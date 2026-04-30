@@ -1,0 +1,22 @@
+{
+  "name": "@debug-hub/browser",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "debug-hub Browser SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  },
+  "files": ["dist"]
+}
