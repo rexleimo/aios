@@ -1,0 +1,23 @@
+{
+  "name": "@debug-hub/node",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "debug-hub Node.js SDK",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.3.0"
+  },
+  "files": ["dist"]
+}
