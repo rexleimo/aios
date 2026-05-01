@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>debug-hub</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace; background: #0d1117; color: #c9d1d9; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #21262d; }
+  .header h1 { font-size: 20px; color: #58a6ff; }
+  .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+  .tab { padding: 8px 16px; background: #161b22; border: 1px solid #21262d; border-radius: 6px; cursor: pointer; color: #8b949e; font-size: 14px; }
+  .tab.active { background: #21262d; color: #58a6ff; border-color: #58a6ff; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 24px; }
+  .stat-card { background: #161b22; border: 1px solid #21262d; border-radius: 8px; padding: 16px; }
+  .stat-card .label { font-size: 12px; color: #8b949e; text-transform: uppercase; }
+  .stat-card .value { font-size: 28px; font-weight: bold; margin-top: 4px; }
+  .stat-card .value.error { color: #f85149; }
+  .stat-card .value.warn { color: #d29922; }
+  .stat-card .value.info { color: #58a6ff; }
+  .search-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+  .search-bar input, .search-bar select { background: #0d1117; border: 1px solid #21262d; border-radius: 6px; padding: 8px 12px; color: #c9d1d9; font-size: 14px; }
+  .search-bar input { flex: 1; }
+  .log-list { list-style: none; }
+  .log-item { padding: 10px 12px; border-bottom: 1px solid #21262d; font-size: 13px; display: flex; gap: 12px; align-items: flex-start; cursor: pointer; }
+  .log-item:hover { background: #161b22; }
+  .log-level { font-weight: bold; min-width: 50px; text-transform: uppercase; font-size: 11px; padding: 2px 6px; border-radius: 3px; text-align: center; }
+  .log-level.debug { color: #8b949e; background: #21262d; }
+  .log-level.info { color: #58a6ff; background: #0d2a4e; }
+  .log-level.warn { color: #d29922; background: #2d1b00; }
+  .log-level.error { color: #f85149; background: #3d0000; }
+  .log-level.fatal { color: #fff; background: #f85149; }
+  .log-time { color: #484f58; min-width: 80px; }
+  .log-msg { flex: 1; word-break: break-word; }
+  .log-module { color: #8b949e; font-size: 11px; min-width: 100px; text-align: right; }
+  .trace-list { list-style: none; }
+  .trace-item { padding: 12px; border-bottom: 1px solid #21262d; cursor: pointer; }
+  .trace-item:hover { background: #161b22; }
+  .trace-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+  .trace-id { color: #58a6ff; font-family: monospace; font-size: 13px; }
+  .trace-meta { color: #8b949e; font-size: 12px; }
+  .span-node { padding: 4px 0; font-size: 13px; }
+  .span-node .span-msg { color: #c9d1d9; }
+  .span-node .span-dur { color: #8b949e; font-size: 11px; }
+  .empty { text-align: center; color: #484f58; padding: 40px; font-size: 14px; }
+  .live-indicator { display: inline-block; width: 8px; height: 8px; background: #3fb950; border-radius: 50%; margin-right: 6px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>debug-hub</h1>
+    <span id="live-status"><span class="live-indicator"></span>Live</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-tab="dashboard">Dashboard</div>
+    <div class="tab" data-tab="logs">Logs</div>
+    <div class="tab" data-tab="traces">Traces</div>
+  </div>
+
+  <div id="tab-dashboard">
+    <div class="stats" id="stats"></div>
+    <h3 style="margin-bottom:12px;color:#8b949e;font-size:14px;">Recent Errors</h3>
+    <ul class="log-list" id="recent-errors"></ul>
+  </div>
+
+  <div id="tab-logs" style="display:none;">
+    <div class="search-bar">
+      <input type="text" id="search-keyword" placeholder="Search logs...">
+      <select id="search-level">
+        <option value="">All levels</option>
+        <option value="debug">Debug</option>
+        <option value="info">Info</option>
+        <option value="warn">Warn</option>
+        <option value="error">Error</option>
+        <option value="fatal">Fatal</option>
+      </select>
+    </div>
+    <ul class="log-list" id="log-list"></ul>
+  </div>
+
+  <div id="tab-traces" style="display:none;">
+    <ul class="trace-list" id="trace-list"></ul>
+  </div>
+</div>
+
+<script>
+const API = '/api';
+let currentTab = 'dashboard';
+
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTab = tab.dataset.tab;
+    document.getElementById('tab-dashboard').style.display = currentTab === 'dashboard' ? '' : 'none';
+    document.getElementById('tab-logs').style.display = currentTab === 'logs' ? '' : 'none';
+    document.getElementById('tab-traces').style.display = currentTab === 'traces' ? '' : 'none';
+    refresh();
+  });
+});
+
+function formatTime(ts) {
+  return new Date(ts).toLocaleTimeString();
+}
+
+async function loadStats() {
+  const res = await fetch(`${API}/stats`);
+  const stats = await res.json();
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card"><div class="label">Total Logs</div><div class="value">${stats.totalLogs}</div></div>
+    <div class="stat-card"><div class="label">Traces</div><div class="value">${stats.totalTraces}</div></div>
+    <div class="stat-card"><div class="label">Errors</div><div class="value error">${stats.errorCount}</div></div>
+    <div class="stat-card"><div class="label">Info</div><div class="value info">${stats.levelCounts.info || 0}</div></div>
+    <div class="stat-card"><div class="label">Warnings</div><div class="value warn">${stats.levelCounts.warn || 0}</div></div>
+  `;
+  const errorList = document.getElementById('recent-errors');
+  if (stats.recentErrors.length === 0) {
+    errorList.innerHTML = '<li class="empty">No recent errors</li>';
+  } else {
+    errorList.innerHTML = stats.recentErrors.map(e => `
+      <li class="log-item">
+        <span class="log-time">${formatTime(e.timestamp)}</span>
+        <span class="log-msg">${escHtml(e.message)}</span>
+        ${e.traceId ? `<span class="log-module">${e.traceId.slice(0, 8)}</span>` : ''}
+      </li>
+    `).join('');
+  }
+}
+
+async function loadLogs() {
+  const keyword = document.getElementById('search-keyword').value;
+  const level = document.getElementById('search-level').value;
+  const params = new URLSearchParams();
+  if (keyword) params.set('keyword', keyword);
+  if (level) params.set('level', level);
+  params.set('limit', '200');
+  const res = await fetch(`${API}/logs/search?${params}`);
+  const logs = await res.json();
+  const list = document.getElementById('log-list');
+  if (logs.length === 0) {
+    list.innerHTML = '<li class="empty">No logs found</li>';
+  } else {
+    list.innerHTML = logs.map(e => `
+      <li class="log-item" data-trace="${e.trace?.traceId || ''}">
+        <span class="log-level ${e.level}">${e.level}</span>
+        <span class="log-time">${formatTime(e.timestamp)}</span>
+        <span class="log-msg">${escHtml(e.message)}</span>
+        <span class="log-module">${e.source?.module || ''}</span>
+      </li>
+    `).join('');
+  }
+}
+
+async function loadTraces() {
+  const res = await fetch(`${API}/traces`);
+  const traces = await res.json();
+  const list = document.getElementById('trace-list');
+  if (traces.length === 0) {
+    list.innerHTML = '<li class="empty">No traces yet</li>';
+  } else {
+    list.innerHTML = traces.map(t => `
+      <li class="trace-item" data-id="${t.traceId}">
+        <div class="trace-header">
+          <span class="trace-id">${t.traceId}</span>
+          <span class="trace-meta">${t.spanCount} spans · ${t.errorCount} errors · ${t.duration || 0}ms</span>
+        </div>
+        ${renderSpanTree(t.rootSpan, 0)}
+      </li>
+    `).join('');
+  }
+}
+
+function renderSpanTree(span, depth) {
+  if (!span) return '';
+  const indent = depth * 16;
+  return `<div class="span-node" style="margin-left:${indent}px">
+    <span class="span-msg">${escHtml(span.message)}</span>
+    <span class="span-dur">${span.duration ? span.duration + 'ms' : ''}</span>
+    ${(span.children || []).map(c => renderSpanTree(c, depth + 1)).join('')}
+  </div>`;
+}
+
+function escHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+async function refresh() {
+  if (currentTab === 'dashboard') await loadStats();
+  if (currentTab === 'logs') await loadLogs();
+  if (currentTab === 'traces') await loadTraces();
+}
+
+document.getElementById('search-keyword').addEventListener('input', debounce(loadLogs, 300));
+document.getElementById('search-level').addEventListener('change', loadLogs);
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+const evtSource = new EventSource(`${API}/events`);
+evtSource.onmessage = () => refresh();
+
+refresh();
+</script>
+</body>
+</html>
