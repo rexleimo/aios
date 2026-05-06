@@ -17,6 +17,47 @@ description: Start from the task you want to solve, then go deeper into ContextD
   <figcaption>New users should take the shortest path first: install, run Doctor, enable project memory, and only start Agent Team when the task is clearly splittable.</figcaption>
 </figure>
 
+## Core Features
+
+<div class="feature-grid">
+  <a href="contextdb.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧠</div>
+    <div class="feature-card__title">ContextDB</div>
+    <div class="feature-card__desc">Project-wide memory layer. Events, checkpoints, and context packets persist across terminal restarts.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+  <a href="superpowers.md" class="feature-card feature-card--workflow">
+    <div class="feature-card__icon">⚡</div>
+    <div class="feature-card__title">Superpowers</div>
+    <div class="feature-card__desc">Reusable automation skills. Brainstorm, plan, debug, verify, and deploy with guided workflows.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+  <a href="team-ops.md" class="feature-card feature-card--team">
+    <div class="feature-card__icon">👥</div>
+    <div class="feature-card__title">Agent Team</div>
+    <div class="feature-card__desc">Dispatch splittable tasks to multiple CLI workers and track with HUD. Coordinate agents, not chaos.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+  <a href="solo-harness.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌙</div>
+    <div class="feature-card__title">Solo Harness</div>
+    <div class="feature-card__desc">Long-running single-agent work with run journals, resume/stop controls, and worktree isolation.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+  <a href="debug-hub.md" class="feature-card feature-card--debug">
+    <div class="feature-card__icon">🐛</div>
+    <div class="feature-card__title">debug-hub</div>
+    <div class="feature-card__desc">MCP-native debug log service. Let coding agents query their own runtime logs and self-diagnose.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌐</div>
+    <div class="feature-card__title">Browser MCP</div>
+    <div class="feature-card__desc">Stealth browser automation with CDP. Human behavior simulation and anti-detection built-in.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
+</div>
+
 ## Featured: debug-hub
 
 **Let coding agents debug themselves.** debug-hub is an MCP-native debug log service that exposes logs and traces as tools your agents can query directly — no human needed to grep terminal output or correlate error spans.
@@ -34,7 +75,7 @@ cd packages/debug-hub && npm install && npm run dev
 ```
 
 [Read the full announcement →](/blog/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[Quick Start](#){ .md-button }
+[Quick Start](debug-hub.md){ .md-button }
 
 ## Pick What You Want To Do
 
@@ -97,7 +138,7 @@ If the task is still unclear, start with normal interactive `codex` and ask it t
 
 - **Not every task needs Agent Team**: use one agent for single-file fixes, small bugs, or unclear requirements.
 - **You do not need every environment variable on day one**: start with the `aios` TUI.
-- **Do not start from the feature list**: start from “what do I want to do?” and copy the command.
+- **Do not start from the feature list**: start from "what do I want to do?" and copy the command.
 - **Do not skip Doctor**: run diagnostics before changing install, browser, skills, or native config by hand.
 
 ## Release Notes And Deep Dives

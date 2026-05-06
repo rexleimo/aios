@@ -491,3 +491,178 @@ body {
     text-align: center;
   }
 }
+
+/* ========================================
+   Feature Grid Styles for Home Page
+   ======================================== */
+
+.feature-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  margin: 1.5rem 0;
+}
+
+.feature-card {
+  padding: 1.25rem;
+  border: 1px solid var(--gd-border);
+  border-radius: 12px;
+  background: var(--gd-surface);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+  display: block;
+}
+
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gd-shadow-paper);
+  border-color: var(--gd-primary);
+  text-decoration: none;
+}
+
+.feature-card__icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.feature-card__title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--gd-text);
+}
+
+.feature-card__desc {
+  font-size: 0.9rem;
+  color: var(--gd-text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.feature-card__link {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--gd-primary);
+}
+
+/* Card theme colors */
+.feature-card--memory .feature-card__icon { background: #e8f0fe; }
+.feature-card--workflow .feature-card__icon { background: #fce8e6; }
+.feature-card--team .feature-card__icon { background: #e6f4ea; }
+.feature-card--debug .feature-card__icon { background: #fff3e0; }
+.feature-card--tool .feature-card__icon { background: #f3e8fd; }
+
+[data-md-color-scheme="slate"] .feature-card--memory .feature-card__icon { background: rgba(138, 180, 248, 0.2); }
+[data-md-color-scheme="slate"] .feature-card--workflow .feature-card__icon { background: rgba(255, 138, 128, 0.2); }
+[data-md-color-scheme="slate"] .feature-card--team .feature-card__icon { background: rgba(129, 199, 132, 0.2); }
+[data-md-color-scheme="slate"] .feature-card--debug .feature-card__icon { background: rgba(255, 183, 77, 0.2); }
+[data-md-color-scheme="slate"] .feature-card--tool .feature-card__icon { background: rgba(206, 147, 216, 0.2); }
+
+/* ========================================
+   Skill Grid Styles for Superpowers Page
+   ======================================== */
+
+.skill-section {
+  margin: 2rem 0;
+}
+
+.skill-section__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--gd-border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.skill-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.skill-card {
+  padding: 1rem;
+  border: 1px solid var(--gd-border);
+  border-radius: 10px;
+  background: var(--gd-surface);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.skill-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--gd-shadow-paper);
+  border-color: var(--gd-primary);
+}
+
+.skill-card__header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.skill-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.skill-card__name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--gd-text);
+}
+
+.skill-card__desc {
+  font-size: 0.9rem;
+  color: var(--gd-text-muted);
+  margin-bottom: 0.75rem;
+  line-height: 1.5;
+}
+
+.skill-card__example {
+  background: var(--gd-code-bg);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  font-family: "Roboto Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--gd-code-text);
+}
+
+/* Skill category colors */
+.skill-card--start .skill-card__icon { background: #e8f0fe; }
+.skill-card--debug .skill-card__icon { background: #fff3e0; }
+.skill-card--efficiency .skill-card__icon { background: #e6f4ea; }
+.skill-card--security .skill-card__icon { background: #fce8e6; }
+
+[data-md-color-scheme="slate"] .skill-card--start .skill-card__icon { background: rgba(138, 180, 248, 0.2); }
+[data-md-color-scheme="slate"] .skill-card--debug .skill-card__icon { background: rgba(255, 183, 77, 0.2); }
+[data-md-color-scheme="slate"] .skill-card--efficiency .skill-card__icon { background: rgba(129, 199, 132, 0.2); }
+[data-md-color-scheme="slate"] .skill-card--security .skill-card__icon { background: rgba(255, 138, 128, 0.2); }
+
+/* Quick start table simplification */
+.quick-start-table {
+  margin: 1rem 0;
+}
+
+.quick-start-table th {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.quick-start-table td {
+  font-size: 0.9rem;
+}

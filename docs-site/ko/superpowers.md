@@ -1,106 +1,137 @@
 ---
 title: Superpowers
-description: CLI를 더 똑똑하게 만드는 재사용 가능한 자동화 스킬.
+description: CLI를 더 똑똑하게 만드는 재사용 가능한 자동화 스킬. 사용 사례별로 정리되어 있습니다.
 ---
 
 # Superpowers
 
 Superpowers는 재사용 가능한 자동화 스킬입니다. Claude Code, Codex, Gemini CLI, OpenCode에 후킹해서 반복 작업을 자동 처리합니다.
 
-## 핵심 특징
+같은 명령이나 프롬프트를 반복하는 대신, 검증된 워크플로우를 통해 AI를 안내하고 모범 사례를 시행하며 완료 전에 결과를 검증하는 스킬을 호출하세요.
 
-- **자동 계획** - 요구사항을 실행 가능한 스텝으로 자동 분해
-- **병렬 실행** - 독립 태스크 식별, 여러 서브태스크 병렬 실행
-- **스마트 검증** - 완료 전에 결과 자동 검증, 추측에 의존하지 않음
+---
 
-## 있는 스킬들
+## 🚀 시작하기
 
-### brainstorming
+명확성과 구조를 갖춘 새 작업을 시작하는 스킬.
 
-창작 작업 시작 전에 의도를 명확히.
+<div class="skill-grid">
+  <div class="skill-card skill-card--start">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">💡</div>
+      <div class="skill-card__name">brainstorming</div>
+    </div>
+    <div class="skill-card__desc">창작 작업 시작 전에 의도를 명확히. 컨텍스트 탐색, 명확화 질문, 트레이드오프가 있는 접근법 제안, 코딩 전 승인 받기.</div>
+    <div class="skill-card__example">brainstorming으로 이 기능을 어떻게 구현할지 생각해줘</div>
+  </div>
+  <div class="skill-card skill-card--start">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">📝</div>
+      <div class="skill-card__name">writing-plans</div>
+    </div>
+    <div class="skill-card__desc">요구사항을 실행 가능한 계획으로 변환. 요구사항 분석, 순차적 스텝 분해, 의존성 파악, 상세 계획 문서 출력.</div>
+    <div class="skill-card__example">writing-plans으로 이 요구사항을 단계로 나눠줘</div>
+  </div>
+</div>
 
-- 프로젝트 컨텍스트 탐색
-- 명확한 질문 하나씩
-- 접근법 제안과 트레이드오프
-- 코드 전에 디자인 제시하고 승인 구하기
+---
 
-**쓰는 때**: 새 기능 개발, 페이지 디자인, 기능 추가.
+## 🐛 디버깅 및 검증
 
-### writing-plans
+증거에 기반해 버그를 수정하고 품질을 보장하는 스킬.
 
-요구사항을 실행 가능한 계획으로 변환.
+<div class="skill-grid">
+  <div class="skill-card skill-card--debug">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">🔍</div>
+      <div class="skill-card__name">systematic-debugging</div>
+    </div>
+    <div class="skill-card__desc">증거로 버그 고치기. 증상과 에러 메시지 수집, 가설 형성, 체계적 테스트, 수정 검증.</div>
+    <div class="skill-card__example">버그가 있어, systematic-debugging 사용해줘</div>
+  </div>
+  <div class="skill-card skill-card--debug">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">✅</div>
+      <div class="skill-card__name">verification-before-completion</div>
+    </div>
+    <div class="skill-card__desc">증거 없이 완료라고 말하지 마. 검증 명령 실행, 출력이 기대대로인지 확인, 성공 주장 전 구체적 증거 필요.</div>
+    <div class="skill-card__example">완료 전에 verification-before-completion으로 검증해줘</div>
+  </div>
+</div>
 
-- 요구사항 분석
-- 순차적 스텝으로 분해
-- 의존성 파악
-- 상세 계획 문서 출력
+---
 
-**쓰는 때**: 명세나 다단계 태스크가 있고 로드맵 필요할 때.
+## ⚡ 효율성 및 협업
 
-### dispatching-parallel-agents
+더 빠르게 실행하고 규모 있게 협업하는 스킬.
 
-여러 독립 태스크를 병렬로 실행.
+<div class="skill-grid">
+  <div class="skill-card skill-card--efficiency">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">⚡</div>
+      <div class="skill-card__name">dispatching-parallel-agents</div>
+    </div>
+    <div class="skill-card__desc">여러 독립 작업을 한번에 실행. 독립 워크플로 식별, 병렬 에이전트 기동, 결과 취합, 우아한 실패 처리.</div>
+    <div class="skill-card__example">dispatching-parallel-agents로 이걸 병렬 처리해줘</div>
+  </div>
+  <div class="skill-card skill-card--efficiency">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">👥</div>
+      <div class="skill-card__name">team-ops</div>
+    </div>
+    <div class="skill-card__desc">HUD와 Team 상태 도구로 다중 에이전트 협업 모니터링 및 관리. 실시간 세션 상태 보기, 결과 추적, 스킬 개선 후보 발견.</div>
+    <div class="skill-card__example">team-ops 모니터링 패널 보여줘</div>
+  </div>
+</div>
 
-- 독립 워크플로 식별
-- 병렬 agents 기동
-- 결과 취합
-- 실패 적절히 처리
+---
 
-**쓰는 때**: 2개 이상 공유 상태 없는 태스크를 동시에 돌리고 싶을 때.
+## 🔒 보안 및 규정 준수
 
-### verification-before-completion
+자동화를 안전하게 유지하는 스킬.
 
-검증 없이 완료라고 말하지 마.
+<div class="skill-grid">
+  <div class="skill-card skill-card--security">
+    <div class="skill-card__header">
+      <div class="skill-card__icon">🔒</div>
+      <div class="skill-card__name">security-scan</div>
+    </div>
+    <div class="skill-card__desc">자동화 전에 설정의 보안 문제 확인. 스킬, 훅, MCP 설정 스캔, 노출된 시크릿 식별, 수정 제안.</div>
+    <div class="skill-card__example">security-scan 실행해서 설정 보안 확인해줘</div>
+  </div>
+</div>
 
-- 검증 명령 실행
-- 출력이 기대대로인지 확인
-- 구체적 증거가 있어야 성공
+---
 
-**쓰는 때**: 기능 완료, 버그 수정, PR 생성 전.
+## 사용 방법
 
-### systematic-debugging
+1. **Superpowers가 필요하면 자연스럽게 요청하세요** — AI가 의도를 인식하고 스킬을 호출합니다.
+2. **스킬이 자동으로 검증된 워크플로우를 안내합니다**.
+3. **결과는 향후 참조를 위해 프로젝트 메모리에 저장됩니다**.
 
-추측 아니라 증거로 버그 고치기.
-
-- 증상과 에러 메시지 수집
-- 가설 형성
-- 체계적으로 테스트
-- 수정 검증
-
-**쓰는 때**: 테스트 실패, 크래시, 예상치 못한 동작 마주했을 때.
-
-### security-scan
-
-자동화 전에 설정 보안 문제 체크.
-
-- skills, hooks, MCP 설정 스캔
-- 노출된 시크릿 식별
-- 수정 제안
-
-**쓰는 때**: 자동화 활성화나 설정 변경 시.
-
-## 어떻게 사용하나
-
-1. Superpowers가 필요하면 자연스럽게 말하세요
-2. AI가 스킬을 호출하고 안내합니다
-3. 결과는 프로젝트 메모리에 저장됩니다
-
-## 예
+### 예제 명령
 
 ```
-brainstorming으로 이 기능을 어떻게 구현할지 생각하기
-writing-plans으로 요구사항을 단계로 나누기
-dispatching-parallel-agents로 태스크 병렬 실행하기
-verification-before-completion으로 완료 전에 검증하기
+"brainstorming으로 이 기능을 어떻게 구현할지 생각해줘"
+"writing-plans으로 이 요구사항을 단계로 나눠줘"
+"버그가 있어, systematic-debugging 사용해줘"
+"완료 전에 verification-before-completion으로 검증해줘"
+"dispatching-parallel-agents로 이걸 병렬 처리해줘"
+"security-scan 실행해서 설정 보안 확인해줘"
 ```
+
+---
 
 ## RL 훈련 시스템
 
 AIOS는 멀티 환경 강화학습 시스템을 포함합니다. 통합 제어 플레인을 통해 셸, 브라우저, 오케스트레이터 태스크에서 공유 학생 정책을 훈련합니다.
 
-자세한 내용은[아키텍처 페이지](architecture.md#rl-training-layer-aios)를 참조하세요.
+자세한 내용은 [아키텍처 페이지](architecture.md#rl-training-layer-aios)를 참조하세요.
+
+---
 
 ## 더 보기
 
-- [사례 집합](case-library.md) - 실사용례
-- [ContextDB](contextdb.md) - 기억이 세션을어다릅는 방식
+- [사례 집합](case-library.md) - 실제 사용 예제
+- [ContextDB](contextdb.md) - 기억이 세션을 넘어 유지되는 방식
+- [Agent Team & HUD](team-ops.md) - 다중 에이전트 협업 상세

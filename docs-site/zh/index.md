@@ -17,6 +17,47 @@ description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏�
   <figcaption>新用户先走最短路径：安装并跑 Doctor，给项目开启记忆；只有任务可拆、验收清楚时再开多 Agent。</figcaption>
 </figure>
 
+## 核心功能
+
+<div class="feature-grid">
+  <a href="contextdb.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧠</div>
+    <div class="feature-card__title">ContextDB</div>
+    <div class="feature-card__desc">项目级记忆层。事件、检查点和上下文包在终端重启后依然持久化。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+  <a href="superpowers.md" class="feature-card feature-card--workflow">
+    <div class="feature-card__icon">⚡</div>
+    <div class="feature-card__title">Superpowers</div>
+    <div class="feature-card__desc">可复用的自动化技能。通过引导式工作流进行头脑风暴、规划、调试、验证和部署。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+  <a href="team-ops.md" class="feature-card feature-card--team">
+    <div class="feature-card__icon">👥</div>
+    <div class="feature-card__title">Agent Team</div>
+    <div class="feature-card__desc">将可拆分的任务分发给多个 CLI 工作进程并通过 HUD 追踪。协调 Agents，而非制造混乱。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+  <a href="solo-harness.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌙</div>
+    <div class="feature-card__title">单 Agent 夜跑</div>
+    <div class="feature-card__desc">长时间运行的单 Agent 任务，支持运行日志、恢复/停止控制和工作目录隔离。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+  <a href="debug-hub.md" class="feature-card feature-card--debug">
+    <div class="feature-card__icon">🐛</div>
+    <div class="feature-card__title">debug-hub</div>
+    <div class="feature-card__desc">MCP 原生调试日志服务。让 coding agent 查询自己的运行时日志并自我诊断。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌐</div>
+    <div class="feature-card__title">Browser MCP</div>
+    <div class="feature-card__desc">隐形浏览器自动化，基于 CDP。内置人类行为模拟和反检测功能。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
+</div>
+
 ## 重点推荐：debug-hub
 
 **让 coding agent 学会自己查日志。** debug-hub 是专为 agent 设计的 MCP 原生调试日志服务，把日志和调用链暴露为 agent 可直接调用的工具——不用人类再去翻终端、grep 输出、手动关联错误。
@@ -34,7 +75,7 @@ cd packages/debug-hub && npm install && npm run dev
 ```
 
 [查看完整公告 →](/blog/zh/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[快速开始](#){ .md-button }
+[快速开始](debug-hub.md){ .md-button }
 
 ## 先选你要做什么
 
@@ -97,7 +138,7 @@ aios team status --provider codex --watch
 
 - **不是所有任务都要多 Agent**：单文件修复、小 bug、需求还不清楚时，先单 agent。
 - **不是所有变量都要配置**：新用户先用 `aios` TUI，别一上来记环境变量。
-- **不是只看功能列表**：先按“我要做什么”找命令，再去看模块参考。
+- **不是只看功能列表**：先按"我要做什么"找命令，再去看模块参考。
 - **不要忽略 Doctor**：安装、浏览器、skills、native 配置问题，先跑诊断再改。
 
 ## 发布说明与深度文章
@@ -111,7 +152,7 @@ aios team status --provider codex --watch
 ## 下一步阅读
 
 - [快速开始](getting-started.md)：安装、Setup、Doctor、第一次运行。
-- [按场景找命令](use-cases.md)：按“我想做什么”查入口。
+- [按场景找命令](use-cases.md)：按"我想做什么"查入口。
 - [多 Agent 实战](team-ops.md)：什么时候开团队、怎么监控、怎么收尾。
 - [单 Agent 夜跑](solo-harness.md)：怎么让一个 agent 过夜跑、查看状态、停止和恢复。
 - [ContextDB](contextdb.md)：理解记忆如何跨会话持久化。

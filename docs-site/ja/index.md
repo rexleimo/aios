@@ -17,6 +17,47 @@ description: まずやりたい作業からコマンドを選び、ContextDB、A
   <figcaption>新規ユーザーは最短経路から始めます。インストール後に Doctor を実行し、プロジェクト記憶を有効化し、タスクが明確に分割できる時だけ Agent Team を使います。</figcaption>
 </figure>
 
+## コア機能
+
+<div class="feature-grid">
+  <a href="contextdb.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧠</div>
+    <div class="feature-card__title">ContextDB</div>
+    <div class="feature-card__desc">プロジェクト全体の記憶レイヤー。イベント、checkpoint、context pack がターミナル再起動後も保持されます。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+  <a href="superpowers.md" class="feature-card feature-card--workflow">
+    <div class="feature-card__icon">⚡</div>
+    <div class="feature-card__title">Superpowers</div>
+    <div class="feature-card__desc">再利用可能な自動化スキル。ブレインストーミング、計画立案、デバッグ、検証、デプロイをガイド付きワークフローで。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+  <a href="team-ops.md" class="feature-card feature-card--team">
+    <div class="feature-card__icon">👥</div>
+    <div class="feature-card__title">Agent Team</div>
+    <div class="feature-card__desc">分割可能なタスクを複数の CLI worker に分散し、HUD で追跡。agents を協調させ、混沌を防ぎます。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+  <a href="solo-harness.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌙</div>
+    <div class="feature-card__title">ソロ Harness</div>
+    <div class="feature-card__desc">長時間実行の単一 agent 作業に、run journal、resume/stop 制御、worktree 分離を提供。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+  <a href="debug-hub.md" class="feature-card feature-card--debug">
+    <div class="feature-card__icon">🐛</div>
+    <div class="feature-card__title">debug-hub</div>
+    <div class="feature-card__desc">MCP ネイティブのデバッグログサービス。coding agent が自身のランタイムログをクエリし、自己診断可能に。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+    <div class="feature-card__icon">🌐</div>
+    <div class="feature-card__title">Browser MCP</div>
+    <div class="feature-card__desc">Stealth ブラウザ自動化 with CDP。人間の行動シミュレーションと反検出機能を内蔵。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
+</div>
+
 ## 注目: debug-hub
 
 **coding agent に自己診断能力を。** debug-hub は agent 専用に設計された MCP ネイティブのデバッグログサービスです。ログとトレースを agent が直接クエリできるツールとして公開し、人間がターミナル出力を grep したりエラースパンを手動で関連付けたりする必要をなくします。
@@ -34,7 +75,7 @@ cd packages/debug-hub && npm install && npm run dev
 ```
 
 [お知らせ全文を読む →](/blog/ja/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[クイックスタート](#){ .md-button }
+[クイックスタート](debug-hub.md){ .md-button }
 
 ## まず何をしたいか選ぶ
 

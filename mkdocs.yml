@@ -67,6 +67,7 @@ plugins:
             Core Features: 功能核心
             ContextDB: ContextDB
             Superpowers: Superpowers
+            debug-hub: debug-hub
             Route & Concurrency Profiles: 路由与并发档位
             Advanced Design Skills: 高级设计技能
             Solo Harness: 单 Agent 夜跑
@@ -99,6 +100,7 @@ plugins:
             Core Features: コアプリ 功能
             ContextDB: ContextDB
             Superpowers: Superpowers
+            debug-hub: debug-hub
             Route & Concurrency Profiles: ルーティングと並列プロファイル
             Advanced Design Skills: 高度デザインスキル
             Solo Harness: ソロ Harness
@@ -130,6 +132,7 @@ plugins:
             Core Features: 핵심 기능
             ContextDB: ContextDB
             Superpowers: Superpowers
+            debug-hub: debug-hub
             Route & Concurrency Profiles: 라우팅/병렬 프로필
             Advanced Design Skills: 고급 디자인 스킬
             Solo Harness: 솔로 Harness
@@ -178,6 +181,7 @@ nav:
   - Core Features:
       - ContextDB: contextdb.md
       - Superpowers: superpowers.md
+      - debug-hub: debug-hub.md
       - Route & Concurrency Profiles: route-concurrency-profiles.md
       - Advanced Design Skills: advanced-design-skills.md
       - Agent Team: team-ops.md
