@@ -6,6 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- feat(perception): add content outcome recording, insight generation, and perception summary for agent learning loop
 - feat(debug-hub): add MCP-native debug log service with Node.js/Browser/Go SDKs, embedded Web UI, and file-based storage
 
 ## [1.8.0] - 2026-05-05

@@ -128,7 +128,7 @@ async function runInternal(options) {
 
 
 function resolveRuntimeWorkspace(command, options = {}) {
-  const workspaceScoped = new Set(['harness', 'hud', 'memo', 'orchestrate', 'team', 'quality-gate', 'snapshot-rollback', 'entropy-gc', 'learn-eval', 'release-status']);
+  const workspaceScoped = new Set(['harness', 'hud', 'memo', 'orchestrate', 'team', 'quality-gate', 'snapshot-rollback', 'entropy-gc', 'learn-eval', 'release-status', 'perception']);
   if (!workspaceScoped.has(command)) return rootDir;
   const explicit = String(options.workspaceRoot || options.rootDir || '').trim();
   if (explicit) return path.resolve(explicit);
@@ -373,6 +373,24 @@ async function main() {
   if (parsed.command === 'memo') {
     const { runMemo } = await import('./lib/memo/memo.mjs');
     await runMemo(parsed.options, { rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options) });
+    return;
+  }
+
+  if (parsed.command === 'perception') {
+    const sub = parsed.options.subcommand || 'summary';
+    const rootDir = resolveRuntimeWorkspace(parsed.command, parsed.options);
+    if (sub === 'record') {
+      const { recordOutcomeSnapshot } = await import('./lib/perception/outcome-recorder.mjs');
+      await recordOutcomeSnapshot(parsed.options, { rootDir });
+    } else if (sub === 'insights') {
+      const { generateInsights } = await import('./lib/perception/insight-generator.mjs');
+      await generateInsights(parsed.options, { rootDir });
+    } else if (sub === 'summary') {
+      const { runPerceptionSummary } = await import('./lib/perception/perception-summary.mjs');
+      await runPerceptionSummary(parsed.options, { rootDir });
+    } else {
+      throw new Error(`Unknown perception subcommand: ${sub}. Use: record, insights, summary`);
+    }
     return;
   }
 }

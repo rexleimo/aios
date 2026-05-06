@@ -71,6 +71,7 @@ plugins:
             Route & Concurrency Profiles: 路由与并发档位
             Advanced Design Skills: 高级设计技能
             Solo Harness: 单 Agent 夜跑
+            Perception: 感知层
             Architecture: 架构
             CLI Workflows: 按场景找命令
             Agent Team: 多 Agent 实战
@@ -104,6 +105,7 @@ plugins:
             Route & Concurrency Profiles: ルーティングと並列プロファイル
             Advanced Design Skills: 高度デザインスキル
             Solo Harness: ソロ Harness
+            Perception: パーセプション
             Architecture: アーキテクチャ
             CLI Workflows: CLI ワークフロー
             Resources: リソース
@@ -136,6 +138,7 @@ plugins:
             Route & Concurrency Profiles: 라우팅/병렬 프로필
             Advanced Design Skills: 고급 디자인 스킬
             Solo Harness: 솔로 Harness
+            Perception: 인식 레이어
             Architecture: 아키텍처
             CLI Workflows: CLI 워크플로
             Resources: 리소스
@@ -187,6 +190,7 @@ nav:
       - Agent Team: team-ops.md
       - Solo Harness: solo-harness.md
       - HUD Guide: hud-guide.md
+      - Perception: perception.md
       - Architecture: architecture.md
       - CLI Workflows: use-cases.md
   - Resources:

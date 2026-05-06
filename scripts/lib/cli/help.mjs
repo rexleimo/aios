@@ -11,6 +11,7 @@ Commands:
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   memo          Workspace memo + pinned memory helpers
+  perception    Content outcome recording, insight generation, and perception summary
   quality-gate  Run repo quality checks with harness profiles
   orchestrate   Preview reusable subagent workflow blueprints
   team          One-click multi-client live team runtime (codex/claude/gemini)
@@ -45,6 +46,9 @@ Examples:
   node scripts/aios.mjs entropy-gc auto --session codex-cli-20260303T080437-065e16c0
   node scripts/aios.mjs snapshot-rollback --session codex-cli-20260303T080437-065e16c0 --job phase.implement --dry-run
   node scripts/aios.mjs release-status --recent 12
+  node scripts/aios.mjs perception record --content-id note_001 --platform xiaohongshu --content-type note --title "test" --metrics '{"likes":100}'
+  node scripts/aios.mjs perception insights --min-sample 3
+  node scripts/aios.mjs perception summary --format json
   node scripts/aios.mjs internal browser doctor --fix
   node scripts/aios.mjs internal browser mcp-migrate
   node scripts/aios.mjs internal browser cdp-start
@@ -344,6 +348,41 @@ Options:
   AIOS_RELEASE_TREND_WOW_FALLBACK_DELTA_WARN=<0-1>  (env) WoW fallback-rate delta warning threshold (default: 0.03)
   --format <text|json>
   -h, --help
+`;
+    case 'perception':
+      return `Usage:
+  node scripts/aios.mjs perception record [options]
+  node scripts/aios.mjs perception insights [options]
+  node scripts/aios.mjs perception summary [options]
+
+Subcommands:
+  record      Record a structured outcome snapshot after content operation
+  insights    Analyze outcomes and generate insight memos
+  summary     Build perception layer markdown for agent context injection
+
+Options:
+  --content-id <id>               (record) Required content identifier
+  --platform <name>               (record) Required platform (e.g. xiaohongshu)
+  --content-type <type>           (record) Required content type (e.g. note, video)
+  --title <text>                  (record) Content title
+  --publish-time <iso>            (record) Publish timestamp
+  --snapshot-window <duration>    (record) Metrics snapshot window (default: immediate)
+  --metrics <json>                (record) Metrics JSON: likes, comments, saves, views, etc.
+  --context <json>                (record) Context JSON: topic, format, publishHour, etc.
+  --space <name>                  Workspace memory space (default: default)
+  --min-sample <n>                (insights) Minimum sample size per dimension group (default: 3)
+  --max-chars <n>                 (summary) Max output characters (default: 10000)
+  --format <text|json>            Output format
+  --dry-run                       Preview without storing
+  --json                          Output as JSON
+  -h, --help
+
+Environment:
+  CTXDB_PERCEPTION                Enable/disable perception overlay (default: true)
+  PERCEPTION_MAX_CHARS            Max chars for perception overlay (default: 3000)
+  PERCEPTION_OUTCOMES_LIMIT       Max outcomes loaded (default: 20)
+  PERCEPTION_INSIGHTS_LIMIT       Max insights loaded (default: 10)
+  PERCEPTION_MIN_SAMPLE           Min sample for insight generation (default: 3)
 `;
     default:
       return getRootHelpText();

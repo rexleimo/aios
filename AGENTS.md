@@ -156,6 +156,12 @@ Persona and user profile memory are part of the same runtime layer:
 - `ctx-agent` injects persona and user profile content into the Memory prelude before workspace memo content.
 - Treat these files as stable guidance, not task facts; project-specific facts should still go through ContextDB events, checkpoints, or workspace memo.
 
+Perception layer enables agent learning from content operation outcomes:
+- `aios perception record` records structured outcome snapshots (metrics + context) to ContextDB
+- `aios perception insights` generates statistical insights by dimension (topic/format/publishHour)
+- `aios perception summary` builds perception markdown injected into agent context
+- The perception overlay is auto-injected by `ctx-agent` when `CTXDB_PERCEPTION=true` (default)
+
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
 
 For browser tasks, use this operating pattern unless the user explicitly asks otherwise:

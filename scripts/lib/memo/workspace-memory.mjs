@@ -58,16 +58,32 @@ export function ensureWorkspaceMemorySession(workspaceRoot, space = 'default') {
     return { created: false, sessionId, dir };
   }
 
+  const now = new Date().toISOString();
   mkdirSync(dir, { recursive: true });
   writeFileSync(metaPath, JSON.stringify({
     schemaVersion: 1,
+    sessionId,
     agent: 'workspace-memory',
     project: 'workspace-memory',
     goal: `Workspace memory for space: ${space}`,
+    tags: [],
     status: 'running',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   }, null, 2) + '\n', 'utf8');
+
+  const statePath = path.join(dir, 'state.json');
+  if (!existsSync(statePath)) {
+    writeFileSync(statePath, JSON.stringify({
+      sessionId,
+      lastEventAt: null,
+      lastEventSeq: 0,
+      lastCheckpointAt: null,
+      lastCheckpointSeq: 0,
+      status: 'running',
+      nextActions: [],
+    }, null, 2) + '\n', 'utf8');
+  }
 
   const pinnedPath = workspaceMemoryPinnedPath(workspaceRoot, sessionId);
   if (!existsSync(pinnedPath)) {

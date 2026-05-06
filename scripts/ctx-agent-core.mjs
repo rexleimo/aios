@@ -18,6 +18,7 @@ import {
 import { buildPersonaOverlay, ensurePersonaLayer } from './lib/memo/persona.mjs';
 import { scanWorkspaceMemoryContent } from './lib/memo/safety.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from './lib/contextdb/continuity.mjs';
+import { buildPerceptionSummary } from './lib/perception/perception-summary.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -811,6 +812,20 @@ async function buildMemoryPrelude(workspaceRoot, env = process.env) {
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.warn(`[warn] workspace memory overlay skipped: ${reason}`);
+  }
+
+  try {
+    if (parseBoolEnv(env.CTXDB_PERCEPTION, true)) {
+      const space = await resolveWorkspaceMemorySpace(workspaceRoot, env);
+      const maxChars = parseBoundedIntegerEnv(env.PERCEPTION_MAX_CHARS, 3000, { min: 256, max: 15000 });
+      const perceptionOverlay = await buildPerceptionSummary({ workspaceRoot, space, maxChars });
+      if (perceptionOverlay) {
+        sections.push(perceptionOverlay.trim());
+      }
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn(`[warn] perception overlay skipped: ${reason}`);
   }
 
   return sections.join('\n\n').trim();
