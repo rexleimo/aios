@@ -17,12 +17,32 @@ description: Start from the task you want to solve, then go deeper into ContextD
   <figcaption>New users should take the shortest path first: install, run Doctor, enable project memory, and only start Agent Team when the task is clearly splittable.</figcaption>
 </figure>
 
+## Featured: debug-hub
+
+**Let coding agents debug themselves.** debug-hub is an MCP-native debug log service that exposes logs and traces as tools your agents can query directly — no human needed to grep terminal output or correlate error spans.
+
+| | |
+|---|---|
+| **MCP tools for agents** | `search_logs`, `get_trace`, `list_traces`, `get_stats`, `clear_logs` |
+| **Three SDKs** | Node.js, Browser, Go — one consistent API |
+| **Zero dependencies** | File-based storage under `~/.debug-hub/`, no database, no Docker |
+| **Embedded Web UI** | Dark-themed dashboard with SSE live feed |
+
+```bash
+cd packages/debug-hub && npm install && npm run dev
+# HTTP API + Web UI at http://localhost:39200, MCP via stdio
+```
+
+[Read the full announcement →](/blog/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
+[Quick Start](#){ .md-button }
+
 ## Pick What You Want To Do
 
 | What you want now | Read first | Shortest command |
 |---|---|---|
 | Install and open the TUI | [Quick Start](getting-started.md) | `aios` |
 | Give an agent project memory | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
+| **Let agents debug themselves** | **[debug-hub blog](/blog/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
 | Run one agent overnight | [Solo Harness](solo-harness.md) | `aios harness run --objective "Draft tomorrow handoff" --worktree` |
 | Run multiple agents together | [Agent Team](team-ops.md) | `aios team 3:codex "Implement X and run tests"` |
 | See task progress | [HUD Guide](hud-guide.md) | `aios team status --provider codex --watch` |
@@ -35,7 +55,8 @@ RexCLI is not another coding agent. It is a local-first capability layer:
 1. **Memory layer: ContextDB** - stores events, checkpoints, and context packets inside the current project so work survives terminal restarts.
 2. **Workflow layer: Superpowers** - turns vague requests into plans, debugs with evidence, and verifies before completion.
 3. **Collaboration layer: Agent Team** - sends clearly separable work to multiple CLI workers and tracks them with HUD.
-4. **Tool layer: Browser MCP + Privacy Guard** - lets agents use the browser and redacts sensitive config before sharing.
+4. **Observability layer: debug-hub** - exposes agent runtime logs and traces as MCP tools so agents can self-diagnose errors.
+5. **Tool layer: Browser MCP + Privacy Guard** - lets agents use the browser and redacts sensitive config before sharing.
 
 For long-running single-agent work, [Solo Harness](solo-harness.md) adds run journals, resume/stop controls, and optional worktree isolation on top of ContextDB.
 
@@ -81,6 +102,7 @@ If the task is still unclear, start with normal interactive `codex` and ask it t
 
 ## Release Notes And Deep Dives
 
+- [debug-hub: MCP-Native Debug Log Service](/blog/2026-05-debug-hub-mcp/): let coding agents query their own runtime logs via MCP tools.
 - [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane and rollout model.
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path and semantic rerank behavior.
 - [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fixes and Windows launch reliability.

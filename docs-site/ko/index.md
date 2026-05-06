@@ -17,12 +17,32 @@ description: 먼저 하고 싶은 작업에서 명령을 고르고, 그다음 Co
   <figcaption>처음에는 가장 짧은 경로만 따라가세요. 설치 후 Doctor 를 실행하고, 프로젝트 기억을 켠 다음, 작업이 명확히 분리될 때만 Agent Team 을 사용합니다.</figcaption>
 </figure>
 
+## 주목: debug-hub
+
+**coding agent 가 스스로 진단하게 하세요.** debug-hub 는 agent 전용으로 설계된 MCP 네이티브 디버그 로그 서비스입니다. 로그와 트레이스를 agent 가 직접 쿼리할 수 있는 도구로 노출하여, 사람이 터미널 출력을 grep 하거나 오류 스팬을 수동으로 연결할 필요를 없앱니다.
+
+| | |
+|---|---|
+| **agent 용 MCP 도구** | `search_logs`, `get_trace`, `list_traces`, `get_stats`, `clear_logs` |
+| **3가지 SDK** | Node.js, Browser, Go — 일관된 API |
+| **제로 의존성** | `~/.debug-hub/` 파일 기반 스토리지, DB 불필요, Docker 불필요 |
+| **내장 Web UI** | 다크 테마 대시보드, SSE 실시간 피드 |
+
+```bash
+cd packages/debug-hub && npm install && npm run dev
+# HTTP API + Web UI: http://localhost:39200, MCP 는 stdio
+```
+
+[공지 전문 읽기 →](/blog/ko/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
+[빠른 시작](#){ .md-button }
+
 ## 먼저 하고 싶은 일을 고르세요
 
 | 지금 하고 싶은 일 | 먼저 볼 문서 | 가장 짧은 명령 |
 |---|---|---|
 | 설치하고 TUI 열기 | [빠른 시작](getting-started.md) | `aios` |
 | agent 가 프로젝트 맥락을 기억하게 하기 | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
+| **agent 가 스스로 디버깅하게 하기** | **[debug-hub 블로그](/blog/ko/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
 | 한 agent 를 밤새 돌리기 | [솔로 Harness](solo-harness.md) | `aios harness run --objective "내일 아침 인계 메모 정리" --worktree` |
 | 여러 agent 로 함께 작업하기 | [Agent Team](team-ops.md) | `aios team 3:codex "X 구현 후 테스트 실행"` |
 | 진행 상황 보기 | [HUD 가이드](hud-guide.md) | `aios team status --provider codex --watch` |
@@ -35,7 +55,8 @@ RexCLI 는 새로운 coding agent 가 아닙니다. 로컬 우선의 기능 레�
 1. **기억 레이어 ContextDB**: 이벤트, checkpoint, context pack 을 현재 프로젝트에 저장해 터미널을 다시 열어도 이어서 작업할 수 있습니다.
 2. **워크플로 레이어 Superpowers**: 요구를 계획으로 나누고, 증거 기반으로 디버깅하고, 완료 전에 검증합니다.
 3. **협업 레이어 Agent Team**: 명확히 분리 가능한 작업을 여러 CLI worker 에게 맡기고 HUD 로 상태를 추적합니다.
-4. **도구 레이어 Browser MCP + Privacy Guard**: agent 가 브라우저를 사용할 수 있게 하고, 민감한 설정은 공유 전에 마스킹합니다.
+4. **관측 레이어 debug-hub**: agent 런타임 로그와 트레이스를 MCP 도구로 노출하여 agent 가 자율적으로 오류를 진단할 수 있게 합니다.
+5. **도구 레이어 Browser MCP + Privacy Guard**: agent 가 브라우저를 사용할 수 있게 하고, 민감한 설정은 공유 전에 마스킹합니다.
 
 단일 agent 장시간 작업에는 [솔로 Harness](solo-harness.md) 가 ContextDB 위에 run journal, resume/stop 제어, 선택적 worktree 격리를 더합니다.
 
@@ -81,6 +102,7 @@ aios team status --provider codex --watch
 
 ## 릴리스 노트와 상세 글
 
+- [debug-hub: MCP 네이티브 디버그 로그 서비스](/blog/ko/2026-05-debug-hub-mcp/): coding agent 가 MCP 도구로 자신의 런타임 로그를 직접 쿼리 가능.
 - [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane 과 rollout model.
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path 와 semantic rerank behavior.
 - [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fix 와 Windows launch reliability.

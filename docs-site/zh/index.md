@@ -17,12 +17,32 @@ description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏�
   <figcaption>新用户先走最短路径：安装并跑 Doctor，给项目开启记忆；只有任务可拆、验收清楚时再开多 Agent。</figcaption>
 </figure>
 
+## 重点推荐：debug-hub
+
+**让 coding agent 学会自己查日志。** debug-hub 是专为 agent 设计的 MCP 原生调试日志服务，把日志和调用链暴露为 agent 可直接调用的工具——不用人类再去翻终端、grep 输出、手动关联错误。
+
+| | |
+|---|---|
+| **Agent 可用的 MCP 工具** | `search_logs`、`get_trace`、`list_traces`、`get_stats`、`clear_logs` |
+| **三种 SDK** | Node.js、Browser、Go，一致的 API |
+| **零依赖** | `~/.debug-hub/` 文件存储，不需要数据库、不需要 Docker |
+| **内嵌 Web UI** | 暗色主题 Dashboard，SSE 实时推送 |
+
+```bash
+cd packages/debug-hub && npm install && npm run dev
+# HTTP API + Web UI: http://localhost:39200，MCP 走 stdio
+```
+
+[查看完整公告 →](/blog/zh/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
+[快速开始](#){ .md-button }
+
 ## 先选你要做什么
 
 | 你现在想做 | 先看 | 最短命令 |
 |---|---|---|
 | 只想装好并打开 TUI | [快速开始](getting-started.md) | `aios` |
 | 让 agent 记住项目上下文 | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
+| **让 agent 自己查日志** | **[debug-hub 博客](/blog/zh/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
 | 让一个 agent 过夜跑 | [单 Agent 夜跑](solo-harness.md) | `aios harness run --objective "整理明早交接清单" --worktree` |
 | 多个 agent 一起做任务 | [多 Agent 实战](team-ops.md) | `aios team 3:codex "实现 X 并跑测试"` |
 | 看任务跑到哪了 | [HUD 指南](hud-guide.md) | `aios team status --provider codex --watch` |
@@ -35,7 +55,8 @@ RexCLI 不是新的 coding agent。它是一个本地优先的能力层：
 1. **记忆层 ContextDB**：把事件、checkpoint、上下文包保存在当前项目里，重启终端后还能续上。
 2. **工作流层 Superpowers**：把需求拆成计划、按证据调试、完成前做验证。
 3. **协作层 Agent Team**：把明确可拆分的任务交给多个 CLI worker，并用 HUD 追踪状态。
-4. **工具层 Browser MCP + Privacy Guard**：让 agent 可以安全使用浏览器、读取敏感配置前先脱敏。
+4. **可观测层 debug-hub**：把 agent 运行时日志和调用链暴露为 MCP 工具，让 agent 自主排查错误。
+5. **工具层 Browser MCP + Privacy Guard**：让 agent 可以安全使用浏览器、读取敏感配置前先脱敏。
 
 如果是单 agent 的长任务，[单 Agent 夜跑](solo-harness.md) 会在 ContextDB 之上补上 run journal、resume/stop 控制和可选 worktree 隔离。
 
@@ -81,6 +102,7 @@ aios team status --provider codex --watch
 
 ## 发布说明与深度文章
 
+- [debug-hub：MCP 原生调试日志服务](/blog/zh/2026-05-debug-hub-mcp/)：让 coding agent 通过 MCP 工具直接查询自身运行时日志。
 - [AIOS RL Training System](/blog/rl-training-system/)：多环境训练控制平面与 rollout 模型。
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)：FTS5 + BM25 检索路径和语义重排行为。
 - [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)：包装器启动修复与 Windows 启动稳定性。

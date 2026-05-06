@@ -17,12 +17,32 @@ description: まずやりたい作業からコマンドを選び、ContextDB、A
   <figcaption>新規ユーザーは最短経路から始めます。インストール後に Doctor を実行し、プロジェクト記憶を有効化し、タスクが明確に分割できる時だけ Agent Team を使います。</figcaption>
 </figure>
 
+## 注目: debug-hub
+
+**coding agent に自己診断能力を。** debug-hub は agent 専用に設計された MCP ネイティブのデバッグログサービスです。ログとトレースを agent が直接クエリできるツールとして公開し、人間がターミナル出力を grep したりエラースパンを手動で関連付けたりする必要をなくします。
+
+| | |
+|---|---|
+| **agent 用 MCP ツール** | `search_logs`、`get_trace`、`list_traces`、`get_stats`、`clear_logs` |
+| **3 種類の SDK** | Node.js、Browser、Go — 一貫した API |
+| **ゼロ依存** | `~/.debug-hub/` 配下のファイルストレージ、DB 不要、Docker 不要 |
+| **組み込み Web UI** | ダークテーマのダッシュボード、SSE ライブフィード |
+
+```bash
+cd packages/debug-hub && npm install && npm run dev
+# HTTP API + Web UI: http://localhost:39200、MCP は stdio
+```
+
+[お知らせ全文を読む →](/blog/ja/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
+[クイックスタート](#){ .md-button }
+
 ## まず何をしたいか選ぶ
 
 | 今やりたいこと | 先に読む | 最短コマンド |
 |---|---|---|
 | インストールして TUI を開く | [クイックスタート](getting-started.md) | `aios` |
 | agent にプロジェクト文脈を覚えさせる | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
+| **agent に自己診断させる** | **[debug-hub ブログ](/blog/ja/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
 | 1つの agent を夜通し走らせる | [ソロ Harness](solo-harness.md) | `aios harness run --objective "明朝の引き継ぎメモをまとめる" --worktree` |
 | 複数 agent で作業する | [Agent Team](team-ops.md) | `aios team 3:codex "X を実装し、テストを実行"` |
 | 進捗を見る | [HUD ガイド](hud-guide.md) | `aios team status --provider codex --watch` |
@@ -35,7 +55,8 @@ RexCLI は新しい coding agent ではありません。ローカル優先の�
 1. **記憶レイヤー ContextDB**: イベント、checkpoint、context pack を現在のプロジェクトに保存し、ターミナル再起動後も続きから作業できます。
 2. **ワークフローレイヤー Superpowers**: 要件を計画に分解し、証拠ベースでデバッグし、完了前に検証します。
 3. **協調レイヤー Agent Team**: 明確に分割できるタスクを複数 CLI worker に渡し、HUD で状態を追跡します。
-4. **ツールレイヤー Browser MCP + Privacy Guard**: agent がブラウザを使えるようにし、機密設定は共有前にマスクします。
+4. **可観測レイヤー debug-hub**: agent のランタイムログとトレースを MCP ツールとして公開し、agent が自律的にエラーを診断できるようにします。
+5. **ツールレイヤー Browser MCP + Privacy Guard**: agent がブラウザを使えるようにし、機密設定は共有前にマスクします。
 
 単一 agent の長時間作業では、[ソロ Harness](solo-harness.md) が ContextDB の上に run journal、resume/stop 制御、必要に応じた worktree 分離を追加します。
 
@@ -81,6 +102,7 @@ aios team status --provider codex --watch
 
 ## リリースノートと詳細記事
 
+- [debug-hub: MCP ネイティブデバッグログサービス](/blog/ja/2026-05-debug-hub-mcp/): coding agent が MCP ツールで自身のランタイムログを直接クエリ可能に。
 - [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane と rollout model。
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path と semantic rerank behavior。
 - [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fix と Windows launch reliability。
