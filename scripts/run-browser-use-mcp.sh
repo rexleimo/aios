@@ -40,4 +40,20 @@ if [[ -z "${BROWSER_USE_DEFAULT_TIMEOUT_MS:-}" ]]; then
   export BROWSER_USE_DEFAULT_TIMEOUT_MS="20000"
 fi
 
+# --- credential username injection (non-sensitive, from Keychain) ---
+inject_usernames() {
+  for site in xiaohongshu jimeng; do
+    local svc="aios-browser-mcp/${site}/username"
+    local username
+    username=$(security find-generic-password -s "$svc" -a "default" -w 2>/dev/null || true)
+    if [[ -n "$username" ]]; then
+      local env_key
+      env_key="AIOS_CRED_$(echo "$site" | tr '[:lower:]' '[:upper:]')_USERNAME"
+      export "$env_key=$username"
+      echo "[aios-browser] injected username for $site: $username" >&2
+    fi
+  done
+}
+inject_usernames
+
 exec "$VENV_PYTHON" "$BOOTSTRAP_SCRIPT"
