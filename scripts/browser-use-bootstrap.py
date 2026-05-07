@@ -75,6 +75,73 @@ def _install_optional_shims() -> None:
         sys.modules["mcp_browser_use.ins"] = ins
 
 
+def _install_credential_shim() -> None:
+    """Install mcp_browser_use.credentials shim so the MCP server can
+    read credentials on-demand without exposing them to LLM context."""
+    try:
+        if importlib.util.find_spec("mcp_browser_use.credentials") is not None:
+            return
+    except (ModuleNotFoundError, ValueError):
+        pass
+
+    # Ensure parent package exists (normally provided by server src on sys.path)
+    try:
+        _parent_spec = importlib.util.find_spec("mcp_browser_use")
+    except (ModuleNotFoundError, ValueError):
+        _parent_spec = None
+    if _parent_spec is None:
+        sys.modules.setdefault("mcp_browser_use", types.ModuleType("mcp_browser_use"))
+
+    cred = types.ModuleType("mcp_browser_use.credentials")
+
+    def resolve_password(site: str, account: str = "default") -> str | None:
+        import subprocess
+        svc = f"aios-browser-mcp/{site}"
+        try:
+            result = subprocess.run(
+                ["security", "find-generic-password", "-s", svc, "-a", account, "-w"],
+                capture_output=True, text=True, timeout=5,
+            )
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return None
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def resolve_username(site: str, account: str = "default") -> str | None:
+        import os as _os
+        env_key = f"AIOS_CRED_{site.upper()}_USERNAME"
+        value = _os.getenv(env_key, "").strip()
+        if value:
+            return value
+        import subprocess as _subprocess
+        svc = f"aios-browser-mcp/{site}/username"
+        try:
+            result = _subprocess.run(
+                ["security", "find-generic-password", "-s", svc, "-a", account, "-w"],
+                capture_output=True, text=True, timeout=5,
+            )
+        except (FileNotFoundError, _subprocess.TimeoutExpired):
+            return None
+        if result.returncode != 0:
+            return None
+        return result.stdout.strip()
+
+    def has_credential(site: str, account: str = "default") -> bool:
+        import subprocess as _subprocess
+        svc = f"aios-browser-mcp/{site}"
+        result = _subprocess.run(
+            ["security", "find-generic-password", "-s", svc, "-a", account],
+            capture_output=True, timeout=5,
+        )
+        return result.returncode == 0
+
+    cred.resolve_password = resolve_password
+    cred.resolve_username = resolve_username
+    cred.has_credential = has_credential
+    sys.modules["mcp_browser_use.credentials"] = cred
+
+
 def _install_screenshot_timeout_guard() -> None:
     timeout_ms = _env_int("BROWSER_USE_SCREENSHOT_TIMEOUT_MS", DEFAULT_SCREENSHOT_TIMEOUT_MS)
     os.environ.setdefault("BROWSER_USE_SCREENSHOT_TIMEOUT_MS", str(timeout_ms))
@@ -113,6 +180,7 @@ def main() -> None:
 
     sys.path.insert(0, str(src_dir))
     _install_optional_shims()
+    _install_credential_shim()
     _install_screenshot_timeout_guard()
 
     from mcp_browser_use.server import main as server_main
