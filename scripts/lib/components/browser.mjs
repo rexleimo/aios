@@ -11,6 +11,7 @@ const CDP_SERVICE_LABEL_PREFIX = 'com.aios.cdp';
 const DEFAULT_BROWSER_USE_REPO = '/Users/molei/codes/ai-browser-book';
 const LEGACY_BROWSER_ALIAS = 'playwright-browser-mcp';
 const PRIMARY_BROWSER_ALIAS = 'puppeteer-stealth';
+const AUTH_TOOLS_ALIAS = 'aios-auth-tools';
 
 function requireCommand(name) {
   if (!commandExists(name)) {
@@ -56,6 +57,22 @@ function buildPreferredMcpServer(rootDir, existingAlias = {}) {
   };
 }
 
+function buildAuthToolsMcpServer(rootDir, existingEntry = {}) {
+  const authScript = path.join(rootDir, 'scripts', 'auth-tools-server.py');
+  const cdpUrl = resolveDefaultCdpUrl(rootDir);
+  const nextEnv = {
+    ...(existingEntry && typeof existingEntry.env === 'object' ? existingEntry.env : {}),
+    BROWSER_USE_CDP_URL: cdpUrl,
+  };
+
+  return {
+    type: 'stdio',
+    command: 'python3',
+    args: ['-u', authScript],
+    env: nextEnv,
+  };
+}
+
 function migrateOneMcpJsonFile(filePath, rootDir) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
@@ -83,6 +100,7 @@ function migrateOneMcpJsonFile(filePath, rootDir) {
   const mcpServers = parsed.mcpServers;
   const existingAlias = mcpServers[PRIMARY_BROWSER_ALIAS];
   mcpServers[PRIMARY_BROWSER_ALIAS] = buildPreferredMcpServer(rootDir, existingAlias);
+  mcpServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
   delete mcpServers[LEGACY_BROWSER_ALIAS];
 
   const nextRaw = `${JSON.stringify(parsed, null, 2)}\n`;
