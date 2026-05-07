@@ -174,7 +174,7 @@ test('ctx-agent lazy mode prelude includes persona and user profile overlays', a
     );
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stdout, /Memory prelude: enabled/);
+    assert.match(result.stderr, /Memory: persona\+user\+workspace loaded/);
     const lines = String(result.stdout || '').trim().split(/\r?\n/);
     const payload = JSON.parse(lines.at(-1) || '{}');
     assert.equal(payload.marker, 'LAZY_PERSONA_CODEX');
