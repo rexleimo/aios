@@ -3,7 +3,6 @@ name: rex-reviewer
 description: "Reviewer role card for AIOS orchestrations (correctness, regressions, tests)."
 tools: ["Read", "Grep", "Glob"]
 model: sonnet
-preferredModel: claude-opus
 ---
 
 <!-- AIOS-GENERATED: orchestrator-agents v1 -->

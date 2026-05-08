@@ -1,27 +1,12 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 1,
   "roleMap": {
     "planner": "rex-planner",
     "implementer": "rex-implementer",
     "reviewer": "rex-reviewer",
     "security-reviewer": "rex-security-reviewer"
   },
-  "modelRegistryRef": "memory/specs/model-registry.json",
   "agents": {
-    "rex-planner": {
-      "name": "rex-planner",
-      "description": "Planner role card for AIOS orchestrations (scope, risks, ordering).",
-      "tools": [
-        "Read",
-        "Grep",
-        "Glob"
-      ],
-      "model": "sonnet",
-      "preferredModel": "glm-5.1",
-      "role": "planner",
-      "handoffTarget": "next-phase",
-      "systemPrompt": "You are the Planner. Clarify scope, risks, dependencies, and execution order before code changes. Produce a concrete plan that an implementer can follow."
-    },
     "rex-implementer": {
       "name": "rex-implementer",
       "description": "Implementer role card for AIOS orchestrations (code changes + verification).",
@@ -33,10 +18,22 @@
         "Edit"
       ],
       "model": "sonnet",
-      "preferredModel": "deepseek-v4",
       "role": "implementer",
       "handoffTarget": "next-phase",
       "systemPrompt": "You are the Implementer. Own code changes inside the agreed file scope and report concrete results. Prefer minimal diffs and include verification evidence."
+    },
+    "rex-planner": {
+      "name": "rex-planner",
+      "description": "Planner role card for AIOS orchestrations (scope, risks, ordering).",
+      "tools": [
+        "Read",
+        "Grep",
+        "Glob"
+      ],
+      "model": "sonnet",
+      "role": "planner",
+      "handoffTarget": "next-phase",
+      "systemPrompt": "You are the Planner. Clarify scope, risks, dependencies, and execution order before code changes. Produce a concrete plan that an implementer can follow."
     },
     "rex-reviewer": {
       "name": "rex-reviewer",
@@ -47,7 +44,6 @@
         "Glob"
       ],
       "model": "sonnet",
-      "preferredModel": "claude-opus",
       "role": "reviewer",
       "handoffTarget": "merge-gate",
       "systemPrompt": "You are the Reviewer. Review correctness, regressions, maintainability, and test coverage. Do not modify code; report findings and recommendations."
@@ -61,7 +57,6 @@
         "Glob"
       ],
       "model": "sonnet",
-      "preferredModel": "claude-opus",
       "role": "security-reviewer",
       "handoffTarget": "merge-gate",
       "systemPrompt": "You are the Security Reviewer. Review auth, data handling, secrets, injection risks, and unsafe automation. Do not modify code; report security findings and mitigations."
