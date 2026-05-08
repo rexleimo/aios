@@ -10,7 +10,7 @@ description: MCP 原生调试日志服务，让 coding agent 能够查询自己�
 debug-hub 是专为 coding agent 设计的 MCP 原生调试日志服务。它将日志和调用链暴露为 agent 可直接调用的 MCP 工具——这样它们就可以 `search_logs`、`get_trace` 和 `get_stats`，而无需你去 grep 终端输出。
 
 [阅读博客文章](/blog/zh/2026-05-debug-hub-mcp/){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="blog_post" }
-[快速开始](#快速开始){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
+[快速开始](#quick-start){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
 
 ---
 
@@ -65,7 +65,7 @@ debug-hub 是专为 coding agent 设计的 MCP 原生调试日志服务。它将
 
 ---
 
-## 快速开始
+## 快速开始 {#quick-start}
 
 ```bash
 cd packages/debug-hub

@@ -20,43 +20,43 @@ description: Start from the task you want to solve, then go deeper into ContextD
 ## Core Features
 
 <div class="feature-grid">
-  <a href="contextdb.md" class="feature-card feature-card--memory">
+  <a href="contextdb/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧠</div>
     <div class="feature-card__title">ContextDB</div>
     <div class="feature-card__desc">Project-wide memory layer. Events, checkpoints, and context packets persist across terminal restarts.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="superpowers.md" class="feature-card feature-card--workflow">
+  <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
     <div class="feature-card__desc">Reusable automation skills. Brainstorm, plan, debug, verify, and deploy with guided workflows.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="team-ops.md" class="feature-card feature-card--team">
+  <a href="team-ops/" class="feature-card feature-card--team">
     <div class="feature-card__icon">👥</div>
     <div class="feature-card__title">Agent Team</div>
     <div class="feature-card__desc">Dispatch splittable tasks to multiple CLI workers and track with HUD. Coordinate agents, not chaos.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="solo-harness.md" class="feature-card feature-card--tool">
+  <a href="solo-harness/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌙</div>
     <div class="feature-card__title">Solo Harness</div>
     <div class="feature-card__desc">Long-running single-agent work with run journals, resume/stop controls, and worktree isolation.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="debug-hub.md" class="feature-card feature-card--debug">
+  <a href="debug-hub/" class="feature-card feature-card--debug">
     <div class="feature-card__icon">🐛</div>
     <div class="feature-card__title">debug-hub</div>
     <div class="feature-card__desc">MCP-native debug log service. Let coding agents query their own runtime logs and self-diagnose.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="model-router.md" class="feature-card feature-card--memory">
+  <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
     <div class="feature-card__desc">Intelligent model dispatch for Agent Teams. Match tasks to optimal models by capability, cost, and history.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
-  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+  <a href="troubleshooting/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
     <div class="feature-card__desc">Stealth browser automation with CDP. Human behavior simulation and anti-detection built-in.</div>

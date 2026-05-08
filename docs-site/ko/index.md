@@ -20,43 +20,43 @@ description: 먼저 하고 싶은 작업에서 명령을 고르고, 그다음 Co
 ## 핵심 기능
 
 <div class="feature-grid">
-  <a href="contextdb.md" class="feature-card feature-card--memory">
+  <a href="contextdb/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧠</div>
     <div class="feature-card__title">ContextDB</div>
     <div class="feature-card__desc">프로젝트 전체 메모리 레이어. 이벤트, 체크포인트, 컨텍스트 패킷이 터미널 재시작 후에도 유지됩니다.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
-  <a href="superpowers.md" class="feature-card feature-card--workflow">
+  <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
     <div class="feature-card__desc">재사용 가능한 자동화 스킬. 브레인스토밍, 계획 작성, 디버깅, 검증, 배포를 가이드된 워크플로우로 처리합니다.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
-  <a href="team-ops.md" class="feature-card feature-card--team">
+  <a href="team-ops/" class="feature-card feature-card--team">
     <div class="feature-card__icon">👥</div>
     <div class="feature-card__title">Agent Team</div>
     <div class="feature-card__desc">분리 가능한 작업을 여러 CLI 워커에 분배하고 HUD로 추적합니다. 에이전트를 협력시키고 혼란은 줄입니다.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
-  <a href="solo-harness.md" class="feature-card feature-card--tool">
+  <a href="solo-harness/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌙</div>
     <div class="feature-card__title">솔로 Harness</div>
     <div class="feature-card__desc">실행 저널, 재개/중지 제어, worktree 격리를 갖춘 장시간 싱글 에이전트 작업.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
-  <a href="debug-hub.md" class="feature-card feature-card--debug">
+  <a href="debug-hub/" class="feature-card feature-card--debug">
     <div class="feature-card__icon">🐛</div>
     <div class="feature-card__title">debug-hub</div>
     <div class="feature-card__desc">MCP 네이티브 디버그 로그 서비스. 코딩 에이전트가 자신의 런타임 로그를 조회하고 자가 진단할 수 있게 합니다.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
-  <a href="model-router.md" class="feature-card feature-card--memory">
+  <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
     <div class="feature-card__desc">Agent Team을 위한 지능형 모델 디스패치. 능력, 비용, 성공률에 따라 최적의 모델을 선택합니다.</div>
     <span class="feature-card__link">자세히 →</span>
   </a>
-  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+  <a href="troubleshooting/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
     <div class="feature-card__desc">CDP 기반 스텔스 브라우저 자동화. 휴먼 행동 시뮬레이션 및 탐지 방지 기능 내장.</div>
@@ -150,10 +150,10 @@ aios team status --provider codex --watch
 ## 릴리스 노트와 상세 글
 
 - [debug-hub: MCP 네이티브 디버그 로그 서비스](/blog/ko/2026-05-debug-hub-mcp/): 코딩 에이전트가 MCP 도구로 자신의 런타임 로그를 직접 쿼리 가능.
-- [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane 과 rollout model.
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path 와 semantic rerank behavior.
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fix 와 Windows launch reliability.
-- [Orchestrate Live](/blog/orchestrate-live/): live orchestration gates 와 execution workflow.
+- [AIOS RL Training System](/blog/ko/rl-training-system/): multi-environment training control plane 과 rollout model.
+- [ContextDB Search Upgrade](/blog/ko/contextdb-fts-bm25-search/): FTS5 + BM25 search path 와 semantic rerank behavior.
+- [Windows CLI Startup Stability](/blog/ko/windows-cli-startup-stability/): wrapper startup fix 와 Windows launch reliability.
+- [Orchestrate Live](/blog/ko/orchestrate-live/): live orchestration gates 와 execution workflow.
 
 ## 다음에 읽을 문서
 

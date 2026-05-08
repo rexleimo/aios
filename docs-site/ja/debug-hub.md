@@ -10,7 +10,7 @@ description: coding agent が自身のランタイムログをクエリし、エ
 debug-hub は、coding agent 専用に設計された MCP ネイティブのデバッグログサービスです。ログとトレースを MCP ツールとして公開し、agent が直接 `search_logs`、`get_trace`、`get_stats` をクエリできるようにします。人間がターミナル出力を grep したり、エラースパンを手動で関連付けたりする必要はありません。
 
 [ブログ記事を読む](/blog/ja/2026-05-debug-hub-mcp/){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="blog_post" }
-[クイックスタート](#クイックスタート){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
+[クイックスタート](#quick-start){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
 
 ---
 
@@ -65,7 +65,7 @@ coding agent がエラーループに陥ったり、判断で停滞したり、�
 
 ---
 
-## クイックスタート
+## クイックスタート {#quick-start}
 
 ```bash
 cd packages/debug-hub

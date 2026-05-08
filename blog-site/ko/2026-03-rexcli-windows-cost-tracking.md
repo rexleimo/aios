@@ -20,7 +20,7 @@ RexCLI는 이제 Windows 워크플로를 엔드투엔드로 지원합니다. Win
 - Windows에서 Codex 인수 분할 문제 위험 감소
 - 非git 워크스페이스의 우아한 저하 지원
 
-관련 문서: [Windows 가이드](/windows-guide/)
+관련 문서: [Windows 가이드](/ko/windows-guide/)
 
 ## 라이브 비용 추적（비용 텔레메트리）
 

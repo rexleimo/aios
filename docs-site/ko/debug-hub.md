@@ -10,7 +10,7 @@ description: 코딩 에이전트가 자신의 런타임 로그를 조회하고 �
 debug-hub는 코딩 에이전트 전용으로 설계된 MCP 네이티브 디버그 로그 서비스입니다. 로그와 트레이스를 에이전트가 직접 조회할 수 있는 MCP 도구로 노출하여, 터미널 출력을 grep 하거나 오류 스팬을 수동으로 연결할 필요 없이 `search_logs`, `get_trace`, `get_stats` 등을 사용할 수 있게 합니다.
 
 [블로그 글 읽기](/blog/ko/2026-05-debug-hub-mcp/){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="blog_post" }
-[빠른 시작](#빠른-시작){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
+[빠른 시작](#quick-start){ .md-button data-rex-track="cta_click" data-rex-location="debug_hub_hero" data-rex-target="quick_start" }
 
 ---
 
@@ -65,7 +65,7 @@ debug-hub는 코딩 에이전트 전용으로 설계된 MCP 네이티브 디버�
 
 ---
 
-## 빠른 시작
+## 빠른 시작 {#quick-start}
 
 ```bash
 cd packages/debug-hub

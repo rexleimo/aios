@@ -31,7 +31,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 - [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)
 - [Browser MCP 弱模型升级：语义快照 + 文本点击](2026-04-browser-mcp-weak-model-upgrade.md)
 - [高级设计技能页面制作：把模糊提示词变成可生产 UI](advanced-design-skills-page-building.md)
-- [RexCli TUI 重构：基于 React Ink 的现代终端交互](zh/2026-04-rexcli-ink-tui-refactor.md)
+- [RexCli TUI 重构：基于 React Ink 的现代终端交互](2026-04-rexcli-ink-tui-refactor.md)
 - [RexCli Skills 安装体验更新：全局/项目范围、更清晰的选择器](2026-03-rexcli-skills-install-experience.md)
 - [AIOS RL 训练系统：从合成 BUG 修复到多环境联合学习](rl-training-system.md)
 - [ContextDB 检索升级：FTS5/BM25 + 增量索引同步（P1.5）](contextdb-fts-bm25-search.md)

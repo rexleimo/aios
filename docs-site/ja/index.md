@@ -20,43 +20,43 @@ description: まずやりたい作業からコマンドを選び、ContextDB、A
 ## コア機能
 
 <div class="feature-grid">
-  <a href="contextdb.md" class="feature-card feature-card--memory">
+  <a href="contextdb/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧠</div>
     <div class="feature-card__title">ContextDB</div>
     <div class="feature-card__desc">プロジェクト全体の記憶レイヤー。イベント、checkpoint、context pack がターミナル再起動後も保持されます。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
-  <a href="superpowers.md" class="feature-card feature-card--workflow">
+  <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
     <div class="feature-card__desc">再利用可能な自動化スキル。ブレインストーミング、計画立案、デバッグ、検証、デプロイをガイド付きワークフローで。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
-  <a href="team-ops.md" class="feature-card feature-card--team">
+  <a href="team-ops/" class="feature-card feature-card--team">
     <div class="feature-card__icon">👥</div>
     <div class="feature-card__title">Agent Team</div>
     <div class="feature-card__desc">分割可能なタスクを複数の CLI worker に分散し、HUD で追跡。agents を協調させ、混沌を防ぎます。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
-  <a href="solo-harness.md" class="feature-card feature-card--tool">
+  <a href="solo-harness/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌙</div>
     <div class="feature-card__title">ソロ Harness</div>
     <div class="feature-card__desc">長時間実行の単一 agent 作業に、run journal、resume/stop 制御、worktree 分離を提供。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
-  <a href="debug-hub.md" class="feature-card feature-card--debug">
+  <a href="debug-hub/" class="feature-card feature-card--debug">
     <div class="feature-card__icon">🐛</div>
     <div class="feature-card__title">debug-hub</div>
     <div class="feature-card__desc">MCP ネイティブのデバッグログサービス。coding agent が自身のランタイムログをクエリし、自己診断可能に。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
-  <a href="model-router.md" class="feature-card feature-card--memory">
+  <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
     <div class="feature-card__desc">Agent Team に最適なモデルを自動選択。能力、コスト、成功率に基づくインテリジェントな振り分け。</div>
     <span class="feature-card__link">詳細 →</span>
   </a>
-  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+  <a href="troubleshooting/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
     <div class="feature-card__desc">ステルスブラウザ自動化（CDP）。人間の行動シミュレーションと検出回避を内蔵。</div>
@@ -150,10 +150,10 @@ aios team status --provider codex --watch
 ## リリースノートと詳細記事
 
 - [debug-hub: MCP ネイティブデバッグログサービス](/blog/ja/2026-05-debug-hub-mcp/): coding agent が MCP ツールで自身のランタイムログを直接クエリ可能に。
-- [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane と rollout model。
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path と semantic rerank behavior。
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fix と Windows launch reliability。
-- [Orchestrate Live](/blog/orchestrate-live/): live orchestration gates と execution workflow。
+- [AIOS RL Training System](/blog/ja/rl-training-system/): multi-environment training control plane と rollout model。
+- [ContextDB Search Upgrade](/blog/ja/contextdb-fts-bm25-search/): FTS5 + BM25 search path と semantic rerank behavior。
+- [Windows CLI Startup Stability](/blog/ja/windows-cli-startup-stability/): wrapper startup fix と Windows launch reliability。
+- [Orchestrate Live](/blog/ja/orchestrate-live/): live orchestration gates と execution workflow。
 
 ## 次に読む
 

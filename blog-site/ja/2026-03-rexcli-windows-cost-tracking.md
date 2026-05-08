@@ -20,7 +20,7 @@ RexCLI は 이제 Windows ワークフローをエンドツーエンドでサポ
 - Windows での Codex 引数分割問題のリスク軽減
 - 非 git ワークスペースでのグレースフルデグラデーションサポート
 
-関連ドキュメント: [Windows ガイド](/windows-guide/)
+関連ドキュメント: [Windows ガイド](/ja/windows-guide/)
 
 ## ライブコスト追跡（コストテレメトリ）
 

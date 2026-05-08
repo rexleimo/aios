@@ -68,6 +68,7 @@ plugins:
             ContextDB: ContextDB
             Superpowers: Superpowers
             debug-hub: debug-hub
+            Model Router: 模型路由器
             Route & Concurrency Profiles: 路由与并发档位
             Advanced Design Skills: 高级设计技能
             Solo Harness: 单 Agent 夜跑
@@ -75,6 +76,8 @@ plugins:
             Architecture: 架构
             CLI Workflows: 按场景找命令
             Agent Team: 多 Agent 实战
+            HUD Guide: HUD 指南
+            Skill Candidates: 技能候选
             Resources: 资源
             CLI Comparison: CLI 对比
             Case Library: 官方案例库
@@ -98,19 +101,23 @@ plugins:
             Quick Start: クイックスタート
             Windows Guide: Windows ガイド
             Troubleshooting: トラブルシューティング
-            Core Features: コアプリ 功能
+            Core Features: コア機能
             ContextDB: ContextDB
             Superpowers: Superpowers
             debug-hub: debug-hub
+            Model Router: モデルルーター
             Route & Concurrency Profiles: ルーティングと並列プロファイル
             Advanced Design Skills: 高度デザインスキル
             Solo Harness: ソロ Harness
             Perception: パーセプション
             Architecture: アーキテクチャ
             CLI Workflows: CLI ワークフロー
+            Agent Team: Agent Team
+            HUD Guide: HUD ガイド
             Resources: リソース
             CLI Comparison: CLI 比較
             Case Library: 公式ケースライブラリ
+            Skill Candidates: スキル候補
             Case - Cross-CLI Handoff: 事例 - クロスCLI引き継ぎ
             Case - Browser Auth-Wall Flow: 事例 - ブラウザ認証ウォール
             Case - Privacy Guard Config Read: 事例 - Privacy Guard設定読取
@@ -135,15 +142,19 @@ plugins:
             ContextDB: ContextDB
             Superpowers: Superpowers
             debug-hub: debug-hub
+            Model Router: 모델 라우터
             Route & Concurrency Profiles: 라우팅/병렬 프로필
             Advanced Design Skills: 고급 디자인 스킬
             Solo Harness: 솔로 Harness
             Perception: 인식 레이어
             Architecture: 아키텍처
             CLI Workflows: CLI 워크플로
+            Agent Team: Agent Team
+            HUD Guide: HUD 가이드
             Resources: 리소스
             CLI Comparison: CLI 비교
             Case Library: 공식 사례 라이브러리
+            Skill Candidates: 스킬 후보
             Case - Cross-CLI Handoff: 사례 - 크로스 CLI 핸드오프
             Case - Browser Auth-Wall Flow: 사례 - 브라우저 인증 장벽 흐름
             Case - Privacy Guard Config Read: 사례 - Privacy Guard 설정 읽기
@@ -185,6 +196,7 @@ nav:
       - ContextDB: contextdb.md
       - Superpowers: superpowers.md
       - debug-hub: debug-hub.md
+      - Model Router: model-router.md
       - Route & Concurrency Profiles: route-concurrency-profiles.md
       - Advanced Design Skills: advanced-design-skills.md
       - Agent Team: team-ops.md

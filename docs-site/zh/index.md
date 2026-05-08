@@ -20,43 +20,43 @@ description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏�
 ## 核心功能
 
 <div class="feature-grid">
-  <a href="contextdb.md" class="feature-card feature-card--memory">
+  <a href="contextdb/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧠</div>
     <div class="feature-card__title">ContextDB</div>
     <div class="feature-card__desc">项目级记忆层。事件、检查点和上下文包在终端重启后依然持久化。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="superpowers.md" class="feature-card feature-card--workflow">
+  <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
     <div class="feature-card__desc">可复用的自动化技能。通过引导式工作流进行头脑风暴、规划、调试、验证和部署。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="team-ops.md" class="feature-card feature-card--team">
+  <a href="team-ops/" class="feature-card feature-card--team">
     <div class="feature-card__icon">👥</div>
     <div class="feature-card__title">Agent Team</div>
     <div class="feature-card__desc">将可拆分的任务分发给多个 CLI 工作进程并通过 HUD 追踪。协调 Agents，而非制造混乱。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="solo-harness.md" class="feature-card feature-card--tool">
+  <a href="solo-harness/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌙</div>
     <div class="feature-card__title">单 Agent 夜跑</div>
     <div class="feature-card__desc">长时间运行的单 Agent 任务，支持运行日志、恢复/停止控制和工作目录隔离。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="debug-hub.md" class="feature-card feature-card--debug">
+  <a href="debug-hub/" class="feature-card feature-card--debug">
     <div class="feature-card__icon">🐛</div>
     <div class="feature-card__title">debug-hub</div>
     <div class="feature-card__desc">MCP 原生调试日志服务。让 coding agent 查询自己的运行时日志并自我诊断。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="model-router.md" class="feature-card feature-card--memory">
+  <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
     <div class="feature-card__desc">智能模型调度，为 Agent Team 匹配最优模型。按能力、成本和历史成功率决策。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
-  <a href="troubleshooting.md" class="feature-card feature-card--tool">
+  <a href="troubleshooting/" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
     <div class="feature-card__desc">隐形浏览器自动化，基于 CDP。内置人类行为模拟和反检测功能。</div>
@@ -150,10 +150,10 @@ aios team status --provider codex --watch
 ## 发布说明与深度文章
 
 - [debug-hub：MCP 原生调试日志服务](/blog/zh/2026-05-debug-hub-mcp/)：让 coding agent 通过 MCP 工具直接查询自身运行时日志。
-- [AIOS RL Training System](/blog/rl-training-system/)：多环境训练控制平面与 rollout 模型。
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)：FTS5 + BM25 检索路径和语义重排行为。
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)：包装器启动修复与 Windows 启动稳定性。
-- [Orchestrate Live](/blog/orchestrate-live/)：live 编排门禁与执行流程。
+- [AIOS RL Training System](/blog/zh/rl-training-system/)：多环境训练控制平面与 rollout 模型。
+- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)：FTS5 + BM25 检索路径和语义重排行为。
+- [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)：包装器启动修复与 Windows 启动稳定性。
+- [Orchestrate Live](/blog/zh/orchestrate-live/)：live 编排门禁与执行流程。
 
 ## 下一步阅读
 

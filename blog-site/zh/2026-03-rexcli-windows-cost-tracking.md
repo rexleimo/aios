@@ -19,7 +19,7 @@ RexCli 现在完全支持 Windows 环境！我们解决了路径处理、命令�
 - 避免 Windows Codex 参数分割错误
 - 非 git 工作区的优雅降级支持
 
-相关文档：[Windows 使用指南](/windows-guide/)
+相关文档：[Windows 使用指南](/zh/windows-guide/)
 
 ## 实时成本追踪（Cost Telemetry）
 
