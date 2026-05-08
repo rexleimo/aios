@@ -27,6 +27,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 
 ## 最新文章
 
+- [Model Router：Agent Team 的智能多模型调度层](2026-05-model-router.md)
 - [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)
 - [Browser MCP 弱模型升级：语义快照 + 文本点击](2026-04-browser-mcp-weak-model-upgrade.md)
 - [高级设计技能页面制作：把模糊提示词变成可生产 UI](advanced-design-skills-page-building.md)

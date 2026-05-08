@@ -3,6 +3,7 @@ name: rex-planner
 description: "Planner role card for AIOS orchestrations (scope, risks, ordering)."
 tools: ["Read", "Grep", "Glob"]
 model: sonnet
+preferredModel: glm-5.1
 ---
 
 <!-- AIOS-GENERATED: orchestrator-agents v1 -->

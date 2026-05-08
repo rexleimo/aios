@@ -3,6 +3,7 @@ name: rex-implementer
 description: "Implementer role card for AIOS orchestrations (code changes + verification)."
 tools: ["Read", "Grep", "Glob", "Bash", "Edit"]
 model: sonnet
+preferredModel: deepseek-v4
 ---
 
 <!-- AIOS-GENERATED: orchestrator-agents v1 -->

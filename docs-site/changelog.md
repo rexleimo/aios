@@ -14,8 +14,9 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 
 ## Latest Stable
 
-- `1.8.0` (2026-05-05):
+- `1.8.0` (2026-05-08):
   - Adds self-trigger harness routing for wrapped `codex`, `claude`, `gemini`, and `opencode` sessions.
+  - **Model Router**: Intelligent multi-model dispatch for Agent Teams. Includes model capability registry (8 models), task-type to model routing, three CLI protocol adapters (claude/codex/gemini), cost-ascending fallback chains, agent-callable `model-router` skill, `AIOS_MODEL_{ROLE}` env var overrides, and perception feedback loop integration. See [Model Router](model-router.md) for full documentation.
   - **GroupChat Runtime**: `aios team` live mode now uses round-based agent execution with shared conversation history. Agents in each round run in parallel; all agents see the full accumulated thread. Blocked agents trigger automatic re-plan rounds. Contrasts with the old one-shot isolated dispatch model.
   - **OpenCode CLI subagent support**: `opencode-cli` is now a fully supported `AIOS_SUBAGENT_CLIENT` for all orchestration paths (subagent, team, and GroupChat runtimes).
 

@@ -50,6 +50,12 @@ description: Start from the task you want to solve, then go deeper into ContextD
     <div class="feature-card__desc">MCP-native debug log service. Let coding agents query their own runtime logs and self-diagnose.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
+  <a href="model-router.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧭</div>
+    <div class="feature-card__title">Model Router</div>
+    <div class="feature-card__desc">Intelligent model dispatch for Agent Teams. Match tasks to optimal models by capability, cost, and history.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
   <a href="troubleshooting.md" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>

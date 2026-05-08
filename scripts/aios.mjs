@@ -376,6 +376,15 @@ async function main() {
     return;
   }
 
+  if (parsed.command === 'model-router') {
+    const { runModelRouterCommand } = await import('./lib/model-router.mjs');
+    const result = await runModelRouterCommand(parsed.options, { rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options) });
+    if (result.exitCode !== 0) {
+      process.exitCode = result.exitCode;
+    }
+    return;
+  }
+
   if (parsed.command === 'perception') {
     const sub = parsed.options.subcommand || 'summary';
     const rootDir = resolveRuntimeWorkspace(parsed.command, parsed.options);

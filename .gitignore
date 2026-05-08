@@ -87,3 +87,4 @@ memory/skills/skills/
 
 # Local analysis clones (do not commit)
 .superpowers/
+__pycache__/

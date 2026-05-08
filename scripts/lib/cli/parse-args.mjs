@@ -1641,6 +1641,63 @@ export function parseArgs(argv = []) {
     return parsePerceptionArgs(argv);
   }
 
+  if (first === 'model-router') {
+    return parseModelRouterArgs(argv);
+  }
+
+function parseModelRouterArgs(argv) {
+  const rest = argv.slice(1);
+  let help = false;
+  const options = {};
+
+  let index = 0;
+  if (rest[0] && !String(rest[0]).startsWith('-')) {
+    options.subcommand = String(rest[0]).trim().toLowerCase();
+    index = 1;
+  }
+
+  for (; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === '--') continue;
+    if (arg === '-h' || arg === '--help') {
+      help = true;
+      continue;
+    }
+
+    switch (arg) {
+      case '--task':
+      case '--prompt':
+        options.task = takeValue(rest, index, arg);
+        index += 1;
+        break;
+      case '--task-type':
+        options.taskType = takeValue(rest, index, '--task-type');
+        index += 1;
+        break;
+      case '--format':
+        options.format = takeValue(rest, index, '--format');
+        index += 1;
+        break;
+      case '--json':
+        options.json = true;
+        break;
+      case '--workspace':
+        options.workspaceRoot = takeValue(rest, index, '--workspace');
+        index += 1;
+        break;
+      default:
+        throw new Error(`Unknown option: ${arg}`);
+    }
+  }
+
+  return {
+    mode: help ? 'help' : 'command',
+    help,
+    command: 'model-router',
+    options,
+  };
+}
+
   if (first === 'internal') {
     return parseInternalArgs(argv.slice(1));
   }

@@ -9,8 +9,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - feat(perception): add content outcome recording, insight generation, and perception summary for agent learning loop
 - feat(debug-hub): add MCP-native debug log service with Node.js/Browser/Go SDKs, embedded Web UI, and file-based storage
 
-## [1.8.0] - 2026-05-05
+## [1.8.0] - 2026-05-08
 
+- feat(model-router): add intelligent model dispatch for multi-model Agent Teams
+  - Model capability registry (`memory/specs/model-registry.json`) with 8 models and structured strengths/costs/CLI protocols
+  - Task-type to model routing: code-review→Opus, implementation→DeepSeek, research→Gemini, browser→GPT-5.5, and more
+  - Three CLI protocol adapters: claude (--model), codex (-m), gemini (-m)
+  - Cost-ascending fallback chains for all task types
+  - Agent-callable `model-router` skill for self-service routing
+  - `model-router list|route|stats` CLI commands
+  - Orchestrator agent cards with `preferredModel` field (env var → preferredModel → model fallback)
+  - `AIOS_MODEL_{ROLE}` environment variable overrides
+  - Perception integration: model dispatch events recorded to ContextDB for historical success-rate learning
+  - Injected into AIOS Task Router guide for automatic agent awareness
 - feat: add self-trigger harness routing for wrapped agents
 
 ## [1.7.1] - 2026-04-26

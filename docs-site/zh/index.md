@@ -50,6 +50,12 @@ description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏�
     <div class="feature-card__desc">MCP 原生调试日志服务。让 coding agent 查询自己的运行时日志并自我诊断。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
+  <a href="model-router.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧭</div>
+    <div class="feature-card__title">Model Router</div>
+    <div class="feature-card__desc">智能模型调度，为 Agent Team 匹配最优模型。按能力、成本和历史成功率决策。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
   <a href="troubleshooting.md" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>

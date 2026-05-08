@@ -29,6 +29,7 @@ aios
 | 能力 | 说明 | 命令 |
 |------|------|------|
 | **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` 自动加载 |
+| **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
 | **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
@@ -44,6 +45,9 @@ aios
 
 # 多 Agent 协作
 aios team 3:codex "重构登录模块并运行测试"
+
+# 智能模型路由
+node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
 
 # 单 Agent 过夜任务
 aios harness run --objective "完成明天的交接文档" --worktree
@@ -71,6 +75,7 @@ aios team status --provider codex --watch
 ## 文档
 
 - [快速开始](https://cli.rexai.top/zh/getting-started/) — 安装、配置、首次运行
+- [Model Router](https://cli.rexai.top/zh/model-router/) — Agent Team 多模型智能调度
 - [ContextDB](https://cli.rexai.top/zh/contextdb/) — 项目记忆系统详解
 - [Agent Team](https://cli.rexai.top/zh/team-ops/) — 多 Agent 协作指南
 - [Solo Harness](https://cli.rexai.top/zh/solo-harness/) — 过夜长任务指南

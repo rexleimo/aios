@@ -50,11 +50,17 @@ description: まずやりたい作業からコマンドを選び、ContextDB、A
     <div class="feature-card__desc">MCP ネイティブのデバッグログサービス。coding agent が自身のランタイムログをクエリし、自己診断可能に。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
+  <a href="model-router.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧭</div>
+    <div class="feature-card__title">Model Router</div>
+    <div class="feature-card__desc">Agent Team に最適なモデルを自動選択。能力、コスト、成功率に基づくインテリジェントな振り分け。</div>
+    <span class="feature-card__link">詳細 →</span>
+  </a>
   <a href="troubleshooting.md" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
-    <div class="feature-card__desc">Stealth ブラウザ自動化 with CDP。人間の行動シミュレーションと反検出機能を内蔵。</div>
-    <span class="feature-card__link">詳細を見る →</span>
+    <div class="feature-card__desc">ステルスブラウザ自動化（CDP）。人間の行動シミュレーションと検出回避を内蔵。</div>
+    <span class="feature-card__link">詳細 →</span>
   </a>
 </div>
 

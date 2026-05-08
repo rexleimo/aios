@@ -27,6 +27,7 @@ This blog tracks practical patterns for:
 
 ## Latest Posts
 
+- [Model Router: Intelligent Multi-Model Dispatch for Agent Teams](2026-05-model-router.md)
 - [Solo Harness: Let One Agent Work Overnight Without Losing Control](2026-04-solo-harness.md)
 - [Browser MCP Weak-Model Upgrade: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)
 - [Advanced Design Skills for Page Building: From Vague Prompts to Production UI](advanced-design-skills-page-building.md)

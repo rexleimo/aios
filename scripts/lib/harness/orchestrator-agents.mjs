@@ -34,6 +34,17 @@ function normalizeTools(value) {
 
 export { ORCHESTRATOR_AGENT_MARKER };
 
+export function resolveEffectiveModel(agent, env = process.env) {
+  if (!agent) return '';
+  const role = normalizeRoleId(agent.role);
+  if (role) {
+    const envKey = `AIOS_MODEL_${role.toUpperCase().replace(/-/g, '_')}`;
+    const envModel = String(env?.[envKey] || '').trim();
+    if (envModel) return envModel;
+  }
+  return normalizeId(agent.preferredModel) || normalizeId(agent.model);
+}
+
 export function normalizeOrchestratorAgentSpec(raw = {}) {
   const schemaVersion = Number(raw?.schemaVersion) || 1;
   const roleMap = raw?.roleMap && typeof raw.roleMap === 'object' ? { ...raw.roleMap } : {};
@@ -48,6 +59,7 @@ export function normalizeOrchestratorAgentSpec(raw = {}) {
       description: normalizeId(agent?.description),
       tools: normalizeTools(agent?.tools),
       model: normalizeId(agent?.model),
+      preferredModel: normalizeId(agent?.preferredModel),
       role: normalizeRoleId(agent?.role),
       handoffTarget: normalizeId(agent?.handoffTarget || 'next-phase'),
       systemPrompt: normalizeId(agent?.systemPrompt),

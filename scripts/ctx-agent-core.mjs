@@ -411,6 +411,7 @@ function buildTaskRouterGuide({
     '- Prefer single by default; do not escalate to subagent/team/harness unless the trigger is explicit or clearly necessary.',
     '- Do not spawn built-in explorer/worker subagents only to "scan/explain a codebase".',
     '- If waiting for delegated workers, emit heartbeat every 30s; stop waiting after 120s and provide fallback next steps.',
+    '- When dispatching subtasks to models, invoke the model-router skill to match task types to optimal models.',
     'Policy: when route=subagent/team/harness, execute the matching AIOS command directly (live) unless user explicitly requests preview/dry-run.',
     'User trigger shortcuts in one-shot prompt text:',
     '- /single <task>',
@@ -420,6 +421,15 @@ function buildTaskRouterGuide({
     `Team trigger command: ${teamCommand}`,
     `Subagent trigger command: ${subagentCommand}`,
     `Harness trigger command: ${harnessCommand}`,
+    '',
+    '## Model Router',
+    'When dispatching work to different models, use the model-router skill to match task types to the optimal model.',
+    'Model dispatch commands:',
+    '  node scripts/aios.mjs model-router route --task "<description>"          # Route task to best model',
+    '  node scripts/aios.mjs model-router route --task "<desc>" --task-type <t> # Route with explicit type',
+    '  node scripts/aios.mjs model-router stats                                 # View dispatch history',
+    'Task types: code-review, security-review, architecture, implementation, browser-automation, research, planning, testing, docs, frontend, self-healing',
+    'Override via env: AIOS_MODEL_PLANNER=claude-opus AIOS_MODEL_IMPLEMENTATION=deepseek-v4',
   ].join('\n');
 }
 

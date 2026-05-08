@@ -50,11 +50,17 @@ description: 먼저 하고 싶은 작업에서 명령을 고르고, 그다음 Co
     <div class="feature-card__desc">MCP 네이티브 디버그 로그 서비스. 코딩 에이전트가 자신의 런타임 로그를 조회하고 자가 진단할 수 있게 합니다.</div>
     <span class="feature-card__link">더 알아보기 →</span>
   </a>
+  <a href="model-router.md" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">🧭</div>
+    <div class="feature-card__title">Model Router</div>
+    <div class="feature-card__desc">Agent Team을 위한 지능형 모델 디스패치. 능력, 비용, 성공률에 따라 최적의 모델을 선택합니다.</div>
+    <span class="feature-card__link">자세히 →</span>
+  </a>
   <a href="troubleshooting.md" class="feature-card feature-card--tool">
     <div class="feature-card__icon">🌐</div>
     <div class="feature-card__title">Browser MCP</div>
-    <div class="feature-card__desc">CDP 기반 스텔스 브라우저 자동화. 인간 행동 시뮬레이션과 안티-탐지 기능이 내장되어 있습니다.</div>
-    <span class="feature-card__link">더 알아보기 →</span>
+    <div class="feature-card__desc">CDP 기반 스텔스 브라우저 자동화. 휴먼 행동 시뮬레이션 및 탐지 방지 기능 내장.</div>
+    <span class="feature-card__link">자세히 →</span>
   </a>
 </div>
 

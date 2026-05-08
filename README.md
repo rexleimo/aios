@@ -1,10 +1,10 @@
 # RexCLI (AIOS)
 
-> 给 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力的本地 Agent 工作流层。
+> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
 
-[文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/getting-started/) | [官方案例库](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/rex-cli)
+[Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Case Library](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/rex-cli)
 
-## 安装
+## Install
 
 macOS / Linux:
 
@@ -22,77 +22,82 @@ irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps
 aios
 ```
 
-启动后选择 `Setup`，运行 `Doctor`，即可开始使用。
+Once started, select `Setup`, run `Doctor`, and you're ready to go.
 
-## 核心能力
+## Core Capabilities
 
-| 能力 | 说明 | 命令 |
-|------|------|------|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` 自动加载 |
-| **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
-| **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
-| **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
-| **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
-| **Superpowers** | 可复用工作流技能（brainstorm/plan/debug/verify） | TUI 中选择 |
-| **Privacy Guard** | 敏感文件读取前自动脱敏 | `aios privacy status` |
+| Capability | Description | Command |
+|------------|-------------|---------|
+| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` |
+| **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
+| **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
+| **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
+| **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
+| **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
+| **Superpowers** | Reusable workflow skills (brainstorm/plan/debug/verify) | Select from TUI |
+| **Privacy Guard** | Auto-redact sensitive files before sharing | `aios privacy status` |
 
-## 快速体验
+## Quick Tour
 
 ```bash
-# 启动 TUI
+# Launch TUI
 aios
 
-# 多 Agent 协作
-aios team 3:codex "重构登录模块并运行测试"
+# Multi-agent collaboration
+aios team 3:codex "Refactor the auth module and run tests"
 
-# 单 Agent 过夜任务
-aios harness run --objective "完成明天的交接文档" --worktree
+# Single-agent overnight task
+aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
 
-# 内容结果追踪（小红书等场景）
-aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "测试" --metrics '{"likes":100}'
+# Intelligent model routing
+node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
 
-# 查看任务状态
+# Content outcome tracking
+aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'
+
+# Check task status
 aios team status --provider codex --watch
 ```
 
-## 工作原理
+## How It Works
 
 ```text
-用户 → codex / claude / gemini
-     → zsh wrapper（透明包装）
-     → ctx-agent.mjs（ContextDB 集成）
-        → contextdb CLI（记忆持久化）
-        → 启动原生 CLI（附带上下文包）
-     → browser MCP（可选浏览器自动化）
+User → codex / claude / gemini
+     → zsh wrapper (transparent)
+     → ctx-agent.mjs (ContextDB integration)
+        → contextdb CLI (memory persistence)
+        → launch native CLI (with context pack)
+     → browser MCP (optional browser automation)
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini` 命令即可，RexCLI 自动在后台加载项目记忆。
+After installation, just use `codex`, `claude`, or `gemini` as usual — RexCLI automatically loads project memory in the background.
 
-## 文档
+## Docs
 
-- [快速开始](https://cli.rexai.top/getting-started/) — 安装、配置、首次运行
-- [ContextDB](https://cli.rexai.top/contextdb/) — 项目记忆系统详解
-- [Agent Team](https://cli.rexai.top/team-ops/) — 多 Agent 协作指南
-- [Solo Harness](https://cli.rexai.top/solo-harness/) — 过夜长任务指南
-- [Perception](https://cli.rexai.top/perception/) — 内容结果追踪与洞察
-- [架构](https://cli.rexai.top/architecture/) — 系统架构说明
-- [故障排查](https://cli.rexai.top/troubleshooting/) — 常见问题解决
-- [按场景找命令](https://cli.rexai.top/use-cases/) — CLI 工作流速查
+- [Quick Start](https://cli.rexai.top/getting-started/) — Install, configure, first run
+- [Model Router](https://cli.rexai.top/model-router/) — Multi-model dispatch for Agent Teams
+- [ContextDB](https://cli.rexai.top/contextdb/) — Project memory system
+- [Agent Team](https://cli.rexai.top/team-ops/) — Multi-agent collaboration guide
+- [Solo Harness](https://cli.rexai.top/solo-harness/) — Overnight task guide
+- [Perception](https://cli.rexai.top/perception/) — Content outcome tracking & insights
+- [Architecture](https://cli.rexai.top/architecture/) — System architecture
+- [Troubleshooting](https://cli.rexai.top/troubleshooting/) — Common issues
+- [Use Cases](https://cli.rexai.top/use-cases/) — Find commands by scenario
 
-## 环境要求
+## Requirements
 
 - Git
 - Node.js 22 LTS + npm
-- Windows: PowerShell 5.x 或 7
+- Windows: PowerShell 5.x or 7
 
-## 开发
+## Development
 
 ```bash
 git clone https://github.com/rexleimo/rex-cli.git
 cd rex-cli
 ```
 
-验证:
+Verify:
 
 ```bash
 cd mcp-server
@@ -101,6 +106,6 @@ npm run typecheck
 npm run build
 ```
 
-## 许可
+## License
 
-详见 [CHANGELOG.md](CHANGELOG.md) 版本历史。
+See [CHANGELOG.md](CHANGELOG.md) for version history.

@@ -3,6 +3,7 @@ name: rex-security-reviewer
 description: "Security reviewer role card for AIOS orchestrations (auth, secrets, unsafe automation)."
 tools: ["Read", "Grep", "Glob"]
 model: sonnet
+preferredModel: claude-opus
 ---
 
 <!-- AIOS-GENERATED: orchestrator-agents v1 -->

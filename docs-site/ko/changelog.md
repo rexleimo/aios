@@ -14,8 +14,9 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 ## 최신 안정 버전
 
-- `1.8.0` (2026-05-05):
+- `1.8.0` (2026-05-08):
   - 래핑된 `codex`, `claude`, `gemini`, `opencode` 세션용 self-trigger harness routing 을 추가했습니다.
+  - **Model Router**: Agent Team 을 위한 지능형 멀티모델 디스패치. 모델 능력 레지스트리 (8개 모델), 태스크 유형별 모델 라우팅, 3가지 CLI 프로토콜 어댑터 (claude/codex/gemini), 비용 오름차순 폴백 체인, 에이전트 호출 가능한 `model-router` 스킬, `AIOS_MODEL_{ROLE}` 환경 변수 오버라이드, 피드백 루프 통합을 포함합니다. 자세한 내용은 [모델 라우터](model-router.md)를 참조하세요.
   - **GroupChat Runtime**: `aios team` 라이브 모드가 이제 공유 대화 히스토리를 갖춘 라운드 기반 에이전트 실행을 사용합니다. 각 라운드의 에이전트는 병렬로 실행되며, 모든 에이전트가 전체 누적 스레드를 볼 수 있습니다. 막힌 에이전트는 자동으로 re-plan 라운드를 트리거합니다. 기존의 일회성 격리 dispatch 모델과 대조됩니다.
   - **OpenCode CLI subagent 지원**: `opencode-cli` 가 모든 orchestration 경로 (subagent, team, GroupChat runtime) 에서 완전히 지원되는 `AIOS_SUBAGENT_CLIENT` 가 되었습니다.
 

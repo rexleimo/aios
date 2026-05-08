@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "activeModel": "claude-sonnet",
+  "fallbackPolicy": "cost-ascending",
+  "models": {
+    "gpt-5.5": {
+      "provider": "codex",
+      "label": "GPT-5.5 (OpenAI)",
+      "description": "六边形战士，通用旗舰，原生 Computer Use、1M 上下文、知识检索、代码执行、通用推理全能",
+      "strengths": ["general-reasoning", "browser-automation", "desktop-automation", "knowledge-retrieval", "code-execution", "all-rounder"],
+      "weaknesses": ["highest-cost"],
+      "cost": "highest",
+      "speed": "fast",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "--yolo -m gpt-5.5 -p",
+        "modelArg": "-m",
+        "modelValue": "gpt-5.5"
+      }
+    },
+    "kimi-k2.6": {
+      "provider": "claude",
+      "label": "Kimi K2.6 (Moonshot)",
+      "description": "开源 Agent 专用，300 子 Agent 并行编排、12+ 小时自主执行、编码驱动设计（前端 Awwwards 级）、文档→技能",
+      "strengths": ["multi-agent-orchestration", "long-running-execution", "frontend-ui", "full-stack", "skill-learning"],
+      "weaknesses": ["deep-security-review", "enterprise-compliance"],
+      "cost": "low",
+      "speed": "fast",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model kimi-k2.6 -p",
+        "modelArg": "--model",
+        "modelValue": "kimi-k2.6"
+      }
+    },
+    "claude-opus": {
+      "provider": "claude",
+      "label": "Claude Opus 4.7 (Anthropic)",
+      "description": "质量天花板，代码架构判断、长文本写作、自我验证、高风险场景可靠性、幻觉率 36%",
+      "strengths": ["code-review", "architecture-design", "security-audit", "long-form-writing", "self-verification", "high-stakes-decision"],
+      "weaknesses": ["browser-automation", "real-time-execution", "cost-sensitive-tasks"],
+      "cost": "highest",
+      "speed": "slow",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "-p",
+        "modelArg": "--model",
+        "modelValue": "claude-opus-4-7"
+      }
+    },
+    "claude-sonnet": {
+      "provider": "claude",
+      "label": "Claude Sonnet 4.6 (Anthropic)",
+      "description": "性价比之王，日常开发、RAG、Adaptive Thinking、速度均衡",
+      "strengths": ["daily-development", "rapid-prototyping", "rag", "classification", "summarization"],
+      "weaknesses": ["complex-architecture", "deep-security-audit"],
+      "cost": "medium",
+      "speed": "fast",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "-p",
+        "modelArg": "--model",
+        "modelValue": "claude-sonnet-4-6"
+      }
+    },
+    "deepseek-v4": {
+      "provider": "claude",
+      "label": "DeepSeek-V4-Pro",
+      "description": "开源代码怪兽，1M 上下文、Terminal-Bench 67.9%、LiveCodeBench 93.5%、价格仅为 GPT-5.5 的 1/70",
+      "strengths": ["algorithm-implementation", "core-logic", "long-log-analysis", "batch-processing", "cost-efficient-coding"],
+      "weaknesses": ["frontend-ui", "multimodal", "creative-writing"],
+      "cost": "lowest",
+      "speed": "fast",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model deepseek-v4-pro -p",
+        "modelArg": "--model",
+        "modelValue": "deepseek-v4-pro"
+      }
+    },
+    "glm-5.1": {
+      "provider": "claude",
+      "label": "GLM-5.1 (智谱)",
+      "description": "自主推理引擎，8 小时自主循环、AIME 95.3%、复杂系统工程、MoE 744B 参数",
+      "strengths": ["math-reasoning", "science-reasoning", "autonomous-loop", "systems-engineering", "long-running-planning"],
+      "weaknesses": ["browser-automation", "multimodal"],
+      "cost": "low",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model glm-5.1 -p",
+        "modelArg": "--model",
+        "modelValue": "glm-5.1"
+      }
+    },
+    "minimax-m2.7": {
+      "provider": "claude",
+      "label": "MiniMax-M2.7",
+      "description": "自进化 Agent，自优化（100 轮自主迭代）、生产故障恢复（<3 分钟）、原生 Agent Teams",
+      "strengths": ["self-healing", "production-recovery", "continuous-optimization", "agent-teams"],
+      "weaknesses": ["initial-bootstrap", "creative-tasks"],
+      "cost": "low",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model minimax-m2.7 -p",
+        "modelArg": "--model",
+        "modelValue": "minimax-m2.7"
+      }
+    },
+    "gemini-3-pro": {
+      "provider": "gemini",
+      "label": "Gemini-3-Pro (Google)",
+      "description": "多模态长文，1M+ 上下文、信息召回率 97%、原生视频/音频/图像融合、推测解码 2-3 倍速",
+      "strengths": ["multimodal-analysis", "long-document-research", "video-analysis", "audio-analysis", "information-recall", "large-context-processing"],
+      "weaknesses": ["complex-code-architecture", "precise-math"],
+      "cost": "medium",
+      "speed": "medium",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "gemini",
+        "argsTemplate": "-m gemini-3-pro -p",
+        "modelArg": "-m",
+        "modelValue": "gemini-3-pro"
+      }
+    }
+  },
+  "routingRules": [
+    {
+      "taskType": "code-review",
+      "description": "代码审查、架构评审、质量把关",
+      "primary": "claude-opus",
+      "fallback": ["gpt-5.5", "glm-5.1"]
+    },
+    {
+      "taskType": "security-review",
+      "description": "安全审计、漏洞扫描、合规检查",
+      "primary": "claude-opus",
+      "fallback": ["gpt-5.5", "glm-5.1"]
+    },
+    {
+      "taskType": "architecture",
+      "description": "架构设计、技术选型、系统设计",
+      "primary": "claude-opus",
+      "fallback": ["gpt-5.5", "glm-5.1"]
+    },
+    {
+      "taskType": "implementation",
+      "description": "写代码、算法实现、核心逻辑",
+      "primary": "deepseek-v4",
+      "fallback": ["gpt-5.5", "claude-sonnet"]
+    },
+    {
+      "taskType": "browser-automation",
+      "description": "浏览器操作、桌面自动化、网页抓取",
+      "primary": "gpt-5.5",
+      "fallback": ["kimi-k2.6", "claude-sonnet"]
+    },
+    {
+      "taskType": "research",
+      "description": "读超长文档、视频分析、信息检索",
+      "primary": "gemini-3-pro",
+      "fallback": ["gpt-5.5", "kimi-k2.6"]
+    },
+    {
+      "taskType": "planning",
+      "description": "任务拆解、方案设计、路线规划",
+      "primary": "glm-5.1",
+      "fallback": ["gpt-5.5", "claude-opus"]
+    },
+    {
+      "taskType": "testing",
+      "description": "测试编写、测试策略、QA",
+      "primary": "claude-sonnet",
+      "fallback": ["gpt-5.5", "deepseek-v4"]
+    },
+    {
+      "taskType": "docs",
+      "description": "文档编写、README、知识库",
+      "primary": "claude-sonnet",
+      "fallback": ["gpt-5.5", "kimi-k2.6"]
+    },
+    {
+      "taskType": "frontend",
+      "description": "前端UI、设计实现、Awwwards 级页面",
+      "primary": "kimi-k2.6",
+      "fallback": ["gpt-5.5", "claude-sonnet"]
+    },
+    {
+      "taskType": "self-healing",
+      "description": "故障恢复、自优化、生产修复",
+      "primary": "minimax-m2.7",
+      "fallback": ["glm-5.1", "gpt-5.5"]
+    },
+    {
+      "taskType": "general",
+      "description": "通用任务（未匹配到特定类型时）",
+      "primary": "gpt-5.5",
+      "fallback": ["claude-sonnet", "deepseek-v4"]
+    }
+  ],
+  "roleDefaults": {
+    "planner": { "taskType": "planning" },
+    "implementer": { "taskType": "implementation" },
+    "reviewer": { "taskType": "code-review" },
+    "security-reviewer": { "taskType": "security-review" }
+  }
+}
