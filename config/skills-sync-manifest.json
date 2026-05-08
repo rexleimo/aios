@@ -104,6 +104,11 @@
       "repoTargets": ["codex", "claude", "gemini", "opencode"]
     },
     {
+      "relativeSkillPath": "model-router",
+      "installCatalogName": "model-router",
+      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+    },
+    {
       "relativeSkillPath": ".system/skill-creator",
       "installCatalogName": null,
       "repoTargets": ["codex", "claude"],

@@ -228,6 +228,18 @@
         "project": false
       },
       "tags": ["xhs", "ops"]
+    },
+    {
+      "name": "model-router",
+      "description": "Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate. TRIGGERS: 模型调度, model dispatch, 选模型, 路由, routing, dispatch to model.",
+      "source": "skill-sources/model-router",
+      "clients": ["codex", "claude", "gemini", "opencode"],
+      "scopes": ["global", "project"],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": ["aios", "model-router", "orchestration", "dispatch", "essential"]
     }
   ]
 }
