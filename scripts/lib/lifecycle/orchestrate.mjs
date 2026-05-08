@@ -965,7 +965,7 @@ export async function runOrchestrate(
   };
 
   let dispatchPlan = options.dispatchMode === 'local'
-    ? buildLocalDispatchPlan(dagPlan, { phaseExecutor: options.phaseExecutor })
+    ? buildLocalDispatchPlan(dagPlan, { phaseExecutor: options.phaseExecutor, env })
     : null;
   let retryReplay = null;
   if (options.retryBlocked) {

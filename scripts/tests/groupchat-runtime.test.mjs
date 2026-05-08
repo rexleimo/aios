@@ -634,6 +634,42 @@ test('runGroupChat handles re-plan when implementer is blocked', async () => {
   assert.ok(plannerCalls >= 2, `expected >=2 planner calls, got ${plannerCalls}`);
 });
 
+
+
+test('runGroupChat passes model-router context to each speaker prompt', async () => {
+  const { runGroupChat } = await import('../lib/harness/groupchat-runtime.mjs');
+  const captured = [];
+  const spawnFn = async (args) => {
+    captured.push(args);
+    return {
+      exitCode: 0,
+      handoff: makeHandoff({ fromRole: args.role, toRole: args.role === 'planner' ? 'implementer' : 'done' }),
+      elapsedMs: 5,
+    };
+  };
+
+  const result = await runGroupChat({
+    taskTitle: 'Route groupchat speakers',
+    blueprint: 'bugfix',
+    spawnFn,
+    config: { maxRounds: 4, concurrency: 2 },
+    env: {
+      ...process.env,
+      AIOS_MODEL_ROUTER: '1',
+      AIOS_MODEL_PLANNER: 'gemini-3-pro',
+      AIOS_MODEL_IMPLEMENTER: 'gpt-5.5',
+    },
+    io: stubIo().io,
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(captured[0]?.modelRouting?.modelId, 'gemini-3-pro');
+  assert.equal(captured[0]?.modelRouting?.clientId, 'gemini-cli');
+  assert.match(captured[0]?.systemPrompt || '', /## Model Router/);
+  assert.match(captured[0]?.userPrompt || '', /modelId=gemini-3-pro/);
+  assert.equal(result.conversationHistory[0]?.modelRouting?.modelId, 'gemini-3-pro');
+});
+
 test('runGroupChat stops at maxRounds', async () => {
   const { runGroupChat } = await import('../lib/harness/groupchat-runtime.mjs');
 

@@ -5,6 +5,13 @@ import { fileURLToPath } from 'node:url';
 
 import agentSpec from '../../../memory/specs/orchestrator-agents.json' with { type: 'json' };
 import { runContextDbCli } from '../contextdb-cli.mjs';
+import {
+  buildClientModelArgs,
+  buildModelRouterPromptSection,
+  isModelRouterEnabled,
+  normalizeModelRouting,
+  recordModelDispatch,
+} from '../model-router.mjs';
 import { spawnCommand, spawnCommandWithInput, commandExists } from '../platform/process.mjs';
 import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
 import { normalizeOrchestratorAgentSpec } from './orchestrator-agents.mjs';
@@ -162,6 +169,32 @@ function buildCodexConfigArgs(env = process.env) {
     return [];
   }
   return ['-c', 'mcp_servers={}', '-c', 'features.rmcp_client=false'];
+}
+
+function buildRoutedExtraArgs(clientId = '', modelRouting = null, env = process.env) {
+  if (!isModelRouterEnabled(env)) return [];
+  return buildClientModelArgs(clientId, modelRouting);
+}
+
+function resolveExecutionClientId(defaultClientId = '', modelRouting = null, env = process.env) {
+  const route = normalizeModelRouting(modelRouting);
+  if (isModelRouterEnabled(env) && route?.clientId) return route.clientId;
+  return normalizeText(defaultClientId);
+}
+
+function recordPhaseModelDispatch({ rootDir, job, modelRouting, success, elapsedMs, description }) {
+  const route = normalizeModelRouting(modelRouting);
+  if (!route?.modelId || !rootDir) return;
+  recordModelDispatch({
+    workspaceRoot: rootDir,
+    modelId: route.modelId,
+    taskType: route.taskType,
+    role: route.role || job?.role,
+    success,
+    latencyMs: elapsedMs,
+    costEstimate: route.cost,
+    description,
+  });
 }
 
 function formatSnapshotTimestamp(ts = new Date()) {
@@ -629,6 +662,13 @@ function buildSystemPrompt({ agent, contextText, plan, job, phase, rootDir, env,
     lines.push('');
   }
 
+  const modelRouterSection = buildModelRouterPromptSection(job?.launchSpec?.modelRouting);
+  if (modelRouterSection) {
+    lines.push(modelRouterSection);
+    lines.push('Use the routed model/protocol for this job; record any mismatch as a blocker.');
+    lines.push('');
+  }
+
   const ownedPrefixes = resolveOwnedPathPrefixes(phase, job).join(', ');
   const workItemRefs = Array.isArray(job?.launchSpec?.workItemRefs)
     ? job.launchSpec.workItemRefs.map((item) => normalizeText(item)).filter(Boolean)
@@ -798,7 +838,7 @@ function attachAttemptMeta(result, payload) {
   return payload;
 }
 
-export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs, env, io = null, cwd = null, codexOutput = null }) {
+export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs, env, io = null, cwd = null, codexOutput = null, modelRouting = null }) {
   const command = CLIENT_COMMAND[clientId];
   if (!command) {
     return { exitCode: 1, stdout: '', stderr: '', error: `Unsupported subagent client: ${clientId}` };
@@ -810,17 +850,18 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
 
   const systemText = normalizeText(systemPrompt);
   const promptText = normalizeText(userPrompt);
+  const routedExtraArgs = buildRoutedExtraArgs(clientId, modelRouting, env);
 
   let args = [];
   if (clientId === 'claude-code') {
     args = systemText
-      ? ['--print', '--append-system-prompt', systemText, promptText]
-      : ['--print', promptText];
+      ? [...routedExtraArgs, '--print', '--append-system-prompt', systemText, promptText]
+      : [...routedExtraArgs, '--print', promptText];
   } else if (clientId === 'gemini-cli') {
     const fullPrompt = systemText
       ? `${systemText}\n\n## New User Request\n${promptText}`
       : promptText;
-    args = ['-p', fullPrompt];
+    args = [...routedExtraArgs, '-p', fullPrompt];
   } else if (clientId === 'opencode-cli') {
     const fullPrompt = systemText
       ? `${systemText}\n\n## New User Request\n${promptText}`
@@ -844,7 +885,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
     }
 
     if (structuredFlags.length > 0) {
-      args = ['exec', ...codexConfigArgs, ...structuredFlags, '-'];
+      args = ['exec', ...codexConfigArgs, ...routedExtraArgs, ...structuredFlags, '-'];
       const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
       const combinedStdout = String(result.stdout || '');
       const combinedStderr = String(result.stderr || '');
@@ -872,7 +913,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
         const combined = `${combinedStdout}\n${combinedStderr}`.trim();
         const structuredFlags = ['--output-schema', '--output-last-message', '--color'];
         if (isUnsupportedCodexFlagError(combined, structuredFlags) || isCodexSchemaValidationError(combined)) {
-          const fallbackArgs = ['exec', ...codexConfigArgs];
+          const fallbackArgs = ['exec', ...codexConfigArgs, ...routedExtraArgs];
           if (codexOutput?.lastMessagePath) {
             fallbackArgs.push('--output-last-message', codexOutput.lastMessagePath);
           }
@@ -906,7 +947,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
             const fallbackCombined = `${fallbackStdout}\n${fallbackStderr}`.trim();
             const fallbackFlags = ['--output-last-message', '--color'];
             if (isUnsupportedCodexFlagError(fallbackCombined, fallbackFlags)) {
-              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexConfigArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
+              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexConfigArgs, ...routedExtraArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
               const plainStdout = String(plainFallback.stdout || '');
               const plainStderr = String(plainFallback.stderr || '');
               const plainExit = Number.isFinite(plainFallback.status) ? plainFallback.status : 1;
@@ -951,7 +992,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
       });
     }
 
-    args = ['exec', ...codexConfigArgs, '-'];
+    args = ['exec', ...codexConfigArgs, ...routedExtraArgs, '-'];
     const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
     const combinedStdout = String(result.stdout || '');
     const combinedStderr = String(result.stderr || '');
@@ -1005,6 +1046,7 @@ function buildBlockedJobRun(plan, job, dependencyRuns, {
   rawOutput = '',
   attempts = 0,
 }) {
+  const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const jobRun = {
     jobId: job.jobId,
     jobType: job.jobType,
@@ -1013,6 +1055,7 @@ function buildBlockedJobRun(plan, job, dependencyRuns, {
     executorLabel,
     dependsOn: Array.isArray(job.dependsOn) ? [...job.dependsOn] : [],
     status: 'blocked',
+    ...(modelRouting ? { modelRouting } : {}),
     inputSummary: {
       dependencyCount: dependencyRuns.length,
       inputTypes: Array.isArray(job.launchSpec?.inputs) ? [...job.launchSpec.inputs] : [],
@@ -1076,6 +1119,8 @@ function buildAutoCompletedReadOnlyReviewRun(plan, job, dependencyRuns, { execut
     recommendations: [],
   });
 
+  const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
+
   return {
     jobId: job.jobId,
     jobType: job.jobType,
@@ -1085,6 +1130,7 @@ function buildAutoCompletedReadOnlyReviewRun(plan, job, dependencyRuns, { execut
     dependsOn: Array.isArray(job.dependsOn) ? [...job.dependsOn] : [],
     status: 'completed',
     elapsedMs: 0,
+    ...(modelRouting ? { modelRouting } : {}),
     inputSummary: {
       dependencyCount: dependencyRuns.length,
       inputTypes: Array.isArray(job.launchSpec?.inputs) ? [...job.launchSpec.inputs] : [],
@@ -1177,15 +1223,18 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
     }
     : null;
 
+  const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
+  const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);
   const startedAt = Date.now();
-  const result = await runOneShot(clientId, {
+  const result = await runOneShot(executionClientId, {
     systemPrompt,
     userPrompt,
     timeoutMs,
     env,
     io,
     cwd: rootDir,
-    codexOutput,
+    codexOutput: executionClientId === 'codex-cli' ? codexOutput : null,
+    modelRouting,
   });
   const elapsedMs = Date.now() - startedAt;
 
@@ -1215,6 +1264,7 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
       rawCommandOutput,
     });
     io?.log?.(`[subagent-runtime] blocked ${job.jobId} reason=${failureReason}`);
+    recordPhaseModelDispatch({ rootDir, job, modelRouting, success: false, elapsedMs, description: failureReason });
     return buildBlockedJobRun(plan, job, dependencyRuns, {
       executorLabel,
       reason: failureReason,
@@ -1230,6 +1280,7 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
 
   if (!rawJson) {
     io?.log?.(`[subagent-runtime] blocked ${job.jobId} reason=Failed to parse JSON handoff from subagent output`);
+    recordPhaseModelDispatch({ rootDir, job, modelRouting, success: false, elapsedMs, description: 'Failed to parse JSON handoff from subagent output' });
     return buildBlockedJobRun(plan, job, dependencyRuns, {
       executorLabel,
       reason: 'Failed to parse JSON handoff from subagent output',
@@ -1251,6 +1302,7 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const validation = validateHandoffPayload(normalizedPayload);
   if (!validation.ok) {
     io?.log?.(`[subagent-runtime] blocked ${job.jobId} reason=Invalid handoff payload`);
+    recordPhaseModelDispatch({ rootDir, job, modelRouting, success: false, elapsedMs, description: 'Invalid handoff payload' });
     return buildBlockedJobRun(plan, job, dependencyRuns, {
       executorLabel,
       reason: `Invalid handoff payload: ${validation.errors.join('; ')}`,
@@ -1265,6 +1317,7 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
   if (!filePolicy.ok) {
     const reason = summarizeFilePolicyViolation(filePolicy.violations);
     io?.log?.(`[subagent-runtime] blocked ${job.jobId} reason=${reason}`);
+    recordPhaseModelDispatch({ rootDir, job, modelRouting, success: false, elapsedMs, description: reason });
     return buildBlockedJobRun(plan, job, dependencyRuns, {
       executorLabel,
       reason,
@@ -1284,6 +1337,14 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
     ? ` tokens=${costTelemetry.totalTokens} usd=${costTelemetry.usd}`
     : '';
   io?.log?.(`[subagent-runtime] completed ${job.jobId} status=${payloadStatus} elapsedMs=${elapsedMs}${costNote}`);
+  recordPhaseModelDispatch({
+    rootDir,
+    job,
+    modelRouting,
+    success: jobStatus === 'completed',
+    elapsedMs,
+    description: `${job.jobId} ${payloadStatus}`,
+  });
 
   if (jobStatus === 'completed') {
     appendJobFindingsToRoleMemory({
@@ -1306,6 +1367,8 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
     status: jobStatus,
     elapsedMs,
     ...(hasCostTelemetry(costTelemetry) ? { cost: costTelemetry } : {}),
+    ...(modelRouting ? { modelRouting } : {}),
+    ...(executionClientId && executionClientId !== clientId ? { routedClientId: executionClientId } : {}),
     ...(Number.isFinite(result.attempts) && result.attempts > 0 ? { attempts: Math.floor(result.attempts) } : {}),
     inputSummary: {
       dependencyCount: dependencyRuns.length,

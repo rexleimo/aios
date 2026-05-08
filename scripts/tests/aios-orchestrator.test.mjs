@@ -227,6 +227,57 @@ async function createFakeCodexCommand(
   return binDir;
 }
 
+async function createFakeAgentCommands({ captureInputPath = '', captureArgsPath = '' } = {}) {
+  const binDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-agent-bin-'));
+  const script = path.join(binDir, 'fake-agent.mjs');
+  const captureInputPathLiteral = JSON.stringify(String(captureInputPath || '').trim());
+  const captureArgsPathLiteral = JSON.stringify(String(captureArgsPath || '').trim());
+  const scriptBody = [
+    "import fs from 'node:fs';",
+    "import path from 'node:path';",
+    'const cli = path.basename(process.argv[1]).replace(/\\.cmd$/i, "");',
+    'const args = process.argv.slice(2);',
+    'const invoked = process.env.FAKE_AGENT_CLI || (["codex", "claude", "gemini"].includes(cli) ? cli : String(args.find((arg) => arg === "codex" || arg === "claude" || arg === "gemini") || cli));',
+    `const captureInputPath = ${captureInputPathLiteral};`,
+    `const captureArgsPath = ${captureArgsPathLiteral};`,
+    "let stdinText = '';",
+    'try {',
+    "  stdinText = fs.readFileSync(0, 'utf8');",
+    '} catch {',
+    "  stdinText = '';",
+    '}',
+    'if (captureInputPath) {',
+    '  fs.appendFileSync(captureInputPath, `===${invoked}:PROMPT===\\n${stdinText}\\nARGS=${JSON.stringify(args)}\\n`, "utf8");',
+    '}',
+    'if (captureArgsPath) {',
+    '  fs.appendFileSync(captureArgsPath, `${invoked} ${JSON.stringify(args)}\\n`, "utf8");',
+    '}',
+    'const prompt = [stdinText, ...args].join(" ");',
+    'const roleMatch = /fromRole=([a-z-]+)/.exec(prompt) || /role:\\s*([a-z-]+)/.exec(prompt);',
+    'const role = roleMatch ? roleMatch[1] : "subagent";',
+    'const workItemMatch = /workItemRefs=([^\\n]+)/.exec(prompt);',
+    'const workItem = workItemMatch ? workItemMatch[1].split(",")[0].trim() : "";',
+    'const fileByWorkItem = { "wi.1": "scripts/routed-worker.mjs", "wi.2": "scripts/tests/routed-worker.test.mjs", "wi.3": "scripts/routed-worker-extra.mjs", "wi.4": "scripts/tests/routed-worker-extra.test.mjs" };',
+    'const filesTouched = role === "implementer" ? [fileByWorkItem[workItem] || "scripts/routed-worker.mjs"] : [];',
+    'const payload = { schemaVersion: 1, status: "completed", fromRole: role, toRole: "next-phase", taskTitle: "Fake routed task", contextSummary: `Routed through ${invoked}`, findings: [`cli=${invoked}`], filesTouched, openQuestions: [], recommendations: [] };',
+    'const jsonText = JSON.stringify(payload);',
+    'const lastMessageFlagIndex = args.indexOf("--output-last-message");',
+    'if (lastMessageFlagIndex >= 0 && args[lastMessageFlagIndex + 1]) {',
+    '  fs.writeFileSync(args[lastMessageFlagIndex + 1], jsonText, "utf8");',
+    '}',
+    'process.stdout.write(`${jsonText}\\n`);',
+  ].join('\n');
+  await fs.writeFile(script, `${scriptBody}\n`, 'utf8');
+
+  for (const command of ['codex', 'claude', 'gemini']) {
+    const file = path.join(binDir, command);
+    await fs.writeFile(file, `#!/usr/bin/env bash\nFAKE_AGENT_CLI="${command}" exec node "${script}" "$@"\n`, 'utf8');
+    await fs.chmod(file, 0o755);
+  }
+
+  return binDir;
+}
+
 
 async function writePlanFile(rootDir, relPath = 'docs/plans/preflight-ready.md', markdown = '') {
   const content = markdown || `# Preflight Ready Plan
@@ -1542,7 +1593,18 @@ test('buildLocalDispatchPlan creates job dependencies and a merge gate for paral
   assert.deepEqual(securityJob?.dependsOn, ['phase.implement.wi.1', 'phase.implement.wi.2']);
   assert.deepEqual(mergeJob?.dependsOn, ['phase.review', 'phase.security']);
   assert.equal(mergeJob?.jobType, 'merge-gate');
-  assert.equal(reviewJob?.launchSpec.requiresModel, false);
+  assert.equal(planJob?.launchSpec.requiresModel, true);
+  assert.equal(planJob?.launchSpec.modelRouting?.taskType, 'planning');
+  assert.equal(planJob?.launchSpec.modelRouting?.modelId, 'glm-5.1');
+  assert.equal(planJob?.launchSpec.modelRouting?.clientId, 'claude-code');
+  assert.equal(implementJob1?.launchSpec.requiresModel, true);
+  assert.equal(implementJob1?.launchSpec.modelRouting?.taskType, 'implementation');
+  assert.equal(implementJob1?.launchSpec.modelRouting?.modelId, 'deepseek-v4');
+  assert.equal(reviewJob?.launchSpec.requiresModel, true);
+  assert.equal(reviewJob?.launchSpec.modelRouting?.taskType, 'code-review');
+  assert.equal(reviewJob?.launchSpec.modelRouting?.modelId, 'claude-opus');
+  assert.equal(securityJob?.launchSpec.modelRouting?.taskType, 'security-review');
+  assert.equal(mergeJob?.launchSpec.requiresModel, false);
   assert.equal(reviewJob?.launchSpec.executor, 'local-phase');
   assert.equal(Array.isArray(reviewJob?.launchSpec.workItemRefs), true);
   assert.equal((reviewJob?.launchSpec.workItemRefs || []).length >= 1, true);
@@ -2054,6 +2116,160 @@ test('runOrchestrate --retry-blocked replays blocked jobs with seeded dependenci
   assert.equal(report.dispatchRun.jobRuns[0].status, 'completed');
 });
 
+
+test('runOrchestrate live dispatch uses model-router per job and records dispatch events', async () => {
+  const rootDir = await makeRootDir();
+  const captureInputPath = path.join(rootDir, 'agent-prompts.log');
+  const captureArgsPath = path.join(rootDir, 'agent-args.log');
+  const fakeBin = await createFakeAgentCommands({ captureInputPath, captureArgsPath });
+  await writeSession(
+    rootDir,
+    'model-route-session',
+    { updatedAt: '2026-05-08T08:00:00.000Z', goal: 'Verify model-router team execution' },
+    [
+      {
+        seq: 1,
+        ts: '2026-05-08T08:00:00.000Z',
+        status: 'done',
+        summary: 'Ready to route.',
+        nextActions: [],
+        artifacts: [],
+        telemetry: { verification: { result: 'passed', evidence: 'setup' }, retryCount: 0, elapsedMs: 10 },
+      },
+    ]
+  );
+
+  const logs = [];
+  await runOrchestrate(
+    {
+      sessionId: 'model-route-session',
+      blueprint: 'feature',
+      contextSummary: '- implement routed worker\n- add routed tests',
+      dispatchMode: 'local',
+      executionMode: 'live',
+      format: 'json',
+    },
+    {
+      rootDir,
+      io: { log: (line) => logs.push(line) },
+      env: {
+        ...process.env,
+        AIOS_EXECUTE_LIVE: '1',
+        AIOS_ALLOW_UNKNOWN_CAPABILITIES: '1',
+        AIOS_SUBAGENT_CLIENT: 'codex-cli',
+        AIOS_MODEL_ROUTER: '1',
+        AIOS_MODEL_PLANNER: 'gemini-3-pro',
+        AIOS_MODEL_IMPLEMENTER: 'gpt-5.5',
+        AIOS_MODEL_REVIEWER: 'claude-opus',
+        AIOS_MODEL_SECURITY_REVIEWER: 'claude-opus',
+        PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+      },
+    }
+  );
+
+  const report = JSON.parse(logs.at(-1));
+  const planRun = report.dispatchRun.jobRuns.find((jobRun) => jobRun.role === 'planner');
+  const implementRun = report.dispatchRun.jobRuns.find((jobRun) => jobRun.role === 'implementer');
+  const reviewRun = report.dispatchRun.jobRuns.find((jobRun) => jobRun.role === 'reviewer');
+  assert.equal(planRun?.modelRouting?.modelId, 'gemini-3-pro');
+  assert.equal(planRun?.modelRouting?.clientId, 'gemini-cli');
+  assert.equal(implementRun?.modelRouting?.modelId, 'gpt-5.5');
+  assert.equal(implementRun?.modelRouting?.clientId, 'codex-cli');
+  assert.equal(reviewRun?.modelRouting?.modelId, 'claude-opus');
+  assert.equal(reviewRun?.modelRouting?.clientId, 'claude-code');
+
+  const argsLog = await fs.readFile(captureArgsPath, 'utf8');
+  assert.match(argsLog, /gemini \["-m","gemini-3-pro","-p"/);
+  assert.match(argsLog, /codex \["exec".*"-m","gpt-5\.5"/);
+  assert.match(argsLog, /claude \["--model","claude-opus-4-7","--print"/);
+
+  const promptLog = await fs.readFile(captureInputPath, 'utf8');
+  assert.match(promptLog, /## Model Router/);
+  assert.match(promptLog, /modelId=gpt-5\.5/);
+
+  const sessionDirs = await fs.readdir(path.join(rootDir, 'memory', 'context-db', 'sessions'));
+  const modelEvents = [];
+  for (const sessionDir of sessionDirs) {
+    const eventsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionDir, 'l2-events.jsonl');
+    try {
+      const lines = (await fs.readFile(eventsPath, 'utf8')).trim().split('\n').filter(Boolean);
+      for (const line of lines) {
+        const event = JSON.parse(line);
+        if (event.kind === 'model.dispatch') modelEvents.push(event);
+      }
+    } catch {
+      // ignore sessions without event logs
+    }
+  }
+  assert.equal(modelEvents.length >= 3, true);
+  assert.equal(modelEvents.some((event) => event.turn?.environment === 'model-router'), true);
+  assert.equal(modelEvents.some((event) => event.refs?.includes('gpt-5.5')), true);
+});
+
+
+test('runOrchestrate live dispatch honors AIOS_MODEL_ROUTER=0 while keeping metadata', async () => {
+  const rootDir = await makeRootDir();
+  const captureInputPath = path.join(rootDir, 'agent-prompts-disabled.log');
+  const captureArgsPath = path.join(rootDir, 'agent-args-disabled.log');
+  const fakeBin = await createFakeAgentCommands({ captureInputPath, captureArgsPath });
+  await writeSession(
+    rootDir,
+    'model-route-disabled-session',
+    { updatedAt: '2026-05-08T08:00:00.000Z', goal: 'Verify disabled model-router execution override' },
+    [
+      {
+        seq: 1,
+        ts: '2026-05-08T08:00:00.000Z',
+        status: 'done',
+        summary: 'Ready to route without overriding CLI.',
+        nextActions: [],
+        artifacts: [],
+        telemetry: { verification: { result: 'passed', evidence: 'setup' }, retryCount: 0, elapsedMs: 10 },
+      },
+    ]
+  );
+
+  const logs = [];
+  await runOrchestrate(
+    {
+      sessionId: 'model-route-disabled-session',
+      blueprint: 'feature',
+      contextSummary: '- implement routed worker',
+      dispatchMode: 'local',
+      executionMode: 'live',
+      format: 'json',
+    },
+    {
+      rootDir,
+      io: { log: (line) => logs.push(line) },
+      env: {
+        ...process.env,
+        AIOS_EXECUTE_LIVE: '1',
+        AIOS_ALLOW_UNKNOWN_CAPABILITIES: '1',
+        AIOS_SUBAGENT_CLIENT: 'codex-cli',
+        AIOS_MODEL_ROUTER: '0',
+        AIOS_MODEL_PLANNER: 'gemini-3-pro',
+        PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+      },
+    }
+  );
+
+  const report = JSON.parse(logs.at(-1));
+  const planRun = report.dispatchRun.jobRuns.find((jobRun) => jobRun.role === 'planner');
+  assert.equal(planRun?.modelRouting?.modelId, 'gemini-3-pro');
+  assert.equal(planRun?.modelRouting?.clientId, 'gemini-cli');
+  assert.equal(planRun?.routedClientId, undefined);
+
+  const argsLog = await fs.readFile(captureArgsPath, 'utf8');
+  assert.match(argsLog, /codex \["exec"/);
+  assert.doesNotMatch(argsLog, /gemini \[/);
+  assert.doesNotMatch(argsLog, /"-m","gemini-3-pro"/);
+
+  const promptLog = await fs.readFile(captureInputPath, 'utf8');
+  assert.match(promptLog, /## Model Router/);
+  assert.match(promptLog, /modelId=gemini-3-pro/);
+});
+
 test('runOrchestrate refuses live --retry-blocked when dispatch hindsight is unstable', async () => {
   const rootDir = await makeRootDir();
   const fakeBin = await createFakeCodexCommand();
@@ -2251,7 +2467,11 @@ test('runOrchestrate adds a local dispatch skeleton without invoking models', as
 
   assert.equal(report.dispatchPlan.mode, 'local');
   assert.equal(report.dispatchPlan.readyForExecution, false);
-  assert.equal(report.dispatchPlan.jobs.every((job) => job.launchSpec.requiresModel === false), true);
+  assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'phase').every((job) => job.launchSpec.requiresModel === true), true);
+  assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'merge-gate').every((job) => job.launchSpec.requiresModel === false), true);
+  assert.equal(report.dispatchPlan.jobs.find((job) => job.jobId === 'phase.plan')?.launchSpec.modelRouting?.taskType, 'planning');
+  assert.equal(report.dispatchPlan.jobs.find((job) => job.jobId === 'phase.plan')?.launchSpec.modelRouting?.modelId, 'glm-5.1');
+  assert.equal(report.dispatchPlan.jobs.find((job) => job.role === 'security-reviewer')?.launchSpec.modelRouting?.modelId, 'claude-opus');
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'phase').every((job) => job.launchSpec.executor === 'local-phase'), true);
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'merge-gate').every((job) => job.launchSpec.executor === 'local-merge-gate'), true);
   assert.deepEqual(report.dispatchPlan.executorRegistry, ['local-phase']);

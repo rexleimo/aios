@@ -141,6 +141,9 @@ function buildTeamRuntimeEnv(options = {}, baseEnv = process.env) {
   if (clientId) {
     runtimeEnv.AIOS_SUBAGENT_CLIENT = clientId;
   }
+  if (runtimeEnv.AIOS_MODEL_ROUTER === undefined) {
+    runtimeEnv.AIOS_MODEL_ROUTER = '1';
+  }
   const workers = Number.parseInt(String(options.workers ?? '').trim(), 10);
   if (Number.isFinite(workers) && workers > 0) {
     runtimeEnv.AIOS_SUBAGENT_CONCURRENCY = String(workers);

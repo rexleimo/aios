@@ -1,4 +1,5 @@
 import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
+import { resolveModelRoutingForRole } from '../model-router.mjs';
 import { resolveAgentRefIdForRole } from './orchestrator-agents.mjs';
 import {
   LOCAL_CONTROL_EXECUTOR,
@@ -959,7 +960,8 @@ function createPhaseJob(
   dependsOn = [],
   handoffTarget = 'next-phase',
   modeOverride = null,
-  phaseExecutor = LOCAL_PHASE_EXECUTOR
+  phaseExecutor = LOCAL_PHASE_EXECUTOR,
+  env = process.env
 ) {
   const contextSources = ['orchestration-plan'];
   if (plan.learnEvalOverlay) {
@@ -972,6 +974,11 @@ function createPhaseJob(
 
   const mode = modeOverride || phase.mode;
   const agentRefId = resolveAgentRefIdForRole(phase.role) || String(phase.role || '').trim();
+  const modelRouting = resolveModelRoutingForRole({
+    role: phase.role,
+    taskDescription: `${phase.label}: ${phase.responsibility} ${phase.ownership}`,
+    env,
+  });
 
   return {
     jobId: `phase.${phase.id}`,
@@ -987,7 +994,8 @@ function createPhaseJob(
     outputs: ['handoff'],
     launchSpec: {
       executor: phaseExecutor,
-      requiresModel: false,
+      requiresModel: true,
+      modelRouting,
       agentRefId,
       inputs: contextSources,
       outputType: 'handoff',
@@ -1052,9 +1060,10 @@ function createPhaseJobWithOverrides(
     jobIdOverride = '',
     workItemRefsOverride = null,
     workItemId = '',
+    env = process.env,
   } = {}
 ) {
-  const base = createPhaseJob(plan, phase, dependsOn, handoffTarget, modeOverride, phaseExecutor);
+  const base = createPhaseJob(plan, phase, dependsOn, handoffTarget, modeOverride, phaseExecutor, env);
   const resolvedRefs = Array.isArray(workItemRefsOverride)
     ? workItemRefsOverride.map((item) => normalizeText(item)).filter(Boolean)
     : base.launchSpec.workItemRefs;
@@ -1187,6 +1196,7 @@ export function buildLocalDispatchPlan(input = {}, options = {}) {
   const parallelism = getDispatchParallelism(plan);
   const phaseExecutorSelection = resolvePhaseExecutorSelection(options.phaseExecutor);
   const phaseExecutor = phaseExecutorSelection.applied_executor;
+  const env = options.env || process.env;
   const workItemQueueEntries = [];
   const maxParallelWorkItems = 2;
   const jobs = [];
@@ -1245,7 +1255,7 @@ export function buildLocalDispatchPlan(input = {}, options = {}) {
         };
       }
 
-      const job = createPhaseJob(plan, phase, openParallelGroup.upstreamJobIds, 'merge-gate', null, phaseExecutor);
+      const job = createPhaseJob(plan, phase, openParallelGroup.upstreamJobIds, 'merge-gate', null, phaseExecutor, env);
       jobs.push(job);
       openParallelGroup.jobIds.push(job.jobId);
       continue;
@@ -1268,6 +1278,7 @@ export function buildLocalDispatchPlan(input = {}, options = {}) {
           jobIdOverride: itemJob.jobId,
           workItemRefsOverride: [itemJob.itemId],
           workItemId: itemJob.itemId,
+          env,
         });
         jobs.push(job);
       }
@@ -1282,6 +1293,7 @@ export function buildLocalDispatchPlan(input = {}, options = {}) {
       handoffTarget: 'next-phase',
       modeOverride: policySerializedParallel ? 'sequential' : null,
       phaseExecutor,
+      env,
       ...(singleWorkItemRef ? { workItemRefsOverride: singleWorkItemRef, workItemId: singleWorkItemRef[0] } : {}),
     });
     jobs.push(job);
@@ -1510,6 +1522,7 @@ export function executeLocalDispatchPlan(input = {}, rawDispatchPlan = null) {
       executorLabel: executor.label,
       dependsOn: [...job.dependsOn],
       status: execution.status,
+      ...(job.launchSpec?.modelRouting ? { modelRouting: { ...job.launchSpec.modelRouting } } : {}),
       inputSummary: {
         dependencyCount: dependencyRuns.length,
         inputTypes: Array.isArray(job.launchSpec.inputs) ? [...job.launchSpec.inputs] : [],

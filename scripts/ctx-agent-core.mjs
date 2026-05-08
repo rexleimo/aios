@@ -892,6 +892,12 @@ function buildPersistenceInstructions() {
   ].join('\n');
 }
 
+function formatMemoryPreludeStatus(memoryPrelude = '') {
+  return String(memoryPrelude || '').trim()
+    ? 'Memory prelude: enabled'
+    : 'Memory prelude: disabled';
+}
+
 export function shouldAutoRebuildNative(env = process.env) {
   return parseBoolEnv(env.CTXDB_AUTO_REBUILD_NATIVE, true);
 }
@@ -1852,6 +1858,7 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
 
     console.error(`[aios] Session: ${facadeResult.facade?.sessionId || '(new)'}`);
     console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: lazy-load | Route: ${opts.routeMode}`);
+    console.log(formatMemoryPreludeStatus(memoryPrelude));
 
     if (shouldScheduleAsyncBootstrap(facadeResult, opts.agent)) {
       forkAsyncBootstrap(opts.workspaceRoot, opts);
@@ -1959,6 +1966,9 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
 
   console.error(`[aios] Session: ${opts.sessionId}`);
   console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: ${packResult.mode} | Route: ${opts.routeMode}`);
+  if (opts.prompt && opts.dryRun) {
+    console.log(formatMemoryPreludeStatus(memoryPrelude));
+  }
 
   if (opts.prompt) {
     const routeDecision = resolveTaskRouteDecision({

@@ -33,6 +33,25 @@ graph LR
 3. **Dispatch** — a CLI command is generated in the correct protocol based on model provider
 4. **Learn** — dispatch outcomes are recorded to the perception layer; future routing considers historical success rates
 
+## Agent Team Runtime
+
+`aios team` and `aios orchestrate --dispatch local --execute live` now apply the Model Router per phase by default instead of using one outer worker client for every role.
+
+- Phase jobs expose `launchSpec.requiresModel=true` and `launchSpec.modelRouting` with `role`, `taskType`, `modelId`, `provider`, `clientId`, `cliCommand`, `reason`, and `fallback`.
+- Merge gates stay deterministic control jobs with `requiresModel=false`.
+- Live subagent and GroupChat workers switch to the routed CLI client (`codex-cli`, `claude-code`, or `gemini-cli`) and append the correct model argument for that protocol.
+- Worker prompts include a `## Model Router` section so the selected model/protocol is visible in prompt logs and handoffs.
+- Each phase or speaker writes a ContextDB `kind=model.dispatch` event with `turn.environment=model-router`; refs include the routed model, task type, and role for `model-router stats`.
+
+Disable execution-time CLI switching when you need a fixed worker client:
+
+```bash
+AIOS_MODEL_ROUTER=0 aios team "implement the feature"
+# also accepted: false, off, no
+```
+
+Dry-runs still include planned routing metadata where safe, so previews remain auditable without invoking models.
+
 ## Model Capability Registry
 
 The registry (`memory/specs/model-registry.json`) defines 8 models with structured capabilities:
@@ -105,12 +124,18 @@ Override model selection per role without changing config files:
 
 ```bash
 export AIOS_MODEL_PLANNER=claude-opus
-export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
+export AIOS_MODEL_IMPLEMENTER=deepseek-v4
 export AIOS_MODEL_REVIEWER=claude-opus
 export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
 ```
 
-Or by task type:
+Disable live execution-time CLI switching while keeping routing metadata in previews/reports:
+
+```bash
+export AIOS_MODEL_ROUTER=0
+```
+
+Or override by task type:
 
 ```bash
 export AIOS_MODEL_CODE_REVIEW=claude-opus
@@ -126,7 +151,18 @@ The Model Router is injected into the agent's context via the AIOS Task Router. 
 
 ### Via Orchestrator
 
-Agent role cards (`.claude/agents/*.md`) include a `preferredModel` field that the orchestrator resolves at dispatch time:
+Agent Team dispatch resolves model routing from role defaults and environment overrides. The default role mapping is:
+
+| Role | Task Type | Default Primary |
+|------|-----------|-----------------|
+| planner | planning | GLM-5.1 |
+| implementer | implementation | DeepSeek-V4 |
+| reviewer | code-review | Claude Opus |
+| security-reviewer | security-review | Claude Opus |
+
+The effective model is resolved via: **role env var** > **task-type env var** > **routing rule primary** > **fallback chain**.
+
+Agent role cards (`.claude/agents/*.md`) may also include a `preferredModel` field for compatibility with older orchestrator flows:
 
 ```yaml
 # .claude/agents/rex-reviewer.md
@@ -134,7 +170,7 @@ model: sonnet
 preferredModel: claude-opus
 ```
 
-The effective model is resolved via: **env var** > **preferredModel** > **model** (fallback).
+In live team execution, the `launchSpec.modelRouting.clientId` decides the CLI protocol unless `AIOS_MODEL_ROUTER=0` disables execution-time override.
 
 ## Perception Feedback Loop
 

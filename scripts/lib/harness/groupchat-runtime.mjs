@@ -2,6 +2,7 @@ import { getOrchestratorBlueprint, ORCHESTRATOR_BLUEPRINT_NAMES } from './orches
 import { normalizeOrchestratorAgentSpec } from './orchestrator-agents.mjs';
 import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
 import { buildPersonaOverlay } from '../memo/persona.mjs';
+import { buildModelRouterPromptSection, normalizeModelRouting, resolveModelRoutingForRole } from '../model-router.mjs';
 import agentSpec from '../../../memory/specs/orchestrator-agents.json' with { type: 'json' };
 
 // ---------------------------------------------------------------------------
@@ -45,7 +46,7 @@ export class ConversationHistory {
     return this.entries.length > 0 ? this.entries[this.entries.length - 1] : null;
   }
 
-  addEntry({ speaker, role, roundNumber, handoff, rawOutput = '', elapsedMs = 0 }) {
+  addEntry({ speaker, role, roundNumber, handoff, rawOutput = '', elapsedMs = 0, modelRouting = null }) {
     const entry = {
       turnNumber: this.entries.length + 1,
       roundNumber: Number.isFinite(roundNumber) ? Math.max(1, Math.floor(roundNumber)) : 1,
@@ -54,6 +55,7 @@ export class ConversationHistory {
       handoff: handoff && typeof handoff === 'object' ? normalizeHandoffPayload(handoff) : normalizeHandoffPayload({}),
       rawOutput: normalizeText(rawOutput),
       elapsedMs: Number.isFinite(elapsedMs) ? Math.floor(elapsedMs) : 0,
+      ...(normalizeModelRouting(modelRouting) ? { modelRouting: normalizeModelRouting(modelRouting) } : {}),
       timestamp: new Date().toISOString(),
     };
     this.entries.push(entry);
@@ -380,7 +382,7 @@ export function buildConversationPrompt({ history, currentRole, currentSpeaker }
   return lines.join('\n');
 }
 
-function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMemory }) {
+function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMemory, modelRouting = null }) {
   const lines = [];
   if (agent?.systemPrompt) {
     lines.push(agent.systemPrompt);
@@ -405,6 +407,13 @@ function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMemory }) 
     lines.push('Key findings from prior invocations:');
     lines.push('');
     lines.push(rolePinnedMemory.trim());
+  }
+
+  const modelRouterSection = buildModelRouterPromptSection(modelRouting);
+  if (modelRouterSection) {
+    lines.push('');
+    lines.push(modelRouterSection);
+    lines.push('Use the routed model/protocol for this GroupChat speaker.');
   }
 
   lines.push('');
@@ -457,6 +466,7 @@ export async function executeRound({
           handoff: result.handoff,
           rawOutput: result.rawOutput || '',
           elapsedMs: result.elapsedMs || 0,
+          modelRouting: result?.modelRouting || speaker.modelRouting || null,
         });
         entries.push(entry);
         io?.log?.(`[groupchat] round=${roundNumber} speaker=${speaker.speaker} status=${result.handoff.status} elapsed=${result.elapsedMs}ms`);
@@ -482,6 +492,7 @@ export async function executeRound({
         handoff: blockedHandoff,
         rawOutput: result?.rawOutput || '',
         elapsedMs: result?.elapsedMs || 0,
+        modelRouting: result?.modelRouting || speaker.modelRouting || null,
       });
       entries.push(entry);
       io?.log?.(`[groupchat] round=${roundNumber} speaker=${speaker.speaker} BLOCKED reason=${result?.error || `exit=${result?.exitCode}`}`);
@@ -505,6 +516,7 @@ export async function executeRound({
         roundNumber,
         handoff: blockedHandoff,
         elapsedMs: 0,
+        modelRouting: speaker.modelRouting || null,
       });
       entries.push(entry);
       io?.log?.(`[groupchat] round=${roundNumber} speaker=${speaker.speaker} EXCEPTION ${message}`);
@@ -601,11 +613,17 @@ export async function runGroupChat({
     // Build spawn wrapper that creates proper prompts
     const wrappedSpawn = async ({ role, speaker, workItem, conversationHistory }) => {
       const agent = agentSpecNormalized.agents[resolveAgentId(role)] || null;
+      const modelRouting = resolveModelRoutingForRole({
+        role,
+        taskDescription: `${taskTitle} ${contextSummary}`,
+        env,
+      });
       const systemPrompt = buildSystemPromptForSpeaker({
         agent,
         rootDir,
         env,
         rolePinnedMemory: '',
+        modelRouting,
       });
 
       const conversationPrompt = buildConversationPrompt({
@@ -625,7 +643,7 @@ export async function runGroupChat({
       const userPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
 
       // Call the actual spawn function with full prompt context
-      return spawnFn({
+      const result = await spawnFn({
         role,
         speaker,
         workItem: workItem || null,
@@ -633,7 +651,12 @@ export async function runGroupChat({
         systemPrompt,
         conversationPrompt: fullPrompt,
         userPrompt,
+        modelRouting,
       });
+      return {
+        ...(result && typeof result === 'object' ? result : {}),
+        modelRouting: result?.modelRouting || modelRouting,
+      };
     };
 
     await executeRound({

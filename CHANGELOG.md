@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-05-08
+
+- Enable model-router per-phase team dispatch
+
 ## [1.8.1] - 2026-05-08
 
 - fix localized docs links and site validation

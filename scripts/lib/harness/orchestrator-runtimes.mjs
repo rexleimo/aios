@@ -3,6 +3,7 @@ import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
 import { createHandoffFromPhase, executeLocalDispatchPlan, mergeParallelHandoffs } from './orchestrator.mjs';
 import { executeSubagentDispatchPlan, runOneShot } from './subagent-runtime.mjs';
 import { runGroupChat } from './groupchat-runtime.mjs';
+import { isModelRouterEnabled, normalizeModelRouting, recordModelDispatch } from '../model-router.mjs';
 
 export const LOCAL_DRY_RUN_RUNTIME = 'local-dry-run';
 export const SUBAGENT_RUNTIME = 'subagent-runtime';
@@ -298,32 +299,58 @@ function extractHandoffJson(rawOutput) {
   }
 }
 
+function resolveGroupChatClientId(defaultClientId = '', modelRouting = null, env = process.env) {
+  const route = normalizeModelRouting(modelRouting);
+  if (isModelRouterEnabled(env) && route?.clientId) return route.clientId;
+  return String(defaultClientId || '').trim();
+}
+
+function recordGroupChatModelDispatch({ rootDir, role, modelRouting, success, elapsedMs, description }) {
+  const route = normalizeModelRouting(modelRouting);
+  if (!route?.modelId || !rootDir) return;
+  recordModelDispatch({
+    workspaceRoot: rootDir,
+    modelId: route.modelId,
+    taskType: route.taskType,
+    role: route.role || role,
+    success,
+    latencyMs: elapsedMs,
+    costEstimate: route.cost,
+    description,
+  });
+}
+
 function buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io }) {
-  return async ({ role, speaker, workItem, conversationHistory, systemPrompt, conversationPrompt, userPrompt }) => {
+  return async ({ role, speaker, workItem, conversationHistory, systemPrompt, conversationPrompt, userPrompt, modelRouting = null }) => {
     const promptText = String(userPrompt || conversationPrompt || '').trim();
     if (!promptText) {
       return { exitCode: 1, error: 'Empty prompt for groupchat speaker', handoff: null, rawOutput: '', elapsedMs: 0 };
     }
 
+    const route = normalizeModelRouting(modelRouting);
+    const executionClientId = resolveGroupChatClientId(clientId, route, env);
     const startedAt = Date.now();
     let result;
     try {
-      result = await runOneShot(clientId, {
+      result = await runOneShot(executionClientId, {
         systemPrompt: '',
         userPrompt: promptText,
         timeoutMs,
         env,
         io,
         cwd: rootDir || undefined,
+        modelRouting: route,
       });
     } catch (error) {
       const elapsedMs = Date.now() - startedAt;
+      recordGroupChatModelDispatch({ rootDir, role, modelRouting: route, success: false, elapsedMs, description: error instanceof Error ? error.message : String(error) });
       return {
         exitCode: 1,
         error: error instanceof Error ? error.message : String(error),
         handoff: null,
         rawOutput: '',
         elapsedMs,
+        modelRouting: route,
       };
     }
 
@@ -342,12 +369,23 @@ function buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io }) {
           recommendations: result.exitCode === 0 ? ['Task completed'] : ['Re-plan needed'],
         });
 
+    recordGroupChatModelDispatch({
+      rootDir,
+      role,
+      modelRouting: route,
+      success: result.exitCode === 0 && handoff?.status !== 'blocked',
+      elapsedMs,
+      description: `groupchat ${speaker} ${handoff?.status || 'unknown'}`,
+    });
+
     return {
       exitCode: result.exitCode,
       handoff,
       rawOutput,
       elapsedMs,
       error: result.error || null,
+      modelRouting: route,
+      ...(executionClientId !== clientId ? { routedClientId: executionClientId } : {}),
     };
   };
 }
@@ -367,6 +405,7 @@ function mapGroupChatResultToDispatchResult(groupChatResult, plan, dispatchPlan)
       executorLabel: entry.speaker,
       dependsOn: [],
       status: entry.handoff?.status === 'blocked' ? 'blocked' : 'completed',
+      ...(entry.modelRouting ? { modelRouting: { ...entry.modelRouting } } : {}),
       inputSummary: { dependencyCount: 0, inputTypes: [] },
       output: {
         outputType: 'handoff',

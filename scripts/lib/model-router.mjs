@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runContextDbCli } from './contextdb-cli.mjs';
+import defaultRegistry from '../../memory/specs/model-registry.json' with { type: 'json' };
 import {
   ensureWorkspaceMemorySession,
   normalizeWorkspaceMemorySpace,
@@ -14,6 +15,11 @@ const ROOT_DIR = path.resolve(__dirname, '..', '..');
 const REGISTRY_PATH = path.join(ROOT_DIR, 'memory', 'specs', 'model-registry.json');
 
 const COST_ORDER = Object.freeze(['lowest', 'low', 'medium', 'high', 'highest']);
+const PROVIDER_CLIENT_MAP = Object.freeze({
+  codex: 'codex-cli',
+  claude: 'claude-code',
+  gemini: 'gemini-cli',
+});
 
 let _registryCache = null;
 let _registryCacheMtime = 0;
@@ -38,6 +44,31 @@ function normalizeId(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+function normalizeEnvKey(value) {
+  return String(value || '').trim().toUpperCase().replace(/-/g, '_');
+}
+
+function clonePlain(value) {
+  if (!value || typeof value !== 'object') return value || null;
+  return JSON.parse(JSON.stringify(value));
+}
+
+function defaultModelRegistry() {
+  return clonePlain(defaultRegistry);
+}
+
+function isDisabledEnvValue(value) {
+  const text = String(value ?? '').trim().toLowerCase();
+  return text === '0' || text === 'false' || text === 'off' || text === 'no';
+}
+
+export function isModelRouterEnabled(env = process.env) {
+  if (env?.AIOS_MODEL_ROUTER === undefined && env?.AIOS_SUBAGENT_CLIENT && !env?.AIOS_MODEL_ROUTER_FORCE) return false;
+  if (isDisabledEnvValue(env?.AIOS_MODEL_ROUTER)) return false;
+  const disabled = String(env?.AIOS_DISABLE_MODEL_ROUTER ?? '').trim().toLowerCase();
+  return !(disabled === '1' || disabled === 'true' || disabled === 'yes' || disabled === 'on');
+}
+
 function getActiveModel(registry) {
   return normalizeId(registry?.activeModel) || '';
 }
@@ -54,16 +85,33 @@ export function getRoutingRule(taskType, registry) {
   return registry.routingRules.find((r) => normalizeId(r.taskType) === type) || null;
 }
 
-export function resolveModelForRole(role, registry) {
+export function resolveModelForRole(role, registry = defaultModelRegistry(), env = process.env) {
   const roleKey = normalizeId(role);
   const roleDefault = registry?.roleDefaults?.[roleKey];
+  const taskType = normalizeId(roleDefault?.taskType) || roleKey || 'general';
+  const roleOverride = env?.[`AIOS_MODEL_${normalizeEnvKey(roleKey)}`];
+  if (roleOverride) {
+    const modelId = normalizeId(roleOverride);
+    const model = getModelConfig(modelId, registry);
+    if (model) {
+      return {
+        modelId,
+        model,
+        rule: getRoutingRule(taskType, registry),
+        taskType,
+        reason: `env override AIOS_MODEL_${normalizeEnvKey(roleKey)} for role="${roleKey}"`,
+      };
+    }
+  }
   if (roleDefault) {
-    return resolveModelForTask(roleDefault.taskType, registry);
+    const decision = resolveModelForTask(taskType, registry, env);
+    return { ...decision, taskType };
   }
   return {
     modelId: getActiveModel(registry) || 'claude-sonnet',
     model: getModelConfig(getActiveModel(registry) || 'claude-sonnet', registry),
     rule: null,
+    taskType: 'general',
     reason: 'no role default, using active model',
   };
 }
@@ -146,18 +194,25 @@ export function buildCLICommand(modelConfig, rolePrompt, task) {
   }
 
   const { command, argsTemplate, modelArg, modelValue } = modelConfig.cli;
-
   const fullPrompt = `"[${rolePrompt}] ${task}"`;
+  const parts = [command];
+  const template = String(argsTemplate || '').trim();
+  const templateAlreadyIncludesModel = modelArg && modelValue
+    ? template.includes(modelArg) || template.includes(modelValue)
+    : false;
 
-  if (argsTemplate) {
-    return `${command} ${argsTemplate} ${fullPrompt}`;
+  if (modelArg && modelValue && !templateAlreadyIncludesModel) {
+    parts.push(modelArg, modelValue);
   }
-
-  if (modelArg && modelValue) {
-    return `${command} ${modelArg} ${modelValue} -p ${fullPrompt}`;
+  if (template) {
+    parts.push(template);
+  } else if (!(modelArg && modelValue)) {
+    parts.push('-p');
+  } else {
+    parts.push('-p');
   }
-
-  return `${command} -p ${fullPrompt}`;
+  parts.push(fullPrompt);
+  return parts.join(' ');
 }
 
 export function buildModelSummaryTable(registry) {
@@ -214,6 +269,122 @@ function matchTaskTypeFromDescription(taskDescription, registry) {
 export function resolveModelForTaskDescription(taskDescription, registry, env = process.env) {
   const matchedType = matchTaskTypeFromDescription(taskDescription, registry);
   return resolveModelForTask(matchedType, registry, env);
+}
+
+
+export function providerToClientId(provider) {
+  const key = normalizeId(provider);
+  return PROVIDER_CLIENT_MAP[key] || '';
+}
+
+export function normalizeModelRouting(raw = null) {
+  if (!raw || typeof raw !== 'object') return null;
+  const modelId = normalizeId(raw.modelId);
+  const role = normalizeId(raw.role);
+  const taskType = normalizeId(raw.taskType || raw.resolvedType);
+  if (!modelId || !taskType) return null;
+  const provider = normalizeId(raw.provider);
+  return {
+    role,
+    taskType,
+    modelId,
+    modelLabel: String(raw.modelLabel || raw.model || '').trim(),
+    provider,
+    clientId: String(raw.clientId || providerToClientId(provider)).trim(),
+    reason: String(raw.reason || '').trim(),
+    cost: normalizeId(raw.cost) || 'unknown',
+    speed: normalizeId(raw.speed) || 'unknown',
+    contextWindow: String(raw.contextWindow || '').trim(),
+    cliCommand: String(raw.cliCommand || '').trim(),
+    fallback: Array.isArray(raw.fallback) ? raw.fallback.map((item) => normalizeId(item)).filter(Boolean) : [],
+  };
+}
+
+export function resolveModelRoutingForRole({
+  role = '',
+  taskDescription = '',
+  registry = defaultModelRegistry(),
+  env = process.env,
+} = {}) {
+  const roleKey = normalizeId(role);
+  const roleDefault = registry?.roleDefaults?.[roleKey];
+  const taskType = normalizeId(roleDefault?.taskType)
+    || matchTaskTypeFromDescription(taskDescription, registry)
+    || 'general';
+  const decision = roleKey
+    ? resolveModelForRole(roleKey, registry, env)
+    : resolveModelForTask(taskType, registry, env);
+  const resolvedType = normalizeId(decision.taskType || taskType);
+  const fallback = getFallbackChain(resolvedType, registry).map((model) => normalizeId(model?.id || model?.modelId || ''));
+  const model = decision.model || getModelConfig(decision.modelId, registry) || null;
+  const provider = normalizeId(model?.provider);
+  return normalizeModelRouting({
+    role: roleKey,
+    taskType: resolvedType,
+    modelId: decision.modelId,
+    modelLabel: model?.label || decision.modelId,
+    provider,
+    clientId: providerToClientId(provider),
+    reason: decision.reason,
+    cost: model?.cost || 'unknown',
+    speed: model?.speed || 'unknown',
+    contextWindow: model?.contextWindow || '',
+    cliCommand: buildCLICommand(model, resolvedType, taskDescription || roleKey || resolvedType),
+    fallback,
+  });
+}
+
+export function resolveModelRoutingForTask({
+  taskType = '',
+  taskDescription = '',
+  registry = defaultModelRegistry(),
+  env = process.env,
+} = {}) {
+  const resolvedType = normalizeId(taskType) || matchTaskTypeFromDescription(taskDescription, registry) || 'general';
+  const decision = resolveModelForTask(resolvedType, registry, env);
+  const model = decision.model || getModelConfig(decision.modelId, registry) || null;
+  const provider = normalizeId(model?.provider);
+  return normalizeModelRouting({
+    role: '',
+    taskType: resolvedType,
+    modelId: decision.modelId,
+    modelLabel: model?.label || decision.modelId,
+    provider,
+    clientId: providerToClientId(provider),
+    reason: decision.reason,
+    cost: model?.cost || 'unknown',
+    speed: model?.speed || 'unknown',
+    contextWindow: model?.contextWindow || '',
+    cliCommand: buildCLICommand(model, resolvedType, taskDescription || resolvedType),
+    fallback: getFallbackChain(resolvedType, registry).map((item) => normalizeId(item?.id || item?.modelId || '')),
+  });
+}
+
+export function buildModelRouterPromptSection(modelRouting = null) {
+  const route = normalizeModelRouting(modelRouting);
+  if (!route) return '';
+  return [
+    '## Model Router',
+    `- role=${route.role || 'unknown'}`,
+    `- taskType=${route.taskType}`,
+    `- modelId=${route.modelId}`,
+    `- provider=${route.provider || 'unknown'}`,
+    `- clientId=${route.clientId || 'unknown'}`,
+    route.reason ? `- reason=${route.reason}` : '',
+    route.cliCommand ? `- cliCommand=${route.cliCommand}` : '',
+  ].filter(Boolean).join('\n');
+}
+
+export function buildClientModelArgs(clientId = '', modelRouting = null) {
+  const route = normalizeModelRouting(modelRouting);
+  if (!route) return [];
+  const modelConfig = getModelConfig(route.modelId, defaultRegistry) || null;
+  const modelValue = modelConfig?.cli?.modelValue || route.modelId;
+  const client = String(clientId || route.clientId || '').trim().toLowerCase();
+  if (client === 'codex-cli') return ['-m', modelValue];
+  if (client === 'claude-code') return ['--model', modelValue];
+  if (client === 'gemini-cli') return ['-m', modelValue];
+  return [];
 }
 
 function dispatchOutcomeSessionId(workspaceRoot, space = 'default') {
@@ -419,6 +590,8 @@ export async function runModelRouterCommand(rawOptions = {}, { rootDir, io = con
         resolvedType,
         modelId: decision.modelId,
         model: decision.model?.label,
+        provider: decision.model?.provider,
+        clientId: providerToClientId(decision.model?.provider),
         reason: decision.reason,
         cliCommand,
       }, null, 2));
@@ -439,4 +612,4 @@ export async function runModelRouterCommand(rawOptions = {}, { rootDir, io = con
   }
 }
 
-export { loadRegistry, matchTaskTypeFromDescription };
+export { loadRegistry, matchTaskTypeFromDescription, defaultModelRegistry };

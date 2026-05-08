@@ -45,6 +45,14 @@ description: "当需要调度不同模型执行子任务时使用。根据任务
 | 故障恢复 | **MiniMax-M2.7** | GLM-5.1 → GPT-5.5 |
 | 通用兜底 | **GPT-5.5** | Claude Sonnet → DeepSeek-V4 |
 
+## Agent Team 集成
+
+- `aios team` / `aios orchestrate --dispatch local --execute live` 默认启用 per-phase model routing，并为 planner / implementer / reviewer / security-reviewer 分别解析模型。
+- 每个 phase job 的 `launchSpec.modelRouting` 会包含 `role`、`taskType`、`modelId`、`provider`、`clientId`、`cliCommand`、`reason` 和 `fallback`，merge-gate 保持 `requiresModel=false`。
+- live subagent / GroupChat 运行时会按 `clientId` 切换 CLI 协议并附加模型参数；同时在 prompt 中加入 `## Model Router` 段落，便于子 Agent 自检。
+- 每个 phase / speaker 完成或阻塞后写入 ContextDB `kind=model.dispatch` 事件，`turn.environment=model-router`，refs 包含 model/task/role，供 `model-router stats` 汇总。
+- 如需只使用外层 `AIOS_SUBAGENT_CLIENT`，设置 `AIOS_MODEL_ROUTER=0`（也支持 `false` / `off` / `no`）；dry-run 仍可展示计划中的 routing metadata。
+
 ## 决策流程
 
 1. 分析子任务类型（写代码？审查？研究？规划？）
@@ -69,7 +77,12 @@ node scripts/aios.mjs model-router stats         # 调度统计
 ## 环境变量
 
 ```bash
-export AIOS_MODEL_CODE_REVIEW=claude-opus
+export AIOS_MODEL_ROUTER=0                 # 关闭 live 执行期模型覆盖；metadata 仍可生成
+export AIOS_MODEL_PLANNER=claude-opus       # 按角色覆盖
+export AIOS_MODEL_IMPLEMENTER=deepseek-v4
+export AIOS_MODEL_REVIEWER=claude-opus
+export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
+export AIOS_MODEL_CODE_REVIEW=claude-opus   # 按任务类型覆盖
 export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
 export AIOS_MODEL_PLANNING=glm-5.1
 ```
