@@ -92,6 +92,8 @@ curl -X POST http://localhost:39200/api/logs/single \
   }'
 ```
 
+`trace` 字段为可选 — 无需追踪的日志可省略。批量 POST 中无效条目会被跳过（响应包含 `written`/`skipped` 计数）；单条 POST 对畸形负载返回 HTTP 400。
+
 然后打开 `http://localhost:39200` 即可在 Dashboard 中查看。
 
 ---
@@ -141,11 +143,11 @@ trace.End()
 |------|-------------|
 | `debug_hub.list_traces` | 列出最近的执行调用链，支持过滤 |
 | `debug_hub.get_trace` | 获取特定调用链的完整跨度树 |
-| `debug_hub.search_logs` | 按关键词、级别、时间范围、模块或 traceId 搜索日志 |
+| `debug_hub.search_logs` | 大小写不敏感，按关键词、级别、时间范围、模块或 traceId 搜索日志 |
 | `debug_hub.get_stats` | 聚合计数、错误摘要、级别分布 |
 | `debug_hub.clear_logs` | 根据保留规则清理旧日志 |
 | `debug_hub.start_session` | 创建带目标和工作区元数据的 agent 调试会话 |
-| `debug_hub.record_event` | 记录 hypothesis、tool call、artifact、verification note 等结构化证据 |
+| `debug_hub.record_event` | 记录结构化证据（无效 level 默认 `info`，无效 kind 默认 `note`） |
 | `debug_hub.get_session` | 读取会话及其证据事件 |
 | `debug_hub.timeline` | 返回紧凑的时间线证据流 |
 | `debug_hub.health` | 返回采集/存储健康状态和 schema version |
@@ -205,7 +207,7 @@ debug-hub 是一个 Node.js 二进制文件，整合了四个组件：
 
 ## 路线图
 
-debug-hub 当前为 0.2.0 版本。近期新增自动 Trace 物化、agent 调试会话、结构化证据事件、存储健康状态和紧凑上下文包。路线图包括：
+debug-hub 当前为 0.2.0 版本。近期改进包括自动 Trace 物化（防抖合并）、agent 调试会话、结构化证据事件、HTTP 端点输入校验、MCP 参数校验、路径穿越防护、大小写不敏感搜索和紧凑上下文包。路线图包括：
 
 - **Python SDK** — 面向更广泛的 AI/ML agent 生态系统
 - **多 agent 关联** — 编排器/工作器模式的跨 agent 调用链链接

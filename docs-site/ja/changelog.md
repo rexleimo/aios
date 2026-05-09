@@ -15,7 +15,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 ## 最新安定版
 
 - `1.10.0` (2026-05-09):
-  - **debug-hub v0.2**: 自動 Trace 物化、agent デバッグセッション、構造化証拠イベント、`/api/health`、`timeline` / `health` / `compact_context` MCP ツールを追加。詳細は [debug-hub](debug-hub.md)。
+  - **debug-hub v0.2**: 自動 Trace 物化（デバウンス）、agent デバッグセッション、構造化証拠イベント、`/api/health`、`timeline` / `health` / `compact_context` MCP ツールを追加。HTTP エンドポイント入力バリデーション、MCP 引数バリデーション、パストラバーサル保護、大文字小文字を区別しない検索、デバウンスドトレースインデックスを含む。詳細は [debug-hub](debug-hub.md)。
 
 - `1.8.0` (2026-05-08):
   - ラップされた `codex`、`claude`、`gemini`、`opencode` セッション向けの self-trigger harness routing を追加。

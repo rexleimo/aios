@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [1.10.0] - 2026-05-09
 
 - feat(debug-hub): add agent debugging sessions and trace materialization
+- fix(debug-hub): debounce trace materialization, harden path safety, add input validation, and improve search correctness
 
 ## [1.9.0] - 2026-05-08
 

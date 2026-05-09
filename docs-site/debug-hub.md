@@ -92,6 +92,8 @@ curl -X POST http://localhost:39200/api/logs/single \
   }'
 ```
 
+The `trace` field is optional — omit it for logs that don't need tracing. Invalid entries in batch POST get skipped (response includes `written`/`skipped` counts); single-entry POST returns HTTP 400 on malformed payloads.
+
 Then open `http://localhost:39200` to see it in the dashboard.
 
 ---
@@ -141,11 +143,11 @@ trace.End()
 |------|-------------|
 | `debug_hub.list_traces` | List recent execution traces with filters |
 | `debug_hub.get_trace` | Get full span tree for a specific trace |
-| `debug_hub.search_logs` | Search by keyword, level, time range, module, or traceId |
+| `debug_hub.search_logs` | Case-insensitive search by keyword, level, time range, module, or traceId |
 | `debug_hub.get_stats` | Aggregate counts, error summary, level breakdown |
 | `debug_hub.clear_logs` | Clean up old logs with retention rules |
 | `debug_hub.start_session` | Create an agent debugging session with objective/workspace metadata |
-| `debug_hub.record_event` | Attach structured evidence such as hypotheses, tool calls, artifacts, or verification notes |
+| `debug_hub.record_event` | Attach structured evidence (level defaults to `info`, kind defaults to `note` if invalid) |
 | `debug_hub.get_session` | Read a session with its recorded evidence |
 | `debug_hub.timeline` | Return a compact chronological evidence stream |
 | `debug_hub.health` | Report ingest/storage health and schema version |
@@ -205,7 +207,7 @@ Distributed orchestrator/worker patterns can correlate traces across agent bound
 
 ## What's Next
 
-debug-hub is at 0.2.0. Recent additions include automatic trace materialization, agent debugging sessions, structured evidence events, storage health, and compact context packs. The roadmap includes:
+debug-hub is at 0.2.0. Recent improvements include automatic trace materialization (debounced), agent debugging sessions, structured evidence events, input validation on HTTP endpoints, MCP argument validation, path-traversal hardening, case-insensitive search, and compact context packs. The roadmap includes:
 
 - **Python SDK** — for the broader AI/ML agent ecosystem
 - **Multi-agent correlation** — cross-agent trace linking for orchestrator/worker patterns

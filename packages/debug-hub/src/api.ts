@@ -1,7 +1,22 @@
 import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
 import type { Storage } from './storage.js';
 import type { EventBus } from './events.js';
-import type { LogEntry } from './types.js';
+import type { LogEntry, LogLevel } from './types.js';
+
+const VALID_LEVELS = new Set<string>(['debug', 'info', 'warn', 'error', 'fatal']);
+
+function validateLogEntry(body: unknown): body is LogEntry {
+  if (!body || typeof body !== 'object') return false;
+  const e = body as Record<string, unknown>;
+  return typeof e.id === 'string'
+    && typeof e.timestamp === 'number'
+    && VALID_LEVELS.has(e.level as string)
+    && typeof e.message === 'string';
+}
+
+function validateLevel(level: unknown): LogLevel | undefined {
+  return VALID_LEVELS.has(level as string) ? (level as LogLevel) : undefined;
+}
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -30,6 +45,7 @@ export interface ApiServer {
   listen(port: number): Promise<void>;
   close(): Promise<void>;
   address(): { port: number };
+  storage: Storage;
 }
 
 export function createApiServer(storage: Storage, events: EventBus): ApiServer {
@@ -43,6 +59,10 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
       // POST /api/logs/single
       if (method === 'POST' && url === '/api/logs/single') {
         const body = JSON.parse(await readBody(req));
+        if (!validateLogEntry(body)) {
+          sendJson(res, 400, { error: 'Invalid log entry: missing or invalid id/timestamp/level/message' });
+          return;
+        }
         await storage.writeLog(body as LogEntry);
         events.emit('log', body);
         sendJson(res, 200, { success: true });
@@ -51,12 +71,19 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
 
       // POST /api/logs
       if (method === 'POST' && url === '/api/logs') {
-        const entries: LogEntry[] = JSON.parse(await readBody(req));
-        for (const entry of entries) {
-          await storage.writeLog(entry);
-          events.emit('log', entry);
+        const body = JSON.parse(await readBody(req));
+        if (!Array.isArray(body)) {
+          sendJson(res, 400, { error: 'Invalid request: expected an array of log entries' });
+          return;
         }
-        sendJson(res, 200, { success: true, count: entries.length });
+        let written = 0;
+        for (const entry of body) {
+          if (!validateLogEntry(entry)) continue;
+          await storage.writeLog(entry as LogEntry);
+          events.emit('log', entry);
+          written++;
+        }
+        sendJson(res, 200, { success: true, count: written, skipped: body.length - written });
         return;
       }
 
@@ -81,7 +108,7 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
         const q = parseQuery(url);
         const results = await storage.searchLogs({
           keyword: q.keyword,
-          level: q.level as any,
+          level: validateLevel(q.level),
           since: q.since ? Number(q.since) : undefined,
           module: q.module,
           traceId: q.traceId,
@@ -153,6 +180,7 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
   let httpServer: Server;
 
   return {
+    storage,
     listen(port: number): Promise<void> {
       return new Promise((resolve) => {
         httpServer = server.listen(port, '127.0.0.1', () => {

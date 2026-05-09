@@ -92,6 +92,8 @@ curl -X POST http://localhost:39200/api/logs/single \
   }'
 ```
 
+`trace` フィールドはオプションです — トレース不要なログは省略可能。バッチ POST では無効なエントリがスキップされます（レスポンスに `written`/`skipped` カウントが含まれます）。単一エントリの POST は不正なペイロードに対して HTTP 400 を返します。
+
 その後、`http://localhost:39200` を開いてダッシュボードで確認してください。
 
 ---
@@ -141,11 +143,11 @@ trace.End()
 |------|-------------|
 | `debug_hub.list_traces` | フィルタ付きで最近の実行トレースを一覧表示 |
 | `debug_hub.get_trace` | 特定のトレースの完全なスパンツリーを取得 |
-| `debug_hub.search_logs` | キーワード、レベル、時間範囲、モジュール、traceId で検索 |
+| `debug_hub.search_logs` | 大文字小文字を区別せず、キーワード、レベル、時間範囲、モジュール、traceId で検索 |
 | `debug_hub.get_stats` | 集計カウント、エラーサマリー、レベル内訳 |
 | `debug_hub.clear_logs` | 保持ポリシーに基づいて古いログをクリーンアップ |
 | `debug_hub.start_session` | 目的とワークスペース情報を持つ agent デバッグセッションを作成 |
-| `debug_hub.record_event` | hypothesis、tool call、artifact、verification note などの構造化証拠を記録 |
+| `debug_hub.record_event` | 構造化証拠を記録（無効な level は `info`、無効な kind は `note` にデフォルト） |
 | `debug_hub.get_session` | セッションと記録された証拠を取得 |
 | `debug_hub.timeline` | コンパクトな時系列証拠ストリームを返す |
 | `debug_hub.health` | 取り込み/ストレージの健全性と schema version を返す |
@@ -205,7 +207,7 @@ agent が再試行ループに陥った時、自身の最近のエラーログ�
 
 ## 今後の予定
 
-debug-hub は 0.2.0 です。最近の追加機能は、自動 Trace 物化、agent デバッグセッション、構造化証拠イベント、ストレージヘルス、コンパクトコンテキストパックです。ロードマップには：
+debug-hub は 0.2.0 です。最近の改善には、自動 Trace 物化（デバウンス）、agent デバッグセッション、構造化証拠イベント、HTTP エンドポイント入力バリデーション、MCP 引数バリデーション、パストラバーサル保護、大文字小文字を区別しない検索、コンパクトコンテキストパックが含まれます。ロードマップには：
 
 - **Python SDK** — より広い AI/ML agent エコシステム向け
 - **マルチ agent 相関** — オーケストレーター/ワーカーパターン向けクロス agent トレースリンク

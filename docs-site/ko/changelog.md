@@ -15,7 +15,7 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 ## 최신 안정 버전
 
 - `1.10.0` (2026-05-09):
-  - **debug-hub v0.2**: 자동 Trace 물질화, agent 디버깅 세션, 구조화 증거 이벤트, `/api/health`, `timeline` / `health` / `compact_context` MCP 도구를 추가했습니다. 자세한 내용은 [debug-hub](debug-hub.md)를 참조하세요.
+  - **debug-hub v0.2**: 자동 Trace 물질화(디바운스), agent 디버깅 세션, 구조화 증거 이벤트, `/api/health`, `timeline` / `health` / `compact_context` MCP 도구를 추가했습니다. HTTP 엔드포인트 입력 검증, MCP 인수 검증, 경로 탐색 방지, 대소문자 구분 없는 검색, 디바운스된 트레이스 인덱싱이 포함됩니다. 자세한 내용은 [debug-hub](debug-hub.md)를 참조하세요.
 
 - `1.8.0` (2026-05-08):
   - 래핑된 `codex`, `claude`, `gemini`, `opencode` 세션용 self-trigger harness routing 을 추가했습니다.

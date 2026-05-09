@@ -56,13 +56,27 @@ Available MCP tools:
 
 Agents can then record hypotheses, tool calls, reproduction runs, artifacts, and verification notes with `debug_hub.record_event`. Logs remain available as JSONL, but v0.2 also keeps session/event indexes so an agent can query a timeline or compact handoff pack without reading raw noisy logs.
 
+Invalid entries in batch POST /api/logs are skipped (response includes `written` and `skipped` counts). Single-entry POST /api/logs/single returns HTTP 400 for malformed payloads.
+
+Programmatic consumers can call `storage.flushPendingTraces()` to force immediate trace materialization (normally debounced at 200ms). The `ApiServer` interface also exposes its `.storage` property for test access.
+
 ### HTTP API
 
 ```bash
-# Report a log
+# Report a log (trace is optional)
 curl -X POST http://localhost:39200/api/logs/single \
   -H 'Content-Type: application/json' \
   -d '{"id":"1","timestamp":1714500000000,"level":"info","message":"hello","source":{},"trace":{"traceId":"t1","spanId":"s1"},"sdk":{"name":"test","version":"1.0","runtime":"node"}}'
+
+# Minimal log without trace
+curl -X POST http://localhost:39200/api/logs/single \
+  -H 'Content-Type: application/json' \
+  -d '{"id":"2","timestamp":1714500000001,"level":"warn","message":"no trace needed","source":{},"sdk":{"name":"test","version":"1.0","runtime":"node"}}'
+
+# Batch send
+curl -X POST http://localhost:39200/api/logs \
+  -H 'Content-Type: application/json' \
+  -d '[{"id":"3","timestamp":1714500000002,"level":"info","message":"batch1","source":{},"sdk":{"name":"test","version":"1.0","runtime":"node"}},{"id":"4","timestamp":1714500000003,"level":"info","message":"batch2","source":{},"sdk":{"name":"test","version":"1.0","runtime":"node"}}]'
 
 # Get stats
 curl http://localhost:39200/api/stats
@@ -70,8 +84,8 @@ curl http://localhost:39200/api/stats
 # Get storage health
 curl http://localhost:39200/api/health
 
-# Search logs
-curl 'http://localhost:39200/api/logs/search?level=error'
+# Search logs (keyword matching is case-insensitive)
+curl 'http://localhost:39200/api/logs/search?level=error&keyword=timeout'
 ```
 
 ### Node.js SDK

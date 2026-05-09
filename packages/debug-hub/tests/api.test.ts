@@ -88,6 +88,9 @@ describe('HTTP API', () => {
       body: JSON.stringify(makeEntry({ message: 'health probe' })),
     });
 
+    // Flush debounced trace materialization
+    await server.storage.flushPendingTraces();
+
     const res = await fetch(`${baseUrl}/api/health`);
     assert.equal(res.status, 200);
     const health = await res.json();

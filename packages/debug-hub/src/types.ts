@@ -31,7 +31,7 @@ export interface LogEntry {
   level: LogLevel;
   message: string;
   source: LogSource;
-  trace: LogTrace;
+  trace?: LogTrace;
   tags?: Record<string, string>;
   data?: Record<string, unknown>;
   error?: LogError;

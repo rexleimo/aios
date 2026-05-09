@@ -105,6 +105,7 @@ describe('Storage', () => {
       trace: { traceId: 'trace-auto', spanId: 'child', parentSpanId: 'root' },
     }));
 
+    await storage.flushPendingTraces();
     const traces = await storage.listTraces();
     assert.equal(traces.length, 1);
     assert.equal(traces[0].traceId, 'trace-auto');

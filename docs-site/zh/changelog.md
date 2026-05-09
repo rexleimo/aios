@@ -15,7 +15,7 @@ description: 版本历史、升级说明与文档变更入口。
 ## 最新稳定版
 
 - `1.10.0`（2026-05-09）：
-  - **debug-hub v0.2**：新增自动 Trace 物化、agent 调试会话、结构化证据事件、`/api/health`，以及 `timeline`、`health`、`compact_context` MCP 工具。详见 [debug-hub](debug-hub.md)。
+  - **debug-hub v0.2**：新增自动 Trace 物化（防抖合并）、agent 调试会话、结构化证据事件、`/api/health`，以及 `timeline`、`health`、`compact_context` MCP 工具。包含 HTTP 端点输入校验、MCP 参数校验、路径穿越防护、大小写不敏感搜索和防抖索引优化。详见 [debug-hub](debug-hub.md)。
 
 - `1.8.0`（2026-05-08）：
   - 新增包装式 `codex`、`claude`、`gemini`、`opencode` 会话的自触发 harness 路由。

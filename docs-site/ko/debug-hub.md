@@ -92,6 +92,8 @@ curl -X POST http://localhost:39200/api/logs/single \
   }'
 ```
 
+`trace` 필드는 선택 사항입니다 — 트레이스가 필요 없는 로그는 생략 가능합니다. 배치 POST에서 유효하지 않은 항목은 건너뜁니다 (응답에 `written`/`skipped` 카운트 포함). 단일 항목 POST는 잘못된 페이로드에 대해 HTTP 400을 반환합니다.
+
 그런 다음 `http://localhost:39200`를 열어 대시보드에서 확인하세요.
 
 ---
@@ -141,11 +143,11 @@ trace.End()
 |------|-------------|
 | `debug_hub.list_traces` | 필터로 최근 실행 트레이스 목록 조회 |
 | `debug_hub.get_trace` | 특정 트레이스의 전체 스팬 트리 조회 |
-| `debug_hub.search_logs` | 키워드, 레벨, 시간 범위, 모듈, traceId로 검색 |
+| `debug_hub.search_logs` | 대소문자 구분 없이 키워드, 레벨, 시간 범위, 모듈, traceId로 검색 |
 | `debug_hub.get_stats` | 집계 카운트, 에러 요약, 레벨 분석 |
 | `debug_hub.clear_logs` | 보관 규칙으로 오래된 로그 정리 |
 | `debug_hub.start_session` | 목표와 워크스페이스 메타데이터가 있는 agent 디버깅 세션 생성 |
-| `debug_hub.record_event` | hypothesis, tool call, artifact, verification note 같은 구조화 증거 기록 |
+| `debug_hub.record_event` | 구조화 증거 기록 (유효하지 않은 level은 `info`, kind는 `note`로 기본값) |
 | `debug_hub.get_session` | 세션과 기록된 증거 조회 |
 | `debug_hub.timeline` | 간결한 시간순 증거 스트림 반환 |
 | `debug_hub.health` | 수집/스토리지 상태와 schema version 반환 |
@@ -205,7 +207,7 @@ debug-hub는 4개 컴포넌트를 하나의 Node.js 바이너리에 패키징합
 
 ## 향후 계획
 
-debug-hub는 0.2.0입니다. 최근 추가된 기능은 자동 Trace 물질화, agent 디버깅 세션, 구조화 증거 이벤트, 스토리지 헬스, 컴팩트 컨텍스트 팩입니다. 로드맵에는 다음이 포함됩니다:
+debug-hub는 0.2.0입니다. 최근 개선 사항으로는 자동 Trace 물질화(디바운스), agent 디버깅 세션, 구조화 증거 이벤트, HTTP 엔드포인트 입력 검증, MCP 인수 검증, 경로 탐색 방지, 대소문자 구분 없는 검색, 컴팩트 컨텍스트 팩이 포함됩니다. 로드맵에는 다음이 포함됩니다:
 
 - **Python SDK** — 더 넓은 AI/ML 에이전트 생태계용
 - **다중 에이전트 연관** — 오케스트레이터/워커 패턴을 위한 교차 에이전트 트레이스 연결

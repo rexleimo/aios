@@ -20,9 +20,18 @@ import type {
 
 export class Storage {
   private baseDir: string;
+  private traceTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private invalidEventCount = 0;
 
   constructor(baseDir: string) {
     this.baseDir = baseDir;
+  }
+
+  private sanitizeId(id: string): string {
+    if (id.includes('..') || id.includes('/') || id.includes('\\')) {
+      throw new Error(`Invalid id: "${id}" contains path traversal characters`);
+    }
+    return id;
   }
 
   private logsDir() { return join(this.baseDir, 'logs'); }
@@ -50,7 +59,7 @@ export class Storage {
   }
 
   private sessionFile(sessionId: string): string {
-    return join(this.sessionsDir(), `${sessionId}.json`);
+    return join(this.sessionsDir(), `${this.sanitizeId(sessionId)}.json`);
   }
 
   async writeLog(entry: LogEntry): Promise<void> {
@@ -58,7 +67,27 @@ export class Storage {
     const line = JSON.stringify(entry) + '\n';
     await appendFile(this.dailyFile(), line, 'utf-8');
     if (entry.trace?.traceId) {
-      await this.materializeTrace(entry.trace.traceId);
+      this.debounceMaterialize(entry.trace.traceId);
+    }
+  }
+
+  private debounceMaterialize(traceId: string): void {
+    const existing = this.traceTimers.get(traceId);
+    if (existing) clearTimeout(existing);
+    this.traceTimers.set(traceId, setTimeout(() => {
+      this.traceTimers.delete(traceId);
+      this.materializeTrace(traceId).catch(() => { /* best-effort */ });
+    }, 200));
+  }
+
+  async flushPendingTraces(): Promise<void> {
+    const pending = [...this.traceTimers.keys()];
+    for (const [traceId, timer] of this.traceTimers) {
+      clearTimeout(timer);
+    }
+    this.traceTimers.clear();
+    for (const traceId of pending) {
+      try { await this.materializeTrace(traceId); } catch { /* best-effort */ }
     }
   }
 
@@ -79,7 +108,8 @@ export class Storage {
     const parentBySpan = new Map<string, string | undefined>();
 
     for (const entry of logs) {
-      const spanId = entry.trace.spanId;
+      const spanId = entry.trace?.spanId;
+      if (!spanId) continue;
       const existing = spanMap.get(spanId);
       if (!existing) {
         spanMap.set(spanId, {
@@ -94,7 +124,7 @@ export class Storage {
 
       lastSeen.set(spanId, entry.timestamp);
       if (!parentBySpan.has(spanId)) {
-        parentBySpan.set(spanId, entry.trace.parentSpanId);
+        parentBySpan.set(spanId, entry.trace?.parentSpanId);
       }
     }
 
@@ -115,9 +145,10 @@ export class Storage {
       if (span.children?.length === 0) delete span.children;
     }
 
-    const rootEntry = logs.find(entry => !entry.trace.parentSpanId) ?? logs[0];
-    const rootSpan = spanMap.get(rootEntry.trace.spanId) ?? {
-      spanId: rootEntry.trace.spanId,
+    const rootEntry = logs.find(entry => !entry.trace?.parentSpanId) ?? logs[0];
+    const rootSpanId = rootEntry.trace?.spanId;
+    const rootSpan = (rootSpanId ? spanMap.get(rootSpanId) : undefined) ?? {
+      spanId: rootSpanId ?? 'unknown',
       message: rootEntry.message,
       level: rootEntry.level,
     };
@@ -152,6 +183,7 @@ export class Storage {
         if (!line.trim()) continue;
         try {
           entries.push(JSON.parse(line));
+          if (entries.length >= limit) break;
         } catch { /* skip malformed lines */ }
       }
       if (entries.length >= limit) break;
@@ -161,10 +193,21 @@ export class Storage {
 
   async searchLogs(query: SearchQuery): Promise<LogEntry[]> {
     const limit = query.limit ?? 100;
-    const all = await this.readLogs(limit * 5);
 
+    // Fast-path: traceId lookup from pre-materialized trace
+    if (query.traceId && !query.keyword && !query.level && !query.since && !query.module) {
+      return (await this.readLogs(limit * 5)).filter(
+        entry => entry.trace?.traceId === query.traceId
+      ).slice(0, limit);
+    }
+
+    // For since-filtered queries, read enough to satisfy the time window
+    const readLimit = query.since ? limit * 10 : limit * 5;
+    const all = await this.readLogs(readLimit);
+
+    const kw = query.keyword?.toLowerCase();
     return all.filter(entry => {
-      if (query.keyword && !entry.message.includes(query.keyword)) return false;
+      if (kw && !entry.message.toLowerCase().includes(kw)) return false;
       if (query.level && entry.level !== query.level) return false;
       if (query.since && entry.timestamp < query.since) return false;
       if (query.module && entry.source?.module !== query.module) return false;
@@ -175,15 +218,17 @@ export class Storage {
 
   async writeTrace(trace: Trace): Promise<void> {
     await this.ensureDirs();
-    const filePath = join(this.tracesDir(), `${trace.traceId}.json`);
+    const filePath = join(this.tracesDir(), `${this.sanitizeId(trace.traceId)}.json`);
     await writeFile(filePath, JSON.stringify(trace, null, 2), 'utf-8');
   }
 
   async getTrace(traceId: string): Promise<Trace | null> {
-    const filePath = join(this.tracesDir(), `${traceId}.json`);
+    const filePath = join(this.tracesDir(), `${this.sanitizeId(traceId)}.json`);
     if (!existsSync(filePath)) return null;
-    const content = await readFile(filePath, 'utf-8');
-    return JSON.parse(content);
+    try {
+      const content = await readFile(filePath, 'utf-8');
+      return JSON.parse(content);
+    } catch { return null; }
   }
 
   async listTraces(limit = 50): Promise<Trace[]> {
@@ -281,10 +326,13 @@ export class Storage {
   async getSession(sessionId: string): Promise<DebugSession | null> {
     const filePath = this.sessionFile(sessionId);
     if (!existsSync(filePath)) return null;
-    return JSON.parse(await readFile(filePath, 'utf-8'));
+    try {
+      return JSON.parse(await readFile(filePath, 'utf-8'));
+    } catch { return null; }
   }
 
   private async updateSessionTimestamp(sessionId: string, timestamp: number): Promise<void> {
+    // Re-read to reduce (not eliminate) the read-modify-write race window
     const session = await this.getSession(sessionId);
     if (!session) return;
     session.updatedAt = Math.max(session.updatedAt, timestamp);
@@ -341,7 +389,7 @@ export class Storage {
         if (!line.trim()) continue;
         try {
           events.push(JSON.parse(line));
-        } catch { /* health reports invalid counts in a later schema version */ }
+        } catch { this.invalidEventCount++; }
       }
       if (events.length >= limit) break;
     }
@@ -423,7 +471,7 @@ export class Storage {
       totalTraces: traces.length,
       totalSessions: sessions.length,
       totalEvents: events.length,
-      invalidEvents: 0,
+      invalidEvents: this.invalidEventCount,
       latestLogTimestamp,
     };
   }
@@ -431,10 +479,14 @@ export class Storage {
   async getCompactContext(query: { sessionId?: string; limit?: number } = {}): Promise<CompactContext> {
     const stats = await this.getStats();
     const session = query.sessionId ? await this.getSession(query.sessionId) : undefined;
+    // If sessionId was requested but not found, return empty timeline
+    const timeline = (query.sessionId && !session)
+      ? []
+      : await this.getTimeline({ sessionId: query.sessionId, limit: query.limit ?? 20 });
     return {
       session: session ?? undefined,
       stats,
-      timeline: await this.getTimeline({ sessionId: query.sessionId, limit: query.limit ?? 20 }),
+      timeline,
       recentErrors: stats.recentErrors,
     };
   }

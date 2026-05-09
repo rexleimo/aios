@@ -1,5 +1,22 @@
 import type { Storage } from './storage.js';
-import type { SearchQuery, LogLevel } from './types.js';
+import type { SearchQuery, LogLevel, DebugEventKind } from './types.js';
+
+const VALID_LEVELS = new Set<string>(['debug', 'info', 'warn', 'error', 'fatal']);
+const VALID_KINDS = new Set<string>(['log', 'hypothesis', 'tool_call', 'artifact', 'environment', 'verification', 'span', 'note']);
+
+function requireString(args: Record<string, unknown>, key: string): string | null {
+  const v = args[key];
+  if (typeof v !== 'string' || v.trim().length === 0) return null;
+  return v;
+}
+
+function validateLevel(level: unknown): LogLevel | undefined {
+  return VALID_LEVELS.has(level as string) ? (level as LogLevel) : undefined;
+}
+
+function validateKind(kind: unknown): DebugEventKind | undefined {
+  return VALID_KINDS.has(kind as string) ? (kind as DebugEventKind) : undefined;
+}
 
 export const mcpToolDefinitions = [
   {
@@ -137,13 +154,16 @@ export function createMcpHandler(storage: Storage) {
       case 'debug_hub.list_traces':
         return await storage.listTraces((args.limit as number) ?? 20);
 
-      case 'debug_hub.get_trace':
-        return await storage.getTrace(args.traceId as string);
+      case 'debug_hub.get_trace': {
+        const traceId = requireString(args, 'traceId');
+        if (!traceId) return { error: 'Missing required argument: traceId' };
+        return await storage.getTrace(traceId);
+      }
 
       case 'debug_hub.search_logs':
         return await storage.searchLogs({
           keyword: args.keyword as string | undefined,
-          level: args.level as LogLevel | undefined,
+          level: validateLevel(args.level),
           since: args.since as number | undefined,
           module: args.module as string | undefined,
           traceId: args.traceId as string | undefined,
@@ -157,31 +177,40 @@ export function createMcpHandler(storage: Storage) {
         await storage.clearLogs(args.olderThan as number | undefined);
         return { success: true };
 
-      case 'debug_hub.start_session':
+      case 'debug_hub.start_session': {
+        const objective = requireString(args, 'objective');
+        if (!objective) return { error: 'Missing required argument: objective' };
         return await storage.createSession({
           sessionId: args.sessionId as string | undefined,
-          objective: args.objective as string,
+          objective,
           workspace: args.workspace as string | undefined,
           agent: args.agent as string | undefined,
           tags: args.tags as Record<string, string> | undefined,
         });
+      }
 
-      case 'debug_hub.record_event':
+      case 'debug_hub.record_event': {
+        const message = requireString(args, 'message');
+        if (!message) return { error: 'Missing required argument: message' };
         return await storage.recordEvent({
           sessionId: args.sessionId as string | undefined,
           runId: args.runId as string | undefined,
           hypothesisId: args.hypothesisId as string | undefined,
-          kind: args.kind as any,
-          level: args.level as LogLevel | undefined,
-          message: args.message as string,
+          kind: validateKind(args.kind) ?? 'note',
+          level: validateLevel(args.level) ?? 'info',
+          message,
           payload: args.payload as Record<string, unknown> | undefined,
           trace: args.trace as any,
           source: args.source as any,
           tags: args.tags as Record<string, string> | undefined,
         });
+      }
 
-      case 'debug_hub.get_session':
-        return await storage.getSessionDetail(args.sessionId as string);
+      case 'debug_hub.get_session': {
+        const sessionId = requireString(args, 'sessionId');
+        if (!sessionId) return { error: 'Missing required argument: sessionId' };
+        return await storage.getSessionDetail(sessionId);
+      }
 
       case 'debug_hub.timeline':
         return await storage.getTimeline({
