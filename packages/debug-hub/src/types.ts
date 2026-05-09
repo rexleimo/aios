@@ -150,3 +150,23 @@ export interface CompactContext {
   timeline: TimelineItem[];
   recentErrors: Stats['recentErrors'];
 }
+
+export interface InstrumentFile {
+  path: string;
+  lineCount: number;
+}
+
+export interface InstrumentRecord {
+  sessionId: string;
+  marker: string;
+  instrumentedAt: number;
+  files: InstrumentFile[];
+}
+
+export interface CleanupReport {
+  sessionId: string;
+  filesScanned: number;
+  filesModified: number;
+  linesRemoved: number;
+  dryRun: boolean;
+}

@@ -14,6 +14,9 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 
 ## Latest Stable
 
+- `1.11.0` (2026-05-09):
+  - **debug-hub v0.3**: Instrumentation tracking and automatic cleanup. New MCP tools: `instrument`, `list_instruments`, `cleanup_instruments`. Marker convention `DH:<sessionId>` for zero-dependency debug log injection with dual-mode cleanup (explicit via instrument records, discovery via workspace grep). Dry-run support for safe cleanup preview. Cross-model debug protocol via workspace memory. Replaces upstream debug skill with debug-hub skill. See [debug-hub](debug-hub.md).
+
 - `1.10.0` (2026-05-09):
   - **debug-hub v0.2**: Adds automatic trace materialization (debounced), agent debugging sessions, structured evidence events, `/api/health`, and MCP tools for `timeline`, `health`, and `compact_context`. Includes input validation on HTTP endpoints, MCP argument validation, path-traversal hardening, case-insensitive search, and debounced trace indexing. See [debug-hub](debug-hub.md).
 

@@ -146,6 +146,52 @@ export const mcpToolDefinitions = [
       },
     },
   },
+  {
+    name: 'debug_hub.instrument',
+    description: 'Record files that were instrumented with debug logs for a session. Call after injecting DH:<sessionId> marker lines so cleanup can find them later.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Session ID these files belong to' },
+        files: {
+          type: 'array',
+          description: 'Files instrumented with debug logs',
+          items: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'Absolute file path' },
+              lineCount: { type: 'number', description: 'Approximate debug lines added' },
+            },
+            required: ['path'],
+          },
+        },
+      },
+      required: ['sessionId', 'files'],
+    },
+  },
+  {
+    name: 'debug_hub.list_instruments',
+    description: 'List recorded instrumentations, optionally filtered by session',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Optional session filter' },
+      },
+    },
+  },
+  {
+    name: 'debug_hub.cleanup_instruments',
+    description: 'Remove debug log lines tagged with DH:<sessionId> marker from instrumented files. Uses recorded instruments first; falls back to workspace grep if no records found. Safe to run multiple times (idempotent).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'Session ID whose debug lines to remove' },
+        dryRun: { type: 'boolean', description: 'Report without modifying files', default: false },
+        workspace: { type: 'string', description: 'Workspace root for grep discovery fallback' },
+      },
+      required: ['sessionId'],
+    },
+  },
 ];
 
 export function createMcpHandler(storage: Storage) {
@@ -226,6 +272,34 @@ export function createMcpHandler(storage: Storage) {
           sessionId: args.sessionId as string | undefined,
           limit: args.limit as number | undefined,
         });
+
+      case 'debug_hub.instrument': {
+        const sessionId = requireString(args, 'sessionId');
+        if (!sessionId) return { error: 'Missing required argument: sessionId' };
+        const files = args.files as { path: string; lineCount?: number }[] | undefined;
+        if (!files || !Array.isArray(files) || files.length === 0) {
+          return { error: 'Missing required argument: files (non-empty array)' };
+        }
+        for (const f of files) {
+          if (typeof f.path !== 'string' || f.path.trim().length === 0) {
+            return { error: 'Each file must have a non-empty path' };
+          }
+        }
+        return await storage.recordInstrument(sessionId, files as { path: string; lineCount: number }[]);
+      }
+
+      case 'debug_hub.list_instruments':
+        return await storage.listInstruments(args.sessionId as string | undefined);
+
+      case 'debug_hub.cleanup_instruments': {
+        const sessionId = requireString(args, 'sessionId');
+        if (!sessionId) return { error: 'Missing required argument: sessionId' };
+        return await storage.cleanupInstruments(
+          sessionId,
+          args.workspace as string | undefined,
+          (args.dryRun as boolean) ?? false,
+        );
+      }
 
       default:
         throw new Error(`Unknown tool: ${name}`);

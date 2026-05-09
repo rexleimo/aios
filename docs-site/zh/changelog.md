@@ -14,6 +14,9 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 最新稳定版
 
+- `1.11.0`（2026-05-09）：
+  - **debug-hub v0.3**：注入追踪与自动清理。新增 MCP 工具：`instrument`、`list_instruments`、`cleanup_instruments`。标记约定 `DH:<sessionId>` 实现零依赖调试代码注入与双模清理（显式通过 instrument 记录，回退通过 workspace grep）。支持 `dryRun` 安全预览。跨模型调试协议通过 workspace memory 共享。用 debug-hub skill 替换上游 debug skill。详见 [debug-hub](debug-hub.md)。
+
 - `1.10.0`（2026-05-09）：
   - **debug-hub v0.2**：新增自动 Trace 物化（防抖合并）、agent 调试会话、结构化证据事件、`/api/health`，以及 `timeline`、`health`、`compact_context` MCP 工具。包含 HTTP 端点输入校验、MCP 参数校验、路径穿越防护、大小写不敏感搜索和防抖索引优化。详见 [debug-hub](debug-hub.md)。
 

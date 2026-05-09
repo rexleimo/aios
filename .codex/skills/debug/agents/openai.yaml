@@ -1,4 +1,0 @@
-interface:
-  display_name: "Runtime Debug"
-  short_description: "Hypothesis-driven debugging with local log capture"
-  default_prompt: "Use $debug to adapt to the current host agent, attach to or start a local log collector, skip target-app health preflights unless startup failure is the bug, do not open project pages unless the user explicitly asks, use the collector dashboard as the only default page open, instrument the runtime, send browser logs directly to the collector endpoint when debugging frontend code, analyze the recorded log file, and prove the fix."

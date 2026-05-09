@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-05-09
+
+- feat(debug-hub): add instrumentation tracking and automatic cleanup (v0.3.0)
+  - New MCP tools: `debug_hub.instrument`, `debug_hub.list_instruments`, `debug_hub.cleanup_instruments`
+  - Marker convention `DH:<sessionId>` for zero-dependency debug log injection and cleanup
+  - Dual-mode cleanup: explicit (instrument records) and discovery (workspace grep fallback)
+  - Dry-run support for safe cleanup preview
+- feat(debug-hub): add debug-hub skill replacing upstream debug skill
+- feat(debug-hub): add cross-model debug instrumentation protocol via workspace memory
+
 ## [1.10.0] - 2026-05-09
 
 - feat(debug-hub): add agent debugging sessions and trace materialization

@@ -123,9 +123,13 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 その後 `http://localhost:39200` を開いてダッシュボードで確認できます。
 
-## 今後の予定
+## 0.1.0 以降の更新
 
-debug-hub は 0.1.0 です。ロードマップ:
+**v0.2 (2026-05-09):** 自動 Trace 物化（デバウンス）、agent デバッグセッション（`start_session`、`record_event`、`get_session`）、構造化証拠イベント、コンパクトタイムラインとコンテキストパック、`/api/health`、入力バリデーション、パストラバーサル保護。
+
+**v0.3 (2026-05-09):** インストルメンテーション追跡と自動クリーンアップ。新しい MCP ツール: `instrument`、`list_instruments`、`cleanup_instruments`。マーカー規約 `DH:<sessionId>` によるゼロ依存デバッグコード注入 — agent が 1 行の `__dh` レポーターを注入し、各デバッグ呼び出しをセッションマーカーでタグ付けし、バグ修正後に `cleanup_instruments` で全注入コードを除去。デュアルモードクリーンアップ（instrument 記録による明示的モード、workspace grep によるフォールバック）、`dryRun` プレビュー対応。
+
+## ロードマップ
 
 - **Python SDK** — より広範な AI/ML agent エコシステム向け
 - **トレース圧縮** — 長いトレースを agent フレンドリーなサマリーに圧縮し、コンテキストウィンドウを節約

@@ -37,7 +37,7 @@ coding agent がエラーループに陥ったり、判断で停滞したり、�
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">agent 用 MCP ツール</div>
     <div class="feature-card__desc">
-      ログ/Trace ツールに加えて <code>start_session</code>、<code>record_event</code>、<code>timeline</code>、<code>health</code>、<code>compact_context</code> を提供し、agent はログだけでなく実行証拠をクエリできます。
+      ログ/Trace ツールに加えて <code>start_session</code>、<code>record_event</code>、<code>instrument</code>、<code>cleanup_instruments</code> などを提供し、agent はデバッグコードを注入し、バグ修正後に自動クリーンアップできます。
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -152,6 +152,9 @@ trace.End()
 | `debug_hub.timeline` | コンパクトな時系列証拠ストリームを返す |
 | `debug_hub.health` | 取り込み/ストレージの健全性と schema version を返す |
 | `debug_hub.compact_context` | agent の再開/引き継ぎ用コンテキストパックを生成 |
+| `debug_hub.instrument` | デバッグコードが注入されたファイルを記録 |
+| `debug_hub.list_instruments` | セッションでフィルタ可能な注入記録を一覧表示 |
+| `debug_hub.cleanup_instruments` | `DH:<sessionId>` タグ付きデバッグコード行を削除（`dryRun` 対応） |
 
 ### 自己診断の例
 

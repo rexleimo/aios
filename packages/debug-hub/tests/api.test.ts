@@ -95,7 +95,7 @@ describe('HTTP API', () => {
     assert.equal(res.status, 200);
     const health = await res.json();
     assert.equal(health.status, 'ok');
-    assert.equal(health.schemaVersion, '0.2.0');
+    assert.equal(health.schemaVersion, '0.3.0');
     assert.equal(health.totalLogs, 1);
     assert.equal(health.totalTraces, 1);
     assert.ok(health.dataDir.includes('debug-hub-api-'));

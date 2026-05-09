@@ -37,7 +37,7 @@ debug-hub는 코딩 에이전트 전용으로 설계된 MCP 네이티브 디버�
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">에이전트용 MCP 도구</div>
     <div class="feature-card__desc">
-      로그/Trace 도구에 <code>start_session</code>, <code>record_event</code>, <code>timeline</code>, <code>health</code>, <code>compact_context</code>를 더해 agent가 로그뿐 아니라 런타임 증거를 쿼리할 수 있습니다.
+      로그/Trace 도구에 <code>start_session</code>, <code>record_event</code>, <code>instrument</code>, <code>cleanup_instruments</code> 등을 더해 agent가 디버그 코드를 주입하고 버그 수정 후 자동 정리할 수 있습니다.
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -152,6 +152,9 @@ trace.End()
 | `debug_hub.timeline` | 간결한 시간순 증거 스트림 반환 |
 | `debug_hub.health` | 수집/스토리지 상태와 schema version 반환 |
 | `debug_hub.compact_context` | agent 재개/인계를 위한 제한된 컨텍스트 팩 생성 |
+| `debug_hub.instrument` | 디버그 코드가 주입된 파일 기록 |
+| `debug_hub.list_instruments` | 세션별로 필터 가능한 주입 기록 목록 |
+| `debug_hub.cleanup_instruments` | `DH:<sessionId>` 태그된 디버그 코드 라인 제거 (`dryRun` 지원) |
 
 ### 자가 진단 예제
 

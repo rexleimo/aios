@@ -32,7 +32,7 @@ debug-hub is a single Node.js binary that packs four things into one process:
 | Component | Role |
 |-----------|------|
 | **HTTP API** | Receives logs from SDKs, serves search/stats endpoints |
-| **MCP Server** | Exposes 5 tools (`list_traces`, `get_trace`, `search_logs`, `get_stats`, `clear_logs`) for coding agents |
+| **MCP Server** | Exposes 14 tools (`list_traces`, `get_trace`, `search_logs`, `get_stats`, `clear_logs`, `start_session`, `record_event`, `get_session`, `timeline`, `health`, `compact_context`, `instrument`, `list_instruments`, `cleanup_instruments`) for coding agents |
 | **Embedded Web UI** | Dark-themed dashboard with log search, trace viewer, SSE live feed |
 | **File Storage** | JSONL files under `~/.debug-hub/` — directly readable by `cat`/`grep` |
 
@@ -122,9 +122,13 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 Then open `http://localhost:39200` to see it in the dashboard.
 
-## What's Next
+## What Shipped Since 0.1.0
 
-debug-hub is at 0.1.0. The roadmap includes:
+**v0.2 (2026-05-09):** Automatic trace materialization (debounced), agent debugging sessions (`start_session`, `record_event`, `get_session`), structured evidence events (hypotheses, tool calls, verification), compact timeline and context packs for agent handoff, `/api/health` endpoint, input validation, path-traversal hardening.
+
+**v0.3 (2026-05-09):** Instrumentation tracking and automatic cleanup. New MCP tools: `instrument`, `list_instruments`, `cleanup_instruments`. Marker convention `DH:<sessionId>` for zero-dependency debug code injection — agents inject a single-line `__dh` reporter, tag every debug call with the session marker, and `cleanup_instruments` strips all injected code when the bug is fixed. Dual-mode cleanup (explicit via instrument records, discovery via workspace grep) with `dryRun` preview.
+
+## Roadmap
 
 - **Python SDK** — for the broader AI/ML agent ecosystem
 - **Trace-aware compaction** — summarize long traces for context-window efficiency

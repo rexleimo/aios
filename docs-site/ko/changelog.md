@@ -14,6 +14,9 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 ## 최신 안정 버전
 
+- `1.11.0` (2026-05-09):
+  - **debug-hub v0.3**: 인스트루먼트 추적과 자동 정리. 새로운 MCP 도구: `instrument`, `list_instruments`, `cleanup_instruments`. 마커 규칙 `DH:<sessionId>`로 제로 의존성 디버그 코드 주입과 듀얼 모드 정리 (명시적 모드는 instrument 기록, 폴백은 workspace grep). `dryRun` 미리보기 지원. 워크스페이스 메모리를 통한 크로스 모델 디버그 프로토콜. 업스트림 debug 스킬을 debug-hub 스킬로 교체. 자세한 내용은 [debug-hub](debug-hub.md) 참조.
+
 - `1.10.0` (2026-05-09):
   - **debug-hub v0.2**: 자동 Trace 물질화(디바운스), agent 디버깅 세션, 구조화 증거 이벤트, `/api/health`, `timeline` / `health` / `compact_context` MCP 도구를 추가했습니다. HTTP 엔드포인트 입력 검증, MCP 인수 검증, 경로 탐색 방지, 대소문자 구분 없는 검색, 디바운스된 트레이스 인덱싱이 포함됩니다. 자세한 내용은 [debug-hub](debug-hub.md)를 참조하세요.
 

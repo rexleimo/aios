@@ -1,13 +1,17 @@
 import { readFile, writeFile, appendFile, mkdir, readdir, unlink, rm } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, relative, sep } from 'node:path';
 import { existsSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { execSync } from 'node:child_process';
 import type {
+  CleanupReport,
   CompactContext,
   DebugEvent,
   DebugEventKind,
   DebugSession,
   HealthReport,
+  InstrumentFile,
+  InstrumentRecord,
   LogEntry,
   LogLevel,
   SessionDetail,
@@ -38,12 +42,14 @@ export class Storage {
   private tracesDir() { return join(this.baseDir, 'traces'); }
   private sessionsDir() { return join(this.baseDir, 'sessions'); }
   private eventsDir() { return join(this.baseDir, 'events'); }
+  private instrumentsDir() { return join(this.baseDir, 'instruments'); }
 
   private async ensureDirs(): Promise<void> {
     await mkdir(this.logsDir(), { recursive: true });
     await mkdir(this.tracesDir(), { recursive: true });
     await mkdir(this.sessionsDir(), { recursive: true });
     await mkdir(this.eventsDir(), { recursive: true });
+    await mkdir(this.instrumentsDir(), { recursive: true });
   }
 
   private dailyFile(): string {
@@ -465,7 +471,7 @@ export class Storage {
 
     return {
       status: 'ok',
-      schemaVersion: '0.2.0',
+      schemaVersion: '0.3.0',
       dataDir: this.baseDir,
       totalLogs: logs.length,
       totalTraces: traces.length,
@@ -489,5 +495,108 @@ export class Storage {
       timeline,
       recentErrors: stats.recentErrors,
     };
+  }
+
+  // ── Instrumentation tracking ──────────────────────────────────────
+
+  private instrumentFile(sessionId: string): string {
+    return join(this.instrumentsDir(), `${this.sanitizeId(sessionId)}.json`);
+  }
+
+  async recordInstrument(sessionId: string, files: InstrumentFile[]): Promise<InstrumentRecord> {
+    await this.ensureDirs();
+    const marker = `DH:${sessionId}`;
+    const existing = await this.getInstrumentRecord(sessionId);
+    const merged = existing
+      ? [...existing.files, ...files].filter(
+          (f, i, arr) => arr.findIndex(x => x.path === f.path) === i,
+        )
+      : files;
+    const record: InstrumentRecord = {
+      sessionId,
+      marker,
+      instrumentedAt: Date.now(),
+      files: merged,
+    };
+    await writeFile(this.instrumentFile(sessionId), JSON.stringify(record, null, 2), 'utf-8');
+    return record;
+  }
+
+  private async getInstrumentRecord(sessionId: string): Promise<InstrumentRecord | null> {
+    const filePath = this.instrumentFile(sessionId);
+    if (!existsSync(filePath)) return null;
+    try {
+      return JSON.parse(await readFile(filePath, 'utf-8'));
+    } catch {
+      return null;
+    }
+  }
+
+  async listInstruments(sessionId?: string): Promise<InstrumentRecord[]> {
+    if (!existsSync(this.instrumentsDir())) return [];
+    const files = (await readdir(this.instrumentsDir()))
+      .filter(f => f.endsWith('.json'))
+      .sort()
+      .reverse();
+    const records: InstrumentRecord[] = [];
+    for (const file of files) {
+      try {
+        const record: InstrumentRecord = JSON.parse(
+          await readFile(join(this.instrumentsDir(), file), 'utf-8'),
+        );
+        if (!sessionId || record.sessionId === sessionId) records.push(record);
+      } catch { /* skip malformed */ }
+    }
+    return records;
+  }
+
+  async cleanupInstruments(
+    sessionId: string,
+    workspace?: string,
+    dryRun = false,
+  ): Promise<CleanupReport> {
+    const record = await this.getInstrumentRecord(sessionId);
+    let filePaths: string[];
+
+    if (record && record.files.length > 0) {
+      filePaths = record.files.map(f => f.path).filter(p => existsSync(p));
+    } else if (workspace) {
+      // Discovery fallback: grep the workspace for the marker
+      const marker = `DH:${sessionId}`;
+      try {
+        const out = execSync(
+          `grep -rl '${marker}' '${workspace}' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.rs' 2>/dev/null || true`,
+          { encoding: 'utf-8', timeout: 10000 },
+        ).trim();
+        filePaths = out ? out.split('\n') : [];
+      } catch {
+        filePaths = [];
+      }
+    } else {
+      filePaths = [];
+    }
+
+    let filesScanned = 0;
+    let filesModified = 0;
+    let linesRemoved = 0;
+
+    for (const filePath of filePaths) {
+      filesScanned++;
+      try {
+        const content = await readFile(filePath, 'utf-8');
+        const lines = content.split('\n');
+        const kept = lines.filter(line => !line.includes(`DH:${sessionId}`));
+        const removed = lines.length - kept.length;
+        if (removed > 0) {
+          linesRemoved += removed;
+          filesModified++;
+          if (!dryRun) {
+            await writeFile(filePath, kept.join('\n'), 'utf-8');
+          }
+        }
+      } catch { /* skip unreadable files */ }
+    }
+
+    return { sessionId, filesScanned, filesModified, linesRemoved, dryRun };
   }
 }

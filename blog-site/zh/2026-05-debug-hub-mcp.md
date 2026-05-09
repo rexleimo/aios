@@ -120,9 +120,13 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 打开 `http://localhost:39200` 就能在 Dashboard 看到。
 
-## 后续规划
+## 0.1.0 以来的更新
 
-debug-hub 目前是 0.1.0。路线图包括：
+**v0.2 (2026-05-09):** 自动 Trace 物化（防抖合并）、agent 调试会话（`start_session`、`record_event`、`get_session`）、结构化证据事件、紧凑时间线和上下文包、`/api/health`、输入校验、路径穿越防护。
+
+**v0.3 (2026-05-09):** 注入追踪与自动清理。新增 MCP 工具：`instrument`、`list_instruments`、`cleanup_instruments`。标记约定 `DH:<sessionId>` 实现零依赖调试代码注入——agent 注入一行 `__dh` reporter，每条调试调用标记会话 ID，修完 bug 后 `cleanup_instruments` 一键清理。双模清理（显式通过 instrument 记录，回退通过 workspace grep），支持 `dryRun` 预览。
+
+## 路线图
 
 - **Python SDK** — 覆盖更广的 AI/ML agent 生态
 - **Trace 压缩** — 把长 trace 总结为 agent 友好的摘要，不占满 context window

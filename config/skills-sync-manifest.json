@@ -19,8 +19,8 @@
       "repoTargets": ["codex", "claude", "gemini", "opencode", "agents"]
     },
     {
-      "relativeSkillPath": "debug",
-      "installCatalogName": "debug",
+      "relativeSkillPath": "debug-hub",
+      "installCatalogName": "debug-hub",
       "repoTargets": ["codex", "claude", "gemini", "opencode", "agents"]
     },
     {

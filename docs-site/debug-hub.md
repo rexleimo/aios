@@ -37,7 +37,7 @@ This breaks down for long-running harness jobs, overnight runs, and multi-agent 
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">MCP Tools for Agents</div>
     <div class="feature-card__desc">
-      Trace/log tools plus <code>start_session</code>, <code>record_event</code>, <code>timeline</code>, <code>health</code>, and <code>compact_context</code> — agents can query runtime evidence, not just logs.
+      Trace/log tools plus <code>start_session</code>, <code>record_event</code>, <code>instrument</code>, <code>cleanup_instruments</code>, and more — agents can query runtime evidence, inject debug code, and auto-cleanup after fixing bugs.
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -88,7 +88,7 @@ curl -X POST http://localhost:39200/api/logs/single \
     "message": "hello from debug-hub",
     "source": {},
     "trace": {"traceId": "t1", "spanId": "s1"},
-    "sdk": {"name": "test", "version": "0.2.0", "runtime": "node"}
+    "sdk": {"name": "test", "version": "0.3.0", "runtime": "node"}
   }'
 ```
 
@@ -152,6 +152,26 @@ trace.End()
 | `debug_hub.timeline` | Return a compact chronological evidence stream |
 | `debug_hub.health` | Report ingest/storage health and schema version |
 | `debug_hub.compact_context` | Build a bounded handoff context pack for agent resume |
+| `debug_hub.instrument` | Record files instrumented with debug logs for a session |
+| `debug_hub.list_instruments` | List recorded instrumentations, optionally filtered by session |
+| `debug_hub.cleanup_instruments` | Remove debug log lines tagged with `DH:<sessionId>` (supports `dryRun`) |
+
+### Debug Instrumentation Flow
+
+Agent debugging a project can inject zero-dependency instrumentation and clean up after:
+
+1. **Start session**: `debug_hub.start_session { objective: "debug payment timeout" }`
+2. **Inject reporter** at the top of the first modified file:
+   ```js
+   const __dh=async(m,d)=>{try{await fetch('http://127.0.0.1:39200/api/logs/single',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:crypto.randomUUID(),timestamp:Date.now(),level:'debug',message:m,data:d,sdk:{name:'dh',version:'1',runtime:'node'}})})}catch{}}
+   ```
+3. **Tag debug calls** with `DH:<sessionId>`:
+   ```js
+   __dh('DH:sess-abc user state', {user});
+   ```
+4. **Record instrumentation**: `debug_hub.instrument { sessionId, files: [{path, lineCount}] }`
+5. **Reproduce & analyze**: `debug_hub.search_logs { keyword: "sess-abc" }`
+6. **Cleanup after fix**: `debug_hub.cleanup_instruments { sessionId }`
 
 ### Self-Diagnosis Example
 
@@ -207,11 +227,12 @@ Distributed orchestrator/worker patterns can correlate traces across agent bound
 
 ## What's Next
 
-debug-hub is at 0.2.0. Recent improvements include automatic trace materialization (debounced), agent debugging sessions, structured evidence events, input validation on HTTP endpoints, MCP argument validation, path-traversal hardening, case-insensitive search, and compact context packs. The roadmap includes:
+debug-hub is at 0.3.0. v0.3 adds instrumentation tracking and automatic cleanup: agents inject zero-dependency debug code with session-scoped markers, debug-hub tracks which files were modified, and `cleanup_instruments` strips all injected code when the bug is fixed. The roadmap includes:
 
 - **Python SDK** — for the broader AI/ML agent ecosystem
 - **Multi-agent correlation** — cross-agent trace linking for orchestrator/worker patterns
 - **Persistent alert rules** — agent-configurable watch conditions that fire on log patterns
+- **Go SDK** — for Go-based agent runtimes
 
 ---
 

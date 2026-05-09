@@ -39,6 +39,9 @@ Available MCP tools:
 - `debug_hub.timeline` — Return a compact chronological evidence stream
 - `debug_hub.health` — Report ingest/storage health and schema version
 - `debug_hub.compact_context` — Build a bounded handoff context pack
+- `debug_hub.instrument` — Record files instrumented with debug logs for a session
+- `debug_hub.list_instruments` — List recorded instrumentations, optionally filtered by session
+- `debug_hub.cleanup_instruments` — Remove debug log lines tagged with `DH:<sessionId>` marker
 
 ### Agent Debugging Sessions
 
@@ -55,6 +58,36 @@ Available MCP tools:
 ```
 
 Agents can then record hypotheses, tool calls, reproduction runs, artifacts, and verification notes with `debug_hub.record_event`. Logs remain available as JSONL, but v0.2 also keeps session/event indexes so an agent can query a timeline or compact handoff pack without reading raw noisy logs.
+
+**v0.3.0** introduces instrumentation tracking and automatic cleanup:
+
+```json
+{
+  "tool": "debug_hub.instrument",
+  "arguments": {
+    "sessionId": "checkout-debug",
+    "files": [
+      { "path": "/repo/src/checkout.ts", "lineCount": 3 },
+      { "path": "/repo/src/payment.ts", "lineCount": 2 }
+    ]
+  }
+}
+```
+
+After fixing the bug, call `debug_hub.cleanup_instruments` to strip all injected debug lines. Use `dryRun: true` first to preview. If the agent forgot to call `instrument`, pass `workspace` for grep-based discovery.
+
+### Instrumentation Protocol
+
+When injecting debug logs into a target project, use this zero-dependency reporter:
+
+```js
+const __dh=async(m,d)=>{try{await fetch('http://127.0.0.1:39200/api/logs/single',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:crypto.randomUUID(),timestamp:Date.now(),level:'debug',message:m,data:d,sdk:{name:'dh',version:'1',runtime:'node'}})})}catch{}}
+
+// Tag every debug call with DH:<sessionId>
+__dh('DH:sess-abc user state', {user});
+```
+
+Cleanup strips all lines containing `DH:<sessionId>` — the `__dh` helper and every call site.
 
 Invalid entries in batch POST /api/logs are skipped (response includes `written` and `skipped` counts). Single-entry POST /api/logs/single returns HTTP 400 for malformed payloads.
 
@@ -127,14 +160,15 @@ trace.End()
 
 ## Storage
 
-Logs, traces, sessions, and events are stored in `~/.debug-hub/` as JSON files:
+Logs, traces, sessions, events, and instruments are stored in `~/.debug-hub/` as JSON files:
 
 ```
 ~/.debug-hub/
 ├── logs/2026-04-30.jsonl       # Daily log stream
 ├── traces/{traceId}.json       # Derived trace files
 ├── sessions/{sessionId}.json   # Agent debugging sessions
-└── events/2026-04-30.jsonl     # Structured evidence events
+├── events/2026-04-30.jsonl     # Structured evidence events
+└── instruments/{sessionId}.json # Instrumentation records
 ```
 
 Agents can directly read these files with `cat` or `grep`. When logs share a `traceId`, debug-hub automatically materializes `traces/{traceId}.json` so `debug_hub.get_trace` works even if callers only reported log entries.

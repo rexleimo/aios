@@ -37,7 +37,7 @@ debug-hub 是专为 coding agent 设计的 MCP 原生调试日志服务。它将
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">Agent 可用的 MCP 工具</div>
     <div class="feature-card__desc">
-      日志/Trace 工具加上 <code>start_session</code>、<code>record_event</code>、<code>timeline</code>、<code>health</code>、<code>compact_context</code> — agent 可以查询运行时证据，而不只是日志。
+      日志/Trace 工具加上 <code>start_session</code>、<code>record_event</code>、<code>instrument</code>、<code>cleanup_instruments</code> 等 — agent 可以注入调试代码，修完 bug 后自动清理。
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -152,6 +152,26 @@ trace.End()
 | `debug_hub.timeline` | 返回紧凑的时间线证据流 |
 | `debug_hub.health` | 返回采集/存储健康状态和 schema version |
 | `debug_hub.compact_context` | 为 agent 恢复/交接生成受限上下文包 |
+| `debug_hub.instrument` | 记录被注入调试日志的文件信息 |
+| `debug_hub.list_instruments` | 列出已记录的注入记录，可按 session 过滤 |
+| `debug_hub.cleanup_instruments` | 删除所有带 `DH:<sessionId>` 标记的调试代码（支持 `dryRun`） |
+
+### 调试注入流程
+
+Agent 在为项目注入调试代码时可以：
+
+1. **启动会话**：`debug_hub.start_session { objective: "调试支付超时" }`
+2. **注入 reporter** 到首个修改文件的顶部：
+   ```js
+   const __dh=async(m,d)=>{try{await fetch('http://127.0.0.1:39200/api/logs/single',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:crypto.randomUUID(),timestamp:Date.now(),level:'debug',message:m,data:d,sdk:{name:'dh',version:'1',runtime:'node'}})})}catch{}}
+   ```
+3. **标记调试调用**，使用 `DH:<sessionId>`：
+   ```js
+   __dh('DH:sess-abc 用户状态', {user});
+   ```
+4. **记录注入信息**：`debug_hub.instrument { sessionId, files: [{path, lineCount}] }`
+5. **复现并分析**：`debug_hub.search_logs { keyword: "sess-abc" }`
+6. **修复后清理**：`debug_hub.cleanup_instruments { sessionId }`
 
 ### 自我诊断示例
 
@@ -207,11 +227,12 @@ debug-hub 是一个 Node.js 二进制文件，整合了四个组件：
 
 ## 路线图
 
-debug-hub 当前为 0.2.0 版本。近期改进包括自动 Trace 物化（防抖合并）、agent 调试会话、结构化证据事件、HTTP 端点输入校验、MCP 参数校验、路径穿越防护、大小写不敏感搜索和紧凑上下文包。路线图包括：
+debug-hub 当前为 0.3.0 版本。v0.3 新增注入追踪和自动清理：agent 注入零依赖调试代码并带上会话级标记，debug-hub 追踪修改了哪些文件，修完 bug 后 `cleanup_instruments` 一键清理。路线图包括：
 
 - **Python SDK** — 面向更广泛的 AI/ML agent 生态系统
 - **多 agent 关联** — 编排器/工作器模式的跨 agent 调用链链接
 - **持久告警规则** — agent 可配置的监控条件，在日志模式触发时告警
+- **Go SDK** — 面向 Go 编写的 agent 运行时
 
 ---
 

@@ -148,7 +148,7 @@ describe('MCP Tools', () => {
 
     const health = await handler('debug_hub.health', {});
     assert.equal(health.status, 'ok');
-    assert.equal(health.schemaVersion, '0.2.0');
+    assert.equal(health.schemaVersion, '0.3.0');
     assert.equal(health.totalSessions, 1);
     assert.equal(health.totalEvents, 1);
     assert.ok(health.dataDir.includes('debug-hub-mcp-'));
@@ -176,6 +176,166 @@ describe('MCP Tools', () => {
     assert.equal(context.recentErrors[0].message, 'checkout failed');
     assert.ok(context.timeline.length <= 5);
     assert.ok(context.timeline.some((item: any) => item.message === 'payment API is unavailable'));
+  });
+
+  it('debug_hub.instrument should record instrumented files for a session', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-instr-1',
+      objective: 'debug auth flow',
+    });
+
+    const record = await handler('debug_hub.instrument', {
+      sessionId: 'session-instr-1',
+      files: [
+        { path: '/repo/src/auth.ts', lineCount: 3 },
+        { path: '/repo/src/middleware.ts', lineCount: 2 },
+      ],
+    });
+
+    assert.equal(record.sessionId, 'session-instr-1');
+    assert.equal(record.marker, 'DH:session-instr-1');
+    assert.equal(record.files.length, 2);
+  });
+
+  it('debug_hub.instrument should merge with previous records for same session', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-instr-merge',
+      objective: 'debug checkout',
+    });
+
+    await handler('debug_hub.instrument', {
+      sessionId: 'session-instr-merge',
+      files: [{ path: '/repo/src/a.ts', lineCount: 1 }],
+    });
+    const record = await handler('debug_hub.instrument', {
+      sessionId: 'session-instr-merge',
+      files: [{ path: '/repo/src/b.ts', lineCount: 2 }],
+    });
+
+    assert.equal(record.files.length, 2);
+  });
+
+  it('debug_hub.instrument should reject missing sessionId', async () => {
+    const result = await handler('debug_hub.instrument', {
+      files: [{ path: '/x.ts' }],
+    });
+    assert.ok(result.error);
+  });
+
+  it('debug_hub.instrument should reject empty files array', async () => {
+    const result = await handler('debug_hub.instrument', {
+      sessionId: 's1',
+      files: [],
+    });
+    assert.ok(result.error);
+  });
+
+  it('debug_hub.list_instruments should list all instrument records', async () => {
+    await handler('debug_hub.instrument', {
+      sessionId: 'list-1',
+      files: [{ path: '/repo/a.ts' }],
+    });
+    await handler('debug_hub.instrument', {
+      sessionId: 'list-2',
+      files: [{ path: '/repo/b.ts' }],
+    });
+
+    const all = await handler('debug_hub.list_instruments', {});
+    assert.equal(all.length, 2);
+
+    const filtered = await handler('debug_hub.list_instruments', { sessionId: 'list-1' });
+    assert.equal(filtered.length, 1);
+    assert.equal(filtered[0].sessionId, 'list-1');
+  });
+
+  it('debug_hub.cleanup_instruments should remove debug lines (explicit mode)', async () => {
+    const sessionId = 'cleanup-explicit';
+    await handler('debug_hub.instrument', {
+      sessionId,
+      files: [{ path: '/repo/test.ts' }],
+    });
+
+    // Write a temp file simulating instrumented code
+    const tmpFile = join(tmpDir, 'test-cleanup.ts');
+    const { writeFile, readFile } = await import('node:fs/promises');
+    await writeFile(tmpFile, [
+      'import { foo } from "./bar";',
+      `console.log("// DH:${sessionId} user state", user);`,
+      `console.log("// DH:${sessionId} response", res);`,
+      'return result;',
+    ].join('\n'), 'utf-8');
+
+    // Update instrument record to point to real temp file
+    await handler('debug_hub.instrument', {
+      sessionId,
+      files: [{ path: tmpFile, lineCount: 2 }],
+    });
+
+    const report = await handler('debug_hub.cleanup_instruments', { sessionId });
+    assert.equal(report.filesScanned, 1);
+    assert.equal(report.filesModified, 1);
+    assert.equal(report.linesRemoved, 2);
+    assert.equal(report.dryRun, false);
+
+    const content = await readFile(tmpFile, 'utf-8');
+    assert.ok(!content.includes(`DH:${sessionId}`));
+    assert.ok(content.includes('import { foo }'));
+    assert.ok(content.includes('return result;'));
+  });
+
+  it('debug_hub.cleanup_instruments should support dryRun', async () => {
+    const sessionId = 'cleanup-dry';
+    const tmpFile = join(tmpDir, 'test-dry.ts');
+    const { writeFile, readFile } = await import('node:fs/promises');
+    const original = [
+      'import x from "x";',
+      `// DH:${sessionId} debug line`,
+      'export default x;',
+    ].join('\n');
+    await writeFile(tmpFile, original, 'utf-8');
+
+    await handler('debug_hub.instrument', {
+      sessionId,
+      files: [{ path: tmpFile, lineCount: 1 }],
+    });
+
+    const report = await handler('debug_hub.cleanup_instruments', { sessionId, dryRun: true });
+    assert.equal(report.linesRemoved, 1);
+    assert.equal(report.dryRun, true);
+
+    // File should be unchanged
+    const content = await readFile(tmpFile, 'utf-8');
+    assert.equal(content, original);
+  });
+
+  it('debug_hub.cleanup_instruments should reject missing sessionId', async () => {
+    const result = await handler('debug_hub.cleanup_instruments', {});
+    assert.ok(result.error);
+  });
+
+  it('debug_hub.cleanup_instruments discovery fallback should grep workspace', async () => {
+    const sessionId = 'cleanup-discovery';
+    const subDir = join(tmpDir, 'src');
+    const { mkdir, writeFile, readFile } = await import('node:fs/promises');
+    await mkdir(subDir, { recursive: true });
+
+    const tmpFile = join(subDir, 'discover.ts');
+    await writeFile(tmpFile, [
+      'const a = 1;',
+      `console.log("// DH:${sessionId} debug", a);`,
+      'const b = 2;',
+    ].join('\n'), 'utf-8');
+
+    // No instrument record — discovery via workspace grep
+    const report = await handler('debug_hub.cleanup_instruments', {
+      sessionId,
+      workspace: tmpDir,
+    });
+    assert.equal(report.filesScanned, 1);
+    assert.equal(report.linesRemoved, 1);
+
+    const content = await readFile(tmpFile, 'utf-8');
+    assert.ok(!content.includes(`DH:${sessionId}`));
   });
 
   it('should throw on unknown tool', async () => {
