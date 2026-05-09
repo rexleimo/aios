@@ -14,6 +14,9 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 ## 最新安定版
 
+- `1.10.0` (2026-05-09):
+  - **debug-hub v0.2**: 自動 Trace 物化、agent デバッグセッション、構造化証拠イベント、`/api/health`、`timeline` / `health` / `compact_context` MCP ツールを追加。詳細は [debug-hub](debug-hub.md)。
+
 - `1.8.0` (2026-05-08):
   - ラップされた `codex`、`claude`、`gemini`、`opencode` セッション向けの self-trigger harness routing を追加。
   - **Model Router**: Agent Team 向けのインテリジェントなマルチモデルディスパッチ。モデル能力レジストリ (8モデル)、タスクタイプからモデルへのルーティング、3つの CLI プロトコルアダプタ (claude/codex/gemini)、コスト昇順のフォールバックチェーン、Agent 呼び出し可能な `model-router` スキル、`AIOS_MODEL_{ROLE}` 環境変数オーバーライド、知覚フィードバックループ統合を含みます。詳細は [モデルルーター](model-router.md) を参照してください。

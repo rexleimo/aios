@@ -1,6 +1,6 @@
 # debug-hub
 
-Debug log collection service for coding agents.
+Debug log and structured evidence collection service for coding agents.
 
 ## Quick Start
 
@@ -33,6 +33,28 @@ Available MCP tools:
 - `debug_hub.search_logs` — Search logs
 - `debug_hub.get_stats` — Get statistics
 - `debug_hub.clear_logs` — Clear logs
+- `debug_hub.start_session` — Create an agent debugging session
+- `debug_hub.record_event` — Attach structured evidence to a session
+- `debug_hub.get_session` — Read a session with its recorded evidence
+- `debug_hub.timeline` — Return a compact chronological evidence stream
+- `debug_hub.health` — Report ingest/storage health and schema version
+- `debug_hub.compact_context` — Build a bounded handoff context pack
+
+### Agent Debugging Sessions
+
+```json
+{
+  "tool": "debug_hub.start_session",
+  "arguments": {
+    "sessionId": "checkout-debug",
+    "objective": "Find why checkout retries never recover",
+    "workspace": "/repo/app",
+    "agent": "codex-cli"
+  }
+}
+```
+
+Agents can then record hypotheses, tool calls, reproduction runs, artifacts, and verification notes with `debug_hub.record_event`. Logs remain available as JSONL, but v0.2 also keeps session/event indexes so an agent can query a timeline or compact handoff pack without reading raw noisy logs.
 
 ### HTTP API
 
@@ -44,6 +66,9 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 # Get stats
 curl http://localhost:39200/api/stats
+
+# Get storage health
+curl http://localhost:39200/api/health
 
 # Search logs
 curl 'http://localhost:39200/api/logs/search?level=error'
@@ -88,13 +113,14 @@ trace.End()
 
 ## Storage
 
-Logs are stored in `~/.debug-hub/` as JSON files:
+Logs, traces, sessions, and events are stored in `~/.debug-hub/` as JSON files:
 
 ```
 ~/.debug-hub/
-├── logs/2026-04-30.jsonl    # Daily log stream
-├── traces/{traceId}.json    # Trace files
-└── index.json               # Stats index
+├── logs/2026-04-30.jsonl       # Daily log stream
+├── traces/{traceId}.json       # Derived trace files
+├── sessions/{sessionId}.json   # Agent debugging sessions
+└── events/2026-04-30.jsonl     # Structured evidence events
 ```
 
-Agent can directly read these files with `cat` or `grep`.
+Agents can directly read these files with `cat` or `grep`. When logs share a `traceId`, debug-hub automatically materializes `traces/{traceId}.json` so `debug_hub.get_trace` works even if callers only reported log entries.

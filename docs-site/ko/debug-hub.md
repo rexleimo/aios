@@ -37,7 +37,7 @@ debug-hub는 코딩 에이전트 전용으로 설계된 MCP 네이티브 디버�
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">에이전트용 MCP 도구</div>
     <div class="feature-card__desc">
-      <code>list_traces</code>, <code>get_trace</code>, <code>search_logs</code>, <code>get_stats</code>, <code>clear_logs</code> — 에이전트가 자신의 런타임을 조회할 수 있는 5가지 도구.
+      로그/Trace 도구에 <code>start_session</code>, <code>record_event</code>, <code>timeline</code>, <code>health</code>, <code>compact_context</code>를 더해 agent가 로그뿐 아니라 런타임 증거를 쿼리할 수 있습니다.
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -88,7 +88,7 @@ curl -X POST http://localhost:39200/api/logs/single \
     "message": "hello from debug-hub",
     "source": {},
     "trace": {"traceId": "t1", "spanId": "s1"},
-    "sdk": {"name": "test", "version": "0.1.0", "runtime": "node"}
+    "sdk": {"name": "test", "version": "0.2.0", "runtime": "node"}
   }'
 ```
 
@@ -144,6 +144,12 @@ trace.End()
 | `debug_hub.search_logs` | 키워드, 레벨, 시간 범위, 모듈, traceId로 검색 |
 | `debug_hub.get_stats` | 집계 카운트, 에러 요약, 레벨 분석 |
 | `debug_hub.clear_logs` | 보관 규칙으로 오래된 로그 정리 |
+| `debug_hub.start_session` | 목표와 워크스페이스 메타데이터가 있는 agent 디버깅 세션 생성 |
+| `debug_hub.record_event` | hypothesis, tool call, artifact, verification note 같은 구조화 증거 기록 |
+| `debug_hub.get_session` | 세션과 기록된 증거 조회 |
+| `debug_hub.timeline` | 간결한 시간순 증거 스트림 반환 |
+| `debug_hub.health` | 수집/스토리지 상태와 schema version 반환 |
+| `debug_hub.compact_context` | agent 재개/인계를 위한 제한된 컨텍스트 팩 생성 |
 
 ### 자가 진단 예제
 
@@ -164,7 +170,7 @@ debug-hub는 4개 컴포넌트를 하나의 Node.js 바이너리에 패키징합
 | 컴포넌트 | 역할 |
 |-----------|------|
 | **HTTP API** | SDK에서 로그 수신, 검색/통계 엔드포인트 제공 |
-| **MCP 서버** | 코딩 에이전트용 5가지 쿼리 도구 노출 |
+| **MCP 서버** | 코딩 에이전트용 로그/Trace, 세션, 이벤트, 헬스, 타임라인, 컴팩트 컨텍스트 도구 제공 |
 | **내장 Web UI** | 다크 테마 대시보드와 로그 검색, 트레이스 뷰어, SSE 라이브 피드 |
 | **파일 스토리지** | `~/.debug-hub/` 아래 JSONL 파일 — 직접 읽을 수 있음 |
 
@@ -199,10 +205,9 @@ debug-hub는 4개 컴포넌트를 하나의 Node.js 바이너리에 패키징합
 
 ## 향후 계획
 
-debug-hub는 0.1.0입니다. 로드맵에는 다음이 포함됩니다:
+debug-hub는 0.2.0입니다. 최근 추가된 기능은 자동 Trace 물질화, agent 디버깅 세션, 구조화 증거 이벤트, 스토리지 헬스, 컴팩트 컨텍스트 팩입니다. 로드맵에는 다음이 포함됩니다:
 
 - **Python SDK** — 더 넓은 AI/ML 에이전트 생태계용
-- **트레이스 인식 압축** — 컨텍스트 윈도우 효율을 위한 긴 트레이스 요약
 - **다중 에이전트 연관** — 오케스트레이터/워커 패턴을 위한 교차 에이전트 트레이스 연결
 - **영구 알림 규칙** — 로그 패턴에서 발동하는 에이전트 구성 가능 감시 조건
 

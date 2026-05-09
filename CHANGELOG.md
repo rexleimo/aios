@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-05-09
+
+- feat(debug-hub): add agent debugging sessions and trace materialization
+
 ## [1.9.0] - 2026-05-08
 
 - Enable model-router per-phase team dispatch

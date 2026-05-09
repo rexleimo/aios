@@ -37,7 +37,7 @@ This breaks down for long-running harness jobs, overnight runs, and multi-agent 
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">MCP Tools for Agents</div>
     <div class="feature-card__desc">
-      <code>list_traces</code>, <code>get_trace</code>, <code>search_logs</code>, <code>get_stats</code>, <code>clear_logs</code> — 5 tools that let agents query their own runtime.
+      Trace/log tools plus <code>start_session</code>, <code>record_event</code>, <code>timeline</code>, <code>health</code>, and <code>compact_context</code> — agents can query runtime evidence, not just logs.
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -88,7 +88,7 @@ curl -X POST http://localhost:39200/api/logs/single \
     "message": "hello from debug-hub",
     "source": {},
     "trace": {"traceId": "t1", "spanId": "s1"},
-    "sdk": {"name": "test", "version": "0.1.0", "runtime": "node"}
+    "sdk": {"name": "test", "version": "0.2.0", "runtime": "node"}
   }'
 ```
 
@@ -144,6 +144,12 @@ trace.End()
 | `debug_hub.search_logs` | Search by keyword, level, time range, module, or traceId |
 | `debug_hub.get_stats` | Aggregate counts, error summary, level breakdown |
 | `debug_hub.clear_logs` | Clean up old logs with retention rules |
+| `debug_hub.start_session` | Create an agent debugging session with objective/workspace metadata |
+| `debug_hub.record_event` | Attach structured evidence such as hypotheses, tool calls, artifacts, or verification notes |
+| `debug_hub.get_session` | Read a session with its recorded evidence |
+| `debug_hub.timeline` | Return a compact chronological evidence stream |
+| `debug_hub.health` | Report ingest/storage health and schema version |
+| `debug_hub.compact_context` | Build a bounded handoff context pack for agent resume |
 
 ### Self-Diagnosis Example
 
@@ -164,7 +170,7 @@ debug-hub is a single Node.js binary that packs four components:
 | Component | Role |
 |-----------|------|
 | **HTTP API** | Receives logs from SDKs, serves search/stats endpoints |
-| **MCP Server** | Exposes 5 query tools for coding agents |
+| **MCP Server** | Exposes log/trace tools plus session, event, health, timeline, and compact context tools for coding agents |
 | **Embedded Web UI** | Dark-themed dashboard with log search, trace viewer, SSE live feed |
 | **File Storage** | JSONL files under `~/.debug-hub/` — directly readable |
 
@@ -199,10 +205,9 @@ Distributed orchestrator/worker patterns can correlate traces across agent bound
 
 ## What's Next
 
-debug-hub is at 0.1.0. The roadmap includes:
+debug-hub is at 0.2.0. Recent additions include automatic trace materialization, agent debugging sessions, structured evidence events, storage health, and compact context packs. The roadmap includes:
 
 - **Python SDK** — for the broader AI/ML agent ecosystem
-- **Trace-aware compaction** — summarize long traces for context-window efficiency
 - **Multi-agent correlation** — cross-agent trace linking for orchestrator/worker patterns
 - **Persistent alert rules** — agent-configurable watch conditions that fire on log patterns
 

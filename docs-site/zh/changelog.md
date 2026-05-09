@@ -14,6 +14,9 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 最新稳定版
 
+- `1.10.0`（2026-05-09）：
+  - **debug-hub v0.2**：新增自动 Trace 物化、agent 调试会话、结构化证据事件、`/api/health`，以及 `timeline`、`health`、`compact_context` MCP 工具。详见 [debug-hub](debug-hub.md)。
+
 - `1.8.0`（2026-05-08）：
   - 新增包装式 `codex`、`claude`、`gemini`、`opencode` 会话的自触发 harness 路由。
   - **Model Router（模型路由器）**：Agent Team 的智能多模型调度。包含模型能力注册表（8个模型）、任务类型到模型的路由、三种CLI协议适配器（claude/codex/gemini）、按成本升序的降级链、Agent可调用的 `model-router` skill、`AIOS_MODEL_{ROLE}` 环境变量覆盖，以及感知反馈循环集成。详见 [Model Router](model-router.md)。

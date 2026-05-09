@@ -98,6 +98,13 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
         return;
       }
 
+      // GET /api/health
+      if (method === 'GET' && url === '/api/health') {
+        const health = await storage.getHealth();
+        sendJson(res, 200, health);
+        return;
+      }
+
       // DELETE /api/logs
       if (method === 'DELETE' && url === '/api/logs') {
         await storage.clearLogs();

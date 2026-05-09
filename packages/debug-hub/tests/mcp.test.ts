@@ -68,6 +68,116 @@ describe('MCP Tools', () => {
     assert.equal(stats.totalLogs, 0);
   });
 
+  it('debug_hub.start_session should create an agent debugging session', async () => {
+    const session = await handler('debug_hub.start_session', {
+      sessionId: 'session-1',
+      objective: 'debug checkout failure',
+      workspace: '/repo/app',
+      agent: 'codex-cli',
+    });
+
+    assert.equal(session.sessionId, 'session-1');
+    assert.equal(session.objective, 'debug checkout failure');
+    assert.equal(session.status, 'active');
+    assert.equal(session.workspace, '/repo/app');
+    assert.equal(session.agent, 'codex-cli');
+  });
+
+  it('debug_hub.record_event should attach structured evidence to a session', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-1',
+      objective: 'debug checkout failure',
+    });
+
+    const event = await handler('debug_hub.record_event', {
+      sessionId: 'session-1',
+      kind: 'hypothesis',
+      level: 'info',
+      message: 'payment timeout is caused by stale config',
+      hypothesisId: 'h1',
+      payload: { configKey: 'PAYMENT_URL' },
+    });
+
+    assert.equal(event.sessionId, 'session-1');
+    assert.equal(event.kind, 'hypothesis');
+    assert.equal(event.hypothesisId, 'h1');
+
+    const detail = await handler('debug_hub.get_session', { sessionId: 'session-1' });
+    assert.equal(detail.session.sessionId, 'session-1');
+    assert.equal(detail.events.length, 1);
+    assert.equal(detail.events[0].message, 'payment timeout is caused by stale config');
+    assert.deepEqual(detail.events[0].payload, { configKey: 'PAYMENT_URL' });
+  });
+
+  it('debug_hub.timeline should return chronological session evidence', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-1',
+      objective: 'debug checkout failure',
+    });
+    await handler('debug_hub.record_event', {
+      sessionId: 'session-1',
+      kind: 'hypothesis',
+      message: 'config may be stale',
+      hypothesisId: 'h1',
+    });
+    await handler('debug_hub.record_event', {
+      sessionId: 'session-1',
+      kind: 'verification',
+      level: 'warn',
+      message: 'reproduction still fails',
+      runId: 'run-1',
+    });
+
+    const timeline = await handler('debug_hub.timeline', { sessionId: 'session-1' });
+    assert.equal(timeline.length, 2);
+    assert.equal(timeline[0].kind, 'hypothesis');
+    assert.equal(timeline[1].kind, 'verification');
+    assert.equal(timeline[1].runId, 'run-1');
+  });
+
+  it('debug_hub.health should report storage health for agent diagnostics', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-1',
+      objective: 'debug checkout failure',
+    });
+    await handler('debug_hub.record_event', {
+      sessionId: 'session-1',
+      kind: 'note',
+      message: 'collector is receiving evidence',
+    });
+
+    const health = await handler('debug_hub.health', {});
+    assert.equal(health.status, 'ok');
+    assert.equal(health.schemaVersion, '0.2.0');
+    assert.equal(health.totalSessions, 1);
+    assert.equal(health.totalEvents, 1);
+    assert.ok(health.dataDir.includes('debug-hub-mcp-'));
+  });
+
+  it('debug_hub.compact_context should produce a bounded handoff pack', async () => {
+    await handler('debug_hub.start_session', {
+      sessionId: 'session-1',
+      objective: 'debug checkout failure',
+    });
+    await storage.writeLog(makeEntry({
+      level: 'error',
+      message: 'checkout failed',
+      tags: { sessionId: 'session-1' },
+    }));
+    await handler('debug_hub.record_event', {
+      sessionId: 'session-1',
+      kind: 'hypothesis',
+      message: 'payment API is unavailable',
+    });
+
+    const context = await handler('debug_hub.compact_context', { sessionId: 'session-1', limit: 5 });
+    assert.equal(context.session.objective, 'debug checkout failure');
+    assert.equal(context.stats.errorCount, 1);
+    assert.equal(context.recentErrors[0].message, 'checkout failed');
+    assert.ok(context.timeline.length <= 5);
+    assert.ok(context.timeline.some((item: any) => item.message === 'payment API is unavailable'));
+  });
+
   it('should throw on unknown tool', async () => {
     await assert.rejects(
       () => handler('unknown_tool', {}),

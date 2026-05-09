@@ -90,6 +90,33 @@ describe('Storage', () => {
     assert.equal(detail.traceId, 't1');
   });
 
+  it('should materialize trace details from log entries with matching traceId', async () => {
+    await storage.writeLog(makeEntry({
+      id: 'root-log',
+      timestamp: 1000,
+      message: 'root span',
+      trace: { traceId: 'trace-auto', spanId: 'root' },
+    }));
+    await storage.writeLog(makeEntry({
+      id: 'child-log',
+      timestamp: 1100,
+      level: 'error',
+      message: 'child failed',
+      trace: { traceId: 'trace-auto', spanId: 'child', parentSpanId: 'root' },
+    }));
+
+    const traces = await storage.listTraces();
+    assert.equal(traces.length, 1);
+    assert.equal(traces[0].traceId, 'trace-auto');
+    assert.equal(traces[0].spanCount, 2);
+    assert.equal(traces[0].errorCount, 1);
+
+    const detail = await storage.getTrace('trace-auto');
+    assert.ok(detail);
+    assert.equal(detail.rootSpan.message, 'root span');
+    assert.equal(detail.rootSpan.children?.[0]?.message, 'child failed');
+  });
+
   it('should return stats', async () => {
     await storage.writeLog(makeEntry({ level: 'info' }));
     await storage.writeLog(makeEntry({ level: 'error' }));

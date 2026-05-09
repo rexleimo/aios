@@ -73,3 +73,80 @@ export interface SearchQuery {
   traceId?: string;
   limit?: number;
 }
+
+export type DebugSessionStatus = 'active' | 'completed' | 'failed';
+
+export interface DebugSession {
+  sessionId: string;
+  objective: string;
+  status: DebugSessionStatus;
+  startedAt: number;
+  updatedAt: number;
+  endedAt?: number;
+  workspace?: string;
+  agent?: string;
+  tags?: Record<string, string>;
+}
+
+export type DebugEventKind =
+  | 'log'
+  | 'hypothesis'
+  | 'tool_call'
+  | 'artifact'
+  | 'environment'
+  | 'verification'
+  | 'span'
+  | 'note';
+
+export interface DebugEvent {
+  eventId: string;
+  timestamp: number;
+  kind: DebugEventKind;
+  level: LogLevel;
+  message: string;
+  sessionId?: string;
+  runId?: string;
+  hypothesisId?: string;
+  trace?: LogTrace;
+  source?: LogSource;
+  payload?: Record<string, unknown>;
+  tags?: Record<string, string>;
+}
+
+export interface SessionDetail {
+  session: DebugSession;
+  events: DebugEvent[];
+  traces: Trace[];
+}
+
+export interface TimelineItem {
+  timestamp: number;
+  kind: DebugEventKind;
+  level: LogLevel;
+  message: string;
+  sessionId?: string;
+  runId?: string;
+  traceId?: string;
+  spanId?: string;
+  hypothesisId?: string;
+  payload?: Record<string, unknown>;
+}
+
+export interface HealthReport {
+  status: 'ok';
+  schemaVersion: string;
+  dataDir: string;
+  totalLogs: number;
+  totalTraces: number;
+  totalSessions: number;
+  totalEvents: number;
+  invalidEvents: number;
+  latestLogTimestamp?: number;
+}
+
+export interface CompactContext {
+  session?: DebugSession;
+  stats: Stats;
+  timeline: TimelineItem[];
+  recentErrors: Stats['recentErrors'];
+}

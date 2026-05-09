@@ -37,7 +37,7 @@ coding agent がエラーループに陥ったり、判断で停滞したり、�
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">agent 用 MCP ツール</div>
     <div class="feature-card__desc">
-      <code>list_traces</code>、<code>get_trace</code>、<code>search_logs</code>、<code>get_stats</code>、<code>clear_logs</code> — agent が自身のランタイムをクエリできる 5 つのツール。
+      ログ/Trace ツールに加えて <code>start_session</code>、<code>record_event</code>、<code>timeline</code>、<code>health</code>、<code>compact_context</code> を提供し、agent はログだけでなく実行証拠をクエリできます。
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -88,7 +88,7 @@ curl -X POST http://localhost:39200/api/logs/single \
     "message": "hello from debug-hub",
     "source": {},
     "trace": {"traceId": "t1", "spanId": "s1"},
-    "sdk": {"name": "test", "version": "0.1.0", "runtime": "node"}
+    "sdk": {"name": "test", "version": "0.2.0", "runtime": "node"}
   }'
 ```
 
@@ -144,6 +144,12 @@ trace.End()
 | `debug_hub.search_logs` | キーワード、レベル、時間範囲、モジュール、traceId で検索 |
 | `debug_hub.get_stats` | 集計カウント、エラーサマリー、レベル内訳 |
 | `debug_hub.clear_logs` | 保持ポリシーに基づいて古いログをクリーンアップ |
+| `debug_hub.start_session` | 目的とワークスペース情報を持つ agent デバッグセッションを作成 |
+| `debug_hub.record_event` | hypothesis、tool call、artifact、verification note などの構造化証拠を記録 |
+| `debug_hub.get_session` | セッションと記録された証拠を取得 |
+| `debug_hub.timeline` | コンパクトな時系列証拠ストリームを返す |
+| `debug_hub.health` | 取り込み/ストレージの健全性と schema version を返す |
+| `debug_hub.compact_context` | agent の再開/引き継ぎ用コンテキストパックを生成 |
 
 ### 自己診断の例
 
@@ -164,7 +170,7 @@ debug-hub は 4 つのコンポーネントをパックした単一の Node.js �
 | コンポーネント | 役割 |
 |-----------|------|
 | **HTTP API** | SDK からログを受信し、検索/統計エンドポイントを提供 |
-| **MCP Server** | coding agent 用に 5 つのクエリツールを公開 |
+| **MCP Server** | coding agent 用にログ/Trace、セッション、イベント、ヘルス、タイムライン、コンパクトコンテキストのツールを公開 |
 | **組み込み Web UI** | ログ検索、トレースビューア、SSE ライブフィード付きダークテーマダッシュボード |
 | **ファイルストレージ** | `~/.debug-hub/` 配下の JSONL ファイル — 直接読み取り可能 |
 
@@ -199,10 +205,9 @@ agent が再試行ループに陥った時、自身の最近のエラーログ�
 
 ## 今後の予定
 
-debug-hub は 0.1.0 です。ロードマップには：
+debug-hub は 0.2.0 です。最近の追加機能は、自動 Trace 物化、agent デバッグセッション、構造化証拠イベント、ストレージヘルス、コンパクトコンテキストパックです。ロードマップには：
 
 - **Python SDK** — より広い AI/ML agent エコシステム向け
-- **トレース対応圧縮** — コンテキストウィンドウ効率のため長いトレースを要約
 - **マルチ agent 相関** — オーケストレーター/ワーカーパターン向けクロス agent トレースリンク
 - **永続アラートルール** — ログパターンで発火する agent 設定可能な監視条件
 

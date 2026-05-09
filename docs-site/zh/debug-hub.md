@@ -37,7 +37,7 @@ debug-hub 是专为 coding agent 设计的 MCP 原生调试日志服务。它将
     <div class="feature-card__icon">🔧</div>
     <div class="feature-card__title">Agent 可用的 MCP 工具</div>
     <div class="feature-card__desc">
-      <code>list_traces</code>、<code>get_trace</code>、<code>search_logs</code>、<code>get_stats</code>、<code>clear_logs</code> — 5 个工具让 agent 查询自己的运行时状态。
+      日志/Trace 工具加上 <code>start_session</code>、<code>record_event</code>、<code>timeline</code>、<code>health</code>、<code>compact_context</code> — agent 可以查询运行时证据，而不只是日志。
     </div>
   </div>
   <div class="feature-card feature-card--tool">
@@ -88,7 +88,7 @@ curl -X POST http://localhost:39200/api/logs/single \
     "message": "hello from debug-hub",
     "source": {},
     "trace": {"traceId": "t1", "spanId": "s1"},
-    "sdk": {"name": "test", "version": "0.1.0", "runtime": "node"}
+    "sdk": {"name": "test", "version": "0.2.0", "runtime": "node"}
   }'
 ```
 
@@ -144,6 +144,12 @@ trace.End()
 | `debug_hub.search_logs` | 按关键词、级别、时间范围、模块或 traceId 搜索日志 |
 | `debug_hub.get_stats` | 聚合计数、错误摘要、级别分布 |
 | `debug_hub.clear_logs` | 根据保留规则清理旧日志 |
+| `debug_hub.start_session` | 创建带目标和工作区元数据的 agent 调试会话 |
+| `debug_hub.record_event` | 记录 hypothesis、tool call、artifact、verification note 等结构化证据 |
+| `debug_hub.get_session` | 读取会话及其证据事件 |
+| `debug_hub.timeline` | 返回紧凑的时间线证据流 |
+| `debug_hub.health` | 返回采集/存储健康状态和 schema version |
+| `debug_hub.compact_context` | 为 agent 恢复/交接生成受限上下文包 |
 
 ### 自我诊断示例
 
@@ -164,7 +170,7 @@ debug-hub 是一个 Node.js 二进制文件，整合了四个组件：
 | 组件 | 作用 |
 |-----------|------|
 | **HTTP API** | 接收来自 SDK 的日志，提供搜索/统计端点 |
-| **MCP Server** | 为 coding agent 暴露 5 个查询工具 |
+| **MCP Server** | 为 coding agent 暴露日志/Trace、会话、事件、健康、时间线和紧凑上下文工具 |
 | **内嵌 Web UI** | 暗色主题仪表盘，包含日志搜索、调用链查看器、SSE 实时推送 |
 | **文件存储** | `~/.debug-hub/` 下的 JSONL 文件 — 可直接读取 |
 
@@ -199,10 +205,9 @@ debug-hub 是一个 Node.js 二进制文件，整合了四个组件：
 
 ## 路线图
 
-debug-hub 当前为 0.1.0 版本。路线图包括：
+debug-hub 当前为 0.2.0 版本。近期新增自动 Trace 物化、agent 调试会话、结构化证据事件、存储健康状态和紧凑上下文包。路线图包括：
 
 - **Python SDK** — 面向更广泛的 AI/ML agent 生态系统
-- **调用链感知压缩** — 为上下文窗口效率总结长调用链
 - **多 agent 关联** — 编排器/工作器模式的跨 agent 调用链链接
 - **持久告警规则** — agent 可配置的监控条件，在日志模式触发时告警
 

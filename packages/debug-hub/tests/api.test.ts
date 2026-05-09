@@ -81,6 +81,23 @@ describe('HTTP API', () => {
     assert.equal(stats.errorCount, 1);
   });
 
+  it('GET /api/health should return debug-hub storage health', async () => {
+    await fetch(`${baseUrl}/api/logs/single`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(makeEntry({ message: 'health probe' })),
+    });
+
+    const res = await fetch(`${baseUrl}/api/health`);
+    assert.equal(res.status, 200);
+    const health = await res.json();
+    assert.equal(health.status, 'ok');
+    assert.equal(health.schemaVersion, '0.2.0');
+    assert.equal(health.totalLogs, 1);
+    assert.equal(health.totalTraces, 1);
+    assert.ok(health.dataDir.includes('debug-hub-api-'));
+  });
+
   it('GET /api/logs/search should search logs', async () => {
     await fetch(`${baseUrl}/api/logs/single`, {
       method: 'POST',

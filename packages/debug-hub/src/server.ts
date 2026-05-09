@@ -30,7 +30,7 @@ export async function startServer(options: ServerOptions = {}): Promise<{ http: 
 
   // Create MCP server
   const mcp = new Server(
-    { name: 'debug-hub', version: '0.1.0' },
+    { name: 'debug-hub', version: '0.2.0' },
     { capabilities: { tools: {} } }
   );
 
