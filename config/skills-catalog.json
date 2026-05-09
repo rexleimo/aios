@@ -26,9 +26,9 @@
       "tags": ["general", "discovery"]
     },
     {
-      "name": "debug",
-      "description": "Evidence-first runtime debugging with a local NDJSON log collector.",
-      "source": "skill-sources/debug",
+      "name": "debug-hub",
+      "description": "Evidence-first debugging: inject zero-dependency log calls, collect via debug-hub HTTP API, analyze through MCP tools.",
+      "source": "skill-sources/debug-hub",
       "clients": ["codex", "claude", "gemini", "opencode"],
       "scopes": ["global", "project"],
       "defaultInstall": {
