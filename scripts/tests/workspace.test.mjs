@@ -13,6 +13,7 @@ import {
   readKnowledgeSnapshot,
   writeConflictMarker,
   readConflictMarkers,
+  buildAgentView,
 } from '../lib/contextdb/workspace.mjs';
 
 test('initWorkspace creates meta.json with version 1', async (t) => {
@@ -140,6 +141,41 @@ test('readConflictMarkers returns empty array when no conflicts', async (t) => {
     await initWorkspace(tmpDir);
     const markers = await readConflictMarkers(tmpDir);
     assert.deepEqual(markers, []);
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('buildAgentView assembles view from workspace and session data', async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    const { writeSkillIndex } = await import('../lib/contextdb/skill-index.mjs');
+    await writeSkillIndex(tmpDir, {
+      skills: [
+        { name: '发布笔记', file: 'memory/skills/发布笔记.json', keywords: ['发布'], taskTypes: ['content-publish'], version: 1 },
+      ],
+    });
+
+    const view = await buildAgentView(tmpDir, 'test-session', 'content-publish');
+    assert.equal(view.sessionId, 'test-session');
+    assert.equal(view.workspaceVersion, 1);
+    assert.ok(typeof view.projectContext === 'string');
+    assert.equal(view.relevantSkills.length, 1);
+    assert.equal(view.relevantSkills[0].name, '发布笔记');
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('buildAgentView with missing workspace returns default view', async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    const view = await buildAgentView(tmpDir, 'test-session');
+    assert.equal(view.sessionId, 'test-session');
+    assert.equal(view.workspaceVersion, 0);
+    assert.deepEqual(view.relevantSkills, []);
+    assert.equal(view.continuity, null);
   } finally {
     await rm(tmpDir, { recursive: true });
   }

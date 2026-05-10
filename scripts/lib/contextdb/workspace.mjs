@@ -145,3 +145,72 @@ export async function writeWorkspaceMeta(workspaceRoot, updates = {}) {
   await writeAtomicFile(metaPath, `${JSON.stringify(updated, null, 2)}\n`);
   return updated;
 }
+
+export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
+  let meta;
+  let projectContext = '';
+
+  try {
+    meta = await readWorkspaceMeta(workspaceRoot);
+    const contextPath = path.join(workspaceDir(workspaceRoot), 'project-context.md');
+    try {
+      projectContext = await fs.readFile(contextPath, 'utf8');
+    } catch {
+      projectContext = '';
+    }
+  } catch {
+    return {
+      sessionId,
+      workspaceVersion: 0,
+      projectContext: '',
+      relevantSkills: [],
+      activeTasks: [],
+      continuity: null,
+    };
+  }
+
+  const { readSkillIndex, findSkillsByTaskType } = await import('./skill-index.mjs');
+  const { readHandoffPacket } = await import('./handoff.mjs');
+
+  const index = await readSkillIndex(workspaceRoot);
+  const relevantSkills = taskType
+    ? findSkillsByTaskType(index, taskType)
+    : index.skills;
+
+  let continuity = null;
+  try {
+    const sessionsDir = path.join(path.resolve(workspaceRoot), 'memory', 'context-db', 'sessions');
+    const entries = await fs.readdir(sessionsDir);
+    let latestSessionId = '';
+    let latestMtime = 0;
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const metaPath = path.join(sessionsDir, entry.name, 'meta.json');
+      try {
+        const raw = await fs.readFile(metaPath, 'utf8');
+        const m = JSON.parse(raw);
+        const mtime = new Date(m.updated_at || m.updatedAt || m.created_at || m.createdAt || 0).getTime();
+        if (mtime > latestMtime && entry.name !== sessionId) {
+          latestMtime = mtime;
+          latestSessionId = entry.name;
+        }
+      } catch {
+        // skip
+      }
+    }
+    if (latestSessionId) {
+      continuity = await readHandoffPacket(workspaceRoot, latestSessionId);
+    }
+  } catch {
+    // no sessions
+  }
+
+  return {
+    sessionId,
+    workspaceVersion: meta.workspaceVersion,
+    projectContext,
+    relevantSkills,
+    activeTasks: [],
+    continuity,
+  };
+}
