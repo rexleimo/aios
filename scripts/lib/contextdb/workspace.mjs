@@ -180,7 +180,7 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
   let continuity = null;
   try {
     const sessionsDir = path.join(path.resolve(workspaceRoot), 'memory', 'context-db', 'sessions');
-    const entries = await fs.readdir(sessionsDir);
+    const entries = await fs.readdir(sessionsDir, { withFileTypes: true });
     let latestSessionId = '';
     let latestMtime = 0;
     for (const entry of entries) {
