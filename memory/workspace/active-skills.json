@@ -1,0 +1,221 @@
+{
+  "skills": [
+    {
+      "name": "cap 提交推送快捷指令",
+      "file": "cap提交推送.json",
+      "keywords": [
+        "cap",
+        "commit + push",
+        "commit and push",
+        "提交并推送"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "publish笔记",
+      "file": "publish笔记.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "互动操作",
+      "file": "互动操作.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "人类行为模拟",
+      "file": "人类行为模拟.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "内容策略选择",
+      "file": "内容策略选择.json",
+      "keywords": [
+        "策略选择",
+        "内容策略",
+        "大纲生成",
+        "结构规划",
+        "笔记结构",
+        "storyboard"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "内容选题规划",
+      "file": "内容选题规划.json",
+      "keywords": [
+        "选题",
+        "写什么",
+        "内容规划",
+        "话题推荐",
+        "写什么内容"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "剧本式多图生成",
+      "file": "剧本式多图生成.json",
+      "keywords": [
+        "剧本",
+        "分镜",
+        "漫画",
+        "多图",
+        "连载",
+        "故事",
+        "小剧场",
+        "条漫",
+        "系列图",
+        "连续画面"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "即梦AI生成图片",
+      "file": "即梦AI生成图片.json",
+      "keywords": [
+        "即梦生成图片",
+        "AI生成图片",
+        "用即梦做图",
+        "jimeng生成",
+        "即梦出图"
+      ],
+      "taskTypes": [],
+      "version": "1.1.0",
+      "lastUsed": null
+    },
+    {
+      "name": "反检测脚本",
+      "file": "反检测脚本.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "发布小红书笔记",
+      "file": "发布笔记.json",
+      "keywords": [
+        "发布笔记",
+        "发小红书",
+        "发笔记",
+        "写笔记"
+      ],
+      "taskTypes": [
+        "xiaohongshu",
+        "jimeng",
+        "baoyu-xhs-images"
+      ],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "技能使用约束",
+      "file": "技能使用约束.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "数据分析",
+      "file": "数据分析.json",
+      "keywords": [],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "智能内容分析",
+      "file": "智能内容分析.json",
+      "keywords": [
+        "分析内容",
+        "内容诊断",
+        "笔记分析",
+        "爆款潜力",
+        "内容优化",
+        "pre-analysis"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "智能发布工作流",
+      "file": "智能发布工作流.json",
+      "keywords": [
+        "发布笔记",
+        "publish",
+        "发小红书",
+        "上传笔记",
+        "定时发布",
+        "dry-run",
+        "预览发布"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "热点追踪分析",
+      "file": "热点追踪分析.json",
+      "keywords": [
+        "热点",
+        "趋势",
+        "热门",
+        "分析",
+        "爆款",
+        "追踪"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "生成小红书配图",
+      "file": "生成小红书配图.json",
+      "keywords": [
+        "生成图片",
+        "做张图",
+        "配图",
+        "封面图",
+        "即梦",
+        "AI配图",
+        "小红书配图",
+        "出图",
+        "画图"
+      ],
+      "taskTypes": [],
+      "version": "2.0.0",
+      "lastUsed": null
+    },
+    {
+      "name": "视频笔记发布",
+      "file": "视频笔记发布.json",
+      "keywords": [
+        "发视频",
+        "视频笔记",
+        "短视频",
+        "发布视频"
+      ],
+      "taskTypes": [],
+      "version": "1.0.0",
+      "lastUsed": null
+    }
+  ]
+}
