@@ -1072,6 +1072,32 @@ function resolveWorkspaceRoot(cwd) {
   return cwd;
 }
 
+async function handleWorkspaceCommand(command, workspaceRoot) {
+  if (command === 'workspace-init') {
+    const { initWorkspace } = await import('./lib/contextdb/workspace.mjs');
+    const { buildSkillIndex, writeSkillIndex } = await import('./lib/contextdb/skill-index.mjs');
+    const result = await initWorkspace(workspaceRoot);
+    const index = await buildSkillIndex(workspaceRoot);
+    await writeSkillIndex(workspaceRoot, index);
+    console.log(JSON.stringify({ ...result, skillCount: index.skills.length }, null, 2));
+    return;
+  }
+  if (command === 'workspace-sync') {
+    const { buildSkillIndex, writeSkillIndex } = await import('./lib/contextdb/skill-index.mjs');
+    const index = await buildSkillIndex(workspaceRoot);
+    await writeSkillIndex(workspaceRoot, index);
+    console.log(JSON.stringify({ synced: index.skills.length }, null, 2));
+    return;
+  }
+  if (command === 'workspace-doctor') {
+    const { runDoctorChecks } = await import('./lib/contextdb/doctor.mjs');
+    const report = await runDoctorChecks(workspaceRoot);
+    console.log(JSON.stringify(report, null, 2));
+    if (report.status !== 'healthy') process.exitCode = 1;
+    return;
+  }
+}
+
 function parseArgs(argv) {
   const opts = {
     agent: '',
@@ -1790,6 +1816,14 @@ async function safeContextPack(workspaceRoot, { sessionId, eventLimit, packPath 
 }
 
 export async function runCtxAgent(argv = process.argv.slice(2)) {
+  // Workspace subcommands — handled before full arg parsing
+  const firstArg = argv[0];
+  if (firstArg === 'workspace-init' || firstArg === 'workspace-sync' || firstArg === 'workspace-doctor') {
+    const workspaceRoot = resolveWorkspaceRoot(process.cwd());
+    await handleWorkspaceCommand(firstArg, workspaceRoot);
+    return;
+  }
+
   const opts = parseArgs(argv);
   validateOpts(opts);
 
