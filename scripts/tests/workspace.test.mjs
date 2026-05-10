@@ -109,3 +109,38 @@ test('readKnowledgeSnapshot returns null when no snapshot exists', async (t) => 
     await rm(tmpDir, { recursive: true });
   }
 });
+
+test('writeConflictMarker creates a conflict file and readConflictMarkers lists it', async (t) => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    const conflict = {
+      file: 'memory/workspace/meta.json',
+      expectedVersion: 1,
+      actualVersion: 2,
+      attemptedBy: 'agent-x',
+      attemptedAt: new Date().toISOString(),
+    };
+    await writeConflictMarker(tmpDir, conflict);
+    const markers = await readConflictMarkers(tmpDir);
+    assert.equal(markers.length, 1);
+    assert.equal(markers[0].file, conflict.file);
+    assert.equal(markers[0].expectedVersion, 1);
+    assert.equal(markers[0].actualVersion, 2);
+    assert.equal(markers[0].attemptedBy, 'agent-x');
+    assert.ok(markers[0].detectedAt);
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('readConflictMarkers returns empty array when no conflicts', async (t) => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    const markers = await readConflictMarkers(tmpDir);
+    assert.deepEqual(markers, []);
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
