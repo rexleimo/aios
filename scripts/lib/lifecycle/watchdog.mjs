@@ -498,6 +498,11 @@ export async function runTodoEnforcerLoop(options = {}, { rootDir, io = console 
   let nudgeCount = normalizeNonNegativeInteger(options.initialNudgeCount, 0);
   const sessionId = normalizeText(options.sessionId);
 
+  let runContextDbCli = null;
+  try {
+    ({ runContextDbCli } = await import('../contextdb-cli.mjs'));
+  } catch { /* ContextDB not available, nudges will only log */ }
+
   for (let i = 0; i < maxIterations; i++) {
     const signals = await collectWatchdogSignals({
       rootDir,
@@ -513,17 +518,17 @@ export async function runTodoEnforcerLoop(options = {}, { rootDir, io = console 
       nudgeCount = action.nudgeCount;
       io.log(`[todo-enforcer] ${action.reason}`);
       io.log(`[todo-enforcer] nudge: ${action.message}`);
-      // Write nudge event to ContextDB for agent to pick up
-      try {
-        const { runContextDbCli } = await import('../contextdb-cli.mjs');
-        runContextDbCli([
-          'event:add', '--workspace', rootDir || process.cwd(),
-          '--session', sessionId || 'default',
-          '--role', 'system', '--kind', 'enforcer.nudge',
-          '--text', JSON.stringify({ message: action.message, nudgeCount, idleSeconds: idleState.idleSeconds }),
-          '--turn-id', `enforcer-${Date.now().toString(36)}`,
-        ]);
-      } catch { /* best-effort */ }
+      if (runContextDbCli) {
+        try {
+          runContextDbCli([
+            'event:add', '--workspace', rootDir || process.cwd(),
+            '--session', sessionId || 'default',
+            '--role', 'system', '--kind', 'enforcer.nudge',
+            '--text', JSON.stringify({ message: action.message, nudgeCount, idleSeconds: idleState.idleSeconds }),
+            '--turn-id', `enforcer-${Date.now().toString(36)}`,
+          ]);
+        } catch { /* best-effort */ }
+      }
     } else if (action.action === 'blocked') {
       io.log(`[todo-enforcer] ${action.reason}`);
       io.log(`[todo-enforcer] BLOCKED: ${action.message}`);

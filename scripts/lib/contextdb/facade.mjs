@@ -39,13 +39,13 @@ export function filterMemoriesByBudget(memories, budget = 'medium') {
   let totalTokens = 0;
   const result = [];
   for (const tier of allowedTiers) {
-    const budget = CONTEXT_TIERS[tier].tokenBudget;
+    const tierBudget = CONTEXT_TIERS[tier].tokenBudget;
     const tierMemories = memories
       .filter((m) => (m._tier || classifyMemoryTier(m)) === tier)
       .sort((a, b) => (b.accessCount || 0) - (a.accessCount || 0));
     for (const m of tierMemories) {
       const estimatedTokens = Math.ceil((m.text?.length || 0) / 4);
-      if (totalTokens + estimatedTokens > budget) break;
+      if (totalTokens + estimatedTokens > tierBudget) break;
       totalTokens += estimatedTokens;
       result.push({ ...m, _tier: tier, _estimatedTokens: estimatedTokens });
     }
