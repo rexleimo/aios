@@ -71,6 +71,59 @@ export async function readWorkspaceMeta(workspaceRoot) {
   return JSON.parse(content);
 }
 
+const KNOWLEDGE_SNAPSHOT_FILENAME = 'knowledge-snapshot.json';
+
+export async function writeKnowledgeSnapshot(workspaceRoot, snapshot) {
+  const snapPath = path.join(workspaceDir(workspaceRoot), KNOWLEDGE_SNAPSHOT_FILENAME);
+  await writeAtomicFile(snapPath, `${JSON.stringify(snapshot, null, 2)}\n`);
+  return snapshot;
+}
+
+export async function readKnowledgeSnapshot(workspaceRoot) {
+  const snapPath = path.join(workspaceDir(workspaceRoot), KNOWLEDGE_SNAPSHOT_FILENAME);
+  try {
+    const raw = await fs.readFile(snapPath, 'utf8');
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+const CONFLICTS_DIRNAME = 'conflicts';
+
+function conflictsDir(workspaceRoot) {
+  return path.join(workspaceDir(workspaceRoot), CONFLICTS_DIRNAME);
+}
+
+export async function writeConflictMarker(workspaceRoot, conflict) {
+  const dir = conflictsDir(workspaceRoot);
+  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const filePath = path.join(dir, `${timestamp}.json`);
+  await writeAtomicFile(filePath, `${JSON.stringify({
+    ...conflict,
+    detectedAt: new Date().toISOString(),
+  }, null, 2)}\n`);
+  return filePath;
+}
+
+export async function readConflictMarkers(workspaceRoot) {
+  const dir = conflictsDir(workspaceRoot);
+  try {
+    const entries = await fs.readdir(dir);
+    const markers = [];
+    for (const entry of entries) {
+      if (!entry.endsWith('.json')) continue;
+      try {
+        const raw = await fs.readFile(path.join(dir, entry), 'utf8');
+        markers.push(JSON.parse(raw));
+      } catch {}
+    }
+    return markers;
+  } catch {
+    return [];
+  }
+}
+
 export async function writeWorkspaceMeta(workspaceRoot, updates = {}) {
   const metaPath = path.join(workspaceDir(workspaceRoot), 'meta.json');
 

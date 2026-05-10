@@ -8,7 +8,11 @@ import {
   readWorkspaceMeta,
   writeWorkspaceMeta,
   workspaceDir,
-  OptimisticLockError
+  OptimisticLockError,
+  writeKnowledgeSnapshot,
+  readKnowledgeSnapshot,
+  writeConflictMarker,
+  readConflictMarkers,
 } from '../lib/contextdb/workspace.mjs';
 
 test('initWorkspace creates meta.json with version 1', async (t) => {
@@ -72,6 +76,35 @@ test('writeWorkspaceMeta rejects stale writes with OptimisticLockError', async (
         return true;
       }
     );
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('writeKnowledgeSnapshot and readKnowledgeSnapshot round-trip', async (t) => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    const snapshot = {
+      generatedAt: new Date().toISOString(),
+      categories: [{ name: 'cat1' }, { name: 'cat2' }],
+      items: [{ name: 'item1' }, { name: 'item2' }]
+    };
+    await writeKnowledgeSnapshot(tmpDir, snapshot);
+    const result = await readKnowledgeSnapshot(tmpDir);
+    assert.equal(result.categories.length, 2);
+    assert.equal(result.items[0].name, 'item1');
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('readKnowledgeSnapshot returns null when no snapshot exists', async (t) => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    const result = await readKnowledgeSnapshot(tmpDir);
+    assert.equal(result, null);
   } finally {
     await rm(tmpDir, { recursive: true });
   }
