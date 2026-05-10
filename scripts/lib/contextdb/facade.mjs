@@ -5,6 +5,54 @@ import { readContinuitySummary } from './continuity.mjs';
 export const FACADE_FILENAME = '.facade.json';
 export const DEFAULT_TTL_SECONDS = 3600;
 
+// Tiered context loading constants (inspired by OpenViking L0/L1/L2)
+export const CONTEXT_TIERS = Object.freeze({
+  L0: { name: 'core', tokenBudget: 2000, description: 'Always loaded: current task, active plan, recent checkpoint' },
+  L1: { name: 'relevant', tokenBudget: 5000, description: 'On-demand: related history, similar task experience, project knowledge' },
+  L2: { name: 'background', tokenBudget: 10000, description: 'Optional: long-term memory, archived history, background knowledge' },
+});
+
+export const TIER_BUDGET_MAP = Object.freeze({
+  low: ['L0'],
+  medium: ['L0', 'L1'],
+  high: ['L0', 'L1', 'L2'],
+});
+
+export function classifyMemoryTier(memory) {
+  const kind = String(memory?.kind || '').toLowerCase();
+  const ageMs = memory?.timestamp ? Date.now() - new Date(memory.timestamp).getTime() : Infinity;
+  const accessCount = Number(memory?.accessCount ?? 0);
+  // L0: current task instructions, active plans, recent checkpoints (<1h old)
+  if (['task.instruction', 'plan', 'checkpoint', 'harness.objective'].includes(kind) || ageMs < 3600000) {
+    return 'L0';
+  }
+  // L2: archived or rarely accessed (>7 days old, <2 accesses)
+  if (ageMs > 604800000 || accessCount < 2) {
+    return 'L2';
+  }
+  // L1: everything else
+  return 'L1';
+}
+
+export function filterMemoriesByBudget(memories, budget = 'medium') {
+  const allowedTiers = TIER_BUDGET_MAP[budget] || TIER_BUDGET_MAP.medium;
+  let totalTokens = 0;
+  const result = [];
+  for (const tier of allowedTiers) {
+    const budget = CONTEXT_TIERS[tier].tokenBudget;
+    const tierMemories = memories
+      .filter((m) => (m._tier || classifyMemoryTier(m)) === tier)
+      .sort((a, b) => (b.accessCount || 0) - (a.accessCount || 0));
+    for (const m of tierMemories) {
+      const estimatedTokens = Math.ceil((m.text?.length || 0) / 4);
+      if (totalTokens + estimatedTokens > budget) break;
+      totalTokens += estimatedTokens;
+      result.push({ ...m, _tier: tier, _estimatedTokens: estimatedTokens });
+    }
+  }
+  return { memories: result, totalTokens, budget, tierCounts: { L0: result.filter((m) => m._tier === 'L0').length, L1: result.filter((m) => m._tier === 'L1').length, L2: result.filter((m) => m._tier === 'L2').length } };
+}
+
 async function overlayContinuity(workspaceRoot, facade) {
   const continuity = await readContinuitySummary({ workspaceRoot, sessionId: facade?.sessionId });
   if (!continuity) return facade;

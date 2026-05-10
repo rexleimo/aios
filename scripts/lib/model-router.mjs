@@ -103,6 +103,20 @@ export function resolveModelForRole(role, registry = defaultModelRegistry(), env
       };
     }
   }
+  // Discipline agent preferred model: use explicit preferredModel if set in roleDefaults
+  const preferredModel = roleDefault?.preferredModel;
+  if (preferredModel) {
+    const model = getModelConfig(preferredModel, registry);
+    if (model) {
+      return {
+        modelId: preferredModel,
+        model,
+        rule: getRoutingRule(taskType, registry),
+        taskType,
+        reason: `discipline agent preferred model for role="${roleKey}"`,
+      };
+    }
+  }
   if (roleDefault) {
     const decision = resolveModelForTask(taskType, registry, env);
     return { ...decision, taskType };
@@ -257,6 +271,7 @@ function matchTaskTypeFromDescription(taskDescription, registry) {
     { type: 'testing', cjk: ['测试', '验证', '质量'], en: /\b(test|testing|verify|qa|quality)\b/i },
     { type: 'docs', cjk: ['写文档', '说明', '指南'], en: /\b(doc|readme|guide|manual)\b/i },
     { type: 'frontend', cjk: ['前端', '页面', '组件', '样式', '界面'], en: /\b(frontend|front.?end|ui|component|css|style)\b/i },
+    { type: 'self-healing', cjk: ['修复', '恢复', '自愈', '故障'], en: /\b(fix|repair|heal|recover|incident|outage)\b/i },
   ];
 
   for (const { type, cjk, en } of patterns) {

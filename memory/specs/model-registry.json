@@ -210,6 +210,13 @@
     "planner": { "taskType": "planning" },
     "implementer": { "taskType": "implementation" },
     "reviewer": { "taskType": "code-review" },
-    "security-reviewer": { "taskType": "security-review" }
+    "security-reviewer": { "taskType": "security-review" },
+    "discipline-planner": { "taskType": "planning", "preferredModel": "claude-opus" },
+    "discipline-builder": { "taskType": "implementation", "preferredModel": "gpt-5.5" },
+    "discipline-reviewer": { "taskType": "code-review", "preferredModel": "claude-sonnet" },
+    "discipline-orchestrator": { "taskType": "planning", "preferredModel": "glm-5.1" },
+    "discipline-explorer": { "taskType": "research", "preferredModel": "gemini-3-pro" },
+    "team-lead": { "taskType": "planning", "preferredModel": "claude-opus" },
+    "team-member": { "taskType": "implementation", "preferredModel": "gpt-5.5" }
   }
 }

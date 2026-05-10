@@ -1,6 +1,23 @@
 # AIOS Competitor Watchlist Analysis
 
-Updated: 2026-05-06T17:00:00+08:00
+Updated: 2026-05-10T18:30:00+08:00
+
+## 2026-05-10 Full Refresh Findings
+
+Full metadata refresh + shallow clone analysis for all tracked projects. Key movements since the May 6 refresh:
+
+| Signal | Detail | AIOS implication |
+|---|---|---|
+| oh-my-openagent Team Mode v4.0 | Released Team Mode: lead + 8 parallel members, tmux visualization, discipline agents (Sisyphus/Hephaestus/Prometheus), IntentGate, Hash-Anchored Edits, skill-embedded MCPs, Ralph Loop. Multi-model: Opus + Kimi K2.6 + GPT-5.5 + GLM-5.1. | Highest-signal competitor for agent execution quality. AIOS must adopt: multi-model discipline agents, intent analysis gate, skill-scoped MCP loading, and completion enforcement (Todo Enforcer). |
+| overstory v0.11.0 (NEW) | Multi-agent orchestration via SQLite mail system, 11 runtime adapters, Web UI fleet management, coordinator/orchestrator architecture, git worktree isolation, tiered conflict resolution. | Direct competitor for AIOS team runtime. Key adopt: structured mail-based agent communication, web UI for fleet visibility, multi-runtime adapter pattern. |
+| OpenHarness auto-dream | Added auto-dream memory consolidation, 43+ tools, plugin ecosystem, context compression, session resume, React TUI. | AIOS ContextDB should add background memory consolidation during idle periods. |
+| golutra CEO Agent roadmap | Announced CEO Agent: month-long autonomous coordinator, infinite agent network, agent self-evolution, cross-device migration, mobile remote control. | golutra is evolving from multi-agent tool → digital life system. AIOS should monitor and prepare for long-horizon autonomous coordination. |
+| OpenViking L0/L1/L2 tiered loading | Active development with tiered context loading, directory recursive retrieval, visualized retrieval trajectory, multi-provider VLM (Kimi/GLM/OpenAI). | AIOS ContextDB must adopt tiered loading to reduce token consumption. Visualization of retrieval trajectory is a key differentiator. |
+| superpowers 180K+ stars | `obra/superpowers`: now on Claude Code plugin marketplace, Codex plugin marketplace, Gemini CLI, Cursor, Factory Droid, GitHub Copilot CLI. | Skills methodology is now the de facto standard across all major coding agents. AIOS native integration is validated. |
+| gnhf v0.1.41 | Agent skill bundled in npm package, worktree isolation for parallel agents, exit summary with branch diff stats. | AIOS should bundle agent-facing skill files for autonomous harness use. |
+| Hermes-agent | Session-centric UX with FTS5 recall, subagent delegation, cron, multi-platform gateway (Telegram/Discord/Slack/WhatsApp/Signal), Ink TUI. | Validated session-aware recall UX. AIOS ContextDB + team direction is correct. |
+| OpenClaw 370K+ stars | 370,251 stars, 76,475 forks, pushed 2026-05-10. | The base platform continues to grow. AIOS plugin compatibility is important. |
+| OpenViking 23.7K stars | 23,706 stars (+188 in 4 days), 1,762 forks, pushed 2026-05-09. | Context databases as agent infrastructure is a validated and growing category. |
 
 ## 2026-05-06 Full Refresh Findings
 

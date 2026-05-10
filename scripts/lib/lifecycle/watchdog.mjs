@@ -6,6 +6,13 @@ const DEFAULT_STALE_THRESHOLD_MINUTES = 30;
 const MAX_SCAN_FILES = 2000;
 const SKIP_DIRS = new Set(['.git', 'node_modules', '.worktrees', 'dist', 'coverage']);
 
+const IDLE_DEFAULTS = Object.freeze({
+  checkIntervalSeconds: 30,
+  idleThresholdSeconds: 120,
+  maxNudgeCount: 3,
+  nudgeMessage: 'You appear to be idle. Review your current task and continue working.',
+});
+
 function normalizeText(value) {
   return String(value ?? '').trim();
 }
@@ -435,4 +442,96 @@ async function countRollbackManifests(artifactsDir) {
   }
   await visit(artifactsDir);
   return count;
+}
+
+// --- Todo Enforcer: idle detection + nudge ---
+
+export function buildIdleDetector(options = {}) {
+  const checkIntervalSeconds = normalizeNonNegativeInteger(options.checkIntervalSeconds, IDLE_DEFAULTS.checkIntervalSeconds);
+  const idleThresholdSeconds = normalizeNonNegativeInteger(options.idleThresholdSeconds, IDLE_DEFAULTS.idleThresholdSeconds);
+  const maxNudgeCount = normalizeNonNegativeInteger(options.maxNudgeCount, IDLE_DEFAULTS.maxNudgeCount);
+  const nudgeMessage = normalizeText(options.nudgeMessage) || IDLE_DEFAULTS.nudgeMessage;
+  return { checkIntervalSeconds, idleThresholdSeconds, maxNudgeCount, nudgeMessage };
+}
+
+export function detectIdleState(signals, idleConfig = IDLE_DEFAULTS) {
+  const idleSeconds = idleConfig.idleThresholdSeconds || IDLE_DEFAULTS.idleThresholdSeconds;
+  const idleThresholdMs = idleSeconds * 1000;
+  const nowMs = Date.now();
+  const commitAgeMs = (signals.commitAgeMinutes ?? Infinity) * 60000;
+  const fileAgeMs = (signals.fileActivityAgeMinutes ?? Infinity) * 60000;
+  const logAgeMs = (signals.logAgeMinutes ?? Infinity) * 60000;
+  const isIdle = commitAgeMs >= idleThresholdMs && fileAgeMs >= idleThresholdMs && logAgeMs >= idleThresholdMs;
+  const cpuActive = signals.cpuState === 'active';
+  return {
+    isIdle: isIdle && !cpuActive,
+    idleSeconds: Math.min(commitAgeMs, fileAgeMs, logAgeMs) / 1000,
+    thresholdSeconds: idleSeconds,
+    signals: { commitAgeMs, fileAgeMs, logAgeMs, cpuActive },
+  };
+}
+
+export function decideNudgeAction(idleState, nudgeCount = 0, config = IDLE_DEFAULTS) {
+  const max = config.maxNudgeCount || IDLE_DEFAULTS.maxNudgeCount;
+  if (!idleState.isIdle) {
+    return { action: 'none', reason: 'agent is active', nudgeCount };
+  }
+  if (nudgeCount >= max) {
+    return {
+      action: 'blocked',
+      reason: `agent idle after ${nudgeCount} nudges (max=${max}), escalating to blocked`,
+      nudgeCount,
+      message: `Agent has been idle for ${Math.round(idleState.idleSeconds)}s after ${nudgeCount} nudges. Operator intervention required.`,
+    };
+  }
+  return {
+    action: 'nudge',
+    reason: `agent idle for ${Math.round(idleState.idleSeconds)}s (threshold=${idleState.thresholdSeconds}s), sending nudge ${nudgeCount + 1}/${max}`,
+    nudgeCount: nudgeCount + 1,
+    message: config.nudgeMessage || IDLE_DEFAULTS.nudgeMessage,
+  };
+}
+
+export async function runTodoEnforcerLoop(options = {}, { rootDir, io = console } = {}) {
+  const config = buildIdleDetector(options);
+  const maxIterations = normalizeNonNegativeInteger(options.maxIterations, 100);
+  let nudgeCount = normalizeNonNegativeInteger(options.initialNudgeCount, 0);
+  const sessionId = normalizeText(options.sessionId);
+
+  for (let i = 0; i < maxIterations; i++) {
+    const signals = await collectWatchdogSignals({
+      rootDir,
+      sessionId,
+      workspaceRoot: options.workspaceRoot || rootDir,
+    });
+    const idleState = detectIdleState(signals, config);
+    const action = decideNudgeAction(idleState, nudgeCount, config);
+
+    if (action.action === 'none') {
+      nudgeCount = 0;
+    } else if (action.action === 'nudge') {
+      nudgeCount = action.nudgeCount;
+      io.log(`[todo-enforcer] ${action.reason}`);
+      io.log(`[todo-enforcer] nudge: ${action.message}`);
+      // Write nudge event to ContextDB for agent to pick up
+      try {
+        const { runContextDbCli } = await import('../contextdb-cli.mjs');
+        runContextDbCli([
+          'event:add', '--workspace', rootDir || process.cwd(),
+          '--session', sessionId || 'default',
+          '--role', 'system', '--kind', 'enforcer.nudge',
+          '--text', JSON.stringify({ message: action.message, nudgeCount, idleSeconds: idleState.idleSeconds }),
+          '--turn-id', `enforcer-${Date.now().toString(36)}`,
+        ]);
+      } catch { /* best-effort */ }
+    } else if (action.action === 'blocked') {
+      io.log(`[todo-enforcer] ${action.reason}`);
+      io.log(`[todo-enforcer] BLOCKED: ${action.message}`);
+      return { exitCode: 2, action: 'blocked', nudgeCount, idleState };
+    }
+
+    const waitMs = (config.checkIntervalSeconds || IDLE_DEFAULTS.checkIntervalSeconds) * 1000;
+    await new Promise((resolve) => setTimeout(resolve, waitMs));
+  }
+  return { exitCode: 0, action: 'completed', nudgeCount };
 }

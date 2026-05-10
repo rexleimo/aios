@@ -1,11 +1,23 @@
 # AIOS Competitor Feature Roadmap
 
 Date: 2026-04-25
-Updated: 2026-05-04
+Updated: 2026-05-10
 
 ## Scope
 
-This note synthesizes local competitor snapshots under `temp/competitor-repos/` plus current AIOS docs/code references. The original roadmap was written from the 2026-04-24/25 local snapshots. On 2026-05-04, AIOS refreshed GitHub metadata for the harness/agent-heavy watchlist rows and confirmed that the main product direction still holds. Because full tarball refreshes stalled on large downloads during the May 4 pass, the addendum below should be read as a metadata refresh rather than a full source re-audit.
+This note synthesizes local competitor snapshots under `temp/competitor-repos/` plus current AIOS docs/code references. The original roadmap was written from the 2026-04-24/25 local snapshots. On 2026-05-04, AIOS refreshed GitHub metadata for the harness/agent-heavy watchlist rows. On 2026-05-10, AIOS performed a full shallow-clone refresh with source analysis and implemented 4 P0 agent capability optimizations.
+
+## 2026-05-10 Full Refresh & Implementation
+
+See `docs/plans/2026-05-10-competitor-refresh-agent-optimization.md` for the full refresh report and implementation details.
+
+Key changes implemented:
+1. **Multi-model discipline agent routing** — 8 role→model mappings in `model-registry.json`
+2. **Todo Enforcer idle detection** — 120s idle → nudge, 3x → blocked in `watchdog.mjs`
+3. **ContextDB L0/L1/L2 tiered loading** — token budget tiers in `facade.mjs`
+4. **Skill-scoped MCP definitions** — `mcp_servers` field in skill JSON format
+
+New competitor added: `jayminwest/overstory` (P0, multi-agent orchestration via SQLite mail).
 
 ## 2026-05-04 Metadata Refresh Addendum
 

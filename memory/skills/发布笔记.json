@@ -110,6 +110,16 @@
     "daily_interactions": 50,
     "min_interval_seconds": 300
   },
+  "mcp_servers": [
+    {
+      "id": "baoyu-xhs-images",
+      "description": "XHS image generation MCP server",
+      "command": "npx",
+      "args": ["-y", "baoyu-xhs-images-mcp@latest"],
+      "start_when": "on_skill_activate",
+      "stop_when": "on_skill_deactivate"
+    }
+  ],
   "notes": [
     "每篇笔记都要有独特的配图，不要重复使用",
     "先确定配图风格，再写内容",
