@@ -111,7 +111,12 @@ export function normalizeHandoffPacket(input = {}) {
 }
 
 export async function writeHandoffPacket(workspaceRoot, sessionId, packet) {
-  const normalized = normalizeHandoffPacket({ ...packet, fromSessionId: sessionId });
+  const normalized = normalizeHandoffPacket({
+    ...packet,
+    fromSessionId: packet.fromSessionId || sessionId,
+    agentType: packet.agentType || packet.fromAgent?.agentType || '',
+    role: packet.role || packet.fromAgent?.role || '',
+  });
   const dir = sessionDir(workspaceRoot, sessionId);
   const filePath = path.join(dir, 'handoff.json');
   await writeAtomicFile(filePath, `${JSON.stringify(normalized, null, 2)}\n`);

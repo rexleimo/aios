@@ -1868,6 +1868,19 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
       facadeResult = { ok: true, facade: fallbackFacade };
     }
     const facadePrompt = buildFacadePrompt(facadeResult.facade, opts.agent);
+    // Inject previous session handoff if available
+    let handoffInjection = '';
+    try {
+      const { readHandoffPacket } = await import('./lib/contextdb/handoff.mjs');
+      const { renderHandoffInjection } = await import('./lib/contextdb/handoff.mjs');
+      const prevSessionId = facadeResult.facade?.sessionId;
+      if (prevSessionId) {
+        const packet = await readHandoffPacket(opts.workspaceRoot, prevSessionId);
+        handoffInjection = renderHandoffInjection(packet);
+      }
+    } catch {
+      // handoff injection optional
+    }
     const routerGuide = shouldInjectTaskRouterGuide(process.env)
       ? buildTaskRouterGuide({
           agent: opts.agent,
@@ -1886,9 +1899,12 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
     const basePrompt = memoryPrelude
       ? `${memoryPrelude}\n\n${persistenceInstructions}\n\n${facadePrompt}`
       : `${persistenceInstructions}\n\n${facadePrompt}`;
-    const effectivePrompt = routerGuide
-      ? `${basePrompt}\n\n${routerGuide}`
+    const withHandoff = handoffInjection
+      ? `${basePrompt}\n\n${handoffInjection}`
       : basePrompt;
+    const effectivePrompt = routerGuide
+      ? `${withHandoff}\n\n${routerGuide}`
+      : withHandoff;
 
     console.error(`[aios] Session: ${facadeResult.facade?.sessionId || '(new)'}`);
     console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: lazy-load | Route: ${opts.routeMode}`);
@@ -1931,6 +1947,21 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
 
   if (!opts.sessionId) {
     throw new Error('Failed to resolve session id from contextdb output');
+  }
+
+  // Workspace bootstrap: ensure workspace exists and skill index is built
+  try {
+    const { initWorkspace } = await import('./lib/contextdb/workspace.mjs');
+    const wsResult = await initWorkspace(opts.workspaceRoot);
+    if (wsResult.created) {
+      const { buildSkillIndex, writeSkillIndex } = await import('./lib/contextdb/skill-index.mjs');
+      const index = await buildSkillIndex(opts.workspaceRoot);
+      await writeSkillIndex(opts.workspaceRoot, index);
+      console.error(`[aios] Workspace initialized with ${index.skills.length} skills indexed`);
+    }
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn(`[warn] workspace bootstrap skipped: ${reason}`);
   }
 
   const packPath = path.join('memory', 'context-db', 'exports', `${opts.sessionId}-context.md`);
@@ -2144,6 +2175,25 @@ Task: ${routedPrompt}`;
           const reason = error instanceof Error ? error.message : String(error);
           console.warn(`[warn] continuity summary skipped: ${reason}`);
         }
+      }
+
+      // Write handoff packet for the next agent
+      try {
+        const { normalizeHandoffPacket, writeHandoffPacket } = await import('./lib/contextdb/handoff.mjs');
+        const packet = normalizeHandoffPacket({
+          fromSessionId: opts.sessionId,
+          agentType: opts.agent,
+          role: 'implementer',
+          intent: routedPrompt,
+          progress: summary,
+          nextActions: nextActions.split('|'),
+          touchedFiles: extractTouchedFilesFromText({ workspaceRoot: opts.workspaceRoot }, opts.prompt, output),
+          confidence: exitCode === 0 ? 'high' : 'low',
+        });
+        await writeHandoffPacket(opts.workspaceRoot, opts.sessionId, packet);
+      } catch (error) {
+        const reason = error instanceof Error ? error.message : String(error);
+        console.warn(`[warn] handoff packet skipped: ${reason}`);
       }
     }
 
