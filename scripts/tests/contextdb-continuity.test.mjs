@@ -75,10 +75,10 @@ test('readContinuitySummary and renderContinuityInjection expose compact startup
 });
 
 test('extractTouchedFilesFromText canonicalizes common path forms', () => {
-  const workspaceRoot = '/Users/molei/codes/aios';
+  const workspaceRoot = '/workspace/project';
   const touched = extractTouchedFilesFromText(
     { workspaceRoot },
-    'Updated /Users/molei/codes/aios/scripts/ctx-agent-core.mjs and README.md.',
+    'Updated /workspace/project/scripts/ctx-agent-core.mjs and README.md.',
     'diff --git a/scripts/lib/contextdb/continuity.mjs b/scripts/lib/contextdb/continuity.mjs',
     'Also checked package.json and mcp-server/src/contextdb/core.ts.'
   );
@@ -91,4 +91,3 @@ test('extractTouchedFilesFromText canonicalizes common path forms', () => {
     'mcp-server/src/contextdb/core.ts',
   ]);
 });
-

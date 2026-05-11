@@ -8,7 +8,9 @@ import sys
 import types
 from pathlib import Path
 
-DEFAULT_BROWSER_USE_REPO = "/Users/molei/codes/ai-browser-book"
+AIOS_ROOT = Path(__file__).resolve().parents[1]
+BROWSER_USE_REPO_DIR_NAME = "ai-browser-book"
+BROWSER_USE_PROJECT_DIR_NAME = "mcp-browser-use"
 DEFAULT_SCREENSHOT_TIMEOUT_MS = 15_000
 
 
@@ -21,6 +23,33 @@ def _env_int(name: str, fallback: int) -> int:
     except ValueError:
         return fallback
     return value if value > 0 else fallback
+
+
+def _browser_use_repo_candidates() -> list[Path]:
+    env_repo = str(os.getenv("AIOS_BROWSER_USE_REPO") or "").strip()
+    candidates: list[Path] = []
+    if env_repo:
+        candidates.append(Path(env_repo).expanduser())
+    candidates.extend([
+        AIOS_ROOT.parent / BROWSER_USE_REPO_DIR_NAME,
+        AIOS_ROOT / BROWSER_USE_REPO_DIR_NAME,
+    ])
+    return candidates
+
+
+def _resolve_browser_use_repo() -> Path:
+    candidates = _browser_use_repo_candidates()
+    for candidate in candidates:
+        project_dir = candidate / BROWSER_USE_PROJECT_DIR_NAME
+        if (project_dir / "pyproject.toml").exists():
+            return candidate.resolve()
+
+    checked = "\n".join(f"  - {candidate / BROWSER_USE_PROJECT_DIR_NAME}" for candidate in candidates)
+    raise SystemExit(
+        "[aios-browser] mcp-browser-use project not found.\n"
+        "[aios-browser] Set AIOS_BROWSER_USE_REPO=/path/to/ai-browser-book or place ai-browser-book next to/in this repo.\n"
+        f"[aios-browser] Checked:\n{checked}"
+    )
 
 
 def _install_optional_shims() -> None:
@@ -172,8 +201,9 @@ def _install_screenshot_timeout_guard() -> None:
 
 
 def main() -> None:
-    browser_use_repo = str(os.getenv("AIOS_BROWSER_USE_REPO") or DEFAULT_BROWSER_USE_REPO).strip()
-    mcp_dir = Path(browser_use_repo) / "mcp-browser-use"
+    browser_use_repo = _resolve_browser_use_repo()
+    os.environ.setdefault("AIOS_BROWSER_USE_REPO", str(browser_use_repo))
+    mcp_dir = browser_use_repo / BROWSER_USE_PROJECT_DIR_NAME
     src_dir = mcp_dir / "src"
     if not src_dir.exists():
         raise SystemExit(f"[aios-browser] browser-use src directory missing: {src_dir}")

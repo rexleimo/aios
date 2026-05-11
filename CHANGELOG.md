@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.11.1] - 2026-05-11
+
+- fix browser MCP installer path portability
+
 ## [1.11.0] - 2026-05-09
 
 - feat(debug-hub): add instrumentation tracking and automatic cleanup (v0.3.0)

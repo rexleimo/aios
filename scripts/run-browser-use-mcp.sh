@@ -4,17 +4,45 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 
-DEFAULT_BROWSER_USE_REPO="/Users/molei/codes/ai-browser-book"
-BROWSER_USE_REPO="${AIOS_BROWSER_USE_REPO:-$DEFAULT_BROWSER_USE_REPO}"
+expand_path() {
+  local value="$1"
+  if [[ "$value" == "~" ]]; then
+    printf '%s' "$HOME"
+  elif [[ "$value" == "~/"* ]]; then
+    printf '%s/%s' "$HOME" "${value#\~/}"
+  else
+    printf '%s' "$value"
+  fi
+}
+
+BROWSER_USE_REPO=""
+BROWSER_USE_CANDIDATES=()
+if [[ -n "${AIOS_BROWSER_USE_REPO:-}" ]]; then
+  BROWSER_USE_CANDIDATES+=("$(expand_path "$AIOS_BROWSER_USE_REPO")")
+fi
+BROWSER_USE_CANDIDATES+=("$ROOT_DIR/../ai-browser-book" "$ROOT_DIR/ai-browser-book")
+
+for candidate in "${BROWSER_USE_CANDIDATES[@]}"; do
+  if [[ -f "$candidate/mcp-browser-use/pyproject.toml" ]]; then
+    BROWSER_USE_REPO="$(cd "$candidate" && pwd -P)"
+    break
+  fi
+done
+
+if [[ -z "$BROWSER_USE_REPO" ]]; then
+  echo "[aios-browser] mcp-browser-use project not found." >&2
+  echo "[aios-browser] Set AIOS_BROWSER_USE_REPO=/path/to/ai-browser-book or place ai-browser-book next to/in this repo." >&2
+  echo "[aios-browser] Checked:" >&2
+  for candidate in "${BROWSER_USE_CANDIDATES[@]}"; do
+    echo "  - $candidate/mcp-browser-use" >&2
+  done
+  exit 1
+fi
+
+export AIOS_BROWSER_USE_REPO="$BROWSER_USE_REPO"
 MCP_DIR="$BROWSER_USE_REPO/mcp-browser-use"
 VENV_PYTHON="$MCP_DIR/.venv/bin/python"
 BOOTSTRAP_SCRIPT="$ROOT_DIR/scripts/browser-use-bootstrap.py"
-
-if [[ ! -f "$MCP_DIR/pyproject.toml" ]]; then
-  echo "[aios-browser] mcp-browser-use project not found: $MCP_DIR" >&2
-  echo "[aios-browser] Set AIOS_BROWSER_USE_REPO=/path/to/ai-browser-book" >&2
-  exit 1
-fi
 
 if [[ ! -x "$VENV_PYTHON" ]]; then
   echo "[aios-browser] browser-use venv python missing: $VENV_PYTHON" >&2

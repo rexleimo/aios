@@ -24,7 +24,7 @@
 This repository is a local-first AI agent workspace centered on browser automation via MCP.
 
 - `mcp-server/`: TypeScript Playwright MCP server (legacy/compat runtime code).
-- `scripts/run-browser-use-mcp.sh`: default MCP launcher that bridges to `/Users/molei/codes/ai-browser-book/mcp-browser-use`.
+- `scripts/run-browser-use-mcp.sh`: default MCP launcher that bridges to `ai-browser-book/mcp-browser-use` via `AIOS_BROWSER_USE_REPO` or repo-relative discovery.
 - `scripts/browser-use-bootstrap.py`: browser-use bootstrap with optional module shims.
 - `mcp-server/src/index.ts`: MCP server entry point and tool routing.
 - `mcp-server/src/browser/`: browser launcher, profile manager, auth checks, and tool actions.

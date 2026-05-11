@@ -8,7 +8,8 @@ import { getClientHomes } from '../platform/paths.mjs';
 
 const DEFAULT_CDP_SERVICE_PORT = 9222;
 const CDP_SERVICE_LABEL_PREFIX = 'com.aios.cdp';
-const DEFAULT_BROWSER_USE_REPO = '/Users/molei/codes/ai-browser-book';
+const BROWSER_USE_REPO_DIR_NAME = 'ai-browser-book';
+const BROWSER_USE_PROJECT_DIR_NAME = 'mcp-browser-use';
 const LEGACY_BROWSER_ALIAS = 'playwright-browser-mcp';
 const PRIMARY_BROWSER_ALIAS = 'puppeteer-stealth';
 const AUTH_TOOLS_ALIAS = 'aios-auth-tools';
@@ -42,12 +43,17 @@ function printSnippet(io, launcherPath, cdpUrl) {
 function buildPreferredMcpServer(rootDir, existingAlias = {}) {
   const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
-  const browserUseRepo = resolveBrowserUseRepo(rootDir);
+  const existingEnv = existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {};
+  const browserUseRepo = findBrowserUseRepo(rootDir, existingEnv);
   const nextEnv = {
-    ...(existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {}),
-    AIOS_BROWSER_USE_REPO: browserUseRepo,
+    ...existingEnv,
     BROWSER_USE_CDP_URL: cdpUrl,
   };
+  if (browserUseRepo) {
+    nextEnv.AIOS_BROWSER_USE_REPO = browserUseRepo;
+  } else if (isLegacyBrowserUseFallback(nextEnv.AIOS_BROWSER_USE_REPO)) {
+    delete nextEnv.AIOS_BROWSER_USE_REPO;
+  }
 
   return {
     type: 'stdio',
@@ -204,14 +210,14 @@ export async function installBrowserMcp({ rootDir, skipPlaywrightInstall = false
     throw new Error(`browser-use bootstrap script not found: ${bootstrapScript}`);
   }
 
-  const browserUseRepo = resolveBrowserUseRepo(rootDir);
-  const browserUseProjectDir = path.join(browserUseRepo, 'mcp-browser-use');
+  const browserUseRepo = findBrowserUseRepo(rootDir);
+  if (!browserUseRepo) {
+    throw new Error(formatBrowserUseMissingMessage(rootDir));
+  }
+  const browserUseProjectDir = path.join(browserUseRepo, BROWSER_USE_PROJECT_DIR_NAME);
   const browserUsePyproject = path.join(browserUseProjectDir, 'pyproject.toml');
   if (!fs.existsSync(browserUsePyproject)) {
-    throw new Error(
-      `browser-use MCP project not found: ${browserUseProjectDir}.\n` +
-      'Set AIOS_BROWSER_USE_REPO to your ai-browser-book repository path.'
-    );
+    throw new Error(formatBrowserUseMissingMessage(rootDir));
   }
 
   const runInBrowserUse = (command, args) => {
@@ -304,23 +310,71 @@ function resolveDefaultCdpUrl(rootDir) {
   }
 }
 
-function resolveBrowserUseRepo(rootDir) {
-  const envRepo = String(process.env.AIOS_BROWSER_USE_REPO || '').trim();
-  const candidates = [
-    envRepo,
-    path.resolve(rootDir, '..', 'ai-browser-book'),
-    path.resolve(rootDir, 'ai-browser-book'),
-    DEFAULT_BROWSER_USE_REPO,
-  ].filter(Boolean);
+function resolveUserPath(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  if (raw === '~') return os.homedir();
+  if (raw.startsWith('~/') || raw.startsWith('~\\')) {
+    return path.join(os.homedir(), raw.slice(2));
+  }
+  return path.resolve(raw);
+}
+
+function uniquePaths(values) {
+  const seen = new Set();
+  const out = [];
+  for (const value of values) {
+    const resolved = resolveUserPath(value);
+    if (!resolved || seen.has(resolved)) continue;
+    seen.add(resolved);
+    out.push(resolved);
+  }
+  return out;
+}
+
+function getBrowserUseRepoCandidates(rootDir, env = process.env) {
+  return uniquePaths([
+    env?.AIOS_BROWSER_USE_REPO,
+    path.resolve(rootDir, '..', BROWSER_USE_REPO_DIR_NAME),
+    path.resolve(rootDir, BROWSER_USE_REPO_DIR_NAME),
+  ]);
+}
+
+function findBrowserUseRepo(rootDir, env = process.env) {
+  const candidates = getBrowserUseRepoCandidates(rootDir, env);
 
   for (const candidate of candidates) {
-    const projectDir = path.join(candidate, 'mcp-browser-use');
+    const projectDir = path.join(candidate, BROWSER_USE_PROJECT_DIR_NAME);
     if (fs.existsSync(path.join(projectDir, 'pyproject.toml'))) {
       return candidate;
     }
   }
 
-  return envRepo || DEFAULT_BROWSER_USE_REPO;
+  return '';
+}
+
+function isLegacyBrowserUseFallback(value) {
+  const normalized = String(value || '').replace(/\\/gu, '/');
+  const parts = normalized.split('/').filter(Boolean);
+  return (
+    parts.length >= 4 &&
+    parts.at(-4) === 'Users' &&
+    parts.at(-3) === 'molei' &&
+    parts.at(-2) === 'codes' &&
+    parts.at(-1) === BROWSER_USE_REPO_DIR_NAME
+  );
+}
+
+function formatBrowserUseMissingMessage(rootDir, env = process.env) {
+  const candidates = getBrowserUseRepoCandidates(rootDir, env);
+  const checked = candidates.length > 0
+    ? candidates.map((candidate) => `  - ${path.join(candidate, BROWSER_USE_PROJECT_DIR_NAME)}`).join('\n')
+    : '  - <none>';
+  return (
+    'browser-use MCP project not found.\n' +
+    'Set AIOS_BROWSER_USE_REPO to your ai-browser-book repository path, or place ai-browser-book next to/in this repo.\n' +
+    `Checked:\n${checked}`
+  );
 }
 
 function resolveCdpServiceLayout(rootDir, port = DEFAULT_CDP_SERVICE_PORT) {
@@ -659,8 +713,10 @@ async function autoHealDefaultCdpPort({
 export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dryRun = false, runtime = {} } = {}) {
   const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
   const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
-  const browserUseRepo = resolveBrowserUseRepo(rootDir);
-  const browserUseProjectDir = path.join(browserUseRepo, 'mcp-browser-use');
+  const browserUseRepo = findBrowserUseRepo(rootDir);
+  const browserUseProjectDir = browserUseRepo
+    ? path.join(browserUseRepo, BROWSER_USE_PROJECT_DIR_NAME)
+    : path.join(getBrowserUseRepoCandidates(rootDir)[0] || path.resolve(rootDir, '..', BROWSER_USE_REPO_DIR_NAME), BROWSER_USE_PROJECT_DIR_NAME);
   const browserUsePyproject = path.join(browserUseProjectDir, 'pyproject.toml');
   const browserUsePython = path.join(browserUseProjectDir, '.venv', 'bin', 'python');
   const profileConfig = path.join(rootDir, 'config', 'browser-profiles.json');
