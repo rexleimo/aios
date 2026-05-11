@@ -88,8 +88,12 @@ function formatHarnessStatusText(status = null) {
     `Iterations: ${status.iterationCount}`,
     `Last outcome: ${status.lastOutcome || '(none)'}`,
     `Last failure: ${status.lastFailureClass || '(none)'}`,
+    `Last stage: ${status.lastStage || '(none)'}`,
     `Stop requested: ${status.stopRequested ? 'yes' : 'no'}`,
   ];
+  if (Array.isArray(status.latestEvidence) && status.latestEvidence.length > 0) {
+    lines.push(`Latest evidence: ${status.latestEvidence.join(' | ')}`);
+  }
   if (status.worktree?.enabled) {
     lines.push(`Worktree: ${status.worktree.preserved ? 'preserved' : 'pending'} ${status.worktree.path || '(no path)'}`);
   }
@@ -141,7 +145,9 @@ function buildIterationPrompt({
     '请完成一轮工作后只返回一个 JSON 对象，不要输出解释文字，不要输出 Markdown。',
     'JSON 必须包含这些字段：',
     '- outcome: success|noop|blocked|infra-retry|human-gate|stopped|failed',
+    '- stage: research|requirements|planning|development|validation|handoff',
     '- summary: 简短中文总结',
+    '- evidence: string[]，列出本轮真实证据（文件、命令、截图、checkpoint 或阻塞原因）',
     '- keyChanges: string[]',
     '- keyLearnings: string[]',
     '- nextAction: string',

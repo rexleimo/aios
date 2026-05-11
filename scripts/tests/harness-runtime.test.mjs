@@ -8,7 +8,9 @@ import {
   normalizeSoloIterationOutcome,
   resolveSoloBackoffState,
   runSoloHarnessLoop,
+  writeSoloIterationCheckpoint,
 } from '../lib/harness/solo-runtime.mjs';
+import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 import {
   getSoloHarnessPaths,
   initSoloRunJournal,
@@ -31,6 +33,8 @@ test('normalizeSoloIterationOutcome fills defaults for a success outcome', () =>
   assert.equal(success.failureClass, 'none');
   assert.equal(success.backoffAction, 'none');
   assert.equal(success.checkpointStatus, 'running');
+  assert.equal(success.stage, 'development');
+  assert.deepEqual(success.evidence, ['summary: done']);
 });
 
 test('normalizeSoloIterationOutcome preserves blocked no-progress decisions', () => {
@@ -39,12 +43,16 @@ test('normalizeSoloIterationOutcome preserves blocked no-progress decisions', ()
     iteration: 2,
     outcome: 'blocked',
     summary: 'No safe next mutation',
+    stage: 'validation',
+    evidence: ['npm test failed'],
     failureClass: 'no-progress',
     shouldStop: false,
   });
 
   assert.equal(blocked.failureClass, 'no-progress');
   assert.equal(blocked.outcome, 'blocked');
+  assert.equal(blocked.stage, 'validation');
+  assert.deepEqual(blocked.evidence, ['npm test failed']);
 });
 
 test('resolveSoloBackoffState doubles delay for infra failures', () => {
@@ -104,6 +112,126 @@ test('runSoloHarnessLoop appends iterations and stops when executeTurn requests 
     const status = await readSoloRunStatus({ rootDir, sessionId: 's1' });
     assert.equal(status.iterationCount, 2);
     assert.equal(status.lastFailureClass, 'stop-requested');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('runSoloHarnessLoop writes stage checkpoint evidence through checkpoint writer', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-solo-runtime-stage-checkpoint-'));
+
+  try {
+    await initSoloRunJournal({
+      rootDir,
+      sessionId: 'stage-session',
+      objective: 'Ship checkpoint strengthening',
+      provider: 'codex',
+      clientId: 'codex-cli',
+      profile: 'standard',
+      worktree: {
+        enabled: false,
+        baseRef: 'HEAD',
+        path: '',
+        preserved: false,
+        cleanupReason: '',
+      },
+    });
+
+    const checkpoints = [];
+    const result = await runSoloHarnessLoop({
+      rootDir,
+      sessionId: 'stage-session',
+      objective: 'Ship checkpoint strengthening',
+      provider: 'codex',
+      clientId: 'codex-cli',
+      profile: 'standard',
+      maxIterations: 1,
+      executeTurn: async () => ({
+        outcome: 'success',
+        stage: 'validation',
+        summary: 'validated harness stage evidence',
+        evidence: ['node --test scripts/tests/harness-runtime.test.mjs'],
+        keyChanges: ['scripts/lib/harness/solo-runtime.mjs'],
+        keyLearnings: [],
+        nextAction: 'ship',
+        shouldStop: true,
+        failureClass: 'none',
+      }),
+      checkpointWriter: async (payload) => {
+        checkpoints.push(payload);
+        return { persisted: true, checkpointId: 'stage-session#C1' };
+      },
+      sleepImpl: async () => {},
+    });
+
+    assert.equal(result.summary.status, 'done');
+    assert.equal(checkpoints.length, 1);
+    assert.equal(checkpoints[0].outcome.stage, 'validation');
+    assert.deepEqual(checkpoints[0].outcome.evidence, ['node --test scripts/tests/harness-runtime.test.mjs']);
+    assert.equal(checkpoints[0].summary.objective, 'Ship checkpoint strengthening');
+
+    const paths = getSoloHarnessPaths({ rootDir, sessionId: 'stage-session' });
+    const logRaw = await readFile(path.join(paths.iterationDir, 'iteration-0001.log.jsonl'), 'utf8');
+    assert.match(logRaw, /\"kind\":\"checkpoint\"/);
+    assert.match(logRaw, /stage-session#C1/);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('writeSoloIterationCheckpoint persists stage telemetry into ContextDB when session exists', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-solo-runtime-contextdb-checkpoint-'));
+
+  try {
+    runContextDbCli(['init', '--workspace', rootDir]);
+    runContextDbCli([
+      'session:new',
+      '--workspace',
+      rootDir,
+      '--agent',
+      'codex-cli',
+      '--project',
+      'checkpoint-test',
+      '--goal',
+      'Persist solo stage checkpoints',
+      '--session-id',
+      'ctx-stage-session',
+    ]);
+
+    const outcome = normalizeSoloIterationOutcome({
+      sessionId: 'ctx-stage-session',
+      iteration: 1,
+      outcome: 'success',
+      stage: 'validation',
+      summary: 'validated stage checkpoint persistence',
+      evidence: ['node --test scripts/tests/harness-runtime.test.mjs'],
+      keyChanges: ['scripts/lib/harness/solo-runtime.mjs'],
+      nextAction: 'continue',
+      shouldStop: true,
+      failureClass: 'none',
+    });
+
+    const result = await writeSoloIterationCheckpoint({
+      rootDir,
+      sessionId: 'ctx-stage-session',
+      summary: { objective: 'Persist solo stage checkpoints' },
+      outcome,
+    });
+
+    assert.equal(result.persisted, true);
+    assert.equal(result.checkpointId, 'ctx-stage-session#C1');
+
+    const checkpointsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'ctx-stage-session', 'l1-checkpoints.jsonl');
+    const checkpointsRaw = await readFile(checkpointsPath, 'utf8');
+    const checkpoint = JSON.parse(checkpointsRaw.trim());
+    assert.equal(checkpoint.status, 'done');
+    assert.match(checkpoint.summary, /^\[validation\]/);
+    assert.equal(checkpoint.telemetry.verification.result, 'passed');
+    assert.match(checkpoint.telemetry.verification.evidence, /stage=validation/);
+    assert.deepEqual(checkpoint.artifacts, [
+      'node --test scripts/tests/harness-runtime.test.mjs',
+      'scripts/lib/harness/solo-runtime.mjs',
+    ]);
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }

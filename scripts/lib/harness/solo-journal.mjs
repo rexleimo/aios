@@ -9,6 +9,7 @@ const OBJECTIVE_FILENAME = 'objective.md';
 const OPERATOR_NOTES_FILENAME = 'operator-notes.md';
 const HOOK_EVENTS_FILENAME = 'hook-events.jsonl';
 const SOLO_HARNESS_DIRNAME = 'solo-harness';
+const SOLO_STAGES = new Set(['research', 'requirements', 'planning', 'development', 'validation', 'handoff']);
 
 function normalizeText(value, fallback = '') {
   const text = String(value ?? '').trim();
@@ -18,6 +19,15 @@ function normalizeText(value, fallback = '') {
 function normalizeStringArray(value) {
   const raw = Array.isArray(value) ? value : [];
   return Array.from(new Set(raw.map((item) => String(item ?? '').trim()).filter(Boolean)));
+}
+
+function normalizeStage(value) {
+  const normalized = normalizeText(value).toLowerCase();
+  return SOLO_STAGES.has(normalized) ? normalized : 'development';
+}
+
+function normalizeOptionalStage(value) {
+  return normalizeText(value) ? normalizeStage(value) : '';
 }
 
 function normalizeAbsolutePath(value) {
@@ -118,6 +128,8 @@ function normalizeRunSummary(input = {}) {
     lastIteration: Number.isFinite(input.lastIteration) ? Math.max(0, Math.floor(input.lastIteration)) : 0,
     lastOutcome: normalizeText(input.lastOutcome),
     lastFailureClass: normalizeText(input.lastFailureClass, 'none'),
+    lastStage: normalizeOptionalStage(input.lastStage),
+    latestEvidence: normalizeStringArray(input.latestEvidence),
     stopRequested: input.stopRequested === true,
     backoff: {
       ...defaultBackoff(),
@@ -147,6 +159,8 @@ function normalizeIterationOutcome(input = {}) {
     iteration,
     outcome: normalizeText(input.outcome, 'failed'),
     summary: normalizeText(input.summary, 'No summary recorded.'),
+    stage: normalizeStage(input.stage),
+    evidence: normalizeStringArray(input.evidence),
     keyChanges: normalizeStringArray(input.keyChanges),
     keyLearnings: normalizeStringArray(input.keyLearnings),
     nextAction: normalizeText(input.nextAction),
@@ -336,6 +350,8 @@ export async function appendSoloIteration({ rootDir, sessionId, iteration, outco
       lastIteration: normalizedOutcome.iteration,
       lastOutcome: normalizedOutcome.outcome,
       lastFailureClass: normalizedOutcome.failureClass,
+      lastStage: normalizedOutcome.stage,
+      latestEvidence: normalizedOutcome.evidence,
       updatedAt: new Date().toISOString(),
     });
   }
@@ -408,6 +424,8 @@ export async function readSoloRunStatus({ rootDir, sessionId } = {}) {
     lastIteration: summary.lastIteration,
     lastOutcome: summary.lastOutcome,
     lastFailureClass: summary.lastFailureClass,
+    lastStage: summary.lastStage,
+    latestEvidence: summary.latestEvidence,
     nextDelayMs: Number.isFinite(summary.backoff?.nextDelayMs) ? summary.backoff.nextDelayMs : 0,
     stopRequested: control?.stopRequested === true || summary.stopRequested === true,
     worktree: defaultWorktreeState(summary.worktree),

@@ -32,6 +32,7 @@ Use this harness to keep long tasks stable under UI drift, model variability, an
 - Time budget per step and per run.
 - Retry budget per failure class.
 - Human-gate checkpoints for login, payment, or policy-sensitive actions.
+- Solo harness checkpoints should include the current stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) and concrete evidence.
 - Structured logs for every major transition.
 
 ## Failure Classes

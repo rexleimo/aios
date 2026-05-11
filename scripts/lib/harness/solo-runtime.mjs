@@ -1,3 +1,7 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
+import { runContextDbCli } from '../contextdb-cli.mjs';
 import { readContinuitySummary, writeContinuitySummary } from '../contextdb/continuity.mjs';
 import {
   appendSoloHookEvent,
@@ -8,6 +12,7 @@ import {
 } from './solo-journal.mjs';
 
 const SOLO_OUTCOMES = new Set(['success', 'noop', 'blocked', 'infra-retry', 'human-gate', 'stopped', 'failed']);
+const SOLO_STAGES = new Set(['research', 'requirements', 'planning', 'development', 'validation', 'handoff']);
 const SOLO_FAILURE_CLASSES = new Set([
   'none',
   'no-progress',
@@ -27,6 +32,27 @@ function normalizeText(value, fallback = '') {
 function normalizeStringArray(value) {
   const raw = Array.isArray(value) ? value : [];
   return Array.from(new Set(raw.map((item) => String(item ?? '').trim()).filter(Boolean)));
+}
+
+function normalizeStage(value) {
+  const normalized = normalizeText(value).toLowerCase();
+  return SOLO_STAGES.has(normalized) ? normalized : 'development';
+}
+
+function deriveEvidence(input = {}) {
+  const explicit = normalizeStringArray(input.evidence);
+  if (explicit.length > 0) return explicit;
+
+  const keyChanges = normalizeStringArray(input.keyChanges).map((item) => `changed: ${item}`);
+  if (keyChanges.length > 0) return keyChanges;
+
+  const nextAction = normalizeText(input.nextAction);
+  if (nextAction) return [`next: ${nextAction}`];
+
+  const summary = normalizeText(input.summary);
+  if (summary) return [`summary: ${summary}`];
+
+  return [`outcome: ${normalizeText(input.outcome, 'unknown')}`];
 }
 
 function sleep(delayMs) {
@@ -102,6 +128,8 @@ export function normalizeSoloIterationOutcome(input = {}) {
     iteration,
     outcome,
     summary: normalizeText(input.summary, 'No summary recorded.'),
+    stage: normalizeStage(input.stage),
+    evidence: deriveEvidence(input),
     keyChanges: normalizeStringArray(input.keyChanges),
     keyLearnings: normalizeStringArray(input.keyLearnings),
     nextAction: normalizeText(input.nextAction),
@@ -291,6 +319,8 @@ function buildStopOutcome({ sessionId, iteration } = {}) {
     iteration,
     outcome: 'stopped',
     summary: 'Stop requested by operator.',
+    stage: 'handoff',
+    evidence: ['operator stop requested'],
     keyChanges: [],
     keyLearnings: [],
     nextAction: 'Inspect harness status and resume when ready.',
@@ -325,6 +355,93 @@ function buildLogEntries({ prompt = '', rawOutput = '', extra = [] } = {}) {
   return entries;
 }
 
+function sessionMetaPath(rootDir, sessionId) {
+  return path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'meta.json');
+}
+
+function mapOutcomeToVerificationResult(outcome = {}) {
+  const normalizedOutcome = normalizeText(outcome.outcome);
+  if (normalizedOutcome === 'success' || normalizedOutcome === 'noop') return 'passed';
+  if (normalizedOutcome === 'failed' || normalizedOutcome === 'infra-retry') return 'failed';
+  if (normalizedOutcome === 'blocked' || normalizedOutcome === 'human-gate' || normalizedOutcome === 'stopped') return 'partial';
+  return 'unknown';
+}
+
+function buildCheckpointEvidence(outcome = {}) {
+  const evidence = normalizeStringArray(outcome.evidence);
+  const suffix = evidence.length > 0 ? ` evidence=${evidence.join('; ')}` : '';
+  return `stage=${normalizeText(outcome.stage, 'development')} outcome=${normalizeText(outcome.outcome, 'unknown')}${suffix}`;
+}
+
+function buildCheckpointArtifacts(outcome = {}) {
+  return normalizeStringArray([
+    ...normalizeStringArray(outcome.evidence),
+    ...normalizeStringArray(outcome.keyChanges),
+  ]);
+}
+
+function buildCheckpointLogEntry(result = {}, outcome = {}) {
+  return {
+    ts: new Date().toISOString(),
+    kind: 'checkpoint',
+    stage: normalizeText(outcome.stage, 'development'),
+    status: result.persisted === true ? 'persisted' : 'skipped',
+    checkpointId: normalizeText(result.checkpointId),
+    reason: normalizeText(result.reason || result.error),
+  };
+}
+
+export async function writeSoloIterationCheckpoint({ rootDir, sessionId, summary = {}, outcome = {} } = {}) {
+  const normalizedSessionId = normalizeText(sessionId);
+  if (!normalizedSessionId) {
+    return { persisted: false, reason: 'missing-session-id' };
+  }
+  if (!existsSync(sessionMetaPath(rootDir, normalizedSessionId))) {
+    return { persisted: false, reason: 'missing-session-meta' };
+  }
+
+  const args = [
+    'checkpoint',
+    '--workspace',
+    rootDir,
+    '--session',
+    normalizedSessionId,
+    '--summary',
+    `[${normalizeText(outcome.stage, 'development')}] ${normalizeText(outcome.summary, 'No summary recorded.')}`,
+    '--status',
+    normalizeText(outcome.checkpointStatus, 'running'),
+    '--verify-result',
+    mapOutcomeToVerificationResult(outcome),
+    '--verify-evidence',
+    buildCheckpointEvidence(outcome),
+  ];
+  if (normalizeText(outcome.nextAction)) {
+    args.push('--next', outcome.nextAction);
+  }
+  const artifacts = buildCheckpointArtifacts(outcome);
+  if (artifacts.length > 0) {
+    args.push('--artifacts', artifacts.join('|'));
+  }
+  if (normalizeText(outcome.failureClass, 'none') !== 'none') {
+    args.push('--failure-category', outcome.failureClass);
+  }
+
+  try {
+    const checkpoint = runContextDbCli(args, { cwd: rootDir });
+    return {
+      persisted: true,
+      checkpointId: `${normalizedSessionId}#C${checkpoint.seq}`,
+      checkpoint,
+    };
+  } catch (error) {
+    return {
+      persisted: false,
+      reason: 'checkpoint-write-failed',
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 async function persistIterationState({
   rootDir,
   sessionId,
@@ -333,13 +450,21 @@ async function persistIterationState({
   prompt = '',
   rawOutput = '',
   extraLogEntries = [],
+  checkpointWriter = writeSoloIterationCheckpoint,
 } = {}) {
+  const checkpointResult = typeof checkpointWriter === 'function'
+    ? await checkpointWriter({ rootDir, sessionId, summary, outcome })
+    : { persisted: false, reason: 'checkpoint-writer-disabled' };
   await appendSoloIteration({
     rootDir,
     sessionId,
     iteration: outcome.iteration,
     outcome,
-    logEntries: buildLogEntries({ prompt, rawOutput, extra: extraLogEntries }),
+    logEntries: buildLogEntries({
+      prompt,
+      rawOutput,
+      extra: [...extraLogEntries, buildCheckpointLogEntry(checkpointResult, outcome)],
+    }),
   });
 
   const continuity = summarizeIterationForContinuity(outcome);
@@ -367,6 +492,8 @@ async function persistIterationState({
     lastIteration: outcome.iteration,
     lastOutcome: outcome.outcome,
     lastFailureClass: outcome.failureClass,
+    lastStage: outcome.stage,
+    latestEvidence: outcome.evidence,
     stopRequested: false,
     backoff: nextBackoff,
     updatedAt: outcome.createdAt,
@@ -384,6 +511,7 @@ export async function runSoloHarnessLoop({
   maxIterations = 20,
   executeTurn,
   lifecycleHooks = {},
+  checkpointWriter = writeSoloIterationCheckpoint,
   sleepImpl = sleep,
 } = {}) {
   if (typeof executeTurn !== 'function') {
@@ -414,6 +542,7 @@ export async function runSoloHarnessLoop({
         sessionId,
         summary,
         outcome: buildStopOutcome({ sessionId, iteration }),
+        checkpointWriter,
       });
       await invokeLifecycleHook({
         rootDir,
@@ -537,6 +666,7 @@ export async function runSoloHarnessLoop({
       prompt: rawTurn?.prompt || '',
       rawOutput: rawTurn?.rawOutput || '',
       extraLogEntries: [...(rawTurn?.logEntries || []), ...turnLogEntries],
+      checkpointWriter,
     });
 
     if (outcome.shouldStop) {
@@ -570,7 +700,9 @@ export async function runSoloHarnessLoop({
     sessionId,
     iteration,
     outcome: 'human-gate',
+    stage: 'handoff',
     summary: `Reached maxIterations (${max}).`,
+    evidence: [`maxIterations=${max}`],
     nextAction: 'Review the latest iteration and resume when the objective is ready for another loop.',
     shouldStop: true,
     failureClass: 'safety-gate',
@@ -580,6 +712,7 @@ export async function runSoloHarnessLoop({
     sessionId,
     summary,
     outcome: maxOutcome,
+    checkpointWriter,
   });
 
   await invokeLifecycleHook({

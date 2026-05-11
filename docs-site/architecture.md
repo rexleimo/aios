@@ -54,6 +54,7 @@ AIOS adds an operator-facing harness on top of ContextDB:
 - `dry-run` execution uses `local-dry-run` (token-free simulation).
 - `live` execution uses `subagent-runtime` and runs phase jobs via Codex CLI (`codex`) (currently codex-only).
 - When using `AIOS_SUBAGENT_CLIENT=codex-cli`, AIOS prefers `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin) for stable JSON handoffs (falls back for older versions).
+- Solo harness iterations record an explicit stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) plus evidence, then persist per-iteration ContextDB checkpoints when a session exists.
 
 ### Team Operations (HUD & Team Status)
 

@@ -85,6 +85,8 @@ test('appendSoloIteration persists iteration artifact and stop control can be re
         iteration: 1,
         outcome: 'success',
         summary: 'created docs',
+        stage: 'planning',
+        evidence: ['docs/checklist.md drafted'],
         keyChanges: ['docs/checklist.md'],
         keyLearnings: ['need final review'],
         nextAction: 'run tests',
@@ -101,6 +103,9 @@ test('appendSoloIteration persists iteration artifact and stop control can be re
 
     assert.match(iteration.iterationPath, /iteration-0001\.json$/);
     assert.match(iteration.logPath, /iteration-0001\.log\.jsonl$/);
+    const iterationPayload = JSON.parse(await readFile(iteration.iterationPath, 'utf8'));
+    assert.equal(iterationPayload.stage, 'planning');
+    assert.deepEqual(iterationPayload.evidence, ['docs/checklist.md drafted']);
 
     await requestSoloHarnessStop({
       rootDir,
@@ -114,6 +119,8 @@ test('appendSoloIteration persists iteration artifact and stop control can be re
     const status = await readSoloRunStatus({ rootDir, sessionId: 'solo-session' });
     assert.equal(status.iterationCount, 1);
     assert.equal(status.lastOutcome, 'success');
+    assert.equal(status.lastStage, 'planning');
+    assert.deepEqual(status.latestEvidence, ['docs/checklist.md drafted']);
     assert.equal(status.stopRequested, true);
   } finally {
     await rm(rootDir, { recursive: true, force: true });

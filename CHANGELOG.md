@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-05-11
+
+- feat(harness): persist stage checkpoint evidence
+
 ## [1.11.2] - 2026-05-11
 
 - fix: run Codex subagents unattended
