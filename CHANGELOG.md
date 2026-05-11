@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.11.2] - 2026-05-11
+
+- fix: run Codex subagents unattended
+
 ## [1.11.1] - 2026-05-11
 
 - fix browser MCP installer path portability

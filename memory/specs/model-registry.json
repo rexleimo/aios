@@ -14,7 +14,7 @@
       "contextWindow": "1M",
       "cli": {
         "command": "codex",
-        "argsTemplate": "--yolo -m gpt-5.5 -p",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-5.5",
         "modelArg": "-m",
         "modelValue": "gpt-5.5"
       }

@@ -145,7 +145,7 @@ codex
 
 期待動作: TTY エラー（`stdout is not a terminal` など）がなく、インタラクティブな `codex` セッションがターミナルに正しくアタッチされる。
 
-ヒント (codex-cli): Codex CLI v0.114+ は `codex exec` 構造化出力をサポート（`--output-schema`、`--output-last-message`、stdin）。AIOS は利用可能な場合、安定した JSON handoff のためにこれらを使用します。
+ヒント (codex-cli): Codex CLI v0.114+ は `codex exec` 構造化出力をサポート（`--output-schema`、`--output-last-message`、stdin）。AIOS は利用可能な場合、安定した JSON handoff のためにこれらを使用します。Codex child worker は既定で `--dangerously-bypass-approvals-and-sandbox` を付与し、unattended live run が approval/sandbox prompt で待ち続けるのを防ぎます。手動デバッグ時のみ `AIOS_SUBAGENT_CODEX_UNATTENDED=0` で無効化してください。
 
 もし routed startup が current の non-AIOS repo 内で `scripts/aios.mjs` を探し続ける場合は、最新 `main` を pull してください。最近の build では routed `ctx-agent` startup が source-repo レイアウトを前提にせず、workspace-aware に動作します。
 

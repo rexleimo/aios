@@ -1008,6 +1008,48 @@ test('dispatch runtime registry disables Codex MCP startup for child workers by 
   }
 });
 
+test('dispatch runtime registry makes Codex child workers unattended by default', async () => {
+  const runtimes = await importDispatchRuntimes();
+  assert.ok(runtimes, 'expected runtime registry module');
+
+  const captureDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-orchestrator-codex-unattended-'));
+  const captureArgsPath = path.join(captureDir, 'argv.jsonl');
+  const fakeBin = await createFakeCodexCommand(null, {
+    captureArgsPath,
+  });
+  const registry = runtimes.createDispatchRuntimeRegistry({ executeDryRunPlan: () => ({ mode: 'dry-run', ok: true, jobRuns: [] }) });
+  const runtime = runtimes.resolveDispatchRuntime({ runtimeId: 'subagent-runtime', executionMode: 'live' }, registry);
+
+  const plan = buildOrchestrationPlan({ blueprint: 'feature', taskTitle: 'Run Codex child workers unattended' });
+  const dispatchPlan = buildLocalDispatchPlan(plan);
+
+  const result = await runtime.execute({
+    plan,
+    dispatchPlan,
+    dispatchPolicy: null,
+    env: {
+      ...process.env,
+      AIOS_EXECUTE_LIVE: '1',
+      AIOS_SUBAGENT_CLIENT: 'codex-cli',
+      AIOS_SUBAGENT_CONCURRENCY: '1',
+      PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+    },
+    io: { log() {} },
+  });
+
+  assert.equal(result.ok, true);
+  const argRows = (await fs.readFile(captureArgsPath, 'utf8'))
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  assert.equal(argRows.length > 0, true);
+  for (const args of argRows) {
+    assert.equal(args[0], 'exec');
+    assert.equal(args.includes('--dangerously-bypass-approvals-and-sandbox'), true);
+  }
+});
+
 test('subagent runtime captures pre-mutation snapshots with schema-checked manifest when opted in', async () => {
   const runtimes = await importDispatchRuntimes();
   assert.ok(runtimes, 'expected runtime registry module');
@@ -1113,9 +1155,12 @@ test('dispatch runtime registry retries codex execution when output schema is re
   const runtimes = await importDispatchRuntimes();
   assert.ok(runtimes, 'expected runtime registry module');
 
+  const captureDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-orchestrator-codex-schema-fallback-'));
+  const captureArgsPath = path.join(captureDir, 'argv.jsonl');
   const fakeBin = await createFakeCodexCommand(null, {
     usageLog: 'inputTokens=60 outputTokens=20 totalTokens=80 usd=0.08',
     failOnOutputSchema: true,
+    captureArgsPath,
   });
   const registry = runtimes.createDispatchRuntimeRegistry({ executeDryRunPlan: () => ({ mode: 'dry-run', ok: true, jobRuns: [] }) });
   const runtime = runtimes.resolveDispatchRuntime({ runtimeId: 'subagent-runtime', executionMode: 'live' }, registry);
@@ -1143,6 +1188,18 @@ test('dispatch runtime registry retries codex execution when output schema is re
   assert.equal(result.jobRuns.some((jobRun) => jobRun.status === 'blocked'), false);
   assert.equal((result.cost?.totalTokens || 0) > 0, true);
   assert.equal((result.cost?.usd || 0) > 0, true);
+
+  const argRows = (await fs.readFile(captureArgsPath, 'utf8'))
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => JSON.parse(line));
+  assert.equal(argRows.length > 1, true);
+  assert.equal(argRows.some((args) => args.includes('--output-schema')), true);
+  assert.equal(argRows.some((args) => !args.includes('--output-schema')), true);
+  for (const args of argRows) {
+    assert.equal(args.includes('--dangerously-bypass-approvals-and-sandbox'), true);
+  }
 });
 
 test('dispatch runtime registry accepts a valid codex handoff that arrives before process exit', async () => {
@@ -2180,12 +2237,13 @@ test('runOrchestrate live dispatch uses model-router per job and records dispatc
 
   const argsLog = await fs.readFile(captureArgsPath, 'utf8');
   assert.match(argsLog, /gemini \["-m","gemini-3-pro","-p"/);
-  assert.match(argsLog, /codex \["exec".*"-m","gpt-5\.5"/);
+  assert.match(argsLog, /codex \["exec".*"--dangerously-bypass-approvals-and-sandbox".*"-m","gpt-5\.5"/);
   assert.match(argsLog, /claude \["--model","claude-opus-4-7","--print"/);
 
   const promptLog = await fs.readFile(captureInputPath, 'utf8');
   assert.match(promptLog, /## Model Router/);
   assert.match(promptLog, /modelId=gpt-5\.5/);
+  assert.match(promptLog, /cliCommand=codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-5\.5/);
 
   const sessionDirs = await fs.readdir(path.join(rootDir, 'memory', 'context-db', 'sessions'));
   const modelEvents = [];

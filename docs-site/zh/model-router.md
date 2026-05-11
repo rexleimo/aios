@@ -37,9 +37,11 @@ description: 多模型 Agent Team 的智能模型调度 — 根据能力、成�
 
 | 协议 | CLI | 使用者 |
 |------|-----|--------|
-| **codex** | `codex --yolo -m <模型名> -p "<提示词>"` | GPT-5.5 |
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <模型名> "<提示词>"` | GPT-5.5 |
 | **gemini** | `gemini -m gemini-3-pro -p "<提示词>"` | Gemini-3-Pro |
 | **claude** | `claude --model <模型名> -p "<提示词>"` | 其余所有模型 |
+
+Codex live worker 会默认附加 `--dangerously-bypass-approvals-and-sandbox`（当前等价于旧的 `--yolo` 快捷方式），避免后台子进程等待 approval/sandbox prompt。只有在手动调试 Codex 时才建议设置 `AIOS_SUBAGENT_CODEX_UNATTENDED=0` 关闭。
 
 ## 路由规则
 

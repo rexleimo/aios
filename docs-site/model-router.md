@@ -73,9 +73,11 @@ Three protocols, automatically selected by provider:
 
 | Protocol | CLI | Used By |
 |----------|-----|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | GPT-5.5 |
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
 | **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
 | **claude** | `claude --model <model> -p "<prompt>"` | All other models |
+
+Codex live workers use the documented `--dangerously-bypass-approvals-and-sandbox` flag (the current equivalent of the old `--yolo` shorthand) so background subagents do not wait on approval or sandbox prompts. Set `AIOS_SUBAGENT_CODEX_UNATTENDED=0` only when you intentionally want to debug Codex without that bypass.
 
 ## Routing Rules
 

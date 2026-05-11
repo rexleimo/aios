@@ -140,7 +140,7 @@ codex
 
 Expected: no TTY errors like `stdout is not a terminal`, and the interactive `codex` session attaches to the terminal correctly.
 
-Tip (codex-cli): Codex CLI v0.114+ supports `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin). AIOS uses them when available for more reliable JSON handoffs.
+Tip (codex-cli): Codex CLI v0.114+ supports `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin). AIOS uses them when available for more reliable JSON handoffs. Codex child workers also run with `--dangerously-bypass-approvals-and-sandbox` by default to prevent unattended live runs from waiting on approval or sandbox prompts; set `AIOS_SUBAGENT_CODEX_UNATTENDED=0` only for manual debugging.
 
 If routed startup is still looking for `scripts/aios.mjs` inside the current non-AIOS repo, pull latest `main`; recent builds make routed `ctx-agent` startup workspace-aware instead of assuming the source-repo layout.
 

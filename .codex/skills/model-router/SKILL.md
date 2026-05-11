@@ -11,7 +11,7 @@ description: "当需要调度不同模型执行子任务时使用。根据任务
 
 | 协议 | CLI | 使用场景 |
 |------|-----|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | 仅 GPT-5.5 |
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | 仅 GPT-5.5 |
 | **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | 仅 Gemini-3-Pro |
 | **claude** | `claude --model <model> -p "<prompt>"` | 其余所有模型 |
 
@@ -49,7 +49,7 @@ description: "当需要调度不同模型执行子任务时使用。根据任务
 
 - `aios team` / `aios orchestrate --dispatch local --execute live` 默认启用 per-phase model routing，并为 planner / implementer / reviewer / security-reviewer 分别解析模型。
 - 每个 phase job 的 `launchSpec.modelRouting` 会包含 `role`、`taskType`、`modelId`、`provider`、`clientId`、`cliCommand`、`reason` 和 `fallback`，merge-gate 保持 `requiresModel=false`。
-- live subagent / GroupChat 运行时会按 `clientId` 切换 CLI 协议并附加模型参数；同时在 prompt 中加入 `## Model Router` 段落，便于子 Agent 自检。
+- live subagent / GroupChat 运行时会按 `clientId` 切换 CLI 协议并附加模型参数；Codex 子进程默认附加 `--dangerously-bypass-approvals-and-sandbox`，避免后台 approval/sandbox prompt 卡死；同时在 prompt 中加入 `## Model Router` 段落，便于子 Agent 自检。
 - 每个 phase / speaker 完成或阻塞后写入 ContextDB `kind=model.dispatch` 事件，`turn.environment=model-router`，refs 包含 model/task/role，供 `model-router stats` 汇总。
 - 如需只使用外层 `AIOS_SUBAGENT_CLIENT`，设置 `AIOS_MODEL_ROUTER=0`（也支持 `false` / `off` / `no`）；dry-run 仍可展示计划中的 routing metadata。
 
@@ -85,6 +85,7 @@ export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
 export AIOS_MODEL_CODE_REVIEW=claude-opus   # 按任务类型覆盖
 export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
 export AIOS_MODEL_PLANNING=glm-5.1
+export AIOS_SUBAGENT_CODEX_UNATTENDED=0      # 关闭 Codex 子进程 yolo/bypass（默认开启）
 ```
 
 ## 注意

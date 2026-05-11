@@ -140,7 +140,7 @@ codex
 
 예상 동작: TTY 오류(`stdout is not a terminal` 등) 없음, 인터랙티브 `codex` 세션이 터미널에 정상적으로 연결.
 
-팁 (codex-cli): Codex CLI v0.114+는 `codex exec` 구조화 출력 지원 (`--output-schema`, `--output-last-message`, stdin). AIOS는 사용 가능할 때 안정적인 JSON handoff를 위해 이를 활용합니다.
+팁 (codex-cli): Codex CLI v0.114+는 `codex exec` 구조화 출력 지원 (`--output-schema`, `--output-last-message`, stdin). AIOS는 사용 가능할 때 안정적인 JSON handoff를 위해 이를 활용합니다. Codex child worker는 기본적으로 `--dangerously-bypass-approvals-and-sandbox`를 붙여 unattended live run이 approval/sandbox prompt에서 멈추지 않게 합니다. 수동 디버깅 시에만 `AIOS_SUBAGENT_CODEX_UNATTENDED=0`으로 끄세요.
 
 팁: 모델 콜 없이 DAG를 검증하려면 `--execute dry-run` 사용 (또는 라이브 런타임 어댑터 시뮬레이션용 `AIOS_SUBAGENT_SIMULATE=1`).
 

@@ -29,6 +29,7 @@ export const SUBAGENT_UPSTREAM_MAX_ATTEMPTS_ENV = 'AIOS_SUBAGENT_UPSTREAM_MAX_AT
 export const SUBAGENT_UPSTREAM_BACKOFF_MS_ENV = 'AIOS_SUBAGENT_UPSTREAM_BACKOFF_MS';
 export const SUBAGENT_PRE_MUTATION_SNAPSHOT_ENV = 'AIOS_SUBAGENT_PRE_MUTATION_SNAPSHOT';
 export const SUBAGENT_CODEX_DISABLE_MCP_ENV = 'AIOS_SUBAGENT_CODEX_DISABLE_MCP';
+export const SUBAGENT_CODEX_UNATTENDED_ENV = 'AIOS_SUBAGENT_CODEX_UNATTENDED';
 
 const SUPPORTED_CLIENTS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
 const CLIENT_COMMAND = {
@@ -169,6 +170,14 @@ function buildCodexConfigArgs(env = process.env) {
     return [];
   }
   return ['-c', 'mcp_servers={}', '-c', 'features.rmcp_client=false'];
+}
+
+function buildCodexUnattendedArgs(env = process.env) {
+  const enabled = parseBooleanEnv(env?.[SUBAGENT_CODEX_UNATTENDED_ENV], true);
+  if (!enabled) {
+    return [];
+  }
+  return ['--dangerously-bypass-approvals-and-sandbox'];
 }
 
 function buildRoutedExtraArgs(clientId = '', modelRouting = null, env = process.env) {
@@ -872,6 +881,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
       ? `${systemText}\n\n## New User Request\n${promptText}`
       : promptText;
     const codexConfigArgs = buildCodexConfigArgs(env);
+    const codexUnattendedArgs = buildCodexUnattendedArgs(env);
 
     const structuredFlags = [];
     if (codexOutput?.schemaPath) {
@@ -885,7 +895,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
     }
 
     if (structuredFlags.length > 0) {
-      args = ['exec', ...codexConfigArgs, ...routedExtraArgs, ...structuredFlags, '-'];
+      args = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, ...structuredFlags, '-'];
       const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
       const combinedStdout = String(result.stdout || '');
       const combinedStderr = String(result.stderr || '');
@@ -913,7 +923,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
         const combined = `${combinedStdout}\n${combinedStderr}`.trim();
         const structuredFlags = ['--output-schema', '--output-last-message', '--color'];
         if (isUnsupportedCodexFlagError(combined, structuredFlags) || isCodexSchemaValidationError(combined)) {
-          const fallbackArgs = ['exec', ...codexConfigArgs, ...routedExtraArgs];
+          const fallbackArgs = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs];
           if (codexOutput?.lastMessagePath) {
             fallbackArgs.push('--output-last-message', codexOutput.lastMessagePath);
           }
@@ -947,7 +957,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
             const fallbackCombined = `${fallbackStdout}\n${fallbackStderr}`.trim();
             const fallbackFlags = ['--output-last-message', '--color'];
             if (isUnsupportedCodexFlagError(fallbackCombined, fallbackFlags)) {
-              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexConfigArgs, ...routedExtraArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
+              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
               const plainStdout = String(plainFallback.stdout || '');
               const plainStderr = String(plainFallback.stderr || '');
               const plainExit = Number.isFinite(plainFallback.status) ? plainFallback.status : 1;
@@ -992,7 +1002,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
       });
     }
 
-    args = ['exec', ...codexConfigArgs, ...routedExtraArgs, '-'];
+    args = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, '-'];
     const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
     const combinedStdout = String(result.stdout || '');
     const combinedStderr = String(result.stderr || '');

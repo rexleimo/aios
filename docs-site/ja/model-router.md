@@ -26,9 +26,11 @@ description: マルチモデル Agent Team のためのインテリジェント�
 
 | プロトコル | CLI | 使用者 |
 |----------|-----|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | GPT-5.5 |
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
 | **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
 | **claude** | `claude --model <model> -p "<prompt>"` | その他すべてのモデル |
+
+Codex live worker は `--dangerously-bypass-approvals-and-sandbox`（旧 `--yolo` 相当）を既定で付与し、バックグラウンド subagent が approval/sandbox prompt で待ち続けるのを防ぎます。手動デバッグ時のみ `AIOS_SUBAGENT_CODEX_UNATTENDED=0` で無効化してください。
 
 ## ルーティングルール
 

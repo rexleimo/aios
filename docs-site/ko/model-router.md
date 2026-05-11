@@ -26,9 +26,11 @@ description: 멀티모델 Agent Team을 위한 지능형 모델 디스패치 —
 
 | 프로토콜 | CLI | 사용 대상 |
 |----------|-----|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | GPT-5.5 |
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
 | **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
 | **claude** | `claude --model <model> -p "<prompt>"` | 그 외 모든 모델 |
+
+Codex live worker는 기본적으로 `--dangerously-bypass-approvals-and-sandbox`(기존 `--yolo`에 해당)를 붙여 background subagent가 approval/sandbox prompt에서 멈추지 않게 합니다. 수동 디버깅 시에만 `AIOS_SUBAGENT_CODEX_UNATTENDED=0`으로 끄세요.
 
 ## 라우팅 규칙
 

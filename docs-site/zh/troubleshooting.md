@@ -146,7 +146,7 @@ export AIOS_EXECUTE_LIVE=1
 export AIOS_SUBAGENT_CLIENT=codex-cli  # 必填（live 目前仅支持 codex-cli）
 ```
 
-如果你使用 `codex` v0.114+，AIOS 会优先使用 `codex exec` 结构化输出以获得稳定的 JSON handoff（旧版本自动降级）。
+如果你使用 `codex` v0.114+，AIOS 会优先使用 `codex exec` 结构化输出以获得稳定的 JSON handoff（旧版本自动降级）。Codex 子进程默认附加 `--dangerously-bypass-approvals-and-sandbox`，避免 unattended live run 等待 approval/sandbox prompt；只有手动调试时才建议设置 `AIOS_SUBAGENT_CODEX_UNATTENDED=0` 关闭。
 
 如果 routed startup 还在当前这个非 AIOS 仓库里找 `scripts/aios.mjs`，先拉取最新 `main`。最近的版本已经把 routed `ctx-agent` startup 改成按当前工作区感知，而不是假定 source-repo 布局。
 
