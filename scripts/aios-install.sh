@@ -4,6 +4,7 @@ set -euo pipefail
 DEFAULT_REPO="rexleimo/rex-cli"
 DEFAULT_INSTALL_DIR="$HOME/.rexcil/rex-cli"
 DEFAULT_WRAP_MODE="opt-in"
+DEFAULT_FIRST_SETUP="1"
 
 usage() {
   cat <<'USAGE'
@@ -16,6 +17,7 @@ Optional environment variables:
   AIOS_REPO           GitHub repo, default: rexleimo/rex-cli
   AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/rex-cli
   AIOS_WRAP_MODE      all|repo-only|opt-in|off (default: opt-in)
+  AIOS_FIRST_SETUP    1|0, run first-run skills/native/superpowers setup (default: 1)
 USAGE
 }
 
@@ -27,6 +29,7 @@ fi
 AIOS_REPO="${AIOS_REPO:-$DEFAULT_REPO}"
 AIOS_INSTALL_DIR="${AIOS_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
 AIOS_WRAP_MODE="${AIOS_WRAP_MODE:-$DEFAULT_WRAP_MODE}"
+AIOS_FIRST_SETUP="${AIOS_FIRST_SETUP:-$DEFAULT_FIRST_SETUP}"
 
 case "$AIOS_WRAP_MODE" in
   all|repo-only|opt-in|off) ;;
@@ -71,6 +74,13 @@ safe_rm_rf() {
     exit 1
   fi
   rm -rf "$target"
+}
+
+is_disabled() {
+  case "$1" in
+    0|false|FALSE|off|OFF|no|NO) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 require_cmd tar
@@ -180,6 +190,23 @@ if [[ -f "$privacy_installer" ]]; then
   fi
 fi
 
+if is_disabled "$AIOS_FIRST_SETUP"; then
+  echo "[info] first-run core setup skipped (AIOS_FIRST_SETUP=$AIOS_FIRST_SETUP)"
+else
+  aios_cli="$AIOS_INSTALL_DIR/scripts/aios.mjs"
+  if [[ -f "$aios_cli" ]]; then
+    if command -v node >/dev/null 2>&1; then
+      echo "+ first-run core setup: node $aios_cli setup --components skills,native,superpowers --client all --skip-doctor"
+      node "$aios_cli" setup --components skills,native,superpowers --client all --skip-doctor
+    else
+      echo "[warn] node not found; skip first-run core setup" >&2
+      echo "       Retry after installing Node.js: aios setup --components skills,native,superpowers" >&2
+    fi
+  else
+    echo "[warn] missing AIOS CLI; skip first-run core setup: $aios_cli" >&2
+  fi
+fi
+
 rc_file="${ZDOTDIR:-$HOME}/.zshrc"
 
 echo ""
@@ -189,5 +216,5 @@ echo "  Install dir: $AIOS_INSTALL_DIR"
 echo ""
 echo "Next:"
 echo "  1) source \"$rc_file\""
-echo "  2) aios        # opens the TUI"
-echo "  3) aios doctor # optional"
+echo "  2) aios doctor # verify"
+echo "  3) aios        # opens the TUI"

@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-05-12
+
+- fix(installer): run first setup for release installs
+
 ## [1.12.0] - 2026-05-11
 
 - feat(harness): persist stage checkpoint evidence
