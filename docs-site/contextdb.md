@@ -209,7 +209,7 @@ The generated packet reports an `Event Window` line with `tokenBudget`, `tokenUs
 
 ## Packet Controls (P0)
 
-`context:pack` supports token-aware compression plus filter-aware export:
+`context:pack` supports token-aware compression plus filter-aware export. This is AIOS-native input compression, not an RTK install or shell hook:
 
 ```bash
 npm run contextdb -- context:pack \
@@ -228,6 +228,8 @@ npm run contextdb -- context:pack \
 - `legacy`: keep the previous tail-window selection behavior and skip compression.
 - `--kinds` / `--refs`: include only matching events.
 - default dedupe is enabled for repeated events in the packet view.
+
+The balanced strategy compresses repeated lines, stack runs, and low-signal event text while preserving critical errors, file paths, command signals, and latest state. Packet telemetry reports `strategy`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated` so the reduction is auditable.
 
 ## Retrieval Commands (P1)
 

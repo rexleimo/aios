@@ -29,6 +29,7 @@ aios
 | 能力 | 说明 | 命令 |
 |------|------|------|
 | **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` 自动加载 |
+| **自研 Token 压缩** | 参考 RTK/Caveman 的思路，但不安装竞品工具；本地完成输入/输出省 token | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
@@ -48,6 +49,9 @@ aios team 3:codex "重构登录模块并运行测试"
 
 # 智能模型路由
 node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
+
+# 自研 token 压缩 ContextDB 包
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
 
 # 单 Agent 过夜任务
 aios harness run --objective "完成明天的交接文档" --worktree

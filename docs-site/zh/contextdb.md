@@ -209,7 +209,7 @@ npm run contextdb -- context:pack \
 
 ## 上下文包控制（P0）
 
-`context:pack` 支持 token-aware 压缩和事件过滤：
+`context:pack` 支持 token-aware 压缩和事件过滤。这是 AIOS 原生输入压缩，不需要安装 RTK 或 shell hook：
 
 ```bash
 npm run contextdb -- context:pack \
@@ -228,6 +228,8 @@ npm run contextdb -- context:pack \
 - `legacy`：保留旧版尾部窗口选择逻辑，不做压缩。
 - `--kinds` / `--refs`：只打包匹配事件。
 - 默认会对重复事件做去重。
+
+`balanced` 会压缩重复行、堆栈噪声和低信号事件文本，同时保留关键错误、文件路径、命令信号与最新状态。上下文包会输出 `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，便于审计省 token 效果。
 
 ## 检索命令（P1）
 

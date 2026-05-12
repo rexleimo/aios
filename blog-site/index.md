@@ -17,6 +17,7 @@ This blog tracks practical patterns for:
 - **Hermes engine** style workflow orchestration
 - **Agent Team** collaboration models
 - **automatic subagent planning** and execution gates
+- native **token compression** without competitor installs
 - **advanced design skills** for page building from vague prompts
 
 ## Getting Started Posts
@@ -28,6 +29,7 @@ This blog tracks practical patterns for:
 ## Latest Posts
 
 - [ContextDB Token Compression: Smaller Context Packs With Safer Recall](2026-05-token-compression.md)
+- [Native Token Compression: Why RexCLI Does Not Install RTK or Caveman](2026-05-native-token-compression.md)
 - [Model Router: Intelligent Multi-Model Dispatch for Agent Teams](2026-05-model-router.md)
 - [Solo Harness: Let One Agent Work Overnight Without Losing Control](2026-04-solo-harness.md)
 - [Browser MCP Weak-Model Upgrade: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)

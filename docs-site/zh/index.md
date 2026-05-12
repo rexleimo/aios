@@ -26,6 +26,12 @@ description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏�
     <div class="feature-card__desc">项目级记忆层。事件、检查点和上下文包在终端重启后依然持久化。</div>
     <span class="feature-card__link">了解更多 →</span>
   </a>
+  <a href="token-compression/" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">✂️</div>
+    <div class="feature-card__title">自研 Token 压缩</div>
+    <div class="feature-card__desc">参考 RTK/Caveman 思路，自研输入/输出压缩，不安装竞品工具。</div>
+    <span class="feature-card__link">了解更多 →</span>
+  </a>
   <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
@@ -100,10 +106,11 @@ cd packages/debug-hub && npm install && npm run dev
 RexCLI 不是新的 coding agent。它是一个本地优先的能力层：
 
 1. **记忆层 ContextDB**：把事件、checkpoint、上下文包保存在当前项目里，重启终端后还能续上。
-2. **工作流层 Superpowers**：把需求拆成计划、按证据调试、完成前做验证。
-3. **协作层 Agent Team**：把明确可拆分的任务交给多个 CLI worker，并用 HUD 追踪状态。
-4. **可观测层 debug-hub**：把 agent 运行时日志和调用链暴露为 MCP 工具，让 agent 自主排查错误。
-5. **工具层 Browser MCP + Privacy Guard**：让 agent 可以安全使用浏览器、读取敏感配置前先脱敏。
+2. **Token 层 自研 Token 压缩**：压缩 ContextDB、浏览器、CLI 和回复 token，不安装竞品。
+3. **工作流层 Superpowers**：把需求拆成计划、按证据调试、完成前做验证。
+4. **协作层 Agent Team**：把明确可拆分的任务交给多个 CLI worker，并用 HUD 追踪状态。
+5. **可观测层 debug-hub**：把 agent 运行时日志和调用链暴露为 MCP 工具，让 agent 自主排查错误。
+6. **工具层 Browser MCP + Privacy Guard**：让 agent 可以安全使用浏览器、读取敏感配置前先脱敏。
 
 如果是单 agent 的长任务，[单 Agent 夜跑](solo-harness.md) 会在 ContextDB 之上补上 run journal、resume/stop 控制和可选 worktree 隔离。
 
@@ -159,6 +166,7 @@ aios team status --provider codex --watch
 ## 下一步阅读
 
 - [快速开始](getting-started.md)：安装、Setup、Doctor、第一次运行。
+- [自研 Token 压缩](token-compression.md)：不安装 RTK/Caveman，也能减少输入/输出 token。
 - [按场景找命令](use-cases.md)：按"我想做什么"查入口。
 - [多 Agent 实战](team-ops.md)：什么时候开团队、怎么监控、怎么收尾。
 - [单 Agent 夜跑](solo-harness.md)：怎么让一个 agent 过夜跑、查看状态、停止和恢复。

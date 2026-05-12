@@ -170,6 +170,26 @@ Multi-profile support for isolated browser instances:
 - TypeScript
 - MCP SDK
 
+## Token Optimization (Input + Output Compression)
+
+AIOS uses a native dual compression system inspired by RTK-style input filtering and Caveman-style output brevity. Do **not** install RTK, Caveman, shell hooks, or competitor CLIs; reference their ideas only.
+
+### Output Compression: `aios-compress` skill
+- Native prompt-level output discipline for compact responses
+- Three levels: `tight` (default 日常), `ultra` (harness 日志), `precise` (浏览器操作 — no compress)
+- Targets ~60% fewer output tokens while keeping technical accuracy
+- Auto-precise mode for browser ops, security warnings, irreversible actions
+- Off: say "precise mode" or "stop compress"
+- See: `.claude/skills/aios-compress/SKILL.md`
+
+### Input Compression: `aios-browser-compress` skill + ContextDB strategies
+- ContextDB packets use built-in `--token-budget` + `--token-strategy legacy|balanced|aggressive`
+- Tool priority: `page.semantic_snapshot` > targeted `page.extract_text` > full `page.extract_text` > `page.get_html`
+- Page-type-aware filtering for XHS note pages, profiles, search results
+- CLI/tool output discipline: scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) instead of full dumps
+- Structural compression: preserve errors/actions/paths/latest state, drop nav/footer/ads, collapse repeated elements
+- See: `.claude/skills/aios-browser-compress/SKILL.md`
+
 ## Important Notes
 
 - All normal browser automation should use the repo-local `puppeteer-stealth` MCP alias and browser-use tools (`chrome.launch_cdp` + `browser.connect_cdp` + `page.*`)

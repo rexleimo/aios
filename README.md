@@ -29,6 +29,7 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 | Capability | Description | Command |
 |------------|-------------|---------|
 | **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` |
+| **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
 | **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
@@ -51,6 +52,9 @@ aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
 
 # Intelligent model routing
 node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
+
+# Native token-compressed ContextDB packet
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
 
 # Content outcome tracking
 aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'

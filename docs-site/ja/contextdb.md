@@ -209,7 +209,7 @@ npm run contextdb -- context:pack \
 
 ## パック制御（P0）
 
-`context:pack` は token-aware 圧縮とイベントフィルタをサポートします:
+`context:pack` は token-aware 圧縮とイベントフィルタをサポートします。これは AIOS ネイティブの入力圧縮であり、RTK や shell hook のインストールは不要です:
 
 ```bash
 npm run contextdb -- context:pack \
@@ -228,6 +228,8 @@ npm run contextdb -- context:pack \
 - `legacy`: 旧来の tail-window 選択を使い、圧縮をスキップ。
 - `--kinds` / `--refs`: 一致イベントのみ含める。
 - デフォルトで重複イベントの除外が有効。
+
+`balanced` strategy は重複行、stack-run ノイズ、低シグナルのイベント本文を圧縮しつつ、重要なエラー、ファイルパス、コマンドシグナル、最新状態を保持します。Packet telemetry は `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` を出力し、削減内容を監査可能にします。
 
 ## 検索コマンド（P1）
 
