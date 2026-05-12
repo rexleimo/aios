@@ -15,6 +15,11 @@ ContextDB `context:pack` now supports **token compression**. Give it a token bud
 
 [Read the official ContextDB docs](https://cli.rexai.top/contextdb/#token-compression){ .md-button .md-button--primary }
 
+<figure class="rex-visual">
+  <img src="assets/visual-token-compression-wireframe.svg" alt="Wireframe showing raw history being compressed into a smaller context packet">
+  <figcaption>Wireframe version for the “what is good about compression?” question: keep signal, compress noise, fit the budget.</figcaption>
+</figure>
+
 ## Do It Now
 
 ```bash

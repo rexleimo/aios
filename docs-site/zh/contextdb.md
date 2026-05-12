@@ -202,6 +202,11 @@ npm run contextdb -- context:pack \
 
 生成的上下文包会在 `Event Window` 行报告 `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，方便确认压缩是否先于删除事件生效。
 
+<figure class="rex-visual">
+  <img src="../assets/visual-token-compression-wireframe.svg" alt="ContextDB token 压缩线框图：原始会话历史、预算感知压缩、更小的上下文包">
+  <figcaption>Token 压缩不是少记，而是先保留高信号信息、压缩噪音输出，再把更小的上下文包交给下一次 agent 运行。</figcaption>
+</figure>
+
 ## 上下文包控制（P0）
 
 `context:pack` 支持 token-aware 压缩和事件过滤：

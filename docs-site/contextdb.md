@@ -202,6 +202,11 @@ npm run contextdb -- context:pack \
 
 The generated packet reports an `Event Window` line with `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated`, so you can verify whether compression saved tokens before events were removed.
 
+<figure class="rex-visual">
+  <img src="assets/visual-token-compression-wireframe.svg" alt="Wireframe showing ContextDB token compression: raw session history, budget-aware compression, and a smaller context packet">
+  <figcaption>Token compression is a three-step handoff: preserve high-signal work, compress noisy output, then send a smaller packet to the next agent run.</figcaption>
+</figure>
+
 ## Packet Controls (P0)
 
 `context:pack` supports token-aware compression plus filter-aware export:

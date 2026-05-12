@@ -202,6 +202,11 @@ npm run contextdb -- context:pack \
 
 생성된 패킷의 `Event Window` 줄에는 `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, `truncated` 가 표시되어 이벤트 삭제 전에 압축으로 token 을 절약했는지 확인할 수 있습니다.
 
+<figure class="rex-visual">
+  <img src="../assets/visual-token-compression-wireframe.svg" alt="ContextDB token compression wireframe: raw session history, budget-aware compression, smaller context packet">
+  <figcaption>Token compression 은 기억을 줄이는 기능이 아니라, 고신호 정보는 남기고 노이즈를 압축해 다음 agent 에 작은 packet 을 넘기는 방식입니다.</figcaption>
+</figure>
+
 ## 패킷 제어 (P0)
 
 `context:pack`은 token-aware 압축과 이벤트 필터를 지원합니다:

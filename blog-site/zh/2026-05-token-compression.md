@@ -15,6 +15,11 @@ ContextDB `context:pack` 现在支持 **token 压缩**。给它一个 token 预�
 
 [查看官方 ContextDB 文档](https://cli.rexai.top/zh/contextdb/#token-compression){ .md-button .md-button--primary }
 
+<figure class="rex-visual">
+  <img src="../assets/visual-token-compression-wireframe.svg" alt="Token 压缩线框图：把原始历史压缩成更小的上下文包">
+  <figcaption>给“这个压缩有什么 nb 的地方”的线框版回答：保留信号，压缩噪音，塞进预算。</figcaption>
+</figure>
+
 ## 现在就用
 
 ```bash
