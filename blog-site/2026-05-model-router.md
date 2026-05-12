@@ -1,93 +1,137 @@
 ---
-title: "Model Router: Intelligent Multi-Model Dispatch for Agent Teams"
-description: "Introducing the Model Router — an intelligent dispatch layer that matches sub-tasks to optimal models by capability, cost, and historical success rate, with automatic CLI protocol selection."
+title: "Model Router: Balanced Multi-Model Dispatch for Agent Teams"
+description: "Balanced v2 routes sub-tasks with weighted signals, profiles, and explainable output so subscribed models are used when they are actually the right tool."
 date: 2026-05-08
 tags: ["model-router", "multi-model", "Agent Team", "orchestration", "dispatch", "AIOS"]
 ---
 
-# Model Router: Intelligent Multi-Model Dispatch for Agent Teams
+# Model Router: Balanced Multi-Model Dispatch for Agent Teams
 
-Every coding agent has a different shape. Claude Opus excels at code review and architecture. DeepSeek-V4 is fast and cheap for implementation. Gemini-3-Pro handles 1M-token research documents. GPT-5.5 is the all-rounder that can do anything reasonably well.
+Every coding agent has a different shape. Claude Opus is strong for review and architecture. DeepSeek-V4 is cheap and fast for ordinary implementation. Gemini-3-Pro handles long documents. GPT-5.5 is the all-rounder you want for browser and computer-use flows. Kimi K2.6 is a better fit for frontend UI. MiniMax-M2.7 is built for self-healing operations.
 
-But here's the problem: **your orchestrator has to remember which model is best for which task**, and it has to get the CLI command right for each one. `claude --model <name>` vs `codex --yolo -m <name>` vs `gemini -m <name>`. Multiply this by 8 models, 12 task types, and cost-aware fallback chains — it's too much for any human (or agent) to keep straight without tooling.
+The hard part is not knowing that list once. The hard part is routing real messy task descriptions correctly every time.
 
-**Model Router** solves this with a simple dispatch layer that agents can call directly.
+Balanced Model Router v2 upgrades the dispatch layer from first-match keywords to weighted task signals, routing profiles, and explainable output.
 
-## How It Works
+## Why Balanced v2
 
-The Model Router is a four-step pipeline:
+The old failure mode was easy to spot in stats: too many tasks collapsed into `implementation -> deepseek-v4`. That is fine for a normal endpoint, but wrong for browser publishing, frontend polish, or production recovery.
 
-1. **Analyze** — read the sub-task description and match it to a task type (code-review, implementation, research, etc.)
-2. **Route** — look up the primary model by capability match, with cost-ascending fallback chain
-3. **Dispatch** — generate the correct CLI command for the model's provider (claude/codex/gemini)
-4. **Learn** — record the dispatch outcome to ContextDB for historical success-rate feedback
+Balanced v2 keeps DeepSeek for ordinary coding while upgrading when the prompt contains strong capability signals.
+
+| Task | Before | Balanced v2 |
+|------|--------|-------------|
+| `用浏览器打开小红书发布页面，上传图片并填写标题` | `implementation -> deepseek-v4` | `browser-automation -> gpt-5.5` |
+| `build a beautiful landing page component` | `implementation -> deepseek-v4` | `frontend -> kimi-k2.6` |
+| `修复线上登录故障并分析日志` | often `research -> gemini-3-pro` | `self-healing -> minimax-m2.7` |
+| `阅读一份很长的第三方 API 文档，整理迁移策略` | research | `research -> gemini-3-pro` |
+| `实现一个新的登录接口，并补测试` | implementation | `implementation -> deepseek-v4` |
+
+That is the balance: spend on strong models when the task needs them, not because every task sounds important.
+
+## Profiles
+
+Balanced v2 has three routing profiles:
+
+- `balanced`: default. Strong signals upgrade; ordinary implementation stays cost-aware.
+- `premium`: broad, risky, or low-confidence work gets a stronger-model bias.
+- `budget`: low-cost by default, with upgrades only for hard capability requirements.
 
 ```bash
-# Auto-detect task type from description
-node scripts/aios.mjs model-router route --task "Review auth.js for security vulnerabilities"
-# → security-review → Claude Opus (primary)
-# → fallback chain: GPT-5.5 → GLM-5.1
-
-node scripts/aios.mjs model-router route --task "Implement a user login endpoint"
-# → implementation → DeepSeek-V4 (primary)
-# → fallback chain: GPT-5.5 → Claude Sonnet
-
-node scripts/aios.mjs model-router route --task "Research React 19 migration strategies"
-# → research → Gemini-3-Pro (primary)
-# → fallback chain: GPT-5.5 → Kimi K2.6
+node scripts/aios.mjs model-router route \
+  --task "build a beautiful landing page component" \
+  --profile balanced \
+  --explain
 ```
 
-## The Model Registry
+You can also set a session default:
 
-The router ships with a capability registry covering 8 models:
+```bash
+export AIOS_MODEL_ROUTER_PROFILE=premium
+```
 
-| Model | Best For | Cost |
-|-------|----------|------|
-| **Claude Opus 4.7** | Code review, architecture, security audit | Highest |
-| **Claude Sonnet 4.6** | Daily dev, RAG, rapid prototyping | Medium |
-| **GPT-5.5** | All-rounder: automation, reasoning, general | Highest |
-| **DeepSeek-V4-Pro** | Algorithm, core logic, batch processing | Lowest |
-| **GLM-5.1** | Math reasoning, autonomous loops, planning | Low |
-| **Kimi K2.6** | Multi-agent orchestration, frontend UI | Low |
-| **MiniMax-M2.7** | Self-healing, production recovery | Low |
-| **Gemini-3-Pro** | Multimodal analysis, long-doc research, 1M context | Medium |
+## Explainable Routing
 
-Each model entry includes its CLI protocol — `claude`, `codex`, or `gemini` — so the router always generates the correct command.
+The best new habit is to use `--explain` before blaming the router.
 
-## Three CLI Protocols, Automatic Selection
+```bash
+node scripts/aios.mjs model-router route \
+  --task "用浏览器打开小红书发布页面，上传图片并填写标题" \
+  --profile balanced \
+  --explain
+```
+
+The output includes:
+
+```json
+{
+  "resolvedType": "browser-automation",
+  "modelId": "gpt-5.5",
+  "profile": "balanced",
+  "confidence": 0.86,
+  "matchedSignals": [
+    { "taskType": "browser-automation", "signal": "浏览器", "weight": 8 },
+    { "taskType": "browser-automation", "signal": "上传", "weight": 8 },
+    { "taskType": "browser-automation", "signal": "填写", "weight": 8 }
+  ],
+  "why": [
+    "Detected browser-automation signals: 浏览器, 上传, 填写",
+    "balanced profile selected browser-automation"
+  ]
+}
+```
+
+Those fields make the decision debuggable:
+
+- `matchedSignals` shows the words that mattered.
+- `confidence` shows how clearly one task type won.
+- `why` explains the route in plain language.
+- `recommendedPhases` points out compound tasks that should be split.
+
+## Strong Signals
+
+The current signal map is intentionally simple and inspectable:
+
+| Signal examples | Route |
+|-----------------|-------|
+| browser, upload, screenshot, 浏览器, 上传, 填写 | `browser-automation -> GPT-5.5` |
+| security, vulnerability, auth, 安全, 漏洞, 权限 | `security-review -> Claude Opus` |
+| code review, pull request, 代码审查, 代码质量 | `code-review -> Claude Opus` |
+| production, incident, logs, 线上, 故障, 日志 | `self-healing -> MiniMax-M2.7` |
+| architecture, system design, 架构, 跨模块 | `architecture -> Claude Opus` |
+| long document, multimodal, 长文档, 第三方 API | `research -> Gemini-3-Pro` |
+| frontend, UI, landing page, component, 样式 | `frontend -> Kimi K2.6` |
+| implement, develop, 实现, 开发 | `implementation -> DeepSeek-V4` |
+
+This is not a black box. The registry lives in `memory/specs/model-registry.json`, and the router logic lives in `scripts/lib/model-router.mjs`.
+
+## Compound Tasks
+
+A prompt like this is not one job:
+
+```text
+设计 model-router 的优化方案并更新 skill 文档和博客
+```
+
+Balanced v2 can expose multiple recommended phases, for example planning plus docs. It still returns one `resolvedType` for compatibility, but `recommendedPhases` tells the orchestrator or human operator how to split the work.
+
+That keeps v2 safe: it improves route inspection without silently rewriting team plans.
+
+## CLI Protocols Still Matter
+
+The router also hides provider-specific command syntax:
 
 | Protocol | CLI Template | Used By |
-|----------|-------------|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
-| **claude** | `claude --model <model> -p "<prompt>"` | All others |
+|----------|--------------|---------|
+| `codex` | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
+| `gemini` | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
+| `claude` | `claude --model <model> -p "<prompt>"` | All others |
 
-No more "was it `-m` or `--model`?" — the router handles it.
+No more guessing whether a child worker needs `-m`, `--model`, or a provider-specific unattended flag.
 
-## Environment Variable Overrides
+## Stats Are Diagnostics, Not Magic
 
-Per-role overrides without touching config files:
-
-```bash
-export AIOS_MODEL_PLANNER=claude-opus
-export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
-export AIOS_MODEL_REVIEWER=claude-opus
-export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
-```
-
-Or by task type:
-
-```bash
-export AIOS_MODEL_CODE_REVIEW=claude-opus
-export AIOS_MODEL_RESEARCH=gemini-3-pro
-export AIOS_MODEL_GENERAL=gpt-5.5
-```
-
-Resolution priority: **env var** > **preferredModel** (agent card) > **model** (fallback).
-
-## Perception Feedback Loop
-
-Every dispatch is recorded as a `model.dispatch` event:
+Every live dispatch can be recorded as a ContextDB `model.dispatch` event:
 
 ```json
 {
@@ -100,31 +144,26 @@ Every dispatch is recorded as a `model.dispatch` event:
 }
 ```
 
-Over time, the perception system computes per-task-type model success rates. Future routing decisions weight: **capability match × historical success rate × cost**.
+`node scripts/aios.mjs model-router stats` summarizes that history. It is useful for spotting drift, such as every phase being recorded as `deepseek-v4 / implementation`.
 
-## Agent Integration
-
-The Model Router is injected into agent context via the AIOS Task Router. Any agent running through `ctx-agent` automatically receives model routing guidance. When dispatching sub-tasks, the agent can invoke the `model-router` skill to determine the optimal model.
-
-Agent role cards (`.claude/agents/*.md`) include a `preferredModel` field:
-
-```yaml
-# .claude/agents/rex-reviewer.md
-model: sonnet
-preferredModel: claude-opus
-```
+But v2 does not yet feed historical success rate back into live scoring. That is a future optimization. Today, routing is determined by task signals, profiles, env overrides, and registry rules.
 
 ## Getting Started
 
 ```bash
-# View all models and capabilities
+# View all models and routing rules
 node scripts/aios.mjs model-router list
 
-# Route a task to the best model
-node scripts/aios.mjs model-router route --task "你的任务描述"
+# Route with explanation
+node scripts/aios.mjs model-router route --task "你的任务描述" --profile balanced --explain
 
-# View dispatch statistics
+# Force a known task type
+node scripts/aios.mjs model-router route --task "重构数据库连接" --task-type implementation
+
+# View recorded dispatch stats
 node scripts/aios.mjs model-router stats
 ```
 
-The Model Router is available in RexCLI v1.8.0+. See the [full documentation](https://cli.rexai.top/model-router/) for configuration, routing rules, and integration details.
+If subscribed models seem underused, first run the route command with `--explain`. If the task is ordinary implementation, Balanced is doing its job. If the task is browser, frontend, security, architecture, long-doc research, or production recovery, the matched signals should show why it upgrades.
+
+See the [full documentation](https://cli.rexai.top/model-router/) for configuration, routing profiles, and Agent Team integration details.

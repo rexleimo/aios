@@ -1678,6 +1678,13 @@ function parseModelRouterArgs(argv) {
         options.format = takeValue(rest, index, '--format');
         index += 1;
         break;
+      case '--profile':
+        options.profile = takeValue(rest, index, '--profile');
+        index += 1;
+        break;
+      case '--explain':
+        options.explain = true;
+        break;
       case '--json':
         options.json = true;
         break;

@@ -20,6 +20,19 @@ const PROVIDER_CLIENT_MAP = Object.freeze({
   claude: 'claude-code',
   gemini: 'gemini-cli',
 });
+const DEFAULT_SIGNAL_RULES = Object.freeze([
+  { taskType: 'security-review', priority: 100, weight: 8, keywords: { cjk: ['安全', '漏洞', '注入', '权限', '合规'], en: ['secret', 'security', 'vulnerability', 'xss', 'csrf', 'injection', 'permission', 'compliance', 'auth'] }, reason: 'security or auth risk' },
+  { taskType: 'code-review', priority: 98, weight: 7, keywords: { cjk: ['代码审查', '审查', '评审', '代码质量'], en: ['code review', 'review', 'pull request', 'pr', 'code quality'] }, reason: 'code review or quality gate' },
+  { taskType: 'browser-automation', priority: 95, weight: 8, keywords: { cjk: ['浏览器', '打开', '上传', '填写', '截图', '网页抓取', '发布页面'], en: ['browser', 'upload', 'screenshot', 'scrape', 'crawl', 'automation', 'computer use'] }, reason: 'live browser or desktop workflow' },
+  { taskType: 'self-healing', priority: 90, weight: 8, keywords: { cjk: ['线上', '故障', '恢复', '自愈', '事故', '日志'], en: ['incident', 'outage', 'recover', 'self-healing', 'production', 'logs'] }, reason: 'production recovery or incident signal' },
+  { taskType: 'architecture', priority: 80, weight: 7, keywords: { cjk: ['架构', '技术选型', '系统设计', '跨模块', '重构方案'], en: ['architecture', 'system design', 'tech stack', 'cross-module', 'refactor plan'] }, reason: 'architecture or system design' },
+  { taskType: 'research', priority: 70, weight: 7, keywords: { cjk: ['很长', '长文档', '第三方 api', '调研', '研究', '视频', '图像', '多模态'], en: ['long document', 'research', 'migration strategy', 'video', 'image', 'multimodal'] }, reason: 'long-context or multimodal research' },
+  { taskType: 'frontend', priority: 65, weight: 7, keywords: { cjk: ['前端', '组件', '样式', '界面', '落地页'], en: ['frontend', 'front-end', 'ui', 'landing page', 'component', 'css', 'style', 'beautiful'] }, reason: 'frontend UI or visual design' },
+  { taskType: 'testing', priority: 50, weight: 4, keywords: { cjk: ['测试', '验证', 'qa'], en: ['test', 'testing', 'verify', 'qa'] }, reason: 'testing or QA' },
+  { taskType: 'docs', priority: 45, weight: 5, keywords: { cjk: ['文档', '博客', 'readme', '指南', '说明', 'skill'], en: ['docs', 'blog', 'readme', 'guide', 'manual', 'skill'] }, reason: 'documentation work' },
+  { taskType: 'planning', priority: 40, weight: 5, keywords: { cjk: ['设计', '方案', '规划', '拆解', '计划'], en: ['design', 'planning', 'plan', 'blueprint', 'roadmap'] }, reason: 'planning or decomposition' },
+  { taskType: 'implementation', priority: 20, weight: 6, keywords: { cjk: ['实现', '写代码', '编写', '开发', '构建'], en: ['implement', 'build', 'coding', 'develop'] }, reason: 'implementation work' },
+]);
 
 let _registryCache = null;
 let _registryCacheMtime = 0;
@@ -48,6 +61,10 @@ function normalizeEnvKey(value) {
   return String(value || '').trim().toUpperCase().replace(/-/g, '_');
 }
 
+function uniq(values) {
+  return [...new Set(values.filter(Boolean))];
+}
+
 function clonePlain(value) {
   if (!value || typeof value !== 'object') return value || null;
   return JSON.parse(JSON.stringify(value));
@@ -73,10 +90,136 @@ function getActiveModel(registry) {
   return normalizeId(registry?.activeModel) || '';
 }
 
+export function normalizeModelRouterProfile(profile, registry = defaultModelRegistry(), env = process.env) {
+  const configured = registry?.routingProfiles && typeof registry.routingProfiles === 'object'
+    ? Object.keys(registry.routingProfiles).map(normalizeId)
+    : ['balanced', 'premium', 'budget'];
+  const allowed = configured.length > 0 ? configured : ['balanced', 'premium', 'budget'];
+  const requested = normalizeId(profile) || normalizeId(env?.AIOS_MODEL_ROUTER_PROFILE) || normalizeId(registry?.defaultProfile) || 'balanced';
+  return allowed.includes(requested) ? requested : 'balanced';
+}
+
+function keywordMatches(text, keyword) {
+  const kw = String(keyword || '').trim().toLowerCase();
+  if (!kw) return false;
+  if (/[a-z0-9]/i.test(kw)) {
+    const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\ /g, '\\s+');
+    return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`, 'iu').test(text);
+  }
+  return text.includes(kw);
+}
+
+function getSignalRules(registry) {
+  return Array.isArray(registry?.signalRules) && registry.signalRules.length > 0
+    ? registry.signalRules
+    : DEFAULT_SIGNAL_RULES;
+}
+
+function buildWhy({ profile, primaryType, matchedSignals, recommendedPhases }) {
+  const primarySignals = matchedSignals.filter((signal) => signal.taskType === primaryType);
+  const phrases = uniq(primarySignals.map((signal) => signal.signal)).slice(0, 5);
+  const reason = primarySignals[0]?.reason || `${primaryType} signal`;
+  const lines = [
+    `Detected ${primaryType} signals${phrases.length ? `: ${phrases.join(', ')}` : ''} (${reason})`,
+    `${profile} profile selected ${primaryType}`,
+  ];
+  const otherTypes = uniq(matchedSignals.map((signal) => signal.taskType).filter((type) => type !== primaryType));
+  if (otherTypes.length > 0) {
+    lines.push(`Also detected lower-priority signals: ${otherTypes.slice(0, 4).join(', ')}`);
+  }
+  if (recommendedPhases.length > 1) {
+    lines.push('Compound task detected; see recommendedPhases for phase-specific routing');
+  }
+  return lines;
+}
+
+export function scoreTaskSignals(taskDescription, registry = defaultModelRegistry(), { profile, env = process.env } = {}) {
+  const activeProfile = normalizeModelRouterProfile(profile, registry, env);
+  const text = String(taskDescription || '').toLowerCase();
+  const matchedSignals = [];
+  const scores = new Map();
+
+  for (const rawRule of getSignalRules(registry)) {
+    const taskType = normalizeId(rawRule.taskType);
+    if (!taskType) continue;
+    const keywords = [
+      ...(Array.isArray(rawRule.keywords?.cjk) ? rawRule.keywords.cjk : []),
+      ...(Array.isArray(rawRule.keywords?.en) ? rawRule.keywords.en : []),
+    ];
+    for (const keyword of keywords) {
+      if (!keywordMatches(text, keyword)) continue;
+      const signal = {
+        taskType,
+        signal: String(keyword).trim(),
+        weight: Number(rawRule.weight) || 1,
+        priority: Number(rawRule.priority) || 0,
+        reason: String(rawRule.reason || '').trim(),
+      };
+      matchedSignals.push(signal);
+      const current = scores.get(taskType) || { taskType, score: 0, priority: signal.priority, count: 0 };
+      current.score += signal.weight;
+      current.priority = Math.max(current.priority, signal.priority);
+      current.count += 1;
+      scores.set(taskType, current);
+    }
+  }
+
+  if (scores.size === 0) {
+    const fallback = 'general';
+    return {
+      profile: activeProfile,
+      primaryType: fallback,
+      confidence: 0.3,
+      matchedSignals: [],
+      why: [`No strong routing signal detected; ${activeProfile} profile falls back to general`],
+      recommendedPhases: [],
+    };
+  }
+
+  const ranked = [...scores.values()].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    if (b.priority !== a.priority) return b.priority - a.priority;
+    return a.taskType.localeCompare(b.taskType);
+  });
+  let primaryType = ranked[0].taskType;
+  let confidence = Math.min(0.95, Math.max(0.45, ranked[0].score / Math.max(8, ranked[0].score + (ranked[1]?.score || 0))));
+
+  if (activeProfile === 'premium') {
+    const strong = ranked.find((item) => ['architecture', 'security-review', 'browser-automation'].includes(item.taskType));
+    if (strong) {
+      primaryType = strong.taskType;
+      confidence = Math.max(confidence, 0.78);
+    } else if (primaryType === 'implementation' && ranked[0].score >= 10) {
+      primaryType = 'general';
+      confidence = Math.max(confidence, 0.72);
+    }
+  }
+
+  const recommendedPhases = ranked
+    .filter((item) => item.score >= 5)
+    .slice(0, 4)
+    .map((item) => ({ taskType: item.taskType, score: item.score }));
+
+  if (recommendedPhases.length > 1 && primaryType === 'implementation') {
+    const nonImplementation = recommendedPhases.find((item) => item.taskType !== 'implementation');
+    if (nonImplementation) primaryType = nonImplementation.taskType;
+  }
+
+  return {
+    profile: activeProfile,
+    primaryType,
+    confidence: Number(confidence.toFixed(2)),
+    matchedSignals: matchedSignals.sort((a, b) => b.weight - a.weight || b.priority - a.priority),
+    why: buildWhy({ profile: activeProfile, primaryType, matchedSignals, recommendedPhases }),
+    recommendedPhases,
+  };
+}
+
 export function getModelConfig(modelId, registry) {
   const id = normalizeId(modelId);
   if (!id || !registry?.models) return null;
-  return registry.models[id] || null;
+  const model = registry.models[id];
+  return model ? { id, ...model } : null;
 }
 
 export function getRoutingRule(taskType, registry) {
@@ -256,34 +399,21 @@ export function buildRoutingTableMarkdown(registry) {
 }
 
 function matchTaskTypeFromDescription(taskDescription, registry) {
-  const text = String(taskDescription || '').toLowerCase();
-  // CJK: match without word boundaries; Latin: match with word boundaries
-  function hasCJK(str) { return /[一-鿿㐀-䶿]/.test(str); }
-
-  const patterns = [
-    { type: 'security-review', cjk: ['安全', '漏洞', '注入', '权限'], en: /\b(secret|security|vulnerability|xss|csrf|injection|auth|compliance|permission)\b/i },
-    { type: 'code-review', cjk: ['审查', '审计', '代码质量'], en: /\b(review|audit|code.?quality)\b/i },
-    { type: 'architecture', cjk: ['架构', '技术选型', '系统设计'], en: /\b(architecture|system.?design|tech.?stack)\b/i },
-    { type: 'implementation', cjk: ['写', '实现', '编程', '构建', '重构', '开发', '编写'], en: /\b(implement|coding|build|refactor|develop)\b/i },
-    { type: 'browser-automation', cjk: ['浏览器', '抓取', '爬虫', '截图', '自动化操作'], en: /\b(browser|scrape|crawl|screenshot|automation|computer.?use)\b/i },
-    { type: 'research', cjk: ['调研', '研究', '分析', '调查', '文档'], en: /\b(research|analysis|investigate|document)\b/i },
-    { type: 'planning', cjk: ['规划', '方案', '路线', '拆解'], en: /\b(planning|design|blueprint|roadmap)\b/i },
-    { type: 'testing', cjk: ['测试', '验证', '质量'], en: /\b(test|testing|verify|qa|quality)\b/i },
-    { type: 'docs', cjk: ['写文档', '说明', '指南'], en: /\b(doc|readme|guide|manual)\b/i },
-    { type: 'frontend', cjk: ['前端', '页面', '组件', '样式', '界面'], en: /\b(frontend|front.?end|ui|component|css|style)\b/i },
-    { type: 'self-healing', cjk: ['修复', '恢复', '自愈', '故障'], en: /\b(fix|repair|heal|recover|incident|outage)\b/i },
-  ];
-
-  for (const { type, cjk, en } of patterns) {
-    if (Array.isArray(cjk) && cjk.some((kw) => text.includes(kw.toLowerCase()))) return type;
-    if (en && en.test(text)) return type;
-  }
-  return 'general';
+  return scoreTaskSignals(taskDescription, registry).primaryType || 'general';
 }
 
 export function resolveModelForTaskDescription(taskDescription, registry, env = process.env) {
-  const matchedType = matchTaskTypeFromDescription(taskDescription, registry);
-  return resolveModelForTask(matchedType, registry, env);
+  const scoring = scoreTaskSignals(taskDescription, registry, { env });
+  const matchedType = scoring.primaryType || 'general';
+  return {
+    ...resolveModelForTask(matchedType, registry, env),
+    taskType: matchedType,
+    profile: scoring.profile,
+    confidence: scoring.confidence,
+    matchedSignals: scoring.matchedSignals,
+    why: scoring.why,
+    recommendedPhases: scoring.recommendedPhases,
+  };
 }
 
 
@@ -312,6 +442,11 @@ export function normalizeModelRouting(raw = null) {
     contextWindow: String(raw.contextWindow || '').trim(),
     cliCommand: String(raw.cliCommand || '').trim(),
     fallback: Array.isArray(raw.fallback) ? raw.fallback.map((item) => normalizeId(item)).filter(Boolean) : [],
+    profile: normalizeId(raw.profile),
+    confidence: Number.isFinite(raw.confidence) ? raw.confidence : null,
+    matchedSignals: Array.isArray(raw.matchedSignals) ? raw.matchedSignals.map(clonePlain).filter(Boolean) : [],
+    why: Array.isArray(raw.why) ? raw.why.map((item) => String(item || '').trim()).filter(Boolean) : [],
+    recommendedPhases: Array.isArray(raw.recommendedPhases) ? raw.recommendedPhases.map(clonePlain).filter(Boolean) : [],
   };
 }
 
@@ -354,8 +489,19 @@ export function resolveModelRoutingForTask({
   taskDescription = '',
   registry = defaultModelRegistry(),
   env = process.env,
+  profile = '',
 } = {}) {
-  const resolvedType = normalizeId(taskType) || matchTaskTypeFromDescription(taskDescription, registry) || 'general';
+  const scoring = normalizeId(taskType)
+    ? {
+        profile: normalizeModelRouterProfile(profile, registry, env),
+        primaryType: normalizeId(taskType),
+        confidence: 1,
+        matchedSignals: [],
+        why: [`Explicit task type selected: ${normalizeId(taskType)}`],
+        recommendedPhases: [],
+      }
+    : scoreTaskSignals(taskDescription, registry, { profile, env });
+  const resolvedType = normalizeId(taskType) || scoring.primaryType || matchTaskTypeFromDescription(taskDescription, registry) || 'general';
   const decision = resolveModelForTask(resolvedType, registry, env);
   const model = decision.model || getModelConfig(decision.modelId, registry) || null;
   const provider = normalizeId(model?.provider);
@@ -372,6 +518,11 @@ export function resolveModelRoutingForTask({
     contextWindow: model?.contextWindow || '',
     cliCommand: buildCLICommand(model, resolvedType, taskDescription || resolvedType),
     fallback: getFallbackChain(resolvedType, registry).map((item) => normalizeId(item?.id || item?.modelId || '')),
+    profile: scoring.profile,
+    confidence: scoring.confidence,
+    matchedSignals: scoring.matchedSignals,
+    why: scoring.why,
+    recommendedPhases: scoring.recommendedPhases,
   });
 }
 
@@ -590,25 +741,36 @@ export async function runModelRouterCommand(rawOptions = {}, { rootDir, io = con
     case 'route': {
       const task = String(rawOptions.task || rawOptions.prompt || '').trim();
       const taskType = String(rawOptions['task-type'] || rawOptions.taskType || '').trim();
+      const profile = String(rawOptions.profile || '').trim();
 
       if (!task) {
         io.error('Missing --task or --prompt');
         return { exitCode: 1 };
       }
 
-      const resolvedType = taskType || (matchTaskTypeFromDescription(task, registry) || 'implementation');
-      const decision = resolveModelForTask(resolvedType, registry, process.env);
-      const cliCommand = buildCLICommand(decision.model, resolvedType, task);
+      const route = resolveModelRoutingForTask({
+        taskType,
+        taskDescription: task,
+        registry,
+        env: process.env,
+        profile,
+      });
 
       io.log(JSON.stringify({
         task,
-        resolvedType,
-        modelId: decision.modelId,
-        model: decision.model?.label,
-        provider: decision.model?.provider,
-        clientId: providerToClientId(decision.model?.provider),
-        reason: decision.reason,
-        cliCommand,
+        resolvedType: route.taskType,
+        modelId: route.modelId,
+        model: route.modelLabel,
+        provider: route.provider,
+        clientId: route.clientId,
+        reason: route.reason,
+        cliCommand: route.cliCommand,
+        fallback: route.fallback,
+        profile: route.profile,
+        confidence: route.confidence,
+        matchedSignals: route.matchedSignals,
+        why: route.why,
+        recommendedPhases: route.recommendedPhases,
       }, null, 2));
 
       return { exitCode: 0 };

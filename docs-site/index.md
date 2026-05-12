@@ -59,7 +59,7 @@ description: Start from the task you want to solve, then go deeper into ContextD
   <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
-    <div class="feature-card__desc">Intelligent model dispatch for Agent Teams. Match tasks to optimal models by capability, cost, and history.</div>
+    <div class="feature-card__desc">Balanced model dispatch for Agent Teams. Match tasks to optimal models by capability signals, profile, and cost.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
   <a href="troubleshooting/" class="feature-card feature-card--tool">
