@@ -49,9 +49,9 @@
 - Read: `docs-site/**/*.md`
 - Read: `scripts/check-site-sync.mjs`
 
-- [ ] Map all nav entries in `mkdocs.yml` to existing docs pages.
-- [ ] Identify localized pages missing from `zh/`, `ja/`, or `ko/` where nav/i18n expects them.
-- [ ] Return a concise list of broken targets and suspected content issues.
+- [x] Map all nav entries in `mkdocs.yml` to existing docs pages.
+- [x] Identify localized pages missing from `zh/`, `ja/`, or `ko/` where nav/i18n expects them.
+- [x] Return a concise list of broken targets and suspected content issues.
 
 ### Work Item 2: 404 and Wrong Jump Repair
 
@@ -59,9 +59,9 @@
 - Modify: `mkdocs.yml`
 - Modify: `docs-site/**/*.md`
 
-- [ ] Fix internal links that point to missing Markdown files or wrong generated URLs.
-- [ ] Add lightweight placeholder/redirect content only when a real nav target exists but the page is missing.
-- [ ] Preserve external links unless they are clearly typoed.
+- [x] Fix internal links that point to missing Markdown files or wrong generated URLs.
+- [x] Add lightweight placeholder/redirect content only when a real nav target exists but the page is missing.
+- [x] Preserve external links unless they are clearly typoed.
 
 ### Work Item 3: Verification Coverage
 
@@ -70,18 +70,18 @@
 - Modify/Test: `scripts/tests/*.test.mjs` if an existing pattern exists
 - Modify: `package.json` only if adding a script is necessary
 
-- [ ] Ensure local checks fail on missing nav targets and broken relative Markdown links.
-- [ ] Prefer deterministic filesystem checks over network checks.
-- [ ] Document exact verification command output in the final handoff.
+- [x] Ensure local checks fail on missing nav targets and broken relative Markdown links.
+- [x] Prefer deterministic filesystem checks over network checks.
+- [x] Document exact verification command output in the final handoff.
 
 
 ## Verification Evidence
 
-- `npm run test:check-site-sync` -> PASS (6 tests)
-- `npm run check:site-sync` -> PASS (`[check-site-sync] OK`)
-- `.venv-docs/bin/mkdocs build --strict --clean --site-dir /tmp/rex-ai-boot-site-verify -f mkdocs.yml` -> PASS
-- `.venv-docs/bin/mkdocs build --strict --clean --site-dir /tmp/rex-ai-boot-blog-verify -f mkdocs.blog.yml` -> PASS
-- `npm run test:scripts` -> FAIL with 400/402 passing; failing tests are pre-existing ContextDB persona overlay assertions expecting `Memory prelude: enabled`, unrelated to docs/link changes.
+- `npm run test:check-site-sync` -> PASS (6 tests) on 2026-05-12
+- `npm run check:site-sync` -> PASS (`[check-site-sync] OK`) on 2026-05-12
+- `.venv-docs/bin/mkdocs build --strict --clean --site-dir /tmp/rex-ai-boot-site-verify -f mkdocs.yml` -> PASS on 2026-05-12
+- `.venv-docs/bin/mkdocs build --strict --clean --site-dir /tmp/rex-ai-boot-blog-verify -f mkdocs.blog.yml` -> PASS on 2026-05-12
+- `npm run test:scripts` -> PASS (417 tests) on 2026-05-12; the earlier ContextDB persona overlay assertion failure no longer reproduces.
 
 ## Repair Notes
 

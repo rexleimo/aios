@@ -27,6 +27,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 
 ## 最新文章
 
+- [ContextDB Token 压缩：更小的上下文包，更稳的回忆能力](2026-05-token-compression.md)
 - [Model Router：Agent Team 的智能多模型调度层](2026-05-model-router.md)
 - [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)
 - [Browser MCP 弱模型升级：语义快照 + 文本点击](2026-04-browser-mcp-weak-model-upgrade.md)
@@ -43,7 +44,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 ## FAQ
 
 ### 想看记忆系统相关内容，先读哪篇？
-先看 [ContextDB 检索升级：FTS5/BM25 + 增量索引同步（P1.5）](contextdb-fts-bm25-search.md)，再回到文档站 `/contextdb/`。
+如果关心 prompt 预算，先看 [ContextDB Token 压缩](2026-05-token-compression.md)；如果关心检索，再看 [ContextDB 检索升级：FTS5/BM25 + 增量索引同步（P1.5）](contextdb-fts-bm25-search.md)，最后回到官方文档 `/contextdb/`。
 
 ### 想看单 Agent 夜跑，先读哪篇？
 先看 [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)，再回到官方文档 [单 Agent 夜跑](https://cli.rexai.top/zh/solo-harness/)。

@@ -149,6 +149,7 @@ aios team status --provider codex --watch
 
 ## 发布说明与深度文章
 
+- [ContextDB Token 压缩](/blog/zh/2026-05-token-compression/)：先压缩长会话历史，再按预算丢弃低优先级事件，让上下文包更短但保留关键信号。
 - [debug-hub：MCP 原生调试日志服务](/blog/zh/2026-05-debug-hub-mcp/)：让 coding agent 通过 MCP 工具直接查询自身运行时日志。
 - [AIOS RL Training System](/blog/zh/rl-training-system/)：多环境训练控制平面与 rollout 模型。
 - [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)：FTS5 + BM25 检索路径和语义重排行为。

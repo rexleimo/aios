@@ -27,6 +27,7 @@ description: AI 記憶システム、単一 agent harness ワークフロー、A
 
 ## 最新記事
 
+- [ContextDB Token Compression: 小さなコンテキストパケットと安全な recall](2026-05-token-compression.md)
 - [Model Router: Agent Team のためのインテリジェントなマルチモデルディスパッチ](2026-05-model-router.md)
 - [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md)
 - [Browser MCP 弱モデル改善: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)
@@ -42,7 +43,7 @@ description: AI 記憶システム、単一 agent harness ワークフロー、A
 ## FAQ
 
 ### 記憶システム関連の記事はどれから読むべき？
-[ContextDB 検索アップグレード](contextdb-fts-bm25-search.md) から始めるのが最短です。
+prompt budget が気になる場合は [ContextDB Token Compression](2026-05-token-compression.md) から始め、検索挙動は [ContextDB 検索アップグレード](contextdb-fts-bm25-search.md) を確認してください。
 
 ### 単一 agent の夜間実行はどの記事から読むべき？
 まずは [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md) を読み、その後 [公式ドキュメント](https://cli.rexai.top/ja/solo-harness/) を確認するのがおすすめです。

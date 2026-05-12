@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: 会话模型，五步流程与命令示例。
+description: 会话模型、token 压缩上下文包、五步流程与命令示例。
 ---
 
 # ContextDB 运行机制
 
 ## 快速答案（AI 搜索）
 
-ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储事件、checkpoint 和可续跑上下文包，并使用 SQLite sidecar 索引加速检索。
+ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储事件、checkpoint 和可续跑上下文包，使用 SQLite sidecar 索引加速检索，并支持把噪音事件历史压缩到指定 token 预算内，同时优先保留最新和高信号上下文。
 
 ## 标准 5 步
 
@@ -187,20 +187,40 @@ Facade 旁路缓存会在每次成功打包后自动生成：
 
 如果 Facade 缺失或过期，将自动回退到从最新会话头信息生成新的 Facade。
 
+## Token 压缩快速开始 {#token-compression}
+
+当 session 历史有价值，但下一次 CLI 启动只适合注入一个有上限的上下文窗口时，使用 token 压缩。`balanced` 策略会优先保留最近事件、错误、文件路径、命令和 next action 信号；先压缩重复日志、大块输出和 stack trace；只有预算仍放不下时才丢弃低优先级事件。预算特别小时可用 `aggressive`，需要旧版尾部窗口行为时用 `legacy`。
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+生成的上下文包会在 `Event Window` 行报告 `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，方便确认压缩是否先于删除事件生效。
+
 ## 上下文包控制（P0）
 
-`context:pack` 支持 token 预算与事件过滤：
+`context:pack` 支持 token-aware 压缩和事件过滤：
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 60 \
   --token-budget 1200 \
+  --token-strategy balanced \
   --kinds prompt,response,error \
   --refs core.ts,cli.ts
 ```
 
 - `--token-budget`：按估算 token 控制 L2 事件体积。
+- `--token-strategy`：`legacy|balanced|aggressive`（带预算时默认 `balanced`，除非需要旧行为，否则推荐使用）。
+- `balanced`：压缩重复日志、长输出和 stack trace，同时保护最新事件和高信号错误/文件路径。
+- `aggressive`：在小预算下使用更严格的行数与长度限制，优先保留可回忆信号。
+- `legacy`：保留旧版尾部窗口选择逻辑，不做压缩。
 - `--kinds` / `--refs`：只打包匹配事件。
 - 默认会对重复事件做去重。
 

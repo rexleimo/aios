@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: Session model, five runtime steps, and command references.
+description: Session model, token-compressed context packs, five runtime steps, and command references.
 ---
 
 # ContextDB Runtime
 
 ## Quick Answer (AI Search)
 
-ContextDB is a filesystem session layer for multi-CLI agent workflows. It stores events, checkpoints, and resumable context packets per project, and now keeps a SQLite sidecar index for faster retrieval.
+ContextDB is a filesystem session layer for multi-CLI agent workflows. It stores events, checkpoints, and resumable context packets per project, keeps a SQLite sidecar index for faster retrieval, and can now compress noisy event history to fit a target token budget without dropping the newest high-signal work.
 
 ## Canonical 5 Steps
 
@@ -187,9 +187,24 @@ The facade sidecar is auto-generated after each successful pack:
 
 If the facade is missing or expired, it falls back to generating a fresh facade from the latest session headers.
 
+## Token Compression Quick Start {#token-compression}
+
+Use token compression when a session has useful history but the next CLI run should receive only a bounded context window. The `balanced` strategy keeps recent, error, file, command, and next-action signals first; compresses large or repetitive event text; then drops lower-priority events only if the budget still does not fit. Use `aggressive` for very small budgets and `legacy` when you need the old tail-only behavior.
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+The generated packet reports an `Event Window` line with `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated`, so you can verify whether compression saved tokens before events were removed.
+
 ## Packet Controls (P0)
 
-`context:pack` now supports token-aware and filter-aware export:
+`context:pack` supports token-aware compression plus filter-aware export:
 
 ```bash
 npm run contextdb -- context:pack \
@@ -203,6 +218,9 @@ npm run contextdb -- context:pack \
 
 - `--token-budget`: cap recent-event payload by estimated token budget.
 - `--token-strategy`: `legacy|balanced|aggressive` (default with budget: `balanced`; recommended unless you need strict backward behavior).
+- `balanced`: compress repeated logs, long line sets, and stack traces while protecting the latest event and high-signal errors/files.
+- `aggressive`: apply tighter line and length limits for small budgets where recall is more important than verbatim detail.
+- `legacy`: keep the previous tail-window selection behavior and skip compression.
 - `--kinds` / `--refs`: include only matching events.
 - default dedupe is enabled for repeated events in the packet view.
 

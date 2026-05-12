@@ -149,6 +149,7 @@ aios team status --provider codex --watch
 
 ## 릴리스 노트와 상세 글
 
+- [ContextDB Token Compression](/blog/ko/2026-05-token-compression/): 긴 세션 기록을 token 예산 안으로 먼저 압축하고 낮은 우선순위 이벤트를 나중에 제거합니다.
 - [debug-hub: MCP 네이티브 디버그 로그 서비스](/blog/ko/2026-05-debug-hub-mcp/): 코딩 에이전트가 MCP 도구로 자신의 런타임 로그를 직접 쿼리 가능.
 - [AIOS RL Training System](/blog/ko/rl-training-system/): multi-environment training control plane 과 rollout model.
 - [ContextDB Search Upgrade](/blog/ko/contextdb-fts-bm25-search/): FTS5 + BM25 search path 와 semantic rerank behavior.

@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: 5ステップ、SQLite サイドカー、主要コマンド。
+description: 5ステップ、token 圧縮コンテキストパケット、SQLite サイドカー、主要コマンド。
 ---
 
 # ContextDB ランタイム
 
 ## クイックアンサー（AI 検索）
 
-ContextDB はマルチ CLI agent 用のファイルシステムセッション層です。プロジェクトごとにイベント、チェックポイント、コンテキストパケットを保存し、高速な検索のために SQLite サイドカーインデックスを使用します。
+ContextDB はマルチ CLI agent 用のファイルシステムセッション層です。プロジェクトごとにイベント、チェックポイント、コンテキストパケットを保存し、SQLite サイドカーで検索を高速化し、ノイズの多い履歴を token 予算内へ圧縮して最新の高シグナル作業を残せます。
 
 ## 標準 5 ステップ
 
@@ -187,20 +187,40 @@ export CTXDB_LAZY_LOAD=1
 
 ファサードが欠落または期限切れの場合、最新のセッションヘッダーから新しいファサードを生成するフォールバックが実行されます。
 
+## Token 圧縮クイックスタート {#token-compression}
+
+セッション履歴は有用だが、次の CLI 実行には上限付きのコンテキストだけを渡したい場合に token 圧縮を使います。`balanced` は最新イベント、エラー、ファイル、コマンド、next action を優先し、重複ログ・長い出力・stack trace を先に圧縮し、それでも入らない場合だけ低優先度イベントを落とします。小さな予算では `aggressive`、旧来の tail-only 動作が必要な場合は `legacy` を使います。
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+生成されたパケットの `Event Window` 行には `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` が出るため、イベント削除の前に圧縮で token を節約できたか確認できます。
+
 ## パック制御（P0）
 
-`context:pack` はトークン予算とイベントフィルタ，支持します:
+`context:pack` は token-aware 圧縮とイベントフィルタをサポートします:
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 60 \
   --token-budget 1200 \
+  --token-strategy balanced \
   --kinds prompt,response,error \
   --refs core.ts,cli.ts
 ```
 
 - `--token-budget`: 推定トークン数で L2 イベント量の上限を設定。
+- `--token-strategy`: `legacy|balanced|aggressive`（予算指定時の既定は `balanced`。旧動作が必要な場合を除き推奨）。
+- `balanced`: 重複ログ、長い出力、stack trace を圧縮しつつ、最新イベントと高シグナルのエラー/ファイルを保護。
+- `aggressive`: 小さな予算向けに行数と長さをさらに絞り、recall シグナルを優先。
+- `legacy`: 旧来の tail-window 選択を使い、圧縮をスキップ。
 - `--kinds` / `--refs`: 一致イベントのみ含める。
 - デフォルトで重複イベントの除外が有効。
 

@@ -2,6 +2,7 @@
 
 ## Intent Summary
 - AI memory system for coding agents (`ContextDB`)
+- Token-compressed ContextDB context packs for bounded prompt budgets
 - Hermes-style workflow orchestration (`team`, `orchestrate`)
 - Agent Team collaboration and monitoring (`team-ops`, `hud`)
 - Automatic subagent planning with verification gates
@@ -26,6 +27,7 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-05-token-compression/
 - https://cli.rexai.top/blog/launch-post/
 - https://cli.rexai.top/blog/cli-comparison-post/
 - https://cli.rexai.top/blog/automation-playbook-post/

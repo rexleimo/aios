@@ -4,6 +4,7 @@
 
 ## Search Intents
 - memory system for coding agents
+- token-compressed ContextDB packets for bounded agent memory
 - Hermes engine workflow orchestration
 - Agent Team collaboration runtime
 - automatic subagent planning and execution gates
@@ -22,6 +23,7 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-05-token-compression/
 
 ## Languages
 - https://cli.rexai.top/zh/
