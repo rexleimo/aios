@@ -77,11 +77,12 @@ function Invoke-NativeCommand {
   $cmd = Get-Command $Name -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
   if (-not $cmd) {
     Write-Error "Command not found: $Name"
-    return 127
+    $global:LASTEXITCODE = 127
+    return
   }
 
   & $cmd.Source @Arguments
-  return $LASTEXITCODE
+  $global:LASTEXITCODE = $LASTEXITCODE
 }
 
 function Invoke-BridgeOrPassthrough {
@@ -93,11 +94,13 @@ function Invoke-BridgeOrPassthrough {
 
   $bridge = Resolve-BridgePath
   if (-not $bridge) {
-    return (Invoke-NativeCommand -Name $Passthrough -Arguments $Arguments)
+    Invoke-NativeCommand -Name $Passthrough -Arguments $Arguments
+    return
   }
 
   if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
-    return (Invoke-NativeCommand -Name $Passthrough -Arguments $Arguments)
+    Invoke-NativeCommand -Name $Passthrough -Arguments $Arguments
+    return
   }
 
   Update-LastWorkspace
@@ -112,7 +115,7 @@ function Invoke-BridgeOrPassthrough {
 
   try {
     & node $bridge "--agent" $Agent "--command" $Passthrough "--" @Arguments
-    return $LASTEXITCODE
+    $global:LASTEXITCODE = $LASTEXITCODE
   } finally {
     if ($allowStrict) {
       # no-op
@@ -124,29 +127,31 @@ function Invoke-BridgeOrPassthrough {
   }
 }
 
+# Keep these wrapper calls as statements. Assigning their output captures native
+# stdout in PowerShell, which makes TUI clients see stdout as non-terminal.
 function codex {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
   Normalize-CodexHome
-  $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "codex-cli" -Passthrough "codex" -Arguments $Args
+  Invoke-BridgeOrPassthrough -Agent "codex-cli" -Passthrough "codex" -Arguments $Args
 }
 
 function claude {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
-  $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "claude-code" -Passthrough "claude" -Arguments $Args
+  Invoke-BridgeOrPassthrough -Agent "claude-code" -Passthrough "claude" -Arguments $Args
 }
 
 function gemini {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
-  $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "gemini-cli" -Passthrough "gemini" -Arguments $Args
+  Invoke-BridgeOrPassthrough -Agent "gemini-cli" -Passthrough "gemini" -Arguments $Args
 }
 
 function opencode {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
-  $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "opencode-cli" -Passthrough "opencode" -Arguments $Args
+  Invoke-BridgeOrPassthrough -Agent "opencode-cli" -Passthrough "opencode" -Arguments $Args
 }
 
 function aios {

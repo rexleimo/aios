@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.12.4] - 2026-05-13
+
+- fix(shell): preserve PowerShell TTY for wrapped CLIs
+
 ## [1.12.3] - 2026-05-12
 
 - docs: add token compression wireframe and X draft
