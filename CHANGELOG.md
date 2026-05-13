@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-05-13
+
+- feat(native): add route shortcuts
+
 ## [1.12.4] - 2026-05-13
 
 - fix(shell): preserve PowerShell TTY for wrapped CLIs

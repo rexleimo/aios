@@ -33,6 +33,19 @@ ContextDB는 다중 CLI agent를 위한 파일시스템 세션 계층입니다. 
 - `team`: GroupChat Runtime 사용 — 공유 대화 히스토리와 자동 re-plan 을 갖춘 라운드 기반 병렬 에이전트.
 - `harness`: 명시적인 장시간/야간/재개 가능/checkpoint 중심 목표.
 
+## 네이티브 route shortcut
+
+`aios setup` 과 `aios update --components native` 는 관리되는 route shortcut 파일도 설치합니다. 레인을 명시하고 싶을 때는 실행 중인 클라이언트 안에서 다음을 사용하세요:
+
+| 클라이언트 | shortcut 형식 | 관리 파일 |
+|---|---|---|
+| Codex | `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex 는 최상위 `/single` 대신 custom prompt 네임스페이스(`/prompts:<name>`)를 사용합니다. OpenAI 는 custom prompts 를 deprecated 로 표시하지만 현재는 여전히 지원합니다. shortcut 이 빠졌거나 drift 했다면 `aios doctor --native --fix` 를 실행하세요.
+
 제어:
 
 ```bash

@@ -28,7 +28,8 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 
 | Capability | Description | Command |
 |------------|-------------|---------|
-| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` |
+| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` |
+| **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
@@ -43,6 +44,10 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 ```bash
 # Launch TUI
 aios
+
+# Route from inside native clients after setup
+# Claude/Gemini/OpenCode: /team <task>
+# Codex: /prompts:team <task>
 
 # Multi-agent collaboration
 aios team 3:codex "Refactor the auth module and run tests"
@@ -66,7 +71,7 @@ aios team status --provider codex --watch
 ## How It Works
 
 ```text
-User → codex / claude / gemini
+User → codex / claude / gemini / opencode
      → zsh wrapper (transparent)
      → ctx-agent.mjs (ContextDB integration)
         → contextdb CLI (memory persistence)
@@ -74,7 +79,7 @@ User → codex / claude / gemini
      → browser MCP (optional browser automation)
 ```
 
-After installation, just use `codex`, `claude`, or `gemini` as usual — RexCLI automatically loads project memory in the background.
+After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — RexCLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
 
 ## Docs
 

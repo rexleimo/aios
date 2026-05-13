@@ -157,6 +157,12 @@ aios doctor --native --fix
 | 监控 team 进度 | `aios team status --provider codex --watch` |
 | 提交前质量检查 | `aios quality-gate pre-pr --profile strict` |
 
+setup 后可以在原生客户端里直接使用路由快捷命令：
+
+- Claude/Gemini/OpenCode：`/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>`。
+- Codex：`/prompts:single <任务>`、`/prompts:subagent <任务>`、`/prompts:team <任务>`、`/prompts:harness <任务>`。
+- 如果缺失，运行 `aios doctor --native --fix`。
+
 ## 6) 用 Memo 管理持续记忆
 
 如果你想要可持续的项目笔记，但不想手动改 ContextDB 文件：

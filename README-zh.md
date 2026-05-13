@@ -28,7 +28,8 @@ aios
 
 | 能力 | 说明 | 命令 |
 |------|------|------|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` 自动加载 |
+| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` 自动加载 |
+| **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
 | **自研 Token 压缩** | 参考 RTK/Caveman 的思路，但不安装竞品工具；本地完成输入/输出省 token | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
@@ -43,6 +44,10 @@ aios
 ```bash
 # 启动 TUI
 aios
+
+# 在原生客户端内路由任务（setup 后）
+# Claude/Gemini/OpenCode: /team <任务>
+# Codex: /prompts:team <任务>
 
 # 多 Agent 协作
 aios team 3:codex "重构登录模块并运行测试"
@@ -66,7 +71,7 @@ aios team status --provider codex --watch
 ## 工作原理
 
 ```text
-用户 → codex / claude / gemini
+用户 → codex / claude / gemini / opencode
      → zsh wrapper（透明包装）
      → ctx-agent.mjs（ContextDB 集成）
         → contextdb CLI（记忆持久化）
@@ -74,7 +79,7 @@ aios team status --provider codex --watch
      → browser MCP（可选浏览器自动化）
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini` 命令即可，RexCLI 自动在后台加载项目记忆。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 命令即可，RexCLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
 
 ## 文档
 

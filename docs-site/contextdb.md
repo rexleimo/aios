@@ -33,6 +33,19 @@ Wrapped interactive clients (`codex`, `claude`, `gemini`, and `opencode`) receiv
 - `team`: use the GroupChat Runtime — round-based parallel agents with shared conversation history and automatic re-plan.
 - `harness`: use Solo Harness for explicit long-running, overnight, resumable, checkpoint-heavy objectives.
 
+## Native Route Shortcuts
+
+`aios setup` and `aios update --components native` also install managed route shortcut files. Use them inside a running client when you want to force a lane:
+
+| Client | Shortcut form | Managed files |
+|---|---|---|
+| Codex | `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex uses its custom prompt namespace (`/prompts:<name>`) rather than top-level `/single` commands; OpenAI marks custom prompts as deprecated but still supported. If route shortcuts are missing or drifted, run `aios doctor --native --fix`.
+
 Controls:
 
 ```bash

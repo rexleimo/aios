@@ -157,6 +157,12 @@ aios doctor --native --fix
 | team 進捗を監視 | `aios team status --provider codex --watch` |
 | 提出前 quality check | `aios quality-gate pre-pr --profile strict` |
 
+setup 後は、ネイティブクライアント内で route shortcut を直接使えます:
+
+- Claude/Gemini/OpenCode: `/single <task>`、`/subagent <task>`、`/team <task>`、`/harness <task>`。
+- Codex: `/prompts:single <task>`、`/prompts:subagent <task>`、`/prompts:team <task>`、`/prompts:harness <task>`。
+- 欠けている場合は `aios doctor --native --fix` を実行してください。
+
 ## 6) Memo で継続メモを管理
 
 ContextDB ファイルを手で触らず、継続的なプロジェクトメモを残したい場合:

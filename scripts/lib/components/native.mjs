@@ -1,15 +1,22 @@
 import { syncNativeEnhancements } from '../native/sync.mjs';
 import { doctorNativeEnhancements as runNativeDoctor } from '../native/doctor.mjs';
 import { getNativeRepair, listNativeRepairs, rollbackNativeRepair } from '../native/repairs.mjs';
+import { checkRouteTriggerCommandsSync, syncRouteTriggerCommands } from '../native/route-commands.mjs';
 
 export async function installNativeEnhancements({
   rootDir,
   client = 'all',
+  homeMap = {},
+  env = process.env,
   io = console,
 } = {}) {
   const result = await syncNativeEnhancements({ rootDir, client, mode: 'install', io });
+  const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
+  }
+  for (const item of routeResult.results) {
+    io.log(`[done] route commands ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} skipped=${item.skipped}`);
   }
   return result;
 }
@@ -17,11 +24,17 @@ export async function installNativeEnhancements({
 export async function updateNativeEnhancements({
   rootDir,
   client = 'all',
+  homeMap = {},
+  env = process.env,
   io = console,
 } = {}) {
   const result = await syncNativeEnhancements({ rootDir, client, mode: 'install', io });
+  const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
+  }
+  for (const item of routeResult.results) {
+    io.log(`[done] route commands ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} skipped=${item.skipped}`);
   }
   return result;
 }
@@ -29,11 +42,17 @@ export async function updateNativeEnhancements({
 export async function uninstallNativeEnhancements({
   rootDir,
   client = 'all',
+  homeMap = {},
+  env = process.env,
   io = console,
 } = {}) {
   const result = await syncNativeEnhancements({ rootDir, client, mode: 'uninstall', io });
+  const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'uninstall', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> removed=${item.removed} reused=${item.reused}`);
+  }
+  for (const item of routeResult.results) {
+    io.log(`[done] route commands ${item.client} -> removed=${item.removed} reused=${item.reused} skipped=${item.skipped}`);
   }
   return result;
 }
@@ -44,9 +63,31 @@ export async function doctorNativeEnhancements({
   verbose = false,
   fix = false,
   dryRun = false,
+  homeMap = {},
+  env = process.env,
   io = console,
 } = {}) {
-  return runNativeDoctor({ rootDir, client, verbose, fix, dryRun, io });
+  const nativeResult = await runNativeDoctor({ rootDir, client, verbose, fix, dryRun, io });
+  let routeResult = await checkRouteTriggerCommandsSync({ rootDir, client, homeMap, env });
+  if (!routeResult.ok && fix) {
+    if (dryRun) {
+      io.log('[plan] route commands: install managed shortcuts');
+    } else {
+      await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
+      routeResult = await checkRouteTriggerCommandsSync({ rootDir, client, homeMap, env });
+    }
+  }
+  if (verbose || !routeResult.ok) {
+    for (const issue of routeResult.issues) {
+      io.log(`[warn] route command: ${issue}`);
+    }
+  }
+  return {
+    ok: nativeResult.ok && routeResult.ok,
+    effectiveWarnings: nativeResult.effectiveWarnings + (routeResult.ok ? 0 : routeResult.issues.length),
+    errors: nativeResult.errors,
+    issues: [...(nativeResult.issues || []), ...routeResult.issues],
+  };
 }
 
 export async function rollbackNativeEnhancements({

@@ -33,6 +33,19 @@ ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储�
 - `team`：使用 GroupChat Runtime —— 基于轮次的并行 agent，共享对话历史并自动 re-plan。
 - `harness`：明确的长任务、过夜任务、可恢复任务、checkpoint 密集目标。
 
+## 原生路由快捷命令
+
+`aios setup` 和 `aios update --components native` 也会安装受管理的路由快捷命令文件。需要强制指定执行通道时，可在已启动的客户端里直接输入：
+
+| 客户端 | 快捷形式 | 受管理文件 |
+|---|---|---|
+| Codex | `/prompts:single <任务>`、`/prompts:subagent <任务>`、`/prompts:team <任务>`、`/prompts:harness <任务>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex 使用自己的 custom prompt 命名空间（`/prompts:<name>`），不是顶层 `/single` 命令；OpenAI 已标记 custom prompts 为 deprecated，但目前仍可用。如果快捷命令缺失或漂移，运行 `aios doctor --native --fix`。
+
 控制项：
 
 ```bash

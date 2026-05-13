@@ -157,6 +157,12 @@ aios doctor --native --fix
 | Watch team progress | `aios team status --provider codex --watch` |
 | Pre-submit quality check | `aios quality-gate pre-pr --profile strict` |
 
+Route shortcuts are available inside native clients after setup:
+
+- Claude/Gemini/OpenCode: `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>`.
+- Codex: `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>`.
+- If they are missing, run `aios doctor --native --fix`.
+
 ## 6) Use Memo For Persistent Operator Memory
 
 If you need durable project notes without manually touching ContextDB files:
