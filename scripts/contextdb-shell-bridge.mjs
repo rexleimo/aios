@@ -421,6 +421,43 @@ function isInteractivePassthrough(command, passthroughArgs) {
   return false;
 }
 
+function extractClaudePrintPrompt(passthroughArgs) {
+  const remainingArgs = [];
+  let printMode = false;
+  let prompt = '';
+
+  for (let i = 0; i < passthroughArgs.length; i += 1) {
+    const arg = passthroughArgs[i];
+    if (arg === '-p' || arg === '--print') {
+      printMode = true;
+      continue;
+    }
+    if (printMode && !prompt) {
+      prompt = arg;
+      continue;
+    }
+    remainingArgs.push(arg);
+  }
+
+  if (printMode && !prompt) {
+    return { printMode, prompt: '', remainingArgs: passthroughArgs };
+  }
+
+  return { printMode, prompt, remainingArgs };
+}
+
+function extractOneShotPrompt(command, passthroughArgs) {
+  if (command === 'claude') {
+    return extractClaudePrintPrompt(passthroughArgs);
+  }
+
+  return {
+    printMode: false,
+    prompt: '',
+    remainingArgs: passthroughArgs,
+  };
+}
+
 function parsePositiveInteger(value, fallback) {
   const parsed = Number.parseInt(String(value || '').trim(), 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return fallback;
@@ -807,7 +844,12 @@ function main(argv = process.argv.slice(2)) {
     '--project', project,
   ];
 
-  args.push('--', ...opts.passthroughArgs);
+  const oneShot = extractOneShotPrompt(opts.command, opts.passthroughArgs);
+  if (oneShot.printMode && oneShot.prompt) {
+    args.push('--prompt', oneShot.prompt);
+  }
+
+  args.push('--', ...oneShot.remainingArgs);
 
   const code = spawnInherited(runner.command, args, opts.cwd, env);
   process.exit(code);
