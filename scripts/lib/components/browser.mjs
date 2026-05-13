@@ -138,6 +138,7 @@ export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = 
     { path: path.join(homes.claude || '', 'mcp.json'), createIfMissing: false },
     { path: path.join(homes.gemini || '', 'mcp.json'), createIfMissing: false },
     { path: path.join(homes.opencode || '', 'mcp.json'), createIfMissing: false },
+    { path: path.join(homes.kiro || '', 'settings', 'mcp.json'), createIfMissing: false },
   ];
 
   const seen = new Set();

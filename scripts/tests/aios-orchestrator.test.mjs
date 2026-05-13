@@ -896,7 +896,34 @@ test('dispatch runtime registry rejects unsupported subagent client in live mode
   assert.equal(result.ok, false);
   assert.equal(Array.isArray(result.jobRuns), true);
   assert.match(String(result.error || ''), /Unsupported AIOS_SUBAGENT_CLIENT/i);
-  assert.match(String(result.error || ''), /codex-cli, claude-code, gemini-cli, opencode-cli/i);
+  assert.match(String(result.error || ''), /codex-cli, claude-code, gemini-cli, opencode-cli, kiro-cli/i);
+});
+
+test('dispatch runtime registry accepts kiro-cli as a live subagent client when there are no jobs', async () => {
+  const runtimes = await importDispatchRuntimes();
+  assert.ok(runtimes, 'expected runtime registry module');
+
+  const registry = runtimes.createDispatchRuntimeRegistry({ executeDryRunPlan: () => ({ mode: 'dry-run', ok: true, jobRuns: [] }) });
+  const runtime = runtimes.resolveDispatchRuntime({ runtimeId: 'subagent-runtime', executionMode: 'live' }, registry);
+
+  const result = await runtime.execute({
+    plan: { phases: [] },
+    dispatchPlan: {
+      jobs: [],
+      executorRegistry: [],
+      executorDetails: [],
+    },
+    dispatchPolicy: null,
+    env: {
+      AIOS_EXECUTE_LIVE: '1',
+      AIOS_SUBAGENT_CLIENT: 'kiro-cli',
+    },
+  });
+
+  assert.equal(result.mode, 'live');
+  assert.equal(result.ok, true);
+  assert.equal(Array.isArray(result.jobRuns), true);
+  assert.equal(result.jobRuns.length, 0);
 });
 
 test('dispatch runtime registry can simulate the subagent runtime when explicitly enabled', async () => {

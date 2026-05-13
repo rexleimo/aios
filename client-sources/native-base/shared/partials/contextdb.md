@@ -1,6 +1,6 @@
 ContextDB remains the shared runtime layer for memory, checkpoints, and execution evidence.
 
-Wrapped `codex` / `claude` / `gemini` / `opencode` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
+Wrapped `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
 
 Persona and user profile memory are part of the same runtime layer:
 - `aios memo persona ...` manages the global agent identity file (`~/.aios/SOUL.md` by default).

@@ -36,13 +36,14 @@ import { normalizeOrchestratorBlueprint, normalizeOrchestratorFormat } from '../
 
 const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy']);
 const PRIVACY_MODES = new Set(['regex', 'ollama', 'hybrid']);
-const TEAM_PROVIDERS = new Set(['codex', 'claude', 'gemini']);
+const TEAM_PROVIDERS = new Set(['codex', 'claude', 'gemini', 'kiro']);
 const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);
 const SKILL_CANDIDATE_VIEWS = new Set(['inline', 'detail', 'list']);
 const TEAM_PROVIDER_CLIENT_MAP = Object.freeze({
   codex: 'codex-cli',
   claude: 'claude-code',
   gemini: 'gemini-cli',
+  kiro: 'kiro-cli',
 });
 const HARNESS_SUBCOMMANDS = new Set(['run', 'status', 'resume', 'stop']);
 
@@ -108,7 +109,7 @@ function normalizeTeamProvider(raw = 'codex') {
 
 function parseTeamSpec(raw = '') {
   const value = String(raw || '').trim().toLowerCase();
-  const match = /^(\d+):(codex|claude|gemini)$/u.exec(value);
+  const match = /^(\d+):(codex|claude|gemini|kiro)$/u.exec(value);
   if (!match) {
     return null;
   }

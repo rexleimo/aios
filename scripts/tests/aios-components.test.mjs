@@ -18,6 +18,8 @@ import {
   uninstallOrchestratorAgents,
 } from '../lib/components/agents.mjs';
 import { installBrowserMcp, migrateBrowserMcpConfig } from '../lib/components/browser.mjs';
+import { normalizeClient } from '../lib/lifecycle/options.mjs';
+import { getClientHomes } from '../lib/platform/paths.mjs';
 import { syncClaudeSkillPermissions } from '../lib/components/superpowers.mjs';
 import {
   commandExists,
@@ -199,6 +201,40 @@ test('shell install reuses existing ContextDB runtime without reinstall', async 
 
   await installContextDbShell({ rootDir, rcFile, platform: 'darwin', commandRunner });
   assert.equal(called, false);
+});
+
+test('kiro is accepted as a deep client with a generated skills surface', async () => {
+  const rootDir = await makeTemp('aios-kiro-client-root-');
+  const kiroHome = await makeTemp('aios-kiro-home-');
+  await writeSkillsCatalog(rootDir, [
+    {
+      name: 'sample-skill',
+      description: 'sample',
+      source: 'skill-sources/sample-skill',
+      clients: ['codex'],
+      scopes: ['global'],
+      defaultInstall: { global: true, project: false },
+      tags: ['sample'],
+    },
+  ]);
+  await mkdir(path.join(rootDir, 'skill-sources', 'sample-skill'), { recursive: true });
+  await writeFile(path.join(rootDir, 'skill-sources', 'sample-skill', 'SKILL.md'), '# sample\n', 'utf8');
+
+  assert.equal(normalizeClient('kiro'), 'kiro');
+  assert.equal(
+    getClientHomes({ KIRO_HOME: kiroHome, XDG_CONFIG_HOME: path.join(rootDir, '.config') }, rootDir).kiro,
+    kiroHome
+  );
+
+  const logs = [];
+  await installContextDbSkills({
+    rootDir,
+    client: 'kiro',
+    homeMap: { kiro: kiroHome },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  assert.match(logs.join('\n'), /kiro/i);
 });
 
 test('skills install copies repo-managed skills by default and uninstall removes them', async () => {
@@ -391,6 +427,7 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   const claudeHome = await makeTemp('aios-browser-migrate-claude-');
   const geminiHome = await makeTemp('aios-browser-migrate-gemini-');
   const opencodeHome = await makeTemp('aios-browser-migrate-opencode-');
+  const kiroHome = await makeTemp('aios-browser-migrate-kiro-');
 
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(mcpServerDir, { recursive: true });
@@ -421,6 +458,8 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   await writeFile(path.join(mcpServerDir, '.mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
   await mkdir(claudeHome, { recursive: true });
   await writeFile(path.join(claudeHome, 'mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
+  await mkdir(path.join(kiroHome, 'settings'), { recursive: true });
+  await writeFile(path.join(kiroHome, 'settings', 'mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
 
   const logs = [];
   const result = await migrateBrowserMcpConfig({
@@ -431,6 +470,7 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
       claude: claudeHome,
       gemini: geminiHome,
       opencode: opencodeHome,
+      kiro: kiroHome,
     },
   });
 
@@ -448,6 +488,9 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   const claudeMcp = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
   assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, 'bash');
   assert.equal(claudeMcp.mcpServers['playwright-browser-mcp'], undefined);
+  const kiroMcp = JSON.parse(await readFile(path.join(kiroHome, 'settings', 'mcp.json'), 'utf8'));
+  assert.equal(kiroMcp.mcpServers['puppeteer-stealth'].command, 'bash');
+  assert.equal(kiroMcp.mcpServers['playwright-browser-mcp'], undefined);
   assert.match(logs.join('\n'), /mcp-migrate summary:/);
 });
 
@@ -584,6 +627,23 @@ test('windows claude, gemini, and opencode resolve npm-style cmd launchers to di
   assert.equal(opencodeSpec.command, opencode.execPath);
   assert.deepEqual(opencodeSpec.args, [opencode.scriptPath, '--version']);
   assert.equal(opencodeSpec.shell, false);
+});
+
+test('windows kiro-cli resolves npm-style cmd launcher to direct node execution', async () => {
+  const kiro = await makeFakeWindowsAgentLauncher(
+    'kiro-cli',
+    'node_modules/kiro-cli/bin/kiro-cli.js'
+  );
+
+  const spec = getCommandSpawnSpec('kiro-cli', ['--version'], {
+    platform: 'win32',
+    execPath: kiro.execPath,
+    env: { PATH: kiro.binDir, PATHEXT: '.EXE;.CMD' },
+  });
+
+  assert.equal(spec.command, kiro.execPath);
+  assert.deepEqual(spec.args, [kiro.scriptPath, '--version']);
+  assert.equal(spec.shell, false);
 });
 
 

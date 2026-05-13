@@ -3,6 +3,7 @@ import path from 'node:path';
 
 import { renderCompatibilityExport } from './compat-export.mjs';
 import { renderClaudeAgent } from './emitters/claude.mjs';
+import { renderKiroAgent } from './emitters/kiro.mjs';
 import { writeFileAtomic } from '../fs/atomic-write.mjs';
 import {
   ORCHESTRATOR_AGENT_MARKER,
@@ -14,6 +15,13 @@ import { loadCanonicalAgents } from './source-tree.mjs';
 const TARGET_ROOTS = {
   claude: '.claude/agents',
   codex: '.codex/agents',
+  kiro: '.kiro/agents',
+};
+
+const TARGET_EXTENSIONS = {
+  claude: '.md',
+  codex: '.md',
+  kiro: '.json',
 };
 
 function assertCondition(condition, message) {
@@ -52,11 +60,11 @@ async function readOptional(absPath) {
   }
 }
 
-async function listMarkdownFiles(absDir) {
+async function listTargetFiles(absDir, extension) {
   try {
     const entries = await readdir(absDir, { withFileTypes: true });
     return entries
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith(extension))
       .map((entry) => entry.name);
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
@@ -74,6 +82,7 @@ function buildEmitterMap(emitters = {}) {
   return {
     claude: emitters.claude || renderClaudeAgent,
     codex: emitters.codex || renderCodexAgent,
+    kiro: emitters.kiro || renderKiroAgent,
   };
 }
 
@@ -81,7 +90,8 @@ export function resolveAgentTargets(client = 'all') {
   const normalized = String(client || 'all').trim().toLowerCase();
   if (normalized === 'claude') return ['claude'];
   if (normalized === 'codex') return ['codex'];
-  return ['claude', 'codex'];
+  if (normalized === 'kiro') return ['kiro'];
+  return ['claude', 'codex', 'kiro'];
 }
 
 export function isManagedAgentMarkdown(content, expectedId) {
@@ -102,6 +112,30 @@ export function isManagedAgentMarkdown(content, expectedId) {
 
   return nonEmptyLines[0] === ORCHESTRATOR_AGENT_MARKER
     && nonEmptyLines[nonEmptyLines.length - 1] === ORCHESTRATOR_AGENT_MARKER_END;
+}
+
+export function isManagedAgentJson(content, expectedId) {
+  let parsed;
+  try {
+    parsed = JSON.parse(normalizeNewlines(content));
+  } catch {
+    return false;
+  }
+
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+  if (parsed.name !== expectedId) return false;
+  if (typeof parsed.prompt !== 'string') return false;
+
+  const prompt = normalizeNewlines(parsed.prompt);
+  return prompt.includes(ORCHESTRATOR_AGENT_MARKER)
+    && prompt.includes(ORCHESTRATOR_AGENT_MARKER_END);
+}
+
+function isManagedAgentFile(target, content, expectedId) {
+  if (target === 'kiro') {
+    return isManagedAgentJson(content, expectedId);
+  }
+  return isManagedAgentMarkdown(content, expectedId);
 }
 
 function buildExpectedFiles({ source, targets, mode, emitters }) {
@@ -147,7 +181,7 @@ function createDefaultFsOps() {
 
 export async function syncCanonicalAgents({
   rootDir,
-  targets = ['claude', 'codex'],
+  targets = ['claude', 'codex', 'kiro'],
   mode = 'install',
   writeCompatibilityExport = true,
   io = console,
@@ -186,15 +220,16 @@ export async function syncCanonicalAgents({
       assertCondition(targetRoot, `unsupported target: ${target}`);
 
       const absDir = path.join(rootDir, targetRoot);
-      const existingFiles = await listMarkdownFiles(absDir);
+      const targetExtension = TARGET_EXTENSIONS[target] || '.md';
+      const existingFiles = await listTargetFiles(absDir, targetExtension);
       const expectedForTarget = expectedFiles.get(target) || new Map();
 
       for (const fileName of existingFiles) {
         const relPath = path.join(targetRoot, fileName);
         const absPath = path.join(rootDir, relPath);
         const existing = await readFile(absPath, 'utf8');
-        const expectedId = path.basename(fileName, '.md');
-        const managed = isManagedAgentMarkdown(existing, expectedId);
+        const expectedId = path.basename(fileName, targetExtension);
+        const managed = isManagedAgentFile(target, existing, expectedId);
 
         if (hasManagedMarker(existing) && !managed) {
           throw new Error(`malformed managed file: ${relPath}`);

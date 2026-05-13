@@ -10,6 +10,7 @@ import {
 import { renderClaudeNativeOutputs } from './emitters/claude.mjs';
 import { renderCodexNativeOutputs } from './emitters/codex.mjs';
 import { renderGeminiNativeOutputs } from './emitters/gemini.mjs';
+import { renderKiroNativeOutputs } from './emitters/kiro.mjs';
 import { renderOpencodeNativeOutputs } from './emitters/opencode.mjs';
 import {
   AIOS_NATIVE_BEGIN_MARK,
@@ -29,6 +30,7 @@ const EMITTERS = {
   codex: renderCodexNativeOutputs,
   claude: renderClaudeNativeOutputs,
   gemini: renderGeminiNativeOutputs,
+  kiro: renderKiroNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
 };
 const SYNC_LOCK_NAME = 'native-skills-sync';
@@ -165,6 +167,98 @@ async function applyJsonMergeOperation(targetPath, fragment, fsOps, backups, rep
   return summarizeMutation(existsBefore, true);
 }
 
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function mergeObjectFragment(existingObject, fragment) {
+  return {
+    ...(isPlainObject(existingObject) ? existingObject : {}),
+    ...(isPlainObject(fragment) ? fragment : {}),
+  };
+}
+
+async function applyJsonMergeObjectOperation(targetPath, targetKey, fragment, fsOps, backups, repair) {
+  const previous = await fsOps.readTextTarget(targetPath);
+  const existsBefore = previous.length > 0 || await pathExists(targetPath);
+  let parsed;
+  try {
+    parsed = parseJsonObject(previous, targetPath);
+  } catch {
+    if (!repair.resetInvalidJson) {
+      throw new Error(`invalid json: ${path.basename(targetPath)}`);
+    }
+    parsed = {};
+  }
+
+  const currentNode = parsed[targetKey];
+  if (currentNode !== undefined && !isPlainObject(currentNode)) {
+    if (!repair.resetInvalidJson) {
+      throw new Error(`invalid json: ${path.basename(targetPath)}#${targetKey}`);
+    }
+    parsed[targetKey] = {};
+  }
+
+  const next = stringifyJsonObject({
+    ...parsed,
+    [targetKey]: mergeObjectFragment(parsed[targetKey], fragment),
+  });
+  if (normalizeText(previous) === normalizeText(next)) {
+    return 'reused';
+  }
+  await backupTarget(targetPath, fsOps, backups);
+  await fsOps.writeTextTarget(targetPath, next);
+  return summarizeMutation(existsBefore, true);
+}
+
+async function removeJsonMergeObjectOperation(targetPath, targetKey, fragment, fsOps, backups) {
+  const previous = await fsOps.readTextTarget(targetPath);
+  if (!previous && !(await pathExists(targetPath))) {
+    return 'reused';
+  }
+
+  let parsed;
+  try {
+    parsed = parseJsonObject(previous, targetPath);
+  } catch {
+    return 'reused';
+  }
+
+  const currentNode = parsed[targetKey];
+  if (!isPlainObject(currentNode)) {
+    return 'reused';
+  }
+
+  const nextNode = { ...currentNode };
+  let changed = false;
+  for (const key of Object.keys(fragment || {})) {
+    if (key in nextNode) {
+      delete nextNode[key];
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return 'reused';
+  }
+
+  const nextObject = { ...parsed };
+  if (Object.keys(nextNode).length > 0) {
+    nextObject[targetKey] = nextNode;
+  } else {
+    delete nextObject[targetKey];
+  }
+
+  const nextText = Object.keys(nextObject).length > 0 ? stringifyJsonObject(nextObject) : '';
+  await backupTarget(targetPath, fsOps, backups);
+  if (nextText) {
+    await fsOps.writeTextTarget(targetPath, nextText);
+  } else {
+    await fsOps.removeTarget(targetPath);
+  }
+  return 'removed';
+}
+
 async function removeOperation(targetPath, kind, fsOps, backups) {
   const previous = await fsOps.readTextTarget(targetPath);
   if (!previous && !(await pathExists(targetPath))) {
@@ -230,13 +324,19 @@ async function applyRenderedOperations({ rootDir, client, mode, rendered, plan, 
       let status = 'reused';
 
       if (mode === 'uninstall') {
-        status = await removeOperation(targetPath, operation.kind, fsOps, backups);
+        if (operation.kind === 'json-merge-object') {
+          status = await removeJsonMergeObjectOperation(targetPath, operation.targetKey, operation.content, fsOps, backups);
+        } else {
+          status = await removeOperation(targetPath, operation.kind, fsOps, backups);
+        }
       } else if (operation.kind === 'markdown-block') {
         status = await applyMarkdownBlockOperation(targetPath, operation.content, fsOps, backups);
       } else if (operation.kind === 'managed-file') {
         status = await applyManagedFileOperation(targetPath, operation.content, fsOps, backups, repair);
       } else if (operation.kind === 'json-merge') {
         status = await applyJsonMergeOperation(targetPath, operation.content, fsOps, backups, repair);
+      } else if (operation.kind === 'json-merge-object') {
+        status = await applyJsonMergeObjectOperation(targetPath, operation.targetKey, operation.content, fsOps, backups, repair);
       } else {
         throw new Error(`unsupported native operation: ${operation.kind}`);
       }
@@ -288,7 +388,7 @@ async function syncNativeEnhancementsUnlocked({
         surfaces: [currentClient],
         withLock: false,
       });
-      if (currentClient === 'codex' || currentClient === 'claude') {
+      if (currentClient === 'codex' || currentClient === 'claude' || currentClient === 'kiro') {
         await syncCanonicalAgents({ rootDir, io, targets: [currentClient], mode: 'install' });
       }
     }

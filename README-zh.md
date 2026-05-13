@@ -1,6 +1,6 @@
 # RexCLI (AIOS)
 
-> 给 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力的本地 Agent 工作流层。
+> 给 `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` 加上记忆、协作和验证能力的本地 Agent 工作流层。
 
 [文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [官方案例库](https://cli.rexai.top/zh/case-library/) | [GitHub](https://github.com/rexleimo/rex-cli)
 
@@ -28,7 +28,7 @@ aios
 
 | 能力 | 说明 | 命令 |
 |------|------|------|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` 自动加载 |
+| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` 自动加载 |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
@@ -62,7 +62,7 @@ aios team status --provider codex --watch
 ## 工作原理
 
 ```text
-用户 → codex / claude / gemini
+用户 → codex / claude / gemini / opencode / kiro-cli
      → zsh wrapper（透明包装）
      → ctx-agent.mjs（ContextDB 集成）
         → contextdb CLI（记忆持久化）
@@ -70,7 +70,7 @@ aios team status --provider codex --watch
      → browser MCP（可选浏览器自动化）
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini` 命令即可，RexCLI 自动在后台加载项目记忆。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode`、`kiro-cli` 命令即可，RexCLI 自动在后台加载项目记忆。Kiro 现在接入 deep native surface（steering、MCP、skills、agents、headless/solo）；live route preview 现在会保持 `kiro-cli`，不再回退到 `codex`。
 
 ## 文档
 

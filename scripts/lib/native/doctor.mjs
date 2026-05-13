@@ -8,6 +8,7 @@ import { createNativeRepairSession, finalizeNativeRepairSession } from './repair
 import { renderClaudeNativeOutputs } from './emitters/claude.mjs';
 import { renderCodexNativeOutputs } from './emitters/codex.mjs';
 import { renderGeminiNativeOutputs } from './emitters/gemini.mjs';
+import { renderKiroNativeOutputs } from './emitters/kiro.mjs';
 import { renderOpencodeNativeOutputs } from './emitters/opencode.mjs';
 import {
   AIOS_NATIVE_JSON_KEY,
@@ -21,6 +22,7 @@ const EMITTERS = {
   codex: renderCodexNativeOutputs,
   claude: renderClaudeNativeOutputs,
   gemini: renderGeminiNativeOutputs,
+  kiro: renderKiroNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
 };
 
@@ -62,7 +64,35 @@ function formatOperationTarget(operation) {
   if (operation.kind === 'json-merge') {
     return `${operation.targetPath}#${AIOS_NATIVE_JSON_KEY}`;
   }
+  if (operation.kind === 'json-merge-object') {
+    return `${operation.targetPath}#${operation.targetKey}`;
+  }
   return operation.targetPath;
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+function isSubsetObject(currentObject, fragment) {
+  if (!isPlainObject(currentObject) || !isPlainObject(fragment)) {
+    return false;
+  }
+
+  for (const [key, value] of Object.entries(fragment)) {
+    const currentValue = currentObject[key];
+    if (isPlainObject(value)) {
+      if (!isSubsetObject(currentValue, value)) {
+        return false;
+      }
+      continue;
+    }
+    if (JSON.stringify(currentValue) !== JSON.stringify(value)) {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 function parseIssueTargetFromMessage(message = '') {
@@ -165,6 +195,22 @@ async function inspectOperation({ rootDir, client, operation, fixCommand, issues
     return;
   }
 
+  if (operation.kind === 'json-merge-object') {
+    let parsedObject;
+    try {
+      parsedObject = parseJsonObject(current, targetPath);
+    } catch {
+      issues.push(withIssueTarget(buildIssue({ client, status: 'error', message: `[invalid json] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+      return;
+    }
+
+    const currentNode = parsedObject[operation.targetKey];
+    if (!isPlainObject(currentNode) || !isSubsetObject(currentNode, operation.content)) {
+      issues.push(withIssueTarget(buildIssue({ client, message: `[drift] ${operation.targetPath}#${operation.targetKey}`, fix: fixCommand }), operationTarget));
+    }
+    return;
+  }
+
   let parsed;
   try {
     parsed = parseJsonObject(current, targetPath);
@@ -179,6 +225,8 @@ async function inspectOperation({ rootDir, client, operation, fixCommand, issues
   if (JSON.stringify(parsed[AIOS_NATIVE_JSON_KEY]) !== JSON.stringify(operation.content)) {
     issues.push(withIssueTarget(buildIssue({ client, message: `[drift] ${operation.targetPath}#${AIOS_NATIVE_JSON_KEY}`, fix: fixCommand }), operationTarget));
   }
+
+  return;
 }
 
 async function inspectClient({ rootDir, manifest, client }) {
@@ -201,6 +249,17 @@ async function inspectClient({ rootDir, manifest, client }) {
       try {
         const parsed = parseJsonObject(current, targetPath);
         if (AIOS_NATIVE_JSON_KEY in parsed) {
+          hasManagedFootprint = true;
+        }
+      } catch {
+        hasManagedFootprint = true;
+      }
+      continue;
+    }
+    if (operation.kind === 'json-merge-object') {
+      try {
+        const parsed = parseJsonObject(current, targetPath);
+        if (isPlainObject(parsed[operation.targetKey])) {
           hasManagedFootprint = true;
         }
       } catch {
@@ -270,7 +329,7 @@ async function inspectClient({ rootDir, manifest, client }) {
     }
   }
 
-  if (client === 'codex' || client === 'claude') {
+  if (client === 'codex' || client === 'claude' || client === 'kiro') {
     const agentRoot = path.join(rootDir, `.${client}`, 'agents');
     if (!(await pathExists(agentRoot))) {
       issues.push(withIssueTarget(buildIssue({ client, message: `[missing] .${client}/agents`, fix: fixCommand }), `.${client}/agents`));

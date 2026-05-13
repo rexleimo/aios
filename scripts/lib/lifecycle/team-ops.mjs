@@ -59,7 +59,7 @@ function normalizeWatchStalledMs(rawValue, fallback = DEFAULT_WATCH_STALLED_MS) 
 
 function normalizeProvider(value) {
   const normalized = normalizeText(value).toLowerCase();
-  if (normalized === 'codex' || normalized === 'claude' || normalized === 'gemini') {
+  if (normalized === 'codex' || normalized === 'claude' || normalized === 'gemini' || normalized === 'kiro') {
     return normalized;
   }
   return 'codex';

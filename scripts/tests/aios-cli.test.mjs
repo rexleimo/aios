@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
-import { getCommandHelpText } from '../lib/cli/help.mjs';
+import { getCommandHelpText, getInternalHelpText, getRootHelpText } from '../lib/cli/help.mjs';
 import { runReleaseStatus } from '../lib/lifecycle/release-status.mjs';
 import { runSnapshotRollback } from '../lib/lifecycle/snapshot-rollback.mjs';
 
@@ -200,10 +200,17 @@ test('parseArgs accepts team shorthand and runtime overrides', () => {
   assert.equal(shorthand.options.taskTitle, 'Ship team runtime');
   assert.equal(shorthand.options.executionMode, 'live');
 
+  const kiroShorthand = parseArgs(['team', '2:kiro', 'Ship Kiro team runtime']);
+  assert.equal(kiroShorthand.command, 'team');
+  assert.equal(kiroShorthand.options.workers, 2);
+  assert.equal(kiroShorthand.options.provider, 'kiro');
+  assert.equal(kiroShorthand.options.clientId, 'kiro-cli');
+  assert.equal(kiroShorthand.options.taskTitle, 'Ship Kiro team runtime');
+
   const explicit = parseArgs([
     'team',
     '--provider',
-    'gemini',
+    'kiro',
     '--workers',
     '4',
     '--task',
@@ -215,8 +222,8 @@ test('parseArgs accepts team shorthand and runtime overrides', () => {
     'json',
   ]);
   assert.equal(explicit.command, 'team');
-  assert.equal(explicit.options.provider, 'gemini');
-  assert.equal(explicit.options.clientId, 'gemini-cli');
+  assert.equal(explicit.options.provider, 'kiro');
+  assert.equal(explicit.options.clientId, 'kiro-cli');
   assert.equal(explicit.options.workers, 4);
   assert.equal(explicit.options.executionMode, 'dry-run');
   assert.equal(explicit.options.planPath, 'docs/plans/refactor-team.md');
@@ -248,6 +255,10 @@ test('parseArgs accepts hud command options', () => {
   assert.equal(jsonResult.command, 'hud');
   assert.equal(jsonResult.options.provider, 'codex');
   assert.equal(jsonResult.options.json, true);
+
+  const kiroResult = parseArgs(['hud', '--provider', 'kiro']);
+  assert.equal(kiroResult.command, 'hud');
+  assert.equal(kiroResult.options.provider, 'kiro');
 
   const watchdogResult = parseArgs(['hud', '--watchdog']);
   assert.equal(watchdogResult.command, 'hud');
@@ -332,6 +343,11 @@ test('parseArgs accepts harness subcommands', () => {
   assert.equal(run.options.dryRun, true);
   assert.equal(run.options.maxIterations, 3);
   assert.equal(run.options.provider, 'codex');
+
+  const kiroRun = parseArgs(['harness', 'run', '--objective', 'Ship X', '--provider', 'kiro', '--dry-run']);
+  assert.equal(kiroRun.command, 'harness');
+  assert.equal(kiroRun.options.subcommand, 'run');
+  assert.equal(kiroRun.options.provider, 'kiro');
 
   const status = parseArgs(['harness', 'status', '--session', 's1', '--workspace', '/tmp/demo', '--json']);
   assert.equal(status.command, 'harness');
@@ -418,6 +434,17 @@ test('getCommandHelpText includes harness usage and examples', () => {
   assert.match(text, /harness stop/);
   assert.match(text, /--max-iterations <n>/);
   assert.match(text, /--workspace <path>/);
+});
+
+test('getCommandHelpText includes kiro client and provider lists', () => {
+  assert.match(getCommandHelpText('setup'), /--client <all\|codex\|claude\|gemini\|opencode\|kiro>/);
+  assert.match(getCommandHelpText('update'), /--client <all\|codex\|claude\|gemini\|opencode\|kiro>/);
+  assert.match(getCommandHelpText('uninstall'), /--client <all\|codex\|claude\|gemini\|opencode\|kiro>/);
+  assert.match(getCommandHelpText('hud'), /--provider <codex\|claude\|gemini\|kiro>/);
+  assert.match(getRootHelpText(), /One-click multi-client live team runtime \(codex\/claude\/gemini\/kiro\)/);
+  assert.match(getCommandHelpText('team'), /--provider <codex\|claude\|gemini\|kiro>/);
+  assert.match(getInternalHelpText('skills', 'install'), /--client <all\|codex\|claude\|gemini\|opencode\|kiro>/);
+  assert.match(getInternalHelpText('native', 'doctor'), /--client <all\|codex\|claude\|gemini\|opencode\|kiro>/);
 });
 
 test('parseArgs accepts team status/history subcommands', () => {

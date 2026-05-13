@@ -1,5 +1,5 @@
 # ContextDB transparent command wrappers for PowerShell.
-# Source this file in PowerShell profile to make codex/claude/gemini/opencode auto-load context packets.
+# Source this file in PowerShell profile to make codex/claude/gemini/opencode/kiro-cli auto-load context packets.
 # Optional env vars:
 # - ROOTPATH
 # - CTXDB_SHELL_BRIDGE
@@ -147,6 +147,18 @@ function opencode {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
   $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "opencode-cli" -Passthrough "opencode" -Arguments $Args
+}
+
+function kiro-cli {
+  param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
+
+  $global:LASTEXITCODE = Invoke-BridgeOrPassthrough -Agent "kiro-cli" -Passthrough "kiro-cli" -Arguments $Args
+}
+
+function kiro {
+  param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
+
+  kiro-cli @Args
 }
 
 function aios {

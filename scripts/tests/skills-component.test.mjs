@@ -320,6 +320,66 @@ test('doctor and uninstall respect project scope targets', async () => {
   assert.equal(missing, true);
 });
 
+test('project scope installs and removes Kiro skills the same way as other clients', async () => {
+  const rootDir = await makeTemp('aios-skills-kiro-project-root-');
+  const projectRoot = await makeTemp('aios-skills-kiro-project-workspace-');
+  const kiroHome = await makeTemp('aios-skills-kiro-project-home-');
+  await writeSkill(rootDir, 'skill-sources/xhs-ops-methods');
+  await writeCanonicalCatalog(rootDir, [
+    {
+      name: 'xhs-ops-methods',
+      description: 'project only',
+      source: 'skill-sources/xhs-ops-methods',
+      clients: ['kiro'],
+      scopes: ['project'],
+      defaultInstall: { global: false, project: false },
+      tags: ['xhs'],
+    },
+  ]);
+
+  await installContextDbSkills({
+    rootDir,
+    projectRoot,
+    client: 'kiro',
+    scope: 'project',
+    selectedSkills: ['xhs-ops-methods'],
+    homeMap: { kiro: kiroHome },
+  });
+
+  const installedPath = path.join(projectRoot, '.kiro', 'skills', 'xhs-ops-methods', 'SKILL.md');
+  assert.match(await readFile(installedPath, 'utf8'), /sample/);
+
+  const logs = [];
+  await doctorContextDbSkills({
+    rootDir,
+    projectRoot,
+    client: 'kiro',
+    scope: 'project',
+    selectedSkills: ['xhs-ops-methods'],
+    homeMap: { kiro: kiroHome },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+  assert.match(logs.join('\n'), /\.kiro\/skills/);
+  assert.match(logs.join('\n'), /managed copy install/);
+
+  await uninstallContextDbSkills({
+    rootDir,
+    projectRoot,
+    client: 'kiro',
+    scope: 'project',
+    selectedSkills: ['xhs-ops-methods'],
+    homeMap: { kiro: kiroHome },
+  });
+
+  let missing = false;
+  try {
+    await readFile(installedPath, 'utf8');
+  } catch {
+    missing = true;
+  }
+  assert.equal(missing, true);
+});
+
 test('project scope can target a workspace that differs from the catalog source repo', async () => {
   const rootDir = await makeTemp('aios-skills-source-root-');
   const projectRoot = await makeTemp('aios-skills-workspace-root-');

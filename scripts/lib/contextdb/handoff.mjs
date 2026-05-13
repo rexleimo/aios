@@ -9,6 +9,7 @@ const VALID_AGENT_TYPES = [
   'codex-cli',
   'gemini-cli',
   'opencode-cli',
+  'kiro-cli',
 ];
 
 const VALID_ROLES = ['planner', 'implementer', 'reviewer', 'orchestrator'];

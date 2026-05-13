@@ -31,6 +31,17 @@ test('normalizeHandoffPacket produces valid v2 packet from minimal input', async
   assert.deepEqual(packet.assumptions, []);
 });
 
+test('normalizeHandoffPacket accepts kiro-cli agentType', async () => {
+  const packet = normalizeHandoffPacket({
+    fromSessionId: 'session-kiro',
+    agentType: 'kiro-cli',
+    role: 'planner',
+  });
+
+  assert.equal(packet.fromAgent.agentType, 'kiro-cli');
+  assert.equal(packet.fromAgent.role, 'planner');
+});
+
 test('normalizeHandoffPacket rejects invalid agentType', async () => {
   assert.throws(
     () => normalizeHandoffPacket({

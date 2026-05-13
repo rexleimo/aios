@@ -7,11 +7,14 @@ import test from 'node:test';
 
 import {
   buildWorkspaceMemoryOverlay,
+  buildKiroChatArgs,
   classifyOneShotFailure,
   isBetterSqlite3AbiMismatch,
   resolveRoutedSubagentClient,
+  resolveRoutePreviewAgent,
   resolveTaskRouteDecision,
   shouldAutoRebuildNative,
+  runOneShotAgent,
 } from '../ctx-agent-core.mjs';
 import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 
@@ -61,6 +64,10 @@ async function createFakeGeminiCommand(marker = 'FAKE_GEMINI_OK') {
 
 async function createFakeOpenCodeCommand(marker = 'FAKE_OPENCODE_OK') {
   return createFakeCliCommand('opencode', marker);
+}
+
+async function createFakeKiroCommand(marker = 'FAKE_KIRO_OK') {
+  return createFakeCliCommand('kiro-cli', marker);
 }
 
 function parseLastJsonPayload(stdout) {
@@ -200,6 +207,20 @@ test('resolveRoutedSubagentClient falls back to provider-supported runtimes', ()
     }),
     'gemini-cli'
   );
+  assert.equal(
+    resolveRoutedSubagentClient({ agent: 'kiro-cli', teamProvider: 'auto', env: {} }),
+    'kiro-cli'
+  );
+  assert.equal(
+    resolveRoutedSubagentClient({ agent: '', teamProvider: 'kiro', env: {} }),
+    'kiro-cli'
+  );
+});
+
+test('resolveRoutePreviewAgent preserves kiro-cli for live route previews', () => {
+  assert.equal(resolveRoutePreviewAgent('kiro-cli'), 'kiro-cli');
+  assert.equal(resolveRoutePreviewAgent('codex-cli'), 'codex-cli');
+  assert.equal(resolveRoutePreviewAgent('claude-code'), 'claude-code');
 });
 
 test('buildWorkspaceMemoryOverlay reads pinned and recent memos', async () => {
@@ -430,6 +451,7 @@ test('ctx-agent tolerates context:pack failures by running without a context pac
         encoding: 'utf8',
         env: {
           ...process.env,
+          AIOS_PROJECT_NODE_ACTIVE: '1',
           CTXDB_PACK_STRICT: '0',
         },
       }
@@ -1114,6 +1136,34 @@ test('ctx-agent one-shot OpenCode mode uses file-backed context handoff', async 
   }
 });
 
+test('ctx-agent one-shot Kiro mode uses headless chat with trust-all-tools', async () => {
+  const fakeBin = await createFakeKiroCommand();
+  const previousPath = process.env.PATH;
+
+  try {
+    process.env.PATH = `${fakeBin}${path.delimiter}${previousPath || ''}`;
+    const result = runOneShotAgent(
+      'kiro-cli',
+      'Injected Kiro context',
+      'Summarize the current status.',
+      [],
+      { injectContext: true }
+    );
+
+    assert.equal(result.exitCode, 0);
+    const payload = parseLastJsonPayload(result.output);
+    assert.equal(payload.marker, 'FAKE_KIRO_OK');
+    assert.equal(payload.argv[0], 'chat');
+    assert.equal(payload.argv.includes('--no-interactive'), true);
+    assert.equal(payload.argv.includes('--trust-all-tools'), true);
+    assert.match(payload.argv.at(-1), /Injected Kiro context/u);
+    assert.match(payload.argv.at(-1), /Summarize the current status\./u);
+  } finally {
+    process.env.PATH = previousPath;
+    await rm(fakeBin, { recursive: true, force: true });
+  }
+});
+
 test('ctx-agent interactive OpenCode mode sends auto prompt via context packet file reference', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-opencode-interactive-'));
   const sessionId = 'ctx-opencode-interactive';
@@ -1175,4 +1225,12 @@ test('ctx-agent interactive OpenCode mode sends auto prompt via context packet f
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
+});
+
+test('ctx-agent Kiro chat args add trust-all-tools in interactive and headless modes', () => {
+  assert.deepEqual(buildKiroChatArgs(), ['chat', '--trust-all-tools']);
+  assert.deepEqual(
+    buildKiroChatArgs(['--model', 'kiro-model'], { headless: true }),
+    ['chat', '--no-interactive', '--trust-all-tools', '--model', 'kiro-model']
+  );
 });

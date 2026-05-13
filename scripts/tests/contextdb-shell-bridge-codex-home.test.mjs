@@ -565,3 +565,56 @@ test('opencode run subcommand passes through without wrapping', async () => {
   assert.deepEqual(payload.argv, ['run', 'hello']);
   assert.equal(parseRunnerWorkspace(result.stdout), '');
 });
+
+test('kiro-cli interactive runs are wrapped with kiro agent identity', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-kiro-interactive-'));
+  const fakeBin = await createFakePassthroughCommand('kiro-cli', 'FAKE_KIRO');
+  const fakeRunner = await createFakeRunner();
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    agent: 'kiro-cli',
+    command: 'kiro-cli',
+    args: [],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(parseRunnerWorkspace(result.stdout), cwd);
+  const runnerArgs = parseRunnerArgs(result.stdout);
+  const agentIndex = runnerArgs.indexOf('--agent');
+  assert.equal(agentIndex >= 0, true);
+  assert.equal(runnerArgs[agentIndex + 1], 'kiro-cli');
+
+  const autoPrompt = parseRunnerAutoPrompt(result.stdout);
+  assert.match(autoPrompt, /--agent kiro-cli .*--route team/u);
+  assert.match(autoPrompt, /--agent kiro-cli .*--route subagent/u);
+});
+
+test('kiro-cli admin subcommands pass through without wrapping', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-kiro-agent-'));
+  const fakeBin = await createFakePassthroughCommand('kiro-cli', 'FAKE_KIRO');
+  const fakeRunner = await createFakeRunner();
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    agent: 'kiro-cli',
+    command: 'kiro-cli',
+    args: ['agent', 'list'],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const payload = parseLastJsonPayload(result.stdout);
+  assert.equal(payload.marker, 'FAKE_KIRO');
+  assert.deepEqual(payload.argv, ['agent', 'list']);
+  assert.equal(parseRunnerWorkspace(result.stdout), '');
+});

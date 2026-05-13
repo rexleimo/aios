@@ -116,14 +116,20 @@ async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = n
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
+  const supportedSurfaces = selectedSurfaces.filter((surface) => Boolean(resolvedManifest.generatedRoots[surface]));
+  const skippedSurfaces = selectedSurfaces.filter((surface) => !resolvedManifest.generatedRoots[surface]);
   const expectedBySurface = new Map(selectedSurfaces.map((surface) => [surface, new Map()]));
   const results = [];
   const legacyUnmanaged = new Set(resolvedManifest.legacyUnmanaged.map((item) => path.resolve(rootDir, item)));
   const legacyReplaceable = new Set((resolvedManifest.legacyReplaceable || []).map((item) => path.resolve(rootDir, item)));
 
+  for (const surface of skippedSurfaces) {
+    io.log(`[skills] skip unsupported surface: ${surface}`);
+  }
+
   for (const entry of canonicalSkills) {
     for (const surface of entry.repoTargets) {
-      if (!expectedBySurface.has(surface)) {
+      if (!expectedBySurface.has(surface) || !resolvedManifest.generatedRoots[surface]) {
         continue;
       }
       const targetPath = resolveGeneratedTargetPath({ rootDir, entry, surface, manifest: resolvedManifest });
@@ -131,7 +137,7 @@ async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = n
     }
   }
 
-  for (const surface of selectedSurfaces) {
+  for (const surface of supportedSurfaces) {
     const rootRel = resolvedManifest.generatedRoots[surface];
     const rootAbs = path.join(rootDir, rootRel);
     const expected = expectedBySurface.get(surface) || new Map();
@@ -259,12 +265,17 @@ export async function checkGeneratedSkillsSync({ rootDir, io = console, manifest
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
-  const expectedBySurface = new Map(selectedSurfaces.map((surface) => [surface, new Map()]));
+  const supportedSurfaces = selectedSurfaces.filter((surface) => Boolean(resolvedManifest.generatedRoots[surface]));
+  const skippedSurfaces = selectedSurfaces.filter((surface) => !resolvedManifest.generatedRoots[surface]);
+  for (const surface of skippedSurfaces) {
+    io.log(`[skills] skip unsupported surface: ${surface}`);
+  }
+  const expectedBySurface = new Map(supportedSurfaces.map((surface) => [surface, new Map()]));
   const issues = [];
 
   for (const entry of canonicalSkills) {
     for (const surface of entry.repoTargets) {
-      if (!expectedBySurface.has(surface)) {
+      if (!expectedBySurface.has(surface) || !resolvedManifest.generatedRoots[surface]) {
         continue;
       }
       const targetPath = resolveGeneratedTargetPath({ rootDir, entry, surface, manifest: resolvedManifest });
@@ -272,7 +283,7 @@ export async function checkGeneratedSkillsSync({ rootDir, io = console, manifest
     }
   }
 
-  for (const surface of selectedSurfaces) {
+  for (const surface of supportedSurfaces) {
     const rootAbs = path.join(rootDir, resolvedManifest.generatedRoots[surface]);
     const expected = expectedBySurface.get(surface) || new Map();
 

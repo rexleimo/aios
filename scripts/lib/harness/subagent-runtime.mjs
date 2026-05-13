@@ -31,12 +31,13 @@ export const SUBAGENT_PRE_MUTATION_SNAPSHOT_ENV = 'AIOS_SUBAGENT_PRE_MUTATION_SN
 export const SUBAGENT_CODEX_DISABLE_MCP_ENV = 'AIOS_SUBAGENT_CODEX_DISABLE_MCP';
 export const SUBAGENT_CODEX_UNATTENDED_ENV = 'AIOS_SUBAGENT_CODEX_UNATTENDED';
 
-const SUPPORTED_CLIENTS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
+const SUPPORTED_CLIENTS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'kiro-cli']);
 const CLIENT_COMMAND = {
   'codex-cli': 'codex',
   'claude-code': 'claude',
   'gemini-cli': 'gemini',
   'opencode-cli': 'opencode',
+  'kiro-cli': 'kiro-cli',
 };
 
 const CODEX_OUTPUT_SCHEMA_REL = path.join('memory', 'specs', 'agent-handoff.schema.json');
@@ -178,6 +179,20 @@ function buildCodexUnattendedArgs(env = process.env) {
     return [];
   }
   return ['--dangerously-bypass-approvals-and-sandbox'];
+}
+
+function buildKiroChatArgs(extraArgs = [], { headless = false } = {}) {
+  const values = Array.isArray(extraArgs) ? [...extraArgs] : [extraArgs];
+  const passthroughArgs = values[0] === 'chat' ? values.slice(1) : values;
+  const args = ['chat'];
+  if (headless) {
+    args.push('--no-interactive');
+  }
+  args.push('--trust-all-tools');
+  if (passthroughArgs.length > 0) {
+    args.push(...passthroughArgs);
+  }
+  return args;
 }
 
 function buildRoutedExtraArgs(clientId = '', modelRouting = null, env = process.env) {
@@ -876,6 +891,19 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
       ? `${systemText}\n\n## New User Request\n${promptText}`
       : promptText;
     args = ['run', fullPrompt];
+  } else if (clientId === 'kiro-cli') {
+    const fullPrompt = systemText
+      ? `${systemText}\n\n## New User Request\n${promptText}`
+      : promptText;
+    if (!String(env?.KIRO_API_KEY || '').trim()) {
+      return {
+        exitCode: 1,
+        stdout: '',
+        stderr: '',
+        error: 'KIRO_API_KEY is required for headless kiro-cli runs',
+      };
+    }
+    args = [...buildKiroChatArgs(routedExtraArgs, { headless: true }), fullPrompt];
   } else {
     const fullPrompt = systemText
       ? `${systemText}\n\n## New User Request\n${promptText}`
@@ -1455,7 +1483,7 @@ export async function executeSubagentDispatchPlan(
   const normalizedClient = normalizeText(env?.[SUBAGENT_CLIENT_ENV]).toLowerCase();
   const clientId = normalizedClient || '';
   if (!SUPPORTED_CLIENTS.has(clientId)) {
-    const supportedHint = `Set ${SUBAGENT_CLIENT_ENV} to one of: codex-cli, claude-code, gemini-cli, opencode-cli.`;
+    const supportedHint = `Set ${SUBAGENT_CLIENT_ENV} to one of: codex-cli, claude-code, gemini-cli, opencode-cli, kiro-cli.`;
     return {
       mode: 'live',
       ok: false,

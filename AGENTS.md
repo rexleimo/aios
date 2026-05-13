@@ -57,7 +57,7 @@ npm run typecheck && npm run build
 - File names: kebab-case for action modules (for example `auth-check.ts`), `index.ts` for module entry points.
 - For `mcp-server` internals, tool names follow `browser_*`. For default runtime (browser-use), use `chrome.launch_cdp` / `browser.connect_cdp` / `page.*`.
 - Keep configuration JSON keys stable; prefer additive changes over renaming.
-- Repo-local discoverable skills must live under `.codex/skills/` or `.claude/skills/` (optionally `.agents/skills/` only when the target client actually supports it). Do not invent parallel skill roots such as `.baoyu-skills/*/SKILL.md`; those are non-discoverable and should be plain docs or extension config only.
+- Repo-local discoverable skills must live under `.codex/skills/`, `.claude/skills/`, or `.kiro/skills/` (optionally `.agents/skills/` only when the target client actually supports it). Do not invent parallel skill roots such as `.baoyu-skills/*/SKILL.md`; those are non-discoverable and should be plain docs or extension config only.
 
 ## Testing Guidelines
 Automated suites are available for both root AIOS workflows and `mcp-server`.
@@ -117,7 +117,7 @@ For long tasks, announce the chosen route in the first progress update.
 - Trigger: when the user message is exactly `cap`, execute this flow in the current repo.
 - Required flow:
   1. `git status --short` and confirm there are changes.
-  2. If behavior/commands/workflow changed, sync impacted skill docs first (keep `.codex/skills/*` and `.claude/skills/*` aligned).
+  2. If behavior/commands/workflow changed, sync impacted skill docs first (keep `.codex/skills/*`, `.claude/skills/*`, and `.kiro/skills/*` aligned).
   3. `git add -A`.
   4. Commit with a Conventional Commit message from current task context.
   5. If no clear message is available, use fallback `chore: cap snapshot <YYYY-MM-DD>`.
@@ -148,7 +148,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 ContextDB remains the shared runtime layer for memory, checkpoints, and execution evidence.
 
-Wrapped `codex` / `claude` / `gemini` / `opencode` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
+Wrapped `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
 
 Persona and user profile memory are part of the same runtime layer:
 - `aios memo persona ...` manages the global agent identity file (`~/.aios/SOUL.md` by default).
@@ -172,6 +172,6 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 
 ## AIOS Native Codex Layer
 
-- Prefer repo-local `.codex/skills` and `.codex/agents`.
+- Prefer repo-local `.codex/skills` and `.codex/agents` for Codex-specific workflows; use the matching `.claude/skills`, `.claude/agents`, and `.kiro/skills` / `.kiro/agents` roots when working in those clients.
 - Keep work grounded in the AIOS runtime and verification flow.
 <!-- AIOS NATIVE END -->

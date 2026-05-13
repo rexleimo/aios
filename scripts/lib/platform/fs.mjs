@@ -181,6 +181,7 @@ export function collectSkillEntries(sourceRoots) {
 const REPO_DISCOVERABLE_SKILL_ROOTS = new Set([
   '.codex/skills',
   '.claude/skills',
+  '.kiro/skills',
   '.agents/skills',
   '.gemini/skills',
   '.opencode/skills',

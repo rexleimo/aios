@@ -97,6 +97,11 @@ paths=(
   ".codex/agents"
   ".claude/skills"
   ".agents/skills"
+  ".kiro/.aios-native-sync.json"
+  ".kiro/steering"
+  ".kiro/settings"
+  ".kiro/agents"
+  ".kiro/skills"
 )
 
 git -C "$ROOT_DIR" archive --format=tar --prefix="rex-cli/" HEAD "${paths[@]}" | gzip -9 > "$OUT_DIR/rex-cli.tar.gz"

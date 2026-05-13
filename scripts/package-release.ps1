@@ -42,7 +42,12 @@ try {
     ".codex/skills",
     ".codex/agents",
     ".claude/skills",
-    ".agents/skills"
+    ".agents/skills",
+    ".kiro/.aios-native-sync.json",
+    ".kiro/steering",
+    ".kiro/settings",
+    ".kiro/agents",
+    ".kiro/skills"
   )
 
   $installSh = Join-Path $RootDir "scripts/aios-install.sh"

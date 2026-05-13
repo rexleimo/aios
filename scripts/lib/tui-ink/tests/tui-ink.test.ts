@@ -48,6 +48,16 @@ test('native preview helper can be imported', async () => {
   assert.equal(typeof preview.getNativePreview, 'function', 'getNativePreview should be a function');
 });
 
+test('native preview includes Kiro deep outputs', async () => {
+  const preview = await import('../native-preview.ts');
+  assert.deepEqual(preview.getNativePreview('kiro'), {
+    tier: 'deep',
+    lines: ['kiro: .kiro/steering/AIOS.md + .kiro/settings/mcp.json + .kiro/agents + .kiro/skills'],
+  });
+  assert.match(preview.getNativePreview('all').tier, /kiro/);
+  assert.ok(preview.getNativePreview('all').lines.some((line: string) => line.startsWith('kiro: ')));
+});
+
 test('App and runInteractiveSession can be imported', async () => {
   const app = await import('../App.tsx');
   const index = await import('../index.tsx');

@@ -5,7 +5,7 @@
       "name": "aios-workflow-router",
       "description": "Route tasks to appropriate workflows. TRIGGERS: 分析,设计,实现,调试,并发,并行,agent team,长任务,harness,plan,brainstorm,debug,multi-step",
       "source": "skill-sources/aios-workflow-router",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -17,7 +17,7 @@
       "name": "find-skills",
       "description": "Discover installable skills.",
       "source": "skill-sources/find-skills",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -29,7 +29,7 @@
       "name": "debug-hub",
       "description": "Evidence-first debugging: inject zero-dependency log calls, collect via debug-hub HTTP API, analyze through MCP tools.",
       "source": "skill-sources/debug-hub",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -41,7 +41,7 @@
       "name": "search-first",
       "description": "Research-before-building workflow.",
       "source": "skill-sources/search-first",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -53,7 +53,7 @@
       "name": "awesome-design-md",
       "description": "Apply DESIGN.md templates from VoltAgent awesome-design-md via getdesign CLI.",
       "source": "skill-sources/awesome-design-md",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -65,7 +65,7 @@
       "name": "frontend-design",
       "description": "Build distinctive production-grade frontend UI, including no-design-draft workflows with DESIGN.md integration.",
       "source": "skill-sources/frontend-design",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -77,7 +77,7 @@
       "name": "security-scan",
       "description": "Lightweight security hygiene for agent configs.",
       "source": "skill-sources/security-scan",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -89,7 +89,7 @@
       "name": "verification-loop",
       "description": "Evidence-before-assertions workflow.",
       "source": "skill-sources/verification-loop",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -101,7 +101,7 @@
       "name": "versioning-by-impact",
       "description": "Decide semantic versioning impact before release.",
       "source": "skill-sources/versioning-by-impact",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -113,7 +113,7 @@
       "name": "seo-geo-page-optimization",
       "description": "Optimize a page for SEO and GEO.",
       "source": "skill-sources/seo-geo-page-optimization",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -125,7 +125,7 @@
       "name": "skill-constraints",
       "description": "Operational constraints and best practices for skill execution.",
       "source": "skill-sources/skill-constraints",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -137,7 +137,7 @@
       "name": "aios-project-system",
       "description": "Canonical architecture and operating constraints for aios.",
       "source": "skill-sources/aios-project-system",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -149,7 +149,7 @@
       "name": "aios-long-running-harness",
       "description": "Harness controls for long-running AIOS jobs.",
       "source": "skill-sources/aios-long-running-harness",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -161,7 +161,7 @@
       "name": "harness-init-runner",
       "description": "Initialize a lightweight Node.js harness runner (harness/ + .harness/) to drive codex/claude/gemini/opencode CLIs with logs + checkpoints.",
       "source": "skill-sources/harness-init-runner",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -173,7 +173,7 @@
       "name": "contextdb-autopilot",
       "description": "Automatic ContextDB persistence workflow.",
       "source": "skill-sources/contextdb-autopilot",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -185,7 +185,7 @@
       "name": "cap-commit-push",
       "description": "Fast commit-and-push shortcut for this repository.",
       "source": "skill-sources/cap-commit-push",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,
@@ -197,7 +197,7 @@
       "name": "aios-jimeng-image-ops",
       "description": "Jimeng image generation workflow for aios.",
       "source": "skill-sources/aios-jimeng-image-ops",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -209,7 +209,7 @@
       "name": "seed2-manga-drama",
       "description": "Seed2 style manga-drama generation workflow.",
       "source": "skill-sources/seed2-manga-drama",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -221,7 +221,7 @@
       "name": "xhs-ops-methods",
       "description": "Reusable Xiaohongshu operations workflow.",
       "source": "skill-sources/xhs-ops-methods",
-      "clients": ["codex", "claude"],
+      "clients": ["codex", "claude", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": false,
@@ -233,7 +233,7 @@
       "name": "model-router",
       "description": "Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate. TRIGGERS: 模型调度, model dispatch, 选模型, 路由, routing, dispatch to model.",
       "source": "skill-sources/model-router",
-      "clients": ["codex", "claude", "gemini", "opencode"],
+      "clients": ["codex", "claude", "gemini", "opencode", "kiro"],
       "scopes": ["global", "project"],
       "defaultInstall": {
         "global": true,

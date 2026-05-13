@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 
-const WINDOWS_SHELL_COMMANDS = new Set(['codex', 'claude', 'gemini', 'opencode']);
+const WINDOWS_SHELL_COMMANDS = new Set(['codex', 'claude', 'gemini', 'opencode', 'kiro-cli']);
 
 function getEnvCaseInsensitive(env, key) {
   if (!env) return '';

@@ -2,7 +2,7 @@ import { HARNESS_PROFILE_NAMES, normalizeHarnessProfile } from '../harness/profi
 
 export const COMPONENT_NAMES = ['browser', 'shell', 'skills', 'native', 'agents', 'superpowers'];
 export const WRAP_MODES = ['all', 'repo-only', 'opt-in', 'off'];
-export const CLIENT_NAMES = ['all', 'codex', 'claude', 'gemini', 'opencode'];
+export const CLIENT_NAMES = ['all', 'codex', 'claude', 'gemini', 'opencode', 'kiro'];
 export const SKILL_SCOPE_NAMES = ['global', 'project'];
 export const SKILL_INSTALL_MODE_NAMES = ['copy', 'link'];
 export const QUALITY_GATE_MODES = ['quick', 'full', 'pre-pr'];
@@ -17,7 +17,7 @@ export const ENTROPY_GC_FORMAT_NAMES = ['text', 'json'];
 export const SNAPSHOT_ROLLBACK_FORMAT_NAMES = ['text', 'json'];
 export const RELEASE_STATUS_FORMAT_NAMES = ['text', 'json'];
 export const RELEASE_STATUS_HISTORY_FORMAT_NAMES = ['csv', 'ndjson'];
-export const SOLO_HARNESS_PROVIDER_NAMES = ['codex', 'claude', 'gemini', 'opencode'];
+export const SOLO_HARNESS_PROVIDER_NAMES = ['codex', 'claude', 'gemini', 'opencode', 'kiro'];
 
 export function normalizeWrapMode(raw = 'opt-in') {
   const value = String(raw || 'opt-in').trim().toLowerCase();

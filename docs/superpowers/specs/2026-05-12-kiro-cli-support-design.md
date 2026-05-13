@@ -2,11 +2,11 @@
 
 **Date**: 2026-05-12  
 **Status**: Draft  
-**Scope**: Add Kiro CLI as a first-class supported client in the AIOS workspace
+**Scope**: Add Kiro CLI as a deep supported client in the AIOS workspace
 
 ## Problem
 
-The repo currently treats `codex`, `claude`, `gemini`, and `opencode` as first-class clients. Kiro CLI is not represented in the client registry, shell bridge, native sync manifest, or docs. That means Kiro cannot receive the same ContextDB, steering, and MCP bootstrap behavior that the other clients get.
+The repo currently treats `codex`, `claude`, `gemini`, `opencode`, and `kiro` as first-class clients. Kiro CLI is now represented across the client registry, shell bridge, native sync manifest, skills sync, and docs so it can receive the same ContextDB, steering, MCP bootstrap, skills, and agent behavior.
 
 ## Evidence
 
@@ -14,37 +14,21 @@ The repo currently treats `codex`, `claude`, `gemini`, and `opencode` as first-c
 - `scripts/lib/platform/paths.mjs` only defines homes for those four clients.
 - `scripts/lib/components/shell.mjs` and `scripts/contextdb-shell.{zsh,ps1}` only wrap those four commands.
 - `config/native-sync-manifest.json` only emits native artifacts for those four clients.
-- `scripts/lib/harness/subagent-runtime.mjs` only accepts `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli` as live subagent clients.
+- `scripts/lib/harness/subagent-runtime.mjs` accepts `kiro-cli` for explicit live subagent execution.
 
-Kiro CLI docs indicate a terminal CLI entrypoint plus workspace steering and MCP support, so it fits the same client-adapter pattern, but not necessarily the same live subagent runtime contract.
+Kiro CLI docs indicate a terminal CLI entrypoint plus workspace steering, MCP support, custom agents, hooks, and skills. The repository maps those capabilities into the same deep client-adapter pattern used by Codex and Claude.
 
 ## Recommendation
 
-Implement Kiro in two stages.
-
-### Stage 1: Compatibility client
-
-Add Kiro to the repo's client surface so it can receive the same project memory, shell bridge, steering sync, and MCP bootstrap behavior as the other clients.
-
-Kiro does not use the repo's existing skill-pack layout as-is, so stage 1 should treat `skills` as unsupported for Kiro unless a Kiro-specific discoverable format is added later.
-
-### Stage 2: Runtime execution
-
-Only add Kiro to `team` / `subagent` / `harness` live execution if the CLI can produce a stable structured handoff that matches the current runtime contract.
+Add Kiro to the repo's client surface so it can receive the same project memory, shell bridge, steering sync, MCP bootstrap, skills, agent generation, and explicit runtime execution behavior as the other clients.
 
 ## Options
 
-### Option A: Compatibility client only
+### Option A: Deep native client
 
-Add `kiro` / `kiro-cli` to the registry, shell bridge, native sync, and docs. Keep live team/subagent execution out of scope for now.
+Add `kiro` / `kiro-cli` to the registry, shell bridge, native sync, agent generation, skills sync, and live runtime paths.
 
-Trade-off: lowest risk, delivers immediate value, and matches what the repo already does for other compatibility clients.
-
-### Option B: Full runtime client
-
-Add Kiro to the compatibility layer and also to live `team` / `subagent` / `harness` execution paths.
-
-Trade-off: more complete, but riskier because the current runtime assumes specific agent command shapes and structured outputs.
+Trade-off: more work up front, but it aligns the implementation with how Codex and Claude are treated.
 
 ### Option C: Alias-only support
 
@@ -74,7 +58,7 @@ Trade-off: too shallow; it would not make Kiro a real supported client in the re
 
 - Add `kiro` to the client lists used by setup/update/uninstall and home-dir resolution.
 - Treat Kiro home as `~/.kiro` by default, with optional `KIRO_HOME` override.
-- Keep `skills` as a warning/skip path for Kiro in stage 1; steering should come from native sync instead.
+- Generate `.kiro/agents/*.json`, `.kiro/steering/AIOS.md`, `.kiro/settings/mcp.json`, and `.kiro/skills`.
 
 ### Shell bridge
 
@@ -90,20 +74,18 @@ Trade-off: too shallow; it would not make Kiro a real supported client in the re
 ### Docs and help
 
 - Update supported-client lists and examples to mention Kiro where the repo describes supported clients.
-- Keep the wording explicit that Kiro is supported as a compatibility client first, not yet as a live subagent runtime.
+- Keep the wording explicit that Kiro is supported as a deep client with explicit live runtime selection.
 
 ## Acceptance Criteria
 
 - `setup`, `update`, and `uninstall` accept `--client kiro`.
 - The shell bridge can wrap Kiro CLI without breaking existing commands.
-- Native sync can materialize Kiro workspace files.
+- Native sync can materialize Kiro workspace files, including agents and skills.
 - Existing clients still pass their current tests unchanged.
 - The docs clearly state Kiro support level and any runtime limits.
 
 ## Out of Scope For Stage 1
 
-- Adding Kiro to `AIOS_SUBAGENT_CLIENT`.
-- Adding Kiro to `team` / `subagent` live execution providers.
 - Changing the existing codex/claude/gemini/opencode behavior.
 
 ## Open Assumption

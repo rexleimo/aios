@@ -16,6 +16,10 @@ test('resolveSoloHarnessProfile maps codex and opencode providers', () => {
   const opencode = resolveSoloHarnessProfile({ provider: 'opencode' });
   assert.equal(opencode.clientId, 'opencode-cli');
   assert.equal(opencode.command, 'opencode');
+
+  const kiro = resolveSoloHarnessProfile({ provider: 'kiro' });
+  assert.equal(kiro.clientId, 'kiro-cli');
+  assert.equal(kiro.command, 'kiro-cli');
 });
 
 test('validateSoloHarnessExtraArgs rejects reserved harness flags', () => {
@@ -33,6 +37,28 @@ test('checkSoloHarnessProfileReadiness reports missing provider binaries clearly
 
   assert.equal(readiness.ok, false);
   assert.match(readiness.reason, /codex/i);
+});
+
+test('checkSoloHarnessProfileReadiness requires KIRO_API_KEY for kiro', async () => {
+  const readiness = await checkSoloHarnessProfileReadiness({
+    provider: 'kiro',
+    env: {},
+    commandExistsImpl: async () => true,
+  });
+
+  assert.equal(readiness.ok, false);
+  assert.match(readiness.reason, /KIRO_API_KEY/i);
+});
+
+test('checkSoloHarnessProfileReadiness accepts kiro when command and key are present', async () => {
+  const readiness = await checkSoloHarnessProfileReadiness({
+    provider: 'kiro',
+    env: { KIRO_API_KEY: 'test-key' },
+    commandExistsImpl: async () => true,
+  });
+
+  assert.equal(readiness.ok, true);
+  assert.equal(readiness.profile.clientId, 'kiro-cli');
 });
 
 test('buildSoloHarnessCommand routes one-shot runs through ctx-agent', () => {

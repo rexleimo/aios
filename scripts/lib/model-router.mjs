@@ -19,6 +19,7 @@ const PROVIDER_CLIENT_MAP = Object.freeze({
   codex: 'codex-cli',
   claude: 'claude-code',
   gemini: 'gemini-cli',
+  kiro: 'kiro-cli',
 });
 
 let _registryCache = null;

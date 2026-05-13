@@ -15,10 +15,10 @@ import {
 } from '../../hud/state.mjs';
 import { normalizeHudPreset, renderHud } from '../../hud/render.mjs';
 
-type Provider = 'codex' | 'claude' | 'gemini';
+type Provider = 'codex' | 'claude' | 'gemini' | 'opencode' | 'kiro';
 type Preset = 'minimal' | 'focused' | 'full';
 
-const PROVIDERS: Provider[] = ['codex', 'claude', 'gemini'];
+const PROVIDERS: Provider[] = ['codex', 'claude', 'gemini', 'opencode', 'kiro'];
 const PRESETS: Preset[] = ['minimal', 'focused', 'full'];
 
 function clamp(value: number, min: number, max: number) {
@@ -215,4 +215,3 @@ export function HudScreen({ rootDir }: HudScreenProps) {
     </Box>
   );
 }
-

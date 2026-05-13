@@ -57,13 +57,13 @@ export function validateManifest(raw = {}) {
   assertCondition(raw.schemaVersion === 1, 'manifest schemaVersion must be 1');
   assertCondition(Array.isArray(raw.generatedTargets), 'manifest generatedTargets must be an array');
   assertCondition(
-    JSON.stringify(raw.generatedTargets) === JSON.stringify(['claude', 'codex']),
-    'manifest generatedTargets must equal ["claude", "codex"]'
+    JSON.stringify(raw.generatedTargets) === JSON.stringify(['claude', 'codex', 'kiro']),
+    'manifest generatedTargets must equal ["claude", "codex", "kiro"]'
   );
 
   return {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'kiro'],
   };
 }
 

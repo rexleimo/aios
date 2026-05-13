@@ -41,13 +41,15 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'README-zh.md', '# README-ZH\n');
   await writeFixtureFile(rootDir, 'skills-lock.json', '{}\n');
   await writeFixtureFile(rootDir, 'config/skills-catalog.json', '{"version":1,"skills":[]}\n');
-  await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":[".gemini/AIOS.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":[".opencode/AIOS.md",".opencode/skills"]}}}\n');
+  await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":[".gemini/AIOS.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":[".opencode/AIOS.md",".opencode/skills"]},"kiro":{"tier":"deep","metadataRoot":".kiro","outputs":[".kiro/steering/AIOS.md",".kiro/settings/mcp.json",".kiro/agents",".kiro/skills"]}}}\n');
   await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp"}\n');
   await writeFixtureFile(rootDir, 'memory/README.md', '# memory\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
+  await writeFixtureFile(rootDir, 'client-sources/native-base/kiro/project/steering.md', '# native kiro\n');
+  await writeFixtureFile(rootDir, 'client-sources/native-base/kiro/project/mcp.json', '{}\n');
   await writeFixtureFile(rootDir, 'memory/specs/orchestrator-agents.json', '{}\n');
-  await writeFixtureFile(rootDir, 'agent-sources/manifest.json', '{"schemaVersion":1,"generatedTargets":["claude","codex"]}\n');
+  await writeFixtureFile(rootDir, 'agent-sources/manifest.json', '{"schemaVersion":1,"generatedTargets":["claude","codex","kiro"]}\n');
   await writeFixtureFile(rootDir, 'agent-sources/roles/rex-planner.json', '{"schemaVersion":1,"id":"rex-planner","role":"planner","name":"rex-planner","description":"planner","tools":["Read"],"model":"sonnet","handoffTarget":"next-phase","systemPrompt":"plan"}\n');
   await writeFixtureFile(rootDir, 'agent-sources/roles/rex-implementer.json', '{"schemaVersion":1,"id":"rex-implementer","role":"implementer","name":"rex-implementer","description":"implement","tools":["Read","Edit"],"model":"sonnet","handoffTarget":"next-phase","systemPrompt":"implement"}\n');
   await writeFixtureFile(rootDir, 'agent-sources/roles/rex-reviewer.json', '{"schemaVersion":1,"id":"rex-reviewer","role":"reviewer","name":"rex-reviewer","description":"review","tools":["Read"],"model":"sonnet","handoffTarget":"merge-gate","systemPrompt":"review"}\n');
@@ -57,6 +59,11 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, '.claude/skills/sample-skill/SKILL.md', '# claude\n');
   await writeFixtureFile(rootDir, '.claude/agents/rex.md', '# claude agent\n');
   await writeFixtureFile(rootDir, '.agents/skills/sample-skill/SKILL.md', '# agents\n');
+  await writeFixtureFile(rootDir, '.kiro/.aios-native-sync.json', '{"client":"kiro","tier":"deep","managedTargets":[".kiro/steering/AIOS.md",".kiro/settings/mcp.json",".kiro/agents",".kiro/skills"]}\n');
+  await writeFixtureFile(rootDir, '.kiro/steering/AIOS.md', '# kiro steering\n');
+  await writeFixtureFile(rootDir, '.kiro/settings/mcp.json', '{}\n');
+  await writeFixtureFile(rootDir, '.kiro/agents/rex-planner.json', '{"name":"rex-planner","prompt":"<!-- AIOS-GENERATED: orchestrator-agents v1 -->\\n<!-- END AIOS-GENERATED -->"}\n');
+  await writeFixtureFile(rootDir, '.kiro/skills/sample-skill/SKILL.md', '# kiro skill\n');
 
   await writeFixtureFile(rootDir, 'scripts/package-release.sh', await readFile(path.join(workspaceRoot, 'scripts', 'package-release.sh'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/package-release.ps1', await readFile(path.join(workspaceRoot, 'scripts', 'package-release.ps1'), 'utf8'));
@@ -75,6 +82,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/shared.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'shared.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/claude.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'claude.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/codex.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'codex.mjs'), 'utf8'));
+  await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/kiro.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'kiro.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/harness/orchestrator-agents.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'harness', 'orchestrator-agents.mjs'), 'utf8'));
 
   assertOk(run('git', ['init'], { cwd: rootDir }), 'git init failed');
@@ -113,6 +121,22 @@ test('package-release.sh emits stable assets that include native, skill, and age
   assertOk(
     run('test', ['-f', path.join(extractDir, 'rex-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md')]),
     'rex-cli.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
+  );
+  assertOk(
+    run('test', ['-f', path.join(extractDir, 'rex-cli', 'client-sources', 'native-base', 'kiro', 'project', 'steering.md')]),
+    'rex-cli.tar.gz did not include client-sources/native-base/kiro/project/steering.md'
+  );
+  assertOk(
+    run('test', ['-f', path.join(extractDir, 'rex-cli', '.kiro', 'steering', 'AIOS.md')]),
+    'rex-cli.tar.gz did not include generated .kiro/steering/AIOS.md'
+  );
+  assertOk(
+    run('test', ['-f', path.join(extractDir, 'rex-cli', '.kiro', 'agents', 'rex-planner.json')]),
+    'rex-cli.tar.gz did not include generated Kiro agent JSON'
+  );
+  assertOk(
+    run('test', ['-f', path.join(extractDir, 'rex-cli', '.kiro', 'skills', 'sample-skill', 'SKILL.md')]),
+    'rex-cli.tar.gz did not include generated Kiro skills'
   );
   assertOk(
     run('test', ['-f', path.join(extractDir, 'rex-cli', 'package.json')]),

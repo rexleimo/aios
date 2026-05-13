@@ -5,7 +5,7 @@ import { NATIVE_SYNC_META_FILE } from './install-metadata.mjs';
 
 const MANIFEST_PATH = path.join('config', 'native-sync-manifest.json');
 const CLIENT_SOURCE_ROOT = path.join('client-sources', 'native-base');
-const ALLOWED_CLIENTS = ['codex', 'claude', 'gemini', 'opencode'];
+const ALLOWED_CLIENTS = ['codex', 'claude', 'gemini', 'opencode', 'kiro'];
 const ALLOWED_TIERS = ['deep', 'compatibility'];
 
 function assertCondition(condition, message) {
