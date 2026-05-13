@@ -12,6 +12,7 @@ import {
   resolveRoutedSubagentClient,
   resolveTaskRouteDecision,
   shouldAutoRebuildNative,
+  shouldPassCodexInteractivePromptArgs,
 } from '../ctx-agent-core.mjs';
 import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 
@@ -98,6 +99,13 @@ test('auto-rebuild env accepts explicit on values', () => {
   assert.equal(shouldAutoRebuildNative({ CTXDB_AUTO_REBUILD_NATIVE: '1' }), true);
   assert.equal(shouldAutoRebuildNative({ CTXDB_AUTO_REBUILD_NATIVE: 'true' }), true);
   assert.equal(shouldAutoRebuildNative({ CTXDB_AUTO_REBUILD_NATIVE: 'on' }), true);
+});
+
+test('codex interactive prompt args default off on Windows and can be overridden', () => {
+  assert.equal(shouldPassCodexInteractivePromptArgs({}, 'win32'), false);
+  assert.equal(shouldPassCodexInteractivePromptArgs({}, 'darwin'), true);
+  assert.equal(shouldPassCodexInteractivePromptArgs({ CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS: '1' }, 'win32'), true);
+  assert.equal(shouldPassCodexInteractivePromptArgs({ CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS: '0' }, 'darwin'), false);
 });
 
 test('classifyOneShotFailure recognizes timeout-like failures', () => {
@@ -813,6 +821,66 @@ test('ctx-agent interactive Codex mode appends env auto prompt to injected conte
     const promptArg = String(payload.argv.at(-1) || '');
     assert.match(promptArg, /## Auto Prompt/u);
     assert.match(promptArg, /Auto-route request as single\/subagent\/team before planning\./u);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('ctx-agent interactive Codex mode can skip prompt args for TTY-sensitive launches', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-codex-no-prompt-args-'));
+  const sessionId = 'ctx-codex-no-prompt-args';
+  const fakeBin = await createFakeCodexCommand();
+  const autoPrompt = 'Auto-route request as single/subagent/team before planning.';
+
+  try {
+    runContextDbCli([
+      'session:new',
+      '--workspace',
+      workspaceRoot,
+      '--agent',
+      'codex-cli',
+      '--project',
+      'tmp-project',
+      '--goal',
+      'Verify codex prompt arg suppression',
+      '--session-id',
+      sessionId,
+    ]);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent',
+        'codex-cli',
+        '--workspace',
+        workspaceRoot,
+        '--project',
+        'tmp-project',
+        '--session',
+        sessionId,
+        '--no-bootstrap',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CTXDB_AUTO_PROMPT: autoPrompt,
+          CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS: '0',
+          PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.doesNotMatch(result.stdout, /Auto prompt: enabled/u);
+    assert.match(result.stderr, /Codex interactive prompt arguments disabled/u);
+    const payload = parseLastJsonPayload(result.stdout);
+    assert.equal(payload.marker, 'FAKE_CODEX_OK');
+    const argv = Array.isArray(payload.argv) ? payload.argv : [];
+    assert.equal(argv.some((item) => String(item).includes('Auto-route request')), false);
+    assert.equal(argv.some((item) => String(item).includes('ContextDB')), false);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }

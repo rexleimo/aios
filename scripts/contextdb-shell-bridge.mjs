@@ -75,6 +75,7 @@ Environment:
   CTXDB_PRIVACY_BANNER   0/false/off to hide the interactive privacy banner (default: on)
   CTXDB_PRIVACY_COLOR    0/false/off to disable banner ANSI color (default: on unless NO_COLOR is set)
   CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup in wrapped runs
+  CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS 1/true/yes/on to pass startup context as a Codex prompt arg (default: off on Windows)
   CTXDB_DEBUG            1/true/yes/on to print bridge decisions`);
 }
 
