@@ -32,7 +32,6 @@ const HARNESS_ROUTE_PROVIDERS = new Set(['auto', 'codex', 'claude', 'gemini', 'o
 const ORCHESTRATE_BLUEPRINTS = new Set(['feature', 'bugfix', 'refactor', 'security']);
 const SUPPORTED_SUBAGENT_CLIENT_IDS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
 const CTXDB_CODEX_DISABLE_MCP_ENV = 'CTXDB_CODEX_DISABLE_MCP';
-const CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS_ENV = 'CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS';
 const TEAM_ROUTE_KEYWORD_PATTERNS = [
   /并行|并发|同时推进|拆分|多模块|跨模块|跨系统|多阶段/u,
   /subagent|agent\s*team|multi[-\s]?agent|parallel|split/i,
@@ -71,7 +70,6 @@ Environment:
   CTXDB_AUTO_REBUILD_NATIVE 1/true/yes/on to auto-rebuild better-sqlite3 on Node ABI mismatch (default: on)
   CTXDB_TASK_ROUTER_GUIDE 1/true/yes/on to inject routing checklist into context packet (default: on)
   CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup (-c mcp_servers={} -c features.rmcp_client=false)
-  CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS 1/true/yes/on to pass context as a Codex interactive prompt argument (default: off on Windows)
   CTXDB_LAZY_LOAD      1/true/yes/on to enable lazy context loading (default: on)`);
 }
 
@@ -245,10 +243,6 @@ function buildCodexMcpDisableArgs(env = process.env) {
   const disableMcpStartup = parseBoolEnv(env?.[CTXDB_CODEX_DISABLE_MCP_ENV], false);
   if (!disableMcpStartup) return [];
   return ['-c', 'mcp_servers={}', '-c', 'features.rmcp_client=false'];
-}
-
-export function shouldPassCodexInteractivePromptArgs(env = process.env, platform = process.platform) {
-  return parseBoolEnv(env?.[CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS_ENV], platform !== 'win32');
 }
 
 function formatShellArg(value = '') {
@@ -1711,47 +1705,38 @@ function runInteractiveAgent(
   } else if (agent === 'codex-cli') {
     cmd = 'codex';
     const codexConfigArgs = buildCodexMcpDisableArgs(process.env);
-    const passPromptArgs = shouldPassCodexInteractivePromptArgs(process.env, process.platform);
-    if (!passPromptArgs) {
-      const packetHint = contextPacketPath ? ` Context snapshot: ${contextPacketPath}` : '';
-      if (injectContext || explicitAutoPrompt || autoPrompt) {
-        console.warn(`[warn] Codex interactive prompt arguments disabled; launching bare Codex to preserve TTY.${packetHint}`);
+    let shouldInject = injectContext;
+    if (shouldInject && process.platform === 'win32') {
+      const spec = getCommandSpawnSpec(cmd, [], { env: process.env });
+      if (spec.shell === true) {
+        shouldInject = false;
+        console.warn('[warn] Windows shell wrapper detected for codex; skipping auto prompt injection. Paste the context packet as your first prompt.');
       }
-      args = [...codexConfigArgs, ...extraArgs];
-    } else {
-      let shouldInject = injectContext;
-      if (shouldInject && process.platform === 'win32') {
-        const spec = getCommandSpawnSpec(cmd, [], { env: process.env });
-        if (spec.shell === true) {
-          shouldInject = false;
-          console.warn('[warn] Windows shell wrapper detected for codex; skipping auto prompt injection. Paste the context packet as your first prompt.');
-        }
-      }
-      const effectiveAutoPrompt = explicitAutoPrompt
-        ? explicitAutoPrompt
-        : shouldInject
-          ? ''
-          : (autoPrompt || buildInteractiveRouteAutoPrompt({
-            agent,
-            workspaceRoot,
-            project,
-            teamProvider,
-            teamWorkers,
-            harnessProvider,
-            harnessMaxIterations,
-            blueprint,
-            sessionId,
-          }));
-      let combinedPrompt = shouldInject ? contextText : '';
-      if (effectiveAutoPrompt) {
-        combinedPrompt = combinedPrompt
-          ? `${combinedPrompt}\n\n## Auto Prompt\n${effectiveAutoPrompt}`
-          : effectiveAutoPrompt;
-        const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
-        console.log(`Auto prompt: enabled (${promptSource})`);
-      }
-      args = combinedPrompt ? [...codexConfigArgs, ...extraArgs, combinedPrompt] : [...codexConfigArgs, ...extraArgs];
     }
+    const effectiveAutoPrompt = explicitAutoPrompt
+      ? explicitAutoPrompt
+      : shouldInject
+        ? ''
+        : (autoPrompt || buildInteractiveRouteAutoPrompt({
+          agent,
+          workspaceRoot,
+          project,
+          teamProvider,
+          teamWorkers,
+          harnessProvider,
+          harnessMaxIterations,
+          blueprint,
+          sessionId,
+        }));
+    let combinedPrompt = shouldInject ? contextText : '';
+    if (effectiveAutoPrompt) {
+      combinedPrompt = combinedPrompt
+        ? `${combinedPrompt}\n\n## Auto Prompt\n${effectiveAutoPrompt}`
+        : effectiveAutoPrompt;
+      const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
+      console.log(`Auto prompt: enabled (${promptSource})`);
+    }
+    args = combinedPrompt ? [...codexConfigArgs, ...extraArgs, combinedPrompt] : [...codexConfigArgs, ...extraArgs];
   } else {
     cmd = 'opencode';
     const promptText = buildOpenCodePrompt({
@@ -1929,24 +1914,8 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
       forkAsyncBootstrap(opts.workspaceRoot, opts);
     }
 
-    let lazyContextSnapshot = null;
-    if (String(effectivePrompt || '').trim()) {
-      try {
-        lazyContextSnapshot = await writeLatestInjectedContext({
-          workspaceRoot: opts.workspaceRoot,
-          agent: opts.agent,
-          sessionId: facadeResult.facade?.sessionId || 'lazy',
-          contextText: effectivePrompt,
-        });
-      } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        console.warn(`[warn] latest context snapshot write failed: ${reason}`);
-      }
-    }
-
     runInteractiveAgentWithSaveGuard(opts.agent, effectivePrompt, opts.extraArgs, {
       injectContext: true,
-      contextPacketPath: lazyContextSnapshot?.relPath || '',
       workspaceRoot: opts.workspaceRoot,
       project: opts.project,
       teamProvider: opts.teamProvider,
@@ -2247,7 +2216,7 @@ Task: ${routedPrompt}`;
 
   runInteractiveAgentWithSaveGuard(opts.agent, effectiveContextText, opts.extraArgs, {
     injectContext,
-    contextPacketPath: openCodeContextPacketPath || latestInjected?.relPath || '',
+    contextPacketPath: openCodeContextPacketPath,
     workspaceRoot: opts.workspaceRoot,
     project: opts.project,
     teamProvider: opts.teamProvider,

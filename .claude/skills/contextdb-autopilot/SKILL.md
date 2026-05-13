@@ -37,7 +37,6 @@ scripts/ctx-agent.sh --agent opencode-cli --project rex-cli --prompt "继续当�
 
 Interactive wrapper route defaults:
 - Direct `codex`/`claude`/`gemini`/`opencode` startup now injects an auto-route prompt (`single/subagent/team`) by default.
-- On Windows, interactive `codex` launches without prompt arguments by default to preserve TTY/ConPTY behavior; set `CTXDB_CODEX_INTERACTIVE_PROMPT_ARGS=1` only if you need the old argument-based injection.
 - Route execution defaults to live for team/subagent command templates.
 - `opencode` interactive flow falls back to a supported subagent runtime (`codex-cli` by default).
 - Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli>`.
