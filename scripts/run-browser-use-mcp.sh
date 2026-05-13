@@ -15,6 +15,25 @@ expand_path() {
   fi
 }
 
+resolve_browser_use_repo_root() {
+  local candidate="$1"
+  if [[ -f "$candidate/mcp-browser-use/pyproject.toml" ]]; then
+    (cd "$candidate" && pwd -P)
+    return 0
+  fi
+
+  if [[ "$(basename "$candidate")" == "mcp-browser-use" && -f "$candidate/pyproject.toml" ]]; then
+    local parent
+    parent="$(cd "$candidate/.." && pwd -P)"
+    if [[ -f "$parent/mcp-browser-use/pyproject.toml" ]]; then
+      printf '%s' "$parent"
+      return 0
+    fi
+  fi
+
+  return 1
+}
+
 BROWSER_USE_REPO=""
 BROWSER_USE_CANDIDATES=()
 if [[ -n "${AIOS_BROWSER_USE_REPO:-}" ]]; then
@@ -23,8 +42,7 @@ fi
 BROWSER_USE_CANDIDATES+=("$ROOT_DIR/../ai-browser-book" "$ROOT_DIR/ai-browser-book")
 
 for candidate in "${BROWSER_USE_CANDIDATES[@]}"; do
-  if [[ -f "$candidate/mcp-browser-use/pyproject.toml" ]]; then
-    BROWSER_USE_REPO="$(cd "$candidate" && pwd -P)"
+  if BROWSER_USE_REPO="$(resolve_browser_use_repo_root "$candidate")"; then
     break
   fi
 done

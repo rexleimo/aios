@@ -37,14 +37,38 @@ def _browser_use_repo_candidates() -> list[Path]:
     return candidates
 
 
+def _resolve_browser_use_repo_root(candidate: Path) -> Path | None:
+    project_dir = candidate / BROWSER_USE_PROJECT_DIR_NAME
+    if (project_dir / "pyproject.toml").exists():
+        return candidate.resolve()
+
+    if candidate.name == BROWSER_USE_PROJECT_DIR_NAME and (candidate / "pyproject.toml").exists():
+        parent = candidate.parent
+        if (parent / BROWSER_USE_PROJECT_DIR_NAME / "pyproject.toml").exists():
+            return parent.resolve()
+
+    return None
+
+
+def _describe_browser_use_project_path(candidate: Path) -> Path:
+    project_dir = candidate / BROWSER_USE_PROJECT_DIR_NAME
+    if (project_dir / "pyproject.toml").exists():
+        return project_dir
+
+    if candidate.name == BROWSER_USE_PROJECT_DIR_NAME and (candidate / "pyproject.toml").exists():
+        return candidate
+
+    return project_dir
+
+
 def _resolve_browser_use_repo() -> Path:
     candidates = _browser_use_repo_candidates()
     for candidate in candidates:
-        project_dir = candidate / BROWSER_USE_PROJECT_DIR_NAME
-        if (project_dir / "pyproject.toml").exists():
-            return candidate.resolve()
+        resolved = _resolve_browser_use_repo_root(candidate)
+        if resolved is not None:
+            return resolved
 
-    checked = "\n".join(f"  - {candidate / BROWSER_USE_PROJECT_DIR_NAME}" for candidate in candidates)
+    checked = "\n".join(f"  - {_describe_browser_use_project_path(candidate)}" for candidate in candidates)
     raise SystemExit(
         "[aios-browser] mcp-browser-use project not found.\n"
         "[aios-browser] Set AIOS_BROWSER_USE_REPO=/path/to/ai-browser-book or place ai-browser-book next to/in this repo.\n"

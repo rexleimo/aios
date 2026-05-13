@@ -16,6 +16,22 @@ import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers, installSuperpowers } from '../components/superpowers.mjs';
 
+function isMissingBrowserUseRuntimeError(error) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  return message.includes('browser-use MCP project not found')
+    || message.includes('mcp-browser-use project not found');
+}
+
+function logBrowserUseRuntimeWarning(io, error) {
+  const message = error instanceof Error ? error.message : String(error || '');
+  const [firstLine = message] = message.split(/\r?\n/u).filter(Boolean);
+  io.log(`[warn] browser component skipped: ${firstLine}`);
+  io.log('[warn] Browser MCP needs the external ai-browser-book/mcp-browser-use checkout.');
+  io.log('[warn] Auto-discovery checks ../ai-browser-book and ./ai-browser-book from this repo root.');
+  io.log('[warn] If your checkout is elsewhere, set AIOS_BROWSER_USE_REPO to that path.');
+  io.log('[warn] Browser-only recovery: node scripts/aios.mjs internal browser doctor --fix');
+}
+
 export function normalizeUpdateOptions(rawOptions = {}) {
   const defaults = createDefaultUpdateOptions();
   return {
@@ -66,9 +82,18 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   io.log(`Update components: ${options.components.join(',')}`);
 
   if (hasComponent(options.components, 'browser')) {
-    await browserInstaller({ rootDir, skipPlaywrightInstall: !options.withPlaywrightInstall, io });
+    let browserInstallReady = true;
+    try {
+      await browserInstaller({ rootDir, skipPlaywrightInstall: !options.withPlaywrightInstall, io });
+    } catch (error) {
+      if (!isMissingBrowserUseRuntimeError(error)) {
+        throw error;
+      }
+      browserInstallReady = false;
+      logBrowserUseRuntimeWarning(io, error);
+    }
     if (!options.skipDoctor) {
-      await browserDoctor({ rootDir, fix: true, io });
+      await browserDoctor({ rootDir, fix: browserInstallReady, io });
     }
   }
 

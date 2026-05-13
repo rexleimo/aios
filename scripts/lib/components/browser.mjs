@@ -22,7 +22,8 @@ function requireCommand(name) {
 
 function printSnippet(io, launcherPath, cdpUrl) {
   io.log('');
-  io.log('Done. Use this MCP server block in your client config:');
+  io.log('Done. Browser MCP config was auto-updated where possible.');
+  io.log('Use this MCP server block only if a client needs a manual refresh:');
   io.log('- If `puppeteer-stealth` already exists, replace its block in-place (do not delete the alias name).');
   io.log('- If legacy `playwright-browser-mcp` exists, remove it to avoid parallel old/new browser stacks.');
   io.log('');
@@ -120,6 +121,23 @@ function migrateOneMcpJsonFile(filePath, rootDir) {
   };
 }
 
+function collectClientMcpTargets(clientHomes = {}) {
+  const targets = [];
+  const seen = new Set();
+
+  for (const home of [clientHomes.codex, clientHomes.claude, clientHomes.gemini, clientHomes.opencode]) {
+    const resolvedHome = resolveUserPath(home);
+    if (!resolvedHome) continue;
+
+    const absPath = path.resolve(path.join(resolvedHome, 'mcp.json'));
+    if (seen.has(absPath)) continue;
+    seen.add(absPath);
+    targets.push({ path: absPath, createIfMissing: false });
+  }
+
+  return targets;
+}
+
 export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = false, clientHomes = null } = {}) {
   const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
   const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
@@ -134,10 +152,7 @@ export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = 
   const candidates = [
     { path: path.join(rootDir, '.mcp.json'), createIfMissing: true },
     { path: path.join(rootDir, 'mcp-server', '.mcp.json'), createIfMissing: true },
-    { path: path.join(homes.codex || '', 'mcp.json'), createIfMissing: false },
-    { path: path.join(homes.claude || '', 'mcp.json'), createIfMissing: false },
-    { path: path.join(homes.gemini || '', 'mcp.json'), createIfMissing: false },
-    { path: path.join(homes.opencode || '', 'mcp.json'), createIfMissing: false },
+    ...collectClientMcpTargets(homes),
   ];
 
   const seen = new Set();
@@ -198,7 +213,13 @@ export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = 
   };
 }
 
-export async function installBrowserMcp({ rootDir, skipPlaywrightInstall = false, dryRun = false, io = console } = {}) {
+export async function installBrowserMcp({
+  rootDir,
+  skipPlaywrightInstall = false,
+  dryRun = false,
+  io = console,
+  clientHomes = null,
+} = {}) {
   requireCommand('node');
 
   const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
@@ -242,6 +263,14 @@ export async function installBrowserMcp({ rootDir, skipPlaywrightInstall = false
     }
   }
 
+  let migrationResult = null;
+  try {
+    migrationResult = await migrateBrowserMcpConfig({ rootDir, io, dryRun, clientHomes });
+  } catch (error) {
+    const message = formatErrorMessage(error).split(/\r?\n/u)[0];
+    io.log(`[warn] browser MCP config auto-update skipped: ${message}`);
+  }
+
   const launcherPath = dryRun
     ? '<ABSOLUTE_PATH_TO_REPO>/scripts/run-browser-use-mcp.sh'
     : fs.realpathSync(launcherScript);
@@ -252,6 +281,7 @@ export async function installBrowserMcp({ rootDir, skipPlaywrightInstall = false
     launcherPath,
     cdpUrl,
     browserUseProjectDir,
+    migrationResult,
   };
 }
 
@@ -332,6 +362,28 @@ function uniquePaths(values) {
   return out;
 }
 
+function resolveBrowserUseRepoRoot(candidate) {
+  const resolved = resolveUserPath(candidate);
+  if (!resolved) return '';
+
+  const absCandidate = path.resolve(resolved);
+  if (fs.existsSync(path.join(absCandidate, BROWSER_USE_PROJECT_DIR_NAME, 'pyproject.toml'))) {
+    return absCandidate;
+  }
+
+  if (
+    path.basename(absCandidate) === BROWSER_USE_PROJECT_DIR_NAME &&
+    fs.existsSync(path.join(absCandidate, 'pyproject.toml'))
+  ) {
+    const parent = path.dirname(absCandidate);
+    if (fs.existsSync(path.join(parent, BROWSER_USE_PROJECT_DIR_NAME, 'pyproject.toml'))) {
+      return parent;
+    }
+  }
+
+  return '';
+}
+
 function getBrowserUseRepoCandidates(rootDir, env = process.env) {
   return uniquePaths([
     env?.AIOS_BROWSER_USE_REPO,
@@ -344,13 +396,32 @@ function findBrowserUseRepo(rootDir, env = process.env) {
   const candidates = getBrowserUseRepoCandidates(rootDir, env);
 
   for (const candidate of candidates) {
-    const projectDir = path.join(candidate, BROWSER_USE_PROJECT_DIR_NAME);
-    if (fs.existsSync(path.join(projectDir, 'pyproject.toml'))) {
-      return candidate;
+    const browserUseRepo = resolveBrowserUseRepoRoot(candidate);
+    if (browserUseRepo) {
+      return browserUseRepo;
     }
   }
 
   return '';
+}
+
+function describeBrowserUseProjectPath(candidate) {
+  const resolved = resolveUserPath(candidate);
+  if (!resolved) return '';
+
+  const absCandidate = path.resolve(resolved);
+  if (fs.existsSync(path.join(absCandidate, BROWSER_USE_PROJECT_DIR_NAME, 'pyproject.toml'))) {
+    return path.join(absCandidate, BROWSER_USE_PROJECT_DIR_NAME);
+  }
+
+  if (
+    path.basename(absCandidate) === BROWSER_USE_PROJECT_DIR_NAME &&
+    fs.existsSync(path.join(absCandidate, 'pyproject.toml'))
+  ) {
+    return absCandidate;
+  }
+
+  return path.join(absCandidate, BROWSER_USE_PROJECT_DIR_NAME);
 }
 
 function isLegacyBrowserUseFallback(value) {
@@ -362,13 +433,20 @@ function isLegacyBrowserUseFallback(value) {
     parts.at(-3) === 'molei' &&
     parts.at(-2) === 'codes' &&
     parts.at(-1) === BROWSER_USE_REPO_DIR_NAME
+  ) || (
+    parts.length >= 5 &&
+    parts.at(-5) === 'Users' &&
+    parts.at(-4) === 'molei' &&
+    parts.at(-3) === 'codes' &&
+    parts.at(-2) === BROWSER_USE_REPO_DIR_NAME &&
+    parts.at(-1) === BROWSER_USE_PROJECT_DIR_NAME
   );
 }
 
 function formatBrowserUseMissingMessage(rootDir, env = process.env) {
   const candidates = getBrowserUseRepoCandidates(rootDir, env);
   const checked = candidates.length > 0
-    ? candidates.map((candidate) => `  - ${path.join(candidate, BROWSER_USE_PROJECT_DIR_NAME)}`).join('\n')
+    ? candidates.map((candidate) => `  - ${describeBrowserUseProjectPath(candidate)}`).join('\n')
     : '  - <none>';
   return (
     'browser-use MCP project not found.\n' +

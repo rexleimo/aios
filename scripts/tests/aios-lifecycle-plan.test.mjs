@@ -119,6 +119,32 @@ test('runSetup browser flow enables doctor auto-heal by default', async () => {
   assert.equal(calls[1].options.fix, true);
 });
 
+test('runSetup browser flow does not block lifecycle when browser-use runtime is missing', async () => {
+  const calls = [];
+  const logs = [];
+  await runSetup({
+    components: ['browser'],
+    skipPlaywrightInstall: true,
+    skipDoctor: false,
+  }, {
+    rootDir: '/tmp/aios-test',
+    projectRoot: '/tmp/aios-test',
+    io: { log: (line) => logs.push(String(line)) },
+    deps: {
+      installBrowserMcp: async () => {
+        throw new Error('browser-use MCP project not found.\nSet AIOS_BROWSER_USE_REPO to your ai-browser-book repository path.');
+      },
+      doctorBrowserMcp: async (options) => { calls.push({ kind: 'doctor', options }); },
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].kind, 'doctor');
+  assert.equal(calls[0].options.fix, false);
+  assert.match(logs.join('\n'), /\[warn\] browser component skipped:/);
+  assert.match(logs.join('\n'), /node scripts\/aios\.mjs internal browser doctor --fix/);
+});
+
 test('runUpdate browser flow enables doctor auto-heal by default', async () => {
   const calls = [];
   const io = { log: () => {} };
@@ -140,4 +166,30 @@ test('runUpdate browser flow enables doctor auto-heal by default', async () => {
   assert.equal(calls[0].kind, 'install');
   assert.equal(calls[1].kind, 'doctor');
   assert.equal(calls[1].options.fix, true);
+});
+
+test('runUpdate browser flow does not block lifecycle when browser-use runtime is missing', async () => {
+  const calls = [];
+  const logs = [];
+  await runUpdate({
+    components: ['browser'],
+    withPlaywrightInstall: false,
+    skipDoctor: false,
+  }, {
+    rootDir: '/tmp/aios-test',
+    projectRoot: '/tmp/aios-test',
+    io: { log: (line) => logs.push(String(line)) },
+    deps: {
+      installBrowserMcp: async () => {
+        throw new Error('browser-use MCP project not found.\nSet AIOS_BROWSER_USE_REPO to your ai-browser-book repository path.');
+      },
+      doctorBrowserMcp: async (options) => { calls.push({ kind: 'doctor', options }); },
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].kind, 'doctor');
+  assert.equal(calls[0].options.fix, false);
+  assert.match(logs.join('\n'), /\[warn\] browser component skipped:/);
+  assert.match(logs.join('\n'), /node scripts\/aios\.mjs internal browser doctor --fix/);
 });
