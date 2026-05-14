@@ -29,6 +29,8 @@ aios
 | 能力 | 说明 | 命令 |
 |------|------|------|
 | **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` 自动加载 |
+| **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
+| **自研 Token 压缩** | 参考 RTK/Caveman 的思路，但不安装竞品工具；本地完成输入/输出省 token | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
@@ -43,11 +45,18 @@ aios
 # 启动 TUI
 aios
 
+# 在原生客户端内路由任务（setup 后）
+# Claude/Gemini/OpenCode: /team <任务>
+# Codex: /prompts:team <任务>
+
 # 多 Agent 协作
 aios team 3:codex "重构登录模块并运行测试"
 
 # 智能模型路由
 node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
+
+# 自研 token 压缩 ContextDB 包
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
 
 # 单 Agent 过夜任务
 aios harness run --objective "完成明天的交接文档" --worktree
@@ -70,7 +79,7 @@ aios team status --provider codex --watch
      → browser MCP（可选浏览器自动化）
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini`、`opencode`、`kiro-cli` 命令即可，RexCLI 自动在后台加载项目记忆。Kiro 现在接入 deep native surface（steering、MCP、skills、agents、headless/solo）；live route preview 现在会保持 `kiro-cli`，不再回退到 `codex`。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode`、`kiro-cli` 命令即可，RexCLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。Kiro 现在接入 deep native surface（steering、MCP、skills、agents、headless/solo）；live route preview 会保持 `kiro-cli`，不再回退到 `codex`。
 
 ## 文档
 

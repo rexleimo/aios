@@ -6,6 +6,38 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-05-14
+
+- fix model-router client launch flags
+
+## [1.14.0] - 2026-05-14
+
+- add ContextDB memory genealogy TUI
+
+## [1.13.1] - 2026-05-13
+
+- fix shell wrapper claude print prompt routing
+
+## [1.13.0] - 2026-05-13
+
+- feat(native): add route shortcuts
+
+## [1.12.4] - 2026-05-13
+
+- fix(shell): preserve PowerShell TTY for wrapped CLIs
+
+## [1.12.3] - 2026-05-12
+
+- docs: add token compression wireframe and X draft
+
+## [1.12.2] - 2026-05-12
+
+- docs: add token compression website and blog coverage
+
+## [1.12.1] - 2026-05-12
+
+- fix(installer): run first setup for release installs
+
 ## [1.12.0] - 2026-05-11
 
 - feat(harness): persist stage checkpoint evidence

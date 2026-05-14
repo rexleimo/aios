@@ -515,6 +515,36 @@ test('wrapped interactive opencode runs fallback subagent client to codex-cli by
   );
 });
 
+test('wrapped claude print prompt is rewritten to ctx-agent one-shot prompt', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-claude-print-'));
+  const fakeBin = await createFakePassthroughCommand('claude', 'FAKE_CLAUDE');
+  const fakeRunner = await createFakeRunner();
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    agent: 'claude-code',
+    command: 'claude',
+    args: ['--model', 'deepseek-v4-pro', '-p', 'hi'],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(parseRunnerWorkspace(result.stdout), cwd);
+  assert.equal(parseRunnerAutoPrompt(result.stdout), '');
+  const runnerArgs = parseRunnerArgs(result.stdout);
+  const promptIndex = runnerArgs.indexOf('--prompt');
+  assert.equal(promptIndex >= 0, true);
+  assert.equal(runnerArgs[promptIndex + 1], 'hi');
+  const passthroughIndex = runnerArgs.indexOf('--');
+  assert.deepEqual(runnerArgs.slice(passthroughIndex + 1), ['--model', 'deepseek-v4-pro']);
+  assert.equal(runnerArgs.includes('-p'), false);
+  assert.equal(runnerArgs.includes('--print'), false);
+});
+
 test('opencode interactive runs are wrapped through ctx-agent without prompt rewriting', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-opencode-interactive-'));
   const fakeBin = await createFakePassthroughCommand('opencode', 'FAKE_OPENCODE');

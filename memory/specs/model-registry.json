@@ -218,5 +218,123 @@
     "discipline-explorer": { "taskType": "research", "preferredModel": "gemini-3-pro" },
     "team-lead": { "taskType": "planning", "preferredModel": "claude-opus" },
     "team-member": { "taskType": "implementation", "preferredModel": "gpt-5.5" }
-  }
+  },
+  "defaultProfile": "balanced",
+  "routingProfiles": {
+    "balanced": { "description": "Cost-aware default; upgrade on strong signals." },
+    "premium": { "description": "Prefer stronger subscribed models for complex or low-confidence work." },
+    "budget": { "description": "Prefer low-cost models except for hard capability requirements." }
+  },
+  "signalRules": [
+    {
+      "taskType": "security-review",
+      "priority": 100,
+      "weight": 8,
+      "keywords": {
+        "cjk": ["安全", "漏洞", "注入", "权限", "合规"],
+        "en": ["secret", "security", "vulnerability", "xss", "csrf", "injection", "permission", "compliance", "auth"]
+      },
+      "reason": "security or auth risk"
+    },
+    {
+      "taskType": "code-review",
+      "priority": 98,
+      "weight": 7,
+      "keywords": {
+        "cjk": ["代码审查", "审查", "评审", "代码质量"],
+        "en": ["code review", "review", "pull request", "pr", "code quality"]
+      },
+      "reason": "code review or quality gate"
+    },
+    {
+      "taskType": "browser-automation",
+      "priority": 95,
+      "weight": 8,
+      "keywords": {
+        "cjk": ["浏览器", "打开", "上传", "填写", "截图", "网页抓取", "发布页面"],
+        "en": ["browser", "upload", "screenshot", "scrape", "crawl", "automation", "computer use"]
+      },
+      "reason": "live browser or desktop workflow"
+    },
+    {
+      "taskType": "self-healing",
+      "priority": 90,
+      "weight": 8,
+      "keywords": {
+        "cjk": ["线上", "故障", "恢复", "自愈", "事故", "日志"],
+        "en": ["incident", "outage", "recover", "self-healing", "production", "logs"]
+      },
+      "reason": "production recovery or incident signal"
+    },
+    {
+      "taskType": "architecture",
+      "priority": 80,
+      "weight": 7,
+      "keywords": {
+        "cjk": ["架构", "技术选型", "系统设计", "跨模块", "重构方案"],
+        "en": ["architecture", "system design", "tech stack", "cross-module", "refactor plan"]
+      },
+      "reason": "architecture or system design"
+    },
+    {
+      "taskType": "research",
+      "priority": 70,
+      "weight": 7,
+      "keywords": {
+        "cjk": ["很长", "长文档", "第三方 api", "调研", "研究", "视频", "图像", "多模态"],
+        "en": ["long document", "research", "migration strategy", "video", "image", "multimodal"]
+      },
+      "reason": "long-context or multimodal research"
+    },
+    {
+      "taskType": "frontend",
+      "priority": 65,
+      "weight": 7,
+      "keywords": {
+        "cjk": ["前端", "组件", "样式", "界面", "落地页"],
+        "en": ["frontend", "front-end", "ui", "landing page", "component", "css", "style", "beautiful"]
+      },
+      "reason": "frontend UI or visual design"
+    },
+    {
+      "taskType": "testing",
+      "priority": 50,
+      "weight": 4,
+      "keywords": {
+        "cjk": ["测试", "验证", "qa"],
+        "en": ["test", "testing", "verify", "qa"]
+      },
+      "reason": "testing or QA"
+    },
+    {
+      "taskType": "docs",
+      "priority": 45,
+      "weight": 5,
+      "keywords": {
+        "cjk": ["文档", "博客", "readme", "指南", "说明", "skill"],
+        "en": ["docs", "blog", "readme", "guide", "manual", "skill"]
+      },
+      "reason": "documentation work"
+    },
+    {
+      "taskType": "planning",
+      "priority": 40,
+      "weight": 5,
+      "keywords": {
+        "cjk": ["设计", "方案", "规划", "拆解", "计划"],
+        "en": ["design", "planning", "plan", "blueprint", "roadmap"]
+      },
+      "reason": "planning or decomposition"
+    },
+    {
+      "taskType": "implementation",
+      "priority": 20,
+      "weight": 6,
+      "keywords": {
+        "cjk": ["实现", "写代码", "编写", "开发", "构建"],
+        "en": ["implement", "build", "coding", "develop"]
+      },
+      "reason": "implementation work"
+    }
+  ]
 }

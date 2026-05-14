@@ -66,6 +66,7 @@ plugins:
             Troubleshooting: 故障排查
             Core Features: 功能核心
             ContextDB: ContextDB
+            Native Token Compression: 自研 Token 压缩
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 模型路由器
@@ -103,6 +104,7 @@ plugins:
             Troubleshooting: トラブルシューティング
             Core Features: コア機能
             ContextDB: ContextDB
+            Native Token Compression: ネイティブ Token 圧縮
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: モデルルーター
@@ -140,6 +142,7 @@ plugins:
             Troubleshooting: 문제 해결
             Core Features: 핵심 기능
             ContextDB: ContextDB
+            Native Token Compression: 네이티브 Token 압축
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 모델 라우터
@@ -194,6 +197,7 @@ nav:
       - Troubleshooting: troubleshooting.md
   - Core Features:
       - ContextDB: contextdb.md
+      - Native Token Compression: token-compression.md
       - Superpowers: superpowers.md
       - debug-hub: debug-hub.md
       - Model Router: model-router.md

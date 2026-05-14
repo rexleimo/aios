@@ -90,7 +90,14 @@ PRs should include:
 - In this repo, prefer the `puppeteer-stealth` MCP server alias that now routes to browser-use MCP (`scripts/run-browser-use-mcp.sh`).
 - For interactive browser work, use `chrome.launch_cdp {"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}` then `browser.connect_cdp`.
 - If multiple browser MCPs are available, do **not** use `chrome-devtools` for normal business flows; reserve it for low-level inspection/debugging only.
-- Default reasoning order for page understanding: `page.extract_text` / `page.get_html` first, `page.screenshot` as visual fallback.
+- Default reasoning order for page understanding: `page.semantic_snapshot` / targeted `page.extract_text` first, `page.get_html` and `page.screenshot` as fallbacks.
+
+## Token Optimization (Native Input + Output Compression)
+- AIOS references RTK-style input filtering and Caveman-style output brevity, but must not install RTK, Caveman, shell hooks, or competitor CLIs.
+- Output compression lives in `.codex/skills/aios-compress/SKILL.md`: default `tight`, `ultra` for harness/checkpoints, `precise` for browser/safety/irreversible actions.
+- Input compression uses `.codex/skills/aios-browser-compress/SKILL.md` plus ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
+- For browser pages, prefer `page.semantic_snapshot` or targeted `page.extract_text` before full-page text/HTML/screenshots.
+- For CLI/tool input, prefer scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) and preserve errors, paths, commands, latest state, and actionable UI text.
 
 ## Default Superpowers Route
 For substantial user requests, use this route by default:
@@ -149,6 +156,10 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 ContextDB remains the shared runtime layer for memory, checkpoints, and execution evidence.
 
 Wrapped `codex` / `claude` / `gemini` / `opencode` / `kiro-cli` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
+
+Native route shortcuts may also be installed in the client home:
+- Claude/Gemini/OpenCode: `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>`.
+- Codex: `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>`.
 
 Persona and user profile memory are part of the same runtime layer:
 - `aios memo persona ...` manages the global agent identity file (`~/.aios/SOUL.md` by default).

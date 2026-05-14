@@ -182,6 +182,30 @@
       "tags": ["aios", "contextdb"]
     },
     {
+      "name": "aios-compress",
+      "description": "Native AIOS output compression rules for compact, precise agent responses without external compressor dependencies.",
+      "source": "skill-sources/aios-compress",
+      "clients": ["codex", "claude"],
+      "scopes": ["global", "project"],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": ["aios", "token", "compression", "output"]
+    },
+    {
+      "name": "aios-browser-compress",
+      "description": "Native AIOS input compression for browser, CLI, and ContextDB payloads without installing RTK or competitor shell hooks.",
+      "source": "skill-sources/aios-browser-compress",
+      "clients": ["codex", "claude"],
+      "scopes": ["global", "project"],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": ["aios", "token", "compression", "browser", "contextdb"]
+    },
+    {
       "name": "cap-commit-push",
       "description": "Fast commit-and-push shortcut for this repository.",
       "source": "skill-sources/cap-commit-push",

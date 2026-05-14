@@ -17,6 +17,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 - **Hermes 引擎** 风格的编排工作流
 - **Agent Team** 多智能体协作
 - **自动化规划子代理** 与执行门禁
+- 无需安装竞品的 **自研 token 压缩**
 - **高级设计技能** 页面制作与 UI/UX 落地
 
 ## 初始支柱文章
@@ -27,6 +28,8 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 
 ## 最新文章
 
+- [ContextDB Token 压缩：更小的上下文包，更稳的回忆能力](2026-05-token-compression.md)
+- [自研 Token 压缩：为什么 RexCLI 不安装 RTK 或 Caveman](2026-05-native-token-compression.md)
 - [Model Router：Agent Team 的智能多模型调度层](2026-05-model-router.md)
 - [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)
 - [Browser MCP 弱模型升级：语义快照 + 文本点击](2026-04-browser-mcp-weak-model-upgrade.md)
@@ -43,7 +46,7 @@ description: 聚焦 AI 记忆系统、单 Agent harness 工作流、Agent Team �
 ## FAQ
 
 ### 想看记忆系统相关内容，先读哪篇？
-先看 [ContextDB 检索升级：FTS5/BM25 + 增量索引同步（P1.5）](contextdb-fts-bm25-search.md)，再回到文档站 `/contextdb/`。
+如果关心 prompt 预算，先看 [ContextDB Token 压缩](2026-05-token-compression.md)；如果关心检索，再看 [ContextDB 检索升级：FTS5/BM25 + 增量索引同步（P1.5）](contextdb-fts-bm25-search.md)，最后回到官方文档 `/contextdb/`。
 
 ### 想看单 Agent 夜跑，先读哪篇？
 先看 [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)，再回到官方文档 [单 Agent 夜跑](https://cli.rexai.top/zh/solo-harness/)。

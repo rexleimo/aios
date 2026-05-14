@@ -190,7 +190,7 @@ npm run contextdb -- index:sync --force --stats --jsonl-out memory/context-db/ex
 npm run contextdb -- index:rebuild
 ```
 
-`context:pack --token-strategy` supports `legacy|balanced|aggressive` (`balanced` is the default when `--token-budget` is set).
+`context:pack --token-strategy` supports `legacy|balanced|aggressive` (`balanced` is the default when `--token-budget` is set). This is AIOS-native input compression: it does not require RTK, shell hooks, or any external token-compression CLI. The strategy engine compresses repeated lines, stack runs, and low-signal event text while preserving errors, paths, command signals, and the latest execution state.
 
 `search --explain` adds retrieval mode, query tokens, matched tokens, score parts, and suppression reasons to each result. `hygiene:*` commands expose ContextDB maintenance checks; mutation-oriented hygiene operations require `--dry-run` in this conservative first version.
 

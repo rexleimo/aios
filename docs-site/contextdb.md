@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: Session model, five runtime steps, and command references.
+description: Session model, token-compressed context packs, five runtime steps, and command references.
 ---
 
 # ContextDB Runtime
 
 ## Quick Answer (AI Search)
 
-ContextDB is a filesystem session layer for multi-CLI agent workflows. It stores events, checkpoints, and resumable context packets per project, and now keeps a SQLite sidecar index for faster retrieval.
+ContextDB is a filesystem session layer for multi-CLI agent workflows. It stores events, checkpoints, and resumable context packets per project, keeps a SQLite sidecar index for faster retrieval, and can now compress noisy event history to fit a target token budget without dropping the newest high-signal work.
 
 ## Canonical 5 Steps
 
@@ -32,6 +32,19 @@ Wrapped interactive clients (`codex`, `claude`, `gemini`, and `opencode`) receiv
 - `subagent`: use staged orchestration or verification gates for one main domain.
 - `team`: use the GroupChat Runtime — round-based parallel agents with shared conversation history and automatic re-plan.
 - `harness`: use Solo Harness for explicit long-running, overnight, resumable, checkpoint-heavy objectives.
+
+## Native Route Shortcuts
+
+`aios setup` and `aios update --components native` also install managed route shortcut files. Use them inside a running client when you want to force a lane:
+
+| Client | Shortcut form | Managed files |
+|---|---|---|
+| Codex | `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex uses its custom prompt namespace (`/prompts:<name>`) rather than top-level `/single` commands; OpenAI marks custom prompts as deprecated but still supported. If route shortcuts are missing or drifted, run `aios doctor --native --fix`.
 
 Controls:
 
@@ -71,6 +84,20 @@ npm run contextdb -- context:pack --session <id> --out memory/context-db/exports
 npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
 npm run contextdb -- index:rebuild
 ```
+
+## Memory Genealogy
+
+Use `contextdb genealogy` to inspect ContextDB memory as a graph payload for the Memory Galaxy UI. The command is read-only and works from existing session files and indexes.
+
+```bash
+cd mcp-server
+npm run contextdb -- genealogy --project aios --limit 40 --json
+npm run contextdb -- genealogy --project aios --include-events --events-per-session 10 --json
+```
+
+Default output hides raw event nodes so users see sessions, checkpoints, continuity, handoff, and evidence refs first. Add `--include-events` only when a user explicitly expands raw memory details.
+
+Node types include `project`, `workspace-memory`, `session`, `checkpoint`, `continuity`, `handoff`, `event`, and `ref`. Edge types include `contains`, `summarizes`, `inherits`, `references`, `relates`, and `risk`.
 
 ## Workspace Memory (`aios memo`)
 
@@ -187,9 +214,29 @@ The facade sidecar is auto-generated after each successful pack:
 
 If the facade is missing or expired, it falls back to generating a fresh facade from the latest session headers.
 
+## Token Compression Quick Start {#token-compression}
+
+Use token compression when a session has useful history but the next CLI run should receive only a bounded context window. The `balanced` strategy keeps recent, error, file, command, and next-action signals first; compresses large or repetitive event text; then drops lower-priority events only if the budget still does not fit. Use `aggressive` for very small budgets and `legacy` when you need the old tail-only behavior.
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+The generated packet reports an `Event Window` line with `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated`, so you can verify whether compression saved tokens before events were removed.
+
+<figure class="rex-visual">
+  <img src="assets/visual-token-compression-wireframe.svg" alt="Wireframe showing ContextDB token compression: raw session history, budget-aware compression, and a smaller context packet">
+  <figcaption>Token compression is a three-step handoff: preserve high-signal work, compress noisy output, then send a smaller packet to the next agent run.</figcaption>
+</figure>
+
 ## Packet Controls (P0)
 
-`context:pack` now supports token-aware and filter-aware export:
+`context:pack` supports token-aware compression plus filter-aware export. This is AIOS-native input compression, not an RTK install or shell hook:
 
 ```bash
 npm run contextdb -- context:pack \
@@ -203,8 +250,13 @@ npm run contextdb -- context:pack \
 
 - `--token-budget`: cap recent-event payload by estimated token budget.
 - `--token-strategy`: `legacy|balanced|aggressive` (default with budget: `balanced`; recommended unless you need strict backward behavior).
+- `balanced`: compress repeated logs, long line sets, and stack traces while protecting the latest event and high-signal errors/files.
+- `aggressive`: apply tighter line and length limits for small budgets where recall is more important than verbatim detail.
+- `legacy`: keep the previous tail-window selection behavior and skip compression.
 - `--kinds` / `--refs`: include only matching events.
 - default dedupe is enabled for repeated events in the packet view.
+
+The balanced strategy compresses repeated lines, stack runs, and low-signal event text while preserving critical errors, file paths, command signals, and latest state. Packet telemetry reports `strategy`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated` so the reduction is auditable.
 
 ## Retrieval Commands (P1)
 

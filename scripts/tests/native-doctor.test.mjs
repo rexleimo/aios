@@ -6,10 +6,39 @@ import test from 'node:test';
 
 import { runDoctorSuite } from '../lib/doctor/aggregate.mjs';
 import { rollbackNativeRepair } from '../lib/native/repairs.mjs';
+import { syncRouteTriggerCommands } from '../lib/native/route-commands.mjs';
 import { syncNativeEnhancements } from '../lib/native/sync.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
+}
+
+function silentIo() {
+  return { log() {}, warn() {}, error() {} };
+}
+
+async function buildRouteHomeMap() {
+  return {
+    codex: await makeTemp('aios-native-doctor-codex-home-'),
+    claude: await makeTemp('aios-native-doctor-claude-home-'),
+    gemini: await makeTemp('aios-native-doctor-gemini-home-'),
+    opencode: await makeTemp('aios-native-doctor-opencode-home-'),
+  };
+}
+
+function buildRouteEnv(homeMap) {
+  return {
+    CODEX_HOME: homeMap.codex,
+    CLAUDE_HOME: homeMap.claude,
+    GEMINI_HOME: homeMap.gemini,
+    OPENCODE_HOME: homeMap.opencode,
+  };
+}
+
+async function seedRouteCommands(rootDir) {
+  const homeMap = await buildRouteHomeMap();
+  await syncRouteTriggerCommands({ rootDir, client: 'all', homeMap, io: silentIo() });
+  return buildRouteEnv(homeMap);
 }
 
 async function writeJson(filePath, payload) {
@@ -138,13 +167,14 @@ test('doctor --native runs only native checks', async () => {
   const rootDir = await makeTemp('aios-native-doctor-only-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'codex' });
+  const env = await seedRouteCommands(rootDir);
 
   const logs = [];
   const result = await runDoctorSuite({
     rootDir,
     nativeOnly: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   assert.equal(result.exitCode, 0);
@@ -157,6 +187,7 @@ test('doctor --native --verbose prints native explainability details', async () 
   const rootDir = await makeTemp('aios-native-doctor-verbose-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'codex' });
+  const env = await seedRouteCommands(rootDir);
 
   const logs = [];
   const result = await runDoctorSuite({
@@ -164,7 +195,7 @@ test('doctor --native --verbose prints native explainability details', async () 
     nativeOnly: true,
     verbose: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   const rendered = logs.join('\n');
@@ -174,10 +205,34 @@ test('doctor --native --verbose prints native explainability details', async () 
   assert.match(rendered, /operations: AGENTS\.md/);
 });
 
+test('doctor --native --fix installs env-scoped route commands', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-route-fix-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, client: 'codex' });
+  const homeMap = await buildRouteHomeMap();
+  const env = buildRouteEnv(homeMap);
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    nativeOnly: true,
+    fix: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env,
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(await readFile(path.join(homeMap.codex, 'prompts', 'team.md'), 'utf8'), /AIOS \/prompts:team/u);
+  assert.match(await readFile(path.join(homeMap.claude, 'commands', 'team.md'), 'utf8'), /AIOS \/team/u);
+  assert.match(await readFile(path.join(homeMap.gemini, 'commands', 'team.toml'), 'utf8'), /AIOS \/team/u);
+  assert.match(await readFile(path.join(homeMap.opencode, 'commands', 'team.md'), 'utf8'), /AIOS \/team/u);
+});
+
 test('native doctor reports unmanaged conflicts with a concrete recovery command', async () => {
   const rootDir = await makeTemp('aios-native-doctor-conflict-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'codex' });
+  const env = await seedRouteCommands(rootDir);
   await writeFile(path.join(rootDir, 'AGENTS.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
@@ -185,7 +240,7 @@ test('native doctor reports unmanaged conflicts with a concrete recovery command
     rootDir,
     nativeOnly: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   assert.equal(result.exitCode, 1);
@@ -197,6 +252,7 @@ test('native doctor reports sync drift when repo-local generated skills change',
   const rootDir = await makeTemp('aios-native-doctor-drift-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
+  const env = await seedRouteCommands(rootDir);
   await writeFile(path.join(rootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'drifted\n', 'utf8');
 
   const logs = [];
@@ -204,7 +260,7 @@ test('native doctor reports sync drift when repo-local generated skills change',
     rootDir,
     nativeOnly: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   assert.equal(result.exitCode, 1);
@@ -262,6 +318,7 @@ test('doctor --native --fix repairs unmanaged compatibility docs and exits clean
   const rootDir = await makeTemp('aios-native-doctor-fix-managed-file-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
+  const env = await seedRouteCommands(rootDir);
   await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
@@ -270,7 +327,7 @@ test('doctor --native --fix repairs unmanaged compatibility docs and exits clean
     nativeOnly: true,
     fix: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   assert.equal(result.exitCode, 0);
@@ -285,6 +342,7 @@ test('doctor --native --fix --dry-run only prints planned fixes without mutating
   const rootDir = await makeTemp('aios-native-doctor-fix-dry-run-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
+  const env = await seedRouteCommands(rootDir);
   await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
@@ -294,7 +352,7 @@ test('doctor --native --fix --dry-run only prints planned fixes without mutating
     fix: true,
     dryRun: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   assert.equal(result.exitCode, 1);
@@ -308,6 +366,7 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
   const rootDir = await makeTemp('aios-native-doctor-fix-rollback-root-');
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
+  const env = await seedRouteCommands(rootDir);
   await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
@@ -316,7 +375,7 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
     nativeOnly: true,
     fix: true,
     io: { log: (line) => logs.push(String(line)) },
-    env: {},
+    env,
   });
 
   const rendered = logs.join('\n');

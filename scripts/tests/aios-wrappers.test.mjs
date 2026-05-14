@@ -87,6 +87,23 @@ test('install-contextdb-shell.ps1 is a thin wrapper', async () => {
   assert.match(content, /internal shell install/);
 });
 
+test('contextdb PowerShell transparent wrappers preserve native stdout TTY', async () => {
+  const content = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.ps1'), 'utf8');
+
+  assert.doesNotMatch(content, /\$global:LASTEXITCODE\s*=\s*Invoke-BridgeOrPassthrough/u);
+  assert.doesNotMatch(content, /return\s+\(Invoke-NativeCommand/u);
+  assert.doesNotMatch(content, /return\s+\$LASTEXITCODE/u);
+
+  for (const name of ['codex', 'claude', 'gemini', 'opencode']) {
+    assert.match(
+      content,
+      new RegExp(`function ${name} \\{[\\s\\S]*?\\n\\s+Invoke-BridgeOrPassthrough -Agent`, 'u')
+    );
+  }
+
+  assert.match(content, /& node \$bridge "--agent" \$Agent "--command" \$Passthrough "--" @Arguments\r?\n\s+\$global:LASTEXITCODE = \$LASTEXITCODE/u);
+});
+
 test('doctor-contextdb-skills.ps1 is a thin wrapper', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'doctor-contextdb-skills.ps1'), 'utf8');
   assert.match(content, /internal skills doctor/);

@@ -17,6 +17,7 @@ description: AI 記憶システム、単一 agent harness ワークフロー、A
 - **Hermes エンジン** スタイルのワークフロー
 - **Agent Team** 協調実行
 - **subagent 自動計画** と実行ゲート
+- 競合ツールを入れない **ネイティブ token 圧縮**
 - **高度デザインスキル** によるページ制作
 
 ## 初期ピラーページ
@@ -27,6 +28,8 @@ description: AI 記憶システム、単一 agent harness ワークフロー、A
 
 ## 最新記事
 
+- [ContextDB Token 圧縮：より小さな context pack と安全な recall](2026-05-token-compression.md)
+- [ネイティブ Token 圧縮：RexCLI が RTK や Caveman をインストールしない理由](2026-05-native-token-compression.md)
 - [Model Router: Agent Team のためのインテリジェントなマルチモデルディスパッチ](2026-05-model-router.md)
 - [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md)
 - [Browser MCP 弱モデル改善: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)
@@ -42,7 +45,7 @@ description: AI 記憶システム、単一 agent harness ワークフロー、A
 ## FAQ
 
 ### 記憶システム関連の記事はどれから読むべき？
-[ContextDB 検索アップグレード](contextdb-fts-bm25-search.md) から始めるのが最短です。
+prompt budget が気になる場合は [ContextDB Token Compression](2026-05-token-compression.md) から始め、検索挙動は [ContextDB 検索アップグレード](contextdb-fts-bm25-search.md) を確認してください。
 
 ### 単一 agent の夜間実行はどの記事から読むべき？
 まずは [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md) を読み、その後 [公式ドキュメント](https://cli.rexai.top/ja/solo-harness/) を確認するのがおすすめです。

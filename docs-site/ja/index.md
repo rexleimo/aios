@@ -26,6 +26,12 @@ description: まずやりたい作業からコマンドを選び、ContextDB、A
     <div class="feature-card__desc">プロジェクト全体の記憶レイヤー。イベント、checkpoint、context pack がターミナル再起動後も保持されます。</div>
     <span class="feature-card__link">詳細を見る →</span>
   </a>
+  <a href="token-compression/" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">✂️</div>
+    <div class="feature-card__title">ネイティブ Token 圧縮</div>
+    <div class="feature-card__desc">RTK/Caveman の考え方を参考にした自前の入力/出力圧縮。競合ツールはインストールしません。</div>
+    <span class="feature-card__link">詳細を見る →</span>
+  </a>
   <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
@@ -100,10 +106,11 @@ cd packages/debug-hub && npm install && npm run dev
 RexCLI は新しい coding agent ではありません。ローカル優先の能力レイヤーです。
 
 1. **記憶レイヤー ContextDB**: イベント、checkpoint、context pack を現在のプロジェクトに保存し、ターミナル再起動後も続きから作業できます。
-2. **ワークフローレイヤー Superpowers**: 要件を計画に分解し、証拠ベースでデバッグし、完了前に検証します。
-3. **協調レイヤー Agent Team**: 明確に分割できるタスクを複数 CLI worker に渡し、HUD で状態を追跡します。
-4. **可観測レイヤー debug-hub**: agent のランタイムログとトレースを MCP ツールとして公開し、agent が自律的にエラーを診断できるようにします。
-5. **ツールレイヤー Browser MCP + Privacy Guard**: agent がブラウザを使えるようにし、機密設定は共有前にマスクします。
+2. **Token レイヤー ネイティブ Token 圧縮**: ContextDB、ブラウザ、CLI、回答 token を競合ツールなしで削減します。
+3. **ワークフローレイヤー Superpowers**: 要件を計画に分解し、証拠ベースでデバッグし、完了前に検証します。
+4. **協調レイヤー Agent Team**: 明確に分割できるタスクを複数 CLI worker に渡し、HUD で状態を追跡します。
+5. **可観測レイヤー debug-hub**: agent のランタイムログとトレースを MCP ツールとして公開し、agent が自律的にエラーを診断できるようにします。
+6. **ツールレイヤー Browser MCP + Privacy Guard**: agent がブラウザを使えるようにし、機密設定は共有前にマスクします。
 
 単一 agent の長時間作業では、[ソロ Harness](solo-harness.md) が ContextDB の上に run journal、resume/stop 制御、必要に応じた worktree 分離を追加します。
 
@@ -149,6 +156,7 @@ aios team status --provider codex --watch
 
 ## リリースノートと詳細記事
 
+- [ContextDB Token Compression](/blog/ja/2026-05-token-compression/): 長いセッション履歴を token 予算内へ圧縮し、低優先度イベントを落とす前に重要シグナルを残します。
 - [debug-hub: MCP ネイティブデバッグログサービス](/blog/ja/2026-05-debug-hub-mcp/): coding agent が MCP ツールで自身のランタイムログを直接クエリ可能に。
 - [AIOS RL Training System](/blog/ja/rl-training-system/): multi-environment training control plane と rollout model。
 - [ContextDB Search Upgrade](/blog/ja/contextdb-fts-bm25-search/): FTS5 + BM25 search path と semantic rerank behavior。
@@ -158,6 +166,7 @@ aios team status --provider codex --watch
 ## 次に読む
 
 - [クイックスタート](getting-started.md): install、Setup、Doctor、初回実行。
+- [ネイティブ Token 圧縮](token-compression.md): RTK/Caveman を入れずに入力/出力 token を減らす。
 - [シナリオ別コマンド](use-cases.md): 作業別に入口を選ぶ。
 - [Agent Team](team-ops.md): いつ team を使うか、どう監視し、どう完了するか。
 - [ソロ Harness](solo-harness.md): 1つの agent を夜通し動かし、状態確認、停止、再開を行う方法。

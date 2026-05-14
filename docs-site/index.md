@@ -26,6 +26,12 @@ description: Start from the task you want to solve, then go deeper into ContextD
     <div class="feature-card__desc">Project-wide memory layer. Events, checkpoints, and context packets persist across terminal restarts.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
+  <a href="token-compression/" class="feature-card feature-card--memory">
+    <div class="feature-card__icon">✂️</div>
+    <div class="feature-card__title">Native Token Compression</div>
+    <div class="feature-card__desc">Self-contained input and output compression inspired by RTK/Caveman patterns, without competitor installs.</div>
+    <span class="feature-card__link">Learn more →</span>
+  </a>
   <a href="superpowers/" class="feature-card feature-card--workflow">
     <div class="feature-card__icon">⚡</div>
     <div class="feature-card__title">Superpowers</div>
@@ -53,7 +59,7 @@ description: Start from the task you want to solve, then go deeper into ContextD
   <a href="model-router/" class="feature-card feature-card--memory">
     <div class="feature-card__icon">🧭</div>
     <div class="feature-card__title">Model Router</div>
-    <div class="feature-card__desc">Intelligent model dispatch for Agent Teams. Match tasks to optimal models by capability, cost, and history.</div>
+    <div class="feature-card__desc">Balanced model dispatch for Agent Teams. Match tasks to optimal models by capability signals, profile, and cost.</div>
     <span class="feature-card__link">Learn more →</span>
   </a>
   <a href="troubleshooting/" class="feature-card feature-card--tool">
@@ -100,10 +106,11 @@ cd packages/debug-hub && npm install && npm run dev
 RexCLI is not another coding agent. It is a local-first capability layer:
 
 1. **Memory layer: ContextDB** - stores events, checkpoints, and context packets inside the current project so work survives terminal restarts.
-2. **Workflow layer: Superpowers** - turns vague requests into plans, debugs with evidence, and verifies before completion.
-3. **Collaboration layer: Agent Team** - sends clearly separable work to multiple CLI workers and tracks them with HUD.
-4. **Observability layer: debug-hub** - exposes agent runtime logs and traces as MCP tools so agents can self-diagnose errors.
-5. **Tool layer: Browser MCP + Privacy Guard** - lets agents use the browser and redacts sensitive config before sharing.
+2. **Token layer: Native Token Compression** - reduces ContextDB, browser, CLI, and response tokens without competitor installs.
+3. **Workflow layer: Superpowers** - turns vague requests into plans, debugs with evidence, and verifies before completion.
+4. **Collaboration layer: Agent Team** - sends clearly separable work to multiple CLI workers and tracks them with HUD.
+5. **Observability layer: debug-hub** - exposes agent runtime logs and traces as MCP tools so agents can self-diagnose errors.
+6. **Tool layer: Browser MCP + Privacy Guard** - lets agents use the browser and redacts sensitive config before sharing.
 
 For long-running single-agent work, [Solo Harness](solo-harness.md) adds run journals, resume/stop controls, and optional worktree isolation on top of ContextDB.
 
@@ -149,6 +156,7 @@ If the task is still unclear, start with normal interactive `codex` and ask it t
 
 ## Release Notes And Deep Dives
 
+- [ContextDB Token Compression](/blog/2026-05-token-compression/): pack long session history into a bounded token budget with `balanced` / `aggressive` strategies before dropping lower-priority events.
 - [debug-hub: MCP-Native Debug Log Service](/blog/2026-05-debug-hub-mcp/): let coding agents query their own runtime logs via MCP tools.
 - [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane and rollout model.
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path and semantic rerank behavior.
@@ -158,6 +166,7 @@ If the task is still unclear, start with normal interactive `codex` and ask it t
 ## Next Reads
 
 - [Quick Start](getting-started.md): install, Setup, Doctor, and first run.
+- [Native Token Compression](token-compression.md): reduce input/output tokens without RTK or Caveman installs.
 - [Find Commands By Scenario](use-cases.md): choose the right entry point by task.
 - [Agent Team](team-ops.md): when to use a team, how to monitor it, and how to finish safely.
 - [Solo Harness](solo-harness.md): how to let one agent work overnight with status, stop, and resume controls.

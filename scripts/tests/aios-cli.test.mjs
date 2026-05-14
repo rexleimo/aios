@@ -1677,3 +1677,12 @@ test('runReleaseStatus fails when WoW trend threshold env values are invalid', a
     await fs.rm(workspaceRoot, { recursive: true, force: true });
   }
 });
+
+test('parseArgs parses model-router profile and explain flags', () => {
+  const parsed = parseArgs(['model-router', 'route', '--task', 'build ui', '--profile', 'premium', '--explain']);
+  assert.equal(parsed.command, 'model-router');
+  assert.equal(parsed.options.subcommand, 'route');
+  assert.equal(parsed.options.task, 'build ui');
+  assert.equal(parsed.options.profile, 'premium');
+  assert.equal(parsed.options.explain, true);
+});

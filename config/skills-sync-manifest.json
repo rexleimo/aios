@@ -80,6 +80,16 @@
       "repoTargets": ["codex", "claude", "kiro"]
     },
     {
+      "relativeSkillPath": "aios-compress",
+      "installCatalogName": "aios-compress",
+      "repoTargets": ["codex", "claude"]
+    },
+    {
+      "relativeSkillPath": "aios-browser-compress",
+      "installCatalogName": "aios-browser-compress",
+      "repoTargets": ["codex", "claude"]
+    },
+    {
       "relativeSkillPath": "cap-commit-push",
       "installCatalogName": "cap-commit-push",
       "repoTargets": ["codex", "claude", "kiro"]

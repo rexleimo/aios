@@ -82,7 +82,7 @@ export async function runDoctorSuite({
   if (nativeOnly) {
     io.log('');
     io.log('== doctor-native ==');
-    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, io });
+    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, env, io });
     effectiveWarns += nativeResult.effectiveWarnings;
     addDoctorCheck(checks, {
       id: 'doctor:native',
@@ -151,7 +151,7 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-native ==');
   if (isHarnessGateEnabled('doctor:native', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, io });
+    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, env, io });
     effectiveWarns += nativeResult.effectiveWarnings + nativeResult.errors;
     addDoctorCheck(checks, {
       id: 'doctor:native',

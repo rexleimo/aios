@@ -17,6 +17,7 @@ This blog tracks practical patterns for:
 - **Hermes engine** style workflow orchestration
 - **Agent Team** collaboration models
 - **automatic subagent planning** and execution gates
+- native **token compression** without competitor installs
 - **advanced design skills** for page building from vague prompts
 
 ## Getting Started Posts
@@ -27,6 +28,8 @@ This blog tracks practical patterns for:
 
 ## Latest Posts
 
+- [ContextDB Token Compression: Smaller Context Packs With Safer Recall](2026-05-token-compression.md)
+- [Native Token Compression: Why RexCLI Does Not Install RTK or Caveman](2026-05-native-token-compression.md)
 - [Model Router: Intelligent Multi-Model Dispatch for Agent Teams](2026-05-model-router.md)
 - [Solo Harness: Let One Agent Work Overnight Without Losing Control](2026-04-solo-harness.md)
 - [Browser MCP Weak-Model Upgrade: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)
@@ -42,7 +45,7 @@ This blog tracks practical patterns for:
 ## FAQ
 
 ### Where should I start if I care about memory systems?
-Start from [ContextDB Search Upgrade](contextdb-fts-bm25-search.md), then pair with docs at `/contextdb/`.
+Start from [ContextDB Token Compression](2026-05-token-compression.md) if you care about prompt budget, then read [ContextDB Search Upgrade](contextdb-fts-bm25-search.md) for retrieval behavior and pair both with docs at `/contextdb/`.
 
 ### Where should I start for overnight single-agent work?
 Start with [Solo Harness: Let One Agent Work Overnight Without Losing Control](2026-04-solo-harness.md), then pair it with the official docs at `https://cli.rexai.top/solo-harness/`.

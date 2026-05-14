@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: 5ステップ、SQLite サイドカー、主要コマンド。
+description: 5ステップ、token 圧縮コンテキストパケット、SQLite サイドカー、主要コマンド。
 ---
 
 # ContextDB ランタイム
 
 ## クイックアンサー（AI 検索）
 
-ContextDB はマルチ CLI agent 用のファイルシステムセッション層です。プロジェクトごとにイベント、チェックポイント、コンテキストパケットを保存し、高速な検索のために SQLite サイドカーインデックスを使用します。
+ContextDB はマルチ CLI agent 用のファイルシステムセッション層です。プロジェクトごとにイベント、チェックポイント、コンテキストパケットを保存し、SQLite サイドカーで検索を高速化し、ノイズの多い履歴を token 予算内へ圧縮して最新の高シグナル作業を残せます。
 
 ## 標準 5 ステップ
 
@@ -32,6 +32,19 @@ ContextDB はマルチ CLI agent 用のファイルシステムセッション�
 - `subagent`: 1つの主ドメインに staged orchestration / verification gate が必要。
 - `team`: GroupChat Runtime を使用 — 共有会話履歴と自動 re-plan を持つラウンドベースの並列エージェント。
 - `harness`: 明示的な長時間・夜間・再開可能・checkpoint 重視の目標。
+
+## ネイティブ route shortcut
+
+`aios setup` と `aios update --components native` は、管理対象の route shortcut ファイルもインストールします。レーンを明示したい場合は、起動中のクライアント内で次を使います:
+
+| クライアント | ショートカット形式 | 管理対象ファイル |
+|---|---|---|
+| Codex | `/prompts:single <task>`、`/prompts:subagent <task>`、`/prompts:team <task>`、`/prompts:harness <task>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <task>`、`/subagent <task>`、`/team <task>`、`/harness <task>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <task>`、`/subagent <task>`、`/team <task>`、`/harness <task>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <task>`、`/subagent <task>`、`/team <task>`、`/harness <task>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex はトップレベルの `/single` ではなく custom prompt 名前空間（`/prompts:<name>`）を使います。OpenAI は custom prompts を deprecated としていますが、現在もサポートされています。shortcut が欠けている、または drift している場合は `aios doctor --native --fix` を実行してください。
 
 制御:
 
@@ -187,22 +200,49 @@ export CTXDB_LAZY_LOAD=1
 
 ファサードが欠落または期限切れの場合、最新のセッションヘッダーから新しいファサードを生成するフォールバックが実行されます。
 
+## Token 圧縮クイックスタート {#token-compression}
+
+セッション履歴は有用だが、次の CLI 実行には上限付きのコンテキストだけを渡したい場合に token 圧縮を使います。`balanced` は最新イベント、エラー、ファイル、コマンド、next action を優先し、重複ログ・長い出力・stack trace を先に圧縮し、それでも入らない場合だけ低優先度イベントを落とします。小さな予算では `aggressive`、旧来の tail-only 動作が必要な場合は `legacy` を使います。
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+生成されたパケットの `Event Window` 行には `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` が出るため、イベント削除の前に圧縮で token を節約できたか確認できます。
+
+<figure class="rex-visual">
+  <img src="../assets/visual-token-compression-wireframe.svg" alt="ContextDB token compression wireframe: raw session history, budget-aware compression, smaller context packet">
+  <figcaption>Token compression は「記憶を減らす」よりも、重要シグナルを残し、ノイズを圧縮し、次の agent に小さな packet を渡す仕組みです。</figcaption>
+</figure>
+
 ## パック制御（P0）
 
-`context:pack` はトークン予算とイベントフィルタ，支持します:
+`context:pack` は token-aware 圧縮とイベントフィルタをサポートします。これは AIOS ネイティブの入力圧縮であり、RTK や shell hook のインストールは不要です:
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 60 \
   --token-budget 1200 \
+  --token-strategy balanced \
   --kinds prompt,response,error \
   --refs core.ts,cli.ts
 ```
 
 - `--token-budget`: 推定トークン数で L2 イベント量の上限を設定。
+- `--token-strategy`: `legacy|balanced|aggressive`（予算指定時の既定は `balanced`。旧動作が必要な場合を除き推奨）。
+- `balanced`: 重複ログ、長い出力、stack trace を圧縮しつつ、最新イベントと高シグナルのエラー/ファイルを保護。
+- `aggressive`: 小さな予算向けに行数と長さをさらに絞り、recall シグナルを優先。
+- `legacy`: 旧来の tail-window 選択を使い、圧縮をスキップ。
 - `--kinds` / `--refs`: 一致イベントのみ含める。
 - デフォルトで重複イベントの除外が有効。
+
+`balanced` strategy は重複行、stack-run ノイズ、低シグナルのイベント本文を圧縮しつつ、重要なエラー、ファイルパス、コマンドシグナル、最新状態を保持します。Packet telemetry は `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` を出力し、削減内容を監査可能にします。
 
 ## 検索コマンド（P1）
 

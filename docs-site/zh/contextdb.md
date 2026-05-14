@@ -1,13 +1,13 @@
 ---
 title: ContextDB
-description: 会话模型，五步流程与命令示例。
+description: 会话模型、token 压缩上下文包、五步流程与命令示例。
 ---
 
 # ContextDB 运行机制
 
 ## 快速答案（AI 搜索）
 
-ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储事件、checkpoint 和可续跑上下文包，并使用 SQLite sidecar 索引加速检索。
+ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储事件、checkpoint 和可续跑上下文包，使用 SQLite sidecar 索引加速检索，并支持把噪音事件历史压缩到指定 token 预算内，同时优先保留最新和高信号上下文。
 
 ## 标准 5 步
 
@@ -32,6 +32,19 @@ ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储�
 - `subagent`：单个主域，但需要阶段编排或验证门禁。
 - `team`：使用 GroupChat Runtime —— 基于轮次的并行 agent，共享对话历史并自动 re-plan。
 - `harness`：明确的长任务、过夜任务、可恢复任务、checkpoint 密集目标。
+
+## 原生路由快捷命令
+
+`aios setup` 和 `aios update --components native` 也会安装受管理的路由快捷命令文件。需要强制指定执行通道时，可在已启动的客户端里直接输入：
+
+| 客户端 | 快捷形式 | 受管理文件 |
+|---|---|---|
+| Codex | `/prompts:single <任务>`、`/prompts:subagent <任务>`、`/prompts:team <任务>`、`/prompts:harness <任务>` | `~/.codex/prompts/{single,subagent,team,harness}.md` |
+| Claude Code | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.claude/commands/{single,subagent,team,harness}.md` |
+| Gemini CLI | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.gemini/commands/{single,subagent,team,harness}.toml` |
+| OpenCode | `/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>` | `~/.config/opencode/commands/{single,subagent,team,harness}.md` |
+
+Codex 使用自己的 custom prompt 命名空间（`/prompts:<name>`），不是顶层 `/single` 命令；OpenAI 已标记 custom prompts 为 deprecated，但目前仍可用。如果快捷命令缺失或漂移，运行 `aios doctor --native --fix`。
 
 控制项：
 
@@ -187,22 +200,49 @@ Facade 旁路缓存会在每次成功打包后自动生成：
 
 如果 Facade 缺失或过期，将自动回退到从最新会话头信息生成新的 Facade。
 
+## Token 压缩快速开始 {#token-compression}
+
+当 session 历史有价值，但下一次 CLI 启动只适合注入一个有上限的上下文窗口时，使用 token 压缩。`balanced` 策略会优先保留最近事件、错误、文件路径、命令和 next action 信号；先压缩重复日志、大块输出和 stack trace；只有预算仍放不下时才丢弃低优先级事件。预算特别小时可用 `aggressive`，需要旧版尾部窗口行为时用 `legacy`。
+
+```bash
+npm run contextdb -- context:pack \
+  --session <id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/<id>-compressed.md
+```
+
+生成的上下文包会在 `Event Window` 行报告 `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，方便确认压缩是否先于删除事件生效。
+
+<figure class="rex-visual">
+  <img src="../assets/visual-token-compression-wireframe.svg" alt="ContextDB token 压缩线框图：原始会话历史、预算感知压缩、更小的上下文包">
+  <figcaption>Token 压缩不是少记，而是先保留高信号信息、压缩噪音输出，再把更小的上下文包交给下一次 agent 运行。</figcaption>
+</figure>
+
 ## 上下文包控制（P0）
 
-`context:pack` 支持 token 预算与事件过滤：
+`context:pack` 支持 token-aware 压缩和事件过滤。这是 AIOS 原生输入压缩，不需要安装 RTK 或 shell hook：
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 60 \
   --token-budget 1200 \
+  --token-strategy balanced \
   --kinds prompt,response,error \
   --refs core.ts,cli.ts
 ```
 
 - `--token-budget`：按估算 token 控制 L2 事件体积。
+- `--token-strategy`：`legacy|balanced|aggressive`（带预算时默认 `balanced`，除非需要旧行为，否则推荐使用）。
+- `balanced`：压缩重复日志、长输出和 stack trace，同时保护最新事件和高信号错误/文件路径。
+- `aggressive`：在小预算下使用更严格的行数与长度限制，优先保留可回忆信号。
+- `legacy`：保留旧版尾部窗口选择逻辑，不做压缩。
 - `--kinds` / `--refs`：只打包匹配事件。
 - 默认会对重复事件做去重。
+
+`balanced` 会压缩重复行、堆栈噪声和低信号事件文本，同时保留关键错误、文件路径、命令信号与最新状态。上下文包会输出 `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，便于审计省 token 效果。
 
 ## 检索命令（P1）
 

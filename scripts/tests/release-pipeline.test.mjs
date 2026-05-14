@@ -159,6 +159,17 @@ test('one-liner installers bootstrap root runtime dependencies for direct releas
   assert.match(installPs1, /node_modules\/\.bin\/tsx\.cmd/);
 });
 
+test('one-liner installers perform first-run core setup before suggesting doctor', async () => {
+  const workspaceRoot = process.cwd();
+  const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');
+  const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
+
+  assert.match(installSh, /setup --components skills,native,superpowers --client all --skip-doctor/);
+  assert.match(installPs1, /setup --components skills,native,superpowers --client all --skip-doctor/);
+  assert.doesNotMatch(installSh, /setup --components [^\n]*browser/);
+  assert.doesNotMatch(installPs1, /setup --components [^\n]*browser/);
+});
+
 test('release-preflight.sh validates matching tag, VERSION, changelog, and native/skills sync state', async () => {
   const passingRoot = await makeTemp('rex-release-preflight-pass-');
   await seedFixtureRepo(passingRoot, {
