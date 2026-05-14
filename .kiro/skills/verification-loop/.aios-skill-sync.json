@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "verification-loop",
+  "targetSurface": "kiro",
+  "targetRelativePath": "verification-loop",
+  "source": "skill-sources/verification-loop"
+}

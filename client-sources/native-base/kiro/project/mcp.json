@@ -1,0 +1,18 @@
+{
+  "puppeteer-stealth": {
+    "type": "stdio",
+    "command": "bash",
+    "args": ["{{ROOT_DIR}}/scripts/run-browser-use-mcp.sh"],
+    "env": {
+      "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
+    }
+  },
+  "aios-auth-tools": {
+    "type": "stdio",
+    "command": "python3",
+    "args": ["-u", "{{ROOT_DIR}}/scripts/auth-tools-server.py"],
+    "env": {
+      "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
+    }
+  }
+}

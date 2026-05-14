@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "seed2-manga-drama",
+  "targetSurface": "kiro",
+  "targetRelativePath": "seed2-manga-drama",
+  "source": "skill-sources/seed2-manga-drama"
+}

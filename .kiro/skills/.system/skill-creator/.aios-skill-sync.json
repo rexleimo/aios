@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": ".system/skill-creator",
+  "targetSurface": "kiro",
+  "targetRelativePath": ".system/skill-creator",
+  "source": "skill-sources/.system/skill-creator"
+}

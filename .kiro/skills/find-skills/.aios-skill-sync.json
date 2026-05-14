@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "find-skills",
+  "targetSurface": "kiro",
+  "targetRelativePath": "find-skills",
+  "source": "skill-sources/find-skills"
+}
