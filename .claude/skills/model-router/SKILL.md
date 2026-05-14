@@ -12,8 +12,8 @@ description: "当需要调度不同模型执行子任务时使用。根据任务
 | 协议 | CLI | 使用场景 |
 |------|-----|---------|
 | **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
-| **claude** | `claude --model <model> -p "<prompt>"` | 其余模型 |
+| **gemini** | `gemini -m gemini-3-pro --yolo -p "<prompt>"` | Gemini-3-Pro |
+| **claude** | `claude --model <model> --dangerously-skip-permissions -p "<prompt>"` | 其余模型 |
 
 ## 模型能力表
 
@@ -77,7 +77,7 @@ node scripts/aios.mjs model-router route \
 
 - `aios team` / `aios orchestrate --dispatch local --execute live` 默认启用 per-phase model routing，并为 planner / implementer / reviewer / security-reviewer 分别解析模型。
 - 每个 phase job 的 `launchSpec.modelRouting` 包含 `role`、`taskType`、`modelId`、`provider`、`clientId`、`cliCommand`、`reason`、`fallback`，v2 还会保留 `profile`、`confidence`、`matchedSignals`、`why`、`recommendedPhases`。
-- live subagent / GroupChat 运行时会按 `clientId` 切换 CLI 协议并附加模型参数；Codex 子进程默认附加 `--dangerously-bypass-approvals-and-sandbox`，避免后台 approval/sandbox prompt 卡死。
+- live subagent / GroupChat 运行时会按 `clientId` 切换 CLI 协议并附加模型参数；Codex 子进程默认附加 `--dangerously-bypass-approvals-and-sandbox`，Claude 默认附加 `--dangerously-skip-permissions`，Gemini 默认附加 `--yolo`，避免后台 approval/sandbox prompt 卡死。
 - 每个 phase / speaker 完成或阻塞后写入 ContextDB `kind=model.dispatch` 事件，`turn.environment=model-router`，refs 包含 model/task/role，供 `model-router stats` 汇总。
 - 如需只使用外层 `AIOS_SUBAGENT_CLIENT`，设置 `AIOS_MODEL_ROUTER=0`（也支持 `false` / `off` / `no`）；dry-run 仍可展示计划中的 routing metadata。
 
@@ -112,6 +112,8 @@ export AIOS_MODEL_BROWSER_AUTOMATION=gpt-5.5  # 按任务类型覆盖
 export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
 export AIOS_MODEL_PLANNING=glm-5.1
 export AIOS_SUBAGENT_CODEX_UNATTENDED=0       # 关闭 Codex 子进程 bypass（默认开启）
+export AIOS_SUBAGENT_CLAUDE_UNATTENDED=0      # 关闭 Claude 子进程 skip permissions（默认开启）
+export AIOS_SUBAGENT_GEMINI_UNATTENDED=0      # 关闭 Gemini 子进程 yolo（默认开启）
 ```
 
 ## Troubleshooting

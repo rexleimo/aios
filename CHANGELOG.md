@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.14.1] - 2026-05-14
+
+- fix model-router client launch flags
+
 ## [1.14.0] - 2026-05-14
 
 - add ContextDB memory genealogy TUI

@@ -133,6 +133,34 @@ function buildWhy({ profile, primaryType, matchedSignals, recommendedPhases }) {
   return lines;
 }
 
+function cliUnattendedArgs(command = '') {
+  const normalized = normalizeId(command);
+  if (normalized === 'codex') return ['--dangerously-bypass-approvals-and-sandbox'];
+  if (normalized === 'claude') return ['--dangerously-skip-permissions'];
+  if (normalized === 'gemini') return ['--yolo'];
+  return [];
+}
+
+function injectCliUnattendedArgs(command = '', template = '') {
+  const tokens = String(template || '').trim().split(/\s+/u).filter(Boolean);
+  const missing = cliUnattendedArgs(command).filter((arg) => !tokens.includes(arg));
+  if (missing.length === 0) return tokens.join(' ');
+
+  const promptFlagIndex = tokens.findIndex((token) => token === '-p' || token === '--print' || token === '--prompt');
+  if (promptFlagIndex >= 0) {
+    tokens.splice(promptFlagIndex, 0, ...missing);
+    return tokens.join(' ');
+  }
+
+  if (normalizeId(command) === 'codex' && tokens[0] === 'exec') {
+    tokens.splice(1, 0, ...missing);
+    return tokens.join(' ');
+  }
+
+  tokens.push(...missing);
+  return tokens.join(' ');
+}
+
 export function scoreTaskSignals(taskDescription, registry = defaultModelRegistry(), { profile, env = process.env } = {}) {
   const activeProfile = normalizeModelRouterProfile(profile, registry, env);
   const text = String(taskDescription || '').toLowerCase();
@@ -347,7 +375,7 @@ export function getFallbackChain(taskType, registry) {
 
 export function buildCLICommand(modelConfig, rolePrompt, task) {
   if (!modelConfig?.cli) {
-    return `claude -p "[${rolePrompt}] ${task}"`;
+    return `claude --dangerously-skip-permissions -p "[${rolePrompt}] ${task}"`;
   }
 
   const { command, argsTemplate, modelArg, modelValue } = modelConfig.cli;
@@ -362,11 +390,11 @@ export function buildCLICommand(modelConfig, rolePrompt, task) {
     parts.push(modelArg, modelValue);
   }
   if (template) {
-    parts.push(template);
+    parts.push(injectCliUnattendedArgs(command, template));
   } else if (!(modelArg && modelValue)) {
-    parts.push('-p');
+    parts.push(...cliUnattendedArgs(command), '-p');
   } else {
-    parts.push('-p');
+    parts.push(...cliUnattendedArgs(command), '-p');
   }
   parts.push(fullPrompt);
   return parts.join(' ');

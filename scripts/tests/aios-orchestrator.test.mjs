@@ -1046,7 +1046,10 @@ test('dispatch runtime registry makes Codex child workers unattended by default'
   assert.equal(argRows.length > 0, true);
   for (const args of argRows) {
     assert.equal(args[0], 'exec');
-    assert.equal(args.includes('--dangerously-bypass-approvals-and-sandbox'), true);
+    const unattendedIndex = args.indexOf('--dangerously-bypass-approvals-and-sandbox');
+    const firstConfigIndex = args.indexOf('-c');
+    assert.notEqual(unattendedIndex, -1);
+    assert.equal(unattendedIndex < firstConfigIndex, true);
   }
 });
 
@@ -2236,9 +2239,9 @@ test('runOrchestrate live dispatch uses model-router per job and records dispatc
   assert.equal(reviewRun?.modelRouting?.clientId, 'claude-code');
 
   const argsLog = await fs.readFile(captureArgsPath, 'utf8');
-  assert.match(argsLog, /gemini \["-m","gemini-3-pro","-p"/);
-  assert.match(argsLog, /codex \["exec".*"--dangerously-bypass-approvals-and-sandbox".*"-m","gpt-5\.5"/);
-  assert.match(argsLog, /claude \["--model","claude-opus-4-7","--print"/);
+  assert.match(argsLog, /gemini \["-m","gemini-3-pro","--yolo","-p"/);
+  assert.match(argsLog, /codex \["exec","--dangerously-bypass-approvals-and-sandbox",.*"-m","gpt-5\.5"/);
+  assert.match(argsLog, /claude \["--model","claude-opus-4-7","--dangerously-skip-permissions","--print"/);
 
   const promptLog = await fs.readFile(captureInputPath, 'utf8');
   assert.match(promptLog, /## Model Router/);

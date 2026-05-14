@@ -55,6 +55,17 @@ test('route metadata preserves fallback model ids', () => {
   assert.deepEqual(result.fallback, ['kimi-k2.6', 'claude-sonnet']);
 });
 
+test('route metadata shows unattended launch flags for routed CLI clients', () => {
+  const codex = route('用浏览器打开小红书发布页面，上传图片并填写标题');
+  assert.match(codex.cliCommand, /codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-5\.5/u);
+
+  const claude = route('review this pull request for code quality');
+  assert.match(claude.cliCommand, /claude --model claude-opus-4-7 --dangerously-skip-permissions -p/u);
+
+  const gemini = route('阅读一份很长的第三方 API 文档，整理迁移策略');
+  assert.match(gemini.cliCommand, /gemini -m gemini-3-pro --yolo -p/u);
+});
+
 test('CJK implementation signals avoid matching inside browser form verbs', () => {
   const scored = scoreTaskSignals('打开页面并填写标题', registry, { profile: 'balanced' });
   assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'implementation'), false);

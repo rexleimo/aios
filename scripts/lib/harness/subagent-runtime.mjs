@@ -30,6 +30,8 @@ export const SUBAGENT_UPSTREAM_BACKOFF_MS_ENV = 'AIOS_SUBAGENT_UPSTREAM_BACKOFF_
 export const SUBAGENT_PRE_MUTATION_SNAPSHOT_ENV = 'AIOS_SUBAGENT_PRE_MUTATION_SNAPSHOT';
 export const SUBAGENT_CODEX_DISABLE_MCP_ENV = 'AIOS_SUBAGENT_CODEX_DISABLE_MCP';
 export const SUBAGENT_CODEX_UNATTENDED_ENV = 'AIOS_SUBAGENT_CODEX_UNATTENDED';
+export const SUBAGENT_CLAUDE_UNATTENDED_ENV = 'AIOS_SUBAGENT_CLAUDE_UNATTENDED';
+export const SUBAGENT_GEMINI_UNATTENDED_ENV = 'AIOS_SUBAGENT_GEMINI_UNATTENDED';
 
 const SUPPORTED_CLIENTS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
 const CLIENT_COMMAND = {
@@ -178,6 +180,22 @@ function buildCodexUnattendedArgs(env = process.env) {
     return [];
   }
   return ['--dangerously-bypass-approvals-and-sandbox'];
+}
+
+function buildClaudeUnattendedArgs(env = process.env) {
+  const enabled = parseBooleanEnv(env?.[SUBAGENT_CLAUDE_UNATTENDED_ENV], true);
+  if (!enabled) {
+    return [];
+  }
+  return ['--dangerously-skip-permissions'];
+}
+
+function buildGeminiUnattendedArgs(env = process.env) {
+  const enabled = parseBooleanEnv(env?.[SUBAGENT_GEMINI_UNATTENDED_ENV], true);
+  if (!enabled) {
+    return [];
+  }
+  return ['--yolo'];
 }
 
 function buildRoutedExtraArgs(clientId = '', modelRouting = null, env = process.env) {
@@ -863,14 +881,16 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
 
   let args = [];
   if (clientId === 'claude-code') {
+    const claudeUnattendedArgs = buildClaudeUnattendedArgs(env);
     args = systemText
-      ? [...routedExtraArgs, '--print', '--append-system-prompt', systemText, promptText]
-      : [...routedExtraArgs, '--print', promptText];
+      ? [...routedExtraArgs, ...claudeUnattendedArgs, '--print', '--append-system-prompt', systemText, promptText]
+      : [...routedExtraArgs, ...claudeUnattendedArgs, '--print', promptText];
   } else if (clientId === 'gemini-cli') {
+    const geminiUnattendedArgs = buildGeminiUnattendedArgs(env);
     const fullPrompt = systemText
       ? `${systemText}\n\n## New User Request\n${promptText}`
       : promptText;
-    args = [...routedExtraArgs, '-p', fullPrompt];
+    args = [...routedExtraArgs, ...geminiUnattendedArgs, '-p', fullPrompt];
   } else if (clientId === 'opencode-cli') {
     const fullPrompt = systemText
       ? `${systemText}\n\n## New User Request\n${promptText}`
@@ -895,7 +915,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
     }
 
     if (structuredFlags.length > 0) {
-      args = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, ...structuredFlags, '-'];
+      args = ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, ...structuredFlags, '-'];
       const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
       const combinedStdout = String(result.stdout || '');
       const combinedStderr = String(result.stderr || '');
@@ -923,7 +943,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
         const combined = `${combinedStdout}\n${combinedStderr}`.trim();
         const structuredFlags = ['--output-schema', '--output-last-message', '--color'];
         if (isUnsupportedCodexFlagError(combined, structuredFlags) || isCodexSchemaValidationError(combined)) {
-          const fallbackArgs = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs];
+          const fallbackArgs = ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs];
           if (codexOutput?.lastMessagePath) {
             fallbackArgs.push('--output-last-message', codexOutput.lastMessagePath);
           }
@@ -957,7 +977,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
             const fallbackCombined = `${fallbackStdout}\n${fallbackStderr}`.trim();
             const fallbackFlags = ['--output-last-message', '--color'];
             if (isUnsupportedCodexFlagError(fallbackCombined, fallbackFlags)) {
-              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
+              const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, '-'], { env, timeoutMs, cwd, input: fullPrompt, io });
               const plainStdout = String(plainFallback.stdout || '');
               const plainStderr = String(plainFallback.stderr || '');
               const plainExit = Number.isFinite(plainFallback.status) ? plainFallback.status : 1;
@@ -1002,7 +1022,7 @@ export async function runOneShot(clientId, { systemPrompt, userPrompt, timeoutMs
       });
     }
 
-    args = ['exec', ...codexConfigArgs, ...codexUnattendedArgs, ...routedExtraArgs, '-'];
+    args = ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, '-'];
     const result = await runCodexExecWithRetry(command, args, { env, timeoutMs, cwd, input: fullPrompt, io });
     const combinedStdout = String(result.stdout || '');
     const combinedStderr = String(result.stderr || '');
