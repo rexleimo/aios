@@ -161,3 +161,31 @@ function isValidFacade(f) {
     typeof f.goal === 'string'
   );
 }
+
+export function buildTieredContextPrompt(memories, budget = 'medium') {
+  const filtered = filterMemoriesByBudget(memories, budget);
+  if (!filtered.memories.length) return '';
+
+  const tiers = ['L0', 'L1', 'L2'];
+  const allowedTiers = TIER_BUDGET_MAP[budget] || TIER_BUDGET_MAP.medium;
+  const sections = [];
+
+  for (const tier of tiers) {
+    if (!allowedTiers.includes(tier)) continue;
+    const tierMemories = filtered.memories.filter((m) => m._tier === tier);
+    if (!tierMemories.length) continue;
+    const tierInfo = CONTEXT_TIERS[tier];
+    const items = tierMemories.map((m) => {
+      const label = m.kind || m.type || 'memory';
+      const text = m.text || m.summary || '';
+      return `- [${label}] ${text}`.slice(0, 500);
+    });
+    sections.push([
+      `## Context (${tier} — ${tierInfo.name}, <${tierInfo.tokenBudget} tokens)`,
+      ...items,
+    ].join('\n'));
+  }
+
+  const stats = `_${filtered.totalTokens} tokens, ${filtered.memories.length} items (${filtered.tierCounts.L0}L0/${filtered.tierCounts.L1}L1/${filtered.tierCounts.L2}L2), budget=${budget}_`;
+  return [...sections, stats].join('\n\n');
+}

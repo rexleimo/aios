@@ -218,3 +218,90 @@ export function renderContinuityInjection(input = null) {
     '',
   ].join('\n');
 }
+
+// Iteration Notes: structured per-iteration context for harness resume
+export const ITERATION_NOTES_FILENAME = 'iteration-notes.json';
+
+function iterationNotesPath(workspaceRoot, sessionId) {
+  const dir = sessionDir(workspaceRoot, sessionId);
+  return path.join(dir, ITERATION_NOTES_FILENAME);
+}
+
+export function normalizeIterationNote(input = {}) {
+  return {
+    iteration: Number(input.iteration ?? 0),
+    timestamp: normalizeText(input.timestamp, new Date().toISOString()),
+    completed: normalizeStringArray(input.completed),
+    blockers: normalizeStringArray(input.blockers),
+    decisions: normalizeStringArray(input.decisions),
+    nextActions: normalizeStringArray(input.nextActions),
+    artifacts: normalizeStringArray(input.artifacts),
+  };
+}
+
+export async function writeIterationNotes(input = {}) {
+  const sessionId = normalizeText(input.sessionId);
+  if (!sessionId) throw new Error('writeIterationNotes requires sessionId');
+  const note = normalizeIterationNote(input);
+  const filePath = iterationNotesPath(input.workspaceRoot, sessionId);
+
+  let existing = [];
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    existing = JSON.parse(raw);
+    if (!Array.isArray(existing)) existing = [];
+  } catch { /* first note */ }
+
+  const idx = existing.findIndex((n) => n.iteration === note.iteration);
+  if (idx >= 0) {
+    existing[idx] = note;
+  } else {
+    existing.push(note);
+    existing.sort((a, b) => a.iteration - b.iteration);
+  }
+
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await writeAtomicFile(filePath, `${JSON.stringify(existing, null, 2)}\n`);
+  return { notes: existing, filePath };
+}
+
+export async function readIterationNotes({ workspaceRoot, sessionId } = {}) {
+  const normalizedSessionId = normalizeText(sessionId);
+  if (!normalizedSessionId) return [];
+  const filePath = iterationNotesPath(workspaceRoot, normalizedSessionId);
+  try {
+    const raw = await fs.readFile(filePath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(normalizeIterationNote) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function renderIterationNotesInjection(notes = []) {
+  if (!notes.length) return '';
+  const latest = notes[notes.length - 1];
+  const lines = [
+    `## Iteration ${latest.iteration} — ${latest.timestamp}`,
+    '',
+    '### Completed',
+    ...latest.completed.map((item) => `- ${item}`),
+    '',
+    '### Blockers',
+    ...(latest.blockers.length ? latest.blockers.map((item) => `- ${item}`) : ['- (none)']),
+    '',
+    '### Decisions',
+    ...(latest.decisions.length ? latest.decisions.map((item) => `- ${item}`) : ['- (none)']),
+    '',
+    '### Next Actions',
+    ...latest.nextActions.map((item) => `- ${item}`),
+    '',
+    '### Artifacts',
+    ...latest.artifacts.map((item) => `- ${item}`),
+    '',
+  ];
+  if (notes.length > 1) {
+    lines.push(`_(Plus ${notes.length - 1} earlier iterations in iteration-notes.json)_`, '');
+  }
+  return lines.join('\n');
+}

@@ -1,6 +1,30 @@
 # AIOS Competitor Watchlist Analysis
 
-Updated: 2026-05-10T18:30:00+08:00
+Updated: 2026-05-14T10:00:00+08:00
+
+## 2026-05-14 Quick Refresh Findings
+
+Metadata-only refresh. No new shallow clones. Key star movements:
+
+| Project | Stars (May 14) | Delta (vs May 10) | Notes |
+|---------|----------------|-------------------|-------|
+| `oh-my-openagent` | 57,719 | +1,672 | Most active; pushed May 14 |
+| `OpenHarness` | 12,504 | +508 | Steady; React TUI active |
+| `gnhf` | 1,705 | +257 | Growing fast; npm packaged |
+| `overstory` | 1,295 | NEW (was 0) | Corrected stars count |
+| `OpenViking` | 23,706 | stable | L0/L1/L2 tiered loading |
+
+## Prompting Improvements Identified
+
+Five concrete prompting patterns found this cycle:
+
+1. **IntentGate + Discipline Agents** (oh-my-openagent): Pre-flight intent classification before model routing. Route to planner/builder/reviewer agents based on task type.
+2. **Iteration Notes Artifacts** (gnhf): Structured `prompt + notes` injection per iteration. AIOS ContextDB already has memory; needs iteration context packaging.
+3. **Dry-run Readiness Verdicts** (OpenHarness): Machine-readable `ready/warning/blocked` with fix commands. AIOS `quality-gate` needs wiring into `team`/`orchestrate` preflight.
+4. **Tiered Context Assembly** (OpenViking): Explicit L0/L1/L2 budget labels in system prompt. AIOS has the tier filter; needs prompt assembly layer.
+5. **Structured Mail Inbox** (overstory): SQLite mail bus for agent communication. P2 for AIOS parallel agent independence.
+
+Full analysis: `docs/plans/2026-05-14-competitor-prompting-improvements.md`
 
 ## 2026-05-10 Full Refresh Findings
 

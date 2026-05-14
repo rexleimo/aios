@@ -109,6 +109,76 @@ function keywordMatches(text, keyword) {
   return text.includes(kw);
 }
 
+// IntentGate: pre-classify task intent before signal scoring
+const INTENT_RULES = Object.freeze([
+  {
+    intent: 'plan',
+    keywords: { cjk: ['设计', '方案', '规划', '拆解', '计划', '架构', '头脑风暴', 'brainstorm', '路线图'], en: ['design', 'plan', 'planning', 'architect', 'brainstorm', 'roadmap', 'blueprint', 'decompose'] },
+    preferredTaskType: 'planning',
+    reason: 'planning or design intent detected',
+  },
+  {
+    intent: 'implement',
+    keywords: { cjk: ['实现', '写代码', '编写', '开发', '构建', '编码', '修复', '修改'], en: ['implement', 'build', 'coding', 'develop', 'fix', 'write', 'create', 'code'] },
+    preferredTaskType: 'implementation',
+    reason: 'implementation or coding intent detected',
+  },
+  {
+    intent: 'review',
+    keywords: { cjk: ['审查', '评审', '检查', '测试', '验证', '代码质量', '安全审计'], en: ['review', 'check', 'audit', 'verify', 'test', 'security', 'inspect', 'quality'] },
+    preferredTaskType: 'code-review',
+    reason: 'review or quality check intent detected',
+  },
+  {
+    intent: 'explore',
+    keywords: { cjk: ['研究', '调查', '分析', '搜索', '了解', '查看', '文档', '调研'], en: ['research', 'investigate', 'analyze', 'explore', 'search', 'read', 'understand', 'docs', 'documentation'] },
+    preferredTaskType: 'research',
+    reason: 'research or exploration intent detected',
+  },
+]);
+
+export function classifyTaskIntent(taskDescription) {
+  const text = String(taskDescription || '').toLowerCase();
+  if (!text.trim()) return { intent: 'implement', confidence: 0.3, matchedKeywords: [], preferredTaskType: 'implementation', reason: 'empty task description, defaulting to implement' };
+
+  const scores = new Map();
+  const matchedKeywords = [];
+
+  for (const rule of INTENT_RULES) {
+    const allKeywords = [
+      ...(Array.isArray(rule.keywords?.cjk) ? rule.keywords.cjk : []),
+      ...(Array.isArray(rule.keywords?.en) ? rule.keywords.en : []),
+    ];
+    let count = 0;
+    for (const kw of allKeywords) {
+      if (keywordMatches(text, kw)) {
+        count++;
+        matchedKeywords.push({ intent: rule.intent, keyword: kw });
+      }
+    }
+    if (count > 0) {
+      scores.set(rule.intent, { intent: rule.intent, count, preferredTaskType: rule.preferredTaskType, reason: rule.reason });
+    }
+  }
+
+  if (scores.size === 0) {
+    return { intent: 'implement', confidence: 0.3, matchedKeywords: [], preferredTaskType: 'implementation', reason: 'no intent signal detected, defaulting to implement' };
+  }
+
+  const ranked = [...scores.values()].sort((a, b) => b.count - a.count);
+  const top = ranked[0];
+  const runnerUp = ranked[1];
+  const confidence = Math.min(0.95, Math.max(0.5, top.count / Math.max(1, top.count + (runnerUp?.count || 0))));
+
+  return {
+    intent: top.intent,
+    confidence: Number(confidence.toFixed(2)),
+    matchedKeywords,
+    preferredTaskType: top.preferredTaskType,
+    reason: top.reason,
+  };
+}
+
 function getSignalRules(registry) {
   return Array.isArray(registry?.signalRules) && registry.signalRules.length > 0
     ? registry.signalRules
@@ -475,6 +545,7 @@ export function normalizeModelRouting(raw = null) {
     matchedSignals: Array.isArray(raw.matchedSignals) ? raw.matchedSignals.map(clonePlain).filter(Boolean) : [],
     why: Array.isArray(raw.why) ? raw.why.map((item) => String(item || '').trim()).filter(Boolean) : [],
     recommendedPhases: Array.isArray(raw.recommendedPhases) ? raw.recommendedPhases.map(clonePlain).filter(Boolean) : [],
+    intentGate: raw.intentGate && typeof raw.intentGate === 'object' ? { intent: String(raw.intentGate.intent || ''), confidence: raw.intentGate.confidence, preferredTaskType: String(raw.intentGate.preferredTaskType || ''), reason: String(raw.intentGate.reason || '') } : null,
   };
 }
 
@@ -519,7 +590,10 @@ export function resolveModelRoutingForTask({
   env = process.env,
   profile = '',
 } = {}) {
-  const scoring = normalizeId(taskType)
+  // IntentGate: pre-classify intent to influence routing
+  const intentGate = classifyTaskIntent(taskDescription);
+
+  let scoring = normalizeId(taskType)
     ? {
         profile: normalizeModelRouterProfile(profile, registry, env),
         primaryType: normalizeId(taskType),
@@ -529,6 +603,20 @@ export function resolveModelRoutingForTask({
         recommendedPhases: [],
       }
     : scoreTaskSignals(taskDescription, registry, { profile, env });
+
+  // IntentGate: only override when signal scoring has low confidence (no strong keyword match)
+  if (!normalizeId(taskType) && intentGate.confidence >= 0.7 && scoring.confidence < 0.6) {
+    const intentTaskType = intentGate.preferredTaskType;
+    if (intentTaskType && intentTaskType !== scoring.primaryType) {
+      const existingWhy = scoring.why || [];
+      scoring = {
+        ...scoring,
+        primaryType: intentTaskType,
+        why: [...existingWhy, `IntentGate override: intent=${intentGate.intent} (${intentGate.reason}, confidence=${intentGate.confidence})`],
+      };
+    }
+  }
+
   const resolvedType = normalizeId(taskType) || scoring.primaryType || matchTaskTypeFromDescription(taskDescription, registry) || 'general';
   const decision = resolveModelForTask(resolvedType, registry, env);
   const model = decision.model || getModelConfig(decision.modelId, registry) || null;
@@ -551,6 +639,7 @@ export function resolveModelRoutingForTask({
     matchedSignals: scoring.matchedSignals,
     why: scoring.why,
     recommendedPhases: scoring.recommendedPhases,
+    intentGate: { intent: intentGate.intent, confidence: intentGate.confidence, preferredTaskType: intentGate.preferredTaskType, reason: intentGate.reason },
   });
 }
 

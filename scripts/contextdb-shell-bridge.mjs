@@ -834,7 +834,6 @@ function main(argv = process.argv.slice(2)) {
 
   // Normalize: map opencode `version`/`VERSION` to `--version` so it works as a version
   // check rather than being treated as a project directory argument.
-  const firstArg = opts.passthroughArgs[0] || '';
   const isVersionArg = opts.command === 'opencode'
     && (firstArg === 'version' || firstArg === 'VERSION');
   const normalizedArgs = isVersionArg

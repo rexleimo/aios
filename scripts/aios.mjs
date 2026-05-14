@@ -255,6 +255,14 @@ async function main() {
   }
 
   if (parsed.command === 'team') {
+    // Dry-run readiness check (before full orchestration)
+    if (parsed.options.executionMode === 'dry-run' && !parsed.options.taskTitle) {
+      const { runReadinessCheck } = await import('./lib/lifecycle/preflight-contracts.mjs');
+      const result = await runReadinessCheck({ rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options), mode: 'team' });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.verdict === 'blocked') process.exitCode = 1;
+      return;
+    }
     if (parsed.options.subcommand === 'status') {
       const { runTeamStatus } = await import('./lib/lifecycle/team-ops.mjs');
       const result = await runTeamStatus(parsed.options, { rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options) });
@@ -326,6 +334,14 @@ async function main() {
   }
 
   if (parsed.command === 'harness') {
+    // Dry-run readiness check (before harness run)
+    if (parsed.options.executionMode === 'dry-run' && parsed.options.action !== 'run') {
+      const { runReadinessCheck } = await import('./lib/lifecycle/preflight-contracts.mjs');
+      const result = await runReadinessCheck({ rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options), mode: 'harness' });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.verdict === 'blocked') process.exitCode = 1;
+      return;
+    }
     const { runHarnessCommand } = await import('./lib/lifecycle/harness.mjs');
     const result = await runHarnessCommand(parsed.options, {
       rootDir: resolveRuntimeWorkspace(parsed.command, parsed.options),

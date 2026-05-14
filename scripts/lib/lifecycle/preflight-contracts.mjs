@@ -219,3 +219,94 @@ export function mergeReadinessVerdicts(...verdicts) {
     evidence: normalized.flatMap((item) => item.evidence),
   });
 }
+
+export async function runReadinessCheck(input = {}) {
+  const rootDir = input.rootDir || input.workspaceRoot || process.cwd();
+  const mode = normalizeText(input.mode || 'team');
+  const verdicts = [];
+
+  // 1. Plan artifact check (for team/harness modes)
+  const planDir = path.join(rootDir, 'docs', 'plans');
+  let planFound = false;
+  try {
+    const entries = await fs.readdir(planDir);
+    const mdFiles = entries.filter((f) => f.endsWith('.md'));
+    if (mdFiles.length > 0) {
+      planFound = true;
+      verdicts.push(readiness({
+        verdict: 'ready',
+        evidence: [{ type: 'plans', path: `docs/plans/`, summary: `Found ${mdFiles.length} plan file(s)`, createdAt: nowIso() }],
+      }));
+    }
+  } catch { /* no plans dir */ }
+
+  if (!planFound) {
+    const isBlocking = mode === 'team';
+    verdicts.push(readiness({
+      verdict: isBlocking ? 'warning' : 'ready',
+      warnings: isBlocking ? ['No plan files found in docs/plans/'] : [],
+      nextActions: ['Create docs/plans/<date>-<topic>.md with Progress, Decision Log, Acceptance, and Next Actions sections.'],
+    }));
+  }
+
+  // 2. ContextDB session check
+  const contextDbDir = path.join(rootDir, 'memory', 'context-db');
+  let sessionFound = false;
+  try {
+    const sessionsDir = path.join(contextDbDir, 'sessions');
+    const entries = await fs.readdir(sessionsDir);
+    if (entries.length > 0) {
+      sessionFound = true;
+      verdicts.push(readiness({
+        verdict: 'ready',
+        evidence: [{ type: 'contextdb', path: 'memory/context-db/', summary: `Found ${entries.length} session(s)`, createdAt: nowIso() }],
+      }));
+    }
+  } catch { /* no sessions */ }
+
+  if (!sessionFound) {
+    verdicts.push(readiness({
+      verdict: 'ready',
+      warnings: ['No ContextDB sessions found — will create new session on first run.'],
+    }));
+  }
+
+  // 3. Model router check
+  try {
+    const { isModelRouterEnabled } = await import('../model-router.mjs');
+    if (isModelRouterEnabled()) {
+      verdicts.push(readiness({
+        verdict: 'ready',
+        evidence: [{ type: 'model-router', summary: 'Model router is enabled', createdAt: nowIso() }],
+      }));
+    } else {
+      verdicts.push(readiness({
+        verdict: 'warning',
+        warnings: ['Model router is disabled — all tasks will use default model.'],
+        nextActions: ['Set AIOS_MODEL_ROUTER=1 to enable model routing.'],
+      }));
+    }
+  } catch {
+    verdicts.push(readiness({
+      verdict: 'ready',
+      warnings: ['Could not verify model router status.'],
+    }));
+  }
+
+  // 4. Workspace health
+  try {
+    const settingsPath = path.join(rootDir, 'config', 'settings.json');
+    await fs.access(settingsPath);
+    verdicts.push(readiness({
+      verdict: 'ready',
+      evidence: [{ type: 'workspace', path: 'config/settings.json', summary: 'Workspace config found', createdAt: nowIso() }],
+    }));
+  } catch {
+    verdicts.push(readiness({
+      verdict: 'ready',
+      warnings: ['No config/settings.json found — using defaults.'],
+    }));
+  }
+
+  return mergeReadinessVerdicts(...verdicts);
+}
