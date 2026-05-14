@@ -54,7 +54,7 @@ const BLOCKED_SUBCOMMANDS = {
   opencode: new Set([
     'completion', 'acp', 'mcp', 'attach', 'run', 'debug', 'auth', 'agent', 'upgrade',
     'uninstall', 'serve', 'web', 'models', 'stats', 'export', 'import', 'github', 'pr',
-    'session', 'db', '-h', '--help', '-v', '--version',
+    'session', 'db', 'version', '-h', '--help', '-v', '--version',
   ]),
 };
 
@@ -832,8 +832,17 @@ function main(argv = process.argv.slice(2)) {
     }));
   }
 
+  // Normalize: map opencode `version`/`VERSION` to `--version` so it works as a version
+  // check rather than being treated as a project directory argument.
+  const firstArg = opts.passthroughArgs[0] || '';
+  const isVersionArg = opts.command === 'opencode'
+    && (firstArg === 'version' || firstArg === 'VERSION');
+  const normalizedArgs = isVersionArg
+    ? ['--version', ...opts.passthroughArgs.slice(1)]
+    : opts.passthroughArgs;
+
   if (!shouldWrap) {
-    const code = spawnInherited(opts.command, opts.passthroughArgs, opts.cwd, env);
+    const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, env);
     process.exit(code);
   }
 
