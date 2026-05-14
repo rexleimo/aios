@@ -85,6 +85,20 @@ npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/in
 npm run contextdb -- index:rebuild
 ```
 
+## Memory Genealogy
+
+Use `contextdb genealogy` to inspect ContextDB memory as a graph payload for the Memory Galaxy UI. The command is read-only and works from existing session files and indexes.
+
+```bash
+cd mcp-server
+npm run contextdb -- genealogy --project aios --limit 40 --json
+npm run contextdb -- genealogy --project aios --include-events --events-per-session 10 --json
+```
+
+Default output hides raw event nodes so users see sessions, checkpoints, continuity, handoff, and evidence refs first. Add `--include-events` only when a user explicitly expands raw memory details.
+
+Node types include `project`, `workspace-memory`, `session`, `checkpoint`, `continuity`, `handoff`, `event`, and `ref`. Edge types include `contains`, `summarizes`, `inherits`, `references`, `relates`, and `risk`.
+
 ## Workspace Memory (`aios memo`)
 
 Use `aios memo` when you want durable operator memory without leaving the CLI flow.

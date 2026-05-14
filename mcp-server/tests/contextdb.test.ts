@@ -19,6 +19,7 @@ import {
   searchEvents,
   writeCheckpoint,
 } from '../src/contextdb/core.js';
+import { buildMemoryGenealogyGraph } from '../src/contextdb/genealogy.js';
 import { timelineCheckpointRows } from '../src/contextdb/sqlite.js';
 
 async function makeWorkspace(): Promise<string> {
@@ -59,6 +60,141 @@ test('ensureContextDb initializes expected directory structure', async () => {
   assert.equal(sessionsStat.isDirectory(), true);
   assert.equal(indexStat.isFile(), true);
   assert.equal(sqliteStat.isFile(), true);
+});
+
+test('buildMemoryGenealogyGraph maps sessions, checkpoints, refs, continuity, and hidden raw events', async () => {
+  const workspace = await makeWorkspace();
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'aios',
+    goal: 'design memory genealogy map',
+  });
+
+  await appendEvent({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    role: 'user',
+    kind: 'prompt',
+    text: 'raw secret-like event should stay hidden by default',
+    refs: ['docs/superpowers/specs/2026-05-13-contextdb-memory-genealogy-design.md'],
+  });
+  await writeCheckpoint({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    status: 'running',
+    summary: 'Memory genealogy checkpoint summarizes the approved galaxy design.',
+    nextActions: ['build graph command'],
+    artifacts: ['docs/superpowers/specs/2026-05-13-contextdb-memory-genealogy-design.md'],
+    telemetry: {
+      verification: { result: 'partial' },
+      failureCategory: 'contextdb-quality',
+    },
+  });
+
+  const sessionDir = path.join(workspace, 'memory', 'context-db', 'sessions', session.sessionId);
+  await fs.writeFile(path.join(sessionDir, 'continuity.json'), `${JSON.stringify({
+    schemaVersion: 1,
+    sessionId: session.sessionId,
+    intent: 'continue memory genealogy',
+    summary: 'Continue from the galaxy graph design.',
+    touchedFiles: ['mcp-server/src/contextdb/genealogy.ts'],
+    nextActions: ['wire CLI'],
+    updatedAt: new Date().toISOString(),
+  }, null, 2)}\n`, 'utf8');
+  await fs.writeFile(path.join(sessionDir, 'handoff.json'), `${JSON.stringify({
+    schemaVersion: 2,
+    intent: 'handoff genealogy implementation',
+    progress: 'graph builder planned',
+    nextActions: ['implement CLI'],
+  }, null, 2)}\n`, 'utf8');
+
+  const graph = await buildMemoryGenealogyGraph({
+    workspaceRoot: workspace,
+    project: 'aios',
+    limit: 40,
+  });
+
+  assert.equal(graph.schemaVersion, 1);
+  assert.equal(graph.project, 'aios');
+  assert.equal(graph.root, 'project:aios');
+  assert.equal(graph.nodes.some((node) => node.type === 'session' && node.id === `session:${session.sessionId}`), true);
+  assert.equal(graph.nodes.some((node) => node.type === 'checkpoint' && node.id === `checkpoint:${session.sessionId}#C1`), true);
+  assert.equal(graph.nodes.some((node) => node.type === 'continuity'), true);
+  assert.equal(graph.nodes.some((node) => node.type === 'handoff'), true);
+  assert.equal(graph.nodes.some((node) => node.type === 'ref' && node.id.includes('contextdb-memory-genealogy-design.md')), true);
+  assert.equal(graph.nodes.some((node) => node.type === 'event'), false);
+  assert.equal(graph.edges.some((edge) => edge.type === 'contains' && edge.source === 'project:aios' && edge.target === `session:${session.sessionId}`), true);
+  assert.equal(graph.edges.some((edge) => edge.type === 'summarizes' && edge.source === `checkpoint:${session.sessionId}#C1`), true);
+  assert.equal(graph.edges.some((edge) => edge.type === 'references' && edge.source === `checkpoint:${session.sessionId}#C1`), true);
+});
+
+test('contextdb cli genealogy outputs memory graph json', async () => {
+  const workspace = await makeWorkspace();
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'aios',
+    goal: 'cli genealogy smoke test',
+  });
+  await writeCheckpoint({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    status: 'done',
+    summary: 'CLI genealogy checkpoint',
+    artifacts: ['docs-site/contextdb.md'],
+  });
+
+  const result = runContextDbCli([
+    'genealogy',
+    '--workspace', workspace,
+    '--project', 'aios',
+    '--limit', '20',
+    '--json',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const payload = JSON.parse((result.stdout || '{}').trim()) as {
+    root?: string;
+    nodes?: Array<{ id: string; type: string }>;
+    edges?: Array<{ source: string; target: string; type: string }>;
+  };
+  assert.equal(payload.root, 'project:aios');
+  assert.equal(payload.nodes?.some((node) => node.id === `session:${session.sessionId}`), true);
+  assert.equal(payload.edges?.some((edge) => edge.type === 'contains'), true);
+});
+
+test('buildMemoryGenealogyGraph includes hidden event nodes only when requested', async () => {
+  const workspace = await makeWorkspace();
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'aios',
+    goal: 'event expansion privacy test',
+  });
+  await appendEvent({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    role: 'assistant',
+    kind: 'response',
+    text: 'Detailed raw event text should require explicit expansion.',
+    refs: ['mcp-server/src/contextdb/genealogy.ts'],
+  });
+
+  const hidden = await buildMemoryGenealogyGraph({ workspaceRoot: workspace, project: 'aios' });
+  const expanded = await buildMemoryGenealogyGraph({
+    workspaceRoot: workspace,
+    project: 'aios',
+    includeEvents: true,
+    eventsPerSession: 5,
+  });
+
+  assert.equal(hidden.nodes.some((node) => node.type === 'event'), false);
+  assert.equal(hidden.summary.hiddenEvents, 1);
+  const eventNode = expanded.nodes.find((node) => node.type === 'event');
+  assert.equal(Boolean(eventNode), true);
+  assert.equal(eventNode?.hiddenRaw, true);
+  assert.equal(expanded.edges.some((edge) => edge.type === 'references' && edge.source === eventNode?.id), true);
 });
 
 test('contextdb cli supports index:rebuild', async () => {

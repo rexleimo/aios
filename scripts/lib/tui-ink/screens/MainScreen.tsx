@@ -9,6 +9,7 @@ import { Footer } from '../components/Footer';
 
 const MENU_OPTIONS = [
   { label: 'HUD', value: 'hud' },
+  { label: 'Memory Genealogy', value: 'memory-genealogy' },
   { label: 'Setup', value: 'setup' },
   { label: 'Update', value: 'update' },
   { label: 'Uninstall', value: 'uninstall' },

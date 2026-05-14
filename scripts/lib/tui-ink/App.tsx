@@ -9,6 +9,7 @@ import { UpdateScreen } from './screens/UpdateScreen';
 import { UninstallScreen } from './screens/UninstallScreen';
 import { DoctorScreen } from './screens/DoctorScreen';
 import { HudScreen } from './screens/HudScreen';
+import { MemoryGenealogyScreen } from './screens/MemoryGenealogyScreen';
 import { SkillPickerScreen } from './screens/SkillPickerScreen';
 import { ConfirmScreen } from './screens/ConfirmScreen';
 import { useSetupOptions } from './hooks/useSetupOptions';
@@ -70,6 +71,10 @@ function AppContent({
       <Route
         path="/hud"
         element={<HudScreen rootDir={rootDir} />}
+      />
+      <Route
+        path="/memory-genealogy"
+        element={<MemoryGenealogyScreen rootDir={rootDir} />}
       />
       <Route
         path="/setup"

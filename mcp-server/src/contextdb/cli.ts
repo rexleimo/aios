@@ -19,6 +19,7 @@ import {
   type EventTurnEnvelope,
   writeCheckpoint,
 } from './core.js';
+import { buildMemoryGenealogyGraph } from './genealogy.js';
 import { compactContextDb, hygieneStatus, pruneNoise } from './hygiene.js';
 
 type Options = Record<string, string | boolean>;
@@ -36,6 +37,7 @@ function usage(): string {
     '  contextdb context:pack --session <id> [--limit 30] [--token-budget 1200] [--token-strategy legacy|balanced|aggressive] [--recall smart|tail] [--kinds prompt,response,error] [--refs a,b] [--no-dedupe] [--out memory/context-db/exports/<id>.md] [--stdout]',
     '  contextdb search [--query <text>] [--project <name>] [--session <id>] [--scope events|checkpoints|all] [--role <role>] [--kinds a,b] [--refs a,b] [--statuses running,blocked,done] [--limit 20] [--semantic] [--explain]',
     '  contextdb recall:sessions [--query <text>] [--project <name>] [--session <id>] [--exclude-session <id>] [--limit 3] [--highlight-limit 3] [--explain-score]',
+    '  contextdb genealogy [--project <name>] [--session <id>] [--limit 40] [--include-events] [--events-per-session 20] [--json]',
     '  contextdb hygiene:status [--workspace <path>]',
     '  contextdb hygiene:prune-noise [--workspace <path>] [--dry-run]',
     '  contextdb hygiene:compact [--workspace <path>] [--dry-run]',
@@ -315,6 +317,23 @@ async function main(): Promise<void> {
         limit: Number.isFinite(limit) ? limit : 3,
         highlightLimit: Number.isFinite(highlightLimit as number) ? (highlightLimit as number) : undefined,
         explainScore: options['explain-score'] === true,
+      });
+      console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    case 'genealogy': {
+      const limit = typeof options.limit === 'string' ? Number(options.limit) : 40;
+      const eventsPerSession = typeof options['events-per-session'] === 'string'
+        ? Number(options['events-per-session'])
+        : 20;
+      const result = await buildMemoryGenealogyGraph({
+        workspaceRoot,
+        project: typeof options.project === 'string' ? options.project : undefined,
+        sessionId: typeof options.session === 'string' ? options.session : undefined,
+        limit: Number.isFinite(limit) ? limit : 40,
+        includeEvents: options['include-events'] === true,
+        eventsPerSession: Number.isFinite(eventsPerSession) ? eventsPerSession : 20,
       });
       console.log(JSON.stringify(result, null, 2));
       return;
