@@ -11,8 +11,8 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 #app{display:flex;flex-direction:column;height:100vh}
 
 /* Top bar */
-.topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
-.topbar h1{font-size:14px;font-weight:700;white-space:nowrap}
+.topbar{display:flex;align-items:center;gap:8px;padding:7px 14px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap;background:rgba(8,14,29,.5);backdrop-filter:blur(8px)}
+.topbar h1{font-size:13px;font-weight:700;white-space:nowrap;letter-spacing:.01em}
 .topbar h1 span{color:var(--green)}
 .topbar-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto}
 .seg-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-left:4px}
@@ -47,28 +47,28 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 /* Main */
 .main{display:flex;flex:1;overflow:hidden}
 .flow-panel{flex:1.2;position:relative}
-.detail-panel{flex:.8;border-left:1px solid var(--border);overflow-y:auto;max-width:440px;min-width:300px}
-.detail-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg);z-index:5}
-.detail-head h2{font-size:12px;color:var(--text2);font-weight:600}
-.trust-badge{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700}
-.detail-body{padding:14px}
-.detail-body h3{font-size:15px;font-weight:700;margin-bottom:4px}
-.detail-body .sum{color:var(--text2);font-size:13px;line-height:1.5;margin-bottom:14px}
-.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
-.metric{border-radius:10px;background:var(--surface);border:1px solid var(--border);padding:9px}
-.metric b{display:block;font-size:16px}
-.metric span{font-size:11px;color:var(--text2)}
-.tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
-.tag{display:inline-block;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600}
-.timeline{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
-.tl-row{border-radius:8px;background:var(--surface);border:1px solid var(--border);padding:9px}
-.tl-row strong{display:block;font-size:11px;color:var(--text);margin-bottom:2px}
+.detail-panel{flex:.8;border-left:1px solid var(--border);overflow-y:auto;max-width:420px;min-width:280px;background:rgba(8,14,29,.4)}
+.detail-head{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:rgba(8,14,29,.92);backdrop-filter:blur(8px);z-index:5}
+.detail-head h2{font-size:11px;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.trust-badge{border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700}
+.detail-body{padding:12px 14px}
+.detail-body h3{font-size:14px;font-weight:700;margin-bottom:4px}
+.detail-body .sum{color:var(--text2);font-size:12px;line-height:1.5;margin-bottom:12px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:12px}
+.metric{border-radius:8px;background:var(--surface);border:1px solid var(--border);padding:7px 9px}
+.metric b{display:block;font-size:15px}
+.metric span{font-size:10px;color:var(--text2)}
+.tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:12px}
+.tag{display:inline-block;border-radius:4px;padding:2px 7px;font-size:9.5px;font-weight:600}
+.timeline{display:flex;flex-direction:column;gap:6px;margin-bottom:12px}
+.tl-row{border-radius:8px;background:var(--surface);border:1px solid var(--border);padding:8px 10px}
+.tl-row strong{display:block;font-size:10px;color:var(--text);margin-bottom:3px;text-transform:uppercase;letter-spacing:.03em}
 .tl-row small{color:var(--text2);font-size:11px;line-height:1.45;word-break:break-all}
 .tl-row a{color:var(--blue);cursor:pointer;text-decoration:underline}
-.focus-node{display:block;width:100%;margin:3px 0;text-align:left;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.10)}
-.file-content{margin-top:8px;border-radius:6px;background:rgba(0,0,0,.3);border:1px solid var(--border);overflow:hidden}
-.file-content .fc-head{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface);font-size:11px;color:var(--text2)}
-.file-content pre{margin:0;padding:10px;font-size:11px;line-height:1.5;color:var(--text2);overflow-x:auto;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:'SF Mono',Menlo,Consolas,monospace}
+.focus-node{display:block;width:100%;margin:2px 0;text-align:left;background:rgba(255,255,255,.04);border-color:rgba(255,255,255,.08);font-size:10px}
+.file-content{margin-top:8px;border-radius:6px;background:rgba(0,0,0,.25);border:1px solid var(--border);overflow:hidden}
+.file-content .fc-head{display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:var(--surface);font-size:10px;color:var(--text2)}
+.file-content pre{margin:0;padding:10px;font-size:10.5px;line-height:1.5;color:var(--text2);overflow-x:auto;max-height:260px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:'SF Mono',Menlo,Consolas,monospace}
 .callout{border-radius:10px;padding:10px;font-size:12px;line-height:1.5;margin-top:10px}
 .callout-warn{background:rgba(255,143,179,.08);border:1px solid rgba(255,143,179,.18)}
 .callout-info{background:rgba(114,207,255,.08);border:1px solid rgba(114,207,255,.18)}
@@ -87,8 +87,10 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 
 /* React Flow overrides */
 .react-flow__node{font-family:var(--font)}
+.react-flow__edge-path{stroke-linecap:round}
 .react-flow__minimap{background:var(--bg)!important;border:1px solid var(--border)!important;border-radius:8px!important}
 .react-flow__background{background:var(--bg)!important}
+.react-flow__attribution{display:none!important}
 .zoom-controls{position:absolute;left:12px;bottom:12px;z-index:12;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:rgba(8,14,29,.88);backdrop-filter:blur(4px)}
 .zoom-control{width:32px;height:30px;border:0;border-bottom:1px solid var(--border);background:var(--surface);color:var(--text);font-size:17px;font-weight:800;cursor:pointer}
 .zoom-control:last-child{border-bottom:0}
@@ -343,7 +345,7 @@ function dispatchCanvasWheelZoom(deltaY) {
 function layoutTimelineGraph(nodes, edges) {
   const g = new dagre.graphlib.Graph();
   g.setDefaultEdgeLabel(() => ({}));
-  g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 140, marginx: 40, marginy: 40 });
+  g.setGraph({ rankdir: 'LR', nodesep: 80, ranksep: 200, marginx: 60, marginy: 60 });
 
   for (const n of nodes) {
     const w = Math.max(120, (n.data?.label || '').length * 7 + 40);
@@ -386,8 +388,6 @@ function sessionKeyForNode(node, nodeById, incomingEdges) {
 }
 
 function layoutRelationshipGraph(nodes, edges) {
-  // relationship-first clustered map: project in the center, sessions on orbits,
-  // and related CP/Event/Ref nodes clustered around the owning session.
   const nodeById = new Map(nodes.map(n => [n.id, n]));
   const incomingEdges = new Map();
   for (const edge of edges) {
@@ -400,33 +400,50 @@ function layoutRelationshipGraph(nodes, edges) {
   const root = nodes.find(n => n.data?.nodeType === 'project') || nodes[0];
   const workspaceNodes = nodes.filter(n => n.data?.nodeType === 'workspace-memory');
   const sessions = nodes.filter(n => n.data?.nodeType === 'session');
-  const sessionKeys = sessions.map(n => n.data?.sessionId || n.id.replace(/^session:/, ''));
+  const otherNodes = nodes.filter(n =>
+    !positioned.has(n.id) && n.data?.nodeType !== 'project' &&
+    n.data?.nodeType !== 'workspace-memory' && n.data?.nodeType !== 'session'
+  );
 
-  if (root) positioned.set(root.id, { x: 420, y: 300 });
+  // Adaptive scale based on graph density
+  const totalNodes = nodes.length;
+  const scale = Math.max(1, Math.sqrt(totalNodes / 15));
+  const cx = 500 * scale;
+  const cy = 400 * scale;
+
+  // Root at center
+  if (root) positioned.set(root.id, { x: cx, y: cy });
+
+  // Workspace-memory nodes above root
   workspaceNodes.forEach((node, index) => {
-    positioned.set(node.id, { x: 420 + (index * 150), y: 160 });
+    positioned.set(node.id, {
+      x: cx + (index - (workspaceNodes.length - 1) / 2) * 220,
+      y: cy - 200 * scale,
+    });
   });
 
+  // Sessions on adaptive elliptical orbits
   const sessionPositions = new Map();
   const totalSessions = Math.max(1, sessions.length);
+  const perRing = Math.max(6, Math.min(12, Math.ceil(totalSessions / 2)));
   sessions.forEach((node, index) => {
-    const ring = Math.floor(index / 8);
-    const ringStart = ring * 8;
-    const ringCount = Math.min(8, totalSessions - ringStart);
-    const angle = (-Math.PI / 2) + ((index - ringStart) * Math.PI * 2 / Math.max(1, ringCount)) + ring * 0.22;
-    const radiusX = 340 + ring * 300;
-    const radiusY = 230 + ring * 210;
+    const ring = Math.floor(index / perRing);
+    const ringStart = ring * perRing;
+    const ringCount = Math.min(perRing, totalSessions - ringStart);
+    const angle = (-Math.PI / 2) + ((index - ringStart) * Math.PI * 2 / Math.max(1, ringCount));
+    const radiusX = (380 + ring * 340) * scale;
+    const radiusY = (260 + ring * 240) * scale;
     const pos = {
-      x: 420 + Math.cos(angle) * radiusX,
-      y: 300 + Math.sin(angle) * radiusY,
+      x: cx + Math.cos(angle) * radiusX,
+      y: cy + Math.sin(angle) * radiusY,
     };
     positioned.set(node.id, pos);
     sessionPositions.set(node.data?.sessionId || node.id.replace(/^session:/, ''), pos);
   });
 
+  // Cluster remaining nodes around their owning session
   const clusterBuckets = new Map();
-  for (const node of nodes) {
-    if (positioned.has(node.id)) continue;
+  for (const node of otherNodes) {
     const key = sessionKeyForNode(node, nodeById, incomingEdges);
     const bucket = clusterBuckets.get(key) || [];
     bucket.push(node);
@@ -435,15 +452,19 @@ function layoutRelationshipGraph(nodes, edges) {
 
   const typeWeight = { checkpoint: 0, event: 1, continuity: 2, handoff: 2, ref: 3 };
   for (const [key, bucket] of clusterBuckets.entries()) {
-    const anchor = sessionPositions.get(key) || (root ? positioned.get(root.id) : { x: 420, y: 300 });
+    const anchor = sessionPositions.get(key) || (root ? positioned.get(root.id) : { x: cx, y: cy });
     const sorted = bucket.sort((a, b) =>
       (typeWeight[a.data?.nodeType] ?? 4) - (typeWeight[b.data?.nodeType] ?? 4) ||
       String(a.data?.ts || a.id).localeCompare(String(b.data?.ts || b.id))
     );
     sorted.forEach((node, index) => {
-      const angle = index * 2.399963229728653 + (node.data?.nodeType === 'ref' ? 0.42 : 0);
-      const base = node.data?.nodeType === 'ref' ? 160 : node.data?.nodeType === 'checkpoint' ? 96 : 118;
-      const radius = base + Math.sqrt(index) * 42;
+      // Wider golden-angle spiral with adaptive spacing
+      const goldenAngle = 2.399963229728653;
+      const angleOffset = node.data?.nodeType === 'ref' ? 0.42 : node.data?.nodeType === 'checkpoint' ? 0 : 1.2;
+      const angle = index * goldenAngle + angleOffset;
+      const typeSize = node.data?.nodeType === 'ref' ? 200 : node.data?.nodeType === 'checkpoint' ? 140 : 160;
+      const base = typeSize * scale;
+      const radius = base + Math.sqrt(index + 1) * 65 * scale;
       positioned.set(node.id, {
         x: anchor.x + Math.cos(angle) * radius,
         y: anchor.y + Math.sin(angle) * radius,
@@ -451,10 +472,49 @@ function layoutRelationshipGraph(nodes, edges) {
     });
   }
 
-  return nodes.map(node => ({
+  const result = nodes.map(node => ({
     ...node,
-    position: positioned.get(node.id) || { x: 420, y: 300 },
+    position: positioned.get(node.id) || { x: cx, y: cy },
   }));
+
+  return resolveOverlaps(result);
+}
+
+// Push overlapping nodes apart
+function resolveOverlaps(nodes, iterations) {
+  iterations = iterations || 12;
+  const boxes = nodes.map(n => {
+    const label = n.data?.label || n.id || '';
+    const w = Math.max(120, label.length * 7.5 + 32);
+    const h = n.data?.nodeType === 'project' ? 52 : 40;
+    return { id: n.id, x: n.position.x, y: n.position.y, w, h };
+  });
+  const idMap = new Map(nodes.map(n => [n.id, n]));
+  const pad = 16;
+
+  for (let iter = 0; iter < iterations; iter++) {
+    let moved = false;
+    for (let i = 0; i < boxes.length; i++) {
+      for (let j = i + 1; j < boxes.length; j++) {
+        const a = boxes[i], b = boxes[j];
+        const ox = Math.min(a.x + a.w / 2 + pad, b.x + b.w / 2 + pad) - Math.max(a.x - a.w / 2 - pad, b.x - b.w / 2 - pad);
+        const oy = Math.min(a.y + a.h / 2 + pad, b.y + b.h / 2 + pad) - Math.max(a.y - a.h / 2 - pad, b.y - b.h / 2 - pad);
+        if (ox > 0 && oy > 0) {
+          moved = true;
+          const dx = ox < oy ? (ox / 2 + 2) * (a.x < b.x ? -1 : 1) : 0;
+          const dy = ox >= oy ? (oy / 2 + 2) * (a.y < b.y ? -1 : 1) : 0;
+          a.x += dx; a.y += dy;
+          b.x -= dx; b.y -= dy;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+
+  return nodes.map(n => {
+    const box = boxes.find(b => b.id === n.id);
+    return box ? { ...n, position: { x: box.x, y: box.y } } : n;
+  });
 }
 
 function layoutNodes(nodes, edges, layoutMode) {
@@ -468,35 +528,45 @@ function GenealogyNode({ data }) {
   const { label, nodeType, risk, trust, isSelected } = data;
   const lang = data.lang || 'en';
   const color = TYPE_COLORS[nodeType] || '#888';
-  const size = nodeType === 'project' ? 36 : nodeType === 'session' ? 28 : nodeType === 'checkpoint' ? 22 : nodeType === 'event' ? 16 : 18;
-  const trustPct = Math.round((trust || 0.5) * 100);
+  const isRoot = nodeType === 'project' || nodeType === 'workspace-memory';
   const hasRisk = risk && risk !== 'none';
+
+  const borderColor = isSelected ? '#fff' : hasRisk ? TYPE_COLORS.handoff + '88' : color + '30';
+  const bg = isSelected
+    ? `linear-gradient(135deg, ${color}, ${color}cc)`
+    : isRoot
+      ? `linear-gradient(135deg, ${color}18, ${color}08)`
+      : `${color}12`;
 
   return h('div', {
     style: {
-      background: isSelected ? color : `color-mix(in srgb, ${color} 85%, #080e1d)`,
+      background: bg,
       color: isSelected ? '#080e1d' : '#fff',
-      borderRadius: 12,
-      padding: '6px 12px',
-      border: `2px solid ${isSelected ? '#fff' : hasRisk ? TYPE_COLORS.handoff : color}44`,
-      fontSize: 11,
+      borderRadius: isRoot ? 14 : 10,
+      padding: isRoot ? '8px 16px' : '5px 11px',
+      border: `1.5px solid ${borderColor}`,
+      fontSize: isRoot ? 12 : 10.5,
       fontWeight: 700,
       textAlign: 'center',
-      minWidth: 80,
-      maxWidth: 180,
-      boxShadow: isSelected ? `0 0 16px ${color}66` : '0 2px 8px rgba(0,0,0,.4)',
+      minWidth: isRoot ? 90 : 70,
+      maxWidth: 160,
+      boxShadow: isSelected
+        ? `0 0 20px ${color}55, 0 0 4px ${color}33`
+        : `0 1px 4px rgba(0,0,0,.25)`,
       transition: 'all .15s',
       cursor: 'pointer',
       whiteSpace: 'nowrap',
       overflow: 'hidden',
       textOverflow: 'ellipsis',
+      backdropFilter: 'blur(4px)',
+      letterSpacing: isRoot ? 0.02 : 0,
     }
   },
-    h('div', { style: { fontSize: 9, opacity: .7, marginBottom: 1 } }, labelForType(nodeType, lang)),
+    h('div', { style: { fontSize: 8.5, opacity: .55, marginBottom: 2, textTransform: 'uppercase', letterSpacing: '.04em' } }, labelForType(nodeType, lang)),
     label || nodeType,
-    hasRisk && h('span', { style: { marginLeft: 4, fontSize: 10 } }, risk === 'failed' ? '✕' : risk === 'blocked' ? '!' : '?'),
-    h(Handle, { type: 'target', position: Position.Left, style: { background: color, width: 8, height: 8, border: 'none' } }),
-    h(Handle, { type: 'source', position: Position.Right, style: { background: color, width: 8, height: 8, border: 'none' } }),
+    hasRisk && h('span', { style: { marginLeft: 4, fontSize: 9, opacity: .8 } }, risk === 'failed' ? '✕' : risk === 'blocked' ? '!' : '?'),
+    h(Handle, { type: 'target', position: Position.Left, style: { background: color + '66', width: 6, height: 6, border: 'none' } }),
+    h(Handle, { type: 'source', position: Position.Right, style: { background: color + '66', width: 6, height: 6, border: 'none' } }),
   );
 }
 
@@ -744,12 +814,12 @@ function App() {
         type: layoutMode === 'relationship' ? 'default' : 'smoothstep',
         animated: e.type === 'risk',
         style: {
-          stroke: e.type === 'risk' ? TYPE_COLORS.handoff : e.type === 'references' ? TYPE_COLORS.ref : 'rgba(255,255,255,0.2)',
-          strokeWidth: e.type === 'contains' ? 2 : 1.5,
-          opacity: e.type === 'risk' ? 0.7 : 0.35,
+          stroke: e.type === 'risk' ? TYPE_COLORS.handoff : e.type === 'references' ? TYPE_COLORS.ref + '55' : 'rgba(255,255,255,0.10)',
+          strokeWidth: e.type === 'contains' ? 1.2 : 0.8,
+          opacity: e.type === 'risk' ? 0.6 : 0.22,
         },
         label: e.type === 'risk' ? '⚠' : undefined,
-        labelStyle: { fontSize: 10, fill: TYPE_COLORS.handoff },
+        labelStyle: { fontSize: 9, fill: TYPE_COLORS.handoff },
       }));
 
     setRfNodes(layoutNodes(nf, ef, layoutMode));
