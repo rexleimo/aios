@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 import { captureCommand } from "../platform/process.mjs";
 import { ensureParentDir, readTextIfExists, writeText } from "../platform/fs.mjs";
@@ -31,6 +33,7 @@ const DEFAULT_RECALL_HIGHLIGHT_LIMIT = 3;
 const MAX_PRINT_CHARS = 12_000;
 const DEFAULT_WORKSPACE_MEMO_ENTRY_MAX_CHARS = 1400;
 const DEFAULT_WORKSPACE_PINNED_MAX_CHARS = 5000;
+const DEFAULT_AIOS_ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
 
 function usageError(message) {
   const error = new Error(`${message}\n\nRun: node scripts/aios.mjs memo --help`);
@@ -171,6 +174,122 @@ function parsePositiveLimit(raw) {
     throw usageError("--limit must be a positive integer");
   }
   return parsed;
+}
+
+function parsePositivePort(raw) {
+  const parsed = Number.parseInt(String(raw || "").trim(), 10);
+  if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 65535) {
+    throw usageError("--port must be a positive TCP port");
+  }
+  return parsed;
+}
+
+function splitGuiFlags(argv) {
+  const flags = {
+    port: 3210,
+    project: "",
+    openBrowser: true,
+  };
+
+  for (let index = 1; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--") break;
+    if (arg === "--port") {
+      flags.port = parsePositivePort(argv[index + 1]);
+      index += 1;
+      continue;
+    }
+    if (arg === "--project") {
+      const value = String(argv[index + 1] || "").trim();
+      if (!value || value.startsWith("-")) throw usageError("--project requires a value");
+      flags.project = value;
+      index += 1;
+      continue;
+    }
+    if (arg === "--no-open") {
+      flags.openBrowser = false;
+      continue;
+    }
+    throw usageError(`Unknown memo gui option: ${arg}`);
+  }
+
+  return flags;
+}
+
+export function buildMemoGuiLaunchPlan(argv = [], { workspaceRoot = detectWorkspaceRoot(process.cwd()), aiosRootDir = "" } = {}) {
+  if (argv[0] !== "gui") {
+    throw usageError("Usage: memo gui [--port N] [--project name] [--no-open]");
+  }
+  const resolvedWorkspaceRoot = path.resolve(workspaceRoot);
+  const resolvedAiosRootDir = aiosRootDir ? path.resolve(aiosRootDir) : DEFAULT_AIOS_ROOT_DIR;
+  const flags = splitGuiFlags(argv);
+  const project = flags.project || workspaceProjectName(resolvedWorkspaceRoot);
+  const contextDbArgs = [
+    "genealogy:serve",
+    "--workspace", resolvedWorkspaceRoot,
+    "--project", project,
+    "--assets-root", resolvedAiosRootDir,
+    "--port", String(flags.port),
+  ];
+  if (!flags.openBrowser) {
+    contextDbArgs.push("--no-open");
+  }
+
+  return {
+    workspaceRoot: resolvedWorkspaceRoot,
+    aiosRootDir: resolvedAiosRootDir,
+    project,
+    port: flags.port,
+    openBrowser: flags.openBrowser,
+    contextDbArgs,
+  };
+}
+
+export function runMemoGuiServer(plan) {
+  return new Promise((resolve, reject) => {
+    const tsxCli = path.join(plan.aiosRootDir, "mcp-server", "node_modules", "tsx", "dist", "cli.mjs");
+    const contextDbCli = path.join(plan.aiosRootDir, "mcp-server", "src", "contextdb", "cli.ts");
+    const child = spawn(process.execPath, [tsxCli, contextDbCli, ...plan.contextDbArgs], {
+      cwd: plan.workspaceRoot,
+      env: {
+        ...process.env,
+        AIOS_ROOT_DIR: plan.aiosRootDir,
+      },
+      stdio: "inherit",
+    });
+
+    let settled = false;
+    const finish = (error) => {
+      if (settled) return;
+      settled = true;
+      process.off("SIGINT", forwardSigint);
+      process.off("SIGTERM", forwardSigterm);
+      if (error) reject(error);
+      else resolve();
+    };
+    const forwardSignal = (signal) => {
+      if (!child.killed) child.kill(signal);
+    };
+    const forwardSigint = () => forwardSignal("SIGINT");
+    const forwardSigterm = () => forwardSignal("SIGTERM");
+    process.once("SIGINT", forwardSigint);
+    process.once("SIGTERM", forwardSigterm);
+
+    child.once("error", finish);
+    child.once("exit", (status, signal) => {
+      if (signal) {
+        finish();
+        return;
+      }
+      if (status && status !== 0) {
+        const error = new Error(`memo gui exited with status ${status}`);
+        error.code = "AIOS_MEMO_GUI_FAILED";
+        finish(error);
+        return;
+      }
+      finish();
+    });
+  });
 }
 
 function parseBoundedIntegerEnv(value, fallback, { min = 1, max = Number.MAX_SAFE_INTEGER } = {}) {
@@ -329,6 +448,15 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     writeActiveSpaceToState(workspaceRoot, space);
     io.log(`Active space: ${space}`);
     io.log(`Workspace: ${workspaceRoot}`);
+    return;
+  }
+
+  if (primary === "gui") {
+    const plan = buildMemoGuiLaunchPlan(argv, {
+      workspaceRoot,
+      aiosRootDir: process.env.AIOS_ROOT_DIR || DEFAULT_AIOS_ROOT_DIR,
+    });
+    await runMemoGuiServer(plan);
     return;
   }
 

@@ -1,160 +1,153 @@
 ---
 title: Solo Harness
-description: Run one coding agent overnight with ContextDB memory, run journals, resume and stop controls, and optional git worktree isolation.
+description: Let one agent work overnight on a clear task — with journals, stop/resume controls, and optional git worktree isolation.
 ---
 
 # Solo Harness
 
-Solo Harness is the single-agent lane for long-running work in RexCLI.
+**Give your agent a task before you go to sleep. Check the results in the morning.**
 
-Use it when one provider should keep pushing on one objective overnight, while you keep a readable run journal, explicit stop/resume controls, and optional git worktree isolation.
+Solo Harness is for when you have **one clear objective** that's worth running for a long time. It keeps a journal of everything the agent does, and you can stop, check status, or resume at any time.
 
 ## When To Use Solo Harness
 
-Good fit:
+### Good fit
 
-- One clear objective, such as “draft tomorrow handoff” or “finish the release checklist”.
-- The task is not worth splitting into multiple parallel workers.
-- You want a resumable operator loop instead of a one-shot command.
-- You want overnight changes isolated from the main checkout.
-- You want optional lifecycle hook evidence (`--hooks` / `--no-hooks`) for each run.
+- You have **one clear goal** — like "refactor the auth module" or "write integration tests for the payment flow"
+- The task is **too big for a single session** but doesn't need multiple agents
+- You want the agent to keep working **while you're away**
+- You want changes **isolated** from your main branch (with `--worktree`)
 
-Not a good fit:
+### Not a good fit
 
-- The work should be split across independent modules -> use [Agent Team](team-ops.md).
-- You need a staged DAG with preflight gates -> use `aios orchestrate ...`.
-- The requirement is still unclear -> start with normal interactive `codex` or `claude` first.
+- The task could be **split across independent modules** — use [Agent Team](team-ops.md) instead
+- You need **staged execution with quality gates** — use `aios orchestrate ...`
+- You're still **figuring out the requirements** — start with a normal interactive session first
 
 ## Quick Start
 
 ```bash
 # Start an overnight run in an isolated worktree
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --worktree --max-iterations 20
-
-# Check structured status
-aios harness status --session nightly-demo --json
-
-# Monitor the same session in HUD
-aios hud --session nightly-demo --json
-
-# Ask the run to stop cleanly
-aios harness stop --session nightly-demo --reason "morning handoff"
-
-# Continue later with the same session
-aios harness resume --session nightly-demo --max-iterations 10
-```
-
-## Agent Self-Trigger From Wrapped CLIs
-
-When shell wrapping is enabled, interactive `codex` / `claude` / `gemini` / `opencode` sessions receive an AIOS route prompt. The default route is still `single`; the agent should only choose `harness` for explicit long-running, overnight, resumable, or checkpoint-heavy objectives.
-
-For those tasks, the injected command shape is:
-
-```bash
-node <AIOS_ROOT>/scripts/aios.mjs harness run \
-  --objective "<task>" \
-  --provider codex \
-  --max-iterations 8 \
+aios harness run \
+  --objective "Refactor the auth module and write integration tests" \
+  --session nightly-auth \
   --worktree \
-  --workspace <project-root>
+  --max-iterations 20
+
+# Check status anytime
+aios harness status --session nightly-auth --json
+
+# Monitor in HUD
+aios hud --session nightly-auth --json
+
+# Tell it to stop (at the next safe point)
+aios harness stop --session nightly-auth --reason "morning review"
+
+# Continue later
+aios harness resume --session nightly-auth --max-iterations 10
 ```
 
-You can override the injected provider and loop budget with:
+## The Overnight Workflow
+
+Here's how a typical overnight session works:
+
+```
+Evening:
+  1. Write a clear objective
+  2. Start with --worktree (isolates changes from your main branch)
+  3. Check status once to confirm it started OK
+  4. Go to sleep
+
+Morning:
+  5. Check status or HUD to see what happened
+  6. If done: review the changes in the worktree
+  7. If stuck: read the journal, fix issues, and resume
+```
+
+## Why Use `--worktree`?
+
+The `--worktree` flag creates a **separate git worktree** — a copy of your repo where the agent can make changes without affecting your main branch.
+
+- If the agent produces great work: merge it in
+- If the agent goes off track: just delete the worktree, no harm done
+
+**This is recommended for all overnight runs.**
+
+## Try Before You Commit (Dry Run)
+
+Want to see what would happen without spending tokens?
 
 ```bash
+aios harness run \
+  --objective "Draft tomorrow handoff" \
+  --session test-run \
+  --worktree \
+  --max-iterations 3 \
+  --dry-run --json
+```
+
+Dry run creates the session structure but doesn't actually invoke the agent.
+
+## Agent Self-Trigger
+
+When you're using a wrapped CLI (`codex`, `claude`, `gemini`, `opencode`), your agent can **trigger a harness run itself** when it recognizes a long-running task:
+
+```
+You: "This refactoring is going to take a while. Keep working on it overnight."
+Agent: *triggers harness run with the current objective*
+```
+
+You can control this behavior:
+
+```bash
+# Change the default agent
 export CTXDB_HARNESS_PROVIDER=claude
+
+# Change the max iterations
 export CTXDB_HARNESS_MAX_ITERATIONS=12
+
+# Disable the auto-route prompt
+export CTXDB_INTERACTIVE_AUTO_ROUTE=0
 ```
-
-Use `CTXDB_INTERACTIVE_AUTO_ROUTE=0` if you want wrapped clients to start without any route prompt.
-
-## Dry-Run First
-
-If you want to verify the artifact contract before spending tokens, start with dry-run:
-
-```bash
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --worktree --max-iterations 3 --dry-run --json
-```
-
-Dry-run creates the session journal but does not invoke the provider.
 
 ## Hook Controls
 
-`run` and `resume` accept explicit hook toggles:
+By default, harness runs record lifecycle hooks (evidence of what happened at each step). You can toggle this:
 
 ```bash
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --hooks
-aios harness resume --session nightly-demo --no-hooks
+# With hooks (default)
+aios harness run --objective "task" --session my-run --hooks
+
+# Without hooks (less noise)
+aios harness resume --session my-run --no-hooks
 ```
 
-- Default is `--hooks` (enabled), which records lifecycle hook evidence.
-- Use `--no-hooks` when you want a lower-noise run without hook traces.
+## What Gets Written
 
-## Iteration And Workspace Controls
+All artifacts live in your project:
 
-- `--max-iterations <n>` caps the loop budget for `run` and `resume`; the CLI default is `20`, while wrapped-client self-trigger prompts default to `8`.
-- `--workspace <path>` forces ContextDB session artifacts into that project root. Use it when AIOS is invoked from a wrapper, an external checkout, or a parent directory.
-- `--provider <codex|claude|gemini|opencode>` selects the underlying local CLI used by the loop.
-
-## What Solo Harness Writes
-
-Artifacts live under:
-
-```text
+```
 memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+  ├── objective.md           # The goal you gave it
+  ├── run-summary.json       # Current state and progress
+  ├── control.json           # Stop requests and notes
+  ├── hook-events.jsonl      # Lifecycle evidence
+  ├── iteration-0001.json    # What happened in iteration 1
+  ├── iteration-0001.log     # Raw log for debugging
+  └── ...
 ```
 
-Main files:
+## Solo Harness vs. Agent Team
 
-- `objective.md` - normalized objective stored with the session.
-- `run-summary.json` - current state, iteration counters, backoff state, and worktree metadata.
-- `control.json` - stop requests and operator notes.
-- `hook-events.jsonl` - lifecycle hook evidence (when hooks are enabled).
-- `iteration-0001.json` - normalized per-iteration outcome.
-- `iteration-0001.log.jsonl` - raw iteration log stream for debugging.
-
-## Operator Loop
-
-A practical overnight loop looks like this:
-
-1. Start with `aios harness run --worktree`.
-2. Check `aios harness status --session <id> --json` before leaving it alone.
-3. Use `aios hud --session <id>` when you want a human-readable session snapshot.
-4. Use `aios harness stop --session <id>` when you want the run to stop at the next safe boundary.
-5. Use `aios harness resume --session <id>` the next morning or after a manual fix.
-
-## Worktree Behavior
-
-`--worktree` is recommended for overnight runs.
-
-It creates an isolated git worktree for the harness session so the agent does not mutate your main checkout directly. If the run produces no meaningful output, the temporary worktree can be cleaned up automatically. If it produces useful changes, the worktree metadata is preserved in the run summary for operator review.
-
-RexCLI does **not** rely on blanket recovery like `git reset --hard` for this workflow.
-
-## Provider And Runtime Notes
-
-Live execution reuses the existing one-shot `scripts/ctx-agent.mjs` provider path.
-
-That means the matching local CLI still needs to exist and be runnable:
-
-- `codex`
-- `claude`
-- `gemini`
-- `opencode`
-
-If the provider CLI is missing, use dry-run first and fix provider readiness before starting a live overnight run.
-
-## Solo Harness vs Agent Team
-
-| Need | Better fit |
+| Need | Use |
 |---|---|
-| One objective, one provider, resumable overnight execution | `aios harness ...` |
-| Parallel workers on a splittable task | `aios team ...` |
-| Staged orchestration with preflight gates | `aios orchestrate ...` |
+| One agent, one goal, long-running | `aios harness run ...` |
+| Multiple agents on a splittable task | `aios team ...` |
+| Staged execution with preflight gates | `aios orchestrate ...` |
 
-## Related Docs
+## Where To Go Next
 
-- [HUD Guide](hud-guide.md)
-- [Agent Team](team-ops.md)
-- [Find Commands By Scenario](use-cases.md)
-- [Troubleshooting](troubleshooting.md)
+- [Agent Team](team-ops.md) — when one agent isn't enough
+- [HUD Guide](hud-guide.md) — monitoring dashboard
+- [Find Commands By Scenario](use-cases.md) — more command examples
+- [Troubleshooting](troubleshooting.md) — fix common issues

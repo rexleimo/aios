@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import http from 'node:http';
+import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import {
   appendEvent,
   buildTimeline,
@@ -24,6 +27,8 @@ import { compactContextDb, hygieneStatus, pruneNoise } from './hygiene.js';
 
 type Options = Record<string, string | boolean>;
 
+const AIOS_ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
+
 function usage(): string {
   return [
     'Filesystem Context DB CLI',
@@ -38,6 +43,7 @@ function usage(): string {
     '  contextdb search [--query <text>] [--project <name>] [--session <id>] [--scope events|checkpoints|all] [--role <role>] [--kinds a,b] [--refs a,b] [--statuses running,blocked,done] [--limit 20] [--semantic] [--explain]',
     '  contextdb recall:sessions [--query <text>] [--project <name>] [--session <id>] [--exclude-session <id>] [--limit 3] [--highlight-limit 3] [--explain-score]',
     '  contextdb genealogy [--project <name>] [--session <id>] [--limit 40] [--include-events] [--events-per-session 20] [--json]',
+    '  contextdb genealogy:serve [--project <name>] [--workspace <path>] [--assets-root <path>] [--port 3210] [--no-open] [--smoke]',
     '  contextdb hygiene:status [--workspace <path>]',
     '  contextdb hygiene:prune-noise [--workspace <path>] [--dry-run]',
     '  contextdb hygiene:compact [--workspace <path>] [--dry-run]',
@@ -119,6 +125,102 @@ function resolveOutputPath(workspaceRoot: string, outputPath: string): string {
 async function appendJsonLineFile(filePath: string, value: unknown): Promise<void> {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.appendFile(filePath, `${JSON.stringify(value)}\n`, 'utf8');
+}
+
+function resolvePathOption(value: unknown, fallback: string): string {
+  if (typeof value !== 'string' || !value.trim()) return fallback;
+  return path.isAbsolute(value) ? path.resolve(value) : path.resolve(process.cwd(), value);
+}
+
+function resolveGenealogyGuiPaths(options: Options): { assetsRoot: string; guiDir: string; guiHtml: string } {
+  const assetsRoot = resolvePathOption(options['assets-root'], process.env.AIOS_ROOT_DIR || AIOS_ROOT_DIR);
+  const guiDir = path.join(assetsRoot, 'scripts', 'lib', 'genealogy-gui');
+  return {
+    assetsRoot,
+    guiDir,
+    guiHtml: path.join(guiDir, 'index.html'),
+  };
+}
+
+function isInsideDirectory(base: string, target: string): boolean {
+  const resolvedBase = path.resolve(base);
+  const resolvedTarget = path.resolve(target);
+  return resolvedTarget === resolvedBase || resolvedTarget.startsWith(resolvedBase + path.sep);
+}
+
+function injectGuiConfig(html: string, config: Record<string, unknown>): string {
+  const script = `<script>window.__MEMORY_GALAXY_CONFIG__=${JSON.stringify(config).replace(/</g, '\\u003c')};</script>`;
+  return html.includes('</head>') ? html.replace('</head>', `${script}\n</head>`) : `${script}\n${html}`;
+}
+
+function openBrowserUrl(url: string): void {
+  const platform = process.platform;
+  const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open';
+  const args = platform === 'win32' ? ['/c', 'start', '', url] : [url];
+  try {
+    const child = spawn(command, args, { stdio: 'ignore', detached: true });
+    child.unref();
+  } catch {
+    // Opening the browser is best-effort; the server URL is still printed.
+  }
+}
+
+function normalizeProjectFilter(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  if (!trimmed || trimmed === '__all' || trimmed.toLowerCase() === 'all') return undefined;
+  return trimmed;
+}
+
+function requestOriginAllowed(req: http.IncomingMessage): boolean {
+  const origin = req.headers.origin;
+  if (typeof origin !== 'string' || !origin.trim()) return true;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return false;
+    const host = String(req.headers.host || '').toLowerCase();
+    const originPort = parsed.port || (parsed.protocol === 'https:' ? '443' : '80');
+    const originHost = `${parsed.hostname.toLowerCase()}:${originPort}`;
+    return host === originHost;
+  } catch {
+    return false;
+  }
+}
+
+async function collectReadableGraphFiles({
+  workspaceRoot,
+  project,
+}: {
+  workspaceRoot: string;
+  project: string;
+}): Promise<Set<string>> {
+  let graph = await buildMemoryGenealogyGraph({
+    workspaceRoot,
+    project: normalizeProjectFilter(project),
+    limit: 500,
+    includeEvents: true,
+    eventsPerSession: 200,
+  });
+  if (normalizeProjectFilter(project) && graph.summary.sessions === 0) {
+    graph = await buildMemoryGenealogyGraph({
+      workspaceRoot,
+      limit: 500,
+      includeEvents: true,
+      eventsPerSession: 200,
+    });
+  }
+  const allowed = new Set<string>();
+  for (const node of graph.nodes) {
+    for (const candidate of [node.sourcePath, ...(node.refs || [])]) {
+      if (typeof candidate !== 'string' || !candidate.trim()) continue;
+      if (path.isAbsolute(candidate)) continue;
+      const resolved = path.resolve(workspaceRoot, candidate);
+      if (isInsideDirectory(workspaceRoot, resolved)) {
+        allowed.add(resolved);
+      }
+    }
+  }
+  return allowed;
 }
 
 async function main(): Promise<void> {
@@ -329,13 +431,219 @@ async function main(): Promise<void> {
         : 20;
       const result = await buildMemoryGenealogyGraph({
         workspaceRoot,
-        project: typeof options.project === 'string' ? options.project : undefined,
+        project: normalizeProjectFilter(options.project),
         sessionId: typeof options.session === 'string' ? options.session : undefined,
         limit: Number.isFinite(limit) ? limit : 40,
         includeEvents: options['include-events'] === true,
         eventsPerSession: Number.isFinite(eventsPerSession) ? eventsPerSession : 20,
       });
       console.log(JSON.stringify(result, null, 2));
+      return;
+    }
+
+    case 'genealogy:serve': {
+      const { assetsRoot, guiDir, guiHtml } = resolveGenealogyGuiPaths(options);
+      if (!await fs.stat(guiHtml).then(() => true).catch(() => false)) {
+        throw new Error(`GUI not found at ${guiHtml}. Pass --assets-root <aios-root> or set AIOS_ROOT_DIR.`);
+      }
+      const port = typeof options.port === 'string' ? Number(options.port) : 3210;
+      const servePort = Number.isFinite(port) ? port : 3210;
+      const defaultProject = typeof options.project === 'string' ? options.project : path.basename(workspaceRoot);
+      const allowedWorkspaces = new Set([workspaceRoot]);
+
+      function safeResolve(base: string, target: string): string | null {
+        const resolved = path.resolve(base, target);
+        if (!isInsideDirectory(base, resolved)) return null;
+        return resolved;
+      }
+
+      function targetWorkspaceFromUrl(url: URL): string | null {
+        const wsParam = url.searchParams.get('workspace');
+        const targetWorkspace = wsParam ? path.resolve(wsParam) : workspaceRoot;
+        return allowedWorkspaces.has(targetWorkspace) ? targetWorkspace : null;
+      }
+
+      function setCors(req: http.IncomingMessage, res: http.ServerResponse) {
+        const origin = typeof req.headers.origin === 'string' ? req.headers.origin : '';
+        if (requestOriginAllowed(req) && origin) {
+          res.setHeader('Access-Control-Allow-Origin', origin);
+        }
+        res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+        res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+      }
+
+      const server = http.createServer(async (req, res) => {
+        const url = new URL(req.url || '/', `http://localhost:${servePort}`);
+        setCors(req, res);
+        if (!requestOriginAllowed(req)) { res.writeHead(403); res.end('Forbidden origin'); return; }
+        if (req.method === 'OPTIONS') { res.writeHead(204); res.end(); return; }
+
+        try {
+          // Main page & static files from gui dir
+          if (url.pathname === '/' || url.pathname === '/index.html') {
+            const html = injectGuiConfig(await fs.readFile(guiHtml, 'utf8'), {
+              workspaceRoot,
+              project: defaultProject,
+              assetsRoot,
+            });
+            res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+            res.end(html);
+            return;
+          }
+          // Serve other static files from gui dir
+          if (url.pathname.startsWith('/') && !url.pathname.startsWith('/api/')) {
+            const safePath = path.resolve(guiDir, '.' + url.pathname);
+            if (!isInsideDirectory(guiDir, safePath)) { res.writeHead(403); res.end('Forbidden'); return; }
+            try {
+              const content = await fs.readFile(safePath);
+              const ext = path.extname(safePath);
+              const mime = ext === '.html' ? 'text/html' : ext === '.js' ? 'application/javascript' : ext === '.css' ? 'text/css' : ext === '.svg' ? 'image/svg+xml' : 'text/plain';
+              res.writeHead(200, { 'Content-Type': `${mime}; charset=utf-8` });
+              res.end(content);
+              return;
+            } catch (err) {
+              res.writeHead(404); res.end('Not found'); return;
+            }
+          }
+
+          // Genealogy graph — supports ?workspace=&project=&include-events=&limit=
+          if (url.pathname === '/api/genealogy') {
+            const targetWorkspace = targetWorkspaceFromUrl(url);
+            if (!targetWorkspace) { res.writeHead(403); res.end('Workspace not allowed'); return; }
+            const rawProject = url.searchParams.has('project')
+              ? url.searchParams.get('project')
+              : defaultProject;
+            const targetProject = normalizeProjectFilter(rawProject);
+            const includeEvents = url.searchParams.get('include-events') === 'true';
+            const limit = Number(url.searchParams.get('limit')) || 40;
+            const eventsPerSession = Number(url.searchParams.get('events-per-session')) || 20;
+
+            let graph = await buildMemoryGenealogyGraph({
+              workspaceRoot: targetWorkspace,
+              project: targetProject,
+              limit: Number.isFinite(limit) ? limit : 40,
+              includeEvents,
+              eventsPerSession: Number.isFinite(eventsPerSession) ? eventsPerSession : 20,
+            });
+            if (targetProject && graph.summary.sessions === 0) {
+              graph = await buildMemoryGenealogyGraph({
+                workspaceRoot: targetWorkspace,
+                limit: Number.isFinite(limit) ? limit : 40,
+                includeEvents,
+                eventsPerSession: Number.isFinite(eventsPerSession) ? eventsPerSession : 20,
+              });
+              graph.warnings.push(`No sessions matched project "${targetProject}"; showing all workspace projects.`);
+            }
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(graph));
+            return;
+          }
+
+          // List sessions in a workspace — ?workspace=<path>&project=<name>
+          if (url.pathname === '/api/sessions') {
+            const targetWorkspace = targetWorkspaceFromUrl(url);
+            if (!targetWorkspace) { res.writeHead(403); res.end('Workspace not allowed'); return; }
+            const dbRoot = path.join(targetWorkspace, 'memory', 'context-db');
+            const sessionsRoot = path.join(dbRoot, 'sessions');
+            let entries: { sessionId: string; agent: string; project: string; goal: string; status: string; updatedAt: string }[] = [];
+            try {
+              const dirs = await fs.readdir(sessionsRoot, { withFileTypes: true });
+              for (const d of dirs) {
+                if (!d.isDirectory()) continue;
+                const metaPath = path.join(sessionsRoot, d.name, 'meta.json');
+                try {
+                  const raw = await fs.readFile(metaPath, 'utf8');
+                  const m = JSON.parse(raw);
+                  if (m.sessionId) {
+                    entries.push({
+                      sessionId: m.sessionId,
+                      agent: m.agent || '',
+                      project: m.project || '',
+                      goal: m.goal || '',
+                      status: m.status || '',
+                      updatedAt: m.updatedAt || m.createdAt || '',
+                    });
+                  }
+                } catch {}
+              }
+            } catch {}
+            entries.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(entries));
+            return;
+          }
+
+          // Read a file within a workspace — ?workspace=<path>&file=<relative-path>
+          if (url.pathname === '/api/file') {
+            const targetWorkspace = targetWorkspaceFromUrl(url);
+            if (!targetWorkspace) { res.writeHead(403); res.end('Workspace not allowed'); return; }
+            const fileRel = url.searchParams.get('file');
+            if (!fileRel) { res.writeHead(400); res.end('Missing ?file='); return; }
+
+            const filePath = safeResolve(targetWorkspace, fileRel);
+            if (!filePath) { res.writeHead(403); res.end('Path traversal denied'); return; }
+            const project = String(url.searchParams.get('project') || defaultProject);
+            const readableFiles = await collectReadableGraphFiles({ workspaceRoot: targetWorkspace, project });
+            if (!readableFiles.has(filePath)) { res.writeHead(403); res.end('File is not referenced by the graph'); return; }
+
+            try {
+              const content = await fs.readFile(filePath, 'utf8');
+              res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+              res.end(content);
+            } catch (err) {
+              const code = (err as NodeJS.ErrnoException).code;
+              res.writeHead(code === 'ENOENT' ? 404 : 500);
+              res.end(code === 'ENOENT' ? 'File not found' : String(err));
+            }
+            return;
+          }
+
+          res.writeHead(404);
+          res.end('Not found');
+        } catch (err) {
+          res.writeHead(500, { 'Content-Type': 'text/plain' });
+          res.end(err instanceof Error ? err.message : String(err));
+        }
+      });
+
+      if (options.smoke === true) {
+        const [html, graph] = await Promise.all([
+          fs.readFile(guiHtml, 'utf8'),
+          buildMemoryGenealogyGraph({
+            workspaceRoot,
+            project: defaultProject,
+            limit: 40,
+            includeEvents: false,
+          }),
+        ]);
+        console.log(JSON.stringify({
+          ok: true,
+          workspaceRoot,
+          assetsRoot,
+          project: defaultProject,
+          guiHtml,
+          htmlBytes: Buffer.byteLength(html, 'utf8'),
+          graph,
+        }, null, 2));
+        return;
+      }
+
+      server.listen(servePort, () => {
+        const address = server.address();
+        const actualPort = typeof address === 'object' && address ? address.port : servePort;
+        const url = `http://localhost:${actualPort}`;
+        console.log(`Memory Galaxy GUI → ${url}`);
+        console.log(`  Workspace: ${workspaceRoot}`);
+        console.log(`  Project: ${defaultProject}`);
+        console.log(`  Assets: ${assetsRoot}`);
+        console.log(`  API: /api/genealogy?workspace=<path>&project=<name>`);
+        console.log(`  Sessions: /api/sessions?workspace=<path>`);
+        console.log(`  File: /api/file?workspace=<path>&file=<rel-path>`);
+        console.log('Press Ctrl+C to stop.');
+        if (options['no-open'] !== true) {
+          openBrowserUrl(url);
+        }
+      });
       return;
     }
 

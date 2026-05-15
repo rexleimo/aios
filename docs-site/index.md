@@ -1,174 +1,151 @@
 ---
 title: Overview
-description: Start from the task you want to solve, then go deeper into ContextDB, Agent Team, browser automation, and skills.
+description: RexCLI adds memory, skills, and teamwork to the coding agents you already use. No new tools to learn.
 ---
 
 # RexCLI
 
-> Keep your current habits. Add memory, collaboration, and verification to the `codex` / `claude` / `gemini` CLIs you already use.
+**Give your coding agent a brain and a team.**
 
-[3-Minute Quick Start](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[How To Use Agent Team](team-ops.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="team_ops" }
-[Find Commands By Scenario](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
-[GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=en_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
+RexCLI wraps around `codex`, `claude`, `gemini`, and `opencode` to add things they don't have on their own: project memory that survives restarts, reusable skills, and the ability to run multiple agents in parallel.
 
-<figure class="rex-visual">
-  <img src="assets/visual-new-user-path.svg" alt="RexCLI beginner path: install and run Doctor, enable project memory, then use Agent Team when needed">
-  <figcaption>New users should take the shortest path first: install, run Doctor, enable project memory, and only start Agent Team when the task is clearly splittable.</figcaption>
-</figure>
+You keep using the same commands. Nothing changes about your workflow — except your agents get way more capable.
 
-## Core Features
+[Get Started in 3 Minutes](getting-started.md){ .md-button .md-button--primary }
+[See It In Action](use-cases.md){ .md-button }
 
-<div class="feature-grid">
-  <a href="contextdb/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧠</div>
-    <div class="feature-card__title">ContextDB</div>
-    <div class="feature-card__desc">Project-wide memory layer. Events, checkpoints, and context packets persist across terminal restarts.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="token-compression/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">✂️</div>
-    <div class="feature-card__title">Native Token Compression</div>
-    <div class="feature-card__desc">Self-contained input and output compression inspired by RTK/Caveman patterns, without competitor installs.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="superpowers/" class="feature-card feature-card--workflow">
-    <div class="feature-card__icon">⚡</div>
-    <div class="feature-card__title">Superpowers</div>
-    <div class="feature-card__desc">Reusable automation skills. Brainstorm, plan, debug, verify, and deploy with guided workflows.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="team-ops/" class="feature-card feature-card--team">
-    <div class="feature-card__icon">👥</div>
-    <div class="feature-card__title">Agent Team</div>
-    <div class="feature-card__desc">Dispatch splittable tasks to multiple CLI workers and track with HUD. Coordinate agents, not chaos.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="solo-harness/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌙</div>
-    <div class="feature-card__title">Solo Harness</div>
-    <div class="feature-card__desc">Long-running single-agent work with run journals, resume/stop controls, and worktree isolation.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="debug-hub/" class="feature-card feature-card--debug">
-    <div class="feature-card__icon">🐛</div>
-    <div class="feature-card__title">debug-hub</div>
-    <div class="feature-card__desc">MCP-native debug log service. Let coding agents query their own runtime logs and self-diagnose.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="model-router/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧭</div>
-    <div class="feature-card__title">Model Router</div>
-    <div class="feature-card__desc">Balanced model dispatch for Agent Teams. Match tasks to optimal models by capability signals, profile, and cost.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-  <a href="troubleshooting/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌐</div>
-    <div class="feature-card__title">Browser MCP</div>
-    <div class="feature-card__desc">Stealth browser automation with CDP. Human behavior simulation and anti-detection built-in.</div>
-    <span class="feature-card__link">Learn more →</span>
-  </a>
-</div>
+## What Can You Do?
 
-## Featured: debug-hub
+!!! example "Real-world scenarios"
+    === "Remember things"
+        Your agent forgets everything when you close the terminal. **Not anymore.**
 
-**Let coding agents debug themselves.** debug-hub is an MCP-native debug log service that exposes logs and traces as tools your agents can query directly — no human needed to grep terminal output or correlate error spans.
+        ```bash
+        cd your-project
+        touch .contextdb-enable
+        codex  # Now your agent remembers what you did yesterday
+        ```
 
-| | |
+    === "Run overnight"
+        Give your agent a task before you sleep. Check the results in the morning.
+
+        ```bash
+        aios harness run \
+          --objective "Refactor the auth module and write tests" \
+          --worktree
+        ```
+
+    === "Use a team"
+        Split big tasks across multiple agents working in parallel.
+
+        ```bash
+        aios team 3:codex \
+          "Build the settings page, add tests, update docs"
+        aios team status --watch  # Monitor progress in real time
+        ```
+
+    === "Debug itself"
+        Your agent can search its own logs and figure out what went wrong.
+
+        ```bash
+        cd packages/debug-hub && npm run dev
+        # Agents now have tools: search_logs, get_trace, get_stats
+        ```
+
+## Why RexCLI?
+
+If you've ever used a coding agent and thought:
+
+- **"I wish it remembered what we did yesterday"** — that's ContextDB
+- **"I want it to follow a consistent style"** — that's Memo (persona + user profile)
+- **"This task is too big for one agent"** — that's Agent Team
+- **"I want it to keep working while I sleep"** — that's Solo Harness
+- **"I need to debug what the agent is doing"** — that's debug-hub
+- **"I want the right model for each task"** — that's Model Router
+
+RexCLI is **not** another coding agent. It's a layer that makes your existing agents better.
+
+## The Big Picture
+
+Think of RexCLI like a power-up for your coding agents:
+
+```
+Your Project
+  └── ContextDB (memory)
+        └── Sessions, events, checkpoints
+  └── Memo (persistent notes)
+        └── Persona, user profile, project facts
+  └── Superpowers (skills)
+        └── Brainstorm, plan, debug, verify
+  └── Agent Team (parallel work)
+        └── Multiple agents, one goal
+  └── Solo Harness (long-running work)
+        └── Overnight runs with journals
+  └── debug-hub (self-diagnostics)
+        └── Agents query their own logs
+```
+
+## First Time Here?
+
+**Start here:** [Quick Start](getting-started.md) — install, set up, and run your first agent with memory in about 3 minutes.
+
+**Already set up?** Jump to what you need:
+
+| I want to... | Go to |
 |---|---|
-| **MCP tools for agents** | `search_logs`, `get_trace`, `list_traces`, `get_stats`, `clear_logs` |
-| **Three SDKs** | Node.js, Browser, Go — one consistent API |
-| **Zero dependencies** | File-based storage under `~/.debug-hub/`, no database, no Docker |
-| **Embedded Web UI** | Dark-themed dashboard with SSE live feed |
+| Give my agent project memory | [ContextDB](contextdb.md) |
+| Use multiple agents together | [Agent Team](team-ops.md) |
+| Let one agent work overnight | [Solo Harness](solo-harness.md) |
+| Find the right command | [Commands By Scenario](use-cases.md) |
+| Use browser automation | [Troubleshooting](troubleshooting.md) |
+| Understand the architecture | [Architecture](architecture.md) |
 
-```bash
-cd packages/debug-hub && npm install && npm run dev
-# HTTP API + Web UI at http://localhost:39200, MCP via stdio
-```
+## New To AI Coding Agents?
 
-[Read the full announcement →](/blog/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[Quick Start](debug-hub.md){ .md-button }
+No worries. Here's what you need to know:
 
-## Pick What You Want To Do
+**An "agent"** is a coding assistant that runs in your terminal — like Claude Code, Codex CLI, or Gemini CLI. You type what you want, and it writes code for you.
 
-| What you want now | Read first | Shortest command |
-|---|---|---|
-| Install and open the TUI | [Quick Start](getting-started.md) | `aios` |
-| Give an agent project memory | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
-| **Let agents debug themselves** | **[debug-hub blog](/blog/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
-| Run one agent overnight | [Solo Harness](solo-harness.md) | `aios harness run --objective "Draft tomorrow handoff" --worktree` |
-| Run multiple agents together | [Agent Team](team-ops.md) | `aios team 3:codex "Implement X and run tests"` |
-| See task progress | [HUD Guide](hud-guide.md) | `aios team status --provider codex --watch` |
-| Diagnose browser automation | [Troubleshooting](troubleshooting.md) | `aios internal browser doctor --fix` |
+**The problem?** These agents are forgetful. Close the terminal, and everything's gone. They also can't work together or run for a long time without supervision.
 
-## What RexCLI Is
+**RexCLI fixes this** by adding a memory layer, skills, and teamwork — without changing how you interact with your agent.
 
-RexCLI is not another coding agent. It is a local-first capability layer:
+## Common Questions
 
-1. **Memory layer: ContextDB** - stores events, checkpoints, and context packets inside the current project so work survives terminal restarts.
-2. **Token layer: Native Token Compression** - reduces ContextDB, browser, CLI, and response tokens without competitor installs.
-3. **Workflow layer: Superpowers** - turns vague requests into plans, debugs with evidence, and verifies before completion.
-4. **Collaboration layer: Agent Team** - sends clearly separable work to multiple CLI workers and tracks them with HUD.
-5. **Observability layer: debug-hub** - exposes agent runtime logs and traces as MCP tools so agents can self-diagnose errors.
-6. **Tool layer: Browser MCP + Privacy Guard** - lets agents use the browser and redacts sensitive config before sharing.
+### Do I need to stop using my current agent?
 
-For long-running single-agent work, [Solo Harness](solo-harness.md) adds run journals, resume/stop controls, and optional worktree isolation on top of ContextDB.
+No. You keep running `codex`, `claude`, `gemini`, or `opencode` exactly like before. RexCLI just makes them better.
 
-In short: you still run `codex`, `claude`, and `gemini`; RexCLI helps them remember more, coordinate better, and guess less.
+### Is this a cloud service?
 
-## Recommended Path For New Users
+No. Everything runs locally on your machine. Your code and data never leave your computer.
 
-### Day 1: Get It Running
+### Which agents does it support?
 
-```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
-source ~/.zshrc
-aios
-```
+Codex CLI, Claude Code, Gemini CLI, and OpenCode. If your favorite isn't listed, [open an issue](https://github.com/rexleimo/rex-cli/issues).
 
-In the TUI, choose **Setup**, then run **Doctor**.
+### Do I need to learn a lot of new commands?
 
-### Step 2: Enable Memory In A Project
+No. The three things you'll use most are:
 
-```bash
-cd /path/to/your/project
-touch .contextdb-enable
-codex
-```
+1. `aios` — open the setup menu
+2. `touch .contextdb-enable` — turn on memory for a project
+3. `codex` (or `claude`/`gemini`) — start coding as usual
 
-From then on, when you start `codex` / `claude` / `gemini` in this project, RexCLI connects them to the same project context.
+Everything else is optional and you can learn it as you go.
 
-### Step 3: Use Agent Team Only For Splittable Work
+## What's Next?
 
-```bash
-aios team 3:codex "Refactor the login module and run related tests before finishing"
-aios team status --provider codex --watch
-```
+- [Quick Start](getting-started.md) — get running in 3 minutes
+- [ContextDB](contextdb.md) — understand how memory works
+- [Agent Team](team-ops.md) — run multiple agents together
+- [Solo Harness](solo-harness.md) — let agents work overnight
+- [Find Commands By Scenario](use-cases.md) — the command reference
+- [Changelog](changelog.md) — what's new in each release
 
-If the task is still unclear, start with normal interactive `codex` and ask it to analyze first. Use `team` only when the work can be split cleanly.
+## Blog Highlights
 
-## Common Misunderstandings
-
-- **Not every task needs Agent Team**: use one agent for single-file fixes, small bugs, or unclear requirements.
-- **You do not need every environment variable on day one**: start with the `aios` TUI.
-- **Do not start from the feature list**: start from "what do I want to do?" and copy the command.
-- **Do not skip Doctor**: run diagnostics before changing install, browser, skills, or native config by hand.
-
-## Release Notes And Deep Dives
-
-- [ContextDB Token Compression](/blog/2026-05-token-compression/): pack long session history into a bounded token budget with `balanced` / `aggressive` strategies before dropping lower-priority events.
-- [debug-hub: MCP-Native Debug Log Service](/blog/2026-05-debug-hub-mcp/): let coding agents query their own runtime logs via MCP tools.
-- [AIOS RL Training System](/blog/rl-training-system/): multi-environment training control plane and rollout model.
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/): FTS5 + BM25 search path and semantic rerank behavior.
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/): wrapper startup fixes and Windows launch reliability.
-- [Orchestrate Live](/blog/orchestrate-live/): live orchestration gates and execution workflow.
-
-## Next Reads
-
-- [Quick Start](getting-started.md): install, Setup, Doctor, and first run.
-- [Native Token Compression](token-compression.md): reduce input/output tokens without RTK or Caveman installs.
-- [Find Commands By Scenario](use-cases.md): choose the right entry point by task.
-- [Agent Team](team-ops.md): when to use a team, how to monitor it, and how to finish safely.
-- [Solo Harness](solo-harness.md): how to let one agent work overnight with status, stop, and resume controls.
-- [ContextDB](contextdb.md): how memory persists across sessions.
-- [Troubleshooting](troubleshooting.md): install, browser, and live execution issues.
+- [AIOS RL Training System](/blog/rl-training-system/)
+- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)
+- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)
+- [Orchestrate Live](/blog/orchestrate-live/)

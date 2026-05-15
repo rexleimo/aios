@@ -1,42 +1,41 @@
 ---
 title: Quick Start
-description: The shortest path from installation to first use: install, open the TUI, run Doctor, then start an agent inside a project.
+description: Install RexCLI, set it up, and run your first agent with memory — in about 3 minutes.
 ---
 
 # Quick Start
 
-Goal: **install RexCLI, open the TUI, run Doctor once, and start an agent in a project in about 3 minutes.**
+**Goal:** By the end of this page, you'll have RexCLI installed and your coding agent will remember things across sessions.
 
-If you do not know every RexCLI feature yet, that is fine. Follow this page first, then continue to [Find Commands By Scenario](use-cases.md).
+Sounds good? Let's go.
 
 ## What You Need
 
-- Node.js **22 LTS** and `npm`
-- At least one coding CLI: `codex`, `claude`, `gemini`, or `opencode`
-- A project directory where you want to work
+Before we start, make sure you have:
 
-Check Node:
+- **Node.js 22** (the LTS version) — [download it here](https://nodejs.org/) or use `nvm install 22`
+- **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, or `opencode`
+- **A project folder** — any code project where you want your agent to have memory
 
-```bash
-node -v
-npm -v
-```
-
-If Node is not 22, switch first:
+Check your Node version:
 
 ```bash
-nvm install 22
-nvm use 22
+node -v  # Should show v22.x.x
 ```
 
-## 1) Install The Stable Release
+??? note "Need to install or switch Node?"
+    ```bash
+    nvm install 22
+    nvm use 22
+    ```
+
+## Step 1: Install RexCLI
 
 === "macOS / Linux"
 
     ```bash
     curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
-    aios
     ```
 
     If you use bash instead of zsh, replace `source ~/.zshrc` with `source ~/.bashrc`.
@@ -46,272 +45,228 @@ nvm use 22
     ```powershell
     irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
-    aios
     ```
 
-After installation, the default directory is `~/.rexcil/rex-cli`, and the unified entry point is `aios`.
+!!! tip "Stable vs. Development"
+    The commands above install the **stable release** (recommended). Only use `git clone` if you specifically want unreleased features from the `main` branch.
 
-!!! tip "When should I use git clone?"
-    Use `git clone` only if you explicitly want unreleased `main` branch behavior. Stable users should prefer the GitHub Releases installer.
+## Step 2: Run Setup
 
-## 2) Finish Setup And Doctor In The TUI
-
-Run:
+Open the RexCLI menu:
 
 ```bash
 aios
 ```
 
-Recommended order:
+You'll see a TUI (terminal UI) with several options. Do these two things, **in this order**:
 
-1. Choose **Setup**.
-2. Select `all`, or the minimal set `shell,skills,superpowers`.
-3. After installation, choose **Doctor**.
-4. Start using RexCLI after Doctor shows no critical errors.
+1. **Choose "Setup"** — this installs the shell wrappers and skills
+2. **Choose "Doctor"** — this checks everything is working correctly
 
 <figure class="rex-visual">
-  <img src="assets/visual-tui-setup-doctor.svg" alt="Illustration of choosing Setup first and Doctor second in the aios TUI">
-  <figcaption>Illustration: after the TUI opens, run Setup first, then Doctor. When critical errors are 0, go into your project and start `codex` / `claude` / `gemini` / `opencode`.</figcaption>
+  <img src="assets/visual-tui-setup-doctor.svg" alt="Setup first, Doctor second">
+  <figcaption>Always run Setup first, then Doctor. If Doctor shows zero critical errors, you're good to go.</figcaption>
 </figure>
 
-If you changed shell wrappers, reload the current shell:
+!!! warning "If Doctor shows errors"
+    Don't panic. Most errors are easy fixes — missing PATH entries, wrong Node version, etc. Doctor will tell you exactly what's wrong and often offers to fix it automatically.
+
+After setup, reload your shell:
 
 === "macOS / Linux"
-
     ```bash
     source ~/.zshrc
     ```
 
 === "Windows PowerShell"
-
     ```powershell
     . $PROFILE
     ```
 
-## 3) Enable Memory In A Project
+## Step 3: Turn On Memory For Your Project
 
-Enter your project directory:
+Go to any project folder where you want your agent to remember things:
 
 === "macOS / Linux"
 
     ```bash
     cd /path/to/your/project
     touch .contextdb-enable
-    codex
     ```
 
 === "Windows PowerShell"
 
     ```powershell
-    cd C:\path	o\your\project
+    cd C:\path\to\your\project
     New-Item -ItemType File -Path .contextdb-enable -Force
-    codex
     ```
 
-You can also replace the last line with:
+That's it. The `.contextdb-enable` file is an opt-in switch — RexCLI only activates memory in folders where this file exists.
 
-```bash
-claude
-gemini
-```
+## Step 4: Start Your Agent
 
-As long as they run in the same project directory, they read and write the same ContextDB.
-
-## 4) Confirm It Works The First Time
-
-Run inside the project:
-
-=== "macOS / Linux"
-
-    ```bash
-    aios doctor --native --verbose
-    ls -la memory/context-db
-    ```
-
-=== "Windows PowerShell"
-
-    ```powershell
-    aios doctor --native --verbose
-    Get-ChildItem -Path memory/context-db -ErrorAction SilentlyContinue
-    ```
-
-If you see directories such as `sessions/`, `index/`, or `exports/`, ContextDB has started recording.
-
-If the directory does not exist yet, start `codex` / `claude` / `gemini` / `opencode` once normally and let RexCLI initialize it automatically. You do not need to reinstall immediately.
-
-If it still does not appear, run:
-
-```bash
-aios doctor --native --fix
-```
-
-## 5) The 7 Most Used Commands
-
-| Scenario | Command |
-|---|---|
-| Open the TUI | `aios` |
-| Start Codex with memory | `codex` |
-| View current session status | `aios hud --provider codex` |
-| Run one agent overnight | `aios harness run --objective "Draft tomorrow handoff" --worktree --max-iterations 20` |
-| Run a multi-agent task | `aios team 3:codex "Implement X and run tests before finishing"` |
-| Watch team progress | `aios team status --provider codex --watch` |
-| Pre-submit quality check | `aios quality-gate pre-pr --profile strict` |
-
-Route shortcuts are available inside native clients after setup:
-
-- Claude/Gemini/OpenCode: `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>`.
-- Codex: `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>`.
-- If they are missing, run `aios doctor --native --fix`.
-
-## 6) Use Memo For Persistent Operator Memory
-
-If you need durable project notes without manually touching ContextDB files:
-
-```bash
-aios memo use release-train
-aios memo add "Need strict pre-PR checks #quality"
-aios memo pin add "Avoid destructive git commands."
-aios memo persona init
-aios memo persona add "Response style: concise, direct, evidence-first"
-aios memo user init
-aios memo user add "Preferred language: zh-CN + technical English terms"
-aios memo recall "quality gate" --limit 5
-```
-
-Memory layering:
-
-- `memo add/list/search/recall` -> ContextDB events
-- `memo pin` -> workspace `pinned.md`
-- `memo persona/user` -> global identity files (`~/.aios/SOUL.md`, `~/.aios/USER.md`) injected into the `ctx-agent` Memory prelude before workspace memo content
-
-## 7) Shortest Agent Team Usage
-
-Use this only when the task can be split into relatively independent parts:
-
-```bash
-aios team 3:codex "Implement the user settings page, add tests, and update docs"
-aios team status --provider codex --watch
-```
-
-If you are fixing a small bug or do not know how to split the work yet, start normally:
+Now just start your agent like you normally would:
 
 ```bash
 codex
+# or: claude
+# or: gemini
 ```
 
-See [Agent Team](team-ops.md) for more decision rules.
+Your agent now has **project memory**. It will remember:
 
-## 8) Let One Agent Run Overnight
+- What files you worked on
+- What decisions you made
+- What errors you encountered
+- What was left to do
 
-Use Solo Harness when one provider should keep working on one clear objective and leave a run journal:
+...even after you close the terminal and come back tomorrow.
+
+## Step 5: Verify It's Working
+
+Run this to check that memory is active:
 
 ```bash
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --worktree --max-iterations 20
-aios harness status --session nightly-demo --json
+aios doctor --native --verbose
+ls memory/context-db/
 ```
 
-When you start from wrapped `codex` / `claude` / `gemini` / `opencode`, the startup route prompt lets the agent self-trigger this lane for explicit long-running, overnight, resumable, or checkpoint-heavy tasks. The injected command includes `--workspace <project-root>` so ContextDB artifacts stay in the active project.
+You should see directories like `sessions/`, `index/`, or `exports/`. That means memory is recording.
 
-Use `CTXDB_HARNESS_MAX_ITERATIONS=<n>` to change the default injected loop budget.
+??? troubleshooting "Don't see the memory directory?"
+    1. Start your agent once normally — RexCLI creates the directory on first run
+    2. If it still doesn't appear: `aios doctor --native --fix`
 
-## 9) Browser Automation Troubleshooting
+**You're all set!** Your agent now has memory. Keep reading to learn what else you can do.
 
-RexCLI uses a CDP/browser-use path for browser automation by default. For browser-related issues, start with:
+---
+
+## Beyond The Basics
+
+You have memory working. Here are the next things to try, in order of usefulness:
+
+### Save Persistent Notes With Memo
+
+Memo lets you save notes that your agent will see in every session:
 
 ```bash
-aios internal browser doctor --fix
-aios internal browser cdp-status
+# Save a note about this project
+aios memo add "Always use TypeScript strict mode in this project"
+
+# Save a reminder
+aios memo pin add "Never push directly to main"
+
+# Search your notes later
+aios memo search "typescript"
 ```
 
-For complex pages, ask the agent to read page text/DOM first, then use screenshots as fallback. Do not start by blindly clicking buttons.
+### Set Your Agent's Personality
 
-## 10) Privacy-Safe Reads
-
-Do not paste `.env`, tokens, cookies, or cloud config directly into a model. Use:
+You can tell RexCLI how your agent should behave across all projects:
 
 ```bash
-aios privacy read --file <path>
+# Set the agent's communication style
+aios memo persona init
+aios memo persona add "Response style: concise, direct, evidence-first"
+
+# Set your own preferences
+aios memo user init
+aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
 
-When RexCLI-wrapped `codex` / `claude` / `gemini` / `opencode` starts, the Privacy Shield panel shows the current privacy protection status.
+These profiles apply everywhere — not just one project.
 
-## 11) Update And Uninstall
+### Run Multiple Agents Together
 
-Prefer the TUI:
+When a task is too big for one agent, split it across multiple workers:
+
+```bash
+# Start 3 agents working in parallel
+aios team 3:codex "Build the settings page, add tests, and update docs"
+
+# Watch their progress
+aios team status --watch
+```
+
+!!! tip "When to use teams"
+    Use Agent Team only when the task can be **split into independent parts**. For single-file fixes or unclear requirements, stick with one agent.
+
+### Let An Agent Work Overnight
+
+Give your agent a clear objective and let it run while you sleep:
+
+```bash
+aios harness run \
+  --objective "Refactor the auth module and write integration tests" \
+  --worktree \
+  --max-iterations 20
+```
+
+Check progress anytime:
+
+```bash
+aios harness status --session <session-name> --json
+```
+
+### Use Route Shortcuts Inside Agents
+
+When you're inside a running agent, you can trigger RexCLI features with shortcuts:
+
+| Shortcut | What it does |
+|---|---|
+| `/single <task>` | Handle the task in the current agent |
+| `/team <task>` | Split across multiple agents |
+| `/harness <task>` | Run as a long overnight job |
+
+!!! note "Client differences"
+    - **Claude Code / Gemini / OpenCode**: `/single`, `/team`, `/harness`
+    - **Codex**: `/prompts:single`, `/prompts:team`, `/prompts:harness`
+
+    If shortcuts are missing, run `aios doctor --native --fix`.
+
+---
+
+## Common Questions
+
+### Does RexCLI replace my coding agent?
+
+**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. RexCLI adds memory, skills, and teamwork on top of them.
+
+### Why do I need `.contextdb-enable`?
+
+It's an opt-in switch. Without it, RexCLI won't record anything. You choose which projects get memory.
+
+### Will my agents share the same memory?
+
+**Yes.** If you run `codex` and then `claude` in the same project folder, they share the same ContextDB. This means Claude knows what Codex did earlier.
+
+### Do I need to learn everything at once?
+
+**No.** The three things you need on day one are:
+
+1. `aios` — for setup and diagnostics
+2. `touch .contextdb-enable` — to turn on memory
+3. `codex` (or `claude`/`gemini`) — to start coding
+
+Everything else — teams, harness, memo, superpowers — you can learn as you need them.
+
+### How do I update?
 
 ```bash
 aios
+# Then choose "Update" from the menu
 ```
 
-Or use commands:
+### How do I uninstall?
 
 ```bash
-aios update --components all --client all
 aios uninstall --components shell,skills,native
 ```
 
-## 12) Development Install Path
+## Where To Go Next
 
-Maintainers or users testing unreleased features can use:
-
-=== "macOS / Linux"
-
-    ```bash
-    git clone https://github.com/rexleimo/rex-cli.git ~/.rexcil/rex-cli
-    cd ~/.rexcil/rex-cli
-    scripts/aios.sh
-    ```
-
-=== "Windows PowerShell"
-
-    ```powershell
-    git clone https://github.com/rexleimo/rex-cli.git $HOME\.rexcil\rex-cli
-    cd $HOME\.rexcil\rex-cli
-    powershell -ExecutionPolicy Bypass -File .\scripts\aios.ps1
-    ```
-
-Development install is not the same as stable release. Most users should use the one-liner in step 1.
-
-## FAQ
-
-### Does RexCLI replace native CLIs?
-
-No. You still run `codex`, `claude`, `gemini`, and `opencode`. RexCLI adds memory, skills, diagnostics, and orchestration around them.
-
-### Can agents trigger AIOS themselves?
-
-Yes, when they are launched through the wrapped clients. The startup prompt tells the agent when to stay on `single`, when to use `team`/`subagent`, and when a long-running objective should invoke `aios harness run ... --workspace <project-root>`.
-
-### Why create `.contextdb-enable`?
-
-It is an opt-in switch so RexCLI does not record context in every directory. Create it only in repositories where you want project memory.
-
-### Do I need to learn ContextDB / Superpowers / Team Ops first?
-
-No. New users only need three things at first: `aios` for setup and diagnostics, `.contextdb-enable` for project memory, and `codex` for normal work.
-
-### How many agents should I start with?
-
-Start with `3`:
-
-```bash
-aios team 3:codex "task"
-```
-
-If conflicts increase, reduce to `2`; if the task is very independent, consider `4`.
-
-### What if `CODEX_HOME points to ".codex"`?
-
-It means `CODEX_HOME` is relative. Change it to an absolute path:
-
-```bash
-export CODEX_HOME="$HOME/.codex"
-mkdir -p "$CODEX_HOME"
-```
-
-### What should I read next?
-
-- [Find Commands By Scenario](use-cases.md)
-- [Agent Team](team-ops.md)
-- [ContextDB](contextdb.md)
-- [Troubleshooting](troubleshooting.md)
+- [ContextDB](contextdb.md) — understand how memory works under the hood
+- [Agent Team](team-ops.md) — run multiple agents in parallel
+- [Solo Harness](solo-harness.md) — let agents work overnight
+- [Find Commands By Scenario](use-cases.md) — a command reference organized by task
+- [Troubleshooting](troubleshooting.md) — fix common issues

@@ -1,108 +1,96 @@
 ---
 title: Native Token Compression
-description: Input and output token-saving workflow for RexCLI without installing RTK, Caveman, or competitor shell hooks.
+description: Save tokens without installing any extra tools — built right into RexCLI.
 ---
 
 # Native Token Compression
 
-## Quick Answer
+**AI models have a limit on how much text they can process at once.** Token compression keeps your context small enough to fit, while preserving the important stuff.
 
-RexCLI saves tokens natively. It references RTK-style input filtering and Caveman-style output brevity, but does **not** install RTK, Caveman, shell hooks, or competitor CLIs.
+RexCLI does this natively — no extra tools to install, no shell hooks, no dependencies.
 
-The workflow has two layers:
+## The Problem
 
-1. **Input compression**: reduce ContextDB packets, browser page reads, and command output before they enter the model.
-2. **Output compression**: keep agent replies compact while preserving commands, paths, errors, selectors, dates, risks, and verification gaps.
+Every time your agent starts a new session, ContextDB loads the history of what happened before. But if your project has months of history, that's a LOT of text — often more than the model can handle.
 
-## Input Compression
+Token compression solves this by:
 
-### ContextDB Packets
+1. **Keeping** recent work, errors, decisions, and file paths
+2. **Compressing** repeated logs, verbose output, and stack traces
+3. **Dropping** low-priority content only when necessary
 
-Use the built-in `context:pack` strategy engine:
+## Two Layers
+
+### Input Compression (what goes TO the model)
+
+Reduce the context pack before your agent reads it:
 
 ```bash
-cd mcp-server
 npm run contextdb -- context:pack \
-  --session <session_id> \
-  --limit 60 \
+  --session <session-id> \
+  --limit 80 \
   --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<session_id>-context.md
+  --token-strategy balanced
 ```
 
-Strategies:
+| Strategy | When to use | What it does |
+|---|---|---|
+| `balanced` | Default | Compresses low-signal text, keeps errors and recent work |
+| `aggressive` | Very small budgets | Maximum compression, minimal detail |
+| `legacy` | Old behavior | Only keeps the tail end of history |
 
-| Strategy | When to use | Behavior |
-|----------|-------------|----------|
-| `legacy` | strict backward compatibility | tail-window behavior |
-| `balanced` | default recommendation | compress low-signal text before dropping |
-| `aggressive` | tight budget, explicit opt-in | stronger compression and clipping |
+**What gets preserved** (never dropped):
 
-Safety rules:
+- Error messages and failure signals
+- File paths and command outputs
+- Recent state and decisions
 
-- Preserve critical errors, failure terms, file paths, command signals, and latest state.
-- Compress repeated lines, stack traces, and low-signal line sets before dropping events.
-- Drop low-priority events before truncating protected events.
-- Emit telemetry: `strategy`, `rawTokenUsed`, `compressed`, `dropped`, `truncated`.
+**What gets compressed** (shortened, not always dropped):
 
-### Browser Reads
+- Repeated log lines
+- Stack traces
+- Verbose tool output
 
-Use `aios-browser-compress` to prefer compact evidence:
+### Output Compression (what comes FROM the model)
 
-1. `page.semantic_snapshot`
-2. targeted `page.extract_text`
-3. full `page.extract_text`
-4. `page.get_html`
-5. screenshot only when visual evidence is needed
+Control how verbose your agent's responses are:
 
-Before clicking, typing, publishing, or deleting, re-read narrowly if the compressed view does not prove the target is present.
-
-### CLI Output
-
-Do not install a shell hook. Ask tools for scoped output instead:
-
-```bash
-rg -n "pattern" path
- git diff --stat
-sed -n '120,180p' file.ts
-tail -n 120 test.log
-```
-
-## Output Compression
-
-Use `aios-compress` for response style:
-
-| Level | Use case | Behavior |
-|-------|----------|----------|
-| `tight` | normal coding work | concise technical answer, no filler |
-| `ultra` | harness logs, checkpoints | one-line evidence + next action |
-| `precise` | browser actions, safety, irreversible actions | full explicit wording |
-
-Controls:
+| Level | Use for | Behavior |
+|---|---|---|
+| `tight` | Normal coding | Concise answer, no filler |
+| `ultra` | Harness logs, checkpoints | One-line evidence + next action |
+| `precise` | Browser actions, safety-critical | Full explicit wording |
 
 ```text
-/compress tight
-/compress ultra
-/compress precise
-stop compress
+/compress tight     # Normal work
+/compress ultra     # Overnight runs
+/compress precise   # When precision matters
+stop compress       # Back to normal
 ```
+
+## Browser Reads
+
+When your agent reads web pages, RexCLI automatically prefers the most compact format:
+
+1. Semantic snapshot (smallest)
+2. Targeted text extraction
+3. Full text extraction
+4. Full HTML (largest)
+5. Screenshot (only when visual evidence is needed)
+
+This means less token waste when agents browse the web.
 
 ## Why Native?
 
-Native compression keeps behavior auditable and consistent across Codex and Claude:
+RexCLI's compression is built in — not a bolted-on tool:
 
-- no competitor dependency;
-- no global command rewriting;
-- no hidden shell behavior;
-- docs, skills, and code live in this repo;
-- verification can prove what was compressed or dropped.
+- No extra packages to install
+- No shell hooks or command rewriting
+- Everything stays auditable — you can see exactly what was compressed or dropped
+- Works consistently across Codex, Claude, Gemini, and OpenCode
 
-## Related Files
+## Where To Go Next
 
-- `mcp-server/src/contextdb/core.ts`
-- `skill-sources/aios-compress/SKILL.md`
-- `skill-sources/aios-browser-compress/SKILL.md`
-- `.codex/skills/aios-compress/SKILL.md`
-- `.codex/skills/aios-browser-compress/SKILL.md`
-- `.claude/skills/aios-compress/SKILL.md`
-- `.claude/skills/aios-browser-compress/SKILL.md`
+- [ContextDB](contextdb.md) — how memory works with compression
+- [Solo Harness](solo-harness.md) — long runs benefit most from compression
+- [Architecture](architecture.md) — technical details of the compression pipeline

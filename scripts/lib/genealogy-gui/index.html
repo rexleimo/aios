@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Memory Galaxy · ContextDB</title>
+<link rel="stylesheet" href="https://esm.sh/@xyflow/react@12.10.2/dist/style.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080e1d;--surface:rgba(255,255,255,.06);--surface2:rgba(255,255,255,.10);--border:rgba(255,255,255,.14);--text:rgba(255,255,255,.88);--text2:rgba(255,255,255,.58);--green:#5bffc5;--blue:#72cfff;--yellow:#ffd479;--purple:#ad89ff;--pink:#ff8fb3;--orange:#ff9f6b;--font:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+#app{display:flex;flex-direction:column;height:100vh}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);flex-shrink:0;flex-wrap:wrap}
+.topbar h1{font-size:14px;font-weight:700;white-space:nowrap}
+.topbar h1 span{color:var(--green)}
+.topbar-actions{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-left:auto}
+.seg-label{font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-left:4px}
+.ws-input{border-radius:6px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;width:240px;font-family:var(--font)}
+.ws-input:focus{border-color:rgba(91,255,197,.5)}
+.btn{border-radius:6px;padding:5px 12px;background:var(--green);border:none;color:#080e1d;font-size:12px;font-weight:600;cursor:pointer}
+.btn:hover{opacity:.9}
+.btn-sm{border-radius:6px;padding:4px 8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:11px;cursor:pointer}
+.btn-sm:hover{background:var(--surface)}
+.chip{border-radius:999px;padding:4px 9px;background:var(--surface);border:1px solid var(--border);color:var(--text2);font-size:11px;cursor:pointer;transition:.15s;user-select:none;white-space:nowrap}
+.chip:hover{background:var(--surface2);color:var(--text)}
+.chip.active{background:rgba(91,255,197,.13);border-color:rgba(91,255,197,.38);color:var(--green)}
+.search-inp{border-radius:6px;padding:5px 10px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:12px;outline:none;width:150px;font-family:var(--font)}
+.search-inp:focus{border-color:rgba(91,255,197,.5)}
+.icon-btn{width:30px;height:30px;border-radius:50%;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:13px;font-weight:800;cursor:pointer}
+.icon-btn:hover{background:rgba(91,255,197,.12);border-color:rgba(91,255,197,.35);color:var(--green)}
+.text-btn{border-radius:999px;padding:5px 9px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:11px;font-weight:700;cursor:pointer}
+.text-btn:hover{background:var(--surface2)}
+
+/* Help modal */
+.modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.56);display:flex;align-items:flex-start;justify-content:flex-end;padding:54px 18px 18px}
+.help-card{width:min(480px,calc(100vw - 36px));max-height:calc(100vh - 72px);overflow:auto;border-radius:18px;background:linear-gradient(145deg,rgba(16,26,48,.98),rgba(8,14,29,.98));border:1px solid rgba(255,255,255,.18);box-shadow:0 22px 80px rgba(0,0,0,.45);padding:16px}
+.help-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:12px}
+.help-head h2{font-size:16px;margin-bottom:4px}
+.help-head p{font-size:12px;line-height:1.45;color:var(--text2)}
+.help-section{border-radius:12px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.09);padding:11px;margin-top:8px}
+.help-section h3{font-size:12px;margin-bottom:8px;color:var(--green)}
+.help-section dl{display:grid;grid-template-columns:96px 1fr;gap:7px 10px}
+.help-section dt{font-size:11px;font-weight:800;color:var(--text)}
+.help-section dd{font-size:11px;line-height:1.45;color:var(--text2)}
+
+/* Main */
+.main{display:flex;flex:1;overflow:hidden}
+.flow-panel{flex:1.2;position:relative}
+.detail-panel{flex:.8;border-left:1px solid var(--border);overflow-y:auto;max-width:440px;min-width:300px}
+.detail-head{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--bg);z-index:5}
+.detail-head h2{font-size:12px;color:var(--text2);font-weight:600}
+.trust-badge{border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700}
+.detail-body{padding:14px}
+.detail-body h3{font-size:15px;font-weight:700;margin-bottom:4px}
+.detail-body .sum{color:var(--text2);font-size:13px;line-height:1.5;margin-bottom:14px}
+.metrics-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.metric{border-radius:10px;background:var(--surface);border:1px solid var(--border);padding:9px}
+.metric b{display:block;font-size:16px}
+.metric span{font-size:11px;color:var(--text2)}
+.tags-row{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px}
+.tag{display:inline-block;border-radius:5px;padding:2px 7px;font-size:10px;font-weight:600}
+.timeline{display:flex;flex-direction:column;gap:7px;margin-bottom:14px}
+.tl-row{border-radius:8px;background:var(--surface);border:1px solid var(--border);padding:9px}
+.tl-row strong{display:block;font-size:11px;color:var(--text);margin-bottom:2px}
+.tl-row small{color:var(--text2);font-size:11px;line-height:1.45;word-break:break-all}
+.tl-row a{color:var(--blue);cursor:pointer;text-decoration:underline}
+.focus-node{display:block;width:100%;margin:3px 0;text-align:left;background:rgba(255,255,255,.045);border-color:rgba(255,255,255,.10)}
+.file-content{margin-top:8px;border-radius:6px;background:rgba(0,0,0,.3);border:1px solid var(--border);overflow:hidden}
+.file-content .fc-head{display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface);font-size:11px;color:var(--text2)}
+.file-content pre{margin:0;padding:10px;font-size:11px;line-height:1.5;color:var(--text2);overflow-x:auto;max-height:300px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;font-family:'SF Mono',Menlo,Consolas,monospace}
+.callout{border-radius:10px;padding:10px;font-size:12px;line-height:1.5;margin-top:10px}
+.callout-warn{background:rgba(255,143,179,.08);border:1px solid rgba(255,143,179,.18)}
+.callout-info{background:rgba(114,207,255,.08);border:1px solid rgba(114,207,255,.18)}
+
+/* Legend */
+.legend{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2)}
+.legend-dot{width:7px;height:7px;border-radius:50%}
+
+/* Empty state */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:var(--text2);font-size:13px;padding:20px;text-align:center}
+
+/* Loading spinner */
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* React Flow overrides */
+.react-flow__node{font-family:var(--font)}
+.react-flow__minimap{background:var(--bg)!important;border:1px solid var(--border)!important;border-radius:8px!important}
+.react-flow__background{background:var(--bg)!important}
+.zoom-controls{position:absolute;left:12px;bottom:12px;z-index:12;display:flex;flex-direction:column;border:1px solid var(--border);border-radius:10px;overflow:hidden;background:rgba(8,14,29,.88);backdrop-filter:blur(4px)}
+.zoom-control{width:32px;height:30px;border:0;border-bottom:1px solid var(--border);background:var(--surface);color:var(--text);font-size:17px;font-weight:800;cursor:pointer}
+.zoom-control:last-child{border-bottom:0}
+.zoom-control:hover{background:var(--surface2);color:var(--green)}
+
+/* Status bar */
+.status-bar{position:absolute;top:8px;left:8px;z-index:10;display:flex;gap:6px;flex-wrap:wrap}
+.st-badge{border-radius:6px;padding:3px 7px;background:rgba(8,14,29,.88);border:1px solid var(--border);font-size:10px;color:var(--text2);backdrop-filter:blur(4px)}
+.st-badge b{color:var(--text)}
+
+@media(max-width:860px){
+  .topbar-actions{margin-left:0;width:100%;justify-content:flex-start}
+  .ws-input{width:100%;max-width:360px}
+  .main{flex-direction:column}
+  .flow-panel{min-height:55vh}
+  .detail-panel{max-width:none;min-width:0;border-left:none;border-top:1px solid var(--border)}
+  .modal-backdrop{align-items:flex-start;justify-content:center;padding:48px 12px 12px}
+  .help-section dl{grid-template-columns:78px 1fr}
+}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script type="module">
+(async () => {
+document.getElementById('app').textContent = 'Module loading...';
+const [React, ReactDOM, xyflowMod, dagreMod] = await Promise.all([
+  import('https://esm.sh/react@18.3.1'),
+  import('https://esm.sh/react-dom@18.3.1/client?deps=react@18.3.1'),
+  import('https://esm.sh/@xyflow/react@12.10.2?bundle&deps=react@18.3.1,react-dom@18.3.1'),
+  import('https://esm.sh/dagre@0.8.5?bundle'),
+]);
+const { createElement, useState, useEffect, useCallback, useMemo, useRef, StrictMode } = React;
+const { createRoot } = ReactDOM;
+const { ReactFlow, Background, MiniMap, Handle, Position, useNodesState, useEdgesState } = xyflowMod;
+const dagre = dagreMod.default;
+const h = createElement;
+
+// ── Config ──────────────────────────────────────────────────────
+const TYPE_COLORS = {
+  project: '#5bffc5', 'workspace-memory': '#8fffb0', session: '#72cfff',
+  checkpoint: '#ffd479', event: '#ad89ff', continuity: '#ff9f6b',
+  handoff: '#ff8fb3', ref: '#ad89ff',
+};
+const TYPE_LABELS = {
+  en: {
+    project: 'Project', 'workspace-memory': 'WM', session: 'Session',
+    checkpoint: 'CP', event: 'Event', continuity: 'Cont', handoff: 'Handoff', ref: 'Ref',
+  },
+  zh: {
+    project: '项目', 'workspace-memory': '记忆', session: '会话',
+    checkpoint: 'CP', event: '事件', continuity: '连续性', handoff: '交接', ref: 'Ref',
+  },
+};
+const I18N = {
+  en: {
+    load: 'Load',
+    loading: 'Loading...',
+    close: 'Close',
+    retry: 'Retry',
+    error: 'Error',
+    workspacePlaceholder: 'Workspace path (e.g. /Users/me/project)',
+    projectPlaceholder: 'Project name',
+    searchPlaceholder: 'Search...',
+    layoutLabel: 'Layout',
+    filterLabel: 'Filter',
+    relationship: 'Relationship',
+    timeline: 'Timeline',
+    all: 'All',
+    session: 'Sessions',
+    checkpoint: 'Checkpoints',
+    event: 'Events',
+    risk: 'Risks',
+    tips: 'Tips',
+    selected: 'Selected',
+    selectNode: 'Select a node in the galaxy to inspect',
+    parents: 'Parents',
+    children: 'Children',
+    evidenceRefs: 'Evidence refs',
+    sourcePath: 'Source path',
+    sessionId: 'Session',
+    timestamp: 'Timestamp',
+    summary: 'Summary',
+    metricChildren: 'children',
+    metricRefs: 'refs',
+    metricTrust: 'trust',
+    metricRisk: 'risk',
+    failedCallout: 'Verification failed or error detected for this node.',
+    blockedCallout: 'This session is blocked and needs intervention.',
+    emptyPrompt: 'Enter a workspace path and click Load to view the memory genealogy.',
+    recentWorkspaces: 'Recent workspaces:',
+    projectBadge: 'Project',
+    nodesBadge: 'Nodes',
+    sessionsBadge: 'Sessions',
+    cpsBadge: 'CPs',
+    risksBadge: 'Risks',
+    zoomControls: 'Zoom controls',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    helpTitle: 'Memory Galaxy Tips',
+    helpSubtitle: 'Use this view to explore how sessions, checkpoints, events, risks, and source files connect.',
+    filtersTitle: 'Toolbar filters',
+    filterAllTerm: 'All',
+    filterAllDef: 'All visible memory nodes in the current graph.',
+    filterSessionsTerm: 'Sessions',
+    filterSessionsDef: 'Agent runs or work sessions under the selected project.',
+    filterCheckpointsTerm: 'Checkpoints',
+    filterCheckpointsDef: 'Saved state snapshots, usually the best place to understand progress and next actions.',
+    filterEventsTerm: 'Events',
+    filterEventsDef: 'Recent raw conversation/tool events when the graph includes event nodes.',
+    filterRisksTerm: 'Risks',
+    filterRisksDef: 'Only nodes marked failed, blocked, or missing evidence.',
+    filterSearchTerm: 'Search',
+    filterSearchDef: 'Searches node title, summary, type, and id inside the current filter.',
+    layoutHelpTitle: 'Layout modes',
+    relationshipTerm: 'Relationship',
+    relationshipDef: 'Default relationship-first clustered map: sessions orbit the project and related CP/Event/Ref nodes cluster around each session.',
+    timelineTerm: 'Timeline',
+    timelineDef: 'Legacy left-to-right hierarchy for reading parent-to-child progression.',
+    glossaryTitle: 'Node glossary',
+    cpTerm: 'CP = Checkpoint',
+    cpDef: 'A compact saved state: status, summary, next actions, artifacts, trust, and verification signal.',
+    refTerm: 'Ref = Evidence reference',
+    refDef: 'A file or artifact path cited by a checkpoint/event. Click it in the detail panel to inspect content.',
+    trustTerm: 'Trust',
+    trustDef: 'Confidence derived from status and verification metadata; lower trust means review the evidence.',
+    riskTerm: 'Risk',
+    riskDef: 'Blocked/failed/missing-evidence markers that need attention.',
+    interactionsTitle: 'Interactions',
+    interactionsDef: 'Scroll to zoom, drag the canvas to pan, click a node for details, click parent/child buttons to jump.',
+  },
+  zh: {
+    load: '加载',
+    loading: '加载中...',
+    close: '关闭',
+    retry: '重试',
+    error: '错误',
+    workspacePlaceholder: '工作区路径（如 /Users/me/project）',
+    projectPlaceholder: '项目名',
+    searchPlaceholder: '搜索...',
+    layoutLabel: '布局',
+    filterLabel: '筛选',
+    relationship: '关系',
+    timeline: '时间线',
+    all: '全部',
+    session: '会话',
+    checkpoint: '检查点',
+    event: '事件',
+    risk: '风险',
+    tips: '帮助',
+    selected: '当前选择',
+    selectNode: '选择一个节点查看关系和内容',
+    parents: '上游',
+    children: '下游',
+    evidenceRefs: '证据引用',
+    sourcePath: '来源路径',
+    sessionId: '会话',
+    timestamp: '时间',
+    summary: '摘要',
+    metricChildren: '下游',
+    metricRefs: '引用',
+    metricTrust: '可信度',
+    metricRisk: '风险',
+    failedCallout: '该节点有验证失败或错误信号。',
+    blockedCallout: '该会话已阻塞，需要人工处理。',
+    emptyPrompt: '输入工作区路径并点击加载，查看记忆关系图。',
+    recentWorkspaces: '最近工作区：',
+    projectBadge: '项目',
+    nodesBadge: '节点',
+    sessionsBadge: '会话',
+    cpsBadge: 'CP',
+    risksBadge: '风险',
+    zoomControls: '缩放控制',
+    zoomIn: '放大',
+    zoomOut: '缩小',
+    helpTitle: 'Memory Galaxy 使用提示',
+    helpSubtitle: '用这个视图查看会话、检查点、事件、风险和源文件之间的关系。',
+    filtersTitle: '工具栏筛选',
+    filterAllTerm: '全部',
+    filterAllDef: '全部可见记忆节点。',
+    filterSessionsTerm: '会话',
+    filterSessionsDef: '当前项目下的一次 agent 运行或工作会话。',
+    filterCheckpointsTerm: '检查点',
+    filterCheckpointsDef: '保存的状态快照，通常最适合用来理解进度和下一步。',
+    filterEventsTerm: '事件',
+    filterEventsDef: '图中包含事件时展示最近的原始对话/工具事件。',
+    filterRisksTerm: '风险',
+    filterRisksDef: '只显示 failed、blocked、missing-evidence 等需要关注的节点。',
+    filterSearchTerm: '搜索',
+    filterSearchDef: '在当前筛选范围内搜索节点标题、摘要、类型和 id。',
+    layoutHelpTitle: '布局模式',
+    relationshipTerm: '关系',
+    relationshipDef: '默认的关系优先聚类图：会话围绕项目分布，相关 CP/Event/Ref 节点聚合在对应会话附近。',
+    timelineTerm: '时间线',
+    timelineDef: '保留的从左到右层级布局，适合按父子进展阅读。',
+    glossaryTitle: '节点术语',
+    cpTerm: 'CP = 检查点',
+    cpDef: '压缩保存的状态：状态、摘要、下一步、产物、可信度和验证信号。',
+    refTerm: 'Ref = 证据引用',
+    refDef: '检查点/事件引用的文件或产物路径，可在详情面板点击查看内容。',
+    trustTerm: 'Trust',
+    trustDef: '根据状态和验证元数据推导出的可信度；越低越需要核对证据。',
+    riskTerm: 'Risk',
+    riskDef: 'blocked/failed/missing-evidence 等需要注意的风险标记。',
+    interactionsTitle: '交互',
+    interactionsDef: '滚轮缩放，拖动画布平移，点击节点看详情，点击上游/下游按钮跳转。',
+  },
+};
+const STORAGE_KEY = 'memory-galaxy-workspaces';
+const LANG_STORAGE_KEY = 'memory-galaxy-language';
+const API = window.location.origin;
+const SERVER_CONFIG = window.__MEMORY_GALAXY_CONFIG__ || {};
+const DEFAULT_WORKSPACE = String(SERVER_CONFIG.workspaceRoot || '').trim();
+const DEFAULT_PROJECT = String(SERVER_CONFIG.project || '').trim();
+
+function loadWorkspaces() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
+}
+function saveWorkspace(ws) {
+  const list = loadWorkspaces().filter(w => w !== ws);
+  list.unshift(ws);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(list.slice(0, 10)));
+}
+function detectLanguage() {
+  const stored = localStorage.getItem(LANG_STORAGE_KEY);
+  if (stored === 'en' || stored === 'zh') return stored;
+  return navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en';
+}
+function labelForType(type, lang) {
+  return TYPE_LABELS[lang]?.[type] || TYPE_LABELS.en[type] || type;
+}
+function pickText(lang) {
+  return I18N[lang] || I18N.en;
+}
+
+function dispatchCanvasWheelZoom(deltaY) {
+  const pane = document.querySelector('.react-flow__pane');
+  if (!pane) return;
+  const rect = pane.getBoundingClientRect();
+  pane.dispatchEvent(new WheelEvent('wheel', {
+    bubbles: true,
+    cancelable: true,
+    deltaY,
+    deltaMode: 0,
+    clientX: rect.left + rect.width / 2,
+    clientY: rect.top + rect.height / 2,
+  }));
+}
+
+// ── Layouts ─────────────────────────────────────────────────────
+function layoutTimelineGraph(nodes, edges) {
+  const g = new dagre.graphlib.Graph();
+  g.setDefaultEdgeLabel(() => ({}));
+  g.setGraph({ rankdir: 'LR', nodesep: 60, ranksep: 140, marginx: 40, marginy: 40 });
+
+  for (const n of nodes) {
+    const w = Math.max(120, (n.data?.label || '').length * 7 + 40);
+    g.setNode(n.id, { width: w, height: 50 });
+  }
+  for (const e of edges) {
+    g.setEdge(e.source, e.target);
+  }
+
+  dagre.layout(g);
+
+  const positioned = nodes.map(n => {
+    const pos = g.node(n.id);
+    if (!pos) return n;
+    return { ...n, position: { x: pos.x - pos.width / 2, y: pos.y - pos.height / 2 } };
+  });
+
+  const rootNode = positioned.find(n => n.data?.nodeType === 'project');
+  if (!rootNode) return positioned;
+
+  // Keep the project root visible on first paint; users can pan to deeper branches.
+  const rootOffset = {
+    x: 40 - rootNode.position.x,
+    y: 80 - rootNode.position.y,
+  };
+  return positioned.map(n => ({
+    ...n,
+    position: { x: n.position.x + rootOffset.x, y: n.position.y + rootOffset.y },
+  }));
+}
+
+function sessionKeyForNode(node, nodeById, incomingEdges) {
+  if (node.data?.nodeType === 'session') return node.data?.sessionId || node.id.replace(/^session:/, '');
+  if (node.data?.sessionId) return node.data.sessionId;
+  const parentEdge = incomingEdges.get(node.id)?.[0];
+  if (!parentEdge) return '__root';
+  const parent = nodeById.get(parentEdge.source);
+  if (!parent || parent.id === node.id) return '__root';
+  return sessionKeyForNode(parent, nodeById, incomingEdges);
+}
+
+function layoutRelationshipGraph(nodes, edges) {
+  // relationship-first clustered map: project in the center, sessions on orbits,
+  // and related CP/Event/Ref nodes clustered around the owning session.
+  const nodeById = new Map(nodes.map(n => [n.id, n]));
+  const incomingEdges = new Map();
+  for (const edge of edges) {
+    const list = incomingEdges.get(edge.target) || [];
+    list.push(edge);
+    incomingEdges.set(edge.target, list);
+  }
+
+  const positioned = new Map();
+  const root = nodes.find(n => n.data?.nodeType === 'project') || nodes[0];
+  const workspaceNodes = nodes.filter(n => n.data?.nodeType === 'workspace-memory');
+  const sessions = nodes.filter(n => n.data?.nodeType === 'session');
+  const sessionKeys = sessions.map(n => n.data?.sessionId || n.id.replace(/^session:/, ''));
+
+  if (root) positioned.set(root.id, { x: 420, y: 300 });
+  workspaceNodes.forEach((node, index) => {
+    positioned.set(node.id, { x: 420 + (index * 150), y: 160 });
+  });
+
+  const sessionPositions = new Map();
+  const totalSessions = Math.max(1, sessions.length);
+  sessions.forEach((node, index) => {
+    const ring = Math.floor(index / 8);
+    const ringStart = ring * 8;
+    const ringCount = Math.min(8, totalSessions - ringStart);
+    const angle = (-Math.PI / 2) + ((index - ringStart) * Math.PI * 2 / Math.max(1, ringCount)) + ring * 0.22;
+    const radiusX = 340 + ring * 300;
+    const radiusY = 230 + ring * 210;
+    const pos = {
+      x: 420 + Math.cos(angle) * radiusX,
+      y: 300 + Math.sin(angle) * radiusY,
+    };
+    positioned.set(node.id, pos);
+    sessionPositions.set(node.data?.sessionId || node.id.replace(/^session:/, ''), pos);
+  });
+
+  const clusterBuckets = new Map();
+  for (const node of nodes) {
+    if (positioned.has(node.id)) continue;
+    const key = sessionKeyForNode(node, nodeById, incomingEdges);
+    const bucket = clusterBuckets.get(key) || [];
+    bucket.push(node);
+    clusterBuckets.set(key, bucket);
+  }
+
+  const typeWeight = { checkpoint: 0, event: 1, continuity: 2, handoff: 2, ref: 3 };
+  for (const [key, bucket] of clusterBuckets.entries()) {
+    const anchor = sessionPositions.get(key) || (root ? positioned.get(root.id) : { x: 420, y: 300 });
+    const sorted = bucket.sort((a, b) =>
+      (typeWeight[a.data?.nodeType] ?? 4) - (typeWeight[b.data?.nodeType] ?? 4) ||
+      String(a.data?.ts || a.id).localeCompare(String(b.data?.ts || b.id))
+    );
+    sorted.forEach((node, index) => {
+      const angle = index * 2.399963229728653 + (node.data?.nodeType === 'ref' ? 0.42 : 0);
+      const base = node.data?.nodeType === 'ref' ? 160 : node.data?.nodeType === 'checkpoint' ? 96 : 118;
+      const radius = base + Math.sqrt(index) * 42;
+      positioned.set(node.id, {
+        x: anchor.x + Math.cos(angle) * radius,
+        y: anchor.y + Math.sin(angle) * radius,
+      });
+    });
+  }
+
+  return nodes.map(node => ({
+    ...node,
+    position: positioned.get(node.id) || { x: 420, y: 300 },
+  }));
+}
+
+function layoutNodes(nodes, edges, layoutMode) {
+  return layoutMode === 'timeline'
+    ? layoutTimelineGraph(nodes, edges)
+    : layoutRelationshipGraph(nodes, edges);
+}
+
+// ── Custom Node ─────────────────────────────────────────────────
+function GenealogyNode({ data }) {
+  const { label, nodeType, risk, trust, isSelected } = data;
+  const lang = data.lang || 'en';
+  const color = TYPE_COLORS[nodeType] || '#888';
+  const size = nodeType === 'project' ? 36 : nodeType === 'session' ? 28 : nodeType === 'checkpoint' ? 22 : nodeType === 'event' ? 16 : 18;
+  const trustPct = Math.round((trust || 0.5) * 100);
+  const hasRisk = risk && risk !== 'none';
+
+  return h('div', {
+    style: {
+      background: isSelected ? color : `color-mix(in srgb, ${color} 85%, #080e1d)`,
+      color: isSelected ? '#080e1d' : '#fff',
+      borderRadius: 12,
+      padding: '6px 12px',
+      border: `2px solid ${isSelected ? '#fff' : hasRisk ? TYPE_COLORS.handoff : color}44`,
+      fontSize: 11,
+      fontWeight: 700,
+      textAlign: 'center',
+      minWidth: 80,
+      maxWidth: 180,
+      boxShadow: isSelected ? `0 0 16px ${color}66` : '0 2px 8px rgba(0,0,0,.4)',
+      transition: 'all .15s',
+      cursor: 'pointer',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+    }
+  },
+    h('div', { style: { fontSize: 9, opacity: .7, marginBottom: 1 } }, labelForType(nodeType, lang)),
+    label || nodeType,
+    hasRisk && h('span', { style: { marginLeft: 4, fontSize: 10 } }, risk === 'failed' ? '✕' : risk === 'blocked' ? '!' : '?'),
+    h(Handle, { type: 'target', position: Position.Left, style: { background: color, width: 8, height: 8, border: 'none' } }),
+    h(Handle, { type: 'source', position: Position.Right, style: { background: color, width: 8, height: 8, border: 'none' } }),
+  );
+}
+
+const nodeTypes = { genealogyNode: GenealogyNode };
+
+// ── Detail Panel ────────────────────────────────────────────────
+function DetailPanel({ node, graph, workspace, onViewFile, onSelectNode, t, lang }) {
+  if (!node) return h('div', { className: 'empty-state' },
+    h('div', null, t.selectNode),
+  );
+
+  const data = node.data;
+  const color = TYPE_COLORS[data.nodeType] || '#888';
+  const trustPct = Math.round((data.trust || 0.5) * 100);
+  const trustColor = trustPct >= 80 ? 'var(--green)' : trustPct >= 50 ? 'var(--yellow)' : 'var(--pink)';
+
+  // Find connections
+  const childEdges = (graph?.edges || []).filter(e => e.source === node.id);
+  const parentEdges = (graph?.edges || []).filter(e => e.target === node.id);
+  const children = childEdges.map(e => graph?.nodes?.find(n => n.id === e.target)).filter(Boolean);
+  const parents = parentEdges.map(e => graph?.nodes?.find(n => n.id === e.source)).filter(Boolean);
+  const rawNodeType = item => item.data?.nodeType || item.type;
+  const rawNodeLabel = item => item.data?.label || item.label || item.id;
+
+  const tags = [
+    h('span', { className: 'tag', key: 'type', style: { background: color + '22', color } }, labelForType(data.nodeType, lang)),
+    data.status && h('span', { className: 'tag', key: 'st', style: { background: 'var(--blue)', color: '#080e1d' } }, data.status),
+    data.risk !== 'none' && h('span', { className: 'tag', key: 'rk', style: { background: 'rgba(255,143,179,.18)', color: 'var(--pink)' } }, data.risk),
+    data.agent && h('span', { className: 'tag', key: 'ag', style: { background: 'rgba(173,137,255,.15)', color: 'var(--purple)' } }, data.agent),
+  ].filter(Boolean);
+
+  const tlRows = [
+    parents.length > 0 && h('div', { className: 'tl-row', key: 'par' },
+      h('strong', null, `${t.parents} (${parents.length})`),
+      h('small', null, parents.slice(0, 4).map(p =>
+        h('button', { key: p.id, className: 'btn-sm focus-node', onClick: () => onSelectNode(p.id), style: { color: TYPE_COLORS[rawNodeType(p)] || '#888' } }, rawNodeLabel(p).slice(0, 50))
+      )),
+    ),
+    children.length > 0 && h('div', { className: 'tl-row', key: 'ch' },
+      h('strong', null, `${t.children} (${children.length})`),
+      h('small', null, children.slice(0, 4).map(c =>
+        h('button', { key: c.id, className: 'btn-sm focus-node', onClick: () => onSelectNode(c.id), style: { color: TYPE_COLORS[rawNodeType(c)] || '#888' } }, rawNodeLabel(c).slice(0, 50))
+      )),
+    ),
+    (data.refs || []).length > 0 && h('div', { className: 'tl-row', key: 'refs' },
+      h('strong', null, `${t.evidenceRefs} (${data.refs.length})`),
+      h('small', null, (data.refs || []).slice(0, 8).map(ref =>
+        h('span', { key: ref, style: { display: 'block', margin: '2px 0' } },
+          h('a', { onClick: () => onViewFile(ref), title: t.refDef }, ref)
+        )
+      )),
+    ),
+    data.sourcePath && h('div', { className: 'tl-row', key: 'src' },
+      h('strong', null, t.sourcePath),
+      h('small', null, h('a', { onClick: () => onViewFile(data.sourcePath) }, data.sourcePath)),
+    ),
+    data.sessionId && h('div', { className: 'tl-row', key: 'sid' }, h('strong', null, t.sessionId), h('small', null, data.sessionId)),
+    data.ts && h('div', { className: 'tl-row', key: 'ts' }, h('strong', null, t.timestamp), h('small', null, (data.ts || '').slice(0, 19).replace('T', ' '))),
+    data.summary && h('div', { className: 'tl-row', key: 'sum' }, h('strong', null, t.summary), h('small', null, data.summary)),
+  ].filter(Boolean);
+
+  return h('div', null,
+    h('div', { className: 'detail-head' },
+      h('h2', null, t.selected, ': ', h('span', { style: { color } }, labelForType(data.nodeType, lang))),
+      h('span', { className: 'trust-badge', style: { background: trustColor + '22', color: trustColor, border: `1px solid ${trustColor}44` } }, trustPct + '%'),
+    ),
+    h('div', { className: 'detail-body' },
+      h('h3', null, (data.label || node.id).slice(0, 60)),
+      h('div', { className: 'tags-row' }, tags),
+      h('div', { className: 'metrics-grid' },
+        h('div', { className: 'metric' }, h('b', null, children.length), h('span', null, t.metricChildren)),
+        h('div', { className: 'metric' }, h('b', null, (data.refs || []).length), h('span', null, t.metricRefs)),
+        h('div', { className: 'metric' }, h('b', null, trustPct + '%'), h('span', null, t.metricTrust)),
+        h('div', { className: 'metric' }, h('b', { style: { color: data.risk !== 'none' ? 'var(--pink)' : 'inherit' } }, data.risk), h('span', null, t.metricRisk)),
+      ),
+      tlRows.length > 0 && h('div', { className: 'timeline' }, tlRows),
+      data.risk === 'failed' && h('div', { className: 'callout callout-warn' }, t.failedCallout),
+      data.risk === 'blocked' && h('div', { className: 'callout callout-warn' }, t.blockedCallout),
+      h('div', { className: 'legend' },
+        h('span', { className: 'legend-item' }, h('span', { className: 'legend-dot', style: { background: 'var(--green)' } }), labelForType('project', lang)),
+        h('span', { className: 'legend-item' }, h('span', { className: 'legend-dot', style: { background: 'var(--blue)' } }), labelForType('session', lang)),
+        h('span', { className: 'legend-item' }, h('span', { className: 'legend-dot', style: { background: 'var(--yellow)' } }), labelForType('checkpoint', lang)),
+        h('span', { className: 'legend-item' }, h('span', { className: 'legend-dot', style: { background: 'var(--purple)' } }), `${labelForType('event', lang)}/${labelForType('ref', lang)}`),
+        h('span', { className: 'legend-item' }, h('span', { className: 'legend-dot', style: { background: 'var(--pink)' } }), labelForType('handoff', lang)),
+      ),
+    ),
+  );
+}
+
+function HelpModal({ t, lang, onClose, onSwitchLanguage }) {
+  const filters = [
+    [t.filterAllTerm, t.filterAllDef],
+    [t.filterSessionsTerm, t.filterSessionsDef],
+    [t.filterCheckpointsTerm, t.filterCheckpointsDef],
+    [t.filterEventsTerm, t.filterEventsDef],
+    [t.filterRisksTerm, t.filterRisksDef],
+    [t.filterSearchTerm, t.filterSearchDef],
+  ];
+  const layouts = [
+    [t.relationshipTerm, t.relationshipDef],
+    [t.timelineTerm, t.timelineDef],
+  ];
+  const glossary = [
+    [t.cpTerm, t.cpDef],
+    [t.refTerm, t.refDef],
+    [t.trustTerm, t.trustDef],
+    [t.riskTerm, t.riskDef],
+  ];
+
+  return h('div', { className: 'modal-backdrop', role: 'presentation', onClick: onClose },
+    h('div', { className: 'help-card', role: 'dialog', 'aria-modal': 'true', 'aria-label': t.helpTitle, onClick: ev => ev.stopPropagation() },
+      h('div', { className: 'help-head' },
+        h('div', null, h('h2', null, t.helpTitle), h('p', null, t.helpSubtitle)),
+        h('div', { style: { display: 'flex', gap: 6, alignItems: 'center' } },
+          h('button', { className: 'text-btn', onClick: onSwitchLanguage, title: lang === 'zh' ? 'Switch to English' : '切换到中文' }, lang === 'zh' ? 'EN' : '中文'),
+          h('button', { className: 'icon-btn', onClick: onClose, title: t.close, 'aria-label': t.close }, '×'),
+        ),
+      ),
+      h('div', { className: 'help-section' },
+        h('h3', null, t.filtersTitle),
+        h('dl', null, filters.flatMap(([term, desc]) => [h('dt', { key: term + '-dt' }, term), h('dd', { key: term + '-dd' }, desc)])),
+      ),
+      h('div', { className: 'help-section' },
+        h('h3', null, t.layoutHelpTitle),
+        h('dl', null, layouts.flatMap(([term, desc]) => [h('dt', { key: term + '-dt' }, term), h('dd', { key: term + '-dd' }, desc)])),
+      ),
+      h('div', { className: 'help-section' },
+        h('h3', null, t.glossaryTitle),
+        h('dl', null, glossary.flatMap(([term, desc]) => [h('dt', { key: term + '-dt' }, term), h('dd', { key: term + '-dd' }, desc)])),
+      ),
+      h('div', { className: 'help-section' },
+        h('h3', null, t.interactionsTitle),
+        h('p', { style: { fontSize: 11, lineHeight: 1.45, color: 'var(--text2)' } }, t.interactionsDef),
+      ),
+    ),
+  );
+}
+
+// ── App ─────────────────────────────────────────────────────────
+function App() {
+  const [workspace, setWorkspace] = useState(() => DEFAULT_WORKSPACE || loadWorkspaces()[0] || '');
+  const [project, setProject] = useState(() => DEFAULT_PROJECT || 'workspace');
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [graphData, setGraphData] = useState(null);
+  const [selNodeId, setSelNodeId] = useState(null);
+  const [lang, setLang] = useState(detectLanguage);
+  const [layoutMode, setLayoutMode] = useState('relationship');
+  const [showTips, setShowTips] = useState(false);
+  const t = pickText(lang);
+
+  const [rfNodes, setRfNodes, onNodesChange] = useNodesState([]);
+  const [rfEdges, setRfEdges, onEdgesChange] = useEdgesState([]);
+  const rfInstance = useRef(null);
+
+  const [fileViewer, setFileViewer] = useState({ path: '', content: '', loading: false, error: '' });
+
+  const selectedRfNode = useMemo(() => rfNodes.find(n => n.id === selNodeId), [rfNodes, selNodeId]);
+
+  useEffect(() => {
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+  }, [lang]);
+
+  // Load graph data
+  const loadGraph = useCallback(async (ws, proj) => {
+    setIsLoading(true);
+    setError('');
+    setSelNodeId(null);
+    try {
+      const params = new URLSearchParams({ limit: '40' });
+      if (proj) params.set('project', proj);
+      if (ws) params.set('workspace', ws);
+      const resp = await fetch(`${API}/api/genealogy?${params}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const graph = await resp.json();
+      setGraphData(graph);
+      if (ws) saveWorkspace(ws);
+    } catch (e) {
+      setError(e.message);
+      setGraphData(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Convert graph to React Flow nodes/edges
+  useEffect(() => {
+    if (!graphData) { setRfNodes([]); setRfEdges([]); return; }
+
+    let visibleNodes = graphData.nodes || [];
+    let visibleIds = new Set(visibleNodes.map(n => n.id));
+
+    // Filter
+    if (filter !== 'all') {
+      if (filter === 'risk') visibleNodes = visibleNodes.filter(n => n.risk !== 'none');
+      else visibleNodes = visibleNodes.filter(n => n.type === filter);
+      visibleIds = new Set(visibleNodes.map(n => n.id));
+    }
+
+    // Search
+    if (search) {
+      const q = search.toLowerCase();
+      const matching = visibleNodes.filter(n =>
+        (n.label || '').toLowerCase().includes(q) ||
+        (n.summary || '').toLowerCase().includes(q) ||
+        n.type.toLowerCase().includes(q) ||
+        n.id.toLowerCase().includes(q)
+      );
+      visibleNodes = matching;
+      visibleIds = new Set(visibleNodes.map(n => n.id));
+    }
+
+    const nf = visibleNodes.map(n => {
+      const trust = typeof n.trust === 'number' ? n.trust : 0.5;
+      return {
+        id: n.id,
+        type: 'genealogyNode',
+        position: { x: 0, y: 0 },
+        data: {
+          label: n.label || n.id,
+          nodeType: n.type,
+          risk: n.risk || 'none',
+          trust,
+          status: n.status,
+          agent: n.agent,
+          summary: n.summary,
+          refs: n.refs || [],
+          sourcePath: n.sourcePath,
+          sessionId: n.sessionId,
+          ts: n.ts,
+          lang,
+          isSelected: n.id === selNodeId,
+        },
+      };
+    });
+
+    const ef = (graphData.edges || [])
+      .filter(e => visibleIds.has(e.source) && visibleIds.has(e.target))
+      .map(e => ({
+        id: `${e.source}->${e.target}:${e.type}`,
+        source: e.source,
+        target: e.target,
+        type: layoutMode === 'relationship' ? 'default' : 'smoothstep',
+        animated: e.type === 'risk',
+        style: {
+          stroke: e.type === 'risk' ? TYPE_COLORS.handoff : e.type === 'references' ? TYPE_COLORS.ref : 'rgba(255,255,255,0.2)',
+          strokeWidth: e.type === 'contains' ? 2 : 1.5,
+          opacity: e.type === 'risk' ? 0.7 : 0.35,
+        },
+        label: e.type === 'risk' ? '⚠' : undefined,
+        labelStyle: { fontSize: 10, fill: TYPE_COLORS.handoff },
+      }));
+
+    setRfNodes(layoutNodes(nf, ef, layoutMode));
+    setRfEdges(ef);
+  }, [graphData, filter, search, selNodeId, lang, layoutMode]);
+
+  // Mark selected node
+  useEffect(() => {
+    setRfNodes(prev => prev.map(n => ({
+      ...n,
+      data: { ...n.data, isSelected: n.id === selNodeId },
+    })));
+  }, [selNodeId, setRfNodes]);
+
+  // Auto-load on mount
+  useEffect(() => {
+    const defaultWs = DEFAULT_WORKSPACE || loadWorkspaces()[0] || '';
+    const defaultProject = DEFAULT_PROJECT || project;
+    loadGraph(defaultWs, defaultProject);
+    if (defaultWs) setWorkspace(defaultWs);
+    if (defaultProject) setProject(defaultProject);
+  }, []);
+
+  // File viewer
+  const viewFile = useCallback(async (relPath) => {
+    setFileViewer({ path: relPath, content: '', loading: true, error: '' });
+    try {
+      const params = new URLSearchParams({ file: relPath });
+      if (workspace) params.set('workspace', workspace);
+      if (project) params.set('project', project);
+      const resp = await fetch(`${API}/api/file?${params}`);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text = await resp.text();
+      setFileViewer({ path: relPath, content: text, loading: false, error: '' });
+    } catch (e) {
+      setFileViewer({ path: relPath, content: '', loading: false, error: e.message });
+    }
+  }, [workspace, project]);
+
+  const focusNode = useCallback((nodeId) => {
+    setSelNodeId(nodeId);
+    setFileViewer({ path: '', content: '', loading: false, error: '' });
+    window.requestAnimationFrame(() => {
+      const instance = rfInstance.current;
+      if (instance?.fitView) {
+        instance.fitView({ nodes: [{ id: nodeId }], padding: 0.42 });
+      }
+    });
+  }, []);
+
+  const onNodeClick = useCallback((ev, node) => {
+    focusNode(node.id);
+  }, [focusNode]);
+
+  const onPaneClick = useCallback(() => {
+    setSelNodeId(null);
+    setFileViewer({ path: '', content: '', loading: false, error: '' });
+  }, []);
+
+  const switchLanguage = useCallback(() => {
+    const nextLang = lang === 'zh' ? 'en' : 'zh';
+    localStorage.setItem(LANG_STORAGE_KEY, nextLang);
+    setLang(nextLang);
+  }, [lang]);
+
+  const summary = graphData?.summary;
+
+  return h('div', { style: { display: 'flex', flexDirection: 'column', height: '100vh' } },
+    // ── Top bar ──
+    h('div', { className: 'topbar' },
+      h('h1', null, h('span', null, 'Memory Galaxy'), ' · ContextDB'),
+      h('input', {
+        className: 'ws-input', type: 'text', placeholder: t.workspacePlaceholder,
+        value: workspace, onInput: e => setWorkspace(e.target.value),
+        onKeyDown: e => { if (e.key === 'Enter') loadGraph(workspace, project); },
+      }),
+      h('input', {
+        className: 'ws-input', type: 'text', placeholder: t.projectPlaceholder,
+        value: project, onInput: e => setProject(e.target.value),
+        style: { width: 120 },
+      }),
+      h('button', { className: 'btn', onClick: () => loadGraph(workspace, project), disabled: isLoading },
+        isLoading ? h('span', { className: 'spin' }) : t.load
+      ),
+      h('span', { className: 'seg-label' }, t.layoutLabel),
+      h('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+        ['relationship', 'timeline'].map(mode =>
+          h('span', {
+            key: mode,
+            className: 'chip' + (layoutMode === mode ? ' active' : ''),
+            onClick: () => setLayoutMode(mode),
+            title: mode === 'relationship' ? t.relationshipDef : t.timelineDef,
+          }, mode === 'relationship' ? t.relationship : t.timeline)
+        ),
+      ),
+      h('span', { className: 'seg-label' }, t.filterLabel),
+      h('div', { style: { display: 'flex', gap: 4, flexWrap: 'wrap' } },
+        ['all', 'session', 'checkpoint', 'event', 'risk'].map(f =>
+          h('span', { key: f, className: 'chip' + (filter === f ? ' active' : ''), onClick: () => setFilter(f) }, t[f])
+        ),
+      ),
+      h('input', { className: 'search-inp', type: 'text', placeholder: t.searchPlaceholder, value: search, onInput: e => setSearch(e.target.value) }),
+      h('div', { className: 'topbar-actions' },
+        h('button', { className: 'text-btn', onClick: switchLanguage, title: lang === 'zh' ? 'Switch to English' : '切换到中文' }, lang === 'zh' ? 'EN' : '中文'),
+        h('button', { className: 'icon-btn', onClick: () => setShowTips(true), title: t.tips, 'aria-label': t.tips }, '?'),
+      ),
+    ),
+
+    // ── Main ──
+    h('div', { className: 'main' },
+      // Flow panel
+      h('div', { className: 'flow-panel' },
+        error && h('div', { className: 'empty-state', style: { position: 'absolute', inset: 0, zIndex: 20, background: 'var(--bg)' } },
+          h('div', null, t.error, ': ', error),
+          h('button', { className: 'btn', onClick: () => loadGraph(workspace, project) }, t.retry),
+        ),
+        !error && !graphData && !isLoading && h('div', { className: 'empty-state', style: { position: 'absolute', inset: 0, zIndex: 20, background: 'var(--bg)' } },
+          h('div', null, t.emptyPrompt),
+          loadWorkspaces().length > 0 && h('div', { style: { marginTop: 8 } },
+            h('div', { style: { marginBottom: 6, color: 'var(--text2)', fontSize: 11 } }, t.recentWorkspaces),
+            loadWorkspaces().slice(0, 5).map(w =>
+              h('div', {
+                key: w, className: 'btn-sm', style: { margin: '2px 4px', cursor: 'pointer' },
+                onClick: () => { setWorkspace(w); loadGraph(w, project); },
+              }, w)
+            ),
+          ),
+        ),
+        summary && h('div', { className: 'status-bar' },
+          h('span', { className: 'st-badge' }, t.projectBadge, ' ', h('b', null, graphData.project)),
+          h('span', { className: 'st-badge' }, t.nodesBadge, ' ', h('b', null, summary.nodes)),
+          h('span', { className: 'st-badge' }, t.sessionsBadge, ' ', h('b', null, summary.sessions)),
+          h('span', { className: 'st-badge' }, t.cpsBadge, ' ', h('b', null, summary.checkpoints)),
+          h('span', { className: 'st-badge' }, t.risksBadge, ' ', h('b', { style: { color: 'var(--pink)' } },
+            Object.entries(summary.risks || {}).filter(([,v]) => v > 0).filter(([k]) => k !== 'none').reduce((a, [,v]) => a + v, 0)
+          )),
+        ),
+        h(ReactFlow, {
+          nodes: rfNodes, edges: rfEdges, nodeTypes,
+          onNodesChange, onEdgesChange,
+          onNodeClick, onPaneClick,
+          onInit: instance => { rfInstance.current = instance; },
+          nodesDraggable: false, nodesConnectable: false, elementsSelectable: true,
+          panOnScroll: false, zoomOnScroll: true, zoomOnPinch: true,
+          fitView: true, fitViewOptions: { padding: 0.3 },
+          minZoom: 0.1, maxZoom: 2,
+          defaultEdgeOptions: { type: layoutMode === 'relationship' ? 'default' : 'smoothstep' },
+          proOptions: { hideAttribution: true },
+          style: { background: 'var(--bg)' },
+        },
+          h(Background, { color: 'rgba(255,255,255,0.04)', gap: 24 }),
+          h(MiniMap, {
+            nodeColor: n => TYPE_COLORS[n.data?.nodeType] || '#888',
+            maskColor: 'rgba(8,14,29,0.7)',
+            style: { background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8 },
+          }),
+        ),
+        h('div', { className: 'zoom-controls', 'aria-label': t.zoomControls },
+          h('button', { className: 'zoom-control zoom-in', title: t.zoomIn, onClick: () => dispatchCanvasWheelZoom(-600) }, '+'),
+          h('button', { className: 'zoom-control zoom-out', title: t.zoomOut, onClick: () => dispatchCanvasWheelZoom(600) }, '-'),
+        ),
+      ),
+
+      // Detail panel
+      h('div', { className: 'detail-panel' },
+        h(DetailPanel, { node: selectedRfNode, graph: graphData, workspace, onViewFile: viewFile, onSelectNode: focusNode, t, lang }),
+        // File content viewer
+        (fileViewer.path || fileViewer.loading) && h('div', { style: { padding: '0 14px 14px' } },
+          h('div', { className: 'file-content' },
+            h('div', { className: 'fc-head' },
+              h('span', null, fileViewer.path.split('/').pop() || fileViewer.path),
+              h('button', { className: 'btn-sm', onClick: () => setFileViewer({ path: '', content: '', loading: false, error: '' }) }, t.close),
+            ),
+            fileViewer.loading && h('div', { style: { padding: 12, color: 'var(--text2)', fontSize: 12 } }, h('span', { className: 'spin' }), ' ', t.loading),
+            fileViewer.error && h('div', { style: { padding: 12, color: 'var(--pink)', fontSize: 12 } }, t.error, ': ', fileViewer.error),
+            fileViewer.content && h('pre', null, fileViewer.content.slice(0, 5000)),
+          ),
+        ),
+      ),
+      showTips && h(HelpModal, { t, lang, onClose: () => setShowTips(false), onSwitchLanguage: switchLanguage }),
+    ),
+  );
+}
+
+const root = createRoot(document.getElementById('app'));
+root.render(h(StrictMode, null, h(App)));
+
+})().catch(err => {
+  document.getElementById('app').innerHTML =
+    '<div style="padding:20px;color:#ff8fb3;font-family:monospace"><h3>Startup Error</h3><pre>' +
+    (err.stack || err.message || String(err)) + '</pre></div>';
+  console.error(err);
+});
+</script>
+</body>
+</html>

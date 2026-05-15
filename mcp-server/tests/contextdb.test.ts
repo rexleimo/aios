@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 
 import {
   appendEvent,
@@ -36,6 +36,62 @@ function runContextDbCli(args: string[]) {
     cwd: process.cwd(),
     encoding: 'utf8',
   });
+}
+
+async function startContextDbServer(args: string[]): Promise<{
+  url: string;
+  stop: () => Promise<void>;
+}> {
+  const tsxCli = path.join(process.cwd(), 'node_modules', 'tsx', 'dist', 'cli.mjs');
+  const contextDbCli = path.join(process.cwd(), 'src', 'contextdb', 'cli.ts');
+  const child = spawn(process.execPath, [tsxCli, contextDbCli, ...args], {
+    cwd: process.cwd(),
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+
+  let stdout = '';
+  let stderr = '';
+  const ready = new Promise<string>((resolve, reject) => {
+    const timeout = setTimeout(() => {
+      reject(new Error(`contextdb server did not start\nstdout=${stdout}\nstderr=${stderr}`));
+    }, 10_000);
+    child.stdout.on('data', (chunk) => {
+      stdout += String(chunk);
+      const match = stdout.match(/Memory Galaxy GUI → (http:\/\/localhost:\d+)/);
+      if (match) {
+        clearTimeout(timeout);
+        resolve(match[1]);
+      }
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += String(chunk);
+    });
+    child.once('error', (error) => {
+      clearTimeout(timeout);
+      reject(error);
+    });
+    child.once('exit', (code, signal) => {
+      if (!stdout.match(/Memory Galaxy GUI →/)) {
+        clearTimeout(timeout);
+        reject(new Error(`contextdb server exited early code=${code} signal=${signal}\nstdout=${stdout}\nstderr=${stderr}`));
+      }
+    });
+  });
+
+  return {
+    url: await ready,
+    stop: async () => {
+      if (child.exitCode !== null || child.killed) return;
+      child.kill('SIGTERM');
+      await new Promise<void>((resolve) => {
+        const timeout = setTimeout(resolve, 2000);
+        child.once('close', () => {
+          clearTimeout(timeout);
+          resolve();
+        });
+      });
+    },
+  };
 }
 
 test('ensureContextDb initializes expected directory structure', async () => {
@@ -162,6 +218,118 @@ test('contextdb cli genealogy outputs memory graph json', async () => {
   assert.equal(payload.root, 'project:aios');
   assert.equal(payload.nodes?.some((node) => node.id === `session:${session.sessionId}`), true);
   assert.equal(payload.edges?.some((edge) => edge.type === 'contains'), true);
+});
+
+test('contextdb cli genealogy:serve can use AIOS asset root for project workspace data', async () => {
+  const workspace = await makeWorkspace();
+  const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ctxdb-gui-assets-'));
+  const guiDir = path.join(assetRoot, 'scripts', 'lib', 'genealogy-gui');
+  await fs.mkdir(guiDir, { recursive: true });
+  await fs.writeFile(path.join(guiDir, 'index.html'), '<!doctype html><title>test gui</title>', 'utf8');
+
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'demo',
+    goal: 'serve project workspace graph',
+  });
+  await writeCheckpoint({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    status: 'done',
+    summary: 'served graph checkpoint',
+  });
+
+  const result = runContextDbCli([
+    'genealogy:serve',
+    '--workspace', workspace,
+    '--assets-root', assetRoot,
+    '--project', 'demo',
+    '--port', '0',
+    '--smoke',
+  ]);
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const payload = JSON.parse((result.stdout || '{}').trim()) as {
+    ok?: boolean;
+    workspaceRoot?: string;
+    assetsRoot?: string;
+    project?: string;
+    graph?: { root?: string; nodes?: Array<{ id: string; type: string }> };
+    htmlBytes?: number;
+  };
+  assert.equal(payload.ok, true);
+  assert.equal(payload.workspaceRoot, workspace);
+  assert.equal(payload.assetsRoot, assetRoot);
+  assert.equal(payload.project, 'demo');
+  assert.equal(payload.graph?.root, 'project:demo');
+  assert.equal(payload.graph?.nodes?.some((node) => node.id === `session:${session.sessionId}`), true);
+  assert.equal(payload.htmlBytes, '<!doctype html><title>test gui</title>'.length);
+});
+
+test('contextdb cli genealogy:serve keeps browser API scoped to launch workspace and graph files', async () => {
+  const workspace = await makeWorkspace();
+  const otherWorkspace = await makeWorkspace();
+  const assetRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ctxdb-gui-assets-'));
+  const guiDir = path.join(assetRoot, 'scripts', 'lib', 'genealogy-gui');
+  await fs.mkdir(guiDir, { recursive: true });
+  await fs.writeFile(path.join(guiDir, 'index.html'), '<!doctype html><title>test gui</title>', 'utf8');
+  await fs.mkdir(path.join(workspace, 'docs'), { recursive: true });
+  await fs.writeFile(path.join(workspace, 'docs', 'allowed.md'), 'allowed evidence', 'utf8');
+  await fs.writeFile(path.join(workspace, 'secret.txt'), 'not graph evidence', 'utf8');
+
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'demo',
+    goal: 'serve scoped project graph',
+  });
+  await writeCheckpoint({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    status: 'done',
+    summary: 'served scoped graph checkpoint',
+    artifacts: ['docs/allowed.md'],
+  });
+
+  const server = await startContextDbServer([
+    'genealogy:serve',
+    '--workspace', workspace,
+    '--assets-root', assetRoot,
+    '--project', 'demo',
+    '--port', '0',
+    '--no-open',
+  ]);
+
+  try {
+    const allowedFile = await fetch(`${server.url}/api/file?workspace=${encodeURIComponent(workspace)}&project=demo&file=docs%2Fallowed.md`);
+    assert.equal(allowedFile.status, 200);
+    assert.equal(await allowedFile.text(), 'allowed evidence');
+
+    const unreferencedFile = await fetch(`${server.url}/api/file?workspace=${encodeURIComponent(workspace)}&project=demo&file=secret.txt`);
+    assert.equal(unreferencedFile.status, 403);
+
+    const otherWorkspaceGraph = await fetch(`${server.url}/api/genealogy?workspace=${encodeURIComponent(otherWorkspace)}&project=demo`);
+    assert.equal(otherWorkspaceGraph.status, 403);
+
+    const fallbackGraph = await fetch(`${server.url}/api/genealogy?workspace=${encodeURIComponent(workspace)}&project=missing`);
+    assert.equal(fallbackGraph.status, 200);
+    const fallbackFile = await fetch(`${server.url}/api/file?workspace=${encodeURIComponent(workspace)}&project=missing&file=docs%2Fallowed.md`);
+    assert.equal(fallbackFile.status, 200);
+
+    const crossOrigin = await fetch(`${server.url}/api/genealogy?project=demo`, {
+      headers: { Origin: 'https://example.invalid' },
+    });
+    assert.equal(crossOrigin.status, 403);
+    assert.notEqual(crossOrigin.headers.get('access-control-allow-origin'), '*');
+
+    const localCrossOrigin = await fetch(`${server.url}/api/genealogy?project=demo`, {
+      headers: { Origin: 'http://localhost:1' },
+    });
+    assert.equal(localCrossOrigin.status, 403);
+  } finally {
+    await server.stop();
+  }
 });
 
 test('buildMemoryGenealogyGraph includes hidden event nodes only when requested', async () => {

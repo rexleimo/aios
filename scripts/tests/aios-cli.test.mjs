@@ -717,6 +717,13 @@ test('parseArgs accepts memo passthrough args', () => {
   assert.deepEqual(result.options.argv, ['add', 'hello', '#tag']);
 });
 
+test('parseArgs keeps memo gui launch flags as passthrough args', () => {
+  const result = parseArgs(['memo', 'gui', '--port', '4521', '--project', 'demo', '--no-open']);
+  assert.equal(result.command, 'memo');
+  assert.equal(result.mode, 'command');
+  assert.deepEqual(result.options.argv, ['gui', '--port', '4521', '--project', 'demo', '--no-open']);
+});
+
 test('parseArgs accepts harness lifecycle hook flags', () => {
   const runResult = parseArgs(['harness', 'run', '--objective', 'Ship X', '--no-hooks']);
   assert.equal(runResult.command, 'harness');
@@ -853,6 +860,131 @@ test('aios memo prints help', () => {
   assert.match(result.stdout, /persona init\|show\|path/i);
   assert.match(result.stdout, /user init\|show\|path/i);
   assert.match(result.stdout, /recall \[query\]/i);
+  assert.match(result.stdout, /gui \[--port N\]/i);
+});
+
+test('memo gui launch plan uses project workspace data with AIOS GUI assets', async () => {
+  const { buildMemoGuiLaunchPlan } = await import('../lib/memo/memo.mjs');
+  const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-memo-gui-workspace-'));
+  const aiosRootDir = process.cwd();
+
+  const plan = buildMemoGuiLaunchPlan(['gui', '--port', '4521', '--project', 'demo', '--no-open'], {
+    workspaceRoot,
+    aiosRootDir,
+  });
+
+  assert.equal(plan.workspaceRoot, workspaceRoot);
+  assert.equal(plan.aiosRootDir, aiosRootDir);
+  assert.equal(plan.project, 'demo');
+  assert.equal(plan.port, 4521);
+  assert.equal(plan.openBrowser, false);
+  assert.deepEqual(plan.contextDbArgs, [
+    'genealogy:serve',
+    '--workspace', workspaceRoot,
+    '--project', 'demo',
+    '--assets-root', aiosRootDir,
+    '--port', '4521',
+    '--no-open',
+  ]);
+});
+
+test('memo gui runner forwards termination signals to server process', async () => {
+  const { runMemoGuiServer } = await import('../lib/memo/memo.mjs');
+  const tmpRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-memo-gui-runner-'));
+  const binDir = path.join(tmpRoot, 'mcp-server', 'node_modules', 'tsx', 'dist');
+  const cliDir = path.join(tmpRoot, 'mcp-server', 'src', 'contextdb');
+  const markerPath = path.join(tmpRoot, 'signal-marker.json');
+  const readyPath = path.join(tmpRoot, 'ready');
+  await fs.mkdir(binDir, { recursive: true });
+  await fs.mkdir(cliDir, { recursive: true });
+  await fs.writeFile(path.join(cliDir, 'cli.ts'), '', 'utf8');
+  await fs.writeFile(path.join(binDir, 'cli.mjs'), `
+import fs from 'node:fs';
+const marker = process.env.AIOS_MEMO_GUI_SIGNAL_MARKER;
+fs.writeFileSync(process.env.AIOS_MEMO_GUI_READY_MARKER, 'ready');
+process.on('SIGTERM', () => {
+  fs.writeFileSync(marker, JSON.stringify({ signal: 'SIGTERM', args: process.argv.slice(2) }));
+  process.exit(0);
+});
+setInterval(() => {}, 1000);
+`, 'utf8');
+
+  const previousMarker = process.env.AIOS_MEMO_GUI_SIGNAL_MARKER;
+  const previousReady = process.env.AIOS_MEMO_GUI_READY_MARKER;
+  process.env.AIOS_MEMO_GUI_SIGNAL_MARKER = markerPath;
+  process.env.AIOS_MEMO_GUI_READY_MARKER = readyPath;
+  try {
+    const run = runMemoGuiServer({
+      workspaceRoot: tmpRoot,
+      aiosRootDir: tmpRoot,
+      contextDbArgs: ['genealogy:serve', '--workspace', tmpRoot, '--no-open'],
+    });
+    for (let attempts = 0; attempts < 100; attempts += 1) {
+      if (await fs.stat(readyPath).then(() => true).catch(() => false)) break;
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.equal(await fs.stat(readyPath).then(() => true).catch(() => false), true);
+    process.emit('SIGTERM');
+    await run;
+
+    const marker = JSON.parse(await fs.readFile(markerPath, 'utf8'));
+    assert.equal(marker.signal, 'SIGTERM');
+    assert.deepEqual(marker.args, [
+      path.join(tmpRoot, 'mcp-server', 'src', 'contextdb', 'cli.ts'),
+      'genealogy:serve',
+      '--workspace',
+      tmpRoot,
+      '--no-open',
+    ]);
+  } finally {
+    if (previousMarker === undefined) delete process.env.AIOS_MEMO_GUI_SIGNAL_MARKER;
+    else process.env.AIOS_MEMO_GUI_SIGNAL_MARKER = previousMarker;
+    if (previousReady === undefined) delete process.env.AIOS_MEMO_GUI_READY_MARKER;
+    else process.env.AIOS_MEMO_GUI_READY_MARKER = previousReady;
+  }
+});
+
+test('genealogy GUI uses injected project defaults and stable XYFlow inspection interactions', async () => {
+  const html = await fs.readFile(path.join(process.cwd(), 'scripts', 'lib', 'genealogy-gui', 'index.html'), 'utf8');
+  assert.match(html, /window\.__MEMORY_GALAXY_CONFIG__/);
+  assert.match(html, /@xyflow\/react@12\.10\.2\?bundle&deps=react@18\.3\.1,react-dom@18\.3\.1/);
+  assert.match(html, /@xyflow\/react@12\.10\.2\/dist\/style\.css/);
+  assert.match(html, /react-dom@18\.3\.1\/client\?deps=react@18\.3\.1/);
+  assert.match(html, /nodesDraggable:\s*false/);
+  assert.match(html, /zoomOnScroll:\s*true/);
+  assert.match(html, /zoomOnPinch:\s*true/);
+  assert.match(html, /panOnScroll:\s*false/);
+  assert.match(html, /function dispatchCanvasWheelZoom/);
+  assert.match(html, /className:\s*'zoom-control/);
+  assert.match(html, /onPaneClick/);
+  assert.match(html, /focus-node/);
+  assert.match(html, /rootNode = positioned\.find\(n => n\.data\?\.nodeType === 'project'\)/);
+  assert.match(html, /80 - rootNode\.position\.y/);
+  assert.doesNotMatch(html, /fitView\(\{[^}]*duration:/);
+  assert.match(html, /params\.set\('project', project\)/);
+  assert.match(html, /const h = createElement;/);
+  assert.doesNotMatch(html, /htm\.bind\(createElement\)/);
+  assert.doesNotMatch(html, /h\(Controls,/);
+  assert.ok(html.indexOf("Module loading...") < html.indexOf('Promise.all(['));
+});
+
+test('genealogy GUI exposes relationship layout, bilingual UI, and help glossary', async () => {
+  const html = await fs.readFile(path.join(process.cwd(), 'scripts', 'lib', 'genealogy-gui', 'index.html'), 'utf8');
+  assert.match(html, /const I18N = \{/);
+  assert.match(html, /const LANG_STORAGE_KEY = 'memory-galaxy-language'/);
+  assert.match(html, /function HelpModal/);
+  assert.match(html, /CP = Checkpoint/);
+  assert.match(html, /CP = 检查点/);
+  assert.match(html, /Ref = Evidence reference/);
+  assert.match(html, /Ref = 证据引用/);
+  assert.match(html, /All visible memory nodes/);
+  assert.match(html, /全部可见记忆节点/);
+  assert.match(html, /function layoutRelationshipGraph/);
+  assert.match(html, /relationship-first clustered map/);
+  assert.match(html, /function layoutTimelineGraph/);
+  assert.match(html, /layoutMode/);
+  assert.match(html, /setLayoutMode/);
+  assert.match(html, /localStorage\.setItem\(LANG_STORAGE_KEY, nextLang\)/);
 });
 
 test('aios memo add emits side turn-envelope metadata', async () => {

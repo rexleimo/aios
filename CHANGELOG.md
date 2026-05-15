@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-05-14
+
+- feat(contextdb): add project-local memo genealogy GUI
+- feat(contextdb): add relationship-first GUI layout, bilingual labels, and tips glossary
+- fix(contextdb): restore wheel and button zoom interactions in the memo GUI
+
 ## [1.14.1] - 2026-05-14
 
 - fix model-router client launch flags

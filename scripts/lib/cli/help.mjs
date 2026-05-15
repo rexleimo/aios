@@ -135,6 +135,8 @@ Subcommands:
   user add <text>                     Append to global user profile memory
   recall [query] [--limit N] [--highlight-limit N]
                                       Human-readable session recall digest
+  gui [--port N] [--project name] [--no-open]
+                                      Open project-local ContextDB memory genealogy graph
 
 Environment:
   WORKSPACE_MEMORY_SPACE              Override active space for this run
