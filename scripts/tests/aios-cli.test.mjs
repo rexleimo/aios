@@ -16,6 +16,14 @@ test('parseArgs returns interactive mode when no args are provided', () => {
   assert.equal(result.command, 'tui');
 });
 
+test('parseArgs accepts aios init as top-level command', () => {
+  const result = parseArgs(['init', '--agent', 'codex', '--dry-run']);
+  assert.equal(result.mode, 'command');
+  assert.equal(result.command, 'init');
+  assert.equal(result.options.agent, 'codex');
+  assert.equal(result.options.dryRun, true);
+});
+
 test('parseArgs normalizes setup options', () => {
   const result = parseArgs(['setup', '--components', 'all', '--mode', 'opt-in', '--client', 'all']);
   assert.equal(result.mode, 'command');

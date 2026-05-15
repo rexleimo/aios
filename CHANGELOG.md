@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.15.1] - 2026-05-15
+
+- fix: restore aios init release entrypoint
+
 ## [1.15.0] - 2026-05-14
 
 - feat(contextdb): add project-local memo genealogy GUI

@@ -2,6 +2,7 @@
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { initWorkspace } from './lib/contextdb/workspace.mjs';
 import { buildSkillIndex, writeSkillIndex } from './lib/contextdb/skill-index.mjs';
 import { ensurePersonaLayer } from './lib/memo/persona.mjs';
@@ -196,7 +197,7 @@ Options:
   --dry-run        Preview what would be done without writing files`);
 }
 
-async function main(argv = process.argv.slice(2)) {
+export async function main(argv = process.argv.slice(2)) {
   if (argv.includes('-h') || argv.includes('--help')) {
     usage();
     process.exit(0);
@@ -276,7 +277,9 @@ async function main(argv = process.argv.slice(2)) {
   }
 }
 
-main().catch((error) => {
-  console.error(error.message || String(error));
-  process.exit(1);
-});
+if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
+  main().catch((error) => {
+    console.error(error.message || String(error));
+    process.exit(1);
+  });
+}

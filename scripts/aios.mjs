@@ -203,6 +203,16 @@ async function main() {
     return;
   }
 
+  if (parsed.command === 'init') {
+    const { main: runAiosInit } = await import('./aios-init.mjs');
+    const args = [];
+    if (parsed.options.agent) args.push('--agent', parsed.options.agent);
+    if (parsed.options.all) args.push('--all');
+    if (parsed.options.dryRun) args.push('--dry-run');
+    await runAiosInit(args);
+    return;
+  }
+
   if (parsed.command === 'setup') {
     const { runSetup } = await import('./lib/lifecycle/setup.mjs');
     await runSetup(parsed.options, { rootDir, projectRoot });

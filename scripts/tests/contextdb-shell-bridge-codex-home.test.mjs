@@ -310,6 +310,30 @@ test('wrapped interactive codex runs inject route auto prompt by default', async
   );
 });
 
+test('aios init marker switches wrapped interactive runs to slim context without auto prompt', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-aios-init-'));
+  const fakeBin = await createFakeCodexCommand();
+  const fakeRunner = await createFakeRunner();
+  await writeFile(path.join(cwd, 'AGENTS.md'), '<!-- AIOS: memory/context-db/index.json -->\n', 'utf8');
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    args: [],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(parseRunnerAutoPrompt(result.stdout), '');
+  const runnerArgs = parseRunnerArgs(result.stdout);
+  assert.equal(runnerArgs.includes('--context-mode'), true);
+  assert.equal(runnerArgs.includes('slim'), true);
+  assert.equal(runnerArgs.includes('--no-bootstrap'), true);
+});
+
 test('wrapped interactive runs print privacy banner to stderr', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-privacy-banner-'));
   const fakeBin = await createFakeCodexCommand();

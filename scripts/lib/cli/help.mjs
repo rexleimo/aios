@@ -6,6 +6,7 @@ Usage:
   node scripts/aios.mjs <command> [options]
 
 Commands:
+  init          Initialize ContextDB registry markers for this project
   setup         Install AIOS integrations
   update        Update AIOS integrations
   uninstall     Remove selected AIOS integrations
@@ -23,6 +24,7 @@ Commands:
   release-status Show RL policy release gate state and recent trend
 
 Examples:
+  node scripts/aios.mjs init --agent codex
   node scripts/aios.mjs setup --components all --mode opt-in --client all
   node scripts/aios.mjs update --components shell,skills,native --skip-doctor
   node scripts/aios.mjs uninstall --components shell,skills,native
@@ -58,6 +60,15 @@ Examples:
 
 export function getCommandHelpText(command) {
   switch (command) {
+    case 'init':
+      return `Usage:
+  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode>] [--all] [--dry-run]
+
+Options:
+  --agent <name>   Init only the specified agent
+  --all            Init all four agents, even if CLI detection misses them
+  --dry-run        Preview project marker and hook changes without writing files
+`;
     case 'setup':
       return `Usage:
   node scripts/aios.mjs setup [options]

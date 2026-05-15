@@ -45,6 +45,7 @@ const TEAM_PROVIDER_CLIENT_MAP = Object.freeze({
   gemini: 'gemini-cli',
 });
 const HARNESS_SUBCOMMANDS = new Set(['run', 'status', 'resume', 'stop']);
+const INIT_AGENT_NAMES = new Set(['claude', 'codex', 'gemini', 'opencode']);
 
 function takeValue(argv, index, flag) {
   const value = argv[index + 1];
@@ -1289,6 +1290,52 @@ function parsePerceptionArgs(argv) {
   };
 }
 
+function parseInitArgs(argv) {
+  const rest = argv.slice(1);
+  const options = {
+    agent: '',
+    all: false,
+    dryRun: false,
+  };
+  let help = false;
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === '--') continue;
+    if (arg === '-h' || arg === '--help') {
+      help = true;
+      continue;
+    }
+
+    switch (arg) {
+      case '--agent': {
+        const agent = String(takeValue(rest, index, '--agent')).trim().toLowerCase();
+        if (!INIT_AGENT_NAMES.has(agent)) {
+          throw new Error(`--agent must be one of: ${[...INIT_AGENT_NAMES].join(', ')}`);
+        }
+        options.agent = agent;
+        index += 1;
+        break;
+      }
+      case '--all':
+        options.all = true;
+        break;
+      case '--dry-run':
+        options.dryRun = true;
+        break;
+      default:
+        throw new Error(`Unknown option: ${arg}`);
+    }
+  }
+
+  return {
+    mode: help ? 'help' : 'command',
+    help,
+    command: 'init',
+    options,
+  };
+}
+
 function getCommandDefaults(command) {
   if (command === 'setup') return createDefaultSetupOptions();
   if (command === 'update') return createDefaultUpdateOptions();
@@ -1719,6 +1766,10 @@ function parseModelRouterArgs(argv) {
 
   if (first === 'harness') {
     return parseHarnessArgs(argv);
+  }
+
+  if (first === 'init') {
+    return parseInitArgs(argv);
   }
 
   const command = first === 'verify'
