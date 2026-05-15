@@ -135,6 +135,15 @@ function collectClientMcpTargets(clientHomes = {}) {
     targets.push({ path: absPath, createIfMissing: false });
   }
 
+  const kiroHome = resolveUserPath(clientHomes.kiro);
+  if (kiroHome) {
+    const absPath = path.resolve(path.join(kiroHome, 'settings', 'mcp.json'));
+    if (!seen.has(absPath)) {
+      seen.add(absPath);
+      targets.push({ path: absPath, createIfMissing: false });
+    }
+  }
+
   return targets;
 }
 

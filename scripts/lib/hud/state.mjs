@@ -13,6 +13,7 @@ export const HUD_PROVIDER_AGENT_MAP = Object.freeze({
   claude: 'claude-code',
   gemini: 'gemini-cli',
   opencode: 'opencode-cli',
+  kiro: 'kiro-cli',
 });
 
 const AGENT_PROVIDER_MAP = Object.freeze(
@@ -111,7 +112,7 @@ function computeCompletionRatio(done = 0, total = 0) {
 function normalizeProvider(raw = '') {
   const value = normalizeText(raw).toLowerCase();
   if (!value) return '';
-  if (value === 'codex' || value === 'claude' || value === 'gemini' || value === 'opencode') return value;
+  if (value === 'codex' || value === 'claude' || value === 'gemini' || value === 'opencode' || value === 'kiro') return value;
   return '';
 }
 
@@ -1116,7 +1117,7 @@ function buildSuggestedCommands({ sessionId, provider, latestDispatch, latestSki
   }
 
   const effectiveProvider = provider || inferProviderFromAgent(latestDispatch?.raw?.dispatchEvidence?.agent) || '';
-  if (latestDispatch?.blockedJobs > 0 && (effectiveProvider === 'codex' || effectiveProvider === 'claude' || effectiveProvider === 'gemini')) {
+  if (latestDispatch?.blockedJobs > 0 && (effectiveProvider === 'codex' || effectiveProvider === 'claude' || effectiveProvider === 'gemini' || effectiveProvider === 'kiro')) {
     commands.push(
       `node scripts/aios.mjs team --resume ${sessionId} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`
     );

@@ -23,6 +23,11 @@ const PROVIDER_MAP = Object.freeze({
     clientId: 'opencode-cli',
     command: 'opencode',
   },
+  kiro: {
+    provider: 'kiro',
+    clientId: 'kiro-cli',
+    command: 'kiro-cli',
+  },
 });
 
 const RESERVED_FLAGS = new Set([
@@ -77,6 +82,18 @@ export async function checkSoloHarnessProfileReadiness({
       reason: `${profile.command} command is not available on PATH`,
       nextActions: [
         `Install the ${profile.command} CLI or switch --provider to another installed client.`,
+        'Run node scripts/aios.mjs doctor --native --verbose',
+      ],
+    };
+  }
+
+  if (profile.provider === 'kiro' && !String(env?.KIRO_API_KEY || '').trim()) {
+    return {
+      ok: false,
+      profile,
+      reason: 'KIRO_API_KEY is required for headless kiro-cli runs',
+      nextActions: [
+        'Set KIRO_API_KEY for unattended Kiro runs or switch --provider to another installed client.',
         'Run node scripts/aios.mjs doctor --native --verbose',
       ],
     };

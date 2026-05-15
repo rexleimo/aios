@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "native-sync",
+  "client": "kiro",
+  "tier": "deep",
+  "managedTargets": [
+    ".kiro/steering/AIOS.md",
+    ".kiro/settings/mcp.json",
+    ".kiro/agents",
+    ".kiro/skills"
+  ],
+  "generatedAt": "2026-05-13T08:38:44.802Z",
+  "aiosVersion": ""
+}

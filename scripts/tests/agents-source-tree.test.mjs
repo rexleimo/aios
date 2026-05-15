@@ -17,7 +17,7 @@ async function writeJson(rootDir, relativePath, value) {
 function buildManifest() {
   return {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'kiro'],
   };
 }
 
@@ -180,6 +180,7 @@ test('loadCanonicalAgents validates manifest and returns four role-bound agents'
   const result = await mod.loadCanonicalAgents({ rootDir });
 
   assert.equal(result.manifest.schemaVersion, 1);
+  assert.deepEqual(result.manifest.generatedTargets, ['claude', 'codex', 'kiro']);
   assert.deepEqual(Object.keys(result.agentsById), [
     'rex-implementer',
     'rex-planner',

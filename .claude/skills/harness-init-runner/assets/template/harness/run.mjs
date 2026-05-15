@@ -71,7 +71,7 @@ function buildProviderCommand(providerConfig, vars) {
 function usage() {
   return [
     'Usage:',
-    '  node harness/run.mjs --provider <codex|claude|gemini|opencode> [--task "…"] [--name "…"] [--config path] [--allow-risk]',
+    '  node harness/run.mjs --provider <codex|claude|gemini|opencode|kiro> [--task "…"] [--name "…"] [--config path] [--allow-risk]',
     '',
     'Notes:',
     '  - If --task is omitted, the runner reads task text from stdin.',

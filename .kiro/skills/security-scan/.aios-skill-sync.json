@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "security-scan",
+  "targetSurface": "kiro",
+  "targetRelativePath": "security-scan",
+  "source": "skill-sources/security-scan"
+}

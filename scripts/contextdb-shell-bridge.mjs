@@ -21,10 +21,11 @@ const KNOWN_ENDPOINT_ENV_NAMES = new Set([
   'CLAUDE_BASE_URL',
   'CLAUDE_CODE_BASE_URL',
   'OPENCODE_BASE_URL',
+  'KIRO_BASE_URL',
   'OPENROUTER_BASE_URL',
 ]);
 
-const MODEL_ENDPOINT_NAME_RE = /(?:OPENAI|ANTHROPIC|GOOGLE|GEMINI|CODEX|CLAUDE|OPENCODE|OPENROUTER|LLM|MODEL).*(?:BASE_URL|API_BASE|API_URL|ENDPOINT)$/u;
+const MODEL_ENDPOINT_NAME_RE = /(?:OPENAI|ANTHROPIC|GOOGLE|GEMINI|CODEX|CLAUDE|OPENCODE|KIRO|OPENROUTER|LLM|MODEL).*(?:BASE_URL|API_BASE|API_URL|ENDPOINT)$/u;
 const OFFICIAL_ENDPOINT_SUFFIXES = [
   'api.openai.com',
   'openai.com',
@@ -56,11 +57,16 @@ const BLOCKED_SUBCOMMANDS = {
     'uninstall', 'serve', 'web', 'models', 'stats', 'export', 'import', 'github', 'pr',
     'session', 'db', 'version', '-h', '--help', '-v', '--version',
   ]),
+  'kiro-cli': new Set([
+    'agent', 'integrations', 'inline', 'mcp', 'settings', 'login', 'logout', 'auth',
+    'doctor', 'diagnostic', 'install', 'update', 'upgrade', 'completion',
+    '-h', '--help', '-v', '--version',
+  ]),
 };
 
 function usage() {
   console.log(`Usage:
-  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli> --command <codex|claude|gemini|opencode> [--cwd <path>] [-- <args...>]
+  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli|kiro-cli> --command <codex|claude|gemini|opencode|kiro-cli> [--cwd <path>] [-- <args...>]
 
 Environment:
   ROOTPATH               Repo root containing scripts/ctx-agent.mjs
@@ -70,7 +76,7 @@ Environment:
   CTXDB_MARKER_FILE      Marker filename for opt-in mode (default: .contextdb-enable)
   CTXDB_AUTO_CREATE_MARKER 1/true/yes/on to auto-create marker in opt-in mode (default: on)
   CTXDB_INTERACTIVE_AUTO_ROUTE 1/true/yes/on to inject route auto prompt in interactive mode (default: on)
-  CTXDB_HARNESS_PROVIDER codex|claude|gemini|opencode for injected harness route (default: current CLI)
+  CTXDB_HARNESS_PROVIDER codex|claude|gemini|opencode|kiro for injected harness route (default: current CLI)
   CTXDB_HARNESS_MAX_ITERATIONS Positive integer for injected harness route (default: 8)
   CTXDB_PRIVACY_BANNER   0/false/off to hide the interactive privacy banner (default: on)
   CTXDB_PRIVACY_COLOR    0/false/off to disable banner ANSI color (default: on unless NO_COLOR is set)
@@ -556,12 +562,14 @@ function normalizeTeamProvider(value) {
 function inferTeamProviderFromCommand(command) {
   if (command === 'claude') return 'claude';
   if (command === 'gemini') return 'gemini';
+  if (command === 'kiro-cli') return 'kiro';
   return 'codex';
 }
 
 function inferSubagentClientFromProvider(provider) {
   if (provider === 'claude') return 'claude-code';
   if (provider === 'gemini') return 'gemini-cli';
+  if (provider === 'kiro') return 'kiro-cli';
   return 'codex-cli';
 }
 
@@ -570,12 +578,13 @@ function inferSubagentClientFromCommand(command) {
   if (command === 'gemini') return 'gemini-cli';
   if (command === 'codex') return 'codex-cli';
   if (command === 'opencode') return 'opencode-cli';
+  if (command === 'kiro-cli') return 'kiro-cli';
   return '';
 }
 
 function normalizeSubagentClient(value) {
   const normalized = String(value || '').trim().toLowerCase();
-  if (normalized === 'codex-cli' || normalized === 'claude-code' || normalized === 'gemini-cli' || normalized === 'opencode-cli') {
+  if (normalized === 'codex-cli' || normalized === 'claude-code' || normalized === 'gemini-cli' || normalized === 'opencode-cli' || normalized === 'kiro-cli') {
     return normalized;
   }
   return '';
@@ -589,6 +598,10 @@ function resolveSubagentClientForPrompt(command, provider, env) {
   const commandClient = normalizeSubagentClient(inferSubagentClientFromCommand(command));
   if (commandClient) return commandClient;
   return inferSubagentClientFromProvider(provider);
+}
+
+function resolveRoutePreviewAgent(agent) {
+  return agent;
 }
 
 function buildInteractiveAutoPrompt({
@@ -611,8 +624,9 @@ function buildInteractiveAutoPrompt({
     || normalizeHarnessProvider(env.AIOS_HARNESS_PROVIDER)
     || inferHarnessProviderFromCommand(command);
   const harnessMaxIterations = parsePositiveInteger(env.CTXDB_HARNESS_MAX_ITERATIONS || env.AIOS_HARNESS_MAX_ITERATIONS, 8);
+  const routePreviewAgent = resolveRoutePreviewAgent(agent);
   const teamCommand = buildCtxAgentRoutePreview({
-    agent,
+    agent: routePreviewAgent,
     workspaceRoot,
     project,
     routeMode: 'team',
@@ -727,15 +741,15 @@ function spawnInherited(command, args, cwd, env) {
 }
 
 function validateOptions(opts) {
-  const validAgents = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
-  const validCommands = new Set(['codex', 'claude', 'gemini', 'opencode']);
+  const validAgents = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'kiro-cli']);
+  const validCommands = new Set(['codex', 'claude', 'gemini', 'opencode', 'kiro-cli']);
 
   if (!validAgents.has(opts.agent)) {
-    throw new Error('--agent must be one of: codex-cli, claude-code, gemini-cli, opencode-cli');
+    throw new Error('--agent must be one of: codex-cli, claude-code, gemini-cli, opencode-cli, kiro-cli');
   }
 
   if (!validCommands.has(opts.command)) {
-    throw new Error('--command must be one of: codex, claude, gemini, opencode');
+    throw new Error('--command must be one of: codex, claude, gemini, opencode, kiro-cli');
   }
 }
 

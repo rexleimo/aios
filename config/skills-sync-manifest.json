@@ -5,78 +5,79 @@
     "claude": ".claude/skills",
     "gemini": ".gemini/skills",
     "opencode": ".opencode/skills",
+    "kiro": ".kiro/skills",
     "agents": ".agents/skills"
   },
   "skills": [
     {
       "relativeSkillPath": "aios-workflow-router",
       "installCatalogName": "aios-workflow-router",
-      "repoTargets": ["codex", "claude", "gemini", "opencode", "agents"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro", "agents"]
     },
     {
       "relativeSkillPath": "find-skills",
       "installCatalogName": "find-skills",
-      "repoTargets": ["codex", "claude", "gemini", "opencode", "agents"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro", "agents"]
     },
     {
       "relativeSkillPath": "debug-hub",
       "installCatalogName": "debug-hub",
-      "repoTargets": ["codex", "claude", "gemini", "opencode", "agents"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro", "agents"]
     },
     {
       "relativeSkillPath": "search-first",
       "installCatalogName": "search-first",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "awesome-design-md",
       "installCatalogName": "awesome-design-md",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "frontend-design",
       "installCatalogName": "frontend-design",
-      "repoTargets": ["codex", "gemini", "opencode"]
+      "repoTargets": ["codex", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "security-scan",
       "installCatalogName": "security-scan",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "verification-loop",
       "installCatalogName": "verification-loop",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "versioning-by-impact",
       "installCatalogName": "versioning-by-impact",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "seo-geo-page-optimization",
       "installCatalogName": "seo-geo-page-optimization",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "skill-constraints",
       "installCatalogName": "skill-constraints",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "aios-project-system",
       "installCatalogName": "aios-project-system",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "aios-long-running-harness",
       "installCatalogName": "aios-long-running-harness",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "contextdb-autopilot",
       "installCatalogName": "contextdb-autopilot",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "aios-compress",
@@ -91,37 +92,37 @@
     {
       "relativeSkillPath": "cap-commit-push",
       "installCatalogName": "cap-commit-push",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "aios-jimeng-image-ops",
       "installCatalogName": "aios-jimeng-image-ops",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "seed2-manga-drama",
       "installCatalogName": "seed2-manga-drama",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "xhs-ops-methods",
       "installCatalogName": "xhs-ops-methods",
-      "repoTargets": ["codex", "claude"]
+      "repoTargets": ["codex", "claude", "kiro"]
     },
     {
       "relativeSkillPath": "harness-init-runner",
       "installCatalogName": "harness-init-runner",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": "model-router",
       "installCatalogName": "model-router",
-      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+      "repoTargets": ["codex", "claude", "gemini", "opencode", "kiro"]
     },
     {
       "relativeSkillPath": ".system/skill-creator",
       "installCatalogName": null,
-      "repoTargets": ["codex", "claude"],
+      "repoTargets": ["codex", "claude", "kiro"],
       "targetRelativePathBySurface": {
         "codex": ".system/skill-creator",
         "claude": "skill-creator"

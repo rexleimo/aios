@@ -242,7 +242,7 @@ function buildSuggestedCommands({ sessionId, provider, kind } = {}) {
   commands.push(`node scripts/aios.mjs orchestrate --session ${id} --dispatch local --execute dry-run --format json`);
 
   const effectiveProvider = normalizeText(provider);
-  if ((kind === 'repeat-blocked' || kind === 'regression') && (effectiveProvider === 'codex' || effectiveProvider === 'claude' || effectiveProvider === 'gemini')) {
+  if ((kind === 'repeat-blocked' || kind === 'regression') && (effectiveProvider === 'codex' || effectiveProvider === 'claude' || effectiveProvider === 'gemini' || effectiveProvider === 'kiro')) {
     commands.push(`node scripts/aios.mjs team --resume ${id} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`);
   }
 

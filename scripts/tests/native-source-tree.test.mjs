@@ -34,18 +34,20 @@ test('native manifest resolves deep and compatibility tiers by client', async ()
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      kiro: { tier: 'deep', metadataRoot: '.kiro', outputs: ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills'] },
     },
   });
 
   const manifest = loadNativeSyncManifest(rootDir);
-  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode']);
+  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode', 'kiro']);
   assert.equal(manifest.clients.codex.tier, 'deep');
   assert.equal(manifest.clients.claude.tier, 'deep');
   assert.equal(manifest.clients.gemini.tier, 'compatibility');
   assert.equal(manifest.clients.opencode.tier, 'compatibility');
+  assert.equal(manifest.clients.kiro.tier, 'deep');
 });
 
-test('native output plan maps codex and claude repo outputs with per-client metadata roots', async () => {
+test('native output plan maps repo outputs with per-client metadata roots', async () => {
   const rootDir = await makeTemp('aios-native-plan-root-');
   await writeJson(path.join(rootDir, 'config', 'native-sync-manifest.json'), {
     schemaVersion: 1,
@@ -59,12 +61,14 @@ test('native output plan maps codex and claude repo outputs with per-client meta
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      kiro: { tier: 'deep', metadataRoot: '.kiro', outputs: ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills'] },
     },
   });
 
   const manifest = loadNativeSyncManifest(rootDir);
   const codexPlan = buildNativeOutputPlan({ rootDir, manifest, client: 'codex' });
   const claudePlan = buildNativeOutputPlan({ rootDir, manifest, client: 'claude' });
+  const kiroPlan = buildNativeOutputPlan({ rootDir, manifest, client: 'kiro' });
 
   assert.equal(codexPlan.client, 'codex');
   assert.equal(codexPlan.metadataPath, path.join(rootDir, '.codex', NATIVE_SYNC_META_FILE));
@@ -73,4 +77,8 @@ test('native output plan maps codex and claude repo outputs with per-client meta
   assert.equal(claudePlan.client, 'claude');
   assert.equal(claudePlan.metadataPath, path.join(rootDir, '.claude', NATIVE_SYNC_META_FILE));
   assert.deepEqual(claudePlan.outputs, ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills']);
+
+  assert.equal(kiroPlan.client, 'kiro');
+  assert.equal(kiroPlan.metadataPath, path.join(rootDir, '.kiro', NATIVE_SYNC_META_FILE));
+  assert.deepEqual(kiroPlan.outputs, ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills']);
 });

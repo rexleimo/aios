@@ -50,6 +50,11 @@ async function writeNativeManifest(rootDir) {
         metadataRoot: '.opencode',
         outputs: ['.opencode/AIOS.md', '.opencode/skills'],
       },
+      kiro: {
+        tier: 'deep',
+        metadataRoot: '.kiro',
+        outputs: ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills'],
+      },
     },
   });
 }

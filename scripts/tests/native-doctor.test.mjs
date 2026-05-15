@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -59,6 +59,7 @@ async function writeNativeManifest(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      kiro: { tier: 'deep', metadataRoot: '.kiro', outputs: ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills'] },
     },
   });
 }
@@ -69,6 +70,7 @@ async function writeNativeSources(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
+  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project'), { recursive: true });
 
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'core-instructions.md'), 'Shared native instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'contextdb.md'), 'ContextDB bridge enabled.\n', 'utf8');
@@ -93,6 +95,17 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
   });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project', 'steering.md'), 'Kiro steering instructions.\n', 'utf8');
+  await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project', 'mcp.json'), {
+    'puppeteer-stealth': {
+      type: 'stdio',
+      command: 'bash',
+      args: ['{{ROOT_DIR}}/scripts/run-browser-use-mcp.sh'],
+      env: {
+        BROWSER_USE_CDP_URL: 'http://127.0.0.1:9222',
+      },
+    },
+  });
 }
 
 async function writeSkillSources(rootDir) {
@@ -116,7 +129,7 @@ async function writeSkillSources(rootDir) {
 async function writeAgentSources(rootDir) {
   await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'kiro'],
   });
 
   const roles = [
@@ -253,6 +266,52 @@ test('native doctor reports sync drift when repo-local generated skills change',
   assert.equal(result.exitCode, 1);
   assert.match(logs.join('\n'), /\[drift\]/);
   assert.match(await readFile(path.join(rootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /drifted/);
+});
+
+test('native doctor reports Kiro MCP drift with a concrete recovery command', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-kiro-mcp-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, client: 'kiro' });
+  await writeJson(path.join(rootDir, '.kiro', 'settings', 'mcp.json'), {
+    mcpServers: {
+      'puppeteer-stealth': {
+        command: 'node',
+        args: ['wrong.js'],
+      },
+    },
+  });
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    nativeOnly: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env: {},
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.match(logs.join('\n'), /kiro/);
+  assert.match(logs.join('\n'), /\.kiro\/settings\/mcp\.json#mcpServers/);
+  assert.match(logs.join('\n'), /node scripts\/aios\.mjs update --components native --client kiro/);
+});
+
+test('native doctor reports missing Kiro agents with a concrete recovery command', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-kiro-agents-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, client: 'kiro' });
+  await rm(path.join(rootDir, '.kiro', 'agents'), { recursive: true, force: true });
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    nativeOnly: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env: {},
+  });
+
+  assert.equal(result.exitCode, 1);
+  assert.match(logs.join('\n'), /\[missing\] \.kiro\/agents/);
+  assert.match(logs.join('\n'), /node scripts\/aios\.mjs update --components native --client kiro/);
 });
 
 test('doctor --native --fix repairs unmanaged compatibility docs and exits cleanly', async () => {

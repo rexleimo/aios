@@ -27,10 +27,10 @@ const MCP_DIR = path.join(ROOT_DIR, 'mcp-server');
 const CTX_AGENT_CLI_PATH = path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs');
 const ROUTE_MODES = new Set(['auto', 'single', 'team', 'subagent', 'harness']);
 const ROUTE_EXECUTION_MODES = new Set(['dry-run', 'live']);
-const TEAM_ROUTE_PROVIDERS = new Set(['auto', 'codex', 'claude', 'gemini']);
-const HARNESS_ROUTE_PROVIDERS = new Set(['auto', 'codex', 'claude', 'gemini', 'opencode']);
+const TEAM_ROUTE_PROVIDERS = new Set(['auto', 'codex', 'claude', 'gemini', 'kiro']);
+const HARNESS_ROUTE_PROVIDERS = new Set(['auto', 'codex', 'claude', 'gemini', 'opencode', 'kiro']);
 const ORCHESTRATE_BLUEPRINTS = new Set(['feature', 'bugfix', 'refactor', 'security']);
-const SUPPORTED_SUBAGENT_CLIENT_IDS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli']);
+const SUPPORTED_SUBAGENT_CLIENT_IDS = new Set(['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'kiro-cli']);
 const CTXDB_CODEX_DISABLE_MCP_ENV = 'CTXDB_CODEX_DISABLE_MCP';
 const TEAM_ROUTE_KEYWORD_PATTERNS = [
   /并行|并发|同时推进|拆分|多模块|跨模块|跨系统|多阶段/u,
@@ -41,10 +41,10 @@ const HARNESS_ROUTE_KEYWORD_PATTERN = /\b(harness|overnight|long[-\s]?running|re
 
 function usage() {
   console.log(`Usage:
-  scripts/ctx-agent.mjs --agent <claude-code|gemini-cli|codex-cli|opencode-cli> [options] [-- <extra agent args>]
+  scripts/ctx-agent.mjs --agent <claude-code|gemini-cli|codex-cli|opencode-cli|kiro-cli> [options] [-- <extra agent args>]
 
 Options:
-  --agent <name>      Agent name: claude-code | gemini-cli | codex-cli | opencode-cli
+  --agent <name>      Agent name: claude-code | gemini-cli | codex-cli | opencode-cli | kiro-cli
   --workspace <path>  Workspace root to store context-db (default: current git root, else current dir)
   --project <name>    Project name (default: current directory name)
   --goal <text>       Session goal (used when creating a new session)
@@ -170,7 +170,7 @@ function normalizeRouteExecutionMode(rawValue = 'dry-run') {
 function normalizeTeamRouteProvider(rawValue = 'auto') {
   const value = String(rawValue || 'auto').trim().toLowerCase();
   if (!TEAM_ROUTE_PROVIDERS.has(value)) {
-    throw new Error('--team-provider must be one of: auto, codex, claude, gemini');
+    throw new Error('--team-provider must be one of: auto, codex, claude, gemini, kiro');
   }
   return value;
 }
@@ -186,7 +186,7 @@ function normalizeOrchestrateBlueprint(rawValue = 'feature') {
 function normalizeHarnessRouteProvider(rawValue = 'auto') {
   const value = String(rawValue || 'auto').trim().toLowerCase();
   if (!HARNESS_ROUTE_PROVIDERS.has(value)) {
-    throw new Error('--harness-provider must be one of: auto, codex, claude, gemini, opencode');
+    throw new Error('--harness-provider must be one of: auto, codex, claude, gemini, opencode, kiro');
   }
   return value;
 }
@@ -196,6 +196,7 @@ function inferHarnessProviderFromAgent(agent = '') {
   if (normalized === 'claude-code') return 'claude';
   if (normalized === 'gemini-cli') return 'gemini';
   if (normalized === 'opencode-cli') return 'opencode';
+  if (normalized === 'kiro-cli') return 'kiro';
   return 'codex';
 }
 
@@ -203,12 +204,18 @@ function inferTeamProviderFromAgent(agent = '') {
   const normalized = String(agent || '').trim().toLowerCase();
   if (normalized === 'claude-code') return 'claude';
   if (normalized === 'gemini-cli') return 'gemini';
+  if (normalized === 'kiro-cli') return 'kiro';
   return 'codex';
+}
+
+export function resolveRoutePreviewAgent(agent = '') {
+  return String(agent || '').trim().toLowerCase();
 }
 
 function inferSubagentClientFromProvider(provider = 'codex') {
   if (provider === 'claude') return 'claude-code';
   if (provider === 'gemini') return 'gemini-cli';
+  if (provider === 'kiro') return 'kiro-cli';
   return 'codex-cli';
 }
 
@@ -245,6 +252,20 @@ function buildCodexMcpDisableArgs(env = process.env) {
   return ['-c', 'mcp_servers={}', '-c', 'features.rmcp_client=false'];
 }
 
+export function buildKiroChatArgs(extraArgs = [], { headless = false } = {}) {
+  const values = Array.isArray(extraArgs) ? [...extraArgs] : [extraArgs];
+  const passthroughArgs = values[0] === 'chat' ? values.slice(1) : values;
+  const args = ['chat'];
+  if (headless) {
+    args.push('--no-interactive');
+  }
+  args.push('--trust-all-tools');
+  if (passthroughArgs.length > 0) {
+    args.push(...passthroughArgs);
+  }
+  return args;
+}
+
 function formatShellArg(value = '') {
   const text = String(value ?? '');
   return /^[A-Za-z0-9_./:@=-]+$/u.test(text) ? text : JSON.stringify(text);
@@ -262,7 +283,7 @@ function buildCtxAgentRoutePreview({
   blueprint = 'feature',
   taskPrompt = '<task>',
 } = {}) {
-  const args = [CTX_AGENT_CLI_PATH, '--agent', agent];
+  const args = [CTX_AGENT_CLI_PATH, '--agent', resolveRoutePreviewAgent(agent)];
   if (String(workspaceRoot || '').trim()) {
     args.push('--workspace', String(workspaceRoot).trim());
   }
@@ -363,13 +384,14 @@ function buildTaskRouterGuide({
   const workers = parsePositiveInteger(teamWorkers, 3);
   const resolvedBlueprint = normalizeOrchestrateBlueprint(blueprint);
   const resolvedRouteMode = normalizeRouteMode(routeMode);
+  const routePreviewAgent = resolveRoutePreviewAgent(agent);
   const subagentClient = resolveRoutedSubagentClient({
     agent,
     teamProvider: provider,
     env: process.env,
   });
   const teamCommand = buildCtxAgentRoutePreview({
-    agent,
+    agent: routePreviewAgent,
     workspaceRoot,
     project,
     sessionId,
@@ -449,13 +471,14 @@ function buildInteractiveRouteAutoPrompt({
     : normalizeTeamRouteProvider(teamProvider);
   const workers = parsePositiveInteger(teamWorkers, 3);
   const resolvedBlueprint = normalizeOrchestrateBlueprint(blueprint);
+  const routePreviewAgent = resolveRoutePreviewAgent(agent);
   const subagentClient = resolveRoutedSubagentClient({
     agent,
     teamProvider: provider,
     env: process.env,
   });
   const teamCommand = buildCtxAgentRoutePreview({
-    agent,
+    agent: routePreviewAgent,
     workspaceRoot,
     project,
     sessionId,
@@ -1211,9 +1234,9 @@ function validateOpts(opts) {
   if (!opts.agent) {
     throw new Error('Missing required --agent');
   }
-  const validAgents = new Set(['claude-code', 'gemini-cli', 'codex-cli', 'opencode-cli']);
+  const validAgents = new Set(['claude-code', 'gemini-cli', 'codex-cli', 'opencode-cli', 'kiro-cli']);
   if (!validAgents.has(opts.agent)) {
-    throw new Error('--agent must be one of: claude-code, gemini-cli, codex-cli, opencode-cli');
+    throw new Error('--agent must be one of: claude-code, gemini-cli, codex-cli, opencode-cli, kiro-cli');
   }
   const validStatus = new Set(['running', 'blocked', 'done']);
   if (!validStatus.has(opts.checkpointStatus)) {
@@ -1334,7 +1357,7 @@ function extractCreatedSessionId(jsonText) {
   return parseJsonValue(jsonText, (x) => x?.data?.sessionId || x?.sessionId);
 }
 
-function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
+export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
   let cmd = '';
   let args = [];
 
@@ -1368,6 +1391,12 @@ function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext 
       const exitCode = result.status ?? 1;
       return { output, exitCode };
     }
+  } else if (agent === 'kiro-cli') {
+    cmd = 'kiro-cli';
+    const fullPrompt = injectContext
+      ? `${contextText}\n\n## New User Request\n${prompt}`
+      : prompt;
+    args = [...buildKiroChatArgs(extraArgs, { headless: true }), fullPrompt];
   } else {
     cmd = 'opencode';
     const fullPrompt = buildOpenCodePrompt({
@@ -1737,6 +1766,33 @@ function runInteractiveAgent(
       console.log(`Auto prompt: enabled (${promptSource})`);
     }
     args = combinedPrompt ? [...codexConfigArgs, ...extraArgs, combinedPrompt] : [...codexConfigArgs, ...extraArgs];
+  } else if (agent === 'kiro-cli') {
+    cmd = 'kiro-cli';
+    const effectiveAutoPrompt = explicitAutoPrompt
+      ? explicitAutoPrompt
+      : shouldInject
+        ? ''
+        : (autoPrompt || buildInteractiveRouteAutoPrompt({
+          agent,
+          workspaceRoot,
+          project,
+          teamProvider,
+          teamWorkers,
+          harnessProvider,
+          harnessMaxIterations,
+          blueprint,
+          sessionId,
+        }));
+    let combinedPrompt = shouldInject ? contextText : '';
+    if (effectiveAutoPrompt) {
+      combinedPrompt = combinedPrompt
+        ? `${combinedPrompt}\n\n## Auto Prompt\n${effectiveAutoPrompt}`
+        : effectiveAutoPrompt;
+      const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
+      console.log(`Auto prompt: enabled (${promptSource})`);
+    }
+    const chatArgs = buildKiroChatArgs(extraArgs, { headless: false });
+    args = combinedPrompt ? [...chatArgs, combinedPrompt] : chatArgs;
   } else {
     cmd = 'opencode';
     const promptText = buildOpenCodePrompt({

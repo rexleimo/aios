@@ -30,6 +30,7 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     claude: normalizeHomeDir(env.CLAUDE_HOME, path.join(homeDir, '.claude'), homeDir),
     gemini: normalizeHomeDir(env.GEMINI_HOME, path.join(homeDir, '.gemini'), homeDir),
     opencode: normalizeHomeDir(env.OPENCODE_HOME, path.join(xdgConfigHome, 'opencode'), homeDir),
+    kiro: normalizeHomeDir(env.KIRO_HOME, path.join(homeDir, '.kiro'), homeDir),
   };
 }
 

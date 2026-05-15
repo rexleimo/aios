@@ -92,6 +92,88 @@ test('renderCodexAgent matches the same deterministic template contract', async 
   assert.match(md, /^---\nname: rex-planner\n/);
 });
 
+test('renderKiroAgent emits deterministic Kiro custom agent JSON', async () => {
+  const source = await canonicalAgent('planner');
+  const mod = await import('../lib/agents/emitters/kiro.mjs');
+  const rendered = mod.renderKiroAgent(source);
+  const config = JSON.parse(rendered.content);
+
+  assert.equal(rendered.targetRelPath, '.kiro/agents/rex-planner.json');
+  assert.equal(rendered.content.endsWith('\n'), true);
+  assert.equal(config.name, 'rex-planner');
+  assert.equal(config.description, source.description);
+  assert.match(config.prompt, /<!-- AIOS-GENERATED: orchestrator-agents v1 -->/);
+  assert.match(config.prompt, /Role: planner/);
+  assert.deepEqual(config.resources, [
+    'file://.kiro/steering/**/*.md',
+    'skill://.kiro/skills/**/SKILL.md',
+    'skill://~/.kiro/skills/**/SKILL.md',
+  ]);
+  assert.equal(config.includeMcpJson, true);
+  assert.deepEqual(config.tools, ['read', 'grep', 'glob']);
+  assert.deepEqual(config.allowedTools, ['read', 'grep', 'glob']);
+});
+
+test('resolveAgentTargets supports kiro and includes it in all', async () => {
+  const mod = await import('../lib/agents/sync.mjs');
+
+  assert.deepEqual(mod.resolveAgentTargets('kiro'), ['kiro']);
+  assert.deepEqual(mod.resolveAgentTargets('all'), ['claude', 'codex', 'kiro']);
+});
+
+test('syncCanonicalAgents defaults to all canonical targets including Kiro', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+
+  const mod = await import('../lib/agents/sync.mjs');
+  const result = await mod.syncCanonicalAgents({
+    rootDir,
+    writeCompatibilityExport: false,
+    io: { log() {} },
+  });
+
+  assert.deepEqual(result.targets, ['claude', 'codex', 'kiro']);
+  assert.equal(result.results.length, 3);
+  assert.equal(result.results.find((item) => item.target === 'kiro')?.installed, 4);
+  const agentJson = JSON.parse(await readFile(path.join(rootDir, '.kiro/agents/rex-planner.json'), 'utf8'));
+  assert.equal(agentJson.name, 'rex-planner');
+});
+
+test('syncCanonicalAgents installs managed Kiro agent JSON files', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+
+  const mod = await import('../lib/agents/sync.mjs');
+  const result = await mod.syncCanonicalAgents({
+    rootDir,
+    targets: ['kiro'],
+    writeCompatibilityExport: false,
+    io: { log() {} },
+  });
+
+  const agentJson = JSON.parse(await readFile(path.join(rootDir, '.kiro/agents/rex-planner.json'), 'utf8'));
+  assert.equal(result.results[0].targetRel, '.kiro/agents');
+  assert.equal(result.results[0].installed, 4);
+  assert.equal(agentJson.name, 'rex-planner');
+  assert.match(agentJson.prompt, /<!-- END AIOS-GENERATED -->/);
+});
+
+test('syncCanonicalAgents rejects unmanaged Kiro JSON conflicts', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  await writeText(rootDir, '.kiro/agents/rex-planner.json', '{"name":"rex-planner"}\n');
+
+  const mod = await import('../lib/agents/sync.mjs');
+  await assert.rejects(
+    () => mod.syncCanonicalAgents({
+      rootDir,
+      targets: ['kiro'],
+      writeCompatibilityExport: false,
+    }),
+    /unmanaged conflict/i
+  );
+});
+
 test('syncCanonicalAgents aborts before write on unmanaged conflict', async () => {
   const rootDir = await makeRootDir();
   await copyCanonicalSource(rootDir);

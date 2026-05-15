@@ -19,6 +19,7 @@ const PROVIDER_CLIENT_MAP = Object.freeze({
   codex: 'codex-cli',
   claude: 'claude-code',
   gemini: 'gemini-cli',
+  kiro: 'kiro-cli',
 });
 const DEFAULT_SIGNAL_RULES = Object.freeze([
   { taskType: 'security-review', priority: 100, weight: 8, keywords: { cjk: ['安全', '漏洞', '注入', '权限', '合规'], en: ['secret', 'security', 'vulnerability', 'xss', 'csrf', 'injection', 'permission', 'compliance', 'auth'] }, reason: 'security or auth risk' },

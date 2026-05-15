@@ -14,7 +14,7 @@ Commands:
   perception    Content outcome recording, insight generation, and perception summary
   quality-gate  Run repo quality checks with harness profiles
   orchestrate   Preview reusable subagent workflow blueprints
-  team          One-click multi-client live team runtime (codex/claude/gemini)
+  team          One-click multi-client live team runtime (codex/claude/gemini/kiro)
   harness       Solo overnight harness with run journal + resume controls
   hud           Show ContextDB + dispatch HUD (CLI/TUI)
   learn-eval    Turn checkpoint telemetry into operator recommendations
@@ -65,7 +65,7 @@ export function getCommandHelpText(command) {
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|kiro>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -80,7 +80,7 @@ Options:
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|kiro>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -94,7 +94,7 @@ Options:
 
 Options:
   --components <list>            Comma list: shell,skills,native,agents,browser,superpowers (default: shell,skills)
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|kiro>
   --scope <global|project>       Skills uninstall scope (default: global)
   --skills <list>                Comma list of skill names to uninstall
   -h, --help
@@ -175,7 +175,7 @@ Options:
   --limit <n>                   Number of checkpoints to inspect when loading learn-eval
   --recommendation <targetId>   Pin a specific learn-eval recommendation to the overlay
   --dispatch <none|local>       Build a local dispatch skeleton (defaults to local when omitted)
-  --execute <none|dry-run|live> Execute dispatch through the selected runtime (defaults to dry-run; live is opt-in via AIOS_EXECUTE_LIVE=1 + AIOS_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli>)
+  --execute <none|dry-run|live> Execute dispatch through the selected runtime (defaults to dry-run; live is opt-in via AIOS_EXECUTE_LIVE=1 + AIOS_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli|opencode-cli|kiro-cli>)
   --force                       Override live safety guards (retry-blocked instability and unknown capability surfaces)
   --preflight <none|auto>       Run supported local gate/runbook actions before final DAG selection
   AIOS_SUBAGENT_PRE_MUTATION_SNAPSHOT=1 (env) In live mode, capture pre-mutation backups for editable phase owned paths before each subagent run
@@ -204,7 +204,7 @@ Examples:
 
 Options:
   --workers <n>                 Team worker concurrency (default: 3)
-  --provider <codex|claude|gemini>
+  --provider <codex|claude|gemini|kiro>
   --blueprint <feature|bugfix|refactor|security>
   --task <title>
   --context <summary>
@@ -261,7 +261,7 @@ Options:
   --objective <text>            (run) Required objective for a new solo harness run
   --session <id>                Explicit ContextDB session id
   --workspace <path>            Workspace root for ContextDB session artifacts (default: current directory)
-  --provider <codex|claude|gemini|opencode> (run) Provider used by the solo harness
+  --provider <codex|claude|gemini|opencode|kiro> (run) Provider used by the solo harness
   --profile <minimal|standard|strict> (run) Harness profile for surrounding checks
   --worktree                    (run) Execute inside an isolated git worktree
   --base-ref <ref>              (run) Git ref used to seed worktree mode (default: HEAD)
@@ -279,7 +279,7 @@ Options:
 Options:
   --session <id>                Explicit ContextDB session id
   --workspace <path>            Workspace root for ContextDB session artifacts (default: current directory)
-  --provider <codex|claude|gemini>
+  --provider <codex|claude|gemini|kiro>
   --preset <minimal|focused|full> Rendering preset (default: focused; with --watch defaults to minimal unless --preset provided)
   --watch                       Refresh display on an interval (TTY-only)
   --fast                        In --watch + minimal preset, skip heavy reads and throttle state refresh to ~1s
@@ -412,25 +412,25 @@ export function getInternalHelpText(target, action) {
 
   if (target === 'skills' && (action === 'install' || action === 'update')) {
     return `Usage:
-  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
+  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|kiro>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
 `;
   }
 
   if (target === 'skills' && (action === 'uninstall' || action === 'doctor')) {
     return `Usage:
-  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode>] [--scope <global|project>] [--skills <list>]
+  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|kiro>] [--scope <global|project>] [--skills <list>]
 `;
   }
 
   if (target === 'native' && (action === 'install' || action === 'update' || action === 'uninstall')) {
     return `Usage:
-  node scripts/aios.mjs internal native ${action} [--client <all|codex|claude|gemini|opencode>]
+  node scripts/aios.mjs internal native ${action} [--client <all|codex|claude|gemini|opencode|kiro>]
 `;
   }
 
   if (target === 'native' && action === 'doctor') {
     return `Usage:
-  node scripts/aios.mjs internal native doctor [--client <all|codex|claude|gemini|opencode>] [--verbose] [--fix] [--dry-run]
+  node scripts/aios.mjs internal native doctor [--client <all|codex|claude|gemini|opencode|kiro>] [--verbose] [--fix] [--dry-run]
 `;
   }
 

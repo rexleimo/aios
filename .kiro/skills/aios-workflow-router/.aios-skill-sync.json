@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "aios-workflow-router",
+  "targetSurface": "kiro",
+  "targetRelativePath": "aios-workflow-router",
+  "source": "skill-sources/aios-workflow-router"
+}

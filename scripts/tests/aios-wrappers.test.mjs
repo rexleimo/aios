@@ -114,3 +114,15 @@ test('status-browser-cdp.ps1 is a thin wrapper', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'status-browser-cdp.ps1'), 'utf8');
   assert.match(content, /internal browser cdp-status/);
 });
+
+test('contextdb shell wrappers expose kiro-cli and kiro alias through kiro-cli passthrough', async () => {
+  const zsh = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.zsh'), 'utf8');
+  const ps1 = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.ps1'), 'utf8');
+
+  assert.match(zsh, /function\s+kiro-cli|kiro-cli\(\)/);
+  assert.match(zsh, /function\s+kiro|kiro\(\)/);
+  assert.match(zsh, /ctxdb_invoke_bridge_or_passthrough kiro-cli kiro-cli/);
+  assert.match(ps1, /function kiro-cli/);
+  assert.match(ps1, /function kiro/);
+  assert.match(ps1, /Invoke-BridgeOrPassthrough -Agent "kiro-cli" -Passthrough "kiro-cli"/);
+});

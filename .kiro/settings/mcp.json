@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "puppeteer-stealth": {
+      "type": "stdio",
+      "command": "bash",
+      "args": [
+        "/Users/billow/Documents/opensource/rex-cli/scripts/run-browser-use-mcp.sh"
+      ],
+      "env": {
+        "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
+      }
+    },
+    "aios-auth-tools": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "-u",
+        "/Users/billow/Documents/opensource/rex-cli/scripts/auth-tools-server.py"
+      ],
+      "env": {
+        "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
+      }
+    }
+  }
+}

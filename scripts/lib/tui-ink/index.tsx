@@ -67,6 +67,7 @@ function getClientHomes(): Record<Client, string> {
     claude: path.join(home, '.claude'),
     gemini: path.join(home, '.gemini'),
     opencode: path.join(home, '.opencode'),
+    kiro: path.join(home, '.kiro'),
     all: home, // Not used for 'all'
   };
 }

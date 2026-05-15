@@ -1,5 +1,5 @@
 # ContextDB transparent command wrappers for zsh.
-# Source this file in ~/.zshrc to make codex/claude/gemini/opencode auto-load context packets.
+# Source this file in ~/.zshrc to make codex/claude/gemini/opencode/kiro-cli auto-load context packets.
 #
 # Optional overrides:
 # - ROOTPATH: repo root where scripts/contextdb-shell-bridge.mjs lives
@@ -106,6 +106,14 @@ gemini() {
 
 opencode() {
   ctxdb_invoke_bridge_or_passthrough opencode-cli opencode "$@"
+}
+
+kiro-cli() {
+  ctxdb_invoke_bridge_or_passthrough kiro-cli kiro-cli "$@"
+}
+
+kiro() {
+  kiro-cli "$@"
 }
 
 aios() {

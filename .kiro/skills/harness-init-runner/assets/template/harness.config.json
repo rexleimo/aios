@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "runRootDir": ".harness",
+  "runsDir": "runs",
+  "humanGate": {
+    "enabled": true
+  },
+  "providers": {
+    "codex": {
+      "cmd": "codex",
+      "args": [],
+      "stdin": true,
+      "output": "text",
+      "env": {}
+    },
+    "claude": {
+      "cmd": "claude",
+      "args": [],
+      "stdin": true,
+      "output": "text",
+      "env": {}
+    },
+    "gemini": {
+      "cmd": "gemini",
+      "args": [],
+      "stdin": true,
+      "output": "text",
+      "env": {}
+    },
+    "opencode": {
+      "cmd": "opencode",
+      "args": [],
+      "stdin": true,
+      "output": "text",
+      "env": {}
+    }
+  }
+}
+

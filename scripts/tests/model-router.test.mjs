@@ -1,7 +1,10 @@
-import test from 'node:test';
 import assert from 'node:assert/strict';
+import test from 'node:test';
+
 import {
   defaultModelRegistry,
+  normalizeModelRouting,
+  providerToClientId,
   resolveModelForTaskDescription,
   resolveModelRoutingForTask,
   scoreTaskSignals,
@@ -12,6 +15,24 @@ const registry = defaultModelRegistry();
 function route(taskDescription, extra = {}) {
   return resolveModelRoutingForTask({ taskDescription, registry, env: {}, ...extra });
 }
+
+test('providerToClientId maps kiro to kiro-cli', () => {
+  assert.equal(providerToClientId('kiro'), 'kiro-cli');
+  assert.equal(providerToClientId('claude'), 'claude-code');
+});
+
+test('normalizeModelRouting derives kiro clientId from provider', () => {
+  const routing = normalizeModelRouting({
+    modelId: 'kiro-model',
+    taskType: 'general',
+    provider: 'kiro',
+    reason: 'test',
+  });
+
+  assert.equal(routing.modelId, 'kiro-model');
+  assert.equal(routing.provider, 'kiro');
+  assert.equal(routing.clientId, 'kiro-cli');
+});
 
 test('balanced routes Chinese browser publishing to GPT-5.5 browser automation', () => {
   const result = route('用浏览器打开小红书发布页面，上传图片并填写标题');

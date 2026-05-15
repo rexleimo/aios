@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "aios-jimeng-image-ops",
+  "targetSurface": "kiro",
+  "targetRelativePath": "aios-jimeng-image-ops",
+  "source": "skill-sources/aios-jimeng-image-ops"
+}

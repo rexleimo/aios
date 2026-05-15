@@ -26,7 +26,7 @@ import {
   resolveGeneratedTargetRelativePath,
 } from '../skills/source-tree.mjs';
 
-const ALL_CLIENTS = ['codex', 'claude', 'gemini', 'opencode'];
+const ALL_CLIENTS = ['codex', 'claude', 'gemini', 'opencode', 'kiro'];
 const ALL_SCOPES = ['global', 'project'];
 const INSTALL_MODES = ['copy', 'link'];
 
@@ -171,6 +171,8 @@ function resolveProjectSkillRoot(rootDir, client) {
       return path.join(rootDir, '.gemini', 'skills');
     case 'opencode':
       return path.join(rootDir, '.opencode', 'skills');
+    case 'kiro':
+      return path.join(rootDir, '.kiro', 'skills');
     default:
       return '';
   }
@@ -585,7 +587,7 @@ export async function doctorContextDbSkills({
     for (const file of finding.files) {
       io.log(`       move or convert: ${file}`);
     }
-    io.log('       repo-local discoverable skills must live under .codex/skills or .claude/skills');
+    io.log('       repo-local discoverable skills must live under .codex/skills, .claude/skills, or .kiro/skills');
     warnings += 1;
   }
 

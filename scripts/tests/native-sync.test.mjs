@@ -29,6 +29,7 @@ async function writeNativeManifest(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      kiro: { tier: 'deep', metadataRoot: '.kiro', outputs: ['.kiro/steering/AIOS.md', '.kiro/settings/mcp.json', '.kiro/agents', '.kiro/skills'] },
     },
   });
 }
@@ -39,6 +40,7 @@ async function writeNativeSources(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
+  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project'), { recursive: true });
 
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'core-instructions.md'), 'Shared native instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'contextdb.md'), 'ContextDB bridge enabled.\n', 'utf8');
@@ -63,6 +65,17 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
   });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project', 'steering.md'), 'Kiro steering instructions.\n', 'utf8');
+  await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'kiro', 'project', 'mcp.json'), {
+    'puppeteer-stealth': {
+      type: 'stdio',
+      command: 'bash',
+      args: ['{{ROOT_DIR}}/scripts/run-browser-use-mcp.sh'],
+      env: {
+        BROWSER_USE_CDP_URL: 'http://127.0.0.1:9222',
+      },
+    },
+  });
 }
 
 async function writeSkillSources(rootDir) {
@@ -73,9 +86,10 @@ async function writeSkillSources(rootDir) {
       claude: '.claude/skills',
       gemini: '.gemini/skills',
       opencode: '.opencode/skills',
+      kiro: '.kiro/skills',
     },
     skills: [
-      { relativeSkillPath: 'find-skills', installCatalogName: 'find-skills', repoTargets: ['codex', 'claude', 'gemini', 'opencode'] },
+      { relativeSkillPath: 'find-skills', installCatalogName: 'find-skills', repoTargets: ['codex', 'claude', 'gemini', 'opencode', 'kiro'] },
     ],
     legacyUnmanaged: [],
   });
@@ -86,7 +100,7 @@ async function writeSkillSources(rootDir) {
 async function writeAgentSources(rootDir) {
   await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'kiro'],
   });
 
   const roles = [
@@ -170,6 +184,37 @@ test('native sync writes compatibility docs for gemini and opencode', async () =
   assert.match(await readFile(path.join(rootDir, '.opencode', 'AIOS.md'), 'utf8'), /Opencode compatibility/);
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.gemini')).tier, 'compatibility');
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.opencode')).tier, 'compatibility');
+});
+
+test('native sync writes Kiro steering and merges MCP settings without clobbering existing servers', async () => {
+  const rootDir = await makeTemp('aios-native-sync-kiro-root-');
+  await seedNativeRoot(rootDir);
+  await writeJson(path.join(rootDir, '.kiro', 'settings', 'mcp.json'), {
+    mcpServers: {
+      existing: {
+        command: 'node',
+        args: ['server.js'],
+      },
+    },
+    keepMe: true,
+  });
+
+  await syncNativeEnhancements({ rootDir, client: 'kiro' });
+
+  const steering = await readFile(path.join(rootDir, '.kiro', 'steering', 'AIOS.md'), 'utf8');
+  const mcp = JSON.parse(await readFile(path.join(rootDir, '.kiro', 'settings', 'mcp.json'), 'utf8'));
+
+  assert.match(steering, /AIOS NATIVE BEGIN/);
+  assert.match(steering, /Shared native instructions/);
+  assert.match(steering, /Kiro steering instructions/);
+  assert.equal(mcp.keepMe, true);
+  assert.equal(mcp.mcpServers.existing.command, 'node');
+  assert.equal(mcp.mcpServers['puppeteer-stealth'].command, 'bash');
+  assert.deepEqual(mcp.mcpServers['puppeteer-stealth'].args, [path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh')]);
+  assert.equal(JSON.parse(await readFile(path.join(rootDir, '.kiro', 'agents', 'rex-planner.json'), 'utf8')).name, 'rex-planner');
+  assert.match(await readFile(path.join(rootDir, '.kiro', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.equal(readNativeSyncMetadata(path.join(rootDir, '.kiro')).client, 'kiro');
+  assert.equal(readNativeSyncMetadata(path.join(rootDir, '.kiro')).tier, 'deep');
 });
 
 test('native sync repair mode can replace unmanaged compatibility docs', async () => {
