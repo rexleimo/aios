@@ -1,104 +1,105 @@
 ---
-title: "Model Router: Agent Team 을 위한 지능형 멀티모델 디스패치"
-description: "Model Router 소개 — 능력, 비용, 성공률에 따라 하위 작업을 최적 모델에 매칭하고 CLI 프로토콜을 자동 선택하는 지능형 디스패치 레이어."
+title: "Model Router: 어떤 AI 모델을 사용할지 더 이상 고민하지 마세요"
+description: "작업 설명을 읽고 자동으로 최적의 AI 모델을 선택하는 디스패치 레이어. 더 이상 모델의 강점을 외울 필요가 없습니다."
 date: 2026-05-08
-tags: ["model-router", "multi-model", "Agent Team", "orchestration", "dispatch", "AIOS"]
+tags: ["model-router", "multi-model", "Agent Team", "AIOS"]
 ---
 
-# Model Router: Agent Team 을 위한 지능형 멀티모델 디스패치
+# Model Router: 어떤 AI 모델을 사용할지 더 이상 고민하지 마세요
 
-모든 coding agent 는 서로 다른 강점을 가지고 있습니다. Claude Opus 는 코드 리뷰와 아키텍처 설계에 뛰어납니다. DeepSeek-V4 는 빠르고 저렴하게 구현 작업을 처리합니다. Gemini-3-Pro 는 100만 토큰의 연구 문서를 다룰 수 있습니다. GPT-5.5 는 모든 작업을 훌륭하게 해내는 올라운더입니다.
+이런 경험 있으시죠: 작업이 있는데, 어떤 AI 모델을 사용해야 할지 모르겠는 상황. Claude Opus? DeepSeek? GPT-5.5? 각자 다른 것을 잘하고, 잘못 고르면 시간과 비용이 낭비됩니다.
 
-하지만 문제가 있습니다: **오케스트레이터가 어떤 모델이 어떤 작업에 최적인지 기억해야 하고**, 각 모델의 CLI 명령어도 정확히 알아야 합니다. `claude --model <name>` vs `codex --yolo -m <name>` vs `gemini -m <name>`. 8개 모델, 12가지 작업 유형, 비용 고려 폴백 체인 — 도구 없이는 어떤 사람(또는 에이전트)도 전부 기억할 수 없습니다.
+**라우팅이 자동으로 이루어진다면 어떨까요?**
 
-**Model Router** 는 에이전트가 직접 호출할 수 있는 간단한 디스패치 레이어로 이 문제를 해결합니다.
+Model Router 는 작업 설명을 읽고, 어떤 종류의 작업인지 감지하고, 그 작업에 가장 뛰어난 모델로 보냅니다.
 
-## 작동 방식
+## 해결하는 문제
 
-Model Router 는 4단계 파이프라인입니다:
+Model Router 가 없다면, 라우팅은 이렇게 됩니다:
 
-1. **분석** — 하위 작업 설명을 읽고 작업 유형(코드 리뷰, 구현, 리서치 등)에 매칭
-2. **라우팅** — 능력 매칭으로 기본 모델을 선택하고 비용 오름차순 폴백 체인을 부여
-3. **디스패치** — 모델의 제공자(claude/codex/gemini)에 따라 올바른 CLI 명령을 생성
-4. **학습** — 디스패치 결과를 ContextDB 에 기록하여 성공률 피드백으로 활용
+| 여러분이 말하는 것 | 어떤 모델? | 이유 |
+|---|---|---|
+| "랜딩 페이지 만들어줘" | ??? | 프론트엔드? UI? 디자인? |
+| "이 코드 보안 리뷰해줘" | ??? | Claude Opus? GPT-5.5? |
+| "프로덕션 장애 복구해줘" | ??? | 이건 코딩이 아니라 ops 인데 |
+| "로그인 엔드포인트 구현해줘" | ??? | DeepSeek 인 것 같은데, 아닐 수도? |
 
-```bash
-# 설명에서 작업 유형 자동 감지
-node scripts/aios.mjs model-router route --task "Review auth.js for security vulnerabilities"
-# → security-review → Claude Opus (기본)
-# → 폴백 체인: GPT-5.5 → GLM-5.1
-
-node scripts/aios.mjs model-router route --task "Implement a user login endpoint"
-# → implementation → DeepSeek-V4 (기본)
-# → 폴백 체인: GPT-5.5 → Claude Sonnet
-
-node scripts/aios.mjs model-router route --task "Research React 19 migration strategies"
-# → research → Gemini-3-Pro (기본)
-# → 폴백 체인: GPT-5.5 → Kimi K2.6
-```
-
-## 모델 능력 레지스트리
-
-라우터는 8개 모델의 능력 레지스트리와 함께 제공됩니다:
-
-| 모델 | 최적 용도 | 비용 |
-|------|---------|------|
-| **Claude Opus 4.7** | 코드 리뷰, 아키텍처, 보안 감사 | 최고 |
-| **Claude Sonnet 4.6** | 일상 개발, RAG, 빠른 프로토타입 | 중간 |
-| **GPT-5.5** | 올라운더: 자동화, 추론, 범용 | 최고 |
-| **DeepSeek-V4-Pro** | 알고리즘, 핵심 로직, 배치 처리 | 최저 |
-| **GLM-5.1** | 수학 추론, 자율 루프, 시스템 계획 | 낮음 |
-| **Kimi K2.6** | 멀티에이전트 편성, 프론트엔드 UI | 낮음 |
-| **MiniMax-M2.7** | 자가 치유, 프로덕션 복구 | 낮음 |
-| **Gemini-3-Pro** | 멀티모달 분석, 장문 연구, 1M 컨텍스트 | 중간 |
-
-## 세 가지 CLI 프로토콜, 자동 선택
-
-| 프로토콜 | CLI 템플릿 | 사용 대상 |
-|----------|-----------|---------|
-| **codex** | `codex --yolo -m <model> -p "<prompt>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
-| **claude** | `claude --model <model> -p "<prompt>"` | 그 외 모든 모델 |
-
-더는 `-m` 인지 `--model` 인지 헷갈릴 필요가 없습니다.
-
-## 환경 변수 오버라이드
+모든 모델의 강점을 외우고 CLI 를 수동으로 전환해야 합니다. Model Router 를 사용하면 작업을 설명하기만 하면 됩니다:
 
 ```bash
-export AIOS_MODEL_PLANNER=claude-opus
-export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
-export AIOS_MODEL_REVIEWER=claude-opus
-export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
+node scripts/aios.mjs model-router route \
+  --task "아름다운 랜딩 페이지 컴포넌트 만들어줘" \
+  --explain
 ```
 
-해결 우선순위: **환경 변수** > **preferredModel** (에이전트 카드) > **model** (폴백).
+결과: `frontend → kimi-k2.6` ("랜딩 페이지", "컴포넌트", "아름다운" 이 프론트엔드 작업을 나타내기 때문).
 
-## 피드백 루프
+## 어떻게 선택하는지
 
-모든 디스패치는 `model.dispatch` 이벤트로 기록됩니다:
+Model Router 는 작업 설명에서 **신호** 를 찾습니다 — 어떤 종류의 작업인지 나타내는 키워드:
 
-```json
-{
-  "kind": "model.dispatch",
-  "modelId": "claude-opus",
-  "taskType": "code-review",
-  "success": true,
-  "latencyMs": 4500,
-  "costEstimate": "high"
-}
-```
+| 언급하는 내용 | 감지 결과 | 라우팅 대상 | 이유 |
+|---|---|---|---|
+| "browser", "upload", "screenshot" | 브라우저 자동화 | GPT-5.5 | 도구 사용 추론에 가장 뛰어남 |
+| "security", "vulnerability", "auth" | 보안 리뷰 | Claude Opus | 가장 강력한 리뷰어 |
+| "frontend", "UI", "component" | 프론트엔드 작업 | Kimi K2.6 | UI 작업에 가장 뛰어남 |
+| "production", "incident", "logs" | 자가 치유 | MiniMax-M2.7 | ops 복구에 특화 |
+| "long document", "research" | 리서치 | Gemini-3-Pro | 1M 컨텍스트 윈도우 |
+| "implement", 일반 코딩 | 구현 | DeepSeek-V4 | 저렴하고 빠름 |
 
-## 빠른 시작
+`--explain` 을 추가하면 어떤 신호가 매치되었고 왜 그렇게 라우팅되었는지 정확히 볼 수 있습니다.
+
+## Before/After 비교
+
+Balanced v2 라우터에서 바뀐 점:
+
+| 작업 | 이전 (구 라우터) | 이후 (Balanced v2) |
+|---|---|---|
+| "Xiaohongshu 열어서 이미지 업로드" | implementation → DeepSeek | browser-automation → GPT-5.5 |
+| "아름다운 랜딩 페이지 만들어줘" | implementation → DeepSeek | frontend → Kimi K2.6 |
+| "프로덕션 로그인 장애 복구해줘" | research → Gemini | self-healing → MiniMax-M2.7 |
+| "새 로그인 엔드포인트 구현해줘" | implementation → DeepSeek | implementation → DeepSeek (정확함!) |
+
+핵심 인사이트: **일반적인 구현은 저렴하게 유지** 되지만 (DeepSeek), 분명히 특화된 모델이 필요한 작업은 자동으로 업그레이드됩니다.
+
+## 라우팅 프로필
+
+라우팅이 얼마나 적극적인지 제어하는 세 가지 모드:
+
+| 프로필 | 사용 시기 | 동작 |
+|---|---|---|
+| `balanced` (기본값) | 대부분의 작업 | 강한 신호는 업그레이드, 일반 코딩은 저렴하게 유지 |
+| `premium` | 위험하거나 불명확한 작업 | 비싼 모델을 더 자주 사용 |
+| `budget` | 비용에 민감한 작업 | 정말 강력한 모델이 필요하지 않은 한 저렴한 모델 선호 |
 
 ```bash
-# 모든 모델과 능력 보기
+# 명령어별 지정
+node scripts/aios.mjs model-router route --task "..." --profile premium --explain
+
+# 또는 전체 세션에 적용
+export AIOS_MODEL_ROUTER_PROFILE=premium
+```
+
+## 직접 해보세요
+
+```bash
+# 사용 가능한 모든 모델 보기
 node scripts/aios.mjs model-router list
 
-# 작업을 최적 모델로 라우팅
-node scripts/aios.mjs model-router route --task "당신의 작업"
+# 작업을 라우팅하고 이유 확인
+node scripts/aios.mjs model-router route \
+  --task "여기에 작업 설명" \
+  --profile balanced \
+  --explain
 
-# 디스패치 통계 보기
+# 최근 라우팅 기록 보기
 node scripts/aios.mjs model-router stats
 ```
 
-Model Router 는 RexCLI v1.8.0 이상에서 사용할 수 있습니다. 자세한 내용은 [공식 문서](https://cli.rexai.top/ko/model-router/)를 참조하세요.
+## Agent Team 과 함께 사용
+
+Model Router 는 Agent Team 에 내장되어 있습니다 — 팀 실행의 각 단계가 자동으로 최적의 모델로 라우팅됩니다. 따로 설정할 필요가 없습니다.
+
+---
+
+*Model Router 는 [RexCLI](https://cli.rexai.top) 의 일부입니다. 모든 모델, 규칙, 설정 옵션은 [전체 문서](https://cli.rexai.top/model-router/)를 참조하세요.*

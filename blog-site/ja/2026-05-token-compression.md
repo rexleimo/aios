@@ -1,56 +1,107 @@
 ---
-title: "ContextDB Token Compression: 小さなコンテキストパケットと安全な recall"
-description: "ContextDB context:pack は token 予算内でノイズの多いイベント履歴を先に圧縮し、その後に低優先度イベントを落とせるようになりました。"
+title: "Token Compression: 数ヶ月分の Agent 記憶を1つのプロンプトに収める"
+description: "ContextDB が agent の履歴を token 予算内に収まるよう圧縮 — 重要なものを残し、そうでないものを削ります。"
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "context pack", "AI memory", "RexCLI"]
+tags: ["ContextDB", "token compression", "AI メモリ", "RexCLI"]
 ---
 
-# ContextDB Token Compression: 小さなコンテキストパケットと安全な recall
+# Token Compression: 数ヶ月分の Agent 記憶を1つのプロンプトに収める
 
-長時間の agent セッションは有用な記憶を作りますが、raw history はすぐに高コストになります。prompt、tool log、stack trace、checkpoint をすべてそのまま詰めると、次の agent 実行が不要な token まで支払うことになります。
+AI agent のメモリには常にジレンマがあります: agent にはすべてを記憶してほしいけれど、AI モデルには一度に処理できるテキスト量に厳密な制限があります。履歴が増えれば増えるほど、収まる量は減っていきます。
 
-## クイックアンサー
+**Token compression がこの問題を解決します。** 重要なものを残し、残りを圧縮し、制御可能な予算内に履歴を収めます。
 
-ContextDB `context:pack` は **token compression** をサポートしました。token 予算と strategy を指定すると、低優先度イベントを落とす前にノイズの多いイベントテキストを圧縮します。最新イベント、エラー、ファイル参照、コマンド、next action は先に保護されるため、小さなパケットでも実用的な recall を残せます。
+## 1枚の図でわかる課題
 
-[公式 ContextDB docs を読む](https://cli.rexai.top/ja/contextdb/#token-compression){ .md-button .md-button--primary }
+```
+Agent の完全な履歴: 50,000 トークン
+    ↓
+AI モデルのコンテキストウィンドウ: 4,000 トークン
+    ↓
+圧縮なしの場合: 最後の 4,000 トークンだけが生き残る
+    （それより古いものはすべて消える — 重要な決定やエラーも含めて）
+```
 
-<figure class="rex-visual">
-  <img src="../assets/visual-token-compression-wireframe.svg" alt="Token compression wireframe: raw history compressed into a smaller context packet">
-  <figcaption>質問への wireframe 版回答: signal を残し、noise を圧縮し、budget に収める。</figcaption>
-</figure>
+以前のアプローチは **tail window** — 最新のイベントだけを残し、それ以外はすべて破棄する。予測可能ですが無駄が多い: 昨日の重要なエラーを捨てて、5分前の冗長なログを残すかもしれません。
 
-## すぐ使う
+## 圧縮の仕組み
+
+新しいアプローチはもっと賢い:
+
+1. **残す** 重要なもの: エラー、決定、ファイルパス、最近の状態
+2. **圧縮する** ノイズ: 繰り返しのログ、スタックトレース、冗長な出力
+3. **削る** 低優先度のコンテンツは、圧縮だけでは足りない場合のみ
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 80 \
   --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<id>-compressed.md
+  --token-strategy balanced
 ```
 
-通常は `balanced` を使います。非常に小さなパケットが必要なら `aggressive`、旧来の tail-window 動作を確認したいなら `legacy` を使ってください。
+### 結果
 
-## 何が変わったか
+以前:
+```
+❌ 旧アプローチ: 最後の20イベントを残す → イベント #5 の重要なバグを見逃す
+```
 
-以前の予算付きパケットは主に tail window でした。新しい経路では、重複ログ、長い出力、stack trace を安全に圧縮し、それでも入らない場合だけ低優先度イベントを削除します。
+今:
+```
+✅ 新アプローチ: 全80イベントを残し、ノイズを圧縮 → バグはまだそこにある
+```
 
-| Strategy | Best for | Behavior |
+## 3つのストラテジー
+
+| ストラテジー | 使うタイミング | 何をするか |
 |---|---|---|
-| `balanced` | 日常利用 | ノイズを圧縮し、最新・高シグナルイベントを保護。 |
-| `aggressive` | 小さな予算 | より厳しい行数・長さ制限を適用。 |
-| `legacy` | 互換性確認 | 旧来の tail-only 選択を使用し、圧縮しない。 |
+| `balanced` | デフォルト | ノイズを圧縮し、シグナルを残す。日常利用に最適。 |
+| `aggressive` | 非常に小さい予算 | 厳しい制約向けの最大圧縮。 |
+| `legacy` | 互換性 | 旧来の tail-window 動作。必要な場合のみ使用。 |
 
-`Event Window` 行には `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` が表示され、token 節約が圧縮によるものか削除によるものか確認できます。
+**`balanced` から始めてください。** 90% のケースで正しい選択です。
 
-## FAQ
+## 保護されるもの
 
-### Search の代わりですか？
+次のものは **絶対に削られません**:
 
-いいえ。Search は特定の過去イベントを探すためのものです。Token compression は、選択されたセッションウィンドウを次の prompt packet に収めるためのものです。
+- エラーメッセージと失敗シグナル
+- ファイルパスとコマンド出力
+- 最近の状態と決定
+- 次のアクションシグナル
 
-### 重要なエラーは消えませんか？
+次のものが **最初に圧縮されます**（短縮されますが、必ずしも削除されるとは限りません）:
 
-既定 strategy は高シグナル語、file path、error、最新イベントを保護します。圧縮版が十分な signal を残せない場合、そのイベントは原文のまま保持されます。
+- 繰り返しのログ行
+- スタックトレース
+- 冗長なツール出力
+
+パケットにはテレメトリが含まれているため、何が起きたか正確に確認できます: 何トークンがそのまま残り、何が圧縮され、何イベントが削られたか。
+
+## 最も必要なシーン
+
+Token compression は次のようなシナリオで力を発揮します:
+
+- 数ヶ月の履歴がある **長期プロジェクト**
+- 同じ ContextDB を共有する **複数の agent**
+- 大量のログを生成する **夜間 harness 実行**
+- コンパクトなコンテキストが必要な **agent 間の切り替え**
+
+遅延読み込みの起動とも相性が良い — agent は小さなサマリーで即座に起動し、必要なときだけ圧縮された完全な履歴を読み込みます。
+
+## 試してみる
+
+```bash
+npm run contextdb -- context:pack \
+  --session <your-session-id> \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/compressed.md
+```
+
+出力を確認すると、何トークン節約できたかのサマリーが表示されます。
+
+---
+
+*Token compression は [ContextDB](https://cli.rexai.top/contextdb/) に組み込まれており、[RexCLI](https://cli.rexai.top) の一部です。追加ツールは不要です。*

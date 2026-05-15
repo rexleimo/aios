@@ -30,6 +30,7 @@ description: AI 기억 시스템, 단일 agent harness 워크플로, Agent Team,
 
 - [ContextDB Token 압축: 더 작은 context pack과 안전한 recall](2026-05-token-compression.md)
 - [네이티브 Token 압축: RexCLI가 RTK나 Caveman을 설치하지 않는 이유](2026-05-native-token-compression.md)
+- [aios memo GUI: 에이전트의 기억을 살아있는 그래프로 시각화](2026-05-aios-memo-gui.md)
 - [Model Router: Agent Team 을 위한 지능형 멀티모델 디스패치](2026-05-model-router.md)
 - [Solo Harness: 한 Agent 를 밤새 돌려도 통제를 잃지 않는 방법](2026-04-solo-harness.md)
 - [Browser MCP 약한 모델 개선: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)

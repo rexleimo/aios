@@ -1,76 +1,107 @@
 ---
-title: "ContextDB Token 压缩：更小的上下文包，更稳的回忆能力"
-description: "ContextDB context:pack 现在支持在 token 预算内先压缩噪音事件历史，再丢弃低优先级事件，并提供 balanced / aggressive 策略和打包指标。"
+title: "Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt"
+description: "ContextDB 现在能在 token 预算内压缩你的 agent 历史记录——保留重要的，丢弃不重要的。"
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "context pack", "AI memory", "RexCLI"]
+tags: ["ContextDB", "token compression", "AI 记忆", "RexCLI"]
 ---
 
-# ContextDB Token 压缩：更小的上下文包，更稳的回忆能力
+# Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt
 
-长时间 agent 会话会留下有价值的记忆，但原始历史也会很快变贵。每一次 prompt、工具日志、stack trace、checkpoint 都原样打包，下一次 agent 启动就会为大量噪音付 token。
+AI agent 记忆存在一个矛盾：你希望 agent 记住所有事，但 AI 模型能一次性处理的文本量有严格限制。历史越多，能塞进去的就越少。
 
-## 快速答案
+**Token 压缩解决了这个问题。** 它保留重要内容，压缩其余部分，让你的历史记录适应你控制的预算。
 
-ContextDB `context:pack` 现在支持 **token 压缩**。给它一个 token 预算和策略，它会先压缩噪音事件文本，再开始丢弃低优先级事件。最新事件、错误、文件路径、命令和 next action 信号会被优先保护，所以上下文包变小后仍然保留关键线索。
+## 一张图看懂问题
 
-[查看官方 ContextDB 文档](https://cli.rexai.top/zh/contextdb/#token-compression){ .md-button .md-button--primary }
+```
+你的 agent 完整历史：50,000 tokens
+    ↓
+AI 模型的上下文窗口：4,000 tokens
+    ↓
+没有压缩时会发生什么：只有最后 4,000 tokens 活下来
+    （更早的一切都消失了——包括重要决策和错误）
+```
 
-<figure class="rex-visual">
-  <img src="../assets/visual-token-compression-wireframe.svg" alt="Token 压缩线框图：把原始历史压缩成更小的上下文包">
-  <figcaption>给“这个压缩有什么 nb 的地方”的线框版回答：保留信号，压缩噪音，塞进预算。</figcaption>
-</figure>
+老方法是**尾部窗口**——只保留最近的事件，丢弃其他所有内容。可预测，但浪费：它可能丢掉昨天的一个关键错误，却保留了 5 分钟前的一段冗长日志。
 
-## 现在就用
+## 压缩怎么工作
+
+新方法更聪明：
+
+1. **保留**重要内容：错误、决策、文件路径、最近状态
+2. **压缩**噪音内容：重复日志、堆栈跟踪、冗长输出
+3. **丢弃**低优先级内容——只有在压缩不够时才这么做
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 80 \
   --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<id>-compressed.md
+  --token-strategy balanced
 ```
 
-日常默认用 `balanced`。预算特别小时切到 `aggressive`；如果你要复现旧版尾部窗口行为，用 `legacy`。
+### 结果
 
-## 这次更新改变了什么
+以前是这样：
+```
+❌ 老方法：保留最近 20 条事件 → 第 5 条事件里的关键 bug 丢了
+```
 
-以前有预算的上下文包更像一个尾部窗口：从最近事件开始保留，预算满了就停。这个逻辑稳定，但可能保留近期噪音输出，同时丢掉更早的高信号事件。
+现在是这样：
+```
+✅ 新方法：保留全部 80 条事件，压缩噪音 → 那个 bug 还在
+```
 
-新的流程更细：
+## 三种策略
 
-1. 估算候选事件窗口的原始 token 成本。
-2. 在安全时压缩重复日志、大块输出和 stack trace。
-3. 根据新近程度、角色、错误、文件引用、命令和 next action 给事件打分。
-4. 只有压缩后仍超预算时，才丢弃低优先级事件。
-5. 截断幸存事件是最后兜底。
-
-## 策略选择
-
-| 策略 | 适合场景 | 行为 |
+| 策略 | 什么时候用 | 做什么 |
 |---|---|---|
-| `balanced` | 日常默认 | 压缩噪音文本，同时保护最新和高信号事件。 |
-| `aggressive` | 很小的 token 预算 | 使用更严格的行数和长度限制，再决定是否丢弃事件。 |
-| `legacy` | 兼容性排查 | 保留旧版 tail-only 选择逻辑，不做压缩。 |
+| `balanced` | 默认 | 压缩噪音，保留信号。日常使用最佳。 |
+| `aggressive` | 极小预算 | 在紧张限制下最大化压缩。 |
+| `legacy` | 兼容性 | 旧的尾部窗口行为。只在需要时使用。 |
 
-上下文包的 `Event Window` 行还会显示 `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`。你可以直接看到预算是靠压缩省下来的，还是靠删除事件省下来的。
+**从 `balanced` 开始。** 90% 的场景它都是正确选择。
 
-## 为什么重要
+## 什么会被保护
 
-当你在 RexCLI 里跑多 agent 协作或长任务 harness 时，token 压缩特别有用。agent 仍然能看到最近失败、改过的文件和下一步行动，但不用为重复日志全量付费。
+这些内容**永远不会被丢弃**：
 
-它也和懒加载启动互补：交互式会话可以先用小 facade 快速启动，真正需要深层记忆时，再加载压缩后的 context packet。
+- 错误信息和失败信号
+- 文件路径和命令输出
+- 最近状态和决策
+- 下一步行动信号
 
-## FAQ
+这些内容**优先被压缩**（缩短，不一定会丢弃）：
 
-### 压缩会替代 ContextDB search 吗？
+- 重复的日志行
+- 堆栈跟踪
+- 冗长的工具输出
 
-不会。Search 用来找特定历史事件；token 压缩用于在选定 session 窗口后，构造下一次 prompt packet。
+数据包包含遥测信息，你可以看到确切发生了什么：多少 token 是原始的，多少被压缩了，多少事件被丢弃了。
 
-### 重要错误会不会被压没？
+## 什么时候最需要它
 
-默认策略会保护高信号关键词、文件路径、错误和最新事件。如果安全检查发现压缩版本丢失了太多信号，ContextDB 会保留该事件的原文。
+Token 压缩在这些场景下大放异彩：
 
-### 团队流程里应该写哪个命令？
+- 拥有数月历史的**长期项目**
+- 共享同一个 ContextDB 的**多个 agent**
+- 产生大量日志的**过夜 harness 运行**
+- 需要紧凑上下文时**在 agent 之间切换**
 
-推荐 `--token-budget` 搭配 `--token-strategy balanced`。这是稳定默认值；需要更小预算时再改 `aggressive`，排查兼容性时再用 `legacy`。
+它与懒加载启动配合得特别好——你的 agent 以一个微小摘要瞬间启动，只在需要时才加载压缩后的完整历史。
+
+## 试试看
+
+```bash
+npm run contextdb -- context:pack \
+  --session <你的-session-id> \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/compressed.md
+```
+
+然后检查输出——你会看到节省了多少 token 的汇总。
+
+---
+
+*Token 压缩已内置在 [ContextDB](https://cli.rexai.top/contextdb/) 中，是 [RexCLI](https://cli.rexai.top) 的一部分。不需要额外工具。*

@@ -1,97 +1,102 @@
 ---
-title: "Solo Harness: Let One Agent Work Overnight Without Losing Control"
-description: "AIOS 1.7 adds `aios harness` for resumable single-agent runs with run journals, status/stop/resume controls, HUD visibility, and optional worktree isolation."
+title: "Solo Harness: Give Your Agent a Task, Go To Sleep, Check Results In The Morning"
+description: "AIOS 1.7 introduces the overnight agent run — with journals, stop/resume controls, and git worktree isolation."
 date: 2026-04-26
-tags: ["AIOS", "Solo Harness", "Long-Running Agent", "ContextDB", "Automation"]
+tags: ["AIOS", "Solo Harness", "long-running agent", "ContextDB"]
 ---
 
-# Solo Harness: Let One Agent Work Overnight Without Losing Control
+# Solo Harness: Give Your Agent a Task, Go To Sleep, Check Results In The Morning
 
-Most coding CLIs are great at one tight prompt, but awkward at "keep working on this one objective while I'm asleep." Once you leave the terminal, you usually lose visibility, clean stop control, and the ability to resume without rebuilding context by hand.
+Coding agents are great at short tasks. "Fix this bug", "write this function", "refactor this file" — done in minutes.
 
-With AIOS 1.7, we shipped `aios harness`: a single-agent lane for overnight and other long-running work.
+But what about bigger objectives? "Refactor the entire auth module and write tests." That's hours of work. You can't sit there and watch.
 
-## The Problem With One-Shot CLI Loops
+**Solo Harness lets you hand off a big task and come back when it's done.**
 
-- They work well for short requests, but poorly for unattended objectives.
-- After a few hours, it is hard to tell what the agent actually did.
-- Stopping often means interrupting bluntly instead of waiting for a safe boundary.
-- Restarting usually means rebuilding context and operator intent manually.
-- Running inside your main checkout makes it easy to leave behind messy diffs.
+## The Old Way vs. The New Way
 
-## What Ships In `aios harness`
+**Before:** You run a long task, go to bed, wake up to... something. Maybe it finished. Maybe it got stuck. Maybe it made a mess of your git history. You have no idea what happened.
 
-`aios harness` adds a resumable operator loop for one agent working on one objective:
+**After:** You start a harness run with `--worktree`, go to bed, and in the morning:
 
-- `run` starts the session and records the objective.
-- `status` reports the latest structured state and artifacts.
-- `stop` asks the run to halt at the next safe boundary.
-- `resume` restarts the same session instead of creating a brand-new run.
-- `hud` now auto-detects solo harness sessions and shows the latest summary.
-- `--worktree` isolates overnight edits in a disposable git worktree.
+- Check the **run journal** to see exactly what happened
+- Review the **structured status** to see if it completed
+- If it got stuck, **resume** from where it stopped
+- If it went off track, **delete the worktree** — your main branch is untouched
 
-## Quick Start
+## How It Works
 
 ```bash
-# Start an overnight run in an isolated worktree
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --worktree
+# Evening: start the run
+aios harness run \
+  --objective "Refactor the auth module and write integration tests" \
+  --session nightly-auth \
+  --worktree
 
-# Check structured status
-aios harness status --session nightly-demo --json
+# Morning: check what happened
+aios harness status --session nightly-auth --json
 
-# Monitor the same session in HUD
-aios hud --session nightly-demo --json
+# If it finished: review the changes
+aios hud --session nightly-auth
 
-# Ask the run to stop cleanly
-aios harness stop --session nightly-demo --reason "morning handoff"
-
-# Continue later with the same session
-aios harness resume --session nightly-demo
+# If it got stuck: fix the issue and resume
+aios harness resume --session nightly-auth --max-iterations 10
 ```
-
-If you want to confirm the artifact contract before spending tokens, start with dry-run:
-
-```bash
-aios harness run --objective "Draft tomorrow handoff" --session nightly-demo --worktree --dry-run --json
-```
-
-## What The Run Writes
-
-Every session writes its journal under:
-
-```text
-memory/context-db/sessions/<session-id>/artifacts/solo-harness/
-```
-
-Main files include:
-
-- `objective.md` - normalized objective saved with the session.
-- `run-summary.json` - current state, iteration counters, backoff state, and worktree metadata.
-- `control.json` - operator stop requests and notes.
-- `iteration-0001.json` - normalized per-iteration outcome.
-- `iteration-0001.log.jsonl` - raw iteration log stream for debugging.
-
-That gives you a readable handoff trail instead of a vague "the agent ran for a while" story.
 
 ## Why `--worktree` Matters
 
-Overnight runs should not depend on blanket cleanup like `git reset --hard`.
+The `--worktree` flag is important. It creates a separate copy of your repo where the agent can make changes freely.
 
-With `--worktree`, AIOS creates an isolated git worktree for the harness session so the agent does not mutate your main checkout directly. If the run produces nothing useful, the temporary worktree can be cleaned up. If it produces valuable changes, the worktree metadata stays attached to the run summary for review and merge.
+- **Good results?** Merge the worktree into your main branch
+- **Bad results?** Just delete the worktree — zero impact on your code
 
-## Solo Harness vs Agent Team vs Orchestrate
+No `git reset --hard`. No risky cleanup. Just safe isolation.
 
-| Need | Better fit |
-|---|---|
-| One objective, one provider, resumable overnight execution | `aios harness ...` |
-| Parallel workers on a task that splits cleanly | `aios team ...` |
-| Staged orchestration with preflight gates | `aios orchestrate ...` |
+## What Gets Recorded
 
-In short: use Solo Harness when the job should stay with one agent, not become a mini project manager.
+Every harness run writes a journal:
 
-## Read The Docs
+```
+memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+  ├── objective.md           # What you asked it to do
+  ├── run-summary.json       # Current state and progress
+  ├── control.json           # Stop requests and notes
+  ├── iteration-0001.json    # What happened in each iteration
+  └── iteration-0001.log     # Detailed logs
+```
 
-- [Solo Harness docs](https://cli.rexai.top/solo-harness/)
-- [HUD Guide](https://cli.rexai.top/hud-guide/)
-- [Agent Team guide](https://cli.rexai.top/team-ops/)
-- [Use cases](https://cli.rexai.top/use-cases/)
+This gives you a **readable handoff trail** — not just "the agent ran for a while", but exactly what it did, what worked, and what didn't.
+
+## When To Use Solo Harness
+
+**Use it when:**
+- You have one clear objective that will take a long time
+- The task doesn't need to be split across agents
+- You want to wake up to results instead of babysitting
+
+**Don't use it when:**
+- The task can be split into independent parts (use [Agent Team](https://cli.rexai.top/team-ops/) instead)
+- You're still figuring out the requirements (start with a normal session)
+- You need staged execution with quality gates (use orchestrate)
+
+## Try It
+
+```bash
+# Start with a dry run to verify everything is set up
+aios harness run \
+  --objective "Write integration tests for the payment module" \
+  --session test-dry \
+  --worktree \
+  --dry-run --json
+
+# When you're ready, go live
+aios harness run \
+  --objective "Write integration tests for the payment module" \
+  --session payment-tests \
+  --worktree \
+  --max-iterations 20
+```
+
+---
+
+*Solo Harness shipped in AIOS 1.7. Read the [full docs](https://cli.rexai.top/solo-harness/) or try it tonight.*

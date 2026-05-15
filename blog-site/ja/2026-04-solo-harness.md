@@ -1,97 +1,102 @@
 ---
-title: "Solo Harness: 1つの Agent を夜通し動かしても制御を失わない"
-description: "AIOS 1.7 で `aios harness` を追加。run journal、status/stop/resume 制御、HUD 表示、任意の worktree 分離を備えた再開可能な単一 Agent 実行を提供します。"
+title: "Solo Harness: タスクを任せて寝て、朝に結果を確認する"
+description: "AIOS 1.7 で夜間 agent 実行を実現 — run journal、stop/resume 制御、git worktree による隔離を備えています。"
 date: 2026-04-26
-tags: ["AIOS", "Solo Harness", "単一 Agent", "ContextDB", "自動化"]
+tags: ["AIOS", "Solo Harness", "長時間実行 Agent", "ContextDB"]
 ---
 
-# Solo Harness: 1つの Agent を夜通し動かしても制御を失わない
+# Solo Harness: タスクを任せて寝て、朝に結果を確認する
 
-多くの coding CLI は短い prompt を処理するのは得意ですが、「1つの目的に対して数時間、あるいは自分が寝ている間も作業を続ける」という使い方になると、途端に運用しづらくなります。端末を離れた瞬間に、可視性、停止制御、そしてスムーズな再開が失われがちです。
+Coding agent は短いタスクなら得意です。「このバグを直して」「この関数を書いて」「このファイルをリファクタリングして」— 数分で終わります。
 
-AIOS 1.7 で追加した `aios harness` は、そのための単一 Agent 長時間実行レーンです。
+でも、もっと大きな目標はどうでしょう。「auth モジュール全体をリファクタリングしてテストも書いて」。これは数時間かかります。ずっと見ているわけにはいきません。
 
-## ワンショット CLI ループの弱点
+**Solo Harness は、大きなタスクを任せて、終わったら戻ってくる仕組みです。**
 
-- 短い依頼には向いていても、無人の単一目的実行には向きません。
-- 数時間後に Agent が何をしたのか追いづらくなります。
-- 止めたいときに、安全な境界まで待つのではなく強制中断になりがちです。
-- 再開時にコンテキストと operator 意図を手で組み直すことが多いです。
-- メイン checkout で直接走らせると、扱いにくい diff が残りやすくなります。
+## 以前のやり方 vs 今のやり方
 
-## `aios harness` で追加されたもの
+**以前:** 長いタスクを実行して寝て、起きたら……何かがある。終わってるかもしれない。止まってるかもしれない。git 履歴がめちゃくちゃになってるかもしれない。何が起きたのか全くわかりません。
 
-`aios harness` は、「1つの Agent が1つの目的を継続して進める」ための再開可能な operator loop を提供します。
+**今:** `--worktree` 付きで harness run を開始して寝て、朝には:
 
-- `run` - session を開始し、目的を記録します。
-- `status` - 最新の構造化状態と artifact を確認します。
-- `stop` - 次の安全な境界で停止するよう要求します。
-- `resume` - 新しい run を作り直さず、同じ session を再開します。
-- `hud` - solo harness session を自動認識し、最新サマリを表示します。
-- `--worktree` - 夜間実行の変更を破棄可能な git worktree に隔離します。
+- **run journal** を確認して、何が起きたか正確に把握
+- **構造化ステータス** を確認して、完了したかどうかを確認
+- 止まっていれば、止まった場所から **resume**
+- 方向を間違えていれば、**worktree を削除** — メインブランチには影響なし
 
-## クイックスタート
+## 仕組み
 
 ```bash
-# 分離された worktree で夜間実行を開始
-aios harness run --objective "明朝の引き継ぎメモをまとめる" --session nightly-demo --worktree
+# 夜: 実行を開始
+aios harness run \
+  --objective "auth モジュールをリファクタリングして統合テストを書く" \
+  --session nightly-auth \
+  --worktree
 
-# 構造化ステータスを確認
-aios harness status --session nightly-demo --json
+# 朝: 何が起きたか確認
+aios harness status --session nightly-auth --json
 
-# HUD で同じ session を監視
-aios hud --session nightly-demo --json
+# 完了していたら: 変更を確認
+aios hud --session nightly-auth
 
-# 安全な境界で停止するよう依頼
-aios harness stop --session nightly-demo --reason "朝に人が引き継ぐ"
-
-# 後で同じ session を再開
-aios harness resume --session nightly-demo
+# 止まっていたら: 問題を修正して再開
+aios harness resume --session nightly-auth --max-iterations 10
 ```
 
-token を使う前に artifact 契約を確認したい場合は、まず dry-run を使います。
+## `--worktree` が重要な理由
 
-```bash
-aios harness run --objective "明朝の引き継ぎメモをまとめる" --session nightly-demo --worktree --dry-run --json
+`--worktree` フラグは重要です。リポジトリの別コピーを作成し、agent が自由に変更を加えられるようにします。
+
+- **良い結果？** worktree をメインブランチにマージ
+- **悪い結果？** worktree を削除するだけ — コードへの影響はゼロ
+
+`git reset --hard` は不要。リスキーなクリーンアップも不要。安全な隔離だけ。
+
+## 何が記録されるか
+
+各 harness run は journal を書き出します:
+
 ```
-
-## 実行中に書き出されるもの
-
-各 session の run journal は次に保存されます。
-
-```text
 memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+  ├── objective.md           # 依頼した内容
+  ├── run-summary.json       # 現在の状態と進捗
+  ├── control.json           # 停止要求とメモ
+  ├── iteration-0001.json    # 各イテレーションで何が起きたか
+  └── iteration-0001.log     # 詳細ログ
 ```
 
-主なファイル:
+これにより **読みやすい引き継ぎ記録** が手に入ります — 「agent がしばらく動いていた」ではなく、何をしたか、何が上手くいったか、何が上手くいかなかったかが正確にわかります。
 
-- `objective.md` - 正規化された目的。
-- `run-summary.json` - 現在の状態、反復回数、backoff 状態、worktree メタデータ。
-- `control.json` - operator の停止要求とメモ。
-- `iteration-0001.json` - 各反復の正規化済み結果。
-- `iteration-0001.log.jsonl` - デバッグ用の生ログストリーム。
+## Solo Harness を使うべきケース
 
-翌朝引き継ぐときに、曖昧な「昨夜しばらく動いていた」ではなく、読み取れる run journal が残ります。
+**使うべきケース:**
+- 1つの明確な目的があり、時間がかかる
+- タスクを複数の agent に分割する必要がない
+- 見守るのではなく、結果が出たタイミングで確認したい
 
-## なぜ `--worktree` が重要か
+**使わないべきケース:**
+- タスクが独立した部分に分割できる（代わりに [Agent Team](https://cli.rexai.top/team-ops/) を使ってください）
+- まだ要件を整理中（通常のセッションで始めてください）
+- 品質ゲート付きの段階的実行が必要（orchestrate を使ってください）
 
-夜間実行の後始末を、乱暴な `git reset --hard` に頼るべきではありません。
+## 試してみる
 
-`--worktree` を付けると、AIOS は harness session 用の分離 git worktree を作成し、Agent がメイン checkout を直接汚さないようにします。成果がなければ一時 worktree は掃除できますし、価値のある変更が出た場合は、worktree メタデータが run summary に残るため、レビューとマージに引き継げます。
+```bash
+# まず dry run でセットアップを確認
+aios harness run \
+  --objective "payment モジュールの統合テストを書く" \
+  --session test-dry \
+  --worktree \
+  --dry-run --json
 
-## Solo Harness / Agent Team / Orchestrate の使い分け
+# 準備ができたら、本番実行
+aios harness run \
+  --objective "payment モジュールの統合テストを書く" \
+  --session payment-tests \
+  --worktree \
+  --max-iterations 20
+```
 
-| 必要なもの | 向いている選択 |
-|---|---|
-| 1つの目的・1つの provider・再開可能な夜間実行 | `aios harness ...` |
-| 明確に分割できるタスクの並列 worker | `aios team ...` |
-| preflight gate 付きの段階的オーケストレーション | `aios orchestrate ...` |
+---
 
-要するに、この仕事を1つの Agent に持たせ続けたいなら Solo Harness、最初から複数 worker を束ねるなら別ルートです。
-
-## 関連ドキュメント
-
-- [Solo Harness ドキュメント](https://cli.rexai.top/ja/solo-harness/)
-- [HUD ガイド](https://cli.rexai.top/ja/hud-guide/)
-- [Agent Team ガイド](https://cli.rexai.top/ja/team-ops/)
-- [ユースケース集](https://cli.rexai.top/ja/use-cases/)
+*Solo Harness は AIOS 1.7 でリリースされました。[ドキュメント](https://cli.rexai.top/solo-harness/)を読むか、今夜試してみてください。*

@@ -1,76 +1,107 @@
 ---
-title: "ContextDB Token Compression: Smaller Context Packs With Safer Recall"
-description: "ContextDB context:pack now compresses noisy event history under a token budget before dropping events, with balanced and aggressive strategies plus packet telemetry."
+title: "Token Compression: Fit Months of Agent Memory Into a Single Prompt"
+description: "ContextDB now compresses your agent's history to fit within a token budget — keeping what matters, dropping what doesn't."
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "context pack", "AI memory", "RexCLI"]
+tags: ["ContextDB", "token compression", "AI memory", "RexCLI"]
 ---
 
-# ContextDB Token Compression: Smaller Context Packs With Safer Recall
+# Token Compression: Fit Months of Agent Memory Into a Single Prompt
 
-Long-running agent sessions create useful memory, but raw history can become expensive fast. If every prompt, tool log, stack trace, and checkpoint is packed verbatim, the next agent run pays for context it may not need.
+Here's the tension with AI agent memory: you want your agent to remember everything, but AI models have a strict limit on how much text they can process at once. The more history you have, the less fits.
 
-## Quick Answer
+**Token compression solves this.** It keeps the important stuff, compresses the rest, and fits your history into a budget you control.
 
-ContextDB `context:pack` now supports **token compression**. Give it a token budget and a strategy, and it will compress noisy event text before it starts dropping lower-priority events. The latest event, errors, file references, commands, and next-action signals are protected first, so the packet stays useful even when it is much smaller.
+## The Problem In One Picture
 
-[Read the official ContextDB docs](https://cli.rexai.top/contextdb/#token-compression){ .md-button .md-button--primary }
+```
+Your agent's full history: 50,000 tokens
+    ↓
+AI model's context window: 4,000 tokens
+    ↓
+What happens without compression: only the last 4,000 tokens survive
+    (Everything older is gone — including important decisions and errors)
+```
 
-<figure class="rex-visual">
-  <img src="assets/visual-token-compression-wireframe.svg" alt="Wireframe showing raw history being compressed into a smaller context packet">
-  <figcaption>Wireframe version for the “what is good about compression?” question: keep signal, compress noise, fit the budget.</figcaption>
-</figure>
+The old approach was a **tail window** — just keep the most recent events and drop everything else. Predictable, but wasteful: it might drop a critical error from yesterday while keeping a verbose log from 5 minutes ago.
 
-## Do It Now
+## How Compression Works
+
+The new approach is smarter:
+
+1. **Keep** the important stuff: errors, decisions, file paths, recent state
+2. **Compress** the noisy stuff: repeated logs, stack traces, verbose output
+3. **Drop** low-priority content only if compression wasn't enough
 
 ```bash
 npm run contextdb -- context:pack \
   --session <id> \
   --limit 80 \
   --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<id>-compressed.md
+  --token-strategy balanced
 ```
 
-Use `balanced` as the default. Switch to `aggressive` when you need a very small packet, or `legacy` when you want the old tail-window behavior without compression.
+### The Result
 
-## What Changed
+Instead of this:
+```
+❌ Old approach: Keep last 20 events → miss the critical bug from event #5
+```
 
-Before this upgrade, a bounded packet mostly behaved like a tail window: keep recent events until the budget is full, then stop. That is predictable, but it can throw away older high-signal context while keeping noisy recent output.
+You get this:
+```
+✅ New approach: Keep all 80 events, compress the noisy ones → the bug is still there
+```
 
-The new path is more selective:
+## Three Strategies
 
-1. Estimate the raw token cost for the candidate event window.
-2. Compress repetitive logs, long line sets, and stack traces when that is safe.
-3. Score events by recency, role, errors, file references, commands, and next-action signals.
-4. Drop lower-priority events only if compression still cannot fit the budget.
-5. Truncate the survivor only as the final fallback.
-
-## Strategy Guide
-
-| Strategy | Best for | Behavior |
+| Strategy | When to use | What it does |
 |---|---|---|
-| `balanced` | Normal daily use | Compresses noisy text while protecting latest and high-signal events. |
-| `aggressive` | Very small budgets | Applies tighter line and length limits before dropping events. |
-| `legacy` | Compatibility checks | Keeps the previous tail-only selection behavior and skips compression. |
+| `balanced` | Default | Compresses noise, keeps signal. Best for daily use. |
+| `aggressive` | Very small budgets | Maximum compression for tight constraints. |
+| `legacy` | Compatibility | Old tail-window behavior. Use only if you need it. |
 
-The packet also includes telemetry in its `Event Window` line: `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, and `truncated`. That makes it easy to confirm whether the budget was met by compression or by removing events.
+**Start with `balanced`.** It's the right choice for 90% of cases.
 
-## Why It Matters
+## What Gets Protected
 
-Token compression is most useful when you run RexCLI across multiple coding agents or long-running harness sessions. You can keep the agent aware of recent failures, changed files, and next actions without paying to replay every repeated log line.
+These things are **never dropped**:
 
-It also pairs well with lazy load startup: interactive sessions can start fast with a small facade, then load a compressed packet only when the task needs deeper memory.
+- Error messages and failure signals
+- File paths and command outputs
+- Recent state and decisions
+- Next-action signals
 
-## FAQ
+These things are **compressed first** (shortened, not always dropped):
 
-### Does compression replace ContextDB search?
+- Repeated log lines
+- Stack traces
+- Verbose tool output
 
-No. Search is for retrieving specific past events. Token compression is for building the next prompt packet after the relevant session window has been selected.
+The packet includes telemetry so you can see exactly what happened: how many tokens were raw, how many were compressed, how many events were dropped.
 
-### Will important errors disappear?
+## When You Need It Most
 
-The default strategy protects high-signal terms, file paths, errors, and the latest event. If safety checks decide a compressed version lost too much signal, ContextDB keeps the original text for that event.
+Token compression shines in these scenarios:
 
-### Which command should I document in team workflows?
+- **Long-running projects** with months of history
+- **Multiple agents** sharing the same ContextDB
+- **Overnight harness runs** that generate lots of logs
+- **Switching between agents** where you need compact context
 
-Use `--token-budget` with `--token-strategy balanced`. It gives teams a stable default while still allowing `aggressive` for tight budgets and `legacy` for debugging compatibility.
+It pairs especially well with lazy load startup — your agent starts instantly with a tiny summary, then loads a compressed full history only when needed.
+
+## Try It
+
+```bash
+npm run contextdb -- context:pack \
+  --session <your-session-id> \
+  --token-budget 1200 \
+  --token-strategy balanced \
+  --out memory/context-db/exports/compressed.md
+```
+
+Then check the output — you'll see a summary of how many tokens were saved.
+
+---
+
+*Token compression is built into [ContextDB](https://cli.rexai.top/contextdb/), part of [RexCLI](https://cli.rexai.top). No extra tools needed.*

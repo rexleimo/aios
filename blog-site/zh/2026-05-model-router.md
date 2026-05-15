@@ -1,130 +1,105 @@
 ---
-title: "Model Router：Agent Team 的智能多模型调度层"
-description: "推出 Model Router — 根据能力、成本和历史成功率将子任务匹配到最优模型的智能调度层，支持自动 CLI 协议选择。"
+title: "Model Router：别再猜该用哪个 AI 模型了"
+description: "一个调度层，能读懂你的任务描述并自动选择最合适的 AI 模型。再也不用死记硬背模型特长。"
 date: 2026-05-08
-tags: ["model-router", "multi-model", "Agent Team", "orchestration", "dispatch", "AIOS"]
+tags: ["model-router", "多模型", "Agent Team", "AIOS"]
 ---
 
-# Model Router：Agent Team 的智能多模型调度层
+# Model Router：别再猜该用哪个 AI 模型了
 
-每个 coding agent 都有不同的能力形状。Claude Opus 擅长代码审查和架构设计。DeepSeek-V4 快速且便宜，适合写代码。Gemini-3-Pro 能处理 100 万 token 的研究文档。GPT-5.5 是六边形战士，什么都能做。
+你一定有过这种感觉：手头有个任务，但不确定该用哪个 AI 模型。Claude Opus？DeepSeek？GPT-5.5？每个模型各有所长，选错了浪费时间和钱。
 
-但问题来了：**你的编排器得记住哪个模型最适合哪种任务**，而且 CLI 命令也要写对。`claude --model <name>` vs `codex --yolo -m <name>` vs `gemini -m <name>`。8 个模型、12 种任务类型、按成本排序的降级链——没有工具辅助，任何人（或 agent）都记不住。
+**如果路由能自动完成呢？**
 
-**Model Router** 用一个 agent 可直接调用的简单调度层解决了这个问题。
+Model Router 读取你的任务描述，检测工作类型，然后把它派发给最擅长这类工作的模型。
 
-## 工作原理
+## 解决什么问题
 
-Model Router 是一个四步流水线：
+没有 Model Router 时，路由是这样的：
 
-1. **分析** — 读取子任务描述，匹配任务类型（代码审查、代码实现、研究等）
-2. **路由** — 按能力匹配选择首选模型，附带按成本升序排列的降级链
-3. **派发** — 根据模型所属协议自动生成正确的 CLI 命令
-4. **学习** — 将调度结果记录到 ContextDB，用于历史成功率反馈
+| 你说 | 用哪个模型？ | 为什么纠结 |
+|---|---|---|
+| "搭一个落地页" | ??? | 这是前端？UI？设计？ |
+| "审查这段代码的安全性" | ??? | Claude Opus？GPT-5.5？ |
+| "修复线上故障" | ??? | 这是运维，不是写代码 |
+| "实现一个登录接口" | ??? | 应该用 DeepSeek，但也不一定？ |
 
-```bash
-# 从描述自动检测任务类型
-node scripts/aios.mjs model-router route --task "审查 auth.js 的安全漏洞"
-# → security-review → Claude Opus (首选)
-# → 降级链: GPT-5.5 → GLM-5.1
-
-node scripts/aios.mjs model-router route --task "实现一个用户登录接口"
-# → implementation → DeepSeek-V4 (首选)
-# → 降级链: GPT-5.5 → Claude Sonnet
-
-node scripts/aios.mjs model-router route --task "研究 React 19 迁移方案"
-# → research → Gemini-3-Pro (首选)
-# → 降级链: GPT-5.5 → Kimi K2.6
-```
-
-## 模型能力注册表
-
-路由器内置了涵盖 8 个模型的能力注册表：
-
-| 模型 | 最擅长 | 成本 |
-|------|--------|------|
-| **Claude Opus 4.7** | 代码审查、架构设计、安全审计 | 最高 |
-| **Claude Sonnet 4.6** | 日常开发、RAG、快速原型 | 中 |
-| **GPT-5.5** | 六边形战士：自动化、推理、通用 | 最高 |
-| **DeepSeek-V4-Pro** | 算法实现、核心逻辑、批处理 | 最低 |
-| **GLM-5.1** | 数学推理、自主循环、系统规划 | 低 |
-| **Kimi K2.6** | 多 Agent 编排、前端 UI | 低 |
-| **MiniMax-M2.7** | 自愈运维、生产恢复 | 低 |
-| **Gemini-3-Pro** | 多模态分析、长文档研究、1M 上下文 | 中 |
-
-每个模型条目包含其 CLI 协议 — `claude`、`codex` 或 `gemini` — 路由器始终生成正确的命令。
-
-## 三种 CLI 协议，自动选择
-
-| 协议 | CLI 模板 | 使用者 |
-|------|---------|--------|
-| **codex** | `codex --yolo -m <模型名> -p "<提示词>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<提示词>"` | Gemini-3-Pro |
-| **claude** | `claude --model <模型名> -p "<提示词>"` | 其余所有模型 |
-
-不用再纠结是 `-m` 还是 `--model` —— 路由器全自动处理。
-
-## 环境变量覆盖
-
-无需修改配置文件即可按角色覆盖：
+你得记住每个模型的特长，还要手动切换 CLI。有了 Model Router，你只需要描述任务：
 
 ```bash
-export AIOS_MODEL_PLANNER=claude-opus
-export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
-export AIOS_MODEL_REVIEWER=claude-opus
-export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
+node scripts/aios.mjs model-router route \
+  --task "搭建一个漂亮的落地页组件" \
+  --explain
 ```
 
-或按任务类型：
+结果：`frontend → kimi-k2.6`（因为"落地页"、"组件"、"漂亮"暗示了前端工作）。
+
+## 它怎么知道该选什么
+
+Model Router 在你的任务描述中寻找**信号**——那些暗示你正在做什么类型工作的关键词：
+
+| 你提到 | 检测为 | 路由到 | 原因 |
+|---|---|---|---|
+| "browser"、"upload"、"screenshot" | 浏览器自动化 | GPT-5.5 | 工具调用推理最强 |
+| "security"、"vulnerability"、"auth" | 安全审查 | Claude Opus | 审查能力最强 |
+| "frontend"、"UI"、"component" | 前端工作 | Kimi K2.6 | UI 任务最擅长 |
+| "production"、"incident"、"logs" | 自愈运维 | MiniMax-M2.7 | 专为运维恢复设计 |
+| "long document"、"research" | 研究 | Gemini-3-Pro | 100 万 token 上下文窗口 |
+| "implement"、常规编码 | 代码实现 | DeepSeek-V4 | 便宜又快 |
+
+在任何路由命令后加 `--explain`，就能看到匹配了哪些信号以及为什么。
+
+## 前后对比
+
+以下是 Balanced v2 路由器带来的变化：
+
+| 任务 | 之前（旧路由器） | 之后（Balanced v2） |
+|---|---|---|
+| "打开小红书上传图片" | implementation → DeepSeek | browser-automation → GPT-5.5 |
+| "搭建一个漂亮的落地页" | implementation → DeepSeek | frontend → Kimi K2.6 |
+| "修复线上登录故障" | research → Gemini | self-healing → MiniMax-M2.7 |
+| "实现一个新的登录接口" | implementation → DeepSeek | implementation → DeepSeek（正确！） |
+
+核心思路：**普通实现任务保持低成本**（DeepSeek），但明显需要专业模型的任务会自动升级。
+
+## 路由配置
+
+三种模式控制路由的激进程度：
+
+| 配置 | 什么时候用 | 效果 |
+|---|---|---|
+| `balanced`（默认） | 大部分工作 | 强信号才升级；普通编码保持低成本 |
+| `premium` | 高风险或不确定的任务 | 更愿意使用昂贵模型 |
+| `budget` | 成本敏感的工作 | 倾向便宜模型，除非任务确实需要强力模型 |
 
 ```bash
-export AIOS_MODEL_CODE_REVIEW=claude-opus
-export AIOS_MODEL_RESEARCH=gemini-3-pro
-export AIOS_MODEL_GENERAL=gpt-5.5
+# 单条命令指定
+node scripts/aios.mjs model-router route --task "..." --profile premium --explain
+
+# 或者为整个会话设置
+export AIOS_MODEL_ROUTER_PROFILE=premium
 ```
 
-解析优先级：**环境变量** > **preferredModel**（agent 角色卡） > **model**（兜底）。
-
-## 感知反馈循环
-
-每次调度都记录为 `model.dispatch` 事件：
-
-```json
-{
-  "kind": "model.dispatch",
-  "modelId": "claude-opus",
-  "taskType": "code-review",
-  "success": true,
-  "latencyMs": 4500,
-  "costEstimate": "high"
-}
-```
-
-随着时间推移，感知系统按任务类型计算模型成功率。未来的路由决策将综合考虑：**能力匹配 × 历史成功率 × 成本**。
-
-## Agent 集成
-
-Model Router 通过 AIOS Task Router 注入 Agent 上下文。任何通过 `ctx-agent` 运行的 Agent 都会自动获取模型路由指引。当派发子任务时，Agent 可调用 `model-router` skill 确定最优模型。
-
-Agent 角色卡（`.claude/agents/*.md`）包含 `preferredModel` 字段：
-
-```yaml
-# .claude/agents/rex-reviewer.md
-model: sonnet
-preferredModel: claude-opus
-```
-
-## 快速开始
+## 试试看
 
 ```bash
-# 查看所有模型和能力
+# 查看所有可用模型
 node scripts/aios.mjs model-router list
 
-# 将任务路由到最优模型
-node scripts/aios.mjs model-router route --task "你的任务描述"
+# 路由一个任务并查看原因
+node scripts/aios.mjs model-router route \
+  --task "你的任务描述" \
+  --profile balanced \
+  --explain
 
-# 查看调度统计
+# 查看最近的路由记录
 node scripts/aios.mjs model-router stats
 ```
 
-Model Router 已在 RexCLI v1.8.0 中可用。详见[完整文档](https://cli.rexai.top/zh/model-router/)了解配置、路由规则和集成细节。
+## 与 Agent Team 配合
+
+Model Router 已内置到 Agent Team——团队运行的每个阶段会自动路由到最优模型。不需要任何配置。
+
+---
+
+*Model Router 是 [RexCLI](https://cli.rexai.top) 的一部分。查看[完整文档](https://cli.rexai.top/model-router/)了解所有模型、规则和配置选项。*
