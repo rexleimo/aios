@@ -92,23 +92,32 @@ aios
 
 进入你的项目目录：
 
-=== "macOS / Linux"
+```bash
+cd /path/to/your/project
+aios init
+```
 
-    ```bash
-    cd /path/to/your/project
-    touch .contextdb-enable
-    codex
-    ```
+`aios init` 会检测你安装的编程 agent（Claude Code、Codex CLI、Gemini CLI、OpenCode），为每个 agent 配置记忆系统。**幂等操作** — 重复运行不会出错。
 
-=== "Windows PowerShell"
+??? info "工作原理"
+    `aios init` 在每个 agent 的配置文件（CLAUDE.md、AGENTS.md、GEMINI.md）头部添加一个轻量标记（`<!-- AIOS: memory/context-db/index.json -->`）。Agent 启动时看到标记，读取 context registry，按需加载上下文 — 不再等待漫长的上下文注入。
 
-    ```powershell
-    cd C:\path\to\your\project
-    New-Item -ItemType File -Path .contextdb-enable -Force
-    codex
-    ```
+??? info "旧版 opt-in 模式"
+    如果你更喜欢旧的方式，仍然可以用：
 
-你也可以把最后一行换成：
+    === "macOS / Linux"
+        ```bash
+        touch .contextdb-enable
+        ```
+
+    === "Windows PowerShell"
+        ```powershell
+        New-Item -ItemType File -Path .contextdb-enable -Force
+        ```
+
+    推荐使用新的 `aios init` 方式 — 启动更快，跨 agent 记忆共享。
+
+你也可以把 `codex` 换成：
 
 ```bash
 claude

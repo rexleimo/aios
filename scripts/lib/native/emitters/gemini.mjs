@@ -4,14 +4,14 @@ export function renderGeminiNativeOutputs({ rootDir }) {
   return {
     operations: [
       {
-        kind: 'managed-file',
-        targetPath: '.gemini/AIOS.md',
+        kind: 'markdown-block',
+        targetPath: 'GEMINI.md',
         content: joinMarkdownSections([
           ...readSharedMarkdownParts(rootDir),
           readClientMarkdownSource(rootDir, 'gemini', 'AIOS.md'),
         ]),
       },
     ],
-    managedTargets: ['.gemini/AIOS.md', '.gemini/skills'],
+    managedTargets: ['GEMINI.md', '.gemini/skills'],
   };
 }

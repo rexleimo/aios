@@ -5,9 +5,8 @@
   "client": "opencode",
   "tier": "compatibility",
   "managedTargets": [
-    ".opencode/AIOS.md",
     ".opencode/skills"
   ],
-  "generatedAt": "2026-05-14T14:58:10.607Z",
+  "generatedAt": "2026-05-15T10:19:09.064Z",
   "aiosVersion": ""
 }

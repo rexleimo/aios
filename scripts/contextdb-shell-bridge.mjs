@@ -4,9 +4,12 @@ import { getCommandSpawnSpec } from './lib/platform/process.mjs';
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeIndex } from './lib/contextdb/context-registry.mjs';
 
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CTX_AGENT_CLI_PATH = path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs');
+
+const AIOS_MARKER = '<!-- AIOS: memory/context-db/index.json -->';
 
 const KNOWN_ENDPOINT_ENV_NAMES = new Set([
   'OPENAI_BASE_URL',
@@ -396,6 +399,20 @@ function isBlockedSubcommand(command, firstArg) {
   return blocked.has(firstArg);
 }
 
+function detectAiosMarker(workspace) {
+  // Check all agent config files for the aios init marker
+  const configFiles = ['CLAUDE.md', 'AGENTS.md', 'GEMINI.md'];
+  for (const file of configFiles) {
+    try {
+      const content = readFileSync(path.join(workspace, file), 'utf8');
+      if (content.includes(AIOS_MARKER)) return { found: true, file };
+    } catch {
+      // file doesn't exist
+    }
+  }
+  return { found: false, file: '' };
+}
+
 function detectRunner(env) {
   if (env.CTXDB_RUNNER && existsSync(env.CTXDB_RUNNER)) {
     return { command: env.CTXDB_RUNNER, args: [] };
@@ -739,7 +756,7 @@ function validateOptions(opts) {
   }
 }
 
-function main(argv = process.argv.slice(2)) {
+async function main(argv = process.argv.slice(2)) {
   const opts = parseArgs(argv);
   try {
     validateOptions(opts);
@@ -761,10 +778,31 @@ function main(argv = process.argv.slice(2)) {
   const workspace = blockedSubcommand ? '' : detectWorkspaceRoot(opts.cwd);
   const project = env.CTXDB_REPO_NAME || (workspace ? path.basename(workspace) : '');
 
+  // Write context registry index.json (always, so agents can pull context on demand)
+  if (workspace && !blockedSubcommand) {
+    // Best-effort: don't block passthrough on index write failure
+    try {
+      await writeIndex({
+        sessionId: '', // ctx-agent fills this when wrapping; bridge sets empty for passthrough
+        status: 'running',
+        agent: opts.agent,
+        workspaceRoot: workspace,
+      });
+    } catch (err) {
+      if (shouldDebug(env)) {
+        console.error(`[contextdb-shell-bridge] index write failed: ${err.message}`);
+      }
+    }
+  }
+
+  // Check if aios init has been run (marker present in agent config files)
+  const aiosInitDone = workspace ? detectAiosMarker(workspace).found : false;
+
   // Interactive mode detection: bare command invocation (no subcommand/flags) triggers
   // automatic handoff prompt injection so the new session resumes from the last checkpoint.
+  // When aios init is done, skip auto-prompt — the agent reads index.json for context.
   const interactive = isInteractivePassthrough(opts.command, opts.passthroughArgs);
-  if (interactive && !env.CTXDB_AUTO_PROMPT && shouldInjectInteractiveAutoPrompt(env) && runner && workspace) {
+  if (interactive && !env.CTXDB_AUTO_PROMPT && shouldInjectInteractiveAutoPrompt(env) && runner && workspace && !aiosInitDone) {
     env.CTXDB_AUTO_PROMPT = buildInteractiveAutoPrompt({
       agent: opts.agent,
       command: opts.command,
@@ -777,13 +815,15 @@ function main(argv = process.argv.slice(2)) {
       console.error(`[contextdb-shell-bridge] interactive detected; auto-prompt=${preview}`);
     }
   } else if (interactive && shouldDebug(env) && !env.CTXDB_AUTO_PROMPT) {
-    const reason = !shouldInjectInteractiveAutoPrompt(env)
-      ? 'disabled by CTXDB_INTERACTIVE_AUTO_ROUTE'
-      : !runner
-        ? 'runner unavailable'
-        : !workspace
-          ? 'workspace unavailable'
-          : 'skipped';
+    const reason = aiosInitDone
+      ? 'aios init detected (agent self-manages context)'
+      : !shouldInjectInteractiveAutoPrompt(env)
+        ? 'disabled by CTXDB_INTERACTIVE_AUTO_ROUTE'
+        : !runner
+          ? 'runner unavailable'
+          : !workspace
+            ? 'workspace unavailable'
+            : 'skipped';
     console.error(`[contextdb-shell-bridge] interactive detected; auto-prompt ${reason}`);
   }
 
@@ -802,7 +842,7 @@ function main(argv = process.argv.slice(2)) {
 
   if (shouldDebug(env)) {
     const reason = shouldWrap
-      ? 'wrap'
+      ? (aiosInitDone ? 'wrap (aios init detected)' : 'wrap')
       : blockedSubcommand
         ? 'blocked-subcommand'
         : !runner
@@ -852,6 +892,11 @@ function main(argv = process.argv.slice(2)) {
     '--project', project,
   ];
 
+  // When aios init is done, use slim context mode — agent pulls context via registry
+  if (aiosInitDone) {
+    args.push('--context-mode', 'slim', '--no-bootstrap');
+  }
+
   const oneShot = extractOneShotPrompt(opts.command, opts.passthroughArgs);
   if (oneShot.printMode && oneShot.prompt) {
     args.push('--prompt', oneShot.prompt);
@@ -863,4 +908,7 @@ function main(argv = process.argv.slice(2)) {
   process.exit(code);
 }
 
-main();
+main().catch((err) => {
+  console.error(`[contextdb-shell-bridge] fatal: ${err.message}`);
+  process.exit(1);
+});

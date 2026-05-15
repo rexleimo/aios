@@ -14,6 +14,13 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 最新稳定版
 
+- `1.13.0`（2026-05-15）：
+  - **Context Registry（拉取式上下文）**：用 ~350 字节的 registry 指针替代每次 ~30KB 的推送式注入。Agent 读取 `memory/context-db/index.json` 后按需加载上下文。启动从 ~5 分钟降到近乎即时。
+  - **`aios init`**：一条命令初始化全部四种 coding agent（Claude Code、Codex CLI、Gemini CLI、OpenCode）。自动检测已安装的 agent，写入 registry 标记到配置文件，配置 save guard hooks。幂等操作。
+  - **多客户端 native sync 修复**：Gemini 现在写入 `GEMINI.md`（Gemini CLI 实际读取的文件）。OpenCode 直接读取 `AGENTS.md`（无需单独文件）。旧的 `.gemini/AIOS.md` 和 `.opencode/AIOS.md` 已标记废弃。
+  - **`--context-mode slim`**：Team/harness 路由和包装后的 agent 在检测到 registry 标记时自动使用 slim 注入。未包装的 agent 回退到完整注入。
+  - 详见 [ContextDB](contextdb.md)。
+
 - `1.11.0`（2026-05-09）：
   - **debug-hub v0.3**：注入追踪与自动清理。新增 MCP 工具：`instrument`、`list_instruments`、`cleanup_instruments`。标记约定 `DH:<sessionId>` 实现零依赖调试代码注入与双模清理（显式通过 instrument 记录，回退通过 workspace grep）。支持 `dryRun` 安全预览。跨模型调试协议通过 workspace memory 共享。用 debug-hub skill 替换上游 debug skill。详见 [debug-hub](debug-hub.md)。
 

@@ -9,6 +9,57 @@ description: How your agent remembers things across sessions — explained from 
 
 No cloud. No database server. Just files in your project folder.
 
+## Context Registry (Pull-Based Context)
+
+Starting in v1.13, ContextDB uses a **pull-based** model. Instead of injecting ~30KB of context into every session startup (which took ~5 minutes), the system now injects a ~350 byte **registry pointer** and the agent loads what it needs on demand.
+
+### How It Works
+
+```
+Agent starts → reads config file (CLAUDE.md / AGENTS.md / GEMINI.md)
+           → sees marker: <!-- AIOS: memory/context-db/index.json -->
+           → reads memory/context-db/index.json (the registry)
+           → decides what to load based on the task
+
+Task: "fix the auth bug"  → loads handoff (1KB) for continuity
+Task: "analyze XHS data"  → loads handoff + perception (~4KB)
+Task: "debug a crash"     → loads handoff + session history (~20KB)
+```
+
+### Registry Index (index.json)
+
+```json
+{
+  "session": "claude-code-20260515T...",
+  "status": "running",
+  "sources": [
+    {"id": "handoff", "cost": "~1KB", "priority": "high",
+     "path": "memory/context-db/sessions/xxx/handoff.json"},
+    {"id": "session-history", "cost": "~20KB", "priority": "low",
+     "path": "memory/context-db/exports/latest-claude-code-context.md"},
+    {"id": "perception", "cost": "~3KB", "priority": "low",
+     "path": "memory/context-db/exports/latest-perception.md"}
+  ]
+}
+```
+
+### Before vs After
+
+| | Before (Push) | After (Pull) |
+|---|---|---|
+| Startup injection | ~30KB (~12K tokens) | ~350 bytes |
+| Startup wait | ~5 minutes | Near-instant |
+| Context loading | Everything, every time | On-demand, task-aware |
+| Cross-agent memory | Each agent isolated | Shared ContextDB |
+
+### Setup
+
+```bash
+aios init              # one-time setup for all installed agents
+```
+
+The `aios init` command adds the registry marker to each agent's config file and configures save guards so sessions are automatically persisted.
+
 ## Why Does This Matter?
 
 Here's the problem RexCLI solves:
@@ -168,17 +219,19 @@ npm run contextdb -- context:pack \
 
 ## Lazy Load (Fast Startup)
 
-If your project has a lot of history, loading everything on startup can take 2-5 seconds. **Lazy load** makes startup instant:
+The Context Registry already makes startup near-instant by default (~350 byte injection). For sessions that need full context, lazy loading further optimizes:
 
-- On startup: loads a tiny summary (< 50ms)
-- The agent loads full history only when it actually needs it
-- A background process rebuilds the full context pack
+- On startup: only the registry pointer is injected
+- The agent reads the registry and loads what it needs on demand
+- A background process rebuilds the full context pack when needed
 
-Lazy load is **on by default** for interactive sessions. To disable:
+Lazy load is **on by default** for interactive sessions. To force full context loading:
 
 ```bash
 export CTXDB_LAZY_LOAD=0  # Load everything on startup (slower but complete)
 ```
+
+When `aios init` has been run, slim mode is used automatically — the agent manages its own context via the registry. For unwrapped agents or legacy setups, full injection is preserved as fallback.
 
 ## Route Shortcuts
 

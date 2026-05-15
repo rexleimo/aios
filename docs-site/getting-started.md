@@ -87,21 +87,30 @@ After setup, reload your shell:
 
 Go to any project folder where you want your agent to remember things:
 
-=== "macOS / Linux"
+```bash
+cd /path/to/your/project
+aios init
+```
 
-    ```bash
-    cd /path/to/your/project
-    touch .contextdb-enable
-    ```
+That's it. `aios init` detects your installed coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode) and configures each one to use the memory system. It's **idempotent** — safe to run multiple times.
 
-=== "Windows PowerShell"
+??? info "How it works"
+    `aios init` adds a lightweight marker (`<!-- AIOS: memory/context-db/index.json -->`) to each agent's config file (CLAUDE.md, AGENTS.md, GEMINI.md). When your agent starts, it sees the marker, reads the context registry, and loads only what it needs — no more waiting through lengthy context injection.
 
-    ```powershell
-    cd C:\path\to\your\project
-    New-Item -ItemType File -Path .contextdb-enable -Force
-    ```
+??? info "Opt-in mode (legacy)"
+    If you prefer the old opt-in method, you can still use:
 
-That's it. The `.contextdb-enable` file is an opt-in switch — RexCLI only activates memory in folders where this file exists.
+    === "macOS / Linux"
+        ```bash
+        touch .contextdb-enable
+        ```
+
+    === "Windows PowerShell"
+        ```powershell
+        New-Item -ItemType File -Path .contextdb-enable -Force
+        ```
+
+    The new `aios init` method is recommended — it gives you faster startup and cross-agent memory sharing.
 
 ## Step 4: Start Your Agent
 

@@ -57,8 +57,8 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/skills'] },
     },
   });
 }
@@ -260,7 +260,7 @@ test('doctor --native --fix repairs unmanaged compatibility docs and exits clean
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
   const env = await seedRouteCommands(rootDir);
-  await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
+  await writeFile(path.join(rootDir, 'GEMINI.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
   const result = await runDoctorSuite({
@@ -275,8 +275,8 @@ test('doctor --native --fix repairs unmanaged compatibility docs and exits clean
   assert.match(logs.join('\n'), /Native Auto-Fix/);
   assert.match(logs.join('\n'), /\[fix\] native gemini/);
   assert.match(logs.join('\n'), /\[repair\] changed total=\d+/);
-  assert.match(logs.join('\n'), /\[repair\] changed file=\.gemini\/AIOS\.md \(updated\)/);
-  assert.match(await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8'), /AIOS NATIVE BEGIN/);
+  assert.match(logs.join('\n'), /\[repair\] changed file=GEMINI\.md \(updated\)/);
+  assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /AIOS NATIVE BEGIN/);
 });
 
 test('doctor --native --fix --dry-run only prints planned fixes without mutating files', async () => {
@@ -284,7 +284,7 @@ test('doctor --native --fix --dry-run only prints planned fixes without mutating
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
   const env = await seedRouteCommands(rootDir);
-  await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
+  await writeFile(path.join(rootDir, 'GEMINI.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
   const result = await runDoctorSuite({
@@ -299,8 +299,8 @@ test('doctor --native --fix --dry-run only prints planned fixes without mutating
   assert.equal(result.exitCode, 1);
   assert.match(logs.join('\n'), /\[plan\] native gemini/);
   assert.match(logs.join('\n'), /\[plan\] native files total=\d+/);
-  assert.match(logs.join('\n'), /\[plan\] native files file=\.gemini\/AIOS\.md/);
-  assert.equal(await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8'), 'manual overwrite\n');
+  assert.match(logs.join('\n'), /\[plan\] native files file=GEMINI\.md/);
+  assert.equal(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), 'manual overwrite\n');
 });
 
 test('doctor --native --fix records repair manifest and supports rollback', async () => {
@@ -308,7 +308,7 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
   await seedNativeRoot(rootDir);
   await syncNativeEnhancements({ rootDir, client: 'gemini' });
   const env = await seedRouteCommands(rootDir);
-  await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual overwrite\n', 'utf8');
+  await writeFile(path.join(rootDir, 'GEMINI.md'), 'manual overwrite\n', 'utf8');
 
   const logs = [];
   const result = await runDoctorSuite({
@@ -324,7 +324,7 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
   assert.match(rendered, /\[repair\] id=/);
   assert.match(rendered, /\[repair\] manifest=\.aios\/repairs\/.+\/manifest\.json/);
   assert.match(rendered, /\[repair\] rollback: node scripts\/aios\.mjs internal native rollback --repair-id /);
-  assert.match(await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8'), /AIOS NATIVE BEGIN/);
+  assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /AIOS NATIVE BEGIN/);
 
   const repairLine = logs.find((line) => line.startsWith('[repair] id='));
   assert.ok(repairLine);
@@ -341,5 +341,5 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
   const rollbackResult = await rollbackNativeRepair({ rootDir, repairId });
   assert.equal(rollbackResult.ok, true);
   assert.equal(rollbackResult.repairId, repairId);
-  assert.equal(await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8'), 'manual overwrite\n');
+  assert.equal(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), 'manual overwrite\n');
 });

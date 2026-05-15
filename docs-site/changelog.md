@@ -14,6 +14,13 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 
 ## Latest Stable
 
+- `1.13.0` (2026-05-15):
+  - **Context Registry (Pull-Based Context)**: Replaces push-based context injection (~30KB every session) with a lightweight ~350 byte registry pointer. Agents now read `memory/context-db/index.json` and load only what they need. Startup drops from ~5 minutes to near-instant.
+  - **`aios init`**: One-command setup for all four coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode). Detects installed agents, writes registry marker to config files, configures save guard hooks. Idempotent — safe to run multiple times.
+  - **Multi-client native sync fix**: Gemini now writes to `GEMINI.md` (the file Gemini CLI actually reads). OpenCode reads `AGENTS.md` directly (no separate file needed). Old `.gemini/AIOS.md` and `.opencode/AIOS.md` deprecated.
+  - **`--context-mode slim`**: Team/harness routes and wrapped agents automatically use slim injection when the registry marker is detected. Falls back to full injection for unwrapped agents.
+  - See [ContextDB](contextdb.md) for the full architecture.
+
 - `1.11.0` (2026-05-09):
   - **debug-hub v0.3**: Instrumentation tracking and automatic cleanup. New MCP tools: `instrument`, `list_instruments`, `cleanup_instruments`. Marker convention `DH:<sessionId>` for zero-dependency debug log injection with dual-mode cleanup (explicit via instrument records, discovery via workspace grep). Dry-run support for safe cleanup preview. Cross-model debug protocol via workspace memory. Replaces upstream debug skill with debug-hub skill. See [debug-hub](debug-hub.md).
 

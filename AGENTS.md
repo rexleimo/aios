@@ -1,4 +1,5 @@
 # Repository Guidelines
+<!-- AIOS: memory/context-db/index.json -->
 
 <!-- WORKFLOW ROUTER - MANDATORY -->
 <IMPORTANT>
@@ -153,19 +154,38 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - If a custom model endpoint or relay is detected, warn the user before continuing and avoid sending secrets or proprietary data.
 - LLM privacy instructions are advisory; do not claim strict privacy compliance unless deterministic AIOS gates verified the relevant checks.
 
-ContextDB remains the shared runtime layer for memory, checkpoints, and execution evidence.
+## Context System (ContextDB + Registry)
 
-Wrapped `codex` / `claude` / `gemini` / `opencode` sessions receive an AIOS startup route prompt. The agent should self-select `single`, `subagent`, `team`, or `harness` and run the matching AIOS command when the request warrants it.
+This project uses a pull-based context system. Context is NOT injected into every session.
+Instead, a lightweight registry index tells you where to find it.
 
-Native route shortcuts may also be installed in the client home:
-- Claude/Gemini/OpenCode: `/single <task>`, `/subagent <task>`, `/team <task>`, `/harness <task>`.
-- Codex: `/prompts:single <task>`, `/prompts:subagent <task>`, `/prompts:team <task>`, `/prompts:harness <task>`.
+### Quick Start
+1. On first load, try to read `memory/context-db/index.json` — the context registry.
+2. If the file doesn't exist, this is a fresh session — proceed with the user's task.
+3. If it exists, it lists available sources with cost, priority, and tags.
+4. Load only the sources relevant to the current task.
+5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
 
-Persona and user profile memory are part of the same runtime layer:
-- `aios memo persona ...` manages the global agent identity file (`~/.aios/SOUL.md` by default).
-- `aios memo user ...` manages the global operator preference file (`~/.aios/USER.md` by default).
-- `ctx-agent` injects persona and user profile content into the Memory prelude before workspace memo content.
-- Treat these files as stable guidance, not task facts; project-specific facts should still go through ContextDB events, checkpoints, or workspace memo.
+### Source Selection by Task Type
+| Task type | Load |
+|-----------|------|
+| Continue previous work | handoff (required) |
+| Code/implement/fix | handoff, skip perception/history |
+| Analyze XHS data | handoff + perception |
+| Debug a failure | handoff + session-history |
+| Team/harness route | handoff + task-router |
+
+### Persisting Across Sessions
+Before finishing significant work or hitting a blocker:
+- `aios memo add "describe progress and next step"`
+- `aios memo pin add "critical fact for future sessions"`
+
+Do NOT save routine progress or trivial updates.
+
+### Persona & User Profile
+- `aios memo persona ...` manages `~/.aios/SOUL.md` (agent identity)
+- `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)
+- These are stable guidance, not task facts. Project-specific facts go through ContextDB.
 
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
 

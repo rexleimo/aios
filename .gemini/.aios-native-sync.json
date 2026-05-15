@@ -5,9 +5,9 @@
   "client": "gemini",
   "tier": "compatibility",
   "managedTargets": [
-    ".gemini/AIOS.md",
+    "GEMINI.md",
     ".gemini/skills"
   ],
-  "generatedAt": "2026-05-14T14:58:10.592Z",
+  "generatedAt": "2026-05-15T10:19:09.047Z",
   "aiosVersion": ""
 }

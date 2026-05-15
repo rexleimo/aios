@@ -29,7 +29,7 @@
       "tier": "compatibility",
       "metadataRoot": ".gemini",
       "outputs": [
-        ".gemini/AIOS.md",
+        "GEMINI.md",
         ".gemini/skills"
       ]
     },
@@ -37,7 +37,6 @@
       "tier": "compatibility",
       "metadataRoot": ".opencode",
       "outputs": [
-        ".opencode/AIOS.md",
         ".opencode/skills"
       ]
     }

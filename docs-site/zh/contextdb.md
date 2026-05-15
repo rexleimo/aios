@@ -7,7 +7,35 @@ description: 会话模型、token 压缩上下文包、五步流程与命令示�
 
 ## 快速答案（AI 搜索）
 
-ContextDB 是面向多 CLI agent 的文件系统会话层。它按项目存储事件、checkpoint 和可续跑上下文包，使用 SQLite sidecar 索引加速检索，并支持把噪音事件历史压缩到指定 token 预算内，同时优先保留最新和高信号上下文。
+ContextDB 是面向多 CLI agent 的文件系统会话层。从 v1.13 开始，ContextDB 使用 **拉取（pull）模式**：不再每次会话启动注入 ~30KB 上下文（耗时 ~5 分钟），而是注入 ~350 字节的 **registry 指针**，agent 按需加载。
+
+### Context Registry（上下文注册表）
+
+```
+Agent 启动 → 读取配置文件（CLAUDE.md / AGENTS.md / GEMINI.md）
+          → 看到标记：<!-- AIOS: memory/context-db/index.json -->
+          → 读取 memory/context-db/index.json（注册表）
+          → 根据任务类型决定加载什么
+
+任务："修 auth bug"    → 只加载 handoff（1KB）
+任务："分析小红书数据"  → 加载 handoff + perception（~4KB）
+任务："排查崩溃"       → 加载 handoff + 完整历史（~20KB）
+```
+
+### 之前 vs 之后
+
+| | 之前（推送） | 之后（拉取） |
+|---|---|---|
+| 启动注入量 | ~30KB（~12K tokens） | ~350 字节 |
+| 启动等待 | ~5 分钟 | 近乎即时 |
+| 上下文加载 | 每次都全量 | 按需、任务感知 |
+| 跨 agent 记忆 | 各自独立 | 共享 ContextDB |
+
+### 初始化
+
+```bash
+aios init              # 一次性设置所有已安装的 agent
+```
 
 ## 标准 5 步
 

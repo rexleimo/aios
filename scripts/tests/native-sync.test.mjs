@@ -27,8 +27,8 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/skills'] },
     },
   });
 }
@@ -166,30 +166,22 @@ test('native sync writes compatibility docs for gemini and opencode', async () =
 
   await syncNativeEnhancements({ rootDir, client: 'all' });
 
-  assert.match(await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8'), /Gemini compatibility/);
-  assert.match(await readFile(path.join(rootDir, '.opencode', 'AIOS.md'), 'utf8'), /Opencode compatibility/);
+  assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
+  // OpenCode reads AGENTS.md (managed by Codex emitter); no separate AIOS.md file needed
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.gemini')).tier, 'compatibility');
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.opencode')).tier, 'compatibility');
 });
 
-test('native sync repair mode can replace unmanaged compatibility docs', async () => {
-  const rootDir = await makeTemp('aios-native-sync-repair-managed-file-root-');
+test('native sync upserts markdown block into existing GEMINI.md', async () => {
+  const rootDir = await makeTemp('aios-native-sync-gemini-block-root-');
   await seedNativeRoot(rootDir);
-  await mkdir(path.join(rootDir, '.gemini'), { recursive: true });
-  await writeFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'manual compatibility doc\n', 'utf8');
+  await writeFile(path.join(rootDir, 'GEMINI.md'), 'User preface.\n', 'utf8');
 
-  await assert.rejects(
-    syncNativeEnhancements({ rootDir, client: 'gemini' }),
-    /unmanaged conflict/
-  );
+  const result = await syncNativeEnhancements({ rootDir, client: 'gemini' });
+  assert.equal(result.ok, true);
 
-  await syncNativeEnhancements({
-    rootDir,
-    client: 'gemini',
-    repair: { force: true },
-  });
-
-  const repaired = await readFile(path.join(rootDir, '.gemini', 'AIOS.md'), 'utf8');
+  const repaired = await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8');
+  assert.match(repaired, /User preface/);
   assert.match(repaired, /AIOS NATIVE BEGIN/);
   assert.match(repaired, /Gemini compatibility/);
 });

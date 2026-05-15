@@ -1,3 +1,8 @@
+<!-- DEPRECATED: OpenCode reads AGENTS.md (the shared Codex config file) for AIOS native enhancements.
+     The AIOS NATIVE block is managed by the Codex emitter in scripts/lib/native/emitters/codex.mjs.
+     This file is kept for archival reference only.
+     Do not modify — content has been migrated to AGENTS.md. -->
+
 <!-- AIOS NATIVE BEGIN -->
 AIOS native enhancements are active in this repository.
 

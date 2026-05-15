@@ -3,15 +3,9 @@ import { joinMarkdownSections, readClientMarkdownSource, readSharedMarkdownParts
 export function renderOpencodeNativeOutputs({ rootDir }) {
   return {
     operations: [
-      {
-        kind: 'managed-file',
-        targetPath: '.opencode/AIOS.md',
-        content: joinMarkdownSections([
-          ...readSharedMarkdownParts(rootDir),
-          readClientMarkdownSource(rootDir, 'opencode', 'AIOS.md'),
-        ]),
-      },
+      // OpenCode reads AGENTS.md (managed by Codex emitter) and GEMINI.md.
+      // No separate AIOS.md file needed — shared content is already in AGENTS.md.
     ],
-    managedTargets: ['.opencode/AIOS.md', '.opencode/skills'],
+    managedTargets: ['.opencode/skills'],
   };
 }

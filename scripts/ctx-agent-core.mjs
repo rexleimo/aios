@@ -19,6 +19,7 @@ import { buildPersonaOverlay, ensurePersonaLayer } from './lib/memo/persona.mjs'
 import { scanWorkspaceMemoryContent } from './lib/memo/safety.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from './lib/contextdb/continuity.mjs';
 import { buildPerceptionSummary } from './lib/perception/perception-summary.mjs';
+import { renderRegistryInjection, buildIndex } from './lib/contextdb/context-registry.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -61,6 +62,7 @@ Options:
   --blueprint <name>  Orchestrate blueprint for routed subagent: feature|bugfix|refactor|security (default: feature)
   --no-bootstrap      Disable automatic first-task bootstrap for this run
   --no-checkpoint     Disable automatic checkpoint write in one-shot mode
+  --context-mode <mode> Context injection mode: slim|full (default: full)
   --continuity-summary Write compact continuity artifacts after one-shot checkpoint (default)
   --dry-run           Skip remote model call, write synthetic response for pipeline testing
   --max-log-chars <n> Max characters stored in event logs (default: 8000)
@@ -873,6 +875,11 @@ async function ensureMemoryLayers(workspaceRoot, { agent = 'claude-code', projec
   }
 }
 
+function buildSlimInjection({ sessionId = '', status = 'running', agent = '', workspaceRoot = '' } = {}) {
+  const index = buildIndex({ sessionId, status, agent, workspaceRoot });
+  return renderRegistryInjection(index);
+}
+
 function buildPersistenceInstructions() {
   return [
     '## Memory Persistence (AIOS)',
@@ -1118,6 +1125,7 @@ function parseArgs(argv) {
     autoBootstrap: true,
     autoCheckpoint: true,
     continuitySummary: true,
+    contextMode: 'full',
     dryRun: false,
     maxLogChars: '8000',
     extraArgs: [],
@@ -1182,6 +1190,9 @@ function parseArgs(argv) {
         break;
       case '--no-continuity-summary':
         opts.continuitySummary = false;
+        break;
+      case '--context-mode':
+        opts.contextMode = argv[++i] || 'full';
         break;
       case '--dry-run':
         opts.dryRun = true;
@@ -1861,54 +1872,68 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
   const lazyMode = shouldLazyLoad(process.env);
 
   if (lazyMode && !opts.prompt) {
-    const memoryPrelude = await buildMemoryPrelude(opts.workspaceRoot, process.env);
     let facadeResult = await loadFacade(opts.workspaceRoot);
     if (!facadeResult.ok) {
       const fallbackFacade = await generateFacadeFromSession(opts.workspaceRoot, opts.agent, opts.project);
       facadeResult = { ok: true, facade: fallbackFacade };
     }
     const facadePrompt = buildFacadePrompt(facadeResult.facade, opts.agent);
-    // Inject previous session handoff if available
-    let handoffInjection = '';
-    try {
-      const { readHandoffPacket } = await import('./lib/contextdb/handoff.mjs');
-      const { renderHandoffInjection } = await import('./lib/contextdb/handoff.mjs');
-      const prevSessionId = facadeResult.facade?.sessionId;
-      if (prevSessionId) {
-        const packet = await readHandoffPacket(opts.workspaceRoot, prevSessionId);
-        handoffInjection = renderHandoffInjection(packet);
-      }
-    } catch {
-      // handoff injection optional
-    }
-    const routerGuide = shouldInjectTaskRouterGuide(process.env)
-      ? buildTaskRouterGuide({
-          agent: opts.agent,
-          workspaceRoot: opts.workspaceRoot,
-          project: opts.project,
-          teamProvider: opts.teamProvider,
-          teamWorkers: opts.teamWorkers,
-          harnessProvider: opts.harnessProvider,
-          harnessMaxIterations: opts.harnessMaxIterations,
-          blueprint: opts.blueprint,
-          routeMode: opts.routeMode,
-          sessionId: facadeResult.facade?.sessionId || '',
-        })
-      : '';
-    const persistenceInstructions = buildPersistenceInstructions();
-    const basePrompt = memoryPrelude
-      ? `${memoryPrelude}\n\n${persistenceInstructions}\n\n${facadePrompt}`
-      : `${persistenceInstructions}\n\n${facadePrompt}`;
-    const withHandoff = handoffInjection
-      ? `${basePrompt}\n\n${handoffInjection}`
-      : basePrompt;
-    const effectivePrompt = routerGuide
-      ? `${withHandoff}\n\n${routerGuide}`
-      : withHandoff;
+    const sessionId = facadeResult.facade?.sessionId || '';
 
-    console.error(`[aios] Session: ${facadeResult.facade?.sessionId || '(new)'}`);
-    console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: lazy-load | Route: ${opts.routeMode}`);
-    console.log(formatMemoryPreludeStatus(memoryPrelude));
+    let effectivePrompt;
+    if (opts.contextMode === 'slim') {
+      const slimInjection = buildSlimInjection({
+        sessionId,
+        status: 'running',
+        agent: opts.agent,
+        workspaceRoot: opts.workspaceRoot,
+      });
+      effectivePrompt = `${slimInjection}\n\n${facadePrompt}`;
+      console.error(`[aios] Session: ${sessionId || '(new)'} | Context: slim (registry pull) | Route: ${opts.routeMode}`);
+    } else {
+      const memoryPrelude = await buildMemoryPrelude(opts.workspaceRoot, process.env);
+      // Inject previous session handoff if available
+      let handoffInjection = '';
+      try {
+        const { readHandoffPacket } = await import('./lib/contextdb/handoff.mjs');
+        const { renderHandoffInjection } = await import('./lib/contextdb/handoff.mjs');
+        const prevSessionId = facadeResult.facade?.sessionId;
+        if (prevSessionId) {
+          const packet = await readHandoffPacket(opts.workspaceRoot, prevSessionId);
+          handoffInjection = renderHandoffInjection(packet);
+        }
+      } catch {
+        // handoff injection optional
+      }
+      const routerGuide = shouldInjectTaskRouterGuide(process.env)
+        ? buildTaskRouterGuide({
+            agent: opts.agent,
+            workspaceRoot: opts.workspaceRoot,
+            project: opts.project,
+            teamProvider: opts.teamProvider,
+            teamWorkers: opts.teamWorkers,
+            harnessProvider: opts.harnessProvider,
+            harnessMaxIterations: opts.harnessMaxIterations,
+            blueprint: opts.blueprint,
+            routeMode: opts.routeMode,
+            sessionId,
+          })
+        : '';
+      const persistenceInstructions = buildPersistenceInstructions();
+      const basePrompt = memoryPrelude
+        ? `${memoryPrelude}\n\n${persistenceInstructions}\n\n${facadePrompt}`
+        : `${persistenceInstructions}\n\n${facadePrompt}`;
+      const withHandoff = handoffInjection
+        ? `${basePrompt}\n\n${handoffInjection}`
+        : basePrompt;
+      effectivePrompt = routerGuide
+        ? `${withHandoff}\n\n${routerGuide}`
+        : withHandoff;
+
+      console.error(`[aios] Session: ${sessionId || '(new)'}`);
+      console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: lazy-load | Route: ${opts.routeMode}`);
+      console.log(formatMemoryPreludeStatus(memoryPrelude));
+    }
 
     if (shouldScheduleAsyncBootstrap(facadeResult, opts.agent)) {
       forkAsyncBootstrap(opts.workspaceRoot, opts);
@@ -1923,7 +1948,7 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
       harnessProvider: opts.harnessProvider,
       harnessMaxIterations: opts.harnessMaxIterations,
       blueprint: opts.blueprint,
-      sessionId: facadeResult.facade?.sessionId || '',
+      sessionId,
     });
   }
 
@@ -1973,35 +1998,48 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
   }, { strict: strictPack });
   const packAbs = packResult.packAbs;
   const contextText = packResult.contextText;
-  const memoryPrelude = await buildMemoryPrelude(opts.workspaceRoot, process.env);
 
-  const persistenceInstructions = buildPersistenceInstructions();
-  const baseContextText = memoryPrelude
-    ? contextText
-      ? `${memoryPrelude}\n\n${persistenceInstructions}\n\n${contextText}`
-      : `${memoryPrelude}\n\n${persistenceInstructions}`
-    : contextText
-      ? `${persistenceInstructions}\n\n${contextText}`
-      : persistenceInstructions;
-  const routerGuide = shouldInjectTaskRouterGuide(process.env)
-    ? buildTaskRouterGuide({
+  let effectiveContextText;
+  if (opts.contextMode === 'slim') {
+    const slimInjection = buildSlimInjection({
+      sessionId: opts.sessionId,
+      status: opts.checkpointStatus,
       agent: opts.agent,
       workspaceRoot: opts.workspaceRoot,
-      project: opts.project,
-      teamProvider: opts.teamProvider,
-      teamWorkers: opts.teamWorkers,
-      harnessProvider: opts.harnessProvider,
-      harnessMaxIterations: opts.harnessMaxIterations,
-      blueprint: opts.blueprint,
-      routeMode: opts.routeMode,
-      sessionId: opts.sessionId,
-    })
-    : '';
-  const effectiveContextText = routerGuide
-    ? baseContextText
-      ? `${baseContextText}\n\n${routerGuide}`
-      : routerGuide
-    : baseContextText;
+    });
+    effectiveContextText = contextText
+      ? `${slimInjection}\n\n${contextText}`
+      : slimInjection;
+  } else {
+    const memoryPrelude = await buildMemoryPrelude(opts.workspaceRoot, process.env);
+    const persistenceInstructions = buildPersistenceInstructions();
+    const baseContextText = memoryPrelude
+      ? contextText
+        ? `${memoryPrelude}\n\n${persistenceInstructions}\n\n${contextText}`
+        : `${memoryPrelude}\n\n${persistenceInstructions}`
+      : contextText
+        ? `${persistenceInstructions}\n\n${contextText}`
+        : persistenceInstructions;
+    const routerGuide = shouldInjectTaskRouterGuide(process.env)
+      ? buildTaskRouterGuide({
+        agent: opts.agent,
+        workspaceRoot: opts.workspaceRoot,
+        project: opts.project,
+        teamProvider: opts.teamProvider,
+        teamWorkers: opts.teamWorkers,
+        harnessProvider: opts.harnessProvider,
+        harnessMaxIterations: opts.harnessMaxIterations,
+        blueprint: opts.blueprint,
+        routeMode: opts.routeMode,
+        sessionId: opts.sessionId,
+      })
+      : '';
+    effectiveContextText = routerGuide
+      ? baseContextText
+        ? `${baseContextText}\n\n${routerGuide}`
+        : routerGuide
+      : baseContextText;
+  }
   const injectContext = String(effectiveContextText).trim().length > 0;
 
   let latestInjected = null;
@@ -2030,9 +2068,9 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
     : '';
 
   console.error(`[aios] Session: ${opts.sessionId}`);
-  console.error(`[aios] Memory: ${memoryPrelude ? 'persona+user+workspace loaded' : 'empty'} | Context: ${packResult.mode} | Route: ${opts.routeMode}`);
+  console.error(`[aios] Context: ${opts.contextMode === 'slim' ? 'slim (registry pull)' : `full (${packResult.mode})`} | Route: ${opts.routeMode}`);
   if (opts.prompt && opts.dryRun) {
-    console.log(formatMemoryPreludeStatus(memoryPrelude));
+    console.log(effectiveContextText);
   }
 
   if (opts.prompt) {

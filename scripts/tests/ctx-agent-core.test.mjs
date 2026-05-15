@@ -364,7 +364,7 @@ test('ctx-agent one-shot injected context includes persona and user profile over
     );
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stderr, /Memory: persona\+user\+workspace loaded/);
+    assert.match(result.stderr, /Context: full \(fresh\)/);
 
     const latestContextPath = path.join(
       workspaceRoot,
