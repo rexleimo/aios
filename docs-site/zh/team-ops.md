@@ -128,7 +128,18 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 
 不要在不了解失败原因时直接重新开一个更大的 team。
 
-## HUD 看什么
+## 高级运维参考
+
+以下命令建议在熟悉基础流程后再使用。
+
+### HUD 预设
+
+| 预设 | 用途 |
+|---|---|
+| `minimal` | 长时间 watch |
+| `compact` | 终端友好摘要 |
+| `focused` | 均衡默认 |
+| `full` | 完整诊断 |
 
 ```bash
 aios hud --provider codex
@@ -136,16 +147,9 @@ aios hud --watch --preset focused
 aios hud --session <session-id> --json
 ```
 
-重点看：
+### Skill candidates
 
-- 当前 session 是否还活着。
-- dispatch jobs 是否 blocked。
-- quality-gate 是否失败。
-- 是否有可用的 skill candidate 建议。
-
-## skill candidates 什么时候看
-
-失败复盘时再看，不是新手第一步。
+Skill candidates 是从失败会话中提取的改进建议。失败复盘时再看，不是新手第一步。
 
 ```bash
 aios team status --show-skill-candidates

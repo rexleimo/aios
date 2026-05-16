@@ -150,14 +150,6 @@ export AIOS_SUBAGENT_CLIENT=codex-cli  # 必填（live 目前仅支持 codex-cli
 
 如果 routed startup 还在当前这个非 AIOS 仓库里找 `scripts/aios.mjs`，先拉取最新 `main`。最近的版本已经把 routed `ctx-agent` startup 改成按当前工作区感知，而不是假定 source-repo 布局。
 
-## `ctx-agent` 执行报错: `claude: command not found`
-
-原因：旧版 `ctx-agent.sh` 在 `bash set -u` 下展开空数组。
-
-处理：更新到最新 `main` 并重新打开 shell。
-
-新版本已统一为 `ctx-agent-core.mjs` 作为执行核心，避免 sh/mjs 双实现漂移。
-
 ## `CODEX_HOME points to ".codex"` 错误
 
 原因：`CODEX_HOME` 被设置成了相对路径。
