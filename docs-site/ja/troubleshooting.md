@@ -273,3 +273,21 @@ GitHub 設定で修正:
 ### `codex` を入力してもコンテキストが注入されないのはなぜですか？
 
 通常、wrapper が読み込まれていない、`CTXDB_WRAP_MODE` が現在のワークスペースをカバーしていない、またはコマンドが透伝管理サブコマンドであるのが原因です。
+
+## スキルが誤ったレポジトリディレクトリに保存された
+
+canonical repo skill sources の場所は以下に変更されました：
+
+- `<repo>/skill-sources`
+
+生成された repo-local 検出可能な出力は以下の場所にあります：
+
+- `<repo>/.codex/skills`
+- `<repo>/.claude/skills`
+
+並行ディレクトリ（例：`.baoyu-skills/`）に `SKILL.md` を保存すると、Codex / Claude はそれを repo-local スキルとして検出できません。
+
+- `.baoyu-skills/` は `EXTEND.md` のような拡張設定のみに使用
+- 本来のスキルソースファイルは `skill-sources/<name>/SKILL.md` に移動
+- `node scripts/sync-skills.mjs` で生成されたクライアントルートを再構築
+- `scripts/doctor-contextdb-skills.sh --client all` で未対応の repo skill roots を検出

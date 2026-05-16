@@ -1,20 +1,52 @@
 ---
 title: 模型路由器
-description: 多模型 Agent Team 的智能模型调度 — 根据能力、成本和历史成功率将任务匹配到最优模型。
+description: 各任务自动选择合适的 AI 模型 - 无需自己思考。
 ---
 
 # 模型路由器
 
-> 不要为每个模型记忆 CLI 命令。教你的 Agent 自动将任务路由到正确的模型。
+**不同的 AI 模型擅长不同的事情。** 模型路由器自动将每个任务发送到最擅长的模型。
 
-模型路由器是 Agent Team 的智能调度层。它维护模型能力注册表，将子任务匹配到最佳模型，以正确的协议生成 CLI 命令，并通过感知反馈循环从调度历史中学习。
+前端工作？用 Kimi K2.6。安全审查？用 Claude Opus。浏览器自动化？用 GPT-5.5。不需要记住这些 — 路由器从任务描述中判断。
+
+## 简单版本
+
+```bash
+# 将任务路由到最优模型
+node scripts/aios.mjs model-router route \
+  --task "构建一个漂亮的落地页组件" \
+  --explain
+
+# 结果: frontend → kimi-k2.6（因为检测到"落地页"、"组件"、"漂亮"）
+```
+
+就是这样。路由器读取任务，检测信号，选择最优模型。
+
+## 为什么不重要
+
+没有模型路由器，你需要：
+
+1. 知道每个任务类型最适合哪个模型
+2. 在 `codex`、`claude`、`gemini` 命令之间手动切换
+3. 记住每个 CLI 的正确模型标志
+
+有了模型路由器，只需描述任务，剩下的由它处理。
 
 ## 工作原理
 
-1. **分析** — Agent 读取子任务，匹配任务类型（代码审查、实现、研究等）
-2. **路由** — 模型路由器按能力匹配选择首选模型，附带按成本升序的降级链
-3. **派发** — 根据模型所属协议自动生成正确的 CLI 命令
-4. **学习** — 调度结果记录到感知层，未来路由会参考历史成功率
+```
+任务描述
+    ↓
+信号检测（"browser"、"security"、"frontend" 等关键词）
+    ↓
+任务类型分类（browser-automation、code-review 等）
+    ↓
+模型选择（基于路由配置文件）
+    ↓
+CLI 命令生成（codex/claude/gemini 的正确标志）
+    ↓
+执行 + 结果记录
+```
 
 ## 模型能力注册表
 
@@ -60,47 +92,91 @@ Codex live worker 会默认附加 `--dangerously-bypass-approvals-and-sandbox`�
 | 故障恢复 | MiniMax-M2.7 | GLM-5.1 → GPT-5.5 |
 | 通用兜底 | GPT-5.5 | Claude Sonnet → DeepSeek-V4 |
 
+## 路由配置文件
+
+选择路由的积极程度：
+
+| 配置 | 使用时机 | 行为 |
+|------|----------|------|
+| `balanced`（默认） | 大多数工作 | 强信号升级模型；普通编码保持廉价 |
+| `premium` | 风险较高或不清楚的任务 | 更愿意使用 Opus 或 GPT-5.5 等高成本模型 |
+| `budget` | 成本敏感的工作 | 除非任务真的需要强模型，否则优先使用廉价模型 |
+
+```bash
+# 每次命令使用
+node scripts/aios.mjs model-router route --task "..." --profile premium --explain
+
+# 或为会话设置
+export AIOS_MODEL_ROUTER_PROFILE=premium
+```
+
 ## 快速开始
 
-### 查看模型注册表
+### 查看所有模型
 
 ```bash
 node scripts/aios.mjs model-router list
 ```
 
-### 将任务路由到最优模型
+### 带解释的任务路由
 
 ```bash
-# 从描述自动检测任务类型
-node scripts/aios.mjs model-router route --task "审查 auth.js 的安全漏洞"
-
-# 显式指定任务类型
-node scripts/aios.mjs model-router route --task "重构数据库连接" --task-type implementation
+node scripts/aios.mjs model-router route \
+  --task "构建一个漂亮的落地页组件" \
+  --profile balanced \
+  --explain
 ```
 
-### 查看调度统计
+### 强制特定任务类型
+
+```bash
+node scripts/aios.mjs model-router route \
+  --task "重构数据库连接" \
+  --task-type implementation
+```
+
+### 查看调度历史
 
 ```bash
 node scripts/aios.mjs model-router stats
 ```
 
+## 为什么选择这个模型
+
+在任何 route 命令后加 `--explain` 查看推理：
+
+```json
+{
+  "resolvedType": "browser-automation",
+  "modelId": "gpt-5.5",
+  "confidence": 0.86,
+  "matchedSignals": [
+    { "taskType": "browser-automation", "signal": "browser", "weight": 8 }
+  ],
+  "why": ["检测到 browser-automation 信号: browser, upload"]
+}
+```
+
+- **高置信度** = 一个任务类型明确匹配
+- **多个 recommendedPhases** = 任务是复合的；分割以获得更好的路由
+- **matchedSignals** 显示准确哪个关键词触发了路由
+
 ## 环境变量覆盖
 
-无需修改配置文件即可按角色覆盖模型选择：
+如果想强制使用特定模型：
 
 ```bash
+# 按角色
 export AIOS_MODEL_PLANNER=claude-opus
 export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
 export AIOS_MODEL_REVIEWER=claude-opus
-export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
-```
 
-或按任务类型：
-
-```bash
+# 按任务类型
+export AIOS_MODEL_BROWSER_AUTOMATION=gpt-5.5
 export AIOS_MODEL_CODE_REVIEW=claude-opus
-export AIOS_MODEL_RESEARCH=gemini-3-pro
-export AIOS_MODEL_GENERAL=gpt-5.5
+
+# 完全禁用路由（使用固定模型）
+export AIOS_MODEL_ROUTER=0
 ```
 
 ## Agent 集成
@@ -134,3 +210,23 @@ preferredModel: claude-opus
 | `.claude/skills/model-router/SKILL.md` | Agent 可调用的自助路由 skill |
 | `.claude/agents/*.md` | 包含 preferredModel frontmatter 的 Agent 角色卡 |
 | `scripts/lib/model-router.mjs` | 路由器逻辑：匹配、降级、CLI 构建、统计 |
+
+## 常见问题
+
+### 为什么一切都路由到 DeepSeek？
+
+在 `balanced` 配置下，普通实现任务会路由到 DeepSeek（因为它便宜且好）。对于需要更强模型的任务，使用 `--profile premium`。
+
+### 我的任务有多个部分，只得到一个模型
+
+目前复合任务获得一个模型。检查 explain 输出中的 `recommendedPhases` — 如果显示多个类型，将工作分割成单独的任务。
+
+### 我可以将它用于 Agent Team 吗？
+
+可以。Agent Team 默认使用模型路由器 — 团队的每个阶段自动路由到最优模型。
+
+## 下一步
+
+- [Agent Team](team-ops.md) — 带自动路由的多 agent 协作
+- [ContextDB](contextdb.md) — 项目内存
+- [Solo Harness](solo-harness.md) — 长时间运行的单个 agent 工作

@@ -266,3 +266,21 @@ GitHub 설정에서 수정:
 ### `codex`를 입력해도 컨텍스트가 주입되지 않는 이유는 무엇인가요?
 
 일반적으로 래퍼가 로드되지 않았거나, `CTXDB_WRAP_MODE`가 현재 워크스페이스를 커버하지 않거나, 명령어가 패스스루 관리 서브커맨드인 경우입니다.
+
+## 스킬이 잘못된 레포 디렉터리에 저장됨
+
+canonical repo skill sources의 위치가 변경되었습니다:
+
+- `<repo>/skill-sources`
+
+생성된 repo-local 검색 가능 출력의 위치:
+
+- `<repo>/.codex/skills`
+- `<repo>/.claude/skills`
+
+병렬 디렉터리(예: `.baoyu-skills/`)에 `SKILL.md`를 저장하면 Codex / Claude는 이를 스킬로 검색하지 못합니다.
+
+- `.baoyu-skills/`는 `EXTEND.md`와 같은 확장 설정에만 사용
+- 실제 canonical skill 소스 파일은 `skill-sources/<name>/SKILL.md`로 이동
+- `node scripts/sync-skills.mjs`로 생성된 클라이언트 루트를 다시 구축
+- `scripts/doctor-contextdb-skills.sh --client all`로 미지원 스킬 루트 디렉터리를 감지
