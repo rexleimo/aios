@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 const DEFAULT_STALE_THRESHOLD_MINUTES = 30;
 const MAX_SCAN_FILES = 2000;
@@ -159,7 +160,7 @@ export async function collectWatchdogSignals({
   const normalizedRootDir = path.resolve(rootDir || process.cwd());
   const normalizedSessionId = normalizeText(sessionId);
   const sessionDir = normalizedSessionId
-    ? path.join(normalizedRootDir, 'memory', 'context-db', 'sessions', normalizedSessionId)
+    ? path.join(resolveContextDbRoot(normalizedRootDir, { preferLegacyExisting: true }), 'sessions', normalizedSessionId)
     : '';
   const artifactsDir = sessionDir ? path.join(sessionDir, 'artifacts') : '';
   const pausePath = sessionDir ? path.join(sessionDir, '.pause') : '';

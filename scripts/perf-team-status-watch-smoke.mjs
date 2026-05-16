@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
+import { resolveContextDbRoot } from './lib/aios/state-root.mjs';
 import { runTeamStatus } from './lib/lifecycle/team-ops.mjs';
 
 function parsePositiveInt(value, fallback) {
@@ -75,7 +76,7 @@ function writeJsonSync(filePath, value) {
 }
 
 async function seedWorkspace(rootDir, { sessionId = 'perf-watch-session' } = {}) {
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(resolveContextDbRoot(rootDir), 'sessions', sessionId);
   await writeJson(path.join(sessionDir, 'meta.json'), {
     schemaVersion: 1,
     sessionId,

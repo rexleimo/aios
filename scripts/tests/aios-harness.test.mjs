@@ -262,7 +262,7 @@ test('runQualityGate persists verification checkpoint when session is provided',
   assert.equal(report.verificationEvidence?.persisted, true);
   assert.match(report.verificationEvidence?.artifactPath ?? '', /quality-gate-/);
 
-  const checkpointsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'quality-session', 'l1-checkpoints.jsonl');
+  const checkpointsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', 'quality-session', 'l1-checkpoints.jsonl');
   const checkpointsRaw = await readFile(checkpointsPath, 'utf8');
   const checkpoints = checkpointsRaw.trim().split(/\n+/).map((line) => JSON.parse(line));
   const latest = checkpoints.at(-1);
@@ -273,7 +273,7 @@ test('runQualityGate persists verification checkpoint when session is provided',
   assert.equal(Array.isArray(latest.artifacts), true);
   assert.equal(latest.artifacts.length, 1);
 
-  const eventsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'quality-session', 'l2-events.jsonl');
+  const eventsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', 'quality-session', 'l2-events.jsonl');
   const eventsRaw = await readFile(eventsPath, 'utf8');
   const events = eventsRaw.trim().split(/\n+/).map((line) => JSON.parse(line));
   const verificationEvent = events.find((item) => item.kind === 'verification.quality-gate');
@@ -310,7 +310,7 @@ test('runQualityGate persists quality-specific failure category when session is 
   assert.equal(report.failureCategory, 'quality-logs');
   assert.deepEqual(report.failedChecks, ['Logs']);
 
-  const checkpointsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'quality-logs-session', 'l1-checkpoints.jsonl');
+  const checkpointsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', 'quality-logs-session', 'l1-checkpoints.jsonl');
   const checkpointsRaw = await readFile(checkpointsPath, 'utf8');
   const checkpoints = checkpointsRaw.trim().split(/\n+/).map((line) => JSON.parse(line));
   const latest = checkpoints.at(-1);
@@ -319,7 +319,7 @@ test('runQualityGate persists quality-specific failure category when session is 
   assert.equal(latest.telemetry.verification.result, 'failed');
   assert.equal(latest.telemetry.failureCategory, 'quality-logs');
 
-  const eventsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'quality-logs-session', 'l2-events.jsonl');
+  const eventsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', 'quality-logs-session', 'l2-events.jsonl');
   const eventsRaw = await readFile(eventsPath, 'utf8');
   const events = eventsRaw.trim().split(/\n+/).map((line) => JSON.parse(line));
   const verificationEvent = events.find((item) => item.kind === 'verification.quality-gate');
@@ -474,7 +474,7 @@ test('runQualityGate fails when release threshold environment values are invalid
 test('executeEntropyGc dry-run keeps newest artifacts and skips referenced checkpoints', async () => {
   const rootDir = await makeRootDir();
   const sessionId = 'entropy-dry-run';
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   const artifactsDir = path.join(sessionDir, 'artifacts');
   await mkdir(artifactsDir, { recursive: true });
 
@@ -493,7 +493,7 @@ test('executeEntropyGc dry-run keeps newest artifacts and skips referenced check
   await utimes(stale, threeDaysAgo, threeDaysAgo);
 
   const referencedPath = path.join(
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     sessionId,
@@ -536,7 +536,7 @@ test('executeEntropyGc dry-run keeps newest artifacts and skips referenced check
 test('executeEntropyGc auto archives stale artifacts and writes manifest', async () => {
   const rootDir = await makeRootDir();
   const sessionId = 'entropy-auto';
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   const artifactsDir = path.join(sessionDir, 'artifacts');
   await mkdir(artifactsDir, { recursive: true });
 
@@ -587,7 +587,7 @@ test('executeEntropyGc persists turn-envelope metadata on maintenance evidence e
   const rootDir = await makeRootDir();
   const sessionId = 'entropy-evidence-turn';
   createSession(rootDir, sessionId);
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   const artifactsDir = path.join(sessionDir, 'artifacts');
   await mkdir(artifactsDir, { recursive: true });
 

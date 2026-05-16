@@ -167,7 +167,7 @@ Use optional pacing to reduce flaky fast-action races:
 
 ## Filesystem Context DB (for Codex/Claude/Gemini)
 
-This repo now includes a lightweight filesystem context DB under `memory/context-db` to share memory across CLI tools, with a SQLite sidecar index at `memory/context-db/index/context.db`.
+This repo now includes a lightweight filesystem context DB under `.aios/context-db` to share memory across CLI tools, with a SQLite sidecar index at `.aios/context-db/index/context.db`. Legacy `memory/context-db` state is read only for compatibility when `.aios/context-db` is absent.
 
 ### Commands
 
@@ -177,8 +177,8 @@ npm run contextdb -- init
 npm run contextdb -- session:new --agent claude-code --project rex-cli --goal "stabilize browser automation"
 npm run contextdb -- event:add --session <session_id> --role user --text "Need retry and checkpoint strategy"
 npm run contextdb -- checkpoint --session <session_id> --summary "Auth wall found; waiting human login" --status blocked --next "wait-login|resume-run"
-npm run contextdb -- context:pack --session <session_id> --out memory/context-db/exports/<session_id>-context.md
-npm run contextdb -- context:pack --session <session_id> --limit 60 --token-budget 1200 --token-strategy balanced --out memory/context-db/exports/<session_id>-context.md
+npm run contextdb -- context:pack --session <session_id> --out .aios/context-db/exports/<session_id>-context.md
+npm run contextdb -- context:pack --session <session_id> --limit 60 --token-budget 1200 --token-strategy balanced --out .aios/context-db/exports/<session_id>-context.md
 npm run contextdb -- search --query "auth race" --project rex-cli
 npm run contextdb -- search --query "auth race" --scope all --explain
 npm run contextdb -- hygiene:status
@@ -186,7 +186,7 @@ npm run contextdb -- hygiene:prune-noise --dry-run
 npm run contextdb -- hygiene:compact --dry-run
 npm run contextdb -- timeline --session <session_id> --limit 30
 npm run contextdb -- event:get --id <session_id>#<seq>
-npm run contextdb -- index:sync --force --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
+npm run contextdb -- index:sync --force --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 npm run contextdb -- index:rebuild
 ```
 
@@ -232,11 +232,11 @@ npm run bench:contextdb:refs:gate
 
 - Claude Code:
   ```bash
-  claude --append-system-prompt "$(cat memory/context-db/exports/<session_id>-context.md)"
+  claude --append-system-prompt "$(cat .aios/context-db/exports/<session_id>-context.md)"
   ```
 - Gemini CLI:
   ```bash
-  gemini -i "$(cat memory/context-db/exports/<session_id>-context.md)"
+  gemini -i "$(cat .aios/context-db/exports/<session_id>-context.md)"
   ```
 - Codex CLI (example pattern):
   use the generated context packet as the first prompt in the session.
@@ -260,7 +260,7 @@ For full automation, use one-shot mode (`--prompt`) so the script performs all f
 `init -> session:new/latest -> event:add -> checkpoint -> context:pack`.
 
 Each checkpoint now also maintains compact continuity files under
-`memory/context-db/sessions/<session_id>/continuity-summary.md` and
-`memory/context-db/sessions/<session_id>/continuity.json`. `context:pack` includes
+`.aios/context-db/sessions/<session_id>/continuity-summary.md` and
+`.aios/context-db/sessions/<session_id>/continuity.json`. `context:pack` includes
 the latest continuity summary, and `ctx-agent` lazy startup surfaces it through the
 facade prompt for fast resume after `/new`, `/clear`, or a fresh CLI launch.

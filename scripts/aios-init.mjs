@@ -41,7 +41,9 @@ const AGENT_CONFIG = {
   },
 };
 
-const MARKER = '<!-- AIOS: memory/context-db/index.json -->';
+const MARKER = '<!-- AIOS: .aios/context-db/index.json -->';
+const LEGACY_MARKER = '<!-- AIOS: memory/context-db/index.json -->';
+const MARKERS = [MARKER, LEGACY_MARKER];
 
 // --- Agent detection ---
 
@@ -74,7 +76,7 @@ function detectAgents() {
 function hasMarker(workspaceRoot, configFile) {
   try {
     const content = readFileSync(resolve(workspaceRoot, configFile), 'utf8');
-    return content.includes(MARKER);
+    return MARKERS.some((marker) => content.includes(marker));
   } catch {
     return false;
   }

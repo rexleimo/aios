@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { readFile } from 'node:fs/promises';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 import { runAsyncBootstrap } from './async-bootstrap.mjs';
 
 function parseArgs(argv) {
@@ -55,7 +56,7 @@ async function main() {
     process.exit(1);
   }
 
-  const packPath = path.join('memory', 'context-db', 'exports', `latest-${opts.agent}-context.md`);
+  const packPath = contextDbRelativePath(opts.workspaceRoot, 'exports', `latest-${opts.agent}-context.md`);
   await runAsyncBootstrap(opts.workspaceRoot, {
     agent: opts.agent,
     project: opts.project,

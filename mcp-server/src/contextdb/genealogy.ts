@@ -4,6 +4,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 
 import type { Checkpoint, ContextEvent, SessionMeta } from './core.js';
+import { resolveContextDbRoot, toWorkspaceRelative } from './paths.js';
 
 export type MemoryGenealogyNodeType =
   | 'project'
@@ -93,7 +94,6 @@ interface SessionRecord {
 type SessionCheckpoint = Checkpoint;
 type SessionEvent = ContextEvent;
 
-const DB_RELATIVE_PATH = path.join('memory', 'context-db');
 const RISK_VALUES: MemoryGenealogyRisk[] = ['none', 'stale', 'blocked', 'failed', 'missing-evidence'];
 
 function normalizeLimit(value: unknown, fallback: number): number {
@@ -431,7 +431,8 @@ export async function buildMemoryGenealogyGraph(input: BuildMemoryGenealogyInput
   const requestedLimit = normalizeLimit(input.limit, 40);
   const includeEvents = input.includeEvents === true;
   const eventsPerSession = normalizeLimit(input.eventsPerSession, 20);
-  const dbRoot = path.join(workspaceRoot, DB_RELATIVE_PATH);
+  const dbRoot = resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true });
+  const dbRelativePath = toWorkspaceRelative(workspaceRoot, dbRoot);
   const sessionsRoot = path.join(dbRoot, 'sessions');
   const generatedAt = new Date().toISOString();
   const project = input.project || 'workspace';
@@ -446,7 +447,7 @@ export async function buildMemoryGenealogyGraph(input: BuildMemoryGenealogyInput
     label: project,
     summary: `ContextDB memory genealogy for ${project}`,
     project,
-    sourcePath: DB_RELATIVE_PATH.replace(/\\/g, '/'),
+    sourcePath: dbRelativePath,
     trust: 1,
     risk: 'none',
     refs: [],

@@ -61,11 +61,11 @@ async function seedWorkspace(): Promise<{ workspace: string; sessionId: string; 
     summary: 'Hygiene command planned.',
     nextActions: ['Run hygiene status'],
   });
-  const exportsDir = path.join(workspace, 'memory', 'context-db', 'exports');
+  const exportsDir = path.join(workspace, '.aios', 'context-db', 'exports');
   await fs.mkdir(exportsDir, { recursive: true });
   await fs.writeFile(path.join(exportsDir, `${session.sessionId}-context.md`), '# context\n', 'utf8');
   await fs.writeFile(path.join(exportsDir, 'orphan-context.md'), '# stale\n', 'utf8');
-  const eventsPath = path.join(workspace, 'memory', 'context-db', 'sessions', session.sessionId, 'l2-events.jsonl');
+  const eventsPath = path.join(workspace, '.aios', 'context-db', 'sessions', session.sessionId, 'l2-events.jsonl');
   return { workspace, sessionId: session.sessionId, eventsPath };
 }
 

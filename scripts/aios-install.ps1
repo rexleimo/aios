@@ -57,6 +57,7 @@ try {
   if (Test-Path -LiteralPath $InstallDir) {
     New-Item -Path $preserve -ItemType Directory -Force | Out-Null
     $preservePaths = @(
+      ".aios",
       ".browser-profiles",
       "mcp-server/.browser-profiles",
       "memory/context-db",

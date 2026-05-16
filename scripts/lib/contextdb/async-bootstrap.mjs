@@ -1,5 +1,6 @@
 import { mkdir, open, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 import { generateFacadeFromSession, loadFacade } from './facade.mjs';
 
 const BOOTSTRAP_LOCK_FILE = '.async-bootstrap.lock';
@@ -9,8 +10,8 @@ function normalizeStoredPath(value = '') {
   return String(value || '').replace(/\\/g, '/');
 }
 
-function expectedContextPacketPath(agent) {
-  return normalizeStoredPath(path.join('memory', 'context-db', 'exports', `latest-${agent}-context.md`));
+function expectedContextPacketPath(workspaceRoot, agent) {
+  return normalizeStoredPath(contextDbRelativePath(workspaceRoot, 'exports', `latest-${agent}-context.md`));
 }
 
 async function shouldSkipAsyncBootstrap(workspaceRoot, agent) {
@@ -22,11 +23,11 @@ async function shouldSkipAsyncBootstrap(workspaceRoot, agent) {
   if (facade.hasStalePack === true) {
     return false;
   }
-  return normalizeStoredPath(facade.contextPacketPath) === expectedContextPacketPath(agent);
+  return normalizeStoredPath(facade.contextPacketPath) === expectedContextPacketPath(workspaceRoot, agent);
 }
 
 function lockFilePath(workspaceRoot) {
-  return path.join(workspaceRoot, 'memory', 'context-db', BOOTSTRAP_LOCK_FILE);
+  return path.join(resolveContextDbRoot(workspaceRoot), BOOTSTRAP_LOCK_FILE);
 }
 
 async function readLockState(lockPath) {
@@ -98,7 +99,7 @@ export async function runAsyncBootstrap(
         return { ok: true, skipped: true, reason: 'fresh-facade' };
       }
 
-      const packPath = path.join('memory', 'context-db', 'exports', `latest-${agent}-context.md`);
+      const packPath = contextDbRelativePath(workspaceRoot, 'exports', `latest-${agent}-context.md`);
       const packResult = await safeContextPack(workspaceRoot, {
         sessionId: '', // safeContextPack resolves session internally when empty
         eventLimit: 30,
@@ -109,7 +110,7 @@ export async function runAsyncBootstrap(
       facade.hasStalePack = packResult.mode !== 'fresh';
       facade.contextPacketPath = packPath;
 
-      const facadePath = path.join(workspaceRoot, 'memory', 'context-db', '.facade.json');
+      const facadePath = path.join(resolveContextDbRoot(workspaceRoot), '.facade.json');
       await writeFile(facadePath, JSON.stringify(facade, null, 2) + '\n', 'utf8');
       return { ok: true, skipped: false, reason: '', facadePath };
     } finally {

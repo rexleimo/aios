@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 
@@ -13,8 +14,8 @@ function formatArtifactTimestamp(ts = new Date()) {
   return ts.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
-function buildArtifactPath(sessionId, stamp) {
-  return path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', `quality-gate-${stamp}.json`);
+function buildArtifactPath(rootDir, sessionId, stamp) {
+  return contextDbRelativePath(rootDir, 'sessions', sessionId, 'artifacts', `quality-gate-${stamp}.json`);
 }
 
 function summarizeChecks(results = []) {
@@ -97,7 +98,7 @@ export async function persistQualityGateEvidence({ rootDir, sessionId, report, e
   }
 
   const stamp = formatArtifactTimestamp();
-  const artifactPath = buildArtifactPath(sessionId, stamp);
+  const artifactPath = buildArtifactPath(rootDir, sessionId, stamp);
   const artifactAbsPath = path.join(rootDir, artifactPath);
   const artifactPayload = {
     schemaVersion: 1,

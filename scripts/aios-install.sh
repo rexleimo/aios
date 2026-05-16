@@ -97,6 +97,7 @@ extract_dir="$tmp_dir/extract"
 preserve_dir="$tmp_dir/preserve"
 
 preserve_paths=(
+  ".aios"
   ".browser-profiles"
   "mcp-server/.browser-profiles"
   "memory/context-db"

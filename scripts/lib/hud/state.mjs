@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import { buildHindsightEval } from '../harness/hindsight-eval.mjs';
 import { readSoloControl, readSoloRunSummary } from '../harness/solo-journal.mjs';
@@ -116,7 +117,7 @@ function normalizeProvider(raw = '') {
 }
 
 function getSessionsRoot(rootDir) {
-  return path.join(rootDir, 'memory', 'context-db', 'sessions');
+  return path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions');
 }
 
 async function safeReadJson(filePath) {
@@ -1049,7 +1050,7 @@ async function collectRecentDispatchEvidence(rootDir, sessionId, { limit = 6 } =
   const candidates = Array.isArray(index.names) ? index.names.slice(0, max) : [];
 
   return candidates.map((name) => ({
-    artifactPath: toPosixPath(path.join('memory', 'context-db', 'sessions', normalizedSessionId, 'artifacts', name)),
+    artifactPath: contextDbRelativePath(rootDir, 'sessions', normalizedSessionId, 'artifacts', name),
   }));
 }
 

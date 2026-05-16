@@ -27,7 +27,7 @@ test('full lifecycle: two agents share workspace and handoff', async () => {
     await writeSkillIndex(root, index);
 
     // Agent A: create session + handoff
-    const sessionADir = path.join(root, 'memory', 'context-db', 'sessions', 'agent-a-session');
+    const sessionADir = path.join(root, '.aios', 'context-db', 'sessions', 'agent-a-session');
     await mkdir(sessionADir, { recursive: true });
     await writeFile(path.join(sessionADir, 'meta.json'), JSON.stringify({
       sessionId: 'agent-a-session',
@@ -58,7 +58,7 @@ test('full lifecycle: two agents share workspace and handoff', async () => {
     });
 
     // Agent B: start, read workspace + handoff from Agent A
-    const sessionBDir = path.join(root, 'memory', 'context-db', 'sessions', 'agent-b-session');
+    const sessionBDir = path.join(root, '.aios', 'context-db', 'sessions', 'agent-b-session');
     await mkdir(sessionBDir, { recursive: true });
     await writeFile(path.join(sessionBDir, 'meta.json'), JSON.stringify({
       sessionId: 'agent-b-session',

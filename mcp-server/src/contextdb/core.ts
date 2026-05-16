@@ -18,6 +18,7 @@ import {
 } from './sqlite.js';
 import { semanticRerank } from './semantic.js';
 import { buildSearchExplain, type ContextDbSearchExplain } from './explain.js';
+import { resolveContextDbRoot } from './paths.js';
 
 export type SessionStatus = 'running' | 'blocked' | 'done';
 export type EventRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -111,7 +112,6 @@ interface SessionPaths {
   continuityJson: string;
 }
 
-const DB_RELATIVE_PATH = path.join('memory', 'context-db');
 const MANIFEST_NAME = 'manifest.json';
 const INDEX_SESSIONS_NAME = 'sessions.jsonl';
 const INDEX_EVENTS_NAME = 'events.jsonl';
@@ -1025,7 +1025,7 @@ async function readJsonLines<T>(filePath: string): Promise<T[]> {
 }
 
 function getDbRoot(workspaceRoot: string): string {
-  return path.join(workspaceRoot, DB_RELATIVE_PATH);
+  return resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true });
 }
 
 function getSessionsIndexPath(workspaceRoot: string): string {

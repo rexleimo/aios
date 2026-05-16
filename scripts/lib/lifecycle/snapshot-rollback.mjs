@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 
 const SNAPSHOT_KIND = 'orchestration.pre-mutation-snapshot';
 const SNAPSHOT_DIR_PREFIX = 'pre-mutation-';
@@ -151,7 +152,7 @@ async function resolveSnapshotManifest(options = {}, { rootDir } = {}) {
   }
 
   if (sessionId) {
-    const searchRootRelPath = path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts');
+    const searchRootRelPath = contextDbRelativePath(rootDir, 'sessions', sessionId, 'artifacts');
     const candidates = await listSnapshotCandidates({ rootDir, searchRootRelPath, jobId });
     if (candidates.length > 0) return candidates[0];
     throw new Error(`No pre-mutation snapshot manifest found for session "${sessionId}"${jobId ? ` and job "${jobId}"` : ''}.`);

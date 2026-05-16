@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 
@@ -139,7 +140,7 @@ async function readLastJsonLine(filePath) {
 }
 
 async function ensureSessionStateForEventAppend(rootDir, sessionId) {
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions', sessionId);
   const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
   const checkpointsPath = path.join(sessionDir, 'l1-checkpoints.jsonl');
   const statePath = path.join(sessionDir, 'state.json');

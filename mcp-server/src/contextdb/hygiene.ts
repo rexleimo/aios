@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { ensureContextDb } from './core.js';
+import { resolveContextDbRoot } from './paths.js';
 
 export interface ContextDbHygieneStatus {
   ok: true;
@@ -35,8 +36,6 @@ export interface ContextDbCompactResult {
 interface NoiseCandidate {
   reason: string;
 }
-
-const DB_RELATIVE_PATH = path.join('memory', 'context-db');
 
 export async function hygieneStatus(input: { workspaceRoot: string }): Promise<ContextDbHygieneStatus> {
   const dbRoot = await ensureContextDb(input.workspaceRoot);
@@ -97,7 +96,7 @@ async function scanContextDb(workspaceRoot: string): Promise<{
   staleExports: number;
   noiseCandidates: NoiseCandidate[];
 }> {
-  const dbRoot = path.join(workspaceRoot, DB_RELATIVE_PATH);
+  const dbRoot = resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true });
   const sessionsRoot = path.join(dbRoot, 'sessions');
   const exportsRoot = path.join(dbRoot, 'exports');
   const sessionIds = new Set<string>();

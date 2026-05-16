@@ -9,7 +9,9 @@ import { writeIndex } from './lib/contextdb/context-registry.mjs';
 const ROOT_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CTX_AGENT_CLI_PATH = path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs');
 
-const AIOS_MARKER = '<!-- AIOS: memory/context-db/index.json -->';
+const AIOS_MARKER = '<!-- AIOS: .aios/context-db/index.json -->';
+const LEGACY_AIOS_MARKER = '<!-- AIOS: memory/context-db/index.json -->';
+const AIOS_MARKERS = [AIOS_MARKER, LEGACY_AIOS_MARKER];
 
 const KNOWN_ENDPOINT_ENV_NAMES = new Set([
   'OPENAI_BASE_URL',
@@ -405,7 +407,7 @@ function detectAiosMarker(workspace) {
   for (const file of configFiles) {
     try {
       const content = readFileSync(path.join(workspace, file), 'utf8');
-      if (content.includes(AIOS_MARKER)) return { found: true, file };
+      if (AIOS_MARKERS.some((marker) => content.includes(marker))) return { found: true, file };
     } catch {
       // file doesn't exist
     }

@@ -400,9 +400,9 @@ test('aios harness honors --workspace outside the current cwd', async () => {
     );
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    await fs.access(path.join(workspaceRoot, 'memory', 'context-db', 'sessions', 'workspace-session', 'meta.json'));
+    await fs.access(path.join(workspaceRoot, '.aios', 'context-db', 'sessions', 'workspace-session', 'meta.json'));
     await assert.rejects(
-      () => fs.access(path.join(launchRoot, 'memory', 'context-db', 'sessions', 'workspace-session', 'meta.json')),
+      () => fs.access(path.join(launchRoot, '.aios', 'context-db', 'sessions', 'workspace-session', 'meta.json')),
       /ENOENT/
     );
   } finally {
@@ -1010,7 +1010,7 @@ test('aios memo add emits side turn-envelope metadata', async () => {
 
     const eventsPath = path.join(
       workspaceRoot,
-      'memory',
+      '.aios',
       'context-db',
       'sessions',
       'workspace-memory--default',
@@ -1051,7 +1051,7 @@ test('aios memo add blocks unsafe memory injection content', async () => {
 
     const eventsPath = path.join(
       workspaceRoot,
-      'memory',
+      '.aios',
       'context-db',
       'sessions',
       'workspace-memory--default',
@@ -1280,6 +1280,29 @@ test('aios memo add and pin enforce workspace memory capacity limits', async () 
   }
 });
 
+test('aios memo space list reads workspace memory from .aios context db', async () => {
+  const repoRoot = process.cwd();
+  const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-memo-space-list-'));
+  const cliPath = path.join(repoRoot, 'scripts', 'aios.mjs');
+
+  try {
+    const addMemo = spawnSync('node', [cliPath, 'memo', 'add', 'record dotdir space'], {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+    });
+    assert.equal(addMemo.status, 0, addMemo.stderr || addMemo.stdout);
+
+    const listSpaces = spawnSync('node', [cliPath, 'memo', 'space', 'list'], {
+      cwd: workspaceRoot,
+      encoding: 'utf8',
+    });
+    assert.equal(listSpaces.status, 0, listSpaces.stderr || listSpaces.stdout);
+    assert.match(listSpaces.stdout, /\* default/);
+  } finally {
+    await fs.rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
 test('aios memo recall prints a readable recall digest', async () => {
   const repoRoot = process.cwd();
   const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-memo-recall-'));
@@ -1361,7 +1384,7 @@ test('runSnapshotRollback restores targets from explicit manifest path', async (
 
 test('runSnapshotRollback supports session+job discovery in dry-run mode', async () => {
   const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-snapshot-rollback-dryrun-'));
-  const artifactsRoot = path.join(workspaceRoot, 'memory', 'context-db', 'sessions', 'session-x', 'artifacts');
+  const artifactsRoot = path.join(workspaceRoot, '.aios', 'context-db', 'sessions', 'session-x', 'artifacts');
   const snapshotDir = path.join(artifactsRoot, 'pre-mutation-20260412T130000Z-phase_implement');
   const backupDir = path.join(snapshotDir, 'backup');
   const manifestPath = path.join(snapshotDir, 'manifest.json');
@@ -1384,7 +1407,7 @@ test('runSnapshotRollback supports session+job discovery in dry-run mode', async
       targets: [
         { path: 'scripts/sample.txt', existed: true, type: 'file' },
       ],
-      backupPath: 'memory/context-db/sessions/session-x/artifacts/pre-mutation-20260412T130000Z-phase_implement/backup',
+      backupPath: '.aios/context-db/sessions/session-x/artifacts/pre-mutation-20260412T130000Z-phase_implement/backup',
     }, null, 2)}\n`, 'utf8');
 
     const logs = [];

@@ -1,5 +1,5 @@
 # Repository Guidelines
-<!-- AIOS: memory/context-db/index.json -->
+<!-- AIOS: .aios/context-db/index.json -->
 
 <!-- WORKFLOW ROUTER - MANDATORY -->
 <IMPORTANT>
@@ -31,8 +31,9 @@ This repository is a local-first AI agent workspace centered on browser automati
 - `mcp-server/src/browser/`: browser launcher, profile manager, auth checks, and tool actions.
 - `config/`: runtime configuration such as `browser-profiles.json` and safety-related settings.
 - `memory/`: JSON knowledge/skills/specs used by agent workflows.
+- `.aios/`: gitignored project-local runtime state such as ContextDB sessions/exports and bootstrap task queues.
 - `docs/plans/`: implementation and design plans.
-- `tasks/`: task templates and execution tracking artifacts.
+- `tasks/`: repo-managed templates/metrics only; new generated task queues live under `.aios/tasks`.
 
 Do not manually edit `mcp-server/dist/`; it is generated output.
 
@@ -160,11 +161,12 @@ This project uses a pull-based context system. Context is NOT injected into ever
 Instead, a lightweight registry index tells you where to find it.
 
 ### Quick Start
-1. On first load, try to read `memory/context-db/index.json` — the context registry.
+1. On first load, try to read `.aios/context-db/index.json` — the context registry.
 2. If the file doesn't exist, this is a fresh session — proceed with the user's task.
 3. If it exists, it lists available sources with cost, priority, and tags.
 4. Load only the sources relevant to the current task.
 5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
+6. Legacy `memory/context-db/index.json` is read only for compatibility when `.aios/context-db/` is absent.
 
 ### Source Selection by Task Type
 | Task type | Load |

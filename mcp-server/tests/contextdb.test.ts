@@ -98,6 +98,12 @@ test('ensureContextDb initializes expected directory structure', async () => {
   const workspace = await makeWorkspace();
   const dbRoot = await ensureContextDb(workspace);
 
+  assert.equal(dbRoot, path.join(workspace, '.aios', 'context-db'));
+  await assert.rejects(
+    fs.stat(path.join(workspace, 'memory', 'context-db')),
+    (error: unknown) => (error as NodeJS.ErrnoException).code === 'ENOENT'
+  );
+
   const manifestPath = path.join(dbRoot, 'manifest.json');
   const sessionsPath = path.join(dbRoot, 'sessions');
   const indexPath = path.join(dbRoot, 'index', 'sessions.jsonl');
@@ -148,7 +154,7 @@ test('buildMemoryGenealogyGraph maps sessions, checkpoints, refs, continuity, an
     },
   });
 
-  const sessionDir = path.join(workspace, 'memory', 'context-db', 'sessions', session.sessionId);
+  const sessionDir = path.join(workspace, '.aios', 'context-db', 'sessions', session.sessionId);
   await fs.writeFile(path.join(sessionDir, 'continuity.json'), `${JSON.stringify({
     schemaVersion: 1,
     sessionId: session.sessionId,
@@ -406,7 +412,7 @@ test('contextdb cli supports index:sync --stats with incremental counters', asyn
     text: 'indexed event baseline',
   });
 
-  const sessionDir = path.join(workspace, 'memory', 'context-db', 'sessions', session.sessionId);
+  const sessionDir = path.join(workspace, '.aios', 'context-db', 'sessions', session.sessionId);
   const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
   const statePath = path.join(sessionDir, 'state.json');
   const ts = new Date().toISOString();
@@ -458,7 +464,7 @@ test('contextdb cli index:sync writes jsonl records with --jsonl-out', async () 
     text: 'jsonl record seed event',
   });
 
-  const outputPath = path.join('memory', 'context-db', 'exports', 'index-sync-stats.jsonl');
+  const outputPath = path.join('.aios', 'context-db', 'exports', 'index-sync-stats.jsonl');
   const result = runContextDbCli([
     'index:sync',
     '--workspace',
@@ -663,13 +669,13 @@ test('createSession writes metadata and index record', async () => {
 
   const metaPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
     'meta.json'
   );
-  const indexPath = path.join(workspace, 'memory', 'context-db', 'index', 'sessions.jsonl');
+  const indexPath = path.join(workspace, '.aios', 'context-db', 'index', 'sessions.jsonl');
 
   const [metaRaw, indexRaw] = await Promise.all([
     fs.readFile(metaPath, 'utf8'),
@@ -717,7 +723,7 @@ test('appendEvent and writeCheckpoint persist l2/l1 context', async () => {
 
   const eventsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -725,7 +731,7 @@ test('appendEvent and writeCheckpoint persist l2/l1 context', async () => {
   );
   const checkpointsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -733,7 +739,7 @@ test('appendEvent and writeCheckpoint persist l2/l1 context', async () => {
   );
   const summaryPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -741,7 +747,7 @@ test('appendEvent and writeCheckpoint persist l2/l1 context', async () => {
   );
   const continuitySummaryPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -749,7 +755,7 @@ test('appendEvent and writeCheckpoint persist l2/l1 context', async () => {
   );
   const continuityJsonPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -808,7 +814,7 @@ test('writeCheckpoint normalizes telemetry and mirrors it to sidecar indexes', a
 
   const checkpointsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -816,13 +822,13 @@ test('writeCheckpoint normalizes telemetry and mirrors it to sidecar indexes', a
   );
   const summaryPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
     'l0-summary.md'
   );
-  const sqlitePath = path.join(workspace, 'memory', 'context-db', 'index', 'context.db');
+  const sqlitePath = path.join(workspace, '.aios', 'context-db', 'index', 'context.db');
 
   const [checkpointsRaw, summaryRaw] = await Promise.all([
     fs.readFile(checkpointsPath, 'utf8'),
@@ -894,7 +900,7 @@ test('buildContextPacket composes markdown for agent handoff', async () => {
   await fs.writeFile(
     path.join(
       workspace,
-      'memory',
+      '.aios',
       'context-db',
       'sessions',
       session.sessionId,
@@ -947,7 +953,7 @@ test('buildContextPacket tolerates missing or corrupt continuity sidecar', async
 
   const continuityJsonPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -984,7 +990,7 @@ test('buildContextPacket tolerates legacy events missing text', async () => {
 
   const eventsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -1021,7 +1027,7 @@ test('buildContextPacket tolerates legacy events with non-array refs', async () 
 
   const eventsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -1060,7 +1066,7 @@ test('buildContextPacket tolerates legacy checkpoints missing action/artifact ar
 
   const checkpointsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -1114,7 +1120,7 @@ test('appendEvent deduplicates rapid duplicate events', async () => {
 
   const eventsPath = path.join(
     workspace,
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     session.sessionId,
@@ -1249,7 +1255,7 @@ test('contextdb cli context:pack accepts --token-strategy and writes strategy me
     ].join('\n'),
   });
 
-  const outputRel = path.join('memory', 'context-db', 'exports', `${session.sessionId}-aggressive.md`);
+  const outputRel = path.join('.aios', 'context-db', 'exports', `${session.sessionId}-aggressive.md`);
   const result = runContextDbCli([
     'context:pack',
     '--workspace',
@@ -1352,7 +1358,7 @@ test('searchEvents rebuilds sqlite sidecar when context.db is missing', async ()
     refs: ['core.ts'],
   });
 
-  const sqlitePath = path.join(workspace, 'memory', 'context-db', 'index', 'context.db');
+  const sqlitePath = path.join(workspace, '.aios', 'context-db', 'index', 'context.db');
   await fs.unlink(sqlitePath);
   const walPath = `${sqlitePath}-wal`;
   const shmPath = `${sqlitePath}-shm`;
@@ -1545,7 +1551,7 @@ test('findLatestSession prefers sidecar lookup and tolerates malformed sibling m
   });
 
   const brokenSessionId = `codex-cli-broken-${Date.now()}`;
-  const brokenDir = path.join(workspace, 'memory', 'context-db', 'sessions', brokenSessionId);
+  const brokenDir = path.join(workspace, '.aios', 'context-db', 'sessions', brokenSessionId);
   await fs.mkdir(brokenDir, { recursive: true });
   await fs.writeFile(path.join(brokenDir, 'meta.json'), '{this-is-not-json', 'utf8');
 
@@ -1889,7 +1895,7 @@ test('searchEvents incrementally syncs sidecar rows from filesystem without full
     text: 'existing indexed row',
   });
 
-  const sessionDir = path.join(workspace, 'memory', 'context-db', 'sessions', session.sessionId);
+  const sessionDir = path.join(workspace, '.aios', 'context-db', 'sessions', session.sessionId);
   const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
   const statePath = path.join(sessionDir, 'state.json');
   const ts = new Date().toISOString();

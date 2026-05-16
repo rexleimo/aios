@@ -1,11 +1,12 @@
 import { existsSync, promises as fs, statSync } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 // --- Path helpers ---
 
 export function registryPath(workspaceRoot) {
-  return path.join(path.resolve(workspaceRoot || process.cwd()), 'memory', 'context-db', 'index.json');
+  return path.join(resolveContextDbRoot(workspaceRoot), 'index.json');
 }
 
 // --- Source definitions ---
@@ -15,7 +16,7 @@ const SOURCE_DEFS = [
     id: 'handoff',
     cost: '~1KB',
     priority: 'high',
-    pathTemplate: 'memory/context-db/sessions/{sessionId}/handoff.json',
+    pathTemplate: '{contextDb}/sessions/{sessionId}/handoff.json',
     description: 'Previous session intent, progress, blockers, next actions',
     tags: ['continuity', 'all-tasks'],
   },
@@ -23,7 +24,7 @@ const SOURCE_DEFS = [
     id: 'workspace-memory',
     cost: '~2KB',
     priority: 'medium',
-    pathTemplate: 'memory/workspace-memory/{space}/pinned.md',
+    pathTemplate: '{contextDb}/sessions/workspace-memory--{space}/pinned.md',
     description: 'Pinned memos and recent workspace notes',
     tags: ['memory', 'workspace'],
   },
@@ -31,7 +32,7 @@ const SOURCE_DEFS = [
     id: 'perception',
     cost: '~3KB',
     priority: 'low',
-    pathTemplate: 'memory/context-db/exports/latest-perception.md',
+    pathTemplate: '{contextDb}/exports/latest-perception.md',
     description: 'Content analytics and strategy recommendations',
     tags: ['analytics', 'xhs'],
   },
@@ -39,7 +40,7 @@ const SOURCE_DEFS = [
     id: 'task-router',
     cost: '~2KB',
     priority: 'medium',
-    pathTemplate: 'memory/context-db/exports/latest-router.md',
+    pathTemplate: '{contextDb}/exports/latest-router.md',
     description: 'AIOS task routing guide with trigger commands',
     tags: ['routing', 'aios', 'all-tasks'],
   },
@@ -47,7 +48,7 @@ const SOURCE_DEFS = [
     id: 'session-history',
     cost: '~20KB',
     priority: 'low',
-    pathTemplate: 'memory/context-db/exports/latest-{agent}-context.md',
+    pathTemplate: '{contextDb}/exports/latest-{agent}-context.md',
     description: 'Full session events, checkpoints, and assistant responses',
     tags: ['history', 'debugging'],
   },
@@ -55,8 +56,11 @@ const SOURCE_DEFS = [
 
 // --- Source resolution ---
 
-function resolveSourcePath(sourceDef, { sessionId, space, agent } = {}) {
+function resolveSourcePath(sourceDef, { sessionId, space, agent, workspaceRoot } = {}) {
   let p = sourceDef.pathTemplate;
+  if (p.includes('{contextDb}')) {
+    p = p.replace(/\{contextDb\}/g, contextDbRelativePath(workspaceRoot));
+  }
   if (sessionId) p = p.replace(/\{sessionId\}/g, sessionId);
   if (space) p = p.replace(/\{space\}/g, space);
   if (agent) p = p.replace(/\{agent\}/g, agent);
@@ -67,15 +71,16 @@ export function resolveSources({ sessionId, space, agent, workspaceRoot } = {}) 
   const root = path.resolve(workspaceRoot || process.cwd());
   return SOURCE_DEFS.map((def) => ({
     ...def,
-    path: resolveSourcePath(def, { sessionId, space, agent }),
-    absPath: path.join(root, resolveSourcePath(def, { sessionId, space, agent })),
+    path: resolveSourcePath(def, { sessionId, space, agent, workspaceRoot: root }),
+    absPath: path.join(root, resolveSourcePath(def, { sessionId, space, agent, workspaceRoot: root })),
   }));
 }
 
 // --- Index building ---
 
 export function buildIndex({ sessionId, status, space, agent, workspaceRoot } = {}) {
-  const resolvedSources = resolveSources({ sessionId, space, agent, workspaceRoot });
+  const root = path.resolve(workspaceRoot || process.cwd());
+  const resolvedSources = resolveSources({ sessionId, space, agent, workspaceRoot: root });
   const available = [];
   for (const src of resolvedSources) {
     try {
@@ -99,6 +104,7 @@ export function buildIndex({ sessionId, status, space, agent, workspaceRoot } = 
     updated: new Date().toISOString(),
     space: space || 'default',
     agent: agent || '',
+    registryPath: contextDbRelativePath(root, 'index.json'),
     sources: available,
   };
 }
@@ -146,7 +152,7 @@ export function renderRegistryInjection(index) {
 
   return [
     `Session: ${index.session} | Status: ${index.status}`,
-    `Context registry: memory/context-db/index.json`,
+    `Context registry: ${index.registryPath || '.aios/context-db/index.json'}`,
     `Available sources:`,
     sourcesList || '  (none — fresh session)',
     '',

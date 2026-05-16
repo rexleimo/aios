@@ -1,5 +1,6 @@
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
+import { resolveContextDbRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
 import { readContinuitySummary } from './continuity.mjs';
 
 export const FACADE_FILENAME = '.facade.json';
@@ -65,7 +66,9 @@ async function overlayContinuity(workspaceRoot, facade) {
 }
 
 export async function loadFacade(workspaceRoot) {
-  const facadePath = path.join(workspaceRoot, 'memory', 'context-db', FACADE_FILENAME);
+  const root = path.resolve(workspaceRoot || process.cwd());
+  const contextDbRoot = resolveContextDbRoot(root, { preferLegacyExisting: true });
+  const facadePath = path.join(contextDbRoot, FACADE_FILENAME);
   try {
     const text = await readFile(facadePath, 'utf8');
     const facade = JSON.parse(text);
@@ -84,7 +87,13 @@ export async function loadFacade(workspaceRoot) {
 }
 
 export async function generateFacadeFromSession(workspaceRoot, agent, project) {
-  const sessionsDir = path.join(workspaceRoot, 'memory', 'context-db', 'sessions');
+  const root = path.resolve(workspaceRoot || process.cwd());
+  const contextDbRoot = resolveContextDbRoot(root, { preferLegacyExisting: true });
+  const sessionsDir = path.join(contextDbRoot, 'sessions');
+  const contextPacketPath = toWorkspaceRelative(
+    root,
+    path.join(contextDbRoot, 'exports', `latest-${agent}-context.md`)
+  );
   let latestSessionId = '';
   let latestMtime = 0;
 
@@ -119,7 +128,7 @@ export async function generateFacadeFromSession(workspaceRoot, agent, project) {
       status: 'new',
       lastCheckpointSummary: 'No prior sessions',
       keyRefs: [],
-      contextPacketPath: `memory/context-db/exports/latest-${agent}-context.md`,
+      contextPacketPath,
       hasStalePack: false,
     };
   }
@@ -143,7 +152,7 @@ export async function generateFacadeFromSession(workspaceRoot, agent, project) {
     status: meta.status || 'running',
     lastCheckpointSummary: meta.lastCheckpoint?.summary || '',
     keyRefs: meta.lastCheckpoint?.refs || [],
-    contextPacketPath: `memory/context-db/exports/latest-${agent}-context.md`,
+    contextPacketPath,
     hasStalePack: false,
     continuitySummary: continuity?.summary || '',
     continuityNextActions: continuity?.nextActions || [],

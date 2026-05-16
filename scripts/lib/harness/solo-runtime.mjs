@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { readContinuitySummary, writeContinuitySummary } from '../contextdb/continuity.mjs';
@@ -356,7 +357,7 @@ function buildLogEntries({ prompt = '', rawOutput = '', extra = [] } = {}) {
 }
 
 function sessionMetaPath(rootDir, sessionId) {
-  return path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'meta.json');
+  return path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions', sessionId, 'meta.json');
 }
 
 function mapOutcomeToVerificationResult(outcome = {}) {

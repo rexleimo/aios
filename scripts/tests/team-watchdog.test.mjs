@@ -36,7 +36,7 @@ function makeSessionMeta({ sessionId, updatedAt = '2026-04-25T00:00:00.000Z' }) 
 async function makeSessionRoot() {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-watchdog-'));
   const sessionId = 'watchdog-session';
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   await writeJson(path.join(sessionDir, 'meta.json'), makeSessionMeta({ sessionId }));
   await writeJson(path.join(sessionDir, 'state.json'), {
     sessionId,

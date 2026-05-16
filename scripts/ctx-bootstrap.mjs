@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { resolveTasksRoot } from './lib/aios/state-root.mjs';
 
 const DISABLED_VALUES = new Set(['0', 'false', 'off', 'no']);
 
@@ -103,7 +104,7 @@ export async function ensureBootstrapTask(workspaceRoot, options = {}) {
   const agent = options.agent || 'unknown-agent';
   const now = options.now instanceof Date ? options.now : new Date();
 
-  const tasksDir = path.join(root, 'tasks');
+  const tasksDir = resolveTasksRoot(root, { preferLegacyExisting: true });
   const pendingDir = path.join(tasksDir, 'pending');
   const currentTaskPath = path.join(tasksDir, '.current-task');
 

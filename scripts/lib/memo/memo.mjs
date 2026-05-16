@@ -27,6 +27,7 @@ import {
   workspaceMemorySessionId,
   workspaceMemoryStatePath,
 } from "./workspace-memory.mjs";
+import { resolveContextDbRoot } from "../aios/state-root.mjs";
 
 const DEFAULT_LIST_LIMIT = 20;
 const DEFAULT_RECALL_HIGHLIGHT_LIMIT = 3;
@@ -464,7 +465,7 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     if ((secondary || "").toLowerCase() !== "list") {
       throw usageError("Usage: memo space list");
     }
-    const sessionsRoot = path.join(workspaceRoot, "memory", "context-db", "sessions");
+    const sessionsRoot = path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), "sessions");
     const entries = fs.existsSync(sessionsRoot)
       ? fs.readdirSync(sessionsRoot, { withFileTypes: true })
       : [];

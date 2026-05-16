@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import {
   buildExecutorCapabilityManifest,
@@ -545,7 +546,7 @@ async function readJsonOptional(filePath) {
 }
 
 async function listDispatchArtifacts(rootDir, sessionId) {
-  const artifactsDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'artifacts');
+  const artifactsDir = path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions', sessionId, 'artifacts');
   let entries = [];
   try {
     entries = await fs.readdir(artifactsDir, { withFileTypes: true });
@@ -561,8 +562,8 @@ async function listDispatchArtifacts(rootDir, sessionId) {
     .map((entry) => entry.name)
     .sort((left, right) => String(right).localeCompare(String(left)))
     .map((name) => ({
-      artifactPath: path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', name),
-      artifactAbsPath: path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'artifacts', name),
+      artifactPath: contextDbRelativePath(rootDir, 'sessions', sessionId, 'artifacts', name),
+      artifactAbsPath: path.join(artifactsDir, name),
     }));
 }
 

@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import {
   createDefaultEntropyGcOptions,
@@ -239,7 +240,7 @@ export async function executeEntropyGc(
     };
   }
 
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', options.sessionId);
+  const sessionDir = path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions', options.sessionId);
   const artifactsDir = path.join(sessionDir, 'artifacts');
   const checkpointsPath = path.join(sessionDir, 'l1-checkpoints.jsonl');
   const checkpoints = await readJsonLinesOptional(checkpointsPath);

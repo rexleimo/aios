@@ -13,7 +13,7 @@ async function makeRootDir() {
 }
 
 async function writeSession(rootDir, sessionId, metaOverrides = {}, checkpoints = []) {
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   await fs.mkdir(sessionDir, { recursive: true });
 
   const meta = {
@@ -49,7 +49,7 @@ async function writeDispatchEvidence(rootDir, sessionId, {
   workItemTelemetry = null,
   jobRuns = null,
 } = {}) {
-  const artifactPath = path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', artifactName);
+  const artifactPath = path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', artifactName);
   const artifactAbsPath = path.join(rootDir, artifactPath);
   await fs.mkdir(path.dirname(artifactAbsPath), { recursive: true });
   await fs.writeFile(
@@ -76,7 +76,7 @@ async function writeDispatchEvidence(rootDir, sessionId, {
     'utf8'
   );
 
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
   const event = {
     seq,
@@ -1216,7 +1216,7 @@ test('runLearnEval apply-draft persists skill-candidate artifact for manual revi
                       patchHint: 'Add ownership boundary preflight guidance.',
                     },
                     evidence: {
-                      sourceArtifactPath: 'memory/context-db/sessions/draft-session/artifacts/dispatch-run-20260309T050800Z.json',
+                      sourceArtifactPath: '.aios/context-db/sessions/draft-session/artifacts/dispatch-run-20260309T050800Z.json',
                     },
                     review: {
                       status: 'candidate',
@@ -1244,7 +1244,7 @@ test('runLearnEval apply-draft persists skill-candidate artifact for manual revi
   assert.equal(parsed.draftApply.results[0].status, 'applied');
   assert.match(parsed.draftApply.results[0].summary ?? '', /Memo added:/);
 
-  const artifactsDir = path.join(rootDir, 'memory', 'context-db', 'sessions', 'draft-session', 'artifacts');
+  const artifactsDir = path.join(rootDir, '.aios', 'context-db', 'sessions', 'draft-session', 'artifacts');
   const artifactEntries = await fs.readdir(artifactsDir);
   const artifactName = artifactEntries.find((entry) => entry.startsWith('skill-candidate-') && entry.endsWith('.json'));
   assert.ok(artifactName);
@@ -1360,7 +1360,7 @@ test('runLearnEval persists turn-linked hindsight evidence and skips duplicate w
   assert.equal(report.hindsightEvidence?.eventKind, 'orchestration.hindsight-eval');
   assert.equal(report.hindsightEvidence?.parentTurnId, 'dispatch:20260309T011000Z:summary');
 
-  const eventsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'l2-events.jsonl');
+  const eventsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId, 'l2-events.jsonl');
   const rows = (await fs.readFile(eventsPath, 'utf8'))
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -1408,7 +1408,7 @@ test('buildLearnEvalReport ignores non-dispatch verification artifacts', async (
     executors: ['local-phase', 'local-merge-gate'],
     blockedJobs: 0,
   });
-  const qualityArtifactPath = path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', 'quality-gate-20260309T020000Z.json');
+  const qualityArtifactPath = path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', 'quality-gate-20260309T020000Z.json');
   const qualityArtifactAbsPath = path.join(rootDir, qualityArtifactPath);
   await fs.mkdir(path.dirname(qualityArtifactAbsPath), { recursive: true });
   await fs.writeFile(

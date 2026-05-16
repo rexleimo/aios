@@ -24,14 +24,15 @@ test('creates bootstrap task when no current task and no pending tasks', async (
   assert.equal(result.reason, undefined);
   assert.match(result.taskId, /^task_20260305T010203_bootstrap_guidelines$/);
 
-  const taskDir = path.join(workspace, 'tasks', 'pending', result.taskId);
+  const taskDir = path.join(workspace, '.aios', 'tasks', 'pending', result.taskId);
   const taskJsonPath = path.join(taskDir, 'task.json');
   const prdPath = path.join(taskDir, 'prd.md');
-  const currentTaskPath = path.join(workspace, 'tasks', '.current-task');
+  const currentTaskPath = path.join(workspace, '.aios', 'tasks', '.current-task');
 
   assert.equal(existsSync(taskJsonPath), true);
   assert.equal(existsSync(prdPath), true);
   assert.equal(existsSync(currentTaskPath), true);
+  assert.equal(existsSync(path.join(workspace, 'tasks')), false);
 
   const taskJson = JSON.parse(await readFile(taskJsonPath, 'utf8'));
   assert.equal(taskJson.id, result.taskId);
@@ -42,7 +43,7 @@ test('creates bootstrap task when no current task and no pending tasks', async (
   assert.equal(currentTask, `pending/${result.taskId}/task.json`);
 });
 
-test('skips bootstrap when tasks/.current-task already exists', async () => {
+test('skips bootstrap when legacy tasks/.current-task already exists', async () => {
   const workspace = await createWorkspace('aios-bootstrap-current-');
   const tasksDir = path.join(workspace, 'tasks');
   await mkdir(tasksDir, { recursive: true });
@@ -70,6 +71,21 @@ test('skips bootstrap when pending already has tasks', async () => {
 
   assert.equal(result.created, false);
   assert.equal(result.reason, 'pending-has-tasks');
+});
+
+test('skips bootstrap when .aios/tasks/.current-task already exists', async () => {
+  const workspace = await createWorkspace('aios-bootstrap-dotdir-current-');
+  const tasksDir = path.join(workspace, '.aios', 'tasks');
+  await mkdir(tasksDir, { recursive: true });
+  await writeFile(path.join(tasksDir, '.current-task'), 'pending/existing/task.json\n', 'utf8');
+
+  const result = await ensureBootstrapTask(workspace, {
+    project: 'demo-app',
+    now: new Date('2026-03-05T01:02:03.000Z'),
+  });
+
+  assert.equal(result.created, false);
+  assert.equal(result.reason, 'current-task-exists');
 });
 
 test('isBootstrapEnabled supports env opt-out switches', () => {

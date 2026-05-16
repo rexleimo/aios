@@ -310,11 +310,11 @@ test('wrapped interactive codex runs inject route auto prompt by default', async
   );
 });
 
-test('aios init marker switches wrapped interactive runs to slim context without auto prompt', async () => {
+async function assertAiosInitMarkerUsesSlimContext(marker) {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-aios-init-'));
   const fakeBin = await createFakeCodexCommand();
   const fakeRunner = await createFakeRunner();
-  await writeFile(path.join(cwd, 'AGENTS.md'), '<!-- AIOS: memory/context-db/index.json -->\n', 'utf8');
+  await writeFile(path.join(cwd, 'AGENTS.md'), `${marker}\n`, 'utf8');
 
   const result = runBridge({
     cwd,
@@ -332,6 +332,14 @@ test('aios init marker switches wrapped interactive runs to slim context without
   assert.equal(runnerArgs.includes('--context-mode'), true);
   assert.equal(runnerArgs.includes('slim'), true);
   assert.equal(runnerArgs.includes('--no-bootstrap'), true);
+}
+
+test('aios init marker switches wrapped interactive runs to slim context without auto prompt', async () => {
+  await assertAiosInitMarkerUsesSlimContext('<!-- AIOS: .aios/context-db/index.json -->');
+});
+
+test('legacy aios init marker still switches wrapped interactive runs to slim context', async () => {
+  await assertAiosInitMarkerUsesSlimContext('<!-- AIOS: memory/context-db/index.json -->');
 });
 
 test('wrapped interactive runs print privacy banner to stderr', async () => {

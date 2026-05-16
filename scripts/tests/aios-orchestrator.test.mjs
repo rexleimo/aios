@@ -301,7 +301,7 @@ async function writePlanFile(rootDir, relPath = 'docs/plans/preflight-ready.md',
 }
 
 async function writeSession(rootDir, sessionId, metaOverrides = {}, checkpoints = []) {
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   await fs.mkdir(sessionDir, { recursive: true });
 
   const meta = {
@@ -375,7 +375,7 @@ async function writeDispatchEvidence(rootDir, sessionId, {
   blockedJobs = 0,
   artifactName = 'dispatch-run-20260309T030000Z.json',
 } = {}) {
-  const artifactPath = path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', artifactName);
+  const artifactPath = path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', artifactName);
   const artifactAbsPath = path.join(rootDir, artifactPath);
   await fs.mkdir(path.dirname(artifactAbsPath), { recursive: true });
   await fs.writeFile(
@@ -406,7 +406,7 @@ async function writeDispatchEvidence(rootDir, sessionId, {
     'utf8'
   );
 
-  const sessionDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId);
+  const sessionDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId);
   const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
   const event = {
     seq,
@@ -576,7 +576,7 @@ test('buildWorkItemTelemetry maps blocked retries to failure and retry classes',
         },
       ],
     },
-    artifactRefs: ['memory/context-db/sessions/s/artifacts/dispatch-run-x.json'],
+    artifactRefs: ['.aios/context-db/sessions/s/artifacts/dispatch-run-x.json'],
   });
 
   assert.equal(telemetry.schemaVersion, 1);
@@ -2082,7 +2082,7 @@ test('runOrchestrate --retry-blocked replays blocked jobs with seeded dependenci
   );
 
   const artifactRel = path.join(
-    'memory',
+    '.aios',
     'context-db',
     'sessions',
     'retry-session',
@@ -2248,10 +2248,10 @@ test('runOrchestrate live dispatch uses model-router per job and records dispatc
   assert.match(promptLog, /modelId=gpt-5\.5/);
   assert.match(promptLog, /cliCommand=codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-5\.5/);
 
-  const sessionDirs = await fs.readdir(path.join(rootDir, 'memory', 'context-db', 'sessions'));
+  const sessionDirs = await fs.readdir(path.join(rootDir, '.aios', 'context-db', 'sessions'));
   const modelEvents = [];
   for (const sessionDir of sessionDirs) {
-    const eventsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionDir, 'l2-events.jsonl');
+    const eventsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionDir, 'l2-events.jsonl');
     try {
       const lines = (await fs.readFile(eventsPath, 'utf8')).trim().split('\n').filter(Boolean);
       for (const line of lines) {
@@ -2671,7 +2671,7 @@ test('runOrchestrate blocks live execution when capability surfaces are unknown'
   assert.equal(report.suggestedCommands.some((cmd) => cmd.includes('--execute live') && cmd.includes('--force')), true);
 
   await assert.rejects(
-    () => fs.access(path.join(rootDir, 'memory', 'context-db', 'sessions', 'live-capability-guard', 'artifacts')),
+    () => fs.access(path.join(rootDir, '.aios', 'context-db', 'sessions', 'live-capability-guard', 'artifacts')),
     /ENOENT/
   );
 });
@@ -2732,10 +2732,10 @@ test('runOrchestrate blocks live execution by default without persisting evidenc
   assert.equal(report.dispatchEvidence.reason, 'mode-unsupported');
 
   await assert.rejects(
-    () => fs.access(path.join(rootDir, 'memory', 'context-db', 'sessions', 'live-session', 'artifacts')),
+    () => fs.access(path.join(rootDir, '.aios', 'context-db', 'sessions', 'live-session', 'artifacts')),
     /ENOENT/
   );
-  const eventsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'live-session', 'l2-events.jsonl'), 'utf8');
+  const eventsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'live-session', 'l2-events.jsonl'), 'utf8');
   assert.equal(eventsRaw.trim(), '');
 });
 
@@ -2827,13 +2827,13 @@ test('runOrchestrate persists live dispatch evidence with runtime cost telemetry
     true
   );
 
-  const checkpointsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'live-cost-session', 'l1-checkpoints.jsonl'), 'utf8');
+  const checkpointsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'live-cost-session', 'l1-checkpoints.jsonl'), 'utf8');
   const lastCheckpoint = JSON.parse(checkpointsRaw.trim().split('\n').at(-1));
   assert.match(lastCheckpoint.summary, /live/);
   assert.equal((lastCheckpoint.telemetry?.cost?.totalTokens || 0) > 0, true);
   assert.equal((lastCheckpoint.telemetry?.cost?.usd || 0) > 0, true);
 
-  const liveEventsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'live-cost-session', 'l2-events.jsonl'), 'utf8');
+  const liveEventsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'live-cost-session', 'l2-events.jsonl'), 'utf8');
   const liveEvents = liveEventsRaw.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
   const entropyEvent = liveEvents.find((item) => item.kind === 'maintenance.entropy-gc');
   assert.equal(Boolean(entropyEvent), true);
@@ -2906,7 +2906,7 @@ test('runOrchestrate enables clarity human-gate and blocks entropy auto when sig
   assert.equal(report.entropyGc.mode, 'off');
   assert.equal(report.entropyGc.evidence?.persisted, false);
 
-  const eventsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'clarity-session', 'l2-events.jsonl'), 'utf8');
+  const eventsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'clarity-session', 'l2-events.jsonl'), 'utf8');
   const events = eventsRaw.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
   const clarityEvent = events.find((item) => item.kind === 'orchestration.human-gate');
   assert.equal(Boolean(clarityEvent), true);
@@ -2915,7 +2915,7 @@ test('runOrchestrate enables clarity human-gate and blocks entropy auto when sig
   assert.equal(clarityEvent.turn?.hindsightStatus, 'evaluated');
   assert.equal(clarityEvent.turn?.outcome, 'ambiguous');
 
-  const checkpointsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'clarity-session', 'l1-checkpoints.jsonl'), 'utf8');
+  const checkpointsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'clarity-session', 'l1-checkpoints.jsonl'), 'utf8');
   const checkpoints = checkpointsRaw.trim().split('\n').filter(Boolean).map((line) => JSON.parse(line));
   assert.equal(checkpoints.some((item) => item.telemetry?.failureCategory === 'clarity-needs-input'), true);
 });
@@ -3079,8 +3079,8 @@ test('runOrchestrate persists dry-run evidence into ContextDB JSONL and SQLite s
   assert.equal((implementRun.refs || []).some((ref) => String(ref).startsWith('turn:')), true);
   assert.equal((implementRun.refs || []).some((ref) => String(ref).startsWith('work-item:')), true);
 
-  const eventsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'security-stable', 'l2-events.jsonl'), 'utf8');
-  const checkpointsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', 'security-stable', 'l1-checkpoints.jsonl'), 'utf8');
+  const eventsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'security-stable', 'l2-events.jsonl'), 'utf8');
+  const checkpointsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', 'security-stable', 'l1-checkpoints.jsonl'), 'utf8');
   const lastEvent = JSON.parse(eventsRaw.trim().split('\n').at(-1));
   const lastCheckpoint = JSON.parse(checkpointsRaw.trim().split('\n').at(-1));
 
@@ -3096,7 +3096,7 @@ test('runOrchestrate persists dry-run evidence into ContextDB JSONL and SQLite s
   assert.equal(lastCheckpoint.telemetry.verification.result, 'partial');
   assert.equal(lastCheckpoint.artifacts.includes(report.dispatchEvidence.artifactPath), true);
 
-  const sqlitePath = path.join(rootDir, 'memory', 'context-db', 'index', 'context.db');
+  const sqlitePath = path.join(rootDir, '.aios', 'context-db', 'index', 'context.db');
   const timeline = runContextDbCli(['timeline', '--workspace', rootDir, '--session', 'security-stable', '--limit', '10']);
   assert.equal(Array.isArray(timeline.items), true);
   assert.equal(timeline.items.some((item) => item.id === report.dispatchEvidence.eventId), true);
@@ -3889,7 +3889,7 @@ test('renderOrchestrationReport includes dispatch evidence summary', () => {
     taskTitle: 'Ship blueprints',
     dispatchEvidence: {
       persisted: true,
-      artifactPath: 'memory/context-db/sessions/security-stable/artifacts/dispatch-run-20260309T030000Z.json',
+      artifactPath: '.aios/context-db/sessions/security-stable/artifacts/dispatch-run-20260309T030000Z.json',
       eventId: 'security-stable#1',
       checkpointId: 'security-stable#C4',
     },
@@ -3998,7 +3998,7 @@ test('persistDispatchEvidence writes turn envelope work-item refs and enriches j
   assert.equal(jobRun.refs.includes(`turn:${jobRun.turnId}`), true);
   assert.equal(jobRun.refs.includes('work-item:wi.1'), true);
 
-  const eventsRaw = await fs.readFile(path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'l2-events.jsonl'), 'utf8');
+  const eventsRaw = await fs.readFile(path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId, 'l2-events.jsonl'), 'utf8');
   const lastEvent = JSON.parse(eventsRaw.trim().split('\n').at(-1));
   assert.equal(lastEvent.kind, 'orchestration.dispatch-run');
   assert.match(String(lastEvent.turn?.turnId || ''), /^dispatch:/);

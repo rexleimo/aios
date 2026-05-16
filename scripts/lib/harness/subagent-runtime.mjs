@@ -18,6 +18,7 @@ import { normalizeOrchestratorAgentSpec } from './orchestrator-agents.mjs';
 import { mergeParallelHandoffs } from './orchestrator.mjs';
 import { buildPersonaOverlay } from '../memo/persona.mjs';
 import { workspaceMemorySessionId, workspaceMemorySessionDir, workspaceMemoryMetaPath, workspaceMemoryPinnedPath } from '../memo/workspace-memory.mjs';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 
 export const SUBAGENT_CLIENT_ENV = 'AIOS_SUBAGENT_CLIENT';
 export const SUBAGENT_CONCURRENCY_ENV = 'AIOS_SUBAGENT_CONCURRENCY';
@@ -263,7 +264,7 @@ function resolveSnapshotDirectory({ sessionId, stamp, jobId }) {
   const slug = safeFileSlug(jobId || 'job');
   const dirName = `pre-mutation-${stamp}-${slug}`;
   if (sessionId) {
-    return path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', dirName);
+    return path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', dirName);
   }
   return path.join('.aios', 'subagent-snapshots', dirName);
 }
@@ -491,7 +492,7 @@ async function loadContextPacket({ rootDir, sessionId, env, io }) {
   const tokenStrategy = tokenStrategyRaw === 'legacy' || tokenStrategyRaw === 'balanced' || tokenStrategyRaw === 'aggressive'
     ? tokenStrategyRaw
     : '';
-  const outRel = path.join('memory', 'context-db', 'exports', `${sessionId}-context.md`);
+  const outRel = contextDbRelativePath(rootDir, 'exports', `${sessionId}-context.md`);
 
   try {
     const args = [

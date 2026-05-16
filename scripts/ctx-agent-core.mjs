@@ -20,6 +20,12 @@ import { scanWorkspaceMemoryContent } from './lib/memo/safety.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from './lib/contextdb/continuity.mjs';
 import { buildPerceptionSummary } from './lib/perception/perception-summary.mjs';
 import { renderRegistryInjection, buildIndex } from './lib/contextdb/context-registry.mjs';
+import {
+  contextDbRelativePath,
+  resolveContextDbRoot,
+  resolveTasksRoot,
+  toWorkspaceRelative,
+} from './lib/aios/state-root.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -866,7 +872,7 @@ async function ensureMemoryLayers(workspaceRoot, { agent = 'claude-code', projec
   }
 
   try {
-    const facadePath = path.join(workspaceRoot, 'memory', 'context-db', '.facade.json');
+    const facadePath = path.join(resolveContextDbRoot(workspaceRoot), '.facade.json');
     const facade = await generateFacadeFromSession(workspaceRoot, agent, project);
     await fs.writeFile(facadePath, JSON.stringify(facade, null, 2) + '\n', 'utf8');
   } catch (error) {
@@ -922,7 +928,7 @@ export function shouldLazyLoad(env = process.env) {
 
 export function buildFacadePrompt(facade, agent) {
   if (!facade || !facade.sessionId) {
-    return `This project uses ContextDB for session memory. No prior sessions found. Full history will be available at memory/context-db/exports/latest-${agent}-context.md.`;
+    return `This project uses ContextDB for session memory. No prior sessions found. Full history will be available at .aios/context-db/exports/latest-${agent}-context.md.`;
   }
   const refs = facade.keyRefs?.length ? `refs: ${facade.keyRefs.join(', ')}` : '';
   const lines = [
@@ -945,14 +951,14 @@ function normalizeFacadePathForCompare(value = '') {
   return String(value || '').replace(/\\/g, '/');
 }
 
-export function shouldScheduleAsyncBootstrap(facadeResult, agent) {
+export function shouldScheduleAsyncBootstrap(facadeResult, agent, workspaceRoot = process.cwd()) {
   if (!facadeResult?.ok || !facadeResult.facade) {
     return true;
   }
   if (facadeResult.facade.hasStalePack === true) {
     return true;
   }
-  const expectedPath = normalizeFacadePathForCompare(path.join('memory', 'context-db', 'exports', `latest-${agent}-context.md`));
+  const expectedPath = normalizeFacadePathForCompare(contextDbRelativePath(workspaceRoot, 'exports', `latest-${agent}-context.md`));
   return normalizeFacadePathForCompare(facadeResult.facade.contextPacketPath) !== expectedPath;
 }
 
@@ -995,7 +1001,7 @@ async function writeLatestInjectedContext({ workspaceRoot, agent, sessionId, con
   const text = String(contextText || '').trimEnd();
   if (!text) return { ok: false, relPath: '', absPath: '' };
 
-  const relPath = path.join('memory', 'context-db', 'exports', `latest-${agent}-context.md`);
+  const relPath = contextDbRelativePath(workspaceRoot, 'exports', `latest-${agent}-context.md`);
   const absPath = path.join(workspaceRoot, relPath);
   const generatedAt = new Date().toISOString();
   const header = `<!-- AIOS: latest injected context for ${agent}; session=${sessionId}; generated=${generatedAt} -->\n`;
@@ -1787,7 +1793,7 @@ async function ensureOpenCodeContextPacket({ workspaceRoot, sessionId, packAbs, 
 
   const exportsDir = packAbs
     ? path.dirname(packAbs)
-    : path.join(workspaceRoot, 'memory', 'context-db', 'exports');
+    : path.join(resolveContextDbRoot(workspaceRoot), 'exports');
   await fs.mkdir(exportsDir, { recursive: true });
 
   const filePath = packAbs
@@ -1859,7 +1865,11 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
         agent: opts.agent,
       });
       if (bootstrapResult.created) {
-        console.log(`Bootstrap task created: tasks/${bootstrapResult.taskPath}`);
+        const tasksRel = toWorkspaceRelative(
+          opts.workspaceRoot,
+          resolveTasksRoot(opts.workspaceRoot, { preferLegacyExisting: true })
+        );
+        console.log(`Bootstrap task created: ${tasksRel}/${bootstrapResult.taskPath}`);
       }
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
@@ -1935,7 +1945,7 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
       console.log(formatMemoryPreludeStatus(memoryPrelude));
     }
 
-    if (shouldScheduleAsyncBootstrap(facadeResult, opts.agent)) {
+    if (shouldScheduleAsyncBootstrap(facadeResult, opts.agent, opts.workspaceRoot)) {
       forkAsyncBootstrap(opts.workspaceRoot, opts);
     }
 
@@ -1989,7 +1999,7 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
     console.warn(`[warn] workspace bootstrap skipped: ${reason}`);
   }
 
-  const packPath = path.join('memory', 'context-db', 'exports', `${opts.sessionId}-context.md`);
+  const packPath = contextDbRelativePath(opts.workspaceRoot, 'exports', `${opts.sessionId}-context.md`);
   const strictPack = shouldStrictContextPack(process.env);
   const packResult = await safeContextPack(opts.workspaceRoot, {
     sessionId: opts.sessionId,

@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveTasksRoot, toWorkspaceRelative } from './lib/aios/state-root.mjs';
 
 function usage() {
   console.log(`Usage:
@@ -65,7 +66,8 @@ async function listNonHiddenEntries(dirPath) {
 
 export async function inspectBootstrapTask(workspaceRoot) {
   const root = path.resolve(workspaceRoot || process.cwd());
-  const tasksDir = path.join(root, 'tasks');
+  const tasksDir = resolveTasksRoot(root, { preferLegacyExisting: true });
+  const tasksRel = toWorkspaceRelative(root, tasksDir);
   const pendingDir = path.join(tasksDir, 'pending');
   const currentTaskPath = path.join(tasksDir, '.current-task');
 
@@ -73,7 +75,7 @@ export async function inspectBootstrapTask(workspaceRoot) {
     return {
       status: 'warn',
       code: 'tasks-missing',
-      message: 'tasks directory is missing; bootstrap has not been initialized in this workspace',
+      message: `${tasksRel} directory is missing; bootstrap has not been initialized in this workspace`,
       workspaceRoot: root,
     };
   }
@@ -85,7 +87,7 @@ export async function inspectBootstrapTask(workspaceRoot) {
       return {
         status: 'ok',
         code: 'current-task-present',
-        message: `current task pointer is valid: tasks/${currentTask}`,
+        message: `current task pointer is valid: ${tasksRel}/${currentTask}`,
         workspaceRoot: root,
       };
     }
@@ -93,7 +95,7 @@ export async function inspectBootstrapTask(workspaceRoot) {
     return {
       status: 'warn',
       code: 'current-task-broken',
-      message: `tasks/.current-task points to missing file: tasks/${currentTask}`,
+      message: `${tasksRel}/.current-task points to missing file: ${tasksRel}/${currentTask}`,
       workspaceRoot: root,
     };
   }
@@ -103,7 +105,7 @@ export async function inspectBootstrapTask(workspaceRoot) {
     return {
       status: 'warn',
       code: 'pending-empty',
-      message: 'no current task and tasks/pending is empty; run agent once to auto-bootstrap',
+      message: `no current task and ${tasksRel}/pending is empty; run agent once to auto-bootstrap`,
       workspaceRoot: root,
     };
   }
@@ -113,7 +115,7 @@ export async function inspectBootstrapTask(workspaceRoot) {
     return {
       status: 'warn',
       code: 'bootstrap-without-current-task',
-      message: `bootstrap task exists but tasks/.current-task is empty: ${bootstrapEntries[0]}`,
+      message: `bootstrap task exists but ${tasksRel}/.current-task is empty: ${bootstrapEntries[0]}`,
       workspaceRoot: root,
     };
   }

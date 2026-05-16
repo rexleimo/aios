@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 export const REQUIRED_PLAN_HEADINGS = ['Progress', 'Decision Log', 'Acceptance', 'Next Actions'];
 
@@ -250,7 +251,8 @@ export async function runReadinessCheck(input = {}) {
   }
 
   // 2. ContextDB session check
-  const contextDbDir = path.join(rootDir, 'memory', 'context-db');
+  const contextDbDir = resolveContextDbRoot(rootDir, { preferLegacyExisting: true });
+  const contextDbRel = contextDbRelativePath(rootDir);
   let sessionFound = false;
   try {
     const sessionsDir = path.join(contextDbDir, 'sessions');
@@ -259,7 +261,7 @@ export async function runReadinessCheck(input = {}) {
       sessionFound = true;
       verdicts.push(readiness({
         verdict: 'ready',
-        evidence: [{ type: 'contextdb', path: 'memory/context-db/', summary: `Found ${entries.length} session(s)`, createdAt: nowIso() }],
+        evidence: [{ type: 'contextdb', path: `${contextDbRel}/`, summary: `Found ${entries.length} session(s)`, createdAt: nowIso() }],
       }));
     }
   } catch { /* no sessions */ }

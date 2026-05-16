@@ -24,6 +24,7 @@ import {
 } from './core.js';
 import { buildMemoryGenealogyGraph } from './genealogy.js';
 import { compactContextDb, hygieneStatus, pruneNoise } from './hygiene.js';
+import { resolveContextDbRoot, toWorkspaceRelative } from './paths.js';
 
 type Options = Record<string, string | boolean>;
 
@@ -39,7 +40,7 @@ function usage(): string {
     '  contextdb session:latest --agent <name> [--project <name>]',
     '  contextdb event:add --session <id> --role <user|assistant|tool|system> --text <text> [--kind <kind>] [--refs a,b] [--turn-id <id>] [--parent-turn-id <id>] [--turn-type main|side|system-maintenance|verification] [--environment <label>] [--work-item-refs a,b] [--next-state-refs a,b] [--hindsight-status pending|evaluated|na|failed] [--outcome success|correction|retry-needed|ambiguous|unknown]',
     '  contextdb checkpoint --session <id> --summary <text> [--status running|blocked|done] [--next a|b] [--artifacts a|b] [--verify-result unknown|passed|failed|partial] [--retry-count n] [--failure-category <label>] [--elapsed-ms n] [--cost-usd n]',
-    '  contextdb context:pack --session <id> [--limit 30] [--token-budget 1200] [--token-strategy legacy|balanced|aggressive] [--recall smart|tail] [--kinds prompt,response,error] [--refs a,b] [--no-dedupe] [--out memory/context-db/exports/<id>.md] [--stdout]',
+    '  contextdb context:pack --session <id> [--limit 30] [--token-budget 1200] [--token-strategy legacy|balanced|aggressive] [--recall smart|tail] [--kinds prompt,response,error] [--refs a,b] [--no-dedupe] [--out .aios/context-db/exports/<id>.md] [--stdout]',
     '  contextdb search [--query <text>] [--project <name>] [--session <id>] [--scope events|checkpoints|all] [--role <role>] [--kinds a,b] [--refs a,b] [--statuses running,blocked,done] [--limit 20] [--semantic] [--explain]',
     '  contextdb recall:sessions [--query <text>] [--project <name>] [--session <id>] [--exclude-session <id>] [--limit 3] [--highlight-limit 3] [--explain-score]',
     '  contextdb genealogy [--project <name>] [--session <id>] [--limit 40] [--include-events] [--events-per-session 20] [--json]',
@@ -120,6 +121,13 @@ function resolveOutputPath(workspaceRoot: string, outputPath: string): string {
   return path.isAbsolute(outputPath)
     ? outputPath
     : path.resolve(workspaceRoot, outputPath);
+}
+
+function defaultContextDbOutputPath(workspaceRoot: string, ...segments: string[]): string {
+  return toWorkspaceRelative(
+    workspaceRoot,
+    path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), ...segments)
+  );
 }
 
 async function appendJsonLineFile(filePath: string, value: unknown): Promise<void> {
@@ -330,7 +338,7 @@ async function main(): Promise<void> {
           : undefined;
       const out = typeof options.out === 'string'
         ? options.out
-        : path.join('memory', 'context-db', 'exports', `${sessionId}-context.md`);
+        : defaultContextDbOutputPath(workspaceRoot, 'exports', `${sessionId}-context.md`);
 
       const result = await buildContextPacket({
         workspaceRoot,
@@ -543,7 +551,7 @@ async function main(): Promise<void> {
           if (url.pathname === '/api/sessions') {
             const targetWorkspace = targetWorkspaceFromUrl(url);
             if (!targetWorkspace) { res.writeHead(403); res.end('Workspace not allowed'); return; }
-            const dbRoot = path.join(targetWorkspace, 'memory', 'context-db');
+            const dbRoot = resolveContextDbRoot(targetWorkspace, { preferLegacyExisting: true });
             const sessionsRoot = path.join(dbRoot, 'sessions');
             let entries: { sessionId: string; agent: string; project: string; goal: string; status: string; updatedAt: string }[] = [];
             try {

@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { resolveContextDbRoot } from '../aios/state-root.mjs';
 
 export const DEFAULT_WORKSPACE_MEMORY_SPACE = 'default';
 export const WORKSPACE_MEMORY_AGENT = 'workspace-memory';
@@ -30,11 +31,11 @@ export function workspaceMemorySessionId(space) {
 }
 
 export function workspaceMemoryStatePath(workspaceRoot) {
-  return path.join(workspaceRoot, 'memory', 'context-db', '.workspace-memory.json');
+  return path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), '.workspace-memory.json');
 }
 
 export function workspaceMemorySessionDir(workspaceRoot, sessionId) {
-  return path.join(workspaceRoot, 'memory', 'context-db', 'sessions', sessionId);
+  return path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), 'sessions', sessionId);
 }
 
 export function workspaceMemoryMetaPath(workspaceRoot, sessionId) {

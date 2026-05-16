@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { spawnCommand } from '../platform/process.mjs';
@@ -40,7 +41,7 @@ function createSessionId(provider = 'codex') {
 }
 
 function sessionMetaPath(rootDir, sessionId) {
-  return path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'meta.json');
+  return path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions', sessionId, 'meta.json');
 }
 
 function ensureSoloHarnessSession({ rootDir, sessionId = '', provider = 'codex', objective = '' } = {}) {

@@ -7,7 +7,7 @@ import { loadFacade, FACADE_FILENAME, generateFacadeFromSession } from '../lib/c
 
 test('loadFacade returns facade when file exists and is fresh', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'facade-test-'));
-  const facadeDir = path.join(dir, 'memory', 'context-db');
+  const facadeDir = path.join(dir, '.aios', 'context-db');
   await mkdir(facadeDir, { recursive: true });
   const facadePath = path.join(facadeDir, FACADE_FILENAME);
   const payload = {
@@ -19,7 +19,7 @@ test('loadFacade returns facade when file exists and is fresh', async () => {
     status: 'running',
     lastCheckpointSummary: 'test summary',
     keyRefs: ['a.mjs'],
-    contextPacketPath: 'memory/context-db/exports/latest-claude-code-context.md',
+    contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
     hasStalePack: false,
   };
   await writeFile(facadePath, JSON.stringify(payload), 'utf8');
@@ -65,7 +65,7 @@ test('loadFacade returns ok=false when file missing', async () => {
 test('loadFacade overlays continuity sidecar for fresh cached facade', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'facade-test-'));
   const sessionId = 'claude-code-20260425T000000-continuity';
-  const facadeDir = path.join(dir, 'memory', 'context-db');
+  const facadeDir = path.join(dir, '.aios', 'context-db');
   const sessionDir = path.join(facadeDir, 'sessions', sessionId);
   await mkdir(sessionDir, { recursive: true });
 
@@ -80,7 +80,7 @@ test('loadFacade overlays continuity sidecar for fresh cached facade', async () 
       status: 'running',
       lastCheckpointSummary: 'cached checkpoint',
       keyRefs: [],
-      contextPacketPath: 'memory/context-db/exports/latest-claude-code-context.md',
+      contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
       hasStalePack: false,
     }),
     'utf8'
@@ -110,7 +110,7 @@ test('loadFacade overlays continuity sidecar for fresh cached facade', async () 
 
 test('generateFacadeFromSession extracts header from latest session', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'facade-test-'));
-  const sessionsDir = path.join(dir, 'memory', 'context-db', 'sessions');
+  const sessionsDir = path.join(dir, '.aios', 'context-db', 'sessions');
   const sessionId = 'claude-code-20260419T000000-abc123';
   await mkdir(path.join(sessionsDir, sessionId), { recursive: true });
   const meta = {

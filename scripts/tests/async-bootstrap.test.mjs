@@ -7,7 +7,7 @@ import { runAsyncBootstrap } from '../lib/contextdb/async-bootstrap.mjs';
 
 test('async bootstrap writes .facade.json after pack', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'async-bootstrap-test-'));
-  const exportsDir = path.join(dir, 'memory', 'context-db', 'exports');
+  const exportsDir = path.join(dir, '.aios', 'context-db', 'exports');
   await mkdir(exportsDir, { recursive: true });
 
   await writeFile(
@@ -16,7 +16,7 @@ test('async bootstrap writes .facade.json after pack', async () => {
     'utf8'
   );
 
-  const sessionsDir = path.join(dir, 'memory', 'context-db', 'sessions');
+  const sessionsDir = path.join(dir, '.aios', 'context-db', 'sessions');
   const sessionId = 'claude-code-20260419T000000-abc123';
   await mkdir(path.join(sessionsDir, sessionId), { recursive: true });
   await writeFile(
@@ -38,7 +38,7 @@ test('async bootstrap writes .facade.json after pack', async () => {
     safeContextPack: mockPack,
   });
 
-  const facadePath = path.join(dir, 'memory', 'context-db', '.facade.json');
+  const facadePath = path.join(dir, '.aios', 'context-db', '.facade.json');
   const facadeText = await readFile(facadePath, 'utf8');
   const facade = JSON.parse(facadeText);
   assert.equal(facade.sessionId, sessionId);
@@ -49,7 +49,7 @@ test('async bootstrap writes .facade.json after pack', async () => {
 
 test('async bootstrap skips refresh when facade is still fresh', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'async-bootstrap-fresh-'));
-  const contextDir = path.join(dir, 'memory', 'context-db');
+  const contextDir = path.join(dir, '.aios', 'context-db');
   await mkdir(contextDir, { recursive: true });
 
   const facadePath = path.join(contextDir, '.facade.json');
@@ -62,7 +62,7 @@ test('async bootstrap skips refresh when facade is still fresh', async () => {
     status: 'running',
     lastCheckpointSummary: 'fresh',
     keyRefs: [],
-    contextPacketPath: 'memory/context-db/exports/latest-claude-code-context.md',
+    contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
     hasStalePack: false,
   };
   await writeFile(facadePath, `${JSON.stringify(facade, null, 2)}\n`, 'utf8');
@@ -93,10 +93,10 @@ test('async bootstrap skips refresh when facade is still fresh', async () => {
 
 test('async bootstrap dedupes concurrent refresh runs with a workspace lock', async () => {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'async-bootstrap-lock-'));
-  const exportsDir = path.join(dir, 'memory', 'context-db', 'exports');
+  const exportsDir = path.join(dir, '.aios', 'context-db', 'exports');
   await mkdir(exportsDir, { recursive: true });
 
-  const sessionsDir = path.join(dir, 'memory', 'context-db', 'sessions');
+  const sessionsDir = path.join(dir, '.aios', 'context-db', 'sessions');
   const sessionId = 'claude-code-20260419T000000-lock';
   await mkdir(path.join(sessionsDir, sessionId), { recursive: true });
   await writeFile(

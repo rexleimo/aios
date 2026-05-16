@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { withWorkItemArtifactRef } from './work-item-telemetry.mjs';
@@ -44,8 +45,8 @@ function formatArtifactTimestamp(ts = new Date()) {
   return ts.toISOString().replace(/[-:]/g, '').replace(/\.(\d{3})Z$/, '$1Z');
 }
 
-function buildArtifactPath(sessionId, stamp) {
-  return path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', `dispatch-run-${stamp}.json`);
+function buildArtifactPath(rootDir, sessionId, stamp) {
+  return contextDbRelativePath(rootDir, 'sessions', sessionId, 'artifacts', `dispatch-run-${stamp}.json`);
 }
 
 function normalizeDispatchMode(dispatchRun = {}) {
@@ -254,7 +255,7 @@ export async function persistDispatchEvidence({ rootDir, sessionId, report, elap
 
   const persistedAt = now instanceof Date ? now : new Date();
   const stamp = formatArtifactTimestamp(persistedAt);
-  const artifactPath = buildArtifactPath(sessionId, stamp);
+  const artifactPath = buildArtifactPath(rootDir, sessionId, stamp);
   const artifactAbsPath = path.join(rootDir, artifactPath);
   const dispatchRunForArtifact = enrichDispatchRunForArtifact(report.dispatchRun, report.dispatchPlan, stamp);
   const artifactPayload = {

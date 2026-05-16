@@ -221,7 +221,7 @@ test('writeSoloIterationCheckpoint persists stage telemetry into ContextDB when 
     assert.equal(result.persisted, true);
     assert.equal(result.checkpointId, 'ctx-stage-session#C1');
 
-    const checkpointsPath = path.join(rootDir, 'memory', 'context-db', 'sessions', 'ctx-stage-session', 'l1-checkpoints.jsonl');
+    const checkpointsPath = path.join(rootDir, '.aios', 'context-db', 'sessions', 'ctx-stage-session', 'l1-checkpoints.jsonl');
     const checkpointsRaw = await readFile(checkpointsPath, 'utf8');
     const checkpoint = JSON.parse(checkpointsRaw.trim());
     assert.equal(checkpoint.status, 'done');

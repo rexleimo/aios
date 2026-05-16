@@ -241,7 +241,7 @@ export async function runDoctorSuite({
       id: 'doctor:bootstrap',
       item: 'Bootstrap task pointer and pending queue',
       status: bootstrap.status === 'ok' ? 'ok' : 'warn',
-      fix: 'Run aios once to bootstrap task files, then verify tasks/.current-task.',
+      fix: 'Run aios once to bootstrap task files, then verify .aios/tasks/.current-task.',
       note: bootstrap.message,
     });
   } else {

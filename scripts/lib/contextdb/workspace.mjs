@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { resolveContextDbRoot } from '../aios/state-root.mjs';
 
 export class OptimisticLockError extends Error {
   constructor(expected, actual) {
@@ -179,7 +180,10 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
 
   let continuity = null;
   try {
-    const sessionsDir = path.join(path.resolve(workspaceRoot), 'memory', 'context-db', 'sessions');
+    const sessionsDir = path.join(
+      resolveContextDbRoot(path.resolve(workspaceRoot), { preferLegacyExisting: true }),
+      'sessions'
+    );
     const entries = await fs.readdir(sessionsDir, { withFileTypes: true });
     let latestSessionId = '';
     let latestMtime = 0;

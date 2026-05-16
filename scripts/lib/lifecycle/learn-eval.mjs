@@ -5,6 +5,7 @@ import { createDefaultLearnEvalOptions, normalizeLearnEvalFormat } from './optio
 import { buildLearnEvalReport, renderLearnEvalReport } from '../harness/learn-eval.mjs';
 import { persistLearnEvalHindsightEvidence } from '../harness/learn-eval-evidence.mjs';
 import { parseArgs } from '../cli/parse-args.mjs';
+import { contextDbRelativePath } from '../aios/state-root.mjs';
 
 const AIOS_COMMAND_PREFIX = 'node scripts/aios.mjs ';
 const DRAFT_TARGET_PREFIX = 'draft.';
@@ -28,14 +29,13 @@ function formatArtifactTimestamp(ts = new Date()) {
   return ts.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
 }
 
-function buildSkillCandidateArtifactPath(sessionId, { skillId = '', failureClass = '', stamp = '' } = {}) {
+function buildSkillCandidateArtifactPath(rootDir, sessionId, { skillId = '', failureClass = '', stamp = '' } = {}) {
   const normalizedSessionId = String(sessionId || '').trim();
   const normalizedStamp = String(stamp || '').trim() || formatArtifactTimestamp();
   const skillToken = normalizeArtifactToken(skillId, 'skill');
   const failureToken = normalizeArtifactToken(failureClass, 'failure');
-  return path.join(
-    'memory',
-    'context-db',
+  return contextDbRelativePath(
+    rootDir,
     'sessions',
     normalizedSessionId,
     'artifacts',
@@ -303,7 +303,7 @@ async function executeStructuredDraftAction(draftAction, { rootDir, sessionId, e
     let artifactPath = '';
     if (normalizedSessionId) {
       const persistedAt = new Date().toISOString();
-      artifactPath = buildSkillCandidateArtifactPath(normalizedSessionId, {
+      artifactPath = buildSkillCandidateArtifactPath(rootDir, normalizedSessionId, {
         skillId,
         failureClass: String(draftAction?.failureClass || '').trim(),
         stamp: formatArtifactTimestamp(new Date(persistedAt)),

@@ -23,7 +23,7 @@ test('lazy load helpers: buildFacadePrompt with session', async () => {
     goal: 'test goal',
     status: 'running',
     keyRefs: ['a.mjs', 'b.mjs'],
-    contextPacketPath: 'memory/context-db/exports/latest-claude-code-context.md',
+    contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
     continuitySummary: 'Continue from the latest checkpoint.',
     continuityNextActions: ['run focused tests'],
   };
@@ -47,7 +47,7 @@ test('lazy load start-up produces correct facade injection', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-lazy-load-'));
 
   try {
-    const facadeDir = path.join(workspaceRoot, 'memory', 'context-db');
+    const facadeDir = path.join(workspaceRoot, '.aios', 'context-db');
     await mkdir(facadeDir, { recursive: true });
     await writeFile(
       path.join(facadeDir, '.facade.json'),
@@ -60,7 +60,7 @@ test('lazy load start-up produces correct facade injection', async () => {
         status: 'running',
         lastCheckpointSummary: 'test summary',
         keyRefs: ['a.mjs'],
-        contextPacketPath: 'memory/context-db/exports/latest-claude-code-context.md',
+        contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
         hasStalePack: false,
       }),
       'utf8'
@@ -116,7 +116,7 @@ test('ctx-agent lazy mode prelude includes persona and user profile overlays', a
   const codexBin = path.join(fakeBinDir, process.platform === 'win32' ? 'codex.cmd' : 'codex');
 
   try {
-    const facadeDir = path.join(workspaceRoot, 'memory', 'context-db');
+    const facadeDir = path.join(workspaceRoot, '.aios', 'context-db');
     await mkdir(facadeDir, { recursive: true });
     await writeFile(
       path.join(facadeDir, '.facade.json'),
@@ -129,7 +129,7 @@ test('ctx-agent lazy mode prelude includes persona and user profile overlays', a
         status: 'running',
         lastCheckpointSummary: 'ok',
         keyRefs: ['scripts/ctx-agent-core.mjs'],
-        contextPacketPath: 'memory/context-db/exports/latest-codex-cli-context.md',
+        contextPacketPath: '.aios/context-db/exports/latest-codex-cli-context.md',
         hasStalePack: false,
       }),
       'utf8'

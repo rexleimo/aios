@@ -1,5 +1,6 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
 import { getHarnessTarget } from './targets.mjs';
 import { buildHindsightEval } from './hindsight-eval.mjs';
@@ -579,7 +580,7 @@ const FAILURE_CATEGORY_ACTIONS = {
 };
 
 function getSessionsRoot(rootDir) {
-  return path.join(rootDir, 'memory', 'context-db', 'sessions');
+  return path.join(resolveContextDbRoot(rootDir, { preferLegacyExisting: true }), 'sessions');
 }
 
 async function readJson(filePath) {

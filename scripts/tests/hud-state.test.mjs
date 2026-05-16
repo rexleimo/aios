@@ -55,7 +55,7 @@ test('selectHudSessionId respects explicit session id', async () => {
 
 test('selectHudSessionId picks latest provider session by updatedAt', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
 
   await writeJson(
     path.join(sessionsRoot, 'session-1', 'meta.json'),
@@ -78,7 +78,7 @@ test('selectHudSessionId picks latest provider session by updatedAt', async () =
 
 test('selectHudSessionId scales to many sessions', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-many-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
 
   const writeMany = async (prefix, agent, count, startHour) => {
     for (let index = 0; index < count; index += 1) {
@@ -103,7 +103,7 @@ test('selectHudSessionId scales to many sessions', async () => {
 
 test('selectHudSessionId caches session directory listing until sessionsRoot changes', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-sessions-cache-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
 
   for (let index = 0; index < 10; index += 1) {
     const sessionId = `session-${String(index).padStart(2, '0')}`;
@@ -146,7 +146,7 @@ test('selectHudSessionId caches session directory listing until sessionsRoot cha
 test('buildHindsightEval caches artifact signatures to avoid redundant fs.stat', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-hindsight-sig-cache-'));
   const sessionId = 'hindsight-sig-cache-session';
-  const artifactsDir = path.join(rootDir, 'memory', 'context-db', 'sessions', sessionId, 'artifacts');
+  const artifactsDir = path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId, 'artifacts');
 
   const olderPath = path.join(artifactsDir, 'dispatch-run-20260406T000000Z.json');
   const newerPath = path.join(artifactsDir, 'dispatch-run-20260406T000001Z.json');
@@ -198,10 +198,10 @@ test('buildHindsightEval caches artifact signatures to avoid redundant fs.stat',
 
   const dispatchEvidence = [
     {
-      artifactPath: path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', path.basename(newerPath)),
+      artifactPath: path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', path.basename(newerPath)),
     },
     {
-      artifactPath: path.join('memory', 'context-db', 'sessions', sessionId, 'artifacts', path.basename(olderPath)),
+      artifactPath: path.join('.aios', 'context-db', 'sessions', sessionId, 'artifacts', path.basename(olderPath)),
     },
   ];
 
@@ -262,7 +262,7 @@ test('watchRenderLoop skips redraw when output is unchanged', async () => {
 test('readHudState and renderHud expose solo harness status without dispatch warnings', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-solo-harness-'));
   const sessionId = 'solo-harness-session';
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
 
   await writeJson(
     path.join(sessionsRoot, sessionId, 'meta.json'),
@@ -634,7 +634,7 @@ test('renderHud watch line includes stalled summary when provided', () => {
 
 test('readHudState includes latest checkpoint and dispatch evidence', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'session-2';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -662,7 +662,7 @@ test('readHudState includes latest checkpoint and dispatch evidence', async () =
       status: 'running',
       summary: 'Second checkpoint',
       nextActions: ['Next'],
-      artifacts: ['memory/context-db/sessions/session-2/artifacts/dispatch-run-20260405T010000Z.json'],
+      artifacts: ['.aios/context-db/sessions/session-2/artifacts/dispatch-run-20260405T010000Z.json'],
       telemetry: {
         verification: { result: 'passed', evidence: 'unit-test' },
         retryCount: 1,
@@ -804,7 +804,7 @@ test('readHudState includes latest checkpoint and dispatch evidence', async () =
       patchHint: 'Add ownership boundary guidance.',
     },
     evidence: {
-      sourceArtifactPath: 'memory/context-db/sessions/session-2/artifacts/dispatch-run-20260405T010000Z.json',
+      sourceArtifactPath: '.aios/context-db/sessions/session-2/artifacts/dispatch-run-20260405T010000Z.json',
     },
     review: {
       status: 'candidate',
@@ -901,7 +901,7 @@ test('readHudState includes latest checkpoint and dispatch evidence', async () =
 
 test('readHudState caches latest checkpoint tail until file changes', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-checkpoint-cache-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'checkpoint-cache-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const checkpointPath = path.join(sessionDir, 'l1-checkpoints.jsonl');
@@ -962,7 +962,7 @@ test('readHudState caches latest checkpoint tail until file changes', async () =
 
 test('readHudState fast mode skips non-minimal heavy reads', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-fast-state-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'fast-state-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const statePath = path.join(sessionDir, 'state.json');
@@ -1022,7 +1022,7 @@ test('readHudState fast mode skips non-minimal heavy reads', async () => {
       patchHint: 'Add ownership policy checks.',
     },
     evidence: {
-      sourceArtifactPath: 'memory/context-db/sessions/fast-state-session/artifacts/dispatch-run-20260406T020000Z.json',
+      sourceArtifactPath: '.aios/context-db/sessions/fast-state-session/artifacts/dispatch-run-20260406T020000Z.json',
     },
     review: {
       status: 'candidate',
@@ -1089,7 +1089,7 @@ test('readHudState fast mode skips non-minimal heavy reads', async () => {
 
 test('readHudState caches meta/state JSON reads until files change', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-json-cache-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'json-cache-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const metaPath = path.join(sessionDir, 'meta.json');
@@ -1141,7 +1141,7 @@ test('readHudState caches meta/state JSON reads until files change', async () =>
 
 test('readHudState caches skill-candidate artifact reads until files change', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-skill-candidate-cache-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'skill-candidate-cache-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const artifactsDir = path.join(sessionDir, 'artifacts');
@@ -1236,7 +1236,7 @@ test('readHudState caches skill-candidate artifact reads until files change', as
 
 test('readHudDispatchSummary includes latest dispatch, hindsight, and fix hint', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-summary-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'dispatch-summary-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const meta = makeSessionMeta({ sessionId, agent: 'codex-cli', updatedAt: '2026-04-05T03:00:00.000Z' });
@@ -1336,7 +1336,7 @@ test('readHudDispatchSummary includes latest dispatch, hindsight, and fix hint',
       patchHint: 'Add ownership boundary guidance.',
     },
     evidence: {
-      sourceArtifactPath: 'memory/context-db/sessions/dispatch-summary-session/artifacts/dispatch-run-20260405T030000Z.json',
+      sourceArtifactPath: '.aios/context-db/sessions/dispatch-summary-session/artifacts/dispatch-run-20260405T030000Z.json',
     },
     review: {
       status: 'candidate',
@@ -1395,7 +1395,7 @@ test('readHudDispatchSummary includes latest dispatch, hindsight, and fix hint',
 
 test('readHudDispatchSummary refreshes latest dispatch after new artifact is written', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-dispatch-cache-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'dispatch-cache-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const meta = makeSessionMeta({ sessionId, agent: 'codex-cli', updatedAt: '2026-04-06T00:00:00.000Z' });
@@ -1451,7 +1451,7 @@ test('readHudDispatchSummary refreshes latest dispatch after new artifact is wri
 
 test('runTeamHistory includes dispatch hindsight summary and fix hint', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'history-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -1619,7 +1619,7 @@ test('runTeamHistory includes dispatch hindsight summary and fix hint', async ()
 
 test('runTeamHistory fast mode skips dispatch hindsight and fix hint', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-fast-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'history-fast-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -1736,7 +1736,7 @@ test('runTeamHistory fast mode skips dispatch hindsight and fix hint', async () 
 
 test('runTeamStatus --show-skill-candidates renders detailed candidate rows', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-status-skill-candidates-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'status-skill-candidate-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -1843,7 +1843,7 @@ test('runTeamStatus --show-skill-candidates renders detailed candidate rows', as
 
 test('runTeamStatus supports direct skill-candidate detail mode', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-status-skill-candidates-detail-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'status-skill-candidate-detail-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -1893,7 +1893,7 @@ test('runTeamStatus supports direct skill-candidate detail mode', async () => {
 
 test('runTeamStatus --watch surfaces stalled progress when dispatch counters stop changing', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-status-watch-stalled-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'status-watch-stalled-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -1978,7 +1978,7 @@ test('runTeamStatus --watch surfaces stalled progress when dispatch counters sto
 
 test('regression chain recall -> orchestrate -> team status stays connected', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-regression-chain-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'regression-chain-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2068,7 +2068,7 @@ test('regression chain recall -> orchestrate -> team status stays connected', as
 
 test('runTeamStatus exports skill-candidate patch template artifact in one command', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-status-skill-candidates-patch-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'status-skill-candidate-patch-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2134,7 +2134,7 @@ test('runTeamStatus exports skill-candidate patch template artifact in one comma
 
 test('runTeamStatus --draft-id filters skill candidates for detail and patch export', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-status-skill-candidates-draft-id-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'status-skill-candidate-draft-id-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2219,7 +2219,7 @@ test('runTeamStatus --draft-id filters skill candidates for detail and patch exp
 
 test('runHud --show-skill-candidates renders detailed candidate rows', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-skill-candidates-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'hud-skill-candidate-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2299,7 +2299,7 @@ test('runHud --show-skill-candidates renders detailed candidate rows', async () 
 
 test('runHud supports direct skill-candidate detail mode, draft filtering, and patch export', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-skill-candidates-detail-export-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'hud-skill-candidate-detail-export-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2385,7 +2385,7 @@ test('runHud supports direct skill-candidate detail mode, draft filtering, and p
 
 test('runTeamHistory quality-failed-only filters sessions by quality gate outcome', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-quality-filter-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const successSessionId = 'history-quality-success';
   const failedSessionId = 'history-quality-failed';
 
@@ -2449,7 +2449,7 @@ test('runTeamHistory quality-failed-only filters sessions by quality gate outcom
 
 test('runTeamHistory quality-category filters to failed records with matching category', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-quality-category-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const successSessionId = 'history-quality-category-success';
   const failedLogsSessionId = 'history-quality-category-failed-logs';
   const failedOtherSessionId = 'history-quality-category-failed-other';
@@ -2538,7 +2538,7 @@ test('runTeamHistory quality-category filters to failed records with matching ca
 
 test('runTeamHistory quality-category-prefix filters failed category families with comma-separated prefixes', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-quality-category-prefix-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const failedLogsSessionId = 'history-quality-prefix-failed-logs';
   const failedMetricsSessionId = 'history-quality-prefix-failed-metrics';
   const failedOtherSessionId = 'history-quality-prefix-failed-other';
@@ -2646,7 +2646,7 @@ test('runTeamHistory quality-category-prefix filters failed category families wi
 
 test('runTeamHistory quality-category-prefix mode=all requires all prefixes to match', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-quality-category-prefix-all-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const failedLogsSessionId = 'history-quality-prefix-all-failed-logs';
   const failedMetricsSessionId = 'history-quality-prefix-all-failed-metrics';
 
@@ -2717,7 +2717,7 @@ test('runTeamHistory quality-category-prefix mode=all requires all prefixes to m
 
 test('runTeamHistory --draft-id filters sessions by latest skill-candidate draft target id', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-draft-id-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const runtimeSessionId = 'history-draft-id-runtime';
   const ownershipSessionId = 'history-draft-id-ownership';
 
@@ -2796,7 +2796,7 @@ test('runTeamHistory --draft-id filters sessions by latest skill-candidate draft
 
 test('runTeamSkillCandidatesList renders filtered candidate rows without status framing', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-skill-candidates-list-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'team-skill-candidates-list-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2877,7 +2877,7 @@ test('runTeamSkillCandidatesList renders filtered candidate rows without status 
 
 test('runTeamSkillCandidatesExport exports patch template artifact without status rendering', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-skill-candidates-export-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'team-skill-candidates-export-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
 
@@ -2961,7 +2961,7 @@ test('runTeamSkillCandidatesExport exports patch template artifact without statu
 
 test('runTeamSkillCandidatesExport supports explicit output path', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-skill-candidates-export-path-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
   const sessionId = 'team-skill-candidates-export-path-session';
   const sessionDir = path.join(sessionsRoot, sessionId);
   const explicitOutputPath = 'tmp/skill-candidates/manual-export.md';
@@ -3020,7 +3020,7 @@ test('runTeamSkillCandidatesExport supports explicit output path', async () => {
 
 test('runTeamHistory preserves session ordering under concurrency', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-team-history-order-'));
-  const sessionsRoot = path.join(rootDir, 'memory', 'context-db', 'sessions');
+  const sessionsRoot = path.join(rootDir, '.aios', 'context-db', 'sessions');
 
   const firstSessionId = 'history-order-session-a';
   const secondSessionId = 'history-order-session-b';
