@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -62,6 +62,8 @@ test('writeHandoffPacket and readHandoffPacket round-trip', async () => {
     await writeHandoffPacket(tmpDir, sessionId, packet);
     const read = await readHandoffPacket(tmpDir, sessionId);
 
+    await stat(path.join(tmpDir, '.aios', 'context-db', 'sessions', sessionId, 'handoff.json'));
+    await assert.rejects(() => stat(path.join(tmpDir, 'memory', 'context-db', 'sessions', sessionId, 'handoff.json')));
     assert.equal(read.schemaVersion, 2);
     assert.equal(read.fromAgent.sessionId, sessionId);
     assert.equal(read.fromAgent.agentType, 'codex');
@@ -73,6 +75,34 @@ test('writeHandoffPacket and readHandoffPacket round-trip', async () => {
     assert.deepEqual(read.touchedFiles, ['docs/design.md']);
     assert.equal(read.confidence, 'high');
     assert.deepEqual(read.assumptions, ['API is stable']);
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('readHandoffPacket reads legacy memory/context-db handoff when dotdir state is absent', async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'handoff-test-legacy-'));
+  try {
+    const sessionId = 'legacy-session';
+    const legacyDir = path.join(tmpDir, 'memory', 'context-db', 'sessions', sessionId);
+    await mkdir(legacyDir, { recursive: true });
+    await writeFile(path.join(legacyDir, 'handoff.json'), `${JSON.stringify({
+      schemaVersion: 2,
+      fromAgent: { sessionId, agentType: 'codex', role: 'planner' },
+      intent: 'Legacy handoff',
+      progress: 'Existing state',
+      confidence: 'medium',
+      nextActions: [],
+      blockers: [],
+      touchedFiles: [],
+      workspaceChanges: [],
+      pendingWrites: [],
+      assumptions: [],
+      updatedAt: new Date().toISOString(),
+    })}\n`, 'utf8');
+
+    const read = await readHandoffPacket(tmpDir, sessionId);
+    assert.equal(read.intent, 'Legacy handoff');
   } finally {
     await rm(tmpDir, { recursive: true });
   }

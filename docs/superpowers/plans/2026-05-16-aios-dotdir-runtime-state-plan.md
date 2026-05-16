@@ -150,6 +150,30 @@ Commands:
 node --test scripts/tests/contextdb-shell-bridge-codex-home.test.mjs scripts/tests/native-sync.test.mjs scripts/tests/native-doctor.test.mjs
 ```
 
+## Task 6: Move Workspace Runtime Metadata to `.aios/workspace`
+
+**Files:**
+- Modify: `scripts/lib/aios/state-root.mjs`
+- Modify: `scripts/lib/contextdb/workspace.mjs`
+- Modify: `scripts/lib/contextdb/doctor.mjs`
+- Modify: `scripts/lib/contextdb/handoff.mjs`
+- Test: `scripts/tests/aios-state-root.test.mjs`
+- Test: `scripts/tests/workspace.test.mjs`
+- Test: `scripts/tests/skill-index.test.mjs`
+- Test: `scripts/tests/handoff.test.mjs`
+- Test: `scripts/tests/doctor.test.mjs`
+
+- [x] **Step 1: Audit clean `aios init --agent codex` output and identify remaining top-level `memory/workspace`.
+- [x] **Step 2: Add `.aios/workspace` state helper with legacy `memory/workspace` read fallback.
+- [x] **Step 3: Wire workspace meta, active skill index, doctor checks, and handoff compatibility through dotdir-aware helpers.
+- [x] **Step 4: Add focused tests that fresh writes use `.aios/workspace` / `.aios/context-db` and legacy reads remain supported.
+- [x] **Step 5: Re-run clean init smoke to verify no top-level `memory/` or `tasks/` runtime dirs are created.
+
+Commands:
+```bash
+node --test scripts/tests/aios-state-root.test.mjs scripts/tests/workspace.test.mjs scripts/tests/skill-index.test.mjs scripts/tests/handoff.test.mjs scripts/tests/doctor.test.mjs
+```
+
 ## Verification
 
 - [x] `node --test scripts/tests/aios-state-root.test.mjs scripts/tests/contextdb-lazy-load.test.mjs scripts/tests/contextdb-facade.test.mjs scripts/tests/ctx-bootstrap.test.mjs scripts/tests/doctor-bootstrap-task.test.mjs scripts/tests/contextdb-shell-bridge-codex-home.test.mjs`

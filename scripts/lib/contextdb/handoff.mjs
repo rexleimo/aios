@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
+import { resolveContextDbRoot } from '../aios/state-root.mjs';
 
 const VALID_AGENT_TYPES = [
   'claude-code',
@@ -32,9 +33,7 @@ function normalizeStringArray(value) {
 
 function sessionDir(workspaceRoot, sessionId) {
   return path.join(
-    path.resolve(workspaceRoot || process.cwd()),
-    'memory',
-    'context-db',
+    resolveContextDbRoot(path.resolve(workspaceRoot || process.cwd()), { preferLegacyExisting: true }),
     'sessions',
     normalizeText(sessionId)
   );

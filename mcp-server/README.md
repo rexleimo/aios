@@ -167,7 +167,7 @@ Use optional pacing to reduce flaky fast-action races:
 
 ## Filesystem Context DB (for Codex/Claude/Gemini)
 
-This repo now includes a lightweight filesystem context DB under `.aios/context-db` to share memory across CLI tools, with a SQLite sidecar index at `.aios/context-db/index/context.db`. Legacy `memory/context-db` state is read only for compatibility when `.aios/context-db` is absent.
+This repo now includes lightweight project-local runtime state under `.aios/`: ContextDB lives in `.aios/context-db`, workspace metadata/active skill indexes live in `.aios/workspace`, and bootstrap task queues live in `.aios/tasks`. Legacy `memory/context-db`, `memory/workspace`, and `tasks` state is read only for compatibility when the matching `.aios/` state is absent.
 
 ### Commands
 

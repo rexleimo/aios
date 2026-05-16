@@ -5,8 +5,10 @@ import path from 'node:path';
 export const AIOS_STATE_DIRNAME = '.aios';
 export const CONTEXT_DB_DIRNAME = 'context-db';
 export const TASKS_DIRNAME = 'tasks';
+export const WORKSPACE_DIRNAME = 'workspace';
 export const LEGACY_CONTEXT_DB_RELATIVE_PATH = path.join('memory', 'context-db');
 export const LEGACY_TASKS_RELATIVE_PATH = 'tasks';
+export const LEGACY_WORKSPACE_RELATIVE_PATH = path.join('memory', 'workspace');
 
 function expandHome(inputPath, homeDir = os.homedir()) {
   if (!inputPath) return inputPath;
@@ -60,6 +62,18 @@ export function resolveTasksRoot(workspaceRoot, { env = process.env, preferLegac
   return path.join(resolveAiosStateRoot(workspaceRoot, { env }), TASKS_DIRNAME);
 }
 
+export function resolveLegacyWorkspaceRoot(workspaceRoot) {
+  return path.join(normalizeWorkspaceRoot(workspaceRoot), LEGACY_WORKSPACE_RELATIVE_PATH);
+}
+
+export function resolveWorkspaceStateRoot(workspaceRoot, { env = process.env, preferLegacyExisting = false } = {}) {
+  const legacyRoot = resolveLegacyWorkspaceRoot(workspaceRoot);
+  if (preferLegacyExisting && existsSync(legacyRoot) && !existsSync(path.join(resolveAiosStateRoot(workspaceRoot, { env }), WORKSPACE_DIRNAME))) {
+    return legacyRoot;
+  }
+  return path.join(resolveAiosStateRoot(workspaceRoot, { env }), WORKSPACE_DIRNAME);
+}
+
 export function toWorkspaceRelative(workspaceRoot, absolutePath) {
   const relative = path.relative(normalizeWorkspaceRoot(workspaceRoot), path.resolve(absolutePath));
   return relative.split(path.sep).join('/');
@@ -71,4 +85,8 @@ export function contextDbRelativePath(workspaceRoot, ...segments) {
 
 export function tasksRelativePath(workspaceRoot, ...segments) {
   return toWorkspaceRelative(workspaceRoot, path.join(resolveTasksRoot(workspaceRoot), ...segments));
+}
+
+export function workspaceStateRelativePath(workspaceRoot, ...segments) {
+  return toWorkspaceRelative(workspaceRoot, path.join(resolveWorkspaceStateRoot(workspaceRoot), ...segments));
 }

@@ -49,7 +49,7 @@ aios/
 │   ├── specs/            # Safety specifications (行为规范, 风险检测)
 │   ├── history/         # Operation history records
 │   └── knowledge/       # Knowledge base (敏感词库, 热门话题)
-├── .aios/                # Gitignored runtime state (ContextDB, generated task queues)
+├── .aios/                # Gitignored runtime state (ContextDB, workspace metadata, task queues)
 ├── tasks/                # Repo-managed task templates and metrics
 └── config/              # Settings (settings.json)
 ```
@@ -253,6 +253,8 @@ Instead, a lightweight registry index tells you where to find it.
 4. Load only the sources relevant to the current task.
 5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
 6. Legacy `memory/context-db/index.json` is read only for compatibility when `.aios/context-db/` is absent.
+
+Generated AIOS runtime state should stay under `.aios/` (`.aios/context-db`, `.aios/workspace`, `.aios/tasks`). Legacy `memory/context-db`, `memory/workspace`, and `tasks` are compatibility read paths, not fresh-write targets.
 
 ### Source Selection by Task Type
 | Task type | Load |

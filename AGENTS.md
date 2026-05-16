@@ -30,8 +30,8 @@ This repository is a local-first AI agent workspace centered on browser automati
 - `mcp-server/src/index.ts`: MCP server entry point and tool routing.
 - `mcp-server/src/browser/`: browser launcher, profile manager, auth checks, and tool actions.
 - `config/`: runtime configuration such as `browser-profiles.json` and safety-related settings.
-- `memory/`: JSON knowledge/skills/specs used by agent workflows.
-- `.aios/`: gitignored project-local runtime state such as ContextDB sessions/exports and bootstrap task queues.
+- `memory/`: source-managed JSON knowledge/skills/specs used by agent workflows.
+- `.aios/`: gitignored project-local runtime state such as ContextDB sessions/exports, workspace metadata, active skill indexes, and bootstrap task queues.
 - `docs/plans/`: implementation and design plans.
 - `tasks/`: repo-managed templates/metrics only; new generated task queues live under `.aios/tasks`.
 
@@ -167,6 +167,8 @@ Instead, a lightweight registry index tells you where to find it.
 4. Load only the sources relevant to the current task.
 5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
 6. Legacy `memory/context-db/index.json` is read only for compatibility when `.aios/context-db/` is absent.
+
+Generated AIOS runtime state should stay under `.aios/` (`.aios/context-db`, `.aios/workspace`, `.aios/tasks`). Legacy `memory/context-db`, `memory/workspace`, and `tasks` are compatibility read paths, not fresh-write targets.
 
 ### Source Selection by Task Type
 | Task type | Load |

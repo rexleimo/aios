@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [1.16.0] - 2026-05-16
 
 - feat(contextdb): move runtime state into .aios
+- fix(contextdb): keep workspace metadata and handoff compatibility under .aios runtime roots
 
 ## [1.15.1] - 2026-05-15
 

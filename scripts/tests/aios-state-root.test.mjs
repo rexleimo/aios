@@ -8,6 +8,7 @@ import {
   resolveContextDbRoot,
   resolveContextDbPath,
   resolveTasksRoot,
+  resolveWorkspaceStateRoot,
   toWorkspaceRelative,
 } from '../lib/aios/state-root.mjs';
 
@@ -18,6 +19,7 @@ test('defaults runtime state to .aios under workspace', async () => {
   assert.equal(resolveContextDbRoot(root), path.join(root, '.aios', 'context-db'));
   assert.equal(resolveContextDbPath(root, 'index.json'), path.join(root, '.aios', 'context-db', 'index.json'));
   assert.equal(resolveTasksRoot(root), path.join(root, '.aios', 'tasks'));
+  assert.equal(resolveWorkspaceStateRoot(root), path.join(root, '.aios', 'workspace'));
   assert.equal(toWorkspaceRelative(root, path.join(root, '.aios', 'context-db', 'index.json')), '.aios/context-db/index.json');
 });
 
@@ -29,6 +31,14 @@ test('legacy ContextDB root can be selected for existing reads only', async () =
   assert.equal(resolveContextDbRoot(root), path.join(root, '.aios', 'context-db'));
 });
 
+test('legacy workspace state root can be selected for existing reads only', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'aios-state-workspace-legacy-'));
+  await mkdir(path.join(root, 'memory', 'workspace'), { recursive: true });
+
+  assert.equal(resolveWorkspaceStateRoot(root, { preferLegacyExisting: true }), path.join(root, 'memory', 'workspace'));
+  assert.equal(resolveWorkspaceStateRoot(root), path.join(root, '.aios', 'workspace'));
+});
+
 test('env override can place project state outside the default .aios root', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'aios-state-root-env-'));
   const custom = path.join(root, '.custom-aios-state');
@@ -36,6 +46,7 @@ test('env override can place project state outside the default .aios root', asyn
 
   assert.equal(resolveAiosStateRoot(root, { env }), custom);
   assert.equal(resolveContextDbRoot(root, { env }), path.join(custom, 'context-db'));
+  assert.equal(resolveWorkspaceStateRoot(root, { env }), path.join(custom, 'workspace'));
   assert.equal(toWorkspaceRelative(root, path.join(custom, 'context-db')), '.custom-aios-state/context-db');
 });
 

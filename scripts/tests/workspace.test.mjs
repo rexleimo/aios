@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import {
@@ -21,10 +21,31 @@ test('initWorkspace creates meta.json with version 1', async (t) => {
   try {
     const result = await initWorkspace(tmpDir);
     assert.equal(result.created, true);
+    assert.equal(workspaceDir(tmpDir), path.join(tmpDir, '.aios', 'workspace'));
+    await stat(path.join(tmpDir, '.aios', 'workspace', 'meta.json'));
+    await assert.rejects(() => stat(path.join(tmpDir, 'memory', 'workspace')));
     assert.equal(result.meta.schemaVersion, 1);
     assert.equal(result.meta.workspaceVersion, 1);
     assert.equal(result.meta.projectName, 'aios');
     assert(result.meta.lastUpdatedAt);
+  } finally {
+    await rm(tmpDir, { recursive: true });
+  }
+});
+
+test('workspaceDir reads existing legacy memory/workspace only when dotdir state is absent', async () => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-legacy-'));
+  try {
+    await mkdir(path.join(tmpDir, 'memory', 'workspace'), { recursive: true });
+    await writeFile(
+      path.join(tmpDir, 'memory', 'workspace', 'meta.json'),
+      `${JSON.stringify({ schemaVersion: 1, workspaceVersion: 7, projectName: 'legacy' })}\n`,
+      'utf8'
+    );
+
+    assert.equal(workspaceDir(tmpDir), path.join(tmpDir, 'memory', 'workspace'));
+    const meta = await readWorkspaceMeta(tmpDir);
+    assert.equal(meta.workspaceVersion, 7);
   } finally {
     await rm(tmpDir, { recursive: true });
   }
@@ -116,7 +137,7 @@ test('writeConflictMarker creates a conflict file and readConflictMarkers lists 
   try {
     await initWorkspace(tmpDir);
     const conflict = {
-      file: 'memory/workspace/meta.json',
+      file: '.aios/workspace/meta.json',
       expectedVersion: 1,
       actualVersion: 2,
       attemptedBy: 'agent-x',

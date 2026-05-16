@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { resolveContextDbRoot } from '../aios/state-root.mjs';
+import { resolveContextDbRoot, resolveWorkspaceStateRoot } from '../aios/state-root.mjs';
 
 export class OptimisticLockError extends Error {
   constructor(expected, actual) {
@@ -14,11 +14,7 @@ export class OptimisticLockError extends Error {
 }
 
 export function workspaceDir(workspaceRoot) {
-  return path.join(
-    path.resolve(workspaceRoot || process.cwd()),
-    'memory',
-    'workspace'
-  );
+  return resolveWorkspaceStateRoot(path.resolve(workspaceRoot || process.cwd()), { preferLegacyExisting: true });
 }
 
 async function writeAtomicFile(filePath, content) {

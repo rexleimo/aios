@@ -17,7 +17,7 @@ const testDir = path.join(__dirname, '..', '..', 'temp', 'skill-index-test');
 async function setupTestDir() {
   await fs.rm(testDir, { recursive: true, force: true });
   await fs.mkdir(path.join(testDir, 'memory', 'skills'), { recursive: true });
-  await fs.mkdir(path.join(testDir, 'memory', 'workspace'), { recursive: true });
+  await fs.mkdir(path.join(testDir, '.aios', 'workspace'), { recursive: true });
 }
 
 async function teardownTestDir() {
@@ -98,6 +98,8 @@ test('writeSkillIndex and readSkillIndex round-trip', async () => {
   const readIndex = await readSkillIndex(testDir);
 
   assert.deepStrictEqual(readIndex, originalIndex);
+  await fs.stat(path.join(testDir, '.aios', 'workspace', 'active-skills.json'));
+  await assert.rejects(() => fs.stat(path.join(testDir, 'memory', 'workspace', 'active-skills.json')));
 
   await teardownTestDir();
 });

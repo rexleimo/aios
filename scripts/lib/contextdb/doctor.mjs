@@ -1,9 +1,10 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { workspaceDir } from './workspace.mjs';
 
 export async function runDoctorChecks(workspaceRoot) {
   const root = path.resolve(workspaceRoot || process.cwd());
-  const wsDir = path.join(root, 'memory', 'workspace');
+  const wsDir = workspaceDir(root);
   const checks = await Promise.all([
     checkWorkspaceMeta(wsDir),
     checkSkillIndexDrift(root, wsDir),

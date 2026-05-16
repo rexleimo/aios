@@ -10,7 +10,7 @@ async function makeTmp() {
 }
 
 async function initMeta(root, extra = {}) {
-  const wsDir = path.join(root, 'memory', 'workspace');
+  const wsDir = path.join(root, '.aios', 'workspace');
   await mkdir(wsDir, { recursive: true });
   await writeFile(
     path.join(wsDir, 'meta.json'),
