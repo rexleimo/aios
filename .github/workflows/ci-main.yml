@@ -28,6 +28,10 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install mcp-server deps
+        working-directory: mcp-server
+        run: npm ci
+
       - name: Run repo scripts tests
         run: npm run test:scripts
 
@@ -55,6 +59,16 @@ jobs:
       - name: Install mcp-server deps
         working-directory: mcp-server
         run: npm ci
+
+      - name: Install Playwright browsers (Linux)
+        if: runner.os == 'Linux'
+        working-directory: mcp-server
+        run: npx playwright install --with-deps chromium
+
+      - name: Install Playwright browsers
+        if: runner.os != 'Linux'
+        working-directory: mcp-server
+        run: npx playwright install chromium
 
       - name: Typecheck + test + build mcp-server
         working-directory: mcp-server
