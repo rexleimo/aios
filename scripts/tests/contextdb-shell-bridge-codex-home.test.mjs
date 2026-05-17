@@ -207,6 +207,68 @@ test('repo-only mode wraps a non-git cwd when it matches ROOTPATH', async () => 
   assert.equal(parseRunnerWorkspace(result.stdout), cwd);
 });
 
+test('bridge discovers runner from AIOS_ROOT_DIR', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-aios-root-workspace-'));
+  const installRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-aios-root-install-'));
+  const scriptsDir = path.join(installRoot, 'scripts');
+  await mkdir(scriptsDir, { recursive: true });
+  const runner = path.join(scriptsDir, 'ctx-agent.mjs');
+  await writeFile(runner, [
+    '#!/usr/bin/env node',
+    'const args = process.argv.slice(2);',
+    "const index = args.indexOf('--workspace');",
+    "const workspace = index >= 0 ? (args[index + 1] || '') : '';",
+    "console.log(`RUNNER_WORKSPACE=${workspace}`);",
+    "console.log(`RUNNER_ARGS=${JSON.stringify(args)}`);",
+  ].join('\n'), 'utf8');
+  await chmod(runner, 0o755);
+
+  const fakeBin = await createFakeCodexCommand();
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    args: ['hello'],
+    env: {
+      AIOS_ROOT_DIR: installRoot,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(parseRunnerWorkspace(result.stdout), cwd);
+});
+
+test('bridge discovers runner from AIOS_ROOT alias', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-aios-root-alias-workspace-'));
+  const installRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-aios-root-alias-install-'));
+  const scriptsDir = path.join(installRoot, 'scripts');
+  await mkdir(scriptsDir, { recursive: true });
+  const runner = path.join(scriptsDir, 'ctx-agent.mjs');
+  await writeFile(runner, [
+    '#!/usr/bin/env node',
+    'const args = process.argv.slice(2);',
+    "const index = args.indexOf('--workspace');",
+    "const workspace = index >= 0 ? (args[index + 1] || '') : '';",
+    "console.log(`RUNNER_WORKSPACE=${workspace}`);",
+    "console.log(`RUNNER_ARGS=${JSON.stringify(args)}`);",
+  ].join('\n'), 'utf8');
+  await chmod(runner, 0o755);
+
+  const fakeBin = await createFakeCodexCommand();
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    args: ['hello'],
+    env: {
+      AIOS_ROOT: installRoot,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(parseRunnerWorkspace(result.stdout), cwd);
+});
+
 test('repo-only mode still passes through when fallback cwd does not match ROOTPATH', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-fallback-other-'));
   const rootpath = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-rootpath-'));

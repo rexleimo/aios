@@ -2,7 +2,9 @@
 # Source this file in ~/.zshrc to make codex/claude/gemini/opencode auto-load context packets.
 #
 # Optional overrides:
-# - ROOTPATH: repo root where scripts/contextdb-shell-bridge.mjs lives
+# - AIOS_ROOT_DIR: AIOS install root where scripts/contextdb-shell-bridge.mjs lives
+# - AIOS_ROOT: legacy-compatible alias for AIOS_ROOT_DIR
+# - ROOTPATH: legacy alias for AIOS_ROOT_DIR
 # - CTXDB_SHELL_BRIDGE: explicit bridge path (highest priority)
 # - CTXDB_RUNNER: explicit ctx-agent runner path (read by bridge)
 # - CTXDB_REPO_NAME: optional project name (read by bridge)
@@ -46,7 +48,7 @@ ctxdb_find_bridge() {
     return 0
   fi
 
-  local rootpath="${ROOTPATH:-}"
+  local rootpath="${AIOS_ROOT_DIR:-${AIOS_ROOT:-${ROOTPATH:-}}}"
   if [[ -n "$rootpath" ]]; then
     local candidate="$rootpath/scripts/contextdb-shell-bridge.mjs"
     if [[ -f "$candidate" ]]; then
@@ -112,9 +114,9 @@ aios() {
   local sub="${1:-}"
   shift || true
 
-  local rootpath="${ROOTPATH:-}"
+  local rootpath="${AIOS_ROOT_DIR:-${AIOS_ROOT:-${ROOTPATH:-}}}"
   if [[ -z "$rootpath" ]]; then
-    echo "[warn] ROOTPATH is not set (install shell integration first)"
+    echo "[warn] AIOS_ROOT_DIR is not set (install shell integration first)"
     return 1
   fi
 

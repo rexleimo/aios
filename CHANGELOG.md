@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-05-17
+
+- fix: pin AIOS root for shell and Stop hooks
+
 ## [1.17.0] - 2026-05-16
 
 - feat(memo): add git-friendly storage backends

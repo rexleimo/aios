@@ -67,6 +67,7 @@ Options:
   --harness-provider <name> Harness provider for routed harness: codex|claude|gemini|opencode (default: inferred)
   --harness-max-iterations <n> Harness iteration budget for routed harness (default: 8)
   --blueprint <name>  Orchestrate blueprint for routed subagent: feature|bugfix|refactor|security (default: feature)
+  --save-guard        Write a Stop-hook checkpoint only; never launch an agent subprocess
   --no-bootstrap      Disable automatic first-task bootstrap for this run
   --no-checkpoint     Disable automatic checkpoint write in one-shot mode
   --context-mode <mode> Context injection mode: slim|full (default: full)
@@ -1156,6 +1157,7 @@ function parseArgs(argv) {
     harnessProvider: 'auto',
     harnessMaxIterations: '8',
     blueprint: 'feature',
+    saveGuard: false,
     autoBootstrap: true,
     autoCheckpoint: true,
     continuitySummary: true,
@@ -1191,6 +1193,13 @@ function parseArgs(argv) {
         break;
       case '--status':
         opts.checkpointStatus = argv[++i] || 'running';
+        break;
+      case '--checkpoint-status':
+        opts.checkpointStatus = argv[++i] || 'running';
+        opts.saveGuard = true;
+        break;
+      case '--save-guard':
+        opts.saveGuard = true;
         break;
       case '--route':
         opts.routeMode = argv[++i] || 'auto';
@@ -1260,6 +1269,7 @@ function validateOpts(opts) {
   if (!validAgents.has(opts.agent)) {
     throw new Error('--agent must be one of: claude-code, gemini-cli, codex-cli, opencode-cli');
   }
+  opts.checkpointStatus = normalizeCheckpointStatus(opts.checkpointStatus);
   const validStatus = new Set(['running', 'blocked', 'done']);
   if (!validStatus.has(opts.checkpointStatus)) {
     throw new Error('--status must be one of: running, blocked, done');
@@ -1274,6 +1284,13 @@ function validateOpts(opts) {
   opts.harnessProvider = normalizeHarnessRouteProvider(opts.harnessProvider);
   opts.harnessMaxIterations = String(parsePositiveInteger(opts.harnessMaxIterations, undefined, '--harness-max-iterations'));
   opts.blueprint = normalizeOrchestrateBlueprint(opts.blueprint);
+}
+
+function normalizeCheckpointStatus(value = 'running') {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (['completed', 'complete', 'success', 'succeeded'].includes(normalized)) return 'done';
+  if (['failed', 'failure', 'error'].includes(normalized)) return 'blocked';
+  return normalized || 'running';
 }
 
 const COMPILED_CONTEXTDB_CLI = path.join(MCP_DIR, 'dist', 'contextdb', 'cli.js');
@@ -1681,8 +1698,8 @@ function runInteractiveAgentWithSaveGuard(agent, contextText, extraArgs, opts) {
         '--agent', agent,
         '--workspace', workspaceRoot,
         '--project', opts.project || 'aios',
-        '--checkpoint-status', 'completed',
-        '--prompt', `Auto checkpoint: ${agent} session ended (no explicit save)`,
+        '--save-guard',
+        '--status', 'done',
       ], { stdio: 'ignore', timeout: 10000 });
     } catch {
       // best-effort
@@ -1860,6 +1877,39 @@ async function safeContextPack(workspaceRoot, { sessionId, eventLimit, packPath 
   }
 }
 
+function resolveSessionIdForSaveGuard(opts) {
+  if (opts.sessionId) return opts.sessionId;
+
+  const latestJson = ctx(opts.workspaceRoot, 'session:latest', ['--agent', opts.agent, '--project', opts.project]);
+  const latestSessionId = extractLatestSessionId(latestJson);
+  if (latestSessionId) return latestSessionId;
+
+  const goal = opts.goal || `Shared context session for ${opts.agent} on ${opts.project}`;
+  const createJson = ctx(opts.workspaceRoot, 'session:new', [
+    '--agent', opts.agent,
+    '--project', opts.project,
+    '--goal', goal,
+  ]);
+  return extractCreatedSessionId(createJson);
+}
+
+function runSaveGuardCheckpoint(opts) {
+  ctx(opts.workspaceRoot, 'init', []);
+  const sessionId = resolveSessionIdForSaveGuard(opts);
+  if (!sessionId) {
+    throw new Error('Failed to resolve session id for save guard checkpoint');
+  }
+
+  ctx(opts.workspaceRoot, 'checkpoint', [
+    '--session', sessionId,
+    '--summary', `Auto checkpoint: ${opts.agent} Stop hook completed`,
+    '--status', opts.checkpointStatus,
+    '--next', 'Continue next user request',
+    '--verify-result', 'unknown',
+    '--retry-count', '0',
+  ]);
+}
+
 export async function runCtxAgent(argv = process.argv.slice(2)) {
   // Workspace subcommands — handled before full arg parsing
   const firstArg = argv[0];
@@ -1884,6 +1934,11 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
 
   if (!opts.project) {
     opts.project = path.basename(opts.workspaceRoot);
+  }
+
+  if (opts.saveGuard) {
+    runSaveGuardCheckpoint(opts);
+    return;
   }
 
   if (opts.autoBootstrap && isBootstrapEnabled(process.env)) {

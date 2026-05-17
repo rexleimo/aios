@@ -68,8 +68,10 @@ function usage() {
   node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli> --command <codex|claude|gemini|opencode> [--cwd <path>] [-- <args...>]
 
 Environment:
-  ROOTPATH               Repo root containing scripts/ctx-agent.mjs
-  CTXDB_RUNNER           Explicit runner path (overrides ROOTPATH discovery)
+  AIOS_ROOT_DIR          AIOS install root containing scripts/ctx-agent.mjs
+  AIOS_ROOT              Alias for AIOS_ROOT_DIR
+  ROOTPATH               Legacy alias for AIOS_ROOT_DIR
+  CTXDB_RUNNER           Explicit runner path (overrides AIOS root discovery)
   CTXDB_REPO_NAME        Optional project name override
   CTXDB_WRAP_MODE        all|repo-only|opt-in|off (default: repo-only)
   CTXDB_MARKER_FILE      Marker filename for opt-in mode (default: .contextdb-enable)
@@ -420,8 +422,10 @@ function detectRunner(env) {
     return { command: env.CTXDB_RUNNER, args: [] };
   }
 
-  if (env.ROOTPATH) {
-    const candidate = path.join(env.ROOTPATH, 'scripts', 'ctx-agent.mjs');
+  const rootPathCandidates = [env.AIOS_ROOT_DIR, env.AIOS_ROOT, env.ROOTPATH];
+  for (const rootpath of rootPathCandidates) {
+    if (!rootpath) continue;
+    const candidate = path.join(rootpath, 'scripts', 'ctx-agent.mjs');
     if (existsSync(candidate)) {
       return { command: 'node', args: [candidate] };
     }

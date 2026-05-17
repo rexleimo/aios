@@ -108,6 +108,52 @@ test('classifyOneShotFailure falls back to tool for generic failures', () => {
   assert.equal(classifyOneShotFailure('Unhandled exit=1'), 'tool');
 });
 
+test('ctx-agent legacy Stop hook checkpoint-status writes checkpoint without launching claude', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-legacy-stop-hook-'));
+  const fakeClaudeBin = await createFakeClaudeCommand('FAKE_CLAUDE_SHOULD_NOT_RUN');
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        CTX_AGENT_CLI,
+        '--agent', 'claude-code',
+        '--workspace', workspaceRoot,
+        '--project', 'legacy-stop-hook',
+        '--checkpoint-status', 'completed',
+        '--no-bootstrap',
+      ],
+      {
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${fakeClaudeBin}${path.delimiter}${process.env.PATH || ''}`,
+          CTXDB_LAZY_LOAD: '1',
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.doesNotMatch(`${result.stdout}\n${result.stderr}`, /FAKE_CLAUDE_SHOULD_NOT_RUN/u);
+
+    const latest = runContextDbCli(
+      ['session:latest', '--workspace', workspaceRoot, '--agent', 'claude-code', '--project', 'legacy-stop-hook'],
+      { cwd: workspaceRoot }
+    );
+    const sessionId = latest?.session?.sessionId;
+    assert.ok(sessionId, 'expected save guard to create or reuse a session');
+
+    const checkpointsPath = path.join(workspaceRoot, '.aios', 'context-db', 'sessions', sessionId, 'l1-checkpoints.jsonl');
+    const checkpointLines = (await readFile(checkpointsPath, 'utf8')).trim().split(/\r?\n/u);
+    const latestCheckpoint = JSON.parse(checkpointLines.at(-1));
+    assert.equal(latestCheckpoint.status, 'done');
+    assert.match(latestCheckpoint.summary, /Stop hook completed/u);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(fakeClaudeBin, { recursive: true, force: true });
+  }
+});
+
 test('resolveTaskRouteDecision honors explicit prompt route triggers', () => {
   const team = resolveTaskRouteDecision({
     prompt: '/team 同时改 CLI、测试和文档',

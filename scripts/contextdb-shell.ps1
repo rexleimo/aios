@@ -1,6 +1,8 @@
 # ContextDB transparent command wrappers for PowerShell.
 # Source this file in PowerShell profile to make codex/claude/gemini/opencode auto-load context packets.
 # Optional env vars:
+# - AIOS_ROOT_DIR
+# - AIOS_ROOT
 # - ROOTPATH
 # - CTXDB_SHELL_BRIDGE
 # - CTXDB_RUNNER
@@ -47,8 +49,9 @@ function Resolve-BridgePath {
     return $env:CTXDB_SHELL_BRIDGE
   }
 
-  if ($env:ROOTPATH) {
-    $candidate = Join-Path $env:ROOTPATH "scripts/contextdb-shell-bridge.mjs"
+  $rootPath = if ($env:AIOS_ROOT_DIR) { $env:AIOS_ROOT_DIR } elseif ($env:AIOS_ROOT) { $env:AIOS_ROOT } else { $env:ROOTPATH }
+  if ($rootPath) {
+    $candidate = Join-Path $rootPath "scripts/contextdb-shell-bridge.mjs"
     if (Test-Path -LiteralPath $candidate) {
       return $candidate
     }
@@ -159,15 +162,16 @@ function aios {
 
   $sub = if ($Args.Count -gt 0) { $Args[0] } else { "" }
   $rest = if ($Args.Count -gt 1) { $Args[1..($Args.Count - 1)] } else { @() }
+  $rootPath = if ($env:AIOS_ROOT_DIR) { $env:AIOS_ROOT_DIR } elseif ($env:AIOS_ROOT) { $env:AIOS_ROOT } else { $env:ROOTPATH }
 
-  if (-not $env:ROOTPATH) {
-    Write-Host "[warn] ROOTPATH is not set (install PowerShell integration first)"
+  if (-not $rootPath) {
+    Write-Host "[warn] AIOS_ROOT_DIR is not set (install PowerShell integration first)"
     return
   }
 
   switch ($sub) {
     "doctor" {
-      $script = Join-Path $env:ROOTPATH "scripts/verify-aios.ps1"
+      $script = Join-Path $rootPath "scripts/verify-aios.ps1"
       if (-not (Test-Path -LiteralPath $script)) {
         Write-Host "[warn] missing verifier script: $script"
         return
@@ -177,7 +181,7 @@ function aios {
       return
     }
     "update" {
-      $script = Join-Path $env:ROOTPATH "scripts/update-all.ps1"
+      $script = Join-Path $rootPath "scripts/update-all.ps1"
       if (-not (Test-Path -LiteralPath $script)) {
         Write-Host "[warn] missing update script: $script"
         return
@@ -187,7 +191,7 @@ function aios {
       return
     }
     "privacy" {
-      $script = Join-Path $env:ROOTPATH "scripts/privacy-guard.mjs"
+      $script = Join-Path $rootPath "scripts/privacy-guard.mjs"
       if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
         Write-Host "[warn] node not found; privacy guard unavailable"
         $global:LASTEXITCODE = 1
@@ -223,7 +227,7 @@ function aios {
       }
     }
     "" {
-      $script = Join-Path $env:ROOTPATH "scripts/aios.ps1"
+      $script = Join-Path $rootPath "scripts/aios.ps1"
       if (-not (Test-Path -LiteralPath $script)) {
         Write-Host "[warn] missing TUI entry script: $script"
         $global:LASTEXITCODE = 1
@@ -237,7 +241,7 @@ function aios {
     "--help" { }
     "help" { }
     default {
-      $script = Join-Path $env:ROOTPATH "scripts/aios.ps1"
+      $script = Join-Path $rootPath "scripts/aios.ps1"
       if (-not (Test-Path -LiteralPath $script)) {
         Write-Host "[warn] missing TUI entry script: $script"
         $global:LASTEXITCODE = 1

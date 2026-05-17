@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initWorkspace } from './lib/contextdb/workspace.mjs';
 import { buildSkillIndex, writeSkillIndex } from './lib/contextdb/skill-index.mjs';
 import { ensurePersonaLayer } from './lib/memo/persona.mjs';
 import { ensureWorkspaceMemorySession } from './lib/memo/workspace-memory.mjs';
+
+const AIOS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
 // --- Agent config ---
 
@@ -104,19 +106,140 @@ function ensureMarker(workspaceRoot, configFile, { dryRun = false } = {}) {
 
 // --- Hook ---
 
-function buildSaveGuardCommand(agent, workspaceRoot) {
-  const cfg = AGENT_CONFIG[agent];
-  const root = resolve(workspaceRoot || process.cwd());
-  const project = root.split('/').pop() || 'aios';
-  return `node ${resolve(root, 'scripts', 'ctx-agent.mjs')} --agent ${cfg.bridgeName} --workspace ${root} --project ${project} --checkpoint-status completed`;
+function shellQuote(value) {
+  const text = String(value || '');
+  return /^[A-Za-z0-9_./:@=-]+$/u.test(text) ? text : `'${text.replace(/'/g, `'\\''`)}'`;
 }
 
-function ensureHook(workspaceRoot, agent, { dryRun = false } = {}) {
+function resolveAiosRuntimeRoot(env = process.env) {
+  const candidates = [
+    env.AIOS_ROOT_DIR,
+    env.AIOS_ROOT,
+    env.ROOTPATH,
+    env.AIOS_INSTALL_DIR,
+  ];
+  for (const candidate of candidates) {
+    const root = String(candidate || '').trim();
+    if (root) return resolve(root);
+  }
+  return AIOS_ROOT;
+}
+
+export function buildSaveGuardCommand(agent, workspaceRoot, { env = process.env } = {}) {
+  const cfg = AGENT_CONFIG[agent];
+  const root = resolve(workspaceRoot || process.cwd());
+  const project = basename(root) || 'aios';
+  const ctxAgentPath = resolve(resolveAiosRuntimeRoot(env), 'scripts', 'ctx-agent.mjs');
+  return [
+    'node',
+    shellQuote(ctxAgentPath),
+    '--agent',
+    cfg.bridgeName,
+    '--workspace',
+    shellQuote(root),
+    '--project',
+    shellQuote(project),
+    '--save-guard',
+    '--status',
+    'done',
+    '--no-bootstrap',
+  ].join(' ');
+}
+
+function buildHookEntry(agent, command) {
+  if (agent === 'claude') {
+    return {
+      matcher: '',
+      hooks: [
+        {
+          type: 'command',
+          command,
+        },
+      ],
+    };
+  }
+
+  return {
+    matcher: '',
+    command,
+  };
+}
+
+function isSaveGuardCommand(command) {
+  const text = String(command || '');
+  return text.includes('ctx-agent.mjs') && (
+    text.includes('--save-guard') || text.includes('--checkpoint-status') || text.includes('checkpoint-status completed')
+  );
+}
+
+function findSaveGuardHook(stopHooks) {
+  for (let entryIndex = 0; entryIndex < stopHooks.length; entryIndex += 1) {
+    const entry = stopHooks[entryIndex];
+    if (!entry || typeof entry !== 'object') continue;
+
+    if (isSaveGuardCommand(entry.command)) {
+      return { entryIndex, hookIndex: -1, command: entry.command, schema: 'top-level' };
+    }
+
+    if (Array.isArray(entry.hooks)) {
+      for (let hookIndex = 0; hookIndex < entry.hooks.length; hookIndex += 1) {
+        const hook = entry.hooks[hookIndex];
+        if (hook && typeof hook === 'object' && isSaveGuardCommand(hook.command)) {
+          return { entryIndex, hookIndex, command: hook.command, schema: 'nested' };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function upsertSaveGuardHook(stopHooks, agent, hookCommand) {
+  const existing = findSaveGuardHook(stopHooks);
+
+  if (!existing) {
+    return { action: 'add', stopHooks: [...stopHooks, buildHookEntry(agent, hookCommand)] };
+  }
+
+  const needsSchemaUpgrade = agent === 'claude' && existing.schema !== 'nested';
+  if (existing.command === hookCommand && !needsSchemaUpgrade) {
+    return { action: 'skip', stopHooks };
+  }
+
+  const nextStopHooks = [...stopHooks];
+  const entry = nextStopHooks[existing.entryIndex];
+
+  if (agent === 'claude') {
+    if (existing.hookIndex >= 0 && Array.isArray(entry.hooks)) {
+      const nextHooks = [...entry.hooks];
+      nextHooks[existing.hookIndex] = {
+        ...nextHooks[existing.hookIndex],
+        type: nextHooks[existing.hookIndex].type || 'command',
+        command: hookCommand,
+      };
+      nextStopHooks[existing.entryIndex] = {
+        ...entry,
+        hooks: nextHooks,
+      };
+    } else {
+      nextStopHooks[existing.entryIndex] = buildHookEntry(agent, hookCommand);
+    }
+    return { action: 'update', stopHooks: nextStopHooks };
+  }
+
+  nextStopHooks[existing.entryIndex] = {
+    ...entry,
+    command: hookCommand,
+  };
+  return { action: 'update', stopHooks: nextStopHooks };
+}
+
+export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process.env } = {}) {
   const cfg = AGENT_CONFIG[agent];
   if (!cfg || !cfg.hookFile) return null;
 
   const hookPath = resolve(workspaceRoot, cfg.hookFile);
-  const hookCommand = buildSaveGuardCommand(cfg.cli, workspaceRoot);
+  const hookCommand = buildSaveGuardCommand(cfg.cli, workspaceRoot, { env });
 
   let settings = {};
   try {
@@ -128,29 +251,30 @@ function ensureHook(workspaceRoot, agent, { dryRun = false } = {}) {
   // Check if hook already exists
   const hooks = settings.hooks || {};
   const stopHooks = hooks.Stop || [];
-  const alreadyPresent = stopHooks.some((h) => h.command && h.command.includes('checkpoint-status completed'));
+  const hookPlan = upsertSaveGuardHook(stopHooks, agent, hookCommand);
 
-  if (alreadyPresent) {
+  if (hookPlan.action === 'skip') {
     return { path: hookPath, action: 'skip', reason: 'save guard hook already present' };
   }
 
   if (dryRun) {
-    return { path: hookPath, action: 'would-add', reason: `would add Stop hook: ${hookCommand}` };
+    const action = hookPlan.action === 'update' ? 'would-update' : 'would-add';
+    const verb = hookPlan.action === 'update' ? 'would update' : 'would add';
+    return { path: hookPath, action, reason: `${verb} Stop hook: ${hookCommand}` };
   }
 
   settings.hooks = {
     ...hooks,
-    Stop: [
-      ...stopHooks,
-      {
-        matcher: '',
-        command: hookCommand,
-      },
-    ],
+    Stop: hookPlan.stopHooks,
   };
 
+  mkdirSync(dirname(hookPath), { recursive: true });
   writeFileSync(hookPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
-  return { path: hookPath, action: 'added', reason: 'Stop hook added for auto-save' };
+  return {
+    path: hookPath,
+    action: hookPlan.action === 'update' ? 'updated' : 'added',
+    reason: hookPlan.action === 'update' ? 'Stop hook updated for auto-save' : 'Stop hook added for auto-save',
+  };
 }
 
 // --- Workspace init ---

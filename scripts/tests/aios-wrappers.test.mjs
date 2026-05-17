@@ -104,6 +104,21 @@ test('contextdb PowerShell transparent wrappers preserve native stdout TTY', asy
   assert.match(content, /& node \$bridge "--agent" \$Agent "--command" \$Passthrough "--" @Arguments\r?\n\s+\$global:LASTEXITCODE = \$LASTEXITCODE/u);
 });
 
+
+test('contextdb zsh wrapper resolves bridge from AIOS_ROOT_DIR before ROOTPATH', async () => {
+  const content = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.zsh'), 'utf8');
+
+  assert.match(content, /local rootpath="\$\{AIOS_ROOT_DIR:-\$\{AIOS_ROOT:-\$\{ROOTPATH:-\}\}\}"/u);
+  assert.match(content, /\[warn\] AIOS_ROOT_DIR is not set/u);
+});
+
+test('contextdb PowerShell wrapper resolves bridge from AIOS_ROOT_DIR before ROOTPATH', async () => {
+  const content = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.ps1'), 'utf8');
+
+  assert.match(content, /\$rootPath = if \(\$env:AIOS_ROOT_DIR\)/u);
+  assert.match(content, /\[warn\] AIOS_ROOT_DIR is not set/u);
+});
+
 test('doctor-contextdb-skills.ps1 is a thin wrapper', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'doctor-contextdb-skills.ps1'), 'utf8');
   assert.match(content, /internal skills doctor/);

@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  doctorContextDbShell,
   installContextDbShell,
   uninstallContextDbShell,
 } from '../lib/components/shell.mjs';
@@ -27,6 +28,10 @@ import {
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function writeExecutable(filePath, content) {
@@ -102,6 +107,24 @@ async function copyCanonicalAgentSource(rootDir) {
   });
 }
 
+test('shell install pins and quotes AIOS_ROOT_DIR for paths with spaces', async () => {
+  const tempRoot = await makeTemp('aios-shell-spaced-root-');
+  const rootDir = path.join(tempRoot, 'rex cli', 'runtime root');
+  const rcFile = path.join(tempRoot, '.zshrc');
+  await mkdir(rootDir, { recursive: true });
+  await makeFakeMcpServer(rootDir);
+
+  const commandRunner = () => {};
+
+  await installContextDbShell({ rootDir, rcFile, mode: 'opt-in', platform: 'darwin', commandRunner });
+
+  const installed = await readFile(rcFile, 'utf8');
+  assert.match(installed, new RegExp(`export AIOS_ROOT_DIR='${escapeRegExp(rootDir)}'`, 'u'));
+  assert.match(installed, /export AIOS_ROOT="\$\{AIOS_ROOT_DIR\}"/u);
+  assert.match(installed, /export ROOTPATH="\$\{AIOS_ROOT_DIR\}"/u);
+  assert.match(installed, /source "\$AIOS_ROOT_DIR\/scripts\/contextdb-shell\.zsh"/u);
+});
+
 test('shell install writes managed block and uninstall removes it', async () => {
   const rootDir = await makeTemp('aios-shell-root-');
   const rcFile = path.join(rootDir, '.zshrc');
@@ -116,6 +139,9 @@ test('shell install writes managed block and uninstall removes it', async () => 
   await installContextDbShell({ rootDir, rcFile, mode: 'repo-only', platform: 'darwin', commandRunner });
   const installed = await readFile(rcFile, 'utf8');
   assert.match(installed, /# >>> contextdb-shell >>>/);
+  assert.match(installed, /export AIOS_ROOT_DIR='/);
+  assert.match(installed, /export AIOS_ROOT="\$\{AIOS_ROOT_DIR\}"/);
+  assert.match(installed, /export ROOTPATH="\$\{AIOS_ROOT_DIR\}"/);
   assert.match(installed, /CTXDB_WRAP_MODE:-repo-only/);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
@@ -147,6 +173,9 @@ test('windows shell install writes managed block to both PowerShell profiles', a
 
   assert.match(pwshContent, /# >>> contextdb-shell >>>/);
   assert.match(winPsContent, /# >>> contextdb-shell >>>/);
+  assert.match(pwshContent, /\$env:AIOS_ROOT_DIR = /);
+  assert.match(pwshContent, /\$env:AIOS_ROOT = \$env:AIOS_ROOT_DIR/);
+  assert.match(pwshContent, /\$env:ROOTPATH = \$env:AIOS_ROOT_DIR/);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args, ['install']);
@@ -156,6 +185,22 @@ test('windows shell install writes managed block to both PowerShell profiles', a
   await uninstallContextDbShell({ platform: 'win32', homeDir });
   assert.doesNotMatch(await readFile(pwshProfile, 'utf8'), /# >>> contextdb-shell >>>/);
   assert.doesNotMatch(await readFile(winPsProfile, 'utf8'), /# >>> contextdb-shell >>>/);
+});
+
+test('shell doctor reports canonical AIOS root env with ROOTPATH legacy alias', async () => {
+  const logs = [];
+  const env = {
+    AIOS_ROOT_DIR: '/opt/aios',
+    AIOS_ROOT: '/opt/aios',
+    ROOTPATH: '/opt/aios',
+  };
+
+  await doctorContextDbShell({ rcFile: path.join(os.tmpdir(), 'missing-aios-rc'), env, io: { log: (message) => logs.push(message) } });
+
+  const output = logs.join('\n');
+  assert.match(output, /AIOS_ROOT_DIR: \/opt\/aios/u);
+  assert.match(output, /AIOS_ROOT: \/opt\/aios/u);
+  assert.match(output, /ROOTPATH \(legacy\): \/opt\/aios/u);
 });
 
 test('windows shell uninstall removes managed block from BOM-prefixed PowerShell profiles', async () => {

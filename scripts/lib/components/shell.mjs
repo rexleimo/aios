@@ -15,12 +15,20 @@ import { resolvePowerShellProfilePaths, resolveShellRcFile } from '../platform/p
 const BEGIN_MARK = '# >>> contextdb-shell >>>';
 const END_MARK = '# <<< contextdb-shell <<<';
 
+function quotePosixSingle(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+function quotePowerShellSingle(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
 function buildPosixBlock(rootDir, mode) {
-  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode)\nexport ROOTPATH="\${ROOTPATH:-${rootDir}}"\nexport CTXDB_WRAP_MODE="\${CTXDB_WRAP_MODE:-${mode}}"\nif [[ -f "\$ROOTPATH/scripts/contextdb-shell.zsh" ]]; then\n  source "\$ROOTPATH/scripts/contextdb-shell.zsh"\nfi\n${END_MARK}\n`;
+  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode)\nexport AIOS_ROOT_DIR=${quotePosixSingle(rootDir)}\nexport AIOS_ROOT="\${AIOS_ROOT_DIR}"\nexport ROOTPATH="\${AIOS_ROOT_DIR}"\nexport CTXDB_WRAP_MODE="\${CTXDB_WRAP_MODE:-${mode}}"\nif [[ -f "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh" ]]; then\n  source "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh"\nfi\n${END_MARK}\n`;
 }
 
 function buildPowerShellBlock(rootDir, mode) {
-  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode, PowerShell)\nif (-not $env:ROOTPATH) { $env:ROOTPATH = "${rootDir}" }\nif (-not $env:CTXDB_WRAP_MODE) { $env:CTXDB_WRAP_MODE = "${mode}" }\n$ctxShell = Join-Path $env:ROOTPATH "scripts/contextdb-shell.ps1"\nif (Test-Path $ctxShell) {\n  . $ctxShell\n}\n${END_MARK}\n`;
+  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode, PowerShell)\n$env:AIOS_ROOT_DIR = ${quotePowerShellSingle(rootDir)}\n$env:AIOS_ROOT = $env:AIOS_ROOT_DIR\n$env:ROOTPATH = $env:AIOS_ROOT_DIR\nif (-not $env:CTXDB_WRAP_MODE) { $env:CTXDB_WRAP_MODE = "${mode}" }\n$ctxShell = Join-Path $env:AIOS_ROOT_DIR "scripts/contextdb-shell.ps1"\nif (Test-Path $ctxShell) {\n  . $ctxShell\n}\n${END_MARK}\n`;
 }
 
 function getShellPatterns(platform) {
@@ -200,7 +208,9 @@ export async function doctorContextDbShell({
     }
   }
 
-  io.log(`ROOTPATH: ${env.ROOTPATH || '<unset>'}`);
+  io.log(`AIOS_ROOT_DIR: ${env.AIOS_ROOT_DIR || '<unset>'}`);
+  io.log(`AIOS_ROOT: ${env.AIOS_ROOT || '<unset>'}`);
+  io.log(`ROOTPATH (legacy): ${env.ROOTPATH || '<unset>'}`);
   io.log(`CTXDB_WRAP_MODE: ${env.CTXDB_WRAP_MODE || '<unset>'}`);
   io.log(`CODEX_HOME: ${env.CODEX_HOME || '<unset>'}`);
 
