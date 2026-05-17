@@ -2,14 +2,97 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { workspaceDir } from './workspace.mjs';
 
-export async function buildSkillIndex(workspaceRoot) {
-  const skillsDir = path.join(path.resolve(workspaceRoot || process.cwd()), 'memory', 'skills');
+const DISCOVERABLE_SKILL_ROOTS = [
+  ['.codex', 'skills'],
+  ['.claude', 'skills'],
+  ['.agents', 'skills'],
+];
+
+const LEGACY_SKILL_ROOT_SEGMENTS = ['memory', 'skills'];
+
+function toPosixRelative(root, filePath) {
+  return path.relative(root, filePath).split(path.sep).join('/');
+}
+
+function parseFrontmatter(content) {
+  const match = String(content || '').match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return {};
+  const data = {};
+  for (const line of match[1].split(/\r?\n/)) {
+    const pair = line.match(/^([A-Za-z0-9_-]+):\s*(.*)$/);
+    if (!pair) continue;
+    const key = pair[1];
+    const raw = pair[2].trim();
+    data[key] = raw.replace(/^['"]|['"]$/g, '');
+  }
+  return data;
+}
+
+function extractTriggerKeywords(description = '') {
+  const match = String(description || '').match(/\bTRIGGER:\s*(.+)$/i);
+  if (!match) return [];
+  return match[1]
+    .split(/[,，、]/u)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+async function readMarkdownSkill(root, skillDir, sourceRank) {
+  const skillPath = path.join(skillDir, 'SKILL.md');
+  const content = await fs.readFile(skillPath, 'utf8');
+  const frontmatter = parseFrontmatter(content);
+  const id = path.basename(skillDir);
+  const name = frontmatter.name || id;
+  const description = frontmatter.description || '';
+  return {
+    id: String(name),
+    skill: {
+      name: String(name),
+      file: toPosixRelative(root, skillPath),
+      keywords: extractTriggerKeywords(description),
+      taskTypes: [],
+      version: frontmatter.version || '1.0.0',
+      lastUsed: null,
+      source: 'skill',
+      description,
+    },
+    sourceRank,
+  };
+}
+
+async function discoverMarkdownSkills(root) {
+  const discovered = [];
+  for (let sourceRank = 0; sourceRank < DISCOVERABLE_SKILL_ROOTS.length; sourceRank += 1) {
+    const skillsDir = path.join(root, ...DISCOVERABLE_SKILL_ROOTS[sourceRank]);
+    let entries = [];
+    try {
+      entries = await fs.readdir(skillsDir, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+
+    entries.sort((a, b) => a.name.localeCompare(b.name));
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const skillDir = path.join(skillsDir, entry.name);
+      try {
+        discovered.push(await readMarkdownSkill(root, skillDir, sourceRank));
+      } catch {
+        // Skip incomplete or unreadable skill directories.
+      }
+    }
+  }
+  return discovered;
+}
+
+async function discoverLegacyJsonSkills(root) {
+  const skillsDir = path.join(root, ...LEGACY_SKILL_ROOT_SEGMENTS);
   const skills = [];
 
   try {
     const files = await fs.readdir(skillsDir);
 
-    for (const file of files) {
+    for (const file of files.sort((a, b) => a.localeCompare(b))) {
       if (!file.endsWith('.json')) continue;
 
       const filePath = path.join(skillsDir, file);
@@ -19,22 +102,45 @@ export async function buildSkillIndex(workspaceRoot) {
 
         const skill = {
           name: data.name || data.skill_name || file.replace('.json', ''),
-          file: file,
+          file: toPosixRelative(root, filePath),
           keywords: data.trigger_keywords || [],
           taskTypes: extractTaskTypes(data),
           version: data.version || '1.0.0',
-          lastUsed: null
+          lastUsed: null,
+          source: 'legacy-json',
         };
 
-        skills.push(skill);
+        skills.push({ id: String(skill.name), skill, sourceRank: DISCOVERABLE_SKILL_ROOTS.length });
       } catch (err) {
-        // Skip malformed files
-        continue;
+        // Skip malformed files.
       }
     }
   } catch (err) {
-    // Skills directory doesn't exist yet
+    // Legacy skills directory does not exist.
   }
+
+  return skills;
+}
+
+export async function buildSkillIndex(workspaceRoot) {
+  const root = path.resolve(workspaceRoot || process.cwd());
+  const discovered = [
+    ...await discoverMarkdownSkills(root),
+    ...await discoverLegacyJsonSkills(root),
+  ];
+
+  const byName = new Map();
+  for (const item of discovered) {
+    const key = item.id.toLowerCase();
+    const existing = byName.get(key);
+    if (!existing || item.sourceRank < existing.sourceRank) {
+      byName.set(key, item);
+    }
+  }
+
+  const skills = Array.from(byName.values())
+    .sort((a, b) => a.skill.name.localeCompare(b.skill.name))
+    .map((item) => item.skill);
 
   return { skills };
 }

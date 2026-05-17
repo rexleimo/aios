@@ -26,7 +26,7 @@ scripts/ctx-agent.sh --agent gemini-cli --project RexCLI --prompt "Review regres
 1. Shared session/checkpoints updated in:
 
 ```bash
-ls memory/context-db/sessions
+ls .aios/context-db/sessions
 ```
 
 2. Timeline shows cross-agent continuity:
@@ -39,7 +39,7 @@ npm run -s contextdb -- timeline --project RexCLI --limit 12
 3. Exported context packet exists for latest session:
 
 ```bash
-ls memory/context-db/exports | tail -n 5
+ls .aios/context-db/exports | tail -n 5
 ```
 
 ## Why This Matters

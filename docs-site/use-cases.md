@@ -46,19 +46,21 @@ After that, `codex`, `claude`, `gemini`, and `opencode` in the same project all 
 Use `aios memo` when you want lightweight memory without manually editing ContextDB files:
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
 
 Rule of thumb:
 
-- `memo add/list/search/recall` -> ContextDB-backed memory
-- `memo pin` -> workspace pinned file
+- `memo add/search/recall` -> canonical `memory/memo` storage (legacy ContextDB mirror only for compatibility)
+- `memo pin` -> canonical `memory/memo` pinned file (legacy mirror only for compatibility)
 - `memo persona/user` -> global identity files injected into the `ctx-agent` Memory prelude
+
+Default storage is `file` (`memory/memo/file/events.jsonl`). Use `aios memo storage use split` only if you want one JSON file per memo event. `storage rebuild` fully rebuilds derived query files only.
 
 Persona is for the agent baseline ("how this AI should behave"). User profile is for stable operator preferences ("how this user wants work delivered"). Both are safety-scanned and capacity-limited before injection.
 

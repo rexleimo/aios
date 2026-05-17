@@ -104,4 +104,4 @@ npm run contextdb -- context:pack \
 
 ---
 
-*Token compression は [ContextDB](https://cli.rexai.top/contextdb/) に組み込まれており、[RexCLI](https://cli.rexai.top) の一部です。追加ツールは不要です。*
+*Token compression は [ContextDB](https://cli.rexai.top/ja/contextdb/) に組み込まれており、[RexCLI](https://cli.rexai.top) の一部です。追加ツールは不要です。*

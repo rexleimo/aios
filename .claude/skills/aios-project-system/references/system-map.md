@@ -4,10 +4,10 @@
 AIOS is a browser-automation assistant for Xiaohongshu operations plus related content tooling (including Jimeng image generation).
 
 ## End-to-End Flow
-User intent -> skill retrieval (`memory/skills`) -> MCP browser-use/CDP actions -> platform result -> evidence capture -> memory/docs updates.
+User intent -> skill retrieval (repo-local skill roots) -> MCP browser-use/CDP actions -> platform result -> evidence capture -> memory/docs updates.
 
 ## Main State Surfaces
-- Process memory: `memory/skills`, `memory/specs`, `memory/history`, `memory/knowledge`
+- Process memory: repo-local skills, runtime specs in `scripts/lib/specs`, memo records in `memory/memo`, and ContextDB state in `.aios/context-db`
 - Task lifecycle: `tasks/pending`, `tasks/done`, `tasks/failed`
 - Artifact output: `images/`, `temp/`
 - Automation engine: default browser-use MCP launcher (`scripts/run-browser-use-mcp.sh`) + legacy `mcp-server/` Playwright compatibility server

@@ -28,7 +28,7 @@ User command (codex/claude/gemini)
 Each wrapped workspace has its own local store (git root if available, otherwise current directory):
 
 ```text
-memory/context-db/
+.aios/context-db/
   manifest.json
   index/sessions.jsonl
   sessions/<session_id>/

@@ -102,4 +102,4 @@ Model Router 已内置到 Agent Team——团队运行的每个阶段会自动�
 
 ---
 
-*Model Router 是 [RexCLI](https://cli.rexai.top) 的一部分。查看[完整文档](https://cli.rexai.top/model-router/)了解所有模型、规则和配置选项。*
+*Model Router 是 [RexCLI](https://cli.rexai.top) 的一部分。查看[完整文档](https://cli.rexai.top/zh/model-router/)了解所有模型、规则和配置选项。*

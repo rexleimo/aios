@@ -46,19 +46,21 @@ codex
 CLI 안에서 장기 제약/선호를 빠르게 관리하려면 `aios memo`를 사용하세요:
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
 
 메모 계층 규칙:
 
-- `memo add/list/search/recall` -> ContextDB 이벤트 레이어
-- `memo pin` -> 워크스페이스 pinned 파일
+- `memo add/search/recall` -> canonical `memory/memo` storage (legacy ContextDB mirror는 호환용)
+- `memo pin` -> canonical `memory/memo` pinned file (legacy mirror는 호환용)
 - `memo persona/user` -> `ctx-agent` Memory prelude 에 주입되는 전역 identity 파일
+
+Default storage 는 `file` (`memory/memo/file/events.jsonl`) 입니다. memo event 마다 JSON 파일 하나가 필요할 때만 `aios memo storage use split` 을 사용하세요. `storage rebuild` 는 derived query files 만 갱신합니다.
 
 Persona 는 agent baseline ("이 AI 가 어떻게 행동해야 하는가") 용도입니다. User profile 은 안정적인 operator preference ("이 사용자가 어떤 방식의 납품을 원하는가") 용도입니다. 둘 다 주입 전에 안전 스캔과 용량 제한을 거칩니다.
 

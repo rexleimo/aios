@@ -9,7 +9,7 @@ import {
   listLocalDispatchExecutors,
   resolveLocalDispatchExecutor,
 } from './orchestrator-executors.mjs';
-import blueprintSpec from '../../../memory/specs/orchestrator-blueprints.json' with { type: 'json' };
+import blueprintSpec from '../specs/orchestrator-blueprints.json' with { type: 'json' };
 
 export const ORCHESTRATOR_ROLE_IDS = ['planner', 'implementer', 'reviewer', 'security-reviewer'];
 export const ORCHESTRATOR_BLUEPRINT_NAMES = ['feature', 'bugfix', 'refactor', 'security'];
@@ -30,7 +30,7 @@ const WORK_ITEM_OWNERSHIP_HINT_PATTERNS = Object.freeze([
   { pattern: /\bdocs?\b|\breadme\b|\brunbook\b|\bguide\b/i, hints: ['docs/'] },
   { pattern: /\btest|testing|qa|verification|assert|regression\b/i, hints: ['scripts/tests/'] },
   { pattern: /\bmcp-server\b/i, hints: ['mcp-server/src/'] },
-  { pattern: /\bspec|schema\b/i, hints: ['memory/specs/'] },
+  { pattern: /\bspec|schema\b/i, hints: ['scripts/lib/specs/'] },
 ]);
 export { LOCAL_PHASE_EXECUTOR, LOCAL_CONTROL_EXECUTOR, LOCAL_MERGE_GATE_EXECUTOR } from './orchestrator-executors.mjs';
 export const MERGE_GATE_BLOCK_STATUSES = normalizeMergeGateBlockStatuses(blueprintSpec?.mergeGate?.blockStatuses);

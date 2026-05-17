@@ -212,6 +212,8 @@ Round 3 → reviewer（+ security-reviewer 并行）
 
 选择能覆盖任务的最小 blueprint。简单的文件创建用 `bugfix`，不需要 `feature`。
 
+Blueprint、角色卡、runtime manifest、executor manifest 和 handoff schema 都打包在 `scripts/lib/specs/`。Team 运行状态和证据仍写入 `.aios/context-db/`；`memory/memo/` 只保存项目 memo，不是 team runtime 存储。
+
 ### 配置
 
 ```bash

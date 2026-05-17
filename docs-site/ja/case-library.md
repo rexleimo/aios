@@ -95,7 +95,7 @@ scripts/ctx-agent.sh --agent gemini-cli --prompt "回帰リスクと欠落テス
 
 **証拠**
 
-- `memory/context-db/` に新しい session/checkpoint アーティファクト
+- `.aios/context-db/` に新しい session/checkpoint アーティファクト
 - 後の CLI 実行は同じプロジェクトコンテキストを使用して継続可能
 
 ## ケース 4：認証壁処理（人間の介在）
@@ -133,8 +133,8 @@ scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "最新の chec
 
 **証拠**
 
-- `memory/context-db/index/checkpoints.jsonl` に新しい checkpoint エントリ
-- `memory/context-db/exports/` にエクスポート済み context packet
+- `.aios/context-db/index/checkpoints.jsonl` に新しい checkpoint エントリ
+- `.aios/context-db/exports/` にエクスポート済み context packet
 
 ## ケース 6：Skills ライフサイクル運用
 

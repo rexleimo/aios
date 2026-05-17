@@ -10,8 +10,8 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 
 ## Core Topology
 - `CLAUDE.md`: project-level behavior contract and architecture overview.
-- `memory/skills/*.json`: operational playbooks for recurring tasks (not deterministic executors).
-- `memory/specs/*.json`: safety constraints and limits.
+- `.codex/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md`: operational playbooks for recurring tasks (not deterministic executors).
+- `scripts/lib/specs/*.json`: runtime specifications and limits.
 - `tasks/{pending,done,failed}`: task queue and outcomes.
 - `scripts/run-browser-use-mcp.sh`: default browser MCP launcher (bridges to `ai-browser-book/mcp-browser-use`).
 - `mcp-server/`: legacy Playwright MCP implementation retained for compatibility workflows.
@@ -22,10 +22,10 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 - `mcp-server/src/index.ts` still exposes Playwright `browser_*` tools, but treat that path as legacy/compatibility.
 - If both `puppeteer-stealth` and `chrome-devtools` are available, use `puppeteer-stealth` for normal browser automation and reserve `chrome-devtools` for debugging only.
 - For interactive runs, explicitly prefer `chrome.launch_cdp { port: 9222, user_data_dir: '~/.chrome-cdp-profile' }`, then `browser.connect_cdp`.
-- `memory/skills/*.json` can drift from site UI; treat them as runbooks that require live verification.
+- Repo-local skill `SKILL.md` files can drift from site UI; treat them as runbooks that require live verification.
 - Prefer `page.extract_text` / `page.get_html` evidence before using `page.screenshot`.
 - Repo-local discoverable skills must live in `.codex/skills/` or `.claude/skills/`; do not create ad-hoc skill roots such as `.baoyu-skills/*/SKILL.md`. `.baoyu-skills/` is extension-config territory, not a Codex/Claude skill root.
-- Keep safety constraints aligned with `memory/specs` and `memory/skills/技能使用约束.json`.
+- Keep safety constraints aligned with `scripts/lib/specs` and `.codex/skills/skill-constraints/SKILL.md`.
 
 ## Superpowers Route Bridge
 When requests are substantial, chain process skills and harness controls in this order:
@@ -37,7 +37,7 @@ When requests are substantial, chain process skills and harness controls in this
 6. End only with `superpowers:verification-before-completion`.
 
 ## Default Operating Order
-1. Read task context and matching `memory/skills` + `memory/specs` files.
+1. Read task context, matching repo-local skills, and relevant `scripts/lib/specs` files.
 2. Confirm available MCP tools, CDP session strategy, and selector strategy.
 3. Execute with evidence checkpoints (`page.extract_text` / `page.get_html` logs per key step; `page.screenshot` only for visual fallback).
 4. Write outcome to docs/history and patch skills if drift is found.

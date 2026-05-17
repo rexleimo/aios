@@ -3,7 +3,7 @@ import { normalizeOrchestratorAgentSpec } from './orchestrator-agents.mjs';
 import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
 import { buildPersonaOverlay } from '../memo/persona.mjs';
 import { buildModelRouterPromptSection, normalizeModelRouting, resolveModelRoutingForRole } from '../model-router.mjs';
-import agentSpec from '../../../memory/specs/orchestrator-agents.json' with { type: 'json' };
+import agentSpec from '../specs/orchestrator-agents.json' with { type: 'json' };
 
 // ---------------------------------------------------------------------------
 // Config
@@ -418,7 +418,7 @@ function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMemory, mo
 
   lines.push('');
   lines.push('Output Contract');
-  lines.push('Output a single JSON object (no surrounding text) that conforms to `memory/specs/agent-handoff.schema.json`.');
+  lines.push('Output a single JSON object (no surrounding text) that conforms to `scripts/lib/specs/agent-handoff.schema.json`.');
   lines.push('');
   lines.push('Required fields: schemaVersion, status, fromRole, toRole, taskTitle, contextSummary, findings, filesTouched, openQuestions, recommendations.');
   lines.push('Set schemaVersion=1. Always include array fields (empty arrays are OK).');

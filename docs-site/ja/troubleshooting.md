@@ -76,7 +76,7 @@ Doctor スクリプトで確認してください:
 
 ## `search` がサイドカー損失後に空になる
 
-`memory/context-db/index/context.db` がない場合または古い場合:
+`.aios/context-db/index/context.db` がない場合または古い場合:
 
 1. `cd mcp-server && npm run contextdb -- index:rebuild` を実行
 2. `search` / `timeline` / `event:get` を再実行
@@ -111,9 +111,9 @@ aios quality-gate pre-pr --profile strict
 
 - 推奨: CLI を終了し、シェルから `codex` / `claude` / `gemini` を再実行。
 - 同一プロセスで続けたい場合: 新しい会話の最初に最新スナップショットを読ませる:
-  - `@memory/context-db/exports/latest-codex-cli-context.md`
-  - `@memory/context-db/exports/latest-claude-code-context.md`
-  - `@memory/context-db/exports/latest-gemini-cli-context.md`
+  - `@.aios/context-db/exports/latest-codex-cli-context.md`
+  - `@.aios/context-db/exports/latest-claude-code-context.md`
+  - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 クライアントが `@file` 参照をサポートしない場合は、ファイル内容を最初のプロンプトとして貼り付けてください。
 
@@ -160,7 +160,7 @@ codex
 最小構造化出力スモークチェック (macOS/Linux):
 
 ```bash
-printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema memory/specs/agent-handoff.schema.json -
+printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema scripts/lib/specs/agent-handoff.schema.json -
 ```
 
 ## コマンドがラップされていない

@@ -80,8 +80,8 @@ npm run contextdb -- init
 npm run contextdb -- session:new --agent codex-cli --project demo --goal "implement feature"
 npm run contextdb -- event:add --session <id> --role user --kind prompt --text "start"
 npm run contextdb -- checkpoint --session <id> --summary "phase done" --status running --next "write tests|implement"
-npm run contextdb -- context:pack --session <id> --out memory/context-db/exports/<id>-context.md
-npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
+npm run contextdb -- context:pack --session <id> --out .aios/context-db/exports/<id>-context.md
+npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 npm run contextdb -- index:rebuild
 ```
 
@@ -89,28 +89,34 @@ npm run contextdb -- index:rebuild
 
 CLI 흐름 안에서 지속적인 운영자 메모를 관리하려면 `aios memo`를 사용하세요.
 persona/user profile 은 전역 레이어입니다. Agent 의 안정적인 행동 방식과 사용자 선호를 프로젝트 간에 재사용하고, 프로젝트별 사실은 ContextDB 에 남깁니다.
+Project memo 의 canonical data 는 `memory/memo/` 아래에 있습니다. 기본 `file` 은 append-only JSONL storage 이고, `split` 은 memo event 마다 JSON 파일 하나를 저장합니다. ContextDB mirror 는 호환/cache 용도입니다.
 
 저장 경계:
 
-- `memo add/list/search`는 ContextDB `workspace-memory--<space>` 세션에 memo 이벤트를 기록/조회
-- `memo recall`은 ContextDB `recall:sessions`를 호출해 프로젝트 단위 교차 세션 회상을 수행
-- `memo pin show/set/add`는 `memory/context-db/sessions/workspace-memory--<space>/pinned.md`를 읽고 씁니다
+- `memo add/search`는 canonical `memory/memo/file|split` storage를 읽고 쓰며, 호환성을 위해 legacy workspace-memory events에도 mirror합니다
+- `memo recall`은 현재 memo storage에서 읽기 쉬운 recall digest를 만들고, 비어 있으면 legacy workspace-memory로 fallback합니다
+- `memo pin show/set/add`는 canonical `memory/memo/file|split` storage를 읽고 쓰며, 호환성을 위해 legacy workspace-memory 파일에도 mirror합니다
 - `memo persona ...`와 `memo user ...`는 전역 파일 레이어를 사용합니다 (기본값: `~/.aios/SOUL.md`, `~/.aios/USER.md`)
 
 예시:
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR gate before merge #quality"
 aios memo pin add "Never run destructive git commands without explicit approval."
-aios memo list --limit 10
 aios memo search "pre-PR" --limit 5
 aios memo recall "release gate" --limit 5
+aios memo storage status
+aios memo storage use split
+aios memo storage use file
+aios memo storage rebuild
+aios memo storage doctor
 aios memo persona init
 aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user init
 aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
+
+`aios memo storage rebuild` 는 derived query files 만 full rebuild 하며 canonical memo records 를 다시 쓰지 않습니다.
 
 ### Persona / User Profile Memory
 
@@ -154,7 +160,7 @@ ContextDB는 이제 인터랙티브 CLI 세션을 위한 **레이지 로드 모�
 
 ### 작동 방식
 
-1. **빠른 퍼사드 읽기** — 시작 시 `memory/context-db/.facade.json`(캐시된 세션 요약)을 로드합니다.
+1. **빠른 퍼사드 읽기** — 시작 시 `.aios/context-db/.facade.json`(캐시된 세션 요약)을 로드합니다.
 2. **작은 프롬프트 주입** — 150토큰 미만의 퍼사드 프롬프트를 주입하여 에이전트에게 다음을 알려줍니다:
    - ContextDB가 존재함
    - 전체 기록을 찾을 위치
@@ -193,7 +199,7 @@ export CTXDB_LAZY_LOAD=1
   "status": "running",
   "lastCheckpointSummary": "...",
   "keyRefs": ["scripts/ctx-agent-core.mjs"],
-  "contextPacketPath": "memory/context-db/exports/latest-claude-code-context.md",
+  "contextPacketPath": ".aios/context-db/exports/latest-claude-code-context.md",
   "hasStalePack": false
 }
 ```
@@ -210,7 +216,7 @@ npm run contextdb -- context:pack \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced \
-  --out memory/context-db/exports/<id>-compressed.md
+  --out .aios/context-db/exports/<id>-compressed.md
 ```
 
 생성된 패킷의 `Event Window` 줄에는 `tokenBudget`, `tokenUsed`, `rawTokenUsed`, `compressed`, `dropped`, `truncated` 가 표시되어 이벤트 삭제 전에 압축으로 token 을 절약했는지 확인할 수 있습니다.
@@ -272,7 +278,7 @@ ContextDB는 SQLite에 정규화된 `event_refs` 테이블을 유지합니다.
 ```bash
 npm run contextdb -- index:sync --stats
 npm run contextdb -- index:sync --force --stats
-npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
+npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 ```
 
 - `--stats`: sessions/events/checkpoints의 `scanned/upserted`, 소요 시간, throttle skip, force 플래그를 출력.
@@ -314,7 +320,7 @@ npm run contextdb -- search --query "issue auth" --project demo --semantic
 ContextDB는 진릿 데이터를 세션 파일에 저장하고, 속도를 위해 사이드카 인덱스를 사용합니다:
 
 ```text
-memory/context-db/
+.aios/context-db/
   sessions/<session_id>/*        # 진릿 데이터 (source of truth)
   index/context.db               # SQLite 사이드카 (재구축 가능)
   index/sessions.jsonl           # 호환성 인덱스
@@ -344,15 +350,15 @@ memory/context-db/
 
 - 권장: CLI를 종료한 뒤 셸에서 `codex` / `claude` / `gemini` / `opencode`를 다시 실행 (래퍼가 다시 `context:pack` 후 주입).
 - 같은 프로세스에서 계속해야 한다면: 새 대화 첫 메시지에서 최신 스냅샷을 읽도록 요청:
-  - `@memory/context-db/exports/latest-codex-cli-context.md`
-  - `@memory/context-db/exports/latest-claude-code-context.md`
-  - `@memory/context-db/exports/latest-gemini-cli-context.md`
+  - `@.aios/context-db/exports/latest-codex-cli-context.md`
+  - `@.aios/context-db/exports/latest-claude-code-context.md`
+  - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 클라이언트가 `@file` 참조를 지원하지 않으면, 파일 내용을 첫 프롬프트로 붙여넣으세요.
 
 ### Codex, Claude, Gemini는 컨텍스트를 공유하나요?
 
-네. 같은 래핑된 워크스페이스에서 실행되면 (git 루트를 사용할 수 있으면 같은 git 루트, 없으면 같은 현재 디렉터리), 같은 `memory/context-db/`를 사용합니다.
+네. 같은 래핑된 워크스페이스에서 실행되면 (git 루트를 사용할 수 있으면 같은 git 루트, 없으면 같은 현재 디렉터리), 같은 `.aios/context-db/`를 사용합니다.
 
 ### CLI 간 작업을 인계하려면 어떻게 하나요?
 

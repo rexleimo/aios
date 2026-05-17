@@ -75,7 +75,7 @@ memory/context-db/sessions/<session-id>/artifacts/solo-harness/
 - 지켜보는 대신 결과를 기다리고 싶을 때
 
 **사용하지 마세요:**
-- 작업을 독립적인 부분으로 나눌 수 있을 때 ([Agent Team](https://cli.rexai.top/team-ops/) 을 대신 사용)
+- 작업을 독립적인 부분으로 나눌 수 있을 때 ([Agent Team](https://cli.rexai.top/ko/team-ops/) 을 대신 사용)
 - 아직 요구사항을 정리하는 중일 때 (일반 세션으로 시작)
 - 품질 게이트가 있는 단계별 실행이 필요할 때 (orchestrate 를 사용)
 
@@ -99,4 +99,4 @@ aios harness run \
 
 ---
 
-*Solo Harness 는 AIOS 1.7 에 포함되어 있습니다. [전체 문서](https://cli.rexai.top/solo-harness/)를 읽거나 오늘 밤 직접 시도해 보세요.*
+*Solo Harness 는 AIOS 1.7 에 포함되어 있습니다. [전체 문서](https://cli.rexai.top/ko/solo-harness/)를 읽거나 오늘 밤 직접 시도해 보세요.*

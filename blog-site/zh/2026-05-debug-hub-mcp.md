@@ -104,9 +104,9 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 debug-hub 是 RexCLI **可观测性层**的一部分。它与以下工具协同工作：
 
-- [ContextDB](https://cli.rexai.top/contextdb/) — 跨会话的记忆
-- [Solo Harness](https://cli.rexai.top/solo-harness/) — 可自诊断的过夜运行
-- [Agent Team](https://cli.rexai.top/team-ops/) — 多 agent 链路追踪
+- [ContextDB](https://cli.rexai.top/zh/contextdb/) — 跨会话的记忆
+- [Solo Harness](https://cli.rexai.top/zh/solo-harness/) — 可自诊断的过夜运行
+- [Agent Team](https://cli.rexai.top/zh/team-ops/) — 多 agent 链路追踪
 
 当你的 agent 能自己调试，你就能信任它们跑更久、处理更复杂的任务、从错误中恢复——这一切都不需要你时刻关注。
 

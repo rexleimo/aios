@@ -26,6 +26,7 @@ New to RexCLI? These posts will get you oriented:
 - [Browser MCP Upgrades: Smarter Page Reading](2026-04-browser-mcp-weak-model-upgrade.md)
 - [Advanced Design Skills: From Vague Prompts to Production UI](advanced-design-skills-page-building.md)
 - [RexCLI TUI Refactor: A Better Terminal Experience](2026-04-rexcli-ink-tui-refactor.md)
+- [Windows CLI Startup Stability Update](windows-cli-startup-stability.md)
 
 ## Deep Dives
 

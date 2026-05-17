@@ -1,4 +1,4 @@
-import runSummarySchema from '../../../memory/specs/rl-shell-v1-run-summary.schema.json' with { type: 'json' };
+import runSummarySchema from '../specs/rl-shell-v1-run-summary.schema.json' with { type: 'json' };
 
 const ACTION_TYPES = new Set(['read', 'run', 'patch', 'stop']);
 const EPISODE_ENVIRONMENTS = new Set(['shell']);

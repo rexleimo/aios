@@ -201,8 +201,8 @@ preferredModel: claude-opus
 
 | 파일 | 용도 |
 |------|------|
-| `memory/specs/model-registry.json` | 모델 능력, 라우팅 규칙, CLI 프로토콜 설정 |
-| `memory/specs/orchestrator-agents.json` | Agent 롤→preferredModel 매핑 |
+| `scripts/lib/specs/model-registry.json` | 모델 능력, 라우팅 규칙, CLI 프로토콜 설정 |
+| `scripts/lib/specs/orchestrator-agents.json` | Agent 롤→preferredModel 매핑 |
 | `.claude/skills/model-router/SKILL.md` | Agent가 호출 가능한 셀프서비스 라우팅 스킬 |
 | `scripts/lib/model-router.mjs` | 라우터 로직: 매칭, 폴백, CLI 빌드, 통계 |
 

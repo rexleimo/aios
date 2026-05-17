@@ -28,7 +28,7 @@ description: wrapper、runner 与 ContextDB 的运行关系。
 每个被包装的工作区有独立的本地存储（git 根目录，如无则为当前目录）：
 
 ```text
-memory/context-db/
+.aios/context-db/
   manifest.json
   index/sessions.jsonl
   sessions/<session_id>/

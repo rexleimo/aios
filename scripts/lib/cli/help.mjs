@@ -58,6 +58,96 @@ Examples:
 `;
 }
 
+function normalizeMemoHelpPath(argv = []) {
+  const path = [];
+  for (const raw of argv) {
+    const token = String(raw || '').trim().toLowerCase();
+    if (!token || token === '--' || token === '-h' || token === '--help' || token === 'help') {
+      continue;
+    }
+    if (token.startsWith('-')) {
+      continue;
+    }
+    path.push(token);
+  }
+  return path;
+}
+
+function getMemoStorageHelpText(path = []) {
+  const subcommand = path[1] || '';
+
+  switch (subcommand) {
+    case 'status':
+      return `Usage:
+  node scripts/aios.mjs memo storage status
+
+Show active memo storage status and supported storage backends.
+`;
+    case 'use':
+      return `Usage:
+  node scripts/aios.mjs memo storage use <split|file>
+
+Switch active memo storage to split or file.
+`;
+    case 'rebuild':
+      return `Usage:
+  node scripts/aios.mjs memo storage rebuild
+
+Run a full rebuild of derived memo query files without rewriting canonical memo records.
+`;
+    case 'doctor':
+      return `Usage:
+  node scripts/aios.mjs memo storage doctor
+
+Check memo storage health and report repair guidance.
+`;
+    default:
+      return `Usage:
+  node scripts/aios.mjs memo storage <subcommand> [options]
+
+Subcommands:
+  status          Show active memo storage status
+  use split       Switch active memo storage to split files
+  use file        Switch active memo storage to append-only file
+  rebuild         Run a full rebuild of derived query files
+  doctor          Check memo storage health
+`;
+  }
+}
+
+export function getMemoHelpText(argv = []) {
+  const path = normalizeMemoHelpPath(argv);
+  if (path[0] === 'storage') {
+    return getMemoStorageHelpText(path);
+  }
+
+  return `Usage:
+  node scripts/aios.mjs memo <subcommand> [options]
+
+Subcommands:
+  add <text>                          Append memo event (supports #tag)
+  pin show                            Print pinned memory
+  pin set <text>                      Replace pinned memory
+  pin add <text>                      Append to pinned memory
+  persona init|show|path              Initialize/read global persona baseline
+  persona set <text>                  Replace global persona baseline
+  persona add <text>                  Append to global persona baseline
+  user init|show|path                 Initialize/read global user profile memory
+  user set <text>                     Replace global user profile memory
+  user add <text>                     Append to global user profile memory
+  search <query> [--limit N] [--semantic]
+                                      Search memos
+  recall [query] [--limit N] [--highlight-limit N]
+                                      Human-readable session recall digest
+  gui [--port N] [--project name] [--no-open]
+                                      Open project-local ContextDB memory genealogy graph
+  storage                             Manage memo storage backend
+
+Storage:
+  node scripts/aios.mjs memo storage --help
+`;
+}
+
 export function getCommandHelpText(command) {
   switch (command) {
     case 'init':
@@ -125,41 +215,7 @@ Options:
   -h, --help
 `;
     case 'memo':
-      return `Usage:
-  node scripts/aios.mjs memo <subcommand> [options]
-
-Subcommands:
-  use <space>                         Set active workspace memory space
-  space list                          List existing spaces
-  add <text>                          Append memo event (supports #tag)
-  list [--limit N]                    List recent memos (default: 20)
-  search <query> [--limit N] [--semantic]
-                                      Search memos in current space
-  pin show                            Print pinned memory for current space
-  pin set <text>                      Replace pinned memory for current space
-  pin add <text>                      Append to pinned memory for current space
-  persona init|show|path              Initialize/read global persona baseline
-  persona set <text>                  Replace global persona baseline
-  persona add <text>                  Append to global persona baseline
-  user init|show|path                 Initialize/read global user profile memory
-  user set <text>                     Replace global user profile memory
-  user add <text>                     Append to global user profile memory
-  recall [query] [--limit N] [--highlight-limit N]
-                                      Human-readable session recall digest
-  gui [--port N] [--project name] [--no-open]
-                                      Open project-local ContextDB memory genealogy graph
-
-Environment:
-  WORKSPACE_MEMORY_SPACE              Override active space for this run
-  WORKSPACE_MEMORY_MEMO_ENTRY_MAX_CHARS
-                                      Max chars for a single memo add payload
-  WORKSPACE_MEMORY_PINNED_MAX_CHARS   Max chars for pinned memory content
-  AIOS_IDENTITY_HOME                  Default directory for SOUL.md/USER.md
-  AIOS_PERSONA_PATH                   Explicit global persona file path
-  AIOS_PERSONA_MAX_CHARS              Max chars for global persona memory
-  AIOS_USER_PROFILE_PATH              Explicit global user profile file path
-  AIOS_USER_PROFILE_MAX_CHARS         Max chars for global user profile memory
-`;
+      return getMemoHelpText();
     case 'quality-gate':
       return `Usage:
   node scripts/aios.mjs quality-gate [quick|full|pre-pr] [options]

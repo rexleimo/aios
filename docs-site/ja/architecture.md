@@ -23,7 +23,7 @@ description: wrapper / runner / ContextDB の構成。
 各ラップされたワークスペースは独立したローカルストレージを持ちます（git ルートがある場合はそれを使用、なければカレントディレクトリ）：
 
 ```text
-memory/context-db/
+.aios/context-db/
   manifest.json
   index/sessions.jsonl
   sessions/<session_id>/

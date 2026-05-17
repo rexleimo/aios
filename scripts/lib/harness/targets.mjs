@@ -1,4 +1,4 @@
-import targetsSpec from '../../../memory/specs/harness-targets.json' with { type: 'json' };
+import targetsSpec from '../specs/harness-targets.json' with { type: 'json' };
 
 export const HARNESS_TARGET_TYPES = ['gate', 'runbook', 'checklist', 'sample', 'blueprint'];
 

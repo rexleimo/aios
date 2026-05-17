@@ -16,7 +16,7 @@ const testDir = path.join(__dirname, '..', '..', 'temp', 'skill-index-test');
 
 async function setupTestDir() {
   await fs.rm(testDir, { recursive: true, force: true });
-  await fs.mkdir(path.join(testDir, 'memory', 'skills'), { recursive: true });
+  await fs.mkdir(path.join(testDir, '.codex', 'skills'), { recursive: true });
   await fs.mkdir(path.join(testDir, '.aios', 'workspace'), { recursive: true });
 }
 
@@ -27,26 +27,23 @@ async function teardownTestDir() {
 test('buildSkillIndex extracts skill summaries', async () => {
   await setupTestDir();
 
-  const skill1 = {
-    name: 'publish笔记',
-    version: '1.0.0',
-    trigger_keywords: ['发布', '笔记']
-  };
+  await fs.mkdir(path.join(testDir, '.codex', 'skills', 'publish-note'), { recursive: true });
+  await fs.writeFile(path.join(testDir, '.codex', 'skills', 'publish-note', 'SKILL.md'), `---
+name: publish笔记
+description: "发布流程。TRIGGER: 发布, 笔记"
+version: 1.0.0
+---
+# publish笔记
+`);
 
-  const skill2 = {
-    skill_name: '互动操作',
-    version: '2.0.0',
-    trigger_keywords: ['点赞', '评论', '关注']
-  };
-
-  await fs.writeFile(
-    path.join(testDir, 'memory', 'skills', 'publish笔记.json'),
-    JSON.stringify(skill1)
-  );
-  await fs.writeFile(
-    path.join(testDir, 'memory', 'skills', '互动操作.json'),
-    JSON.stringify(skill2)
-  );
+  await fs.mkdir(path.join(testDir, '.codex', 'skills', 'interaction-ops'), { recursive: true });
+  await fs.writeFile(path.join(testDir, '.codex', 'skills', 'interaction-ops', 'SKILL.md'), `---
+name: 互动操作
+description: "互动流程。TRIGGER: 点赞, 评论, 关注"
+version: 2.0.0
+---
+# 互动操作
+`);
 
   const index = await buildSkillIndex(testDir);
 
@@ -54,13 +51,15 @@ test('buildSkillIndex extracts skill summaries', async () => {
   assert.strictEqual(index.skills[0].name, 'publish笔记');
   assert.strictEqual(index.skills[0].version, '1.0.0');
   assert.deepStrictEqual(index.skills[0].keywords, ['发布', '笔记']);
+  assert.strictEqual(index.skills[0].file, '.codex/skills/publish-note/SKILL.md');
   assert.strictEqual(index.skills[1].name, '互动操作');
 
   await teardownTestDir();
 });
 
-test('buildSkillIndex skips malformed files', async () => {
+test('buildSkillIndex skips malformed legacy files', async () => {
   await setupTestDir();
+  await fs.mkdir(path.join(testDir, 'memory', 'skills'), { recursive: true });
 
   await fs.writeFile(
     path.join(testDir, 'memory', 'skills', 'good.json'),
@@ -79,6 +78,31 @@ test('buildSkillIndex skips malformed files', async () => {
 
   assert.strictEqual(index.skills.length, 1);
   assert.strictEqual(index.skills[0].name, 'good');
+
+  await teardownTestDir();
+});
+
+test('buildSkillIndex prefers discoverable project skills over legacy JSON duplicates', async () => {
+  await setupTestDir();
+  await fs.mkdir(path.join(testDir, '.codex', 'skills', 'good'), { recursive: true });
+  await fs.writeFile(path.join(testDir, '.codex', 'skills', 'good', 'SKILL.md'), `---
+name: good
+description: "modern skill"
+---
+# good
+`);
+
+  await fs.mkdir(path.join(testDir, 'memory', 'skills'), { recursive: true });
+  await fs.writeFile(
+    path.join(testDir, 'memory', 'skills', 'good.json'),
+    JSON.stringify({ name: 'good', version: '0.1.0', trigger_keywords: ['legacy'] })
+  );
+
+  const index = await buildSkillIndex(testDir);
+
+  assert.strictEqual(index.skills.length, 1);
+  assert.strictEqual(index.skills[0].file, '.codex/skills/good/SKILL.md');
+  assert.strictEqual(index.skills[0].source, 'skill');
 
   await teardownTestDir();
 });

@@ -174,7 +174,7 @@ test('buildAgentView assembles view from workspace and session data', async () =
     const { writeSkillIndex } = await import('../lib/contextdb/skill-index.mjs');
     await writeSkillIndex(tmpDir, {
       skills: [
-        { name: '发布笔记', file: 'memory/skills/发布笔记.json', keywords: ['发布'], taskTypes: ['content-publish'], version: 1 },
+        { name: '发布笔记', file: '.codex/skills/发布笔记/SKILL.md', keywords: ['发布'], taskTypes: ['content-publish'], version: 1 },
       ],
     });
 

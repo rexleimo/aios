@@ -246,6 +246,132 @@ test('buildWorkspaceMemoryOverlay reads pinned and recent memos', async () => {
   }
 });
 
+test('buildWorkspaceMemoryOverlay prefers canonical memo storage over legacy workspace memory', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workspace-memory-canonical-'));
+
+  try {
+    const canonicalPinnedDir = path.join(workspaceRoot, 'memory', 'memo', 'file', 'pinned');
+    await mkdir(canonicalPinnedDir, { recursive: true });
+    await writeFile(path.join(canonicalPinnedDir, 'default.md'), 'Canonical pinned note\n', 'utf8');
+
+    const canonicalEventsDir = path.join(workspaceRoot, 'memory', 'memo', 'file');
+    await mkdir(canonicalEventsDir, { recursive: true });
+    await writeFile(
+      path.join(canonicalEventsDir, 'events.jsonl'),
+      [
+        JSON.stringify({
+          ts: '2026-03-11T05:00:00.000Z',
+          role: 'user',
+          kind: 'memo',
+          space: 'default',
+          text: 'canonical first memo',
+          refs: [],
+        }),
+        JSON.stringify({
+          ts: '2026-03-11T06:00:00.000Z',
+          role: 'user',
+          kind: 'memo',
+          space: 'default',
+          text: 'canonical latest memo',
+          refs: ['canonical'],
+        }),
+      ].join('\n') + '\n',
+      'utf8'
+    );
+
+    const legacySessionRoot = path.join(
+      workspaceRoot,
+      '.aios',
+      'context-db',
+      'sessions',
+      'workspace-memory--default'
+    );
+    await mkdir(legacySessionRoot, { recursive: true });
+    await writeFile(path.join(legacySessionRoot, 'meta.json'), '{}\n', 'utf8');
+    await writeFile(path.join(legacySessionRoot, 'pinned.md'), 'Legacy pinned note\n', 'utf8');
+    await writeFile(
+      path.join(legacySessionRoot, 'l2-events.jsonl'),
+      `${JSON.stringify({
+        ts: '2026-03-11T00:00:00.000Z',
+        role: 'user',
+        kind: 'memo',
+        text: 'legacy memo should not win',
+        refs: [],
+      })}\n`,
+      'utf8'
+    );
+
+    const overlay = await buildWorkspaceMemoryOverlay(workspaceRoot, {
+      CTXDB_WORKSPACE_MEMORY: '1',
+      WORKSPACE_MEMORY_SPACE: 'default',
+      WORKSPACE_MEMORY_RECENT_LIMIT: '1',
+      WORKSPACE_MEMORY_MAX_CHARS: '4000',
+    });
+
+    assert.match(overlay, /Canonical pinned note/);
+    assert.match(overlay, /canonical latest memo/);
+    assert.match(overlay, /#canonical/);
+    assert.doesNotMatch(overlay, /Legacy pinned note/);
+    assert.doesNotMatch(overlay, /legacy memo should not win/);
+    assert.doesNotMatch(overlay, /canonical first memo/);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('buildWorkspaceMemoryOverlay warns and falls back when canonical memo storage is malformed', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workspace-memory-canonical-bad-'));
+  const warnings = [];
+  const originalWarn = console.warn;
+
+  try {
+    const canonicalEventsDir = path.join(workspaceRoot, 'memory', 'memo', 'file');
+    await mkdir(canonicalEventsDir, { recursive: true });
+    await writeFile(path.join(canonicalEventsDir, 'events.jsonl'), '{not-json}\n', 'utf8');
+
+    const legacySessionRoot = path.join(
+      workspaceRoot,
+      '.aios',
+      'context-db',
+      'sessions',
+      'workspace-memory--default'
+    );
+    await mkdir(legacySessionRoot, { recursive: true });
+    await writeFile(path.join(legacySessionRoot, 'meta.json'), '{}\n', 'utf8');
+    await writeFile(path.join(legacySessionRoot, 'pinned.md'), 'Legacy fallback pinned note\n', 'utf8');
+    await writeFile(
+      path.join(legacySessionRoot, 'l2-events.jsonl'),
+      `${JSON.stringify({
+        ts: '2026-03-11T00:00:00.000Z',
+        role: 'user',
+        kind: 'memo',
+        text: 'legacy fallback memo',
+        refs: [],
+      })}\n`,
+      'utf8'
+    );
+
+    console.warn = (...args) => {
+      warnings.push(args.join(' '));
+    };
+
+    const overlay = await buildWorkspaceMemoryOverlay(workspaceRoot, {
+      CTXDB_WORKSPACE_MEMORY: '1',
+      WORKSPACE_MEMORY_SPACE: 'default',
+      WORKSPACE_MEMORY_RECENT_LIMIT: '2',
+      WORKSPACE_MEMORY_MAX_CHARS: '4000',
+    });
+
+    assert.match(overlay, /Legacy fallback pinned note/);
+    assert.match(overlay, /legacy fallback memo/);
+    assert.match(warnings.join('\n'), /canonical memo storage overlay skipped/);
+    assert.match(warnings.join('\n'), /Malformed memo JSONL/);
+  } finally {
+    console.warn = originalWarn;
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
 test('buildWorkspaceMemoryOverlay drops unsafe pinned/memo content and reports safety notices', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workspace-memory-safety-'));
 

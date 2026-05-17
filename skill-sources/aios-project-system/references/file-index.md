@@ -11,16 +11,16 @@
 - `config/settings.json`
 
 ## Adjust operational behavior
-- `memory/skills/*.json`
-- `memory/specs/*.json`
-- `memory/skills/技能使用约束.json`
+- `.codex/skills/*/SKILL.md`
+- `scripts/lib/specs/*.json`
+- `.codex/skills/skill-constraints/SKILL.md`
 
 ## Diagnose and document failures
 - `tasks/failed/`
-- `memory/history/`
+- `.aios/context-db/`
 - `docs/plans/*.md`
 
 ## Jimeng-specific files
-- `memory/skills/即梦AI生成图片.json`
+- `.codex/skills/aios-jimeng-image-ops/SKILL.md`
 - `docs/plans/2026-03-01-jimeng-ai-image-gen-design.md`
 - `docs/plans/2026-03-01-jimeng-ai-image-gen-implementation-plan.md`

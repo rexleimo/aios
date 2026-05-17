@@ -48,7 +48,7 @@ codex
 Then verify persistent artifacts exist:
 
 ```bash
-ls memory/context-db
+ls .aios/context-db
 ```
 
 Expected: `sessions/`, `index/`, `exports/`.

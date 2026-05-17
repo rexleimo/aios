@@ -23,7 +23,7 @@ description: wrapper, runner, ContextDB 구성.
 각 래핑된 워크스페이스는 독립적인 로컬 스토리지를 가집니다（git 루트가 있으면 사용, 없으면 현재 디렉터리）：
 
 ```text
-memory/context-db/
+.aios/context-db/
   manifest.json
   index/sessions.jsonl
   sessions/<session_id>/

@@ -75,7 +75,7 @@ memory/context-db/sessions/<session-id>/artifacts/solo-harness/
 - 你想一觉醒来拿到结果，而不是全程盯着
 
 **不适合用：**
-- 任务能拆成独立的部分（用 [Agent Team](https://cli.rexai.top/team-ops/)）
+- 任务能拆成独立的部分（用 [Agent Team](https://cli.rexai.top/zh/team-ops/)）
 - 你还在理需求（先用普通会话）
 - 你需要带质量关卡的阶段性执行（用 orchestrate）
 
@@ -99,4 +99,4 @@ aios harness run \
 
 ---
 
-*Solo Harness 在 AIOS 1.7 中发布。阅读[完整文档](https://cli.rexai.top/solo-harness/)或今晚就试试。*
+*Solo Harness 在 AIOS 1.7 中发布。阅读[完整文档](https://cli.rexai.top/zh/solo-harness/)或今晚就试试。*

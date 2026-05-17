@@ -171,7 +171,7 @@ aios hud --export-skill-candidate-patch-template --draft-id <draft-id>
 aios hud --export-skill-candidate-patch-template --skill-candidate-limit 5
 ```
 
-**Output location**: `memory/context-db/sessions/<session-id>/artifacts/skill-candidate-patch-template-<timestamp>.md`
+**Output location**: `.aios/context-db/sessions/<session-id>/artifacts/skill-candidate-patch-template-<timestamp>.md`
 
 ### Filter by Draft ID
 

@@ -55,8 +55,8 @@ scripts/ctx-agent.sh \
 ```
 
 ## Verification
-- Context packet output: `memory/context-db/exports/<session_id>-context.md`
-- Session files: `memory/context-db/sessions/<session_id>/`
+- Context packet output: `.aios/context-db/exports/<session_id>-context.md`
+- Session files: `.aios/context-db/sessions/<session_id>/`
 
 ## New ContextDB Retrieval Commands
 
@@ -80,7 +80,7 @@ npm run contextdb -- search --query "issue auth" --project rex-cli --semantic
 
 Recovery:
 - If retrieval returns empty unexpectedly, run `index:rebuild` once.
-- Source-of-truth remains `memory/context-db/sessions/*`; sidecar is rebuildable cache.
+- Source-of-truth remains `.aios/context-db/sessions/*`; sidecar is rebuildable cache.
 
 ## Packet Budget and Filters
 

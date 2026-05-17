@@ -95,7 +95,7 @@ aios init
 That's it. `aios init` detects your installed coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode) and configures each one to use the memory system. It's **idempotent** — safe to run multiple times.
 
 ??? info "How it works"
-    `aios init` adds a lightweight marker (`<!-- AIOS: memory/context-db/index.json -->`) to each agent's config file (CLAUDE.md, AGENTS.md, GEMINI.md). When your agent starts, it sees the marker, reads the context registry, and loads only what it needs — no more waiting through lengthy context injection.
+    `aios init` adds a lightweight marker (`<!-- AIOS: .aios/context-db/index.json -->`) to each agent's config file (CLAUDE.md, AGENTS.md, GEMINI.md). When your agent starts, it sees the marker, reads the context registry, and loads only what it needs — no more waiting through lengthy context injection.
 
 ??? info "Opt-in mode (legacy)"
     If you prefer the old opt-in method, you can still use:
@@ -137,7 +137,7 @@ Run this to check that memory is active:
 
 ```bash
 aios doctor --native --verbose
-ls memory/context-db/
+ls .aios/context-db/
 ```
 
 You should see directories like `sessions/`, `index/`, or `exports/`. That means memory is recording.
@@ -156,7 +156,7 @@ You have memory working. Here are the next things to try, in order of usefulness
 
 ### Save Persistent Notes With Memo
 
-Memo lets you save notes that your agent will see in every session:
+Memo lets you save Git-friendly project notes that your agent will see in every session:
 
 ```bash
 # Save a note about this project
@@ -167,7 +167,12 @@ aios memo pin add "Never push directly to main"
 
 # Search your notes later
 aios memo search "typescript"
+
+# Inspect the active storage implementation
+aios memo storage status
 ```
+
+By default, project memos are append-only JSONL under `memory/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
 
 ### Set Your Agent's Personality
 

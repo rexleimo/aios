@@ -66,7 +66,7 @@ sleep $((RANDOM % 26 + 5))
 | 截图保存到 temp/ | 路径固定为 aios/temp/ |
 | 先读文本/DOM | `page.extract_text -> page.get_html` |
 | 使用 grep 搜索快照 | 而非目视查看截图 |
-| 记录到历史 | 关键操作写入 memory/history/ |
+| 记录到历史 | 关键操作写入 `.aios/context-db` checkpoint/event |
 | 登录态检测 | 识别到登录页/验证码/2FA 时先提示用户协作登录 |
 
 ### MCP 工具优先级

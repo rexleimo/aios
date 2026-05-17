@@ -14,6 +14,12 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 ## 최신 안정 버전
 
+- `1.17.0` (2026-05-16):
+  - **Memo Storage**: `aios memo` 는 storage abstraction 을 사용하며 public implementation 은 `file` (기본 append-only JSONL: `memory/memo/file/events.jsonl`) 과 `split` (memo event 마다 JSON 파일 하나) 두 가지입니다. `aios memo storage status`, `aios memo storage use split`, `aios memo storage use file`, `aios memo storage rebuild`, `aios memo storage doctor` 로 관리합니다.
+  - **Git-friendly memo source of truth**: `memory/memo/` 가 project memo 의 canonical root 입니다. ContextDB/SQLite 는 호환 mirror 와 재구축 가능한 cache 이며 memo source of truth 가 아닙니다.
+  - **Runtime state alignment**: 새로운 ContextDB runtime state 는 `.aios/context-db/` 에 기록됩니다. legacy `memory/context-db` 는 이미 존재할 때만 compatibility read path 로 사용됩니다.
+  - 자세한 내용은 [ContextDB](contextdb.md#workspace-memory-aios-memo) 의 memo storage boundary 를 참조하세요.
+
 - `1.11.0` (2026-05-09):
   - **debug-hub v0.3**: 인스트루먼트 추적과 자동 정리. 새로운 MCP 도구: `instrument`, `list_instruments`, `cleanup_instruments`. 마커 규칙 `DH:<sessionId>`로 제로 의존성 디버그 코드 주입과 듀얼 모드 정리 (명시적 모드는 instrument 기록, 폴백은 workspace grep). `dryRun` 미리보기 지원. 워크스페이스 메모리를 통한 크로스 모델 디버그 프로토콜. 업스트림 debug 스킬을 debug-hub 스킬로 교체. 자세한 내용은 [debug-hub](debug-hub.md) 참조.
 
@@ -101,7 +107,7 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 ## 2026-03-16 운영 상황
 
 - Continuous live 샘플이 성공 중（`dispatchRun.ok=true`）, 최신 아티팩트:
-  - `memory/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
+  - `.aios/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
 - `learn-eval` 이 아직 권장:
   - `[fix] runbook.failure-triage`（`clarity-needs-input=5`）
   - `[observe] sample.latency-watch`（`avgElapsedMs=160678`）

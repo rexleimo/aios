@@ -75,7 +75,7 @@ memory/context-db/sessions/<session-id>/artifacts/solo-harness/
 - 見守るのではなく、結果が出たタイミングで確認したい
 
 **使わないべきケース:**
-- タスクが独立した部分に分割できる（代わりに [Agent Team](https://cli.rexai.top/team-ops/) を使ってください）
+- タスクが独立した部分に分割できる（代わりに [Agent Team](https://cli.rexai.top/ja/team-ops/) を使ってください）
 - まだ要件を整理中（通常のセッションで始めてください）
 - 品質ゲート付きの段階的実行が必要（orchestrate を使ってください）
 
@@ -99,4 +99,4 @@ aios harness run \
 
 ---
 
-*Solo Harness は AIOS 1.7 でリリースされました。[ドキュメント](https://cli.rexai.top/solo-harness/)を読むか、今夜試してみてください。*
+*Solo Harness は AIOS 1.7 でリリースされました。[ドキュメント](https://cli.rexai.top/ja/solo-harness/)を読むか、今夜試してみてください。*

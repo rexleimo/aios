@@ -95,7 +95,7 @@ scripts/ctx-agent.sh --agent gemini-cli --prompt "회귀 위험과 누락된 테
 
 **증거**
 
-- `memory/context-db/`에 새로운 session/checkpoint 아티팩트
+- `.aios/context-db/`에 새로운 session/checkpoint 아티팩트
 - 이후 CLI 실행이 같은 프로젝트 컨텍스트를 사용하여 계속 가능
 
 ## 사례 4: 인증벽 처리 (인간 개입)
@@ -133,8 +133,8 @@ scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "최신 checkpo
 
 **증거**
 
-- `memory/context-db/index/checkpoints.jsonl`에 새 checkpoint 항목
-- `memory/context-db/exports/`에 내보내기된 context packet
+- `.aios/context-db/index/checkpoints.jsonl`에 새 checkpoint 항목
+- `.aios/context-db/exports/`에 내보내기된 context packet
 
 ## 사례 6: Skills 라이프사이클 운영
 

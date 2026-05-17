@@ -100,7 +100,7 @@ aios init
 `aios init` 会检测你安装的编程 agent（Claude Code、Codex CLI、Gemini CLI、OpenCode），为每个 agent 配置记忆系统。**幂等操作** — 重复运行不会出错。
 
 ??? info "工作原理"
-    `aios init` 在每个 agent 的配置文件（CLAUDE.md、AGENTS.md、GEMINI.md）头部添加一个轻量标记（`<!-- AIOS: memory/context-db/index.json -->`）。Agent 启动时看到标记，读取 context registry，按需加载上下文 — 不再等待漫长的上下文注入。
+    `aios init` 在每个 agent 的配置文件（CLAUDE.md、AGENTS.md、GEMINI.md）头部添加一个轻量标记（`<!-- AIOS: .aios/context-db/index.json -->`）。Agent 启动时看到标记，读取 context registry，按需加载上下文 — 不再等待漫长的上下文注入。
 
 ??? info "旧版 opt-in 模式"
     如果你更喜欢旧的方式，仍然可以用：
@@ -134,14 +134,14 @@ gemini
 
     ```bash
     aios doctor --native --verbose
-    ls -la memory/context-db
+    ls -la .aios/context-db
     ```
 
 === "Windows PowerShell"
 
     ```powershell
     aios doctor --native --verbose
-    Get-ChildItem -Path memory/context-db -ErrorAction SilentlyContinue
+    Get-ChildItem -Path .aios/context-db -ErrorAction SilentlyContinue
     ```
 
 看到 `sessions/`、`index/` 或 `exports/` 这类目录，说明 ContextDB 已经开始记录。
@@ -177,7 +177,6 @@ setup 后可以在原生客户端里直接使用路由快捷命令：
 如果你想要可持续的项目笔记，但不想手动改 ContextDB 文件：
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo persona init
@@ -185,13 +184,16 @@ aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user init
 aios memo user add "Preferred language: zh-CN + technical English terms"
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 ```
 
 记忆分层：
 
-- `memo add/list/search/recall` -> ContextDB 事件层
-- `memo pin` -> 工作区 `pinned.md`
+- `memo add/search/recall` -> 规范 `memory/memo` 存储（仅为兼容性镜像 legacy ContextDB）
+- `memo pin` -> 规范 `memory/memo` pinned 文件（仅为兼容性镜像 legacy workspace-memory）
 - `memo persona/user` -> 全局身份文件（`~/.aios/SOUL.md`、`~/.aios/USER.md`），会在项目 memo 之前注入 `ctx-agent` 的 Memory prelude
+
+默认项目 memo 写入 `memory/memo/file/events.jsonl`（append-only JSONL）。如果更希望一条 memo 一个 JSON 文件，可执行 `aios memo storage use split`；`storage rebuild` 只重建派生查询文件，不改写规范记录。
 
 ## 7) 多 Agent 的最短用法
 

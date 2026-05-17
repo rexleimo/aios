@@ -15,6 +15,7 @@ import {
   workspaceMemorySessionId,
   workspaceMemoryStatePath,
 } from './lib/memo/workspace-memory.mjs';
+import { getActiveMemoStorage, listMemoEvents, readPinnedMemo } from './lib/memo/storage.mjs';
 import { buildPersonaOverlay, ensurePersonaLayer } from './lib/memo/persona.mjs';
 import { scanWorkspaceMemoryContent } from './lib/memo/safety.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from './lib/contextdb/continuity.mjs';
@@ -719,6 +720,27 @@ async function loadRecentMemoEvents(eventsPath, limit) {
   return results;
 }
 
+async function loadCanonicalWorkspaceMemory(workspaceRoot, space, recentLimit) {
+  try {
+    const storage = await getActiveMemoStorage(workspaceRoot);
+    const [pinned, memos] = await Promise.all([
+      readPinnedMemo(workspaceRoot, { storage, space }),
+      listMemoEvents(workspaceRoot, { storage, space, limit: recentLimit }),
+    ]);
+    return {
+      pinned: String(pinned || ''),
+      memos: Array.isArray(memos) ? memos : [],
+      available: Boolean(String(pinned || '').trim()) || (Array.isArray(memos) && memos.length > 0),
+    };
+  } catch (error) {
+    if (existsSync(path.join(path.resolve(workspaceRoot || process.cwd()), 'memory', 'memo'))) {
+      const reason = error instanceof Error ? error.message : String(error);
+      console.warn(`[warn] canonical memo storage overlay skipped: ${reason}`);
+    }
+    return { pinned: '', memos: [], available: false };
+  }
+}
+
 export async function buildWorkspaceMemoryOverlay(workspaceRoot, env = process.env) {
   if (!shouldInjectWorkspaceMemory(env)) return '';
 
@@ -727,15 +749,19 @@ export async function buildWorkspaceMemoryOverlay(workspaceRoot, env = process.e
   const recentLimit = parseBoundedIntegerEnv(env.WORKSPACE_MEMORY_RECENT_LIMIT, 10, { min: 0, max: 50 });
 
   const sessionId = workspaceMemorySessionId(space);
-  if (!existsSync(workspaceMemoryMetaPath(workspaceRoot, sessionId))) {
+  const canonical = await loadCanonicalWorkspaceMemory(workspaceRoot, space, recentLimit);
+  const hasLegacySession = existsSync(workspaceMemoryMetaPath(workspaceRoot, sessionId));
+  if (!canonical.available && !hasLegacySession) {
     return '';
   }
 
-  let pinned = '';
-  try {
-    pinned = await fs.readFile(workspaceMemoryPinnedPath(workspaceRoot, sessionId), 'utf8');
-  } catch {
-    pinned = '';
+  let pinned = canonical.available ? canonical.pinned : '';
+  if (!canonical.available) {
+    try {
+      pinned = await fs.readFile(workspaceMemoryPinnedPath(workspaceRoot, sessionId), 'utf8');
+    } catch {
+      pinned = '';
+    }
   }
   pinned = String(pinned || '').trim();
 
@@ -752,7 +778,9 @@ export async function buildWorkspaceMemoryOverlay(workspaceRoot, env = process.e
     }
   }
 
-  const memos = await loadRecentMemoEvents(workspaceMemoryEventsPath(workspaceRoot, sessionId), recentLimit);
+  const memos = canonical.available
+    ? canonical.memos.slice(0, recentLimit)
+    : await loadRecentMemoEvents(workspaceMemoryEventsPath(workspaceRoot, sessionId), recentLimit);
   const safeMemos = [];
   for (const memo of memos) {
     const memoText = memo?.text ? String(memo.text) : '';

@@ -123,7 +123,6 @@ Before claiming any task complete:
 
 ## Resource Links
 
-- `memory/specs/行为规范.json` - Safety specifications
-- `memory/specs/风险检测.json` - Risk detection rules
+- `scripts/lib/specs/` - Runtime and safety specifications
 - `docs/plans/` - Implementation plans
-- `memory/history/` - Operation records
+- `.aios/context-db/` - Runtime operation records

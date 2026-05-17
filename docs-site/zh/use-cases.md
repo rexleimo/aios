@@ -46,19 +46,21 @@ codex
 如果你希望在 CLI 里快速记录长期偏好/项目约束，用 `aios memo`：
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
 
 记忆分层规则：
 
-- `memo add/list/search/recall` -> ContextDB 事件层
-- `memo pin` -> 当前工作区 pinned 文件
+- `memo add/search/recall` -> 规范 `memory/memo` 存储（仅为兼容性镜像 legacy ContextDB）
+- `memo pin` -> 规范 `memory/memo` pinned 文件（仅为兼容性镜像 legacy workspace-memory）
 - `memo persona/user` -> 全局身份文件，会注入 `ctx-agent` 的 Memory prelude
+
+默认 storage 是 `file`（`memory/memo/file/events.jsonl`）。只有想要一条 memo 一个 JSON 文件时，才用 `aios memo storage use split`。`storage rebuild` 只全量重建派生查询文件。
 
 Persona 用来描述 agent 基线（“这个 AI 应该怎么工作”），User profile 用来描述用户稳定偏好（“这个用户希望怎么交付”）。两者注入前都会经过安全扫描和容量限制。
 

@@ -201,8 +201,8 @@ preferredModel: claude-opus
 
 | ファイル | 用途 |
 |------|---------|
-| `memory/specs/model-registry.json` | モデル能力、ルーティングルール、CLIプロトコル設定 |
-| `memory/specs/orchestrator-agents.json` | Agent ロール→preferredModel マッピング |
+| `scripts/lib/specs/model-registry.json` | モデル能力、ルーティングルール、CLIプロトコル設定 |
+| `scripts/lib/specs/orchestrator-agents.json` | Agent ロール→preferredModel マッピング |
 | `.claude/skills/model-router/SKILL.md` | Agent 呼び出し可能なセルフサービスルーティングスキル |
 | `scripts/lib/model-router.mjs` | ルーターロジック：マッチング、フォールバック、CLIビルド、統計 |
 

@@ -48,7 +48,7 @@ codex
 次に永続化アーティファクトが存在することを確認：
 
 ```bash
-ls memory/context-db
+ls .aios/context-db
 ```
 
 期待値：`sessions/`、`index/`、`exports/`。

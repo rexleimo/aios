@@ -14,8 +14,14 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 
 ## Latest Stable
 
+- `1.17.0` (2026-05-16):
+  - **Memo Storage**: `aios memo` now uses a storage abstraction with two public implementations: `file` (default append-only JSONL at `memory/memo/file/events.jsonl`) and `split` (one JSON file per memo event). Manage it with `aios memo storage status`, `aios memo storage use split`, `aios memo storage use file`, `aios memo storage rebuild`, and `aios memo storage doctor`.
+  - **Git-friendly memo source of truth**: `memory/memo/` is the canonical project memo root. ContextDB/SQLite remain compatibility mirrors and rebuildable caches, not the memo source of truth.
+  - **Runtime state alignment**: new ContextDB runtime state is written under `.aios/context-db/`; legacy `memory/context-db` paths are read only for compatibility when present.
+  - See [ContextDB](contextdb.md#memory-with-memo) for the memo storage boundary.
+
 - `1.13.0` (2026-05-15):
-  - **Context Registry (Pull-Based Context)**: Replaces push-based context injection (~30KB every session) with a lightweight ~350 byte registry pointer. Agents now read `memory/context-db/index.json` and load only what they need. Startup drops from ~5 minutes to near-instant.
+  - **Context Registry (Pull-Based Context)**: Replaces push-based context injection (~30KB every session) with a lightweight ~350 byte registry pointer. Agents now read `.aios/context-db/index.json` and load only what they need. Startup drops from ~5 minutes to near-instant.
   - **`aios init`**: One-command setup for all four coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode). Detects installed agents, writes registry marker to config files, configures save guard hooks. Idempotent — safe to run multiple times.
   - **Multi-client native sync fix**: Gemini now writes to `GEMINI.md` (the file Gemini CLI actually reads). OpenCode reads `AGENTS.md` directly (no separate file needed). Old `.gemini/AIOS.md` and `.opencode/AIOS.md` deprecated.
   - **`--context-mode slim`**: Team/harness routes and wrapped agents automatically use slim injection when the registry marker is detected. Falls back to full injection for unwrapped agents.
@@ -111,7 +117,7 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 ## 2026-03-16 Operational Status
 
 - Continuous live samples are succeeding (`dispatchRun.ok=true`) with latest artifact:
-  - `memory/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
+  - `.aios/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
 - `learn-eval` still recommends:
   - `[fix] runbook.failure-triage` (`clarity-needs-input=5`)
   - `[observe] sample.latency-watch` (`avgElapsedMs=160678`)

@@ -29,6 +29,7 @@ aios
 | 能力 | 说明 | 命令 |
 |------|------|------|
 | **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` 自动加载 |
+| **Memo Storage** | 适合 Git 共享的项目 memo；默认 append-only file 存储，也可切到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
 | **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
 | **自研 Token 压缩** | 参考 RTK/Caveman 的思路，但不安装竞品工具；本地完成输入/输出省 token | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
@@ -44,6 +45,10 @@ aios
 ```bash
 # 启动 TUI
 aios
+
+# 保存适合 Git 共享的项目 memo
+aios memo add "记住 auth 测试要保持严格"
+aios memo storage status
 
 # 在原生客户端内路由任务（setup 后）
 # Claude/Gemini/OpenCode: /team <任务>

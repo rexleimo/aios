@@ -26,7 +26,7 @@ scripts/ctx-agent.sh --agent gemini-cli --project RexCLI --prompt "回帰リス�
 1. 共有 session/checkpoints が以下で更新される：
 
 ```bash
-ls memory/context-db/sessions
+ls .aios/context-db/sessions
 ```
 
 2. タイムラインがクロース agent の連続性を示す：
@@ -39,7 +39,7 @@ npm run -s contextdb -- timeline --project RexCLI --limit 12
 3. 最新 session のエクスポート済み context packet が存在：
 
 ```bash
-ls memory/context-db/exports | tail -n 5
+ls .aios/context-db/exports | tail -n 5
 ```
 
 ## なぜ重要か

@@ -26,7 +26,7 @@ scripts/ctx-agent.sh --agent gemini-cli --project RexCLI --prompt "회귀 위험
 1. 공유 session/checkpoints가 다음에서 업데이트됩니다:
 
 ```bash
-ls memory/context-db/sessions
+ls .aios/context-db/sessions
 ```
 
 2. 타임라인이 크로스 agent 연속성을 보여줍니다:
@@ -39,7 +39,7 @@ npm run -s contextdb -- timeline --project RexCLI --limit 12
 3. 최신 session의 내보내기된 context packet이 존재합니다:
 
 ```bash
-ls memory/context-db/exports | tail -n 5
+ls .aios/context-db/exports | tail -n 5
 ```
 
 ## 왜 중요한가

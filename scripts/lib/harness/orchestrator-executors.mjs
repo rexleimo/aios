@@ -1,4 +1,4 @@
-import executorSpec from '../../../memory/specs/orchestrator-executors.json' with { type: 'json' };
+import executorSpec from '../specs/orchestrator-executors.json' with { type: 'json' };
 
 export const LOCAL_PHASE_EXECUTOR = 'local-phase';
 export const LOCAL_CONTROL_EXECUTOR = 'local-control';

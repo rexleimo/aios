@@ -102,4 +102,4 @@ Model Router は Agent Team に組み込まれています — チーム実行�
 
 ---
 
-*Model Router は [RexCLI](https://cli.rexai.top) の一部です。全モデル、ルール、設定オプションについては[ドキュメント](https://cli.rexai.top/model-router/)をご覧ください。*
+*Model Router は [RexCLI](https://cli.rexai.top) の一部です。全モデル、ルール、設定オプションについては[ドキュメント](https://cli.rexai.top/ja/model-router/)をご覧ください。*

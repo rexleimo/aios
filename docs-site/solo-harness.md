@@ -127,7 +127,7 @@ aios harness resume --session my-run --no-hooks
 All artifacts live in your project:
 
 ```
-memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+.aios/context-db/sessions/<session-id>/artifacts/solo-harness/
   ├── objective.md           # The goal you gave it
   ├── run-summary.json       # Current state and progress
   ├── control.json           # Stop requests and notes

@@ -104,4 +104,4 @@ npm run contextdb -- context:pack \
 
 ---
 
-*Token 压缩已内置在 [ContextDB](https://cli.rexai.top/contextdb/) 中，是 [RexCLI](https://cli.rexai.top) 的一部分。不需要额外工具。*
+*Token 压缩已内置在 [ContextDB](https://cli.rexai.top/zh/contextdb/) 中，是 [RexCLI](https://cli.rexai.top) 的一部分。不需要额外工具。*

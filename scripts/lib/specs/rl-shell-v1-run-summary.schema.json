@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "aios://memory/specs/rl-shell-v1-run-summary.schema.json",
+  "$id": "aios://scripts/lib/specs/rl-shell-v1-run-summary.schema.json",
   "title": "AIOS Shell RL V1 Run Summary",
   "type": "object",
   "additionalProperties": false,

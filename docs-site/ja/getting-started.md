@@ -125,14 +125,14 @@ gemini
 
     ```bash
     aios doctor --native --verbose
-    ls -la memory/context-db
+    ls -la .aios/context-db
     ```
 
 === "Windows PowerShell"
 
     ```powershell
     aios doctor --native --verbose
-    Get-ChildItem -Path memory/context-db -ErrorAction SilentlyContinue
+    Get-ChildItem -Path .aios/context-db -ErrorAction SilentlyContinue
     ```
 
 `sessions/`、`index/`、`exports/` などのディレクトリが見えれば、ContextDB が記録を開始しています。
@@ -168,7 +168,6 @@ setup 後は、ネイティブクライアント内で route shortcut を直接�
 ContextDB ファイルを手で触らず、継続的なプロジェクトメモを残したい場合:
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo persona init
@@ -176,13 +175,16 @@ aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user init
 aios memo user add "Preferred language: zh-CN + technical English terms"
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 ```
 
 記憶レイヤー:
 
-- `memo add/list/search/recall` -> ContextDB イベント
-- `memo pin` -> ワークスペースの `pinned.md`
+- `memo add/search/recall` -> canonical `memory/memo` storage（legacy ContextDB mirror は互換用のみ）
+- `memo pin` -> canonical `memory/memo` pinned file（legacy mirror は互換用のみ）
 - `memo persona/user` -> グローバル identity ファイル（`~/.aios/SOUL.md`、`~/.aios/USER.md`）。workspace memo より前に `ctx-agent` の Memory prelude へ注入されます
+
+既定では project memo は `memory/memo/file/events.jsonl`（append-only JSONL）へ書かれます。memo event ごとに 1 JSON file がよい場合だけ `aios memo storage use split` を使います。`storage rebuild` は derived query files だけを再生成し、正規 records は書き換えません。
 
 ## 7) Agent Team の最短利用
 

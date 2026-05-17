@@ -13,8 +13,8 @@ ContextDB 是面向多 CLI agent 的文件系统会话层。从 v1.13 开始，C
 
 ```
 Agent 启动 → 读取配置文件（CLAUDE.md / AGENTS.md / GEMINI.md）
-          → 看到标记：<!-- AIOS: memory/context-db/index.json -->
-          → 读取 memory/context-db/index.json（注册表）
+          → 看到标记：<!-- AIOS: .aios/context-db/index.json -->
+          → 读取 .aios/context-db/index.json（注册表）
           → 根据任务类型决定加载什么
 
 任务："修 auth bug"    → 只加载 handoff（1KB）
@@ -108,8 +108,8 @@ npm run contextdb -- init
 npm run contextdb -- session:new --agent codex-cli --project demo --goal "implement feature"
 npm run contextdb -- event:add --session <id> --role user --kind prompt --text "start"
 npm run contextdb -- checkpoint --session <id> --summary "phase done" --status running --next "write tests|implement"
-npm run contextdb -- context:pack --session <id> --out memory/context-db/exports/<id>-context.md
-npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
+npm run contextdb -- context:pack --session <id> --out .aios/context-db/exports/<id>-context.md
+npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 npm run contextdb -- index:rebuild
 ```
 
@@ -117,28 +117,34 @@ npm run contextdb -- index:rebuild
 
 当你希望在 CLI 流程里维护可持续的操作员记忆时，使用 `aios memo`。
 persona/user profile 是全局层：agent 的稳定人设与用户偏好可以跨项目复用，而项目事实仍留在当前项目的 ContextDB。
+项目 memo 的规范数据在 `memory/memo/`：默认 `file` 是 append-only JSONL 存储，`split` 是每条 memo 一个 JSON 文件；ContextDB 只保留兼容镜像/缓存角色。
 
 存储边界：
 
-- `memo add/list/search`：在 ContextDB 的 `workspace-memory--<space>` 会话中写入/读取 memo 事件
-- `memo recall`：调用 ContextDB `recall:sessions` 做跨会话项目召回
-- `memo pin show/set/add`：读写 `memory/context-db/sessions/workspace-memory--<space>/pinned.md`
+- `memo add/search`：读写规范 `memory/memo/file|split` 存储，并为兼容性镜像 legacy workspace-memory 事件
+- `memo recall`：从当前 memo storage 生成可读召回摘要，缺省时回退 legacy workspace-memory
+- `memo pin show/set/add`：读写规范 `memory/memo/file|split` 存储，并为兼容性镜像 legacy workspace-memory 文件
 - `memo persona ...` 和 `memo user ...`：全局文件层（默认 `~/.aios/SOUL.md` 与 `~/.aios/USER.md`）
 
 示例：
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR gate before merge #quality"
 aios memo pin add "Never run destructive git commands without explicit approval."
-aios memo list --limit 10
 aios memo search "pre-PR" --limit 5
 aios memo recall "release gate" --limit 5
+aios memo storage status
+aios memo storage use split
+aios memo storage use file
+aios memo storage rebuild
+aios memo storage doctor
 aios memo persona init
 aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user init
 aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
+
+`aios memo storage rebuild` 只全量重建派生查询文件，不改写规范 memo 记录。
 
 ### Persona / User Profile 记忆
 
@@ -182,7 +188,7 @@ ContextDB 现在支持交互式 CLI 会话的**懒加载模式**。不再在每�
 
 ### 工作原理
 
-1. **快速 Facade 读取** — 启动时加载 `memory/context-db/.facade.json`（缓存的会话摘要）。
+1. **快速 Facade 读取** — 启动时加载 `.aios/context-db/.facade.json`（缓存的会话摘要）。
 2. **精简提示词注入** — 注入一个 < 150 token 的 Facade 提示，告知 Agent：
    - ContextDB 存在
    - 完整历史记录的位置
@@ -221,7 +227,7 @@ Facade 旁路缓存会在每次成功打包后自动生成：
   "status": "running",
   "lastCheckpointSummary": "...",
   "keyRefs": ["scripts/ctx-agent-core.mjs"],
-  "contextPacketPath": "memory/context-db/exports/latest-claude-code-context.md",
+  "contextPacketPath": ".aios/context-db/exports/latest-claude-code-context.md",
   "hasStalePack": false
 }
 ```
@@ -238,7 +244,7 @@ npm run contextdb -- context:pack \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced \
-  --out memory/context-db/exports/<id>-compressed.md
+  --out .aios/context-db/exports/<id>-compressed.md
 ```
 
 生成的上下文包会在 `Event Window` 行报告 `tokenBudget`、`tokenUsed`、`rawTokenUsed`、`compressed`、`dropped`、`truncated`，方便确认压缩是否先于删除事件生效。
@@ -300,7 +306,7 @@ ContextDB 现在在 SQLite sidecar 中维护规范化 `event_refs` 表。
 ```bash
 npm run contextdb -- index:sync --stats
 npm run contextdb -- index:sync --force --stats
-npm run contextdb -- index:sync --stats --jsonl-out memory/context-db/exports/index-sync-stats.jsonl
+npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 ```
 
 - `--stats`：输出 sessions/events/checkpoints 的 `scanned/upserted` 计数、耗时、throttle skip 和 force 标记。
@@ -342,7 +348,7 @@ npm run contextdb -- search --query "issue auth" --project demo --semantic
 ContextDB 将真源数据保存在 session 文件中，并使用 sidecar 索引提升速度：
 
 ```text
-memory/context-db/
+.aios/context-db/
   sessions/<session_id>/*        # 真正数据源（source of truth）
   index/context.db               # SQLite sidecar（可重建）
   index/sessions.jsonl           # 兼容索引
@@ -372,15 +378,15 @@ Session ID 使用以下格式：
 
 - 推荐：退出 CLI，然后在 shell 里重新执行 `codex` / `claude` / `gemini` / `opencode`（包装会重新 `context:pack` 并注入）。
 - 如果必须在同一进程里继续：在新对话第一句让模型先读取最新快照：
-  - `@memory/context-db/exports/latest-codex-cli-context.md`
-  - `@memory/context-db/exports/latest-claude-code-context.md`
-  - `@memory/context-db/exports/latest-gemini-cli-context.md`
+  - `@.aios/context-db/exports/latest-codex-cli-context.md`
+  - `@.aios/context-db/exports/latest-claude-code-context.md`
+  - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 如果客户端不支持 `@file` 引用，请把文件内容粘贴为首条消息。
 
 ### Codex、Claude、Gemini 会共享上下文吗？
 
-会。只要它们运行在同一个已包裹工作区（优先使用同一个 git 根目录；没有 git 根目录时则使用同一个当前目录），就会共享同一份 `memory/context-db/`。
+会。只要它们运行在同一个已包裹工作区（优先使用同一个 git 根目录；没有 git 根目录时则使用同一个当前目录），就会共享同一份 `.aios/context-db/`。
 
 ### 怎么做跨 CLI 接力？
 

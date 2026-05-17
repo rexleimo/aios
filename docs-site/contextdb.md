@@ -17,8 +17,8 @@ Starting in v1.13, ContextDB uses a **pull-based** model. Instead of injecting ~
 
 ```
 Agent starts → reads config file (CLAUDE.md / AGENTS.md / GEMINI.md)
-           → sees marker: <!-- AIOS: memory/context-db/index.json -->
-           → reads memory/context-db/index.json (the registry)
+           → sees marker: <!-- AIOS: .aios/context-db/index.json -->
+           → reads .aios/context-db/index.json (the registry)
            → decides what to load based on the task
 
 Task: "fix the auth bug"  → loads handoff (1KB) for continuity
@@ -34,11 +34,11 @@ Task: "debug a crash"     → loads handoff + session history (~20KB)
   "status": "running",
   "sources": [
     {"id": "handoff", "cost": "~1KB", "priority": "high",
-     "path": "memory/context-db/sessions/xxx/handoff.json"},
+     "path": ".aios/context-db/sessions/xxx/handoff.json"},
     {"id": "session-history", "cost": "~20KB", "priority": "low",
-     "path": "memory/context-db/exports/latest-claude-code-context.md"},
+     "path": ".aios/context-db/exports/latest-claude-code-context.md"},
     {"id": "perception", "cost": "~3KB", "priority": "low",
-     "path": "memory/context-db/exports/latest-perception.md"}
+     "path": ".aios/context-db/exports/latest-perception.md"}
   ]
 }
 ```
@@ -89,7 +89,7 @@ Think of ContextDB like a **lab notebook** for your agent:
 ┌─────────────────────────────────────────┐
 │  Your Project                           │
 │  ├── .contextdb-enable                  │
-│  └── memory/context-db/                 │
+│  └── .aios/context-db/                  │
 │      ├── sessions/                      │  ← Recorded events
 │      ├── index/                         │  ← Search index
 │      └── exports/                       │  ← Context packs
@@ -129,6 +129,7 @@ Session IDs look like: `claude-code-20260419T095454-e6eb600d` (agent name + time
 ## Memory With Memo
 
 ContextDB is automatic, but sometimes you want to **manually** save important notes. That's what Memo is for.
+Project memos now use Git-friendly canonical storage under `memory/memo/`: `file` is the default append-only JSONL backend, while `split` stores one JSON file per memo event. ContextDB mirrors are kept only for compatibility/cache.
 
 ### Quick Memo Commands
 
@@ -142,7 +143,16 @@ aios memo pin add "Never push directly to main branch"
 # Search your notes
 aios memo search "typescript"
 aios memo search "testing"
+
+# Check or switch the storage implementation
+aios memo storage status
+aios memo storage use split
+aios memo storage use file
+aios memo storage rebuild
+aios memo storage doctor
 ```
+
+`aios memo storage rebuild` is a full rebuild of derived query files only; it does not rewrite canonical memo records.
 
 ### Recall Across Sessions
 
@@ -290,14 +300,14 @@ npm run contextdb -- index:rebuild
 
 ### Is ContextDB a cloud database?
 
-No. It's just files in your project's `memory/context-db/` folder. Nothing leaves your machine.
+No. It's just files in your project's `.aios/context-db/` folder. Nothing leaves your machine.
 
 ### Why does context disappear after `/new` or `/clear`?
 
 Those commands reset the **in-terminal conversation**, but ContextDB is still on disk. To get context back:
 
 1. Exit the agent and restart it — the wrapper reloads context automatically
-2. Or ask the agent to read the latest snapshot: `@memory/context-db/exports/latest-*-context.md`
+2. Or ask the agent to read the latest snapshot: `@.aios/context-db/exports/latest-*-context.md`
 
 ### Do different agents share the same memory?
 
@@ -307,10 +317,10 @@ Yes. If you run `codex` and then `claude` in the same project, they read and wri
 
 Yes. Just delete `.contextdb-enable` from the project root. Existing data stays on disk but new sessions won't be recorded.
 
-### What's the `memory/context-db/` folder?
+### What's the `.aios/context-db/` folder?
 
 ```
-memory/context-db/
+.aios/context-db/
   sessions/          # Session files (the source of truth)
   index/             # SQLite search index (auto-rebuilt)
   exports/           # Context packs for agents to read

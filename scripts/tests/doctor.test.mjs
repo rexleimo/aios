@@ -44,13 +44,15 @@ test('warning when workspace not initialized (workspace-meta fails)', async () =
   }
 });
 
-test('detects skill index drift (1 skill file, 0 in index)', async () => {
+test('detects skill index drift (1 project skill file, 0 in index)', async () => {
   const tmp = await makeTmp();
   try {
     await initMeta(tmp);
-    const skillsDir = path.join(tmp, 'memory', 'skills');
+    const skillsDir = path.join(tmp, '.codex', 'skills');
     await mkdir(skillsDir, { recursive: true });
-    await writeFile(path.join(skillsDir, 'my-skill.json'), JSON.stringify({ name: 'my-skill' }));
+    const skillDir = path.join(skillsDir, 'my-skill');
+    await mkdir(skillDir, { recursive: true });
+    await writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: my-skill\n---\n# my-skill\n');
 
     const report = await runDoctorChecks(tmp);
     assert.equal(report.status, 'warning');

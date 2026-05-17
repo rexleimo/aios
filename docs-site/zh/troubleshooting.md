@@ -94,7 +94,7 @@ powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-contextdb-shell.ps1
 
 ## `search` 结果异常为空
 
-如果 `memory/context-db/index/context.db` 丢失或过期：
+如果 `.aios/context-db/index/context.db` 丢失或过期：
 
 1. 执行 `cd mcp-server && npm run contextdb -- index:rebuild`
 2. 重新执行 `search` / `timeline` / `event:get`
@@ -131,9 +131,9 @@ aios quality-gate pre-pr --profile strict
 
 1. 推荐：退出 CLI，然后在 shell 里重新执行 `codex` / `claude` / `gemini`。
 2. 如果必须在同一进程里继续：在新对话第一句让模型先读取：
-   - `@memory/context-db/exports/latest-codex-cli-context.md`
-   - `@memory/context-db/exports/latest-claude-code-context.md`
-   - `@memory/context-db/exports/latest-gemini-cli-context.md`
+   - `@.aios/context-db/exports/latest-codex-cli-context.md`
+   - `@.aios/context-db/exports/latest-claude-code-context.md`
+   - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 如果客户端不支持 `@file` 引用，请把文件内容粘贴为首条消息。
 

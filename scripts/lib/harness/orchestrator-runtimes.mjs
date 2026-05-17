@@ -1,4 +1,4 @@
-import runtimeSpec from '../../../memory/specs/orchestrator-runtimes.json' with { type: 'json' };
+import runtimeSpec from '../specs/orchestrator-runtimes.json' with { type: 'json' };
 import { normalizeHandoffPayload, validateHandoffPayload } from './handoff.mjs';
 import { createHandoffFromPhase, executeLocalDispatchPlan, mergeParallelHandoffs } from './orchestrator.mjs';
 import { executeSubagentDispatchPlan, runOneShot } from './subagent-runtime.mjs';

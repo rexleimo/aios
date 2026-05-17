@@ -69,7 +69,7 @@ Latest versions use a unified runtime core (`ctx-agent-core.mjs`) for both shell
 
 ## `search` returns empty after sidecar loss
 
-If `memory/context-db/index/context.db` is missing or stale:
+If `.aios/context-db/index/context.db` is missing or stale:
 
 1. Run `cd mcp-server && npm run contextdb -- index:rebuild`
 2. Retry `search` / `timeline` / `event:get`
@@ -106,9 +106,9 @@ Fix:
 
 1. Preferred: exit the CLI and re-run `codex` / `claude` / `gemini` from your shell.
 2. If you must stay in the same process: in the new conversation, ask the agent to read:
-   - `@memory/context-db/exports/latest-codex-cli-context.md`
-   - `@memory/context-db/exports/latest-claude-code-context.md`
-   - `@memory/context-db/exports/latest-gemini-cli-context.md`
+   - `@.aios/context-db/exports/latest-codex-cli-context.md`
+   - `@.aios/context-db/exports/latest-claude-code-context.md`
+   - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 If `@file` mentions are not supported, paste the file contents as your first prompt.
 
@@ -155,7 +155,7 @@ Common failure signatures:
 Minimal structured-output smoke check (macOS/Linux):
 
 ```bash
-printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema memory/specs/agent-handoff.schema.json -
+printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema scripts/lib/specs/agent-handoff.schema.json -
 ```
 
 ## Commands not wrapped

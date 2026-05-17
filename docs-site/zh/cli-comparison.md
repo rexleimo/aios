@@ -48,7 +48,7 @@ codex
 然后验证持久化工件存在：
 
 ```bash
-ls memory/context-db
+ls .aios/context-db
 ```
 
 预期结果：`sessions/`、`index/`、`exports/`。

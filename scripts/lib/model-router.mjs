@@ -2,7 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { runContextDbCli } from './contextdb-cli.mjs';
-import defaultRegistry from '../../memory/specs/model-registry.json' with { type: 'json' };
+import defaultRegistry from './specs/model-registry.json' with { type: 'json' };
 import {
   ensureWorkspaceMemorySession,
   normalizeWorkspaceMemorySpace,
@@ -49,6 +49,9 @@ async function loadRegistry() {
     return _registryCache;
   } catch (error) {
     if (_registryCache) return _registryCache;
+    if (error?.code === 'ENOENT') {
+      return defaultModelRegistry();
+    }
     throw error;
   }
 }

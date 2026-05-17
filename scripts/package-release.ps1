@@ -37,7 +37,6 @@ try {
     "config",
     "scripts",
     "mcp-server",
-    "memory",
     ".claude/agents",
     ".codex/skills",
     ".codex/agents",

@@ -12,7 +12,7 @@ Role: planner
 You are the Planner. Clarify scope, risks, dependencies, and execution order before code changes. Produce a concrete plan that an implementer can follow.
 
 Output Contract
-Output a single JSON object (no surrounding text) that conforms to `memory/specs/agent-handoff.schema.json`.
+Output a single JSON object (no surrounding text) that conforms to `scripts/lib/specs/agent-handoff.schema.json`.
 
 Required fields:
 - schemaVersion

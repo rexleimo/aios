@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { workspaceDir } from './workspace.mjs';
+import { buildSkillIndex } from './skill-index.mjs';
 
 export async function runDoctorChecks(workspaceRoot) {
   const root = path.resolve(workspaceRoot || process.cwd());
@@ -37,14 +38,9 @@ async function checkWorkspaceMeta(wsDir) {
 
 async function checkSkillIndexDrift(root, wsDir) {
   const id = 'skill-index-drift';
-  const label = 'Skill index matches files in memory/skills/';
-  const skillsDir = path.join(root, 'memory', 'skills');
-
-  let fileCount = 0;
-  try {
-    const files = await fs.readdir(skillsDir);
-    fileCount = files.filter(f => f.endsWith('.json')).length;
-  } catch { /* dir missing = 0 files */ }
+  const label = 'Skill index matches discovered skill sources';
+  const discovered = await buildSkillIndex(root);
+  const fileCount = Array.isArray(discovered.skills) ? discovered.skills.length : 0;
 
   let indexCount = 0;
   try {

@@ -104,9 +104,9 @@ http://localhost:39200 을 열어 대시보드에서 확인하세요.
 
 debug-hub 는 RexCLI 의 **관측가능성 레이어** 의 일부입니다. 다음과 함께 작동합니다:
 
-- [ContextDB](https://cli.rexai.top/contextdb/) — 세션 간 메모리
-- [Solo Harness](https://cli.rexai.top/solo-harness/) — 자가 진단 가능한 야간 실행
-- [Agent Team](https://cli.rexai.top/team-ops/) — 멀티 agent 트레이싱
+- [ContextDB](https://cli.rexai.top/ko/contextdb/) — 세션 간 메모리
+- [Solo Harness](https://cli.rexai.top/ko/solo-harness/) — 자가 진단 가능한 야간 실행
+- [Agent Team](https://cli.rexai.top/ko/team-ops/) — 멀티 agent 트레이싱
 
 Agent 가 스스로 디버깅할 수 있으면, 더 오래 실행하고, 더 복잡한 작업을 처리하고, 에러에서 복구할 수 있다고 신뢰할 수 있습니다 — 모든 것을 여러분의 지속적인 주목 없이.
 

@@ -27,7 +27,7 @@ npm run contextdb -- context:pack \
   --limit 60 \
   --token-budget 1200 \
   --token-strategy balanced \
-  --out memory/context-db/exports/<session_id>-context.md
+  --out .aios/context-db/exports/<session_id>-context.md
 ```
 
 策略：

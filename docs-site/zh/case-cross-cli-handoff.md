@@ -26,7 +26,7 @@ scripts/ctx-agent.sh --agent gemini-cli --project RexCLI --prompt "审查回归�
 1. 共享 session/checkpoints 在以下位置更新：
 
 ```bash
-ls memory/context-db/sessions
+ls .aios/context-db/sessions
 ```
 
 2. 时间线显示跨 agent 连续性：
@@ -39,7 +39,7 @@ npm run -s contextdb -- timeline --project RexCLI --limit 12
 3. 最新 session 存在导出的 context packet：
 
 ```bash
-ls memory/context-db/exports | tail -n 5
+ls .aios/context-db/exports | tail -n 5
 ```
 
 ## 为什么重要

@@ -48,7 +48,7 @@ codex
 그런 다음 영속화된 아티팩트가 존재하는지 확인:
 
 ```bash
-ls memory/context-db
+ls .aios/context-db
 ```
 
 기대값: `sessions/`, `index/`, `exports/`.

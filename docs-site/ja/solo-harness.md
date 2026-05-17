@@ -101,7 +101,7 @@ aios harness resume --session nightly-demo --no-hooks
 artifact は次の場所に保存されます:
 
 ```text
-memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+.aios/context-db/sessions/<session-id>/artifacts/solo-harness/
 ```
 
 主なファイル:

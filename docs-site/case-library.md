@@ -95,7 +95,7 @@ scripts/ctx-agent.sh --agent gemini-cli --prompt "Review risk and missing tests"
 
 **Evidence**
 
-- New session/checkpoint artifacts under `memory/context-db/`
+- New session/checkpoint artifacts under `.aios/context-db/`
 - Later CLI runs can continue using the same project context
 
 ## Case 4: Auth-wall handling (human-in-the-loop)
@@ -133,8 +133,8 @@ scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "Continue from 
 
 **Evidence**
 
-- New checkpoint entry in `memory/context-db/index/checkpoints.jsonl`
-- Exported context packet in `memory/context-db/exports/`
+- New checkpoint entry in `.aios/context-db/index/checkpoints.jsonl`
+- Exported context packet in `.aios/context-db/exports/`
 
 ## Case 6: Team skill lifecycle (install/update/doctor/uninstall)
 

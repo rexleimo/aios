@@ -125,14 +125,14 @@ gemini
 
     ```bash
     aios doctor --native --verbose
-    ls -la memory/context-db
+    ls -la .aios/context-db
     ```
 
 === "Windows PowerShell"
 
     ```powershell
     aios doctor --native --verbose
-    Get-ChildItem -Path memory/context-db -ErrorAction SilentlyContinue
+    Get-ChildItem -Path .aios/context-db -ErrorAction SilentlyContinue
     ```
 
 `sessions/`, `index/`, `exports/` 같은 디렉터리가 보이면 ContextDB 가 기록을 시작한 것입니다.
@@ -168,7 +168,6 @@ setup 이후에는 네이티브 클라이언트 안에서 route shortcut 을 직
 ContextDB 파일을 직접 만지지 않고도 지속적인 프로젝트 메모를 남기려면:
 
 ```bash
-aios memo use release-train
 aios memo add "Need strict pre-PR checks #quality"
 aios memo pin add "Avoid destructive git commands."
 aios memo persona init
@@ -176,13 +175,16 @@ aios memo persona add "Response style: concise, direct, evidence-first"
 aios memo user init
 aios memo user add "Preferred language: zh-CN + technical English terms"
 aios memo recall "quality gate" --limit 5
+aios memo storage status
 ```
 
 메모 레이어:
 
-- `memo add/list/search/recall` -> ContextDB 이벤트
-- `memo pin` -> 워크스페이스 `pinned.md`
+- `memo add/search/recall` -> canonical `memory/memo` storage (legacy ContextDB mirror는 호환용)
+- `memo pin` -> canonical `memory/memo` pinned file (legacy mirror는 호환용)
 - `memo persona/user` -> 전역 identity 파일 (`~/.aios/SOUL.md`, `~/.aios/USER.md`). workspace memo 보다 먼저 `ctx-agent` Memory prelude 에 주입됩니다
+
+기본 project memo 는 `memory/memo/file/events.jsonl` (append-only JSONL) 에 기록됩니다. memo event 마다 JSON 파일 하나를 원할 때만 `aios memo storage use split` 을 사용하세요. `storage rebuild` 는 derived query files 만 다시 만들며 canonical records 는 다시 쓰지 않습니다.
 
 ## 7) Agent Team 최단 사용법
 

@@ -48,7 +48,7 @@ export function renderManagedAgentContent(rawAgent = {}) {
     agent.systemPrompt || 'You are a role-based subagent for AIOS orchestrations.',
     '',
     'Output Contract',
-    'Output a single JSON object (no surrounding text) that conforms to `memory/specs/agent-handoff.schema.json`.',
+    'Output a single JSON object (no surrounding text) that conforms to `scripts/lib/specs/agent-handoff.schema.json`.',
     '',
     'Required fields:',
     '- schemaVersion',

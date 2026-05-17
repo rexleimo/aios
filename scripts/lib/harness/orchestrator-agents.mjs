@@ -1,4 +1,4 @@
-import agentSpec from '../../../memory/specs/orchestrator-agents.json' with { type: 'json' };
+import agentSpec from '../specs/orchestrator-agents.json' with { type: 'json' };
 
 import {
   ORCHESTRATOR_AGENT_MARKER,

@@ -165,7 +165,7 @@ export async function syncCanonicalAgents({
     emitters,
   });
   const exportText = writeCompatibilityExport ? renderCompatibilityExport(source) : null;
-  const exportPath = path.join(rootDir, 'memory', 'specs', 'orchestrator-agents.json');
+  const exportPath = path.join(rootDir, 'scripts', 'lib', 'specs', 'orchestrator-agents.json');
   const ops = fsOps ? { ...createDefaultFsOps(), ...fsOps } : createDefaultFsOps();
   const tempDir = await mkdtemp(path.join(rootDir, '.aios-agent-sync-'));
   const results = selectedTargets.map((target) => ({

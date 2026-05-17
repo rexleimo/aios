@@ -161,6 +161,15 @@ export AIOS_MODEL_CODE_REVIEW=claude-opus
 export AIOS_MODEL_ROUTER=0
 ```
 
+## Configuration Files
+
+| File | Purpose |
+|---|---|
+| `scripts/lib/specs/model-registry.json` | Model capabilities, routing rules, and CLI protocol settings |
+| `scripts/lib/specs/orchestrator-agents.json` | Agent role to `preferredModel` mapping |
+| `.claude/skills/model-router/SKILL.md` | Agent-callable self-service routing skill |
+| `scripts/lib/model-router.mjs` | Router logic: matching, fallback, CLI construction, and stats |
+
 ## Common Questions
 
 ### Why does everything route to DeepSeek?

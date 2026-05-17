@@ -5,7 +5,6 @@ import { fileURLToPath } from "node:url";
 
 import { captureCommand } from "../platform/process.mjs";
 import { ensureParentDir, readTextIfExists, writeText } from "../platform/fs.mjs";
-import { runContextDbCli } from "../contextdb-cli.mjs";
 import { assertWorkspaceMemoryContentSafe } from "./safety.mjs";
 import {
   ensurePersonaLayer,
@@ -21,6 +20,7 @@ import {
   WORKSPACE_MEMORY_SESSION_PREFIX,
   normalizeWorkspaceMemorySpace,
   sanitizeWorkspaceMemorySpaceForSessionId,
+  workspaceMemoryEventsPath,
   workspaceMemoryMetaPath,
   workspaceMemoryPinnedPath,
   workspaceMemorySessionDir,
@@ -107,18 +107,41 @@ function ensureWorkspaceMemorySession(workspaceRoot, space) {
     return { sessionId, dir: sessionDir(workspaceRoot, sessionId) };
   }
 
-  runContextDbCli(["init", "--workspace", workspaceRoot]);
-  runContextDbCli([
-    "session:new",
-    "--workspace", workspaceRoot,
-    "--agent", WORKSPACE_MEMORY_AGENT,
-    "--project", workspaceProjectName(workspaceRoot),
-    "--goal", `Workspace memory space "${normalizeSpace(space)}"`,
-    "--session-id", sessionId,
-    "--tags", `space:${normalizeSpace(space)}`,
-  ]);
+  const dir = sessionDir(workspaceRoot, sessionId);
+  const now = new Date().toISOString();
+  fs.mkdirSync(dir, { recursive: true });
+  writeText(sessionMetaPath(workspaceRoot, sessionId), `${JSON.stringify({
+    schemaVersion: 1,
+    sessionId,
+    agent: WORKSPACE_MEMORY_AGENT,
+    project: workspaceProjectName(workspaceRoot),
+    goal: `Workspace memory space "${normalizeSpace(space)}"`,
+    tags: [`space:${normalizeSpace(space)}`],
+    status: "running",
+    createdAt: now,
+    updatedAt: now,
+  }, null, 2)}\n`);
 
-  return { sessionId, dir: sessionDir(workspaceRoot, sessionId) };
+  const stateFile = path.join(dir, "state.json");
+  if (!fs.existsSync(stateFile)) {
+    writeText(stateFile, `${JSON.stringify({
+      sessionId,
+      lastEventAt: null,
+      lastEventSeq: 0,
+      lastCheckpointAt: null,
+      lastCheckpointSeq: 0,
+      status: "running",
+      nextActions: [],
+    }, null, 2)}\n`);
+  }
+  if (!fs.existsSync(pinnedPath(workspaceRoot, sessionId))) {
+    writeText(pinnedPath(workspaceRoot, sessionId), "");
+  }
+  if (!fs.existsSync(workspaceMemoryEventsPath(workspaceRoot, sessionId))) {
+    writeText(workspaceMemoryEventsPath(workspaceRoot, sessionId), "");
+  }
+
+  return { sessionId, dir };
 }
 
 function pinnedPath(workspaceRoot, sessionId) {
@@ -157,6 +180,214 @@ function createMemoTurnId(space = "") {
   const normalizedSpace = sanitizeWorkspaceMemorySpaceForSessionId(space) || "default";
   const stamp = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
   return `memo:${normalizedSpace}:${stamp}`;
+}
+
+let memoStorageApiPromise;
+
+function memoStorageUnavailableError(cause) {
+  const error = new Error(
+    "Memo storage module is not available. Expected scripts/lib/memo/storage.mjs exports from the memo-storage workstream."
+  );
+  error.code = "AIOS_MEMO_STORAGE_UNAVAILABLE";
+  error.cause = cause;
+  return error;
+}
+
+async function loadMemoStorageApi() {
+  if (!memoStorageApiPromise) {
+    memoStorageApiPromise = import("./storage.mjs").catch((error) => {
+      memoStorageApiPromise = undefined;
+      throw memoStorageUnavailableError(error);
+    });
+  }
+  return memoStorageApiPromise;
+}
+
+async function getActiveMemoStorage(workspaceRoot, storageApi) {
+  const status = await storageApi.getMemoStorageStatus(workspaceRoot);
+  const active = String(status?.active || "file").trim().toLowerCase();
+  return active || "file";
+}
+
+function legacyStateFilePath(workspaceRoot, sessionId) {
+  return path.join(sessionDir(workspaceRoot, sessionId), "state.json");
+}
+
+function readLegacyMemoEvents(workspaceRoot, sessionId) {
+  const raw = readTextIfExists(workspaceMemoryEventsPath(workspaceRoot, sessionId));
+  if (!raw.trim()) return [];
+  const events = [];
+  for (const line of raw.split(/\r?\n/)) {
+    const trimmed = String(line || "").trim();
+    if (!trimmed) continue;
+    try {
+      events.push(JSON.parse(trimmed));
+    } catch {
+      // Keep legacy compatibility tolerant of partially written context logs.
+    }
+  }
+  return events;
+}
+
+function legacyMemoRows(workspaceRoot, space, { query = "", limit = DEFAULT_LIST_LIMIT } = {}) {
+  const sessionId = workspaceMemorySessionId(space);
+  if (!fs.existsSync(workspaceMemoryEventsPath(workspaceRoot, sessionId))) return [];
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  return readLegacyMemoEvents(workspaceRoot, sessionId)
+    .filter((event) => event?.kind === "memo")
+    .filter((event) => !event?.role || String(event.role) === "user")
+    .filter((event) => !normalizedQuery || String(event?.text || "").toLowerCase().includes(normalizedQuery))
+    .slice(-limit)
+    .reverse();
+}
+
+function readLegacyLastEventSeq(workspaceRoot, sessionId) {
+  const stateRaw = readTextIfExists(legacyStateFilePath(workspaceRoot, sessionId)).trim();
+  if (stateRaw) {
+    try {
+      const parsed = JSON.parse(stateRaw);
+      const seq = Number(parsed?.lastEventSeq);
+      if (Number.isFinite(seq) && seq >= 0) return seq;
+    } catch {
+      // Fall back to scanning the JSONL log.
+    }
+  }
+  return readLegacyMemoEvents(workspaceRoot, sessionId).reduce((max, event) => {
+    const seq = Number(event?.seq);
+    return Number.isFinite(seq) && seq > max ? seq : max;
+  }, 0);
+}
+
+function updateLegacyStateAfterMemo(workspaceRoot, sessionId, seq, ts) {
+  const stateFile = legacyStateFilePath(workspaceRoot, sessionId);
+  let state = {};
+  const raw = readTextIfExists(stateFile).trim();
+  if (raw) {
+    try {
+      state = JSON.parse(raw);
+    } catch {
+      state = {};
+    }
+  }
+  writeText(stateFile, `${JSON.stringify({
+    sessionId,
+    lastEventAt: ts,
+    lastEventSeq: seq,
+    lastCheckpointAt: state.lastCheckpointAt ?? null,
+    lastCheckpointSeq: state.lastCheckpointSeq ?? 0,
+    status: state.status || "running",
+    nextActions: Array.isArray(state.nextActions) ? state.nextActions : [],
+  }, null, 2)}\n`);
+}
+
+function mirrorMemoEventToLegacy(workspaceRoot, { space, text, refs = [], turnId = "", record = {} } = {}) {
+  const { sessionId } = ensureWorkspaceMemorySession(workspaceRoot, space);
+  const seq = readLegacyLastEventSeq(workspaceRoot, sessionId) + 1;
+  const ts = String(record?.ts || record?.timestamp || new Date().toISOString());
+  const legacyEvent = {
+    ts,
+    seq,
+    role: "user",
+    kind: "memo",
+    text: String(record?.text || text || ""),
+    refs: Array.isArray(record?.refs) ? record.refs : refs,
+    turn: {
+      turnId: turnId || createMemoTurnId(space),
+      turnType: "side",
+      environment: "memo",
+      hindsightStatus: "na",
+      outcome: "success",
+    },
+  };
+  const eventsPath = workspaceMemoryEventsPath(workspaceRoot, sessionId);
+  ensureParentDir(eventsPath);
+  fs.appendFileSync(eventsPath, `${JSON.stringify(legacyEvent)}\n`, "utf8");
+  updateLegacyStateAfterMemo(workspaceRoot, sessionId, seq, ts);
+  return { sessionId, seq, eventId: `${sessionId}#${seq}`, event: legacyEvent };
+}
+
+function mirrorPinnedMemoToLegacy(workspaceRoot, { space, content }) {
+  const sessionId = workspaceMemorySessionId(space);
+  ensureWorkspaceMemorySession(workspaceRoot, space);
+  writePinned(workspaceRoot, sessionId, content);
+}
+
+function getStorageAvailability(status, storageName) {
+  const available = status?.available && typeof status.available === "object" ? status.available : {};
+  const entry = available[storageName];
+  if (!entry || typeof entry !== "object") return {};
+  return entry;
+}
+
+function formatCount(value) {
+  const count = Number(value);
+  return Number.isFinite(count) ? ` records=${count}` : "";
+}
+
+function printMemoStorageStatus(io, status = {}) {
+  const active = String(status.active || "file");
+  const supported = Array.isArray(status.supported) && status.supported.length > 0
+    ? status.supported
+    : ["split", "file"];
+  io.log("Memo storage status");
+  io.log(`Active: ${active}`);
+  io.log(`Supported: ${supported.join(", ")}`);
+  for (const name of supported) {
+    const availability = getStorageAvailability(status, name);
+    const exists = availability.exists === true ? "exists" : "missing";
+    io.log(`- ${name}: ${exists}${formatCount(availability.records ?? availability.count ?? availability.eventCount)}`);
+  }
+}
+
+function printMemoDoctorReport(io, report = {}) {
+  const checks = Array.isArray(report.checks) ? report.checks : [];
+  io.log(`Memo storage doctor: ${report.ok === false ? "error" : "ok"}`);
+  if (checks.length === 0) return;
+  for (const check of checks) {
+    const id = String(check?.id || "check");
+    const status = String(check?.status || (check?.ok === false ? "error" : "ok"));
+    const message = String(check?.message || check?.summary || check?.detail || "").trim();
+    io.log(`- ${id}: ${status}${message ? ` - ${message}` : ""}`);
+  }
+}
+
+function scoreMemoMatch(row, query) {
+  const normalizedQuery = String(query || "").trim().toLowerCase();
+  if (Number.isFinite(row?.matchScore)) return Number(row.matchScore);
+  if (!normalizedQuery) return 1;
+  const text = String(row?.text || "").toLowerCase();
+  if (!text) return 0;
+  if (text.includes(normalizedQuery)) return 1;
+  const tokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return 1;
+  const hits = tokens.filter((token) => text.includes(token)).length;
+  return hits / tokens.length;
+}
+
+function memoRecordToRecallRow(row, { workspaceRoot, space, query, highlightLimit }) {
+  const text = String(row?.text || "").replace(/\s+/g, " ").trim();
+  const score = scoreMemoMatch(row, query);
+  const highlights = text
+    ? [{
+        label: "memo",
+        text,
+        score,
+      }]
+    : [];
+  const refs = Array.isArray(row?.refs) ? row.refs.filter(Boolean).slice(0, Math.max(0, highlightLimit - highlights.length)) : [];
+  for (const ref of refs) {
+    highlights.push({ label: "ref", text: `#${ref}`, score });
+  }
+  return {
+    status: "running",
+    sessionId: workspaceMemorySessionId(space),
+    project: workspaceProjectName(workspaceRoot),
+    updatedAt: String(row?.ts || row?.timestamp || ""),
+    goal: `Workspace memory space "${space}"`,
+    summary: text,
+    matchScore: score,
+    highlights: highlights.slice(0, highlightLimit),
+  };
 }
 
 function safePrintText(io, text) {
@@ -461,6 +692,51 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     return;
   }
 
+  if (primary === "storage") {
+    const action = String(secondary || "status").toLowerCase();
+    const storageApi = await loadMemoStorageApi();
+
+    if (action === "status") {
+      printMemoStorageStatus(io, await storageApi.getMemoStorageStatus(workspaceRoot));
+      return;
+    }
+
+    if (action === "use") {
+      const target = String(rest.join(" ") || "").trim().toLowerCase();
+      if (!target) throw usageError("Usage: memo storage use <split|file>");
+      const result = await storageApi.switchMemoStorage(workspaceRoot, { target });
+      const status = await storageApi.getMemoStorageStatus(workspaceRoot);
+      const migrated = result?.migrated && typeof result.migrated === "object" ? result.migrated : {};
+      const manifest = result?.manifest && typeof result.manifest === "object" ? result.manifest : {};
+      io.log(`Active memo storage: ${status?.active || target}`);
+      io.log(`Migrated records: ${Number.isFinite(migrated.events) ? migrated.events : 0}`);
+      io.log(`Migrated pinned files: ${Number.isFinite(migrated.pinned) ? migrated.pinned : 0}`);
+      if (migrated.source) io.log(`Migration source: ${migrated.source}`);
+      if (manifest.records !== undefined) io.log(`Rebuilt records: ${manifest.records}`);
+      return;
+    }
+
+    if (action === "rebuild") {
+      const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+      const result = await storageApi.rebuildMemoStorage(workspaceRoot, { storage });
+      io.log(`Full rebuild complete: ${storage}`);
+      if (result?.records !== undefined) io.log(`Records: ${result.records}`);
+      return;
+    }
+
+    if (action === "doctor") {
+      const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+      const report = await storageApi.runMemoStorageDoctor(workspaceRoot, { storage });
+      printMemoDoctorReport(io, report);
+      if (report?.ok === false) {
+        process.exitCode = 1;
+      }
+      return;
+    }
+
+    throw usageError(`Unknown memo storage action: ${secondary}`);
+  }
+
   if (primary === "space") {
     if ((secondary || "").toLowerCase() !== "list") {
       throw usageError("Usage: memo space list");
@@ -537,30 +813,39 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     const sessionId = workspaceMemorySessionId(space);
 
     if (action === "show") {
-      if (!fs.existsSync(pinnedPath(workspaceRoot, sessionId))) {
+      const storageApi = await loadMemoStorageApi();
+      const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+      let content = await storageApi.readPinnedMemo(workspaceRoot, { storage, space });
+      if (!String(content || "").trim() && fs.existsSync(pinnedPath(workspaceRoot, sessionId))) {
+        content = readPinned(workspaceRoot, sessionId);
+      }
+      if (!String(content || "").trim()) {
         io.log("(none)");
         return;
       }
-      safePrintText(io, readPinned(workspaceRoot, sessionId));
+      safePrintText(io, content);
       return;
     }
 
     const text = rest.join(" ").trim();
     if (!text) throw usageError("pin set/add requires text");
     assertSafeMemoText(text, "pinned workspace memory");
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
 
-    ensureWorkspaceMemorySession(workspaceRoot, space);
     if (action === "set") {
       assertMaxChars(text, workspacePinnedMaxChars, "pinned workspace memory");
-      writePinned(workspaceRoot, sessionId, text);
+      await storageApi.writePinnedMemo(workspaceRoot, { storage, space, content: text });
+      mirrorPinnedMemoToLegacy(workspaceRoot, { space, content: text });
       io.log("Pinned memory updated.");
       return;
     }
     if (action === "add") {
-      const existing = readPinned(workspaceRoot, sessionId).trimEnd();
+      const existing = String(await storageApi.readPinnedMemo(workspaceRoot, { storage, space }) || "").trimEnd();
       const next = existing ? `${existing}\n\n${text}` : text;
       assertMaxChars(next, workspacePinnedMaxChars, "pinned workspace memory");
-      writePinned(workspaceRoot, sessionId, next);
+      await storageApi.writePinnedMemo(workspaceRoot, { storage, space, content: next });
+      mirrorPinnedMemoToLegacy(workspaceRoot, { space, content: next });
       io.log("Pinned memory appended.");
       return;
     }
@@ -574,27 +859,28 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     assertMaxChars(text, workspaceMemoEntryMaxChars, "memo entry");
 
     const space = activeSpace;
-    const { sessionId } = ensureWorkspaceMemorySession(workspaceRoot, space);
     const refs = extractTags(text);
     const turnId = createMemoTurnId(space);
-    const args = [
-      "event:add",
-      "--workspace", workspaceRoot,
-      "--session", sessionId,
-      "--role", "user",
-      "--kind", "memo",
-      "--text", text,
-      "--turn-id", turnId,
-      "--turn-type", "side",
-      "--environment", "memo",
-      "--hindsight-status", "na",
-      "--outcome", "success",
-    ];
-    if (refs.length > 0) {
-      args.push("--refs", refs.join(","));
-    }
-    const event = runContextDbCli(args);
-    const eventId = event?.seq ? `${sessionId}#${event.seq}` : "";
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+    const record = await storageApi.appendMemoEvent({
+      workspaceRoot,
+      storage,
+      space,
+      text,
+      refs,
+      role: "user",
+      kind: "memo",
+      turn: {
+        turnId,
+        turnType: "side",
+        environment: "memo",
+        hindsightStatus: "na",
+        outcome: "success",
+      },
+    });
+    const legacy = mirrorMemoEventToLegacy(workspaceRoot, { space, text, refs, turnId, record });
+    const eventId = record?.eventId || legacy.eventId || "";
     io.log(`Memo added${eventId ? `: ${eventId}` : "."}`);
     return;
   }
@@ -605,19 +891,26 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
       throw usageError("Usage: memo recall [query] [--limit N] [--highlight-limit N]");
     }
     const query = positionals.slice(1).join(" ").trim();
-    const args = [
-      "recall:sessions",
-      "--workspace", workspaceRoot,
-      "--project", workspaceProjectName(workspaceRoot),
-      "--limit", String(flags.limit),
-      "--highlight-limit", String(flags.highlightLimit),
-    ];
-    if (query) {
-      args.push("--query", query);
+    const space = activeSpace;
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+    let records = await storageApi.searchMemoEvents(workspaceRoot, {
+      storage,
+      space,
+      query,
+      limit: flags.limit,
+    });
+    if (!Array.isArray(records) || records.length === 0) {
+      records = legacyMemoRows(workspaceRoot, space, { query, limit: flags.limit });
     }
-
-    const result = runContextDbCli(args);
-    const rows = Array.isArray(result?.results) ? result.results : [];
+    const rows = Array.isArray(records)
+      ? records.map((row) => memoRecordToRecallRow(row, {
+          workspaceRoot,
+          space,
+          query,
+          highlightLimit: flags.highlightLimit,
+        }))
+      : [];
     if (rows.length === 0) {
       io.log("(none)");
       return;
@@ -634,24 +927,21 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     const limit = flags.limit;
 
     const space = activeSpace;
-    if (!hasWorkspaceMemorySession(workspaceRoot, space)) {
-      io.log("(none)");
-      return;
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+    let rows = await storageApi.listMemoEvents(workspaceRoot, {
+      storage,
+      space,
+      limit,
+    });
+    if (!Array.isArray(rows) || rows.length === 0) {
+      rows = legacyMemoRows(workspaceRoot, space, { limit });
     }
-    const sessionId = workspaceMemorySessionId(space);
-    const result = runContextDbCli([
-      "search",
-      "--workspace", workspaceRoot,
-      "--session", sessionId,
-      "--kinds", "memo",
-      "--limit", String(limit),
-    ]);
-    const rows = Array.isArray(result?.results) ? result.results : [];
     if (rows.length === 0) {
       io.log("(none)");
       return;
     }
-    for (const row of rows.reverse()) {
+    for (const row of rows) {
       io.log(renderMemoRow(row));
     }
     return;
@@ -665,26 +955,22 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
     const limit = flags.limit;
 
     const space = activeSpace;
-    if (!hasWorkspaceMemorySession(workspaceRoot, space)) {
-      io.log("(none)");
-      return;
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+    let rows = await storageApi.searchMemoEvents(workspaceRoot, {
+      storage,
+      space,
+      query,
+      limit,
+    });
+    if (!Array.isArray(rows) || rows.length === 0) {
+      rows = legacyMemoRows(workspaceRoot, space, { query, limit });
     }
-    const sessionId = workspaceMemorySessionId(space);
-    const result = runContextDbCli([
-      "search",
-      "--workspace", workspaceRoot,
-      "--session", sessionId,
-      "--kinds", "memo",
-      "--query", query,
-      "--limit", String(limit),
-      ...(flags.semantic ? ["--semantic"] : []),
-    ]);
-    const rows = Array.isArray(result?.results) ? result.results : [];
     if (rows.length === 0) {
       io.log("(none)");
       return;
     }
-    for (const row of rows.reverse()) {
+    for (const row of rows) {
       io.log(renderMemoRow(row));
     }
     return;

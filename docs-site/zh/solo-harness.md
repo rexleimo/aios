@@ -101,7 +101,7 @@ aios harness resume --session nightly-demo --no-hooks
 artifact 统一落在：
 
 ```text
-memory/context-db/sessions/<session-id>/artifacts/solo-harness/
+.aios/context-db/sessions/<session-id>/artifacts/solo-harness/
 ```
 
 核心文件：

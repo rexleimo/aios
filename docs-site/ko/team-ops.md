@@ -181,6 +181,8 @@ implementer 가 `blocked` 또는 `needs-input` 을 보고하면 **re-plan 라운
 
 작업에 맞는 가장 작은 blueprint 를 선택하세요. 단순 파일 생성에는 `feature` 가 아닌 `bugfix` 를 사용합니다.
 
+Blueprint, role card, runtime manifest, executor manifest, handoff schema 는 `scripts/lib/specs/` 에 포함됩니다. Team 실행 상태와 증거는 계속 `.aios/context-db/` 에 기록됩니다. `memory/memo/` 는 프로젝트 memo 전용이며 team runtime store 가 아닙니다.
+
 ### 설정
 
 ```bash

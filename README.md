@@ -29,6 +29,7 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 | Capability | Description | Command |
 |------------|-------------|---------|
 | **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` |
+| **Memo Storage** | Git-friendly project notes; default append-only file storage plus optional split-file storage | `aios memo add "note"` / `aios memo storage status` |
 | **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
@@ -44,6 +45,10 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 ```bash
 # Launch TUI
 aios
+
+# Save a Git-friendly project memo
+aios memo add "Remember to keep auth tests strict"
+aios memo storage status
 
 # Route from inside native clients after setup
 # Claude/Gemini/OpenCode: /team <task>

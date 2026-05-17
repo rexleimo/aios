@@ -95,7 +95,7 @@ scripts/ctx-agent.sh --agent gemini-cli --prompt "审查回归风险和缺失的
 
 **证据**
 
-- `memory/context-db/` 下有新的 session/checkpoint 产物
+- `.aios/context-db/` 下有新的 session/checkpoint 产物
 - 后续 CLI 运行可继续使用同一项目上下文
 
 ## 案例 4：认证墙处理（人机协同）
@@ -133,8 +133,8 @@ scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "从最新 chec
 
 **证据**
 
-- `memory/context-db/index/checkpoints.jsonl` 有新 checkpoint 条目
-- `memory/context-db/exports/` 有导出 context packet
+- `.aios/context-db/index/checkpoints.jsonl` 有新 checkpoint 条目
+- `.aios/context-db/exports/` 有导出 context packet
 
 ## 案例 6：Skills 生命周期运维
 

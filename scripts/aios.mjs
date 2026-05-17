@@ -3,7 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from './lib/cli/parse-args.mjs';
-import { getCommandHelpText, getInternalHelpText, getRootHelpText } from './lib/cli/help.mjs';
+import { getCommandHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './lib/cli/help.mjs';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = process.cwd();
@@ -16,6 +16,11 @@ function printHelp(parsed) {
 
   if (parsed.command === 'internal') {
     process.stdout.write(getInternalHelpText(parsed.options.target, parsed.options.action));
+    return;
+  }
+
+  if (parsed.command === 'memo') {
+    process.stdout.write(getMemoHelpText(parsed.options.argv));
     return;
   }
 

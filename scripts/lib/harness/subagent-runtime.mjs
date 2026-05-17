@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import agentSpec from '../../../memory/specs/orchestrator-agents.json' with { type: 'json' };
+import agentSpec from '../specs/orchestrator-agents.json' with { type: 'json' };
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import {
   buildClientModelArgs,
@@ -42,7 +42,8 @@ const CLIENT_COMMAND = {
   'opencode-cli': 'opencode',
 };
 
-const CODEX_OUTPUT_SCHEMA_REL = path.join('memory', 'specs', 'agent-handoff.schema.json');
+const CODEX_OUTPUT_SCHEMA_REL = path.join('scripts', 'lib', 'specs', 'agent-handoff.schema.json');
+const HANDOFF_SCHEMA_DISPLAY_PATH = 'scripts/lib/specs/agent-handoff.schema.json';
 
 function normalizeText(value) {
   return String(value ?? '').trim();
@@ -677,7 +678,7 @@ function buildSystemPrompt({ agent, contextText, plan, job, phase, rootDir, env,
 
   lines.push('');
   lines.push('Output Contract');
-  lines.push('Output a single JSON object (no surrounding text) that conforms to `memory/specs/agent-handoff.schema.json`.');
+  lines.push(`Output a single JSON object (no surrounding text) that conforms to \`${HANDOFF_SCHEMA_DISPLAY_PATH}\`.`);
   lines.push('');
   lines.push('Required fields: schemaVersion, status, fromRole, toRole, taskTitle, contextSummary, findings, filesTouched, openQuestions, recommendations.');
   lines.push('Set schemaVersion=1. Always include array fields (empty arrays are OK).');
@@ -1248,7 +1249,7 @@ async function executePhaseJob(plan, job, phase, dependencyRuns, {
 
   const codexOutput = clientId === 'codex-cli' && codexTempDir && rootDir
     ? {
-      schemaPath: path.join(rootDir, CODEX_OUTPUT_SCHEMA_REL),
+      schemaPath: path.join(resolveRepoRoot(), CODEX_OUTPUT_SCHEMA_REL),
       lastMessagePath: path.join(codexTempDir, `${safeFileSlug(job?.jobId)}.json`),
       color: 'never',
     }

@@ -6,7 +6,7 @@
 
 **Architecture:** Keep existing dispatch skeletons and runtimes, but attach model-router decisions to each phase job, include them in prompts and runtime metadata, select the CLI protocol from the routed model when enabled, and record per-job `model.dispatch` events for `model-router stats`. Dry-run remains non-mutating but now exposes the intended model rule.
 
-**Tech Stack:** Node.js ESM, built-in `node:test`, AIOS ContextDB CLI, existing `memory/specs/model-registry.json`.
+**Tech Stack:** Node.js ESM, built-in `node:test`, AIOS ContextDB CLI, existing `scripts/lib/specs/model-registry.json`.
 
 ---
 

@@ -23,7 +23,7 @@ This design defines:
 
 ## Design Rules
 
-- Blueprints are declarative and live in `memory/specs/orchestrator-blueprints.json`.
+- Blueprints are declarative and live in `scripts/lib/specs/orchestrator-blueprints.json`.
 - Runtime helpers live in `scripts/lib/harness/orchestrator.mjs` and related executor/evidence helpers.
 - Every parallel branch must emit a valid P0 handoff payload.
 - Parallel merge stops when statuses are blocked or file ownership overlaps.

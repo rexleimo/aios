@@ -14,8 +14,14 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 最新稳定版
 
+- `1.17.0`（2026-05-16）：
+  - **Memo Storage**：`aios memo` 现在使用 storage 抽象，公开实现只有 `file`（默认 append-only JSONL：`memory/memo/file/events.jsonl`）和 `split`（每条 memo 一个 JSON 文件）。通过 `aios memo storage status`、`aios memo storage use split`、`aios memo storage use file`、`aios memo storage rebuild` 和 `aios memo storage doctor` 管理。
+  - **适合 Git 共享的 memo 源数据**：`memory/memo/` 是项目 memo 的规范根目录。ContextDB/SQLite 只保留兼容镜像和可重建缓存角色，不再是 memo source of truth。
+  - **运行时状态对齐**：新的 ContextDB 运行时状态写入 `.aios/context-db/`；legacy `memory/context-db` 仅在已存在时作为兼容读路径。
+  - 详见 [ContextDB](contextdb.md#workspace-memory-aios-memo) 中的 memo 存储边界。
+
 - `1.13.0`（2026-05-15）：
-  - **Context Registry（拉取式上下文）**：用 ~350 字节的 registry 指针替代每次 ~30KB 的推送式注入。Agent 读取 `memory/context-db/index.json` 后按需加载上下文。启动从 ~5 分钟降到近乎即时。
+  - **Context Registry（拉取式上下文）**：用 ~350 字节的 registry 指针替代每次 ~30KB 的推送式注入。Agent 读取 `.aios/context-db/index.json` 后按需加载上下文。启动从 ~5 分钟降到近乎即时。
   - **`aios init`**：一条命令初始化全部四种 coding agent（Claude Code、Codex CLI、Gemini CLI、OpenCode）。自动检测已安装的 agent，写入 registry 标记到配置文件，配置 save guard hooks。幂等操作。
   - **多客户端 native sync 修复**：Gemini 现在写入 `GEMINI.md`（Gemini CLI 实际读取的文件）。OpenCode 直接读取 `AGENTS.md`（无需单独文件）。旧的 `.gemini/AIOS.md` 和 `.opencode/AIOS.md` 已标记废弃。
   - **`--context-mode slim`**：Team/harness 路由和包装后的 agent 在检测到 registry 标记时自动使用 slim 注入。未包装的 agent 回退到完整注入。
@@ -110,7 +116,7 @@ description: 版本历史、升级说明与文档变更入口。
 ## 2026-03-16 运行观测状态
 
 - 连续 live sample 维持成功（`dispatchRun.ok=true`），最新 artifact：
-  - `memory/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
+  - `.aios/context-db/sessions/codex-cli-20260303T080437-065e16c0/artifacts/dispatch-run-20260316T111419Z.json`
 - `learn-eval` 当前仍给出：
   - `[fix] runbook.failure-triage`（`clarity-needs-input=5`）
   - `[observe] sample.latency-watch`（`avgElapsedMs=160678`）

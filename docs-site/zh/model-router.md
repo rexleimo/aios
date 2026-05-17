@@ -205,8 +205,8 @@ preferredModel: claude-opus
 
 | 文件 | 用途 |
 |------|------|
-| `memory/specs/model-registry.json` | 模型能力、路由规则、CLI 协议配置 |
-| `memory/specs/orchestrator-agents.json` | Agent 角色→preferredModel 映射（schema v2） |
+| `scripts/lib/specs/model-registry.json` | 模型能力、路由规则、CLI 协议配置 |
+| `scripts/lib/specs/orchestrator-agents.json` | Agent 角色→preferredModel 映射（schema v2） |
 | `.claude/skills/model-router/SKILL.md` | Agent 可调用的自助路由 skill |
 | `.claude/agents/*.md` | 包含 preferredModel frontmatter 的 Agent 角色卡 |
 | `scripts/lib/model-router.mjs` | 路由器逻辑：匹配、降级、CLI 构建、统计 |

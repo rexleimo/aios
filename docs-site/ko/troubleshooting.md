@@ -71,7 +71,7 @@ Doctor 스크립트로 확인하세요:
 
 ## `search`가 사이드카 손실 후 빈 결과 반환
 
-`memory/context-db/index/context.db`가 없거나 오래된 경우:
+`.aios/context-db/index/context.db`가 없거나 오래된 경우:
 
 1. `cd mcp-server && npm run contextdb -- index:rebuild` 실행
 2. `search` / `timeline` / `event:get` 재실행
@@ -106,9 +106,9 @@ aios quality-gate pre-pr --profile strict
 
 - 권장: CLI를 종료한 뒤 셸에서 `codex` / `claude` / `gemini`를 다시 실행
 - 같은 프로세스에서 계속해야 한다면: 새 대화 첫 메시지에서 최신 스냅샷을 읽도록 요청:
-  - `@memory/context-db/exports/latest-codex-cli-context.md`
-  - `@memory/context-db/exports/latest-claude-code-context.md`
-  - `@memory/context-db/exports/latest-gemini-cli-context.md`
+  - `@.aios/context-db/exports/latest-codex-cli-context.md`
+  - `@.aios/context-db/exports/latest-claude-code-context.md`
+  - `@.aios/context-db/exports/latest-gemini-cli-context.md`
 
 클라이언트가 `@file` 참조를 지원하지 않으면 파일 내용을 첫 프롬프트로 붙여넣으세요.
 
@@ -153,7 +153,7 @@ codex
 최소 구조화 출력 스모크 체크 (macOS/Linux):
 
 ```bash
-printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema memory/specs/agent-handoff.schema.json -
+printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema scripts/lib/specs/agent-handoff.schema.json -
 ```
 
 ## 명령어가 랩되지 않음
