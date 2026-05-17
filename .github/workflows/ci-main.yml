@@ -28,9 +28,23 @@ jobs:
         with:
           node-version: "22"
 
+      - name: Install repo script test system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ripgrep
+
       - name: Install mcp-server deps
         working-directory: mcp-server
         run: npm ci
+
+      - name: Install test CLI shims
+        run: |
+          mkdir -p .ci-bin
+          for name in codex claude gemini opencode; do
+            printf '#!/usr/bin/env bash\necho "ci shim"\n' > ".ci-bin/$name"
+            chmod +x ".ci-bin/$name"
+          done
+          echo "$PWD/.ci-bin" >> "$GITHUB_PATH"
 
       - name: Run repo scripts tests
         run: npm run test:scripts
