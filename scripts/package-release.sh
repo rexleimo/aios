@@ -56,7 +56,6 @@ require_cmd() {
 
 require_cmd git
 require_cmd gzip
-require_cmd zip
 
 install_sh="$ROOT_DIR/scripts/aios-install.sh"
 install_ps1="$ROOT_DIR/scripts/aios-install.ps1"
