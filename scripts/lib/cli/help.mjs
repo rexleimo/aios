@@ -12,6 +12,8 @@ Commands:
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   memo          Workspace memo + pinned memory helpers
+  refs          Search/read offloaded tool-output refs
+  canvas        Show Mermaid task canvas for offloaded tool calls
   perception    Content outcome recording, insight generation, and perception summary
   quality-gate  Run repo quality checks with harness profiles
   orchestrate   Preview reusable subagent workflow blueprints
@@ -34,6 +36,8 @@ Examples:
   node scripts/aios.mjs internal native repair show --repair-id latest
   node scripts/aios.mjs internal native rollback --repair-id latest
   node scripts/aios.mjs memo add "note #tag"
+  node scripts/aios.mjs refs grep "error" --session codex-cli-...
+  node scripts/aios.mjs canvas show --session codex-cli-...
   node scripts/aios.mjs quality-gate pre-pr --profile strict
   node scripts/aios.mjs orchestrate feature --task "Ship orchestrator blueprints"
   node scripts/aios.mjs team 3:codex "Ship orchestrator blueprints"
@@ -416,6 +420,36 @@ Options:
   AIOS_RELEASE_TREND_WOW_FAILURE_DELTA_WARN=<0-1>   (env) WoW failure-rate delta warning threshold (default: 0.05)
   AIOS_RELEASE_TREND_WOW_FALLBACK_DELTA_WARN=<0-1>  (env) WoW fallback-rate delta warning threshold (default: 0.03)
   --format <text|json>
+  -h, --help
+`;
+    case 'refs':
+      return `Usage:
+  node scripts/aios.mjs refs list [--session <id>] [--workspace <path>]
+  node scripts/aios.mjs refs grep <pattern> [--session <id>] [--limit N] [--workspace <path>]
+  node scripts/aios.mjs refs read <node_id> [--workspace <path>]
+  node scripts/aios.mjs refs prune [--keep-days N] [--workspace <path>]
+
+Options:
+  --session <id>                 Limit to one offload session
+  --storage <file|split>         Override offload storage backend
+  --workspace <path>             Workspace root containing .aios/offload
+  --limit <n>                    Max refs to list/search (default: 20)
+  --keep-days <n>                Prune refs older than n days (default: 30)
+  -h, --help
+`;
+    case 'canvas':
+      return `Usage:
+  node scripts/aios.mjs canvas show [--session <id>] [--format mmd|json] [--workspace <path>]
+  node scripts/aios.mjs canvas path [--session <id>] [--workspace <path>]
+  node scripts/aios.mjs canvas backfill --input <events.jsonl> --client <client> [--session <id>] [--workspace <path>]
+
+Options:
+  --session <id>                 Offload session id (default: default)
+  --format <mmd|json>            Show Mermaid or raw canvas JSON (default: mmd)
+  --input <path>                 JSONL tool-event log for backfill
+  --client <client>              Client id recorded on generated refs
+  --storage <file|split>         Override offload storage backend
+  --workspace <path>             Workspace root containing .aios/offload
   -h, --help
 `;
     case 'perception':

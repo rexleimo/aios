@@ -34,7 +34,7 @@ import {
 } from '../lifecycle/options.mjs';
 import { normalizeOrchestratorBlueprint, normalizeOrchestratorFormat } from '../harness/orchestrator.mjs';
 
-const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy']);
+const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy', 'offload']);
 const PRIVACY_MODES = new Set(['regex', 'ollama', 'hybrid']);
 const TEAM_PROVIDERS = new Set(['codex', 'claude', 'gemini']);
 const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);
@@ -1158,6 +1158,20 @@ function parseInternalArgs(argv) {
       case '--disable':
         options.disable = true;
         break;
+      case '--workspace':
+        if (target !== 'offload') {
+          throw new Error(`Unknown option: ${arg}`);
+        }
+        options.workspaceRoot = takeValue(rest, index, '--workspace');
+        index += 1;
+        break;
+      case '--storage':
+        if (target !== 'offload') {
+          throw new Error(`Unknown option: ${arg}`);
+        }
+        options.storage = takeValue(rest, index, '--storage');
+        index += 1;
+        break;
       default:
         throw new Error(`Unknown option: ${arg}`);
     }
@@ -1692,6 +1706,78 @@ export function parseArgs(argv = []) {
     return parseModelRouterArgs(argv);
   }
 
+  if (first === 'refs') {
+    return parseRefsArgs(argv);
+  }
+
+  if (first === 'canvas') {
+    return parseCanvasArgs(argv);
+  }
+
+function parseRefsArgs(argv) {
+  const rest = argv.slice(1);
+  let help = false;
+  const options = { subcommand: 'list', session: '', limit: '20', keepDays: '30', pattern: '', nodeId: '', storage: '', workspaceRoot: '' };
+
+  if (rest[0] && !String(rest[0]).startsWith('-')) {
+    const sub = String(rest[0]).trim().toLowerCase();
+    if (['grep', 'read', 'list', 'prune'].includes(sub)) {
+      options.subcommand = sub;
+      rest.shift();
+    }
+  }
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === '-h' || arg === '--help') { help = true; continue; }
+    switch (arg) {
+      case '--session': options.session = takeValue(rest, index, '--session'); index += 1; break;
+      case '--limit': options.limit = takeValue(rest, index, '--limit'); index += 1; break;
+      case '--keep-days': options.keepDays = takeValue(rest, index, '--keep-days'); index += 1; break;
+      case '--storage': options.storage = takeValue(rest, index, '--storage'); index += 1; break;
+      case '--workspace': options.workspaceRoot = takeValue(rest, index, '--workspace'); index += 1; break;
+      default:
+        if (!arg.startsWith('-')) {
+          if (options.subcommand === 'grep' && !options.pattern) { options.pattern = arg; }
+          else if (options.subcommand === 'read' && !options.nodeId) { options.nodeId = arg; }
+        } else {
+          throw new Error(`Unknown option: ${arg}`);
+        }
+    }
+  }
+  return { mode: help ? 'help' : 'command', help, command: 'refs', options };
+}
+
+function parseCanvasArgs(argv) {
+  const rest = argv.slice(1);
+  let help = false;
+  const options = { subcommand: 'show', session: 'default', format: 'mmd', storage: '', client: '', inputPath: '', workspaceRoot: '' };
+
+  if (rest[0] && !String(rest[0]).startsWith('-')) {
+    const sub = String(rest[0]).trim().toLowerCase();
+    if (['show', 'path', 'backfill'].includes(sub)) {
+      options.subcommand = sub;
+      rest.shift();
+    }
+  }
+
+  for (let index = 0; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === '-h' || arg === '--help') { help = true; continue; }
+    switch (arg) {
+      case '--session': options.session = takeValue(rest, index, '--session'); index += 1; break;
+      case '--format': options.format = takeValue(rest, index, '--format'); index += 1; break;
+      case '--storage': options.storage = takeValue(rest, index, '--storage'); index += 1; break;
+      case '--client': options.client = takeValue(rest, index, '--client'); index += 1; break;
+      case '--input':
+      case '--input-path': options.inputPath = takeValue(rest, index, arg); index += 1; break;
+      case '--workspace': options.workspaceRoot = takeValue(rest, index, '--workspace'); index += 1; break;
+      default: throw new Error(`Unknown option: ${arg}`);
+    }
+  }
+  return { mode: help ? 'help' : 'command', help, command: 'canvas', options };
+}
+
 function parseModelRouterArgs(argv) {
   const rest = argv.slice(1);
   let help = false;
@@ -1782,7 +1868,7 @@ function parseModelRouterArgs(argv) {
         ? 'snapshot-rollback'
       : first;
 
-  if (!['setup', 'update', 'uninstall', 'doctor', 'quality-gate', 'orchestrate', 'team', 'hud', 'harness', 'learn-eval', 'entropy-gc', 'snapshot-rollback', 'release-status'].includes(command)) {
+  if (!['setup', 'update', 'uninstall', 'doctor', 'quality-gate', 'orchestrate', 'team', 'hud', 'harness', 'learn-eval', 'entropy-gc', 'snapshot-rollback', 'release-status', 'refs', 'canvas'].includes(command)) {
     throw new Error(`Unknown command: ${argv[0]}`);
   }
 

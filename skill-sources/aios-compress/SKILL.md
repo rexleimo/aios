@@ -39,6 +39,12 @@ Use `precise` for:
 
 Return to `tight` after the precise segment unless the user requested otherwise.
 
+## Long Output Offload
+
+- For tool output that is too large to keep in context, prefer `aios internal offload capture` (hook path) or `aios refs grep/read` (recall path) instead of summarizing away evidence.
+- `aios-compress` reduces assistant output only; offload reduces future input by storing raw tool output under `.aios/offload/refs/` and keeping a Mermaid canvas pointer.
+- Do not claim token savings for the current already-injected tool output; savings apply to resume/context-pack and later recall when only the canvas/node_id is loaded.
+
 ## Boundaries
 
 - This is a prompt-level output discipline, not a shell hook.

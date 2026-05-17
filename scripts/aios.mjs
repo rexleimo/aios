@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from './lib/cli/parse-args.mjs';
@@ -128,16 +129,36 @@ async function runInternal(options) {
     if (action === 'install') return module.installPrivacyGuard({ rootDir, enable: options.enable !== false, disable: Boolean(options.disable), mode: options.mode ?? '' });
   }
 
+  if (target === 'offload') {
+    const { captureFromStdin, resolveStorage } = await import('./lib/offload/tool-offload.mjs');
+    if (action === 'capture') {
+      const workspaceRoot = options.workspaceRoot ? path.resolve(options.workspaceRoot) : projectRoot;
+      const config = await loadWorkspaceConfig(workspaceRoot);
+      const storage = resolveStorage(options, process.env, config);
+      await captureFromStdin(workspaceRoot, storage, config);
+      return;
+    }
+  }
+
   throw new Error(`Unsupported internal action: ${target} ${action}`);
 }
 
 
 function resolveRuntimeWorkspace(command, options = {}) {
-  const workspaceScoped = new Set(['harness', 'hud', 'memo', 'orchestrate', 'team', 'quality-gate', 'snapshot-rollback', 'entropy-gc', 'learn-eval', 'release-status', 'perception']);
+  const workspaceScoped = new Set(['harness', 'hud', 'memo', 'orchestrate', 'team', 'quality-gate', 'snapshot-rollback', 'entropy-gc', 'learn-eval', 'release-status', 'perception', 'refs', 'canvas']);
   if (!workspaceScoped.has(command)) return rootDir;
   const explicit = String(options.workspaceRoot || options.rootDir || '').trim();
   if (explicit) return path.resolve(explicit);
   return projectRoot;
+}
+
+async function loadWorkspaceConfig(workspaceRoot) {
+  const settingsPath = path.join(workspaceRoot, 'config', 'settings.json');
+  try {
+    return JSON.parse(await readFile(settingsPath, 'utf8'));
+  } catch {
+    return {};
+  }
 }
 
 function buildTeamRuntimeEnv(options = {}, baseEnv = process.env) {
@@ -433,6 +454,85 @@ async function main() {
       await runPerceptionSummary(parsed.options, { rootDir });
     } else {
       throw new Error(`Unknown perception subcommand: ${sub}. Use: record, insights, summary`);
+    }
+    return;
+  }
+
+  // ── offload: refs commands ──
+  if (parsed.command === 'refs') {
+    const { resolveStorage } = await import('./lib/offload/tool-offload.mjs');
+    const { readRef, grepRefs, listRefs, pruneRefs } = await import('./lib/offload/refs-store.mjs');
+    const ws = resolveRuntimeWorkspace(parsed.command, parsed.options);
+    const config = await loadWorkspaceConfig(ws);
+    const storage = resolveStorage(parsed.options, process.env, config);
+    const sub = parsed.options.subcommand || 'list';
+
+    if (sub === 'grep') {
+      const pattern = parsed.options.pattern;
+      if (!pattern) { process.stderr.write('Usage: aios refs grep <pattern> [--session S]\n'); process.exitCode = 1; return; }
+      const results = await grepRefs(ws, pattern, { sessionId: parsed.options.session, storage, limit: Number(parsed.options.limit) || 20 });
+      for (const r of results) console.log(`${r.node_id}  ${r.tool || ''}  ${r.ts || ''}  ${r.path}`);
+    } else if (sub === 'read') {
+      const nodeId = parsed.options.nodeId;
+      if (!nodeId) { process.stderr.write('Usage: aios refs read <node_id>\n'); process.exitCode = 1; return; }
+      const content = await readRef(ws, nodeId, storage);
+      if (content) process.stdout.write(typeof content === 'string' ? content : JSON.stringify(content, null, 2));
+      else { process.stderr.write(`[offload] node ${nodeId} not found\n`); process.exitCode = 1; }
+    } else if (sub === 'list') {
+      const results = await listRefs(ws, { sessionId: parsed.options.session, storage, limit: Number(parsed.options.limit) || 20 });
+      for (const r of results) console.log(`${r.node_id}  ${r.session}  ${r.path || ''}`);
+    } else if (sub === 'prune') {
+      const result = await pruneRefs(ws, { storage, keepDays: Number(parsed.options.keepDays) || 30 });
+      console.log(`Pruned ${result.pruned} refs, freed ${(result.bytesFreed / 1024).toFixed(1)}KB`);
+    } else {
+      process.stderr.write(`Unknown refs subcommand: ${sub}. Use: grep, read, list, prune\n`);
+      process.exitCode = 1;
+    }
+    return;
+  }
+
+  // ── offload: canvas commands ──
+  if (parsed.command === 'canvas') {
+    const { resolveStorage } = await import('./lib/offload/tool-offload.mjs');
+    const { loadCanvas, canvasToMermaid, getCanvasPaths } = await import('./lib/offload/mermaid-canvas.mjs');
+    const ws = resolveRuntimeWorkspace(parsed.command, parsed.options);
+    const config = await loadWorkspaceConfig(ws);
+    const storage = resolveStorage(parsed.options, process.env, config);
+    const sub = parsed.options.subcommand || 'show';
+    const session = parsed.options.session || 'default';
+
+    if (sub === 'show') {
+      const fmt = parsed.options.format || 'mmd';
+      if (fmt === 'json') {
+        const canvas = await loadCanvas(ws, session, storage);
+        console.log(JSON.stringify(canvas, null, 2));
+      } else {
+        const canvas = await loadCanvas(ws, session, storage);
+        console.log(canvasToMermaid(canvas));
+      }
+    } else if (sub === 'path') {
+      const paths = getCanvasPaths(ws, session, storage);
+      console.log(JSON.stringify(paths, null, 2));
+    } else if (sub === 'backfill') {
+      const inputPath = String(parsed.options.inputPath || '').trim();
+      if (!inputPath) {
+        process.stderr.write('Usage: aios canvas backfill --input <events.jsonl> --client <client> [--session S]\n');
+        process.exitCode = 1;
+        return;
+      }
+      const { backfillFromJsonl } = await import('./lib/offload/backfill.mjs');
+      const result = await backfillFromJsonl({
+        workspaceRoot: ws,
+        sessionId: session,
+        client: parsed.options.client || '',
+        inputPath,
+        storage,
+        config,
+      });
+      console.log(`Backfilled scanned=${result.scanned} offloaded=${result.offloaded} skipped=${result.skipped} errors=${result.errors}`);
+    } else {
+      process.stderr.write(`Unknown canvas subcommand: ${sub}. Use: show, path, backfill\n`);
+      process.exitCode = 1;
     }
     return;
   }

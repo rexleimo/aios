@@ -146,6 +146,22 @@ export function buildSaveGuardCommand(agent, workspaceRoot, { env = process.env 
   ].join(' ');
 }
 
+export function buildOffloadCaptureCommand(agent, workspaceRoot, { env = process.env } = {}) {
+  const cfg = AGENT_CONFIG[agent];
+  const root = resolve(workspaceRoot || process.cwd());
+  const aiosPath = resolve(resolveAiosRuntimeRoot(env), 'scripts', 'aios.mjs');
+  return [
+    `AIOS_OFFLOAD_CLIENT=${shellQuote(cfg.bridgeName)}`,
+    'node',
+    shellQuote(aiosPath),
+    'internal',
+    'offload',
+    'capture',
+    '--workspace',
+    shellQuote(root),
+  ].join(' ');
+}
+
 function buildHookEntry(agent, command) {
   if (agent === 'claude') {
     return {
@@ -185,6 +201,33 @@ function findSaveGuardHook(stopHooks) {
       for (let hookIndex = 0; hookIndex < entry.hooks.length; hookIndex += 1) {
         const hook = entry.hooks[hookIndex];
         if (hook && typeof hook === 'object' && isSaveGuardCommand(hook.command)) {
+          return { entryIndex, hookIndex, command: hook.command, schema: 'nested' };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+function isOffloadCaptureCommand(command) {
+  const text = String(command || '');
+  return text.includes('aios.mjs') && text.includes('internal offload capture');
+}
+
+function findOffloadCaptureHook(postToolUseHooks) {
+  for (let entryIndex = 0; entryIndex < postToolUseHooks.length; entryIndex += 1) {
+    const entry = postToolUseHooks[entryIndex];
+    if (!entry || typeof entry !== 'object') continue;
+
+    if (isOffloadCaptureCommand(entry.command)) {
+      return { entryIndex, hookIndex: -1, command: entry.command, schema: 'top-level' };
+    }
+
+    if (Array.isArray(entry.hooks)) {
+      for (let hookIndex = 0; hookIndex < entry.hooks.length; hookIndex += 1) {
+        const hook = entry.hooks[hookIndex];
+        if (hook && typeof hook === 'object' && isOffloadCaptureCommand(hook.command)) {
           return { entryIndex, hookIndex, command: hook.command, schema: 'nested' };
         }
       }
@@ -234,12 +277,61 @@ function upsertSaveGuardHook(stopHooks, agent, hookCommand) {
   return { action: 'update', stopHooks: nextStopHooks };
 }
 
+function upsertOffloadCaptureHook(postToolUseHooks, agent, hookCommand) {
+  const existing = findOffloadCaptureHook(postToolUseHooks);
+
+  if (!existing) {
+    return { action: 'add', postToolUseHooks: [...postToolUseHooks, buildHookEntry(agent, hookCommand)] };
+  }
+
+  const needsSchemaUpgrade = agent === 'claude' && existing.schema !== 'nested';
+  if (existing.command === hookCommand && !needsSchemaUpgrade) {
+    return { action: 'skip', postToolUseHooks };
+  }
+
+  const nextPostToolUseHooks = [...postToolUseHooks];
+  const entry = nextPostToolUseHooks[existing.entryIndex];
+
+  if (agent === 'claude') {
+    if (existing.hookIndex >= 0 && Array.isArray(entry.hooks)) {
+      const nextHooks = [...entry.hooks];
+      nextHooks[existing.hookIndex] = {
+        ...nextHooks[existing.hookIndex],
+        type: nextHooks[existing.hookIndex].type || 'command',
+        command: hookCommand,
+      };
+      nextPostToolUseHooks[existing.entryIndex] = {
+        ...entry,
+        hooks: nextHooks,
+      };
+    } else {
+      nextPostToolUseHooks[existing.entryIndex] = buildHookEntry(agent, hookCommand);
+    }
+    return { action: 'update', postToolUseHooks: nextPostToolUseHooks };
+  }
+
+  nextPostToolUseHooks[existing.entryIndex] = {
+    ...entry,
+    command: hookCommand,
+  };
+  return { action: 'update', postToolUseHooks: nextPostToolUseHooks };
+}
+
+function combineHookActions(stopAction, offloadAction) {
+  if (stopAction === 'update' || offloadAction === 'update') return 'update';
+  if (stopAction === 'add' || offloadAction === 'add') return 'add';
+  return 'skip';
+}
+
 export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process.env } = {}) {
   const cfg = AGENT_CONFIG[agent];
   if (!cfg || !cfg.hookFile) return null;
 
   const hookPath = resolve(workspaceRoot, cfg.hookFile);
   const hookCommand = buildSaveGuardCommand(cfg.cli, workspaceRoot, { env });
+  const offloadCommand = agent === 'claude'
+    ? buildOffloadCaptureCommand(cfg.cli, workspaceRoot, { env })
+    : '';
 
   let settings = {};
   try {
@@ -251,29 +343,37 @@ export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process
   // Check if hook already exists
   const hooks = settings.hooks || {};
   const stopHooks = hooks.Stop || [];
+  const postToolUseHooks = hooks.PostToolUse || [];
   const hookPlan = upsertSaveGuardHook(stopHooks, agent, hookCommand);
+  const offloadPlan = offloadCommand
+    ? upsertOffloadCaptureHook(postToolUseHooks, agent, offloadCommand)
+    : { action: 'skip', postToolUseHooks };
+  const combinedAction = combineHookActions(hookPlan.action, offloadPlan.action);
 
-  if (hookPlan.action === 'skip') {
-    return { path: hookPath, action: 'skip', reason: 'save guard hook already present' };
+  if (combinedAction === 'skip') {
+    return { path: hookPath, action: 'skip', reason: 'save guard and offload hooks already present' };
   }
 
   if (dryRun) {
-    const action = hookPlan.action === 'update' ? 'would-update' : 'would-add';
-    const verb = hookPlan.action === 'update' ? 'would update' : 'would add';
-    return { path: hookPath, action, reason: `${verb} Stop hook: ${hookCommand}` };
+    const action = combinedAction === 'update' ? 'would-update' : 'would-add';
+    const verb = combinedAction === 'update' ? 'would update' : 'would add';
+    return { path: hookPath, action, reason: `${verb} hooks: Stop=${hookCommand}${offloadCommand ? `; PostToolUse=${offloadCommand}` : ''}` };
   }
 
   settings.hooks = {
     ...hooks,
     Stop: hookPlan.stopHooks,
   };
+  if (offloadCommand) {
+    settings.hooks.PostToolUse = offloadPlan.postToolUseHooks;
+  }
 
   mkdirSync(dirname(hookPath), { recursive: true });
   writeFileSync(hookPath, `${JSON.stringify(settings, null, 2)}\n`, 'utf8');
   return {
     path: hookPath,
-    action: hookPlan.action === 'update' ? 'updated' : 'added',
-    reason: hookPlan.action === 'update' ? 'Stop hook updated for auto-save' : 'Stop hook added for auto-save',
+    action: combinedAction === 'update' ? 'updated' : 'added',
+    reason: combinedAction === 'update' ? 'hooks updated for auto-save/offload' : 'hooks added for auto-save/offload',
   };
 }
 

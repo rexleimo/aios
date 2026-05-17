@@ -45,6 +45,7 @@ cover-image.png
 # 历史记录（可能包含敏感信息）
 memory/history/
 memory/context-db/
+memory/workspace/
 
 # Claude 本地配置
 .claude/settings.local.json
@@ -89,3 +90,6 @@ memory/skills/skills/
 # Local analysis clones (do not commit)
 .superpowers/
 __pycache__/
+
+# Legacy memo runtime state (do not commit)
+memory/memo/

@@ -89,6 +89,11 @@
       "repoTargets": ["codex", "claude"]
     },
     {
+      "relativeSkillPath": "aios-offload-recall",
+      "installCatalogName": "aios-offload-recall",
+      "repoTargets": ["codex", "claude"]
+    },
+    {
       "relativeSkillPath": "cap-commit-push",
       "installCatalogName": "cap-commit-push",
       "repoTargets": ["codex", "claude"]

@@ -124,11 +124,30 @@ function extractJsonFence(text = '') {
   return '';
 }
 
-function buildIterationPrompt({
+function formatOffloadCanvasPromptBlock(offloadCanvas = null) {
+  if (!offloadCanvas?.mermaid) {
+    return 'Offload Canvas：暂无。';
+  }
+  const lines = [
+    'Offload Canvas：',
+    `- Path: ${offloadCanvas.relativePath || offloadCanvas.path || '(unknown)'}`,
+    '- Recall: 先看图定位 node_id；需要原始证据时只用 `aios refs grep/read` 读取对应节点，不要回放完整 l2-events/tool logs。',
+    '```mermaid',
+    String(offloadCanvas.mermaid).trimEnd(),
+    '```',
+  ];
+  if (offloadCanvas.truncated) {
+    lines.splice(3, 0, '- Truncated: yes');
+  }
+  return lines.join('\n');
+}
+
+export function buildIterationPrompt({
   objective = '',
   iteration = 1,
   continuity = null,
   summary = null,
+  offloadCanvas = null,
 } = {}) {
   const continuityText = continuity?.summary
     ? `上一轮连续性总结：${continuity.summary}`
@@ -140,6 +159,7 @@ function buildIterationPrompt({
     `你正在执行 AIOS solo harness 的第 ${iteration} 轮。`,
     `当前目标：${normalizeText(objective) || '(empty)'}`,
     continuityText,
+    formatOffloadCanvasPromptBlock(offloadCanvas),
     `上一轮 outcome：${lastOutcome}`,
     `上一轮 failureClass：${lastFailure}`,
     '',
@@ -175,11 +195,12 @@ function parseHarnessJsonOutput(rawOutput = '') {
 
 function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionId, objective, provider } = {}) {
   const runtimeAiosRootDir = path.resolve(normalizeText(aiosRootDir, rootDir));
-  return async ({ iteration, continuity, summary, worktree }) => {
+  return async ({ iteration, continuity, offloadCanvas, summary, worktree }) => {
     const prompt = buildIterationPrompt({
       objective,
       iteration,
       continuity,
+      offloadCanvas,
       summary,
     });
     const workspaceRoot = worktree?.enabled && worktree?.path ? worktree.path : rootDir;

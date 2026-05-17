@@ -45,6 +45,21 @@ test('ensureHook writes Claude Stop hook using nested command schema', () => {
   assert.match(settings.hooks.Stop[0].hooks[0].command, /--save-guard/u);
 });
 
+test('ensureHook writes Claude PostToolUse offload capture hook', () => {
+  const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-init-claude-offload-hook-'));
+  ensureHook(workspaceRoot, 'claude', {
+    env: { AIOS_ROOT_DIR: '/opt/aios-runtime' },
+  });
+
+  const settings = JSON.parse(fs.readFileSync(path.join(workspaceRoot, '.claude', 'settings.local.json'), 'utf8'));
+  assert.equal(settings.hooks.PostToolUse.length, 1);
+  assert.deepEqual(Object.keys(settings.hooks.PostToolUse[0]).sort(), ['hooks', 'matcher']);
+  const command = settings.hooks.PostToolUse[0].hooks[0].command;
+  assert.match(command, /\/opt\/aios-runtime\/scripts\/aios\.mjs/u);
+  assert.match(command, /internal offload capture/u);
+  assert.match(command, /--workspace/u);
+});
+
 test('ensureHook upgrades stale nested Claude save guard hook to installed runtime', () => {
   const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-init-claude-stale-hook-'));
   fs.mkdirSync(path.join(workspaceRoot, '.claude'), { recursive: true });

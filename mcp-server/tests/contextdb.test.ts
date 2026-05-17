@@ -934,6 +934,64 @@ test('buildContextPacket composes markdown for agent handoff', async () => {
   assert.match(packet.markdown, /Analyze OpenViking/);
 });
 
+test('buildContextPacket includes offload canvas index without loading raw refs', async () => {
+  const workspace = await makeWorkspace();
+  const session = await createSession({
+    workspaceRoot: workspace,
+    agent: 'codex-cli',
+    project: 'aios',
+    goal: 'Resume with offloaded tool evidence',
+  });
+
+  const canvasDir = path.join(workspace, '.aios', 'offload', 'canvas', session.sessionId);
+  const refsDir = path.join(workspace, '.aios', 'offload', 'refs', session.sessionId);
+  await fs.mkdir(canvasDir, { recursive: true });
+  await fs.mkdir(refsDir, { recursive: true });
+  await fs.writeFile(
+    path.join(canvasDir, 'task-canvas.mmd'),
+    [
+      'graph LR',
+      '    m_n0001_abc123["n0001-abc123 Bash: npm test"]',
+      '    class m_n0001_abc123 s_m_n0001_abc123',
+      '    classDef s_m_n0001_abc123 fill:#dcfce7,stroke:#16a34a',
+      '',
+    ].join('\n'),
+    'utf8'
+  );
+  await fs.writeFile(
+    path.join(refsDir, 'n0001-abc123.md'),
+    'RAW REF BODY THAT SHOULD NOT BE IN THE CONTEXT PACKET\n',
+    'utf8'
+  );
+
+  await appendEvent({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    role: 'tool',
+    kind: 'tool-output',
+    text: '[offloaded -> n0001-abc123]',
+  });
+  await writeCheckpoint({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    summary: 'Tool output was offloaded; resume from the compact canvas.',
+    nextActions: ['Read only needed refs'],
+    status: 'running',
+  });
+
+  const packet = await buildContextPacket({
+    workspaceRoot: workspace,
+    sessionId: session.sessionId,
+    eventLimit: 10,
+  });
+
+  assert.match(packet.markdown, /## Offload Canvas/);
+  assert.match(packet.markdown, /\.aios\/offload\/canvas\/.+\/task-canvas\.mmd/);
+  assert.match(packet.markdown, /n0001-abc123 Bash: npm test/);
+  assert.match(packet.markdown, /refs grep\/read/i);
+  assert.doesNotMatch(packet.markdown, /RAW REF BODY THAT SHOULD NOT BE IN THE CONTEXT PACKET/);
+});
+
 test('buildContextPacket tolerates missing or corrupt continuity sidecar', async () => {
   const workspace = await makeWorkspace();
   const session = await createSession({

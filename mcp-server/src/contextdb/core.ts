@@ -18,7 +18,7 @@ import {
 } from './sqlite.js';
 import { semanticRerank } from './semantic.js';
 import { buildSearchExplain, type ContextDbSearchExplain } from './explain.js';
-import { resolveContextDbRoot } from './paths.js';
+import { resolveAiosStateRoot, resolveContextDbRoot, toWorkspaceRelative } from './paths.js';
 
 export type SessionStatus = 'running' | 'blocked' | 'done';
 export type EventRole = 'system' | 'user' | 'assistant' | 'tool';
@@ -373,9 +373,73 @@ const IMPORTANT_SIGNAL_RE = /\b(error|failed|failure|exception|timeout|panic|blo
 const STACK_LINE_RE = /^\s*(?:at\s+\S+|traceback\b|caused by:|file\s+".+", line \d+|[a-z0-9_.-]+error:)/i;
 const COMMAND_SIGNAL_RE = /\b(?:npm|pnpm|yarn|git|node|python|pytest|cargo|go\s+test|make|cmake|bun)\b/i;
 const FILE_SIGNAL_RE = /([A-Za-z0-9._/\\-]+\.(?:ts|tsx|js|jsx|mjs|cjs|py|json|md|sh|yaml|yml|toml|rs|go|java|rb|php|cpp|c|h))/i;
+const OFFLOAD_CANVAS_MAX_CHARS = 12_000;
 
 function stripAnsi(text: string): string {
   return String(text ?? '').replace(/\u001b\[[0-9;]*[A-Za-z]/g, '');
+}
+
+function sanitizeOffloadSessionId(id: string): string {
+  return String(id || 'default').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 128) || 'default';
+}
+
+async function readOffloadCanvas(workspaceRoot: string, sessionId: string): Promise<{
+  absolutePath: string;
+  relativePath: string;
+  mermaid: string;
+  truncated: boolean;
+} | null> {
+  const stateRoot = resolveAiosStateRoot(workspaceRoot);
+  const safeSessionId = sanitizeOffloadSessionId(sessionId);
+  const candidates = [
+    path.join(stateRoot, 'offload', 'canvas', safeSessionId, 'task-canvas.mmd'),
+    path.join(stateRoot, 'offload', 'split', 'canvas', safeSessionId, 'task-canvas.mmd'),
+  ];
+
+  let selected: { absolutePath: string; mtimeMs: number } | null = null;
+  for (const absolutePath of candidates) {
+    try {
+      const stats = await fs.stat(absolutePath);
+      if (!stats.isFile()) continue;
+      if (!selected || stats.mtimeMs > selected.mtimeMs) {
+        selected = { absolutePath, mtimeMs: stats.mtimeMs };
+      }
+    } catch {
+      // Missing canvas is expected for sessions without offloaded tool output.
+    }
+  }
+  if (!selected) return null;
+
+  const raw = await fs.readFile(selected.absolutePath, 'utf8');
+  const truncated = raw.length > OFFLOAD_CANVAS_MAX_CHARS;
+  const mermaid = truncated
+    ? `${raw.slice(0, OFFLOAD_CANVAS_MAX_CHARS).trimEnd()}\n%% [truncated: canvas exceeds ${OFFLOAD_CANVAS_MAX_CHARS} chars]\n`
+    : raw;
+
+  return {
+    absolutePath: selected.absolutePath,
+    relativePath: toWorkspaceRelative(workspaceRoot, selected.absolutePath),
+    mermaid,
+    truncated,
+  };
+}
+
+function formatOffloadCanvasPacketBlock(canvas: Awaited<ReturnType<typeof readOffloadCanvas>>): string {
+  if (!canvas) {
+    return '1. (none)';
+  }
+  const lines = [
+    `- Path: ${canvas.relativePath}`,
+    '- Recall: inspect this graph first; use `aios refs grep/read` for only the node-level raw evidence you need.',
+    '',
+    '```mermaid',
+    canvas.mermaid.trimEnd(),
+    '```',
+  ];
+  if (canvas.truncated) {
+    lines.splice(2, 0, '- Truncated: yes');
+  }
+  return lines.join('\n');
 }
 
 function hasImportantSignal(text: string): boolean {
@@ -1592,12 +1656,13 @@ export async function buildContextPacket(input: BuildPacketInput): Promise<Build
     ? Math.floor(input.tokenBudget)
     : null;
 
-  const [meta, summaryRaw, checkpoints, events, continuity] = await Promise.all([
+  const [meta, summaryRaw, checkpoints, events, continuity, offloadCanvas] = await Promise.all([
     readJson<SessionMeta>(paths.meta),
     fs.readFile(paths.summary, 'utf8'),
     readJsonLines<Checkpoint>(paths.checkpoints),
     readJsonLines<ContextEvent>(paths.events),
     readContinuitySummary(paths),
+    readOffloadCanvas(input.workspaceRoot, input.sessionId),
   ]);
 
   const latestCheckpoint = checkpoints[checkpoints.length - 1] ?? null;
@@ -1810,6 +1875,9 @@ export async function buildContextPacket(input: BuildPacketInput): Promise<Build
     '',
     `## Recent Events (L2)`,
     eventBlock,
+    '',
+    '## Offload Canvas (L2 Index)',
+    formatOffloadCanvasPacketBlock(offloadCanvas),
     '',
     '## Handoff Prompt',
     'Continue from this state. Preserve constraints, avoid repeating completed work, and update the next checkpoint when done.',

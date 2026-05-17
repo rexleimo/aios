@@ -206,6 +206,18 @@
       "tags": ["aios", "token", "compression", "browser", "contextdb"]
     },
     {
+      "name": "aios-offload-recall",
+      "description": "Recall offloaded AIOS tool and browser outputs through Mermaid canvas and targeted refs reads.",
+      "source": "skill-sources/aios-offload-recall",
+      "clients": ["codex", "claude"],
+      "scopes": ["global", "project"],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": ["aios", "token", "offload", "recall"]
+    },
+    {
       "name": "cap-commit-push",
       "description": "Fast commit-and-push shortcut for this repository.",
       "source": "skill-sources/cap-commit-push",

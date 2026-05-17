@@ -49,6 +49,12 @@ Declare success only when all are true:
 - Evidence snapshot/log exists.
 - Updated runbook reflects newly observed drift.
 
+## Resume With Offload Canvas
+
+- On harness resume, AIOS injects `.aios/offload/canvas/<session>/task-canvas.mmd` when present plus the latest checkpoint/continuity before replaying raw `l2-events.jsonl` or full tool logs.
+- Use `aios refs grep/read` to pull only the node-level evidence needed for the next step.
+- This saves tokens only when resume/context injection excludes the raw logs; it is not retroactive for outputs already injected in the active turn.
+
 ## Resources
 - `references/harness-checklist.md`: operational checklist template.
 - `references/anthropic-mapping.md`: principle-to-project mapping.

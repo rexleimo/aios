@@ -4,6 +4,7 @@ import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { readContinuitySummary, writeContinuitySummary } from '../contextdb/continuity.mjs';
+import { findCanvasMermaid } from '../offload/mermaid-canvas.mjs';
 import {
   appendSoloHookEvent,
   appendSoloIteration,
@@ -598,7 +599,10 @@ export async function runSoloHarnessLoop({
       turnLogEntries.push(onTurnStartResult.logEntry);
     }
 
-    const continuity = await readContinuitySummary({ workspaceRoot: rootDir, sessionId });
+    const [continuity, offloadCanvas] = await Promise.all([
+      readContinuitySummary({ workspaceRoot: rootDir, sessionId }),
+      findCanvasMermaid(rootDir, sessionId),
+    ]);
     const rawTurn = await executeTurn({
       rootDir,
       sessionId,
@@ -609,6 +613,7 @@ export async function runSoloHarnessLoop({
       profile: summary.profile,
       summary,
       continuity,
+      offloadCanvas,
       worktree,
     });
 

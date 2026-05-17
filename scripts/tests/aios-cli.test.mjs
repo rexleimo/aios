@@ -121,6 +121,63 @@ test('parseArgs accepts internal browser cdp lifecycle actions', () => {
   assert.equal(migrate.options.dryRun, true);
 });
 
+test('parseArgs accepts offload refs/canvas commands with workspace scope', () => {
+  const refs = parseArgs([
+    'refs',
+    'grep',
+    'needle',
+    '--session',
+    'session-1',
+    '--workspace',
+    '/tmp/workspace',
+    '--storage',
+    'split',
+    '--limit',
+    '5',
+  ]);
+  assert.equal(refs.command, 'refs');
+  assert.equal(refs.options.subcommand, 'grep');
+  assert.equal(refs.options.pattern, 'needle');
+  assert.equal(refs.options.session, 'session-1');
+  assert.equal(refs.options.workspaceRoot, '/tmp/workspace');
+  assert.equal(refs.options.storage, 'split');
+  assert.equal(refs.options.limit, '5');
+
+  const canvas = parseArgs([
+    'canvas',
+    'show',
+    '--session',
+    'session-1',
+    '--format',
+    'json',
+    '--workspace',
+    '/tmp/workspace',
+  ]);
+  assert.equal(canvas.command, 'canvas');
+  assert.equal(canvas.options.subcommand, 'show');
+  assert.equal(canvas.options.session, 'session-1');
+  assert.equal(canvas.options.format, 'json');
+  assert.equal(canvas.options.workspaceRoot, '/tmp/workspace');
+
+  const backfill = parseArgs([
+    'canvas',
+    'backfill',
+    '--client',
+    'codex-cli',
+    '--session',
+    'session-1',
+    '--input',
+    '/tmp/codex-events.jsonl',
+    '--workspace',
+    '/tmp/workspace',
+  ]);
+  assert.equal(backfill.command, 'canvas');
+  assert.equal(backfill.options.subcommand, 'backfill');
+  assert.equal(backfill.options.client, 'codex-cli');
+  assert.equal(backfill.options.session, 'session-1');
+  assert.equal(backfill.options.inputPath, '/tmp/codex-events.jsonl');
+});
+
 test('parseArgs accepts native component, internal native target, and native-only doctor flags', () => {
   const setupResult = parseArgs([
     'setup',

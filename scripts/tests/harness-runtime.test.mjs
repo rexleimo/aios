@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -19,7 +19,7 @@ import {
   readSoloRunStatus,
   requestSoloHarnessStop,
 } from '../lib/harness/solo-journal.mjs';
-import { runHarnessCommand } from '../lib/lifecycle/harness.mjs';
+import { buildIterationPrompt, runHarnessCommand } from '../lib/lifecycle/harness.mjs';
 
 test('normalizeSoloIterationOutcome fills defaults for a success outcome', () => {
   const success = normalizeSoloIterationOutcome({
@@ -64,6 +64,23 @@ test('resolveSoloBackoffState doubles delay for infra failures', () => {
 
   assert.equal(infra.consecutiveInfraFailures, 2);
   assert.equal(infra.nextDelayMs, 120000);
+});
+
+test('buildIterationPrompt injects offload canvas as compact resume context', () => {
+  const prompt = buildIterationPrompt({
+    objective: 'Resume offloaded evidence',
+    iteration: 2,
+    offloadCanvas: {
+      relativePath: '.aios/offload/canvas/demo-session/task-canvas.mmd',
+      mermaid: 'graph LR\n    m_n0001_abc123["n0001-abc123 Bash: npm test"]\n',
+      truncated: false,
+    },
+  });
+
+  assert.match(prompt, /Offload Canvas/);
+  assert.match(prompt, /\.aios\/offload\/canvas\/demo-session\/task-canvas\.mmd/);
+  assert.match(prompt, /n0001-abc123 Bash: npm test/);
+  assert.match(prompt, /aios refs grep\/read/);
 });
 
 test('runSoloHarnessLoop appends iterations and stops when executeTurn requests it', async () => {
@@ -112,6 +129,65 @@ test('runSoloHarnessLoop appends iterations and stops when executeTurn requests 
     const status = await readSoloRunStatus({ rootDir, sessionId: 's1' });
     assert.equal(status.iterationCount, 2);
     assert.equal(status.lastFailureClass, 'stop-requested');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('runSoloHarnessLoop passes offload canvas to executeTurn', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-solo-runtime-offload-canvas-'));
+
+  try {
+    await initSoloRunJournal({
+      rootDir,
+      sessionId: 'canvas-session',
+      objective: 'Resume with canvas',
+      provider: 'codex',
+      clientId: 'codex-cli',
+      profile: 'standard',
+      worktree: {
+        enabled: false,
+        baseRef: 'HEAD',
+        path: '',
+        preserved: false,
+        cleanupReason: '',
+      },
+    });
+    const canvasDir = path.join(rootDir, '.aios', 'offload', 'canvas', 'canvas-session');
+    await mkdir(canvasDir, { recursive: true });
+    await writeFile(
+      path.join(canvasDir, 'task-canvas.mmd'),
+      'graph LR\n    m_n0001_abc123["n0001-abc123 Bash: npm test"]\n',
+      'utf8'
+    );
+
+    let capturedCanvas = null;
+    await runSoloHarnessLoop({
+      rootDir,
+      sessionId: 'canvas-session',
+      objective: 'Resume with canvas',
+      provider: 'codex',
+      clientId: 'codex-cli',
+      profile: 'standard',
+      maxIterations: 1,
+      executeTurn: async ({ offloadCanvas }) => {
+        capturedCanvas = offloadCanvas;
+        return {
+          outcome: 'success',
+          summary: 'used canvas',
+          keyChanges: [],
+          keyLearnings: [],
+          nextAction: 'done',
+          shouldStop: true,
+          failureClass: 'none',
+        };
+      },
+      sleepImpl: async () => {},
+    });
+
+    assert.ok(capturedCanvas);
+    assert.match(capturedCanvas.relativePath, /\.aios\/offload\/canvas\/canvas-session\/task-canvas\.mmd/);
+    assert.match(capturedCanvas.mermaid, /n0001-abc123 Bash: npm test/);
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }

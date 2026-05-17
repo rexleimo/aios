@@ -42,6 +42,11 @@ When full page text is unavoidable:
 - Profile page: keep username, bio, follower/following counts, note titles, visible tabs.
 - Search results: keep query, result titles, authors, like counts, first content line; drop promoted/recommended blocks.
 
+## Offload Recall
+
+- When a previous browser/tool output was offloaded, inspect `aios canvas show --session <id>` first, then use `aios refs grep <pattern> --session <id>` or `aios refs read <node_id>` only for the specific evidence needed.
+- Prefer canvas + targeted ref reads over loading full historical tool logs into the model.
+
 ## Verification Guard
 
 Before acting on compressed input, confirm it still contains every actionable element needed for the next action. If any target, state, or error message is uncertain, re-read narrowly with a targeted locator before acting.

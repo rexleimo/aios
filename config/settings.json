@@ -14,6 +14,13 @@
     "auto_pause_on_error": true,
     "log_level": "detailed"
   },
+  "offload": {
+    "enabled": true,
+    "minBytes": 2048,
+    "maxRefsPerSession": 1000,
+    "keepDays": 30,
+    "tools": ["Bash", "Read", "Edit", "Write", "page."]
+  },
   "chrome": {
     "headless": false,
     "viewport": {
