@@ -104,19 +104,25 @@ export async function ensureBootstrapTask(workspaceRoot, options = {}) {
   const agent = options.agent || 'unknown-agent';
   const now = options.now instanceof Date ? options.now : new Date();
 
-  const tasksDir = resolveTasksRoot(root, { preferLegacyExisting: true });
+  const tasksDir = resolveTasksRoot(root);
+  const legacyTasksDir = path.join(root, 'tasks');
   const pendingDir = path.join(tasksDir, 'pending');
   const currentTaskPath = path.join(tasksDir, '.current-task');
-
-  await fs.mkdir(pendingDir, { recursive: true });
 
   const currentTask = (await readTextIfExists(currentTaskPath)).trim();
   if (currentTask) {
     return { created: false, reason: 'current-task-exists' };
   }
+  const legacyCurrentTask = (await readTextIfExists(path.join(legacyTasksDir, '.current-task'))).trim();
+  if (legacyCurrentTask) {
+    return { created: false, reason: 'legacy-current-task-exists' };
+  }
 
   if (await hasPendingEntries(pendingDir)) {
     return { created: false, reason: 'pending-has-tasks' };
+  }
+  if (await hasPendingEntries(path.join(legacyTasksDir, 'pending'))) {
+    return { created: false, reason: 'legacy-pending-has-tasks' };
   }
 
   const taskId = buildTaskId(now);
@@ -125,6 +131,7 @@ export async function ensureBootstrapTask(workspaceRoot, options = {}) {
   const prdPath = path.join(taskDir, 'prd.md');
   const currentTaskRel = path.posix.join('pending', taskId, 'task.json');
 
+  await fs.mkdir(pendingDir, { recursive: true });
   await fs.mkdir(taskDir, { recursive: true });
   await Promise.all([
     fs.writeFile(taskJsonPath, `${JSON.stringify(buildTaskJson(taskId, project, agent, now), null, 2)}\n`, 'utf8'),

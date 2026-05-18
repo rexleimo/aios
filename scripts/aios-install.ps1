@@ -60,7 +60,6 @@ try {
       ".aios",
       ".browser-profiles",
       "mcp-server/.browser-profiles",
-      "memory/context-db",
       "config/browser-profiles.json"
     )
 

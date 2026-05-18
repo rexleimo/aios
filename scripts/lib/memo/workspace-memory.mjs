@@ -31,11 +31,11 @@ export function workspaceMemorySessionId(space) {
 }
 
 export function workspaceMemoryStatePath(workspaceRoot) {
-  return path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), '.workspace-memory.json');
+  return path.join(resolveContextDbRoot(workspaceRoot), '.workspace-memory.json');
 }
 
 export function workspaceMemorySessionDir(workspaceRoot, sessionId) {
-  return path.join(resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true }), 'sessions', sessionId);
+  return path.join(resolveContextDbRoot(workspaceRoot), 'sessions', sessionId);
 }
 
 export function workspaceMemoryMetaPath(workspaceRoot, sessionId) {

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 export const AIOS_STATE_DIRNAME = '.aios';
 export const CONTEXT_DB_DIRNAME = 'context-db';
+export const MEMO_DIRNAME = 'memo';
 export const TASKS_DIRNAME = 'tasks';
 export const WORKSPACE_DIRNAME = 'workspace';
 export const LEGACY_CONTEXT_DB_RELATIVE_PATH = path.join('memory', 'context-db');
@@ -50,6 +51,14 @@ export function resolveContextDbPath(workspaceRoot, ...segments) {
   return path.join(resolveContextDbRoot(workspaceRoot), ...segments);
 }
 
+export function resolveMemoRoot(workspaceRoot, { env = process.env } = {}) {
+  return path.join(resolveAiosStateRoot(workspaceRoot, { env }), MEMO_DIRNAME);
+}
+
+export function resolveMemoPath(workspaceRoot, ...segments) {
+  return path.join(resolveMemoRoot(workspaceRoot), ...segments);
+}
+
 export function resolveLegacyTasksRoot(workspaceRoot) {
   return path.join(normalizeWorkspaceRoot(workspaceRoot), LEGACY_TASKS_RELATIVE_PATH);
 }
@@ -85,6 +94,10 @@ export function contextDbRelativePath(workspaceRoot, ...segments) {
 
 export function tasksRelativePath(workspaceRoot, ...segments) {
   return toWorkspaceRelative(workspaceRoot, path.join(resolveTasksRoot(workspaceRoot), ...segments));
+}
+
+export function memoRelativePath(workspaceRoot, ...segments) {
+  return toWorkspaceRelative(workspaceRoot, path.join(resolveMemoRoot(workspaceRoot), ...segments));
 }
 
 export function workspaceStateRelativePath(workspaceRoot, ...segments) {

@@ -86,6 +86,6 @@ test('public memo docs keep file and split as the only documented storage implem
     const text = readRepoFile(relativePath);
     assert.match(text, /\bfile\b/u, `${relativePath} missing file storage`);
     assert.match(text, /\bsplit\b/u, `${relativePath} missing split storage`);
-    assert.match(text, /memory\/memo/u, `${relativePath} missing canonical memory/memo root`);
+    assert.match(text, /\.aios\/memo/u, `${relativePath} missing canonical .aios/memo root`);
   }
 });

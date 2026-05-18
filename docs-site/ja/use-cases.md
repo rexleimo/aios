@@ -56,11 +56,11 @@ aios memo user add "Preferred language: zh-CN + technical English terms"
 
 記憶レイヤーの目安:
 
-- `memo add/search/recall` -> canonical `memory/memo` storage（legacy ContextDB mirror は互換用のみ）
-- `memo pin` -> canonical `memory/memo` pinned file（legacy mirror は互換用のみ）
+- `memo add/search/recall` -> canonical `.aios/memo` storage（legacy ContextDB mirror は互換用のみ）
+- `memo pin` -> canonical `.aios/memo` pinned file（legacy mirror は互換用のみ）
 - `memo persona/user` -> `ctx-agent` の Memory prelude に注入されるグローバル identity ファイル
 
-Default storage は `file`（`memory/memo/file/events.jsonl`）です。memo event ごとに 1 JSON file が必要な場合だけ `aios memo storage use split` を使います。`storage rebuild` は derived query files のみを更新します。
+Default storage は `file`（`.aios/memo/file/events.jsonl`）です。memo event ごとに 1 JSON file が必要な場合だけ `aios memo storage use split` を使います。`storage rebuild` は derived query files のみを更新します。
 
 Persona は agent baseline（「この AI はどう振る舞うべきか」）用です。User profile は安定した operator preference（「このユーザーはどのような納品を望むか」）用です。どちらも注入前に安全スキャンと容量制限を受けます。
 

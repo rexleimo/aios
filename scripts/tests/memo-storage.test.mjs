@@ -39,7 +39,7 @@ test('default storage status uses file without creating canonical records', asyn
     assert.equal(status.active, 'file');
     assert.deepEqual(status.supported, ['split', 'file']);
     assert.equal(status.available.file.exists, false);
-    await assert.rejects(() => fs.stat(path.join(root, 'memory', 'memo', 'file', 'events.jsonl')));
+    await assert.rejects(() => fs.stat(path.join(root, '.aios', 'memo', 'file', 'events.jsonl')));
   });
 });
 
@@ -67,7 +67,7 @@ test('file storage appends searchable memo records and rebuilds derived docs onl
       text: 'alpha deployment note',
       refs: ['ops'],
     });
-    const sourcePath = path.join(root, 'memory', 'memo', 'file', 'events.jsonl');
+    const sourcePath = path.join(root, '.aios', 'memo', 'file', 'events.jsonl');
     const before = await fs.readFile(sourcePath, 'utf8');
     await rebuildMemoStorage(root, { storage: 'file' });
     const after = await fs.readFile(sourcePath, 'utf8');
@@ -82,7 +82,7 @@ test('split storage writes one JSON file per event and supports pinned memo cont
     await appendMemoEvent({ workspaceRoot: root, storage: 'split', space: 'default', text: 'split record one', refs: [] });
     await writePinnedMemo(root, { storage: 'split', space: 'default', content: 'Pinned split memo' });
     await appendPinnedMemo(root, { storage: 'split', space: 'default', content: 'Second pinned line' });
-    const eventFiles = await fs.readdir(path.join(root, 'memory', 'memo', 'split', 'events', 'default'));
+    const eventFiles = await fs.readdir(path.join(root, '.aios', 'memo', 'split', 'events', 'default'));
     assert.equal(eventFiles.length, 1);
     assert.equal(await readPinnedMemo(root, { storage: 'split', space: 'default' }), 'Pinned split memo\n\nSecond pinned line\n');
   });
@@ -137,7 +137,7 @@ test('doctor reports malformed file JSONL and stale derived manifest', async () 
   await withTempRoot('memo-storage-doctor-', async (root) => {
     await appendMemoEvent({ workspaceRoot: root, storage: 'file', space: 'default', text: 'healthy record', refs: [] });
     await rebuildMemoStorage(root, { storage: 'file' });
-    await fs.appendFile(path.join(root, 'memory', 'memo', 'file', 'events.jsonl'), '{bad-json\n', 'utf8');
+    await fs.appendFile(path.join(root, '.aios', 'memo', 'file', 'events.jsonl'), '{bad-json\n', 'utf8');
     const report = await runMemoStorageDoctor(root, { storage: 'file' });
     assert.equal(report.ok, false);
     assert.equal(report.checks.some((check) => check.id === 'file-jsonl' && check.status === 'error'), true);
@@ -151,7 +151,7 @@ test('rebuild succeeds for empty active storage and writes an empty derived mani
     assert.equal(manifest.storage, 'file');
     assert.equal(manifest.records, 0);
 
-    const docs = await fs.readFile(path.join(root, 'memory', 'memo', 'derived', 'file', 'docs.jsonl'), 'utf8');
+    const docs = await fs.readFile(path.join(root, '.aios', 'memo', 'derived', 'file', 'docs.jsonl'), 'utf8');
     assert.equal(docs, '');
   });
 });
@@ -159,7 +159,7 @@ test('rebuild succeeds for empty active storage and writes an empty derived mani
 test('doctor reports malformed split JSON files', async () => {
   await withTempRoot('memo-storage-split-doctor-', async (root) => {
     await appendMemoEvent({ workspaceRoot: root, storage: 'split', space: 'default', text: 'healthy split record', refs: [] });
-    const corruptPath = path.join(root, 'memory', 'memo', 'split', 'events', 'default', '000000000002.json');
+    const corruptPath = path.join(root, '.aios', 'memo', 'split', 'events', 'default', '000000000002.json');
     await fs.writeFile(corruptPath, '{bad-json\n', 'utf8');
 
     const report = await runMemoStorageDoctor(root, { storage: 'split' });

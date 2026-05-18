@@ -133,7 +133,7 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 
 使用适合你任务的最小蓝图。
 
-蓝图、角色卡片、运行时清单、执行器清单和交接模式打包在 `scripts/lib/specs/` 下。Team 运行状态和证据仍然写入 `.aios/context-db/`；`memory/memo/` 仅用于项目备忘录记录，不是 team 运行时存储。
+蓝图、角色卡片、运行时清单、执行器清单和交接模式打包在 `scripts/lib/specs/` 下。Team 运行状态和证据仍然写入 `.aios/context-db/`；`.aios/memo/` 仅用于项目备忘录记录，不是 team 运行时存储。
 
 ### 配置
 

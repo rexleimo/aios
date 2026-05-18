@@ -19,7 +19,10 @@ node_modules/
 Thumbs.db
 temp/
 dist/
-.aios/
+.aios/*
+!.aios/tasks/
+!.aios/tasks/metrics/
+!.aios/tasks/metrics/**
 .contextdb-enable
 site/
 .venv-docs/

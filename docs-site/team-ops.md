@@ -152,7 +152,7 @@ If an agent gets stuck, the planner **automatically re-plans** the next round.
 
 Use the smallest blueprint that fits your task.
 
-Blueprints, role cards, runtime manifests, executor manifests, and handoff schemas are packaged under `scripts/lib/specs/`. Team run state and evidence are still written to `.aios/context-db/`; `memory/memo/` is only for project memo records and is not the team runtime store.
+Blueprints, role cards, runtime manifests, executor manifests, and handoff schemas are packaged under `scripts/lib/specs/`. Team run state and evidence are still written to `.aios/context-db/`; `.aios/memo/` is only for project memo records and is not the team runtime store.
 
 ### Configuration
 

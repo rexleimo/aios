@@ -15,8 +15,8 @@ description: 版本历史、升级说明与文档变更入口。
 ## 最新稳定版
 
 - `1.17.0`（2026-05-16）：
-  - **Memo Storage**：`aios memo` 现在使用 storage 抽象，公开实现只有 `file`（默认 append-only JSONL：`memory/memo/file/events.jsonl`）和 `split`（每条 memo 一个 JSON 文件）。通过 `aios memo storage status`、`aios memo storage use split`、`aios memo storage use file`、`aios memo storage rebuild` 和 `aios memo storage doctor` 管理。
-  - **适合 Git 共享的 memo 源数据**：`memory/memo/` 是项目 memo 的规范根目录。ContextDB/SQLite 只保留兼容镜像和可重建缓存角色，不再是 memo source of truth。
+  - **Memo Storage**：`aios memo` 现在使用 storage 抽象，公开实现只有 `file`（默认 append-only JSONL：`.aios/memo/file/events.jsonl`）和 `split`（每条 memo 一个 JSON 文件）。通过 `aios memo storage status`、`aios memo storage use split`、`aios memo storage use file`、`aios memo storage rebuild` 和 `aios memo storage doctor` 管理。
+  - **适合 Git 共享的 memo 源数据**：`.aios/memo/` 是项目 memo 的规范根目录。ContextDB/SQLite 只保留兼容镜像和可重建缓存角色，不再是 memo source of truth。
   - **运行时状态对齐**：新的 ContextDB 运行时状态写入 `.aios/context-db/`；legacy `memory/context-db` 仅在已存在时作为兼容读路径。
   - 详见 [ContextDB](contextdb.md#workspace-memory-aios-memo) 中的 memo 存储边界。
 

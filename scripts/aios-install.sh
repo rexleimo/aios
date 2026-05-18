@@ -96,13 +96,12 @@ archive_path="$tmp_dir/rex-cli.tar.gz"
 extract_dir="$tmp_dir/extract"
 preserve_dir="$tmp_dir/preserve"
 
-preserve_paths=(
-  ".aios"
-  ".browser-profiles"
-  "mcp-server/.browser-profiles"
-  "memory/context-db"
-  "config/browser-profiles.json"
-)
+  preserve_paths=(
+    ".aios"
+    ".browser-profiles"
+    "mcp-server/.browser-profiles"
+    "config/browser-profiles.json"
+  )
 
 cleanup() {
   rm -rf "$tmp_dir" 2>/dev/null || true

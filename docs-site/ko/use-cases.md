@@ -56,11 +56,11 @@ aios memo user add "Preferred language: zh-CN + technical English terms"
 
 메모 계층 규칙:
 
-- `memo add/search/recall` -> canonical `memory/memo` storage (legacy ContextDB mirror는 호환용)
-- `memo pin` -> canonical `memory/memo` pinned file (legacy mirror는 호환용)
+- `memo add/search/recall` -> canonical `.aios/memo` storage (legacy ContextDB mirror는 호환용)
+- `memo pin` -> canonical `.aios/memo` pinned file (legacy mirror는 호환용)
 - `memo persona/user` -> `ctx-agent` Memory prelude 에 주입되는 전역 identity 파일
 
-Default storage 는 `file` (`memory/memo/file/events.jsonl`) 입니다. memo event 마다 JSON 파일 하나가 필요할 때만 `aios memo storage use split` 을 사용하세요. `storage rebuild` 는 derived query files 만 갱신합니다.
+Default storage 는 `file` (`.aios/memo/file/events.jsonl`) 입니다. memo event 마다 JSON 파일 하나가 필요할 때만 `aios memo storage use split` 을 사용하세요. `storage rebuild` 는 derived query files 만 갱신합니다.
 
 Persona 는 agent baseline ("이 AI 가 어떻게 행동해야 하는가") 용도입니다. User profile 은 안정적인 operator preference ("이 사용자가 어떤 방식의 납품을 원하는가") 용도입니다. 둘 다 주입 전에 안전 스캔과 용량 제한을 거칩니다.
 

@@ -296,11 +296,11 @@ test('buildWorkspaceMemoryOverlay prefers canonical memo storage over legacy wor
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workspace-memory-canonical-'));
 
   try {
-    const canonicalPinnedDir = path.join(workspaceRoot, 'memory', 'memo', 'file', 'pinned');
+    const canonicalPinnedDir = path.join(workspaceRoot, '.aios', 'memo', 'file', 'pinned');
     await mkdir(canonicalPinnedDir, { recursive: true });
     await writeFile(path.join(canonicalPinnedDir, 'default.md'), 'Canonical pinned note\n', 'utf8');
 
-    const canonicalEventsDir = path.join(workspaceRoot, 'memory', 'memo', 'file');
+    const canonicalEventsDir = path.join(workspaceRoot, '.aios', 'memo', 'file');
     await mkdir(canonicalEventsDir, { recursive: true });
     await writeFile(
       path.join(canonicalEventsDir, 'events.jsonl'),
@@ -371,7 +371,7 @@ test('buildWorkspaceMemoryOverlay warns and falls back when canonical memo stora
   const originalWarn = console.warn;
 
   try {
-    const canonicalEventsDir = path.join(workspaceRoot, 'memory', 'memo', 'file');
+    const canonicalEventsDir = path.join(workspaceRoot, '.aios', 'memo', 'file');
     await mkdir(canonicalEventsDir, { recursive: true });
     await writeFile(path.join(canonicalEventsDir, 'events.jsonl'), '{not-json}\n', 'utf8');
 

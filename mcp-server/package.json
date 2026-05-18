@@ -5,7 +5,7 @@
   "description": "Playwright MCP server for browser automation with profile and CDP support",
   "main": "dist/index.js",
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=24 <25"
   },
   "scripts": {
     "build": "node -e \"const fs=require('fs'); if (fs.rmSync) { fs.rmSync('dist',{recursive:true,force:true}); } else if (fs.existsSync('dist')) { fs.rmdirSync('dist',{recursive:true}); }\" && node scripts/with-project-node.mjs ./node_modules/typescript/bin/tsc",

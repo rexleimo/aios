@@ -124,7 +124,7 @@ codex
 ## 使用 Memo 记忆
 
 ContextDB 是自动的，但有时你想**手动**保存重要笔记。这就是 Memo 的用途。
-项目备忘录现在使用 Git 友好的规范存储在 `memory/memo/` 下：`file` 是默认的追加式 JSONL 后端，而 `split` 每个备忘录事件存储一个 JSON 文件。ContextDB 镜像仅用于兼容性/缓存。
+项目备忘录现在使用 Git 友好的规范存储在 `.aios/memo/` 下：`file` 是默认的追加式 JSONL 后端，而 `split` 每个备忘录事件存储一个 JSON 文件。ContextDB 镜像仅用于兼容性/缓存。
 
 ### 快速 Memo 命令
 

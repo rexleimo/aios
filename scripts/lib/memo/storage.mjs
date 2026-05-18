@@ -2,11 +2,11 @@ import { createHash, randomUUID } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { resolveMemoRoot } from '../aios/state-root.mjs';
 
 export const SUPPORTED_MEMO_STORAGES = Object.freeze(['split', 'file']);
 export const DEFAULT_MEMO_STORAGE = 'file';
 
-const MEMO_ROOT_SEGMENTS = ['memory', 'memo'];
 const CONFIG_FILE = 'config.json';
 const FILE_EVENTS_SEGMENTS = ['file', 'events.jsonl'];
 const WORKSPACE_MEMORY_SESSION_PREFIX = 'workspace-memory--';
@@ -18,7 +18,7 @@ function workspacePath(workspaceRoot, ...segments) {
 }
 
 function memoRoot(workspaceRoot) {
-  return workspacePath(workspaceRoot, ...MEMO_ROOT_SEGMENTS);
+  return resolveMemoRoot(workspaceRoot);
 }
 
 function configPath(workspaceRoot) {

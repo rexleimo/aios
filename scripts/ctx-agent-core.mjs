@@ -24,6 +24,7 @@ import { renderRegistryInjection, buildIndex } from './lib/contextdb/context-reg
 import {
   contextDbRelativePath,
   resolveContextDbRoot,
+  resolveMemoRoot,
   resolveTasksRoot,
   toWorkspaceRelative,
 } from './lib/aios/state-root.mjs';
@@ -734,7 +735,7 @@ async function loadCanonicalWorkspaceMemory(workspaceRoot, space, recentLimit) {
       available: Boolean(String(pinned || '').trim()) || (Array.isArray(memos) && memos.length > 0),
     };
   } catch (error) {
-    if (existsSync(path.join(path.resolve(workspaceRoot || process.cwd()), 'memory', 'memo'))) {
+    if (existsSync(resolveMemoRoot(workspaceRoot))) {
       const reason = error instanceof Error ? error.message : String(error);
       console.warn(`[warn] canonical memo storage overlay skipped: ${reason}`);
     }

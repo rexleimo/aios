@@ -55,7 +55,8 @@ test('skips bootstrap when legacy tasks/.current-task already exists', async () 
   });
 
   assert.equal(result.created, false);
-  assert.equal(result.reason, 'current-task-exists');
+  assert.equal(result.reason, 'legacy-current-task-exists');
+  assert.equal(existsSync(path.join(workspace, '.aios', 'tasks')), false);
 });
 
 test('skips bootstrap when pending already has tasks', async () => {
@@ -70,7 +71,8 @@ test('skips bootstrap when pending already has tasks', async () => {
   });
 
   assert.equal(result.created, false);
-  assert.equal(result.reason, 'pending-has-tasks');
+  assert.equal(result.reason, 'legacy-pending-has-tasks');
+  assert.equal(existsSync(path.join(workspace, '.aios', 'tasks')), false);
 });
 
 test('skips bootstrap when .aios/tasks/.current-task already exists', async () => {

@@ -35,7 +35,7 @@ Instead, a lightweight registry index tells you where to find it.
 5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
 6. Legacy `memory/context-db/index.json` is read only for compatibility when `.aios/context-db/` is absent.
 
-Generated AIOS runtime state should stay under `.aios/` (`.aios/context-db`, `.aios/workspace`, `.aios/tasks`). Legacy `memory/context-db`, `memory/workspace`, and `tasks` are compatibility read paths, not fresh-write targets.
+Generated AIOS project state should stay under `.aios/` (`.aios/context-db`, `.aios/workspace`, `.aios/tasks`, `.aios/memo`). Legacy `memory/context-db`, `memory/workspace`, `memory/memo`, and `tasks` are compatibility read paths only, not fresh-write targets.
 
 ### Source Selection by Task Type
 | Task type | Load |

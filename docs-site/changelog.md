@@ -15,8 +15,8 @@ Use this page to track what changed in `RexCLI` and jump to release-related docs
 ## Latest Stable
 
 - `1.17.0` (2026-05-16):
-  - **Memo Storage**: `aios memo` now uses a storage abstraction with two public implementations: `file` (default append-only JSONL at `memory/memo/file/events.jsonl`) and `split` (one JSON file per memo event). Manage it with `aios memo storage status`, `aios memo storage use split`, `aios memo storage use file`, `aios memo storage rebuild`, and `aios memo storage doctor`.
-  - **Git-friendly memo source of truth**: `memory/memo/` is the canonical project memo root. ContextDB/SQLite remain compatibility mirrors and rebuildable caches, not the memo source of truth.
+  - **Memo Storage**: `aios memo` now uses a storage abstraction with two public implementations: `file` (default append-only JSONL at `.aios/memo/file/events.jsonl`) and `split` (one JSON file per memo event). Manage it with `aios memo storage status`, `aios memo storage use split`, `aios memo storage use file`, `aios memo storage rebuild`, and `aios memo storage doctor`.
+  - **Git-friendly memo source of truth**: `.aios/memo/` is the canonical project memo root. ContextDB/SQLite remain compatibility mirrors and rebuildable caches, not the memo source of truth.
   - **Runtime state alignment**: new ContextDB runtime state is written under `.aios/context-db/`; legacy `memory/context-db` paths are read only for compatibility when present.
   - See [ContextDB](contextdb.md#memory-with-memo) for the memo storage boundary.
 

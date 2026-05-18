@@ -42,7 +42,7 @@ test('aios memo add writes canonical file storage and legacy mirror metadata', a
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /Memo added/i);
 
-    const filePath = path.join(workspaceRoot, 'memory', 'memo', 'file', 'events.jsonl');
+    const filePath = path.join(workspaceRoot, '.aios', 'memo', 'file', 'events.jsonl');
     const fileRecords = parseJsonLines(await fs.readFile(filePath, 'utf8'));
     assert.equal(fileRecords.length, 1);
     assert.equal(fileRecords[0].space, 'default');
@@ -67,7 +67,7 @@ test('aios memo add writes canonical file storage and legacy mirror metadata', a
   });
 });
 
-test('aios memo pin writes active storage and mirrors pinned.md to legacy path', async () => {
+test('aios memo pin writes active storage and mirrors pinned.md to .aios ContextDB path', async () => {
   await withWorkspace('aios-memo-cli-pin-', async (workspaceRoot) => {
     const set = runMemo(workspaceRoot, ['pin', 'set', 'Pinned canonical note']);
     assert.equal(set.status, 0, set.stderr || set.stdout);
@@ -76,7 +76,7 @@ test('aios memo pin writes active storage and mirrors pinned.md to legacy path',
     assert.equal(add.status, 0, add.stderr || add.stdout);
 
     const canonicalPinned = await fs.readFile(
-      path.join(workspaceRoot, 'memory', 'memo', 'file', 'pinned', 'default.md'),
+      path.join(workspaceRoot, '.aios', 'memo', 'file', 'pinned', 'default.md'),
       'utf8'
     );
     assert.match(canonicalPinned, /Pinned canonical note/);
@@ -95,7 +95,6 @@ test('aios memo pin writes active storage and mirrors pinned.md to legacy path',
     );
     assert.equal(legacyPinned, canonicalPinned);
 
-    await fs.rm(path.join(workspaceRoot, '.aios'), { recursive: true, force: true });
     const show = runMemo(workspaceRoot, ['pin', 'show']);
     assert.equal(show.status, 0, show.stderr || show.stdout);
     assert.match(show.stdout, /Pinned canonical note/);
@@ -114,11 +113,10 @@ test('aios memo storage use split converts file records and search reads active 
     assert.match(useSplit.stdout, /Migrated records: 1/);
     assert.match(useSplit.stdout, /Rebuilt records: 1/);
 
-    const splitEventsDir = path.join(workspaceRoot, 'memory', 'memo', 'split', 'events', 'default');
+    const splitEventsDir = path.join(workspaceRoot, '.aios', 'memo', 'split', 'events', 'default');
     const splitFiles = (await fs.readdir(splitEventsDir)).filter((name) => name.endsWith('.json'));
     assert.equal(splitFiles.length, 1);
 
-    await fs.rm(path.join(workspaceRoot, '.aios'), { recursive: true, force: true });
     const search = runMemo(workspaceRoot, ['search', 'portable', '--limit', '5']);
     assert.equal(search.status, 0, search.stderr || search.stdout);
     assert.match(search.stdout, /portable memo for split storage/);
@@ -148,7 +146,7 @@ test('aios memo storage rebuild preserves canonical source event bytes', async (
     const add = runMemo(workspaceRoot, ['add', 'rebuild should not rewrite source bytes']);
     assert.equal(add.status, 0, add.stderr || add.stdout);
 
-    const filePath = path.join(workspaceRoot, 'memory', 'memo', 'file', 'events.jsonl');
+    const filePath = path.join(workspaceRoot, '.aios', 'memo', 'file', 'events.jsonl');
     const before = await fs.readFile(filePath, 'utf8');
 
     const rebuild = runMemo(workspaceRoot, ['storage', 'rebuild']);
@@ -166,7 +164,7 @@ test('aios memo storage doctor exits non-zero for malformed active file storage'
     assert.equal(add.status, 0, add.stderr || add.stdout);
 
     await fs.appendFile(
-      path.join(workspaceRoot, 'memory', 'memo', 'file', 'events.jsonl'),
+      path.join(workspaceRoot, '.aios', 'memo', 'file', 'events.jsonl'),
       '{bad-json\n',
       'utf8'
     );
@@ -182,7 +180,6 @@ test('aios memo recall emits readable digest from active storage records', async
     const add = runMemo(workspaceRoot, ['add', 'remember active storage recall evidence']);
     assert.equal(add.status, 0, add.stderr || add.stdout);
 
-    await fs.rm(path.join(workspaceRoot, '.aios'), { recursive: true, force: true });
     const recall = runMemo(workspaceRoot, ['recall', 'storage', '--limit', '2', '--highlight-limit', '2']);
     assert.equal(recall.status, 0, recall.stderr || recall.stdout);
     assert.match(recall.stdout, /workspace-memory--default/);

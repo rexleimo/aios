@@ -157,7 +157,7 @@ If an agent gets stuck, the planner **automatically re-plans** the next round.
 
 タスクに合う最小の blueprint を選んでください。単純なファイル作成には `feature` ではなく `bugfix` で十分です。
 
-Blueprint、ロールカード、runtime manifest、executor manifest、handoff schema は `scripts/lib/specs/` に同伴されています。Team の実行状態と証拠は引き続き `.aios/context-db/` に書き込まれます。`memory/memo/` はプロジェクト memo 専用で、team runtime store ではありません。
+Blueprint、ロールカード、runtime manifest、executor manifest、handoff schema は `scripts/lib/specs/` に同伴されています。Team の実行状態と証拠は引き続き `.aios/context-db/` に書き込まれます。`.aios/memo/` はプロジェクト memo 専用で、team runtime store ではありません。
 
 ### Configuration
 

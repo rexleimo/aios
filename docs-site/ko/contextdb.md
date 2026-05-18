@@ -124,7 +124,7 @@ Session IDs look like: `claude-code-20260419T095454-e6eb600d` (agent name + time
 ## Memory With Memo
 
 ContextDB is automatic, but sometimes you want to **manually** save important notes. That's what Memo is for.
-Project memos now use Git-friendly canonical storage under `memory/memo/`: `file` is the default append-only JSONL backend, while `split` stores one JSON file per memo event. ContextDB mirrors are kept only for compatibility/cache.
+Project memos now use Git-friendly canonical storage under `.aios/memo/`: `file` is the default append-only JSONL backend, while `split` stores one JSON file per memo event. ContextDB mirrors are kept only for compatibility/cache.
 
 ### Quick Memo Commands
 

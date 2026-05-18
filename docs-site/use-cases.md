@@ -56,11 +56,11 @@ aios memo user add "Preferred language: zh-CN + technical English terms"
 
 Rule of thumb:
 
-- `memo add/search/recall` -> canonical `memory/memo` storage (legacy ContextDB mirror only for compatibility)
-- `memo pin` -> canonical `memory/memo` pinned file (legacy mirror only for compatibility)
+- `memo add/search/recall` -> canonical `.aios/memo` storage (legacy ContextDB mirror only for compatibility)
+- `memo pin` -> canonical `.aios/memo` pinned file (legacy mirror only for compatibility)
 - `memo persona/user` -> global identity files injected into the `ctx-agent` Memory prelude
 
-Default storage is `file` (`memory/memo/file/events.jsonl`). Use `aios memo storage use split` only if you want one JSON file per memo event. `storage rebuild` fully rebuilds derived query files only.
+Default storage is `file` (`.aios/memo/file/events.jsonl`). Use `aios memo storage use split` only if you want one JSON file per memo event. `storage rebuild` fully rebuilds derived query files only.
 
 Persona is for the agent baseline ("how this AI should behave"). User profile is for stable operator preferences ("how this user wants work delivered"). Both are safety-scanned and capacity-limited before injection.
 

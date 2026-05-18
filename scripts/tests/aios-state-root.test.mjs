@@ -7,6 +7,8 @@ import {
   resolveAiosStateRoot,
   resolveContextDbRoot,
   resolveContextDbPath,
+  resolveMemoRoot,
+  resolveMemoPath,
   resolveTasksRoot,
   resolveWorkspaceStateRoot,
   toWorkspaceRelative,
@@ -18,6 +20,8 @@ test('defaults runtime state to .aios under workspace', async () => {
   assert.equal(resolveAiosStateRoot(root), path.join(root, '.aios'));
   assert.equal(resolveContextDbRoot(root), path.join(root, '.aios', 'context-db'));
   assert.equal(resolveContextDbPath(root, 'index.json'), path.join(root, '.aios', 'context-db', 'index.json'));
+  assert.equal(resolveMemoRoot(root), path.join(root, '.aios', 'memo'));
+  assert.equal(resolveMemoPath(root, 'file', 'events.jsonl'), path.join(root, '.aios', 'memo', 'file', 'events.jsonl'));
   assert.equal(resolveTasksRoot(root), path.join(root, '.aios', 'tasks'));
   assert.equal(resolveWorkspaceStateRoot(root), path.join(root, '.aios', 'workspace'));
   assert.equal(toWorkspaceRelative(root, path.join(root, '.aios', 'context-db', 'index.json')), '.aios/context-db/index.json');
@@ -46,6 +50,7 @@ test('env override can place project state outside the default .aios root', asyn
 
   assert.equal(resolveAiosStateRoot(root, { env }), custom);
   assert.equal(resolveContextDbRoot(root, { env }), path.join(custom, 'context-db'));
+  assert.equal(resolveMemoRoot(root, { env }), path.join(custom, 'memo'));
   assert.equal(resolveWorkspaceStateRoot(root, { env }), path.join(custom, 'workspace'));
   assert.equal(toWorkspaceRelative(root, path.join(custom, 'context-db')), '.custom-aios-state/context-db');
 });
@@ -77,14 +82,14 @@ test('workspace memory session writes under .aios context db', async () => {
   assert.equal(workspaceMemoryPinnedPath(root, 'workspace-memory--default'), path.join(root, '.aios', 'context-db', 'sessions', 'workspace-memory--default', 'pinned.md'));
 });
 
-test('workspace memory keeps legacy state together when only legacy context db exists', async () => {
+test('workspace memory writes new state under .aios even when legacy context db exists', async () => {
   const root = await mkdtemp(path.join(os.tmpdir(), 'aios-workspace-memory-legacy-'));
   await mkdir(path.join(root, 'memory', 'context-db'), { recursive: true });
   const { ensureWorkspaceMemorySession, workspaceMemoryPinnedPath, workspaceMemoryStatePath } = await import('../lib/memo/workspace-memory.mjs');
 
   const result = ensureWorkspaceMemorySession(root);
 
-  assert.equal(result.dir, path.join(root, 'memory', 'context-db', 'sessions', 'workspace-memory--default'));
-  assert.equal(workspaceMemoryStatePath(root), path.join(root, 'memory', 'context-db', '.workspace-memory.json'));
-  assert.equal(workspaceMemoryPinnedPath(root, 'workspace-memory--default'), path.join(root, 'memory', 'context-db', 'sessions', 'workspace-memory--default', 'pinned.md'));
+  assert.equal(result.dir, path.join(root, '.aios', 'context-db', 'sessions', 'workspace-memory--default'));
+  assert.equal(workspaceMemoryStatePath(root), path.join(root, '.aios', 'context-db', '.workspace-memory.json'));
+  assert.equal(workspaceMemoryPinnedPath(root, 'workspace-memory--default'), path.join(root, '.aios', 'context-db', 'sessions', 'workspace-memory--default', 'pinned.md'));
 });

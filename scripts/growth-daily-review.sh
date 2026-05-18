@@ -2,8 +2,8 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-DAILY_CSV="$ROOT_DIR/tasks/metrics/english-growth-daily.csv"
-CTA_CSV="$ROOT_DIR/tasks/metrics/cta-experiments.csv"
+DAILY_CSV="$ROOT_DIR/.aios/tasks/metrics/english-growth-daily.csv"
+CTA_CSV="$ROOT_DIR/.aios/tasks/metrics/cta-experiments.csv"
 
 usage() {
   cat <<'USAGE'

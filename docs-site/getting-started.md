@@ -172,7 +172,7 @@ aios memo search "typescript"
 aios memo storage status
 ```
 
-By default, project memos are append-only JSONL under `memory/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
+By default, project memos are append-only JSONL under `.aios/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
 
 ### Set Your Agent's Personality
 

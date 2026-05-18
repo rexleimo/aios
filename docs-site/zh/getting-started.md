@@ -172,7 +172,7 @@ aios memo search "typescript"
 aios memo storage status
 ```
 
-默认情况下，项目备忘录是追加式 JSONL，保存在 `memory/memo/file/events.jsonl` 下。只有当你希望每个备忘录事件使用一个 JSON 文件时才使用 `aios memo storage use split`；`storage rebuild` 重新生成派生查询文件，但不重写规范记录。
+默认情况下，项目备忘录是追加式 JSONL，保存在 `.aios/memo/file/events.jsonl` 下。只有当你希望每个备忘录事件使用一个 JSON 文件时才使用 `aios memo storage use split`；`storage rebuild` 重新生成派生查询文件，但不重写规范记录。
 
 ### 设置你的 Agent 性格
 
