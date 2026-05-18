@@ -53,7 +53,7 @@ npm run perf:team-status-watch:smoke
 
 ## Troubleshooting
 
-- If `better-sqlite3` fails on Node ABI mismatch: run `cd mcp-server && npm rebuild better-sqlite3`.
+- If ContextDB fails after switching Node, run `nvm use 24` and then `cd mcp-server && npm run test:contextdb`.
 - If `tsx` cannot be resolved in `mcp-server`: run `cd mcp-server && npm ci`.
 - If orchestrate/learn-eval perf smoke fails intermittently in CI, review `test-results/perf-orchestrate-learn-eval-smoke.json` and adjust thresholds via:
   - `AIOS_PERF_ORCHESTRATE_MAX_MS`

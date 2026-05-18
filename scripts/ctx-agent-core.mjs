@@ -78,7 +78,6 @@ Options:
   -h, --help          Show this help`);
   console.log(`
 Environment:
-  CTXDB_AUTO_REBUILD_NATIVE 1/true/yes/on to auto-rebuild better-sqlite3 on Node ABI mismatch (default: on)
   CTXDB_TASK_ROUTER_GUIDE 1/true/yes/on to inject routing checklist into context packet (default: on)
   CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup (-c mcp_servers={} -c features.rmcp_client=false)
   CTXDB_LAZY_LOAD      1/true/yes/on to enable lazy context loading (default: on)`);
@@ -940,11 +939,6 @@ function formatMemoryPreludeStatus(memoryPrelude = '') {
     ? 'Memory prelude: enabled'
     : 'Memory prelude: disabled';
 }
-
-export function shouldAutoRebuildNative(env = process.env) {
-  return parseBoolEnv(env.CTXDB_AUTO_REBUILD_NATIVE, true);
-}
-
 function shouldStrictContextPack(env = process.env) {
   return parseBoolEnv(env.CTXDB_PACK_STRICT, false);
 }
@@ -1086,15 +1080,6 @@ function getCommandFailureDetail(result) {
   const stderr = (result.stderr || '').trim();
   const stdout = (result.stdout || '').trim();
   return stderr || stdout || `exit=${result.status ?? 1}`;
-}
-
-export function isBetterSqlite3AbiMismatch(detail) {
-  if (!detail) return false;
-  const normalized = String(detail).toLowerCase();
-  const mentionsAddon = normalized.includes('better_sqlite3.node') || normalized.includes('better-sqlite3');
-  const mentionsAbi = normalized.includes('node_module_version')
-    || normalized.includes('compiled against a different node.js version');
-  return mentionsAddon && mentionsAbi;
 }
 export function classifyOneShotFailure(detail) {
   if (!detail) return undefined;
@@ -1327,7 +1312,6 @@ function shouldUseCompiledContextDbCli() {
 
 const USE_COMPILED_CONTEXTDB_CLI = shouldUseCompiledContextDbCli();
 
-let nativeRepairAttempted = false;
 
 function ctx(workspaceRoot, subcommand, args) {
   // Prefer compiled CLI to avoid npm + tsx overhead (~0.3s -> ~0.06s per call)
@@ -1347,40 +1331,8 @@ function ctx(workspaceRoot, subcommand, args) {
     return (firstResult.stdout || '').trim();
   }
 
-  const firstFailure = getCommandFailureDetail(firstResult);
-  const shouldRetryWithRepair = !nativeRepairAttempted
-    && shouldAutoRebuildNative(process.env)
-    && isBetterSqlite3AbiMismatch(firstFailure);
-
-  if (!shouldRetryWithRepair) {
-    ensureSuccess(firstResult, `contextdb ${subcommand} failed`);
-    return (firstResult.stdout || '').trim();
-  }
-
-  nativeRepairAttempted = true;
-  console.warn('[contextdb] Detected better-sqlite3 Node ABI mismatch. Running `npm rebuild better-sqlite3` and retrying once.');
-
-  const rebuildResult = runCommand('npm', ['rebuild', 'better-sqlite3'], {
-    cwd: MCP_DIR,
-  });
-  if (rebuildResult.error || rebuildResult.status !== 0) {
-    const rebuildFailure = getCommandFailureDetail(rebuildResult);
-    throw new Error(`contextdb ${subcommand} failed: ${firstFailure}\nauto-rebuild failed: ${rebuildFailure}`);
-  }
-
-  let retryResult;
-  if (USE_COMPILED_CONTEXTDB_CLI) {
-    retryResult = runCommand(process.execPath, [COMPILED_CONTEXTDB_CLI, subcommand, '--workspace', workspaceRoot, ...args], {
-      cwd: MCP_DIR,
-    });
-  } else {
-    const commandArgs = ['run', '-s', 'contextdb', '--', subcommand, '--workspace', workspaceRoot, ...args];
-    retryResult = runCommand('npm', commandArgs, {
-      cwd: MCP_DIR,
-    });
-  }
-  ensureSuccess(retryResult, `contextdb ${subcommand} failed`);
-  return (retryResult.stdout || '').trim();
+  ensureSuccess(firstResult, `contextdb ${subcommand} failed`);
+  return (firstResult.stdout || '').trim();
 }
 
 function parseJsonValue(text, getter) {

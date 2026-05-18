@@ -1,6 +1,6 @@
 import { existsSync, unlinkSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
-import Database from 'better-sqlite3';
+import { DatabaseSync } from 'node:sqlite';
 import type { CheckpointCost, CheckpointTelemetry, EventTurnEnvelope, VerificationResult } from './core.js';
 
 export interface SqliteSessionRow {
@@ -121,7 +121,9 @@ interface CheckpointSelectRow {
   telemetry_json: string | null;
 }
 
-const dbConnections = new Map<string, Database.Database>();
+type SqliteDatabase = InstanceType<typeof DatabaseSync>;
+
+const dbConnections = new Map<string, SqliteDatabase>();
 const WORD_RE = /[\p{L}\p{N}]+/gu;
 const CJK_CHAR_RE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/u;
 
@@ -209,16 +211,18 @@ function parseCheckpointTelemetry(row: CheckpointSelectRow): CheckpointTelemetry
   return Object.keys(telemetry).length > 0 ? telemetry : undefined;
 }
 
-function getConnection(dbPath: string): Database.Database {
+function getConnection(dbPath: string): SqliteDatabase {
   const cached = dbConnections.get(dbPath);
   if (cached) return cached;
 
   mkdirSync(path.dirname(dbPath), { recursive: true });
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('synchronous = NORMAL');
-  db.pragma('foreign_keys = ON');
-  db.pragma('busy_timeout = 5000');
+  const db = new DatabaseSync(dbPath);
+  db.exec(`
+    PRAGMA journal_mode = WAL;
+    PRAGMA synchronous = NORMAL;
+    PRAGMA foreign_keys = ON;
+    PRAGMA busy_timeout = 5000;
+  `);
   dbConnections.set(dbPath, db);
   return db;
 }
@@ -232,8 +236,27 @@ function closeConnection(dbPath: string): void {
     dbConnections.delete(dbPath);
   }
 }
-function ensureCheckpointTelemetryColumns(db: Database.Database): void {
-  const tableInfo = db.prepare('PRAGMA table_info(checkpoints);').all() as Array<{ name: string }>;
+
+let transactionCounter = 0;
+
+function runTransaction(db: SqliteDatabase, fn: () => void): void {
+  transactionCounter += 1;
+  const savepoint = `aios_tx_${transactionCounter}`;
+  db.exec(`SAVEPOINT ${savepoint};`);
+  try {
+    fn();
+    db.exec(`RELEASE ${savepoint};`);
+  } catch (error) {
+    try {
+      db.exec(`ROLLBACK TO ${savepoint};`);
+    } finally {
+      db.exec(`RELEASE ${savepoint};`);
+    }
+    throw error;
+  }
+}
+function ensureCheckpointTelemetryColumns(db: SqliteDatabase): void {
+  const tableInfo = db.prepare('PRAGMA table_info(checkpoints);').all() as unknown as Array<{ name: string }>;
   const columns = new Set(tableInfo.map((row) => row.name));
   const migrations: Array<[string, string]> = [
     ['verification_result', 'ALTER TABLE checkpoints ADD COLUMN verification_result TEXT;'],
@@ -250,15 +273,15 @@ function ensureCheckpointTelemetryColumns(db: Database.Database): void {
   }
 }
 
-function ensureEventTurnColumn(db: Database.Database): void {
-  const tableInfo = db.prepare('PRAGMA table_info(events);').all() as Array<{ name: string }>;
+function ensureEventTurnColumn(db: SqliteDatabase): void {
+  const tableInfo = db.prepare('PRAGMA table_info(events);').all() as unknown as Array<{ name: string }>;
   const columns = new Set(tableInfo.map((row) => row.name));
   if (!columns.has('turn_json')) {
     db.exec('ALTER TABLE events ADD COLUMN turn_json TEXT;');
   }
 }
 
-function ensureEventsFtsBackfill(db: Database.Database): void {
+function ensureEventsFtsBackfill(db: SqliteDatabase): void {
   db.exec(`
     INSERT INTO events_fts (event_id, kind, text, refs)
     SELECT e.event_id, e.kind, e.text, e.refs_flat
@@ -269,7 +292,7 @@ function ensureEventsFtsBackfill(db: Database.Database): void {
   `);
 }
 
-function ensureCheckpointsFtsBackfill(db: Database.Database): void {
+function ensureCheckpointsFtsBackfill(db: SqliteDatabase): void {
   db.exec(`
     INSERT INTO checkpoints_fts (checkpoint_id, status, summary, next_actions, artifacts, failure_category)
     SELECT
@@ -286,7 +309,7 @@ function ensureCheckpointsFtsBackfill(db: Database.Database): void {
   `);
 }
 
-function ensureEventRefsBackfill(db: Database.Database): void {
+function ensureEventRefsBackfill(db: SqliteDatabase): void {
   try {
     db.exec(`
       INSERT OR IGNORE INTO event_refs (event_id, ref)
@@ -304,10 +327,10 @@ function ensureEventRefsBackfill(db: Database.Database): void {
     SELECT event_id, refs_json
     FROM events
     WHERE refs_json IS NOT NULL AND refs_json != '[]';
-  `).all() as Array<{ event_id: string; refs_json: string }>;
+  `).all() as unknown as Array<{ event_id: string; refs_json: string }>;
   const insert = db.prepare('INSERT OR IGNORE INTO event_refs (event_id, ref) VALUES (?, ?)');
 
-  const tx = db.transaction(() => {
+  runTransaction(db, () => {
     for (const row of rows) {
       const refs = parseJsonStringArray(row.refs_json);
       for (const ref of refs) {
@@ -316,7 +339,6 @@ function ensureEventRefsBackfill(db: Database.Database): void {
       }
     }
   });
-  tx();
 }
 
 export function ensureSqliteSidecar(dbPath: string): void {
@@ -479,7 +501,7 @@ export function findLatestSessionRow(
     ${where}
     ORDER BY updated_at DESC
     LIMIT 1;
-  `).get(...params) as SessionSelectRow | undefined;
+  `).get(...params) as unknown as SessionSelectRow | undefined;
 
   if (!row) return null;
   return {
@@ -535,14 +557,13 @@ export function upsertEventRow(dbPath: string, row: SqliteEventRow): void {
   db.prepare('DELETE FROM event_refs WHERE event_id = ?').run(row.eventId);
   if (row.refs.length > 0) {
     const insertRef = db.prepare('INSERT OR IGNORE INTO event_refs (event_id, ref) VALUES (?, ?)');
-    const tx = db.transaction((refs: string[]) => {
-      for (const ref of refs) {
+    runTransaction(db, () => {
+      for (const ref of row.refs) {
         const normalized = ref.trim();
         if (!normalized) continue;
         insertRef.run(row.eventId, normalized);
       }
     });
-    tx(row.refs);
   }
   db.prepare('DELETE FROM events_fts WHERE event_id = ?').run(row.eventId);
   db.prepare(`
@@ -673,7 +694,7 @@ export function searchEventRows(dbPath: string, input: SqliteSearchInput): Sqlit
         ${ftsWhere}
         ORDER BY bm25(events_fts, 4.0, 2.0, 1.0), e.ts_epoch DESC
         LIMIT ?;
-      `).all(...ftsParams) as EventSelectRow[];
+      `).all(...ftsParams) as unknown as EventSelectRow[];
     } catch {
       rows = [];
     }
@@ -697,7 +718,7 @@ export function searchEventRows(dbPath: string, input: SqliteSearchInput): Sqlit
         WHERE ${fallbackClauses.join(' AND ')}
         ORDER BY e.ts_epoch DESC
         LIMIT ?;
-      `).all(...fallbackParams) as EventSelectRow[];
+      `).all(...fallbackParams) as unknown as EventSelectRow[];
     }
   } else {
     params.push(limit);
@@ -708,7 +729,7 @@ export function searchEventRows(dbPath: string, input: SqliteSearchInput): Sqlit
       ${where}
       ORDER BY e.ts_epoch DESC
       LIMIT ?;
-    `).all(...params) as EventSelectRow[];
+    `).all(...params) as unknown as EventSelectRow[];
   }
 
   return rows.map((row) => {
@@ -772,7 +793,7 @@ export function searchCheckpointRows(dbPath: string, input: SqliteCheckpointSear
         ${ftsWhere}
         ORDER BY bm25(checkpoints_fts, 2.5, 4.5, 1.5, 1.0, 1.0), c.ts_epoch DESC
         LIMIT ?;
-      `).all(...ftsParams) as CheckpointSelectRow[];
+      `).all(...ftsParams) as unknown as CheckpointSelectRow[];
     } catch {
       rows = [];
     }
@@ -797,7 +818,7 @@ export function searchCheckpointRows(dbPath: string, input: SqliteCheckpointSear
         WHERE ${fallbackClauses.join(' AND ')}
         ORDER BY ts_epoch DESC
         LIMIT ?;
-      `).all(...fallbackParams) as CheckpointSelectRow[];
+      `).all(...fallbackParams) as unknown as CheckpointSelectRow[];
     }
   } else {
     params.push(limit);
@@ -809,7 +830,7 @@ export function searchCheckpointRows(dbPath: string, input: SqliteCheckpointSear
       ${where}
       ORDER BY ts_epoch DESC
       LIMIT ?;
-    `).all(...params) as CheckpointSelectRow[];
+    `).all(...params) as unknown as CheckpointSelectRow[];
   }
 
   return rows.map((row) => ({
@@ -836,7 +857,7 @@ export function getEventRowById(dbPath: string, eventId: string): SqliteEventRow
       event_id, session_id, seq, ts, ts_epoch, project, agent, role, kind, text, refs_json, turn_json, text_hash, signature_hash
     FROM events
     WHERE event_id = ?;
-  `).get(eventId) as EventSelectRow | undefined;
+  `).get(eventId) as unknown as EventSelectRow | undefined;
 
   if (!row) return null;
   const turn = parseJsonObject<EventTurnEnvelope>(row.turn_json);
@@ -893,7 +914,7 @@ export function timelineCheckpointRows(dbPath: string, input: SqliteTimelineInpu
     ${where}
     ORDER BY ts_epoch DESC
     LIMIT ?;
-  `).all(...params) as CheckpointSelectRow[];
+  `).all(...params) as unknown as CheckpointSelectRow[];
 
   return rows.map((row) => ({
     checkpointId: row.checkpoint_id,
@@ -914,9 +935,9 @@ export function timelineCheckpointRows(dbPath: string, input: SqliteTimelineInpu
 export function countSqliteRows(dbPath: string): { sessions: number; events: number; checkpoints: number } {
   ensureSqliteSidecar(dbPath);
   const db = getConnection(dbPath);
-  const sessions = db.prepare('SELECT COUNT(*) AS count FROM sessions').get() as { count: number };
-  const events = db.prepare('SELECT COUNT(*) AS count FROM events').get() as { count: number };
-  const checkpoints = db.prepare('SELECT COUNT(*) AS count FROM checkpoints').get() as { count: number };
+  const sessions = db.prepare('SELECT COUNT(*) AS count FROM sessions').get() as unknown as { count: number };
+  const events = db.prepare('SELECT COUNT(*) AS count FROM events').get() as unknown as { count: number };
+  const checkpoints = db.prepare('SELECT COUNT(*) AS count FROM checkpoints').get() as unknown as { count: number };
   return {
     sessions: sessions.count,
     events: events.count,
@@ -931,12 +952,12 @@ export function getSessionIndexedSeqs(dbPath: string, sessionId: string): Sqlite
     SELECT COALESCE(MAX(seq), 0) AS max_seq
     FROM events
     WHERE session_id = ?;
-  `).get(sessionId) as { max_seq?: number } | undefined;
+  `).get(sessionId) as unknown as { max_seq?: number } | undefined;
   const checkpointRow = db.prepare(`
     SELECT COALESCE(MAX(seq), 0) AS max_seq
     FROM checkpoints
     WHERE session_id = ?;
-  `).get(sessionId) as { max_seq?: number } | undefined;
+  `).get(sessionId) as unknown as { max_seq?: number } | undefined;
 
   return {
     eventSeq: Number.isFinite(eventRow?.max_seq) ? Math.max(0, Math.floor(eventRow?.max_seq ?? 0)) : 0,

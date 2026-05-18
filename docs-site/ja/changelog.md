@@ -62,7 +62,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
   - **debug-hub MCP ネイティブデバッグログサービス** (2026-05-06): coding agent 向けの MCP ネイティブなデバッグログ収集。Node.js/Browser/Go SDK、組み込み Web UI、`~/.debug-hub/` 配下のファイルベースストレージ、agent 自己診断用の 5 つの MCP ツール（`list_traces`、`get_trace`、`search_logs`、`get_stats`、`clear_logs`）を提供。agent は人間の介入なしに自身のランタイムログを内省可能
 	  - **Agent self-trigger harness routing** (2026-05-05): ラップされた `codex` / `claude` / `gemini` / `opencode` セッションが `single/subagent/team/harness` を提示；長時間・夜間・再開可能な目標は `aios harness run ... --workspace <project-root>` を自己トリガーでき、`--max-iterations` と `CTXDB_HARNESS_PROVIDER` / `CTXDB_HARNESS_MAX_ITERATIONS` で制御可能
   - **ラップされた coding agent 向け Privacy Shield** (2026-04-24): ContextDB shell の対話型 CLI 起動時に Privacy Guard 状態、カスタムモデル中継エンドポイント検出、`aios privacy read --file <path>` の安全な読み取りパスを示すカラーのプライバシーパネルを表示；自動プロンプトでも LLM のプライバシー指示は助言的で、検証可能な保護は deterministic な AIOS gate によるものだと明示
-  - **ワークスペース認識の routed startup + プロジェクト Node 選択** (2026-04-23): routed `ctx-agent` startup が non-AIOS リポジトリから起動された場合でもアクティブな git ワークスペースを保持；`mcp-server` の npm scripts は `scripts/with-project-node.mjs` 経由で実行され、`.nvmrc` / Node 22 を一貫して尊重するため、`better-sqlite3` の ABI ドリフトを減らし、Node 22 が見つからない場合は明確なエラーを返します
+  - **ワークスペース認識の routed startup + プロジェクト Node 選択** (2026-04-23): routed `ctx-agent` startup が non-AIOS リポジトリから起動された場合でもアクティブな git ワークスペースを保持；`mcp-server` の npm scripts は `scripts/with-project-node.mjs` 経由で実行され、`.nvmrc` / Node 24 を一貫して尊重するため、組み込み `node:sqlite` により外部 SQLite addon の ABI ドリフトを避け、Node 24 が見つからない場合は明確なエラーを返します
   - **ContextDB Shell 起動最適化** (2026-04-22): `ctx()` が `npm run -s contextdb` よりコンパイル済み `mcp-server/dist/contextdb/cli.js` を優先し、1 回あたりのオーバーヘッドを ~0.3s から ~0.06s に削減；one-shot エージェント起動を ~2.2s から ~0.5s に短縮（約 78% 高速化）；shell-bridge の `detectRunner` が `tsx` を不要に；インストール時に `dist/` がない場合は自動ビルドし、ビルド失敗時は npm-run モードに自動フォールバック
   - **デフォルト core skills 更新** (2026-04-19): `awesome-design-md`、`frontend-design`、`cap-commit-push` をデフォルト core skills に昇格
   - **ContextDB レイジーロード** (2026-04-18 〜 2026-04-19): インタラクティブセッションがデフォルトでレイジーコンテキストロード (`CTXDB_LAZY_LOAD=on`) を使用；エージェントはフルコンテキストパックの注入ではなくファサードプロンプトでメモリを自己発見；[レイジーロードドキュメント](contextdb.md#lazy-load) と多言語ブログ記事を追加
@@ -88,7 +88,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
   - コアデフォルト、オプショナル business skills、アンインストールでインストール済み項目のみ表示のカタログ駆動 skill ピッカー
   - TUI skill ピッカーが `Core` と `Optional` にグループ化し、ターミナル可読性のために説明を切り詰める
   - `doctor` が同名グローバルインストールのプロジェクト skill 上書きを警告
-  - Node ランタイムガイダンスが Node 22 LTS に明示的に整合
+  - Node ランタイムガイダンスが Node 24 LTS に明示的に整合
   - **Ink TUI リファクタ** (v1.1.0): TypeScript + Ink ベースの React コンポーネント TUI；REXCLI ASCII アート起動バナー；アダプティブ watch 間隔；左右オプションサイクリング
 - `0.17.0` (2026-03-17):
   - TUI アンインストールピッカーが小さいターミナルでスクロールし、`Select all` / `Clear all` / `Done` を下部に固定

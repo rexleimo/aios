@@ -9,20 +9,19 @@ description: Common setup/runtime issues and direct fixes.
 
 Most failures are setup-scope issues (missing MCP runtime, wrapper not loaded, or wrong wrap mode). Start with doctor scripts, then check wrapper scope.
 
-## `better-sqlite3` / ContextDB fails after switching Node
+## ContextDB fails after switching Node
 
-RexCLI now targets **Node 22 LTS**, and `mcp-server` package scripts try to honor that automatically through `scripts/with-project-node.mjs`.
+RexCLI targets **Node 24 LTS** and uses Node's built-in `node:sqlite` for ContextDB, so there is no external SQLite native addon to rebuild.
 
-If a command exits with `Unable to resolve a Node runtime matching .nvmrc=22`, install Node 22 first, then retry.
+If a command exits with `Unable to resolve a Node runtime matching .nvmrc=24` or `[node-version] AIOS requires Node 24.x LTS`, install/use Node 24 first, then retry.
 
 Quick fix:
 
 ```bash
 node -v
 source ~/.nvm/nvm.sh
-nvm install 22
-nvm use 22
-cd mcp-server && npm rebuild better-sqlite3
+nvm install 24
+nvm use 24
 cd mcp-server && npm run test:contextdb
 ```
 

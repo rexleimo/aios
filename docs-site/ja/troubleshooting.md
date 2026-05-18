@@ -9,20 +9,19 @@ description: よくあるセットアップ/ランタイムの問題と直接的
 
 ほとんどの失敗はセットアップの問題です（MCP ランタイムがない、wrapper がロードされていない、あるいは誤った wrap モード）。まず doctor スクリプトを実行し、wrapper のスコープを確認してください。
 
-## better-sqlite3 / ContextDB が Node 切り替え後に失敗
+## ContextDB が Node 切り替え後に失敗
 
-RexCLI は **Node 22 LTS** を前提としており、`mcp-server` の npm scripts は `scripts/with-project-node.mjs` を通じてその runtime を自動で優先します。
+RexCLI は **Node 24 LTS** を前提としており、ContextDB は Node 組み込みの `node:sqlite` を使用します。外部 SQLite native addon の rebuild は不要です。
 
-`Unable to resolve a Node runtime matching .nvmrc=22` が出た場合は、まず Node 22 をインストールしてから再試行してください。
+`Unable to resolve a Node runtime matching .nvmrc=24` または `[node-version] AIOS requires Node 24.x LTS` が出た場合は、まず Node 24 をインストールしてから再試行してください。
 
 素早い修正:
 
 ```bash
 node -v
 source ~/.nvm/nvm.sh
-nvm install 22
-nvm use 22
-cd mcp-server && npm rebuild better-sqlite3
+nvm install 24
+nvm use 24
 cd mcp-server && npm run test:contextdb
 ```
 

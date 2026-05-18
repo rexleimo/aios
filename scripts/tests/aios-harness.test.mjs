@@ -4,12 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import {
-  isBetterSqlite3AbiMismatch,
-  isBetterSqlite3MissingBindings,
-  isBetterSqlite3RepairableFailure,
-  runContextDbCli,
-} from '../lib/contextdb-cli.mjs';
+import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 import { parseArgs } from '../lib/cli/parse-args.mjs';
 import {
   getDisabledGateIds,
@@ -80,109 +75,25 @@ test('parseArgs accepts quality-gate session', () => {
   assert.equal(result.options.sessionId, 'session-123');
 });
 
-test('runContextDbCli auto-rebuilds better-sqlite3 once on Node ABI mismatch', () => {
+test('runContextDbCli surfaces contextdb cli failures without native rebuild retries', () => {
   const calls = [];
-  const responses = [
-    {
-      status: 1,
-      stdout: '',
-      stderr: `The module '/tmp/better_sqlite3.node' was compiled against a different Node.js version using NODE_MODULE_VERSION 127. This version of Node.js requires NODE_MODULE_VERSION 141.`,
-    },
-    {
-      status: 0,
-      stdout: 'rebuilt\n',
-      stderr: '',
-    },
-    {
-      status: 0,
-      stdout: '{"ok":true}\n',
-      stderr: '',
-    },
-  ];
-
-  const result = runContextDbCli(['timeline', '--workspace', '/tmp/repro'], {
-    cwd: '/tmp/repro',
-    env: { ...process.env, CTXDB_AUTO_REBUILD_NATIVE: '1' },
-    spawnSyncImpl(command, args, options) {
-      calls.push({ command, args, options });
-      return responses.shift();
-    },
-  });
-
-  assert.deepEqual(result, { ok: true });
-  assert.equal(calls.length, 3);
-  assert.equal(calls[0].command, process.execPath);
-  assert.equal(calls[1].command, 'npm');
-  assert.deepEqual(calls[1].args, ['rebuild', 'better-sqlite3']);
-  assert.match(calls[1].options.cwd, /mcp-server$/);
-  assert.equal(calls[2].command, process.execPath);
-});
-
-test('runContextDbCli surfaces ABI mismatch when auto-rebuild is disabled', () => {
-  assert.equal(
-    isBetterSqlite3AbiMismatch(`The module '/tmp/better_sqlite3.node' was compiled against a different Node.js version using NODE_MODULE_VERSION 127.`),
-    true
-  );
 
   assert.throws(
     () => runContextDbCli(['timeline'], {
-      env: { ...process.env, CTXDB_AUTO_REBUILD_NATIVE: '0' },
-      spawnSyncImpl() {
+      spawnSyncImpl(command, args, options) {
+        calls.push({ command, args, options });
         return {
           status: 1,
           stdout: '',
-          stderr: `The module '/tmp/better_sqlite3.node' was compiled against a different Node.js version using NODE_MODULE_VERSION 127.`,
+          stderr: 'contextdb failed',
         };
       },
     }),
-    /better_sqlite3\.node/
+    /contextdb failed/
   );
-});
 
-test('runContextDbCli auto-rebuilds better-sqlite3 when bindings are missing', () => {
-  const calls = [];
-  const responses = [
-    {
-      status: 1,
-      stdout: '',
-      stderr: `Could not locate the bindings file. Tried:\n -> /tmp/better_sqlite3.node`,
-    },
-    {
-      status: 0,
-      stdout: 'rebuilt\n',
-      stderr: '',
-    },
-    {
-      status: 0,
-      stdout: '{"ok":true}\n',
-      stderr: '',
-    },
-  ];
-
-  const result = runContextDbCli(['timeline', '--workspace', '/tmp/repro'], {
-    cwd: '/tmp/repro',
-    env: { ...process.env, CTXDB_AUTO_REBUILD_NATIVE: '1' },
-    spawnSyncImpl(command, args, options) {
-      calls.push({ command, args, options });
-      return responses.shift();
-    },
-  });
-
-  assert.deepEqual(result, { ok: true });
-  assert.equal(calls.length, 3);
-  assert.equal(calls[1].command, 'npm');
-  assert.deepEqual(calls[1].args, ['rebuild', 'better-sqlite3']);
-});
-
-test('better-sqlite3 repair helper recognizes missing bindings failures', () => {
-  assert.equal(
-    isBetterSqlite3MissingBindings('Could not locate the bindings file. Tried: /tmp/better_sqlite3.node'),
-    true
-  );
-  assert.equal(
-    isBetterSqlite3RepairableFailure('Could not locate the bindings file. Tried: /tmp/better_sqlite3.node'),
-    true
-  );
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, process.execPath);
 });
 
 test('planDoctor keeps profile out of preview when standard', () => {

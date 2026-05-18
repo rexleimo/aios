@@ -9,16 +9,18 @@ description: 일반적인 설치/런타임 문제 및 직접 수정 방법.
 
 대부분의 실패는 설정 문제입니다 (MCP 런타임 누락, 래퍼 미로드, 또는 잘못된 랩 모드). 먼저 doctor 스크립트를 실행하고 래퍼 스코프를 확인하세요.
 
-## better-sqlite3 / ContextDB가 Node 전환 후 실패
+## ContextDB가 Node 전환 후 실패
 
-RexCLI는 **Node 22 LTS**를 지원합니다. shell이 Node 25 또는 이전 ABI 비호환 설치에서 실행 중인 경우 ContextDB 관련 명령이 실패할 수 있습니다.
+RexCLI는 **Node 24 LTS**를 기준으로 하며, ContextDB는 Node 내장 `node:sqlite`를 사용합니다. 외부 SQLite native addon을 rebuild할 필요가 없습니다.
 
 빠른 수정:
 
 ```bash
 node -v
-source ~/.nvm/nvm.sh && nvm use 22
-cd mcp-server && npm rebuild better-sqlite3
+source ~/.nvm/nvm.sh
+nvm install 24
+nvm use 24
+cd mcp-server && npm run test:contextdb
 ```
 
 재시도:

@@ -87,7 +87,7 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
   - 코어 기본값, 선택적 business skills, 제거 시 설치된 항목만 표시하는 카탈로그 중심 skill 피커
   - TUI skill 피커가 항목을 `Core` 와 `Optional` 으로 그룹화하고 터미널 가독성을 위해 설명을 잘라냄
   - `doctor` 가 이제 동일명 글로벌 설치의 프로젝트 skill 오버라이드를 경고
-  - Node 런타임 안내가 이제 Node 22 LTS 에 명시적으로 정렬
+  - Node 런타임 안내가 이제 Node 24 LTS 에 명시적으로 정렬
   - **Ink TUI 리팩터** (v1.1.0): TypeScript + Ink 기반 React 컴포넌트 TUI; REXCLI ASCII 아트 시작 배너; 적응형 watch 간격; 좌우 옵션 사이클링
 - `0.17.0` (2026-03-17):
   - TUI 제거 피커가 이제 작은 터미널에서 스크롤하고 `Select all` / `Clear all` / `Done` 을 하단에 고정

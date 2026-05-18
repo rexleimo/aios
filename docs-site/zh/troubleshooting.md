@@ -9,20 +9,19 @@ description: 常见报错与修复步骤。
 
 大多数问题来自环境与作用域配置（MCP 依赖缺失、包装未加载、wrap 模式不匹配）。先跑诊断，再改配置。
 
-## `better-sqlite3` / ContextDB 切换 Node 后失败
+## ContextDB 切换 Node 后失败
 
-RexCLI 现在明确以 **Node 22 LTS** 为运行基线，`mcp-server` 的 npm scripts 也会通过 `scripts/with-project-node.mjs` 自动优先选择这个运行时。
+RexCLI 现在明确以 **Node 24 LTS** 为运行基线，ContextDB 使用 Node 内置的 `node:sqlite`，不再需要重建外部 SQLite native addon。
 
-如果命令直接报 `Unable to resolve a Node runtime matching .nvmrc=22`，说明本机还没有可用的 Node 22，需要先安装再重试。
+如果命令直接报 `Unable to resolve a Node runtime matching .nvmrc=24` 或 `[node-version] AIOS requires Node 24.x LTS`，说明本机还没有切到可用的 Node 24，需要先安装再重试。
 
 快速修复：
 
 ```bash
 node -v
 source ~/.nvm/nvm.sh
-nvm install 22
-nvm use 22
-cd mcp-server && npm rebuild better-sqlite3
+nvm install 24
+nvm use 24
 cd mcp-server && npm run test:contextdb
 ```
 
