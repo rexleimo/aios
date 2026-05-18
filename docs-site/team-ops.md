@@ -204,6 +204,38 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 aios hud --provider codex
 ```
 
+## Advanced Operations Reference
+
+The following commands are recommended for advanced users who are familiar with the basic flow.
+
+### HUD Presets
+
+| Preset | Use case |
+|---|---|
+| `minimal` | Long-running watches |
+| `compact` | Terminal-friendly summary |
+| `focused` | Balanced default |
+| `full` | Full diagnostics |
+
+```bash
+aios hud --provider codex
+aios hud --watch --preset focused
+aios hud --session <session-id> --json
+```
+
+### Skill Candidates
+
+Skill candidates are improvement suggestions extracted from failed sessions. Review them during failure retrospectives — not as a first step.
+
+```bash
+aios team status --show-skill-candidates
+aios team skill-candidates list --session <session-id>
+aios team skill-candidates export --session <session-id> --output ./candidate.patch.md
+```
+
+!!! warning "Human review required"
+    Always review skill candidate patches before applying them, especially suggestions that modify skills, hooks, or MCP configuration.
+
 ## Where To Go Next
 
 - [Solo Harness](solo-harness.md) — when you need one agent working overnight

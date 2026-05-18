@@ -158,6 +158,43 @@ Harness runs can log structured traces. If something goes wrong overnight, the n
 
 In Agent Team workflows, traces can be correlated across agent boundaries for a unified view of what happened.
 
+## Architecture
+
+debug-hub is a single Node.js binary with four integrated components:
+
+| Component | Purpose |
+|-----------|---------|
+| **HTTP API** | Receives logs from SDKs, provides search/stats endpoints |
+| **MCP Server** | Exposes log/trace, session, event, health, timeline, and compact-context tools to coding agents |
+| **Embedded Web UI** | Dark-themed dashboard with log search, trace viewer, and SSE live feed |
+| **File Storage** | JSONL files under `~/.debug-hub/` — readable with `cat`/`grep` |
+
+### Design Decisions
+
+**No database dependency.** Storage is JSONL files on disk. This means:
+- Zero configuration beyond `npm install`
+- Agents can read files directly, bypassing the API
+- No daemon, no Docker, no connection strings
+
+**MCP-first, HTTP-second.** MCP tool definitions and the HTTP API share the same storage layer and are co-designed.
+
+**Dashboard uses SSE.** New log entries are broadcast via Server-Sent Events — no WebSocket complexity, no polling overhead.
+
+## Roadmap
+
+debug-hub is currently at v0.3.0. v0.3 added injection tracking and auto-cleanup: agents inject zero-dependency debug code with session-level markers, debug-hub tracks which files were modified, and `cleanup_instruments` removes everything after fixing. Roadmap includes:
+
+- **Python SDK** — for the broader AI/ML agent ecosystem
+- **Multi-agent correlation** — cross-agent trace linking for orchestrator/worker patterns
+- **Persistent alert rules** — agent-configurable monitoring conditions that fire when log patterns trigger
+- **Go SDK** — for Go-written agent runtimes
+
+## Resources
+
+- **Deep Dive Blog Post**: [debug-hub: MCP-Native Debug Log Service](/blog/2026-05-debug-hub-mcp/)
+- **Source Code**: `packages/debug-hub` in the rex-ai-boot monorepo
+- **System Requirements**: Node.js ≥ 22
+
 ## Where To Go Next
 
 - [Solo Harness](solo-harness.md) — long-running agent work with journaling

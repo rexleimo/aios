@@ -1,174 +1,131 @@
 ---
 title: 概要
-description: まずやりたい作業からコマンドを選び、ContextDB、Agent Team、ブラウザ自動化、skills に進みます。
+description: RexCLIは、codex、claude、gemini、opencodeに記憶、協調、検証を追加します。ワークフローは変わりません。
 ---
 
-# RexCLI
+# RexCLI (AIOS)
 
-> 今の習慣を変えずに、普段使っている `codex` / `claude` / `gemini` に記憶、協調、検証を追加します。
+> ローカル agent ワークフローレイヤー。`codex` / `claude` / `gemini` / `opencode` に記憶、協調、検証を追加します。
 
-[3分クイックスタート](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[Agent Team の使い方](team-ops.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="team_ops" }
-[シナリオ別コマンド](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
-[GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=ja_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
+いつものコマンドを使い続けられます。ワークフローは変わりません。ただ、agent に脳、チーム、自己診断が追加されるだけです。
 
-<figure class="rex-visual">
-  <img src="../assets/visual-new-user-path.svg" alt="RexCLI 初心者の3ステップ: Doctor、プロジェクト記憶、必要時だけ Agent Team">
-  <figcaption>新規ユーザーは最短経路から始めます。インストール後に Doctor を実行し、プロジェクト記憶を有効化し、タスクが明確に分割できる時だけ Agent Team を使います。</figcaption>
-</figure>
+[3分で始める](getting-started.md){ .md-button .md-button--primary }
+[実際に見る](use-cases.md){ .md-button }
 
 ## コア機能
 
-<div class="feature-grid">
-  <a href="contextdb/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧠</div>
-    <div class="feature-card__title">ContextDB</div>
-    <div class="feature-card__desc">プロジェクト全体の記憶レイヤー。イベント、checkpoint、context pack がターミナル再起動後も保持されます。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="token-compression/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">✂️</div>
-    <div class="feature-card__title">ネイティブ Token 圧縮</div>
-    <div class="feature-card__desc">RTK/Caveman の考え方を参考にした自前の入力/出力圧縮。競合ツールはインストールしません。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="superpowers/" class="feature-card feature-card--workflow">
-    <div class="feature-card__icon">⚡</div>
-    <div class="feature-card__title">Superpowers</div>
-    <div class="feature-card__desc">再利用可能な自動化スキル。ブレインストーミング、計画立案、デバッグ、検証、デプロイをガイド付きワークフローで。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="team-ops/" class="feature-card feature-card--team">
-    <div class="feature-card__icon">👥</div>
-    <div class="feature-card__title">Agent Team</div>
-    <div class="feature-card__desc">分割可能なタスクを複数の CLI worker に分散し、HUD で追跡。agents を協調させ、混沌を防ぎます。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="solo-harness/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌙</div>
-    <div class="feature-card__title">ソロ Harness</div>
-    <div class="feature-card__desc">長時間実行の単一 agent 作業に、run journal、resume/stop 制御、worktree 分離を提供。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="debug-hub/" class="feature-card feature-card--debug">
-    <div class="feature-card__icon">🐛</div>
-    <div class="feature-card__title">debug-hub</div>
-    <div class="feature-card__desc">MCP ネイティブのデバッグログサービス。coding agent が自身のランタイムログをクエリし、自己診断可能に。</div>
-    <span class="feature-card__link">詳細を見る →</span>
-  </a>
-  <a href="model-router/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧭</div>
-    <div class="feature-card__title">Model Router</div>
-    <div class="feature-card__desc">Agent Team に最適なモデルを自動選択。能力、コスト、成功率に基づくインテリジェントな振り分け。</div>
-    <span class="feature-card__link">詳細 →</span>
-  </a>
-  <a href="troubleshooting/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌐</div>
-    <div class="feature-card__title">Browser MCP</div>
-    <div class="feature-card__desc">ステルスブラウザ自動化（CDP）。人間の行動シミュレーションと検出回避を内蔵。</div>
-    <span class="feature-card__link">詳細 →</span>
-  </a>
-</div>
-
-## 注目: debug-hub
-
-**coding agent に自己診断能力を。** debug-hub は agent 専用に設計された MCP ネイティブのデバッグログサービスです。ログとトレースを agent が直接クエリできるツールとして公開し、人間がターミナル出力を grep したりエラースパンを手動で関連付けたりする必要をなくします。
-
-| | |
-|---|---|
-| **agent 用 MCP ツール** | `search_logs`、`get_trace`、`list_traces`、`get_stats`、`clear_logs` |
-| **3 種類の SDK** | Node.js、Browser、Go — 一貫した API |
-| **ゼロ依存** | `~/.debug-hub/` 配下のファイルストレージ、DB 不要、Docker 不要 |
-| **組み込み Web UI** | ダークテーマのダッシュボード、SSE ライブフィード |
-
-```bash
-cd packages/debug-hub && npm install && npm run dev
-# HTTP API + Web UI: http://localhost:39200、MCP は stdio
-```
-
-[お知らせ全文を読む →](/blog/ja/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[クイックスタート](debug-hub.md){ .md-button }
-
-## まず何をしたいか選ぶ
-
-| 今やりたいこと | 先に読む | 最短コマンド |
+| 機能 | 説明 | コマンド |
 |---|---|---|
-| インストールして TUI を開く | [クイックスタート](getting-started.md) | `aios` |
-| agent にプロジェクト文脈を覚えさせる | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
-| **agent に自己診断させる** | **[debug-hub ブログ](/blog/ja/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
-| 1つの agent を夜通し走らせる | [ソロ Harness](solo-harness.md) | `aios harness run --objective "明朝の引き継ぎメモをまとめる" --worktree` |
-| 複数 agent で作業する | [Agent Team](team-ops.md) | `aios team 3:codex "X を実装し、テストを実行"` |
-| 進捗を見る | [HUD ガイド](hud-guide.md) | `aios team status --provider codex --watch` |
-| ブラウザ自動化を診断する | [トラブルシューティング](troubleshooting.md) | `aios internal browser doctor --fix` |
+| **ContextDB** | イベント、checkpoint、context pack を持つクロスセッションプロジェクト記憶 | `codex` / `claude` / `gemini` / `opencode` が自動ロード |
+| **Memo Storage** | Git フレンドリーなプロジェクトメモ。デフォルトは追加専用ファイルストレージ | `aios memo add "note"` / `aios memo storage status` |
+| **Native Route Shortcuts** | single/subagent/team/harness レーン向けクライアントネイティブルートプロンプト | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
+| **Native Token Compression** | RTK/Caveman パターンに着想を得た自前入力/出力削減。競合ツールはインストールしません | `context:pack --token-budget 1200 --token-strategy balanced` |
+| **Model Router** | Agent Team 向けインテリジェントマルチモデルディスパッチ。能力、コスト、成功率でタスクをマッチング | `node scripts/aios.mjs model-router route --task "..."` |
+| **Agent Team** | HUD ビジュアル追跡付きマルチ agent 並列協調 | `aios team 3:codex "task description"` |
+| **Solo Harness** | resume サポートとランジャーナル付き単一 agent 夜通しタスク | `aios harness run --objective "goal" --worktree` |
+| **Perception** | コンテンツ成果トラッキング + 統計インサイト + perception インジェクション | `aios perception record` / `insights` / `summary` |
+| **Browser MCP** | CDP 経由ステルスブラウザ自動化 | `aios internal browser doctor` |
+| **Superpowers** | 再利用可能なワークフロースキル（brainstorm/plan/debug/verify） | TUI から選択 |
+| **Privacy Guard** | 共有前に機密ファイルを自動リダクション | `aios privacy status` |
 
-## RexCLI とは
+## 仕組み
 
-RexCLI は新しい coding agent ではありません。ローカル優先の能力レイヤーです。
+```text
+User → codex / claude / gemini / opencode
+     → zsh wrapper (透過的)
+     → ctx-agent.mjs (ContextDB 統合)
+        → contextdb CLI (記憶永続化)
+        → launch native CLI (context pack 付き)
+     → browser MCP (オプションブラウザ自動化)
+```
 
-1. **記憶レイヤー ContextDB**: イベント、checkpoint、context pack を現在のプロジェクトに保存し、ターミナル再起動後も続きから作業できます。
-2. **Token レイヤー ネイティブ Token 圧縮**: ContextDB、ブラウザ、CLI、回答 token を競合ツールなしで削減します。
-3. **ワークフローレイヤー Superpowers**: 要件を計画に分解し、証拠ベースでデバッグし、完了前に検証します。
-4. **協調レイヤー Agent Team**: 明確に分割できるタスクを複数 CLI worker に渡し、HUD で状態を追跡します。
-5. **可観測レイヤー debug-hub**: agent のランタイムログとトレースを MCP ツールとして公開し、agent が自律的にエラーを診断できるようにします。
-6. **ツールレイヤー Browser MCP + Privacy Guard**: agent がブラウザを使えるようにし、機密設定は共有前にマスクします。
+インストール後は、いつも通り `codex`、`claude`、`gemini`、`opencode` を使うだけ。RexCLI はバックグラウンドでプロジェクト記憶を自動ロードし、クライアントがサポートする場所にルートショートカットをプロビジョニングします。
 
-単一 agent の長時間作業では、[ソロ Harness](solo-harness.md) が ContextDB の上に run journal、resume/stop 制御、必要に応じた worktree 分離を追加します。
-
-つまり、あなたは引き続き `codex`、`claude`、`gemini` を実行します。RexCLI はそれらに記憶、協調、検証を足します。
-
-## 新規ユーザーの推奨ルート
-
-### 1日目: まず動かす
+## クイックツアー
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
-source ~/.zshrc
+# TUI を起動
 aios
-```
 
-TUI で **Setup** を選び、その後 **Doctor** を実行します。
+# Git フレンドリーなプロジェクトメモを保存
+aios memo add "Remember to keep auth tests strict"
+aios memo storage status
 
-### Step 2: プロジェクトで記憶を有効化
+# セットアップ後のネイティブクライアント内ルート
+# Claude/Gemini/OpenCode: /team <task>
+# Codex: /prompts:team <task>
 
-```bash
-cd /path/to/your/project
-touch .contextdb-enable
-codex
-```
+# マルチ agent 協調
+aios team 3:codex "Refactor the auth module and run tests"
 
-以後、このプロジェクトで `codex` / `claude` / `gemini` を起動すると、RexCLI が同じプロジェクト文脈へ接続します。
+# 単一 agent 夜通しタスク
+aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
 
-### Step 3: 分割できる時だけ Agent Team を使う
+# インテリジェントモデルルーティング
+node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
 
-```bash
-aios team 3:codex "ログインモジュールをリファクタし、完了前に関連テストを実行"
+# ネイティブ token 圧縮 ContextDB パケット
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+
+# コンテンツ成果トラッキング
+aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'
+
+# タスクステータス確認
 aios team status --provider codex --watch
 ```
 
-タスクがまだ曖昧なら、まず通常の対話型 `codex` で分析します。明確に分割できる時だけ `team` を使ってください。
+## 初めての方へ
 
-## よくある誤解
+**始めるなら:** [クイックスタート](getting-started.md) — インストール、設定、初回 agent 実行を約3分で。
 
-- **すべての作業に Agent Team は不要**: 単一ファイル修正、小さな bug、曖昧な要件は単一 agent から始めます。
-- **初日に全環境変数を覚える必要はありません**: まず `aios` TUI を使ってください。
-- **機能一覧から始めない**: 「今何をしたいか」からコマンドを選びます。
-- **Doctor を飛ばさない**: install、browser、skills、native 設定を手で直す前に診断します。
+**もう設定済み?** 必要なところにジャンプ:
 
-## リリースノートと詳細記事
+| したいこと | 移動先 |
+|---|---|
+| agent にプロジェクト記憶を付与 | [ContextDB](contextdb.md) |
+| 複数の agent を一緒に使う | [Agent Team](team-ops.md) |
+| 1つの agent を夜通し走らせる | [Solo Harness](solo-harness.md) |
+| タスクをインテリジェントにルーティング | [Model Router](model-router.md) |
+| token 使用量を削減 | [Token Compression](token-compression.md) |
+| 適切なコマンドを見つける | [シナリオ別コマンド](use-cases.md) |
 
-- [ContextDB Token Compression](/blog/ja/2026-05-token-compression/): 長いセッション履歴を token 予算内へ圧縮し、低優先度イベントを落とす前に重要シグナルを残します。
-- [debug-hub: MCP ネイティブデバッグログサービス](/blog/ja/2026-05-debug-hub-mcp/): coding agent が MCP ツールで自身のランタイムログを直接クエリ可能に。
-- [AIOS RL Training System](/blog/ja/rl-training-system/): multi-environment training control plane と rollout model。
-- [ContextDB Search Upgrade](/blog/ja/contextdb-fts-bm25-search/): FTS5 + BM25 search path と semantic rerank behavior。
-- [Windows CLI Startup Stability](/blog/ja/windows-cli-startup-stability/): wrapper startup fix と Windows launch reliability。
-- [Orchestrate Live](/blog/ja/orchestrate-live/): live orchestration gates と execution workflow。
+## 要件
 
-## 次に読む
+- Git
+- Node.js 22 LTS + npm
+- Windows: PowerShell 5.x or 7
 
-- [クイックスタート](getting-started.md): install、Setup、Doctor、初回実行。
-- [ネイティブ Token 圧縮](token-compression.md): RTK/Caveman を入れずに入力/出力 token を減らす。
-- [シナリオ別コマンド](use-cases.md): 作業別に入口を選ぶ。
-- [Agent Team](team-ops.md): いつ team を使うか、どう監視し、どう完了するか。
-- [ソロ Harness](solo-harness.md): 1つの agent を夜通し動かし、状態確認、停止、再開を行う方法。
-- [ContextDB](contextdb.md): 記憶がセッションをまたいで残る仕組み。
-- [トラブルシューティング](troubleshooting.md): install、browser、live 実行の問題。
+## 開発
+
+```bash
+git clone https://github.com/rexleimo/rex-cli.git
+cd rex-cli
+```
+
+確認:
+
+```bash
+cd mcp-server
+npm test
+npm run typecheck
+npm run build
+```
+
+## ドキュメント
+
+- [クイックスタート](getting-started.md) — インストール、設定、初回実行
+- [Model Router](model-router.md) — Agent Team 向けマルチモデルディスパッチ
+- [ContextDB](contextdb.md) — プロジェクト記憶システム
+- [Agent Team](team-ops.md) — マルチ agent 協調ガイド
+- [Solo Harness](solo-harness.md) — 夜通しタスクガイド
+- [Perception](perception.md) — コンテンツ成果トラッキング & インサイト
+- [アーキテクチャ](architecture.md) — システムアーキテクチャ
+- [トラブルシューティング](troubleshooting.md) — よくある問題
+- [ユースケース](use-cases.md) — シナリオ別コマンド検索
+
+## ブログハイライト
+
+- [AIOS RL Training System](/blog/ja/rl-training-system/)
+- [ContextDB Search Upgrade](/blog/ja/contextdb-fts-bm25-search/)
+- [Windows CLI Startup Stability](/blog/ja/windows-cli-startup-stability/)
+- [Orchestrate Live](/blog/ja/orchestrate-live/)

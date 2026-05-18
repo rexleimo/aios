@@ -48,6 +48,18 @@ CLI command generation (correct flags for codex/claude/gemini)
 Execution + outcome recording
 ```
 
+## CLI Protocol
+
+Three protocols, auto-selected by provider:
+
+| Protocol | CLI | Used by |
+|---|---|---|
+| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
+| **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
+| **claude** | `claude --model <model> -p "<prompt>"` | All other models |
+
+Codex live worker defaults to `--dangerously-bypass-approvals-and-sandbox` (equivalent to the old `--yolo` shortcut), avoiding waiting for approval/sandbox prompts in background subprocesses. Only set `AIOS_SUBAGENT_CODEX_UNATTENDED=0` when manually debugging Codex.
+
 ## Supported Models
 
 | Model | Best at | Cost |
@@ -169,6 +181,28 @@ export AIOS_MODEL_ROUTER=0
 | `scripts/lib/specs/orchestrator-agents.json` | Agent role to `preferredModel` mapping |
 | `.claude/skills/model-router/SKILL.md` | Agent-callable self-service routing skill |
 | `scripts/lib/model-router.mjs` | Router logic: matching, fallback, CLI construction, and stats |
+
+## Agent Integration
+
+### Guided by Task Routing
+
+Model Router injects agent context through AIOS Task Router. Any agent running under `ctx-agent` automatically receives model dispatch guidance. When dispatching sub-agents, the agent can call the `model-router` skill to determine the optimal model.
+
+### Via Orchestrator
+
+Agent role cards (`.claude/agents/*.md`) contain a `preferredModel` field that the orchestrator automatically resolves when dispatching:
+
+```yaml
+# .claude/agents/rex-reviewer.md
+model: sonnet
+preferredModel: claude-opus
+```
+
+Model resolution priority: **environment variable** > **preferredModel** > **model** (fallback).
+
+## Perception Feedback Loop
+
+Each model dispatch is recorded as a `model.dispatch` event in ContextDB. The perception system can calculate model success rate by task type. Future routing decisions will synthesize: **capability match × historical success rate × cost**.
 
 ## Common Questions
 

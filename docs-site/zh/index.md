@@ -1,174 +1,136 @@
 ---
 title: 概览
-description: 先按任务找到命令，再深入 ContextDB、Agent Team、浏览器自动化和技能系统。
+description: RexCLI (AIOS) 给你正在用的 codex / claude / gemini / opencode 加一层记忆、协作和验证能力——不换工具，不改习惯。
 ---
 
-# RexCLI
+# RexCLI (AIOS)
 
-> 不换工具，不改习惯。给你正在用的 `codex` / `claude` / `gemini` 加一层记忆、协作和验证能力。
+> 给 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力的本地 Agent 工作流层。
 
 [3 分钟快速开始](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
 [多 Agent 怎么用](team-ops.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="team_ops" }
 [按场景找命令](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
 [GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=zh_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
 
-<figure class="rex-visual">
-  <img src="../assets/visual-new-user-path.svg" alt="RexCLI 新手三步路径：安装 Doctor、启用项目记忆、按需开启多 Agent">
-  <figcaption>新用户先走最短路径：安装并跑 Doctor，给项目开启记忆；只有任务可拆、验收清楚时再开多 Agent。</figcaption>
-</figure>
+## 核心能力
 
-## 核心功能
-
-<div class="feature-grid">
-  <a href="contextdb/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧠</div>
-    <div class="feature-card__title">ContextDB</div>
-    <div class="feature-card__desc">项目级记忆层。事件、检查点和上下文包在终端重启后依然持久化。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="token-compression/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">✂️</div>
-    <div class="feature-card__title">自研 Token 压缩</div>
-    <div class="feature-card__desc">参考 RTK/Caveman 思路，自研输入/输出压缩，不安装竞品工具。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="superpowers/" class="feature-card feature-card--workflow">
-    <div class="feature-card__icon">⚡</div>
-    <div class="feature-card__title">Superpowers</div>
-    <div class="feature-card__desc">可复用的自动化技能。通过引导式工作流进行头脑风暴、规划、调试、验证和部署。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="team-ops/" class="feature-card feature-card--team">
-    <div class="feature-card__icon">👥</div>
-    <div class="feature-card__title">Agent Team</div>
-    <div class="feature-card__desc">将可拆分的任务分发给多个 CLI 工作进程并通过 HUD 追踪。协调 Agents，而非制造混乱。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="solo-harness/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌙</div>
-    <div class="feature-card__title">单 Agent 夜跑</div>
-    <div class="feature-card__desc">长时间运行的单 Agent 任务，支持运行日志、恢复/停止控制和工作目录隔离。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="debug-hub/" class="feature-card feature-card--debug">
-    <div class="feature-card__icon">🐛</div>
-    <div class="feature-card__title">debug-hub</div>
-    <div class="feature-card__desc">MCP 原生调试日志服务。让 coding agent 查询自己的运行时日志并自我诊断。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="model-router/" class="feature-card feature-card--memory">
-    <div class="feature-card__icon">🧭</div>
-    <div class="feature-card__title">Model Router</div>
-    <div class="feature-card__desc">智能模型调度，为 Agent Team 匹配最优模型。按能力、成本和历史成功率决策。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-  <a href="troubleshooting/" class="feature-card feature-card--tool">
-    <div class="feature-card__icon">🌐</div>
-    <div class="feature-card__title">Browser MCP</div>
-    <div class="feature-card__desc">隐形浏览器自动化，基于 CDP。内置人类行为模拟和反检测功能。</div>
-    <span class="feature-card__link">了解更多 →</span>
-  </a>
-</div>
-
-## 重点推荐：debug-hub
-
-**让 coding agent 学会自己查日志。** debug-hub 是专为 agent 设计的 MCP 原生调试日志服务，把日志和调用链暴露为 agent 可直接调用的工具——不用人类再去翻终端、grep 输出、手动关联错误。
-
-| | |
-|---|---|
-| **Agent 可用的 MCP 工具** | `search_logs`、`get_trace`、`list_traces`、`get_stats`、`clear_logs` |
-| **三种 SDK** | Node.js、Browser、Go，一致的 API |
-| **零依赖** | `~/.debug-hub/` 文件存储，不需要数据库、不需要 Docker |
-| **内嵌 Web UI** | 暗色主题 Dashboard，SSE 实时推送 |
-
-```bash
-cd packages/debug-hub && npm install && npm run dev
-# HTTP API + Web UI: http://localhost:39200，MCP 走 stdio
-```
-
-[查看完整公告 →](/blog/zh/2026-05-debug-hub-mcp/){ .md-button .md-button--primary }
-[快速开始](debug-hub.md){ .md-button }
-
-## 先选你要做什么
-
-| 你现在想做 | 先看 | 最短命令 |
+| 能力 | 说明 | 命令 |
 |---|---|---|
-| 只想装好并打开 TUI | [快速开始](getting-started.md) | `aios` |
-| 让 agent 记住项目上下文 | [ContextDB](contextdb.md) | `touch .contextdb-enable && codex` |
-| **让 agent 自己查日志** | **[debug-hub 博客](/blog/zh/2026-05-debug-hub-mcp/)** | `cd packages/debug-hub && npm run dev` |
-| 让一个 agent 过夜跑 | [单 Agent 夜跑](solo-harness.md) | `aios harness run --objective "整理明早交接清单" --worktree` |
-| 多个 agent 一起做任务 | [多 Agent 实战](team-ops.md) | `aios team 3:codex "实现 X 并跑测试"` |
-| 看任务跑到哪了 | [HUD 指南](hud-guide.md) | `aios team status --provider codex --watch` |
-| 浏览器自动化出问题 | [故障排查](troubleshooting.md) | `aios internal browser doctor --fix` |
+| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` 自动加载 |
+| **Memo Storage** | Git-friendly 项目笔记；默认 append-only file 存储，也可切换到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
+| **原生路由快捷命令** | 客户端原生路由提示，single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
+| **原生 Token 压缩** | 自研输入/输出压缩，参考 RTK/Caveman 思路，不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
+| **Model Router** | Agent Team 智能多模型调度 — 按能力、成本和历史成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
+| **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
+| **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
+| **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
+| **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
+| **Superpowers** | 可复用工作流技能（brainstorm/plan/debug/verify） | TUI 中选择 |
+| **Privacy Guard** | 敏感文件读取前自动脱敏 | `aios privacy status` |
 
-## RexCLI 到底是什么
+你继续使用原有命令，工作流程完全不变——只是你的 agents 多了记忆、协作和自诊断能力。
 
-RexCLI 不是新的 coding agent。它是一个本地优先的能力层：
+[快速开始](getting-started.md){ .md-button .md-button--primary }
+[按场景找命令](use-cases.md){ .md-button }
 
-1. **记忆层 ContextDB**：把事件、checkpoint、上下文包保存在当前项目里，重启终端后还能续上。
-2. **Token 层 自研 Token 压缩**：压缩 ContextDB、浏览器、CLI 和回复 token，不安装竞品。
-3. **工作流层 Superpowers**：把需求拆成计划、按证据调试、完成前做验证。
-4. **协作层 Agent Team**：把明确可拆分的任务交给多个 CLI worker，并用 HUD 追踪状态。
-5. **可观测层 debug-hub**：把 agent 运行时日志和调用链暴露为 MCP 工具，让 agent 自主排查错误。
-6. **工具层 Browser MCP + Privacy Guard**：让 agent 可以安全使用浏览器、读取敏感配置前先脱敏。
+## 工作原理
 
-如果是单 agent 的长任务，[单 Agent 夜跑](solo-harness.md) 会在 ContextDB 之上补上 run journal、resume/stop 控制和可选 worktree 隔离。
+```text
+User → codex / claude / gemini / opencode
+     → zsh wrapper（透明包装）
+     → ctx-agent.mjs（ContextDB 集成）
+        → contextdb CLI（记忆持久化）
+        → 启动原生 CLI（附带上下文包）
+     → browser MCP（可选浏览器自动化）
+```
 
-一句话：你还是运行 `codex`、`claude`、`gemini`，RexCLI 负责让它们更有记忆、更会协作、更少瞎猜。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 命令即可，RexCLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
 
-## 新用户推荐路径
-
-### 第一天：先跑通
+## 快速体验
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
-source ~/.zshrc
+# 启动 TUI
 aios
-```
 
-在 TUI 里选择 **Setup**，完成后跑 **Doctor**。
+# 保存适合 Git 共享的项目 memo
+aios memo add "记住 auth 测试要保持严格"
+aios memo storage status
 
-### 第二步：在项目里启用记忆
+# 在原生客户端内路由任务（setup 后）
+# Claude/Gemini/OpenCode: /team <任务>
+# Codex: /prompts:team <任务>
 
-```bash
-cd /path/to/your/project
-touch .contextdb-enable
-codex
-```
+# 多 Agent 协作
+aios team 3:codex "重构登录模块并运行测试"
 
-以后在这个项目里启动 `codex` / `claude` / `gemini`，RexCLI 会自动接上项目上下文。
+# 单 Agent 过夜任务
+aios harness run --objective "完成明天的交接文档" --worktree
 
-### 第三步：遇到可拆任务再用多 Agent
+# 智能模型路由
+node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
 
-```bash
-aios team 3:codex "把登录模块重构掉，并在完成前运行相关测试"
+# 自研 token 压缩 ContextDB 包
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+
+# 内容结果追踪（小红书等场景）
+aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "测试" --metrics '{"likes":100}'
+
+# 查看任务状态
 aios team status --provider codex --watch
 ```
 
-如果任务还不清楚，先用普通交互式 `codex` 让它分析；只有明确能拆分时再开 `team`。
+## 第一次使用？
 
-## 常见误区
+**从这里开始：** [快速开始](getting-started.md) — 安装、配置、第一次运行，大约 3 分钟。
 
-- **不是所有任务都要多 Agent**：单文件修复、小 bug、需求还不清楚时，先单 agent。
-- **不是所有变量都要配置**：新用户先用 `aios` TUI，别一上来记环境变量。
-- **不是只看功能列表**：先按"我要做什么"找命令，再去看模块参考。
-- **不要忽略 Doctor**：安装、浏览器、skills、native 配置问题，先跑诊断再改。
+**已经安装好了？** 直接跳转到你需要的部分：
 
-## 发布说明与深度文章
+| 我想... | 去往 |
+|---|---|
+| 给 agent 添加项目记忆 | [ContextDB](contextdb.md) |
+| 多个 agents 一起工作 | [Agent Team](team-ops.md) |
+| 一个 agent 过夜运行 | [Solo Harness](solo-harness.md) |
+| 智能路由任务 | [Model Router](model-router.md) |
+| 减少 token 使用 | [Token Compression](token-compression.md) |
+| 按场景找命令 | [Commands By Scenario](use-cases.md) |
 
-- [ContextDB Token 压缩](/blog/zh/2026-05-token-compression/)：先压缩长会话历史，再按预算丢弃低优先级事件，让上下文包更短但保留关键信号。
-- [debug-hub：MCP 原生调试日志服务](/blog/zh/2026-05-debug-hub-mcp/)：让 coding agent 通过 MCP 工具直接查询自身运行时日志。
-- [AIOS RL Training System](/blog/zh/rl-training-system/)：多环境训练控制平面与 rollout 模型。
-- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)：FTS5 + BM25 检索路径和语义重排行为。
-- [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)：包装器启动修复与 Windows 启动稳定性。
-- [Orchestrate Live](/blog/zh/orchestrate-live/)：live 编排门禁与执行流程。
+## 环境要求
 
-## 下一步阅读
+- Git
+- Node.js 22 LTS + npm
+- Windows: PowerShell 5.x 或 7
 
-- [快速开始](getting-started.md)：安装、Setup、Doctor、第一次运行。
-- [自研 Token 压缩](token-compression.md)：不安装 RTK/Caveman，也能减少输入/输出 token。
-- [按场景找命令](use-cases.md)：按"我想做什么"查入口。
-- [多 Agent 实战](team-ops.md)：什么时候开团队、怎么监控、怎么收尾。
-- [单 Agent 夜跑](solo-harness.md)：怎么让一个 agent 过夜跑、查看状态、停止和恢复。
-- [ContextDB](contextdb.md)：理解记忆如何跨会话持久化。
-- [故障排查](troubleshooting.md)：安装、浏览器、live 执行失败时先看这里。
+## 开发
+
+```bash
+git clone https://github.com/rexleimo/rex-cli.git
+cd rex-cli
+```
+
+验证：
+
+```bash
+cd mcp-server
+npm test
+npm run typecheck
+npm run build
+```
+
+## 文档
+
+- [快速开始](getting-started.md) — 安装、配置、首次运行
+- [Model Router](model-router.md) — Agent Team 多模型智能调度
+- [ContextDB](contextdb.md) — 项目记忆系统
+- [Agent Team](team-ops.md) — 多 Agent 协作指南
+- [Solo Harness](solo-harness.md) — 过夜长任务指南
+- [Perception](perception.md) — 内容结果追踪与洞察
+- [架构](architecture.md) — 系统架构
+- [故障排查](troubleshooting.md) — 常见问题
+- [按场景找命令](use-cases.md) — CLI 工作流速查
+
+## 博客精选
+
+- [AIOS RL Training System](/blog/zh/rl-training-system/)
+- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
+- [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)
+- [Orchestrate Live](/blog/zh/orchestrate-live/)

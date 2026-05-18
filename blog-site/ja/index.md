@@ -1,55 +1,54 @@
 ---
 title: ブログハブ
-description: AI 記憶システム、単一 agent harness ワークフロー、Agent Team、subagent 自動計画に関する技術・成長記事。
+description: RexCLI — codex、claude、gemini、opencodeに記憶、協調、検証を追加するローカルagentワークフローレイヤーについてのストーリー、チュートリアル、深い考察。
 ---
 
-# ブログハブ
+# ブログ
 
-ここは検索流入向けの独立ブログです。
-製品ドキュメントは [cli.rexai.top](https://cli.rexai.top/ja/) で別運用しています。
+AI coding agent をより賢く、より可靠に、より使いやすくするためのストーリー、チュートリアル、深い考察。
 
-## クイックアンサー
+RexCLI（AIOS とも呼ばれます）はローカル agent ワークフローレイヤーです。新しい coding agent ではなく、既存の `codex`、`claude`、`gemini`、`opencode` に記憶、チームワーク、自己診断を追加するレイヤーです。
 
-このブログで扱う中心テーマ:
+## ここから始める
 
-- **記憶システム**（ContextDB）
-- **単一 agent の夜間 harness** と長時間実行
-- **Hermes エンジン** スタイルのワークフロー
-- **Agent Team** 協調実行
-- **subagent 自動計画** と実行ゲート
-- 競合ツールを入れない **ネイティブ token 圧縮**
-- **高度デザインスキル** によるページ制作
+RexCLI を初めて使う方へ。これらの投稿で概要を把握できます:
 
-## 初期ピラーページ
-
-- [ローンチ記事](launch-post.md)
-- [CLI 比較](cli-comparison-post.md)
-- [自動化プレイブック](automation-playbook-post.md)
+- [RexCLI のストーリー](launch-post.md) — なぜ作られたか、どんな問題を解決するか
+- [CLI 比較：生 vs. RexCLI](cli-comparison-post.md) — レイヤーを追加すると何が変わるか
+- [自動化プレイブック](automation-playbook-post.md) — 日次使用的パタン
 
 ## 最新記事
 
 - [ContextDB Token 圧縮：より小さな context pack と安全な recall](2026-05-token-compression.md)
 - [ネイティブ Token 圧縮：RexCLI が RTK や Caveman をインストールしない理由](2026-05-native-token-compression.md)
+- [Model Router：すべてのタスクに適切なモデル](2026-05-model-router.md)
 - [aios memo GUI：Agent の記憶を生きたグラフとして可視化](2026-05-aios-memo-gui.md)
-- [Model Router: Agent Team のためのインテリジェントなマルチモデルディスパッチ](2026-05-model-router.md)
 - [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md)
-- [Browser MCP 弱モデル改善: Semantic Snapshot + Text Click](2026-04-browser-mcp-weak-model-upgrade.md)
-- [高度デザインスキルでページ制作: 曖昧プロンプトを本番 UI に変える](advanced-design-skills-page-building.md)
+- [debug-hub: Agent が自らデバッグする時代](2026-05-debug-hub-mcp.md)
+- [Browser MCP 改善：より賢いページ読み取り](2026-04-browser-mcp-weak-model-upgrade.md)
+- [高度なデザインスキルでページ制作：曖昧プロンプトを本番 UI に](advanced-design-skills-page-building.md)
 - [RexCLI TUI リファクタリング：React Ink によるモダンなターミナルUI](2026-04-rexcli-ink-tui-refactor.md)
-- [AIOS RL Training System: Multi-Environment Reinforcement Learning](rl-training-system.md)
-- [ContextDB 検索アップグレード: FTS5/BM25 + 増分インデックス同期（P1.5）](contextdb-fts-bm25-search.md)
-- [Windows CLI Startup Stability Update](windows-cli-startup-stability.md)
-- [Orchestrate Live: Subagent Runtime](orchestrate-live.md)
-- [もう手動で小红書をやらなくていい！AIで毎日2時間増やす自動化運用術](xiaohongshu-automation.md)
-- [2026年AIプログラミングCLI比較：Claude Code vs Codex vs Gemini](ai-cli-comparison.md)
+- [Windows CLI 起動安定性アップデート](windows-cli-startup-stability.md)
+
+## 深い考察
+
+- [AIOS RL Training System: Agent に学習させる](rl-training-system.md)
+- [ContextDB 検索：履歴の中からを見つける](contextdb-fts-bm25-search.md)
+- [Orchestrate Live：本番で Subagent を実行する](orchestrate-live.md)
 
 ## FAQ
 
-### 記憶システム関連の記事はどれから読むべき？
-prompt budget が気になる場合は [ContextDB Token Compression](2026-05-token-compression.md) から始め、検索挙動は [ContextDB 検索アップグレード](contextdb-fts-bm25-search.md) を確認してください。
+### どこから始めたらいいですか？
+まず [RexCLI のストーリー](launch-post.md) を読み、次に [クイックスタート](https://cli.rexai.top/ja/getting-started/) ガイドを試してください。
 
-### 単一 agent の夜間実行はどの記事から読むべき？
-まずは [Solo Harness: 1つの Agent を夜通し動かしても制御を失わない](2026-04-solo-harness.md) を読み、その後 [公式ドキュメント](https://cli.rexai.top/ja/solo-harness/) を確認するのがおすすめです。
+### 記憶とコンテキスト管理を大事にしたい
+[Token 圧縮](2026-05-token-compression.md) から始めて、[ContextDB 検索](contextdb-fts-bm25-search.md) を読んでください。
 
-### Agent Team / subagent の更新はどこで追う？
-[Orchestrate Live](orchestrate-live.md) を中心に追うのがおすすめです。
+### agent を夜通し走らせたい
+[Solo Harness](2026-04-solo-harness.md) を読んでから、[Solo Harness ドキュメント](https://cli.rexai.top/ja/solo-harness/) を確認してください。
+
+### agent に自らデバッグさせたい
+[debug-hub](2026-05-debug-hub-mcp.md) を読んでから、[debug-hub ドキュメント](https://cli.rexai.top/ja/debug-hub/) を確認してください。
+
+### RexCLI は新しい coding agent ですか？
+いいえ。`codex`、`claude`、`gemini`、`opencode` をラップして記憶、チームワーク、自己診断を追加します。ワークフローは変わりません。

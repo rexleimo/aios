@@ -103,35 +103,4 @@ Superpowers は、一般的なワークフローを自動化する再利用可�
 
 ---
 
-## 使い方
-
-1. **Superpowers が必要なら、自然に言う** — AI が意図を認識してスキルを起動します。
-2. **スキルが自動的に実績のあるワークフローでナビゲート** します。
-3. **結果はプロジェクトメモリに保存** され、後で参照できます。
-
-### コマンド例
-
-```
-"brainstorming でこの機能の実装方法を考える"
-"writing-plans でこの要件をステップに分解する"
-"バグが発生したので、systematic-debugging を使う"
-"完了前に verification-before-completion で検証する"
-"dispatching-parallel-agents でこれを並行処理する"
-"security-scan を実行して設定の安全性を確認する"
-```
-
----
-
 ## RL トレーニングシステム
-
-AIOS にはマルチ環境の強化学習システムが含まれています。統一制御プレーンを通じて、シェル、ブラウザ、オーケストレータータスク間で共有学生ポリシーを訓練します。
-
-詳細は[アーキテクチャページ](architecture.md#rl-training-layer-aios)を参照してください。
-
----
-
-## 続きを読む
-
-- [ケース集](case-library.md) - 実例
-- [ContextDB](contextdb.md) - 記憶がセッションを跨ぐ仕組み
-- [Agent Team と HUD](team-ops.md) - マルチ agent 協調の詳細

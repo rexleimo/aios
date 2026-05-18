@@ -1,88 +1,77 @@
 ---
 title: Overview
-description: RexCLI adds memory, skills, and teamwork to the coding agents you already use. No new tools to learn.
+description: RexCLI adds memory, collaboration, and verification to codex, claude, gemini, and opencode — without changing your workflow.
 ---
 
-# RexCLI
+# RexCLI (AIOS)
 
-**Give your coding agent a brain and a team.**
+> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
 
-RexCLI wraps around `codex`, `claude`, `gemini`, and `opencode` to add things they don't have on their own: project memory that survives restarts, reusable skills, and the ability to run multiple agents in parallel.
-
-You keep using the same commands. Nothing changes about your workflow — except your agents get way more capable.
+You keep using the same commands. Nothing changes about your workflow — except your agents get a brain, a team, and self-diagnostics.
 
 [Get Started in 3 Minutes](getting-started.md){ .md-button .md-button--primary }
 [See It In Action](use-cases.md){ .md-button }
 
-## What Can You Do?
+## Core Capabilities
 
-!!! example "Real-world scenarios"
-    === "Remember things"
-        Your agent forgets everything when you close the terminal. **Not anymore.**
+| Capability | Description | Command |
+|---|---|---|
+| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` |
+| **Memo Storage** | Git-friendly project notes; default append-only file storage plus optional split-file storage | `aios memo add "note"` / `aios memo storage status` |
+| **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
+| **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
+| **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
+| **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
+| **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
+| **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
+| **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
+| **Superpowers** | Reusable workflow skills (brainstorm/plan/debug/verify) | Select from TUI |
+| **Privacy Guard** | Auto-redact sensitive files before sharing | `aios privacy status` |
 
-        ```bash
-        cd your-project
-        touch .contextdb-enable
-        codex  # Now your agent remembers what you did yesterday
-        ```
+## How It Works
 
-    === "Run overnight"
-        Give your agent a task before you sleep. Check the results in the morning.
-
-        ```bash
-        aios harness run \
-          --objective "Refactor the auth module and write tests" \
-          --worktree
-        ```
-
-    === "Use a team"
-        Split big tasks across multiple agents working in parallel.
-
-        ```bash
-        aios team 3:codex \
-          "Build the settings page, add tests, update docs"
-        aios team status --watch  # Monitor progress in real time
-        ```
-
-    === "Debug itself"
-        Your agent can search its own logs and figure out what went wrong.
-
-        ```bash
-        cd packages/debug-hub && npm run dev
-        # Agents now have tools: search_logs, get_trace, get_stats
-        ```
-
-## Why RexCLI?
-
-If you've ever used a coding agent and thought:
-
-- **"I wish it remembered what we did yesterday"** — that's ContextDB
-- **"I want it to follow a consistent style"** — that's Memo (persona + user profile)
-- **"This task is too big for one agent"** — that's Agent Team
-- **"I want it to keep working while I sleep"** — that's Solo Harness
-- **"I need to debug what the agent is doing"** — that's debug-hub
-- **"I want the right model for each task"** — that's Model Router
-
-RexCLI is **not** another coding agent. It's a layer that makes your existing agents better.
-
-## The Big Picture
-
-Think of RexCLI like a power-up for your coding agents:
-
+```text
+User → codex / claude / gemini / opencode
+     → zsh wrapper (transparent)
+     → ctx-agent.mjs (ContextDB integration)
+        → contextdb CLI (memory persistence)
+        → launch native CLI (with context pack)
+     → browser MCP (optional browser automation)
 ```
-Your Project
-  └── ContextDB (memory)
-        └── Sessions, events, checkpoints
-  └── Memo (persistent notes)
-        └── Persona, user profile, project facts
-  └── Superpowers (skills)
-        └── Brainstorm, plan, debug, verify
-  └── Agent Team (parallel work)
-        └── Multiple agents, one goal
-  └── Solo Harness (long-running work)
-        └── Overnight runs with journals
-  └── debug-hub (self-diagnostics)
-        └── Agents query their own logs
+
+After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — RexCLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
+
+## Quick Tour
+
+```bash
+# Launch TUI
+aios
+
+# Save a Git-friendly project memo
+aios memo add "Remember to keep auth tests strict"
+aios memo storage status
+
+# Route from inside native clients after setup
+# Claude/Gemini/OpenCode: /team <task>
+# Codex: /prompts:team <task>
+
+# Multi-agent collaboration
+aios team 3:codex "Refactor the auth module and run tests"
+
+# Single-agent overnight task
+aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
+
+# Intelligent model routing
+node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
+
+# Native token-compressed ContextDB packet
+cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+
+# Content outcome tracking
+aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'
+
+# Check task status
+aios team status --provider codex --watch
 ```
 
 ## First Time Here?
@@ -96,52 +85,43 @@ Your Project
 | Give my agent project memory | [ContextDB](contextdb.md) |
 | Use multiple agents together | [Agent Team](team-ops.md) |
 | Let one agent work overnight | [Solo Harness](solo-harness.md) |
+| Route tasks intelligently | [Model Router](model-router.md) |
+| Reduce token usage | [Token Compression](token-compression.md) |
 | Find the right command | [Commands By Scenario](use-cases.md) |
-| Use browser automation | [Troubleshooting](troubleshooting.md) |
-| Understand the architecture | [Architecture](architecture.md) |
 
-## New To AI Coding Agents?
+## Requirements
 
-No worries. Here's what you need to know:
+- Git
+- Node.js 22 LTS + npm
+- Windows: PowerShell 5.x or 7
 
-**An "agent"** is a coding assistant that runs in your terminal — like Claude Code, Codex CLI, or Gemini CLI. You type what you want, and it writes code for you.
+## Development
 
-**The problem?** These agents are forgetful. Close the terminal, and everything's gone. They also can't work together or run for a long time without supervision.
+```bash
+git clone https://github.com/rexleimo/rex-cli.git
+cd rex-cli
+```
 
-**RexCLI fixes this** by adding a memory layer, skills, and teamwork — without changing how you interact with your agent.
+Verify:
 
-## Common Questions
+```bash
+cd mcp-server
+npm test
+npm run typecheck
+npm run build
+```
 
-### Do I need to stop using my current agent?
+## Docs
 
-No. You keep running `codex`, `claude`, `gemini`, or `opencode` exactly like before. RexCLI just makes them better.
-
-### Is this a cloud service?
-
-No. Everything runs locally on your machine. Your code and data never leave your computer.
-
-### Which agents does it support?
-
-Codex CLI, Claude Code, Gemini CLI, and OpenCode. If your favorite isn't listed, [open an issue](https://github.com/rexleimo/rex-cli/issues).
-
-### Do I need to learn a lot of new commands?
-
-No. The three things you'll use most are:
-
-1. `aios` — open the setup menu
-2. `touch .contextdb-enable` — turn on memory for a project
-3. `codex` (or `claude`/`gemini`) — start coding as usual
-
-Everything else is optional and you can learn it as you go.
-
-## What's Next?
-
-- [Quick Start](getting-started.md) — get running in 3 minutes
-- [ContextDB](contextdb.md) — understand how memory works
-- [Agent Team](team-ops.md) — run multiple agents together
-- [Solo Harness](solo-harness.md) — let agents work overnight
-- [Find Commands By Scenario](use-cases.md) — the command reference
-- [Changelog](changelog.md) — what's new in each release
+- [Quick Start](getting-started.md) — Install, configure, first run
+- [Model Router](model-router.md) — Multi-model dispatch for Agent Teams
+- [ContextDB](contextdb.md) — Project memory system
+- [Agent Team](team-ops.md) — Multi-agent collaboration guide
+- [Solo Harness](solo-harness.md) — Overnight task guide
+- [Perception](perception.md) — Content outcome tracking & insights
+- [Architecture](architecture.md) — System architecture
+- [Troubleshooting](troubleshooting.md) — Common issues
+- [Use Cases](use-cases.md) — Find commands by scenario
 
 ## Blog Highlights
 

@@ -1,109 +1,104 @@
 ---
 title: 快速开始
-description: 从安装到第一次使用 RexCLI 的最短路径，先跑通，再按需打开高级能力。
+description: Install RexCLI, set it up, and run your first agent with memory — in about 3 minutes.
 ---
 
 # 快速开始
 
-目标：**先在 3 分钟内装好、打开 TUI、跑一次 Doctor、在项目里启动 agent。**
+**Goal:** By the end of this page, you'll have RexCLI installed and your coding agent will remember things across sessions.
 
-如果你还不知道 RexCLI 的所有功能，没关系。先按本页走一遍，后面再看 [按场景找命令](use-cases.md)。
+Sounds good? Let's go.
 
-## 你需要准备什么
+## What You Need
 
-- Node.js **22 LTS** 和 `npm`
-- 至少一个 coding CLI：`codex`、`claude`、`gemini` 或 `opencode`
-- 一个你要工作的项目目录
+Before we start, make sure you have:
 
-检查 Node：
+- **Node.js 22** (the LTS version) — [download it here](https://nodejs.org/) or use `nvm install 22`
+- **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, or `opencode`
+- **A project folder** — any code project where you want your agent to have memory
 
-```bash
-node -v
-npm -v
-```
-
-如果 Node 不是 22，建议先切换：
+Check your Node version:
 
 ```bash
-nvm install 22
-nvm use 22
+node -v  # Should show v22.x.x
 ```
 
-## 1) 安装稳定版
+??? note "Need to install or switch Node?"
+    ```bash
+    nvm install 22
+    nvm use 22
+    ```
+
+## Step 1: Install RexCLI
 
 === "macOS / Linux"
 
     ```bash
     curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
-    aios
     ```
 
-    如果你使用 bash 而不是 zsh，把 `source ~/.zshrc` 换成 `source ~/.bashrc`。
+    If you use bash instead of zsh, replace `source ~/.zshrc` with `source ~/.bashrc`.
 
 === "Windows PowerShell"
 
     ```powershell
     irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
-    aios
     ```
 
-安装后默认目录是 `~/.rexcil/rex-cli`，统一入口是 `aios`。
+!!! tip "Stable vs. Development"
+    The commands above install the **stable release** (recommended). Only use `git clone` if you specifically want unreleased features from the `main` branch.
 
-!!! tip "什么时候用 git clone？"
-    只有你明确想跟随 `main` 分支的未发布行为时，才用 `git clone`。稳定用户优先用 GitHub Releases 安装。
+## Step 2: Run Setup
 
-## 2) 在 TUI 里完成 Setup 和 Doctor
-
-运行：
+Open the RexCLI menu:
 
 ```bash
 aios
 ```
 
-推荐顺序：
+You'll see a TUI (terminal UI) with several options. Do these two things, **in this order**:
 
-1. 选择 **Setup**。
-2. 组件先选 `all`，或最小选择 `shell,skills,superpowers`。
-3. 安装完成后选择 **Doctor**。
-4. Doctor 没有关键错误后再开始使用。
+1. **Choose "Setup"** — this installs the shell wrappers and skills
+2. **Choose "Doctor"** — this checks everything is working correctly
 
 <figure class="rex-visual">
-  <img src="../assets/visual-tui-setup-doctor.svg" alt="aios TUI 中先选择 Setup，再选择 Doctor 的示意图">
-  <figcaption>示意图：TUI 打开后先做 Setup，再做 Doctor。关键错误为 0 后，再进入项目里启动 `codex` / `claude` / `gemini` / `opencode`。</figcaption>
+  <img src="assets/visual-tui-setup-doctor.svg" alt="Setup first, Doctor second">
+  <figcaption>Always run Setup first, then Doctor. If Doctor shows zero critical errors, you're good to go.</figcaption>
 </figure>
 
-如果你改了 shell 包装层，重新加载当前 shell：
+!!! warning "If Doctor shows errors"
+    Don't panic. Most errors are easy fixes — missing PATH entries, wrong Node version, etc. Doctor will tell you exactly what's wrong and often offers to fix it automatically.
+
+After setup, reload your shell:
 
 === "macOS / Linux"
-
     ```bash
     source ~/.zshrc
     ```
 
 === "Windows PowerShell"
-
     ```powershell
     . $PROFILE
     ```
 
-## 3) 在项目里启用记忆
+## Step 3: Turn On Memory For Your Project
 
-进入你的项目目录：
+Go to any project folder where you want your agent to remember things:
 
 ```bash
 cd /path/to/your/project
 aios init
 ```
 
-`aios init` 会检测你安装的编程 agent（Claude Code、Codex CLI、Gemini CLI、OpenCode），为每个 agent 配置记忆系统。**幂等操作** — 重复运行不会出错。
+That's it. `aios init` detects your installed coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode) and configures each one to use the memory system. It's **idempotent** — safe to run multiple times.
 
-??? info "工作原理"
-    `aios init` 在每个 agent 的配置文件（CLAUDE.md、AGENTS.md、GEMINI.md）头部添加一个轻量标记（`<!-- AIOS: .aios/context-db/index.json -->`）。Agent 启动时看到标记，读取 context registry，按需加载上下文 — 不再等待漫长的上下文注入。
+??? info "How it works"
+    `aios init` adds a lightweight marker (`<!-- AIOS: .aios/context-db/index.json -->`) to each agent's config file (CLAUDE.md, AGENTS.md, GEMINI.md). When your agent starts, it sees the marker, reads the context registry, and loads only what it needs — no more waiting through lengthy context injection.
 
-??? info "旧版 opt-in 模式"
-    如果你更喜欢旧的方式，仍然可以用：
+??? info "Opt-in mode (legacy)"
+    If you prefer the old opt-in method, you can still use:
 
     === "macOS / Linux"
         ```bash
@@ -115,214 +110,177 @@ aios init
         New-Item -ItemType File -Path .contextdb-enable -Force
         ```
 
-    推荐使用新的 `aios init` 方式 — 启动更快，跨 agent 记忆共享。
+    The new `aios init` method is recommended — it gives you faster startup and cross-agent memory sharing.
 
-你也可以把 `codex` 换成：
+## Step 4: Start Your Agent
 
-```bash
-claude
-gemini
-```
-
-只要在同一项目目录里，它们都会读写同一个 ContextDB。
-
-## 4) 第一次确认是否生效
-
-在项目里运行：
-
-=== "macOS / Linux"
-
-    ```bash
-    aios doctor --native --verbose
-    ls -la .aios/context-db
-    ```
-
-=== "Windows PowerShell"
-
-    ```powershell
-    aios doctor --native --verbose
-    Get-ChildItem -Path .aios/context-db -ErrorAction SilentlyContinue
-    ```
-
-看到 `sessions/`、`index/` 或 `exports/` 这类目录，说明 ContextDB 已经开始记录。
-
-如果目录还不存在，先正常启动一次 `codex` / `claude` / `gemini` / `opencode`，让 RexCLI 自动初始化；不需要立刻重装。
-
-如果没有看到，不要急着重装，先跑：
-
-```bash
-aios doctor --native --fix
-```
-
-## 5) 最常用的 7 条命令
-
-| 场景 | 命令 |
-|---|---|
-| 打开 TUI | `aios` |
-| 启动带记忆的 Codex | `codex` |
-| 查看当前会话状态 | `aios hud --provider codex` |
-| 单 Agent 过夜执行 | `aios harness run --objective "整理明早交接清单" --worktree --max-iterations 20` |
-| 多 agent 执行任务 | `aios team 3:codex "实现 X，并在完成前跑测试"` |
-| 监控 team 进度 | `aios team status --provider codex --watch` |
-| 提交前质量检查 | `aios quality-gate pre-pr --profile strict` |
-
-setup 后可以在原生客户端里直接使用路由快捷命令：
-
-- Claude/Gemini/OpenCode：`/single <任务>`、`/subagent <任务>`、`/team <任务>`、`/harness <任务>`。
-- Codex：`/prompts:single <任务>`、`/prompts:subagent <任务>`、`/prompts:team <任务>`、`/prompts:harness <任务>`。
-- 如果缺失，运行 `aios doctor --native --fix`。
-
-## 6) 用 Memo 管理持续记忆
-
-如果你想要可持续的项目笔记，但不想手动改 ContextDB 文件：
-
-```bash
-aios memo add "Need strict pre-PR checks #quality"
-aios memo pin add "Avoid destructive git commands."
-aios memo persona init
-aios memo persona add "Response style: concise, direct, evidence-first"
-aios memo user init
-aios memo user add "Preferred language: zh-CN + technical English terms"
-aios memo recall "quality gate" --limit 5
-aios memo storage status
-```
-
-记忆分层：
-
-- `memo add/search/recall` -> 规范 `memory/memo` 存储（仅为兼容性镜像 legacy ContextDB）
-- `memo pin` -> 规范 `memory/memo` pinned 文件（仅为兼容性镜像 legacy workspace-memory）
-- `memo persona/user` -> 全局身份文件（`~/.aios/SOUL.md`、`~/.aios/USER.md`），会在项目 memo 之前注入 `ctx-agent` 的 Memory prelude
-
-默认项目 memo 写入 `memory/memo/file/events.jsonl`（append-only JSONL）。如果更希望一条 memo 一个 JSON 文件，可执行 `aios memo storage use split`；`storage rebuild` 只重建派生查询文件，不改写规范记录。
-
-## 7) 多 Agent 的最短用法
-
-当任务能拆成多个相对独立的部分时再用：
-
-```bash
-aios team 3:codex "实现用户设置页、补测试、更新文档"
-aios team status --provider codex --watch
-```
-
-如果你只是修一个小 bug，或者还不知道要怎么拆，先普通启动：
+Now just start your agent like you normally would:
 
 ```bash
 codex
+# or: claude
+# or: gemini
 ```
 
-更多判断标准看 [多 Agent 实战](team-ops.md)。
+Your agent now has **project memory**. It will remember:
 
-## 8) 让一个 Agent 过夜执行
+- What files you worked on
+- What decisions you made
+- What errors you encountered
+- What was left to do
 
-当一个 provider 需要围绕一个明确目标持续推进，并留下 run journal 时，用 Solo Harness：
+...even after you close the terminal and come back tomorrow.
+
+## Step 5: Verify It's Working
+
+Run this to check that memory is active:
 
 ```bash
-aios harness run --objective "整理明早交接清单" --session nightly-demo --worktree --max-iterations 20
-aios harness status --session nightly-demo --json
+aios doctor --native --verbose
+ls .aios/context-db/
 ```
 
-如果你从包装后的 `codex` / `claude` / `gemini` / `opencode` 开始，启动路由提示会让 agent 在明确的长任务、过夜任务、可恢复任务、checkpoint 密集目标上自触发这条通道。注入命令会带 `--workspace <project-root>`，所以 ContextDB artifact 会留在当前项目里。
+You should see directories like `sessions/`, `index/`, or `exports/`. That means memory is recording.
 
-用 `CTXDB_HARNESS_MAX_ITERATIONS=<n>` 可调整默认注入的循环预算。
+??? troubleshooting "Don't see the memory directory?"
+    1. Start your agent once normally — RexCLI creates the directory on first run
+    2. If it still doesn't appear: `aios doctor --native --fix`
 
-## 9) 浏览器自动化先这样排查
+**You're all set!** Your agent now has memory. Keep reading to learn what else you can do.
 
-RexCLI 默认使用 CDP/browser-use 路线做浏览器自动化。出现浏览器相关问题先跑：
+---
+
+## Beyond The Basics
+
+You have memory working. Here are the next things to try, in order of usefulness:
+
+### Save Persistent Notes With Memo
+
+Memo lets you save Git-friendly project notes that your agent will see in every session:
 
 ```bash
-aios internal browser doctor --fix
-aios internal browser cdp-status
+# Save a note about this project
+aios memo add "Always use TypeScript strict mode in this project"
+
+# Save a reminder
+aios memo pin add "Never push directly to main"
+
+# Search your notes later
+aios memo search "typescript"
+
+# Inspect the active storage implementation
+aios memo storage status
 ```
 
-复杂页面操作时，优先让 agent 读取页面文本/DOM，再截图；不要一开始就盲点按钮。
+By default, project memos are append-only JSONL under `memory/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
 
-## 10) 隐私读取
+### Set Your Agent's Personality
 
-读取 `.env`、token、cookies、云服务配置时，不要直接贴给模型。用：
+You can tell RexCLI how your agent should behave across all projects:
 
 ```bash
-aios privacy read --file <path>
+# Set the agent's communication style
+aios memo persona init
+aios memo persona add "Response style: concise, direct, evidence-first"
+
+# Set your own preferences
+aios memo user init
+aios memo user add "Preferred language: zh-CN + technical English terms"
 ```
 
-启动被 RexCLI 包装的 `codex` / `claude` / `gemini` / `opencode` 时，会出现 Privacy Shield 提示，说明当前隐私保护状态。
+These profiles apply everywhere — not just one project.
 
-## 11) 更新和卸载
+### Run Multiple Agents Together
 
-优先走 TUI：
+When a task is too big for one agent, split it across multiple workers:
+
+```bash
+# Start 3 agents working in parallel
+aios team 3:codex "Build the settings page, add tests, and update docs"
+
+# Watch their progress
+aios team status --watch
+```
+
+!!! tip "When to use teams"
+    Use Agent Team only when the task can be **split into independent parts**. For single-file fixes or unclear requirements, stick with one agent.
+
+### Let An Agent Work Overnight
+
+Give your agent a clear objective and let it run while you sleep:
+
+```bash
+aios harness run \
+  --objective "Refactor the auth module and write integration tests" \
+  --worktree \
+  --max-iterations 20
+```
+
+Check progress anytime:
+
+```bash
+aios harness status --session <session-name> --json
+```
+
+### Use Route Shortcuts Inside Agents
+
+When you're inside a running agent, you can trigger RexCLI features with shortcuts:
+
+| Shortcut | What it does |
+|---|---|
+| `/single <task>` | Handle the task in the current agent |
+| `/team <task>` | Split across multiple agents |
+| `/harness <task>` | Run as a long overnight job |
+
+!!! note "Client differences"
+    - **Claude Code / Gemini / OpenCode**: `/single`, `/team`, `/harness`
+    - **Codex**: `/prompts:single`, `/prompts:team`, `/prompts:harness`
+
+    If shortcuts are missing, run `aios doctor --native --fix`.
+
+---
+
+## Common Questions
+
+### Does RexCLI replace my coding agent?
+
+**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. RexCLI adds memory, skills, and teamwork on top of them.
+
+### Why do I need `.contextdb-enable`?
+
+It's an opt-in switch. Without it, RexCLI won't record anything. You choose which projects get memory.
+
+### Will my agents share the same memory?
+
+**Yes.** If you run `codex` and then `claude` in the same project folder, they share the same ContextDB. This means Claude knows what Codex did earlier.
+
+### Do I need to learn everything at once?
+
+**No.** The three things you need on day one are:
+
+1. `aios` — for setup and diagnostics
+2. `touch .contextdb-enable` — to turn on memory
+3. `codex` (or `claude`/`gemini`) — to start coding
+
+Everything else — teams, harness, memo, superpowers — you can learn as you need them.
+
+### How do I update?
 
 ```bash
 aios
+# Then choose "Update" from the menu
 ```
 
-也可以命令行执行：
+### How do I uninstall?
 
 ```bash
-aios update --components all --client all
 aios uninstall --components shell,skills,native
 ```
 
-## 12) 开发安装路径
+## Where To Go Next
 
-维护者或想测试未发布功能时使用：
-
-=== "macOS / Linux"
-
-    ```bash
-    git clone https://github.com/rexleimo/rex-cli.git ~/.rexcil/rex-cli
-    cd ~/.rexcil/rex-cli
-    scripts/aios.sh
-    ```
-
-=== "Windows PowerShell"
-
-    ```powershell
-    git clone https://github.com/rexleimo/rex-cli.git $HOME\.rexcil\rex-cli
-    cd $HOME\.rexcil\rex-cli
-    powershell -ExecutionPolicy Bypass -File .\scripts\aios.ps1
-    ```
-
-开发安装不等同于稳定 release。普通用户建议使用第 1 步的一条命令安装。
-
-## 常见问答
-
-### RexCLI 会替代原生 CLI 吗？
-
-不会。你仍然运行 `codex`、`claude`、`gemini`、`opencode`。RexCLI 只是在启动前后补上记忆、技能、诊断和编排能力。
-
-### Agent 可以自己触发 AIOS 吗？
-
-可以，前提是通过被包装的客户端启动。启动提示会告诉 agent 什么时候保持 `single`，什么时候使用 `team` / `subagent`，以及什么时候把长任务交给 `aios harness run ... --workspace <project-root>`。
-
-### 为什么要创建 `.contextdb-enable`？
-
-这是 opt-in 开关，避免 RexCLI 在所有目录里都记录上下文。只在你愿意启用项目记忆的仓库创建它。
-
-### 我需要先学完 ContextDB / Superpowers / Team Ops 吗？
-
-不需要。新用户先会三件事就够：`aios` 安装诊断、`.contextdb-enable` 启用项目、`codex` 正常工作。
-
-### 多 Agent 默认开几个？
-
-推荐从 `3` 开始：
-
-```bash
-aios team 3:codex "任务"
-```
-
-如果冲突变多，降到 `2`；如果任务很独立，再考虑 `4`。
-
-### `CODEX_HOME points to ".codex"` 怎么办？
-
-说明 `CODEX_HOME` 是相对路径，改成绝对路径：
-
-```bash
-export CODEX_HOME="$HOME/.codex"
-mkdir -p "$CODEX_HOME"
-```
-
-### 下一页看什么？
-
-- [按场景找命令](use-cases.md)
-- [多 Agent 实战](team-ops.md)
-- [ContextDB](contextdb.md)
-- [故障排查](troubleshooting.md)
+- [ContextDB](contextdb.md) — understand how memory works under the hood
+- [Agent Team](team-ops.md) — run multiple agents in parallel
+- [Solo Harness](solo-harness.md) — let agents work overnight
+- [Find Commands By Scenario](use-cases.md) — a command reference organized by task
+- [Troubleshooting](troubleshooting.md) — fix common issues

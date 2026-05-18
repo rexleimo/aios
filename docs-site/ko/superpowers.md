@@ -103,35 +103,4 @@ Superpowers는 재사용 가능한 자동화 스킬입니다. Claude Code, Codex
 
 ---
 
-## 사용 방법
-
-1. **Superpowers가 필요하면 자연스럽게 요청하세요** — AI가 의도를 인식하고 스킬을 호출합니다.
-2. **스킬이 자동으로 검증된 워크플로우를 안내합니다**.
-3. **결과는 향후 참조를 위해 프로젝트 메모리에 저장됩니다**.
-
-### 예제 명령
-
-```
-"brainstorming으로 이 기능을 어떻게 구현할지 생각해줘"
-"writing-plans으로 이 요구사항을 단계로 나눠줘"
-"버그가 있어, systematic-debugging 사용해줘"
-"완료 전에 verification-before-completion으로 검증해줘"
-"dispatching-parallel-agents로 이걸 병렬 처리해줘"
-"security-scan 실행해서 설정 보안 확인해줘"
-```
-
----
-
 ## RL 훈련 시스템
-
-AIOS는 멀티 환경 강화학습 시스템을 포함합니다. 통합 제어 플레인을 통해 셸, 브라우저, 오케스트레이터 태스크에서 공유 학생 정책을 훈련합니다.
-
-자세한 내용은 [아키텍처 페이지](architecture.md#rl-training-layer-aios)를 참조하세요.
-
----
-
-## 더 보기
-
-- [사례 집합](case-library.md) - 실제 사용 예제
-- [ContextDB](contextdb.md) - 기억이 세션을 넘어 유지되는 방식
-- [Agent Team & HUD](team-ops.md) - 다중 에이전트 협업 상세

@@ -1,17 +1,19 @@
 ---
 title: Blog Hub
-description: Stories, tutorials, and deep dives about making AI coding agents smarter, more reliable, and easier to work with.
+description: Stories, tutorials, and deep dives about RexCLI — the local agent workflow layer that adds memory, collaboration, and verification to codex, claude, gemini, and opencode.
 ---
 
 # Blog
 
-Learn how to get the most out of RexCLI and your AI coding agents. Each post tells a story — what problem we faced, how we solved it, and how you can use it too.
+Stories, tutorials, and deep dives about making AI coding agents smarter, more reliable, and easier to work with.
+
+RexCLI (also called AIOS) is a local agent workflow layer — not a new coding agent, but a layer that makes your existing `codex`, `claude`, `gemini`, and `opencode` better with memory, teamwork, and self-diagnostics.
 
 ## Start Here
 
 New to RexCLI? These posts will get you oriented:
 
-- [The Story Behind RexCLI](launch-post.md) — why I built it, and what problems it solves
+- [The Story Behind RexCLI](launch-post.md) — why it was built, and what problems it solves
 - [CLI Comparison: Raw vs. RexCLI](cli-comparison-post.md) — what changes when you add the layer
 - [Automation Playbook](automation-playbook-post.md) — practical patterns for daily use
 
@@ -47,3 +49,6 @@ Read [Solo Harness](2026-04-solo-harness.md), then check the [Solo Harness docs]
 
 ### I want agents to debug themselves
 Read [debug-hub](2026-05-debug-hub-mcp.md), then check the [debug-hub docs](https://cli.rexai.top/debug-hub/).
+
+### Is RexCLI a new coding agent?
+No. It wraps around `codex`, `claude`, `gemini`, and `opencode` to add memory, teamwork, and self-diagnostics — without changing how you work.

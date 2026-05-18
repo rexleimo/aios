@@ -31,7 +31,7 @@ aios
 | **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` 自动加载 |
 | **Memo Storage** | 适合 Git 共享的项目 memo；默认 append-only file 存储，也可切到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
 | **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
-| **自研 Token 压缩** | 参考 RTK/Caveman 的思路，但不安装竞品工具；本地完成输入/输出省 token | `context:pack --token-budget 1200 --token-strategy balanced` |
+| **原生 Token 压缩** | 自研输入/输出 token 压缩，参考 RTK/Caveman 思路，但不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |

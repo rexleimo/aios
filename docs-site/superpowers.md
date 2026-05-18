@@ -134,6 +134,12 @@ You can also explicitly invoke a skill by name:
 | "Multiple independent things to do" | `dispatching-parallel-agents` |
 | "Need to check security" | `security-scan` |
 
+## RL Training System
+
+AIOS includes a multi-environment reinforcement learning system. It trains a shared student policy using a unified control plane across shell, browser, and orchestrator tasks.
+
+For details, see the [Architecture page](architecture.md#rl-training-layer-aios).
+
 ## Where To Go Next
 
 - [Case Library](case-library.md) — real-world examples of skills in action
