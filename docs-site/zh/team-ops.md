@@ -5,23 +5,23 @@ description: 什么时候使用 Agent Team，怎么启动、监控、收尾，�
 
 # 多 Agent 实战
 
-**One agent is good. Multiple agents working together can be great — but only when the task actually calls for it.**
+**一个 agent 很好。多个 agent 协同工作可以更出色 — 但只有当任务确实需要时。**
 
-Agent Team lets you split a task across multiple coding agents working in parallel. Each agent handles part of the work, and you can monitor their progress in real time.
+Agent Team 让你可以将一个任务分散到多个编码 agent 并行工作。每个 agent 处理部分工作，你可以实时监控他们的进度。
 
-## The One Command To Remember
+## 记住这一个命令
 
 ```bash
-# Start 3 agents on a task
-aios team 3:codex "Build the settings page, add tests, and update docs"
+# 启动 3 个 agent 执行任务
+aios team 3:codex "构建设置页面，添加测试，并更新文档"
 
-# Watch them work
+# 观察他们工作
 aios team status --provider codex --watch
 ```
 
-## When To Use Teams (And When Not To)
+## 何时使用团队（以及何时不使用）
 
-### Good fit for Agent Team
+### 适合 Agent Team
 
 适合用：
 
@@ -30,7 +30,7 @@ aios team status --provider codex --watch
 - 你愿意为并行执行支付更多 token 和等待成本。
 - 你需要 HUD/历史记录来追踪多个 worker。
 
-### Bad fit for Agent Team
+### 不适合 Agent Team
 
 不适合用：
 
@@ -45,7 +45,7 @@ aios team status --provider codex --watch
 codex
 ```
 
-### Quick Checklist
+### 快速检查清单
 
 开 team 前建议先确认这 3 项：
 
@@ -55,12 +55,12 @@ codex
   <div class="rex-checklist__item">验收标准能一句话说清</div>
 </div>
 
-## The 10-Minute Flow
+## 10 分钟流程
 
-### 1. Write A Clear Task
-### 2. Start Monitoring
-### 3. Check History And Failures
-### 4. Run A Quality Check Before Finishing
+### 1. 写一个清晰的任务
+### 2. 开始监控
+### 3. 检查历史和失败
+### 4. 完成前运行质量检查
 
 ```bash
 aios quality-gate pre-pr --profile strict
@@ -68,17 +68,17 @@ aios quality-gate pre-pr --profile strict
 
 如果 quality gate 失败，先看失败分类，不要直接再次开更多 worker。
 
-## How Many Agents Should I Use?
+## 我应该使用多少个 Agent？
 
-| Count | Command | Best for |
+| 数量 | 命令 | 最适合 |
 |---|---|---|
-| 2 | `aios team 2:codex "task"` | First time, or when files might overlap |
-| 3 | `aios team 3:codex "task"` | Most daily features (recommended) |
-| 4 | `aios team 4:codex "task"` | Very independent modules with clear tests |
+| 2 | `aios team 2:codex "task"` | 第一次，或者文件可能重叠时 |
+| 3 | `aios team 3:codex "task"` | 大多数日常功能（推荐） |
+| 4 | `aios team 4:codex "task"` | 有清晰测试的非常独立模块 |
 
-If you see conflicts or duplicate edits, reduce the count — don't increase it.
+如果你看到冲突或重复编辑，减少数量 — 而不是增加。
 
-## Choosing A Provider
+## 选择 Provider
 
 ```bash
 aios team 3:codex "task"
@@ -86,15 +86,15 @@ aios team 2:claude "task"
 aios team 2:gemini "task" --dry-run
 ```
 
-Recommendations:
+建议：
 
-- Use `codex` for daily implementation work.
-- Try `claude` for long-form analysis or planning comparisons.
-- Use `--dry-run` when you're not sure what will happen.
+- 使用 `codex` 进行日常实现工作。
+- 尝试 `claude` 进行长篇分析或规划比较。
+- 当你不确定会发生什么时使用 `--dry-run`。
 
-## If Something Goes Wrong
+## 如果出了问题
 
-### A run was interrupted
+### 运行被中断
 
 如果某次运行中断，先看历史：
 
@@ -110,49 +110,49 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 
 不要在不了解失败原因时直接重新开一个更大的 team。
 
-## How Team Works Under The Hood
+## Team 幕后工作原理
 
 当 `aios team` 在 live 模式下运行时，它使用 **GroupChat Runtime**：一种基于轮次的执行模型，agent 共享同一个对话线程，而非在隔离的单次 dispatch 中工作。
 
 ```
-Round 1 → Planner analyzes the task and creates work items
-Round 2 → N implementers work in parallel (one per work item)
-Round 3 → Reviewer checks the results
+第 1 轮 → Planner 分析任务并创建工作项
+第 2 轮 → N 个实现者并行工作（每个工作项一个）
+第 3 轮 → Reviewer 检查结果
 ```
 
-If an agent gets stuck, the planner **automatically re-plans** the next round.
+如果一个 agent 卡住了，planner **自动重新规划**下一轮。
 
-### Blueprints
+### 蓝图
 
-| Blueprint | Rounds | Best for |
+| 蓝图 | 轮次 | 最适合 |
 |---|---|---|
-| `bugfix` | plan → implement → review | Simple fixes, small scope |
-| `feature` | plan → implement → review + security | New features with quality checks |
-| `refactor` | plan → implement → review | Pure refactoring, no new features |
-| `security` | assess → plan → implement → review | Security-sensitive changes |
+| `bugfix` | plan → implement → review | 简单修复，小范围 |
+| `feature` | plan → implement → review + security | 有质量检查的新功能 |
+| `refactor` | plan → implement → review | 纯重构，无新功能 |
+| `security` | assess → plan → implement → review | 安全敏感变更 |
 
-Use the smallest blueprint that fits your task.
+使用适合你任务的最小蓝图。
 
-Blueprints, role cards, runtime manifests, executor manifests, and handoff schemas are packaged under `scripts/lib/specs/`. Team run state and evidence are still written to `.aios/context-db/`; `memory/memo/` is only for project memo records and is not the team runtime store.
+蓝图、角色卡片、运行时清单、执行器清单和交接模式打包在 `scripts/lib/specs/` 下。Team 运行状态和证据仍然写入 `.aios/context-db/`；`memory/memo/` 仅用于项目备忘录记录，不是 team 运行时存储。
 
-### Configuration
+### 配置
 
 ```bash
-# Required for live execution
+# live 执行必须
 export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli   # or claude-code, gemini-cli, opencode-cli
+export AIOS_SUBAGENT_CLIENT=codex-cli   # 或 claude-code, gemini-cli, opencode-cli
 
-# Concurrency (speakers per round)
-export AIOS_SUBAGENT_CONCURRENCY=3      # default: 3
+# 并发（每轮发言者数量）
+export AIOS_SUBAGENT_CONCURRENCY=3      # 默认：3
 
-# Per-agent turn timeout (milliseconds)
-export AIOS_SUBAGENT_TIMEOUT_MS=600000  # default: 10 minutes
+# 每个 agent 轮次超时（毫秒）
+export AIOS_SUBAGENT_TIMEOUT_MS=600000  # 默认：10 分钟
 
-# Skip capability preflight and go straight to live (use with caution)
+# 跳过 capability preflight 直接进入 live（谨慎使用）
 export AIOS_ALLOW_UNKNOWN_CAPABILITIES=1
 ```
 
-GroupChat live execution is gated by `AIOS_EXECUTE_LIVE=1`. When not set, `aios team` falls back to a dry-run preview of the dispatch plan.
+GroupChat live 执行由 `AIOS_EXECUTE_LIVE=1` 门控。如果未设置，`aios team` 回退到调度计划的 dry-run 预览。
 
 ## Team vs. Harness vs. Orchestrate
 
@@ -170,7 +170,7 @@ export AIOS_SUBAGENT_CLIENT=codex-cli
 aios orchestrate --session <session-id> --dispatch local --execute live
 ```
 
-## Command Reference
+## 命令参考
 
 ```bash
 # 启动团队（默认 dry-run 预览）
@@ -199,13 +199,13 @@ AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
   aios orchestrate bugfix --task "修复 X" --execute live --preflight none
 ```
 
-## Advanced Operations Reference
+## 高级操作参考
 
 以下命令建议在熟悉基础流程后再使用。
 
-### HUD Presets
+### HUD 预设
 
-| Preset | 用途 |
+| 预设 | 用途 |
 |---|---|
 | `minimal` | 长时间 watch |
 | `compact` | 终端友好摘要 |
@@ -230,10 +230,10 @@ aios team skill-candidates export --session <session-id> --output ./candidate.pa
 
 应用前必须人工审查补丁，尤其是会改 skills、hooks、MCP 配置的建议。
 
-## Where To Go Next
+## 下一步去哪里
 
 - [按场景找命令](use-cases.md)
 - [HUD 指南](hud-guide.md)
-- [Skill Candidates](skill-candidates.md)
+- [技能候选](skill-candidates.md)
 - [路由与并发档位](route-concurrency-profiles.md)
 - [故障排查](troubleshooting.md)

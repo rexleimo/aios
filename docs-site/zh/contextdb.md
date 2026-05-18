@@ -3,30 +3,30 @@ title: ContextDB
 description: How your agent remembers things across sessions — explained from the ground up.
 ---
 
-# ContextDB
+# ContextDB 上下文数据库
 
-**The short version:** ContextDB is a local memory system for your coding agents. It remembers what happened in past sessions so your agent can pick up where it left off.
+**简述：** ContextDB 是一个本地记忆系统，为你的编码 Agent 工作。它记住过去会话中发生的事情，让你的 Agent 能够在中断处继续。
 
-No cloud. No database server. Just files in your project folder.
+不依赖云，不依赖数据库服务器。只需项目文件夹中的文件。
 
-## Context Registry (Pull-Based Context)
+## 上下文注册表（拉取式上下文）
 
-Starting in v1.13, ContextDB uses a **pull-based** model. Instead of injecting ~30KB of context into every session startup (which took ~5 minutes), the system now injects a ~350 byte **registry pointer** and the agent loads what it needs on demand.
+从 v1.13 开始，ContextDB 使用**拉取式**模型。与其在每次会话启动时注入约 30KB 的上下文（需要约 5 分钟），系统现在只注入约 350 字节的**注册表指针**，然后由 Agent 按需加载所需内容。
 
-### How It Works
+### 工作原理
 
 ```
-Agent starts → reads config file (CLAUDE.md / AGENTS.md / GEMINI.md)
-            → sees marker: <!-- AIOS: .aios/context-db/index.json -->
-            → reads .aios/context-db/index.json (the registry)
-            → decides what to load based on the task
+Agent 启动 → 读取配置文件 (CLAUDE.md / AGENTS.md / GEMINI.md)
+           → 看到标记：<!-- AIOS: .aios/context-db/index.json -->
+           → 读取 .aios/context-db/index.json（注册表）
+           → 根据任务决定加载什么
 
-Task: "fix the auth bug"  → loads handoff (1KB) for continuity
-Task: "analyze XHS data"  → loads handoff + perception (~4KB)
-Task: "debug a crash"     → loads handoff + session history (~20KB)
+任务："修复认证 bug"     → 加载 handoff (1KB) 保持连续性
+任务："分析小红书数据"  → 加载 handoff + perception (~4KB)
+任务："调试崩溃"        → 加载 handoff + session history (~20KB)
 ```
 
-### Registry Index (index.json)
+### 注册表索引 (index.json)
 
 ```json
 {
@@ -43,59 +43,59 @@ Task: "debug a crash"     → loads handoff + session history (~20KB)
 }
 ```
 
-### Before vs After
+### 新旧对比
 
-| | Before (Push) | After (Pull) |
+| | 旧（推送） | 新（拉取） |
 |---|---|---|
-| Startup injection | ~30KB (~12K tokens) | ~350 bytes |
-| Startup wait | ~5 minutes | Near-instant |
-| Context loading | Everything, every time | On-demand, task-aware |
-| Cross-agent memory | Each agent isolated | Shared ContextDB |
+| 启动时注入 | ~30KB (~12K tokens) | ~350 bytes |
+| 启动等待 | ~5 分钟 | 瞬时 |
+| 上下文加载 | 每次加载所有内容 | 按需，基于任务 |
+| 跨 Agent 记忆 | 每个 Agent 隔离 | 共享 ContextDB |
 
-### Setup
+### 安装
 
 ```bash
-aios init              # one-time setup for all installed agents
+aios init              # 一次性为所有已安装的 Agent 设置
 ```
 
-The `aios init` command adds the registry marker to each agent's config file and configures save guards so sessions are automatically persisted.
+`aios init` 命令将注册表标记添加到每个 Agent 的配置文件，并配置保存保护，以便会话自动持久化。
 
-## Why Does This Matter?
+## 为什么这很重要？
 
-Here's the problem ContextDB solves:
+以下是 ContextDB 解决的问题：
 
 ```
-Day 1: You work on a feature with your agent. Great progress.
-Day 2: You open the terminal again. Your agent has NO IDEA what happened yesterday.
-       You have to explain everything from scratch. Again.
+第 1 天：你和 Agent 一起开发一个功能。进展顺利。
+第 2 天：你再次打开终端。你的 Agent 完全不知道昨天发生了什么。
+         你不得不从头解释一切。再来一次。
 ```
 
-ContextDB fixes this. When you start your agent in a project with ContextDB enabled, it automatically loads context from previous sessions.
+ContextDB 解决了这个问题。当你在启用 ContextDB 的项目中启动 Agent 时，它会自动从之前的会话加载上下文。
 
-## How It Works (The Simple Version)
+## 工作原理（简单版）
 
-Think of ContextDB like a **lab notebook** for your agent:
+把 ContextDB 想象成 Agent 的**实验记录本**：
 
-1. **Events** — Every time you or the agent does something, it's recorded
-2. **Checkpoints** — At important moments, a summary is saved
-3. **Context packs** — When a new session starts, all relevant history is bundled up and given to the agent
+1. **事件** — 每次你或 Agent 做什么，都会被记录
+2. **检查点** — 在重要时刻，保存一份摘要
+3. **上下文包** — 当新会话启动时，所有相关历史被打包并提供给 Agent
 
 ```
 ┌─────────────────────────────────────────┐
-│  Your Project                           │
+│  你的项目                               │
 │  ├── .contextdb-enable                  │
 │  └── .aios/context-db/                  │
-│      ├── sessions/                      │  ← Recorded events
-│      ├── index/                         │  ← Search index
-│      └── exports/                       │  ← Context packs
+│      ├── sessions/                      │  ← 记录的事件
+│      ├── index/                         │  ← 搜索索引
+│      └── exports/                       │  ← 上下文包
 └─────────────────────────────────────────┘
 ```
 
-All of this lives in your project folder. Nothing is sent anywhere.
+所有内容都保存在你的项目文件夹中。不会发送到任何地方。
 
-## Getting Started
+## 快速开始
 
-### Enable Memory For A Project
+### 为项目启用记忆
 
 ```bash
 cd /path/to/your/project
@@ -103,43 +103,43 @@ touch .contextdb-enable
 codex
 ```
 
-That's it. From now on, every session in this project is recorded.
+就这样。从现在起，这个项目中的每个会话都会被记录。
 
-### What Gets Remembered?
+### 会记住什么？
 
-| Type | Example |
+| 类型 | 示例 |
 |---|---|
-| Prompts you sent | "Refactor the auth module" |
-| Code the agent wrote | Files created or modified |
-| Errors encountered | Stack traces, failed builds |
-| Decisions made | "Use Redis for caching instead of Memcached" |
-| What's left to do | "Still need to write integration tests" |
+| 你发送的提示 | "重构认证模块" |
+| Agent 写的代码 | 创建或修改的文件 |
+| 遇到的错误 | 堆栈跟踪、构建失败 |
+| 作出的决策 | "使用 Redis 进行缓存而不是 Memcached" |
+| 剩余待办事项 | "仍需编写集成测试" |
 
-### How Sessions Work
+### 会话如何工作
 
-Each time you start your agent, ContextDB creates a new **session**. Sessions are linked together so the agent can see the full history.
+每次启动 Agent 时，ContextDB 都会创建一个新的**会话**。会话相互链接，以便 Agent 能够看到完整的历史。
 
-Session IDs look like: `claude-code-20260419T095454-e6eb600d` (agent name + timestamp + random ID).
+会话 ID 格式：`claude-code-20260419T095454-e6eb600d`（Agent 名称 + 时间戳 + 随机 ID）。
 
-## Memory With Memo
+## 使用 Memo 记忆
 
-ContextDB is automatic, but sometimes you want to **manually** save important notes. That's what Memo is for.
-Project memos now use Git-friendly canonical storage under `memory/memo/`: `file` is the default append-only JSONL backend, while `split` stores one JSON file per memo event. ContextDB mirrors are kept only for compatibility/cache.
+ContextDB 是自动的，但有时你想**手动**保存重要笔记。这就是 Memo 的用途。
+项目备忘录现在使用 Git 友好的规范存储在 `memory/memo/` 下：`file` 是默认的追加式 JSONL 后端，而 `split` 每个备忘录事件存储一个 JSON 文件。ContextDB 镜像仅用于兼容性/缓存。
 
-### Quick Memo Commands
+### 快速 Memo 命令
 
 ```bash
-# Save a note about this project
-aios memo add "This project uses strict TypeScript — no any types"
+# 保存关于这个项目的笔记
+aios memo add "此项目使用严格的 TypeScript — 禁止 any 类型"
 
-# Pin something important (always visible)
-aios memo pin add "Never push directly to main branch"
+# 固定重要内容（始终可见）
+aios memo pin add "永远不要直接推送到 main 分支"
 
-# Search your notes
+# 搜索你的笔记
 aios memo search "typescript"
 aios memo search "testing"
 
-# Check or switch the storage implementation
+# 检查或切换存储实现
 aios memo storage status
 aios memo storage use split
 aios memo storage use file
@@ -147,55 +147,55 @@ aios memo storage rebuild
 aios memo storage doctor
 ```
 
-`aios memo storage rebuild` is a full rebuild of derived query files only; it does not rewrite canonical memo records.
+`aios memo storage rebuild` 是仅重建派生查询文件的完整重建；它不会重写规范备忘录记录。
 
-### Recall Across Sessions
+### 跨会话回忆
 
 ```bash
-# Find notes from past sessions about a topic
-aios memo recall "database migration" --limit 5
+# 从过去的会话中查找关于某个主题的笔记
+aios memo recall "数据库迁移" --limit 5
 ```
 
-### Persona: Set Your Agent's Style
+### Persona：设置 Agent 的风格
 
-Want your agent to always respond in a certain way? Set a persona:
+希望你的 Agent 始终以某种方式回应？设置一个 persona：
 
 ```bash
 aios memo persona init
-aios memo persona add "Response style: concise, direct, evidence-first"
-aios memo persona add "Always explain WHY, not just WHAT"
+aios memo persona add "回复风格：简洁、直接、证据优先"
+aios memo persona add "总是解释 WHY，而不只是 WHAT"
 ```
 
-### User Profile: Set Your Preferences
+### 用户个人资料：设置你的偏好
 
-Tell the agent about yourself:
+告诉 Agent 关于你自己的信息：
 
 ```bash
 aios memo user init
-aios memo user add "Preferred language: zh-CN + technical English terms"
-aios memo user add "I'm a senior engineer — skip beginner explanations"
+aios memo user add "首选语言：zh-CN + 技术英语术语"
+aios memo user add "我是一名高级工程师 — 跳过入门解释"
 ```
 
-Persona and user profile are **global** — they apply to all your projects.
+Persona 和用户个人资料是**全局的** — 它们适用于你所有项目。
 
-## Searching Your History
+## 搜索你的历史
 
-ContextDB builds a search index so you (and your agent) can find past work:
+ContextDB 构建一个搜索索引，以便你（和你的 Agent）能够找到过去的工作：
 
 ```bash
-# Search for past events
-npm run contextdb -- search --query "auth bug" --project my-app
+# 搜索过去的事件
+npm run contextdb -- search --query "认证 bug" --project my-app
 
-# View a timeline of what happened
+# 查看发生了什么的时间线
 npm run contextdb -- timeline --session <session-id> --limit 30
 ```
 
-The search uses SQLite under the hood with full-text search (FTS5 + BM25 ranking).
+搜索在底层使用 SQLite 进行全文搜索（FTS5 + BM25 排名）。
 
-### Incremental Sync + refs Normalization
+### 增量同步 + refs 规范化
 
-ContextDB maintains a normalized `event_refs` table in the SQLite sidecar.  
-`--refs` filtering now uses normalized refs exact matching to reduce false positives from substring matching.
+ContextDB 在 SQLite sidecar 中维护一个规范化的 `event_refs` 表。  
+`--refs` 过滤现在使用规范化 refs 精确匹配来减少来自子字符串匹配的误报。
 
 ```bash
 npm run contextdb -- index:sync --stats
@@ -203,13 +203,13 @@ npm run contextdb -- index:sync --force --stats
 npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
 ```
 
-- `--stats`: Outputs `scanned/upserted` counts for sessions/events/checkpoints, elapsed time, throttle skip, and force flag.
-- `--jsonl-out`: Appends one JSON record per execution (with timestamp) for trend analysis.
-- Only use `index:rebuild` when the sidecar is missing/corrupted or a full schema rebuild is needed.
+- `--stats`：输出 sessions/events/checkpoints 的 scanned/upserted 计数、耗时、节流跳过和强制标志。
+- `--jsonl-out`：每次执行追加一条 JSON 记录（带时间戳）用于趋势分析。
+- 仅当 sidecar 丢失/损坏或需要完整模式重建时才使用 `index:rebuild`。
 
-### refs Query Performance Benchmark
+### refs 查询性能基准
 
-Use the built-in script to monitor refs query latency and run regression gates:
+使用内置脚本监控 refs 查询延迟并运行回归门控：
 
 ```bash
 cd mcp-server
@@ -218,29 +218,29 @@ npm run bench:contextdb:refs:ci
 npm run bench:contextdb:refs:gate
 ```
 
-### Optional Semantic Search
+### 可选的语义搜索
 
-Semantic mode is optional; it automatically falls back to lexical search when unavailable.
+语义模式是可选的；当不可用时，它会自动回退到词汇搜索。
 
 ```bash
 export CONTEXTDB_SEMANTIC=1
 export CONTEXTDB_SEMANTIC_PROVIDER=token
-npm run contextdb -- search --query "issue auth" --project demo --semantic
+npm run contextdb -- search --query "问题 认证" --project demo --semantic
 ```
 
-## Token Compression (Keeping Context Small)
+## Token 压缩（保持上下文精简）
 
-The more history you have, the bigger the context pack gets. Token compression keeps it manageable.
+你的历史越多，上下文包就越大。Token 压缩使其可控。
 
-### Why It Matters
+### 为什么重要
 
-AI models have a **context window limit**. If your project history is too long, it won't fit. Token compression:
+AI 模型有**上下文窗口限制**。如果你的项目历史太长，它将无法容纳。Token 压缩：
 
-1. Keeps the most important information (recent work, errors, decisions)
-2. Compresses or removes less important stuff (repeated logs, verbose output)
-3. Fits everything within a budget you control
+1. 保留最重要的信息（最近的工作、错误、决策）
+2. 压缩或删除不太重要的内容（重复的日志、冗长的输出）
+3. 将所有内容压缩到你控制的预算范围内
 
-### How To Use It
+### 如何使用
 
 ```bash
 npm run contextdb -- context:pack \
@@ -250,97 +250,97 @@ npm run contextdb -- context:pack \
   --token-strategy balanced
 ```
 
-### Strategies
+### 策略
 
-| Strategy | When to use |
+| 策略 | 何时使用 |
 |---|---|
-| `balanced` | Default. Keeps recent + important, compresses the rest |
-| `aggressive` | Very small budgets. Maximizes compression |
-| `legacy` | Old behavior. Only keeps the tail end |
+| `balanced` | 默认。保留最近 + 重要的，压缩其余 |
+| `aggressive` | 非常小的预算。最大压缩 |
+| `legacy` | 旧行为。只保留末尾 |
 
-## Lazy Load (Fast Startup)
+## 延迟加载（快速启动）
 
-The Context Registry already makes startup near-instant by default (~350 byte injection). For sessions that need full context, lazy loading further optimizes:
+上下文注册表已经默认使启动接近瞬时（~350 字节注入）。对于需要完整上下文的会话，延迟加载进一步优化：
 
-- On startup: only the registry pointer is injected
-- The agent reads the registry and loads what it needs on demand
-- A background process rebuilds the full context pack when needed
+- 启动时：只注入注册表指针
+- Agent 读取注册表并按需加载所需内容
+- 后台进程在需要时重建完整上下文包
 
-Lazy load is **on by default** for interactive sessions. To force full context loading:
+延迟加载在交互式会话中默认**开启**。要强制完整上下文加载：
 
 ```bash
-export CTXDB_LAZY_LOAD=0  # Load everything on startup (slower but complete)
+export CTXDB_LAZY_LOAD=0  # 启动时加载所有内容（较慢但完整）
 ```
 
-When `aios init` has been run, slim mode is used automatically — the agent manages its own context via the registry. For unwrapped agents or legacy setups, full injection is preserved as fallback.
+当 `aios init` 已运行时，自动使用 slim 模式 — Agent 通过注册表管理自己的上下文。对于未包装的 Agent 或旧版设置，保留完整注入作为后备。
 
-## Route Shortcuts
+## 路由快捷方式
 
-When you're inside a running agent, you can choose how to handle a task:
+当你在运行中的 Agent 内部时，你可以选择如何处理任务：
 
-| Shortcut | Meaning |
+| 快捷方式 | 含义 |
 |---|---|
-| `/single <task>` | Handle in the current agent (default) |
-| `/subagent <task>` | Staged orchestration with verification |
-| `/team <task>` | Split across multiple agents |
-| `/harness <task>` | Long-running overnight job |
+| `/single <任务>` | 在当前 Agent 中处理（默认） |
+| `/subagent <任务>` | 分阶段编排与验证 |
+| `/team <任务>` | 分发给多个 Agent |
+| `/harness <任务>` | 长时间通宵运行 |
 
-These are installed automatically during setup. If they're missing:
+这些在设置期间自动安装。如果它们丢失了：
 
 ```bash
 aios doctor --native --fix
 ```
 
-## Advanced: Manual Commands
+## 高级：手动命令
 
-## Advanced: Configuration
+## 高级：配置
 
-| Variable | What it does | Default |
+| 变量 | 作用 | 默认值 |
 |---|---|---|
-| `CTXDB_PACK_STRICT` | Fail if context pack can't be built | `0` (warn and continue) |
-| `CTXDB_LAZY_LOAD` | Enable fast startup with lazy loading | `1` (on) |
-| `CTXDB_INTERACTIVE_AUTO_ROUTE` | Show route shortcuts on startup | `1` (on) |
-| `CTXDB_HARNESS_PROVIDER` | Default agent for harness runs | `codex` |
-| `CTXDB_HARNESS_MAX_ITERATIONS` | Max loops for harness runs | `8` |
-| `AIOS_IDENTITY_HOME` | Directory for persona/user files | `~/.aios` |
-| `AIOS_PERSONA_MAX_CHARS` | Max size for persona file | `2400` |
+| `CTXDB_PACK_STRICT` | 如果无法构建上下文包则失败 | `0`（警告并继续） |
+| `CTXDB_LAZY_LOAD` | 启用快速启动与延迟加载 | `1`（开启） |
+| `CTXDB_INTERACTIVE_AUTO_ROUTE` | 启动时显示路由快捷方式 | `1`（开启） |
+| `CTXDB_HARNESS_PROVIDER` | harness 运行的默认 Agent | `codex` |
+| `CTXDB_HARNESS_MAX_ITERATIONS` | harness 运行的最大循环次数 | `8` |
+| `AIOS_IDENTITY_HOME` | persona/user 文件的目录 | `~/.aios` |
+| `AIOS_PERSONA_MAX_CHARS` | persona 文件的最大大小 | `2400` |
 
-## Common Questions
+## 常见问题
 
-### Is ContextDB a cloud database?
+### ContextDB 是云数据库吗？
 
-No. It's just files in your project's `.aios/context-db/` folder. Nothing leaves your machine.
+不是。它只是你项目 `.aios/context-db/` 文件夹中的文件。没有任何内容离开你的机器。
 
-### Why does context disappear after `/new` or `/clear`?
+### 为什么在 `/new` 或 `/clear` 后上下文会消失？
 
-Those commands reset the **in-terminal conversation**, but ContextDB is still on disk. To get context back:
+这些命令重置的是**终端内对话**，但 ContextDB 仍在磁盘上。要恢复上下文：
 
-1. Exit the agent and restart it — the wrapper reloads context automatically
-2. Or ask the agent to read the latest snapshot: `@.aios/context-db/exports/latest-*-context.md`
+1. 退出 Agent 并重新启动 — 包装器自动重新加载上下文
+2. 或者让 Agent 读取最新的快照：`@.aios/context-db/exports/latest-*-context.md`
 
-### Do different agents share the same memory?
+### 不同的 Agent 会共享相同的记忆吗？
 
-Yes. If you run `codex` and then `claude` in the same project, they read and write the same ContextDB. Claude will know what Codex did.
+是的。如果你在同一个项目中先运行 `codex` 然后运行 `claude`，它们读写相同的 ContextDB。Claude 会知道 Codex 之前做了什么。
 
-### Can I turn it off?
+### 我可以关闭它吗？
 
-Yes. Just delete `.contextdb-enable` from the project root. Existing data stays on disk but new sessions won't be recorded.
+可以。只需从项目根目录删除 `.contextdb-enable`。现有数据保留在磁盘上，但新会话不会被记录。
 
-### What's the `.aios/context-db/` folder?
+### `.aios/context-db/` 文件夹是什么？
 
 ```
 .aios/context-db/
-  sessions/          # Session files (the source of truth)
-  index/             # SQLite search index (auto-rebuilt)
-  exports/           # Context packs for agents to read
+  sessions/          # 会话文件（信息来源）
+  index/             # SQLite 搜索索引（自动重建）
+  exports/           # Agent 读取的上下文包
 ```
 
-You can safely delete `index/` — it's rebuilt automatically. Don't delete `sessions/` unless you want to erase history.
+你可以安全地删除 `index/` — 它会自动重建。除非你想擦除历史，否则不要删除 `sessions/`。
 
-## Where To Go Next
+## 下一步去哪里
 
-- [Quick Start](getting-started.md) — if you haven't set up yet
-- [Agent Team](team-ops.md) — when one agent isn't enough
-- [Solo Harness](solo-harness.md) — let agents work overnight
-- [Token Compression](token-compression.md) — deep dive into keeping context small
-- [Troubleshooting](troubleshooting.md) — fix common ContextDB issues
+- [快速开始](getting-started.md) — 如果你还没有设置
+- [多 Agent 实战](team-ops.md) — 当一个 Agent 不够时
+- [单 Agent 夜跑](solo-harness.md) — 让 Agent 通宵工作
+- [自研 Token 压缩](token-compression.md) — 深入了解如何保持上下文精简
+- [故障排查](troubleshooting.md) — 修复常见 ContextDB 问题

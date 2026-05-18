@@ -3,7 +3,7 @@ title: Superpowers
 description: 让 CLI 更智能的可复用自动化技能，按使用场景分类整理。
 ---
 
-# Superpowers
+# Superpowers 超能力
 
 Superpowers 是可复用的技能，用于自动化常见工作流。它们接入 Claude Code、Codex、Gemini CLI 和 OpenCode 来自动处理重复任务。
 
@@ -11,11 +11,11 @@ Superpowers 是可复用的技能，用于自动化常见工作流。它们接�
 
 ---
 
-## The Skills
-## How To Use Skills
-## Which Skill Should I Use?
-## RL Training System
-## Where To Go Next
+## 技能总览
+## 如何使用技能
+## 我应该使用哪个技能？
+## 强化学习训练系统
+## 下一步去哪里
 
 - [官方案例库](case-library.md) - 真实使用示例
 - [ContextDB](contextdb.md) - 记忆如何跨会话持久化
