@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.18.3] - 2026-05-19
+
+- fix: align mcp-server Node runtime pin
+
 ## [1.18.2] - 2026-05-19
 
 - fix: run GitHub workflows on Node 24
