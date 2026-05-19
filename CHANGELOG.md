@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.18.1] - 2026-05-19
+
+- fix: align Node 24 install guidance for node:sqlite
+
 ## [1.18.0] - 2026-05-17
 
 - feat(offload): add canvas backfill and Claude hook

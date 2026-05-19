@@ -13,7 +13,7 @@ description: Install RexCLI, set it up, and run your first agent with memory —
 
 在开始之前，请确保你拥有：
 
-- **Node.js 22**（LTS 版本）— [在此下载](https://nodejs.org/) 或使用 `nvm install 22`
+- **Node.js 24**（必需的 LTS 基线）— [在此下载](https://nodejs.org/) 或使用 `nvm install 24`
 - **一个编码 CLI** — 至少其中之一：`codex`、`claude`、`gemini` 或 `opencode`
 - **一个项目文件夹** — 任何你想让 Agent 拥有记忆的代码项目
 
@@ -25,8 +25,8 @@ node -v  # 应该显示 v22.x.x
 
 ??? note "需要安装或切换 Node？"
     ```bash
-    nvm install 22
-    nvm use 22
+    nvm install 24
+    nvm use 24
     ```
 
 ## 步骤 1：安装 RexCLI

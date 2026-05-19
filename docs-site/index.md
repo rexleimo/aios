@@ -92,7 +92,7 @@ aios team status --provider codex --watch
 ## Requirements
 
 - Git
-- Node.js 22 LTS + npm
+- Node.js 24 LTS + npm
 - Windows: PowerShell 5.x or 7
 
 ## Development

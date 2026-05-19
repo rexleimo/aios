@@ -101,7 +101,7 @@ After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual
 ## Requirements
 
 - Git
-- Node.js 22 LTS + npm
+- Node.js 24 LTS + npm
 - Windows: PowerShell 5.x or 7
 
 ## Development

@@ -96,7 +96,7 @@ description: 版本历史、升级说明与文档变更入口。
   - skill 选择器改为 catalog 驱动，区分核心默认项与按需业务项；卸载时只显示已安装技能
   - TUI skill picker 新增 `Core` / `Optional` 分组，并对长描述做终端友好截断
   - `doctor` 会提示同名 skill 的 `project` 安装覆盖 `global` 安装
-  - Node 运行时口径统一到 22 LTS
+  - Node 运行时口径统一到 24 LTS
   - **Ink TUI 重构**（v1.1.0）：基于 TypeScript + Ink 的全屏 TUI，采用 React 组件；启动横幅显示 REXCLI ASCII art；自适应 watch 间隔；左右选项循环
 - `0.17.0`（2026-03-17）：
   - TUI 卸载选择器在小终端中可滚动，`-Select all` / `Clear all` / `Done` 按钮固定在底部

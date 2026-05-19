@@ -13,20 +13,20 @@ Sounds good? Let's go.
 
 Before we start, make sure you have:
 
-- **Node.js 22** (the LTS version) — [download it here](https://nodejs.org/) or use `nvm install 22`
+- **Node.js 24** (the required LTS baseline) — [download it here](https://nodejs.org/) or use `nvm install 24`
 - **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, or `opencode`
 - **A project folder** — any code project where you want your agent to have memory
 
 Check your Node version:
 
 ```bash
-node -v  # Should show v22.x.x
+node -v  # Should show v24.x.x
 ```
 
 ??? note "Need to install or switch Node?"
     ```bash
-    nvm install 22
-    nvm use 22
+    nvm install 24
+    nvm use 24
     ```
 
 ## Step 1: Install RexCLI

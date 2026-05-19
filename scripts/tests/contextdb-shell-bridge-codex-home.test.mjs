@@ -260,6 +260,7 @@ test('bridge discovers runner from AIOS_ROOT alias', async () => {
     pathPrefix: fakeBin,
     args: ['hello'],
     env: {
+      AIOS_ROOT_DIR: '',
       AIOS_ROOT: installRoot,
       CTXDB_WRAP_MODE: 'all',
     },

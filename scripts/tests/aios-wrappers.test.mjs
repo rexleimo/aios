@@ -12,7 +12,7 @@ async function createFakeNode(tempDir, captureFile) {
   const script = `#!/usr/bin/env bash
 set -euo pipefail
 if [[ "\${1:-}" == "-p" ]]; then
-  printf '22\n'
+  printf '24\n'
   exit 0
 fi
 printf '%s\n' "$@" > "$AIOS_CAPTURE_FILE"

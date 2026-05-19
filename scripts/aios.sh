@@ -2,13 +2,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NODE_MIN_MAJOR=22
+NODE_REQUIRED_MAJOR="$(tr -d '[:space:]' < "$SCRIPT_DIR/../.nvmrc" | sed 's/^v//')"
 
 print_node_help() {
   cat <<'EOF' >&2
 AIOS now uses Node.js as the unified lifecycle runtime.
 
-Install Node.js 22 LTS, then rerun this command.
+Install Node.js 24 LTS, then rerun this command.
 
 macOS:
   brew install node
@@ -41,7 +41,7 @@ if ! command -v node >/dev/null 2>&1; then
     shift
     install_node
   elif [[ -t 0 && -t 1 ]]; then
-    printf 'Node.js 22+ is required. Install now? [y/N] ' >&2
+    printf 'Node.js %s.x is required. Install now? [y/N] ' "$NODE_REQUIRED_MAJOR" >&2
     read -r answer
     if [[ "$answer" =~ ^[Yy]$ ]]; then
       install_node
@@ -56,8 +56,8 @@ if ! command -v node >/dev/null 2>&1; then
 fi
 
 node_major="$(node -p "process.versions.node.split('.')[0]")"
-if [[ "$node_major" -lt "$NODE_MIN_MAJOR" ]]; then
-  echo "[err] Node.js $NODE_MIN_MAJOR+ is required (found $(node -v))." >&2
+if [[ "$node_major" != "$NODE_REQUIRED_MAJOR" ]]; then
+  echo "[err] Node.js $NODE_REQUIRED_MAJOR.x is required (found $(node -v))." >&2
   print_node_help
   exit 1
 fi

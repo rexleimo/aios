@@ -101,7 +101,7 @@ aios team status --provider codex --watch
 ## 环境要求
 
 - Git
-- Node.js 22 LTS + npm
+- Node.js 24 LTS + npm
 - Windows: PowerShell 5.x 或 7
 
 ## 开发
