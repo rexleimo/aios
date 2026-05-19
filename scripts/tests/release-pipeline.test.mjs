@@ -94,36 +94,36 @@ test('package-release.sh emits stable assets that include native, skill, and age
 
   assertOk(result);
 
-  for (const fileName of ['aios-install.sh', 'aios-install.ps1', 'rex-cli.tar.gz', 'rex-cli.zip']) {
+  for (const fileName of ['aios-install.sh', 'aios-install.ps1', 'harness-cli.tar.gz', 'harness-cli.zip']) {
     const filePath = path.join(outDir, fileName);
     assertOk(run('test', ['-f', filePath]), `${fileName} was not produced`);
   }
 
   const extractDir = await makeTemp('rex-release-assets-extract-');
-  assertOk(run('tar', ['-xzf', path.join(outDir, 'rex-cli.tar.gz'), '-C', extractDir]));
+  assertOk(run('tar', ['-xzf', path.join(outDir, 'harness-cli.tar.gz'), '-C', extractDir]));
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'skill-sources', 'sample-skill', 'SKILL.md')]),
-    'rex-cli.tar.gz did not include skill-sources/sample-skill/SKILL.md'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'skill-sources', 'sample-skill', 'SKILL.md')]),
+    'harness-cli.tar.gz did not include skill-sources/sample-skill/SKILL.md'
   );
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'agent-sources', 'manifest.json')]),
-    'rex-cli.tar.gz did not include agent-sources/manifest.json'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'agent-sources', 'manifest.json')]),
+    'harness-cli.tar.gz did not include agent-sources/manifest.json'
   );
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json')]),
-    'rex-cli.tar.gz did not include bundled runtime specs'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json')]),
+    'harness-cli.tar.gz did not include bundled runtime specs'
   );
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md')]),
-    'rex-cli.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md')]),
+    'harness-cli.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
   );
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'package.json')]),
-    'rex-cli.tar.gz did not include root package.json for direct release installs'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'package.json')]),
+    'harness-cli.tar.gz did not include root package.json for direct release installs'
   );
   assertOk(
-    run('test', ['-f', path.join(extractDir, 'rex-cli', 'package-lock.json')]),
-    'rex-cli.tar.gz did not include root package-lock.json for direct release installs'
+    run('test', ['-f', path.join(extractDir, 'harness-cli', 'package-lock.json')]),
+    'harness-cli.tar.gz did not include root package-lock.json for direct release installs'
   );
 });
 

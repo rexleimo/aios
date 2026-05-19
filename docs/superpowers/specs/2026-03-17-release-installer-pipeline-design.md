@@ -136,8 +136,8 @@ Each official GitHub Release must upload:
 
 - `aios-install.sh`
 - `aios-install.ps1`
-- `rex-cli.tar.gz`
-- `rex-cli.zip`
+- `harness-cli.tar.gz`
+- `harness-cli.zip`
 
 These assets are the contract behind the documented stable install commands.
 
@@ -273,13 +273,13 @@ If any one of these differs, the workflow must fail before publishing assets.
 3. Confirm these version-specific URLs for the new tag download successfully:
    - `.../releases/download/vX.Y.Z/aios-install.sh`
    - `.../releases/download/vX.Y.Z/aios-install.ps1`
-   - `.../releases/download/vX.Y.Z/rex-cli.tar.gz`
-   - `.../releases/download/vX.Y.Z/rex-cli.zip`
+   - `.../releases/download/vX.Y.Z/harness-cli.tar.gz`
+   - `.../releases/download/vX.Y.Z/harness-cli.zip`
 4. Confirm these `latest` URLs download successfully:
    - `.../releases/latest/download/aios-install.sh`
    - `.../releases/latest/download/aios-install.ps1`
-   - `.../releases/latest/download/rex-cli.tar.gz`
-   - `.../releases/latest/download/rex-cli.zip`
+   - `.../releases/latest/download/harness-cli.tar.gz`
+   - `.../releases/latest/download/harness-cli.zip`
 5. Run the stable one-liner install on at least one Unix shell environment.
 6. Verify the installed CLI reports `X.Y.Z`, so the published installer is not silently serving the wrong payload.
 

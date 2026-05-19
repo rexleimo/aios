@@ -39,7 +39,7 @@ case "$AIOS_WRAP_MODE" in
     ;;
 esac
 
-asset_url="https://github.com/${AIOS_REPO}/releases/latest/download/rex-cli.tar.gz"
+asset_url="https://github.com/${AIOS_REPO}/releases/latest/download/harness-cli.tar.gz"
 
 require_cmd() {
   local cmd="$1"
@@ -92,7 +92,7 @@ parent_dir="$(dirname "$AIOS_INSTALL_DIR")"
 mkdir -p "$parent_dir"
 
 tmp_dir="$(mktemp -d)"
-archive_path="$tmp_dir/rex-cli.tar.gz"
+archive_path="$tmp_dir/harness-cli.tar.gz"
 extract_dir="$tmp_dir/extract"
 preserve_dir="$tmp_dir/preserve"
 
@@ -115,8 +115,8 @@ mkdir -p "$extract_dir"
 echo "+ extract -> $extract_dir"
 tar -xzf "$archive_path" -C "$extract_dir"
 
-if [[ ! -d "$extract_dir/rex-cli" ]]; then
-  echo "Archive layout unexpected: missing rex-cli/ folder" >&2
+if [[ ! -d "$extract_dir/harness-cli" ]]; then
+  echo "Archive layout unexpected: missing harness-cli/ folder" >&2
   exit 1
 fi
 
@@ -137,7 +137,7 @@ if [[ -d "$AIOS_INSTALL_DIR" ]]; then
 fi
 
 echo "+ install -> $AIOS_INSTALL_DIR"
-mv "$extract_dir/rex-cli" "$AIOS_INSTALL_DIR"
+mv "$extract_dir/harness-cli" "$AIOS_INSTALL_DIR"
 
 for rel in "${preserve_paths[@]}"; do
   src="$preserve_dir/$rel"

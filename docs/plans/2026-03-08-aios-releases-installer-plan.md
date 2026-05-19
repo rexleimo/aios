@@ -4,7 +4,7 @@
 
 **Goal:** Ship GitHub Releases artifacts + stable one-liner installers that install to `~/.rexcil/rex-cli`, and update docs so `aios` is the single interactive entry.
 
-**Architecture:** Build a deterministic release bundle (`rex-cli.tar.gz`, `rex-cli.zip`) that excludes user state (profiles/context-db), publish via a tag-triggered workflow, and provide two tiny installer scripts (`aios-install.sh` / `aios-install.ps1`) that fetch `releases/latest` and run shell integration so `aios` opens the TUI by default.
+**Architecture:** Build a deterministic release bundle (`harness-cli.tar.gz`, `harness-cli.zip`) that excludes user state (profiles/context-db), publish via a tag-triggered workflow, and provide two tiny installer scripts (`aios-install.sh` / `aios-install.ps1`) that fetch `releases/latest` and run shell integration so `aios` opens the TUI by default.
 
 **Tech Stack:** Bash, PowerShell, GitHub Actions, existing AIOS install/update scripts.
 
@@ -19,8 +19,8 @@
 **Step 1: Define deterministic output names**
 - Output directory (default): `dist/release/`
 - Files:
-  - `dist/release/rex-cli.tar.gz` (macOS/Linux)
-  - `dist/release/rex-cli.zip` (Windows)
+  - `dist/release/harness-cli.tar.gz` (macOS/Linux)
+  - `dist/release/harness-cli.zip` (Windows)
   - `dist/release/aios-install.sh`
   - `dist/release/aios-install.ps1`
 
@@ -37,8 +37,8 @@
   - `site/` (built docs)
 
 **Step 3: Produce archives**
-- `tar -czf rex-cli.tar.gz rex-cli`
-- `zip -r rex-cli.zip rex-cli`
+- `tar -czf harness-cli.tar.gz harness-cli`
+- `zip -r harness-cli.zip harness-cli`
 
 **Step 4: Smoke run locally**
 Run:
@@ -60,8 +60,8 @@ Expected: all 4 files exist.
 - Repo: `rexleimo/rex-cli` (override via env `AIOS_REPO`)
 - Install dir: `~/.rexcil/rex-cli` (override via env `AIOS_INSTALL_DIR`)
 - Download URLs:
-  - `https://github.com/$AIOS_REPO/releases/latest/download/rex-cli.tar.gz`
-  - `https://github.com/$AIOS_REPO/releases/latest/download/rex-cli.zip`
+  - `https://github.com/$AIOS_REPO/releases/latest/download/harness-cli.tar.gz`
+  - `https://github.com/$AIOS_REPO/releases/latest/download/harness-cli.zip`
 
 **Step 2: Preserve user state on upgrade**
 Preserve if present:
@@ -124,7 +124,7 @@ After extracting:
 
 **Step 1: Add A/B/C install routes**
 - A) `git clone` to `~/.rexcil/rex-cli`
-- B) Download from Releases (`rex-cli.tar.gz` / `rex-cli.zip`)
+- B) Download from Releases (`harness-cli.tar.gz` / `harness-cli.zip`)
 - C) One-liner installers (`aios-install.sh` / `aios-install.ps1`, recommended)
 
 **Step 2: Promote the unified entry**

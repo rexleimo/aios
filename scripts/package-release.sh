@@ -12,8 +12,8 @@ Usage:
   scripts/package-release.sh [--out <dir>]
 
 Outputs:
-  - rex-cli.tar.gz      (macOS/Linux)
-  - rex-cli.zip         (Windows)
+  - harness-cli.tar.gz      (macOS/Linux)
+  - harness-cli.zip         (Windows)
   - aios-install.sh     (one-liner installer, bash/zsh)
   - aios-install.ps1    (one-liner installer, PowerShell)
 USAGE
@@ -74,7 +74,7 @@ cp "$install_sh" "$OUT_DIR/aios-install.sh"
 cp "$install_ps1" "$OUT_DIR/aios-install.ps1"
 chmod +x "$OUT_DIR/aios-install.sh" || true
 
-echo "+ tar -> $OUT_DIR/rex-cli.tar.gz"
+echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
 paths=(
   "AGENTS.md"
   "CHANGELOG.md"
@@ -97,10 +97,10 @@ paths=(
   ".agents/skills"
 )
 
-git -C "$ROOT_DIR" archive --format=tar --prefix="rex-cli/" HEAD "${paths[@]}" | gzip -9 > "$OUT_DIR/rex-cli.tar.gz"
+git -C "$ROOT_DIR" archive --format=tar --prefix="harness-cli/" HEAD "${paths[@]}" | gzip -9 > "$OUT_DIR/harness-cli.tar.gz"
 
-echo "+ zip -> $OUT_DIR/rex-cli.zip"
-git -C "$ROOT_DIR" archive --format=zip --prefix="rex-cli/" -o "$OUT_DIR/rex-cli.zip" HEAD "${paths[@]}"
+echo "+ zip -> $OUT_DIR/harness-cli.zip"
+git -C "$ROOT_DIR" archive --format=zip --prefix="harness-cli/" -o "$OUT_DIR/harness-cli.zip" HEAD "${paths[@]}"
 
 echo ""
 echo "Done. Assets:"

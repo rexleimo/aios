@@ -31,7 +31,7 @@ function Test-FirstSetupDisabled([string]$Value) {
   return @("0", "false", "off", "no") -contains $Value.ToLowerInvariant()
 }
 
-$assetUrl = "https://github.com/$Repo/releases/latest/download/rex-cli.zip"
+$assetUrl = "https://github.com/$Repo/releases/latest/download/harness-cli.zip"
 
 $parent = Split-Path -Parent $InstallDir
 New-Item -Path $parent -ItemType Directory -Force | Out-Null
@@ -40,7 +40,7 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("aios-install-" + [guid]::Ne
 New-Item -Path $tmp -ItemType Directory -Force | Out-Null
 
 try {
-  $zipPath = Join-Path $tmp "rex-cli.zip"
+  $zipPath = Join-Path $tmp "harness-cli.zip"
   $extract = Join-Path $tmp "extract"
   $preserve = Join-Path $tmp "preserve"
 
@@ -49,9 +49,9 @@ try {
   Write-Host "+ extract -> $extract"
   Expand-Archive -LiteralPath $zipPath -DestinationPath $extract -Force
 
-  $extractedRoot = Join-Path $extract "rex-cli"
+  $extractedRoot = Join-Path $extract "harness-cli"
   if (-not (Test-Path -LiteralPath $extractedRoot)) {
-    throw "Archive layout unexpected: missing rex-cli/ folder"
+    throw "Archive layout unexpected: missing harness-cli/ folder"
   }
 
   if (Test-Path -LiteralPath $InstallDir) {

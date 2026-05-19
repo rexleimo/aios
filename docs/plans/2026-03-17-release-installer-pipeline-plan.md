@@ -30,7 +30,7 @@
 
 - [ ] **Step 1: Remove unrestricted stable publishing from `workflow_dispatch`, or gate it behind an explicit semver tag input resolved to that exact tag**
 - [ ] **Step 2: Add workflow preflight checks that fail if tag name, `VERSION`, and changelog release heading do not match**
-- [ ] **Step 3: Ensure release packaging always uploads `aios-install.sh`, `aios-install.ps1`, `rex-cli.tar.gz`, and `rex-cli.zip`**
+- [ ] **Step 3: Ensure release packaging always uploads `aios-install.sh`, `aios-install.ps1`, `harness-cli.tar.gz`, and `harness-cli.zip`**
 - [ ] **Step 4: Re-run focused release pipeline tests and local packaging verification**
 
 ### Task 3: Add a maintainer release helper flow

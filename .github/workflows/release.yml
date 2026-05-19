@@ -57,7 +57,7 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            dist/release/rex-cli.tar.gz
-            dist/release/rex-cli.zip
+            dist/release/harness-cli.tar.gz
+            dist/release/harness-cli.zip
             dist/release/aios-install.sh
             dist/release/aios-install.ps1

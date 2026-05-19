@@ -52,24 +52,24 @@ try {
   Copy-Item -LiteralPath $installSh -Destination (Join-Path $Out "aios-install.sh") -Force
   Copy-Item -LiteralPath $installPs1 -Destination (Join-Path $Out "aios-install.ps1") -Force
 
-  $tarGz = Join-Path $Out "rex-cli.tar.gz"
-  $zip = Join-Path $Out "rex-cli.zip"
+  $tarGz = Join-Path $Out "harness-cli.tar.gz"
+  $zip = Join-Path $Out "harness-cli.zip"
 
   $tarPath = Join-Path $tmp "rex-cli.tar"
   $extractDir = Join-Path $tmp "extract"
   New-Item -Path $extractDir -ItemType Directory -Force | Out-Null
 
   Write-Host "+ git archive (tar) -> $tarPath"
-  & git -C $RootDir archive --format=tar --prefix="rex-cli/" -o $tarPath HEAD @paths
+  & git -C $RootDir archive --format=tar --prefix="harness-cli/" -o $tarPath HEAD @paths
 
   Write-Host "+ extract tar -> $extractDir"
   & tar -xf $tarPath -C $extractDir
 
   Write-Host "+ tar.gz -> $tarGz"
-  & tar -czf $tarGz -C $extractDir "rex-cli"
+  & tar -czf $tarGz -C $extractDir "harness-cli"
 
   Write-Host "+ git archive (zip) -> $zip"
-  & git -C $RootDir archive --format=zip --prefix="rex-cli/" -o $zip HEAD @paths
+  & git -C $RootDir archive --format=zip --prefix="harness-cli/" -o $zip HEAD @paths
 
   Write-Host ""
   Write-Host "Done. Assets:"
