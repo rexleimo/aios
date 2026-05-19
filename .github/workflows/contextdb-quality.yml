@@ -46,7 +46,12 @@ jobs:
 
       - name: ContextDB refs benchmark gate
         working-directory: mcp-server
-        run: npm run bench:contextdb:refs:gate
+        run: >
+          npm run bench:contextdb:refs:gate --
+          --refs-only-p95-max 900
+          --refs-query-p95-max 900
+          --refs-only-avg-max 450
+          --refs-query-avg-max 450
 
       - name: Upload benchmark artifact
         if: always()
