@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-05-19
+
+- feat: add aios version and runtime update
+
 ## [1.18.7] - 2026-05-19
 
 - docs: update repository URL to harness-cli

@@ -168,6 +168,27 @@ test('runUpdate browser flow enables doctor auto-heal by default', async () => {
   assert.equal(calls[1].options.fix, true);
 });
 
+test('runUpdate performs runtime self-update when requested', async () => {
+  const calls = [];
+  await runUpdate({
+    selfUpdate: true,
+    components: ['skills'],
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-test',
+    projectRoot: '/tmp/aios-test',
+    io: { log: () => {} },
+    deps: {
+      updateHarnessRuntime: async (options) => { calls.push({ kind: 'runtime', options }); },
+      installContextDbSkills: async (options) => { calls.push({ kind: 'skills', options }); },
+    },
+  });
+
+  assert.equal(calls[0].kind, 'runtime');
+  assert.equal(calls[0].options.rootDir, '/tmp/aios-test');
+  assert.equal(calls[1].kind, 'skills');
+});
+
 test('runUpdate browser flow does not block lifecycle when browser-use runtime is missing', async () => {
   const calls = [];
   const logs = [];

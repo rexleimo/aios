@@ -1367,6 +1367,9 @@ function parseTopLevelArgs(command, argv) {
   const rest = argv.slice(1);
   const defaults = getCommandDefaults(command);
   const options = { ...defaults };
+  if (command === 'update') {
+    options.selfUpdate = true;
+  }
   let help = false;
 
   for (let index = 0; index < rest.length; index += 1) {
@@ -1434,6 +1437,18 @@ function parseTopLevelArgs(command, argv) {
         break;
       case '--skip-doctor':
         options.skipDoctor = true;
+        break;
+      case '--self-update':
+        if (command !== 'update') {
+          throw new Error(`Unknown option: ${arg}`);
+        }
+        options.selfUpdate = true;
+        break;
+      case '--skip-self-update':
+        if (command !== 'update') {
+          throw new Error(`Unknown option: ${arg}`);
+        }
+        options.selfUpdate = false;
         break;
       case '--strict':
         if (command === 'doctor' || command === 'release-status') {
@@ -1685,6 +1700,15 @@ export function parseArgs(argv = []) {
   }
 
   const first = String(argv[0] || '').trim().toLowerCase();
+  if (first === '-v' || first === '--version' || first === 'version') {
+    return {
+      mode: 'command',
+      help: false,
+      command: 'version',
+      options: {},
+    };
+  }
+
   if (first === '-h' || first === '--help' || first === 'help') {
     return {
       mode: 'help',

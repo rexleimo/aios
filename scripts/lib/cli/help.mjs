@@ -3,12 +3,14 @@ export function getRootHelpText() {
 
 Usage:
   node scripts/aios.mjs
+  node scripts/aios.mjs --version
   node scripts/aios.mjs <command> [options]
 
 Commands:
   init          Initialize ContextDB registry markers for this project
+  version       Print the installed Harness CLI version
   setup         Install AIOS integrations
-  update        Update AIOS integrations
+  update        Update Harness CLI and AIOS integrations
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   memo          Workspace memo + pinned memory helpers
@@ -27,6 +29,7 @@ Commands:
 
 Examples:
   node scripts/aios.mjs init --agent codex
+  node scripts/aios.mjs --version
   node scripts/aios.mjs setup --components all --mode opt-in --client all
   node scripts/aios.mjs update --components shell,skills,native --skip-doctor
   node scripts/aios.mjs uninstall --components shell,skills,native
@@ -183,6 +186,8 @@ Options:
   node scripts/aios.mjs update [options]
 
 Options:
+  --self-update                 Refresh Harness CLI itself before component updates (default for CLI)
+  --skip-self-update            Only update selected integrations
   --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
   --mode <all|repo-only|opt-in|off>
   --client <all|codex|claude|gemini|opencode>

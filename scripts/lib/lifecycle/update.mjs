@@ -15,6 +15,7 @@ import { updateNativeEnhancements } from '../components/native.mjs';
 import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from '../components/shell.mjs';
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers, installSuperpowers } from '../components/superpowers.mjs';
+import { updateHarnessRuntime } from './self-update.mjs';
 
 function isMissingBrowserUseRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
@@ -35,6 +36,7 @@ function logBrowserUseRuntimeWarning(io, error) {
 export function normalizeUpdateOptions(rawOptions = {}) {
   const defaults = createDefaultUpdateOptions();
   return {
+    selfUpdate: Boolean(rawOptions.selfUpdate ?? defaults.selfUpdate),
     components: normalizeComponents(rawOptions.components, defaults.components),
     wrapMode: normalizeWrapMode(rawOptions.wrapMode ?? defaults.wrapMode),
     client: normalizeClient(rawOptions.client ?? defaults.client),
@@ -56,6 +58,7 @@ export function planUpdate(rawOptions = {}) {
     '--scope', options.scope,
     '--install-mode', options.installMode,
   ];
+  if (options.selfUpdate) args.push('--self-update');
   if (options.skills.length > 0) args.push('--skills', options.skills.join(','));
   if (options.withPlaywrightInstall) args.push('--with-playwright-install');
   if (options.skipDoctor) args.push('--skip-doctor');
@@ -79,6 +82,12 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   const agentsInstaller = deps.installOrchestratorAgents ?? installOrchestratorAgents;
   const superpowersInstaller = deps.installSuperpowers ?? installSuperpowers;
   const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
+  const runtimeUpdater = deps.updateHarnessRuntime ?? updateHarnessRuntime;
+
+  if (options.selfUpdate) {
+    await runtimeUpdater({ rootDir, io });
+  }
+
   io.log(`Update components: ${options.components.join(',')}`);
 
   if (hasComponent(options.components, 'browser')) {

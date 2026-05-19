@@ -133,7 +133,7 @@ aios() {
     update)
       local script="$rootpath/scripts/update-all.sh"
       if [[ -x "$script" ]]; then
-        "$script" --components shell,skills --mode opt-in "$@"
+        "$script" "$@"
         return $?
       fi
       echo "[warn] missing update script: $script"
@@ -202,6 +202,7 @@ aios() {
     -h|--help|help)
       echo "Usage:"
       echo "  aios                     # interactive TUI"
+      echo "  aios --version           # print Harness CLI version"
       echo "  aios <doctor|update|privacy> [args]"
       return 0
       ;;

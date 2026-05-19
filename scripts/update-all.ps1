@@ -6,7 +6,11 @@ param(
   [string]$Client = 'all',
   [switch]$WithPlaywrightInstall,
   [switch]$SkipDoctor,
-  [switch]$Help
+  [switch]$SelfUpdate,
+  [switch]$SkipSelfUpdate,
+  [switch]$Help,
+  [Parameter(ValueFromRemainingArguments = $true)]
+  [string[]]$ExtraArgs
 )
 
 Set-StrictMode -Version Latest
@@ -20,6 +24,9 @@ if ($Help) {
   $forward += @('--components', $Components, '--mode', $Mode, '--client', $Client)
   if ($WithPlaywrightInstall) { $forward += '--with-playwright-install' }
   if ($SkipDoctor) { $forward += '--skip-doctor' }
+  if ($SelfUpdate) { $forward += '--self-update' }
+  if ($SkipSelfUpdate) { $forward += '--skip-self-update' }
+  if ($ExtraArgs) { $forward += $ExtraArgs }
 }
 
 & $wrapper @forward

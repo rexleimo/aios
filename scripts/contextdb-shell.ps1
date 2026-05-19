@@ -186,7 +186,7 @@ function aios {
         Write-Host "[warn] missing update script: $script"
         return
       }
-      & $script -Components "shell,skills" -Mode "opt-in" @rest
+      & $script @rest
       $global:LASTEXITCODE = $LASTEXITCODE
       return
     }
@@ -255,6 +255,7 @@ function aios {
 
   Write-Host "Usage:"
   Write-Host "  aios                     # interactive TUI"
+  Write-Host "  aios --version           # print Harness CLI version"
   Write-Host "  aios <doctor|update|privacy> [args]"
   $global:LASTEXITCODE = 0
 }

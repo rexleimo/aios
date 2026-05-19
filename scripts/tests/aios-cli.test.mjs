@@ -16,6 +16,25 @@ test('parseArgs returns interactive mode when no args are provided', () => {
   assert.equal(result.command, 'tui');
 });
 
+test('aios --version prints the Harness CLI version', async () => {
+  const version = (await fs.readFile(path.join(process.cwd(), 'VERSION'), 'utf8')).trim();
+  const result = spawnSync(process.execPath, ['scripts/aios.mjs', '--version'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.stdout.trim(), `Harness CLI ${version}`);
+});
+
+test('parseArgs accepts version aliases', () => {
+  for (const arg of ['--version', '-v', 'version']) {
+    const result = parseArgs([arg]);
+    assert.equal(result.mode, 'command');
+    assert.equal(result.command, 'version');
+  }
+});
+
 test('parseArgs accepts aios init as top-level command', () => {
   const result = parseArgs(['init', '--agent', 'codex', '--dry-run']);
   assert.equal(result.mode, 'command');
@@ -31,6 +50,15 @@ test('parseArgs normalizes setup options', () => {
   assert.deepEqual(result.options.components, ['all']);
   assert.equal(result.options.wrapMode, 'opt-in');
   assert.equal(result.options.client, 'all');
+});
+
+test('parseArgs enables runtime self-update for aios update by default', () => {
+  const result = parseArgs(['update', '--components', 'skills', '--skip-self-update']);
+  assert.equal(result.command, 'update');
+  assert.equal(result.options.selfUpdate, false);
+
+  const defaultResult = parseArgs(['update', '--components', 'skills']);
+  assert.equal(defaultResult.options.selfUpdate, true);
 });
 
 test('parseArgs accepts skills scope and selected skill names', () => {

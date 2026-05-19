@@ -161,6 +161,14 @@ async function loadWorkspaceConfig(workspaceRoot) {
   }
 }
 
+async function getRuntimeVersion() {
+  try {
+    return (await readFile(path.join(rootDir, 'VERSION'), 'utf8')).trim();
+  } catch {
+    return 'unknown';
+  }
+}
+
 function buildTeamRuntimeEnv(options = {}, baseEnv = process.env) {
   const runtimeEnv = { ...baseEnv };
   const clientId = String(options.clientId || '').trim();
@@ -194,6 +202,11 @@ async function main() {
 
   if (parsed.mode === 'help') {
     printHelp(parsed);
+    return;
+  }
+
+  if (parsed.command === 'version') {
+    process.stdout.write(`Harness CLI ${await getRuntimeVersion()}\n`);
     return;
   }
 
