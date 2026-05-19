@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.18.2] - 2026-05-19
+
+- fix: run GitHub workflows on Node 24
+
 ## [1.18.1] - 2026-05-19
 
 - fix: align Node 24 install guidance for node:sqlite
