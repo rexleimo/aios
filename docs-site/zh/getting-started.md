@@ -1,11 +1,11 @@
 ---
 title: 快速开始
-description: Install RexCLI, set it up, and run your first agent with memory — in about 3 minutes.
+description: Install Harness CLI, set it up, and run your first agent with memory — in about 3 minutes.
 ---
 
 # 快速开始
 
-**目标：** 读完本页后，你将安装好 RexCLI，你的编码 Agent 将能够在会话之间记住事情。
+**目标：** 读完本页后，你将安装好 Harness CLI，你的编码 Agent 将能够在会话之间记住事情。
 
 听起来不错？让我们开始吧。
 
@@ -29,7 +29,7 @@ node -v  # 应该显示 v22.x.x
     nvm use 24
     ```
 
-## 步骤 1：安装 RexCLI
+## 步骤 1：安装 Harness CLI
 
 === "macOS / Linux"
 
@@ -52,7 +52,7 @@ node -v  # 应该显示 v22.x.x
 
 ## 步骤 2：运行设置
 
-打开 RexCLI 菜单：
+打开 Harness CLI 菜单：
 
 ```bash
 aios
@@ -143,7 +143,7 @@ ls .aios/context-db/
 你应该看到像 `sessions/`、`index/` 或 `exports/` 这样的目录。这意味着记忆正在记录。
 
 ??? troubleshooting "看不到记忆目录？"
-    1. 正常启动一次你的 Agent — RexCLI 在首次运行时创建目录
+    1. 正常启动一次你的 Agent — Harness CLI 在首次运行时创建目录
     2. 如果仍然没有出现：`aios doctor --native --fix`
 
 **你已经完成了！** 你的 Agent 现在有记忆了。继续阅读以了解你还可以做什么。
@@ -176,7 +176,7 @@ aios memo storage status
 
 ### 设置你的 Agent 性格
 
-你可以告诉 RexCLI 你的 Agent 在所有项目中应该如何表现：
+你可以告诉 Harness CLI 你的 Agent 在所有项目中应该如何表现：
 
 ```bash
 # 设置 Agent 的沟通风格
@@ -224,7 +224,7 @@ aios harness status --session <session-name> --json
 
 ### 在 Agent 内部使用路由快捷方式
 
-当你在运行中的 Agent 内部时，可以用快捷方式触发 RexCLI 功能：
+当你在运行中的 Agent 内部时，可以用快捷方式触发 Harness CLI 功能：
 
 | 快捷方式 | 功能 |
 |---|---|
@@ -242,13 +242,13 @@ aios harness status --session <session-name> --json
 
 ## 常见问题
 
-### RexCLI 会取代我的编码 Agent 吗？
+### Harness CLI 会取代我的编码 Agent 吗？
 
-**不会。** 你仍然运行 `codex`、`claude`、`gemini` 或 `opencode`。RexCLI 在它们之上添加了记忆、技能和团队协作。
+**不会。** 你仍然运行 `codex`、`claude`、`gemini` 或 `opencode`。Harness CLI 在它们之上添加了记忆、技能和团队协作。
 
 ### 为什么需要 `.contextdb-enable`？
 
-这是一个选择加入开关。没有它，RexCLI 不会记录任何内容。你选择哪些项目拥有记忆。
+这是一个选择加入开关。没有它，Harness CLI 不会记录任何内容。你选择哪些项目拥有记忆。
 
 ### 我的 Agent 会共享相同的记忆吗？
 

@@ -53,7 +53,7 @@ GUI가 있기 전에는, 에이전트의 이력을 이해하려면 다음과 같
 
 ## 시작하기
 
-aios memo GUI는 기존 ContextDB 데이터를 읽어옵니다. 이미 RexCLI가 설정되어 있고 프로젝트에 `.contextdb-enable`이 있다면, 데이터가 준비되어 있습니다.
+aios memo GUI는 기존 ContextDB 데이터를 읽어옵니다. 이미 Harness CLI가 설정되어 있고 프로젝트에 `.contextdb-enable`이 있다면, 데이터가 준비되어 있습니다.
 
 1. GUI를 열고 프로젝트를 지정
 2. **Load**를 클릭하여 ContextDB 데이터 가져오기
@@ -87,10 +87,10 @@ aios memo GUI는 **ContextDB** 생태계의 일부입니다 — 코딩 에이전
 
 ## 사용해 보기
 
-이미 RexCLI에서 ContextDB를 사용하고 있다면, 데이터가 준비되어 있습니다. aios memo GUI를 열고 탐색을 시작하세요.
+이미 Harness CLI에서 ContextDB를 사용하고 있다면, 데이터가 준비되어 있습니다. aios memo GUI를 열고 탐색을 시작하세요.
 
-RexCLI가 처음이신가요? [퀵스타트 가이드](https://cli.rexai.top/ko/getting-started/)로 시작하여 프로젝트에서 ContextDB를 실행하고, 돌아와서 에이전트의 기억을 시각화하세요.
+Harness CLI가 처음이신가요? [퀵스타트 가이드](https://cli.rexai.top/ko/getting-started/)로 시작하여 프로젝트에서 ContextDB를 실행하고, 돌아와서 에이전트의 기억을 시각화하세요.
 
 ---
 
-*aios memo GUI는 [RexCLI](https://cli.rexai.top) 생태계의 일부입니다.[시작하기](https://cli.rexai.top/ko/getting-started/) 또는 [ContextDB 문서](https://cli.rexai.top/ko/contextdb/)를 읽고 에이전트 기억에 대해 자세히 알아보세요.*
+*aios memo GUI는 [Harness CLI](https://cli.rexai.top) 생태계의 일부입니다.[시작하기](https://cli.rexai.top/ko/getting-started/) 또는 [ContextDB 문서](https://cli.rexai.top/ko/contextdb/)를 읽고 에이전트 기억에 대해 자세히 알아보세요.*

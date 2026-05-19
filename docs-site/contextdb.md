@@ -62,7 +62,7 @@ The `aios init` command adds the registry marker to each agent's config file and
 
 ## Why Does This Matter?
 
-Here's the problem RexCLI solves:
+Here's the problem Harness CLI solves:
 
 ```
 Day 1: You work on a feature with your agent. Great progress.

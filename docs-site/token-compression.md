@@ -1,13 +1,13 @@
 ---
 title: Native Token Compression
-description: Save tokens without installing any extra tools — built right into RexCLI.
+description: Save tokens without installing any extra tools — built right into Harness CLI.
 ---
 
 # Native Token Compression
 
 **AI models have a limit on how much text they can process at once.** Token compression keeps your context small enough to fit, while preserving the important stuff.
 
-RexCLI does this natively — no extra tools to install, no shell hooks, no dependencies.
+Harness CLI does this natively — no extra tools to install, no shell hooks, no dependencies.
 
 ## The Problem
 
@@ -70,7 +70,7 @@ stop compress       # Back to normal
 
 ## Browser Reads
 
-When your agent reads web pages, RexCLI automatically prefers the most compact format:
+When your agent reads web pages, Harness CLI automatically prefers the most compact format:
 
 1. Semantic snapshot (smallest)
 2. Targeted text extraction
@@ -82,7 +82,7 @@ This means less token waste when agents browse the web.
 
 ## Why Native?
 
-RexCLI's compression is built in — not a bolted-on tool:
+Harness CLI's compression is built in — not a bolted-on tool:
 
 - No extra packages to install
 - No shell hooks or command rewriting

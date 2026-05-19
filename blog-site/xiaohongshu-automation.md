@@ -49,7 +49,7 @@ I toss the materials into a designated folder, then...
 codex
 ```
 
-RexCLI handles: login → photo selection → caption writing → publishing → screenshot confirmation.
+Harness CLI handles: login → photo selection → caption writing → publishing → screenshot confirmation.
 
 Not a dream. I tested it 100 times. 98% success rate.
 
@@ -59,7 +59,7 @@ Not a dream. I tested it 100 times. 98% success rate.
 
 **Now**:
 
-Set keywords (like "programming", "AI", "growth"), RexCLI automatically:
+Set keywords (like "programming", "AI", "growth"), Harness CLI automatically:
 - Visits target users
 - Intelligently likes posts
 - Generates personalized comments (not the garbage "follow back for follow back" kind)
@@ -75,15 +75,15 @@ Includes: impressions, views, likes, saves, comments, follower growth...
 
 ---
 
-## 03. The Core Tech: Why RexCLI?
+## 03. The Core Tech: Why Harness CLI?
 
 You might be thinking: "代理运营服务才 99/month on Taobao, why bother doing this yourself?"
 
 Fair question. Let me explain the difference.
 
-### Regular Scripts vs RexCLI
+### Regular Scripts vs Harness CLI
 
-| Item | Taobao Scripts | RexCLI |
+| Item | Taobao Scripts | Harness CLI |
 |------|---------------|--------|
 | Browser control | None or simulated | Real Playwright |
 | Resume from breakpoint | ❌ Start over on failure | ✅ Context DB remembers progress |
@@ -114,11 +114,11 @@ A: Possible, but avoidable. The key is simulating real human behavior:
 - Random click positions
 - Don't operate at high frequency in short time periods
 
-RexCLI has these settings enabled by default. Don't be stupid and turn them off.
+Harness CLI has these settings enabled by default. Don't be stupid and turn them off.
 
 **Q2: How to maintain Xiaohongshu login state?**
 
-A: Browser profile saves it. Manually log in once, then RexCLI automatically reuses the Cookie. Usually lasts 1-2 weeks. Re-login before it expires.
+A: Browser profile saves it. Manually log in once, then Harness CLI automatically reuses the Cookie. Usually lasts 1-2 weeks. Re-login before it expires.
 
 **Q3: Can it really generate captions?**
 
@@ -164,6 +164,6 @@ Tell me in the comments, and I'll write a dedicated article about whatever you n
 
 **If this was useful, please give it a like to show your support.**
 
-Want to learn more RexCLI tricks? Follow [rexai.top](https://rexai.top). I'll keep sharing AI automation real-world cases.
+Want to learn more Harness CLI tricks? Follow [rexai.top](https://rexai.top). I'll keep sharing AI automation real-world cases.
 
-**Next article preview: How to manage 10 Xiaohongshu accounts simultaneously without getting banned, using RexCLI.**
+**Next article preview: How to manage 10 Xiaohongshu accounts simultaneously without getting banned, using Harness CLI.**

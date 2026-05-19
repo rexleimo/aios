@@ -1,13 +1,13 @@
 ---
 title: 自研 Token 压缩
-description: RexCLI 的输入/输出省 token 工作流，不安装 RTK、Caveman 或竞品 shell hook。
+description: Harness CLI 的输入/输出省 token 工作流，不安装 RTK、Caveman 或竞品 shell hook。
 ---
 
 # 自研 Token 压缩
 
 ## 快速答案
 
-RexCLI 原生省 token。我们参考 RTK 风格的输入过滤和 Caveman 风格的输出简写，但**不安装** RTK、Caveman、shell hook 或竞品 CLI。
+Harness CLI 原生省 token。我们参考 RTK 风格的输入过滤和 Caveman 风格的输出简写，但**不安装** RTK、Caveman、shell hook 或竞品 CLI。
 
 工作流分两层：
 

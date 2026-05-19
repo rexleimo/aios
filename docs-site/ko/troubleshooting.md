@@ -11,7 +11,7 @@ description: 일반적인 설치/런타임 문제 및 직접 수정 방법.
 
 ## ContextDB가 Node 전환 후 실패
 
-RexCLI는 **Node 24 LTS**를 기준으로 하며, ContextDB는 Node 내장 `node:sqlite`를 사용합니다. 외부 SQLite native addon을 rebuild할 필요가 없습니다.
+Harness CLI는 **Node 24 LTS**를 기준으로 하며, ContextDB는 Node 내장 `node:sqlite`를 사용합니다. 외부 SQLite native addon을 rebuild할 필요가 없습니다.
 
 빠른 수정:
 
@@ -215,7 +215,7 @@ canonical skill source tree는 이제 다음 위치에 있습니다:
 - `node scripts/sync-skills.mjs`로 각 클라이언트의 호환 디렉터리를 다시 생성하세요
 - `scripts/doctor-contextdb-skills.sh --client all`로 미지원 스킬 루트 디렉터리를 감지하세요
 
-## `--scope project`가 RexCLI 소스 레포 내에서 실패함
+## `--scope project`가 Harness CLI 소스 레포 내에서 실패함
 
 canonical skill source tree 마이그레이션 후 발생합니다. 이는 의도적인 동작입니다:
 

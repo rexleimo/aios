@@ -5,7 +5,7 @@ description: ContextDB、run journal、resume/stop 制御、必要に応じた w
 
 # ソロ Harness
 
-`Solo Harness` は、RexCLI における**単一 agent の長時間実行レーン**です。
+`Solo Harness` は、Harness CLI における**単一 agent の長時間実行レーン**です。
 
 1つの provider に1つの目標を夜通し進めさせつつ、読みやすい run journal、明示的な stop/resume 制御、必要に応じた git worktree 分離を保ちたい時に使います。
 

@@ -6,7 +6,7 @@ Increase site traffic and GitHub saves/stars with an English-first strategy, tar
 
 ## Product Positioning Guardrail
 
-RexCLI is not a replacement for Codex/Claude/Gemini. It is an orchestration layer that adds:
+Harness CLI is not a replacement for Codex/Claude/Gemini. It is an orchestration layer that adds:
 
 1. Cross-CLI memory (ContextDB)
 2. Browser automation (MCP)

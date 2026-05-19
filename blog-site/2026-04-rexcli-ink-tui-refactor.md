@@ -1,11 +1,11 @@
 ---
-title: "RexCLI TUI Refactor: Modern Terminal UI with React Ink"
-description: "RexCLI migrated its TUI installer from manual string rendering to a React Ink + Ink UI component architecture, improving both the interactive experience and code maintainability."
+title: "Harness CLI TUI Refactor: Modern Terminal UI with React Ink"
+description: "Harness CLI migrated its TUI installer from manual string rendering to a React Ink + Ink UI component architecture, improving both the interactive experience and code maintainability."
 date: 2026-04-02
-tags: [RexCLI, TUI, Ink, React, Terminal, Onboarding]
+tags: [Harness CLI, TUI, Ink, React, Terminal, Onboarding]
 ---
 
-# RexCLI TUI Refactor: Modern Terminal UI with React Ink
+# Harness CLI TUI Refactor: Modern Terminal UI with React Ink
 
 The previous TUI installer used manual string concatenation to render the interface — high maintenance cost and a basic interactive experience. This refactor migrates it to a **React Ink + Ink UI** component architecture, making terminal interaction more modern.
 

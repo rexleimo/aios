@@ -1,4 +1,4 @@
-# RexCLI (AIOS)
+# Harness CLI (AIOS)
 
 > 给 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力的本地 Agent 工作流层。
 
@@ -84,7 +84,7 @@ aios team status --provider codex --watch
      → browser MCP（可选浏览器自动化）
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 命令即可，RexCLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 命令即可，Harness CLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
 
 ## 文档
 

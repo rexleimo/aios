@@ -1,6 +1,6 @@
 ---
 title: Route & Concurrency Profiles
-description: Minimal env profiles for interactive routing and parallel execution in RexCLI.
+description: Minimal env profiles for interactive routing and parallel execution in Harness CLI.
 ---
 
 # Route & Concurrency Profiles

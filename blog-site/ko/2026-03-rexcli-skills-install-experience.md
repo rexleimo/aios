@@ -1,18 +1,18 @@
 ---
-title: "RexCLI Skills 설치 경험 업데이트: Global/Project 스코프 및 더 명확한 선택기"
+title: "Harness CLI Skills 설치 경험 업데이트: Global/Project 스코프 및 더 명확한 선택기"
 description: "이 업데이트는 skills 설치/제거 경험을 개선하고, canonical source를 skill-sources/로 통합���며, 기본 설치 모드를 이식 가능한 복사로 전환하고, Node 런타임 베이스라인을 22 LTS로 표준화했습니다."
 date: 2026-03-17
-tags: [RexCLI, Skills, TUI, 온보딩, AI Development]
+tags: [Harness CLI, Skills, TUI, 온보딩, AI Development]
 ---
 
-# RexCLI Skills 설치 경험 업데이트: Global/Project 스코프 및 더 명확한 선택기
+# Harness CLI Skills 설치 경험 업데이트: Global/Project 스코프 및 더 명확한 선택기
 
 이번 이터레이션은 두 가지 실용적인 문제에 집중했습니다:
 
 1. 모든 스킬이 모든 프로젝트에 기본으로 표시될 필요는 없습니다. 특히 강력한 비즈니스 또는 레포 고유 의미를 가진 스킬에 대해서는 더욱 그렇습니다.
 2. '스킬 소스 파일'과 '설치된 스킬 대상'을 동일한 디렉터리 트리에 유지하면跨머신/跨프로젝트 동기화가 점점 유지하기 어려워집니다.
 
-이를 해결하기 위해 RexCLI는 skills 라이프사이클(설치/제거/동기화)을 정리하고 다음과 같은 경계를 명확히 했습니다:
+이를 해결하기 위해 Harness CLI는 skills 라이프사이클(설치/제거/동기화)을 정리하고 다음과 같은 경계를 명확히 했습니다:
 
 - 시스템 핵심 기능
 - 옵션 확장

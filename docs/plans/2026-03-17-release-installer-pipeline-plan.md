@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make GitHub Releases the working stable installation channel for `RexCLI`, so `releases/latest/download/aios-install.sh` and related assets resolve after an official versioned release.
+**Goal:** Make GitHub Releases the working stable installation channel for `Harness CLI`, so `releases/latest/download/aios-install.sh` and related assets resolve after an official versioned release.
 
 **Architecture:** Tighten the release workflow around semver tags, add explicit version/tag/changelog consistency checks, define one supported development install path (`git clone main`), and document a maintainer release flow that reliably publishes installer assets to GitHub Releases.
 

@@ -1,4 +1,4 @@
-site_name: RexCLI Documentation
+site_name: Harness CLI Documentation
 site_url: https://cli.rexai.top
 site_description: AI memory system docs for Codex/Claude/Gemini/OpenCode with Hermes workflows, Agent Team runtime, and automatic subagent planning.
 site_author: RexAI
@@ -49,13 +49,13 @@ plugins:
           default: true
           build: true
           link: /
-          site_name: RexCLI Documentation
+          site_name: Harness CLI Documentation
           site_description: AI memory system docs for Codex/Claude/Gemini/OpenCode with Hermes workflows, Agent Team runtime, and automatic subagent planning.
         - locale: zh
           name: 简体中文
           build: true
           link: /zh/
-          site_name: RexCLI 文档
+          site_name: Harness CLI 文档
           site_description: 面向 Codex/Claude/Gemini/OpenCode 的 AI 记忆系统文档，覆盖 Hermes 工作流、Agent Team 与自动化子代理规划。
           nav_translations:
             Home: 首页
@@ -93,7 +93,7 @@ plugins:
           name: 日本語
           build: true
           link: /ja/
-          site_name: RexCLI ドキュメント
+          site_name: Harness CLI ドキュメント
           site_description: Codex/Claude/Gemini/OpenCode 向けの AI 記憶システム文書。Hermes ワークフロー、Agent Team、subagent 自動計画をカバー。
           nav_translations:
             Home: ホーム
@@ -131,7 +131,7 @@ plugins:
           name: 한국어
           build: true
           link: /ko/
-          site_name: RexCLI 문서
+          site_name: Harness CLI 문서
           site_description: Codex/Claude/Gemini/OpenCode용 AI 기억 시스템 문서. Hermes 워크플로, Agent Team, 자동 subagent 계획을 다룹니다.
           nav_translations:
             Home: 홈

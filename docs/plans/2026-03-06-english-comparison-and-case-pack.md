@@ -4,7 +4,7 @@
 
 Ship English-first public pages that improve developer understanding and conversion:
 
-1. A clear comparison page (`raw CLI` vs `RexCLI layer`)
+1. A clear comparison page (`raw CLI` vs `Harness CLI layer`)
 2. Three reproducible case deep-dives with command-level evidence
 
 ## Scope

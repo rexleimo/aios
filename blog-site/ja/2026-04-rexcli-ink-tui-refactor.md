@@ -1,11 +1,11 @@
 ---
-title: "RexCLI TUI リファクタリング：React Ink によるモダンなターミナルUI"
-description: "RexCLI は手動の文字列レンダリングから React Ink + Ink UI コンポーネントアーキテクチャへ TUI インストーラーを移行し、対話体験とコードメンテ性を向上させました。"
+title: "Harness CLI TUI リファクタリング：React Ink によるモダンなターミナルUI"
+description: "Harness CLI は手動の文字列レンダリングから React Ink + Ink UI コンポーネントアーキテクチャへ TUI インストーラーを移行し、対話体験とコードメンテ性を向上させました。"
 date: 2026-04-02
-tags: [RexCLI, TUI, Ink, React, Terminal, Onboarding]
+tags: [Harness CLI, TUI, Ink, React, Terminal, Onboarding]
 ---
 
-# RexCLI TUI リファクタリング：React Ink によるモダンなターミナルUI
+# Harness CLI TUI リファクタリング：React Ink によるモダンなターミナルUI
 
 これまでの TUI インストーラーは手動の文字列連結でインターフェースを描画しており、保守コストが高く対話体験もシンプルでした。今回のリファクタリングで **React Ink + Ink UI** コンポーネントアーキテクチャに移行し、ターミナルでの操作をよりモダンにします。
 

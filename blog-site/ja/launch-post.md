@@ -1,7 +1,7 @@
 ---
 title: "ようやく「AIコーディングツールはどれが優れているか」論争に終止符を打つツールを作った"
 publish_date: 2026-03-10
-description: "RexCLI的故事 — Claude Code、Codex、Geminiを置換わずかに統合するワークフローレイヤー。"
+description: "Harness CLI的故事 — Claude Code、Codex、Geminiを置換わずかに統合するワークフローレイヤー。"
 ---
 
 # ようやく「AIコーディングツールはどれが優れているか」論争に終止符を打つツールを作った
@@ -40,9 +40,9 @@ Gemini：私は誰？ここはどこ？
 
 ---
 
-## 02. RexCLIとは何か？
+## 02. Harness CLIとは何か？
 
-**RexCLI = Claude Code + Codex + Geminiが協調動作、互いに競合しない。**
+**Harness CLI = Claude Code + Codex + Geminiが協調動作、互いに競合しない。**
 
 ### 中核機能
 
@@ -57,7 +57,7 @@ Gemini：私は誰？ここはどこ？
 ```
 あなたがcodex/claude/geminiと入力
        ↓
-RexCLIが自動傍受
+Harness CLIが自動傍受
        ↓
 判断：ラップするか直通するか？
        ↓
@@ -134,13 +134,13 @@ codex
 
 耐えるより解決策を作った。
 
-**RexCLIは私のパーソナルプロジェクトで、毎日使ってるツールだ。**
+**Harness CLIは私のパーソナルプロジェクトで、毎日使ってるツールだ。**
 
 ---
 
 ## 06. 終わりに
 
-**RexCLIはClaude CodeやCodexを置換おうとしているのではない。**
+**Harness CLIはClaude CodeやCodexを置換おうとしているのではない。**
 
 既存のツールをよりよく協調させる「接着剤レイヤー」に過ぎない。
 

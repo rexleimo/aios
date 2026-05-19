@@ -1,6 +1,6 @@
 ---
 title: 시나리오별 명령 찾기
-description: 개념을 먼저 외우지 말고, “지금 무엇을 하고 싶은가”에서 RexCLI 명령을 고르세요.
+description: 개념을 먼저 외우지 말고, “지금 무엇을 하고 싶은가”에서 Harness CLI 명령을 고르세요.
 ---
 
 # 시나리오별 명령 찾기
@@ -150,7 +150,7 @@ aios release-status --recent 12
 aios release-status --strict
 ```
 
-## RexCLI 에 단계별 orchestration 을 맡기고 싶어요
+## Harness CLI 에 단계별 orchestration 을 맡기고 싶어요
 
 먼저 model call 없이 preview:
 
@@ -190,7 +190,7 @@ aios internal browser cdp-status
 aios privacy read --file .env
 ```
 
-`.env`, cookies, tokens, browser profiles 를 model 에 그대로 붙여 넣지 마세요. RexCLI Privacy Guard 는 read output 을 공유하기 전에 마스킹하려고 합니다.
+`.env`, cookies, tokens, browser profiles 를 model 에 그대로 붙여 넣지 마세요. Harness CLI Privacy Guard 는 read output 을 공유하기 전에 마스킹하려고 합니다.
 
 ## 선택 기준
 

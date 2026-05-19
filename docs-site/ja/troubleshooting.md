@@ -11,7 +11,7 @@ description: よくあるセットアップ/ランタイムの問題と直接的
 
 ## ContextDB が Node 切り替え後に失敗
 
-RexCLI は **Node 24 LTS** を前提としており、ContextDB は Node 組み込みの `node:sqlite` を使用します。外部 SQLite native addon の rebuild は不要です。
+Harness CLI は **Node 24 LTS** を前提としており、ContextDB は Node 組み込みの `node:sqlite` を使用します。外部 SQLite native addon の rebuild は不要です。
 
 `Unable to resolve a Node runtime matching .nvmrc=24` または `[node-version] AIOS requires Node 24.x LTS` が出た場合は、まず Node 24 をインストールしてから再試行してください。
 
@@ -219,7 +219,7 @@ canonical skill source tree は以下に置かれるようになりました:
 - `node scripts/sync-skills.mjs` で各クライアントの互換ディレクトリを再生成
 - `scripts/doctor-contextdb-skills.sh --client all` で未対応のスキルルートディレクトリを検出
 
-## `--scope project` が RexCLI ソースレポ内で失敗する
+## `--scope project` が Harness CLI ソースレポ内で失敗する
 
 canonical skill source tree の移行後に発生します。これは意図的な動作です:
 

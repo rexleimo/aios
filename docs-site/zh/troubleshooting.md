@@ -11,7 +11,7 @@ description: 常见报错与修复步骤。
 
 ## ContextDB 切换 Node 后失败
 
-RexCLI 现在明确以 **Node 24 LTS** 为运行基线，ContextDB 使用 Node 内置的 `node:sqlite`，不再需要重建外部 SQLite native addon。
+Harness CLI 现在明确以 **Node 24 LTS** 为运行基线，ContextDB 使用 Node 内置的 `node:sqlite`，不再需要重建外部 SQLite native addon。
 
 如果命令直接报 `Unable to resolve a Node runtime matching .nvmrc=24` 或 `[node-version] AIOS requires Node 24.x LTS`，说明本机还没有切到可用的 Node 24，需要先安装再重试。
 
@@ -179,7 +179,7 @@ export CTXDB_WRAP_MODE=off
 
 如果需要隔离，请将自定义技能放在 repo-local 文件夹中。
 
-## 在 RexCLI 源仓库里执行 `--scope project` 失败
+## 在 Harness CLI 源仓库里执行 `--scope project` 失败
 
 这是 canonical skill source 迁移后的预期行为。
 

@@ -1,4 +1,4 @@
-# 终于等到了！我做了 RexCLI，让 AI 编程工具不再互相"打架"
+# 终于等到了！我做了 Harness CLI，让 AI 编程工具不再互相"打架"
 
 说出来你可能不信，我曾经被三个 AI 编程工具折磨到崩溃。
 
@@ -34,9 +34,9 @@ Gemini：我是谁，我在哪？
 
 ---
 
-## 02. RexCLI 是什么？
+## 02. Harness CLI 是什么？
 
-**RexCLI = 让 Claude Code + Codex + Gemini 协同工作，不再互相打架。**
+**Harness CLI = 让 Claude Code + Codex + Gemini 协同工作，不再互相打架。**
 
 ### 核心能力
 
@@ -51,7 +51,7 @@ Gemini：我是谁，我在哪？
 ```
 你输入 codex/claude/gemini
        ↓
-RexCLI 自动拦截
+Harness CLI 自动拦截
        ↓
 判断：是该包裹还是透传？
        ↓
@@ -129,13 +129,13 @@ codex
 
 与其忍，不如自己动手。
 
-**RexCLI 是我的个人作品，也是我每天都在用的工具。**
+**Harness CLI 是我的个人作品，也是我每天都在用的工具。**
 
 ---
 
 ## 06. 写在最后
 
-**RexCLI 不是要替代 Claude Code 或 Codex。**
+**Harness CLI 不是要替代 Claude Code 或 Codex。**
 
 它只是一个"粘合剂"，让现有的工具更好地协同工作。
 

@@ -4,7 +4,7 @@
 
 **Goal:** Drive English-first traffic and increase repository saves/stars from 0 to 200 in 15 days.
 
-**Architecture:** Use a daily growth loop: publish one English asset, distribute it to one high-intent channel, route to one clear GitHub star CTA, then checkpoint metrics and adapt next-day content. Keep positioning strict: RexCLI augments existing CLI agents instead of replacing them.
+**Architecture:** Use a daily growth loop: publish one English asset, distribute it to one high-intent channel, route to one clear GitHub star CTA, then checkpoint metrics and adapt next-day content. Keep positioning strict: Harness CLI augments existing CLI agents instead of replacing them.
 
 **Tech Stack:** MkDocs docs-site, GitHub repository pages, shell scripts, GitHub API, daily metric CSV.
 
@@ -65,7 +65,7 @@ Update docs homepage hero buttons:
 
 Create `docs-site/english-growth.md` covering:
 - 15-day target
-- why RexCLI is an orchestration layer
+- why Harness CLI is an orchestration layer
 - daily checkpoints
 - clear contribution/star CTA
 
@@ -98,7 +98,7 @@ Daily expected pace:
 
 - If growth < planned pace for 2 consecutive days:
   - switch to stronger social proof content (demo GIF + before/after workflow)
-  - run one high-signal comparison post (`raw CLI` vs `RexCLI layer`)
+  - run one high-signal comparison post (`raw CLI` vs `Harness CLI layer`)
 
 ---
 

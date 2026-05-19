@@ -131,7 +131,7 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 
 ## How Team Works Under The Hood
 
-When you start a team, RexCLI uses a **GroupChat Runtime** — a round-based system where agents share a conversation thread:
+When you start a team, Harness CLI uses a **GroupChat Runtime** — a round-based system where agents share a conversation thread:
 
 ```
 Round 1 → Planner analyzes the task and creates work items

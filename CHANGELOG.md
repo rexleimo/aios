@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.18.5] - 2026-05-19
+
+- docs: rename product brand to Harness CLI
+
 ## [1.18.4] - 2026-05-19
 
 - ci: relax ContextDB benchmark gate for Node 24

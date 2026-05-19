@@ -11,7 +11,7 @@ Most failures are setup-scope issues (missing MCP runtime, wrapper not loaded, o
 
 ## ContextDB fails after switching Node
 
-RexCLI targets **Node 24 LTS** and uses Node's built-in `node:sqlite` for ContextDB, so there is no external SQLite native addon to rebuild.
+Harness CLI targets **Node 24 LTS** and uses Node's built-in `node:sqlite` for ContextDB, so there is no external SQLite native addon to rebuild.
 
 If a command exits with `Unable to resolve a Node runtime matching .nvmrc=24` or `[node-version] AIOS requires Node 24.x LTS`, install/use Node 24 first, then retry.
 
@@ -205,7 +205,7 @@ Skill loading scope is separate from ContextDB wrapping:
 
 If you need isolation, keep custom skills in repo-local folders.
 
-## `--scope project` fails inside the RexCLI source repo
+## `--scope project` fails inside the Harness CLI source repo
 
 This is expected after the canonical skill-source migration.
 

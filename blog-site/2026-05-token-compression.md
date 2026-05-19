@@ -2,7 +2,7 @@
 title: "Token Compression: Fit Months of Agent Memory Into a Single Prompt"
 description: "ContextDB now compresses your agent's history to fit within a token budget — keeping what matters, dropping what doesn't."
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "AI memory", "RexCLI"]
+tags: ["ContextDB", "token compression", "AI memory", "Harness CLI"]
 ---
 
 # Token Compression: Fit Months of Agent Memory Into a Single Prompt
@@ -104,4 +104,4 @@ Then check the output — you'll see a summary of how many tokens were saved.
 
 ---
 
-*Token compression is built into [ContextDB](https://cli.rexai.top/contextdb/), part of [RexCLI](https://cli.rexai.top). No extra tools needed.*
+*Token compression is built into [ContextDB](https://cli.rexai.top/contextdb/), part of [Harness CLI](https://cli.rexai.top). No extra tools needed.*

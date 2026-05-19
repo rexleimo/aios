@@ -53,7 +53,7 @@ GUI が登場する前、Agent の履歴を理解するには次のような作�
 
 ## はじめに
 
-aios memo GUI は既存の ContextDB データを読み取ります。RexCLI がセットアップされ、プロジェクトに `.contextdb-enable` がある場合、データは準備完了です。
+aios memo GUI は既存の ContextDB データを読み取ります。Harness CLI がセットアップされ、プロジェクトに `.contextdb-enable` がある場合、データは準備完了です。
 
 1. GUI を開き、プロジェクトを指定
 2. **Load** をクリックして ContextDB データをインポート
@@ -87,10 +87,10 @@ aios memo GUI は **ContextDB** エコシステムの一部です — コーデ�
 
 ## 試してみる
 
-RexCLI で ContextDB を既に有効にしている場合、データは準備できています。aios memo GUI を開いて探索を始めましょう。
+Harness CLI で ContextDB を既に有効にしている場合、データは準備できています。aios memo GUI を開いて探索を始めましょう。
 
-RexCLI は初めてですか？ [クイックスタートガイド](https://cli.rexai.top/ja/getting-started/)から始めてプロジェクトで ContextDB を実行し、戻って Agent の記憶を可視化しましょう。
+Harness CLI は初めてですか？ [クイックスタートガイド](https://cli.rexai.top/ja/getting-started/)から始めてプロジェクトで ContextDB を実行し、戻って Agent の記憶を可視化しましょう。
 
 ---
 
-*aios memo GUI は [RexCLI](https://cli.rexai.top) エコシステムの一部です。[始める](https://cli.rexai.top/ja/getting-started/)か、[ContextDB ドキュメント](https://cli.rexai.top/ja/contextdb/)を読んで、Agent の記憶について詳しく学びましょう。*
+*aios memo GUI は [Harness CLI](https://cli.rexai.top) エコシステムの一部です。[始める](https://cli.rexai.top/ja/getting-started/)か、[ContextDB ドキュメント](https://cli.rexai.top/ja/contextdb/)を読んで、Agent の記憶について詳しく学びましょう。*

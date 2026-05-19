@@ -2,7 +2,7 @@
 
 ## Summary
 
-Make GitHub Releases the single stable distribution channel for `RexCLI` installers and packaged artifacts, so the documented one-liner install URLs under `releases/latest/download/...` are always valid after an official release.
+Make GitHub Releases the single stable distribution channel for `Harness CLI` installers and packaged artifacts, so the documented one-liner install URLs under `releases/latest/download/...` are always valid after an official release.
 
 ## Problem
 

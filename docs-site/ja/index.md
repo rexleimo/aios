@@ -1,9 +1,9 @@
 ---
 title: 概要
-description: RexCLIは、codex、claude、gemini、opencodeに記憶、協調、検証を追加します。ワークフローは変わりません。
+description: Harness CLIは、codex、claude、gemini、opencodeに記憶、協調、検証を追加します。ワークフローは変わりません。
 ---
 
-# RexCLI (AIOS)
+# Harness CLI (AIOS)
 
 > ローカル agent ワークフローレイヤー。`codex` / `claude` / `gemini` / `opencode` に記憶、協調、検証を追加します。
 
@@ -39,7 +39,7 @@ User → codex / claude / gemini / opencode
      → browser MCP (オプションブラウザ自動化)
 ```
 
-インストール後は、いつも通り `codex`、`claude`、`gemini`、`opencode` を使うだけ。RexCLI はバックグラウンドでプロジェクト記憶を自動ロードし、クライアントがサポートする場所にルートショートカットをプロビジョニングします。
+インストール後は、いつも通り `codex`、`claude`、`gemini`、`opencode` を使うだけ。Harness CLI はバックグラウンドでプロジェクト記憶を自動ロードし、クライアントがサポートする場所にルートショートカットをプロビジョニングします。
 
 ## クイックツアー
 

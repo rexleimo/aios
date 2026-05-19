@@ -53,7 +53,7 @@ Need to know what your agent was doing last Tuesday? Click the session node. Wan
 
 ## Getting Started
 
-The aios memo GUI reads from your existing ContextDB data. If you already have RexCLI set up with `.contextdb-enable` in your project, your data is ready.
+The aios memo GUI reads from your existing ContextDB data. If you already have Harness CLI set up with `.contextdb-enable` in your project, your data is ready.
 
 1. Open the GUI and point it to your project
 2. Click **Load** to import your ContextDB data
@@ -87,10 +87,10 @@ It's not just pretty — it's practical. When you're debugging an agent that wen
 
 ## Try It
 
-If you're already using RexCLI with ContextDB enabled, your data is ready. Open the aios memo GUI and start exploring.
+If you're already using Harness CLI with ContextDB enabled, your data is ready. Open the aios memo GUI and start exploring.
 
-New to RexCLI? Start with the [Quick Start guide](https://cli.rexai.top/getting-started/) to get ContextDB running in your project, then come back and visualize your agent's memory.
+New to Harness CLI? Start with the [Quick Start guide](https://cli.rexai.top/getting-started/) to get ContextDB running in your project, then come back and visualize your agent's memory.
 
 ---
 
-*The aios memo GUI is part of the [RexCLI](https://cli.rexai.top) ecosystem. [Get started](https://cli.rexai.top/getting-started/) or [read the ContextDB docs](https://cli.rexai.top/contextdb/) to learn more about agent memory.*
+*The aios memo GUI is part of the [Harness CLI](https://cli.rexai.top) ecosystem. [Get started](https://cli.rexai.top/getting-started/) or [read the ContextDB docs](https://cli.rexai.top/contextdb/) to learn more about agent memory.*

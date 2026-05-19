@@ -1,20 +1,20 @@
 ---
 title: CLI 비교
-description: 원시 Codex/Claude/Gemini CLI 워크플로와 RexCLI 오케스트레이션 레이어를 비교.
+description: 원시 Codex/Claude/Gemini CLI 워크플로와 Harness CLI 오케스트레이션 레이어를 비교.
 ---
 
-# 원시 CLI vs RexCLI 레이어
+# 원시 CLI vs Harness CLI 레이어
 
-RexCLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
+Harness CLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
 그것은 그 위에 있는 신뢰성 레이어입니다.
 
 [GitHub에서 Star](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [빠른 시작](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [케이스 집합](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
-## RexCLI로 무엇이 달라지나
+## Harness CLI로 무엇이 달라지나
 
-| 워크플로 요구사항 | 원시 CLI만 | RexCLI 레이어 있음 |
+| 워크플로 요구사항 | 원시 CLI만 | Harness CLI 레이어 있음 |
 |---|---|---|
 | 크로스 세션 기억 | 수동 복사/붙여넣기 컨텍스트 | 프로젝트 ContextDB 기본 재개 |
 | 크로스 agent 핸드오프 | 임시적이고 취약함 | 공유 session/checkpoint 아티팩트 |
@@ -28,7 +28,7 @@ RexCLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
 - 세션 지속성이나 워크플로 추적 가능성이 필요 없는 경우.
 - 일회용 환경에서 실험하는 경우.
 
-## RexCLI 추가 경우
+## Harness CLI 추가 경우
 
 - 같은 프로젝트에서 `codex`, `claude`, `gemini`, `opencode`를 전환하는 경우.
 - 재시작 안전 컨텍스트와 감사 가능한 checkpoint가 필요한 경우.

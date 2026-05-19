@@ -21,7 +21,7 @@ Stop worrying. This article isn't about benchmarks or hype. I'll tell you **whic
 | Writing core business logic | Claude Code | Best context understanding, highest code quality |
 | Running automation scripts / browser operations | Codex | Works out of the box, stable and reliable |
 | Google ecosystem developer | Gemini | Seamless Workspace integration |
-| **I want all of the above** | **RexCLI** | Integrates all three + extras |
+| **I want all of the above** | **Harness CLI** | Integrates all three + extras |
 
 If you're in a rush, skip to the last section.
 
@@ -157,27 +157,27 @@ Talking about specs is boring. Let's go straight to scenarios.
 
 Yes, brother.
 
-I built RexCLI, an open-source workflow tool. The core idea: **don't reinvent the wheel — make existing Claude Code, Codex, and Gemini work together**.
+I built Harness CLI, an open-source workflow tool. The core idea: **don't reinvent the wheel — make existing Claude Code, Codex, and Gemini work together**.
 
-### What problems does RexCLI solve?
+### What problems does Harness CLI solve?
 
 **Problem 1: Losing context when switching tools**
 
 Before: You were halfway through a task with Codex, wanted Claude to help optimize? Sorry, context is gone, start over.
 
-RexCLI's Context DB remembers task progress. Switch tools without losing continuity.
+Harness CLI's Context DB remembers task progress. Switch tools without losing continuity.
 
 **Problem 2: Browser automation configuration is a pain**
 
 Every tool has different MCP configuration methods. Annoying?
 
-RexCLI unifies `browser_*` tools. Whether you use Codex or Claude, you can operate browsers with the same commands.
+Harness CLI unifies `browser_*` tools. Whether you use Codex or Claude, you can operate browsers with the same commands.
 
 **Problem 3: Secret key leak risk**
 
 When running scripts, could your API key accidentally leak into logs?
 
-RexCLI has Privacy Guard. Automatically redacts sensitive data before reading config files. Protects your keys.
+Harness CLI has Privacy Guard. Automatically redacts sensitive data before reading config files. Protects your keys.
 
 ### How to use it?
 
@@ -205,7 +205,7 @@ Website: [rexai.top](https://rexai.top)
 | Writing core business code | Claude Code |
 | Running automation scripts / browser operations | Codex |
 | Google ecosystem developer | Gemini |
-| Want the best of both worlds | RexCLI |
+| Want the best of both worlds | Harness CLI |
 
 **My personal choice**: Daily scripts with Codex, complex code refactoring with Claude, Gemini for research when needed. Tools are a means, not an end.
 
@@ -217,13 +217,13 @@ Honestly, for most developers, the three tools aren't that different.
 
 **What truly affects efficiency is workflow continuity** — whether your task remembers where you left off, whether switching tools loses context.
 
-From this angle, RexCLI may be the most complete solution available today.
+From this angle, Harness CLI may be the most complete solution available today.
 
 ---
 
 ## 09. Next Article Preview
 
-In the next article, I'll dive deep into **RexCLI's technical architecture**, and how to use it to seamlessly switch between three CLIs.
+In the next article, I'll dive deep into **Harness CLI's technical architecture**, and how to use it to seamlessly switch between three CLIs.
 
 Stay tuned.
 
@@ -231,6 +231,6 @@ Stay tuned.
 
 **Which AI programming tool are you using right now? What's your biggest pain point?**
 
-Let's chat in the comments. The person with the most likes gets a free RexCLI onboarding guide.
+Let's chat in the comments. The person with the most likes gets a free Harness CLI onboarding guide.
 
 Want to learn more? Follow [rexai.top](https://rexai.top). See you in the next article!

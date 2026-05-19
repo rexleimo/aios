@@ -1,9 +1,9 @@
 ---
 title: Overview
-description: RexCLI adds memory, collaboration, and verification to codex, claude, gemini, and opencode — without changing your workflow.
+description: Harness CLI adds memory, collaboration, and verification to codex, claude, gemini, and opencode — without changing your workflow.
 ---
 
-# RexCLI (AIOS)
+# Harness CLI (AIOS)
 
 > A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
 
@@ -39,7 +39,7 @@ User → codex / claude / gemini / opencode
      → browser MCP (optional browser automation)
 ```
 
-After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — RexCLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
+After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — Harness CLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
 
 ## Quick Tour
 

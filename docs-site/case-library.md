@@ -1,11 +1,11 @@
 ---
 title: Case Library
-description: Official reproducible scenarios that show what RexCLI can do in real workflows.
+description: Official reproducible scenarios that show what Harness CLI can do in real workflows.
 ---
 
 # Official Case Library
 
-This page is the canonical capability map for `RexCLI`.
+This page is the canonical capability map for `Harness CLI`.
 
 Each case includes:
 
@@ -16,7 +16,7 @@ Each case includes:
 ## Featured English Deep Dives
 
 [Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_library_featured_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="github_star" }
-[Raw CLI vs RexCLI Layer](cli-comparison.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="compare_workflows" }
+[Raw CLI vs Harness CLI Layer](cli-comparison.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="compare_workflows" }
 [Case: Cross-CLI Handoff](case-cross-cli-handoff.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_handoff" }
 [Case: Browser Auth-Wall Flow](case-auth-wall-browser.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_authwall" }
 [Case: Privacy Guard Config Read](case-privacy-guard.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_privacy" }
@@ -128,7 +128,7 @@ You need one command to produce an auditable record (`init -> session -> event -
 **Run**
 
 ```bash
-scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "Continue from latest checkpoint and execute next step"
+scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "Continue from latest checkpoint and execute next step"
 ```
 
 **Evidence**

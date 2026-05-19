@@ -1,6 +1,6 @@
 # Docs Visual Onboarding Improvement Plan
 
-**Goal:** Make RexCLI official docs easier for new users by adding visual onboarding, real CLI/TUI evidence, and scenario-based image assets.
+**Goal:** Make Harness CLI official docs easier for new users by adding visual onboarding, real CLI/TUI evidence, and scenario-based image assets.
 
 **Scope:** Chinese docs first. Update public docs pages and static assets only; do not change runtime behavior.
 

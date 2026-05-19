@@ -16,9 +16,9 @@ description: 공유 ContextDB로 Claude 분석, Codex 구현, Gemini 리뷰의 �
 ## 실행
 
 ```bash
-scripts/ctx-agent.sh --agent claude-code --project RexCLI --prompt "障碍을 분석하고 주요 수정안을 제안하세요."
-scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "최신 checkpoint에서 주요 수정을 구현하세요."
-scripts/ctx-agent.sh --agent gemini-cli --project RexCLI --prompt "회귀 위험과 누락된 테스트를 리뷰하세요."
+scripts/ctx-agent.sh --agent claude-code --project Harness CLI --prompt "障碍을 분석하고 주요 수정안을 제안하세요."
+scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "최신 checkpoint에서 주요 수정을 구현하세요."
+scripts/ctx-agent.sh --agent gemini-cli --project Harness CLI --prompt "회귀 위험과 누락된 테스트를 리뷰하세요."
 ```
 
 ## 증거
@@ -33,7 +33,7 @@ ls .aios/context-db/sessions
 
 ```bash
 cd mcp-server
-npm run -s contextdb -- timeline --project RexCLI --limit 12
+npm run -s contextdb -- timeline --project Harness CLI --limit 12
 ```
 
 3. 최신 session의 내보내기된 context packet이 존재합니다:
@@ -45,6 +45,6 @@ ls .aios/context-db/exports | tail -n 5
 ## 왜 중요한가
 
 공유 레이어 없이는 크로스 agent 핸드오프가 종종 복사/붙여넣기 컨텍스트로 퇴보합니다.
-RexCLI에서는 모든 agent가 동일한 프로젝트 컨텍스트 경로와 checkpoint 스트림을 읽고 씁니다.
+Harness CLI에서는 모든 agent가 동일한 프로젝트 컨텍스트 경로와 checkpoint 스트림을 읽고 씁니다.
 
 [Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }

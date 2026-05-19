@@ -1,11 +1,11 @@
 ---
 title: 官方案例库
-description: 用可复现命令说明 RexCLI 在真实场景里能做什么。
+description: 用可复现命令说明 Harness CLI 在真实场景里能做什么。
 ---
 
 # 官方案例库
 
-这页是 `RexCLI` 的能力地图。
+这页是 `Harness CLI` 的能力地图。
 
 每个案例都包含：
 
@@ -128,7 +128,7 @@ browser_auth_check {}
 **运行**
 
 ```bash
-scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "从最新 checkpoint 继续并执行下一步"
+scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "从最新 checkpoint 继续并执行下一步"
 ```
 
 **证据**

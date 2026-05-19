@@ -1,18 +1,18 @@
 ---
-title: "RexCLI Skills Install Experience Update: Global/Project Scope and a Clearer Picker"
+title: "Harness CLI Skills Install Experience Update: Global/Project Scope and a Clearer Picker"
 description: "This update improves the skills install/uninstall experience, consolidates canonical sources into skill-sources/, switches the default install mode to a portable copy, and standardizes the Node runtime baseline on 22 LTS."
 date: 2026-03-17
-tags: [RexCLI, Skills, TUI, Onboarding, AI Development]
+tags: [Harness CLI, Skills, TUI, Onboarding, AI Development]
 ---
 
-# RexCLI Skills Install Experience Update: Global/Project Scope and a Clearer Picker
+# Harness CLI Skills Install Experience Update: Global/Project Scope and a Clearer Picker
 
 This iteration focused on two practical problems:
 
 1. Not every skill should appear by default in every project, especially skills that carry strong business or repo-specific semantics.
 2. Keeping “skill source files” and “installed skill targets” in the same directory tree makes cross-machine and cross-project syncing increasingly hard to maintain.
 
-To address these, RexCLI tightened the skills lifecycle (install/uninstall/sync) and clarified the boundaries between:
+To address these, Harness CLI tightened the skills lifecycle (install/uninstall/sync) and clarified the boundaries between:
 
 - system core capabilities,
 - optional extensions,

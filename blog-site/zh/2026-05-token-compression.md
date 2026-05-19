@@ -2,7 +2,7 @@
 title: "Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt"
 description: "ContextDB 现在能在 token 预算内压缩你的 agent 历史记录——保留重要的，丢弃不重要的。"
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "AI 记忆", "RexCLI"]
+tags: ["ContextDB", "token compression", "AI 记忆", "Harness CLI"]
 ---
 
 # Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt
@@ -104,4 +104,4 @@ npm run contextdb -- context:pack \
 
 ---
 
-*Token 压缩已内置在 [ContextDB](https://cli.rexai.top/zh/contextdb/) 中，是 [RexCLI](https://cli.rexai.top) 的一部分。不需要额外工具。*
+*Token 压缩已内置在 [ContextDB](https://cli.rexai.top/zh/contextdb/) 中，是 [Harness CLI](https://cli.rexai.top) 的一部分。不需要额外工具。*

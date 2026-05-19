@@ -5,7 +5,7 @@ description: ContextDB, run journal, resume/stop 제어, 선택적 worktree 격�
 
 # 솔로 Harness
 
-`Solo Harness` 는 RexCLI 의 **단일 agent 장시간 실행 레인**입니다.
+`Solo Harness` 는 Harness CLI 의 **단일 agent 장시간 실행 레인**입니다.
 
 하나의 provider 가 하나의 목표를 밤새 계속 밀어붙이게 하면서, 읽기 쉬운 run journal, 명시적인 stop/resume 제어, 필요할 때의 git worktree 격리를 유지하고 싶을 때 사용합니다.
 

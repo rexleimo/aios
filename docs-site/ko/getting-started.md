@@ -1,11 +1,11 @@
 ---
 title: 빠른 시작
-description: Install RexCLI, set it up, and run your first agent with memory — in about 3 minutes.
+description: Install Harness CLI, set it up, and run your first agent with memory — in about 3 minutes.
 ---
 
 # 빠른 시작
 
-**Goal:** By the end of this page, you'll have RexCLI installed and your coding agent will remember things across sessions.
+**Goal:** By the end of this page, you'll have Harness CLI installed and your coding agent will remember things across sessions.
 
 Sounds good? Let's go.
 
@@ -29,7 +29,7 @@ node -v  # Should show v24.x.x
     nvm use 24
     ```
 
-## Step 1: Install RexCLI
+## Step 1: Install Harness CLI
 
 === "macOS / Linux"
 
@@ -52,7 +52,7 @@ node -v  # Should show v24.x.x
 
 ## Step 2: Run Setup
 
-Open the RexCLI menu:
+Open the Harness CLI menu:
 
 ```bash
 aios
@@ -143,7 +143,7 @@ ls .aios/context-db/
 You should see directories like `sessions/`, `index/`, or `exports/`. That means memory is recording.
 
 ??? troubleshooting "Don't see the memory directory?"
-    1. Start your agent once normally — RexCLI creates the directory on first run
+    1. Start your agent once normally — Harness CLI creates the directory on first run
     2. If it still doesn't appear: `aios doctor --native --fix`
 
 **You're all set!** Your agent now has memory. Keep reading to learn what else you can do.
@@ -176,7 +176,7 @@ By default, project memos are append-only JSONL under `.aios/memo/file/events.js
 
 ### Set Your Agent's Personality
 
-You can tell RexCLI how your agent should behave across all projects:
+You can tell Harness CLI how your agent should behave across all projects:
 
 ```bash
 # Set the agent's communication style
@@ -224,7 +224,7 @@ aios harness status --session <session-name> --json
 
 ### Use Route Shortcuts Inside Agents
 
-When you're inside a running agent, you can trigger RexCLI features with shortcuts:
+When you're inside a running agent, you can trigger Harness CLI features with shortcuts:
 
 | Shortcut | What it does |
 |---|---|
@@ -242,13 +242,13 @@ When you're inside a running agent, you can trigger RexCLI features with shortcu
 
 ## Common Questions
 
-### Does RexCLI replace my coding agent?
+### Does Harness CLI replace my coding agent?
 
-**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. RexCLI adds memory, skills, and teamwork on top of them.
+**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. Harness CLI adds memory, skills, and teamwork on top of them.
 
 ### Why do I need `.contextdb-enable`?
 
-It's an opt-in switch. Without it, RexCLI won't record anything. You choose which projects get memory.
+It's an opt-in switch. Without it, Harness CLI won't record anything. You choose which projects get memory.
 
 ### Will my agents share the same memory?
 

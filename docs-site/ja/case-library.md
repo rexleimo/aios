@@ -1,11 +1,11 @@
 ---
 title: 公式ケースライブラリ
-description: RexCLI で実行できる代表シナリオを再現可能なコマンド付きで整理。
+description: Harness CLI で実行できる代表シナリオを再現可能なコマンド付きで整理。
 ---
 
 # 公式ケースライブラリ
 
-このページは `RexCLI` の能力マップです。
+このページは `Harness CLI` の能力マップです。
 
 各ケースは次の3つを含みます：
 
@@ -128,7 +128,7 @@ browser_auth_check {}
 **実行**
 
 ```bash
-scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "最新の checkpoint から次を実行"
+scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "最新の checkpoint から次を実行"
 ```
 
 **証拠**

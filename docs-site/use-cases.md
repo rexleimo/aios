@@ -1,6 +1,6 @@
 ---
 title: Find Commands By Scenario
-description: Do not memorize concepts first. Pick the RexCLI command by what you want to do now.
+description: Do not memorize concepts first. Pick the Harness CLI command by what you want to do now.
 ---
 
 # Find Commands By Scenario
@@ -150,7 +150,7 @@ aios release-status --recent 12
 aios release-status --strict
 ```
 
-## I Want RexCLI To Orchestrate Stages
+## I Want Harness CLI To Orchestrate Stages
 
 Preview first, without model calls:
 
@@ -190,7 +190,7 @@ If page actions fail, read [Troubleshooting](troubleshooting.md) before reinstal
 aios privacy read --file .env
 ```
 
-Do not paste `.env`, cookies, tokens, or browser profiles directly into a model. RexCLI Privacy Guard tries to redact before read output is shared.
+Do not paste `.env`, cookies, tokens, or browser profiles directly into a model. Harness CLI Privacy Guard tries to redact before read output is shared.
 
 ## Selection Mnemonic
 

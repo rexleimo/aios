@@ -5,7 +5,7 @@ description: 用 ContextDB、run journal、resume/stop 控制和可选 worktree 
 
 # 单 Agent 夜跑
 
-`Solo Harness` 是 RexCLI 里专门给**单个 agent 长任务**准备的执行通道。
+`Solo Harness` 是 Harness CLI 里专门给**单个 agent 长任务**准备的执行通道。
 
 当你想让一个 provider 围绕一个目标夜里持续推进，同时保留可读的 run journal、明确的 stop/resume 控制、以及可选的 git worktree 隔离时，就用它。
 

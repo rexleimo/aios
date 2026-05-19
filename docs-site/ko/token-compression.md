@@ -1,13 +1,13 @@
 ---
 title: 네이티브 Token 압축
-description: RTK, Caveman, 경쟁 shell hook을 설치하지 않는 RexCLI 입력/출력 token 절감 워크플로.
+description: RTK, Caveman, 경쟁 shell hook을 설치하지 않는 Harness CLI 입력/출력 token 절감 워크플로.
 ---
 
 # 네이티브 Token 압축
 
 ## 빠른 답변
 
-RexCLI는 token 절감을 네이티브로 처리합니다. RTK 스타일 입력 필터링과 Caveman 스타일 짧은 출력을 참고하지만, RTK, Caveman, shell hook, 경쟁 CLI는 **설치하지 않습니다**.
+Harness CLI는 token 절감을 네이티브로 처리합니다. RTK 스타일 입력 필터링과 Caveman 스타일 짧은 출력을 참고하지만, RTK, Caveman, shell hook, 경쟁 CLI는 **설치하지 않습니다**.
 
 워크플로는 두 레이어입니다.
 

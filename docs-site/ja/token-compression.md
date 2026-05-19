@@ -1,13 +1,13 @@
 ---
 title: ネイティブ Token 圧縮
-description: RTK、Caveman、競合 shell hook をインストールせずに使う RexCLI の入力/出力 token 削減ワークフロー。
+description: RTK、Caveman、競合 shell hook をインストールせずに使う Harness CLI の入力/出力 token 削減ワークフロー。
 ---
 
 # ネイティブ Token 圧縮
 
 ## クイックアンサー
 
-RexCLI は token をネイティブに削減します。RTK 風の入力フィルタリングと Caveman 風の短い出力を参考にしますが、RTK、Caveman、shell hook、競合 CLI は**インストールしません**。
+Harness CLI は token をネイティブに削減します。RTK 風の入力フィルタリングと Caveman 風の短い出力を参考にしますが、RTK、Caveman、shell hook、競合 CLI は**インストールしません**。
 
 ワークフローは 2 層です。
 

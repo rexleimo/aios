@@ -1,4 +1,4 @@
-/* Analytics bridge for RexCLI docs.
+/* Analytics bridge for Harness CLI docs.
  * Sends events to gtag when available and falls back to console logs.
  */
 (function () {

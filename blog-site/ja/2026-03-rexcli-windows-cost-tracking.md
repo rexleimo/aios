@@ -1,17 +1,17 @@
 ---
-title: "RexCLI アップデート: Windows ネイティブサポート + ライブコスト追跡"
-description: "RexCLI は完全な Windows ワークフロー、ライブ API コストテレメトリ、OpenCode Agent 統合など主要なアップデートをもたらし、より透過的な AI 開発を可能にします。"
+title: "Harness CLI アップデート: Windows ネイティブサポート + ライブコスト追跡"
+description: "Harness CLI は完全な Windows ワークフロー、ライブ API コストテレメトリ、OpenCode Agent 統合など主要なアップデートをもたらし、より透過的な AI 開発を可能にします。"
 date: 2026-03-16
-tags: [RexCLI, Windows, Cost Tracking, OpenCode, AI Development]
+tags: [Harness CLI, Windows, Cost Tracking, OpenCode, AI Development]
 ---
 
-# RexCLI アップデート: Windows ネイティブサポート + ライブコスト追跡
+# Harness CLI アップデート: Windows ネイティブサポート + ライブコスト追跡
 
 このアップデートは AI 支援開発をより信頼性が高く透過的にする複数の改善を届けます。
 
 ## Windows ネイティブワークフローサポート
 
-RexCLI は 이제 Windows ワークフローをエンドツーエンドでサポートしています。Windows 固有のパス処理やコマンドライン引数分割の問題に対処し、Windows 開発者も同じワークフローをスムーズに使えるようにしました。
+Harness CLI は 이제 Windows ワークフローをエンドツーエンドでサポートしています。Windows 固有のパス処理やコマンドライン引数分割の問題に対処し、Windows 開発者も同じワークフローをスムーズに使えるようにしました。
 
 主な改善点:
 
@@ -24,7 +24,7 @@ RexCLI は 이제 Windows ワークフローをエンドツーエンドでサポ
 
 ## ライブコスト追跡（コストテレメトリ）
 
-ライブコストテレメトリはリアルタイムで API 使用コストを把握するのに役立ちます。長時間タスク中、RexCLI は以下を追跡・表示できます:
+ライブコストテレメトリはリアルタイムで API 使用コストを把握するのに役立ちます。長時間タスク中、Harness CLI は以下を追跡・表示できます:
 
 - トークン使用量
 - コストサマリー
@@ -35,7 +35,7 @@ RexCLI は 이제 Windows ワークフローをエンドツーエンドでサポ
 
 ## OpenCode Agent サポート
 
-RexCLI は OpenCode Agent サポートを統合し、以下を可能にします:
+Harness CLI は OpenCode Agent サポートを統合し、以下を可能にします:
 
 - OpenCode の agent エコシステムを活用
 - より柔軟なオーケストレーションとディスパッチ戦略を実行

@@ -1,6 +1,6 @@
 ---
 title: シナリオ別コマンド
-description: 先に概念を暗記せず、「今何をしたいか」から RexCLI コマンドを選びます。
+description: 先に概念を暗記せず、「今何をしたいか」から Harness CLI コマンドを選びます。
 ---
 
 # シナリオ別コマンド
@@ -150,7 +150,7 @@ aios release-status --recent 12
 aios release-status --strict
 ```
 
-## RexCLI に段階的に orchestration させたい
+## Harness CLI に段階的に orchestration させたい
 
 まず model call なしで preview:
 
@@ -190,7 +190,7 @@ aios internal browser cdp-status
 aios privacy read --file .env
 ```
 
-`.env`、cookies、tokens、browser profiles をそのまま model に貼らないでください。RexCLI Privacy Guard は read output を共有する前にマスクします。
+`.env`、cookies、tokens、browser profiles をそのまま model に貼らないでください。Harness CLI Privacy Guard は read output を共有する前にマスクします。
 
 ## 選び方の目安
 

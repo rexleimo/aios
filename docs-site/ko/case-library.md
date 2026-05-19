@@ -1,11 +1,11 @@
 ---
 title: 공식 사례 라이브러리
-description: RexCLI로 실제로 무엇을 할 수 있는지 재현 가능한 명령 기준으로 정리.
+description: Harness CLI로 실제로 무엇을 할 수 있는지 재현 가능한 명령 기준으로 정리.
 ---
 
 # 공식 사례 라이브러리
 
-이 페이지는 `RexCLI`의 능력 맵입니다.
+이 페이지는 `Harness CLI`의 능력 맵입니다.
 
 각 사례는 다음을 포함합니다:
 
@@ -128,7 +128,7 @@ browser_auth_check {}
 **실행**
 
 ```bash
-scripts/ctx-agent.sh --agent codex-cli --project RexCLI --prompt "최신 checkpoint에서 다음 작업 실행"
+scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "최신 checkpoint에서 다음 작업 실행"
 ```
 
 **증거**

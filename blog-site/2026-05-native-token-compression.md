@@ -1,21 +1,21 @@
 ---
-title: "Native Token Compression: Why RexCLI Does Not Install RTK or Caveman"
+title: "Native Token Compression: Why Harness CLI Does Not Install RTK or Caveman"
 date: 2026-05-12
-tags: ["AIOS", "token compression", "ContextDB", "skills", "RexCLI"]
-description: "RexCLI now implements token savings natively: ContextDB input compression, compact browser reads, scoped CLI output, and output compression skills without competitor dependencies."
+tags: ["AIOS", "token compression", "ContextDB", "skills", "Harness CLI"]
+description: "Harness CLI now implements token savings natively: ContextDB input compression, compact browser reads, scoped CLI output, and output compression skills without competitor dependencies."
 ---
 
-# Native Token Compression: Why RexCLI Does Not Install RTK or Caveman
+# Native Token Compression: Why Harness CLI Does Not Install RTK or Caveman
 
 Token cost is not only a billing problem. It is a reliability problem.
 
 Long AI coding sessions fail when the model sees too much noise: full logs, repeated stack traces, page boilerplate, and verbose status updates. The obvious shortcut is to install a token-saving competitor tool. We chose not to do that.
 
-RexCLI references the useful ideas from RTK-style input filtering and Caveman-style output brevity, then implements the workflow inside AIOS.
+Harness CLI references the useful ideas from RTK-style input filtering and Caveman-style output brevity, then implements the workflow inside AIOS.
 
 ## What Changed
 
-RexCLI now treats token reduction as two native layers:
+Harness CLI now treats token reduction as two native layers:
 
 1. **Input compression**: reduce command, browser, and ContextDB payloads before they enter the model.
 2. **Output compression**: make the agent answer compactly without losing exact commands, paths, errors, or risk warnings.
@@ -51,7 +51,7 @@ For browser work, the new `aios-browser-compress` skill pushes agents toward com
 4. `page.get_html`
 5. screenshot only when visual evidence is needed
 
-For CLI work, RexCLI prefers scoped output over full dumps: `rg`, `git diff --stat`, `sed -n`, `head`, `tail`, and focused test selectors.
+For CLI work, Harness CLI prefers scoped output over full dumps: `rg`, `git diff --stat`, `sed -n`, `head`, `tail`, and focused test selectors.
 
 ## Native Output Compression
 
@@ -69,7 +69,7 @@ The key rule: compression must never hide risk. Errors, commands, paths, selecto
 
 Installing another token tool looks fast, but it creates hidden coupling:
 
-- command behavior can change outside RexCLI's control;
+- command behavior can change outside Harness CLI's control;
 - cross-client behavior differs between Codex, Claude, Gemini, and opencode;
 - docs become harder to verify;
 - users inherit another dependency, update path, and failure mode.
@@ -98,6 +98,6 @@ For browser automation, prefer semantic snapshots and targeted extraction before
 
 ## Bottom Line
 
-RexCLI token savings are now native: input compression in ContextDB and browser workflows, output compression in AIOS skills, and no competitor installation step.
+Harness CLI token savings are now native: input compression in ContextDB and browser workflows, output compression in AIOS skills, and no competitor installation step.
 
 That keeps long-running agent work cheaper, quieter, and easier to verify.

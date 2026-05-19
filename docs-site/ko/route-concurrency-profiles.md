@@ -1,6 +1,6 @@
 ---
 title: 라우팅/병렬 프로필
-description: RexCLI 라우팅과 병렬 설정을 최소 변수로 선택하는 빠른 가이드.
+description: Harness CLI 라우팅과 병렬 설정을 최소 변수로 선택하는 빠른 가이드.
 ---
 
 # 라우팅/병렬 프로필

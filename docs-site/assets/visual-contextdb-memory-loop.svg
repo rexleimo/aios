@@ -17,5 +17,5 @@
 <path d="M418 272 C460 260 470 220 505 210" class="line arrow"/><path d="M418 340 C462 340 470 340 505 340" class="line arrow"/><path d="M418 408 C460 420 470 460 505 470" class="line arrow"/>
 <g transform="translate(860,190)"><ellipse cx="130" cy="54" rx="112" ry="36" fill="#dbeafe" stroke="#8ab4f8" stroke-width="2"/><rect x="18" y="54" width="224" height="190" fill="#dbeafe" stroke="#8ab4f8" stroke-width="2"/><ellipse cx="130" cy="244" rx="112" ry="36" fill="#c7dcff" stroke="#8ab4f8" stroke-width="2"/><text x="73" y="66" class="label">ContextDB</text><text x="56" y="122" class="small">events.jsonl</text><text x="56" y="158" class="small">checkpoints/</text><text x="56" y="194" class="small">context packs</text><text x="56" y="230" class="small">SQLite index</text></g>
 <path d="M755 209 C815 205 820 215 878 235" class="line arrow"/><path d="M755 340 C815 340 820 340 878 340" class="line arrow"/><path d="M755 470 C815 478 820 450 878 430" class="line arrow"/>
-<text x="70" y="570" class="subtitle">换 CLI 不等于换上下文：RexCLI 把项目事件和 checkpoint 留在本地项目记忆里。</text>
+<text x="70" y="570" class="subtitle">换 CLI 不等于换上下文：Harness CLI 把项目事件和 checkpoint 留在本地项目记忆里。</text>
 </svg>

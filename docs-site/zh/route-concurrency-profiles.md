@@ -1,6 +1,6 @@
 ---
 title: 路由与并发档位
-description: 用最少变量选择 RexCLI 的交互路由与并发执行配置。
+description: 用最少变量选择 Harness CLI 的交互路由与并发执行配置。
 ---
 
 # 路由与并发档位

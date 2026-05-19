@@ -1,20 +1,20 @@
 ---
 title: CLI Comparison
-description: Compare raw Codex/Claude/Gemini CLI workflows with RexCLI's orchestration layer.
+description: Compare raw Codex/Claude/Gemini CLI workflows with Harness CLI's orchestration layer.
 ---
 
-# Raw CLI vs RexCLI Layer
+# Raw CLI vs Harness CLI Layer
 
-RexCLI is not a replacement for Codex, Claude, or Gemini CLI.
+Harness CLI is not a replacement for Codex, Claude, or Gemini CLI.
 It is a reliability layer on top of them.
 
 [Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [Quick Start](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [Case Library](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
-## What Changes With RexCLI
+## What Changes With Harness CLI
 
-| Workflow Need | Raw CLI Only | With RexCLI Layer |
+| Workflow Need | Raw CLI Only | With Harness CLI Layer |
 |---|---|---|
 | Cross-session memory | Manual copy/paste context | Project ContextDB resume by default |
 | Cross-agent handoff | Ad hoc and fragile | Shared session/checkpoint artifacts |
@@ -28,7 +28,7 @@ It is a reliability layer on top of them.
 - You do not need session persistence or workflow traceability.
 - You are experimenting in a throwaway environment.
 
-## Add RexCLI When
+## Add Harness CLI When
 
 - You switch between `codex`, `claude`, `gemini`, or `opencode` in one project.
 - You want restart-safe context and auditable checkpoints.

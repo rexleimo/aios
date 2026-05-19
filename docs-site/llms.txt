@@ -1,4 +1,4 @@
-# RexCLI
+# Harness CLI
 
 > AI memory system + orchestration docs for Codex CLI, Claude Code, Gemini CLI, and OpenCode.
 

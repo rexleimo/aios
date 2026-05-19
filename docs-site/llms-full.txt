@@ -1,4 +1,4 @@
-# RexCLI full index
+# Harness CLI full index
 
 ## Intent Summary
 - AI memory system for coding agents (`ContextDB`)

@@ -1,7 +1,7 @@
 ---
 title: "I Finally Built the Tool That Ends the 'Which AI Coding Tool Is Better' Debate"
 publish_date: 2026-03-10
-description: "The story behind RexCLI — a workflow layer that unifies Claude Code, Codex, and Gemini without replacing any of them."
+description: "The story behind Harness CLI — a workflow layer that unifies Claude Code, Codex, and Gemini without replacing any of them."
 ---
 
 # I Finally Built the Tool That Ends the 'Which AI Coding Tool Is Better' Debate
@@ -40,9 +40,9 @@ Gemini: Who am I, where am I?
 
 ---
 
-## 02. What Is RexCLI?
+## 02. What Is Harness CLI?
 
-**RexCLI = Claude Code + Codex + Gemini working together, without fighting each other.**
+**Harness CLI = Claude Code + Codex + Gemini working together, without fighting each other.**
 
 ### Core Capabilities
 
@@ -57,7 +57,7 @@ Gemini: Who am I, where am I?
 ```
 You type codex/claude/gemini
        ↓
-RexCLI intercepts automatically
+Harness CLI intercepts automatically
        ↓
 Decision: wrap or pass through?
        ↓
@@ -134,13 +134,13 @@ Every day I was switching between three tools — losing context, duplicating co
 
 Rather than endure it, I built a solution.
 
-**RexCLI is my personal project, and it's the tool I use every single day.**
+**Harness CLI is my personal project, and it's the tool I use every single day.**
 
 ---
 
 ## 06. Closing Thoughts
 
-**RexCLI isn't trying to replace Claude Code or Codex.**
+**Harness CLI isn't trying to replace Claude Code or Codex.**
 
 It's just a "glue layer" that helps existing tools work better together.
 

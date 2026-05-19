@@ -1,6 +1,6 @@
 ---
 title: 按场景找命令
-description: 不先背概念，直接按“我想做什么”选择 RexCLI 命令。
+description: 不先背概念，直接按“我想做什么”选择 Harness CLI 命令。
 ---
 
 # 按场景找命令
@@ -150,7 +150,7 @@ aios release-status --recent 12
 aios release-status --strict
 ```
 
-## 我想让 RexCLI 分阶段编排
+## 我想让 Harness CLI 分阶段编排
 
 先预览，不调用模型：
 
@@ -190,7 +190,7 @@ aios internal browser cdp-status
 aios privacy read --file .env
 ```
 
-不要把 `.env`、cookies、token、浏览器 profile 原样贴给模型。RexCLI 的 Privacy Guard 会尽量在读取前脱敏。
+不要把 `.env`、cookies、token、浏览器 profile 原样贴给模型。Harness CLI 的 Privacy Guard 会尽量在读取前脱敏。
 
 ## 选择口诀
 

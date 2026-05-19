@@ -1,20 +1,20 @@
 ---
 title: CLI 比較
-description: 生 Codex/Claude/Gemini CLI ワークフローと RexCLI オーケストレーション層を比較。
+description: 生 Codex/Claude/Gemini CLI ワークフローと Harness CLI オーケストレーション層を比較。
 ---
 
-# 生 CLI vs RexCLI 層
+# 生 CLI vs Harness CLI 層
 
-RexCLI は Codex、Claude、Gemini CLI の代替ではありません。
+Harness CLI は Codex、Claude、Gemini CLI の代替ではありません。
 それはその上の信頼性レイヤーです。
 
 [GitHub で Star](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [クイックスタート](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [ケース集](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
-## RexCLI で何が変わるか
+## Harness CLI で何が変わるか
 
-| ワークフロー要件 | 生 CLI のみ | RexCLI 層あり |
+| ワークフロー要件 | 生 CLI のみ | Harness CLI 層あり |
 |---|---|---|
 | クロスセッション記憶 | 手動コピー/ペーストコンテキスト | プロジェクト ContextDB によるデフォルト再開 |
 | クロス agent handoff | 其那的で脆弱 | 共有 session/checkpoint アーティファクト |
@@ -28,7 +28,7 @@ RexCLI は Codex、Claude、Gemini CLI の代替ではありません。
 - セッション永続性やワークフロー追跡可能性が不要な場合。
 - 使い捨て環境で実験している場合。
 
-## RexCLI を追加する場合
+## Harness CLI を追加する場合
 
 - 同じプロジェクトで `codex`、`claude`、`gemini`、`opencode` を切り替える場合。
 - 再起動安全なコンテキストと監査可能な checkpoint を必要とする場合。

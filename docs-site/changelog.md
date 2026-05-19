@@ -5,7 +5,7 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 # Changelog
 
-Use this page to track what changed in `RexCLI` and jump to release-related docs.
+Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
 ## Official Release History
 
