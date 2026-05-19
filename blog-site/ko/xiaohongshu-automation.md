@@ -130,10 +130,10 @@ A: 가능해요. 하지만 완전 AI에게 다 맡기진 마세요. 최적 방�
 
 ```bash
 # 1. 프로젝트 클론
-git clone https://github.com/rexleimo/rex-cli.git
+git clone https://github.com/rexleimo/harness-cli.git
 
 # 2. 설치
-cd rex-cli
+cd harness-cli
 ./scripts/setup-all.sh --components all
 
 # 3. 실행

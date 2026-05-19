@@ -9,8 +9,8 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 官方发布记录
 
-- GitHub 变更文件：[CHANGELOG.md](https://github.com/rexleimo/rex-cli/blob/main/CHANGELOG.md)
-- GitHub Releases：[releases](https://github.com/rexleimo/rex-cli/releases)
+- GitHub 变更文件：[CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
+- GitHub Releases：[releases](https://github.com/rexleimo/harness-cli/releases)
 
 ## 最新稳定版
 

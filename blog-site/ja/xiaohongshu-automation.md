@@ -130,10 +130,10 @@ Harness CLI 默认开了这些配置，别手贱关掉。
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/rexleimo/rex-cli.git
+git clone https://github.com/rexleimo/harness-cli.git
 
 # 2. 安装
-cd rex-cli
+cd harness-cli
 ./scripts/setup-all.sh --components all
 
 # 3. 启动

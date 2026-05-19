@@ -7,7 +7,7 @@ description: RexAI エコシステムへの主要リンク。
 
 RexAI エコシステムの主要リンク:
 
-- [Harness CLI GitHub リポジトリ](https://github.com/rexleimo/rex-cli)
+- [Harness CLI GitHub リポジトリ](https://github.com/rexleimo/harness-cli)
 - [RexAI ドキュメント](https://cli.rexai.top)
 - [RexAI ブログ](https://cli.rexai.top/blog/ja/)
 - [RexOS Agent OS](https://os.rexai.top)

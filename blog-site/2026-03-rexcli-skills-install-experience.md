@@ -55,4 +55,4 @@ The practical outcome:
 ## Related Links
 
 - Docs: `/superpowers/`
-- Repo: <https://github.com/rexleimo/rex-cli>
+- Repo: <https://github.com/rexleimo/harness-cli>

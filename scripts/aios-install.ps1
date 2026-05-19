@@ -1,6 +1,6 @@
 param(
-  [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/rex-cli" }),
-  [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/rex-cli") }),
+  [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/harness-cli" }),
+  [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/harness-cli") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
   [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" }),
   [string]$FirstSetup = $(if ($env:AIOS_FIRST_SETUP) { $env:AIOS_FIRST_SETUP } else { "1" })

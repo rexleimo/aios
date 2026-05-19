@@ -10,7 +10,7 @@ description: Harness CLI (AIOS) 给你正在用的 codex / claude / gemini / ope
 [3 分钟快速开始](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
 [多 Agent 怎么用](team-ops.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="team_ops" }
 [按场景找命令](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
-[GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=zh_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
+[GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=zh_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
 
 ## 核心能力
 
@@ -103,8 +103,8 @@ aios team status --provider codex --watch
 ## 开发
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 ```
 
 验证：

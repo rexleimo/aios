@@ -34,7 +34,7 @@ node -v  # Should show v24.x.x
 === "macOS / Linux"
 
     ```bash
-    curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+    curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
     ```
 
@@ -43,7 +43,7 @@ node -v  # Should show v24.x.x
 === "Windows PowerShell"
 
     ```powershell
-    irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps1 | iex
+    irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ```
 

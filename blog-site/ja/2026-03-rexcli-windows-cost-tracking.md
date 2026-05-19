@@ -43,4 +43,4 @@ Harness CLI は OpenCode Agent サポートを統合し、以下を可能にし�
 ## 関連リンク
 
 - ドキュメント: `/getting-started/`
-- レポ: <https://github.com/rexleimo/rex-cli>
+- レポ: <https://github.com/rexleimo/harness-cli>

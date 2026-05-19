@@ -55,4 +55,4 @@ tags: [RexCli, Skills, TUI, Onboarding, AI Development]
 ## 相关链接
 
 - Docs: `/superpowers/`
-- Repo: <https://github.com/rexleimo/rex-cli>
+- Repo: <https://github.com/rexleimo/harness-cli>

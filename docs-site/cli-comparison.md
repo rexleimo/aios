@@ -8,7 +8,7 @@ description: Compare raw Codex/Claude/Gemini CLI workflows with Harness CLI's or
 Harness CLI is not a replacement for Codex, Claude, or Gemini CLI.
 It is a reliability layer on top of them.
 
-[Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [Quick Start](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [Case Library](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
@@ -38,8 +38,8 @@ It is a reliability layer on top of them.
 ## Fast Proof (5 Minutes)
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 scripts/setup-all.sh --components all --mode opt-in
 source ~/.zshrc
 codex
@@ -61,4 +61,4 @@ Expected: `sessions/`, `index/`, `exports/`.
 
 ## Next Action
 
-[Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }

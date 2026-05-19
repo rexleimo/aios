@@ -5,7 +5,7 @@ description: 检测 challenge/auth 墙并在 human-in-the-loop handoff 下安全
 
 # 案例：浏览器认证墙流程
 
-[在 GitHub 上 Star](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_authwall_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_authwall_hero" data-rex-target="github_star" }
+[在 GitHub 上 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_authwall_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_authwall_hero" data-rex-target="github_star" }
 [对比工作流](cli-comparison.md){ .md-button data-rex-track="cta_click" data-rex-location="case_authwall_hero" data-rex-target="compare_workflows" }
 [案例集](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="case_authwall_hero" data-rex-target="case_library" }
 
@@ -46,4 +46,4 @@ browser_snapshot {"profile":"default","includeAx":true}
 可靠的自动化不是盲目自动化。
 此流程确保对政策敏感的操作由人工明确门控，然后使用共享浏览器状态恢复。
 
-[Star on GitHub](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_authwall_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_authwall_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_authwall_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_authwall_footer" data-rex-target="github_star" }

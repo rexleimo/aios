@@ -56,7 +56,7 @@ Doctor スクリプトで確認してください:
   "mcpServers": {
     "puppeteer-stealth": {
       "command": "node",
-      "args": ["/path/to/rex-cli/mcp-server/dist/puppeteer-stealth-server.js"]
+      "args": ["/path/to/harness-cli/mcp-server/dist/puppeteer-stealth-server.js"]
     }
   }
 }

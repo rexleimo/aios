@@ -98,8 +98,8 @@ aios team status --provider codex --watch
 ## 개발
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 ```
 
 확인:

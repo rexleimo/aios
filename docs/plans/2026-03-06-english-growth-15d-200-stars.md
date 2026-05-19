@@ -29,7 +29,7 @@ Create `tasks/metrics/english-growth-daily.csv` with:
 **Step 2: Add daily snapshot command**
 
 Create `scripts/growth-daily-metrics.sh` to:
-- pull star count from `https://api.github.com/repos/rexleimo/rex-cli`
+- pull star count from `https://api.github.com/repos/rexleimo/harness-cli`
 - append a CSV row for current day
 - preserve manual fields for traffic/clicks
 

@@ -55,4 +55,4 @@ Skills インストールはようになりました明示的なスコープ選�
 ## 関連リンク
 
 - ドキュメント: `/superpowers/`
-- レポ: <https://github.com/rexleimo/rex-cli>
+- レポ: <https://github.com/rexleimo/harness-cli>

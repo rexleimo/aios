@@ -8,7 +8,7 @@ description: 원시 Codex/Claude/Gemini CLI 워크플로와 Harness CLI 오케�
 Harness CLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
 그것은 그 위에 있는 신뢰성 레이어입니다.
 
-[GitHub에서 Star](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
+[GitHub에서 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [빠른 시작](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [케이스 집합](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
@@ -38,8 +38,8 @@ Harness CLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
 ## 빠른 증명 (5분)
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 scripts/setup-all.sh --components all --mode opt-in
 source ~/.zshrc
 codex
@@ -61,4 +61,4 @@ ls .aios/context-db
 
 ## 다음 액션
 
-[GitHub에서 Star](https://github.com/rexleimo/rex-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+[GitHub에서 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }

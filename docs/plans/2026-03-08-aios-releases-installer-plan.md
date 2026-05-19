@@ -2,7 +2,7 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Ship GitHub Releases artifacts + stable one-liner installers that install to `~/.rexcil/rex-cli`, and update docs so `aios` is the single interactive entry.
+**Goal:** Ship GitHub Releases artifacts + stable one-liner installers that install to `~/.rexcil/harness-cli`, and update docs so `aios` is the single interactive entry.
 
 **Architecture:** Build a deterministic release bundle (`harness-cli.tar.gz`, `harness-cli.zip`) that excludes user state (profiles/context-db), publish via a tag-triggered workflow, and provide two tiny installer scripts (`aios-install.sh` / `aios-install.ps1`) that fetch `releases/latest` and run shell integration so `aios` opens the TUI by default.
 
@@ -57,8 +57,8 @@ Expected: all 4 files exist.
 - Create: `scripts/aios-install.ps1`
 
 **Step 1: Default repo + install dir**
-- Repo: `rexleimo/rex-cli` (override via env `AIOS_REPO`)
-- Install dir: `~/.rexcil/rex-cli` (override via env `AIOS_INSTALL_DIR`)
+- Repo: `rexleimo/harness-cli` (override via env `AIOS_REPO`)
+- Install dir: `~/.rexcil/harness-cli` (override via env `AIOS_INSTALL_DIR`)
 - Download URLs:
   - `https://github.com/$AIOS_REPO/releases/latest/download/harness-cli.tar.gz`
   - `https://github.com/$AIOS_REPO/releases/latest/download/harness-cli.zip`
@@ -123,7 +123,7 @@ After extracting:
 - Modify: `docs-site/zh/getting-started.md`
 
 **Step 1: Add A/B/C install routes**
-- A) `git clone` to `~/.rexcil/rex-cli`
+- A) `git clone` to `~/.rexcil/harness-cli`
 - B) Download from Releases (`harness-cli.tar.gz` / `harness-cli.zip`)
 - C) One-liner installers (`aios-install.sh` / `aios-install.ps1`, recommended)
 

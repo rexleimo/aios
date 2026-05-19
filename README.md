@@ -2,14 +2,14 @@
 
 > A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
 
-[Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Case Library](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/rex-cli)
+[Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Case Library](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
 ## Install
 
 macOS / Linux:
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc
 aios
 ```
@@ -17,7 +17,7 @@ aios
 Windows PowerShell:
 
 ```powershell
-irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps1 | iex
+irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 aios
 ```
@@ -107,8 +107,8 @@ After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual
 ## Development
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 ```
 
 Verify:

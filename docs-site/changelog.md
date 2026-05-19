@@ -9,8 +9,8 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
-- GitHub changelog file: [CHANGELOG.md](https://github.com/rexleimo/rex-cli/blob/main/CHANGELOG.md)
-- GitHub releases: [releases](https://github.com/rexleimo/rex-cli/releases)
+- GitHub changelog file: [CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
+- GitHub releases: [releases](https://github.com/rexleimo/harness-cli/releases)
 
 ## Latest Stable
 

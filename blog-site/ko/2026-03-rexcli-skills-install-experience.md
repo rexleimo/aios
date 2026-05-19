@@ -55,4 +55,4 @@ Skills 설치는 이제 명시적 스코프 선택을 지원합니다:
 ## 관련 링크
 
 - 문서: `/superpowers/`
-- 레포: <https://github.com/rexleimo/rex-cli>
+- 레포: <https://github.com/rexleimo/harness-cli>

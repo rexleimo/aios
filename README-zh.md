@@ -2,14 +2,14 @@
 
 > 给 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力的本地 Agent 工作流层。
 
-[文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [官方案例库](https://cli.rexai.top/zh/case-library/) | [GitHub](https://github.com/rexleimo/rex-cli)
+[文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [官方案例库](https://cli.rexai.top/zh/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
 ## 安装
 
 macOS / Linux:
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc
 aios
 ```
@@ -17,7 +17,7 @@ aios
 Windows PowerShell:
 
 ```powershell
-irm https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.ps1 | iex
+irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 aios
 ```
@@ -107,8 +107,8 @@ aios team status --provider codex --watch
 ## 开发
 
 ```bash
-git clone https://github.com/rexleimo/rex-cli.git
-cd rex-cli
+git clone https://github.com/rexleimo/harness-cli.git
+cd harness-cli
 ```
 
 验证:

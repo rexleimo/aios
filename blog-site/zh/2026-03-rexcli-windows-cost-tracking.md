@@ -42,4 +42,4 @@ RexCli 现在集成了 OpenCode Agent 支持，让你可以：
 ## 相关链接
 
 - Docs: `/getting-started/`
-- Repo: <https://github.com/rexleimo/rex-cli>
+- Repo: <https://github.com/rexleimo/harness-cli>

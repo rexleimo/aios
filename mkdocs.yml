@@ -2,8 +2,8 @@ site_name: Harness CLI Documentation
 site_url: https://cli.rexai.top
 site_description: AI memory system docs for Codex/Claude/Gemini/OpenCode with Hermes workflows, Agent Team runtime, and automatic subagent planning.
 site_author: RexAI
-repo_url: https://github.com/rexleimo/rex-cli
-repo_name: rexleimo/rex-cli
+repo_url: https://github.com/rexleimo/harness-cli
+repo_name: rexleimo/harness-cli
 
 docs_dir: docs-site
 site_dir: site
@@ -219,4 +219,4 @@ nav:
       - Changelog: changelog.md
       - Friends: friends.md
   - External:
-      - Project: https://github.com/rexleimo/rex-cli
+      - Project: https://github.com/rexleimo/harness-cli

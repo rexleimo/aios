@@ -103,10 +103,10 @@ claude
 
 ```bash
 # 1. 克隆
-git clone https://github.com/rexleimo/rex-cli.git
+git clone https://github.com/rexleimo/harness-cli.git
 
 # 2. 安装
-cd rex-cli
+cd harness-cli
 ./scripts/setup-all.sh --components all
 
 # 3. 启动

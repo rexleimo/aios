@@ -9,7 +9,7 @@ Make GitHub Releases the single stable distribution channel for `Harness CLI` in
 The repository currently documents stable install commands like:
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 ```
 
 But the GitHub repository has no published Releases right now. That creates a hard mismatch:
@@ -146,7 +146,7 @@ These assets are the contract behind the documented stable install commands.
 Stable docs continue to use:
 
 ```bash
-curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 ```
 
 and the PowerShell equivalent.

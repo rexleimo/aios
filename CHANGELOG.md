@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.18.7] - 2026-05-19
+
+- docs: update repository URL to harness-cli
+
 ## [1.18.6] - 2026-05-19
 
 - fix: rename release archives to harness-cli

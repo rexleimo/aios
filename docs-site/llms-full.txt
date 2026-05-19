@@ -22,8 +22,8 @@
 
 ## Releases
 - https://cli.rexai.top/changelog/
-- https://github.com/rexleimo/rex-cli/blob/main/CHANGELOG.md
-- https://github.com/rexleimo/rex-cli/releases
+- https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md
+- https://github.com/rexleimo/harness-cli/releases
 
 ## Blog
 - https://cli.rexai.top/blog/

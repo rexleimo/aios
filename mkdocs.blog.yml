@@ -2,8 +2,8 @@ site_name: Harness CLI Blog
 site_url: https://cli.rexai.top/blog/
 site_description: Engineering and growth blog for AI memory systems, single-agent harness workflows, Agent Team runtime, and automatic subagent planning.
 site_author: RexAI
-repo_url: https://github.com/rexleimo/rex-cli
-repo_name: rexleimo/rex-cli
+repo_url: https://github.com/rexleimo/harness-cli
+repo_name: rexleimo/harness-cli
 
 docs_dir: blog-site
 site_dir: site/blog

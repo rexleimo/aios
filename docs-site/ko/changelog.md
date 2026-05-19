@@ -9,8 +9,8 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 ## 공식 릴리스 이력
 
-- GitHub 변경 파일: [CHANGELOG.md](https://github.com/rexleimo/rex-cli/blob/main/CHANGELOG.md)
-- GitHub Releases: [releases](https://github.com/rexleimo/rex-cli/releases)
+- GitHub 변경 파일: [CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
+- GitHub Releases: [releases](https://github.com/rexleimo/harness-cli/releases)
 
 ## 최신 안정 버전
 

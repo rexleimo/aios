@@ -164,5 +164,5 @@ node scripts/rl-mixed-v1.mjs mixed-eval
 ## 延伸阅读
 
 - [AIOS 架构](/zh/architecture/) — 脚线、分发器和 RL 模块布局
-- [RL Core 设计规范](https://github.com/rexleimo/rex-cli/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md) — 完整技术规格
-- [浏览器 + 编排器 RL 设计](https://github.com/rexleimo/rex-cli/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md) — 联合环境详情
+- [RL Core 设计规范](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md) — 完整技术规格
+- [浏览器 + 编排器 RL 设计](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md) — 联合环境详情

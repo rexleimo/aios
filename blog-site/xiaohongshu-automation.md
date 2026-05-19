@@ -130,10 +130,10 @@ A: Yes. But I don't recommend letting AI write everything. Best practice: AI gen
 
 ```bash
 # 1. Clone the project
-git clone https://github.com/rexleimo/rex-cli.git
+git clone https://github.com/rexleimo/harness-cli.git
 
 # 2. Install
-cd rex-cli
+cd harness-cli
 ./scripts/setup-all.sh --components all
 
 # 3. Launch

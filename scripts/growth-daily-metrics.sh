@@ -3,7 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CSV_PATH="$ROOT_DIR/.aios/tasks/metrics/english-growth-daily.csv"
-REPO="rexleimo/rex-cli"
+REPO="rexleimo/harness-cli"
 
 if ! command -v curl >/dev/null 2>&1; then
   echo "curl is required" >&2

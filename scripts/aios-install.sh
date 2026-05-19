@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_REPO="rexleimo/rex-cli"
-DEFAULT_INSTALL_DIR="$HOME/.rexcil/rex-cli"
+DEFAULT_REPO="rexleimo/harness-cli"
+DEFAULT_INSTALL_DIR="$HOME/.rexcil/harness-cli"
 DEFAULT_WRAP_MODE="opt-in"
 DEFAULT_FIRST_SETUP="1"
 
@@ -11,11 +11,11 @@ usage() {
 AIOS one-liner installer (Releases-first)
 
 Usage:
-  curl -fsSL https://github.com/rexleimo/rex-cli/releases/latest/download/aios-install.sh | bash
+  curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 
 Optional environment variables:
-  AIOS_REPO           GitHub repo, default: rexleimo/rex-cli
-  AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/rex-cli
+  AIOS_REPO           GitHub repo, default: rexleimo/harness-cli
+  AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/harness-cli
   AIOS_WRAP_MODE      all|repo-only|opt-in|off (default: opt-in)
   AIOS_FIRST_SETUP    1|0, run first-run skills/native/superpowers setup (default: 1)
 USAGE
