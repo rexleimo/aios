@@ -17,6 +17,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [Codemap：给你的 AI Agent 一张代码地图](2026-05-codemap-crg.md)
 - [ContextDB Token 压缩：更小的上下文包，更稳的回忆能力](2026-05-token-compression.md)
 - [自研 Token 压缩：为什么 Harness CLI 不安装 RTK 或 Caveman](2026-05-native-token-compression.md)
 - [aios memo GUI：把 Agent 的记忆变成一张活的图谱](2026-05-aios-memo-gui.md)

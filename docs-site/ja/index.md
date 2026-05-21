@@ -21,6 +21,7 @@ description: Harness CLIは、codex、claude、gemini、opencodeに記憶、協�
 | **Native Route Shortcuts** | single/subagent/team/harness レーン向けクライアントネイティブルートプロンプト | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | RTK/Caveman パターンに着想を得た自前入力/出力削減。競合ツールはインストールしません | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 向けインテリジェントマルチモデルディスパッチ。能力、コスト、成功率でタスクをマッチング | `node scripts/aios.mjs model-router route --task "..."` |
+| **Codemap** | Tree-sitter コード知識グラフ — ワンコマンドで全エージェントがコード構造を即座に理解 | `aios internal codemap install` / `doctor` |
 | **Agent Team** | HUD ビジュアル追跡付きマルチ agent 並列協調 | `aios team 3:codex "task description"` |
 | **Solo Harness** | resume サポートとランジャーナル付き単一 agent 夜通しタスク | `aios harness run --objective "goal" --worktree` |
 | **Perception** | コンテンツ成果トラッキング + 統計インサイト + perception インジェクション | `aios perception record` / `insights` / `summary` |

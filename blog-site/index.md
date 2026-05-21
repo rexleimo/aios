@@ -19,6 +19,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [Codemap: Give Your AI Agent a Map of Your Codebase](2026-05-codemap-crg.md)
 - [ContextDB Token Compression: Fit More Memory In Less Space](2026-05-token-compression.md)
 - [Native Token Compression: No Extra Tools Needed](2026-05-native-token-compression.md)
 - [Model Router: The Right Model for Every Task](2026-05-model-router.md)

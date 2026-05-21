@@ -4,6 +4,7 @@ import path from 'node:path';
 
 import { commandExists, captureCommand, runCommand } from '../platform/process.mjs';
 import { getClientHomes } from '../platform/paths.mjs';
+import { syncGeneratedSkills } from '../skills/sync.mjs';
 
 const CRG_MCP_ALIAS = 'code-review-graph';
 const STATE_FILE_NAME = 'codemap.json';
@@ -13,6 +14,11 @@ const AGENTS_MD_MARKERS = {
   begin: '<!-- AIOS CODEMAP BEGIN -->',
   end: '<!-- AIOS CODEMAP END -->',
 };
+
+function backupFilePath(filePath) {
+  const ts = new Date().toISOString().replace(/[-:]/g, '').replace('T', '-').slice(0, 15);
+  return `${filePath}.bak-${ts}`;
+}
 
 function resolveUserPath(value) {
   const raw = String(value || '').trim();
@@ -87,7 +93,6 @@ function buildCrgMcpServerEntry(clientKey) {
   };
   if (clientKey === 'opencode') {
     entry.type = 'stdio';
-    entry.env = [];
   }
   return entry;
 }
@@ -101,6 +106,7 @@ function injectCrgIntoMcpJson(filePath, clientKey, { dryRun = false, io = consol
     try {
       parsed = JSON.parse(raw);
     } catch (error) {
+      fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
       return {
         status: 'error',
         reason: `JSON parse failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -134,7 +140,7 @@ function injectCrgIntoMcpJson(filePath, clientKey, { dryRun = false, io = consol
   }
 
   if (exists) {
-    fs.writeFileSync(`${filePath}.bak`, raw, 'utf8');
+    fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
   }
 
   fs.mkdirSync(path.dirname(filePath), { recursive: true });
@@ -153,7 +159,7 @@ function removeCrgFromMcpJson(filePath, { io = console } = {}) {
     if (!(CRG_MCP_ALIAS in parsed.mcpServers)) return;
 
     delete parsed.mcpServers[CRG_MCP_ALIAS];
-    fs.writeFileSync(`${filePath}.bak`, raw, 'utf8');
+    fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
     fs.writeFileSync(filePath, `${JSON.stringify(parsed, null, 2)}\n`, 'utf8');
     io.log(`OK   codemap removed ${CRG_MCP_ALIAS} from ${filePath}`);
   } catch (error) {
@@ -282,7 +288,7 @@ function collectCodemapMcpTargets(rootDir, clientHomes = {}) {
 export async function installCodemap({ rootDir, projectRoot, dryRun = false, io = console, clientHomes = null } = {}) {
   const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());
 
-  io.log('[1/7] Checking uv in PATH');
+  io.log('[1/8] Checking uv in PATH');
   if (!commandExists('uv')) {
     throw new Error(
       'Missing required command: uv. Install uv first:\n' +
@@ -292,7 +298,7 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
   }
   io.log('OK   uv found');
 
-  io.log('[2/7] Verifying code-review-graph via uvx');
+  io.log('[2/8] Verifying code-review-graph via uvx');
   const versionResult = captureCrgCommand(['--version'], { cwd: projectRoot });
   if (!versionResult) {
     throw new Error(
@@ -302,7 +308,7 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
   const crgVersion = versionResult.stdout.trim();
   io.log(`OK   code-review-graph version: ${crgVersion || 'available'}`);
 
-  io.log('[3/7] Building graph');
+  io.log('[3/8] Building graph');
   const crgDataDir = path.join(projectRoot, CRG_DATA_DIR);
   const graphExists = fs.existsSync(crgDataDir);
   if (graphExists) {
@@ -316,7 +322,7 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
     }
   }
 
-  io.log('[4/7] Injecting MCP config into clients');
+  io.log('[4/8] Injecting MCP config into clients');
   const targets = collectCodemapMcpTargets(rootDir, homes);
   const filtered = targets.filter((t) => t.createIfMissing || fs.existsSync(t.path));
   const injectedClients = [];
@@ -332,8 +338,12 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
     injectedClients.push(target.clientKey);
   }
 
-  io.log('[5/7] Installing opencode plugin');
-  if (injectedClients.includes('opencode')) {
+  io.log('[5/8] Installing opencode plugin');
+  const opencodeInstalled = injectedClients.includes('opencode') && (
+    commandExists('opencode') ||
+    fs.existsSync(path.join(os.homedir(), '.config', 'opencode'))
+  );
+  if (opencodeInstalled) {
     io.log(`+ uvx ${CRG_MCP_ALIAS} install --platform opencode`);
     if (dryRun) {
       io.log(`[dry-run] skipped: uvx ${CRG_MCP_ALIAS} install --platform opencode`);
@@ -348,7 +358,7 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
     io.log('SKIP opencode not detected, skipping plugin install');
   }
 
-  io.log('[6/7] Writing state file');
+  io.log('[6/8] Writing state file');
   const state = {
     version: 1,
     installedAt: new Date().toISOString(),
@@ -364,41 +374,77 @@ export async function installCodemap({ rootDir, projectRoot, dryRun = false, io 
     io.log(`OK   codemap state written to ${stateFilePath(projectRoot)}`);
   }
 
-  io.log('[7/7] Updating AGENTS.md');
+  io.log('[7/8] Updating AGENTS.md');
   injectCrgIntoAgentsMd(projectRoot, { dryRun, io });
+
+  io.log('[8/8] Syncing skills from skill-sources to client dirs');
+  const skillsSourceDir = path.join(rootDir, 'skill-sources');
+  if (fs.existsSync(skillsSourceDir)) {
+    if (dryRun) {
+      io.log(`[dry-run] skipped: syncGeneratedSkills({ rootDir })`);
+    } else {
+      try {
+        const syncResult = await syncGeneratedSkills({ rootDir, io });
+        const totals = syncResult.results.reduce((acc, r) => {
+          acc.installed += r.installed;
+          acc.updated += r.updated;
+          acc.reused += r.reused;
+          acc.removed += r.removed;
+          return acc;
+        }, { installed: 0, updated: 0, reused: 0, removed: 0 });
+        io.log(`OK   skills synced: installed=${totals.installed} updated=${totals.updated} reused=${totals.reused} removed=${totals.removed}`);
+      } catch (syncError) {
+        io.log(`[warn] skill sync failed: ${syncError instanceof Error ? syncError.message : String(syncError)}`);
+      }
+    }
+  } else {
+    io.log('SKIP skill-sources/ not found, skipping skill sync');
+  }
 
   io.log('Codemap install complete.');
   return { state, injectedClients, dryRun };
 }
 
-export async function uninstallCodemap({ rootDir, projectRoot, io = console, clientHomes = null } = {}) {
+export async function uninstallCodemap({ rootDir, projectRoot, dryRun = false, io = console, clientHomes = null } = {}) {
   const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());
 
   io.log('[1/4] Removing MCP config from clients');
   const targets = collectCodemapMcpTargets(rootDir, homes);
   for (const target of targets) {
-    if (fs.existsSync(target.path)) {
+    if (dryRun) {
+      if (fs.existsSync(target.path)) {
+        io.log(`PLAN codemap would remove ${CRG_MCP_ALIAS} from ${target.path}`);
+      }
+    } else if (fs.existsSync(target.path)) {
       removeCrgFromMcpJson(target.path, { io });
     }
   }
 
   io.log('[2/4] Removing AGENTS.md CRG section');
-  removeCrgFromAgentsMd(projectRoot, { io });
+  if (dryRun) {
+    io.log('PLAN codemap would remove CRG section from AGENTS.md');
+  } else {
+    removeCrgFromAgentsMd(projectRoot, { io });
+  }
 
   io.log('[3/4] Removing state file');
-  removeState(projectRoot);
-  io.log(`OK   codemap state removed`);
+  if (dryRun) {
+    io.log(`PLAN codemap would remove state file ${stateFilePath(projectRoot)}`);
+  } else {
+    removeState(projectRoot);
+    io.log(`OK   codemap state removed`);
+  }
 
   io.log('[4/4] Preserving graph data');
   const crgDataDir = path.join(projectRoot, CRG_DATA_DIR);
   if (fs.existsSync(crgDataDir)) {
-    io.log(`OK   preserved ${crgDataDir} (user data)`);
+    io.log(`OK   ${dryRun ? 'would preserve' : 'preserved'} ${crgDataDir} (user data)`);
   } else {
     io.log('OK   graph data directory not present');
   }
 
   io.log('Codemap uninstall complete.');
-  return { removed: true };
+  return { removed: true, dryRun };
 }
 
 export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun = false, io = console, clientHomes = null } = {}) {
@@ -421,14 +467,14 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
   io.log(`Project: ${projectRoot}`);
   io.log('');
 
-  io.log('[1/6] Checking uv in PATH');
+  io.log('[1/7] Checking uv in PATH');
   if (commandExists('uv')) {
     ok('uv found');
   } else {
     err('uv not found in PATH');
   }
 
-  io.log('[2/6] Checking code-review-graph via uvx');
+  io.log('[2/7] Checking code-review-graph via uvx');
   if (commandExists('uvx')) {
     const versionResult = captureCrgCommand(['--version'], { cwd: projectRoot });
     if (versionResult) {
@@ -440,7 +486,7 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
     err('uvx not found in PATH');
   }
 
-  io.log('[3/6] Checking graph data directory');
+  io.log('[3/7] Checking graph data directory');
   const crgDataDir = path.join(projectRoot, CRG_DATA_DIR);
   if (fs.existsSync(crgDataDir)) {
     ok(`graph data directory exists: ${crgDataDir}`);
@@ -448,7 +494,7 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
     warn(`graph data directory missing: ${crgDataDir}`);
   }
 
-  io.log('[4/6] Checking graph has nodes');
+  io.log('[4/7] Checking graph has nodes');
   const statusResult = captureCrgCommand(['status'], { cwd: projectRoot });
   if (statusResult && statusResult.stdout.trim()) {
     ok(`graph status: ${statusResult.stdout.trim().split('\n')[0]}`);
@@ -456,27 +502,37 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
     warn('graph status unavailable or empty');
   }
 
-  io.log('[5/6] Checking MCP config in clients');
+  io.log('[5/7] Checking MCP config in clients');
   const targets = collectCodemapMcpTargets(rootDir, homes);
   let foundMcp = false;
-  for (const target of targets) {
-    if (!fs.existsSync(target.path)) continue;
+  const existingTargets = targets.filter((t) => fs.existsSync(t.path));
+  for (const target of existingTargets) {
+    let hasCrg = false;
+    let parseError = false;
     try {
       const raw = fs.readFileSync(target.path, 'utf8');
       const parsed = JSON.parse(raw);
       if (parsed?.mcpServers?.[CRG_MCP_ALIAS]) {
         ok(`${CRG_MCP_ALIAS} found in ${target.path} (${target.clientKey})`);
+        hasCrg = true;
         foundMcp = true;
       }
     } catch {
-      // ignore parse errors
+      parseError = true;
+    }
+    if (!hasCrg) {
+      if (parseError) {
+        warn(`${CRG_MCP_ALIAS} missing in ${target.path} (${target.clientKey}) — file exists but JSON is invalid`);
+      } else {
+        warn(`${CRG_MCP_ALIAS} missing in ${target.path} (${target.clientKey})`);
+      }
     }
   }
-  if (!foundMcp) {
-    warn(`${CRG_MCP_ALIAS} not found in any client MCP config`);
+  if (existingTargets.length === 0) {
+    warn('no MCP config files found for any client');
   }
 
-  io.log('[6/6] Checking state file');
+  io.log('[6/7] Checking state file');
   const state = readState(projectRoot);
   if (state && state.version === 1) {
     ok(`state file valid: ${stateFilePath(projectRoot)}`);
@@ -502,12 +558,14 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
     io.log('[fix] Re-running installCodemap to heal issues...');
     try {
       await installCodemap({ rootDir, projectRoot, dryRun, io, clientHomes: homes });
+      io.log('[fix] Install complete. Re-run doctor to verify.');
     } catch (error) {
       err(`fix failed: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 
   io.log('');
+  io.log('Note: counts reflect pre-fix state. Re-run doctor to get fresh results.');
   if (errors > 0) io.log(`Result: FAILED (${errors} errors, ${effectiveWarnings} warnings)`);
   else io.log(`Result: OK (${effectiveWarnings} warnings)`);
 
@@ -515,7 +573,13 @@ export async function doctorCodemap({ rootDir, projectRoot, fix = false, dryRun 
 }
 
 export async function buildCodemap({ projectRoot, io = console } = {}) {
-  return runCrgCommand(['build'], { cwd: projectRoot, io });
+  const result = runCrgCommand(['build'], { cwd: projectRoot, io });
+  const state = readState(projectRoot);
+  if (state) {
+    state.graphBuilt = true;
+    writeState(projectRoot, state);
+  }
+  return result;
 }
 
 export async function updateCodemap({ projectRoot, io = console } = {}) {

@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.1] - 2026-05-21
+
+- feat(codemap): integrate code-review-graph as first-class AIOS component with docs, blog, and i18n support
+
 ## [1.19.0] - 2026-05-19
 
 - feat: add aios version and runtime update

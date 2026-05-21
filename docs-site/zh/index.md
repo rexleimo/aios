@@ -21,6 +21,7 @@ description: Harness CLI (AIOS) 给你正在用的 codex / claude / gemini / ope
 | **原生路由快捷命令** | 客户端原生路由提示，single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
 | **原生 Token 压缩** | 自研输入/输出压缩，参考 RTK/Caveman 思路，不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本和历史成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
+| **Codemap** | Tree-sitter 代码知识图谱 — 一行命令安装，所有 agent 瞬间获得代码库的结构化理解 | `aios internal codemap install` / `doctor` |
 | **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
 | **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |

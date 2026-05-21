@@ -478,7 +478,9 @@ export async function runHarnessCommand(options = {}, {
         try {
           const { buildCodemap } = await import('../components/codemap.mjs');
           await buildCodemap({ projectRoot: preservedWorktree.workspacePath || preservedWorktree.path, io: { log: (msg) => {} } });
-        } catch { /* non-fatal */ }
+        } catch (buildErr) {
+          io.log(`[warn] codemap build in worktree failed: ${buildErr instanceof Error ? buildErr.message : String(buildErr)}`);
+        }
       }
     }
 

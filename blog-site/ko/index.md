@@ -19,6 +19,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
+- [Codemap：AI 에이전트에게 코드베이스 지도를](2026-05-codemap-crg.md)
 - [ContextDB Token 압축: 더 작은 context pack과 안전한 recall](2026-05-token-compression.md)
 - [네이티브 Token 압축: Harness CLI가 RTK나 Caveman을 설치하지 않는 이유](2026-05-native-token-compression.md)
 - [Model Router: 모든 태스크에 맞는 올바른 모델](2026-05-model-router.md)

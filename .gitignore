@@ -99,6 +99,14 @@ memory/memo/
 # Added by code-review-graph
 .code-review-graph/
 
+# Client-local MCP config — per-machine paths, not to be committed
+.opencode.json
+
+# MCP config backups created by codemap install/uninstall
+.mcp.json.bak*
+*.mcp.json.bak*
+*.bak-*
+
 # Client-local skill and config directories — managed by sync-skills.mjs
 .claude/
 .opencode/

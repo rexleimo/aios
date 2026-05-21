@@ -70,6 +70,7 @@ plugins:
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 模型路由器
+            Code Review Graph / Codemap: 代码审查图谱 / Codemap
             Route & Concurrency Profiles: 路由与并发档位
             Advanced Design Skills: 高级设计技能
             Solo Harness: 单 Agent 夜跑
@@ -108,6 +109,7 @@ plugins:
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: モデルルーター
+            Code Review Graph / Codemap: コードレビューグラフ / Codemap
             Route & Concurrency Profiles: ルーティングと並列プロファイル
             Advanced Design Skills: 高度デザインスキル
             Solo Harness: ソロ Harness
@@ -146,6 +148,7 @@ plugins:
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 모델 라우터
+            Code Review Graph / Codemap: 코드 리뷰 그래프 / Codemap
             Route & Concurrency Profiles: 라우팅/병렬 프로필
             Advanced Design Skills: 고급 디자인 스킬
             Solo Harness: 솔로 Harness
@@ -201,6 +204,7 @@ nav:
       - Superpowers: superpowers.md
       - debug-hub: debug-hub.md
       - Model Router: model-router.md
+      - Code Review Graph / Codemap: codemap.md
       - Route & Concurrency Profiles: route-concurrency-profiles.md
       - Advanced Design Skills: advanced-design-skills.md
       - Agent Team: team-ops.md
