@@ -75,32 +75,44 @@ cp "$install_ps1" "$OUT_DIR/aios-install.ps1"
 chmod +x "$OUT_DIR/aios-install.sh" || true
 
 echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
-paths=(
-  "AGENTS.md"
-  "CHANGELOG.md"
-  "VERSION"
-  "package.json"
-  "package-lock.json"
-  "README.md"
-  "README-zh.md"
-  "skills-lock.json"
-  "client-sources"
-  "agent-sources"
-  "skill-sources"
-  "config"
-  "scripts"
-  "mcp-server"
-  ".claude/agents"
-  ".codex/skills"
-  ".codex/agents"
-  ".claude/skills"
-  ".agents/skills"
+(
+  cd "$ROOT_DIR"
+  tar -czf "$OUT_DIR/harness-cli.tar.gz" \
+    --transform 's|^|harness-cli/|' \
+    --exclude='.git' \
+    --exclude='node_modules' \
+    --exclude='dist' \
+    --exclude='__pycache__' \
+    --exclude='.mypy_cache' \
+    --exclude='.aios' \
+    --exclude='*.pyc' \
+    --exclude='.DS_Store' \
+    AGENTS.md CHANGELOG.md VERSION \
+    package.json package-lock.json \
+    README.md README-zh.md \
+    skills-lock.json \
+    client-sources agent-sources skill-sources \
+    config scripts mcp-server \
+    .claude/agents .claude/skills \
+    .codex/skills .codex/agents \
+    .agents/skills .opencode/skills
 )
 
-git -C "$ROOT_DIR" archive --format=tar --prefix="harness-cli/" HEAD "${paths[@]}" | gzip -9 > "$OUT_DIR/harness-cli.tar.gz"
-
 echo "+ zip -> $OUT_DIR/harness-cli.zip"
-git -C "$ROOT_DIR" archive --format=zip --prefix="harness-cli/" -o "$OUT_DIR/harness-cli.zip" HEAD "${paths[@]}"
+(
+  cd "$ROOT_DIR"
+  zip -r "$OUT_DIR/harness-cli.zip" \
+    AGENTS.md CHANGELOG.md VERSION \
+    package.json package-lock.json \
+    README.md README-zh.md \
+    skills-lock.json \
+    client-sources agent-sources skill-sources \
+    config scripts mcp-server \
+    .claude/agents .claude/skills \
+    .codex/skills .codex/agents \
+    .agents/skills .opencode/skills \
+    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'dist/*' -x '.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
+)
 
 echo ""
 echo "Done. Assets:"
