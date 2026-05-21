@@ -62,6 +62,34 @@ Examples:
   node scripts/aios.mjs internal browser mcp-migrate
   node scripts/aios.mjs internal browser cdp-start
   node scripts/aios.mjs internal browser cdp-status
+  node scripts/aios.mjs internal codemap install
+  node scripts/aios.mjs internal codemap doctor --fix
+`;
+}
+
+export function getCodemapHelpText() {
+  return `AIOS Codemap — code-review-graph integration
+
+Usage:
+  node scripts/aios.mjs internal codemap <action> [options]
+
+Actions:
+  install    Install code-review-graph: uvx check, graph build, MCP inject, AGENTS.md update
+  uninstall  Remove CRG configs, plugin, state (preserves .code-review-graph/)
+  doctor     Health check for codemap installation
+  build      Full graph rebuild from scratch
+  update     Incremental graph update (changed files only, <2s)
+  status     Show codemap state and graph statistics
+
+Options:
+  --fix      (doctor) auto-fix issues found
+  --dry-run  Preview changes without writing
+
+Examples:
+  node scripts/aios.mjs internal codemap install
+  node scripts/aios.mjs internal codemap doctor --fix
+  node scripts/aios.mjs internal codemap build
+  node scripts/aios.mjs internal codemap update
 `;
 }
 
@@ -622,6 +650,10 @@ export function getInternalHelpText(target, action) {
     return `Usage:
   node scripts/aios.mjs internal privacy install [--enable] [--disable] [--mode <regex|ollama|hybrid>]
 `;
+  }
+
+  if (target === 'codemap') {
+    return getCodemapHelpText();
   }
 
   return getRootHelpText();

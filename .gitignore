@@ -96,3 +96,5 @@ __pycache__/
 
 # Legacy memo runtime state (do not commit)
 memory/memo/
+# Added by code-review-graph
+.code-review-graph/

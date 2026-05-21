@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import { existsSync, promises as fs } from 'node:fs';
 import path from 'node:path';
 import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.mjs';
 
@@ -1204,6 +1204,18 @@ export async function runOrchestrate(
     clarityGate: resolvedClarityGate,
   });
 
+  let codemapAnalysis = null;
+  try {
+    const codemapStatePath = path.join(rootDir, '.aios', 'codemap.json');
+    if (existsSync(codemapStatePath)) {
+      const { captureCrgCommand } = await import('../components/codemap.mjs');
+      const result = captureCrgCommand(['detect-changes', '--brief'], { cwd: rootDir });
+      if (result && result.status === 0 && result.stdout) {
+        codemapAnalysis = result.stdout.trim();
+      }
+    }
+  } catch { /* non-fatal */ }
+
   const reportBasePlan = buildOrchestrationPlan({
     blueprint,
     taskTitle,
@@ -1230,6 +1242,7 @@ export async function runOrchestrate(
         ...(entropyGc ? { entropyGc } : {}),
         ...(workItemTelemetry ? { workItemTelemetry } : {}),
         ...(dispatchInsights ? { dispatchInsights } : {}),
+        ...(codemapAnalysis ? { codemapAnalysis } : {}),
         ...(retryReplay ? { retryReplay } : {}),
         ...(readiness ? { readiness } : {}),
       },

@@ -2,6 +2,7 @@ import path from 'node:path';
 
 import { inspectBootstrapTask } from '../../doctor-bootstrap-task.mjs';
 import { doctorBrowserMcp } from '../components/browser.mjs';
+import { doctorCodemap } from '../components/codemap.mjs';
 import { doctorNativeEnhancements } from '../components/native.mjs';
 import { doctorContextDbShell } from '../components/shell.mjs';
 import { doctorContextDbSkills } from '../components/skills.mjs';
@@ -276,6 +277,33 @@ export async function runDoctorSuite({
     addDoctorCheck(checks, {
       id: 'doctor:browser',
       item: 'Browser MCP prerequisites and profile health',
+      status: 'skip',
+      fix: 'Enable gate or run doctor with --profile standard/strict.',
+      note: `disabled for profile=${profile}`,
+    });
+  }
+
+  io.log('');
+  io.log('== doctor-codemap ==');
+  if (isHarnessGateEnabled('doctor:codemap', { profile, disabledGates, profiles: ['standard', 'strict'] })) {
+    const codemapResult = await doctorCodemap({ rootDir, projectRoot: rootDir, fix, dryRun, io });
+    addDoctorCheck(checks, {
+      id: 'doctor:codemap',
+      item: 'Code review graph (CRG) installation and graph health',
+      status: codemapResult.errors > 0 ? 'error' : (codemapResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
+      fix: 'Run: node scripts/aios.mjs internal codemap doctor --fix',
+      note: `errors=${codemapResult.errors}; effectiveWarnings=${codemapResult.effectiveWarnings}`,
+    });
+    if (codemapResult.errors > 0) {
+      effectiveWarns += 1;
+    } else {
+      effectiveWarns += codemapResult.effectiveWarnings;
+    }
+  } else {
+    logSkippedGate(io, 'doctor:codemap', profile);
+    addDoctorCheck(checks, {
+      id: 'doctor:codemap',
+      item: 'Code review graph (CRG) installation and graph health',
       status: 'skip',
       fix: 'Enable gate or run doctor with --profile standard/strict.',
       note: `disabled for profile=${profile}`,

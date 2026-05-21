@@ -472,6 +472,16 @@ export async function runHarnessCommand(options = {}, {
       });
     }
 
+    if (preservedWorktree?.enabled && preservedWorktree.path) {
+      const codemapStatePath = path.join(rootDir, '.aios', 'codemap.json');
+      if (existsSync(codemapStatePath)) {
+        try {
+          const { buildCodemap } = await import('../components/codemap.mjs');
+          await buildCodemap({ projectRoot: preservedWorktree.workspacePath || preservedWorktree.path, io: { log: (msg) => {} } });
+        } catch { /* non-fatal */ }
+      }
+    }
+
     try {
       const result = await runSoloHarnessLoop({
         rootDir,

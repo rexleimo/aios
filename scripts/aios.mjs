@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from './lib/cli/parse-args.mjs';
-import { getCommandHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './lib/cli/help.mjs';
+import { getCommandHelpText, getCodemapHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './lib/cli/help.mjs';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const projectRoot = process.cwd();
@@ -127,6 +127,16 @@ async function runInternal(options) {
   if (target === 'privacy') {
     const module = await import('./lib/components/shell.mjs');
     if (action === 'install') return module.installPrivacyGuard({ rootDir, enable: options.enable !== false, disable: Boolean(options.disable), mode: options.mode ?? '' });
+  }
+
+  if (target === 'codemap') {
+    const module = await import('./lib/components/codemap.mjs');
+    if (action === 'install') return module.installCodemap({ rootDir, projectRoot, dryRun: Boolean(options.dryRun), io: console });
+    if (action === 'uninstall') return module.uninstallCodemap({ rootDir, projectRoot, io: console });
+    if (action === 'doctor') return module.doctorCodemap({ rootDir, projectRoot, fix: Boolean(options.fix), dryRun: Boolean(options.dryRun), io: console });
+    if (action === 'build') return module.buildCodemap({ projectRoot, io: console });
+    if (action === 'update') return module.updateCodemap({ projectRoot, io: console });
+    if (action === 'status') return module.statusCodemap({ projectRoot, io: console });
   }
 
   if (target === 'offload') {

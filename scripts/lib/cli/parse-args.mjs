@@ -34,7 +34,7 @@ import {
 } from '../lifecycle/options.mjs';
 import { normalizeOrchestratorBlueprint, normalizeOrchestratorFormat } from '../harness/orchestrator.mjs';
 
-const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy', 'offload']);
+const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy', 'offload', 'codemap']);
 const PRIVACY_MODES = new Set(['regex', 'ollama', 'hybrid']);
 const TEAM_PROVIDERS = new Set(['codex', 'claude', 'gemini']);
 const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);
@@ -1144,7 +1144,7 @@ function parseInternalArgs(argv) {
         options.verbose = true;
         break;
       case '--fix':
-        if (((target !== 'native' && target !== 'browser') || action !== 'doctor')) {
+        if (((target !== 'native' && target !== 'browser' && target !== 'codemap') || action !== 'doctor')) {
           throw new Error(`Unknown option: ${arg}`);
         }
         options.fix = true;

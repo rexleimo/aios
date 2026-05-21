@@ -21,7 +21,8 @@ Pick one of: **Adopt**, **Extend**, **Compose**, **Build**, with a short justifi
    - Constraints: platform (macOS/Linux/Windows), clients (codex/claude/gemini/opencode), offline needs, security posture.
 
 2. **Search locally (before the internet)**
-   - Code: `rg -n "<keyword>"` in the repo.
+   - CRG (if codemap installed): `semantic_search_nodes(query="<keyword>")` then `query_graph(pattern="callers_of"|"callees_of"|"tests_for", target="<name>")` — returns structural context that text search cannot provide
+   - Code: `rg -n "<keyword>"` in the repo (fallback when CRG doesn't cover what you need)
    - Scripts: check `scripts/` for existing lifecycle/doctor commands.
    - Docs: check `README*` and `docs/`.
 
