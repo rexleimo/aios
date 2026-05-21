@@ -69,16 +69,37 @@ if [[ ! -f "$install_ps1" ]]; then
   exit 1
 fi
 
+release_paths=(
+  AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc
+  package.json package-lock.json
+  README.md README-zh.md
+  skills-lock.json
+  client-sources agent-sources skill-sources
+  config scripts mcp-server
+  .claude/agents .claude/skills
+  .codex/skills .codex/agents
+  .agents/skills .opencode/skills
+)
+
+existing_release_paths=()
+for release_path in "${release_paths[@]}"; do
+  if [[ -e "$ROOT_DIR/$release_path" ]]; then
+    existing_release_paths+=("$release_path")
+  fi
+done
+
 echo "+ cp installers -> $OUT_DIR"
 cp "$install_sh" "$OUT_DIR/aios-install.sh"
 cp "$install_ps1" "$OUT_DIR/aios-install.ps1"
 chmod +x "$OUT_DIR/aios-install.sh" || true
 
 echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
+tar_stage="$(mktemp -d)"
+trap 'rm -rf "$tar_stage"' EXIT
+mkdir -p "$tar_stage/harness-cli"
 (
   cd "$ROOT_DIR"
-  tar -czf "$OUT_DIR/harness-cli.tar.gz" \
-    --transform 's|^|harness-cli/|' \
+  tar -cf - \
     --exclude='.git' \
     --exclude='node_modules' \
     --exclude='dist' \
@@ -87,30 +108,18 @@ echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
     --exclude='.aios' \
     --exclude='*.pyc' \
     --exclude='.DS_Store' \
-    AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc \
-    package.json package-lock.json \
-    README.md README-zh.md \
-    skills-lock.json \
-    client-sources agent-sources skill-sources \
-    config scripts mcp-server \
-    .claude/agents .claude/skills \
-    .codex/skills .codex/agents \
-    .agents/skills .opencode/skills
+    "${existing_release_paths[@]}" | (cd "$tar_stage/harness-cli" && tar -xf -)
+)
+(
+  cd "$tar_stage"
+  tar -czf "$OUT_DIR/harness-cli.tar.gz" harness-cli
 )
 
 echo "+ zip -> $OUT_DIR/harness-cli.zip"
 (
   cd "$ROOT_DIR"
   zip -r "$OUT_DIR/harness-cli.zip" \
-    AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc \
-    package.json package-lock.json \
-    README.md README-zh.md \
-    skills-lock.json \
-    client-sources agent-sources skill-sources \
-    config scripts mcp-server \
-    .claude/agents .claude/skills \
-    .codex/skills .codex/agents \
-    .agents/skills .opencode/skills \
+    "${existing_release_paths[@]}" \
     -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'dist/*' -x '.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
 )
 

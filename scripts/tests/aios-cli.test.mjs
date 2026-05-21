@@ -28,11 +28,119 @@ test('aios --version prints the Harness CLI version', async () => {
 });
 
 test('parseArgs accepts version aliases', () => {
-  for (const arg of ['--version', '-v', 'version']) {
+  for (const arg of ['--version', '-v', '-V', 'version']) {
     const result = parseArgs([arg]);
     assert.equal(result.mode, 'command');
     assert.equal(result.command, 'version');
   }
+});
+
+test('parseArgs accepts Commander-style equals options', () => {
+  const setup = parseArgs(['setup', '--components=skills,native', '--mode=opt-in', '--client=codex']);
+  assert.equal(setup.command, 'setup');
+  assert.deepEqual(setup.options.components, ['skills', 'native']);
+  assert.equal(setup.options.wrapMode, 'opt-in');
+  assert.equal(setup.options.client, 'codex');
+
+  const team = parseArgs(['team', '--provider=claude', '--workers=2', '--task=Refactor CLI', '--dry-run']);
+  assert.equal(team.command, 'team');
+  assert.equal(team.options.provider, 'claude');
+  assert.equal(team.options.clientId, 'claude-code');
+  assert.equal(team.options.workers, 2);
+  assert.equal(team.options.taskTitle, 'Refactor CLI');
+  assert.equal(team.options.executionMode, 'dry-run');
+});
+
+test('aios declares CLI engineering dependencies directly', async () => {
+  const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf8'));
+  assert.match(pkg.dependencies?.commander || '', /^\^?\d/u);
+  assert.match(pkg.dependencies?.['@inquirer/prompts'] || '', /^\^?\d/u);
+  assert.match(pkg.dependencies?.chalk || '', /^\^?\d/u);
+});
+
+test('interactive command picker returns a parsed command choice', async () => {
+  const { chooseInteractiveCommand } = await import('../lib/cli/interactive.mjs');
+  let promptConfig;
+  const parsed = await chooseInteractiveCommand({
+    selectFn: async (config) => {
+      promptConfig = config;
+      return 'doctor';
+    },
+  });
+
+  assert.equal(parsed.command, 'doctor');
+  assert.equal(parsed.mode, 'command');
+  assert.match(promptConfig.message, /AIOS/);
+  assert.deepEqual(
+    promptConfig.choices.map((choice) => choice.value),
+    ['tui', 'doctor', 'setup', 'help']
+  );
+});
+
+test('embedded AIOS command fragments parse through the shared fragment helper', async () => {
+  const { parseAiosCommandAction } = await import('../lib/cli/fragment-parser.mjs');
+  const parsed = parseAiosCommandAction('node scripts/aios.mjs team --provider=claude --workers=2 --task="Refactor CLI"');
+
+  assert.equal(parsed.command, 'team');
+  assert.equal(parsed.options.provider, 'claude');
+  assert.equal(parsed.options.clientId, 'claude-code');
+  assert.equal(parsed.options.workers, 2);
+  assert.equal(parsed.options.taskTitle, 'Refactor CLI');
+});
+
+test('the CLI dispatcher factory can be imported independently of the launcher', async () => {
+  const { createAiosDispatch } = await import('../lib/cli/dispatch.mjs');
+
+  let output = '';
+  const dispatch = createAiosDispatch({
+    rootDir: process.cwd(),
+    projectRoot: process.cwd(),
+    stdout: { write: (chunk) => { output += String(chunk); return true; } },
+  });
+  await dispatch({ mode: 'command', command: 'version', options: {} });
+
+  assert.match(output, /Harness CLI/u);
+});
+
+test('Commander app declares commands with readable options', async () => {
+  const { createAiosProgram } = await import('../lib/cli/commander-app.mjs');
+  const program = createAiosProgram({ version: 'test-version', dispatch: async () => {} });
+  assert.equal(program.name(), 'aios');
+  assert.match(program.description(), /AIOS/i);
+
+  const init = program.commands.find((command) => command.name() === 'init');
+  assert.ok(init, 'init command should be declared');
+  assert.match(init.description(), /Initialize/i);
+  assert.ok(init.options.some((option) => option.flags.includes('--agent <agent>')));
+  assert.ok(init.options.some((option) => option.flags.includes('--dry-run')));
+
+  const team = program.commands.find((command) => command.name() === 'team');
+  assert.ok(team, 'team command should be declared');
+  assert.match(team.description(), /team/i);
+  assert.ok(team.options.some((option) => option.flags.includes('--provider <provider>')));
+  assert.ok(team.options.some((option) => option.flags.includes('--workers <n>')));
+});
+
+test('Commander app routes actions through parsed command dispatch', async () => {
+  const { createAiosProgram } = await import('../lib/cli/commander-app.mjs');
+  let dispatched;
+  const program = createAiosProgram({
+    version: 'test-version',
+    dispatch: async (parsed) => {
+      dispatched = parsed;
+    },
+  });
+
+  await program.parseAsync(['team', '--provider=claude', '--workers=2', '--task=Refactor CLI', '--dry-run'], {
+    from: 'user',
+  });
+
+  assert.equal(dispatched.command, 'team');
+  assert.equal(dispatched.options.provider, 'claude');
+  assert.equal(dispatched.options.clientId, 'claude-code');
+  assert.equal(dispatched.options.workers, 2);
+  assert.equal(dispatched.options.taskTitle, 'Refactor CLI');
+  assert.equal(dispatched.options.executionMode, 'dry-run');
 });
 
 test('parseArgs accepts aios init as top-level command', () => {

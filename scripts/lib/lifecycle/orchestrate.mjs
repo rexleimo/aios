@@ -21,7 +21,7 @@ import { persistDispatchEvidence } from '../harness/orchestrator-evidence.mjs';
 import { buildDispatchInsights } from '../harness/dispatch-insights.mjs';
 import { buildLearnEvalReport } from '../harness/learn-eval.mjs';
 import { buildWorkItemTelemetry } from '../harness/work-item-telemetry.mjs';
-import { parseArgs } from '../cli/parse-args.mjs';
+import { parseAiosCommandAction } from '../cli/fragment-parser.mjs';
 import { runDoctor } from './doctor.mjs';
 import { executeEntropyGc } from './entropy-gc.mjs';
 import { runQualityGate } from './quality-gate.mjs';
@@ -289,29 +289,6 @@ function buildLearnEvalOverlay(report, recommendationId = '') {
     appliedRecommendationIds: appliedRecommendations.map((item) => item.targetId),
     appliedRecommendations,
   };
-}
-
-function tokenizeCliFragment(value = '') {
-  const tokens = [];
-  const pattern = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|([^\s]+)/g;
-  for (const match of String(value || '').matchAll(pattern)) {
-    tokens.push(match[1] ?? match[2] ?? match[3] ?? '');
-  }
-  return tokens.filter(Boolean);
-}
-
-function parseAiosCommandAction(action = '') {
-  const trimmed = String(action || '').trim();
-  const prefix = 'node scripts/aios.mjs ';
-  if (!trimmed.startsWith(prefix)) {
-    return null;
-  }
-
-  try {
-    return parseArgs(tokenizeCliFragment(trimmed.slice(prefix.length)));
-  } catch {
-    return null;
-  }
 }
 
 function createBufferedIo() {

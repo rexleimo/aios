@@ -4,10 +4,9 @@ import path from 'node:path';
 import { createDefaultLearnEvalOptions, normalizeLearnEvalFormat } from './options.mjs';
 import { buildLearnEvalReport, renderLearnEvalReport } from '../harness/learn-eval.mjs';
 import { persistLearnEvalHindsightEvidence } from '../harness/learn-eval-evidence.mjs';
-import { parseArgs } from '../cli/parse-args.mjs';
+import { parseAiosCommandAction } from '../cli/fragment-parser.mjs';
 import { contextDbRelativePath } from '../aios/state-root.mjs';
 
-const AIOS_COMMAND_PREFIX = 'node scripts/aios.mjs ';
 const DRAFT_TARGET_PREFIX = 'draft.';
 const SKILL_CANDIDATE_ARTIFACT_KIND = 'learn-eval.skill-candidate';
 
@@ -91,26 +90,6 @@ function buildSkillCandidateArtifactPayload(draftAction, { sessionId = '', persi
       sourceDraftTargetId: String(review.sourceDraftTargetId || '').trim() || null,
     },
   };
-}
-
-function tokenizeCliFragment(value = '') {
-  const tokens = [];
-  const pattern = /"([^"\\]*(?:\\.[^"\\]*)*)"|'([^'\\]*(?:\\.[^'\\]*)*)'|([^\s]+)/g;
-  for (const match of String(value || '').matchAll(pattern)) {
-    tokens.push(match[1] ?? match[2] ?? match[3] ?? '');
-  }
-  return tokens.filter(Boolean);
-}
-
-function parseAiosCommandAction(action = '') {
-  const trimmed = String(action || '').trim();
-  if (!trimmed.startsWith(AIOS_COMMAND_PREFIX)) return null;
-
-  try {
-    return parseArgs(tokenizeCliFragment(trimmed.slice(AIOS_COMMAND_PREFIX.length)));
-  } catch {
-    return null;
-  }
 }
 
 function createBufferedIo() {

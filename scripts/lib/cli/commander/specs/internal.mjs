@@ -1,0 +1,27 @@
+export const INTERNAL_COMMAND_SPECS = [
+  {
+    name: 'internal',
+    description: 'Internal component maintenance commands',
+    options: [
+      ['--mode <mode>', 'Wrap or privacy mode'],
+      ['--client <client>', 'Target client'],
+      ['--scope <scope>', 'Skill scope'],
+      ['--skills <list>', 'Skill names'],
+      ['--install-mode <mode>', 'Skill install mode'],
+      ['--rc-file <path>', 'Shell rc file path'],
+      ['--repo <url>', 'Superpowers repo URL'],
+      ['--repair-id <id>', 'Repair id'],
+      ['--limit <n>', 'Result limit'],
+      ['--force', 'Force operation'],
+      ['--update', 'Update while installing'],
+      ['--dry-run', 'Preview changes'],
+      ['--verbose', 'Print detailed checks'],
+      ['--fix', 'Apply supported repairs'],
+      ['--skip-playwright-install', 'Skip browser-use runtime installation'],
+      ['--enable', 'Enable privacy guard'],
+      ['--disable', 'Disable privacy guard'],
+      ['--workspace <path>', 'Workspace root'],
+      ['--storage <backend>', 'Storage backend'],
+    ],
+  },
+];
