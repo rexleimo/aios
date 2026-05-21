@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.4] - 2026-05-22
+
+- fix(install): fix Join-Path 3-arg syntax for PowerShell 5.1 compatibility in aios.ps1
+
 ## [1.20.3] - 2026-05-22
 
 - fix(install): handle archives with or without harness-cli/ prefix (Windows + bash)

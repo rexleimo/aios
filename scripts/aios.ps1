@@ -10,7 +10,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
 $ScriptPath = Join-Path $PSScriptRoot 'aios.mjs'
-$RequiredNodeMajor = (Get-Content (Join-Path $PSScriptRoot '..' '.nvmrc') -Raw).Trim().TrimStart('v')
+$nvmrcPath = [System.IO.Path]::Combine($PSScriptRoot, '..', '.nvmrc')
+$RequiredNodeMajor = (Get-Content $nvmrcPath -Raw).Trim().TrimStart('v')
 
 function Get-NodePath {
   $cmd = Get-Command node -ErrorAction SilentlyContinue | Select-Object -First 1
