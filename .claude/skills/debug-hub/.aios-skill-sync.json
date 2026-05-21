@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "debug-hub",
-  "targetSurface": "claude",
-  "targetRelativePath": "debug-hub",
-  "source": "skill-sources/debug-hub"
-}

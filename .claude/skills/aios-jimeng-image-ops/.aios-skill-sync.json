@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "aios-jimeng-image-ops",
-  "targetSurface": "claude",
-  "targetRelativePath": "aios-jimeng-image-ops",
-  "source": "skill-sources/aios-jimeng-image-ops"
-}

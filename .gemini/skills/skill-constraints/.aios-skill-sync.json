@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "skill-constraints",
-  "targetSurface": "gemini",
-  "targetRelativePath": "skill-constraints",
-  "source": "skill-sources/skill-constraints"
-}

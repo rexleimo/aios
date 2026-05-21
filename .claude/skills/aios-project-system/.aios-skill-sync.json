@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "aios-project-system",
-  "targetSurface": "claude",
-  "targetRelativePath": "aios-project-system",
-  "source": "skill-sources/aios-project-system"
-}

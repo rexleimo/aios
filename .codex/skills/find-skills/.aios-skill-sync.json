@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "find-skills",
-  "targetSurface": "codex",
-  "targetRelativePath": "find-skills",
-  "source": "skill-sources/find-skills"
-}

@@ -98,3 +98,10 @@ __pycache__/
 memory/memo/
 # Added by code-review-graph
 .code-review-graph/
+
+# Client-local skill and config directories — managed by sync-skills.mjs
+.claude/
+.opencode/
+.codex/
+.gemini/
+.agents/

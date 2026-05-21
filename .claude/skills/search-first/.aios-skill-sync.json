@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "search-first",
-  "targetSurface": "claude",
-  "targetRelativePath": "search-first",
-  "source": "skill-sources/search-first"
-}

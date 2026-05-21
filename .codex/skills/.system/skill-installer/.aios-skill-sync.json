@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": ".system/skill-installer",
-  "targetSurface": "codex",
-  "targetRelativePath": ".system/skill-installer",
-  "source": "skill-sources/.system/skill-installer"
-}

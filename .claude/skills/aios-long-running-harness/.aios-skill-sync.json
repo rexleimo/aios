@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "aios-long-running-harness",
-  "targetSurface": "claude",
-  "targetRelativePath": "aios-long-running-harness",
-  "source": "skill-sources/aios-long-running-harness"
-}

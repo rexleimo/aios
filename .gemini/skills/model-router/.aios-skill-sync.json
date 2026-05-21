@@ -1,9 +1,0 @@
-{
-  "schemaVersion": 1,
-  "managedBy": "aios",
-  "kind": "generated-skill",
-  "relativeSkillPath": "model-router",
-  "targetSurface": "gemini",
-  "targetRelativePath": "model-router",
-  "source": "skill-sources/model-router"
-}
