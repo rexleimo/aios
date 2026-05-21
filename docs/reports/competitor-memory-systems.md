@@ -1,6 +1,7 @@
 # 竞品库：Agent Memory 系统
 
 > 收录对 AIOS 有参考价值的外部 Agent 记忆/上下文压缩方案。
+> 最后更新: 2026-05-22 | 并行Agent分析刷新
 
 ---
 
@@ -8,6 +9,9 @@
 
 - **仓库**: https://github.com/Tencent/TencentDB-Agent-Memory
 - **收录日期**: 2026-05-17
+- **最后刷新**: 2026-05-22
+- **Stars**: 3,299 | **Forks**: 250 | **最后推送**: 2026-05-18
+- **最新版本**: v0.3.4 (2026-05-13) | **贡献者**: 2 (Yuntong8888, Maxwell-Code07)
 - **许可证**: MIT
 - **集成目标**: OpenClaw plugin / Hermes Gateway（Docker）
 - **存储后端**: SQLite + sqlite-vec（本地，开箱即用）
@@ -159,6 +163,9 @@ L3 用户画像（Persona，persona.md）
 
 - **仓库**: https://github.com/mem0ai/mem0
 - **收录日期**: 2026-05-17
+- **最后刷新**: 2026-05-22
+- **Stars**: 56,240 | **Forks**: 6,402 | **最后推送**: 2026-05-19
+- **最新版本**: cli-v0.2.5 (2026-05-14) | **贡献者**: 310 (Dev-Khant, deshraj, taranjeet 等)
 - **许可证**: Apache 2.0
 - **集成目标**: Python/Node SDK、Self-Hosted Server、Cloud SaaS
 - **存储后端**: 22 种向量数据库（Qdrant 默认）+ SQLite（历史记录）
@@ -242,6 +249,9 @@ V3 改为纯累积式：一次 LLM 调用提取事实并直接 ADD，不做 UPDA
 
 - **仓库**: https://github.com/getzep/zep
 - **收录日期**: 2026-05-17
+- **最后刷新**: 2026-05-22
+- **Stars**: 4,584 | **Forks**: 627 | **最后推送**: 2026-04-09 (主库较安静)
+- **最新版本**: zep-python v3.22.0 (2026-05-04) | **贡献者**: 20
 - **许可证**: Apache 2.0（核心引擎 Graphiti 也 Apache 2.0）
 - **集成目标**: Python/TS/Go SDK、REST API、MCP Server
 - **存储后端**: Neo4j（默认）/ FalkorDB / Kuzu / Amazon Neptune
@@ -323,6 +333,10 @@ P95 延迟 < 200ms。
 
 - **仓库**: https://github.com/letta-ai/letta
 - **收录日期**: 2026-05-17
+- **最后刷新**: 2026-05-22
+- **Stars**: 22,831 | **Forks**: 2,432 | **最后推送**: 2026-05-14
+- **最新版本**: v0.16.8 (2026-05-14) | **贡献者**: 140
+- **子项目监控**: claude-subconscious (2,606★), letta-code (2,114★), agent-file (1,032★)
 - **许可证**: Apache 2.0
 - **集成目标**: Python/TS SDK、REST API、CLI、MCP Server
 - **存储后端**: SQLite（默认）/ PostgreSQL + pgvector（生产）/ ChromaDB（向量）
@@ -422,10 +436,11 @@ Core Memory 划分为具名 block（`human`、`persona`、`scratchpad`），
 
 ---
 
-## 四家竞品横向对比
+## 四家竞品横向对比 (2026-05-22 刷新)
 
 | 维度 | TencentDB | mem0 | Zep | Letta | AIOS |
 |------|-----------|------|-----|-------|------|
+| Stars | 3,299 | **56,240** | 4,584 | 22,831 | N/A |
 | 核心创新 | Mermaid 符号化 + L0-L3 分层 | 单次 LLM 提取 + ADD-only | 时序知识图谱 + 事实失效 | 虚拟内存 + Sleep-Time | 输入/输出压缩 |
 | 最大 Token 节省 | 61% | N/A（架构级优化） | >98%（1.6K vs 115K） | 3x per-interaction | ~60% 输出 |
 | 记忆结构 | 语义金字塔 | 向量 + 实体 | 知识图谱 | 三层虚拟内存 | JSON 文件 |
@@ -434,9 +449,12 @@ Core Memory 划分为具名 block（`human`、`persona`、`scratchpad`），
 | 存储 | SQLite | 22 种向量DB | Neo4j 等图DB | SQLite/PostgreSQL | JSON 文件 |
 | LLM 依赖 | 提取用 | 提取用 | 摄入+抽取用 | 摘要用 | 无 |
 | 自托管 | 完全本地 | 可选 | Graphiti 可 | 可选 | 完全本地 |
+| 活跃度 | 活跃(v0.3.4) | **极活跃**(310贡献者) | 主库安静(4月) | 活跃(v0.16.8) | v1.20.4 |
 
-### AIOS 最值得借鉴的 Top 3
+### AIOS 最值得借鉴的 Top 5 (2026-05-22 更新)
 
-1. **工具日志 offload + Mermaid 状态图**（来自 TencentDB）— 已有设计 spec，Phase 1 实现中
-2. **Sleep-Time 离线整理**（来自 Letta）— 用便宜模型空闲时做摘要/合并/归档
-3. **事实失效而非删除**（来自 Zep）— memo 增加 `valid_at` / `invalid_at`，支持时序推理
+1. **工具日志 offload + Mermaid 状态图**（来自 TencentDB）— 已有设计 spec
+2. **零LLM检索管道**（来自 mem0）— 写入一次LLM提取，检索纯向量/关键词，大幅降低延迟
+3. **语义金字塔 L0→L3 分层压缩**（来自 TencentDB）— 对齐 aios-compress 三级到渐进披露
+4. **Sleep-Time 离线整理**（来自 Letta）— 用便宜模型空闲时做摘要/合并/归档
+5. **事实失效而非删除**（来自 Zep）— memo 增加 `valid_at` / `invalid_at`，支持时序推理

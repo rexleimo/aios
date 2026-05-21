@@ -151,7 +151,7 @@ export function renderRegistryInjection(index) {
     .join('\n');
 
   return [
-    `Session: ${index.session} | Status: ${index.status}`,
+    `Session: ${index.session} · Status: ${index.status}`,
     `Context registry: ${index.registryPath || '.aios/context-db/index.json'}`,
     `Available sources:`,
     sourcesList || '  (none — fresh session)',

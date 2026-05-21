@@ -174,6 +174,8 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 4. Use `query_graph` pattern="tests_for" to check coverage.
 
 <!-- AIOS CODEMAP BEGIN -->
+## MCP Tools: code-review-graph
+
 This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
 
 ### Decision checkpoints (mandatory)

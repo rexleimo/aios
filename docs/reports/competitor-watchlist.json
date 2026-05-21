@@ -1,0 +1,305 @@
+{
+  "schemaVersion": 2,
+  "lastUpdated": "2026-05-22",
+  "refreshMethod": "agent-team-parallel-analysis",
+  "categories": {
+    "memory-systems": {
+      "description": "Agent记忆与上下文管理系统",
+      "competitors": [
+        {
+          "id": "tencentdb-agent-memory",
+          "name": "TencentDB-Agent-Memory",
+          "repo": "Tencent/TencentDB-Agent-Memory",
+          "url": "https://github.com/Tencent/TencentDB-Agent-Memory",
+          "stars": 3299,
+          "forks": 250,
+          "lastPush": "2026-05-18",
+          "latestRelease": "v0.3.4",
+          "releaseDate": "2026-05-13",
+          "license": "MIT",
+          "language": "TypeScript",
+          "priority": "P1"
+        },
+        {
+          "id": "mem0",
+          "name": "mem0",
+          "repo": "mem0ai/mem0",
+          "url": "https://github.com/mem0ai/mem0",
+          "stars": 56240,
+          "forks": 6402,
+          "lastPush": "2026-05-19",
+          "latestRelease": "cli-v0.2.5",
+          "releaseDate": "2026-05-14",
+          "license": "Apache-2.0",
+          "language": "Python",
+          "priority": "P0"
+        },
+        {
+          "id": "zep",
+          "name": "Zep",
+          "repo": "getzep/zep",
+          "url": "https://github.com/getzep/zep",
+          "stars": 4584,
+          "forks": 627,
+          "lastPush": "2026-04-09",
+          "latestRelease": "zep-python-v3.22.0",
+          "releaseDate": "2026-05-04",
+          "license": "Apache-2.0",
+          "language": "Python",
+          "priority": "P1"
+        },
+        {
+          "id": "letta",
+          "name": "Letta (MemGPT)",
+          "repo": "letta-ai/letta",
+          "url": "https://github.com/letta-ai/letta",
+          "stars": 22831,
+          "forks": 2432,
+          "lastPush": "2026-05-14",
+          "latestRelease": "v0.16.8",
+          "releaseDate": "2026-05-14",
+          "license": "Apache-2.0",
+          "language": "Python",
+          "priority": "P0",
+          "watchAlso": [
+            "letta-ai/claude-subconscious",
+            "letta-ai/letta-code",
+            "letta-ai/agent-file"
+          ]
+        }
+      ]
+    },
+    "harness-orchestration": {
+      "description": "Agent Harness与任务编排系统",
+      "competitors": [
+        {
+          "id": "open-harness",
+          "name": "OpenHarness",
+          "repo": "HKUDS/OpenHarness",
+          "url": "https://github.com/HKUDS/OpenHarness",
+          "stars": 12823,
+          "forks": 2119,
+          "lastPush": "2026-05-17",
+          "latestRelease": "v0.1.9",
+          "releaseDate": "2026-05-07",
+          "license": "MIT",
+          "language": "Python",
+          "priority": "P0",
+          "signal": "dry-run readiness裁定已进入unreleased分支"
+        },
+        {
+          "id": "gnhf",
+          "name": "gnhf",
+          "repo": "kunchenguid/gnhf",
+          "url": "https://github.com/kunchenguid/gnhf",
+          "stars": 1565,
+          "forks": 95,
+          "lastPush": "2026-05-07",
+          "latestRelease": "gnhf-v0.1.41",
+          "releaseDate": "2026-05-07",
+          "license": "MIT",
+          "language": "TypeScript",
+          "priority": "P1"
+        },
+        {
+          "id": "oh-my-openagent",
+          "name": "oh-my-openagent",
+          "repo": "code-yeongyu/oh-my-openagent",
+          "url": "https://github.com/code-yeongyu/oh-my-openagent",
+          "stars": 57775,
+          "forks": 4687,
+          "lastPush": "2026-05-14",
+          "latestRelease": "v4.1.2",
+          "releaseDate": "2026-05-14",
+          "license": "NOASSERTION",
+          "language": "TypeScript",
+          "priority": "P0"
+        },
+        {
+          "id": "overstory",
+          "name": "overstory",
+          "repo": "jayminwest/overstory",
+          "url": "https://github.com/jayminwest/overstory",
+          "stars": 1294,
+          "forks": 207,
+          "lastPush": "2026-05-09",
+          "latestRelease": "v0.11.0",
+          "releaseDate": "2026-05-02",
+          "license": "MIT",
+          "language": "TypeScript",
+          "priority": "P1"
+        },
+        {
+          "id": "revfactory-harness",
+          "name": "revfactory/harness",
+          "repo": "revfactory/harness",
+          "url": "https://github.com/revfactory/harness",
+          "stars": 3363,
+          "forks": 508,
+          "lastPush": "2026-05-07",
+          "latestRelease": "v1.0.1",
+          "license": "Apache-2.0",
+          "language": "HTML",
+          "priority": "P1"
+        },
+        {
+          "id": "long-running-tasks",
+          "name": "long-running-tasks",
+          "repo": "mmTheBest/long-running-tasks",
+          "url": "https://github.com/mmTheBest/long-running-tasks",
+          "stars": 1,
+          "forks": 0,
+          "lastPush": "2026-03-06",
+          "license": "MIT",
+          "status": "dormant",
+          "priority": "P2"
+        }
+      ]
+    },
+    "context-infrastructure": {
+      "description": "ContextDB/记忆基础设施",
+      "competitors": [
+        {
+          "id": "openviking",
+          "name": "OpenViking",
+          "repo": "volcengine/OpenViking",
+          "url": "https://github.com/volcengine/OpenViking",
+          "stars": 21184,
+          "forks": 1500,
+          "lastPush": "2026-04-06",
+          "latestRelease": "v0.3.17",
+          "releaseDate": "2026-05-15",
+          "license": "AGPL-3.0",
+          "language": "Python",
+          "priority": "P0",
+          "signal": "v0.3.17大版本: LangChain适配器, OVPack v2, 审计控制台, VLM故障切换"
+        },
+        {
+          "id": "openclaw",
+          "name": "OpenClaw",
+          "repo": "openclaw/openclaw",
+          "url": "https://github.com/openclaw/openclaw",
+          "stars": 373615,
+          "forks": 77581,
+          "lastPush": "2026-05-21",
+          "latestRelease": "v2026.5.20-beta.1",
+          "license": "MIT",
+          "language": "TypeScript",
+          "priority": "P0",
+          "note": "生态级项目, 插件系统值得深度研究"
+        },
+        {
+          "id": "openclaw-recall",
+          "name": "OpenClaw Recall",
+          "repo": "Felix201209/openclaw-recall",
+          "url": "https://github.com/Felix201209/openclaw-recall",
+          "stars": 3,
+          "forks": 2,
+          "lastPush": "2026-03-21",
+          "latestRelease": "v1.3.2",
+          "license": "Apache-2.0",
+          "language": "TypeScript",
+          "priority": "P2",
+          "status": "dormant"
+        }
+      ]
+    },
+    "execution-quality": {
+      "description": "执行质量/规划/编辑安全",
+      "competitors": [
+        {
+          "id": "hermes-agent",
+          "name": "Hermes Agent",
+          "repo": "NousResearch/hermes-agent",
+          "url": "https://github.com/NousResearch/hermes-agent",
+          "stars": 160333,
+          "forks": 26037,
+          "lastPush": "2026-05-21",
+          "latestRelease": "v2026.5.16",
+          "releaseDate": "2026-05-16",
+          "license": "MIT",
+          "language": "Python",
+          "priority": "P0",
+          "signal": "自我改进闭环: 从经验创建技能"
+        },
+        {
+          "id": "superpowers",
+          "name": "superpowers",
+          "repo": "obra/superpowers",
+          "url": "https://github.com/obra/superpowers",
+          "stars": 201097,
+          "forks": 17915,
+          "lastPush": "2026-05-14",
+          "latestRelease": "v5.1.0",
+          "releaseDate": "2026-05-04",
+          "license": "MIT",
+          "language": "Shell",
+          "priority": "P0",
+          "note": "Claude Code官方市场插件, 可组合技能方法论"
+        },
+        {
+          "id": "the-pair",
+          "name": "the-pair",
+          "repo": "timwuhaotian/the-pair",
+          "url": "https://github.com/timwuhaotian/the-pair",
+          "stars": 266,
+          "forks": 16,
+          "lastPush": "2026-03-30",
+          "latestRelease": "v1.3.1",
+          "license": "Apache-2.0",
+          "language": "TypeScript",
+          "priority": "P1",
+          "signal": "Mentor-Executor质量门控"
+        },
+        {
+          "id": "execplan-skill",
+          "name": "execplan-skill",
+          "repo": "tiann/execplan-skill",
+          "url": "https://github.com/tiann/execplan-skill",
+          "stars": 26,
+          "lastPush": "2026-03-13",
+          "license": "NOASSERTION",
+          "priority": "P2"
+        }
+      ]
+    },
+    "browser-control-plane": {
+      "description": "浏览器验证/操作员控制面",
+      "competitors": [
+        {
+          "id": "vision-test-harness",
+          "name": "vision-test-harness",
+          "repo": "UpGPT-ai/vision-test-harness",
+          "url": "https://github.com/UpGPT-ai/vision-test-harness",
+          "stars": 0,
+          "lastPush": "2026-04-01",
+          "license": "NOASSERTION",
+          "language": "TypeScript",
+          "priority": "P2",
+          "status": "concept-prototype"
+        },
+        {
+          "id": "golutra",
+          "name": "golutra",
+          "repo": "golutra/golutra",
+          "url": "https://github.com/golutra/golutra",
+          "stars": 3266,
+          "forks": 371,
+          "lastPush": "2026-04-07",
+          "latestRelease": "v0.2.4",
+          "license": "NOASSERTION",
+          "language": "Rust",
+          "priority": "P1",
+          "note": "唯一桌面端竞品, Rust+Tauri"
+        }
+      ]
+    }
+  },
+  "crossCuttingTrends": [
+    "自我进化+技能自动生成 (Hermes/superpowers/OpenClaw共同方向)",
+    "多模型路由+Per-Agent模型分配 (OpenViking/oh-my-openagent)",
+    "dry-run readiness裁定 (OpenHarness unreleased)",
+    "零LLM检索管道减少推理成本 (mem0)",
+    "分层上下文渐进披露 (TencentDB/OpenViking)"
+  ]
+}
