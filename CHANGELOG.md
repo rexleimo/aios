@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.2] - 2026-05-21
+
+- fix(codemap): fix claude code MCP config path and codex createIfMissing logic
+
 ## [1.20.1] - 2026-05-21
 
 - feat(codemap): integrate code-review-graph as first-class AIOS component with docs, blog, and i18n support
