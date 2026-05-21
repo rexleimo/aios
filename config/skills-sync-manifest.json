@@ -74,6 +74,11 @@
       "repoTargets": ["codex", "claude"]
     },
     {
+      "relativeSkillPath": "aios-codemap-ops",
+      "installCatalogName": "aios-codemap-ops",
+      "repoTargets": ["codex", "claude", "gemini", "opencode"]
+    },
+    {
       "relativeSkillPath": "contextdb-autopilot",
       "installCatalogName": "contextdb-autopilot",
       "repoTargets": ["codex", "claude"]

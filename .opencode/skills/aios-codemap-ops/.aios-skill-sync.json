@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "generated-skill",
+  "relativeSkillPath": "aios-codemap-ops",
+  "targetSurface": "opencode",
+  "targetRelativePath": "aios-codemap-ops",
+  "source": "skill-sources/aios-codemap-ops"
+}

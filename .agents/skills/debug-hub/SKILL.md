@@ -41,6 +41,7 @@ Other tools: `list_traces`, `get_trace`, `compact_context`, `health` — see MCP
 1. **Start**: `debug_hub.start_session { objective: "..." }` — note the `sessionId`
 2. **Hypothesize**: 3-5 testable hypotheses about root cause
 3. **Inject**: write `__dh` helper + marked log calls, one per hypothesis
+   - CRG (if codemap installed): `semantic_search_nodes(query="<error-related term>")` → `query_graph(pattern="callees_of", target="<suspected function>")` → `detect_changes(base="HEAD~5")` for structural evidence before injecting
 4. **Record**: `debug_hub.instrument { sessionId, files: [{path, lineCount}] }` — use absolute paths
 5. **Reproduce**: ask user to run the failing scenario
 6. **Analyze**: `debug_hub.search_logs { keyword: "<sessionId>" }` → CONFIRMED/REJECTED/INCONCLUSIVE
