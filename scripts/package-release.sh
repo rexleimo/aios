@@ -87,7 +87,7 @@ echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
     --exclude='.aios' \
     --exclude='*.pyc' \
     --exclude='.DS_Store' \
-    AGENTS.md CHANGELOG.md VERSION \
+    AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc \
     package.json package-lock.json \
     README.md README-zh.md \
     skills-lock.json \
@@ -102,7 +102,7 @@ echo "+ zip -> $OUT_DIR/harness-cli.zip"
 (
   cd "$ROOT_DIR"
   zip -r "$OUT_DIR/harness-cli.zip" \
-    AGENTS.md CHANGELOG.md VERSION \
+    AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc \
     package.json package-lock.json \
     README.md README-zh.md \
     skills-lock.json \
