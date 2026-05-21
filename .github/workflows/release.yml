@@ -44,6 +44,11 @@ jobs:
         run: |
           node scripts/materialize-release-local-outputs.mjs
 
+      - name: Sync skills + native configs
+        run: |
+          node scripts/sync-skills.mjs
+          node scripts/sync-native.mjs
+
       - name: Release preflight
         run: |
           bash scripts/release-preflight.sh --tag "${GITHUB_REF_NAME}"
