@@ -131,9 +131,9 @@ async function runInternal(options) {
 
   if (target === 'codemap') {
     const module = await import('./lib/components/codemap.mjs');
-    if (action === 'install') return module.installCodemap({ rootDir, projectRoot, dryRun: Boolean(options.dryRun), io: console });
-    if (action === 'uninstall') return module.uninstallCodemap({ rootDir, projectRoot, dryRun: Boolean(options.dryRun), io: console });
-    if (action === 'doctor') return module.doctorCodemap({ rootDir, projectRoot, fix: Boolean(options.fix), dryRun: Boolean(options.dryRun), io: console });
+    if (action === 'install') return module.installCodemap({ rootDir, projectRoot, dryRun: Boolean(options.dryRun), client: options.client ?? 'all', io: console });
+    if (action === 'uninstall') return module.uninstallCodemap({ rootDir, projectRoot, dryRun: Boolean(options.dryRun), client: options.client ?? 'all', io: console });
+    if (action === 'doctor') return module.doctorCodemap({ rootDir, projectRoot, fix: Boolean(options.fix), dryRun: Boolean(options.dryRun), client: options.client ?? 'all', io: console });
     if (action === 'build') return module.buildCodemap({ projectRoot, io: console });
     if (action === 'update') return module.updateCodemap({ projectRoot, io: console });
     if (action === 'status') return module.statusCodemap({ projectRoot, io: console });

@@ -108,43 +108,52 @@ Single module, same pattern as `browser.mjs`. Exported functions:
 
 ### Step 4: Inject MCP config for all clients
 
-For each detected/installed client, write the CRG MCP server entry:
+For each selected client, write the CRG MCP server entry. `install --client all`
+creates missing client config files so a fresh project does not silently skip a
+client.
 
-**opencode** — `.mcp.json` (project root):
+**codex-cli** — `~/.codex/config.toml`:
+```toml
+[mcp_servers.code-review-graph]
+command = "uvx"
+args = ["code-review-graph", "serve"]
+cwd = "<project>"
+type = "stdio"
+```
+
+**claude-code** — project `.mcp.json`:
 ```json
 "code-review-graph": {
-  "type": "stdio",
   "command": "uvx",
   "args": ["code-review-graph", "serve"],
-  "env": []
+  "cwd": "<project>",
+  "type": "stdio"
 }
 ```
 
-**claude-code** — `~/.claude.json` or project `.claude.json`:
+**gemini-cli** — project `.gemini/settings.json`:
 ```json
 "code-review-graph": {
   "command": "uvx",
-  "args": ["code-review-graph", "serve"]
+  "args": ["code-review-graph", "serve"],
+  "cwd": "<project>"
 }
 ```
 
-**codex-cli** — `~/.codex/mcp.json`:
+**opencode** — `~/.config/opencode/opencode.json`:
 ```json
-"code-review-graph": {
-  "command": "uvx",
-  "args": ["code-review-graph", "serve"]
+"mcp": {
+  "code-review-graph": {
+    "type": "local",
+    "command": ["uvx", "code-review-graph", "serve"],
+    "enabled": true
+  }
 }
 ```
 
-**gemini-cli** — `~/.gemini/settings.json`:
-```json
-"code-review-graph": {
-  "command": "uvx",
-  "args": ["code-review-graph", "serve"]
-}
-```
-
-Reuses existing pattern from `browser.mjs`: `collectClientMcpTargets()` + per-file merge. Only writes to clients that exist on the system.
+The OpenCode target is global because current OpenCode reliably reads
+`~/.config/opencode/opencode.json`; project `.opencode.json` was not sufficient
+in CLI smoke tests.
 
 ### Step 5: Install opencode plugin (auto-incremental update)
 
@@ -156,9 +165,12 @@ Run `uvx code-review-graph install --platform opencode` which:
 
 Record install metadata for doctor/uninstall.
 
-### Step 7: Update AGENTS.md with graph-first guidance
+### Step 7: Update client instruction files with graph-first guidance
 
-Append a `## Code Review Graph (CRG)` section to `AGENTS.md` if not already present. This section tells all agents to prefer CRG tools over grep/glob/read when exploring code. Exact content:
+Append a marker-managed `## MCP Tools: code-review-graph` section to
+`AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` if not already present. This section
+tells all agents to prefer CRG tools over grep/glob/read when exploring code.
+Exact content:
 
 ```markdown
 ## Code Review Graph (CRG)
@@ -224,7 +236,7 @@ In `scripts/lib/lifecycle/orchestrate.mjs`, when building the dispatch plan:
 - Include the change impact summary in the dispatch context sent to each worker
 - Workers can use `get_impact_radius` to understand their task's blast radius
 
-### 4. AGENTS.md graph-first guidance
+### 4. Client-doc graph-first guidance
 
 Installed in Step 7 of the install pipeline. Makes every agent session automatically prefer CRG tools.
 
@@ -250,7 +262,7 @@ Agent lifecycle:
 
 This single call gives the agent: project structure, risk level, relevant communities, and `next_tool_suggestions`. It replaces the typical "read README → ls → grep main" startup.
 
-**Implementation**: AGENTS.md first rule, before any other instruction.
+**Implementation**: client instruction-file first rule, before any other instruction.
 
 #### Decision 2: "What to change?" — agent locates modification targets
 
@@ -389,7 +401,7 @@ All 28 MCP tools + 5 prompts + CLI commands, mapped to AIOS touchpoints:
 | `scripts/lib/doctor/aggregate.mjs` | Add `doctor:codemap` gate |
 | `scripts/lib/lifecycle/harness.mjs` | Add codemap build/update in worktree flow |
 | `scripts/lib/lifecycle/orchestrate.mjs` | Add codemap detect-changes in team dispatch |
-| `AGENTS.md` | Add CRG graph-first section (by install, not hardcoded) |
+| `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` | Add CRG graph-first section (by install, not hardcoded) |
 | `.aios/codemap.json` | Runtime state (created by install, gitignored) |
 
 ---
@@ -425,7 +437,7 @@ scripts/doctor-codemap.sh
 - `uvx code-review-graph` fails: check network, suggest `uv cache clean` + retry
 - Build fails (no parsable code): warn and continue; MCP tools will return empty results
 - MCP config write fails (permission): warn per-client, continue with remaining clients
-- AGENTS.md already has CRG section: skip (idempotent by marker comment)
+- Client instruction file already has CRG section: skip (idempotent by marker comment)
 - Doctor finds stale graph: suggest `aios internal codemap update`
 
 ---
@@ -436,7 +448,7 @@ scripts/doctor-codemap.sh
 1. Remove `code-review-graph` entry from all client MCP configs
 2. Remove `~/.config/opencode/plugins/crg-plugin.ts` if it was installed by us
 3. Remove `.aios/codemap.json`
-4. Remove the CRG section from `AGENTS.md` (by marker)
+4. Remove the CRG section from client instruction files (by marker)
 5. Do NOT delete `.code-review-graph/` (user's graph data, may be valuable)
 
 ---
@@ -449,8 +461,8 @@ scripts/doctor-codemap.sh
 |-----------|---------------|---------------|------|
 | `build` | Creates `.code-review-graph/` (SQLite + .gitignore) | Delete directory | **None** — new dir, gitignored |
 | `update` | Updates `.code-review-graph/graph.db` only | Delete & rebuild | **None** — no source files touched |
-| AGENTS.md append | Adds CRG section (by marker) | Remove marker section | **Low** — append-only, marker-based |
-| MCP config inject | `.mcp.json`, `~/.claude.json`, `~/.codex/mcp.json`, `~/.gemini/settings.json` | Remove `code-review-graph` key | **Medium** — modifies user config files |
+| Client docs append | Adds CRG section (by marker) to `AGENTS.md`, `CLAUDE.md`, `GEMINI.md` | Remove marker section | **Low** — append-only, marker-based |
+| MCP config inject | `~/.codex/config.toml`, `.mcp.json`, `.gemini/settings.json`, `~/.config/opencode/opencode.json` | Remove `code-review-graph` entry | **Medium** — modifies user config files |
 | opencode plugin | `~/.config/opencode/plugins/crg-plugin.ts` | Delete file | **Low** — new file, no overwrite |
 | `apply_refactor_tool` (CRG native) | Source files | git checkout | **Medium** — **not triggered by AIOS** |
 
@@ -462,7 +474,7 @@ scripts/doctor-codemap.sh
 ### Critical safety guards (MUST implement)
 
 1. **MCP config write: backup before modify**
-   - Before writing to `~/.claude.json`, `~/.codex/mcp.json`, `~/.gemini/settings.json`, create a `.bak` copy
+   - Before writing to existing client config files, create a `.bak` copy
    - If JSON parse fails on existing file, abort with error — never overwrite a corrupt config
    - Pattern: same as `browser.mjs` `migrateOneMcpJsonFile()`
 
@@ -474,12 +486,12 @@ scripts/doctor-codemap.sh
 3. **Uninstall: preserve user data**
    - Keep `.code-review-graph/` (user's graph data)
    - Keep `.code-review-graphignore` if user created one
-   - Only remove: MCP config entries, plugin, `.aios/codemap.json`, AGENTS.md section
+   - Only remove: MCP config entries, plugin, `.aios/codemap.json`, CRG instruction sections
 
 4. **`apply_refactor_tool` guard**
    - CRG's `apply_refactor_tool` can modify source files (rename refactoring)
    - This is a CRG-native MCP tool, NOT called by `aios internal codemap *` commands
-   - Guard: AGENTS.md skill section must document that `apply_refactor_tool` requires explicit user approval and should be preceded by `git add` for easy rollback
+   - Guard: client instruction sections must document that `apply_refactor_tool` requires explicit user approval and should be preceded by `git add` for easy rollback
    - AIOS codemap component never calls `apply_refactor_tool` automatically
 
 5. **Never delete without confirmation**

@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.3] - 2026-05-21
+
+- fix(codemap): repair multi-client CRG install loop
+
 ## [1.20.2] - 2026-05-21
 
 - fix(codemap): fix claude code MCP config path and codex createIfMissing logic

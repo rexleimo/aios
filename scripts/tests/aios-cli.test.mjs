@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
-import { getCommandHelpText } from '../lib/cli/help.mjs';
+import { getCodemapHelpText, getCommandHelpText } from '../lib/cli/help.mjs';
 import { runReleaseStatus } from '../lib/lifecycle/release-status.mjs';
 import { runSnapshotRollback } from '../lib/lifecycle/snapshot-rollback.mjs';
 
@@ -147,6 +147,24 @@ test('parseArgs accepts internal browser cdp lifecycle actions', () => {
   assert.equal(migrate.options.target, 'browser');
   assert.equal(migrate.options.action, 'mcp-migrate');
   assert.equal(migrate.options.dryRun, true);
+});
+
+test('parseArgs accepts codemap client targeting and help documents config paths', () => {
+  const install = parseArgs(['internal', 'codemap', 'install', '--client', 'opencode', '--dry-run']);
+  assert.equal(install.command, 'internal');
+  assert.equal(install.options.target, 'codemap');
+  assert.equal(install.options.action, 'install');
+  assert.equal(install.options.client, 'opencode');
+  assert.equal(install.options.dryRun, true);
+
+  const doctor = parseArgs(['internal', 'codemap', 'doctor', '--client', 'codex', '--fix']);
+  assert.equal(doctor.options.client, 'codex');
+  assert.equal(doctor.options.fix, true);
+
+  const help = getCodemapHelpText();
+  assert.match(help, /~\/\.codex\/config\.toml/);
+  assert.match(help, /\.gemini\/settings\.json/);
+  assert.match(help, /opencode\.json/);
 });
 
 test('parseArgs accepts offload refs/canvas commands with workspace scope', () => {
