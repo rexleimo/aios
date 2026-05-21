@@ -269,12 +269,12 @@ function collectCodemapMcpTargets(rootDir, clientHomes = {}) {
 
   const codexHome = resolveUserPath(clientHomes.codex);
   if (codexHome) {
-    addUnique(path.join(codexHome, 'mcp.json'), 'codex', false);
+    addUnique(path.join(codexHome, 'mcp.json'), 'codex', fs.existsSync(codexHome));
   }
 
   const claudeHome = resolveUserPath(clientHomes.claude);
   if (claudeHome) {
-    addUnique(path.join(claudeHome, '.claude.json'), 'claude', false);
+    addUnique(path.join(path.dirname(claudeHome), '.claude.json'), 'claude', false);
   }
 
   const geminiHome = resolveUserPath(clientHomes.gemini);
