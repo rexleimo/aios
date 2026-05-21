@@ -115,8 +115,14 @@ mkdir -p "$extract_dir"
 echo "+ extract -> $extract_dir"
 tar -xzf "$archive_path" -C "$extract_dir"
 
-if [[ ! -d "$extract_dir/harness-cli" ]]; then
-  echo "Archive layout unexpected: missing harness-cli/ folder" >&2
+# Detect archive layout: prefer harness-cli/ prefix, fall back to root
+if [[ -d "$extract_dir/harness-cli" ]]; then
+  extracted_root="$extract_dir/harness-cli"
+elif [[ -f "$extract_dir/package.json" ]]; then
+  echo "[info] archive layout: no harness-cli/ prefix, using extract root"
+  extracted_root="$extract_dir"
+else
+  echo "Archive layout unexpected: neither harness-cli/ prefix nor expected files found in $extract_dir" >&2
   exit 1
 fi
 
@@ -137,7 +143,7 @@ if [[ -d "$AIOS_INSTALL_DIR" ]]; then
 fi
 
 echo "+ install -> $AIOS_INSTALL_DIR"
-mv "$extract_dir/harness-cli" "$AIOS_INSTALL_DIR"
+mv "$extracted_root" "$AIOS_INSTALL_DIR"
 
 for rel in "${preserve_paths[@]}"; do
   src="$preserve_dir/$rel"

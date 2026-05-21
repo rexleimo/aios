@@ -6,12 +6,9 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-## [1.21.0] - 2026-05-21
+## [1.20.3] - 2026-05-22
 
-- Add Commander-backed AIOS CLI shell
-
-## [1.20.3] - 2026-05-21
-
+- fix(install): handle archives with or without harness-cli/ prefix (Windows + bash)
 - fix(codemap): repair multi-client CRG install loop
 
 ## [1.20.2] - 2026-05-21

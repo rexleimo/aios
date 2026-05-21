@@ -49,9 +49,15 @@ try {
   Write-Host "+ extract -> $extract"
   Expand-Archive -LiteralPath $zipPath -DestinationPath $extract -Force
 
-  $extractedRoot = Join-Path $extract "harness-cli"
-  if (-not (Test-Path -LiteralPath $extractedRoot)) {
-    throw "Archive layout unexpected: missing harness-cli/ folder"
+  # Detect archive layout: prefer harness-cli/ prefix, fall back to root
+  $candidate = Join-Path $extract "harness-cli"
+  if (Test-Path -LiteralPath $candidate) {
+    $extractedRoot = $candidate
+  } elseif (Test-Path -LiteralPath (Join-Path $extract "package.json")) {
+    Write-Host "[info] archive layout: no harness-cli/ prefix, using extract root"
+    $extractedRoot = $extract
+  } else {
+    throw "Archive layout unexpected: neither harness-cli/ prefix nor expected files found in $extract"
   }
 
   if (Test-Path -LiteralPath $InstallDir) {
