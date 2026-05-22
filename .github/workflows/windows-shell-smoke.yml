@@ -17,7 +17,12 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
-          cache-dependency-path: mcp-server/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            mcp-server/package-lock.json
+
+      - name: Install root deps
+        run: npm install
 
       - name: Install mcp-server deps
         run: npm ci
