@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { captureCommand } from "../platform/process.mjs";
 import { ensureParentDir, readTextIfExists, writeText } from "../platform/fs.mjs";
+import { getMemoHelpText } from "../cli/help.mjs";
 import { assertWorkspaceMemoryContentSafe } from "./safety.mjs";
 import {
   ensurePersonaLayer,
@@ -671,8 +672,10 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
   );
 
   const [primary, secondary, ...rest] = argv;
-  if (!primary) {
-    throw usageError("Missing memo subcommand");
+  if (!primary || primary === '-h' || primary === '--help' || primary === 'help') {
+    const showHelp = getMemoHelpText(argv.slice(1));
+    io.log(showHelp);
+    return;
   }
 
   if (primary === "use") {
