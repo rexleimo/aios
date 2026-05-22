@@ -12,8 +12,12 @@ if (!Number.isFinite(requiredMajor) || requiredMajor <= 0) {
   process.exit(1);
 }
 
-if (actualMajor !== requiredMajor) {
-  console.error(`[node-version] AIOS requires Node ${requiredMajor}.x LTS. Current runtime is ${process.version}.`);
-  console.error(`Run: nvm install ${requiredMajor} && nvm use ${requiredMajor}`);
+if (actualMajor < requiredMajor) {
+  console.error(`[node-version] AIOS requires Node >= ${requiredMajor}.x LTS. Current runtime is ${process.version}.`);
+  const hint = process.platform === 'win32'
+    ? `Install Node ${requiredMajor} via winget: winget install OpenJS.NodeJS.LTS`
+    : `Use nvm: nvm install ${requiredMajor} && nvm use ${requiredMajor}`;
+  console.error(hint);
+  console.error('Tip: scripts/aios.sh --install-node (macOS/Linux)');
   process.exit(1);
 }

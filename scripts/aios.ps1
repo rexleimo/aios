@@ -44,12 +44,15 @@ if (-not $nodePath) {
 }
 
 if (-not $nodePath) {
-  throw "AIOS now uses Node.js as the unified lifecycle runtime. Install Node.js $RequiredNodeMajor LTS and rerun."
+  throw "AIOS now uses Node.js as the unified lifecycle runtime. Install Node.js $RequiredNodeMajor LTS and rerun.`n`nWindows: winget install OpenJS.NodeJS.LTS`nAll platforms: nvm-windows or fnm"
 }
 
 $nodeMajor = (& $nodePath -p "process.versions.node.split('.')[0]")
-if ([int]$nodeMajor -ne [int]$RequiredNodeMajor) {
-  throw "Node.js $RequiredNodeMajor.x is required (found $(& $nodePath -v))."
+if ([int]$nodeMajor -lt [int]$RequiredNodeMajor) {
+  Write-Error "Node.js >= $RequiredNodeMajor.x is required (found $(& $nodePath -v))."
+  Write-Host "[hint] If you have Node $RequiredNodeMajor via nvm-windows/fnm, switch to it first."
+  Write-Host "       Or install: winget install OpenJS.NodeJS.LTS"
+  throw "AIOS requires Node.js >= $RequiredNodeMajor.x. Current: v$nodeMajor."
 }
 
 $forward = @()
