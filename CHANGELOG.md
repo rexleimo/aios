@@ -6,6 +6,24 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.6] - 2026-05-22
+
+- fix(memo): handle -h/--help gracefully in runMemo as fallback for Windows Commander edge cases
+- fix(cli): relax node version check to >=24 (was strict ==24), improve nvm hints in all entry wrappers
+- fix(ci): add root npm install to windows-shell-smoke workflow
+
+## [1.20.5] - 2026-05-22
+
+- feat(platform): add Windows MCP launcher (run-browser-use-mcp.ps1), cross-platform browser executable paths
+- feat(platform): add resolveVenvPythonPath, resolveShellCommand, resolvePythonCommand helpers for cross-platform parity
+- feat(platform): add Brave/Arc/Canary/Flatpak browser candidate paths across macOS/Windows/Linux
+- fix(platform): replace hardcoded python3 with uv run + platform-aware resolution in aios-cred.mjs
+- fix(platform): add HOME/USERPROFILE fallback in browser.mjs and self-update.mjs
+- fix(platform): add uname guard for macOS Keychain security CLI in run-browser-use-mcp.sh
+- fix(platform): use resolveVenvPythonPath in doctorBrowserMcp, resolveLauncherScript for platform-aware script paths
+- test(platform): add platform-smoke.test.mjs (22 assertions covering MCP config, launchers, browser paths, py/uv)
+- docs: add platform audit report (docs/plans/2026-05-22-platform-audit.md)
+
 ## [1.20.4] - 2026-05-22
 
 - fix(install): fix Join-Path 3-arg syntax for PowerShell 5.1 compatibility in aios.ps1
