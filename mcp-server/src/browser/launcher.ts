@@ -114,10 +114,54 @@ function resolveExecutablePath(profile: BrowserProfile): string | undefined {
   if (process.platform === 'darwin') {
     const macCandidates = [
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      '/Applications/Google Chrome Beta.app/Contents/MacOS/Google Chrome Beta',
       '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
       '/Applications/Chromium.app/Contents/MacOS/Chromium',
+      '/Applications/Brave Browser.app/Contents/MacOS/Brave Browser',
+      '/Applications/Arc.app/Contents/MacOS/Arc',
+      '/opt/homebrew/bin/chromium',
+      '/usr/local/bin/chromium',
     ];
     for (const candidate of macCandidates) {
+      if (fs.existsSync(candidate)) return candidate;
+    }
+  }
+
+  if (process.platform === 'win32') {
+    const winCandidates = [
+      path.join(process.env['PROGRAMFILES'] || 'C:\\Program Files', 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Google\\Chrome\\Application\\chrome.exe'),
+      path.join(process.env['PROGRAMFILES'] || 'C:\\Program Files', 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)', 'Microsoft\\Edge\\Application\\msedge.exe'),
+      path.join(process.env['LOCALAPPDATA'] || '', 'Chromium\\Application\\chrome.exe'),
+      path.join(process.env['LOCALAPPDATA'] || '', 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'),
+      path.join(process.env['LOCALAPPDATA'] || '', 'Google\\Chrome SxS\\Application\\chrome.exe'),
+    ];
+    for (const candidate of winCandidates) {
+      if (fs.existsSync(candidate)) return candidate;
+    }
+  }
+
+  if (process.platform === 'linux') {
+    const linuxCandidates = [
+      '/usr/bin/google-chrome',
+      '/usr/bin/google-chrome-stable',
+      '/usr/bin/google-chrome-beta',
+      '/usr/bin/chromium',
+      '/usr/bin/chromium-browser',
+      '/usr/bin/microsoft-edge',
+      '/usr/bin/microsoft-edge-stable',
+      '/usr/bin/brave-browser',
+      '/usr/bin/vivaldi',
+      '/usr/bin/opera',
+      '/snap/bin/chromium',
+      '/snap/bin/brave',
+      '/var/lib/flatpak/exports/bin/org.chromium.Chromium',
+      '/var/lib/flatpak/exports/bin/com.brave.Browser',
+      '/var/lib/flatpak/exports/bin/com.google.Chrome',
+      '/var/lib/flatpak/exports/bin/com.microsoft.Edge',
+    ];
+    for (const candidate of linuxCandidates) {
       if (fs.existsSync(candidate)) return candidate;
     }
   }

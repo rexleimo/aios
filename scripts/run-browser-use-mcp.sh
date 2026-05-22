@@ -88,6 +88,10 @@ fi
 
 # --- credential username injection (non-sensitive, from Keychain) ---
 inject_usernames() {
+  if [[ "$(uname)" != "Darwin" ]]; then
+    echo "[aios-browser] skipping Keychain injection (not macOS)" >&2
+    return 0
+  fi
   for site in xiaohongshu jimeng; do
     local svc="aios-browser-mcp/${site}/username"
     local username

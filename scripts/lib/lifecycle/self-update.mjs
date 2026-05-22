@@ -88,13 +88,13 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
   if (process.platform === 'win32') {
     const script = `$env:AIOS_REPO='${repo}'; $env:AIOS_INSTALL_DIR='${rootDir.replaceAll("'", "''")}'; $env:AIOS_FIRST_SETUP='0'; irm https://github.com/${repo}/releases/latest/download/aios-install.ps1 | iex`;
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');
-    await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.HOME || rootDir, env, io });
+    await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
     return { method: 'release-installer', updated: true, skipped: false };
   }
 
   const script = `curl -fsSL https://github.com/${repo}/releases/latest/download/aios-install.sh | bash`;
   io.log('+ runtime self-update: GitHub Releases installer');
-  await runCommand('bash', ['-lc', script], { cwd: process.env.HOME || rootDir, env, io });
+  await runCommand('bash', ['-lc', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
   return { method: 'release-installer', updated: true, skipped: false };
 }
 

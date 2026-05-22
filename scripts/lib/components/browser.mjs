@@ -21,6 +21,11 @@ function requireCommand(name) {
 }
 
 function printSnippet(io, launcherPath, cdpUrl) {
+  const shellCmd = resolveShellCommand();
+  const isWin = process.platform === 'win32';
+  const argsStr = isWin
+    ? `"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", "${launcherPath}"`
+    : `"${launcherPath}"`;
   io.log('');
   io.log('Done. Browser MCP config was auto-updated where possible.');
   io.log('Use this MCP server block only if a client needs a manual refresh:');
@@ -31,8 +36,8 @@ function printSnippet(io, launcherPath, cdpUrl) {
   io.log('  "mcpServers": {');
   io.log('    "puppeteer-stealth": {');
   io.log('      "type": "stdio",');
-  io.log('      "command": "bash",');
-  io.log(`      "args": ["${launcherPath}"],`);
+  io.log(`      "command": "${shellCmd}",`);
+  io.log(`      "args": [${argsStr}],`);
   io.log('      "env": {');
   io.log(`        "BROWSER_USE_CDP_URL": "${cdpUrl}"`);
   io.log('      }');
@@ -41,8 +46,31 @@ function printSnippet(io, launcherPath, cdpUrl) {
   io.log('}');
 }
 
+function resolveLauncherScript(rootDir, platform = process.platform) {
+  if (platform === 'win32') {
+    return path.join(rootDir, 'scripts', 'run-browser-use-mcp.ps1');
+  }
+  return path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
+}
+
+function resolveShellCommand(platform = process.platform) {
+  return platform === 'win32' ? 'pwsh' : 'bash';
+}
+
+function resolvePythonCommand(platform = process.platform) {
+  return platform === 'win32' ? 'python' : 'python3';
+}
+
+function resolveVenvPythonPath(projectDir, platform = process.platform) {
+  if (platform === 'win32') {
+    return path.join(projectDir, '.venv', 'Scripts', 'python.exe');
+  }
+  return path.join(projectDir, '.venv', 'bin', 'python');
+}
+
 function buildPreferredMcpServer(rootDir, existingAlias = {}) {
-  const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
+  const launcherScript = resolveLauncherScript(rootDir);
+  const shellCommand = resolveShellCommand();
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
   const existingEnv = existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {};
   const browserUseRepo = findBrowserUseRepo(rootDir, existingEnv);
@@ -56,10 +84,14 @@ function buildPreferredMcpServer(rootDir, existingAlias = {}) {
     delete nextEnv.AIOS_BROWSER_USE_REPO;
   }
 
+  const args = shellCommand === 'pwsh'
+    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcherScript]
+    : [launcherScript];
+
   return {
     type: 'stdio',
-    command: 'bash',
-    args: [launcherScript],
+    command: shellCommand,
+    args,
     env: nextEnv,
   };
 }
@@ -74,7 +106,7 @@ function buildAuthToolsMcpServer(rootDir, existingEntry = {}) {
 
   return {
     type: 'stdio',
-    command: 'python3',
+    command: resolvePythonCommand(),
     args: ['-u', authScript],
     env: nextEnv,
   };
@@ -139,7 +171,7 @@ function collectClientMcpTargets(clientHomes = {}) {
 }
 
 export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = false, clientHomes = null } = {}) {
-  const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
+  const launcherScript = resolveLauncherScript(rootDir);
   const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
   if (!fs.existsSync(launcherScript)) {
     throw new Error(`browser-use launcher script not found: ${launcherScript}`);
@@ -219,10 +251,11 @@ export async function installBrowserMcp({
   dryRun = false,
   io = console,
   clientHomes = null,
+  platform = process.platform,
 } = {}) {
   requireCommand('node');
 
-  const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
+  const launcherScript = resolveLauncherScript(rootDir, platform);
   const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
   if (!fs.existsSync(launcherScript)) {
     throw new Error(`browser-use launcher script not found: ${launcherScript}`);
@@ -249,15 +282,16 @@ export async function installBrowserMcp({
   };
 
   if (!skipPlaywrightInstall) {
-    const venvPython = path.join(browserUseProjectDir, '.venv', 'bin', 'python');
+    const venvPython = resolveVenvPythonPath(browserUseProjectDir, platform);
     if (fs.existsSync(venvPython)) {
       io.log(`+ browser-use runtime found: ${venvPython}`);
     } else if (commandExists('uv')) {
       runInBrowserUse('uv', ['sync']);
     } else {
-      requireCommand('python3');
-      runInBrowserUse('python3', ['-m', 'venv', '.venv']);
-      const venvPython = path.join(browserUseProjectDir, '.venv', 'bin', 'python');
+      const pythonCmd = resolvePythonCommand(platform);
+      requireCommand(pythonCmd);
+      runInBrowserUse(pythonCmd, ['-m', 'venv', '.venv']);
+      const venvPython = resolveVenvPythonPath(browserUseProjectDir, platform);
       runInBrowserUse(venvPython, ['-m', 'pip', 'install', '-U', 'pip']);
       runInBrowserUse(venvPython, ['-m', 'pip', 'install', '-e', '.[dev]']);
     }
@@ -272,7 +306,7 @@ export async function installBrowserMcp({
   }
 
   const launcherPath = dryRun
-    ? '<ABSOLUTE_PATH_TO_REPO>/scripts/run-browser-use-mcp.sh'
+    ? `<ABSOLUTE_PATH_TO_REPO>/scripts/${path.basename(resolveLauncherScript(rootDir, platform))}`
     : fs.realpathSync(launcherScript);
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
   printSnippet(io, launcherPath, cdpUrl);
@@ -456,7 +490,7 @@ function formatBrowserUseMissingMessage(rootDir, env = process.env) {
 }
 
 function resolveCdpServiceLayout(rootDir, port = DEFAULT_CDP_SERVICE_PORT) {
-  const homeDir = process.env.HOME || os.homedir();
+  const homeDir = process.env.HOME || process.env.USERPROFILE || os.homedir();
   if (!homeDir) {
     throw new Error('Cannot resolve HOME directory for browser CDP launch service.');
   }
@@ -789,14 +823,14 @@ async function autoHealDefaultCdpPort({
 }
 
 export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dryRun = false, runtime = {} } = {}) {
-  const launcherScript = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
+  const launcherScript = resolveLauncherScript(rootDir);
   const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
   const browserUseRepo = findBrowserUseRepo(rootDir);
   const browserUseProjectDir = browserUseRepo
     ? path.join(browserUseRepo, BROWSER_USE_PROJECT_DIR_NAME)
     : path.join(getBrowserUseRepoCandidates(rootDir)[0] || path.resolve(rootDir, '..', BROWSER_USE_REPO_DIR_NAME), BROWSER_USE_PROJECT_DIR_NAME);
   const browserUsePyproject = path.join(browserUseProjectDir, 'pyproject.toml');
-  const browserUsePython = path.join(browserUseProjectDir, '.venv', 'bin', 'python');
+  const browserUsePython = resolveVenvPythonPath(browserUseProjectDir);
   const profileConfig = path.join(rootDir, 'config', 'browser-profiles.json');
   const doctorRuntime = resolveBrowserDoctorRuntime(runtime);
 

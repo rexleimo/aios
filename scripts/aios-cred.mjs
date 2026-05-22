@@ -11,13 +11,42 @@ import { dirname, resolve } from 'node:path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
+function resolvePython() {
+  if (process.platform === 'win32') {
+    return 'python';
+  }
+  return 'python3';
+}
+
 function python(expr, stdinObj = null) {
-  const args = ['-c', expr];
+  if (stdinObj !== null && stdinObj.password) {
+    const fallback = resolvePython();
+    const result = spawnSync(fallback, ['-c', expr], {
+      encoding: 'utf-8',
+      input: JSON.stringify(stdinObj),
+    });
+    if (result.error) throw result.error;
+    if (result.stderr) process.stderr.write(result.stderr);
+    return result.stdout.trim();
+  }
+
+  // Prefer uv run for cross-platform compatibility; fall back to platform python.
+  let pythonCmd = null;
+  const uvCheck = spawnSync(process.platform === 'win32' ? 'where' : 'command', ['-v', 'uv'], { stdio: 'ignore' });
+  if (uvCheck.status === 0) {
+    pythonCmd = 'uv';
+  } else {
+    pythonCmd = resolvePython();
+  }
+
+  const args = pythonCmd === 'uv'
+    ? ['run', 'python', '-c', expr]
+    : ['-c', expr];
   const opts = { encoding: 'utf-8' };
   if (stdinObj !== null) {
     opts.input = JSON.stringify(stdinObj);
   }
-  const result = spawnSync('python3', args, opts);
+  const result = spawnSync(pythonCmd, args, opts);
   if (result.error) throw result.error;
   if (result.stderr) process.stderr.write(result.stderr);
   return result.stdout.trim();
