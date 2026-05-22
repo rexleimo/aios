@@ -208,3 +208,50 @@ export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStora
     truncated,
   };
 }
+
+// ── auto-compaction ──
+
+const COMPACT_MILD_NODES = 20;
+const COMPACT_AGGRESSIVE_NODES = 50;
+const COMPACT_KEEP_RECENT = 10;
+
+export function computeCompactAction(nodeCount) {
+  if (nodeCount >= COMPACT_AGGRESSIVE_NODES) return 'aggressive';
+  if (nodeCount >= COMPACT_MILD_NODES) return 'mild';
+  return 'none';
+}
+
+export async function compactCanvas(workspaceRoot, sessionId, storage, { maxRecent = COMPACT_KEEP_RECENT } = {}) {
+  const canvas = await loadCanvas(workspaceRoot, sessionId, storage);
+  const action = computeCompactAction(canvas.nodes.length);
+  if (action === 'none') return { action: 'none', canvas };
+
+  const stale = canvas.nodes.length - maxRecent;
+  const oldNodes = canvas.nodes.slice(0, stale);
+  const recentNodes = canvas.nodes.slice(stale);
+
+  const summaryNode = {
+    id: `compact-${oldNodes[0]?.id || 'start'}-to-${oldNodes[oldNodes.length - 1]?.id || 'end'}`,
+    tool: 'offload:compact',
+    label: `[compacted ${oldNodes.length} earlier steps]`,
+    status: 'ok',
+    ts: new Date().toISOString(),
+    ref: '',
+  };
+
+  const compacted = {
+    version: canvas.version,
+    session: canvas.session,
+    started: canvas.started,
+    updated: new Date().toISOString(),
+    nodes: [summaryNode, ...recentNodes],
+    edges: [{ from: summaryNode.id, to: recentNodes[0]?.id || summaryNode.id, kind: 'next' }],
+  };
+
+  for (let i = 1; i < recentNodes.length; i++) {
+    compacted.edges.push({ from: recentNodes[i - 1].id, to: recentNodes[i].id, kind: 'next' });
+  }
+
+  await saveCanvas(workspaceRoot, sessionId, compacted, storage);
+  return { action, canvas: compacted, removedCount: oldNodes.length };
+}

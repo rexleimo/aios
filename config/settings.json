@@ -19,7 +19,13 @@
     "minBytes": 2048,
     "maxRefsPerSession": 1000,
     "keepDays": 30,
-    "tools": ["Bash", "Read", "Edit", "Write", "page."]
+    "tools": ["Bash", "Read", "Edit", "Write", "page.", "harness-turn-"],
+    "compact": {
+      "enabled": true,
+      "mildNodes": 20,
+      "aggressiveNodes": 50,
+      "keepRecent": 10
+    }
   },
   "chrome": {
     "headless": false,

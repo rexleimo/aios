@@ -4,7 +4,8 @@ import { contextDbRelativePath, resolveContextDbRoot } from '../aios/state-root.
 
 import { runContextDbCli } from '../contextdb-cli.mjs';
 import { readContinuitySummary, writeContinuitySummary } from '../contextdb/continuity.mjs';
-import { findCanvasMermaid } from '../offload/mermaid-canvas.mjs';
+import { findCanvasMermaid, compactCanvas } from '../offload/mermaid-canvas.mjs';
+import { capture, resolveStorage, resolveConfig } from '../offload/tool-offload.mjs';
 import {
   appendSoloHookEvent,
   appendSoloIteration,
@@ -674,6 +675,31 @@ export async function runSoloHarnessLoop({
       extraLogEntries: [...(rawTurn?.logEntries || []), ...turnLogEntries],
       checkpointWriter,
     });
+
+    // offload turn output + auto-compact canvas
+    try {
+      const config = resolveConfig({ offload: { enabled: true, minBytes: 512 } });
+      const storage = resolveStorage({}, process.env, { offload: { storage: 'file' } });
+      const outputStr = rawTurn?.rawOutput || outcome?.summary || '';
+      const outputSize = Buffer.byteLength(outputStr, 'utf8');
+      if (outputSize >= config.minBytes) {
+        await capture(
+          {
+            client: summary.clientId || summary.provider || 'codex',
+            session: sessionId,
+            tool: `harness-turn-${iteration}`,
+            input: rawTurn?.prompt || summary.objective || '',
+            output: outputStr,
+            exitCode: outcome.outcome === 'success' ? 0 : 1,
+            durationMs: 0,
+          },
+          { workspaceRoot: rootDir, storage, config },
+        );
+      }
+      await compactCanvas(rootDir, sessionId, storage);
+    } catch {
+      // offload failure should not block harness execution
+    }
 
     if (outcome.shouldStop) {
       await invokeLifecycleHook({
