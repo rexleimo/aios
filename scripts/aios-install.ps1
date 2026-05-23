@@ -43,8 +43,15 @@ function Download-File([string]$Url, [string]$OutFile) {
 }
 
 function Invoke-Checked([string]$Command, [string[]]$Arguments) {
-  & $Command @Arguments
-  $exitCode = $LASTEXITCODE
+  $exitCode = 1
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    & $Command @Arguments
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
   if ($null -ne $exitCode -and $exitCode -ne 0) {
     throw ("Command failed with exit code {0}: {1} {2}" -f $exitCode, $Command, ($Arguments -join " "))
   }

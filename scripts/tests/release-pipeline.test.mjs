@@ -227,11 +227,72 @@ exit 0
   assert.deepEqual(captured.split(/\r?\n/).filter(Boolean), ['internal', 'shell', 'install', '--mode', 'opt-in', '--force']);
 });
 
+windowsInstallerTest('PowerShell one-liner installer tolerates successful native stderr', async () => {
+  const workspaceRoot = process.cwd();
+  const rootDir = await makeTemp('rex-installer-iex-stderr-');
+  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
+  const zipPath = path.join(rootDir, 'harness-cli.zip');
+  const installDir = path.join(rootDir, 'install');
+  const profilePath = path.join(rootDir, 'profile.ps1');
+
+  await writeFixtureFile(packageRoot, 'package.json', '{"name":"installer-smoke","type":"module"}\n');
+  await writeFixtureFile(packageRoot, 'node_modules/.bin/tsx.cmd', '@echo off\r\nexit /b 0\r\n');
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/aios.ps1',
+    `Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+exit 0
+`
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/aios.mjs',
+    `#!/usr/bin/env node
+console.error("Cloning into 'fixture-superpowers'...");
+process.exit(0);
+`
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/install-contextdb-shell.ps1',
+    await readFile(path.join(workspaceRoot, 'scripts', 'install-contextdb-shell.ps1'), 'utf8')
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/lib/powershell/aios-internal-wrapper.ps1',
+    await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'powershell', 'aios-internal-wrapper.ps1'), 'utf8')
+  );
+
+  const zipResult = run('powershell', [
+    '-NoProfile',
+    '-Command',
+    `Compress-Archive -Path ${quotePowerShellSingle(packageRoot)} -DestinationPath ${quotePowerShellSingle(zipPath)} -Force`,
+  ]);
+  assertOk(zipResult);
+
+  const command = [
+    `$env:AIOS_ASSET_URL = ${quotePowerShellSingle(zipPath)}`,
+    `$env:AIOS_INSTALL_DIR = ${quotePowerShellSingle(installDir)}`,
+    `$env:AIOS_POWERSHELL_PROFILE = ${quotePowerShellSingle(profilePath)}`,
+    `$env:AIOS_FIRST_SETUP = '1'`,
+    `Get-Content -LiteralPath ${quotePowerShellSingle(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'))} -Raw | Invoke-Expression`,
+  ].join('; ');
+
+  const result = run('powershell', ['-NoProfile', '-Command', command]);
+
+  assertOk(result);
+  assert.match(result.stderr, /Cloning into 'fixture-superpowers'/);
+  assert.match(result.stdout, /\[ok\] Installed AIOS/);
+});
+
 test('PowerShell installer fails fast when native setup commands fail', async () => {
   const workspaceRoot = process.cwd();
   const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
 
   assert.match(installPs1, /function Invoke-Checked/);
+  assert.match(installPs1, /\$previousErrorActionPreference = \$ErrorActionPreference/);
+  assert.match(installPs1, /\$ErrorActionPreference = 'Continue'/);
   assert.match(installPs1, /Invoke-Checked -Command "npm" -Arguments @\("install", "--include=dev"\)/);
   assert.match(installPs1, /AIOS runtime deps install did not produce expected TUI runner/);
   assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$shellInstaller, "--mode", \$WrapMode, "--force"\)/);

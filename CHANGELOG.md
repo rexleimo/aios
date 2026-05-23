@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.10] - 2026-05-23
+
+- fix(install): avoid treating successful native stderr as fatal during PowerShell one-liner installs
+
 ## [1.20.9] - 2026-05-23
 
 - fix(install): normalize Windows PowerShell shell-wrapper flags during release installs
