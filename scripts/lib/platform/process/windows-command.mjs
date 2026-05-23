@@ -6,6 +6,61 @@ import { resolveClientCommandNames } from '../../clients/registry.mjs';
 import { getEnvCaseInsensitive, splitWindowsPathEntries, splitWindowsPathExt } from './env.mjs';
 
 const WINDOWS_SHELL_COMMANDS = new Set(resolveClientCommandNames('all'));
+const WINDOWS_LAUNCHER_TARGET_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.exe', '.com']);
+const WINDOWS_NODE_SCRIPT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
+const WINDOWS_NATIVE_EXTENSIONS = new Set(['.exe', '.com']);
+
+function normalizeWindowsLauncherPath(rawPath, launcherDir) {
+  const normalized = String(rawPath || '')
+    .trim()
+    .replace(/%~dp0/giu, '')
+    .replace(/%dp0%/giu, '')
+    .replace(/\$basedir/giu, '')
+    .replace(/^[/\\]+/u, '')
+    .replace(/\\/gu, path.sep)
+    .replace(/\//gu, path.sep);
+
+  if (!normalized) return '';
+  return path.resolve(launcherDir, normalized);
+}
+
+// 纯函数：从 Windows 启动器里解析可直达的真实入口，避免把原生 exe 也误判成 shell fallback。
+export function resolveWindowsLauncherTarget(launcherPath, { execPath = process.execPath } = {}) {
+  const ext = path.extname(launcherPath).toLowerCase();
+  if (!['.cmd', '.bat', '.ps1'].includes(ext)) {
+    return null;
+  }
+
+  let content = '';
+  try {
+    content = fs.readFileSync(launcherPath, 'utf8');
+  } catch {
+    return null;
+  }
+
+  const launcherDir = path.dirname(launcherPath);
+  const quotedPathRegex = /["']([^"'\r\n]+?)["']/gu;
+  const candidates = [];
+
+  for (const match of content.matchAll(quotedPathRegex)) {
+    const candidatePath = normalizeWindowsLauncherPath(match[1], launcherDir);
+    if (!candidatePath) continue;
+
+    const targetExt = path.extname(candidatePath).toLowerCase();
+    if (!WINDOWS_LAUNCHER_TARGET_EXTENSIONS.has(targetExt)) continue;
+    if (!fs.existsSync(candidatePath)) continue;
+
+    candidates.push({ path: candidatePath, ext: targetExt });
+  }
+
+  const nodeScript = candidates.find((candidate) => WINDOWS_NODE_SCRIPT_EXTENSIONS.has(candidate.ext));
+  if (nodeScript) return { kind: 'node', command: execPath, argsPrefix: [nodeScript.path] };
+
+  const nativeExecutable = candidates.find((candidate) => WINDOWS_NATIVE_EXTENSIONS.has(candidate.ext));
+  if (nativeExecutable) return { kind: 'native', command: nativeExecutable.path, argsPrefix: [] };
+
+  return null;
+}
 
 export function resolveWindowsCommandExt(command, env = process.env) {
   const base = path.basename(command).trim();
@@ -82,47 +137,12 @@ export function findFirstExisting(paths) {
 }
 
 export function resolveNodeScriptFromWindowsLauncher(launcherPath) {
-  const ext = path.extname(launcherPath).toLowerCase();
-  if (!['.cmd', '.bat', '.ps1'].includes(ext)) {
-    return '';
-  }
-
-  let content = '';
-  try {
-    content = fs.readFileSync(launcherPath, 'utf8');
-  } catch {
-    return '';
-  }
-
-  const launcherDir = path.dirname(launcherPath);
-  const candidates = [];
-  const quotedPathRegex = /["']([^"'\r\n]*?\.(?:c|m)?js)["']/giu;
-  for (const match of content.matchAll(quotedPathRegex)) {
-    const rawPath = String(match[1] || '').trim();
-    if (!rawPath) continue;
-
-    const normalized = rawPath
-      .replace(/%~dp0/giu, '')
-      .replace(/%dp0%/giu, '')
-      .replace(/\$basedir/giu, '')
-      .replace(/^[/\\]+/u, '')
-      .replace(/\\/gu, path.sep)
-      .replace(/\//gu, path.sep);
-
-    if (!normalized) continue;
-    candidates.push(path.resolve(launcherDir, normalized));
-  }
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
+  const target = resolveWindowsLauncherTarget(launcherPath);
+  if (target?.kind === 'node') return target.argsPrefix[0] || '';
   return '';
 }
 
-export function getWindowsNodeCli(command, { platform = process.platform, execPath = process.execPath, env = process.env } = {}) {
+export function getWindowsDirectCli(command, { platform = process.platform, execPath = process.execPath, env = process.env } = {}) {
   if (platform !== 'win32' || !fs.existsSync(execPath)) {
     return null;
   }
@@ -156,13 +176,21 @@ export function getWindowsNodeCli(command, { platform = process.platform, execPa
   if (WINDOWS_SHELL_COMMANDS.has(commandBase)) {
     const launcherPath = resolveWindowsCommandPath(command, env);
     if (launcherPath) {
-      const cliEntry = resolveNodeScriptFromWindowsLauncher(launcherPath);
+      const cliEntry = resolveWindowsLauncherTarget(launcherPath, { execPath });
       if (cliEntry) {
-        return { command: execPath, argsPrefix: [cliEntry] };
+        return cliEntry;
       }
     }
   }
 
+  return null;
+}
+
+export function getWindowsNodeCli(command, options = {}) {
+  const direct = getWindowsDirectCli(command, options);
+  if (direct?.kind === 'node') {
+    return { command: direct.command, argsPrefix: direct.argsPrefix };
+  }
   return null;
 }
 

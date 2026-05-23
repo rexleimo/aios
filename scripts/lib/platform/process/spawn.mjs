@@ -1,6 +1,6 @@
 import { spawn, spawnSync } from 'node:child_process';
 
-import { getWindowsNodeCli, shouldUseWindowsShellCommand } from './windows-command.mjs';
+import { getWindowsDirectCli, shouldUseWindowsShellCommand } from './windows-command.mjs';
 
 // 纯函数：把平台参数和 child_process 选项拆开，避免调用层重复处理 platform/execPath。
 export function splitExecutionOptions(options = {}) {
@@ -15,11 +15,11 @@ export function splitExecutionOptions(options = {}) {
 
 export function getCommandSpawnSpec(command, args = [], options = {}) {
   const { platform, execPath, spawnOptions } = splitExecutionOptions(options);
-  const windowsNodeCli = getWindowsNodeCli(command, { platform, execPath, env: spawnOptions.env });
-  if (windowsNodeCli) {
+  const windowsDirectCli = getWindowsDirectCli(command, { platform, execPath, env: spawnOptions.env });
+  if (windowsDirectCli) {
     return {
-      command: windowsNodeCli.command,
-      args: [...windowsNodeCli.argsPrefix, ...args],
+      command: windowsDirectCli.command,
+      args: [...windowsDirectCli.argsPrefix, ...args],
       shell: false,
     };
   }
@@ -33,7 +33,7 @@ export function getCommandSpawnSpec(command, args = [], options = {}) {
 
 export function commandExists(name, options = {}) {
   const { platform, execPath, spawnOptions } = splitExecutionOptions(options);
-  if (getWindowsNodeCli(name, { platform, execPath, env: spawnOptions.env })) {
+  if (getWindowsDirectCli(name, { platform, execPath, env: spawnOptions.env })) {
     return true;
   }
 

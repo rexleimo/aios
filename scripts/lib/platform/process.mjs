@@ -1,7 +1,9 @@
 export { getEnvCaseInsensitive, splitWindowsPathEntries, splitWindowsPathExt } from './process/env.mjs';
 export {
+  getWindowsDirectCli,
   getWindowsNodeCli,
   resolveNodeScriptFromWindowsLauncher,
+  resolveWindowsLauncherTarget,
   resolveWindowsCommandExt,
   resolveWindowsCommandPath,
   shouldUseWindowsShellCommand,

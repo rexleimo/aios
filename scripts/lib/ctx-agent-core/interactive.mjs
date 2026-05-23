@@ -23,7 +23,7 @@ function usesWindowsShellFallback(command, env = process.env) {
 
 function warnOpenCodeShellPromptSuppressed() {
   console.warn('[warn] Windows shell fallback detected for opencode; skipping automatic ContextDB prompt injection to avoid cmd.exe interpreting AIOS context lines as commands.');
-  console.warn('[hint] Update/reinstall OpenCode so its launcher resolves to a direct Node entrypoint, then rerun the command.');
+  console.warn('[hint] Update/reinstall OpenCode so its launcher resolves to a direct executable entrypoint, then rerun the command.');
 }
 
 function routeAutoPrompt(opts) {

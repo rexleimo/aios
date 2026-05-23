@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.11] - 2026-05-23
+
+- fix(windows): launch OpenCode native npm wrappers directly instead of via cmd.exe shell fallback
+
 ## [1.20.10] - 2026-05-23
 
 - fix(install): avoid treating successful native stderr as fatal during PowerShell one-liner installs

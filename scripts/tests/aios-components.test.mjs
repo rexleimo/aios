@@ -116,6 +116,25 @@ async function makeFakeWindowsAgentLauncher(command, scriptRelativePath) {
   return { binDir, execPath, scriptPath, launcherPath };
 }
 
+async function makeFakeWindowsNativeLauncher(command, executableRelativePath) {
+  const rootDir = await makeTemp(`aios-win-${command}-native-launcher-`);
+  const binDir = path.join(rootDir, 'bin');
+  const executablePath = path.join(binDir, ...String(executableRelativePath).split('/'));
+  const launcherPath = path.join(binDir, `${command}.cmd`);
+  const windowsRelPath = String(executableRelativePath).split('/').join('\\');
+
+  await mkdir(path.dirname(executablePath), { recursive: true });
+  await mkdir(binDir, { recursive: true });
+  await writeFile(executablePath, '', 'utf8');
+  await writeFile(
+    launcherPath,
+    `@ECHO off\r\n"%~dp0\\${windowsRelPath}" %*\r\n`,
+    'utf8'
+  );
+
+  return { binDir, executablePath, launcherPath };
+}
+
 async function makeFakeMcpServer(rootDir) {
   const mcpDir = path.join(rootDir, 'mcp-server');
   await mkdir(mcpDir, { recursive: true });
@@ -946,6 +965,23 @@ test('windows opencode resolves mjs cmd launcher to direct node execution', asyn
 
   assert.equal(spec.command, opencode.execPath);
   assert.deepEqual(spec.args, [opencode.scriptPath, '--version']);
+  assert.equal(spec.shell, false);
+});
+
+test('windows opencode resolves native exe cmd launcher to direct executable', async () => {
+  const opencode = await makeFakeWindowsNativeLauncher(
+    'opencode',
+    'node_modules/opencode-ai/bin/opencode.exe'
+  );
+
+  const spec = getCommandSpawnSpec('opencode', ['--version'], {
+    platform: 'win32',
+    execPath: process.execPath,
+    env: { PATH: opencode.binDir, PATHEXT: '.EXE;.CMD' },
+  });
+
+  assert.equal(spec.command, opencode.executablePath);
+  assert.deepEqual(spec.args, ['--version']);
   assert.equal(spec.shell, false);
 });
 
