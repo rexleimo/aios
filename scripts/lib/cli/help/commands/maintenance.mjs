@@ -1,0 +1,114 @@
+export function getMaintenanceCommandHelpText(command) {
+  switch (command) {
+    case 'entropy-gc':
+      return `Usage:
+  node scripts/aios.mjs entropy-gc [dry-run|auto|off] [options]
+
+Options:
+  --session <id>                 Required session id to clean
+  --retain <n>                   Keep latest n dispatch artifacts (default: 5)
+  --min-age-hours <n>            Only archive files older than n hours (default: 24)
+  --format <text|json>
+  -h, --help
+`;
+    case 'snapshot-rollback':
+      return `Usage:
+  node scripts/aios.mjs snapshot-rollback [options]
+
+Options:
+  --manifest <path>              Explicit snapshot manifest path (relative to workspace or absolute)
+  --session <id>                 Auto-select latest snapshot manifest under session artifacts
+  --job <jobId>                  Optional job filter when auto-selecting snapshot manifest
+  --dry-run                      Preview restore actions without mutating files
+  --format <text|json>
+  -h, --help
+`;
+    case 'release-status':
+      return `Usage:
+  node scripts/aios.mjs release-status [options]
+
+Options:
+  --state-path <path>            Override release gate state file path
+  --recent <n>                   Limit recent trend window (default: 10)
+  --strict                       Enforce health gate and return non-zero when not passed
+  --min-samples <n>              Strict gate minimum recent samples (default: 8)
+  --max-failure-rate <0-1>       Strict gate max recent failure rate (default: 0.2)
+  --max-fallback-rate <0-1>      Strict gate max recent fallback rate (default: 0.1)
+  --output <path>                Write rendered report to file
+  --history-output <path>        Write daily trend history export file
+  --history-format <csv|ndjson>  History export format (default: csv)
+  --history-days <n>             Number of recent days included in history export (default: 14)
+  AIOS_RELEASE_TREND_WOW_FAILURE_DELTA_WARN=<0-1>   (env) WoW failure-rate delta warning threshold (default: 0.05)
+  AIOS_RELEASE_TREND_WOW_FALLBACK_DELTA_WARN=<0-1>  (env) WoW fallback-rate delta warning threshold (default: 0.03)
+  --format <text|json>
+  -h, --help
+`;
+    case 'refs':
+      return `Usage:
+  node scripts/aios.mjs refs list [--session <id>] [--workspace <path>]
+  node scripts/aios.mjs refs grep <pattern> [--session <id>] [--limit N] [--workspace <path>]
+  node scripts/aios.mjs refs read <node_id> [--workspace <path>]
+  node scripts/aios.mjs refs prune [--keep-days N] [--workspace <path>]
+
+Options:
+  --session <id>                 Limit to one offload session
+  --storage <file|split>         Override offload storage backend
+  --workspace <path>             Workspace root containing .aios/offload
+  --limit <n>                    Max refs to list/search (default: 20)
+  --keep-days <n>                Prune refs older than n days (default: 30)
+  -h, --help
+`;
+    case 'canvas':
+      return `Usage:
+  node scripts/aios.mjs canvas show [--session <id>] [--format mmd|json] [--workspace <path>]
+  node scripts/aios.mjs canvas path [--session <id>] [--workspace <path>]
+  node scripts/aios.mjs canvas backfill --input <events.jsonl> --client <client> [--session <id>] [--workspace <path>]
+
+Options:
+  --session <id>                 Offload session id (default: default)
+  --format <mmd|json>            Show Mermaid or raw canvas JSON (default: mmd)
+  --input <path>                 JSONL tool-event log for backfill
+  --client <client>              Client id recorded on generated refs
+  --storage <file|split>         Override offload storage backend
+  --workspace <path>             Workspace root containing .aios/offload
+  -h, --help
+`;
+    case 'perception':
+      return `Usage:
+  node scripts/aios.mjs perception record [options]
+  node scripts/aios.mjs perception insights [options]
+  node scripts/aios.mjs perception summary [options]
+
+Subcommands:
+  record      Record a structured outcome snapshot after content operation
+  insights    Analyze outcomes and generate insight memos
+  summary     Build perception layer markdown for agent context injection
+
+Options:
+  --content-id <id>               (record) Required content identifier
+  --platform <name>               (record) Required platform (e.g. xiaohongshu)
+  --content-type <type>           (record) Required content type (e.g. note, video)
+  --title <text>                  (record) Content title
+  --publish-time <iso>            (record) Publish timestamp
+  --snapshot-window <duration>    (record) Metrics snapshot window (default: immediate)
+  --metrics <json>                (record) Metrics JSON: likes, comments, saves, views, etc.
+  --context <json>                (record) Context JSON: topic, format, publishHour, etc.
+  --space <name>                  Workspace memory space (default: default)
+  --min-sample <n>                (insights) Minimum sample size per dimension group (default: 3)
+  --max-chars <n>                 (summary) Max output characters (default: 10000)
+  --format <text|json>            Output format
+  --dry-run                       Preview without storing
+  --json                          Output as JSON
+  -h, --help
+
+Environment:
+  CTXDB_PERCEPTION                Enable/disable perception overlay (default: true)
+  PERCEPTION_MAX_CHARS            Max chars for perception overlay (default: 3000)
+  PERCEPTION_OUTCOMES_LIMIT       Max outcomes loaded (default: 20)
+  PERCEPTION_INSIGHTS_LIMIT       Max insights loaded (default: 10)
+  PERCEPTION_MIN_SAMPLE           Min sample for insight generation (default: 3)
+`;
+    default:
+      return '';
+  }
+}

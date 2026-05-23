@@ -2,7 +2,7 @@
 
 import React, { useState, useCallback } from 'react';
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router';
-import { Box, Text } from 'ink';
+import { Box, Text, useApp, useInput } from 'ink';
 import { MainScreen } from './screens/MainScreen';
 import { SetupScreen } from './screens/SetupScreen';
 import { UpdateScreen } from './screens/UpdateScreen';
@@ -23,6 +23,7 @@ function AppContent({
   onExit
 }: TuiSessionProps & { onExit: () => void }) {
   const navigate = useNavigate();
+  const { exit } = useApp();
   const {
     options,
     cycleWrapMode,
@@ -61,6 +62,15 @@ function AppContent({
   ) => {
     await onRun(action, actionOptions, hooks);
   }, [onRun]);
+
+  useInput(
+    useCallback((input, key) => {
+      if (input === 'q' || input === 'Q' || key.escape) {
+        onExit();
+        exit();
+      }
+    }, [exit, onExit])
+  );
 
   return (
     <Routes>

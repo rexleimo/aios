@@ -241,8 +241,8 @@ export function collectUnexpectedSkillRootFindings(rootDir) {
     if (skillFiles.length === 0) continue;
 
     findings.push({
-      root: relName,
-      files: skillFiles.map((filePath) => path.relative(rootDir, filePath)),
+      root: relName.replace(/\\/g, '/'),
+      files: skillFiles.map((filePath) => path.relative(rootDir, filePath).replace(/\\/g, '/')),
     });
   }
   return findings;

@@ -141,6 +141,34 @@ test('checkGeneratedSkillsSync reports stale generated outputs', async () => {
   assert.match(result.issues.join('\n'), /\[drift\]/);
 });
 
+test('syncGeneratedSkills can materialize generated roots into a separate target root', async () => {
+  const rootDir = await makeTemp('aios-skills-sync-source-root-');
+  const targetRootDir = await makeTemp('aios-skills-sync-target-root-');
+  await writeSkill(rootDir, 'find-skills');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      codex: '.codex/skills',
+    },
+    skills: [
+      {
+        relativeSkillPath: 'find-skills',
+        installCatalogName: 'find-skills',
+        repoTargets: ['codex'],
+      },
+    ],
+    legacyUnmanaged: [],
+  });
+
+  const result = await syncGeneratedSkills({ rootDir, targetRootDir });
+  assert.equal(result.ok, true);
+  assert.match(await readFile(path.join(targetRootDir, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /sample/);
+  await assert.rejects(() => readFile(path.join(rootDir, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'));
+
+  const check = await checkGeneratedSkillsSync({ rootDir, targetRootDir, io: { log() {} } });
+  assert.equal(check.ok, true);
+});
+
 test('collectUnexpectedSkillRootFindings does not warn on skill-sources', async () => {
   const rootDir = await makeTemp('aios-skills-sources-root-');
   await writeSkill(rootDir, 'find-skills');

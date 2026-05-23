@@ -1,29 +1,17 @@
 import path from 'node:path';
 
 import { commandExists } from '../platform/process.mjs';
+import {
+  ALL_CLIENTS,
+  getClientCommandName,
+  getClientRuntimeId,
+} from '../clients/registry.mjs';
 
-const PROVIDER_MAP = Object.freeze({
-  codex: {
-    provider: 'codex',
-    clientId: 'codex-cli',
-    command: 'codex',
-  },
-  claude: {
-    provider: 'claude',
-    clientId: 'claude-code',
-    command: 'claude',
-  },
-  gemini: {
-    provider: 'gemini',
-    clientId: 'gemini-cli',
-    command: 'gemini',
-  },
-  opencode: {
-    provider: 'opencode',
-    clientId: 'opencode-cli',
-    command: 'opencode',
-  },
-});
+const PROVIDER_MAP = Object.freeze(Object.fromEntries(ALL_CLIENTS.map((client) => [client, {
+  provider: client,
+  clientId: getClientRuntimeId(client),
+  command: getClientCommandName(client),
+}])));
 
 const RESERVED_FLAGS = new Set([
   '--session',

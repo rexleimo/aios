@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
-import os from 'node:os';
+import { cp, mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
 async function makeTemp(prefix) {
-  return mkdtemp(path.join(os.tmpdir(), prefix));
+  const tempRoot = path.join(process.cwd(), 'temp');
+  await mkdir(tempRoot, { recursive: true });
+  return mkdtemp(path.join(tempRoot, prefix));
 }
 
 async function writeFixtureFile(rootDir, relativePath, content) {
@@ -26,6 +27,15 @@ function assertOk(result, message = '') {
   assert.equal(result.status, 0, message || result.stderr || result.stdout);
 }
 
+async function assertFileExists(filePath, message = '') {
+  const fileStat = await stat(filePath);
+  assert.equal(fileStat.isFile(), true, message || `expected file to exist: ${filePath}`);
+}
+
+function runPowerShell(scriptPath, args = [], options = {}) {
+  return run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], options);
+}
+
 async function seedFixtureRepo(rootDir, {
   checkSkillsSyncScript = 'process.exit(0);\n',
   checkNativeSyncScript = 'process.exit(0);\n',
@@ -41,7 +51,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'README-zh.md', '# README-ZH\n');
   await writeFixtureFile(rootDir, 'skills-lock.json', '{}\n');
   await writeFixtureFile(rootDir, 'config/skills-catalog.json', '{"version":1,"skills":[]}\n');
-  await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":[".gemini/AIOS.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":[".opencode/AIOS.md",".opencode/skills"]}}}\n');
+  await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":["GEMINI.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":["AGENTS.md",".opencode/skills"]}}}\n');
   await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp"}\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
@@ -59,7 +69,10 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/package-release.sh', await readFile(path.join(workspaceRoot, 'scripts', 'package-release.sh'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/package-release.ps1', await readFile(path.join(workspaceRoot, 'scripts', 'package-release.ps1'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/release-preflight.sh', await readFile(path.join(workspaceRoot, 'scripts', 'release-preflight.sh'), 'utf8'));
+  await writeFixtureFile(rootDir, 'scripts/release-preflight.ps1', await readFile(path.join(workspaceRoot, 'scripts', 'release-preflight.ps1'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/release-stable.sh', await readFile(path.join(workspaceRoot, 'scripts', 'release-stable.sh'), 'utf8'));
+  await writeFixtureFile(rootDir, 'scripts/release-stable.ps1', await readFile(path.join(workspaceRoot, 'scripts', 'release-stable.ps1'), 'utf8'));
+  await writeFixtureFile(rootDir, 'scripts/materialize-release-local-outputs.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'materialize-release-local-outputs.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/generate-orchestrator-agents.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'generate-orchestrator-agents.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/aios-install.sh', '#!/usr/bin/env bash\n');
   await writeFixtureFile(rootDir, 'scripts/aios-install.ps1', "Write-Host 'fixture'\n");
@@ -74,6 +87,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/claude.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'claude.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/emitters/codex.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'emitters', 'codex.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/harness/orchestrator-agents.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'harness', 'orchestrator-agents.mjs'), 'utf8'));
+  await cp(path.join(workspaceRoot, 'scripts', 'lib', 'clients'), path.join(rootDir, 'scripts', 'lib', 'clients'), { recursive: true });
   await writeFixtureFile(rootDir, 'scripts/lib/specs/orchestrator-agents.json', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'specs', 'orchestrator-agents.json'), 'utf8'));
 
   assertOk(run('git', ['init'], { cwd: rootDir }), 'git init failed');
@@ -88,41 +102,41 @@ test('package-release.sh emits stable assets that include native, skill, and age
   await seedFixtureRepo(rootDir);
 
   const outDir = await makeTemp('rex-release-assets-out-');
-  const result = run('bash', ['scripts/package-release.sh', '--out', outDir], {
-    cwd: rootDir,
-  });
+  const result = process.platform === 'win32'
+    ? runPowerShell('scripts/package-release.ps1', ['-Out', outDir], { cwd: rootDir })
+    : run('bash', ['scripts/package-release.sh', '--out', outDir], { cwd: rootDir });
 
   assertOk(result);
 
   for (const fileName of ['aios-install.sh', 'aios-install.ps1', 'harness-cli.tar.gz', 'harness-cli.zip']) {
     const filePath = path.join(outDir, fileName);
-    assertOk(run('test', ['-f', filePath]), `${fileName} was not produced`);
+    await assertFileExists(filePath, `${fileName} was not produced`);
   }
 
   const extractDir = await makeTemp('rex-release-assets-extract-');
   assertOk(run('tar', ['-xzf', path.join(outDir, 'harness-cli.tar.gz'), '-C', extractDir]));
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'skill-sources', 'sample-skill', 'SKILL.md')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'skill-sources', 'sample-skill', 'SKILL.md'),
     'harness-cli.tar.gz did not include skill-sources/sample-skill/SKILL.md'
   );
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'agent-sources', 'manifest.json')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'agent-sources', 'manifest.json'),
     'harness-cli.tar.gz did not include agent-sources/manifest.json'
   );
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json'),
     'harness-cli.tar.gz did not include bundled runtime specs'
   );
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'),
     'harness-cli.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
   );
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'package.json')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'package.json'),
     'harness-cli.tar.gz did not include root package.json for direct release installs'
   );
-  assertOk(
-    run('test', ['-f', path.join(extractDir, 'harness-cli', 'package-lock.json')]),
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'package-lock.json'),
     'harness-cli.tar.gz did not include root package-lock.json for direct release installs'
   );
 });
@@ -136,6 +150,24 @@ test('one-liner installers bootstrap root runtime dependencies for direct releas
   assert.match(installSh, /node_modules\/\.bin\/tsx/);
   assert.match(installPs1, /npm install --include=dev/);
   assert.match(installPs1, /node_modules\/\.bin\/tsx\.cmd/);
+});
+
+test('PowerShell installer enables TLS 1.2 before release asset downloads', async () => {
+  const workspaceRoot = process.cwd();
+  const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
+
+  assert.match(installPs1, /\[Net\.SecurityProtocolType\]::Tls12/);
+  assert.match(installPs1, /\nEnable-Tls12\s*\r?\n[\s\S]*Download-File -Url \$assetUrl/);
+});
+
+test('PowerShell installer fails fast when native setup commands fail', async () => {
+  const workspaceRoot = process.cwd();
+  const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
+
+  assert.match(installPs1, /function Invoke-Checked/);
+  assert.match(installPs1, /Invoke-Checked -Command "npm" -Arguments @\("install", "--include=dev"\)/);
+  assert.match(installPs1, /AIOS runtime deps install did not produce expected TUI runner/);
+  assert.match(installPs1, /Invoke-Checked -Command "node" -Arguments @\(\$aiosCli, "setup"/);
 });
 
 test('one-liner installers perform first-run core setup before suggesting doctor', async () => {
@@ -156,9 +188,9 @@ test('release-preflight.sh validates matching tag, VERSION, changelog, and nativ
     checkNativeSyncScript: "console.log('[ok] native sync clean');\nprocess.exit(0);\n",
   });
 
-  const ok = run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], {
-    cwd: passingRoot,
-  });
+  const ok = process.platform === 'win32'
+    ? runPowerShell('scripts/release-preflight.ps1', ['-Tag', 'v1.2.3'], { cwd: passingRoot })
+    : run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], { cwd: passingRoot });
   assertOk(ok);
   assert.match(ok.stdout, /SKILLS:\s+generated roots match skill-sources\//);
   assert.match(ok.stdout, /NATIVE:\s+generated native outputs match client-sources\/native-base\//);
@@ -170,17 +202,44 @@ test('release-preflight.sh validates matching tag, VERSION, changelog, and nativ
     checkNativeSyncScript: "console.error('[drift] AGENTS.md');\nprocess.exit(1);\n",
   });
 
-  const drift = run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], {
-    cwd: failingRoot,
-  });
+  const drift = process.platform === 'win32'
+    ? runPowerShell('scripts/release-preflight.ps1', ['-Tag', 'v1.2.3'], { cwd: failingRoot })
+    : run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], { cwd: failingRoot });
   assert.notEqual(drift.status, 0);
   assert.match(`${drift.stderr}\n${drift.stdout}`, /native sync drift detected/i);
 });
 
-test('release-stable.sh dry-run prints the exact tag from VERSION', () => {
-  const result = run('bash', ['scripts/release-stable.sh', '--dry-run', '--allow-dirty'], {
-    cwd: process.cwd(),
+test('release-preflight materializes sync checks in a temporary target root', async () => {
+  const rootDir = await makeTemp('rex-release-preflight-materialize-');
+  const assertMaterializeArg = `
+if (!process.argv.includes('--materialize-temp')) {
+  console.error('missing --materialize-temp');
+  process.exit(2);
+}
+console.log('[ok] materialize-temp');
+`;
+  await seedFixtureRepo(rootDir, {
+    checkSkillsSyncScript: assertMaterializeArg,
+    checkNativeSyncScript: assertMaterializeArg,
   });
+
+  const result = process.platform === 'win32'
+    ? runPowerShell('scripts/release-preflight.ps1', ['-Tag', 'v1.2.3'], { cwd: rootDir })
+    : run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], { cwd: rootDir });
+
+  assertOk(result);
+});
+
+test('release-stable.sh dry-run prints the exact tag from VERSION', async () => {
+  const rootDir = await makeTemp('rex-release-stable-dry-run-');
+  await seedFixtureRepo(rootDir, {
+    checkSkillsSyncScript: "console.log('[ok] skills sync clean');\nprocess.exit(0);\n",
+    checkNativeSyncScript: "console.log('[ok] native sync clean');\nprocess.exit(0);\n",
+  });
+
+  const result = process.platform === 'win32'
+    ? runPowerShell('scripts/release-stable.ps1', ['-DryRun', '-AllowDirty'], { cwd: rootDir })
+    : run('bash', ['scripts/release-stable.sh', '--dry-run', '--allow-dirty'], { cwd: rootDir });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /Tag:\s+v\d+\.\d+\.\d+/);

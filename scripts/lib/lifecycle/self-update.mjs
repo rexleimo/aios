@@ -45,6 +45,10 @@ function runCommand(command, args, { cwd, env = process.env, io = console } = {}
   });
 }
 
+function quotePowerShellSingleString(value) {
+  return String(value).replaceAll("'", "''");
+}
+
 async function readVersion(rootDir) {
   try {
     return (await readFile(path.join(rootDir, 'VERSION'), 'utf8')).trim();
@@ -86,7 +90,15 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
   };
 
   if (process.platform === 'win32') {
-    const script = `$env:AIOS_REPO='${repo}'; $env:AIOS_INSTALL_DIR='${rootDir.replaceAll("'", "''")}'; $env:AIOS_FIRST_SETUP='0'; irm https://github.com/${repo}/releases/latest/download/aios-install.ps1 | iex`;
+    const psRepo = quotePowerShellSingleString(repo);
+    const psRootDir = quotePowerShellSingleString(rootDir);
+    const script = [
+      '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12',
+      `$env:AIOS_REPO='${psRepo}'`,
+      `$env:AIOS_INSTALL_DIR='${psRootDir}'`,
+      "$env:AIOS_FIRST_SETUP='0'",
+      'irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex',
+    ].join('; ');
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');
     await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
     return { method: 'release-installer', updated: true, skipped: false };

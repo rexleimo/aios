@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import { resolveClientAgentTargets } from '../clients/registry.mjs';
 
 const ROOT_DIR_NAME = 'agent-sources';
 const ROLES_DIR_NAME = 'roles';
@@ -20,6 +21,7 @@ const ALLOWED_AGENT_KEYS = new Set([
 const ALLOWED_HANDOFF_TARGETS = new Set(['next-phase', 'merge-gate']);
 const MANAGED_MARKER_PATTERN = /AIOS-GENERATED|END AIOS-GENERATED/;
 const KEBAB_CASE_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const GENERATED_AGENT_TARGETS = resolveClientAgentTargets('all');
 
 function assertCondition(condition, message) {
   if (!condition) {
@@ -57,13 +59,13 @@ export function validateManifest(raw = {}) {
   assertCondition(raw.schemaVersion === 1, 'manifest schemaVersion must be 1');
   assertCondition(Array.isArray(raw.generatedTargets), 'manifest generatedTargets must be an array');
   assertCondition(
-    JSON.stringify(raw.generatedTargets) === JSON.stringify(['claude', 'codex']),
-    'manifest generatedTargets must equal ["claude", "codex"]'
+    JSON.stringify(raw.generatedTargets) === JSON.stringify(GENERATED_AGENT_TARGETS),
+    `manifest generatedTargets must equal ${JSON.stringify(GENERATED_AGENT_TARGETS)}`
   );
 
   return {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: [...GENERATED_AGENT_TARGETS],
   };
 }
 

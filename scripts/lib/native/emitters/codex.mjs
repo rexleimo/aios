@@ -9,6 +9,7 @@ export function renderCodexNativeOutputs({ rootDir }) {
         content: joinMarkdownSections([
           ...readSharedMarkdownParts(rootDir),
           readClientMarkdownSource(rootDir, 'codex', 'AGENTS.md'),
+          readClientMarkdownSource(rootDir, 'opencode', 'AIOS.md'),
         ]),
       },
     ],

@@ -130,13 +130,13 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
   }
 
   if (hasComponent(options.components, 'agents')) {
-    await agentsInstaller({ rootDir, client: options.client, io });
+    await agentsInstaller({ rootDir, projectRoot, client: options.client, io });
   }
 
   if (hasComponent(options.components, 'superpowers')) {
-    await superpowersInstaller({ rootDir, io });
+    await superpowersInstaller({ rootDir: projectRoot, client: options.client, io });
     if (!options.skipDoctor) {
-      const result = await superpowersDoctor({ io });
+      const result = await superpowersDoctor({ client: options.client, io });
       if (result.errors > 0) {
         throw new Error(`doctor-superpowers failed (${result.errors} errors)`);
       }

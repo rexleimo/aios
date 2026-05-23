@@ -235,7 +235,7 @@ async function createFakeAgentCommands({ captureInputPath = '', captureArgsPath 
   const scriptBody = [
     "import fs from 'node:fs';",
     "import path from 'node:path';",
-    'const cli = path.basename(process.argv[1]).replace(/\\.cmd$/i, "");',
+    'const cli = path.basename(process.argv[1]).replace(/\\.(?:cmd|mjs)$/i, "");',
     'const args = process.argv.slice(2);',
     'const invoked = process.env.FAKE_AGENT_CLI || (["codex", "claude", "gemini"].includes(cli) ? cli : String(args.find((arg) => arg === "codex" || arg === "claude" || arg === "gemini") || cli));',
     `const captureInputPath = ${captureInputPathLiteral};`,
@@ -270,6 +270,14 @@ async function createFakeAgentCommands({ captureInputPath = '', captureArgsPath 
   await fs.writeFile(script, `${scriptBody}\n`, 'utf8');
 
   for (const command of ['codex', 'claude', 'gemini']) {
+    if (process.platform === 'win32') {
+      const commandScript = path.join(binDir, `${command}.mjs`);
+      await fs.writeFile(commandScript, `${scriptBody}\n`, 'utf8');
+      const file = path.join(binDir, `${command}.cmd`);
+      await fs.writeFile(file, `@echo off\r\nnode "${commandScript}" %*\r\n`, 'utf8');
+      continue;
+    }
+
     const file = path.join(binDir, command);
     await fs.writeFile(file, `#!/usr/bin/env bash\nFAKE_AGENT_CLI="${command}" exec node "${script}" "$@"\n`, 'utf8');
     await fs.chmod(file, 0o755);

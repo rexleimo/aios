@@ -43,7 +43,7 @@ node -v  # Should show v24.x.x
 === "Windows PowerShell"
 
     ```powershell
-    irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ```
 

@@ -28,6 +28,7 @@ test('planDoctor preserves strict and global security flags', () => {
   const plan = planDoctor({
     strict: true,
     globalSecurity: true,
+    client: 'opencode',
     nativeOnly: true,
     verbose: true,
     fix: true,
@@ -36,11 +37,12 @@ test('planDoctor preserves strict and global security flags', () => {
   assert.equal(plan.command, 'doctor');
   assert.equal(plan.options.strict, true);
   assert.equal(plan.options.globalSecurity, true);
+  assert.equal(plan.options.client, 'opencode');
   assert.equal(plan.options.nativeOnly, true);
   assert.equal(plan.options.verbose, true);
   assert.equal(plan.options.fix, true);
   assert.equal(plan.options.dryRun, true);
-  assert.match(plan.preview, /doctor --strict --global-security --native --verbose --fix --dry-run/);
+  assert.match(plan.preview, /doctor --strict --global-security --client opencode --native --verbose --fix --dry-run/);
 });
 
 test('planEntropyGc preserves explicit options', () => {
@@ -82,7 +84,7 @@ test('planReleaseStatus preserves strict health-gate options', () => {
   assert.equal(plan.options.maxFailureRate, 0.25);
   assert.equal(plan.options.maxFallbackRate, 0.15);
   assert.equal(plan.options.format, 'json');
-  assert.equal(plan.options.historyOutputPath.endsWith('/tmp/release-history.csv'), true);
+  assert.equal(plan.options.historyOutputPath.replace(/\\/g, '/').endsWith('/tmp/release-history.csv'), true);
   assert.equal(plan.options.historyFormat, 'ndjson');
   assert.equal(plan.options.historyDays, 21);
   assert.match(plan.preview, /release-status/);
@@ -187,6 +189,66 @@ test('runUpdate performs runtime self-update when requested', async () => {
   assert.equal(calls[0].kind, 'runtime');
   assert.equal(calls[0].options.rootDir, '/tmp/aios-test');
   assert.equal(calls[1].kind, 'skills');
+});
+
+test('runSetup scopes native, agents, and superpowers project writes to projectRoot and client', async () => {
+  const calls = [];
+  await runSetup({
+    components: ['native', 'agents', 'superpowers'],
+    client: 'opencode',
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-install',
+    projectRoot: '/tmp/user-project',
+    io: { log: () => {} },
+    deps: {
+      installNativeEnhancements: async (options) => { calls.push({ kind: 'native', options }); },
+      installOrchestratorAgents: async (options) => { calls.push({ kind: 'agents', options }); },
+      installSuperpowers: async (options) => { calls.push({ kind: 'superpowers', options }); },
+    },
+  });
+
+  assert.equal(calls[0].kind, 'native');
+  assert.equal(calls[0].options.rootDir, '/tmp/aios-install');
+  assert.equal(calls[0].options.projectRoot, '/tmp/user-project');
+  assert.equal(calls[0].options.client, 'opencode');
+  assert.equal(calls[1].kind, 'agents');
+  assert.equal(calls[1].options.rootDir, '/tmp/aios-install');
+  assert.equal(calls[1].options.projectRoot, '/tmp/user-project');
+  assert.equal(calls[1].options.client, 'opencode');
+  assert.equal(calls[2].kind, 'superpowers');
+  assert.equal(calls[2].options.rootDir, '/tmp/user-project');
+  assert.equal(calls[2].options.client, 'opencode');
+});
+
+test('runUpdate scopes native, agents, and superpowers project writes to projectRoot and client', async () => {
+  const calls = [];
+  await runUpdate({
+    components: ['native', 'agents', 'superpowers'],
+    client: 'claude',
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-install',
+    projectRoot: '/tmp/user-project',
+    io: { log: () => {} },
+    deps: {
+      updateNativeEnhancements: async (options) => { calls.push({ kind: 'native', options }); },
+      installOrchestratorAgents: async (options) => { calls.push({ kind: 'agents', options }); },
+      installSuperpowers: async (options) => { calls.push({ kind: 'superpowers', options }); },
+    },
+  });
+
+  assert.equal(calls[0].kind, 'native');
+  assert.equal(calls[0].options.rootDir, '/tmp/aios-install');
+  assert.equal(calls[0].options.projectRoot, '/tmp/user-project');
+  assert.equal(calls[0].options.client, 'claude');
+  assert.equal(calls[1].kind, 'agents');
+  assert.equal(calls[1].options.rootDir, '/tmp/aios-install');
+  assert.equal(calls[1].options.projectRoot, '/tmp/user-project');
+  assert.equal(calls[1].options.client, 'claude');
+  assert.equal(calls[2].kind, 'superpowers');
+  assert.equal(calls[2].options.rootDir, '/tmp/user-project');
+  assert.equal(calls[2].options.client, 'claude');
 });
 
 test('runUpdate browser flow does not block lifecycle when browser-use runtime is missing', async () => {

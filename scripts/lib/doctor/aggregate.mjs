@@ -9,56 +9,17 @@ import { doctorContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers } from '../components/superpowers.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
 import { commandExists, captureCommand, runCommand } from '../platform/process.mjs';
+import { runNativeOnlyDoctor } from './aggregate/native-only.mjs';
+import { addDoctorCheck, countEffectiveWarnLines, logSkippedGate, printCaptured, printDoctorCheckSummary } from './aggregate/reporting.mjs';
 
-export function countEffectiveWarnLines(input) {
-  const lines = Array.isArray(input) ? input : String(input || '').split(/\r?\n/);
-  return lines
-    .filter((line) => line.startsWith('[warn] '))
-    .filter((line) => !/^\[warn\] (codex|claude|gemini) not found in PATH$/u.test(line))
-    .length;
-}
-
-function printCaptured(io, text) {
-  for (const line of String(text || '').split(/\r?\n/)) {
-    if (line.length > 0) {
-      io.log(line);
-    }
-  }
-}
-
-function logSkippedGate(io, gateId, profile) {
-  io.log(`[skip] ${gateId} disabled for profile=${profile}`);
-}
-
-function addDoctorCheck(checks, check) {
-  checks.push({
-    id: String(check.id || '').trim() || 'unknown',
-    item: String(check.item || '').trim() || 'unspecified',
-    status: String(check.status || 'unknown').trim() || 'unknown',
-    fix: String(check.fix || '').trim() || 'review logs and rerun doctor',
-    note: String(check.note || '').trim(),
-  });
-}
-
-function printDoctorCheckSummary(io, checks = []) {
-  io.log('');
-  io.log('Doctor Check Summary');
-  io.log('--------------------');
-  for (const check of checks) {
-    io.log(`[check] ${check.id}`);
-    io.log(`  item: ${check.item}`);
-    io.log(`  status: ${check.status}`);
-    io.log(`  fix: ${check.fix}`);
-    if (check.note) {
-      io.log(`  note: ${check.note}`);
-    }
-  }
-}
+export { countEffectiveWarnLines } from './aggregate/reporting.mjs';
 
 export async function runDoctorSuite({
   rootDir,
+  projectRoot = rootDir,
   strict = false,
   globalSecurity = false,
+  client = 'all',
   nativeOnly = false,
   verbose = false,
   fix = false,
@@ -74,33 +35,27 @@ export async function runDoctorSuite({
   io.log('AIOS Verify');
   io.log('-----------');
   io.log(`Repo: ${rootDir}`);
+  if (projectRoot && projectRoot !== rootDir) {
+    io.log(`Project: ${projectRoot}`);
+  }
   io.log(`Strict: ${strict}`);
+  io.log(`Client: ${client}`);
   io.log(`Profile: ${profile}`);
   io.log(`Verbose: ${verbose}`);
   io.log(`Fix: ${fix}`);
   io.log(`DryRun: ${dryRun}`);
 
   if (nativeOnly) {
-    io.log('');
-    io.log('== doctor-native ==');
-    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, env, io });
-    effectiveWarns += nativeResult.effectiveWarnings;
-    addDoctorCheck(checks, {
-      id: 'doctor:native',
-      item: 'Repo-local native enhancement surfaces',
-      status: nativeResult.errors > 0 ? 'error' : (nativeResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: 'Run: node scripts/aios.mjs update --components native --client all',
-      note: `errors=${nativeResult.errors}; effectiveWarnings=${nativeResult.effectiveWarnings}`,
+    return runNativeOnlyDoctor({
+      rootDir,
+      projectRoot,
+      client,
+      verbose,
+      fix,
+      dryRun,
+      env,
+      io,
     });
-    printDoctorCheckSummary(io, checks);
-    io.log('');
-    io.log(`[summary] effective_warn=${effectiveWarns}`);
-    if (nativeResult.errors > 0 || nativeResult.effectiveWarnings > 0) {
-      io.log('[fail] native doctor found actionable issues');
-      return { effectiveWarns, exitCode: 1 };
-    }
-    io.log('[ok] verify-aios complete');
-    return { effectiveWarns, exitCode: 0 };
   }
 
   io.log('');
@@ -129,13 +84,13 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-contextdb-skills ==');
   if (isHarnessGateEnabled('doctor:skills', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const skillsResult = await doctorContextDbSkills({ rootDir, client: 'all', io });
+    const skillsResult = await doctorContextDbSkills({ rootDir, projectRoot, client, io });
     effectiveWarns += skillsResult.effectiveWarnings;
     addDoctorCheck(checks, {
       id: 'doctor:skills',
       item: 'Skill install integrity and repo skill roots',
       status: skillsResult.effectiveWarnings > 0 ? 'warn' : 'ok',
-      fix: 'Run: node scripts/aios.mjs setup --components skills --client all',
+      fix: `Run: node scripts/aios.mjs setup --components skills --client ${client}`,
       note: `effectiveWarnings=${skillsResult.effectiveWarnings}`,
     });
   } else {
@@ -152,13 +107,13 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-native ==');
   if (isHarnessGateEnabled('doctor:native', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const nativeResult = await doctorNativeEnhancements({ rootDir, client: 'all', verbose, fix, dryRun, env, io });
+    const nativeResult = await doctorNativeEnhancements({ rootDir, projectRoot, client, verbose, fix, dryRun, env, io });
     effectiveWarns += nativeResult.effectiveWarnings + nativeResult.errors;
     addDoctorCheck(checks, {
       id: 'doctor:native',
       item: 'Repo-local native enhancement surfaces',
       status: nativeResult.errors > 0 ? 'error' : (nativeResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: 'Run: node scripts/aios.mjs update --components native --client all',
+      fix: `Run: node scripts/aios.mjs update --components native --client ${client}`,
       note: `errors=${nativeResult.errors}; effectiveWarnings=${nativeResult.effectiveWarnings}`,
     });
   } else {
@@ -175,12 +130,12 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-superpowers ==');
   if (isHarnessGateEnabled('doctor:superpowers', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const superpowersResult = await doctorSuperpowers({ io });
+    const superpowersResult = await doctorSuperpowers({ client, io });
     addDoctorCheck(checks, {
       id: 'doctor:superpowers',
       item: 'Superpowers repository and managed links',
       status: superpowersResult.errors > 0 ? 'error' : (superpowersResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: 'Run: node scripts/aios.mjs internal superpowers install --update',
+      fix: `Run: node scripts/aios.mjs internal superpowers install --client ${client} --update`,
       note: `errors=${superpowersResult.errors}; effectiveWarnings=${superpowersResult.effectiveWarnings}`,
     });
     if (superpowersResult.errors > 0) {
@@ -230,7 +185,7 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-bootstrap-task ==');
   if (isHarnessGateEnabled('doctor:bootstrap', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const bootstrap = await inspectBootstrapTask(rootDir);
+    const bootstrap = await inspectBootstrapTask(projectRoot || rootDir);
     io.log('Bootstrap Task Doctor');
     io.log('---------------------');
     io.log(`Workspace: ${bootstrap.workspaceRoot}`);
@@ -286,7 +241,7 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-codemap ==');
   if (isHarnessGateEnabled('doctor:codemap', { profile, disabledGates, profiles: ['standard', 'strict'] })) {
-    const codemapResult = await doctorCodemap({ rootDir, projectRoot: rootDir, fix, dryRun, io });
+    const codemapResult = await doctorCodemap({ rootDir, projectRoot: projectRoot || rootDir, client, fix, dryRun, io });
     addDoctorCheck(checks, {
       id: 'doctor:codemap',
       item: 'Code review graph (CRG) installation and graph health',

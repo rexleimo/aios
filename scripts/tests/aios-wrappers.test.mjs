@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 const repoRoot = process.cwd();
+const bashWrapperTest = process.platform === 'win32' ? test.skip : test;
 
 async function createFakeNode(tempDir, captureFile) {
   const nodePath = path.join(tempDir, 'node');
@@ -46,7 +47,7 @@ async function runWrapper(scriptPath, args) {
   };
 }
 
-test('install-contextdb-shell.sh forwards to internal shell install', async () => {
+bashWrapperTest('install-contextdb-shell.sh forwards to internal shell install', async () => {
   const { result, captured } = await runWrapper('scripts/install-contextdb-shell.sh', ['--mode', 'repo-only', '--force']);
   assert.equal(result.status, 0);
   assert.equal(captured[1], 'internal');
@@ -55,7 +56,7 @@ test('install-contextdb-shell.sh forwards to internal shell install', async () =
   assert.deepEqual(captured.slice(4), ['--mode', 'repo-only', '--force']);
 });
 
-test('update-contextdb-skills.sh forwards to internal skills update', async () => {
+bashWrapperTest('update-contextdb-skills.sh forwards to internal skills update', async () => {
   const { result, captured } = await runWrapper('scripts/update-contextdb-skills.sh', ['--client', 'gemini']);
   assert.equal(result.status, 0);
   assert.equal(captured[1], 'internal');
@@ -64,7 +65,7 @@ test('update-contextdb-skills.sh forwards to internal skills update', async () =
   assert.deepEqual(captured.slice(4), ['--client', 'gemini']);
 });
 
-test('doctor-browser-mcp.sh forwards help to internal browser doctor', async () => {
+bashWrapperTest('doctor-browser-mcp.sh forwards help to internal browser doctor', async () => {
   const { result, captured } = await runWrapper('scripts/doctor-browser-mcp.sh', ['--help']);
   assert.equal(result.status, 0);
   assert.equal(captured[1], 'internal');
@@ -73,7 +74,7 @@ test('doctor-browser-mcp.sh forwards help to internal browser doctor', async () 
   assert.deepEqual(captured.slice(4), ['--help']);
 });
 
-test('start-browser-cdp.sh forwards to internal browser cdp-start', async () => {
+bashWrapperTest('start-browser-cdp.sh forwards to internal browser cdp-start', async () => {
   const { result, captured } = await runWrapper('scripts/start-browser-cdp.sh', ['--help']);
   assert.equal(result.status, 0);
   assert.equal(captured[1], 'internal');

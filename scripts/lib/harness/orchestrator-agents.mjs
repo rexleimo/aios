@@ -5,6 +5,7 @@ import {
   renderManagedAgentContent,
 } from '../agents/emitters/shared.mjs';
 import { resolveAgentTargets, syncCanonicalAgents } from '../agents/sync.mjs';
+import { resolveClientAgentTargets } from '../clients/registry.mjs';
 
 const LEGACY_TARGET_MAP = {
   '.claude/agents': 'claude',
@@ -97,7 +98,7 @@ export function renderAgentMarkdown(agent) {
 
 function normalizeLegacyTargets(targets) {
   if (!Array.isArray(targets) || targets.length === 0) {
-    return ['claude', 'codex'];
+    return resolveClientAgentTargets('all');
   }
 
   const selected = [];
@@ -110,12 +111,16 @@ function normalizeLegacyTargets(targets) {
       continue;
     }
 
-    if (value === 'claude' || value === 'codex') {
-      selected.push(value);
-      continue;
+    try {
+      const resolvedTargets = resolveAgentTargets(value);
+      if (resolvedTargets.includes(value)) {
+        selected.push(value);
+        continue;
+      }
+      selected.push(...resolvedTargets);
+    } catch {
+      // Keep legacy behavior: unknown target strings are ignored by this adapter.
     }
-
-    selected.push(...resolveAgentTargets(value));
   }
 
   return [...new Set(selected)];

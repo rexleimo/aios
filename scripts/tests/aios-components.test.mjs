@@ -20,7 +20,7 @@ import {
   uninstallOrchestratorAgents,
 } from '../lib/components/agents.mjs';
 import { installBrowserMcp, migrateBrowserMcpConfig } from '../lib/components/browser.mjs';
-import { syncClaudeSkillPermissions } from '../lib/components/superpowers.mjs';
+import { doctorSuperpowers, installSuperpowers, syncClaudeSkillPermissions } from '../lib/components/superpowers.mjs';
 import {
   commandExists,
   getCommandSpawnSpec,
@@ -37,6 +37,43 @@ function escapeRegExp(value) {
 async function writeExecutable(filePath, content) {
   await writeFile(filePath, content, 'utf8');
   await chmod(filePath, 0o755);
+}
+
+function browserLauncherName() {
+  return process.platform === 'win32' ? 'run-browser-use-mcp.ps1' : 'run-browser-use-mcp.sh';
+}
+
+function browserLauncherPath(rootDir) {
+  return path.join(rootDir, 'scripts', browserLauncherName());
+}
+
+function hasFunctionalBash() {
+  if (!commandExists('bash')) return false;
+  const result = spawnSync('bash', ['-lc', 'printf ok'], { encoding: 'utf8' });
+  return result.status === 0 && result.stdout === 'ok';
+}
+
+async function writeBrowserLauncherFixture(scriptsDir) {
+  const filePath = path.join(scriptsDir, browserLauncherName());
+  const content = process.platform === 'win32'
+    ? '# browser-use MCP PowerShell fixture\n'
+    : '#!/usr/bin/env bash\n';
+  await writeFile(filePath, content, 'utf8');
+  if (process.platform !== 'win32') {
+    await chmod(filePath, 0o755);
+  }
+  return filePath;
+}
+
+function expectedBrowserMcpCommand() {
+  return process.platform === 'win32' ? 'pwsh' : 'bash';
+}
+
+function expectedBrowserMcpArgs(rootDir) {
+  const launcher = browserLauncherPath(rootDir);
+  return process.platform === 'win32'
+    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcher]
+    : [launcher];
 }
 
 async function makeFakeWindowsNodeInstall({ withNpxCli = true } = {}) {
@@ -358,6 +395,73 @@ test('syncClaudeSkillPermissions can seed global Claude settings when requested'
   assert.equal(seeded.permissions.allow.includes('Skill(subagent-driven-development)'), true);
 });
 
+test('installSuperpowers skips clients without superpowers support', async () => {
+  const rootDir = await makeTemp('aios-superpowers-skip-root-');
+  const codexHome = await makeTemp('aios-superpowers-skip-codex-home-');
+  const claudeHome = await makeTemp('aios-superpowers-skip-claude-home-');
+  const agentsHome = await makeTemp('aios-superpowers-skip-agents-home-');
+  const logs = [];
+
+  const result = await installSuperpowers({
+    rootDir,
+    client: 'opencode',
+    env: {
+      ...process.env,
+      CODEX_HOME: codexHome,
+      CLAUDE_HOME: claudeHome,
+      AGENTS_HOME: agentsHome,
+    },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  assert.equal(result.skipped, true);
+  assert.match(logs.join('\n'), /skipped.*opencode/i);
+  await assert.rejects(() => readFile(path.join(codexHome, 'superpowers', 'skills', 'using-superpowers', 'SKILL.md'), 'utf8'));
+  await assert.rejects(() => readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
+});
+
+test('doctorSuperpowers skips Claude checks for codex-only client', async () => {
+  if (!commandExists('git')) return;
+
+  const rootDir = await makeTemp('aios-superpowers-doctor-codex-root-');
+  const codexHome = await makeTemp('aios-superpowers-doctor-codex-home-');
+  const claudeHome = await makeTemp('aios-superpowers-doctor-claude-home-');
+  const agentsHome = await makeTemp('aios-superpowers-doctor-agents-home-');
+  const superpowersDir = path.join(codexHome, 'superpowers');
+  const env = {
+    ...process.env,
+    CODEX_HOME: codexHome,
+    CLAUDE_HOME: claudeHome,
+    AGENTS_HOME: agentsHome,
+  };
+
+  await mkdir(superpowersDir, { recursive: true });
+  await writeSuperpowersSkill(codexHome, 'using-superpowers');
+  spawnSync('git', ['init', superpowersDir], { stdio: 'ignore' });
+
+  await installSuperpowers({
+    rootDir,
+    client: 'codex',
+    installClaudePlugin: false,
+    env,
+    io: { log() {} },
+  });
+
+  const logs = [];
+  const result = await doctorSuperpowers({
+    client: 'codex',
+    env,
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  const rendered = logs.join('\n');
+  assert.equal(result.errors, 0);
+  assert.doesNotMatch(rendered, /claude_home/i);
+  assert.doesNotMatch(rendered, /Claude Code skill/i);
+  assert.match(rendered, /client: codex/i);
+  assert.match(rendered, /Claude Code superpowers doctor skipped/i);
+});
+
 test('browser installer runtime files do not embed author machine paths', async () => {
   const workspaceRoot = process.cwd();
   const files = [
@@ -374,6 +478,10 @@ test('browser installer runtime files do not embed author machine paths', async 
 });
 
 test('browser install accepts AIOS_BROWSER_USE_REPO pointing at the browser-use project dir', async () => {
+  if (!hasFunctionalBash()) {
+    return;
+  }
+
   const workspaceRoot = await makeTemp('aios-browser-install-project-dir-root-');
   const launcherDir = path.join(workspaceRoot, 'scripts');
   const repoRoot = await makeTemp('aios-browser-install-project-dir-repo-');
@@ -411,6 +519,11 @@ test('browser install accepts AIOS_BROWSER_USE_REPO pointing at the browser-use 
 });
 
 test('browser bootstrap accepts AIOS_BROWSER_USE_REPO pointing at the browser-use project dir', async () => {
+  const pythonCmd = commandExists('python3') ? 'python3' : commandExists('python') ? 'python' : '';
+  if (!pythonCmd) {
+    return;
+  }
+
   const workspaceRoot = await makeTemp('aios-browser-bootstrap-project-dir-root-');
   const repoRoot = await makeTemp('aios-browser-bootstrap-project-dir-repo-');
   const projectDir = path.join(repoRoot, 'mcp-browser-use');
@@ -419,7 +532,7 @@ test('browser bootstrap accepts AIOS_BROWSER_USE_REPO pointing at the browser-us
   await writeFile(path.join(projectDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
 
   const expectedRepoRoot = await realpath(repoRoot);
-  const result = spawnSync('python3', ['-c', `
+  const result = spawnSync(pythonCmd, ['-c', `
 import pathlib
 import runpy
 ns = runpy.run_path(${JSON.stringify(bootstrapScript)})
@@ -444,7 +557,7 @@ test('browser mcp-migrate omits unresolved browser-use repo instead of writing a
 
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
@@ -472,7 +585,7 @@ test('browser mcp-migrate removes stale unresolved AIOS_BROWSER_USE_REPO values'
 
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
@@ -511,7 +624,7 @@ test('browser install missing external runtime reports portable repo-relative ca
   const rootDir = await makeTemp('aios-browser-install-portable-root-');
   const scriptsDir = path.join(rootDir, 'scripts');
   await mkdir(scriptsDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
 
   const previous = process.env.AIOS_BROWSER_USE_REPO;
@@ -551,7 +664,7 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
   await mkdir(browserUseProjectDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
   await writeFile(path.join(browserUseProjectDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
@@ -592,8 +705,8 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
     assert.equal(result.migrationResult.created + result.migrationResult.updated >= 2, true);
 
     const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-    assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, 'bash');
-    assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, [path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh')]);
+    assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
+    assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
     assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9555');
     assert.equal(
       await realpath(rootMcp.mcpServers['puppeteer-stealth'].env.AIOS_BROWSER_USE_REPO),
@@ -602,12 +715,12 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
     assert.equal(rootMcp.mcpServers['playwright-browser-mcp'], undefined);
 
     const mcpServerMcp = JSON.parse(await readFile(path.join(rootDir, 'mcp-server', '.mcp.json'), 'utf8'));
-    assert.equal(mcpServerMcp.mcpServers['puppeteer-stealth'].command, 'bash');
-    assert.deepEqual(mcpServerMcp.mcpServers['puppeteer-stealth'].args, [path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh')]);
+    assert.equal(mcpServerMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
+    assert.deepEqual(mcpServerMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
     assert.equal(mcpServerMcp.mcpServers['playwright-browser-mcp'], undefined);
 
     const claudeMcp = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
-    assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, 'bash');
+    assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
     assert.equal(claudeMcp.mcpServers['playwright-browser-mcp'], undefined);
   } finally {
     if (previous === undefined) delete process.env.AIOS_BROWSER_USE_REPO;
@@ -628,7 +741,7 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(mcpServerDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
@@ -672,14 +785,14 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   assert.equal(result.updated >= 3, true);
 
   const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-  assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, 'bash');
-  assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, [path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh')]);
+  assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
+  assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
   assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.KEEP_ME, '1');
   assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
   assert.equal(rootMcp.mcpServers['playwright-browser-mcp'], undefined);
 
   const claudeMcp = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
-  assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, 'bash');
+  assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
   assert.equal(claudeMcp.mcpServers['playwright-browser-mcp'], undefined);
   assert.match(logs.join('\n'), /mcp-migrate summary:/);
 });
@@ -691,7 +804,7 @@ test('browser mcp-migrate --dry-run does not modify files', async () => {
 
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeBrowserLauncherFixture(scriptsDir);
   await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
@@ -819,6 +932,23 @@ test('windows claude, gemini, and opencode resolve npm-style cmd launchers to di
   assert.equal(opencodeSpec.shell, false);
 });
 
+test('windows opencode resolves mjs cmd launcher to direct node execution', async () => {
+  const opencode = await makeFakeWindowsAgentLauncher(
+    'opencode',
+    'node_modules/opencode-ai/dist/index.mjs'
+  );
+
+  const spec = getCommandSpawnSpec('opencode', ['--version'], {
+    platform: 'win32',
+    execPath: opencode.execPath,
+    env: { PATH: opencode.binDir, PATHEXT: '.EXE;.CMD' },
+  });
+
+  assert.equal(spec.command, opencode.execPath);
+  assert.deepEqual(spec.args, [opencode.scriptPath, '--version']);
+  assert.equal(spec.shell, false);
+});
+
 
 test('skills doctor warns on non-discoverable repo skill roots', async () => {
   const rootDir = await makeTemp('aios-skills-doctor-root-');
@@ -854,7 +984,7 @@ test('skills doctor warns on non-discoverable repo skill roots', async () => {
   assert.equal(logs.some((line) => line.includes('.baoyu-skills/wrong-skill/SKILL.md')), true);
 });
 
-test('agents install maps gemini to both compatibility targets and uninstall removes managed files only', async () => {
+test('agents install skips unsupported clients and uninstall removes managed files only', async () => {
   const rootDir = await makeTemp('aios-agents-root-');
   await copyCanonicalAgentSource(rootDir);
   const claudeDir = path.join(rootDir, '.claude', 'agents');
@@ -867,7 +997,12 @@ test('agents install maps gemini to both compatibility targets and uninstall rem
   const logs = [];
   const io = { log: (line) => logs.push(String(line)) };
 
-  await installOrchestratorAgents({ rootDir, client: 'gemini', io });
+  const skipped = await installOrchestratorAgents({ rootDir, client: 'opencode', io });
+  assert.equal(skipped.skipped, true);
+  await assert.rejects(() => readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'));
+  await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'));
+
+  await installOrchestratorAgents({ rootDir, client: 'all', io });
 
   assert.match(await readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);

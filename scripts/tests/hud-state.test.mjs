@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { pathToFileURL } from 'node:url';
 
+import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 import { buildHindsightEval } from '../lib/harness/hindsight-eval.mjs';
 import { initSoloRunJournal, writeSoloControl } from '../lib/harness/solo-journal.mjs';
 import { readHudDispatchSummary, readHudState, selectHudSessionId } from '../lib/hud/state.mjs';
@@ -45,6 +46,29 @@ function makeSessionMeta({ sessionId, agent, updatedAt }) {
     updatedAt,
   };
 }
+
+test('hud state entrypoint delegates state, artifact, and command responsibilities to focused modules', async () => {
+  const root = path.resolve('scripts/lib/hud');
+  const entry = await fs.readFile(path.join(root, 'state.mjs'), 'utf8');
+  const entryLines = entry.split(/\r?\n/u).length;
+  assert.equal(entryLines <= 260, true, `hud/state.mjs is ${entryLines} lines; keep session, artifact, IO, and command logic split under hud/state/*`);
+
+  const modules = [
+    { file: 'state/providers.mjs', exports: ['HUD_PROVIDER_AGENT_MAP', 'normalizeProvider', 'inferProviderFromAgent'] },
+    { file: 'state/io.mjs', exports: ['safeReadJsonCached', 'readLastJsonLine', 'readLatestQualityGateEvent'] },
+    { file: 'state/sessions.mjs', exports: ['listContextDbSessions', 'selectHudSessionId'] },
+    { file: 'state/artifacts.mjs', exports: ['findLatestDispatchArtifact', 'findLatestSkillCandidateArtifact', 'collectRecentDispatchEvidence'] },
+    { file: 'state/commands.mjs', exports: ['buildSuggestedCommands', 'buildHarnessSuggestedCommands', 'buildDispatchFixHint'] },
+    { file: 'state/compose.mjs', exports: ['readHudState', 'readHudDispatchSummary'] },
+  ];
+
+  for (const moduleDef of modules) {
+    const mod = await import(pathToFileURL(path.join(root, moduleDef.file)).href);
+    for (const exportName of moduleDef.exports) {
+      assert.notEqual(mod[exportName], undefined, `${moduleDef.file} should export ${exportName}`);
+    }
+  }
+});
 
 test('selectHudSessionId respects explicit session id', async () => {
   const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-hud-'));
@@ -2025,31 +2049,20 @@ test('regression chain recall -> orchestrate -> team status stays connected', as
   assert.equal(orchestrateReport.dispatchRun.ok, true);
   assert.equal((orchestrateReport.dispatchRun.jobRuns || []).length > 0, true);
 
-  const recall = spawnSync(
-    'npx',
-    [
-      'tsx',
-      'mcp-server/src/contextdb/cli.ts',
-      'recall:sessions',
-      '--workspace',
-      rootDir,
-      '--project',
-      'aios',
-      '--query',
-      'login hardening regressions',
-      '--limit',
-      '3',
-      '--highlight-limit',
-      '2',
-      '--explain-score',
-    ],
-    {
-      cwd: process.cwd(),
-      encoding: 'utf8',
-    }
-  );
-  assert.equal(recall.status, 0, recall.stderr || recall.stdout);
-  const recallPayload = JSON.parse((recall.stdout || '{}').trim());
+  const recallPayload = runContextDbCli([
+    'recall:sessions',
+    '--workspace',
+    rootDir,
+    '--project',
+    'aios',
+    '--query',
+    'login hardening regressions',
+    '--limit',
+    '3',
+    '--highlight-limit',
+    '2',
+    '--explain-score',
+  ]);
   assert.equal(Array.isArray(recallPayload.results), true);
   assert.equal(recallPayload.results[0]?.sessionId, sessionId);
   assert.equal(Boolean(recallPayload.results[0]?.scoreExplanation), true);

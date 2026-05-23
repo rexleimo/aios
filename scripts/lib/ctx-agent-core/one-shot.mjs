@@ -1,0 +1,123 @@
+import { getClientCommandName, resolveClientFromRuntimeId } from '../clients/registry.mjs';
+import { ROOT_DIR, parsePositiveInteger, runCommand, runCommandWithInput } from './common.mjs';
+import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePreview, buildHarnessRoutePreview, normalizeOrchestrateBlueprint, normalizeRouteExecutionMode, normalizeRouteMode, resolveHarnessRouteProviderForAgent, resolveRoutedSubagentClient } from './routes.mjs';
+import { buildOpenCodePrompt } from './opencode-context.mjs';
+
+export function classifyOneShotFailure(detail) {
+  if (!detail) return undefined;
+  const normalized = String(detail).toLowerCase();
+  if (normalized.includes('timeout') || normalized.includes('timed out')) return 'timeout';
+  if (normalized.includes('rate limit') || normalized.includes('too many requests')) return 'rate-limit';
+  if (normalized.includes('auth') || normalized.includes('login')) return 'auth';
+  if (normalized.includes('network') || normalized.includes('enotfound') || normalized.includes('econn')) return 'network';
+  if (normalized.includes('permission') || normalized.includes('denied')) return 'permission';
+  return 'tool';
+}
+
+function commandForRuntime(agent) {
+  const client = resolveClientFromRuntimeId(agent) || 'opencode';
+  return getClientCommandName(client);
+}
+
+function runBufferedCommand(command, args) {
+  const result = runCommand(command, args);
+  return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
+}
+
+function runCodexOneShot(prompt, extraArgs, injectContext, contextText) {
+  const cmd = commandForRuntime('codex-cli');
+  const args = ['exec', '-', ...buildCodexMcpDisableArgs(process.env), ...extraArgs];
+  const fullPrompt = injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt;
+  const result = runCommandWithInput(cmd, args, fullPrompt);
+  return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
+}
+
+const ONE_SHOT_HANDLERS = {
+  'claude-code': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+    commandForRuntime('claude-code'),
+    injectContext ? ['--print', '--append-system-prompt', contextText, prompt, ...extraArgs] : ['--print', prompt, ...extraArgs]
+  ),
+  'gemini-cli': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+    commandForRuntime('gemini-cli'),
+    ['-p', injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt, ...extraArgs]
+  ),
+  'codex-cli': ({ contextText, prompt, extraArgs, injectContext }) => runCodexOneShot(prompt, extraArgs, injectContext, contextText),
+  'opencode-cli': ({ contextText, prompt, extraArgs, injectContext, contextPacketPath }) => runBufferedCommand(
+    commandForRuntime('opencode-cli'),
+    ['run', ...extraArgs, buildOpenCodePrompt({ contextPacketPath, contextText, prompt, injectContext, promptKind: 'request' })]
+  ),
+};
+
+export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
+  const handler = ONE_SHOT_HANDLERS[agent] || ONE_SHOT_HANDLERS['opencode-cli'];
+  return handler({ contextText, prompt, extraArgs, injectContext, contextPacketPath });
+}
+
+export function buildRoutedCommandSpec({
+  workspaceRoot = process.cwd(), project = '', agent = 'codex-cli', routeMode = 'team', routeExecutionMode = 'dry-run', teamProvider = 'auto',
+  teamWorkers = 3, harnessProvider = 'auto', harnessMaxIterations = 8, blueprint = 'feature', taskPrompt = '', sessionId = '',
+} = {}) {
+  const executionMode = normalizeRouteExecutionMode(routeExecutionMode);
+  const effectiveRoute = normalizeRouteMode(routeMode);
+  const effectivePrompt = String(taskPrompt || '').trim();
+  const { env: commandEnv, provider } = buildRouteRuntimeEnv({ agent, teamProvider, teamWorkers, executionMode });
+  const workers = parsePositiveInteger(teamWorkers, 3);
+
+  if (effectiveRoute === 'team') {
+    return { command: process.execPath, args: [], env: commandEnv, cwd: workspaceRoot, preview: buildCtxAgentRoutePreview({ agent, workspaceRoot, project, sessionId, routeMode: 'team', executionMode, teamProvider: provider, teamWorkers: workers, taskPrompt: effectivePrompt }), provider, workers, executionMode, routeMode: effectiveRoute };
+  }
+  if (effectiveRoute === 'subagent') {
+    const effectiveBlueprint = normalizeOrchestrateBlueprint(blueprint);
+    const subagentClient = resolveRoutedSubagentClient({ agent, teamProvider: provider, env: process.env });
+    return { command: process.execPath, args: [], env: commandEnv, cwd: workspaceRoot, preview: buildCtxAgentRoutePreview({ agent: subagentClient, workspaceRoot, project, sessionId, routeMode: 'subagent', executionMode, teamProvider: provider, teamWorkers: workers, blueprint: effectiveBlueprint, taskPrompt: effectivePrompt }), provider, workers, executionMode, routeMode: effectiveRoute, blueprint: effectiveBlueprint };
+  }
+  if (effectiveRoute === 'harness') {
+    const resolvedProvider = resolveHarnessRouteProviderForAgent({ agent, harnessProvider });
+    return { command: process.execPath, args: [], env: commandEnv, cwd: workspaceRoot, preview: buildHarnessRoutePreview({ workspaceRoot, sessionId, provider: resolvedProvider, taskPrompt: effectivePrompt, maxIterations: harnessMaxIterations }), provider: resolvedProvider, workers, executionMode, routeMode: effectiveRoute, harnessMaxIterations: parsePositiveInteger(harnessMaxIterations, 8) };
+  }
+  throw new Error(`Unsupported routed mode: ${effectiveRoute}`);
+}
+
+function createBufferedIo(outputChunks) {
+  return {
+    log: (...parts) => outputChunks.push(parts.join(' ')),
+    warn: (...parts) => outputChunks.push(parts.join(' ')),
+    error: (...parts) => outputChunks.push(parts.join(' ')),
+  };
+}
+
+function formatRoutedOutput(spec, commandOutput) {
+  const lines = [`[ctx-agent route] mode=${spec.routeMode} execute=${spec.executionMode}`, `Command: ${spec.preview}`];
+  if (commandOutput) lines.push(commandOutput);
+  return `${lines.join('\n')}\n`;
+}
+
+export async function runRoutedOneShotTask(options = {}) {
+  const spec = buildRoutedCommandSpec(options);
+  const outputChunks = [];
+  const io = createBufferedIo(outputChunks);
+
+  if (spec.routeMode === 'harness') {
+    const { runHarnessCommand } = await import('../lifecycle/harness.mjs');
+    const result = await runHarnessCommand({
+      subcommand: 'run', objective: String(options.taskPrompt || '').trim(), sessionId: String(options.sessionId || '').trim(),
+      provider: spec.provider, profile: 'standard', worktree: true, baseRef: 'HEAD', maxIterations: spec.harnessMaxIterations,
+      lifecycleHooks: true, dryRun: spec.executionMode !== 'live', json: true,
+    }, { rootDir: options.workspaceRoot || process.cwd(), aiosRootDir: ROOT_DIR, io });
+    return { output: formatRoutedOutput(spec, outputChunks.join('\n').trim()), exitCode: result.exitCode ?? 1, preview: spec.preview, routeMode: spec.routeMode, executionMode: spec.executionMode };
+  }
+
+  const { runOrchestrate } = await import('../lifecycle/orchestrate.mjs');
+  const useGroupChat = spec.routeMode === 'team' && spec.executionMode === 'live';
+  const result = await runOrchestrate({
+    blueprint: spec.routeMode === 'subagent' ? spec.blueprint : options.blueprint,
+    taskTitle: String(options.taskPrompt || '').trim(),
+    contextSummary: '',
+    sessionId: String(options.sessionId || '').trim(),
+    dispatchMode: 'local',
+    executionMode: spec.executionMode,
+    preflightMode: 'auto',
+    format: 'json',
+  }, { rootDir: options.workspaceRoot || process.cwd(), env: spec.env, io, runtimeId: useGroupChat ? 'groupchat-runtime' : '' });
+  return { output: formatRoutedOutput(spec, outputChunks.join('\n').trim()), exitCode: result.exitCode ?? 1, preview: spec.preview, routeMode: spec.routeMode, executionMode: spec.executionMode };
+}

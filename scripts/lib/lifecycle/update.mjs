@@ -140,13 +140,13 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   }
 
   if (hasComponent(options.components, 'agents')) {
-    await agentsInstaller({ rootDir, client: options.client, io });
+    await agentsInstaller({ rootDir, projectRoot, client: options.client, io });
   }
 
   if (hasComponent(options.components, 'superpowers')) {
-    await superpowersInstaller({ rootDir, update: true, force: true, io });
+    await superpowersInstaller({ rootDir: projectRoot, client: options.client, update: true, force: true, io });
     if (!options.skipDoctor) {
-      const result = await superpowersDoctor({ io });
+      const result = await superpowersDoctor({ client: options.client, io });
       if (result.errors > 0) {
         throw new Error(`doctor-superpowers failed (${result.errors} errors)`);
       }

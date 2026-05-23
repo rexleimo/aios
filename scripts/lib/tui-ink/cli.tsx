@@ -28,6 +28,16 @@ function printBanner(): void {
   console.log('\x1b[36m' + REX_CLI_BANNER + '\x1b[0m'); // cyan color
 }
 
+function canUseInteractiveTui(): boolean {
+  return Boolean(process.stdin.isTTY && process.stdout.isTTY && typeof process.stdin.setRawMode === 'function');
+}
+
+function printNonInteractiveTuiHelp(): void {
+  console.error('[err] AIOS TUI requires an interactive terminal with raw keyboard input.');
+  console.error('[hint] Open Windows Terminal or PowerShell directly, then run: aios');
+  console.error('[hint] Non-interactive alternatives: aios doctor, aios setup, aios update');
+}
+
 const rootDir = process.env.AIOS_ROOT_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const projectRoot = process.env.AIOS_PROJECT_ROOT || process.cwd();
 
@@ -135,6 +145,12 @@ export async function runInteractiveSession({
 
 // Main entry point when run directly
 async function main() {
+  if (!canUseInteractiveTui()) {
+    printNonInteractiveTuiHelp();
+    process.exitCode = 1;
+    return;
+  }
+
   // Print welcome banner first
   printBanner();
 

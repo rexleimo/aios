@@ -2,14 +2,16 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { resolveContextDbRoot } from '../aios/state-root.mjs';
+import {
+  resolveClientCommandNames,
+  resolveClientRuntimeIds,
+} from '../clients/registry.mjs';
 
 const VALID_AGENT_TYPES = [
-  'claude-code',
-  'codex',
-  'gemini',
-  'codex-cli',
-  'gemini-cli',
-  'opencode-cli',
+  ...new Set([
+    ...resolveClientRuntimeIds('all'),
+    ...resolveClientCommandNames('all'),
+  ]),
 ];
 
 const VALID_ROLES = ['planner', 'implementer', 'reviewer', 'orchestrator'];

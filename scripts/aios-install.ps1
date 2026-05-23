@@ -9,6 +9,17 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 
+function Enable-Tls12() {
+  try {
+    $tls12 = [Net.SecurityProtocolType]::Tls12
+    if (([Net.ServicePointManager]::SecurityProtocol -band $tls12) -ne $tls12) {
+      [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor $tls12
+    }
+  } catch {
+    Write-Host ("[warn] unable to enable TLS 1.2 for downloads: {0}" -f $_.Exception.Message)
+  }
+}
+
 function Download-File([string]$Url, [string]$OutFile) {
   Write-Host "+ download $Url"
   $iwr = Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue
@@ -17,6 +28,14 @@ function Download-File([string]$Url, [string]$OutFile) {
     return
   }
   Invoke-WebRequest -Uri $Url -OutFile $OutFile
+}
+
+function Invoke-Checked([string]$Command, [string[]]$Arguments) {
+  & $Command @Arguments
+  $exitCode = $LASTEXITCODE
+  if ($null -ne $exitCode -and $exitCode -ne 0) {
+    throw ("Command failed with exit code {0}: {1} {2}" -f $exitCode, $Command, ($Arguments -join " "))
+  }
 }
 
 function Safe-RemoveDir([string]$Path) {
@@ -32,6 +51,8 @@ function Test-FirstSetupDisabled([string]$Value) {
 }
 
 $assetUrl = "https://github.com/$Repo/releases/latest/download/harness-cli.zip"
+
+Enable-Tls12
 
 $parent = Split-Path -Parent $InstallDir
 New-Item -Path $parent -ItemType Directory -Force | Out-Null
@@ -107,10 +128,13 @@ try {
       Write-Host "+ install AIOS runtime deps: npm install --include=dev"
       Push-Location $InstallDir
       try {
-        & npm install --include=dev
+        Invoke-Checked -Command "npm" -Arguments @("install", "--include=dev")
       }
       finally {
         Pop-Location
+      }
+      if (-not (Test-Path -LiteralPath $rootTsxBin)) {
+        throw ("AIOS runtime deps install did not produce expected TUI runner: {0}" -f $rootTsxBin)
       }
     } else {
       Write-Host ("[ok] AIOS runtime deps ready: {0}" -f $InstallDir)
@@ -122,7 +146,7 @@ try {
   $shellInstaller = Join-Path $InstallDir "scripts/install-contextdb-shell.ps1"
   if (Test-Path -LiteralPath $shellInstaller) {
     Write-Host "+ install PowerShell integration: $shellInstaller -Mode $WrapMode -Force"
-    & powershell -ExecutionPolicy Bypass -File $shellInstaller -Mode $WrapMode -Force
+    Invoke-Checked -Command "powershell" -Arguments @("-ExecutionPolicy", "Bypass", "-File", $shellInstaller, "-Mode", $WrapMode, "-Force")
   } else {
     Write-Host "[warn] missing shell installer: $shellInstaller"
   }
@@ -144,7 +168,7 @@ try {
     if (Test-Path -LiteralPath $aiosCli) {
       if (Get-Command node -ErrorAction SilentlyContinue) {
         Write-Host "+ first-run core setup: node $aiosCli setup --components skills,native,superpowers --client all --skip-doctor"
-        & node $aiosCli setup --components skills,native,superpowers --client all --skip-doctor
+        Invoke-Checked -Command "node" -Arguments @($aiosCli, "setup", "--components", "skills,native,superpowers", "--client", "all", "--skip-doctor")
       } else {
         Write-Host "[warn] node not found; skip first-run core setup"
         Write-Host "       Retry after installing Node.js: aios setup --components skills,native,superpowers"

@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 import {
   normalizeSoloIterationOutcome,
@@ -20,6 +21,30 @@ import {
   requestSoloHarnessStop,
 } from '../lib/harness/solo-journal.mjs';
 import { buildIterationPrompt, runHarnessCommand } from '../lib/lifecycle/harness.mjs';
+import {
+  buildClientStructuredOutputOptions,
+  cleanupClientStructuredOutputTempDir,
+  createClientStructuredOutputTempDir,
+  shouldUseClientStructuredOutput,
+} from '../lib/harness/subagent-clients/structured-output.mjs';
+import { buildOneShotInvocation } from '../lib/harness/subagent-clients/one-shot.mjs';
+
+async function writeFakeCli(binDir, name) {
+  await mkdir(binDir, { recursive: true });
+  const ext = process.platform === 'win32' ? '.cmd' : '';
+  const filePath = path.join(binDir, `${name}${ext}`);
+  const content = process.platform === 'win32'
+    ? `@echo off\r\n"%~dp0\\node.exe" "%~dp0\\${name}.js" %*\r\n`
+    : '#!/usr/bin/env sh\necho "fake $@"\n';
+  await writeFile(filePath, content, 'utf8');
+  if (process.platform === 'win32') {
+    await writeFile(path.join(binDir, `${name}.js`), 'console.log("fake");\n', 'utf8');
+  }
+  if (process.platform !== 'win32') {
+    await chmod(filePath, 0o755);
+  }
+  return filePath;
+}
 
 test('normalizeSoloIterationOutcome fills defaults for a success outcome', () => {
   const success = normalizeSoloIterationOutcome({
@@ -64,6 +89,134 @@ test('resolveSoloBackoffState doubles delay for infra failures', () => {
 
   assert.equal(infra.consecutiveInfraFailures, 2);
   assert.equal(infra.nextDelayMs, 120000);
+});
+
+test('structured subagent output is isolated to the codex runtime adapter', async () => {
+  const tempDir = await createClientStructuredOutputTempDir('codex-cli');
+
+  try {
+    assert.equal(shouldUseClientStructuredOutput('codex-cli'), true);
+    assert.equal(shouldUseClientStructuredOutput('opencode-cli'), false);
+    assert.equal(await createClientStructuredOutputTempDir('opencode-cli'), null);
+
+    const codexOutput = buildClientStructuredOutputOptions({
+      clientId: 'codex-cli',
+      tempDir,
+      schemaPath: 'schema.json',
+      lastMessagePath: 'last-message.json',
+    });
+    assert.deepEqual(codexOutput, {
+      schemaPath: 'schema.json',
+      lastMessagePath: 'last-message.json',
+      color: 'never',
+    });
+    assert.equal(buildClientStructuredOutputOptions({ clientId: 'opencode-cli', tempDir }), null);
+  } finally {
+    await cleanupClientStructuredOutputTempDir(tempDir);
+  }
+});
+
+test('one-shot subagent invocation strategies cover every harness client', () => {
+  const adapters = {
+    buildClaudeUnattendedArgs: () => ['--claude-unattended'],
+    buildGeminiUnattendedArgs: () => ['--gemini-yolo'],
+    buildCodexConfigArgs: () => ['-c', 'mcp_servers={}'],
+    buildCodexUnattendedArgs: () => ['--codex-unattended'],
+  };
+  const common = {
+    systemText: 'system',
+    promptText: 'prompt',
+    routedExtraArgs: ['-m', 'model-a'],
+    codexOutput: {
+      schemaPath: 'schema.json',
+      lastMessagePath: 'last-message.json',
+      color: 'never',
+    },
+    adapters,
+  };
+
+  assert.deepEqual(buildOneShotInvocation({ clientId: 'claude-code', ...common }), {
+    runner: 'spawn',
+    args: ['-m', 'model-a', '--claude-unattended', '--print', '--append-system-prompt', 'system', 'prompt'],
+  });
+  assert.deepEqual(buildOneShotInvocation({ clientId: 'gemini-cli', ...common }), {
+    runner: 'spawn',
+    args: ['-m', 'model-a', '--gemini-yolo', '-p', 'system\n\n## New User Request\nprompt'],
+  });
+  assert.deepEqual(buildOneShotInvocation({ clientId: 'opencode-cli', ...common }), {
+    runner: 'spawn',
+    args: ['run', 'system\n\n## New User Request\nprompt'],
+  });
+  assert.deepEqual(buildOneShotInvocation({ clientId: 'codex-cli', ...common }), {
+    runner: 'codex-exec',
+    fullPrompt: 'system\n\n## New User Request\nprompt',
+    codexConfigArgs: ['-c', 'mcp_servers={}'],
+    codexUnattendedArgs: ['--codex-unattended'],
+    routedExtraArgs: ['-m', 'model-a'],
+    structuredFlags: ['--output-schema', 'schema.json', '--output-last-message', 'last-message.json', '--color', 'never'],
+    args: [
+      'exec',
+      '--codex-unattended',
+      '-c',
+      'mcp_servers={}',
+      '-m',
+      'model-a',
+      '--output-schema',
+      'schema.json',
+      '--output-last-message',
+      'last-message.json',
+      '--color',
+      'never',
+      '-',
+    ],
+  });
+});
+
+test('subagent runtime delegates orchestration responsibilities to focused modules', async () => {
+  const entry = await readFile(path.resolve('scripts/lib/harness/subagent-runtime.mjs'), 'utf8');
+  const entryLines = entry.trim().split(/\r?\n/u).length;
+  assert.equal(entryLines <= 260, true, `subagent-runtime.mjs is ${entryLines} lines; keep it as a facade and split orchestration responsibilities under harness/subagent-runtime/*`);
+
+  const modules = [
+    { file: 'scripts/lib/harness/subagent-runtime/constants.mjs', exports: ['SUBAGENT_CLIENT_ENV', 'CLIENT_COMMAND'] },
+    { file: 'scripts/lib/harness/subagent-runtime/text.mjs', exports: ['normalizeText', 'clipText'] },
+    { file: 'scripts/lib/harness/subagent-runtime/file-policy.mjs', exports: ['evaluatePhaseFilePolicy', 'summarizeFilePolicyViolation'] },
+    { file: 'scripts/lib/harness/subagent-runtime/client-args.mjs', exports: ['buildCodexConfigArgs', 'buildRoutedExtraArgs'] },
+    { file: 'scripts/lib/harness/subagent-runtime/one-shot-runner.mjs', exports: ['runOneShot'] },
+    { file: 'scripts/lib/harness/subagent-runtime/paths.mjs', exports: ['resolveRepoRoot'] },
+    { file: 'scripts/lib/harness/subagent-runtime/snapshots.mjs', exports: ['createPreMutationSnapshot', 'withPreMutationSnapshot'] },
+    { file: 'scripts/lib/harness/subagent-runtime/telemetry.mjs', exports: ['collectCostTelemetry', 'mergeCostTelemetry', 'normalizeCostTelemetry'] },
+    { file: 'scripts/lib/harness/subagent-runtime/context-packet.mjs', exports: ['detectSessionIdFromPlan', 'loadContextPacket'] },
+    { file: 'scripts/lib/harness/subagent-runtime/role-memory.mjs', exports: ['loadRolePinnedMemory', 'appendJobFindingsToRoleMemory'] },
+    { file: 'scripts/lib/harness/subagent-runtime/prompts.mjs', exports: ['buildSystemPrompt', 'buildUserPrompt', 'renderDependencyContext'] },
+    { file: 'scripts/lib/harness/subagent-runtime/handoff-output.mjs', exports: ['extractJsonCandidate'] },
+    { file: 'scripts/lib/harness/subagent-runtime/job-runs.mjs', exports: ['buildBlockedJobRun', 'buildAutoCompletedReadOnlyReviewRun', 'normalizeSeededJobRun'] },
+    { file: 'scripts/lib/harness/subagent-runtime/phase-job.mjs', exports: ['executePhaseJob'] },
+    { file: 'scripts/lib/harness/subagent-runtime/merge-gate.mjs', exports: ['executeMergeGateJob'] },
+    { file: 'scripts/lib/harness/subagent-runtime/dispatch-executor.mjs', exports: ['runDispatchJobs'] },
+    { file: 'scripts/lib/harness/subagent-runtime/phase-output.mjs', exports: ['readSubagentOutputText', 'normalizePhaseHandoffPayload', 'buildCompletedPhaseJobRun'] },
+    { file: 'scripts/lib/harness/subagent-runtime/phase-blocks.mjs', exports: ['buildBlockedPhaseJobRun'] },
+    { file: 'scripts/lib/harness/subagent-clients/spawn-result.mjs', exports: ['normalizeSpawnResult'] },
+    { file: 'scripts/lib/harness/subagent-clients/invocation-runner.mjs', exports: ['runClientInvocation'] },
+    { file: 'scripts/lib/harness/subagent-clients/codex-exec.mjs', exports: ['runCodexInvocation'] },
+  ];
+
+  for (const moduleDef of modules) {
+    const mod = await import(pathToFileURL(path.resolve(moduleDef.file)).href);
+    for (const exportName of moduleDef.exports) {
+      assert.notEqual(mod[exportName], undefined, `${moduleDef.file} should export ${exportName}`);
+    }
+  }
+
+  const focusedBudgets = [
+    ['scripts/lib/harness/subagent-runtime/one-shot-runner.mjs', 120],
+    ['scripts/lib/harness/subagent-runtime/phase-job.mjs', 180],
+  ];
+  for (const [file, maxLines] of focusedBudgets) {
+    const raw = await readFile(path.resolve(file), 'utf8');
+    const lines = raw.trim().split(/\r?\n/u).length;
+    assert.equal(lines <= maxLines, true, `${file} is ${lines} lines; move reusable client/result handling into focused modules`);
+  }
 });
 
 test('buildIterationPrompt injects offload canvas as compact resume context', () => {
@@ -337,8 +490,8 @@ test('runHarnessCommand supports dry-run, stop, status, and resume with injected
     );
     assert.equal(dryRun.exitCode, 0);
     const dryRunPayload = JSON.parse(logs.at(-1));
-    assert.equal(dryRunPayload.sessionId, 'demo-session');
-    assert.equal(dryRunPayload.worktree.enabled, true);
+    assert.equal(dryRunPayload.session.sessionId, 'demo-session');
+    assert.equal(dryRunPayload.session.worktree.enabled, true);
 
     const stopResult = await runHarnessCommand(
       { subcommand: 'stop', sessionId: 'demo-session', json: true },
@@ -385,6 +538,62 @@ test('runHarnessCommand supports dry-run, stop, status, and resume with injected
     const finalControl = await readSoloControl({ rootDir, sessionId: 'demo-session' });
     assert.equal(finalControl.stopRequested, false);
   } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('runHarnessCommand dry-run recognizes OpenCode project skill roots', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-solo-harness-opencode-skills-'));
+  const binDir = path.join(rootDir, 'bin');
+  const logs = [];
+  const originalPath = process.env.PATH;
+  const originalPathCase = process.env.Path;
+  const originalPathExt = process.env.PATHEXT;
+
+  try {
+    await writeFakeCli(binDir, 'opencode');
+    await mkdir(path.join(rootDir, '.opencode', 'skills', 'find-skills'), { recursive: true });
+    await writeFile(path.join(rootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), '# find-skills\n', 'utf8');
+
+    const testPath = `${binDir}${path.delimiter}${originalPath || originalPathCase || ''}`;
+    process.env.PATH = testPath;
+    process.env.Path = testPath;
+    if (process.platform === 'win32') {
+      process.env.PATHEXT = originalPathExt || '.COM;.EXE;.BAT;.CMD';
+    }
+
+    const dryRun = await runHarnessCommand(
+      {
+        subcommand: 'run',
+        objective: 'Verify OpenCode skill discovery',
+        sessionId: 'opencode-session',
+        provider: 'opencode',
+        dryRun: true,
+        json: true,
+      },
+      {
+        rootDir,
+        io: { log: (line) => logs.push(String(line)) },
+      }
+    );
+
+    assert.equal(dryRun.exitCode, 0);
+    const payload = JSON.parse(logs.at(-1));
+    const skillCheck = payload.checks.find((item) => item.label === 'Skills indexed');
+    assert.equal(skillCheck.ok, true);
+    assert.match(skillCheck.detail, /1 skills found/u);
+  } finally {
+    process.env.PATH = originalPath;
+    if (originalPathCase === undefined) {
+      delete process.env.Path;
+    } else {
+      process.env.Path = originalPathCase;
+    }
+    if (originalPathExt === undefined) {
+      delete process.env.PATHEXT;
+    } else {
+      process.env.PATHEXT = originalPathExt;
+    }
     await rm(rootDir, { recursive: true, force: true });
   }
 });
@@ -490,7 +699,7 @@ test('runHarnessCommand persists AIOS install root for workspace-scoped live res
 
     assert.equal(runResult.exitCode, 0);
     const summary = await readSoloRunSummary({ rootDir, sessionId: 'external-session' });
-    assert.equal(summary.aiosRootDir, '/opt/aios');
+    assert.equal(summary.aiosRootDir, path.resolve('/opt/aios'));
     assert.equal(summary.workspaceRoot, rootDir);
   } finally {
     await rm(rootDir, { recursive: true, force: true });

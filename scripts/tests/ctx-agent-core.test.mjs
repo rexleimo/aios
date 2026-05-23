@@ -14,9 +14,17 @@ import {
 import { runContextDbCli } from '../lib/contextdb-cli.mjs';
 
 const CTX_AGENT_CLI = path.resolve('scripts', 'ctx-agent.mjs');
+const AIOS_CLI = path.resolve('scripts', 'aios.mjs');
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatPreviewArg(value = '') {
+  const text = String(value ?? '');
+  return /^[A-Za-z0-9_./:@=-]+$/u.test(text)
+    ? text
+    : `"${text.replace(/(["`$])/g, '\\$1')}"`;
 }
 
 async function createFakeCliCommand(commandName, marker) {
@@ -59,6 +67,23 @@ async function createFakeGeminiCommand(marker = 'FAKE_GEMINI_OK') {
 
 async function createFakeOpenCodeCommand(marker = 'FAKE_OPENCODE_OK') {
   return createFakeCliCommand('opencode', marker);
+}
+
+async function createFakeUnresolvableWindowsOpenCodeCommand(marker = 'FAKE_OPENCODE_SHELL_FALLBACK') {
+  const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-opencode-shell-'));
+  const markerLiteral = JSON.stringify(marker);
+  const script = path.join(binDir, 'opencode-fake.mjs');
+  await writeFile(
+    script,
+    `process.stdout.write(JSON.stringify({ marker: ${markerLiteral}, argv: process.argv.slice(2) }) + "\\n");\n`,
+    'utf8'
+  );
+  await writeFile(
+    path.join(binDir, 'opencode.cmd'),
+    `@echo off\r\nnode ${script} %*\r\n`,
+    'utf8'
+  );
+  return binDir;
 }
 
 function parseLastJsonPayload(stdout) {
@@ -714,7 +739,13 @@ test('ctx-agent one-shot dry-run route harness prints trigger command', async ()
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /\[route\] mode=harness/);
     assert.match(result.stdout, /Command: node /u);
-    assert.match(result.stdout, /node .*scripts\/aios\.mjs harness run --objective "过夜整理明早交接清单" --session codex-cli-[^\s]+ --provider codex --max-iterations 5 --worktree --workspace /u);
+    assert.match(
+      result.stdout,
+      new RegExp(
+        `node ${escapeRegExp(formatPreviewArg(AIOS_CLI))} harness run --objective \".+?\" --session codex-cli-[^\\s]+ --provider codex --max-iterations 5 --worktree --workspace ${escapeRegExp(formatPreviewArg(workspaceRoot))}`,
+        'u'
+      )
+    );
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -753,7 +784,10 @@ test('ctx-agent one-shot dry-run route team prints trigger command', async () =>
     assert.match(result.stdout, /\[route\] mode=team/);
     assert.match(
       result.stdout,
-      new RegExp(`Command: node ${escapeRegExp(CTX_AGENT_CLI)} --agent codex-cli --workspace ${escapeRegExp(workspaceRoot)} --project tmp-project --session codex-cli-[^\\s]+ --route team --route-execute dry-run --team-provider codex --team-workers 3 --prompt "并行改造 UI、API 和测试" --no-bootstrap`, 'u')
+      new RegExp(
+        `Command: node ${escapeRegExp(formatPreviewArg(CTX_AGENT_CLI))} --agent codex-cli --workspace ${escapeRegExp(formatPreviewArg(workspaceRoot))} --project tmp-project --session codex-cli-[^\\s]+ --route team --route-execute dry-run --team-provider codex --team-workers 3 --prompt \".+?\" --no-bootstrap`,
+        'u'
+      )
     );
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
@@ -1312,5 +1346,52 @@ test('ctx-agent interactive OpenCode mode sends auto prompt via context packet f
     assert.doesNotMatch(payload.argv[1], /# Context Packet/u);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('ctx-agent interactive OpenCode Windows shell fallback does not pass injected context as prompt args', async (t) => {
+  if (process.platform !== 'win32') {
+    t.skip('Windows shell fallback behavior is only meaningful on win32');
+    return;
+  }
+
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-opencode-shell-workspace-'));
+  const fakeBin = await createFakeUnresolvableWindowsOpenCodeCommand();
+
+  try {
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent',
+        'opencode-cli',
+        '--workspace',
+        workspaceRoot,
+        '--project',
+        'tmp-project',
+        '--context-mode',
+        'slim',
+        '--no-bootstrap',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CTXDB_AUTO_PROMPT: '',
+          PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stderr, /Windows shell fallback detected for opencode/u);
+    const payload = parseLastJsonPayload(result.stdout);
+    assert.equal(payload.marker, 'FAKE_OPENCODE_SHELL_FALLBACK');
+    assert.equal(payload.argv.includes('--prompt'), false);
+    assert.equal(payload.argv.includes('Status:'), false);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(fakeBin, { recursive: true, force: true });
   }
 });

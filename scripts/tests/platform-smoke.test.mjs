@@ -5,54 +5,80 @@ import { describe, it } from 'node:test';
 
 const rootDir = path.resolve(import.meta.dirname, '..', '..');
 
-describe('MCP Server Config — Platform Detection (static analysis)', () => {
-  const browserSrc = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'components', 'browser.mjs'), 'utf8');
+function readRepoSource(...segments) {
+  return fs.readFileSync(path.join(rootDir, ...segments), 'utf8');
+}
+
+function countSourceLines(source) {
+  const trimmed = String(source || '').trim();
+  return trimmed ? trimmed.split(/\r?\n/u).length : 0;
+}
+
+describe('MCP Server Config - Platform Detection (static analysis)', () => {
+  const browserFacadeSrc = readRepoSource('scripts', 'lib', 'components', 'browser.mjs');
+  const browserRuntimePathsSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'runtime-paths.mjs');
+  const browserMcpConfigSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'mcp-config.mjs');
+  const browserCdpServiceSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'cdp-service.mjs');
+  const browserDoctorSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'doctor.mjs');
+
+  it('browser component entrypoint stays a thin facade over focused modules', () => {
+    assert.equal(countSourceLines(browserFacadeSrc) <= 40, true,
+      'browser.mjs should stay a facade and keep browser responsibilities under components/browser/*');
+    assert.ok(browserFacadeSrc.includes("from './browser/mcp-config.mjs'"),
+      'facade should re-export MCP config module');
+    assert.ok(browserFacadeSrc.includes("from './browser/install.mjs'"),
+      'facade should re-export install module');
+    assert.ok(browserFacadeSrc.includes("from './browser/cdp-service.mjs'"),
+      'facade should re-export CDP service module');
+    assert.ok(browserFacadeSrc.includes("from './browser/doctor.mjs'"),
+      'facade should re-export doctor module');
+  });
 
   it('buildPreferredMcpServer uses resolveShellCommand for platform-aware shell', () => {
-    assert.ok(browserSrc.includes('const shellCommand = resolveShellCommand()'),
+    assert.ok(browserMcpConfigSrc.includes('const shellCommand = resolveShellCommand()'),
       'buildPreferredMcpServer should call resolveShellCommand');
-    assert.ok(browserSrc.includes('resolveShellCommand(platform'),
+    assert.ok(browserRuntimePathsSrc.includes('resolveShellCommand(platform'),
       'resolveShellCommand should accept platform param');
   });
 
   it('resolveShellCommand returns pwsh on win32, bash otherwise', () => {
-    assert.ok(browserSrc.includes("? 'pwsh' : 'bash'"),
+    assert.ok(browserRuntimePathsSrc.includes("? 'pwsh' : 'bash'"),
       'resolveShellCommand should have pwsh/bash ternary');
   });
 
   it('resolvePythonCommand returns python on win32, python3 otherwise', () => {
-    assert.ok(browserSrc.includes("? 'python' : 'python3'"),
+    assert.ok(browserRuntimePathsSrc.includes("? 'python' : 'python3'"),
       'resolvePythonCommand should have python/python3 ternary');
   });
 
   it('resolveVenvPythonPath has Scripts for win32, bin for others', () => {
-    assert.ok(browserSrc.includes("'Scripts'"),
+    assert.ok(browserRuntimePathsSrc.includes("'Scripts'"),
       'resolveVenvPythonPath should reference Windows Scripts dir');
-    assert.ok(browserSrc.includes("'bin'"),
+    assert.ok(browserRuntimePathsSrc.includes("'bin'"),
       'resolveVenvPythonPath should reference POSIX bin dir');
   });
 
   it('pwsh args include -NoProfile -ExecutionPolicy Bypass -File', () => {
-    assert.ok(browserSrc.includes('-NoProfile'),
+    assert.ok(browserMcpConfigSrc.includes('-NoProfile'),
       'pwsh args should include -NoProfile');
-    assert.ok(browserSrc.includes('ExecutionPolicy'),
+    assert.ok(browserMcpConfigSrc.includes('ExecutionPolicy'),
       'pwsh args should include -ExecutionPolicy Bypass');
   });
 
   it('resolveCdpServiceLayout has USERPROFILE fallback', () => {
-    assert.ok(browserSrc.includes('process.env.USERPROFILE'),
+    assert.ok(browserCdpServiceSrc.includes('process.env.USERPROFILE'),
       'resolveCdpServiceLayout should reference USERPROFILE');
   });
 
   it('doctorBrowserMcp uses resolveVenvPythonPath instead of hardcoded path', () => {
-    assert.ok(browserSrc.includes('resolveVenvPythonPath(browserUseProjectDir)'),
+    assert.ok(browserDoctorSrc.includes('resolveVenvPythonPath(browserUseProjectDir'),
       'doctorBrowserMcp should use resolveVenvPythonPath');
-    assert.ok(!browserSrc.includes(".join(browserUseProjectDir, '.venv', 'bin', 'python')"),
+    assert.ok(!browserDoctorSrc.includes(".join(browserUseProjectDir, '.venv', 'bin', 'python')"),
       'doctorBrowserMcp should NOT hardcode .venv/bin/python');
   });
 
   it('doctorBrowserMcp uses resolveLauncherScript', () => {
-    assert.ok(browserSrc.includes('resolveLauncherScript(rootDir)'),
+    assert.ok(browserDoctorSrc.includes('resolveLauncherScript(rootDir'),
       'doctorBrowserMcp should use resolveLauncherScript');
   });
 });
@@ -148,11 +174,27 @@ describe('REQUIRED: py/py3 — Cross-Platform Safety', () => {
     const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'lifecycle', 'self-update.mjs'), 'utf8');
     assert.ok(content.includes('USERPROFILE'), 'should reference USERPROFILE');
   });
+
+  it('self-update.mjs enables TLS 1.2 before Windows release installer request', () => {
+    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'lifecycle', 'self-update.mjs'), 'utf8');
+    const tlsIndex = content.indexOf('[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12');
+    const installerIndex = content.indexOf('aios-install.ps1');
+
+    assert.ok(tlsIndex >= 0, 'should enable TLS 1.2 for Windows PowerShell downloads');
+    assert.ok(installerIndex >= 0 && tlsIndex < installerIndex, 'should set TLS before requesting installer');
+  });
+
+  it('dispatch starts TUI through local tsx cli instead of npx shell', () => {
+    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'cli', 'dispatch.mjs'), 'utf8');
+    assert.ok(content.includes("node_modules', 'tsx', 'dist', 'cli.mjs'"), 'should resolve local tsx cli');
+    assert.ok(content.includes('spawnSync(process.execPath'), 'should launch local tsx with node');
+    assert.ok(!content.includes('npx tsx'), 'should not depend on npx for TUI startup');
+  });
 });
 
 describe('Shell Script Parity — MCP & ContextDB (static analysis)', () => {
-  it('contextdb cli.ts has cross-platform browser open', () => {
-    const content = fs.readFileSync(path.join(rootDir, 'mcp-server', 'src', 'contextdb', 'cli.ts'), 'utf8');
+  it('contextdb genealogy server has cross-platform browser open', () => {
+    const content = fs.readFileSync(path.join(rootDir, 'mcp-server', 'src', 'contextdb', 'cli', 'genealogy-server.ts'), 'utf8');
     assert.ok(content.includes("platform === 'darwin'"), 'should check darwin');
     assert.ok(content.includes("platform === 'win32'"), 'should check win32');
     assert.ok(content.includes('xdg-open'), 'should have Linux fallback');

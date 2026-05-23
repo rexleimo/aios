@@ -6,6 +6,7 @@ export const HEALTH_COMMAND_SPECS = [
     options: [
       ['--strict', 'Enable strict checks'],
       ['--global-security', 'Include global security checks'],
+      ['--client <client>', 'Target client'],
       ['--native', 'Run native enhancement checks only'],
       ['--verbose', 'Print detailed checks'],
       ['--fix', 'Apply supported repairs'],

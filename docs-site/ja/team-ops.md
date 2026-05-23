@@ -166,7 +166,7 @@ Blueprint、ロールカード、runtime manifest、executor manifest、handoff 
 export AIOS_EXECUTE_LIVE=1
 export AIOS_SUBAGENT_CLIENT=codex-cli   # または claude-code, gemini-cli, opencode-cli
 
-# 並列数（ラウンドあたりの speaker 数��
+# 並列数（ラウンドあたりの speaker 数）
 export AIOS_SUBAGENT_CONCURRENCY=3      # デフォルト: 3
 
 # エージェントターンあたりのタイムアウト（ms）

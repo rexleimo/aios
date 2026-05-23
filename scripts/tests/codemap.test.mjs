@@ -3,6 +3,7 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { pathToFileURL } from 'node:url';
 
 import { doctorCodemap, installCodemap } from '../lib/components/codemap.mjs';
 
@@ -12,6 +13,10 @@ async function makeTemp(prefix) {
 
 function silentIo(logs = []) {
   return { log: (line) => logs.push(String(line)) };
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 async function writeJson(filePath, payload) {
@@ -54,7 +59,7 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);
   assert.match(codexToml, /command = "uvx"/);
   assert.match(codexToml, /args = \["code-review-graph", "serve"\]/);
-  assert.match(codexToml, new RegExp(`cwd = "${projectRoot.replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')}"`));
+  assert.match(codexToml, new RegExp(`cwd = ${escapeRegExp(JSON.stringify(projectRoot))}`));
 
   const claudeMcp = await readJson(path.join(projectRoot, '.mcp.json'));
   assert.equal(claudeMcp.mcpServers['code-review-graph'].cwd, projectRoot);
@@ -73,7 +78,10 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
 
   assert.match(await readFile(path.join(projectRoot, 'CLAUDE.md'), 'utf8'), /MCP Tools: code-review-graph/);
   assert.match(await readFile(path.join(projectRoot, 'GEMINI.md'), 'utf8'), /MCP Tools: code-review-graph/);
-  assert.match(await readFile(path.join(projectRoot, 'AGENTS.md'), 'utf8'), /MCP Tools: code-review-graph/);
+  const agentsMd = await readFile(path.join(projectRoot, 'AGENTS.md'), 'utf8');
+  assert.match(agentsMd, /MCP Tools: code-review-graph/);
+  assert.match(agentsMd, /`detect_changes` → `get_review_context`/u);
+  assert.doesNotMatch(agentsMd, /[\u922b]\??/u);
 });
 
 test('codemap doctor reports missing per-client MCP config and --fix heals it', async () => {
@@ -101,7 +109,7 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   assert.ok(first.effectiveWarnings >= 4);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*config\.toml \(codex\)/);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*\.mcp\.json \(claude\)/);
-  assert.match(firstLogs.join('\n'), /code-review-graph missing in .*\.gemini\/settings\.json \(gemini\)/);
+  assert.match(firstLogs.join('\n').replace(/\\/g, '/'), /code-review-graph missing in .*\.gemini\/settings\.json \(gemini\)/);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*opencode\.json \(opencode\)/);
 
   const fixLogs = [];
@@ -128,8 +136,31 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
 
   assert.equal(second.errors, 0);
   assert.equal(second.effectiveWarnings, 0);
-  assert.match(secondLogs.join('\n'), /code-review-graph found in .*config\.toml \(codex\)/);
-  assert.match(secondLogs.join('\n'), /code-review-graph found in .*\.mcp\.json \(claude\)/);
-  assert.match(secondLogs.join('\n'), /code-review-graph found in .*\.gemini\/settings\.json \(gemini\)/);
-  assert.match(secondLogs.join('\n'), /code-review-graph found in .*opencode\.json \(opencode\)/);
+  const normalizedSecondLogs = secondLogs.join('\n').replace(/\\/g, '/');
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*config\.toml \(codex\)/);
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*\.mcp\.json \(claude\)/);
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*\.gemini\/settings\.json \(gemini\)/);
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*opencode\.json \(opencode\)/);
+});
+
+test('codemap component keeps client config responsibilities in focused modules', async () => {
+  const entry = await readFile(path.resolve('scripts/lib/components/codemap.mjs'), 'utf8');
+  const entryLines = entry.trim().split(/\r?\n/u).length;
+  assert.equal(entryLines <= 360, true, `codemap.mjs is ${entryLines} lines; keep config/state/docs/plugins split under components/codemap/*`);
+
+  const modules = [
+    { file: 'scripts/lib/components/codemap/constants.mjs', exports: ['CRG_MCP_ALIAS', 'CRG_DATA_DIR'] },
+    { file: 'scripts/lib/components/codemap/crg.mjs', exports: ['captureCrgCommand', 'runCrgCommand'] },
+    { file: 'scripts/lib/components/codemap/instructions.mjs', exports: ['injectCrgIntoInstructionFiles', 'removeCrgFromInstructionFiles'] },
+    { file: 'scripts/lib/components/codemap/mcp-targets.mjs', exports: ['collectCodemapMcpTargets', 'injectCrgIntoClientTarget'] },
+    { file: 'scripts/lib/components/codemap/opencode-plugin.mjs', exports: ['ensureOpencodePlugin', 'removeOpencodePlugin'] },
+    { file: 'scripts/lib/components/codemap/state-store.mjs', exports: ['readState', 'writeState', 'removeState'] },
+  ];
+
+  for (const moduleDef of modules) {
+    const mod = await import(pathToFileURL(path.resolve(moduleDef.file)).href);
+    for (const exportName of moduleDef.exports) {
+      assert.equal(typeof mod[exportName], exportName === 'CRG_MCP_ALIAS' || exportName === 'CRG_DATA_DIR' ? 'string' : 'function', `${moduleDef.file} should export ${exportName}`);
+    }
+  }
 });

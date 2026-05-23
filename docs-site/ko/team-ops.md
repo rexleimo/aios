@@ -172,7 +172,7 @@ export AIOS_SUBAGENT_CONCURRENCY=3      # 기본값: 3
 # 에이전트 턴당 타임아웃 (ms)
 export AIOS_SUBAGENT_TIMEOUT_MS=600000  # 기본값: 10분
 
-# capability preflight 없이 라이브 실행 허용 (��의해서 사용)
+# capability preflight 없이 라이브 실행 허용 (주의해서 사용)
 export AIOS_ALLOW_UNKNOWN_CAPABILITIES=1
 ```
 
@@ -232,7 +232,7 @@ AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
 | Preset | 용도 |
 |---|---|
 | `minimal` | 긴 watch 세션 |
-| `compact` | ��미널 친화 요약 |
+| `compact` | 터미널 친화 요약 |
 | `focused` | 균형 잡힌 기본값 |
 | `full` | 전체 진단 |
 

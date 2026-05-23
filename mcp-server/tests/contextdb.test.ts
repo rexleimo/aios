@@ -20,7 +20,7 @@ import {
   writeCheckpoint,
 } from '../src/contextdb/core.js';
 import { buildMemoryGenealogyGraph } from '../src/contextdb/genealogy.js';
-import { timelineCheckpointRows } from '../src/contextdb/sqlite.js';
+import { closeSqliteSidecar, timelineCheckpointRows } from '../src/contextdb/sqlite.js';
 
 async function makeWorkspace(): Promise<string> {
   const workspace = await fs.mkdtemp(path.join(os.tmpdir(), 'ctxdb-'));
@@ -57,7 +57,7 @@ async function startContextDbServer(args: string[]): Promise<{
     }, 10_000);
     child.stdout.on('data', (chunk) => {
       stdout += String(chunk);
-      const match = stdout.match(/Memory Galaxy GUI → (http:\/\/localhost:\d+)/);
+      const match = stdout.match(/Memory Galaxy GUI -> (http:\/\/localhost:\d+)/);
       if (match) {
         clearTimeout(timeout);
         resolve(match[1]);
@@ -71,7 +71,7 @@ async function startContextDbServer(args: string[]): Promise<{
       reject(error);
     });
     child.once('exit', (code, signal) => {
-      if (!stdout.match(/Memory Galaxy GUI →/)) {
+      if (!stdout.match(/Memory Galaxy GUI -> /)) {
         clearTimeout(timeout);
         reject(new Error(`contextdb server exited early code=${code} signal=${signal}\nstdout=${stdout}\nstderr=${stderr}`));
       }
@@ -1417,6 +1417,7 @@ test('searchEvents rebuilds sqlite sidecar when context.db is missing', async ()
   });
 
   const sqlitePath = path.join(workspace, '.aios', 'context-db', 'index', 'context.db');
+  closeSqliteSidecar(sqlitePath);
   await fs.unlink(sqlitePath);
   const walPath = `${sqlitePath}-wal`;
   const shmPath = `${sqlitePath}-shm`;

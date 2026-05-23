@@ -11,6 +11,7 @@ import {
   writeText,
 } from '../platform/fs.mjs';
 import { resolvePowerShellProfilePaths, resolveShellRcFile } from '../platform/paths.mjs';
+import { resolveClientCommandNames } from '../clients/registry.mjs';
 
 const BEGIN_MARK = '# >>> contextdb-shell >>>';
 const END_MARK = '# <<< contextdb-shell <<<';
@@ -233,7 +234,7 @@ export async function doctorContextDbShell({
     }
   }
 
-  for (const command of ['codex', 'claude', 'gemini', 'opencode']) {
+  for (const command of resolveClientCommandNames('all')) {
     if (commandExists(command, { platform, env })) {
       io.log(`[ok] ${command} found in PATH`);
     } else {

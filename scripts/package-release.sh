@@ -102,6 +102,7 @@ mkdir -p "$tar_stage/harness-cli"
   tar -cf - \
     --exclude='.git' \
     --exclude='node_modules' \
+    --exclude='mcp-server/.npm-cache' \
     --exclude='dist' \
     --exclude='__pycache__' \
     --exclude='.mypy_cache' \
@@ -120,7 +121,7 @@ echo "+ zip -> $OUT_DIR/harness-cli.zip"
   cd "$ROOT_DIR"
   zip -r "$OUT_DIR/harness-cli.zip" \
     "${existing_release_paths[@]}" \
-    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'dist/*' -x '.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
+    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'mcp-server/.npm-cache/*' -x 'dist/*' -x '.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
 )
 
 echo ""

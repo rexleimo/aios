@@ -28,7 +28,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
 }
@@ -166,10 +166,67 @@ test('native sync writes compatibility docs for gemini and opencode', async () =
 
   await syncNativeEnhancements({ rootDir, client: 'all' });
 
+  assert.match(await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'), /Opencode compatibility/);
   assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
-  // OpenCode reads AGENTS.md (managed by Codex emitter); no separate AIOS.md file needed
+  // OpenCode reads AGENTS.md (managed by the shared Codex/OpenCode emitter); no separate AIOS.md file needed.
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.gemini')).tier, 'compatibility');
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.opencode')).tier, 'compatibility');
+});
+
+test('native sync can install codex project outputs outside the AIOS source root', async () => {
+  const rootDir = await makeTemp('aios-native-sync-source-root-');
+  const targetRootDir = await makeTemp('aios-native-sync-target-root-');
+  await seedNativeRoot(rootDir);
+  await writeFile(path.join(targetRootDir, 'AGENTS.md'), 'Project intro.\n', 'utf8');
+
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir, client: 'codex' });
+  assert.equal(result.ok, true);
+
+  const agentsDoc = await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8');
+  assert.match(agentsDoc, /Project intro/);
+  assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
+  assert.match(agentsDoc, /Codex native block/);
+  assert.match(await readFile(path.join(targetRootDir, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
+  assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.codex')).client, 'codex');
+  await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
+});
+
+test('native sync can install all client project outputs outside the AIOS source root', async () => {
+  const rootDir = await makeTemp('aios-native-sync-source-all-root-');
+  const targetRootDir = await makeTemp('aios-native-sync-target-all-root-');
+  await seedNativeRoot(rootDir);
+
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir, client: 'all' });
+  assert.equal(result.ok, true);
+
+  assert.match(await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8'), /Codex native block/);
+  assert.match(await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8'), /Opencode compatibility/);
+  assert.match(await readFile(path.join(targetRootDir, 'CLAUDE.md'), 'utf8'), /Claude native block/);
+  assert.match(await readFile(path.join(targetRootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
+  assert.match(await readFile(path.join(targetRootDir, '.claude', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
+  assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
+  await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
+});
+
+test('native sync can install opencode standalone instructions outside the AIOS source root', async () => {
+  const rootDir = await makeTemp('aios-native-sync-source-opencode-root-');
+  const targetRootDir = await makeTemp('aios-native-sync-target-opencode-root-');
+  await seedNativeRoot(rootDir);
+
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir, client: 'opencode' });
+  assert.equal(result.ok, true);
+
+  const agentsDoc = await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8');
+  assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
+  assert.match(agentsDoc, /Opencode compatibility/);
+  assert.doesNotMatch(agentsDoc, /Codex native block/);
+  assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
+  await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
 });
 
 test('native sync upserts markdown block into existing GEMINI.md', async () => {

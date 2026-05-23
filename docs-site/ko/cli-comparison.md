@@ -5,7 +5,7 @@ description: 원시 Codex/Claude/Gemini CLI 워크플로와 Harness CLI 오케�
 
 # 원시 CLI vs Harness CLI 레이어
 
-Harness CLI는 Codex, Claude 또�� Gemini CLI의 대체품이 아닙니다.
+Harness CLI는 Codex, Claude 또는 Gemini CLI의 대체품이 아닙니다.
 그것은 그 위에 있는 신뢰성 레이어입니다.
 
 [GitHub에서 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }

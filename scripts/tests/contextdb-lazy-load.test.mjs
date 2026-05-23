@@ -4,6 +4,9 @@ import { mkdtemp, mkdir, writeFile, rm, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('lazy load helpers: shouldLazyLoad defaults to true', async () => {
   const { shouldLazyLoad, buildWorkspaceMemoryOverlay } = await import('../ctx-agent-core.mjs');
@@ -68,7 +71,6 @@ test('lazy load start-up produces correct facade injection', async () => {
 
     // Run ctx-agent-core in one-shot mode with --prompt so it doesn't hit interactive lazy path
     // but with CTXDB_LAZY_LOAD=0 to test eager path still works
-    const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
     const result = spawnSync(
       process.execPath,
       [
@@ -98,7 +100,7 @@ test('lazy load start-up produces correct facade injection', async () => {
 
 test('async bootstrap runner exists and is executable', async () => {
   const runnerPath = path.resolve(
-    path.dirname(new URL(import.meta.url).pathname),
+    path.dirname(fileURLToPath(import.meta.url)),
     '..',
     'lib',
     'contextdb',
@@ -140,16 +142,18 @@ test('ctx-agent lazy mode prelude includes persona and user profile overlays', a
     await writeFile(path.join(identityHome, 'SOUL.md'), '# persona baseline\nAlways be concise.\n', 'utf8');
     await writeFile(path.join(identityHome, 'USER.md'), '# user profile\nPrefers Chinese.\n', 'utf8');
 
+    const codexImpl = path.join(fakeBinDir, 'codex-fake.mjs');
+    const codexImplScript = 'process.stdout.write(JSON.stringify({ marker: "LAZY_PERSONA_CODEX", argv: process.argv.slice(2) }) + "\\n");\n';
+    await writeFile(codexImpl, codexImplScript, 'utf8');
     const codexScript = process.platform === 'win32'
-      ? '@echo off\r\nnode -e "process.stdout.write(JSON.stringify({ marker: \'LAZY_PERSONA_CODEX\', argv: process.argv.slice(1) }) + \'\\\\n\')" %*\r\n'
-      : '#!/usr/bin/env node\nprocess.stdout.write(JSON.stringify({ marker: \'LAZY_PERSONA_CODEX\', argv: process.argv.slice(2) }) + \"\\n\");\n';
+      ? `@echo off\r\n"${process.execPath}" "${codexImpl}" %*\r\n`
+      : `#!/usr/bin/env sh\nexec "${process.execPath}" "${codexImpl}" "$@"\n`;
     await writeFile(codexBin, codexScript, 'utf8');
     if (process.platform !== 'win32') {
       const { chmod } = await import('node:fs/promises');
       await chmod(codexBin, 0o755);
     }
 
-    const repoRoot = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
     const result = spawnSync(
       process.execPath,
       [

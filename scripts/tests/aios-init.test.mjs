@@ -6,6 +6,18 @@ import test from 'node:test';
 
 import { buildSaveGuardCommand, ensureHook } from '../aios-init.mjs';
 
+function normalizeSlashes(value) {
+  return String(value).replace(/\\/g, '/');
+}
+
+function runtimeScriptPath(rootDir, scriptName) {
+  return normalizeSlashes(path.join(path.resolve(rootDir), 'scripts', scriptName));
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 test('buildSaveGuardCommand uses AIOS ctx-agent and save-guard mode for external workspaces', () => {
   const workspaceRoot = "/tmp/rex workspace/$unsafe'sub";
   const installRoot = "/opt/rex cli/$install";
@@ -13,9 +25,10 @@ test('buildSaveGuardCommand uses AIOS ctx-agent and save-guard mode for external
     env: { ROOTPATH: installRoot },
   });
 
-  assert.match(command, /node '\/opt\/rex cli\/\$install\/scripts\/ctx-agent\.mjs'/u);
-  assert.doesNotMatch(command, /rex workspace\/.*\/scripts\/ctx-agent\.mjs/u);
-  assert.doesNotMatch(command, new RegExp(path.resolve('scripts', 'ctx-agent.mjs').replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'u'));
+  const normalizedCommand = normalizeSlashes(command);
+  assert.match(normalizedCommand, new RegExp(`node '${escapeRegExp(runtimeScriptPath(installRoot, 'ctx-agent.mjs'))}'`, 'u'));
+  assert.doesNotMatch(normalizedCommand, /rex workspace\/.*\/scripts\/ctx-agent\.mjs/u);
+  assert.doesNotMatch(normalizedCommand, new RegExp(escapeRegExp(normalizeSlashes(path.resolve('scripts', 'ctx-agent.mjs'))), 'u'));
   assert.match(command, /--save-guard/u);
   assert.match(command, /--status done/u);
   assert.doesNotMatch(command, /--checkpoint-status/u);
@@ -26,7 +39,7 @@ test('buildSaveGuardCommand accepts AIOS_ROOT alias for installed runtime root',
     env: { AIOS_ROOT: '/opt/aios-root' },
   });
 
-  assert.match(command, /node \/opt\/aios-root\/scripts\/ctx-agent\.mjs/u);
+  assert.match(normalizeSlashes(command), new RegExp(`node '?${escapeRegExp(runtimeScriptPath('/opt/aios-root', 'ctx-agent.mjs'))}'?`, 'u'));
   assert.match(command, /--save-guard/u);
 });
 
@@ -41,7 +54,7 @@ test('ensureHook writes Claude Stop hook using nested command schema', () => {
   assert.equal(settings.hooks.Stop.length, 1);
   assert.deepEqual(Object.keys(settings.hooks.Stop[0]).sort(), ['hooks', 'matcher']);
   assert.equal(settings.hooks.Stop[0].hooks[0].type, 'command');
-  assert.match(settings.hooks.Stop[0].hooks[0].command, /\/opt\/aios-runtime\/scripts\/ctx-agent\.mjs/u);
+  assert.match(normalizeSlashes(settings.hooks.Stop[0].hooks[0].command), new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'ctx-agent.mjs')), 'u'));
   assert.match(settings.hooks.Stop[0].hooks[0].command, /--save-guard/u);
 });
 
@@ -55,7 +68,7 @@ test('ensureHook writes Claude PostToolUse offload capture hook', () => {
   assert.equal(settings.hooks.PostToolUse.length, 1);
   assert.deepEqual(Object.keys(settings.hooks.PostToolUse[0]).sort(), ['hooks', 'matcher']);
   const command = settings.hooks.PostToolUse[0].hooks[0].command;
-  assert.match(command, /\/opt\/aios-runtime\/scripts\/aios\.mjs/u);
+  assert.match(normalizeSlashes(command), new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'aios.mjs')), 'u'));
   assert.match(command, /internal offload capture/u);
   assert.match(command, /--workspace/u);
 });
@@ -86,8 +99,9 @@ test('ensureHook upgrades stale nested Claude save guard hook to installed runti
   assert.equal(result.action, 'updated');
   const settings = JSON.parse(fs.readFileSync(path.join(workspaceRoot, '.claude', 'settings.local.json'), 'utf8'));
   const command = settings.hooks.Stop[0].hooks[0].command;
-  assert.match(command, /\/opt\/aios-runtime\/scripts\/ctx-agent\.mjs/u);
-  assert.doesNotMatch(command, new RegExp(`${workspaceRoot.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\/scripts\\/ctx-agent\\.mjs`, 'u'));
+  const normalizedCommand = normalizeSlashes(command);
+  assert.match(normalizedCommand, new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'ctx-agent.mjs')), 'u'));
+  assert.doesNotMatch(normalizedCommand, new RegExp(`${escapeRegExp(normalizeSlashes(workspaceRoot))}\\/scripts\\/ctx-agent\\.mjs`, 'u'));
   assert.match(command, /--save-guard/u);
   assert.doesNotMatch(command, /--checkpoint-status/u);
 });

@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -16,54 +15,10 @@ import {
   resolveGeneratedTargetPath,
   resolveGeneratedTargetRelativePath,
 } from './source-tree.mjs';
+import { snapshotDirectory, snapshotsEqual } from './directory-snapshot.mjs';
 import { withRepoLock } from '../fs/repo-lock.mjs';
 
 const SYNC_LOCK_NAME = 'native-skills-sync';
-
-function hashBuffer(buffer) {
-  return crypto.createHash('sha1').update(buffer).digest('hex');
-}
-
-function snapshotDirectory(absDir, baseDir = absDir, output = new Map(), ignoreNames = new Set()) {
-  if (!fs.existsSync(absDir)) {
-    return output;
-  }
-  const entries = fs.readdirSync(absDir, { withFileTypes: true }).sort((a, b) => a.name.localeCompare(b.name));
-  for (const entry of entries) {
-    if (ignoreNames.has(entry.name)) {
-      continue;
-    }
-    const absPath = path.join(absDir, entry.name);
-    const relPath = path.relative(baseDir, absPath) || '.';
-    if (entry.isDirectory()) {
-      output.set(relPath, { type: 'dir' });
-      snapshotDirectory(absPath, baseDir, output, ignoreNames);
-      continue;
-    }
-    const content = fs.readFileSync(absPath);
-    output.set(relPath, { type: 'file', hash: hashBuffer(content) });
-  }
-  return output;
-}
-
-function snapshotsEqual(left, right) {
-  if (left.size !== right.size) {
-    return false;
-  }
-  for (const [relPath, value] of left.entries()) {
-    const other = right.get(relPath);
-    if (!other) {
-      return false;
-    }
-    if (value.type !== other.type) {
-      return false;
-    }
-    if (value.hash !== other.hash) {
-      return false;
-    }
-  }
-  return true;
-}
 
 function collectManagedGeneratedTargets(rootDir) {
   const results = [];
@@ -110,30 +65,47 @@ function materializeWithMetadata({ rootDir, entry, surface }) {
   return materialized;
 }
 
-async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = null, surfaces = [] } = {}) {
+function formatTargetPath(targetRootDir, targetPath) {
+  return (path.relative(targetRootDir, targetPath) || '.').replace(/\\/g, '/');
+}
+
+async function syncGeneratedSkillsUnlocked({
+  rootDir,
+  targetRootDir = rootDir,
+  io = console,
+  manifest = null,
+  surfaces = [],
+} = {}) {
+  const sourceRootDir = path.resolve(rootDir);
+  const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
   const resolvedManifest = manifest || loadSkillsSyncManifest(rootDir);
-  const canonicalSkills = listCanonicalSkills(rootDir, resolvedManifest);
+  const canonicalSkills = listCanonicalSkills(sourceRootDir, resolvedManifest);
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
   const expectedBySurface = new Map(selectedSurfaces.map((surface) => [surface, new Map()]));
   const results = [];
-  const legacyUnmanaged = new Set(resolvedManifest.legacyUnmanaged.map((item) => path.resolve(rootDir, item)));
-  const legacyReplaceable = new Set((resolvedManifest.legacyReplaceable || []).map((item) => path.resolve(rootDir, item)));
+  const legacyUnmanaged = new Set(resolvedManifest.legacyUnmanaged.map((item) => path.resolve(resolvedTargetRootDir, item)));
+  const legacyReplaceable = new Set((resolvedManifest.legacyReplaceable || []).map((item) => path.resolve(resolvedTargetRootDir, item)));
 
   for (const entry of canonicalSkills) {
     for (const surface of entry.repoTargets) {
       if (!expectedBySurface.has(surface)) {
         continue;
       }
-      const targetPath = resolveGeneratedTargetPath({ rootDir, entry, surface, manifest: resolvedManifest });
+      const targetPath = resolveGeneratedTargetPath({
+        rootDir: resolvedTargetRootDir,
+        entry,
+        surface,
+        manifest: resolvedManifest,
+      });
       expectedBySurface.get(surface).set(targetPath, entry);
     }
   }
 
   for (const surface of selectedSurfaces) {
     const rootRel = resolvedManifest.generatedRoots[surface];
-    const rootAbs = path.join(rootDir, rootRel);
+    const rootAbs = path.join(resolvedTargetRootDir, rootRel);
     const expected = expectedBySurface.get(surface) || new Map();
     let installed = 0;
     let updated = 0;
@@ -149,7 +121,7 @@ async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = n
         targetRelativePath,
         source: path.posix.join('skill-sources', entry.relativeSkillPath.split(path.sep).join('/')),
       });
-      const materialized = materializeWithMetadata({ rootDir, entry, surface });
+      const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
       try {
         if (!fs.existsSync(targetPath)) {
           writeMaterializedTarget({ materializedPath: materialized.directoryPath, targetPath, metadata });
@@ -183,12 +155,12 @@ async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = n
           }
           if (legacyReplaceable.has(path.resolve(targetPath))) {
             writeMaterializedTarget({ materializedPath: materialized.directoryPath, targetPath, metadata });
-            io.log(`[skills] replaced legacy target: ${path.relative(rootDir, targetPath)}`);
+            io.log(`[skills] replaced legacy target: ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
             updated += 1;
             continue;
           }
           if (!legacyUnmanaged.has(path.resolve(targetPath))) {
-            io.log(`[skills] skip unmanaged blocker: ${path.relative(rootDir, targetPath)}`);
+            io.log(`[skills] skip unmanaged blocker: ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
           }
           skipped += 1;
           continue;
@@ -239,6 +211,7 @@ async function syncGeneratedSkillsUnlocked({ rootDir, io = console, manifest = n
 
 export async function syncGeneratedSkills({
   rootDir,
+  targetRootDir = rootDir,
   io = console,
   manifest = null,
   surfaces = [],
@@ -246,16 +219,24 @@ export async function syncGeneratedSkills({
   lockOptions = {},
 } = {}) {
   if (!withLock) {
-    return syncGeneratedSkillsUnlocked({ rootDir, io, manifest, surfaces });
+    return syncGeneratedSkillsUnlocked({ rootDir, targetRootDir, io, manifest, surfaces });
   }
   return withRepoLock({ rootDir, lockName: SYNC_LOCK_NAME, io, ...lockOptions }, () => (
-    syncGeneratedSkillsUnlocked({ rootDir, io, manifest, surfaces })
+    syncGeneratedSkillsUnlocked({ rootDir, targetRootDir, io, manifest, surfaces })
   ));
 }
 
-export async function checkGeneratedSkillsSync({ rootDir, io = console, manifest = null, surfaces = [] } = {}) {
+export async function checkGeneratedSkillsSync({
+  rootDir,
+  targetRootDir = rootDir,
+  io = console,
+  manifest = null,
+  surfaces = [],
+} = {}) {
+  const sourceRootDir = path.resolve(rootDir);
+  const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
   const resolvedManifest = manifest || loadSkillsSyncManifest(rootDir);
-  const canonicalSkills = listCanonicalSkills(rootDir, resolvedManifest);
+  const canonicalSkills = listCanonicalSkills(sourceRootDir, resolvedManifest);
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
@@ -267,26 +248,31 @@ export async function checkGeneratedSkillsSync({ rootDir, io = console, manifest
       if (!expectedBySurface.has(surface)) {
         continue;
       }
-      const targetPath = resolveGeneratedTargetPath({ rootDir, entry, surface, manifest: resolvedManifest });
+      const targetPath = resolveGeneratedTargetPath({
+        rootDir: resolvedTargetRootDir,
+        entry,
+        surface,
+        manifest: resolvedManifest,
+      });
       expectedBySurface.get(surface).set(targetPath, entry);
     }
   }
 
   for (const surface of selectedSurfaces) {
-    const rootAbs = path.join(rootDir, resolvedManifest.generatedRoots[surface]);
+    const rootAbs = path.join(resolvedTargetRootDir, resolvedManifest.generatedRoots[surface]);
     const expected = expectedBySurface.get(surface) || new Map();
 
     for (const [targetPath, entry] of expected.entries()) {
-      const materialized = materializeWithMetadata({ rootDir, entry, surface });
+      const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
       try {
         if (!fs.existsSync(targetPath)) {
-          issues.push(`[missing] ${path.relative(rootDir, targetPath)}`);
+          issues.push(`[missing] ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
           continue;
         }
         const currentSnapshot = snapshotDirectory(targetPath);
         const nextSnapshot = snapshotDirectory(materialized.directoryPath);
         if (!snapshotsEqual(currentSnapshot, nextSnapshot)) {
-          issues.push(`[drift] ${path.relative(rootDir, targetPath)}`);
+          issues.push(`[drift] ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
         }
       } finally {
         materialized.cleanup();
@@ -295,7 +281,7 @@ export async function checkGeneratedSkillsSync({ rootDir, io = console, manifest
 
     for (const managedTargetPath of collectManagedGeneratedTargets(rootAbs)) {
       if (!expected.has(managedTargetPath)) {
-        issues.push(`[stale] ${path.relative(rootDir, managedTargetPath)}`);
+        issues.push(`[stale] ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
       }
     }
   }

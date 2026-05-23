@@ -19,6 +19,18 @@ function silentIo() {
   return { log() {}, warn() {}, error() {} };
 }
 
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function formatShellArg(value = '') {
+  const text = String(value ?? '');
+  if (text === '$PWD') return '"$PWD"';
+  if (text === '${PWD##*/}') return '"${PWD##*/}"';
+  if (/^[A-Za-z0-9_./:@=-]+$/u.test(text)) return text;
+  return `'${text.replace(/'/g, "'\\''")}'`;
+}
+
 async function buildHomeMap() {
   return {
     codex: await makeTemp('aios-route-codex-home-'),
@@ -44,8 +56,8 @@ async function seedMinimalNativeRoot(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['.gemini/AIOS.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/AIOS.md', '.opencode/skills'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
   await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
@@ -86,7 +98,10 @@ test('route trigger sync installs slash shortcuts in each client home', async ()
   assert.match(codexSubagent, /\$ARGUMENTS/u);
   assert.match(codexSubagent, /AIOS \/prompts:subagent/u);
   assert.match(codexSubagent, /--route subagent/u);
-  assert.match(codexSubagent, new RegExp(`node ${rootDir.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/scripts/ctx-agent\\.mjs`, 'u'));
+  assert.match(
+    codexSubagent,
+    new RegExp(`node ${escapeRegExp(formatShellArg(path.join(rootDir, 'scripts', 'ctx-agent.mjs')))}`, 'u')
+  );
 
   const claudeTeam = await readFile(path.join(homeMap.claude, 'commands', 'team.md'), 'utf8');
   assert.match(claudeTeam, /description: AIOS route: team/u);
@@ -135,7 +150,10 @@ test('route trigger command bodies shell-quote static paths', async () => {
   const team = targets.find((target) => target.route === 'team');
 
   assert.ok(team);
-  assert.match(team.content, /node '\/tmp\/aios root\/\$unsafe'\\''sub\/scripts\/ctx-agent\.mjs'/u);
+  assert.match(
+    team.content,
+    new RegExp(`node ${escapeRegExp(formatShellArg(path.join(rootDir, 'scripts', 'ctx-agent.mjs')))}`, 'u')
+  );
   assert.match(team.content, /--workspace "\$PWD"/u);
   assert.match(team.content, /--project "\$\{PWD##\*\/\}"/u);
 });

@@ -37,7 +37,7 @@ function parseNonNegativeInteger(value, fallback = 0) {
 }
 
 function extractDispatchStamp(artifactPath = '') {
-  const match = /dispatch-run-([^/]+)\.json$/i.exec(normalizeText(artifactPath));
+  const match = /dispatch-run-([^/]+)\.json$/i.exec(normalizeText(artifactPath).replace(/\\/g, '/'));
   return match ? normalizeText(match[1]) : '';
 }
 

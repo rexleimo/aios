@@ -5,12 +5,13 @@ import { checkRouteTriggerCommandsSync, syncRouteTriggerCommands } from '../nati
 
 export async function installNativeEnhancements({
   rootDir,
+  projectRoot = rootDir,
   client = 'all',
   homeMap = {},
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, client, mode: 'install', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
@@ -23,12 +24,13 @@ export async function installNativeEnhancements({
 
 export async function updateNativeEnhancements({
   rootDir,
+  projectRoot = rootDir,
   client = 'all',
   homeMap = {},
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, client, mode: 'install', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
@@ -41,12 +43,13 @@ export async function updateNativeEnhancements({
 
 export async function uninstallNativeEnhancements({
   rootDir,
+  projectRoot = rootDir,
   client = 'all',
   homeMap = {},
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, client, mode: 'uninstall', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'uninstall', io });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'uninstall', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> removed=${item.removed} reused=${item.reused}`);
@@ -59,6 +62,7 @@ export async function uninstallNativeEnhancements({
 
 export async function doctorNativeEnhancements({
   rootDir,
+  projectRoot = rootDir,
   client = 'all',
   verbose = false,
   fix = false,
@@ -67,7 +71,7 @@ export async function doctorNativeEnhancements({
   env = process.env,
   io = console,
 } = {}) {
-  const nativeResult = await runNativeDoctor({ rootDir, client, verbose, fix, dryRun, io });
+  const nativeResult = await runNativeDoctor({ rootDir, targetRootDir: projectRoot, client, verbose, fix, dryRun, io });
   let routeResult = await checkRouteTriggerCommandsSync({ rootDir, client, homeMap, env });
   if (!routeResult.ok && fix) {
     if (dryRun) {

@@ -1,12 +1,19 @@
 import { captureCommand } from '../platform/process.mjs';
+import {
+  buildRuntimeClientProviderMap,
+  getClientCommandName,
+  resolveClientRuntimeIds,
+} from '../clients/registry.mjs';
 import { validateTeacherResponse } from './schema.mjs';
 
-const BACKEND_COMMANDS = {
-  'codex-cli': 'codex',
-  'claude-code': 'claude',
-  'gemini-cli': 'gemini',
-  opencode: 'opencode',
-};
+const RUNTIME_CLIENT_PROVIDER_MAP = buildRuntimeClientProviderMap('all');
+const BACKEND_COMMANDS = Object.freeze({
+  ...Object.fromEntries(resolveClientRuntimeIds('all').map((clientId) => [
+    clientId,
+    getClientCommandName(RUNTIME_CLIENT_PROVIDER_MAP[clientId]),
+  ])),
+  opencode: getClientCommandName('opencode'),
+});
 
 function makeFailureDefaults({ backend, callStatus }) {
   return validateTeacherResponse({

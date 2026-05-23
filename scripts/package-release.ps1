@@ -44,6 +44,17 @@ try {
     ".agents/skills"
   )
 
+  $archivePaths = @()
+  foreach ($relPath in $paths) {
+    $gitMatches = & git -C $RootDir ls-tree -r --name-only HEAD -- $relPath
+    if ($LASTEXITCODE -ne 0) {
+      throw "git ls-tree failed for release path: $relPath"
+    }
+    if ($gitMatches) {
+      $archivePaths += $relPath
+    }
+  }
+
   $installSh = Join-Path $RootDir "scripts/aios-install.sh"
   $installPs1 = Join-Path $RootDir "scripts/aios-install.ps1"
   if (-not (Test-Path -LiteralPath $installSh)) { throw "Missing installer script: $installSh" }
@@ -60,7 +71,7 @@ try {
   New-Item -Path $extractDir -ItemType Directory -Force | Out-Null
 
   Write-Host "+ git archive (tar) -> $tarPath"
-  & git -C $RootDir archive --format=tar --prefix="harness-cli/" -o $tarPath HEAD @paths
+  & git -C $RootDir archive --format=tar --prefix="harness-cli/" -o $tarPath HEAD @archivePaths
 
   Write-Host "+ extract tar -> $extractDir"
   & tar -xf $tarPath -C $extractDir
@@ -69,7 +80,7 @@ try {
   & tar -czf $tarGz -C $extractDir "harness-cli"
 
   Write-Host "+ git archive (zip) -> $zip"
-  & git -C $RootDir archive --format=zip --prefix="harness-cli/" -o $zip HEAD @paths
+  & git -C $RootDir archive --format=zip --prefix="harness-cli/" -o $zip HEAD @archivePaths
 
   Write-Host ""
   Write-Host "Done. Assets:"

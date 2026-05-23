@@ -355,8 +355,9 @@ test('parseArgs accepts native component, internal native target, and native-onl
   assert.equal(internalResult.options.target, 'native');
   assert.equal(internalResult.options.client, 'codex');
 
-  const doctorResult = parseArgs(['doctor', '--native', '--verbose', '--fix', '--dry-run']);
+  const doctorResult = parseArgs(['doctor', '--client', 'opencode', '--native', '--verbose', '--fix', '--dry-run']);
   assert.equal(doctorResult.command, 'doctor');
+  assert.equal(doctorResult.options.client, 'opencode');
   assert.equal(doctorResult.options.nativeOnly, true);
   assert.equal(doctorResult.options.verbose, true);
   assert.equal(doctorResult.options.fix, true);
@@ -369,6 +370,12 @@ test('parseArgs accepts native component, internal native target, and native-onl
   assert.equal(internalDoctor.options.verbose, true);
   assert.equal(internalDoctor.options.fix, true);
   assert.equal(internalDoctor.options.dryRun, true);
+
+  const internalSuperpowersDoctor = parseArgs(['internal', 'superpowers', 'doctor', '--client', 'opencode']);
+  assert.equal(internalSuperpowersDoctor.command, 'internal');
+  assert.equal(internalSuperpowersDoctor.options.target, 'superpowers');
+  assert.equal(internalSuperpowersDoctor.options.action, 'doctor');
+  assert.equal(internalSuperpowersDoctor.options.client, 'opencode');
 
   const internalRollback = parseArgs(['internal', 'native', 'rollback', '--repair-id', 'latest', '--dry-run']);
   assert.equal(internalRollback.command, 'internal');
@@ -1120,6 +1127,7 @@ test('memo gui runner forwards termination signals to server process', async () 
   await fs.writeFile(path.join(binDir, 'cli.mjs'), `
 import fs from 'node:fs';
 const marker = process.env.AIOS_MEMO_GUI_SIGNAL_MARKER;
+fs.writeFileSync(marker, JSON.stringify({ signal: 'started', args: process.argv.slice(2) }));
 fs.writeFileSync(process.env.AIOS_MEMO_GUI_READY_MARKER, 'ready');
 process.on('SIGTERM', () => {
   fs.writeFileSync(marker, JSON.stringify({ signal: 'SIGTERM', args: process.argv.slice(2) }));
@@ -1147,7 +1155,7 @@ setInterval(() => {}, 1000);
     await run;
 
     const marker = JSON.parse(await fs.readFile(markerPath, 'utf8'));
-    assert.equal(marker.signal, 'SIGTERM');
+    assert.equal(marker.signal, process.platform === 'win32' ? 'started' : 'SIGTERM');
     assert.deepEqual(marker.args, [
       path.join(tmpRoot, 'mcp-server', 'src', 'contextdb', 'cli.ts'),
       'genealogy:serve',

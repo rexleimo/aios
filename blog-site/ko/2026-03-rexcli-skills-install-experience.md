@@ -1,6 +1,6 @@
 ---
 title: "Harness CLI Skills 설치 경험 업데이트: Global/Project 스코프 및 더 명확한 선택기"
-description: "이 업데이트는 skills 설치/제거 경험을 개선하고, canonical source를 skill-sources/로 통합���며, 기본 설치 모드를 이식 가능한 복사로 전환하고, Node 런타임 베이스라인을 22 LTS로 표준화했습니다."
+description: "이 업데이트는 skills 설치/제거 경험을 개선하고, canonical source를 skill-sources/로 통합하며, 기본 설치 모드를 이식 가능한 복사로 전환하고, Node 런타임 베이스라인을 22 LTS로 표준화했습니다."
 date: 2026-03-17
 tags: [Harness CLI, Skills, TUI, 온보딩, AI Development]
 ---

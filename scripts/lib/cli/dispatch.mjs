@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { execSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 
 import { chooseInteractiveCommand } from './interactive.mjs';
 import { getCommandHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './help.mjs';
@@ -32,19 +33,32 @@ function applyResultExitCode(result) {
   }
 }
 
-function runInteractiveTui({ rootDir, projectRoot }) {
+function runInteractiveTui({ rootDir, projectRoot, stderr = process.stderr }) {
   const cliPath = path.join(rootDir, 'scripts/lib/tui-ink/cli.tsx');
+  const tsxCliPath = path.join(rootDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
+
+  if (!existsSync(tsxCliPath)) {
+    stderr.write(`[err] missing TUI runtime dependency: ${tsxCliPath}\n`);
+    stderr.write('[hint] Reinstall AIOS, or run from the install root: npm install --include=dev\n');
+    process.exitCode = 1;
+    return;
+  }
 
   process.env.AIOS_ROOT_DIR = rootDir;
   process.env.AIOS_PROJECT_ROOT = projectRoot;
 
-  try {
-    execSync(`npx tsx "${cliPath}"`, {
-      stdio: 'inherit',
-      env: process.env,
-    });
-  } catch {
+  const result = spawnSync(process.execPath, [tsxCliPath, cliPath], {
+    stdio: 'inherit',
+    env: process.env,
+  });
+  if (result.error) {
+    stderr.write(`[err] failed to start AIOS TUI: ${result.error.message}\n`);
     process.exitCode = 1;
+    return;
+  }
+  const status = result.status ?? (result.signal ? 1 : 0);
+  if (status !== 0) {
+    process.exitCode = status;
   }
 }
 
@@ -58,6 +72,10 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         stderr.write('[warn] interactive TUI requires a TTY\n');
         stdout.write(getRootHelpText());
         process.exitCode = 1;
+        return;
+      }
+      if (parsed.command === 'tui') {
+        runInteractiveTui({ ...context, stderr });
         return;
       }
       parsed = await chooseInteractiveCommand();
@@ -113,7 +131,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
     if (parsed.command === 'doctor') {
       const { runDoctor } = await import('../lifecycle/doctor.mjs');
-      await runDoctor(parsed.options, { rootDir });
+      await runDoctor(parsed.options, context);
       return;
     }
 

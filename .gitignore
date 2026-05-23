@@ -61,6 +61,7 @@ memory/workspace/
 
 # MCP 服务器
 mcp-server/node_modules/
+mcp-server/.npm-cache/
 mcp-server/dist/
 mcp-server/.browser-profiles/
 mcp-server/.mcp.json

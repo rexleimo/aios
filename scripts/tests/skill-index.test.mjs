@@ -48,11 +48,14 @@ version: 2.0.0
   const index = await buildSkillIndex(testDir);
 
   assert.strictEqual(index.skills.length, 2);
-  assert.strictEqual(index.skills[0].name, 'publish笔记');
-  assert.strictEqual(index.skills[0].version, '1.0.0');
-  assert.deepStrictEqual(index.skills[0].keywords, ['发布', '笔记']);
-  assert.strictEqual(index.skills[0].file, '.codex/skills/publish-note/SKILL.md');
-  assert.strictEqual(index.skills[1].name, '互动操作');
+  const publishSkill = index.skills.find((skill) => skill.file === '.codex/skills/publish-note/SKILL.md');
+  const interactionSkill = index.skills.find((skill) => skill.file === '.codex/skills/interaction-ops/SKILL.md');
+  assert.ok(publishSkill);
+  assert.ok(interactionSkill);
+  assert.strictEqual(publishSkill.name, 'publish笔记');
+  assert.strictEqual(publishSkill.version, '1.0.0');
+  assert.deepStrictEqual(publishSkill.keywords, ['发布', '笔记']);
+  assert.strictEqual(interactionSkill.name, '互动操作');
 
   await teardownTestDir();
 });

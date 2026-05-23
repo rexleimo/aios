@@ -1,6 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import {
+  buildModelSummaryTable,
+  buildRoutingTableMarkdown,
   defaultModelRegistry,
   resolveModelForTaskDescription,
   resolveModelRoutingForTask,
@@ -102,4 +106,38 @@ test('signal scoring exposes multiple matched signals', () => {
   assert.equal(scored.recommendedPhases.length >= 2, true);
   assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'planning'), true);
   assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'docs'), true);
+});
+
+test('model-router reports render Chinese headers without mojibake', () => {
+  const summary = buildModelSummaryTable(registry);
+  const routing = buildRoutingTableMarkdown(registry);
+  const combined = `${summary}\n${routing}`;
+
+  assert.match(summary, /\| 模型 \| 定位 \| 最擅长 \| 成本 \| 速度 \|/u);
+  assert.match(routing, /\| 任务类型 \| 首选模型 \| 降级链 \|/u);
+  assert.match(routing, / → /u);
+  assert.doesNotMatch(combined, /[\u59af\u7037\u7039\u93c8\u93bf\u95ab\u922b]\??/u);
+});
+
+test('model-router entrypoint stays a thin facade over focused modules', async () => {
+  const root = path.resolve('scripts', 'lib');
+  const entry = await readFile(path.join(root, 'model-router.mjs'), 'utf8');
+  const entryLines = entry.split(/\r?\n/u).length;
+  assert.equal(entryLines <= 180, true, `model-router.mjs is ${entryLines} lines; split responsibilities into scripts/lib/model-router/*`);
+
+  for (const moduleName of [
+    'shared.mjs',
+    'registry.mjs',
+    'profile.mjs',
+    'signals.mjs',
+    'selection.mjs',
+    'client-cli.mjs',
+    'routing.mjs',
+    'reporting.mjs',
+    'history.mjs',
+    'command.mjs',
+  ]) {
+    const source = await readFile(path.join(root, 'model-router', moduleName), 'utf8');
+    assert.match(source, /export/u, `${moduleName} should expose focused model-router APIs`);
+  }
 });

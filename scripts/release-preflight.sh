@@ -14,8 +14,8 @@ Validates:
   - tag format is vX.Y.Z
   - VERSION matches X.Y.Z
   - CHANGELOG.md contains ## [X.Y.Z] - YYYY-MM-DD
-  - generated skill roots match skill-sources via scripts/check-skills-sync.mjs
-  - generated native outputs match client-sources/native-base via scripts/check-native-sync.mjs
+  - generated skill roots materialize from skill-sources via scripts/check-skills-sync.mjs
+  - generated native outputs materialize from client-sources/native-base via scripts/check-native-sync.mjs
 EOF
 }
 
@@ -76,12 +76,12 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
-if ! node "$ROOT_DIR/scripts/check-skills-sync.mjs" >/dev/null; then
+if ! node "$ROOT_DIR/scripts/check-skills-sync.mjs" --materialize-temp >/dev/null; then
   echo "skills sync drift detected; run: node scripts/sync-skills.mjs" >&2
   exit 1
 fi
 
-if ! node "$ROOT_DIR/scripts/check-native-sync.mjs" >/dev/null; then
+if ! node "$ROOT_DIR/scripts/check-native-sync.mjs" --materialize-temp >/dev/null; then
   echo "native sync drift detected; run: node scripts/sync-native.mjs" >&2
   exit 1
 fi

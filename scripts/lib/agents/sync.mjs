@@ -10,11 +10,14 @@ import {
 } from './emitters/shared.mjs';
 import { renderCodexAgent } from './emitters/codex.mjs';
 import { loadCanonicalAgents } from './source-tree.mjs';
+import {
+  getClientAgentTargetRoot,
+  resolveClientAgentTargets,
+} from '../clients/registry.mjs';
 
-const TARGET_ROOTS = {
-  claude: '.claude/agents',
-  codex: '.codex/agents',
-};
+const TARGET_ROOTS = Object.fromEntries(
+  resolveClientAgentTargets('all').map((target) => [target, getClientAgentTargetRoot(target)])
+);
 
 function assertCondition(condition, message) {
   if (!condition) {
@@ -33,6 +36,13 @@ function hasManagedMarker(content) {
 
 function slugifyPath(relativePath) {
   return relativePath.replace(/[\\/]/g, '__');
+}
+
+function joinRelativePath(...parts) {
+  return parts
+    .map((part) => String(part || '').replace(/\\/g, '/').replace(/^\/+|\/+$/g, ''))
+    .filter(Boolean)
+    .join('/');
 }
 
 async function readOptional(absPath) {
@@ -78,10 +88,7 @@ function buildEmitterMap(emitters = {}) {
 }
 
 export function resolveAgentTargets(client = 'all') {
-  const normalized = String(client || 'all').trim().toLowerCase();
-  if (normalized === 'claude') return ['claude'];
-  if (normalized === 'codex') return ['codex'];
-  return ['claude', 'codex'];
+  return resolveClientAgentTargets(client);
 }
 
 export function isManagedAgentMarkdown(content, expectedId) {
@@ -147,17 +154,20 @@ function createDefaultFsOps() {
 
 export async function syncCanonicalAgents({
   rootDir,
-  targets = ['claude', 'codex'],
+  targetRootDir = rootDir,
+  targets = resolveClientAgentTargets('all'),
   mode = 'install',
   writeCompatibilityExport = true,
   io = console,
   fsOps,
   emitters,
 }) {
+  const sourceRootDir = path.resolve(rootDir);
+  const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
   const selectedTargets = [...new Set((targets || []).map((target) => String(target).trim()).filter(Boolean))];
   const source = mode === 'uninstall' && writeCompatibilityExport === false
     ? null
-    : await loadCanonicalAgents({ rootDir });
+    : await loadCanonicalAgents({ rootDir: sourceRootDir });
   const expectedFiles = buildExpectedFiles({
     source: source || { agentsById: {} },
     targets: selectedTargets,
@@ -165,9 +175,10 @@ export async function syncCanonicalAgents({
     emitters,
   });
   const exportText = writeCompatibilityExport ? renderCompatibilityExport(source) : null;
-  const exportPath = path.join(rootDir, 'scripts', 'lib', 'specs', 'orchestrator-agents.json');
+  const exportPath = path.join(resolvedTargetRootDir, 'scripts', 'lib', 'specs', 'orchestrator-agents.json');
   const ops = fsOps ? { ...createDefaultFsOps(), ...fsOps } : createDefaultFsOps();
-  const tempDir = await mkdtemp(path.join(rootDir, '.aios-agent-sync-'));
+  await mkdir(resolvedTargetRootDir, { recursive: true });
+  const tempDir = await mkdtemp(path.join(resolvedTargetRootDir, '.aios-agent-sync-'));
   const results = selectedTargets.map((target) => ({
     target,
     targetRel: TARGET_ROOTS[target],
@@ -185,13 +196,13 @@ export async function syncCanonicalAgents({
       const targetRoot = TARGET_ROOTS[target];
       assertCondition(targetRoot, `unsupported target: ${target}`);
 
-      const absDir = path.join(rootDir, targetRoot);
+      const absDir = path.join(resolvedTargetRootDir, targetRoot);
       const existingFiles = await listMarkdownFiles(absDir);
       const expectedForTarget = expectedFiles.get(target) || new Map();
 
       for (const fileName of existingFiles) {
-        const relPath = path.join(targetRoot, fileName);
-        const absPath = path.join(rootDir, relPath);
+        const relPath = joinRelativePath(targetRoot, fileName);
+        const absPath = path.join(resolvedTargetRootDir, relPath);
         const existing = await readFile(absPath, 'utf8');
         const expectedId = path.basename(fileName, '.md');
         const managed = isManagedAgentMarkdown(existing, expectedId);
@@ -228,7 +239,7 @@ export async function syncCanonicalAgents({
       for (const [relPath, nextContent] of expectedForTarget.entries()) {
         replaceOps.push({
           target,
-          absPath: path.join(rootDir, relPath),
+          absPath: path.join(resolvedTargetRootDir, relPath),
           relPath,
           existed: false,
           previousContent: '',

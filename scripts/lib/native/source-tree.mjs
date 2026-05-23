@@ -2,10 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { NATIVE_SYNC_META_FILE } from './install-metadata.mjs';
+import {
+  resolveClientNativeClients,
+} from '../clients/registry.mjs';
 
 const MANIFEST_PATH = path.join('config', 'native-sync-manifest.json');
 const CLIENT_SOURCE_ROOT = path.join('client-sources', 'native-base');
-const ALLOWED_CLIENTS = ['codex', 'claude', 'gemini', 'opencode'];
 const ALLOWED_TIERS = ['deep', 'compatibility'];
 
 function assertCondition(condition, message) {
@@ -19,12 +21,12 @@ function readJsonFile(filePath) {
 }
 
 export function resolveNativeClients(client = 'all') {
-  const normalized = String(client || 'all').trim().toLowerCase();
-  if (normalized === 'all') {
-    return [...ALLOWED_CLIENTS];
+  try {
+    return resolveClientNativeClients(client);
+  } catch {
+    const normalized = String(client || '').trim().toLowerCase();
+    throw new Error(`unsupported native client: ${normalized}`);
   }
-  assertCondition(ALLOWED_CLIENTS.includes(normalized), `unsupported native client: ${normalized}`);
-  return [normalized];
 }
 
 export function loadNativeSyncManifest(rootDir) {
@@ -40,7 +42,7 @@ export function loadNativeSyncManifest(rootDir) {
   assertCondition(raw.clients && typeof raw.clients === 'object' && !Array.isArray(raw.clients), 'native manifest clients must be an object');
 
   const clients = {};
-  for (const client of ALLOWED_CLIENTS) {
+  for (const client of resolveNativeClients('all')) {
     const entry = raw.clients[client];
     assertCondition(entry && typeof entry === 'object' && !Array.isArray(entry), `native manifest missing client entry: ${client}`);
     assertCondition(ALLOWED_TIERS.includes(entry.tier), `native manifest tier must be one of: ${ALLOWED_TIERS.join(', ')}`);
@@ -66,8 +68,9 @@ export function loadNativeSyncManifest(rootDir) {
 }
 
 export function buildNativeOutputPlan({ rootDir, manifest = loadNativeSyncManifest(rootDir), client }) {
-  const normalized = String(client || '').trim().toLowerCase();
-  assertCondition(ALLOWED_CLIENTS.includes(normalized), `unsupported native client: ${normalized}`);
+  const selected = resolveNativeClients(client);
+  assertCondition(selected.length === 1 && String(client || '').trim().toLowerCase() !== 'all', `unsupported native client: ${client}`);
+  const [normalized] = selected;
   const entry = manifest.clients[normalized];
   const metadataRoot = path.join(rootDir, entry.metadataRoot);
   return {

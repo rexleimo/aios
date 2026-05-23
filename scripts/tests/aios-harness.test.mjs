@@ -15,6 +15,7 @@ import { renderHandoffMarkdown, validateHandoffPayload } from '../lib/harness/ha
 import { planDoctor } from '../lib/lifecycle/doctor.mjs';
 import { executeEntropyGc } from '../lib/lifecycle/entropy-gc.mjs';
 import { planQualityGate, runQualityGate } from '../lib/lifecycle/quality-gate.mjs';
+import { DEFAULT_ARCHITECTURE_RULES, evaluateArchitectureGovernance } from '../lib/architecture/governance.mjs';
 
 async function makeRootDir() {
   return await mkdtemp(path.join(os.tmpdir(), 'aios-quality-gate-'));
@@ -133,7 +134,7 @@ test('runQualityGate log audit excludes cli entrypoints and tests', async () => 
       rootDir,
       io: { log() {} },
       env: {
-        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:git',
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:architecture,quality:git',
       },
     }
   );
@@ -145,6 +146,61 @@ test('runQualityGate log audit excludes cli entrypoints and tests', async () => 
   assert.equal(report.failureCategory, 'quality-logs');
 });
 
+test('architecture governance reports facade budget and module ownership failures', async () => {
+  const rootDir = await makeRootDir();
+  await mkdir(path.join(rootDir, 'scripts', 'lib'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'lib', 'demo.mjs'), 'a\nb\nc\n', 'utf8');
+
+  const report = await evaluateArchitectureGovernance({
+    rootDir,
+    rules: [{
+      id: 'demo',
+      label: 'Demo Facade',
+      path: 'scripts/lib/demo.mjs',
+      maxLines: 2,
+      requiredModules: ['scripts/lib/demo/part.mjs'],
+    }],
+  });
+
+  assert.equal(report.ok, false);
+  assert.equal(report.checks[0]?.status, 'FAIL');
+  assert.match(report.detail, /Demo Facade/u);
+  assert.match(report.detail, /3 lines > 2/u);
+  assert.match(report.detail, /missing modules: scripts\/lib\/demo\/part\.mjs/u);
+});
+
+test('architecture governance default rules cover remaining large workflow facades', () => {
+  const ruleIds = DEFAULT_ARCHITECTURE_RULES.map((rule) => rule.id);
+  assert.equal(ruleIds.includes('harness-orchestrator-facade'), true);
+  assert.equal(ruleIds.includes('learn-eval-facade'), true);
+  assert.equal(ruleIds.includes('lifecycle-orchestrate-facade'), true);
+  assert.equal(ruleIds.includes('team-ops-facade'), true);
+  assert.equal(ruleIds.includes('rl-mixed-run-orchestrator-facade'), true);
+  assert.equal(ruleIds.includes('browser-component-facade'), true);
+  assert.equal(ruleIds.includes('lifecycle-harness-facade'), true);
+  assert.equal(ruleIds.includes('solo-runtime-facade'), true);
+});
+
+test('runQualityGate surfaces architecture governance as a first-class gate', async () => {
+  const rootDir = await makeRootDir();
+  const report = await runQualityGate(
+    { mode: 'full' },
+    {
+      rootDir,
+      io: { log() {} },
+      env: {
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:release,quality:git',
+      },
+    }
+  );
+
+  const architecture = report.results.find((item) => item.label === 'Architecture');
+  assert.equal(architecture?.status, 'FAIL');
+  assert.match(String(architecture?.detail || ''), /missing entrypoint/u);
+  assert.deepEqual(report.failedChecks, ['Architecture']);
+  assert.equal(report.failureCategory, 'quality-architecture');
+});
+
 test('runQualityGate persists verification checkpoint when session is provided', async () => {
   const rootDir = await makeRootDir();
   createSession(rootDir, 'quality-session');
@@ -154,6 +210,9 @@ test('runQualityGate persists verification checkpoint when session is provided',
     {
       rootDir,
       io: { log() {} },
+      env: {
+        AIOS_DISABLED_GATES: 'quality:architecture',
+      },
       checkRunner(command, args) {
         if (command === 'npm' && args[0] === 'run' && ['build', 'typecheck', 'test:scripts', 'test:contextdb'].includes(args[1])) {
           return { status: 0, stdout: `${args[1]} ok\n`, stderr: '' };
@@ -206,7 +265,7 @@ test('runQualityGate persists quality-specific failure category when session is 
       rootDir,
       io: { log() {} },
       env: {
-        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:git',
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:architecture,quality:git',
       },
       checkRunner(command) {
         if (command === 'rg') {
@@ -285,7 +344,7 @@ test('runQualityGate fails with quality-release category when strict release gat
       rootDir,
       io: { log() {} },
       env: {
-        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:git',
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:architecture,quality:git',
       },
     }
   );
@@ -340,7 +399,7 @@ test('runQualityGate applies release thresholds from environment overrides', asy
       rootDir,
       io: { log() {} },
       env: {
-        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:git',
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:architecture,quality:git',
         AIOS_RELEASE_GATE_MIN_SAMPLES: '8',
         AIOS_RELEASE_GATE_MAX_FAILURE_RATE: '0.6',
         AIOS_RELEASE_GATE_MAX_FALLBACK_RATE: '0.4',
@@ -368,7 +427,7 @@ test('runQualityGate fails when release threshold environment values are invalid
       rootDir,
       io: { log() {} },
       env: {
-        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:git',
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:logs,quality:architecture,quality:git',
         AIOS_RELEASE_GATE_MAX_FAILURE_RATE: 'bad-value',
       },
     }

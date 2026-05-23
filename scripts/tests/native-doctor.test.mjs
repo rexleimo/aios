@@ -58,7 +58,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
 }
@@ -168,6 +168,54 @@ test('doctor --native runs only native checks', async () => {
   assert.match(logs.join('\n'), /doctor-native/);
   assert.doesNotMatch(logs.join('\n'), /doctor-contextdb-shell/);
   assert.doesNotMatch(logs.join('\n'), /doctor-browser-mcp/);
+});
+
+test('doctor --native respects client-specific compatibility targets', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-client-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, client: 'opencode' });
+  const env = await seedRouteCommands(rootDir);
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    client: 'opencode',
+    nativeOnly: true,
+    verbose: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env,
+  });
+
+  const rendered = logs.join('\n');
+  assert.equal(result.exitCode, 0);
+  assert.match(rendered, /Client: opencode/);
+  assert.match(rendered, /metadata=\.opencode\/\.aios-native-sync\.json present/);
+  assert.doesNotMatch(rendered, /update --components native --client codex/);
+});
+
+test('doctor --native checks projectRoot outputs when AIOS is installed elsewhere', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-source-root-');
+  const projectRoot = await makeTemp('aios-native-doctor-project-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client: 'opencode' });
+  const env = await seedRouteCommands(rootDir);
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    projectRoot,
+    client: 'opencode',
+    nativeOnly: true,
+    verbose: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env,
+  });
+
+  const rendered = logs.join('\n');
+  assert.equal(result.exitCode, 0);
+  assert.ok(rendered.includes(`Project: ${projectRoot}`));
+  assert.match(rendered, /metadata=\.opencode\/\.aios-native-sync\.json present/);
+  await assert.rejects(() => readFile(path.join(rootDir, '.opencode', '.aios-native-sync.json'), 'utf8'));
 });
 
 test('doctor --native --verbose prints native explainability details', async () => {

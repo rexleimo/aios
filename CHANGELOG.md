@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.8] - 2026-05-23
+
+- fix(install): force TLS 1.2 for Windows release installer downloads and self-update bootstrap
+- fix(install): fail fast when Windows installer dependency setup commands exit non-zero
+- fix(tui): start the Ink TUI through the local tsx runtime and report non-interactive terminal limitations clearly
+
 ## [1.20.6] - 2026-05-22
 
 - fix(memo): handle -h/--help gracefully in runMemo as fallback for Windows Commander edge cases

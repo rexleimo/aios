@@ -10,6 +10,7 @@
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { existsSync } from 'node:fs';
 import { chromium } from 'playwright';
 import { STEALTH_SCRIPT } from '../src/browser/stealth-script.js';
 
@@ -19,6 +20,12 @@ const STEALTH_ARGS = [
   '--disable-setuid-sandbox',
   '--disable-dev-shm-usage',
 ];
+
+const chromiumExecutable = chromium.executablePath();
+const stealthTest = existsSync(chromiumExecutable)
+  ? test
+  : test.skip;
+const missingChromiumMessage = `Playwright Chromium is not installed at ${chromiumExecutable}; run npx playwright install chromium to enable stealth tests.`;
 
 async function launchStealthBrowser() {
   const browser = await chromium.launch({
@@ -33,7 +40,7 @@ async function launchStealthBrowser() {
   return { browser, context };
 }
 
-test('navigator.webdriver is false', async () => {
+stealthTest('navigator.webdriver is false', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -47,7 +54,7 @@ test('navigator.webdriver is false', async () => {
   }
 });
 
-test('navigator.plugins is instanceof PluginArray', async () => {
+stealthTest('navigator.plugins is instanceof PluginArray', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -61,7 +68,7 @@ test('navigator.plugins is instanceof PluginArray', async () => {
   }
 });
 
-test('navigator.plugins.length > 0', async () => {
+stealthTest('navigator.plugins.length > 0', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -75,7 +82,7 @@ test('navigator.plugins.length > 0', async () => {
   }
 });
 
-test('navigator.languages is instanceof Array', async () => {
+stealthTest('navigator.languages is instanceof Array', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -89,7 +96,7 @@ test('navigator.languages is instanceof Array', async () => {
   }
 });
 
-test('navigator.languages includes zh-CN', async () => {
+stealthTest('navigator.languages includes zh-CN', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -103,7 +110,7 @@ test('navigator.languages includes zh-CN', async () => {
   }
 });
 
-test('navigator.language is zh-CN', async () => {
+stealthTest('navigator.language is zh-CN', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -117,7 +124,7 @@ test('navigator.language is zh-CN', async () => {
   }
 });
 
-test('WebGL is available (skipped in headless shell)', async () => {
+stealthTest('WebGL is available (skipped in headless shell)', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -140,7 +147,7 @@ test('WebGL is available (skipped in headless shell)', async () => {
   }
 });
 
-test('WebGL spoofing works when WebGL is available', async () => {
+stealthTest('WebGL spoofing works when WebGL is available', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -163,7 +170,7 @@ test('WebGL spoofing works when WebGL is available', async () => {
   }
 });
 
-test('chrome.runtime exists', async () => {
+stealthTest('chrome.runtime exists', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -177,7 +184,7 @@ test('chrome.runtime exists', async () => {
   }
 });
 
-test('navigator.permissions.query returns prompt for geolocation', async () => {
+stealthTest('navigator.permissions.query returns prompt for geolocation', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -198,7 +205,7 @@ test('navigator.permissions.query returns prompt for geolocation', async () => {
   }
 });
 
-test('CDP automation globals are removed', async () => {
+stealthTest('CDP automation globals are removed', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();
@@ -220,7 +227,7 @@ test('CDP automation globals are removed', async () => {
   }
 });
 
-test('PluginArray methods exist and return expected types', async () => {
+stealthTest('PluginArray methods exist and return expected types', { skip: !existsSync(chromiumExecutable) ? missingChromiumMessage : false }, async () => {
   const { browser, context } = await launchStealthBrowser();
   try {
     const page = await context.newPage();

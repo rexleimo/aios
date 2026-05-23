@@ -33,6 +33,11 @@ import {
   normalizeWrapMode,
 } from '../../lifecycle/options.mjs';
 import { normalizeOrchestratorBlueprint, normalizeOrchestratorFormat } from '../../harness/orchestrator.mjs';
+import {
+  ALL_CLIENTS,
+  buildTeamProviderRuntimeClientMap,
+  resolveClientTeamProviders,
+} from '../../clients/registry.mjs';
 
 export {
   createDefaultDoctorOptions,
@@ -73,16 +78,12 @@ export {
 
 export const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy', 'offload', 'codemap']);
 export const PRIVACY_MODES = new Set(['regex', 'ollama', 'hybrid']);
-export const TEAM_PROVIDERS = new Set(['codex', 'claude', 'gemini']);
+export const TEAM_PROVIDERS = new Set(resolveClientTeamProviders('all'));
 export const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);
 export const SKILL_CANDIDATE_VIEWS = new Set(['inline', 'detail', 'list']);
-export const TEAM_PROVIDER_CLIENT_MAP = Object.freeze({
-  codex: 'codex-cli',
-  claude: 'claude-code',
-  gemini: 'gemini-cli',
-});
+export const TEAM_PROVIDER_CLIENT_MAP = Object.freeze(buildTeamProviderRuntimeClientMap('all'));
 export const HARNESS_SUBCOMMANDS = new Set(['run', 'status', 'resume', 'stop']);
-export const INIT_AGENT_NAMES = new Set(['claude', 'codex', 'gemini', 'opencode']);
+export const INIT_AGENT_NAMES = new Set(ALL_CLIENTS);
 
 export function expandEqualsOptions(argv = []) {
   const expanded = [];
@@ -160,14 +161,20 @@ export function normalizeTeamProvider(raw = 'codex') {
 
 export function parseTeamSpec(raw = '') {
   const value = String(raw || '').trim().toLowerCase();
-  const match = /^(\d+):(codex|claude|gemini)$/u.exec(value);
+  const match = /^(\d+):([a-z0-9_-]+)$/u.exec(value);
   if (!match) {
+    return null;
+  }
+  let provider;
+  try {
+    provider = normalizeTeamProvider(match[2]);
+  } catch {
     return null;
   }
   const workers = parsePositiveInteger(match[1], 'team workers');
   return {
     workers,
-    provider: normalizeTeamProvider(match[2]),
+    provider,
   };
 }
 

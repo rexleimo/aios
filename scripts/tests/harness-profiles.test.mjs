@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -64,11 +65,13 @@ test('buildSoloHarnessCommand separates AIOS install root from target workspace'
     prompt: 'return json',
   });
 
-  assert.equal(built.args[0], '/opt/aios/scripts/ctx-agent.mjs');
-  assert.equal(built.cwd, '/tmp/project/.aios-worktrees/session-1');
+  const expectedAiosRoot = path.resolve('/opt/aios');
+  const expectedWorkspace = path.resolve('/tmp/project/.aios-worktrees/session-1');
+  assert.equal(built.args[0], path.join(expectedAiosRoot, 'scripts', 'ctx-agent.mjs'));
+  assert.equal(built.cwd, expectedWorkspace);
   assert.deepEqual(
     built.args.slice(built.args.indexOf('--workspace'), built.args.indexOf('--workspace') + 2),
-    ['--workspace', '/tmp/project/.aios-worktrees/session-1']
+    ['--workspace', expectedWorkspace]
   );
   assert.deepEqual(
     built.args.slice(built.args.indexOf('--project'), built.args.indexOf('--project') + 2),

@@ -1,0 +1,20 @@
+import { CLIENT_SELECTIONS, resolveClientHarnessProviders } from '../../clients/registry.mjs';
+
+export const COMPONENT_NAMES = ['browser', 'shell', 'skills', 'native', 'agents', 'superpowers'];
+export const WRAP_MODES = ['all', 'repo-only', 'opt-in', 'off'];
+export const CLIENT_NAMES = CLIENT_SELECTIONS;
+export const SKILL_SCOPE_NAMES = ['global', 'project'];
+export const SKILL_INSTALL_MODE_NAMES = ['copy', 'link'];
+export const QUALITY_GATE_MODES = ['quick', 'full', 'pre-pr'];
+export const ORCHESTRATOR_FORMAT_NAMES = ['text', 'json'];
+export const ORCHESTRATOR_BLUEPRINT_NAMES = ['feature', 'bugfix', 'refactor', 'security'];
+export const ORCHESTRATOR_DISPATCH_MODE_NAMES = ['none', 'local'];
+export const ORCHESTRATOR_EXECUTION_MODE_NAMES = ['none', 'dry-run', 'live'];
+export const ORCHESTRATOR_PREFLIGHT_MODE_NAMES = ['none', 'auto'];
+export const LEARN_EVAL_FORMAT_NAMES = ['text', 'json'];
+export const ENTROPY_GC_MODE_NAMES = ['dry-run', 'auto', 'off'];
+export const ENTROPY_GC_FORMAT_NAMES = ['text', 'json'];
+export const SNAPSHOT_ROLLBACK_FORMAT_NAMES = ['text', 'json'];
+export const RELEASE_STATUS_FORMAT_NAMES = ['text', 'json'];
+export const RELEASE_STATUS_HISTORY_FORMAT_NAMES = ['csv', 'ndjson'];
+export const SOLO_HARNESS_PROVIDER_NAMES = resolveClientHarnessProviders('all');

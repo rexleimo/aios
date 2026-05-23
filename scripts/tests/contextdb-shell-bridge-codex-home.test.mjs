@@ -15,6 +15,12 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function shellArgPattern(value) {
+  return `"${escapeRegExp(value)}"|${escapeRegExp(value)}`;
+}
+
+const AIOS_CLI = path.join(ROOT, 'scripts', 'aios.mjs');
+
 async function createFakeCodexCommand() {
   const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-bin-'));
   if (process.platform === 'win32') {
@@ -89,7 +95,11 @@ function runBridge({
   command = 'codex',
 }) {
   const env = { ...process.env, CTXDB_AUTO_PROMPT: "", ...envOverrides };
-  env.PATH = `${pathPrefix}${path.delimiter}${env.PATH || ''}`;
+  const nextPath = `${pathPrefix}${path.delimiter}${env.PATH || env.Path || ''}`;
+  env.PATH = nextPath;
+  if (process.platform === 'win32') {
+    env.Path = nextPath;
+  }
 
   if (codeHome !== undefined) {
     env.CODEX_HOME = codeHome;
@@ -361,15 +371,15 @@ test('wrapped interactive codex runs inject route auto prompt by default', async
   assert.match(autoPrompt, /Only choose harness for explicit long-running, overnight, resumable/u);
   assert.match(
     autoPrompt,
-    new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent codex-cli --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent codex-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,
-    new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent codex-cli --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent codex-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,
-    new RegExp(`node .*scripts/aios\.mjs harness run --objective "<task>" --provider codex --max-iterations 8 --worktree --workspace ${escapeRegExp(cwd)}`, 'u')
+    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider codex --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
   );
 });
 
@@ -492,7 +502,7 @@ test('wrapped interactive codex runs honors harness route env overrides', async 
   const autoPrompt = parseRunnerAutoPrompt(result.stdout);
   assert.match(
     autoPrompt,
-    new RegExp(`node .*scripts/aios\.mjs harness run --objective "<task>" --provider claude --max-iterations 4 --worktree --workspace ${escapeRegExp(cwd)}`, 'u')
+    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider claude --max-iterations 4 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
   );
 });
 
@@ -564,15 +574,15 @@ test('wrapped interactive claude and gemini runs inject provider-specific route 
     const autoPrompt = parseRunnerAutoPrompt(result.stdout);
     assert.match(
       autoPrompt,
-      new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent ${item.expectedClient} --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --prompt "<task>" --no-bootstrap`)
+      new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent ${item.expectedClient} --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --prompt "<task>" --no-bootstrap`)
     );
     assert.match(
       autoPrompt,
-      new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent ${item.expectedClient} --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`)
+      new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent ${item.expectedClient} --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`)
     );
     assert.match(
       autoPrompt,
-      new RegExp(`node .*scripts/aios\.mjs harness run --objective "<task>" --provider ${item.expectedProvider} --max-iterations 8 --worktree --workspace ${escapeRegExp(cwd)}`, 'u')
+      new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider ${item.expectedProvider} --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
     );
   }
 });
@@ -598,15 +608,15 @@ test('wrapped interactive opencode runs fallback subagent client to codex-cli by
   const autoPrompt = parseRunnerAutoPrompt(result.stdout);
   assert.match(
     autoPrompt,
-    new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent opencode-cli --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,
-    new RegExp(`node ${escapeRegExp(CTX_AGENT_CLI)} --agent opencode-cli --workspace ${escapeRegExp(cwd)} --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,
-    new RegExp(`node .*scripts/aios\.mjs harness run --objective "<task>" --provider opencode --max-iterations 8 --worktree --workspace ${escapeRegExp(cwd)}`, 'u')
+    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider opencode --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
   );
 });
 
