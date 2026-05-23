@@ -36,6 +36,12 @@ function runPowerShell(scriptPath, args = [], options = {}) {
   return run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], options);
 }
 
+function quotePowerShellSingle(value) {
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+const windowsInstallerTest = process.platform === 'win32' ? test : test.skip;
+
 async function seedFixtureRepo(rootDir, {
   checkSkillsSyncScript = 'process.exit(0);\n',
   checkNativeSyncScript = 'process.exit(0);\n',
@@ -160,6 +166,67 @@ test('PowerShell installer enables TLS 1.2 before release asset downloads', asyn
   assert.match(installPs1, /\nEnable-Tls12\s*\r?\n[\s\S]*Download-File -Url \$assetUrl/);
 });
 
+test('PowerShell installer can use a local asset URL for install smoke tests', async () => {
+  const workspaceRoot = process.cwd();
+  const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
+
+  assert.match(installPs1, /AIOS_ASSET_URL/);
+  assert.match(installPs1, /\$assetUrl = if \(\$AssetUrl\)/);
+  assert.match(installPs1, /Copy-Item -LiteralPath \$localPath -Destination \$OutFile -Force/);
+});
+
+windowsInstallerTest('PowerShell installer smoke extracts local asset and installs shell wrapper', async () => {
+  const workspaceRoot = process.cwd();
+  const rootDir = await makeTemp('rex-installer-smoke-');
+  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
+  const zipPath = path.join(rootDir, 'harness-cli.zip');
+  const installDir = path.join(rootDir, 'install');
+
+  await writeFixtureFile(packageRoot, 'package.json', '{"name":"installer-smoke","type":"module"}\n');
+  await writeFixtureFile(packageRoot, 'node_modules/.bin/tsx.cmd', '@echo off\r\nexit /b 0\r\n');
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/aios.ps1',
+    `Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$capture = Join-Path (Split-Path -Parent $PSScriptRoot) 'shell-capture.txt'
+Set-Content -LiteralPath $capture -Value ($args -join "\`n") -Encoding utf8
+exit 0
+`
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/install-contextdb-shell.ps1',
+    await readFile(path.join(workspaceRoot, 'scripts', 'install-contextdb-shell.ps1'), 'utf8')
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/lib/powershell/aios-internal-wrapper.ps1',
+    await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'powershell', 'aios-internal-wrapper.ps1'), 'utf8')
+  );
+
+  const zipResult = run('powershell', [
+    '-NoProfile',
+    '-Command',
+    `Compress-Archive -Path ${quotePowerShellSingle(packageRoot)} -DestinationPath ${quotePowerShellSingle(zipPath)} -Force`,
+  ]);
+  assertOk(zipResult);
+
+  const result = runPowerShell(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), ['-WrapMode', 'opt-in'], {
+    env: {
+      ...process.env,
+      AIOS_ASSET_URL: zipPath,
+      AIOS_INSTALL_DIR: installDir,
+      AIOS_FIRST_SETUP: '0',
+    },
+  });
+
+  assertOk(result);
+  assert.match(result.stdout, /install PowerShell integration: .*--mode opt-in --force/);
+  const captured = (await readFile(path.join(installDir, 'shell-capture.txt'), 'utf8')).replace(/^\uFEFF/u, '');
+  assert.deepEqual(captured.split(/\r?\n/).filter(Boolean), ['internal', 'shell', 'install', '--mode', 'opt-in', '--force']);
+});
+
 test('PowerShell installer fails fast when native setup commands fail', async () => {
   const workspaceRoot = process.cwd();
   const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
@@ -167,6 +234,8 @@ test('PowerShell installer fails fast when native setup commands fail', async ()
   assert.match(installPs1, /function Invoke-Checked/);
   assert.match(installPs1, /Invoke-Checked -Command "npm" -Arguments @\("install", "--include=dev"\)/);
   assert.match(installPs1, /AIOS runtime deps install did not produce expected TUI runner/);
+  assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$shellInstaller, "--mode", \$WrapMode, "--force"\)/);
+  assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$privacyInstaller, "--enable"\)/);
   assert.match(installPs1, /Invoke-Checked -Command "node" -Arguments @\(\$aiosCli, "setup"/);
 });
 

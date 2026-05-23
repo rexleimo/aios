@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmod, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 const repoRoot = process.cwd();
 const bashWrapperTest = process.platform === 'win32' ? test.skip : test;
+const powershellWrapperTest = process.platform === 'win32' ? test : test.skip;
 
 async function createFakeNode(tempDir, captureFile) {
   const nodePath = path.join(tempDir, 'node');
@@ -41,6 +42,45 @@ async function runWrapper(scriptPath, args) {
   });
 
   const captured = await readFile(captureFile, 'utf8');
+  return {
+    result,
+    captured: captured.split(/\r?\n/).filter(Boolean),
+  };
+}
+
+async function runPowerShellWrapper(scriptName, args) {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ps-wrapper-test-'));
+  const helperDir = path.join(tempDir, 'lib', 'powershell');
+  const captureFile = path.join(tempDir, 'capture.txt');
+
+  await mkdir(helperDir, { recursive: true });
+  await copyFile(
+    path.join(repoRoot, 'scripts', scriptName),
+    path.join(tempDir, scriptName)
+  );
+  await copyFile(
+    path.join(repoRoot, 'scripts', 'lib', 'powershell', 'aios-internal-wrapper.ps1'),
+    path.join(helperDir, 'aios-internal-wrapper.ps1')
+  );
+
+  const fakeAios = `
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Set-Content -LiteralPath $env:AIOS_CAPTURE_FILE -Value ($args -join "\`n") -Encoding utf8
+exit 0
+`;
+  await writeFile(path.join(tempDir, 'aios.ps1'), fakeAios, 'utf8');
+
+  const result = spawnSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', path.join(tempDir, scriptName), ...args], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      AIOS_CAPTURE_FILE: captureFile,
+    },
+  });
+
+  const captured = (await readFile(captureFile, 'utf8')).replace(/^\uFEFF/u, '');
   return {
     result,
     captured: captured.split(/\r?\n/).filter(Boolean),
@@ -85,7 +125,33 @@ bashWrapperTest('start-browser-cdp.sh forwards to internal browser cdp-start', a
 
 test('install-contextdb-shell.ps1 is a thin wrapper', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'install-contextdb-shell.ps1'), 'utf8');
-  assert.match(content, /internal shell install/);
+  assert.match(content, /Invoke-AiosInternalCommand/);
+  assert.match(content, /-Target 'shell' -Action 'install'/);
+});
+
+powershellWrapperTest('install-contextdb-shell.ps1 normalizes PowerShell-style flags', async () => {
+  const { result, captured } = await runPowerShellWrapper('install-contextdb-shell.ps1', ['-Mode', 'repo-only', '-Force']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(captured, ['internal', 'shell', 'install', '--mode', 'repo-only', '--force']);
+});
+
+powershellWrapperTest('install-contextdb-shell.ps1 preserves canonical CLI-style flags', async () => {
+  const { result, captured } = await runPowerShellWrapper('install-contextdb-shell.ps1', ['--mode', 'opt-in', '--force']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(captured, ['internal', 'shell', 'install', '--mode', 'opt-in', '--force']);
+});
+
+powershellWrapperTest('update-contextdb-shell.ps1 normalizes rc-file and force flags', async () => {
+  const profilePath = path.join(os.tmpdir(), 'aios-profile-smoke.ps1');
+  const { result, captured } = await runPowerShellWrapper('update-contextdb-shell.ps1', ['-RcFile', profilePath, '-Force']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(captured, ['internal', 'shell', 'update', '--rc-file', profilePath, '--force']);
+});
+
+powershellWrapperTest('install-privacy-guard.ps1 normalizes PowerShell-style flags', async () => {
+  const { result, captured } = await runPowerShellWrapper('install-privacy-guard.ps1', ['-Enable', '-Mode', 'regex']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(captured, ['internal', 'privacy', 'install', '--mode', 'regex', '--enable']);
 });
 
 test('contextdb PowerShell transparent wrappers preserve native stdout TTY', async () => {

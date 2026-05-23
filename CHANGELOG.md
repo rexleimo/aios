@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.20.9] - 2026-05-23
+
+- fix(install): normalize Windows PowerShell shell-wrapper flags during release installs
+- fix(install): normalize Windows privacy-guard wrapper flags during release installs
+- test(install): add local Windows installer smoke coverage for the release PowerShell installer
+
 ## [1.20.8] - 2026-05-23
 
 - fix(install): force TLS 1.2 for Windows release installer downloads and self-update bootstrap

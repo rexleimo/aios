@@ -1,5 +1,6 @@
 param(
   [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/harness-cli" }),
+  [string]$AssetUrl = $(if ($env:AIOS_ASSET_URL) { $env:AIOS_ASSET_URL } else { "" }),
   [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/harness-cli") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
   [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" }),
@@ -21,6 +22,17 @@ function Enable-Tls12() {
 }
 
 function Download-File([string]$Url, [string]$OutFile) {
+  if ($Url -match '^file://') {
+    $localPath = ([System.Uri]$Url).LocalPath
+    Write-Host "+ copy $localPath"
+    Copy-Item -LiteralPath $localPath -Destination $OutFile -Force
+    return
+  }
+  if (Test-Path -LiteralPath $Url) {
+    Write-Host "+ copy $Url"
+    Copy-Item -LiteralPath $Url -Destination $OutFile -Force
+    return
+  }
   Write-Host "+ download $Url"
   $iwr = Get-Command Invoke-WebRequest -ErrorAction SilentlyContinue
   if ($iwr -and $iwr.Parameters.ContainsKey('UseBasicParsing')) {
@@ -50,7 +62,7 @@ function Test-FirstSetupDisabled([string]$Value) {
   return @("0", "false", "off", "no") -contains $Value.ToLowerInvariant()
 }
 
-$assetUrl = "https://github.com/$Repo/releases/latest/download/harness-cli.zip"
+$assetUrl = if ($AssetUrl) { $AssetUrl } else { "https://github.com/$Repo/releases/latest/download/harness-cli.zip" }
 
 Enable-Tls12
 
@@ -145,8 +157,8 @@ try {
 
   $shellInstaller = Join-Path $InstallDir "scripts/install-contextdb-shell.ps1"
   if (Test-Path -LiteralPath $shellInstaller) {
-    Write-Host "+ install PowerShell integration: $shellInstaller -Mode $WrapMode -Force"
-    Invoke-Checked -Command "powershell" -Arguments @("-ExecutionPolicy", "Bypass", "-File", $shellInstaller, "-Mode", $WrapMode, "-Force")
+    Write-Host "+ install PowerShell integration: $shellInstaller --mode $WrapMode --force"
+    Invoke-Checked -Command "powershell" -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $shellInstaller, "--mode", $WrapMode, "--force")
   } else {
     Write-Host "[warn] missing shell installer: $shellInstaller"
   }
@@ -154,8 +166,8 @@ try {
   $privacyInstaller = Join-Path $InstallDir "scripts/install-privacy-guard.ps1"
   if (Test-Path -LiteralPath $privacyInstaller) {
     try {
-      Write-Host "+ init privacy guard: $privacyInstaller"
-      & powershell -ExecutionPolicy Bypass -File $privacyInstaller -Enable
+      Write-Host "+ init privacy guard: $privacyInstaller --enable"
+      Invoke-Checked -Command "powershell" -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $privacyInstaller, "--enable")
     } catch {
       Write-Host ("[warn] privacy guard init skipped: {0}" -f $_.Exception.Message)
     }

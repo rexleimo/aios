@@ -1,17 +1,17 @@
+[CmdletBinding(PositionalBinding = $false)]
 param(
+  [ValidateSet("all", "repo-only", "opt-in", "off")]
+  [string]$Mode = "",
+  [string]$RcFile = "",
+  [switch]$Force,
   [Parameter(ValueFromRemainingArguments = $true)]
   [string[]]$Args
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$wrapper = Join-Path $PSScriptRoot 'aios.ps1'
+. (Join-Path $PSScriptRoot 'lib/powershell/aios-internal-wrapper.ps1')
 
-# Build argument list, filtering out empty strings
-$passArgs = @()
-if ($Args -and @($Args).Count -gt 0) {
-  $passArgs = @($Args) | Where-Object { $_ -and $_.Trim() }
-}
-
-& $wrapper internal shell install @passArgs
+$passArgs = ConvertTo-AiosCanonicalArgumentList -Mode $Mode -RcFile $RcFile -Force:$Force -Args $Args
+Invoke-AiosInternalCommand -ScriptRoot $PSScriptRoot -Target 'shell' -Action 'install' -Arguments $passArgs | Out-Null
 exit $LASTEXITCODE
