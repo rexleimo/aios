@@ -31,8 +31,8 @@ function printHelp(parsed, { stdout = process.stdout } = {}) {
 }
 
 /* 中文注释：子命令返回 exitCode 时在这里统一映射到进程退出码，避免每个模块直接改 process。 */
-function applyResultExitCode(result) {
-  if (result?.exitCode !== 0) {
+export function applyResultExitCode(result) {
+  if (typeof result?.exitCode === 'number') {
     process.exitCode = result.exitCode;
   }
 }
@@ -74,6 +74,8 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
   const workspaceFor = (parsed) => resolveRuntimeWorkspace(parsed.command, parsed.options, context);
 
   return async function dispatchParsed(parsed) {
+    process.exitCode = 0;
+
     if (parsed.mode === 'interactive') {
       if (!process.stdin.isTTY || !process.stdout.isTTY) {
         stderr.write('[warn] interactive TUI requires a TTY\n');
@@ -294,12 +296,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'refs') {
-      await runRefsCommand(parsed, context);
+      await runRefsCommand(parsed, { ...context, stdout, stderr });
       return;
     }
 
     if (parsed.command === 'canvas') {
-      await runCanvasCommand(parsed, context);
+      await runCanvasCommand(parsed, { ...context, stdout, stderr });
       return;
     }
 

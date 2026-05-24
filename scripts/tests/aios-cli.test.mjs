@@ -103,6 +103,121 @@ test('the CLI dispatcher factory can be imported independently of the launcher',
   assert.match(output, /Harness CLI/u);
 });
 
+test('applyResultExitCode clears stale failures when a command succeeds', async () => {
+  const { applyResultExitCode } = await import('../lib/cli/dispatch.mjs');
+  const previousExitCode = process.exitCode;
+
+  try {
+    process.exitCode = 1;
+    applyResultExitCode({ exitCode: 0 });
+    assert.equal(process.exitCode, 0);
+
+    process.exitCode = 1;
+    applyResultExitCode({ exitCode: 2 });
+    assert.equal(process.exitCode, 2);
+  } finally {
+    process.exitCode = previousExitCode;
+  }
+});
+
+test('createAiosDispatch routes refs output through injected streams and respects the limit', async () => {
+  const { createAiosDispatch } = await import('../lib/cli/dispatch.mjs');
+  const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-cli-refs-'));
+  const previousExitCode = process.exitCode;
+  const originalConsoleLog = console.log;
+  let stdout = '';
+  let stderr = '';
+  let consoleLogCount = 0;
+
+  try {
+    const interceptionDir = path.join(workspaceRoot, '.aios', 'interception', 'refs', 's1');
+    const offloadDir = path.join(workspaceRoot, '.aios', 'offload', 'refs', 's1');
+    await fs.mkdir(interceptionDir, { recursive: true });
+    await fs.mkdir(offloadDir, { recursive: true });
+    await fs.writeFile(path.join(interceptionDir, 'one.raw'), 'needle interception one');
+    await fs.writeFile(path.join(interceptionDir, 'one.meta.json'), JSON.stringify({
+      ref_id: 'one',
+      source: 'source-a',
+      host: 'host-a',
+      raw_bytes: 10,
+    }));
+    await fs.writeFile(path.join(offloadDir, 'first.md'), '---\nnode_id: first\nsession: s1\n---\nfirst body\n');
+    await fs.writeFile(path.join(offloadDir, 'second.md'), '---\nnode_id: second\nsession: s1\n---\nsecond body\n');
+
+    console.log = () => {
+      consoleLogCount += 1;
+    };
+
+    const dispatch = createAiosDispatch({
+      rootDir: process.cwd(),
+      projectRoot: workspaceRoot,
+      stdout: { write: (chunk) => { stdout += String(chunk); return true; } },
+      stderr: { write: (chunk) => { stderr += String(chunk); return true; } },
+    });
+
+    await dispatch({
+      mode: 'command',
+      command: 'refs',
+      options: {
+        subcommand: 'list',
+        session: 's1',
+        limit: '2',
+        storage: '',
+        workspaceRoot: '',
+      },
+    });
+
+    const lines = stdout.trim().split(/\r?\n/).filter(Boolean);
+    assert.equal(lines.length, 2);
+    assert.match(lines[0], /^one\s+interception\/source-a\s+s1\s+/u);
+    assert.ok(lines.some((line) => line.startsWith('first  s1  ') || line.startsWith('second  s1  ')));
+    assert.equal(stderr, '');
+    assert.equal(consoleLogCount, 0);
+  } finally {
+    console.log = originalConsoleLog;
+    process.exitCode = previousExitCode;
+    await fs.rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('createAiosDispatch clears stale exit codes between invocations', async () => {
+  const { createAiosDispatch } = await import('../lib/cli/dispatch.mjs');
+  const previousExitCode = process.exitCode;
+  let stdout = '';
+  let stderr = '';
+
+  try {
+    const dispatch = createAiosDispatch({
+      rootDir: process.cwd(),
+      projectRoot: process.cwd(),
+      stdout: { write: (chunk) => { stdout += String(chunk); return true; } },
+      stderr: { write: (chunk) => { stderr += String(chunk); return true; } },
+    });
+
+    process.exitCode = 0;
+    await dispatch({
+      mode: 'command',
+      command: 'refs',
+      options: {
+        subcommand: 'grep',
+        pattern: '',
+        session: '',
+        limit: '1',
+        storage: '',
+        workspaceRoot: '',
+      },
+    });
+    assert.equal(process.exitCode, 1);
+
+    await dispatch({ mode: 'command', command: 'version', options: {} });
+    assert.equal(process.exitCode, 0);
+    assert.match(stdout, /Harness CLI/u);
+    assert.match(stderr, /Usage: aios refs grep/u);
+  } finally {
+    process.exitCode = previousExitCode;
+  }
+});
+
 test('Commander app declares commands with readable options', async () => {
   const { createAiosProgram } = await import('../lib/cli/commander-app.mjs');
   const program = createAiosProgram({ version: 'test-version', dispatch: async () => {} });
