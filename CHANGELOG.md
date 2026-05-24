@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.0] - 2026-05-24
+
+- refactor(aios): split large runtime modules, enforce generated/cache ignore rules, and preserve multi-client Windows command handling
+- refactor(dispatch): improve CLI exit-code reset and route refs/canvas output through injected streams
+- ci: install root script dependencies for release and performance smoke workflows
+
 ## [1.20.11] - 2026-05-23
 
 - fix(windows): launch OpenCode native npm wrappers directly instead of via cmd.exe shell fallback
