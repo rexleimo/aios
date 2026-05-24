@@ -1,6 +1,8 @@
 <!-- AIOS: .aios/context-db/index.json -->
 # CLAUDE.md
 
+<!-- 中文注释：Claude 薄壳只放稳定路由和红线，具体压缩机制交给 AIOS 拦截运行时执行。 -->
+
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 <!-- WORKFLOW ROUTER - MANDATORY -->
@@ -216,6 +218,34 @@ For substantial tasks, route execution in this order:
    - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
 6. Close only after `superpowers:verification-before-completion` and concrete artifact evidence.
 
+
+<!-- AIOS CODEMAP BEGIN -->
+## MCP Tools: code-review-graph
+
+This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
+
+### Decision checkpoints (mandatory)
+
+| When | Call | Why |
+|------|------|-----|
+| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
+| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
+| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
+| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
+| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
+
+### Search rules
+
+- Finding code: `semantic_search_nodes` before grep
+- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
+- Code review: `detect_changes` → `get_review_context` before reading entire files
+
+### Parameters
+
+- Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
+- Follow `next_tool_suggestions` from each response for the next tool to call
+<!-- AIOS CODEMAP END -->
+
 <!-- AIOS NATIVE BEGIN -->
 AIOS native enhancements are active in this repository.
 
@@ -293,30 +323,3 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - Prefer repo-local `.claude/skills` and `.claude/agents`.
 - Keep work grounded in the AIOS runtime and verification flow.
 <!-- AIOS NATIVE END -->
-
-<!-- AIOS CODEMAP BEGIN -->
-## MCP Tools: code-review-graph
-
-This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
-
-### Decision checkpoints (mandatory)
-
-| When | Call | Why |
-|------|------|-----|
-| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
-| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
-| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
-| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
-| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
-
-### Search rules
-
-- Finding code: `semantic_search_nodes` before grep
-- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
-- Code review: `detect_changes` → `get_review_context` before reading entire files
-
-### Parameters
-
-- Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
-- Follow `next_tool_suggestions` from each response for the next tool to call
-<!-- AIOS CODEMAP END -->

@@ -1,4 +1,6 @@
 # Repository Guidelines
+
+<!-- 中文注释：仓库级薄壳保留工作流路由、验证要求和拦截机制入口，防止长会话压缩后丢失关键规则。 -->
 <!-- AIOS: .aios/context-db/index.json -->
 
 <!-- WORKFLOW ROUTER - MANDATORY -->
@@ -276,4 +278,12 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 
 - Prefer repo-local `.codex/skills` and `.codex/agents`.
 - Keep work grounded in the AIOS runtime and verification flow.
+
+# AIOS For OpenCode
+
+This repository provides compatibility-tier native enhancements for OpenCode through repo-local skills and AIOS runtime conventions.
+
+## Agent Self-Trigger
+
+When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
 <!-- AIOS NATIVE END -->

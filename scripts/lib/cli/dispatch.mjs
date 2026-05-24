@@ -1,3 +1,4 @@
+/* 中文注释：顶层分发器把 interception、refs 和维护命令挂到统一 CLI，保证整条链路可执行。 */
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
@@ -5,9 +6,11 @@ import { spawnSync } from 'node:child_process';
 import { chooseInteractiveCommand } from './interactive.mjs';
 import { getCommandHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './help.mjs';
 import { runInternal } from './dispatch/internal.mjs';
+import { runInterceptionCommand } from './dispatch/interception.mjs';
 import { runCanvasCommand, runRefsCommand } from './dispatch/offload.mjs';
 import { buildTeamRuntimeEnv, getRuntimeVersion, resolveRuntimeWorkspace } from './dispatch/runtime.mjs';
 
+/* 中文注释：帮助输出也走统一分发器，保证新增 interception 子命令后 CLI 和文档入口一致。 */
 function printHelp(parsed, { stdout = process.stdout } = {}) {
   if (!parsed || parsed.command === 'root') {
     stdout.write(getRootHelpText());
@@ -27,12 +30,14 @@ function printHelp(parsed, { stdout = process.stdout } = {}) {
   stdout.write(getCommandHelpText(parsed.command));
 }
 
+/* 中文注释：子命令返回 exitCode 时在这里统一映射到进程退出码，避免每个模块直接改 process。 */
 function applyResultExitCode(result) {
   if (result?.exitCode !== 0) {
     process.exitCode = result.exitCode;
   }
 }
 
+/* 中文注释：TUI 是交互入口；非 TTY 下直接降级为 help，避免自动化环境挂起。 */
 function runInteractiveTui({ rootDir, projectRoot, stderr = process.stderr }) {
   const cliPath = path.join(rootDir, 'scripts/lib/tui-ink/cli.tsx');
   const tsxCliPath = path.join(rootDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
@@ -62,8 +67,10 @@ function runInteractiveTui({ rootDir, projectRoot, stderr = process.stderr }) {
   }
 }
 
+/* 中文注释：createAiosDispatch 是所有 CLI 命令的路由表；新增能力必须在这里接入才能被真实调用。 */
 export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdout, stderr = process.stderr } = {}) {
   const context = { rootDir, projectRoot };
+  /* 中文注释：workspace 参数优先；没传时用当前 projectRoot，确保 proof/refs 写到用户正在操作的工作区。 */
   const workspaceFor = (parsed) => resolveRuntimeWorkspace(parsed.command, parsed.options, context);
 
   return async function dispatchParsed(parsed) {
@@ -154,6 +161,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'team') {
+      /* 中文注释：team dry-run 没有任务标题时只做 preflight，防止误启动多 agent 执行。 */
       if (parsed.options.executionMode === 'dry-run' && !parsed.options.taskTitle) {
         const { runReadinessCheck } = await import('../lifecycle/preflight-contracts.mjs');
         const result = await runReadinessCheck({ rootDir: workspaceFor(parsed), mode: 'team' });
@@ -191,6 +199,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
       const { runOrchestrate } = await import('../lifecycle/orchestrate.mjs');
       const runtimeEnv = buildTeamRuntimeEnv(parsed.options, process.env);
+      /* 中文注释：team 命令最终复用 orchestrate，本层只负责把团队语义翻译成 local dispatch 参数。 */
       applyResultExitCode(await runOrchestrate({
         blueprint: parsed.options.blueprint,
         taskTitle: parsed.options.taskTitle,
@@ -214,6 +223,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'harness') {
+      /* 中文注释：非 run 的 dry-run harness 先做 readiness，避免 resume/status 误触发真实执行。 */
       if (parsed.options.executionMode === 'dry-run' && parsed.options.action !== 'run') {
         const { runReadinessCheck } = await import('../lifecycle/preflight-contracts.mjs');
         const result = await runReadinessCheck({ rootDir: workspaceFor(parsed), mode: 'harness' });
@@ -290,6 +300,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
     if (parsed.command === 'canvas') {
       await runCanvasCommand(parsed, context);
+      return;
+    }
+
+    if (parsed.command === 'interception') {
+      applyResultExitCode(await runInterceptionCommand(parsed, { rootDir, workspaceRoot: workspaceFor(parsed) }));
+      return;
     }
   };
 }

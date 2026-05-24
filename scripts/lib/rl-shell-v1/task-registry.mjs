@@ -2,6 +2,7 @@ import { cp, mkdir, readdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
+import { collectFailingTests } from './temp-runner/command.mjs';
 import { validateTaskManifest } from './schema.mjs';
 
 function createDeterministicOrder(items, seed) {
@@ -60,13 +61,6 @@ async function runVerificationCommand({ cwd, command }) {
     stdout: result.stdout || '',
     stderr: result.stderr || '',
   };
-}
-
-function collectFailingTests(output) {
-  return String(output || '')
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line.includes('not ok') || line.includes('failure') || line.includes('ERR_TEST_FAILURE'));
 }
 
 export function buildTaskManifest({ seedDir, seedId, variantId, split, seed, repoSnapshotId, verificationCommand, constraints, promptTemplate, generatedDir }) {

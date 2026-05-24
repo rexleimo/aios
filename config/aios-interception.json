@@ -1,0 +1,24 @@
+﻿{
+  "schemaVersion": 1,
+  "defaultThresholds": {
+    "minRawBytes": 2048,
+    "maxSummaryLines": 8,
+    "maxKeyLines": 12,
+    "maxErrorLines": 8
+  },
+  "rawRefs": {
+    "root": ".aios/interception/refs",
+    "ttlDays": 30,
+    "redactionDefault": "metadata-only-before-share"
+  },
+  "mcp": {
+    "shrinkToolsList": true,
+    "shrinkToolsCall": true,
+    "storeFullCatalogRef": true
+  },
+  "shell": {
+    "rewriteBroadReads": true,
+    "askBeforeDestructive": true,
+    "unknownCommandPolicy": "passthrough-with-output-shrink"
+  }
+}

@@ -1,3 +1,4 @@
+/* 中文注释：帮助文案显式暴露 interception doctor/proof，让用户能直接验证压缩链路。 */
 export function getMaintenanceCommandHelpText(command) {
   switch (command) {
     case 'entropy-gc':
@@ -71,6 +72,25 @@ Options:
   --client <client>              Client id recorded on generated refs
   --storage <file|split>         Override offload storage backend
   --workspace <path>             Workspace root containing .aios/offload
+  -h, --help
+`;
+    case 'interception':
+      return `Usage:
+  node scripts/aios.mjs interception doctor [--fix] [--dry-run] [--json] [--workspace <path>]
+  node scripts/aios.mjs interception proof [--session <id>] [--json] [--workspace <path>]
+  node scripts/aios.mjs interception mcp-migrate [--dry-run] [--json]
+
+Subcommands:
+  doctor       Verify RTK/Caveman-style interception, MCP proxy routing, refs, and metrics
+  proof        Run deterministic shell + MCP sentinel proof and print savings metrics
+  mcp-migrate  Force MCP configs through scripts/aios-mcp-proxy.mjs
+
+Options:
+  --session <id>                 Proof session id
+  --workspace <path>             Workspace root for proof refs/metrics
+  --fix                          Repair MCP proxy routing before proof
+  --dry-run                      Preview repair actions without writing configs
+  --json                         Output machine-readable proof
   -h, --help
 `;
     case 'perception':

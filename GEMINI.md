@@ -1,5 +1,33 @@
 <!-- AIOS: .aios/context-db/index.json -->
 
+
+<!-- AIOS CODEMAP BEGIN -->
+## MCP Tools: code-review-graph
+
+This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
+
+### Decision checkpoints (mandatory)
+
+| When | Call | Why |
+|------|------|-----|
+| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
+| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
+| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
+| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
+| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
+
+### Search rules
+
+- Finding code: `semantic_search_nodes` before grep
+- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
+- Code review: `detect_changes` → `get_review_context` before reading entire files
+
+### Parameters
+
+- Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
+- Follow `next_tool_suggestions` from each response for the next tool to call
+<!-- AIOS CODEMAP END -->
+
 <!-- AIOS NATIVE BEGIN -->
 AIOS native enhancements are active in this repository.
 
@@ -74,36 +102,11 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 
 # AIOS For Gemini
 
+<!-- 中文注释：Gemini 薄壳保持跨客户端一致路由，真实节流依赖 MCP 代理和 refs 数据面。 -->
+
 This repository provides compatibility-tier native enhancements for Gemini through repo-local skills and AIOS runtime conventions.
 
 ## Agent Self-Trigger
 
 When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
 <!-- AIOS NATIVE END -->
-
-<!-- AIOS CODEMAP BEGIN -->
-## MCP Tools: code-review-graph
-
-This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
-
-### Decision checkpoints (mandatory)
-
-| When | Call | Why |
-|------|------|-----|
-| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
-| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
-| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
-| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
-| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
-
-### Search rules
-
-- Finding code: `semantic_search_nodes` before grep
-- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
-- Code review: `detect_changes` → `get_review_context` before reading entire files
-
-### Parameters
-
-- Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
-- Follow `next_tool_suggestions` from each response for the next tool to call
-<!-- AIOS CODEMAP END -->

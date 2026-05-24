@@ -1,6 +1,15 @@
+<!-- 中文注释：客户端模板同步 MCP 代理和原文召回策略，避免各宿主入口漂移。 -->
+
 AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
+
+## AIOS Interception Runtime
+
+- Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
+- For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
+- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`, producing compact packets, raw refs, and metrics.
+- Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
 
 
 ## AIOS Self-Trigger Routing

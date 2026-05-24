@@ -1,3 +1,4 @@
+/* 中文注释：CLI 回归测试确保 interception/refs 子命令能从真实入口被解析和执行。 */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
@@ -574,6 +575,20 @@ test('parseArgs accepts harness subcommands', () => {
   const stop = parseArgs(['harness', 'stop', '--session', 's1', '--workspace', '/tmp/demo']);
   assert.equal(stop.options.subcommand, 'stop');
   assert.equal(stop.options.workspaceRoot, '/tmp/demo');
+});
+
+test('parseArgs accepts interception proof and repair commands', () => {
+  const proof = parseArgs(['interception', 'proof', '--session', 'proof-1', '--json']);
+  assert.equal(proof.command, 'interception');
+  assert.equal(proof.options.subcommand, 'proof');
+  assert.equal(proof.options.session, 'proof-1');
+  assert.equal(proof.options.json, true);
+
+  const doctor = parseArgs(['interception', 'doctor', '--fix', '--workspace', '/tmp/ws']);
+  assert.equal(doctor.command, 'interception');
+  assert.equal(doctor.options.subcommand, 'doctor');
+  assert.equal(doctor.options.fix, true);
+  assert.equal(doctor.options.workspaceRoot, '/tmp/ws');
 });
 
 test('parseArgs rejects invalid harness max-iterations budgets', () => {

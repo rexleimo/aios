@@ -1,3 +1,4 @@
+/* 中文注释：进程平台层统一跨系统启动细节，为 shell interception 提供稳定输入。 */
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -6,7 +7,64 @@ import { resolveClientCommandNames } from '../../clients/registry.mjs';
 import { getEnvCaseInsensitive, splitWindowsPathEntries, splitWindowsPathExt } from './env.mjs';
 
 const WINDOWS_SHELL_COMMANDS = new Set(resolveClientCommandNames('all'));
+const WINDOWS_LAUNCHER_TARGET_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.exe', '.com']);
+const WINDOWS_NODE_SCRIPT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
+const WINDOWS_NATIVE_EXTENSIONS = new Set(['.exe', '.com']);
 
+/* 中文注释：Windows shim 文件里的路径经常带 %~dp0/$basedir，这里归一成真实绝对路径。 */
+function normalizeWindowsLauncherPath(rawPath, launcherDir) {
+  const normalized = String(rawPath || '')
+    .trim()
+    .replace(/%~dp0/giu, '')
+    .replace(/%dp0%/giu, '')
+    .replace(/\$basedir/giu, '')
+    .replace(/^[/\\]+/u, '')
+    .replace(/\\/gu, path.sep)
+    .replace(/\//gu, path.sep);
+
+  if (!normalized) return '';
+  return path.resolve(launcherDir, normalized);
+}
+
+/* 中文注释：从 Windows 启动器解析真实入口，优先绕过 .cmd/.ps1 shim，减少 shell quoting 和中文路径问题。 */
+export function resolveWindowsLauncherTarget(launcherPath, { execPath = process.execPath } = {}) {
+  const ext = path.extname(launcherPath).toLowerCase();
+  if (!['.cmd', '.bat', '.ps1'].includes(ext)) {
+    return null;
+  }
+
+  let content = '';
+  try {
+    content = fs.readFileSync(launcherPath, 'utf8');
+  } catch {
+    return null;
+  }
+
+  const launcherDir = path.dirname(launcherPath);
+  const quotedPathRegex = /["']([^"'\r\n]+?)["']/gu;
+  const candidates = [];
+
+  for (const match of content.matchAll(quotedPathRegex)) {
+    const candidatePath = normalizeWindowsLauncherPath(match[1], launcherDir);
+    if (!candidatePath) continue;
+
+    const targetExt = path.extname(candidatePath).toLowerCase();
+    if (!WINDOWS_LAUNCHER_TARGET_EXTENSIONS.has(targetExt)) continue;
+    if (!fs.existsSync(candidatePath)) continue;
+
+    candidates.push({ path: candidatePath, ext: targetExt });
+  }
+
+  const nodeScript = candidates.find((candidate) => WINDOWS_NODE_SCRIPT_EXTENSIONS.has(candidate.ext));
+  if (nodeScript) return { kind: 'node', command: execPath, argsPrefix: [nodeScript.path] };
+
+  const nativeExecutable = candidates.find((candidate) => WINDOWS_NATIVE_EXTENSIONS.has(candidate.ext));
+  if (nativeExecutable) return { kind: 'native', command: nativeExecutable.path, argsPrefix: [] };
+
+  return null;
+}
+
+/* 中文注释：按 PATHEXT 查命令扩展名，用于判断裸命令最终会命中 .cmd/.bat 还是原生 exe。 */
 export function resolveWindowsCommandExt(command, env = process.env) {
   const base = path.basename(command).trim();
   if (!base) return '';
@@ -31,6 +89,7 @@ export function resolveWindowsCommandExt(command, env = process.env) {
   return '';
 }
 
+/* 中文注释：解析命令真实路径；显式路径必须存在，裸命令按 PATH/PATHEXT 搜索。 */
 export function resolveWindowsCommandPath(command, env = process.env) {
   const raw = String(command || '').trim();
   if (!raw) return '';
@@ -71,6 +130,7 @@ export function resolveWindowsCommandPath(command, env = process.env) {
   return '';
 }
 
+/* 中文注释：按候选顺序返回第一个存在的运行时入口，避免硬编码单一 Node 安装布局。 */
 export function findFirstExisting(paths) {
   for (const candidate of paths) {
     if (fs.existsSync(candidate)) {
@@ -81,48 +141,15 @@ export function findFirstExisting(paths) {
   return null;
 }
 
+/* 中文注释：兼容旧调用方：只需要 node script 路径时，从 launcher target 里取 argsPrefix[0]。 */
 export function resolveNodeScriptFromWindowsLauncher(launcherPath) {
-  const ext = path.extname(launcherPath).toLowerCase();
-  if (!['.cmd', '.bat', '.ps1'].includes(ext)) {
-    return '';
-  }
-
-  let content = '';
-  try {
-    content = fs.readFileSync(launcherPath, 'utf8');
-  } catch {
-    return '';
-  }
-
-  const launcherDir = path.dirname(launcherPath);
-  const candidates = [];
-  const quotedPathRegex = /["']([^"'\r\n]*?\.(?:c|m)?js)["']/giu;
-  for (const match of content.matchAll(quotedPathRegex)) {
-    const rawPath = String(match[1] || '').trim();
-    if (!rawPath) continue;
-
-    const normalized = rawPath
-      .replace(/%~dp0/giu, '')
-      .replace(/%dp0%/giu, '')
-      .replace(/\$basedir/giu, '')
-      .replace(/^[/\\]+/u, '')
-      .replace(/\\/gu, path.sep)
-      .replace(/\//gu, path.sep);
-
-    if (!normalized) continue;
-    candidates.push(path.resolve(launcherDir, normalized));
-  }
-
-  for (const candidate of candidates) {
-    if (fs.existsSync(candidate)) {
-      return candidate;
-    }
-  }
-
+  const target = resolveWindowsLauncherTarget(launcherPath);
+  if (target?.kind === 'node') return target.argsPrefix[0] || '';
   return '';
 }
 
-export function getWindowsNodeCli(command, { platform = process.platform, execPath = process.execPath, env = process.env } = {}) {
+/* 中文注释：为 npm/npx/codex/claude/gemini/opencode 这类 shim 找到可直达入口，尽量避免 shell。 */
+export function getWindowsDirectCli(command, { platform = process.platform, execPath = process.execPath, env = process.env } = {}) {
   if (platform !== 'win32' || !fs.existsSync(execPath)) {
     return null;
   }
@@ -156,9 +183,9 @@ export function getWindowsNodeCli(command, { platform = process.platform, execPa
   if (WINDOWS_SHELL_COMMANDS.has(commandBase)) {
     const launcherPath = resolveWindowsCommandPath(command, env);
     if (launcherPath) {
-      const cliEntry = resolveNodeScriptFromWindowsLauncher(launcherPath);
+      const cliEntry = resolveWindowsLauncherTarget(launcherPath, { execPath });
       if (cliEntry) {
-        return { command: execPath, argsPrefix: [cliEntry] };
+        return cliEntry;
       }
     }
   }
@@ -166,6 +193,16 @@ export function getWindowsNodeCli(command, { platform = process.platform, execPa
   return null;
 }
 
+/* 中文注释：只返回 Node CLI 入口，给需要明确 node script 的调用方使用。 */
+export function getWindowsNodeCli(command, options = {}) {
+  const direct = getWindowsDirectCli(command, options);
+  if (direct?.kind === 'node') {
+    return { command: direct.command, argsPrefix: direct.argsPrefix };
+  }
+  return null;
+}
+
+/* 中文注释：只有无法直达真实 CLI 且命中 .cmd/.bat 时才走 shell，降低参数转义风险。 */
 export function shouldUseWindowsShellCommand(command, { platform = process.platform, env = process.env } = {}) {
   if (platform !== 'win32') {
     return false;

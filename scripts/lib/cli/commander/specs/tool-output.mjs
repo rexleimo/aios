@@ -1,3 +1,4 @@
+/* 中文注释：CLI 规格声明工具输出策略，让帮助文案和分发逻辑共享同一事实源。 */
 export const TOOL_OUTPUT_COMMAND_SPECS = [
   {
     name: 'model-router',
@@ -55,6 +56,17 @@ export const TOOL_OUTPUT_COMMAND_SPECS = [
       ['--input-path <path>', 'JSONL tool-event log'],
       ['--client <client>', 'Client id'],
       ['--storage <backend>', 'Storage backend'],
+      ['--workspace <path>', 'Workspace root'],
+    ],
+  },
+  {
+    name: 'interception',
+    description: 'RTK/Caveman-style interception proof, MCP proxy repair, and metrics',
+    options: [
+      ['--session <id>', 'Proof session id'],
+      ['--json', 'Output JSON'],
+      ['--fix', 'Repair MCP proxy routing before proof'],
+      ['--dry-run', 'Preview repair actions without writing configs'],
       ['--workspace <path>', 'Workspace root'],
     ],
   },

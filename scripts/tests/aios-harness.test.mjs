@@ -179,6 +179,16 @@ test('architecture governance default rules cover remaining large workflow facad
   assert.equal(ruleIds.includes('browser-component-facade'), true);
   assert.equal(ruleIds.includes('lifecycle-harness-facade'), true);
   assert.equal(ruleIds.includes('solo-runtime-facade'), true);
+  assert.equal(ruleIds.includes('orchestrator-runtimes-facade'), true);
+  assert.equal(ruleIds.includes('groupchat-runtime-facade'), true);
+  assert.equal(ruleIds.includes('native-repairs-facade'), true);
+  assert.equal(ruleIds.includes('rl-shell-schema-facade'), true);
+  assert.equal(ruleIds.includes('rl-shell-temp-runner-facade'), true);
+  assert.equal(ruleIds.includes('rl-core-trainer-facade'), true);
+  assert.equal(ruleIds.includes('rl-core-campaign-controller-facade'), true);
+  assert.equal(ruleIds.includes('rl-shell-run-orchestrator-facade'), true);
+  assert.equal(ruleIds.includes('rl-orchestrator-decision-runner-facade'), true);
+  assert.equal(ruleIds.includes('rl-orchestrator-policy-release-gate-facade'), true);
 });
 
 test('runQualityGate surfaces architecture governance as a first-class gate', async () => {

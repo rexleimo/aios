@@ -1,8 +1,9 @@
+/* 中文注释：进程平台层统一跨系统启动细节，为 shell interception 提供稳定输入。 */
 import { spawn, spawnSync } from 'node:child_process';
 
-import { getWindowsNodeCli, shouldUseWindowsShellCommand } from './windows-command.mjs';
+import { getWindowsDirectCli, shouldUseWindowsShellCommand } from './windows-command.mjs';
 
-// 纯函数：把平台参数和 child_process 选项拆开，避免调用层重复处理 platform/execPath。
+/* 中文注释：纯函数把平台参数和 child_process 选项拆开，调用层无需重复处理 platform/execPath。 */
 export function splitExecutionOptions(options = {}) {
   const {
     platform = process.platform,
@@ -13,13 +14,14 @@ export function splitExecutionOptions(options = {}) {
   return { platform, execPath, spawnOptions };
 }
 
+/* 中文注释：统一生成 spawn spec；Windows 下优先直达真实 CLI，只有必要时才走 shell。 */
 export function getCommandSpawnSpec(command, args = [], options = {}) {
   const { platform, execPath, spawnOptions } = splitExecutionOptions(options);
-  const windowsNodeCli = getWindowsNodeCli(command, { platform, execPath, env: spawnOptions.env });
-  if (windowsNodeCli) {
+  const windowsDirectCli = getWindowsDirectCli(command, { platform, execPath, env: spawnOptions.env });
+  if (windowsDirectCli) {
     return {
-      command: windowsNodeCli.command,
-      args: [...windowsNodeCli.argsPrefix, ...args],
+      command: windowsDirectCli.command,
+      args: [...windowsDirectCli.argsPrefix, ...args],
       shell: false,
     };
   }
@@ -31,9 +33,10 @@ export function getCommandSpawnSpec(command, args = [], options = {}) {
   };
 }
 
+/* 中文注释：commandExists 复用 Windows direct-cli 判断，避免 npm/codex 这类 shim 被误判不存在。 */
 export function commandExists(name, options = {}) {
   const { platform, execPath, spawnOptions } = splitExecutionOptions(options);
-  if (getWindowsNodeCli(name, { platform, execPath, env: spawnOptions.env })) {
+  if (getWindowsDirectCli(name, { platform, execPath, env: spawnOptions.env })) {
     return true;
   }
 
@@ -45,6 +48,7 @@ export function commandExists(name, options = {}) {
   return result.status === 0;
 }
 
+/* 中文注释：同步捕获命令用于轻量探测；输出返回调用方，不直接写终端。 */
 export function captureCommand(command, args = [], options = {}) {
   const { spawnOptions } = splitExecutionOptions(options);
   const spec = getCommandSpawnSpec(command, args, options);
@@ -63,6 +67,7 @@ export function captureCommand(command, args = [], options = {}) {
   };
 }
 
+/* 中文注释：异步 spawn 捕获 stdout/stderr，给 harness/interception 提供可压缩的完整输出。 */
 export function spawnCommand(command, args = [], options = {}) {
   const { timeoutMs, ...rest } = options || {};
   const { spawnOptions } = splitExecutionOptions(rest);
@@ -82,6 +87,7 @@ export function spawnCommand(command, args = [], options = {}) {
     let settled = false;
     let timer = null;
 
+    /* 中文注释：这里累积字符串是有意的，后续会进入 compact packet/raw ref，而不是直接进入模型上下文。 */
     if (child.stdout) {
       child.stdout.setEncoding('utf8');
       child.stdout.on('data', (chunk) => {
@@ -97,6 +103,7 @@ export function spawnCommand(command, args = [], options = {}) {
     }
 
     const finalize = (payload) => {
+      /* 中文注释：error 和 close 可能竞态触发，settled 保证只返回一次结果。 */
       if (settled) return;
       settled = true;
       if (timer) {
@@ -112,7 +119,7 @@ export function spawnCommand(command, args = [], options = {}) {
         try {
           child.kill();
         } catch {
-          // ignore kill errors
+          /* 中文注释：忽略 kill 失败，close/error 会统一收敛结果。 */
         }
       }, Math.floor(timeoutMs));
     }
@@ -139,6 +146,7 @@ export function spawnCommand(command, args = [], options = {}) {
   });
 }
 
+/* 中文注释：带输入的 spawn 用于需要 stdin 的客户端；输出捕获策略和 spawnCommand 保持一致。 */
 export function spawnCommandWithInput(command, args = [], options = {}) {
   const { timeoutMs, input = '', ...rest } = options || {};
   const { spawnOptions } = splitExecutionOptions(rest);
@@ -173,6 +181,7 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
     }
 
     const finalize = (payload) => {
+      /* 中文注释：stdin EPIPE、timeout、close 都可能到达，统一收敛成一次 resolve。 */
       if (settled) return;
       settled = true;
       if (timer) {
@@ -184,17 +193,17 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
 
     if (child.stdin) {
       child.stdin.on('error', () => {
-        // Ignore stdin pipe errors (e.g., EPIPE when the child exits early).
+        /* 中文注释：忽略 stdin EPIPE，子进程提前退出时由 close/error 收敛。 */
       });
       try {
         child.stdin.setDefaultEncoding('utf8');
       } catch {
-        // ignore encoding errors
+        /* 中文注释：编码设置失败不阻断执行，输出仍由事件流处理。 */
       }
       try {
         child.stdin.end(String(input || ''));
       } catch {
-        // ignore stdin write errors
+        /* 中文注释：stdin 写入失败交给 close/error 统一返回。 */
       }
     }
 
@@ -204,7 +213,7 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
         try {
           child.kill();
         } catch {
-          // ignore kill errors
+          /* 中文注释：忽略 kill 失败，close/error 会统一收敛结果。 */
         }
       }, Math.floor(timeoutMs));
     }
@@ -231,6 +240,7 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
   });
 }
 
+/* 中文注释：runCommand 用于确实需要继承 stdio 的命令；它不参与 interception 捕获链路。 */
 export function runCommand(command, args = [], options = {}) {
   const { spawnOptions } = splitExecutionOptions(options);
   const spec = getCommandSpawnSpec(command, args, options);

@@ -114,3 +114,11 @@ memory/memo/
 .codex/
 .gemini/
 .agents/
+
+# RL/实验运行产物（由测试和训练生成，不提交）
+experiments/rl-shell-v1/campaigns/
+experiments/rl-shell-v1/runs/
+experiments/rl-shell-v1/shadow-evals/
+experiments/rl-shell-v1/control-state/
+experiments/rl-shell-v1/tasks/generated/
+experiments/rl-shell-v1/configs/*.invalid-tasks.json

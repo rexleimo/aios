@@ -1,3 +1,4 @@
+/* 中文注释：交互循环把用户输入和自动路由连接起来，确保压缩策略不只停留在配置层。 */
 import { spawnSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 import path from 'node:path';
@@ -23,7 +24,7 @@ function usesWindowsShellFallback(command, env = process.env) {
 
 function warnOpenCodeShellPromptSuppressed() {
   console.warn('[warn] Windows shell fallback detected for opencode; skipping automatic ContextDB prompt injection to avoid cmd.exe interpreting AIOS context lines as commands.');
-  console.warn('[hint] Update/reinstall OpenCode so its launcher resolves to a direct Node entrypoint, then rerun the command.');
+  console.warn('[hint] Update/reinstall OpenCode so its launcher resolves to a direct executable entrypoint, then rerun the command.');
 }
 
 function routeAutoPrompt(opts) {

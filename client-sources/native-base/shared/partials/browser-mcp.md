@@ -1,4 +1,8 @@
+<!-- 中文注释：客户端模板同步 MCP 代理和原文召回策略，避免各宿主入口漂移。 -->
+
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
+
+Default MCP routing is proxied through `scripts/aios-mcp-proxy.mjs` so large `tools/call` results are compacted before they reach the agent context. If browser output looks raw or huge, run `node scripts/aios.mjs interception doctor --fix` before continuing.
 
 For browser tasks, use this operating pattern unless the user explicitly asks otherwise:
 - Connect to a visible CDP browser first: `chrome.launch_cdp` then `browser.connect_cdp`.

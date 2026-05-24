@@ -5,277 +5,558 @@
       "name": "aios-workflow-router",
       "description": "Route tasks to appropriate workflows. TRIGGERS: 分析,设计,实现,调试,并发,并行,agent team,长任务,harness,plan,brainstorm,debug,multi-step",
       "source": "skill-sources/aios-workflow-router",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "workflow", "routing", "essential"]
+      "tags": [
+        "general",
+        "workflow",
+        "routing",
+        "essential"
+      ]
     },
     {
       "name": "find-skills",
       "description": "Discover installable skills.",
       "source": "skill-sources/find-skills",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "discovery"]
+      "tags": [
+        "general",
+        "discovery"
+      ]
     },
     {
       "name": "debug-hub",
       "description": "Evidence-first debugging: inject zero-dependency log calls, collect via debug-hub HTTP API, analyze through MCP tools.",
       "source": "skill-sources/debug-hub",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["general", "debug", "verification"]
+      "tags": [
+        "general",
+        "debug",
+        "verification"
+      ]
     },
     {
       "name": "search-first",
       "description": "Research-before-building workflow.",
       "source": "skill-sources/search-first",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "research"]
+      "tags": [
+        "general",
+        "research"
+      ]
     },
     {
       "name": "awesome-design-md",
       "description": "Apply DESIGN.md templates from VoltAgent awesome-design-md via getdesign CLI.",
       "source": "skill-sources/awesome-design-md",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "design", "ui", "essential"]
+      "tags": [
+        "general",
+        "design",
+        "ui",
+        "essential"
+      ]
     },
     {
       "name": "frontend-design",
       "description": "Build distinctive production-grade frontend UI, including no-design-draft workflows with DESIGN.md integration.",
       "source": "skill-sources/frontend-design",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "frontend", "design", "ui", "essential"]
+      "tags": [
+        "general",
+        "frontend",
+        "design",
+        "ui",
+        "essential"
+      ]
     },
     {
       "name": "security-scan",
       "description": "Lightweight security hygiene for agent configs.",
       "source": "skill-sources/security-scan",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "security"]
+      "tags": [
+        "general",
+        "security"
+      ]
     },
     {
       "name": "verification-loop",
       "description": "Evidence-before-assertions workflow.",
       "source": "skill-sources/verification-loop",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "verification"]
+      "tags": [
+        "general",
+        "verification"
+      ]
     },
     {
       "name": "versioning-by-impact",
       "description": "Decide semantic versioning impact before release.",
       "source": "skill-sources/versioning-by-impact",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "release"]
+      "tags": [
+        "general",
+        "release"
+      ]
     },
     {
       "name": "seo-geo-page-optimization",
       "description": "Optimize a page for SEO and GEO.",
       "source": "skill-sources/seo-geo-page-optimization",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["content", "seo"]
+      "tags": [
+        "content",
+        "seo"
+      ]
     },
     {
       "name": "skill-constraints",
       "description": "Operational constraints and best practices for skill execution.",
       "source": "skill-sources/skill-constraints",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["general", "safety"]
+      "tags": [
+        "general",
+        "safety"
+      ]
     },
     {
       "name": "aios-project-system",
       "description": "Canonical architecture and operating constraints for aios.",
       "source": "skill-sources/aios-project-system",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "repo"]
+      "tags": [
+        "aios",
+        "repo"
+      ]
     },
     {
       "name": "aios-long-running-harness",
       "description": "Harness controls for long-running AIOS jobs.",
       "source": "skill-sources/aios-long-running-harness",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "harness"]
+      "tags": [
+        "aios",
+        "harness"
+      ]
     },
     {
       "name": "harness-init-runner",
       "description": "Initialize a lightweight Node.js harness runner (harness/ + .harness/) to drive codex/claude/gemini/opencode CLIs with logs + checkpoints.",
       "source": "skill-sources/harness-init-runner",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["harness", "bootstrap", "runner", "cli", "node", "agents"]
+      "tags": [
+        "harness",
+        "bootstrap",
+        "runner",
+        "cli",
+        "node",
+        "agents"
+      ]
     },
     {
       "name": "contextdb-autopilot",
       "description": "Automatic ContextDB persistence workflow.",
       "source": "skill-sources/contextdb-autopilot",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "contextdb"]
+      "tags": [
+        "aios",
+        "contextdb"
+      ]
     },
     {
       "name": "aios-compress",
       "description": "Native AIOS output compression rules for compact, precise agent responses without external compressor dependencies.",
       "source": "skill-sources/aios-compress",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "token", "compression", "output"]
+      "tags": [
+        "aios",
+        "token",
+        "compression",
+        "output"
+      ]
     },
     {
       "name": "aios-browser-compress",
       "description": "Native AIOS input compression for browser, CLI, and ContextDB payloads without installing RTK or competitor shell hooks.",
       "source": "skill-sources/aios-browser-compress",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "token", "compression", "browser", "contextdb"]
+      "tags": [
+        "aios",
+        "token",
+        "compression",
+        "browser",
+        "contextdb"
+      ]
+    },
+    {
+      "name": "aios-interception-runtime",
+      "description": "RTK/Caveman-style AIOS interception runtime with compact packets, raw refs, MCP proxy routing, and metrics proof.",
+      "source": "skill-sources/aios-interception-runtime",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "token",
+        "interception",
+        "rtk",
+        "caveman",
+        "metrics"
+      ]
     },
     {
       "name": "aios-offload-recall",
       "description": "Recall offloaded AIOS tool and browser outputs through Mermaid canvas and targeted refs reads.",
       "source": "skill-sources/aios-offload-recall",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "token", "offload", "recall"]
+      "tags": [
+        "aios",
+        "token",
+        "offload",
+        "recall"
+      ]
     },
     {
       "name": "cap-commit-push",
       "description": "Fast commit-and-push shortcut for this repository.",
       "source": "skill-sources/cap-commit-push",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "git", "essential"]
+      "tags": [
+        "aios",
+        "git",
+        "essential"
+      ]
     },
     {
       "name": "aios-jimeng-image-ops",
       "description": "Jimeng image generation workflow for aios.",
       "source": "skill-sources/aios-jimeng-image-ops",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["jimeng", "ops"]
+      "tags": [
+        "jimeng",
+        "ops"
+      ]
     },
     {
       "name": "seed2-manga-drama",
       "description": "Seed2 style manga-drama generation workflow.",
       "source": "skill-sources/seed2-manga-drama",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["content", "video"]
+      "tags": [
+        "content",
+        "video"
+      ]
     },
     {
       "name": "xhs-ops-methods",
       "description": "Reusable Xiaohongshu operations workflow.",
       "source": "skill-sources/xhs-ops-methods",
-      "clients": ["codex", "claude"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": false,
         "project": false
       },
-      "tags": ["xhs", "ops"]
+      "tags": [
+        "xhs",
+        "ops"
+      ]
     },
     {
       "name": "model-router",
       "description": "Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate. TRIGGERS: 模型调度, model dispatch, 选模型, 路由, routing, dispatch to model.",
       "source": "skill-sources/model-router",
-      "clients": ["codex", "claude", "gemini", "opencode"],
-      "scopes": ["global", "project"],
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
       "defaultInstall": {
         "global": true,
         "project": false
       },
-      "tags": ["aios", "model-router", "orchestration", "dispatch", "essential"]
+      "tags": [
+        "aios",
+        "model-router",
+        "orchestration",
+        "dispatch",
+        "essential"
+      ]
     }
   ]
 }

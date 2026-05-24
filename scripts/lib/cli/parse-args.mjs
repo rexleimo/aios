@@ -1,4 +1,6 @@
+/* 中文注释：参数解析层识别 interception/refs 子命令，并把它们交给专用分发器。 */
 import { parseHarnessArgs, parseHudArgs, parseTeamArgs } from './parse-args/execution.mjs';
+import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import {
   parseCanvasArgs,
   parseInitArgs,
@@ -21,6 +23,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'team',
   'hud',
   'harness',
+  'interception',
   'learn-eval',
   'entropy-gc',
   'snapshot-rollback',
@@ -29,6 +32,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'canvas',
 ]);
 
+/* 中文注释：兼容别名在解析层归一化，分发层只处理标准命令名。 */
 function normalizeTopLevelCommand(first) {
   if (first === 'verify') return 'doctor';
   if (first === 'quality' || first === 'quality-gate') return 'quality-gate';
@@ -37,6 +41,7 @@ function normalizeTopLevelCommand(first) {
   return first;
 }
 
+/* 中文注释：parseArgs 只做语法解析和轻校验，不做 IO；这样测试可以快速覆盖所有 CLI 入口。 */
 export function parseArgs(argv = []) {
   argv = expandEqualsOptions(argv);
   if (argv.length === 0) {
@@ -76,6 +81,7 @@ export function parseArgs(argv = []) {
   if (first === 'team') return parseTeamArgs(argv);
   if (first === 'hud') return parseHudArgs(argv);
   if (first === 'harness') return parseHarnessArgs(argv);
+  if (first === 'interception') return parseInterceptionArgs(argv);
   if (first === 'init') return parseInitArgs(argv);
 
   const command = normalizeTopLevelCommand(first);

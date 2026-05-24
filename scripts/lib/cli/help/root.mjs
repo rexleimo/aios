@@ -1,3 +1,4 @@
+/* 中文注释：帮助文案显式暴露 interception doctor/proof，让用户能直接验证压缩链路。 */
 export function getRootHelpText() {
   return `AIOS unified entry (Node-first CLI + TUI)
 
@@ -16,6 +17,7 @@ Commands:
   memo          Workspace memo + pinned memory helpers
   refs          Search/read offloaded tool-output refs
   canvas        Show Mermaid task canvas for offloaded tool calls
+  interception  RTK/Caveman-style interception proof, MCP proxy repair, and metrics
   perception    Content outcome recording, insight generation, and perception summary
   quality-gate  Run repo quality checks with harness profiles
   orchestrate   Preview reusable subagent workflow blueprints
@@ -41,6 +43,8 @@ Examples:
   node scripts/aios.mjs memo add "note #tag"
   node scripts/aios.mjs refs grep "error" --session codex-cli-...
   node scripts/aios.mjs canvas show --session codex-cli-...
+  node scripts/aios.mjs interception proof --json
+  node scripts/aios.mjs interception doctor --fix
   node scripts/aios.mjs quality-gate pre-pr --profile strict
   node scripts/aios.mjs orchestrate feature --task "Ship orchestrator blueprints"
   node scripts/aios.mjs team 3:codex "Ship orchestrator blueprints"

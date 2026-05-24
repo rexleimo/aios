@@ -1,0 +1,46 @@
+﻿{
+  "schemaVersion": 1,
+  "levels": {
+    "L3": "Full transparent interception: pre-tool rewrite or controlled runtime plus MCP proxy and compact packets.",
+    "L2": "Controlled runtime/proxy available, but native host raw shell may bypass interception.",
+    "L1": "Advisory skill/thin-shell guidance only.",
+    "L0": "No reliable AIOS interception surface."
+  },
+  "clients": {
+    "claude": {
+      "targetLevel": "L2",
+      "capabilities": ["sessionStartInjection", "mcpProxy", "compactPacket"],
+      "limits": ["pre-tool rewrite hook adapter is not installed in this release."]
+    },
+    "codex": {
+      "targetLevel": "L2",
+      "capabilities": ["controlledShellRunner", "mcpProxy", "compactPacket"],
+      "limits": ["Do not claim raw host shell L3 unless Codex exposes a pre-tool mutation API."]
+    },
+    "gemini": {
+      "targetLevel": "L2",
+      "capabilities": ["mcpProxy", "compactPacket"],
+      "limits": ["Shell interception requires verified host hook or AIOS-controlled runner."]
+    },
+    "opencode": {
+      "targetLevel": "L2",
+      "capabilities": ["mcpProxy", "compactPacket"],
+      "limits": ["L3 depends on plugin or tool-call mutation support."]
+    },
+    "cursor": {
+      "targetLevel": "L1",
+      "capabilities": ["advisorySkills"],
+      "limits": ["Needs a verified extension/hook surface before claiming L2/L3."]
+    },
+    "aios-harness": {
+      "targetLevel": "L3",
+      "capabilities": ["controlledShellRunner", "mcpProxy", "compactPacket", "metrics"],
+      "limits": []
+    },
+    "generic-mcp": {
+      "targetLevel": "L2",
+      "capabilities": ["mcpProxy", "compactPacket"],
+      "limits": ["Proxy-only; shell is out of scope."]
+    }
+  }
+}

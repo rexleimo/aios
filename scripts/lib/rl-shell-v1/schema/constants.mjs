@@ -1,0 +1,93 @@
+export const ACTION_TYPES = new Set(['read', 'run', 'patch', 'stop']);
+export const EPISODE_ENVIRONMENTS = new Set(['shell']);
+export const OBSERVATION_STATUS = new Set(['ok', 'rejected', 'error', 'timeout']);
+export const TEACHER_CALL_STATUS = new Set(['ok', 'fallback_ok', 'invalid_response', 'failed_all_backends']);
+export const SPLITS = new Set(['train', 'held_out']);
+export const EPISODE_STATUS = new Set(['success', 'failed', 'runtime_error', 'timeout']);
+export const DISTILLATION_STATUS = new Set(['applied', 'skipped']);
+export const TASK_SOURCES = new Set(['synthetic', 'real_shadow']);
+export const COMPARISON_STATUS = new Set(['completed', 'comparison_failed']);
+export const RELATIVE_OUTCOMES = new Set(['better', 'same', 'worse']);
+export const ADMISSION_STATUS = new Set(['admitted', 'rejected']);
+export const REPLAY_ROUTES = new Set(['positive', 'neutral', 'negative', 'diagnostic_only']);
+export const STOP_CONDITIONS = new Set([
+  'student_stop',
+  'verification_passed',
+  'max_steps_reached',
+  'episode_timeout',
+  'unsafe_runner_state',
+  'repeated_no_progress',
+]);
+
+export const EPISODE_ALLOWED_KEYS = Object.freeze([
+  'schema_version',
+  'environment',
+  'episode_id',
+  'run_id',
+  'task_id',
+  'task_source',
+  'split',
+  'repo_snapshot_id',
+  'student_model_id',
+  'teacher_backend_requested',
+  'teacher_backend_used',
+  'attempt_id',
+  'update_epoch_id',
+  'batch_id',
+  'pre_update_ref_checkpoint_id',
+  'seed',
+  'start_ts',
+  'end_ts',
+  'status',
+  'task_prompt',
+  'constraints',
+  'baseline_failing_tests',
+  'baseline_reproduced',
+  'student_steps',
+  'commands_executed',
+  'files_read',
+  'files_touched',
+  'patch_apply_results',
+  'verification_executed',
+  'verification_passed',
+  'stdout_summary',
+  'stderr_summary',
+  'final_diff',
+  'tests_before',
+  'tests_after',
+  'runtime_failures',
+  'timeout_flag',
+  'stop_reason',
+  'stop_condition',
+  'no_progress_window',
+  'teacher_call_status',
+  'teacher_latency_ms',
+  'teacher_confidence',
+  'teacher_critique',
+  'teacher_reference_solution',
+  'teacher_shaping_score',
+  'distillation_status',
+  'distillation_skip_reason',
+  'terminal_reward',
+  'teacher_term',
+  'fused_reward',
+  'advantage',
+  'return',
+  'comparison_status',
+  'relative_outcome',
+  'rollback_batch',
+  'admission_status',
+  'admission_reason',
+  'replay_eligible',
+  'replay_priority',
+  'replay_route',
+  'safety_violation',
+  'safety_violation_reason',
+  'policy_loss',
+  'distill_loss',
+  'kl_loss',
+  'stdout_artifact_path',
+  'stderr_artifact_path',
+  'final_diff_artifact_path',
+  'observation_trace_artifact_path',
+]);

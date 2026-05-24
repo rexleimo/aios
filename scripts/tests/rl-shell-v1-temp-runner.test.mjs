@@ -149,6 +149,18 @@ test('temp runner replays baseline failing tests before student actions and clea
   await assert.rejects(() => access(workspacePath));
 });
 
+test('temp runner collects default Node test failures from the standard reporter output', async () => {
+  const mod = await import('../lib/rl-shell-v1/temp-runner.mjs');
+  const failures = mod.collectFailingTests([
+    '✖ addition returns the sum (1.0466ms)',
+    'AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:',
+    '',
+  ].join('\n'));
+
+  assert.equal(failures.length >= 1, true);
+  assert.match(failures.join('\n'), /addition returns the sum|ERR_ASSERTION/u);
+});
+
 test('temp runner flags repeated identical failed actions as repeated_no_progress', async () => {
   const mod = await import('../lib/rl-shell-v1/temp-runner.mjs');
   const { workspace } = await createFixtureWorkspace(mod);
