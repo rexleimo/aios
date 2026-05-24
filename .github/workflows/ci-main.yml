@@ -31,7 +31,10 @@ jobs:
       - name: Install repo script test system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y ripgrep
+          sudo apt-get install -y ripgrep zip
+
+      - name: Install repo script deps
+        run: npm ci
 
       - name: Install mcp-server deps
         working-directory: mcp-server
@@ -107,6 +110,9 @@ jobs:
 
       - name: Install mcp-server deps
         working-directory: mcp-server
+        run: npm ci
+
+      - name: Install repo script deps
         run: npm ci
 
       - name: Run orchestrate/learn-eval perf smoke
