@@ -17,7 +17,7 @@ function countSourceLines(source) {
 describe('MCP Server Config - Platform Detection (static analysis)', () => {
   const browserFacadeSrc = readRepoSource('scripts', 'lib', 'components', 'browser.mjs');
   const browserRuntimePathsSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'runtime-paths.mjs');
-  const browserMcpConfigSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'mcp-config.mjs');
+  const browserMcpBuilderSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'mcp-server-builders.mjs');
   const browserCdpServiceSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'cdp-service.mjs');
   const browserDoctorSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'doctor.mjs');
 
@@ -35,15 +35,21 @@ describe('MCP Server Config - Platform Detection (static analysis)', () => {
   });
 
   it('buildPreferredMcpServer uses resolveShellCommand for platform-aware shell', () => {
-    assert.ok(browserMcpConfigSrc.includes('const shellCommand = resolveShellCommand()'),
-      'buildPreferredMcpServer should call resolveShellCommand');
+    assert.ok(browserMcpBuilderSrc.includes('const platform = runtime.platform || process.platform'),
+      'buildPreferredMcpServer should accept an injectable platform for cross-platform config tests');
+    assert.ok(browserMcpBuilderSrc.includes('const shellCommand = resolveShellCommand(platform, runtime)'),
+      'buildPreferredMcpServer should call resolveShellCommand with platform/runtime');
     assert.ok(browserRuntimePathsSrc.includes('resolveShellCommand(platform'),
       'resolveShellCommand should accept platform param');
   });
 
-  it('resolveShellCommand returns pwsh on win32, bash otherwise', () => {
-    assert.ok(browserRuntimePathsSrc.includes("? 'pwsh' : 'bash'"),
-      'resolveShellCommand should have pwsh/bash ternary');
+  it('resolveShellCommand prefers pwsh and falls back to Windows PowerShell', () => {
+    assert.ok(browserRuntimePathsSrc.includes("return 'bash'"),
+      'resolveShellCommand should keep bash for non-Windows platforms');
+    assert.ok(browserRuntimePathsSrc.includes("exists('pwsh')"),
+      'resolveShellCommand should prefer pwsh on Windows');
+    assert.ok(browserRuntimePathsSrc.includes("exists('powershell')"),
+      'resolveShellCommand should fall back to Windows PowerShell');
   });
 
   it('resolvePythonCommand returns python on win32, python3 otherwise', () => {
@@ -58,11 +64,13 @@ describe('MCP Server Config - Platform Detection (static analysis)', () => {
       'resolveVenvPythonPath should reference POSIX bin dir');
   });
 
-  it('pwsh args include -NoProfile -ExecutionPolicy Bypass -File', () => {
-    assert.ok(browserMcpConfigSrc.includes('-NoProfile'),
-      'pwsh args should include -NoProfile');
-    assert.ok(browserMcpConfigSrc.includes('ExecutionPolicy'),
-      'pwsh args should include -ExecutionPolicy Bypass');
+  it('PowerShell args include -NoProfile -ExecutionPolicy Bypass -File', () => {
+    assert.ok(browserMcpBuilderSrc.includes('isPowerShell'),
+      'builder should classify both pwsh and powershell as PowerShell');
+    assert.ok(browserMcpBuilderSrc.includes('-NoProfile'),
+      'PowerShell args should include -NoProfile');
+    assert.ok(browserMcpBuilderSrc.includes('ExecutionPolicy'),
+      'PowerShell args should include -ExecutionPolicy Bypass');
   });
 
   it('resolveCdpServiceLayout has USERPROFILE fallback', () => {

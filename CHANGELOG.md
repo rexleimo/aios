@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.1] - 2026-05-25
+
+- fix(mcp): handle Windows shell fallback and JSON-RPC notifications
+
 ## [1.30.0] - 2026-05-24
 
 - refactor(aios): split large runtime modules, enforce generated/cache ignore rules, and preserve multi-client Windows command handling

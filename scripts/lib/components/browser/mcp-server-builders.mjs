@@ -13,9 +13,10 @@ import {
 } from './runtime-paths.mjs';
 
 /* 中文注释：主浏览器 MCP 必须包上 aios-mcp-proxy，大 HTML/截图文本才会进入 interception 数据面。 */
-export function buildPreferredMcpServer(rootDir, existingAlias = {}) {
-  const launcherScript = resolveLauncherScript(rootDir);
-  const shellCommand = resolveShellCommand();
+export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {}) {
+  const platform = runtime.platform || process.platform;
+  const launcherScript = resolveLauncherScript(rootDir, platform);
+  const shellCommand = resolveShellCommand(platform, runtime);
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
   const existingEnv = existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {};
   const browserUseRepo = findBrowserUseRepo(rootDir, existingEnv);
@@ -29,7 +30,8 @@ export function buildPreferredMcpServer(rootDir, existingAlias = {}) {
     delete nextEnv.AIOS_BROWSER_USE_REPO;
   }
 
-  const args = shellCommand === 'pwsh'
+  const isPowerShell = ['pwsh', 'powershell', 'powershell.exe'].includes(shellCommand.toLowerCase());
+  const args = isPowerShell
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcherScript]
     : [launcherScript];
 

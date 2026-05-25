@@ -8,6 +8,11 @@ export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 
   if (typeof forward !== 'function') throw new TypeError('json-rpc proxy forward function is required');
 
   return async function handleJsonRpcMessage(message) {
+    if (!Object.prototype.hasOwnProperty.call(message ?? {}, 'id')) {
+      Promise.resolve(forward(message, { expectResponse: false })).catch(() => {});
+      return undefined;
+    }
+
     const response = await forward(message);
     if (!response || typeof response !== 'object' || !('result' in response)) return response;
 

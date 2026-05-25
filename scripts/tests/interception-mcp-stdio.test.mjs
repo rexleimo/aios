@@ -38,3 +38,28 @@ test('stdio MCP proxy line handler returns parse error for invalid JSON', async 
   const response = await handleJsonRpcProxyLine('{bad', async () => null);
   assert.equal(response.error.code, -32700);
 });
+
+test('stdio MCP proxy forwards notifications without waiting for a response', async () => {
+  const forwarded = [];
+  const handler = createJsonRpcProxyHandler({
+    workspaceRoot: process.cwd(),
+    sessionId: 'stdio-mcp-test',
+    forward: async (message, options) => {
+      forwarded.push({ message, options });
+      return new Promise(() => {});
+    },
+  });
+
+  const response = await Promise.race([
+    handleJsonRpcProxyLine(JSON.stringify({
+      jsonrpc: '2.0',
+      method: 'notifications/initialized',
+      params: {},
+    }), handler),
+    new Promise((resolve) => setTimeout(() => resolve('timeout'), 25)),
+  ]);
+
+  assert.equal(response, undefined);
+  assert.equal(forwarded.length, 1);
+  assert.equal(forwarded[0].options.expectResponse, false);
+});

@@ -27,7 +27,12 @@ export async function runJsonRpcStdioProxy({ command, args = [], cwd = process.c
   });
 
   /* 中文注释：JSON-RPC 通过 id 匹配请求和响应；pending map 保证并发请求返回时不会串包。 */
-  const forward = message => new Promise(resolve => {
+  const forward = (message, { expectResponse = true } = {}) => new Promise(resolve => {
+    if (!expectResponse) {
+      child.stdin.write(`${JSON.stringify(message)}\n`);
+      resolve(undefined);
+      return;
+    }
     pending.set(message.id, resolve);
     child.stdin.write(`${JSON.stringify(message)}\n`);
   });

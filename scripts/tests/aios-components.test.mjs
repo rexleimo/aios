@@ -26,6 +26,8 @@ import {
   commandExists,
   getCommandSpawnSpec,
 } from '../lib/platform/process.mjs';
+import { buildPreferredMcpServer } from '../lib/components/browser/mcp-server-builders.mjs';
+import { resolveShellCommand } from '../lib/components/browser/runtime-paths.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -75,7 +77,7 @@ function expectedBrowserMcpArgs(rootDir) {
   const upstreamArgs = process.platform === 'win32'
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcher]
     : [launcher];
-  const upstreamCommand = process.platform === 'win32' ? 'pwsh' : 'bash';
+  const upstreamCommand = resolveShellCommand(process.platform);
   return [
     path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'),
     '--workspace',
@@ -87,6 +89,35 @@ function expectedBrowserMcpArgs(rootDir) {
     ...upstreamArgs,
   ];
 }
+
+test('browser shell command falls back to Windows PowerShell when pwsh is unavailable', () => {
+  const command = resolveShellCommand('win32', {
+    commandExists: (candidate) => candidate === 'powershell',
+  });
+
+  assert.equal(command, 'powershell');
+});
+
+test('browser MCP server keeps bash launcher semantics on macOS and Linux', () => {
+  for (const platform of ['darwin', 'linux']) {
+    let probedWindowsShells = false;
+    const rootDir = path.join(os.tmpdir(), `aios-browser-${platform}`);
+    const server = buildPreferredMcpServer(rootDir, {}, {
+      platform,
+      commandExists: () => {
+        probedWindowsShells = true;
+        return true;
+      },
+    });
+    const sep = server.args.indexOf('--');
+
+    assert.equal(server.args[sep + 1], 'bash');
+    assert.deepEqual(server.args.slice(sep + 2), [
+      path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh'),
+    ]);
+    assert.equal(probedWindowsShells, false);
+  }
+});
 
 async function makeFakeWindowsNodeInstall({ withNpxCli = true } = {}) {
   const rootDir = await makeTemp('aios-node-install-');

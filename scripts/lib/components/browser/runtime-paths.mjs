@@ -6,6 +6,7 @@ import {
   BROWSER_USE_REPO_DIR_NAME,
   DEFAULT_CDP_SERVICE_PORT,
 } from './constants.mjs';
+import { commandExists as defaultCommandExists } from '../../platform/process.mjs';
 
 export function resolveLauncherScript(rootDir, platform = process.platform) {
   if (platform === 'win32') {
@@ -14,8 +15,15 @@ export function resolveLauncherScript(rootDir, platform = process.platform) {
   return path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
 }
 
-export function resolveShellCommand(platform = process.platform) {
-  return platform === 'win32' ? 'pwsh' : 'bash';
+export function resolveShellCommand(platform = process.platform, runtime = {}) {
+  if (platform !== 'win32') return 'bash';
+
+  const exists = typeof runtime.commandExists === 'function'
+    ? runtime.commandExists
+    : (command) => defaultCommandExists(command, { platform });
+  if (exists('pwsh')) return 'pwsh';
+  if (exists('powershell')) return 'powershell';
+  return 'pwsh';
 }
 
 export function resolvePythonCommand(platform = process.platform) {
