@@ -247,9 +247,18 @@ This project has a structural knowledge graph. **Use it at each decision point i
 <!-- AIOS CODEMAP END -->
 
 <!-- AIOS NATIVE BEGIN -->
+<!-- 中文注释：客户端模板同步 MCP 代理和原文召回策略，避免各宿主入口漂移。 -->
+
 AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
+
+## AIOS Interception Runtime
+
+- Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
+- For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
+- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`, producing compact packets, raw refs, and metrics.
+- Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
 
 
 ## AIOS Self-Trigger Routing
@@ -304,7 +313,11 @@ Do NOT save routine progress or trivial updates.
 - `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)
 - These are stable guidance, not task facts. Project-specific facts go through ContextDB.
 
+<!-- 中文注释：客户端模板同步 MCP 代理和原文召回策略，避免各宿主入口漂移。 -->
+
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
+
+Default MCP routing is proxied through `scripts/aios-mcp-proxy.mjs` so large `tools/call` results are compacted before they reach the agent context. If browser output looks raw or huge, run `node scripts/aios.mjs interception doctor --fix` before continuing.
 
 For browser tasks, use this operating pattern unless the user explicitly asks otherwise:
 - Connect to a visible CDP browser first: `chrome.launch_cdp` then `browser.connect_cdp`.
