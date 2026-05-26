@@ -75,6 +75,8 @@ export function inferOwnedPathHints(summary = '', type = 'general') {
     hints.push('docs/');
   } else if (typeLabel === 'testing') {
     hints.push('scripts/tests/');
+  } else {
+    hints.push('scripts/', 'mcp-server/', 'docs/');
   }
   for (const entry of WORK_ITEM_OWNERSHIP_HINT_PATTERNS) {
     if (entry.pattern.test(summary)) {

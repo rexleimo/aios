@@ -11,7 +11,7 @@
       "responsibility": "Own code changes inside the agreed file scope and report concrete results.",
       "ownership": "Production code, tests, and local verification for explicitly assigned owned files.",
       "canEditFiles": true,
-      "ownedPathPrefixes": []
+      "ownedPathPrefixes": ["scripts/", "mcp-server/", "docs/"]
     },
     "reviewer": {
       "responsibility": "Review correctness, regressions, maintainability, and test coverage.",

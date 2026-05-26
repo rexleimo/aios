@@ -122,3 +122,4 @@ experiments/rl-shell-v1/shadow-evals/
 experiments/rl-shell-v1/control-state/
 experiments/rl-shell-v1/tasks/generated/
 experiments/rl-shell-v1/configs/*.invalid-tasks.json
+undefined/

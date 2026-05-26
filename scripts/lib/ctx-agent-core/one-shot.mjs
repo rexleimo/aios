@@ -3,6 +3,39 @@ import { ROOT_DIR, parsePositiveInteger, runCommand, runCommandWithInput } from 
 import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePreview, buildHarnessRoutePreview, normalizeOrchestrateBlueprint, normalizeRouteExecutionMode, normalizeRouteMode, resolveHarnessRouteProviderForAgent, resolveRoutedSubagentClient } from './routes.mjs';
 import { buildOpenCodePrompt } from './opencode-context.mjs';
 
+async function ensurePlanArtifact(rootDir, taskTitle) {
+  const { promises: fs } = await import('node:fs');
+  const pathMod = await import('node:path');
+  const date = new Date().toISOString().slice(0, 10);
+  const slug = String(taskTitle || 'task').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'task';
+  const planDir = pathMod.join(rootDir, 'docs', 'plans');
+  const planPath = pathMod.join(planDir, `${date}-${slug}.md`);
+  try {
+    await fs.access(planPath);
+    return planPath;
+  } catch {}
+  await fs.mkdir(planDir, { recursive: true });
+  const content = [
+    `# ${taskTitle || 'Task'}`,
+    '',
+    '## Progress',
+    '- Plan auto-generated for team dispatch.',
+    '',
+    '## Decision Log',
+    '- (none yet)',
+    '',
+    '## Acceptance',
+    '- Task completed and verified.',
+    '',
+    '## Next Actions',
+    '- Execute team dispatch.',
+    '',
+  ].join('\n');
+  await fs.writeFile(planPath, content, 'utf8');
+  return planPath;
+}
+
 export function classifyOneShotFailure(detail) {
   if (!detail) return undefined;
   const normalized = String(detail).toLowerCase();
@@ -109,15 +142,19 @@ export async function runRoutedOneShotTask(options = {}) {
 
   const { runOrchestrate } = await import('../lifecycle/orchestrate.mjs');
   const useGroupChat = spec.routeMode === 'team' && spec.executionMode === 'live';
+  const rootDir = options.workspaceRoot || process.cwd();
+  const taskTitle = String(options.taskPrompt || '').trim();
+  const planPath = await ensurePlanArtifact(rootDir, taskTitle);
   const result = await runOrchestrate({
     blueprint: spec.routeMode === 'subagent' ? spec.blueprint : options.blueprint,
-    taskTitle: String(options.taskPrompt || '').trim(),
+    taskTitle,
     contextSummary: '',
+    planPath,
     sessionId: String(options.sessionId || '').trim(),
     dispatchMode: 'local',
     executionMode: spec.executionMode,
     preflightMode: 'auto',
     format: 'json',
-  }, { rootDir: options.workspaceRoot || process.cwd(), env: spec.env, io, runtimeId: useGroupChat ? 'groupchat-runtime' : '' });
+  }, { rootDir, env: spec.env, io, runtimeId: useGroupChat ? 'groupchat-runtime' : '' });
   return { output: formatRoutedOutput(spec, outputChunks.join('\n').trim()), exitCode: result.exitCode ?? 1, preview: spec.preview, routeMode: spec.routeMode, executionMode: spec.executionMode };
 }

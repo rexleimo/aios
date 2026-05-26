@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.3] - 2026-05-26
+
+- fix(team): auto-create plan artifact and set default ownedPathPrefixes to unblock team live preflight
+
 ## [1.30.2] - 2026-05-26
 
 - fix(harness): make gate prompts recoverable
