@@ -103,12 +103,24 @@ async function main() {
   }
 
   const gate = evaluateHumanGate({ taskText, enabled: config.humanGate.enabled, allowRisk: args.allowRisk });
+  if (gate.allowed && Array.isArray(gate.warnings) && gate.warnings.length > 0) {
+    process.stderr.write('[harness] human gate warning; continuing:\n');
+    for (const warning of gate.warnings) {
+      process.stderr.write(`- ${warning}\n`);
+    }
+  }
   if (!gate.allowed) {
-    process.stderr.write('[harness] blocked by human gate:\n');
+    process.stderr.write('[harness] confirmation required by human gate:\n');
     for (const reason of gate.reasons) {
       process.stderr.write(`- ${reason}\n`);
     }
-    process.stderr.write('Use --allow-risk to proceed.\n');
+    if (gate.question) {
+      process.stderr.write(`Question: ${gate.question}\n`);
+    }
+    if (gate.recommendedAction) {
+      process.stderr.write(`Recommended action: ${gate.recommendedAction}\n`);
+    }
+    process.stderr.write(`${gate.resumeHint || 'After explicit approval, rerun with --allow-risk.'}\n`);
     process.exitCode = 2;
     return;
   }

@@ -29,6 +29,10 @@ import {
 } from '../lib/harness/subagent-clients/structured-output.mjs';
 import { buildOneShotInvocation } from '../lib/harness/subagent-clients/one-shot.mjs';
 
+async function importHarnessInitHumanGate() {
+  return await import(pathToFileURL(path.resolve('skill-sources/harness-init-runner/assets/template/harness/lib/human-gate.mjs')).href);
+}
+
 async function writeFakeCli(binDir, name) {
   await mkdir(binDir, { recursive: true });
   const ext = process.platform === 'win32' ? '.cmd' : '';
@@ -45,6 +49,51 @@ async function writeFakeCli(binDir, name) {
   }
   return filePath;
 }
+
+test('harness init human gate warns but does not block background safety references', async () => {
+  const { evaluateHumanGate } = await importHarnessInitHumanGate();
+
+  const gate = evaluateHumanGate({
+    taskText: [
+      'User goal: explain why harness gates ask for confirmation.',
+      '',
+      '# AGENTS.md instructions',
+      '- cap eventually runs git push after verification.',
+      '- Never expose token, credential, or session cookie values.',
+    ].join('\n'),
+  });
+
+  assert.equal(gate.allowed, true);
+  assert.equal(gate.decision, 'warn');
+  assert.deepEqual(gate.reasons, []);
+  assert.equal(gate.warnings.some((item) => /background/i.test(item)), true);
+});
+
+test('harness init human gate requires confirmation for explicit sensitive actions', async () => {
+  const { evaluateHumanGate } = await importHarnessInitHumanGate();
+
+  const gate = evaluateHumanGate({
+    taskText: 'Run git push to publish the current branch.',
+  });
+
+  assert.equal(gate.allowed, false);
+  assert.equal(gate.decision, 'approval-required');
+  assert.equal(gate.reasons.some((item) => /git push/i.test(item)), true);
+  assert.match(gate.question, /confirm/i);
+  assert.match(gate.resumeHint, /--allow-risk/);
+});
+
+test('harness init human gate does not block negated sensitive command examples', async () => {
+  const { evaluateHumanGate } = await importHarnessInitHumanGate();
+
+  const gate = evaluateHumanGate({
+    taskText: 'Do not run git push; only explain when a push would require approval.',
+  });
+
+  assert.equal(gate.allowed, true);
+  assert.equal(gate.decision, 'warn');
+  assert.equal(gate.reasons.length, 0);
+});
 
 test('normalizeSoloIterationOutcome fills defaults for a success outcome', () => {
   const success = normalizeSoloIterationOutcome({

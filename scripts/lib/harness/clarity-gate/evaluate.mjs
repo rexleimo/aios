@@ -12,11 +12,46 @@ export function buildNextActions(gate) {
   if (!gate?.needsHuman) {
     return ['Continue automation'];
   }
+  if (gate?.decision === 'approval-required') {
+    return [
+      'Review the gate question and confirm whether the sensitive next action is allowed',
+      `Rerun: ${gate?.resumeCommand || 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json'}`,
+      'If not approved, revise the plan to avoid the sensitive action',
+    ];
+  }
   return [
-    'Review clarity-gate reasons and decide whether to continue automation',
-    'If safe, rerun orchestrate live after resolving unclear signals',
-    'If risky, perform manual triage and checkpoint findings',
+    'Answer the clarity-gate question or resolve the unclear signal',
+    `Rerun: ${gate?.resumeCommand || 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json'}`,
+    'Checkpoint the decision before retrying automation',
   ];
+}
+
+function buildDecision({ sensitiveCommandSignals, externalWriteSignals, boundaryCrossingSignals, reasons }) {
+  if (reasons.length === 0) return 'allow';
+  if (
+    sensitiveCommandSignals.length > 0
+    || externalWriteSignals.length > 0
+    || boundaryCrossingSignals.length > 0
+  ) {
+    return 'approval-required';
+  }
+  return 'clarify';
+}
+
+function buildQuestion({ decision, reasons }) {
+  if (reasons.length === 0) return '';
+  if (decision === 'approval-required') {
+    return `Please confirm before automation continues: may the harness proceed past this sensitive gate? Reason: ${reasons[0]}`;
+  }
+  return `Please clarify before automation continues: how should the harness resolve this gate? Reason: ${reasons[0]}`;
+}
+
+function buildResumeCommand(sessionId) {
+  const normalizedSessionId = normalizeText(sessionId);
+  if (!normalizedSessionId) {
+    return 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json';
+  }
+  return `node scripts/aios.mjs orchestrate --session ${normalizedSessionId} --dispatch local --execute live --format json`;
 }
 
 export function evaluateClarityGate(
@@ -73,11 +108,30 @@ export function evaluateClarityGate(
   }
 
   const needsHuman = reasons.length > 0;
+  const decision = buildDecision({
+    sensitiveCommandSignals,
+    externalWriteSignals,
+    boundaryCrossingSignals,
+    reasons,
+  });
+  const resumeCommand = needsHuman ? buildResumeCommand(sessionId) : '';
+  const gateCore = {
+    needsHuman,
+    decision,
+    resumeCommand,
+  };
   return {
     sessionId: normalizeText(sessionId),
     needsHuman,
+    decision,
     status: needsHuman ? 'needs-input' : 'clear',
     reasons,
+    warnings: [],
+    question: buildQuestion({ decision, reasons }),
+    recommendedAction: needsHuman
+      ? 'Pause automation until the operator answers the gate question.'
+      : 'Continue automation.',
+    resumeCommand,
     metrics: {
       blockedCheckpoints,
       blockedCheckpointsTotal: blockedCheckpointMetrics.blockedCheckpointsTotal,
@@ -98,6 +152,6 @@ export function evaluateClarityGate(
       dispatchTurnIds,
       dispatchWorkItemRefs,
     },
-    nextActions: buildNextActions({ needsHuman }),
+    nextActions: buildNextActions(gateCore),
   };
 }

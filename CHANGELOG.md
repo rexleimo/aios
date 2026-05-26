@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.2] - 2026-05-26
+
+- fix(harness): make gate prompts recoverable
+
 ## [1.30.1] - 2026-05-25
 
 - fix(mcp): handle Windows shell fallback and JSON-RPC notifications

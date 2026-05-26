@@ -25,6 +25,7 @@ import { evaluateClarityGate } from '../lib/harness/clarity-gate.mjs';
 import { buildDispatchInsights } from '../lib/harness/dispatch-insights.mjs';
 import { persistDispatchEvidence } from '../lib/harness/orchestrator-evidence.mjs';
 import { buildWorkItemTelemetry } from '../lib/harness/work-item-telemetry.mjs';
+import { executeMergeGateJob } from '../lib/harness/subagent-runtime/merge-gate.mjs';
 import { planOrchestrate, runOrchestrate } from '../lib/lifecycle/orchestrate.mjs';
 
 async function importDispatchRuntimes() {
@@ -716,6 +717,9 @@ test('evaluateClarityGate flags sensitive command and boundary-crossing signals'
   assert.equal(gate.metrics.sensitiveCommandSignals.length > 0, true);
   assert.equal(gate.metrics.boundaryCrossingSignals.length > 0, true);
   assert.equal(gate.metrics.externalWriteSignals.length, 0);
+  assert.equal(gate.decision, 'approval-required');
+  assert.match(gate.question, /confirm/i);
+  assert.equal(gate.nextActions.some((item) => /rerun/i.test(item)), true);
 });
 
 test('evaluateClarityGate flags external write targets outside repo scope', () => {
@@ -782,6 +786,39 @@ test('evaluateClarityGate ignores boundary terms in narrative findings and recom
   assert.equal(gate.needsHuman, false);
   assert.equal(gate.metrics.boundaryCrossingSignals.length, 0);
   assert.equal(gate.reasons.some((item) => /auth\/payment\/policy boundary signals/i.test(item)), false);
+});
+
+test('evaluateClarityGate ignores negated sensitive command references', () => {
+  const gate = evaluateClarityGate({
+    sessionId: 'negated-command-session',
+    learnEvalReport: {
+      status: { counts: { blocked: 0 } },
+      recommendations: { fix: [], promote: [] },
+    },
+    dispatchRun: {
+      jobRuns: [
+        {
+          output: {
+            payload: {
+              taskTitle: 'Document release safety',
+              contextSummary: 'Explain when approvals are needed.',
+              findings: [],
+              openQuestions: [],
+              recommendations: [
+                'Do not run git push; only document the approval rule.',
+              ],
+              filesTouched: [],
+            },
+          },
+        },
+      ],
+    },
+  });
+
+  assert.equal(gate.needsHuman, false);
+  assert.equal(gate.decision, 'allow');
+  assert.equal(gate.metrics.sensitiveCommandSignals.length, 0);
+  assert.equal(gate.reasons.some((item) => /sensitive command signals/i.test(item)), false);
 });
 
 test('evaluateClarityGate excludes clarity-needs-input checkpoints from blocked threshold metric', () => {
@@ -1914,6 +1951,57 @@ test('mergeParallelHandoffs blocks file touches from read-only roles', () => {
   assert.equal(Array.isArray(result.ownershipViolations), true);
   assert.equal(result.ownershipViolations.length, 1);
   assert.equal(result.ownershipViolations[0].filePath, 'src/new-file.ts');
+});
+
+test('executeMergeGateJob includes actionable blocked details', () => {
+  const run = executeMergeGateJob(
+    { taskTitle: 'Review auth flow' },
+    {
+      jobId: 'merge.final-checks',
+      jobType: 'merge-gate',
+      role: 'merge-gate',
+      group: 'final-checks',
+      dependsOn: ['phase.review', 'phase.security'],
+      launchSpec: { executor: 'local-merge-gate', outputType: 'merged-handoff' },
+    },
+    [
+      {
+        jobId: 'phase.review',
+        output: {
+          payload: {
+            fromRole: 'reviewer',
+            toRole: 'merge-gate',
+            taskTitle: 'Review auth flow',
+            contextSummary: 'Reviewer needs branch confirmation.',
+            status: 'needs-input',
+            openQuestions: ['Which branch should be reviewed?'],
+            filesTouched: ['src/auth.ts'],
+          },
+        },
+      },
+      {
+        jobId: 'phase.security',
+        output: {
+          payload: {
+            fromRole: 'security-reviewer',
+            toRole: 'merge-gate',
+            taskTitle: 'Review auth flow',
+            contextSummary: 'Security review touched the same file.',
+            status: 'completed',
+            filesTouched: ['src/auth.ts'],
+          },
+        },
+      },
+    ],
+    { executorLabel: 'Local Merge Gate Executor' }
+  );
+
+  assert.equal(run.status, 'blocked');
+  assert.equal(run.output.mergeResult.blocked.length, 1);
+  assert.equal(run.output.mergeResult.ownershipViolations.length, 2);
+  assert.equal(run.output.mergeResult.conflicts.length, 1);
+  assert.match(run.output.mergeResult.question, /resolve/i);
+  assert.match(run.output.mergeResult.nextAction, /phase\.review/i);
 });
 
 test('planOrchestrate emits stable preview', () => {

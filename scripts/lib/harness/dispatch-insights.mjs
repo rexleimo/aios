@@ -209,15 +209,20 @@ export function buildDispatchInsights(
     const reasons = Array.isArray(clarityGate?.reasons)
       ? clarityGate.reasons.map((item) => normalizeText(item)).filter(Boolean)
       : [];
+    const question = normalizeText(clarityGate?.question);
+    const nextActions = Array.isArray(clarityGate?.nextActions)
+      ? clarityGate.nextActions.map((item) => normalizeText(item)).filter(Boolean)
+      : [];
     addSignal(signals, {
       id: 'clarity.human-gate',
       severity: 'block',
-      message: 'Clarity gate requires human review.',
+      message: question || 'Clarity gate requires human review.',
       ...(reasons.length > 0 ? { evidence: reasons.slice(0, 3).join('; ') } : {}),
     });
     addAction(actions, {
       id: 'review-clarity-gate',
-      label: 'Review clarity-gate reasons and decide whether automation may continue.',
+      label: nextActions[0] || 'Review clarity-gate reasons and decide whether automation may continue.',
+      ...(normalizeText(clarityGate?.resumeCommand) ? { command: normalizeText(clarityGate.resumeCommand) } : {}),
     });
   }
 

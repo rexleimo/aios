@@ -124,6 +124,9 @@ export function collectPatternSignals(snippets = [], patterns = []) {
       if (!descriptor.pattern.test(snippet)) {
         continue;
       }
+      if (isNegatedRiskSample(snippet, descriptor)) {
+        continue;
+      }
       if (seen.has(descriptor.id)) {
         continue;
       }
@@ -139,6 +142,23 @@ export function collectPatternSignals(snippets = [], patterns = []) {
     }
   }
   return signals;
+}
+
+export function isNegatedRiskSample(snippet = '', descriptor = {}) {
+  const text = normalizeSnippet(snippet).toLowerCase();
+  if (!text) return false;
+  const negationWindows = [
+    /\b(do not|don't|never|must not|should not|avoid|without|no need to)\b.{0,120}/gi,
+    /.{0,80}\b(not required|not requested|not allowed|disabled)\b.{0,80}/gi,
+  ];
+  for (const windowPattern of negationWindows) {
+    for (const match of text.matchAll(windowPattern)) {
+      if (descriptor.pattern.test(match[0])) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 export function isLikelyExternalWritePath(filePath = '') {

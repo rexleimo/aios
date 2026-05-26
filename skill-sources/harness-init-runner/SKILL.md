@@ -46,9 +46,10 @@ Runtime artifacts are written under `./.harness/runs/*` and must not be committe
 
 ## Safety defaults
 
-- The runner performs a lightweight “human gate” check on the task text for auth/payment/policy + sensitive command keywords.
-- If blocked, it exits with a non-zero code and prints reasons.
-- Operator can bypass using `--allow-risk`.
+- The runner performs a lightweight “human gate” check on actionable task intent for auth/payment/policy + sensitive command keywords.
+- Background references from repo instructions, notes, or negated examples produce warnings but do not block provider execution.
+- Sensitive next actions exit with a non-zero code and print reasons, a concrete confirmation question, and resume guidance.
+- Operator can bypass after explicit approval using `--allow-risk`.
 
 ## Notes for multi-client compatibility
 

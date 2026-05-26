@@ -31,7 +31,8 @@ Use this harness to keep long tasks stable under UI drift, model variability, an
 ## Required Controls
 - Time budget per step and per run.
 - Retry budget per failure class.
-- Human-gate checkpoints for login, payment, or policy-sensitive actions.
+- Human-gate checkpoints for login, payment, or policy-sensitive actions must ask a concrete confirmation question and include a resumable next command.
+- Do not treat background instructions or negated examples as blocking gates; warn and continue when the next action itself is safe.
 - Solo harness checkpoints should include the current stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) and concrete evidence.
 - Structured logs for every major transition.
 
