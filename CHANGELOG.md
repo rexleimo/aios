@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.5] - 2026-05-27
+
+- fix(superpowers): filter superpowers skills by catalog clients
+
 ## [1.30.4] - 2026-05-27
 
 - fix(skills): consolidate compression skills, add skill-opt-lite, fix catalog duplicates
