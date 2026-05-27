@@ -29,10 +29,15 @@ export function linkClaudeSkills({
   fs,
   sourcePath,
   claudeSkillsRoot,
+  allowedSkills = null,
   force = false,
   io = console,
 } = {}) {
-  const skillNames = listSkillNames(fs, sourcePath);
+  const allSkillNames = listSkillNames(fs, sourcePath);
+  const skillNames = allowedSkills
+    ? allSkillNames.filter((name) => allowedSkills.has(name))
+    : allSkillNames;
+  const skippedByFilter = allowedSkills ? allSkillNames.length - skillNames.length : 0;
   let linked = 0;
   let reused = 0;
   let skipped = 0;
@@ -54,10 +59,15 @@ export function linkClaudeSkills({
     io.log(`[link] Claude Code skill: ${skillName}`);
   }
 
+  if (skippedByFilter > 0) {
+    io.log(`[skip] ${skippedByFilter} skill(s) not in catalog for claude; filtered out`);
+  }
+
   return {
     total: skillNames.length,
     linked,
     reused,
     skipped,
+    filteredOut: skippedByFilter,
   };
 }

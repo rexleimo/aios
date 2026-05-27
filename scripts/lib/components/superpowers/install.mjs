@@ -4,6 +4,7 @@ import path from 'node:path';
 import { ensureManagedLink } from '../../platform/fs.mjs';
 import { commandExists, captureCommand, runCommand } from '../../platform/process.mjs';
 import { getAgentsHome, getClientHomes } from '../../platform/paths.mjs';
+import { loadSkillsCatalog } from '../skills/catalog.mjs';
 
 import { CLAUDE_PLUGIN_NAME, DEFAULT_REPO_URL } from './constants.mjs';
 import { resolveSuperpowersClients } from './clients.mjs';
@@ -102,10 +103,22 @@ export async function installSuperpowers({
       }
     } else {
       const claudeSkillsRoot = path.join(claudeHome, 'skills');
+      let allowedSkills = null;
+      try {
+        const catalog = loadSkillsCatalog(rootDir);
+        allowedSkills = new Set(
+          catalog
+            .filter((entry) => entry.clients.includes('claude'))
+            .map((entry) => entry.name)
+        );
+      } catch {
+        // catalog not available — fall back to linking all
+      }
       const linkResult = linkClaudeSkills({
         fs,
         sourcePath: source.sourcePath,
         claudeSkillsRoot,
+        allowedSkills,
         force,
         io,
       });
