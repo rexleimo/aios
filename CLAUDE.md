@@ -5,25 +5,23 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-<!-- WORKFLOW ROUTER - MANDATORY -->
+<!-- SUPERPOWERS SKILL ENFORCEMENT - MANDATORY -->
 <IMPORTANT>
-## Workflow Routing (REQUIRED)
+## Skill Enforcement (REQUIRED)
 
-**Before any action, route the task to the appropriate workflow:**
+**Superpowers skills MUST be invoked before any implementation action.** This is not optional.
 
-1. **Check task type** by looking for these keywords:
-   - 设计/创意/新功能/brainstorm → Use brainstorming workflow
-   - 调试/bug/error/debug → Use debugging workflow
-   - 并发/并行/agent team/dispatch → Use parallel dispatch workflow
-   - 长任务/harness/multi-step → Use harness workflow
-   - 实现/implement/开发 → Use implementation workflow
-   - 分析/研究/调查 → Use analysis workflow
-
-2. **Invoke `aios-workflow-router` skill** to get the correct workflow.
-
-3. **Do NOT skip this step** - Even simple tasks benefit from proper routing.
+1. **Invoke `using-superpowers` skill first** — it determines which process skill applies.
+2. **Process skills are mandatory, not optional:**
+   - Design/new behavior/creating features → MUST invoke `superpowers:brainstorming`
+   - Multi-step delivery → MUST invoke `superpowers:writing-plans`
+   - Debug/failure analysis → MUST invoke `superpowers:systematic-debugging`
+   - Test-first implementation → MUST invoke `superpowers:test-driven-development`
+   - About to claim completion → MUST invoke `superpowers:verification-before-completion`
+3. **Use `aios-workflow-router` as a routing aid** — it helps classify task type and dispatches to the correct superpowers skill. It does NOT replace superpowers skills.
+4. **Do NOT inline superpowers workflows** — always invoke the skill, never paraphrase its process.
 </IMPORTANT>
-<!-- END WORKFLOW ROUTER -->
+<!-- END SUPERPOWERS SKILL ENFORCEMENT -->
 
 ## Project Overview
 
@@ -173,23 +171,13 @@ Multi-profile support for isolated browser instances:
 
 ## Token Optimization (Input + Output Compression)
 
-AIOS uses a native dual compression system inspired by RTK-style input filtering and Caveman-style output brevity. Do **not** install RTK, Caveman, shell hooks, or competitor CLIs; reference their ideas only.
+AIOS has a unified native interception runtime that replaces RTK/Caveman. Do **not** install RTK, Caveman, shell hooks, or competitor CLIs.
 
-### Output Compression: `aios-compress` skill
-- Native prompt-level output discipline for compact responses
-- Three levels: `tight` (default 日常), `ultra` (harness 日志), `precise` (浏览器操作 — no compress)
-- Targets ~60% fewer output tokens while keeping technical accuracy
-- Auto-precise mode for browser ops, security warnings, irreversible actions
-- Off: say "precise mode" or "stop compress"
-- See: `.claude/skills/aios-compress/SKILL.md`
-
-### Input Compression: `aios-browser-compress` skill + ContextDB strategies
-- ContextDB packets use built-in `--token-budget` + `--token-strategy legacy|balanced|aggressive`
-- Tool priority: `page.semantic_snapshot` > targeted `page.extract_text` > full `page.extract_text` > `page.get_html`
-- Page-type-aware filtering for XHS note pages, profiles, search results
-- CLI/tool output discipline: scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) instead of full dumps
-- Structural compression: preserve errors/actions/paths/latest state, drop nav/footer/ads, collapse repeated elements
-- See: `.claude/skills/aios-browser-compress/SKILL.md`
+### Token Optimization: `aios-interception-runtime` skill
+- **Output compression** (tight/ultra/precise): prompt-level output discipline for compact responses. `tight` default, `ultra` for harness, `precise` for browser ops/security.
+- **Input compression**: tool priority `page.semantic_snapshot` > targeted `page.extract_text` > full `page.extract_text` > `page.get_html`. ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
+- **Data plane interception**: MCP tools route through `scripts/aios-mcp-proxy.mjs`; large output offloaded to refs; metrics in `.aios/interception/metrics/`.
+- See: `.claude/skills/aios-interception-runtime/SKILL.md`
 
 ## Important Notes
 

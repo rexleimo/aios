@@ -1,15 +1,16 @@
 ---
 name: contextdb-autopilot
-description: Use when running tasks in Codex CLI, Claude Code, Gemini CLI, or opencode and you need automatic context persistence (init/session/event/checkpoint/context-pack) plus interactive auto-routing without manual contextdb commands.
+description: Automatic ContextDB session lifecycle — init, session events, checkpoints, context-pack. Use when you need AIOS context persistence without running manual contextdb commands. NOT for general task execution — only for ContextDB session management. TRIGGER: contextdb、session persist、context pack、checkpoint save.
 ---
 
 # ContextDB Autopilot
+
+Working directory: project root (commands assume repo root; `npm run contextdb` must run from `mcp-server/`)
 
 ## Overview
 Use this skill to run a task with full filesystem context DB automation in one command.
 
 Script path: `scripts/ctx-agent.sh`
-Runtime core: `scripts/ctx-agent-core.mjs` (single source for sh/mjs wrappers)
 
 ## When to Use
 - You want cross-CLI memory continuity (`codex`, `claude`, `gemini`, `opencode`) in the same project.
@@ -36,7 +37,7 @@ scripts/ctx-agent.sh --agent opencode-cli --project rex-cli --prompt "继续当�
 - `CODEX_HOME` can be relative; wrappers normalize it against current working directory at runtime.
 
 Interactive wrapper route defaults:
-- Direct `codex`/`claude`/`gemini`/`opencode` startup now injects an auto-route prompt (`single/subagent/team`) by default.
+- Direct `codex`/`claude`/`gemini`/`opencode` startup injects an auto-route prompt (`single/subagent/team`) by default.
 - Route execution defaults to live for team/subagent command templates.
 - `opencode` interactive flow falls back to a supported subagent runtime (`codex-cli` by default).
 - Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli>`.
@@ -58,17 +59,14 @@ scripts/ctx-agent.sh \
 - Context packet output: `.aios/context-db/exports/<session_id>-context.md`
 - Session files: `.aios/context-db/sessions/<session_id>/`
 
-## New ContextDB Retrieval Commands
+## Retrieval Workflow
 
-Use these for index-first retrieval before full packet expansion:
+When retrieving from ContextDB, always run BOTH search AND timeline in sequence — never just one. Search finds relevant events by keyword; timeline provides the chronological context that explains *when* and *why* those events occurred. Without timeline, you miss the causal chain between events.
 
-```bash
-cd mcp-server
-npm run contextdb -- search --query "auth race" --project rex-cli --kinds response --refs auth.ts
-npm run contextdb -- timeline --session <session_id> --limit 30
-npm run contextdb -- event:get --id <session_id>#<seq>
-npm run contextdb -- index:rebuild
-```
+1. `npm run contextdb -- search --query "<term>" --project <project>` — find relevant events
+2. `npm run contextdb -- timeline --session <session_id> --limit 30` — see chronological context
+
+Only then drill into specific events with `event:get`. If retrieval returns empty, run `index:rebuild` once and retry both commands.
 
 Optional semantic rerank:
 

@@ -1,13 +1,13 @@
 ---
 name: skill-constraints
-description: Use when executing any skill or browser automation task - enforces operational constraints and best practices
+description: Enforce browser automation safety constraints — tool usage order, anti-detection rules, screenshot discipline, and human-in-the-loop checks. Use when setting up or verifying browser/MCP tool operations, NOT for every skill execution.
 ---
 
-# 技能使用约束
+# 浏览器操作约束
 
-## Overview
+Working directory: any (MCP tools are session-relative; file paths are relative to project root)
 
-所有技能操作必须遵循此约束规范，确保安全、高效、可追溯。
+所有浏览器自动化操作 MUST 遵循此约束规��，确保安全、高效、可追溯。
 
 ## When to Use
 
@@ -33,41 +33,47 @@ description: Use when executing any skill or browser automation task - enforces 
    - 不使用 `chrome-devtools` 工具链执行业务流程，统一走 `puppeteer-stealth` 的 browser-use 工具链（`chrome.*` / `browser.*` / `page.*`）
 
 2. 只有视觉信息不足时才截图，并保存到 temp/ 目录
-   - 条件：文本/HTML 证据不足以判断状态
-   - 使用：`page.screenshot`
-   - 路径：`aios/temp/{操作类型}_{时间戳}.png`
-   - 示例：`login_20240301_120000.png`
+    - 条件：文本/HTML 证据不足以判断状态
+    - 使用：`page.screenshot`
+    - 路径：`aios/temp/{操作类型}_{时间戳}.png`
+    - 示例：`login_20240301_120000.png`
+    - 若 `aios/temp/` 不存在则先创建：`mkdir -p aios/temp`
 ```
 
 ### 操作间隔
 
+**Every browser action (click, type, navigate) MUST be followed by a random wait. No exceptions.**
+
+Use `page.wait` with a random duration, or if running in a shell context:
 ```bash
-# 随机等待 5-30 秒
 sleep $((RANDOM % 26 + 5))
 ```
+In MCP context, use `page.wait({ duration: <random 5-30s> })` or equivalent.
+
+This is not optional — skipping intervals risks detection and account bans. If you batch operations without waiting, the entire task is considered failed regardless of outcome.
 
 ## Rules
 
-### 禁止行为
+### MUST NOT（禁止行为）
 
-| 禁止 | 说明 |
+| 行为 | 原因 |
 |------|------|
-| 直接在对话中粘贴大段截图 | 浪费 token，必须保存到文件 |
-| 跳过反检测脚本 | 每次操作前必须执行 |
-| 忽略操作间隔 | 必须随机 5-30 秒 |
-| 在非 temp 目录保存截图 | 必须保存到 aios/temp/ |
-| 自动化执行第三方平台登录 | 登录必须人工完成（含 2FA） |
+| 直接在对话中粘贴大段截图 | 浪费 token，MUST 保存到文件 |
+| 跳过反检测 | 每次操作前 MUST 执行 |
+| 跳过操作间隔 | MUST 随机 5-30 秒 |
+| 在非 temp 目录保存截图 | MUST 保存到 aios/temp/ |
+| 自动化执行第三方平台登录 | 登录 MUST 由人工完成（含 2FA） |
 
-### 必需行为
+### MUST（必需行为）
 
-| 必须 | 说明 |
+| 行为 | 原因 |
 |------|------|
-| 操作前执行反检测 | 使用 skill/反检测脚本.json |
+| 操作前执行反检测 | 使用反检测脚本（如项目中已有）或通过 CDP 指纹配置规��� |
 | 截图保存到 temp/ | 路径固定为 aios/temp/ |
-| 先读文本/DOM | `page.extract_text -> page.get_html` |
-| 使用 grep 搜索快照 | 而非目视查看截图 |
+| 先读文本/DOM | `page.extract_text` → `page.get_html` |
+| 使用 grep 搜索快照 | 先保存 snapshot 到文件，再用 grep 搜索 |
 | 记录到历史 | 关键操作写入 `.aios/context-db` checkpoint/event |
-| 登录态检测 | 识别到登录页/验证码/2FA 时先提示用户协作登录 |
+| 登录态检测 | 识别到登录页/验证码/2FA 时 MUST 先提示用户协作登录 |
 
 ### MCP 工具优先级
 

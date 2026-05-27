@@ -1,105 +1,42 @@
 ---
 name: frontend-design
-description: Use when users need to build or polish web UI without a complete design handoff, including cases where no mockup/design稿 is available and the agent must produce a strong visual direction plus production-ready code.
+description: Build production-grade frontend UI with distinctive design. Use AFTER establishing design direction — if no DESIGN.md exists, invoke `awesome-design-md` first to create one, then use this skill to implement. For web components, pages, landing pages, dashboards, React components, HTML/CSS layouts, or styling any web UI.
+license: Complete terms in LICENSE.txt
 ---
 
-# Frontend Design
+This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
 
-Build distinctive, production-grade frontend UI with clear visual direction and avoid generic AI-looking interfaces.
+The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
 
-## Trigger
+## Design Thinking
 
-- User asks to build or beautify pages/components/frontends.
-- User has rough requirements but no design稿.
-- Existing UI works functionally but looks generic.
+Before coding, understand the context and commit to a BOLD aesthetic direction:
+- **Purpose**: What problem does this interface solve? Who uses it?
+- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
+- **Constraints**: Technical requirements (framework, performance, accessibility).
+- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
 
-## Fuzzy Prompt Autopilot
+**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
 
-If user prompt is vague, do not stall. Convert it into one explicit mode, then build:
+Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
+- Production-grade and functional
+- Visually striking and memorable
+- Cohesive with a clear aesthetic point-of-view
+- Meticulously refined in every detail
 
-- `Patch`: small element-level change (example: "改一下这个页面某个元素")
-- `Restyle`: keep structure, change visual direction (example: "参考某种风格做一下")
-- `Flow`: complete SaaS workflow UI (example: "做一个完整后台")
+## Frontend Aesthetics Guidelines
 
-Before coding, write a short assumption block:
+Focus on:
+- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
+- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
+- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
+- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
+- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
 
-- `Goal`: what should improve now
-- `Primary user`: role/persona
-- `Platform`: web desktop first or mobile first
-- `Scope`: this task edits one view / one module / full flow
+NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
 
-Only ask one clarifying question if a blocker is truly critical. Otherwise continue with reasonable defaults.
+Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
 
-## Operating Mode
+**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
 
-1. If `DESIGN.md` exists: treat it as style source of truth.
-2. If `DESIGN.md` is missing:
-   - If network + `npx` are available, first use `awesome-design-md` workflow to install one baseline style.
-   - If not available, create a compact local `DESIGN.md` with:
-     - visual theme
-     - color roles
-     - typography pair
-     - spacing scale
-     - component states
-     - motion principles
-
-For `Restyle` and `Flow`, always establish `DESIGN.md` (remote baseline or local compact version) before implementation.
-
-## No-Design-Draft Protocol
-
-Before coding, lock these 6 choices in one short block:
-
-- `Audience`: consumer / prosumer / enterprise
-- `Tone`: minimal / editorial / playful / cinematic / technical
-- `Density`: airy / balanced / dense
-- `Contrast`: soft / medium / high
-- `Motion`: none / subtle / expressive
-- `Memorable element`: one signature motif (shape, accent, type treatment, motion pattern)
-
-Do not proceed with implementation until these choices are explicit.
-
-## Delivery Contract by Mode
-
-For vague prompts, the implementation output must still be concrete:
-
-- `Patch`:
-  - Preserve layout intent, update only required scope.
-  - Include complete interaction states (default/hover/focus/active/disabled).
-  - Verify desktop + mobile behavior for touched area.
-- `Restyle`:
-  - Keep information architecture stable unless explicitly changed.
-  - Apply a consistent style system (type/color/spacing/radius/shadow/motion).
-  - Avoid one-off visual overrides that bypass design tokens.
-- `Flow`:
-  - Define SaaS flow map first: `entry -> navigation -> key tasks -> feedback -> empty/error`.
-  - Deliver connected screens, not isolated mock sections.
-  - Cover at least: dashboard, list, detail, create/edit form, settings/billing (or equivalent).
-  - Include loading/empty/error/success states for core actions.
-
-## Implementation Rules
-
-- Avoid generic defaults: Inter/Roboto + purple gradient + template layouts.
-- Use CSS variables (or design tokens) for colors, spacing, radius, shadow, type.
-- Keep hierarchy clear: first screen must communicate value + primary CTA.
-- Match complexity to direction:
-  - maximal style -> richer motion/background systems
-  - minimal style -> stricter spacing/typography precision
-- Maintain accessibility:
-  - keyboard focus visible
-  - text contrast adequate
-  - interaction states complete (hover/focus/active/disabled)
-
-## Quality Checklist
-
-- Visual style is recognizable in one glance.
-- Typography scale is coherent across sections.
-- Color accents are intentional, not scattered.
-- Layout rhythm is consistent on desktop and mobile.
-- UI is production-functional, not just a static mockup.
-
-## Prompt Pattern
-
-- `Implement this UI using DESIGN.md as the style contract.`
-- `If DESIGN.md is missing, establish a 6-choice design direction block first, then build.`
-- `Prioritize visual distinctiveness and usability; avoid generic template aesthetics.`
-- `When prompt is vague, classify into Patch/Restyle/Flow, state assumptions briefly, then implement end-to-end.`
+Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.

@@ -1,9 +1,11 @@
 ---
 name: harness-init-runner
-description: Initialize a lightweight Node.js long-running agent harness (harness/ + .harness/) with a cross-provider runner that can drive codex/claude/gemini/opencode CLIs, capturing prompts, logs, and checkpoints.
+description: Initialize a lightweight repo-local Node.js harness (harness/ + .harness/) WITHOUT AIOS dependency. Use ONLY when you need a standalone, portable harness. If AIOS is installed, use `aios-long-running-harness` instead — it has ContextDB integration, superpowers pairing, and checkpoint recovery.
 ---
 
 # Harness Init Runner (Node.js)
+
+Working directory: any Node.js repo with `package.json`
 
 Create a portable long-running-agent harness inside the **current repo** (Node.js), without pulling in the full AIOS workspace layout.
 
@@ -20,7 +22,7 @@ Create a portable long-running-agent harness inside the **current repo** (Node.j
 - `package.json` scripts: `harness:run`, `harness:doctor`
 - dependency: `zod`
 
-Runtime artifacts are written under `./.harness/runs/*` and must not be committed.
+Runtime artifacts are written under `./.harness/runs/*` and MUST NOT be committed.
 
 ## Preconditions
 
@@ -32,7 +34,7 @@ Runtime artifacts are written under `./.harness/runs/*` and must not be committe
 1. Locate repo root by searching upward for `package.json`.
 2. Copy the bundled templates from `assets/template/` into the target repo root:
    - copy `assets/template/harness/` → `<repoRoot>/harness/`
-   - copy `assets/template/harness.config.json` → `<repoRoot>/harness.config.json` (do not overwrite if user has edits; merge instead)
+   - For `harness.config.json`: **if the file already exists, merge** (preserve user's existing keys, add only missing ones). **If it does not exist, copy the template.** Never silently overwrite user edits.
 3. Append `/.harness/` to `<repoRoot>/.gitignore` (create file if missing).
 4. Update `<repoRoot>/package.json` (additive only):
    - Add scripts:
@@ -46,10 +48,9 @@ Runtime artifacts are written under `./.harness/runs/*` and must not be committe
 
 ## Safety defaults
 
-- The runner performs a lightweight “human gate” check on actionable task intent for auth/payment/policy + sensitive command keywords.
-- Background references from repo instructions, notes, or negated examples produce warnings but do not block provider execution.
-- Sensitive next actions exit with a non-zero code and print reasons, a concrete confirmation question, and resume guidance.
-- Operator can bypass after explicit approval using `--allow-risk`.
+- The runner performs a lightweight “human gate” check on the task text for auth/payment/policy + sensitive command keywords.
+- If blocked, it exits with a non-zero code and prints reasons.
+- Operator can bypass using `--allow-risk`.
 
 ## Notes for multi-client compatibility
 

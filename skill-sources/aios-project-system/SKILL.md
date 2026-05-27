@@ -8,6 +8,8 @@ description: Use when operating in the aios repository and needing the canonical
 ## Overview
 Use this skill as the repository map for `aios`. It explains where state lives, how automation actually runs, and which files are authoritative before you edit tasks, workflows, or browser operations.
 
+**This skill is a map, not a router.** For task routing, use `aios-workflow-router`. For process skills, use `superpowers:*`.
+
 ## Core Topology
 - `CLAUDE.md`: project-level behavior contract and architecture overview.
 - `.codex/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md`: operational playbooks for recurring tasks (not deterministic executors).
@@ -26,21 +28,6 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 - Prefer `page.extract_text` / `page.get_html` evidence before using `page.screenshot`.
 - Repo-local discoverable skills must live in `.codex/skills/` or `.claude/skills/`; do not create ad-hoc skill roots such as `.baoyu-skills/*/SKILL.md`. `.baoyu-skills/` is extension-config territory, not a Codex/Claude skill root.
 - Keep safety constraints aligned with `scripts/lib/specs` and `.codex/skills/skill-constraints/SKILL.md`.
-
-## Superpowers Route Bridge
-When requests are substantial, chain process skills and harness controls in this order:
-1. Choose process: `superpowers:brainstorming` / `superpowers:writing-plans` / `superpowers:systematic-debugging`.
-2. Produce plan artifact in `docs/plans/YYYY-MM-DD-<topic>.md`.
-3. Apply `aios-long-running-harness` preflight, evidence gates, and retry policy.
-4. Persist run state via ContextDB checkpoints.
-5. If work splits into independent domains, use `superpowers:dispatching-parallel-agents`; if domains are coupled, stay sequential.
-6. End only with `superpowers:verification-before-completion`.
-
-## Default Operating Order
-1. Read task context, matching repo-local skills, and relevant `scripts/lib/specs` files.
-2. Confirm available MCP tools, CDP session strategy, and selector strategy.
-3. Execute with evidence checkpoints (`page.extract_text` / `page.get_html` logs per key step; `page.screenshot` only for visual fallback).
-4. Write outcome to docs/history and patch skills if drift is found.
 
 ## Resources
 - `references/system-map.md`: concise architecture and data flow map.

@@ -153,22 +153,6 @@
       ]
     },
     {
-      "relativeSkillPath": "aios-compress",
-      "installCatalogName": "aios-compress",
-      "repoTargets": [
-        "codex",
-        "claude"
-      ]
-    },
-    {
-      "relativeSkillPath": "aios-browser-compress",
-      "installCatalogName": "aios-browser-compress",
-      "repoTargets": [
-        "codex",
-        "claude"
-      ]
-    },
-    {
       "relativeSkillPath": "aios-interception-runtime",
       "installCatalogName": "aios-interception-runtime",
       "repoTargets": [
@@ -231,6 +215,16 @@
     {
       "relativeSkillPath": "model-router",
       "installCatalogName": "model-router",
+      "repoTargets": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ]
+    },
+    {
+      "relativeSkillPath": "skill-opt-lite",
+      "installCatalogName": "skill-opt-lite",
       "repoTargets": [
         "codex",
         "claude",

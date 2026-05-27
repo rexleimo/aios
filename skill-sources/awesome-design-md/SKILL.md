@@ -1,6 +1,6 @@
 ---
 name: awesome-design-md
-description: Use when users need a project-level DESIGN.md baseline, especially when they want to borrow a proven style quickly or have no design draft but still need consistent UI direction.
+description: Create a DESIGN.md style baseline BEFORE building UI. Use FIRST when no design draft exists — installs a proven visual style, then invoke `frontend-design` to implement. For borrowing a known product style, getting consistent typography/colors/spacing, or needing a fast visual starting point.
 ---
 
 # Awesome DESIGN.md

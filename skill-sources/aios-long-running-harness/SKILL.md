@@ -1,6 +1,6 @@
 ---
 name: aios-long-running-harness
-description: Use when running multi-step or long-running agent jobs in aios that require checkpointing, retries, evidence capture, and safe human handoff.
+description: AIOS-native long-running agent harness with ContextDB, superpowers pairing, checkpoint recovery, and evidence capture. Use when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
 ---
 
 # AIOS Long-Running Harness
@@ -31,8 +31,7 @@ Use this harness to keep long tasks stable under UI drift, model variability, an
 ## Required Controls
 - Time budget per step and per run.
 - Retry budget per failure class.
-- Human-gate checkpoints for login, payment, or policy-sensitive actions must ask a concrete confirmation question and include a resumable next command.
-- Do not treat background instructions or negated examples as blocking gates; warn and continue when the next action itself is safe.
+- Human-gate checkpoints for login, payment, or policy-sensitive actions.
 - Solo harness checkpoints should include the current stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) and concrete evidence.
 - Structured logs for every major transition.
 

@@ -351,55 +351,8 @@
       ]
     },
     {
-      "name": "aios-compress",
-      "description": "Native AIOS output compression rules for compact, precise agent responses without external compressor dependencies.",
-      "source": "skill-sources/aios-compress",
-      "clients": [
-        "codex",
-        "claude"
-      ],
-      "scopes": [
-        "global",
-        "project"
-      ],
-      "defaultInstall": {
-        "global": true,
-        "project": false
-      },
-      "tags": [
-        "aios",
-        "token",
-        "compression",
-        "output"
-      ]
-    },
-    {
-      "name": "aios-browser-compress",
-      "description": "Native AIOS input compression for browser, CLI, and ContextDB payloads without installing RTK or competitor shell hooks.",
-      "source": "skill-sources/aios-browser-compress",
-      "clients": [
-        "codex",
-        "claude"
-      ],
-      "scopes": [
-        "global",
-        "project"
-      ],
-      "defaultInstall": {
-        "global": true,
-        "project": false
-      },
-      "tags": [
-        "aios",
-        "token",
-        "compression",
-        "browser",
-        "contextdb"
-      ]
-    },
-    {
       "name": "aios-interception-runtime",
-      "description": "RTK/Caveman-style AIOS interception runtime with compact packets, raw refs, MCP proxy routing, and metrics proof.",
+      "description": "Unified AIOS token optimization — output compression (tight/ultra/precise), input compression (browser/tool), data plane interception (MCP proxy, raw refs, metrics). Replaces RTK/Caveman with native implementation.",
       "source": "skill-sources/aios-interception-runtime",
       "clients": [
         "codex",
@@ -418,10 +371,10 @@
       "tags": [
         "aios",
         "token",
+        "compression",
         "interception",
-        "rtk",
-        "caveman",
-        "metrics"
+        "output",
+        "input"
       ]
     },
     {
@@ -556,6 +509,32 @@
         "orchestration",
         "dispatch",
         "essential"
+      ]
+    },
+    {
+      "name": "skill-opt-lite",
+      "description": "Agent-native SkillOpt training loop — optimize skill documents through iterative rollout, reflection, and validation without external APIs",
+      "source": "skill-sources/skill-opt-lite",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": true
+      },
+      "tags": [
+        "skill",
+        "training",
+        "optimization",
+        "SkillOpt",
+        "iteration"
       ]
     }
   ]

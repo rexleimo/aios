@@ -3,25 +3,23 @@
 <!-- 中文注释：仓库级薄壳保留工作流路由、验证要求和拦截机制入口，防止长会话压缩后丢失关键规则。 -->
 <!-- AIOS: .aios/context-db/index.json -->
 
-<!-- WORKFLOW ROUTER - MANDATORY -->
+<!-- SUPERPOWERS SKILL ENFORCEMENT - MANDATORY -->
 <IMPORTANT>
-## Workflow Routing (REQUIRED)
+## Skill Enforcement (REQUIRED)
 
-**Before any action, route the task to the appropriate workflow:**
+**Superpowers skills MUST be invoked before any implementation action.** This is not optional.
 
-1. **Check task type** by looking for these keywords:
-   - 设计/创意/新功能/brainstorm → Use brainstorming workflow
-   - 调试/bug/error/debug → Use debugging workflow
-   - 并发/并行/agent team/dispatch → Use parallel dispatch workflow
-   - 长任务/harness/multi-step → Use harness workflow
-   - 实现/implement/开发 → Use implementation workflow
-   - 分析/研究/调查 → Use analysis workflow
-
-2. **Invoke `aios-workflow-router` skill** to get the correct workflow.
-
-3. **Do NOT skip this step** - Even simple tasks benefit from proper routing.
+1. **Invoke `using-superpowers` skill first** — it determines which process skill applies.
+2. **Process skills are mandatory, not optional:**
+   - Design/new behavior/creating features → MUST invoke `superpowers:brainstorming`
+   - Multi-step delivery → MUST invoke `superpowers:writing-plans`
+   - Debug/failure analysis → MUST invoke `superpowers:systematic-debugging`
+   - Test-first implementation → MUST invoke `superpowers:test-driven-development`
+   - About to claim completion → MUST invoke `superpowers:verification-before-completion`
+3. **Use `aios-workflow-router` as a routing aid** — it helps classify task type and dispatches to the correct superpowers skill. It does NOT replace superpowers skills.
+4. **Do NOT inline superpowers workflows** — always invoke the skill, never paraphrase its process.
 </IMPORTANT>
-<!-- END WORKFLOW ROUTER -->
+<!-- END SUPERPOWERS SKILL ENFORCEMENT -->
 
 ## Project Structure & Module Organization
 This repository is a local-first AI agent workspace centered on browser automation via MCP.
@@ -96,11 +94,12 @@ PRs should include:
 - If multiple browser MCPs are available, do **not** use `chrome-devtools` for normal business flows; reserve it for low-level inspection/debugging only.
 - Default reasoning order for page understanding: `page.semantic_snapshot` / targeted `page.extract_text` first, `page.get_html` and `page.screenshot` as fallbacks.
 
-## Token Optimization (Native Input + Output Compression)
-- AIOS references RTK-style input filtering and Caveman-style output brevity, but must not install RTK, Caveman, shell hooks, or competitor CLIs.
-- Output compression lives in `.codex/skills/aios-compress/SKILL.md`: default `tight`, `ultra` for harness/checkpoints, `precise` for browser/safety/irreversible actions.
-- Input compression uses `.codex/skills/aios-browser-compress/SKILL.md` plus ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
-- For browser pages, prefer `page.semantic_snapshot` or targeted `page.extract_text` before full-page text/HTML/screenshots.
+## Token Optimization (Unified Interception Runtime)
+- AIOS has a native interception runtime that replaces RTK/Caveman. Do not install RTK, Caveman, shell hooks, or competitor CLIs.
+- All token optimization (output compression, input compression, data plane interception) lives in `.claude/skills/aios-interception-runtime/SKILL.md`.
+- Output compression: default `tight`, `ultra` for harness/checkpoints, `precise` for browser/safety/irreversible actions.
+- Input compression: prefer `page.semantic_snapshot` or targeted `page.extract_text` before full-page text/HTML/screenshots; use ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
+- Data plane: MCP tools route through `scripts/aios-mcp-proxy.mjs`; large output is offloaded to refs; metrics in `.aios/interception/metrics/`.
 - For CLI/tool input, prefer scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) and preserve errors, paths, commands, latest state, and actionable UI text.
 
 ## Default Superpowers Route
