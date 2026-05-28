@@ -160,8 +160,13 @@ function opencode {
 function aios {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
-  $sub = if ($Args.Count -gt 0) { $Args[0] } else { "" }
-  $rest = @(if ($Args.Count -gt 1) { $Args[1..($Args.Count - 1)] })
+  $argList = @($Args)
+  if ($argList.Count -eq 1 -and $null -eq $argList[0]) {
+    $argList = @()
+  }
+
+  $sub = if ($argList.Count -gt 0) { $argList[0] } else { "" }
+  $rest = @(if ($argList.Count -gt 1) { $argList[1..($argList.Count - 1)] })
   $rootPath = if ($env:AIOS_ROOT_DIR) { $env:AIOS_ROOT_DIR } elseif ($env:AIOS_ROOT) { $env:AIOS_ROOT } else { $env:ROOTPATH }
 
   if (-not $rootPath) {
@@ -203,8 +208,13 @@ function aios {
         return
       }
 
-      $action = if ($rest.Count -gt 0) { $rest[0] } else { 'status' }
-      $privacyArgs = @(if ($rest.Count -gt 1) { $rest[1..($rest.Count - 1)] })
+      $restList = @($rest)
+      if ($restList.Count -eq 1 -and $null -eq $restList[0]) {
+        $restList = @()
+      }
+
+      $action = if ($restList.Count -gt 0) { $restList[0] } else { 'status' }
+      $privacyArgs = @(if ($restList.Count -gt 1) { $restList[1..($restList.Count - 1)] })
 
       switch ($action) {
         "init" { & node $script "init" @privacyArgs; $global:LASTEXITCODE = $LASTEXITCODE; return }

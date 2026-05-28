@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.9] - 2026-05-28
+
+- fix(windows): preserve AIOS PowerShell wrapper arguments
+
 ## [1.30.8] - 2026-05-28
 
 - fix(windows): preserve AIOS PowerShell wrapper arguments

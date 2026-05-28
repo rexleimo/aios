@@ -197,6 +197,15 @@ powershellWrapperTest('contextdb PowerShell aios function preserves a single for
   assert.deepEqual(captured, ['memo', '--help']);
 });
 
+powershellWrapperTest('contextdb PowerShell aios function avoids raw Count under strict mode', async () => {
+  const content = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.ps1'), 'utf8');
+
+  assert.match(content, /\$argList = @\(\$Args\)/u);
+  assert.match(content, /\$restList = @\(\$rest\)/u);
+  assert.doesNotMatch(content, /\$Args\.Count/u);
+  assert.doesNotMatch(content, /\$rest\.Count/u);
+});
+
 test('contextdb PowerShell transparent wrappers preserve native stdout TTY', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'contextdb-shell.ps1'), 'utf8');
 
