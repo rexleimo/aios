@@ -1,0 +1,2 @@
+# Keep canonical skill frontmatter LF-only for strict parser tests on Windows.
+skill-sources/**/SKILL.md text eol=lf

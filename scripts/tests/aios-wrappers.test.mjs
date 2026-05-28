@@ -87,6 +87,43 @@ exit 0
   };
 }
 
+async function runContextdbShellAiosFunction(args) {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'aios-contextdb-shell-test-'));
+  const scriptsDir = path.join(tempDir, 'scripts');
+  const captureFile = path.join(tempDir, 'capture.txt');
+
+  await mkdir(scriptsDir, { recursive: true });
+  const fakeAios = `
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+Set-Content -LiteralPath $env:AIOS_CAPTURE_FILE -Value ($args -join "\`n") -Encoding utf8
+exit 0
+`;
+  await writeFile(path.join(scriptsDir, 'aios.ps1'), fakeAios, 'utf8');
+
+  const quotedArgs = args.map((arg) => `'${arg.replaceAll("'", "''")}'`).join(', ');
+  const command = `
+$env:AIOS_ROOT_DIR = '${tempDir.replaceAll("'", "''")}'
+$env:AIOS_CAPTURE_FILE = '${captureFile.replaceAll("'", "''")}'
+. '${path.join(repoRoot, 'scripts', 'contextdb-shell.ps1').replaceAll("'", "''")}'
+$aiosArgs = @(${quotedArgs})
+aios @aiosArgs
+exit $global:LASTEXITCODE
+`;
+
+  const result = spawnSync('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', command], {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: process.env,
+  });
+
+  const captured = (await readFile(captureFile, 'utf8')).replace(/^\uFEFF/u, '');
+  return {
+    result,
+    captured: captured.split(/\r?\n/).filter(Boolean),
+  };
+}
+
 bashWrapperTest('install-contextdb-shell.sh forwards to internal shell install', async () => {
   const { result, captured } = await runWrapper('scripts/install-contextdb-shell.sh', ['--mode', 'repo-only', '--force']);
   assert.equal(result.status, 0);
@@ -152,6 +189,12 @@ powershellWrapperTest('install-privacy-guard.ps1 normalizes PowerShell-style fla
   const { result, captured } = await runPowerShellWrapper('install-privacy-guard.ps1', ['-Enable', '-Mode', 'regex']);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.deepEqual(captured, ['internal', 'privacy', 'install', '--mode', 'regex', '--enable']);
+});
+
+powershellWrapperTest('contextdb PowerShell aios function preserves a single forwarded option', async () => {
+  const { result, captured } = await runContextdbShellAiosFunction(['memo', '--help']);
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(captured, ['memo', '--help']);
 });
 
 test('contextdb PowerShell transparent wrappers preserve native stdout TTY', async () => {

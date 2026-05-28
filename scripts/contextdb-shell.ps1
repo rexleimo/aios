@@ -161,7 +161,7 @@ function aios {
   param([Parameter(ValueFromRemainingArguments = $true)] [string[]]$Args)
 
   $sub = if ($Args.Count -gt 0) { $Args[0] } else { "" }
-  $rest = if ($Args.Count -gt 1) { $Args[1..($Args.Count - 1)] } else { @() }
+  $rest = @(if ($Args.Count -gt 1) { $Args[1..($Args.Count - 1)] })
   $rootPath = if ($env:AIOS_ROOT_DIR) { $env:AIOS_ROOT_DIR } elseif ($env:AIOS_ROOT) { $env:AIOS_ROOT } else { $env:ROOTPATH }
 
   if (-not $rootPath) {
@@ -204,7 +204,7 @@ function aios {
       }
 
       $action = if ($rest.Count -gt 0) { $rest[0] } else { 'status' }
-      $privacyArgs = if ($rest.Count -gt 1) { $rest[1..($rest.Count - 1)] } else { @() }
+      $privacyArgs = @(if ($rest.Count -gt 1) { $rest[1..($rest.Count - 1)] })
 
       switch ($action) {
         "init" { & node $script "init" @privacyArgs; $global:LASTEXITCODE = $LASTEXITCODE; return }
