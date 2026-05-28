@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.30.6] - 2026-05-28
+
+- fix(tui): refresh installed skills state after setup/update/uninstall actions so picker reflects current disk state
+- fix(skills): quote YAML frontmatter description fields containing Chinese punctuation to prevent parser errors
+
 ## [1.30.5] - 2026-05-27
 
 - fix(superpowers): filter superpowers skills by catalog clients

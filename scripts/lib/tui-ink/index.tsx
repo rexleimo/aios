@@ -113,14 +113,20 @@ export async function runInteractiveSession({
   rootDir,
   onRun,
 }: RunInteractiveSessionOptions): Promise<void> {
-  // Print welcome banner
   printBanner();
 
   const catalogSkills = loadSkillsCatalog(rootDir);
-  const installedSkills = collectInstalledSkills(rootDir, process.cwd(), catalogSkills);
+  const cwd = process.cwd();
 
-  // Wrapper to match TuiSessionProps.onRun signature
-  const handleRun = async (action: string, options: unknown) => {
+  const onRefreshInstalled = (): InstalledSkills => {
+    return collectInstalledSkills(rootDir, cwd, catalogSkills);
+  };
+
+  const handleRun = async (
+    action: string,
+    options: unknown,
+    hooks?: { onLog?: (line: string) => void }
+  ) => {
     await onRun(action, options);
   };
 
@@ -128,7 +134,8 @@ export async function runInteractiveSession({
     React.createElement(App, {
       rootDir,
       catalogSkills,
-      installedSkills,
+      installedSkills: onRefreshInstalled(),
+      onRefreshInstalled,
       onRun: handleRun,
     })
   );

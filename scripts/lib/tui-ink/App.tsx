@@ -1,6 +1,6 @@
 // scripts/lib/tui-ink/App.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { MemoryRouter, Routes, Route, useNavigate } from 'react-router';
 import { Box, Text, useApp, useInput } from 'ink';
 import { MainScreen } from './screens/MainScreen';
@@ -19,11 +19,18 @@ function AppContent({
   rootDir,
   catalogSkills,
   installedSkills,
+  onRefreshInstalled,
   onRun,
   onExit
 }: TuiSessionProps & { onExit: () => void }) {
   const navigate = useNavigate();
   const { exit } = useApp();
+  const [liveInstalled, setLiveInstalled] = useState(installedSkills);
+
+  useEffect(() => {
+    setLiveInstalled(installedSkills);
+  }, [installedSkills]);
+
   const {
     options,
     cycleWrapMode,
@@ -32,7 +39,7 @@ function AppContent({
     toggleComponent,
     toggleSkipFlag,
     setSelectedSkills,
-  } = useSetupOptions(catalogSkills, installedSkills);
+  } = useSetupOptions(catalogSkills, liveInstalled);
 
   const [skillPickerOwner, setSkillPickerOwner] = useState<Action | null>(null);
   const [skillPickerClient, setSkillPickerClient] = useState<Client>('all');
@@ -61,7 +68,8 @@ function AppContent({
     hooks?: { onLog?: (line: string) => void }
   ) => {
     await onRun(action, actionOptions, hooks);
-  }, [onRun]);
+    onRefreshInstalled();
+  }, [onRun, onRefreshInstalled]);
 
   useInput(
     useCallback((input, key) => {
@@ -164,7 +172,7 @@ function AppContent({
           <SkillPickerScreen
             rootDir={rootDir}
             catalogSkills={catalogSkills}
-            installedSkills={installedSkills}
+            installedSkills={liveInstalled}
             selectedSkills={skillPickerOwner ? options[skillPickerOwner]?.selectedSkills || [] : []}
             client={skillPickerClient}
             scope={skillPickerScope}
@@ -182,10 +190,16 @@ function AppContent({
 
 export function App(props: TuiSessionProps) {
   const [exitRequested, setExitRequested] = useState(false);
+  const [currentInstalled, setCurrentInstalled] = useState(props.installedSkills);
 
   const handleExit = useCallback(() => {
     setExitRequested(true);
   }, []);
+
+  const handleRefreshInstalled = useCallback(() => {
+    const fresh = props.onRefreshInstalled();
+    setCurrentInstalled(fresh);
+  }, [props.onRefreshInstalled]);
 
   if (exitRequested) {
     return (
@@ -197,7 +211,12 @@ export function App(props: TuiSessionProps) {
 
   return (
     <MemoryRouter>
-      <AppContent {...props} onExit={handleExit} />
+      <AppContent
+        {...props}
+        installedSkills={currentInstalled}
+        onRefreshInstalled={handleRefreshInstalled}
+        onExit={handleExit}
+      />
     </MemoryRouter>
   );
 }

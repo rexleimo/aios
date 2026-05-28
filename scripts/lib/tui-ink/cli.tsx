@@ -80,7 +80,7 @@ function getClientHomes(): Record<Client, string> {
   };
 }
 
-function collectInstalledSkills(
+export function collectInstalledSkills(
   rootDir: string,
   projectRoot: string,
   catalogSkills: CatalogSkill[]
@@ -121,7 +121,11 @@ export async function runInteractiveSession({
   onRun: (action: string, options: unknown, hooks?: { onLog?: (line: string) => void }) => Promise<void>;
 }): Promise<void> {
   const catalogSkills = loadSkillsCatalog(rootDir);
-  const installedSkills = collectInstalledSkills(rootDir, process.cwd(), catalogSkills);
+  const cwd = process.cwd();
+
+  const onRefreshInstalled = (): InstalledSkills => {
+    return collectInstalledSkills(rootDir, cwd, catalogSkills);
+  };
 
   const handleRun = async (
     action: string,
@@ -135,7 +139,8 @@ export async function runInteractiveSession({
     React.createElement(App, {
       rootDir,
       catalogSkills,
-      installedSkills,
+      installedSkills: onRefreshInstalled(),
+      onRefreshInstalled,
       onRun: handleRun,
     })
   );

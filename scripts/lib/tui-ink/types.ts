@@ -84,5 +84,6 @@ export interface TuiSessionProps {
   rootDir: string;
   catalogSkills: CatalogSkill[];
   installedSkills: InstalledSkills;
+  onRefreshInstalled: () => InstalledSkills;
   onRun: (action: Action, options: unknown, hooks?: { onLog?: (line: string) => void }) => Promise<void>;
 }
