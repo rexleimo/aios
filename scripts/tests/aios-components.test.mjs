@@ -1079,12 +1079,12 @@ test('agents install skips unsupported clients and uninstall removes managed fil
   const skipped = await installOrchestratorAgents({ rootDir, client: 'opencode', io });
   assert.equal(skipped.skipped, true);
   await assert.rejects(() => readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'));
-  await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'));
+  await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'));
 
   await installOrchestratorAgents({ rootDir, client: 'all', io });
 
   assert.match(await readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
-  assert.match(await readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
+  assert.match(await readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
 
   await uninstallOrchestratorAgents({ rootDir, client: 'all', io });
   assert.equal(await readFile(path.join(claudeDir, 'notes.md'), 'utf8'), 'manual\n');
@@ -1099,7 +1099,7 @@ test('agents install skips unsupported clients and uninstall removes managed fil
 
   let codexMissing = false;
   try {
-    await readFile(path.join(codexDir, 'rex-planner.md'), 'utf8');
+    await readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8');
   } catch {
     codexMissing = true;
   }
@@ -1121,5 +1121,5 @@ test('agents install fails on unmanaged conflicts before writing other targets',
   );
 
   assert.equal(await readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'), 'manual\n');
-  await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'));
+  await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'));
 });

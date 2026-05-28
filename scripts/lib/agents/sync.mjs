@@ -62,11 +62,15 @@ async function readOptional(absPath) {
   }
 }
 
-async function listMarkdownFiles(absDir) {
+async function listAgentRoleFiles(absDir) {
   try {
     const entries = await readdir(absDir, { withFileTypes: true });
     return entries
-      .filter((entry) => entry.isFile() && entry.name.toLowerCase().endsWith('.md'))
+      .filter((entry) => {
+        if (!entry.isFile()) return false;
+        const lowerName = entry.name.toLowerCase();
+        return lowerName.endsWith('.md') || lowerName.endsWith('.toml');
+      })
       .map((entry) => entry.name);
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
@@ -109,6 +113,26 @@ export function isManagedAgentMarkdown(content, expectedId) {
 
   return nonEmptyLines[0] === ORCHESTRATOR_AGENT_MARKER
     && nonEmptyLines[nonEmptyLines.length - 1] === ORCHESTRATOR_AGENT_MARKER_END;
+}
+
+export function isManagedAgentToml(content, expectedId) {
+  const normalized = normalizeNewlines(content);
+  const lines = normalized.split('\n');
+  const nonEmptyLines = lines.filter((line) => line.trim().length > 0);
+  if (nonEmptyLines.length === 0) return false;
+  if (nonEmptyLines[0] !== `# ${ORCHESTRATOR_AGENT_MARKER}`) return false;
+  if (nonEmptyLines[nonEmptyLines.length - 1] !== `# ${ORCHESTRATOR_AGENT_MARKER_END}`) return false;
+
+  const nameLine = lines.find((line) => line.trim().startsWith('name = '));
+  const match = nameLine?.trim().match(/^name\s*=\s*"([^"]+)"\s*$/u);
+  return Boolean(match && match[1] === expectedId);
+}
+
+export function isManagedAgentFile(content, expectedId, relPath = '') {
+  if (String(relPath || '').toLowerCase().endsWith('.toml')) {
+    return isManagedAgentToml(content, expectedId);
+  }
+  return isManagedAgentMarkdown(content, expectedId);
 }
 
 function buildExpectedFiles({ source, targets, mode, emitters }) {
@@ -197,15 +221,15 @@ export async function syncCanonicalAgents({
       assertCondition(targetRoot, `unsupported target: ${target}`);
 
       const absDir = path.join(resolvedTargetRootDir, targetRoot);
-      const existingFiles = await listMarkdownFiles(absDir);
+      const existingFiles = await listAgentRoleFiles(absDir);
       const expectedForTarget = expectedFiles.get(target) || new Map();
 
       for (const fileName of existingFiles) {
         const relPath = joinRelativePath(targetRoot, fileName);
         const absPath = path.join(resolvedTargetRootDir, relPath);
         const existing = await readFile(absPath, 'utf8');
-        const expectedId = path.basename(fileName, '.md');
-        const managed = isManagedAgentMarkdown(existing, expectedId);
+        const expectedId = path.basename(fileName, path.extname(fileName));
+        const managed = isManagedAgentFile(existing, expectedId, relPath);
 
         if (hasManagedMarker(existing) && !managed) {
           throw new Error(`malformed managed file: ${relPath}`);

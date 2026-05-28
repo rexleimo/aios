@@ -187,7 +187,7 @@ test('native sync can install codex project outputs outside the AIOS source root
   assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
   assert.match(agentsDoc, /Codex native block/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
-  assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
+  assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.codex')).client, 'codex');
   await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
 });
@@ -208,6 +208,7 @@ test('native sync can install all client project outputs outside the AIOS source
   assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
+  assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
   await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
 });

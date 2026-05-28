@@ -256,7 +256,8 @@
     }
   ],
   "legacyReplaceable": [
-    ".claude/skills/skill-creator"
+    ".claude/skills/skill-creator",
+    ".claude/skills/skill-opt-lite"
   ],
   "legacyUnmanaged": [
     ".claude/skills/baoyu-xhs-images"

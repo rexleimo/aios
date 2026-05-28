@@ -67,7 +67,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'agent-sources/roles/rex-reviewer.json', '{"schemaVersion":1,"id":"rex-reviewer","role":"reviewer","name":"rex-reviewer","description":"review","tools":["Read"],"model":"sonnet","handoffTarget":"merge-gate","systemPrompt":"review"}\n');
   await writeFixtureFile(rootDir, 'agent-sources/roles/rex-security-reviewer.json', '{"schemaVersion":1,"id":"rex-security-reviewer","role":"security-reviewer","name":"rex-security-reviewer","description":"security","tools":["Read"],"model":"sonnet","handoffTarget":"merge-gate","systemPrompt":"secure"}\n');
   await writeFixtureFile(rootDir, '.codex/skills/sample-skill/SKILL.md', '# codex\n');
-  await writeFixtureFile(rootDir, '.codex/agents/rex.md', '# codex agent\n');
+  await writeFixtureFile(rootDir, '.codex/agents/rex.toml', '# codex agent\n');
   await writeFixtureFile(rootDir, '.claude/skills/sample-skill/SKILL.md', '# claude\n');
   await writeFixtureFile(rootDir, '.claude/agents/rex.md', '# claude agent\n');
   await writeFixtureFile(rootDir, '.agents/skills/sample-skill/SKILL.md', '# agents\n');

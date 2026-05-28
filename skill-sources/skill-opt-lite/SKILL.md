@@ -1,6 +1,6 @@
 ---
 name: skill-opt-lite
-description: Train and optimize skill documents using the SkillOpt methodology — the agent acts as both target and optimizer, running tasks, reflecting on failures, proposing edits, and validating improvements in a self-contained training loop. TRIGGER: optimize skill, train skill, improve skill, skill training, skill optimization, SkillOpt, skill evolution, skill iteration loop, skill feedback loop, skill tuning.
+description: "Train and optimize skill documents using the SkillOpt methodology — the agent acts as both target and optimizer, running tasks, reflecting on failures, proposing edits, and validating improvements in a self-contained training loop. TRIGGER: optimize skill, train skill, improve skill, skill training, skill optimization, SkillOpt, skill evolution, skill iteration loop, skill feedback loop, skill tuning."
 ---
 
 # SkillOpt-Lite: Agent-Native Skill Training

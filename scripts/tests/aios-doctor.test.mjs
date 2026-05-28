@@ -55,6 +55,31 @@ test('doctor-security-config scans agent-sources JSON files', async () => {
   assert.match(`${result.stdout}\n${result.stderr}`, /private_key/);
 });
 
+test('doctor-security-config scans Codex TOML agent roles', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-doctor-codex-agent-'));
+  const agentDir = path.join(rootDir, '.codex', 'agents');
+  await mkdir(agentDir, { recursive: true });
+  await writeFile(
+    path.join(agentDir, 'rex-planner.toml'),
+    [
+      'name = "rex-planner"',
+      'description = "planner"',
+      'developer_instructions = "-----BEGIN PRIVATE KEY-----"',
+      '',
+    ].join('\n'),
+    'utf8'
+  );
+
+  const result = spawnSync(process.execPath, ['scripts/doctor-security-config.mjs', '--workspace', rootDir, '--strict'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stdout}\n${result.stderr}`, /\.codex\/agents\/rex-planner\.toml/);
+  assert.match(`${result.stdout}\n${result.stderr}`, /private_key/);
+});
+
 test('doctorBrowserMcp --fix auto-heals default cdpPort when service start succeeds', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-browser-doctor-fix-root-'));
   const scriptsDir = path.join(rootDir, 'scripts');

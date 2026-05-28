@@ -140,7 +140,7 @@ test('syncGeneratedAgents renders from rootDir canonical source', async () => {
   assert.equal(result.ok, true);
   assert.equal(result.targets.includes('.codex/agents'), true);
 
-  const generated = await fs.readFile(path.join(codexDir, 'rex-planner.md'), 'utf8');
+  const generated = await fs.readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8');
   assert.match(generated, /Planner role from temp canonical source/);
 });
 
@@ -163,7 +163,7 @@ test('syncGeneratedAgents rejects unmanaged conflicts', async () => {
 
   const manual = await fs.readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8');
   assert.equal(manual, 'manual\n');
-  await assert.rejects(() => fs.readFile(path.join(codexDir, 'rex-planner.md'), 'utf8'));
+  await assert.rejects(() => fs.readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'));
 });
 
 test('buildLocalDispatchPlan injects agentRefId into phase job launchSpec', () => {

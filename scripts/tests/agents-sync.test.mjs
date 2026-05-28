@@ -81,15 +81,19 @@ test('renderClaudeAgent matches the normative template', async () => {
   assert.match(md, /^([\s\S]*)<!-- END AIOS-GENERATED -->\n$/);
 });
 
-test('renderCodexAgent matches the same deterministic template contract', async () => {
+test('renderCodexAgent matches Codex TOML role contract', async () => {
   const source = await canonicalAgent('planner');
   const mod = await import('../lib/agents/emitters/codex.mjs');
   const rendered = mod.renderCodexAgent(source);
   const md = rendered.content;
 
   assert.equal(md.endsWith('\n'), true);
-  assert.equal(rendered.targetRelPath, '.codex/agents/rex-planner.md');
-  assert.match(md, /^---\nname: rex-planner\n/);
+  assert.equal(rendered.targetRelPath, '.codex/agents/rex-planner.toml');
+  assert.match(md, /^# <!-- AIOS-GENERATED: orchestrator-agents v1 -->\n/);
+  assert.match(md, /^name = "rex-planner"$/m);
+  assert.match(md, /^description = "Planner role card for AIOS orchestrations \(scope, risks, ordering\)."$/m);
+  assert.match(md, /^developer_instructions = "/m);
+  assert.doesNotMatch(md, /^---$/m);
 });
 
 test('syncCanonicalAgents aborts before write on unmanaged conflict', async () => {
@@ -212,6 +216,17 @@ test('syncCanonicalAgents removes stale managed files after successful sync', as
   await mod.syncCanonicalAgents({ rootDir, targets: ['claude'] });
 
   await assert.rejects(() => readFile(path.join(rootDir, '.claude/agents/old-agent.md'), 'utf8'));
+});
+
+test('syncCanonicalAgents migrates stale Codex markdown agents to TOML role files', async () => {
+  const rootDir = await makeRootDir();
+  await seedManagedTargets(rootDir);
+
+  const mod = await import('../lib/agents/sync.mjs');
+  await mod.syncCanonicalAgents({ rootDir, targets: ['codex'] });
+
+  await assert.rejects(() => readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8'));
+  assert.match(await readFile(path.join(rootDir, '.codex/agents/rex-planner.toml'), 'utf8'), /developer_instructions = "/);
 });
 
 test('syncCanonicalAgents rejects malformed marker-bearing files', async () => {

@@ -3,7 +3,7 @@ import path from 'node:path';
 import { parseArgs, usage } from './args.mjs';
 import {
   detectGitRoot,
-  listAgentMdFiles,
+  listAgentRoleFiles,
   listFilesIfPresent,
   listFilesUnder,
   pickGlobalConfigFiles,
@@ -30,8 +30,8 @@ function collectWorkspaceFiles(workspace) {
     '.gemini/settings.json',
     '.opencode/settings.json',
   ]));
-  files.push(...listAgentMdFiles(workspace, '.claude/agents'));
-  files.push(...listAgentMdFiles(workspace, '.codex/agents'));
+  files.push(...listAgentRoleFiles(workspace, '.claude/agents', ['.md']));
+  files.push(...listAgentRoleFiles(workspace, '.codex/agents', ['.toml', '.md']));
   files.push(...listFilesUnder(workspace, 'agent-sources', (name) => name.toLowerCase().endsWith('.json')));
   return files;
 }

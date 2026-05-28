@@ -32,7 +32,7 @@ export function listFilesIfPresent(workspace, relPaths) {
   return out;
 }
 
-export function listAgentMdFiles(workspace, relDir) {
+export function listAgentRoleFiles(workspace, relDir, extensions = ['.md']) {
   const absDir = path.join(workspace, relDir);
   let entries = [];
   try {
@@ -44,10 +44,15 @@ export function listAgentMdFiles(workspace, relDir) {
   const out = [];
   for (const ent of entries) {
     if (!ent.isFile()) continue;
-    if (!ent.name.toLowerCase().endsWith('.md')) continue;
+    const lowerName = ent.name.toLowerCase();
+    if (!extensions.some((extension) => lowerName.endsWith(extension))) continue;
     out.push(path.join(absDir, ent.name));
   }
   return out;
+}
+
+export function listAgentMdFiles(workspace, relDir) {
+  return listAgentRoleFiles(workspace, relDir, ['.md']);
 }
 
 export function listFilesUnder(workspace, relDir, predicate) {
