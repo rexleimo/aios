@@ -1,20 +1,15 @@
-import {
-  joinMarkdownSections,
-  readClientJsonSource,
-  readClientMarkdownSource,
-  readSharedMarkdownParts,
-} from './shared.mjs';
+import { getClientInstructionFileName } from '../../clients/registry.mjs';
+
+import { composeNativeMarkdown } from './compose.mjs';
+import { readClientJsonSource } from './shared.mjs';
 
 export function renderClaudeNativeOutputs({ rootDir }) {
   return {
     operations: [
       {
         kind: 'markdown-block',
-        targetPath: 'CLAUDE.md',
-        content: joinMarkdownSections([
-          ...readSharedMarkdownParts(rootDir),
-          readClientMarkdownSource(rootDir, 'claude', 'CLAUDE.md'),
-        ]),
+        targetPath: getClientInstructionFileName('claude'),
+        content: composeNativeMarkdown({ rootDir, client: 'claude' }),
       },
       {
         kind: 'json-merge',

@@ -1,17 +1,16 @@
-import { joinMarkdownSections, readClientMarkdownSource, readSharedMarkdownParts } from './shared.mjs';
+import { getClientInstructionFileName } from '../../clients/registry.mjs';
+
+import { composeNativeMarkdown } from './compose.mjs';
 
 export function renderGeminiNativeOutputs({ rootDir }) {
   return {
     operations: [
       {
         kind: 'markdown-block',
-        targetPath: 'GEMINI.md',
-        content: joinMarkdownSections([
-          ...readSharedMarkdownParts(rootDir),
-          readClientMarkdownSource(rootDir, 'gemini', 'AIOS.md'),
-        ]),
+        targetPath: getClientInstructionFileName('gemini'),
+        content: composeNativeMarkdown({ rootDir, client: 'gemini' }),
       },
     ],
-    managedTargets: ['GEMINI.md', '.gemini/skills'],
+    managedTargets: ['GEMINI.md', '.gemini/commands'],
   };
 }

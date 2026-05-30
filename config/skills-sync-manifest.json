@@ -3,7 +3,7 @@
   "generatedRoots": {
     "codex": ".codex/skills",
     "claude": ".claude/skills",
-    "gemini": ".gemini/skills",
+    "gemini": ".gemini/commands",
     "opencode": ".opencode/skills",
     "agents": ".agents/skills"
   },

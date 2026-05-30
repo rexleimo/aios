@@ -121,6 +121,8 @@ function resolveSkillCandidateFilePath({ rootDir = '', skillId = '' } = {}) {
   const candidates = [
     path.join(normalizedRootDir, '.codex', 'skills', normalizedSkillId, 'SKILL.md'),
     path.join(normalizedRootDir, '.claude', 'skills', normalizedSkillId, 'SKILL.md'),
+    path.join(normalizedRootDir, '.gemini', 'skills', normalizedSkillId, 'SKILL.md'),
+    path.join(normalizedRootDir, '.opencode', 'skills', normalizedSkillId, 'SKILL.md'),
     path.join(normalizedRootDir, '.agents', 'skills', normalizedSkillId, 'SKILL.md'),
   ];
   const selected = candidates.find((item) => existsSync(item)) || candidates[0];

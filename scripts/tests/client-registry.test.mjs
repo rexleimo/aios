@@ -22,6 +22,11 @@ import {
   resolveClientSkillRoots,
 } from '../lib/clients/paths/index.mjs';
 import {
+  getClientInstructionFileName,
+  getClientMcpTarget,
+  resolveClientMcpTargetPath,
+} from '../lib/clients/native/index.mjs';
+import {
   buildRuntimeClientProviderMap,
   buildRuntimeClientModelArgs,
   getClientCommandName,
@@ -68,7 +73,7 @@ test('client registry exposes shared skill roots for selected clients', () => {
   assert.deepEqual(resolveClientSkillRoots('all'), [
     '.codex/skills',
     '.claude/skills',
-    '.gemini/skills',
+    '.gemini/commands',
     '.opencode/skills',
     '.agents/skills',
   ]);
@@ -117,6 +122,84 @@ test('client registry reports capability support explicitly', () => {
   assert.equal(getClientCapability('opencode', 'superpowers'), false);
 });
 
+test('client registry exposes native instruction filenames per client', () => {
+  assert.equal(getClientInstructionFileName('claude'), 'CLAUDE.md');
+  assert.equal(getClientInstructionFileName('codex'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('gemini'), 'GEMINI.md');
+  assert.equal(getClientInstructionFileName('opencode'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
+});
+
+test('client registry exposes per-client MCP target conventions (single source of truth)', () => {
+  const codexTarget = getClientMcpTarget('codex');
+  assert.equal(codexTarget.format, 'toml');
+  assert.equal(codexTarget.namespace, 'mcp_servers');
+  assert.deepEqual(codexTarget.scopes, [
+    { scope: 'home', file: 'config.toml' },
+    { scope: 'project', file: '.codex/config.toml' },
+  ]);
+
+  const claudeTarget = getClientMcpTarget('claude');
+  assert.equal(claudeTarget.format, 'json');
+  assert.equal(claudeTarget.namespace, 'mcpServers');
+  assert.deepEqual(claudeTarget.scopes, [
+    { scope: 'project', file: '.mcp.json' },
+    { scope: 'home', file: '.mcp.json' },
+  ]);
+
+  const geminiTarget = getClientMcpTarget('gemini');
+  assert.equal(geminiTarget.format, 'json');
+  assert.equal(geminiTarget.namespace, 'mcpServers');
+  assert.deepEqual(geminiTarget.scopes, [
+    { scope: 'project', file: '.gemini/settings.json' },
+    { scope: 'home', file: 'settings.json' },
+  ]);
+
+  const ocTarget = getClientMcpTarget('opencode');
+  assert.equal(ocTarget.format, 'opencode-json');
+  assert.equal(ocTarget.namespace, 'mcp');
+  assert.deepEqual(ocTarget.scopes, [
+    { scope: 'home', file: 'opencode.json' },
+  ]);
+});
+
+test('resolveClientMcpTargetPath honors home vs project scope', () => {
+  // home-scoped clients resolve under their client home
+  assert.equal(
+    resolveClientMcpTargetPath('codex', { projectRoot: '/proj', clientHome: '/home/.codex' }),
+    '/home/.codex/config.toml',
+  );
+  assert.equal(
+    resolveClientMcpTargetPath('opencode', { projectRoot: '/proj', clientHome: '/home/.config/opencode' }),
+    '/home/.config/opencode/opencode.json',
+  );
+  // project-scoped clients resolve under the project root
+  assert.equal(
+    resolveClientMcpTargetPath('claude', { projectRoot: '/proj', clientHome: '/home/.claude' }),
+    '/proj/.mcp.json',
+  );
+  assert.equal(
+    resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' }),
+    '/proj/.gemini/settings.json',
+  );
+  // codex has dual scope: falls back to project when home is absent
+  assert.equal(resolveClientMcpTargetPath('codex', { projectRoot: '/proj' }), '/proj/.codex/config.toml');
+});
+
+test('every client declares instruction filename and a valid MCP target', () => {
+  for (const client of ALL_CLIENTS) {
+    assert.ok(getClientInstructionFileName(client), `${client} instruction filename`);
+    const mcp = getClientMcpTarget(client);
+    assert.ok(Array.isArray(mcp.scopes) && mcp.scopes.length > 0, `${client} mcp.scopes`);
+    for (const s of mcp.scopes) {
+      assert.ok(['home', 'project'].includes(s.scope), `${client} mcp.scope value ${s.scope}`);
+      assert.ok(s.file, `${client} mcp.scope file`);
+    }
+    assert.ok(['json', 'toml', 'opencode-json'].includes(mcp.format), `${client} mcp.format`);
+    assert.ok(mcp.namespace, `${client} mcp.namespace present`);
+  }
+});
+
 test('client registry facade re-exports split module APIs', () => {
   assert.equal(registry.ALL_CLIENTS, ALL_CLIENTS);
   assert.equal(registry.resolveClientSelection, resolveClientSelection);
@@ -125,4 +208,7 @@ test('client registry facade re-exports split module APIs', () => {
   assert.equal(registry.getClientRuntimeId, getClientRuntimeId);
   assert.equal(registry.resolveClientTeamProviders, resolveClientTeamProviders);
   assert.equal(registry.buildRuntimeClientModelArgs, buildRuntimeClientModelArgs);
+  assert.equal(registry.getClientInstructionFileName, getClientInstructionFileName);
+  assert.equal(registry.getClientMcpTarget, getClientMcpTarget);
+  assert.equal(registry.resolveClientMcpTargetPath, resolveClientMcpTargetPath);
 });

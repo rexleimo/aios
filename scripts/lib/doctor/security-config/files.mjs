@@ -105,18 +105,20 @@ export function relativeTo(workspace, filePath) {
 }
 
 export function pickGlobalConfigFiles(homeDir, env = process.env) {
+  // 各客户端真实存在的全局(home 作用域)配置文件。
+  // 注意：~/.claude/mcp.json 不是 Claude Code 的真实 MCP 位置（其 MCP 走项目 .mcp.json / ~/.claude.json），
+  // 故不扫描；opencode 的真实配置是 ~/.config/opencode/opencode.json。
   const candidates = [
     path.join(homeDir, '.codex', 'config.toml'),
     path.join(homeDir, '.claude', 'settings.json'),
-    path.join(homeDir, '.claude', 'mcp.json'),
+    path.join(homeDir, '.claude.json'),
     path.join(homeDir, '.gemini', 'settings.json'),
   ];
 
   const xdg = env.XDG_CONFIG_HOME && path.isAbsolute(env.XDG_CONFIG_HOME)
     ? env.XDG_CONFIG_HOME
     : path.join(homeDir, '.config');
-  candidates.push(path.join(xdg, 'opencode', 'settings.json'));
-  candidates.push(path.join(xdg, 'opencode', 'mcp.json'));
+  candidates.push(path.join(xdg, 'opencode', 'opencode.json'));
 
   return candidates.filter(isFile);
 }

@@ -7,10 +7,12 @@ import { getClientHomes } from '../../platform/paths.mjs';
 import { AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS, PRIMARY_BROWSER_ALIAS } from './constants.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
+import { migrateOneMcpToml } from './mcp-toml.mjs';
+import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
 import { resolveLauncherScript } from './runtime-paths.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。 */
-export function migrateOneMcpJsonFile(filePath, rootDir) {
+export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers' } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
 
@@ -30,11 +32,11 @@ export function migrateOneMcpJsonFile(filePath, rootDir) {
     parsed = {};
   }
 
-  if (!parsed.mcpServers || typeof parsed.mcpServers !== 'object' || Array.isArray(parsed.mcpServers)) {
-    parsed.mcpServers = {};
+  if (!parsed[serversKey] || typeof parsed[serversKey] !== 'object' || Array.isArray(parsed[serversKey])) {
+    parsed[serversKey] = {};
   }
 
-  const mcpServers = parsed.mcpServers;
+  const mcpServers = parsed[serversKey];
   const existingAlias = mcpServers[PRIMARY_BROWSER_ALIAS];
   mcpServers[PRIMARY_BROWSER_ALIAS] = buildPreferredMcpServer(rootDir, existingAlias);
   mcpServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
@@ -76,7 +78,14 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
 
   for (const target of targets) {
     const absPath = path.resolve(target.path);
-    const result = migrateOneMcpJsonFile(absPath, rootDir);
+    let result;
+    if (target.format === 'toml') {
+      result = migrateOneMcpToml(absPath, rootDir);
+    } else if (target.format === 'opencode-json') {
+      result = migrateOneMcpOpencodeJson(absPath, rootDir);
+    } else {
+      result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace });
+    }
     if (result.status === 'error') {
       io.log(`ERR  mcp-migrate skipped (invalid json): ${absPath}; ${result.reason}`);
       errors += 1;

@@ -22,9 +22,14 @@ function usesWindowsShellFallback(command, env = process.env) {
   return spec.shell === true;
 }
 
+function warnShellPromptSuppressed(clientLabel) {
+  console.warn(`[warn] Windows shell fallback detected for ${clientLabel}; skipping automatic ContextDB prompt injection to avoid cmd.exe interpreting AIOS context lines as commands.`);
+  console.warn(`[action] Reinstall or update the ${clientLabel} client launcher so it resolves to a direct executable (not a .cmd/.ps1 wrapper). After reinstalling, rerun this command.`);
+  console.warn('[alt] As a workaround, manually paste the AIOS context packet (see .aios/context-db/) as your first prompt in a new session.');
+}
+
 function warnOpenCodeShellPromptSuppressed() {
-  console.warn('[warn] Windows shell fallback detected for opencode; skipping automatic ContextDB prompt injection to avoid cmd.exe interpreting AIOS context lines as commands.');
-  console.warn('[hint] Update/reinstall OpenCode so its launcher resolves to a direct executable entrypoint, then rerun the command.');
+  warnShellPromptSuppressed('opencode');
 }
 
 function routeAutoPrompt(opts) {
@@ -55,9 +60,9 @@ function buildGeminiInvocation({ contextText, extraArgs, injectContext, autoProm
 function buildCodexInvocation({ contextText, extraArgs, injectContext, autoPrompt, explicitAutoPrompt, routeOptions }) {
   const cmd = commandForRuntime('codex-cli');
   let shouldInject = injectContext;
-  if (shouldInject && process.platform === 'win32' && getCommandSpawnSpec(cmd, [], { env: process.env }).shell === true) {
+  if (shouldInject && usesWindowsShellFallback(cmd, process.env)) {
     shouldInject = false;
-    console.warn('[warn] Windows shell wrapper detected for codex; skipping auto prompt injection. Paste the context packet as your first prompt.');
+    warnShellPromptSuppressed('codex');
   }
   const effectiveAutoPrompt = explicitAutoPrompt ? explicitAutoPrompt : shouldInject ? '' : (autoPrompt || routeAutoPrompt(routeOptions));
   let combinedPrompt = shouldInject ? contextText : '';

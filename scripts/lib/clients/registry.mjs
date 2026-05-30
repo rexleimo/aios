@@ -3,6 +3,7 @@ export {
   CAPABILITY_CLIENT_ORDER,
   CLIENT_CAPABILITIES,
   CLIENT_DEFINITIONS,
+  CLIENT_MCP_TARGETS,
   CLIENT_SELECTIONS,
   SHARED_AGENT_SKILL_ROOT,
 } from './core/definitions.mjs';
@@ -28,8 +29,16 @@ export {
   getClientAgentTargetRoot,
   getClientNativeMetadataRoot,
   getClientProjectSkillRoot,
+  getClientSkillFormat,
   resolveClientSkillRoots,
 } from './paths/index.mjs';
+export {
+  getClientInstructionFileName,
+  getClientMcpTarget,
+  getClientNativeProjectSourceFile,
+  resolveClientMcpTargetPath,
+  resolveClientMcpTargetPaths,
+} from './native/index.mjs';
 export {
   buildRuntimeClientProviderMap,
   buildRuntimeClientModelArgs,

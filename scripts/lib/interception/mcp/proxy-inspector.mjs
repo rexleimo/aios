@@ -2,18 +2,30 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { ALL_CLIENTS, getClientMcpTarget } from '../../clients/registry.mjs';
 import { isAiosMcpProxyEntry } from './proxy-config.mjs';
 
-/* 中文注释：检查 project、mcp-server 和已发现客户端 home；required 仅用于仓库内关键配置。 */
+/* 中文注释：检查 project、mcp-server 和各客户端真实落点；落点/格式取自 registry 单一事实来源。
+   required 仅用于仓库内关键配置。proxy 巡检只对 JSON(mcpServers) 落点有意义，TOML/opencode 形状
+   由各自迁移器保证，这里标注 format 供调用方区分。 */
 export function collectInterceptionMcpTargets({ rootDir, clientHomes = {} } = {}) {
   const targets = [
-    { client: 'project', path: path.join(rootDir, '.mcp.json'), required: true },
-    { client: 'mcp-server', path: path.join(rootDir, 'mcp-server', '.mcp.json'), required: true },
+    { client: 'project', path: path.join(rootDir, '.mcp.json'), required: true, format: 'json', namespace: 'mcpServers' },
+    { client: 'mcp-server', path: path.join(rootDir, 'mcp-server', '.mcp.json'), required: true, format: 'json', namespace: 'mcpServers' },
   ];
-  for (const client of ['codex', 'claude', 'gemini', 'opencode']) {
-    const home = clientHomes?.[client];
-    if (!home) continue;
-    targets.push({ client, path: path.join(home, 'mcp.json'), required: false });
+  for (const client of ALL_CLIENTS) {
+    const desc = getClientMcpTarget(client);
+    for (const scopeEntry of desc.scopes) {
+      const base = scopeEntry.scope === 'home' ? clientHomes?.[client] : rootDir;
+      if (!base) continue;
+      targets.push({
+        client,
+        path: path.join(base, scopeEntry.file),
+        required: false,
+        format: desc.format,
+        namespace: desc.namespace,
+      });
+    }
   }
   const seen = new Set();
   return targets
@@ -26,10 +38,15 @@ export function collectInterceptionMcpTargets({ rootDir, clientHomes = {} } = {}
     .map((target) => ({ ...target, path: path.resolve(target.path) }));
 }
 
-/* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。 */
-export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', rootDir = '' } = {}) {
+/* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。
+   非 JSON(mcpServers) 落点（codex TOML / opencode mcp 命名空间）此处不解析 mcpServers，
+   返回 unsupported 由调用方跳过，避免误报。 */
+export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', rootDir = '', namespace = 'mcpServers', format = 'json' } = {}) {
   if (!fs.existsSync(filePath)) {
     return { path: filePath, exists: false, hasAlias: false, proxied: false };
+  }
+  if (format !== 'json') {
+    return { path: filePath, exists: true, hasAlias: false, proxied: false, unsupported: true };
   }
   let parsed;
   try {
@@ -37,7 +54,7 @@ export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', r
   } catch (error) {
     return { path: filePath, exists: true, hasAlias: false, proxied: false, error: error.message };
   }
-  const entry = parsed?.mcpServers?.[alias];
+  const entry = parsed?.[namespace]?.[alias];
   return {
     path: filePath,
     exists: true,
@@ -50,6 +67,6 @@ export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', r
 export function inspectMcpProxyTargets({ rootDir, clientHomes = {}, alias = 'puppeteer-stealth' } = {}) {
   return collectInterceptionMcpTargets({ rootDir, clientHomes }).map((target) => ({
     ...target,
-    ...inspectMcpProxyTarget(target.path, { alias, rootDir }),
+    ...inspectMcpProxyTarget(target.path, { alias, rootDir, namespace: target.namespace, format: target.format }),
   }));
 }

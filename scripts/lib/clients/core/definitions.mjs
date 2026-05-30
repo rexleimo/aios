@@ -1,13 +1,21 @@
 export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
 
+// Per-client skill format: 'markdown-directory' = SKILL.md in a dir (default for claude/codex/opencode).
+// 'toml-command' = single .toml file per skill in <projectSkillRoot>/ (gemini CLI reads .gemini/commands/*.toml).
+export const SKILL_FORMATS = Object.freeze(['markdown-directory', 'toml-command']);
+export const DEFAULT_SKILL_FORMAT = 'markdown-directory';
+
 export const CLIENT_DEFINITIONS = Object.freeze({
   codex: Object.freeze({
     capabilities: Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']),
     commandName: 'codex',
     runtimeClientId: 'codex-cli',
     projectSkillRoot: '.codex/skills',
+    skillFormat: 'markdown-directory',
     agentTargetRoot: '.codex/agents',
     nativeMetadataRoot: '.codex',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--dangerously-bypass-approvals-and-sandbox']),
     unattendedInsertAfterToken: 'exec',
@@ -17,8 +25,11 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     commandName: 'claude',
     runtimeClientId: 'claude-code',
     projectSkillRoot: '.claude/skills',
+    skillFormat: 'markdown-directory',
     agentTargetRoot: '.claude/agents',
     nativeMetadataRoot: '.claude',
+    instructionFileName: 'CLAUDE.md',
+    nativeProjectSourceFile: 'CLAUDE.md',
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
   }),
@@ -26,8 +37,11 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'gemini',
     runtimeClientId: 'gemini-cli',
-    projectSkillRoot: '.gemini/skills',
+    projectSkillRoot: '.gemini/commands',
+    skillFormat: 'toml-command',
     nativeMetadataRoot: '.gemini',
+    instructionFileName: 'GEMINI.md',
+    nativeProjectSourceFile: 'GEMINI.md',
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--yolo']),
   }),
@@ -36,7 +50,10 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     commandName: 'opencode',
     runtimeClientId: 'opencode-cli',
     projectSkillRoot: '.opencode/skills',
+    skillFormat: 'markdown-directory',
     nativeMetadataRoot: '.opencode',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AIOS.md',
     unattendedArgs: Object.freeze([]),
   }),
 });
@@ -54,3 +71,42 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
 });
 
 export const SHARED_AGENT_SKILL_ROOT = '.agents/skills';
+
+// 每个客户端 MCP 配置的真实落点——全系统单一事实来源（取代之前错误的 home/mcp.json 假设）。
+// 双作用域：大多数客户端同时支持项目级和用户级 MCP 配置，各有独立文件。
+// format: 'json'(标准 mcpServers) | 'toml'(codex 的 [mcp_servers]) | 'opencode-json'(opencode 的 mcp 命名空间 + 本地条目形状)
+// namespace: JSON 顶层键 / TOML 表前缀。
+// createIfMissing 由各消费方按自身语义决定，不在此处编码。
+export const CLIENT_MCP_TARGETS = Object.freeze({
+  codex: Object.freeze({
+    format: 'toml',
+    namespace: 'mcp_servers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'config.toml' }),
+      Object.freeze({ scope: 'project', file: '.codex/config.toml' }),
+    ]),
+  }),
+  claude: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'project', file: '.mcp.json' }),
+      Object.freeze({ scope: 'home', file: '.mcp.json' }),
+    ]),
+  }),
+  gemini: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'project', file: '.gemini/settings.json' }),
+      Object.freeze({ scope: 'home', file: 'settings.json' }),
+    ]),
+  }),
+  opencode: Object.freeze({
+    format: 'opencode-json',
+    namespace: 'mcp',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'opencode.json' }),
+    ]),
+  }),
+});

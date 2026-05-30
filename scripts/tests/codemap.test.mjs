@@ -6,6 +6,9 @@ import test from 'node:test';
 import { pathToFileURL } from 'node:url';
 
 import { doctorCodemap, installCodemap } from '../lib/components/codemap.mjs';
+import { collectCodemapMcpTargets } from '../lib/components/codemap/mcp-targets.mjs';
+import { collectCodemapInstructionFiles } from '../lib/components/codemap/instructions.mjs';
+import { getClientMcpTarget, getClientInstructionFileName, ALL_CLIENTS } from '../lib/clients/registry.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -27,6 +30,34 @@ async function writeJson(filePath, payload) {
 async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, 'utf8'));
 }
+
+test('codemap MCP targets agree with the client registry (single source of truth)', () => {
+  const projectRoot = '/proj';
+  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode' };
+  const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
+  const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
+
+  // codex → home/config.toml ; claude → project/.mcp.json ; gemini → project/.gemini/settings.json ; opencode → home/opencode.json
+  assert.ok(byClient.codex.path.endsWith(path.join('.codex', 'config.toml')));
+  assert.ok(byClient.claude.path.endsWith(path.join('proj', '.mcp.json')));
+  assert.ok(byClient.gemini.path.endsWith(path.join('proj', '.gemini', 'settings.json')));
+  assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
+
+  // The registry descriptor must point at the same file basenames codemap actually writes.
+  for (const client of ALL_CLIENTS) {
+    const desc = getClientMcpTarget(client);
+    assert.ok(byClient[client].path.endsWith(desc.file.split('/').join(path.sep)),
+      `${client}: registry file ${desc.file} must match codemap target ${byClient[client].path}`);
+  }
+});
+
+test('codemap instruction filenames agree with the client registry instructionFileName', () => {
+  const fileFor = (client) => collectCodemapInstructionFiles(client)[0]?.fileName;
+  for (const client of ALL_CLIENTS) {
+    assert.equal(fileFor(client), getClientInstructionFileName(client),
+      `${client}: codemap instruction file must match registry instructionFileName`);
+  }
+});
 
 test('codemap install writes client-readable MCP configs for all AIOS clients', async () => {
   const rootDir = await makeTemp('aios-codemap-install-root-');

@@ -268,6 +268,40 @@ Do NOT save routine progress or trivial updates.
 - `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)
 - These are stable guidance, not task facts. Project-specific facts go through ContextDB.
 
+<!-- 中文注释：superpowers 流程强制段，仅对具备 superpowers 能力的客户端下发，避免向无此技能的宿主发指令。 -->
+
+## AIOS Superpowers Workflow
+
+- Before any implementation action, route through the superpowers process skills instead of improvising. Invoke the skill — do not paraphrase or inline its process.
+  - Design / new behavior / new feature → `superpowers:brainstorming`
+  - Multi-step delivery → `superpowers:writing-plans`
+  - Debugging / failure analysis → `superpowers:systematic-debugging`
+  - Test-first implementation → `superpowers:test-driven-development`
+  - About to claim completion → `superpowers:verification-before-completion`
+- Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
+- Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
+
+<!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
+
+## AIOS Subagent Dispatch
+
+- This client ships repo-local agent definitions; prefer them over ad-hoc roles.
+- Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
+- Use `superpowers:dispatching-parallel-agents` to fan out, then converge with a verification pass before merge.
+- If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
+
+<!-- 中文注释：code-review-graph（codemap）MCP 决策检查点。所有已注册 MCP 的客户端均下发，让 gemini/opencode 也能用结构图。 -->
+
+## AIOS Code-Review-Graph (codemap) MCP
+
+This project exposes a structural knowledge graph via the `code-review-graph` MCP. Use it at each decision point in your workflow.
+
+- Before doing anything → `get_minimal_context(task="...")` for project context + suggested next steps.
+- Before modifying code → `get_impact_radius(detail_level="minimal")` to check blast radius, and `query_graph(pattern="tests_for", target="...")` to confirm tests exist (write tests first if not).
+- After modifying code → `detect_changes(detail_level="minimal")` to verify actual impact matches expectations.
+- Before submitting → `get_affected_flows()` + `get_suggested_questions()` as a final safety net.
+- Finding code → `semantic_search_nodes` before grep. Always use `detail_level="minimal"` and follow each response's `next_tool_suggestions`.
+
 <!-- 中文注释：客户端模板同步 MCP 代理和原文召回策略，避免各宿主入口漂移。 -->
 
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.

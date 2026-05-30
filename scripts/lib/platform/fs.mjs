@@ -182,7 +182,7 @@ const REPO_DISCOVERABLE_SKILL_ROOTS = new Set([
   '.codex/skills',
   '.claude/skills',
   '.agents/skills',
-  '.gemini/skills',
+  '.gemini/commands',
   '.opencode/skills',
 ]);
 

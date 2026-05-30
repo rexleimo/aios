@@ -43,7 +43,7 @@ async function writeNativeManifest(rootDir) {
       gemini: {
         tier: 'compatibility',
         metadataRoot: '.gemini',
-        outputs: ['GEMINI.md', '.gemini/skills'],
+        outputs: ['GEMINI.md', '.gemini/commands'],
       },
       opencode: {
         tier: 'compatibility',

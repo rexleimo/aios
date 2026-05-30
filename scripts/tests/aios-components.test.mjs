@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { chmod, cp, lstat, mkdtemp, mkdir, realpath, readFile, writeFile } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -781,9 +782,11 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
     assert.deepEqual(mcpServerMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
     assert.equal(mcpServerMcp.mcpServers['playwright-browser-mcp'], undefined);
 
-    const claudeMcp = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
-    assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-    assert.equal(claudeMcp.mcpServers['playwright-browser-mcp'], undefined);
+    // claude is PROJECT-scoped: its MCP target is <project>/.mcp.json (rootMcp above),
+    // NOT ~/.claude/mcp.json. The pre-existing legacy home file is left untouched.
+    const legacyClaude = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
+    assert.ok(legacyClaude.mcpServers['playwright-browser-mcp'], 'legacy home file untouched');
+    assert.equal(legacyClaude.mcpServers['puppeteer-stealth'], undefined, 'no new alias in legacy home file');
   } finally {
     if (previous === undefined) delete process.env.AIOS_BROWSER_USE_REPO;
     else process.env.AIOS_BROWSER_USE_REPO = previous;
@@ -827,8 +830,13 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
 
   await writeFile(path.join(rootDir, '.mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
   await writeFile(path.join(mcpServerDir, '.mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
-  await mkdir(claudeHome, { recursive: true });
-  await writeFile(path.join(claudeHome, 'mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
+  // claude is PROJECT-scoped (.mcp.json), already seeded above. gemini is PROJECT-scoped too.
+  await mkdir(path.join(rootDir, '.gemini'), { recursive: true });
+  await writeFile(path.join(rootDir, '.gemini', 'settings.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
+  await mkdir(codexHome, { recursive: true });
+  await writeFile(path.join(codexHome, 'config.toml'), 'model = "gpt-5"\n', 'utf8');
+  await mkdir(opencodeHome, { recursive: true });
+  await writeFile(path.join(opencodeHome, 'opencode.json'), `${JSON.stringify({ theme: 'dark' }, null, 2)}\n`, 'utf8');
 
   const logs = [];
   const result = await migrateBrowserMcpConfig({
@@ -853,9 +861,28 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
   assert.equal(rootMcp.mcpServers['playwright-browser-mcp'], undefined);
 
-  const claudeMcp = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
+  // claude: project .mcp.json IS the claude target (NOT ~/.claude/mcp.json)
+  const claudeMcp = rootMcp;
   assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-  assert.equal(claudeMcp.mcpServers['playwright-browser-mcp'], undefined);
+
+  // gemini: project .gemini/settings.json, preserves unrelated keys
+  const geminiMcp = JSON.parse(await readFile(path.join(rootDir, '.gemini', 'settings.json'), 'utf8'));
+  assert.equal(geminiMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
+  assert.equal(geminiMcp.mcpServers['playwright-browser-mcp'], undefined);
+
+  // codex: home config.toml (TOML), preserves unrelated model line
+  const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
+  assert.match(codexToml, /\[mcp_servers\.puppeteer-stealth\]/);
+  assert.match(codexToml, /model = "gpt-5"/);
+
+  // opencode: home opencode.json, mcp namespace + local shape, preserves theme
+  const opencodeJson = JSON.parse(await readFile(path.join(opencodeHome, 'opencode.json'), 'utf8'));
+  assert.equal(opencodeJson.theme, 'dark');
+  assert.equal(opencodeJson.mcp['puppeteer-stealth'].type, 'local');
+  assert.ok(Array.isArray(opencodeJson.mcp['puppeteer-stealth'].command));
+
+  // ~/.claude/mcp.json must NOT be created (not a real Claude Code MCP location)
+  assert.equal(existsSync(path.join(claudeHome, 'mcp.json')), false);
   assert.match(logs.join('\n'), /mcp-migrate summary:/);
 });
 

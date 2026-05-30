@@ -5,6 +5,8 @@ import { workspaceDir } from './workspace.mjs';
 const DISCOVERABLE_SKILL_ROOTS = [
   ['.codex', 'skills'],
   ['.claude', 'skills'],
+  ['.gemini', 'skills'],
+  ['.opencode', 'skills'],
   ['.agents', 'skills'],
 ];
 

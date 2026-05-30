@@ -57,7 +57,7 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/commands'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
@@ -84,6 +84,9 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When \`puppeteer-stealth\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
 `, 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'Superpowers section.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'Agent routing section.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'codemap.md'), 'Codemap section.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'codex', 'project', 'AGENTS.md'), 'Codex native block.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'Claude native block.\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {
@@ -101,7 +104,7 @@ async function writeSkillSources(rootDir) {
     generatedRoots: {
       codex: '.codex/skills',
       claude: '.claude/skills',
-      gemini: '.gemini/skills',
+      gemini: '.gemini/commands',
       opencode: '.opencode/skills',
     },
     skills: [

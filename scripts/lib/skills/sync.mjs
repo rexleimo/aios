@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { getClientSkillFormat } from '../clients/registry.mjs';
 import {
   buildGeneratedSkillMetadata,
   GENERATED_SKILL_META_FILE,
@@ -16,6 +17,12 @@ import {
   resolveGeneratedTargetRelativePath,
 } from './source-tree.mjs';
 import { snapshotDirectory, snapshotsEqual } from './directory-snapshot.mjs';
+import {
+  convertSkillToTomlCommand,
+  isManagedTomlCommand,
+  parseManagedMarker,
+  writeTomlCommandTarget,
+} from './emitters/toml-command.mjs';
 import { withRepoLock } from '../fs/repo-lock.mjs';
 
 const SYNC_LOCK_NAME = 'native-skills-sync';
@@ -69,6 +76,102 @@ function formatTargetPath(targetRootDir, targetPath) {
   return (path.relative(targetRootDir, targetPath) || '.').replace(/\\/g, '/');
 }
 
+// Write a TOML command file for a single skill target. Returns counters increment object.
+function syncTomlCommandTarget({
+  sourceRootDir,
+  resolvedTargetRootDir,
+  entry,
+  surface,
+  targetPath,
+  metadata,
+  legacyReplaceable,
+  legacyUnmanaged,
+  io,
+  counters,
+}) {
+  const result = { installed: 0 };
+  const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
+  try {
+    const { toml } = convertSkillToTomlCommand(materialized.directoryPath, {
+      relativeSkillPath: entry.relativeSkillPath,
+      targetSurface: surface,
+    });
+
+    const writeMeta = (tgtPath, meta) => {
+      // Write companion metadata for stale detection
+      const metaPath = tgtPath + '.meta.json';
+      fs.mkdirSync(path.dirname(metaPath), { recursive: true });
+      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2), 'utf8');
+    };
+
+    if (!fs.existsSync(targetPath)) {
+      writeTomlCommandTarget(targetPath, toml, metadata, writeMeta);
+      result.installed = 1;
+      return result;
+    }
+
+    if (!isManagedTomlCommand(targetPath)) {
+      const resolved = path.resolve(targetPath);
+      if (legacyReplaceable.has(resolved)) {
+        writeTomlCommandTarget(targetPath, toml, metadata, writeMeta);
+        io.log(`[skills] replaced legacy TOML target: ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
+        counters.updated += 1;
+        return result;
+      }
+      if (!legacyUnmanaged.has(resolved)) {
+        io.log(`[skills] skip unmanaged TOML blocker: ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
+      }
+      counters.skipped += 1;
+      return result;
+    }
+
+    const currentContent = fs.readFileSync(targetPath, 'utf8');
+    if (currentContent === toml) {
+      // Content identical — update companion metadata only
+      writeMeta(targetPath, metadata);
+      counters.reused += 1;
+      return result;
+    }
+
+    writeTomlCommandTarget(targetPath, toml, metadata, writeMeta);
+    counters.updated += 1;
+    return result;
+  } finally {
+    materialized.cleanup();
+  }
+}
+
+// Scan a directory for stale AIOS-managed TOML files and remove them.
+// Returns the count of removed files.
+function collectStaleTomlTargets(rootAbs, expected) {
+  let removed = 0;
+  if (!fs.existsSync(rootAbs)) return removed;
+  for (const entry of fs.readdirSync(rootAbs, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.toml')) continue;
+    const absPath = path.join(rootAbs, entry.name);
+    if (expected.has(absPath)) continue;
+    if (!isManagedTomlCommand(absPath)) continue;
+    fs.rmSync(absPath, { force: true });
+    // Also clean up companion metadata
+    const metaPath = absPath + '.meta.json';
+    if (fs.existsSync(metaPath)) fs.rmSync(metaPath, { force: true });
+    removed += 1;
+  }
+  return removed;
+}
+
+// Collect absolute paths of AIOS-managed TOML files (for check mode, non-destructive).
+function collectTomlManagedPaths(rootAbs) {
+  const paths = [];
+  if (!fs.existsSync(rootAbs)) return paths;
+  for (const entry of fs.readdirSync(rootAbs, { withFileTypes: true })) {
+    if (!entry.isFile() || !entry.name.endsWith('.toml')) continue;
+    const absPath = path.join(rootAbs, entry.name);
+    if (isManagedTomlCommand(absPath)) paths.push(absPath);
+  }
+  return paths;
+}
+
 async function syncGeneratedSkillsUnlocked({
   rootDir,
   targetRootDir = rootDir,
@@ -93,19 +196,23 @@ async function syncGeneratedSkillsUnlocked({
       if (!expectedBySurface.has(surface)) {
         continue;
       }
-      const targetPath = resolveGeneratedTargetPath({
+      const format = getClientSkillFormat(surface);
+      const basePath = resolveGeneratedTargetPath({
         rootDir: resolvedTargetRootDir,
         entry,
         surface,
         manifest: resolvedManifest,
       });
-      expectedBySurface.get(surface).set(targetPath, entry);
+      // TOML-command surfaces use <name>.toml files, not <name>/ directories.
+      const targetPath = format === 'toml-command' ? `${basePath}.toml` : basePath;
+      expectedBySurface.get(surface).set(targetPath, { entry, format });
     }
   }
 
   for (const surface of selectedSurfaces) {
     const rootRel = resolvedManifest.generatedRoots[surface];
     const rootAbs = path.join(resolvedTargetRootDir, rootRel);
+    const format = getClientSkillFormat(surface);
     const expected = expectedBySurface.get(surface) || new Map();
     let installed = 0;
     let updated = 0;
@@ -113,7 +220,7 @@ async function syncGeneratedSkillsUnlocked({
     let skipped = 0;
     let removed = 0;
 
-    for (const [targetPath, entry] of expected.entries()) {
+    for (const [targetPath, { entry, format: entryFormat }] of expected.entries()) {
       const targetRelativePath = resolveGeneratedTargetRelativePath(entry, surface);
       const metadata = buildGeneratedSkillMetadata({
         relativeSkillPath: entry.relativeSkillPath,
@@ -121,6 +228,24 @@ async function syncGeneratedSkillsUnlocked({
         targetRelativePath,
         source: path.posix.join('skill-sources', entry.relativeSkillPath.split(path.sep).join('/')),
       });
+
+      // TOML-command path: convert SKILL.md → .toml file (for Gemini CLI)
+      if (entryFormat === 'toml-command') {
+        installed += syncTomlCommandTarget({
+          sourceRootDir,
+          resolvedTargetRootDir,
+          entry,
+          surface,
+          targetPath,
+          metadata,
+          legacyReplaceable,
+          legacyUnmanaged,
+          io,
+          counters: { updated, reused, skipped },
+        }).installed;
+        continue;
+      }
+
       const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
       try {
         if (!fs.existsSync(targetPath)) {
@@ -180,16 +305,21 @@ async function syncGeneratedSkillsUnlocked({
       }
     }
 
-    for (const managedTargetPath of collectManagedGeneratedTargets(rootAbs)) {
-      if (expected.has(managedTargetPath)) {
-        continue;
+    if (format === 'toml-command') {
+      // Stale detection for TOML: scan *.toml files with managed marker.
+      removed += collectStaleTomlTargets(rootAbs, expected);
+    } else {
+      for (const managedTargetPath of collectManagedGeneratedTargets(rootAbs)) {
+        if (expected.has(managedTargetPath)) {
+          continue;
+        }
+        const meta = readGeneratedSkillMetadata(managedTargetPath);
+        if (!meta || meta.targetSurface !== surface) {
+          continue;
+        }
+        fs.rmSync(managedTargetPath, { recursive: true, force: true });
+        removed += 1;
       }
-      const meta = readGeneratedSkillMetadata(managedTargetPath);
-      if (!meta || meta.targetSurface !== surface) {
-        continue;
-      }
-      fs.rmSync(managedTargetPath, { recursive: true, force: true });
-      removed += 1;
     }
 
     results.push({
@@ -248,21 +378,45 @@ export async function checkGeneratedSkillsSync({
       if (!expectedBySurface.has(surface)) {
         continue;
       }
-      const targetPath = resolveGeneratedTargetPath({
+      const format = getClientSkillFormat(surface);
+      const basePath = resolveGeneratedTargetPath({
         rootDir: resolvedTargetRootDir,
         entry,
         surface,
         manifest: resolvedManifest,
       });
-      expectedBySurface.get(surface).set(targetPath, entry);
+      const targetPath = format === 'toml-command' ? `${basePath}.toml` : basePath;
+      expectedBySurface.get(surface).set(targetPath, { entry, format });
     }
   }
 
   for (const surface of selectedSurfaces) {
     const rootAbs = path.join(resolvedTargetRootDir, resolvedManifest.generatedRoots[surface]);
+    const format = getClientSkillFormat(surface);
     const expected = expectedBySurface.get(surface) || new Map();
 
-    for (const [targetPath, entry] of expected.entries()) {
+    for (const [targetPath, { entry, format: entryFormat }] of expected.entries()) {
+      if (entryFormat === 'toml-command') {
+        if (!fs.existsSync(targetPath)) {
+          issues.push(`[missing] ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
+          continue;
+        }
+        const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
+        try {
+          const { toml } = convertSkillToTomlCommand(materialized.directoryPath, {
+            relativeSkillPath: entry.relativeSkillPath,
+            targetSurface: surface,
+          });
+          const currentContent = fs.readFileSync(targetPath, 'utf8');
+          if (currentContent !== toml) {
+            issues.push(`[drift] ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
+          }
+        } finally {
+          materialized.cleanup();
+        }
+        continue;
+      }
+
       const materialized = materializeWithMetadata({ rootDir: sourceRootDir, entry, surface });
       try {
         if (!fs.existsSync(targetPath)) {
@@ -279,9 +433,17 @@ export async function checkGeneratedSkillsSync({
       }
     }
 
-    for (const managedTargetPath of collectManagedGeneratedTargets(rootAbs)) {
-      if (!expected.has(managedTargetPath)) {
-        issues.push(`[stale] ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
+    if (format === 'toml-command') {
+      for (const absPath of collectTomlManagedPaths(rootAbs)) {
+        if (!expected.has(absPath)) {
+          issues.push(`[stale] ${formatTargetPath(resolvedTargetRootDir, absPath)}`);
+        }
+      }
+    } else {
+      for (const managedTargetPath of collectManagedGeneratedTargets(rootAbs)) {
+        if (!expected.has(managedTargetPath)) {
+          issues.push(`[stale] ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
+        }
       }
     }
   }

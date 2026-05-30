@@ -100,7 +100,7 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
       'irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex',
     ].join('; ');
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');
-    await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
+    await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.USERPROFILE || process.env.HOME || rootDir, env, io });
     return { method: 'release-installer', updated: true, skipped: false };
   }
 

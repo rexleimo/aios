@@ -27,7 +27,7 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/commands'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
@@ -54,6 +54,9 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When \`puppeteer-stealth\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
 `, 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'Section SUPERPOWERS-CAP only.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'Section AGENT-ROUTING-CAP only.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'codemap.md'), 'Section CODEMAP-NATIVE for all.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'codex', 'project', 'AGENTS.md'), 'Codex native block.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'Claude native block.\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {
@@ -61,7 +64,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
       SessionStart: ['node omc-hook.mjs'],
     },
   });
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'), 'Gemini compatibility instructions.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
 }
 
@@ -71,7 +74,7 @@ async function writeSkillSources(rootDir) {
     generatedRoots: {
       codex: '.codex/skills',
       claude: '.claude/skills',
-      gemini: '.gemini/skills',
+      gemini: '.gemini/commands',
       opencode: '.opencode/skills',
     },
     skills: [
@@ -117,6 +120,26 @@ async function seedNativeRoot(rootDir) {
   await writeSkillSources(rootDir);
   await writeAgentSources(rootDir);
 }
+
+test('native sync gates instruction sections by client capability', async () => {
+  const rootDir = await makeTemp('aios-native-sync-capability-root-');
+  await seedNativeRoot(rootDir);
+
+  await syncNativeEnhancements({ rootDir, client: 'all' });
+
+  const agentsDoc = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
+  const geminiDoc = await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8');
+
+  // codex has superpowers + agents + native → all gated sections present.
+  assert.match(agentsDoc, /SUPERPOWERS-CAP/);
+  assert.match(agentsDoc, /AGENT-ROUTING-CAP/);
+  assert.match(agentsDoc, /CODEMAP-NATIVE/);
+
+  // gemini lacks superpowers/agents but has native → only codemap is shared, not superpowers/agents.
+  assert.doesNotMatch(geminiDoc, /SUPERPOWERS-CAP/);
+  assert.doesNotMatch(geminiDoc, /AGENT-ROUTING-CAP/);
+  assert.match(geminiDoc, /CODEMAP-NATIVE/);
+});
 
 test('native sync injects a managed block into AGENTS.md without deleting user text', async () => {
   const rootDir = await makeTemp('aios-native-sync-codex-root-');
@@ -205,7 +228,7 @@ test('native sync can install all client project outputs outside the AIOS source
   assert.match(await readFile(path.join(targetRootDir, 'CLAUDE.md'), 'utf8'), /Claude native block/);
   assert.match(await readFile(path.join(targetRootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
-  assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.gemini', 'commands', 'find-skills.toml'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);

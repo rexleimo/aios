@@ -82,11 +82,14 @@ export function removeManagedJsonFragment(existingObject) {
 }
 
 export function readSharedMarkdownParts(rootDir) {
-  return [
-    fs.readFileSync(resolveSharedNativePartialPath({ rootDir, fileName: 'core-instructions.md' }), 'utf8').trim(),
-    fs.readFileSync(resolveSharedNativePartialPath({ rootDir, fileName: 'contextdb.md' }), 'utf8').trim(),
-    fs.readFileSync(resolveSharedNativePartialPath({ rootDir, fileName: 'browser-mcp.md' }), 'utf8').trim(),
-  ].filter(Boolean);
+  return readNativePartials(rootDir, ['core-instructions.md', 'contextdb.md', 'browser-mcp.md']);
+}
+
+// 读取一组共享 native partials，按给定顺序返回非空段落，供能力感知渲染器选取。
+export function readNativePartials(rootDir, fileNames = []) {
+  return fileNames
+    .map((fileName) => fs.readFileSync(resolveSharedNativePartialPath({ rootDir, fileName }), 'utf8').trim())
+    .filter(Boolean);
 }
 
 export function readClientMarkdownSource(rootDir, client, fileName) {
