@@ -33,7 +33,7 @@ export async function createControlStateStore({ rootDir, namespace = 'rl-core' }
   return {
     rootDir,
     namespace,
-    filePath: path.join(rootDir, 'experiments', namespace, 'control-state', 'snapshot.json'),
+    filePath: path.join(rootDir, '.aios', 'experiments', namespace, 'control-state', 'snapshot.json'),
   };
 }
 

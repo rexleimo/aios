@@ -35,7 +35,7 @@ async function listSeedIds(rootDir, config) {
   if (Array.isArray(config.seeds) && config.seeds.length > 0) {
     return config.seeds;
   }
-  const seedRoot = path.join(rootDir, 'experiments', 'rl-shell-v1', 'seeds');
+  const seedRoot = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'seeds');
   return await readdir(seedRoot);
 }
 
@@ -44,7 +44,7 @@ function buildTaskId({ seedId, variantId, seed }) {
 }
 
 function resolveGeneratedDir(rootDir, config) {
-  return path.join(rootDir, config.generated_dir || 'experiments/rl-shell-v1/tasks/generated');
+  return path.join(rootDir, config.generated_dir || '.aios/experiments/rl-shell-v1/tasks/generated');
 }
 
 async function runVerificationCommand({ cwd, command }) {
@@ -79,7 +79,7 @@ export function buildTaskManifest({ seedDir, seedId, variantId, split, seed, rep
   });
 }
 
-export async function generateBenchmark({ rootDir, seed = 0, configPath = 'experiments/rl-shell-v1/configs/benchmark-v1.json' }) {
+export async function generateBenchmark({ rootDir, seed = 0, configPath = '.aios/experiments/rl-shell-v1/configs/benchmark-v1.json' }) {
   const config = await readJson(path.join(rootDir, configPath));
   const generatedDir = resolveGeneratedDir(rootDir, config);
   await rm(generatedDir, { recursive: true, force: true });
@@ -89,7 +89,7 @@ export async function generateBenchmark({ rootDir, seed = 0, configPath = 'exper
   const generatedTasks = [];
 
   for (const seedId of seedIds) {
-    const seedDir = path.join(rootDir, 'experiments', 'rl-shell-v1', 'seeds', seedId);
+    const seedDir = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'seeds', seedId);
     const manifestTemplate = await readJson(path.join(seedDir, 'manifest.template.json'));
     const variantCount = Number(manifestTemplate.variant_count || 0);
     for (let variantId = 1; variantId <= variantCount; variantId += 1) {
@@ -130,7 +130,7 @@ export async function generateBenchmark({ rootDir, seed = 0, configPath = 'exper
       verificationCommand: task.verificationCommand,
       constraints: task.constraints,
       promptTemplate: task.promptTemplate,
-      generatedDir: config.generated_dir || 'experiments/rl-shell-v1/tasks/generated',
+      generatedDir: config.generated_dir || '.aios/experiments/rl-shell-v1/tasks/generated',
     });
     await writeJson(task.manifestPath, manifest);
   }
@@ -196,7 +196,7 @@ async function validateGeneratedTasks({ rootDir, configPath }) {
     }
   }
 
-  const exclusionReportPath = path.join(rootDir, 'experiments', 'rl-shell-v1', 'configs', 'benchmark-v1.invalid-tasks.json');
+  const exclusionReportPath = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'configs', 'benchmark-v1.invalid-tasks.json');
   await writeJson(exclusionReportPath, {
     generated_at: new Date().toISOString(),
     invalid_reason_counts: invalidTasks.reduce((counts, item) => {
@@ -215,7 +215,7 @@ async function validateGeneratedTasks({ rootDir, configPath }) {
   };
 }
 
-export async function loadTaskRegistry({ rootDir, configPath = 'experiments/rl-shell-v1/configs/benchmark-v1.json' }) {
+export async function loadTaskRegistry({ rootDir, configPath = '.aios/experiments/rl-shell-v1/configs/benchmark-v1.json' }) {
   await ensureGeneratedBenchmark({ rootDir, configPath });
   const validated = await validateGeneratedTasks({ rootDir, configPath });
   const minimumTrain = Number(validated.config.minimum_train_tasks || 32);

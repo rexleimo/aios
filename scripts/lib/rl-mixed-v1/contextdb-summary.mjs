@@ -28,7 +28,7 @@ export function buildMixedSummaryPayload({ runId, mode, result }) {
 
 export async function writeMixedSummary({ rootDir, runId, mode, result }) {
   const payload = buildMixedSummaryPayload({ runId, mode, result });
-  const summaryPath = path.join(rootDir, 'experiments', 'rl-mixed-v1', 'runs', runId, 'run-summary.json');
+  const summaryPath = path.join(rootDir, '.aios', 'experiments', 'rl-mixed-v1', 'runs', runId, 'run-summary.json');
   await mkdir(path.dirname(summaryPath), { recursive: true });
   await writeFile(summaryPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
   return {

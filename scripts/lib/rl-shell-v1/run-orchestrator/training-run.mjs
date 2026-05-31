@@ -45,7 +45,7 @@ export async function runTrainingRun({ config, seed, deps = {} }) {
   const stopConditionResolver = deps.getStopConditionCandidate || getStopConditionCandidate;
   const registryLoader = deps.registryLoader || (async () => await loadTaskRegistry({
     rootDir,
-    configPath: config.configPath || 'experiments/rl-shell-v1/configs/benchmark-v1.json',
+    configPath: config.configPath || '.aios/experiments/rl-shell-v1/configs/benchmark-v1.json',
   }));
   const registry = await registryLoader({ seed, rootDir, config });
   if (registry?.valid === false) {
@@ -54,7 +54,7 @@ export async function runTrainingRun({ config, seed, deps = {} }) {
 
   const runId = createRunId({ seed });
   const runDir = await createRunLayout({
-    rootDir: path.join(rootDir, 'experiments', 'rl-shell-v1'),
+    rootDir: path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1'),
     runId,
   });
 

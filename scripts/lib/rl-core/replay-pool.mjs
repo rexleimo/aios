@@ -64,7 +64,7 @@ export function classifyReplayRoute(episode) {
 }
 
 export async function createReplayPool({ rootDir, namespace = 'rl-core' }) {
-  const poolDir = path.join(rootDir, 'experiments', namespace, 'replay-pool');
+  const poolDir = path.join(rootDir, '.aios', 'experiments', namespace, 'replay-pool');
   await mkdir(poolDir, { recursive: true });
   return {
     rootDir,

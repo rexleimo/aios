@@ -32,7 +32,7 @@ export function normalizePolicyReleaseConfig({
       promotion_initial_rollout_rate: 0.1,
       promotion_max_rollout_rate: 1,
       eval_window_size: 24,
-      state_path: path.join(rootDir, 'experiments', 'rl-mixed-v1', 'release', 'orchestrator-policy-release.state.json'),
+      state_path: path.join(rootDir, '.aios', 'experiments', 'rl-mixed-v1', 'release', 'orchestrator-policy-release.state.json'),
       env,
     };
   }
@@ -64,7 +64,7 @@ export function normalizePolicyReleaseConfig({
     promotion_initial_rollout_rate: clamp(policyRelease.promotionInitialRolloutRate ?? 0.1, 0.01, 1),
     promotion_max_rollout_rate: clamp(policyRelease.promotionMaxRolloutRate ?? 1, 0.1, 1),
     eval_window_size: safePositiveInteger(policyRelease.evalWindowSize, 24),
-    state_path: statePath || path.join(rootDir, 'experiments', 'rl-mixed-v1', 'release', 'orchestrator-policy-release.state.json'),
+    state_path: statePath || path.join(rootDir, '.aios', 'experiments', 'rl-mixed-v1', 'release', 'orchestrator-policy-release.state.json'),
     env,
   };
 }

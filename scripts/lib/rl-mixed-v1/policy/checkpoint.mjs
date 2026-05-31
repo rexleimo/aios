@@ -26,7 +26,7 @@ import {
 import { normalizePolicyOpeMetrics } from './ope.mjs';
 
 export async function ensureNamespaceRoot(rootDir, namespace) {
-  const baseDir = path.join(rootDir, 'experiments', namespace);
+  const baseDir = path.join(rootDir, '.aios', 'experiments', namespace);
   await mkdir(baseDir, { recursive: true });
   return baseDir;
 }

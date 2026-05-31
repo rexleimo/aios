@@ -16,7 +16,7 @@ export async function runCampaign({ config, deps = {} }) {
   const replayPoolLoader = deps.replayPoolLoader || loadReplayPool;
   const registryLoader = deps.registryLoader || (async () => await loadTaskRegistry({
     rootDir,
-    configPath: config.configPath || 'experiments/rl-shell-v1/configs/benchmark-v1.json',
+    configPath: config.configPath || '.aios/experiments/rl-shell-v1/configs/benchmark-v1.json',
   }));
   const registryGate = await registryLoader({ rootDir, config });
   if (registryGate?.valid === false) {
@@ -62,7 +62,7 @@ export async function runCampaign({ config, deps = {} }) {
   );
 
   const campaignId = `campaign-${Date.now()}`;
-  const campaignDir = path.join(rootDir, 'experiments', 'rl-shell-v1', 'campaigns');
+  const campaignDir = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'campaigns');
   await mkdir(campaignDir, { recursive: true });
   const campaignArtifactPath = path.join(campaignDir, `${campaignId}.json`);
   const status = seedResults.some((row) => row.successRate >= 0.5) ? 'passed' : 'failed';

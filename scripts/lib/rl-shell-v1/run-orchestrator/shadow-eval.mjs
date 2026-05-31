@@ -64,7 +64,7 @@ export async function runRealShadowEval({ config, deps = {} }) {
     attempt_results: attemptResults,
   });
 
-  const shadowDir = path.join(rootDir, 'experiments', 'rl-shell-v1', 'shadow-evals');
+  const shadowDir = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'shadow-evals');
   await mkdir(shadowDir, { recursive: true });
   const shadowArtifactPath = path.join(shadowDir, `shadow-${Date.now()}.json`);
   await writeFile(shadowArtifactPath, `${JSON.stringify({

@@ -124,7 +124,7 @@ export function buildRunSummaryPayload({ run, metrics, config }) {
 
 export async function writeRunSummary({ rootDir, summary, sessionId = '', writer = defaultWriter }) {
   const normalized = validateRunSummary(normalizeRunSummary(summary));
-  const artifactPath = path.join(rootDir, 'experiments', 'rl-shell-v1', 'runs', normalized.run_id, 'run-summary.json');
+  const artifactPath = path.join(rootDir, '.aios', 'experiments', 'rl-shell-v1', 'runs', normalized.run_id, 'run-summary.json');
   await writeJson(artifactPath, normalized);
 
   try {
