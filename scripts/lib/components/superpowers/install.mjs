@@ -4,7 +4,6 @@ import path from 'node:path';
 import { ensureManagedLink } from '../../platform/fs.mjs';
 import { commandExists, captureCommand, runCommand } from '../../platform/process.mjs';
 import { getAgentsHome, getClientHomes } from '../../platform/paths.mjs';
-import { loadSkillsCatalog } from '../skills/catalog.mjs';
 
 import { CLAUDE_PLUGIN_NAME, DEFAULT_REPO_URL } from './constants.mjs';
 import { resolveSuperpowersClients } from './clients.mjs';
@@ -69,7 +68,10 @@ export async function installSuperpowers({
     runCommand('git', ['clone', repoUrl, superpowersDir]);
   }
 
-  if (clientSelection.hasCodex || clientSelection.hasClaude) {
+  // 中文注释：~/.agents/skills/superpowers 是所有受支持客户端的共享投递点：
+  // opencode 通过外部 skill 扫描读取它，gemini 通过 ~/.agents/skills 别名读取它，codex/claude 也复用它。
+  // 由于上方在 supported.length===0 时已提前返回，此处至少有一个受支持客户端，故无条件建立共享链接。
+  {
     const status = ensureManagedLink(skillsTarget, skillsSource, { force });
     if (status === 'reused') {
       io.log(`[ok] superpowers link already configured: ${skillsTarget}`);
@@ -103,17 +105,11 @@ export async function installSuperpowers({
       }
     } else {
       const claudeSkillsRoot = path.join(claudeHome, 'skills');
-      let allowedSkills = null;
-      try {
-        const catalog = loadSkillsCatalog(rootDir);
-        allowedSkills = new Set(
-          catalog
-            .filter((entry) => entry.clients.includes('claude'))
-            .map((entry) => entry.name)
-        );
-      } catch {
-        // catalog not available — fall back to linking all
-      }
+      // 中文注释：source.sourcePath 是 superpowers 这个受信外部 bundle 的 skills 目录，
+      // 其中每个都是应当为 claude 安装的 superpowers skill。AIOS 自有 catalog 不收录它们，
+      // 旧逻辑用 catalog 过滤会把全部 14 个滤掉（0 linked），等于 claude 装了 superpowers 却用不上。
+      // 这里全量链接，与 codex/opencode 经 ~/.agents/skills/superpowers 拿到的集合保持一致。
+      const allowedSkills = null;
       const linkResult = linkClaudeSkills({
         fs,
         sourcePath: source.sourcePath,

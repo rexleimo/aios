@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "generatedTargets": [
     "claude",
-    "codex"
+    "codex",
+    "opencode"
   ]
 }

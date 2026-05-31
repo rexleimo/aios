@@ -38,6 +38,7 @@
       "metadataRoot": ".opencode",
       "outputs": [
         "AGENTS.md",
+        ".opencode/agents",
         ".opencode/skills"
       ]
     }

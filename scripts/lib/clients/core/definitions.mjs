@@ -34,7 +34,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
   }),
   gemini: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness', 'superpowers']),
     commandName: 'gemini',
     runtimeClientId: 'gemini-cli',
     projectSkillRoot: '.gemini/skills',
@@ -46,11 +46,12 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     unattendedArgs: Object.freeze(['--yolo']),
   }),
   opencode: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness']),
+    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents']),
     commandName: 'opencode',
     runtimeClientId: 'opencode-cli',
     projectSkillRoot: '.opencode/skills',
     skillFormat: 'markdown-directory',
+    agentTargetRoot: '.opencode/agents',
     nativeMetadataRoot: '.opencode',
     instructionFileName: 'AGENTS.md',
     nativeProjectSourceFile: 'AIOS.md',
@@ -64,8 +65,8 @@ export const CLIENT_SELECTIONS = Object.freeze(['all', ...ALL_CLIENTS]);
 export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
-  agents: Object.freeze(['claude', 'codex']),
-  superpowers: Object.freeze(['codex', 'claude']),
+  agents: Object.freeze(['claude', 'codex', 'opencode']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'opencode']),
   team: Object.freeze(['codex', 'claude', 'gemini']),
   harness: ALL_CLIENTS,
 });

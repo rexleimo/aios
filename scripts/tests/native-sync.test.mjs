@@ -28,7 +28,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agents', '.opencode/skills'] },
     },
   });
 }
@@ -89,7 +89,7 @@ async function writeSkillSources(rootDir) {
 async function writeAgentSources(rootDir) {
   await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'opencode'],
   });
 
   const roles = [
@@ -135,8 +135,8 @@ test('native sync gates instruction sections by client capability', async () => 
   assert.match(agentsDoc, /AGENT-ROUTING-CAP/);
   assert.match(agentsDoc, /CODEMAP-NATIVE/);
 
-  // gemini lacks superpowers/agents but has native → only codemap is shared, not superpowers/agents.
-  assert.doesNotMatch(geminiDoc, /SUPERPOWERS-CAP/);
+  // gemini has superpowers + native but NOT agents → superpowers + codemap present, agent-routing absent.
+  assert.match(geminiDoc, /SUPERPOWERS-CAP/);
   assert.doesNotMatch(geminiDoc, /AGENT-ROUTING-CAP/);
   assert.match(geminiDoc, /CODEMAP-NATIVE/);
 });

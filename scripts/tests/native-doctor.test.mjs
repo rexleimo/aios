@@ -58,7 +58,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agents', '.opencode/skills'] },
     },
   });
 }
@@ -119,7 +119,7 @@ async function writeSkillSources(rootDir) {
 async function writeAgentSources(rootDir) {
   await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex'],
+    generatedTargets: ['claude', 'codex', 'opencode'],
   });
 
   const roles = [

@@ -63,8 +63,8 @@ test('client registry validation returns normalized values for reuse', () => {
 });
 
 test('client registry keeps capability-specific ordering', () => {
-  assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex']);
-  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude']);
+  assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode']);
+  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'opencode']);
   assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini']);
   assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode']);
 });
@@ -73,7 +73,7 @@ test('client registry exposes shared skill roots for selected clients', () => {
   assert.deepEqual(resolveClientSkillRoots('all'), [
     '.codex/skills',
     '.claude/skills',
-    '.gemini/commands',
+    '.gemini/skills',
     '.opencode/skills',
     '.agents/skills',
   ]);
@@ -118,8 +118,10 @@ test('client registry exposes runtime argument adapters without consumer if-else
 test('client registry reports capability support explicitly', () => {
   assert.equal(supportsClientCapability('codex', 'agents'), true);
   assert.equal(supportsClientCapability(' CODEX ', ' AGENTS '), true);
-  assert.equal(supportsClientCapability('opencode', 'agents'), false);
-  assert.equal(getClientCapability('opencode', 'superpowers'), false);
+  assert.equal(supportsClientCapability('opencode', 'agents'), true);
+  assert.equal(getClientCapability('opencode', 'superpowers'), true);
+  assert.equal(getClientCapability('gemini', 'superpowers'), true);
+  assert.equal(supportsClientCapability('gemini', 'agents'), false);
 });
 
 test('client registry exposes native instruction filenames per client', () => {

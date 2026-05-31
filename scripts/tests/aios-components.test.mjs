@@ -458,16 +458,25 @@ test('syncClaudeSkillPermissions can seed global Claude settings when requested'
   assert.equal(seeded.permissions.allow.includes('Skill(subagent-driven-development)'), true);
 });
 
-test('installSuperpowers skips clients without superpowers support', async () => {
-  const rootDir = await makeTemp('aios-superpowers-skip-root-');
-  const codexHome = await makeTemp('aios-superpowers-skip-codex-home-');
-  const claudeHome = await makeTemp('aios-superpowers-skip-claude-home-');
-  const agentsHome = await makeTemp('aios-superpowers-skip-agents-home-');
+test('installSuperpowers includes opencode via the shared ~/.agents/skills link', async () => {
+  if (!commandExists('git')) return;
+
+  const rootDir = await makeTemp('aios-superpowers-opencode-root-');
+  const codexHome = await makeTemp('aios-superpowers-opencode-codex-home-');
+  const claudeHome = await makeTemp('aios-superpowers-opencode-claude-home-');
+  const agentsHome = await makeTemp('aios-superpowers-opencode-agents-home-');
+  const superpowersDir = path.join(codexHome, 'superpowers');
   const logs = [];
+
+  // Pre-seed a local superpowers git repo so install reuses it instead of cloning from the network.
+  await mkdir(superpowersDir, { recursive: true });
+  await writeSuperpowersSkill(codexHome, 'using-superpowers');
+  spawnSync('git', ['init', superpowersDir], { stdio: 'ignore' });
 
   const result = await installSuperpowers({
     rootDir,
     client: 'opencode',
+    installClaudePlugin: false,
     env: {
       ...process.env,
       CODEX_HOME: codexHome,
@@ -477,9 +486,16 @@ test('installSuperpowers skips clients without superpowers support', async () =>
     io: { log: (line) => logs.push(String(line)) },
   });
 
-  assert.equal(result.skipped, true);
-  assert.match(logs.join('\n'), /skipped.*opencode/i);
-  await assert.rejects(() => readFile(path.join(codexHome, 'superpowers', 'skills', 'using-superpowers', 'SKILL.md'), 'utf8'));
+  // opencode now supports superpowers, so install is NOT skipped and the shared link is created.
+  assert.equal(result.skipped, false);
+  assert.ok(result.supportedClients.includes('opencode'));
+  // opencode discovers superpowers via the shared ~/.agents/skills/superpowers link (external skill scan).
+  const linkedSkill = await readFile(
+    path.join(agentsHome, 'skills', 'superpowers', 'using-superpowers', 'SKILL.md'),
+    'utf8'
+  );
+  assert.match(linkedSkill, /using-superpowers/);
+  // opencode-only install must not touch claude project settings.
   await assert.rejects(() => readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
 });
 
@@ -1103,15 +1119,17 @@ test('agents install skips unsupported clients and uninstall removes managed fil
   const logs = [];
   const io = { log: (line) => logs.push(String(line)) };
 
-  const skipped = await installOrchestratorAgents({ rootDir, client: 'opencode', io });
+  const skipped = await installOrchestratorAgents({ rootDir, client: 'gemini', io });
   assert.equal(skipped.skipped, true);
   await assert.rejects(() => readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'));
   await assert.rejects(() => readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'));
 
   await installOrchestratorAgents({ rootDir, client: 'all', io });
 
+  const opencodeDir = path.join(rootDir, '.opencode', 'agents');
   assert.match(await readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
+  assert.match(await readFile(path.join(opencodeDir, 'rex-planner.md'), 'utf8'), /mode: subagent/);
 
   await uninstallOrchestratorAgents({ rootDir, client: 'all', io });
   assert.equal(await readFile(path.join(claudeDir, 'notes.md'), 'utf8'), 'manual\n');
