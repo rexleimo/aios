@@ -7,8 +7,10 @@
   "task_prompt": "Fix the normalization helper for trim variant 9.",
   "verification_command": "node --test",
   "baseline_failing_tests": [
-    "not ok 1 - normalizeName trims outer whitespace",
-    "failureType: 'testCodeFailure'"
+    "✖ normalizeName trims outer whitespace (0.758166ms)",
+    "✖ normalizeName trims outer whitespace (0.758166ms)",
+    "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+    "code: 'ERR_ASSERTION',"
   ],
   "constraints": [
     "Do not edit tests",

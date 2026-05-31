@@ -56,7 +56,7 @@ async function seedMinimalNativeRoot(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/commands'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
@@ -65,7 +65,7 @@ async function seedMinimalNativeRoot(rootDir) {
     generatedRoots: {
       codex: '.codex/skills',
       claude: '.claude/skills',
-      gemini: '.gemini/commands',
+      gemini: '.gemini/skills',
       opencode: '.opencode/skills',
     },
     skills: [],
@@ -79,7 +79,7 @@ async function seedMinimalNativeRoot(rootDir) {
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'agent-routing\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'codemap.md'), 'codemap\n', 'utf8');
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'), 'gemini native\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'gemini native\n', 'utf8');
 }
 
 test('route trigger sync installs slash shortcuts in each client home', async () => {

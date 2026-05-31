@@ -1,6 +1,6 @@
 // toml-command.mjs — converts SKILL.md (YAML frontmatter + markdown body) to Gemini CLI command TOML.
-// Gemini CLI reads .gemini/commands/*.toml with a `prompt` field; SKILL.md placed in .gemini/skills/ is invisible.
-// This emitter replaces the directory-copy sync path for clients with skillFormat: 'toml-command'.
+// Used ONLY for route commands (/single, /team, etc.), NOT for skills.
+// Gemini skills use .gemini/skills/<name>/SKILL.md (same as Claude's markdown-directory format).
 
 import fs from 'node:fs';
 import path from 'node:path';

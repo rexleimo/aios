@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "version_id": "b0001-u000000-20260530T091336722Z",
+  "saved_at": "2026-05-30T09:13:36.722Z",
+  "update_count": 0,
+  "batch_index": 1,
+  "active_checkpoint_id": "ckpt-mixed-a-u1",
+  "quality_status": "degraded",
+  "quality_score": -1,
+  "ope": {
+    "window_size": 1,
+    "active_policy": {
+      "sample_count": 1,
+      "ips": 1.2000000000000002,
+      "self_normalized_ips": 1.2000000000000002,
+      "dr": 1.2000000000000002,
+      "avg_logged_reward": 1.2000000000000002,
+      "effective_sample_size": 1,
+      "max_importance_weight": 1,
+      "clip_weight": 20,
+      "min_logging_probability": 0.0001,
+      "ips_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ],
+      "dr_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ]
+    },
+    "reference_policy": {
+      "sample_count": 1,
+      "ips": 1.2000000000000002,
+      "self_normalized_ips": 1.2000000000000002,
+      "dr": 1.2000000000000002,
+      "avg_logged_reward": 1.2000000000000002,
+      "effective_sample_size": 1,
+      "max_importance_weight": 1,
+      "clip_weight": 20,
+      "min_logging_probability": 0.0001,
+      "ips_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ],
+      "dr_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ]
+    },
+    "dr_lift_vs_reference": 0
+  },
+  "reward_config": {
+    "weights": {
+      "terminal": 0.8,
+      "successRate": 0.4,
+      "rollbackRate": -0.6,
+      "humanHandoffRate": -0.3,
+      "missedHandoff": -0.4,
+      "verificationBlocked": -0.2
+    },
+    "auto_tune": {
+      "enabled": true,
+      "step": 0.03,
+      "min_samples": 2
+    },
+    "latest_tuning": {
+      "tuned": false,
+      "reason": "insufficient_samples",
+      "weights": {
+        "terminal": 0.8,
+        "successRate": 0.4,
+        "rollbackRate": -0.6,
+        "humanHandoffRate": -0.3,
+        "missedHandoff": -0.4,
+        "verificationBlocked": -0.2
+      },
+      "adjustments": {}
+    }
+  },
+  "stability": {
+    "has_critical": false,
+    "alerts": [],
+    "last_anneal": {
+      "previous_rate": 0.15,
+      "next_rate": 0.15,
+      "anneal_action": "hold"
+    }
+  },
+  "active_policy": {
+    "seed": 0,
+    "vocabulary": [],
+    "vocabularyIndex": {},
+    "weights": {
+      "orchestrator:dispatch": []
+    },
+    "updateCount": 4,
+    "onlineUpdateCount": 1
+  },
+  "reference_policy": {
+    "seed": 0,
+    "vocabulary": [],
+    "vocabularyIndex": {},
+    "weights": {
+      "orchestrator:dispatch": []
+    },
+    "updateCount": 0,
+    "onlineUpdateCount": 0
+  }
+}

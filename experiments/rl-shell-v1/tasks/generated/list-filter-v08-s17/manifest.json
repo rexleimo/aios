@@ -7,8 +7,10 @@
   "task_prompt": "Fix the list filtering behavior for variant 8.",
   "verification_command": "node --test",
   "baseline_failing_tests": [
-    "not ok 1 - filterActive keeps only active items in original order",
-    "failureType: 'testCodeFailure'"
+    "✖ filterActive keeps only active items in original order (1.065834ms)",
+    "✖ filterActive keeps only active items in original order (1.065834ms)",
+    "AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:",
+    "code: 'ERR_ASSERTION',"
   ],
   "constraints": [
     "Do not edit tests",

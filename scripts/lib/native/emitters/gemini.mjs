@@ -11,6 +11,6 @@ export function renderGeminiNativeOutputs({ rootDir }) {
         content: composeNativeMarkdown({ rootDir, client: 'gemini' }),
       },
     ],
-    managedTargets: ['GEMINI.md', '.gemini/commands'],
+    managedTargets: ['GEMINI.md', '.gemini/skills'],
   };
 }

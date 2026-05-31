@@ -27,7 +27,7 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/commands'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
@@ -74,7 +74,7 @@ async function writeSkillSources(rootDir) {
     generatedRoots: {
       codex: '.codex/skills',
       claude: '.claude/skills',
-      gemini: '.gemini/commands',
+      gemini: '.gemini/skills',
       opencode: '.opencode/skills',
     },
     skills: [
@@ -228,7 +228,7 @@ test('native sync can install all client project outputs outside the AIOS source
   assert.match(await readFile(path.join(targetRootDir, 'CLAUDE.md'), 'utf8'), /Claude native block/);
   assert.match(await readFile(path.join(targetRootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
-  assert.match(await readFile(path.join(targetRootDir, '.gemini', 'commands', 'find-skills.toml'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);

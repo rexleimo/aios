@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "version_id": "b0001-u000001-20260530T091337099Z",
+  "saved_at": "2026-05-30T09:13:37.099Z",
+  "update_count": 1,
+  "batch_index": 1,
+  "active_checkpoint_id": "ckpt-mixed-a-u1",
+  "quality_status": "degraded",
+  "quality_score": -1,
+  "ope": {
+    "window_size": 2,
+    "active_policy": {
+      "sample_count": 2,
+      "ips": 1.2359892038865845,
+      "self_normalized_ips": 1.2000000000000002,
+      "dr": 1.2000000000000002,
+      "avg_logged_reward": 1.2000000000000002,
+      "effective_sample_size": 2,
+      "max_importance_weight": 1.0299910032388202,
+      "clip_weight": 20,
+      "min_logging_probability": 0.0001,
+      "ips_ci95": [
+        1.2359892038865845,
+        1.2359892038865845
+      ],
+      "dr_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ]
+    },
+    "reference_policy": {
+      "sample_count": 2,
+      "ips": 1.2000000000000002,
+      "self_normalized_ips": 1.2000000000000002,
+      "dr": 1.2000000000000002,
+      "avg_logged_reward": 1.2000000000000002,
+      "effective_sample_size": 2,
+      "max_importance_weight": 1,
+      "clip_weight": 20,
+      "min_logging_probability": 0.0001,
+      "ips_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ],
+      "dr_ci95": [
+        1.2000000000000002,
+        1.2000000000000002
+      ]
+    },
+    "dr_lift_vs_reference": 0
+  },
+  "reward_config": {
+    "weights": {
+      "terminal": 0.8,
+      "successRate": 0.4,
+      "rollbackRate": -0.6,
+      "humanHandoffRate": -0.3,
+      "missedHandoff": -0.4,
+      "verificationBlocked": -0.2
+    },
+    "auto_tune": {
+      "enabled": true,
+      "step": 0.03,
+      "min_samples": 2
+    },
+    "latest_tuning": {
+      "tuned": false,
+      "reason": "insufficient_samples",
+      "weights": {
+        "terminal": 0.8,
+        "successRate": 0.4,
+        "rollbackRate": -0.6,
+        "humanHandoffRate": -0.3,
+        "missedHandoff": -0.4,
+        "verificationBlocked": -0.2
+      },
+      "adjustments": {}
+    }
+  },
+  "stability": {
+    "has_critical": true,
+    "alerts": [
+      {
+        "batch_id": "batch-001",
+        "severity": "warning",
+        "code": "degradation_streak",
+        "degradation_streak": 2
+      },
+      {
+        "batch_id": "batch-001",
+        "severity": "critical",
+        "code": "holdout_failed",
+        "orchestrator_status": "passed",
+        "shell_status": "failed"
+      }
+    ],
+    "last_anneal": {
+      "previous_rate": 0.162,
+      "next_rate": 0.17496,
+      "anneal_action": "increase_exploration"
+    }
+  },
+  "active_policy": {
+    "seed": 0,
+    "vocabulary": [],
+    "vocabularyIndex": {},
+    "weights": {
+      "shell:failing_tests": [],
+      "browser:publish-sequence": [],
+      "orchestrator:dispatch": []
+    },
+    "updateCount": 8,
+    "onlineUpdateCount": 2,
+    "contextualBandit": {
+      "contexts": {
+        "orchestrator:dispatch:blockers=0:human=0": {
+          "pull_count": 1,
+          "reward_sum": 1.2000000000000002,
+          "average_reward": 1.2000000000000002,
+          "actions": {
+            "local-phase": {
+              "preference": 0.030000000000000006,
+              "pull_count": 1,
+              "reward_sum": 1.2000000000000002
+            },
+            "local-control": {
+              "preference": -0.030000000000000006,
+              "pull_count": 0,
+              "reward_sum": 0
+            }
+          }
+        }
+      },
+      "updateCount": 1,
+      "rngState": 142474131
+    }
+  },
+  "reference_policy": {
+    "seed": 0,
+    "vocabulary": [],
+    "vocabularyIndex": {},
+    "weights": {
+      "shell:failing_tests": [],
+      "browser:publish-sequence": [],
+      "orchestrator:dispatch": []
+    },
+    "updateCount": 0,
+    "onlineUpdateCount": 0
+  }
+}

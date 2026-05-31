@@ -57,7 +57,7 @@ async function writeNativeManifest(rootDir) {
     clients: {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
-      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/commands'] },
+      gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
     },
   });
@@ -94,7 +94,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
       SessionStart: ['node omc-hook.mjs'],
     },
   });
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'), 'Gemini compatibility instructions.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
 }
 
@@ -104,7 +104,7 @@ async function writeSkillSources(rootDir) {
     generatedRoots: {
       codex: '.codex/skills',
       claude: '.claude/skills',
-      gemini: '.gemini/commands',
+      gemini: '.gemini/skills',
       opencode: '.opencode/skills',
     },
     skills: [

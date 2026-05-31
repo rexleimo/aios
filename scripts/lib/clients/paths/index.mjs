@@ -21,7 +21,7 @@ export function getClientProjectSkillRoot(client) {
 }
 
 // 纯函数：返回该客户端 skill 输出格式——单一事实来源，消除各处 hardcoded SKILL.md 假设。
-// gemini 返回 'toml-command'（.gemini/commands/*.toml），其他客户端返回 'markdown-directory'。
+// 所有客户端（含 gemini）均返回 'markdown-directory'（.gemini/skills/<name>/SKILL.md）。
 // 对于非客户端合成 surface（如 'agents'），安全回退到 'markdown-directory'。
 export function getClientSkillFormat(client) {
   if (!isKnownClient(client)) return 'markdown-directory';

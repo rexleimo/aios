@@ -7,8 +7,10 @@
   "task_prompt": "Fix the failing addition behavior for variant 5.",
   "verification_command": "node --test",
   "baseline_failing_tests": [
-    "not ok 1 - addition returns the sum",
-    "failureType: 'testCodeFailure'"
+    "✖ addition returns the sum (0.781917ms)",
+    "✖ addition returns the sum (0.781917ms)",
+    "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:",
+    "code: 'ERR_ASSERTION',"
   ],
   "constraints": [
     "Do not edit tests",

@@ -1,0 +1,247 @@
+{
+  "schema_version": 1,
+  "latest_version_id": "b0001-u000001-20260530T091337099Z",
+  "last_good_version_id": null,
+  "versions": [
+    {
+      "version_id": "b0001-u000000-20260530T091255663Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091255663Z.json",
+      "saved_at": "2026-05-30T09:12:55.663Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 0,
+        "ips": 0,
+        "self_normalized_ips": 0,
+        "dr": 0,
+        "avg_logged_reward": 0,
+        "effective_sample_size": 0,
+        "max_importance_weight": 0,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          0,
+          0
+        ],
+        "dr_ci95": [
+          0,
+          0
+        ]
+      },
+      "stability_status": "ok"
+    },
+    {
+      "version_id": "b0001-u000000-20260530T091255820Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091255820Z.json",
+      "saved_at": "2026-05-30T09:12:55.820Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 0,
+        "ips": 0,
+        "self_normalized_ips": 0,
+        "dr": 0,
+        "avg_logged_reward": 0,
+        "effective_sample_size": 0,
+        "max_importance_weight": 0,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          0,
+          0
+        ],
+        "dr_ci95": [
+          0,
+          0
+        ]
+      },
+      "stability_status": "ok"
+    },
+    {
+      "version_id": "b0001-u000000-20260530T091255987Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091255987Z.json",
+      "saved_at": "2026-05-30T09:12:55.987Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 0,
+        "ips": 0,
+        "self_normalized_ips": 0,
+        "dr": 0,
+        "avg_logged_reward": 0,
+        "effective_sample_size": 0,
+        "max_importance_weight": 0,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          0,
+          0
+        ],
+        "dr_ci95": [
+          0,
+          0
+        ]
+      },
+      "stability_status": "critical"
+    },
+    {
+      "version_id": "b0001-u000001-20260530T091256144Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000001-20260530T091256144Z.json",
+      "saved_at": "2026-05-30T09:12:56.144Z",
+      "update_count": 1,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 1,
+        "ips": 1.2359892038865845,
+        "self_normalized_ips": 1.2000000000000002,
+        "dr": 1.2000000000000002,
+        "avg_logged_reward": 1.2000000000000002,
+        "effective_sample_size": 1,
+        "max_importance_weight": 1.0299910032388202,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          1.2359892038865845,
+          1.2359892038865845
+        ],
+        "dr_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ]
+      },
+      "stability_status": "critical"
+    },
+    {
+      "version_id": "b0001-u000000-20260530T091336568Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091336568Z.json",
+      "saved_at": "2026-05-30T09:13:36.568Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 1,
+        "ips": 1.2000000000000002,
+        "self_normalized_ips": 1.2000000000000002,
+        "dr": 1.2000000000000002,
+        "avg_logged_reward": 1.2000000000000002,
+        "effective_sample_size": 1,
+        "max_importance_weight": 1,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ],
+        "dr_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ]
+      },
+      "stability_status": "ok"
+    },
+    {
+      "version_id": "b0001-u000000-20260530T091336722Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091336722Z.json",
+      "saved_at": "2026-05-30T09:13:36.722Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 1,
+        "ips": 1.2000000000000002,
+        "self_normalized_ips": 1.2000000000000002,
+        "dr": 1.2000000000000002,
+        "avg_logged_reward": 1.2000000000000002,
+        "effective_sample_size": 1,
+        "max_importance_weight": 1,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ],
+        "dr_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ]
+      },
+      "stability_status": "ok"
+    },
+    {
+      "version_id": "b0001-u000000-20260530T091336936Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000000-20260530T091336936Z.json",
+      "saved_at": "2026-05-30T09:13:36.936Z",
+      "update_count": 0,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 1,
+        "ips": 1.2000000000000002,
+        "self_normalized_ips": 1.2000000000000002,
+        "dr": 1.2000000000000002,
+        "avg_logged_reward": 1.2000000000000002,
+        "effective_sample_size": 1,
+        "max_importance_weight": 1,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ],
+        "dr_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ]
+      },
+      "stability_status": "critical"
+    },
+    {
+      "version_id": "b0001-u000001-20260530T091337099Z",
+      "file_path": "/Users/rex/codes/harness-cli/experiments/rl-mixed-v1/checkpoints/orchestrator-bandit-policy.versions/orchestrator-bandit-policy.b0001-u000001-20260530T091337099Z.json",
+      "saved_at": "2026-05-30T09:13:37.099Z",
+      "update_count": 1,
+      "batch_index": 1,
+      "active_checkpoint_id": "ckpt-mixed-a-u1",
+      "quality_status": "degraded",
+      "quality_score": -1,
+      "ope": {
+        "sample_count": 2,
+        "ips": 1.2359892038865845,
+        "self_normalized_ips": 1.2000000000000002,
+        "dr": 1.2000000000000002,
+        "avg_logged_reward": 1.2000000000000002,
+        "effective_sample_size": 2,
+        "max_importance_weight": 1.0299910032388202,
+        "clip_weight": 20,
+        "min_logging_probability": 0.0001,
+        "ips_ci95": [
+          1.2359892038865845,
+          1.2359892038865845
+        ],
+        "dr_ci95": [
+          1.2000000000000002,
+          1.2000000000000002
+        ]
+      },
+      "stability_status": "critical"
+    }
+  ]
+}

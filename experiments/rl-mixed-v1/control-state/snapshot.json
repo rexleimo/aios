@@ -1,0 +1,11 @@
+{
+  "active_checkpoint_id": "ckpt-mixed-a-u1",
+  "pre_update_ref_checkpoint_id": "ckpt-mixed-a",
+  "last_stable_checkpoint_id": "ckpt-mixed-a",
+  "mode": "collection",
+  "applied_event_ids": [
+    "update-completed-1",
+    "epoch-replay-only-1"
+  ],
+  "last_event_id": "epoch-replay-only-1"
+}

@@ -1,7 +1,7 @@
 export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
 
-// Per-client skill format: 'markdown-directory' = SKILL.md in a dir (default for claude/codex/opencode).
-// 'toml-command' = single .toml file per skill in <projectSkillRoot>/ (gemini CLI reads .gemini/commands/*.toml).
+// Per-client skill format: 'markdown-directory' = SKILL.md in a dir (all clients including gemini).
+// 'toml-command' = single .toml file, used only for route commands (.gemini/commands/*.toml), not skills.
 export const SKILL_FORMATS = Object.freeze(['markdown-directory', 'toml-command']);
 export const DEFAULT_SKILL_FORMAT = 'markdown-directory';
 
@@ -37,8 +37,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'gemini',
     runtimeClientId: 'gemini-cli',
-    projectSkillRoot: '.gemini/commands',
-    skillFormat: 'toml-command',
+    projectSkillRoot: '.gemini/skills',
+    skillFormat: 'markdown-directory',
     nativeMetadataRoot: '.gemini',
     instructionFileName: 'GEMINI.md',
     nativeProjectSourceFile: 'GEMINI.md',
