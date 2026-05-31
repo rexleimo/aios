@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "seed_id": "arithmetic-add",
-  "verification_command": "node --test",
-  "variant_count": 16,
-  "task_prompt_template": "Fix the failing addition behavior for variant {{variant_id}}.",
-  "constraints": ["Do not edit tests", "Use only local files"]
-}

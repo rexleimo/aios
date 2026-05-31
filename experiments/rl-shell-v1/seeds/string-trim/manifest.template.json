@@ -1,8 +1,0 @@
-{
-  "schema_version": 1,
-  "seed_id": "string-trim",
-  "verification_command": "node --test",
-  "variant_count": 16,
-  "task_prompt_template": "Fix the normalization helper for trim variant {{variant_id}}.",
-  "constraints": ["Do not edit tests", "Keep function signature stable"]
-}
