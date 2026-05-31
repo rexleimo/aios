@@ -3,6 +3,7 @@
   "generatedTargets": [
     "claude",
     "codex",
-    "opencode"
+    "opencode",
+    "crush"
   ]
 }

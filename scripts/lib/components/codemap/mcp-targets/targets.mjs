@@ -36,6 +36,15 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
       return opencodeHome ? path.join(opencodeHome, 'opencode.json') : '';
     },
   }),
+  Object.freeze({
+    clientKey: 'crush',
+    format: 'crush-json',
+    createIfMissing: true,
+    resolvePath: (_projectRoot, clientHomes) => {
+      const crushHome = resolveUserPath(clientHomes.crush);
+      return crushHome ? path.join(crushHome, 'crush.json') : '';
+    },
+  }),
 ]);
 
 export function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {

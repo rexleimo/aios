@@ -17,7 +17,7 @@ async function writeJson(rootDir, relativePath, value) {
 function buildManifest() {
   return {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex', 'opencode'],
+    generatedTargets: ['claude', 'codex', 'opencode', 'crush'],
   };
 }
 

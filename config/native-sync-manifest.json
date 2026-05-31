@@ -41,6 +41,14 @@
         ".opencode/agents",
         ".opencode/skills"
       ]
+    },
+    "crush": {
+      "tier": "compatibility",
+      "metadataRoot": ".crush",
+      "outputs": [
+        "AGENTS.md",
+        ".crush/skills"
+      ]
     }
   }
 }

@@ -124,6 +124,36 @@ export function removeCrgFromOpencodeJson(filePath, options = {}) {
   return removeCrgFromJsonNamespace(filePath, 'mcp', options);
 }
 
+export function injectCrgIntoCrushJson(filePath, { dryRun = false } = {}) {
+  const state = parseJsonConfig(filePath, { dryRun });
+  if (state.error) {
+    return { status: 'error', reason: state.error };
+  }
+
+  const parsed = state.parsed;
+  if (!isObjectRecord(parsed.mcp)) {
+    parsed.mcp = {};
+  }
+
+  const desired = {
+    type: 'stdio',
+    command: 'uvx',
+    args: ['code-review-graph', 'serve'],
+  };
+  const existing = parsed.mcp[CRG_MCP_ALIAS];
+  const nextEntry = { ...desired };
+  if (isObjectRecord(existing)) {
+    Object.assign(nextEntry, existing, desired);
+  }
+  parsed.mcp[CRG_MCP_ALIAS] = nextEntry;
+
+  return writeJsonConfig(filePath, state.raw, parsed, state.exists, { dryRun });
+}
+
+export function removeCrgFromCrushJson(filePath, options = {}) {
+  return removeCrgFromJsonNamespace(filePath, 'mcp', options);
+}
+
 export function inspectJsonNamespace(raw, namespaceKey) {
   const parsed = raw.trim() ? JSON.parse(raw) : {};
   const namespace = parsed?.[namespaceKey];

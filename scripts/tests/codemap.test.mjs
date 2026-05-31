@@ -33,7 +33,7 @@ async function readJson(filePath) {
 
 test('codemap MCP targets agree with the client registry (single source of truth)', () => {
   const projectRoot = '/proj';
-  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode' };
+  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode', crush: '/h/.config/crush' };
   const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
   const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
 
@@ -66,25 +66,28 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const claudeHome = path.join(rootDir, 'home', '.claude');
   const geminiHome = path.join(rootDir, 'home', '.gemini');
   const opencodeHome = path.join(rootDir, 'home', '.config', 'opencode');
+  const crushHome = path.join(rootDir, 'home', '.config', 'crush');
 
   await mkdir(codexHome, { recursive: true });
+  await mkdir(crushHome, { recursive: true });
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
   await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
   await writeJson(path.join(projectRoot, '.gemini', 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(opencodeHome, 'opencode.json'), { mcp: { existing: { type: 'local', command: ['node', 'server.js'] } } });
+  await writeJson(path.join(crushHome, 'crush.json'), { mcp: { existing: { type: 'stdio', command: 'node' } } });
 
   const logs = [];
   const result = await installCodemap({
     rootDir,
     projectRoot,
     io: silentIo(logs),
-    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome },
+    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, crush: crushHome },
     skipCrgChecks: true,
     crgVersion: 'code-review-graph test',
   });
 
-  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'opencode']);
+  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'crush', 'gemini', 'opencode']);
 
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);

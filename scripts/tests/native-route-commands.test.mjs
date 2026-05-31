@@ -58,6 +58,7 @@ async function seedMinimalNativeRoot(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
+      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
     },
   });
   await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
@@ -67,6 +68,7 @@ async function seedMinimalNativeRoot(rootDir) {
       claude: '.claude/skills',
       gemini: '.gemini/skills',
       opencode: '.opencode/skills',
+      crush: '.crush/skills',
     },
     skills: [],
     legacyUnmanaged: [],
