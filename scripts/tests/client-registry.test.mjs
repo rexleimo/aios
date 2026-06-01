@@ -65,7 +65,7 @@ test('client registry validation returns normalized values for reuse', () => {
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'crush']);
   assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'crush']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
   assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
 });
 
@@ -99,14 +99,15 @@ test('client registry exposes runtime command and client identifiers', () => {
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'antigravity', 'crush']);
-  assert.deepEqual(resolveClientTeamProviders('opencode'), []);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(resolveClientTeamProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
     codex: 'codex-cli',
     claude: 'claude-code',
     gemini: 'gemini-cli',
     antigravity: 'antigravity-cli',
+    opencode: 'opencode-cli',
     crush: 'crush-cli',
   });
 });
@@ -115,9 +116,9 @@ test('client registry exposes runtime argument adapters without consumer if-else
   assert.deepEqual(buildRuntimeClientModelArgs('codex-cli', 'gpt-5'), ['-m', 'gpt-5']);
   assert.deepEqual(buildRuntimeClientModelArgs('claude-code', 'claude-sonnet'), ['--model', 'claude-sonnet']);
   assert.deepEqual(buildRuntimeClientModelArgs('gemini-cli', 'gemini-2.5-pro'), ['-m', 'gemini-2.5-pro']);
-  assert.deepEqual(buildRuntimeClientModelArgs('opencode-cli', 'qwen3'), []);
+  assert.deepEqual(buildRuntimeClientModelArgs('opencode-cli', 'qwen3'), ['-m', 'qwen3']);
   assert.deepEqual(getClientUnattendedArgs('codex'), ['--dangerously-bypass-approvals-and-sandbox']);
-  assert.deepEqual(getClientUnattendedArgs('opencode'), []);
+  assert.deepEqual(getClientUnattendedArgs('opencode'), ['run', '--dangerously-skip-permissions']);
 });
 
 test('client registry reports capability support explicitly', () => {

@@ -19,6 +19,9 @@ const SHARED_SECTION_PLAN = Object.freeze([
   { file: 'agent-routing.md', capability: 'agents' },
   { file: 'codemap.md', capability: 'native' },
   { file: 'browser-mcp.md' },
+  { file: 'team-provider.md', capability: 'team' },
+  { file: 'model-router.md', capability: 'team' },
+  { file: 'harness.md' },
 ]);
 
 // 能力感知地拼装某客户端的 native 指令正文：共享段（按能力过滤）+ 该客户端项目源段。

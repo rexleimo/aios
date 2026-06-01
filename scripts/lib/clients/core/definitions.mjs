@@ -63,7 +63,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     unattendedArgs: Object.freeze(['--yolo']),
   }),
   opencode: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents']),
+    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents', 'team']),
     commandName: 'opencode',
     runtimeClientId: 'opencode-cli',
     projectSkillRoot: '.opencode/skills',
@@ -72,7 +72,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeMetadataRoot: '.opencode',
     instructionFileName: 'AGENTS.md',
     nativeProjectSourceFile: 'AIOS.md',
-    unattendedArgs: Object.freeze([]),
+    modelArgFlag: '-m',
+    unattendedArgs: Object.freeze(['run', '--dangerously-skip-permissions']),
   }),
   // Crush (charmbracelet) — successor to OpenCode. Auto-discovers ~/.agents/skills/,
   // ~/.claude/skills/, .agents/skills/, .claude/skills/, and .crush/skills/.
@@ -100,7 +101,7 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
   superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'crush']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
   harness: ALL_CLIENTS,
 });
 
