@@ -295,7 +295,7 @@ test('PowerShell installer fails fast when native setup commands fail', async ()
   assert.match(installPs1, /function Invoke-Checked/);
   assert.match(installPs1, /\$previousErrorActionPreference = \$ErrorActionPreference/);
   assert.match(installPs1, /\$ErrorActionPreference = 'Continue'/);
-  assert.match(installPs1, /Invoke-Checked -Command "npm" -Arguments @\("install", "--include=dev"\)/);
+  assert.match(installPs1, /Invoke-Checked -Command "npm" -Arguments @\("install", "--include=dev", "--engine-strict=false"\)/);
   assert.match(installPs1, /AIOS runtime deps install did not produce expected TUI runner/);
   assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$shellInstaller, "--mode", \$WrapMode, "--force"\)/);
   assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$privacyInstaller, "--enable"\)/);

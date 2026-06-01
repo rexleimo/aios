@@ -162,8 +162,8 @@ if [[ -f "$root_package_json" ]]; then
     exit 1
   fi
   if [[ ! -x "$root_tsx_bin" ]]; then
-    echo "+ install AIOS runtime deps: (cd $AIOS_INSTALL_DIR && npm install --include=dev)"
-    (cd "$AIOS_INSTALL_DIR" && npm install --include=dev)
+    echo "+ install AIOS runtime deps: (cd $AIOS_INSTALL_DIR && npm install --include=dev --engine-strict=false)"
+    (cd "$AIOS_INSTALL_DIR" && npm install --include=dev --engine-strict=false)
   else
     echo "[ok] AIOS runtime deps ready: $AIOS_INSTALL_DIR"
   fi

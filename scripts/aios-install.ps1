@@ -144,10 +144,10 @@ try {
       throw "Missing required command: npm"
     }
     if (-not (Test-Path -LiteralPath $rootTsxBin)) {
-      Write-Host "+ install AIOS runtime deps: npm install --include=dev"
+      Write-Host "+ install AIOS runtime deps: npm install --include=dev --engine-strict=false"
       Push-Location $InstallDir
       try {
-        Invoke-Checked -Command "npm" -Arguments @("install", "--include=dev")
+        Invoke-Checked -Command "npm" -Arguments @("install", "--include=dev", "--engine-strict=false")
       }
       finally {
         Pop-Location
