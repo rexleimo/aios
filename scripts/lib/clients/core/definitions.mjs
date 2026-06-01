@@ -99,7 +99,7 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'crush']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
   team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity']),
   harness: ALL_CLIENTS,
 });
