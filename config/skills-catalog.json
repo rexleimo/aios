@@ -422,69 +422,7 @@
         "essential"
       ]
     },
-    {
-      "name": "aios-jimeng-image-ops",
-      "description": "Jimeng image generation workflow for aios.",
-      "source": "skill-sources/aios-jimeng-image-ops",
-      "clients": [
-        "codex",
-        "claude"
-      ],
-      "scopes": [
-        "global",
-        "project"
-      ],
-      "defaultInstall": {
-        "global": false,
-        "project": false
-      },
-      "tags": [
-        "jimeng",
-        "ops"
-      ]
-    },
-    {
-      "name": "seed2-manga-drama",
-      "description": "Seed2 style manga-drama generation workflow.",
-      "source": "skill-sources/seed2-manga-drama",
-      "clients": [
-        "codex",
-        "claude"
-      ],
-      "scopes": [
-        "global",
-        "project"
-      ],
-      "defaultInstall": {
-        "global": false,
-        "project": false
-      },
-      "tags": [
-        "content",
-        "video"
-      ]
-    },
-    {
-      "name": "xhs-ops-methods",
-      "description": "Reusable Xiaohongshu operations workflow.",
-      "source": "skill-sources/xhs-ops-methods",
-      "clients": [
-        "codex",
-        "claude"
-      ],
-      "scopes": [
-        "global",
-        "project"
-      ],
-      "defaultInstall": {
-        "global": false,
-        "project": false
-      },
-      "tags": [
-        "xhs",
-        "ops"
-      ]
-    },
+
     {
       "name": "model-router",
       "description": "Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate. TRIGGERS: 模型调度, model dispatch, 选模型, 路由, routing, dispatch to model.",
