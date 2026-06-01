@@ -186,7 +186,17 @@ async function syncGeneratedSkillsUnlocked({
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
-  const expectedBySurface = new Map(selectedSurfaces.map((surface) => [surface, new Map()]));
+  // Deduplicate surfaces that share the same generated directory (e.g. gemini and antigravity both map to .gemini/skills).
+  // Keep only the first surface per directory to avoid metadata conflicts.
+  const seenRoots = new Set();
+  const dedupedSurfaces = [];
+  for (const surface of selectedSurfaces) {
+    const root = resolvedManifest.generatedRoots[surface];
+    if (!root || seenRoots.has(root)) continue;
+    seenRoots.add(root);
+    dedupedSurfaces.push(surface);
+  }
+  const expectedBySurface = new Map(dedupedSurfaces.map((surface) => [surface, new Map()]));
   const results = [];
   const legacyUnmanaged = new Set(resolvedManifest.legacyUnmanaged.map((item) => path.resolve(resolvedTargetRootDir, item)));
   const legacyReplaceable = new Set((resolvedManifest.legacyReplaceable || []).map((item) => path.resolve(resolvedTargetRootDir, item)));
@@ -209,7 +219,7 @@ async function syncGeneratedSkillsUnlocked({
     }
   }
 
-  for (const surface of selectedSurfaces) {
+  for (const surface of dedupedSurfaces) {
     const rootRel = resolvedManifest.generatedRoots[surface];
     const rootAbs = path.join(resolvedTargetRootDir, rootRel);
     const format = getClientSkillFormat(surface);
@@ -370,7 +380,17 @@ export async function checkGeneratedSkillsSync({
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
-  const expectedBySurface = new Map(selectedSurfaces.map((surface) => [surface, new Map()]));
+  // Deduplicate surfaces that share the same generated directory (e.g. gemini and antigravity both map to .gemini/skills).
+  // Keep only the first surface per directory to avoid false drift from metadata differences.
+  const seenRoots = new Set();
+  const dedupedSurfaces = [];
+  for (const surface of selectedSurfaces) {
+    const root = resolvedManifest.generatedRoots[surface];
+    if (!root || seenRoots.has(root)) continue;
+    seenRoots.add(root);
+    dedupedSurfaces.push(surface);
+  }
+  const expectedBySurface = new Map(dedupedSurfaces.map((surface) => [surface, new Map()]));
   const issues = [];
 
   for (const entry of canonicalSkills) {
@@ -390,7 +410,7 @@ export async function checkGeneratedSkillsSync({
     }
   }
 
-  for (const surface of selectedSurfaces) {
+  for (const surface of dedupedSurfaces) {
     const rootAbs = path.join(resolvedTargetRootDir, resolvedManifest.generatedRoots[surface]);
     const format = getClientSkillFormat(surface);
     const expected = expectedBySurface.get(surface) || new Map();

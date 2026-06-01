@@ -353,6 +353,53 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When `puppeteer-stealth` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
 
+<!-- Team provider 指令 — 仅对具备 team capability 的客户端下发 -->
+
+## AIOS Team Provider
+
+When this client is launched by AIOS as a team worker (`ctx-agent.mjs --route team`), it runs in unattended mode. Key behaviors:
+
+- **Unattended execution**: The client is launched with auto-approve flags (e.g., `--yolo`, `--dangerously-skip-permissions`). Do not prompt for permissions — assume all operations are pre-authorized by the AIOS orchestrator.
+- **Model routing**: The `--team-provider` flag and `AIOS_MODEL_ROUTER` env var determine which model each phase uses. Check `AIOS_MODEL_*` env vars for per-role model assignments.
+- **Output format**: Results are captured by the AIOS ctx-agent runtime. Produce structured, parseable output — avoid interactive-only output (TUI elements, spinners, progress bars).
+- **Error handling**: If a task fails, write a clear error summary to stderr and exit with non-zero code. The orchestrator will handle retries.
+- **Scope isolation**: Each team worker owns a specific domain. Do not modify files outside your assigned scope unless explicitly told to.
+- **Handoff**: When finished, summarize what was done, what was changed, and any blockers in a concise handoff note.
+
+<!-- Model router 指令 — 仅对具备 team capability 的客户端下发 -->
+
+## AIOS Model Router
+
+AIOS supports per-role model routing in team and subagent workflows. The following environment variables control model selection:
+
+- `AIOS_MODEL_ROUTER` — Set to `1` to enable model routing (default: `0`).
+- `AIOS_MODEL_PLANNER` — Model ID for the planner phase (e.g., `gemini-3-pro`).
+- `AIOS_MODEL_IMPLEMENTER` — Model ID for the implementer phase (e.g., `gpt-5.5`).
+- `AIOS_MODEL_REVIEWER` — Model ID for the reviewer phase (e.g., `claude-opus`).
+- `AIOS_MODEL_SECURITY_REVIEWER` — Model ID for the security reviewer phase.
+
+When model routing is active:
+1. Read `AIOS_MODEL_ROUTER` at startup to determine if routing is enabled.
+2. Use the client's model flag (`-m`, `--model`) to set the assigned model.
+3. Record the model used in any dispatch evidence or event logs.
+4. If a model env var is unset, fall back to the client's default model.
+
+This enables heterogeneous team workflows where different roles use different LLM providers (e.g., Gemini for planning, Codex for implementation, Claude for review).
+
+<!-- Harness 指令 — 所有客户端都下发 -->
+
+## AIOS Solo Harness
+
+When this client is launched by AIOS solo harness (`aios harness run`):
+
+- **Objective-driven**: The harness provides a multi-line objective and runs iterative loops. Each iteration should advance toward the objective.
+- **Checkpoints**: After each significant change, record progress via `aios memo add`. The harness reads these for recovery.
+- **Session state**: All state is persisted in `.aios/context-db/` and `.aios/workspace/`. On resume, read these first to continue where you left off.
+- **Iteration budget**: The harness sets `AIOS_HARNESS_MAX_ITERATIONS` (default 8). Respect this limit and wrap up cleanly when approaching it.
+- **Worktree isolation**: If `--worktree` is active, changes happen in a git worktree. Commit frequently with clear messages for merge readiness.
+- **Evidence**: Before claiming a sub-task is done, produce concrete evidence (test output, file diffs, screenshots). The harness validates evidence before advancing.
+- **Failure recovery**: On failure, do not silently retry. Write the error to `aios memo add` with the failure context, then exit. The harness will retry with fresh context.
+
 ## AIOS Native Claude Layer
 
 - Prefer repo-local `.claude/skills` and `.claude/agents`.

@@ -1,6 +1,6 @@
 # Harness CLI (AIOS)
 
-> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
+> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode` / `antigravity` / `crush`.
 
 [Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Case Library](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
@@ -28,7 +28,7 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 
 | Capability | Description | Command |
 |------------|-------------|---------|
-| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` |
+| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` / `antigravity` / `crush` |
 | **Memo Storage** | Git-friendly project notes; default append-only file storage plus optional split-file storage | `aios memo add "note"` / `aios memo storage status` |
 | **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
@@ -76,7 +76,7 @@ aios team status --provider codex --watch
 ## How It Works
 
 ```text
-User → codex / claude / gemini / opencode
+User → codex / claude / gemini / opencode / antigravity / crush
      → zsh wrapper (transparent)
      → ctx-agent.mjs (ContextDB integration)
         → contextdb CLI (memory persistence)
@@ -84,7 +84,7 @@ User → codex / claude / gemini / opencode
      → browser MCP (optional browser automation)
 ```
 
-After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — Harness CLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
+After installation, just use `codex`, `claude`, `gemini`, `opencode`, `antigravity`, or `crush` as usual — Harness CLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
 
 ## Docs
 

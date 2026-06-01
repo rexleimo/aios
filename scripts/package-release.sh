@@ -78,7 +78,8 @@ release_paths=(
   config scripts mcp-server
   .claude/agents .claude/skills
   .codex/skills .codex/agents
-  .agents/skills .opencode/skills
+  .agents/skills .opencode/skills .opencode/agents
+  .gemini/skills .gemini/commands
 )
 
 existing_release_paths=()

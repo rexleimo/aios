@@ -6,6 +6,32 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.40.0] - 2026-05-31
+
+### Added
+
+- feat(clients): add Antigravity CLI support (replaces deprecated Gemini CLI)
+- feat(clients): add Crush (charmbracelet) client support with `--yolo` unattended mode
+- feat(clients): add team/model-router/harness instruction partials for opencode
+- feat(clients): add opencode team capability support
+- feat(opencode): add agent management and agent emitter for opencode
+- feat(clients): expand superpowers capability to all 6 clients (codex, claude, gemini, antigravity, opencode, crush)
+- feat(clients): expand skills/native/harness capabilities to all 6 clients
+
+### Fixed
+
+- fix(clients): add modelArgFlag for crush (`--model`)
+- fix(clients): add crush to team capability
+- fix(clients): add opencode to superpowers capability order
+- fix(skills): remove XHS-only skills, expand core AIOS skills to all 6 clients
+- fix(gemini): revert skill format from toml-command to markdown-directory
+- fix(tests): repair codemap dedup assertion and release-pipeline missing crush agent emitter
+
+### Changed
+
+- refactor: complete AIOS adaptation layer phases 5-10
+- chore: move experiments/ to .aios/experiments/ and gitignore
+
 ## [1.30.9] - 2026-05-28
 
 - fix(windows): preserve AIOS PowerShell wrapper arguments
