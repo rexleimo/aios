@@ -65,7 +65,7 @@ test('client registry validation returns normalized values for reuse', () => {
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'crush']);
   assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'crush']);
   assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
 });
 
@@ -99,7 +99,7 @@ test('client registry exposes runtime command and client identifiers', () => {
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'antigravity']);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'antigravity', 'crush']);
   assert.deepEqual(resolveClientTeamProviders('opencode'), []);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
@@ -107,6 +107,7 @@ test('client registry exposes team and harness provider subsets', () => {
     claude: 'claude-code',
     gemini: 'gemini-cli',
     antigravity: 'antigravity-cli',
+    crush: 'crush-cli',
   });
 });
 

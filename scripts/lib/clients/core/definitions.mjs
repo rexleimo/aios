@@ -79,7 +79,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   // Auto-loads AGENTS.md, CLAUDE.md, and GEMINI.md as context files.
   // MCP config in crush.json under "mcp" namespace. Hooks are Claude Code–compatible.
   crush: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents']),
+    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents', 'team']),
     commandName: 'crush',
     runtimeClientId: 'crush-cli',
     projectSkillRoot: '.crush/skills',
@@ -100,7 +100,7 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
   superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'crush']),
   harness: ALL_CLIENTS,
 });
 
