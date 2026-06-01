@@ -44,11 +44,20 @@ test('codemap MCP targets agree with the client registry (single source of truth
   assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
 
   // The registry descriptor must point at the same file basenames codemap actually writes.
+  // Clients that share a dedup'd path (e.g. antigravity shares .gemini/settings.json with gemini)
+  // are absent from byClient — that's correct because the first writer already covers them.
   for (const client of ALL_CLIENTS) {
+    const target = byClient[client];
+    if (!target) continue; // dedup'd path — covered by another client
     const desc = getClientMcpTarget(client);
-    assert.ok(byClient[client].path.endsWith(desc.file.split('/').join(path.sep)),
-      `${client}: registry file ${desc.file} must match codemap target ${byClient[client].path}`);
+    // desc.scopes[].file lists the candidate file names; at least one must match the target path
+    const scopeFiles = desc.scopes.map((s) => s.file.split('/').join(path.sep));
+    assert.ok(scopeFiles.some((f) => target.path.endsWith(f)),
+      `${client}: registry scope files [${scopeFiles}] must match codemap target ${target.path}`);
   }
+  // antigravity shares .gemini/settings.json with gemini — verify explicitly
+  assert.ok(!byClient.antigravity, 'antigravity should be dedup’d (shares path with gemini)');
+  assert.ok(byClient.gemini.path.endsWith(path.join('.gemini', 'settings.json')));
 });
 
 test('codemap instruction filenames agree with the client registry instructionFileName', () => {
