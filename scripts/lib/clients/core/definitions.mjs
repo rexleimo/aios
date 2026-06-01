@@ -89,6 +89,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeMetadataRoot: '.crush',
     instructionFileName: 'AGENTS.md',
     nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '--model',
     unattendedArgs: Object.freeze(['--yolo']),
   }),
 });
