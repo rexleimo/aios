@@ -2,10 +2,7 @@ import path from 'node:path';
 
 import { supportsClientCapability } from '../../clients/registry.mjs';
 import { checkGeneratedSkillsSync } from '../../skills/sync.mjs';
-import { renderClaudeNativeOutputs } from '../emitters/claude.mjs';
-import { renderCodexNativeOutputs } from '../emitters/codex.mjs';
-import { renderGeminiNativeOutputs } from '../emitters/gemini.mjs';
-import { renderOpencodeNativeOutputs } from '../emitters/opencode.mjs';
+import { EMITTERS } from '../sync/constants.mjs';
 import { AIOS_NATIVE_JSON_KEY, hasManagedMarkdownBlock, parseJsonObject } from '../emitters/shared.mjs';
 import { readNativeSyncMetadata } from '../install-metadata.mjs';
 import { buildNativeOutputPlan } from '../source-tree.mjs';
@@ -19,13 +16,6 @@ import {
   readOptional,
   withIssueTarget,
 } from './shared.mjs';
-
-const EMITTERS = {
-  codex: renderCodexNativeOutputs,
-  claude: renderClaudeNativeOutputs,
-  gemini: renderGeminiNativeOutputs,
-  opencode: renderOpencodeNativeOutputs,
-};
 
 async function detectManagedFootprint({ rendered, plan, resolvedTargetRootDir }) {
   for (const operation of rendered.operations) {

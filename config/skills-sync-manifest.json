@@ -6,7 +6,8 @@
     "gemini": ".gemini/skills",
     "opencode": ".opencode/skills",
     "crush": ".crush/skills",
-    "agents": ".agents/skills"
+    "agents": ".agents/skills",
+    "antigravity": ".gemini/skills"
   },
   "skills": [
     {
@@ -16,6 +17,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush",
         "agents"
@@ -28,6 +30,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush",
         "agents"
@@ -40,6 +43,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush",
         "agents"
@@ -52,6 +56,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -63,6 +68,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -73,6 +79,7 @@
       "repoTargets": [
         "codex",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -84,6 +91,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -95,6 +103,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -106,6 +115,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -125,6 +135,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -152,6 +163,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -171,6 +183,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -222,6 +235,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -233,6 +247,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]
@@ -244,6 +259,7 @@
         "codex",
         "claude",
         "gemini",
+        "antigravity",
         "opencode",
         "crush"
       ]

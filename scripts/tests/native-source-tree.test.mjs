@@ -35,11 +35,12 @@ test('native manifest resolves deep and compatibility tiers by client', async ()
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
       crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
+      "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
   });
 
   const manifest = loadNativeSyncManifest(rootDir);
-  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode', 'crush']);
+  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
   assert.equal(manifest.clients.codex.tier, 'deep');
   assert.equal(manifest.clients.claude.tier, 'deep');
   assert.equal(manifest.clients.gemini.tier, 'compatibility');
@@ -61,6 +62,7 @@ test('native output plan maps codex and claude repo outputs with per-client meta
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/skills'] },
       crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
+      "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
   });
 

@@ -33,7 +33,7 @@ async function readJson(filePath) {
 
 test('codemap MCP targets agree with the client registry (single source of truth)', () => {
   const projectRoot = '/proj';
-  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode', crush: '/h/.config/crush' };
+  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode', crush: '/h/.config/crush', antigravity: '/h/.gemini' };
   const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
   const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
 
@@ -82,7 +82,7 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
     rootDir,
     projectRoot,
     io: silentIo(logs),
-    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, crush: crushHome },
+    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, crush: crushHome, antigravity: geminiHome },
     skipCrgChecks: true,
     crgVersion: 'code-review-graph test',
   });

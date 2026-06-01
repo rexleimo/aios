@@ -1,4 +1,5 @@
 import { ALL_CLIENTS } from '../../clients/registry.mjs';
+import { renderAntigravityNativeOutputs } from '../emitters/antigravity.mjs';
 import { renderClaudeNativeOutputs } from '../emitters/claude.mjs';
 import { renderCodexNativeOutputs } from '../emitters/codex.mjs';
 import { renderCrushNativeOutputs } from '../emitters/crush.mjs';
@@ -11,6 +12,7 @@ const EMITTER_IMPLS = Object.freeze({
   gemini: renderGeminiNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
   crush: renderCrushNativeOutputs,
+  antigravity: renderAntigravityNativeOutputs,
 });
 
 // Auto-derived from ALL_CLIENTS registry: ensures every client has an emitter.

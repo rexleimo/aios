@@ -44,6 +44,23 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeProjectSourceFile: 'GEMINI.md',
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--yolo']),
+    deprecated: true,  // Replaced by Antigravity CLI on 2026-06-18; keep syncing but no new features
+  }),
+  // Antigravity CLI (Google) — successor to Gemini CLI. Inherits Agent Skills, Hooks,
+  // Subagents, and Extensions from Gemini CLI. Built in Go. Not 1:1 feature parity.
+  // Conservative assumption: same skill paths and instruction file as Gemini CLI.
+  // TODO: verify paths after Antigravity CLI docs become available.
+  antigravity: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness', 'superpowers']),
+    commandName: 'antigravity',
+    runtimeClientId: 'antigravity-cli',
+    projectSkillRoot: '.gemini/skills',    // Inherited from Gemini CLI; verify after install
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.gemini',          // May change; verify after install
+    instructionFileName: 'GEMINI.md',       // Inherited from Gemini CLI; verify after install
+    nativeProjectSourceFile: 'GEMINI.md',
+    modelArgFlag: '-m',
+    unattendedArgs: Object.freeze(['--yolo']),
   }),
   opencode: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents']),
@@ -56,7 +73,6 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     instructionFileName: 'AGENTS.md',
     nativeProjectSourceFile: 'AIOS.md',
     unattendedArgs: Object.freeze([]),
-    deprecated: true,  // Archived; migrated to Crush (charmbracelet/crush)
   }),
   // Crush (charmbracelet) — successor to OpenCode. Auto-discovers ~/.agents/skills/,
   // ~/.claude/skills/, .agents/skills/, .claude/skills/, and .crush/skills/.
@@ -83,8 +99,8 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'crush']),
-  team: Object.freeze(['codex', 'claude', 'gemini']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'crush']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity']),
   harness: ALL_CLIENTS,
 });
 
@@ -113,6 +129,15 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     ]),
   }),
   gemini: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'project', file: '.gemini/settings.json' }),
+      Object.freeze({ scope: 'home', file: 'settings.json' }),
+    ]),
+  }),
+  // Antigravity CLI MCP — inherited from Gemini CLI; verify paths after install.
+  antigravity: Object.freeze({
     format: 'json',
     namespace: 'mcpServers',
     scopes: Object.freeze([

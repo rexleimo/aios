@@ -49,6 +49,14 @@
         "AGENTS.md",
         ".crush/skills"
       ]
+    },
+    "antigravity": {
+      "tier": "compatibility",
+      "metadataRoot": ".gemini",
+      "outputs": [
+        "GEMINI.md",
+        ".gemini/skills"
+      ]
     }
   }
 }
