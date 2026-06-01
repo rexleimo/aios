@@ -78,6 +78,7 @@
       "installCatalogName": "frontend-design",
       "repoTargets": [
         "codex",
+        "claude",
         "gemini",
         "antigravity",
         "opencode",
@@ -125,7 +126,11 @@
       "installCatalogName": "seo-geo-page-optimization",
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -145,7 +150,11 @@
       "installCatalogName": "aios-project-system",
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -153,7 +162,11 @@
       "installCatalogName": "aios-long-running-harness",
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -173,7 +186,11 @@
       "installCatalogName": "contextdb-autopilot",
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -193,7 +210,11 @@
       "installCatalogName": "aios-offload-recall",
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -201,31 +222,11 @@
       "installCatalogName": "cap-commit-push",
       "repoTargets": [
         "codex",
-        "claude"
-      ]
-    },
-    {
-      "relativeSkillPath": "aios-jimeng-image-ops",
-      "installCatalogName": "aios-jimeng-image-ops",
-      "repoTargets": [
-        "codex",
-        "claude"
-      ]
-    },
-    {
-      "relativeSkillPath": "seed2-manga-drama",
-      "installCatalogName": "seed2-manga-drama",
-      "repoTargets": [
-        "codex",
-        "claude"
-      ]
-    },
-    {
-      "relativeSkillPath": "xhs-ops-methods",
-      "installCatalogName": "xhs-ops-methods",
-      "repoTargets": [
-        "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ]
     },
     {
@@ -269,21 +270,39 @@
       "installCatalogName": null,
       "repoTargets": [
         "codex",
-        "claude"
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ],
       "targetRelativePathBySurface": {
         "codex": ".system/skill-creator",
-        "claude": "skill-creator"
+        "claude": "skill-creator",
+        "gemini": "skill-creator",
+        "antigravity": "skill-creator",
+        "opencode": "skill-creator",
+        "crush": "skill-creator"
       }
     },
     {
       "relativeSkillPath": ".system/skill-installer",
       "installCatalogName": null,
       "repoTargets": [
-        "codex"
+        "codex",
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush"
       ],
       "targetRelativePathBySurface": {
-        "codex": ".system/skill-installer"
+        "codex": ".system/skill-installer",
+        "claude": "skill-installer",
+        "gemini": "skill-installer",
+        "antigravity": "skill-installer",
+        "opencode": "skill-installer",
+        "crush": "skill-installer"
       }
     }
   ],
@@ -291,7 +310,5 @@
     ".claude/skills/skill-creator",
     ".claude/skills/skill-opt-lite"
   ],
-  "legacyUnmanaged": [
-    ".claude/skills/baoyu-xhs-images"
-  ]
+  "legacyUnmanaged": []
 }
