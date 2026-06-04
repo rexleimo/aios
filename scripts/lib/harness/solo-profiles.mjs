@@ -116,6 +116,8 @@ export function buildSoloHarnessCommand({
     String(prompt ?? ''),
     '--status',
     'running',
+    '--route',
+    'single',
     '--max-log-chars',
     '12000',
     '--no-continuity-summary',

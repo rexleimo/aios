@@ -52,6 +52,10 @@ test('buildSoloHarnessCommand routes one-shot runs through ctx-agent', () => {
   assert.ok(built.args.includes('--session'));
   assert.ok(built.args.includes('session-1'));
   assert.ok(built.args.includes('--prompt'));
+  assert.deepEqual(
+    built.args.slice(built.args.indexOf('--route'), built.args.indexOf('--route') + 2),
+    ['--route', 'single']
+  );
 });
 
 test('buildSoloHarnessCommand separates AIOS install root from target workspace', () => {
