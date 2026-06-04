@@ -5,6 +5,13 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v1.50.0（2026-06-04）
+
+- **統合 AIOS 検索**：`node scripts/aios.mjs search "<query>"` で project memory、pinned memo、docs、plans、code を一度に検索できます。
+- **クロス CLI の記憶安全性**：`project_shared` は全 client で見え、`agent_private` は一致する `--agent <runtime-client-id>` のみで見えます。
+- **全 client への native guidance**：Codex/OpenCode/Crush は `AGENTS.md`、Claude は `CLAUDE.md`、Gemini/Antigravity は `GEMINI.md` で同じ search 指示を受け取ります。
+- **リリース tutorial**：[v1.50.0 統合検索 tutorial](/blog/ja/2026-06-v150-unified-aios-search/) と [ContextDB](contextdb.md#統合プロジェクト検索v1500) を参照してください。
+
 このページでは `Harness CLI` の変更点を追跡し、関連ドキュメントへ移動できます。
 
 ## 公式リリース履歴

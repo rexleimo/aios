@@ -5,6 +5,13 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v1.50.0（2026-06-04）
+
+- **统一 AIOS 搜索**：`node scripts/aios.mjs search "<query>"` 可以一次搜索项目记忆、pinned memo、文档、计划和代码。
+- **跨客户端记忆安全**：`project_shared` 对所有客户端可见；`agent_private` 只有匹配 `--agent <runtime-client-id>` 时可见。
+- **全客户端 native 指令**：Codex/OpenCode/Crush 通过 `AGENTS.md`，Claude 通过 `CLAUDE.md`，Gemini/Antigravity 通过 `GEMINI.md` 接收同一套 search 指令。
+- **发布教程**：阅读 [v1.50.0 统一搜索教程](/blog/zh/2026-06-v150-unified-aios-search/) 和 [ContextDB](contextdb.md#统一项目搜索v1500)。
+
 本页用于追踪 `Harness CLI` 的版本变化，并快速跳转到相关文档。
 
 ## 官方发布记录

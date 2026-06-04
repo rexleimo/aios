@@ -284,3 +284,21 @@ aios uninstall --components shell,skills,native
 - [单 Agent 夜跑](solo-harness.md) — 让 Agent 通宵工作
 - [按场景找命令](use-cases.md) — 按任务组织的命令参考
 - [故障排查](troubleshooting.md) — 修复常见问题
+
+### 大范围读文件前，先搜索
+
+回到一个项目后，如果你不确定某个决策、计划或实现在哪里，先用统一 AIOS 搜索：
+
+```bash
+node scripts/aios.mjs search "native client guidance" --agent codex-cli --json
+```
+
+常用模式：
+
+```bash
+node scripts/aios.mjs search "release blocker" --source memory,plans
+node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
+node scripts/aios.mjs search "private scratch" --scope agent_private --agent claude-code
+```
+
+它会同时搜索项目记忆、pinned notes、计划、文档和代码，并保留跨客户端 memo 安全规则。需要“记忆 + 仓库上下文”时，先用它再决定是否 `grep`。

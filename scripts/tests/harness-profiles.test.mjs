@@ -52,6 +52,27 @@ test('buildSoloHarnessCommand routes one-shot runs through ctx-agent', () => {
   assert.ok(built.args.includes('--session'));
   assert.ok(built.args.includes('session-1'));
   assert.ok(built.args.includes('--prompt'));
+  assert.deepEqual(
+    built.args.slice(built.args.indexOf('--route'), built.args.indexOf('--route') + 2),
+    ['--route', 'single']
+  );
+});
+
+test('buildSoloHarnessCommand defaults codex harness runs to unattended mode', () => {
+  const built = buildSoloHarnessCommand({
+    rootDir: '/tmp/aios',
+    sessionId: 'session-1',
+    objective: 'Ship checklist',
+    provider: 'codex',
+    prompt: 'return json',
+  });
+
+  const separatorIndex = built.args.indexOf('--');
+  assert.notEqual(separatorIndex, -1);
+  assert.deepEqual(
+    built.args.slice(separatorIndex + 1),
+    ['--dangerously-bypass-approvals-and-sandbox']
+  );
 });
 
 test('buildSoloHarnessCommand separates AIOS install root from target workspace', () => {

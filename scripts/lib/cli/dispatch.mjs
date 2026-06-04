@@ -144,6 +144,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'clients') {
+      const { runClientsCommand } = await import('../lifecycle/clients.mjs');
+      applyResultExitCode(await runClientsCommand(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+      return;
+    }
+
     if (parsed.command === 'quality-gate') {
       const { runQualityGate } = await import('../lifecycle/quality-gate.mjs');
       applyResultExitCode(await runQualityGate(parsed.options, { rootDir: workspaceFor(parsed) }));
@@ -297,6 +303,15 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
     if (parsed.command === 'refs') {
       await runRefsCommand(parsed, { ...context, stdout, stderr });
+      return;
+    }
+
+    if (parsed.command === 'search') {
+      const { runSearchCommand } = await import('../search/cli.mjs');
+      applyResultExitCode(await runSearchCommand(parsed.options, {
+        rootDir: workspaceFor(parsed),
+        stdout,
+      }));
       return;
     }
 

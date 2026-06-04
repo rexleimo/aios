@@ -90,10 +90,43 @@ Before finishing significant work or hitting a blocker:
 
 Do NOT save routine progress or trivial updates.
 
+### Memo Scope Rules
+Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, Gemini, Antigravity, and Crush can all recall the same project facts.
+
+Use agent-private memory only for client-specific scratch notes that should not pollute other clients:
+- `aios memo add "codex-only scratch note" --scope agent_private --agent codex-cli`
+- `aios memo list --agent claude-code` shows project-shared records plus Claude-private records, but not Codex-private records.
+
+Never store global project decisions, architecture facts, task handoffs, release blockers, or user preferences as `agent_private`. Those belong in the default `project_shared` scope or pinned project memo.
+
+### Unified Project Search
+Before ad-hoc grep or broad file reads, use unified search when you need project memory, docs, plans, and code references together:
+
+```bash
+node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json
+```
+
+Use `--source memory,plans` for memory plus plan recall, `--source docs,code` for repo reference lookup, and `--scope agent_private --agent <runtime-client-id>` only when intentionally searching that agent's private scratch notes. The command preserves `project_shared` visibility across clients and filters other agents' private memos.
+
 ### Persona & User Profile
 - `aios memo persona ...` manages `~/.aios/SOUL.md` (agent identity)
 - `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)
 - These are stable guidance, not task facts. Project-specific facts go through ContextDB.
+
+## AIOS Client Capability Gates
+
+Before using a client for live delegation, training, quality-gate execution, or harness work, check the verified rollout state:
+
+```bash
+node scripts/aios.mjs clients doctor --json
+```
+
+Interpretation:
+- `supported-candidate`: Static projection and live AIOS orchestration are allowed, subject to normal task safety gates.
+- `compatibility`: Keep context/skills/native sync working, but avoid new live-only assumptions unless the command output explicitly allows them.
+- `pending-smoke`: Treat the client as static-projection-only. Do not launch it for live one-shot work, skill training, quality-gate runner duties, or harness live execution until CLI args, MCP config, and unattended smoke evidence are verified.
+
+Current strict policy: Antigravity and Crush may receive generated instructions/skills, but live execution remains blocked while they are `pending-smoke`. If a task needs those clients, report the blocker and continue with a verified client instead of silently falling back.
 
 <!-- 中文注释：superpowers 流程强制段，仅对具备 superpowers 能力的客户端下发，避免向无此技能的宿主发指令。 -->
 

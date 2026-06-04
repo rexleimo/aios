@@ -183,6 +183,51 @@ aios memo user add "I'm a senior engineer — skip beginner explanations"
 
 Persona and user profile are **global** — they apply to all your projects.
 
+## Unified Project Search (v1.50.0)
+
+Starting in v1.50.0, agents and humans can search project memory and repository references with one command before falling back to broad `grep` or full file reads:
+
+```bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+```
+
+Use it when you need the current project story across memory, docs, plans, and code:
+
+```bash
+# Search everything: memory, docs, plans, and code
+node scripts/aios.mjs search "native client guidance" --agent claude-code
+
+# Search only memory and implementation plans
+node scripts/aios.mjs search "v1.50.0" --source memory,plans --limit 10 --json
+
+# Search another workspace without changing directories
+node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source docs,code
+```
+
+### Source Filters
+
+| Source | What it searches | Good for |
+|---|---|---|
+| `memory` | Project memos and pinned memory | Decisions, handoffs, constraints |
+| `plans` | `docs/plans/` and superpowers plans | Implementation intent and checkpoints |
+| `docs` | README, AGENTS/CLAUDE/GEMINI, docs-site, docs | Runbooks and user-facing docs |
+| `code` | `scripts/`, `mcp-server/src`, tests, packages, config | CLI implementation and tests |
+| `all` | All of the above | First pass before targeted reads |
+
+### Cross-Client Memory Safety
+
+Search preserves the memo visibility model:
+
+- `project_shared` records are visible to every client.
+- `agent_private` records require the matching `--agent <runtime-client-id>`.
+- Other clients' private scratch notes are filtered out.
+
+Runtime IDs are `codex-cli`, `claude-code`, `gemini-cli`, `antigravity-cli`, `opencode-cli`, and `crush-cli`.
+
+### Agent Instruction Coverage
+
+The search guidance is generated from shared native instructions. Codex, OpenCode, and Crush receive it through `AGENTS.md`; Claude receives it through `CLAUDE.md`; Gemini and Antigravity receive it through `GEMINI.md`. Antigravity and Crush remain `pending-smoke` for live execution, but their static instruction projection includes the same search rules.
+
 ## Searching Your History
 
 ContextDB builds a search index so you (and your agent) can find past work:

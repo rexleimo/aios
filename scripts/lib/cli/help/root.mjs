@@ -15,6 +15,7 @@ Commands:
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   memo          Workspace memo + pinned memory helpers
+  search        Search project memory, docs, plans, and code references
   refs          Search/read offloaded tool-output refs
   canvas        Show Mermaid task canvas for offloaded tool calls
   interception  RTK/Caveman-style interception proof, MCP proxy repair, and metrics
@@ -41,6 +42,7 @@ Examples:
   node scripts/aios.mjs internal native repair show --repair-id latest
   node scripts/aios.mjs internal native rollback --repair-id latest
   node scripts/aios.mjs memo add "note #tag"
+  node scripts/aios.mjs search "project memory" --agent codex-cli --json
   node scripts/aios.mjs refs grep "error" --session codex-cli-...
   node scripts/aios.mjs canvas show --session codex-cli-...
   node scripts/aios.mjs interception proof --json
