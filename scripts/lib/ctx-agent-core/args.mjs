@@ -11,10 +11,10 @@ import { resolveClientFromRuntimeId, resolveClientRuntimeIds } from '../clients/
 
 export function usage() {
   console.log(`Usage:
-  scripts/ctx-agent.mjs --agent <claude-code|gemini-cli|codex-cli|opencode-cli> [options] [-- <extra agent args>]
+  scripts/ctx-agent.mjs --agent <codex-cli|claude-code|gemini-cli|antigravity-cli|opencode-cli|crush-cli> [options] [-- <extra agent args>]
 
 Options:
-  --agent <name>      Agent name: claude-code | gemini-cli | codex-cli | opencode-cli
+  --agent <name>      Agent name: codex-cli | claude-code | gemini-cli | antigravity-cli | opencode-cli | crush-cli
   --workspace <path>  Workspace root to store context-db (default: current git root, else current dir)
   --project <name>    Project name (default: current directory name)
   --goal <text>       Session goal (used when creating a new session)

@@ -18,6 +18,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'update',
   'uninstall',
   'doctor',
+  'clients',
   'quality-gate',
   'orchestrate',
   'team',
@@ -39,6 +40,53 @@ function normalizeTopLevelCommand(first) {
   if (first === 'entropy') return 'entropy-gc';
   if (first === 'rollback-snapshot') return 'snapshot-rollback';
   return first;
+}
+
+function parseClientsArgs(argv) {
+  const rest = argv.slice(1);
+  const options = {
+    subcommand: 'doctor',
+    json: false,
+    format: 'text',
+  };
+  let help = false;
+  for (let index = 0; index < rest.length; index += 1) {
+    const arg = rest[index];
+    if (arg === '-h' || arg === '--help') {
+      help = true;
+      continue;
+    }
+    if (arg === '--json') {
+      options.json = true;
+      options.format = 'json';
+      continue;
+    }
+    if (arg === '--format') {
+      const value = rest[index + 1];
+      if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
+      options.format = String(value).trim().toLowerCase();
+      options.json = options.format === 'json';
+      index += 1;
+      continue;
+    }
+    if (!String(arg || '').startsWith('-') && index === 0) {
+      options.subcommand = String(arg || '').trim().toLowerCase();
+      continue;
+    }
+    throw new Error(`Unknown option: ${arg}`);
+  }
+  if (options.subcommand !== 'doctor') {
+    throw new Error('clients requires subcommand: doctor');
+  }
+  if (!['text', 'json'].includes(options.format)) {
+    throw new Error('--format must be one of: text, json');
+  }
+  return {
+    mode: help ? 'help' : 'command',
+    help,
+    command: 'clients',
+    options,
+  };
 }
 
 /* 中文注释：parseArgs 只做语法解析和轻校验，不做 IO；这样测试可以快速覆盖所有 CLI 入口。 */
@@ -83,6 +131,7 @@ export function parseArgs(argv = []) {
   if (first === 'harness') return parseHarnessArgs(argv);
   if (first === 'interception') return parseInterceptionArgs(argv);
   if (first === 'init') return parseInitArgs(argv);
+  if (first === 'clients') return parseClientsArgs(argv);
 
   const command = normalizeTopLevelCommand(first);
   if (!TOP_LEVEL_COMMANDS.has(command)) {

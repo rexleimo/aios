@@ -2,6 +2,8 @@ import { getActiveMemoStorage } from './config.mjs';
 import { collectEvents } from './events-read.mjs';
 import {
   normalizeLimit,
+  normalizeMemoAgent,
+  normalizeMemoScope,
   normalizeMemoStorageName,
   sortEventsDescending,
 } from './normalizers.mjs';
@@ -28,11 +30,26 @@ function scoreEvent(event, query) {
   return score;
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20 } = {}) {
+function eventVisibleForAgent(event, agent) {
+  const scope = normalizeMemoScope(event.scope || 'project_shared');
+  if (scope === 'project_shared') return true;
+  const normalizedAgent = normalizeMemoAgent(agent);
+  if (!normalizedAgent) return false;
+  return normalizeMemoAgent(event.agent) === normalizedAgent;
+}
+
+function filterMemoIdentity(events, { scope = '', agent = '' } = {}) {
+  const normalizedScope = scope ? normalizeMemoScope(scope) : '';
+  return events
+    .filter((event) => !normalizedScope || normalizeMemoScope(event.scope || 'project_shared') === normalizedScope)
+    .filter((event) => eventVisibleForAgent(event, agent));
+}
+
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '' } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
-  return sortEventsDescending(events)
+  return sortEventsDescending(filterMemoIdentity(events, { scope, agent }))
     .filter((event) => eventMatchesQuery(event, query))
     .map((event) => ({ ...event, matchScore: scoreEvent(event, query) }))
     .sort((a, b) => {
@@ -43,8 +60,8 @@ export async function searchMemoEvents(workspaceRoot, { storage, space = 'defaul
     .slice(0, boundedLimit);
 }
 
-export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20 } = {}) {
+export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '' } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
-  return sortEventsDescending(events).slice(0, normalizeLimit(limit));
+  return sortEventsDescending(filterMemoIdentity(events, { scope, agent })).slice(0, normalizeLimit(limit));
 }

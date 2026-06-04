@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.41.0] - 2026-06-04
+
+- add multi-client capability gates and memo scope guidance
+
 ## [1.40.0] - 2026-05-31
 
 ### Added

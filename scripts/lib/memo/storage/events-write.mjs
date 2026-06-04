@@ -5,6 +5,8 @@ import { appendText, atomicWriteText, collectRecursiveFiles } from './fs-io.mjs'
 import { readJsonlEvents } from './events-read.mjs';
 import {
   normalizeMemoStorageName,
+  normalizeMemoScope,
+  normalizeMemoAgent,
   normalizeSpaceName,
   sanitizeSpace,
   sortEventsAscending,
@@ -34,7 +36,7 @@ function paddedSeq(seq) {
   return String(seq).padStart(12, '0');
 }
 
-export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy }) {
+export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy, scope, agent }) {
   const normalizedSpace = normalizeSpaceName(space);
   const safeSpace = sanitizeSpace(normalizedSpace);
   const timestamp = ts ? String(ts) : new Date().toISOString();
@@ -51,6 +53,8 @@ export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId
     kind: 'memo',
     text: String(text ?? '').trim(),
     refs: toRefs(refs),
+    scope: normalizeMemoScope(scope),
+    agent: normalizeMemoAgent(agent),
     ...(turn && typeof turn === 'object' ? { turn } : {}),
     ...(legacy && typeof legacy === 'object' ? { legacy } : {}),
   };
@@ -103,7 +107,7 @@ export async function writeExistingEvents(workspaceRoot, storage, events) {
   }
 }
 
-export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined } = {}) {
+export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined, scope = 'project_shared', agent = '' } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const content = String(text ?? '').trim();
   if (!content) {
@@ -120,6 +124,8 @@ export async function appendMemoEvent({ workspaceRoot, storage, space = 'default
     text: content,
     refs,
     turn,
+    scope,
+    agent,
     seq,
   });
 

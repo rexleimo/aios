@@ -15,6 +15,14 @@ export const HEALTH_COMMAND_SPECS = [
     ],
   },
   {
+    name: 'clients',
+    description: 'Report strict rollout status for AIOS-supported clients',
+    options: [
+      ['--json', 'Output JSON'],
+      ['--format <format>', 'Output format: text or json'],
+    ],
+  },
+  {
     name: 'quality-gate',
     description: 'Run repo quality checks with harness profiles',
     aliases: ['quality'],
