@@ -178,6 +178,44 @@ aios memo user add "I'm a senior engineer — skip beginner explanations"
 
 Persona and user profile are **global** — they apply to all your projects.
 
+## 통합 프로젝트 검색(v1.50.0) {#통합-프로젝트-검색v1500}
+
+v1.50.0부터 에이전트와 사용자는 넓은 `grep` 또는 전체 파일 읽기 전에 프로젝트 메모리, 문서, 계획, 코드를 하나의 명령으로 검색할 수 있습니다.
+
+```bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+```
+
+자주 쓰는 예시:
+
+```bash
+node scripts/aios.mjs search "native client guidance" --agent claude-code
+node scripts/aios.mjs search "v1.50.0" --source memory,plans --limit 10 --json
+node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source docs,code
+```
+
+### Source 필터
+
+| Source | 검색 대상 | 적합한 용도 |
+|---|---|---|
+| `memory` | project memo, pinned memory | 결정, handoff, 제약 |
+| `plans` | `docs/plans/`, superpowers plans | 구현 의도와 checkpoint |
+| `docs` | README, AGENTS/CLAUDE/GEMINI, docs-site, docs | runbook, 사용 문서 |
+| `code` | `scripts/`, `mcp-server/src`, tests, packages, config | CLI 구현과 테스트 |
+| `all` | 전체 | targeted read 전 첫 검색 |
+
+### 크로스 클라이언트 메모리 안전성
+
+- `project_shared` 기록은 모든 클라이언트에서 보입니다.
+- `agent_private` 기록은 일치하는 `--agent <runtime-client-id>` 가 필요합니다.
+- 다른 클라이언트의 private scratch note 는 필터링됩니다.
+
+Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `antigravity-cli`, `opencode-cli`, `crush-cli` 입니다.
+
+### 모든 클라이언트 지침 배포
+
+검색 가이드는 shared native instructions 에서 생성됩니다. Codex, OpenCode, Crush 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini 와 Antigravity 는 `GEMINI.md` 로 받습니다. Antigravity 와 Crush 는 live execution 에서는 여전히 `pending-smoke` 이지만, 정적 instruction projection 에는 동일한 검색 규칙이 포함됩니다.
+
 ## Searching Your History
 
 ContextDB builds a search index so you (and your agent) can find past work:

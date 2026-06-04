@@ -116,4 +116,4 @@ aios internal codemap doctor
 # 이제 에이전트가 손전등 대신 지도를 가지고 탐색합니다
 ```
 
-[전체 문서 →](/codemap/){ .md-button }
+[전체 문서 →](/ko/codemap/){ .md-button }

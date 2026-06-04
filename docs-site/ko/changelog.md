@@ -5,6 +5,13 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v1.50.0 (2026-06-04)
+
+- **통합 AIOS 검색**: `node scripts/aios.mjs search "<query>"` 로 project memory, pinned memo, docs, plans, code 를 한 번에 검색합니다.
+- **크로스 클라이언트 메모리 안전성**: `project_shared` 는 모든 클라이언트에 보이고, `agent_private` 는 일치하는 `--agent <runtime-client-id>` 에서만 보입니다.
+- **모든 클라이언트 native guidance**: Codex/OpenCode/Crush 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini/Antigravity 는 `GEMINI.md` 로 같은 search 지침을 받습니다.
+- **릴리스 튜토리얼**: [v1.50.0 통합 검색 튜토리얼](/blog/ko/2026-06-v150-unified-aios-search/) 과 [ContextDB](contextdb.md#통합-프로젝트-검색v1500) 를 참고하세요.
+
 이 페이지에서 `Harness CLI` 변경 이력을 추적하고 관련 문서로 이동할 수 있습니다.
 
 ## 공식 릴리스 이력

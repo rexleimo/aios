@@ -9,6 +9,13 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
+## v1.50.0 (2026-06-04)
+
+- **Unified AIOS Search**: `node scripts/aios.mjs search "<query>"` searches project memory, pinned memo, docs, plans, and code from one CLI surface.
+- **Cross-client memory safety**: Search keeps `project_shared` visible across clients and filters `agent_private` records unless the matching `--agent <runtime-client-id>` is supplied.
+- **All-client native guidance**: The same search instruction is projected to Codex/OpenCode/Crush through `AGENTS.md`, Claude through `CLAUDE.md`, and Gemini/Antigravity through `GEMINI.md`.
+- **Release tutorials**: See the [v1.50.0 unified search tutorial](/blog/2026-06-v150-unified-aios-search/) and [ContextDB](contextdb.md#unified-project-search-v1500).
+
 - GitHub changelog file: [CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
 - GitHub releases: [releases](https://github.com/rexleimo/harness-cli/releases)
 

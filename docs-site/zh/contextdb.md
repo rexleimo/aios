@@ -344,3 +344,48 @@ aios doctor --native --fix
 - [单 Agent 夜跑](solo-harness.md) — 让 Agent 通宵工作
 - [自研 Token 压缩](token-compression.md) — 深入了解如何保持上下文精简
 - [故障排查](troubleshooting.md) — 修复常见 ContextDB 问题
+
+## 统一项目搜索（v1.50.0） {#统一项目搜索v1500}
+
+从 v1.50.0 开始，Agent 和人都可以先用一个命令搜索项目记忆、文档、计划和代码，再决定是否需要大范围 `grep` 或读取整文件：
+
+```bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+```
+
+常用方式：
+
+```bash
+# 搜索全部来源：memory、docs、plans、code
+node scripts/aios.mjs search "native client guidance" --agent claude-code
+
+# 只搜索记忆和计划
+node scripts/aios.mjs search "v1.50.0" --source memory,plans --limit 10 --json
+
+# 搜索另一个 workspace
+node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source docs,code
+```
+
+### 来源过滤
+
+| 来源 | 搜索内容 | 适合场景 |
+|---|---|---|
+| `memory` | 项目 memo 和 pinned memory | 决策、交接、约束 |
+| `plans` | `docs/plans/` 和 superpowers plans | 实施意图和 checkpoint |
+| `docs` | README、AGENTS/CLAUDE/GEMINI、docs-site、docs | Runbook 和用户文档 |
+| `code` | `scripts/`、`mcp-server/src`、tests、packages、config | CLI 实现和测试 |
+| `all` | 以上全部 | targeted read 前的第一轮检索 |
+
+### 跨客户端记忆安全
+
+搜索遵循 memo 可见性模型：
+
+- `project_shared` 对所有客户端可见。
+- `agent_private` 需要匹配 `--agent <runtime-client-id>`。
+- 其他客户端的私有草稿会被过滤。
+
+Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`antigravity-cli`、`opencode-cli`、`crush-cli`。
+
+### 全客户端指令覆盖
+
+搜索指令来自 shared native instructions。Codex、OpenCode、Crush 通过 `AGENTS.md` 接收；Claude 通过 `CLAUDE.md` 接收；Gemini、Antigravity 通过 `GEMINI.md` 接收。Antigravity 和 Crush 仍处于 `pending-smoke`，不能 live 执行，但静态指令投影已经包含同一套搜索规则。
