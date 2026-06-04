@@ -38,6 +38,15 @@ Use agent-private memory only for client-specific scratch notes that should not 
 
 Never store global project decisions, architecture facts, task handoffs, release blockers, or user preferences as `agent_private`. Those belong in the default `project_shared` scope or pinned project memo.
 
+### Unified Project Search
+Before ad-hoc grep or broad file reads, use unified search when you need project memory, docs, plans, and code references together:
+
+```bash
+node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json
+```
+
+Use `--source memory,plans` for memory plus plan recall, `--source docs,code` for repo reference lookup, and `--scope agent_private --agent <runtime-client-id>` only when intentionally searching that agent's private scratch notes. The command preserves `project_shared` visibility across clients and filters other agents' private memos.
+
 ### Persona & User Profile
 - `aios memo persona ...` manages `~/.aios/SOUL.md` (agent identity)
 - `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)

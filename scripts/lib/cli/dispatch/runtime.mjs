@@ -15,6 +15,7 @@ const WORKSPACE_SCOPED_COMMANDS = new Set([
   'release-status',
   'perception',
   'refs',
+  'search',
   'canvas',
   'interception',
 ]);

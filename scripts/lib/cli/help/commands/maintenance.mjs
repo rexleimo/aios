@@ -59,6 +59,21 @@ Options:
   --keep-days <n>                Prune refs older than n days (default: 30)
   -h, --help
 `;
+    case 'search':
+      return `Usage:
+  node scripts/aios.mjs search <query> [options]
+
+Options:
+  --source <list>                Sources: memory, docs, plans, code, all (default: all)
+  --scope <scope>                Memo scope filter, e.g. project_shared or agent_private
+  --agent <id>                   Agent id allowed to read matching agent_private memos
+  --space <name>                 Memo space (default: default)
+  --workspace <path>             Workspace root to search
+  --limit <n>                    Max results (default: 20, max: 100)
+  --format <text|json>
+  --json
+  -h, --help
+`;
     case 'canvas':
       return `Usage:
   node scripts/aios.mjs canvas show [--session <id>] [--format mmd|json] [--workspace <path>]

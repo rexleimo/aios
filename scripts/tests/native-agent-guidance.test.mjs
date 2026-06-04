@@ -9,4 +9,6 @@ test('native agent instructions explain client capability gates and memo scope u
   assert.match(markdown, /pending-smoke/i);
   assert.match(markdown, /project_shared/);
   assert.match(markdown, /agent_private/);
+  assert.match(markdown, /node scripts\/aios\.mjs search/);
+  assert.match(markdown, /project memory, docs, plans, and code references/i);
 });

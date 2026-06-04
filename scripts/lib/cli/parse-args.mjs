@@ -9,6 +9,7 @@ import {
   parseModelRouterArgs,
   parsePerceptionArgs,
   parseRefsArgs,
+  parseSearchArgs,
 } from './parse-args/maintenance.mjs';
 import { expandEqualsOptions } from './parse-args/shared.mjs';
 import { parseTopLevelArgs } from './parse-args/top-level.mjs';
@@ -31,6 +32,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'release-status',
   'refs',
   'canvas',
+  'search',
 ]);
 
 /* 中文注释：兼容别名在解析层归一化，分发层只处理标准命令名。 */
@@ -124,6 +126,7 @@ export function parseArgs(argv = []) {
   if (first === 'perception') return parsePerceptionArgs(argv);
   if (first === 'model-router') return parseModelRouterArgs(argv);
   if (first === 'refs') return parseRefsArgs(argv);
+  if (first === 'search') return parseSearchArgs(argv);
   if (first === 'canvas') return parseCanvasArgs(argv);
   if (first === 'internal') return parseInternalArgs(argv.slice(1));
   if (first === 'team') return parseTeamArgs(argv);

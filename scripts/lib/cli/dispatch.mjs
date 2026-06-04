@@ -306,6 +306,15 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'search') {
+      const { runSearchCommand } = await import('../search/cli.mjs');
+      applyResultExitCode(await runSearchCommand(parsed.options, {
+        rootDir: workspaceFor(parsed),
+        stdout,
+      }));
+      return;
+    }
+
     if (parsed.command === 'canvas') {
       await runCanvasCommand(parsed, { ...context, stdout, stderr });
       return;

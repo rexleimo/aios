@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.42.0] - 2026-06-04
+
+- add unified AIOS project search
+
 ## [1.41.0] - 2026-06-04
 
 - add multi-client capability gates and memo scope guidance
