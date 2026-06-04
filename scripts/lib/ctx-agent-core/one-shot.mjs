@@ -62,9 +62,13 @@ function runBufferedCommand(command, args) {
   return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
 }
 
+export function buildCodexOneShotArgs({ configArgs = buildCodexMcpDisableArgs(process.env), extraArgs = [] } = {}) {
+  return ['exec', ...configArgs, ...extraArgs, '-'];
+}
+
 function runCodexOneShot(prompt, extraArgs, injectContext, contextText) {
   const cmd = commandForRuntime('codex-cli');
-  const args = ['exec', '-', ...buildCodexMcpDisableArgs(process.env), ...extraArgs];
+  const args = buildCodexOneShotArgs({ extraArgs });
   const fullPrompt = injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt;
   const result = runCommandWithInput(cmd, args, fullPrompt);
   return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
