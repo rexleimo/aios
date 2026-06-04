@@ -96,14 +96,14 @@ Ensure AI answer-engine resource files mention v1.50.0 search docs and blog tuto
 **Files:**
 - All changed files
 
-- [ ] **Step 1: Run focused verification**
+- [x] **Step 1: Run focused verification**
 
 Run: `npm run check:site-sync`, focused search/native tests, markdown link/resource checks, and `git diff --check`.
 
-- [ ] **Step 2: Commit and push**
+- [x] **Step 2: Commit and push**
 
 Run cap flow: `git add -A`, conventional commit, `git push` / upstream push if needed.
 
-- [ ] **Step 3: Publish GitHub version v1.50.0**
+- [x] **Step 3: Publish GitHub version v1.50.0**
 
 Create tag/release `v1.50.0` with verified release notes and resource integrity evidence. If release already exists, report and do not overwrite without explicit user instruction.
