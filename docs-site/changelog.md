@@ -9,6 +9,14 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
+## v1.50.1 (2026-06-05)
+
+- **All-client turn compression compliance**: every AIOS-managed client/host now shares the `bidirectional-turn-compression` metric with required `pre_send` and `post_receive` records.
+- **No fake savings for bypasses**: direct host output outside the AIOS-managed runner is recorded as `policy-violation` / `non_compliant`, with `saved_bytes=0`.
+- **Proof matrix**: `node scripts/aios.mjs interception proof --json` and `doctor --json` include `turn_compression_matrix` for Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, and `generic-mcp`.
+- **Skill training evidence**: `aios-interception-runtime` was trained with SkillOpt-Lite; artifacts live under `.skillopt/aios-interception-runtime-2026-06-05`.
+- **Release tutorial**: See the [v1.50.1 token compression compliance post](/blog/2026-06-v1501-token-compression-compliance/) and [Native Token Compression](token-compression.md#all-client-turn-compression-v1501).
+
 ## v1.50.0 (2026-06-04)
 
 - **Unified AIOS Search**: `node scripts/aios.mjs search "<query>"` searches project memory, pinned memo, docs, plans, and code from one CLI surface.

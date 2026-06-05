@@ -55,6 +55,7 @@ test('collectClientMcpTargets includes project-scoped fallbacks when home is una
   // codex: home scope skipped (no home) → project scope present
   // claude: project scope present
   // gemini: home scope skipped → project scope present
-  // opencode: home only → skipped (no project scope)
-  assert.deepEqual(clients, ['claude', 'codex', 'gemini']);
+  // opencode: home only -> skipped (no project scope)
+  // crush: project AGENTS.md fallback shares the codex/opencode instruction surface.
+  assert.deepEqual(clients, ['claude', 'codex', 'crush', 'gemini']);
 });

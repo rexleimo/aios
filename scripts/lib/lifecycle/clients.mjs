@@ -6,6 +6,7 @@ function renderTextReport(report) {
   ];
   for (const client of report.clients) {
     lines.push(`- ${client.clientId} (${client.runtimeId}): ${client.status}`);
+    lines.push(`  compression=${client.compressionCompliance.metric} entrypoint=${client.compressionCompliance.requiredEntrypoint} pre_send=required post_receive=required bypass=${client.compressionCompliance.uncontrolledHostOutputPolicy}`);
     if (client.reasons.length > 0) {
       lines.push(`  reasons: ${client.reasons.join('; ')}`);
     }
@@ -23,4 +24,3 @@ export async function runClientsCommand(options = {}, { rootDir = process.cwd(),
   stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : renderTextReport(report));
   return { exitCode: 0, report };
 }
-

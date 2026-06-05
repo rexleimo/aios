@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.50.1] - 2026-06-05
+
+- enforce all-client AIOS turn compression compliance
+- add `bidirectional-turn-compression` proof matrix covering `pre_send` and `post_receive` for every client/host
+- mark uncontrolled direct host output as `policy-violation`/`non_compliant` instead of reporting fake savings
+- train `aios-interception-runtime` with SkillOpt-Lite and publish the training artifact under `.skillopt/aios-interception-runtime-2026-06-05`
+
 ## [1.50.0] - 2026-06-04
 
 - add v1.50.0 docs, blog tutorial, and site resources for unified AIOS search

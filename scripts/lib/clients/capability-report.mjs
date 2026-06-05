@@ -27,6 +27,15 @@ const PENDING_ALLOWED = Object.freeze({
   harnessLiveAllowed: false,
 });
 
+const REQUIRED_TURN_COMPRESSION = Object.freeze({
+  preSendRequired: true,
+  postReceiveRequired: true,
+  mode: 'tight',
+  uncontrolledHostOutput: 'policy-violation',
+});
+
+const COMPRESSION_METRIC = 'bidirectional-turn-compression';
+
 async function readHostCapabilities(rootDir) {
   const filePath = path.join(rootDir, 'config', 'host-capabilities.json');
   try {
@@ -63,6 +72,9 @@ function reasonsForClient(clientId, { hostCapabilities }) {
   if (!hostEntry) {
     reasons.push('host-capabilities entry is missing; treating advanced interception as unverified');
   }
+  if (hostEntry?.directHostBypassAllowed !== false) {
+    reasons.push('direct host bypass is not compliant; launch through the AIOS-managed runner so pre_send and post_receive compression are enforced');
+  }
   if (CLIENT_DEFINITIONS[clientId]?.deprecated) {
     reasons.push('client is compatibility-tier/deprecated; keep syncing but avoid new live-only features');
   }
@@ -80,6 +92,10 @@ export async function buildClientCapabilityReport({ rootDir = process.cwd(), env
     const status = statusForClient(clientId);
     const gates = gatesForStatus(status);
     const hostEntry = hostCapabilities?.clients?.[clientId] || null;
+    const turnCompression = {
+      ...REQUIRED_TURN_COMPRESSION,
+      ...(hostEntry?.turnCompression && typeof hostEntry.turnCompression === 'object' ? hostEntry.turnCompression : {}),
+    };
     return {
       clientId,
       runtimeId: getClientRuntimeId(clientId),
@@ -90,6 +106,18 @@ export async function buildClientCapabilityReport({ rootDir = process.cwd(), env
       instructionFileName: definition.instructionFileName,
       projectSkillRoot: definition.projectSkillRoot,
       mcpTarget: getClientMcpTarget(clientId),
+      requiredEntrypoint: hostEntry?.requiredEntrypoint || 'aios-managed-runner',
+      directHostBypassAllowed: hostEntry?.directHostBypassAllowed === true,
+      turnCompression,
+      compressionCompliance: {
+        status: 'required',
+        metric: COMPRESSION_METRIC,
+        requiredEntrypoint: hostEntry?.requiredEntrypoint || 'aios-managed-runner',
+        directHostBypassAllowed: hostEntry?.directHostBypassAllowed === true,
+        preSendMetricRequired: turnCompression.preSendRequired === true,
+        postReceiveMetricRequired: turnCompression.postReceiveRequired === true,
+        uncontrolledHostOutputPolicy: turnCompression.uncontrolledHostOutput,
+      },
       ...gates,
       reasons: reasonsForClient(clientId, { hostCapabilities, env }),
     };
@@ -102,4 +130,3 @@ export async function buildClientCapabilityReport({ rootDir = process.cwd(), env
     clients,
   };
 }
-

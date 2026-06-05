@@ -26,3 +26,13 @@ test('Cursor remains advisory until a real hook surface exists', () => {
   assert.equal(capabilities.clients.cursor.targetLevel, 'L1');
   assert.match(capabilities.clients.cursor.limits.join('\n'), /verified extension\/hook surface/);
 });
+
+test('all host capability entries require bidirectional turn compression and disallow bypass', () => {
+  for (const [clientId, entry] of Object.entries(capabilities.clients)) {
+    assert.equal(entry.requiredEntrypoint, 'aios-managed-runner', `${clientId} must require AIOS-managed entrypoint`);
+    assert.equal(entry.directHostBypassAllowed, false, `${clientId} must reject direct host bypass`);
+    assert.equal(entry.turnCompression?.preSendRequired, true, `${clientId} must require pre-send compression`);
+    assert.equal(entry.turnCompression?.postReceiveRequired, true, `${clientId} must require post-receive compression`);
+    assert.equal(entry.turnCompression?.uncontrolledHostOutput, 'policy-violation', `${clientId} must treat uncontrolled host output as a violation`);
+  }
+});

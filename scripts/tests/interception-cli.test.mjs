@@ -25,6 +25,14 @@ test('interception proof command emits savings and capability matrix', async () 
   assert.equal(parsed.metrics.total_saved_bytes > 0, true);
   assert.equal(parsed.metrics.raw_contains_sentinel, false);
   assert.equal(parsed.capability_matrix.some((item) => item.client === 'aios-harness' && item.targetLevel === 'L3'), true);
+  assert.equal(parsed.turn_compression_matrix.ok, true);
+  assert.equal(parsed.turn_compression_matrix.clients.length, parsed.capability_matrix.length);
+  for (const client of parsed.turn_compression_matrix.clients) {
+    assert.equal(client.compliance_status, 'compliant');
+    assert.equal(client.direct_host_bypass_allowed, false);
+    assert.equal(client.pre_send.saved_bytes > 0, true, `${client.client_id} pre_send metric missing`);
+    assert.equal(client.post_receive.saved_bytes > 0, true, `${client.client_id} post_receive metric missing`);
+  }
 });
 
 test('interception doctor and mcp migration keep browser MCP proxied', async () => {
@@ -34,6 +42,8 @@ test('interception doctor and mcp migration keep browser MCP proxied', async () 
   assert.equal(parsed.ok, true);
   assert.equal(parsed.mcp_proxy.ok, true);
   assert.equal(parsed.proof.metrics.records, 2);
+  assert.equal(parsed.proof.turn_compression_matrix.ok, true);
+  assert.equal(parsed.proof.turn_compression_matrix.clients.length, parsed.capability_matrix.length);
   assert.equal(parsed.targets_after.some((item) => item.client === 'project' && item.proxied), true);
 
   const mcpRaw = await readFile(path.join(process.cwd(), '.mcp.json'), 'utf8');

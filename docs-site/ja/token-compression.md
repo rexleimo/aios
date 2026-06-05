@@ -106,3 +106,26 @@ stop compress
 - `.codex/skills/aios-browser-compress/SKILL.md`
 - `.claude/skills/aios-compress/SKILL.md`
 - `.claude/skills/aios-browser-compress/SKILL.md`
+
+## All-Client Turn Compression (v1.50.1) {#all-client-turn-compression-v1501}
+
+v1.50.1 では、token compression を単なる guidance ではなく、計測可能な all-client contract にしました。
+
+すべての AIOS-managed agent turn は共有 metric `bidirectional-turn-compression` を出力する必要があります。
+
+- `pre_send`: prompt/input が target client または model に届く前に圧縮する。
+- `post_receive`: client/model output を AIOS が受け入れる前に圧縮する。
+- `requiredEntrypoint`: `aios-managed-runner`。
+- `directHostBypassAllowed`: `false`。
+- `uncontrolledHostOutput`: `policy-violation`。
+
+現在の matrix を確認します。
+
+```bash
+node scripts/aios.mjs clients doctor --json
+node scripts/aios.mjs interception proof --json
+```
+
+proof output には Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` の `turn_compression_matrix` が含まれます。compliant な client は `pre_send` と `post_receive` の両方で non-zero `saved_bytes` を持ちます。
+
+AIOS-managed runner 外の direct host output は savings として数えません。`policy-violation` / `non_compliant` として記録され、`saved_bytes=0` になります。

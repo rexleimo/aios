@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
+import { compressPostReceiveTurn, compressPreSendTurn } from '../interception/index.mjs';
 import { loadFacade, generateFacadeFromSession } from '../contextdb/facade.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from '../contextdb/continuity.mjs';
 import { contextDbRelativePath, resolveTasksRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
@@ -193,11 +194,50 @@ async function executePrompt(opts, context) {
   if (opts.dryRun) return { ...dryRunPrompt(opts, context.packResult.packAbs, routeDecision, routedPrompt), routedPrompt };
   let result;
   if (routeDecision.routeMode === 'single') {
-    result = runOneShotAgent(opts.agent, context.effectiveContextText, routedPrompt, opts.extraArgs, { injectContext: context.injectContext, contextPacketPath: context.openCodeContextPacketPath });
+    const outbound = await compactCtxAgentPreSend({ opts, context, routedPrompt });
+    result = runOneShotAgent(opts.agent, outbound.contextText, outbound.prompt, opts.extraArgs, { injectContext: outbound.injectContext, contextPacketPath: context.openCodeContextPacketPath });
   } else {
     result = await runRoutedOneShotTask({ ...opts, taskPrompt: routedPrompt, routeMode: routeDecision.routeMode });
   }
-  return { ...result, routedPrompt };
+  return { ...result, routedPrompt, turnCompression: routeDecision.routeMode === 'single' };
+}
+
+async function compactCtxAgentPreSend({ opts, context, routedPrompt }) {
+  const sentText = context.openCodeContextPacketPath
+    ? routedPrompt
+    : context.injectContext ? `${context.effectiveContextText}\n\n${routedPrompt}` : routedPrompt;
+  const packet = await compressPreSendTurn({
+    workspaceRoot: opts.workspaceRoot,
+    cwd: opts.workspaceRoot,
+    sessionId: opts.sessionId,
+    clientId: opts.agent,
+    hostLevel: 'L2',
+    prompt: sentText,
+    mode: 'tight',
+    metrics: { enabled: true },
+  });
+  if (!packet?.refs?.length) {
+    return { contextText: context.effectiveContextText, prompt: routedPrompt, injectContext: context.injectContext };
+  }
+  return {
+    contextText: JSON.stringify(packet, null, 2),
+    prompt: 'Use the AIOS compact packet above for this turn. Recall raw refs only if necessary.',
+    injectContext: true,
+  };
+}
+
+async function compactCtxAgentPostReceive(opts, output) {
+  const packet = await compressPostReceiveTurn({
+    workspaceRoot: opts.workspaceRoot,
+    cwd: opts.workspaceRoot,
+    sessionId: opts.sessionId,
+    clientId: opts.agent,
+    hostLevel: 'L2',
+    output,
+    mode: 'tight',
+    metrics: { enabled: true },
+  });
+  return packet?.refs?.length ? JSON.stringify(packet, null, 2) : output;
 }
 
 function dryRunPrompt(opts, packAbs, routeDecision, routedPrompt) {
@@ -214,12 +254,13 @@ async function runPromptFlow(opts, context) {
   const responseTurnId = `oneshot:${opts.sessionId}:${oneShotTurnSeed}:response`;
   addPromptEvent(opts, promptTurnId);
   const startedAt = Date.now();
-  const { output, exitCode, routedPrompt } = await executePrompt(opts, context);
+  const { output, exitCode, routedPrompt, turnCompression } = await executePrompt(opts, context);
+  const compactOutput = turnCompression ? await compactCtxAgentPostReceive(opts, output) : output;
   const elapsedMs = Date.now() - startedAt;
-  process.stdout.write(output.endsWith('\n') ? output : `${output}\n`);
+  process.stdout.write(compactOutput.endsWith('\n') ? compactOutput : `${compactOutput}\n`);
   const responseStatus = exitCode !== 0 ? 'blocked' : opts.checkpointStatus;
-  addResponseEvent(opts, responseTurnId, promptTurnId, output, exitCode);
-  if (opts.autoCheckpoint) await writeAutoCheckpoint(opts, routedPrompt, output, responseStatus, elapsedMs, exitCode);
+  addResponseEvent(opts, responseTurnId, promptTurnId, compactOutput, exitCode);
+  if (opts.autoCheckpoint) await writeAutoCheckpoint(opts, routedPrompt, compactOutput, responseStatus, elapsedMs, exitCode);
   try {
     await safeContextPack(opts.workspaceRoot, { sessionId: opts.sessionId, eventLimit: opts.eventLimit, packPath: context.packPath }, { strict: context.strictPack });
   } catch (error) {

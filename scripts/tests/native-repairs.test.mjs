@@ -45,10 +45,20 @@ async function writeNativeManifest(rootDir) {
         metadataRoot: '.gemini',
         outputs: ['GEMINI.md', '.gemini/commands'],
       },
+      antigravity: {
+        tier: 'compatibility',
+        metadataRoot: '.gemini',
+        outputs: ['GEMINI.md', '.gemini/skills'],
+      },
       opencode: {
         tier: 'compatibility',
         metadataRoot: '.opencode',
         outputs: ['AGENTS.md', '.opencode/skills'],
+      },
+      crush: {
+        tier: 'compatibility',
+        metadataRoot: '.crush',
+        outputs: ['AGENTS.md', '.crush/skills'],
       },
     },
   });

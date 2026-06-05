@@ -19,6 +19,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
+- [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0: 기억, 문서, 계획, 코드를 가로지르는 통합 AIOS 검색](2026-06-v150-unified-aios-search.md)
 - [Codemap：AI 에이전트에게 코드베이스 지도를](2026-05-codemap-crg.md)
 - [ContextDB Token 압축: 더 작은 context pack과 안전한 recall](2026-05-token-compression.md)

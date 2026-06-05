@@ -9,38 +9,166 @@
   "clients": {
     "claude": {
       "targetLevel": "L2",
-      "capabilities": ["sessionStartInjection", "mcpProxy", "compactPacket"],
-      "limits": ["pre-tool rewrite hook adapter is not installed in this release."]
+      "capabilities": [
+        "sessionStartInjection",
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "pre-tool rewrite hook adapter is not installed in this release."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "codex": {
       "targetLevel": "L2",
-      "capabilities": ["controlledShellRunner", "mcpProxy", "compactPacket"],
-      "limits": ["Do not claim raw host shell L3 unless Codex exposes a pre-tool mutation API."]
+      "capabilities": [
+        "controlledShellRunner",
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "Do not claim raw host shell L3 unless Codex exposes a pre-tool mutation API."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "gemini": {
       "targetLevel": "L2",
-      "capabilities": ["mcpProxy", "compactPacket"],
-      "limits": ["Shell interception requires verified host hook or AIOS-controlled runner."]
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "Shell interception requires verified host hook or AIOS-controlled runner."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
+    "antigravity": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "Live execution remains pending-smoke; no raw host shell L3 claim."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "opencode": {
       "targetLevel": "L2",
-      "capabilities": ["mcpProxy", "compactPacket"],
-      "limits": ["L3 depends on plugin or tool-call mutation support."]
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "L3 depends on plugin or tool-call mutation support."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
+    "crush": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "Live execution remains pending-smoke until CLI smoke evidence is verified."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "cursor": {
       "targetLevel": "L1",
-      "capabilities": ["advisorySkills"],
-      "limits": ["Needs a verified extension/hook surface before claiming L2/L3."]
+      "capabilities": [
+        "advisorySkills"
+      ],
+      "limits": [
+        "Needs a verified extension/hook surface before claiming L2/L3."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "aios-harness": {
       "targetLevel": "L3",
-      "capabilities": ["controlledShellRunner", "mcpProxy", "compactPacket", "metrics"],
-      "limits": []
+      "capabilities": [
+        "controlledShellRunner",
+        "mcpProxy",
+        "compactPacket",
+        "metrics"
+      ],
+      "limits": [],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     },
     "generic-mcp": {
       "targetLevel": "L2",
-      "capabilities": ["mcpProxy", "compactPacket"],
-      "limits": ["Proxy-only; shell is out of scope."]
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "Proxy-only; shell is out of scope."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     }
   }
 }

@@ -14,6 +14,9 @@ import { toPosixPath } from './shared.mjs';
 
 export async function runReleaseStatus(rawOptions = {}, { rootDir, io = console, env = process.env } = {}) {
   const { options } = planReleaseStatus(rawOptions, { rootDir, env });
+  if (!rawOptions.statePath) {
+    options.statePath = await resolveReadableDefaultStatePath(options.statePath, rootDir);
+  }
   const statePath = toPosixPath(path.relative(rootDir, options.statePath) || options.statePath);
   const outputPath = options.outputPath
     ? toPosixPath(path.relative(rootDir, options.outputPath) || options.outputPath)
@@ -115,4 +118,28 @@ export async function runReleaseStatus(rawOptions = {}, { rootDir, io = console,
   await emitHistory(historyDaily);
   await emitResult(result);
   return result;
+}
+
+async function resolveReadableDefaultStatePath(defaultStatePath, rootDir) {
+  try {
+    await access(defaultStatePath);
+    return defaultStatePath;
+  } catch (error) {
+    if (!error || typeof error !== 'object' || error.code !== 'ENOENT') throw error;
+  }
+
+  const legacyStatePath = path.join(
+    rootDir,
+    'experiments',
+    'rl-mixed-v1',
+    'release',
+    'orchestrator-policy-release.state.json'
+  );
+  try {
+    await access(legacyStatePath);
+    return legacyStatePath;
+  } catch (error) {
+    if (!error || typeof error !== 'object' || error.code !== 'ENOENT') throw error;
+    return defaultStatePath;
+  }
 }

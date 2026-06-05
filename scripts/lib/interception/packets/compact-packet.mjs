@@ -21,6 +21,12 @@ export function buildCompactPacket({ request, output, shrink, ref, rawBytes }) {
     source: sourceFromKind(request.kind),
     host: request.host,
     sessionId: request.sessionId,
+    event_kind: request.metadata?.eventKind || eventKindFromRequest(request),
+    client_id: request.metadata?.clientId || request.host,
+    host_level: request.metadata?.hostLevel || request.capabilities?.targetLevel || request.capabilities?.effectiveLevel || '',
+    mode: request.metadata?.mode || '',
+    fallback_reason: request.metadata?.fallbackReason || '',
+    uncontrolled: request.metadata?.uncontrolled === true,
     summary: shrink.summary,
     key_lines: shrink.keyLines,
     errors: shrink.errors,
@@ -49,8 +55,15 @@ export function buildCompactPacket({ request, output, shrink, ref, rawBytes }) {
 
 /* 中文注释：保持和 engine 里的 source 归类一致，方便 metrics、doctor 和用户输出对齐。 */
 function sourceFromKind(kind) {
+  if (kind.startsWith('agent.')) return 'agent';
   if (kind.startsWith('mcp.')) return 'mcp';
   if (kind === 'shell') return 'shell';
   if (kind === 'browser') return 'browser';
+  return kind;
+}
+
+function eventKindFromRequest(request) {
+  const kind = String(request.kind || '');
+  if (kind.startsWith('agent.')) return kind.slice('agent.'.length);
   return kind;
 }

@@ -1,0 +1,36 @@
+{
+  "mcp": {
+    "puppeteer-stealth": {
+      "type": "stdio",
+      "command": "/opt/homebrew/Cellar/node/26.0.0/bin/node",
+      "args": [
+        "/Users/rex/cool.cnb/rex-ai-boot/scripts/aios-mcp-proxy.mjs",
+        "--workspace",
+        "/Users/rex/cool.cnb/rex-ai-boot",
+        "--host",
+        "puppeteer-stealth",
+        "--",
+        "bash",
+        "/Users/rex/cool.cnb/rex-ai-boot/scripts/run-browser-use-mcp.sh"
+      ],
+      "env": {
+        "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222",
+        "AIOS_BROWSER_USE_REPO": "/Users/rex/cool.cnb/ai-browser-book",
+        "AIOS_INTERCEPTION_METRICS": "1",
+        "AIOS_MCP_PROXY": "1",
+        "AIOS_MCP_UPSTREAM_HOST": "puppeteer-stealth"
+      }
+    },
+    "aios-auth-tools": {
+      "type": "stdio",
+      "command": "python3",
+      "args": [
+        "-u",
+        "/Users/rex/cool.cnb/rex-ai-boot/scripts/auth-tools-server.py"
+      ],
+      "env": {
+        "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
+      }
+    }
+  }
+}

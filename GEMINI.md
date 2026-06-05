@@ -42,6 +42,13 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`, producing compact packets, raw refs, and metrics.
 - Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
 
+## AIOS Turn Compression Enforcement
+
+- Every AIOS-owned agent turn must satisfy the shared `bidirectional-turn-compression` metric: compress before sending to the target client (`pre_send`) and compress after receiving the client output (`post_receive`).
+- Launch live agent work through the AIOS-managed runner (`ctx-agent`, `aios team`, `aios harness`, or an AIOS subagent runtime); direct host execution that bypasses this runner is a policy violation.
+- If direct host output or raw uncompressed tool output is observed, stop the live run, record it as `uncontrolled_host_output`, and restart through the AIOS-managed runner instead of accepting the result.
+- Do not report token savings for uncontrolled output; compliant savings require compact packets, raw refs, and metrics records for both `pre_send` and `post_receive`.
+
 
 ## AIOS Self-Trigger Routing
 

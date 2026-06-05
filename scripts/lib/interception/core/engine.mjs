@@ -72,6 +72,7 @@ export function createInterceptionEngine(options = {}) {
 
 /* 中文注释：kind 是内部事件类型，source 是用户读指标时看到的大类，两者分开方便未来扩展。 */
 function sourceFromKind(kind) {
+  if (kind.startsWith('agent.')) return 'agent';
   if (kind.startsWith('mcp.')) return 'mcp';
   if (kind === 'shell') return 'shell';
   if (kind === 'browser') return 'browser';

@@ -3,12 +3,12 @@ import path from 'node:path';
 import { spawnCommand } from '../../platform/process.mjs';
 import { buildSoloHarnessCommand } from '../../harness/solo-profiles.mjs';
 import { classifySoloFailure } from '../../harness/solo-runtime.mjs';
-import { createInterceptionEngine } from '../../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn } from '../../interception/index.mjs';
 import { normalizeText } from './shared.mjs';
 import { buildIterationPrompt, parseHarnessJsonOutput } from './prompt.mjs';
 
 /* 中文注释：生产执行器负责跑一轮 provider，并把 provider 输出纳入 interception packet，防止长任务日志撑爆上下文。 */
-export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionId, objective, provider } = {}) {
+export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionId, objective, provider, spawnCommandImpl = spawnCommand } = {}) {
   const runtimeAiosRootDir = path.resolve(normalizeText(aiosRootDir, rootDir));
   return async ({ iteration, continuity, offloadCanvas, summary, worktree }) => {
     const prompt = buildIterationPrompt({
@@ -19,16 +19,30 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
       summary,
     });
     const workspaceRoot = worktree?.enabled && worktree?.path ? worktree.path : rootDir;
+    const preSendPacket = await compressPreSendTurn({
+      workspaceRoot: rootDir,
+      cwd: workspaceRoot,
+      sessionId,
+      clientId: 'aios-harness',
+      hostLevel: 'L3',
+      prompt,
+      mode: 'tight',
+      metrics: { enabled: true },
+    });
+    const providerPrompt = preSendPacket?.refs?.length ? JSON.stringify(preSendPacket, null, 2) : prompt;
+    const providerObjective = preSendPacket?.refs?.length
+      ? 'AIOS compacted solo harness objective; use the compact packet in --prompt.'
+      : objective;
     const built = buildSoloHarnessCommand({
       rootDir: summary?.workspaceRoot || rootDir,
       aiosRootDir: summary?.aiosRootDir || runtimeAiosRootDir,
       sessionId,
-      objective,
+      objective: providerObjective,
       provider,
       workspaceRoot,
-      prompt,
+      prompt: providerPrompt,
     });
-    const result = await spawnCommand(built.command, built.args, {
+    const result = await spawnCommandImpl(built.command, built.args, {
       cwd: built.cwd,
       env: process.env,
       timeoutMs: 30 * 60 * 1000,
@@ -117,18 +131,16 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
 
 /* 中文注释：Harness 直接调用 Engine，而不是走外部 CLI，这样长任务内部也能复用同一套 packet/ref/metrics。 */
 async function buildHarnessInterceptionPacket({ rootDir, sessionId, built, result, rawOutput, workspaceRoot }) {
-  const engine = createInterceptionEngine({ workspaceRoot: rootDir, metrics: { enabled: true } });
-  const packet = await engine.interceptToolResult({
-    kind: 'shell',
-    host: 'aios-harness',
-    sessionId,
+  const packet = await compressPostReceiveTurn({
+    workspaceRoot: rootDir,
     cwd: workspaceRoot,
-    payload: {
-      command: [built.command, ...(built.args || [])].join(' '),
-      exitCode: result.status ?? (result.error ? 1 : 0),
-      stdout: result.stdout || '',
-      stderr: result.stderr || '',
-    },
+    sessionId,
+    clientId: 'aios-harness',
+    hostLevel: 'L3',
+    output: `${result.stdout || ''}${result.stderr || ''}`,
+    command: [built.command, ...(built.args || [])].join(' '),
+    mode: 'tight',
+    metrics: { enabled: true },
   });
   /* 中文注释：小输出没有 ref 时保留原文，避免 harness journal 里全是无意义 packet。 */
   if (!packet.refs?.length) return rawOutput;

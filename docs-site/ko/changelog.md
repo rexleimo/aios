@@ -5,6 +5,14 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v1.50.1 (2026-06-05)
+
+- **전체 클라이언트 turn compression compliance**: 모든 AIOS-managed client/host가 `bidirectional-turn-compression` metric을 공유하며 `pre_send`와 `post_receive` 기록을 필수로 만듭니다.
+- **Bypass에 가짜 절감 없음**: AIOS-managed runner 밖의 direct host output은 `policy-violation` / `non_compliant`로 기록되고 `saved_bytes=0`이 됩니다.
+- **Proof matrix**: `node scripts/aios.mjs interception proof --json` 및 `doctor --json`이 Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, `generic-mcp`의 `turn_compression_matrix`를 출력합니다.
+- **Skill training evidence**: `aios-interception-runtime`은 SkillOpt-Lite로 training되었으며 artifact는 `.skillopt/aios-interception-runtime-2026-06-05`에 있습니다.
+- **Release tutorial**: [v1.50.1 token compression compliance post](/blog/ko/2026-06-v1501-token-compression-compliance/) 와 [Native Token Compression](token-compression.md#all-client-turn-compression-v1501)을 참고하세요.
+
 ## v1.50.0 (2026-06-04)
 
 - **통합 AIOS 검색**: `node scripts/aios.mjs search "<query>"` 로 project memory, pinned memo, docs, plans, code 를 한 번에 검색합니다.

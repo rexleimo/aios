@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import { mkdtemp, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -14,6 +17,7 @@ import {
 } from '../lib/harness/groupchat-runtime.mjs';
 
 import { normalizeHandoffPayload } from '../lib/harness/handoff.mjs';
+import { readMetricsRecords } from '../lib/interception/metrics/metrics-sink.mjs';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -745,6 +749,49 @@ test('runGroupChat expands implementer into parallel work items from planner fin
   assert.equal(result.ok, true);
   // With work item expansion, implementer should be called for each work item
   assert.ok(implementerCallCount >= 1, `expected >=1 implementer calls, got ${implementerCallCount}`);
+});
+
+
+
+test('runGroupChat compresses large pre-send prompts and post-receive raw output at the AIOS turn boundary', async () => {
+  const { runGroupChat } = await import('../lib/harness/groupchat-runtime.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-groupchat-turn-'));
+  const PRE_SENTINEL = 'GROUPCHAT_PRE_SEND_SENTINEL';
+  const POST_SENTINEL = 'GROUPCHAT_POST_RECEIVE_SENTINEL';
+  const captured = [];
+
+  try {
+    const spawnFn = async (args) => {
+      captured.push(args);
+      return {
+        exitCode: 0,
+        handoff: makeHandoff({ fromRole: args.role, toRole: 'done', findings: ['done'] }),
+        rawOutput: `${POST_SENTINEL.repeat(120)}\nERROR issue at scripts/lib/harness/groupchat-runtime/run.mjs:25`,
+        elapsedMs: 1,
+      };
+    };
+
+    const result = await runGroupChat({
+      taskTitle: 'Compress groupchat turn',
+      contextSummary: `${PRE_SENTINEL.repeat(120)}\nscripts/lib/harness/groupchat-runtime/run.mjs:25`,
+      blueprint: 'bugfix',
+      spawnFn,
+      rootDir,
+      config: { maxRounds: 1, concurrency: 1, sessionId: 'group-turn' },
+      io: stubIo().io,
+    });
+
+    assert.equal(result.conversationHistory.length, 1);
+    assert.equal(JSON.stringify(captured[0]).includes(PRE_SENTINEL), false);
+    assert.equal(result.conversationHistory[0].rawOutput.includes(POST_SENTINEL), false);
+    assert.match(result.conversationHistory[0].rawOutput, /aios\.compact_packet/);
+
+    const records = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'group-turn' });
+    assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'aios-groupchat'), true);
+    assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'aios-groupchat'), true);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 // ---------------------------------------------------------------------------

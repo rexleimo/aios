@@ -16,6 +16,7 @@ import { buildSystemPrompt, buildUserPrompt } from './prompts.mjs';
 import { appendJobFindingsToRoleMemory, loadRolePinnedMemory } from './role-memory.mjs';
 import { collectCostTelemetry, hasCostTelemetry } from './telemetry.mjs';
 import { normalizeText, safeFileSlug } from './text.mjs';
+import { compactSubagentTurnOutput, prepareSubagentTurnPrompts } from './turn-compression.mjs';
 
 function resolveAgentForJob(job, spec) {
   const agentId = normalizeText(job?.launchSpec?.agentRefId);
@@ -23,7 +24,6 @@ function resolveAgentForJob(job, spec) {
   return spec.agents[agentId] || null;
 }
 
-// 纯函数：不同客户端可能不返回 attempts，这里统一为阻塞记录可用的计数。
 function normalizeResultAttempts(result, fallback = 0) {
   if (!Number.isFinite(result?.attempts)) return fallback;
   return Math.max(1, Math.floor(result.attempts));
@@ -49,6 +49,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   executorLabel,
   rootDir,
   structuredOutputTempDir,
+  runOneShotImpl = runOneShot,
 }) {
   const agent = resolveAgentForJob(job, agentSpecNormalized);
   const role = normalizeText(job?.role);
@@ -58,11 +59,12 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const structuredOutput = buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job });
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);
+  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, systemPrompt, userPrompt });
 
   const startedAt = Date.now();
-  const result = await runOneShot(executionClientId, {
-    systemPrompt,
-    userPrompt,
+  const result = await runOneShotImpl(executionClientId, {
+    systemPrompt: outbound.systemPrompt,
+    userPrompt: outbound.userPrompt,
     timeoutMs,
     env,
     io,
@@ -73,6 +75,15 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const elapsedMs = Date.now() - startedAt;
   const rawCommandOutput = `${result.stdout || ''}\n${result.stderr || ''}`.trim();
   const outputText = await readSubagentOutputText({ structuredOutput, rawCommandOutput });
+  const compacted = await compactSubagentTurnOutput({
+    rootDir,
+    sessionId: outbound.sessionId,
+    executionClientId,
+    outputText,
+    rawCommandOutput,
+  });
+  const compactOutputText = compacted.outputText;
+  const compactRawCommandOutput = compacted.rawCommandOutput;
   const rawJson = extractJsonCandidate(outputText);
   const costTelemetry = collectCostTelemetry({ rawText: rawCommandOutput, rawJson });
   const attempts = normalizeResultAttempts(result);
@@ -84,7 +95,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     reason,
     elapsedMs,
     costTelemetry,
-    rawOutput: options.rawOutput ?? rawCommandOutput,
+    rawOutput: options.rawOutput ?? compactRawCommandOutput,
     attempts: options.attempts ?? attempts,
     rootDir,
     modelRouting,
@@ -103,28 +114,28 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
       exitCode: result.exitCode,
       rawCommandOutput,
     });
-    return block(failureReason, { attempts: attemptCount, rawOutput: rawCommandOutput });
+    return block(failureReason, { attempts: attemptCount, rawOutput: compactRawCommandOutput });
   }
   if (allowTimedOutHandoff) {
     io?.log?.(`[subagent-runtime] continuing ${job.jobId} with last-message payload after timeout`);
   }
 
   if (!rawJson) {
-    return block('Failed to parse JSON handoff from subagent output', { rawOutput: rawCommandOutput });
+    return block('Failed to parse JSON handoff from subagent output', { rawOutput: compactRawCommandOutput });
   }
 
   const normalizedPayload = normalizePhaseHandoffPayload({ rawJson, plan, job, phase });
   const validation = validateHandoffPayload(normalizedPayload);
   if (!validation.ok) {
     return block(`Invalid handoff payload: ${validation.errors.join('; ')}`, {
-      rawOutput: outputText,
+      rawOutput: compactOutputText,
       dispatchDescription: 'Invalid handoff payload',
     });
   }
 
   const filePolicy = evaluatePhaseFilePolicy(validation.value, phase, job);
   if (!filePolicy.ok) {
-    return block(summarizeFilePolicyViolation(filePolicy.violations), { rawOutput: outputText });
+    return block(summarizeFilePolicyViolation(filePolicy.violations), { rawOutput: compactOutputText });
   }
 
   const payloadStatus = validation.value.status;
@@ -164,6 +175,6 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     clientId,
     result,
     payload: validation.value,
-    outputText,
+    outputText: compactOutputText,
   });
 }

@@ -34,6 +34,22 @@ test('client capability report covers all registered clients and blocks pending-
   }
 });
 
+test('client capability report requires AIOS-managed bidirectional turn compression for every client', async () => {
+  const report = await buildClientCapabilityReport({ rootDir: process.cwd(), env: {} });
+  for (const client of report.clients) {
+    assert.equal(client.requiredEntrypoint, 'aios-managed-runner', `${client.clientId} must require the AIOS runner`);
+    assert.equal(client.directHostBypassAllowed, false, `${client.clientId} must not allow direct host bypass`);
+    assert.equal(client.turnCompression?.preSendRequired, true, `${client.clientId} must require pre-send compression`);
+    assert.equal(client.turnCompression?.postReceiveRequired, true, `${client.clientId} must require post-receive compression`);
+    assert.equal(client.turnCompression?.uncontrolledHostOutput, 'policy-violation', `${client.clientId} must reject uncontrolled host output`);
+    assert.equal(client.compressionCompliance?.status, 'required', `${client.clientId} must publish required compression compliance`);
+    assert.equal(client.compressionCompliance?.metric, 'bidirectional-turn-compression', `${client.clientId} must use the shared metric name`);
+    assert.equal(client.compressionCompliance?.preSendMetricRequired, true, `${client.clientId} must require pre_send metrics`);
+    assert.equal(client.compressionCompliance?.postReceiveMetricRequired, true, `${client.clientId} must require post_receive metrics`);
+    assert.equal(client.compressionCompliance?.uncontrolledHostOutputPolicy, 'policy-violation', `${client.clientId} must expose violation policy`);
+  }
+});
+
 test('clients doctor command parses doctor subcommand and json flag', () => {
   const parsed = parseArgs(['clients', 'doctor', '--json']);
   assert.equal(parsed.command, 'clients');
@@ -52,4 +68,18 @@ test('aios clients doctor --json emits strict rollout status for six clients', (
   assert.deepEqual(report.clients.map((client) => client.clientId), ALL_CLIENTS);
   assert.equal(byId(report, 'antigravity').status, 'pending-smoke');
   assert.equal(byId(report, 'crush').liveExecutionAllowed, false);
+  assert.equal(byId(report, 'codex').compressionCompliance.metric, 'bidirectional-turn-compression');
+});
+
+test('aios clients doctor text output includes the shared compression metric', () => {
+  const result = spawnSync(process.execPath, [CLI, 'clients', 'doctor'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+    env: { ...process.env, AIOS_NO_COLOR: '1' },
+  });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /compression=bidirectional-turn-compression/u);
+  assert.match(result.stdout, /entrypoint=aios-managed-runner/u);
+  assert.match(result.stdout, /pre_send=required post_receive=required/u);
+  assert.match(result.stdout, /bypass=policy-violation/u);
 });

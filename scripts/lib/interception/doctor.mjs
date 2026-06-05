@@ -54,6 +54,7 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
       shell: proof.shell,
       mcp: proof.mcp,
       metrics: proof.metrics,
+      turn_compression_matrix: proof.turn_compression_matrix,
     },
     capability_matrix: buildCapabilityMatrix(rootDir),
   };

@@ -1,4 +1,5 @@
 import { normalizeOrchestratorAgentSpec } from '../orchestrator-agents.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn } from '../../interception/index.mjs';
 import { resolveModelRoutingForRole } from '../../model-router.mjs';
 import agentSpec from '../../specs/orchestrator-agents.json' with { type: 'json' };
 
@@ -22,7 +23,20 @@ function resolveAgentId(role) {
   return map[normalized] || '';
 }
 
-function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env }) {
+function stringifyTurnPacket(packet, fallback) {
+  if (!packet?.refs?.length) return fallback;
+  return JSON.stringify(packet, null, 2);
+}
+
+function compactModelRoutingForTurn(modelRouting, compacted) {
+  if (!compacted || !modelRouting || typeof modelRouting !== 'object') return modelRouting;
+  const copy = { ...modelRouting };
+  if (copy.cliCommand) copy.cliCommand = '[compacted by AIOS turn gateway]';
+  if (copy.taskDescription) copy.taskDescription = '[compacted by AIOS turn gateway]';
+  return copy;
+}
+
+function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId }) {
   return async ({ role, speaker, workItem, conversationHistory }) => {
     const agent = agentSpecNormalized.agents[resolveAgentId(role)] || null;
     const modelRouting = resolveModelRoutingForRole({
@@ -49,20 +63,48 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
       workItems: workItem ? [workItem] : (Array.isArray(workItems) ? workItems : []),
     });
     const fullPrompt = `${systemPrompt}\n\n${conversationPrompt}\n${rolePrompt}`;
-    const userPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
+    const rawUserPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
+    const preSendPacket = await compressPreSendTurn({
+      workspaceRoot: rootDir || process.cwd(),
+      cwd: rootDir || process.cwd(),
+      sessionId,
+      clientId: 'aios-groupchat',
+      hostLevel: 'L3',
+      prompt: rawUserPrompt,
+      mode: 'tight',
+      metrics: { enabled: true },
+    });
+    const compactPrompt = stringifyTurnPacket(preSendPacket, rawUserPrompt);
+    const compactSystemPrompt = preSendPacket?.refs?.length ? compactPrompt : systemPrompt;
+    const outboundModelRouting = compactModelRoutingForTurn(modelRouting, preSendPacket?.refs?.length);
     const result = await spawnFn({
       role,
       speaker,
       workItem: workItem || null,
       conversationHistory,
-      systemPrompt,
-      conversationPrompt: fullPrompt,
-      userPrompt,
-      modelRouting,
+      systemPrompt: compactSystemPrompt,
+      conversationPrompt: compactPrompt,
+      userPrompt: compactPrompt,
+      modelRouting: outboundModelRouting,
     });
+    if (result?.rawOutput) {
+      const postReceivePacket = await compressPostReceiveTurn({
+        workspaceRoot: rootDir || process.cwd(),
+        cwd: rootDir || process.cwd(),
+        sessionId,
+        clientId: 'aios-groupchat',
+        hostLevel: 'L3',
+        output: result.rawOutput,
+        mode: 'tight',
+        metrics: { enabled: true },
+      });
+      if (postReceivePacket?.refs?.length) {
+        result.rawOutput = JSON.stringify(postReceivePacket, null, 2);
+      }
+    }
     return {
       ...(result && typeof result === 'object' ? result : {}),
-      modelRouting: result?.modelRouting || modelRouting,
+      modelRouting: result?.modelRouting || outboundModelRouting,
     };
   };
 }
@@ -124,7 +166,7 @@ export async function runGroupChat({
       roundNumber,
       speakers,
       history,
-      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env }),
+      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId: cfg.sessionId }),
       timeoutMs: cfg.timeoutMs,
       concurrency: cfg.concurrency,
       io,
