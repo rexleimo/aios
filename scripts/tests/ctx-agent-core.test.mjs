@@ -546,6 +546,67 @@ test('ctx-agent one-shot injected context includes persona and user profile over
   }
 });
 
+test('ctx-agent memory layer initializes default workspace memory session without object-string id', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-workspace-memory-init-'));
+  const sessionId = 'ctx-workspace-memory-init';
+  const fakeBin = await createFakeCodexCommand();
+
+  try {
+    runContextDbCli([
+      'session:new',
+      '--workspace',
+      workspaceRoot,
+      '--agent',
+      'codex-cli',
+      '--project',
+      'tmp-project',
+      '--goal',
+      'Verify workspace memory init',
+      '--session-id',
+      sessionId,
+    ]);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent',
+        'codex-cli',
+        '--workspace',
+        workspaceRoot,
+        '--project',
+        'tmp-project',
+        '--session',
+        sessionId,
+        '--prompt',
+        'summarize',
+        '--dry-run',
+        '--no-bootstrap',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          CTXDB_PACK_STRICT: '0',
+          AIOS_IDENTITY_HOME: path.join(workspaceRoot, '.identity'),
+          PATH: `${fakeBin}${path.delimiter}${process.env.PATH || ''}`,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    await stat(path.join(workspaceRoot, '.aios', 'context-db', 'sessions', 'workspace-memory--default', 'meta.json'));
+    await assert.rejects(
+      stat(path.join(workspaceRoot, '.aios', 'context-db', 'sessions', 'workspace-memory--[object-object]', 'meta.json')),
+      { code: 'ENOENT' }
+    );
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(fakeBin, { recursive: true, force: true });
+  }
+});
+
 test('ctx-agent tolerates context:pack failures by running without a context packet', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-pack-fail-'));
   const sessionId = 'ctx-pack-failure';

@@ -169,7 +169,7 @@ async function makeFakeWindowsNativeLauncher(command, executableRelativePath) {
 
   await mkdir(path.dirname(executablePath), { recursive: true });
   await mkdir(binDir, { recursive: true });
-  await writeFile(executablePath, '', 'utf8');
+  await writeFile(executablePath, 'MZ', 'utf8');
   await writeFile(
     launcherPath,
     `@ECHO off\r\n"%~dp0\\${windowsRelPath}" %*\r\n`,
@@ -177,6 +177,50 @@ async function makeFakeWindowsNativeLauncher(command, executableRelativePath) {
   );
 
   return { binDir, executablePath, launcherPath };
+}
+
+async function makeFakeWindowsBrokenNativeLauncherWithWrapper(command, executableRelativePath, wrapperRelativePath) {
+  const rootDir = await makeTemp(`aios-win-${command}-broken-native-launcher-`);
+  const binDir = path.join(rootDir, 'bin');
+  const execPath = path.join(binDir, 'node.exe');
+  const executablePath = path.join(binDir, ...String(executableRelativePath).split('/'));
+  const wrapperPath = path.join(binDir, ...String(wrapperRelativePath).split('/'));
+  const launcherPath = path.join(binDir, `${command}.cmd`);
+  const windowsRelExecutablePath = String(executableRelativePath).split('/').join('\\');
+
+  await mkdir(path.dirname(executablePath), { recursive: true });
+  await mkdir(path.dirname(wrapperPath), { recursive: true });
+  await mkdir(binDir, { recursive: true });
+  await writeFile(execPath, '', 'utf8');
+  await writeFile(executablePath, 'echo broken native launcher\n', 'utf8');
+  await writeFile(wrapperPath, 'console.log("wrapper fallback");\n', 'utf8');
+  await writeFile(
+    launcherPath,
+    `@ECHO off\r\n"%~dp0\\${windowsRelExecutablePath}" %*\r\n`,
+    'utf8'
+  );
+
+  return { binDir, execPath, executablePath, wrapperPath, launcherPath };
+}
+
+async function makeFakeWindowsNativeLauncherInAppData(command, executableRelativePath) {
+  const rootDir = await makeTemp(`aios-win-${command}-appdata-launcher-`);
+  const appDataDir = path.join(rootDir, 'Roaming');
+  const binDir = path.join(appDataDir, 'npm');
+  const executablePath = path.join(binDir, ...String(executableRelativePath).split('/'));
+  const launcherPath = path.join(binDir, `${command}.cmd`);
+  const windowsRelPath = String(executableRelativePath).split('/').join('\\');
+
+  await mkdir(path.dirname(executablePath), { recursive: true });
+  await mkdir(binDir, { recursive: true });
+  await writeFile(executablePath, 'MZfake', 'utf8');
+  await writeFile(
+    launcherPath,
+    `@ECHO off\r\n"%~dp0\\${windowsRelPath}" %*\r\n`,
+    'utf8'
+  );
+
+  return { appDataDir, binDir, executablePath, launcherPath };
 }
 
 async function makeFakeMcpServer(rootDir) {
@@ -1037,6 +1081,24 @@ test('windows claude, gemini, and opencode resolve npm-style cmd launchers to di
   assert.equal(opencodeSpec.shell, false);
 });
 
+test('windows claude falls back to the package node wrapper when the native exe is not a real Windows binary', async () => {
+  const claude = await makeFakeWindowsBrokenNativeLauncherWithWrapper(
+    'claude',
+    'node_modules/@anthropic-ai/claude-code/bin/claude.exe',
+    'node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs'
+  );
+
+  const spec = getCommandSpawnSpec('claude', ['--version'], {
+    platform: 'win32',
+    execPath: claude.execPath,
+    env: { PATH: claude.binDir, PATHEXT: '.EXE;.CMD' },
+  });
+
+  assert.equal(spec.command, claude.execPath);
+  assert.deepEqual(spec.args, [claude.wrapperPath, '--version']);
+  assert.equal(spec.shell, false);
+});
+
 test('windows opencode resolves mjs cmd launcher to direct node execution', async () => {
   const opencode = await makeFakeWindowsAgentLauncher(
     'opencode',
@@ -1064,6 +1126,27 @@ test('windows opencode resolves native exe cmd launcher to direct executable', a
     platform: 'win32',
     execPath: process.execPath,
     env: { PATH: opencode.binDir, PATHEXT: '.EXE;.CMD' },
+  });
+
+  assert.equal(spec.command, opencode.executablePath);
+  assert.deepEqual(spec.args, ['--version']);
+  assert.equal(spec.shell, false);
+});
+
+test('windows client launchers can be resolved from APPDATA npm even when PATH is missing the npm shim directory', async () => {
+  const opencode = await makeFakeWindowsNativeLauncherInAppData(
+    'opencode',
+    'node_modules/opencode-ai/bin/opencode.exe'
+  );
+
+  const spec = getCommandSpawnSpec('opencode', ['--version'], {
+    platform: 'win32',
+    execPath: process.execPath,
+    env: {
+      PATH: '',
+      APPDATA: opencode.appDataDir,
+      PATHEXT: '.EXE;.CMD',
+    },
   });
 
   assert.equal(spec.command, opencode.executablePath);

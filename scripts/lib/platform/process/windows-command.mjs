@@ -10,6 +10,7 @@ const WINDOWS_SHELL_COMMANDS = new Set(resolveClientCommandNames('all'));
 const WINDOWS_LAUNCHER_TARGET_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.exe', '.com']);
 const WINDOWS_NODE_SCRIPT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
 const WINDOWS_NATIVE_EXTENSIONS = new Set(['.exe', '.com']);
+const WINDOWS_WRAPPER_CANDIDATES = ['cli-wrapper.cjs', 'cli.js', 'cli.mjs', 'index.js', 'index.mjs'];
 
 /* 中文注释：Windows shim 文件里的路径经常带 %~dp0/$basedir，这里归一成真实绝对路径。 */
 function normalizeWindowsLauncherPath(rawPath, launcherDir) {
@@ -24,6 +25,46 @@ function normalizeWindowsLauncherPath(rawPath, launcherDir) {
 
   if (!normalized) return '';
   return path.resolve(launcherDir, normalized);
+}
+
+function getWindowsCommandSearchDirs(env = process.env) {
+  const pathValue = getEnvCaseInsensitive(env, 'PATH') || '';
+  const dirs = splitWindowsPathEntries(pathValue);
+  const appData = String(getEnvCaseInsensitive(env, 'APPDATA') || '').trim();
+  if (appData) {
+    dirs.push(path.join(appData, 'npm'));
+  }
+
+  return Array.from(new Set(dirs.filter(Boolean).map((dir) => path.resolve(dir))));
+}
+
+function isLikelyWindowsBinary(filePath) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    try {
+      const buffer = Buffer.alloc(2);
+      const bytesRead = fs.readSync(fd, buffer, 0, 2, 0);
+      return bytesRead === 2 && buffer[0] === 0x4d && buffer[1] === 0x5a;
+    } finally {
+      fs.closeSync(fd);
+    }
+  } catch {
+    return false;
+  }
+}
+
+function findWindowsLauncherNodeWrapper(nativeExecutablePath) {
+  const executableDir = path.dirname(nativeExecutablePath);
+  const packageRoot = path.dirname(executableDir);
+  for (const candidateName of WINDOWS_WRAPPER_CANDIDATES) {
+    const candidatePath = path.join(packageRoot, candidateName);
+    const ext = path.extname(candidatePath).toLowerCase();
+    if (!WINDOWS_NODE_SCRIPT_EXTENSIONS.has(ext)) continue;
+    if (!fs.existsSync(candidatePath)) continue;
+    return candidatePath;
+  }
+
+  return '';
 }
 
 /* 中文注释：从 Windows 启动器解析真实入口，优先绕过 .cmd/.ps1 shim，减少 shell quoting 和中文路径问题。 */
@@ -59,7 +100,16 @@ export function resolveWindowsLauncherTarget(launcherPath, { execPath = process.
   if (nodeScript) return { kind: 'node', command: execPath, argsPrefix: [nodeScript.path] };
 
   const nativeExecutable = candidates.find((candidate) => WINDOWS_NATIVE_EXTENSIONS.has(candidate.ext));
-  if (nativeExecutable) return { kind: 'native', command: nativeExecutable.path, argsPrefix: [] };
+  if (nativeExecutable) {
+    if (isLikelyWindowsBinary(nativeExecutable.path)) {
+      return { kind: 'native', command: nativeExecutable.path, argsPrefix: [] };
+    }
+
+    const wrapperPath = findWindowsLauncherNodeWrapper(nativeExecutable.path);
+    if (wrapperPath) {
+      return { kind: 'node', command: execPath, argsPrefix: [wrapperPath] };
+    }
+  }
 
   return null;
 }
@@ -72,9 +122,8 @@ export function resolveWindowsCommandExt(command, env = process.env) {
   const directExt = path.extname(base).toLowerCase();
   if (directExt) return directExt;
 
-  const pathValue = getEnvCaseInsensitive(env, 'PATH') || '';
   const pathExtValue = getEnvCaseInsensitive(env, 'PATHEXT') || '.COM;.EXE;.BAT;.CMD';
-  const dirs = splitWindowsPathEntries(pathValue);
+  const dirs = getWindowsCommandSearchDirs(env);
   const exts = splitWindowsPathExt(pathExtValue);
 
   for (const dir of dirs) {
@@ -102,9 +151,8 @@ export function resolveWindowsCommandPath(command, env = process.env) {
     return '';
   }
 
-  const pathValue = getEnvCaseInsensitive(env, 'PATH') || '';
   const pathExtValue = getEnvCaseInsensitive(env, 'PATHEXT') || '.COM;.EXE;.BAT;.CMD';
-  const dirs = splitWindowsPathEntries(pathValue);
+  const dirs = getWindowsCommandSearchDirs(env);
   const exts = splitWindowsPathExt(pathExtValue);
 
   const directExt = path.extname(raw).toLowerCase();
