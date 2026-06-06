@@ -19,6 +19,8 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新記事
 
+- [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)
+- [v1.50.0：記憶、ドキュメント、計画、コードを横断する統合 AIOS 検索](2026-06-v150-unified-aios-search.md)
 - [Codemap：AIエージェントにコードベースの地図を](2026-05-codemap-crg.md)
 - [ContextDB Token 圧縮：より小さな context pack と安全な recall](2026-05-token-compression.md)
 - [ネイティブ Token 圧縮：Harness CLI が RTK や Caveman をインストールしない理由](2026-05-native-token-compression.md)

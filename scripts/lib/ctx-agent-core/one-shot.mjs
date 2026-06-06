@@ -3,6 +3,8 @@ import { ROOT_DIR, parsePositiveInteger, runCommand, runCommandWithInput } from 
 import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePreview, buildHarnessRoutePreview, normalizeOrchestrateBlueprint, normalizeRouteExecutionMode, normalizeRouteMode, resolveHarnessRouteProviderForAgent, resolveRoutedSubagentClient } from './routes.mjs';
 import { buildOpenCodePrompt } from './opencode-context.mjs';
 
+const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set(['antigravity-cli', 'crush-cli']);
+
 async function ensurePlanArtifact(rootDir, taskTitle) {
   const { promises: fs } = await import('node:fs');
   const pathMod = await import('node:path');
@@ -48,7 +50,10 @@ export function classifyOneShotFailure(detail) {
 }
 
 function commandForRuntime(agent) {
-  const client = resolveClientFromRuntimeId(agent) || 'opencode';
+  const client = resolveClientFromRuntimeId(agent);
+  if (!client) {
+    throw new Error(`Unsupported one-shot agent: ${agent}`);
+  }
   return getClientCommandName(client);
 }
 
@@ -57,9 +62,13 @@ function runBufferedCommand(command, args) {
   return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
 }
 
+export function buildCodexOneShotArgs({ configArgs = buildCodexMcpDisableArgs(process.env), extraArgs = [] } = {}) {
+  return ['exec', ...configArgs, ...extraArgs, '-'];
+}
+
 function runCodexOneShot(prompt, extraArgs, injectContext, contextText) {
   const cmd = commandForRuntime('codex-cli');
-  const args = ['exec', '-', ...buildCodexMcpDisableArgs(process.env), ...extraArgs];
+  const args = buildCodexOneShotArgs({ extraArgs });
   const fullPrompt = injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt;
   const result = runCommandWithInput(cmd, args, fullPrompt);
   return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
@@ -82,7 +91,19 @@ const ONE_SHOT_HANDLERS = {
 };
 
 export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
-  const handler = ONE_SHOT_HANDLERS[agent] || ONE_SHOT_HANDLERS['opencode-cli'];
+  if (PENDING_SMOKE_ONE_SHOT_AGENTS.has(agent)) {
+    return {
+      output: `${agent} is pending-smoke: live one-shot execution is blocked until CLI arguments, MCP config, and unattended smoke evidence are verified.\n`,
+      exitCode: 1,
+    };
+  }
+  const handler = ONE_SHOT_HANDLERS[agent];
+  if (!handler) {
+    return {
+      output: `${agent} is unsupported for one-shot execution; no verified handler is registered.\n`,
+      exitCode: 1,
+    };
+  }
   return handler({ contextText, prompt, extraArgs, injectContext, contextPacketPath });
 }
 

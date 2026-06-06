@@ -106,3 +106,26 @@ stop compress
 - `.codex/skills/aios-browser-compress/SKILL.md`
 - `.claude/skills/aios-compress/SKILL.md`
 - `.claude/skills/aios-browser-compress/SKILL.md`
+
+## 全客户端 Turn Compression（v1.50.1） {#all-client-turn-compression-v1501}
+
+v1.50.1 把 token 压缩从提示词约束升级为可度量的全客户端合同。
+
+每个 AIOS 托管的 agent turn 都必须产生同一个 `bidirectional-turn-compression` 指标：
+
+- `pre_send`：prompt/input 进入目标 client 或模型前先压缩。
+- `post_receive`：client/model 输出被 AIOS 接受前先压缩。
+- `requiredEntrypoint`：`aios-managed-runner`。
+- `directHostBypassAllowed`：`false`。
+- `uncontrolledHostOutput`：`policy-violation`。
+
+检查当前矩阵：
+
+```bash
+node scripts/aios.mjs clients doctor --json
+node scripts/aios.mjs interception proof --json
+```
+
+proof 输出包含 Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` 的 `turn_compression_matrix`。合规客户端必须同时在 `pre_send` 和 `post_receive` 上有非零 `saved_bytes`。
+
+不经过 AIOS-managed runner 的 direct host output 不计入省 token。它会被记录为 `policy-violation` / `non_compliant`，且 `saved_bytes=0`，避免用汇总数字掩盖绕过链路。

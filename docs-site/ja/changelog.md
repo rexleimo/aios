@@ -5,6 +5,21 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v1.50.1 (2026-06-05)
+
+- **全クライアント turn compression compliance**: すべての AIOS-managed client/host が `bidirectional-turn-compression` metric を共有し、`pre_send` と `post_receive` を必須にしました。
+- **Bypass で偽の節約をしない**: AIOS-managed runner 外の direct host output は `policy-violation` / `non_compliant` として記録され、`saved_bytes=0` になります。
+- **Proof matrix**: `node scripts/aios.mjs interception proof --json` と `doctor --json` が Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` の `turn_compression_matrix` を出力します。
+- **Skill training evidence**: `aios-interception-runtime` は SkillOpt-Lite で training 済みで、artifact は `.skillopt/aios-interception-runtime-2026-06-05` にあります。
+- **Release tutorial**: [v1.50.1 token compression compliance post](/blog/ja/2026-06-v1501-token-compression-compliance/) と [Native Token Compression](token-compression.md#all-client-turn-compression-v1501) を参照してください。
+
+## v1.50.0（2026-06-04）
+
+- **統合 AIOS 検索**：`node scripts/aios.mjs search "<query>"` で project memory、pinned memo、docs、plans、code を一度に検索できます。
+- **クロス CLI の記憶安全性**：`project_shared` は全 client で見え、`agent_private` は一致する `--agent <runtime-client-id>` のみで見えます。
+- **全 client への native guidance**：Codex/OpenCode/Crush は `AGENTS.md`、Claude は `CLAUDE.md`、Gemini/Antigravity は `GEMINI.md` で同じ search 指示を受け取ります。
+- **リリース tutorial**：[v1.50.0 統合検索 tutorial](/blog/ja/2026-06-v150-unified-aios-search/) と [ContextDB](contextdb.md#統合プロジェクト検索v1500) を参照してください。
+
 このページでは `Harness CLI` の変更点を追跡し、関連ドキュメントへ移動できます。
 
 ## 公式リリース履歴

@@ -1,0 +1,15 @@
+{
+  "skill_path": ".codex/skills/aios-interception-runtime/SKILL.md",
+  "current_step": 1,
+  "current_epoch": 1,
+  "current_score": 1.0,
+  "best_score": 1.0,
+  "best_step": 1,
+  "edit_budget": 4,
+  "min_edit_budget": 2,
+  "total_epochs": 1,
+  "steps_per_epoch": 1,
+  "consecutive_no_improvement": 0,
+  "early_stop_patience": 2,
+  "run_dir": ".skillopt/aios-interception-runtime-2026-06-05"
+}

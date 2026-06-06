@@ -221,6 +221,80 @@ test('one-shot subagent invocation strategies cover every harness client', () =>
   });
 });
 
+
+
+test('executePhaseJob compresses subagent prompts before client launch and compacts accepted output', async () => {
+  const { executePhaseJob } = await import('../lib/harness/subagent-runtime/phase-job.mjs');
+  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-subagent-turn-'));
+  const PRE_SENTINEL = 'SUBAGENT_PRE_SEND_SENTINEL';
+  const POST_SENTINEL = 'SUBAGENT_POST_RECEIVE_SENTINEL';
+  let captured = null;
+
+  try {
+    const plan = {
+      taskTitle: 'Subagent turn compression',
+      contextSummary: `${PRE_SENTINEL.repeat(120)}\nscripts/lib/harness/subagent-runtime/phase-job.mjs:42`,
+      phases: [],
+      workItems: [],
+    };
+    const job = {
+      jobId: 'job.compress',
+      jobType: 'phase',
+      role: 'implementer',
+      launchSpec: { executor: 'codex', handoffTarget: 'reviewer', inputs: [] },
+      dependsOn: [],
+    };
+    const phase = {
+      id: 'phase.implement',
+      label: 'Implement',
+      responsibility: 'Implement the requested behavior',
+      ownership: 'scripts/lib/harness/subagent-runtime/',
+      canEditFiles: false,
+    };
+
+    const run = await executePhaseJob(plan, job, phase, [], {
+      clientId: 'codex-cli',
+      contextText: `${PRE_SENTINEL.repeat(120)}\nContext path scripts/lib/harness/subagent-runtime/prompts.mjs:1`,
+      timeoutMs: 1000,
+      env: process.env,
+      io: { log() {}, warn() {}, error() {} },
+      agentSpecNormalized: { agents: {} },
+      executorLabel: 'codex',
+      rootDir,
+      runOneShotImpl: async (clientId, args) => {
+        captured = { clientId, args };
+        return {
+          exitCode: 0,
+          stdout: JSON.stringify({
+            schemaVersion: 1,
+            status: 'completed',
+            fromRole: 'implementer',
+            toRole: 'reviewer',
+            taskTitle: 'Subagent turn compression',
+            contextSummary: `${POST_SENTINEL.repeat(120)}\nscripts/lib/harness/subagent-runtime/phase-output.mjs:7`,
+            findings: ['compressed'],
+            filesTouched: [],
+            openQuestions: [],
+            recommendations: [],
+          }),
+          stderr: '',
+        };
+      },
+    });
+
+    assert.equal(JSON.stringify(captured).includes(PRE_SENTINEL), false);
+    assert.equal(run.output.rawOutput.includes(POST_SENTINEL), false);
+    assert.match(run.output.rawOutput, /aios\.compact_packet/);
+
+    const records = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'job.compress' });
+    assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'codex-cli'), true);
+    assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'codex-cli'), true);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('subagent runtime delegates orchestration responsibilities to focused modules', async () => {
   const entry = await readFile(path.resolve('scripts/lib/harness/subagent-runtime.mjs'), 'utf8');
   const entryLines = entry.trim().split(/\r?\n/u).length;
@@ -283,6 +357,60 @@ test('buildIterationPrompt injects offload canvas as compact resume context', ()
   assert.match(prompt, /\.aios\/offload\/canvas\/demo-session\/task-canvas\.mmd/);
   assert.match(prompt, /n0001-abc123 Bash: npm test/);
   assert.match(prompt, /aios refs grep\/read/);
+});
+
+
+
+test('buildProductionExecuteTurn compresses solo harness prompts before provider launch and compacts received output', async () => {
+  const { buildProductionExecuteTurn } = await import('../lib/lifecycle/harness/execute-turn.mjs');
+  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-solo-turn-'));
+  const PRE_SENTINEL = 'SOLO_HARNESS_PRE_SEND_SENTINEL';
+  const POST_SENTINEL = 'SOLO_HARNESS_POST_RECEIVE_SENTINEL';
+  let captured = null;
+
+  try {
+    const executeTurn = buildProductionExecuteTurn({
+      rootDir,
+      aiosRootDir: rootDir,
+      sessionId: 'solo-turn',
+      objective: `${PRE_SENTINEL.repeat(120)}\nscripts/lib/lifecycle/harness/execute-turn.mjs:11`,
+      provider: 'codex',
+      spawnCommandImpl: async (command, args, options) => {
+        captured = { command, args, options };
+        return {
+          status: 0,
+          stdout: JSON.stringify({
+            outcome: 'success',
+            summary: `${POST_SENTINEL.repeat(120)}\nscripts/lib/lifecycle/harness/execute-turn.mjs:33`,
+            keyChanges: [],
+            keyLearnings: [],
+            nextAction: 'stop',
+            shouldStop: true,
+          }),
+          stderr: '',
+        };
+      },
+    });
+
+    const result = await executeTurn({
+      iteration: 1,
+      continuity: '',
+      offloadCanvas: null,
+      summary: { workspaceRoot: rootDir, aiosRootDir: rootDir },
+      worktree: { enabled: false },
+    });
+
+    assert.equal(JSON.stringify(captured).includes(PRE_SENTINEL), false);
+    assert.equal(result.rawOutput.includes(POST_SENTINEL), false);
+    assert.match(result.rawOutput, /aios\.compact_packet/);
+
+    const records = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'solo-turn' });
+    assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'aios-harness'), true);
+    assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'aios-harness'), true);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('runSoloHarnessLoop appends iterations and stops when executeTurn requests it', async () => {
@@ -886,4 +1014,10 @@ test('runSoloHarnessLoop emits lifecycle hook evidence and iteration hook logs',
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }
+});
+
+test('classifySoloFailure does not treat search results mentioning ownership as an ownership gate', async () => {
+  const { classifySoloFailure } = await import('../lib/harness/solo-runtime.mjs');
+  const detail = 'docs/plans/plan-ownership-preflight-gates.md\nSearch result mentions ownership, but no gate was raised.';
+  assert.equal(classifySoloFailure(detail), 'runtime-error');
 });

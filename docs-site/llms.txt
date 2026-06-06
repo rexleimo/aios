@@ -9,6 +9,9 @@
 - Agent Team collaboration runtime
 - automatic subagent planning and execution gates
 - privacy-safe coding agent startup with Privacy Shield and Privacy Guard
+- unified AIOS project search across memory, docs, plans, and code
+- all-client native instruction projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
+- measurable all-client turn compression with pre_send and post_receive proof
 
 ## Canonical
 - https://cli.rexai.top/
@@ -18,12 +21,16 @@
 - https://cli.rexai.top/use-cases/
 - https://cli.rexai.top/case-library/
 - https://cli.rexai.top/contextdb/
+- https://cli.rexai.top/contextdb/#unified-project-search-v1500
+- https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501
 - https://cli.rexai.top/troubleshooting/
 - https://cli.rexai.top/changelog/
 
 ## Blog
 - https://cli.rexai.top/blog/
 - https://cli.rexai.top/blog/2026-05-token-compression/
+- https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
+- https://cli.rexai.top/blog/2026-06-v1501-token-compression-compliance/
 
 ## Languages
 - https://cli.rexai.top/zh/

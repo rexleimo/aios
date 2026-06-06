@@ -119,7 +119,10 @@ export function classifySoloFailure(value = {}) {
       : normalizeText(value?.message || value?.summary || value?.stderr || value?.stdout);
   const normalized = detail.toLowerCase();
 
-  if (normalized.includes('ownership') || normalized.includes('ownedpath')) return 'ownership-gate';
+  if (normalized.includes('ownedpath')
+    || normalized.includes('ownership-gate')
+    || normalized.includes('ownership gate')
+    || normalized.includes('ownership preflight failed')) return 'ownership-gate';
   if (normalized.includes('safety') || normalized.includes('human gate')) return 'safety-gate';
   if (normalized.includes('timeout') || normalized.includes('rate limit') || normalized.includes('econnreset')) return 'runtime-error';
   if (normalized.includes('tool')) return 'tool-error';

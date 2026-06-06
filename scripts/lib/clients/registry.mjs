@@ -58,3 +58,6 @@ export {
   resolveClientHarnessProviders,
   resolveClientTeamProviders,
 } from './providers/index.mjs';
+export {
+  buildClientCapabilityReport,
+} from './capability-report.mjs';

@@ -46,7 +46,7 @@ function selectKeyLines(lines, limit, errorLines) {
   for (const line of lines) {
     const trimmed = trimLine(line);
     if (!trimmed || seen.has(trimmed)) continue;
-    if (/[A-Za-z]:\\|\.m?[jt]s:\d+|\.tsx?:\d+|\.py:\d+|\.rs:\d+|\.go:\d+|exit code|status/i.test(trimmed)) {
+    if (isControlContractLine(trimmed) || /[A-Za-z]:\\|\.m?[jt]s:\d+|\.tsx?:\d+|\.py:\d+|\.rs:\d+|\.go:\d+|exit code|status/i.test(trimmed)) {
       matches.push(trimmed);
       seen.add(trimmed);
       if (matches.length >= limit) break;
@@ -83,11 +83,32 @@ function buildSummary(lines, errorLines, exitCode, maxLines) {
 /* 中文注释：单行截断保护模型上下文，完整内容仍可通过 raw ref 召回。 */
 function trimLine(line) {
   const text = String(line ?? '').trim();
-  return text.length > 240 ? `${text.slice(0, 237)}...` : text;
+  if (/cliCommand=/.test(text)) return trimCliCommandLine(text);
+  if (text.length <= 240) return text;
+  const signals = [];
+  const pathMatch = text.match(/[A-Za-z]:\\[^ "'\n]+|[^ "'\n]+\.[cm]?[jt]sx?:\d+|[^ "'\n]+\.py:\d+|[^ "'\n]+\.rs:\d+|[^ "'\n]+\.go:\d+/i);
+  if (pathMatch && pathMatch[0].length <= 160) signals.push(`path=${pathMatch[0]}`);
+  const errorMatch = text.match(/\b(error|failed|failure|exception|traceback|panic|fatal)\b/i);
+  if (errorMatch) signals.push(`signal=${errorMatch[0].toLowerCase()}`);
+  return `[long line omitted: ${text.length} chars${signals.length ? `; ${signals.join('; ')}` : ''}]`;
+}
+
+function trimCliCommandLine(text) {
+  if (text.length <= 240) return text;
+  const codexModelPrefix = text.match(/^(.*?cliCommand=codex exec .*? -m [^\s"]+)/);
+  if (codexModelPrefix) return codexModelPrefix[1];
+  return text
+    .replace(/(\s-p\s+).+$/u, '$1[prompt omitted]')
+    .replace(/(\s--print\s+).+$/u, '$1[prompt omitted]')
+    .slice(0, 240);
 }
 
 /* 中文注释：超长低信号行通常是 HTML/base64/打包日志，保留长度提示即可，不直接塞回 packet。 */
 function isLowSignalLongLine(line) {
   if (line.length < 160) return false;
   return !/\b(error|failed|failure|exception|traceback|panic|fatal)\b|[A-Za-z]:\\|\.[cm]?[jt]sx?:\d+|\.\w+:\d+/i.test(line);
+}
+
+function isControlContractLine(line) {
+  return /model router|modelId=|cliCommand=|role:|jobId:|decomposed work items|\bwi\.\d+\b|no-op handoff|do not run broad verification|output only|output contract|required fields|handoff|fromRole|toRole/i.test(line);
 }

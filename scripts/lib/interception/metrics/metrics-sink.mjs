@@ -14,12 +14,21 @@ export function metricsSessionPath(workspaceRoot, sessionId = 'default') {
 export async function writeMetricsRecord({ workspaceRoot, sessionId = 'default', packet, request, ref = null, now = () => new Date() }) {
   const filePath = metricsSessionPath(workspaceRoot, sessionId);
   await mkdir(path.dirname(filePath), { recursive: true });
+  const metadata = request?.metadata ?? {};
   const record = {
     ts: now().toISOString(),
     session_id: sessionId,
     host: packet.host,
     source: packet.source,
     kind: request?.kind || '',
+    event_kind: metadata.eventKind || packet.event_kind || eventKindFromKind(request?.kind || ''),
+    client_id: metadata.clientId || packet.client_id || packet.host,
+    host_level: metadata.hostLevel || packet.host_level || '',
+    mode: metadata.mode || packet.mode || '',
+    fallback_reason: metadata.fallbackReason || packet.fallback_reason || '',
+    uncontrolled: metadata.uncontrolled === true || packet.uncontrolled === true,
+    policy_violation: metadata.policyViolation === true || packet.policy_violation === true,
+    compliance_status: metadata.complianceStatus || packet.compliance_status || '',
     ref_id: packet.refs?.[0]?.ref_id || ref?.refId || '',
     raw_bytes: packet.metrics.raw_bytes,
     compact_bytes: packet.metrics.compact_bytes,
@@ -47,4 +56,10 @@ export async function readMetricsRecords({ workspaceRoot, sessionId = 'default' 
 /* 中文注释：sessionId 会进入文件名，清洗后可跨 Windows/POSIX 使用。 */
 function sanitize(value) {
   return String(value || 'default').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 128) || 'default';
+}
+
+function eventKindFromKind(kind) {
+  const text = String(kind || '');
+  if (text.startsWith('agent.')) return text.slice('agent.'.length);
+  return text;
 }

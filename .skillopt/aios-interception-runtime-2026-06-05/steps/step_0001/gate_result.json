@@ -1,0 +1,70 @@
+{
+  "step": 1,
+  "action": "accept_new_best",
+  "candidate_hard": 1.0,
+  "current_hard": 0.6666666666666666,
+  "best_hard": 0.6666666666666666,
+  "candidate_hash": "1b406d702035654f",
+  "results": [
+    {
+      "id": "valid-output-cost",
+      "hard": 1,
+      "soft": 1.0,
+      "fail_reason": "",
+      "checks": [
+        [
+          "proof command",
+          true
+        ],
+        [
+          "saved_bytes",
+          true
+        ],
+        [
+          "post_receive explicit",
+          true
+        ]
+      ]
+    },
+    {
+      "id": "valid-skip-question",
+      "hard": 1,
+      "soft": 1.0,
+      "fail_reason": "",
+      "checks": [
+        [
+          "skip/platform guidance",
+          true
+        ],
+        [
+          "token tests distinction",
+          true
+        ]
+      ]
+    },
+    {
+      "id": "valid-all-client-contract",
+      "hard": 1,
+      "soft": 1.0,
+      "fail_reason": "",
+      "checks": [
+        [
+          "managed runner",
+          true
+        ],
+        [
+          "bypass false",
+          true
+        ],
+        [
+          "pre/post",
+          true
+        ],
+        [
+          "policy violation",
+          true
+        ]
+      ]
+    }
+  ]
+}

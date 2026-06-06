@@ -5,6 +5,7 @@ import {
   ALL_CLIENTS,
   getClientCommandName,
   getClientRuntimeId,
+  getClientUnattendedArgs,
 } from '../clients/registry.mjs';
 
 const PROVIDER_MAP = Object.freeze(Object.fromEntries(ALL_CLIENTS.map((client) => [client, {
@@ -26,6 +27,17 @@ const RESERVED_FLAGS = new Set([
 function normalizeText(value, fallback = '') {
   const text = String(value ?? '').trim();
   return text || fallback;
+}
+
+function uniqueArgs(args = []) {
+  const seen = new Set();
+  const result = [];
+  for (const arg of args) {
+    if (seen.has(arg)) continue;
+    seen.add(arg);
+    result.push(arg);
+  }
+  return result;
 }
 
 export function resolveSoloHarnessProfile({ provider = 'codex' } = {}) {
@@ -95,7 +107,11 @@ export function buildSoloHarnessCommand({
   }
 
   const normalizedObjective = normalizeText(objective, 'Solo harness objective');
-  const validatedExtraArgs = validateSoloHarnessExtraArgs(extraArgs);
+  const defaultExtraArgs = profile.provider === 'codex' ? getClientUnattendedArgs(profile.clientId) : [];
+  const validatedExtraArgs = uniqueArgs([
+    ...validateSoloHarnessExtraArgs(defaultExtraArgs),
+    ...validateSoloHarnessExtraArgs(extraArgs),
+  ]);
   const aiosRoot = path.resolve(aiosRootDir || rootDir || process.cwd());
   const effectiveWorkspace = path.resolve(workspaceRoot || rootDir || process.cwd());
   const project = path.basename(effectiveWorkspace);
@@ -116,6 +132,8 @@ export function buildSoloHarnessCommand({
     String(prompt ?? ''),
     '--status',
     'running',
+    '--route',
+    'single',
     '--max-log-chars',
     '12000',
     '--no-continuity-summary',

@@ -6,6 +6,27 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.50.1] - 2026-06-05
+
+- enforce all-client AIOS turn compression compliance
+- add `bidirectional-turn-compression` proof matrix covering `pre_send` and `post_receive` for every client/host
+- mark uncontrolled direct host output as `policy-violation`/`non_compliant` instead of reporting fake savings
+- train `aios-interception-runtime` with SkillOpt-Lite and publish the training artifact under `.skillopt/aios-interception-runtime-2026-06-05`
+
+## [1.50.0] - 2026-06-04
+
+- add v1.50.0 docs, blog tutorial, and site resources for unified AIOS search
+- document all-client native search guidance inheritance across Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
+- publish usage guidance for memo visibility filters, source filters, and release verification
+
+## [1.42.0] - 2026-06-04
+
+- add unified AIOS project search
+
+## [1.41.0] - 2026-06-04
+
+- add multi-client capability gates and memo scope guidance
+
 ## [1.40.0] - 2026-05-31
 
 ### Added

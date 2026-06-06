@@ -40,6 +40,18 @@ export function toRefs(refs = []) {
   return output;
 }
 
+export function normalizeMemoScope(raw) {
+  const value = String(raw || '').trim().toLowerCase().replace(/[-\s]+/gu, '_');
+  if (!value || value === 'project' || value === 'shared' || value === 'global') return 'project_shared';
+  if (value === 'private' || value === 'agent') return 'agent_private';
+  if (['project_shared', 'agent_private', 'agent_ephemeral'].includes(value)) return value;
+  throw new Error('memo scope must be one of: project_shared, agent_private, agent_ephemeral');
+}
+
+export function normalizeMemoAgent(raw) {
+  return String(raw || '').trim().toLowerCase();
+}
+
 // 纯函数：兼容旧名称 stream/file-stream，并统一拒绝 sqlite 等缓存实现。
 export function normalizeMemoStorageName(raw) {
   const value = String(raw || '').trim().toLowerCase();
@@ -66,6 +78,8 @@ export function normalizeEventRows(events, { fallbackStorage = DEFAULT_MEMO_STOR
         kind: event.kind ? String(event.kind) : 'memo',
         text: event.text ? String(event.text) : '',
         refs: toRefs(event.refs || []),
+        scope: normalizeMemoScope(event.scope || event.memoryScope || 'project_shared'),
+        agent: normalizeMemoAgent(event.agent || event.agentNamespace || ''),
         turn: event.turn && typeof event.turn === 'object' ? event.turn : undefined,
         legacy: event.legacy && typeof event.legacy === 'object' ? event.legacy : undefined,
       };

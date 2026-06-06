@@ -1,0 +1,32 @@
+[
+  {
+    "id": "train-proof-required",
+    "instruction": "User asks: '我们这个 token 省流量到底有没有真的生效？给我证明。'",
+    "expected_outcome": "Must require running node scripts/aios.mjs interception proof --json; must mention saved_bytes and saving_ratio; must not answer with prompt-only advice."
+  },
+  {
+    "id": "train-client-matrix",
+    "instruction": "User asks: '所有客户端是不是都对齐同一个指标？'",
+    "expected_outcome": "Must inspect/cite clients doctor or proof turn_compression_matrix; must require bidirectional-turn-compression for every client; must name pre_send and post_receive."
+  },
+  {
+    "id": "train-bypass-violation",
+    "instruction": "User shows raw direct host output and says: '这个也算省 token 吗？'",
+    "expected_outcome": "Must mark uncontrolled/direct host output as policy violation/non_compliant; must not claim savings; must restart through AIOS-managed runner."
+  },
+  {
+    "id": "train-browser-input",
+    "instruction": "User wants browser page understanding with minimal tokens.",
+    "expected_outcome": "Must prefer page.semantic_snapshot or targeted page.extract_text before get_html/screenshot; must verify action target before acting."
+  },
+  {
+    "id": "train-raw-ref-recall",
+    "instruction": "User asks for details from an offloaded large output.",
+    "expected_outcome": "Must use canvas/ref grep/read targeted recall, not load full raw logs into model context."
+  },
+  {
+    "id": "train-client-level-honesty",
+    "instruction": "User asks whether Codex/Claude are L3 after the implementation.",
+    "expected_outcome": "Must use config/host-capabilities.json as source of truth; must not overclaim native raw-shell L3 without verified host hook; must say AIOS harness is L3 controlled target."
+  }
+]

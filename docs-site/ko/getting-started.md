@@ -156,6 +156,7 @@ You have memory working. Here are the next things to try, in order of usefulness
 
 ### Save Persistent Notes With Memo
 
+
 Memo lets you save Git-friendly project notes that your agent will see in every session:
 
 ```bash
@@ -173,6 +174,24 @@ aios memo storage status
 ```
 
 By default, project memos are append-only JSONL under `.aios/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
+
+### 넓은 파일 읽기 전에 검색하기
+
+프로젝트로 돌아왔을 때 결정, 계획, 구현 위치가 기억나지 않는다면 먼저 통합 AIOS 검색을 사용하세요.
+
+```bash
+node scripts/aios.mjs search "native client guidance" --agent codex-cli --json
+```
+
+유용한 패턴:
+
+```bash
+node scripts/aios.mjs search "release blocker" --source memory,plans
+node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
+node scripts/aios.mjs search "private scratch" --scope agent_private --agent claude-code
+```
+
+프로젝트 메모리, pinned notes, 계획, 문서, 코드를 함께 검색하면서 cross-client memo safety 를 유지합니다.
 
 ### Set Your Agent's Personality
 

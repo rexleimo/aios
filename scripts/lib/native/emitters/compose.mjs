@@ -15,6 +15,7 @@ import {
 const SHARED_SECTION_PLAN = Object.freeze([
   { file: 'core-instructions.md' },
   { file: 'contextdb.md' },
+  { file: 'client-capabilities.md' },
   { file: 'superpowers.md', capability: 'superpowers' },
   { file: 'agent-routing.md', capability: 'agents' },
   { file: 'codemap.md', capability: 'native' },

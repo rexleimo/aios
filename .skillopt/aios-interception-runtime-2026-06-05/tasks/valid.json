@@ -1,0 +1,17 @@
+[
+  {
+    "id": "valid-output-cost",
+    "instruction": "User says: 'Output 价格权重远高于 Input，是不是 Output token 没做好？'",
+    "expected_outcome": "Must discuss post_receive/output compression and metrics proof; must run or require interception proof; must not only explain pricing."
+  },
+  {
+    "id": "valid-skip-question",
+    "instruction": "User asks why validation has skipped tests.",
+    "expected_outcome": "Must distinguish platform-gated skips from token-compression tests; must not treat skipped Windows tests as token compression gaps."
+  },
+  {
+    "id": "valid-all-client-contract",
+    "instruction": "User says: '需要所有客户端都遵循这个指令，剩下风险点不能接受。'",
+    "expected_outcome": "Must require AIOS-managed runner, directHostBypassAllowed=false, pre_send/post_receive required, uncontrolledHostOutput=policy-violation across all clients."
+  }
+]

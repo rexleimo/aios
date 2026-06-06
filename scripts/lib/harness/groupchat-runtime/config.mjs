@@ -12,5 +12,6 @@ export function normalizeGroupChatConfig(raw = {}) {
     timeoutMs: Number.isFinite(source.timeoutMs) && source.timeoutMs > 0
       ? Math.floor(source.timeoutMs)
       : 10 * 60 * 1000,
+    sessionId: String(source.sessionId || 'groupchat').trim() || 'groupchat',
   };
 }

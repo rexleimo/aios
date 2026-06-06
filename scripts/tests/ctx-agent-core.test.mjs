@@ -766,6 +766,69 @@ test('ctx-agent one-shot writes turn envelope metadata for prompt/response event
   }
 });
 
+
+
+test('ctx-agent one-shot compresses prompt before client stdin and compacts received output', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-turn-compress-'));
+  const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-turn-bin-'));
+  const sessionId = 'ctx-turn-compress';
+  const capturePath = path.join(workspaceRoot, 'captured-stdin.txt');
+  const PRE_SENTINEL = 'CTX_AGENT_PRE_SEND_SENTINEL';
+  const POST_SENTINEL = 'CTX_AGENT_POST_RECEIVE_SENTINEL';
+
+  try {
+    const fakeCodex = path.join(binDir, 'codex');
+    await writeFile(fakeCodex, `#!/usr/bin/env node\nimport { readFileSync, writeFileSync } from 'node:fs';\nconst input = readFileSync(0, 'utf8');\nwriteFileSync(process.env.AIOS_TEST_CAPTURE_PATH, input);\nprocess.stdout.write('${POST_SENTINEL}'.repeat(160) + '\\nscripts/lib/ctx-agent-core/run.mjs:211\\n');\n`, 'utf8');
+    await chmod(fakeCodex, 0o755);
+
+    runContextDbCli([
+      'session:new',
+      '--workspace', workspaceRoot,
+      '--agent', 'codex-cli',
+      '--project', 'tmp-project',
+      '--goal', 'Verify ctx-agent turn compression',
+      '--session-id', sessionId,
+    ]);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent', 'codex-cli',
+        '--workspace', workspaceRoot,
+        '--project', 'tmp-project',
+        '--session', sessionId,
+        '--prompt', `${PRE_SENTINEL.repeat(160)}\nscripts/lib/ctx-agent-core/run.mjs:189`,
+        '--no-bootstrap',
+        '--no-auto-checkpoint',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+          AIOS_TEST_CAPTURE_PATH: capturePath,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const captured = await readFile(capturePath, 'utf8');
+    assert.equal(captured.includes(PRE_SENTINEL), false);
+    assert.equal(result.stdout.includes(POST_SENTINEL), false);
+    assert.match(result.stdout, /aios\.compact_packet/);
+
+    const metricsPath = path.join(workspaceRoot, '.aios', 'interception', 'metrics', `${sessionId}.jsonl`);
+    const records = (await readFile(metricsPath, 'utf8')).trim().split(/\r?\n/).map((line) => JSON.parse(line));
+    assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'codex-cli'), true);
+    assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'codex-cli'), true);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(binDir, { recursive: true, force: true });
+  }
+});
+
 test('ctx-agent one-shot dry-run route harness prints trigger command', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-route-harness-'));
 

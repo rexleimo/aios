@@ -4,6 +4,7 @@ import { readMetricsRecords } from './metrics/metrics-sink.mjs';
 import { readRawRef } from './refs/raw-ref-store.mjs';
 import { runShellEnvelope } from './shell/shell-wrapper.mjs';
 import { buildCapabilityMatrix, inspectMcpProxyTargets } from './clients/capabilities.mjs';
+import { runTurnCompressionMatrixProof } from './turn/turn-gateway.mjs';
 
 /* 中文注释：没有显式 session 时生成时间戳 session，避免 proof 多次运行互相污染指标。 */
 function makeSessionId(raw = '') {
@@ -88,6 +89,14 @@ export async function runInterceptionProof(options = {}, { rootDir = process.cwd
 
   const shell = await verifyPacket({ workspaceRoot: rootDir, sessionId, packet: shellPacket, sentinel: shellSentinel, source: 'shell' });
   const mcp = await verifyPacket({ workspaceRoot: rootDir, sessionId, packet: mcpPacket, sentinel: mcpSentinel, source: 'mcp' });
+  const turnCompressionMatrix = await runTurnCompressionMatrixProof({
+    rootDir,
+    workspaceRoot: rootDir,
+    sessionId,
+    mode: 'tight',
+    thresholds: { minRawBytes: 64 },
+    metrics: { enabled: true },
+  });
   const metrics = await readMetricsRecords({ workspaceRoot: rootDir, sessionId });
   /* 中文注释：只统计本次 proof 生成的 ref，避免同 session 历史记录影响节省率判断。 */
   const currentMetrics = metrics.filter((item) => item.ref_id === shell.ref_id || item.ref_id === mcp.ref_id);
@@ -111,6 +120,7 @@ export async function runInterceptionProof(options = {}, { rootDir = process.cwd
       saving_ratio: totalRawBytes > 0 ? Number((totalSavedBytes / totalRawBytes).toFixed(4)) : 0,
       raw_contains_sentinel: false,
     },
+    turn_compression_matrix: turnCompressionMatrix,
     mcp_proxy_targets: inspectMcpProxyTargets({ rootDir, clientHomes }),
     capability_matrix: buildCapabilityMatrix(rootDir),
     exitCode: 0,

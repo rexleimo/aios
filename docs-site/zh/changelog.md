@@ -5,6 +5,21 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v1.50.1（2026-06-05）
+
+- **全客户端 turn compression 合规**：所有 AIOS 托管客户端/宿主共享 `bidirectional-turn-compression` 指标，并强制记录 `pre_send` 与 `post_receive`。
+- **绕过不再冒充省 token**：未经过 AIOS-managed runner 的 direct host output 会记录为 `policy-violation` / `non_compliant`，且 `saved_bytes=0`。
+- **Proof 矩阵**：`node scripts/aios.mjs interception proof --json` 和 `doctor --json` 输出 Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` 的 `turn_compression_matrix`。
+- **技能训练证据**：`aios-interception-runtime` 已通过 SkillOpt-Lite 训练，产物位于 `.skillopt/aios-interception-runtime-2026-06-05`。
+- **发布教程**：阅读 [v1.50.1 token 压缩合规文章](/blog/zh/2026-06-v1501-token-compression-compliance/) 和 [自研 Token 压缩](token-compression.md#all-client-turn-compression-v1501)。
+
+## v1.50.0（2026-06-04）
+
+- **统一 AIOS 搜索**：`node scripts/aios.mjs search "<query>"` 可以一次搜索项目记忆、pinned memo、文档、计划和代码。
+- **跨客户端记忆安全**：`project_shared` 对所有客户端可见；`agent_private` 只有匹配 `--agent <runtime-client-id>` 时可见。
+- **全客户端 native 指令**：Codex/OpenCode/Crush 通过 `AGENTS.md`，Claude 通过 `CLAUDE.md`，Gemini/Antigravity 通过 `GEMINI.md` 接收同一套 search 指令。
+- **发布教程**：阅读 [v1.50.0 统一搜索教程](/blog/zh/2026-06-v150-unified-aios-search/) 和 [ContextDB](contextdb.md#统一项目搜索v1500)。
+
 本页用于追踪 `Harness CLI` 的版本变化，并快速跳转到相关文档。
 
 ## 官方发布记录

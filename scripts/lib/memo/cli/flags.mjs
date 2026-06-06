@@ -8,6 +8,8 @@ export function splitFlags(argv) {
   const flags = {
     limit: DEFAULT_LIST_LIMIT,
     semantic: false,
+    scope: '',
+    agent: '',
   };
   const positionals = [];
   for (let i = 0; i < argv.length; i += 1) {
@@ -25,6 +27,16 @@ export function splitFlags(argv) {
       flags.semantic = true;
       continue;
     }
+    if (arg === '--scope') {
+      flags.scope = String(argv[i + 1] || '').trim();
+      i += 1;
+      continue;
+    }
+    if (arg === '--agent') {
+      flags.agent = String(argv[i + 1] || '').trim();
+      i += 1;
+      continue;
+    }
     positionals.push(arg);
   }
   return { positionals, flags };
@@ -34,6 +46,8 @@ export function splitRecallFlags(argv) {
   const flags = {
     limit: DEFAULT_LIST_LIMIT,
     highlightLimit: DEFAULT_RECALL_HIGHLIGHT_LIMIT,
+    scope: '',
+    agent: '',
   };
   const positionals = [];
 
@@ -50,6 +64,16 @@ export function splitRecallFlags(argv) {
     }
     if (arg === '--highlight-limit') {
       flags.highlightLimit = parsePositiveLimit(argv[i + 1]);
+      i += 1;
+      continue;
+    }
+    if (arg === '--scope') {
+      flags.scope = String(argv[i + 1] || '').trim();
+      i += 1;
+      continue;
+    }
+    if (arg === '--agent') {
+      flags.agent = String(argv[i + 1] || '').trim();
       i += 1;
       continue;
     }

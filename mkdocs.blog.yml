@@ -95,6 +95,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v1.50.0 Unified AIOS Search: 2026-06-v150-unified-aios-search.md
       - ContextDB Token Compression: 2026-05-token-compression.md
       - Native Token Compression: 2026-05-native-token-compression.md
       - Solo Harness Overnight Runs: 2026-04-solo-harness.md

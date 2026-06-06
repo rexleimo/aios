@@ -9,7 +9,7 @@ const CLIENT_HOME_ENV_VARS = Object.freeze([
   Object.freeze({ env: 'OPENCODE_HOME', label: 'opencode' }),
 ]);
 
-function normalizeOneClientHome(env, cwd, { envVar, label }) {
+function normalizeOneClientHome(env, cwd, { env: envVar, label }) {
   const value = env[envVar];
   if (!value) return false;
 

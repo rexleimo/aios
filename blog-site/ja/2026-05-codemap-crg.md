@@ -116,4 +116,4 @@ aios internal codemap doctor
 # Let your agent explore with a map instead of a flashlight
 ```
 
-[Full Documentation →](/codemap/){ .md-button }
+[Full Documentation →](/ja/codemap/){ .md-button }

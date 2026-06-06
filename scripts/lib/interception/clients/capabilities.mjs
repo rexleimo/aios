@@ -14,7 +14,13 @@ export {
 } from '../mcp/proxy-inspector.mjs';
 
 export const INTERCEPTION_LEVELS = Object.freeze(['L0', 'L1', 'L2', 'L3']);
-export const CLIENT_ORDER = Object.freeze(['aios-harness', 'codex', 'claude', 'gemini', 'opencode', 'cursor', 'generic-mcp']);
+export const CLIENT_ORDER = Object.freeze(['aios-harness', 'codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'cursor', 'generic-mcp']);
+export const REQUIRED_TURN_COMPRESSION = Object.freeze({
+  preSendRequired: true,
+  postReceiveRequired: true,
+  mode: 'tight',
+  uncontrolledHostOutput: 'policy-violation',
+});
 
 /* 中文注释：能力矩阵是跨客户端承诺的事实源，避免文档、Skill 和代码各说各话。 */
 export function resolveInterceptionConfigPath(rootDir) {
@@ -35,13 +41,16 @@ export function loadHostCapabilities(rootDir) {
 export function getClientCapability(capabilities, client) {
   const entry = capabilities?.clients?.[client];
   if (!entry) {
-    return {
-      client,
-      targetLevel: 'L0',
-      effectiveLevel: 'L0',
-      capabilities: [],
-      limits: [`Unknown client: ${client}`],
-    };
+  return {
+    client,
+    targetLevel: 'L0',
+    effectiveLevel: 'L0',
+    capabilities: [],
+    limits: [`Unknown client: ${client}`],
+    requiredEntrypoint: 'aios-managed-runner',
+    directHostBypassAllowed: false,
+    turnCompression: { ...REQUIRED_TURN_COMPRESSION },
+  };
   }
 
   /* 中文注释：这里只记录已验证能力，不记录愿望清单；产品口径也必须从这里取。 */
@@ -51,6 +60,12 @@ export function getClientCapability(capabilities, client) {
     effectiveLevel: entry.targetLevel || 'L0',
     capabilities: Array.isArray(entry.capabilities) ? [...entry.capabilities] : [],
     limits: Array.isArray(entry.limits) ? [...entry.limits] : [],
+    requiredEntrypoint: entry.requiredEntrypoint || 'aios-managed-runner',
+    directHostBypassAllowed: entry.directHostBypassAllowed === true,
+    turnCompression: {
+      ...REQUIRED_TURN_COMPRESSION,
+      ...(entry.turnCompression && typeof entry.turnCompression === 'object' ? entry.turnCompression : {}),
+    },
   };
 }
 

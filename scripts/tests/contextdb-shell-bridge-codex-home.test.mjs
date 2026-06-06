@@ -587,7 +587,7 @@ test('wrapped interactive claude and gemini runs inject provider-specific route 
   }
 });
 
-test('wrapped interactive opencode runs fallback subagent client to codex-cli by default', async () => {
+test('wrapped interactive opencode runs with its native team provider by default', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-opencode-route-'));
   const fakeBin = await createFakePassthroughCommand('opencode', 'FAKE_OPENCODE');
   const fakeRunner = await createFakeRunner();
@@ -608,11 +608,11 @@ test('wrapped interactive opencode runs fallback subagent client to codex-cli by
   const autoPrompt = parseRunnerAutoPrompt(result.stdout);
   assert.match(
     autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider opencode --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
+    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider opencode --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
   );
   assert.match(
     autoPrompt,

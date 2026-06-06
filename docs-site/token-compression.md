@@ -94,3 +94,26 @@ Harness CLI's compression is built in — not a bolted-on tool:
 - [ContextDB](contextdb.md) — how memory works with compression
 - [Solo Harness](solo-harness.md) — long runs benefit most from compression
 - [Architecture](architecture.md) — technical details of the compression pipeline
+
+## All-Client Turn Compression (v1.50.1) {#all-client-turn-compression-v1501}
+
+v1.50.1 turns token compression from guidance into a measurable all-client contract.
+
+Every AIOS-managed agent turn must produce the shared `bidirectional-turn-compression` metric:
+
+- `pre_send`: compress the prompt/input before it reaches the target client or model.
+- `post_receive`: compress the client/model output before AIOS accepts it.
+- `requiredEntrypoint`: `aios-managed-runner`.
+- `directHostBypassAllowed`: `false`.
+- `uncontrolledHostOutput`: `policy-violation`.
+
+Check the current matrix:
+
+```bash
+node scripts/aios.mjs clients doctor --json
+node scripts/aios.mjs interception proof --json
+```
+
+The proof output includes `turn_compression_matrix` for Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, and `generic-mcp`. A compliant client has non-zero `saved_bytes` for both `pre_send` and `post_receive`.
+
+Direct host output outside the AIOS-managed runner is not counted as savings. It is recorded as `policy-violation` / `non_compliant` with `saved_bytes=0`, so reports cannot hide bypasses behind aggregate compression numbers.

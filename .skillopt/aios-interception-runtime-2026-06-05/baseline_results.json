@@ -1,0 +1,65 @@
+{
+  "score": 0.6666666666666666,
+  "results": [
+    {
+      "id": "valid-output-cost",
+      "hard": 1,
+      "soft": 1.0,
+      "fail_reason": "",
+      "checks": [
+        [
+          "proof command",
+          true
+        ],
+        [
+          "saved_bytes",
+          true
+        ],
+        [
+          "post_receive explicit",
+          true
+        ]
+      ]
+    },
+    {
+      "id": "valid-skip-question",
+      "hard": 0,
+      "soft": 0.0,
+      "fail_reason": "skip/platform guidance; token tests distinction",
+      "checks": [
+        [
+          "skip/platform guidance",
+          false
+        ],
+        [
+          "token tests distinction",
+          false
+        ]
+      ]
+    },
+    {
+      "id": "valid-all-client-contract",
+      "hard": 1,
+      "soft": 1.0,
+      "fail_reason": "",
+      "checks": [
+        [
+          "managed runner",
+          true
+        ],
+        [
+          "bypass false",
+          true
+        ],
+        [
+          "pre/post",
+          true
+        ],
+        [
+          "policy violation",
+          true
+        ]
+      ]
+    }
+  ]
+}

@@ -116,4 +116,4 @@ aios internal codemap doctor
 # 让你的 agent 带着地图而不是手电筒探索代码
 ```
 
-[完整文档 →](/codemap/){ .md-button }
+[完整文档 →](/zh/codemap/){ .md-button }

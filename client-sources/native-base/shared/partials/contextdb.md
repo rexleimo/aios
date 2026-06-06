@@ -29,6 +29,24 @@ Before finishing significant work or hitting a blocker:
 
 Do NOT save routine progress or trivial updates.
 
+### Memo Scope Rules
+Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, Gemini, Antigravity, and Crush can all recall the same project facts.
+
+Use agent-private memory only for client-specific scratch notes that should not pollute other clients:
+- `aios memo add "codex-only scratch note" --scope agent_private --agent codex-cli`
+- `aios memo list --agent claude-code` shows project-shared records plus Claude-private records, but not Codex-private records.
+
+Never store global project decisions, architecture facts, task handoffs, release blockers, or user preferences as `agent_private`. Those belong in the default `project_shared` scope or pinned project memo.
+
+### Unified Project Search
+Before ad-hoc grep or broad file reads, use unified search when you need project memory, docs, plans, and code references together:
+
+```bash
+node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json
+```
+
+Use `--source memory,plans` for memory plus plan recall, `--source docs,code` for repo reference lookup, and `--scope agent_private --agent <runtime-client-id>` only when intentionally searching that agent's private scratch notes. The command preserves `project_shared` visibility across clients and filters other agents' private memos.
+
 ### Persona & User Profile
 - `aios memo persona ...` manages `~/.aios/SOUL.md` (agent identity)
 - `aios memo user ...` manages `~/.aios/USER.md` (operator preferences)
