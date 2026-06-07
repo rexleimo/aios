@@ -1,0 +1,5 @@
+interface:
+  display_name: "RexAI Image Generation"
+  short_description: "Generate RexAI text-to-image and image-to-image results"
+  default_prompt: "Use RexAI to generate an image from a prompt or transform a reference image, then return the saved result path and job details."
+
