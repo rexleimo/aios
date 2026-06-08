@@ -86,7 +86,6 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
     ...process.env,
     AIOS_REPO: repo,
     AIOS_INSTALL_DIR: rootDir,
-    AIOS_FIRST_SETUP: '0',
   };
 
   if (process.platform === 'win32') {
@@ -96,7 +95,6 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
       '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12',
       `$env:AIOS_REPO='${psRepo}'`,
       `$env:AIOS_INSTALL_DIR='${psRootDir}'`,
-      "$env:AIOS_FIRST_SETUP='0'",
       'irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex',
     ].join('; ');
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');

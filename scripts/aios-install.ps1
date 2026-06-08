@@ -3,8 +3,7 @@ param(
   [string]$AssetUrl = $(if ($env:AIOS_ASSET_URL) { $env:AIOS_ASSET_URL } else { "" }),
   [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/harness-cli") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
-  [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" }),
-  [string]$FirstSetup = $(if ($env:AIOS_FIRST_SETUP) { $env:AIOS_FIRST_SETUP } else { "1" })
+  [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" })
 )
 
 Set-StrictMode -Version Latest
@@ -63,10 +62,6 @@ function Safe-RemoveDir([string]$Path) {
   if ($full -eq [System.IO.Path]::GetPathRoot($full)) { throw "Refusing to remove root: $full" }
   if ($full -eq [System.IO.Path]::GetFullPath($HOME)) { throw "Refusing to remove HOME: $full" }
   Remove-Item -LiteralPath $full -Recurse -Force -ErrorAction SilentlyContinue
-}
-
-function Test-FirstSetupDisabled([string]$Value) {
-  return @("0", "false", "off", "no") -contains $Value.ToLowerInvariant()
 }
 
 $assetUrl = if ($AssetUrl) { $AssetUrl } else { "https://github.com/$Repo/releases/latest/download/harness-cli.zip" }
@@ -177,23 +172,6 @@ try {
       Invoke-Checked -Command "powershell" -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $privacyInstaller, "--enable")
     } catch {
       Write-Host ("[warn] privacy guard init skipped: {0}" -f $_.Exception.Message)
-    }
-  }
-
-  if (Test-FirstSetupDisabled -Value $FirstSetup) {
-    Write-Host ("[info] first-run core setup skipped (AIOS_FIRST_SETUP={0})" -f $FirstSetup)
-  } else {
-    $aiosCli = Join-Path $InstallDir "scripts/aios.mjs"
-    if (Test-Path -LiteralPath $aiosCli) {
-      if (Get-Command node -ErrorAction SilentlyContinue) {
-        Write-Host "+ first-run core setup: node $aiosCli setup --components skills,native,superpowers --client all --skip-doctor"
-        Invoke-Checked -Command "node" -Arguments @($aiosCli, "setup", "--components", "skills,native,superpowers", "--client", "all", "--skip-doctor")
-      } else {
-        Write-Host "[warn] node not found; skip first-run core setup"
-        Write-Host "       Retry after installing Node.js: aios setup --components skills,native,superpowers"
-      }
-    } else {
-      Write-Host ("[warn] missing AIOS CLI; skip first-run core setup: {0}" -f $aiosCli)
     }
   }
 

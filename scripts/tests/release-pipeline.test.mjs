@@ -219,7 +219,6 @@ exit 0
       ...process.env,
       AIOS_ASSET_URL: zipPath,
       AIOS_INSTALL_DIR: installDir,
-      AIOS_FIRST_SETUP: '0',
     },
   });
 
@@ -249,14 +248,6 @@ exit 0
   );
   await writeFixtureFile(
     packageRoot,
-    'scripts/aios.mjs',
-    `#!/usr/bin/env node
-console.error("Cloning into 'fixture-superpowers'...");
-process.exit(0);
-`
-  );
-  await writeFixtureFile(
-    packageRoot,
     'scripts/install-contextdb-shell.ps1',
     await readFile(path.join(workspaceRoot, 'scripts', 'install-contextdb-shell.ps1'), 'utf8')
   );
@@ -277,14 +268,12 @@ process.exit(0);
     `$env:AIOS_ASSET_URL = ${quotePowerShellSingle(zipPath)}`,
     `$env:AIOS_INSTALL_DIR = ${quotePowerShellSingle(installDir)}`,
     `$env:AIOS_POWERSHELL_PROFILE = ${quotePowerShellSingle(profilePath)}`,
-    `$env:AIOS_FIRST_SETUP = '1'`,
     `Get-Content -LiteralPath ${quotePowerShellSingle(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'))} -Raw | Invoke-Expression`,
   ].join('; ');
 
   const result = run('powershell', ['-NoProfile', '-Command', command]);
 
   assertOk(result);
-  assert.match(result.stderr, /Cloning into 'fixture-superpowers'/);
   assert.match(result.stdout, /\[ok\] Installed AIOS/);
 });
 
@@ -299,18 +288,17 @@ test('PowerShell installer fails fast when native setup commands fail', async ()
   assert.match(installPs1, /AIOS runtime deps install did not produce expected TUI runner/);
   assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$shellInstaller, "--mode", \$WrapMode, "--force"\)/);
   assert.match(installPs1, /Invoke-Checked -Command "powershell" -Arguments @\("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", \$privacyInstaller, "--enable"\)/);
-  assert.match(installPs1, /Invoke-Checked -Command "node" -Arguments @\(\$aiosCli, "setup"/);
 });
 
-test('one-liner installers perform first-run core setup before suggesting doctor', async () => {
+test('one-liner installers do not auto-run client setup or native enhancements', async () => {
   const workspaceRoot = process.cwd();
   const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');
   const installPs1 = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.ps1'), 'utf8');
 
-  assert.match(installSh, /setup --components skills,native,superpowers --client all --skip-doctor/);
-  assert.match(installPs1, /setup --components skills,native,superpowers --client all --skip-doctor/);
-  assert.doesNotMatch(installSh, /setup --components [^\n]*browser/);
-  assert.doesNotMatch(installPs1, /setup --components [^\n]*browser/);
+  assert.doesNotMatch(installSh, /setup --components skills,native,superpowers --client all --skip-doctor/);
+  assert.doesNotMatch(installPs1, /setup --components skills,native,superpowers --client all --skip-doctor/);
+  assert.doesNotMatch(installSh, /\bif is_disabled\b/);
+  assert.doesNotMatch(installPs1, /\bTest-FirstSetupDisabled\b/);
 });
 
 test('release-preflight.sh validates matching tag, VERSION, changelog, and native/skills sync state', async () => {
