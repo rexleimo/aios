@@ -318,6 +318,7 @@ Current strict policy: Antigravity and Crush may receive generated instructions/
   - Debugging / failure analysis → `superpowers:systematic-debugging`
   - Test-first implementation → `superpowers:test-driven-development`
   - About to claim completion → `superpowers:verification-before-completion`
+- **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
 - Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
 
@@ -407,13 +408,20 @@ When this client is launched by AIOS solo harness (`aios harness run`):
 - **Evidence**: Before claiming a sub-task is done, produce concrete evidence (test output, file diffs, screenshots). The harness validates evidence before advancing.
 - **Failure recovery**: On failure, do not silently retry. Write the error to `aios memo add` with the failure context, then exit. The harness will retry with fresh context.
 
-# AIOS For Crush
+## AIOS Native Codex Layer
 
-This repository provides compatibility-tier native enhancements for Crush (charmbracelet) through repo-local skills and AIOS runtime conventions.
+- Prefer repo-local `.codex/skills` and `.codex/agents`.
+- Keep work grounded in the AIOS runtime and verification flow.
 
-Crush auto-discovers skills from `.agents/skills`, `.crush/skills`, and `.claude/skills` (project and global). It also auto-loads `AGENTS.md`, `CLAUDE.md`, and `GEMINI.md` as context files — so all AIOS instructions are automatically in scope.
+# AIOS For OpenCode
+
+This repository provides compatibility-tier native enhancements for OpenCode through repo-local skills and AIOS runtime conventions.
 
 ## Agent Self-Trigger
 
 When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
+
+## Turn Compression Compliance
+
+OpenCode work in this repository must obey the shared AIOS `bidirectional-turn-compression` metric: run live work through the AIOS-managed runner, require `pre_send` compression before model input, require `post_receive` compression after model output, and treat direct host bypass as a policy violation.
 <!-- AIOS NATIVE END -->
