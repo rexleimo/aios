@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.50.2] - 2026-06-09
+
+- feat(skills): add pre-edit-safety-gate skill with CRG-backed edit safety enforcement, routing, and native AGENTS.md injection for all 7 client surfaces
+
 ## [1.50.1] - 2026-06-05
 
 - enforce all-client AIOS turn compression compliance
