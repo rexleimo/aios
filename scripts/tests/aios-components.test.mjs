@@ -230,12 +230,24 @@ async function makeFakeMcpServer(rootDir) {
   return mcpDir;
 }
 
-async function writeSkillsCatalog(rootDir, skills) {
+async function writeTestManifest(rootDir, skills) {
   const configDir = path.join(rootDir, 'config');
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(configDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills,
+  await writeFile(path.join(configDir, 'skills-sync-manifest.json'), JSON.stringify({
+    schemaVersion: 1,
+    generatedRoots: { codex: '.codex/skills' },
+    skills: skills.map((s) => ({
+      relativeSkillPath: s.name,
+      installCatalogName: s.name,
+      description: s.description,
+      clients: s.clients,
+      scopes: s.scopes,
+      defaultInstall: s.defaultInstall,
+      tags: s.tags,
+      repoTargets: s.clients,
+    })),
+    legacyUnmanaged: [],
+    legacyReplaceable: [],
   }, null, 2), 'utf8');
 }
 
@@ -401,7 +413,7 @@ test('skills install copies repo-managed skills by default and uninstall removes
   const codexSkillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
   await mkdir(codexSkillDir, { recursive: true });
   await writeFile(path.join(codexSkillDir, 'SKILL.md'), '# sample\n', 'utf8');
-  await writeSkillsCatalog(rootDir, [
+  await writeTestManifest(rootDir, [
     {
       name: 'sample-skill',
       description: 'sample',
@@ -1159,11 +1171,14 @@ test('skills doctor warns on non-discoverable repo skill roots', async () => {
   const rootDir = await makeTemp('aios-skills-doctor-root-');
   const badSkillDir = path.join(rootDir, '.baoyu-skills', 'wrong-skill');
   const sampleSkillDir = path.join(rootDir, '.codex', 'skills', 'sample-skill');
+  const canonicalSkillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
   await mkdir(badSkillDir, { recursive: true });
   await mkdir(sampleSkillDir, { recursive: true });
+  await mkdir(canonicalSkillDir, { recursive: true });
   await writeFile(path.join(badSkillDir, 'SKILL.md'), '# wrong\n', 'utf8');
   await writeFile(path.join(sampleSkillDir, 'SKILL.md'), '# sample\n', 'utf8');
-  await writeSkillsCatalog(rootDir, [
+  await writeFile(path.join(canonicalSkillDir, 'SKILL.md'), '# sample\n', 'utf8');
+  await writeTestManifest(rootDir, [
     {
       name: 'sample-skill',
       description: 'sample',

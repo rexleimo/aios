@@ -21,6 +21,27 @@
         "opencode",
         "crush",
         "agents"
+      ],
+      "description": "Route tasks to appropriate workflows. TRIGGERS: 分析,设计,实现,调试,并发,并行,agent team,长任务,harness,plan,brainstorm,debug,multi-step",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "workflow",
+        "routing",
+        "essential"
       ]
     },
     {
@@ -34,6 +55,28 @@
         "opencode",
         "crush",
         "agents"
+      ],
+      "description": "Use before ANY code modification — editing files, creating new files, or changing behavior. Mandatory CRG impact-radius check, dependency tracing, style alignment, and test-coverage verification before edits. Post-edit CRG update and verification.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "safety",
+        "edit",
+        "verification",
+        "essential"
       ]
     },
     {
@@ -47,6 +90,25 @@
         "opencode",
         "crush",
         "agents"
+      ],
+      "description": "Discover installable skills.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "discovery"
       ]
     },
     {
@@ -60,6 +122,26 @@
         "opencode",
         "crush",
         "agents"
+      ],
+      "description": "Evidence-first debugging: inject zero-dependency log calls, collect via debug-hub HTTP API, analyze through MCP tools.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": false,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "debug",
+        "verification"
       ]
     },
     {
@@ -72,6 +154,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Research-before-building workflow.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "research"
       ]
     },
     {
@@ -84,6 +185,27 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Apply DESIGN.md templates from VoltAgent awesome-design-md via getdesign CLI.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "design",
+        "ui",
+        "essential"
       ]
     },
     {
@@ -96,6 +218,28 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Build distinctive production-grade frontend UI, including no-design-draft workflows with DESIGN.md integration.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "frontend",
+        "design",
+        "ui",
+        "essential"
       ]
     },
     {
@@ -108,6 +252,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Lightweight security hygiene for agent configs.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "security"
       ]
     },
     {
@@ -120,6 +283,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Evidence-before-assertions workflow.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "verification"
       ]
     },
     {
@@ -132,6 +314,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Decide semantic versioning impact before release.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "release"
       ]
     },
     {
@@ -144,6 +345,23 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Optimize a page for SEO and GEO.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": false,
+        "project": false
+      },
+      "tags": [
+        "content",
+        "seo"
       ]
     },
     {
@@ -156,6 +374,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Operational constraints and best practices for skill execution.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "general",
+        "safety"
       ]
     },
     {
@@ -168,6 +405,23 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Canonical architecture and operating constraints for aios.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "repo"
       ]
     },
     {
@@ -180,6 +434,23 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Harness controls for long-running AIOS jobs.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "harness"
       ]
     },
     {
@@ -192,6 +463,28 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Quick reference for code-review-graph (CRG) MCP tools. Use when you need to look up a CRG tool name, parameter, or pattern. For workflow guidance, see AGENTS.md decision checkpoints. Requires `aios internal codemap install`.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "codemap",
+        "code-review",
+        "crg",
+        "reference"
       ]
     },
     {
@@ -204,6 +497,23 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Automatic ContextDB persistence workflow.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "contextdb"
       ]
     },
     {
@@ -216,6 +526,29 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Unified AIOS token optimization — output compression (tight/ultra/precise), input compression (browser/tool), data plane interception (MCP proxy, raw refs, metrics). Replaces RTK/Caveman with native implementation.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "token",
+        "compression",
+        "interception",
+        "output",
+        "input"
       ]
     },
     {
@@ -228,6 +561,25 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Recall offloaded AIOS tool and browser outputs through Mermaid canvas and targeted refs reads.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "token",
+        "offload",
+        "recall"
       ]
     },
     {
@@ -240,6 +592,24 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Fast commit-and-push shortcut for this repository.",
+      "clients": [
+        "codex",
+        "claude"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "git",
+        "essential"
       ]
     },
     {
@@ -252,6 +622,29 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Initialize a lightweight Node.js harness runner (harness/ + .harness/) to drive codex/claude/gemini/opencode CLIs with logs + checkpoints.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": false,
+        "project": false
+      },
+      "tags": [
+        "harness",
+        "bootstrap",
+        "runner",
+        "cli",
+        "node",
+        "agents"
       ]
     },
     {
@@ -264,6 +657,28 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate. TRIGGERS: 模型调度, model dispatch, 选模型, 路由, routing, dispatch to model.",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": false
+      },
+      "tags": [
+        "aios",
+        "model-router",
+        "orchestration",
+        "dispatch",
+        "essential"
       ]
     },
     {
@@ -276,6 +691,28 @@
         "antigravity",
         "opencode",
         "crush"
+      ],
+      "description": "Agent-native SkillOpt training loop — optimize skill documents through iterative rollout, reflection, and validation without external APIs",
+      "clients": [
+        "codex",
+        "claude",
+        "gemini",
+        "opencode"
+      ],
+      "scopes": [
+        "global",
+        "project"
+      ],
+      "defaultInstall": {
+        "global": true,
+        "project": true
+      },
+      "tags": [
+        "skill",
+        "training",
+        "optimization",
+        "SkillOpt",
+        "iteration"
       ]
     },
     {

@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.50.3] - 2026-06-09
+
+- refactor(skills): merge skills-catalog.json into skills-sync-manifest.json as single data source for skill discovery and sync
+- fix(release): include .crush/skills and .crush/agents in release package
+
 ## [1.50.2] - 2026-06-09
 
 - feat(skills): add pre-edit-safety-gate skill with CRG-backed edit safety enforcement, routing, and native AGENTS.md injection for all 7 client surfaces

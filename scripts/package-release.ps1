@@ -26,6 +26,9 @@ try {
     "AGENTS.md",
     "CHANGELOG.md",
     "VERSION",
+    ".nvmrc",
+    ".node-version",
+    ".npmrc",
     "package.json",
     "package-lock.json",
     "README.md",
@@ -38,10 +41,16 @@ try {
     "scripts",
     "mcp-server",
     ".claude/agents",
+    ".claude/skills",
     ".codex/skills",
     ".codex/agents",
-    ".claude/skills",
-    ".agents/skills"
+    ".agents/skills",
+    ".opencode/skills",
+    ".opencode/agents",
+    ".gemini/skills",
+    ".gemini/commands",
+    ".crush/skills",
+    ".crush/agents"
   )
 
   $archivePaths = @()

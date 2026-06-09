@@ -47,6 +47,13 @@ export function loadSkillsSyncManifest(rootDir) {
           .map(([surface, relPath]) => [normalizeString(surface), normalizeString(relPath)])
           .filter(([, relPath]) => relPath))
         : {},
+      description: typeof entry.description === 'string' ? entry.description : '',
+      clients: normalizeStringArray(entry.clients),
+      scopes: normalizeStringArray(entry.scopes),
+      defaultInstall: typeof entry.defaultInstall === 'object' && entry.defaultInstall
+        ? entry.defaultInstall
+        : { global: false, project: false },
+      tags: normalizeStringArray(entry.tags),
     })).filter((entry) => entry.relativeSkillPath),
     legacyUnmanaged,
     legacyReplaceable,

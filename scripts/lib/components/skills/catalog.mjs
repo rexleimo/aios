@@ -10,10 +10,6 @@ import {
 
 import { normalizeSelectedSkills } from './normalizers.mjs';
 
-export function resolveCatalogPath(rootDir) {
-  return path.join(rootDir, 'config', 'skills-catalog.json');
-}
-
 export function toPosixPath(inputPath) {
   return String(inputPath || '').split(path.sep).join('/');
 }
@@ -120,23 +116,31 @@ export function resolveCatalogEntries({ rootDir, catalog, clientName, scope, sel
 }
 
 export function loadSkillsCatalog(rootDir) {
-  const catalogPath = resolveCatalogPath(rootDir);
-  if (!fs.existsSync(catalogPath)) {
-    throw new Error(`Skills catalog not found: ${catalogPath}`);
+  let manifest;
+  try {
+    manifest = loadSkillsSyncManifest(rootDir);
+  } catch {
+    throw new Error(`Skills sync manifest not found. Run: node scripts/sync-skills.mjs`);
   }
 
-  const parsed = JSON.parse(fs.readFileSync(catalogPath, 'utf8'));
-  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
-  return skills.map((entry) => ({
-    ...entry,
-    clients: Array.isArray(entry.clients) ? entry.clients.map((client) => String(client || '').trim().toLowerCase()).filter(Boolean) : [],
-    scopes: Array.isArray(entry.scopes) ? entry.scopes.map((scope) => String(scope || '').trim().toLowerCase()).filter(Boolean) : [],
-    source: String(entry.source || '').trim(),
-    name: String(entry.name || '').trim(),
-    description: String(entry.description || '').trim(),
-    defaultInstall: typeof entry.defaultInstall === 'object' && entry.defaultInstall
-      ? entry.defaultInstall
-      : { global: false, project: false },
-    tags: Array.isArray(entry.tags) ? entry.tags.map((tag) => String(tag || '').trim()).filter(Boolean) : [],
-  })).filter((entry) => entry.name && entry.source);
+  return manifest.skills
+    .filter((entry) => entry.installCatalogName !== null)
+    .map((entry) => ({
+      name: String(entry.installCatalogName || '').trim(),
+      description: String(entry.description || '').trim(),
+      source: path.posix.join('skill-sources', entry.relativeSkillPath),
+      clients: Array.isArray(entry.clients)
+        ? entry.clients.map((c) => String(c || '').trim().toLowerCase()).filter(Boolean)
+        : [],
+      scopes: Array.isArray(entry.scopes)
+        ? entry.scopes.map((s) => String(s || '').trim().toLowerCase()).filter(Boolean)
+        : [],
+      defaultInstall: typeof entry.defaultInstall === 'object' && entry.defaultInstall
+        ? entry.defaultInstall
+        : { global: false, project: false },
+      tags: Array.isArray(entry.tags)
+        ? entry.tags.map((t) => String(t || '').trim()).filter(Boolean)
+        : [],
+    }))
+    .filter((entry) => entry.name && entry.source);
 }

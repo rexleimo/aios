@@ -20,50 +20,24 @@ async function writeSkill(rootDir, relativeDir, body = '# sample\n') {
   await writeFile(path.join(skillDir, 'SKILL.md'), body, 'utf8');
 }
 
-async function writeCatalog(rootDir) {
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: '.codex/skills/find-skills',
-        clients: ['codex'],
-        scopes: ['global', 'project'],
-        defaultInstall: { global: true, project: false },
-        tags: ['general'],
-      },
-      {
-        name: 'xhs-ops-methods',
-        description: 'project only',
-        source: '.codex/skills/xhs-ops-methods',
-        clients: ['codex'],
-        scopes: ['project'],
-        defaultInstall: { global: false, project: false },
-        tags: ['xhs'],
-      },
-    ],
-  }, null, 2), 'utf8');
-}
-
-async function writeCanonicalCatalog(rootDir, skills = [
-  {
-    name: 'find-skills',
-    description: 'general',
-    source: 'skill-sources/find-skills',
-    clients: ['codex'],
-    scopes: ['global', 'project'],
-    defaultInstall: { global: true, project: false },
-    tags: ['general'],
-  },
-]) {
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills,
+async function writeTestManifest(rootDir, skills) {
+  const configDir = path.join(rootDir, 'config');
+  await mkdir(configDir, { recursive: true });
+  await writeFile(path.join(configDir, 'skills-sync-manifest.json'), JSON.stringify({
+    schemaVersion: 1,
+    generatedRoots: { codex: '.codex/skills' },
+    skills: skills.map((s) => ({
+      relativeSkillPath: s.relativeSkillPath || s.name,
+      installCatalogName: s.name,
+      description: s.description,
+      clients: s.clients,
+      scopes: s.scopes,
+      defaultInstall: s.defaultInstall,
+      tags: s.tags,
+      repoTargets: s.repoTargets || s.clients,
+    })),
+    legacyUnmanaged: [],
+    legacyReplaceable: [],
   }, null, 2), 'utf8');
 }
 
@@ -71,7 +45,9 @@ test('default install mode copies skill trees and writes install metadata', asyn
   const rootDir = await makeTemp('aios-skills-copy-root-');
   const codexHome = await makeTemp('aios-skills-copy-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeCanonicalCatalog(rootDir);
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   await installContextDbSkills({
     rootDir,
@@ -95,7 +71,9 @@ test('explicit link mode preserves symlink installs', async () => {
   const rootDir = await makeTemp('aios-skills-link-root-');
   const codexHome = await makeTemp('aios-skills-link-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeCanonicalCatalog(rootDir);
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   await installContextDbSkills({
     rootDir,
@@ -114,7 +92,9 @@ test('doctor recognizes managed copy installs and legacy managed links', async (
   const rootDir = await makeTemp('aios-skills-doctor-modes-root-');
   const codexHome = await makeTemp('aios-skills-doctor-modes-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeCanonicalCatalog(rootDir);
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
   await writeSkill(rootDir, '.codex/skills/find-skills');
 
   await installContextDbSkills({
@@ -156,7 +136,9 @@ test('doctor recognizes managed copy installs and legacy managed links', async (
 test('project installs reject the source repo root', async () => {
   const rootDir = await makeTemp('aios-skills-source-repo-root-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeCanonicalCatalog(rootDir);
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   await assert.rejects(
     installContextDbSkills({
@@ -173,9 +155,12 @@ test('project installs reject the source repo root', async () => {
 test('global scope installs only global-eligible catalog skills', async () => {
   const rootDir = await makeTemp('aios-skills-catalog-root-');
   const codexHome = await makeTemp('aios-skills-catalog-home-');
-  await writeSkill(rootDir, '.codex/skills/find-skills');
-  await writeSkill(rootDir, '.codex/skills/xhs-ops-methods');
-  await writeCatalog(rootDir);
+  await writeSkill(rootDir, 'skill-sources/find-skills');
+  await writeSkill(rootDir, 'skill-sources/xhs-ops-methods');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+    { name: 'xhs-ops-methods', description: 'project only', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: false }, tags: ['xhs'] },
+  ]);
 
   await installContextDbSkills({
     rootDir,
@@ -203,31 +188,10 @@ test('explicit selected skills limit installation candidates', async () => {
   const codexHome = await makeTemp('aios-skills-selected-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
   await writeSkill(rootDir, 'skill-sources/xhs-ops-methods');
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: 'skill-sources/find-skills',
-        clients: ['codex'],
-        scopes: ['global', 'project'],
-        defaultInstall: { global: true, project: false },
-        tags: ['general'],
-      },
-      {
-        name: 'xhs-ops-methods',
-        description: 'project only',
-        source: 'skill-sources/xhs-ops-methods',
-        clients: ['codex'],
-        scopes: ['project'],
-        defaultInstall: { global: false, project: false },
-        tags: ['xhs'],
-      },
-    ],
-  }, null, 2), 'utf8');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+    { name: 'xhs-ops-methods', description: 'project only', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: false }, tags: ['xhs'] },
+  ]);
 
   await installContextDbSkills({
     rootDir,
@@ -255,24 +219,10 @@ test('doctor and uninstall respect project scope targets', async () => {
   const projectRoot = await makeTemp('aios-skills-project-workspace-');
   const codexHome = await makeTemp('aios-skills-project-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeCatalog(rootDir);
 
-  const catalog = {
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: 'skill-sources/find-skills',
-        clients: ['codex'],
-        scopes: ['global', 'project'],
-        defaultInstall: { global: true, project: false },
-        tags: ['general'],
-      },
-    ],
-  };
-  await mkdir(path.join(rootDir, 'config'), { recursive: true });
-  await writeFile(path.join(rootDir, 'config', 'skills-catalog.json'), JSON.stringify(catalog, null, 2), 'utf8');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   const logs = [];
   const io = { log: (line) => logs.push(String(line)) };
@@ -325,22 +275,9 @@ test('project scope can target a workspace that differs from the catalog source 
   const projectRoot = await makeTemp('aios-skills-workspace-root-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
 
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: 'skill-sources/find-skills',
-        clients: ['codex'],
-        scopes: ['project'],
-        defaultInstall: { global: false, project: true },
-        tags: ['general'],
-      },
-    ],
-  }, null, 2), 'utf8');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: true }, tags: ['general'] },
+  ]);
 
   await installContextDbSkills({
     rootDir,
@@ -362,22 +299,9 @@ test('doctor warns about project overriding global even when scope=global', asyn
   const codexHome = await makeTemp('aios-skills-override-global-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
 
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: 'skill-sources/find-skills',
-        clients: ['codex'],
-        scopes: ['global', 'project'],
-        defaultInstall: { global: true, project: false },
-        tags: ['general'],
-      },
-    ],
-  }, null, 2), 'utf8');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   await installContextDbSkills({ rootDir, client: 'codex', scope: 'global', homeMap: { codex: codexHome } });
   await installContextDbSkills({ rootDir, projectRoot, client: 'codex', scope: 'project', homeMap: { codex: codexHome } });
@@ -401,22 +325,9 @@ test('doctor warns about project overriding global even when scope=project', asy
   const codexHome = await makeTemp('aios-skills-override-project-home-');
   await writeSkill(rootDir, 'skill-sources/find-skills');
 
-  const catalogDir = path.join(rootDir, 'config');
-  await mkdir(catalogDir, { recursive: true });
-  await writeFile(path.join(catalogDir, 'skills-catalog.json'), JSON.stringify({
-    version: 1,
-    skills: [
-      {
-        name: 'find-skills',
-        description: 'general',
-        source: 'skill-sources/find-skills',
-        clients: ['codex'],
-        scopes: ['global', 'project'],
-        defaultInstall: { global: true, project: false },
-        tags: ['general'],
-      },
-    ],
-  }, null, 2), 'utf8');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
 
   await installContextDbSkills({ rootDir, client: 'codex', scope: 'global', homeMap: { codex: codexHome } });
   await installContextDbSkills({ rootDir, projectRoot, client: 'codex', scope: 'project', homeMap: { codex: codexHome } });
