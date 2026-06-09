@@ -17,6 +17,12 @@ description: "Route tasks to appropriate superpowers workflows. TRIGGER: 分析�
 
 **This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill via the Skill tool — never inline the process.
 
+### 0. Mandatory Pre-Edit Safety Gate (ALL task types)
+
+**BEFORE any code modification** (editing, creating, deleting files), regardless of task type, MUST invoke: `pre-edit-safety-gate`
+
+This gate checks CRG impact radius, dependencies, style alignment, and test coverage before edits, and enforces CRG graph update + detect_changes + typecheck + test after edits. It applies to ALL task types below. Do not skip.
+
 ### 1. Design/Creative Tasks (设计/创意任务)
 **Keywords**: 设计、创意、新功能、新特性、build、create、implement、brainstorm、头脑风暴
 

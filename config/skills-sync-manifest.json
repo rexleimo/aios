@@ -24,6 +24,19 @@
       ]
     },
     {
+      "relativeSkillPath": "pre-edit-safety-gate",
+      "installCatalogName": "pre-edit-safety-gate",
+      "repoTargets": [
+        "codex",
+        "claude",
+        "gemini",
+        "antigravity",
+        "opencode",
+        "crush",
+        "agents"
+      ]
+    },
+    {
       "relativeSkillPath": "find-skills",
       "installCatalogName": "find-skills",
       "repoTargets": [
