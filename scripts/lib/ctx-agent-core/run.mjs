@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
-import { compressPostReceiveTurn, compressPreSendTurn } from '../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, requireTurnCompression } from '../interception/index.mjs';
 import { loadFacade, generateFacadeFromSession } from '../contextdb/facade.mjs';
 import { extractTouchedFilesFromText, writeContinuitySummary } from '../contextdb/continuity.mjs';
 import { contextDbRelativePath, resolveTasksRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
@@ -206,16 +206,27 @@ async function compactCtxAgentPreSend({ opts, context, routedPrompt }) {
   const sentText = context.openCodeContextPacketPath
     ? routedPrompt
     : context.injectContext ? `${context.effectiveContextText}\n\n${routedPrompt}` : routedPrompt;
-  const packet = await compressPreSendTurn({
+  const packet = await requireTurnCompression({
     workspaceRoot: opts.workspaceRoot,
     cwd: opts.workspaceRoot,
     sessionId: opts.sessionId,
     clientId: opts.agent,
     hostLevel: 'L2',
-    prompt: sentText,
     mode: 'tight',
-    metrics: { enabled: true },
+    eventKind: 'pre_send',
+    text: sentText,
+    run: () => compressPreSendTurn({
+      workspaceRoot: opts.workspaceRoot,
+      cwd: opts.workspaceRoot,
+      sessionId: opts.sessionId,
+      clientId: opts.agent,
+      hostLevel: 'L2',
+      prompt: sentText,
+      mode: 'tight',
+      metrics: { enabled: true },
+    }),
   });
+  emitTurnCompressionLog(packet);
   if (!packet?.refs?.length) {
     return { contextText: context.effectiveContextText, prompt: routedPrompt, injectContext: context.injectContext };
   }
@@ -227,16 +238,27 @@ async function compactCtxAgentPreSend({ opts, context, routedPrompt }) {
 }
 
 async function compactCtxAgentPostReceive(opts, output) {
-  const packet = await compressPostReceiveTurn({
+  const packet = await requireTurnCompression({
     workspaceRoot: opts.workspaceRoot,
     cwd: opts.workspaceRoot,
     sessionId: opts.sessionId,
     clientId: opts.agent,
     hostLevel: 'L2',
-    output,
     mode: 'tight',
-    metrics: { enabled: true },
+    eventKind: 'post_receive',
+    text: output,
+    run: () => compressPostReceiveTurn({
+      workspaceRoot: opts.workspaceRoot,
+      cwd: opts.workspaceRoot,
+      sessionId: opts.sessionId,
+      clientId: opts.agent,
+      hostLevel: 'L2',
+      output,
+      mode: 'tight',
+      metrics: { enabled: true },
+    }),
   });
+  emitTurnCompressionLog(packet);
   return packet?.refs?.length ? JSON.stringify(packet, null, 2) : output;
 }
 

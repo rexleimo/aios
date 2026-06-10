@@ -692,17 +692,25 @@ test('parseArgs accepts harness subcommands', () => {
   assert.equal(stop.options.workspaceRoot, '/tmp/demo');
 });
 
-test('parseArgs accepts interception proof and repair commands', () => {
+test('parseArgs accepts interception proof, tail, and repair commands', () => {
   const proof = parseArgs(['interception', 'proof', '--session', 'proof-1', '--json']);
   assert.equal(proof.command, 'interception');
   assert.equal(proof.options.subcommand, 'proof');
   assert.equal(proof.options.session, 'proof-1');
   assert.equal(proof.options.json, true);
 
-  const doctor = parseArgs(['interception', 'doctor', '--fix', '--workspace', '/tmp/ws']);
+  const tail = parseArgs(['interception', 'tail', '--latest', '--limit', '3', '--json']);
+  assert.equal(tail.command, 'interception');
+  assert.equal(tail.options.subcommand, 'tail');
+  assert.equal(tail.options.latest, true);
+  assert.equal(tail.options.limit, 3);
+  assert.equal(tail.options.json, true);
+
+  const doctor = parseArgs(['interception', 'doctor', '--fix', '--enforce-turns', '--workspace', '/tmp/ws']);
   assert.equal(doctor.command, 'interception');
   assert.equal(doctor.options.subcommand, 'doctor');
   assert.equal(doctor.options.fix, true);
+  assert.equal(doctor.options.enforceTurns, true);
   assert.equal(doctor.options.workspaceRoot, '/tmp/ws');
 });
 

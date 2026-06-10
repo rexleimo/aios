@@ -61,6 +61,30 @@ function buildWrappedRunnerArgs({ runner, workspace, opts, project, aiosInitDone
   return args;
 }
 
+function buildDirectNativeBlockMessage({ opts, workspace, project }) {
+  const command = [
+    'node',
+    path.join('scripts', 'ctx-agent.mjs'),
+    '--agent',
+    opts.agent,
+    '--workspace',
+    workspace,
+    '--project',
+    project || path.basename(workspace),
+  ].join(' ');
+  return [
+    '[contextdb-shell-bridge] direct native agent execution blocked',
+    'AIOS workspaces require pre_send/post_receive turn compression.',
+    `Use: ${command}`,
+    'Set CTXDB_ALLOW_DIRECT_NATIVE_AGENT=1 only for explicit diagnostics.',
+  ].join('\n');
+}
+
+function shouldBlockDirectNativeAgent({ env, interactive, workspace, aiosInitDone, shouldWrap }) {
+  if (env.CTXDB_ALLOW_DIRECT_NATIVE_AGENT === '1') return false;
+  return Boolean(interactive && workspace && aiosInitDone && !shouldWrap);
+}
+
 async function prepareBridgeState(opts, env) {
   const firstArg = opts.passthroughArgs[0] || '';
   const blockedSubcommand = isBlockedSubcommand(opts.command, firstArg);
@@ -157,6 +181,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const normalizedArgs = normalizePassthroughArgs(opts.command, firstArg, opts.passthroughArgs);
+  if (shouldBlockDirectNativeAgent({ env, interactive, workspace, aiosInitDone, shouldWrap })) {
+    process.stderr.write(`${buildDirectNativeBlockMessage({ opts, workspace, project })}\n`);
+    process.exit(66);
+  }
+
   if (!shouldWrap) {
     const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, env);
     process.exit(code);

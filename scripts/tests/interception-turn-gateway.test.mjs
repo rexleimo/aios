@@ -9,8 +9,10 @@ import {
   TURN_COMPRESSION_CLIENT_IDS,
   compressPostReceiveTurn,
   compressPreSendTurn,
+  formatTurnCompressionLog,
   readRawRef,
   recordUncontrolledTurn,
+  requireTurnCompression,
   runTurnCompressionMatrixProof,
 } from '../lib/interception/index.mjs';
 import { CLIENT_ORDER } from '../lib/interception/clients/capabilities.mjs';
@@ -121,6 +123,33 @@ test('turn coverage includes every registered client plus AIOS-owned virtual cli
   }
 });
 
+test('turn compression log formatter emits a readable execution line', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-turn-log-format-'));
+  try {
+    const packet = await compressPreSendTurn({
+      workspaceRoot,
+      cwd: workspaceRoot,
+      sessionId: 'turn-log',
+      clientId: 'codex',
+      hostLevel: 'L2',
+      prompt: PRE_SEND_SENTINEL.repeat(40),
+      mode: 'tight',
+      now: () => new Date('2026-06-05T00:00:00.000Z'),
+      thresholds: { minRawBytes: 64 },
+      metrics: { enabled: false },
+    });
+
+    const line = formatTurnCompressionLog(packet);
+    assert.match(line, /pre_send/);
+    assert.match(line, /client=codex/);
+    assert.match(line, /strategy=/);
+    assert.match(line, /saved=/);
+    assert.match(line, /ref=/);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
 
 test('turn matrix proof emits aligned pre-send and post-receive metrics for every client', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-turn-matrix-'));
@@ -186,6 +215,37 @@ test('uncontrolled host output is recorded without fake savings', async () => {
 
     const records = await readMetricsRecords({ workspaceRoot, sessionId: 'direct-host' });
     assert.deepEqual(records[0], record);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('required turn compression records a policy violation and fails closed when hook execution breaks', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-turn-required-'));
+  try {
+    await assert.rejects(
+      requireTurnCompression({
+        workspaceRoot,
+        cwd: workspaceRoot,
+        sessionId: 'required-turn',
+        clientId: 'codex',
+        hostLevel: 'L2',
+        mode: 'tight',
+        eventKind: 'pre_send',
+        text: PRE_SEND_SENTINEL.repeat(40),
+        run: async () => {
+          throw new Error('compress boom');
+        },
+      }),
+      /required pre_send failed for codex: compress boom/u
+    );
+
+    const records = await readMetricsRecords({ workspaceRoot, sessionId: 'required-turn' });
+    assert.equal(records.length, 1);
+    assert.equal(records[0].event_kind, 'uncontrolled_host_output');
+    assert.equal(records[0].client_id, 'codex');
+    assert.equal(records[0].policy_violation, true);
+    assert.match(records[0].fallback_reason, /missing pre_send turn compression/i);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }

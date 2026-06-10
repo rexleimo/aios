@@ -186,6 +186,71 @@ export async function recordUncontrolledTurn(options = {}) {
   });
 }
 
+export async function requireTurnCompression(options = {}) {
+  const {
+    workspaceRoot = options.cwd || process.cwd(),
+    cwd = workspaceRoot,
+    sessionId = 'default',
+    clientId,
+    hostLevel = '',
+    mode = 'tight',
+    eventKind,
+    text = '',
+    run,
+  } = options;
+
+  if (typeof run !== 'function') {
+    throw new TypeError('requireTurnCompression requires a run function');
+  }
+
+  try {
+    const packet = await run();
+    if (!packet || packet.type !== INTERCEPTION_PACKET_TYPE) {
+      throw new Error('compression hook did not return an AIOS compact packet');
+    }
+    return packet;
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    await recordUncontrolledTurn({
+      workspaceRoot,
+      cwd,
+      sessionId,
+      clientId,
+      hostLevel,
+      mode,
+      rawBytes: Buffer.byteLength(String(text || ''), 'utf8'),
+      fallbackReason: `missing ${eventKind} turn compression: ${reason}`,
+    });
+    throw new Error(`required ${eventKind} failed for ${clientId}: ${reason}`);
+  }
+}
+
+export function formatTurnCompressionLog(packet) {
+  if (!packet || typeof packet !== 'object') return '';
+  const metrics = packet.metrics || {};
+  const refId = packet.refs?.[0]?.ref_id || 'inline';
+  const ratio = Number.isFinite(metrics.saving_ratio) ? metrics.saving_ratio.toFixed(4) : '0.0000';
+  return [
+    packet.event_kind || 'unknown',
+    `client=${packet.client_id || packet.host || 'unknown'}`,
+    `host=${packet.host_level || '-'}`,
+    `strategy=${metrics.strategy || 'unknown'}`,
+    `raw=${metrics.raw_bytes ?? 0}`,
+    `compact=${metrics.compact_bytes ?? 0}`,
+    `saved=${metrics.saved_bytes ?? 0}`,
+    `ratio=${ratio}`,
+    `ref=${refId}`,
+  ].join(' ');
+}
+
+export function emitTurnCompressionLog(packet, { env = process.env, write = null } = {}) {
+  if (String(env?.AIOS_INTERCEPTION_LOG ?? '1') === '0') return;
+  const line = formatTurnCompressionLog(packet);
+  if (!line) return;
+  const logger = typeof write === 'function' ? write : (msg) => console.error(msg);
+  logger(`[aios][turn-compression] ${line}`);
+}
+
 function normalizeClientId(value) {
   const clientId = String(value || '').trim();
   if (!clientId) throw new TypeError('turn compression clientId is required');

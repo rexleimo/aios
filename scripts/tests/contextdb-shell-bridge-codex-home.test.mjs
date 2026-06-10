@@ -302,6 +302,52 @@ test('repo-only mode still passes through when fallback cwd does not match ROOTP
   assert.match(result.stdout, /CODEX_HOME=/);
 });
 
+test('AIOS workspace blocks direct interactive native agent when shell wrapping is disabled', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-direct-native-block-'));
+  const fakeBin = await createFakeCodexCommand();
+  const fakeRunner = await createFakeRunner();
+  await writeFile(path.join(cwd, 'AGENTS.md'), '<!-- AIOS: .aios/context-db/index.json -->\n', 'utf8');
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    args: [],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'off',
+    },
+  });
+
+  assert.equal(result.status, 66);
+  assert.match(result.stderr, /direct native agent execution blocked/u);
+  assert.match(result.stderr, /scripts\/ctx-agent\.mjs/u);
+  assert.doesNotMatch(result.stdout, /CODEX_HOME=/u);
+  assert.equal(parseRunnerWorkspace(result.stdout), '');
+});
+
+test('AIOS direct native block can be bypassed explicitly for diagnostics', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-direct-native-allow-'));
+  const fakeBin = await createFakeCodexCommand();
+  const fakeRunner = await createFakeRunner();
+  await writeFile(path.join(cwd, 'AGENTS.md'), '<!-- AIOS: .aios/context-db/index.json -->\n', 'utf8');
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: fakeBin,
+    args: [],
+    env: {
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'off',
+      CTXDB_ALLOW_DIRECT_NATIVE_AGENT: '1',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /CODEX_HOME=/u);
+  assert.doesNotMatch(result.stderr, /direct native agent execution blocked/u);
+  assert.equal(parseRunnerWorkspace(result.stdout), '');
+});
+
 test('opt-in mode auto-creates marker and wraps a non-git cwd', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-fallback-optin-'));
   const fakeBin = await createFakeCodexCommand();

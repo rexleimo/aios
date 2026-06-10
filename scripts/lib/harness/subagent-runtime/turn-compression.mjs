@@ -1,5 +1,5 @@
 /* 中文注释：Subagent turn 压缩集中在这里，避免 phase-job 同时承担 prompt/result 网关细节。 */
-import { compressPostReceiveTurn, compressPreSendTurn } from '../../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, requireTurnCompression } from '../../interception/index.mjs';
 import { normalizeText } from './text.mjs';
 
 export async function prepareSubagentTurnPrompts({
@@ -8,18 +8,31 @@ export async function prepareSubagentTurnPrompts({
   executionClientId,
   systemPrompt,
   userPrompt,
+  io = null,
 }) {
   const sessionId = resolveTurnSessionId(job);
-  const packet = await compressPreSendTurn({
+  const text = `${systemPrompt}\n\n${userPrompt}`;
+  const packet = await requireTurnCompression({
     workspaceRoot: rootDir || process.cwd(),
     cwd: rootDir || process.cwd(),
     sessionId,
     clientId: executionClientId,
     hostLevel: 'L2',
-    prompt: `${systemPrompt}\n\n${userPrompt}`,
     mode: 'tight',
-    metrics: { enabled: true },
+    eventKind: 'pre_send',
+    text,
+    run: () => compressPreSendTurn({
+      workspaceRoot: rootDir || process.cwd(),
+      cwd: rootDir || process.cwd(),
+      sessionId,
+      clientId: executionClientId,
+      hostLevel: 'L2',
+      prompt: text,
+      mode: 'tight',
+      metrics: { enabled: true },
+    }),
   });
+  emitTurnCompressionLog(packet, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
   if (!packet?.refs?.length) {
     return { sessionId, systemPrompt, userPrompt };
   }
@@ -33,17 +46,30 @@ export async function compactSubagentTurnOutput({
   executionClientId,
   outputText,
   rawCommandOutput,
+  io = null,
 }) {
-  const packet = await compressPostReceiveTurn({
+  const text = outputText || rawCommandOutput;
+  const packet = await requireTurnCompression({
     workspaceRoot: rootDir || process.cwd(),
     cwd: rootDir || process.cwd(),
     sessionId,
     clientId: executionClientId,
     hostLevel: 'L2',
-    output: outputText || rawCommandOutput,
     mode: 'tight',
-    metrics: { enabled: true },
+    eventKind: 'post_receive',
+    text,
+    run: () => compressPostReceiveTurn({
+      workspaceRoot: rootDir || process.cwd(),
+      cwd: rootDir || process.cwd(),
+      sessionId,
+      clientId: executionClientId,
+      hostLevel: 'L2',
+      output: text,
+      mode: 'tight',
+      metrics: { enabled: true },
+    }),
   });
+  emitTurnCompressionLog(packet, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
   if (!packet?.refs?.length) {
     return { outputText, rawCommandOutput };
   }

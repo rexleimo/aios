@@ -818,6 +818,8 @@ test('ctx-agent one-shot compresses prompt before client stdin and compacts rece
     assert.equal(captured.includes(PRE_SENTINEL), false);
     assert.equal(result.stdout.includes(POST_SENTINEL), false);
     assert.match(result.stdout, /aios\.compact_packet/);
+    assert.match(result.stderr, /\[aios\]\[turn-compression\] pre_send client=codex-cli/u);
+    assert.match(result.stderr, /\[aios\]\[turn-compression\] post_receive client=codex-cli/u);
 
     const metricsPath = path.join(workspaceRoot, '.aios', 'interception', 'metrics', `${sessionId}.jsonl`);
     const records = (await readFile(metricsPath, 'utf8')).trim().split(/\r?\n/).map((line) => JSON.parse(line));

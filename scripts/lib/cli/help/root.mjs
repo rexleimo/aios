@@ -46,7 +46,9 @@ Examples:
   node scripts/aios.mjs refs grep "error" --session codex-cli-...
   node scripts/aios.mjs canvas show --session codex-cli-...
   node scripts/aios.mjs interception proof --json
+  node scripts/aios.mjs interception tail --latest --json
   node scripts/aios.mjs interception doctor --fix
+  node scripts/aios.mjs interception doctor --enforce-turns --json
   node scripts/aios.mjs quality-gate pre-pr --profile strict
   node scripts/aios.mjs orchestrate feature --task "Ship orchestrator blueprints"
   node scripts/aios.mjs team 3:codex "Ship orchestrator blueprints"

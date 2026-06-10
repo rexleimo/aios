@@ -22,6 +22,7 @@ Environment:
   CTXDB_PRIVACY_BANNER   0/false/off to hide the interactive privacy banner (default: on)
   CTXDB_PRIVACY_COLOR    0/false/off to disable banner ANSI color (default: on unless NO_COLOR is set)
   CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup in wrapped runs
+  CTXDB_ALLOW_DIRECT_NATIVE_AGENT 1 to bypass AIOS direct-agent block for diagnostics
   CTXDB_DEBUG            1/true/yes/on to print bridge decisions`);
 }
 

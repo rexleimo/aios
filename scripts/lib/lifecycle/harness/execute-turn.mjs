@@ -3,7 +3,7 @@ import path from 'node:path';
 import { spawnCommand } from '../../platform/process.mjs';
 import { buildSoloHarnessCommand } from '../../harness/solo-profiles.mjs';
 import { classifySoloFailure } from '../../harness/solo-runtime.mjs';
-import { compressPostReceiveTurn, compressPreSendTurn } from '../../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, requireTurnCompression } from '../../interception/index.mjs';
 import { normalizeText } from './shared.mjs';
 import { buildIterationPrompt, parseHarnessJsonOutput } from './prompt.mjs';
 
@@ -19,16 +19,27 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
       summary,
     });
     const workspaceRoot = worktree?.enabled && worktree?.path ? worktree.path : rootDir;
-    const preSendPacket = await compressPreSendTurn({
+    const preSendPacket = await requireTurnCompression({
       workspaceRoot: rootDir,
       cwd: workspaceRoot,
       sessionId,
       clientId: 'aios-harness',
       hostLevel: 'L3',
-      prompt,
       mode: 'tight',
-      metrics: { enabled: true },
+      eventKind: 'pre_send',
+      text: prompt,
+      run: () => compressPreSendTurn({
+        workspaceRoot: rootDir,
+        cwd: workspaceRoot,
+        sessionId,
+        clientId: 'aios-harness',
+        hostLevel: 'L3',
+        prompt,
+        mode: 'tight',
+        metrics: { enabled: true },
+      }),
     });
+    emitTurnCompressionLog(preSendPacket);
     const providerPrompt = preSendPacket?.refs?.length ? JSON.stringify(preSendPacket, null, 2) : prompt;
     const providerObjective = preSendPacket?.refs?.length
       ? 'AIOS compacted solo harness objective; use the compact packet in --prompt.'
@@ -131,17 +142,28 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
 
 /* 中文注释：Harness 直接调用 Engine，而不是走外部 CLI，这样长任务内部也能复用同一套 packet/ref/metrics。 */
 async function buildHarnessInterceptionPacket({ rootDir, sessionId, built, result, rawOutput, workspaceRoot }) {
-  const packet = await compressPostReceiveTurn({
+  const packet = await requireTurnCompression({
     workspaceRoot: rootDir,
     cwd: workspaceRoot,
     sessionId,
     clientId: 'aios-harness',
     hostLevel: 'L3',
-    output: `${result.stdout || ''}${result.stderr || ''}`,
-    command: [built.command, ...(built.args || [])].join(' '),
     mode: 'tight',
-    metrics: { enabled: true },
+    eventKind: 'post_receive',
+    text: `${result.stdout || ''}${result.stderr || ''}`,
+    run: () => compressPostReceiveTurn({
+      workspaceRoot: rootDir,
+      cwd: workspaceRoot,
+      sessionId,
+      clientId: 'aios-harness',
+      hostLevel: 'L3',
+      output: `${result.stdout || ''}${result.stderr || ''}`,
+      command: [built.command, ...(built.args || [])].join(' '),
+      mode: 'tight',
+      metrics: { enabled: true },
+    }),
   });
+  emitTurnCompressionLog(packet);
   /* 中文注释：小输出没有 ref 时保留原文，避免 harness journal 里全是无意义 packet。 */
   if (!packet.refs?.length) return rawOutput;
   return JSON.stringify(packet, null, 2);

@@ -1,5 +1,4 @@
 import path from 'node:path';
-
 import { normalizeModelRouting } from '../../model-router.mjs';
 import { validateHandoffPayload } from '../handoff.mjs';
 import { buildClientStructuredOutputOptions, shouldUseClientStructuredOutput } from '../subagent-clients/structured-output.mjs';
@@ -59,7 +58,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const structuredOutput = buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job });
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);
-  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, systemPrompt, userPrompt });
+  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, systemPrompt, userPrompt, io });
 
   const startedAt = Date.now();
   const result = await runOneShotImpl(executionClientId, {
@@ -81,6 +80,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     executionClientId,
     outputText,
     rawCommandOutput,
+    io,
   });
   const compactOutputText = compacted.outputText;
   const compactRawCommandOutput = compacted.rawCommandOutput;

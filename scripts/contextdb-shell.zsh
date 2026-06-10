@@ -16,6 +16,7 @@
 # - CTXDB_HARNESS_MAX_ITERATIONS: iteration budget for injected harness route (default: 8, read by bridge)
 # - CTXDB_PRIVACY_BANNER: show/hide interactive Privacy Shield banner (default: on, read by bridge)
 # - CTXDB_PRIVACY_COLOR: enable/disable banner ANSI color (default: on unless NO_COLOR is set, read by bridge)
+# - CTXDB_ALLOW_DIRECT_NATIVE_AGENT: set to 1 to bypass AIOS direct-agent block for diagnostics
 
 typeset -g CTXDB_LAST_WORKSPACE=""
 

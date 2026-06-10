@@ -91,18 +91,23 @@ Options:
 `;
     case 'interception':
       return `Usage:
-  node scripts/aios.mjs interception doctor [--fix] [--dry-run] [--json] [--workspace <path>]
+  node scripts/aios.mjs interception doctor [--fix] [--dry-run] [--enforce-turns] [--json] [--workspace <path>]
   node scripts/aios.mjs interception proof [--session <id>] [--json] [--workspace <path>]
+  node scripts/aios.mjs interception tail [--session <id> | --latest] [--limit <n>] [--json] [--workspace <path>]
   node scripts/aios.mjs interception mcp-migrate [--dry-run] [--json]
 
 Subcommands:
   doctor       Verify RTK/Caveman-style interception, MCP proxy routing, refs, and metrics
   proof        Run deterministic shell + MCP sentinel proof and print savings metrics
+  tail         Show recent interception metric events from the latest or selected session
   mcp-migrate  Force MCP configs through scripts/aios-mcp-proxy.mjs
 
 Options:
   --session <id>                 Proof session id
+  --latest                       Tail the newest interception metrics session
+  --limit <n>                    Number of recent records to show (default: 10)
   --workspace <path>             Workspace root for proof refs/metrics
+  --enforce-turns                Fail when latest or selected metrics lack pre_send/post_receive
   --fix                          Repair MCP proxy routing before proof
   --dry-run                      Preview repair actions without writing configs
   --json                         Output machine-readable proof

@@ -1,5 +1,5 @@
 import { normalizeOrchestratorAgentSpec } from '../orchestrator-agents.mjs';
-import { compressPostReceiveTurn, compressPreSendTurn } from '../../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, requireTurnCompression } from '../../interception/index.mjs';
 import { resolveModelRoutingForRole } from '../../model-router.mjs';
 import agentSpec from '../../specs/orchestrator-agents.json' with { type: 'json' };
 
@@ -36,7 +36,7 @@ function compactModelRoutingForTurn(modelRouting, compacted) {
   return copy;
 }
 
-function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId }) {
+function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId, io }) {
   return async ({ role, speaker, workItem, conversationHistory }) => {
     const agent = agentSpecNormalized.agents[resolveAgentId(role)] || null;
     const modelRouting = resolveModelRoutingForRole({
@@ -64,16 +64,27 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
     });
     const fullPrompt = `${systemPrompt}\n\n${conversationPrompt}\n${rolePrompt}`;
     const rawUserPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
-    const preSendPacket = await compressPreSendTurn({
+    const preSendPacket = await requireTurnCompression({
       workspaceRoot: rootDir || process.cwd(),
       cwd: rootDir || process.cwd(),
       sessionId,
       clientId: 'aios-groupchat',
       hostLevel: 'L3',
-      prompt: rawUserPrompt,
       mode: 'tight',
-      metrics: { enabled: true },
+      eventKind: 'pre_send',
+      text: rawUserPrompt,
+      run: () => compressPreSendTurn({
+        workspaceRoot: rootDir || process.cwd(),
+        cwd: rootDir || process.cwd(),
+        sessionId,
+        clientId: 'aios-groupchat',
+        hostLevel: 'L3',
+        prompt: rawUserPrompt,
+        mode: 'tight',
+        metrics: { enabled: true },
+      }),
     });
+    emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
     const compactPrompt = stringifyTurnPacket(preSendPacket, rawUserPrompt);
     const compactSystemPrompt = preSendPacket?.refs?.length ? compactPrompt : systemPrompt;
     const outboundModelRouting = compactModelRoutingForTurn(modelRouting, preSendPacket?.refs?.length);
@@ -88,16 +99,27 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
       modelRouting: outboundModelRouting,
     });
     if (result?.rawOutput) {
-      const postReceivePacket = await compressPostReceiveTurn({
+      const postReceivePacket = await requireTurnCompression({
         workspaceRoot: rootDir || process.cwd(),
         cwd: rootDir || process.cwd(),
         sessionId,
         clientId: 'aios-groupchat',
         hostLevel: 'L3',
-        output: result.rawOutput,
         mode: 'tight',
-        metrics: { enabled: true },
+        eventKind: 'post_receive',
+        text: result.rawOutput,
+        run: () => compressPostReceiveTurn({
+          workspaceRoot: rootDir || process.cwd(),
+          cwd: rootDir || process.cwd(),
+          sessionId,
+          clientId: 'aios-groupchat',
+          hostLevel: 'L3',
+          output: result.rawOutput,
+          mode: 'tight',
+          metrics: { enabled: true },
+        }),
       });
+      emitTurnCompressionLog(postReceivePacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
       if (postReceivePacket?.refs?.length) {
         result.rawOutput = JSON.stringify(postReceivePacket, null, 2);
       }
@@ -166,7 +188,7 @@ export async function runGroupChat({
       roundNumber,
       speakers,
       history,
-      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId: cfg.sessionId }),
+      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId: cfg.sessionId, io }),
       timeoutMs: cfg.timeoutMs,
       concurrency: cfg.concurrency,
       io,

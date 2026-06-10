@@ -1,9 +1,13 @@
 /* 中文注释：Interception 回归测试覆盖压缩、召回、指标和客户端配置，防止链路退化成 prompt-only。 */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
 import { readFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+
+import { compressPreSendTurn } from '../lib/interception/index.mjs';
 
 const cli = path.join(process.cwd(), 'scripts', 'aios.mjs');
 
@@ -48,4 +52,69 @@ test('interception doctor and mcp migration keep browser MCP proxied', async () 
 
   const mcpRaw = await readFile(path.join(process.cwd(), '.mcp.json'), 'utf8');
   assert.match(mcpRaw, /aios-mcp-proxy\.mjs/);
+});
+
+test('interception tail --latest returns the newest proof session with recent pre/post metrics', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-interception-tail-'));
+  const sessionId = `tail-cli-${Date.now()}`;
+
+  try {
+    await mkdir(path.join(workspaceRoot, 'config'), { recursive: true });
+    await copyFile(
+      path.join(process.cwd(), 'config', 'host-capabilities.json'),
+      path.join(workspaceRoot, 'config', 'host-capabilities.json')
+    );
+
+    const proof = runAios(['interception', 'proof', '--session', sessionId, '--workspace', workspaceRoot, '--json']);
+    assert.equal(proof.status, 0, proof.stderr || proof.stdout);
+
+    const tail = runAios(['interception', 'tail', '--latest', '--workspace', workspaceRoot, '--json']);
+    assert.equal(tail.status, 0, tail.stderr || tail.stdout);
+    const parsed = JSON.parse(tail.stdout);
+
+    assert.equal(parsed.ok, true);
+    assert.equal(parsed.session_id, sessionId);
+    assert.equal(parsed.total_records > 0, true);
+    assert.equal(parsed.recent.some((record) => record.event_kind === 'pre_send'), true);
+    assert.equal(parsed.recent.some((record) => record.event_kind === 'post_receive'), true);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('interception doctor --enforce-turns fails when selected metrics lack post_receive', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-interception-enforce-turns-'));
+  const sessionId = `missing-post-${Date.now()}`;
+
+  try {
+    await mkdir(path.join(workspaceRoot, 'config'), { recursive: true });
+    await copyFile(
+      path.join(process.cwd(), 'config', 'host-capabilities.json'),
+      path.join(workspaceRoot, 'config', 'host-capabilities.json')
+    );
+
+    await compressPreSendTurn({
+      workspaceRoot,
+      cwd: workspaceRoot,
+      sessionId,
+      clientId: 'codex-cli',
+      hostLevel: 'L2',
+      prompt: 'PRE_SEND_ONLY_SENTINEL'.repeat(120),
+      mode: 'tight',
+      thresholds: { minRawBytes: 64 },
+      metrics: { enabled: true },
+    });
+
+    const result = runAios(['interception', 'doctor', '--workspace', workspaceRoot, '--session', sessionId, '--enforce-turns', '--json']);
+    assert.notEqual(result.status, 0, result.stderr || result.stdout);
+    const parsed = JSON.parse(result.stdout);
+
+    assert.equal(parsed.ok, false);
+    assert.equal(parsed.turn_compliance.enforced, true);
+    assert.equal(parsed.turn_compliance.session_id, sessionId);
+    assert.equal(parsed.turn_compliance.pre_send, 1);
+    assert.equal(parsed.turn_compliance.post_receive, 0);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+  }
 });
