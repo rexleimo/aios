@@ -1,6 +1,15 @@
 ---
 name: aios-long-running-harness
 description: AIOS-native long-running agent harness with ContextDB, superpowers pairing, checkpoint recovery, and evidence capture. Use when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
+
+installCatalogName: aios-long-running-harness
+clients: [codex, claude]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [aios, harness]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 # AIOS Long-Running Harness

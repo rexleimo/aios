@@ -4,6 +4,15 @@ description: >
   Quick reference for code-review-graph (CRG) MCP tools. Use when you need
   to look up a CRG tool name, parameter, or pattern. For workflow guidance,
   see AGENTS.md decision checkpoints. Requires `aios internal codemap install`.
+
+installCatalogName: aios-codemap-ops
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [aios, codemap, code-review, crg, reference]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 ## CRG Tool Quick Reference

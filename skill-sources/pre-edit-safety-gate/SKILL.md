@@ -1,6 +1,15 @@
 ---
 name: pre-edit-safety-gate
 description: Use before ANY code modification — editing files, creating new files, or changing behavior. Mandatory CRG impact-radius check, dependency tracing, style alignment, and test-coverage verification before edits. Post-edit CRG update and verification.
+
+installCatalogName: pre-edit-safety-gate
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [general, safety, edit, verification, essential]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
 ---
 
 # Pre-Edit Safety Gate

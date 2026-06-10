@@ -2,6 +2,15 @@
 name: aios-interception-runtime
 description: AIOS native token compression and interception. Use for ALL token optimization — output compression (tight/ultra/precise), input compression (browser/page/tool), MCP proxy routing, raw refs, compact packets, and metrics proof. Replaces RTK/Caveman with native AIOS implementation.
 primary: false
+
+installCatalogName: aios-interception-runtime
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [aios, token, compression, interception, output, input]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 <!-- 中文注释：统一的 token 压缩与拦截运行时。输出压缩、输入压缩、数据面拦截三合一。 -->

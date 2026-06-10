@@ -3,6 +3,20 @@ name: skill-creator
 description: Guide for creating effective skills. This skill should be used when users want to create a new skill (or update an existing skill) that extends Codex's capabilities with specialized knowledge, workflows, or tool integrations.
 metadata:
   short-description: Create or update a skill
+
+installCatalogName: null
+clients: null
+scopes: null
+defaultInstall: null
+tags: null
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+targetRelativePathBySurface:
+  codex: ".system/skill-creator"
+  claude: "skill-creator"
+  gemini: "skill-creator"
+  antigravity: "skill-creator"
+  opencode: "skill-creator"
+  crush: "skill-creator"
 ---
 
 # Skill Creator

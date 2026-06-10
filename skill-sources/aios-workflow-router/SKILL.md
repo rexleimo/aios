@@ -1,6 +1,15 @@
 ---
 name: aios-workflow-router
 description: "Route tasks to appropriate superpowers workflows. TRIGGER: 分析、设计、实现、调试、并发、并行、agent team、长任务、harness、plan、计划、brainstorm、头脑风暴、debug、调试、multi-step、多步骤"
+
+installCatalogName: aios-workflow-router
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [general, workflow, routing, essential]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
 ---
 
 # AIOS Workflow Router

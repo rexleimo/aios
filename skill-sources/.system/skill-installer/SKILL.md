@@ -3,6 +3,20 @@ name: skill-installer
 description: Install Codex skills into $CODEX_HOME/skills from a curated list or a GitHub repo path. Use when a user asks to list installable skills, install a curated skill, or install a skill from another repo (including private repos).
 metadata:
   short-description: Install curated skills from openai/skills or other repos
+
+installCatalogName: null
+clients: null
+scopes: null
+defaultInstall: null
+tags: null
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+targetRelativePathBySurface:
+  codex: ".system/skill-installer"
+  claude: "skill-installer"
+  gemini: "skill-installer"
+  antigravity: "skill-installer"
+  opencode: "skill-installer"
+  crush: "skill-installer"
 ---
 
 # Skill Installer

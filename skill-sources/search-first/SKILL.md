@@ -1,6 +1,15 @@
 ---
 name: search-first
 description: Research-before-building workflow. Use when adding new behavior, dependencies, or integrations to avoid reinventing and to stay compatible across codex/claude/gemini/opencode.
+
+installCatalogName: search-first
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [general, research]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 # Search First

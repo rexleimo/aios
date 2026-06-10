@@ -2,6 +2,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
+import { readSkillFrontmatter, stripAiosFrontmatter } from './frontmatter.mjs';
+
 const SYNC_MANIFEST_PATH = path.join('config', 'skills-sync-manifest.json');
 
 function normalizeString(value) {
@@ -19,6 +21,85 @@ export function resolveSkillsSyncManifestPath(rootDir) {
   return path.join(rootDir, SYNC_MANIFEST_PATH);
 }
 
+/**
+ * Scan skill-sources/ directory and discover all skills from SKILL.md frontmatter.
+ * This is the unified source of truth for skill metadata.
+ */
+export function scanSkillsSources(rootDir) {
+  const skillsDir = path.join(rootDir, 'skill-sources');
+  const results = [];
+
+  function scan(dir, relativePrefix = '') {
+    if (!fs.existsSync(dir)) return;
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      // Skip hidden dirs (like .system) at top level — handled separately
+      if (!relativePrefix && entry.name.startsWith('.')) continue;
+
+      const skillMd = path.join(dir, entry.name, 'SKILL.md');
+      const relPath = relativePrefix ? `${relativePrefix}/${entry.name}` : entry.name;
+
+      if (fs.existsSync(skillMd)) {
+        const fm = readSkillFrontmatter(skillMd) || {};
+        if (fm.name) {
+          results.push({
+            relativeSkillPath: relPath,
+            installCatalogName: fm.installCatalogName === null ? null : normalizeString(fm.installCatalogName || fm.name),
+            repoTargets: normalizeStringArray(fm.repoTargets),
+            targetRelativePathBySurface: fm.targetRelativePathBySurface && typeof fm.targetRelativePathBySurface === 'object'
+              ? Object.fromEntries(Object.entries(fm.targetRelativePathBySurface)
+                .map(([surface, relPath]) => [normalizeString(surface), normalizeString(relPath)])
+                .filter(([, relPath]) => relPath))
+              : {},
+            description: typeof fm.description === 'string' ? fm.description : '',
+            clients: normalizeStringArray(fm.clients),
+            scopes: normalizeStringArray(fm.scopes),
+            defaultInstall: typeof fm.defaultInstall === 'object' && fm.defaultInstall
+              ? fm.defaultInstall
+              : { global: false, project: false },
+            tags: normalizeStringArray(fm.tags),
+          });
+        }
+      }
+    }
+  }
+
+  scan(skillsDir);
+
+  // Also scan .system/ for hidden system skills
+  const systemDir = path.join(skillsDir, '.system');
+  if (fs.existsSync(systemDir)) {
+    for (const entry of fs.readdirSync(systemDir, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const skillMd = path.join(systemDir, entry.name, 'SKILL.md');
+      if (fs.existsSync(skillMd)) {
+        const fm = readSkillFrontmatter(skillMd) || {};
+        if (fm.name) {
+          results.push({
+            relativeSkillPath: `.system/${entry.name}`,
+            installCatalogName: fm.installCatalogName === null ? null : normalizeString(fm.installCatalogName || fm.name),
+            repoTargets: normalizeStringArray(fm.repoTargets),
+            targetRelativePathBySurface: fm.targetRelativePathBySurface && typeof fm.targetRelativePathBySurface === 'object'
+              ? Object.fromEntries(Object.entries(fm.targetRelativePathBySurface)
+                .map(([surface, relPath]) => [normalizeString(surface), normalizeString(relPath)])
+                .filter(([, relPath]) => relPath))
+              : {},
+            description: typeof fm.description === 'string' ? fm.description : '',
+            clients: normalizeStringArray(fm.clients),
+            scopes: normalizeStringArray(fm.scopes),
+            defaultInstall: typeof fm.defaultInstall === 'object' && fm.defaultInstall
+              ? fm.defaultInstall
+              : { global: false, project: false },
+            tags: normalizeStringArray(fm.tags),
+          });
+        }
+      }
+    }
+  }
+
+  return results;
+}
+
 export function loadSkillsSyncManifest(rootDir) {
   const manifestPath = resolveSkillsSyncManifestPath(rootDir);
   if (!fs.existsSync(manifestPath)) {
@@ -31,14 +112,12 @@ export function loadSkillsSyncManifest(rootDir) {
       .map(([surface, relPath]) => [normalizeString(surface), normalizeString(relPath)])
       .filter(([, relPath]) => relPath))
     : {};
-  const skills = Array.isArray(parsed.skills) ? parsed.skills : [];
   const legacyUnmanaged = normalizeStringArray(parsed.legacyUnmanaged);
   const legacyReplaceable = normalizeStringArray(parsed.legacyReplaceable);
 
-  return {
-    schemaVersion: Number(parsed.schemaVersion) || 1,
-    generatedRoots,
-    skills: skills.map((entry) => ({
+  // Use manifest skills array if present (backward compat), otherwise scan from sources
+  const skills = Array.isArray(parsed.skills) && parsed.skills.length > 0
+    ? parsed.skills.map((entry) => ({
       relativeSkillPath: normalizeString(entry.relativeSkillPath),
       installCatalogName: entry.installCatalogName == null ? null : normalizeString(entry.installCatalogName),
       repoTargets: normalizeStringArray(entry.repoTargets),
@@ -54,7 +133,13 @@ export function loadSkillsSyncManifest(rootDir) {
         ? entry.defaultInstall
         : { global: false, project: false },
       tags: normalizeStringArray(entry.tags),
-    })).filter((entry) => entry.relativeSkillPath),
+    })).filter((entry) => entry.relativeSkillPath)
+    : scanSkillsSources(rootDir);
+
+  return {
+    schemaVersion: Number(parsed.schemaVersion) || 1,
+    generatedRoots,
+    skills,
     legacyUnmanaged,
     legacyReplaceable,
   };
@@ -93,6 +178,17 @@ export function materializeSkillTree({ rootDir, relativeSkillPath, client } = {}
 
   const materializedPath = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-skill-tree-'));
   copyWithoutClients(sourcePath, materializedPath);
+
+  // Strip AIOS-internal frontmatter fields from SKILL.md so client skill
+  // engines only see the standard fields (name, description, etc.)
+  const skillMdPath = path.join(materializedPath, 'SKILL.md');
+  if (fs.existsSync(skillMdPath)) {
+    const raw = fs.readFileSync(skillMdPath, 'utf8');
+    const stripped = stripAiosFrontmatter(raw);
+    if (stripped !== raw) {
+      fs.writeFileSync(skillMdPath, stripped, 'utf8');
+    }
+  }
 
   const overridePath = client
     ? path.join(sourcePath, 'clients', client)

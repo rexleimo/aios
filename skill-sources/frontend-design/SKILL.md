@@ -2,6 +2,15 @@
 name: frontend-design
 description: Build production-grade frontend UI with distinctive design. Use AFTER establishing design direction — if no DESIGN.md exists, invoke `awesome-design-md` first to create one, then use this skill to implement. For web components, pages, landing pages, dashboards, React components, HTML/CSS layouts, or styling any web UI.
 license: Complete terms in LICENSE.txt
+
+installCatalogName: frontend-design
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [general, frontend, design, ui, essential]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

@@ -1,6 +1,15 @@
 ---
 name: rexai-image-generation
 description: Use when the user wants to generate an image, edit an image, create visual artwork, produce text-to-image output, transform an existing image with image-to-image, or asks for 生图, 生成图片, 文生图, 图生图, text-to-image, image-to-image, AI image, picture generation, image result, image edit, or visual generation.
+
+installCatalogName: rexai-image-generation
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: false
+  project: false
+tags: [image, generation, rexai]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 # RexAI Image Generation

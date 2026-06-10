@@ -1,6 +1,15 @@
 ---
 name: seo-geo-page-optimization
 description: Use when improving a single page for SEO and AI answer-engine visibility (GEO), especially when you need faster first-screen conversion and clearer traffic funnels.
+
+installCatalogName: seo-geo-page-optimization
+clients: [codex, claude]
+scopes: [global, project]
+defaultInstall:
+  global: false
+  project: false
+tags: [content, seo]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
 # SEO + GEO Page Optimization

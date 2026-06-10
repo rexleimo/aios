@@ -41,22 +41,18 @@ function printNonInteractiveTuiHelp(): void {
 const rootDir = process.env.AIOS_ROOT_DIR || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const projectRoot = process.env.AIOS_PROJECT_ROOT || process.cwd();
 
-function resolveCatalogPath(rootDir: string): string {
-  return path.join(rootDir, 'config', 'skills-catalog.json');
-}
-
-function loadSkillsCatalog(rootDir: string): CatalogSkill[] {
-  const catalogPath = resolveCatalogPath(rootDir);
-  if (!fs.existsSync(catalogPath)) {
-    return [];
-  }
-  try {
-    const content = fs.readFileSync(catalogPath, 'utf-8');
-    const data = JSON.parse(content);
-    return Array.isArray(data?.skills) ? data.skills : [];
-  } catch {
-    return [];
-  }
+async function loadSkillsCatalog(rootDir: string): Promise<CatalogSkill[]> {
+  const { scanSkillsSources } = await import('../skills/source-tree.mjs');
+  const skills = scanSkillsSources(rootDir);
+  return skills
+    .filter((entry) => entry.installCatalogName !== null)
+    .map((entry) => ({
+      name: entry.installCatalogName || entry.relativeSkillPath,
+      description: entry.description || '',
+      clients: entry.clients || [],
+      scopes: entry.scopes || [],
+      defaultInstall: entry.defaultInstall || { global: false, project: false },
+    }));
 }
 
 function normalizePathForCompare(inputPath: string): string {
@@ -120,7 +116,7 @@ export async function runInteractiveSession({
   rootDir: string;
   onRun: (action: string, options: unknown, hooks?: { onLog?: (line: string) => void }) => Promise<void>;
 }): Promise<void> {
-  const catalogSkills = loadSkillsCatalog(rootDir);
+  const catalogSkills = await loadSkillsCatalog(rootDir);
   const cwd = process.cwd();
 
   const onRefreshInstalled = (): InstalledSkills => {

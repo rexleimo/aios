@@ -1,6 +1,15 @@
 ---
 name: debug-hub
 description: Evidence-first debugging WITH MCP tools. Use when debug_hub MCP server is available. Inject log calls, collect via HTTP API (port 39200), analyze through MCP tools, clean up when done. If debug_hub MCP is unavailable, use `debug` skill (bundled Python collector) instead.
+
+installCatalogName: debug-hub
+clients: [codex, claude, gemini, opencode]
+scopes: [global, project]
+defaultInstall:
+  global: false
+  project: false
+tags: [general, debug, verification]
+repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
 ---
 
 # Debug-Hub
