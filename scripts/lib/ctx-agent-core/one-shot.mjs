@@ -88,7 +88,15 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('opencode-cli'),
     ['run', ...extraArgs, buildOpenCodePrompt({ contextPacketPath, contextText, prompt, injectContext, promptKind: 'request' })]
   ),
+  'crush-cli': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+    commandForRuntime('crush-cli'),
+    ['run', ...extraArgs, injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt]
+  ),
 };
+
+// Exported for tests only: lets verification assert handlers are registered
+// even while the pending-smoke short-circuit still blocks live execution.
+export const ONE_SHOT_HANDLERS_FOR_TEST = ONE_SHOT_HANDLERS;
 
 export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
   if (PENDING_SMOKE_ONE_SHOT_AGENTS.has(agent)) {

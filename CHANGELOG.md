@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.51.0] - 2026-06-10
+
+- feat(clients): add crush smoke verification and harden pending-smoke gating
+
 ## [1.50.3] - 2026-06-09
 
 - refactor(skills): merge skills-catalog.json into skills-sync-manifest.json as single data source for skill discovery and sync

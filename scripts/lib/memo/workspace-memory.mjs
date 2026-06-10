@@ -12,6 +12,17 @@ export function normalizeWorkspaceMemorySpace(raw) {
   return value ? value : DEFAULT_WORKSPACE_MEMORY_SPACE;
 }
 
+function normalizeWorkspaceMemoryOptions(input) {
+  if (input && typeof input === 'object' && !Array.isArray(input)) {
+    return {
+      space: normalizeWorkspaceMemorySpace(input.space),
+    };
+  }
+  return {
+    space: normalizeWorkspaceMemorySpace(input),
+  };
+}
+
 export function sanitizeWorkspaceMemorySpaceForSessionId(space) {
   const trimmed = normalizeWorkspaceMemorySpace(space);
   const normalized = trimmed
@@ -27,7 +38,7 @@ export function sanitizeWorkspaceMemorySpaceForSessionId(space) {
 }
 
 export function workspaceMemorySessionId(space) {
-  return `${WORKSPACE_MEMORY_SESSION_PREFIX}${sanitizeWorkspaceMemorySpaceForSessionId(space)}`;
+  return `${WORKSPACE_MEMORY_SESSION_PREFIX}${sanitizeWorkspaceMemorySpaceForSessionId(normalizeWorkspaceMemoryOptions(space).space)}`;
 }
 
 export function workspaceMemoryStatePath(workspaceRoot) {
@@ -51,7 +62,8 @@ export function workspaceMemoryEventsPath(workspaceRoot, sessionId) {
 }
 
 export function ensureWorkspaceMemorySession(workspaceRoot, space = 'default') {
-  const sessionId = workspaceMemorySessionId(space);
+  const options = normalizeWorkspaceMemoryOptions(space);
+  const sessionId = workspaceMemorySessionId(options.space);
   const dir = workspaceMemorySessionDir(workspaceRoot, sessionId);
   const metaPath = workspaceMemoryMetaPath(workspaceRoot, sessionId);
 
@@ -64,9 +76,9 @@ export function ensureWorkspaceMemorySession(workspaceRoot, space = 'default') {
   writeFileSync(metaPath, JSON.stringify({
     schemaVersion: 1,
     sessionId,
-    agent: 'workspace-memory',
-    project: 'workspace-memory',
-    goal: `Workspace memory for space: ${space}`,
+    agent: WORKSPACE_MEMORY_AGENT,
+    project: WORKSPACE_MEMORY_AGENT,
+    goal: `Workspace memory for space: ${options.space}`,
     tags: [],
     status: 'running',
     createdAt: now,

@@ -71,14 +71,21 @@ function parseClientsArgs(argv) {
       index += 1;
       continue;
     }
+    if (arg === '--client') {
+      const value = rest[index + 1];
+      if (!value || value.startsWith('-')) throw new Error('Missing value for --client');
+      options.client = String(value).trim();
+      index += 1;
+      continue;
+    }
     if (!String(arg || '').startsWith('-') && index === 0) {
       options.subcommand = String(arg || '').trim().toLowerCase();
       continue;
     }
     throw new Error(`Unknown option: ${arg}`);
   }
-  if (options.subcommand !== 'doctor') {
-    throw new Error('clients requires subcommand: doctor');
+  if (!['doctor', 'smoke'].includes(options.subcommand)) {
+    throw new Error('clients requires subcommand: doctor or smoke');
   }
   if (!['text', 'json'].includes(options.format)) {
     throw new Error('--format must be one of: text, json');

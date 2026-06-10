@@ -2,7 +2,7 @@
   "mcp": {
     "puppeteer-stealth": {
       "type": "stdio",
-      "command": "/opt/homebrew/Cellar/node/26.0.0/bin/node",
+      "command": "/Users/rex/.nvm/versions/node/v24.16.0/bin/node",
       "args": [
         "/Users/rex/cool.cnb/rex-ai-boot/scripts/aios-mcp-proxy.mjs",
         "--workspace",

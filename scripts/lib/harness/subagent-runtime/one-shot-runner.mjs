@@ -12,6 +12,8 @@ import {
 } from './client-args.mjs';
 import { normalizeText } from './text.mjs';
 
+const PENDING_SMOKE_SUBAGENT_CLIENTS = new Set(['antigravity-cli', 'crush-cli']);
+
 function buildRuntimeInvocation({ clientId, systemPrompt, userPrompt, env, codexOutput, modelRouting }) {
   const systemText = normalizeText(systemPrompt);
   const promptText = normalizeText(userPrompt);
@@ -43,6 +45,15 @@ export async function runOneShot(clientId, {
   codexOutput = null,
   modelRouting = null,
 }) {
+  if (PENDING_SMOKE_SUBAGENT_CLIENTS.has(clientId)) {
+    return {
+      exitCode: 1,
+      stdout: '',
+      stderr: '',
+      error: `${clientId} is pending-smoke: live subagent execution is blocked until CLI arguments, MCP config, and unattended smoke evidence are verified.`,
+    };
+  }
+
   const command = CLIENT_COMMAND[clientId];
   if (!command) {
     return { exitCode: 1, stdout: '', stderr: '', error: `Unsupported subagent client: ${clientId}` };
