@@ -49,7 +49,7 @@ Interactive wrapper route defaults:
 - Direct `codex`/`claude`/`gemini`/`opencode` startup injects an auto-route prompt (`single/subagent/team`) by default.
 - Route execution defaults to live for team/subagent command templates.
 - `opencode` interactive flow falls back to a supported subagent runtime (`codex-cli` by default).
-- Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli>`.
+- Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli|antigravity-cli|opencode-cli|crush-cli>`.
 
 Bootstrap note:
 - On first run in a workspace, `ctx-agent` may auto-create `tasks/pending/task_<timestamp>_bootstrap_guidelines/*` and `tasks/.current-task` if both are empty.

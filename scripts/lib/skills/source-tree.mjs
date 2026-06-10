@@ -179,8 +179,17 @@ export function materializeSkillTree({ rootDir, relativeSkillPath, client } = {}
   const materializedPath = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-skill-tree-'));
   copyWithoutClients(sourcePath, materializedPath);
 
+  const overridePath = client
+    ? path.join(sourcePath, 'clients', client)
+    : '';
+  if (overridePath && fs.existsSync(overridePath)) {
+    fs.cpSync(overridePath, materializedPath, { recursive: true });
+  }
+
   // Strip AIOS-internal frontmatter fields from SKILL.md so client skill
-  // engines only see the standard fields (name, description, etc.)
+  // engines only see the standard fields (name, description, etc.).
+  // Done AFTER overlay application so a clients/<client>/SKILL.md overlay
+  // cannot leak AIOS-only metadata into generated client output.
   const skillMdPath = path.join(materializedPath, 'SKILL.md');
   if (fs.existsSync(skillMdPath)) {
     const raw = fs.readFileSync(skillMdPath, 'utf8');
@@ -188,13 +197,6 @@ export function materializeSkillTree({ rootDir, relativeSkillPath, client } = {}
     if (stripped !== raw) {
       fs.writeFileSync(skillMdPath, stripped, 'utf8');
     }
-  }
-
-  const overridePath = client
-    ? path.join(sourcePath, 'clients', client)
-    : '';
-  if (overridePath && fs.existsSync(overridePath)) {
-    fs.cpSync(overridePath, materializedPath, { recursive: true });
   }
 
   return {

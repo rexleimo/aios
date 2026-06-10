@@ -3,8 +3,18 @@ import path from 'node:path';
 import { resolveContextDbRoot } from '../../aios/state-root.mjs';
 import { checkSoloHarnessProfileReadiness } from '../../harness/solo-profiles.mjs';
 import { resolveClientSkillRoots } from '../../clients/registry.mjs';
+import { CLIENT_MCP_TARGETS } from '../../clients/core/definitions.mjs';
 
 const SKILL_DIRS = resolveClientSkillRoots('all');
+
+// Project-scope MCP config files across all clients, derived from the single
+// source of truth in CLIENT_MCP_TARGETS (no hard-coded per-client path list).
+const PROJECT_MCP_CONFIG_FILES = [...new Set(
+  Object.values(CLIENT_MCP_TARGETS)
+    .flatMap((target) => target.scopes)
+    .filter((entry) => entry.scope === 'project')
+    .map((entry) => entry.file)
+)];
 
 export async function runHarnessDryRunChecks({ rootDir, provider, sessionId, objective, worktree = false }) {
   const results = [];
@@ -55,9 +65,9 @@ export async function runHarnessDryRunChecks({ rootDir, provider, sessionId, obj
     'ContextDB',
     sessionCount > 0 ? `${sessionCount} prior session(s) found` : 'no prior sessions — fresh start');
 
-  // 5. MCP config
+  // 5. MCP config (project-scope files across all supported clients)
   let mcpConfigs = 0;
-  for (const pattern of ['.mcp.json', '.claude/mcp.json', '.codex/mcp.json']) {
+  for (const pattern of PROJECT_MCP_CONFIG_FILES) {
     try {
       await fs.access(path.join(rootDir, pattern));
       mcpConfigs++;
@@ -118,7 +128,7 @@ export async function runHarnessDryRunChecks({ rootDir, provider, sessionId, obj
     for (const w of warnings) {
       if (w.label === 'Skills indexed') nextActions.push('Run aios workspace-init to populate skill index');
       if (w.label === 'Workspace config') nextActions.push('Create config/settings.json or run aios init');
-      if (w.label === 'MCP servers') nextActions.push('Add .mcp.json or .claude/mcp.json for browser+tool support');
+      if (w.label === 'MCP servers') nextActions.push(`Add a project MCP config for the target client (e.g. ${PROJECT_MCP_CONFIG_FILES.join(', ')}) for browser+tool support`);
       if (w.label === 'Plan artifact') nextActions.push('Create docs/plans/<date>-<topic>.md for team mode readiness');
       if (w.label === 'Git repository') nextActions.push('Initialize git repo for worktree isolation support');
       if (w.label === 'Worktree ContextDB') nextActions.push('Remove .aios/ from .gitignore or run without --worktree for ContextDB access');

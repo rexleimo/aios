@@ -56,15 +56,24 @@ function normalizePathForCompare(inputPath: string): string {
 }
 
 // Simplified client homes - matches existing logic in scripts/lib/platform/paths.mjs
+// antigravity inherits Gemini's roots; crush uses its own .crush root.
 function getClientHomes(): Record<Client, string> {
   const home = process.env.HOME || process.env.USERPROFILE || '';
   return {
     codex: path.join(home, '.codex'),
     claude: path.join(home, '.claude'),
     gemini: path.join(home, '.gemini'),
+    antigravity: path.join(home, '.gemini'),
     opencode: path.join(home, '.opencode'),
+    crush: path.join(home, '.crush'),
     all: home, // Not used for 'all'
   };
+}
+
+// Project-scope skill root per client. antigravity shares Gemini's .gemini/skills.
+function getClientProjectSkillDir(projectRoot: string, client: Client): string {
+  const subdir = client === 'antigravity' ? '.gemini/skills' : `.${client}/skills`;
+  return path.join(projectRoot, subdir);
 }
 
 function collectInstalledSkills(
@@ -79,10 +88,7 @@ function collectInstalledSkills(
   for (const skill of catalogSkills) {
     for (const client of Array.isArray(skill.clients) ? skill.clients : []) {
       const globalRoot = path.join(homes[client] || '', 'skills');
-      const projectRootForClient = path.join(
-        projectRoot,
-        client === 'opencode' ? '.opencode/skills' : `.${client}/skills`
-      );
+      const projectRootForClient = getClientProjectSkillDir(projectRoot, client);
       const globalPath = path.join(globalRoot, skill.name);
       const projectPath = path.join(projectRootForClient, skill.name);
 

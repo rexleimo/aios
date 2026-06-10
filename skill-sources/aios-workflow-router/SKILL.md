@@ -22,9 +22,13 @@ repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
 用户请求 → 任务类型判断 → MUST invoke 对应的 superpowers skill
 ```
 
+## Skill Name Resolution (cross-client)
+
+Routes below reference target skills by name. The `superpowers:` prefix is the canonical superpowers-plugin namespace; if the current client does not expose that namespace, invoke the same skill by its plain installed name (e.g. `superpowers:brainstorming` → `brainstorming`, `superpowers:writing-plans` → `writing-plans`). Resolve the name to whatever the current client exposes, then invoke through that client's skill mechanism.
+
 ## Routing Rules
 
-**This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill via the Skill tool — never inline the process.
+**This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill through the current client's skill mechanism (e.g. the Skill tool in Claude Code / Copilot CLI, `activate_skill` in Gemini/Antigravity CLI, or the equivalent skill invocation in Codex/OpenCode/Crush) — never inline the process.
 
 ### 0. Mandatory Pre-Edit Safety Gate (ALL task types)
 

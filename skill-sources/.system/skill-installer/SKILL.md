@@ -9,14 +9,11 @@ clients: null
 scopes: null
 defaultInstall: null
 tags: null
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+# Codex-only: the bundled helper scripts install into $CODEX_HOME/skills, so this
+# skill is intentionally scoped to Codex and not projected to other clients.
+repoTargets: [codex]
 targetRelativePathBySurface:
   codex: ".system/skill-installer"
-  claude: "skill-installer"
-  gemini: "skill-installer"
-  antigravity: "skill-installer"
-  opencode: "skill-installer"
-  crush: "skill-installer"
 ---
 
 # Skill Installer

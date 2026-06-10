@@ -19,14 +19,16 @@ repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 
 ## Install/Doctor Targets
 
-`aios internal codemap install --client all` should make CRG available to the four AIOS clients:
+`aios internal codemap install --client all` should make CRG available to the AIOS-supported clients:
 
 | Client | Config written |
 |--------|----------------|
 | Codex | `~/.codex/config.toml` (`[mcp_servers.code-review-graph]`) |
 | Claude Code | `<project>/.mcp.json` |
 | Gemini CLI | `<project>/.gemini/settings.json` |
+| Antigravity CLI | `<project>/.gemini/settings.json` (inherited from Gemini CLI) |
 | OpenCode | `~/.config/opencode/opencode.json` plus `plugins/crg-plugin.ts` |
+| Crush | `<project>/crush.json` (`mcp` namespace) |
 
 If a client cannot see CRG tools, run `aios internal codemap doctor --fix --client <client>` from the target project, then restart that client.
 

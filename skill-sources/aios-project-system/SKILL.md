@@ -20,8 +20,9 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 **This skill is a map, not a router.** For task routing, use `aios-workflow-router`. For process skills, use `superpowers:*`.
 
 ## Core Topology
-- `CLAUDE.md`: project-level behavior contract and architecture overview.
-- `.codex/skills/*/SKILL.md` and `.claude/skills/*/SKILL.md`: operational playbooks for recurring tasks (not deterministic executors).
+- `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`: per-client project-level behavior contract and architecture overview (each client loads its own instruction file).
+- `skill-sources/*/SKILL.md`: canonical skill sources (edit here, never edit generated copies).
+- Generated repo-local skills per client: `.codex/skills`, `.claude/skills`, `.gemini/skills` (also used by Antigravity), `.opencode/skills`, `.crush/skills`, `.agents/skills` — emitted from `skill-sources/` via `config/skills-sync-manifest.json`.
 - `scripts/lib/specs/*.json`: runtime specifications and limits.
 - `tasks/{pending,done,failed}`: task queue and outcomes.
 - `scripts/run-browser-use-mcp.sh`: default browser MCP launcher (bridges to `ai-browser-book/mcp-browser-use`).
@@ -35,8 +36,8 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 - For interactive runs, explicitly prefer `chrome.launch_cdp { port: 9222, user_data_dir: '~/.chrome-cdp-profile' }`, then `browser.connect_cdp`.
 - Repo-local skill `SKILL.md` files can drift from site UI; treat them as runbooks that require live verification.
 - Prefer `page.extract_text` / `page.get_html` evidence before using `page.screenshot`.
-- Repo-local discoverable skills must live in `.codex/skills/` or `.claude/skills/`; do not create ad-hoc skill roots such as `.baoyu-skills/*/SKILL.md`. `.baoyu-skills/` is extension-config territory, not a Codex/Claude skill root.
-- Keep safety constraints aligned with `scripts/lib/specs` and `.codex/skills/skill-constraints/SKILL.md`.
+- Repo-local discoverable skills are generated under each client's skill root (`.codex/skills`, `.claude/skills`, `.gemini/skills` for Gemini/Antigravity, `.opencode/skills`, `.crush/skills`, `.agents/skills`) from `skill-sources/` — do not create ad-hoc skill roots such as `.baoyu-skills/*/SKILL.md`. `.baoyu-skills/` is extension-config territory, not a skill root. Edit canonical sources under `skill-sources/`, then run skill sync.
+- Keep safety constraints aligned with `scripts/lib/specs` and the `skill-constraints` skill.
 
 ## Resources
 - `references/system-map.md`: concise architecture and data flow map.

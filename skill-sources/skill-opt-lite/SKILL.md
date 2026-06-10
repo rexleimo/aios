@@ -134,7 +134,7 @@ Read `references/scoring-guide.md` for full scoring and gate logic.
 
 ## Minimal Example
 
-User: "Optimize my skill at `.claude/skills/my-skill/SKILL.md` for writing TypeScript tests. Here are 10 test-writing tasks."
+User: "Optimize my skill at `skill-sources/my-skill/SKILL.md` (or `<client-skill-root>/my-skill/SKILL.md`) for writing TypeScript tests. Here are 10 test-writing tasks."
 
 Agent:
 1. Split tasks 8 train / 2 valid

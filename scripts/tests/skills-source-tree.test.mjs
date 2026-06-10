@@ -76,6 +76,45 @@ test('materializeSkillTree copies base tree then overlays client-specific files'
   }
 });
 
+test('materializeSkillTree strips AIOS frontmatter after applying client overlay', async () => {
+  const rootDir = await makeTemp('aios-skills-overlay-frontmatter-root-');
+  const skillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
+  await mkdir(path.join(skillDir, 'clients', 'claude'), { recursive: true });
+  await writeFile(path.join(skillDir, 'SKILL.md'), `---
+name: sample-skill
+description: Use when testing base frontmatter stripping
+repoTargets: [codex, claude]
+clients: [codex, claude]
+---
+
+# Base
+`, 'utf8');
+  await writeFile(path.join(skillDir, 'clients', 'claude', 'SKILL.md'), `---
+name: sample-skill
+description: Use when testing overlay frontmatter stripping
+repoTargets: [claude]
+targetRelativePathBySurface:
+  claude: sample-skill
+clients: [claude]
+---
+
+# Claude Overlay
+`, 'utf8');
+
+  const materialized = materializeSkillTree({ rootDir, relativeSkillPath: 'sample-skill', client: 'claude' });
+  try {
+    const content = await readFile(path.join(materialized.directoryPath, 'SKILL.md'), 'utf8');
+    assert.match(content, /# Claude Overlay/);
+    assert.match(content, /name: sample-skill/);
+    assert.match(content, /description: Use when testing overlay frontmatter stripping/);
+    assert.doesNotMatch(content, /repoTargets:/);
+    assert.doesNotMatch(content, /targetRelativePathBySurface:/);
+    assert.doesNotMatch(content, /clients:/);
+  } finally {
+    materialized.cleanup();
+  }
+});
+
 test('materializeSkillTree excludes the clients subtree from emitted output', async () => {
   const rootDir = await makeTemp('aios-skills-no-clients-root-');
   const skillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
