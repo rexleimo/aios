@@ -69,7 +69,7 @@ async function checkLatestTurnCompliance({ workspaceRoot, session = '', latest =
 /* 中文注释：doctor 是运维入口：先看配置，必要时修复，再跑 proof 用真实指标证明链路可用。 */
 export async function runInterceptionDoctor(options = {}, { rootDir = process.cwd(), projectRoot = rootDir, io = console, env = process.env, clientHomes = null } = {}) {
   const homes = clientHomes || getClientHomes(env);
-  const beforeTargets = inspectMcpProxyTargets({ rootDir, clientHomes: homes });
+  const beforeTargets = inspectMcpProxyTargets({ rootDir, clientHomes: homes, aliases: ['puppeteer-stealth', 'aios-shell'] });
   const shouldEnforceTurns = Boolean(options.enforceTurns);
   const turnCompliancePromise = shouldEnforceTurns
     ? checkLatestTurnCompliance({
@@ -88,7 +88,7 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
       io: options.json ? { log() {} } : io,
     });
   }
-  const afterTargets = inspectMcpProxyTargets({ rootDir, clientHomes: homes });
+  const afterTargets = inspectMcpProxyTargets({ rootDir, clientHomes: homes, aliases: ['puppeteer-stealth', 'aios-shell'] });
   /* 中文注释：配置看起来正确不代表链路真的压缩，所以 doctor 必须再跑一次 live proof。 */
   const proof = await runInterceptionProof({ sessionId: options.sessionId || options.session, json: false }, { rootDir: projectRoot || rootDir, io: { log() {} }, clientHomes: homes });
   const mcpProxy = statusFromTargets(afterTargets);

@@ -100,6 +100,7 @@ PRs should include:
 - Output compression: default `tight`, `ultra` for harness/checkpoints, `precise` for browser/safety/irreversible actions.
 - Input compression: prefer `page.semantic_snapshot` or targeted `page.extract_text` before full-page text/HTML/screenshots; use ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
 - Data plane: MCP tools route through `scripts/aios-mcp-proxy.mjs`; large output is offloaded to refs; metrics in `.aios/interception/metrics/`.
+- Shell command interception: the `aios_shell` MCP tool (`aios-shell` alias) provides deterministic output compression for shell commands across all clients via the MCP proxy; prefer it over the host Bash tool when available.
 - For CLI/tool input, prefer scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) and preserve errors, paths, commands, latest state, and actionable UI text.
 
 ## Default Superpowers Route

@@ -42,7 +42,29 @@ export function buildAiosMcpProxyServer({ rootDir, upstream, host = 'generic-mcp
   };
 }
 
-/* 中文注释：迁移前先拆出原 upstream，避免重复套娃代理。 */
+export function buildAiosShellMcpServer({ rootDir, workspaceRoot = rootDir } = {}) {
+  if (!rootDir) throw new Error('rootDir is required for AIOS shell MCP server config');
+  return {
+    type: 'stdio',
+    command: process.execPath,
+    args: [
+      path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'),
+      '--workspace',
+      workspaceRoot || rootDir,
+      '--host',
+      'aios-shell',
+      '--',
+      process.execPath,
+      path.join(rootDir, 'scripts', 'shell-mcp-server.mjs'),
+    ],
+    env: {
+      AIOS_INTERCEPTION_METRICS: '1',
+      AIOS_MCP_PROXY: '1',
+      AIOS_MCP_UPSTREAM_HOST: 'aios-shell',
+    },
+  };
+}
+
 export function unwrapAiosMcpProxyEntry(entry) {
   if (!entry || typeof entry !== 'object' || !Array.isArray(entry.args)) return null;
   const args = entry.args.map(String);

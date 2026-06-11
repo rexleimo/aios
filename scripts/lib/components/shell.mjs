@@ -75,11 +75,40 @@ function samePath(left, right, platform = process.platform) {
 }
 
 function buildPosixNativeShim({ rootDir, command, runtimeId }) {
-  return `#!/usr/bin/env sh\n# ${NATIVE_SHIM_MARK}: ${command}\nAIOS_ROOT_DIR=\${AIOS_ROOT_DIR:-${quotePosixSingle(rootDir)}}\nAIOS_ROOT=\${AIOS_ROOT:-\$AIOS_ROOT_DIR}\nROOTPATH=\${ROOTPATH:-\$AIOS_ROOT_DIR}\nAIOS_NATIVE_SHIM_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexport AIOS_ROOT_DIR AIOS_ROOT ROOTPATH AIOS_NATIVE_SHIM_DIR\nexec node "$AIOS_ROOT_DIR/scripts/contextdb-shell-bridge.mjs" --agent ${quotePosixSingle(runtimeId)} --command ${quotePosixSingle(command)} -- "$@"\n`;
+  const quotedRoot = quotePosixSingle(rootDir);
+  return `#!/usr/bin/env sh
+# ${NATIVE_SHIM_MARK}: ${command}
+_aios_root_baked=${quotedRoot}
+if [ -f "\${AIOS_ROOT_DIR:-}/scripts/contextdb-shell-bridge.mjs" ]; then
+  :
+elif [ -f "$_aios_root_baked/scripts/contextdb-shell-bridge.mjs" ]; then
+  AIOS_ROOT_DIR="$_aios_root_baked"
+else
+  for _aios_probe_dir in "$HOME/.rexcil/harness-cli" "$HOME/cool.cnb/rex-ai-boot"; do
+    if [ -f "$_aios_probe_dir/scripts/contextdb-shell-bridge.mjs" ]; then
+      AIOS_ROOT_DIR="$_aios_probe_dir"
+      break
+    fi
+  done
+fi
+if [ ! -f "$AIOS_ROOT_DIR/scripts/contextdb-shell-bridge.mjs" ]; then
+  _aios_real_bin=$(PATH=$(echo "$PATH" | sed "s|$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)||g" | sed 's|::\+|:|g') command -v -- "$(basename "$0")" 2>/dev/null || true)
+  if [ -n "$_aios_real_bin" ] && [ "$_aios_real_bin" != "$0" ]; then
+    exec "$_aios_real_bin" -- "$@"
+  fi
+  echo "[aios-shim] FATAL: cannot find contextdb-shell-bridge.mjs or real ${command}" >&2
+  exit 127
+fi
+AIOS_ROOT=\${AIOS_ROOT:-\$AIOS_ROOT_DIR}
+ROOTPATH=\${ROOTPATH:-\$AIOS_ROOT_DIR}
+AIOS_NATIVE_SHIM_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export AIOS_ROOT_DIR AIOS_ROOT ROOTPATH AIOS_NATIVE_SHIM_DIR
+exec node "$AIOS_ROOT_DIR/scripts/contextdb-shell-bridge.mjs" --agent ${quotePosixSingle(runtimeId)} --command ${quotePosixSingle(command)} -- "$@"
+`;
 }
 
 function buildWindowsNativeShim({ rootDir, command, runtimeId }) {
-  return `@echo off\r\nrem ${NATIVE_SHIM_MARK}: ${command}\r\nif "%AIOS_ROOT_DIR%"=="" set "AIOS_ROOT_DIR=${rootDir}"\r\nif "%AIOS_ROOT%"=="" set "AIOS_ROOT=%AIOS_ROOT_DIR%"\r\nif "%ROOTPATH%"=="" set "ROOTPATH=%AIOS_ROOT_DIR%"\r\nset "AIOS_NATIVE_SHIM_DIR=%~dp0"\r\nnode "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" --agent ${quoteWindowsArg(runtimeId)} --command ${quoteWindowsArg(command)} -- %*\r\nexit /b %ERRORLEVEL%\r\n`;
+  return `@echo off\r\nrem ${NATIVE_SHIM_MARK}: ${command}\r\nif "%AIOS_ROOT_DIR%"=="" set "AIOS_ROOT_DIR=${rootDir}"\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" (\r\n  if exist "${rootDir}\\scripts\\contextdb-shell-bridge.mjs" set "AIOS_ROOT_DIR=${rootDir}"\r\n)\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" (\r\n  where /q "${command}" 2>nul\r\n  if not errorlevel 1 (\r\n    for /f "tokens=*" %%i in ('where "${command}"') do set "_aios_real_bin=%%i"\r\n    if not "%_aios_real_bin%"=="%~f0" (\r\n      "%_aios_real_bin%" %*\r\n      exit /b %ERRORLEVEL%\r\n    )\r\n  )\r\n  echo [aios-shim] FATAL: cannot find contextdb-shell-bridge.mjs or real ${command} 1>&2\r\n  exit /b 127\r\n)\r\nif "%AIOS_ROOT%"=="" set "AIOS_ROOT=%AIOS_ROOT_DIR%"\r\nif "%ROOTPATH%"=="" set "ROOTPATH=%AIOS_ROOT_DIR%"\r\nset "AIOS_NATIVE_SHIM_DIR=%~dp0"\r\nnode "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" --agent ${quoteWindowsArg(runtimeId)} --command ${quoteWindowsArg(command)} -- %*\r\nexit /b %ERRORLEVEL%\r\n`;
 }
 
 function installNativeShims({ rootDir, platform = process.platform, homeDir = os.homedir() } = {}) {

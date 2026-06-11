@@ -64,9 +64,23 @@ export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', r
 }
 
 /* 中文注释：聚合巡检结果给 proof/doctor 使用，调用方无需理解每个客户端的路径规则。 */
-export function inspectMcpProxyTargets({ rootDir, clientHomes = {}, alias = 'puppeteer-stealth' } = {}) {
-  return collectInterceptionMcpTargets({ rootDir, clientHomes }).map((target) => ({
-    ...target,
-    ...inspectMcpProxyTarget(target.path, { alias, rootDir, namespace: target.namespace, format: target.format }),
-  }));
+export function inspectMcpProxyTargets({ rootDir, clientHomes = {}, alias = 'puppeteer-stealth', aliases = [] } = {}) {
+  const checkAliases = aliases.length > 0 ? aliases : [alias];
+  const targets = collectInterceptionMcpTargets({ rootDir, clientHomes });
+  return targets.map((target) => {
+    const aliasResults = checkAliases.map((checkAlias) => ({
+      alias: checkAlias,
+      ...inspectMcpProxyTarget(target.path, { alias: checkAlias, rootDir, namespace: target.namespace, format: target.format }),
+    }));
+    const primary = aliasResults.find((r) => r.alias === alias) || aliasResults[0];
+    const allProxied = aliasResults.every((r) => !r.exists || r.proxied || r.unsupported);
+    return {
+      ...target,
+      exists: primary.exists,
+      hasAlias: primary.hasAlias,
+      proxied: primary.proxied,
+      allAliasesProxied: allProxied,
+      aliasResults,
+    };
+  });
 }

@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { migrateOneMcpOpencodeJson } from '../lib/components/browser/mcp-opencode.mjs';
-import { PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
+import { PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS, SHELL_ALIAS } from '../lib/components/browser/constants.mjs';
 
 async function makeTemp() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-mcp-opencode-'));
@@ -29,6 +29,11 @@ test('migrateOneMcpOpencodeJson writes opencode local-shape entries under the mc
   // env must survive as `environment` (browser server requires CDP url etc.)
   assert.ok(browser.environment && browser.environment.BROWSER_USE_CDP_URL, 'env mapped to environment');
   assert.ok(parsed.mcp[AUTH_TOOLS_ALIAS], 'auth tools registered');
+  assert.ok(parsed.mcp[SHELL_ALIAS], 'shell tool registered');
+  const shell = parsed.mcp[SHELL_ALIAS];
+  assert.equal(shell.type, 'local');
+  assert.equal(shell.enabled, true);
+  assert.ok(Array.isArray(shell.command), 'shell command is an array');
 });
 
 test('migrateOneMcpOpencodeJson preserves unrelated keys, drops legacy alias, is idempotent', async () => {

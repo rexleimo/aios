@@ -7,6 +7,7 @@
 1. Tool output enters an AIOS-owned boundary:
    - Shell/harness: `runShellEnvelope` or `scripts/aios-intercept.mjs`
    - MCP: `scripts/aios-mcp-proxy.mjs`
+   - MCP shell tool: `scripts/shell-mcp-server.mjs` registered as `aios-shell` in all client configs, proxied through the same MCP proxy
    - Native CLI entrypoints: shell setup installs `~/.aios/bin/<client>` shims ahead of the real clients and routes them through `scripts/contextdb-shell-bridge.mjs`
    - Host-native shell hooks: `scripts/hooks/claude/aios-rewrite.sh` may rewrite supported Bash commands before execution
 2. `createInterceptionEngine()` normalizes output and builds a compact packet.
@@ -50,3 +51,4 @@ Do not over-claim native raw-shell interception for a client that lacks a verifi
 - The bridge removes `AIOS_NATIVE_SHIM_DIR` from child `PATH` before launching the real client or AIOS runner to avoid recursion.
 - Strict shim verification must also find the real downstream client after removing `AIOS_NATIVE_SHIM_DIR` from `PATH`.
 - Native shims prove process-level input/output control and AIOS runner entry. They do not prove internal interactive model-turn interception unless the client also has a verified hook/plugin/gateway.
+- Shims self-heal by probing common AIOS install paths when the baked-in fallback fails; if no install is found, they fail-open by exec-ing the real client binary directly.

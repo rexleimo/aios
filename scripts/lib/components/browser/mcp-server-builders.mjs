@@ -2,7 +2,7 @@
 import path from 'node:path';
 
 import { buildAiosMcpProxyServer } from '../../interception/mcp/proxy-config.mjs';
-import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS } from './constants.mjs';
+import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import {
   findBrowserUseRepo,
   isLegacyBrowserUseFallback,
@@ -66,4 +66,17 @@ export function buildAuthToolsMcpServer(rootDir, existingEntry = {}) {
   };
 }
 
-export { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS };
+export { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS };
+
+export function buildShellMcpServer(rootDir) {
+  return buildAiosMcpProxyServer({
+    rootDir,
+    upstream: {
+      type: 'stdio',
+      command: process.execPath,
+      args: [path.join(rootDir, 'scripts', 'shell-mcp-server.mjs')],
+    },
+    host: SHELL_ALIAS,
+    workspaceRoot: rootDir,
+  });
+}

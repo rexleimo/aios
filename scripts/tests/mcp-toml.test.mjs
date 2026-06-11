@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { migrateOneMcpToml } from '../lib/components/browser/mcp-toml.mjs';
-import { PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS } from '../lib/components/browser/constants.mjs';
+import { PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, SHELL_ALIAS } from '../lib/components/browser/constants.mjs';
 
 async function makeTemp() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-mcp-toml-'));
@@ -20,6 +20,7 @@ test('migrateOneMcpToml creates codex mcp_servers sections for browser + auth al
   assert.equal(result.status, 'created');
   assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
   assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${AUTH_TOOLS_ALIAS}\\]`));
+  assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${SHELL_ALIAS}\\]`));
   assert.match(result.nextRaw, /command = "/);
   assert.match(result.nextRaw, /args = \[/);
   assert.match(result.nextRaw, /env = \{/);
