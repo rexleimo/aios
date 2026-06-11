@@ -25,7 +25,7 @@ A valid proof must show:
 - `saved_bytes > 0` and `saving_ratio > 0.5` for large outputs;
 - MCP config targets are routed through `scripts/aios-mcp-proxy.mjs`.
 - for host-native shell hooks, `aios init --agent claude` registers `PreToolUse` and `node scripts/aios.mjs interception rewrite --hook claude --input <json>` returns host protocol JSON with `updatedInput.command`.
-- for native CLI entrypoints, `node scripts/aios.mjs clients doctor --native-strict --json` shows managed shims installed and first in `PATH`.
+- for native CLI entrypoints, `node scripts/aios.mjs clients doctor --native-strict --json` shows managed shims installed, first in `PATH`, and backed by a real downstream client after the shim dir is removed from `PATH`.
 
 Run:
 
@@ -48,4 +48,5 @@ Do not over-claim native raw-shell interception for a client that lacks a verifi
 
 - Shims live in `~/.aios/bin` and are managed files only.
 - The bridge removes `AIOS_NATIVE_SHIM_DIR` from child `PATH` before launching the real client or AIOS runner to avoid recursion.
+- Strict shim verification must also find the real downstream client after removing `AIOS_NATIVE_SHIM_DIR` from `PATH`.
 - Native shims prove process-level input/output control and AIOS runner entry. They do not prove internal interactive model-turn interception unless the client also has a verified hook/plugin/gateway.
