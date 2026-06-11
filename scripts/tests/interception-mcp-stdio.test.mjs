@@ -7,7 +7,7 @@ import { handleJsonRpcProxyLine } from '../lib/interception/mcp/stdio-proxy.mjs'
 
 const SENTINEL = 'UNIQUE_STDIO_MCP_SENTINEL';
 
-test('stdio MCP proxy line handler forwards JSON-RPC and returns compact packet for tools/call', async () => {
+test('stdio MCP proxy line handler keeps tools/call MCP shape and returns AIOS metadata', async () => {
   const handler = createJsonRpcProxyHandler({
     workspaceRoot: process.cwd(),
     sessionId: 'stdio-mcp-test',
@@ -29,9 +29,12 @@ test('stdio MCP proxy line handler forwards JSON-RPC and returns compact packet 
   }), handler);
 
   assert.equal(response.id, 11);
-  assert.equal(response.result.type, 'aios.compact_packet');
   assert.equal(JSON.stringify(response).includes(SENTINEL), false);
-  assert.equal(response.result.refs.length, 1);
+  assert.equal(response.result.content.length, 1);
+  assert.equal(response.result.content[0].type, 'text');
+  assert.match(response.result.content[0].text, /aios\.compact_packet/);
+  assert.equal(response.result._meta.aios.type, 'aios.compact_packet');
+  assert.equal(response.result._meta.aios.refs.length, 1);
 });
 
 test('stdio MCP proxy line handler returns parse error for invalid JSON', async () => {

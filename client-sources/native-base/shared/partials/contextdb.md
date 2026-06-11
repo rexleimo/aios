@@ -73,7 +73,7 @@ Never store global project decisions, architecture facts, task handoffs, release
 
 ### Unified Project Search (mandatory fallback)
 
-**Before any ad-hoc grep or broad file reads**, use unified search to check memory, docs, plans, and code:
+**Before any ad-hoc grep or broad file reads**, use unified search to check project memory, docs, plans, and code references:
 
 ```bash
 node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json

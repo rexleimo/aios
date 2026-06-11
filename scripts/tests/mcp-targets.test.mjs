@@ -59,3 +59,58 @@ test('collectClientMcpTargets includes project-scoped fallbacks when home is una
   // crush: project AGENTS.md fallback shares the codex/opencode instruction surface.
   assert.deepEqual(clients, ['claude', 'codex', 'crush', 'gemini']);
 });
+
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+
+import { inspectMcpProxyTarget } from '../lib/interception/mcp/proxy-inspector.mjs';
+
+function proxiedEntry(rootDir, alias = 'puppeteer-stealth') {
+  return {
+    type: 'stdio',
+    command: process.execPath,
+    args: [
+      path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'),
+      '--workspace', rootDir,
+      '--host', alias,
+      '--', process.execPath, 'server.mjs',
+    ],
+  };
+}
+
+test('inspectMcpProxyTarget recognizes proxied entries in JSON, TOML, opencode, and crush formats', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-mcp-inspect-root-'));
+  const jsonPath = path.join(rootDir, '.mcp.json');
+  const tomlPath = path.join(rootDir, 'config.toml');
+  const opencodePath = path.join(rootDir, 'opencode.json');
+  const crushPath = path.join(rootDir, 'crush.json');
+  await mkdir(rootDir, { recursive: true });
+
+  await writeFile(jsonPath, JSON.stringify({
+    mcpServers: { 'puppeteer-stealth': proxiedEntry(rootDir) },
+  }), 'utf8');
+  await writeFile(tomlPath, [
+    '[mcp_servers.puppeteer-stealth]',
+    'type = "stdio"',
+    `command = "${process.execPath}"`,
+    `args = ["${path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs')}", "--workspace", "${rootDir}", "--host", "puppeteer-stealth", "--", "node", "server.mjs"]`,
+    'env = { "AIOS_MCP_PROXY" = "1" }',
+    '',
+  ].join('\n'), 'utf8');
+  await writeFile(opencodePath, JSON.stringify({
+    mcp: {
+      'puppeteer-stealth': {
+        type: 'local',
+        command: [process.execPath, path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'), '--workspace', rootDir, '--host', 'puppeteer-stealth', '--', 'node', 'server.mjs'],
+      },
+    },
+  }), 'utf8');
+  await writeFile(crushPath, JSON.stringify({
+    mcp: { 'puppeteer-stealth': proxiedEntry(rootDir) },
+  }), 'utf8');
+
+  assert.equal(inspectMcpProxyTarget(jsonPath, { alias: 'puppeteer-stealth', rootDir }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(tomlPath, { alias: 'puppeteer-stealth', rootDir, format: 'toml' }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(opencodePath, { alias: 'puppeteer-stealth', rootDir, format: 'opencode-json', namespace: 'mcp' }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(crushPath, { alias: 'puppeteer-stealth', rootDir, format: 'json', namespace: 'mcp' }).proxied, true);
+});

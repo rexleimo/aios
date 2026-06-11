@@ -112,7 +112,7 @@ Every new task about token savings, browser/MCP output size, shell output size, 
 
 ### Runtime Contract
 - Data plane is code, not prompt: `InterceptionEngine -> CompactPacket -> RawRefStore -> MetricsSink`
-- MCP clients must route browser tools through `scripts/aios-mcp-proxy.mjs` before the real MCP server
+- MCP clients must route browser tools through `scripts/aios-mcp-proxy.mjs` before the real MCP server; MCP wire responses stay protocol-compatible, with AIOS compact packets attached at `_meta.aios` plus refs/metrics
 - Shell command output is intercepted via the `aios_shell` MCP tool (registered as `aios-shell` in all client configs), routed through the same MCP proxy for automatic compression
 - AIOS-controlled shell/harness calls must route through `scripts/aios-intercept.mjs` or `runShellEnvelope`
 - Native CLI entrypoints must be shadowed by managed `~/.aios/bin/<client>` shims when shell setup is installed; verify shims plus real downstream clients with `node scripts/aios.mjs clients doctor --native-strict --json`

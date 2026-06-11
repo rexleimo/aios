@@ -245,7 +245,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 - Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
 - For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
-- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`, producing compact packets, raw refs, and metrics.
+- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
 - Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
 - Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
 
@@ -349,7 +349,7 @@ Never store global project decisions, architecture facts, task handoffs, release
 
 ### Unified Project Search (mandatory fallback)
 
-**Before any ad-hoc grep or broad file reads**, use unified search to check memory, docs, plans, and code:
+**Before any ad-hoc grep or broad file reads**, use unified search to check project memory, docs, plans, and code references:
 
 ```bash
 node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json

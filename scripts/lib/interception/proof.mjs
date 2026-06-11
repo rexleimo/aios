@@ -85,7 +85,7 @@ export async function runInterceptionProof(options = {}, { rootDir = process.cwd
     method: 'tools/call',
     params: { name: 'page.get_html', arguments: {} },
   });
-  const mcpPacket = mcpResponse.result;
+  const mcpPacket = mcpResponse.result?._meta?.aios;
 
   const shell = await verifyPacket({ workspaceRoot: rootDir, sessionId, packet: shellPacket, sentinel: shellSentinel, source: 'shell' });
   const mcp = await verifyPacket({ workspaceRoot: rootDir, sessionId, packet: mcpPacket, sentinel: mcpSentinel, source: 'mcp' });

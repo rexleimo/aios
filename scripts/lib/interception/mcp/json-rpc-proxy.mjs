@@ -3,7 +3,7 @@ import { createInterceptionEngine } from '../core/engine.mjs';
 import { extractToolCallText } from './tools-call-shrink.mjs';
 import { buildToolsListPacket } from './tools-list-packet.mjs';
 
-/* 中文注释：JSON-RPC proxy 保持 id/result/error 形状不变，只替换 result 的体积，确保 MCP 客户端无感接入。 */
+/* 中文注释：JSON-RPC proxy 保持标准 MCP result 形状，只把 AIOS 压缩证据附加到 _meta.aios。 */
 export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 'default', host = 'generic-mcp', thresholds, now, metrics }) {
   if (typeof forward !== 'function') throw new TypeError('json-rpc proxy forward function is required');
 
@@ -17,21 +17,26 @@ export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 
     if (!response || typeof response !== 'object' || !('result' in response)) return response;
 
     if (message?.method === 'tools/list') {
-      /* 中文注释：tools/list 返回精简目录，同时把完整 schema 存成 ref，避免能力发现丢失。 */
+      if (!isObjectRecord(response.result) || !Array.isArray(response.result.tools)) return response;
+      /* 中文注释：tools/list 必须保留 inputSchema 等标准字段，严格 MCP 客户端才会接受。 */
       return {
         ...response,
-        result: await buildToolsListPacket({
-          result: response.result,
-          workspaceRoot,
-          sessionId,
-          host,
-          now,
-          metrics,
-        }),
+        result: attachAiosMetadata(
+          response.result,
+          await buildToolsListPacket({
+            result: response.result,
+            workspaceRoot,
+            sessionId,
+            host,
+            now,
+            metrics,
+          }),
+        ),
       };
     }
 
     if (message?.method === 'tools/call') {
+      if (!isObjectRecord(response.result) || !Array.isArray(response.result.content)) return response;
       const engine = createInterceptionEngine({ workspaceRoot, thresholds, now, metrics });
       /* 中文注释：tools/call 结果先展开成文本，再复用同一个 engine，保证 MCP 和 shell 的 packet/metrics 一致。 */
       const text = extractToolCallText(response.result);
@@ -47,9 +52,32 @@ export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 
         },
         metadata: { originalMethod: message.method },
       });
-      return { ...response, result: packet };
+      return {
+        ...response,
+        result: attachAiosMetadata(
+          {
+            ...response.result,
+            content: [{ type: 'text', text: JSON.stringify(packet, null, 2) }],
+          },
+          packet,
+        ),
+      };
     }
 
     return response;
   };
+}
+
+function attachAiosMetadata(result, aios) {
+  return {
+    ...result,
+    _meta: {
+      ...(isObjectRecord(result?._meta) ? result._meta : {}),
+      aios,
+    },
+  };
+}
+
+function isObjectRecord(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }

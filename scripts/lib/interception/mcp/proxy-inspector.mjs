@@ -38,29 +38,86 @@ export function collectInterceptionMcpTargets({ rootDir, clientHomes = {} } = {}
     .map((target) => ({ ...target, path: path.resolve(target.path) }));
 }
 
-/* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。
-   非 JSON(mcpServers) 落点（codex TOML / opencode mcp 命名空间）此处不解析 mcpServers，
-   返回 unsupported 由调用方跳过，避免误报。 */
+/* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。 */
 export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', rootDir = '', namespace = 'mcpServers', format = 'json' } = {}) {
   if (!fs.existsSync(filePath)) {
     return { path: filePath, exists: false, hasAlias: false, proxied: false };
   }
-  if (format !== 'json') {
-    return { path: filePath, exists: true, hasAlias: false, proxied: false, unsupported: true };
-  }
+  if (format === 'toml') return inspectTomlMcpProxyTarget(filePath, { alias, rootDir });
   let parsed;
   try {
     parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
   } catch (error) {
     return { path: filePath, exists: true, hasAlias: false, proxied: false, error: error.message };
   }
-  const entry = parsed?.[namespace]?.[alias];
+  const entry = format === 'opencode-json'
+    ? normalizeOpencodeEntry(parsed?.[namespace]?.[alias])
+    : parsed?.[namespace]?.[alias];
   return {
     path: filePath,
     exists: true,
     hasAlias: Boolean(entry),
     proxied: isAiosMcpProxyEntry(entry, rootDir),
   };
+}
+
+function inspectTomlMcpProxyTarget(filePath, { alias, rootDir }) {
+  const raw = fs.readFileSync(filePath, 'utf8').replace(/^\uFEFF/u, '');
+  const section = readTomlMcpSection(raw, alias);
+  if (!section) return { path: filePath, exists: true, hasAlias: false, proxied: false };
+  const entry = {
+    command: readTomlStringValue(section, 'command'),
+    args: readTomlStringArray(section, 'args'),
+  };
+  return {
+    path: filePath,
+    exists: true,
+    hasAlias: true,
+    proxied: isAiosMcpProxyEntry(entry, rootDir),
+  };
+}
+
+function readTomlMcpSection(raw, alias) {
+  const header = `[mcp_servers.${alias}]`;
+  const lines = raw.split(/\r?\n/u);
+  const start = lines.findIndex((line) => line.trim() === header);
+  if (start < 0) return '';
+  const body = [];
+  for (const line of lines.slice(start + 1)) {
+    if (/^\s*\[/u.test(line)) break;
+    body.push(line);
+  }
+  return body.join('\n');
+}
+
+function readTomlStringValue(section, key) {
+  const pattern = new RegExp(`^\\s*${key}\\s*=\\s*\"((?:\\\\.|[^\"])*)\"\\s*$`, 'mu');
+  const value = pattern.exec(section)?.[1] || '';
+  return value.replace(/\\"/gu, '"').replace(/\\\\/gu, '\\');
+}
+
+function readTomlStringArray(section, key) {
+  const pattern = new RegExp(`^\\s*${key}\\s*=\\s*\\[([\\s\\S]*?)\\]\\s*$`, 'mu');
+  const body = pattern.exec(section)?.[1] || '';
+  const values = [];
+  const itemPattern = /"((?:\\.|[^"])*)"/gu;
+  let match;
+  while ((match = itemPattern.exec(body)) !== null) {
+    values.push(match[1].replace(/\\"/gu, '"').replace(/\\\\/gu, '\\'));
+  }
+  return values;
+}
+
+function normalizeOpencodeEntry(entry) {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return entry;
+  if (Array.isArray(entry.command)) {
+    return {
+      command: String(entry.command[0] || ''),
+      args: entry.command.slice(1).map(String),
+      env: entry.environment && typeof entry.environment === 'object' ? entry.environment : {},
+    };
+  }
+  return entry;
 }
 
 /* 中文注释：聚合巡检结果给 proof/doctor 使用，调用方无需理解每个客户端的路径规则。 */

@@ -11,7 +11,7 @@ import { readRawRef } from '../lib/interception/refs/raw-ref-store.mjs';
 
 const SENTINEL = 'UNIQUE_MCP_RAW_PAYLOAD_SENTINEL';
 
-test('json-rpc proxy shrinks tools/call result and preserves raw by ref', async () => {
+test('json-rpc proxy keeps tools/call MCP shape and stores AIOS metadata by ref', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-mcp-proxy-'));
   const calls = [];
   try {
@@ -47,20 +47,23 @@ test('json-rpc proxy shrinks tools/call result and preserves raw by ref', async 
     assert.equal(response.id, 7);
     assert.equal(calls.length, 1);
     assert.equal(JSON.stringify(response).includes(SENTINEL), false);
-    assert.equal(response.result.type, 'aios.compact_packet');
-    assert.equal(response.result.refs.length, 1);
+    assert.equal(response.result.content.length, 1);
+    assert.equal(response.result.content[0].type, 'text');
+    assert.match(response.result.content[0].text, /aios\.compact_packet/);
+    assert.equal(response.result._meta.aios.type, 'aios.compact_packet');
+    assert.equal(response.result._meta.aios.refs.length, 1);
 
     const metrics = await readMetricsRecords({ workspaceRoot, sessionId: 'mcp-session' });
     assert.equal(metrics.length, 1);
     assert.equal(metrics[0].source, 'mcp');
-    assert.equal(metrics[0].ref_id, response.result.refs[0].ref_id);
-    assert.equal(metrics[0].saved_bytes, response.result.metrics.saved_bytes);
+    assert.equal(metrics[0].ref_id, response.result._meta.aios.refs[0].ref_id);
+    assert.equal(metrics[0].saved_bytes, response.result._meta.aios.metrics.saved_bytes);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
 });
 
-test('json-rpc proxy shrinks tools/list, stores full catalog ref, and records metrics', async () => {
+test('json-rpc proxy keeps tools/list MCP shape, stores full catalog ref, and records metrics', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-mcp-proxy-'));
   try {
     const handler = createJsonRpcProxyHandler({
@@ -87,14 +90,15 @@ test('json-rpc proxy shrinks tools/list, stores full catalog ref, and records me
     const response = await handler({ jsonrpc: '2.0', id: 3, method: 'tools/list' });
     assert.equal(response.id, 3);
     assert.equal(response.result.tools[0].name, 'page.screenshot');
-    assert.equal(JSON.stringify(response).includes('giant base64 blob'.repeat(10)), false);
-    assert.equal(response.result.refs.length, 1);
-    assert.equal(response.result.recall.length > 0, true);
+    assert.deepEqual(response.result.tools[0].inputSchema, { type: 'object', properties: { fullPage: { type: 'boolean' } } });
+    assert.equal(response.result._meta.aios.tools[0].name, 'page.screenshot');
+    assert.equal(response.result._meta.aios.refs.length, 1);
+    assert.equal(response.result._meta.aios.recall.length > 0, true);
 
     const recalled = await readRawRef({
       workspaceRoot,
       sessionId: 'mcp-session',
-      refId: response.result.refs[0].ref_id,
+      refId: response.result._meta.aios.refs[0].ref_id,
     });
     assert.match(recalled.raw, /page\.screenshot/);
     assert.match(recalled.raw, /giant base64 blob/);
@@ -102,8 +106,23 @@ test('json-rpc proxy shrinks tools/list, stores full catalog ref, and records me
     const metrics = await readMetricsRecords({ workspaceRoot, sessionId: 'mcp-session' });
     assert.equal(metrics.length, 1);
     assert.equal(metrics[0].kind, 'mcp.tools_list');
-    assert.equal(metrics[0].ref_id, response.result.refs[0].ref_id);
+    assert.equal(metrics[0].ref_id, response.result._meta.aios.refs[0].ref_id);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
+});
+
+test('json-rpc proxy passes through non-MCP shaped tool results', async () => {
+  const handler = createJsonRpcProxyHandler({
+    workspaceRoot: process.cwd(),
+    sessionId: 'mcp-session',
+    forward: async message => ({
+      jsonrpc: '2.0',
+      id: message.id,
+      result: { arbitrary: true },
+    }),
+  });
+
+  const response = await handler({ jsonrpc: '2.0', id: 9, method: 'tools/call' });
+  assert.deepEqual(response.result, { arbitrary: true });
 });

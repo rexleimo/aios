@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.52.1] - 2026-06-11
+
+- fix MCP proxy wire compatibility for strict clients
+
 ## [1.52.0] - 2026-06-11
 
 ### Added

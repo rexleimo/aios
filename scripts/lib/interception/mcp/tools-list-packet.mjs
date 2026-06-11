@@ -4,7 +4,7 @@ import { estimateTokensFromBytes } from '../metrics/token-estimator.mjs';
 import { writeRawRef } from '../refs/raw-ref-store.mjs';
 import { shrinkToolsList } from './tools-list-shrink.mjs';
 
-/* 中文注释：构建 compact catalog，同时把完整 catalog 写入 raw ref 供后续精准召回。 */
+/* 中文注释：构建 MCP-safe AIOS 元数据，同时把完整 catalog 写入 raw ref 供后续精准召回。 */
 export async function buildToolsListPacket({ result, workspaceRoot, sessionId, host, now, metrics }) {
   const compact = shrinkToolsList(result);
   const rawText = JSON.stringify(result ?? {}, null, 2);
@@ -24,6 +24,8 @@ export async function buildToolsListPacket({ result, workspaceRoot, sessionId, h
   });
 
   const packet = {
+    type: 'aios.mcp_metadata',
+    version: 1,
     ...compact,
     refs: [{
       ref_id: ref.refId,

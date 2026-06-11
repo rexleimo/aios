@@ -8,7 +8,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 - Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
 - For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
-- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`, producing compact packets, raw refs, and metrics.
+- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
 - Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
 - Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
 

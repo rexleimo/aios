@@ -11,10 +11,11 @@
    - Native CLI entrypoints: shell setup installs `~/.aios/bin/<client>` shims ahead of the real clients and routes them through `scripts/contextdb-shell-bridge.mjs`
    - Host-native shell hooks: `scripts/hooks/claude/aios-rewrite.sh` may rewrite supported Bash commands before execution
 2. `createInterceptionEngine()` normalizes output and builds a compact packet.
-3. Large raw output is stored in `.aios/interception/refs/<session>/`.
-4. Compact packet carries only summary, key lines, errors, refs, and metrics.
-5. Metrics JSONL is appended to `.aios/interception/metrics/<session>.jsonl`.
-6. Raw recall uses `node scripts/aios.mjs refs read|grep|list`.
+3. MCP wire responses remain protocol-compatible; MCP compact packets are attached at `result._meta.aios` and large `tools/call` text is replaced with a compact text payload.
+4. Large raw output is stored in `.aios/interception/refs/<session>/`.
+5. Compact packet carries only summary, key lines, errors, refs, and metrics.
+6. Metrics JSONL is appended to `.aios/interception/metrics/<session>.jsonl`.
+7. Raw recall uses `node scripts/aios.mjs refs read|grep|list`.
 
 ## Required Proof
 
