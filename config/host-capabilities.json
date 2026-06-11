@@ -11,11 +11,12 @@
       "targetLevel": "L2",
       "capabilities": [
         "sessionStartInjection",
+        "preToolRewrite",
         "mcpProxy",
         "compactPacket"
       ],
       "limits": [
-        "pre-tool rewrite hook adapter is not installed in this release."
+        "Command rewrite is guarded to supported noisy shell commands; unsupported shell constructs fail open."
       ],
       "requiredEntrypoint": "aios-managed-runner",
       "directHostBypassAllowed": false,

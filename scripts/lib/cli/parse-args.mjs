@@ -63,6 +63,10 @@ function parseClientsArgs(argv) {
       options.format = 'json';
       continue;
     }
+    if (arg === '--native-strict') {
+      options.nativeStrict = true;
+      continue;
+    }
     if (arg === '--format') {
       const value = rest[index + 1];
       if (!value || value.startsWith('-')) throw new Error('Missing value for --format');

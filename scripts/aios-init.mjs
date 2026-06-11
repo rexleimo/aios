@@ -162,10 +162,24 @@ export function buildOffloadCaptureCommand(agent, workspaceRoot, { env = process
   ].join(' ');
 }
 
-function buildHookEntry(agent, command) {
+export function buildCommandRewriteHookCommand(agent, workspaceRoot, { env = process.env } = {}) {
+  const cfg = AGENT_CONFIG[agent];
+  const runtimeRoot = resolveAiosRuntimeRoot(env);
+  const hookPath = resolve(runtimeRoot, 'scripts', 'hooks', 'claude', 'aios-rewrite.sh');
+  if (!cfg || cfg.cli !== 'claude') {
+    return '';
+  }
+  return [
+    `AIOS_ROOT_DIR=${shellQuote(runtimeRoot)}`,
+    'bash',
+    shellQuote(hookPath),
+  ].join(' ');
+}
+
+function buildHookEntry(agent, command, { matcher = '' } = {}) {
   if (agent === 'claude') {
     return {
-      matcher: '',
+      matcher,
       hooks: [
         {
           type: 'command',
@@ -237,6 +251,33 @@ function findOffloadCaptureHook(postToolUseHooks) {
   return null;
 }
 
+function isCommandRewriteHookCommand(command) {
+  const text = String(command || '');
+  return text.includes('aios-rewrite.sh');
+}
+
+function findCommandRewriteHook(preToolUseHooks) {
+  for (let entryIndex = 0; entryIndex < preToolUseHooks.length; entryIndex += 1) {
+    const entry = preToolUseHooks[entryIndex];
+    if (!entry || typeof entry !== 'object') continue;
+
+    if (isCommandRewriteHookCommand(entry.command)) {
+      return { entryIndex, hookIndex: -1, command: entry.command, schema: 'top-level' };
+    }
+
+    if (Array.isArray(entry.hooks)) {
+      for (let hookIndex = 0; hookIndex < entry.hooks.length; hookIndex += 1) {
+        const hook = entry.hooks[hookIndex];
+        if (hook && typeof hook === 'object' && isCommandRewriteHookCommand(hook.command)) {
+          return { entryIndex, hookIndex, command: hook.command, schema: 'nested' };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 function upsertSaveGuardHook(stopHooks, agent, hookCommand) {
   const existing = findSaveGuardHook(stopHooks);
 
@@ -275,6 +316,47 @@ function upsertSaveGuardHook(stopHooks, agent, hookCommand) {
     command: hookCommand,
   };
   return { action: 'update', stopHooks: nextStopHooks };
+}
+
+function upsertCommandRewriteHook(preToolUseHooks, agent, hookCommand) {
+  const existing = findCommandRewriteHook(preToolUseHooks);
+
+  if (!existing) {
+    return { action: 'add', preToolUseHooks: [...preToolUseHooks, buildHookEntry(agent, hookCommand, { matcher: 'Bash' })] };
+  }
+
+  const needsSchemaUpgrade = agent === 'claude' && existing.schema !== 'nested';
+  if (existing.command === hookCommand && !needsSchemaUpgrade) {
+    return { action: 'skip', preToolUseHooks };
+  }
+
+  const nextPreToolUseHooks = [...preToolUseHooks];
+  const entry = nextPreToolUseHooks[existing.entryIndex];
+
+  if (agent === 'claude') {
+    if (existing.hookIndex >= 0 && Array.isArray(entry.hooks)) {
+      const nextHooks = [...entry.hooks];
+      nextHooks[existing.hookIndex] = {
+        ...nextHooks[existing.hookIndex],
+        type: nextHooks[existing.hookIndex].type || 'command',
+        command: hookCommand,
+      };
+      nextPreToolUseHooks[existing.entryIndex] = {
+        ...entry,
+        matcher: entry.matcher || 'Bash',
+        hooks: nextHooks,
+      };
+    } else {
+      nextPreToolUseHooks[existing.entryIndex] = buildHookEntry(agent, hookCommand, { matcher: 'Bash' });
+    }
+    return { action: 'update', preToolUseHooks: nextPreToolUseHooks };
+  }
+
+  nextPreToolUseHooks[existing.entryIndex] = {
+    ...entry,
+    command: hookCommand,
+  };
+  return { action: 'update', preToolUseHooks: nextPreToolUseHooks };
 }
 
 function upsertOffloadCaptureHook(postToolUseHooks, agent, hookCommand) {
@@ -317,9 +399,9 @@ function upsertOffloadCaptureHook(postToolUseHooks, agent, hookCommand) {
   return { action: 'update', postToolUseHooks: nextPostToolUseHooks };
 }
 
-function combineHookActions(stopAction, offloadAction) {
-  if (stopAction === 'update' || offloadAction === 'update') return 'update';
-  if (stopAction === 'add' || offloadAction === 'add') return 'add';
+function combineHookActions(...actions) {
+  if (actions.includes('update')) return 'update';
+  if (actions.includes('add')) return 'add';
   return 'skip';
 }
 
@@ -332,6 +414,9 @@ export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process
   const offloadCommand = agent === 'claude'
     ? buildOffloadCaptureCommand(cfg.cli, workspaceRoot, { env })
     : '';
+  const commandRewriteCommand = agent === 'claude'
+    ? buildCommandRewriteHookCommand(cfg.cli, workspaceRoot, { env })
+    : '';
 
   let settings = {};
   try {
@@ -343,27 +428,34 @@ export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process
   // Check if hook already exists
   const hooks = settings.hooks || {};
   const stopHooks = hooks.Stop || [];
+  const preToolUseHooks = hooks.PreToolUse || [];
   const postToolUseHooks = hooks.PostToolUse || [];
   const hookPlan = upsertSaveGuardHook(stopHooks, agent, hookCommand);
+  const commandRewritePlan = commandRewriteCommand
+    ? upsertCommandRewriteHook(preToolUseHooks, agent, commandRewriteCommand)
+    : { action: 'skip', preToolUseHooks };
   const offloadPlan = offloadCommand
     ? upsertOffloadCaptureHook(postToolUseHooks, agent, offloadCommand)
     : { action: 'skip', postToolUseHooks };
-  const combinedAction = combineHookActions(hookPlan.action, offloadPlan.action);
+  const combinedAction = combineHookActions(hookPlan.action, commandRewritePlan.action, offloadPlan.action);
 
   if (combinedAction === 'skip') {
-    return { path: hookPath, action: 'skip', reason: 'save guard and offload hooks already present' };
+    return { path: hookPath, action: 'skip', reason: 'save guard, command rewrite, and offload hooks already present' };
   }
 
   if (dryRun) {
     const action = combinedAction === 'update' ? 'would-update' : 'would-add';
     const verb = combinedAction === 'update' ? 'would update' : 'would add';
-    return { path: hookPath, action, reason: `${verb} hooks: Stop=${hookCommand}${offloadCommand ? `; PostToolUse=${offloadCommand}` : ''}` };
+    return { path: hookPath, action, reason: `${verb} hooks: Stop=${hookCommand}${commandRewriteCommand ? `; PreToolUse=${commandRewriteCommand}` : ''}${offloadCommand ? `; PostToolUse=${offloadCommand}` : ''}` };
   }
 
   settings.hooks = {
     ...hooks,
     Stop: hookPlan.stopHooks,
   };
+  if (commandRewriteCommand) {
+    settings.hooks.PreToolUse = commandRewritePlan.preToolUseHooks;
+  }
   if (offloadCommand) {
     settings.hooks.PostToolUse = offloadPlan.postToolUseHooks;
   }
@@ -373,7 +465,7 @@ export function ensureHook(workspaceRoot, agent, { dryRun = false, env = process
   return {
     path: hookPath,
     action: combinedAction === 'update' ? 'updated' : 'added',
-    reason: combinedAction === 'update' ? 'hooks updated for auto-save/offload' : 'hooks added for auto-save/offload',
+    reason: combinedAction === 'update' ? 'hooks updated for auto-save/rewrite/offload' : 'hooks added for auto-save/rewrite/offload',
   };
 }
 

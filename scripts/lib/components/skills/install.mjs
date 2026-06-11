@@ -13,6 +13,8 @@ import {
   isManagedLinkInstall,
   matchesManagedInstall,
   materializeCatalogEntry,
+  snapshotDirectory,
+  snapshotsEqual,
 } from './install-targets.mjs';
 import { normalizeInstallMode, normalizeScope, resolveHomeMap } from './normalizers.mjs';
 import { assertProjectScopeAllowed } from './safety.mjs';
@@ -101,8 +103,16 @@ export async function installContextDbSkills({
           continue;
         }
         if (managedCopy && !force) {
-          io.log(`[ok] ${clientName} skill already installed (${normalizedScope}): ${entry.name}`);
-          reused += 1;
+          const currentSnapshot = snapshotDirectory(targetPath, targetPath, new Map(), new Set(['.aios-skill-install.json']));
+          const expectedSnapshot = snapshotDirectory(materialized.directoryPath, materialized.directoryPath, new Map());
+          if (snapshotsEqual(currentSnapshot, expectedSnapshot)) {
+            io.log(`[ok] ${clientName} skill already installed (${normalizedScope}): ${entry.name}`);
+            reused += 1;
+            continue;
+          }
+          installCopyTarget({ targetPath, materializedPath: materialized.directoryPath, metadata: expectedCopyMetadata });
+          io.log(`[copy] ${clientName} skill refreshed (${normalizedScope}): ${entry.name}`);
+          replaced += 1;
           continue;
         }
         if (managedExisting && force) {

@@ -67,6 +67,36 @@ test('default install mode copies skill trees and writes install metadata', asyn
   assert.equal(metadata.catalogSource, 'skill-sources/find-skills');
 });
 
+test('copy install refreshes managed skill trees when catalog content changes', async () => {
+  const rootDir = await makeTemp('aios-skills-refresh-root-');
+  const codexHome = await makeTemp('aios-skills-refresh-home-');
+  await writeSkill(rootDir, 'skill-sources/find-skills', '# old\n');
+  await writeTestManifest(rootDir, [
+    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global'], defaultInstall: { global: true, project: false }, tags: ['general'] },
+  ]);
+
+  await installContextDbSkills({
+    rootDir,
+    client: 'codex',
+    scope: 'global',
+    homeMap: { codex: codexHome },
+  });
+
+  await writeSkill(rootDir, 'skill-sources/find-skills', '# new\n');
+  const logs = [];
+  await installContextDbSkills({
+    rootDir,
+    client: 'codex',
+    scope: 'global',
+    homeMap: { codex: codexHome },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  const targetFile = path.join(codexHome, 'skills', 'find-skills', 'SKILL.md');
+  assert.equal(await readFile(targetFile, 'utf8'), '# new\n');
+  assert.match(logs.join('\n'), /skill refreshed/);
+});
+
 test('explicit link mode preserves symlink installs', async () => {
   const rootDir = await makeTemp('aios-skills-link-root-');
   const codexHome = await makeTemp('aios-skills-link-home-');

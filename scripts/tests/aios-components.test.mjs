@@ -57,6 +57,12 @@ function hasFunctionalBash() {
   return result.status === 0 && result.stdout === 'ok';
 }
 
+function hasFunctionalZsh() {
+  if (!commandExists('zsh')) return false;
+  const result = spawnSync('zsh', ['-fc', 'printf ok'], { encoding: 'utf8' });
+  return result.status === 0 && result.stdout === 'ok';
+}
+
 async function writeBrowserLauncherFixture(scriptsDir) {
   const filePath = path.join(scriptsDir, browserLauncherName());
   const content = process.platform === 'win32'
@@ -267,22 +273,98 @@ test('shell install pins and quotes AIOS_ROOT_DIR for paths with spaces', async 
   const tempRoot = await makeTemp('aios-shell-spaced-root-');
   const rootDir = path.join(tempRoot, 'rex cli', 'runtime root');
   const rcFile = path.join(tempRoot, '.zshrc');
+  const homeDir = path.join(tempRoot, 'home');
   await mkdir(rootDir, { recursive: true });
+  await mkdir(homeDir, { recursive: true });
   await makeFakeMcpServer(rootDir);
 
   const commandRunner = () => {};
 
-  await installContextDbShell({ rootDir, rcFile, mode: 'opt-in', platform: 'darwin', commandRunner });
+  await installContextDbShell({ rootDir, rcFile, mode: 'opt-in', platform: 'darwin', homeDir, commandRunner });
 
   const installed = await readFile(rcFile, 'utf8');
+  const shimDir = path.join(homeDir, '.aios', 'bin');
   assert.match(installed, new RegExp(`export AIOS_ROOT_DIR='${escapeRegExp(rootDir)}'`, 'u'));
+  assert.match(installed, new RegExp(`export AIOS_NATIVE_SHIM_DIR='${escapeRegExp(shimDir)}'`, 'u'));
+  assert.ok(installed.includes('for _aios_path_entry in "${path[@]}"; do'));
+  assert.ok(installed.includes('path=("$AIOS_NATIVE_SHIM_DIR" "${_aios_path_tail[@]}")'));
+  assert.match(installed, /_aios_path_old="\$PATH"/u);
+  assert.match(installed, /for _aios_path_entry in \$_aios_path_old; do/u);
+  assert.ok(installed.includes('export PATH="$AIOS_NATIVE_SHIM_DIR${_aios_path_tail:+:$_aios_path_tail}"'));
   assert.match(installed, /export AIOS_ROOT="\$\{AIOS_ROOT_DIR\}"/u);
   assert.match(installed, /export ROOTPATH="\$\{AIOS_ROOT_DIR\}"/u);
   assert.match(installed, /source "\$AIOS_ROOT_DIR\/scripts\/contextdb-shell\.zsh"/u);
+  assert.match(await readFile(path.join(shimDir, 'codex'), 'utf8'), /--agent '?codex-cli'? --command '?codex'?/u);
+  assert.match(await readFile(path.join(shimDir, 'claude'), 'utf8'), /--agent '?claude-code'? --command '?claude'?/u);
+});
+
+test('shell install keeps the native shim dir first when sourced by zsh with PATH already containing it later', async () => {
+  if (!hasFunctionalZsh()) {
+    return;
+  }
+
+  const rootDir = await makeTemp('aios-shell-zsh-path-reorder-root-');
+  const homeDir = await makeTemp('aios-shell-zsh-path-reorder-home-');
+  const rcFile = path.join(rootDir, '.zshrc');
+  await makeFakeMcpServer(rootDir);
+
+  await installContextDbShell({
+    rootDir,
+    rcFile,
+    mode: 'opt-in',
+    platform: 'darwin',
+    homeDir,
+    commandRunner: () => {},
+  });
+
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  const result = spawnSync('zsh', ['-fc', 'source "$1"; printf "%s\n" "$PATH"', '--', rcFile], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `/usr/bin:${process.env.PATH || ''}:${shimDir}` },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const pathEntries = result.stdout.trim().split(':');
+  assert.equal(pathEntries[0], shimDir);
+  assert.equal(pathEntries.filter((entry) => entry === shimDir).length, 1);
+});
+
+test('shell install keeps the native shim dir first when sourced by bash with PATH already containing it later', async () => {
+  if (!hasFunctionalBash()) {
+    return;
+  }
+
+  const rootDir = await makeTemp('aios-shell-path-reorder-root-');
+  const homeDir = await makeTemp('aios-shell-path-reorder-home-');
+  const rcFile = path.join(rootDir, '.zshrc');
+  await makeFakeMcpServer(rootDir);
+
+  await installContextDbShell({
+    rootDir,
+    rcFile,
+    mode: 'opt-in',
+    platform: 'darwin',
+    homeDir,
+    commandRunner: () => {},
+  });
+
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  const result = spawnSync('/bin/bash', ['-c', 'source "$1"; printf "%s\n" "$PATH"', '--', rcFile], {
+    cwd: rootDir,
+    encoding: 'utf8',
+    env: { ...process.env, PATH: `/usr/bin:${process.env.PATH || ''}:${shimDir}` },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const pathEntries = result.stdout.trim().split(':');
+  assert.equal(pathEntries[0], shimDir);
+  assert.equal(pathEntries.filter((entry) => entry === shimDir).length, 1);
 });
 
 test('shell install writes managed block and uninstall removes it', async () => {
   const rootDir = await makeTemp('aios-shell-root-');
+  const homeDir = await makeTemp('aios-shell-home-');
   const rcFile = path.join(rootDir, '.zshrc');
   await writeFile(rcFile, '# existing\n', 'utf8');
   await makeFakeMcpServer(rootDir);
@@ -292,22 +374,46 @@ test('shell install writes managed block and uninstall removes it', async () => 
     calls.push({ command, args, options });
   };
 
-  await installContextDbShell({ rootDir, rcFile, mode: 'repo-only', platform: 'darwin', commandRunner });
+  await installContextDbShell({ rootDir, rcFile, mode: 'repo-only', platform: 'darwin', homeDir, commandRunner });
   const installed = await readFile(rcFile, 'utf8');
+  const shimDir = path.join(homeDir, '.aios', 'bin');
   assert.match(installed, /# >>> contextdb-shell >>>/);
   assert.match(installed, /export AIOS_ROOT_DIR='/);
+  assert.match(installed, /export AIOS_NATIVE_SHIM_DIR='/);
   assert.match(installed, /export AIOS_ROOT="\$\{AIOS_ROOT_DIR\}"/);
   assert.match(installed, /export ROOTPATH="\$\{AIOS_ROOT_DIR\}"/);
   assert.match(installed, /CTXDB_WRAP_MODE:-repo-only/);
+  assert.equal(existsSync(path.join(shimDir, 'codex')), true);
+  assert.equal(existsSync(path.join(shimDir, 'opencode')), true);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args, ['install']);
   assert.equal(calls[1].command, 'npm');
   assert.deepEqual(calls[1].args, ['run', 'build']);
 
-  await uninstallContextDbShell({ rcFile, platform: 'darwin' });
+  await uninstallContextDbShell({ rcFile, platform: 'darwin', homeDir });
   const removed = await readFile(rcFile, 'utf8');
   assert.doesNotMatch(removed, /# >>> contextdb-shell >>>/);
+  assert.equal(existsSync(path.join(shimDir, 'codex')), false);
+});
+
+test('shell install refuses to overwrite unmanaged native shims', async () => {
+  const rootDir = await makeTemp('aios-shell-conflict-root-');
+  const homeDir = await makeTemp('aios-shell-conflict-home-');
+  const rcFile = path.join(rootDir, '.zshrc');
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  const codexShim = path.join(shimDir, 'codex');
+  await mkdir(shimDir, { recursive: true });
+  await writeFile(codexShim, '# unmanaged user shim\n', 'utf8');
+  await makeFakeMcpServer(rootDir);
+
+  await assert.rejects(
+    installContextDbShell({ rootDir, rcFile, mode: 'repo-only', platform: 'darwin', homeDir, commandRunner: () => {} }),
+    /Refusing to overwrite unmanaged native shim/
+  );
+
+  assert.equal(await readFile(codexShim, 'utf8'), '# unmanaged user shim\n');
+  assert.equal(existsSync(path.join(shimDir, 'claude')), false);
 });
 
 test('windows shell install writes managed block to both PowerShell profiles', async () => {
@@ -330,8 +436,12 @@ test('windows shell install writes managed block to both PowerShell profiles', a
   assert.match(pwshContent, /# >>> contextdb-shell >>>/);
   assert.match(winPsContent, /# >>> contextdb-shell >>>/);
   assert.match(pwshContent, /\$env:AIOS_ROOT_DIR = /);
+  assert.match(pwshContent, /\$env:AIOS_NATIVE_SHIM_DIR = /);
+  assert.match(pwshContent, /\$pathEntries = @\(\$env:Path -split ';' \| Where-Object \{ \$_ -and \$_ -ne \$env:AIOS_NATIVE_SHIM_DIR \}\)/);
+  assert.match(pwshContent, /\$env:Path = \(@\(\$env:AIOS_NATIVE_SHIM_DIR\) \+ \$pathEntries\) -join ';'/);
   assert.match(pwshContent, /\$env:AIOS_ROOT = \$env:AIOS_ROOT_DIR/);
   assert.match(pwshContent, /\$env:ROOTPATH = \$env:AIOS_ROOT_DIR/);
+  assert.match(await readFile(path.join(homeDir, '.aios', 'bin', 'codex.cmd'), 'utf8'), /--agent "codex-cli" --command "codex"/u);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args, ['install']);
@@ -357,6 +467,25 @@ test('shell doctor reports canonical AIOS root env with ROOTPATH legacy alias', 
   assert.match(output, /AIOS_ROOT_DIR: \/opt\/aios/u);
   assert.match(output, /AIOS_ROOT: \/opt\/aios/u);
   assert.match(output, /ROOTPATH \(legacy\): \/opt\/aios/u);
+});
+
+test('shell doctor warns when native shim dir is not first in PATH', async () => {
+  const logs = [];
+  const homeDir = await makeTemp('aios-shell-path-home-');
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  const env = {
+    AIOS_NATIVE_SHIM_DIR: shimDir,
+    PATH: `/usr/bin${path.delimiter}${shimDir}`,
+  };
+
+  await doctorContextDbShell({
+    rcFile: path.join(os.tmpdir(), 'missing-aios-rc'),
+    env,
+    homeDir,
+    io: { log: (message) => logs.push(message) },
+  });
+
+  assert.match(logs.join('\n'), new RegExp(`native shim dir is in PATH but not first: ${escapeRegExp(shimDir)}`, 'u'));
 });
 
 test('windows shell uninstall removes managed block from BOM-prefixed PowerShell profiles', async () => {

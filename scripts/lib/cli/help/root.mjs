@@ -47,6 +47,7 @@ Examples:
   node scripts/aios.mjs canvas show --session codex-cli-...
   node scripts/aios.mjs interception proof --json
   node scripts/aios.mjs interception tail --latest --json
+  node scripts/aios.mjs interception rewrite --command "git status"
   node scripts/aios.mjs interception doctor --fix
   node scripts/aios.mjs interception doctor --enforce-turns --json
   node scripts/aios.mjs quality-gate pre-pr --profile strict

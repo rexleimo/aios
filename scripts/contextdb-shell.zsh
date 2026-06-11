@@ -17,6 +17,7 @@
 # - CTXDB_PRIVACY_BANNER: show/hide interactive Privacy Shield banner (default: on, read by bridge)
 # - CTXDB_PRIVACY_COLOR: enable/disable banner ANSI color (default: on unless NO_COLOR is set, read by bridge)
 # - CTXDB_ALLOW_DIRECT_NATIVE_AGENT: set to 1 to bypass AIOS direct-agent block for diagnostics
+# - AIOS_NATIVE_SHIM_DIR: PATH shadow shim dir; bridge removes it before launching real clients
 
 typeset -g CTXDB_LAST_WORKSPACE=""
 

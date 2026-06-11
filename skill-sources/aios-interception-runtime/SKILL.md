@@ -114,6 +114,8 @@ Every new task about token savings, browser/MCP output size, shell output size, 
 - Data plane is code, not prompt: `InterceptionEngine -> CompactPacket -> RawRefStore -> MetricsSink`
 - MCP clients must route browser tools through `scripts/aios-mcp-proxy.mjs` before the real MCP server
 - AIOS-controlled shell/harness calls must route through `scripts/aios-intercept.mjs` or `runShellEnvelope`
+- Native CLI entrypoints must be shadowed by managed `~/.aios/bin/<client>` shims when shell setup is installed; verify with `node scripts/aios.mjs clients doctor --native-strict --json`
+- Host-native shell hooks, when installed, may rewrite safe noisy commands through `scripts/aios-intercept.mjs`; use `node scripts/aios.mjs interception rewrite --command "<cmd>"` to inspect the exact rewrite
 - Large raw output must not enter the compact packet; raw bytes are recalled through refs
 - Metrics must be written under `.aios/interception/metrics/<session>.jsonl` with `raw_bytes`, `compact_bytes`, `saved_bytes`, and `saving_ratio`
 
@@ -124,6 +126,7 @@ Every new task about token savings, browser/MCP output size, shell output size, 
 - Using `page.get_html`, screenshots, or broad shell reads directly when an MCP proxy or AIOS runner can intercept them
 
 ## Boundaries
-- This is a unified token optimization skill, not a shell hook
-- It never rewrites commands or hides risk
+- This is a unified token optimization skill; shell rewrite is a guarded host-hook path, not global magic
+- Native shims cover process-level CLI input/output and AIOS runner entry; they do not magically expose hidden interactive model turns without hook/plugin/gateway support
+- It never rewrites commands with unsupported shell constructs or hides risk
 - It must surface blockers, uncertainty, and verification gaps even in `ultra` mode

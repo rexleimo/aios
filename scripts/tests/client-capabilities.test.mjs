@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { chmod, mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
-import { ALL_CLIENTS } from '../lib/clients/core/definitions.mjs';
+import { ALL_CLIENTS, CLIENT_DEFINITIONS } from '../lib/clients/core/definitions.mjs';
 import { buildClientCapabilityReport } from '../lib/clients/capability-report.mjs';
+import { runClientsCommand } from '../lib/lifecycle/clients.mjs';
 
 const CLI = 'scripts/aios.mjs';
 
@@ -51,10 +55,58 @@ test('client capability report requires AIOS-managed bidirectional turn compress
 });
 
 test('clients doctor command parses doctor subcommand and json flag', () => {
-  const parsed = parseArgs(['clients', 'doctor', '--json']);
+  const parsed = parseArgs(['clients', 'doctor', '--json', '--native-strict']);
   assert.equal(parsed.command, 'clients');
   assert.equal(parsed.options.subcommand, 'doctor');
   assert.equal(parsed.options.json, true);
+  assert.equal(parsed.options.nativeStrict, true);
+});
+
+test('native strict capability report requires managed shims at PATH front', async () => {
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-home-'));
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  await mkdir(shimDir, { recursive: true });
+
+  for (const clientId of ALL_CLIENTS) {
+    const commandName = CLIENT_DEFINITIONS[clientId].commandName;
+    const fileName = process.platform === 'win32' ? `${commandName}.cmd` : commandName;
+    const shimPath = path.join(shimDir, fileName);
+    await writeFile(shimPath, 'AIOS_NATIVE_SHIM managed\n', 'utf8');
+    if (process.platform !== 'win32') await chmod(shimPath, 0o755);
+  }
+
+  const report = await buildClientCapabilityReport({
+    rootDir: process.cwd(),
+    nativeStrict: true,
+    env: {
+      HOME: homeDir,
+      AIOS_NATIVE_SHIM_DIR: shimDir,
+      PATH: `${shimDir}${path.delimiter}/usr/bin`,
+    },
+  });
+
+  assert.equal(report.nativeStrict.enabled, true);
+  assert.equal(report.nativeStrict.ok, true);
+  assert.equal(byId(report, 'codex').nativeShim.installed, true);
+  assert.equal(byId(report, 'codex').nativeShim.pathPrecedence, true);
+});
+
+test('clients doctor --native-strict fails when shims are missing', async () => {
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-missing-home-'));
+  let output = '';
+  const result = await runClientsCommand(
+    { subcommand: 'doctor', nativeStrict: true, format: 'json' },
+    {
+      rootDir: process.cwd(),
+      env: { HOME: homeDir, PATH: '/usr/bin' },
+      stdout: { write: (chunk) => { output += chunk; } },
+    }
+  );
+
+  assert.equal(result.exitCode, 1);
+  const report = JSON.parse(output);
+  assert.equal(report.nativeStrict.ok, false);
+  assert.equal(byId(report, 'codex').nativeShim.installed, false);
 });
 
 test('aios clients doctor --json emits strict rollout status for six clients', () => {

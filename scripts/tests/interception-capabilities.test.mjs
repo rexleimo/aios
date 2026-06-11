@@ -16,10 +16,10 @@ test('AIOS harness is the controlled L3 runtime target', () => {
   assert.equal(capabilities.clients['aios-harness'].capabilities.includes('compactPacket'), true);
 });
 
-test('Claude stays L2 until pre-tool rewrite hook adapter is installed', () => {
+test('Claude declares guarded pre-tool rewrite without overclaiming full shell L3', () => {
   assert.equal(capabilities.clients.claude.targetLevel, 'L2');
-  assert.equal(capabilities.clients.claude.capabilities.includes('preToolRewrite'), false);
-  assert.match(capabilities.clients.claude.limits.join('\n'), /pre-tool rewrite hook/);
+  assert.equal(capabilities.clients.claude.capabilities.includes('preToolRewrite'), true);
+  assert.match(capabilities.clients.claude.limits.join('\n'), /unsupported shell constructs fail open/);
 });
 
 test('Cursor remains advisory until a real hook surface exists', () => {

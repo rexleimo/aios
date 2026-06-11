@@ -11,10 +11,15 @@ import {
   writeText,
 } from '../platform/fs.mjs';
 import { resolvePowerShellProfilePaths, resolveShellRcFile } from '../platform/paths.mjs';
-import { resolveClientCommandNames } from '../clients/registry.mjs';
+import {
+  getClientRuntimeId,
+  resolveClientCommandNames,
+  resolveClientFromCommandName,
+} from '../clients/registry.mjs';
 
 const BEGIN_MARK = '# >>> contextdb-shell >>>';
 const END_MARK = '# <<< contextdb-shell <<<';
+const NATIVE_SHIM_MARK = 'AIOS_NATIVE_SHIM managed';
 
 function quotePosixSingle(value) {
   return `'${String(value).replace(/'/g, `'\\''`)}'`;
@@ -24,12 +29,16 @@ function quotePowerShellSingle(value) {
   return `'${String(value).replace(/'/g, "''")}'`;
 }
 
-function buildPosixBlock(rootDir, mode) {
-  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode)\nexport AIOS_ROOT_DIR=${quotePosixSingle(rootDir)}\nexport AIOS_ROOT="\${AIOS_ROOT_DIR}"\nexport ROOTPATH="\${AIOS_ROOT_DIR}"\nexport CTXDB_WRAP_MODE="\${CTXDB_WRAP_MODE:-${mode}}"\nif [[ -f "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh" ]]; then\n  source "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh"\nfi\n${END_MARK}\n`;
+function quoteWindowsArg(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
 }
 
-function buildPowerShellBlock(rootDir, mode) {
-  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode, PowerShell)\n$env:AIOS_ROOT_DIR = ${quotePowerShellSingle(rootDir)}\n$env:AIOS_ROOT = $env:AIOS_ROOT_DIR\n$env:ROOTPATH = $env:AIOS_ROOT_DIR\nif (-not $env:CTXDB_WRAP_MODE) { $env:CTXDB_WRAP_MODE = "${mode}" }\n$ctxShell = Join-Path $env:AIOS_ROOT_DIR "scripts/contextdb-shell.ps1"\nif (Test-Path $ctxShell) {\n  . $ctxShell\n}\n${END_MARK}\n`;
+function buildPosixBlock(rootDir, mode, shimDir) {
+  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode)\nexport AIOS_ROOT_DIR=${quotePosixSingle(rootDir)}\nexport AIOS_ROOT="\${AIOS_ROOT_DIR}"\nexport ROOTPATH="\${AIOS_ROOT_DIR}"\nexport CTXDB_WRAP_MODE="\${CTXDB_WRAP_MODE:-${mode}}"\nexport AIOS_NATIVE_SHIM_DIR=${quotePosixSingle(shimDir)}\nif [ -n "\${ZSH_VERSION:-}" ]; then\n  _aios_path_tail=()\n  for _aios_path_entry in "\${path[@]}"; do\n    if [[ "\$_aios_path_entry" == "\$AIOS_NATIVE_SHIM_DIR" ]]; then\n      continue\n    fi\n    _aios_path_tail+=("\$_aios_path_entry")\n  done\n  path=("\$AIOS_NATIVE_SHIM_DIR" "\${_aios_path_tail[@]}")\n  export PATH\nelif [ -n "\$PATH" ]; then\n  _aios_path_old="\$PATH"\n  _aios_path_tail=""\n  _aios_path_ifs=\$IFS\n  IFS=:\n  for _aios_path_entry in \$_aios_path_old; do\n    case "\$_aios_path_entry" in\n      ""|"\$AIOS_NATIVE_SHIM_DIR") continue ;;\n    esac\n    if [ -z "\$_aios_path_tail" ]; then\n      _aios_path_tail="\$_aios_path_entry"\n    else\n      _aios_path_tail="\$_aios_path_tail:\$_aios_path_entry"\n    fi\n  done\n  IFS=\$_aios_path_ifs\n  export PATH="\$AIOS_NATIVE_SHIM_DIR\${_aios_path_tail:+:\$_aios_path_tail}"\nelse\n  export PATH="\$AIOS_NATIVE_SHIM_DIR"\nfi\nif [[ -f "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh" ]]; then\n  source "\$AIOS_ROOT_DIR/scripts/contextdb-shell.zsh"\nfi\n${END_MARK}\n`;
+}
+
+function buildPowerShellBlock(rootDir, mode, shimDir) {
+  return `${BEGIN_MARK}\n# ContextDB transparent CLI wrappers (codex/claude/gemini/opencode, PowerShell)\n$env:AIOS_ROOT_DIR = ${quotePowerShellSingle(rootDir)}\n$env:AIOS_ROOT = $env:AIOS_ROOT_DIR\n$env:ROOTPATH = $env:AIOS_ROOT_DIR\nif (-not $env:CTXDB_WRAP_MODE) { $env:CTXDB_WRAP_MODE = "${mode}" }\n$env:AIOS_NATIVE_SHIM_DIR = ${quotePowerShellSingle(shimDir)}\nif ($env:Path) {\n  $pathEntries = @($env:Path -split ';' | Where-Object { $_ -and $_ -ne $env:AIOS_NATIVE_SHIM_DIR })\n} else {\n  $pathEntries = @()\n}\n$env:Path = (@($env:AIOS_NATIVE_SHIM_DIR) + $pathEntries) -join ';'\n$ctxShell = Join-Path $env:AIOS_ROOT_DIR "scripts/contextdb-shell.ps1"\nif (Test-Path $ctxShell) {\n  . $ctxShell\n}\n${END_MARK}\n`;
 }
 
 function getShellPatterns(platform) {
@@ -48,6 +57,70 @@ function resolveTargetFiles({ platform = process.platform, rcFile, env = process
   }
 
   return [resolveShellRcFile(env, homeDir)];
+}
+
+function resolveNativeShimDir({ homeDir = os.homedir() } = {}) {
+  return path.join(homeDir, '.aios', 'bin');
+}
+
+function envPathEntries(env = process.env) {
+  const pathKey = Object.keys(env || {}).find((key) => key.toLowerCase() === 'path') || 'PATH';
+  return String(env?.[pathKey] || '').split(path.delimiter).filter(Boolean);
+}
+
+function samePath(left, right, platform = process.platform) {
+  const a = path.resolve(String(left || ''));
+  const b = path.resolve(String(right || ''));
+  return platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
+function buildPosixNativeShim({ rootDir, command, runtimeId }) {
+  return `#!/usr/bin/env sh\n# ${NATIVE_SHIM_MARK}: ${command}\nAIOS_ROOT_DIR=\${AIOS_ROOT_DIR:-${quotePosixSingle(rootDir)}}\nAIOS_ROOT=\${AIOS_ROOT:-\$AIOS_ROOT_DIR}\nROOTPATH=\${ROOTPATH:-\$AIOS_ROOT_DIR}\nAIOS_NATIVE_SHIM_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)\nexport AIOS_ROOT_DIR AIOS_ROOT ROOTPATH AIOS_NATIVE_SHIM_DIR\nexec node "$AIOS_ROOT_DIR/scripts/contextdb-shell-bridge.mjs" --agent ${quotePosixSingle(runtimeId)} --command ${quotePosixSingle(command)} -- "$@"\n`;
+}
+
+function buildWindowsNativeShim({ rootDir, command, runtimeId }) {
+  return `@echo off\r\nrem ${NATIVE_SHIM_MARK}: ${command}\r\nif "%AIOS_ROOT_DIR%"=="" set "AIOS_ROOT_DIR=${rootDir}"\r\nif "%AIOS_ROOT%"=="" set "AIOS_ROOT=%AIOS_ROOT_DIR%"\r\nif "%ROOTPATH%"=="" set "ROOTPATH=%AIOS_ROOT_DIR%"\r\nset "AIOS_NATIVE_SHIM_DIR=%~dp0"\r\nnode "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" --agent ${quoteWindowsArg(runtimeId)} --command ${quoteWindowsArg(command)} -- %*\r\nexit /b %ERRORLEVEL%\r\n`;
+}
+
+function installNativeShims({ rootDir, platform = process.platform, homeDir = os.homedir() } = {}) {
+  const shimDir = resolveNativeShimDir({ homeDir });
+  fs.mkdirSync(shimDir, { recursive: true });
+  const targets = resolveClientCommandNames('all').map((command) => {
+    const fileName = platform === 'win32' ? `${command}.cmd` : command;
+    return { command, targetPath: path.join(shimDir, fileName) };
+  });
+  const conflicts = targets.filter(({ targetPath }) => {
+    if (!fs.existsSync(targetPath)) return false;
+    const content = readTextIfExists(targetPath);
+    return !content.includes(NATIVE_SHIM_MARK);
+  });
+  if (conflicts.length > 0) {
+    const files = conflicts.map((item) => item.targetPath).join(', ');
+    throw new Error(`Refusing to overwrite unmanaged native shim(s): ${files}`);
+  }
+  for (const { command, targetPath } of targets) {
+    const client = resolveClientFromCommandName(command);
+    const runtimeId = getClientRuntimeId(client);
+    const content = platform === 'win32'
+      ? buildWindowsNativeShim({ rootDir, command, runtimeId })
+      : buildPosixNativeShim({ rootDir, command, runtimeId });
+    fs.writeFileSync(targetPath, content, 'utf8');
+    if (platform !== 'win32') fs.chmodSync(targetPath, 0o755);
+  }
+  return shimDir;
+}
+
+function uninstallNativeShims({ platform = process.platform, homeDir = os.homedir() } = {}) {
+  const shimDir = resolveNativeShimDir({ homeDir });
+  for (const command of resolveClientCommandNames('all')) {
+    const fileName = platform === 'win32' ? `${command}.cmd` : command;
+    const targetPath = path.join(shimDir, fileName);
+    const content = readTextIfExists(targetPath);
+    if (content?.includes(NATIVE_SHIM_MARK)) {
+      fs.rmSync(targetPath, { force: true });
+    }
+  }
+  return shimDir;
 }
 
 function ensureContextDbRuntime({ rootDir, platform = process.platform, env = process.env, io = console, commandRunner = runCommand } = {}) {
@@ -119,7 +192,8 @@ export async function installContextDbShell({
 
   const targetFiles = resolveTargetFiles({ platform, rcFile, env, homeDir });
   const patterns = getShellPatterns(platform);
-  const block = platform === 'win32' ? buildPowerShellBlock(rootDir, mode) : buildPosixBlock(rootDir, mode);
+  const shimDir = installNativeShims({ rootDir, platform, homeDir });
+  const block = platform === 'win32' ? buildPowerShellBlock(rootDir, mode, shimDir) : buildPosixBlock(rootDir, mode, shimDir);
   const statuses = [];
 
   for (const targetFile of targetFiles) {
@@ -146,7 +220,7 @@ export async function installContextDbShell({
 
   io.log(`Default wrap mode: ${mode}`);
   const status = statuses.some((item) => item === 'installed') ? 'installed' : 'reused';
-  return { status, targetFiles };
+  return { status, targetFiles, shimDir };
 }
 
 export async function uninstallContextDbShell({
@@ -158,6 +232,7 @@ export async function uninstallContextDbShell({
 } = {}) {
   const targetFiles = resolveTargetFiles({ platform, rcFile, env, homeDir });
   const patterns = getShellPatterns(platform);
+  const shimDir = uninstallNativeShims({ platform, homeDir });
   let removed = 0;
 
   for (const targetFile of targetFiles) {
@@ -173,7 +248,7 @@ export async function uninstallContextDbShell({
     removed += 1;
   }
 
-  return { status: removed > 0 ? 'removed' : 'missing', targetFiles };
+  return { status: removed > 0 ? 'removed' : 'missing', targetFiles, shimDir };
 }
 
 export async function doctorContextDbShell({
@@ -213,6 +288,7 @@ export async function doctorContextDbShell({
   io.log(`AIOS_ROOT: ${env.AIOS_ROOT || '<unset>'}`);
   io.log(`ROOTPATH (legacy): ${env.ROOTPATH || '<unset>'}`);
   io.log(`CTXDB_WRAP_MODE: ${env.CTXDB_WRAP_MODE || '<unset>'}`);
+  io.log(`AIOS_NATIVE_SHIM_DIR: ${env.AIOS_NATIVE_SHIM_DIR || '<unset>'}`);
   io.log(`CODEX_HOME: ${env.CODEX_HOME || '<unset>'}`);
 
   if (env.CODEX_HOME) {
@@ -239,6 +315,27 @@ export async function doctorContextDbShell({
       io.log(`[ok] ${command} found in PATH`);
     } else {
       warn(`${command} not found in PATH`, { effective: false });
+    }
+  }
+
+  const shimDir = resolveNativeShimDir({ homeDir });
+  const entries = envPathEntries(env);
+  if (!entries.some((entry) => samePath(entry, shimDir, platform))) {
+    warn(`native shim dir not found in PATH: ${shimDir}`);
+  } else if (!samePath(entries[0], shimDir, platform)) {
+    warn(`native shim dir is in PATH but not first: ${shimDir}`);
+  } else {
+    io.log(`[ok] native shim dir is first in PATH: ${shimDir}`);
+  }
+
+  for (const command of resolveClientCommandNames('all')) {
+    const fileName = platform === 'win32' ? `${command}.cmd` : command;
+    const shimPath = path.join(shimDir, fileName);
+    const content = readTextIfExists(shimPath);
+    if (content?.includes(NATIVE_SHIM_MARK)) {
+      io.log(`[ok] native shim installed: ${shimPath}`);
+    } else {
+      warn(`native shim missing: ${shimPath}`);
     }
   }
 

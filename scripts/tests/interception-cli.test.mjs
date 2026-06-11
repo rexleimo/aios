@@ -8,8 +8,19 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { compressPreSendTurn } from '../lib/interception/index.mjs';
+import { buildClaudePreToolUseRewriteResponse, rewriteShellCommand } from '../lib/interception/index.mjs';
 
 const cli = path.join(process.cwd(), 'scripts', 'aios.mjs');
+
+function shellArg(value = '') {
+  const text = String(value ?? '');
+  if (/^[A-Za-z0-9_./:@=-]+$/u.test(text)) return text;
+  return `'${text.replace(/'/g, "'\\''")}'`;
+}
+
+function interceptPrefix(rootDir = process.cwd()) {
+  return `node ${shellArg(path.join(rootDir, 'scripts', 'aios-intercept.mjs'))} shell`;
+}
 
 function runAios(args, env = {}) {
   return spawnSync(process.execPath, [cli, ...args], {
@@ -117,4 +128,121 @@ test('interception doctor --enforce-turns fails when selected metrics lack post_
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
+});
+
+test('rewriteShellCommand rewrites common noisy commands and compound commands', () => {
+  const gitStatus = rewriteShellCommand('git status --short');
+  assert.equal(gitStatus.action, 'rewrite');
+  assert.equal(gitStatus.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git status --short');
+  assert.equal(gitStatus.strategy, 'aios-shell-command-wrapper');
+
+  const compound = rewriteShellCommand('git status && npm test');
+  assert.equal(compound.action, 'rewrite');
+  assert.equal(compound.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git status && node scripts/aios-intercept.mjs shell -- npm test');
+
+  const fallback = rewriteShellCommand('git status || npm test');
+  assert.equal(fallback.action, 'rewrite');
+  assert.equal(fallback.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git status || node scripts/aios-intercept.mjs shell -- npm test');
+
+  const partialWrapped = rewriteShellCommand('git status && node scripts/aios-intercept.mjs shell -- npm test');
+  assert.equal(partialWrapped.action, 'rewrite');
+  assert.equal(partialWrapped.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git status && node scripts/aios-intercept.mjs shell -- npm test');
+
+  const wrappedFirst = rewriteShellCommand('node scripts/aios-intercept.mjs shell -- git status && npm test');
+  assert.equal(wrappedFirst.action, 'rewrite');
+  assert.equal(wrappedFirst.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git status && node scripts/aios-intercept.mjs shell -- npm test');
+
+  const quotedSeparator = rewriteShellCommand('git commit -m "fix && test"');
+  assert.equal(quotedSeparator.action, 'rewrite');
+  assert.equal(quotedSeparator.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git commit -m "fix && test"');
+
+  const quotedCommandLikeSeparator = rewriteShellCommand('git commit -m "fix && npm test"');
+  assert.equal(quotedCommandLikeSeparator.action, 'rewrite');
+  assert.equal(quotedCommandLikeSeparator.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git commit -m "fix && npm test"');
+
+  const singleQuotedSeparator = rewriteShellCommand("git commit -m 'fix || rg docs'");
+  assert.equal(singleQuotedSeparator.action, 'rewrite');
+  assert.equal(singleQuotedSeparator.rewrittenCommand, "node scripts/aios-intercept.mjs shell -- git commit -m 'fix || rg docs'");
+
+  const semicolonInQuotes = rewriteShellCommand('git commit -m "fix; npm test"');
+  assert.equal(semicolonInQuotes.action, 'rewrite');
+  assert.equal(semicolonInQuotes.rewrittenCommand, 'node scripts/aios-intercept.mjs shell -- git commit -m "fix; npm test"');
+
+  const passthroughWithQuotedSeparator = rewriteShellCommand('echo "x && git status"');
+  assert.equal(passthroughWithQuotedSeparator.action, 'passthrough');
+  assert.equal(passthroughWithQuotedSeparator.reason, 'no command rewrite rule matched');
+
+  const alreadyWrapped = rewriteShellCommand('node scripts/aios-intercept.mjs shell -- git status');
+  assert.equal(alreadyWrapped.action, 'passthrough');
+  assert.equal(alreadyWrapped.reason, 'already routed through AIOS interception');
+});
+
+test('rewriteShellCommand avoids shell constructs where compact JSON would change semantics', () => {
+  for (const command of [
+    'git diff > patch.diff',
+    'git status | head',
+    'git log $(git rev-parse --abbrev-ref HEAD)',
+    'git show "$(git rev-parse HEAD)"',
+    'git show `git rev-parse HEAD`',
+  ]) {
+    const decision = rewriteShellCommand(command);
+    assert.equal(decision.action, 'passthrough', command);
+    assert.equal(decision.reason, 'unsupported shell construct');
+  }
+});
+
+test('Claude PreToolUse hook response updates Bash command and fails open for no match', () => {
+  const response = buildClaudePreToolUseRewriteResponse({
+    tool_name: 'Bash',
+    tool_input: { command: 'git diff' },
+  });
+
+  assert.equal(response.ok, true);
+  assert.equal(response.response.hookSpecificOutput.hookEventName, 'PreToolUse');
+  assert.equal(response.response.hookSpecificOutput.updatedInput.command, 'node scripts/aios-intercept.mjs shell -- git diff');
+
+  const noMatch = buildClaudePreToolUseRewriteResponse({
+    tool_name: 'Read',
+    tool_input: { file_path: 'README.md' },
+  });
+  assert.equal(noMatch.ok, true);
+  assert.deepEqual(noMatch.response, {});
+  assert.equal(noMatch.decision.action, 'passthrough');
+});
+
+test('interception rewrite CLI prints text and Claude hook JSON', () => {
+  const text = runAios(['interception', 'rewrite', '--command', 'git status --short']);
+  assert.equal(text.status, 0, text.stderr || text.stdout);
+  assert.equal(text.stdout.trim(), `${interceptPrefix()} -- git status --short`);
+
+  const hookInput = JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'npm test' } });
+  const hook = runAios(['interception', 'rewrite', '--hook', 'claude', '--input', hookInput, '--json']);
+  assert.equal(hook.status, 0, hook.stderr || hook.stdout);
+  const parsed = JSON.parse(hook.stdout);
+  assert.equal(parsed.hookSpecificOutput.updatedInput.command, `${interceptPrefix()} -- npm test`);
+});
+
+test('Claude hook script emits host protocol JSON directly', () => {
+  const result = spawnSync('scripts/hooks/claude/aios-rewrite.sh', {
+    cwd: process.cwd(),
+    input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git status --short' } }),
+    encoding: 'utf8',
+    env: { ...process.env, AIOS_ROOT_DIR: process.cwd() },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const parsed = JSON.parse(result.stdout);
+  assert.equal(parsed.hookSpecificOutput.updatedInput.command, `${interceptPrefix()} -- git status --short`);
+});
+
+test('aios-intercept shell shorthand preserves failing command exit status', () => {
+  const result = spawnSync(process.execPath, ['scripts/aios-intercept.mjs', 'shell', '--', 'node', '-e', 'process.exit(7)'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 7, result.stderr || result.stdout);
+  const packet = JSON.parse(result.stdout);
+  assert.equal(packet.source, 'shell');
+  assert.equal(packet.safety.requires_human, true);
 });

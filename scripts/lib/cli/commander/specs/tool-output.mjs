@@ -68,6 +68,9 @@ export const TOOL_OUTPUT_COMMAND_SPECS = [
       ['--fix', 'Repair MCP proxy routing before proof'],
       ['--dry-run', 'Preview repair actions without writing configs'],
       ['--workspace <path>', 'Workspace root'],
+      ['--command <cmd>', 'Shell command to rewrite through AIOS interception'],
+      ['--hook <hook>', 'Host-native hook response format'],
+      ['--input <json>', 'Host hook JSON payload'],
     ],
   },
 ];

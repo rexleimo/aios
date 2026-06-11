@@ -1,18 +1,18 @@
 /* 中文注释：interception 参数解析独立成模块，避免 maintenance 解析器继续膨胀。 */
 import { takeValue } from './shared.mjs';
 
-const INTERCEPTION_SUBCOMMANDS = new Set(['doctor', 'proof', 'tail', 'mcp-migrate']);
+const INTERCEPTION_SUBCOMMANDS = new Set(['doctor', 'proof', 'tail', 'rewrite', 'mcp-migrate']);
 
 /* 中文注释：只解析 interception 的验证/修复入口，不掺杂 refs、canvas 或内部维护命令。 */
 export function parseInterceptionArgs(argv) {
   const rest = argv.slice(1);
   let help = false;
-  const options = { subcommand: 'doctor', session: '', json: false, fix: false, dryRun: false, workspaceRoot: '', latest: false, limit: 10, enforceTurns: false };
+  const options = { subcommand: 'doctor', session: '', json: false, fix: false, dryRun: false, workspaceRoot: '', latest: false, limit: 10, enforceTurns: false, commandText: '', hook: '', input: '' };
 
   if (rest[0] && !String(rest[0]).startsWith('-')) {
     const sub = String(rest[0]).trim().toLowerCase();
     if (!INTERCEPTION_SUBCOMMANDS.has(sub)) {
-      throw new Error('interception subcommand must be one of: doctor, proof, tail, mcp-migrate');
+      throw new Error('interception subcommand must be one of: doctor, proof, tail, rewrite, mcp-migrate');
     }
     options.subcommand = sub;
     rest.shift();
@@ -40,6 +40,21 @@ export function parseInterceptionArgs(argv) {
         break;
       case '--workspace':
         options.workspaceRoot = takeValue(rest, index, '--workspace');
+        index += 1;
+        break;
+      case '--command':
+        options.commandText = takeValue(rest, index, '--command');
+        index += 1;
+        break;
+      case '--hook':
+        options.hook = takeValue(rest, index, '--hook').trim().toLowerCase();
+        if (!['claude'].includes(options.hook)) {
+          throw new Error('--hook must be one of: claude');
+        }
+        index += 1;
+        break;
+      case '--input':
+        options.input = takeValue(rest, index, '--input');
         index += 1;
         break;
       case '--latest':

@@ -7,6 +7,8 @@
 1. Tool output enters an AIOS-owned boundary:
    - Shell/harness: `runShellEnvelope` or `scripts/aios-intercept.mjs`
    - MCP: `scripts/aios-mcp-proxy.mjs`
+   - Native CLI entrypoints: shell setup installs `~/.aios/bin/<client>` shims ahead of the real clients and routes them through `scripts/contextdb-shell-bridge.mjs`
+   - Host-native shell hooks: `scripts/hooks/claude/aios-rewrite.sh` may rewrite supported Bash commands before execution
 2. `createInterceptionEngine()` normalizes output and builds a compact packet.
 3. Large raw output is stored in `.aios/interception/refs/<session>/`.
 4. Compact packet carries only summary, key lines, errors, refs, and metrics.
@@ -22,6 +24,8 @@ A valid proof must show:
 - metrics record contains the packet ref id;
 - `saved_bytes > 0` and `saving_ratio > 0.5` for large outputs;
 - MCP config targets are routed through `scripts/aios-mcp-proxy.mjs`.
+- for host-native shell hooks, `aios init --agent claude` registers `PreToolUse` and `node scripts/aios.mjs interception rewrite --hook claude --input <json>` returns host protocol JSON with `updatedInput.command`.
+- for native CLI entrypoints, `node scripts/aios.mjs clients doctor --native-strict --json` shows managed shims installed and first in `PATH`.
 
 Run:
 
@@ -33,3 +37,15 @@ node scripts/aios.mjs interception doctor --fix --json
 
 Use `config/host-capabilities.json` as the source of truth.
 Do not over-claim native raw-shell interception for a client that lacks a verified pre-tool mutation surface.
+
+## Shell Rewrite Guardrails
+
+- Rewrite only supported noisy commands (`git`, `rg`, test/build commands, etc.) through `scripts/aios-intercept.mjs`.
+- Fail open when the command is unsupported or the hook cannot parse input.
+- Do not rewrite commands with shell constructs where compact JSON would change semantics: pipes, redirection, command substitution, or backticks.
+
+## Native Shim Guardrails
+
+- Shims live in `~/.aios/bin` and are managed files only.
+- The bridge removes `AIOS_NATIVE_SHIM_DIR` from child `PATH` before launching the real client or AIOS runner to avoid recursion.
+- Native shims prove process-level input/output control and AIOS runner entry. They do not prove internal interactive model-turn interception unless the client also has a verified hook/plugin/gateway.

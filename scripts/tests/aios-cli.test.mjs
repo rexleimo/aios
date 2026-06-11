@@ -692,7 +692,7 @@ test('parseArgs accepts harness subcommands', () => {
   assert.equal(stop.options.workspaceRoot, '/tmp/demo');
 });
 
-test('parseArgs accepts interception proof, tail, and repair commands', () => {
+test('parseArgs accepts interception proof, tail, rewrite, and repair commands', () => {
   const proof = parseArgs(['interception', 'proof', '--session', 'proof-1', '--json']);
   assert.equal(proof.command, 'interception');
   assert.equal(proof.options.subcommand, 'proof');
@@ -712,6 +712,13 @@ test('parseArgs accepts interception proof, tail, and repair commands', () => {
   assert.equal(doctor.options.fix, true);
   assert.equal(doctor.options.enforceTurns, true);
   assert.equal(doctor.options.workspaceRoot, '/tmp/ws');
+
+  const rewrite = parseArgs(['interception', 'rewrite', '--command', 'git status', '--hook', 'claude', '--json']);
+  assert.equal(rewrite.command, 'interception');
+  assert.equal(rewrite.options.subcommand, 'rewrite');
+  assert.equal(rewrite.options.commandText, 'git status');
+  assert.equal(rewrite.options.hook, 'claude');
+  assert.equal(rewrite.options.json, true);
 });
 
 test('parseArgs rejects invalid harness max-iterations budgets', () => {

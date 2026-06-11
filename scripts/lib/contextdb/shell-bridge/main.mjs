@@ -85,6 +85,28 @@ function shouldBlockDirectNativeAgent({ env, interactive, workspace, aiosInitDon
   return Boolean(interactive && workspace && aiosInitDone && !shouldWrap);
 }
 
+function resolvePathKeys(env) {
+  return Object.keys(env || {}).filter((key) => key.toLowerCase() === 'path');
+}
+
+function samePathEntry(left, right) {
+  const a = path.resolve(String(left || ''));
+  const b = path.resolve(String(right || ''));
+  return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
+function buildChildEnv(env) {
+  const shimDir = String(env.AIOS_NATIVE_SHIM_DIR || '').trim();
+  if (!shimDir) return env;
+
+  const next = { ...env };
+  for (const key of resolvePathKeys(next)) {
+    const entries = String(next[key] || '').split(path.delimiter);
+    next[key] = entries.filter((entry) => entry && !samePathEntry(entry, shimDir)).join(path.delimiter);
+  }
+  return next;
+}
+
 async function prepareBridgeState(opts, env) {
   const firstArg = opts.passthroughArgs[0] || '';
   const blockedSubcommand = isBlockedSubcommand(opts.command, firstArg);
@@ -187,11 +209,11 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   if (!shouldWrap) {
-    const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, env);
+    const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, buildChildEnv(env));
     process.exit(code);
   }
 
   const args = buildWrappedRunnerArgs({ runner, workspace, opts, project, aiosInitDone });
-  const code = spawnInherited(runner.command, args, opts.cwd, env);
+  const code = spawnInherited(runner.command, args, opts.cwd, buildChildEnv(env));
   process.exit(code);
 }

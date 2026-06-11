@@ -20,6 +20,7 @@ export const HEALTH_COMMAND_SPECS = [
     options: [
       ['--json', 'Output JSON'],
       ['--format <format>', 'Output format: text or json'],
+      ['--native-strict', 'Fail when native shims are missing or not first in PATH'],
     ],
   },
   {

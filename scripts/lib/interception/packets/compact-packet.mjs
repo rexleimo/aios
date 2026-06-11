@@ -27,6 +27,7 @@ export function buildCompactPacket({ request, output, shrink, ref, rawBytes }) {
     mode: request.metadata?.mode || '',
     fallback_reason: request.metadata?.fallbackReason || '',
     uncontrolled: request.metadata?.uncontrolled === true,
+    exit_code: output.exitCode,
     summary: shrink.summary,
     key_lines: shrink.keyLines,
     errors: shrink.errors,

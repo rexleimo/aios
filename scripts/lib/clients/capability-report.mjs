@@ -1,4 +1,5 @@
 import { promises as fs } from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 
 import {
@@ -35,6 +36,7 @@ const REQUIRED_TURN_COMPRESSION = Object.freeze({
 });
 
 const COMPRESSION_METRIC = 'bidirectional-turn-compression';
+const NATIVE_SHIM_MARK = 'AIOS_NATIVE_SHIM managed';
 
 async function readHostCapabilities(rootDir) {
   const filePath = path.join(rootDir, 'config', 'host-capabilities.json');
@@ -85,13 +87,67 @@ function gatesForStatus(status) {
   return status === 'pending-smoke' ? PENDING_ALLOWED : LIVE_ALLOWED;
 }
 
-export async function buildClientCapabilityReport({ rootDir = process.cwd(), env = process.env } = {}) {
+function resolveNativeShimDir(env = process.env) {
+  const explicit = String(env.AIOS_NATIVE_SHIM_DIR || '').trim();
+  if (explicit && path.isAbsolute(explicit)) return explicit;
+  const home = String(env.HOME || env.USERPROFILE || '').trim();
+  return path.join(path.isAbsolute(home) ? home : os.homedir(), '.aios', 'bin');
+}
+
+function pathEntries(env = process.env) {
+  const pathKey = Object.keys(env).find((key) => key.toLowerCase() === 'path') || 'PATH';
+  return String(env[pathKey] || '').split(path.delimiter).filter(Boolean);
+}
+
+function samePath(left, right) {
+  const a = path.resolve(String(left || ''));
+  const b = path.resolve(String(right || ''));
+  return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
+}
+
+async function inspectNativeShim(clientId, { env = process.env } = {}) {
+  const definition = CLIENT_DEFINITIONS[clientId];
+  const shimDir = resolveNativeShimDir(env);
+  if (!definition?.commandName) {
+    return {
+      required: false,
+      shimDir,
+      expectedPath: '',
+      installed: false,
+      inPath: false,
+      pathPrecedence: false,
+      error: `unknown client: ${clientId}`,
+    };
+  }
+  const fileName = process.platform === 'win32' ? `${definition.commandName}.cmd` : definition.commandName;
+  const shimPath = path.join(shimDir, fileName);
+  const entries = pathEntries(env);
+  let managed = false;
+  try {
+    const content = await fs.readFile(shimPath, 'utf8');
+    managed = content.includes(NATIVE_SHIM_MARK);
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
+  return {
+    required: false,
+    shimDir,
+    expectedPath: shimPath,
+    installed: managed,
+    inPath: entries.some((entry) => samePath(entry, shimDir)),
+    pathPrecedence: entries.length > 0 && samePath(entries[0], shimDir),
+  };
+}
+
+export async function buildClientCapabilityReport({ rootDir = process.cwd(), env = process.env, nativeStrict = false } = {}) {
   const hostCapabilities = await readHostCapabilities(rootDir);
-  const clients = ALL_CLIENTS.map((clientId) => {
+  const clients = await Promise.all(ALL_CLIENTS.map(async (clientId) => {
     const definition = CLIENT_DEFINITIONS[clientId];
     const status = statusForClient(clientId);
     const gates = gatesForStatus(status);
     const hostEntry = hostCapabilities?.clients?.[clientId] || null;
+    const nativeShim = await inspectNativeShim(clientId, { env });
+    nativeShim.required = Boolean(nativeStrict);
     const turnCompression = {
       ...REQUIRED_TURN_COMPRESSION,
       ...(hostEntry?.turnCompression && typeof hostEntry.turnCompression === 'object' ? hostEntry.turnCompression : {}),
@@ -118,15 +174,22 @@ export async function buildClientCapabilityReport({ rootDir = process.cwd(), env
         postReceiveMetricRequired: turnCompression.postReceiveRequired === true,
         uncontrolledHostOutputPolicy: turnCompression.uncontrolledHostOutput,
       },
+      nativeShim,
       ...gates,
       reasons: reasonsForClient(clientId, { hostCapabilities, env }),
     };
-  });
+  }));
+  const nativeStrictOk = !nativeStrict || clients.every((client) => client.nativeShim.installed && client.nativeShim.pathPrecedence);
 
   return {
     schemaVersion: 1,
     generatedAt: new Date().toISOString(),
     policy: 'strict-verification-first',
+    nativeStrict: {
+      enabled: Boolean(nativeStrict),
+      ok: nativeStrictOk,
+      shimDir: resolveNativeShimDir(env),
+    },
     clients,
   };
 }

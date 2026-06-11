@@ -70,6 +70,7 @@ async function createFakeRunner() {
     "const workspace = index >= 0 ? (args[index + 1] || '') : '';",
     "console.log(`RUNNER_WORKSPACE=${workspace}`);",
     "console.log(`RUNNER_ARGS=${JSON.stringify(args)}`);",
+    "console.log(`RUNNER_PATH=${process.env.PATH || process.env.Path || ''}`);",
     "console.log(`RUNNER_AUTO_PROMPT_JSON=${JSON.stringify(process.env.CTXDB_AUTO_PROMPT || '')}`);",
   ].join('\n'), 'utf8');
 
@@ -135,6 +136,11 @@ function parseRunnerArgs(stdout) {
   const line = (stdout || '').trim().split(/\r?\n/).find((x) => x.startsWith('RUNNER_ARGS='));
   if (!line) return [];
   return JSON.parse(line.slice('RUNNER_ARGS='.length));
+}
+
+function parseRunnerPath(stdout) {
+  const line = (stdout || '').trim().split(/\r?\n/).find((x) => x.startsWith('RUNNER_PATH='));
+  return line ? line.slice('RUNNER_PATH='.length) : '';
 }
 
 function parseRunnerAutoPrompt(stdout) {
@@ -302,6 +308,33 @@ test('repo-only mode still passes through when fallback cwd does not match ROOTP
   assert.match(result.stdout, /CODEX_HOME=/);
 });
 
+test('native shim path is removed before direct passthrough to avoid recursion', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-shim-strip-direct-'));
+  const realBin = await createFakeCodexCommand();
+  const shimDir = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-shim-dir-'));
+  const shimPath = path.join(shimDir, process.platform === 'win32' ? 'codex.cmd' : 'codex');
+  if (process.platform === 'win32') {
+    await writeFile(shimPath, '@echo off\r\necho SHIM_RECURSED\r\n', 'utf8');
+  } else {
+    await writeFile(shimPath, '#!/usr/bin/env bash\necho SHIM_RECURSED\n', 'utf8');
+    await chmod(shimPath, 0o755);
+  }
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: `${shimDir}${path.delimiter}${realBin}`,
+    args: ['hello'],
+    env: {
+      AIOS_NATIVE_SHIM_DIR: shimDir,
+      CTXDB_WRAP_MODE: 'repo-only',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /CODEX_HOME=/u);
+  assert.doesNotMatch(result.stdout, /SHIM_RECURSED/u);
+});
+
 test('AIOS workspace blocks direct interactive native agent when shell wrapping is disabled', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-direct-native-block-'));
   const fakeBin = await createFakeCodexCommand();
@@ -389,6 +422,28 @@ test('wrapped interactive runs do not get rewritten to one-shot continue prompts
   const runnerArgs = parseRunnerArgs(result.stdout);
   assert.equal(runnerArgs.includes('--prompt'), false);
   assert.equal(runnerArgs.at(-1), '--');
+});
+
+test('native shim path is removed before launching the AIOS runner', async () => {
+  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-shim-strip-runner-'));
+  const fakeBin = await createFakeCodexCommand();
+  const fakeRunner = await createFakeRunner();
+  const shimDir = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-runner-shim-dir-'));
+
+  const result = runBridge({
+    cwd,
+    pathPrefix: `${shimDir}${path.delimiter}${fakeBin}`,
+    args: [],
+    env: {
+      AIOS_NATIVE_SHIM_DIR: shimDir,
+      CTXDB_RUNNER: fakeRunner,
+      CTXDB_WRAP_MODE: 'all',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const runnerPath = parseRunnerPath(result.stdout).split(path.delimiter).filter(Boolean);
+  assert.equal(runnerPath.includes(shimDir), false);
 });
 
 test('wrapped interactive codex runs inject route auto prompt by default', async () => {
