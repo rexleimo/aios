@@ -6,6 +6,23 @@
 
 ## [未发布]
 
+## [1.52.0] - 2026-06-11
+
+### 新增
+- feat(shell): 新增 `aios_shell` MCP 工具（`scripts/shell-mcp-server.mjs`），通过 MCP 代理对所有客户端实现确定性 shell 输出压缩
+- feat(shell): 通过 `doctor --fix` 将 `aios-shell` 别名注册到全部 9 个客户端配置（`.mcp.json`、`.codex/config.toml`、`.gemini/settings.json`、`opencode.json`、`crush.json` 等）
+- feat(shim): 为原生 shim 添加自愈机制 — 探测常见 AIOS 安装路径，当 bridge 不可达时 fail-open 直接执行真实客户端
+- feat(shell): 在命令重写中为敏感命令（`git push`、`npm publish`）添加宿主权限审查守卫
+
+### 变更
+- feat(strict): 增强原生严格模式，验证受管 shim 背后是否存在真实下游客户端
+- feat(rewrite): 在命令重写中拦截危险 shell 结构（`\n`、`\r`、单 `&`）
+- feat(hook): Claude PreToolUse hook 不再强制自动允许；改用 envelope 式命令包装
+- chore(deps): 升级 `proxy-inspector.mjs`，检查多个 MCP 别名（`puppeteer-stealth`、`aios-shell`）
+
+### 修复
+- fix(shim): 修复当 `AIOS_ROOT_DIR` 未设置时，原生 shim 回退到过期的临时目录（`/var/folders/...`）
+
 ## [1.40.0] - 2026-05-31
 
 ### 新增

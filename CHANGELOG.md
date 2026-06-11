@@ -6,6 +6,23 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.52.0] - 2026-06-11
+
+### Added
+- feat(shell): add `aios_shell` MCP tool (`scripts/shell-mcp-server.mjs`) with output compression via MCP proxy for deterministic shell interception across all clients
+- feat(shell): register `aios-shell` alias in all 9 client configs via `doctor --fix` (`.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `opencode.json`, `crush.json`, etc.)
+- feat(shim): add self-healing to native shims — probe common AIOS install paths, fail-open by exec-ing real client binary when bridge is unreachable
+- feat(shell): add host permission review guard for sensitive commands (`git push`, `npm publish`) in command rewrite
+
+### Changed
+- feat(strict): enhance native strict mode to verify real downstream client exists behind managed shim
+- feat(rewrite): block dangerous shell constructs in command rewrite (`\n`, `\r`, single `&`)
+- feat(hook): Claude PreToolUse hook no longer forces auto-allow; uses envelope-based command wrapping
+- chore(deps): upgrade `proxy-inspector.mjs` to check multiple MCP aliases (`puppeteer-stealth`, `aios-shell`)
+
+### Fixed
+- fix(shim): prevent stale temp-directory fallback (`/var/folders/...`) in native shims when `AIOS_ROOT_DIR` is unset
+
 ## [1.51.0] - 2026-06-10
 
 - feat(clients): add crush smoke verification and harden pending-smoke gating

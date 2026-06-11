@@ -17,6 +17,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1：全客户端 Token 压缩合规](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码](2026-06-v150-unified-aios-search.md)
 - [Codemap：给你的 AI Agent 一张代码地图](2026-05-codemap-crg.md)

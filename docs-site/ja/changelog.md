@@ -5,6 +5,20 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v1.52.0 (2026-06-11)
+
+- **aios_shell MCP ツール**: `aios-shell` MCP エイリアス経由で全クライアントにおいて決定論的な shell 出力圧縮を実現。shell コマンドは `scripts/shell-mcp-server.mjs` で実行され、MCP proxy が自動的に **99%+ の節約率** で圧縮します。
+- **3層防御**: MCP ツール (全クライアント) → shim+hook (Claude/全クライアント) → プロンプト誘導。単一障害点なし。
+- **Shim 自己修復**: ネイティブ shim が 4 つの fallback パスを探索し、fail-open で実際のクライアントバイナリを実行。
+- **機密コマンドガード**: `git push` と `npm publish` が実行前に遮断され、ホスト権限確認が必要。
+- **aios-shell 全クライアント登録**: `doctor --fix` で `.mcp.json`、`.codex/config.toml`、`.gemini/settings.json`、`opencode.json`、`crush.json` に登録。
+- 参考: [v1.52.0 ブログ記事](/blog/ja/2026-06-v152-aios-shell-mcp/).
+
+## v1.51.0 (2026-06-10)
+
+- **Crush smoke 検証**: Crush (charmbracelet) を pending-smoke ゲーティングに追加し、live execution ブロックを強化。
+- **Native strict モード強化**: `clients doctor --native-strict` が管理 shim の背後に実際のダウンストリームクライアントが存在するか検証。
+
 ## v1.50.1 (2026-06-05)
 
 - **全クライアント turn compression compliance**: すべての AIOS-managed client/host が `bidirectional-turn-compression` metric を共有し、`pre_send` と `post_receive` を必須にしました。

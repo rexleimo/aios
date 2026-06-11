@@ -5,6 +5,20 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v1.52.0（2026-06-11）
+
+- **aios_shell MCP 工具**：通过 `aios-shell` MCP 别名实现跨所有客户端的确定性 shell 输出压缩。shell 命令通过 `scripts/shell-mcp-server.mjs` 执行，输出由 MCP proxy 自动压缩，**压缩率超过 99%**。
+- **三层拦截防线**：MCP 工具（全客户端）→ shim+hook（Claude/全客户端）→ 提示词引导。无单点故障。
+- **Shim 自愈**：原生 shim 探测 4 条回退路径（`AIOS_ROOT_DIR` → baked root → `~/.rexcil/harness-cli` → `~/cool.cnb/rex-ai-boot`），全部失败后 fail-open 执行真实客户端。
+- **敏感命令守卫**：`git push` 和 `npm publish` 在执行前被拦截，需宿主权限审查。
+- **aios-shell 注册到全客户端配置**：通过 `doctor --fix` 注册到 `.mcp.json`、`.codex/config.toml`、`.gemini/settings.json`、`opencode.json`、`crush.json`。
+- 详情参见：[v1.52.0 博客文章](/blog/zh/2026-06-v152-aios-shell-mcp/)。
+
+## v1.51.0（2026-06-10）
+
+- **Crush smoke 验证**：将 Crush（charmbracelet）加入 pending-smoke 门控，强化 live execution 拦截。
+- **Native strict 模式升级**：`clients doctor --native-strict` 现在验证受管 shim 背后是否存在真实下游客户端。
+
 ## v1.50.1（2026-06-05）
 
 - **全客户端 turn compression 合规**：所有 AIOS 托管客户端/宿主共享 `bidirectional-turn-compression` 指标，并强制记录 `pre_send` 与 `post_receive`。

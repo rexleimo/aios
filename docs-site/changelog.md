@@ -9,6 +9,21 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
+## v1.52.0 (2026-06-11)
+
+- **aios_shell MCP tool**: deterministic shell output compression across all clients via `aios-shell` MCP alias. Shell commands execute through `scripts/shell-mcp-server.mjs` and output is automatically compressed by the MCP proxy at **99%+ saving ratio**.
+- **Three-layer interception defense**: MCP tool (all clients) → shim+hook (Claude/all) → prompt guidance. No single point of failure.
+- **Shim self-healing**: native shims probe 4 fallback paths (`AIOS_ROOT_DIR` → baked root → `~/.rexcil/harness-cli` → `~/cool.cnb/rex-ai-boot`) before failing open to the real client binary.
+- **Sensitive command guard**: `git push` and `npm publish` are intercepted before execution and require host permission review.
+- **aios-shell in all client configs**: registered via `doctor --fix` in `.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `opencode.json`, and `crush.json`.
+- See: [v1.52.0 blog post](/blog/2026-06-v152-aios-shell-mcp/).
+
+## v1.51.0 (2026-06-10)
+
+- **Crush smoke verification**: added Crush (charmbracelet) to pending-smoke gating with hardened live execution blocks.
+- **Native strict mode upgrade**: `clients doctor --native-strict` now verifies real downstream clients exist behind managed shims.
+- See: [v1.51.0 blog post](/blog/2026-06-v151-crush-smoke/).
+
 ## v1.50.1 (2026-06-05)
 
 - **All-client turn compression compliance**: every AIOS-managed client/host now shares the `bidirectional-turn-compression` metric with required `pre_send` and `post_receive` records.
