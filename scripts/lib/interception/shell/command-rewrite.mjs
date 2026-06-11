@@ -38,6 +38,14 @@ export function rewriteShellCommand(command, options = {}) {
       originalCommand: original,
     };
   }
+  if (requiresHostPermissionReview(original)) {
+    return {
+      action: 'passthrough',
+      reason: 'sensitive command requires host permission review',
+      strategy: 'host-permission-review',
+      originalCommand: original,
+    };
+  }
 
   const rewritten = rewriteCompoundCommand(original, options);
   if (rewritten === original) {
@@ -78,7 +86,7 @@ export function buildClaudePreToolUseRewriteResponse(input = {}, options = {}) {
     };
   }
 
-  const decision = rewriteShellCommand(command, options);
+  const decision = rewriteShellCommand(command, { ...options, envelope: true });
   if (decision.action !== 'rewrite') {
     return { ok: true, response: {}, decision };
   }
@@ -89,8 +97,6 @@ export function buildClaudePreToolUseRewriteResponse(input = {}, options = {}) {
     response: {
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
-        permissionDecision: 'allow',
-        permissionDecisionReason: 'AIOS command-level interception rewrite',
         updatedInput: {
           ...toolInput,
           command: decision.rewrittenCommand,
@@ -214,11 +220,19 @@ function hasUnsupportedShellConstruct(command) {
       if (char === quote) quote = '';
       continue;
     }
+    if (char === '\n' || char === '\r') return true;
     if (char === '"' || char === "'") {
       quote = char;
       continue;
     }
     if (char === '`' || char === '<' || char === '>') return true;
+    if (char === '&') {
+      if (next === '&') {
+        index += 1;
+        continue;
+      }
+      return true;
+    }
     if (char === '|') {
       if (next === '|') {
         index += 1;
@@ -229,6 +243,15 @@ function hasUnsupportedShellConstruct(command) {
     if (char === '$' && next === '(') return true;
   }
   return false;
+}
+
+function requiresHostPermissionReview(command) {
+  return splitShellCommandPreservingSeparators(command).some((part) => {
+    if (!part || part.type === 'separator') return false;
+    const stripped = stripEnvPrefix(stripShellPrefix(part.text.trim()));
+    return /^git\s+push\b/u.test(stripped)
+      || /^(?:npm|pnpm|yarn)\s+publish\b/u.test(stripped);
+  });
 }
 
 function isShellTool(toolName) {

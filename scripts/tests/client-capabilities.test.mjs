@@ -65,6 +65,43 @@ test('clients doctor command parses doctor subcommand and json flag', () => {
 test('native strict capability report requires managed shims at PATH front', async () => {
   const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-home-'));
   const shimDir = path.join(homeDir, '.aios', 'bin');
+  const realBinDir = path.join(homeDir, 'real-bin');
+  await mkdir(shimDir, { recursive: true });
+  await mkdir(realBinDir, { recursive: true });
+
+  for (const clientId of ALL_CLIENTS) {
+    const commandName = CLIENT_DEFINITIONS[clientId].commandName;
+    const fileName = process.platform === 'win32' ? `${commandName}.cmd` : commandName;
+    const shimPath = path.join(shimDir, fileName);
+    await writeFile(shimPath, 'AIOS_NATIVE_SHIM managed\n', 'utf8');
+    if (process.platform !== 'win32') await chmod(shimPath, 0o755);
+
+    const realPath = path.join(realBinDir, fileName);
+    await writeFile(realPath, process.platform === 'win32' ? '@echo off\r\n' : '#!/bin/sh\nexit 0\n', 'utf8');
+    if (process.platform !== 'win32') await chmod(realPath, 0o755);
+  }
+
+  const report = await buildClientCapabilityReport({
+    rootDir: process.cwd(),
+    nativeStrict: true,
+    env: {
+      HOME: homeDir,
+      AIOS_NATIVE_SHIM_DIR: shimDir,
+      PATH: `${shimDir}${path.delimiter}${realBinDir}`,
+    },
+  });
+
+  assert.equal(report.nativeStrict.enabled, true);
+  assert.equal(report.nativeStrict.ok, true);
+  assert.equal(byId(report, 'codex').nativeShim.installed, true);
+  assert.equal(byId(report, 'codex').nativeShim.pathPrecedence, true);
+  assert.equal(byId(report, 'codex').nativeShim.realCommandAvailable, true);
+  assert.equal(byId(report, 'codex').nativeShim.realCommandPath, path.join(realBinDir, process.platform === 'win32' ? 'codex.cmd' : 'codex'));
+});
+
+test('native strict capability report fails when no real client exists behind managed shims', async () => {
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-only-home-'));
+  const shimDir = path.join(homeDir, '.aios', 'bin');
   await mkdir(shimDir, { recursive: true });
 
   for (const clientId of ALL_CLIENTS) {
@@ -81,14 +118,50 @@ test('native strict capability report requires managed shims at PATH front', asy
     env: {
       HOME: homeDir,
       AIOS_NATIVE_SHIM_DIR: shimDir,
-      PATH: `${shimDir}${path.delimiter}/usr/bin`,
+      PATH: shimDir,
     },
   });
 
   assert.equal(report.nativeStrict.enabled, true);
-  assert.equal(report.nativeStrict.ok, true);
+  assert.equal(report.nativeStrict.ok, false);
   assert.equal(byId(report, 'codex').nativeShim.installed, true);
   assert.equal(byId(report, 'codex').nativeShim.pathPrecedence, true);
+  assert.equal(byId(report, 'codex').nativeShim.realCommandAvailable, false);
+  assert.equal(byId(report, 'codex').nativeShim.realCommandPath, '');
+});
+
+test('native strict capability report requires executable real clients on posix', async (t) => {
+  if (process.platform === 'win32') {
+    t.skip('POSIX executable bits do not apply on Windows');
+    return;
+  }
+
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-nonexec-home-'));
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  const realBinDir = path.join(homeDir, 'real-bin');
+  await mkdir(shimDir, { recursive: true });
+  await mkdir(realBinDir, { recursive: true });
+
+  for (const clientId of ALL_CLIENTS) {
+    const commandName = CLIENT_DEFINITIONS[clientId].commandName;
+    const shimPath = path.join(shimDir, commandName);
+    await writeFile(shimPath, 'AIOS_NATIVE_SHIM managed\n', 'utf8');
+    await chmod(shimPath, 0o755);
+    await writeFile(path.join(realBinDir, commandName), '#!/bin/sh\nexit 0\n', 'utf8');
+  }
+
+  const report = await buildClientCapabilityReport({
+    rootDir: process.cwd(),
+    nativeStrict: true,
+    env: {
+      HOME: homeDir,
+      AIOS_NATIVE_SHIM_DIR: shimDir,
+      PATH: `${shimDir}${path.delimiter}${realBinDir}`,
+    },
+  });
+
+  assert.equal(report.nativeStrict.ok, false);
+  assert.equal(byId(report, 'codex').nativeShim.realCommandAvailable, false);
 });
 
 test('clients doctor --native-strict fails when shims are missing', async () => {

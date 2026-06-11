@@ -12,7 +12,7 @@ function renderTextReport(report) {
     lines.push(`- ${client.clientId} (${client.runtimeId}): ${client.status}`);
     lines.push(`  compression=${client.compressionCompliance.metric} entrypoint=${client.compressionCompliance.requiredEntrypoint} pre_send=required post_receive=required bypass=${client.compressionCompliance.uncontrolledHostOutputPolicy}`);
     if (report.nativeStrict?.enabled) {
-      lines.push(`  nativeShim=installed:${client.nativeShim.installed ? 'yes' : 'no'} pathFront:${client.nativeShim.pathPrecedence ? 'yes' : 'no'}`);
+      lines.push(`  nativeShim=installed:${client.nativeShim.installed ? 'yes' : 'no'} pathFront:${client.nativeShim.pathPrecedence ? 'yes' : 'no'} realClient:${client.nativeShim.realCommandAvailable ? 'yes' : 'no'}`);
     }
     if (client.reasons.length > 0) {
       lines.push(`  reasons: ${client.reasons.join('; ')}`);

@@ -9,6 +9,7 @@ import test from 'node:test';
 
 import { compressPreSendTurn } from '../lib/interception/index.mjs';
 import { buildClaudePreToolUseRewriteResponse, rewriteShellCommand } from '../lib/interception/index.mjs';
+import { decodeEnvelope } from '../lib/interception/core/envelope.mjs';
 
 const cli = path.join(process.cwd(), 'scripts', 'aios.mjs');
 
@@ -20,6 +21,12 @@ function shellArg(value = '') {
 
 function interceptPrefix(rootDir = process.cwd()) {
   return `node ${shellArg(path.join(rootDir, 'scripts', 'aios-intercept.mjs'))} shell`;
+}
+
+function decodeEnvelopeFromWrappedCommand(command) {
+  const match = String(command || '').match(/\s--envelope\s+([A-Za-z0-9_-]+)/u);
+  assert.ok(match, `expected wrapped command to use --envelope: ${command}`);
+  return decodeEnvelope(match[1]);
 }
 
 function runAios(args, env = {}) {
@@ -184,6 +191,8 @@ test('rewriteShellCommand avoids shell constructs where compact JSON would chang
     'git log $(git rev-parse --abbrev-ref HEAD)',
     'git show "$(git rev-parse HEAD)"',
     'git show `git rev-parse HEAD`',
+    'git status\nnpm test',
+    'git status & npm test',
   ]) {
     const decision = rewriteShellCommand(command);
     assert.equal(decision.action, 'passthrough', command);
@@ -191,7 +200,15 @@ test('rewriteShellCommand avoids shell constructs where compact JSON would chang
   }
 });
 
-test('Claude PreToolUse hook response updates Bash command and fails open for no match', () => {
+test('rewriteShellCommand leaves sensitive outbound package commands to host permissions', () => {
+  for (const command of ['git push origin main', 'npm publish']) {
+    const decision = rewriteShellCommand(command);
+    assert.equal(decision.action, 'passthrough', command);
+    assert.equal(decision.reason, 'sensitive command requires host permission review');
+  }
+});
+
+test('Claude PreToolUse hook response updates Bash command without forcing host allow', () => {
   const response = buildClaudePreToolUseRewriteResponse({
     tool_name: 'Bash',
     tool_input: { command: 'git diff' },
@@ -199,7 +216,11 @@ test('Claude PreToolUse hook response updates Bash command and fails open for no
 
   assert.equal(response.ok, true);
   assert.equal(response.response.hookSpecificOutput.hookEventName, 'PreToolUse');
-  assert.equal(response.response.hookSpecificOutput.updatedInput.command, 'node scripts/aios-intercept.mjs shell -- git diff');
+  assert.equal(response.response.hookSpecificOutput.permissionDecision, undefined);
+  assert.equal(response.response.hookSpecificOutput.permissionDecisionReason, undefined);
+  const envelope = decodeEnvelopeFromWrappedCommand(response.response.hookSpecificOutput.updatedInput.command);
+  assert.equal(envelope.command, 'git diff');
+  assert.deepEqual(envelope.args || [], []);
 
   const noMatch = buildClaudePreToolUseRewriteResponse({
     tool_name: 'Read',
@@ -208,6 +229,20 @@ test('Claude PreToolUse hook response updates Bash command and fails open for no
   assert.equal(noMatch.ok, true);
   assert.deepEqual(noMatch.response, {});
   assert.equal(noMatch.decision.action, 'passthrough');
+});
+
+test('Claude PreToolUse hook preserves shell command string semantics in envelopes', () => {
+  for (const command of ['NODE_ENV=test npm test', "cat 'a b.txt'"]) {
+    const response = buildClaudePreToolUseRewriteResponse({
+      tool_name: 'Bash',
+      tool_input: { command },
+    });
+
+    assert.equal(response.ok, true);
+    const envelope = decodeEnvelopeFromWrappedCommand(response.response.hookSpecificOutput.updatedInput.command);
+    assert.equal(envelope.command, command);
+    assert.deepEqual(envelope.args || [], []);
+  }
 });
 
 test('interception rewrite CLI prints text and Claude hook JSON', () => {
@@ -219,7 +254,9 @@ test('interception rewrite CLI prints text and Claude hook JSON', () => {
   const hook = runAios(['interception', 'rewrite', '--hook', 'claude', '--input', hookInput, '--json']);
   assert.equal(hook.status, 0, hook.stderr || hook.stdout);
   const parsed = JSON.parse(hook.stdout);
-  assert.equal(parsed.hookSpecificOutput.updatedInput.command, `${interceptPrefix()} -- npm test`);
+  const envelope = decodeEnvelopeFromWrappedCommand(parsed.hookSpecificOutput.updatedInput.command);
+  assert.equal(parsed.hookSpecificOutput.permissionDecision, undefined);
+  assert.equal(envelope.command, 'npm test');
 });
 
 test('Claude hook script emits host protocol JSON directly', () => {
@@ -232,7 +269,9 @@ test('Claude hook script emits host protocol JSON directly', () => {
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const parsed = JSON.parse(result.stdout);
-  assert.equal(parsed.hookSpecificOutput.updatedInput.command, `${interceptPrefix()} -- git status --short`);
+  const envelope = decodeEnvelopeFromWrappedCommand(parsed.hookSpecificOutput.updatedInput.command);
+  assert.equal(parsed.hookSpecificOutput.permissionDecision, undefined);
+  assert.equal(envelope.command, 'git status --short');
 });
 
 test('aios-intercept shell shorthand preserves failing command exit status', () => {

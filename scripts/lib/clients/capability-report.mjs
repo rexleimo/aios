@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import { constants as fsConstants, promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
@@ -105,6 +105,54 @@ function samePath(left, right) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
 }
 
+function pathExtEntries(env = process.env) {
+  const pathExtKey = Object.keys(env).find((key) => key.toLowerCase() === 'pathext') || 'PATHEXT';
+  return String(env[pathExtKey] || '.COM;.EXE;.BAT;.CMD')
+    .split(';')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => entry.startsWith('.') ? entry : `.${entry}`);
+}
+
+function buildPathEnvWithoutShim(env, shimDir) {
+  const next = { ...env };
+  const pathKeys = Object.keys(next).filter((key) => key.toLowerCase() === 'path');
+  for (const key of pathKeys.length > 0 ? pathKeys : ['PATH']) {
+    const entries = String(next[key] || '').split(path.delimiter);
+    next[key] = entries.filter((entry) => entry && !samePath(entry, shimDir)).join(path.delimiter);
+  }
+  return next;
+}
+
+async function fileExists(filePath) {
+  try {
+    const stats = await fs.stat(filePath);
+    if (!stats.isFile()) return false;
+    if (process.platform !== 'win32') {
+      await fs.access(filePath, fsConstants.X_OK);
+    }
+    return true;
+  } catch (error) {
+    if (['EACCES', 'ENOENT', 'ENOTDIR'].includes(error?.code)) return false;
+    throw error;
+  }
+}
+
+async function findCommandInPath(commandName, env = process.env) {
+  const entries = pathEntries(env);
+  const names = process.platform === 'win32' && !path.extname(commandName)
+    ? pathExtEntries(env).map((ext) => `${commandName}${ext}`)
+    : [commandName];
+
+  for (const entry of entries) {
+    for (const name of names) {
+      const candidate = path.join(entry, name);
+      if (await fileExists(candidate)) return candidate;
+    }
+  }
+  return '';
+}
+
 async function inspectNativeShim(clientId, { env = process.env } = {}) {
   const definition = CLIENT_DEFINITIONS[clientId];
   const shimDir = resolveNativeShimDir(env);
@@ -116,6 +164,8 @@ async function inspectNativeShim(clientId, { env = process.env } = {}) {
       installed: false,
       inPath: false,
       pathPrecedence: false,
+      realCommandAvailable: false,
+      realCommandPath: '',
       error: `unknown client: ${clientId}`,
     };
   }
@@ -129,6 +179,7 @@ async function inspectNativeShim(clientId, { env = process.env } = {}) {
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
   }
+  const realCommandPath = await findCommandInPath(definition.commandName, buildPathEnvWithoutShim(env, shimDir));
   return {
     required: false,
     shimDir,
@@ -136,6 +187,8 @@ async function inspectNativeShim(clientId, { env = process.env } = {}) {
     installed: managed,
     inPath: entries.some((entry) => samePath(entry, shimDir)),
     pathPrecedence: entries.length > 0 && samePath(entries[0], shimDir),
+    realCommandAvailable: Boolean(realCommandPath),
+    realCommandPath,
   };
 }
 
@@ -179,7 +232,11 @@ export async function buildClientCapabilityReport({ rootDir = process.cwd(), env
       reasons: reasonsForClient(clientId, { hostCapabilities, env }),
     };
   }));
-  const nativeStrictOk = !nativeStrict || clients.every((client) => client.nativeShim.installed && client.nativeShim.pathPrecedence);
+  const nativeStrictOk = !nativeStrict || clients.every((client) => (
+    client.nativeShim.installed
+    && client.nativeShim.pathPrecedence
+    && client.nativeShim.realCommandAvailable
+  ));
 
   return {
     schemaVersion: 1,
