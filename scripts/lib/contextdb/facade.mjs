@@ -90,10 +90,6 @@ export async function generateFacadeFromSession(workspaceRoot, agent, project) {
   const root = path.resolve(workspaceRoot || process.cwd());
   const contextDbRoot = resolveContextDbRoot(root, { preferLegacyExisting: true });
   const sessionsDir = path.join(contextDbRoot, 'sessions');
-  const contextPacketPath = toWorkspaceRelative(
-    root,
-    path.join(contextDbRoot, 'exports', `latest-${agent}-context.md`)
-  );
   let latestSessionId = '';
   let latestMtime = 0;
 
@@ -128,8 +124,7 @@ export async function generateFacadeFromSession(workspaceRoot, agent, project) {
       status: 'new',
       lastCheckpointSummary: 'No prior sessions',
       keyRefs: [],
-      contextPacketPath,
-      hasStalePack: false,
+      handoffPath: '',
     };
   }
 
@@ -152,8 +147,7 @@ export async function generateFacadeFromSession(workspaceRoot, agent, project) {
     status: meta.status || 'running',
     lastCheckpointSummary: meta.lastCheckpoint?.summary || '',
     keyRefs: meta.lastCheckpoint?.refs || [],
-    contextPacketPath,
-    hasStalePack: false,
+    handoffPath: toWorkspaceRelative(root, path.join(contextDbRoot, 'sessions', latestSessionId, 'handoff.json')),
     continuitySummary: continuity?.summary || '',
     continuityNextActions: continuity?.nextActions || [],
     continuityUpdatedAt: continuity?.updatedAt || '',

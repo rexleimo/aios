@@ -127,7 +127,7 @@ Options:
 Subcommands:
   record      Record a structured outcome snapshot after content operation
   insights    Analyze outcomes and generate insight memos
-  summary     Build perception layer markdown for agent context injection
+  summary     Build perception layer markdown for explicit analysis/reporting
 
 Options:
   --content-id <id>               (record) Required content identifier

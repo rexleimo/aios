@@ -91,10 +91,6 @@ export function resolveRoutedSubagentClient({ agent = 'codex-cli', teamProvider 
   return inferSubagentClientFromProvider(provider);
 }
 
-export function shouldInjectTaskRouterGuide(env = process.env) {
-  return parseBoolEnv(env.CTXDB_TASK_ROUTER_GUIDE, true);
-}
-
 export function buildCodexMcpDisableArgs(env = process.env) {
   const disableMcpStartup = parseBoolEnv(env?.[CTXDB_CODEX_DISABLE_MCP_ENV], false);
   return disableMcpStartup ? ['-c', 'mcp_servers={}', '-c', 'features.rmcp_client=false'] : [];

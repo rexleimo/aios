@@ -12,7 +12,7 @@ import { buildBlockedPhaseJobRun } from './phase-blocks.mjs';
 import { buildCompletedPhaseJobRun, normalizePhaseHandoffPayload, readSubagentOutputText, resolvePhaseJobStatus } from './phase-output.mjs';
 import { resolveRepoRoot } from './paths.mjs';
 import { buildSystemPrompt, buildUserPrompt } from './prompts.mjs';
-import { appendJobFindingsToRoleMemory, loadRolePinnedMemory } from './role-memory.mjs';
+import { appendJobFindingsToRoleMemory } from './role-memory.mjs';
 import { collectCostTelemetry, hasCostTelemetry } from './telemetry.mjs';
 import { normalizeText, safeFileSlug } from './text.mjs';
 import { compactSubagentTurnOutput, prepareSubagentTurnPrompts } from './turn-compression.mjs';
@@ -40,7 +40,6 @@ function buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job
 
 export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   clientId,
-  contextText,
   timeoutMs,
   env,
   io,
@@ -52,8 +51,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
 }) {
   const agent = resolveAgentForJob(job, agentSpecNormalized);
   const role = normalizeText(job?.role);
-  const rolePinnedMemory = await loadRolePinnedMemory(role, rootDir);
-  const systemPrompt = buildSystemPrompt({ agent, contextText, plan, job, phase, rootDir, env, rolePinnedMemory });
+  const systemPrompt = buildSystemPrompt({ agent, plan, job, phase });
   const userPrompt = buildUserPrompt({ plan, job, phase, dependencyRuns });
   const structuredOutput = buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job });
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);

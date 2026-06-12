@@ -1,0 +1,23 @@
+{
+  "source_type": "failure",
+  "failure_summary": [
+    {
+      "task_id": "harness-valid-001",
+      "description": "missing required pattern: ## Context Boundary; missing required pattern: ContextDB as storage and evidence, not as prompt replay"
+    },
+    {
+      "task_id": "harness-valid-002",
+      "description": "missing required pattern: wait for explicit resume intent"
+    },
+    {
+      "task_id": "harness-valid-003",
+      "description": "missing required pattern: Do not feed `context:pack` output into a model prompt; missing required pattern: Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills"
+    }
+  ],
+  "patch": {
+    "reasoning": "Add explicit no-injection policy anchors for deprecated flags, manual report boundaries, explicit resume intent, and static rule placement.",
+    "edits": [
+      "see git diff for accepted skill edits"
+    ]
+  }
+}

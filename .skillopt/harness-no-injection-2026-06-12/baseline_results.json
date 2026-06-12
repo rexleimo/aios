@@ -1,0 +1,59 @@
+{
+  "skill_path": "skill-sources/aios-long-running-harness/SKILL.md",
+  "initial_hash": "882a77b9ba3afd87",
+  "train_results": [
+    {
+      "id": "harness-train-001",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: ## Context Boundary; missing required pattern: ContextDB as storage and evidence, not as prompt replay",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-002",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: wait for explicit resume intent",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-003",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-004",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: Do not feed `context:pack` output into a model prompt",
+      "task_type": "skill-policy-regression"
+    }
+  ],
+  "validation_results": [
+    {
+      "id": "harness-valid-001",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: ## Context Boundary; missing required pattern: ContextDB as storage and evidence, not as prompt replay",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-valid-002",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: wait for explicit resume intent",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-valid-003",
+      "hard": 0,
+      "soft": 0.3,
+      "fail_reason": "missing required pattern: Do not feed `context:pack` output into a model prompt; missing required pattern: Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills",
+      "task_type": "skill-policy-regression"
+    }
+  ],
+  "train_hard": 0,
+  "validation_hard": 0
+}

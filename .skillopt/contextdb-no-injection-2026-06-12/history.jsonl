@@ -1,0 +1,2 @@
+{"step":1,"action":"accept_new_best","baseline_valid":0.3333,"candidate_valid":1,"candidate_hash":"d46f44a5f1257d77"}
+{"step":2,"action":"refactor_preserved_best","candidate_valid":1,"candidate_hash":"66bfa26fba21776b"}

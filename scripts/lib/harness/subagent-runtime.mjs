@@ -16,7 +16,6 @@ import {
 } from './subagent-clients/structured-output.mjs';
 import {
   detectSessionIdFromPlan,
-  loadContextPacket,
 } from './subagent-runtime/context-packet.mjs';
 import { runDispatchJobs } from './subagent-runtime/dispatch-executor.mjs';
 import { resolveRepoRoot } from './subagent-runtime/paths.mjs';
@@ -35,9 +34,6 @@ export {
   SUBAGENT_CLAUDE_UNATTENDED_ENV,
   SUBAGENT_CLIENT_ENV,
   SUBAGENT_CONCURRENCY_ENV,
-  SUBAGENT_CONTEXT_LIMIT_ENV,
-  SUBAGENT_CONTEXT_TOKEN_BUDGET_ENV,
-  SUBAGENT_CONTEXT_TOKEN_STRATEGY_ENV,
   SUBAGENT_CODEX_DISABLE_MCP_ENV,
   SUBAGENT_CODEX_UNATTENDED_ENV,
   SUBAGENT_GEMINI_UNATTENDED_ENV,
@@ -112,8 +108,6 @@ export async function executeSubagentDispatchPlan(
 
   const rootDir = normalizeText(runtimeRootDir) ? path.resolve(String(runtimeRootDir)) : resolveRepoRoot();
   const sessionId = detectSessionIdFromPlan(plan);
-  const contextPacket = await loadContextPacket({ rootDir, sessionId, env, io });
-  const contextText = contextPacket.ok ? contextPacket.contextText : '';
 
   const concurrency = parsePositiveInt(env?.[SUBAGENT_CONCURRENCY_ENV], 3);
   const timeoutMs = parsePositiveInt(env?.[SUBAGENT_TIMEOUT_MS_ENV], 10 * 60 * 1000);
@@ -127,7 +121,6 @@ export async function executeSubagentDispatchPlan(
       plan,
       dispatchPlan,
       clientId,
-      contextText,
       concurrency,
       timeoutMs,
       env,

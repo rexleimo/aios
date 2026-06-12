@@ -1,0 +1,19 @@
+{
+  "source_type": "failure",
+  "failure_summary": [
+    {
+      "task_id": "cdb-valid-001",
+      "description": "missing required pattern: Deprecated prompt-loading flags are intentionally unsupported; missing required pattern: --startup-mode; missing required pattern: --context-mode; missing required pattern: CTXDB_AUTO_PROMPT"
+    },
+    {
+      "task_id": "cdb-valid-002",
+      "description": "missing required pattern: Never paste a full ContextDB Report"
+    }
+  ],
+  "patch": {
+    "reasoning": "Add explicit no-injection policy anchors for deprecated flags, manual report boundaries, explicit resume intent, and static rule placement.",
+    "edits": [
+      "see git diff for accepted skill edits"
+    ]
+  }
+}

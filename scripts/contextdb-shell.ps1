@@ -1,5 +1,5 @@
 # ContextDB transparent command wrappers for PowerShell.
-# Source this file in PowerShell profile to make codex/claude/gemini/opencode auto-load context packets.
+# Source this file in PowerShell profile to route supported clients through AIOS without prompt injection.
 # Optional env vars:
 # - AIOS_ROOT_DIR
 # - AIOS_ROOT
@@ -10,9 +10,6 @@
 # - CTXDB_WRAP_MODE
 # - CTXDB_MARKER_FILE
 # - CTXDB_AUTO_CREATE_MARKER
-# - CTXDB_INTERACTIVE_AUTO_ROUTE
-# - CTXDB_HARNESS_PROVIDER
-# - CTXDB_HARNESS_MAX_ITERATIONS
 # - CTXDB_PRIVACY_BANNER
 # - CTXDB_PRIVACY_COLOR
 # - CTXDB_ALLOW_DIRECT_NATIVE_AGENT
@@ -109,27 +106,8 @@ function Invoke-BridgeOrPassthrough {
   }
 
   Update-LastWorkspace
-  # Avoid bricking interactive wrappers if someone left CTXDB_PACK_STRICT=1 in
-  # their environment. Quality gates can still enforce strict mode explicitly.
-  $prevStrict = $env:CTXDB_PACK_STRICT
-  $strictInteractive = if ($env:CTXDB_PACK_STRICT_INTERACTIVE) { $env:CTXDB_PACK_STRICT_INTERACTIVE.Trim().ToLowerInvariant() } else { "" }
-  $allowStrict = $strictInteractive -in @("1", "true", "yes", "on")
-  if (-not $allowStrict) {
-    $env:CTXDB_PACK_STRICT = "0"
-  }
-
-  try {
-    & node $bridge "--agent" $Agent "--command" $Passthrough "--" @Arguments
-    $global:LASTEXITCODE = $LASTEXITCODE
-  } finally {
-    if ($allowStrict) {
-      # no-op
-    } elseif ($null -eq $prevStrict) {
-      Remove-Item Env:CTXDB_PACK_STRICT -ErrorAction SilentlyContinue | Out-Null
-    } else {
-      $env:CTXDB_PACK_STRICT = $prevStrict
-    }
-  }
+  & node $bridge "--agent" $Agent "--command" $Passthrough "--" @Arguments
+  $global:LASTEXITCODE = $LASTEXITCODE
 }
 
 # Keep these wrapper calls as statements. Assigning their output captures native

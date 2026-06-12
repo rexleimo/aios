@@ -1,0 +1,28 @@
+[
+  {
+    "id": "harness-valid-001",
+    "instruction": "Validate the harness skill names a Context Boundary.",
+    "expected_outcome": "Skill contains Context Boundary and storage-not-prompt-replay language.",
+    "required_patterns": [
+      "## Context Boundary",
+      "ContextDB as storage and evidence, not as prompt replay"
+    ]
+  },
+  {
+    "id": "harness-valid-002",
+    "instruction": "Validate explicit resume intent is required.",
+    "expected_outcome": "Skill says wait for explicit resume intent.",
+    "required_patterns": [
+      "wait for explicit resume intent"
+    ]
+  },
+  {
+    "id": "harness-valid-003",
+    "instruction": "Validate context:pack is a report/debug artifact only.",
+    "expected_outcome": "Skill says not to feed context:pack output into model prompts and keeps stable rules in static files.",
+    "required_patterns": [
+      "Do not feed `context:pack` output into a model prompt",
+      "Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills"
+    ]
+  }
+]

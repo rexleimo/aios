@@ -1,15 +1,11 @@
-/* 中文注释：交互循环把用户输入和自动路由连接起来，确保压缩策略不只停留在配置层。 */
+/* 中文注释：交互启动只保留 CLI 透传与退出保存保护，不再注入 ContextDB/自动提示词。 */
 import { spawnSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 import path from 'node:path';
-import { getCommandSpawnSpec } from '../platform/process.mjs';
 import { workspaceMemoryEventsPath } from '../memo/workspace-memory.mjs';
 import { getClientCommandName, resolveClientFromRuntimeId } from '../clients/registry.mjs';
 import { ROOT_DIR, runCommand } from './common.mjs';
 import { buildCodexMcpDisableArgs } from './routes.mjs';
-import { buildInteractiveRouteAutoPrompt } from './route-prompts.mjs';
-import { buildOpenCodePrompt } from './opencode-context.mjs';
-import { extractHandoffPrompt, getAutoPrompt } from './facade.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
 
 function commandForRuntime(agent) {
@@ -17,81 +13,24 @@ function commandForRuntime(agent) {
   return getClientCommandName(client);
 }
 
-function usesWindowsShellFallback(command, env = process.env) {
-  if (process.platform !== 'win32') return false;
-  const spec = getCommandSpawnSpec(command, [], { env });
-  return spec.shell === true;
+function buildClaudeInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('claude-code'), args: [...extraArgs] };
 }
 
-function warnShellPromptSuppressed(clientLabel) {
-  console.warn(`[warn] Windows shell fallback detected for ${clientLabel}; skipping automatic ContextDB prompt injection to avoid cmd.exe interpreting AIOS context lines as commands.`);
-  console.warn(`[action] Reinstall or update the ${clientLabel} client launcher so it resolves to a direct executable (not a .cmd/.ps1 wrapper). After reinstalling, rerun this command.`);
-  console.warn('[alt] As a workaround, manually paste the AIOS context packet (see .aios/context-db/) as your first prompt in a new session.');
+function buildGeminiInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('gemini-cli'), args: [...extraArgs] };
 }
 
-function warnOpenCodeShellPromptSuppressed() {
-  warnShellPromptSuppressed('opencode');
-}
-
-function routeAutoPrompt(opts) {
-  return buildInteractiveRouteAutoPrompt(opts);
-}
-
-function buildClaudeInvocation({ contextText, extraArgs, injectContext, autoPrompt, explicitAutoPrompt }) {
-  const args = injectContext ? ['--append-system-prompt', contextText, ...extraArgs] : [...extraArgs];
-  if (autoPrompt) {
-    const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
-    console.log(`Auto prompt: enabled (${promptSource})`);
-    args.push(autoPrompt);
-  }
-  return { cmd: commandForRuntime('claude-code'), args };
-}
-
-function buildGeminiInvocation({ contextText, extraArgs, injectContext, autoPrompt, explicitAutoPrompt, routeOptions }) {
-  const effectiveAutoPrompt = autoPrompt || routeAutoPrompt(routeOptions);
-  let combinedPrompt = injectContext ? contextText : '';
-  if (effectiveAutoPrompt) {
-    combinedPrompt = combinedPrompt ? `${combinedPrompt}\n\n## Auto Prompt\n${effectiveAutoPrompt}` : effectiveAutoPrompt;
-    const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
-    console.log(`Auto prompt: enabled (${promptSource})`);
-  }
-  return { cmd: commandForRuntime('gemini-cli'), args: combinedPrompt ? ['-i', combinedPrompt, ...extraArgs] : [...extraArgs] };
-}
-
-function buildCodexInvocation({ contextText, extraArgs, injectContext, autoPrompt, explicitAutoPrompt, routeOptions }) {
+function buildCodexInvocation({ extraArgs = [] }) {
   const cmd = commandForRuntime('codex-cli');
-  let shouldInject = injectContext;
-  if (shouldInject && usesWindowsShellFallback(cmd, process.env)) {
-    shouldInject = false;
-    warnShellPromptSuppressed('codex');
-  }
-  const effectiveAutoPrompt = explicitAutoPrompt ? explicitAutoPrompt : shouldInject ? '' : (autoPrompt || routeAutoPrompt(routeOptions));
-  let combinedPrompt = shouldInject ? contextText : '';
-  if (effectiveAutoPrompt) {
-    combinedPrompt = combinedPrompt ? `${combinedPrompt}\n\n## Auto Prompt\n${effectiveAutoPrompt}` : effectiveAutoPrompt;
-    const promptSource = explicitAutoPrompt ? 'env' : 'context handoff';
-    console.log(`Auto prompt: enabled (${promptSource})`);
-  }
   const codexConfigArgs = buildCodexMcpDisableArgs(process.env);
-  return { cmd, args: combinedPrompt ? [...codexConfigArgs, ...extraArgs, combinedPrompt] : [...codexConfigArgs, ...extraArgs] };
+  return { cmd, args: [...codexConfigArgs, ...extraArgs] };
 }
 
-function buildOpenCodeInvocation({ contextText, extraArgs, injectContext, autoPrompt, explicitAutoPrompt, contextPacketPath }) {
+function buildOpenCodeInvocation({ extraArgs = [] }) {
   const cmd = commandForRuntime('opencode-cli');
-  const promptText = buildOpenCodePrompt({ contextPacketPath, contextText, prompt: autoPrompt, injectContext, promptKind: 'handoff' });
-  const suppressPrompt = Boolean(promptText && usesWindowsShellFallback(cmd, process.env));
-  if (suppressPrompt) {
-    warnOpenCodeShellPromptSuppressed();
-    return { cmd, args: [...extraArgs] };
-  }
-  if (promptText) {
-    const promptSource = explicitAutoPrompt
-      ? (contextPacketPath && injectContext ? 'env via file' : 'env')
-      : (contextPacketPath && injectContext ? 'context handoff via file' : 'context handoff');
-    console.log(`Auto prompt: enabled (${promptSource})`);
-  }
   const strictAgentArgs = buildOpenCodeStrictAgentArgs(extraArgs);
-  return { cmd, args: promptText ? [...strictAgentArgs, '--prompt', promptText] : strictAgentArgs };
+  return { cmd, args: strictAgentArgs };
 }
 
 const INTERACTIVE_BUILDERS = {
@@ -101,7 +40,7 @@ const INTERACTIVE_BUILDERS = {
   'opencode-cli': buildOpenCodeInvocation,
 };
 
-export function runInteractiveAgentWithSaveGuard(agent, contextText, extraArgs, opts) {
+export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {
   const sessionId = opts.sessionId || '';
   const workspaceRoot = opts.workspaceRoot || '';
   let eventsMtimeMs = 0;
@@ -129,16 +68,12 @@ export function runInteractiveAgentWithSaveGuard(agent, contextText, extraArgs, 
   };
 
   process.on('exit', saveGuard);
-  runInteractiveAgent(agent, contextText, extraArgs, opts);
+  runInteractiveAgent(agent, extraArgs, opts);
 }
 
-export function runInteractiveAgent(agent, contextText, extraArgs, opts = {}) {
-  const explicitAutoPrompt = getAutoPrompt(process.env);
-  const handoffPrompt = extractHandoffPrompt(contextText);
-  const autoPrompt = explicitAutoPrompt || handoffPrompt;
+export function runInteractiveAgent(agent, extraArgs, opts = {}) {
   const builder = INTERACTIVE_BUILDERS[agent] || INTERACTIVE_BUILDERS['opencode-cli'];
-  const routeOptions = { agent, ...opts };
-  const { cmd, args } = builder({ contextText, extraArgs, autoPrompt, explicitAutoPrompt, routeOptions, ...opts });
+  const { cmd, args } = builder({ extraArgs, ...opts });
   const result = runCommand(cmd, args, { stdio: 'inherit' });
   if (result.error) {
     console.error(result.error.message || String(result.error));

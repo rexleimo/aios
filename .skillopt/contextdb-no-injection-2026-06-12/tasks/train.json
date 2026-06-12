@@ -1,0 +1,39 @@
+[
+  {
+    "id": "cdb-train-001",
+    "instruction": "Ensure the ContextDB skill rejects legacy prompt-loading flags instead of documenting compatibility.",
+    "expected_outcome": "Skill explicitly says deprecated prompt-loading flags are unsupported and names --startup-mode, --context-mode, and CTXDB_AUTO_PROMPT.",
+    "required_patterns": [
+      "Deprecated prompt-loading flags are intentionally unsupported",
+      "--startup-mode",
+      "--context-mode",
+      "CTXDB_AUTO_PROMPT"
+    ]
+  },
+  {
+    "id": "cdb-train-002",
+    "instruction": "Ensure manual report export is not treated as model prompt material.",
+    "expected_outcome": "Skill tells agents never to paste a full ContextDB Report into a model prompt by default.",
+    "required_patterns": [
+      "Never paste a full ContextDB Report"
+    ]
+  },
+  {
+    "id": "cdb-train-003",
+    "instruction": "Ensure interactive startup/resume is pull-based.",
+    "expected_outcome": "Skill says startup summary is local-only and user must explicitly name the task or handoff to continue.",
+    "required_patterns": [
+      "must not pass that summary as model input",
+      "user must explicitly name the task/handoff to continue"
+    ]
+  },
+  {
+    "id": "cdb-train-004",
+    "instruction": "Ensure durable rules live in static instruction files and skills.",
+    "expected_outcome": "Skill places durable workflow constraints in AGENTS/CLAUDE/GEMINI and skills rather than runtime injection.",
+    "required_patterns": [
+      "Durable workflow constraints belong in checked-in instruction files",
+      "repo-local skills"
+    ]
+  }
+]

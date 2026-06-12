@@ -244,28 +244,35 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 ## Context System (ContextDB + Registry)
 
-This project uses a pull-based context system. Context is NOT injected into every session.
-Instead, a lightweight registry index tells you where to find it.
+This project uses a pull-based context system. Runtime context is NOT automatically injected into model prompts.
+Stable workflow constraints live in checked-in instruction files (`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and repo-local skills). Runtime state lives in `.aios/` and is loaded only when the user asks to continue or the current task clearly needs it.
 
 ### Quick Start
 1. On first load, try to read `.aios/context-db/index.json` — the context registry.
 2. If the file doesn't exist, this is a fresh session — proceed with the user's task.
 3. If it exists, it lists available sources with cost, priority, and tags.
 4. Load only the sources relevant to the current task.
-5. Default: load `handoff` for session continuity. Skip `perception` for coding tasks.
+5. Default: do not load session history. Load `handoff` only after the user confirms resume/continue or the task explicitly references prior work. Skip `perception` for coding tasks.
 6. Legacy `memory/context-db/index.json` is read only for compatibility when `.aios/context-db/` is absent.
 
 Generated AIOS runtime state should stay under `.aios/` (`.aios/context-db`, `.aios/workspace`, `.aios/tasks`). Legacy `memory/context-db`, `memory/workspace`, and `tasks` are compatibility read paths, not fresh-write targets.
+
+### Prompt Injection Policy
+- Do not inject ContextDB packets, recent events, checkpoints, handoff prompts, persona overlays, user overlays, or router guides into ordinary startup or one-shot prompts.
+- Startup may show a short local unfinished-task summary to the user, but it must not pass that summary as model input.
+- `contextdb context:pack` is a manual export/debug tool. It may write files for inspection, but its output is not default prompt input.
+- If the user says "continue", "resume", "继续", or selects an unfinished task, read only the listed task/handoff files needed for that continuation.
+- Stable rules belong in native instruction files and skills, not in repeated runtime prompt injection.
 
 ### Source Selection by Task Type
 | Task type | Load |
 |-----------|------|
 | All task types | project-memory (auto-recall REQUIRED — see Memo Auto-Recall above) |
-| Continue previous work | handoff (required) |
-| Code/implement/fix | handoff, skip perception/history |
-| Analyze XHS data | handoff + perception |
-| Debug a failure | handoff + session-history |
-| Team/harness route | handoff + task-router |
+| Continue previous work | selected task + handoff after user confirmation |
+| Code/implement/fix | static instructions + targeted repo search; skip perception/history by default |
+| Analyze XHS data | targeted perception only when analytics context is explicitly needed |
+| Debug a failure | targeted event/checkpoint search; do not load full session history by default |
+| Team/harness route | static workflow instructions + explicit plan/handoff files only |
 
 ### Persisting Across Sessions
 Before finishing significant work or hitting a blocker:

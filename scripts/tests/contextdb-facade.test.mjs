@@ -19,8 +19,7 @@ test('loadFacade returns facade when file exists and is fresh', async () => {
     status: 'running',
     lastCheckpointSummary: 'test summary',
     keyRefs: ['a.mjs'],
-    contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
-    hasStalePack: false,
+    handoffPath: '.aios/context-db/sessions/claude-code-20260419T000000-abc123/handoff.json',
   };
   await writeFile(facadePath, JSON.stringify(payload), 'utf8');
 
@@ -43,8 +42,7 @@ test('loadFacade returns ok=false when facade is expired', async () => {
     status: 'running',
     lastCheckpointSummary: '',
     keyRefs: [],
-    contextPacketPath: '',
-    hasStalePack: false,
+    handoffPath: '',
   };
   await writeFile(facadePath, JSON.stringify(payload), 'utf8');
 
@@ -80,8 +78,7 @@ test('loadFacade overlays continuity sidecar for fresh cached facade', async () 
       status: 'running',
       lastCheckpointSummary: 'cached checkpoint',
       keyRefs: [],
-      contextPacketPath: '.aios/context-db/exports/latest-claude-code-context.md',
-      hasStalePack: false,
+      handoffPath: '.aios/context-db/sessions/claude-code-20260425T000000-continuity/handoff.json',
     }),
     'utf8'
   );
@@ -91,7 +88,7 @@ test('loadFacade overlays continuity sidecar for fresh cached facade', async () 
       schemaVersion: 1,
       sessionId,
       intent: 'continue from cached facade',
-      summary: 'Fresh continuity should be injected without bootstrap refresh.',
+      summary: 'Fresh continuity should be exposed without bootstrap refresh.',
       touchedFiles: ['scripts/lib/contextdb/facade.mjs'],
       nextActions: ['resume from sidecar'],
       updatedAt: '2026-04-25T00:00:00.000Z',
@@ -101,7 +98,7 @@ test('loadFacade overlays continuity sidecar for fresh cached facade', async () 
 
   const result = await loadFacade(dir);
   assert.equal(result.ok, true);
-  assert.equal(result.facade.continuitySummary, 'Fresh continuity should be injected without bootstrap refresh.');
+  assert.equal(result.facade.continuitySummary, 'Fresh continuity should be exposed without bootstrap refresh.');
   assert.deepEqual(result.facade.continuityNextActions, ['resume from sidecar']);
   assert.equal(result.facade.continuityUpdatedAt, '2026-04-25T00:00:00.000Z');
 
@@ -132,7 +129,7 @@ test('generateFacadeFromSession extracts header from latest session', async () =
       intent: 'continue facade test',
       summary: 'Facade should expose continuity.',
       touchedFiles: ['scripts/lib/contextdb/facade.mjs'],
-      nextActions: ['inject lazy startup prompt'],
+      nextActions: ['show explicit resume summary'],
       updatedAt: '2026-04-25T00:00:00.000Z',
     }),
     'utf8'
@@ -144,7 +141,7 @@ test('generateFacadeFromSession extracts header from latest session', async () =
   assert.equal(facade.status, 'running');
   assert.equal(facade.lastCheckpointSummary, 'checkpoint summary');
   assert.equal(facade.continuitySummary, 'Facade should expose continuity.');
-  assert.deepEqual(facade.continuityNextActions, ['inject lazy startup prompt']);
+  assert.deepEqual(facade.continuityNextActions, ['show explicit resume summary']);
 
   await rm(dir, { recursive: true });
 });

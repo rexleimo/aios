@@ -192,32 +192,6 @@ export async function readContinuitySummary({ workspaceRoot, sessionId } = {}) {
   }
 }
 
-export function renderContinuityInjection(input = null) {
-  if (!input) return '';
-  const summary = normalizeContinuitySummary(input);
-  const touchedFiles = summary.touchedFiles.length > 0
-    ? summary.touchedFiles.map((item) => `- ${item}`).join('\n')
-    : '- (none recorded)';
-  const nextActions = summary.nextActions.length > 0
-    ? summary.nextActions.map((item) => `- ${item}`).join('\n')
-    : '- (none recorded)';
-  return [
-    '## Continuity Summary',
-    '',
-    `- Intent: ${summary.intent}`,
-    `- Updated: ${summary.updatedAt}`,
-    '',
-    summary.summary,
-    '',
-    'Touched Files:',
-    touchedFiles,
-    '',
-    'Next Actions:',
-    nextActions,
-    '',
-  ].join('\n');
-}
-
 // Iteration Notes: structured per-iteration context for harness resume
 export const ITERATION_NOTES_FILENAME = 'iteration-notes.json';
 

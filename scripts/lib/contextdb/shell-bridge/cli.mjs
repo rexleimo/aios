@@ -16,9 +16,6 @@ Environment:
   CTXDB_WRAP_MODE        all|repo-only|opt-in|off (default: repo-only)
   CTXDB_MARKER_FILE      Marker filename for opt-in mode (default: .contextdb-enable)
   CTXDB_AUTO_CREATE_MARKER 1/true/yes/on to auto-create marker in opt-in mode (default: on)
-  CTXDB_INTERACTIVE_AUTO_ROUTE 1/true/yes/on to inject route auto prompt in interactive mode (default: on)
-  CTXDB_HARNESS_PROVIDER codex|claude|gemini|opencode for injected harness route (default: current CLI)
-  CTXDB_HARNESS_MAX_ITERATIONS Positive integer for injected harness route (default: 8)
   CTXDB_PRIVACY_BANNER   0/false/off to hide the interactive privacy banner (default: on)
   CTXDB_PRIVACY_COLOR    0/false/off to disable banner ANSI color (default: on unless NO_COLOR is set)
   CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup in wrapped runs

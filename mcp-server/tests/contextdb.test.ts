@@ -909,7 +909,7 @@ test('buildContextPacket composes markdown for agent handoff', async () => {
     `${JSON.stringify({
       schemaVersion: 1,
       sessionId: session.sessionId,
-      intent: 'Unique sidecar intent for packet injection',
+      intent: 'Unique sidecar intent for report export',
       summary: 'Sidecar-only compact resume summary.',
       touchedFiles: ['sidecar-only.ts'],
       nextActions: ['Sidecar-only resume action'],
@@ -924,14 +924,16 @@ test('buildContextPacket composes markdown for agent handoff', async () => {
     eventLimit: 10,
   });
 
-  assert.match(packet.markdown, /Context Packet/);
+  assert.match(packet.markdown, /ContextDB Report/);
   assert.match(packet.markdown, /filesystem-only context DB MVP/);
-  assert.match(packet.markdown, /## Continuity Summary/);
-  assert.match(packet.markdown, /Unique sidecar intent for packet injection/);
+  assert.match(packet.markdown, /## Continuity/);
+  assert.match(packet.markdown, /Unique sidecar intent for report export/);
   assert.match(packet.markdown, /Sidecar-only compact resume summary/);
   assert.match(packet.markdown, /Sidecar-only resume action/);
   assert.match(packet.markdown, /Create CLI commands/);
   assert.match(packet.markdown, /Analyze OpenViking/);
+  assert.doesNotMatch(packet.markdown, /Handoff Prompt/);
+  assert.doesNotMatch(packet.markdown, /Continue from this state/);
 });
 
 test('buildContextPacket includes offload canvas index without loading raw refs', async () => {
@@ -985,7 +987,7 @@ test('buildContextPacket includes offload canvas index without loading raw refs'
     eventLimit: 10,
   });
 
-  assert.match(packet.markdown, /## Offload Canvas/);
+  assert.match(packet.markdown, /## Offload References/);
   assert.match(packet.markdown, /\.aios\/offload\/canvas\/.+\/task-canvas\.mmd/);
   assert.match(packet.markdown, /n0001-abc123 Bash: npm test/);
   assert.match(packet.markdown, /refs grep\/read/i);
@@ -1069,7 +1071,7 @@ test('buildContextPacket tolerates legacy events missing text', async () => {
     eventLimit: 5,
   });
 
-  assert.match(packet.markdown, /Recent Events/);
+  assert.match(packet.markdown, /Event Log/);
   assert.match(packet.markdown, new RegExp(`${session.sessionId}#\\?`));
   assert.match(packet.markdown, /user\/prompt/);
 });
@@ -1144,7 +1146,7 @@ test('buildContextPacket tolerates legacy checkpoints missing action/artifact ar
     eventLimit: 5,
   });
 
-  assert.match(packet.markdown, /## L1 Snapshot/);
+  assert.match(packet.markdown, /## Latest Checkpoint/);
   assert.match(packet.markdown, /Next Actions:/);
   assert.match(packet.markdown, /Artifacts:/);
   assert.match(packet.markdown, /- \(none\)/);
@@ -1896,7 +1898,7 @@ test('buildContextPacket smart recall includes relevant older checkpoint context
     recallStrategy: 'smart',
   });
 
-  assert.match(packet.markdown, /Relevant Checkpoints \(L1\+\)/);
+  assert.match(packet.markdown, /Related Checkpoints/);
   assert.match(packet.markdown, /contextdb retry loop/i);
 });
 

@@ -1,0 +1,32 @@
+{
+  "step": 1,
+  "action": "accept_new_best",
+  "candidate_hard": 1,
+  "candidate_soft": 1,
+  "current_hard": 0.3333,
+  "best_hard": 0.3333,
+  "candidate_hash": "d46f44a5f1257d77",
+  "validation_results": [
+    {
+      "id": "cdb-valid-001",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "cdb-valid-002",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "cdb-valid-003",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    }
+  ]
+}

@@ -9,17 +9,6 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BRIDGE = path.join(ROOT, 'scripts', 'contextdb-shell-bridge.mjs');
-const CTX_AGENT_CLI = path.join(ROOT, 'scripts', 'ctx-agent.mjs');
-
-function escapeRegExp(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-function shellArgPattern(value) {
-  return `"${escapeRegExp(value)}"|${escapeRegExp(value)}`;
-}
-
-const AIOS_CLI = path.join(ROOT, 'scripts', 'aios.mjs');
 
 async function createFakeCodexCommand() {
   const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-bin-'));
@@ -71,7 +60,7 @@ async function createFakeRunner() {
     "console.log(`RUNNER_WORKSPACE=${workspace}`);",
     "console.log(`RUNNER_ARGS=${JSON.stringify(args)}`);",
     "console.log(`RUNNER_PATH=${process.env.PATH || process.env.Path || ''}`);",
-    "console.log(`RUNNER_AUTO_PROMPT_JSON=${JSON.stringify(process.env.CTXDB_AUTO_PROMPT || '')}`);",
+    "console.log(`RUNNER_IMPLICIT_PROMPT_ENV_JSON=${JSON.stringify(process.env.AIOS_IMPLICIT_PROMPT || '')}`);",
   ].join('\n'), 'utf8');
 
   if (process.platform === 'win32') {
@@ -95,7 +84,7 @@ function runBridge({
   agent = 'codex-cli',
   command = 'codex',
 }) {
-  const env = { ...process.env, CTXDB_AUTO_PROMPT: "", ...envOverrides };
+  const env = { ...process.env, ...envOverrides };
   const nextPath = `${pathPrefix}${path.delimiter}${env.PATH || env.Path || ''}`;
   env.PATH = nextPath;
   if (process.platform === 'win32') {
@@ -143,10 +132,10 @@ function parseRunnerPath(stdout) {
   return line ? line.slice('RUNNER_PATH='.length) : '';
 }
 
-function parseRunnerAutoPrompt(stdout) {
-  const line = (stdout || '').trim().split(/\r?\n/).find((x) => x.startsWith('RUNNER_AUTO_PROMPT_JSON='));
+function parseRunnerImplicitPromptEnv(stdout) {
+  const line = (stdout || '').trim().split(/\r?\n/).find((x) => x.startsWith('RUNNER_IMPLICIT_PROMPT_ENV_JSON='));
   if (!line) return '';
-  return JSON.parse(line.slice('RUNNER_AUTO_PROMPT_JSON='.length));
+  return JSON.parse(line.slice('RUNNER_IMPLICIT_PROMPT_ENV_JSON='.length));
 }
 
 function parseLastJsonPayload(stdout) {
@@ -446,7 +435,7 @@ test('native shim path is removed before launching the AIOS runner', async () =>
   assert.equal(runnerPath.includes(shimDir), false);
 });
 
-test('wrapped interactive codex runs inject route auto prompt by default', async () => {
+test('wrapped interactive codex runs without implicit prompt injection', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-route-'));
   const fakeBin = await createFakeCodexCommand();
   const fakeRunner = await createFakeRunner();
@@ -462,29 +451,10 @@ test('wrapped interactive codex runs inject route auto prompt by default', async
   });
 
   assert.equal(result.status, 0);
-  const autoPrompt = parseRunnerAutoPrompt(result.stdout);
-  assert.match(autoPrompt, /Routing policy: default to single-route execution\./u);
-  assert.match(autoPrompt, /Privacy boundary: LLM instructions are advisory/u);
-  assert.match(autoPrompt, /Use `aios privacy read --file <path>` for sensitive files/u);
-  assert.match(autoPrompt, /Do not claim strict privacy compliance unless AIOS gates verified it/u);
-  assert.match(autoPrompt, /Do NOT spawn built-in explorer\/worker subagents just to scan a codebase/u);
-  assert.match(autoPrompt, /post a heartbeat every 30s and stop waiting after 120s/u);
-  assert.match(autoPrompt, /Only choose harness for explicit long-running, overnight, resumable/u);
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent codex-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider codex --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
-  );
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent codex-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider codex --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
-  );
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider codex --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
-  );
+  assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
 });
 
-async function assertAiosInitMarkerUsesSlimContext(marker) {
+async function assertAiosInitMarkerDisablesBootstrapOnly(marker) {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-aios-init-'));
   const fakeBin = await createFakeCodexCommand();
   const fakeRunner = await createFakeRunner();
@@ -501,19 +471,19 @@ async function assertAiosInitMarkerUsesSlimContext(marker) {
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.equal(parseRunnerAutoPrompt(result.stdout), '');
+  assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
   const runnerArgs = parseRunnerArgs(result.stdout);
-  assert.equal(runnerArgs.includes('--context-mode'), true);
-  assert.equal(runnerArgs.includes('slim'), true);
+  assert.equal(runnerArgs.includes('--context-mode'), false);
+  assert.equal(runnerArgs.includes('slim'), false);
   assert.equal(runnerArgs.includes('--no-bootstrap'), true);
 }
 
-test('aios init marker switches wrapped interactive runs to slim context without auto prompt', async () => {
-  await assertAiosInitMarkerUsesSlimContext('<!-- AIOS: .aios/context-db/index.json -->');
+test('aios init marker wraps interactive runs without context injection flags', async () => {
+  await assertAiosInitMarkerDisablesBootstrapOnly('<!-- AIOS: .aios/context-db/index.json -->');
 });
 
-test('legacy aios init marker still switches wrapped interactive runs to slim context', async () => {
-  await assertAiosInitMarkerUsesSlimContext('<!-- AIOS: memory/context-db/index.json -->');
+test('legacy aios init marker wraps interactive runs without context injection flags', async () => {
+  await assertAiosInitMarkerDisablesBootstrapOnly('<!-- AIOS: memory/context-db/index.json -->');
 });
 
 test('wrapped interactive runs print privacy banner to stderr', async () => {
@@ -582,7 +552,7 @@ test('privacy banner can be disabled via CTXDB_PRIVACY_BANNER', async () => {
   assert.doesNotMatch(result.stderr, /AIOS Privacy Shield/u);
 });
 
-test('wrapped interactive codex runs honors harness route env overrides', async () => {
+test('wrapped interactive codex ignores harness route env overrides for startup prompts', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-harness-env-'));
   const fakeBin = await createFakeCodexCommand();
   const fakeRunner = await createFakeRunner();
@@ -600,58 +570,13 @@ test('wrapped interactive codex runs honors harness route env overrides', async 
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  const autoPrompt = parseRunnerAutoPrompt(result.stdout);
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider claude --max-iterations 4 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
-  );
+  assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
 });
 
-test('wrapped interactive codex runs can disable route auto prompt injection via env', async () => {
-  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-route-disabled-'));
-  const fakeBin = await createFakeCodexCommand();
-  const fakeRunner = await createFakeRunner();
-
-  const result = runBridge({
-    cwd,
-    pathPrefix: fakeBin,
-    args: [],
-    env: {
-      CTXDB_RUNNER: fakeRunner,
-      CTXDB_WRAP_MODE: 'all',
-      CTXDB_INTERACTIVE_AUTO_ROUTE: '0',
-    },
-  });
-
-  assert.equal(result.status, 0);
-  const autoPrompt = parseRunnerAutoPrompt(result.stdout);
-  assert.equal(autoPrompt, '');
-});
-
-test('wrapped interactive codex runs preserve explicit CTXDB_AUTO_PROMPT overrides', async () => {
-  const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-auto-prompt-override-'));
-  const fakeBin = await createFakeCodexCommand();
-  const fakeRunner = await createFakeRunner();
-
-  const result = runBridge({
-    cwd,
-    pathPrefix: fakeBin,
-    args: [],
-    env: {
-      CTXDB_RUNNER: fakeRunner,
-      CTXDB_WRAP_MODE: 'all',
-      CTXDB_AUTO_PROMPT: 'custom-auto-prompt',
-    },
-  });
-
-  assert.equal(result.status, 0);
-  assert.equal(parseRunnerAutoPrompt(result.stdout), 'custom-auto-prompt');
-});
-
-test('wrapped interactive claude and gemini runs inject provider-specific route prompts', async () => {
+test('wrapped interactive claude and gemini runs without provider-specific route prompts', async () => {
   const cases = [
-    { command: 'claude', agent: 'claude-code', expectedProvider: 'claude', expectedClient: 'claude-code' },
-    { command: 'gemini', agent: 'gemini-cli', expectedProvider: 'gemini', expectedClient: 'gemini-cli' },
+    { command: 'claude', agent: 'claude-code' },
+    { command: 'gemini', agent: 'gemini-cli' },
   ];
 
   for (const item of cases) {
@@ -672,23 +597,11 @@ test('wrapped interactive claude and gemini runs inject provider-specific route 
     });
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    const autoPrompt = parseRunnerAutoPrompt(result.stdout);
-    assert.match(
-      autoPrompt,
-      new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent ${item.expectedClient} --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --prompt "<task>" --no-bootstrap`)
-    );
-    assert.match(
-      autoPrompt,
-      new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent ${item.expectedClient} --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider ${item.expectedProvider} --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`)
-    );
-    assert.match(
-      autoPrompt,
-      new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider ${item.expectedProvider} --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
-    );
+    assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
   }
 });
 
-test('wrapped interactive opencode runs with its native team provider by default', async () => {
+test('wrapped interactive opencode runs without implicit prompt injection', async () => {
   const cwd = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-interactive-opencode-route-'));
   const fakeBin = await createFakePassthroughCommand('opencode', 'FAKE_OPENCODE');
   const fakeRunner = await createFakeRunner();
@@ -706,19 +619,7 @@ test('wrapped interactive opencode runs with its native team provider by default
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  const autoPrompt = parseRunnerAutoPrompt(result.stdout);
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route team --route-execute live --team-provider opencode --team-workers 3 --prompt "<task>" --no-bootstrap`, 'u')
-  );
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(CTX_AGENT_CLI)}) --agent opencode-cli --workspace (?:${shellArgPattern(cwd)}) --project ${escapeRegExp(path.basename(cwd))} --route subagent --route-execute live --team-provider opencode --team-workers 3 --blueprint feature --prompt "<task>" --no-bootstrap`, 'u')
-  );
-  assert.match(
-    autoPrompt,
-    new RegExp(`node (?:${shellArgPattern(AIOS_CLI)}) harness run --objective "<task>" --provider opencode --max-iterations 8 --worktree --workspace (?:${shellArgPattern(cwd)})`, 'u')
-  );
+  assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
 });
 
 test('wrapped claude print prompt is rewritten to ctx-agent one-shot prompt', async () => {
@@ -740,7 +641,7 @@ test('wrapped claude print prompt is rewritten to ctx-agent one-shot prompt', as
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.equal(parseRunnerWorkspace(result.stdout), cwd);
-  assert.equal(parseRunnerAutoPrompt(result.stdout), '');
+  assert.equal(parseRunnerImplicitPromptEnv(result.stdout), '');
   const runnerArgs = parseRunnerArgs(result.stdout);
   const promptIndex = runnerArgs.indexOf('--prompt');
   assert.equal(promptIndex >= 0, true);

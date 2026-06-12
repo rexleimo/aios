@@ -7,7 +7,6 @@ import test from 'node:test';
 import {
   extractTouchedFilesFromText,
   readContinuitySummary,
-  renderContinuityInjection,
   writeContinuitySummary,
 } from '../lib/contextdb/continuity.mjs';
 
@@ -44,7 +43,7 @@ test('writeContinuitySummary writes markdown and json artifacts', async () => {
   }
 });
 
-test('readContinuitySummary and renderContinuityInjection expose compact startup context', async () => {
+test('readContinuitySummary exposes compact continuity artifact data', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-continuity-read-'));
   const sessionId = 'continuity-session';
 
@@ -55,20 +54,14 @@ test('readContinuitySummary and renderContinuityInjection expose compact startup
       intent: 'continue implementation',
       summary: 'Carry forward PR-3 state.',
       touchedFiles: ['scripts/lib/contextdb/continuity.mjs'],
-      nextActions: ['wire ctx-agent injection'],
+      nextActions: ['wire explicit resume artifact'],
       updatedAt: '2026-04-25T00:00:00.000Z',
     });
 
     const continuity = await readContinuitySummary({ workspaceRoot, sessionId });
     assert.equal(continuity?.sessionId, sessionId);
     assert.equal(continuity?.summary, 'Carry forward PR-3 state.');
-
-    const injection = renderContinuityInjection(continuity);
-    assert.match(injection, /^## Continuity Summary/m);
-    assert.match(injection, /Carry forward PR-3 state/);
-    assert.match(injection, /wire ctx-agent injection/);
-
-    assert.equal(renderContinuityInjection(null), '');
+    assert.deepEqual(continuity?.nextActions, ['wire explicit resume artifact']);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }

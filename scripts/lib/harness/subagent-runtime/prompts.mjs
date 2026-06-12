@@ -1,5 +1,4 @@
 import { buildModelRouterPromptSection } from '../../model-router.mjs';
-import { buildPersonaOverlay } from '../../memo/persona.mjs';
 import { HANDOFF_SCHEMA_DISPLAY_PATH } from './constants.mjs';
 import { resolveOwnedPathPrefixes } from './file-policy.mjs';
 import { normalizeText } from './text.mjs';
@@ -14,31 +13,12 @@ export function renderDependencyContext(dependencyRuns = []) {
   return handoffs.map((payload, index) => `- upstream[${index + 1}]: ${JSON.stringify(payload)}`).join('\n');
 }
 
-export function buildSystemPrompt({ agent, contextText, plan, job, phase, rootDir, env, rolePinnedMemory }) {
+export function buildSystemPrompt({ agent, plan, job, phase }) {
   const lines = [];
   if (agent?.systemPrompt) {
     lines.push(agent.systemPrompt);
   } else {
     lines.push('You are a role-based subagent for AIOS orchestrations.');
-  }
-
-  if (rootDir) {
-    try {
-      const personaOverlay = buildPersonaOverlay('persona', { workspaceRoot: rootDir, env });
-      if (personaOverlay) { lines.push(''); lines.push(personaOverlay.trim()); }
-    } catch { /* skip persona on error */ }
-    try {
-      const userOverlay = buildPersonaOverlay('user', { workspaceRoot: rootDir, env });
-      if (userOverlay) { lines.push(''); lines.push(userOverlay.trim()); }
-    } catch { /* skip user profile on error */ }
-  }
-
-  if (rolePinnedMemory) {
-    lines.push('');
-    lines.push('## Role Memory (Pinned)');
-    lines.push('Key findings preserved from prior invocations of this role:');
-    lines.push('');
-    lines.push(rolePinnedMemory.trim());
   }
 
   lines.push('');
@@ -49,12 +29,6 @@ export function buildSystemPrompt({ agent, contextText, plan, job, phase, rootDi
   lines.push('Set schemaVersion=1. Always include array fields (empty arrays are OK).');
   lines.push(`Set fromRole=${normalizeText(job?.role) || 'unknown'} and toRole=${normalizeText(job?.launchSpec?.handoffTarget) || 'next-phase'}.`);
   lines.push('');
-
-  if (contextText) {
-    lines.push('Context Packet');
-    lines.push(contextText.trim());
-    lines.push('');
-  }
 
   const modelRouterSection = buildModelRouterPromptSection(job?.launchSpec?.modelRouting);
   if (modelRouterSection) {

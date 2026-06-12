@@ -13,6 +13,4 @@ export {
   normalizeTeamRouteProvider,
   resolveHarnessRouteProviderForAgent,
   resolveRoutedSubagentClient,
-  shouldInjectTaskRouterGuide,
 } from './route-normalizers.mjs';
-export { buildInteractiveRouteAutoPrompt, buildTaskRouterGuide } from './route-prompts.mjs';

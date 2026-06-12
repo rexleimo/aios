@@ -1,0 +1,32 @@
+{
+  "step": 1,
+  "action": "accept_new_best",
+  "candidate_hard": 1,
+  "candidate_soft": 1,
+  "current_hard": 0,
+  "best_hard": 0,
+  "candidate_hash": "892513be482291b3",
+  "validation_results": [
+    {
+      "id": "harness-valid-001",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-valid-002",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-valid-003",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    }
+  ]
+}

@@ -36,22 +36,6 @@ const SOURCE_DEFS = [
     description: 'Content analytics and strategy recommendations',
     tags: ['analytics', 'xhs'],
   },
-  {
-    id: 'task-router',
-    cost: '~2KB',
-    priority: 'medium',
-    pathTemplate: '{contextDb}/exports/latest-router.md',
-    description: 'AIOS task routing guide with trigger commands',
-    tags: ['routing', 'aios', 'all-tasks'],
-  },
-  {
-    id: 'session-history',
-    cost: '~20KB',
-    priority: 'low',
-    pathTemplate: '{contextDb}/exports/latest-{agent}-context.md',
-    description: 'Full session events, checkpoints, and assistant responses',
-    tags: ['history', 'debugging'],
-  },
 ];
 
 // --- Source resolution ---
@@ -137,26 +121,4 @@ export async function readIndex(workspaceRoot) {
   const absPath = registryPath(workspaceRoot);
   const raw = await fs.readFile(absPath, 'utf8');
   return JSON.parse(raw);
-}
-
-// --- Injection text ---
-
-export function renderRegistryInjection(index) {
-  const sourcesList = index.sources
-    .sort((a, b) => {
-      const prio = { high: 0, medium: 1, low: 2 };
-      return (prio[a.priority] ?? 1) - (prio[b.priority] ?? 1);
-    })
-    .map((s) => `  ${s.id} (${s.cost}): ${s.path}`)
-    .join('\n');
-
-  return [
-    `Session: ${index.session} · Status: ${index.status}`,
-    `Context registry: ${index.registryPath || '.aios/context-db/index.json'}`,
-    `Available sources:`,
-    sourcesList || '  (none — fresh session)',
-    '',
-    'Read the registry index.json, then load only the sources relevant to the current task.',
-    'Default: load "handoff" for continuity. Skip "perception" for coding tasks.',
-  ].join('\n');
 }

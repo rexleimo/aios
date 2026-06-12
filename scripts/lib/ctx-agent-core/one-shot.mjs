@@ -67,31 +67,30 @@ export function buildCodexOneShotArgs({ configArgs = buildCodexMcpDisableArgs(pr
   return ['exec', ...configArgs, ...extraArgs, '-'];
 }
 
-function runCodexOneShot(prompt, extraArgs, injectContext, contextText) {
+function runCodexOneShot(prompt, extraArgs) {
   const cmd = commandForRuntime('codex-cli');
   const args = buildCodexOneShotArgs({ extraArgs });
-  const fullPrompt = injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt;
-  const result = runCommandWithInput(cmd, args, fullPrompt);
+  const result = runCommandWithInput(cmd, args, prompt);
   return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
 }
 
 const ONE_SHOT_HANDLERS = {
-  'claude-code': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+  'claude-code': ({ prompt, extraArgs }) => runBufferedCommand(
     commandForRuntime('claude-code'),
-    injectContext ? ['--print', '--append-system-prompt', contextText, prompt, ...extraArgs] : ['--print', prompt, ...extraArgs]
+    ['--print', prompt, ...extraArgs]
   ),
-  'gemini-cli': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+  'gemini-cli': ({ prompt, extraArgs }) => runBufferedCommand(
     commandForRuntime('gemini-cli'),
-    ['-p', injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt, ...extraArgs]
+    ['-p', prompt, ...extraArgs]
   ),
-  'codex-cli': ({ contextText, prompt, extraArgs, injectContext }) => runCodexOneShot(prompt, extraArgs, injectContext, contextText),
-  'opencode-cli': ({ contextText, prompt, extraArgs, injectContext, contextPacketPath }) => runBufferedCommand(
+  'codex-cli': ({ prompt, extraArgs }) => runCodexOneShot(prompt, extraArgs),
+  'opencode-cli': ({ prompt, extraArgs }) => runBufferedCommand(
     commandForRuntime('opencode-cli'),
-    ['run', ...buildOpenCodeStrictAgentArgs(extraArgs), buildOpenCodePrompt({ contextPacketPath, contextText, prompt, injectContext, promptKind: 'request' })]
+    ['run', ...buildOpenCodeStrictAgentArgs(extraArgs), buildOpenCodePrompt({ prompt })]
   ),
-  'crush-cli': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
+  'crush-cli': ({ prompt, extraArgs }) => runBufferedCommand(
     commandForRuntime('crush-cli'),
-    ['run', ...extraArgs, injectContext ? `${contextText}\n\n## New User Request\n${prompt}` : prompt]
+    ['run', ...extraArgs, prompt]
   ),
 };
 
@@ -99,7 +98,7 @@ const ONE_SHOT_HANDLERS = {
 // even while the pending-smoke short-circuit still blocks live execution.
 export const ONE_SHOT_HANDLERS_FOR_TEST = ONE_SHOT_HANDLERS;
 
-export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectContext = true, contextPacketPath = '' } = {}) {
+export function runOneShotAgent(agent, prompt, extraArgs) {
   if (PENDING_SMOKE_ONE_SHOT_AGENTS.has(agent)) {
     return {
       output: `${agent} is pending-smoke: live one-shot execution is blocked until CLI arguments, MCP config, and unattended smoke evidence are verified.\n`,
@@ -113,7 +112,7 @@ export function runOneShotAgent(agent, contextText, prompt, extraArgs, { injectC
       exitCode: 1,
     };
   }
-  return handler({ contextText, prompt, extraArgs, injectContext, contextPacketPath });
+  return handler({ prompt, extraArgs });
 }
 
 export function buildRoutedCommandSpec({

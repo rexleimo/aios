@@ -1,0 +1,33 @@
+{
+  "results": [
+    {
+      "id": "harness-train-001",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-002",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-003",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    },
+    {
+      "id": "harness-train-004",
+      "hard": 1,
+      "soft": 1,
+      "fail_reason": "",
+      "task_type": "skill-policy-regression"
+    }
+  ],
+  "batch_hard": 1
+}

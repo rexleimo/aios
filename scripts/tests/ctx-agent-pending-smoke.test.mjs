@@ -7,11 +7,15 @@ import { runOneShot } from '../lib/harness/subagent-runtime/one-shot-runner.mjs'
 
 test('ctx-agent one-shot blocks Antigravity and Crush instead of falling back to OpenCode', () => {
   for (const agent of ['antigravity-cli', 'crush-cli']) {
-    const result = runOneShotAgent(agent, 'context', 'prompt', [], { injectContext: false });
+    const result = runOneShotAgent(agent, 'prompt', []);
     assert.notEqual(result.exitCode, 0);
     assert.match(result.output, new RegExp(`${agent}.*pending-smoke|pending-smoke.*${agent}`, 'i'));
     assert.doesNotMatch(result.output, /opencode/i);
   }
+});
+
+test('ctx-agent one-shot API no longer accepts injected context arguments', () => {
+  assert.equal(runOneShotAgent.length, 3);
 });
 
 test('codex one-shot puts flags before stdin prompt placeholder', () => {
@@ -58,7 +62,7 @@ test('harness one-shot invocation builds real crush args and leaves antigravity 
 test('only crush keeps a registered handler while pending-smoke short-circuit wins', () => {
   assert.equal(typeof ONE_SHOT_HANDLERS_FOR_TEST['antigravity-cli'], 'undefined');
   assert.equal(typeof ONE_SHOT_HANDLERS_FOR_TEST['crush-cli'], 'function');
-  const result = runOneShotAgent('antigravity-cli', 'ctx', 'do work', [], { injectContext: false });
+  const result = runOneShotAgent('antigravity-cli', 'do work', []);
   assert.notEqual(result.exitCode, 0);
   assert.match(result.output, /pending-smoke/i);
 });

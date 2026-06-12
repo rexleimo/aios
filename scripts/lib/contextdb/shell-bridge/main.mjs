@@ -2,14 +2,9 @@ import path from 'node:path';
 import { normalizeCodeHome } from './code-home.mjs';
 import { parseArgs, usage, validateOptions } from './cli.mjs';
 import { writeBridgeContextIndex } from './context-index.mjs';
-import { logAutoPromptDecision, logBridgeDecision, shouldDebug } from './debug.mjs';
+import { logBridgeDecision } from './debug.mjs';
 import { buildPrivacyBanner, shouldPrintPrivacyBanner } from './privacy.mjs';
-import {
-  buildInteractiveAutoPrompt,
-  extractOneShotPrompt,
-  isInteractivePassthrough,
-  shouldInjectInteractiveAutoPrompt,
-} from './prompts.mjs';
+import { extractOneShotPrompt, isInteractivePassthrough } from './prompts.mjs';
 import { spawnInherited } from './process-runner.mjs';
 import {
   detectAiosMarker,
@@ -49,7 +44,7 @@ function buildWrappedRunnerArgs({ runner, workspace, opts, project, aiosInitDone
   ];
 
   if (aiosInitDone) {
-    args.push('--context-mode', 'slim', '--no-bootstrap');
+    args.push('--no-bootstrap');
   }
 
   const oneShot = extractOneShotPrompt(opts.command, opts.passthroughArgs);
@@ -121,27 +116,6 @@ async function prepareBridgeState(opts, env) {
   return { firstArg, blockedSubcommand, runner, workspace, project };
 }
 
-function maybeInjectAutoPrompt({ opts, env, interactive, runner, workspace, project, aiosInitDone }) {
-  if (interactive && !env.CTXDB_AUTO_PROMPT && shouldInjectInteractiveAutoPrompt(env) && runner && workspace && !aiosInitDone) {
-    env.CTXDB_AUTO_PROMPT = buildInteractiveAutoPrompt({
-      agent: opts.agent,
-      command: opts.command,
-      workspaceRoot: workspace,
-      project,
-      env,
-    });
-    if (shouldDebug(env)) {
-      const preview = String(env.CTXDB_AUTO_PROMPT || '').split(/\r?\n/u)[0] || 'continue';
-      console.error(`[contextdb-shell-bridge] interactive detected; auto-prompt=${preview}`);
-    }
-    return;
-  }
-
-  if (interactive) {
-    logAutoPromptDecision({ env, aiosInitDone, runner, workspace });
-  }
-}
-
 export async function main(argv = process.argv.slice(2)) {
   const opts = parseArgs(argv);
   if (opts.help) {
@@ -167,7 +141,6 @@ export async function main(argv = process.argv.slice(2)) {
 
   const aiosInitDone = workspace ? detectAiosMarker(workspace).found : false;
   const interactive = isInteractivePassthrough(opts.command, opts.passthroughArgs);
-  maybeInjectAutoPrompt({ opts, env, interactive, runner, workspace, project, aiosInitDone });
 
   const mode = (env.CTXDB_WRAP_MODE || 'repo-only').trim().toLowerCase();
   let markerCreated = false;

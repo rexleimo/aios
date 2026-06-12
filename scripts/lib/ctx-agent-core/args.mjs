@@ -20,7 +20,6 @@ Options:
   --goal <text>       Session goal (used when creating a new session)
   --session <id>      Reuse a specific session id
   --prompt <text>     Run one-shot mode and auto log request/response/checkpoint
-  --limit <n>         Number of recent events in context packet (default: 30)
   --status <state>    Checkpoint status on success: running|blocked|done (default: running)
   --route <mode>      One-shot routing mode: auto|single|team|subagent|harness (default: auto)
   --route-execute <mode> Routed execution mode: dry-run|live (default: live)
@@ -32,23 +31,20 @@ Options:
   --save-guard        Write a Stop-hook checkpoint only; never launch an agent subprocess
   --no-bootstrap      Disable automatic first-task bootstrap for this run
   --no-checkpoint     Disable automatic checkpoint write in one-shot mode
-  --context-mode <mode> Context injection mode: slim|full (default: full)
   --continuity-summary Write compact continuity artifacts after one-shot checkpoint (default)
   --dry-run           Skip remote model call, write synthetic response for pipeline testing
   --max-log-chars <n> Max characters stored in event logs (default: 8000)
   -h, --help          Show this help`);
   console.log(`
 Environment:
-  CTXDB_TASK_ROUTER_GUIDE 1/true/yes/on to inject routing checklist into context packet (default: on)
-  CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup (-c mcp_servers={} -c features.rmcp_client=false)
-  CTXDB_LAZY_LOAD      1/true/yes/on to enable lazy context loading (default: on)`);
+  CTXDB_CODEX_DISABLE_MCP 1/true/yes/on to launch Codex without MCP startup (-c mcp_servers={} -c features.rmcp_client=false)`);
 }
 
 export function parseArgs(argv) {
   const opts = {
-    agent: '', project: '', workspaceRoot: '', goal: '', sessionId: '', prompt: '', eventLimit: '30', checkpointStatus: 'running',
+    agent: '', project: '', workspaceRoot: '', goal: '', sessionId: '', prompt: '', checkpointStatus: 'running',
     routeMode: 'auto', routeExecutionMode: 'live', teamProvider: 'auto', teamWorkers: '3', harnessProvider: 'auto', harnessMaxIterations: '8',
-    blueprint: 'feature', saveGuard: false, autoBootstrap: true, autoCheckpoint: true, continuitySummary: true, contextMode: 'full', dryRun: false,
+    blueprint: 'feature', saveGuard: false, autoBootstrap: true, autoCheckpoint: true, continuitySummary: true, dryRun: false,
     maxLogChars: '8000', extraArgs: [],
   };
 
@@ -62,7 +58,7 @@ export function parseArgs(argv) {
       case '--goal': opts.goal = read(); break;
       case '--session': opts.sessionId = read(); break;
       case '--prompt': opts.prompt = read(); break;
-      case '--limit': opts.eventLimit = read('30'); break;
+      case '--limit': throw new Error('--limit has been removed from ctx-agent prompt execution; context packets are no longer injected.');
       case '--status': opts.checkpointStatus = read('running'); break;
       case '--checkpoint-status': opts.checkpointStatus = read('running'); opts.saveGuard = true; break;
       case '--save-guard': opts.saveGuard = true; break;
@@ -77,7 +73,8 @@ export function parseArgs(argv) {
       case '--no-checkpoint': opts.autoCheckpoint = false; break;
       case '--continuity-summary': opts.continuitySummary = true; break;
       case '--no-continuity-summary': opts.continuitySummary = false; break;
-      case '--context-mode': opts.contextMode = read('full'); break;
+      case '--context-mode': throw new Error('--context-mode has been removed; ctx-agent no longer injects ContextDB packets into prompts.');
+      case '--startup-mode': throw new Error('--startup-mode has been removed; interactive startup always shows a local unfinished-task summary and never injects prompts.');
       case '--dry-run': opts.dryRun = true; break;
       case '--max-log-chars': opts.maxLogChars = read('8000'); break;
       case '-h':

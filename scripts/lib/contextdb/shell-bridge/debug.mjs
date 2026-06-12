@@ -5,20 +5,6 @@ export function shouldDebug(env) {
   return value === '1' || value === 'true' || value === 'yes' || value === 'on';
 }
 
-export function logAutoPromptDecision({ env, aiosInitDone, runner, workspace }) {
-  if (!shouldDebug(env) || env.CTXDB_AUTO_PROMPT) return;
-  const reason = aiosInitDone
-    ? 'aios init detected (agent self-manages context)'
-    : env.CTXDB_INTERACTIVE_AUTO_ROUTE === '0'
-      ? 'disabled by CTXDB_INTERACTIVE_AUTO_ROUTE'
-      : !runner
-        ? 'runner unavailable'
-        : !workspace
-          ? 'workspace unavailable'
-          : 'skipped';
-  console.error(`[contextdb-shell-bridge] interactive detected; auto-prompt ${reason}`);
-}
-
 export function logBridgeDecision({
   env,
   opts,

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { chmod, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -28,6 +28,16 @@ import {
   shouldUseClientStructuredOutput,
 } from '../lib/harness/subagent-clients/structured-output.mjs';
 import { buildOneShotInvocation } from '../lib/harness/subagent-clients/one-shot.mjs';
+
+async function pathExists(targetPath) {
+  try {
+    await stat(targetPath);
+    return true;
+  } catch (error) {
+    if (error && typeof error === 'object' && error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
 
 async function importHarnessInitHumanGate() {
   return await import(pathToFileURL(path.resolve('skill-sources/harness-init-runner/assets/template/harness/lib/human-gate.mjs')).href);
@@ -255,7 +265,6 @@ test('executePhaseJob compresses subagent prompts before client launch and compa
 
     const run = await executePhaseJob(plan, job, phase, [], {
       clientId: 'codex-cli',
-      contextText: `${PRE_SENTINEL.repeat(120)}\nContext path scripts/lib/harness/subagent-runtime/prompts.mjs:1`,
       timeoutMs: 1000,
       env: process.env,
       io: { log() {}, warn() {}, error() {} },
@@ -295,6 +304,111 @@ test('executePhaseJob compresses subagent prompts before client launch and compa
   }
 });
 
+test('subagent dispatch does not auto-load ContextDB context packets into prompts', async () => {
+  const { executeSubagentDispatchPlan } = await import('../lib/harness/subagent-runtime.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-subagent-no-context-pack-'));
+  const sessionId = 'subagent-no-context-pack';
+  const contextSentinel = 'LEGACY_CONTEXT_PACKET_SHOULD_NOT_APPEAR';
+  const fakeBinDir = await mkdtemp(path.join(os.tmpdir(), 'aios-subagent-no-context-bin-'));
+
+  try {
+    runContextDbCli([
+      'session:new',
+      '--workspace',
+      rootDir,
+      '--agent',
+      'codex-cli',
+      '--project',
+      'tmp-project',
+      '--goal',
+      'Verify subagent prompt injection removal',
+      '--session-id',
+      sessionId,
+    ]);
+    await writeFile(
+      path.join(rootDir, '.aios', 'context-db', 'sessions', sessionId, 'l0-summary.md'),
+      `${contextSentinel}\n`,
+      'utf8'
+    );
+
+    const codexImpl = path.join(fakeBinDir, 'codex-fake.mjs');
+    await writeFile(
+      codexImpl,
+      [
+        'const fs = await import("node:fs");',
+        'const input = fs.readFileSync(0, "utf8");',
+        `if (input.includes(${JSON.stringify(contextSentinel)}) || input.includes("# Context Packet") || input.includes("Context Packet")) process.exit(23);`,
+        'process.stdout.write(JSON.stringify({',
+        '  schemaVersion: 1,',
+        '  status: "completed",',
+        '  fromRole: "implementer",',
+        '  toRole: "reviewer",',
+        '  taskTitle: "No context packet",',
+        '  contextSummary: "ok",',
+        '  findings: [],',
+        '  filesTouched: [],',
+        '  openQuestions: [],',
+        '  recommendations: []',
+        '}) + "\\n");',
+      ].join('\n'),
+      'utf8'
+    );
+    const codexBin = path.join(fakeBinDir, process.platform === 'win32' ? 'codex.cmd' : 'codex');
+    const codexScript = process.platform === 'win32'
+      ? `@echo off\r\n"${process.execPath}" "${codexImpl}" %*\r\n`
+      : `#!/usr/bin/env sh\nexec "${process.execPath}" "${codexImpl}" "$@"\n`;
+    await writeFile(codexBin, codexScript, 'utf8');
+    if (process.platform !== 'win32') await chmod(codexBin, 0o755);
+
+    const plan = {
+      taskTitle: 'No context packet',
+      contextSummary: 'Run one phase without automatic ContextDB prompt input',
+      learnEvalOverlay: { sessionId },
+      phases: [
+        {
+          id: 'phase.implement',
+          label: 'Implement',
+          responsibility: 'Return a handoff',
+          ownership: 'scripts/',
+          canEditFiles: false,
+        },
+      ],
+      workItems: [],
+    };
+    const dispatchPlan = {
+      executorRegistry: ['codex'],
+      executorDetails: [{ id: 'codex', label: 'Codex' }],
+      jobs: [
+        {
+          jobId: 'job.no-context',
+          jobType: 'phase',
+          role: 'implementer',
+          phaseId: 'phase.implement',
+          launchSpec: { executor: 'codex', handoffTarget: 'reviewer', inputs: [] },
+          dependsOn: [],
+        },
+      ],
+    };
+
+    const result = await executeSubagentDispatchPlan(plan, dispatchPlan, {
+      rootDir,
+      env: {
+        ...process.env,
+        AIOS_SUBAGENT_CLIENT: 'codex-cli',
+        AIOS_SUBAGENT_TIMEOUT_MS: '5000',
+        PATH: `${fakeBinDir}${path.delimiter}${process.env.PATH || ''}`,
+      },
+      io: { log() {}, warn() {}, error() {} },
+    });
+
+    assert.equal(result.ok, true, JSON.stringify(result, null, 2));
+    assert.equal(await pathExists(path.join(rootDir, '.aios', 'context-db', 'exports', `${sessionId}-context.md`)), false);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+    await rm(fakeBinDir, { recursive: true, force: true });
+  }
+});
+
 test('subagent runtime delegates orchestration responsibilities to focused modules', async () => {
   const entry = await readFile(path.resolve('scripts/lib/harness/subagent-runtime.mjs'), 'utf8');
   const entryLines = entry.trim().split(/\r?\n/u).length;
@@ -309,7 +423,7 @@ test('subagent runtime delegates orchestration responsibilities to focused modul
     { file: 'scripts/lib/harness/subagent-runtime/paths.mjs', exports: ['resolveRepoRoot'] },
     { file: 'scripts/lib/harness/subagent-runtime/snapshots.mjs', exports: ['createPreMutationSnapshot', 'withPreMutationSnapshot'] },
     { file: 'scripts/lib/harness/subagent-runtime/telemetry.mjs', exports: ['collectCostTelemetry', 'mergeCostTelemetry', 'normalizeCostTelemetry'] },
-    { file: 'scripts/lib/harness/subagent-runtime/context-packet.mjs', exports: ['detectSessionIdFromPlan', 'loadContextPacket'] },
+    { file: 'scripts/lib/harness/subagent-runtime/context-packet.mjs', exports: ['detectSessionIdFromPlan'] },
     { file: 'scripts/lib/harness/subagent-runtime/role-memory.mjs', exports: ['loadRolePinnedMemory', 'appendJobFindingsToRoleMemory'] },
     { file: 'scripts/lib/harness/subagent-runtime/prompts.mjs', exports: ['buildSystemPrompt', 'buildUserPrompt', 'renderDependencyContext'] },
     { file: 'scripts/lib/harness/subagent-runtime/handoff-output.mjs', exports: ['extractJsonCandidate'] },

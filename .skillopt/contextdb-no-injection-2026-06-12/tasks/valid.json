@@ -1,0 +1,34 @@
+[
+  {
+    "id": "cdb-valid-001",
+    "instruction": "Validate no legacy prompt loader compatibility remains in ContextDB autopilot.",
+    "expected_outcome": "Deprecated prompt-loading flags are intentionally unsupported and --startup-mode/--context-mode/CTXDB_AUTO_PROMPT are named.",
+    "required_patterns": [
+      "Deprecated prompt-loading flags are intentionally unsupported",
+      "--startup-mode",
+      "--context-mode",
+      "CTXDB_AUTO_PROMPT"
+    ]
+  },
+  {
+    "id": "cdb-valid-002",
+    "instruction": "Validate context:pack report boundaries.",
+    "expected_outcome": "Full ContextDB Report is never pasted into prompts by default; reports are explicit inspection/debug exports.",
+    "required_patterns": [
+      "Never paste a full ContextDB Report",
+      "explicit inspection/debug export"
+    ],
+    "forbidden_patterns": [
+      "^# Context Packet$"
+    ]
+  },
+  {
+    "id": "cdb-valid-003",
+    "instruction": "Validate startup continuation remains user-selected.",
+    "expected_outcome": "Startup summary is not model input and user explicitly names the task/handoff to continue.",
+    "required_patterns": [
+      "must not pass that summary as model input",
+      "user must explicitly name the task/handoff to continue"
+    ]
+  }
+]

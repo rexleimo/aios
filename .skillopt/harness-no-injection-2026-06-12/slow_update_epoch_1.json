@@ -1,0 +1,8 @@
+{
+  "epoch": 1,
+  "guidance": [
+    "Keep old prompt injection surfaces named as removed behavior.",
+    "Prefer targeted retrieval over full report prompt replay.",
+    "Place stable rules in static instruction files and skills."
+  ]
+}

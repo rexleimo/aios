@@ -30,7 +30,6 @@ export async function runDispatchJobs({
   plan,
   dispatchPlan,
   clientId,
-  contextText,
   concurrency,
   timeoutMs,
   env,
@@ -103,7 +102,6 @@ export async function runDispatchJobs({
       }
       const phaseJobRun = await executePhaseJob(plan, job, phase, dependencyRuns, {
         clientId,
-        contextText,
         timeoutMs,
         env,
         io,

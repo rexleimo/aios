@@ -1,0 +1,14 @@
+{
+  "current_step": 2,
+  "current_epoch": 1,
+  "current_score": 1,
+  "best_score": 1,
+  "best_step": 2,
+  "edit_budget": 4,
+  "min_edit_budget": 2,
+  "total_epochs": 1,
+  "steps_per_epoch": 1,
+  "consecutive_no_improvement": 0,
+  "early_stop_patience": 2,
+  "skill_path": "skill-sources/contextdb-autopilot/SKILL.md"
+}

@@ -1,5 +1,5 @@
 # ContextDB transparent command wrappers for zsh.
-# Source this file in ~/.zshrc to make codex/claude/gemini/opencode auto-load context packets.
+# Source this file in ~/.zshrc to route supported clients through AIOS without prompt injection.
 #
 # Optional overrides:
 # - AIOS_ROOT_DIR: AIOS install root where scripts/contextdb-shell-bridge.mjs lives
@@ -11,9 +11,6 @@
 # - CTXDB_WRAP_MODE: all|repo-only|opt-in|off (default: repo-only, read by bridge)
 # - CTXDB_MARKER_FILE: marker filename for opt-in mode (default: .contextdb-enable, read by bridge)
 # - CTXDB_AUTO_CREATE_MARKER: auto-create marker in opt-in mode (default: on, read by bridge)
-# - CTXDB_INTERACTIVE_AUTO_ROUTE: inject single/subagent/team/harness route prompt (default: on, read by bridge)
-# - CTXDB_HARNESS_PROVIDER: provider for injected harness route (default: current CLI, read by bridge)
-# - CTXDB_HARNESS_MAX_ITERATIONS: iteration budget for injected harness route (default: 8, read by bridge)
 # - CTXDB_PRIVACY_BANNER: show/hide interactive Privacy Shield banner (default: on, read by bridge)
 # - CTXDB_PRIVACY_COLOR: enable/disable banner ANSI color (default: on unless NO_COLOR is set, read by bridge)
 # - CTXDB_ALLOW_DIRECT_NATIVE_AGENT: set to 1 to bypass AIOS direct-agent block for diagnostics
@@ -84,15 +81,7 @@ ctxdb_invoke_bridge_or_passthrough() {
   fi
 
   ctxdb_update_last_workspace
-  # Avoid bricking interactive wrappers if someone left CTXDB_PACK_STRICT=1 in
-  # their shell env. Quality gates can still enforce strict mode explicitly.
-  local strict_interactive="${CTXDB_PACK_STRICT_INTERACTIVE:-}"
-  strict_interactive="${strict_interactive:l}"
-  if [[ "$strict_interactive" == "1" || "$strict_interactive" == "true" || "$strict_interactive" == "yes" || "$strict_interactive" == "on" ]]; then
-    node "$bridge" --agent "$agent" --command "$passthrough" -- "$@"
-  else
-    CTXDB_PACK_STRICT=0 node "$bridge" --agent "$agent" --command "$passthrough" -- "$@"
-  fi
+  node "$bridge" --agent "$agent" --command "$passthrough" -- "$@"
 }
 
 codex() {

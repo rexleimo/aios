@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-06-12
+
+- remove automatic ContextDB prompt injection and startup-mode inject
+
 ## [1.53.0] - 2026-06-12
 
 - enforce AIOS primary agent for OpenCode

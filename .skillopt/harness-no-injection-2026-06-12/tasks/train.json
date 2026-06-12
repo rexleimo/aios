@@ -1,0 +1,35 @@
+[
+  {
+    "id": "harness-train-001",
+    "instruction": "Ensure harness resume uses ContextDB as storage/evidence rather than prompt replay.",
+    "expected_outcome": "Skill has a Context Boundary and says ContextDB is storage and evidence, not prompt replay.",
+    "required_patterns": [
+      "## Context Boundary",
+      "ContextDB as storage and evidence, not as prompt replay"
+    ]
+  },
+  {
+    "id": "harness-train-002",
+    "instruction": "Ensure resume waits for explicit user intent.",
+    "expected_outcome": "Skill tells agents to wait for explicit resume intent before loading selected artifacts.",
+    "required_patterns": [
+      "wait for explicit resume intent"
+    ]
+  },
+  {
+    "id": "harness-train-003",
+    "instruction": "Ensure stable operating rules are static, not generated handoff prompts.",
+    "expected_outcome": "Skill says stable operating rules live in AGENTS.md, CLAUDE.md, GEMINI.md, and skills.",
+    "required_patterns": [
+      "Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills"
+    ]
+  },
+  {
+    "id": "harness-train-004",
+    "instruction": "Ensure context:pack is not fed into a model prompt.",
+    "expected_outcome": "Skill forbids feeding context:pack output into model prompts.",
+    "required_patterns": [
+      "Do not feed `context:pack` output into a model prompt"
+    ]
+  }
+]
