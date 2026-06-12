@@ -10,6 +10,7 @@ import { buildCodexMcpDisableArgs } from './routes.mjs';
 import { buildInteractiveRouteAutoPrompt } from './route-prompts.mjs';
 import { buildOpenCodePrompt } from './opencode-context.mjs';
 import { extractHandoffPrompt, getAutoPrompt } from './facade.mjs';
+import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
 
 function commandForRuntime(agent) {
   const client = resolveClientFromRuntimeId(agent) || 'opencode';
@@ -89,7 +90,8 @@ function buildOpenCodeInvocation({ contextText, extraArgs, injectContext, autoPr
       : (contextPacketPath && injectContext ? 'context handoff via file' : 'context handoff');
     console.log(`Auto prompt: enabled (${promptSource})`);
   }
-  return { cmd, args: promptText ? ['--prompt', promptText, ...extraArgs] : [...extraArgs] };
+  const strictAgentArgs = buildOpenCodeStrictAgentArgs(extraArgs);
+  return { cmd, args: promptText ? [...strictAgentArgs, '--prompt', promptText] : strictAgentArgs };
 }
 
 const INTERACTIVE_BUILDERS = {

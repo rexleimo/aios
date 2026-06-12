@@ -28,7 +28,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agents', '.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills'] },
       crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
       "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
@@ -208,6 +208,24 @@ test('native sync writes compatibility docs for gemini and opencode', async () =
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.opencode')).tier, 'compatibility');
 });
 
+test('native sync installs an OpenCode primary agent that fails closed on missing skills', async () => {
+  const rootDir = await makeTemp('aios-native-sync-opencode-primary-agent-root-');
+  await seedNativeRoot(rootDir);
+
+  const result = await syncNativeEnhancements({ rootDir, client: 'opencode' });
+  const primaryAgent = await readFile(path.join(rootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8');
+  const metadata = readNativeSyncMetadata(path.join(rootDir, '.opencode'));
+
+  assert.equal(result.ok, true);
+  assert.match(primaryAgent, /^---\nname: aios-build\n/m);
+  assert.match(primaryAgent, /^mode: primary$/m);
+  assert.match(primaryAgent, /invoke `using-superpowers` before any response or action/u);
+  assert.match(primaryAgent, /`superpowers:brainstorming` -> `brainstorming`/u);
+  assert.match(primaryAgent, /If a required skill is unavailable, stop/u);
+  assert.equal(primaryAgent.startsWith('---\n'), true);
+  assert.ok(metadata.managedTargets.includes('.opencode/agent/aios-build.md'));
+});
+
 test('native sync can install codex project outputs outside the AIOS source root', async () => {
   const rootDir = await makeTemp('aios-native-sync-source-root-');
   const targetRootDir = await makeTemp('aios-native-sync-target-root-');
@@ -242,6 +260,7 @@ test('native sync can install all client project outputs outside the AIOS source
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8'), /^mode: primary$/m);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
@@ -261,6 +280,7 @@ test('native sync can install opencode standalone instructions outside the AIOS 
   assert.match(agentsDoc, /Opencode compatibility/);
   assert.doesNotMatch(agentsDoc, /Codex native block/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
+  assert.match(await readFile(path.join(targetRootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8'), /^mode: primary$/m);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
   await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
 });

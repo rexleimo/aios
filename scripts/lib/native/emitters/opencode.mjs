@@ -1,4 +1,8 @@
 import { getClientInstructionFileName } from '../../clients/registry.mjs';
+import {
+  OPENCODE_STRICT_PRIMARY_AGENT_PATH,
+  renderOpenCodeStrictPrimaryAgent,
+} from '../../opencode/strict-primary-agent.mjs';
 
 import { composeNativeMarkdown } from './compose.mjs';
 
@@ -7,18 +11,27 @@ export function renderOpencodeNativeOutputs({ rootDir, selectedClients = ['openc
   // 统一产出（已追加 opencode 兼容段），此处不再重复写，避免互相覆盖。
   const codexSelected = new Set(selectedClients).has('codex');
   const targetPath = getClientInstructionFileName('opencode');
-  const operations = codexSelected
-    ? []
-    : [
-        {
-          kind: 'markdown-block',
-          targetPath,
-          content: composeNativeMarkdown({ rootDir, client: 'opencode' }),
-        },
-      ];
+  const operations = [
+    ...(
+      codexSelected
+        ? []
+        : [
+            {
+              kind: 'markdown-block',
+              targetPath,
+              content: composeNativeMarkdown({ rootDir, client: 'opencode' }),
+            },
+          ]
+    ),
+    {
+      kind: 'managed-exact-file',
+      targetPath: OPENCODE_STRICT_PRIMARY_AGENT_PATH,
+      content: renderOpenCodeStrictPrimaryAgent(),
+    },
+  ];
   const managedTargets = codexSelected
-    ? ['.opencode/skills']
-    : [targetPath, '.opencode/skills'];
+    ? ['.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH]
+    : [targetPath, '.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH];
 
   return {
     operations,

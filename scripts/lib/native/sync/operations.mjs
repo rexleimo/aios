@@ -52,6 +52,33 @@ export async function applyManagedFileOperation(targetPath, content, fsOps, back
   return summarizeMutation(existsBefore, true);
 }
 
+export async function applyManagedExactFileOperation(targetPath, content, fsOps, backups, repair) {
+  const previous = await fsOps.readTextTarget(targetPath);
+  const existsBefore = previous.length > 0 || await pathExists(targetPath);
+  const next = `${normalizeText(content).trimEnd()}\n`;
+
+  if (previous) {
+    let managed = false;
+    try {
+      managed = hasManagedMarkdownBlock(previous);
+    } catch {
+      if (!repair.forceReplaceManagedFiles) {
+        throw new Error(`malformed managed block: ${path.basename(targetPath)}`);
+      }
+    }
+    if (!managed && !repair.forceReplaceManagedFiles) {
+      throw new Error(`unmanaged conflict: ${path.basename(targetPath)}`);
+    }
+    if (managed && normalizeText(previous) === normalizeText(next)) {
+      return 'reused';
+    }
+  }
+
+  await backupTarget(targetPath, fsOps, backups);
+  await fsOps.writeTextTarget(targetPath, next);
+  return summarizeMutation(existsBefore, true);
+}
+
 export async function applyJsonMergeOperation(targetPath, fragment, fsOps, backups, repair) {
   const previous = await fsOps.readTextTarget(targetPath);
   const existsBefore = previous.length > 0 || await pathExists(targetPath);
@@ -93,7 +120,7 @@ export async function removeOperation(targetPath, kind, fsOps, backups) {
     return 'removed';
   }
 
-  if (kind === 'managed-file') {
+  if (kind === 'managed-file' || kind === 'managed-exact-file') {
     if (!previous || !hasManagedMarkdownBlock(previous)) {
       return 'reused';
     }

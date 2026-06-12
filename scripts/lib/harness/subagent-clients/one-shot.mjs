@@ -1,4 +1,5 @@
 import { getClientRuntimeId } from '../../clients/registry.mjs';
+import { buildOpenCodeStrictAgentArgs } from '../../opencode/strict-primary-agent.mjs';
 
 function combineSystemAndPrompt(systemText, promptText) {
   return systemText
@@ -63,9 +64,9 @@ const CLIENT_STRATEGIES = Object.freeze({
       combineSystemAndPrompt(systemText, promptText),
     ],
   }),
-  [getClientRuntimeId('opencode')]: ({ systemText, promptText }) => ({
+  [getClientRuntimeId('opencode')]: ({ systemText, promptText, routedExtraArgs }) => ({
     runner: 'spawn',
-    args: ['run', combineSystemAndPrompt(systemText, promptText)],
+    args: ['run', ...buildOpenCodeStrictAgentArgs(routedExtraArgs), combineSystemAndPrompt(systemText, promptText)],
   }),
   [getClientRuntimeId('codex')]: ({
     systemText,
