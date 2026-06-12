@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -58,7 +58,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agents', '.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills'] },
       crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
       "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
@@ -206,6 +206,28 @@ test('doctor --native respects client-specific compatibility targets', async () 
   assert.match(rendered, /Client: opencode/);
   assert.match(rendered, /metadata=\.opencode\/\.aios-native-sync\.json present/);
   assert.doesNotMatch(rendered, /update --components native --client codex/);
+});
+
+test('doctor --native reports a missing OpenCode primary agent', async () => {
+  const rootDir = await makeTemp('aios-native-doctor-opencode-primary-agent-root-');
+  await seedNativeRoot(rootDir);
+  await syncNativeEnhancements({ rootDir, client: 'opencode' });
+  const env = await seedRouteCommands(rootDir);
+  await rm(path.join(rootDir, '.opencode', 'agent', 'aios-build.md'), { force: true });
+
+  const logs = [];
+  const result = await runDoctorSuite({
+    rootDir,
+    client: 'opencode',
+    nativeOnly: true,
+    io: { log: (line) => logs.push(String(line)) },
+    env,
+  });
+
+  const rendered = logs.join('\n');
+  assert.equal(result.exitCode, 1);
+  assert.match(rendered, /\[missing\] \.opencode\/agent\/aios-build\.md/u);
+  assert.match(rendered, /node scripts\/aios\.mjs update --components native --client opencode/u);
 });
 
 test('doctor --native checks projectRoot outputs when AIOS is installed elsewhere', async () => {

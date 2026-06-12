@@ -1403,10 +1403,11 @@ test('ctx-agent one-shot OpenCode mode uses file-backed context handoff', async 
     const payload = parseLastJsonPayload(result.stdout);
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
     assert.equal(payload.argv[0], 'run');
-    assert.match(payload.argv[1], /Read the context packet at/u);
-    assert.match(payload.argv[1], new RegExp(`${sessionId}-context(?:-opencode)?\\.md`));
-    assert.match(payload.argv[1], /Summarize the current status\./u);
-    assert.doesNotMatch(payload.argv[1], /# Context Packet/u);
+    assert.deepEqual(payload.argv.slice(1, 3), ['--agent', 'aios-build']);
+    assert.match(payload.argv[3], /Read the context packet at/u);
+    assert.match(payload.argv[3], new RegExp(`${sessionId}-context(?:-opencode)?\\.md`));
+    assert.match(payload.argv[3], /Summarize the current status\./u);
+    assert.doesNotMatch(payload.argv[3], /# Context Packet/u);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -1462,14 +1463,14 @@ test('ctx-agent interactive OpenCode mode sends auto prompt via context packet f
     assert.match(result.stdout, /Auto prompt: enabled \(context handoff via file\)/u);
     const payload = parseLastJsonPayload(result.stdout);
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
-    assert.deepEqual(payload.argv.slice(0, 2), ['--prompt', payload.argv[1]]);
-    assert.match(payload.argv[1], /Read the context packet at/u);
-    assert.match(payload.argv[1], new RegExp(`${sessionId}-context(?:-opencode)?\\.md`));
+    assert.deepEqual(payload.argv.slice(0, 3), ['--agent', 'aios-build', '--prompt']);
+    assert.match(payload.argv[3], /Read the context packet at/u);
+    assert.match(payload.argv[3], new RegExp(`${sessionId}-context(?:-opencode)?\\.md`));
     assert.match(
-      payload.argv[1],
+      payload.argv[3],
       /Continue from this state\. Preserve constraints, avoid repeating completed work, and update the next checkpoint when done\./u
     );
-    assert.doesNotMatch(payload.argv[1], /# Context Packet/u);
+    assert.doesNotMatch(payload.argv[3], /# Context Packet/u);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -1514,6 +1515,7 @@ test('ctx-agent interactive OpenCode Windows shell fallback does not pass inject
     assert.match(result.stderr, /Windows shell fallback detected for opencode/u);
     const payload = parseLastJsonPayload(result.stdout);
     assert.equal(payload.marker, 'FAKE_OPENCODE_SHELL_FALLBACK');
+    assert.equal(payload.argv.includes('--agent'), false);
     assert.equal(payload.argv.includes('--prompt'), false);
     assert.equal(payload.argv.includes('Status:'), false);
   } finally {

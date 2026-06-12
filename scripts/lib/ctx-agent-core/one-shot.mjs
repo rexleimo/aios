@@ -2,6 +2,7 @@ import { getClientCommandName, resolveClientFromRuntimeId } from '../clients/reg
 import { ROOT_DIR, parsePositiveInteger, runCommand, runCommandWithInput } from './common.mjs';
 import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePreview, buildHarnessRoutePreview, normalizeOrchestrateBlueprint, normalizeRouteExecutionMode, normalizeRouteMode, resolveHarnessRouteProviderForAgent, resolveRoutedSubagentClient } from './routes.mjs';
 import { buildOpenCodePrompt } from './opencode-context.mjs';
+import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
 
 const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set(['antigravity-cli', 'crush-cli']);
 
@@ -86,7 +87,7 @@ const ONE_SHOT_HANDLERS = {
   'codex-cli': ({ contextText, prompt, extraArgs, injectContext }) => runCodexOneShot(prompt, extraArgs, injectContext, contextText),
   'opencode-cli': ({ contextText, prompt, extraArgs, injectContext, contextPacketPath }) => runBufferedCommand(
     commandForRuntime('opencode-cli'),
-    ['run', ...extraArgs, buildOpenCodePrompt({ contextPacketPath, contextText, prompt, injectContext, promptKind: 'request' })]
+    ['run', ...buildOpenCodeStrictAgentArgs(extraArgs), buildOpenCodePrompt({ contextPacketPath, contextText, prompt, injectContext, promptKind: 'request' })]
   ),
   'crush-cli': ({ contextText, prompt, extraArgs, injectContext }) => runBufferedCommand(
     commandForRuntime('crush-cli'),

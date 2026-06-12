@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [1.53.0] - 2026-06-12
+
+- enforce AIOS primary agent for OpenCode
+
 ## [1.52.1] - 2026-06-11
 
 - fix MCP proxy wire compatibility for strict clients

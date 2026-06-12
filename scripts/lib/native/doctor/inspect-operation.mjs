@@ -59,6 +59,26 @@ export async function inspectOperation({ targetRootDir, client, operation, fixCo
     return;
   }
 
+  if (operation.kind === 'managed-exact-file') {
+    if (!current) {
+      issues.push(withIssueTarget(buildIssue({ client, message: `[missing] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+      return;
+    }
+    try {
+      if (!hasManagedMarkdownBlock(current)) {
+        issues.push(withIssueTarget(buildIssue({ client, message: `[unmanaged conflict] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+        return;
+      }
+    } catch {
+      issues.push(withIssueTarget(buildIssue({ client, status: 'error', message: `[malformed] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+      return;
+    }
+    if (current !== `${String(operation.content || '').replace(/\r\n/g, '\n').trimEnd()}\n`) {
+      issues.push(withIssueTarget(buildIssue({ client, message: `[drift] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+    }
+    return;
+  }
+
   if (!current) {
     issues.push(withIssueTarget(buildIssue({ client, message: `[missing] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
     return;
