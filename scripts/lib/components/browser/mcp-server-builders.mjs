@@ -22,7 +22,7 @@ export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {
   const browserUseRepo = findBrowserUseRepo(rootDir, existingEnv);
   const nextEnv = {
     ...existingEnv,
-    BROWSER_USE_CDP_URL: cdpUrl,
+    BROWSER_USE_CDP_URL: existingEnv.BROWSER_USE_CDP_URL || cdpUrl,
   };
   if (browserUseRepo) {
     nextEnv.AIOS_BROWSER_USE_REPO = browserUseRepo;

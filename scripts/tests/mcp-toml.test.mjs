@@ -65,3 +65,35 @@ test('migrateOneMcpToml writes only the primary browser alias', async () => {
   assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
   assert.match(result.nextRaw, /model = "gpt-5"/);
 });
+
+test('migrateOneMcpToml removes legacy browser aliases and preserves env from the first existing browser entry', async () => {
+  const rootDir = process.cwd();
+  const dir = await makeTemp();
+  const filePath = path.join(dir, 'config.toml');
+  await writeFile(filePath, [
+    'model = "gpt-5"',
+    '',
+    '[mcp_servers.puppeteer-stealth]',
+    'type = "stdio"',
+    'command = "node"',
+    'args = ["legacy-browser.mjs"]',
+    'env = { "CUSTOM_FLAG" = "from-puppeteer", "KEEP_ME" = "yes", "BROWSER_USE_CDP_URL" = "http://127.0.0.1:9333" }',
+    '',
+    '[mcp_servers.playwright-browser-mcp]',
+    'type = "stdio"',
+    'command = "node"',
+    'args = ["legacy-playwright.mjs"]',
+    'env = { "CUSTOM_FLAG" = "from-playwright" }',
+    '',
+  ].join('\n'), 'utf8');
+
+  const result = migrateOneMcpToml(filePath, rootDir);
+  assert.equal(result.status, 'updated');
+  assert.match(result.nextRaw, /model = "gpt-5"/);
+  assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
+  assert.doesNotMatch(result.nextRaw, /\[mcp_servers\.puppeteer-stealth\]/);
+  assert.doesNotMatch(result.nextRaw, /\[mcp_servers\.playwright-browser-mcp\]/);
+  assert.match(result.nextRaw, /"CUSTOM_FLAG" = "from-puppeteer"/);
+  assert.match(result.nextRaw, /"KEEP_ME" = "yes"/);
+  assert.match(result.nextRaw, /"BROWSER_USE_CDP_URL" = "http:\/\/127\.0\.0\.1:9333"/);
+});

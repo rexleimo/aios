@@ -62,3 +62,47 @@ test('migrateOneMcpOpencodeJson preserves unrelated keys and is idempotent', asy
   assert.equal(second.status, 'unchanged');
   assert.equal(await readFile(filePath, 'utf8'), first.nextRaw);
 });
+
+test('migrateOneMcpOpencodeJson migrates legacy browser aliases into only mcp-browser-use and preserves env', async () => {
+  const rootDir = process.cwd();
+  const dir = await makeTemp();
+  const filePath = path.join(dir, 'opencode.json');
+  await writeFile(filePath, JSON.stringify({
+    theme: 'dark',
+    mcp: {
+      'puppeteer-stealth': {
+        type: 'local',
+        command: ['legacy-browser.mjs'],
+        enabled: true,
+        environment: {
+          CUSTOM_FLAG: 'from-puppeteer',
+          KEEP_ME: 'yes',
+          BROWSER_USE_CDP_URL: 'http://127.0.0.1:9333',
+        },
+      },
+      'playwright-browser-mcp': {
+        type: 'local',
+        command: ['legacy-playwright.mjs'],
+        enabled: true,
+        environment: {
+          CUSTOM_FLAG: 'from-playwright',
+        },
+      },
+      'user-server': { type: 'local', command: ['keep'], enabled: true },
+    },
+  }, null, 2), 'utf8');
+
+  const result = migrateOneMcpOpencodeJson(filePath, rootDir);
+  assert.equal(result.status, 'updated');
+
+  const parsed = JSON.parse(result.nextRaw);
+  assert.equal(parsed.theme, 'dark');
+  const browser = parsed.mcp[PRIMARY_BROWSER_ALIAS];
+  assert.ok(browser, 'browser alias migrated');
+  assert.equal(browser.environment.CUSTOM_FLAG, 'from-puppeteer');
+  assert.equal(browser.environment.KEEP_ME, 'yes');
+  assert.equal(browser.environment.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
+  assert.ok(!parsed.mcp['puppeteer-stealth'], 'legacy puppeteer alias removed');
+  assert.ok(!parsed.mcp['playwright-browser-mcp'], 'legacy playwright alias removed');
+  assert.ok(parsed.mcp['user-server'], 'unrelated server preserved');
+});

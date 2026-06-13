@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-06-13
+
+- fix browser MCP legacy alias migration
+
 ## [2.0.0] - 2026-06-12
 
 - remove automatic ContextDB prompt injection and startup-mode inject

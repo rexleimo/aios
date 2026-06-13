@@ -5,6 +5,7 @@ import path from 'node:path';
 
 import { getClientHomes } from '../../platform/paths.mjs';
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import { findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
@@ -37,7 +38,8 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
   }
 
   const mcpServers = parsed[serversKey];
-  const existingAlias = mcpServers[PRIMARY_BROWSER_ALIAS];
+  const existingAlias = findFirstBrowserServerEntry(mcpServers);
+  removeLegacyBrowserServerEntries(mcpServers);
   mcpServers[PRIMARY_BROWSER_ALIAS] = buildPreferredMcpServer(rootDir, existingAlias);
   mcpServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
   mcpServers[SHELL_ALIAS] = buildShellMcpServer(rootDir);

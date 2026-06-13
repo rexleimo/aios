@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import { findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 
 function isObjectRecord(value) {
@@ -54,7 +55,8 @@ export function migrateOneMcpOpencodeJson(filePath, rootDir) {
   }
 
   const mcp = parsed.mcp;
-  const existingBrowser = mcp[PRIMARY_BROWSER_ALIAS];
+  const existingBrowser = findFirstBrowserServerEntry(mcp);
+  removeLegacyBrowserServerEntries(mcp);
   const browser = buildPreferredMcpServer(rootDir, { env: readExistingEnvironment(existingBrowser) });
   const auth = buildAuthToolsMcpServer(rootDir, { env: readExistingEnvironment(mcp[AUTH_TOOLS_ALIAS]) });
   const shell = buildShellMcpServer(rootDir);
