@@ -10,7 +10,7 @@ import {
   isInitializeRequest,
 } from '@modelcontextprotocol/sdk/types.js';
 import {
-  tools as playwrightTools,
+  tools as browserTools,
   browserLauncher,
   navigate,
   click,
@@ -140,10 +140,10 @@ function extractBearerToken(header: unknown): string {
   return match ? match[1].trim() : '';
 }
 
-function createPlaywrightBrowserServer(): Server {
+function createAiosBrowserServer(): Server {
   const server = new Server(
     {
-      name: 'playwright-browser-mcp',
+      name: 'aios-browser-mcp',
       version: '1.0.0',
     },
     {
@@ -157,8 +157,7 @@ function createPlaywrightBrowserServer(): Server {
   server.setRequestHandler(ListToolsRequestSchema, async () => {
     return {
       tools: [
-        // Playwright 浏览器工具
-        ...playwrightTools,
+        ...browserTools,
         {
           name: 'browser_close',
           description: 'Close browser',
@@ -179,7 +178,6 @@ function createPlaywrightBrowserServer(): Server {
             },
           },
         },
-        // 保留旧版 puppeteer 工具（可选）
       ],
     };
   });
@@ -220,10 +218,10 @@ function createPlaywrightBrowserServer(): Server {
 }
 
 async function startStdioServer() {
-  const server = createPlaywrightBrowserServer();
+  const server = createAiosBrowserServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('Playwright Browser MCP Server running on stdio');
+  console.error('AIOS Browser MCP Server running on stdio');
 }
 
 async function startHttpServer() {
@@ -312,7 +310,7 @@ async function startHttpServer() {
         return;
       }
 
-      const server = createPlaywrightBrowserServer();
+      const server = createAiosBrowserServer();
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: () => randomUUID(),
         onsessioninitialized: (newSessionId) => {
@@ -351,7 +349,7 @@ async function startHttpServer() {
   });
 
   const httpServer = app.listen(port, host, () => {
-    console.error(`Playwright Browser MCP Server HTTP listening on http://${host}:${port}/mcp`);
+    console.error(`AIOS Browser MCP Server HTTP listening on http://${host}:${port}/mcp`);
   });
 
   httpServer.on('error', (error: any) => {

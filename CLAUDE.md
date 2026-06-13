@@ -25,7 +25,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a **Xiaohongshu (小红书) Operations Assistant** - an AI agent framework that uses Claude Code with the repo-local browser MCP (`puppeteer-stealth` alias routed to browser-use MCP) to automate operations on Xiaohongshu (xiaohongshu.com), a Chinese social media platform.
+This is a **Xiaohongshu (小红书) Operations Assistant** - an AI agent framework that uses Claude Code with the repo-local browser MCP (`mcp-browser-use` alias routed to browser-use MCP) to automate operations on Xiaohongshu (xiaohongshu.com), a Chinese social media platform.
 
 ## Core Architecture
 
@@ -181,7 +181,7 @@ AIOS has a unified native interception runtime that replaces RTK/Caveman. Do **n
 
 ## Important Notes
 
-- All normal browser automation should use the repo-local `puppeteer-stealth` MCP alias and browser-use tools (`chrome.launch_cdp` + `browser.connect_cdp` + `page.*`)
+- All normal browser automation should use the repo-local `mcp-browser-use` MCP alias and browser-use tools (`chrome.launch_cdp` + `browser.connect_cdp` + `page.*`)
 - If multiple browser MCPs are installed, reserve `chrome-devtools` for low-level debugging only
 - For interactive work, prefer `chrome.launch_cdp {"port":9222}` then `browser.connect_cdp`
 - The system maintains a file-based memory system in JSON format
@@ -435,7 +435,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - After navigation or major actions, use `page.wait` when a state transition is expected, then re-read the page.
 - Use `page.screenshot` only as a visual fallback when text/HTML evidence is not enough.
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
-- When `puppeteer-stealth` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
+- When `mcp-browser-use` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
 
 <!-- Team provider 指令 — 仅对具备 team capability 的客户端下发 -->
 

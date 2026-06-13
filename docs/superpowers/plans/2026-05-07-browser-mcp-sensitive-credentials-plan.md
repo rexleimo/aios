@@ -1112,7 +1112,7 @@ In the `installBrowserMcp()` / MCP config generator section, add a second server
 ```json
 {
   "mcpServers": {
-    "puppeteer-stealth": {
+    "mcp-browser-use": {
       "type": "stdio",
       "command": "bash",
       "args": ["/path/to/scripts/run-browser-use-mcp.sh"],
@@ -1132,7 +1132,7 @@ In the `installBrowserMcp()` / MCP config generator section, add a second server
 }
 ```
 
-The `browser.mjs` change: in the function that generates the MCP server config block, append the `aios-auth-tools` entry. The exact location depends on the current code — find where `puppeteer-stealth` server block is constructed and add the second entry.
+The `browser.mjs` change: in the function that generates the MCP server config block, append the `aios-auth-tools` entry. The exact location depends on the current code — find where the `mcp-browser-use` server block is constructed and add the second entry.
 
 - [ ] **Step 2: Verify with doctor check**
 

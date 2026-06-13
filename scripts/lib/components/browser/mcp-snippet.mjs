@@ -14,7 +14,6 @@ export function printSnippet(io, launcherPath, cdpUrl) {
   io.log('Done. Browser MCP config was auto-updated where possible.');
   io.log('Use this MCP server block only if a client needs a manual refresh:');
   io.log(`- If \`${PRIMARY_BROWSER_ALIAS}\` already exists, replace its block in-place (do not delete the alias name).`);
-  io.log('- If legacy `playwright-browser-mcp` exists, remove it to avoid parallel old/new browser stacks.');
   io.log('');
   io.log('{');
   io.log('  "mcpServers": {');

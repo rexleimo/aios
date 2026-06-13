@@ -112,7 +112,7 @@ Per-client project sources are minimal (4–9 lines naming the client layer).
 
 ## 4. MCP Registration Architecture
 
-Two MCP server aliases: `puppeteer-stealth` (browser, proxied), `aios-auth-tools`.
+Two MCP server aliases: `mcp-browser-use` (browser, proxied), `aios-auth-tools`.
 
 Format dispatch per `target.format`:
 - `json` → JSON parse → upsert mcpServers.<alias> → JSON stringify

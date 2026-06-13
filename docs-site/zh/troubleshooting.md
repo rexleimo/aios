@@ -33,7 +33,7 @@ npm run test:scripts
 
 ## Browser MCP 工具不可用
 
-**大多数情况**: Playwright MCP 未安装，或 `~/.config/codex/` (或 `~/.config/claude/` 等) 的 MCP 配置中缺少 `puppeteer-stealth` 别名。
+**大多数情况**: browser-use MCP 运行时未安装，或客户端 MCP 配置中缺少 `mcp-browser-use` 别名。
 
 用 Doctor 脚本检查：
 
@@ -49,14 +49,14 @@ npm run test:scripts
     powershell -ExecutionPolicy Bypass -File .\scripts\doctor-browser-mcp.ps1
     ```
 
-或手动打开 `~/.config/codex/mcp.json`（或 Claude Code 的 `~/.config/claude/settings.json`，Gemini CLI 的 `~/.gemini/mcp.json`），确保包含：
+或手动打开对应客户端 MCP 配置，确保包含：
 
 ```json
 {
   "mcpServers": {
-    "puppeteer-stealth": {
+    "mcp-browser-use": {
       "command": "node",
-      "args": ["/path/to/harness-cli/mcp-server/dist/puppeteer-stealth-server.js"]
+      "args": ["/path/to/rex-ai-boot/scripts/run-browser-use-mcp.sh"]
     }
   }
 }

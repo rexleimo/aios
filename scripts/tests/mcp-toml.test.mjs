@@ -5,7 +5,11 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { migrateOneMcpToml } from '../lib/components/browser/mcp-toml.mjs';
-import { PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, SHELL_ALIAS } from '../lib/components/browser/constants.mjs';
+import {
+  AUTH_TOOLS_ALIAS,
+  PRIMARY_BROWSER_ALIAS,
+  SHELL_ALIAS,
+} from '../lib/components/browser/constants.mjs';
 
 async function makeTemp() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-mcp-toml-'));
@@ -42,4 +46,22 @@ test('migrateOneMcpToml preserves unrelated codex config and is idempotent', asy
   const second = migrateOneMcpToml(filePath, rootDir);
   assert.equal(second.status, 'unchanged');
   assert.equal(await readFile(filePath, 'utf8'), first.nextRaw);
+});
+
+test('migrateOneMcpToml writes only the primary browser alias', async () => {
+  const rootDir = process.cwd();
+  const dir = await makeTemp();
+  const filePath = path.join(dir, 'config.toml');
+  await writeFile(filePath, [
+    'model = "gpt-5"',
+    '',
+    'command = "node"',
+    'args = ["old-legacy.js"]',
+    '',
+  ].join('\n'), 'utf8');
+
+  const result = migrateOneMcpToml(filePath, rootDir);
+  assert.equal(result.status, 'updated');
+  assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
+  assert.match(result.nextRaw, /model = "gpt-5"/);
 });

@@ -18,7 +18,7 @@
 - feat(strict): 增强原生严格模式，验证受管 shim 背后是否存在真实下游客户端
 - feat(rewrite): 在命令重写中拦截危险 shell 结构（`\n`、`\r`、单 `&`）
 - feat(hook): Claude PreToolUse hook 不再强制自动允许；改用 envelope 式命令包装
-- chore(deps): 升级 `proxy-inspector.mjs`，检查多个 MCP 别名（`puppeteer-stealth`、`aios-shell`）
+- chore(deps): 升级 `proxy-inspector.mjs`，检查受管 MCP 别名（`mcp-browser-use`、`aios-shell`）
 
 ### 修复
 - fix(shim): 修复当 `AIOS_ROOT_DIR` 未设置时，原生 shim 回退到过期的临时目录（`/var/folders/...`）

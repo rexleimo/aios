@@ -31,7 +31,7 @@ Expected MCP block:
 ```json
 {
   "mcpServers": {
-    "puppeteer-stealth": {
+    "mcp-browser-use": {
       "type": "stdio",
       "command": "bash",
       "args": ["/ABS/PATH/aios/scripts/run-browser-use-mcp.sh"],
@@ -149,7 +149,7 @@ If CDP connection fails:
 
 - The server auto-detects workspace root by locating `config/browser-profiles.json`.
 - For local persistent profiles, if `userDataDir` is locked by another browser process, server retries with an isolated runtime profile directory by default (`isolateOnLock=true`).
-- Default toolchain is `chrome.launch_cdp` -> `browser.connect_cdp` -> `page.*` under the `puppeteer-stealth` alias.
+- Default toolchain is `chrome.launch_cdp` -> `browser.connect_cdp` -> `page.*` under the `mcp-browser-use` alias.
 - Recommended reasoning order: `page.extract_text` -> `page.get_html` -> `page.screenshot` (visual fallback only).
 - For interactive agent work, prefer `chrome.launch_cdp {"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}` and then `browser.connect_cdp`.
 - Keep login/challenge/captcha as human-in-the-loop; resume automation only after manual completion.

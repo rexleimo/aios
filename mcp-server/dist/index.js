@@ -5,7 +5,7 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, isInitializeRequest, } from '@modelcontextprotocol/sdk/types.js';
-import { tools as playwrightTools, browserLauncher, navigate, click, type, setInputFiles, snapshot, screenshot, authCheck, challengeCheck, } from './browser/index.js';
+import { tools as browserTools, browserLauncher, navigate, click, type, setInputFiles, snapshot, screenshot, authCheck, challengeCheck, } from './browser/index.js';
 // 工具处理器映射
 const toolHandlers = {
     browser_launch: async (args) => {
@@ -130,9 +130,9 @@ function extractBearerToken(header) {
     const match = /^bearer\s+(.+)$/i.exec(text);
     return match ? match[1].trim() : '';
 }
-function createPlaywrightBrowserServer() {
+function createAiosBrowserServer() {
     const server = new Server({
-        name: 'playwright-browser-mcp',
+        name: 'aios-browser-mcp',
         version: '1.0.0',
     }, {
         capabilities: {
@@ -143,8 +143,7 @@ function createPlaywrightBrowserServer() {
     server.setRequestHandler(ListToolsRequestSchema, async () => {
         return {
             tools: [
-                // Playwright 浏览器工具
-                ...playwrightTools,
+                ...browserTools,
                 {
                     name: 'browser_close',
                     description: 'Close browser',
@@ -165,7 +164,6 @@ function createPlaywrightBrowserServer() {
                         },
                     },
                 },
-                // 保留旧版 puppeteer 工具（可选）
             ],
         };
     });
@@ -202,10 +200,10 @@ function createPlaywrightBrowserServer() {
     return server;
 }
 async function startStdioServer() {
-    const server = createPlaywrightBrowserServer();
+    const server = createAiosBrowserServer();
     const transport = new StdioServerTransport();
     await server.connect(transport);
-    console.error('Playwright Browser MCP Server running on stdio');
+    console.error('AIOS Browser MCP Server running on stdio');
 }
 async function startHttpServer() {
     const host = String(process.env.MCP_HTTP_HOST || '127.0.0.1').trim() || '127.0.0.1';
@@ -278,7 +276,7 @@ async function startHttpServer() {
                 });
                 return;
             }
-            const server = createPlaywrightBrowserServer();
+            const server = createAiosBrowserServer();
             const transport = new StreamableHTTPServerTransport({
                 sessionIdGenerator: () => randomUUID(),
                 onsessioninitialized: (newSessionId) => {
@@ -314,7 +312,7 @@ async function startHttpServer() {
         }
     });
     const httpServer = app.listen(port, host, () => {
-        console.error(`Playwright Browser MCP Server HTTP listening on http://${host}:${port}/mcp`);
+        console.error(`AIOS Browser MCP Server HTTP listening on http://${host}:${port}/mcp`);
     });
     httpServer.on('error', (error) => {
         console.error('[mcp-http] failed to start http server:', error);

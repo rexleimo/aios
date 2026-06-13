@@ -43,7 +43,7 @@
 ## 5. 技术实现
 
 ### 5.1 浏览器操作
-- 使用 puppeteer-stealth MCP
+- 使用 mcp-browser-use MCP
 - 反检测：随机延迟（3-8秒）、人类行为模拟
 - 页面快照获取 DOM 结构
 

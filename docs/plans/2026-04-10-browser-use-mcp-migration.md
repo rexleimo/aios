@@ -8,7 +8,7 @@ Repo: `aios`
 - Keep CDP-based fingerprint browsing behavior by preserving dedicated profile startup and CDP lifecycle tooling.
 
 ## Decisions
-- Keep MCP alias name as `puppeteer-stealth` to avoid client-side alias churn.
+- Use `mcp-browser-use` as the only browser MCP alias.
 - Route alias startup to `scripts/run-browser-use-mcp.sh`.
 - Keep `internal browser cdp-*` controls, but switch CDP launch agent to real Chrome/Chromium executable discovery and profile persistence.
 
@@ -35,7 +35,7 @@ Repo: `aios`
 
 5. Added one-command MCP config migration:
    - `node scripts/aios.mjs internal browser mcp-migrate [--dry-run]`
-   - Migrates `puppeteer-stealth` to browser-use launcher and removes legacy `playwright-browser-mcp` entries.
+   - Writes `mcp-browser-use` to the browser-use launcher and removes old browser MCP aliases instead of preserving compatibility names.
 
 ## Validation Plan
 - `npm run test:scripts`

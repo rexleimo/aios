@@ -39,7 +39,7 @@ Working directory: any (MCP tools are session-relative; file paths are relative 
 1. 优先使用文本/DOM证据做决策
    - 先读 `page.extract_text`，必要时补充 `page.get_html`
    - 比整页截图更高效，可快速定位按钮文案和页面状态
-   - 不使用 `chrome-devtools` 工具链执行业务流程，统一走 `puppeteer-stealth` 的 browser-use 工具链（`chrome.*` / `browser.*` / `page.*`）
+   - 不使用 `chrome-devtools` 工具链执行业务流程，统一走 `mcp-browser-use` 的 browser-use 工具链（`chrome.*` / `browser.*` / `page.*`）
 
 2. 只有视觉信息不足时才截图，并保存到 temp/ 目录
     - 条件：文本/HTML 证据不足以判断状态

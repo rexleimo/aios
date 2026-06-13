@@ -4,7 +4,7 @@
    注意：`environment` 字段名依据 opencode 本地 MCP 约定;浏览器 server 需要 env，故必须落到 environment。 */
 import fs from 'node:fs';
 
-import { AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 
 function isObjectRecord(value) {
@@ -54,13 +54,13 @@ export function migrateOneMcpOpencodeJson(filePath, rootDir) {
   }
 
   const mcp = parsed.mcp;
-  const browser = buildPreferredMcpServer(rootDir, { env: readExistingEnvironment(mcp[PRIMARY_BROWSER_ALIAS]) });
+  const existingBrowser = mcp[PRIMARY_BROWSER_ALIAS];
+  const browser = buildPreferredMcpServer(rootDir, { env: readExistingEnvironment(existingBrowser) });
   const auth = buildAuthToolsMcpServer(rootDir, { env: readExistingEnvironment(mcp[AUTH_TOOLS_ALIAS]) });
   const shell = buildShellMcpServer(rootDir);
   mcp[PRIMARY_BROWSER_ALIAS] = toOpencodeLocalEntry(browser);
   mcp[AUTH_TOOLS_ALIAS] = toOpencodeLocalEntry(auth);
   mcp[SHELL_ALIAS] = toOpencodeLocalEntry(shell);
-  delete mcp[LEGACY_BROWSER_ALIAS];
 
   const nextRaw = `${JSON.stringify(parsed, null, 2)}\n`;
   if (exists && raw === nextRaw) {

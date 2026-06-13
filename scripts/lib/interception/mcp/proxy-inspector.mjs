@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { ALL_CLIENTS, getClientMcpTarget } from '../../clients/registry.mjs';
+import { PRIMARY_BROWSER_ALIAS } from '../../components/browser/constants.mjs';
 import { isAiosMcpProxyEntry } from './proxy-config.mjs';
 
 /* 中文注释：检查 project、mcp-server 和各客户端真实落点；落点/格式取自 registry 单一事实来源。
@@ -39,7 +40,7 @@ export function collectInterceptionMcpTargets({ rootDir, clientHomes = {} } = {}
 }
 
 /* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。 */
-export function inspectMcpProxyTarget(filePath, { alias = 'puppeteer-stealth', rootDir = '', namespace = 'mcpServers', format = 'json' } = {}) {
+export function inspectMcpProxyTarget(filePath, { alias = PRIMARY_BROWSER_ALIAS, rootDir = '', namespace = 'mcpServers', format = 'json' } = {}) {
   if (!fs.existsSync(filePath)) {
     return { path: filePath, exists: false, hasAlias: false, proxied: false };
   }
@@ -121,7 +122,7 @@ function normalizeOpencodeEntry(entry) {
 }
 
 /* 中文注释：聚合巡检结果给 proof/doctor 使用，调用方无需理解每个客户端的路径规则。 */
-export function inspectMcpProxyTargets({ rootDir, clientHomes = {}, alias = 'puppeteer-stealth', aliases = [] } = {}) {
+export function inspectMcpProxyTargets({ rootDir, clientHomes = {}, alias = PRIMARY_BROWSER_ALIAS, aliases = [] } = {}) {
   const checkAliases = aliases.length > 0 ? aliases : [alias];
   const targets = collectInterceptionMcpTargets({ rootDir, clientHomes });
   return targets.map((target) => {

@@ -89,7 +89,7 @@ PRs should include:
 - Preserve human-in-the-loop checks for auth walls and sensitive outbound actions.
 
 ## Browser MCP Selection
-- In this repo, prefer the `puppeteer-stealth` MCP server alias that now routes to browser-use MCP (`scripts/run-browser-use-mcp.sh`).
+- In this repo, prefer the `mcp-browser-use` MCP server alias (browser-use runtime via `scripts/run-browser-use-mcp.sh`).
 - For interactive browser work, use `chrome.launch_cdp {"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}` then `browser.connect_cdp`.
 - If multiple browser MCPs are available, do **not** use `chrome-devtools` for normal business flows; reserve it for low-level inspection/debugging only.
 - Default reasoning order for page understanding: `page.semantic_snapshot` / targeted `page.extract_text` first, `page.get_html` and `page.screenshot` as fallbacks.
@@ -403,7 +403,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - After navigation or major actions, use `page.wait` when a state transition is expected, then re-read the page.
 - Use `page.screenshot` only as a visual fallback when text/HTML evidence is not enough.
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
-- When `puppeteer-stealth` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
+- When `mcp-browser-use` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
 
 <!-- Team provider 指令 — 仅对具备 team capability 的客户端下发 -->
 

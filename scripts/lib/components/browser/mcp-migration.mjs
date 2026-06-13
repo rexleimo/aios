@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { getClientHomes } from '../../platform/paths.mjs';
-import { AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
@@ -41,7 +41,6 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
   mcpServers[PRIMARY_BROWSER_ALIAS] = buildPreferredMcpServer(rootDir, existingAlias);
   mcpServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
   mcpServers[SHELL_ALIAS] = buildShellMcpServer(rootDir);
-  delete mcpServers[LEGACY_BROWSER_ALIAS];
 
   const nextRaw = `${JSON.stringify(parsed, null, 2)}\n`;
   if (exists && raw === nextRaw) {

@@ -57,7 +57,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - After navigation or major actions, use \`page.wait\` when a state transition is expected, then re-read the page.
 - Use \`page.screenshot\` only as a visual fallback when text/HTML evidence is not enough.
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
-- When \`puppeteer-stealth\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
+- When \`mcp-browser-use\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
 `, 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'Section SUPERPOWERS-CAP only.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'Section AGENT-ROUTING-CAP only.\n', 'utf8');

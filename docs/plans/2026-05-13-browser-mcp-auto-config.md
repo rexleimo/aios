@@ -4,7 +4,7 @@
 
 **Goal:** Make browser MCP setup automatically discover the local `ai-browser-book` checkout and write the generated MCP config back into the repo/client config files.
 
-**Architecture:** Keep the existing launcher/bootstrap discovery logic, but make `installBrowserMcp` perform the config migration as part of a successful install. The migration should keep `puppeteer-stealth` as the alias, update launcher/env paths when a local checkout is found, and preserve warning-only behavior when the checkout is still missing.
+**Architecture:** Keep the existing launcher/bootstrap discovery logic, but make `installBrowserMcp` perform the config migration as part of a successful install. The migration should write only the `mcp-browser-use` alias, update launcher/env paths when a local checkout is found, and preserve warning-only behavior when the checkout is still missing.
 
 **Tech Stack:** TypeScript, Node.js, Bash, Python, JSON config files
 

@@ -23,5 +23,5 @@ User intent -> skill retrieval (repo-local skill roots) -> MCP browser-use/CDP a
 
 ## High-Risk Drift Zones
 - Dynamic CSS class names on target websites.
-- Alias mismatch (`puppeteer-stealth` server name vs browser-use tool namespace `chrome.*` / `browser.*` / `page.*`).
+- Browser MCP alias drift: keep `mcp-browser-use` as the only active browser MCP alias.
 - Skill JSON assumptions that are no longer valid for latest UI.

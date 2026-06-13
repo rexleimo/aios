@@ -28,6 +28,7 @@ import {
   getCommandSpawnSpec,
 } from '../lib/platform/process.mjs';
 import { buildPreferredMcpServer } from '../lib/components/browser/mcp-server-builders.mjs';
+import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
 import { resolveShellCommand } from '../lib/components/browser/runtime-paths.mjs';
 
 async function makeTemp(prefix) {
@@ -90,7 +91,7 @@ function expectedBrowserMcpArgs(rootDir) {
     '--workspace',
     rootDir,
     '--host',
-    'puppeteer-stealth',
+    PRIMARY_BROWSER_ALIAS,
     '--',
     upstreamCommand,
     ...upstreamArgs,
@@ -837,7 +838,7 @@ test('browser mcp-migrate omits unresolved browser-use repo instead of writing a
 
   const raw = await readFile(path.join(rootDir, '.mcp.json'), 'utf8');
   const parsed = JSON.parse(raw);
-  assert.equal(parsed.mcpServers['puppeteer-stealth'].env.AIOS_BROWSER_USE_REPO, undefined);
+  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO, undefined);
   assert.doesNotMatch(raw, /\/Users\/molei\/codes\//u);
   assert.doesNotMatch(raw, /\/Users\/rex\/cool\.cnb\//u);
 });
@@ -859,7 +860,7 @@ test('browser mcp-migrate removes stale unresolved AIOS_BROWSER_USE_REPO values'
 
   const staleConfig = {
     mcpServers: {
-      'puppeteer-stealth': {
+      [PRIMARY_BROWSER_ALIAS]: {
         command: 'bash',
         args: ['/old/run-browser-use-mcp.sh'],
         env: {
@@ -879,8 +880,8 @@ test('browser mcp-migrate removes stale unresolved AIOS_BROWSER_USE_REPO values'
 
   const raw = await readFile(path.join(rootDir, '.mcp.json'), 'utf8');
   const parsed = JSON.parse(raw);
-  assert.equal(parsed.mcpServers['puppeteer-stealth'].env.AIOS_BROWSER_USE_REPO, undefined);
-  assert.equal(parsed.mcpServers['puppeteer-stealth'].env.KEEP_ME, '1');
+  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO, undefined);
+  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.KEEP_ME, '1');
   assert.doesNotMatch(raw, /molei/u);
 });
 
@@ -939,9 +940,9 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
   await mkdir(claudeHome, { recursive: true });
   await writeFile(path.join(claudeHome, 'mcp.json'), JSON.stringify({
     mcpServers: {
-      'playwright-browser-mcp': {
+      'user-server': {
         command: 'node',
-        args: ['/legacy/dist/index.js'],
+        args: ['/user/server.js'],
       },
     },
   }, null, 2), 'utf8');
@@ -969,25 +970,23 @@ test('browser install auto-writes mcp configs when adjacent ai-browser-book chec
     assert.equal(result.migrationResult.created + result.migrationResult.updated >= 2, true);
 
     const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-    assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-    assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
-    assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9555');
+    assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+    assert.deepEqual(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
+    assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9555');
     assert.equal(
-      await realpath(rootMcp.mcpServers['puppeteer-stealth'].env.AIOS_BROWSER_USE_REPO),
+      await realpath(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO),
       expectedRepoRoot
     );
-    assert.equal(rootMcp.mcpServers['playwright-browser-mcp'], undefined);
 
     const mcpServerMcp = JSON.parse(await readFile(path.join(rootDir, 'mcp-server', '.mcp.json'), 'utf8'));
-    assert.equal(mcpServerMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-    assert.deepEqual(mcpServerMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
-    assert.equal(mcpServerMcp.mcpServers['playwright-browser-mcp'], undefined);
+    assert.equal(mcpServerMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+    assert.deepEqual(mcpServerMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
 
     // claude is PROJECT-scoped: its MCP target is <project>/.mcp.json (rootMcp above),
-    // NOT ~/.claude/mcp.json. The pre-existing legacy home file is left untouched.
-    const legacyClaude = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
-    assert.ok(legacyClaude.mcpServers['playwright-browser-mcp'], 'legacy home file untouched');
-    assert.equal(legacyClaude.mcpServers['puppeteer-stealth'], undefined, 'no new alias in legacy home file');
+    // NOT ~/.claude/mcp.json. The pre-existing home file is left untouched.
+    const homeClaude = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
+    assert.ok(homeClaude.mcpServers['user-server'], 'home file untouched');
+    assert.equal(homeClaude.mcpServers[PRIMARY_BROWSER_ALIAS], undefined, 'no new primary alias in home file');
   } finally {
     if (previous === undefined) delete process.env.AIOS_BROWSER_USE_REPO;
     else process.env.AIOS_BROWSER_USE_REPO = previous;
@@ -1015,25 +1014,21 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
     },
   }, null, 2), 'utf8');
 
-  const legacyConfig = {
+  const existingConfig = {
     mcpServers: {
-      'puppeteer-stealth': {
+      [PRIMARY_BROWSER_ALIAS]: {
         command: 'node',
-        args: ['/legacy/dist/index.js'],
+        args: ['/old-browser.js'],
         env: { KEEP_ME: '1' },
-      },
-      'playwright-browser-mcp': {
-        command: 'node',
-        args: ['/legacy/dist/index.js'],
       },
     },
   };
 
-  await writeFile(path.join(rootDir, '.mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
-  await writeFile(path.join(mcpServerDir, '.mcp.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(rootDir, '.mcp.json'), `${JSON.stringify(existingConfig, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(mcpServerDir, '.mcp.json'), `${JSON.stringify(existingConfig, null, 2)}\n`, 'utf8');
   // claude is PROJECT-scoped (.mcp.json), already seeded above. gemini is PROJECT-scoped too.
   await mkdir(path.join(rootDir, '.gemini'), { recursive: true });
-  await writeFile(path.join(rootDir, '.gemini', 'settings.json'), `${JSON.stringify(legacyConfig, null, 2)}\n`, 'utf8');
+  await writeFile(path.join(rootDir, '.gemini', 'settings.json'), `${JSON.stringify(existingConfig, null, 2)}\n`, 'utf8');
   await mkdir(codexHome, { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), 'model = "gpt-5"\n', 'utf8');
   await mkdir(opencodeHome, { recursive: true });
@@ -1056,31 +1051,29 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   assert.equal(result.updated >= 3, true);
 
   const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-  assert.equal(rootMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-  assert.deepEqual(rootMcp.mcpServers['puppeteer-stealth'].args, expectedBrowserMcpArgs(rootDir));
-  assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.KEEP_ME, '1');
-  assert.equal(rootMcp.mcpServers['puppeteer-stealth'].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
-  assert.equal(rootMcp.mcpServers['playwright-browser-mcp'], undefined);
+  assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+  assert.deepEqual(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
+  assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.KEEP_ME, '1');
+  assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
 
   // claude: project .mcp.json IS the claude target (NOT ~/.claude/mcp.json)
   const claudeMcp = rootMcp;
-  assert.equal(claudeMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
+  assert.equal(claudeMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
 
   // gemini: project .gemini/settings.json, preserves unrelated keys
   const geminiMcp = JSON.parse(await readFile(path.join(rootDir, '.gemini', 'settings.json'), 'utf8'));
-  assert.equal(geminiMcp.mcpServers['puppeteer-stealth'].command, expectedBrowserMcpCommand());
-  assert.equal(geminiMcp.mcpServers['playwright-browser-mcp'], undefined);
+  assert.equal(geminiMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
 
   // codex: home config.toml (TOML), preserves unrelated model line
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
-  assert.match(codexToml, /\[mcp_servers\.puppeteer-stealth\]/);
+  assert.match(codexToml, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
   assert.match(codexToml, /model = "gpt-5"/);
 
   // opencode: home opencode.json, mcp namespace + local shape, preserves theme
   const opencodeJson = JSON.parse(await readFile(path.join(opencodeHome, 'opencode.json'), 'utf8'));
   assert.equal(opencodeJson.theme, 'dark');
-  assert.equal(opencodeJson.mcp['puppeteer-stealth'].type, 'local');
-  assert.ok(Array.isArray(opencodeJson.mcp['puppeteer-stealth'].command));
+  assert.equal(opencodeJson.mcp[PRIMARY_BROWSER_ALIAS].type, 'local');
+  assert.ok(Array.isArray(opencodeJson.mcp[PRIMARY_BROWSER_ALIAS].command));
 
   // ~/.claude/mcp.json must NOT be created (not a real Claude Code MCP location)
   assert.equal(existsSync(path.join(claudeHome, 'mcp.json')), false);
@@ -1104,7 +1097,7 @@ test('browser mcp-migrate --dry-run does not modify files', async () => {
 
   const before = JSON.stringify({
     mcpServers: {
-      'puppeteer-stealth': { command: 'node', args: ['/old.js'] },
+      [PRIMARY_BROWSER_ALIAS]: { command: 'node', args: ['/old.js'] },
     },
   }, null, 2) + '\n';
 

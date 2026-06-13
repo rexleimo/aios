@@ -30,9 +30,9 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 - `docs/plans/`: design, implementation, and postmortem documents.
 
 ## Runtime Truths (Do Not Skip)
-- MCP server label may still be `puppeteer-stealth`, but default runtime now routes to browser-use tools (`chrome.launch_cdp`, `browser.connect_cdp`, `page.*`) via `scripts/run-browser-use-mcp.sh`.
+- The primary browser MCP server label is `mcp-browser-use`; do not add compatibility aliases for old browser MCP names.
 - `mcp-server/src/index.ts` still exposes Playwright `browser_*` tools, but treat that path as legacy/compatibility.
-- If both `puppeteer-stealth` and `chrome-devtools` are available, use `puppeteer-stealth` for normal browser automation and reserve `chrome-devtools` for debugging only.
+- If both `mcp-browser-use` and `chrome-devtools` are available, use `mcp-browser-use` for normal browser automation and reserve `chrome-devtools` for debugging only.
 - For interactive runs, explicitly prefer `chrome.launch_cdp { port: 9222, user_data_dir: '~/.chrome-cdp-profile' }`, then `browser.connect_cdp`.
 - Repo-local skill `SKILL.md` files can drift from site UI; treat them as runbooks that require live verification.
 - Prefer `page.extract_text` / `page.get_html` evidence before using `page.screenshot`.

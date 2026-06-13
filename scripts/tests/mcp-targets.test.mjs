@@ -63,9 +63,10 @@ test('collectClientMcpTargets includes project-scoped fallbacks when home is una
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 
+import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
 import { inspectMcpProxyTarget } from '../lib/interception/mcp/proxy-inspector.mjs';
 
-function proxiedEntry(rootDir, alias = 'puppeteer-stealth') {
+function proxiedEntry(rootDir, alias = PRIMARY_BROWSER_ALIAS) {
   return {
     type: 'stdio',
     command: process.execPath,
@@ -87,30 +88,30 @@ test('inspectMcpProxyTarget recognizes proxied entries in JSON, TOML, opencode, 
   await mkdir(rootDir, { recursive: true });
 
   await writeFile(jsonPath, JSON.stringify({
-    mcpServers: { 'puppeteer-stealth': proxiedEntry(rootDir) },
+    mcpServers: { [PRIMARY_BROWSER_ALIAS]: proxiedEntry(rootDir) },
   }), 'utf8');
   await writeFile(tomlPath, [
-    '[mcp_servers.puppeteer-stealth]',
+    `[mcp_servers.${PRIMARY_BROWSER_ALIAS}]`,
     'type = "stdio"',
     `command = "${process.execPath}"`,
-    `args = ["${path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs')}", "--workspace", "${rootDir}", "--host", "puppeteer-stealth", "--", "node", "server.mjs"]`,
+    `args = ["${path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs')}", "--workspace", "${rootDir}", "--host", "${PRIMARY_BROWSER_ALIAS}", "--", "node", "server.mjs"]`,
     'env = { "AIOS_MCP_PROXY" = "1" }',
     '',
   ].join('\n'), 'utf8');
   await writeFile(opencodePath, JSON.stringify({
     mcp: {
-      'puppeteer-stealth': {
+      [PRIMARY_BROWSER_ALIAS]: {
         type: 'local',
-        command: [process.execPath, path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'), '--workspace', rootDir, '--host', 'puppeteer-stealth', '--', 'node', 'server.mjs'],
+        command: [process.execPath, path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'), '--workspace', rootDir, '--host', PRIMARY_BROWSER_ALIAS, '--', 'node', 'server.mjs'],
       },
     },
   }), 'utf8');
   await writeFile(crushPath, JSON.stringify({
-    mcp: { 'puppeteer-stealth': proxiedEntry(rootDir) },
+    mcp: { [PRIMARY_BROWSER_ALIAS]: proxiedEntry(rootDir) },
   }), 'utf8');
 
-  assert.equal(inspectMcpProxyTarget(jsonPath, { alias: 'puppeteer-stealth', rootDir }).proxied, true);
-  assert.equal(inspectMcpProxyTarget(tomlPath, { alias: 'puppeteer-stealth', rootDir, format: 'toml' }).proxied, true);
-  assert.equal(inspectMcpProxyTarget(opencodePath, { alias: 'puppeteer-stealth', rootDir, format: 'opencode-json', namespace: 'mcp' }).proxied, true);
-  assert.equal(inspectMcpProxyTarget(crushPath, { alias: 'puppeteer-stealth', rootDir, format: 'json', namespace: 'mcp' }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(jsonPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(tomlPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'toml' }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(opencodePath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'opencode-json', namespace: 'mcp' }).proxied, true);
+  assert.equal(inspectMcpProxyTarget(crushPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'json', namespace: 'mcp' }).proxied, true);
 });

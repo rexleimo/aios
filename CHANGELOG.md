@@ -30,7 +30,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - feat(strict): enhance native strict mode to verify real downstream client exists behind managed shim
 - feat(rewrite): block dangerous shell constructs in command rewrite (`\n`, `\r`, single `&`)
 - feat(hook): Claude PreToolUse hook no longer forces auto-allow; uses envelope-based command wrapping
-- chore(deps): upgrade `proxy-inspector.mjs` to check multiple MCP aliases (`puppeteer-stealth`, `aios-shell`)
+- chore(deps): upgrade `proxy-inspector.mjs` to check managed MCP aliases (`mcp-browser-use`, `aios-shell`)
 
 ### Fixed
 - fix(shim): prevent stale temp-directory fallback (`/var/folders/...`) in native shims when `AIOS_ROOT_DIR` is unset

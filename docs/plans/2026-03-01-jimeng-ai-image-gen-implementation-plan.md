@@ -4,9 +4,9 @@
 
 **Goal:** 创建一个自动化技能，通过浏览器操作即梦AI网站实现文生图功能
 
-**Architecture:** 基于现有 puppeteer-stealth MCP，创建一个技能 JSON 文件，定义操作流程和提示词模板
+**Architecture:** 基于现有 mcp-browser-use MCP，创建一个技能 JSON 文件，定义操作流程和提示词模板
 
-**Tech Stack:** JSON 技能文件 + puppeteer-stealth MCP 浏览器自动化
+**Tech Stack:** JSON 技能文件 + mcp-browser-use MCP 浏览器自动化
 
 ---
 
@@ -27,7 +27,7 @@
   "platform": "jimeng.jianying.com",
   "url": "https://jimeng.jianying.com/ai-tool/image/generate",
 
-  "mcp_required": "puppeteer-stealth",
+  "mcp_required": "mcp-browser-use",
 
   "steps": [
     {
@@ -142,7 +142,7 @@ Expected: 输出 "JSON valid"
 ## Task 2: 测试技能 - 探索即梦网站
 
 **Files:**
-- Test: 使用 puppeteer-stealth MCP 打开即梦网站
+- Test: 使用 mcp-browser-use MCP 打开即梦网站
 
 **Step 1: 启动浏览器并导航**
 

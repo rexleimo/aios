@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { AUTH_TOOLS_ALIAS, LEGACY_BROWSER_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 
 // 纯函数：转义 TOML 字符串，避免 Windows 反斜杠与引号破坏配置。
@@ -56,7 +56,7 @@ export function migrateOneMcpToml(filePath, rootDir) {
   ];
 
   let base = raw;
-  for (const alias of [PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, SHELL_ALIAS, LEGACY_BROWSER_ALIAS]) {
+  for (const alias of [PRIMARY_BROWSER_ALIAS, AUTH_TOOLS_ALIAS, SHELL_ALIAS]) {
     base = removeSection(base, alias);
   }
   base = base.replace(/\s*$/u, '');
