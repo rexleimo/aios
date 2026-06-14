@@ -14,6 +14,7 @@ import {
   SKILL_SCOPE_NAMES,
   SNAPSHOT_ROLLBACK_FORMAT_NAMES,
   SOLO_HARNESS_PROVIDER_NAMES,
+  TOKEN_PROFILE_NAMES,
   WRAP_MODES,
 } from './constants.mjs';
 
@@ -40,6 +41,10 @@ export function normalizeSkillScope(raw = 'global') {
 
 export function normalizeSkillInstallMode(raw = 'copy') {
   return normalizeEnum(raw, 'copy', SKILL_INSTALL_MODE_NAMES, '--install-mode');
+}
+
+export function normalizeTokenProfile(raw = 'balanced') {
+  return normalizeEnum(raw, 'balanced', TOKEN_PROFILE_NAMES, '--token-profile');
 }
 
 // 纯函数：支持数组或逗号分隔输入，去重后保留用户声明的技能顺序。

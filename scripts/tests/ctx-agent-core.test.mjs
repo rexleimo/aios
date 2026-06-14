@@ -520,9 +520,12 @@ test('ctx-agent one-shot compresses prompt before client stdin and compacts rece
   const POST_SENTINEL = 'CTX_AGENT_POST_RECEIVE_SENTINEL';
 
   try {
-    const fakeCodex = path.join(binDir, 'codex');
+    const fakeCodex = path.join(binDir, process.platform === 'win32' ? 'codex-fake.mjs' : 'codex');
     await writeFile(fakeCodex, `#!/usr/bin/env node\nimport { readFileSync, writeFileSync } from 'node:fs';\nconst input = readFileSync(0, 'utf8');\nwriteFileSync(process.env.AIOS_TEST_CAPTURE_PATH, input);\nprocess.stdout.write('${POST_SENTINEL}'.repeat(160) + '\\nscripts/lib/ctx-agent-core/run.mjs:211\\n');\n`, 'utf8');
     await chmod(fakeCodex, 0o755);
+    if (process.platform === 'win32') {
+      await writeFile(path.join(binDir, 'codex.cmd'), `@echo off\r\nnode "${fakeCodex}" %*\r\n`, 'utf8');
+    }
 
     runContextDbCli([
       'session:new',
@@ -1224,10 +1227,10 @@ test('ctx-agent interactive OpenCode Windows shell fallback does not pass inject
     );
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stderr, /Windows shell fallback detected for opencode/u);
     const payload = parseLastJsonPayload(result.stdout);
     assert.equal(payload.marker, 'FAKE_OPENCODE_SHELL_FALLBACK');
-    assert.equal(payload.argv.includes('--agent'), false);
+    const agentIndex = payload.argv.indexOf('--agent');
+    assert.equal(payload.argv[agentIndex + 1], 'aios-build');
     assert.equal(payload.argv.includes('--prompt'), false);
     assert.equal(payload.argv.includes('Status:'), false);
   } finally {

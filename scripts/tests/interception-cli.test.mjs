@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
-import { readFile } from 'node:fs/promises';
+import { chmod, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -58,7 +58,15 @@ test('interception proof command emits savings and capability matrix', async () 
 });
 
 test('interception doctor and mcp migration keep browser MCP proxied', async () => {
-  const result = runAios(['interception', 'doctor', '--json']);
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-interception-doctor-'));
+  await mkdir(path.join(workspaceRoot, 'config'), { recursive: true });
+  await copyFile(
+    path.join(process.cwd(), 'config', 'host-capabilities.json'),
+    path.join(workspaceRoot, 'config', 'host-capabilities.json')
+  );
+  await copyFile(path.join(process.cwd(), '.mcp.json'), path.join(workspaceRoot, '.mcp.json'));
+  const env = { AIOS_HOME: path.join(workspaceRoot, 'home') };
+  const result = runAios(['interception', 'doctor', '--fix', '--workspace', workspaceRoot, '--json'], env);
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.ok, true);
@@ -68,7 +76,7 @@ test('interception doctor and mcp migration keep browser MCP proxied', async () 
   assert.equal(parsed.proof.turn_compression_matrix.clients.length, parsed.capability_matrix.length);
   assert.equal(parsed.targets_after.some((item) => item.client === 'project' && item.proxied), true);
 
-  const mcpRaw = await readFile(path.join(process.cwd(), '.mcp.json'), 'utf8');
+  const mcpRaw = await readFile(path.join(workspaceRoot, '.mcp.json'), 'utf8');
   assert.match(mcpRaw, /aios-mcp-proxy\.mjs/);
 });
 
@@ -260,12 +268,43 @@ test('interception rewrite CLI prints text and Claude hook JSON', () => {
 });
 
 test('Claude hook script emits host protocol JSON directly', () => {
+  if (process.platform === 'win32') {
+    test.skip('POSIX shell hook script is validated through an explicit bash launcher on Windows');
+    return;
+  }
   const result = spawnSync('scripts/hooks/claude/aios-rewrite.sh', {
     cwd: process.cwd(),
     input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git status --short' } }),
     encoding: 'utf8',
     env: { ...process.env, AIOS_ROOT_DIR: process.cwd() },
   });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  const parsed = JSON.parse(result.stdout);
+  const envelope = decodeEnvelopeFromWrappedCommand(parsed.hookSpecificOutput.updatedInput.command);
+  assert.equal(parsed.hookSpecificOutput.permissionDecision, undefined);
+  assert.equal(envelope.command, 'git status --short');
+});
+
+test('Claude hook script emits host protocol JSON through bash on Windows-compatible shells', async () => {
+  const bashProbe = spawnSync('bash', ['--version'], { encoding: 'utf8' });
+  if (bashProbe.status !== 0) {
+    test.skip('bash is not available in this environment');
+    return;
+  }
+  const hookPath = path.join(process.cwd(), 'scripts', 'hooks', 'claude', 'aios-rewrite.sh');
+  await chmod(hookPath, 0o755).catch(() => {});
+  const result = spawnSync('bash', [hookPath], {
+    cwd: process.cwd(),
+    input: JSON.stringify({ tool_name: 'Bash', tool_input: { command: 'git status --short' } }),
+    encoding: 'utf8',
+    env: { ...process.env, AIOS_ROOT_DIR: process.cwd() },
+  });
+
+  if (result.error?.code === 'ENOENT') {
+    test.skip('bash is not available in this environment');
+    return;
+  }
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const parsed = JSON.parse(result.stdout);

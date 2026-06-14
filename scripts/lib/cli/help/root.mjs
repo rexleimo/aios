@@ -26,6 +26,8 @@ Commands:
   harness       Solo overnight harness with run journal + resume controls
   hud           Show ContextDB + dispatch HUD (CLI/TUI)
   learn-eval    Turn checkpoint telemetry into operator recommendations
+  skill         Skill compliance dry-runs and health dashboard
+  session       Inspect session-local changed file state
   entropy-gc    Auto-archive stale ContextDB artifacts with rollback manifests
   snapshot-rollback Restore pre-mutation snapshot artifacts (manifest-driven)
   release-status Show RL policy release gate state and recent trend
@@ -61,6 +63,9 @@ Examples:
   node scripts/aios.mjs team status --provider codex --watch
   node scripts/aios.mjs orchestrate --session codex-cli-20260303T080437-065e16c0 --format json
   node scripts/aios.mjs learn-eval --limit 5
+  node scripts/aios.mjs skill comply skill-sources/search-first/SKILL.md --client opencode --dry-run --json
+  node scripts/aios.mjs skill health --json
+  node scripts/aios.mjs session changed-files --session codex-cli-20260303T080437-065e16c0 --json
   node scripts/aios.mjs entropy-gc auto --session codex-cli-20260303T080437-065e16c0
   node scripts/aios.mjs snapshot-rollback --session codex-cli-20260303T080437-065e16c0 --job phase.implement --dry-run
   node scripts/aios.mjs release-status --recent 12

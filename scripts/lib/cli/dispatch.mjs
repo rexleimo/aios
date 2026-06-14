@@ -150,6 +150,25 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'skill') {
+      if (parsed.options.subcommand === 'comply') {
+        const { runSkillComply } = await import('../skills/compliance.mjs');
+        applyResultExitCode(await runSkillComply(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
+      if (parsed.options.subcommand === 'health') {
+        const { runSkillHealth } = await import('../skills/health.mjs');
+        applyResultExitCode(await runSkillHealth(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
+    }
+
+    if (parsed.command === 'session') {
+      const { runSessionChangedFiles } = await import('../session/changed-files.mjs');
+      applyResultExitCode(await runSessionChangedFiles(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+      return;
+    }
+
     if (parsed.command === 'quality-gate') {
       const { runQualityGate } = await import('../lifecycle/quality-gate.mjs');
       applyResultExitCode(await runQualityGate(parsed.options, { rootDir: workspaceFor(parsed) }));

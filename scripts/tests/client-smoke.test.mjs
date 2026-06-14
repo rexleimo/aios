@@ -8,6 +8,7 @@ import {
   buildSmokeInvocation,
   formatSmokeEvidence,
   runClientSmoke,
+  runClientTriggerLiveSmoke,
 } from '../lib/clients/smoke.mjs';
 import { runClientsCommand } from '../lib/lifecycle/clients.mjs';
 
@@ -115,4 +116,33 @@ test('runClientSmoke records actual probed filesystem paths instead of raw regis
   const persisted = JSON.parse(await readFile(evidencePath, 'utf8'));
   assert.equal(persisted.resolvedPaths.instructionFile.exists, true);
   assert.equal(persisted.resolvedPaths.mcpTargets[2].exists, true);
+});
+
+test('runClientTriggerLiveSmoke validates OpenCode one-shot trigger output without real CLI dependency', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-opencode-live-smoke-root-'));
+  await writeFile(path.join(rootDir, 'AGENTS.md'), 'AIOS Token Discipline\nAIOS Superpowers Workflow\n', 'utf8');
+  await mkdir(path.join(rootDir, '.opencode', 'agent'), { recursive: true });
+  await writeFile(path.join(rootDir, '.opencode', 'agent', 'aios-build.md'), 'Use AGENTS.md and AIOS skills.\n', 'utf8');
+  await mkdir(path.join(rootDir, '.opencode', 'skills'), { recursive: true });
+  await writeFile(path.join(rootDir, 'opencode.json'), '{"agent":"aios-build"}\n', 'utf8');
+
+  const spawnCalls = [];
+  const result = await runClientTriggerLiveSmoke('opencode', {
+    rootDir,
+    spawnImpl: (command, args) => {
+      spawnCalls.push({ command, args });
+      return {
+        status: 0,
+        stdout: 'AIOS_TRIGGER_OK: token discipline, superpowers, skills loaded\n',
+        stderr: '',
+      };
+    },
+    now: new Date('2026-06-14T00:00:00Z'),
+  });
+
+  assert.equal(result.evidence.status, 'pass');
+  assert.equal(result.evidence.client, 'opencode');
+  assert.equal(result.evidence.triggerDetected, true);
+  assert.equal(spawnCalls.length, 1);
+  assert.match(spawnCalls[0].args.join(' '), /AIOS_TRIGGER_PROBE/);
 });

@@ -6,6 +6,8 @@ export function createDefaultSetupOptions() {
     scope: 'global',
     installMode: 'copy',
     skills: [],
+    tokenProfile: 'balanced',
+    applyClientCostSettings: false,
     skipPlaywrightInstall: false,
     skipDoctor: false,
   };
@@ -20,6 +22,8 @@ export function createDefaultUpdateOptions() {
     scope: 'global',
     installMode: 'copy',
     skills: [],
+    tokenProfile: 'balanced',
+    applyClientCostSettings: false,
     withPlaywrightInstall: false,
     skipDoctor: false,
   };

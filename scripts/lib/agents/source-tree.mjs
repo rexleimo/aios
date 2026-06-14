@@ -6,6 +6,8 @@ const ROOT_DIR_NAME = 'agent-sources';
 const ROLES_DIR_NAME = 'roles';
 const MANIFEST_FILE_NAME = 'manifest.json';
 const REQUIRED_ROLE_IDS = ['planner', 'implementer', 'reviewer', 'security-reviewer'];
+const OPTIONAL_ROLE_IDS = ['token-steward', 'smoke-runner'];
+const ALLOWED_ROLE_IDS = [...REQUIRED_ROLE_IDS, ...OPTIONAL_ROLE_IDS];
 const ALLOWED_MANIFEST_KEYS = new Set(['schemaVersion', 'generatedTargets']);
 const ALLOWED_AGENT_KEYS = new Set([
   'schemaVersion',
@@ -15,6 +17,13 @@ const ALLOWED_AGENT_KEYS = new Set([
   'description',
   'tools',
   'model',
+  'recommendedModel',
+  'fallbackModel',
+  'tokenProfile',
+  'activationHints',
+  'workflowSteps',
+  'promptDefense',
+  'outputContract',
   'handoffTarget',
   'systemPrompt',
 ]);
@@ -53,6 +62,25 @@ function normalizeSingleLineField(raw, key) {
   return value;
 }
 
+function normalizeOptionalSingleLineField(raw, key) {
+  if (raw?.[key] === undefined || raw?.[key] === null) return '';
+  if (String(raw[key]).trim().length === 0) return '';
+  return normalizeSingleLineField(raw, key);
+}
+
+function normalizeStringListField(raw, key) {
+  if (raw?.[key] === undefined || raw?.[key] === null) return [];
+  assertCondition(Array.isArray(raw[key]), `${key} must be an array of strings`);
+  return raw[key].map((value) => {
+    assertCondition(typeof value === 'string', `${key} must be an array of strings`);
+    const item = value.trim();
+    assertCondition(item.length > 0, `${key} items must be non-empty`);
+    assertCondition(!item.includes('\n') && !item.includes('\r'), `${key} items must be single-line`);
+    assertCondition(!MANAGED_MARKER_PATTERN.test(item), `${key} items must not contain managed marker text`);
+    return item;
+  });
+}
+
 export function validateManifest(raw = {}) {
   assertCondition(raw && typeof raw === 'object' && !Array.isArray(raw), 'manifest must be an object');
   assertNoUnknownKeys(raw, ALLOWED_MANIFEST_KEYS, 'manifest');
@@ -83,7 +111,7 @@ export function validateCanonicalAgent(raw = {}) {
   const systemPrompt = normalizeStringField(raw, 'systemPrompt');
 
   assertCondition(KEBAB_CASE_PATTERN.test(id), 'id must be kebab-case');
-  assertCondition(REQUIRED_ROLE_IDS.includes(role), `role must be one of ${REQUIRED_ROLE_IDS.join('|')}`);
+  assertCondition(ALLOWED_ROLE_IDS.includes(role), `role must be one of ${ALLOWED_ROLE_IDS.join('|')}`);
   assertCondition(ALLOWED_HANDOFF_TARGETS.has(handoffTarget), 'handoffTarget must be one of next-phase|merge-gate');
   assertCondition(Array.isArray(raw.tools), 'tools must be an array of strings');
 
@@ -104,6 +132,13 @@ export function validateCanonicalAgent(raw = {}) {
     description,
     tools,
     model,
+    recommendedModel: normalizeOptionalSingleLineField(raw, 'recommendedModel'),
+    fallbackModel: normalizeOptionalSingleLineField(raw, 'fallbackModel'),
+    tokenProfile: normalizeOptionalSingleLineField(raw, 'tokenProfile'),
+    activationHints: normalizeStringListField(raw, 'activationHints'),
+    workflowSteps: normalizeStringListField(raw, 'workflowSteps'),
+    promptDefense: normalizeOptionalSingleLineField(raw, 'promptDefense'),
+    outputContract: normalizeStringField({ outputContract: raw.outputContract || 'JSON handoff object' }, 'outputContract'),
     handoffTarget,
     systemPrompt,
   };

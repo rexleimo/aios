@@ -74,6 +74,36 @@ Options:
   --json
   -h, --help
 `;
+    case 'skill':
+      return `Usage:
+  node scripts/aios.mjs skill comply <path> --dry-run [--client <client>] [--json]
+  node scripts/aios.mjs skill health [--dashboard] [--json]
+
+Subcommands:
+  comply       Generate expected skill behavior and trigger-smoke scenarios
+  health       Report skill observation success rates and failure clusters
+
+Options:
+  --client <client>              Target client for compliance scenarios
+  --dry-run                      Generate spec/scenarios without live model execution
+  --dashboard                    Render text dashboard for health
+  --format <text|json>
+  --json
+  -h, --help
+`;
+    case 'session':
+      return `Usage:
+  node scripts/aios.mjs session changed-files [--session <id>] [--json]
+
+Subcommands:
+  changed-files                  Show session-local changed file ledger
+
+Options:
+  --session <id>                 Session id (default: default)
+  --format <text|json>
+  --json
+  -h, --help
+`;
     case 'canvas':
       return `Usage:
   node scripts/aios.mjs canvas show [--session <id>] [--format mmd|json] [--workspace <path>]

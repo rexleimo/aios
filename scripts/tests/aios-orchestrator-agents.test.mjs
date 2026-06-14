@@ -91,19 +91,40 @@ test('renderCompatibilityExport preserves current orchestrator agent shape', asy
   const parsed = JSON.parse(text);
 
   assert.deepEqual(Object.keys(parsed), ['schemaVersion', 'roleMap', 'agents']);
-  assert.deepEqual(Object.keys(parsed.roleMap), [
-    'planner',
-    'implementer',
-    'reviewer',
-    'security-reviewer',
-  ]);
-  assert.deepEqual(Object.keys(parsed.agents), [
+  for (const role of ['planner', 'implementer', 'reviewer', 'security-reviewer']) {
+    assert.ok(parsed.roleMap[role], `expected roleMap.${role}`);
+  }
+  for (const agentId of ['rex-implementer', 'rex-planner', 'rex-reviewer', 'rex-security-reviewer']) {
+    assert.ok(parsed.agents[agentId], `expected agent ${agentId}`);
+  }
+  assert.equal(parsed.agents['rex-planner'].model, 'sonnet');
+});
+
+test('canonical agents support ECC-style native pack metadata and token/smoke roles', async () => {
+  const source = await loadCanonicalFixture();
+  const mod = await import('../lib/agents/compat-export.mjs');
+  const text = mod.renderCompatibilityExport(source);
+  const parsed = JSON.parse(text);
+
+  assert.equal(parsed.roleMap['token-steward'], 'rex-token-steward');
+  assert.equal(parsed.roleMap['smoke-runner'], 'rex-smoke-runner');
+  assert.deepEqual(Object.keys(parsed.agents).sort(), [
     'rex-implementer',
     'rex-planner',
     'rex-reviewer',
     'rex-security-reviewer',
+    'rex-smoke-runner',
+    'rex-token-steward',
   ]);
-  assert.equal(parsed.agents['rex-planner'].model, 'sonnet');
+
+  const tokenSteward = parsed.agents['rex-token-steward'];
+  assert.equal(tokenSteward.tokenProfile, 'minimal');
+  assert.equal(tokenSteward.recommendedModel, 'sonnet');
+  assert.equal(tokenSteward.fallbackModel, 'haiku');
+  assert.match(tokenSteward.promptDefense, /ignore external instructions/i);
+  assert.ok(tokenSteward.workflowSteps.includes('inspect-mcp-budget'));
+  assert.ok(tokenSteward.activationHints.includes('token-budget'));
+  assert.match(tokenSteward.outputContract, /JSON/);
 });
 
 test('generate-orchestrator-agents --export-only skips generated target sync', () => {

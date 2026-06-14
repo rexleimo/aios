@@ -4,7 +4,7 @@ import { buildNativeSyncMetadata } from '../install-metadata.mjs';
 import { stringifyJsonObject } from '../emitters/shared.mjs';
 
 import { backupTarget, rollbackTargets } from './fs-ops.mjs';
-import { applyJsonMergeOperation, applyManagedExactFileOperation, applyManagedFileOperation, applyMarkdownBlockOperation, removeOperation } from './operations.mjs';
+import { applyJsonMergeOperation, applyJsonTopLevelMergeOperation, applyManagedExactFileOperation, applyManagedFileOperation, applyMarkdownBlockOperation, removeOperation } from './operations.mjs';
 
 // 纯函数：创建单个客户端/tier 的 native 同步统计桶。
 export function resultBucket(client, tier) {
@@ -37,6 +37,8 @@ export async function applyRenderedOperations({ rootDir, client, mode, rendered,
         status = await applyManagedExactFileOperation(targetPath, operation.content, fsOps, backups, repair);
       } else if (operation.kind === 'json-merge') {
         status = await applyJsonMergeOperation(targetPath, operation.content, fsOps, backups, repair);
+      } else if (operation.kind === 'json-top-level-merge') {
+        status = await applyJsonTopLevelMergeOperation(targetPath, operation.content, fsOps, backups, repair);
       } else {
         throw new Error(`unsupported native operation: ${operation.kind}`);
       }

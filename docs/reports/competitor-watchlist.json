@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "lastUpdated": "2026-06-04",
-  "lastDeepDive": "2026-06-04 (5-way parallel deep-dive: README+source+CHANGELOG+ROADMAP)",
+  "lastUpdated": "2026-06-14",
+  "lastDeepDive": "2026-06-14 (ECC deep-dive + low-value dormant cleanup)",
   "refreshMethod": "agent-team-parallel-analysis",
   "categories": {
     "memory-systems": {
@@ -21,7 +21,10 @@
           "license": "MIT",
           "language": "TypeScript",
           "priority": "P0",
-          "priorityHistory": ["P1 (5月22日)", "P0 (6月4日 升级, v1.0 服务化路径重要)"]
+          "priorityHistory": [
+            "P1 (5月22日)",
+            "P0 (6月4日 升级, v1.0 服务化路径重要)"
+          ]
         },
         {
           "id": "mem0",
@@ -52,7 +55,10 @@
           "license": "Apache-2.0",
           "language": "Python",
           "priority": "P2",
-          "priorityHistory": ["P1 (5月22日)", "P2 (6月4日 降, watch-only, 跟踪迁至 graphiti)"],
+          "priorityHistory": [
+            "P1 (5月22日)",
+            "P2 (6月4日 降, watch-only, 跟踪迁至 graphiti)"
+          ],
           "status": "watch-only",
           "watchAlso": [
             "getzep/graphiti",
@@ -72,7 +78,9 @@
             "license": "Apache-2.0",
             "language": "Python",
             "priority": "P0",
-            "priorityHistory": ["P0 (新增 6月4日)"]
+            "priorityHistory": [
+              "P0 (新增 6月4日)"
+            ]
           }
         },
         {
@@ -108,7 +116,9 @@
             "license": "Apache-2.0",
             "language": "Python",
             "priority": "P0",
-            "priorityHistory": ["P0 (新增 6月4日)"]
+            "priorityHistory": [
+              "P0 (新增 6月4日)"
+            ]
           }
         }
       ]
@@ -175,7 +185,10 @@
           "license": "MIT",
           "language": "TypeScript",
           "priority": "P3",
-          "priorityHistory": ["P1 (5月22日)", "P3 (6月4日 降, 项目 archived, 仅作模式参考)"],
+          "priorityHistory": [
+            "P1 (5月22日)",
+            "P3 (6月4日 降, 项目 archived, 仅作模式参考)"
+          ],
           "status": "archived",
           "watchNote": "模式可参考 (worker_died, sling --recover, stall timeout), 代码不抄. 5月22日 review-brief 降级判断完全正确"
         },
@@ -192,21 +205,6 @@
           "language": "HTML",
           "priority": "P1",
           "riskNote": "+2,261★ (64.5% 暴力增长) 但仓库无 .py/.ts runtime 代码, 纯 HTML/markdown GTM 内容. 3 语言 README + 4 GTM launch 内容 + 韩国社区 PR 接力. 技术深度需独立评估"
-        },
-        {
-          "id": "long-running-tasks",
-          "name": "long-running-tasks",
-          "repo": "mmTheBest/long-running-tasks",
-          "url": "https://github.com/mmTheBest/long-running-tasks",
-          "stars": 1,
-          "forks": 0,
-          "lastPush": "2026-03-06",
-          "license": "MIT",
-          "status": "dormant-remove-candidate",
-          "dormantDays": 90,
-          "priority": "P3",
-          "priorityHistory": ["P2 (5月22日)", "P3 (6月4日 降, 移除候选)"],
-          "watchNote": "90 天 dormant 确认, 5月22日 stall-detection 已被 gnhf/overstory 实现, 无独特价值. 建议从 watchlist 移除"
         }
       ]
     },
@@ -244,23 +242,6 @@
           "language": "TypeScript",
           "priority": "P0",
           "note": "生态级项目, Skill Workshop + Plugin 外部化值得深度研究"
-        },
-        {
-          "id": "openclaw-recall",
-          "name": "OpenClaw Recall",
-          "repo": "Felix201209/openclaw-recall",
-          "url": "https://github.com/Felix201209/openclaw-recall",
-          "stars": 4,
-          "forks": 2,
-          "lastPush": "2026-03-21",
-          "latestRelease": "v1.3.2",
-          "license": "Apache-2.0",
-          "language": "TypeScript",
-          "status": "dormant-remove-candidate",
-          "dormantDays": 77,
-          "priority": "P3",
-          "priorityHistory": ["P2 (5月22日)", "P3 (6月4日 降, 移除候选)"],
-          "watchNote": "77 天 dormant 确认, 主项目 OpenClaw v2026.6.x 零次引用, 4 memory types 与 QMD 重复. 建议从 watchlist 移除, 4 memory types 分类法转 crossCuttingTrends"
         }
       ]
     },
@@ -314,45 +295,29 @@
           "license": "Apache-2.0",
           "language": "TypeScript",
           "priority": "P1",
-          "priorityHistory": ["P1 (5月22日)", "P1 (6月4日 维持, 升级 P0 候选 — 4 段 verdict schema 1 周可抄)"],
+          "priorityHistory": [
+            "P1 (5月22日)",
+            "P1 (6月4日 维持, 升级 P0 候选 — 4 段 verdict schema 1 周可抄)"
+          ],
           "signal2": "Mentor-Executor质量门控, 4 段结构化 verdict, v2.0.2 暴露的 bug 提示 acceptance check 不能在无文件变更时还跑 — AIOS harness checkpoint 必吸取"
         },
         {
-          "id": "execplan-skill",
-          "name": "execplan-skill",
-          "repo": "tiann/execplan-skill",
-          "url": "https://github.com/tiann/execplan-skill",
-          "stars": 52,
-          "forks": 3,
-          "lastPush": "2025-12-20",
+          "id": "ecc",
+          "name": "Everything Claude Code / ECC",
+          "repo": "affaan-m/ecc",
+          "url": "https://github.com/affaan-m/ecc",
+          "lastDeepDive": "2026-06-14",
           "license": "NOASSERTION",
-          "status": "dormant-remove-candidate",
-          "dormantDays": 166,
-          "priority": "P3",
-          "priorityHistory": ["P2 (5月22日)", "P3 (6月4日 降, 移除候选)"],
-          "watchNote": "166 天 dormant 确认, ★ 翻倍是被动增长, 规范已 stable. 建议从 watchlist 移除, 保留对 OpenAI Cookbook ExecPlan 规范本身的追踪"
+          "language": "TypeScript/Python/Markdown",
+          "priority": "P0",
+          "signal": "OpenCode-first projection via opencode.json; explicit instructions/agent/command/plugin/skills.paths beats passive .opencode/skills discovery. skill-comply measures whether skills/rules are actually followed across supportive/neutral/competing prompts. Skill health/evolution loop tracks observations, failure clusters, amendments, version snapshots, and hook-promotion candidates.",
+          "aiosAction": "Adopt route and mechanisms only: AIOS-native OpenCode opencode.json projection, trigger-smoke, skill compliance dry-run, skill health dashboard, changed-files ledger, and prompt-to-hook promotion policy."
         }
       ]
     },
     "browser-control-plane": {
       "description": "浏览器验证/操作员控制面",
       "competitors": [
-        {
-          "id": "vision-test-harness",
-          "name": "vision-test-harness",
-          "repo": "UpGPT-ai/vision-test-harness",
-          "url": "https://github.com/UpGPT-ai/vision-test-harness",
-          "stars": 0,
-          "forks": 0,
-          "lastPush": "2026-04-20",
-          "license": "MIT",
-          "language": "TypeScript",
-          "status": "dormant-remove-candidate",
-          "dormantDays": 45,
-          "priority": "P3",
-          "priorityHistory": ["P2 (5月22日)", "P3 (6月4日 降, 移除候选)"],
-          "watchNote": "45 天 dormant + 0★ 0 forks 确认, 4月20日 MIT relicense 后无 follow-up. 模式 (YAML browser tests + DOM privacy overlay) 可独立借鉴, 不依赖项目存活"
-        },
         {
           "id": "golutra",
           "name": "golutra",
@@ -367,7 +332,10 @@
           "license": "BSL-1.1",
           "language": "Rust",
           "priority": "P2",
-          "priorityHistory": ["P1 (5月22日)", "P2 (6月4日 降, README 声明与代码现实不符)"],
+          "priorityHistory": [
+            "P1 (5月22日)",
+            "P2 (6月4日 降, README 声明与代码现实不符)"
+          ],
           "note": "唯一桌面端竞品, Rust+Tauri. 但 v0.2.6 之后无 feature 提交, slowing"
         }
       ]
@@ -396,7 +364,11 @@
     "Mermaid符号化工具日志压缩 (TencentDB -61% token)",
     "结构化 mentor verdict (the-pair 4 段) + 两阶段 subagent 审查 (superpowers)",
     "Recall 上下文预算控制 (TencentDB maxChars × maxTotal)",
-    "Usage/Audit 多时区控制台 (OpenViking v0.3.19, 7 表 schema)"
+    "Usage/Audit 多时区控制台 (OpenViking v0.3.19, 7 表 schema)",
+    "ECC/OpenCode explicit opencode.json projection: instructions + primary agent + commands + skills.paths is more reliable than passive skill folder discovery.",
+    "Skill compliance measurement is becoming mandatory: generate expected behavior, run supportive/neutral/competing scenarios, then promote low-compliance prompt steps into hooks or quality gates.",
+    "Session-local changed-files ledgers improve reviewer/test/security agent focus before expanding to graph blast-radius analysis.",
+    "Agent catalog compression: load names/descriptions/tools by default; full prompts and skill bodies only when selected."
   ],
   "p0OptimizationTargets": {
     "harness": "受控技能自生成闭环 + Dry-Run Readiness + Sleep-Time Memory + default_mode + worker_died 兜底",
@@ -405,5 +377,16 @@
     "memory": "Recall 预算 + Mermaid压缩 + L0→L3语义金字塔 + Usage/Audit 多时区控制台 + OpenClaw Skill Workshop 治理闭环",
     "model": "Per-agent 模型路由 + MiniMax M3 long-task benchmark (letta-code 外部验证)"
   },
-  "nextRefresh": "2026-06-18 (2 weeks), focus on OpenViking v0.3.24+ / OpenClaw v2026.6.2 stable / Hermes v0.15.3+ / oh-my-openagent v4.8+ / M3 long-task 实战数据"
+  "nextRefresh": "2026-06-18 (2 weeks), focus on OpenViking v0.3.24+ / OpenClaw v2026.6.2 stable / Hermes v0.15.3+ / oh-my-openagent v4.8+ / M3 long-task 实战数据",
+  "cleanupNotes": {
+    "2026-06-14": {
+      "removedDormantIds": [
+        "long-running-tasks",
+        "openclaw-recall",
+        "execplan-skill",
+        "vision-test-harness"
+      ],
+      "rule": "Remove dormant P3 repos when their only useful pattern has been absorbed into crossCuttingTrends or superseded by active P0/P1 projects."
+    }
+  }
 }

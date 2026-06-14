@@ -40,7 +40,8 @@
         "AGENTS.md",
         ".opencode/agent/aios-build.md",
         ".opencode/agents",
-        ".opencode/skills"
+        ".opencode/skills",
+        "opencode.json"
       ]
     },
     "crush": {

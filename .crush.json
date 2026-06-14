@@ -2,10 +2,10 @@
   "mcp": {
     "aios-auth-tools": {
       "type": "stdio",
-      "command": "python3",
+      "command": "python",
       "args": [
         "-u",
-        "/Users/rex/cool.cnb/rex-ai-boot/scripts/auth-tools-server.py"
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift\\scripts\\auth-tools-server.py"
       ],
       "env": {
         "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
@@ -13,16 +13,16 @@
     },
     "aios-shell": {
       "type": "stdio",
-      "command": "/Users/rex/.nvm/versions/node/v24.16.0/bin/node",
+      "command": "D:\\Program Files\\nodejs\\node.exe",
       "args": [
-        "/Users/rex/cool.cnb/rex-ai-boot/scripts/aios-mcp-proxy.mjs",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift\\scripts\\aios-mcp-proxy.mjs",
         "--workspace",
-        "/Users/rex/cool.cnb/rex-ai-boot",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift",
         "--host",
         "aios-shell",
         "--",
-        "/Users/rex/.nvm/versions/node/v24.16.0/bin/node",
-        "/Users/rex/cool.cnb/rex-ai-boot/scripts/shell-mcp-server.mjs"
+        "D:\\Program Files\\nodejs\\node.exe",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift\\scripts\\shell-mcp-server.mjs"
       ],
       "env": {
         "AIOS_INTERCEPTION_METRICS": "1",
@@ -32,16 +32,20 @@
     },
     "mcp-browser-use": {
       "type": "stdio",
-      "command": "/Users/rex/.nvm/versions/node/v24.16.0/bin/node",
+      "command": "D:\\Program Files\\nodejs\\node.exe",
       "args": [
-        "/Users/rex/cool.cnb/rex-ai-boot/scripts/aios-mcp-proxy.mjs",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift\\scripts\\aios-mcp-proxy.mjs",
         "--workspace",
-        "/Users/rex/cool.cnb/rex-ai-boot",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift",
         "--host",
         "mcp-browser-use",
         "--",
-        "bash",
-        "/Users/rex/cool.cnb/rex-ai-boot/scripts/run-browser-use-mcp.sh"
+        "powershell",
+        "-NoProfile",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "C:\\Users\\Administrator\\.config\\superpowers\\worktrees\\harness-cli\\ecc-aios-uplift\\scripts\\run-browser-use-mcp.ps1"
       ],
       "env": {
         "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222",

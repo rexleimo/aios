@@ -3,6 +3,10 @@ import {
   OPENCODE_STRICT_PRIMARY_AGENT_PATH,
   renderOpenCodeStrictPrimaryAgent,
 } from '../../opencode/strict-primary-agent.mjs';
+import {
+  buildOpenCodeConfig,
+  OPENCODE_CONFIG_PATH,
+} from '../../opencode/config.mjs';
 
 import { composeNativeMarkdown } from './compose.mjs';
 
@@ -28,10 +32,15 @@ export function renderOpencodeNativeOutputs({ rootDir, selectedClients = ['openc
       targetPath: OPENCODE_STRICT_PRIMARY_AGENT_PATH,
       content: renderOpenCodeStrictPrimaryAgent(),
     },
+    {
+      kind: 'json-top-level-merge',
+      targetPath: OPENCODE_CONFIG_PATH,
+      content: buildOpenCodeConfig(),
+    },
   ];
   const managedTargets = codexSelected
-    ? ['.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH]
-    : [targetPath, '.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH];
+    ? ['.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH, OPENCODE_CONFIG_PATH]
+    : [targetPath, '.opencode/skills', OPENCODE_STRICT_PRIMARY_AGENT_PATH, OPENCODE_CONFIG_PATH];
 
   return {
     operations,

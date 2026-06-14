@@ -342,7 +342,7 @@ test('AIOS workspace blocks direct interactive native agent when shell wrapping 
 
   assert.equal(result.status, 66);
   assert.match(result.stderr, /direct native agent execution blocked/u);
-  assert.match(result.stderr, /scripts\/ctx-agent\.mjs/u);
+  assert.match(result.stderr.replace(/\\/g, '/'), /scripts\/ctx-agent\.mjs/u);
   assert.doesNotMatch(result.stdout, /CODEX_HOME=/u);
   assert.equal(parseRunnerWorkspace(result.stdout), '');
 });

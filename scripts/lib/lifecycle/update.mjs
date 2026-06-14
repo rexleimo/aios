@@ -6,6 +6,7 @@ import {
   normalizeSkillInstallMode,
   normalizeSkillNames,
   normalizeSkillScope,
+  normalizeTokenProfile,
   normalizeWrapMode,
 } from './options.mjs';
 import { installOrchestratorAgents } from '../components/agents.mjs';
@@ -43,6 +44,8 @@ export function normalizeUpdateOptions(rawOptions = {}) {
     scope: normalizeSkillScope(rawOptions.scope ?? defaults.scope),
     installMode: normalizeSkillInstallMode(rawOptions.installMode ?? defaults.installMode),
     skills: normalizeSkillNames(rawOptions.skills ?? defaults.skills),
+    tokenProfile: normalizeTokenProfile(rawOptions.tokenProfile ?? defaults.tokenProfile),
+    applyClientCostSettings: Boolean(rawOptions.applyClientCostSettings ?? defaults.applyClientCostSettings),
     withPlaywrightInstall: Boolean(rawOptions.withPlaywrightInstall ?? defaults.withPlaywrightInstall),
     skipDoctor: Boolean(rawOptions.skipDoctor ?? defaults.skipDoctor),
   };
@@ -57,9 +60,11 @@ export function planUpdate(rawOptions = {}) {
     '--client', options.client,
     '--scope', options.scope,
     '--install-mode', options.installMode,
+    '--token-profile', options.tokenProfile,
   ];
   if (options.selfUpdate) args.push('--self-update');
   if (options.skills.length > 0) args.push('--skills', options.skills.join(','));
+  if (options.applyClientCostSettings) args.push('--apply-client-cost-settings');
   if (options.withPlaywrightInstall) args.push('--with-playwright-install');
   if (options.skipDoctor) args.push('--skip-doctor');
   return {

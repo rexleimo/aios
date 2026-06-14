@@ -24,6 +24,26 @@ export const HEALTH_COMMAND_SPECS = [
     ],
   },
   {
+    name: 'skill',
+    description: 'Run AIOS skill compliance and health tools',
+    options: [
+      ['--client <client>', 'Target client'],
+      ['--dry-run', 'Generate compliance spec/scenarios without live model execution'],
+      ['--json', 'Output JSON'],
+      ['--format <format>', 'Output format: text or json'],
+      ['--dashboard', 'Render skill health dashboard'],
+    ],
+  },
+  {
+    name: 'session',
+    description: 'Inspect AIOS session-local state',
+    options: [
+      ['--session <id>', 'Session id'],
+      ['--json', 'Output JSON'],
+      ['--format <format>', 'Output format: text or json'],
+    ],
+  },
+  {
     name: 'quality-gate',
     description: 'Run repo quality checks with harness profiles',
     aliases: ['quality'],

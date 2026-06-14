@@ -1,5 +1,6 @@
 import { buildClientCapabilityReport } from '../clients/registry.mjs';
 import { listSmokeClients, runClientSmoke } from '../clients/smoke.mjs';
+import { runClientTriggerSmoke } from '../clients/trigger-smoke.mjs';
 
 function renderTextReport(report) {
   const lines = [
@@ -32,6 +33,30 @@ export async function runClientsCommand(
   } = {}
 ) {
   const subcommand = String(options.subcommand || 'doctor').trim().toLowerCase();
+  if (subcommand === 'trigger-smoke') {
+    const requested = String(options.client || 'all')
+      .split(',').map((s) => s.trim()).filter(Boolean);
+    const clients = requested.includes('all')
+      ? (await buildClientCapabilityReport({ rootDir, env })).clients.map((client) => client.clientId)
+      : requested;
+    const results = [];
+    for (const client of clients) {
+      const evidence = await runClientTriggerSmoke(client, { rootDir });
+      results.push(evidence);
+    }
+    const report = {
+      schemaVersion: 1,
+      kind: 'clients.trigger-smoke',
+      generatedAt: new Date().toISOString(),
+      clients: results,
+    };
+    const ok = results.every((item) => item.status === 'pass');
+    const json = options.json || options.format === 'json';
+    stdout.write(json
+      ? `${JSON.stringify(report, null, 2)}\n`
+      : `${results.map((item) => `[clients] trigger-smoke ${item.clientId}: ${item.status}`).join('\n')}\n`);
+    return { exitCode: ok ? 0 : 1, report };
+  }
   if (subcommand === 'smoke') {
     const available = listSmokeClientsImpl();
     const requested = String(options.client || available.join(','))

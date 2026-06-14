@@ -18,3 +18,4 @@ export const SNAPSHOT_ROLLBACK_FORMAT_NAMES = ['text', 'json'];
 export const RELEASE_STATUS_FORMAT_NAMES = ['text', 'json'];
 export const RELEASE_STATUS_HISTORY_FORMAT_NAMES = ['csv', 'ndjson'];
 export const SOLO_HARNESS_PROVIDER_NAMES = resolveClientHarnessProviders('all');
+export const TOKEN_PROFILE_NAMES = ['minimal', 'balanced', 'full'];

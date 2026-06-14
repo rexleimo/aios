@@ -175,26 +175,27 @@ test('client registry exposes per-client MCP target conventions (single source o
 });
 
 test('resolveClientMcpTargetPath honors home vs project scope', () => {
+  const slash = (value) => String(value).replace(/\\/g, '/');
   // home-scoped clients resolve under their client home
   assert.equal(
-    resolveClientMcpTargetPath('codex', { projectRoot: '/proj', clientHome: '/home/.codex' }),
+    slash(resolveClientMcpTargetPath('codex', { projectRoot: '/proj', clientHome: '/home/.codex' })),
     '/home/.codex/config.toml',
   );
   assert.equal(
-    resolveClientMcpTargetPath('opencode', { projectRoot: '/proj', clientHome: '/home/.config/opencode' }),
+    slash(resolveClientMcpTargetPath('opencode', { projectRoot: '/proj', clientHome: '/home/.config/opencode' })),
     '/home/.config/opencode/opencode.json',
   );
   // project-scoped clients resolve under the project root
   assert.equal(
-    resolveClientMcpTargetPath('claude', { projectRoot: '/proj', clientHome: '/home/.claude' }),
+    slash(resolveClientMcpTargetPath('claude', { projectRoot: '/proj', clientHome: '/home/.claude' })),
     '/proj/.mcp.json',
   );
   assert.equal(
-    resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' }),
+    slash(resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' })),
     '/proj/.gemini/settings.json',
   );
   // codex has dual scope: falls back to project when home is absent
-  assert.equal(resolveClientMcpTargetPath('codex', { projectRoot: '/proj' }), '/proj/.codex/config.toml');
+  assert.equal(slash(resolveClientMcpTargetPath('codex', { projectRoot: '/proj' })), '/proj/.codex/config.toml');
 });
 
 test('every client declares instruction filename and a valid MCP target', () => {
