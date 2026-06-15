@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-06-15
+
+- make markdown agent role cards canonical
+
 ## [2.0.2] - 2026-06-15
 
 ### Fixed
