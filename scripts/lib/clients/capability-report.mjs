@@ -111,7 +111,7 @@ function pathExtEntries(env = process.env) {
     .split(';')
     .map((entry) => entry.trim())
     .filter(Boolean)
-    .map((entry) => entry.startsWith('.') ? entry : `.${entry}`);
+    .map((entry) => (entry.startsWith('.') ? entry : `.${entry}`).toLowerCase());
 }
 
 function buildPathEnvWithoutShim(env, shimDir) {

@@ -19,6 +19,7 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新記事
 
+- [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
 - [v1.52.0: 決定論的 Shell 出力圧縮 (MCP 経由)](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0：記憶、ドキュメント、計画、コードを横断する統合 AIOS 検索](2026-06-v150-unified-aios-search.md)

@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "defaultProfile": "balanced",
+  "mcpBudget": {
+    "maxEnabledServers": 10
+  },
+  "compactTriggers": [
+    "after-exploration",
+    "after-milestone",
+    "after-debugging",
+    "before-context-switch"
+  ],
+  "compactAntiTriggers": [
+    "mid-implementation",
+    "active-debugging",
+    "active-multi-file-refactor"
+  ],
+  "clientCostRecommendations": {
+    "claude": {
+      "model": "sonnet",
+      "maxThinkingTokens": 10000,
+      "subagentModel": "haiku"
+    }
+  }
+}

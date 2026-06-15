@@ -30,6 +30,7 @@ import {
   normalizeSkillInstallMode,
   normalizeSkillNames,
   normalizeSkillScope,
+  normalizeTokenProfile,
   normalizeWrapMode,
 } from '../../lifecycle/options.mjs';
 import { normalizeOrchestratorBlueprint, normalizeOrchestratorFormat } from '../../harness/orchestrator.mjs';
@@ -73,6 +74,7 @@ export {
   normalizeSkillInstallMode,
   normalizeSkillNames,
   normalizeSkillScope,
+  normalizeTokenProfile,
   normalizeWrapMode,
 };
 

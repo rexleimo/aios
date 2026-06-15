@@ -16,6 +16,14 @@ const SMOKE_CLIENTS = Object.freeze({
   crush: { command: 'crush', helpArgs: ['run', '--help'], taskArgs: ['run', SMOKE_TASK_PROMPT] },
 });
 
+const LIVE_TRIGGER_CLIENTS = Object.freeze({
+  opencode: {
+    command: 'opencode',
+    args: ['run', 'AIOS_TRIGGER_PROBE: reply with AIOS_TRIGGER_OK if AGENTS.md, native skills, and the configured agent are loaded.'],
+    successPattern: /AIOS_TRIGGER_OK/iu,
+  },
+});
+
 export function buildSmokeInvocation(client) {
   const spec = SMOKE_CLIENTS[client];
   if (!spec) throw new Error(`unknown smoke client: ${client}`);
@@ -82,6 +90,39 @@ export async function runClientSmoke(
   const dir = path.join(rootDir, '.aios', 'clients', 'smoke');
   await fs.mkdir(dir, { recursive: true });
   const file = path.join(dir, `${client}-${timestamp.replace(/[:.]/g, '-')}.json`);
+  await fs.writeFile(file, JSON.stringify(evidence, null, 2), 'utf8');
+  return { evidence, evidencePath: file };
+}
+
+export async function runClientTriggerLiveSmoke(
+  client,
+  { rootDir = process.cwd(), env = process.env, spawnImpl = spawnSync, now = new Date() } = {}
+) {
+  const spec = LIVE_TRIGGER_CLIENTS[client];
+  if (!spec) throw new Error(`unknown live trigger smoke client: ${client}`);
+  const timestamp = now instanceof Date ? now.toISOString() : new Date(now).toISOString();
+  const result = spawnImpl(spec.command, spec.args, {
+    cwd: rootDir,
+    encoding: 'utf8',
+    env,
+    timeout: SMOKE_TIMEOUT_MS,
+  });
+  const output = `${result.stdout || ''}${result.stderr || ''}`;
+  const triggerDetected = spec.successPattern.test(output);
+  const evidence = {
+    schemaVersion: 1,
+    kind: 'client.trigger-live-smoke',
+    client,
+    timestamp,
+    status: (result.status ?? 127) === 0 && triggerDetected ? 'pass' : 'fail',
+    exitCode: result.status ?? 127,
+    triggerDetected,
+    taskOutputSummary: output.slice(0, 500),
+    resolvedPaths: resolveClientPaths(client, { rootDir, env }),
+  };
+  const dir = path.join(rootDir, '.aios', 'clients', 'smoke');
+  await fs.mkdir(dir, { recursive: true });
+  const file = path.join(dir, `${client}-trigger-live-${timestamp.replace(/[:.]/g, '-')}.json`);
   await fs.writeFile(file, JSON.stringify(evidence, null, 2), 'utf8');
   return { evidence, evidencePath: file };
 }

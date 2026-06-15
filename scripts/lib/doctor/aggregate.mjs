@@ -9,6 +9,7 @@ import { doctorContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers } from '../components/superpowers.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
 import { commandExists, captureCommand, runCommand } from '../platform/process.mjs';
+import { inspectTokenDiscipline, printTokenDisciplineReport } from '../token-discipline/index.mjs';
 import { runNativeOnlyDoctor } from './aggregate/native-only.mjs';
 import { addDoctorCheck, countEffectiveWarnLines, logSkippedGate, printCaptured, printDoctorCheckSummary } from './aggregate/reporting.mjs';
 
@@ -25,8 +26,10 @@ export async function runDoctorSuite({
   fix = false,
   dryRun = false,
   profile = 'standard',
+  tokenProfile = 'balanced',
   io = console,
   env = process.env,
+  deps = {},
 } = {}) {
   let effectiveWarns = 0;
   const disabledGates = getDisabledGateIds(env);
@@ -59,9 +62,36 @@ export async function runDoctorSuite({
   }
 
   io.log('');
+  io.log('== doctor-token-discipline ==');
+  if (isHarnessGateEnabled('doctor:token-discipline', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
+    const tokenInspector = deps.inspectTokenDiscipline ?? inspectTokenDiscipline;
+    const tokenReporter = deps.printTokenDisciplineReport ?? printTokenDisciplineReport;
+    const tokenResult = tokenInspector({ rootDir, projectRoot: projectRoot || rootDir, profile: tokenProfile });
+    tokenReporter(tokenResult, io);
+    effectiveWarns += tokenResult.effectiveWarnings;
+    addDoctorCheck(checks, {
+      id: 'doctor:token-discipline',
+      item: 'Token profile discipline and MCP budget hygiene',
+      status: tokenResult.effectiveWarnings > 0 ? 'warn' : 'ok',
+      fix: `Use --token-profile minimal or disable low-value MCP servers.`,
+      note: `enabledMcpServers=${tokenResult.enabledMcpServers}; maxEnabledServers=${tokenResult.maxEnabledServers}; effectiveWarnings=${tokenResult.effectiveWarnings}`,
+    });
+  } else {
+    logSkippedGate(io, 'doctor:token-discipline', profile);
+    addDoctorCheck(checks, {
+      id: 'doctor:token-discipline',
+      item: 'Token profile discipline and MCP budget hygiene',
+      status: 'skip',
+      fix: 'Enable gate or run doctor with --profile standard/strict.',
+      note: `disabled for profile=${profile}`,
+    });
+  }
+
+  io.log('');
   io.log('== doctor-contextdb-shell ==');
   if (isHarnessGateEnabled('doctor:shell', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const shellResult = await doctorContextDbShell({ io });
+    const shellDoctor = deps.doctorContextDbShell ?? doctorContextDbShell;
+    const shellResult = await shellDoctor({ io });
     effectiveWarns += shellResult.effectiveWarnings;
     addDoctorCheck(checks, {
       id: 'doctor:shell',
@@ -84,7 +114,8 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-contextdb-skills ==');
   if (isHarnessGateEnabled('doctor:skills', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const skillsResult = await doctorContextDbSkills({ rootDir, projectRoot, client, io });
+    const skillsDoctor = deps.doctorContextDbSkills ?? doctorContextDbSkills;
+    const skillsResult = await skillsDoctor({ rootDir, projectRoot, client, io });
     effectiveWarns += skillsResult.effectiveWarnings;
     addDoctorCheck(checks, {
       id: 'doctor:skills',
@@ -107,7 +138,8 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-native ==');
   if (isHarnessGateEnabled('doctor:native', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const nativeResult = await doctorNativeEnhancements({ rootDir, projectRoot, client, verbose, fix, dryRun, env, io });
+    const nativeDoctor = deps.doctorNativeEnhancements ?? doctorNativeEnhancements;
+    const nativeResult = await nativeDoctor({ rootDir, projectRoot, client, verbose, fix, dryRun, env, io });
     effectiveWarns += nativeResult.effectiveWarnings + nativeResult.errors;
     addDoctorCheck(checks, {
       id: 'doctor:native',
@@ -130,7 +162,8 @@ export async function runDoctorSuite({
   io.log('');
   io.log('== doctor-superpowers ==');
   if (isHarnessGateEnabled('doctor:superpowers', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const superpowersResult = await doctorSuperpowers({ client, io });
+    const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
+    const superpowersResult = await superpowersDoctor({ client, io });
     addDoctorCheck(checks, {
       id: 'doctor:superpowers',
       item: 'Superpowers repository and managed links',

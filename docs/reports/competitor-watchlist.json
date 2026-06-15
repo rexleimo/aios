@@ -300,6 +300,18 @@
             "P1 (6月4日 维持, 升级 P0 候选 — 4 段 verdict schema 1 周可抄)"
           ],
           "signal2": "Mentor-Executor质量门控, 4 段结构化 verdict, v2.0.2 暴露的 bug 提示 acceptance check 不能在无文件变更时还跑 — AIOS harness checkpoint 必吸取"
+        },
+        {
+          "id": "ecc",
+          "name": "Everything Claude Code / ECC",
+          "repo": "affaan-m/ecc",
+          "url": "https://github.com/affaan-m/ecc",
+          "lastDeepDive": "2026-06-14",
+          "license": "NOASSERTION",
+          "language": "TypeScript/Python/Markdown",
+          "priority": "P0",
+          "signal": "OpenCode-first projection via opencode.json; explicit instructions/agent/command/plugin/skills.paths beats passive .opencode/skills discovery. skill-comply measures whether skills/rules are actually followed across supportive/neutral/competing prompts. Skill health/evolution loop tracks observations, failure clusters, amendments, version snapshots, and hook-promotion candidates.",
+          "aiosAction": "Adopt route and mechanisms only: AIOS-native OpenCode opencode.json projection, trigger-smoke, skill compliance dry-run, skill health dashboard, changed-files ledger, and prompt-to-hook promotion policy."
         }
       ]
     },
@@ -354,7 +366,11 @@
     "Mermaid符号化工具日志压缩 (TencentDB -61% token)",
     "结构化 mentor verdict (the-pair 4 段) + 两阶段 subagent 审查 (superpowers)",
     "Recall 上下文预算控制 (TencentDB maxChars × maxTotal)",
-    "Usage/Audit 多时区控制台 (OpenViking v0.3.19, 7 表 schema)"
+    "Usage/Audit 多时区控制台 (OpenViking v0.3.19, 7 表 schema)",
+    "ECC/OpenCode explicit opencode.json projection: instructions + primary agent + commands + skills.paths is more reliable than passive skill folder discovery.",
+    "Skill compliance measurement is becoming mandatory: generate expected behavior, run supportive/neutral/competing scenarios, then promote low-compliance prompt steps into hooks or quality gates.",
+    "Session-local changed-files ledgers improve reviewer/test/security agent focus before expanding to graph blast-radius analysis.",
+    "Agent catalog compression: load names/descriptions/tools by default; full prompts and skill bodies only when selected."
   ],
   "p0OptimizationTargets": {
     "harness": "受控技能自生成闭环 + Dry-Run Readiness + Sleep-Time Memory + default_mode + worker_died 兜底",
@@ -377,7 +393,8 @@
       "retained": [
         "overstory retained as archived pattern reference for worker_died/recover/stall timeout",
         "zep retained because coreRepo graphiti remains P0"
-      ]
+      ],
+      "rule": "Remove dormant P3 repos when their only useful pattern has been absorbed into crossCuttingTrends or superseded by active P0/P1 projects."
     }
   ]
 }

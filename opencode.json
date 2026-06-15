@@ -1,0 +1,51 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "aios-build",
+  "instructions": [
+    "AGENTS.md",
+    ".opencode/agent/aios-build.md"
+  ],
+  "skills": {
+    "paths": [
+      ".opencode/skills"
+    ]
+  },
+  "agent": {
+    "aios-build": {
+      "description": "AIOS strict primary agent for skill enforcement, turn compression, and verification.",
+      "mode": "primary",
+      "tools": {
+        "read": true,
+        "bash": true,
+        "write": true,
+        "edit": true,
+        "changed-files": true
+      }
+    }
+  },
+  "command": {
+    "verify": {
+      "description": "Run AIOS verification loop and report fresh evidence.",
+      "template": "Use verification-before-completion, then run the relevant AIOS quality gate.\\n\\n$ARGUMENTS",
+      "agent": "aios-build"
+    },
+    "changed-files": {
+      "description": "Show files changed in the current AIOS session.",
+      "template": "Run: node scripts/aios.mjs session changed-files --json\\n\\n$ARGUMENTS",
+      "agent": "aios-build"
+    },
+    "skill-comply": {
+      "description": "Generate AIOS skill compliance scenarios for a skill/rule/agent file.",
+      "template": "Run: node scripts/aios.mjs skill comply $ARGUMENTS --dry-run --json",
+      "agent": "aios-build"
+    },
+    "skill-health": {
+      "description": "Show AIOS skill health and failure clusters.",
+      "template": "Run: node scripts/aios.mjs skill health --json\\n\\n$ARGUMENTS",
+      "agent": "aios-build"
+    }
+  },
+  "permission": {
+    "mcp_*": "ask"
+  }
+}

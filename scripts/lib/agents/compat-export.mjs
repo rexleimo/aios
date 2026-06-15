@@ -20,6 +20,13 @@ export function buildCompatibilitySpec(source) {
       description: agent.description,
       tools: [...agent.tools],
       model: agent.model,
+      recommendedModel: agent.recommendedModel,
+      fallbackModel: agent.fallbackModel,
+      tokenProfile: agent.tokenProfile,
+      activationHints: [...(agent.activationHints || [])],
+      workflowSteps: [...(agent.workflowSteps || [])],
+      promptDefense: agent.promptDefense,
+      outputContract: agent.outputContract,
       role: agent.role,
       handoffTarget: agent.handoffTarget,
       systemPrompt: agent.systemPrompt,
@@ -28,12 +35,7 @@ export function buildCompatibilitySpec(source) {
 
   return {
     schemaVersion: 1,
-    roleMap: {
-      planner: roleMap.planner,
-      implementer: roleMap.implementer,
-      reviewer: roleMap.reviewer,
-      'security-reviewer': roleMap['security-reviewer'],
-    },
+    roleMap: Object.fromEntries(Object.entries(roleMap).sort(([left], [right]) => left.localeCompare(right))),
     agents,
   };
 }

@@ -95,6 +95,9 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v2.0.2 ECC Uplift: 2026-06-v202-ecc-uplift.md
+      - v1.52.0 Shell Output Compression: 2026-06-v152-aios-shell-mcp.md
+      - v1.50.1 Token Compression Compliance: 2026-06-v1501-token-compression-compliance.md
       - v1.50.0 Unified AIOS Search: 2026-06-v150-unified-aios-search.md
       - ContextDB Token Compression: 2026-05-token-compression.md
       - Native Token Compression: 2026-05-native-token-compression.md

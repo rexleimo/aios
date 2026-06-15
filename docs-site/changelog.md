@@ -9,6 +9,21 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
+## v2.0.2 (2026-06-15)
+
+- **Skill health validation**: `recordSkillObservation()` now rejects unknown statuses instead of silently recording them as failures, keeping failure-rate telemetry honest and surfacing producer bugs early.
+- **Help-first CLI parsing**: `aios skill ... --help` and `aios session ... --help` now show usage before required positional-argument validation runs.
+- **Crush config hygiene**: `.crush.json` and `crush.json` are no longer tracked in the repository; local Crush config files remain supported but are ignored by git.
+- See: [v2.0.2 release post](/blog/2026-06-v202-ecc-uplift/).
+
+## v2.0.1 (2026-06-13)
+
+- **Browser MCP alias migration**: fixed legacy alias compatibility while keeping the default browser-use runtime path stable.
+
+## v2.0.0 (2026-06-12)
+
+- **Pull-based runtime context**: removed automatic ContextDB prompt injection and startup-mode injection so agents load runtime context only when needed.
+
 ## v1.52.0 (2026-06-11)
 
 - **aios_shell MCP tool**: deterministic shell output compression across all clients via `aios-shell` MCP alias. Shell commands execute through `scripts/shell-mcp-server.mjs` and output is automatically compressed by the MCP proxy at **99%+ saving ratio**.

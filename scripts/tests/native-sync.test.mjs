@@ -28,7 +28,7 @@ async function writeNativeManifest(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
       crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
       "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
@@ -47,7 +47,8 @@ async function writeNativeSources(rootDir) {
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'core-instructions.md'), 'Shared native instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'contextdb.md'), 'ContextDB bridge enabled.\n', 'utf8');
 
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'client-capabilities.md'), 'Client capability gates enabled.\n', 'utf8');  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'browser-mcp.md'), `Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'client-capabilities.md'), 'Client capability gates enabled.\n', 'utf8');  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'token-discipline.md'), 'AIOS Token Discipline: minimal | balanced | full. Use strategic compact after exploration, before implementation. Do not replace AIOS interception runtime.\n', 'utf8');
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'browser-mcp.md'), `Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
 
 For browser tasks, use this operating pattern unless the user explicitly asks otherwise:
 - Connect to a visible CDP browser first: \`chrome.launch_cdp\` then \`browser.connect_cdp\`.
@@ -142,12 +143,12 @@ test('native sync gates instruction sections by client capability', async () => 
   const agentsDoc = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
   const geminiDoc = await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8');
 
-  // codex has superpowers + agents + native → all gated sections present.
+  // codex has superpowers + agents + native �?all gated sections present.
   assert.match(agentsDoc, /SUPERPOWERS-CAP/);
   assert.match(agentsDoc, /AGENT-ROUTING-CAP/);
   assert.match(agentsDoc, /CODEMAP-NATIVE/);
 
-  // gemini has superpowers + native but NOT agents → superpowers + codemap present, agent-routing absent.
+  // gemini has superpowers + native but NOT agents �?superpowers + codemap present, agent-routing absent.
   assert.match(geminiDoc, /SUPERPOWERS-CAP/);
   assert.doesNotMatch(geminiDoc, /AGENT-ROUTING-CAP/);
   assert.match(geminiDoc, /CODEMAP-NATIVE/);
@@ -261,6 +262,7 @@ test('native sync can install all client project outputs outside the AIOS source
   assert.match(await readFile(path.join(targetRootDir, '.gemini', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8'), /^mode: primary$/m);
+  assert.equal(JSON.parse(await readFile(path.join(targetRootDir, 'opencode.json'), 'utf8')).default_agent, 'aios-build');
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'agents', 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
@@ -281,6 +283,7 @@ test('native sync can install opencode standalone instructions outside the AIOS 
   assert.doesNotMatch(agentsDoc, /Codex native block/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8'), /^mode: primary$/m);
+  assert.equal(JSON.parse(await readFile(path.join(targetRootDir, 'opencode.json'), 'utf8')).skills.paths[0], '.opencode/skills');
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.opencode')).client, 'opencode');
   await assert.rejects(() => readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'));
 });

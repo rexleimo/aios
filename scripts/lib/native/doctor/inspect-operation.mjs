@@ -79,6 +79,27 @@ export async function inspectOperation({ targetRootDir, client, operation, fixCo
     return;
   }
 
+  if (operation.kind === 'json-top-level-merge') {
+    if (!current) {
+      issues.push(withIssueTarget(buildIssue({ client, message: `[missing] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+      return;
+    }
+    let parsed;
+    try {
+      parsed = parseJsonObject(current, targetPath);
+    } catch {
+      issues.push(withIssueTarget(buildIssue({ client, status: 'error', message: `[invalid json] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
+      return;
+    }
+    for (const [key, expected] of Object.entries(operation.content || {})) {
+      if (JSON.stringify(parsed[key]) !== JSON.stringify(expected)) {
+        issues.push(withIssueTarget(buildIssue({ client, message: `[drift] ${operation.targetPath}#${key}`, fix: fixCommand }), operationTarget));
+        return;
+      }
+    }
+    return;
+  }
+
   if (!current) {
     issues.push(withIssueTarget(buildIssue({ client, message: `[missing] ${operation.targetPath}`, fix: fixCommand }), operationTarget));
     return;

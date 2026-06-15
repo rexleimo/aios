@@ -5,6 +5,7 @@ import {
   normalizeSkillInstallMode,
   normalizeSkillNames,
   normalizeSkillScope,
+  normalizeTokenProfile,
   normalizeWrapMode,
   takeValue,
 } from '../shared.mjs';
@@ -32,6 +33,14 @@ export function applyComponentOption({ command, options, defaults, rest, index, 
       if (command !== 'setup' && command !== 'update') return null;
       options.installMode = normalizeSkillInstallMode(takeValue(rest, index, '--install-mode'));
       return 1;
+    case '--token-profile':
+      if (command !== 'setup' && command !== 'update') return null;
+      options.tokenProfile = normalizeTokenProfile(takeValue(rest, index, '--token-profile'));
+      return 1;
+    case '--apply-client-cost-settings':
+      if (command !== 'setup' && command !== 'update') return null;
+      options.applyClientCostSettings = true;
+      return 0;
     case '--skip-playwright-install':
       options.skipPlaywrightInstall = true;
       return 0;

@@ -6,6 +6,18 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-06-15
+
+### Fixed
+- Validate skill health observation statuses at write time so producer typos fail fast instead of being persisted as failures.
+- Honor `--help`, `-h`, and `help` before positional validation for `aios skill` and `aios session` subcommands.
+
+### Changed
+- Remove tracked `.crush.json` and `crush.json` from the repository; local Crush config copies are now ignored by git.
+
+### Docs
+- Add v2.0.2 release notes to docs and blog sources and rebuild the generated website output.
+
 ## [2.0.1] - 2026-06-13
 
 - fix browser MCP legacy alias migration

@@ -100,6 +100,30 @@ export async function applyJsonMergeOperation(targetPath, fragment, fsOps, backu
   return summarizeMutation(existsBefore, true);
 }
 
+export async function applyJsonTopLevelMergeOperation(targetPath, fragment, fsOps, backups, repair) {
+  const previous = await fsOps.readTextTarget(targetPath);
+  const existsBefore = previous.length > 0 || await pathExists(targetPath);
+  let parsed;
+  try {
+    parsed = parseJsonObject(previous, targetPath);
+  } catch {
+    if (!repair.resetInvalidJson) {
+      throw new Error(`invalid json: ${path.basename(targetPath)}`);
+    }
+    parsed = {};
+  }
+  const next = stringifyJsonObject({
+    ...parsed,
+    ...fragment,
+  });
+  if (normalizeText(previous) === normalizeText(next)) {
+    return 'reused';
+  }
+  await backupTarget(targetPath, fsOps, backups);
+  await fsOps.writeTextTarget(targetPath, next);
+  return summarizeMutation(existsBefore, true);
+}
+
 export async function removeOperation(targetPath, kind, fsOps, backups) {
   const previous = await fsOps.readTextTarget(targetPath);
   if (!previous && !(await pathExists(targetPath))) {

@@ -10,6 +10,8 @@ import {
   parsePerceptionArgs,
   parseRefsArgs,
   parseSearchArgs,
+  parseSessionArgs,
+  parseSkillArgs,
 } from './parse-args/maintenance.mjs';
 import { expandEqualsOptions } from './parse-args/shared.mjs';
 import { parseTopLevelArgs } from './parse-args/top-level.mjs';
@@ -33,6 +35,8 @@ const TOP_LEVEL_COMMANDS = new Set([
   'refs',
   'canvas',
   'search',
+  'skill',
+  'session',
 ]);
 
 /* 中文注释：兼容别名在解析层归一化，分发层只处理标准命令名。 */
@@ -88,8 +92,8 @@ function parseClientsArgs(argv) {
     }
     throw new Error(`Unknown option: ${arg}`);
   }
-  if (!['doctor', 'smoke'].includes(options.subcommand)) {
-    throw new Error('clients requires subcommand: doctor or smoke');
+  if (!['doctor', 'smoke', 'trigger-smoke'].includes(options.subcommand)) {
+    throw new Error('clients requires subcommand: doctor, smoke, or trigger-smoke');
   }
   if (!['text', 'json'].includes(options.format)) {
     throw new Error('--format must be one of: text, json');
@@ -138,6 +142,8 @@ export function parseArgs(argv = []) {
   if (first === 'model-router') return parseModelRouterArgs(argv);
   if (first === 'refs') return parseRefsArgs(argv);
   if (first === 'search') return parseSearchArgs(argv);
+  if (first === 'skill') return parseSkillArgs(argv);
+  if (first === 'session') return parseSessionArgs(argv);
   if (first === 'canvas') return parseCanvasArgs(argv);
   if (first === 'internal') return parseInternalArgs(argv.slice(1));
   if (first === 'team') return parseTeamArgs(argv);
