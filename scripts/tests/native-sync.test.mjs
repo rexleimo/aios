@@ -1,11 +1,16 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { readNativeSyncMetadata } from '../lib/native/install-metadata.mjs';
 import { syncNativeEnhancements } from '../lib/native/sync.mjs';
+
+function resolveRepoRoot() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -29,7 +34,7 @@ async function writeNativeManifest(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
-      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
+      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/agents', '.crush/skills'] },
       "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
   });
@@ -100,31 +105,9 @@ async function writeSkillSources(rootDir) {
 }
 
 async function writeAgentSources(rootDir) {
-  await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
-    schemaVersion: 1,
-    generatedTargets: ['claude', 'codex', 'opencode', 'crush'],
+  await cp(path.join(resolveRepoRoot(), 'agent-sources'), path.join(rootDir, 'agent-sources'), {
+    recursive: true,
   });
-
-  const roles = [
-    ['rex-planner', 'planner'],
-    ['rex-implementer', 'implementer'],
-    ['rex-reviewer', 'reviewer'],
-    ['rex-security-reviewer', 'security-reviewer'],
-  ];
-
-  for (const [id, role] of roles) {
-    await writeJson(path.join(rootDir, 'agent-sources', 'roles', `${id}.json`), {
-      schemaVersion: 1,
-      id,
-      role,
-      name: id,
-      description: `${role} role`,
-      tools: ['Read'],
-      model: 'sonnet',
-      handoffTarget: role === 'reviewer' || role === 'security-reviewer' ? 'merge-gate' : 'next-phase',
-      systemPrompt: `${role} prompt`,
-    });
-  }
 }
 
 async function seedNativeRoot(rootDir) {

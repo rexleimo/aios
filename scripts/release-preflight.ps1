@@ -90,10 +90,18 @@ Invoke-NodeCheck `
 $AgentManifest = Join-Path $RootDir "agent-sources/manifest.json"
 $HasAgentManifest = Test-Path -LiteralPath $AgentManifest
 if ($HasAgentManifest) {
+  & git -C $RootDir diff --quiet -- scripts/lib/specs/orchestrator-agents.json
+  if ($LASTEXITCODE -ne 0) {
+    throw "agent export drift detected; run: node scripts/generate-orchestrator-agents.mjs --export-only and commit scripts/lib/specs/orchestrator-agents.json"
+  }
   Invoke-NodeCheck `
     -ScriptPath (Join-Path $RootDir "scripts/generate-orchestrator-agents.mjs") `
     -Arguments @("--export-only") `
     -FailureMessage "agent export regeneration failed; run: node scripts/generate-orchestrator-agents.mjs --export-only"
+  & git -C $RootDir diff --quiet -- scripts/lib/specs/orchestrator-agents.json
+  if ($LASTEXITCODE -ne 0) {
+    throw "agent export drift detected; run: node scripts/generate-orchestrator-agents.mjs --export-only and commit scripts/lib/specs/orchestrator-agents.json"
+  }
 }
 
 Write-Host "[ok] release preflight passed for $Tag"

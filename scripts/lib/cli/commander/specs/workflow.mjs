@@ -1,5 +1,15 @@
 export const WORKFLOW_COMMAND_SPECS = [
   {
+    name: 'workflow',
+    description: 'List and dry-run AIOS workflow recipes',
+    options: [
+      ['--task <title>', 'Task title'],
+      ['--dry-run', 'Dry-run workflow execution'],
+      ['--format <format>', 'Output format'],
+      ['--json', 'Output JSON'],
+    ],
+  },
+  {
     name: 'orchestrate',
     description: 'Preview reusable subagent workflow blueprints',
     options: [

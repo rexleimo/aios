@@ -87,8 +87,16 @@ if ! node "$ROOT_DIR/scripts/check-native-sync.mjs" --materialize-temp >/dev/nul
 fi
 
 if [[ -f "$ROOT_DIR/agent-sources/manifest.json" ]]; then
+  if ! git -C "$ROOT_DIR" diff --quiet -- scripts/lib/specs/orchestrator-agents.json; then
+    echo "agent export drift detected; run: node scripts/generate-orchestrator-agents.mjs --export-only and commit scripts/lib/specs/orchestrator-agents.json" >&2
+    exit 1
+  fi
   if ! node "$ROOT_DIR/scripts/generate-orchestrator-agents.mjs" --export-only >/dev/null; then
     echo "agent export regeneration failed; run: node scripts/generate-orchestrator-agents.mjs --export-only" >&2
+    exit 1
+  fi
+  if ! git -C "$ROOT_DIR" diff --quiet -- scripts/lib/specs/orchestrator-agents.json; then
+    echo "agent export drift detected; run: node scripts/generate-orchestrator-agents.mjs --export-only and commit scripts/lib/specs/orchestrator-agents.json" >&2
     exit 1
   fi
 fi

@@ -1,8 +1,29 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
+
+function resolveRepoRoot() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
+
+let canonicalRoleCache = null;
+
+async function loadCanonicalRoleFixtures() {
+  if (!canonicalRoleCache) {
+    const sourceTree = await import('../lib/agents/source-tree.mjs');
+    const source = await sourceTree.loadCanonicalAgents({ rootDir: resolveRepoRoot() });
+    canonicalRoleCache = {
+      planner: source.agentsById['rex-planner'],
+      implementer: source.agentsById['rex-implementer'],
+      reviewer: source.agentsById['rex-reviewer'],
+      'security-reviewer': source.agentsById['rex-security-reviewer'],
+    };
+  }
+  return canonicalRoleCache;
+}
 
 async function makeRootDir() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-agents-source-tree-'));
@@ -14,6 +35,49 @@ async function writeJson(rootDir, relativePath, value) {
   await writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
+function renderScalar(value) {
+  return String(value ?? '');
+}
+
+function renderInlineArray(values = []) {
+  return `[${values.map((value) => JSON.stringify(String(value))).join(', ')}]`;
+}
+
+function renderCanonicalRoleMarkdown(agent, overrides = {}) {
+  const source = {
+    ...agent,
+    ...overrides,
+  };
+  const frontmatter = [
+    '---',
+    `schemaVersion: ${source.schemaVersion}`,
+    `id: ${renderScalar(source.id)}`,
+    `role: ${renderScalar(source.role)}`,
+    `name: ${renderScalar(source.name)}`,
+    `description: ${renderScalar(source.description)}`,
+    `tools: ${renderInlineArray(source.tools)}`,
+    `model: ${renderScalar(source.model)}`,
+    `recommendedModel: ${renderScalar(source.recommendedModel)}`,
+    `fallbackModel: ${renderScalar(source.fallbackModel)}`,
+    `tokenProfile: ${renderScalar(source.tokenProfile)}`,
+    `activationHints: ${renderInlineArray(source.activationHints)}`,
+    `workflowSteps: ${renderInlineArray(source.workflowSteps)}`,
+    `promptDefense: ${renderScalar(source.promptDefense)}`,
+    `outputContract: ${renderScalar(source.outputContract)}`,
+    `handoffTarget: ${renderScalar(source.handoffTarget)}`,
+    '---',
+    '',
+    renderScalar(source.systemPrompt),
+  ];
+  return `${frontmatter.join('\n').trimEnd()}\n`;
+}
+
+async function writeRoleMarkdown(rootDir, relativePath, agent, overrides = {}) {
+  const filePath = path.join(rootDir, relativePath);
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, renderCanonicalRoleMarkdown(agent, overrides), 'utf8');
+}
+
 function buildManifest() {
   return {
     schemaVersion: 1,
@@ -21,75 +85,30 @@ function buildManifest() {
   };
 }
 
-function buildRole(role) {
-  const base = {
-    planner: {
-      schemaVersion: 1,
-      id: 'rex-planner',
-      role: 'planner',
-      name: 'rex-planner',
-      description: 'Planner role card for AIOS orchestrations (scope, risks, ordering).',
-      tools: ['Read', 'Grep', 'Glob'],
-      model: 'sonnet',
-      handoffTarget: 'next-phase',
-      systemPrompt: 'You are the Planner. Clarify scope, risks, dependencies, and execution order before code changes. Produce a concrete plan that an implementer can follow.',
-    },
-    implementer: {
-      schemaVersion: 1,
-      id: 'rex-implementer',
-      role: 'implementer',
-      name: 'rex-implementer',
-      description: 'Implementer role card for AIOS orchestrations (code changes + verification).',
-      tools: ['Read', 'Grep', 'Glob', 'Bash', 'Edit'],
-      model: 'sonnet',
-      handoffTarget: 'next-phase',
-      systemPrompt: 'You are the Implementer. Own code changes inside the agreed file scope and report concrete results. Prefer minimal diffs and include verification evidence.',
-    },
-    reviewer: {
-      schemaVersion: 1,
-      id: 'rex-reviewer',
-      role: 'reviewer',
-      name: 'rex-reviewer',
-      description: 'Reviewer role card for AIOS orchestrations (correctness, regressions, tests).',
-      tools: ['Read', 'Grep', 'Glob'],
-      model: 'sonnet',
-      handoffTarget: 'merge-gate',
-      systemPrompt: 'You are the Reviewer. Review correctness, regressions, maintainability, and test coverage. Do not modify code; report findings and recommendations.',
-    },
-    'security-reviewer': {
-      schemaVersion: 1,
-      id: 'rex-security-reviewer',
-      role: 'security-reviewer',
-      name: 'rex-security-reviewer',
-      description: 'Security reviewer role card for AIOS orchestrations (auth, secrets, unsafe automation).',
-      tools: ['Read', 'Grep', 'Glob'],
-      model: 'sonnet',
-      handoffTarget: 'merge-gate',
-      systemPrompt: 'You are the Security Reviewer. Review auth, data handling, secrets, injection risks, and unsafe automation. Do not modify code; report security findings and mitigations.',
-    },
+async function writeCanonicalFixture(rootDir, options = {}, format = 'markdown') {
+  const base = await loadCanonicalRoleFixtures();
+  await writeJson(rootDir, 'agent-sources/manifest.json', buildManifest());
+  const writeRole = async (agent, overrides = {}) => {
+    const extension = format === 'json' ? 'json' : 'md';
+    const relativePath = `agent-sources/roles/${agent.id}.${extension}`;
+    if (format === 'markdown') {
+      await writeRoleMarkdown(rootDir, relativePath, agent, overrides);
+      return;
+    }
+    if (format === 'json') {
+      await writeJson(rootDir, relativePath, {
+        ...agent,
+        ...overrides,
+      });
+      return;
+    }
+    throw new Error(`unsupported fixture format: ${format}`);
   };
 
-  return structuredClone(base[role]);
-}
-
-async function writeCanonicalFixture(rootDir, options = {}) {
-  await writeJson(rootDir, 'agent-sources/manifest.json', buildManifest());
-  await writeJson(rootDir, 'agent-sources/roles/rex-planner.json', {
-    ...buildRole('planner'),
-    ...(options.plannerOverride || {}),
-  });
-  await writeJson(rootDir, 'agent-sources/roles/rex-implementer.json', {
-    ...buildRole('implementer'),
-    ...(options.implementerOverride || {}),
-  });
-  await writeJson(rootDir, 'agent-sources/roles/rex-reviewer.json', {
-    ...buildRole('reviewer'),
-    ...(options.reviewerOverride || {}),
-  });
-  await writeJson(rootDir, 'agent-sources/roles/rex-security-reviewer.json', {
-    ...buildRole('security-reviewer'),
-    ...(options.securityReviewerOverride || {}),
-  });
+  await writeRole(base.planner, options.plannerOverride);
+  await writeRole(base.implementer, options.implementerOverride);
+  await writeRole(base.reviewer, options.reviewerOverride);
+  await writeRole(base['security-reviewer'], options.securityReviewerOverride);
 
   if (options.extraRoleFile) {
     await writeFile(path.join(rootDir, 'agent-sources', options.extraRoleFile), 'note\n', 'utf8');
@@ -119,7 +138,7 @@ async function makeFixtureWithDuplicateRole() {
 async function makeFixtureMissingRole(roleId) {
   const rootDir = await makeRootDir();
   await writeCanonicalFixture(rootDir);
-  const roleFile = path.join(rootDir, 'agent-sources', 'roles', `rex-${roleId}.json`);
+  const roleFile = path.join(rootDir, 'agent-sources', 'roles', `rex-${roleId}.md`);
   await rm(roleFile);
   return rootDir;
 }
@@ -136,7 +155,7 @@ async function makeFixtureWithMultilineDescription() {
   const rootDir = await makeRootDir();
   await writeCanonicalFixture(rootDir, {
     plannerOverride: { description: 'line 1\nline 2' },
-  });
+  }, 'json');
   return rootDir;
 }
 
@@ -168,7 +187,7 @@ async function makeFixtureWithNonStringTool() {
   const rootDir = await makeRootDir();
   await writeCanonicalFixture(rootDir, {
     plannerOverride: { tools: ['Read', 42] },
-  });
+  }, 'json');
   return rootDir;
 }
 
@@ -189,18 +208,79 @@ test('loadCanonicalAgents validates manifest and returns four role-bound agents'
   assert.equal(result.roleMap.planner, 'rex-planner');
 });
 
+test('loadCanonicalAgents reads ECC-style markdown frontmatter role sources', async () => {
+  const rootDir = await makeRootDir();
+  await writeCanonicalFixture(rootDir);
+
+  const mod = await import('../lib/agents/source-tree.mjs');
+  const result = await mod.loadCanonicalAgents({ rootDir });
+
+  assert.equal(result.agentsById['rex-planner'].id, 'rex-planner');
+  assert.equal(result.agentsById['rex-planner'].role, 'planner');
+  assert.match(result.agentsById['rex-planner'].systemPrompt, /^# /);
+  assert.match(result.agentsById['rex-planner'].systemPrompt, /Output contract/i);
+  assert.equal(result.roleMap.securityReviewer, undefined);
+  assert.equal(result.roleMap['security-reviewer'], 'rex-security-reviewer');
+});
+
+test('repository canonical role authoring files are markdown, not JSON', async () => {
+  const roleEntries = await readdir(path.join(resolveRepoRoot(), 'agent-sources', 'roles'));
+
+  assert.ok(roleEntries.some((entry) => entry.endsWith('.md')), 'agent-sources/roles should contain markdown role cards');
+  assert.deepEqual(
+    roleEntries.filter((entry) => entry.endsWith('.json')),
+    [],
+    'agent-sources/roles JSON files are compatibility data, not maintainable authoring sources'
+  );
+});
+
+test('loadCanonicalAgents preserves legacy JSON role source compatibility', async () => {
+  const rootDir = await makeRootDir();
+  await writeCanonicalFixture(rootDir, {}, 'json');
+
+  const mod = await import('../lib/agents/source-tree.mjs');
+  const result = await mod.loadCanonicalAgents({ rootDir, allowLegacyJsonRoles: true });
+
+  assert.equal(result.agentsById['rex-reviewer'].role, 'reviewer');
+});
+
+test('loadCanonicalAgents rejects legacy JSON role sources by default', async () => {
+  const rootDir = await makeRootDir();
+  await writeCanonicalFixture(rootDir, {}, 'json');
+
+  const mod = await import('../lib/agents/source-tree.mjs');
+  await assert.rejects(
+    () => mod.loadCanonicalAgents({ rootDir }),
+    /legacy JSON role sources require allowLegacyJsonRoles/i
+  );
+});
+
+test('loadCanonicalAgents rejects duplicate markdown and JSON source for one role card', async () => {
+  const rootDir = await makeRootDir();
+  const base = await loadCanonicalRoleFixtures();
+  await writeCanonicalFixture(rootDir, {}, 'json');
+  await writeRoleMarkdown(rootDir, 'agent-sources/roles/rex-planner.md', base.planner);
+
+  const mod = await import('../lib/agents/source-tree.mjs');
+  await assert.rejects(
+    () => mod.loadCanonicalAgents({ rootDir, allowLegacyJsonRoles: true }),
+    /duplicate source/i
+  );
+});
+
 test('loadCanonicalAgents allows multiline systemPrompt content', async () => {
   const rootDir = await makeRootDir();
+  const canonicalPlanner = (await loadCanonicalRoleFixtures()).planner;
   await writeCanonicalFixture(rootDir, {
     plannerOverride: {
-      systemPrompt: 'line 1\nline 2\nline 3',
+      systemPrompt: `${canonicalPlanner.systemPrompt}\n\nAdditional handoff line one.\nAdditional handoff line two.`,
     },
   });
 
   const mod = await import('../lib/agents/source-tree.mjs');
   const result = await mod.loadCanonicalAgents({ rootDir });
 
-  assert.match(result.agentsById['rex-planner'].systemPrompt, /line 2/);
+  assert.match(result.agentsById['rex-planner'].systemPrompt, /Additional handoff line two/);
 });
 
 test('loadCanonicalAgents rejects unknown keys and unexpected files', async () => {
@@ -225,7 +305,7 @@ test('loadCanonicalAgents rejects duplicate ids, duplicate roles, missing requir
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithDuplicateRole() }), /duplicate role/i);
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureMissingRole('reviewer') }), /missing required role/i);
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithFilenameMismatch() }), /filename/i);
-  await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithMultilineDescription() }), /single-line/i);
+  await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithMultilineDescription(), allowLegacyJsonRoles: true }), /single-line/i);
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithManagedMarker() }), /managed marker/i);
 });
 
@@ -234,5 +314,5 @@ test('loadCanonicalAgents rejects uppercase ids, uppercase roles, and non-string
 
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithUppercaseId() }), /kebab-case/i);
   await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithUppercaseRole() }), /role must be one of/i);
-  await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithNonStringTool() }), /array of strings/i);
+  await assert.rejects(async () => mod.loadCanonicalAgents({ rootDir: await makeFixtureWithNonStringTool(), allowLegacyJsonRoles: true }), /array of strings/i);
 });

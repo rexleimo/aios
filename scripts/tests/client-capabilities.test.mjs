@@ -16,6 +16,39 @@ function byId(report, clientId) {
   return report.clients.find((client) => client.clientId === clientId);
 }
 
+async function writeClientEvidence(rootDir, clientId, {
+  smokeStatus = 'pass',
+  metricsEvents = ['pre_send', 'post_receive'],
+  provenanceClient = clientId,
+} = {}) {
+  const timestamp = '2026-06-15T00:00:00.000Z';
+  await writeFile(
+    path.join(rootDir, '.aios', 'clients', 'smoke', `${clientId}-2026-06-15T00-00-00-000Z.json`),
+    `${JSON.stringify({ schemaVersion: 1, client: clientId, status: smokeStatus, timestamp }, null, 2)}\n`,
+    'utf8'
+  );
+  const metricLines = metricsEvents.map((eventKind) => JSON.stringify({
+    ts: timestamp,
+    event_kind: eventKind,
+    client_id: clientId,
+    mode: 'tight',
+    uncontrolled: false,
+    policy_violation: false,
+    saved_bytes: 128,
+    saving_ratio: 0.75,
+  })).join('\n');
+  await writeFile(
+    path.join(rootDir, '.aios', 'interception', 'metrics', 'client-proof.jsonl'),
+    `${metricLines}\n`,
+    'utf8'
+  );
+  await writeFile(
+    path.join(rootDir, '.aios', 'clients', 'provenance', `${clientId}.json`),
+    `${JSON.stringify({ schemaVersion: 1, clientId: provenanceClient, status: 'verified', timestamp }, null, 2)}\n`,
+    'utf8'
+  );
+}
+
 test('client capability report covers all registered clients and blocks pending-smoke live surfaces', async () => {
   const report = await buildClientCapabilityReport({ rootDir: process.cwd(), env: {} });
   assert.equal(report.schemaVersion, 1);
@@ -25,6 +58,16 @@ test('client capability report covers all registered clients and blocks pending-
   assert.equal(byId(report, 'claude').status, 'supported-candidate');
   assert.equal(byId(report, 'opencode').status, 'supported-candidate');
   assert.equal(byId(report, 'gemini').status, 'compatibility');
+
+  for (const clientId of ['codex', 'claude', 'opencode', 'gemini']) {
+    const client = byId(report, clientId);
+    assert.equal(client.staticProjectionAllowed, true);
+    assert.equal(client.liveExecutionAllowed, false);
+    assert.equal(client.skillTrainingAllowed, false);
+    assert.equal(client.qualityGateRunnerAllowed, false);
+    assert.equal(client.harnessLiveAllowed, false);
+    assert.equal(client.verification.status, 'blocked');
+  }
 
   for (const clientId of ['antigravity', 'crush']) {
     const client = byId(report, clientId);
@@ -36,6 +79,52 @@ test('client capability report covers all registered clients and blocks pending-
     assert.equal(client.harnessLiveAllowed, false);
     assert.ok(client.reasons.some((reason) => /smoke|verified|one-shot/i.test(reason)), `${clientId} should explain pending smoke`);
   }
+});
+
+test('client evidence must be passing, client-scoped, and bidirectional before verification', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-client-invalid-evidence-'));
+  await mkdir(path.join(evidenceRoot, '.aios', 'clients', 'smoke'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'interception', 'metrics'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'clients', 'provenance'), { recursive: true });
+  await writeClientEvidence(evidenceRoot, 'codex', {
+    smokeStatus: 'fail',
+    metricsEvents: ['pre_send'],
+    provenanceClient: 'claude',
+  });
+
+  const report = await buildClientCapabilityReport({
+    rootDir: process.cwd(),
+    evidenceRoot,
+    env: {},
+  });
+  const codex = byId(report, 'codex');
+
+  assert.equal(codex.verification.status, 'blocked');
+  assert.deepEqual(codex.verification.missing, ['smoke', 'metrics', 'provenance']);
+  assert.equal(codex.liveExecutionAllowed, false);
+  assert.match(codex.reasons.join('\n'), /smoke|metrics|provenance/i);
+});
+
+test('verified client evidence still cannot unlock live gates while agents or workflows are blocked', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-client-only-evidence-'));
+  await mkdir(path.join(evidenceRoot, '.aios', 'clients', 'smoke'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'interception', 'metrics'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'clients', 'provenance'), { recursive: true });
+  await writeClientEvidence(evidenceRoot, 'codex');
+
+  const report = await buildClientCapabilityReport({
+    rootDir: process.cwd(),
+    evidenceRoot,
+    env: {},
+  });
+  const codex = byId(report, 'codex');
+
+  assert.equal(codex.verification.status, 'verified');
+  assert.equal(report.agentCatalogue.blocked, true);
+  assert.ok(report.workflowRecipes.blockedWorkflowIds.length > 0);
+  assert.equal(codex.liveExecutionAllowed, false);
+  assert.equal(codex.skillTrainingAllowed, false);
+  assert.match(codex.reasons.join('\n'), /agent|workflow/i);
 });
 
 test('client capability report requires AIOS-managed bidirectional turn compression for every client', async () => {
@@ -188,11 +277,13 @@ test('aios clients doctor --json emits strict rollout status for six clients', (
     encoding: 'utf8',
     env: { ...process.env, AIOS_NO_COLOR: '1' },
   });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.status, 1, result.stderr || result.stdout);
   const report = JSON.parse(result.stdout);
   assert.deepEqual(report.clients.map((client) => client.clientId), ALL_CLIENTS);
   assert.equal(byId(report, 'antigravity').status, 'pending-smoke');
   assert.equal(byId(report, 'crush').liveExecutionAllowed, false);
+  assert.equal(byId(report, 'codex').liveExecutionAllowed, false);
+  assert.equal(byId(report, 'codex').verification.status, 'blocked');
   assert.equal(byId(report, 'codex').compressionCompliance.metric, 'bidirectional-turn-compression');
 });
 
@@ -202,7 +293,7 @@ test('aios clients doctor text output includes the shared compression metric', (
     encoding: 'utf8',
     env: { ...process.env, AIOS_NO_COLOR: '1' },
   });
-  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.equal(result.status, 1, result.stderr || result.stdout);
   assert.match(result.stdout, /compression=bidirectional-turn-compression/u);
   assert.match(result.stdout, /entrypoint=aios-managed-runner/u);
   assert.match(result.stdout, /pre_send=required post_receive=required/u);

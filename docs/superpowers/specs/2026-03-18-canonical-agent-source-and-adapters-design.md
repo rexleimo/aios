@@ -17,7 +17,7 @@ V1 does not redesign the live runtime. Runtime capability and adapter selection 
 ## Problem
 
 Current agent management mixes source-of-truth data and generated outputs:
-- `memory/specs/orchestrator-agents.json` is hand-edited but also acts as a compatibility format,
+- `scripts/lib/specs/orchestrator-agents.json` is hand-edited but also acts as a compatibility format,
 - `.claude/agents/*.md` and `.codex/agents/*.md` are generated directly from that compatibility format,
 - sync ownership rules exist in code, but they are not expressed as a formal source-plus-emitter contract.
 
@@ -30,7 +30,7 @@ That creates two problems:
 In scope:
 - introduce `agent-sources/` as the only hand-edited source tree for orchestrator agents,
 - define a concrete manifest and per-agent schema,
-- generate `memory/specs/orchestrator-agents.json` from canonical source,
+- generate `scripts/lib/specs/orchestrator-agents.json` from canonical source,
 - generate `.claude/agents/*.md` and `.codex/agents/*.md` from canonical source,
 - formalize managed-file ownership, collision handling, stale-file removal, and staged sync,
 - inventory existing repo integrations that depend on agent generation.
@@ -49,7 +49,7 @@ V1 has three units:
 1. Canonical source loader
    - reads and validates `agent-sources/`
 2. Compatibility/export renderer
-   - emits `memory/specs/orchestrator-agents.json`
+   - emits `scripts/lib/specs/orchestrator-agents.json`
 3. Client emitters plus sync
    - emit `.claude/agents/*.md` and `.codex/agents/*.md`
    - own filesystem sync rules
@@ -64,37 +64,48 @@ The orchestrator runtime continues reading the existing compatibility export in 
 agent-sources/
   manifest.json
   roles/
-    rex-planner.json
-    rex-implementer.json
-    rex-reviewer.json
-    rex-security-reviewer.json
+    rex-planner.md
+    rex-implementer.md
+    rex-reviewer.md
+    rex-security-reviewer.md
 ```
 
-V1 supports only this exact layout. There are no extra source subdirectories in this spec.
+V1 supports only this exact authoring layout. There are no extra source subdirectories in this spec.
 
 ### Manifest Schema
 
 `agent-sources/manifest.json` is required and must contain:
 
 - `schemaVersion`: integer, must equal `1`
-- `generatedTargets`: array, must equal `["claude", "codex"]`
+- `generatedTargets`: array, must equal the resolved client agent targets, currently `["claude", "codex", "opencode", "crush"]`
 
 Example:
 
 ```json
 {
   "schemaVersion": 1,
-  "generatedTargets": ["claude", "codex"]
+  "generatedTargets": ["claude", "codex", "opencode", "crush"]
 }
 ```
 
 `generatedTargets` is fixed in v1. There is no per-agent target filtering in this spec.
 `generatedTargets` is constraining metadata in v1: every resolved sync target must be a member of this list.
 
+### 2026-06-15 Revision: Markdown Role Cards Are The Authoring Source
+
+The original v1 design used `agent-sources/roles/*.json` as the authoring source. That proved hard to maintain once ECC-style role cards grew into full prompts because every body edit required JSON escaping and made reviews noisy.
+
+Current rule:
+- `agent-sources/roles/<id>.md` is the canonical author-maintained source.
+- YAML frontmatter stores structured fields such as `schemaVersion`, `id`, `role`, `name`, `description`, `tools`, `model`, `workflowSteps`, and `handoffTarget`.
+- The Markdown body is the full `systemPrompt`.
+- `scripts/lib/specs/orchestrator-agents.json` remains the generated runtime compatibility export.
+- Legacy `roles/*.json` is accepted only when callers explicitly opt into `allowLegacyJsonRoles` for migration or compatibility tests; default canonical loading rejects JSON role sources so new authoring cannot drift back to JSON.
+
 ### Per-Agent Schema
 
-Each file under `agent-sources/roles/*.json` contains exactly one agent definition.
-The filename must equal `<id>.json`.
+Each file under `agent-sources/roles/*.md` contains exactly one agent definition.
+The filename must equal `<id>.md`.
 
 Required fields:
 - `schemaVersion`: integer, must equal `1`
@@ -105,9 +116,9 @@ Required fields:
 - `tools`: string array, may be empty
 - `model`: non-empty string
 - `handoffTarget`: enum `next-phase | merge-gate`
-- `systemPrompt`: non-empty string
+- Markdown body: non-empty `systemPrompt` content
 
-There are no optional fields in v1.
+Optional metadata fields include `recommendedModel`, `fallbackModel`, `tokenProfile`, `activationHints`, `workflowSteps`, `promptDefense`, and `outputContract` where supported by the loader.
 
 Validation closure rules:
 - unknown keys are rejected
@@ -119,18 +130,42 @@ Validation closure rules:
 
 Example:
 
-```json
-{
-  "schemaVersion": 1,
-  "id": "rex-implementer",
-  "role": "implementer",
-  "name": "rex-implementer",
-  "description": "Implementer role card for scoped code changes and verification.",
-  "tools": ["Read", "Grep", "Glob", "Bash", "Edit"],
-  "model": "sonnet",
-  "handoffTarget": "next-phase",
-  "systemPrompt": "You are the Implementer. Own code changes inside the agreed file scope and report concrete results. Prefer minimal diffs and include verification evidence."
-}
+```markdown
+---
+schemaVersion: 1
+id: "rex-implementer"
+role: "implementer"
+name: "rex-implementer"
+description: "Implementer role card for scoped code changes and verification."
+tools: ["Read", "Grep", "Glob", "Bash", "Edit"]
+model: "sonnet"
+workflowSteps: ["inspect-assigned-scope", "apply-minimal-change", "run-required-verification", "return-structured-json-handoff"]
+outputContract: "JSON handoff object with status, files changed, evidence, blockers, and next steps."
+handoffTarget: "next-phase"
+---
+
+# Implementer Agent
+
+## When to use
+Use this role for scoped implementation after planning is complete.
+
+## Mission
+Own code changes inside the agreed file scope and report concrete results.
+
+## Workflow
+1. Inspect the assigned scope.
+2. Apply the smallest safe change.
+3. Run required verification.
+4. Return a structured JSON handoff.
+
+## Hard constraints
+Do not expand scope or claim completion without evidence.
+
+## Evidence
+Attach command output, diff references, or blockers.
+
+## Output contract
+Return the required JSON handoff object.
 ```
 
 ### Source Rules
@@ -139,7 +174,7 @@ Example:
 - role-to-agent mapping is derived from each agent file's `role` and `id`.
 - exactly one agent must exist for each role in v1.
 - duplicate roles or duplicate ids are fatal validation errors.
-- unexpected files under `agent-sources/roles/` are fatal validation errors.
+- in default canonical mode, only `agent-sources/roles/*.md` is accepted; `*.json` is fatal unless `allowLegacyJsonRoles` is explicitly enabled for migration tests.
 - unexpected subdirectories under `agent-sources/` are fatal validation errors.
 
 ## Compatibility Export
@@ -149,7 +184,7 @@ Example:
 Generated file:
 
 ```text
-memory/specs/orchestrator-agents.json
+scripts/lib/specs/orchestrator-agents.json
 ```
 
 ### Export Contract
@@ -344,7 +379,7 @@ Partial failure rule:
 - commit order is:
   - move stale managed target files for the selected roots into a temporary trash area
   - write replacement managed target files
-  - write `memory/specs/orchestrator-agents.json` last
+  - write `scripts/lib/specs/orchestrator-agents.json` last
 - if stale-file move fails, the commit aborts before any replacement write
 - if any target-file replacement fails, compatibility export is not updated and moved stale files are restored from the temporary trash area
 - if final compatibility export write fails, sync restores moved stale files and replacement target files from the pre-commit backups, then exits non-zero
@@ -402,7 +437,7 @@ V1 implementation planning must cover these existing repo surfaces:
 - Source and rendering
   - `scripts/lib/harness/orchestrator-agents.mjs`
   - `scripts/generate-orchestrator-agents.mjs`
-  - `memory/specs/orchestrator-agents.json`
+  - `scripts/lib/specs/orchestrator-agents.json`
 
 - Orchestrator consumers of compatibility export
   - `scripts/lib/harness/orchestrator.mjs`
@@ -475,13 +510,13 @@ Required automated tests:
 Required manual verification:
 - inspect generated `.claude/agents` and `.codex/agents`
 - run setup/update/uninstall with the `agents` component
-- run orchestrator smoke checks that still consume `memory/specs/orchestrator-agents.json`
+- run orchestrator smoke checks that still consume `scripts/lib/specs/orchestrator-agents.json`
 - perform the initial cutover by generating from `agent-sources/` and confirming byte-for-byte equality with the pre-cutover committed compatibility export and generated agent files before switching repository authority
 
 ## Rollback
 
 Rollback path:
-- restore `memory/specs/orchestrator-agents.json` as the hand-edited source of truth
+- restore `scripts/lib/specs/orchestrator-agents.json` as the hand-edited source of truth
 - point sync/render logic back to the compatibility export path
 - stop reading `agent-sources/`
 - keep existing generated target directories intact until a later cleanup change
@@ -500,7 +535,7 @@ Those belong in a separate runtime-focused spec after v1 source/export/emitter s
 This spec is ready for implementation planning when all are true:
 - `agent-sources/` is the only hand-edited repository source for orchestrator agents
 - manifest and per-agent schemas are concrete enough to validate mechanically
-- `memory/specs/orchestrator-agents.json` is a generated compatibility export
+- `scripts/lib/specs/orchestrator-agents.json` is a generated compatibility export
 - `.claude/agents` and `.codex/agents` are generated from canonical source
 - sync ownership, collision handling, stale-file removal, and failure behavior are explicit
 - current orchestrator consumers can continue reading the compatibility export in v1

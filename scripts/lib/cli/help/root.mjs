@@ -14,6 +14,9 @@ Commands:
   update        Update Harness CLI and AIOS integrations
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
+  status        Show unified AIOS readiness status
+  agents        Inspect default agent catalogue and live-readiness gates
+  workflow      List and dry-run workflow recipes
   memo          Workspace memo + pinned memory helpers
   search        Search project memory, docs, plans, and code references
   refs          Search/read offloaded tool-output refs
@@ -40,6 +43,9 @@ Examples:
   node scripts/aios.mjs uninstall --components shell,skills,native
   node scripts/aios.mjs doctor --strict --native --verbose --profile standard
   node scripts/aios.mjs doctor --native --fix --dry-run
+  node scripts/aios.mjs status --json
+  node scripts/aios.mjs agents doctor --strict --json
+  node scripts/aios.mjs workflow run ecc-uplift-governed --task "Borrow ECC safely" --dry-run --json
   node scripts/aios.mjs internal native repair list --limit 20
   node scripts/aios.mjs internal native repair show --repair-id latest
   node scripts/aios.mjs internal native rollback --repair-id latest

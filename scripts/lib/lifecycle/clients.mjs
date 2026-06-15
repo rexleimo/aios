@@ -82,5 +82,6 @@ export async function runClientsCommand(
   const report = await buildClientCapabilityReport({ rootDir, env, nativeStrict: Boolean(options.nativeStrict) });
   const json = options.json || options.format === 'json';
   stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : renderTextReport(report));
-  return { exitCode: report.nativeStrict?.enabled && !report.nativeStrict.ok ? 1 : 0, report };
+  const evidenceBlocked = report.clients.some((client) => client.verification?.status !== 'verified');
+  return { exitCode: (report.nativeStrict?.enabled && !report.nativeStrict.ok) || evidenceBlocked ? 1 : 0, report };
 }

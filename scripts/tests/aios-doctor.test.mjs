@@ -25,23 +25,27 @@ test('countEffectiveWarnLines counts actionable warnings', () => {
   assert.equal(count, 2);
 });
 
-test('doctor-security-config scans agent-sources JSON files', async () => {
+test('doctor-security-config scans agent-sources markdown role cards', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-doctor-agents-'));
   const roleDir = path.join(rootDir, 'agent-sources', 'roles');
   await mkdir(roleDir, { recursive: true });
   await writeFile(
-    path.join(roleDir, 'rex-planner.json'),
-    JSON.stringify({
-      schemaVersion: 1,
-      id: 'rex-planner',
-      role: 'planner',
-      name: 'rex-planner',
-      description: 'planner',
-      tools: ['Read'],
-      model: 'sonnet',
-      handoffTarget: 'next-phase',
-      systemPrompt: '-----BEGIN PRIVATE KEY-----',
-    }, null, 2),
+    path.join(roleDir, 'rex-planner.md'),
+    [
+      '---',
+      'schemaVersion: 1',
+      'id: "rex-planner"',
+      'role: "planner"',
+      'name: "rex-planner"',
+      'description: "planner"',
+      'tools: ["Read"]',
+      'model: "sonnet"',
+      'handoffTarget: "next-phase"',
+      '---',
+      '',
+      '-----BEGIN PRIVATE KEY-----',
+      '',
+    ].join('\n'),
     'utf8'
   );
 
@@ -51,7 +55,7 @@ test('doctor-security-config scans agent-sources JSON files', async () => {
   });
 
   assert.notEqual(result.status, 0);
-  assert.match(`${result.stdout}\n${result.stderr}`, /agent-sources\/roles\/rex-planner\.json/);
+  assert.match(`${result.stdout}\n${result.stderr}`, /agent-sources\/roles\/rex-planner\.md/);
   assert.match(`${result.stdout}\n${result.stderr}`, /private_key/);
 });
 

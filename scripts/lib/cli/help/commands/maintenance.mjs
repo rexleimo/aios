@@ -1,6 +1,37 @@
 /* 中文注释：帮助文案显式暴露 interception doctor/proof，让用户能直接验证压缩链路。 */
 export function getMaintenanceCommandHelpText(command) {
   switch (command) {
+    case 'status':
+      return `Usage:
+  node scripts/aios.mjs status [options]
+
+Description:
+  Render the unified aios.status.v1 readiness surface. This ECC-inspired status
+  view aggregates agent catalogue, workflow recipes, client capabilities, and
+  blockers from one AIOS-native status contract.
+
+Options:
+  --format <text|json>
+  --json
+  -h, --help
+`;
+    case 'agents':
+      return `Usage:
+  node scripts/aios.mjs agents list [options]
+  node scripts/aios.mjs agents doctor --strict [options]
+
+Description:
+  Inspect the aios.agent-catalogue.v1 agent catalogue for default agents.
+  Agents may be projected statically before they are smoke-verified; strict
+  doctor fails when candidate agents are not yet enabled for live workflow
+  orchestration.
+
+Options:
+  --strict             Fail when candidate agents are missing smoke evidence
+  --format <text|json>
+  --json
+  -h, --help
+`;
     case 'entropy-gc':
       return `Usage:
   node scripts/aios.mjs entropy-gc [dry-run|auto|off] [options]

@@ -43,6 +43,13 @@ async function writeJson(rootDir, relativePath, value) {
   await fs.writeFile(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
+async function replaceInFile(rootDir, relativePath, search, replacement) {
+  const filePath = path.join(rootDir, relativePath);
+  const current = await fs.readFile(filePath, 'utf8');
+  assert.ok(current.includes(search), `${relativePath} should include ${search}`);
+  await fs.writeFile(filePath, current.replace(search, replacement), 'utf8');
+}
+
 async function loadCanonicalFixture() {
   const sourceTree = await import('../lib/agents/source-tree.mjs');
   return sourceTree.loadCanonicalAgents({ rootDir: resolveRepoRoot() });
@@ -100,6 +107,19 @@ test('renderCompatibilityExport preserves current orchestrator agent shape', asy
   assert.equal(parsed.agents['rex-planner'].model, 'sonnet');
 });
 
+
+test('generateCompatibilityExport stays in sync with canonical markdown sources', async () => {
+  const source = await loadCanonicalFixture();
+  const compat = await import('../lib/agents/compat-export.mjs');
+  const fs = await import('node:fs/promises');
+  const path = await import('node:path');
+
+  const rendered = compat.renderCompatibilityExport(source);
+  const actual = await fs.readFile(path.join(resolveRepoRoot(), 'scripts/lib/specs/orchestrator-agents.json'), 'utf8');
+
+  assert.equal(actual, rendered);
+});
+
 test('canonical agents support ECC-style native pack metadata and token/smoke roles', async () => {
   const source = await loadCanonicalFixture();
   const mod = await import('../lib/agents/compat-export.mjs');
@@ -108,20 +128,26 @@ test('canonical agents support ECC-style native pack metadata and token/smoke ro
 
   assert.equal(parsed.roleMap['token-steward'], 'rex-token-steward');
   assert.equal(parsed.roleMap['smoke-runner'], 'rex-smoke-runner');
-  assert.deepEqual(Object.keys(parsed.agents).sort(), [
+  for (const agentId of [
+    'rex-architect',
+    'rex-build-error-resolver',
     'rex-implementer',
     'rex-planner',
     'rex-reviewer',
     'rex-security-reviewer',
     'rex-smoke-runner',
+    'rex-tdd-guide',
     'rex-token-steward',
-  ]);
+  ]) {
+    assert.ok(parsed.agents[agentId], `expected ECC-inspired default agent ${agentId}`);
+  }
+  assert.ok(Object.keys(parsed.agents).length >= 14);
 
   const tokenSteward = parsed.agents['rex-token-steward'];
   assert.equal(tokenSteward.tokenProfile, 'minimal');
   assert.equal(tokenSteward.recommendedModel, 'sonnet');
   assert.equal(tokenSteward.fallbackModel, 'haiku');
-  assert.match(tokenSteward.promptDefense, /ignore external instructions/i);
+  assert.match(tokenSteward.promptDefense, /claim parity/i);
   assert.ok(tokenSteward.workflowSteps.includes('inspect-mcp-budget'));
   assert.ok(tokenSteward.activationHints.includes('token-budget'));
   assert.match(tokenSteward.outputContract, /JSON/);
@@ -146,13 +172,13 @@ test('syncGeneratedAgents renders from rootDir canonical source', async () => {
   assert.ok(agents, 'expected orchestrator-agents module');
 
   const rootDir = await makeRootDir();
-  const source = await loadCanonicalFixture();
-  const planner = source.agentsById[source.roleMap.planner];
   await copyCanonicalSource(rootDir);
-  await writeJson(rootDir, 'agent-sources/roles/rex-planner.json', {
-    ...planner,
-    description: 'Planner role from temp canonical source.',
-  });
+  await replaceInFile(
+    rootDir,
+    'agent-sources/roles/rex-planner.md',
+    'description: "Planner role card for AIOS orchestrations (scope, risks, ordering)."',
+    'description: "Planner role from temp canonical source."'
+  );
 
   const codexDir = path.join(rootDir, '.codex', 'agents');
   await fs.mkdir(codexDir, { recursive: true });

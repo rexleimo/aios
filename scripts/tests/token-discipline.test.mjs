@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
 import { runDoctorSuite } from '../lib/doctor/aggregate.mjs';
@@ -14,6 +15,10 @@ import {
   planTokenDiscipline,
   planClientCostSettings,
 } from '../lib/token-discipline/index.mjs';
+
+function resolveRepoRoot() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -54,23 +59,9 @@ async function seedNativeRoot(rootDir) {
     skills: [],
     legacyUnmanaged: [],
   });
-  await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), {
-    schemaVersion: 1,
-    generatedTargets: ['claude', 'codex', 'opencode', 'crush'],
+  await cp(path.join(resolveRepoRoot(), 'agent-sources'), path.join(rootDir, 'agent-sources'), {
+    recursive: true,
   });
-  for (const [id, role] of [['rex-planner', 'planner'], ['rex-implementer', 'implementer'], ['rex-reviewer', 'reviewer'], ['rex-security-reviewer', 'security-reviewer']]) {
-    await writeJson(path.join(rootDir, 'agent-sources', 'roles', `${id}.json`), {
-      schemaVersion: 1,
-      id,
-      role,
-      name: id,
-      description: role,
-      tools: ['Read'],
-      model: 'sonnet',
-      handoffTarget: 'next-phase',
-      systemPrompt: role,
-    });
-  }
   const partials = path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials');
   await mkdir(partials, { recursive: true });
   for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'superpowers', 'agent-routing', 'codemap', 'browser-mcp', 'team-provider', 'model-router', 'harness']) {

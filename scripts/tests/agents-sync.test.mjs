@@ -5,6 +5,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+const RICH_PROMPT_MARKERS = ['When to use', 'Mission', 'Workflow', 'Hard constraints', 'Evidence', 'Output contract'];
+
 function resolveRepoRoot() {
   return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 }
@@ -52,14 +54,15 @@ async function seedManagedTargets(rootDir, { extraManagedFile = null } = {}) {
     await readFile(path.join(resolveRepoRoot(), 'scripts/lib/specs', 'orchestrator-agents.json'), 'utf8')
   );
 
-  for (const targetRoot of ['.claude/agents', '.codex/agents']) {
-    for (const agent of Object.values(source.agentsById)) {
-      await writeText(
-        rootDir,
-        path.join(targetRoot, `${agent.name}.md`),
-        await renderManagedAgent(agent)
-      );
-    }
+  for (const agent of Object.values(source.agentsById)) {
+    await writeText(
+      rootDir,
+      path.join('.claude/agents', `${agent.name}.md`),
+      await renderManagedAgent(agent)
+    );
+    const { renderCodexAgent } = await import('../lib/agents/emitters/codex.mjs');
+    const rendered = renderCodexAgent(agent);
+    await writeText(rootDir, rendered.targetRelPath, rendered.content);
   }
 
   if (extraManagedFile) {
@@ -67,6 +70,27 @@ async function seedManagedTargets(rootDir, { extraManagedFile = null } = {}) {
     const extraName = path.basename(extraManagedFile, '.md');
     await writeText(rootDir, extraManagedFile, await renderManagedAgent(planner, extraName));
   }
+}
+
+function extractMarkdownAgentBody(content) {
+  const normalized = String(content).replace(/\r\n/g, '\n');
+  const frontmatterEnd = normalized.indexOf('\n---\n', 4);
+  assert.ok(frontmatterEnd >= 0, 'markdown agent must include frontmatter');
+  return normalized.slice(frontmatterEnd + '\n---\n'.length);
+}
+
+function extractCodexDeveloperInstructions(content) {
+  const match = String(content).match(/^developer_instructions\s*=\s*("(?:\\.|[^"\\])*")$/m);
+  assert.ok(match, 'Codex agent must include developer_instructions');
+  return JSON.parse(match[1]);
+}
+
+function assertRichAgentInstructions(content, label) {
+  assert.ok(content.length >= 2500, `${label} should preserve the rich ECC prompt`);
+  for (const marker of RICH_PROMPT_MARKERS) {
+    assert.match(content, new RegExp(marker, 'i'), `${label} missing ${marker}`);
+  }
+  assert.match(content, /single JSON object/i, `${label} missing JSON handoff contract`);
 }
 
 test('renderClaudeAgent matches the normative template', async () => {
@@ -79,6 +103,7 @@ test('renderClaudeAgent matches the normative template', async () => {
   assert.equal(rendered.targetRelPath, '.claude/agents/rex-planner.md');
   assert.match(md, /^---\nname: rex-planner\n/);
   assert.match(md, /^([\s\S]*)<!-- END AIOS-GENERATED -->\n$/);
+  assertRichAgentInstructions(extractMarkdownAgentBody(md), 'Claude agent body');
 });
 
 test('renderCodexAgent matches Codex TOML role contract', async () => {
@@ -94,6 +119,23 @@ test('renderCodexAgent matches Codex TOML role contract', async () => {
   assert.match(md, /^description = "Planner role card for AIOS orchestrations \(scope, risks, ordering\)."$/m);
   assert.match(md, /^developer_instructions = "/m);
   assert.doesNotMatch(md, /^---$/m);
+  assertRichAgentInstructions(extractCodexDeveloperInstructions(md), 'Codex developer_instructions');
+});
+
+test('all client agent emitters preserve rich ECC role cards in generated outputs', async () => {
+  const source = await canonicalAgent('reviewer');
+  const emitters = [
+    ['claude', '../lib/agents/emitters/claude.mjs', 'renderClaudeAgent', extractMarkdownAgentBody],
+    ['codex', '../lib/agents/emitters/codex.mjs', 'renderCodexAgent', extractCodexDeveloperInstructions],
+    ['opencode', '../lib/agents/emitters/opencode.mjs', 'renderOpencodeAgent', extractMarkdownAgentBody],
+    ['crush', '../lib/agents/emitters/crush.mjs', 'renderCrushAgent', extractMarkdownAgentBody],
+  ];
+
+  for (const [client, modulePath, exportName, extractor] of emitters) {
+    const mod = await import(modulePath);
+    const rendered = mod[exportName](source);
+    assertRichAgentInstructions(extractor(rendered.content), `${client} generated agent`);
+  }
 });
 
 test('syncCanonicalAgents aborts before write on unmanaged conflict', async () => {
@@ -116,7 +158,7 @@ test('syncCanonicalAgents rolls back replacements when final export write fails'
 
   const mod = await import('../lib/agents/sync.mjs');
   const beforeClaude = await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8');
-  const beforeCodex = await readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8');
+  const beforeCodex = await readFile(path.join(rootDir, '.codex/agents/rex-planner.toml'), 'utf8');
   const beforeExport = await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8');
 
   await assert.rejects(
@@ -133,7 +175,7 @@ test('syncCanonicalAgents rolls back replacements when final export write fails'
   );
 
   assert.equal(await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8'), beforeClaude);
-  assert.equal(await readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8'), beforeCodex);
+  assert.equal(await readFile(path.join(rootDir, '.codex/agents/rex-planner.toml'), 'utf8'), beforeCodex);
   assert.equal(await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8'), beforeExport);
 });
 
@@ -225,8 +267,9 @@ test('syncCanonicalAgents migrates stale Codex markdown agents to TOML role file
   const mod = await import('../lib/agents/sync.mjs');
   await mod.syncCanonicalAgents({ rootDir, targets: ['codex'] });
 
-  await assert.rejects(() => readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8'));
-  assert.match(await readFile(path.join(rootDir, '.codex/agents/rex-planner.toml'), 'utf8'), /developer_instructions = "/);
+  const content = await readFile(path.join(rootDir, '.codex/agents/rex-planner.toml'), 'utf8');
+  assert.match(content, /developer_instructions = "/);
+  assertRichAgentInstructions(extractCodexDeveloperInstructions(content), 'synced Codex agent');
 });
 
 test('syncCanonicalAgents rejects malformed marker-bearing files', async () => {

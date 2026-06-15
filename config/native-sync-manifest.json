@@ -49,6 +49,7 @@
       "metadataRoot": ".crush",
       "outputs": [
         "AGENTS.md",
+        ".crush/agents",
         ".crush/skills"
       ]
     },

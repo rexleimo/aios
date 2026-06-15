@@ -150,6 +150,18 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'status') {
+      const { runStatusCommand } = await import('../lifecycle/status.mjs');
+      applyResultExitCode(await runStatusCommand(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+      return;
+    }
+
+    if (parsed.command === 'agents') {
+      const { runAgentsCommand } = await import('../lifecycle/agents.mjs');
+      applyResultExitCode(await runAgentsCommand(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+      return;
+    }
+
     if (parsed.command === 'skill') {
       if (parsed.options.subcommand === 'comply') {
         const { runSkillComply } = await import('../skills/compliance.mjs');
@@ -178,6 +190,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     if (parsed.command === 'orchestrate') {
       const { runOrchestrate } = await import('../lifecycle/orchestrate.mjs');
       applyResultExitCode(await runOrchestrate(parsed.options, { rootDir: workspaceFor(parsed) }));
+      return;
+    }
+
+    if (parsed.command === 'workflow') {
+      const { runWorkflowCommand } = await import('../lifecycle/workflow.mjs');
+      applyResultExitCode(await runWorkflowCommand(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
       return;
     }
 

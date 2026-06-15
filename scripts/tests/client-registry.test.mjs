@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   ALL_CLIENTS,
@@ -19,6 +22,7 @@ import {
   resolveClientSelection,
 } from '../lib/clients/core/selection.mjs';
 import {
+  getClientAgentTargetRoot,
   resolveClientSkillRoots,
 } from '../lib/clients/paths/index.mjs';
 import {
@@ -43,6 +47,10 @@ import {
   resolveClientTeamProviders,
 } from '../lib/clients/providers/index.mjs';
 import * as registry from '../lib/clients/registry.mjs';
+
+function resolveRepoRoot() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
 
 test('client registry exposes stable canonical client order', () => {
   assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
@@ -79,6 +87,19 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.agents/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
+});
+
+test('native sync manifest declares generated agent outputs for every agent-capable client', async () => {
+  const manifest = JSON.parse(await readFile(path.join(resolveRepoRoot(), 'config', 'native-sync-manifest.json'), 'utf8'));
+
+  for (const client of resolveClientsWithCapability('agents', 'all')) {
+    const agentRoot = getClientAgentTargetRoot(client);
+    assert.ok(agentRoot, `${client} must expose an agent target root`);
+    assert.ok(
+      manifest.clients?.[client]?.outputs?.includes(agentRoot),
+      `${client} native sync outputs must include ${agentRoot}`
+    );
+  }
 });
 
 test('client registry exposes runtime command and client identifiers', () => {

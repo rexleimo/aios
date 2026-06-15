@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { cp, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
 import { syncNativeEnhancements } from '../lib/native/sync.mjs';
@@ -10,6 +11,10 @@ import { runClientsCommand } from '../lib/lifecycle/clients.mjs';
 import { evaluateSkillComplianceDryRun } from '../lib/skills/compliance.mjs';
 import { buildSkillHealthReport, recordSkillObservation } from '../lib/skills/health.mjs';
 import { recordSessionChangedFile, readSessionChangedFiles } from '../lib/session/changed-files.mjs';
+
+function resolveRepoRoot() {
+  return path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+}
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -63,25 +68,9 @@ async function seedNativeRoot(rootDir) {
   });
   await mkdir(path.join(rootDir, 'skill-sources', 'verification-loop'), { recursive: true });
   await writeFile(path.join(rootDir, 'skill-sources', 'verification-loop', 'SKILL.md'), '---\nname: verification-loop\ndescription: verify\n---\n# Verify\n', 'utf8');
-  await writeJson(path.join(rootDir, 'agent-sources', 'manifest.json'), { schemaVersion: 1, generatedTargets: ['claude', 'codex', 'opencode', 'crush'] });
-  for (const [id, role, handoffTarget] of [
-    ['rex-planner', 'planner', 'next-phase'],
-    ['rex-implementer', 'implementer', 'next-phase'],
-    ['rex-reviewer', 'reviewer', 'merge-gate'],
-    ['rex-security-reviewer', 'security-reviewer', 'merge-gate'],
-  ]) {
-    await writeJson(path.join(rootDir, 'agent-sources', 'roles', `${id}.json`), {
-      schemaVersion: 1,
-      id,
-      role,
-      name: id,
-      description: role,
-      tools: ['Read'],
-      model: 'sonnet',
-      handoffTarget,
-      systemPrompt: role,
-    });
-  }
+  await cp(path.join(resolveRepoRoot(), 'agent-sources'), path.join(rootDir, 'agent-sources'), {
+    recursive: true,
+  });
 }
 
 test('native sync writes OpenCode opencode.json with explicit AIOS trigger surfaces', async () => {

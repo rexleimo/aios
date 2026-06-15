@@ -1,5 +1,22 @@
 export function getWorkflowCommandHelpText(command) {
   switch (command) {
+    case 'workflow':
+      return `Usage:
+  node scripts/aios.mjs workflow list [options]
+  node scripts/aios.mjs workflow run <workflowId> --dry-run [options]
+
+Description:
+  List and dry-run aios.workflow-recipe.v1 recipes. Workflow recipes are the
+  AIOS-native equivalent of ECC orchestrate/plan/tdd/loop commands: they bind
+  default agents to ordered stages and block live execution until evidence exists.
+
+Options:
+  --task <title>       (run) Task title recorded in the dry-run
+  --dry-run            Required for workflow run until managed live evidence gates pass
+  --format <text|json>
+  --json
+  -h, --help
+`;
     case 'orchestrate':
       return `Usage:
   node scripts/aios.mjs orchestrate [feature|bugfix|refactor|security] [options]

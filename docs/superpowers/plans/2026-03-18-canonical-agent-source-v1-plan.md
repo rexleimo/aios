@@ -2,11 +2,11 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Replace the hand-edited orchestrator agent compatibility spec with a canonical `agent-sources/` tree while keeping `.claude/agents`, `.codex/agents`, and existing orchestrator consumers behaviorally unchanged.
+**Goal:** Replace the hand-edited orchestrator agent compatibility spec with a canonical `agent-sources/` tree while keeping `.claude/agents`, `.codex/agents`, and existing orchestrator consumers behaviorally unchanged. The canonical authoring format is now Markdown frontmatter + body; JSON remains a generated compatibility/export format.
 
-**Architecture:** Add a canonical source loader plus a deterministic compatibility/export and emitter-sync pipeline. Keep `memory/specs/orchestrator-agents.json` as the runtime-facing compatibility export in v1, but generate it from `agent-sources/`. Treat sync as a strict transaction: any malformed managed file, unmanaged conflict, collision, or write failure exits non-zero and leaves managed outputs unchanged.
+**Architecture:** Add a canonical source loader plus a deterministic compatibility/export and emitter-sync pipeline. Keep `scripts/lib/specs/orchestrator-agents.json` as the runtime-facing compatibility export in v1, but generate it from `agent-sources/`. Treat sync as a strict transaction: any malformed managed file, unmanaged conflict, collision, or write failure exits non-zero and leaves managed outputs unchanged.
 
-**Tech Stack:** Node 22 ESM, built-in `node:test`, JSON source files, repo-local generated Markdown agent catalogs.
+**Tech Stack:** Node 22 ESM, built-in `node:test`, Markdown/frontmatter source files, generated JSON compatibility export, repo-local generated agent catalogs.
 
 ---
 
@@ -14,10 +14,10 @@
 
 Create:
 - `agent-sources/manifest.json`
-- `agent-sources/roles/rex-planner.json`
-- `agent-sources/roles/rex-implementer.json`
-- `agent-sources/roles/rex-reviewer.json`
-- `agent-sources/roles/rex-security-reviewer.json`
+- `agent-sources/roles/rex-planner.md`
+- `agent-sources/roles/rex-implementer.md`
+- `agent-sources/roles/rex-reviewer.md`
+- `agent-sources/roles/rex-security-reviewer.md`
 - `scripts/lib/agents/source-tree.mjs`
 - `scripts/lib/agents/compat-export.mjs`
 - `scripts/lib/agents/emitters/claude.mjs`
@@ -42,7 +42,7 @@ Modify:
 - `scripts/tests/aios-orchestrator-agents.test.mjs`
 - `scripts/tests/aios-components.test.mjs`
 - `scripts/tests/release-pipeline.test.mjs`
-- `memory/specs/orchestrator-agents.json`
+- `scripts/lib/specs/orchestrator-agents.json`
 - `README.md`
 - `README-zh.md`
 
@@ -51,8 +51,8 @@ Keep unchanged in v1:
 - `scripts/lib/harness/subagent-runtime.mjs`
 
 Responsibility split:
-- `scripts/lib/agents/source-tree.mjs`: validate manifest, validate `roles/<id>.json`, load canonical agents, enforce fixed role cardinality.
-- `scripts/lib/agents/compat-export.mjs`: render deterministic `memory/specs/orchestrator-agents.json` content from canonical source.
+- `scripts/lib/agents/source-tree.mjs`: validate manifest, validate `roles/<id>.md` frontmatter/body, load canonical agents, enforce fixed role cardinality.
+- `scripts/lib/agents/compat-export.mjs`: render deterministic `scripts/lib/specs/orchestrator-agents.json` content from canonical source.
 - `scripts/lib/agents/emitters/*.mjs`: pure Markdown renderers for client-specific agent files.
 - `scripts/lib/agents/sync.mjs`: target resolution, strict managed-file detection, collision checks, staging, rollback, stale-file removal.
 - `scripts/lib/harness/orchestrator-agents.mjs`: thin compatibility wrapper around the new source/export/sync modules so existing callers do not need large rewrites in v1.
@@ -63,10 +63,10 @@ Responsibility split:
 
 **Files:**
 - Create: `agent-sources/manifest.json`
-- Create: `agent-sources/roles/rex-planner.json`
-- Create: `agent-sources/roles/rex-implementer.json`
-- Create: `agent-sources/roles/rex-reviewer.json`
-- Create: `agent-sources/roles/rex-security-reviewer.json`
+- Create: `agent-sources/roles/rex-planner.md`
+- Create: `agent-sources/roles/rex-implementer.md`
+- Create: `agent-sources/roles/rex-reviewer.md`
+- Create: `agent-sources/roles/rex-security-reviewer.md`
 - Create: `scripts/tests/agents-source-tree.test.mjs`
 
 - [ ] **Step 1: Add the failing source-tree tests**
@@ -123,14 +123,14 @@ Expected: FAIL with import or missing-module errors for `scripts/lib/agents/sour
 
 - [ ] **Step 3: Add canonical source fixtures**
 
-Create the new source tree with one file per existing role, mirroring current live values from `memory/specs/orchestrator-agents.json`.
+Create the new source tree with one file per existing role, mirroring current live values from `scripts/lib/specs/orchestrator-agents.json`.
 
 Example fixture content:
 
 ```json
 {
   "schemaVersion": 1,
-  "generatedTargets": ["claude", "codex"]
+  "generatedTargets": ["claude", "codex", "opencode", "crush"]
 }
 ```
 
@@ -160,9 +160,9 @@ export function buildRoleMap(agentsById) {}
 ```
 
 Required behavior:
-- read only `agent-sources/manifest.json` and `agent-sources/roles/*.json`
+- read only `agent-sources/manifest.json` and `agent-sources/roles/*.md`
 - require `manifest.schemaVersion === 1`
-- require `manifest.generatedTargets` to equal `["claude", "codex"]`
+- require `manifest.generatedTargets` to equal resolved client agent targets, currently `["claude", "codex", "opencode", "crush"]`
 - reject unknown manifest keys
 - reject unknown agent keys
 - require per-agent `schemaVersion === 1`
@@ -171,11 +171,11 @@ Required behavior:
 - require `role` in `planner|implementer|reviewer|security-reviewer`
 - require `handoffTarget` in `next-phase|merge-gate`
 - require `tools` to be an array of strings
-- enforce filename `<id>.json`
+- enforce filename `<id>.md` in default canonical mode
 - reject duplicate agent `id`
 - reject duplicate `role`
 - enforce exactly one agent per required role
-- reject unexpected files under `agent-sources/roles/`
+- reject unexpected files under `agent-sources/roles/`; `.json` role files require explicit legacy compatibility mode
 - reject unexpected subdirectories under `agent-sources/`
 - reject multi-line `name`, `description`, `model`, and `tools[]` items
 - reject any string field containing managed marker text
@@ -198,7 +198,7 @@ git commit -m "feat(agents): add canonical agent source loader"
 **Files:**
 - Create: `scripts/lib/agents/compat-export.mjs`
 - Modify: `scripts/generate-orchestrator-agents.mjs`
-- Modify: `memory/specs/orchestrator-agents.json`
+- Modify: `scripts/lib/specs/orchestrator-agents.json`
 - Modify: `scripts/tests/aios-orchestrator-agents.test.mjs`
 
 - [ ] **Step 1: Add the failing compatibility-export tests**
@@ -264,7 +264,7 @@ node scripts/generate-orchestrator-agents.mjs --export-only
 Required behavior:
 - load canonical source
 - render and validate the compatibility export
-- write only `memory/specs/orchestrator-agents.json`
+- write only `scripts/lib/specs/orchestrator-agents.json`
 - do not sync `.claude/agents` or `.codex/agents` yet in this step
 
 - [ ] **Step 5: Verify byte-for-byte cutover for the compatibility export only**
@@ -273,12 +273,12 @@ Run:
 
 ```bash
 node scripts/generate-orchestrator-agents.mjs --export-only
-git diff -- memory/specs/orchestrator-agents.json
+git diff -- scripts/lib/specs/orchestrator-agents.json
 git diff -- .claude/agents .codex/agents
 ```
 
 Expected:
-- no diff at all for `memory/specs/orchestrator-agents.json` before repository authority switches to `agent-sources/`
+- no diff at all for `scripts/lib/specs/orchestrator-agents.json` before repository authority switches to `agent-sources/`
 - no diff for `.claude/agents` and `.codex/agents` because `--export-only` must not touch generated target roots
 
 - [ ] **Step 6: Run agent tests and confirm pass**
@@ -289,7 +289,7 @@ Expected: PASS
 - [ ] **Step 7: Commit the compatibility-export cutover**
 
 ```bash
-git add scripts/lib/agents/compat-export.mjs scripts/generate-orchestrator-agents.mjs scripts/tests/aios-orchestrator-agents.test.mjs memory/specs/orchestrator-agents.json
+git add scripts/lib/agents/compat-export.mjs scripts/generate-orchestrator-agents.mjs scripts/tests/aios-orchestrator-agents.test.mjs scripts/lib/specs/orchestrator-agents.json
 git commit -m "refactor(agents): generate compatibility export from canonical source"
 ```
 
@@ -334,7 +334,7 @@ test('syncCanonicalAgents rolls back replacements when final export write fails'
   const mod = await import('../lib/agents/sync.mjs');
   const beforeClaude = await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8');
   const beforeCodex = await readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8');
-  const beforeExport = await readFile(path.join(rootDir, 'memory/specs/orchestrator-agents.json'), 'utf8');
+  const beforeExport = await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8');
 
   await assert.rejects(
     () => mod.syncCanonicalAgents({
@@ -347,7 +347,7 @@ test('syncCanonicalAgents rolls back replacements when final export write fails'
 
   assert.equal(await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8'), beforeClaude);
   assert.equal(await readFile(path.join(rootDir, '.codex/agents/rex-planner.md'), 'utf8'), beforeCodex);
-  assert.equal(await readFile(path.join(rootDir, 'memory/specs/orchestrator-agents.json'), 'utf8'), beforeExport);
+  assert.equal(await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8'), beforeExport);
 });
 
 test('syncCanonicalAgents rolls back when stale managed backup move fails', async () => {
@@ -377,7 +377,7 @@ test('syncCanonicalAgents rolls back when target replacement fails during commit
 
   const mod = await import('../lib/agents/sync.mjs');
   const beforePlanner = await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8');
-  const beforeExport = await readFile(path.join(rootDir, 'memory/specs/orchestrator-agents.json'), 'utf8');
+  const beforeExport = await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8');
 
   await assert.rejects(
     () => mod.syncCanonicalAgents({
@@ -389,7 +389,7 @@ test('syncCanonicalAgents rolls back when target replacement fails during commit
   );
 
   assert.equal(await readFile(path.join(rootDir, '.claude/agents/rex-planner.md'), 'utf8'), beforePlanner);
-  assert.equal(await readFile(path.join(rootDir, 'memory/specs/orchestrator-agents.json'), 'utf8'), beforeExport);
+  assert.equal(await readFile(path.join(rootDir, 'scripts/lib/specs/orchestrator-agents.json'), 'utf8'), beforeExport);
 });
 
 test('syncCanonicalAgents detects collisions before any file is written', async () => {
@@ -492,7 +492,7 @@ Required behavior:
 - `client=all|gemini|opencode` -> `['claude', 'codex']`
 - `mode='install'` and `mode='update'` compute the selected targets' expected managed set from canonical source
 - `mode='uninstall'` computes an empty expected set only for the selected target roots and removes only managed files under those roots
-- `writeCompatibilityExport=true` is used for install/update sync; `writeCompatibilityExport=false` is required for uninstall so `memory/specs/orchestrator-agents.json` remains unchanged
+- `writeCompatibilityExport=true` is used for install/update sync; `writeCompatibilityExport=false` is required for uninstall so `scripts/lib/specs/orchestrator-agents.json` remains unchanged
 - reject any unmanaged conflict with non-zero failure
 - reject malformed marker-bearing files with non-zero failure
 - detect collisions before writing anything
@@ -527,7 +527,7 @@ Required behavior:
 
 Modify `scripts/generate-orchestrator-agents.mjs` so it:
 - loads canonical source,
-- regenerates `memory/specs/orchestrator-agents.json`,
+- regenerates `scripts/lib/specs/orchestrator-agents.json`,
 - syncs selected target roots,
 - prints totals from the new sync result.
 
@@ -609,7 +609,7 @@ Required behavior:
 - `uninstall` still routes `agents` through the same client surface
 - `uninstall` renders an empty expected set only for the selected target roots
 - `uninstall` leaves `agent-sources/` unchanged
-- `uninstall` leaves `memory/specs/orchestrator-agents.json` unchanged
+- `uninstall` leaves `scripts/lib/specs/orchestrator-agents.json` unchanged
 - help text remains `--client <all|codex|claude|gemini|opencode>`
 - no new CLI values are added in v1
 
@@ -656,7 +656,7 @@ git commit -m "feat(agents): wire canonical source through lifecycle and release
 
 Document that:
 - `agent-sources/` is the canonical source
-- `memory/specs/orchestrator-agents.json` is generated compatibility output
+- `scripts/lib/specs/orchestrator-agents.json` is generated compatibility output
 - `.claude/agents` and `.codex/agents` are generated sync-owned outputs
 - `gemini` and `opencode` client selections still resolve to compatibility targets in v1
 
@@ -696,7 +696,7 @@ git diff -- .claude/agents .codex/agents
 ```
 
 Expected:
-- `--export-only` exits 0 and only refreshes `memory/specs/orchestrator-agents.json`
+- `--export-only` exits 0 and only refreshes `scripts/lib/specs/orchestrator-agents.json`
 - `.claude/agents` and `.codex/agents` remain unchanged
 
 - [ ] **Step 5: Verify full generation and setup flow**
@@ -738,7 +738,7 @@ test -e .codex/agents/rex-planner.md
 
 Expected:
 - update/uninstall exit 0
-- orchestrator smoke command exits 0 and still resolves `agentRefId` through `memory/specs/orchestrator-agents.json`
+- orchestrator smoke command exits 0 and still resolves `agentRefId` through `scripts/lib/specs/orchestrator-agents.json`
 - after uninstall, `.claude/agents/rex-planner.md` is absent and `.codex/agents/rex-planner.md` is still present
 
 - [ ] **Step 8: Restore generated roots and verify clean tree**

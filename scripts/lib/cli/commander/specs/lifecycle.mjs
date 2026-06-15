@@ -1,5 +1,22 @@
 export const LIFECYCLE_COMMAND_SPECS = [
   {
+    name: 'status',
+    description: 'Show unified AIOS readiness status',
+    options: [
+      ['--format <format>', 'Output format'],
+      ['--json', 'Output JSON'],
+    ],
+  },
+  {
+    name: 'agents',
+    description: 'Inspect AIOS default agent catalogue',
+    options: [
+      ['--strict', 'Fail when candidate agents are not smoke-verified'],
+      ['--format <format>', 'Output format'],
+      ['--json', 'Output JSON'],
+    ],
+  },
+  {
     name: 'setup',
     description: 'Install AIOS integrations',
     options: [

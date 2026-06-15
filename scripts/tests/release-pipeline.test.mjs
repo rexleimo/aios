@@ -32,6 +32,14 @@ async function assertFileExists(filePath, message = '') {
   assert.equal(fileStat.isFile(), true, message || `expected file to exist: ${filePath}`);
 }
 
+async function assertFileMissing(filePath, message = '') {
+  await assert.rejects(
+    () => stat(filePath),
+    /ENOENT/,
+    message || `expected file to be absent: ${filePath}`
+  );
+}
+
 function runPowerShell(scriptPath, args = [], options = {}) {
   return run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath, ...args], options);
 }
@@ -61,11 +69,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp"}\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
-  await writeFixtureFile(rootDir, 'agent-sources/manifest.json', '{"schemaVersion":1,"generatedTargets":["claude","codex","opencode","crush"]}\n');
-  await writeFixtureFile(rootDir, 'agent-sources/roles/rex-planner.json', '{"schemaVersion":1,"id":"rex-planner","role":"planner","name":"rex-planner","description":"planner","tools":["Read"],"model":"sonnet","handoffTarget":"next-phase","systemPrompt":"plan"}\n');
-  await writeFixtureFile(rootDir, 'agent-sources/roles/rex-implementer.json', '{"schemaVersion":1,"id":"rex-implementer","role":"implementer","name":"rex-implementer","description":"implement","tools":["Read","Edit"],"model":"sonnet","handoffTarget":"next-phase","systemPrompt":"implement"}\n');
-  await writeFixtureFile(rootDir, 'agent-sources/roles/rex-reviewer.json', '{"schemaVersion":1,"id":"rex-reviewer","role":"reviewer","name":"rex-reviewer","description":"review","tools":["Read"],"model":"sonnet","handoffTarget":"merge-gate","systemPrompt":"review"}\n');
-  await writeFixtureFile(rootDir, 'agent-sources/roles/rex-security-reviewer.json', '{"schemaVersion":1,"id":"rex-security-reviewer","role":"security-reviewer","name":"rex-security-reviewer","description":"security","tools":["Read"],"model":"sonnet","handoffTarget":"merge-gate","systemPrompt":"secure"}\n');
+  await cp(path.join(workspaceRoot, 'agent-sources'), path.join(rootDir, 'agent-sources'), { recursive: true });
   await writeFixtureFile(rootDir, '.codex/skills/sample-skill/SKILL.md', '# codex\n');
   await writeFixtureFile(rootDir, '.codex/agents/rex.toml', '# codex agent\n');
   await writeFixtureFile(rootDir, '.claude/skills/sample-skill/SKILL.md', '# claude\n');
@@ -86,6 +90,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/check-native-sync.mjs', checkNativeSyncScript);
   await writeFixtureFile(rootDir, 'scripts/sync-native.mjs', "console.log('[ok] native sync');\n");
   await writeFixtureFile(rootDir, 'scripts/lib/fs/atomic-write.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'fs', 'atomic-write.mjs'), 'utf8'));
+  await writeFixtureFile(rootDir, 'scripts/lib/skills/frontmatter.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'skills', 'frontmatter.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/source-tree.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'source-tree.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/compat-export.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'compat-export.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/sync.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'sync.mjs'), 'utf8'));
@@ -130,6 +135,14 @@ test('package-release.sh emits stable assets that include native, skill, and age
   await assertFileExists(
     path.join(extractDir, 'harness-cli', 'agent-sources', 'manifest.json'),
     'harness-cli.tar.gz did not include agent-sources/manifest.json'
+  );
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'agent-sources', 'roles', 'rex-planner.md'),
+    'harness-cli.tar.gz did not include markdown role cards'
+  );
+  await assertFileMissing(
+    path.join(extractDir, 'harness-cli', 'agent-sources', 'roles', 'rex-planner.json'),
+    'harness-cli.tar.gz should not include legacy JSON role cards'
   );
   await assertFileExists(
     path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json'),
@@ -327,6 +340,23 @@ test('release-preflight.sh validates matching tag, VERSION, changelog, and nativ
     : run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], { cwd: failingRoot });
   assert.notEqual(drift.status, 0);
   assert.match(`${drift.stderr}\n${drift.stdout}`, /native sync drift detected/i);
+});
+
+
+test('release-preflight fails when generated orchestrator agent export drifts', async () => {
+  const rootDir = await makeTemp('rex-release-preflight-agent-drift-');
+  await seedFixtureRepo(rootDir, {
+    checkSkillsSyncScript: "console.log('[ok] skills sync clean');\nprocess.exit(0);\n",
+    checkNativeSyncScript: "console.log('[ok] native sync clean');\nprocess.exit(0);\n",
+  });
+  await writeFixtureFile(rootDir, 'scripts/lib/specs/orchestrator-agents.json', '{"schemaVersion":1,"roleMap":{},"agents":{}}\n');
+
+  const result = process.platform === 'win32'
+    ? runPowerShell('scripts/release-preflight.ps1', ['-Tag', 'v1.2.3'], { cwd: rootDir })
+    : run('bash', ['scripts/release-preflight.sh', '--tag', 'v1.2.3'], { cwd: rootDir });
+
+  assert.notEqual(result.status, 0);
+  assert.match(`${result.stderr}\n${result.stdout}`, /agent export drift detected/i);
 });
 
 test('release-preflight materializes sync checks in a temporary target root', async () => {

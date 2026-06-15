@@ -32,7 +32,10 @@ function collectWorkspaceFiles(workspace) {
   ]));
   files.push(...listAgentRoleFiles(workspace, '.claude/agents', ['.md']));
   files.push(...listAgentRoleFiles(workspace, '.codex/agents', ['.toml', '.md']));
-  files.push(...listFilesUnder(workspace, 'agent-sources', (name) => name.toLowerCase().endsWith('.json')));
+  files.push(...listFilesUnder(workspace, 'agent-sources', (name) => {
+    const lowerName = name.toLowerCase();
+    return lowerName.endsWith('.json') || lowerName.endsWith('.md');
+  }));
   return files;
 }
 
