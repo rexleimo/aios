@@ -17,6 +17,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v2.0.2：更安全的技能健康记录与更干净的 Crush 配置](2026-06-v202-ecc-uplift.md)
 - [v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1：全客户端 Token 压缩合规](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码](2026-06-v150-unified-aios-search.md)

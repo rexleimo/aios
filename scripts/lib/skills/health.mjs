@@ -9,8 +9,15 @@ function observationsPath(rootDir) {
   return path.join(healthDir(rootDir), 'observations.jsonl');
 }
 
+const ALLOWED_STATUSES = ['success', 'failure'];
+const ALLOWED_STATUS_SET = new Set(ALLOWED_STATUSES);
+
 function normalizeStatus(status) {
-  return status === 'success' ? 'success' : 'failure';
+  const normalized = String(status || '').trim().toLowerCase();
+  if (!ALLOWED_STATUS_SET.has(normalized)) {
+    throw new Error(`skill observation status must be one of: ${ALLOWED_STATUSES.join(', ')}`);
+  }
+  return normalized;
 }
 
 export async function recordSkillObservation({

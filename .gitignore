@@ -102,6 +102,8 @@ memory/memo/
 
 # Client-local MCP config — per-machine paths, not to be committed
 .opencode.json
+.crush.json
+crush.json
 
 # MCP config backups created by codemap install/uninstall
 .mcp.json.bak*

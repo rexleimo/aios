@@ -52,6 +52,21 @@ test('parseArgs accepts Commander-style equals options', () => {
   assert.equal(team.options.executionMode, 'dry-run');
 });
 
+test('parseArgs gives help flags precedence for skill and session commands', () => {
+  for (const argv of [
+    ['skill', '--help'],
+    ['skill', 'comply', '--help'],
+    ['skill', 'health', '--help'],
+    ['session', '--help'],
+    ['session', 'changed-files', '--help'],
+  ]) {
+    const result = parseArgs(argv);
+    assert.equal(result.mode, 'help');
+    assert.equal(result.help, true);
+    assert.equal(result.command, argv[0]);
+  }
+});
+
 test('aios declares CLI engineering dependencies directly', async () => {
   const pkg = JSON.parse(await fs.readFile(path.join(process.cwd(), 'package.json'), 'utf8'));
   assert.match(pkg.dependencies?.commander || '', /^\^?\d/u);

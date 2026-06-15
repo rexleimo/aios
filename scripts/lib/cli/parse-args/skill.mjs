@@ -1,27 +1,39 @@
 import { takeValue } from './shared.mjs';
 
+function isHelpArg(arg) {
+  return arg === '-h' || arg === '--help' || arg === 'help';
+}
+
 export function parseSkillArgs(argv = []) {
   const rest = argv.slice(1);
+  const rawSubcommand = String(rest[0] || '').trim().toLowerCase();
   const options = {
-    subcommand: String(rest[0] || '').trim().toLowerCase(),
+    subcommand: isHelpArg(rawSubcommand) ? '' : rawSubcommand,
     json: false,
     format: 'text',
     dryRun: false,
     dashboard: false,
     client: 'codex',
   };
-  let help = false;
-  if (!options.subcommand) throw new Error('skill requires subcommand: comply or health');
+  let help = isHelpArg(rawSubcommand);
   let start = 1;
   if (options.subcommand === 'comply') {
-    options.path = rest[1] || '';
-    start = 2;
-    if (!options.path) throw new Error('skill comply requires a path');
+    const pathArg = rest[1] || '';
+    if (pathArg && !isHelpArg(pathArg) && !String(pathArg).startsWith('-')) {
+      options.path = pathArg;
+      start = 2;
+    } else {
+      options.path = '';
+    }
   }
-  for (let index = start; index < rest.length; index += 1) {
+  for (let index = 1; index < rest.length; index += 1) {
     const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
+    if (index < start) {
+      continue;
+    }
+    if (isHelpArg(arg)) {
       help = true;
+      continue;
     } else if (arg === '--json') {
       options.json = true;
       options.format = 'json';
@@ -40,12 +52,24 @@ export function parseSkillArgs(argv = []) {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
+  if (help) {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'skill',
+      options,
+    };
+  }
+  if (!options.subcommand) throw new Error('skill requires subcommand: comply or health');
+  if (options.subcommand === 'comply') {
+    if (!options.path) throw new Error('skill comply requires a path');
+  }
   if (!['comply', 'health'].includes(options.subcommand)) {
     throw new Error('skill requires subcommand: comply or health');
   }
   return {
-    mode: help ? 'help' : 'command',
-    help,
+    mode: 'command',
+    help: false,
     command: 'skill',
     options,
   };

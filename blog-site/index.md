@@ -19,6 +19,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
 - [v1.52.0: Deterministic Shell Output Compression via MCP](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0: Unified AIOS Search Across Memory, Docs, Plans, and Code](2026-06-v150-unified-aios-search.md)

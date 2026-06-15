@@ -175,14 +175,20 @@ test('skill health records observations and reports success rate with failure cl
   await recordSkillObservation({ rootDir, skillId: 'search-first', status: 'success', failure: '', amendmentId: 'a1', at: '2026-06-14T01:00:00.000Z' });
   await recordSkillObservation({ rootDir, skillId: 'search-first', status: 'failure', failure: 'missed local search', amendmentId: 'a2', at: '2026-06-14T02:00:00.000Z' });
   await recordSkillObservation({ rootDir, skillId: 'verification-loop', status: 'failure', failure: 'claimed before test', amendmentId: '', at: '2026-06-14T03:00:00.000Z' });
+  await assert.rejects(
+    () => recordSkillObservation({ rootDir, skillId: 'search-first', status: 'typo', failure: 'bad producer', at: '2026-06-14T04:00:00.000Z' }),
+    /skill observation status must be one of: success, failure/
+  );
 
   const report = await buildSkillHealthReport({ rootDir, now: new Date('2026-06-15T00:00:00.000Z') });
+  const rawObservations = await readFile(path.join(rootDir, '.aios', 'skill-health', 'observations.jsonl'), 'utf8');
 
   assert.equal(report.kind, 'skill-health.report');
   assert.equal(report.skills['search-first'].total, 2);
   assert.equal(report.skills['search-first'].successRate, 0.5);
   assert.equal(report.skills['search-first'].pendingAmendments.length, 2);
   assert.equal(report.failurePatterns[0].failure, 'missed local search');
+  assert.equal(rawObservations.trim().split(/\r?\n/u).length, 3);
 });
 
 test('session changed-files ledger records latest operation per file', async () => {

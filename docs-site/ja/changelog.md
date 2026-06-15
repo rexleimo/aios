@@ -5,6 +5,21 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v2.0.2 (2026-06-15)
+
+- **Skill health validation**: `recordSkillObservation()` は未知の status を拒否し、producer の typo を failure として保存しないようになりました。
+- **Help-first CLI parsing**: `aios skill ... --help` と `aios session ... --help` は必須位置引数の検証より先に usage を表示します。
+- **Crush config hygiene**: `.crush.json` と `crush.json` は repository で tracking されなくなりました。local Crush config は引き続き利用できますが git では無視されます。
+- 参考: [v2.0.2 release post](/blog/ja/2026-06-v202-ecc-uplift/).
+
+## v2.0.1 (2026-06-13)
+
+- **Browser MCP alias migration**: default browser-use runtime を保ったまま legacy alias compatibility を修正しました。
+
+## v2.0.0 (2026-06-12)
+
+- **Pull-based runtime context**: automatic ContextDB prompt injection と startup-mode injection を削除し、必要な時だけ runtime context を読み込む形にしました。
+
 ## v1.52.0 (2026-06-11)
 
 - **aios_shell MCP ツール**: `aios-shell` MCP エイリアス経由で全クライアントにおいて決定論的な shell 出力圧縮を実現。shell コマンドは `scripts/shell-mcp-server.mjs` で実行され、MCP proxy が自動的に **99%+ の節約率** で圧縮します。

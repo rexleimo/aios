@@ -1,19 +1,24 @@
 import { takeValue } from './shared.mjs';
 
+function isHelpArg(arg) {
+  return arg === '-h' || arg === '--help' || arg === 'help';
+}
+
 export function parseSessionArgs(argv = []) {
   const rest = argv.slice(1);
+  const rawSubcommand = String(rest[0] || '').trim().toLowerCase();
   const options = {
-    subcommand: String(rest[0] || '').trim().toLowerCase(),
+    subcommand: isHelpArg(rawSubcommand) ? '' : rawSubcommand,
     session: 'default',
     json: false,
     format: 'text',
   };
-  let help = false;
-  if (!options.subcommand) throw new Error('session requires subcommand: changed-files');
+  let help = isHelpArg(rawSubcommand);
   for (let index = 1; index < rest.length; index += 1) {
     const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
+    if (isHelpArg(arg)) {
       help = true;
+      continue;
     } else if (arg === '--json') {
       options.json = true;
       options.format = 'json';
@@ -28,12 +33,21 @@ export function parseSessionArgs(argv = []) {
       throw new Error(`Unknown option: ${arg}`);
     }
   }
+  if (help) {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'session',
+      options,
+    };
+  }
+  if (!options.subcommand) throw new Error('session requires subcommand: changed-files');
   if (options.subcommand !== 'changed-files') {
     throw new Error('session requires subcommand: changed-files');
   }
   return {
-    mode: help ? 'help' : 'command',
-    help,
+    mode: 'command',
+    help: false,
     command: 'session',
     options,
   };

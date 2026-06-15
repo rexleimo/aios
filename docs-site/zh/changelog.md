@@ -5,6 +5,21 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v2.0.2（2026-06-15）
+
+- **技能健康记录校验**：`recordSkillObservation()` 现在会拒绝未知 status，不再把生产端拼写错误静默落成 failure，避免污染失败率统计。
+- **Help 优先解析**：`aios skill ... --help` 与 `aios session ... --help` 会先展示用法，再执行必填位置参数校验。
+- **Crush 配置卫生**：`.crush.json` 与 `crush.json` 不再由仓库跟踪；本地 Crush 配置仍可生成/读取，但会被 git 忽略。
+- 详情参见：[v2.0.2 发布文章](/blog/zh/2026-06-v202-ecc-uplift/)。
+
+## v2.0.1（2026-06-13）
+
+- **Browser MCP alias 迁移**：修复 legacy alias 兼容路径，同时保持默认 browser-use runtime 稳定。
+
+## v2.0.0（2026-06-12）
+
+- **拉取式运行时上下文**：移除自动 ContextDB prompt 注入和 startup-mode 注入，agent 只在需要时读取运行时上下文。
+
 ## v1.52.0（2026-06-11）
 
 - **aios_shell MCP 工具**：通过 `aios-shell` MCP 别名实现跨所有客户端的确定性 shell 输出压缩。shell 命令通过 `scripts/shell-mcp-server.mjs` 执行，输出由 MCP proxy 自动压缩，**压缩率超过 99%**。
