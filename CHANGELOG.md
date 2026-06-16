@@ -8,7 +8,15 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [3.0.0] - 2026-06-15
 
-- make markdown agent role cards canonical
+### Added
+- Make markdown agent role cards canonical across exported agent surfaces.
+- Add agent governance rollout documentation for workflow routing, smoke validation, and skill training gates.
+- Add website and blog guidance for the agent governance rollout.
+
+### Fixed
+- Preserve original subagent prompt semantics when turn compression offloads large prompt refs.
+- Deep-merge OpenCode AIOS command/config buckets during native sync so user-defined commands are retained.
+- Reject unsafe session and skill identifiers before writing runtime paths or health reports.
 
 ## [2.0.2] - 2026-06-15
 
