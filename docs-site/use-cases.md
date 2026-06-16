@@ -119,6 +119,14 @@ aios team status --provider codex --watch
 
 In live mode, Agent Team uses the **GroupChat Runtime**: agents run in rounds with a shared conversation thread. The planner analyzes the task, implementers work in parallel per round, and reviewers validate. Blocked agents trigger automatic re-plan rounds.
 
+When you add agents, change routing, or update workflow skills, record governance evidence before trusting live runs:
+
+```bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
 Bad fit: fuzzy requirements, one-off bugs, or multiple workers likely editing the same file. Use normal `codex` first in those cases.
 
 ## I Want To See Progress And History

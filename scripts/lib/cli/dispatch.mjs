@@ -173,6 +173,11 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         applyResultExitCode(await runSkillHealth(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
         return;
       }
+      if (parsed.options.subcommand === 'verify-training') {
+        const { runSkillTrainingGate } = await import('../skills/training-gate.mjs');
+        applyResultExitCode(await runSkillTrainingGate(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
     }
 
     if (parsed.command === 'session') {

@@ -23,6 +23,7 @@ export function buildCompactPacket({ request, output, shrink, ref, rawBytes }) {
     sessionId: request.sessionId,
     event_kind: request.metadata?.eventKind || eventKindFromRequest(request),
     client_id: request.metadata?.clientId || request.host,
+    agent_id: request.metadata?.agentId || '',
     host_level: request.metadata?.hostLevel || request.capabilities?.targetLevel || request.capabilities?.effectiveLevel || '',
     mode: request.metadata?.mode || '',
     fallback_reason: request.metadata?.fallbackReason || '',

@@ -20,6 +20,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 ## 최신 글
 
 - [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
+- [Agent Governance: Team live 실행 전에 증거 남기기](2026-06-agent-governance.md)
 - [v1.52.0: 결정론적 Shell 출력 압축 (MCP 기반)](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)
 - [v1.50.0: 기억, 문서, 계획, 코드를 가로지르는 통합 AIOS 검색](2026-06-v150-unified-aios-search.md)

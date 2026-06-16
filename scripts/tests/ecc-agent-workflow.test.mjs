@@ -166,9 +166,10 @@ test('valid agent evidence can promote projected agents but not candidate-only a
 });
 
 test('projected agents stay workflow-blocked until local smoke and metrics evidence exists', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-agent-blocked-evidence-'));
   const catalogue = await buildAgentCatalogue({
     rootDir: process.cwd(),
-    evidenceRoot: process.cwd(),
+    evidenceRoot,
   });
   const byId = Object.fromEntries(catalogue.agents.map((agent) => [agent.agentId, agent]));
 

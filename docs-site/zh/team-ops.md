@@ -135,6 +135,29 @@ aios team --resume <session-id> --retry-blocked --provider codex --workers 2
 
 蓝图、角色卡片、运行时清单、执行器清单和交接模式打包在 `scripts/lib/specs/` 下。Team 运行状态和证据仍然写入 `.aios/context-db/`；`.aios/memo/` 仅用于项目备忘录记录，不是 team 运行时存储。
 
+## Agent 治理与 smoke 证据
+
+随着 agent 面越来越大，要把每次工作流改动都当成一次契约变更。把团队或 harness 的 live 跑法放出去之前，先用 smoke 证据和训练检查证明新行为仍然符合系统契约。
+
+```bash
+# 先预览 agent smoke 路径，不做 live 执行
+node scripts/aios.mjs agents smoke --dry-run --json
+
+# 为当前 agent 集合记录 smoke 证据
+node scripts/aios.mjs agents smoke --json
+
+# 确认已修改的 skill 在 live 使用前完成训练校验
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
+smoke 运行会为每个核心风险 agent 写入三类证据：
+
+- `.aios/agents/smoke/<agent>.json`
+- `.aios/agents/provenance/<agent>.json`
+- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
+
+把这些证据当成是否可以进入 live workflow 的依据。只要 skill 有改动，training verification 就是 done 的一部分。
+
 ### 配置
 
 ```bash

@@ -216,6 +216,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
 - Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
 - Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
+- For agent promotions, turn compression metrics must include `agent_id` and both `pre_send` / `post_receive` evidence before a workflow can be considered live-ready.
 
 ## AIOS Turn Compression Enforcement
 
@@ -352,6 +353,22 @@ Interpretation:
 
 Current strict policy: Antigravity and Crush may receive generated instructions/skills, but live execution remains blocked while they are `pending-smoke`. If a task needs those clients, report the blocker and continue with a verified client instead of silently falling back.
 
+## AIOS Token Discipline
+
+AIOS uses native token discipline profiles: `minimal | balanced | full`.
+
+- `minimal`: prefer the smallest useful context; use semantic summaries, scoped reads, and compact handoffs.
+- `balanced`: default profile; preserve enough evidence for implementation while avoiding noisy full-output dumps.
+- `full`: use only when debugging, auditing, or reviewing requires broader evidence.
+
+Use strategic compact at stable boundaries: after exploration, before implementation; after a milestone; after debugging; before context switch.
+
+Avoid compacting in the middle of implementation, active debugging, or a multi-file refactor where local continuity matters.
+
+Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling, and prefer AIOS compact packets/raw refs for large outputs.
+
+Do not replace AIOS interception runtime. Token profiles are a pre-context hygiene layer; `scripts/aios-mcp-proxy.mjs`, raw refs, compact packets, and interception metrics remain authoritative.
+
 <!-- 中文注释：superpowers 流程强制段，仅对具备 superpowers 能力的客户端下发，避免向无此技能的宿主发指令。 -->
 
 ## AIOS Superpowers Workflow
@@ -364,6 +381,7 @@ Current strict policy: Antigravity and Crush may receive generated instructions/
   - About to claim completion → `superpowers:verification-before-completion`
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
+- If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
 - Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
 
 <!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
@@ -374,6 +392,7 @@ Current strict policy: Antigravity and Crush may receive generated instructions/
 - Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
 - Use `superpowers:dispatching-parallel-agents` to fan out, then converge with a verification pass before merge.
 - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
+- When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.
 
 <!-- 中文注释：code-review-graph（codemap）MCP 决策检查点。所有已注册 MCP 的客户端均下发，让 gemini/opencode 也能用结构图。 -->
 

@@ -6,3 +6,4 @@
 - Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
 - Use `superpowers:dispatching-parallel-agents` to fan out, then converge with a verification pass before merge.
 - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
+- When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.

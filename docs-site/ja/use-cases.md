@@ -119,6 +119,14 @@ aios team status --provider codex --watch
 
 live モードでは、Agent Team は **GroupChat Runtime** を使用します：エージェントが共有会話スレッドでラウンド実行されます。planner がタスクを分析し、implementer がラウンドごとに並列作業し、reviewer が検証します。ブロックされたエージェントは自動的に re-plan ラウンドをトリガーします。
 
+agent 追加、routing 変更、workflow skill 更新を行う場合は、live 実行を信頼する前に governance 証跡を記録します。
+
+```bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
 適さない: 要件が曖昧、小さな bug、複数 worker が同じファイルを編集しそうな場合。この時は通常の `codex` から始めます。
 
 ## 進捗と履歴を見たい

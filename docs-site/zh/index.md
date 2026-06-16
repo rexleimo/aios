@@ -22,7 +22,7 @@ description: Harness CLI (AIOS) 给你正在用的 codex / claude / gemini / ope
 | **原生 Token 压缩** | 自研输入/输出压缩，参考 RTK/Caveman 思路，不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本和历史成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Codemap** | Tree-sitter 代码知识图谱 — 一行命令安装，所有 agent 瞬间获得代码库的结构化理解 | `aios internal codemap install` / `doctor` |
-| **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
+| **Agent Team** | 多 Agent 并行协作，带 HUD 追踪、smoke 证据和治理检查 | `aios team 3:codex "任务描述"` / `node scripts/aios.mjs agents smoke --json` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
 | **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
@@ -122,7 +122,7 @@ npm run build
 - [快速开始](getting-started.md) — 安装、配置、首次运行
 - [Model Router](model-router.md) — Agent Team 多模型智能调度
 - [ContextDB](contextdb.md) — 项目记忆系统
-- [Agent Team](team-ops.md) — 多 Agent 协作指南
+- [Agent Team](team-ops.md) — 多 Agent 协作与工作流治理指南
 - [Solo Harness](solo-harness.md) — 过夜长任务指南
 - [Perception](perception.md) — 内容结果追踪与洞察
 - [架构](architecture.md) — 系统架构
@@ -132,6 +132,7 @@ npm run build
 ## 博客精选
 
 - [AIOS RL Training System](/blog/zh/rl-training-system/)
+- [Agent 治理：让 Team live 运行先证明自己](/blog/zh/2026-06-agent-governance/)
 - [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
 - [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)
 - [Orchestrate Live](/blog/zh/orchestrate-live/)

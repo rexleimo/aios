@@ -7,6 +7,12 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## Docs And Workflow Notes
+
+- Added agent governance coverage to the Team docs, scenario guide, ContextDB reference, and blog.
+- New smoke evidence guidance now points to `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, and `.aios/interception/metrics/agents-smoke-<agent>.jsonl`.
+- Skill edits now point readers to `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` before trusting live agent workflows.
+
 ## Official Release History
 
 ## v2.0.2 (2026-06-15)

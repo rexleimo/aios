@@ -227,6 +227,23 @@ Runtime IDs are `codex-cli`, `claude-code`, `gemini-cli`, `antigravity-cli`, `op
 ### Agent Instruction Coverage
 
 The search guidance is generated from shared native instructions. Codex, OpenCode, and Crush receive it through `AGENTS.md`; Claude receives it through `CLAUDE.md`; Gemini and Antigravity receive it through `GEMINI.md`. Antigravity and Crush remain `pending-smoke` for live execution, but their static instruction projection includes the same search rules.
+### Agent Governance Evidence
+
+When you add or re-route agents, or change a workflow skill, treat the change like an operating-procedure update instead of a simple doc tweak. Record smoke evidence before trusting the new live path:
+
+```bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
+The smoke run writes per-agent evidence under:
+
+- `.aios/agents/smoke/<agent>.json`
+- `.aios/agents/provenance/<agent>.json`
+- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
+
+Keep those files alongside the session history when you need to explain why a routing change or skill update was safe.
 
 ## Searching Your History
 

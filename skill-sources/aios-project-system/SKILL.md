@@ -23,6 +23,7 @@ Use this skill as the repository map for `aios`. It explains where state lives, 
 - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`: per-client project-level behavior contract and architecture overview (each client loads its own instruction file).
 - `skill-sources/*/SKILL.md`: canonical skill sources (edit here, never edit generated copies).
 - Generated repo-local skills per client: `.codex/skills`, `.claude/skills`, `.gemini/skills` (also used by Antigravity), `.opencode/skills`, `.crush/skills`, `.agents/skills` — emitted from `skill-sources/` via `config/skills-sync-manifest.json`.
+- Agent promotion and workflow enablement are evidence-gated: use `agents smoke` for core-risk rollout evidence, then `skill verify-training` to block changed skills until SkillOpt training is accepted.
 - `scripts/lib/specs/*.json`: runtime specifications and limits.
 - `tasks/{pending,done,failed}`: task queue and outcomes.
 - `scripts/run-browser-use-mcp.sh`: default browser MCP launcher (bridges to `ai-browser-book/mcp-browser-use`).

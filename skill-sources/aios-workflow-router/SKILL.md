@@ -69,6 +69,8 @@ If no subagent tool available, emulate with explicit task queues. Emit heartbeat
 1. If no plan exists: `superpowers:brainstorming` first, then `superpowers:writing-plans`
 2. If plan exists: `superpowers:test-driven-development`
 
+**Agent workflow note**: when the change adds or reshapes agent roles, also require the repo's agent smoke plan and skill training gate before the new workflow can be considered live-ready.
+
 ### 6. Analysis Tasks (分析任务)
 **Keywords**: 分析、analysis、研究、research、investigate、调查、为什么、why
 

@@ -22,7 +22,7 @@ You keep using the same commands. Nothing changes about your workflow — except
 | **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
 | **Codemap** | Tree-sitter code knowledge graph — one-command install gives all agents instant structural understanding of your codebase | `aios internal codemap install` / `doctor` |
-| **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
+| **Agent Team** | Multi-agent parallel collaboration with HUD tracking, smoke evidence, and governance checks | `aios team 3:codex "task description"` / `node scripts/aios.mjs agents smoke --json` |
 | **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
 | **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
@@ -117,7 +117,7 @@ npm run build
 - [Quick Start](getting-started.md) — Install, configure, first run
 - [Model Router](model-router.md) — Multi-model dispatch for Agent Teams
 - [ContextDB](contextdb.md) — Project memory system
-- [Agent Team](team-ops.md) — Multi-agent collaboration guide
+- [Agent Team](team-ops.md) — Multi-agent collaboration and workflow governance guide
 - [Solo Harness](solo-harness.md) — Overnight task guide
 - [Perception](perception.md) — Content outcome tracking & insights
 - [Architecture](architecture.md) — System architecture
@@ -127,6 +127,7 @@ npm run build
 ## Blog Highlights
 
 - [AIOS RL Training System](/blog/rl-training-system/)
+- [Agent Governance: Make Team Runs Prove Themselves Before Going Live](/blog/2026-06-agent-governance/)
 - [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)
 - [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)
 - [Orchestrate Live](/blog/orchestrate-live/)

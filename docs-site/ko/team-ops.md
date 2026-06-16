@@ -159,6 +159,29 @@ If an agent gets stuck, the planner **automatically re-plans** the next round.
 
 Blueprint, role card, runtime manifest, executor manifest, handoff schema 는 `scripts/lib/specs/` 에 포함됩니다. Team 실행 상태와 증거는 계속 `.aios/context-db/` 에 기록됩니다. `.aios/memo/` 는 프로젝트 memo 전용이며 team runtime store 가 아닙니다.
 
+## Agent 거버넌스와 smoke 증거
+
+agent 수가 늘어날수록 workflow 변경은 contract 변경으로 봐야 합니다. team 이나 harness live 실행을 열기 전에 smoke 증거와 training check 로 새 동작이 시스템 contract 에 맞는지 확인하세요.
+
+```bash
+# live 실행 없이 agent smoke 경로를 미리 보기
+node scripts/aios.mjs agents smoke --dry-run --json
+
+# 현재 agent 집합에 대한 smoke 증거 기록
+node scripts/aios.mjs agents smoke --json
+
+# 변경된 skill 이 live 사용 전에 training 되었는지 확인
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
+smoke 실행은 core-risk agent 별로 다음 3가지 증거를 남깁니다.
+
+- `.aios/agents/smoke/<agent>.json`
+- `.aios/agents/provenance/<agent>.json`
+- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
+
+이 증거를 docs 변경, skill 업데이트, routing 조정이 live workflow 로 넘어가도 되는지 판단하는 기준으로 사용하세요. skill 을 바꿨다면 training verification 은 done 조건입니다.
+
 ### Configuration
 
 ```bash

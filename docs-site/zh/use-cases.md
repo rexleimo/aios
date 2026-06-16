@@ -119,6 +119,14 @@ aios team status --provider codex --watch
 
 在 live 模式下，Agent Team 使用 **GroupChat Runtime**：agent 在轮次中运行，共享同一个对话线程。Planner 分析任务，implementer 按轮次并行工作，reviewer 验证。被阻塞的 agent 会触发自动 re-plan 轮次。
 
+当你新增 agent、修改路由或更新 workflow skill 时，先记录治理证据再信任 live 运行：
+
+```bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
 不适合：需求还模糊、单点 bug、多个 worker 会改同一个文件。此时先用普通 `codex`。
 
 ## 我想看进度和历史

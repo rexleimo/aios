@@ -5,6 +5,12 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## ドキュメントと workflow のメモ
+
+- agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
+- 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
+- skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
+
 ## v2.0.2 (2026-06-15)
 
 - **Skill health validation**: `recordSkillObservation()` は未知の status を拒否し、producer の typo を failure として保存しないようになりました。

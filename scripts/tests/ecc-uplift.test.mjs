@@ -95,6 +95,18 @@ test('native sync writes OpenCode opencode.json with explicit AIOS trigger surfa
 });
 
 test('parseArgs accepts clients trigger-smoke and skill/session subcommands', () => {
+  const agentSmoke = parseArgs(['agents', 'smoke', '--dry-run', '--json']);
+  assert.equal(agentSmoke.command, 'agents');
+  assert.equal(agentSmoke.options.subcommand, 'smoke');
+  assert.equal(agentSmoke.options.dryRun, true);
+  assert.equal(agentSmoke.options.json, true);
+
+  const trainingGate = parseArgs(['skill', 'verify-training', '--changed', '--base', 'HEAD~1', '--json']);
+  assert.equal(trainingGate.command, 'skill');
+  assert.equal(trainingGate.options.subcommand, 'verify-training');
+  assert.equal(trainingGate.options.changed, true);
+  assert.equal(trainingGate.options.base, 'HEAD~1');
+
   const trigger = parseArgs(['clients', 'trigger-smoke', '--client', 'opencode', '--json']);
   assert.equal(trigger.command, 'clients');
   assert.equal(trigger.options.subcommand, 'trigger-smoke');
@@ -192,4 +204,33 @@ test('session changed-files ledger records latest operation per file', async () 
   assert.deepEqual(report.files.map((file) => file.path), ['src/a.ts', 'src/b.ts']);
   assert.equal(report.files[0].count, 2);
   assert.equal(report.files[1].changeType, 'added');
+});
+
+
+test('skill training gate blocks changed skills without accepted SkillOpt evidence', async () => {
+  const rootDir = await makeTemp('aios-skill-training-root-');
+  await mkdir(path.join(rootDir, 'skill-sources', 'search-first'), { recursive: true });
+  await writeFile(path.join(rootDir, 'skill-sources', 'search-first', 'SKILL.md'), '---\nname: search-first\ndescription: Search first\n---\n# Search First\n', 'utf8');
+
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const blocked = await verifySkillTrainingGate({
+    rootDir,
+    changedFiles: ['skill-sources/search-first/SKILL.md'],
+  });
+  assert.equal(blocked.status, 'blocked');
+  assert.equal(blocked.skills[0].skillId, 'search-first');
+  assert.match(blocked.skills[0].reason, /SkillOpt/i);
+
+  await writeJson(path.join(rootDir, '.skillopt', 'search-first-2026-06-15', 'state.json'), {
+    skillId: 'search-first',
+    status: 'accepted',
+    gate: 'accepted',
+    nonRegression: true,
+  });
+  const verified = await verifySkillTrainingGate({
+    rootDir,
+    changedFiles: ['skill-sources/search-first/SKILL.md'],
+  });
+  assert.equal(verified.status, 'verified');
+  assert.equal(verified.skills[0].evidence.status, 'accepted');
 });

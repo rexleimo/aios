@@ -33,7 +33,7 @@ aios
 | **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
 | **原生 Token 压缩** | 自研输入/输出 token 压缩，参考 RTK/Caveman 思路，但不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
-| **Agent Team** | 多 Agent 并行协作，HUD 可视化追踪 | `aios team 3:codex "任务描述"` |
+| **Agent Team** | 多 Agent 并行协作，带 HUD 追踪、smoke 证据和治理检查 | `aios team 3:codex "任务描述"` / `node scripts/aios.mjs agents smoke --json` |
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
 | **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
@@ -91,7 +91,7 @@ aios team status --provider codex --watch
 - [快速开始](https://cli.rexai.top/zh/getting-started/) — 安装、配置、首次运行
 - [Model Router](https://cli.rexai.top/zh/model-router/) — Agent Team 多模型智能调度
 - [ContextDB](https://cli.rexai.top/zh/contextdb/) — 项目记忆系统详解
-- [Agent Team](https://cli.rexai.top/zh/team-ops/) — 多 Agent 协作指南
+- [Agent Team](https://cli.rexai.top/zh/team-ops/) — 多 Agent 协作与工作流治理指南
 - [Solo Harness](https://cli.rexai.top/zh/solo-harness/) — 过夜长任务指南
 - [Perception](https://cli.rexai.top/zh/perception/) — 内容结果追踪与洞察
 - [架构](https://cli.rexai.top/zh/architecture/) — 系统架构说明

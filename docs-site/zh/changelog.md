@@ -5,6 +5,12 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## 文档与工作流说明
+
+- 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
+- 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
+- skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
+
 ## v2.0.2（2026-06-15）
 
 - **技能健康记录校验**：`recordSkillObservation()` 现在会拒绝未知 status，不再把生产端拼写错误静默落成 failure，避免污染失败率统计。

@@ -11,6 +11,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
 - Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
 - Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
+- For agent promotions, turn compression metrics must include `agent_id` and both `pre_send` / `post_receive` evidence before a workflow can be considered live-ready.
 
 ## AIOS Turn Compression Enforcement
 

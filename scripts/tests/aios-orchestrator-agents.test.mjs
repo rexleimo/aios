@@ -153,6 +153,91 @@ test('canonical agents support ECC-style native pack metadata and token/smoke ro
   assert.match(tokenSteward.outputContract, /JSON/);
 });
 
+test('turn compression metrics preserve agent_id for catalogue promotion evidence', async () => {
+  const rootDir = await makeRootDir();
+  const { compressPreSendTurn, compressPostReceiveTurn } = await import('../lib/interception/turn/turn-gateway.mjs');
+  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
+  const common = {
+    workspaceRoot: rootDir,
+    cwd: rootDir,
+    sessionId: 'agent-turn-proof',
+    clientId: 'codex',
+    agentId: 'rex-planner',
+    hostLevel: 'L2',
+    thresholds: { minRawBytes: 16 },
+    metrics: { enabled: true },
+  };
+
+  await compressPreSendTurn({ ...common, prompt: 'planner prompt '.repeat(20) });
+  await compressPostReceiveTurn({ ...common, output: 'planner output '.repeat(20) });
+
+  const records = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'agent-turn-proof' });
+  assert.deepEqual(records.map((record) => record.agent_id), ['rex-planner', 'rex-planner']);
+  assert.deepEqual(records.map((record) => record.event_kind), ['pre_send', 'post_receive']);
+});
+
+test('agents smoke --dry-run produces first-stage core-risk plan without writing evidence', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+
+  const { parseArgs } = await import('../lib/cli/parse-args.mjs');
+  const { runAgentsCommand } = await import('../lib/lifecycle/agents.mjs');
+  const parsed = parseArgs(['agents', 'smoke', '--dry-run', '--json']);
+  assert.equal(parsed.options.subcommand, 'smoke');
+  assert.equal(parsed.options.dryRun, true);
+
+  let output = '';
+  const result = await runAgentsCommand(parsed.options, {
+    rootDir,
+    stdout: { write: (chunk) => { output += String(chunk); } },
+  });
+
+  assert.equal(result.exitCode, 0);
+  const report = JSON.parse(output);
+  assert.equal(report.kind, 'aios.agents.smoke-plan.v1');
+  assert.equal(report.dryRun, true);
+  assert.ok(report.agents.some((agent) => agent.agentId === 'rex-evidence-auditor'));
+  assert.ok(report.agents.some((agent) => agent.agentId === 'rex-install-governance-reviewer'));
+  await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
+});
+
+test('agents smoke records smoke, provenance, and metrics evidence for core-risk roles', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+
+  const { parseArgs } = await import('../lib/cli/parse-args.mjs');
+  const { runAgentsCommand } = await import('../lib/lifecycle/agents.mjs');
+  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
+  const parsed = parseArgs(['agents', 'smoke', '--json']);
+  assert.equal(parsed.options.subcommand, 'smoke');
+  assert.equal(parsed.options.dryRun, false);
+
+  let output = '';
+  const result = await runAgentsCommand(parsed.options, {
+    rootDir,
+    stdout: { write: (chunk) => { output += String(chunk); } },
+  });
+
+  assert.equal(result.exitCode, 0);
+  const report = JSON.parse(output);
+  assert.equal(report.kind, 'aios.agents.smoke-plan.v1');
+  assert.equal(report.dryRun, false);
+  assert.equal(report.recorded, 16);
+
+  const smoke = JSON.parse(await fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
+  const provenance = JSON.parse(await fs.readFile(path.join(rootDir, '.aios', 'agents', 'provenance', 'rex-planner.json'), 'utf8'));
+  const metrics = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'agents-smoke-rex-planner' });
+
+  assert.equal(smoke.status, 'pass');
+  assert.equal(provenance.status, 'verified');
+  assert.equal(provenance.agentId, 'rex-planner');
+  assert.deepEqual(metrics.map((record) => record.event_kind), ['pre_send', 'post_receive']);
+  assert.deepEqual(metrics.map((record) => record.agent_id), ['rex-planner', 'rex-planner']);
+  assert.ok(metrics.every((record) => Number(record.saved_bytes) > 0));
+  assert.ok(metrics.every((record) => record.refs_count > 0));
+});
+
+
 test('generate-orchestrator-agents --export-only skips generated target sync', () => {
   const result = run(process.execPath, ['scripts/generate-orchestrator-agents.mjs', '--export-only'], {
     cwd: resolveRepoRoot(),

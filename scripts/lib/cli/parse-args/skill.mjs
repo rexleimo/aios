@@ -13,6 +13,8 @@ export function parseSkillArgs(argv = []) {
     format: 'text',
     dryRun: false,
     dashboard: false,
+    changed: false,
+    base: 'HEAD',
     client: 'codex',
   };
   let help = isHelpArg(rawSubcommand);
@@ -41,6 +43,11 @@ export function parseSkillArgs(argv = []) {
       options.dryRun = true;
     } else if (arg === '--dashboard') {
       options.dashboard = true;
+    } else if (arg === '--changed') {
+      options.changed = true;
+    } else if (arg === '--base') {
+      options.base = takeValue(rest, index, '--base');
+      index += 1;
     } else if (arg === '--client') {
       options.client = takeValue(rest, index, '--client');
       index += 1;
@@ -60,12 +67,12 @@ export function parseSkillArgs(argv = []) {
       options,
     };
   }
-  if (!options.subcommand) throw new Error('skill requires subcommand: comply or health');
+  if (!options.subcommand) throw new Error('skill requires subcommand: comply, health, or verify-training');
   if (options.subcommand === 'comply') {
     if (!options.path) throw new Error('skill comply requires a path');
   }
-  if (!['comply', 'health'].includes(options.subcommand)) {
-    throw new Error('skill requires subcommand: comply or health');
+  if (!['comply', 'health', 'verify-training'].includes(options.subcommand)) {
+    throw new Error('skill requires subcommand: comply, health, or verify-training');
   }
   return {
     mode: 'command',

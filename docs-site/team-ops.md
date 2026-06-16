@@ -154,6 +154,29 @@ Use the smallest blueprint that fits your task.
 
 Blueprints, role cards, runtime manifests, executor manifests, and handoff schemas are packaged under `scripts/lib/specs/`. Team run state and evidence are still written to `.aios/context-db/`; `.aios/memo/` is only for project memo records and is not the team runtime store.
 
+## Agent Governance And Smoke Evidence
+
+As the agent surface grows, treat every workflow change like a contract change. Before you let a team or harness run go live, prove that the new behavior still fits the system with smoke evidence and training checks.
+
+```bash
+# Preview the agent smoke path without live execution
+node scripts/aios.mjs agents smoke --dry-run --json
+
+# Record smoke evidence for the active agent set
+node scripts/aios.mjs agents smoke --json
+
+# Confirm changed skills were trained before live use
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
+Smoke runs now write three evidence streams for each core-risk agent:
+
+- `.aios/agents/smoke/<agent>.json`
+- `.aios/agents/provenance/<agent>.json`
+- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
+
+Use that evidence to decide whether a docs change, skill update, or routing tweak is ready for live workflows. If the skill changed, training verification is part of the definition of done.
+
 ### Configuration
 
 ```bash

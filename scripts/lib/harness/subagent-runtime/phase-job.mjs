@@ -56,7 +56,8 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const structuredOutput = buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job });
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);
-  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, systemPrompt, userPrompt, io });
+  const agentId = normalizeText(job?.launchSpec?.agentRefId);
+  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, agentId, systemPrompt, userPrompt, io });
 
   const startedAt = Date.now();
   const result = await runOneShotImpl(executionClientId, {
@@ -76,6 +77,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     rootDir,
     sessionId: outbound.sessionId,
     executionClientId,
+    agentId,
     outputText,
     rawCommandOutput,
     io,

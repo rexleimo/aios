@@ -389,3 +389,20 @@ Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`antigravity-cli`
 ### 全客户端指令覆盖
 
 搜索指令来自 shared native instructions。Codex、OpenCode、Crush 通过 `AGENTS.md` 接收；Claude 通过 `CLAUDE.md` 接收；Gemini、Antigravity 通过 `GEMINI.md` 接收。Antigravity 和 Crush 仍处于 `pending-smoke`，不能 live 执行，但静态指令投影已经包含同一套搜索规则。
+### Agent 治理证据
+
+当你新增或重路由 agent，或修改 workflow skill 时，不要把它当成普通文档改动，而是要当成操作规程更新。先记录 smoke 证据，再信任新的 live 路径：
+
+```bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+```
+
+smoke 运行会为每个 agent 写入这些证据文件：
+
+- `.aios/agents/smoke/<agent>.json`
+- `.aios/agents/provenance/<agent>.json`
+- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
+
+需要解释路由变更或 skill 更新为什么安全时，把这些文件和 session history 一起看。

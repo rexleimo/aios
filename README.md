@@ -33,7 +33,7 @@ Once started, select `Setup`, run `Doctor`, and you're ready to go.
 | **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
-| **Agent Team** | Multi-agent parallel collaboration with HUD visual tracking | `aios team 3:codex "task description"` |
+| **Agent Team** | Multi-agent parallel collaboration with HUD tracking, smoke evidence, and governance checks | `aios team 3:codex "task description"` / `node scripts/aios.mjs agents smoke --json` |
 | **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
 | **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
@@ -91,7 +91,7 @@ After installation, just use `codex`, `claude`, `gemini`, `opencode`, `antigravi
 - [Quick Start](https://cli.rexai.top/getting-started/) — Install, configure, first run
 - [Model Router](https://cli.rexai.top/model-router/) — Multi-model dispatch for Agent Teams
 - [ContextDB](https://cli.rexai.top/contextdb/) — Project memory system
-- [Agent Team](https://cli.rexai.top/team-ops/) — Multi-agent collaboration guide
+- [Agent Team](https://cli.rexai.top/team-ops/) — Multi-agent collaboration and workflow governance guide
 - [Solo Harness](https://cli.rexai.top/solo-harness/) — Overnight task guide
 - [Perception](https://cli.rexai.top/perception/) — Content outcome tracking & insights
 - [Architecture](https://cli.rexai.top/architecture/) — System architecture

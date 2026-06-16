@@ -10,4 +10,5 @@
   - About to claim completion → `superpowers:verification-before-completion`
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
+- If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
 - Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.

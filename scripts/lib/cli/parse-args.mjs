@@ -116,6 +116,7 @@ function parseAgentsArgs(argv) {
     json: false,
     format: 'text',
     strict: false,
+    dryRun: false,
   };
   let help = false;
   for (let index = 0; index < rest.length; index += 1) {
@@ -133,6 +134,10 @@ function parseAgentsArgs(argv) {
       options.strict = true;
       continue;
     }
+    if (arg === '--dry-run') {
+      options.dryRun = true;
+      continue;
+    }
     if (arg === '--format') {
       const value = rest[index + 1];
       if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
@@ -147,8 +152,8 @@ function parseAgentsArgs(argv) {
     }
     throw new Error(`Unknown option: ${arg}`);
   }
-  if (!['doctor', 'list'].includes(options.subcommand)) {
-    throw new Error('agents requires subcommand: doctor or list');
+  if (!['doctor', 'list', 'smoke'].includes(options.subcommand)) {
+    throw new Error('agents requires subcommand: doctor, list, or smoke');
   }
   if (!['text', 'json'].includes(options.format)) {
     throw new Error('--format must be one of: text, json');

@@ -58,6 +58,7 @@ export async function compressTurn(options = {}) {
     metadata: {
       eventKind,
       clientId,
+      agentId: normalizeAgentId(options.agentId),
       hostLevel: options.hostLevel || '',
       mode: options.mode || 'tight',
       uncontrolled: false,
@@ -255,6 +256,10 @@ function normalizeClientId(value) {
   const clientId = String(value || '').trim();
   if (!clientId) throw new TypeError('turn compression clientId is required');
   return clientId;
+}
+
+function normalizeAgentId(value) {
+  return String(value || '').trim();
 }
 
 function normalizeEventKind(value) {

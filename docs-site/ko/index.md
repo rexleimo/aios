@@ -22,7 +22,7 @@ description: Harness CLI는 codex, claude, gemini, opencode에 기억, 협업, �
 | **Native Token Compression** | RTK/Caveman 패턴에 영감을 받은 자체 입력/출력 감소. 경쟁 도구는 설치하지 않음 | `context:pack --token-budget 1200 --token-strategy balanced` |
 | **Model Router** | Agent Team을 위한 지능형 멀티모델 디스패치. 능력, 비용, 성공률로 태스크 매칭 | `node scripts/aios.mjs model-router route --task "..."` |
 | **Codemap** | Tree-sitter 코드 지식 그래프 — 단일 명령어로 모든 에이전트가 코드베이스 구조를 즉시 이해 | `aios internal codemap install` / `doctor` |
-| **Agent Team** | HUD 비주얼 추적 기능이 있는 멀티 agent 병렬 협업 | `aios team 3:codex "task description"` |
+| **Agent Team** | HUD 추적, smoke 증거, governance check 가 있는 멀티 agent 병렬 협업 | `aios team 3:codex "task description"` / `node scripts/aios.mjs agents smoke --json` |
 | **Solo Harness** | 재개 지원과 런 저널이 있는 단일 agent 야간 태스크 | `aios harness run --objective "goal" --worktree` |
 | **Perception** | 콘텐츠 성과 추적 + 통계 인사이트 + perception 주입 | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | CDP 기반 스텔스 브라우저 자동화 | `aios internal browser doctor` |
@@ -117,7 +117,7 @@ npm run build
 - [퀵스타트](getting-started.md) — 설치, 설정, 첫 실행
 - [Model Router](model-router.md) — Agent Team을 위한 멀티모델 디스패치
 - [ContextDB](contextdb.md) — 프로젝트 메모리 시스템
-- [Agent Team](team-ops.md) — 멀티 agent 협업 가이드
+- [Agent Team](team-ops.md) — 멀티 agent 협업과 workflow governance 가이드
 - [Solo Harness](solo-harness.md) — 야간 태스크 가이드
 - [Perception](perception.md) — 콘텐츠 성과 추적 & 인사이트
 - [아키텍처](architecture.md) — 시스템 아키텍처
@@ -127,6 +127,7 @@ npm run build
 ## 블로그 하이라이트
 
 - [AIOS RL Training System](/blog/ko/rl-training-system/)
+- [Agent Governance: Team live 실행 전에 증거 남기기](/blog/ko/2026-06-agent-governance/)
 - [ContextDB Search Upgrade](/blog/ko/contextdb-fts-bm25-search/)
 - [Windows CLI Startup Stability](/blog/ko/windows-cli-startup-stability/)
 - [Orchestrate Live](/blog/ko/orchestrate-live/)
