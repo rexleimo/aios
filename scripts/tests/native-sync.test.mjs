@@ -210,6 +210,43 @@ test('native sync installs an OpenCode primary agent that fails closed on missin
   assert.ok(metadata.managedTargets.includes('.opencode/agent/aios-build.md'));
 });
 
+test('native sync merges OpenCode config without clobbering user command buckets', async () => {
+  const rootDir = await makeTemp('aios-native-sync-opencode-merge-root-');
+  await seedNativeRoot(rootDir);
+  await writeJson(path.join(rootDir, 'opencode.json'), {
+    command: {
+      custom: {
+        description: 'User command',
+        template: 'Keep this command',
+        agent: 'general',
+      },
+    },
+    agent: {
+      general: {
+        description: 'User agent',
+        mode: 'primary',
+      },
+    },
+    skills: {
+      paths: ['custom-skills'],
+    },
+    permission: {
+      bash: 'allow',
+    },
+  });
+
+  await syncNativeEnhancements({ rootDir, client: 'opencode' });
+
+  const config = JSON.parse(await readFile(path.join(rootDir, 'opencode.json'), 'utf8'));
+  assert.equal(config.command.custom.template, 'Keep this command');
+  assert.equal(config.command.verify.agent, 'aios-build');
+  assert.equal(config.agent.general.description, 'User agent');
+  assert.equal(config.agent['aios-build'].mode, 'primary');
+  assert.deepEqual(config.skills.paths, ['custom-skills', '.opencode/skills']);
+  assert.equal(config.permission.bash, 'allow');
+  assert.equal(config.permission['mcp_*'], 'ask');
+});
+
 test('native sync can install codex project outputs outside the AIOS source root', async () => {
   const rootDir = await makeTemp('aios-native-sync-source-root-');
   const targetRootDir = await makeTemp('aios-native-sync-target-root-');

@@ -13,6 +13,35 @@ import {
 
 import { backupTarget, normalizeText, pathExists, summarizeMutation } from './fs-ops.mjs';
 
+function isPlainObject(value) {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value));
+}
+
+function mergeArrayValues(existing, incoming) {
+  const merged = [...existing];
+  for (const item of incoming) {
+    if (!merged.some((previous) => JSON.stringify(previous) === JSON.stringify(item))) {
+      merged.push(item);
+    }
+  }
+  return merged;
+}
+
+function deepMergeJsonObject(existing, fragment) {
+  const next = { ...existing };
+  for (const [key, value] of Object.entries(fragment || {})) {
+    const previous = next[key];
+    if (isPlainObject(previous) && isPlainObject(value)) {
+      next[key] = deepMergeJsonObject(previous, value);
+    } else if (Array.isArray(previous) && Array.isArray(value)) {
+      next[key] = mergeArrayValues(previous, value);
+    } else {
+      next[key] = value;
+    }
+  }
+  return next;
+}
+
 export async function applyMarkdownBlockOperation(targetPath, content, fsOps, backups) {
   const previous = await fsOps.readTextTarget(targetPath);
   const existsBefore = previous.length > 0 || await pathExists(targetPath);
@@ -112,10 +141,7 @@ export async function applyJsonTopLevelMergeOperation(targetPath, fragment, fsOp
     }
     parsed = {};
   }
-  const next = stringifyJsonObject({
-    ...parsed,
-    ...fragment,
-  });
+  const next = stringifyJsonObject(deepMergeJsonObject(parsed, fragment));
   if (normalizeText(previous) === normalizeText(next)) {
     return 'reused';
   }

@@ -242,9 +242,10 @@ test('executePhaseJob compresses subagent prompts before client launch and compa
   let captured = null;
 
   try {
+    const requiredInstruction = 'REQUIRED_ORIGINAL_TASK_INSTRUCTION_SURVIVES_PRE_SEND';
     const plan = {
       taskTitle: 'Subagent turn compression',
-      contextSummary: `${PRE_SENTINEL.repeat(120)}\nscripts/lib/harness/subagent-runtime/phase-job.mjs:42`,
+      contextSummary: `${PRE_SENTINEL.repeat(120)}\n${requiredInstruction}\nscripts/lib/harness/subagent-runtime/phase-job.mjs:42`,
       phases: [],
       workItems: [],
     };
@@ -292,7 +293,7 @@ test('executePhaseJob compresses subagent prompts before client launch and compa
       },
     });
 
-    assert.equal(JSON.stringify(captured).includes(PRE_SENTINEL), false);
+    assert.equal(JSON.stringify(captured).includes(requiredInstruction), true);
     assert.equal(run.output.rawOutput.includes(POST_SENTINEL), false);
     assert.match(run.output.rawOutput, /aios\.compact_packet/);
 

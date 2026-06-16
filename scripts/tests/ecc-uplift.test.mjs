@@ -192,6 +192,21 @@ test('skill health records observations and reports success rate with failure cl
   assert.equal(rawObservations.trim().split(/\r?\n/u).length, 3);
 });
 
+test('skill health rejects unsafe skill identifiers before recording observations', async () => {
+  const rootDir = await makeTemp('aios-skill-health-unsafe-id-root-');
+
+  await assert.rejects(
+    () => recordSkillObservation({ rootDir, skillId: '../outside', status: 'success', at: '2026-06-14T01:00:00.000Z' }),
+    /unsafe skillId/
+  );
+  await assert.rejects(
+    () => recordSkillObservation({ rootDir, skillId: 'bad\nid', status: 'success', at: '2026-06-14T01:00:00.000Z' }),
+    /unsafe skillId/
+  );
+
+  await assert.rejects(() => readFile(path.join(rootDir, '.aios', 'skill-health', 'observations.jsonl'), 'utf8'));
+});
+
 test('session changed-files ledger records latest operation per file', async () => {
   const rootDir = await makeTemp('aios-changed-files-root-');
   await recordSessionChangedFile({ rootDir, sessionId: 's1', filePath: 'src/a.ts', changeType: 'modified', at: '2026-06-14T01:00:00.000Z' });
@@ -204,6 +219,21 @@ test('session changed-files ledger records latest operation per file', async () 
   assert.deepEqual(report.files.map((file) => file.path), ['src/a.ts', 'src/b.ts']);
   assert.equal(report.files[0].count, 2);
   assert.equal(report.files[1].changeType, 'added');
+});
+
+test('session changed-files rejects traversal session identifiers', async () => {
+  const rootDir = await makeTemp('aios-changed-files-unsafe-session-root-');
+
+  await assert.rejects(
+    () => recordSessionChangedFile({ rootDir, sessionId: '../../outside', filePath: 'src/a.ts' }),
+    /unsafe sessionId/
+  );
+  await assert.rejects(
+    () => readSessionChangedFiles({ rootDir, sessionId: 'bad/session' }),
+    /unsafe sessionId/
+  );
+
+  await assert.rejects(() => readFile(path.join(rootDir, 'outside', 'changed-files.jsonl'), 'utf8'));
 });
 
 

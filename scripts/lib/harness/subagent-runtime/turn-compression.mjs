@@ -40,7 +40,14 @@ export async function prepareSubagentTurnPrompts({
     return { sessionId, systemPrompt, userPrompt };
   }
   const compact = JSON.stringify(packet, null, 2);
-  return { sessionId, systemPrompt: compact, userPrompt: compact };
+  const recall = [
+    '<AIOS_PRE_SEND_COMPRESSION>',
+    'The transport layer recorded a compact packet for this turn. The executable task instructions remain below; do not replace them with the packet summary.',
+    'If you need the raw packet evidence, use the ref recall commands from this packet:',
+    compact,
+    '</AIOS_PRE_SEND_COMPRESSION>',
+  ].join('\n');
+  return { sessionId, systemPrompt, userPrompt: `${recall}\n\n${userPrompt}` };
 }
 
 export async function compactSubagentTurnOutput({

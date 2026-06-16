@@ -11,6 +11,15 @@ function observationsPath(rootDir) {
 
 const ALLOWED_STATUSES = ['success', 'failure'];
 const ALLOWED_STATUS_SET = new Set(ALLOWED_STATUSES);
+const SAFE_SKILL_ID_PATTERN = /^[A-Za-z0-9._-]+$/u;
+
+function normalizeSkillId(skillId) {
+  const normalized = String(skillId || '').trim();
+  if (!normalized || !SAFE_SKILL_ID_PATTERN.test(normalized)) {
+    throw new Error('unsafe skillId: use only letters, numbers, dot, underscore, or dash');
+  }
+  return normalized;
+}
 
 function normalizeStatus(status) {
   const normalized = String(status || '').trim().toLowerCase();
@@ -28,10 +37,10 @@ export async function recordSkillObservation({
   amendmentId = '',
   at = new Date().toISOString(),
 } = {}) {
-  if (!skillId) throw new Error('skill observation requires skillId');
+  const safeSkillId = normalizeSkillId(skillId);
   const row = {
     schemaVersion: 1,
-    skillId,
+    skillId: safeSkillId,
     status: normalizeStatus(status),
     failure: String(failure || '').trim(),
     amendmentId: String(amendmentId || '').trim(),
