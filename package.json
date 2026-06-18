@@ -40,6 +40,6 @@
     "check:node": "node scripts/check-node-version.mjs"
   },
   "devDependencies": {
-    "tsx": "^4.21.0"
+    "tsx": "^4.22.3"
   }
 }
