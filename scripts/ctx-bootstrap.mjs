@@ -1,102 +1,11 @@
+// scripts/ctx-bootstrap.mjs — 薄壳入口，逻辑在 scripts/lib/ctx-bootstrap/
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { resolveTasksRoot } from './lib/aios/state-root.mjs';
+import { buildTaskId, buildTaskJson, buildBootstrapPrd, isBootstrapEnabled } from './lib/ctx-bootstrap/tasks.mjs';
+import { readTextIfExists, hasPendingEntries } from './lib/ctx-bootstrap/io.mjs';
 
-const DISABLED_VALUES = new Set(['0', 'false', 'off', 'no']);
-
-function formatTaskTimestamp(now) {
-  return now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, '');
-}
-
-function buildTaskId(now) {
-  return `task_${formatTaskTimestamp(now)}_bootstrap_guidelines`;
-}
-
-function buildTaskJson(taskId, project, agent, now) {
-  return {
-    id: taskId,
-    title: 'Bootstrap project guidance',
-    description: 'Create baseline AIOS project guidance before feature work',
-    type: 'analysis',
-    status: 'pending',
-    params: {
-      bootstrap: true,
-      project,
-      agent,
-      checklist: [
-        'Read AGENTS.md and repository guidelines',
-        'Document project-specific conventions in docs/plans',
-        'Run first scoped task with ContextDB checkpoint evidence',
-      ],
-    },
-    result: {},
-    created_at: now.toISOString(),
-    started_at: '',
-    completed_at: '',
-    error: null,
-  };
-}
-
-function buildBootstrapPrd(project, agent, taskId, now) {
-  const date = now.toISOString().slice(0, 10);
-  return `# Bootstrap: Establish Project Guidance
-
-## Context
-
-- Project: \`${project}\`
-- Agent: \`${agent}\`
-- Task ID: \`${taskId}\`
-- Created: \`${date}\`
-
-## Goal
-
-Create the minimum project guidance baseline so future AI runs do not start from an empty context.
-
-## Required Steps
-
-1. Confirm repository constraints from \`AGENTS.md\`.
-2. Create or update a plan artifact under \`docs/plans/\`.
-3. Define acceptance criteria for the next concrete engineering task.
-4. Execute the next task with ContextDB checkpoint evidence.
-
-## Definition of Done
-
-- [ ] Guidance notes are written and discoverable.
-- [ ] Next task objective is explicit and scoped.
-- [ ] At least one checkpoint includes summary + next actions.
-`;
-}
-
-async function readTextIfExists(filePath) {
-  try {
-    return await fs.readFile(filePath, 'utf8');
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return '';
-    }
-    throw error;
-  }
-}
-
-async function hasPendingEntries(dirPath) {
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    return entries.some((entry) => !entry.name.startsWith('.'));
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
-      return false;
-    }
-    throw error;
-  }
-}
-
-export function isBootstrapEnabled(env = process.env) {
-  const raw = env.AIOS_BOOTSTRAP_AUTO;
-  if (raw === undefined || raw === null || String(raw).trim() === '') {
-    return true;
-  }
-  return !DISABLED_VALUES.has(String(raw).trim().toLowerCase());
-}
+export { isBootstrapEnabled };
 
 export async function ensureBootstrapTask(workspaceRoot, options = {}) {
   const root = path.resolve(workspaceRoot);
