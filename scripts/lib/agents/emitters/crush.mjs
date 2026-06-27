@@ -7,9 +7,7 @@ import {
 // as OpenCode: `.crush/agents/<name>.md` with YAML frontmatter
 // (name/description/mode: subagent) and a managed body block.
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 function normalizeRoleId(value) {
   return normalizeText(value).toLowerCase();

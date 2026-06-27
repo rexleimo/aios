@@ -2,9 +2,7 @@ import targetsSpec from '../specs/harness-targets.json' with { type: 'json' };
 
 export const HARNESS_TARGET_TYPES = ['gate', 'runbook', 'checklist', 'sample', 'blueprint'];
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeTargetType(value) {
   const normalized = normalizeText(value).toLowerCase();

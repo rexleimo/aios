@@ -3,9 +3,7 @@ import {
   ORCHESTRATOR_AGENT_MARKER_END,
 } from './shared.mjs';
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 function normalizeRoleId(value) {
   return normalizeText(value).toLowerCase();

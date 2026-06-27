@@ -16,9 +16,7 @@ export function nowIso() {
 }
 
 // 纯函数：把任意输入收敛为去空白字符串，避免 HUD 拼装层重复做空值判断。
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+export { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：统一缓存键片段的转义规则，避免不同缓存模块生成不兼容 key。
 export function getCacheKeyPart(value) {

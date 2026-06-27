@@ -17,10 +17,7 @@ const VALID_AGENT_TYPES = [
 const VALID_ROLES = ['planner', 'implementer', 'reviewer', 'orchestrator'];
 const VALID_CONFIDENCE = ['high', 'medium', 'low'];
 
-function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeStringArray(value) {
   const raw = Array.isArray(value)

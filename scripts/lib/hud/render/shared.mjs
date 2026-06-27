@@ -1,7 +1,5 @@
 // 纯函数：统一 HUD 文本归一化，避免渲染层重复 trim。
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+export { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：压缩单行文本，避免 Windows 终端和 watch 输出过宽。
 export function clipLine(value, maxLen = 140) {

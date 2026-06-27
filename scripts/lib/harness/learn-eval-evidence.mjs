@@ -10,9 +10,7 @@ function nowIso() {
   return new Date().toISOString();
 }
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeStringArray(raw = []) {
   if (!Array.isArray(raw)) return [];

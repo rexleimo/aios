@@ -1,6 +1,4 @@
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeInteger(value, fallback = 0) {
   const parsed = Number.parseInt(String(value ?? '').trim(), 10);

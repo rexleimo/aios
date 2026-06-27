@@ -1,10 +1,8 @@
 /* 中文注释：entropy-gc 通用纯函数只处理文本、路径、时间戳和记录格式化。 */
 import path from 'node:path';
 
-// 纯函数：统一修剪文本，避免 sessionId 等字段出现不可见空白。
-export function normalizeText(value = '') {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：报告路径统一为 slash，保证 Windows/Linux 输出稳定。
 export function normalizePath(value = '') {

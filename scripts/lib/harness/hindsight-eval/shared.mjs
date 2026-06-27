@@ -2,9 +2,8 @@ export function nowIso() {
   return new Date().toISOString();
 }
 
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：清理缓存键中的分隔符，避免路径或 ID 中的双冒号污染组合键。
 export function getCacheKeyPart(value) {

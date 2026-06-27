@@ -6,9 +6,7 @@ import { runContextDbCli } from '../contextdb-cli.mjs';
 
 export const QUALITY_GATE_VERIFICATION_KIND = 'verification.quality-gate';
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function formatArtifactTimestamp(ts = new Date()) {
   return ts.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');

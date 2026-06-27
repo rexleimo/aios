@@ -7,15 +7,7 @@ const RUN_COMMAND_TOKENS = ['"node --test"', '"cat src/math.mjs"', '"cat src/nor
 const PATCH_DIFF_TOKENS = ['"*** Begin Patch\\n*** End Patch\\n"'];
 const STOP_MESSAGE_TOKENS = ['"done"', '"unable_to_continue"'];
 
-function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+import { computeHash } from '../../../src/shared/normalize.mjs';
 
 function nextRandom(policy) {
   let state = policy.rngState >>> 0;

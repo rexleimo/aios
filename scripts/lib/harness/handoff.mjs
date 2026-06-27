@@ -1,8 +1,6 @@
 export const HANDOFF_STATUSES = ['ready', 'blocked', 'needs-input', 'completed'];
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeList(value) {
   if (Array.isArray(value)) {

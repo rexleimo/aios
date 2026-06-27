@@ -24,10 +24,7 @@ const RESERVED_FLAGS = new Set([
   '--help',
 ]);
 
-function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function uniqueArgs(args = []) {
   const seen = new Set();

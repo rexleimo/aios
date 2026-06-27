@@ -1,19 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
 
-function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
-function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+import { clone, computeHash } from '../../../src/shared/normalize.mjs';
 
 function average(values) {
   if (!Array.isArray(values) || values.length === 0) return 0;

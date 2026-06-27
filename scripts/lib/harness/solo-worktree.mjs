@@ -3,10 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function runGit(rootDir, args) {
   const result = spawnSync('git', args, {

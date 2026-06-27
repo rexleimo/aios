@@ -1,9 +1,7 @@
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function clipLine(value, maxLen = 180) {
   const text = String(value ?? '').replace(/\s+/g, ' ').trim();

@@ -1,21 +1,6 @@
 ﻿// 纯函数：生成稳定的 32 位哈希，避免测试数据依赖随机数。
-export function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
-
 // 纯函数：用 JSON 语义做深拷贝，适合当前策略快照这类纯数据对象。
-export function clone(value) {
-  if (value == null) {
-    return value;
-  }
-  return JSON.parse(JSON.stringify(value));
-}
+export { computeHash, clone } from '../../../src/shared/normalize.mjs';
 
 // 纯函数：统一数值边界裁剪，防止各策略模块重复写 NaN 保护。
 export function clamp(value, min, max) {

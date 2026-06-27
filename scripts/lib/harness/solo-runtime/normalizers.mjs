@@ -5,10 +5,7 @@ import {
 } from './constants.mjs';
 
 // 纯函数：统一 solo harness 文本归一化，并保留兜底值。
-export function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+export { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：规整字符串数组，供 evidence/keyChanges 等字段复用。
 export function normalizeStringArray(value) {

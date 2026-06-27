@@ -1,9 +1,7 @@
 /* 中文注释：watchdog 纯函数工具负责输入归一化和时间计算，不触碰文件系统。 */
 
-// 纯函数：统一修剪字符串，避免 session/provider 参数含空白导致误判。
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：数值字段允许无法解析时回退，便于组合多个弱信号。
 export function normalizeNumber(value, fallback = null) {

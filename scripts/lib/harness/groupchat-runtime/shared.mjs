@@ -1,3 +1,1 @@
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+export { normalizeText } from '../../../../src/shared/normalize.mjs';

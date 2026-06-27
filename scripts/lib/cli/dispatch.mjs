@@ -1,76 +1,19 @@
-/* 中文注释：顶层分发器把 interception、refs 和维护命令挂到统一 CLI，保证整条链路可执行。 */
-import path from 'node:path';
-import { existsSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
+// scripts/lib/cli/dispatch.mjs — barrel index + 剩余的 createAiosDispatch 路由逻辑
+// 原文件 425 行拆分为 helpers.mjs（printHelp/applyResultExitCode/runInteractiveTui）+ 本文件（路由表）
 
 import { chooseInteractiveCommand } from './interactive.mjs';
-import { getCommandHelpText, getInternalHelpText, getMemoHelpText, getRootHelpText } from './help.mjs';
 import { runInternal } from './dispatch/internal.mjs';
 import { runInterceptionCommand } from './dispatch/interception.mjs';
 import { runCanvasCommand, runRefsCommand } from './dispatch/offload.mjs';
 import { buildTeamRuntimeEnv, getRuntimeVersion, resolveRuntimeWorkspace } from './dispatch/runtime.mjs';
+import { printHelp, applyResultExitCode, runInteractiveTui } from './dispatch/helpers.mjs';
 
-/* 中文注释：帮助输出也走统一分发器，保证新增 interception 子命令后 CLI 和文档入口一致。 */
-function printHelp(parsed, { stdout = process.stdout } = {}) {
-  if (!parsed || parsed.command === 'root') {
-    stdout.write(getRootHelpText());
-    return;
-  }
+export { applyResultExitCode } from './dispatch/helpers.mjs';
 
-  if (parsed.command === 'internal') {
-    stdout.write(getInternalHelpText(parsed.options.target, parsed.options.action));
-    return;
-  }
-
-  if (parsed.command === 'memo') {
-    stdout.write(getMemoHelpText(parsed.options.argv));
-    return;
-  }
-
-  stdout.write(getCommandHelpText(parsed.command));
-}
-
-/* 中文注释：子命令返回 exitCode 时在这里统一映射到进程退出码，避免每个模块直接改 process。 */
-export function applyResultExitCode(result) {
-  if (typeof result?.exitCode === 'number') {
-    process.exitCode = result.exitCode;
-  }
-}
-
-/* 中文注释：TUI 是交互入口；非 TTY 下直接降级为 help，避免自动化环境挂起。 */
-function runInteractiveTui({ rootDir, projectRoot, stderr = process.stderr }) {
-  const cliPath = path.join(rootDir, 'scripts/lib/tui-ink/cli.tsx');
-  const tsxCliPath = path.join(rootDir, 'node_modules', 'tsx', 'dist', 'cli.mjs');
-
-  if (!existsSync(tsxCliPath)) {
-    stderr.write(`[err] missing TUI runtime dependency: ${tsxCliPath}\n`);
-    stderr.write('[hint] Reinstall AIOS, or run from the install root: npm install --include=dev\n');
-    process.exitCode = 1;
-    return;
-  }
-
-  process.env.AIOS_ROOT_DIR = rootDir;
-  process.env.AIOS_PROJECT_ROOT = projectRoot;
-
-  const result = spawnSync(process.execPath, [tsxCliPath, cliPath], {
-    stdio: 'inherit',
-    env: process.env,
-  });
-  if (result.error) {
-    stderr.write(`[err] failed to start AIOS TUI: ${result.error.message}\n`);
-    process.exitCode = 1;
-    return;
-  }
-  const status = result.status ?? (result.signal ? 1 : 0);
-  if (status !== 0) {
-    process.exitCode = status;
-  }
-}
-
-/* 中文注释：createAiosDispatch 是所有 CLI 命令的路由表；新增能力必须在这里接入才能被真实调用。 */
+/** 所有 CLI 命令的路由表；新增能力必须在这里接入才能被真实调用 */
 export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdout, stderr = process.stderr } = {}) {
   const context = { rootDir, projectRoot };
-  /* 中文注释：workspace 参数优先；没传时用当前 projectRoot，确保 proof/refs 写到用户正在操作的工作区。 */
+  /** workspace 参数优先；没传时用当前 projectRoot，确保 proof/refs 写到用户正在操作的工作区 */
   const workspaceFor = (parsed) => resolveRuntimeWorkspace(parsed.command, parsed.options, context);
 
   return async function dispatchParsed(parsed) {
@@ -117,7 +60,6 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       if (parsed.options.all) args.push('--all');
       if (parsed.options.dryRun) args.push('--dry-run');
       if (parsed.options.defaultMode) {
-        // Write default_mode to .aios/config.json then run init
         const { writeAiosConfig } = await import('../lifecycle/options/default-mode.mjs');
         await writeAiosConfig(rootDir, { defaultMode: parsed.options.defaultMode });
         args.push('--default-mode', parsed.options.defaultMode);
@@ -184,7 +126,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         applyResultExitCode(await runSkillTrainingGate(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
         return;
       }
-      /* 中文注释：Skill Workshop — 受控技能自生成闭环 */
+      /* Skill Workshop — 受控技能自生成闭环 */
       if (parsed.options.subcommand === 'propose') {
         const { propose } = await import('../skills/skill-workshop.mjs');
         applyResultExitCode(await propose({ rootDir: workspaceFor(parsed), description: parsed.options.description, stdout }));
@@ -254,7 +196,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'team') {
-      /* 中文注释：team dry-run 没有任务标题时只做 preflight，防止误启动多 agent 执行。 */
+      /* team dry-run 没有任务标题时只做 preflight，防止误启动多 agent 执行 */
       if (parsed.options.executionMode === 'dry-run' && !parsed.options.taskTitle) {
         const { runReadinessCheck } = await import('../lifecycle/preflight-contracts.mjs');
         const result = await runReadinessCheck({ rootDir: workspaceFor(parsed), mode: 'team' });
@@ -292,7 +234,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
       const { runOrchestrate } = await import('../lifecycle/orchestrate.mjs');
       const runtimeEnv = buildTeamRuntimeEnv(parsed.options, process.env);
-      /* 中文注释：team 命令最终复用 orchestrate，本层只负责把团队语义翻译成 local dispatch 参数。 */
+      /* team 命令最终复用 orchestrate，本层只负责把团队语义翻译成 local dispatch 参数 */
       applyResultExitCode(await runOrchestrate({
         blueprint: parsed.options.blueprint,
         taskTitle: parsed.options.taskTitle,
@@ -316,7 +258,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'harness') {
-      /* 中文注释：非 run 的 dry-run harness 先做 readiness，避免 resume/status 误触发真实执行。 */
+      /* 非 run 的 dry-run harness 先做 readiness，避免 resume/status 误触发真实执行 */
       if (parsed.options.executionMode === 'dry-run' && parsed.options.action !== 'run') {
         const { runReadinessCheck } = await import('../lifecycle/preflight-contracts.mjs');
         const result = await runReadinessCheck({ rootDir: workspaceFor(parsed), mode: 'harness' });

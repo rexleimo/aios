@@ -4,10 +4,8 @@ export const SNAPSHOT_KIND = 'orchestration.pre-mutation-snapshot';
 export const SNAPSHOT_DIR_PREFIX = 'pre-mutation-';
 export const DEFAULT_GLOBAL_SNAPSHOT_ROOT = path.join('.aios', 'subagent-snapshots');
 
-// 纯函数：统一规整文本，避免命令层到处重复处理空值和空白。
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：统一把路径转换成 POSIX 片段，便于跨平台比较和排序。
 export function toPosixPath(filePath = '') {

@@ -6,10 +6,7 @@ import { resolveContextDbRoot } from '../aios/state-root.mjs';
 export const CONTINUITY_SUMMARY_FILENAME = 'continuity-summary.md';
 export const CONTINUITY_JSON_FILENAME = 'continuity.json';
 
-function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeStringArray(value) {
   const raw = Array.isArray(value)

@@ -1,10 +1,8 @@
 /* 中文注释：dispatch evidence 的通用纯函数只处理字符串、数组和路径格式。 */
 import { contextDbRelativePath } from '../../aios/state-root.mjs';
 
-// 纯函数：统一文本修剪，避免 artifact/event 字段出现不可见空白。
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：字符串数组去重去空，保证 refs/workItemRefs 稳定。
 export function uniqueStrings(values = []) {

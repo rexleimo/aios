@@ -4,10 +4,7 @@ import path from 'node:path';
 import { SOLO_STAGES } from './constants.mjs';
 
 // 纯函数：统一文本修剪，并支持 fallback。
-export function normalizeText(value, fallback = '') {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-}
+export { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：数组字段去重、去空，保证写入 JSON 的结构稳定。
 export function normalizeStringArray(value) {

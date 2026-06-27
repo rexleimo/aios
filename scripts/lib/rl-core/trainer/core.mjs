@@ -1,18 +1,6 @@
 // 纯函数：对可 JSON 序列化的策略快照做深拷贝，避免训练更新污染参考策略。
-export function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
-
 // 纯函数：生成稳定的 32 位哈希，用于跨平台可复现的伪随机种子。
-export function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { clone, computeHash } from '../../../../src/shared/normalize.mjs';
 
 export function nextRandom(state) {
   let seed = Number(state.rngState || 0) >>> 0;

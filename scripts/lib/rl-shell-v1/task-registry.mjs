@@ -12,15 +12,7 @@ function createDeterministicOrder(items, seed) {
     .map((entry) => entry.item);
 }
 
-function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+import { computeHash } from '../../../src/shared/normalize.mjs';
 
 async function readJson(filePath) {
   return JSON.parse(await readFile(filePath, 'utf8'));

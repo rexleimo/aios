@@ -2,9 +2,7 @@ export const AUTO_WATCH_MIN_INTERVAL_MS = 250;
 export const AUTO_WATCH_MAX_INTERVAL_MS = 2000;
 const AUTO_WATCH_BACKOFF_MULTIPLIER = 2;
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeFixedIntervalMs(value, fallback = 1000) {
   const parsed = Number.parseInt(String(value ?? '').trim(), 10);

@@ -1,13 +1,5 @@
 // 纯函数：生成稳定哈希，供可重复的决策采样和证据打分使用。
-export function computeHash(value) {
-  let hash = 2166136261;
-  const text = String(value);
-  for (let index = 0; index < text.length; index += 1) {
-    hash ^= text.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-  return hash >>> 0;
-}
+export { computeHash, normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：只保留任务允许的执行器，避免上游传入非法选择。
 export function resolveRequestedExecutor({ task, selectedExecutor }) {
@@ -25,10 +17,6 @@ const DECISION_BLUEPRINT_BY_TYPE = Object.freeze({
   handoff: 'security',
   preflight: 'bugfix',
 });
-
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
 
 // 纯函数：去重并过滤空字符串，供状态摘要和事件字段归一化复用。
 export function toUniqueStrings(values = []) {

@@ -9,9 +9,7 @@ import {
 // 这里只发 name/description/mode(subagent),避免 model(需 provider/ 前缀) 与 tools(需对象) 的非法形状。
 // body 必须以受管标记包裹，使 sync 的 isManagedAgentMarkdown 能识别为受管文件。
 
-function normalizeText(value) {
-  return String(value || '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 function normalizeRoleId(value) {
   return normalizeText(value).toLowerCase();

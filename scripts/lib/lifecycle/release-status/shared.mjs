@@ -1,10 +1,8 @@
 /* 中文注释：release-status 纯函数工具只做文本、路径和数值归一化，不读写状态文件。 */
 import path from 'node:path';
 
-// 纯函数：统一修剪用户输入，避免每个模块各自处理 null/undefined。
-export function normalizeText(value = '') {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：解析带默认值的正整数；空值走 fallback，非法显式输入抛错。
 export function parsePositiveInteger(value, fallback, flagName) {

@@ -18,9 +18,7 @@ const FAST_WATCH_MINIMAL_SKILL_CANDIDATE_LIMIT = 3;
 const MAX_SKILL_CANDIDATE_LIMIT = 20;
 const SKILL_CANDIDATE_VIEWS = new Set(['inline', 'detail']);
 
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../src/shared/normalize.mjs';
 
 function normalizeSkillCandidateView(value, fallback = 'inline') {
   const normalized = normalizeText(value).toLowerCase();

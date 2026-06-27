@@ -7,9 +7,9 @@ export const AIOS_NATIVE_BEGIN_MARK = '<!-- AIOS NATIVE BEGIN -->';
 export const AIOS_NATIVE_END_MARK = '<!-- AIOS NATIVE END -->';
 export const AIOS_NATIVE_JSON_KEY = 'aiosNative';
 
-function normalizeText(content) {
-  return String(content || '').replace(/\r\n/g, '\n');
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+
+// 注：normalizeText 由 src/shared/normalize.mjs 提供（trim 语义），原 emitters 内联实现已被替换。
 
 export function hasManagedMarkdownBlock(content) {
   const normalized = normalizeText(content);

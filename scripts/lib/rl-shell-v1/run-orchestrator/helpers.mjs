@@ -1,7 +1,5 @@
 // 纯函数：对可 JSON 序列化对象做深拷贝，写 checkpoint 时隔离策略对象。
-export function clone(value) {
-  return JSON.parse(JSON.stringify(value));
-}
+export { clone } from '../../../../src/shared/normalize.mjs';
 
 // 纯函数：生成教师后端不可用时的标准响应，训练流程无需关心 fallback 细节。
 export function createTeacherFailureResponse(backend) {

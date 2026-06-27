@@ -1,9 +1,7 @@
+import { normalizeText } from '../../../src/shared/normalize.mjs';
+
 const CAPABILITY_KEYS = ['read', 'write', 'network', 'browser', 'sideEffect'];
 const DEFAULT_COST_TOKEN_WARNING_THRESHOLD = 200000;
-
-function normalizeText(value) {
-  return String(value ?? '').trim();
-}
 
 function normalizeStatus(value = '') {
   const normalized = normalizeText(value).toLowerCase();

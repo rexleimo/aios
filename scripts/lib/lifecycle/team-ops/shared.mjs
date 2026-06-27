@@ -10,9 +10,8 @@ export const DEFAULT_WATCH_STALLED_MS = 30_000;
 const MIN_WATCH_STALLED_MS = 1000;
 const MAX_WATCH_STALLED_MS = 10 * 60 * 1000;
 
-export function normalizeText(value) {
-  return String(value ?? '').trim();
-}
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 export function normalizeCounter(value) {
   return Number.isFinite(value) ? Math.max(0, Math.floor(value)) : 0;
