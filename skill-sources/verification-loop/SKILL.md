@@ -42,3 +42,60 @@ Use this skill when:
 ## Evidence Capture
 - Record the exact commands run and whether they succeeded.
 - For failures: include the first actionable error line and the remediation you applied.
+
+## Structured Verdict Schema
+
+Inspired by the-pair v2.0.2 `quality_gate.rs`: every completion claim MUST be
+backed by a structured verdict with exactly four sections. A verdict missing any
+section is an **automatic REJECT** — there is no partial credit.
+
+The four required sections, in order:
+
+1. **FILES_REVIEWED** — list of files reviewed with line ranges and change status.
+2. **CHECKS** — typecheck, test suite, lint — each with a concrete PASS/FAIL status.
+3. **CODE** — the specific code snippet or issue reference, as a quoted block.
+4. **VALIDATION** — summary verdict: `APPROVED` or `REJECTED`, followed by specific
+   `next_actions` when rejected.
+
+### Mandatory format
+
+```
+VERDICT:
+FILES_REVIEWED:
+  - path/to/file.ts: lines 45-67 (changed)
+CHECKS:
+  - typecheck: PASS
+  - test suite: PASS (8/8)
+  - lint: PASS
+CODE:
+  > // specific snippet or issue reference
+VALIDATION:
+  APPROVED — all checks pass
+  OR
+  REJECTED — [specific next_actions list]
+```
+
+Rules:
+- All four section headers (`FILES_REVIEWED:`, `CHECKS:`, `CODE:`, `VALIDATION:`)
+  MUST be present, each on its own line, followed by a non-empty body.
+- A section header with no body counts as missing → REJECT.
+- `CHECKS` MUST enumerate concrete commands with PASS/FAIL, not "looks fine".
+- `CODE` MUST quote the exact snippet under review or the exact issue — never a
+  paraphrase.
+- `VALIDATION` MUST start with `APPROVED` or `REJECTED`. If `REJECTED`, it MUST
+  list specific, actionable next steps.
+
+### Verdict validator
+
+Completeness is machine-checkable with no LLM calls. The validator lives at
+`scripts/lib/skills/verdict-schema.mjs` and exposes two functions:
+
+- `parseVerdictText(text)` → extracts the four sections from a verdict block and
+  records which headers were present.
+- `validateVerdictCompleteness(parsed)` → returns
+  `{ approved, missing_sections, empty_sections, next_actions }`. `approved` is
+  `true` only when all four sections are present and non-empty.
+
+Use the validator as a gate before asserting "done": if it returns
+`approved: false`, the verdict is rejected and the listed `next_actions` must be
+satisfied first.

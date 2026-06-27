@@ -78,8 +78,8 @@ const toolHandlers: Record<string, (args: any) => Promise<any>> = {
     return await challengeCheck(args?.profile);
   },
   browser_screenshot: async (args) => {
-    const { fullPage, profile, filePath, selector } = args ?? {};
-    return await screenshot(fullPage, profile, filePath, selector);
+    const { fullPage, profile, filePath, selector, redactPii, privacyPreset } = args ?? {};
+    return await screenshot({ fullPage, profile, filePath, selector, redactPii, privacyPreset });
   },
   browser_close: async (args) => {
     const profile = args?.profile || 'default';

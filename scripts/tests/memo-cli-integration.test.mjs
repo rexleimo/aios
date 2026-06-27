@@ -188,3 +188,138 @@ test('aios memo recall emits readable digest from active storage records', async
     assert.match(recall.stdout, /active storage recall evidence/);
   });
 });
+
+/* ── Session close auto-memo & start timeline tests ── */
+
+import { appendMemoEvent } from '../lib/memo/storage/events-write.mjs';
+import { listMemoEvents } from '../lib/memo/storage/query.mjs';
+import { autoMemoSessionClose } from '../lib/lifecycle/session-hooks/close.mjs';
+import { renderActivityTimeline } from '../lib/lifecycle/session-hooks/start-timeline.mjs';
+import { recordSessionChangedFile } from '../lib/session/changed-files.mjs';
+import { resolveContextDbRoot } from '../lib/aios/state-root.mjs';
+
+function ensureDirSync(dir) {
+  return fs.mkdir(dir, { recursive: true });
+}
+
+async function seedSessionEvents(rootDir, sessionId, events) {
+  const contextDbRoot = resolveContextDbRoot(rootDir, { preferLegacyExisting: true });
+  const sessionDir = path.join(contextDbRoot, 'sessions', sessionId);
+  await ensureDirSync(sessionDir);
+  const eventsPath = path.join(sessionDir, 'l2-events.jsonl');
+  const lines = events.map((e) => JSON.stringify(e)).join('\n');
+  await fs.writeFile(eventsPath, lines + '\n', 'utf8');
+}
+
+test('session close hook writes a memo event with summary', async () => {
+  await withWorkspace('aios-session-close-', async (workspaceRoot) => {
+    const sessionId = 'test-session-close-1';
+
+    // Seed l2-events.jsonl with a few events, including an assistant message
+    await seedSessionEvents(workspaceRoot, sessionId, [
+      { role: 'user', text: 'Refactor the database module', ts: new Date().toISOString() },
+      { role: 'assistant', text: 'I have refactored the database module and updated the connection pool.', ts: new Date().toISOString() },
+      { role: 'tool', text: '{"status":"ok"}', ts: new Date().toISOString() },
+    ]);
+
+    // Record some touched files
+    await recordSessionChangedFile({ rootDir: workspaceRoot, sessionId, filePath: 'src/db/connection.mjs', changeType: 'modified' });
+    await recordSessionChangedFile({ rootDir: workspaceRoot, sessionId, filePath: 'src/db/pool.mjs', changeType: 'created' });
+
+    // Run the close hook
+    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+
+    // Verify the memo event structure
+    assert.ok(event, 'should return an event object');
+    assert.equal(event.kind, 'memo', 'event kind should be memo');
+    assert.equal(event.role, 'user', 'event role should be user');
+    assert.ok(event.eventId, 'event should have an eventId');
+    assert.ok(event.ts, 'event should have a timestamp');
+    assert.equal(event.scope, 'project_shared', 'scope should be project_shared');
+    assert.ok(event.text.includes('Session test-session-close-1 completed.'), 'text should include session id');
+    assert.ok(event.text.includes('Summary:'), 'text should include Summary prefix');
+    assert.ok(event.text.includes('database'), 'text should include key content from assistant message');
+    assert.ok(event.turn, 'event should have turn metadata');
+    assert.equal(event.turn.expiryDays, 90, 'turn expiryDays should be 90');
+
+    // Verify the event was actually persisted — read it back via listMemoEvents
+    const recent = await listMemoEvents(workspaceRoot, { limit: 5 });
+    assert.ok(recent.length >= 1, 'at least one memo event should exist after close');
+
+    const found = recent.find((e) => e.text.includes('test-session-close-1'));
+    assert.ok(found, 'the close memo event should be findable via listMemoEvents');
+  });
+});
+
+test('session close hook handles empty session gracefully', async () => {
+  await withWorkspace('aios-session-close-empty-', async (workspaceRoot) => {
+    const sessionId = 'empty-session';
+
+    // No events file, no changed-files — just run the hook
+    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+
+    assert.ok(event, 'should return an event even for empty session');
+    assert.equal(event.kind, 'memo');
+    assert.ok(event.text.includes('Session empty-session completed.'), 'text should include session id');
+
+    // Verify persistence
+    const recent = await listMemoEvents(workspaceRoot, { limit: 5 });
+    assert.ok(recent.some((e) => e.text.includes('empty-session')), 'empty session memo should be findable');
+  });
+});
+
+test('session start timeline renders recent events', async () => {
+  await withWorkspace('aios-session-start-', async (workspaceRoot) => {
+    // Write a few memo events so we have content to render
+    await appendMemoEvent({ workspaceRoot, text: 'Initial project setup and configuration', refs: ['config'], scope: 'project_shared' });
+    await appendMemoEvent({ workspaceRoot, text: 'Database schema design and migration planning', refs: ['db'], scope: 'project_shared' });
+    await appendMemoEvent({ workspaceRoot, text: 'API endpoint implementation for user management', refs: ['api'], scope: 'project_shared' });
+
+    // Render timeline
+    const lines = await renderActivityTimeline({ rootDir: workspaceRoot, limit: 10 });
+
+    assert.ok(Array.isArray(lines), 'should return an array of strings');
+    assert.ok(lines.length >= 3, 'should render at least 3 events');
+
+    // Each line should have an icon, relative time, and truncated text
+    for (const line of lines) {
+      assert.ok(typeof line === 'string' && line.length > 0, 'each line should be a non-empty string');
+      // Should contain relative time pattern (e.g. "1m ago", "just now")
+      assert.match(line, /(just now|\d+[mhd] ago)/, 'each line should have relative time');
+    }
+
+    // Verify content from our events is visible
+    const allText = lines.join('\n');
+    assert.ok(allText.includes('Initial project'), 'should contain first event text');
+    assert.ok(allText.includes('Database schema'), 'should contain second event text');
+    assert.ok(allText.includes('API endpoint'), 'should contain third event text');
+  });
+});
+
+test('session start timeline handles empty state gracefully', async () => {
+  await withWorkspace('aios-session-start-empty-', async (workspaceRoot) => {
+    const lines = await renderActivityTimeline({ rootDir: workspaceRoot, limit: 10 });
+    assert.ok(Array.isArray(lines), 'should return an array');
+    assert.equal(lines.length, 0, 'should return empty array when no events exist');
+  });
+});
+
+test('session close memo text is truncated to 200 chars', async () => {
+  await withWorkspace('aios-session-close-trunc-', async (workspaceRoot) => {
+    const sessionId = 'trunc-test';
+    const longMsg = 'A'.repeat(500);
+
+    await seedSessionEvents(workspaceRoot, sessionId, [
+      { role: 'assistant', text: longMsg, ts: new Date().toISOString() },
+    ]);
+
+    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+    // The extracted last assistant content is truncated to 200 chars
+    const summaryContent = event.text;
+    // The summary includes "Session <id> completed. Key files: ... Summary: <truncated>"
+    // The truncated assistant content should be at most 200 chars
+    const summaryMatch = summaryContent.match(/Summary: (.+)$/);
+    assert.ok(summaryMatch, 'should have a Summary: part');
+    assert.ok(summaryMatch[1].length <= 200, `summary content should be <= 200 chars, got ${summaryMatch[1].length}`);
+  });
+});

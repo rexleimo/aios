@@ -23,11 +23,11 @@ async function withTempRoot(prefix, fn) {
   }
 }
 
-function runMemo(workspaceRoot, args) {
+function runMemo(workspaceRoot, args, { env: extraEnv = null } = {}) {
   return spawnSync(process.execPath, [cliPath, 'memo', ...args], {
     cwd: workspaceRoot,
     encoding: 'utf8',
-    env: { ...process.env },
+    env: { ...process.env, ...extraEnv },
   });
 }
 
@@ -70,5 +70,70 @@ test('aios memo add accepts --scope and --agent without hiding shared defaults',
     assert.equal(claudeList.status, 0, claudeList.stderr || claudeList.stdout);
     assert.match(claudeList.stdout, /shared rollout memory/);
     assert.doesNotMatch(claudeList.stdout, /private codex scratch/);
+  });
+});
+
+test('AIOS_AGENT_ID env var defaults memo add to that agent namespace', async () => {
+  await withTempRoot('memo-env-add-', async (workspaceRoot) => {
+    /* Without --agent but with AIOS_AGENT_ID set, the record should be tagged with that agent. */
+    const privateViaEnv = runMemo(
+      workspaceRoot,
+      ['add', 'env-injected scratch', '--scope', 'agent_private'],
+      { env: { AIOS_AGENT_ID: 'codex-cli' } },
+    );
+    assert.equal(privateViaEnv.status, 0, privateViaEnv.stderr || privateViaEnv.stdout);
+
+    const records = parseJsonLines(await fs.readFile(path.join(workspaceRoot, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8'));
+    assert.equal(records[0].scope, 'agent_private');
+    assert.equal(records[0].agent, 'codex-cli');
+  });
+});
+
+test('AIOS_AGENT_ID env var scopes memo list to the injected agent', async () => {
+  await withTempRoot('memo-env-list-', async (workspaceRoot) => {
+    const shared = runMemo(workspaceRoot, ['add', 'shared project memory']);
+    assert.equal(shared.status, 0, shared.stderr || shared.stdout);
+
+    const codexPrivate = runMemo(
+      workspaceRoot,
+      ['add', 'codex-only detail', '--scope', 'agent_private', '--agent', 'codex-cli'],
+    );
+    assert.equal(codexPrivate.status, 0, codexPrivate.stderr || codexPrivate.stdout);
+
+    /* With AIOS_AGENT_ID set, list should behave like --agent codex-cli: shared visible, claude private hidden. */
+    const codexList = runMemo(workspaceRoot, ['list'], { env: { AIOS_AGENT_ID: 'codex-cli' } });
+    assert.equal(codexList.status, 0, codexList.stderr || codexList.stdout);
+    assert.match(codexList.stdout, /shared project memory/);
+    assert.match(codexList.stdout, /codex-only detail/);
+
+    /* A different injected agent must not see codex's private record. */
+    const claudeList = runMemo(workspaceRoot, ['list'], { env: { AIOS_AGENT_ID: 'claude-code' } });
+    assert.equal(claudeList.status, 0, claudeList.stderr || claudeList.stdout);
+    assert.match(claudeList.stdout, /shared project memory/);
+    assert.doesNotMatch(claudeList.stdout, /codex-only detail/);
+  });
+});
+
+test('explicit --agent flag overrides AIOS_AGENT_ID env var', async () => {
+  await withTempRoot('memo-env-override-', async (workspaceRoot) => {
+    /* AIOS_AGENT_ID points at codex, but an explicit --agent claude-code must win. */
+    const added = runMemo(
+      workspaceRoot,
+      ['add', 'claude-tagged scratch', '--scope', 'agent_private', '--agent', 'claude-code'],
+      { env: { AIOS_AGENT_ID: 'codex-cli' } },
+    );
+    assert.equal(added.status, 0, added.stderr || added.stdout);
+
+    const records = parseJsonLines(await fs.readFile(path.join(workspaceRoot, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8'));
+    assert.equal(records[0].agent, 'claude-code');
+
+    /* With env=codex but explicit --agent=claude-code, the private claude record is visible. */
+    const claudeList = runMemo(
+      workspaceRoot,
+      ['list', '--agent', 'claude-code'],
+      { env: { AIOS_AGENT_ID: 'codex-cli' } },
+    );
+    assert.equal(claudeList.status, 0, claudeList.stderr || claudeList.stdout);
+    assert.match(claudeList.stdout, /claude-tagged scratch/);
   });
 });

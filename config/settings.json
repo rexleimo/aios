@@ -34,6 +34,10 @@
       "height": 720
     }
   },
+  "recall": {
+    "maxCharsPerMemory": 5000,
+    "maxTotalRecallChars": 30000
+  },
   "anti_detection": {
     "enabled": true,
     "stealth_mode": {

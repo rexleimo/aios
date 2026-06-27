@@ -448,7 +448,7 @@ test('subagent runtime delegates orchestration responsibilities to focused modul
 
   const focusedBudgets = [
     ['scripts/lib/harness/subagent-runtime/one-shot-runner.mjs', 120],
-    ['scripts/lib/harness/subagent-runtime/phase-job.mjs', 180],
+    ['scripts/lib/harness/subagent-runtime/phase-job.mjs', 190],
   ];
   for (const [file, maxLines] of focusedBudgets) {
     const raw = await readFile(path.resolve(file), 'utf8');

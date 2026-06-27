@@ -48,6 +48,9 @@ export function splitRecallFlags(argv) {
     highlightLimit: DEFAULT_RECALL_HIGHLIGHT_LIMIT,
     scope: '',
     agent: '',
+    mode: 'hybrid',
+    maxCharsPerMemory: '',
+    maxTotalChars: '',
   };
   const positionals = [];
 
@@ -74,6 +77,25 @@ export function splitRecallFlags(argv) {
     }
     if (arg === '--agent') {
       flags.agent = String(argv[i + 1] || '').trim();
+      i += 1;
+      continue;
+    }
+    if (arg === '--mode') {
+      const value = String(argv[i + 1] || '').trim().toLowerCase();
+      if (!['fts-only', 'hybrid'].includes(value)) {
+        throw new Error('--mode must be one of: fts-only, hybrid');
+      }
+      flags.mode = value;
+      i += 1;
+      continue;
+    }
+    if (arg === '--max-chars-per-memory') {
+      flags.maxCharsPerMemory = String(argv[i + 1] || '').trim();
+      i += 1;
+      continue;
+    }
+    if (arg === '--max-total-chars') {
+      flags.maxTotalChars = String(argv[i + 1] || '').trim();
       i += 1;
       continue;
     }

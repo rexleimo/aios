@@ -157,6 +157,7 @@ Options:
   node scripts/aios.mjs interception tail [--session <id> | --latest] [--limit <n>] [--json] [--workspace <path>]
   node scripts/aios.mjs interception rewrite --command <cmd> [--hook claude] [--json]
   node scripts/aios.mjs interception mcp-migrate [--dry-run] [--json]
+  node scripts/aios.mjs interception audit [--timezone <tz>] [--date <YYYY-MM-DD>] [--json] [--workspace <path>]
 
 Subcommands:
   doctor       Verify RTK/Caveman-style interception, MCP proxy routing, refs, and metrics
@@ -164,6 +165,7 @@ Subcommands:
   tail         Show recent interception metric events from the latest or selected session
   rewrite      Rewrite shell commands for host-native tool hooks
   mcp-migrate  Force MCP configs through scripts/aios-mcp-proxy.mjs
+  audit        Hourly token usage aggregation with timezone-aware query
 
 Options:
   --session <id>                 Proof session id
@@ -176,7 +178,9 @@ Options:
   --enforce-turns                Fail when latest or selected metrics lack pre_send/post_receive
   --fix                          Repair MCP proxy routing before proof
   --dry-run                      Preview repair actions without writing configs
-  --json                         Output machine-readable proof
+  --timezone <tz>                Viewer timezone for audit (default: UTC)
+  --date <YYYY-MM-DD>            Filter audit by local date
+  --json                         Output machine-readable proof/audit
   -h, --help
 `;
     case 'perception':

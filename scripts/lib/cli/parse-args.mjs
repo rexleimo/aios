@@ -3,6 +3,7 @@ import { parseHarnessArgs, parseHudArgs, parseTeamArgs } from './parse-args/exec
 import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import {
   parseCanvasArgs,
+  parseDreamArgs,
   parseInitArgs,
   parseInternalArgs,
   parseMemoArgs,
@@ -17,6 +18,7 @@ import { expandEqualsOptions } from './parse-args/shared.mjs';
 import { parseTopLevelArgs } from './parse-args/top-level.mjs';
 
 const TOP_LEVEL_COMMANDS = new Set([
+  'dream',
   'setup',
   'update',
   'uninstall',
@@ -48,6 +50,7 @@ function normalizeTopLevelCommand(first) {
   if (first === 'quality' || first === 'quality-gate') return 'quality-gate';
   if (first === 'entropy') return 'entropy-gc';
   if (first === 'rollback-snapshot') return 'snapshot-rollback';
+  if (first === 'consolidate') return 'dream';
   return first;
 }
 
@@ -308,6 +311,7 @@ export function parseArgs(argv = []) {
   }
 
   if (first === 'memo') return parseMemoArgs(argv);
+  if (first === 'dream' || normalizeTopLevelCommand(first) === 'dream') return parseDreamArgs(argv);
   if (first === 'perception') return parsePerceptionArgs(argv);
   if (first === 'model-router') return parseModelRouterArgs(argv);
   if (first === 'refs') return parseRefsArgs(argv);

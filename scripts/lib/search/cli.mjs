@@ -27,6 +27,9 @@ export async function runSearchCommand(options = {}, { rootDir = process.cwd(), 
     scope: options.scope,
     agent: options.agent,
     space: options.space,
+    mode: options.mode,
+    maxCharsPerMemory: options.maxCharsPerMemory,
+    maxTotalChars: options.maxTotalChars,
   });
 
   if (options.json || options.format === 'json') {

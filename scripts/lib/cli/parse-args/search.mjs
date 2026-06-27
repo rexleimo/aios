@@ -12,6 +12,9 @@ export function parseSearchArgs(argv = []) {
     workspaceRoot: '',
     format: 'text',
     json: false,
+    mode: 'hybrid',
+    maxCharsPerMemory: '',
+    maxTotalChars: '',
   };
   const queryParts = [];
   let help = false;
@@ -61,6 +64,26 @@ export function parseSearchArgs(argv = []) {
     }
     if (arg === '--workspace') {
       options.workspaceRoot = takeValue(rest, index, '--workspace');
+      index += 1;
+      continue;
+    }
+    if (arg === '--mode') {
+      const value = takeValue(rest, index, '--mode');
+      const mode = String(value).trim().toLowerCase();
+      if (!['fts-only', 'hybrid'].includes(mode)) {
+        throw new Error('--mode must be one of: fts-only, hybrid');
+      }
+      options.mode = mode;
+      index += 1;
+      continue;
+    }
+    if (arg === '--max-chars-per-memory') {
+      options.maxCharsPerMemory = takeValue(rest, index, '--max-chars-per-memory');
+      index += 1;
+      continue;
+    }
+    if (arg === '--max-total-chars') {
+      options.maxTotalChars = takeValue(rest, index, '--max-total-chars');
       index += 1;
       continue;
     }

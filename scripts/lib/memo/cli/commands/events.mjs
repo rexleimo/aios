@@ -10,6 +10,11 @@ import {
 import { usageError } from '../shared.mjs';
 import { getActiveMemoStorage, loadMemoStorageApi } from '../storage-api.mjs';
 
+/* 中文注释：当 team/harness dispatch 设置了 AIOS_AGENT_ID 时，memo CLI 默认使用该 agent 命名空间，避免每个子 agent 都要显式传 --agent。 */
+function resolveMemoAgent(flags) {
+  return String(flags?.agent || '').trim() || String(process.env.AIOS_AGENT_ID || '').trim();
+}
+
 export async function handleMemoAddCommand({
   secondary,
   rest,
@@ -36,7 +41,7 @@ export async function handleMemoAddCommand({
     text,
     refs,
     scope: flags.scope || 'project_shared',
-    agent: flags.agent || '',
+    agent: resolveMemoAgent(flags),
     role: 'user',
     kind: 'memo',
     turn: {
@@ -62,13 +67,20 @@ export async function handleMemoRecallCommand({ argv, workspaceRoot, activeSpace
   const space = activeSpace;
   const storageApi = await loadMemoStorageApi();
   const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+
+  // Parse budget flags — empty string means default (no limit)
+  const maxCharsPerMemory = flags.maxCharsPerMemory ? Number.parseInt(flags.maxCharsPerMemory, 10) : Infinity;
+  const maxTotalChars = flags.maxTotalChars ? Number.parseInt(flags.maxTotalChars, 10) : Infinity;
+
   let records = await storageApi.searchMemoEvents(workspaceRoot, {
     storage,
     space,
     query,
     limit: flags.limit,
     scope: flags.scope,
-    agent: flags.agent,
+    agent: resolveMemoAgent(flags),
+    maxCharsPerMemory: Number.isFinite(maxCharsPerMemory) ? maxCharsPerMemory : Infinity,
+    maxTotalChars: Number.isFinite(maxTotalChars) ? maxTotalChars : Infinity,
   });
   if (!Array.isArray(records) || records.length === 0) {
     records = legacyMemoRows(workspaceRoot, space, { query, limit: flags.limit });
@@ -94,7 +106,7 @@ export async function handleMemoRecallCommand({ argv, workspaceRoot, activeSpace
 export async function handleMemoListCommand({ argv, workspaceRoot, activeSpace, io }) {
   const { positionals, flags } = splitFlags(argv);
   if (positionals[0] !== 'list') throw usageError('Usage: memo list [--limit N]');
-  const rows = await loadMemoRows({ workspaceRoot, activeSpace, limit: flags.limit, scope: flags.scope, agent: flags.agent });
+  const rows = await loadMemoRows({ workspaceRoot, activeSpace, limit: flags.limit, scope: flags.scope, agent: resolveMemoAgent(flags) });
   if (rows.length === 0) {
     io.log('(none)');
     return true;
@@ -117,7 +129,7 @@ export async function handleMemoSearchCommand({ argv, workspaceRoot, activeSpace
     query,
     limit: flags.limit,
     scope: flags.scope,
-    agent: flags.agent,
+    agent: resolveMemoAgent(flags),
   });
   if (rows.length === 0) {
     io.log('(none)');

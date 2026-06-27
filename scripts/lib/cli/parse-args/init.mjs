@@ -7,6 +7,7 @@ export function parseInitArgs(argv) {
     agent: '',
     all: false,
     dryRun: false,
+    defaultMode: '',
   };
   let help = false;
 
@@ -25,6 +26,11 @@ export function parseInitArgs(argv) {
           throw new Error(`--agent must be one of: ${[...INIT_AGENT_NAMES].join(', ')}`);
         }
         options.agent = agent;
+        index += 1;
+        break;
+      }
+      case '--default-mode': {
+        options.defaultMode = String(takeValue(rest, index, '--default-mode')).trim();
         index += 1;
         break;
       }

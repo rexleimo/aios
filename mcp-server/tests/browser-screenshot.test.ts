@@ -21,6 +21,9 @@ test('screenshot uses locator capture when selector is provided', async () => {
         return Buffer.from('locator-shot');
       },
     }),
+    // applyPrivacyOverlay calls page.evaluate before capture; return a no-op
+    // stats object so the redaction pass is a no-op in this locator test.
+    evaluate: async () => ({ nodesRedacted: 0, elementsBlurred: 0 }),
   };
 
   const originalGetState = browserLauncher.getState.bind(browserLauncher);
@@ -30,7 +33,7 @@ test('screenshot uses locator capture when selector is provided', async () => {
   })) as typeof browserLauncher.getState;
 
   try {
-    const result = await screenshot(false, 'default', undefined, '#publish');
+    const result = await screenshot({ fullPage: false, profile: 'default', selector: '#publish' });
 
     assert.equal(result.success, true);
     assert.equal(result.selector, '#publish');

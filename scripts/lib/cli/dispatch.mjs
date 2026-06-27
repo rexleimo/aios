@@ -116,6 +116,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       if (parsed.options.agent) args.push('--agent', parsed.options.agent);
       if (parsed.options.all) args.push('--all');
       if (parsed.options.dryRun) args.push('--dry-run');
+      if (parsed.options.defaultMode) {
+        // Write default_mode to .aios/config.json then run init
+        const { writeAiosConfig } = await import('../lifecycle/options/default-mode.mjs');
+        await writeAiosConfig(rootDir, { defaultMode: parsed.options.defaultMode });
+        args.push('--default-mode', parsed.options.defaultMode);
+      }
       await runAiosInit(args);
       return;
     }
@@ -178,9 +184,46 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         applyResultExitCode(await runSkillTrainingGate(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
         return;
       }
+      /* 中文注释：Skill Workshop — 受控技能自生成闭环 */
+      if (parsed.options.subcommand === 'propose') {
+        const { propose } = await import('../skills/skill-workshop.mjs');
+        applyResultExitCode(await propose({ rootDir: workspaceFor(parsed), description: parsed.options.description, stdout }));
+        return;
+      }
+      if (parsed.options.subcommand === 'review') {
+        const { review } = await import('../skills/skill-workshop.mjs');
+        applyResultExitCode(await review({ rootDir: workspaceFor(parsed), id: parsed.options.id, action: parsed.options.action, stdout, stderr }));
+        return;
+      }
+      if (parsed.options.subcommand === 'apply') {
+        const { apply: workshopApply } = await import('../skills/skill-workshop.mjs');
+        applyResultExitCode(await workshopApply({ rootDir: workspaceFor(parsed), id: parsed.options.id, policyCheck: Boolean(parsed.options.policy), stdout, stderr }));
+        return;
+      }
+      if (parsed.options.subcommand === 'rollback') {
+        const { rollback } = await import('../skills/skill-workshop.mjs');
+        applyResultExitCode(await rollback({ rootDir: workspaceFor(parsed), name: parsed.options.name, stdout, stderr }));
+        return;
+      }
+      if (parsed.options.subcommand === 'index') {
+        const { skillIndexScan } = await import('../skills/skill-workshop.mjs');
+        applyResultExitCode(await skillIndexScan({ rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
     }
 
     if (parsed.command === 'session') {
+      const sub = parsed.options.subcommand;
+      if (sub === 'close') {
+        const { runSessionClose } = await import('../lifecycle/session-hooks/close.mjs');
+        applyResultExitCode(await runSessionClose(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
+      if (sub === 'start') {
+        const { runSessionStartTimeline } = await import('../lifecycle/session-hooks/start-timeline.mjs');
+        applyResultExitCode(await runSessionStartTimeline(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
       const { runSessionChangedFiles } = await import('../session/changed-files.mjs');
       applyResultExitCode(await runSessionChangedFiles(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
       return;
@@ -310,6 +353,18 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     if (parsed.command === 'release-status') {
       const { runReleaseStatus } = await import('../lifecycle/release-status.mjs');
       applyResultExitCode(await runReleaseStatus(parsed.options, { rootDir: workspaceFor(parsed) }));
+      return;
+    }
+
+    if (parsed.command === 'dream') {
+      const { runDream } = await import('../lifecycle/dream/index.mjs');
+      const workspace = workspaceFor(parsed);
+      const result = await runDream({
+        rootDir: workspace,
+        mode: parsed.options.mode,
+        spaces: parsed.options.spaces,
+      });
+      stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       return;
     }
 

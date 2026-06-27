@@ -45,11 +45,11 @@ function filterMemoIdentity(events, { scope = '', agent = '' } = {}) {
     .filter((event) => eventVisibleForAgent(event, agent));
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '' } = {}) {
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', maxCharsPerMemory = Infinity, maxTotalChars = Infinity } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
-  return sortEventsDescending(filterMemoIdentity(events, { scope, agent }))
+  const scored = sortEventsDescending(filterMemoIdentity(events, { scope, agent }))
     .filter((event) => eventMatchesQuery(event, query))
     .map((event) => ({ ...event, matchScore: scoreEvent(event, query) }))
     .sort((a, b) => {
@@ -58,6 +58,14 @@ export async function searchMemoEvents(workspaceRoot, { storage, space = 'defaul
       return String(b.ts || '').localeCompare(String(a.ts || ''));
     })
     .slice(0, boundedLimit);
+
+  // Apply recall budget if non-default values are provided
+  const hasBudget = Number.isFinite(maxCharsPerMemory) || Number.isFinite(maxTotalChars);
+  if (hasBudget) {
+    const { applyRecallBudget } = await import('../../search/budget.mjs');
+    return applyRecallBudget(scored, { maxCharsPerMemory, maxTotalChars });
+  }
+  return scored;
 }
 
 export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '' } = {}) {

@@ -2,7 +2,7 @@ import path from 'node:path';
 import { normalizeModelRouting } from '../../model-router.mjs';
 import { validateHandoffPayload } from '../handoff.mjs';
 import { buildClientStructuredOutputOptions, shouldUseClientStructuredOutput } from '../subagent-clients/structured-output.mjs';
-import { CODEX_OUTPUT_SCHEMA_REL } from './constants.mjs';
+import { CODEX_OUTPUT_SCHEMA_REL, AGENT_ID_ENV } from './constants.mjs';
 import { recordPhaseModelDispatch, resolveExecutionClientId } from './client-args.mjs';
 import { evaluatePhaseFilePolicy, summarizeFilePolicyViolation } from './file-policy.mjs';
 import { extractJsonCandidate } from './handoff-output.mjs';
@@ -21,6 +21,14 @@ function resolveAgentForJob(job, spec) {
   const agentId = normalizeText(job?.launchSpec?.agentRefId);
   if (!agentId) return null;
   return spec.agents[agentId] || null;
+}
+
+/* 中文注释：把当前 job 的 agent id 注入子进程环境变量，让 memo CLI 默认使用该 agent 命名空间。显式 --agent 仍然优先生效。 */
+function injectAgentIdEnv(env, agentId) {
+  const normalized = normalizeText(agentId);
+  if (!normalized) return env;
+  if (env && typeof env === 'object' && env[AGENT_ID_ENV] === normalized) return env;
+  return { ...(env || {}), [AGENT_ID_ENV]: normalized };
 }
 
 function normalizeResultAttempts(result, fallback = 0) {
@@ -64,7 +72,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     systemPrompt: outbound.systemPrompt,
     userPrompt: outbound.userPrompt,
     timeoutMs,
-    env,
+    env: injectAgentIdEnv(env, agentId),
     io,
     cwd: rootDir,
     codexOutput: shouldUseClientStructuredOutput(executionClientId) ? structuredOutput : null,

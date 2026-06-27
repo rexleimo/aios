@@ -41,9 +41,9 @@ export function parseSessionArgs(argv = []) {
       options,
     };
   }
-  if (!options.subcommand) throw new Error('session requires subcommand: changed-files');
-  if (options.subcommand !== 'changed-files') {
-    throw new Error('session requires subcommand: changed-files');
+  if (!options.subcommand) throw new Error('session requires subcommand: changed-files, close, start');
+  if (!['changed-files', 'close', 'start'].includes(options.subcommand)) {
+    throw new Error('session requires subcommand: changed-files, close, start');
   }
   return {
     mode: 'command',

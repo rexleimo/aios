@@ -20,7 +20,7 @@
     "contextdb": "node scripts/with-project-node.mjs ./node_modules/tsx/dist/cli.mjs src/contextdb/cli.ts"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "playwright": "^1.58.2",
     "playwright-core": "^1.58.2"
   },

@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { readAiosConfig, resolveDefaultModeInjections, writeAiosConfig } from './lib/lifecycle/options/default-mode.mjs';
 import { initWorkspace } from './lib/contextdb/workspace.mjs';
 import { buildSkillIndex, writeSkillIndex } from './lib/contextdb/skill-index.mjs';
 import { ensurePersonaLayer } from './lib/memo/persona.mjs';

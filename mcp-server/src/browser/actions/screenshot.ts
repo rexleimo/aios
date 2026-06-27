@@ -2,13 +2,35 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 
 import { browserLauncher } from '../launcher.js';
+import { applyPrivacyOverlay, type ApplyPrivacyOverlayOptions } from '../privacy-overlay.js';
 
-export async function screenshot(
-  fullPage: boolean = false,
-  profile: string = 'default',
-  filePath?: string,
-  selector?: string
-) {
+export interface ScreenshotOptions {
+  fullPage?: boolean;
+  profile?: string;
+  filePath?: string;
+  selector?: string;
+  /**
+   * When true (default), apply a best-effort DOM PII redaction pass before
+   * capturing. See src/browser/privacy-overlay.ts.
+   */
+  redactPii?: boolean;
+  /**
+   * Privacy preset name (e.g. 'gmail', 'wordpress-admin', 'generic').
+   * Only used when redactPii is not false. Defaults to 'generic'.
+   */
+  privacyPreset?: string;
+}
+
+export async function screenshot(opts: ScreenshotOptions = {}) {
+  const {
+    fullPage = false,
+    profile = 'default',
+    filePath,
+    selector,
+    redactPii = true,
+    privacyPreset,
+  } = opts;
+
   const state = browserLauncher.getState(profile);
   if (!state || state.activePageId === null) {
     throw new Error('No active page');
@@ -17,6 +39,18 @@ export async function screenshot(
   const page = state.pages.get(state.activePageId);
   if (!page) {
     throw new Error('Page not found');
+  }
+
+  // Apply best-effort DOM PII redaction before capture. The overlay mutates
+  // the live DOM transiently (a reload restores original content) so the
+  // screenshot below captures a scrubbed view.
+  let privacy;
+  if (redactPii) {
+    const overlayOpts: ApplyPrivacyOverlayOptions = { enabled: true };
+    if (privacyPreset) overlayOpts.preset = privacyPreset;
+    privacy = await applyPrivacyOverlay(page, overlayOpts);
+  } else {
+    privacy = { applied: false, preset: privacyPreset ?? 'generic', nodesRedacted: 0, elementsBlurred: 0, patternsApplied: [] as string[] };
   }
 
   const buffer = selector
@@ -38,5 +72,6 @@ export async function screenshot(
     fullPage,
     profile,
     selector,
+    privacy,
   };
 }

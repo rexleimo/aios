@@ -193,7 +193,7 @@ async function searchReferenceFiles(workspaceRoot, { query, source, roots, limit
     .slice(0, limit);
 }
 
-async function searchMemory(workspaceRoot, { query, limit, scope, agent, space }) {
+async function searchMemory(workspaceRoot, { query, limit, scope, agent, space, maxCharsPerMemory = Infinity, maxTotalChars = Infinity }) {
   const storage = await getActiveMemoStorage(workspaceRoot);
   const rows = await searchMemoEvents(workspaceRoot, {
     storage,
@@ -202,6 +202,8 @@ async function searchMemory(workspaceRoot, { query, limit, scope, agent, space }
     limit,
     scope,
     agent,
+    maxCharsPerMemory,
+    maxTotalChars,
   });
   const results = rows.map((row) => ({
     source: 'memory',
@@ -252,6 +254,19 @@ export async function searchAiosProject(workspaceRoot, options = {}) {
   const perSourceLimit = Math.max(limit, 10);
   const results = [];
 
+  // Resolve budget from options, falling back to config defaults
+  const maxCharsPerMemory = Number.isFinite(Number(options.maxCharsPerMemory))
+    ? Number(options.maxCharsPerMemory)
+    : Infinity;
+  const maxTotalChars = Number.isFinite(Number(options.maxTotalChars))
+    ? Number(options.maxTotalChars)
+    : Infinity;
+
+  // --mode flag: currently a no-op marker (both modes do the same thing
+  // since there is no vector backend yet), but documents intent for
+  // future sqlite-vec integration.
+  const searchMode = String(options.mode || 'hybrid').trim().toLowerCase();
+
   if (sources.includes('memory')) {
     results.push(...await searchMemory(root, {
       query,
@@ -259,6 +274,8 @@ export async function searchAiosProject(workspaceRoot, options = {}) {
       scope: options.scope || '',
       agent: options.agent || '',
       space: options.space || 'default',
+      maxCharsPerMemory,
+      maxTotalChars,
     }));
   }
   if (sources.includes('plans')) {

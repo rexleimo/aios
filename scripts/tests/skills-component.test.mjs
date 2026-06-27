@@ -1,376 +1,434 @@
 import assert from 'node:assert/strict';
-import { lstat, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import fs from 'node:fs';
+import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 import {
-  doctorContextDbSkills,
-  installContextDbSkills,
-  uninstallContextDbSkills,
-} from '../lib/components/skills.mjs';
+  propose,
+  review,
+  apply,
+  rollback,
+  skillIndexScan,
+  proposalsDir,
+  indexFilePath,
+  readIndex,
+} from '../lib/skills/skill-workshop.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
 }
 
-async function writeSkill(rootDir, relativeDir, body = '# sample\n') {
-  const skillDir = path.join(rootDir, relativeDir);
+async function captureStdio(fn) {
+  const chunks = [];
+  const stdout = { write: (s) => chunks.push(String(s)) };
+  await fn(stdout);
+  return chunks.join('');
+}
+
+// ---------------------------------------------------------------------------
+// propose
+// ---------------------------------------------------------------------------
+
+test('propose creates a new proposal directory with proposal.json and SKILL.md', async () => {
+  const rootDir = await makeTemp('aios-workshop-propose-');
+
+  let outText = '';
+  const result = await propose({ rootDir, description: 'test skill for verification', stdout: { write: (s) => { outText += String(s); } } });
+
+  assert.equal(result.exitCode, 0);
+  assert.ok(result.proposal);
+  assert.equal(result.proposal.status, 'pending');
+  assert.ok(result.proposal.id.startsWith('prop-'));
+
+  const propsDir = proposalsDir(rootDir);
+  const propPath = path.join(propsDir, result.proposal.id);
+  const propFile = path.join(propPath, 'proposal.json');
+  const skillMd = path.join(propPath, 'SKILL.md');
+
+  assert.ok(fs.existsSync(propFile), 'proposal.json should exist');
+  assert.ok(fs.existsSync(skillMd), 'SKILL.md should exist');
+
+  const prop = JSON.parse(await readFile(propFile, 'utf8'));
+  assert.equal(prop.status, 'pending');
+  assert.equal(prop.description, 'test skill for verification');
+
+  const skillContent = await readFile(skillMd, 'utf8');
+  assert.ok(skillContent.includes('test skill for verification'));
+  assert.match(outText, /proposal created/);
+});
+
+test('propose works with empty description', async () => {
+  const rootDir = await makeTemp('aios-workshop-propose-empty-');
+
+  const result = await propose({ rootDir, description: '', stdout: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.proposal.description, '(no description)');
+});
+
+// ---------------------------------------------------------------------------
+// review
+// ---------------------------------------------------------------------------
+
+test('review approves a pending proposal', async () => {
+  const rootDir = await makeTemp('aios-workshop-review-');
+  const propResult = await propose({ rootDir, description: 'test', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+
+  let outText = '';
+  const result = await review({ rootDir, id, action: 'approve', stdout: { write: (s) => { outText += String(s); } } });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.proposal.status, 'approve');
+  assert.ok(result.proposal.reviewedAt);
+  assert.match(outText, /→ approve/);
+});
+
+test('review rejects a pending proposal', async () => {
+  const rootDir = await makeTemp('aios-workshop-review-reject-');
+  const propResult = await propose({ rootDir, description: 'test', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+
+  const result = await review({ rootDir, id, action: 'reject', stdout: { write: () => {} }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.proposal.status, 'reject');
+});
+
+test('review errors on already-reviewed proposal', async () => {
+  const rootDir = await makeTemp('aios-workshop-review-already-');
+  const propResult = await propose({ rootDir, description: 'test', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let errText = '';
+  const result = await review({ rootDir, id, action: 'reject', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /already has status/);
+});
+
+test('review errors on unknown proposal id', async () => {
+  const rootDir = await makeTemp('aios-workshop-review-unknown-');
+  let errText = '';
+  const result = await review({ rootDir, id: 'prop-nonexistent', action: 'approve', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /not found/);
+});
+
+test('review errors on invalid action', async () => {
+  const rootDir = await makeTemp('aios-workshop-review-badaction-');
+  let errText = '';
+  const result = await review({ rootDir, id: 'anything', action: 'invalid', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /must be one of/);
+});
+
+// ---------------------------------------------------------------------------
+// apply
+// ---------------------------------------------------------------------------
+
+test('apply copies approved proposal to skill-sources/ and updates lock', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-');
+  // Ensure skill-sources dir exists (needed for scan)
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+
+  const propResult = await propose({ rootDir, description: 'my-applied-skill', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+
+  // Approve it first
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let outText = '';
+  const result = await apply({ rootDir, id, stdout: { write: (s) => { outText += String(s); } }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+
+  // Check skill-sources/<id>/ exists
+  const skillDir = path.join(rootDir, 'skill-sources', id);
+  assert.ok(fs.existsSync(path.join(skillDir, 'SKILL.md')));
+
+  // Check lock updated
+  const lock = JSON.parse(await readFile(path.join(rootDir, 'skills-lock.json'), 'utf8'));
+  assert.ok(lock.skills[id]);
+  assert.equal(lock.skills[id].sourceType, 'agent-generated');
+  assert.equal(lock.skills[id].origin, 'agent-generated');
+  assert.ok(lock.skills[id].computedHash);
+
+  // Check proposal now has 'applied' status
+  const propFile = path.join(proposalsDir(rootDir), id, 'proposal.json');
+  const prop = JSON.parse(await readFile(propFile, 'utf8'));
+  assert.equal(prop.status, 'applied');
+
+  assert.match(outText, /applied/);
+});
+
+test('apply errors on non-approved proposal', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-rejected-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+
+  const propResult = await propose({ rootDir, description: 'test', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+
+  await review({ rootDir, id, action: 'reject', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let errText = '';
+  const result = await apply({ rootDir, id, stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /only approved proposals/);
+});
+
+test('apply errors on missing proposal', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-missing-');
+  let errText = '';
+  const result = await apply({ rootDir, id: 'prop-nonexistent', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /not found/);
+});
+
+// ---------------------------------------------------------------------------
+// apply + install policy integration
+// ---------------------------------------------------------------------------
+
+test('apply respects a permissive default policy (no policy file)', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-policy-default-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+
+  const propResult = await propose({ rootDir, description: 'allowed skill', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  const result = await apply({ rootDir, id, stdout: { write: () => {} }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+});
+
+test('apply is blocked by a deny policy and writes a policy error', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-policy-deny-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+  await mkdir(path.join(rootDir, '.aios'), { recursive: true });
+  // Deny everything under skill-sources/
+  await writeFile(
+    path.join(rootDir, '.aios', 'skill-install-policy.json'),
+    JSON.stringify({ allow: ['skill-sources/*'], deny: ['skill-sources/*'], requireProvenance: false, version: 1 }),
+    'utf8',
+  );
+
+  const propResult = await propose({ rootDir, description: 'blocked', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let errText = '';
+  const result = await apply({ rootDir, id, stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /policy/i);
+  assert.match(errText, /propose/);
+  // Skill should NOT have been installed
+  assert.ok(!fs.existsSync(path.join(rootDir, 'skill-sources', id, 'SKILL.md')));
+});
+
+test('apply --policyCheck reports DENIED without writing files', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-policycheck-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+  await mkdir(path.join(rootDir, '.aios'), { recursive: true });
+  await writeFile(
+    path.join(rootDir, '.aios', 'skill-install-policy.json'),
+    JSON.stringify({ allow: [], deny: ['skill-sources/*'], requireProvenance: false, version: 1 }),
+    'utf8',
+  );
+
+  const propResult = await propose({ rootDir, description: 'dry-run', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let outText = '';
+  const result = await apply({ rootDir, id, policyCheck: true, stdout: { write: (s) => { outText += String(s); } }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 1);
+  assert.match(outText, /DENIED/);
+  // Nothing installed
+  assert.ok(!fs.existsSync(path.join(rootDir, 'skill-sources', id)));
+  // Proposal still in 'approve' state (not applied)
+  const propFile = path.join(proposalsDir(rootDir), id, 'proposal.json');
+  const prop = JSON.parse(await readFile(propFile, 'utf8'));
+  assert.equal(prop.status, 'approve');
+});
+
+test('apply --policyCheck reports ALLOWED and exits 0', async () => {
+  const rootDir = await makeTemp('aios-workshop-apply-policycheck-ok-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
+
+  const propResult = await propose({ rootDir, description: 'ok', stdout: { write: () => {} } });
+  const id = propResult.proposal.id;
+  await review({ rootDir, id, action: 'approve', stdout: { write: () => {} }, stderr: { write: () => {} } });
+
+  let outText = '';
+  const result = await apply({ rootDir, id, policyCheck: true, stdout: { write: (s) => { outText += String(s); } }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+  assert.match(outText, /ALLOWED/);
+  // Nothing installed in dry-run
+  assert.ok(!fs.existsSync(path.join(rootDir, 'skill-sources', id)));
+});
+
+// ---------------------------------------------------------------------------
+// rollback
+// ---------------------------------------------------------------------------
+
+test('rollback restores previous lock entry', async () => {
+  const rootDir = await makeTemp('aios-workshop-rollback-');
+
+  // Create a lock entry with history
+  const lockPath = path.join(rootDir, 'skills-lock.json');
+  const lockPrev = {
+    version: 1,
+    skills: {
+      'test-skill': {
+        source: 'obra/superpowers',
+        sourceType: 'github',
+        version: '1.0.0',
+        path: 'skill-sources/test-skill/SKILL.md',
+        computedHash: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        appliedAt: '2026-01-01T00:00:00.000Z',
+        history: [
+          {
+            version: '0.9.0',
+            computedHash: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            path: 'skill-sources/test-skill/SKILL.md',
+          },
+        ],
+      },
+    },
+  };
+  await writeFile(lockPath, JSON.stringify(lockPrev, null, 2) + '\n', 'utf8');
+
+  let outText = '';
+  const result = await rollback({ rootDir, name: 'test-skill', stdout: { write: (s) => { outText += String(s); } }, stderr: { write: () => {} } });
+  assert.equal(result.exitCode, 0);
+
+  const lock = JSON.parse(await readFile(lockPath, 'utf8'));
+  assert.equal(lock.skills['test-skill'].version, '0.9.0');
+  assert.equal(lock.skills['test-skill'].computedHash, 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb');
+  assert.deepEqual(lock.skills['test-skill'].history, []);
+
+  assert.match(outText, /rolled back/);
+});
+
+test('rollback errors on skill with no history', async () => {
+  const rootDir = await makeTemp('aios-workshop-rollback-nohist-');
+  const lockPath = path.join(rootDir, 'skills-lock.json');
+  await writeFile(lockPath, JSON.stringify({
+    version: 1,
+    skills: {
+      'test-skill': {
+        source: 'obra/superpowers',
+        sourceType: 'github',
+        version: '1.0.0',
+        path: 'skill-sources/test-skill/SKILL.md',
+        computedHash: 'aaaa',
+        history: [],
+      },
+    },
+  }, null, 2) + '\n', 'utf8');
+
+  let errText = '';
+  const result = await rollback({ rootDir, name: 'test-skill', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /no previous version/);
+});
+
+test('rollback errors on unknown skill', async () => {
+  const rootDir = await makeTemp('aios-workshop-rollback-unknown-');
+  const lockPath = path.join(rootDir, 'skills-lock.json');
+  await writeFile(lockPath, JSON.stringify({ version: 1, skills: {} }, null, 2) + '\n', 'utf8');
+
+  let errText = '';
+  const result = await rollback({ rootDir, name: 'nonexistent', stdout: { write: () => {} }, stderr: { write: (s) => { errText += String(s); } } });
+  assert.equal(result.exitCode, 1);
+  assert.match(errText, /not found/);
+});
+
+// ---------------------------------------------------------------------------
+// index
+// ---------------------------------------------------------------------------
+
+test('skillIndexScan rebuilds index from skill-sources/', async () => {
+  const rootDir = await makeTemp('aios-workshop-index-');
+
+  // Create a skill source
+  const skillDir = path.join(rootDir, 'skill-sources', 'test-skill');
   await mkdir(skillDir, { recursive: true });
-  await writeFile(path.join(skillDir, 'SKILL.md'), body, 'utf8');
-}
+  await writeFile(path.join(skillDir, 'SKILL.md'), '---\nname: test-skill\ndescription: Test\n---\n\n# Test\n', 'utf8');
 
-async function writeTestManifest(rootDir, skills) {
-  const configDir = path.join(rootDir, 'config');
-  await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(configDir, 'skills-sync-manifest.json'), JSON.stringify({
-    schemaVersion: 1,
-    generatedRoots: { codex: '.codex/skills' },
-    skills: skills.map((s) => ({
-      relativeSkillPath: s.relativeSkillPath || s.name,
-      installCatalogName: s.name,
-      description: s.description,
-      clients: s.clients,
-      scopes: s.scopes,
-      defaultInstall: s.defaultInstall,
-      tags: s.tags,
-      repoTargets: s.repoTargets || s.clients,
-    })),
-    legacyUnmanaged: [],
-    legacyReplaceable: [],
-  }, null, 2), 'utf8');
-}
+  let outText = '';
+  const result = await skillIndexScan({ rootDir, stdout: { write: (s) => { outText += String(s); } } });
+  assert.equal(result.exitCode, 0);
 
-test('default install mode copies skill trees and writes install metadata', async () => {
-  const rootDir = await makeTemp('aios-skills-copy-root-');
-  const codexHome = await makeTemp('aios-skills-copy-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
-
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-  });
-
-  const targetDir = path.join(codexHome, 'skills', 'find-skills');
-  const stat = await lstat(targetDir);
-  assert.equal(stat.isSymbolicLink(), false);
-
-  const metadata = JSON.parse(await readFile(path.join(targetDir, '.aios-skill-install.json'), 'utf8'));
-  assert.equal(metadata.installMode, 'copy');
-  assert.equal(metadata.skillName, 'find-skills');
-  assert.equal(metadata.relativeSkillPath, 'find-skills');
-  assert.equal(metadata.catalogSource, 'skill-sources/find-skills');
+  const index = readIndex(rootDir);
+  assert.equal(index.format_version, 1);
+  assert.equal(index.skills.length, 1);
+  assert.equal(index.skills[0].name, 'test-skill');
+  assert.equal(index.skills[0].origin, 'vendored');
+  assert.ok(index.skills[0].hash);
+  assert.match(outText, /scanned/);
 });
 
-test('copy install refreshes managed skill trees when catalog content changes', async () => {
-  const rootDir = await makeTemp('aios-skills-refresh-root-');
-  const codexHome = await makeTemp('aios-skills-refresh-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills', '# old\n');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
+test('skillIndexScan handles empty skill-sources/', async () => {
+  const rootDir = await makeTemp('aios-workshop-index-empty-');
+  await mkdir(path.join(rootDir, 'skill-sources'), { recursive: true });
 
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-  });
-
-  await writeSkill(rootDir, 'skill-sources/find-skills', '# new\n');
-  const logs = [];
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-    io: { log: (line) => logs.push(String(line)) },
-  });
-
-  const targetFile = path.join(codexHome, 'skills', 'find-skills', 'SKILL.md');
-  assert.equal(await readFile(targetFile, 'utf8'), '# new\n');
-  assert.match(logs.join('\n'), /skill refreshed/);
+  await skillIndexScan({ rootDir, stdout: { write: () => {} } });
+  const index = readIndex(rootDir);
+  assert.equal(index.skills.length, 0);
 });
 
-test('explicit link mode preserves symlink installs', async () => {
-  const rootDir = await makeTemp('aios-skills-link-root-');
-  const codexHome = await makeTemp('aios-skills-link-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
+// ---------------------------------------------------------------------------
+// parseSkillArgs integration tests
+// ---------------------------------------------------------------------------
 
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    installMode: 'link',
-    homeMap: { codex: codexHome },
-  });
+test('parseSkillArgs recognizes workshop subcommands', async () => {
+  const { parseSkillArgs } = await import('../lib/cli/parse-args/skill.mjs');
 
-  const targetDir = path.join(codexHome, 'skills', 'find-skills');
-  const stat = await lstat(targetDir);
-  assert.equal(stat.isSymbolicLink(), true);
+  const proposeParsed = parseSkillArgs(['skill', 'propose', 'my new skill']);
+  assert.equal(proposeParsed.options.subcommand, 'propose');
+  assert.equal(proposeParsed.options.description, 'my new skill');
+
+  const reviewParsed = parseSkillArgs(['skill', 'review', 'prop-123', '--approve']);
+  assert.equal(reviewParsed.options.subcommand, 'review');
+  assert.equal(reviewParsed.options.id, 'prop-123');
+  assert.equal(reviewParsed.options.action, 'approve');
+
+  const applyParsed = parseSkillArgs(['skill', 'apply', 'prop-123']);
+  assert.equal(applyParsed.options.subcommand, 'apply');
+  assert.equal(applyParsed.options.id, 'prop-123');
+
+  const rollbackParsed = parseSkillArgs(['skill', 'rollback', 'my-skill']);
+  assert.equal(rollbackParsed.options.subcommand, 'rollback');
+  assert.equal(rollbackParsed.options.name, 'my-skill');
+
+  const indexParsed = parseSkillArgs(['skill', 'index', '--scan']);
+  assert.equal(indexParsed.options.subcommand, 'index');
+  assert.equal(indexParsed.options.scan, true);
 });
 
-test('doctor recognizes managed copy installs and legacy managed links', async () => {
-  const rootDir = await makeTemp('aios-skills-doctor-modes-root-');
-  const codexHome = await makeTemp('aios-skills-doctor-modes-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
-  await writeSkill(rootDir, '.codex/skills/find-skills');
+test('parseSkillArgs validates required positional args for workshop subcommands', async () => {
+  const { parseSkillArgs } = await import('../lib/cli/parse-args/skill.mjs');
 
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-  });
-
-  const copyLogs = [];
-  await doctorContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    selectedSkills: ['find-skills'],
-    homeMap: { codex: codexHome },
-    io: { log: (line) => copyLogs.push(String(line)) },
-  });
-  assert.match(copyLogs.join('\n'), /managed copy install/);
-
-  const legacyHome = await makeTemp('aios-skills-legacy-home-');
-  await mkdir(path.join(legacyHome, 'skills'), { recursive: true });
-  await import('node:fs').then(({ default: fs }) => {
-    fs.symlinkSync(path.join(rootDir, '.codex', 'skills', 'find-skills'), path.join(legacyHome, 'skills', 'find-skills'));
-  });
-
-  const legacyLogs = [];
-  await doctorContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    selectedSkills: ['find-skills'],
-    homeMap: { codex: legacyHome },
-    io: { log: (line) => legacyLogs.push(String(line)) },
-  });
-  assert.match(legacyLogs.join('\n'), /legacy managed link install/);
+  assert.throws(() => parseSkillArgs(['skill', 'review']), /skill review requires a proposal id/);
+  assert.throws(() => parseSkillArgs(['skill', 'apply']), /skill apply requires a proposal id/);
+  assert.throws(() => parseSkillArgs(['skill', 'rollback']), /skill rollback requires a skill name/);
 });
 
-test('project installs reject the source repo root', async () => {
-  const rootDir = await makeTemp('aios-skills-source-repo-root-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
+test('parseSkillArgs validate --action flags for review', async () => {
+  const { parseSkillArgs } = await import('../lib/cli/parse-args/skill.mjs');
 
-  await assert.rejects(
-    installContextDbSkills({
-      rootDir,
-      projectRoot: rootDir,
-      client: 'codex',
-      scope: 'project',
-      selectedSkills: ['find-skills'],
-    }),
-    /owned by sync-skills/
-  );
+  const approveParsed = parseSkillArgs(['skill', 'review', 'prop-1', '--approve']);
+  assert.equal(approveParsed.options.action, 'approve');
+
+  const rejectParsed = parseSkillArgs(['skill', 'review', 'prop-1', '--reject']);
+  assert.equal(rejectParsed.options.action, 'reject');
+
+  const quarantineParsed = parseSkillArgs(['skill', 'review', 'prop-1', '--quarantine']);
+  assert.equal(quarantineParsed.options.action, 'quarantine');
 });
 
-test('global scope installs only global-eligible catalog skills', async () => {
-  const rootDir = await makeTemp('aios-skills-catalog-root-');
-  const codexHome = await makeTemp('aios-skills-catalog-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeSkill(rootDir, 'skill-sources/xhs-ops-methods');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-    { name: 'xhs-ops-methods', description: 'project only', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: false }, tags: ['xhs'] },
-  ]);
-
-  await installContextDbSkills({
-    rootDir,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-  });
-
-  const globalSkillPath = path.join(codexHome, 'skills', 'find-skills', 'SKILL.md');
-  const projectOnlyPath = path.join(codexHome, 'skills', 'xhs-ops-methods', 'SKILL.md');
-  assert.match(await readFile(globalSkillPath, 'utf8'), /sample/);
-
-  let missing = false;
-  try {
-    await readFile(projectOnlyPath, 'utf8');
-  } catch {
-    missing = true;
-  }
-  assert.equal(missing, true);
-});
-
-test('explicit selected skills limit installation candidates', async () => {
-  const rootDir = await makeTemp('aios-skills-selected-root-');
-  const projectRoot = await makeTemp('aios-skills-selected-project-');
-  const codexHome = await makeTemp('aios-skills-selected-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-  await writeSkill(rootDir, 'skill-sources/xhs-ops-methods');
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-    { name: 'xhs-ops-methods', description: 'project only', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: false }, tags: ['xhs'] },
-  ]);
-
-  await installContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    selectedSkills: ['xhs-ops-methods'],
-    homeMap: { codex: codexHome },
-  });
-
-  const selectedPath = path.join(projectRoot, '.codex', 'skills', 'xhs-ops-methods', 'SKILL.md');
-  assert.match(await readFile(selectedPath, 'utf8'), /sample/);
-
-  let installedUnexpectedly = true;
-  try {
-    await readFile(path.join(projectRoot, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8');
-  } catch {
-    installedUnexpectedly = false;
-  }
-  assert.equal(installedUnexpectedly, false);
-});
-
-test('doctor and uninstall respect project scope targets', async () => {
-  const rootDir = await makeTemp('aios-skills-project-root-');
-  const projectRoot = await makeTemp('aios-skills-project-workspace-');
-  const codexHome = await makeTemp('aios-skills-project-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
-
-  const logs = [];
-  const io = { log: (line) => logs.push(String(line)) };
-
-  await installContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    selectedSkills: ['find-skills'],
-    homeMap: { codex: codexHome },
-    io,
-  });
-
-  const projectInstalledPath = path.join(projectRoot, '.codex', 'skills', 'find-skills', 'SKILL.md');
-  assert.match(await readFile(projectInstalledPath, 'utf8'), /sample/);
-
-  await doctorContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    selectedSkills: ['find-skills'],
-    homeMap: { codex: codexHome },
-    io,
-  });
-  assert.match(logs.join('\n'), /\.codex\/skills/);
-
-  await uninstallContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    selectedSkills: ['find-skills'],
-    homeMap: { codex: codexHome },
-    io,
-  });
-
-  let missing = false;
-  try {
-    await readFile(projectInstalledPath, 'utf8');
-  } catch {
-    missing = true;
-  }
-  assert.equal(missing, true);
-});
-
-test('project scope can target a workspace that differs from the catalog source repo', async () => {
-  const rootDir = await makeTemp('aios-skills-source-root-');
-  const projectRoot = await makeTemp('aios-skills-workspace-root-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['project'], defaultInstall: { global: false, project: true }, tags: ['general'] },
-  ]);
-
-  await installContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    selectedSkills: ['find-skills'],
-  });
-
-  assert.match(
-    await readFile(path.join(projectRoot, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'),
-    /sample/
-  );
-});
-
-test('doctor warns about project overriding global even when scope=global', async () => {
-  const rootDir = await makeTemp('aios-skills-override-global-root-');
-  const projectRoot = await makeTemp('aios-skills-override-global-workspace-');
-  const codexHome = await makeTemp('aios-skills-override-global-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
-
-  await installContextDbSkills({ rootDir, client: 'codex', scope: 'global', homeMap: { codex: codexHome } });
-  await installContextDbSkills({ rootDir, projectRoot, client: 'codex', scope: 'project', homeMap: { codex: codexHome } });
-
-  const logs = [];
-  await doctorContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'global',
-    homeMap: { codex: codexHome },
-    io: { log: (line) => logs.push(String(line)) },
-  });
-
-  assert.match(logs.join('\n'), /project install overrides global install/);
-});
-
-test('doctor warns about project overriding global even when scope=project', async () => {
-  const rootDir = await makeTemp('aios-skills-override-project-root-');
-  const projectRoot = await makeTemp('aios-skills-override-project-workspace-');
-  const codexHome = await makeTemp('aios-skills-override-project-home-');
-  await writeSkill(rootDir, 'skill-sources/find-skills');
-
-  await writeTestManifest(rootDir, [
-    { name: 'find-skills', description: 'general', clients: ['codex'], scopes: ['global', 'project'], defaultInstall: { global: true, project: false }, tags: ['general'] },
-  ]);
-
-  await installContextDbSkills({ rootDir, client: 'codex', scope: 'global', homeMap: { codex: codexHome } });
-  await installContextDbSkills({ rootDir, projectRoot, client: 'codex', scope: 'project', homeMap: { codex: codexHome } });
-
-  const logs = [];
-  await doctorContextDbSkills({
-    rootDir,
-    projectRoot,
-    client: 'codex',
-    scope: 'project',
-    homeMap: { codex: codexHome },
-    io: { log: (line) => logs.push(String(line)) },
-  });
-
-  assert.match(logs.join('\n'), /project install overrides global install/);
+test('parseSkillArgs defaults index scan to true', async () => {
+  const { parseSkillArgs } = await import('../lib/cli/parse-args/skill.mjs');
+  const parsed = parseSkillArgs(['skill', 'index']);
+  assert.equal(parsed.options.scan, true);
 });

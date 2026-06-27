@@ -132,7 +132,7 @@ export const tools = [
   },
   {
     name: 'browser_screenshot',
-    description: 'Take screenshot',
+    description: 'Take screenshot. By default applies a best-effort DOM PII redaction overlay (emails, phones, credit cards, sensitive selectors) before capture; set redactPii=false to skip.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -140,6 +140,12 @@ export const tools = [
         profile: { type: 'string', default: 'default' },
         filePath: { type: 'string' },
         selector: { type: 'string' },
+        redactPii: { type: 'boolean', default: true },
+        privacyPreset: {
+          type: 'string',
+          enum: ['generic', 'gmail', 'wordpress-admin'],
+          default: 'generic',
+        },
       },
     },
   },
