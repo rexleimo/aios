@@ -4,38 +4,25 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { performance } from 'node:perf_hooks';
 
-function parseNumber(value, fallback) {
+import { createCliParser } from '../src/shared/cli-parser.mjs';
+
+const cli = createCliParser({
+  name: 'perf-orchestrate-learn-eval-smoke',
+  description: 'Run performance smoke test: orchestrate + learn-eval pipeline',
+  options: [
+    ['--orchestrate-max-ms <n>', 'Max ms for orchestrate dry-run'],
+    ['--learn-eval-max-ms <n>', 'Max ms for learn-eval'],
+    ['--json-out <path>', 'Write JSON report to file'],
+  ],
+  envDefaults: {
+    orchestrateMaxMs: { env: 'AIOS_PERF_ORCHESTRATE_MAX_MS', default: 30000 },
+    learnEvalMaxMs: { env: 'AIOS_PERF_LEARN_EVAL_MAX_MS', default: 20000 },
+  },
+});
+
+function coercePositiveInt(value, fallback) {
   const parsed = Number.parseInt(String(value ?? ''), 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseArgs(argv = []) {
-  const options = {
-    orchestrateMaxMs: parseNumber(process.env.AIOS_PERF_ORCHESTRATE_MAX_MS, 30000),
-    learnEvalMaxMs: parseNumber(process.env.AIOS_PERF_LEARN_EVAL_MAX_MS, 20000),
-    jsonOut: '',
-  };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = argv[i];
-    if (token === '--orchestrate-max-ms') {
-      options.orchestrateMaxMs = parseNumber(argv[i + 1], options.orchestrateMaxMs);
-      i += 1;
-      continue;
-    }
-    if (token === '--learn-eval-max-ms') {
-      options.learnEvalMaxMs = parseNumber(argv[i + 1], options.learnEvalMaxMs);
-      i += 1;
-      continue;
-    }
-    if (token === '--json-out') {
-      options.jsonOut = String(argv[i + 1] || '').trim();
-      i += 1;
-      continue;
-    }
-  }
-
-  return options;
 }
 
 function runCommand(command, args, { cwd }) {
@@ -87,7 +74,18 @@ function writeJsonReport(filePath, value) {
 }
 
 function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const parsed = cli.parse(process.argv.slice(2));
+  if (parsed.help) {
+    console.log(cli.program.helpInformation());
+    return;
+  }
+
+  const options = {
+    orchestrateMaxMs: coercePositiveInt(parsed.flags.orchestrateMaxMs, 30000),
+    learnEvalMaxMs: coercePositiveInt(parsed.flags.learnEvalMaxMs, 20000),
+    jsonOut: parsed.flags.jsonOut || '',
+  };
+
   const repoRoot = process.cwd();
   const mcpDir = path.join(repoRoot, 'mcp-server');
   const sessionId = createSessionId();

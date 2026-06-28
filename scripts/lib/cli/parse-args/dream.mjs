@@ -1,49 +1,38 @@
-/**
- * Dream command argument parser.
- * Supports: aios dream --preview | aios dream --apply
- */
+/* 中文注释：dream 命令参数解析——基于 Commander 声明式替代手写 for 循环。 */
+import { Command } from 'commander';
+
+const DREAM_CLI = new Command()
+  .name('dream')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(false)
+  .allowExcessArguments(false)
+  .option('--preview', 'Preview consolidation plan (default)')
+  .option('--apply', 'Apply consolidation changes')
+  .option('--space <name>', 'Target consolidation space');
 
 export function parseDreamArgs(argv) {
   const rest = argv.slice(1);
-  const options = {
-    mode: 'preview',
-    spaces: [],
-  };
-  let help = false;
+  const help = rest.includes('-h') || rest.includes('--help');
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
-    }
-    if (arg === '--preview') {
-      options.mode = 'preview';
-      continue;
-    }
-    if (arg === '--apply') {
-      options.mode = 'apply';
-      continue;
-    }
-    if (arg === '--space') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --space');
-      options.spaces.push(String(value).trim());
-      index += 1;
-      continue;
-    }
-    throw new Error(`Unknown option: ${arg}`);
+  try {
+    const parsed = DREAM_CLI.parse(rest, { from: 'user' });
+    const flags = parsed.opts();
+    const mode = flags.apply ? 'apply' : 'preview';
+    const spaces = flags.space ? [String(flags.space).trim()] : ['default'];
+
+    return {
+      mode: help ? 'help' : 'command',
+      help,
+      command: 'dream',
+      options: { mode, spaces },
+    };
+  } catch {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'dream',
+      options: { mode: 'preview', spaces: ['default'] },
+    };
   }
-
-  // Default to 'default' space if none specified
-  if (options.spaces.length === 0) {
-    options.spaces = ['default'];
-  }
-
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'dream',
-    options,
-  };
 }

@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { buildCommandRewriteHookCommand, buildSaveGuardCommand, ensureHook } from '../aios-init.mjs';
+import { buildCommandRewriteHookCommand, buildSaveGuardCommand, ensureHook } from '../lib/aios-init/hooks.mjs';
 
 function normalizeSlashes(value) {
   return String(value).replace(/\\/g, '/');

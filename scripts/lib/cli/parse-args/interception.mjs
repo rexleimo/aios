@@ -1,83 +1,102 @@
-/* 中文注释：interception 参数解析独立成模块，避免 maintenance 解析器继续膨胀。 */
-import { takeValue } from './shared.mjs';
+/* 中文注释：interception 参数解析，基于 Commander 声明式 */
+import { Command } from 'commander';
 
 const INTERCEPTION_SUBCOMMANDS = new Set(['doctor', 'proof', 'tail', 'rewrite', 'mcp-migrate', 'audit']);
 
-/* 中文注释：只解析 interception 的验证/修复入口，不掺杂 refs、canvas 或内部维护命令。 */
+const program = new Command()
+  .name('interception')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[args...]');
+
+// 注册子命令——为了 Commander 能正确解析子命令级 options
+for (const name of INTERCEPTION_SUBCOMMANDS) {
+  const cmd = program
+    .command(name)
+    .description(`Interception ${name} command`)
+    .helpOption(false)
+    .allowUnknownOption(true)
+    .allowExcessArguments(true)
+    .argument('[args...]');
+
+  // 所有子命令共用这批 options
+  const sharedOptions = [
+    ['--session <id>', 'Session ID'],
+    ['--json', 'Output as JSON'],
+    ['--fix', 'Fix issues (doctor only)'],
+    ['--dry-run', 'Dry run mode'],
+    ['--enforce-turns', 'Enforce turn compression metrics (doctor only)'],
+    ['--workspace <path>', 'Workspace root'],
+    ['--command <text>', 'Command text (rewrite only)'],
+    ['--hook <name>', 'Hook name: claude (rewrite only)'],
+    ['--input <text>', 'Input text'],
+    ['--latest', 'Get latest (tail only)'],
+    ['--limit <n>', 'Limit count'],
+    ['--timezone <tz>', 'Timezone'],
+    ['--date <date>', 'Date filter'],
+  ];
+  for (const [flags, desc] of sharedOptions) {
+    cmd.option(flags, desc);
+  }
+}
+
+/* 中文注释：只解析 interception 的验证/修复入口 */
 export function parseInterceptionArgs(argv) {
-  const rest = argv.slice(1);
-  let help = false;
-  const options = { subcommand: 'doctor', session: '', json: false, fix: false, dryRun: false, workspaceRoot: '', latest: false, limit: 10, enforceTurns: false, commandText: '', hook: '', input: '', timezone: 'UTC', date: '' };
+  const help = argv.includes('-h') || argv.includes('--help');
+  const options = {
+    subcommand: 'doctor', session: '', json: false, fix: false, dryRun: false,
+    workspaceRoot: '', latest: false, limit: 10, enforceTurns: false,
+    commandText: '', hook: '', input: '', timezone: 'UTC', date: '',
+  };
 
-  if (rest[0] && !String(rest[0]).startsWith('-')) {
-    const sub = String(rest[0]).trim().toLowerCase();
-    if (!INTERCEPTION_SUBCOMMANDS.has(sub)) {
-      throw new Error('interception subcommand must be one of: doctor, proof, tail, rewrite, mcp-migrate, audit');
+  try {
+    // argv = ['interception', 'proof', '--session', ...]；跳过第一个顶层命令
+    const sliced = argv.slice(1);
+    // 空参数：直接返回默认值
+    if (sliced.length === 0) {
+      options.subcommand = 'doctor';
+      return { mode: 'command', help: false, command: 'interception', options };
     }
-    options.subcommand = sub;
-    rest.shift();
-  }
+    const parsed = program.parse(sliced, { from: 'user' });
+    const flags = parsed.opts();
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') { help = true; continue; }
-    switch (arg) {
-      case '--session':
-        options.session = takeValue(rest, index, '--session');
-        index += 1;
-        break;
-      case '--json':
-        options.json = true;
-        break;
-      case '--fix':
-        options.fix = true;
-        break;
-      case '--dry-run':
-        options.dryRun = true;
-        break;
-      case '--enforce-turns':
-        options.enforceTurns = true;
-        break;
-      case '--workspace':
-        options.workspaceRoot = takeValue(rest, index, '--workspace');
-        index += 1;
-        break;
-      case '--command':
-        options.commandText = takeValue(rest, index, '--command');
-        index += 1;
-        break;
-      case '--hook':
-        options.hook = takeValue(rest, index, '--hook').trim().toLowerCase();
-        if (!['claude'].includes(options.hook)) {
-          throw new Error('--hook must be one of: claude');
-        }
-        index += 1;
-        break;
-      case '--input':
-        options.input = takeValue(rest, index, '--input');
-        index += 1;
-        break;
-      case '--latest':
-        options.latest = true;
-        break;
-      case '--limit':
-        options.limit = Number.parseInt(takeValue(rest, index, '--limit'), 10);
-        if (!Number.isFinite(options.limit) || options.limit <= 0) {
-          throw new Error('--limit must be a positive integer');
-        }
-        index += 1;
-        break;
-      case '--timezone':
-        options.timezone = takeValue(rest, index, '--timezone');
-        index += 1;
-        break;
-      case '--date':
-        options.date = takeValue(rest, index, '--date');
-        index += 1;
-        break;
-      default:
-        throw new Error(`Unknown option: ${arg}`);
+    // 找到匹配的子命令对象来获取 opts（因为 program.opts() 可能为空）
+    let matchedCmd = null;
+    const firstArg = sliced[0];
+    if (firstArg && !String(firstArg).startsWith('-') && INTERCEPTION_SUBCOMMANDS.has(firstArg)) {
+      options.subcommand = String(firstArg).trim().toLowerCase();
+      matchedCmd = parsed.commands?.find((c) => c.name() === options.subcommand);
     }
+    const effectiveFlags = matchedCmd?.opts ? matchedCmd.opts() : flags;
+
+    // 映射 Commander 的 camelCase flags 到 kebab-case options
+    if (effectiveFlags.session) options.session = effectiveFlags.session;
+    if (effectiveFlags.json === true) options.json = true;
+    if (effectiveFlags.fix === true) options.fix = true;
+    if (effectiveFlags.dryRun === true) options.dryRun = true;
+    if (effectiveFlags.enforceTurns === true) options.enforceTurns = true;
+    if (effectiveFlags.workspace) options.workspaceRoot = effectiveFlags.workspace;
+    if (effectiveFlags.latest === true) options.latest = true;
+    if (effectiveFlags.limit !== undefined) {
+      const lim = Number.parseInt(effectiveFlags.limit, 10);
+      if (!Number.isFinite(lim) || lim <= 0) throw new Error('--limit must be a positive integer');
+      options.limit = lim;
+    }
+    if (effectiveFlags.command) options.commandText = effectiveFlags.command;
+    if (effectiveFlags.hook) {
+      const h = String(effectiveFlags.hook).trim().toLowerCase();
+      if (h !== 'claude') throw new Error('--hook must be one of: claude');
+      options.hook = h;
+    }
+    if (effectiveFlags.input) options.input = effectiveFlags.input;
+    if (effectiveFlags.timezone) options.timezone = effectiveFlags.timezone;
+    if (effectiveFlags.date) options.date = effectiveFlags.date;
+
+    return { mode: help ? 'help' : 'command', help, command: 'interception', options };
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('positive integer') || e.message.includes('--hook'))) throw e;
+    return { mode: 'help', help: true, command: 'interception', options };
   }
-  return { mode: help ? 'help' : 'command', help, command: 'interception', options };
 }

@@ -7,19 +7,16 @@ export const OPENCODE_STRICT_PRIMARY_AGENT_NAME = 'aios-build';
 export const OPENCODE_STRICT_PRIMARY_AGENT_PATH = `.opencode/agent/${OPENCODE_STRICT_PRIMARY_AGENT_NAME}.md`;
 
 export function withoutOpenCodeAgentArgs(extraArgs = []) {
-  const cleaned = [];
-  for (let index = 0; index < extraArgs.length; index += 1) {
-    const arg = String(extraArgs[index] ?? '');
+  return extraArgs.filter((arg, index) => {
     if (arg === '--agent') {
-      index += 1;
-      continue;
+      // --agent 的下一个参数也跳过（index 处理在 filter 中不方便，改用 reduce）
+      return false;
     }
-    if (arg.startsWith('--agent=')) {
-      continue;
-    }
-    cleaned.push(extraArgs[index]);
-  }
-  return cleaned;
+    if (arg.startsWith('--agent=')) return false;
+    // 检查上一个参数是否是 --agent（如果是，说明当前参数是 agent 的值）
+    if (index > 0 && extraArgs[index - 1] === '--agent') return false;
+    return true;
+  });
 }
 
 export function buildOpenCodeStrictAgentArgs(extraArgs = []) {

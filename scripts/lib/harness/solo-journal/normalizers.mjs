@@ -4,7 +4,9 @@ import path from 'node:path';
 import { SOLO_STAGES } from './constants.mjs';
 
 // 纯函数：统一文本修剪，并支持 fallback。
-export { normalizeText } from '../../../../src/shared/normalize.mjs';
+// 注意：`export ... from` 不会在当前作用域创建绑定，必须先 import 才能在本文件内调用。
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：数组字段去重、去空，保证写入 JSON 的结构稳定。
 export function normalizeStringArray(value) {

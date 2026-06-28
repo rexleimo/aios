@@ -1,4 +1,5 @@
 /* 中文注释：参数解析层识别 interception/refs 子命令，并把它们交给专用分发器。 */
+import { Command } from 'commander';
 import { parseHarnessArgs, parseHudArgs, parseTeamArgs } from './parse-args/execution.mjs';
 import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import {
@@ -16,6 +17,75 @@ import {
 } from './parse-args/maintenance.mjs';
 import { expandEqualsOptions } from './parse-args/shared.mjs';
 import { parseTopLevelArgs } from './parse-args/top-level.mjs';
+
+// 中文注释：通用简单命令解析器——消除 parseStatusArgs/parseClientsArgs/parseAgentsArgs/parseWorkflowArgs 里的手写 for 循环
+function createSimpleCommandParser(name, subcommands, options = []) {
+  const program = new Command()
+    .name(name)
+    .helpOption(false)
+    .exitOverride();
+
+  for (const [flags, desc] of options) {
+    program.option(flags, desc);
+  }
+
+  if (subcommands && subcommands.length > 0) {
+    for (const sub of subcommands) {
+      const cmd = program
+        .command(sub.name)
+        .description(sub.description || '')
+        .helpOption(false)
+        .allowUnknownOption(true)
+        .allowExcessArguments(true)
+        .argument('[args...]');
+
+      for (const [f, d] of sub.options || []) {
+        cmd.option(f, d);
+      }
+    }
+  } else {
+    program.allowUnknownOption(true).allowExcessArguments(true).argument('[args...]');
+  }
+
+  return program;
+}
+
+const STATUS_CLI = createSimpleCommandParser('status', null, [
+  ['--json', 'Output as JSON'],
+  ['--format <text|json>', 'Output format'],
+]);
+
+const CLIENTS_CLI = createSimpleCommandParser('clients', [
+  { name: 'doctor', description: 'Run client doctor checks', options: [['--json', 'JSON output'], ['--format <text|json>', 'Output format'], ['--native-strict', 'Strict native check'], ['--client <name>', 'Target client']] },
+  { name: 'smoke', description: 'Run client smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Output format'], ['--native-strict', 'Strict native check'], ['--client <name>', 'Target client']] },
+  { name: 'trigger-smoke', description: 'Trigger client smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Output format'], ['--native-strict', 'Strict native check'], ['--client <name>', 'Target client']] },
+], [
+  ['--json', 'Output as JSON'],
+  ['--format <text|json>', 'Output format'],
+  ['--native-strict', 'Strict native check'],
+  ['--client <name>', 'Target client'],
+]);
+
+const AGENTS_CLI = createSimpleCommandParser('agents', [
+  { name: 'doctor', description: 'Run agents doctor checks', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
+  { name: 'list', description: 'List agents', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format']] },
+  { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
+], [
+  ['--json', 'Output as JSON'],
+  ['--format <text|json>', 'Output format'],
+  ['--strict', 'Strict check'],
+  ['--dry-run', 'Dry run'],
+]);
+
+const WORKFLOW_CLI = createSimpleCommandParser('workflow', [
+  { name: 'list', description: 'List workflows', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format']] },
+  { name: 'run', description: 'Run a workflow', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--dry-run', 'Dry run'], ['--task <text>', 'Task description']] },
+], [
+  ['--json', 'Output as JSON'],
+  ['--format <text|json>', 'Output format'],
+  ['--dry-run', 'Dry run'],
+  ['--task <text>', 'Task description'],
+]);
 
 const TOP_LEVEL_COMMANDS = new Set([
   'dream',
@@ -55,228 +125,115 @@ function normalizeTopLevelCommand(first) {
 }
 
 function parseClientsArgs(argv) {
-  const rest = argv.slice(1);
-  const options = {
-    subcommand: 'doctor',
-    json: false,
-    format: 'text',
-  };
-  let help = false;
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+  try {
+    // 中文注释：argv = ['clients','doctor','--json']；Commander 会把 'clients' 当命令名，
+    // 用 slice(1) 跳过顶层命令，让子命令解析正常工作
+    const parsed = CLIENTS_CLI.parse(argv.slice(1), { from: 'user' });
+    const flags = parsed.opts();
+    const help = argv.includes('-h') || argv.includes('--help');
+    const subcommand = parsed.args?.[0] || 'doctor';
+    let format = flags.format || 'text';
+    let json = flags.json === true || format === 'json';
+    if (json) format = 'json';
+    if (!['doctor', 'smoke', 'trigger-smoke'].includes(subcommand)) {
+      throw new Error('clients requires subcommand: doctor, smoke, or trigger-smoke');
     }
-    if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-      continue;
+    if (!['text', 'json'].includes(format)) {
+      throw new Error('--format must be one of: text, json');
     }
-    if (arg === '--native-strict') {
-      options.nativeStrict = true;
-      continue;
-    }
-    if (arg === '--format') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
-      options.format = String(value).trim().toLowerCase();
-      options.json = options.format === 'json';
-      index += 1;
-      continue;
-    }
-    if (arg === '--client') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --client');
-      options.client = String(value).trim();
-      index += 1;
-      continue;
-    }
-    if (!String(arg || '').startsWith('-') && index === 0) {
-      options.subcommand = String(arg || '').trim().toLowerCase();
-      continue;
-    }
-    throw new Error(`Unknown option: ${arg}`);
+    const options = { subcommand, json, format };
+    if (flags.nativeStrict) options.nativeStrict = true;
+    if (flags.client) options.client = flags.client;
+    return { mode: help ? 'help' : 'command', help, command: 'clients', options };
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('requires subcommand') || e.message.includes('--format'))) throw e;
+    return { mode: 'help', help: true, command: 'clients', options: { subcommand: 'doctor', json: false, format: 'text' } };
   }
-  if (!['doctor', 'smoke', 'trigger-smoke'].includes(options.subcommand)) {
-    throw new Error('clients requires subcommand: doctor, smoke, or trigger-smoke');
-  }
-  if (!['text', 'json'].includes(options.format)) {
-    throw new Error('--format must be one of: text, json');
-  }
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'clients',
-    options,
-  };
 }
 
 function parseAgentsArgs(argv) {
-  const rest = argv.slice(1);
-  const options = {
-    subcommand: 'doctor',
-    json: false,
-    format: 'text',
-    strict: false,
-    dryRun: false,
-  };
-  let help = false;
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+  try {
+    const parsed = AGENTS_CLI.parse(argv.slice(1), { from: 'user' });
+    const flags = parsed.opts();
+    const help = argv.includes('-h') || argv.includes('--help');
+    const subcommand = parsed.args?.[0] || 'doctor';
+    let format = flags.format || 'text';
+    let json = flags.json === true || format === 'json';
+    if (json) format = 'json';
+    if (!['doctor', 'list', 'smoke'].includes(subcommand)) {
+      throw new Error('agents requires subcommand: doctor, list, or smoke');
     }
-    if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-      continue;
+    if (!['text', 'json'].includes(format)) {
+      throw new Error('--format must be one of: text, json');
     }
-    if (arg === '--strict') {
-      options.strict = true;
-      continue;
-    }
-    if (arg === '--dry-run') {
-      options.dryRun = true;
-      continue;
-    }
-    if (arg === '--format') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
-      options.format = String(value).trim().toLowerCase();
-      options.json = options.format === 'json';
-      index += 1;
-      continue;
-    }
-    if (!String(arg || '').startsWith('-') && index === 0) {
-      options.subcommand = String(arg || '').trim().toLowerCase();
-      continue;
-    }
-    throw new Error(`Unknown option: ${arg}`);
+    return {
+      mode: help ? 'help' : 'command',
+      help,
+      command: 'agents',
+      options: { subcommand, json, format, strict: flags.strict === true, dryRun: flags.dryRun === true },
+    };
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('requires subcommand') || e.message.includes('--format'))) throw e;
+    return { mode: 'help', help: true, command: 'agents', options: { subcommand: 'doctor', json: false, format: 'text', strict: false, dryRun: false } };
   }
-  if (!['doctor', 'list', 'smoke'].includes(options.subcommand)) {
-    throw new Error('agents requires subcommand: doctor, list, or smoke');
-  }
-  if (!['text', 'json'].includes(options.format)) {
-    throw new Error('--format must be one of: text, json');
-  }
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'agents',
-    options,
-  };
 }
 
 function parseWorkflowArgs(argv) {
-  const rest = argv.slice(1);
-  const options = {
-    subcommand: 'list',
-    workflowId: '',
-    task: '',
-    dryRun: false,
-    executionMode: 'dry-run',
-    json: false,
-    format: 'text',
-  };
-  let help = false;
-  let start = 0;
-  if (rest[0] && !String(rest[0]).startsWith('-')) {
-    options.subcommand = String(rest[0]).trim().toLowerCase();
-    start = 1;
-  }
-  if (options.subcommand === 'run' && rest[start] && !String(rest[start]).startsWith('-')) {
-    options.workflowId = String(rest[start]).trim();
-    start += 1;
-  }
-  for (let index = start; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+  try {
+    const parsed = WORKFLOW_CLI.parse(argv.slice(1), { from: 'user' });
+    const flags = parsed.opts();
+    const help = argv.includes('-h') || argv.includes('--help');
+    const args = parsed.args || [];
+    const subcommand = args[0] && !String(args[0]).startsWith('-') ? String(args[0]).trim().toLowerCase() : 'list';
+    let format = flags.format || 'text';
+    let json = flags.json === true || format === 'json';
+    if (json) format = 'json';
+    if (!['list', 'run'].includes(subcommand)) {
+      throw new Error('workflow requires subcommand: list or run');
     }
-    if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-      continue;
+    const options = { subcommand, workflowId: '', task: flags.task || '', dryRun: flags.dryRun === true, executionMode: flags.dryRun ? 'dry-run' : 'live', json, format };
+    if (subcommand === 'run') {
+      const posId = args.slice(1).find(a => !String(a).startsWith('-'));
+      if (posId) options.workflowId = String(posId);
     }
-    if (arg === '--dry-run') {
-      options.dryRun = true;
-      options.executionMode = 'dry-run';
-      continue;
+    if (subcommand === 'run' && !options.workflowId) {
+      throw new Error('workflow run requires workflow id');
     }
-    if (arg === '--task') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --task');
-      options.task = String(value);
-      index += 1;
-      continue;
+    if (!['text', 'json'].includes(format)) {
+      throw new Error('--format must be one of: text, json');
     }
-    if (arg === '--format') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
-      options.format = String(value).trim().toLowerCase();
-      options.json = options.format === 'json';
-      index += 1;
-      continue;
-    }
-    throw new Error(`Unknown option: ${arg}`);
+    return { mode: help ? 'help' : 'command', help, command: 'workflow', options };
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('requires workflow id') || e.message.includes('--format') || e.message.includes('requires subcommand'))) throw e;
+    return { mode: 'help', help: true, command: 'workflow', options: { subcommand: 'list', workflowId: '', task: '', dryRun: false, executionMode: 'dry-run', json: false, format: 'text' } };
   }
-  if (!['list', 'run'].includes(options.subcommand)) {
-    throw new Error('workflow requires subcommand: list or run');
-  }
-  if (options.subcommand === 'run' && !options.workflowId) {
-    throw new Error('workflow run requires workflow id');
-  }
-  if (!['text', 'json'].includes(options.format)) {
-    throw new Error('--format must be one of: text, json');
-  }
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'workflow',
-    options,
-  };
 }
 
 function parseStatusArgs(argv) {
-  const rest = argv.slice(1);
-  const options = {
-    json: false,
-    format: 'text',
-  };
-  let help = false;
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+  try {
+    const parsed = STATUS_CLI.parse(argv, { from: 'user' });
+    const flags = parsed.opts();
+    const help = argv.includes('-h') || argv.includes('--help');
+    let format = flags.format || 'text';
+    let json = flags.json === true || format === 'json';
+    if (!['text', 'json'].includes(format)) {
+      throw new Error('--format must be one of: text, json');
     }
-    if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-      continue;
-    }
-    if (arg === '--format') {
-      const value = rest[index + 1];
-      if (!value || value.startsWith('-')) throw new Error('Missing value for --format');
-      options.format = String(value).trim().toLowerCase();
-      options.json = options.format === 'json';
-      index += 1;
-      continue;
-    }
-    throw new Error(`Unknown option: ${arg}`);
+    if (json) format = 'json';
+    return {
+      mode: help ? 'help' : 'command',
+      help,
+      command: 'status',
+      options: { json, format },
+    };
+  } catch {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'status',
+      options: { json: false, format: 'text' },
+    };
   }
-  if (!['text', 'json'].includes(options.format)) {
-    throw new Error('--format must be one of: text, json');
-  }
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'status',
-    options,
-  };
 }
 
 /* 中文注释：parseArgs 只做语法解析和轻校验，不做 IO；这样测试可以快速覆盖所有 CLI 入口。 */

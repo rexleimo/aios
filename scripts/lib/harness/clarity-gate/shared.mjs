@@ -1,5 +1,7 @@
 /* 中文注释：clarity gate 纯函数工具负责文本、数组和时间戳归一化。 */
-export { normalizeText } from '../../../../src/shared/normalize.mjs';
+// 注意：`export ... from` 不创建本地绑定，必须先 import 才能在本文件内调用。
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 export function formatTurnStamp(date = new Date()) {
   return date.toISOString().replace(/[-:]/g, '').replace(/\.(\d{3})Z$/, '$1Z');

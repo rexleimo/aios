@@ -3,38 +3,58 @@ import path from 'node:path';
 
 import { writeMixedSummary } from './lib/rl-mixed-v1/contextdb-summary.mjs';
 import { runMixedCampaign, runMixedEvaluation } from './lib/rl-mixed-v1/run-orchestrator.mjs';
+import { createCliParser } from '../src/shared/cli-parser.mjs';
 
-function parseArgs(argv) {
-  const [command = '--help', ...rest] = argv;
-  const flags = {};
-  for (let index = 0; index < rest.length; index += 1) {
-    const value = rest[index];
-    if (!value.startsWith('--')) continue;
-    const key = value.slice(2);
-    flags[key] = rest[index + 1] && !rest[index + 1].startsWith('--') ? rest[++index] : true;
-  }
-  return { command, flags };
-}
-
-function printHelp() {
-  console.log([
-    'Usage: node scripts/rl-mixed-v1.mjs <command> [flags]',
-    '',
-    'Commands:',
-    '  browser-only',
-    '  orchestrator-only',
-    '  mixed',
-    '  mixed-resume',
-    '  mixed-eval',
-    '',
-    'Flags:',
-    '  --dry-run',
-    '  --window <n>',
-    '  --json-output <path>',
-    '  --batch-count <n>',
-    '  --initial-checkpoint <id>',
-  ].join('\n'));
-}
+const cli = createCliParser({
+  name: 'rl-mixed-v1',
+  description: 'RL Mixed V1 campaign and evaluation runner',
+  subcommands: [
+    {
+      name: 'browser-only',
+      description: 'Run browser-only campaign',
+      options: [
+        ['--dry-run', 'Dry run mode'],
+        ['--batch-count <n>', 'Number of batches'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+      ],
+    },
+    {
+      name: 'orchestrator-only',
+      description: 'Run orchestrator-only campaign',
+      options: [
+        ['--dry-run', 'Dry run mode'],
+        ['--batch-count <n>', 'Number of batches'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+      ],
+    },
+    {
+      name: 'mixed',
+      description: 'Run mixed campaign (shell + browser + orchestrator)',
+      options: [
+        ['--dry-run', 'Dry run mode'],
+        ['--batch-count <n>', 'Number of batches'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+      ],
+    },
+    {
+      name: 'mixed-resume',
+      description: 'Resume a previous mixed campaign',
+      options: [
+        ['--dry-run', 'Dry run mode'],
+        ['--batch-count <n>', 'Number of batches'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+      ],
+    },
+    {
+      name: 'mixed-eval',
+      description: 'Run mixed evaluation',
+      options: [
+        ['--window <n>', 'Evaluation window'],
+        ['--json-output <path>', 'JSON output file path'],
+      ],
+    },
+  ],
+});
 
 function resolveEnvironments(command) {
   if (command === 'browser-only') return ['browser'];
@@ -47,8 +67,8 @@ async function runCampaignCommand({ command, flags, rootDir }) {
   const result = await runMixedCampaign({
     rootDir,
     activeEnvironments: resolveEnvironments(command),
-    batchTargetCount: Number(flags['batch-count'] || (flags['dry-run'] ? 1 : 3)),
-    initialCheckpointId: flags['initial-checkpoint'] || 'ckpt-mixed-a',
+    batchTargetCount: Number(flags.batchCount || (flags.dryRun ? 1 : 3)),
+    initialCheckpointId: flags.initialCheckpoint || 'ckpt-mixed-a',
     resume: command === 'mixed-resume',
     mode,
   });
@@ -68,12 +88,21 @@ async function runCampaignCommand({ command, flags, rootDir }) {
 
 async function main() {
   const rootDir = process.cwd();
-  const { command, flags } = parseArgs(process.argv.slice(2));
+  const parsed = cli.parse(process.argv.slice(2));
 
-  if (command === '--help' || command === 'help') {
-    printHelp();
+  if (parsed.help) {
+    console.log(cli.program.helpInformation());
     return;
   }
+
+  const command = parsed.command;
+  if (!command) {
+    console.log(cli.program.helpInformation());
+    process.exitCode = 1;
+    return;
+  }
+
+  const flags = parsed.flags;
 
   if (['browser-only', 'orchestrator-only', 'mixed', 'mixed-resume'].includes(command)) {
     await runCampaignCommand({ command, flags, rootDir });
@@ -84,13 +113,13 @@ async function main() {
     const result = await runMixedEvaluation({
       rootDir,
       window: Number(flags.window || 30),
-      jsonOutput: flags['json-output'] || '',
+      jsonOutput: flags.jsonOutput || '',
     });
     console.log(JSON.stringify(result, null, 2));
     return;
   }
 
-  printHelp();
+  console.log(cli.program.helpInformation());
   process.exitCode = 1;
 }
 
@@ -98,4 +127,3 @@ main().catch((error) => {
   console.error(error?.stack || String(error));
   process.exitCode = 1;
 });
-

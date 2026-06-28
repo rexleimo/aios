@@ -1,7 +1,20 @@
+import { Command } from 'commander';
 import {
   resolveClientCommandNames,
   resolveClientRuntimeIds,
 } from '../../clients/registry.mjs';
+
+// 中文注释：Commander 声明式解析，替代手写 for+switch 循环。
+const SHELL_BRIDGE_CLI = new Command()
+  .name('contextdb-shell-bridge')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .option('--agent <name>', 'Agent runtime ID')
+  .option('--command <name>', 'Client command name')
+  .option('--cwd <path>', 'Working directory')
+  .argument('[args...]');
 
 export function usage() {
   console.log(`Usage:
@@ -24,41 +37,41 @@ Environment:
 }
 
 export function parseArgs(argv, cwd = process.cwd()) {
-  const opts = {
-    agent: '',
-    command: '',
-    cwd,
-    help: false,
-    passthroughArgs: [],
-  };
+  // 中文注释：-- 之后的参数全部是 passthrough，不检查 help 标记。
+  const doubleDashIdx = argv.indexOf('--');
+  const scanRange = doubleDashIdx !== -1 ? argv.slice(0, doubleDashIdx) : argv;
+  const help = scanRange.includes('-h') || scanRange.includes('--help');
 
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    switch (arg) {
-      case '--agent':
-        opts.agent = argv[++i] || '';
-        break;
-      case '--command':
-        opts.command = argv[++i] || '';
-        break;
-      case '--cwd':
-        opts.cwd = argv[++i] || cwd;
-        break;
-      case '-h':
-      case '--help':
-        opts.help = true;
-        break;
-      case '--':
-        opts.passthroughArgs = argv.slice(i + 1);
-        i = argv.length;
-        break;
-      default:
-        opts.passthroughArgs.push(arg);
-        break;
+  try {
+    const parsed = SHELL_BRIDGE_CLI.parse(argv, { from: 'user' });
+    const flags = parsed.opts();
+
+    // 提取 -- 后的 passthroughArgs
+    let passthroughArgs;
+    if (doubleDashIdx !== -1) {
+      passthroughArgs = argv.slice(doubleDashIdx + 1);
+    } else {
+      passthroughArgs = (parsed.args || []).filter(
+        (a) => !['-h', '--help'].includes(a),
+      );
     }
-  }
 
-  return opts;
+    return {
+      agent: flags.agent || '',
+      command: flags.command || '',
+      cwd: flags.cwd || cwd,
+      help,
+      passthroughArgs,
+    };
+  } catch {
+    return {
+      agent: '',
+      command: '',
+      cwd,
+      help,
+      passthroughArgs: [],
+    };
+  }
 }
 
 export function validateOptions(opts) {

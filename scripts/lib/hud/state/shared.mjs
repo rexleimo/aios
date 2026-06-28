@@ -16,7 +16,9 @@ export function nowIso() {
 }
 
 // 纯函数：把任意输入收敛为去空白字符串，避免 HUD 拼装层重复做空值判断。
-export { normalizeText } from '../../../../src/shared/normalize.mjs';
+// 注意：`export ... from` 不创建本地绑定，必须先 import 才能在本文件内调用。
+import { normalizeText } from '../../../../src/shared/normalize.mjs';
+export { normalizeText };
 
 // 纯函数：统一缓存键片段的转义规则，避免不同缓存模块生成不兼容 key。
 export function getCacheKeyPart(value) {

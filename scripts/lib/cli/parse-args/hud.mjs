@@ -1,136 +1,120 @@
+/* 中文注释：hud 解析——基于 Commander 声明式替代手写 for 循环。保留 watch 逻辑等原有业务语义。 */
+import { Command } from 'commander';
 import {
-  createDefaultHarnessResumeOptions,
-  createDefaultHarnessRunOptions,
-  createDefaultHarnessStatusOptions,
-  createDefaultHarnessStopOptions,
-  createDefaultHudOptions,
-  HARNESS_SUBCOMMANDS,
   SKILL_CANDIDATE_VIEWS,
-  TEAM_PROVIDER_CLIENT_MAP,
-  normalizeBaseRef,
-  normalizeHarnessProfile,
   normalizeHudPreset,
-  normalizeOrchestrateDispatchMode,
-  normalizeOrchestrateExecutionMode,
-  normalizeOrchestratePreflightMode,
-  normalizeOrchestratorBlueprint,
-  normalizeOrchestratorFormat,
   normalizeSkillCandidateView,
-  normalizeSoloHarnessProvider,
   normalizeTeamProvider,
   parsePositiveInteger,
-  parseTeamSpec,
   parseWatchInterval,
   takeValue,
-} from "./shared.mjs";
+} from './shared.mjs';
+import { createDefaultHudOptions } from './shared.mjs';
+
+const HUD_CLI = new Command()
+  .name('hud')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(false)
+  .allowExcessArguments(false)
+  .option('--session <id>', 'Session ID')
+  .option('--workspace <path>', 'Workspace root')
+  .option('--provider <name>', 'Provider name')
+  .option('--preset <name>', 'Display preset: focused|minimal|full')
+  .option('-w, --watch', 'Watch mode')
+  .option('--fast', 'Fast refresh')
+  .option('--no-fast', 'Disable fast refresh')
+  .option('--show-skill-candidates [view]', 'Show skill candidates (optional view: inline|detail|list)')
+  .option('--skill-candidate-view <view>', 'Skill candidate view: inline|detail|list')
+  .option('--export-skill-candidate-patch-template', 'Export skill candidate patch template')
+  .option('--draft-id <id>', 'Skill candidate draft ID')
+  .option('--skill-candidate-limit <n>', 'Max skill candidates')
+  .option('--json', 'JSON output')
+  .option('--watchdog', 'Watchdog mode')
+  .option('--interval-ms <n>', 'Watch interval in ms or "auto"');
+
 export function parseHudArgs(argv) {
   const rest = argv.slice(1);
-  const options = createDefaultHudOptions();
-  let help = false;
-  let presetExplicit = false;
-  let fastExplicit = false;
+  const help = rest.includes('-h') || rest.includes('--help');
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '--') continue;
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+  try {
+    const parsed = HUD_CLI.parse(rest, { from: 'user' });
+    const flags = parsed.opts();
+    const options = createDefaultHudOptions();
+    let presetExplicit = false;
+    let fastExplicit = false;
+
+    if (flags.session) options.sessionId = String(flags.session).trim();
+    if (flags.workspace) options.workspaceRoot = String(flags.workspace).trim();
+    if (flags.provider) options.provider = normalizeTeamProvider(flags.provider);
+    if (flags.preset) {
+      presetExplicit = true;
+      options.preset = normalizeHudPreset(flags.preset);
     }
+    if (flags.watch) options.watch = true;
+    if (flags.fast) { options.fast = true; fastExplicit = true; }
+    if (flags.fast === false) { options.fast = false; fastExplicit = true; }
+    if (flags.json) options.json = true;
+    if (flags.watchdog) options.watchdog = true;
 
-    switch (arg) {
-      case '--session':
-        options.sessionId = takeValue(rest, index, '--session');
-        index += 1;
-        break;
-      case '--workspace':
-        options.workspaceRoot = takeValue(rest, index, '--workspace');
-        index += 1;
-        break;
-      case '--provider':
-        options.provider = normalizeTeamProvider(takeValue(rest, index, '--provider'));
-        index += 1;
-        break;
-      case '--preset':
-        presetExplicit = true;
-        options.preset = normalizeHudPreset(takeValue(rest, index, '--preset'));
-        index += 1;
-        break;
-      case '--watch':
-      case '-w':
-        options.watch = true;
-        break;
-      case '--fast':
-        options.fast = true;
-        fastExplicit = true;
-        break;
-      case '--no-fast':
-        options.fast = false;
-        fastExplicit = true;
-        break;
-      case '--show-skill-candidates':
-        options.showSkillCandidates = true;
-        if (rest[index + 1] && !String(rest[index + 1]).startsWith('-')) {
-          const nextToken = String(rest[index + 1] || '').trim().toLowerCase();
-          if (SKILL_CANDIDATE_VIEWS.has(nextToken)) {
-            options.skillCandidateView = normalizeSkillCandidateView(rest[index + 1], '--show-skill-candidates');
-            index += 1;
-          }
+    // show-skill-candidates 可以是 boolean 或 string（view 可选值）
+    if (flags.showSkillCandidates !== undefined) {
+      options.showSkillCandidates = true;
+      if (typeof flags.showSkillCandidates === 'string') {
+        const viewFlag = String(flags.showSkillCandidates).trim().toLowerCase();
+        if (SKILL_CANDIDATE_VIEWS.has(viewFlag)) {
+          options.skillCandidateView = normalizeSkillCandidateView(flags.showSkillCandidates, '--show-skill-candidates');
         }
-        break;
-      case '--skill-candidate-view':
-        options.skillCandidateView = normalizeSkillCandidateView(
-          takeValue(rest, index, '--skill-candidate-view'),
-          '--skill-candidate-view'
-        );
-        options.showSkillCandidates = true;
-        index += 1;
-        break;
-      case '--export-skill-candidate-patch-template':
-        options.exportSkillCandidatePatchTemplate = true;
-        options.showSkillCandidates = true;
-        break;
-      case '--draft-id':
-        options.draftId = takeValue(rest, index, '--draft-id');
-        options.showSkillCandidates = true;
-        index += 1;
-        break;
-      case '--skill-candidate-limit':
-        options.skillCandidateLimit = parsePositiveInteger(
-          takeValue(rest, index, '--skill-candidate-limit'),
-          '--skill-candidate-limit'
-        );
-        options.showSkillCandidates = true;
-        index += 1;
-        break;
-      case '--json':
-        options.json = true;
-        break;
-      case '--watchdog':
-        options.watchdog = true;
-        break;
-      case '--interval-ms':
-        options.intervalMs = parseWatchInterval(takeValue(rest, index, '--interval-ms'), '--interval-ms');
-        index += 1;
-        break;
-      default:
-        throw new Error(`Unknown option: ${arg}`);
+      }
     }
-  }
+    if (flags.skillCandidateView) {
+      options.skillCandidateView = normalizeSkillCandidateView(flags.skillCandidateView, '--skill-candidate-view');
+      options.showSkillCandidates = true;
+    }
+    if (flags.exportSkillCandidatePatchTemplate) {
+      options.exportSkillCandidatePatchTemplate = true;
+      options.showSkillCandidates = true;
+    }
+    if (flags.draftId) {
+      options.draftId = String(flags.draftId).trim();
+      options.showSkillCandidates = true;
+    }
+    if (flags.skillCandidateLimit) {
+      options.skillCandidateLimit = parsePositiveInteger(flags.skillCandidateLimit, '--skill-candidate-limit');
+      options.showSkillCandidates = true;
+    }
+    if (flags.intervalMs) {
+      options.intervalMs = parseWatchInterval(flags.intervalMs, '--interval-ms');
+    }
 
-  options.provider = normalizeTeamProvider(options.provider);
-  if (options.watch && !presetExplicit) {
-    options.preset = 'minimal';
+    // 后处理逻辑
+    if (options.watch && !presetExplicit) {
+      options.preset = 'minimal';
+    }
+    const intervalAutoFastEligible = options.intervalMs === 'auto'
+      || (Number.isFinite(options.intervalMs) && options.intervalMs <= 500);
+    if (!fastExplicit && options.watch && options.preset === 'minimal' && intervalAutoFastEligible) {
+      options.fast = true;
+    }
+
+    return {
+      mode: help ? 'help' : 'command',
+      help,
+      command: 'hud',
+      options,
+    };
+  } catch (e) {
+    if (e instanceof Error && (
+      e.message.includes('must be one of') ||
+      e.message.includes('must be a positive integer') ||
+      e.message.includes('must be a number') ||
+      e.message.includes('must not be empty') ||
+      e.message.includes('action must be'))) throw e;
+    return {
+      mode: 'help',
+      help: true,
+      command: 'hud',
+      options: createDefaultHudOptions(),
+    };
   }
-  const intervalAutoFastEligible = options.intervalMs === 'auto'
-    || (Number.isFinite(options.intervalMs) && options.intervalMs <= 500);
-  if (!fastExplicit && options.watch && options.preset === 'minimal' && intervalAutoFastEligible) {
-    options.fast = true;
-  }
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'hud',
-    options,
-  };
 }

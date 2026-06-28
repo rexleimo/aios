@@ -8,18 +8,90 @@ import { loadPolicyCheckpoint } from './lib/rl-shell-v1/student-policy.mjs';
 import { loadTaskRegistry } from './lib/rl-shell-v1/task-registry.mjs';
 import { evaluatePhase3Run, runHeldOutEval } from './lib/rl-shell-v1/eval-harness.mjs';
 import { buildRunSummaryPayload, writeRunSummary } from './lib/rl-shell-v1/contextdb-summary.mjs';
+import { createCliParser } from '../src/shared/cli-parser.mjs';
 
-function parseArgs(argv) {
-  const [command, ...rest] = argv;
-  const flags = {};
-  for (let index = 0; index < rest.length; index += 1) {
-    const value = rest[index];
-    if (!value.startsWith('--')) continue;
-    const key = value.slice(2);
-    flags[key] = rest[index + 1] && !rest[index + 1].startsWith('--') ? rest[++index] : true;
-  }
-  return { command, flags };
-}
+const cli = createCliParser({
+  name: 'rl-shell-v1',
+  description: 'RL Shell V1 — training, evaluation, campaign, and phase3 operations',
+  subcommands: [
+    {
+      name: 'benchmark-generate',
+      description: 'Generate benchmark task data',
+      options: [
+        ['--config <path>', 'Benchmark config path'],
+        ['--seed <n>', 'Random seed'],
+      ],
+    },
+    {
+      name: 'train',
+      description: 'Run training run',
+      options: [
+        ['--config <path>', 'Config path'],
+        ['--seed <n>', 'Random seed'],
+        ['--teacher <backend>', 'Teacher backend'],
+        ['--phase <name>', 'Phase name'],
+      ],
+    },
+    {
+      name: 'eval',
+      description: 'Run evaluation (phase 2B shadow eval or held-out eval)',
+      options: [
+        ['--config <path>', 'Config path'],
+        ['--seed <n>', 'Random seed'],
+        ['--teacher <backend>', 'Teacher backend'],
+        ['--phase <name>', 'Phase name'],
+        ['--checkpoint <path>', 'Checkpoint path (for held-out eval)'],
+      ],
+    },
+    {
+      name: 'campaign',
+      description: 'Run multi-seed campaign',
+      options: [
+        ['--config <path>', 'Config path'],
+        ['--teacher <backend>', 'Teacher backend'],
+        ['--phase <name>', 'Phase name'],
+      ],
+    },
+    {
+      name: 'phase3-train',
+      description: 'Run phase3 training campaign',
+      options: [
+        ['--config <path>', 'Config path'],
+        ['--seed <n>', 'Random seed'],
+        ['--teacher <backend>', 'Teacher backend'],
+        ['--max-tasks <n>', 'Max tasks'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+        ['--monitor-pattern <pattern>', 'Monitor outcome pattern (comma-separated)'],
+        ['--online-batch-size <n>', 'Online batch size'],
+        ['--rollback-threshold <n>', 'Rollback threshold'],
+        ['--resume', 'Resume mode'],
+      ],
+    },
+    {
+      name: 'phase3-resume',
+      description: 'Resume phase3 training campaign',
+      options: [
+        ['--config <path>', 'Config path'],
+        ['--seed <n>', 'Random seed'],
+        ['--teacher <backend>', 'Teacher backend'],
+        ['--max-tasks <n>', 'Max tasks'],
+        ['--initial-checkpoint <id>', 'Initial checkpoint id'],
+        ['--monitor-pattern <pattern>', 'Monitor outcome pattern (comma-separated)'],
+        ['--online-batch-size <n>', 'Online batch size'],
+        ['--rollback-threshold <n>', 'Rollback threshold'],
+        ['--resume', 'Resume mode'],
+      ],
+    },
+    {
+      name: 'phase3-eval',
+      description: 'Evaluate phase3 run',
+      options: [
+        ['--summary <path>', 'Summary JSON file path'],
+        ['--run-dir <path>', 'Run directory'],
+      ],
+    },
+  ],
+});
 
 async function loadConfig(rootDir, configPath, teacher, phase) {
   const absolutePath = path.join(rootDir, configPath);
@@ -34,64 +106,41 @@ async function loadConfig(rootDir, configPath, teacher, phase) {
   };
 }
 
-function createPhase3EpisodeSource({ monitorPattern }) {
-  const outcomes = Array.isArray(monitorPattern) && monitorPattern.length > 0
-    ? monitorPattern
-    : ['better', 'same', 'better', 'same'];
-  return async function nextEpisode({ taskIndex, currentEpoch }) {
-    if (currentEpoch.phase === 'collection') {
-      return {
-        episode_id: `collect-${taskIndex + 1}`,
-        admission_status: 'admitted',
-      };
-    }
-    return {
-      episode_id: `monitor-${taskIndex + 1}`,
-      admission_status: 'admitted',
-      comparison_status: 'completed',
-      relative_outcome: outcomes[taskIndex % outcomes.length],
-    };
-  };
-}
-
-function printUsage() {
-  console.error([
-    'Usage: node scripts/rl-shell-v1.mjs <command> [flags]',
-    '',
-    'Commands:',
-    '  benchmark-generate',
-    '  train',
-    '  eval',
-    '  campaign',
-    '  phase3-train',
-    '  phase3-eval',
-    '  phase3-resume',
-    '',
-    'Common flags:',
-    '  --config <path>',
-    '  --seed <n>',
-    '  --teacher <backend>',
-    '  --phase <name>',
-    '  --resume',
-    '  --max-tasks <n>',
-    '  --initial-checkpoint <id>',
-  ].join('\n'));
-}
-
 async function runPhase3OperatorCommand({ rootDir, config, flags, resume = false }) {
-  const maxTasks = Number(flags['max-tasks'] || config.maxTasks || 5);
-  const initialCheckpointId = flags['initial-checkpoint'] || config.initial_checkpoint_id || 'ckpt-a';
-  const monitorPattern = String(flags['monitor-pattern'] || config.phase3_monitor_pattern || 'better,same,better,same')
+  const maxTasks = Number(flags.maxTasks || config.maxTasks || 5);
+  const initialCheckpointId = flags.initialCheckpoint || config.initial_checkpoint_id || 'ckpt-a';
+  const monitorPattern = String(flags.monitorPattern || config.phase3_monitor_pattern || 'better,same,better,same')
     .split(',')
     .map((value) => value.trim())
     .filter(Boolean);
+
+  function createPhase3EpisodeSource({ monitorPattern }) {
+    const outcomes = Array.isArray(monitorPattern) && monitorPattern.length > 0
+      ? monitorPattern
+      : ['better', 'same', 'better', 'same'];
+    return async function nextEpisode({ taskIndex, currentEpoch }) {
+      if (currentEpoch.phase === 'collection') {
+        return {
+          episode_id: `collect-${taskIndex + 1}`,
+          admission_status: 'admitted',
+        };
+      }
+      return {
+        episode_id: `monitor-${taskIndex + 1}`,
+        admission_status: 'admitted',
+        comparison_status: 'completed',
+        relative_outcome: outcomes[taskIndex % outcomes.length],
+      };
+    };
+  }
+
   const result = await runPhase3Campaign({
     config: {
       rootDir,
       maxTasks,
       initialCheckpointId,
-      onlineBatchSize: Number(flags['online-batch-size'] || config.onlineBatchSize || 4),
-      rollbackThreshold: Number(flags['rollback-threshold'] || config.rollbackThreshold || 3),
+      onlineBatchSize: Number(flags.onlineBatchSize || config.onlineBatchSize || 4),
+      rollbackThreshold: Number(flags.rollbackThreshold || config.rollbackThreshold || 3),
       resume,
     },
     deps: {
@@ -158,7 +207,21 @@ async function runPhase3OperatorCommand({ rootDir, config, flags, resume = false
 
 async function main() {
   const rootDir = process.cwd();
-  const { command, flags } = parseArgs(process.argv.slice(2));
+  const parsed = cli.parse(process.argv.slice(2));
+
+  if (parsed.help) {
+    console.log(cli.program.helpInformation());
+    return;
+  }
+
+  const command = parsed.command;
+  if (!command) {
+    console.log(cli.program.helpInformation());
+    process.exitCode = 1;
+    return;
+  }
+
+  const flags = parsed.flags;
 
   if (command === 'benchmark-generate') {
     const result = await generateBenchmark({
@@ -251,13 +314,13 @@ async function main() {
   if (command === 'phase3-eval') {
     const summaryPath = flags.summary ? path.join(rootDir, flags.summary) : null;
     const runSummary = summaryPath ? JSON.parse(await readFile(summaryPath, 'utf8')) : {};
-    const runDir = flags['run-dir'] ? path.join(rootDir, flags['run-dir']) : undefined;
+    const runDir = flags.runDir ? path.join(rootDir, flags.runDir) : undefined;
     const result = await evaluatePhase3Run({ runDir, runSummary });
     console.log(JSON.stringify(result, null, 2));
     return;
   }
 
-  printUsage();
+  console.log(cli.program.helpInformation());
   process.exitCode = 1;
 }
 

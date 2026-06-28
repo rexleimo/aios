@@ -1,111 +1,108 @@
-/* 中文注释：refs/canvas 同属离线输出召回入口，共用 session、storage、workspace 解析约定。 */
-import { takeValue } from './shared.mjs';
+/* 中文注释：refs/canvas 同属离线输出召回入口——基于 Commander 声明式替代手写 for 循环。 */
+import { Command } from 'commander';
+
+/* --- refs --- */
+const REFS_CLI = new Command()
+  .name('refs')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[pattern]', 'Search pattern (grep subcommand)')
+  .argument('[nodeId]', 'Node ID (read subcommand)')
+  .option('--session <id>', 'Session ID')
+  .option('--limit <n>', 'Max results')
+  .option('--keep-days <n>', 'Retention days')
+  .option('--storage <path>', 'Storage path')
+  .option('--workspace <path>', 'Workspace root');
 
 export function parseRefsArgs(argv) {
   const rest = argv.slice(1);
-  let help = false;
-  const options = { subcommand: 'list', session: '', limit: '20', keepDays: '30', pattern: '', nodeId: '', storage: '', workspaceRoot: '' };
+  const help = rest.includes('-h') || rest.includes('--help');
 
-  /* 中文注释：refs 子命令默认 list；grep/read/prune 显式出现时切换解析目标。 */
-  if (rest[0] && !String(rest[0]).startsWith('-')) {
-    const sub = String(rest[0]).trim().toLowerCase();
-    if (['grep', 'read', 'list', 'prune'].includes(sub)) {
-      options.subcommand = sub;
-      rest.shift();
+  try {
+    // 提取子命令（第一个非 - 参数）
+    let subcommand = 'list';
+    let subIndex = -1;
+    if (rest[0] && !String(rest[0]).startsWith('-') && ['grep', 'read', 'list', 'prune'].includes(String(rest[0]).toLowerCase())) {
+      subcommand = String(rest[0]).trim().toLowerCase();
+      subIndex = 0;
     }
-  }
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
+    // 跳过子命令 token 再让 Commander 解析
+    const parseArgs = subIndex === 0 ? rest.slice(1) : rest;
+    const parsed = REFS_CLI.parse(parseArgs, { from: 'user' });
+    const flags = parsed.opts();
+    const positionalArgs = parsed.args || [];
+
+    const options = {
+      subcommand,
+      session: flags.session || '',
+      limit: flags.limit || '20',
+      keepDays: flags.keepDays || '30',
+      pattern: '',
+      nodeId: '',
+      storage: flags.storage || '',
+      workspaceRoot: flags.workspace || '',
+    };
+
+    if (subcommand === 'grep') {
+      options.pattern = positionalArgs.find(a => !a.startsWith('-')) || '';
     }
-    switch (arg) {
-      case '--session':
-        options.session = takeValue(rest, index, '--session');
-        index += 1;
-        break;
-      case '--limit':
-        options.limit = takeValue(rest, index, '--limit');
-        index += 1;
-        break;
-      case '--keep-days':
-        options.keepDays = takeValue(rest, index, '--keep-days');
-        index += 1;
-        break;
-      case '--storage':
-        options.storage = takeValue(rest, index, '--storage');
-        index += 1;
-        break;
-      case '--workspace':
-        options.workspaceRoot = takeValue(rest, index, '--workspace');
-        index += 1;
-        break;
-      default:
-        if (!arg.startsWith('-')) {
-          if (options.subcommand === 'grep' && !options.pattern) {
-            options.pattern = arg;
-          } else if (options.subcommand === 'read' && !options.nodeId) {
-            options.nodeId = arg;
-          }
-        } else {
-          throw new Error(`Unknown option: ${arg}`);
-        }
+    if (subcommand === 'read') {
+      options.nodeId = positionalArgs.find(a => !a.startsWith('-')) || '';
     }
+
+    return { mode: help ? 'help' : 'command', help, command: 'refs', options };
+  } catch {
+    return { mode: 'help', help: true, command: 'refs', options: { subcommand: 'list', session: '', limit: '20', keepDays: '30', pattern: '', nodeId: '', storage: '', workspaceRoot: '' } };
   }
-  return { mode: help ? 'help' : 'command', help, command: 'refs', options };
 }
 
-/* 中文注释：canvas 是 offload 历史视图入口，和 refs 共用 workspace/storage 参数。 */
+/* --- canvas --- */
+const CANVAS_CLI = new Command()
+  .name('canvas')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .option('--session <id>', 'Session ID')
+  .option('--format <fmt>', 'Output format')
+  .option('--storage <path>', 'Storage path')
+  .option('--client <name>', 'Client name')
+  .option('-i, --input <path>', 'Input path')
+  .option('--input-path <path>', 'Input path')
+  .option('--workspace <path>', 'Workspace root');
+
 export function parseCanvasArgs(argv) {
   const rest = argv.slice(1);
-  let help = false;
-  const options = { subcommand: 'show', session: 'default', format: 'mmd', storage: '', client: '', inputPath: '', workspaceRoot: '' };
+  const help = rest.includes('-h') || rest.includes('--help');
 
-  if (rest[0] && !String(rest[0]).startsWith('-')) {
-    const sub = String(rest[0]).trim().toLowerCase();
-    if (['show', 'path', 'backfill'].includes(sub)) {
-      options.subcommand = sub;
-      rest.shift();
+  try {
+    // 提取子命令
+    let subcommand = 'show';
+    let subIndex = -1;
+    if (rest[0] && !String(rest[0]).startsWith('-') && ['show', 'path', 'backfill'].includes(String(rest[0]).toLowerCase())) {
+      subcommand = String(rest[0]).trim().toLowerCase();
+      subIndex = 0;
     }
-  }
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
-    }
-    switch (arg) {
-      case '--session':
-        options.session = takeValue(rest, index, '--session');
-        index += 1;
-        break;
-      case '--format':
-        options.format = takeValue(rest, index, '--format');
-        index += 1;
-        break;
-      case '--storage':
-        options.storage = takeValue(rest, index, '--storage');
-        index += 1;
-        break;
-      case '--client':
-        options.client = takeValue(rest, index, '--client');
-        index += 1;
-        break;
-      case '--input':
-      case '--input-path':
-        options.inputPath = takeValue(rest, index, arg);
-        index += 1;
-        break;
-      case '--workspace':
-        options.workspaceRoot = takeValue(rest, index, '--workspace');
-        index += 1;
-        break;
-      default:
-        throw new Error(`Unknown option: ${arg}`);
-    }
+    const parseArgs = subIndex === 0 ? rest.slice(1) : rest;
+    const parsed = CANVAS_CLI.parse(parseArgs, { from: 'user' });
+    const flags = parsed.opts();
+
+    const options = {
+      subcommand,
+      session: flags.session || 'default',
+      format: flags.format || 'mmd',
+      storage: flags.storage || '',
+      client: flags.client || '',
+      inputPath: flags.input || flags.inputPath || '',
+      workspaceRoot: flags.workspace || '',
+    };
+
+    return { mode: help ? 'help' : 'command', help, command: 'canvas', options };
+  } catch {
+    return { mode: 'help', help: true, command: 'canvas', options: { subcommand: 'show', session: 'default', format: 'mmd', storage: '', client: '', inputPath: '', workspaceRoot: '' } };
   }
-  return { mode: help ? 'help' : 'command', help, command: 'canvas', options };
 }

@@ -7,46 +7,24 @@ import { performance } from 'node:perf_hooks';
 
 import { resolveContextDbRoot } from './lib/aios/state-root.mjs';
 import { runTeamStatus } from './lib/lifecycle/team-ops.mjs';
+import { createCliParser } from '../src/shared/cli-parser.mjs';
 
-function parsePositiveInt(value, fallback) {
-  const parsed = Number.parseInt(String(value ?? ''), 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
-}
-
-function parseArgs(argv = []) {
-  const options = {
-    frames: parsePositiveInt(process.env.AIOS_PERF_TEAM_STATUS_WATCH_FRAMES, 24),
-    maxP95Ms: parsePositiveInt(process.env.AIOS_PERF_TEAM_STATUS_WATCH_P95_MS, 500),
-    maxAvgMs: parsePositiveInt(process.env.AIOS_PERF_TEAM_STATUS_WATCH_AVG_MS, 250),
-    jsonOut: String(process.env.AIOS_PERF_TEAM_STATUS_WATCH_JSON_OUT || '').trim(),
-  };
-
-  for (let i = 0; i < argv.length; i += 1) {
-    const token = String(argv[i] || '').trim();
-    if (token === '--frames') {
-      options.frames = parsePositiveInt(argv[i + 1], options.frames);
-      i += 1;
-      continue;
-    }
-    if (token === '--max-p95-ms') {
-      options.maxP95Ms = parsePositiveInt(argv[i + 1], options.maxP95Ms);
-      i += 1;
-      continue;
-    }
-    if (token === '--max-avg-ms') {
-      options.maxAvgMs = parsePositiveInt(argv[i + 1], options.maxAvgMs);
-      i += 1;
-      continue;
-    }
-    if (token === '--json-out') {
-      options.jsonOut = String(argv[i + 1] || '').trim();
-      i += 1;
-      continue;
-    }
-  }
-
-  return options;
-}
+const cli = createCliParser({
+  name: 'perf-team-status-watch-smoke',
+  description: 'Run team status watch performance smoke test',
+  options: [
+    ['--frames <n>', 'Number of watch frames'],
+    ['--max-p95-ms <n>', 'Max allowed p95 frame time (ms)'],
+    ['--max-avg-ms <n>', 'Max allowed average frame time (ms)'],
+    ['--json-out <path>', 'Write JSON report to file'],
+  ],
+  envDefaults: {
+    frames: { env: 'AIOS_PERF_TEAM_STATUS_WATCH_FRAMES', default: 24 },
+    maxP95Ms: { env: 'AIOS_PERF_TEAM_STATUS_WATCH_P95_MS', default: 500 },
+    maxAvgMs: { env: 'AIOS_PERF_TEAM_STATUS_WATCH_AVG_MS', default: 250 },
+    jsonOut: { env: 'AIOS_PERF_TEAM_STATUS_WATCH_JSON_OUT', default: '' },
+  },
+});
 
 function percentile(values = [], p = 0.95) {
   if (!Array.isArray(values) || values.length === 0) return 0;
@@ -139,7 +117,18 @@ async function seedWorkspace(rootDir, { sessionId = 'perf-watch-session' } = {})
 }
 
 async function main() {
-  const options = parseArgs(process.argv.slice(2));
+  const parsed = cli.parse(process.argv.slice(2));
+  if (parsed.help) {
+    console.log(cli.program.helpInformation());
+    return;
+  }
+
+  const options = {
+    frames: Number.parseInt(parsed.flags.frames, 10) || 24,
+    maxP95Ms: Number.parseInt(parsed.flags.maxP95Ms, 10) || 500,
+    maxAvgMs: Number.parseInt(parsed.flags.maxAvgMs, 10) || 250,
+    jsonOut: String(parsed.flags.jsonOut || '').trim(),
+  };
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-perf-team-watch-'));
   const { sessionId } = await seedWorkspace(workspaceRoot);
 

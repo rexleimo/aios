@@ -1,4 +1,5 @@
-/* 中文注释：team run 解析只负责启动多客户端团队，不处理 status/history/watchdog。 */
+/* 中文注释：team run 解析——基于 Commander 声明式替代手写 for 循环。 */
+import { Command } from 'commander';
 import {
   normalizeOrchestratePreflightMode,
   normalizeOrchestratorBlueprint,
@@ -6,112 +7,83 @@ import {
   normalizeTeamProvider,
   parsePositiveInteger,
   parseTeamSpec,
-  takeValue,
 } from '../shared.mjs';
 import { createDefaultTeamOptions } from './defaults.mjs';
 import { finalizeTeamProvider, hydrateSessionFromResume } from './shared.mjs';
 
-export function parseTeamRunArgs(argv, rest) {
-  const options = createDefaultTeamOptions();
-  let help = false;
+const TEAM_RUN_CLI = new Command()
+  .name('team-run')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[taskOrSpec]', 'Task title or N:provider spec')
+  .option('--workers <n>', 'Worker count')
+  .option('--provider <name>', 'Provider name')
+  .option('--blueprint <name>', 'Orchestrate blueprint')
+  .option('--task <text>', 'Task description')
+  .option('--context <text>', 'Context summary')
+  .option('--plan <path>', 'Plan file path')
+  .option('--session <id>', 'Session ID')
+  .option('--resume <id>', 'Resume from session ID')
+  .option('--limit <n>', 'Max items')
+  .option('--recommendation <id>', 'Recommendation ID')
+  .option('--preflight <mode>', 'Preflight mode')
+  .option('--format <fmt>', 'Output format')
+  .option('--retry-blocked', 'Retry blocked dispatches')
+  .option('--force', 'Force operation')
+  .option('--dry-run', 'Dry-run mode')
+  .option('--live', 'Live execution mode');
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '--') continue;
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
-    }
-    if (!arg.startsWith('-')) {
+export function parseTeamRunArgs(argv, rest) {
+  const help = rest.includes('-h') || rest.includes('--help');
+  const options = createDefaultTeamOptions();
+
+  try {
+    const parsed = TEAM_RUN_CLI.parse(rest, { from: 'user' });
+    const flags = parsed.opts();
+    const positionalArgs = parsed.args || [];
+
+    // 处理位置参数：team spec 或 task title
+    for (const arg of positionalArgs) {
+      if (String(arg).startsWith('-')) continue;
       const teamSpec = parseTeamSpec(arg);
       if (teamSpec) {
         options.workers = teamSpec.workers;
         options.provider = teamSpec.provider;
-        continue;
+      } else {
+        options.taskTitle = options.taskTitle ? `${options.taskTitle} ${arg}` : arg;
       }
-      options.taskTitle = options.taskTitle
-        ? `${options.taskTitle} ${arg}`
-        : arg;
-      continue;
     }
 
-    switch (arg) {
-      case '--workers':
-        options.workers = parsePositiveInteger(takeValue(rest, index, '--workers'), '--workers');
-        index += 1;
-        break;
-      case '--provider':
-        options.provider = normalizeTeamProvider(takeValue(rest, index, '--provider'));
-        index += 1;
-        break;
-      case '--blueprint':
-        options.blueprint = normalizeOrchestratorBlueprint(takeValue(rest, index, '--blueprint'));
-        index += 1;
-        break;
-      case '--task':
-        options.taskTitle = takeValue(rest, index, '--task');
-        index += 1;
-        break;
-      case '--context':
-        options.contextSummary = takeValue(rest, index, '--context');
-        index += 1;
-        break;
-      case '--plan':
-        options.planPath = takeValue(rest, index, '--plan');
-        index += 1;
-        break;
-      case '--session':
-        options.sessionId = takeValue(rest, index, '--session');
-        index += 1;
-        break;
-      case '--resume':
-        options.resumeSessionId = takeValue(rest, index, '--resume');
-        index += 1;
-        break;
-      case '--limit':
-        options.limit = parsePositiveInteger(takeValue(rest, index, '--limit'), '--limit');
-        index += 1;
-        break;
-      case '--recommendation':
-        options.recommendationId = takeValue(rest, index, '--recommendation');
-        index += 1;
-        break;
-      case '--preflight':
-        options.preflightMode = normalizeOrchestratePreflightMode(takeValue(rest, index, '--preflight'));
-        index += 1;
-        break;
-      case '--format':
-        options.format = normalizeOrchestratorFormat(takeValue(rest, index, '--format'));
-        index += 1;
-        break;
-      case '--retry-blocked':
-        options.retryBlocked = true;
-        break;
-      case '--force':
-        options.force = true;
-        break;
-      case '--dry-run':
-        options.executionMode = 'dry-run';
-        break;
-      case '--live':
-        options.executionMode = 'live';
-        break;
-      default:
-        throw new Error(`Unknown option: ${arg}`);
+    if (flags.workers) options.workers = parsePositiveInteger(flags.workers, '--workers');
+    if (flags.provider) options.provider = normalizeTeamProvider(flags.provider);
+    if (flags.blueprint) options.blueprint = normalizeOrchestratorBlueprint(flags.blueprint);
+    if (flags.task) options.taskTitle = flags.task;
+    if (flags.context) options.contextSummary = flags.context;
+    if (flags.plan) options.planPath = flags.plan;
+    if (flags.session) options.sessionId = flags.session;
+    if (flags.resume) options.resumeSessionId = flags.resume;
+    if (flags.limit) options.limit = parsePositiveInteger(flags.limit, '--limit');
+    if (flags.recommendation) options.recommendationId = flags.recommendation;
+    if (flags.preflight) options.preflightMode = normalizeOrchestratePreflightMode(flags.preflight);
+    if (flags.format) options.format = normalizeOrchestratorFormat(flags.format);
+    if (flags.retryBlocked) options.retryBlocked = true;
+    if (flags.force) options.force = true;
+    if (flags.dryRun) options.executionMode = 'dry-run';
+    if (flags.live) options.executionMode = 'live';
+
+    finalizeTeamProvider(options);
+    options.teamSpec = `${options.workers}:${options.provider}`;
+    hydrateSessionFromResume(options);
+    if (options.retryBlocked && !options.sessionId) {
+      throw new Error('--retry-blocked requires --resume <session-id> or --session <session-id>');
     }
-  }
 
-  finalizeTeamProvider(options);
-  options.teamSpec = `${options.workers}:${options.provider}`;
-  hydrateSessionFromResume(options);
-  if (options.retryBlocked && !options.sessionId) {
-    throw new Error('--retry-blocked requires --resume <session-id> or --session <session-id>');
+    return { mode: help ? 'help' : 'command', help, command: 'team', options };
+  } catch (e) {
+    if (e instanceof Error && e.message.includes('--retry-blocked requires')) throw e;
+    finalizeTeamProvider(options);
+    return { mode: 'help', help: true, command: 'team', options };
   }
-
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'team',
-    options,
-  };
 }

@@ -1,28 +1,43 @@
-/* 中文注释：memo 解析保留透传语义，让 memo 子系统自行解释业务参数。 */
+/* 中文注释：memo 解析保留透传语义——基于 Commander 声明式替代手写 for 循环。 */
+import { Command } from 'commander';
+
+const MEMO_CLI = new Command()
+  .name('memo')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[args...]');
+
 export function parseMemoArgs(argv) {
   const rest = argv.slice(1);
-  let help = false;
-  const passthrough = [];
+  const help = rest.includes('-h') || rest.includes('--help') || rest.includes('help');
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '--') {
-      passthrough.push(...rest.slice(index + 1));
-      break;
+  try {
+    const parsed = MEMO_CLI.parse(rest, { from: 'user' });
+
+    // 提取 -- 后的透传参数
+    const doubleDashIdx = rest.indexOf('--');
+    let passthrough;
+    if (doubleDashIdx !== -1) {
+      passthrough = rest.slice(doubleDashIdx + 1);
+    } else {
+      // Commander 把 positional args 放进 parsed.args，过滤掉 help 标记
+      passthrough = (parsed.args || []).filter(a => !['-h', '--help', 'help'].includes(a));
     }
-    if (arg === '-h' || arg === '--help' || arg === 'help') {
-      help = true;
-      continue;
-    }
-    passthrough.push(arg);
+
+    return {
+      mode: help ? 'help' : 'command',
+      help,
+      command: 'memo',
+      options: { argv: passthrough },
+    };
+  } catch {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'memo',
+      options: { argv: [] },
+    };
   }
-
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'memo',
-    options: {
-      argv: passthrough,
-    },
-  };
 }

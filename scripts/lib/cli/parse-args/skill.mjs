@@ -1,161 +1,117 @@
-import { takeValue } from './shared.mjs';
-
-function isHelpArg(arg) {
-  return arg === '-h' || arg === '--help' || arg === 'help';
-}
+/* 中文注释：skill 参数解析，基于 Commander 声明式 */
+import { Command } from 'commander';
 
 const WORKSHOP_SUBCOMMANDS = new Set(['propose', 'review', 'apply', 'rollback', 'index']);
+const ALL_SUBCOMMANDS = ['comply', 'health', 'verify-training', 'propose', 'review', 'apply', 'rollback', 'index'];
+
+const SHARED_OPTIONS = [
+  ['--json', 'Output as JSON'],
+  ['--format <text|json>', 'Output format'],
+  ['--dry-run', 'Dry run mode'],
+  ['--dashboard', 'Show dashboard'],
+  ['--changed', 'Only changed files'],
+  ['--base <ref>', 'Base reference (default: HEAD)'],
+  ['--client <name>', 'Client name (default: codex)'],
+  ['--approve', 'Approve proposal'],
+  ['--reject', 'Reject proposal'],
+  ['--quarantine', 'Quarantine proposal'],
+  ['--scan', 'Scan for proposals'],
+  ['--policy', 'Policy check'],
+  ['--description <text>', 'Proposal description'],
+];
+
+const program = new Command()
+  .name('skill')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[args...]');
+
+for (const name of ALL_SUBCOMMANDS) {
+  const cmd = program
+    .command(name)
+    .description(`Skill ${name} command`)
+    .helpOption(false)
+    .allowUnknownOption(true)
+    .allowExcessArguments(true)
+    .argument('[args...]');
+  for (const [flags, desc] of SHARED_OPTIONS) {
+    cmd.option(flags, desc);
+  }
+}
 
 export function parseSkillArgs(argv = []) {
   const rest = argv.slice(1);
   const rawSubcommand = String(rest[0] || '').trim().toLowerCase();
+  const help = argv.includes('-h') || argv.includes('--help') || rest.includes('help');
+  const isKnownSub = ALL_SUBCOMMANDS.includes(rawSubcommand);
+  const subcommand = help || !isKnownSub ? '' : rawSubcommand;
+
   const options = {
-    subcommand: isHelpArg(rawSubcommand) ? '' : rawSubcommand,
-    json: false,
-    format: 'text',
-    dryRun: false,
-    dashboard: false,
-    changed: false,
-    base: 'HEAD',
-    client: 'codex',
-    // Workshop fields
-    description: '',
-    id: '',
-    action: '',
-    name: '',
-    scan: false,
-    policy: false,
+    subcommand, json: false, format: 'text', dryRun: false,
+    dashboard: false, changed: false, base: 'HEAD', client: 'codex',
+    description: '', id: '', action: '', name: '', path: '', scan: false, policy: false,
   };
-  let help = isHelpArg(rawSubcommand);
-  let start = 1;
 
-  // Positional arguments for workshop subcommands:
-  //   propose <description>
-  //   review <id>
-  //   apply <id>
-  //   rollback <name>
-  if (options.subcommand === 'propose') {
-    const descArg = rest[1] || '';
-    if (descArg && !isHelpArg(descArg) && !String(descArg).startsWith('-')) {
-      options.description = descArg;
-      start = 2;
+  try {
+    if (!subcommand) {
+      if (rawSubcommand && !rawSubcommand.startsWith('-') && !help) {
+        throw new Error('skill requires subcommand: comply, health, verify-training, propose, review, apply, rollback, or index');
+      }
+      return { mode: 'help', help: true, command: 'skill', options };
     }
-  } else if (options.subcommand === 'review') {
-    const idArg = rest[1] || '';
-    if (idArg && !isHelpArg(idArg) && !String(idArg).startsWith('-')) {
-      options.id = idArg;
-      start = 2;
-    }
-  } else if (options.subcommand === 'apply') {
-    const idArg = rest[1] || '';
-    if (idArg && !isHelpArg(idArg) && !String(idArg).startsWith('-')) {
-      options.id = idArg;
-      start = 2;
-    }
-  } else if (options.subcommand === 'rollback') {
-    const nameArg = rest[1] || '';
-    if (nameArg && !isHelpArg(nameArg) && !String(nameArg).startsWith('-')) {
-      options.name = nameArg;
-      start = 2;
-    }
-  } else if (options.subcommand === 'comply') {
-    const pathArg = rest[1] || '';
-    if (pathArg && !isHelpArg(pathArg) && !String(pathArg).startsWith('-')) {
-      options.path = pathArg;
-      start = 2;
-    } else {
-      options.path = '';
-    }
-  }
 
-  for (let index = 1; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (index < start) {
-      continue;
+    // 处理 positional 参数（Commander 会把它们留在 args 中）
+    const sliced = rest.slice(1); // 跳过子命令
+    const parsed = program.parse(rest, { from: 'user' });
+
+    // 获取子命令的 opts
+    let effectiveFlags = {};
+    const matchedCmd = parsed.commands?.find((c) => c.name() === subcommand);
+    if (matchedCmd?.opts) effectiveFlags = matchedCmd.opts();
+
+    // 从 args 中提取 positional 参数
+    const posArgs = (parsed.args || []).filter(a => !String(a).startsWith('-') && a !== subcommand);
+
+    // 提取位置参数到对应字段
+    if (subcommand === 'propose') {
+      options.description = posArgs[0] || '';
+    } else if (subcommand === 'review' || subcommand === 'apply') {
+      options.id = posArgs[0] || '';
+    } else if (subcommand === 'rollback') {
+      options.name = posArgs[0] || '';
+    } else if (subcommand === 'comply') {
+      options.path = posArgs[0] || '';
     }
-    if (isHelpArg(arg)) {
-      help = true;
-      continue;
-    } else if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-    } else if (arg === '--dry-run') {
-      options.dryRun = true;
-    } else if (arg === '--dashboard') {
-      options.dashboard = true;
-    } else if (arg === '--changed') {
-      options.changed = true;
-    } else if (arg === '--base') {
-      options.base = takeValue(rest, index, '--base');
-      index += 1;
-    } else if (arg === '--client') {
-      options.client = takeValue(rest, index, '--client');
-      index += 1;
-    } else if (arg === '--format') {
-      options.format = takeValue(rest, index, '--format');
-      options.json = options.format === 'json';
-      index += 1;
-    } else if (arg === '--approve') {
-      options.action = 'approve';
-    } else if (arg === '--reject') {
-      options.action = 'reject';
-    } else if (arg === '--quarantine') {
-      options.action = 'quarantine';
-    } else if (arg === '--scan') {
-      options.scan = true;
-    } else if (arg === '--policy') {
-      options.policy = true;
-    } else if (arg === '--description') {
-      options.description = takeValue(rest, index, '--description');
-      index += 1;
-    } else {
-      throw new Error(`Unknown option: ${arg}`);
-    }
-  }
 
-  if (help) {
-    return {
-      mode: 'help',
-      help: true,
-      command: 'skill',
-      options,
-    };
-  }
+    // 映射 flags
+    if (effectiveFlags.json === true) { options.json = true; options.format = 'json'; }
+    if (effectiveFlags.format) options.format = String(effectiveFlags.format);
+    if (effectiveFlags.dryRun === true) options.dryRun = true;
+    if (effectiveFlags.dashboard === true) options.dashboard = true;
+    if (effectiveFlags.changed === true) options.changed = true;
+    if (effectiveFlags.base) options.base = String(effectiveFlags.base);
+    if (effectiveFlags.client) options.client = String(effectiveFlags.client);
+    if (effectiveFlags.approve) options.action = 'approve';
+    if (effectiveFlags.reject) options.action = 'reject';
+    if (effectiveFlags.quarantine) options.action = 'quarantine';
+    if (effectiveFlags.scan === true) options.scan = true;
+    if (effectiveFlags.policy === true) options.policy = true;
+    if (effectiveFlags.description) options.description = String(effectiveFlags.description);
 
-  // Workshop subcommands don't need the old strict validation
-  if (options.subcommand === 'propose') {
-    // description is optional (defaults to empty)
-    return { mode: 'command', help: false, command: 'skill', options };
-  }
-  if (options.subcommand === 'review') {
-    if (!options.id) throw new Error('skill review requires a proposal id');
-    return { mode: 'command', help: false, command: 'skill', options };
-  }
-  if (options.subcommand === 'apply') {
-    if (!options.id) throw new Error('skill apply requires a proposal id');
-    return { mode: 'command', help: false, command: 'skill', options };
-  }
-  if (options.subcommand === 'rollback') {
-    if (!options.name) throw new Error('skill rollback requires a skill name');
-    return { mode: 'command', help: false, command: 'skill', options };
-  }
-  if (options.subcommand === 'index') {
-    // --scan is optional; defaults to true when subcommand is 'index'
-    options.scan = true;
-    return { mode: 'command', help: false, command: 'skill', options };
-  }
+    // 校验
+    if (subcommand === 'review' && !options.id) throw new Error('skill review requires a proposal id');
+    if (subcommand === 'apply' && !options.id) throw new Error('skill apply requires a proposal id');
+    if (subcommand === 'rollback' && !options.name) throw new Error('skill rollback requires a skill name');
+    if (subcommand === 'comply' && !options.path) throw new Error('skill comply requires a path');
+    if (subcommand === 'index') options.scan = true;
 
-  if (!options.subcommand) throw new Error('skill requires subcommand: comply, health, verify-training, propose, review, apply, rollback, or index');
-  if (options.subcommand === 'comply') {
-    if (!options.path) throw new Error('skill comply requires a path');
+    return { mode: 'command', help: false, command: 'skill', options };
+  } catch (e) {
+    if (e instanceof Error && (
+      e.message.includes('requires a') || e.message.includes('requires subcommand') || e.message.includes('--format')
+    )) throw e;
+    return { mode: 'help', help: true, command: 'skill', options };
   }
-  if (!['comply', 'health', 'verify-training', ...WORKSHOP_SUBCOMMANDS].includes(options.subcommand)) {
-    throw new Error('skill requires subcommand: comply, health, verify-training, propose, review, apply, rollback, or index');
-  }
-  return {
-    mode: 'command',
-    help: false,
-    command: 'skill',
-    options,
-  };
 }

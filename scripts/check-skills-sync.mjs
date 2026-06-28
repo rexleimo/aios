@@ -5,29 +5,30 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { checkGeneratedSkillsSync, syncGeneratedSkills } from './lib/skills/sync.mjs';
+import { createCliParser } from '../src/shared/cli-parser.mjs';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-function parseArgs(argv) {
-  const options = {
-    materializeTemp: false,
-    targetRootDir: '',
-  };
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === '--materialize-temp') {
-      options.materializeTemp = true;
-      continue;
-    }
-    if (arg === '--target-root') {
-      options.targetRootDir = path.resolve(argv[index + 1] || '');
-      index += 1;
-    }
-  }
-  return options;
+const cli = createCliParser({
+  name: 'check-skills-sync',
+  description: 'Check generated skills sync status and optionally materialize to a temp directory',
+  options: [
+    ['--materialize-temp', 'Materialize install to a temp directory for comparison'],
+    ['--target-root <path>', 'Override target root instead of current dir'],
+  ],
+});
+
+const parsed = cli.parse(process.argv.slice(2));
+if (parsed.help) {
+  console.log(cli.program.helpInformation());
+  process.exit(0);
 }
 
-const options = parseArgs(process.argv.slice(2));
+const options = {
+  materializeTemp: parsed.flags.materializeTemp === true,
+  targetRootDir: parsed.flags.targetRoot || '',
+};
+
 let tempRoot = '';
 try {
   if (options.materializeTemp) {

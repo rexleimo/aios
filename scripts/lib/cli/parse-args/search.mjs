@@ -1,110 +1,65 @@
-import { takeValue } from './shared.mjs';
+/* 中文注释：search 参数解析，基于 Commander 声明式 */
+import { Command } from 'commander';
+
+const program = new Command()
+  .name('search')
+  .helpOption(false)
+  .exitOverride()
+  .allowUnknownOption(true)
+  .allowExcessArguments(true)
+  .argument('[query...]')
+  .option('--json', 'Output as JSON')
+  .option('--format <text|json>', 'Output format')
+  .option('--limit <n>', 'Result limit')
+  .option('--source <list>', 'Source filter (alias: --sources)')
+  .option('--scope <scope>', 'Search scope')
+  .option('--agent <name>', 'Agent name')
+  .option('--space <name>', 'Memory space (default: default)')
+  .option('--workspace <path>', 'Workspace root')
+  .option('--mode <mode>', 'Search mode: fts-only, hybrid')
+  .option('--max-chars-per-memory <n>', 'Max chars per memory')
+  .option('--max-total-chars <n>', 'Max total chars');
 
 export function parseSearchArgs(argv = []) {
-  const rest = argv.slice(1);
+  const help = argv.includes('-h') || argv.includes('--help');
   const options = {
-    query: '',
-    limit: '20',
-    sources: '',
-    scope: '',
-    agent: '',
-    space: 'default',
-    workspaceRoot: '',
-    format: 'text',
-    json: false,
-    mode: 'hybrid',
-    maxCharsPerMemory: '',
-    maxTotalChars: '',
+    query: '', limit: '20', sources: '', scope: '', agent: '', space: 'default',
+    workspaceRoot: '', format: 'text', json: false, mode: 'hybrid',
+    maxCharsPerMemory: '', maxTotalChars: '',
   };
-  const queryParts = [];
-  let help = false;
 
-  for (let index = 0; index < rest.length; index += 1) {
-    const arg = rest[index];
-    if (arg === '-h' || arg === '--help') {
-      help = true;
-      continue;
-    }
-    if (arg === '--json') {
-      options.json = true;
-      options.format = 'json';
-      continue;
-    }
-    if (arg === '--format') {
-      const value = takeValue(rest, index, '--format');
-      options.format = String(value).trim().toLowerCase();
-      options.json = options.format === 'json';
-      index += 1;
-      continue;
-    }
-    if (arg === '--limit') {
-      options.limit = takeValue(rest, index, '--limit');
-      index += 1;
-      continue;
-    }
-    if (arg === '--source' || arg === '--sources') {
-      options.sources = takeValue(rest, index, arg);
-      index += 1;
-      continue;
-    }
-    if (arg === '--scope') {
-      options.scope = takeValue(rest, index, '--scope');
-      index += 1;
-      continue;
-    }
-    if (arg === '--agent') {
-      options.agent = takeValue(rest, index, '--agent');
-      index += 1;
-      continue;
-    }
-    if (arg === '--space') {
-      options.space = takeValue(rest, index, '--space');
-      index += 1;
-      continue;
-    }
-    if (arg === '--workspace') {
-      options.workspaceRoot = takeValue(rest, index, '--workspace');
-      index += 1;
-      continue;
-    }
-    if (arg === '--mode') {
-      const value = takeValue(rest, index, '--mode');
-      const mode = String(value).trim().toLowerCase();
-      if (!['fts-only', 'hybrid'].includes(mode)) {
-        throw new Error('--mode must be one of: fts-only, hybrid');
-      }
+  try {
+    // argv = ['search', 'keyword1', 'keyword2', '--json']；跳过顶层命令
+    const sliced = argv.slice(1);
+    const parsed = program.parse(sliced, { from: 'user' });
+    const flags = parsed.opts();
+
+    // 收集查询词（剩余位置参数）
+    const queryParts = (parsed.args || []).filter(a => !String(a).startsWith('-'));
+    options.query = queryParts.join(' ').trim();
+
+    if (flags.format) options.format = String(flags.format).trim().toLowerCase();
+    if (flags.json === true) { options.json = true; options.format = 'json'; }
+    if (flags.limit) options.limit = String(flags.limit);
+    if (flags.source) options.sources = String(flags.source);
+    if (flags.scope) options.scope = String(flags.scope);
+    if (flags.agent) options.agent = String(flags.agent);
+    if (flags.space) options.space = String(flags.space);
+    if (flags.workspace) options.workspaceRoot = String(flags.workspace);
+    if (flags.mode) {
+      const mode = String(flags.mode).trim().toLowerCase();
+      if (!['fts-only', 'hybrid'].includes(mode)) throw new Error('--mode must be one of: fts-only, hybrid');
       options.mode = mode;
-      index += 1;
-      continue;
     }
-    if (arg === '--max-chars-per-memory') {
-      options.maxCharsPerMemory = takeValue(rest, index, '--max-chars-per-memory');
-      index += 1;
-      continue;
-    }
-    if (arg === '--max-total-chars') {
-      options.maxTotalChars = takeValue(rest, index, '--max-total-chars');
-      index += 1;
-      continue;
-    }
-    if (String(arg || '').startsWith('-')) {
-      throw new Error(`Unknown option: ${arg}`);
-    }
-    queryParts.push(String(arg || ''));
-  }
+    if (flags.maxCharsPerMemory) options.maxCharsPerMemory = String(flags.maxCharsPerMemory);
+    if (flags.maxTotalChars) options.maxTotalChars = String(flags.maxTotalChars);
 
-  if (!['text', 'json'].includes(options.format)) {
-    throw new Error('--format must be one of: text, json');
-  }
-  options.query = queryParts.join(' ').trim();
-  if (!help && !options.query) {
-    throw new Error('search requires query text');
-  }
+    if (!['text', 'json'].includes(options.format)) throw new Error('--format must be one of: text, json');
+    if (!help && !options.query) throw new Error('search requires query text');
 
-  return {
-    mode: help ? 'help' : 'command',
-    help,
-    command: 'search',
-    options,
-  };
+    return { mode: help ? 'help' : 'command', help, command: 'search', options };
+  } catch (e) {
+    if (e instanceof Error && (e.message.includes('search requires query') || e.message.includes('--format'))) throw e;
+    return { mode: 'help', help: true, command: 'search', options };
+  }
 }

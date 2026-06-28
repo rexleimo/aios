@@ -103,6 +103,9 @@ async function seedFixtureRepo(rootDir, {
   await cp(path.join(workspaceRoot, 'scripts', 'lib', 'clients'), path.join(rootDir, 'scripts', 'lib', 'clients'), { recursive: true });
   await writeFixtureFile(rootDir, 'scripts/lib/specs/orchestrator-agents.json', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'specs', 'orchestrator-agents.json'), 'utf8'));
 
+  // scripts/lib/agents/emitters/* 和 scripts/lib/ctx-agent-core/args.mjs 依赖 src/shared/ 下的公共工具。
+  await cp(path.join(workspaceRoot, 'src', 'shared'), path.join(rootDir, 'src', 'shared'), { recursive: true });
+
   assertOk(run('git', ['init'], { cwd: rootDir }), 'git init failed');
   assertOk(run('git', ['config', 'user.email', 'fixture@example.com'], { cwd: rootDir }));
   assertOk(run('git', ['config', 'user.name', 'Fixture'], { cwd: rootDir }));

@@ -5,28 +5,15 @@ import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { resolveTasksRoot, toWorkspaceRelative } from './lib/aios/state-root.mjs';
 import { normalizeTaskRef, readTextIfExists, listNonHiddenEntries } from './lib/bootstrap-doctor/task-utils.mjs';
+import { createCliParser } from '../src/shared/cli-parser.mjs';
 
-function usage() {
-  console.log(`Usage:
-  node scripts/doctor-bootstrap-task.mjs [--workspace <path>]
-
-Options:
-  --workspace <path>  Workspace root to inspect (default: current working directory)
-  -h, --help          Show this help`);
-}
-
-function parseArgs(argv) {
-  const opts = { workspaceRoot: process.cwd() };
-  for (let i = 0; i < argv.length; i += 1) {
-    const arg = argv[i];
-    switch (arg) {
-      case '--workspace': opts.workspaceRoot = argv[++i] || process.cwd(); break;
-      case '-h': case '--help': usage(); process.exit(0); break;
-      default: throw new Error(`Unknown option: ${arg}`);
-    }
-  }
-  return opts;
-}
+const cli = createCliParser({
+  name: 'doctor-bootstrap-task',
+  description: 'Inspect bootstrap task state for a workspace',
+  options: [
+    ['--workspace <path>', 'Workspace root to inspect (default: current working directory)'],
+  ],
+});
 
 export async function inspectBootstrapTask(workspaceRoot) {
   const root = path.resolve(workspaceRoot || process.cwd());
@@ -62,16 +49,14 @@ export async function inspectBootstrapTask(workspaceRoot) {
 }
 
 export async function runDoctor(argv = process.argv.slice(2), io = console) {
-  let opts;
-  try {
-    opts = parseArgs(argv);
-  } catch (error) {
-    io.error(error instanceof Error ? error.message : String(error));
-    usage();
-    return { status: 'warn', code: 'invalid-args' };
+  const parsed = cli.parse(argv);
+  if (parsed.help) {
+    io.log(cli.program.helpInformation());
+    return { status: 'ok', code: 'help' };
   }
 
-  const result = await inspectBootstrapTask(opts.workspaceRoot);
+  const workspaceRoot = parsed.flags.workspace || process.cwd();
+  const result = await inspectBootstrapTask(workspaceRoot);
   io.log('Bootstrap Task Doctor');
   io.log('---------------------');
   io.log(`Workspace: ${result.workspaceRoot}`);
