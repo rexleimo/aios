@@ -22,12 +22,16 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
-          cache-dependency-path: mcp-server/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Ensure packaging deps
         run: |
           sudo apt-get update
           sudo apt-get install -y rsync zip
+
+      - name: Install root deps
+        run: |
+          npm ci
 
       - name: Install mcp-server deps
         run: |
