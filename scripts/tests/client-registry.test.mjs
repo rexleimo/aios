@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -72,9 +72,9 @@ test('client registry validation returns normalized values for reuse', () => {
 
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
   assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -84,6 +84,7 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.gemini/skills',
     '.opencode/skills',
     '.crush/skills',
+    '.hermes/skills',
     '.agents/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
@@ -107,8 +108,8 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'antigravity-cli', 'opencode-cli', 'crush-cli']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'antigravity-cli', 'opencode-cli', 'crush-cli', 'hermes-agent']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
@@ -116,6 +117,7 @@ test('client registry exposes runtime command and client identifiers', () => {
     'opencode-cli': 'opencode',
     'crush-cli': 'crush',
     'antigravity-cli': 'antigravity',
+    'hermes-agent': 'hermes',
   });
 });
 

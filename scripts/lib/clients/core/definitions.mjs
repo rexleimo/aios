@@ -92,6 +92,23 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze(['--yolo']),
   }),
+  // Hermes Agent (NousResearch) — CLI agent with MCP, skills, cron, memory, delegate_task.
+  // Skill format: markdown-directory (SKILL.md frontmatter + steps).
+  // MCP config: JSON stdio in ~/.hermes/config.yaml mcp_servers section or project .mcp.json.
+  // Native instruction: AGENTS.md (auto-loaded from project root).
+  // No built-in unattended mode; harness orchestration uses delegate_task instead.
+  hermes: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers']),
+    commandName: 'hermes',
+    runtimeClientId: 'hermes-agent',
+    projectSkillRoot: '.hermes/skills',
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.hermes',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '--model',
+    unattendedArgs: Object.freeze([]),  // Hermes 没有 --yolo/--dangerously-skip-permissions 模式
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -101,7 +118,7 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']),
   team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
   harness: ALL_CLIENTS,
 });
@@ -161,6 +178,17 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
       Object.freeze({ scope: 'project', file: 'crush.json' }),
       Object.freeze({ scope: 'project', file: '.crush.json' }),
       Object.freeze({ scope: 'home', file: 'crush.json' }),
+    ]),
+  }),
+  // Hermes Agent MCP — JSON stdio format, mcpServers namespace.
+  // Project scope: .mcp.json (shared with Claude Code).
+  // Home scope: config.yaml under ~/.hermes/ (Hermes reads mcp_servers from its YAML config).
+  hermes: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'project', file: '.mcp.json' }),
+      Object.freeze({ scope: 'home', file: 'config.yaml' }),
     ]),
   }),
 });
