@@ -5,9 +5,8 @@
   "client": "hermes",
   "tier": "compatibility",
   "managedTargets": [
-    "AGENTS.md",
     ".hermes/skills"
   ],
-  "generatedAt": "2026-06-30T07:04:13.300Z",
+  "generatedAt": "2026-06-30T07:13:35.661Z",
   "aiosVersion": ""
 }

@@ -5,13 +5,7 @@ import { readClientJsonSource } from './shared.mjs';
 
 export function renderHermesNativeOutputs({ rootDir }) {
   return {
-    operations: [
-      {
-        kind: 'markdown-block',
-        targetPath: getClientInstructionFileName('hermes'),
-        content: composeNativeMarkdown({ rootDir, client: 'hermes' }),
-      },
-    ],
-    managedTargets: ['AGENTS.md', '.hermes/skills'],
+    operations: [],
+    managedTargets: ['.hermes/skills'],
   };
 }
