@@ -82,7 +82,7 @@ jobs:
       - name: Deploy to GitHub Pages
         if: steps.freshness.outputs.is_latest == 'true'
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
 
       - name: Skip stale deploy
         if: steps.freshness.outputs.is_latest != 'true'
