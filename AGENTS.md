@@ -384,16 +384,6 @@ Do not replace AIOS interception runtime. Token profiles are a pre-context hygie
 - If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
 - Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
 
-<!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
-
-## AIOS Subagent Dispatch
-
-- This client ships repo-local agent definitions; prefer them over ad-hoc roles.
-- Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
-- Use `superpowers:dispatching-parallel-agents` to fan out, then converge with a verification pass before merge.
-- If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
-- When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.
-
 <!-- 中文注释：code-review-graph（codemap）MCP 决策检查点。所有已注册 MCP 的客户端均下发，让 gemini/opencode 也能用结构图。 -->
 
 ## AIOS Code-Review-Graph (codemap) MCP
@@ -424,39 +414,6 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When `mcp-browser-use` is available, use its browser-use toolchain (`chrome.*` / `browser.*` / `page.*`) for normal business flows instead of `chrome-devtools`.
 
-<!-- Team provider 指令 — 仅对具备 team capability 的客户端下发 -->
-
-## AIOS Team Provider
-
-When this client is launched by AIOS as a team worker (`ctx-agent.mjs --route team`), it runs in unattended mode. Key behaviors:
-
-- **Unattended execution**: The client is launched with auto-approve flags (e.g., `--yolo`, `--dangerously-skip-permissions`). Do not prompt for permissions — assume all operations are pre-authorized by the AIOS orchestrator.
-- **Model routing**: The `--team-provider` flag and `AIOS_MODEL_ROUTER` env var determine which model each phase uses. Check `AIOS_MODEL_*` env vars for per-role model assignments.
-- **Output format**: Results are captured by the AIOS ctx-agent runtime. Produce structured, parseable output — avoid interactive-only output (TUI elements, spinners, progress bars).
-- **Error handling**: If a task fails, write a clear error summary to stderr and exit with non-zero code. The orchestrator will handle retries.
-- **Scope isolation**: Each team worker owns a specific domain. Do not modify files outside your assigned scope unless explicitly told to.
-- **Handoff**: When finished, summarize what was done, what was changed, and any blockers in a concise handoff note.
-
-<!-- Model router 指令 — 仅对具备 team capability 的客户端下发 -->
-
-## AIOS Model Router
-
-AIOS supports per-role model routing in team and subagent workflows. The following environment variables control model selection:
-
-- `AIOS_MODEL_ROUTER` — Set to `1` to enable model routing (default: `0`).
-- `AIOS_MODEL_PLANNER` — Model ID for the planner phase (e.g., `gemini-3-pro`).
-- `AIOS_MODEL_IMPLEMENTER` — Model ID for the implementer phase (e.g., `gpt-5.5`).
-- `AIOS_MODEL_REVIEWER` — Model ID for the reviewer phase (e.g., `claude-opus`).
-- `AIOS_MODEL_SECURITY_REVIEWER` — Model ID for the security reviewer phase.
-
-When model routing is active:
-1. Read `AIOS_MODEL_ROUTER` at startup to determine if routing is enabled.
-2. Use the client's model flag (`-m`, `--model`) to set the assigned model.
-3. Record the model used in any dispatch evidence or event logs.
-4. If a model env var is unset, fall back to the client's default model.
-
-This enables heterogeneous team workflows where different roles use different LLM providers (e.g., Gemini for planning, Codex for implementation, Claude for review).
-
 <!-- Harness 指令 — 所有客户端都下发 -->
 
 ## AIOS Solo Harness
@@ -471,20 +428,9 @@ When this client is launched by AIOS solo harness (`aios harness run`):
 - **Evidence**: Before claiming a sub-task is done, produce concrete evidence (test output, file diffs, screenshots). The harness validates evidence before advancing.
 - **Failure recovery**: On failure, do not silently retry. Write the error to `aios memo add` with the failure context, then exit. The harness will retry with fresh context.
 
-## AIOS Native Codex Layer
+## AIOS Native Hermes Layer
 
-- Prefer repo-local `.codex/skills` and `.codex/agents`.
+- Prefer repo-local `.hermes/skills` for AIOS-enhanced skills.
 - Keep work grounded in the AIOS runtime and verification flow.
-
-# AIOS For OpenCode
-
-This repository provides compatibility-tier native enhancements for OpenCode through repo-local skills and AIOS runtime conventions.
-
-## Agent Self-Trigger
-
-When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
-
-## Turn Compression Compliance
-
-OpenCode work in this repository must obey the shared AIOS `bidirectional-turn-compression` metric: run live work through the AIOS-managed runner, require `pre_send` compression before model input, require `post_receive` compression after model output, and treat direct host bypass as a policy violation.
+- AIOS MCP server bridge is available via `scripts/aios-mcp-server.mjs` — expose context-pack, doctor, and interception compression as Hermes MCP tools.
 <!-- AIOS NATIVE END -->

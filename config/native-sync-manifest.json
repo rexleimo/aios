@@ -60,6 +60,14 @@
         "GEMINI.md",
         ".gemini/skills"
       ]
+    },
+    "hermes": {
+      "tier": "compatibility",
+      "metadataRoot": ".hermes",
+      "outputs": [
+        "AGENTS.md",
+        ".hermes/skills"
+      ]
     }
   }
 }

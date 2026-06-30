@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "managedBy": "aios",
+  "kind": "native-sync",
+  "client": "hermes",
+  "tier": "compatibility",
+  "managedTargets": [
+    "AGENTS.md",
+    ".hermes/skills"
+  ],
+  "generatedAt": "2026-06-30T05:46:03.319Z",
+  "aiosVersion": ""
+}
