@@ -19,6 +19,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [Hermes Agent Is Now a First-Class AIOS Client](2026-06-hermes-agent-aios-client.md)
 - [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
 - [Agent Governance: Make Team Runs Prove Themselves Before Going Live](2026-06-agent-governance.md)
 - [v1.52.0: Deterministic Shell Output Compression via MCP](2026-06-v152-aios-shell-mcp.md)

@@ -17,6 +17,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [Hermes Agent 正式成为 AIOS 一等公民客户端](2026-06-hermes-agent-aios-client.md)
 - [v2.0.2：更安全的技能健康记录与更干净的 Crush 配置](2026-06-v202-ecc-uplift.md)
 - [Agent 治理：让 Team live 运行先证明自己](2026-06-agent-governance.md)
 - [v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩](2026-06-v152-aios-shell-mcp.md)

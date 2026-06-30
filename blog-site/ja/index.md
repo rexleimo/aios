@@ -17,9 +17,10 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 - [CLI 比較：生 vs. Harness CLI](cli-comparison-post.md) — レイヤーを追加すると何が変わるか
 - [自動化プレイブック](automation-playbook-post.md) — 日次使用的パタン
 
-## 最新記事
+## 最新の記事
 
-- [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
+- [Hermes Agent が AIOS ファーストクラスクライアントに昇格](2026-06-hermes-agent-aios-client.md)
+- [v2.0.2: より安全な Skill Health Records とよりクリーンな Crush Config](2026-06-v202-ecc-uplift.md)
 - [Agent Governance: Team live 実行の前に証跡を残す](2026-06-agent-governance.md)
 - [v1.52.0: 決定論的 Shell 出力圧縮 (MCP 経由)](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)

@@ -26,6 +26,7 @@ You keep using the same commands. Nothing changes about your workflow — except
 | **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
 | **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
+| **Hermes Agent** | Seventh AIOS client with MCP bridge exposing 5 AIOS tools | `aios setup --client hermes` → `@aios_context_pack` in Hermes |
 | **Superpowers** | Reusable workflow skills (brainstorm/plan/debug/verify) | Select from TUI |
 | **Privacy Guard** | Auto-redact sensitive files before sharing | `aios privacy status` |
 

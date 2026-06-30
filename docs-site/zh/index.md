@@ -26,6 +26,7 @@ description: Harness CLI (AIOS) 给你正在用的 codex / claude / gemini / ope
 | **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
 | **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
+| **Hermes Agent** | 第七个 AIOS 客户端，MCP 桥接暴露 5 个 AIOS 工具 | `aios setup --client hermes` → Hermes 中 `@aios_context_pack` |
 | **Superpowers** | 可复用工作流技能（brainstorm/plan/debug/verify） | TUI 中选择 |
 | **Privacy Guard** | 敏感文件读取前自动脱敏 | `aios privacy status` |
 

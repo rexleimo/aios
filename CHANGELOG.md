@@ -6,6 +6,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-06-30
+
+- feat: Hermes Agent as first-class AIOS client with MCP bridge + multilingual docs
+
+### Added
+- feat(clients): register Hermes Agent (Nous Research) as 7th first-class AIOS client with skills, native, harness, and superpowers capabilities
+- feat(mcp): add `scripts/aios-mcp-server.mjs` — MCP bridge server exposing 5 AIOS tools (aios_context_pack, aios_doctor_suite, aios_intercept_compress, aios_skill_validate, aios_skill_install) for Hermes sessions
+- feat(native): add Hermes native emitter (AGENTS.md output) and MCP target (JSON stdio, .mcp.json + config.yaml scopes)
+- docs: add Hermes Agent + AIOS blog post and changelog coverage in English, Chinese, Japanese, and Korean
+
 ## [3.0.0] - 2026-06-15
 
 ### Added

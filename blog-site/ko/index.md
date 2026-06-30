@@ -19,7 +19,8 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
-- [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
+- [Hermes Agent가 AIOS 최상위 클라이언트로 승격](2026-06-hermes-agent-aios-client.md)
+- [v2.0.2: 더 안전한 Skill Health Records와 더 깔끔한 Crush Config](2026-06-v202-ecc-uplift.md)
 - [Agent Governance: Team live 실행 전에 증거 남기기](2026-06-agent-governance.md)
 - [v1.52.0: 결정론적 Shell 출력 압축 (MCP 기반)](2026-06-v152-aios-shell-mcp.md)
 - [v1.50.1: All-Client Token Compression Compliance](2026-06-v1501-token-compression-compliance.md)

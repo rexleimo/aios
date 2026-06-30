@@ -10,6 +10,7 @@ description: 版本历史、升级说明与文档变更入口。
 - 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
 - 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
+- **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）现已注册为第七个 AIOS 客户端，具备 skills、native、harness、superpowers 四项能力。新增 MCP 桥接服务器（`scripts/aios-mcp-server.mjs`）在 Hermes 会话内直接暴露 5 个 AIOS 工具——`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
 
 ## v2.0.2（2026-06-15）
 

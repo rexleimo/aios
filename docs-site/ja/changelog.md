@@ -10,6 +10,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
 - 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
+- **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：Hermes (Nous Research) が 7 番目の AIOS クライアントとして登録され、skills、native、harness、superpowers の 4 能力を備えました。MCP ブリッジサーバー (`scripts/aios-mcp-server.mjs`) が Hermes セッション内で 5 つの AIOSツールを直接公開 — `aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
 
 ## v2.0.2 (2026-06-15)
 

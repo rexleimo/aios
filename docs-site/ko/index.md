@@ -26,6 +26,7 @@ description: Harness CLI는 codex, claude, gemini, opencode에 기억, 협업, �
 | **Solo Harness** | 재개 지원과 런 저널이 있는 단일 agent 야간 태스크 | `aios harness run --objective "goal" --worktree` |
 | **Perception** | 콘텐츠 성과 추적 + 통계 인사이트 + perception 주입 | `aios perception record` / `insights` / `summary` |
 | **Browser MCP** | CDP 기반 스텔스 브라우저 자동화 | `aios internal browser doctor` |
+| **Hermes Agent** | 7번째 AIOS 클라이언트, MCP 브리지가 5개 AIOS 도구 노출 | `aios setup --client hermes` → Hermes에서 `@aios_context_pack` |
 | **Superpowers** | 재사용 가능한 워크플로 스킬 (brainstorm/plan/debug/verify) | TUI에서 선택 |
 | **Privacy Guard** | 공유 전 민감 파일 자동 리덕션 | `aios privacy status` |
 
