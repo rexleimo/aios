@@ -12,6 +12,41 @@ description: 版本历史、升级说明与文档变更入口。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
 - **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）现已注册为第七个 AIOS 客户端，具备 skills、native、harness、superpowers 四项能力。新增 MCP 桥接服务器（`scripts/aios-mcp-server.mjs`）在 Hermes 会话内直接暴露 5 个 AIOS 工具——`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
 
+## v3.2.0（2026-07-01）— Harness 可靠性与技能生命周期升级
+
+### Harness Solo Runtime
+
+- **consecutiveFailures 自动中止**：`backoff.mjs` 新增双计数器（`consecutiveFailures` + `consecutiveInfraFailures`）。连续 5 次非成功 outcome 后自动 abort session，不再无限重试浪费 token。
+- **Emergency 压缩第三级**：`mermaid-canvas.mjs` 在 mild（20 节点）/ aggressive（50 节点）之上新增 emergency 级别（100 节点触发），仅保留 5 个最近节点，防止 canvas 溢出。
+- **Dry-run Readiness 预检**：新增 `dry-run-readiness.mjs`，在 harness 启动前检查 4 个维度（ContextDB、Git、Provider、Session）。`blocked` 级别直接阻止启动。
+
+### Runtime Directive 系统
+
+- **Directive 注入**：新增 `directive-inject.mjs`，从 `.aios/config.json` 读取 `default_mode`，将对应的 `systemPromptAdditions` 注入每轮 harness 迭代 prompt。支持 3 个内置预设和自定义 `mode_presets`。
+
+### Auto-Dream（Phase A：手动）
+
+- **手动记忆整理 CLI**：`scripts/lib/memo/autodream.mjs` 提供 `--preview`（预览）和 `--apply`（执行）模式，封装已有的 taxonomy + 去重 + TTL 过期管道。
+
+### Skill Workshop
+
+- **Stale 检测**：apply 前比对目标 `SKILL.md` 的文件系统 hash 与 lock 中的 `computedHash`，不一致则拒绝 apply，防止覆盖用户手动修改。
+- **文件级 rollback**：apply 前将完整 `SKILL.md` 内容存入 `lock.rollbackSnapshot.previousContent`，rollback 时恢复实际文件内容。
+
+### 验证
+
+全部改动通过 37/37 单元 + 集成测试。
+
+详见：[v3.2.0 发布文章](/blog/zh/2026-07-v320-harness-reliability-upgrade/)。
+
+## v3.1.0（2026-06-30）— Hermes Agent 一等公民客户端集成
+
+- **Hermes Agent 注册为第 7 个 AIOS 一等公民客户端**：具备 skills、native、harness、superpowers 全部能力。
+- **MCP 桥接服务器**：`scripts/aios-mcp-server.mjs` 在 Hermes 会话内暴露 5 个 AIOS 工具（`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`）。
+- **Native emitter + MCP target**：AGENTS.md 输出 + JSON stdio（`.mcp.json` + `config.yaml` scopes）。
+- 多语言文档覆盖（英/中/日/韩）。
+- 详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
+
 ## v2.0.2（2026-06-15）
 
 - **技能健康记录校验**：`recordSkillObservation()` 现在会拒绝未知 status，不再把生产端拼写错误静默落成 failure，避免污染失败率统计。
@@ -60,8 +95,8 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 官方发布记录
 
-- GitHub 变更文件：[CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
-- GitHub Releases：[releases](https://github.com/rexleimo/harness-cli/releases)
+[⭐ 在 GitHub 上 Star](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
+[📦 查看 Releases](https://github.com/rexleimo/harness-cli/releases){ .md-button }
 
 ## 最新稳定版
 

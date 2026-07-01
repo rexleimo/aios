@@ -12,6 +12,41 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
 - **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：Hermes (Nous Research) が 7 番目の AIOS クライアントとして登録され、skills、native、harness、superpowers の 4 能力を備えました。MCP ブリッジサーバー (`scripts/aios-mcp-server.mjs`) が Hermes セッション内で 5 つの AIOSツールを直接公開 — `aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
 
+## v3.2.0（2026-07-01）— Harness 信頼性とスキルライフサイクル向上
+
+### Harness Solo Runtime
+
+- **consecutiveFailures 自動中止**：`backoff.mjs` にデュアルカウンター（`consecutiveFailures` + `consecutiveInfraFailures`）を追加。5 連続非成功 outcome で自動 abort、無限リトライによる token 無駄を防止。
+- **Emergency 圧縮ティア**：`mermaid-canvas.mjs` に 3 番目の圧縮レベル（100+ ノードで発火）を追加。emergency モードは最近 5 ノードのみ保持し、canvas オーバーフローを防止。
+- **Dry-run Readiness プレフライト**：新規 `dry-run-readiness.mjs` が harness 起動前に 4 次元（ContextDB、Git、Provider、Session）をチェック。`blocked` レベルは起動を阻止。
+
+### Runtime Directive システム
+
+- **Directive 注入**：新規 `directive-inject.mjs` が `.aios/config.json` の `default_mode` を読み、対応する `systemPromptAdditions` を毎回の harness 反復 prompt に注入。3 つの内蔵プリセットとカスタム `mode_presets` をサポート。
+
+### Auto-Dream（Phase A: 手動）
+
+- **手動メモリ整理 CLI**：`scripts/lib/memo/autodream.mjs` が `--preview`（計画のみ）と `--apply`（実行）モードを提供。既存の taxonomy + 重複排除 + TTL 期限切れパイプラインをラップ。
+
+### Skill Workshop
+
+- **Stale 検出**：apply 前にターゲット `SKILL.md` のファイルシステム hash と lock の `computedHash` を比較。不一致場合は apply を拒否し、ユーザーの手動編集を保護。
+- **ファイルレベル rollback**：apply 前に完全な `SKILL.md` 内容を `lock.rollbackSnapshot.previousContent` に保存。rollback 時に実際のファイル内容を復元。
+
+### 検証
+
+全変更は 37/37 ユニット + 統合テストで検証済み。
+
+詳細: [v3.2.0 リリース記事](/blog/ja/2026-07-v320-harness-reliability-upgrade/)。
+
+## v3.1.0（2026-06-30）— Hermes Agent ファーストクラスクライアント統合
+
+- **Hermes Agent が 7 番目の AIOS ファーストクラスクライアントとして登録**：skills、native、harness、superpowers の全機能を備える。
+- **MCP ブリッジサーバー**：`scripts/aios-mcp-server.mjs` が Hermes セッション内で 5 つの AIOS ツール（`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`）を公開。
+- **Native emitter + MCP target**：AGENTS.md 出力 + JSON stdio（`.mcp.json` + `config.yaml` scopes）。
+- 多言語ドキュメント対応（英/中/日/韓）。
+- 詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
+
 ## v2.0.2 (2026-06-15)
 
 - **Skill health validation**: `recordSkillObservation()` は未知の status を拒否し、producer の typo を failure として保存しないようになりました。
@@ -60,8 +95,8 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 ## 公式リリース履歴
 
-- GitHub 変更ファイル：[CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
-- GitHub Releases: [releases](https://github.com/rexleimo/harness-cli/releases)
+[⭐ GitHub で Star](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
+[📦 Releases を見る](https://github.com/rexleimo/harness-cli/releases){ .md-button }
 
 ## 最新安定版
 

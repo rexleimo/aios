@@ -7,7 +7,7 @@ description: Partner and ecosystem links for quick discovery.
 
 Useful links across the RexAI ecosystem:
 
-- [Harness CLI GitHub](https://github.com/rexleimo/harness-cli)
+- [⭐ Star Harness CLI on GitHub](https://github.com/rexleimo/harness-cli)
 - [RexAI Docs Home](https://cli.rexai.top)
 - [RexAI Blog](https://cli.rexai.top/blog/)
 - [RexOS Agent OS](https://os.rexai.top)

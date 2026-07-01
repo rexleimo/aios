@@ -94,8 +94,8 @@ All changes verified with 37/37 unit + integration tests passing.
 - **All-client native guidance**: The same search instruction is projected to Codex/OpenCode/Crush through `AGENTS.md`, Claude through `CLAUDE.md`, and Gemini/Antigravity through `GEMINI.md`.
 - **Release tutorials**: See the [v1.50.0 unified search tutorial](/blog/2026-06-v150-unified-aios-search/) and [ContextDB](contextdb.md#unified-project-search-v1500).
 
-- GitHub changelog file: [CHANGELOG.md](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)
-- GitHub releases: [releases](https://github.com/rexleimo/harness-cli/releases)
+[⭐ Star on GitHub](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
+[📦 View Releases](https://github.com/rexleimo/harness-cli/releases){ .md-button }
 
 ## Latest Stable
 
