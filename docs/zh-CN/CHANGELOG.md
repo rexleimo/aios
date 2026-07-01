@@ -4,7 +4,14 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-## [未发布]
+## [3.2.0] - 2026-07-01
+### 新增
+- feat(harness): 新增 consecutiveFailures 双计数器，连续失败 5 次后自动 abort session，避免无限重试浪费 token
+- feat(offload): 新增 emergency 压缩第三级（100+ 节点触发，保留 5 个最近节点），防止 context overflow
+- feat(harness): 新增 dry-run readiness 预检（ContextDB/Git/Provider/Session 4 维度），blocked 级别阻止 harness 启动
+- feat(runtime): 新增 directive injection，从 .aios/config.json 读取 default_mode 注入到每轮迭代 prompt
+- feat(memo): 新增 auto-dream 手动 CLI（scripts/lib/memo/autodream.mjs），支持 --preview 和 --apply 模式
+- feat(skills): 新增 skill workshop stale 检测（比对文件 hash vs lock hash）和文件级 rollback 快照（保存 previousContent）
 
 ## [1.52.0] - 2026-06-11
 

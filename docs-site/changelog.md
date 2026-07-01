@@ -16,7 +16,32 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
-## v2.0.2 (2026-06-15)
+## Unreleased — Harness Reliability & Skill Lifecycle Upgrade
+
+### Harness Solo Runtime
+
+- **consecutiveFailures abort**: New dual-counter system (`consecutiveFailures` + `consecutiveInfraFailures`) in `backoff.mjs`. After 5 consecutive non-success outcomes, the harness automatically aborts the session instead of retrying indefinitely — preventing wasted tokens on unrecoverable failures.
+- **Emergency compaction tier**: `mermaid-canvas.mjs` now has a third compaction level triggered at 100+ canvas nodes. Emergency mode keeps only 5 recent nodes (vs 10 for mild/aggressive), preventing context overflow in long-running sessions.
+- **Dry-run readiness preflight**: New `dry-run-readiness.mjs` checks 4 dimensions (ContextDB index, Git status, Provider config, Session resume) before the harness loop starts. `blocked` level prevents launch entirely; `warning` level logs issues but continues.
+
+### Runtime Directive System
+
+- **Directive injection**: New `directive-inject.mjs` reads `default_mode` from `.aios/config.json` and injects corresponding `systemPromptAdditions` into every harness iteration prompt. Supports 3 built-in presets (`strict-primary`, `harness-runner`, `team-worker`) and custom `mode_presets`. This is an original design — not a copy of oh-my-openagent's ULTRAWORK keyword detection.
+
+### Auto-Dream (Phase A: Manual)
+
+- **Manual dream CLI**: `scripts/lib/memo/autodream.mjs` provides `--preview` (plan only) and `--apply` (execute) modes for memory consolidation. Wraps the existing `runDream` taxonomy + dedup + TTL expiry pipeline. Phase B will add automatic triggering.
+
+### Skill Workshop
+
+- **Stale detection**: `skill-workshop.mjs` apply() now compares the target file's filesystem hash against the lock's `computedHash`. If they differ (skill was modified externally), apply is rejected — preventing accidental overwrites of user edits.
+- **File-level rollback snapshot**: apply() saves the complete `previousContent` of `SKILL.md` in `lock.rollbackSnapshot.previousContent`. rollback() can now restore actual file content, not just metadata.
+
+### Verification
+
+All changes verified with 37/37 unit + integration tests passing.
+
+
 
 - **Skill health validation**: `recordSkillObservation()` now rejects unknown statuses instead of silently recording them as failures, keeping failure-rate telemetry honest and surfacing producer bugs early.
 - **Help-first CLI parsing**: `aios skill ... --help` and `aios session ... --help` now show usage before required positional-argument validation runs.

@@ -4,7 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [3.2.0] - 2026-07-01
+
+### Added
+- feat(harness): add consecutiveFailures abort after 5 consecutive failures to prevent infinite retry loops
+- feat(offload): add emergency compaction tier (100+ nodes) to Mermaid canvas for overflow protection
+- feat(harness): add dry-run readiness preflight check (ContextDB, Git, Provider, Session) before harness start
+- feat(runtime): add directive injection from .aios/config.json default_mode into harness iteration prompts
+- feat(memo): add auto-dream manual CLI (scripts/lib/memo/autodream.mjs) with --preview and --apply modes
+- feat(skills): add skill workshop stale detection and file-level rollback snapshot
 
 ## [3.1.0] - 2026-06-30
 
