@@ -3,7 +3,8 @@ import { readContinuitySummary } from '../../contextdb/continuity.mjs';
 import { findCanvasMermaid, compactCanvas } from '../../offload/mermaid-canvas.mjs';
 import { capture, resolveStorage, resolveConfig } from '../../offload/tool-offload.mjs';
 import { readSoloControl, readSoloRunSummary, writeSoloRunSummary } from '../solo-journal.mjs';
-import { sleep } from './backoff.mjs';
+import { sleep, resolveSoloBackoffState, shouldAbortForConsecutiveFailures, maxConsecutiveFailures } from './backoff.mjs';
+import { evaluateDryRunReadiness, formatDryRunReadiness } from './dry-run-readiness.mjs';
 import { writeSoloIterationCheckpoint } from './checkpoint.mjs';
 import { invokeLifecycleHook } from './hooks.mjs';
 import { normalizeSoloIterationOutcome } from './normalizers.mjs';
@@ -38,6 +39,37 @@ export async function runSoloHarnessLoop({
       profile,
       worktree,
     });
+  }
+
+  // ── Dry-run readiness preflight ──
+  // 在进入主循环前检测环境问题，避免 agent 跑到一半才失败。
+  // blocked 级别直接拒绝启动；warning 级别记录但继续。
+  const readiness = evaluateDryRunReadiness(rootDir, {
+    sessionId,
+    provider,
+    worktree,
+    resume: Boolean(summary?.lastIteration),
+  });
+  if (readiness.level === 'blocked') {
+    const blockedOutcome = normalizeSoloIterationOutcome({
+      sessionId,
+      iteration: 0,
+      outcome: 'failed',
+      stage: 'handoff',
+      summary: `Harness blocked by dry-run readiness check: ${readiness.reasons.join('; ')}`,
+      evidence: readiness.checks.filter(c => c.status === 'fail').map(c => `${c.label}: ${c.detail}`),
+      nextAction: readiness.nextActions.join(' '),
+      shouldStop: true,
+      failureClass: 'safety-gate',
+    });
+    summary = await persistIterationState({
+      rootDir,
+      sessionId,
+      summary,
+      outcome: blockedOutcome,
+      checkpointWriter,
+    });
+    return { summary, stoppedByControl: false, readiness };
   }
 
   let iteration = Number.isFinite(summary.lastIteration) ? summary.lastIteration + 1 : 1;
@@ -223,6 +255,49 @@ export async function runSoloHarnessLoop({
           summary,
           stoppedByControl: false,
           reason: 'iteration-stop',
+        },
+      });
+      return {
+        summary,
+        stoppedByControl: false,
+      };
+    }
+
+    // 连续失败 abort：避免 agent 在不可恢复的故障中无限重试浪费 token
+    if (shouldAbortForConsecutiveFailures(summary.backoff)) {
+      const abortOutcome = normalizeSoloIterationOutcome({
+        sessionId,
+        iteration,
+        outcome: 'failed',
+        stage: 'handoff',
+        summary: `Aborted after ${maxConsecutiveFailures()} consecutive failures.`,
+        evidence: [`consecutiveFailures=${summary.backoff?.consecutiveFailures || maxConsecutiveFailures()}`],
+        nextAction: 'Inspect the harness journal and checkpoint to diagnose the repeated failure, then resume with a fresh objective.',
+        shouldStop: true,
+        failureClass: summary.backoff?.consecutiveInfraFailures > 0 ? 'runtime-error' : 'no-progress',
+      });
+      summary = await persistIterationState({
+        rootDir,
+        sessionId,
+        summary,
+        outcome: abortOutcome,
+        checkpointWriter,
+      });
+      await invokeLifecycleHook({
+        rootDir,
+        sessionId,
+        hook: 'onSessionEnd',
+        phase: 'session-end',
+        iteration,
+        callback: lifecycleHooks?.onSessionEnd,
+        payload: {
+          rootDir,
+          sessionId,
+          objective: summary.objective,
+          iteration,
+          summary,
+          stoppedByControl: false,
+          reason: 'consecutive-failures-abort',
         },
       });
       return {

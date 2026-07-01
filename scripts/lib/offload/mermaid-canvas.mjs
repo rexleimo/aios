@@ -213,9 +213,12 @@ export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStora
 
 const COMPACT_MILD_NODES = 20;
 const COMPACT_AGGRESSIVE_NODES = 50;
+const COMPACT_EMERGENCY_NODES = 100;
 const COMPACT_KEEP_RECENT = 10;
+const COMPACT_EMERGENCY_KEEP_RECENT = 5;
 
 export function computeCompactAction(nodeCount) {
+  if (nodeCount >= COMPACT_EMERGENCY_NODES) return 'emergency';
   if (nodeCount >= COMPACT_AGGRESSIVE_NODES) return 'aggressive';
   if (nodeCount >= COMPACT_MILD_NODES) return 'mild';
   return 'none';
@@ -226,14 +229,17 @@ export async function compactCanvas(workspaceRoot, sessionId, storage, { maxRece
   const action = computeCompactAction(canvas.nodes.length);
   if (action === 'none') return { action: 'none', canvas };
 
-  const stale = canvas.nodes.length - maxRecent;
+  // emergency 压缩比 aggressive 更激进：只保留最近 5 个节点（而非 10 个），
+  // 且把被压缩的节点摘要合并为一个 summary node，防止 context overflow 时 canvas 自身过大。
+  const keepRecent = action === 'emergency' ? COMPACT_EMERGENCY_KEEP_RECENT : maxRecent;
+  const stale = canvas.nodes.length - keepRecent;
   const oldNodes = canvas.nodes.slice(0, stale);
   const recentNodes = canvas.nodes.slice(stale);
 
   const summaryNode = {
     id: `compact-${oldNodes[0]?.id || 'start'}-to-${oldNodes[oldNodes.length - 1]?.id || 'end'}`,
-    tool: 'offload:compact',
-    label: `[compacted ${oldNodes.length} earlier steps]`,
+    tool: action === 'emergency' ? 'offload:compact-emergency' : 'offload:compact',
+    label: `[${action} compacted ${oldNodes.length} earlier steps]`,
     status: 'ok',
     ts: new Date().toISOString(),
     ref: '',
