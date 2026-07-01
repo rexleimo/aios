@@ -228,8 +228,31 @@ export function apply({ rootDir, id, policyCheck = false, stdout = process.stdou
 
   // Destination: skill-sources/<skillName>/
   const destDir = path.join(rootDir, 'skill-sources', skillName);
-  if (fs.existsSync(destDir)) {
-    stderr.write(`[err] skill-sources/${skillName} already exists\n`);
+  const destSkillMdPath = path.join(destDir, 'SKILL.md');
+
+  // ── Stale 检测 + 文件级 rollback 快照 ──
+  // 如果目标已存在（update 场景），在覆盖前保存完整文件内容用于 rollback。
+  // 同时校验目标文件 hash 与 lock 中记录的 computedHash 是否一致，
+  // 不一致说明目标被外部修改过 → stale，拒绝 apply。
+  let previousContent = null;
+  let previousContentHash = null;
+  if (fs.existsSync(destDir) && fs.existsSync(destSkillMdPath)) {
+    previousContent = fs.readFileSync(destSkillMdPath, 'utf8');
+    previousContentHash = sha256File(destSkillMdPath);
+
+    // stale 检测：如果 lock 中已有此 skill 的记录，比对 hash
+    const existingLockPath = path.join(rootDir, 'skills-lock.json');
+    if (fs.existsSync(existingLockPath)) {
+      const existingLock = JSON.parse(fs.readFileSync(existingLockPath, 'utf8'));
+      const existingEntry = existingLock.skills?.[skillName];
+      if (existingEntry?.computedHash && existingEntry.computedHash !== previousContentHash) {
+        stderr.write(`[err] skill "${skillName}" is stale: lock hash ${existingEntry.computedHash.slice(0, 16)}... does not match current file hash ${previousContentHash.slice(0, 16)}...\n`);
+        stderr.write(`     The target skill was modified externally after the last apply. Review the changes and update the proposal before applying.\n`);
+        return { exitCode: 1, stale: true };
+      }
+    }
+  } else if (fs.existsSync(destDir)) {
+    stderr.write(`[err] skill-sources/${skillName} already exists but has no SKILL.md\n`);
     return { exitCode: 1 };
   }
 
@@ -246,6 +269,17 @@ export function apply({ rootDir, id, policyCheck = false, stdout = process.stdou
   // Save current lock entry for rollback
   const previousEntry = lock.skills[skillName] ? { ...lock.skills[skillName] } : null;
 
+  // ── 文件级 rollback 快照 ──
+  // 把 apply 前的完整文件内容存入 lock history，支持真正的文件级恢复。
+  // 参考: OpenClaw workshop/types.ts:86-99 SkillProposalRollback.previousContent
+  const rollbackEntry = {
+    version: previousEntry?.version || '1.0.0',
+    path: previousEntry?.path || `skill-sources/${skillName}/SKILL.md`,
+    computedHash: previousContentHash || '',
+    appliedAt: previousEntry?.appliedAt || '',
+    previousContent: previousContent,  // null = create 场景（目标文件不存在）
+  };
+
   lock.skills[skillName] = {
     source: 'aios-workshop',
     sourceType: 'agent-generated',
@@ -254,7 +288,8 @@ export function apply({ rootDir, id, policyCheck = false, stdout = process.stdou
     origin: 'agent-generated',
     appliedAt: new Date().toISOString(),
     computedHash: hash,
-    history: previousEntry ? [previousEntry] : [],
+    history: previousEntry ? [{ ...previousEntry, previousContent: previousEntry.previousContent || null }] : [],
+    rollbackSnapshot: rollbackEntry,
   };
 
   fs.writeFileSync(lockPath, JSON.stringify(lock, null, 2) + '\n', 'utf8');
