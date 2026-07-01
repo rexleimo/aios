@@ -19,6 +19,7 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新の記事
 
+- [v3.2.0：Harness 信頼性とスキルライフサイクル向上](2026-07-v320-harness-reliability-upgrade.md)
 - [Hermes Agent が AIOS ファーストクラスクライアントに昇格](2026-06-hermes-agent-aios-client.md)
 - [v2.0.2: より安全な Skill Health Records とよりクリーンな Crush Config](2026-06-v202-ecc-uplift.md)
 - [Agent Governance: Team live 実行の前に証跡を残す](2026-06-agent-governance.md)

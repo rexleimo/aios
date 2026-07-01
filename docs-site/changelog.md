@@ -16,7 +16,7 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
-## Unreleased — Harness Reliability & Skill Lifecycle Upgrade
+## v3.2.0 (2026-07-01) — Harness 可靠性与技能生命周期升级
 
 ### Harness Solo Runtime
 
@@ -41,9 +41,17 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 All changes verified with 37/37 unit + integration tests passing.
 
+## v3.1.0 (2026-06-30) — Hermes Agent 一等公民客户端集成
 
+- **Hermes Agent 注册为第 7 个 AIOS 一等公民客户端**：具备 skills、native、harness、superpowers 全部能力。
+- **MCP 桥接服务器**：`scripts/aios-mcp-server.mjs` 在 Hermes 会话内暴露 5 个 AIOS 工具（`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`）。
+- **Native emitter + MCP target**：AGENTS.md 输出 + JSON stdio（`.mcp.json` + `config.yaml` scopes）。
+- 多语言文档覆盖（英/中/日/韩）。
+- See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 
-- **Skill health validation**: `recordSkillObservation()` now rejects unknown statuses instead of silently recording them as failures, keeping failure-rate telemetry honest and surfacing producer bugs early.
+## v2.0.2 (2026-06-15)
+
+- **Skill health validation**: `recordSkillObservation()` now rejects unknown statuses
 - **Help-first CLI parsing**: `aios skill ... --help` and `aios session ... --help` now show usage before required positional-argument validation runs.
 - **Crush config hygiene**: `.crush.json` and `crush.json` are no longer tracked in the repository; local Crush config files remain supported but are ignored by git.
 - See: [v2.0.2 release post](/blog/2026-06-v202-ecc-uplift/).
