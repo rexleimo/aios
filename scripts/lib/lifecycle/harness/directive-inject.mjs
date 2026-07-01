@@ -15,9 +15,13 @@
  * 参考: scripts/lib/lifecycle/options/default-mode.mjs (已有的 preset 定义)
  */
 
-/**
- * Runtime directive injection — 从 .aios/config.json 读取 default_mode，
- * 返回对应的 systemPromptAdditions + skills 列表，注入到 harness iteration prompt。
+import { readFileSync, existsSync } from 'node:fs';
+import { resolveDefaultModeInjections } from '../options/default-mode.mjs';
+import { join } from 'node:path';
+
+// 内置 presets（和 default-mode.mjs 保持一致，同步版本直接引用）
+const BUILTIN_PRESETS = {
+  'strict-primary': {
     label: 'Strict AIOS Primary Agent',
     skills: ['superpowers:using-superpowers', 'pre-edit-safety-gate', 'verification-loop'],
     systemPromptAdditions: [
@@ -56,10 +60,13 @@ export function resolveRuntimeDirectiveInjections(rootDir) {
   // 同步读取 .aios/config.json
   let config = null;
   try {
-    const configPath = path.join(rootDir, '.aios', 'config.json');
-    const { readFileSync, existsSync } = require('node:fs');
+    const configPath = join(rootDir, '.aios', 'config.json');
     if (existsSync(configPath)) {
-      config = JSON.parse(readFileSync(configPath, 'utf8'));
+      const content = readFileSync(configPath, 'utf8');
+      if (content.trim() === '') {
+        return null;
+      }
+      config = JSON.parse(content);
     }
   } catch {
     return null;
