@@ -1,4 +1,5 @@
 import { normalizeText } from './shared.mjs';
+import { resolveRuntimeDirectiveInjections } from './directive-inject.mjs';
 
 function extractJsonFence(text = '') {
   const fenced = /```json\s*([\s\S]*?)```/iu.exec(String(text || ''));
@@ -41,12 +42,29 @@ export function buildIterationPrompt({
   continuity = null,
   summary = null,
   offloadCanvas = null,
+  rootDir = null,
 } = {}) {
   const continuityText = continuity?.summary
     ? `上一轮连续性总结：${continuity.summary}`
     : '上一轮连续性总结：暂无。';
   const lastOutcome = normalizeText(summary?.lastOutcome) || 'none';
   const lastFailure = normalizeText(summary?.lastFailureClass) || 'none';
+
+  // ── Runtime directive 注入 ──
+  // 从 .aios/runtime-directive.json 读取 active mode 的 systemPromptAdditions，
+  // 注入到 iteration prompt 前面，让 agent 每轮都能看到一致的 directive。
+  const directiveLines = [];
+  if (rootDir) {
+    const injections = resolveRuntimeDirectiveInjections(rootDir);
+    if (injections?.systemPromptAdditions?.length) {
+      directiveLines.push('--- Runtime Directive ---');
+      for (const addition of injections.systemPromptAdditions) {
+        directiveLines.push(addition);
+      }
+      directiveLines.push('--- End Runtime Directive ---');
+      directiveLines.push('');
+    }
+  }
 
   return [
     `你正在执行 AIOS solo harness 的第 ${iteration} 轮。`,
@@ -56,6 +74,7 @@ export function buildIterationPrompt({
     `上一轮 outcome：${lastOutcome}`,
     `上一轮 failureClass：${lastFailure}`,
     '',
+    ...directiveLines,
     '请完成一轮工作后只返回一个 JSON 对象，不要输出解释文字，不要输出 Markdown。',
     'JSON 必须包含这些字段：',
     '- outcome: success|noop|blocked|infra-retry|human-gate|stopped|failed',
