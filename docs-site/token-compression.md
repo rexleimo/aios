@@ -1,13 +1,13 @@
 ---
-title: Native Token Compression
-description: Save tokens without installing any extra tools — built right into Harness CLI.
+title: Token Compression
+description: Save tokens with community tools RTK + Caveman — installed automatically by aios init.
 ---
 
-# Native Token Compression
+# Token Compression
 
 **AI models have a limit on how much text they can process at once.** Token compression keeps your context small enough to fit, while preserving the important stuff.
 
-Harness CLI does this natively — no extra tools to install, no shell hooks, no dependencies.
+Harness CLI integrates two community-maintained tools — **RTK** and **Caveman** — installed automatically via `aios init`.
 
 ## The Problem
 
@@ -19,11 +19,39 @@ Token compression solves this by:
 2. **Compressing** repeated logs, verbose output, and stack traces
 3. **Dropping** low-priority content only when necessary
 
-## Two Layers
+## Two Tools
 
-### Input Compression (what goes TO the model)
+### RTK — Input Compression (command output)
 
-Reduce the context pack before your agent reads it:
+RTK (https://github.com/rtk-ai/rtk) is a Rust CLI proxy that filters and compresses command output 60-90% before it reaches your agent's context. Single binary, <10ms overhead, 100+ supported commands.
+
+Installed and initialized automatically:
+
+```bash
+# aios init handles this, but you can also do it manually:
+rtk init -g                     # Claude Code / Copilot (default)
+rtk init -g --codex             # Codex
+rtk init -g --gemini            # Gemini CLI
+rtk init --agent hermes         # Hermes
+```
+
+After init, commands like `git status` are automatically rewritten to `rtk git status` — your agent receives compact output without any manual effort.
+
+### Caveman — Output Compression (agent replies)
+
+Caveman (https://github.com/JuliusBrussee/caveman) is a Claude Code skill that cuts ~75% of output tokens while keeping full technical accuracy. It compresses the *style*, not the content.
+
+```text
+/caveman              # activate (default: full)
+/caveman lite         # light: drop filler
+/caveman ultra        # telegraphic: minimal
+/caveman wenyan       # classical Chinese (even shorter)
+"normal mode"         # back to normal
+```
+
+### ContextDB Packets
+
+For session history compression:
 
 ```bash
 npm run contextdb -- context:pack \
@@ -45,29 +73,6 @@ npm run contextdb -- context:pack \
 - File paths and command outputs
 - Recent state and decisions
 
-**What gets compressed** (shortened, not always dropped):
-
-- Repeated log lines
-- Stack traces
-- Verbose tool output
-
-### Output Compression (what comes FROM the model)
-
-Control how verbose your agent's responses are:
-
-| Level | Use for | Behavior |
-|---|---|---|
-| `tight` | Normal coding | Concise answer, no filler |
-| `ultra` | Harness logs, checkpoints | One-line evidence + next action |
-| `precise` | Browser actions, safety-critical | Full explicit wording |
-
-```text
-/compress tight     # Normal work
-/compress ultra     # Overnight runs
-/compress precise   # When precision matters
-stop compress       # Back to normal
-```
-
 ## Browser Reads
 
 When your agent reads web pages, Harness CLI automatically prefers the most compact format:
@@ -80,40 +85,24 @@ When your agent reads web pages, Harness CLI automatically prefers the most comp
 
 This means less token waste when agents browse the web.
 
-## Why Native?
+## Installation
 
-Harness CLI's compression is built in — not a bolted-on tool:
+```bash
+# automatic — detects, installs, configures, initializes
+node scripts/aios.mjs init --all
 
-- No extra packages to install
-- No shell hooks or command rewriting
-- Everything stays auditable — you can see exactly what was compressed or dropped
-- Works consistently across Codex, Claude, Gemini, and OpenCode
+# CI/unattended
+node scripts/aios.mjs init --all --yes-compression-tools
+
+# manual
+# RTK:     https://github.com/rtk-ai/rtk#installation
+# Caveman: https://github.com/JuliusBrussee/caveman#install
+```
+
+Both tools run locally — no external services, no data leaves your machine.
 
 ## Where To Go Next
 
 - [ContextDB](contextdb.md) — how memory works with compression
 - [Solo Harness](solo-harness.md) — long runs benefit most from compression
 - [Architecture](architecture.md) — technical details of the compression pipeline
-
-## All-Client Turn Compression (v1.50.1) {#all-client-turn-compression-v1501}
-
-v1.50.1 turns token compression from guidance into a measurable all-client contract.
-
-Every AIOS-managed agent turn must produce the shared `bidirectional-turn-compression` metric:
-
-- `pre_send`: compress the prompt/input before it reaches the target client or model.
-- `post_receive`: compress the client/model output before AIOS accepts it.
-- `requiredEntrypoint`: `aios-managed-runner`.
-- `directHostBypassAllowed`: `false`.
-- `uncontrolledHostOutput`: `policy-violation`.
-
-Check the current matrix:
-
-```bash
-node scripts/aios.mjs clients doctor --json
-node scripts/aios.mjs interception proof --json
-```
-
-The proof output includes `turn_compression_matrix` for Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, and `generic-mcp`. A compliant client has non-zero `saved_bytes` for both `pre_send` and `post_receive`.
-
-Direct host output outside the AIOS-managed runner is not counted as savings. It is recorded as `policy-violation` / `non_compliant` with `saved_bytes=0`, so reports cannot hide bypasses behind aggregate compression numbers.

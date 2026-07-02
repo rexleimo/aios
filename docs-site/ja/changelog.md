@@ -12,6 +12,46 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
 - **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：Hermes (Nous Research) が 7 番目の AIOS クライアントとして登録され、skills、native、harness、superpowers の 4 能力を備えました。MCP ブリッジサーバー (`scripts/aios-mcp-server.mjs`) が Hermes セッション内で 5 つの AIOSツールを直接公開 — `aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
 
+## v3.3.0（2026-07-02）— ネイティブインターセプションランタイム廃止、RTK + Caveman 全自動インストール
+
+### Breaking Change：AIOS ネイティブインターセプションランタイム廃止
+
+AIOS ネイティブトークンインターセプションランタイム（`scripts/aios-mcp-proxy.mjs`、`scripts/aios-intercept.mjs`、`config/aios-interception.json`）は deprecated になりました。コードは保持されますが、積極的なメンテナンスは終了します。
+
+代替はコミュニティツールです：
+
+- **RTK** (https://github.com/rtk-ai/rtk) — Rust CLI プロキシ、コマンド出力を 60-90% 圧縮。シングルバイナリ、<10ms オーバーヘッド、100+ 対応コマンド。ローカル実行、外部サービスなし。
+- **Caveman** (https://github.com/JuliusBrussee/caveman) — Claude Code スキル、agent 出力トークンを ~75% 圧縮。技術的正確性を維持、表現スタイルのみ圧縮。ローカル prompt skill。
+
+### 新機能：全自動インストール
+
+`aios init` が RTK + Caveman を自動検出・インストール：
+
+```bash
+node scripts/aios.mjs init --all
+node scripts/aios.mjs init --all --yes-compression-tools
+node scripts/aios.mjs init --dry-run
+```
+
+フロー：検出 → ユーザー確認 → ダウンロードインストール → 検証 → PATH 設定 → `rtk init -g` クライアント初期化。
+
+プラットフォーム：macOS (brew)、Linux/WSL (install.sh)、Windows (PowerShell zip + 自動 PATH)。
+
+### 削除されたポリシー
+
+- `bidirectional-turn-compression` 強制ポリシー削除
+- `pre_send` / `post_receive` 圧縮検証要件削除
+- `uncontrolled_host_output` ポリシー違反マーキング削除
+- "Do not install RTK, Caveman" 禁止削除
+
+### マイグレーション
+
+1. `aios init` で RTK + Caveman をインストール
+2. 旧 `scripts/aios-mcp-proxy.mjs` は削除不要、メンテナンス終了
+3. 旧設定 `config/aios-interception.json` は読み込まれません
+4. AI クライアントを再起動して RTK hook/plugin を有効化
+5. Claude Code で `/caveman` 入力で Caveman を有効化
+
 ## v3.2.0（2026-07-01）— Harness 信頼性とスキルライフサイクル向上
 
 ### Harness Solo Runtime

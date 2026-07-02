@@ -12,6 +12,51 @@ description: 版本历史、升级说明与文档变更入口。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
 - **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）现已注册为第七个 AIOS 客户端，具备 skills、native、harness、superpowers 四项能力。新增 MCP 桥接服务器（`scripts/aios-mcp-server.mjs`）在 Hermes 会话内直接暴露 5 个 AIOS 工具——`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
 
+## v3.3.0（2026-07-02）— 废弃原生拦截运行时，全自动安装 RTK + Caveman
+
+### Breaking Change：AIOS 原生拦截运行时废弃
+
+AIOS 原生 token 拦截运行时（`scripts/aios-mcp-proxy.mjs`、`scripts/aios-intercept.mjs`、`config/aios-interception.json`）已标记为 deprecated。代码保留但不再积极维护。
+
+替代方案是社区维护的工具：
+
+- **RTK** (https://github.com/rtk-ai/rtk) — Rust CLI 代理，压缩命令输出 60-90%。单二进制，<10ms 开销，100+ 支持命令。本地运行，无外部服务。
+- **Caveman** (https://github.com/JuliusBrussee/caveman) — Claude Code skill，压缩 agent 输出 token ~75%。保持技术准确性，仅压缩表述风格。本地 prompt skill。
+
+### 新功能：全自动安装
+
+`aios init` 现在自动检测并安装 RTK + Caveman：
+
+```bash
+# 交互式安装（用户确认后全自动）
+node scripts/aios.mjs init --all
+
+# CI/无人值守（跳过确认）
+node scripts/aios.mjs init --all --yes-compression-tools
+
+# 仅检测不安装
+node scripts/aios.mjs init --dry-run
+```
+
+安装流程：检测 → 用户确认 → 下载安装 → 验证 → PATH 配置 → `rtk init -g` 客户端初始化。
+
+平台支持：macOS (brew)、Linux/WSL (install.sh)、Windows (PowerShell zip 下载 + 自动 PATH 配置)。
+
+### 删除的策略
+
+- `bidirectional-turn-compression` 强制策略全部删除
+- `pre_send` / `post_receive` 压缩验证要求删除
+- `uncontrolled_host_output` 策略违规标记删除
+- "Do not install RTK, Caveman" 禁令删除
+
+### 迁移指南
+
+1. 运行 `aios init` 安装 RTK + Caveman
+2. 旧的 `scripts/aios-mcp-proxy.mjs` 不需要删除，但不再维护
+3. 旧配置 `config/aios-interception.json` 不再被读取
+4. 重启 AI 客户端激活 RTK hook/plugin
+5. 在 Claude Code 中输入 `/caveman` 激活 Caveman
+
 ## v3.2.0（2026-07-01）— Harness 可靠性与技能生命周期升级
 
 ### Harness Solo Runtime

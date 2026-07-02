@@ -1,13 +1,13 @@
 ---
-title: 自研 Token 压缩
-description: Harness CLI 的输入/输出省 token 工作流，不安装 RTK、Caveman 或竞品 shell hook。
+title: Token 压缩
+description: 通过社区工具 RTK + Caveman 节省 token，由 aios init 自动安装。
 ---
 
-# 自研 Token 压缩
+# Token 压缩
 
 ## 快速答案
 
-Harness CLI 原生省 token。我们参考 RTK 风格的输入过滤和 Caveman 风格的输出简写，但**不安装** RTK、Caveman、shell hook 或竞品 CLI。
+Harness CLI 集成两个社区工具来节省 token：**RTK** (github.com/rtk-ai/rtk) 压缩命令输出 60-90%，**Caveman** (github.com/JuliusBrussee/caveman) 压缩 agent 输出 ~75%。两者均本地运行，由 `aios init` 全自动安装。
 
 工作流分两层：
 

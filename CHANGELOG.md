@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.3.0] - 2026-07-02
+
+### Changed — AIOS 原生拦截运行时废弃，改用社区工具 RTK + Caveman
+
+- **deprecated**: `scripts/aios-mcp-proxy.mjs`、`scripts/aios-intercept.mjs`、`config/aios-interception.json` 标记为 deprecated，保留代码但不再积极维护
+- **删除禁令**: AGENTS.md / CLAUDE.md / GEMINI.md 中的 "Do not install RTK, Caveman" 禁令全部移除
+- **删除 Turn Compression Enforcement**: `bidirectional-turn-compression`、`pre_send/post_receive`、`uncontrolled_host_output` 等强制策略全部删除
+- **隐私修正**: RTK/Caveman 均为本地运行（RTK 是 Rust 二进制，Caveman 是 prompt skill），不经过外部服务
+
+### Added — 全自动安装 RTK + Caveman
+
+- **feat(init): 新增 `scripts/lib/aios-init/compression-tools.mjs`** — 全自动安装社区 token 压缩工具
+  - RTK (github.com/rtk-ai/rtk): Rust CLI 代理，压缩命令输出 60-90%
+  - Caveman (github.com/JuliusBrussee/caveman): Claude Code skill，压缩输出 token ~75%
+  - 安装流程：检测 → 用户确认 → 下载安装 → 验证 → PATH 配置 → `rtk init -g` 客户端初始化
+  - 平台支持：macOS (brew)、Linux/WSL (install.sh)、Windows (PowerShell zip 下载 + 自动 PATH 配置)
+  - `--yes-compression-tools` 跳过确认提示（CI/无人值守场景）
+- **feat(cli): `aios init` 新增 `--yes-compression-tools` 参数** — 从 parse-args 到 dispatch 全链路支持
+- **docs: 重写 aios-interception-runtime skill** — 从原生拦截运行时文档改为 RTK + Caveman 安装配置指南
+  - 同步到 5 个客户端目录（.claude / .codex / .gemini / .opencode / .crush）
+  - 同步 client-sources partials（core-instructions / browser-mcp / token-discipline）
+
+### 修改文件清单
+
+| 文件 | 变更 |
+|------|------|
+| AGENTS.md, CLAUDE.md, GEMINI.md | 禁令→中立表述，删除 Turn Compression 段，隐私 opt-in |
+| client-sources/ partials (3) | 同步拦截运行时废弃 + RTK/Caveman 引用 |
+| client-sources/ crush, opencode, hermes | Turn Compression → 社区工具引用 |
+| scripts/aios-mcp-proxy.mjs, aios-intercept.mjs | 顶部 @deprecated JSDoc |
+| config/aios-interception.json | _deprecated 字段 |
+| scripts/lib/aios-init/compression-tools.mjs | 新文件：全自动安装逻辑 |
+| scripts/aios-init.mjs | 集成 ensureCompressionTools |
+| scripts/lib/cli/parse-args/init.mjs | --yes-compression-tools 选项 |
+| scripts/lib/cli/dispatch.mjs | 传递 yesCompressionTools |
+| scripts/lib/cli/help/commands/basic.mjs | help 文本更新 |
+| skill-sources/aios-interception-runtime/ | SKILL.md + runtime-contract.md 全部重写 |
+
 ## [3.2.0] - 2026-07-01
 
 ### Added

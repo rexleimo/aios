@@ -1,13 +1,13 @@
 ---
-title: ネイティブ Token 圧縮
-description: RTK、Caveman、競合 shell hook をインストールせずに使う Harness CLI の入力/出力 token 削減ワークフロー。
+title: Token 圧縮
+description: コミュニティツール RTK + Caveman で token を節約。aios init が自動インストール。
 ---
 
-# ネイティブ Token 圧縮
+# Token 圧縮
 
 ## クイックアンサー
 
-Harness CLI は token をネイティブに削減します。RTK 風の入力フィルタリングと Caveman 風の短い出力を参考にしますが、RTK、Caveman、shell hook、競合 CLI は**インストールしません**。
+Harness CLI は 2 つのコミュニティツールを統合して token を節約します：**RTK** (github.com/rtk-ai/rtk) はコマンド出力を 60-90% 圧縮、**Caveman** (github.com/JuliusBrussee/caveman) は agent 出力を ~75% 圧縮。どちらもローカル実行、`aios init` で全自動インストール。
 
 ワークフローは 2 層です。
 
