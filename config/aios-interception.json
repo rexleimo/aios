@@ -1,4 +1,5 @@
 ﻿{
+  "_deprecated": "AIOS 原生拦截运行时已废弃。Token 压缩改由社区工具 RTK + Caveman 处理。此配置文件不再被读取，保留供参考。请通过 aios init 安装 RTK + Caveman。",
   "schemaVersion": 1,
   "defaultThresholds": {
     "minRawBytes": 2048,

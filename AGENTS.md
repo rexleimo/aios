@@ -94,13 +94,14 @@ PRs should include:
 - If multiple browser MCPs are available, do **not** use `chrome-devtools` for normal business flows; reserve it for low-level inspection/debugging only.
 - Default reasoning order for page understanding: `page.semantic_snapshot` / targeted `page.extract_text` first, `page.get_html` and `page.screenshot` as fallbacks.
 
-## Token Optimization (Unified Interception Runtime)
-- AIOS has a native interception runtime that replaces RTK/Caveman. Do not install RTK, Caveman, shell hooks, or competitor CLIs.
-- All token optimization (output compression, input compression, data plane interception) lives in `.claude/skills/aios-interception-runtime/SKILL.md`.
-- Output compression: default `tight`, `ultra` for harness/checkpoints, `precise` for browser/safety/irreversible actions.
-- Input compression: prefer `page.semantic_snapshot` or targeted `page.extract_text` before full-page text/HTML/screenshots; use ContextDB `context:pack --token-budget <n> --token-strategy legacy|balanced|aggressive`.
-- Data plane: MCP tools route through `scripts/aios-mcp-proxy.mjs`; large output is offloaded to refs; metrics in `.aios/interception/metrics/`.
-- Shell command interception: the `aios_shell` MCP tool (`aios-shell` alias) provides deterministic output compression for shell commands across all clients via the MCP proxy; prefer it over the host Bash tool when available.
+## Token Optimization (Community Tools + AIOS Hygiene)
+- Token compression is handled by community-maintained tools: **RTK** and **Caveman**. The AIOS native interception runtime is deprecated (see `scripts/aios-mcp-proxy.mjs` header).
+- `aios init` automatically detects and installs RTK + Caveman if not present. Manual install:
+  - RTK: `brew install rtk` or `curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh` (see https://github.com/rtk-ai/rtk#installation)
+  - Caveman: `curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash` (see https://github.com/JuliusBrussee/caveman#install)
+- **Privacy**: RTK and Caveman both run locally — no external services. RTK filters command output in-process; Caveman is a prompt skill that compresses agent output style. Data does not leave the machine. The `--yes-compression-tools` flag skips the install confirmation prompt for CI/unattended use.
+- After install, RTK/Caveman handle output compression, input compression, and data-plane interception automatically. No manual MCP proxy routing needed.
+- AIOS token discipline profiles (`minimal | balanced | full`) remain as a pre-context hygiene layer — see "AIOS Token Discipline" section below.
 - For CLI/tool input, prefer scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) and preserve errors, paths, commands, latest state, and actionable UI text.
 
 ## Default Superpowers Route
@@ -209,22 +210,13 @@ AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
 
-## AIOS Interception Runtime
+## AIOS Interception Runtime (Deprecated)
 
-- Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
-- For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
-- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
-- Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
-- Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
-- For agent promotions, turn compression metrics must include `agent_id` and both `pre_send` / `post_receive` evidence before a workflow can be considered live-ready.
+<!-- 中文注释：原生拦截运行时已废弃，改为使用社区维护的 RTK + Caveman。保留代码但不积极维护。 -->
 
-## AIOS Turn Compression Enforcement
-
-- Every AIOS-owned agent turn must satisfy the shared `bidirectional-turn-compression` metric: compress before sending to the target client (`pre_send`) and compress after receiving the client output (`post_receive`).
-- Launch live agent work through the AIOS-managed runner (`ctx-agent`, `aios team`, `aios harness`, or an AIOS subagent runtime); direct host execution that bypasses this runner is a policy violation.
-- Native CLI entrypoints should be launched through managed `~/.aios/bin/<client>` shims when shell setup is installed; verify with `node scripts/aios.mjs clients doctor --native-strict --json`.
-- If direct host output or raw uncompressed tool output is observed, stop the live run, record it as `uncontrolled_host_output`, and restart through the AIOS-managed runner instead of accepting the result.
-- Do not report token savings for uncontrolled output; compliant savings require compact packets, raw refs, and metrics records for both `pre_send` and `post_receive`.
+- The AIOS native interception runtime (`scripts/aios-mcp-proxy.mjs`, `scripts/aios-intercept.mjs`) is **deprecated**. Code is retained for reference but no longer actively maintained.
+- Token compression is now handled by community tools: **RTK** and **Caveman**, installed automatically by `aios init`.
+- For migration help, see `.claude/skills/aios-interception-runtime/SKILL.md` (rewritten as RTK/Caveman install guide).
 
 
 ## AIOS Self-Trigger Routing
@@ -241,6 +233,7 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - Never paste or expose API keys, tokens, cookies, sessions, private keys, `.env` files, credential configs, customer data, browser profiles, or unredacted authorization logs.
 - For sensitive files, use `aios privacy read --file <path>` and share only the redacted output.
 - If a custom model endpoint or relay is detected, warn the user before continuing and avoid sending secrets or proprietary data.
+- **RTK/Caveman privacy**: Both tools run locally — no external services. RTK filters command output in-process; Caveman is a prompt skill. The `--yes-compression-tools` flag skips the install confirmation prompt for CI/unattended use.
 - LLM privacy instructions are advisory; do not claim strict privacy compliance unless deterministic AIOS gates verified the relevant checks.
 
 ## Context System (ContextDB + Registry)
@@ -365,9 +358,9 @@ Use strategic compact at stable boundaries: after exploration, before implementa
 
 Avoid compacting in the middle of implementation, active debugging, or a multi-file refactor where local continuity matters.
 
-Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling, and prefer AIOS compact packets/raw refs for large outputs.
+Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling.
 
-Do not replace AIOS interception runtime. Token profiles are a pre-context hygiene layer; `scripts/aios-mcp-proxy.mjs`, raw refs, compact packets, and interception metrics remain authoritative.
+Token profiles are a pre-context hygiene layer. Deep token compression (output/input/data-plane) is handled by community tools RTK + Caveman, installed via `aios init`.
 
 <!-- 中文注释：superpowers 流程强制段，仅对具备 superpowers 能力的客户端下发，避免向无此技能的宿主发指令。 -->
 
@@ -410,7 +403,7 @@ This project exposes a structural knowledge graph via the `code-review-graph` MC
 
 Browser MCP is available through the repo-local AIOS server and should be preferred for browser work.
 
-Default MCP routing is proxied through `scripts/aios-mcp-proxy.mjs` so large `tools/call` results are compacted before they reach the agent context. If browser output looks raw or huge, run `node scripts/aios.mjs interception doctor --fix` before continuing.
+If RTK/Caveman are installed (via `aios init`), MCP tool output is automatically compressed. If browser output looks raw or huge, verify RTK/Caveman are running: `rtk status` or `caveman status`.
 
 For browser tasks, use this operating pattern unless the user explicitly asks otherwise:
 - Connect to a visible CDP browser first: `chrome.launch_cdp` then `browser.connect_cdp`.
@@ -484,7 +477,5 @@ This repository provides compatibility-tier native enhancements for OpenCode thr
 
 When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
 
-## Turn Compression Compliance
-
-OpenCode work in this repository must obey the shared AIOS `bidirectional-turn-compression` metric: run live work through the AIOS-managed runner, require `pre_send` compression before model input, require `post_receive` compression after model output, and treat direct host bypass as a policy violation.
+OpenCode work in this repository uses community tools (RTK + Caveman) for token compression, installed via `aios init`.
 <!-- AIOS NATIVE END -->

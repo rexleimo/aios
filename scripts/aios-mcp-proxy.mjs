@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @deprecated AIOS 原生拦截运行时已废弃。Token 压缩改由社区工具 RTK + Caveman 处理。
+ * 本文件保留供参考，不再积极维护。请通过 `aios init` 安装 RTK + Caveman。
+ * 迁移指南见 .claude/skills/aios-interception-runtime/SKILL.md
+ */
 /* 中文注释：MCP server 代理入口在客户端和上游服务之间插入 AIOS 压缩数据面。 */
 import { createJsonRpcProxyHandler } from './lib/interception/mcp/json-rpc-proxy.mjs';
 import { runJsonRpcStdioProxy } from './lib/interception/mcp/stdio-proxy.mjs';

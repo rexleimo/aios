@@ -10,6 +10,6 @@ Use strategic compact at stable boundaries: after exploration, before implementa
 
 Avoid compacting in the middle of implementation, active debugging, or a multi-file refactor where local continuity matters.
 
-Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling, and prefer AIOS compact packets/raw refs for large outputs.
+Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling.
 
-Do not replace AIOS interception runtime. Token profiles are a pre-context hygiene layer; `scripts/aios-mcp-proxy.mjs`, raw refs, compact packets, and interception metrics remain authoritative.
+Token profiles are a pre-context hygiene layer. Deep token compression (output/input/data-plane) is handled by community tools RTK + Caveman, installed via `aios init`.

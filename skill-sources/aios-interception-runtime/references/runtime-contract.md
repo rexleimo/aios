@@ -1,55 +1,45 @@
-# AIOS Interception Runtime Contract
+# RTK + Caveman Runtime Contract
 
-<!-- 中文注释：运行时契约定义 raw ref、compact packet、metrics 和客户端能力边界，是验收标准来源。 -->
+<!-- 中文注释：运行时契约已重写为社区工具参考。原 AIOS 拦截运行时契约已废弃。 -->
 
-## Mechanism
-
-1. Tool output enters an AIOS-owned boundary:
-   - Shell/harness: `runShellEnvelope` or `scripts/aios-intercept.mjs`
-   - MCP: `scripts/aios-mcp-proxy.mjs`
-   - MCP shell tool: `scripts/shell-mcp-server.mjs` registered as `aios-shell` in all client configs, proxied through the same MCP proxy
-   - Native CLI entrypoints: shell setup installs `~/.aios/bin/<client>` shims ahead of the real clients and routes them through `scripts/contextdb-shell-bridge.mjs`
-   - Host-native shell hooks: `scripts/hooks/claude/aios-rewrite.sh` may rewrite supported Bash commands before execution
-2. `createInterceptionEngine()` normalizes output and builds a compact packet.
-3. MCP wire responses remain protocol-compatible; MCP compact packets are attached at `result._meta.aios` and large `tools/call` text is replaced with a compact text payload.
-4. Large raw output is stored in `.aios/interception/refs/<session>/`.
-5. Compact packet carries only summary, key lines, errors, refs, and metrics.
-6. Metrics JSONL is appended to `.aios/interception/metrics/<session>.jsonl`.
-7. Raw recall uses `node scripts/aios.mjs refs read|grep|list`.
-
-## Required Proof
-
-A valid proof must show:
-
-- compact packet does not contain the unique raw sentinel;
-- raw ref recall does contain the sentinel;
-- metrics record contains the packet ref id;
-- `saved_bytes > 0` and `saving_ratio > 0.5` for large outputs;
-- MCP config targets are routed through `scripts/aios-mcp-proxy.mjs`.
-- for host-native shell hooks, `aios init --agent claude` registers `PreToolUse` and `node scripts/aios.mjs interception rewrite --hook claude --input <json>` returns host protocol JSON with `updatedInput.command`.
-- for native CLI entrypoints, `node scripts/aios.mjs clients doctor --native-strict --json` shows managed shims installed, first in `PATH`, and backed by a real downstream client after the shim dir is removed from `PATH`.
-
-Run:
+## 安装验证
 
 ```bash
-node scripts/aios.mjs interception doctor --fix --json
+# 验证 RTK 安装
+rtk --version && rtk gain
+
+# 验证 Caveman 安装
+# Caveman 安装后会在 ~/.claude/skills/caveman/ 或项目级 .claude/skills/caveman/ 注册 skill
+ls ~/.claude/skills/caveman/ 2>/dev/null || ls .claude/skills/caveman/ 2>/dev/null
 ```
 
-## Client Levels
+## 数据流
 
-Use `config/host-capabilities.json` as the source of truth.
-Do not over-claim native raw-shell interception for a client that lacks a verified pre-tool mutation surface.
+### RTK
+1. Agent 发起 Bash 命令（如 `git status`）
+2. RTK hook/plugin 自动改写为 `rtk git status`
+3. RTK 执行原命令，过滤和压缩输出
+4. 压缩后的输出进入 agent context
 
-## Shell Rewrite Guardrails
+### Caveman
+1. 用户输入 `/caveman` 激活
+2. Agent 回复时使用 caveman 表述风格
+3. 输出 token 减少 ~75%，技术准确性保持 100%
 
-- Rewrite only supported noisy commands (`git`, `rg`, test/build commands, etc.) through `scripts/aios-intercept.mjs`.
-- Fail open when the command is unsupported or the hook cannot parse input.
-- Do not rewrite commands with shell constructs where compact JSON would change semantics: pipes, redirection, command substitution, or backticks.
+## 兼容性
 
-## Native Shim Guardrails
+- RTK 支持 Claude Code / Codex / Gemini / Hermes / Cursor / Windsurf / Cline / Copilot 等
+- Caveman 支持 Claude Code / Codex / Gemini / Cursor / Windsurf / Cline / Copilot 等 30+ 客户端
+- 旧的 `scripts/aios-mcp-proxy.mjs` 路由不再需要
+- 旧的 `config/aios-interception.json` 配置不再被读取
 
-- Shims live in `~/.aios/bin` and are managed files only.
-- The bridge removes `AIOS_NATIVE_SHIM_DIR` from child `PATH` before launching the real client or AIOS runner to avoid recursion.
-- Strict shim verification must also find the real downstream client after removing `AIOS_NATIVE_SHIM_DIR` from `PATH`.
-- Native shims prove process-level input/output control and AIOS runner entry. They do not prove internal interactive model-turn interception unless the client also has a verified hook/plugin/gateway.
-- Shims self-heal by probing common AIOS install paths when the baked-in fallback fails; if no install is found, they fail-open by exec-ing the real client binary directly.
+## 从旧运行时迁移
+
+| 旧路径 | 新状态 |
+|--------|--------|
+| `scripts/aios-mcp-proxy.mjs` | deprecated，保留不维护 |
+| `scripts/aios-intercept.mjs` | deprecated，保留不维护 |
+| `scripts/hooks/claude/aios-rewrite.sh` | deprecated，保留不维护 |
+| `config/aios-interception.json` | deprecated，不再被读取 |
+| `.aios/interception/metrics/` | 可清理，不影响功能 |
+| `scripts/lib/interception/` | deprecated，保留不维护 |

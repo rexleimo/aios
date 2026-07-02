@@ -1,4 +1,9 @@
 #!/usr/bin/env node
+/**
+ * @deprecated AIOS 原生拦截运行时已废弃。Token 压缩改由社区工具 RTK + Caveman 处理。
+ * 本文件保留供参考，不再积极维护。请通过 `aios init` 安装 RTK + Caveman。
+ * 迁移指南见 .claude/skills/aios-interception-runtime/SKILL.md
+ */
 /* 中文注释：CLI 网关把普通命令包成 envelope，统一进入 interception shell 链路。 */
 import { decodeEnvelope } from './lib/interception/core/envelope.mjs';
 import { runShellEnvelope } from './lib/interception/shell/shell-wrapper.mjs';

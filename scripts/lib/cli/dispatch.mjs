@@ -59,6 +59,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       if (parsed.options.agent) args.push('--agent', parsed.options.agent);
       if (parsed.options.all) args.push('--all');
       if (parsed.options.dryRun) args.push('--dry-run');
+      if (parsed.options.yesCompressionTools) args.push('--yes-compression-tools');
       if (parsed.options.defaultMode) {
         const { writeAiosConfig } = await import('../lifecycle/options/default-mode.mjs');
         await writeAiosConfig(rootDir, { defaultMode: parsed.options.defaultMode });

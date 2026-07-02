@@ -4,23 +4,13 @@ AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
 
-## AIOS Interception Runtime
+## AIOS Interception Runtime (Deprecated)
 
-- Large tool/browser/shell outputs must go through the AIOS interception data plane when an AIOS-controlled surface exists.
-- For proof, run `node scripts/aios.mjs interception proof --json`; for repair, run `node scripts/aios.mjs interception doctor --fix`.
-- MCP browser tools must be routed as `client -> scripts/aios-mcp-proxy.mjs -> real MCP server`; MCP wire responses stay protocol-compatible while AIOS compact packets are exposed through `_meta.aios`, raw refs, and metrics.
-- Host-native shell hooks, where supported, should route safe noisy Bash commands through `scripts/hooks/claude/aios-rewrite.sh` -> `scripts/aios-intercept.mjs`; inspect with `node scripts/aios.mjs interception rewrite --command "<cmd>"`.
-- Do not claim RTK/Caveman parity without metrics from `.aios/interception/metrics/<session>.jsonl`.
-- For agent promotions, turn compression metrics must include `agent_id` and both `pre_send` / `post_receive` evidence before a workflow can be considered live-ready.
+<!-- 中文注释：原生拦截运行时已废弃，改为使用社区维护的 RTK + Caveman。 -->
 
-## AIOS Turn Compression Enforcement
-
-- Every AIOS-owned agent turn must satisfy the shared `bidirectional-turn-compression` metric: compress before sending to the target client (`pre_send`) and compress after receiving the client output (`post_receive`).
-- Launch live agent work through the AIOS-managed runner (`ctx-agent`, `aios team`, `aios harness`, or an AIOS subagent runtime); direct host execution that bypasses this runner is a policy violation.
-- Native CLI entrypoints should be launched through managed `~/.aios/bin/<client>` shims when shell setup is installed; verify with `node scripts/aios.mjs clients doctor --native-strict --json`.
-- If direct host output or raw uncompressed tool output is observed, stop the live run, record it as `uncontrolled_host_output`, and restart through the AIOS-managed runner instead of accepting the result.
-- Do not report token savings for uncontrolled output; compliant savings require compact packets, raw refs, and metrics records for both `pre_send` and `post_receive`.
-
+- The AIOS native interception runtime is **deprecated**. Code retained for reference, no longer actively maintained.
+- Token compression is now handled by community tools: **RTK** (https://github.com/rtk-ai/rtk) and **Caveman** (https://github.com/JuliusBrussee/caveman), installed automatically by `aios init`.
+- For migration help, see `.claude/skills/aios-interception-runtime/SKILL.md` (rewritten as RTK/Caveman install guide).
 
 ## AIOS Self-Trigger Routing
 
@@ -36,4 +26,5 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - Never paste or expose API keys, tokens, cookies, sessions, private keys, `.env` files, credential configs, customer data, browser profiles, or unredacted authorization logs.
 - For sensitive files, use `aios privacy read --file <path>` and share only the redacted output.
 - If a custom model endpoint or relay is detected, warn the user before continuing and avoid sending secrets or proprietary data.
+- **RTK/Caveman privacy**: Both tools run locally — no external services. RTK filters command output in-process; Caveman is a prompt skill. The `--yes-compression-tools` flag skips the install confirmation prompt for CI/unattended use.
 - LLM privacy instructions are advisory; do not claim strict privacy compliance unless deterministic AIOS gates verified the relevant checks.

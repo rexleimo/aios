@@ -1,6 +1,6 @@
 ---
 name: aios-interception-runtime
-description: AIOS native token compression and interception. Use for ALL token optimization — output compression (tight/ultra/precise), input compression (browser/page/tool), MCP proxy routing, raw refs, compact packets, and metrics proof. Replaces RTK/Caveman with native AIOS implementation.
+description: RTK + Caveman community token compression tools install and config guide. RTK (github.com/rtk-ai/rtk) compresses command output 60-90%. Caveman (github.com/JuliusBrussee/caveman) cuts output tokens ~75%. Both run locally, no external services. The AIOS native interception runtime is deprecated.
 primary: false
 
 installCatalogName: aios-interception-runtime
@@ -9,126 +9,173 @@ scopes: [global, project]
 defaultInstall:
   global: true
   project: false
-tags: [aios, token, compression, interception, output, input]
+tags: [aios, token, compression, rtk, caveman, community]
 repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
 ---
 
-<!-- 中文注释：统一的 token 压缩与拦截运行时。输出压缩、输入压缩、数据面拦截三合一。 -->
+<!-- 中文注释：Skill 已重写为 RTK + Caveman 社区工具安装配置指南。原生拦截运行时已废弃。 -->
 
-# AIOS Interception Runtime
+# RTK + Caveman 社区工具安装配置指南
 
-AIOS 的原生 token 优化层，覆盖三个层面：**输出压缩**（agent 写什么）、**输入压缩**（agent 读什么）、**数据面拦截**（自动截获和压缩）。
+AIOS 原生拦截运行时已废弃。Token 压缩改由社区维护的 **RTK** 和 **Caveman** 处理。
 
-不安装 RTK、Caveman 或任何竞品。RTK/Caveman 仅作为 prior art 参考。
+- **RTK** (https://github.com/rtk-ai/rtk) — Rust CLI 代理，过滤和压缩命令输出 60-90%。单二进制，<10ms 开销，100+ 支持命令。本地运行，无外部服务。
+- **Caveman** (https://github.com/JuliusBrussee/caveman) — Claude Code skill/插件，压缩 agent 输出 token ~75%。保持技术准确性，仅压缩表述风格。本地 prompt skill。
 
-## Always Read
-1. references/runtime-contract.md
+## 一、自动安装
 
-## 一、输出压缩 (Output Compression)
+`aios init` 会自动检测并安装 RTK + Caveman（带有安装确认提示）：
 
-压缩回答，不压缩真相。
+```bash
+# 交互式安装（会提示确认）
+node scripts/aios.mjs init --agent <claude|codex|gemini|opencode>
 
-- Default level: `tight`
-- Switch command: `/compress tight|ultra|precise|off`
-- User overrides win: `precise mode`、`stop compress`、或任何要求更多细节的请求会禁用当前响应的压缩
+# 跳过确认提示（用于 CI/无人值守场景）
+node scripts/aios.mjs init --yes-compression-tools
 
-### Levels
+# 仅检测不安装
+node scripts/aios.mjs init --dry-run
+```
 
-| Level | Output shape | Use for |
-|-------|--------------|---------|
-| `tight` | Short sentences, fragments ok, no filler | Normal analysis, code work, status updates |
-| `ultra` | One-liners, `A -> B` notation, only evidence/next action | Harness logs, heartbeat updates, checkpoint summaries |
-| `precise` | Full explicit wording, no compression | Browser actions, irreversible operations, safety/security warnings |
+安装后 `aios init` 会自动运行 `rtk init -g` 为检测到的客户端注册 hook/plugin。
 
-### Rules
-- Drop filler: pleasantries, hedging, repeated setup, generic summaries
-- Keep exact: commands, code, errors, file paths, URLs, API names, selectors, dates, numbers
-- Prefer: `changed X in path. verified with command. next Y.`
-- Do not compress quoted user text, legal/security warnings, or step sequences where order matters
+## 二、手动安装
 
-### Auto-Precise Guard
-Use `precise` for:
-- Browser operation instructions (`page.click`, `page.type`, `page.goto`, selector choice)
-- Auth, payment, deletion, publishing, external network, or irreversible actions
-- User confusion, contradiction, or repeated clarification
-- Any response where missing a qualifier could change behavior
+### RTK
 
-Return to `tight` after the precise segment unless the user requested otherwise.
+```bash
+# macOS (推荐)
+brew install rtk
 
-## 二、输入压缩 (Input Compression)
+# Linux / macOS / WSL
+curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
 
-在数据进入模型之前减少 token。
+# Windows (下载预编译二进制)
+# 从 https://github.com/rtk-ai/rtk/releases 下载 rtk-x86_64-pc-windows-msvc.zip
+# 解压到 PATH 中的目录（如 C:\Users\<you>\.local\bin）
 
-### Browser Tool Priority
+# Cargo
+cargo install --git https://github.com/rtk-ai/rtk
 
-| Priority | Tool | When |
-|----------|------|------|
-| 1 | `page.semantic_snapshot` | Navigation, buttons, links, current page structure |
-| 2 | targeted `page.extract_text` | Specific section, post body, form, comments |
-| 3 | full `page.extract_text` | Need page text and no target is known |
-| 4 | `page.get_html` | Last resort when text/snapshot lacks required evidence |
-| 5 | `page.screenshot` | Visual-only fallback |
+# 验证
+rtk --version   # 应显示 rtk 0.28.2+
+rtk gain        # 查看 token 节省统计
+```
 
-### ContextDB Packets
-Use built-in strategy in `mcp-server/src/contextdb/core.ts`:
-- Command: `npm run contextdb -- context:pack --session <id> --token-budget 1200 --token-strategy balanced`
-- Strategies: `legacy`, `balanced`, `aggressive`
-- Safety: preserves errors, paths, commands, latest state, and high-signal events before dropping noise
+#### RTK 初始化
 
-### Structural Filters
-When full page text is unavoidable:
-- Keep: page title, main content, visible actions, buttons, links, form fields, counts, validation errors, current URL context
-- Drop: nav/footer boilerplate, cookie banners, ads, recommendation rails, duplicate cards, social share blocks
-- Collapse repeated structures as `N x [pattern]` while keeping one representative item
+```bash
+rtk init -g                     # Claude Code / Copilot (默认)
+rtk init -g --gemini            # Gemini CLI
+rtk init -g --codex             # Codex (OpenAI)
+rtk init --agent cursor         # Cursor
+rtk init --agent windsurf        # Windsurf
+rtk init --agent cline          # Cline / Roo Code
+rtk init --agent hermes         # Hermes
+```
 
-### CLI/Tool Output
-Prefer scoped commands (`rg`, `git diff --stat`, `sed -n`, `head/tail`) instead of dumping full logs.
+### Caveman
 
-### XHS Page Rules
-- Note page: keep title, author, body, hashtags, like/comment/collect counts, first useful comments
-- Profile page: keep username, bio, follower/following counts, note titles, visible tabs
-- Search results: keep query, result titles, authors, like counts, first content line; drop promoted/recommended blocks
+```bash
+# macOS / Linux / WSL / Git Bash
+curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash
 
-### Offload Recall
-- When previous browser/tool output was offloaded, inspect `aios canvas show --session <id>` first, then use `aios refs grep <pattern> --session <id>` or `aios refs read <node_id>` only for the specific evidence needed
-- Prefer canvas + targeted ref reads over loading full historical tool logs
+# Windows (PowerShell 5.1+)
+irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex
+```
 
-### Verification Guard
-Before acting on compressed input, confirm it still contains every actionable element needed for the next action. If any target, state, or error message is uncertain, re-read narrowly with a targeted locator before acting.
+安装后约 30 秒。需要 Node >= 18。会自动检测已安装的客户端并跳过没有的。
+安全重复运行。
 
-## 三、数据面拦截 (Data Plane Interception)
+#### Caveman 使用
 
-自动截获和压缩，无需手动干预。
+```bash
+/caveman              # 激活 caveman 模式（默认 full）
+/caveman lite         # 轻度：去掉填充语
+/caveman full         # 完整 caveman 模式（默认）
+/caveman ultra        # 极简：电报体
+/caveman wenyan       # 文言文模式（更短）
 
-### Session Discipline
-Every new task about token savings, browser/MCP output size, shell output size, refs, or metrics must re-read `references/runtime-contract.md`. Do not answer with prompt-only advice when a deterministic interception surface is available.
+# 其他命令
+/caveman-commit       # 压缩 commit message
+/caveman-review       # 一行 PR 评论
+/caveman-stats        # token 使用统计
+/caveman-compress <file>  # 压缩文件内容
 
-### Task Routing
-- Need proof/metrics -> run `node scripts/aios.mjs interception proof --json`
-- Need repair/default routing -> run `node scripts/aios.mjs interception doctor --fix`
-- Need MCP config migration only -> run `node scripts/aios.mjs interception mcp-migrate`
-- Need raw recall -> use `node scripts/aios.mjs refs read <ref_id> --session <session>` or `refs grep`
-- Need client capability answer -> cite `config/host-capabilities.json` and doctor output, not assumptions
+# 退出
+"normal mode"         # 恢复正常输出
+```
 
-### Runtime Contract
-- Data plane is code, not prompt: `InterceptionEngine -> CompactPacket -> RawRefStore -> MetricsSink`
-- MCP clients must route browser tools through `scripts/aios-mcp-proxy.mjs` before the real MCP server; MCP wire responses stay protocol-compatible, with AIOS compact packets attached at `_meta.aios` plus refs/metrics
-- Shell command output is intercepted via the `aios_shell` MCP tool (registered as `aios-shell` in all client configs), routed through the same MCP proxy for automatic compression
-- AIOS-controlled shell/harness calls must route through `scripts/aios-intercept.mjs` or `runShellEnvelope`
-- Native CLI entrypoints must be shadowed by managed `~/.aios/bin/<client>` shims when shell setup is installed; verify shims plus real downstream clients with `node scripts/aios.mjs clients doctor --native-strict --json`
-- Shims include self-healing: probe common AIOS install paths before falling back to the real client binary (fail-open)
-- Host-native shell hooks, when installed, may rewrite safe noisy commands through `scripts/aios-intercept.mjs`; use `node scripts/aios.mjs interception rewrite --command "<cmd>"` to inspect the exact rewrite
-- Large raw output must not enter the compact packet; raw bytes are recalled through refs
-- Metrics must be written under `.aios/interception/metrics/<session>.jsonl` with `raw_bytes`, `compact_bytes`, `saved_bytes`, and `saving_ratio`
+## 三、压缩级别参考
 
-## Red Flags - STOP
-- Claiming RTK/Caveman parity without a fresh `interception proof` result
-- Reporting token savings without `saved_bytes` and `saving_ratio` evidence
-- Calling a client L3 when `config/host-capabilities.json` records a lower level
-- Using `page.get_html`, screenshots, or broad shell reads directly when an MCP proxy or AIOS runner can intercept them
+| 工具 | 级别 | 输出形态 | 适用场景 |
+|------|------|---------|---------|
+| RTK | (自动) | 过滤噪声、分组、截断、去重 | 所有 shell 命令输出 |
+| Caveman | `lite` | 去掉填充语 | 轻度压缩 |
+| Caveman | `full` | Caveman 表述 | 默认，日常使用 |
+| Caveman | `ultra` | 电报体 | 最大压缩 |
+| Caveman | `wenyan` | 文言文 | 中文场景最短 |
+
+## 四、隐私说明
+
+- **RTK**：本地 Rust 二进制，过滤和压缩命令输出。不发送数据到外部服务。
+- **Caveman**：本地 prompt skill，压缩 agent 输出风格。压缩后的输出进入 LLM 上下文（和正常对话一样），但不经过额外中继。
+- 两者均为本地运行，不需要外部 API 或服务。
+- `--yes-compression-tools` 跳过安装确认提示（用于 CI/无人值守场景）。
+
+## 五、故障排查
+
+### RTK 未运行
+
+```bash
+# 检查安装
+rtk --version
+which rtk
+
+# 检查 token 节省
+rtk gain
+
+# 重新初始化
+rtk init -g
+```
+
+### Windows 上 RTK hook 不工作
+
+RTK 的 auto-rewrite hook 需要 Unix shell。在原生 Windows 上，RTK 回退到 CLAUDE.md injection 模式。
+推荐使用 WSL 获得完整 hook 支持。详见 https://github.com/rtk-ai/rtk#windows
+
+### Caveman 未激活
+
+```bash
+# 在 Claude Code 中输入
+/caveman
+
+# 或让 agent 读取安装文件
+# "Read CLAUDE.md and INSTALL.md, install caveman for me."
+```
+
+### 从 AIOS 原生拦截迁移
+
+1. 运行 `aios init` 安装 RTK + Caveman
+2. 旧的 `scripts/aios-mcp-proxy.mjs` 和 `scripts/aios-intercept.mjs` 已标记 deprecated，不需要删除但不再维护
+3. 旧的 `.aios/interception/metrics/` 目录可以清理但不影响功能
+4. 旧配置 `config/aios-interception.json` 不再被读取
+
+## 六、AIOS Token Discipline（仍保留）
+
+AIOS token discipline profiles（`minimal | balanced | full`）作为 pre-context 卫生层保留，与 RTK/Caveman 互补：
+
+- `minimal`: 使用最小有用上下文
+- `balanced`: 默认，保留足够证据但避免噪声
+- `full`: 仅用于调试/审计/审查
+
+这些 profile 是提示层卫生，不替代 RTK/Caveman 的深度压缩。
 
 ## Boundaries
-- This is a unified token optimization skill; shell rewrite is a guarded host-hook path, not global magic
-- Native shims cover process-level CLI input/output and AIOS runner entry; they do not magically expose hidden interactive model turns without hook/plugin/gateway support
-- It never rewrites commands with unsupported shell constructs or hides risk
-- It must surface blockers, uncertainty, and verification gaps even in `ultra` mode
+
+- RTK 是 Rust 二进制，通过 hook/plugin 机制拦截命令输出
+- Caveman 是 prompt skill，改变 agent 输出风格
+- 两者互补：RTK 压缩输入（工具输出），Caveman 压缩输出（agent 回复）
+- AIOS 原生拦截运行时代码保留但不再积极维护
+- Token discipline profiles 是 pre-context 卫生层
+- 遇到工具本身的 bug 应向对应社区报告

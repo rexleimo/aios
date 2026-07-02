@@ -11,7 +11,8 @@ const INIT_CLI = new Command()
   .option('--agent <name>', 'Agent name to initialize for')
   .option('--default-mode <mode>', 'Default initialization mode')
   .option('--all', 'Initialize for all agents')
-  .option('--dry-run', 'Preview changes without writing');
+  .option('--dry-run', 'Preview changes without writing')
+  .option('--yes-compression-tools', 'Skip RTK/Caveman privacy prompt (auto-consent)');
 
 export function parseInitArgs(argv) {
   const rest = argv.slice(1);
@@ -34,6 +35,7 @@ export function parseInitArgs(argv) {
         agent: agent || '',
         all: flags.all === true,
         dryRun: flags.dryRun === true,
+        yesCompressionTools: flags.yesCompressionTools === true,
         defaultMode: String(flags.defaultMode || '').trim(),
       },
     };
@@ -43,7 +45,7 @@ export function parseInitArgs(argv) {
       mode: 'help',
       help: true,
       command: 'init',
-      options: { agent: '', all: false, dryRun: false, defaultMode: '' },
+      options: { agent: '', all: false, dryRun: false, yesCompressionTools: false, defaultMode: '' },
     };
   }
 }
