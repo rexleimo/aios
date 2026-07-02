@@ -9,7 +9,8 @@ import { buildCodexMcpDisableArgs } from './routes.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
 
 function commandForRuntime(agent) {
-  const client = resolveClientFromRuntimeId(agent) || 'opencode';
+  const client = resolveClientFromRuntimeId(agent);
+  if (!client) throw new Error(`Unsupported interactive agent: ${agent}`);
   return getClientCommandName(client);
 }
 
@@ -33,11 +34,16 @@ function buildOpenCodeInvocation({ extraArgs = [] }) {
   return { cmd, args: strictAgentArgs };
 }
 
+function buildHermesInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('hermes-agent'), args: [...extraArgs] };
+}
+
 const INTERACTIVE_BUILDERS = {
   'claude-code': buildClaudeInvocation,
   'gemini-cli': buildGeminiInvocation,
   'codex-cli': buildCodexInvocation,
   'opencode-cli': buildOpenCodeInvocation,
+  'hermes-agent': buildHermesInvocation,
 };
 
 export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {
@@ -72,7 +78,11 @@ export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {
 }
 
 export function runInteractiveAgent(agent, extraArgs, opts = {}) {
-  const builder = INTERACTIVE_BUILDERS[agent] || INTERACTIVE_BUILDERS['opencode-cli'];
+  const builder = INTERACTIVE_BUILDERS[agent];
+  if (!builder) {
+    console.error(`Unsupported interactive agent: ${agent}`);
+    process.exit(1);
+  }
   const { cmd, args } = builder({ extraArgs, ...opts });
   const result = runCommand(cmd, args, { stdio: 'inherit' });
   if (result.error) {

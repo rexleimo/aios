@@ -68,6 +68,10 @@ async function createFakeOpenCodeCommand(marker = 'FAKE_OPENCODE_OK') {
   return createFakeCliCommand('opencode', marker);
 }
 
+async function createFakeHermesCommand(marker = 'FAKE_HERMES_OK') {
+  return createFakeCliCommand('hermes', marker);
+}
+
 async function createFakeUnresolvableWindowsOpenCodeCommand(marker = 'FAKE_OPENCODE_SHELL_FALLBACK') {
   const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-opencode-shell-'));
   const markerLiteral = JSON.stringify(marker);
@@ -1191,6 +1195,65 @@ test('ctx-agent interactive OpenCode mode does not send context handoff prompt',
     assert.equal(argv.some((arg) => String(arg).includes('Read the context packet at')), false);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
+  }
+});
+
+test('ctx-agent interactive Hermes startup invokes hermes instead of OpenCode fallback', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-hermes-interactive-'));
+  const sessionId = 'ctx-hermes-interactive';
+  const fakeHermesBin = await createFakeHermesCommand();
+  const fakeOpenCodeBin = await createFakeOpenCodeCommand('FAKE_OPENCODE_SHOULD_NOT_RUN');
+
+  try {
+    runContextDbCli([
+      'session:new',
+      '--workspace',
+      workspaceRoot,
+      '--agent',
+      'hermes-agent',
+      '--project',
+      'tmp-project',
+      '--goal',
+      'Verify hermes interactive uses hermes command',
+      '--session-id',
+      sessionId,
+    ]);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent',
+        'hermes-agent',
+        '--workspace',
+        workspaceRoot,
+        '--project',
+        'tmp-project',
+        '--session',
+        sessionId,
+        '--no-bootstrap',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${fakeHermesBin}${path.delimiter}${fakeOpenCodeBin}${path.delimiter}${process.env.PATH || ''}`,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    const payload = parseLastJsonPayload(result.stdout);
+    assert.equal(payload.marker, 'FAKE_HERMES_OK');
+    const argv = Array.isArray(payload.argv) ? payload.argv : [];
+    assert.equal(argv.includes('--prompt'), false);
+    assert.equal(argv.includes('--agent'), false);
+    assert.doesNotMatch(result.stdout, /FAKE_OPENCODE_SHOULD_NOT_RUN/u);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(fakeHermesBin, { recursive: true, force: true });
+    await rm(fakeOpenCodeBin, { recursive: true, force: true });
   }
 });
 

@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.3.1] - 2026-07-02
+
+### Fixed
+- Route `hermes-agent` interactive startup to the Hermes CLI instead of falling through to OpenCode.
+
 ## [3.3.0] - 2026-07-02
 
 ### Changed — AIOS 原生拦截运行时废弃，改用社区工具 RTK + Caveman
