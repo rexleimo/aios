@@ -40,6 +40,7 @@ try {
     "config",
     "scripts",
     "mcp-server",
+    "src",
     ".claude/agents",
     ".claude/skills",
     ".codex/skills",

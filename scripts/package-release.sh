@@ -75,7 +75,7 @@ release_paths=(
   README.md README-zh.md
   skills-lock.json
   client-sources agent-sources skill-sources
-  config scripts mcp-server
+  config scripts mcp-server src
   .claude/agents .claude/skills
   .codex/skills .codex/agents
   .agents/skills .opencode/skills .opencode/agents
