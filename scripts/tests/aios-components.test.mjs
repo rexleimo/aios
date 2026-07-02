@@ -27,6 +27,7 @@ import {
   commandExists,
   getCommandSpawnSpec,
 } from '../lib/platform/process.mjs';
+import { getClientHomes } from '../lib/platform/paths.mjs';
 import { buildPreferredMcpServer } from '../lib/components/browser/mcp-server-builders.mjs';
 import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
 import { resolveShellCommand } from '../lib/components/browser/runtime-paths.mjs';
@@ -1324,6 +1325,49 @@ test('skills doctor warns on non-discoverable repo skill roots', async () => {
   assert.equal(result.warnings >= 1, true);
   assert.equal(logs.some((line) => line.includes('non-discoverable skill root .baoyu-skills')), true);
   assert.equal(logs.some((line) => line.includes('.baoyu-skills/wrong-skill/SKILL.md')), true);
+});
+
+test('skills doctor resolves Hermes home when checking all clients', async () => {
+  const rootDir = await makeTemp('aios-skills-doctor-hermes-root-');
+  const sampleSkillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
+  await mkdir(sampleSkillDir, { recursive: true });
+  await writeFile(path.join(sampleSkillDir, 'SKILL.md'), '# sample\n', 'utf8');
+  await writeTestManifest(rootDir, [
+    {
+      name: 'sample-skill',
+      description: 'sample',
+      source: '.codex/skills/sample-skill',
+      clients: ['codex'],
+      scopes: ['global'],
+      defaultInstall: { global: true, project: false },
+      tags: ['sample'],
+    },
+  ]);
+
+  const homesRoot = await makeTemp('aios-skills-doctor-hermes-home-');
+  const logs = [];
+  const result = await doctorContextDbSkills({
+    rootDir,
+    client: 'all',
+    homeMap: {
+      codex: path.join(homesRoot, 'codex'),
+      claude: path.join(homesRoot, 'claude'),
+      gemini: path.join(homesRoot, 'gemini'),
+      opencode: path.join(homesRoot, 'opencode'),
+    },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  assert.equal(result.errors, 0);
+  assert.equal(logs.some((line) => line.includes('hermes target root:')), true);
+});
+
+test('getClientHomes includes Hermes with env override support', async () => {
+  const homeDir = await makeTemp('aios-client-homes-');
+  const hermesHome = path.join(homeDir, 'custom-hermes');
+  const homes = getClientHomes({ HERMES_HOME: hermesHome }, homeDir);
+
+  assert.equal(homes.hermes, hermesHome);
 });
 
 test('agents install skips unsupported clients and uninstall removes managed files only', async () => {

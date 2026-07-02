@@ -4,6 +4,11 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import {
+  buildCavemanWindowsInstallCommand,
+  buildRTKInitCommandForAgent,
+  getCavemanVerificationPaths,
+} from '../lib/aios-init/compression-tools.mjs';
 import { buildCommandRewriteHookCommand, buildSaveGuardCommand, ensureHook } from '../lib/aios-init/hooks.mjs';
 
 function normalizeSlashes(value) {
@@ -17,6 +22,40 @@ function runtimeScriptPath(rootDir, scriptName) {
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+test('buildCavemanWindowsInstallCommand downloads install.ps1 before execution', () => {
+  const command = buildCavemanWindowsInstallCommand();
+
+  assert.match(command, /Invoke-WebRequest/u);
+  assert.match(command, /-OutFile \$installer/u);
+  assert.match(command, /-ExecutionPolicy Bypass/u);
+  assert.match(command, /-File \$installer/u);
+  assert.doesNotMatch(command, /\|\s*iex/u);
+});
+
+test('getCavemanVerificationPaths covers current installer targets', () => {
+  const home = normalizeSlashes(path.join(os.tmpdir(), 'aios-home'));
+  const cwd = normalizeSlashes(path.join(os.tmpdir(), 'aios-repo'));
+  const opencodeHome = normalizeSlashes(path.join(os.tmpdir(), 'opencode-home'));
+  const paths = getCavemanVerificationPaths({
+    home,
+    cwd,
+    env: { OPENCODE_HOME: opencodeHome },
+  }).map((entry) => normalizeSlashes(entry.path));
+
+  assert.ok(paths.includes(`${cwd}/.agents/skills/caveman`));
+  assert.ok(paths.includes(`${opencodeHome}/skills/caveman`));
+  assert.ok(paths.includes(`${home}/.claude/plugins/cache/caveman`));
+});
+
+test('buildRTKInitCommandForAgent uses current RTK flags', () => {
+  assert.equal(buildRTKInitCommandForAgent('claude'), 'rtk init -g');
+  assert.equal(buildRTKInitCommandForAgent('codex'), 'rtk init -g --codex');
+  assert.equal(buildRTKInitCommandForAgent('gemini'), 'rtk init -g --gemini');
+  assert.equal(buildRTKInitCommandForAgent('opencode'), 'rtk init -g --opencode');
+  assert.equal(buildRTKInitCommandForAgent('hermes'), 'rtk init -g --agent hermes');
+  assert.equal(buildRTKInitCommandForAgent('unknown'), null);
+});
 
 test('buildSaveGuardCommand uses AIOS ctx-agent and save-guard mode for external workspaces', () => {
   const workspaceRoot = "/tmp/rex workspace/$unsafe'sub";

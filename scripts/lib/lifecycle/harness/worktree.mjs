@@ -31,6 +31,11 @@ export async function resolveResumeWorktree({ rootDir, summary } = {}) {
       initialHead: prepared.initialHead,
     };
   } catch {
-    return existing;
+    return {
+      ...existing,
+      enabled: false,
+      preserved: false,
+      cleanupReason: 'resume-worktree-unavailable',
+    };
   }
 }

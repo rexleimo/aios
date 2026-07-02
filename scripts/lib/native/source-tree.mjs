@@ -42,7 +42,9 @@ export function loadNativeSyncManifest(rootDir) {
   assertCondition(raw.clients && typeof raw.clients === 'object' && !Array.isArray(raw.clients), 'native manifest clients must be an object');
 
   const clients = {};
-  for (const client of resolveNativeClients('all')) {
+  const knownClients = new Set(resolveNativeClients('all'));
+  for (const client of Object.keys(raw.clients)) {
+    assertCondition(knownClients.has(client), `native manifest unknown client entry: ${client}`);
     const entry = raw.clients[client];
     assertCondition(entry && typeof entry === 'object' && !Array.isArray(entry), `native manifest missing client entry: ${client}`);
     assertCondition(ALLOWED_TIERS.includes(entry.tier), `native manifest tier must be one of: ${ALLOWED_TIERS.join(', ')}`);
@@ -72,6 +74,7 @@ export function buildNativeOutputPlan({ rootDir, manifest = loadNativeSyncManife
   assertCondition(selected.length === 1 && String(client || '').trim().toLowerCase() !== 'all', `unsupported native client: ${client}`);
   const [normalized] = selected;
   const entry = manifest.clients[normalized];
+  assertCondition(entry && typeof entry === 'object', `native manifest missing client entry: ${normalized}`);
   const metadataRoot = path.join(rootDir, entry.metadataRoot);
   return {
     client: normalized,

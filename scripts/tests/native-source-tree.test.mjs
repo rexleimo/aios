@@ -38,11 +38,12 @@ test('native manifest resolves deep and compatibility tiers by client', async ()
   });
 
   const manifest = loadNativeSyncManifest(rootDir);
-  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode']);
+  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
   assert.equal(manifest.clients.codex.tier, 'deep');
   assert.equal(manifest.clients.claude.tier, 'deep');
   assert.equal(manifest.clients.gemini.tier, 'compatibility');
   assert.equal(manifest.clients.opencode.tier, 'compatibility');
+  assert.equal(manifest.clients.hermes, undefined);
 });
 
 test('native output plan maps codex and claude repo outputs with per-client metadata roots', async () => {

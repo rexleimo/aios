@@ -16,7 +16,7 @@ test('buildSmokeInvocation throws for unknown client', () => {
   assert.throws(() => buildSmokeInvocation('nope'), /unknown smoke client/i);
 });
 
-
+test('runClientTriggerLiveSmoke records OpenCode trigger evidence', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-opencode-live-smoke-root-'));
   await writeFile(path.join(rootDir, 'AGENTS.md'), 'AIOS Token Discipline\nAIOS Superpowers Workflow\n', 'utf8');
   await mkdir(path.join(rootDir, '.opencode', 'agent'), { recursive: true });

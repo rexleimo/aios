@@ -81,7 +81,10 @@ rtk init --agent hermes         # Hermes
 curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash
 
 # Windows (PowerShell 5.1+)
-irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex
+$installer = Join-Path $env:TEMP 'caveman-install.ps1'
+irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 -OutFile $installer
+powershell -NoProfile -ExecutionPolicy Bypass -File $installer
+Remove-Item $installer -Force
 ```
 
 安装后约 30 秒。需要 Node >= 18。会自动检测已安装的客户端并跳过没有的。

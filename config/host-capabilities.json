@@ -82,6 +82,25 @@
         "uncontrolledHostOutput": "policy-violation"
       }
     },
+    "hermes": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket",
+        "advisorySkills"
+      ],
+      "limits": [
+        "No built-in unattended approval mode; harness orchestration must use controlled AIOS entrypoints."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
     "cursor": {
       "targetLevel": "L1",
       "capabilities": [

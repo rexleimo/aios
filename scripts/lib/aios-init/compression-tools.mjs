@@ -20,6 +20,9 @@ import { platform, arch } from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
 
+const CAVEMAN_INSTALL_PS_URL = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1';
+const CAVEMAN_INSTALL_SH_URL = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh';
+
 /* 中文注释：检测工具是否已安装 */
 function isToolInstalled(toolName) {
   try {
@@ -234,6 +237,48 @@ function verifyRTK() {
   return false;
 }
 
+export function buildCavemanWindowsInstallCommand() {
+  return `
+    $ErrorActionPreference = 'Stop'
+    $installer = Join-Path ([System.IO.Path]::GetTempPath()) ('caveman-install-' + [guid]::NewGuid().ToString('N') + '.ps1')
+    try {
+      Invoke-WebRequest -Uri '${CAVEMAN_INSTALL_PS_URL}' -OutFile $installer -UseBasicParsing
+      & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $installer
+      if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    } finally {
+      Remove-Item -LiteralPath $installer -Force -ErrorAction SilentlyContinue
+    }
+  `.trim();
+}
+
+function resolveAbsoluteEnvPath(env, name, fallback) {
+  const value = String(env[name] || '').trim();
+  return value && path.isAbsolute(value) ? value : fallback;
+}
+
+export function getCavemanVerificationPaths({
+  home = process.env.USERPROFILE || process.env.HOME || '',
+  cwd = process.cwd(),
+  env = process.env,
+} = {}) {
+  const xdgConfigHome = resolveAbsoluteEnvPath(env, 'XDG_CONFIG_HOME', path.join(home, '.config'));
+  const claudeHome = resolveAbsoluteEnvPath(env, 'CLAUDE_HOME', path.join(home, '.claude'));
+  const codexHome = resolveAbsoluteEnvPath(env, 'CODEX_HOME', path.join(home, '.codex'));
+  const geminiHome = resolveAbsoluteEnvPath(env, 'GEMINI_HOME', path.join(home, '.gemini'));
+  const opencodeHome = resolveAbsoluteEnvPath(env, 'OPENCODE_HOME', path.join(xdgConfigHome, 'opencode'));
+
+  return [
+    { label: 'Claude plugin cache', path: path.join(claudeHome, 'plugins', 'cache', 'caveman') },
+    { label: 'Claude skill', path: path.join(claudeHome, 'skills', 'caveman') },
+    { label: 'Codex skill', path: path.join(codexHome, 'skills', 'caveman') },
+    { label: 'Gemini skill', path: path.join(geminiHome, 'skills', 'caveman') },
+    { label: 'Opencode skill', path: path.join(opencodeHome, 'skills', 'caveman') },
+    { label: 'repo shared skill', path: path.join(cwd, '.agents', 'skills', 'caveman') },
+    { label: 'repo Codex skill', path: path.join(cwd, '.codex', 'skills', 'caveman') },
+    { label: 'repo Claude skill', path: path.join(cwd, '.claude', 'skills', 'caveman') },
+  ];
+}
+
 /* 中文注释：安装 Caveman */
 function installCaveman() {
   const plat = platform();
@@ -241,13 +286,13 @@ function installCaveman() {
 
   if (isWin) {
     console.log('  [1/3] running Caveman install.ps1...');
-    const psCmd = 'irm https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1 | iex';
+    const psCmd = buildCavemanWindowsInstallCommand();
     if (runCommand(psCmd, { timeout: 180000 })) {
       return verifyCaveman();
     }
   } else {
     console.log('  [1/3] running Caveman install.sh...');
-    const cmd = 'curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash';
+    const cmd = `curl -fsSL ${CAVEMAN_INSTALL_SH_URL} | bash`;
     if (runCommand(cmd, { timeout: 180000 })) {
       return verifyCaveman();
     }
@@ -261,45 +306,44 @@ function installCaveman() {
 /* 中文注释：验证 Caveman 安装是否成功 */
 function verifyCaveman() {
   console.log('  [2/3] verifying Caveman installation...');
-  const home = process.env.USERPROFILE || process.env.HOME || '';
-  const checks = [
-    path.join(home, '.claude', 'skills', 'caveman'),
-    path.join(home, '.codex', 'skills', 'caveman'),
-    path.join(home, '.gemini', 'skills', 'caveman'),
-    path.join(process.cwd(), '.claude', 'skills', 'caveman'),
-  ];
-  for (const check of checks) {
-    if (fs.existsSync(check)) {
-      console.log(`  [2/3] Caveman verified: ${check}`);
+  for (const check of getCavemanVerificationPaths()) {
+    if (fs.existsSync(check.path)) {
+      console.log(`  [2/3] Caveman verified (${check.label}): ${check.path}`);
       return true;
     }
   }
-  // install.sh 可能安装到其他位置，也算成功
-  console.warn('  [2/3] Caveman skill not found in standard paths');
-  console.warn('  [hint] may need to restart terminal; check ~/.claude/skills/');
+  console.warn('  [2/3] Caveman install marker not found in known paths');
+  console.warn('  [hint] may need to restart terminal; check Claude plugins, ~/.config/opencode/skills, or repo .agents/skills');
   return false;
 }
 
+
 /* 中文注释：RTK 初始化 — 为检测到的客户端注册 hook/plugin */
+export function buildRTKInitCommandForAgent(agent) {
+  const RTK_AGENT_MAP = {
+    claude: null,
+    codex: '--codex',
+    gemini: '--gemini',
+    opencode: '--opencode',
+    hermes: '--agent hermes',
+  };
+  const rtkFlag = RTK_AGENT_MAP[agent];
+  if (rtkFlag === undefined) return null;
+  return rtkFlag ? `rtk init -g ${rtkFlag}` : 'rtk init -g';
+}
+
+/* Initialize RTK hooks/plugins for detected clients. */
 function initRTKForAgents(agents) {
   if (!isToolInstalled('rtk')) return;
 
-  const RTK_AGENT_MAP = {
-    claude: null,           // 默认，不需要 --agent
-    codex: '--codex',
-    gemini: '--gemini',
-    opencode: '--agent opencode',
-    hermes: '--agent hermes',
-  };
-
   for (const agent of agents) {
-    const rtkFlag = RTK_AGENT_MAP[agent];
-    if (rtkFlag === undefined) continue; // 不支持的客户端跳过
-    const cmd = rtkFlag ? `rtk init -g ${rtkFlag}` : 'rtk init -g';
+    const cmd = buildRTKInitCommandForAgent(agent);
+    if (!cmd) continue;
     console.log(`  [4/4] rtk init for ${agent}...`);
     runCommand(cmd, { timeout: 30000 });
   }
 }
+
 
 /**
  * 检测并安装 RTK + Caveman — 全自动
@@ -317,14 +361,7 @@ export async function ensureCompressionTools(options = {}) {
   const rtkInstalled = isToolInstalled('rtk');
   let cavemanInstalled = false;
   try {
-    const home = process.env.USERPROFILE || process.env.HOME || '';
-    const checks = [
-      path.join(home, '.claude', 'skills', 'caveman'),
-      path.join(home, '.codex', 'skills', 'caveman'),
-      path.join(home, '.gemini', 'skills', 'caveman'),
-      path.join(process.cwd(), '.claude', 'skills', 'caveman'),
-    ];
-    cavemanInstalled = checks.some(p => fs.existsSync(p));
+    cavemanInstalled = getCavemanVerificationPaths().some((candidate) => fs.existsSync(candidate.path));
   } catch {
     // ignore
   }
@@ -334,7 +371,13 @@ export async function ensureCompressionTools(options = {}) {
     caveman: cavemanInstalled ? 'installed' : 'missing',
   };
 
-  // 都已安装 — 确保 rtk init
+  if (dryRun) {
+    console.log(`  ? RTK: ${result.rtk}`);
+    console.log(`  ? Caveman: ${result.caveman}`);
+    console.log('    (dry-run: would auto-install after confirmation)');
+    return result;
+  }
+
   if (rtkInstalled && cavemanInstalled) {
     console.log('  RTK: installed');
     console.log('  Caveman: installed');
@@ -342,14 +385,6 @@ export async function ensureCompressionTools(options = {}) {
       console.log('  ensuring rtk init for detected agents...');
       initRTKForAgents(agents);
     }
-    return result;
-  }
-
-  // dry-run 仅报告
-  if (dryRun) {
-    console.log(`  ? RTK: ${result.rtk}`);
-    console.log(`  ? Caveman: ${result.caveman}`);
-    console.log('    (dry-run: would auto-install after confirmation)');
     return result;
   }
 

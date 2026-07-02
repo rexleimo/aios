@@ -26,6 +26,7 @@ import path from 'node:path';
  */
 export function evaluateDryRunReadiness(rootDir, opts = {}) {
   const { sessionId = '', provider = '', worktree = null, resume = false } = opts;
+  const worktreeEnabled = worktree === true || (worktree && typeof worktree === 'object' && worktree.enabled === true);
   const checks = [];
   const reasons = [];
   const nextActions = [];
@@ -60,7 +61,7 @@ export function evaluateDryRunReadiness(rootDir, opts = {}) {
   let gitDetail = 'Git repository detected.';
   const gitDir = path.join(rootDir, '.git');
   if (!fs.existsSync(gitDir)) {
-    if (worktree) {
+    if (worktreeEnabled) {
       gitStatus = 'fail';
       gitDetail = 'Worktree mode requested but rootDir is not a git repository.';
       level = 'blocked';

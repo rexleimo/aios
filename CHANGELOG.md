@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.3.2] - 2026-07-02
+
+### Fixed
+- Fix Caveman Windows installation by running the PowerShell installer from a downloaded temp file instead of piping into `iex`.
+- Detect current Caveman install targets across Claude plugins, Opencode skills, and shared repo skill directories.
+- Keep `aios init --dry-run` read-only for compression tools and use the current RTK Opencode init flag.
+- Resolve Hermes home paths during skills doctor checks.
+
 ## [3.3.1] - 2026-07-02
 
 ### Fixed

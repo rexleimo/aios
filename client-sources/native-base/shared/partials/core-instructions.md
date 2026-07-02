@@ -12,6 +12,13 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - Token compression is now handled by community tools: **RTK** (https://github.com/rtk-ai/rtk) and **Caveman** (https://github.com/JuliusBrussee/caveman), installed automatically by `aios init`.
 - For migration help, see `.claude/skills/aios-interception-runtime/SKILL.md` (rewritten as RTK/Caveman install guide).
 
+## AIOS Turn Compression Enforcement
+
+- Required metric: `bidirectional-turn-compression`.
+- Every AIOS-managed turn must pass through `pre_send` and `post_receive` compression gates.
+- Direct host output bypass is a policy violation; use the AIOS-managed runner, MCP proxy, or compact packet path instead.
+- Do not claim compression compliance unless both pre-send and post-receive evidence are present.
+
 ## AIOS Self-Trigger Routing
 
 - Continue normally in the active coding client for single-domain work.
