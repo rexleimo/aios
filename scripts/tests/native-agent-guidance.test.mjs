@@ -41,7 +41,6 @@ test('all native clients inherit strict AIOS turn compression enforcement', () =
 test('compatibility client project notes repeat the turn compression policy', () => {
   for (const file of [
     'client-sources/native-base/opencode/project/AIOS.md',
-    'client-sources/native-base/crush/project/AGENTS.md',
   ]) {
     const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
     assert.match(markdown, /Turn Compression Compliance/, `${file} missing compatibility heading`);

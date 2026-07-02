@@ -70,7 +70,7 @@ node scripts/aios.mjs memo search "<distilled keyword>" --limit 5
 4. Only if memo search also returns nothing should you fall through to Unified Project Search below.
 
 ### Memo Scope Rules
-Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, Gemini, Antigravity, and Crush can all recall the same project facts.
+Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, and Gemini can all recall the same project facts.
 
 Use agent-private memory only for client-specific scratch notes that should not pollute other clients:
 - `aios memo add "codex-only scratch note" --scope agent_private --agent codex-cli`

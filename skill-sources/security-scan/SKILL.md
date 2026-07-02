@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [general, security]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Security Scan

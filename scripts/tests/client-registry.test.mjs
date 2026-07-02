@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -71,10 +71,10 @@ test('client registry validation returns normalized values for reuse', () => {
 });
 
 test('client registry keeps capability-specific ordering', () => {
-  assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
+  assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode']);
+  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -83,7 +83,6 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.claude/skills',
     '.gemini/skills',
     '.opencode/skills',
-    '.crush/skills',
     '.hermes/skills',
     '.agents/skills',
   ]);
@@ -108,30 +107,26 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'antigravity-cli', 'opencode-cli', 'crush-cli', 'hermes-agent']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
     'gemini-cli': 'gemini',
     'opencode-cli': 'opencode',
-    'crush-cli': 'crush',
-    'antigravity-cli': 'antigravity',
     'hermes-agent': 'hermes',
   });
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode']);
   assert.deepEqual(resolveClientTeamProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
     codex: 'codex-cli',
     claude: 'claude-code',
     gemini: 'gemini-cli',
-    antigravity: 'antigravity-cli',
     opencode: 'opencode-cli',
-    crush: 'crush-cli',
   });
 });
 
@@ -140,7 +135,6 @@ test('client registry exposes runtime argument adapters without consumer if-else
   assert.deepEqual(buildRuntimeClientModelArgs('claude-code', 'claude-sonnet'), ['--model', 'claude-sonnet']);
   assert.deepEqual(buildRuntimeClientModelArgs('gemini-cli', 'gemini-2.5-pro'), ['-m', 'gemini-2.5-pro']);
   assert.deepEqual(buildRuntimeClientModelArgs('opencode-cli', 'qwen3'), ['-m', 'qwen3']);
-  assert.deepEqual(buildRuntimeClientModelArgs('crush-cli', 'gpt-5'), ['--model', 'gpt-5']);
   assert.deepEqual(getClientUnattendedArgs('codex'), ['--dangerously-bypass-approvals-and-sandbox']);
   assert.deepEqual(getClientUnattendedArgs('opencode'), ['run', '--dangerously-skip-permissions']);
 });
@@ -160,8 +154,6 @@ test('client registry exposes native instruction filenames per client', () => {
   assert.equal(getClientInstructionFileName('gemini'), 'GEMINI.md');
   assert.equal(getClientInstructionFileName('opencode'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
-  assert.equal(getClientInstructionFileName('crush'), 'AGENTS.md');
-  assert.equal(getClientInstructionFileName('antigravity'), 'GEMINI.md');
 });
 
 test('client registry exposes per-client MCP target conventions (single source of truth)', () => {
@@ -230,7 +222,7 @@ test('every client declares instruction filename and a valid MCP target', () => 
       assert.ok(['home', 'project'].includes(s.scope), `${client} mcp.scope value ${s.scope}`);
       assert.ok(s.file, `${client} mcp.scope file`);
     }
-    assert.ok(['json', 'toml', 'opencode-json', 'crush-json'].includes(mcp.format), `${client} mcp.format ${mcp.format}`);
+    assert.ok(['json', 'toml', 'opencode-json'].includes(mcp.format), `${client} mcp.format ${mcp.format}`);
     assert.ok(mcp.namespace, `${client} mcp.namespace present`);
   }
 });

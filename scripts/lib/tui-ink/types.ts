@@ -2,7 +2,7 @@
 
 export type WrapMode = 'all' | 'repo-only' | 'opt-in' | 'off';
 export type Scope = 'global' | 'project';
-export type Client = 'all' | 'codex' | 'claude' | 'gemini' | 'antigravity' | 'opencode' | 'crush';
+export type Client = 'all' | 'codex' | 'claude' | 'gemini' | 'opencode';
 export type Action = 'setup' | 'update' | 'uninstall' | 'doctor';
 
 export interface ComponentsConfig {

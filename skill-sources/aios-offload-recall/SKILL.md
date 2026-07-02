@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, token, offload, recall]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # AIOS Offload Recall

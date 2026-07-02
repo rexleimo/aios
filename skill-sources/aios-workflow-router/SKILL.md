@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [general, workflow, routing, essential]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
+repoTargets: [codex, claude, gemini, opencode, agents]
 ---
 
 # AIOS Workflow Router
@@ -28,7 +28,7 @@ Routes below reference target skills by name. The `superpowers:` prefix is the c
 
 ## Routing Rules
 
-**This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill through the current client's skill mechanism (e.g. the Skill tool in Claude Code / Copilot CLI, `activate_skill` in Gemini/Antigravity CLI, or the equivalent skill invocation in Codex/OpenCode/Crush) — never inline the process.
+**This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill through the current client's skill mechanism (e.g. the Skill tool in Claude Code / Copilot CLI, `activate_skill` in Gemini CLI, or the equivalent skill invocation in Codex/OpenCode) — never inline the process.
 
 ### 0. Mandatory Pre-Edit Safety Gate (ALL task types)
 

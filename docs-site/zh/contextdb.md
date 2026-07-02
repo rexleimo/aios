@@ -384,11 +384,11 @@ node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source
 - `agent_private` 需要匹配 `--agent <runtime-client-id>`。
 - 其他客户端的私有草稿会被过滤。
 
-Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`antigravity-cli`、`opencode-cli`、`crush-cli`。
+Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`opencode-cli`、`hermes-agent`。
 
 ### 全客户端指令覆盖
 
-搜索指令来自 shared native instructions。Codex、OpenCode、Crush 通过 `AGENTS.md` 接收；Claude 通过 `CLAUDE.md` 接收；Gemini、Antigravity 通过 `GEMINI.md` 接收。Antigravity 和 Crush 仍处于 `pending-smoke`，不能 live 执行，但静态指令投影已经包含同一套搜索规则。
+搜索指令来自 shared native instructions。Codex、OpenCode 通过 `AGENTS.md` 接收；Claude 通过 `CLAUDE.md` 接收；Gemini 通过 `GEMINI.md` 接收。
 ### Agent 治理证据
 
 当你新增或重路由 agent，或修改 workflow skill 时，不要把它当成普通文档改动，而是要当成操作规程更新。先记录 smoke 证据，再信任新的 live 路径：

@@ -12,7 +12,7 @@ import type {
 } from '../types';
 
 const MODE_OPTIONS: WrapMode[] = ['all', 'repo-only', 'opt-in', 'off'];
-const CLIENT_OPTIONS: Client[] = ['all', 'codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush'];
+const CLIENT_OPTIONS: Client[] = ['all', 'codex', 'claude', 'gemini', 'opencode'];
 const SCOPE_OPTIONS: Scope[] = ['global', 'project'];
 type CycleDirection = 'next' | 'prev';
 

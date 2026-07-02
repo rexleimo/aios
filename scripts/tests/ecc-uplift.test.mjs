@@ -34,13 +34,7 @@ async function seedNativeRoot(rootDir) {
       codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
-      opencode: {
-        tier: 'compatibility',
-        metadataRoot: '.opencode',
-        outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'],
-      },
-      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
-      antigravity: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
+      opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
     },
   });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials'), { recursive: true });
@@ -48,8 +42,6 @@ async function seedNativeRoot(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project'), { recursive: true });
   for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'browser-mcp', 'superpowers', 'agent-routing', 'codemap', 'team-provider', 'model-router', 'harness']) {
     await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', `${name}.md`), `${name}\n`, 'utf8');
   }
@@ -58,8 +50,6 @@ async function seedNativeRoot(rootDir) {
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'Claude.\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {});
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini.\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project', 'AGENTS.md'), 'Crush.\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project', 'GEMINI.md'), 'Antigravity.\n', 'utf8');
   await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
     schemaVersion: 1,
     generatedRoots: { opencode: '.opencode/skills' },

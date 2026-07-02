@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, harness]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # AIOS Long-Running Harness

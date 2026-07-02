@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, git, essential]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Cap Commit Push

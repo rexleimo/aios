@@ -6,7 +6,7 @@ import path from 'node:path';
 
 import { CLIENT_DEFINITIONS } from '../registry.mjs';
 
-const PENDING_SMOKE_CLIENTS = new Set(['antigravity', 'crush']);
+const PENDING_SMOKE_CLIENTS = new Set([]);
 const SUPPORTED_CANDIDATES = new Set(['codex', 'claude', 'opencode']);
 const REQUIRED_CLIENT_EVIDENCE = Object.freeze(['smoke', 'metrics', 'provenance']);
 
@@ -215,12 +215,6 @@ function reasonsForClient(clientId, {
   const status = statusForClient(clientId);
   if (status === 'pending-smoke') {
     reasons.push('live execution is blocked until one-shot runner, CLI arguments, MCP config, and smoke evidence are verified');
-  }
-  if (clientId === 'antigravity') {
-    reasons.push('Antigravity currently inherits Gemini paths and must remain pending-smoke until install verification');
-  }
-  if (clientId === 'crush') {
-    reasons.push('Crush has static projections, but live one-shot and unattended arguments need smoke verification');
   }
   if (!hostEntry) {
     reasons.push('host-capabilities entry is missing; treating advanced interception as unverified');

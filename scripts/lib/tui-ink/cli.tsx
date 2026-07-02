@@ -71,17 +71,14 @@ function getClientHomes(): Record<Client, string> {
     codex: path.join(home, '.codex'),
     claude: path.join(home, '.claude'),
     gemini: path.join(home, '.gemini'),
-    antigravity: path.join(home, '.gemini'),
     opencode: path.join(home, '.opencode'),
-    crush: path.join(home, '.crush'),
     all: home,
   };
 }
 
-// Project-scope skill root per client. antigravity shares Gemini's .gemini/skills.
+// Project-scope skill root per client.
 function getClientProjectSkillDir(projectRoot: string, client: Client): string {
-  const subdir = client === 'antigravity' ? '.gemini/skills' : `.${client}/skills`;
-  return path.join(projectRoot, subdir);
+  return path.join(projectRoot, `.${client}/skills`);
 }
 
 export function collectInstalledSkills(

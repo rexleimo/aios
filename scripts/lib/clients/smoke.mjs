@@ -12,9 +12,7 @@ import {
 const SMOKE_TASK_PROMPT = 'reply with OK';
 const SMOKE_TIMEOUT_MS = 20_000;
 
-const SMOKE_CLIENTS = Object.freeze({
-  crush: { command: 'crush', helpArgs: ['run', '--help'], taskArgs: ['run', SMOKE_TASK_PROMPT] },
-});
+const SMOKE_CLIENTS = Object.freeze({});
 
 const LIVE_TRIGGER_CLIENTS = Object.freeze({
   opencode: {

@@ -36,23 +36,6 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
       return opencodeHome ? path.join(opencodeHome, 'opencode.json') : '';
     },
   }),
-  Object.freeze({
-    clientKey: 'crush',
-    format: 'crush-json',
-    createIfMissing: true,
-    resolvePath: (_projectRoot, clientHomes) => {
-      const crushHome = resolveUserPath(clientHomes.crush);
-      return crushHome ? path.join(crushHome, 'crush.json') : '';
-    },
-  }),
-  // Antigravity CLI shares .gemini/settings.json with Gemini CLI.
-  // The addUnique dedup in collectCodemapMcpTargets will skip if gemini already wrote to this path.
-  Object.freeze({
-    clientKey: 'antigravity',
-    format: 'mcp-json',
-    createIfMissing: true,
-    resolvePath: (projectRoot) => path.join(projectRoot, '.gemini', 'settings.json'),
-  }),
 ]);
 
 export function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {

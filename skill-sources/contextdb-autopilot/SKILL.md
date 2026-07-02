@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, contextdb]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # ContextDB Autopilot
@@ -65,7 +65,7 @@ Interactive wrapper behavior:
 - Startup prints only a local unfinished-task summary when tasks/handoffs exist.
 - To resume, the user must explicitly name the task/handoff to continue before any ContextDB detail is loaded.
 - Route execution defaults to live for team/subagent command templates.
-- Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli|antigravity-cli|opencode-cli|crush-cli>`.
+- Override subagent runtime for routed commands with `CTXDB_ROUTE_SUBAGENT_CLIENT=<codex-cli|claude-code|gemini-cli|opencode-cli>`.
 
 Bootstrap note:
 - On first run in a workspace, `ctx-agent` may auto-create `tasks/pending/task_<timestamp>_bootstrap_guidelines/*` and `tasks/.current-task` if both are empty.

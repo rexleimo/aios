@@ -94,8 +94,6 @@ function classifyLowValueMcpServers({ projectRoot, mcpBudget = {} } = {}) {
     { file: path.join(projectRoot, '.mcp.json'), namespace: 'mcpServers' },
     { file: path.join(projectRoot, '.gemini', 'settings.json'), namespace: 'mcpServers' },
     { file: path.join(projectRoot, 'opencode.json'), namespace: 'mcp' },
-    { file: path.join(projectRoot, 'crush.json'), namespace: 'mcp' },
-    { file: path.join(projectRoot, '.crush.json'), namespace: 'mcp' },
   ];
 
   const findings = [];
@@ -183,8 +181,6 @@ export function inspectTokenDiscipline({ rootDir, projectRoot = rootDir, profile
     { file: path.join(projectRoot, '.mcp.json'), kind: 'json', namespace: 'mcpServers' },
     { file: path.join(projectRoot, '.gemini', 'settings.json'), kind: 'json', namespace: 'mcpServers' },
     { file: path.join(projectRoot, 'opencode.json'), kind: 'json', namespace: 'mcp' },
-    { file: path.join(projectRoot, 'crush.json'), kind: 'json', namespace: 'mcp' },
-    { file: path.join(projectRoot, '.crush.json'), kind: 'json', namespace: 'mcp' },
     { file: path.join(projectRoot, '.codex', 'config.toml'), kind: 'toml' },
   ];
 

@@ -80,7 +80,6 @@ release_paths=(
   .codex/skills .codex/agents
   .agents/skills .opencode/skills .opencode/agents
   .gemini/skills .gemini/commands
-  .crush/skills .crush/agents
 )
 
 existing_release_paths=()

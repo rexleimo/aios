@@ -128,7 +128,6 @@ test('all client agent emitters preserve rich ECC role cards in generated output
     ['claude', '../lib/agents/emitters/claude.mjs', 'renderClaudeAgent', extractMarkdownAgentBody],
     ['codex', '../lib/agents/emitters/codex.mjs', 'renderCodexAgent', extractCodexDeveloperInstructions],
     ['opencode', '../lib/agents/emitters/opencode.mjs', 'renderOpencodeAgent', extractMarkdownAgentBody],
-    ['crush', '../lib/agents/emitters/crush.mjs', 'renderCrushAgent', extractMarkdownAgentBody],
   ];
 
   for (const [client, modulePath, exportName, extractor] of emitters) {

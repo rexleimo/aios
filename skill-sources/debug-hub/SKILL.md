@@ -9,7 +9,7 @@ defaultInstall:
   global: false
   project: false
 tags: [general, debug, verification]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush, agents]
+repoTargets: [codex, claude, gemini, opencode, agents]
 ---
 
 # Debug-Hub

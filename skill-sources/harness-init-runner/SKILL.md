@@ -9,7 +9,7 @@ defaultInstall:
   global: false
   project: false
 tags: [harness, bootstrap, runner, cli, node, agents]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Harness Init Runner (Node.js)

@@ -55,25 +55,20 @@ function normalizePathForCompare(inputPath: string): string {
   return process.platform === 'win32' ? output.toLowerCase() : output;
 }
 
-// Simplified client homes - matches existing logic in scripts/lib/platform/paths.mjs
-// antigravity inherits Gemini's roots; crush uses its own .crush root.
 function getClientHomes(): Record<Client, string> {
   const home = process.env.HOME || process.env.USERPROFILE || '';
   return {
     codex: path.join(home, '.codex'),
     claude: path.join(home, '.claude'),
     gemini: path.join(home, '.gemini'),
-    antigravity: path.join(home, '.gemini'),
     opencode: path.join(home, '.opencode'),
-    crush: path.join(home, '.crush'),
     all: home, // Not used for 'all'
   };
 }
 
-// Project-scope skill root per client. antigravity shares Gemini's .gemini/skills.
+// Project-scope skill root per client.
 function getClientProjectSkillDir(projectRoot: string, client: Client): string {
-  const subdir = client === 'antigravity' ? '.gemini/skills' : `.${client}/skills`;
-  return path.join(projectRoot, subdir);
+  return path.join(projectRoot, `.${client}/skills`);
 }
 
 function collectInstalledSkills(

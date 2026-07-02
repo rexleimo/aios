@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [general, research]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Search First

@@ -9,7 +9,7 @@ defaultInstall:
   global: false
   project: false
 tags: [content, seo]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # SEO + GEO Page Optimization

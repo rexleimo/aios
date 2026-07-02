@@ -1,4 +1,4 @@
-import { inspectJsonNamespace, injectCrgIntoMcpJson, injectCrgIntoOpencodeJson, injectCrgIntoCrushJson, removeCrgFromMcpJson, removeCrgFromOpencodeJson, removeCrgFromCrushJson } from './json.mjs';
+import { inspectJsonNamespace, injectCrgIntoMcpJson, injectCrgIntoOpencodeJson, removeCrgFromMcpJson, removeCrgFromOpencodeJson } from './json.mjs';
 import { inspectCodexToml, removeCrgFromCodexToml, upsertCodexMcpToml } from './toml.mjs';
 
 const CODEMAP_TARGET_FORMATS = Object.freeze({
@@ -16,11 +16,6 @@ const CODEMAP_TARGET_FORMATS = Object.freeze({
     inject: (target, projectRoot, options) => injectCrgIntoMcpJson(target.path, target.clientKey, projectRoot, options),
     remove: (target, options) => removeCrgFromMcpJson(target.path, options),
     inspect: (raw) => inspectJsonNamespace(raw, 'mcpServers'),
-  }),
-  'crush-json': Object.freeze({
-    inject: (target, _projectRoot, options) => injectCrgIntoCrushJson(target.path, options),
-    remove: (target, options) => removeCrgFromCrushJson(target.path, options),
-    inspect: (raw) => inspectJsonNamespace(raw, 'mcp'),
   }),
 });
 

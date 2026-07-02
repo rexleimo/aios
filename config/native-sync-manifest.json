@@ -44,23 +44,6 @@
         "opencode.json"
       ]
     },
-    "crush": {
-      "tier": "compatibility",
-      "metadataRoot": ".crush",
-      "outputs": [
-        "AGENTS.md",
-        ".crush/agents",
-        ".crush/skills"
-      ]
-    },
-    "antigravity": {
-      "tier": "compatibility",
-      "metadataRoot": ".gemini",
-      "outputs": [
-        "GEMINI.md",
-        ".gemini/skills"
-      ]
-    },
     "hermes": {
       "tier": "compatibility",
       "metadataRoot": ".hermes",

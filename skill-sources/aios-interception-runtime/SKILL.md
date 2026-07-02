@@ -10,7 +10,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, token, compression, rtk, caveman, community]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 <!-- 中文注释：Skill 已重写为 RTK + Caveman 社区工具安装配置指南。原生拦截运行时已废弃。 -->

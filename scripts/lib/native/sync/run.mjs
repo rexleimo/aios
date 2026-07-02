@@ -23,7 +23,7 @@ export async function syncNativeEnhancementsUnlocked({
   const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
   const manifest = loadNativeSyncManifest(sourceRootDir);
   const allClients = resolveNativeClients(client);
-  // Deduplicate clients that share the same metadataRoot (e.g. gemini and antigravity both use .gemini).
+  // Deduplicate clients that share the same metadataRoot.
   // Keep only the first client per metadataRoot to avoid overwriting each other's metadata.
   const seenRoots = new Set();
   const selectedClients = [];

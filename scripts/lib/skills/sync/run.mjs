@@ -9,6 +9,7 @@ import {
   buildGeneratedSkillMetadata,
   GENERATED_SKILL_META_FILE,
   isManagedGeneratedSkill,
+  readGeneratedSkillMetadata,
   writeGeneratedSkillMetadata,
 } from '../install-metadata.mjs';
 import {

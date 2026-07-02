@@ -4,9 +4,7 @@
     "codex": ".codex/skills",
     "claude": ".claude/skills",
     "gemini": ".gemini/skills",
-    "antigravity": ".gemini/skills",
     "opencode": ".opencode/skills",
-    "crush": ".crush/skills",
     "agents": ".agents/skills"
   },
   "skills": [],

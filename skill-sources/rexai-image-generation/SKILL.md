@@ -9,7 +9,7 @@ defaultInstall:
   global: false
   project: false
 tags: [image, generation, rexai]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # RexAI Image Generation

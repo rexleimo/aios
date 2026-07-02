@@ -29,9 +29,7 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     codex: normalizeHomeDir(env.CODEX_HOME, path.join(homeDir, '.codex'), homeDir),
     claude: normalizeHomeDir(env.CLAUDE_HOME, path.join(homeDir, '.claude'), homeDir),
     gemini: normalizeHomeDir(env.GEMINI_HOME, path.join(homeDir, '.gemini'), homeDir),
-    antigravity: normalizeHomeDir(env.ANTIGRAVITY_HOME, path.join(homeDir, '.gemini'), homeDir),
     opencode: normalizeHomeDir(env.OPENCODE_HOME, path.join(xdgConfigHome, 'opencode'), homeDir),
-    crush: normalizeHomeDir(env.CRUSH_HOME, path.join(homeDir, '.crush'), homeDir),
   };
 }
 

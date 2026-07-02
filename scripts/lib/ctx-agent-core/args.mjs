@@ -16,7 +16,7 @@ const cli = createCliParser({
   name: 'ctx-agent',
   description: 'Context agent: run one-shot or interactive agent sessions with contextdb',
   options: [
-    ['--agent <name>', 'Agent name: codex-cli | claude-code | gemini-cli | antigravity-cli | opencode-cli | crush-cli'],
+    ['--agent <name>', 'Agent name: codex-cli | claude-code | gemini-cli | opencode-cli'],
     ['--workspace <path>', 'Workspace root to store context-db (default: current git root, else current dir)'],
     ['--project <name>', 'Project name (default: current directory name)'],
     ['--goal <text>', 'Session goal (used when creating a new session)'],

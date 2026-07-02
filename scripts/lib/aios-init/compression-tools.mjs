@@ -285,10 +285,11 @@ function initRTKForAgents(agents) {
   if (!isToolInstalled('rtk')) return;
 
   const RTK_AGENT_MAP = {
-    claude: null,      // 默认，不需要 --agent
+    claude: null,           // 默认，不需要 --agent
     codex: '--codex',
     gemini: '--gemini',
     opencode: '--agent opencode',
+    hermes: '--agent hermes',
   };
 
   for (const agent of agents) {

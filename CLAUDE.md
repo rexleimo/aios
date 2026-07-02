@@ -246,8 +246,8 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 <!-- 中文注释：原生拦截运行时已废弃，改为使用社区维护的 RTK + Caveman。 -->
 
 - The AIOS native interception runtime is **deprecated**. Code retained for reference, no longer actively maintained.
-- Token compression is now handled by community tools: **RTK** and **Caveman**, installed automatically by `aios init`.
-
+- Token compression is now handled by community tools: **RTK** (https://github.com/rtk-ai/rtk) and **Caveman** (https://github.com/JuliusBrussee/caveman), installed automatically by `aios init`.
+- For migration help, see `.claude/skills/aios-interception-runtime/SKILL.md` (rewritten as RTK/Caveman install guide).
 
 ## AIOS Self-Trigger Routing
 
@@ -338,7 +338,7 @@ node scripts/aios.mjs memo search "<distilled keyword>" --limit 5
 4. Only if memo search also returns nothing should you fall through to Unified Project Search below.
 
 ### Memo Scope Rules
-Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, Gemini, Antigravity, and Crush can all recall the same project facts.
+Project memory must survive client switches. By default, `aios memo add ...` writes `scope=project_shared`, so Codex, Claude, OpenCode, and Gemini can all recall the same project facts.
 
 Use agent-private memory only for client-specific scratch notes that should not pollute other clients:
 - `aios memo add "codex-only scratch note" --scope agent_private --agent codex-cli`
@@ -373,8 +373,6 @@ Interpretation:
 - `supported-candidate`: Static projection and live AIOS orchestration are allowed, subject to normal task safety gates.
 - `compatibility`: Keep context/skills/native sync working, but avoid new live-only assumptions unless the command output explicitly allows them.
 - `pending-smoke`: Treat the client as static-projection-only. Do not launch it for live one-shot work, skill training, quality-gate runner duties, or harness live execution until CLI args, MCP config, and unattended smoke evidence are verified.
-
-Current strict policy: Antigravity and Crush may receive generated instructions/skills, but live execution remains blocked while they are `pending-smoke`. If a task needs those clients, report the blocker and continue with a verified client instead of silently falling back.
 
 ## AIOS Token Discipline
 

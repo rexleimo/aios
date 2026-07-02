@@ -34,8 +34,6 @@ async function writeNativeManifest(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
-      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/agents', '.crush/skills'] },
-      "antigravity": { "tier": "compatibility", "metadataRoot": ".gemini", "outputs": ["GEMINI.md", ".gemini/skills"] },
     },
   });
 }
@@ -46,8 +44,6 @@ async function writeNativeSources(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project'), { recursive: true });
 
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'core-instructions.md'), 'Shared native instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'contextdb.md'), 'ContextDB bridge enabled.\n', 'utf8');
@@ -80,8 +76,6 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
   });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project', 'AGENTS.md'), 'Crush compatibility instructions.\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project', 'GEMINI.md'), 'Antigravity compatibility instructions.\n', 'utf8');
 }
 
 async function writeSkillSources(rootDir) {
@@ -92,11 +86,9 @@ async function writeSkillSources(rootDir) {
       claude: '.claude/skills',
       gemini: '.gemini/skills',
       opencode: '.opencode/skills',
-      crush: '.crush/skills',
-      antigravity: '.gemini/skills',
     },
     skills: [
-      { relativeSkillPath: 'find-skills', installCatalogName: 'find-skills', repoTargets: ['codex', 'claude', 'gemini', 'opencode', 'antigravity'] },
+      { relativeSkillPath: 'find-skills', installCatalogName: 'find-skills', repoTargets: ['codex', 'claude', 'gemini', 'opencode'] },
     ],
     legacyUnmanaged: [],
   });

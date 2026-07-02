@@ -44,23 +44,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeProjectSourceFile: 'GEMINI.md',
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--yolo']),
-    deprecated: true,  // Replaced by Antigravity CLI on 2026-06-18; keep syncing but no new features
-  }),
-  // Antigravity CLI (Google) — successor to Gemini CLI. Inherits Agent Skills, Hooks,
-  // Subagents, and Extensions from Gemini CLI. Built in Go. Not 1:1 feature parity.
-  // Conservative assumption: same skill paths and instruction file as Gemini CLI.
-  // TODO: verify paths after Antigravity CLI docs become available.
-  antigravity: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'team', 'harness', 'superpowers']),
-    commandName: 'antigravity',
-    runtimeClientId: 'antigravity-cli',
-    projectSkillRoot: '.gemini/skills',    // Inherited from Gemini CLI; verify after install
-    skillFormat: 'markdown-directory',
-    nativeMetadataRoot: '.gemini',          // May change; verify after install
-    instructionFileName: 'GEMINI.md',       // Inherited from Gemini CLI; verify after install
-    nativeProjectSourceFile: 'GEMINI.md',
-    modelArgFlag: '-m',
-    unattendedArgs: Object.freeze(['--yolo']),
+    deprecated: true,  // Gemini CLI superseded; keep syncing but no new features
   }),
   opencode: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents', 'team']),
@@ -74,23 +58,6 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeProjectSourceFile: 'AIOS.md',
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['run', '--dangerously-skip-permissions']),
-  }),
-  // Crush (charmbracelet) — successor to OpenCode. Auto-discovers ~/.agents/skills/,
-  // ~/.claude/skills/, .agents/skills/, .claude/skills/, and .crush/skills/.
-  // Auto-loads AGENTS.md, CLAUDE.md, and GEMINI.md as context files.
-  // MCP config in crush.json under "mcp" namespace. Hooks are Claude Code–compatible.
-  crush: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents', 'team']),
-    commandName: 'crush',
-    runtimeClientId: 'crush-cli',
-    projectSkillRoot: '.crush/skills',
-    skillFormat: 'markdown-directory',
-    agentTargetRoot: '.crush/agents',
-    nativeMetadataRoot: '.crush',
-    instructionFileName: 'AGENTS.md',
-    nativeProjectSourceFile: 'AGENTS.md',
-    modelArgFlag: '--model',
-    unattendedArgs: Object.freeze(['--yolo']),
   }),
   // Hermes Agent (NousResearch) — CLI agent with MCP, skills, cron, memory, delegate_task.
   // Skill format: markdown-directory (SKILL.md frontmatter + steps).
@@ -117,9 +84,9 @@ export const CLIENT_SELECTIONS = Object.freeze(['all', ...ALL_CLIENTS]);
 export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
-  agents: Object.freeze(['claude', 'codex', 'opencode', 'crush']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush', 'hermes']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'antigravity', 'opencode', 'crush']),
+  agents: Object.freeze(['claude', 'codex', 'opencode']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'hermes']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode']),
   harness: ALL_CLIENTS,
 });
 
@@ -155,29 +122,11 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
       Object.freeze({ scope: 'home', file: 'settings.json' }),
     ]),
   }),
-  // Antigravity CLI MCP — inherited from Gemini CLI; verify paths after install.
-  antigravity: Object.freeze({
-    format: 'json',
-    namespace: 'mcpServers',
-    scopes: Object.freeze([
-      Object.freeze({ scope: 'project', file: '.gemini/settings.json' }),
-      Object.freeze({ scope: 'home', file: 'settings.json' }),
-    ]),
-  }),
   opencode: Object.freeze({
     format: 'opencode-json',
     namespace: 'mcp',
     scopes: Object.freeze([
       Object.freeze({ scope: 'home', file: 'opencode.json' }),
-    ]),
-  }),
-  crush: Object.freeze({
-    format: 'json',
-    namespace: 'mcp',
-    scopes: Object.freeze([
-      Object.freeze({ scope: 'project', file: 'crush.json' }),
-      Object.freeze({ scope: 'project', file: '.crush.json' }),
-      Object.freeze({ scope: 'home', file: 'crush.json' }),
     ]),
   }),
   // Hermes Agent MCP — JSON stdio format, mcpServers namespace.

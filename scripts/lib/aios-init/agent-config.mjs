@@ -34,6 +34,13 @@ export const AGENT_CONFIG = {
     hookFile: null,
     hasHook: false,
   },
+  hermes: {
+    cli: 'hermes',
+    bridgeName: 'hermes-cli',
+    configFile: 'AGENTS.md',
+    hookFile: null,
+    hasHook: false,
+  },
 };
 
 export const MARKER = '<!-- AIOS: .aios/context-db/index.json -->';

@@ -56,8 +56,7 @@ test('collectClientMcpTargets includes project-scoped fallbacks when home is una
   // claude: project scope present
   // gemini: home scope skipped → project scope present
   // opencode: home only -> skipped (no project scope)
-  // crush: project AGENTS.md fallback shares the codex/opencode instruction surface.
-  assert.deepEqual(clients, ['claude', 'codex', 'crush', 'gemini']);
+  assert.deepEqual(clients, ['claude', 'codex', 'gemini']);
 });
 
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
@@ -79,12 +78,11 @@ function proxiedEntry(rootDir, alias = PRIMARY_BROWSER_ALIAS) {
   };
 }
 
-test('inspectMcpProxyTarget recognizes proxied entries in JSON, TOML, opencode, and crush formats', async () => {
+test('inspectMcpProxyTarget recognizes proxied entries in JSON, TOML, and opencode formats', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-mcp-inspect-root-'));
   const jsonPath = path.join(rootDir, '.mcp.json');
   const tomlPath = path.join(rootDir, 'config.toml');
   const opencodePath = path.join(rootDir, 'opencode.json');
-  const crushPath = path.join(rootDir, 'crush.json');
   await mkdir(rootDir, { recursive: true });
 
   await writeFile(jsonPath, JSON.stringify({
@@ -106,12 +104,8 @@ test('inspectMcpProxyTarget recognizes proxied entries in JSON, TOML, opencode, 
       },
     },
   }), 'utf8');
-  await writeFile(crushPath, JSON.stringify({
-    mcp: { [PRIMARY_BROWSER_ALIAS]: proxiedEntry(rootDir) },
-  }), 'utf8');
 
   assert.equal(inspectMcpProxyTarget(jsonPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir }).proxied, true);
   assert.equal(inspectMcpProxyTarget(tomlPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'toml' }).proxied, true);
   assert.equal(inspectMcpProxyTarget(opencodePath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'opencode-json', namespace: 'mcp' }).proxied, true);
-  assert.equal(inspectMcpProxyTarget(crushPath, { alias: PRIMARY_BROWSER_ALIAS, rootDir, format: 'json', namespace: 'mcp' }).proxied, true);
 });

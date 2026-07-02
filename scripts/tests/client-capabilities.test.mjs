@@ -68,17 +68,6 @@ test('client capability report covers all registered clients and blocks pending-
     assert.equal(client.harnessLiveAllowed, false);
     assert.equal(client.verification.status, 'blocked');
   }
-
-  for (const clientId of ['antigravity', 'crush']) {
-    const client = byId(report, clientId);
-    assert.equal(client.status, 'pending-smoke');
-    assert.equal(client.staticProjectionAllowed, true);
-    assert.equal(client.liveExecutionAllowed, false);
-    assert.equal(client.skillTrainingAllowed, false);
-    assert.equal(client.qualityGateRunnerAllowed, false);
-    assert.equal(client.harnessLiveAllowed, false);
-    assert.ok(client.reasons.some((reason) => /smoke|verified|one-shot/i.test(reason)), `${clientId} should explain pending smoke`);
-  }
 });
 
 test('client evidence must be passing, client-scoped, and bidirectional before verification', async () => {
@@ -280,8 +269,6 @@ test('aios clients doctor --json emits strict rollout status for six clients', (
   assert.equal(result.status, 1, result.stderr || result.stdout);
   const report = JSON.parse(result.stdout);
   assert.deepEqual(report.clients.map((client) => client.clientId), ALL_CLIENTS);
-  assert.equal(byId(report, 'antigravity').status, 'pending-smoke');
-  assert.equal(byId(report, 'crush').liveExecutionAllowed, false);
   assert.equal(byId(report, 'codex').liveExecutionAllowed, false);
   assert.equal(byId(report, 'codex').verification.status, 'blocked');
   assert.equal(byId(report, 'codex').compressionCompliance.metric, 'bidirectional-turn-compression');

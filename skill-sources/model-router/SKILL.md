@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, model-router, orchestration, dispatch, essential]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Model Router

@@ -42,8 +42,6 @@ async function seedNativeRoot(rootDir) {
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
-      crush: { tier: 'compatibility', metadataRoot: '.crush', outputs: ['AGENTS.md', '.crush/skills'] },
-      antigravity: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
     },
   });
   await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
@@ -53,8 +51,6 @@ async function seedNativeRoot(rootDir) {
       claude: '.claude/skills',
       gemini: '.gemini/skills',
       opencode: '.opencode/skills',
-      crush: '.crush/skills',
-      antigravity: '.gemini/skills',
     },
     skills: [],
     legacyUnmanaged: [],
@@ -76,15 +72,11 @@ async function seedNativeRoot(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project'), { recursive: true });
-  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project'), { recursive: true });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'codex', 'project', 'AGENTS.md'), 'codex project\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'claude project\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {});
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'gemini project\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'opencode project\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'crush', 'project', 'AGENTS.md'), 'crush project\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'antigravity', 'project', 'GEMINI.md'), 'antigravity project\n', 'utf8');
 }
 
 test('token profile parses for setup and update and rejects invalid values', () => {

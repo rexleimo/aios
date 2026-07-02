@@ -33,7 +33,7 @@ async function readJson(filePath) {
 
 test('codemap MCP targets agree with the client registry (single source of truth)', () => {
   const projectRoot = '/proj';
-  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode', crush: '/h/.config/crush', antigravity: '/h/.gemini' };
+  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode' };
   const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
   const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
 
@@ -44,8 +44,8 @@ test('codemap MCP targets agree with the client registry (single source of truth
   assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
 
   // The registry descriptor must point at the same file basenames codemap actually writes.
-  // Clients that share a dedup'd path (e.g. antigravity shares .gemini/settings.json with gemini)
-  // are absent from byClient — that's correct because the first writer already covers them.
+  // Clients that share a dedup'd path are absent from byClient — that's correct because
+  // the first writer already covers them.
   for (const client of ALL_CLIENTS) {
     const target = byClient[client];
     if (!target) continue; // dedup'd path — covered by another client
@@ -55,9 +55,6 @@ test('codemap MCP targets agree with the client registry (single source of truth
     assert.ok(scopeFiles.some((f) => target.path.endsWith(f)),
       `${client}: registry scope files [${scopeFiles}] must match codemap target ${target.path}`);
   }
-  // antigravity shares .gemini/settings.json with gemini — verify explicitly
-  assert.ok(!byClient.antigravity, 'antigravity should be dedup’d (shares path with gemini)');
-  assert.ok(byClient.gemini.path.endsWith(path.join('.gemini', 'settings.json')));
 });
 
 test('codemap instruction filenames agree with the client registry instructionFileName', () => {
@@ -75,28 +72,25 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const claudeHome = path.join(rootDir, 'home', '.claude');
   const geminiHome = path.join(rootDir, 'home', '.gemini');
   const opencodeHome = path.join(rootDir, 'home', '.config', 'opencode');
-  const crushHome = path.join(rootDir, 'home', '.config', 'crush');
 
   await mkdir(codexHome, { recursive: true });
-  await mkdir(crushHome, { recursive: true });
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
   await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
   await writeJson(path.join(projectRoot, '.gemini', 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(opencodeHome, 'opencode.json'), { mcp: { existing: { type: 'local', command: ['node', 'server.js'] } } });
-  await writeJson(path.join(crushHome, 'crush.json'), { mcp: { existing: { type: 'stdio', command: 'node' } } });
 
   const logs = [];
   const result = await installCodemap({
     rootDir,
     projectRoot,
     io: silentIo(logs),
-    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, crush: crushHome, antigravity: geminiHome },
+    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome },
     skipCrgChecks: true,
     crgVersion: 'code-review-graph test',
   });
 
-  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'crush', 'gemini', 'opencode']);
+  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'opencode']);
 
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);

@@ -1,6 +1,6 @@
 # Harness CLI (AIOS)
 
-> 给 `codex` / `claude` / `gemini` / `opencode` / `antigravity` / `crush` 加上记忆、协作和验证能力的本地 Agent 工作流层。
+> 给 `codex` / `claude` / `gemini` / `opencode` / `hermes` 加上记忆、协作和验证能力的本地 Agent 工作流层。
 
 [文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [官方案例库](https://cli.rexai.top/zh/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
@@ -28,7 +28,7 @@ aios
 
 | 能力 | 说明 | 命令 |
 |------|------|------|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `antigravity` / `crush` 自动加载 |
+| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `hermes` 自动加载 |
 | **Memo Storage** | 适合 Git 共享的项目 memo；默认 append-only file 存储，也可切到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
 | **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
 | **原生 Token 压缩** | 自研输入/输出 token 压缩，参考 RTK/Caveman 思路，但不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
@@ -76,7 +76,7 @@ aios team status --provider codex --watch
 ## 工作原理
 
 ```text
-用户 → codex / claude / gemini / opencode / antigravity / crush
+用户 → codex / claude / gemini / opencode / hermes
      → zsh wrapper（透明包装）
      → ctx-agent.mjs（ContextDB 集成）
         → contextdb CLI（记忆持久化）
@@ -84,7 +84,7 @@ aios team status --provider codex --watch
      → browser MCP（可选浏览器自动化）
 ```
 
-安装后，直接使用 `codex`、`claude`、`gemini`、`opencode`、`antigravity` 或 `crush` 命令即可，Harness CLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
+安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 或 `hermes` 命令即可，Harness CLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
 
 ## 文档
 

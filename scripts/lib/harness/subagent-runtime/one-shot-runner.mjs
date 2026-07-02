@@ -12,7 +12,7 @@ import {
 } from './client-args.mjs';
 import { normalizeText } from './text.mjs';
 
-const PENDING_SMOKE_SUBAGENT_CLIENTS = new Set(['antigravity-cli', 'crush-cli']);
+const PENDING_SMOKE_SUBAGENT_CLIENTS = new Set([]);
 
 function buildRuntimeInvocation({ clientId, systemPrompt, userPrompt, env, codexOutput, modelRouting }) {
   const systemText = normalizeText(systemPrompt);

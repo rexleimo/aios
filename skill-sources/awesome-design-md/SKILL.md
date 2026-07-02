@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [general, design, ui, essential]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # Awesome DESIGN.md

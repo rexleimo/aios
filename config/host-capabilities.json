@@ -1,4 +1,4 @@
-﻿{
+{
   "schemaVersion": 1,
   "levels": {
     "L3": "Full transparent interception: pre-tool rewrite or controlled runtime plus MCP proxy and compact packets.",
@@ -64,24 +64,6 @@
         "uncontrolledHostOutput": "policy-violation"
       }
     },
-    "antigravity": {
-      "targetLevel": "L2",
-      "capabilities": [
-        "mcpProxy",
-        "compactPacket"
-      ],
-      "limits": [
-        "Live execution remains pending-smoke; no raw host shell L3 claim."
-      ],
-      "requiredEntrypoint": "aios-managed-runner",
-      "directHostBypassAllowed": false,
-      "turnCompression": {
-        "preSendRequired": true,
-        "postReceiveRequired": true,
-        "mode": "tight",
-        "uncontrolledHostOutput": "policy-violation"
-      }
-    },
     "opencode": {
       "targetLevel": "L2",
       "capabilities": [
@@ -90,24 +72,6 @@
       ],
       "limits": [
         "L3 depends on plugin or tool-call mutation support."
-      ],
-      "requiredEntrypoint": "aios-managed-runner",
-      "directHostBypassAllowed": false,
-      "turnCompression": {
-        "preSendRequired": true,
-        "postReceiveRequired": true,
-        "mode": "tight",
-        "uncontrolledHostOutput": "policy-violation"
-      }
-    },
-    "crush": {
-      "targetLevel": "L2",
-      "capabilities": [
-        "mcpProxy",
-        "compactPacket"
-      ],
-      "limits": [
-        "Live execution remains pending-smoke until CLI smoke evidence is verified."
       ],
       "requiredEntrypoint": "aios-managed-runner",
       "directHostBypassAllowed": false,

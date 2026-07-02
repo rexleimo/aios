@@ -9,9 +9,9 @@ export const AGENTS_MD_MARKERS = Object.freeze({
 });
 
 export const CLIENT_INSTRUCTION_FILES = Object.freeze([
-  Object.freeze({ clientKeys: ['codex', 'opencode', 'crush', 'hermes'], fileName: 'AGENTS.md' }),
+  Object.freeze({ clientKeys: ['codex', 'opencode', 'hermes'], fileName: 'AGENTS.md' }),
   Object.freeze({ clientKeys: ['claude'], fileName: 'CLAUDE.md' }),
-  Object.freeze({ clientKeys: ['gemini', 'antigravity'], fileName: 'GEMINI.md' }),
+  Object.freeze({ clientKeys: ['gemini'], fileName: 'GEMINI.md' }),
 ]);
 
 export const CLIENT_MCP_ENTRY_OVERRIDES = Object.freeze({

@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: true
 tags: [skill, training, optimization, SkillOpt, iteration]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # SkillOpt-Lite: Agent-Native Skill Training

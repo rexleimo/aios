@@ -222,11 +222,11 @@ Search preserves the memo visibility model:
 - `agent_private` records require the matching `--agent <runtime-client-id>`.
 - Other clients' private scratch notes are filtered out.
 
-Runtime IDs are `codex-cli`, `claude-code`, `gemini-cli`, `antigravity-cli`, `opencode-cli`, and `crush-cli`.
+Runtime IDs are `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli`, and `hermes-agent`.
 
 ### Agent Instruction Coverage
 
-The search guidance is generated from shared native instructions. Codex, OpenCode, and Crush receive it through `AGENTS.md`; Claude receives it through `CLAUDE.md`; Gemini and Antigravity receive it through `GEMINI.md`. Antigravity and Crush remain `pending-smoke` for live execution, but their static instruction projection includes the same search rules.
+The search guidance is generated from shared native instructions. Codex and OpenCode receive it through `AGENTS.md`; Claude receives it through `CLAUDE.md`; Gemini receives it through `GEMINI.md`.
 ### Agent Governance Evidence
 
 When you add or re-route agents, or change a workflow skill, treat the change like an operating-procedure update instead of a simple doc tweak. Record smoke evidence before trusting the new live path:

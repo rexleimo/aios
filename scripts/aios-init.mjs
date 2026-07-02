@@ -31,13 +31,13 @@ async function ensureWorkspace(workspaceRoot, { dryRun = false } = {}) {
 }
 
 function usage() {
-  console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode>] [--all] [--dry-run] [--yes-compression-tools]
+  console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes>] [--all] [--dry-run] [--yes-compression-tools]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
 Options:
   --agent <name>              Init only the specified agent
-  --all                      Init all four agents (even if CLI not detected)
+  --all                      Init all agents (even if CLI not detected)
   --dry-run                  Preview what would be done without writing files
   --yes-compression-tools    Skip RTK/Caveman privacy prompt (auto-consent)`);
 }
@@ -55,7 +55,7 @@ export async function main(argv = process.argv.slice(2)) {
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 
   if (requestedAgent && !AGENT_CONFIG[requestedAgent]) {
-    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode`);
+    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes`);
     process.exit(1);
   }
 
@@ -68,7 +68,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (agents.length === 0) {
     console.log('No supported AI coding agents detected.');
-    console.log('Supported: claude, codex, gemini, opencode');
+    console.log('Supported: claude, codex, gemini, opencode, hermes');
     console.log('Use --all to initialize for all agents regardless of detection.');
     process.exit(0);
   }

@@ -126,6 +126,6 @@ node scripts/aios.mjs clients doctor --json
 node scripts/aios.mjs interception proof --json
 ```
 
-proof 输出包含 Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` 的 `turn_compression_matrix`。合规客户端必须同时在 `pre_send` 和 `post_receive` 上有非零 `saved_bytes`。
+proof 输出包含 Codex、Claude、Gemini、OpenCode、`aios-harness`、`generic-mcp` 的 `turn_compression_matrix`。合规客户端必须同时在 `pre_send` 和 `post_receive` 上有非零 `saved_bytes`。
 
 不经过 AIOS-managed runner 的 direct host output 不计入省 token。它会被记录为 `policy-violation` / `non_compliant`，且 `saved_bytes=0`，避免用汇总数字掩盖绕过链路。

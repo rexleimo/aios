@@ -10,7 +10,6 @@ import {
 } from './emitters/shared.mjs';
 import { renderCodexAgent } from './emitters/codex.mjs';
 import { renderOpencodeAgent } from './emitters/opencode.mjs';
-import { renderCrushAgent } from './emitters/crush.mjs';
 import { loadCanonicalAgents } from './source-tree.mjs';
 import { resolveClientAgentTargets } from '../clients/capabilities/index.mjs';
 import { getClientAgentTargetRoot } from '../clients/paths/index.mjs';
@@ -89,7 +88,6 @@ function buildEmitterMap(emitters = {}) {
     claude: emitters.claude || renderClaudeAgent,
     codex: emitters.codex || renderCodexAgent,
     opencode: emitters.opencode || renderOpencodeAgent,
-    crush: emitters.crush || renderCrushAgent,
   };
 }
 

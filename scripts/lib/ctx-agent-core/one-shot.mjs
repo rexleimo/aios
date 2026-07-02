@@ -4,7 +4,7 @@ import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePrevi
 import { buildOpenCodePrompt } from './opencode-context.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
 
-const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set(['antigravity-cli', 'crush-cli']);
+const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set([]);
 
 async function ensurePlanArtifact(rootDir, taskTitle) {
   const { promises: fs } = await import('node:fs');
@@ -87,10 +87,6 @@ const ONE_SHOT_HANDLERS = {
   'opencode-cli': ({ prompt, extraArgs }) => runBufferedCommand(
     commandForRuntime('opencode-cli'),
     ['run', ...buildOpenCodeStrictAgentArgs(extraArgs), buildOpenCodePrompt({ prompt })]
-  ),
-  'crush-cli': ({ prompt, extraArgs }) => runBufferedCommand(
-    commandForRuntime('crush-cli'),
-    ['run', ...extraArgs, prompt]
   ),
 };
 

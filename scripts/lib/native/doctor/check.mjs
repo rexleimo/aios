@@ -7,7 +7,7 @@ export async function checkNativeEnhancementsSync({ rootDir, targetRootDir = roo
   const manifest = loadNativeSyncManifest(rootDir);
   const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
   const clients = resolveNativeClients(client);
-  // Deduplicate clients that share the same metadataRoot (e.g. gemini and antigravity both use .gemini).
+  // Deduplicate clients that share the same metadataRoot.
   // Keep only the first client per metadataRoot to avoid false drift from metadata.client mismatches.
   const seenRoots = new Set();
   const dedupedClients = [];

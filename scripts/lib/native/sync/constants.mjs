@@ -1,8 +1,6 @@
 import { ALL_CLIENTS } from '../../clients/registry.mjs';
-import { renderAntigravityNativeOutputs } from '../emitters/antigravity.mjs';
 import { renderClaudeNativeOutputs } from '../emitters/claude.mjs';
 import { renderCodexNativeOutputs } from '../emitters/codex.mjs';
-import { renderCrushNativeOutputs } from '../emitters/crush.mjs';
 import { renderGeminiNativeOutputs } from '../emitters/gemini.mjs';
 import { renderHermesNativeOutputs } from '../emitters/hermes.mjs';
 import { renderOpencodeNativeOutputs } from '../emitters/opencode.mjs';
@@ -13,8 +11,6 @@ const EMITTER_REGISTRY = Object.freeze({
   claude: renderClaudeNativeOutputs,
   gemini: renderGeminiNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
-  antigravity: renderAntigravityNativeOutputs,
-  crush: renderCrushNativeOutputs,
   hermes: renderHermesNativeOutputs,
 });
 

@@ -126,6 +126,6 @@ node scripts/aios.mjs clients doctor --json
 node scripts/aios.mjs interception proof --json
 ```
 
-proof output에는 Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, `generic-mcp`의 `turn_compression_matrix`가 포함됩니다. compliant client는 `pre_send`와 `post_receive` 양쪽 모두에서 non-zero `saved_bytes`를 가져야 합니다.
+proof output에는 Codex, Claude, Gemini, OpenCode, `aios-harness`, `generic-mcp`의 `turn_compression_matrix`가 포함됩니다. compliant client는 `pre_send`와 `post_receive` 양쪽 모두에서 non-zero `saved_bytes`를 가져야 합니다.
 
 AIOS-managed runner 밖의 direct host output은 savings로 계산하지 않습니다. `policy-violation` / `non_compliant`로 기록되고 `saved_bytes=0`이 됩니다.

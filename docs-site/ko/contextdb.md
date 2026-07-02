@@ -210,11 +210,11 @@ node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source
 - `agent_private` 기록은 일치하는 `--agent <runtime-client-id>` 가 필요합니다.
 - 다른 클라이언트의 private scratch note 는 필터링됩니다.
 
-Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `antigravity-cli`, `opencode-cli`, `crush-cli` 입니다.
+Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli`, `hermes-agent` 입니다.
 
 ### 모든 클라이언트 지침 배포
 
-검색 가이드는 shared native instructions 에서 생성됩니다. Codex, OpenCode, Crush 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini 와 Antigravity 는 `GEMINI.md` 로 받습니다. Antigravity 와 Crush 는 live execution 에서는 여전히 `pending-smoke` 이지만, 정적 instruction projection 에는 동일한 검색 규칙이 포함됩니다.
+검색 가이드는 shared native instructions 에서 생성됩니다. Codex, OpenCode 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini 는 `GEMINI.md` 로 받습니다.
 
 ## Searching Your History
 

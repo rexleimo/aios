@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [general, safety]
-repoTargets: [codex, claude, gemini, antigravity, opencode, crush]
+repoTargets: [codex, claude, gemini, opencode]
 ---
 
 # 浏览器操作约束

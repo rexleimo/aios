@@ -52,18 +52,6 @@ const CLIENT_STRATEGIES = Object.freeze({
       combineSystemAndPrompt(systemText, promptText),
     ],
   }),
-  [getClientRuntimeId('crush')]: ({
-    systemText,
-    promptText,
-    routedExtraArgs,
-  }) => ({
-    runner: 'spawn',
-    args: [
-      'run',
-      ...routedExtraArgs,
-      combineSystemAndPrompt(systemText, promptText),
-    ],
-  }),
   [getClientRuntimeId('opencode')]: ({ systemText, promptText, routedExtraArgs }) => ({
     runner: 'spawn',
     args: ['run', ...buildOpenCodeStrictAgentArgs(routedExtraArgs), combineSystemAndPrompt(systemText, promptText)],
