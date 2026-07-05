@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="10" fill="#0b1f3a"/>
-  <path d="M15 50V14h18c9 0 16 5 16 14 0 6-3 10-8 12l9 10H38l-7-8h-4v8H15zm12-19h7c4 0 7-2 7-5s-3-5-7-5h-7v10z" fill="#50e3c2"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Harness CLI">
+  <rect width="120" height="120" rx="20" fill="#06070D"/>
+  <path d="M28 90V30h34c17 0 28 9 28 24 0 11-6 18-15 21l17 15H75L61 77H44v13H28zm16-27h16c9 0 14-3 14-10s-5-10-14-10H44v20z" fill="#22D3EE"/>
 </svg>
