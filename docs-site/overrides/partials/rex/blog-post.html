@@ -1,0 +1,27 @@
+<div class="rex-blog-shell rex-blog-post" data-rex-shell="blog-post">
+  {% include "partials/rex/blog-header.html" %}
+  <main class="rex-blog-article">
+    <article class="rex-blog-article__inner md-typeset">
+      <header class="rex-blog-article-header">
+        <nav class="rex-blog-breadcrumb" aria-label="Breadcrumb"><a href="https://cli.rexai.top/">Home</a><span>/</span><a href="https://cli.rexai.top/blog/">Blog</a><span>/</span><strong>{{ page.title }}</strong></nav>
+        <div class="rex-blog-tags"><span>SYSTEM ARCHITECTURE</span><span>Explorer</span></div>
+        <h1>{{ page.title }}</h1>
+        <div class="rex-blog-article-meta"><span class="rex-blog-avatar">PJ</span><strong>Rex AI Team</strong><span>{{ page.meta.date or page.meta.publish_date or 'July 2, 2026' }}</span><span>8 min read</span></div>
+        <div class="rex-blog-article-hero" aria-hidden="true"><span></span></div>
+      </header>
+      <div class="rex-blog-article-body">
+        {% include "partials/content.html" %}
+      </div>
+    </article>
+  </main>
+  <section class="rex-related-reading" aria-label="Related reading">
+    <span>RELATED READING</span>
+    <h2>More from the blog</h2>
+    <div class="rex-related-reading__grid">
+      <a href="2026-06-agent-governance/"><strong>SYSTEM DESIGN</strong><span>Agent Governance Framework</span><em>Read more -></em></a>
+      <a href="contextdb-fts-bm25-search/"><strong>INFRASTRUCTURE</strong><span>ContextDB Search Upgrade</span><em>Read more -></em></a>
+      <a href="2026-05-model-router/"><strong>ARCHITECTURE</strong><span>Multi-Model Routing Strategy</span><em>Read more -></em></a>
+    </div>
+  </section>
+  {% include "partials/rex/blog-footer.html" %}
+</div>

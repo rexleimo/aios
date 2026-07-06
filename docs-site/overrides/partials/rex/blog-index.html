@@ -1,0 +1,88 @@
+<div class="rex-blog-shell rex-blog-index" data-rex-shell="blog-index">
+  {% include "partials/rex/blog-header.html" %}
+  <main class="rex-blog-index__main">
+    <section class="rex-blog-hero">
+      <span class="rex-blog-hero__badge">THE HARNESS CLI BLOG</span>
+      <h1>Notes from the local agent layer</h1>
+      <p>Deep dives, release notes, and field reports on memory, multi-agent orchestration, and verification — straight from the people building Harness CLI.</p>
+      <div class="rex-blog-hero__pills" aria-label="Blog categories">
+        <span class="is-active">All</span>
+        <span>Research</span>
+        <span>Memory</span>
+        <span>Teams</span>
+        <span>Governance</span>
+        <span>Platform</span>
+      </div>
+    </section>
+
+    <section class="rex-blog-featured" aria-label="Featured article">
+      <a class="rex-blog-featured__media" href="2026-06-agent-governance/">
+        <span class="rex-blog-featured__badge">FEATURED</span>
+        <span class="rex-blog-featured__icon"></span>
+      </a>
+      <div class="rex-blog-featured__body">
+        <div class="rex-blog-meta"><span>TEAMS</span><small>12 min read</small></div>
+        <h2><a href="2026-06-agent-governance/">How multi-agent teams stopped stepping on each other</a></h2>
+        <p>We rebuilt orchestration around isolated worktrees, a shared task ledger, and adversarial verification. Here's the architecture that lets a dozen agents work the same repo without merge chaos.</p>
+        <div class="rex-blog-author"><span></span><strong>Rex Chen</strong><small>Jul 4, 2026</small></div>
+      </div>
+    </section>
+
+    <section class="rex-blog-posts" aria-label="All posts">
+      <div class="rex-blog-posts__header">
+        <h2>All posts <span>42 articles</span></h2>
+        <button type="button">Newest</button>
+      </div>
+      <div class="rex-blog-card-grid">
+        <a class="rex-blog-card is-blue" href="2026-05-token-compression/">
+          <span class="rex-blog-card__thumb"><span data-icon="database"></span></span>
+          <span class="rex-blog-card__meta"><strong>MEMORY</strong>5 min read</span>
+          <span class="rex-blog-card__title">ContextDB: search that actually remembers</span>
+          <span class="rex-blog-card__desc">Vector recall tuned for code context, so agents pull the right snippet instead of the nearest one.</span>
+          <span class="rex-blog-card__footer"><span>Rex Chen</span><small>Jun 28, 2026</small></span>
+        </a>
+        <a class="rex-blog-card is-green" href="2026-06-agent-governance/">
+          <span class="rex-blog-card__thumb"><span data-icon="shield"></span></span>
+          <span class="rex-blog-card__meta"><strong>GOVERNANCE</strong>7 min read</span>
+          <span class="rex-blog-card__title">Make agent teams prove themselves first</span>
+          <span class="rex-blog-card__desc">A gated pipeline that forces every team run through verification before it can touch main.</span>
+          <span class="rex-blog-card__footer"><span>Mira Osei</span><small>Jun 21, 2026</small></span>
+        </a>
+        <a class="rex-blog-card is-violet" href="windows-cli-startup-stability/">
+          <span class="rex-blog-card__thumb"><span data-icon="monitor"></span></span>
+          <span class="rex-blog-card__meta"><strong>PLATFORM</strong>4 min read</span>
+          <span class="rex-blog-card__title">Fixing cold starts on Windows</span>
+          <span class="rex-blog-card__desc">What we changed in the launcher to get consistent sub-second startup on Windows 11.</span>
+          <span class="rex-blog-card__footer"><span>Dan Roth</span><small>Jun 14, 2026</small></span>
+        </a>
+        <a class="rex-blog-card is-orange" href="rl-training-system/">
+          <span class="rex-blog-card__thumb"><span data-icon="flask"></span></span>
+          <span class="rex-blog-card__meta"><strong>RESEARCH</strong>9 min read</span>
+          <span class="rex-blog-card__title">Teaching agents to self-diagnose</span>
+          <span class="rex-blog-card__desc">A debug-hub loop that reproduces, isolates, and confirms a fix before reporting done.</span>
+          <span class="rex-blog-card__footer"><span>Rex Chen</span><small>Jun 6, 2026</small></span>
+        </a>
+        <a class="rex-blog-card is-red" href="orchestrate-live/">
+          <span class="rex-blog-card__thumb"><span data-icon="team"></span></span>
+          <span class="rex-blog-card__meta"><strong>TEAMS</strong>6 min read</span>
+          <span class="rex-blog-card__title">Watching a dozen agents work live</span>
+          <span class="rex-blog-card__desc">The HUD that turns an opaque orchestration run into a readable, interruptible timeline.</span>
+          <span class="rex-blog-card__footer"><span>Mira Osei</span><small>May 30, 2026</small></span>
+        </a>
+        <a class="rex-blog-card is-teal" href="2026-05-native-token-compression/">
+          <span class="rex-blog-card__thumb"><span data-icon="bolt"></span></span>
+          <span class="rex-blog-card__meta"><strong>MEMORY</strong>8 min read</span>
+          <span class="rex-blog-card__title">Native token compression, explained</span>
+          <span class="rex-blog-card__desc">How we shrink context windows without losing the details agents rely on.</span>
+          <span class="rex-blog-card__footer"><span>Dan Roth</span><small>May 22, 2026</small></span>
+        </a>
+      </div>
+    </section>
+
+    <section class="rex-blog-pagination" aria-label="Pagination">
+      <button type="button">+ Load more articles</button>
+      <div><span class="is-active">1</span><span>2</span><span>3</span><span>...</span><span>8</span></div>
+    </section>
+  </main>
+  {% include "partials/rex/blog-footer.html" %}
+</div>

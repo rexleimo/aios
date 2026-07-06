@@ -1,0 +1,45 @@
+<div class="rex-doc-layout rex-doc-page" data-rex-shell="docs">
+  {% include "partials/rex/docs-sidebar.html" %}
+  <main class="rex-doc-main" id="rex-doc-main">
+    <div class="rex-doc-main__inner">
+      <nav class="rex-doc-breadcrumb" aria-label="Breadcrumb">
+        <a href="{{ '/' | url }}">Home</a>
+        {% if page.parent %}
+          <span>/</span>
+          <span>{{ page.parent.title }}</span>
+        {% endif %}
+        <span>/</span>
+        <strong>{{ page.title }}</strong>
+      </nav>
+
+      <header class="rex-doc-hero">
+        <h1>{{ page.title }}</h1>
+        {% if page.meta and page.meta.description %}
+          <p>{{ page.meta.description }}</p>
+        {% elif config.site_description %}
+          <p>{{ config.site_description }}</p>
+        {% endif %}
+      </header>
+
+      {% if page.toc %}
+        <section class="rex-doc-outline" aria-label="On this page">
+          <div class="rex-doc-outline__title"><span aria-hidden="true"></span>On This Page</div>
+          <ul>
+            {% for toc_item in page.toc %}
+              <li><a href="#{{ toc_item.id }}">{{ toc_item.title }}</a></li>
+              {% if toc_item.children %}
+                {% for child in toc_item.children %}
+                  <li class="is-child"><a href="#{{ child.id }}">{{ child.title }}</a></li>
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </section>
+      {% endif %}
+
+      <article class="rex-doc-content md-typeset">
+        {% include "partials/content.html" %}
+      </article>
+    </div>
+  </main>
+</div>
