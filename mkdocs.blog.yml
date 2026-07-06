@@ -79,6 +79,9 @@ plugins:
             Blog Home: 블로그 홈
             Posts: 글 목록
 
+hooks:
+  - scripts/mkdocs_blog_content.py
+
 extra:
   links:
     docs: https://cli.rexai.top/
@@ -88,6 +91,7 @@ extra:
 
 extra_javascript:
   - assets/analytics-placeholder.js
+  - assets/blog-runtime.js
 
 extra_css:
   - assets/custom.css

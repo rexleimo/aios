@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.3.3] - 2026-07-06
+
+- refresh home redesign and dynamic blog
+
 ## [3.3.2] - 2026-07-02
 
 ### Fixed
@@ -649,3 +653,4 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [0.1.0] - 2026-03-03
 
 - Initialize project versioning (`VERSION`, `CHANGELOG.md`) and release tooling baseline.
+

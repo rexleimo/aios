@@ -90,6 +90,12 @@
   filter: grayscale(1);
 }
 
+.rex-blog-article-hero.is-blue { background: linear-gradient(135deg, rgba(47, 132, 255, 0.88), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)), radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%), linear-gradient(135deg, #151515, #83b8ff 48%, #111111); }
+.rex-blog-article-hero.is-green { background: linear-gradient(135deg, rgba(31, 190, 97, 0.84), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)), radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%), linear-gradient(135deg, #151515, #87ddb3 48%, #111111); }
+.rex-blog-article-hero.is-violet { background: linear-gradient(135deg, rgba(139, 92, 246, 0.86), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)), radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%), linear-gradient(135deg, #151515, #c0a7ff 48%, #111111); }
+.rex-blog-article-hero.is-red { background: linear-gradient(135deg, rgba(248, 113, 113, 0.84), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)), radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%), linear-gradient(135deg, #151515, #ffaaaa 48%, #111111); }
+.rex-blog-article-hero.is-teal { background: linear-gradient(135deg, rgba(20, 184, 166, 0.88), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)), radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%), linear-gradient(135deg, #151515, #7ee8dc 48%, #111111); }
+
 .rex-blog-article-hero span {
   position: absolute;
   right: 12%;

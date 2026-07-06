@@ -1,13 +1,20 @@
+{% set current = rex_blog.current if rex_blog and rex_blog.current else none %}
 <div class="rex-blog-shell rex-blog-post" data-rex-shell="blog-post">
   {% include "partials/rex/blog-header.html" %}
   <main class="rex-blog-article">
     <article class="rex-blog-article__inner md-typeset">
       <header class="rex-blog-article-header">
-        <nav class="rex-blog-breadcrumb" aria-label="Breadcrumb"><a href="https://cli.rexai.top/">Home</a><span>/</span><a href="https://cli.rexai.top/blog/">Blog</a><span>/</span><strong>{{ page.title }}</strong></nav>
-        <div class="rex-blog-tags"><span>SYSTEM ARCHITECTURE</span><span>Explorer</span></div>
-        <h1>{{ page.title }}</h1>
-        <div class="rex-blog-article-meta"><span class="rex-blog-avatar">PJ</span><strong>Rex AI Team</strong><span>{{ page.meta.date or page.meta.publish_date or 'July 2, 2026' }}</span><span>8 min read</span></div>
-        <div class="rex-blog-article-hero" aria-hidden="true"><span></span></div>
+        <nav class="rex-blog-breadcrumb" aria-label="Breadcrumb"><a href="{{ rex_blog.docs_home_url }}">Home</a><span>/</span><a href="{{ rex_blog.blog_home_url }}">{{ rex_blog.strings.blog_label }}</a><span>/</span><strong>{{ current.title if current else page.title }}</strong></nav>
+        <div class="rex-blog-tags">
+          {% if current and current.tags %}
+            {% for tag in current.tags %}<span>{{ tag }}</span>{% endfor %}
+          {% elif current %}
+            <span>{{ current.category }}</span>
+          {% endif %}
+        </div>
+        <h1>{{ current.title if current else page.title }}</h1>
+        <div class="rex-blog-article-meta"><span class="rex-blog-avatar">{{ current.initials if current else 'RX' }}</span><strong>{{ current.author if current else 'RexAI Team' }}</strong><span>{{ current.date_label if current and current.date_label else (page.meta.date or page.meta.publish_date or '') }}</span><span>{{ current.read_time_label if current else '' }}</span></div>
+        <div class="rex-blog-article-hero {{ current.theme_class if current else '' }}" aria-hidden="true"><span></span></div>
       </header>
       <div class="rex-blog-article-body">
         {% include "partials/content.html" %}
@@ -15,12 +22,12 @@
     </article>
   </main>
   <section class="rex-related-reading" aria-label="Related reading">
-    <span>RELATED READING</span>
-    <h2>More from the blog</h2>
+    <span>{{ rex_blog.strings.related_label }}</span>
+    <h2>{{ rex_blog.strings.related_title }}</h2>
     <div class="rex-related-reading__grid">
-      <a href="{{ '2026-06-agent-governance/' | url }}"><strong>SYSTEM DESIGN</strong><span>Agent Governance Framework</span><em>Read more -&gt;</em></a>
-      <a href="{{ 'contextdb-fts-bm25-search/' | url }}"><strong>INFRASTRUCTURE</strong><span>ContextDB Search Upgrade</span><em>Read more -&gt;</em></a>
-      <a href="{{ '2026-05-model-router/' | url }}"><strong>ARCHITECTURE</strong><span>Multi-Model Routing Strategy</span><em>Read more -&gt;</em></a>
+      {% for post in rex_blog.related %}
+        <a href="{{ post.url }}"><strong>{{ post.category }}</strong><span>{{ post.title }}</span><em>{{ rex_blog.strings.read_more }}</em></a>
+      {% endfor %}
     </div>
   </section>
   {% include "partials/rex/blog-footer.html" %}

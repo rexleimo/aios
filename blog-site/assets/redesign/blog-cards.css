@@ -63,6 +63,11 @@
   letter-spacing: -0.03em;
 }
 
+.rex-blog-card__meta span {
+  color: var(--rex-blog-soft);
+  font-size: 0.72rem;
+}
+
 .rex-blog-card__title {
   margin-top: 0.8rem;
   color: var(--rex-blog-text);
