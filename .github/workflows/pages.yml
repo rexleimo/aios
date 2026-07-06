@@ -55,7 +55,7 @@ jobs:
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.resolve_page_url.outputs.page_url }}
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -79,10 +79,37 @@ jobs:
               );
             }
 
-      - name: Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages (attempt 1)
         if: steps.freshness.outputs.is_latest == 'true'
-        id: deployment
+        id: deployment_attempt_1
+        continue-on-error: true
         uses: actions/deploy-pages@v4
+
+      - name: Wait before retrying GitHub Pages deploy
+        if: steps.freshness.outputs.is_latest == 'true' && steps.deployment_attempt_1.outcome == 'failure'
+        run: sleep 15
+
+      - name: Deploy to GitHub Pages (attempt 2)
+        if: steps.freshness.outputs.is_latest == 'true' && steps.deployment_attempt_1.outcome == 'failure'
+        id: deployment_attempt_2
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+
+      - name: Resolve deployed page URL
+        if: steps.freshness.outputs.is_latest == 'true' && (steps.deployment_attempt_1.outcome == 'success' || steps.deployment_attempt_2.outcome == 'success')
+        id: resolve_page_url
+        run: |
+          page_url="${{ steps.deployment_attempt_1.outputs.page_url }}"
+          if [ -z "${page_url}" ]; then
+            page_url="${{ steps.deployment_attempt_2.outputs.page_url }}"
+          fi
+          echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Fail when GitHub Pages deploy retries are exhausted
+        if: steps.freshness.outputs.is_latest == 'true' && steps.deployment_attempt_1.outcome == 'failure' && steps.deployment_attempt_2.outcome == 'failure'
+        run: |
+          echo "::error title=GitHub Pages deploy failed::Both GitHub Pages deploy attempts failed."
+          exit 1
 
       - name: Skip stale deploy
         if: steps.freshness.outputs.is_latest != 'true'
