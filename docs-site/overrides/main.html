@@ -42,4 +42,29 @@
     }
   }
   </script>
+
+  <!-- 首页标记 — 给 body 加 md-home class 用于 CSS 区分 -->
+  {% if page.meta and page.meta.home %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      document.body.classList.add('md-home');
+    });
+  </script>
+  {% endif %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var path = window.location.pathname;
+      var body = document.body;
+      var isHome = {{ 'true' if page.meta and page.meta.home else 'false' }};
+
+      body.classList.add(isHome ? 'rex-home' : 'rex-doc-page');
+
+      if (path.indexOf('/blog/') === 0) {
+        body.classList.add('rex-blog');
+        if (path !== '/blog/' && !path.endsWith('/blog/')) {
+          body.classList.add('rex-blog-post');
+        }
+      }
+    });
+  </script>
 {% endblock %}

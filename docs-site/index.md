@@ -1,134 +1,252 @@
 ---
-title: Overview
-description: Harness CLI adds memory, collaboration, and verification to codex, claude, gemini, and opencode — without changing your workflow.
+title: Harness CLI — Local-First Agent Layer
+description: Harness CLI (AIOS) adds cross-session memory, multi-agent collaboration, and verification to codex, claude, gemini, and opencode — without changing how you work.
+home: true
 ---
 
-# Harness CLI (AIOS)
+<!-- ============================================================
+     Hero Section — 粒子流场 + 抽象环形装饰
+     设计稿: berPn > Hero (hDFaw)
+     ============================================================ -->
 
-> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode`.
+<div class="hero-section">
+  <canvas id="hero-canvas" class="hero-section__canvas"></canvas>
 
-You keep using the same commands. Nothing changes about your workflow — except your agents get a brain, a team, and self-diagnostics.
+  <div class="hero-abstract">
+    <div class="hero-abstract__glow"></div>
+    <div class="hero-abstract__ring hero-abstract__ring--outer"></div>
+    <div class="hero-abstract__ring hero-abstract__ring--mid"></div>
+    <div class="hero-abstract__ring hero-abstract__ring--inner"></div>
+    <div class="hero-abstract__diamond"></div>
+    <div class="hero-abstract__diag-line hero-abstract__diag-line--1"></div>
+    <div class="hero-abstract__diag-line hero-abstract__diag-line--2"></div>
+    <span class="hero-abstract__number">01</span>
+    <div class="hero-abstract__node-chip">
+      <span class="hero-abstract__live-dot"></span>
+      <span class="hero-abstract__chip-text">agent · online</span>
+    </div>
+  </div>
 
-[Get Started in 3 Minutes](getting-started.md){ .md-button .md-button--primary }
-[See It In Action](use-cases.md){ .md-button }
+  <div class="zone-label">
+    <svg class="zone-label__icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+    THREE.JS ZONE · particle field + cursor parallax drift
+  </div>
 
-## Core Capabilities
+  <div class="hero-content">
+    <div class="hero-badge">
+      <span class="hero-badge__dot"></span>
+      LOCAL-FIRST AGENT LAYER
+    </div>
 
-| Capability | Description | Command |
-|---|---|---|
-| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` |
-| **Memo Storage** | Git-friendly project notes; default append-only file storage plus optional split-file storage | `aios memo add "note"` / `aios memo storage status` |
-| **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
-| **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
-| **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
-| **Codemap** | Tree-sitter code knowledge graph — one-command install gives all agents instant structural understanding of your codebase | `aios internal codemap install` / `doctor` |
-| **Agent Team** | Multi-agent parallel collaboration with HUD tracking, smoke evidence, and governance checks | `aios team 3:codex "task description"` / `node scripts/aios.mjs agents smoke --json` |
-| **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
-| **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
-| **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
-| **Hermes Agent** | Seventh AIOS client with MCP bridge exposing 5 AIOS tools | `aios setup --client hermes` → `@aios_context_pack` in Hermes |
-| **Superpowers** | Reusable workflow skills (brainstorm/plan/debug/verify) | Select from TUI |
-| **Privacy Guard** | Auto-redact sensitive files before sharing | `aios privacy status` |
+    <div class="hero-headline">
+      <h1 class="hero-headline__line hero-headline__line--muted">Same commands.</h1>
+      <div class="hero-headline__line hero-headline__line--primary">Now with a brain,</div>
+      <div class="hero-headline__line hero-headline__line--accent">a team &amp; self-diagnostics.</div>
+    </div>
 
-## How It Works
+    <p class="hero-subheadline">
+      Harness CLI (AIOS) is a local workflow layer that adds cross-session memory,
+      multi-agent collaboration, and verification on top of codex, claude, gemini,
+      and opencode — without changing how you work.
+    </p>
 
-```text
-User → codex / claude / gemini / opencode
-     → zsh wrapper (transparent)
-     → ctx-agent.mjs (ContextDB integration)
-        → contextdb CLI (memory persistence)
-        → launch native CLI (with context pack)
-     → browser MCP (optional browser automation)
-```
+    <div class="hero-cta-row">
+      <a href="getting-started" class="md-button md-button--primary">Get Started in 3 Minutes</a>
+      <a href="use-cases" class="md-button">See It In Action</a>
+    </div>
 
-After installation, just use `codex`, `claude`, `gemini`, or `opencode` as usual — Harness CLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
+    <div class="hero-works">
+      <span class="hero-works__label">WORKS INSIDE THE CLIENTS YOU ALREADY USE</span>
+      <div class="hero-works__chips">
+        <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>codex</span>
+        <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>claude</span>
+        <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>gemini</span>
+        <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>opencode</span>
+        <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>hermes</span>
+      </div>
+    </div>
+  </div>
+</div>
 
-## Quick Tour
+<!-- ============================================================
+     Capabilities Section — 交互式节点网格 + 四大能力卡片
+     设计稿: berPn > Capabilities Section (bmpwt)
+     ============================================================ -->
 
-```bash
-# Launch TUI
-aios
+<div class="capabilities-section">
+  <canvas id="grid-canvas" class="capabilities-section__canvas"></canvas>
 
-# Save a Git-friendly project memo
-aios memo add "Remember to keep auth tests strict"
-aios memo storage status
+  <div class="zone-label">
+    <svg class="zone-label__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    THREE.JS · hover-reactive node grid
+  </div>
 
-# Route from inside native clients after setup
-# Claude/Gemini/OpenCode: /team <task>
-# Codex: /prompts:team <task>
+  <div class="capabilities-content">
+    <div class="capabilities-header">
+      <span class="capabilities-eyebrow">CORE CAPABILITIES</span>
+      <h2 class="capabilities-title">Four systems, working<br>underneath your CLI</h2>
+      <p class="capabilities-sub">
+        Four systems working underneath codex, claude, gemini, and opencode —
+        memory, collaboration, routing, and safety.
+      </p>
+    </div>
 
-# Multi-agent collaboration
-aios team 3:codex "Refactor the auth module and run tests"
+    <div class="capabilities-cards">
+      <div class="capability-card capability-card--accent">
+        <span class="capability-card__index">01</span>
+        <div class="capability-card__icon-badge">🧠</div>
+        <h3 class="capability-card__title">Cross-Session Memory</h3>
+        <p class="capability-card__desc">Project memory with events, checkpoints, and context packs auto-loaded on every launch.</p>
+        <span class="capability-card__cmd">auto-loaded</span>
+      </div>
 
-# Single-agent overnight task
-aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
+      <div class="capability-card capability-card--violet">
+        <span class="capability-card__index">02</span>
+        <div class="capability-card__icon-badge">👥</div>
+        <h3 class="capability-card__title">Multi-Agent Teams</h3>
+        <p class="capability-card__desc">Parallel agent collaboration with live HUD tracking and built-in governance.</p>
+        <span class="capability-card__cmd">/team &lt;task&gt;</span>
+      </div>
 
-# Intelligent model routing
-node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
+      <div class="capability-card capability-card--blue">
+        <span class="capability-card__index">03</span>
+        <div class="capability-card__icon-badge">🔀</div>
+        <h3 class="capability-card__title">Model Router</h3>
+        <p class="capability-card__desc">Intelligent multi-model dispatch by capability, cost, and measured success rate.</p>
+        <span class="capability-card__cmd">route --task</span>
+      </div>
 
-# Native token-compressed ContextDB packet
-cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+      <div class="capability-card capability-card--success">
+        <span class="capability-card__index">04</span>
+        <div class="capability-card__icon-badge">🛡️</div>
+        <h3 class="capability-card__title">Verify &amp; Safeguard</h3>
+        <p class="capability-card__desc">Self-diagnostics, verification loops, and privacy redaction before anything ships.</p>
+        <span class="capability-card__cmd">aios verify</span>
+      </div>
+    </div>
+  </div>
+</div>
 
-# Content outcome tracking
-aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'
+<!-- ============================================================
+     Demo Section — 终端演示 + HUD 雷达
+     设计稿: berPn > Demo Section (M5ju4)
+     ============================================================ -->
 
-# Check task status
-aios team status --provider codex --watch
-```
+<div class="demo-section">
+  <span class="demo-section__decor-number">02</span>
 
-## First Time Here?
+  <div class="demo-header">
+    <span class="demo-eyebrow">LIVE DEMO</span>
+    <h2 class="demo-title">Watch it work in real-time</h2>
+    <p class="demo-sub">
+      Same shell, same muscle memory — Harness loads memory, spins up a team,
+      and verifies in the background.
+    </p>
+  </div>
 
-**Start here:** [Quick Start](getting-started.md) — install, set up, and run your first agent with memory in about 3 minutes.
+  <div class="demo-row">
+    <div class="hero-terminal">
+      <div class="hero-terminal__bar">
+        <div class="hero-terminal__traffic">
+          <span></span><span></span><span></span>
+        </div>
+        <span class="hero-terminal__title">aios — zsh — 92×24</span>
+      </div>
+      <div class="hero-terminal__body">
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__prompt">$</span>
+          <span class="hero-terminal__text">aios setup --client claude</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__success">✓</span>
+          <span class="hero-terminal__text">context pack loaded · 3 checkpoints, 12 events</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__prompt">$</span>
+          <span class="hero-terminal__text">/team "refactor the auth module"</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__arrow">→</span>
+          <span class="hero-terminal__text">spawning 3 agents · router → opus · sonnet · haiku</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__dot">●</span>
+          <span class="hero-terminal__text">agent-1 planning&nbsp;&nbsp;agent-2 editing&nbsp;&nbsp;agent-3 verifying</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__success">✓</span>
+          <span class="hero-terminal__text">verification passed · 0 regressions · 2 secrets redacted</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__prompt">$</span>
+          <span class="hero-terminal__text">aios memo add "auth refactor shipped"</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__success">✓</span>
+          <span class="hero-terminal__text">memo saved to cross-session project memory</span>
+        </div>
+        <div class="hero-terminal__line">
+          <span class="hero-terminal__prompt">$</span>
+          <span class="hero-terminal__cursor"></span>
+        </div>
+      </div>
+    </div>
 
-**Already set up?** Jump to what you need:
+    <div class="hud-panel">
+      <canvas id="hud-canvas" class="hud-panel__canvas"></canvas>
+      <div class="hud-panel__content">
+        <div>
+          <div class="hud-panel__title">SYSTEM TELEMETRY</div>
+          <div class="hud-panel__sub">live agent throughput</div>
+        </div>
+        <div class="hud-bars">
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:70px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:120px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:95px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:150px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:110px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:140px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:80px"></div></div>
+          <div class="hud-bar"><div class="hud-bar__fill" style="height:130px"></div></div>
+        </div>
+        <div class="zone-label zone-label--inline">
+          <svg class="zone-label__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+          WEBGL · radar sweep + throughput
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
-| I want to... | Go to |
-|---|---|
-| Give my agent project memory | [ContextDB](contextdb.md) |
-| Use multiple agents together | [Agent Team](team-ops.md) |
-| Let one agent work overnight | [Solo Harness](solo-harness.md) |
-| Route tasks intelligently | [Model Router](model-router.md) |
-| Reduce token usage | [Token Compression](token-compression.md) |
-| Find the right command | [Commands By Scenario](use-cases.md) |
+<!-- ============================================================
+     Closing CTA — 双栏布局 + 浮动卡片装饰
+     设计稿: berPn > Closing CTA (dgsXd)
+     ============================================================ -->
 
-## Requirements
-
-- Git
-- Node.js 24 LTS + npm
-- Windows: PowerShell 5.x or 7
-
-## Development
-
-```bash
-git clone https://github.com/rexleimo/harness-cli.git
-cd harness-cli
-```
-
-Verify:
-
-```bash
-cd mcp-server
-npm test
-npm run typecheck
-npm run build
-```
-
-## Docs
-
-- [Quick Start](getting-started.md) — Install, configure, first run
-- [Model Router](model-router.md) — Multi-model dispatch for Agent Teams
-- [ContextDB](contextdb.md) — Project memory system
-- [Agent Team](team-ops.md) — Multi-agent collaboration and workflow governance guide
-- [Solo Harness](solo-harness.md) — Overnight task guide
-- [Perception](perception.md) — Content outcome tracking & insights
-- [Architecture](architecture.md) — System architecture
-- [Troubleshooting](troubleshooting.md) — Common issues
-- [Use Cases](use-cases.md) — Find commands by scenario
-
-## Blog Highlights
-
-- [AIOS RL Training System](/blog/rl-training-system/)
-- [Agent Governance: Make Team Runs Prove Themselves Before Going Live](/blog/2026-06-agent-governance/)
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)
-- [Orchestrate Live](/blog/orchestrate-live/)
+<div class="cta-section">
+  <div class="cta-section__left">
+    <span class="cta-section__decor-number">01</span>
+    <div class="cta-content">
+      <h2 class="cta-heading">Ready to level up?</h2>
+      <p class="cta-sub">Join developers shipping faster with AI-powered workflows.</p>
+      <div class="cta-buttons">
+        <a href="getting-started" class="md-button md-button--primary">Get Started Free</a>
+        <a href="contextdb" class="md-button">Read Docs</a>
+      </div>
+    </div>
+  </div>
+  <!-- Right Section — WebGL Nebula + 粒子装饰 + 浮动卡片 -->
+  <div class="cta-section__right">
+    <canvas id="cta-canvas" class="cta-section__canvas"></canvas>
+    <div class="cta-float-card cta-float-card--1">
+      <svg class="cta-float-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+      <span class="cta-float-card__label">10x faster</span>
+    </div>
+    <div class="cta-float-card cta-float-card--2">
+      <svg class="cta-float-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12l2 2 4-4"/><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.97 0 3.78.63 5.26 1.69"/></svg>
+      <span class="cta-float-card__label">Verified</span>
+    </div>
+    <span class="cta-section__text-decor">START</span>
+    <div class="cta-code-snippet">$ harness start</div>
+  </div>
+</div>

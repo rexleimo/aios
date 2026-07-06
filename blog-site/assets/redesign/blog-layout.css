@@ -1,0 +1,257 @@
+body {
+  color: var(--rex-blog-text);
+  background: var(--rex-blog-bg);
+}
+
+.md-header,
+.md-tabs,
+.md-footer {
+  color: var(--rex-blog-text);
+  background: var(--rex-blog-bg);
+  border-color: var(--rex-blog-border);
+  box-shadow: none;
+}
+
+.md-header {
+  height: 72px;
+  border-bottom: 1px solid var(--rex-blog-border);
+}
+
+.md-header__inner {
+  min-height: 72px;
+  padding-inline: clamp(1rem, 5vw, 4rem);
+}
+
+.md-header__title,
+.md-tabs__link,
+.md-typeset h1,
+.md-typeset h2,
+.md-typeset h3 {
+  font-family: var(--rex-blog-font-display);
+}
+
+.md-tabs__link:is(:hover, :focus),
+.md-tabs__item--active .md-tabs__link,
+.md-typeset a {
+  color: var(--rex-blog-accent);
+}
+
+.md-main {
+  background: var(--rex-blog-bg);
+}
+
+body.rex-blog .md-sidebar {
+  display: none;
+}
+
+body.rex-blog .md-main__inner {
+  display: block;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+body.rex-blog .md-content {
+  max-width: none;
+}
+
+body.rex-blog .md-content__inner {
+  color: var(--rex-blog-muted);
+}
+
+.md-typeset {
+  color: var(--rex-blog-muted);
+  font-family: var(--rex-blog-font-body);
+  font-size: 0.82rem;
+  line-height: 1.72;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-content__inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 88px clamp(1.25rem, 8vw, 7.5rem) 80px;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset h1 {
+  max-width: 860px;
+  margin: 0 auto 1rem;
+  color: var(--rex-blog-text);
+  font-size: clamp(3rem, 7vw, 5rem);
+  line-height: 0.96;
+  text-align: center;
+  letter-spacing: -0.075em;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > p:first-of-type {
+  max-width: 680px;
+  margin: 0 auto 1.7rem;
+  color: var(--rex-blog-muted);
+  font-size: 1.02rem;
+  text-align: center;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > p:nth-of-type(2) {
+  max-width: 740px;
+  margin: 0 auto 3rem;
+  text-align: center;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset h2 {
+  max-width: 960px;
+  margin: 3.8rem auto 1.3rem;
+  color: var(--rex-blog-text);
+  font-size: clamp(1.8rem, 4vw, 3.1rem);
+  letter-spacing: -0.055em;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset h2::before,
+body.rex-blog-post .md-typeset h2::before {
+  display: block;
+  margin-bottom: 0.55rem;
+  color: var(--rex-blog-accent);
+  content: "//";
+  font-size: 0.9rem;
+  letter-spacing: 0;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul {
+  display: grid;
+  max-width: 960px;
+  margin: 0 auto 2.4rem;
+  padding: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  list-style: none;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li {
+  min-height: 120px;
+  padding: 1.15rem;
+  background:
+    linear-gradient(180deg, rgba(255, 132, 0, 0.07), transparent 4.5rem),
+    var(--rex-blog-panel);
+  border: 1px solid var(--rex-blog-border);
+  border-radius: var(--rex-blog-radius);
+  transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li:nth-of-type(6n + 1) {
+  background:
+    linear-gradient(135deg, rgba(47, 132, 255, 0.75), transparent 6rem),
+    var(--rex-blog-panel);
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li:nth-of-type(6n + 2) {
+  background:
+    linear-gradient(135deg, rgba(31, 190, 97, 0.72), transparent 6rem),
+    var(--rex-blog-panel);
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li:nth-of-type(6n + 3) {
+  background:
+    linear-gradient(135deg, rgba(139, 92, 246, 0.75), transparent 6rem),
+    var(--rex-blog-panel);
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li:nth-of-type(6n + 4) {
+  background:
+    linear-gradient(135deg, rgba(255, 132, 0, 0.78), transparent 6rem),
+    var(--rex-blog-panel);
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li:is(:hover, :focus-within) {
+  border-color: rgba(255, 132, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+body.rex-blog:not(.rex-blog-post) .md-typeset > ul > li a {
+  color: var(--rex-blog-accent);
+  font-weight: 800;
+  text-decoration: none;
+}
+
+body.rex-blog-post .md-content__inner {
+  width: min(760px, calc(100vw - 2.5rem));
+  max-width: 760px;
+  margin-right: auto !important;
+  margin-left: auto !important;
+  padding: 56px 1.25rem 88px;
+}
+
+body.rex-blog-post .md-typeset h1 {
+  max-width: 760px;
+  margin: 0 0 1.2rem;
+  color: var(--rex-blog-text);
+  font-size: clamp(2rem, 3.2vw, 2.85rem);
+  line-height: 1.08;
+  letter-spacing: -0.055em;
+}
+
+body.rex-blog-post .md-typeset h1::after {
+  display: block;
+  height: 220px;
+  margin-top: 1.4rem;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.08) 42%, rgba(0, 0, 0, 0.68)),
+    radial-gradient(circle at 25% 30%, rgba(255, 255, 255, 0.9), transparent 18%),
+    linear-gradient(135deg, #151515, #CFCFCF 48%, #111111);
+  border: 1px solid var(--rex-blog-border);
+  border-radius: 8px;
+  content: "";
+  filter: grayscale(1);
+}
+
+body.rex-blog-post .md-typeset > p:first-of-type {
+  color: var(--rex-blog-muted);
+  font-size: 1rem;
+}
+
+body.rex-blog-post .md-typeset h2 {
+  margin-top: 3rem;
+  color: var(--rex-blog-text);
+  font-size: clamp(1.6rem, 3vw, 2.15rem);
+  letter-spacing: -0.04em;
+}
+
+body.rex-blog-post .md-typeset ul,
+body.rex-blog-post .md-typeset ol {
+  padding-left: 1.3rem;
+}
+
+body.rex-blog-post .md-typeset li {
+  margin: 0.45rem 0;
+}
+
+.md-typeset code {
+  color: #FFD3A3;
+  background: rgba(255, 132, 0, 0.12);
+  border: 1px solid rgba(255, 132, 0, 0.24);
+  border-radius: 0.35rem;
+}
+
+.md-typeset pre,
+.highlight {
+  background: #0D0D0F !important;
+  border: 1px solid var(--rex-blog-border);
+  border-radius: 8px;
+}
+
+.md-typeset blockquote,
+.md-typeset .admonition,
+.md-typeset details {
+  color: var(--rex-blog-text);
+  background: rgba(255, 132, 0, 0.05);
+  border: 1px solid rgba(255, 132, 0, 0.45);
+  border-left: 3px solid var(--rex-blog-accent);
+  border-radius: 8px;
+}
+
+.md-footer {
+  border-top: 1px solid var(--rex-blog-border);
+}
+
+@media (max-width: 900px) {
+  body.rex-blog:not(.rex-blog-post) .md-typeset > ul {
+    grid-template-columns: 1fr;
+  }
+}

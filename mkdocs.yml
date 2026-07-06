@@ -18,8 +18,6 @@ theme:
     - navigation.tabs
     - navigation.sections
     - navigation.top
-    - navigation.instant
-    - navigation.instant.progress
     - content.code.copy
     - search.suggest
     - search.highlight
@@ -44,6 +42,7 @@ markdown_extensions:
   - admonition
   - attr_list
   - md_in_html
+  - pymdownx.details
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true
@@ -203,11 +202,14 @@ extra:
       href: https://tool.rexai.top
       title: RexAI free no-ad online tools portal
 
-extra_javascript:
-  - assets/analytics-placeholder.js
-
 extra_css:
   - assets/custom.css
+  - assets/home.css
+  - assets/pages.css
+
+extra_javascript:
+  - assets/analytics-placeholder.js
+  - assets/home-animation.js
 
 nav:
   - Home: index.md

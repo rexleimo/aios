@@ -1,0 +1,13 @@
+:root {
+  --rex-blog-bg: #111111;
+  --rex-blog-panel: #1A1A1A;
+  --rex-blog-panel-strong: #2E2E2E;
+  --rex-blog-border: #2E2E2E;
+  --rex-blog-accent: #FF8400;
+  --rex-blog-text: #FFFFFF;
+  --rex-blog-muted: #B8B9B6;
+  --rex-blog-soft: #7A7A76;
+  --rex-blog-radius: 12px;
+  --rex-blog-font-display: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --rex-blog-font-body: "Geist", "Inter", system-ui, sans-serif;
+}
