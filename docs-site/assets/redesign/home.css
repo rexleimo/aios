@@ -1,9 +1,24 @@
+.rex-home-main {
+  min-height: calc(100vh - 72px);
+  overflow: hidden;
+}
+
+.rex-home-main > h1:first-child {
+  display: none;
+}
+
+.rex-home-shell .md-typeset {
+  color: var(--rex-muted);
+}
+
+.rex-home-shell .md-main__inner,
 .rex-home .md-main__inner,
 .md-home .md-main__inner {
   max-width: none;
   margin: 0;
 }
 
+.rex-home-shell .md-content,
 .rex-home .md-content,
 .md-home .md-content {
   max-width: none;
@@ -14,9 +29,9 @@
 .demo-section,
 .cta-section {
   position: relative;
-  left: 50%;
-  width: 100vw;
-  margin-left: -50vw;
+  left: auto;
+  width: 100%;
+  margin-left: 0;
   overflow: hidden;
   background: var(--rex-bg);
 }

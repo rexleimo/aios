@@ -1,5 +1,8 @@
 @import url("redesign/blog-tokens.css");
-@import url("redesign/blog-layout.css");
+@import url("redesign/blog-shell.css");
+@import url("redesign/blog-index.css");
+@import url("redesign/blog-post.css");
+@import url("redesign/blog-cards.css");
 
 /* Blog build keeps a separate asset root; shared docs CSS is intentionally not imported here. */
 :root {

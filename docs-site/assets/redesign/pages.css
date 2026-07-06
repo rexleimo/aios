@@ -1,72 +1,181 @@
-.rex-doc-page .md-main__inner {
-  max-width: 1440px;
-  gap: 1.6rem;
-  padding: 1.2rem clamp(1rem, 3vw, 2rem) 4rem;
+.rex-doc-main {
+  min-width: 0;
+  padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 5vw, 4.5rem) 5rem;
 }
 
-.rex-doc-page .md-content__inner {
-  max-width: 980px;
+.rex-doc-main__inner {
+  width: min(1040px, 100%);
   margin: 0 auto;
-  padding: clamp(2rem, 4vw, 3rem);
+}
+
+.rex-doc-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  color: var(--rex-soft);
+  font-family: var(--rex-font-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.rex-doc-breadcrumb a {
+  color: var(--rex-cyan);
+  text-decoration: none;
+}
+
+.rex-doc-breadcrumb strong {
+  color: var(--rex-muted);
+}
+
+.rex-doc-hero {
+  max-width: 860px;
+  margin-bottom: 1.35rem;
+}
+
+.rex-doc-hero h1 {
+  margin: 0;
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-size: clamp(2.6rem, 6vw, 5.4rem);
+  font-weight: 900;
+  letter-spacing: -0.075em;
+  line-height: 0.94;
+}
+
+.rex-doc-hero p {
+  max-width: 720px;
+  margin: 1rem 0 0;
+  color: #B8C6DA;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.rex-doc-outline,
+.rex-doc-content {
   background:
-    linear-gradient(180deg, rgba(13, 18, 32, 0.86), rgba(8, 10, 18, 0.72)),
+    linear-gradient(180deg, rgba(13, 18, 32, 0.88), rgba(8, 10, 18, 0.74)),
     radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.08), transparent 30rem);
   border: 1px solid var(--rex-border);
-  border-radius: 22px;
   box-shadow: var(--rex-shadow-soft);
 }
 
-.rex-doc-page .md-typeset > h1:first-child {
-  max-width: 860px;
-  margin-top: 0;
+.rex-doc-outline {
+  margin: 0 0 1rem;
+  padding: 1rem;
+  border-radius: 18px;
 }
 
-.rex-doc-page .md-typeset > p:first-of-type {
+.rex-doc-outline__title {
+  display: flex;
+  gap: 0.55rem;
+  align-items: center;
+  color: var(--rex-text);
+  font-family: var(--rex-font-mono);
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.rex-doc-outline__title span {
+  width: 0.45rem;
+  height: 0.45rem;
+  background: var(--rex-cyan);
+  border-radius: 999px;
+  box-shadow: 0 0 16px var(--rex-cyan);
+}
+
+.rex-doc-outline ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rex-doc-outline li a {
+  display: inline-flex;
+  padding: 0.4rem 0.62rem;
+  color: var(--rex-muted);
+  background: rgba(6, 7, 13, 0.54);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  text-decoration: none;
+}
+
+.rex-doc-outline li.is-child a {
+  color: var(--rex-soft);
+}
+
+.rex-doc-outline li a:is(:hover, :focus-visible) {
+  color: var(--rex-cyan);
+  border-color: rgba(34, 211, 238, 0.36);
+}
+
+.rex-doc-content {
+  padding: clamp(1.4rem, 4vw, 3rem);
+  border-radius: 24px;
+}
+
+.rex-doc-content > h1:first-child {
+  display: none;
+}
+
+.rex-doc-content > p:first-of-type {
   max-width: 760px;
   color: #B8C6DA;
   font-size: 1rem;
 }
 
-.rex-doc-page .md-typeset ul,
-.rex-doc-page .md-typeset ol {
+.rex-doc-content ul,
+.rex-doc-content ol {
   color: var(--rex-muted);
 }
 
-.rex-doc-page .md-typeset li::marker {
+.rex-doc-content li::marker {
   color: var(--rex-cyan);
 }
 
-.rex-doc-page .md-typeset hr {
+.rex-doc-content hr {
   border-bottom-color: var(--rex-border);
 }
 
-.rex-doc-page .md-typeset img {
+.rex-doc-content img {
   overflow: hidden;
   border: 1px solid var(--rex-border);
   border-radius: 16px;
   box-shadow: var(--rex-shadow-soft);
 }
 
-.rex-doc-page .md-typeset .grid,
-.rex-doc-page .md-typeset .cards {
+.rex-doc-content .grid,
+.rex-doc-content .cards {
   gap: 1rem;
 }
 
-.rex-doc-page .md-typeset .grid.cards > ul > li,
-.rex-doc-page .md-typeset .cards > ul > li {
+.rex-doc-content .grid.cards > ul > li,
+.rex-doc-content .cards > ul > li {
   background: rgba(13, 18, 32, 0.8);
   border: 1px solid var(--rex-border);
   border-radius: 16px;
   box-shadow: var(--rex-shadow-soft);
 }
 
-@media (max-width: 960px) {
-  .rex-doc-page .md-main__inner {
-    padding-inline: 0.75rem;
+@media (max-width: 860px) {
+  .rex-doc-main {
+    padding: 1rem 0.8rem 3rem;
   }
 
-  .rex-doc-page .md-content__inner {
-    padding: 1.5rem;
-    border-radius: 16px;
+  .rex-doc-hero h1 {
+    font-size: clamp(2.2rem, 12vw, 3.5rem);
+  }
+
+  .rex-doc-content {
+    padding: 1.25rem;
+    border-radius: 18px;
   }
 }
