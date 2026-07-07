@@ -69,7 +69,7 @@ home: true
 
   <div class="zone-label">
     <svg class="zone-label__icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-    INTERACTIVE FIELD · particle field + cursor parallax drift
+    LIVE OVERVIEW · ambient activity backdrop
   </div>
   </div>
 </div>
@@ -233,7 +233,7 @@ home: true
         </div>
         <div class="zone-label zone-label--inline">
           <svg class="zone-label__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-          telemetry sweep + throughput
+          activity overview + throughput
         </div>
       </div>
     </div>
