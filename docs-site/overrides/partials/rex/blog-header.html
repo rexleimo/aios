@@ -3,13 +3,27 @@
     <span class="rex-blog-header__mark"></span>
     <span>HARNESS CLI</span>
   </a>
-  <nav class="rex-blog-header__nav" aria-label="Blog navigation">
-    <a href="https://cli.rexai.top/">Docs</a>
-    <a class="is-active" href="https://cli.rexai.top/blog/">Blog</a>
-    <a href="https://cli.rexai.top/changelog/">Changelog</a>
-  </nav>
-  <div class="rex-blog-header__actions">
-    <a href="{{ config.repo_url }}">GitHub</a>
-    <a class="rex-blog-header__cta" href="https://cli.rexai.top/getting-started/">Get Started</a>
+  <button
+    class="rex-blog-header__menu"
+    type="button"
+    aria-expanded="false"
+    aria-controls="rex-blog-header-panel"
+    aria-label="Toggle blog navigation"
+    data-rex-blog-menu-toggle
+  >
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+  <div class="rex-blog-header__panel" id="rex-blog-header-panel" data-rex-blog-menu-panel>
+    <nav class="rex-blog-header__nav" aria-label="Blog navigation">
+      <a href="https://cli.rexai.top/">Docs</a>
+      <a class="is-active" href="https://cli.rexai.top/blog/">Blog</a>
+      <a href="https://cli.rexai.top/changelog/">Changelog</a>
+    </nav>
+    <div class="rex-blog-header__actions">
+      <a href="{{ config.repo_url }}">GitHub</a>
+      <a class="rex-blog-header__cta" href="https://cli.rexai.top/getting-started/">Get Started</a>
+    </div>
   </div>
 </header>

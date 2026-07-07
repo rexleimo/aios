@@ -657,3 +657,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [0.1.0] - 2026-03-03
 
 - Initialize project versioning (`VERSION`, `CHANGELOG.md`) and release tooling baseline.
+
+## [3.3.5] - 2026-07-07
+
+- improve blog responsive layouts and navbar dropdown behavior

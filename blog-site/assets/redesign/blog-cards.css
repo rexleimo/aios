@@ -169,3 +169,18 @@
     grid-template-columns: 1fr;
   }
 }
+
+@media (max-width: 767px) {
+  .rex-related-reading {
+    padding: 3rem 1rem;
+  }
+
+  .rex-related-reading h2 {
+    margin-bottom: 1.15rem;
+    font-size: clamp(1.8rem, 10vw, 2.35rem);
+  }
+
+  .rex-related-reading__grid a {
+    min-height: 0;
+  }
+}

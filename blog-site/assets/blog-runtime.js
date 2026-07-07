@@ -1,4 +1,41 @@
 (() => {
+  const header = document.querySelector('[data-rex-shell="blog-header"]');
+  const menuToggle = header?.querySelector('[data-rex-blog-menu-toggle]');
+  const menuPanel = header?.querySelector('[data-rex-blog-menu-panel]');
+
+  if (header && menuToggle && menuPanel) {
+    const closeMenu = () => {
+      header.classList.remove('is-open');
+      menuToggle.setAttribute('aria-expanded', 'false');
+    };
+
+    const toggleMenu = () => {
+      const nextOpen = !header.classList.contains('is-open');
+      header.classList.toggle('is-open', nextOpen);
+      menuToggle.setAttribute('aria-expanded', String(nextOpen));
+    };
+
+    menuToggle.addEventListener('click', toggleMenu);
+    menuPanel.querySelectorAll('a').forEach((link) => {
+      link.addEventListener('click', closeMenu);
+    });
+    document.addEventListener('click', (event) => {
+      if (!header.contains(event.target)) {
+        closeMenu();
+      }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') {
+        closeMenu();
+      }
+    });
+    window.addEventListener('resize', () => {
+      if (window.innerWidth > 1023) {
+        closeMenu();
+      }
+    });
+  }
+
   const root = document.querySelector('[data-rex-blog-index]');
   if (!root) {
     return;

@@ -92,6 +92,84 @@ test('blog responsive contract adds a tablet grid before collapsing to one colum
   );
 });
 
+test('blog shell responsive contract switches to a dropdown menu on tablet and mobile', () => {
+  const headerTemplate = read('docs-site/overrides/partials/rex/blog-header.html');
+  const shellCss = read('blog-site/assets/redesign/blog-shell.css');
+  const runtime = read('blog-site/assets/blog-runtime.js');
+
+  assert.match(
+    headerTemplate,
+    /data-rex-blog-menu-toggle/
+  );
+  assert.match(
+    headerTemplate,
+    /aria-expanded="false"[\s\S]*aria-controls="rex-blog-header-panel"/
+  );
+  assert.match(
+    headerTemplate,
+    /class="rex-blog-header__panel"[\s\S]*id="rex-blog-header-panel"[\s\S]*data-rex-blog-menu-panel/
+  );
+
+  assert.match(shellCss, /\.rex-blog-header__menu\s*\{[\s\S]*display: none;/);
+  assert.match(
+    shellCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-header\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-header__menu\s*\{[\s\S]*display: inline-flex;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-header__panel\s*\{[\s\S]*position: absolute;[\s\S]*opacity: 0;[\s\S]*pointer-events: none;/
+  );
+  assert.match(
+    shellCss,
+    /\.rex-blog-header\.is-open \.rex-blog-header__panel\s*\{[\s\S]*opacity: 1;[\s\S]*pointer-events: auto;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-header__actions\s*\{[\s\S]*flex-direction: column;[\s\S]*align-items: stretch;/
+  );
+
+  assert.match(runtime, /\[data-rex-shell="blog-header"\]/);
+  assert.match(runtime, /data-rex-blog-menu-toggle/);
+  assert.match(runtime, /classList\.toggle\('is-open'/);
+  assert.match(runtime, /setAttribute\('aria-expanded'/);
+  assert.match(runtime, /event\.key === 'Escape'/);
+  assert.match(runtime, /!header\.contains\(event\.target\)/);
+});
+
+test('blog article responsive contract keeps post layouts readable on tablet and mobile', () => {
+  const blogPostCss = read('blog-site/assets/redesign/blog-post.css');
+  const blogCardsCss = read('blog-site/assets/redesign/blog-cards.css');
+
+  assert.match(
+    blogPostCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-article__inner\s*\{[\s\S]*width: min\(100%, calc\(100vw - 2rem\)\);/
+  );
+  assert.match(
+    blogPostCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-article-hero\s*\{[\s\S]*height: 300px;/
+  );
+  assert.match(
+    blogPostCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-article\s*\{[\s\S]*padding: 2\.25rem 0 3rem;/
+  );
+  assert.match(
+    blogPostCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-article__inner\s*\{[\s\S]*width: min\(100%, calc\(100vw - 1rem\)\);/
+  );
+  assert.match(
+    blogPostCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-article-header h1\s*\{[\s\S]*font-size: clamp\(2rem, 12vw, 2\.8rem\);/
+  );
+  assert.match(
+    blogCardsCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-related-reading\s*\{[\s\S]*padding: 3rem 1rem;/
+  );
+});
+
 test('docs responsive contract switches between desktop sidebar, tablet header, and mobile header states', () => {
   const shellCss = read('docs-site/assets/redesign/shell.css');
   const pagesCss = read('docs-site/assets/redesign/pages.css');

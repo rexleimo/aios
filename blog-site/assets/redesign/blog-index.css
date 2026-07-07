@@ -292,6 +292,11 @@
     margin-bottom: 3rem;
   }
 
+  .rex-blog-hero__pills {
+    gap: 0.55rem;
+    margin-top: 1.4rem;
+  }
+
   .rex-blog-hero h1 {
     font-size: clamp(2.8rem, 12vw, 4.6rem);
   }
@@ -303,6 +308,10 @@
 
   .rex-blog-featured__media {
     min-height: 280px;
+  }
+
+  .rex-blog-featured__body {
+    padding: 1.5rem;
   }
 
   .rex-blog-featured__icon {
@@ -335,6 +344,14 @@
 
   .rex-blog-hero p {
     font-size: 0.95rem;
+  }
+
+  .rex-blog-hero__pills {
+    justify-content: flex-start;
+  }
+
+  .rex-blog-hero__pills button {
+    min-height: 40px;
   }
 
   .rex-blog-featured {
