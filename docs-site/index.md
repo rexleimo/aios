@@ -69,7 +69,7 @@ home: true
 
   <div class="zone-label">
     <svg class="zone-label__icon" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
-    THREE.JS ZONE · particle field + cursor parallax drift
+    INTERACTIVE FIELD · particle field + cursor parallax drift
   </div>
   </div>
 </div>
@@ -85,7 +85,7 @@ home: true
 
   <div class="zone-label">
     <svg class="zone-label__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-    THREE.JS · hover-reactive node grid
+    responsive node grid
   </div>
 
   <div class="capabilities-content">
@@ -233,7 +233,7 @@ home: true
         </div>
         <div class="zone-label zone-label--inline">
           <svg class="zone-label__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
-          WEBGL · radar sweep + throughput
+          telemetry sweep + throughput
         </div>
       </div>
     </div>

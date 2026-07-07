@@ -67,8 +67,13 @@ test('home HUD markup preserves the Pencil telemetry title row structure', () =>
   assert.match(home, /class="hud-panel__status"/);
   assert.match(home, /aria-label="Telemetry activity"/);
   assert.match(home, /class="hud-panel__sub">live agent throughput<\/div>/);
+  assert.match(home, /INTERACTIVE FIELD · particle field \+ cursor parallax drift/);
+  assert.match(home, /responsive node grid/);
   assert.match(home, /class="zone-label zone-label--inline"/);
-  assert.match(home, /WEBGL · radar sweep \+ throughput/);
+  assert.match(home, /telemetry sweep \+ throughput/);
+  assert.doesNotMatch(home, /THREE\.JS ZONE · particle field \+ cursor parallax drift/);
+  assert.doesNotMatch(home, /THREE\.JS · hover-reactive node grid/);
+  assert.doesNotMatch(home, /WEBGL · radar sweep \+ throughput/);
 });
 
 test('home animation entrypoint delegates to a decoupled Pencil WebGL runtime', () => {

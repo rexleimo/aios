@@ -70,6 +70,43 @@ test('home shell and hero narrow-screen contract match the approved tablet and m
   );
 });
 
+test('home desktop hero contract stays readable on short-height PC viewports', () => {
+  const homeCss = read('docs-site/assets/redesign/home.css');
+
+  assert.match(
+    homeCss,
+    /@media \(max-height: 700px\) and \(min-width: 861px\)[\s\S]*\.hero-section\s*\{[\s\S]*height: auto;[\s\S]*min-height: 0;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 700px\) and \(min-width: 861px\)[\s\S]*\.hero-layout\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 420px;[\s\S]*align-items: start;[\s\S]*padding: 88px 64px 32px 88px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 700px\) and \(min-width: 861px\)[\s\S]*\.hero-headline\s*\{[\s\S]*font-size: 50px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 700px\) and \(min-width: 861px\)[\s\S]*\.hero-abstract\s*\{[\s\S]*width: 420px;[\s\S]*height: 460px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 620px\) and \(min-width: 861px\)[\s\S]*\.hero-layout\s*\{[\s\S]*gap: 40px;[\s\S]*padding: 72px 56px 20px 72px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 620px\) and \(min-width: 861px\)[\s\S]*\.hero-headline\s*\{[\s\S]*font-size: 46px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 620px\) and \(min-width: 861px\)[\s\S]*\.hero-abstract\s*\{[\s\S]*width: 380px;[\s\S]*height: 416px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-height: 620px\) and \(min-width: 861px\)[\s\S]*\.zone-label\s*\{[\s\S]*display: none;/
+  );
+});
+
 test('blog responsive contract adds a tablet grid before collapsing to one column', () => {
   const blogIndexCss = read('blog-site/assets/redesign/blog-index.css');
   const blogCardsCss = read('blog-site/assets/redesign/blog-cards.css');
