@@ -1408,7 +1408,65 @@
   }
 
   .hero-abstract {
+    width: min(100%, 360px);
+    height: 392px;
     margin: 0 auto;
+  }
+
+  .hero-abstract__glow {
+    inset: 86px auto auto 102px;
+    width: 192px;
+    height: 192px;
+  }
+
+  .hero-abstract__ring--outer {
+    inset: 80px auto auto 92px;
+    width: 228px;
+    height: 228px;
+  }
+
+  .hero-abstract__ring--mid {
+    inset: 116px auto auto 128px;
+    width: 156px;
+    height: 156px;
+  }
+
+  .hero-abstract__ring--inner {
+    inset: 160px auto auto 172px;
+    width: 72px;
+    height: 72px;
+  }
+
+  .hero-abstract__diamond {
+    inset: 72px auto auto 198px;
+    width: 136px;
+    height: 136px;
+  }
+
+  .hero-abstract__diag-line {
+    width: 284px;
+  }
+
+  .hero-abstract__diag-line--1 {
+    left: 16px;
+    top: 304px;
+  }
+
+  .hero-abstract__diag-line--2 {
+    left: 52px;
+    top: 350px;
+  }
+
+  .hero-abstract__number {
+    left: 84px;
+    top: 140px;
+    font-size: 176px;
+    letter-spacing: -4px;
+  }
+
+  .hero-abstract__node-chip {
+    top: 126px;
+    left: 208px;
   }
 
   .zone-label {
@@ -1482,6 +1540,70 @@
 
   .hero-headline {
     font-size: 36px;
+  }
+
+  .hero-abstract {
+    width: min(100%, 280px);
+    height: 308px;
+  }
+
+  .hero-abstract__glow {
+    inset: 66px auto auto 78px;
+    width: 148px;
+    height: 148px;
+  }
+
+  .hero-abstract__ring--outer {
+    inset: 62px auto auto 70px;
+    width: 170px;
+    height: 170px;
+  }
+
+  .hero-abstract__ring--mid {
+    inset: 90px auto auto 98px;
+    width: 118px;
+    height: 118px;
+  }
+
+  .hero-abstract__ring--inner {
+    inset: 126px auto auto 134px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .hero-abstract__diamond {
+    inset: 54px auto auto 144px;
+    width: 102px;
+    height: 102px;
+  }
+
+  .hero-abstract__diag-line {
+    width: 220px;
+  }
+
+  .hero-abstract__diag-line--1 {
+    left: 12px;
+    top: 240px;
+  }
+
+  .hero-abstract__diag-line--2 {
+    left: 38px;
+    top: 278px;
+  }
+
+  .hero-abstract__number {
+    left: 58px;
+    top: 112px;
+    font-size: 138px;
+    letter-spacing: -3px;
+  }
+
+  .hero-abstract__node-chip {
+    top: 100px;
+    left: 154px;
+    gap: 0.35rem;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.62rem;
   }
 
   .hero-cta-row .md-button,

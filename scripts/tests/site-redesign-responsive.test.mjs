@@ -44,6 +44,32 @@ test('home responsive contract progressively reflows capability demo and cta sec
   );
 });
 
+test('home shell and hero narrow-screen contract match the approved tablet and mobile states', () => {
+  const homeCss = read('docs-site/assets/redesign/home.css');
+  const shellCss = read('docs-site/assets/redesign/shell.css');
+
+  assert.match(
+    shellCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-topbar__inner\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) auto;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-topbar__nav\s*\{[\s\S]*display: none;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-topbar__actions\s*\{[\s\S]*gap: 0\.5rem;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-width: 860px\)[\s\S]*\.hero-abstract\s*\{[\s\S]*width: min\(100%, 360px\);[\s\S]*height: 392px;/
+  );
+  assert.match(
+    homeCss,
+    /@media \(max-width: 720px\)[\s\S]*\.hero-abstract\s*\{[\s\S]*width: min\(100%, 280px\);[\s\S]*height: 308px;/
+  );
+});
+
 test('blog responsive contract adds a tablet grid before collapsing to one column', () => {
   const blogIndexCss = read('blog-site/assets/redesign/blog-index.css');
   const blogCardsCss = read('blog-site/assets/redesign/blog-cards.css');
