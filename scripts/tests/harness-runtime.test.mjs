@@ -233,6 +233,85 @@ test('one-shot subagent invocation strategies cover every harness client', () =>
 
 
 
+test('executePhaseJob waits for role-memory persistence before returning', async () => {
+  const { executePhaseJob } = await import('../lib/harness/subagent-runtime/phase-job.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-subagent-role-memory-'));
+  const gate = Promise.withResolvers();
+  let appendStarted = false;
+  let appendFinished = false;
+
+  try {
+    const plan = {
+      taskTitle: 'Role memory persistence',
+      contextSummary: 'Wait for role memory writes before returning.',
+      phases: [],
+      workItems: [],
+    };
+    const job = {
+      jobId: 'job.role-memory',
+      jobType: 'phase',
+      role: 'implementer',
+      launchSpec: { executor: 'codex', handoffTarget: 'reviewer', inputs: [] },
+      dependsOn: [],
+    };
+    const phase = {
+      id: 'phase.implement',
+      label: 'Implement',
+      responsibility: 'Persist role memory before returning',
+      ownership: 'scripts/lib/harness/subagent-runtime/',
+      canEditFiles: false,
+    };
+
+    const runPromise = executePhaseJob(plan, job, phase, [], {
+      clientId: 'codex-cli',
+      timeoutMs: 1000,
+      env: process.env,
+      io: { log() {}, warn() {}, error() {} },
+      agentSpecNormalized: { agents: {} },
+      executorLabel: 'codex',
+      rootDir,
+      appendJobFindingsToRoleMemoryImpl: async () => {
+        appendStarted = true;
+        await gate.promise;
+        appendFinished = true;
+      },
+      runOneShotImpl: async () => ({
+        exitCode: 0,
+        stdout: JSON.stringify({
+          schemaVersion: 1,
+          status: 'completed',
+          fromRole: 'implementer',
+          toRole: 'reviewer',
+          taskTitle: 'Role memory persistence',
+          contextSummary: 'Persisted successfully.',
+          findings: ['awaited role memory write'],
+          filesTouched: [],
+          openQuestions: [],
+          recommendations: [],
+        }),
+        stderr: '',
+      }),
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 25));
+    const runState = await Promise.race([
+      runPromise.then(() => 'returned'),
+      new Promise((resolve) => setTimeout(() => resolve('pending'), 25)),
+    ]);
+
+    assert.equal(appendStarted, true);
+    assert.equal(runState, 'pending');
+
+    gate.resolve();
+    const run = await runPromise;
+    assert.equal(appendFinished, true);
+    assert.equal(run.status, 'completed');
+  } finally {
+    gate.resolve();
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('executePhaseJob compresses subagent prompts before client launch and compacts accepted output', async () => {
   const { executePhaseJob } = await import('../lib/harness/subagent-runtime/phase-job.mjs');
   const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');

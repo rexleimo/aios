@@ -19,7 +19,7 @@
     "aios": "node scripts/aios.mjs",
     "check:site-sync": "node scripts/check-site-sync.mjs",
     "test:check-site-sync": "node --test scripts/tests/check-site-sync.test.mjs",
-    "test:site-redesign": "node --test scripts/tests/site-redesign-assets.test.mjs",
+    "test:site-redesign": "node --test scripts/tests/site-redesign-assets.test.mjs scripts/tests/site-redesign-responsive.test.mjs",
     "perf:orchestrate-learn-eval:smoke": "node scripts/perf-orchestrate-learn-eval-smoke.mjs",
     "perf:team-status-watch:smoke": "node scripts/perf-team-status-watch-smoke.mjs",
     "pretest:scripts": "node scripts/check-node-version.mjs",

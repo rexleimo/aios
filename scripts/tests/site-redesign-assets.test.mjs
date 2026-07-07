@@ -486,17 +486,15 @@ test('home desktop design renders inside a centered 1440px stage instead of stre
 
   assertRuleIncludes(homeCss, '.rex-home-main', [
     '--rex-home-design-width: 1440px;',
-    '--rex-home-scale: 1;',
   ]);
   assertRuleIncludes(homeCss, '.home-section__stage', [
-    'left: 50%;',
-    'width: var(--rex-home-design-width);',
-    'transform: translateX(-50%) scale(var(--rex-home-scale));',
-    'transform-origin: top center;',
+    'position: relative;',
+    'width: min(100%, var(--rex-home-design-width));',
+    'margin: 0 auto;',
   ]);
   assertRuleIncludes(homeCss, '.hero-section', [
     '--rex-section-height: 770px;',
-    'height: calc(var(--rex-section-height) * var(--rex-home-scale));',
+    'height: 770px;',
   ]);
   assertRuleIncludes(homeCss, '.demo-section', [
     '--rex-section-height: 760px;',
@@ -507,8 +505,9 @@ test('home desktop design renders inside a centered 1440px stage instead of stre
     'transform: none;',
   ]);
 
-  assert.match(animation, /syncHomeDesignScale/);
-  assert.match(animation, /--rex-home-scale/);
+  assert.doesNotMatch(homeCss, /scale\(var\(--rex-home-scale\)\)/);
+  assert.doesNotMatch(animation, /syncHomeDesignScale/);
+  assert.doesNotMatch(animation, /--rex-home-scale/);
 });
 
 test('home demo section avoids global stage scaling and stacks before cards look compressed', () => {

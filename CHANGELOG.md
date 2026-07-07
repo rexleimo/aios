@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.3.4] - 2026-07-07
+
+- improve responsive site reflow and subagent cleanup reliability
+
 ## [3.3.3] - 2026-07-06
 
 - refresh home redesign and dynamic blog
@@ -653,4 +657,3 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [0.1.0] - 2026-03-03
 
 - Initialize project versioning (`VERSION`, `CHANGELOG.md`) and release tooling baseline.
-

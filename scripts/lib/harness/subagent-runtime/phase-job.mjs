@@ -56,6 +56,7 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   rootDir,
   structuredOutputTempDir,
   runOneShotImpl = runOneShot,
+  appendJobFindingsToRoleMemoryImpl = appendJobFindingsToRoleMemory,
 }) {
   const agent = resolveAgentForJob(job, agentSpecNormalized);
   const role = normalizeText(job?.role);
@@ -162,14 +163,14 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   });
 
   if (jobStatus === 'completed') {
-    appendJobFindingsToRoleMemory({
+    await appendJobFindingsToRoleMemoryImpl({
       role: job.role,
       rootDir,
       jobId: job.jobId,
       taskTitle: plan.taskTitle,
       findings: validation.value.findings,
       contextSummary: validation.value.contextSummary,
-    }).catch(() => { /* background best-effort */ });
+    }).catch(() => {});
   }
 
   return buildCompletedPhaseJobRun({
