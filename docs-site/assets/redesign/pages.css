@@ -1,10 +1,10 @@
 .rex-doc-main {
   min-width: 0;
-  padding: clamp(1.25rem, 4vw, 3rem) clamp(1rem, 5vw, 4.5rem) 5rem;
+  padding: 32px 32px 5rem;
 }
 
 .rex-doc-main__inner {
-  width: min(1040px, 100%);
+  width: min(820px, 100%);
   margin: 0 auto;
 }
 
@@ -31,26 +31,26 @@
 }
 
 .rex-doc-hero {
-  max-width: 860px;
-  margin-bottom: 1.35rem;
+  max-width: 680px;
+  margin-bottom: 1.25rem;
 }
 
 .rex-doc-hero h1 {
   margin: 0;
   color: var(--rex-text);
-  font-family: var(--rex-font-display);
-  font-size: clamp(2.6rem, 6vw, 5.4rem);
-  font-weight: 900;
-  letter-spacing: -0.075em;
-  line-height: 0.94;
+  font-family: var(--rex-font-mono);
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
 }
 
 .rex-doc-hero p {
-  max-width: 720px;
-  margin: 1rem 0 0;
+  max-width: 640px;
+  margin: 0.9rem 0 0;
   color: #B8C6DA;
-  font-size: 1rem;
-  line-height: 1.7;
+  font-size: 0.95rem;
+  line-height: 1.65;
 }
 
 .rex-doc-outline,
@@ -64,8 +64,8 @@
 
 .rex-doc-outline {
   margin: 0 0 1rem;
-  padding: 1rem;
-  border-radius: 18px;
+  padding: 0.95rem;
+  border-radius: 16px;
 }
 
 .rex-doc-outline__title {
@@ -118,8 +118,8 @@
 }
 
 .rex-doc-content {
-  padding: clamp(1.4rem, 4vw, 3rem);
-  border-radius: 24px;
+  padding: 1.5rem;
+  border-radius: 20px;
 }
 
 .rex-doc-content > h1:first-child {
@@ -152,30 +152,45 @@
   box-shadow: var(--rex-shadow-soft);
 }
 
-.rex-doc-content .grid,
-.rex-doc-content .cards {
-  gap: 1rem;
-}
-
-.rex-doc-content .grid.cards > ul > li,
-.rex-doc-content .cards > ul > li {
-  background: rgba(13, 18, 32, 0.8);
-  border: 1px solid var(--rex-border);
-  border-radius: 16px;
-  box-shadow: var(--rex-shadow-soft);
-}
-
-@media (max-width: 860px) {
+@media (max-width: 1023px) {
   .rex-doc-main {
-    padding: 1rem 0.8rem 3rem;
+    padding: 24px 20px 3rem;
   }
 
   .rex-doc-hero h1 {
-    font-size: clamp(2.2rem, 12vw, 3.5rem);
+    font-size: 1.75rem;
   }
 
   .rex-doc-content {
     padding: 1.25rem;
     border-radius: 18px;
+  }
+}
+
+@media (max-width: 767px) {
+  .rex-doc-main {
+    padding: 16px 16px 2.5rem;
+  }
+
+  .rex-doc-breadcrumb {
+    margin-bottom: 1rem;
+  }
+
+  .rex-doc-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .rex-doc-hero p {
+    font-size: 0.9rem;
+  }
+
+  .rex-doc-outline {
+    padding: 0.85rem;
+    border-radius: 14px;
+  }
+
+  .rex-doc-content {
+    padding: 1rem;
+    border-radius: 16px;
   }
 }

@@ -1,45 +1,113 @@
 <div class="rex-doc-layout rex-doc-page" data-rex-shell="docs">
   {% include "partials/rex/docs-sidebar.html" %}
-  <main class="rex-doc-main" id="rex-doc-main">
-    <div class="rex-doc-main__inner">
-      <nav class="rex-doc-breadcrumb" aria-label="Breadcrumb">
-        <a href="{{ '/' | url }}">Home</a>
-        {% if page.parent %}
+  <div class="rex-doc-shell">
+    <details class="rex-doc-device-nav rex-doc-device-nav--tablet">
+      <summary class="rex-doc-device-bar rex-doc-device-bar--tablet" aria-label="Toggle documentation navigation">
+        <span class="rex-doc-device-bar__group rex-doc-device-bar__group--brand">
+          <span class="rex-doc-device-bar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M3 6h18"></path>
+              <path d="M3 12h18"></path>
+              <path d="M3 18h18"></path>
+            </svg>
+          </span>
+          <span class="rex-doc-device-bar__brand">HARNESS CLI</span>
+        </span>
+        <span class="rex-doc-device-bar__group rex-doc-device-bar__group--actions">
+          <span class="rex-doc-device-bar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+          </span>
+          <span class="rex-doc-device-bar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M20 21a8 8 0 0 0-16 0"></path>
+              <circle cx="12" cy="8" r="4"></circle>
+            </svg>
+          </span>
+        </span>
+      </summary>
+      <div class="rex-doc-device-panel">
+        {% include "partials/rex/docs-sidebar-links.html" %}
+        <div class="rex-doc-sidebar__status rex-doc-sidebar__status--device">
+          <span>Local Machine</span>
+          <strong>aios v3.3.2</strong>
+        </div>
+      </div>
+    </details>
+
+    <details class="rex-doc-device-nav rex-doc-device-nav--mobile">
+      <summary class="rex-doc-device-bar rex-doc-device-bar--mobile" aria-label="Toggle documentation navigation">
+        <span class="rex-doc-device-bar__group rex-doc-device-bar__group--brand">
+          <span class="rex-doc-device-bar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <path d="M3 6h18"></path>
+              <path d="M3 12h18"></path>
+              <path d="M3 18h18"></path>
+            </svg>
+          </span>
+          <span class="rex-doc-device-bar__brand">HARNESS CLI</span>
+        </span>
+        <span class="rex-doc-device-bar__group rex-doc-device-bar__group--actions">
+          <span class="rex-doc-device-bar__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false">
+              <circle cx="11" cy="11" r="7"></circle>
+              <path d="m20 20-3.5-3.5"></path>
+            </svg>
+          </span>
+        </span>
+      </summary>
+      <div class="rex-doc-device-panel">
+        {% include "partials/rex/docs-sidebar-links.html" %}
+        <div class="rex-doc-sidebar__status rex-doc-sidebar__status--device">
+          <span>Local Machine</span>
+          <strong>aios v3.3.2</strong>
+        </div>
+      </div>
+    </details>
+
+    <main class="rex-doc-main" id="rex-doc-main">
+      <div class="rex-doc-main__inner">
+        <nav class="rex-doc-breadcrumb" aria-label="Breadcrumb">
+          <a href="{{ '/' | url }}">Home</a>
+          {% if page.parent %}
+            <span>/</span>
+            <span>{{ page.parent.title }}</span>
+          {% endif %}
           <span>/</span>
-          <span>{{ page.parent.title }}</span>
+          <strong>{{ page.title }}</strong>
+        </nav>
+
+        <header class="rex-doc-hero">
+          <h1>{{ page.title }}</h1>
+          {% if page.meta and page.meta.description %}
+            <p>{{ page.meta.description }}</p>
+          {% elif config.site_description %}
+            <p>{{ config.site_description }}</p>
+          {% endif %}
+        </header>
+
+        {% if page.toc %}
+          <section class="rex-doc-outline" aria-label="On this page">
+            <div class="rex-doc-outline__title"><span aria-hidden="true"></span>On This Page</div>
+            <ul>
+              {% for toc_item in page.toc %}
+                <li><a href="#{{ toc_item.id }}">{{ toc_item.title }}</a></li>
+                {% if toc_item.children %}
+                  {% for child in toc_item.children %}
+                    <li class="is-child"><a href="#{{ child.id }}">{{ child.title }}</a></li>
+                  {% endfor %}
+                {% endif %}
+              {% endfor %}
+            </ul>
+          </section>
         {% endif %}
-        <span>/</span>
-        <strong>{{ page.title }}</strong>
-      </nav>
 
-      <header class="rex-doc-hero">
-        <h1>{{ page.title }}</h1>
-        {% if page.meta and page.meta.description %}
-          <p>{{ page.meta.description }}</p>
-        {% elif config.site_description %}
-          <p>{{ config.site_description }}</p>
-        {% endif %}
-      </header>
-
-      {% if page.toc %}
-        <section class="rex-doc-outline" aria-label="On this page">
-          <div class="rex-doc-outline__title"><span aria-hidden="true"></span>On This Page</div>
-          <ul>
-            {% for toc_item in page.toc %}
-              <li><a href="#{{ toc_item.id }}">{{ toc_item.title }}</a></li>
-              {% if toc_item.children %}
-                {% for child in toc_item.children %}
-                  <li class="is-child"><a href="#{{ child.id }}">{{ child.title }}</a></li>
-                {% endfor %}
-              {% endif %}
-            {% endfor %}
-          </ul>
-        </section>
-      {% endif %}
-
-      <article class="rex-doc-content md-typeset">
-        {% include "partials/content.html" %}
-      </article>
-    </div>
-  </main>
+        <article class="rex-doc-content md-typeset">
+          {% include "partials/content.html" %}
+        </article>
+      </div>
+    </main>
+  </div>
 </div>

@@ -622,19 +622,27 @@ test('override template replaces Material layout blocks with Pencil shell routin
 test('docs shell partials expose the Pencil application layout contract', () => {
   assert.equal(exists('docs-site/overrides/partials/rex/docs-sidebar.html'), true);
   assert.equal(exists('docs-site/overrides/partials/rex/docs-page.html'), true);
+  assert.equal(exists('docs-site/overrides/partials/rex/docs-sidebar-links.html'), true);
 
   const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
   for (const marker of [
     'rex-doc-sidebar',
     'HARNESS CLI',
-    'Getting Started',
-    'Core Systems',
-    'Collaboration',
-    'Reference',
+    'docs-sidebar-links.html',
     'Local Machine',
     'aios v',
   ]) {
     assert.match(sidebar, new RegExp(marker));
+  }
+
+  const links = read('docs-site/overrides/partials/rex/docs-sidebar-links.html');
+  for (const marker of [
+    'Getting Started',
+    'Core Systems',
+    'Collaboration',
+    'Reference',
+  ]) {
+    assert.match(links, new RegExp(marker));
   }
 
   const page = read('docs-site/overrides/partials/rex/docs-page.html');
@@ -642,6 +650,9 @@ test('docs shell partials expose the Pencil application layout contract', () => 
     'rex-doc-layout',
     'rex-doc-outline',
     'On This Page',
+    'rex-doc-device-nav--tablet',
+    'rex-doc-device-nav--mobile',
+    'docs-sidebar-links.html',
     '{% include "partials/content.html" %}',
   ]) {
     assert.match(page, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));

@@ -4,43 +4,7 @@
     <span>HARNESS CLI</span>
   </a>
 
-  <nav class="rex-doc-sidebar__nav">
-    <section class="rex-doc-sidebar__section">
-      <h2>Getting Started</h2>
-      <a class="rex-doc-sidebar__item{% if page.url == 'getting-started/' %} is-active{% endif %}" href="{{ 'getting-started/' | url }}"><span data-icon="terminal"></span>Quick Start</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'windows-guide/' %} is-active{% endif %}" href="{{ 'windows-guide/' | url }}"><span data-icon="monitor"></span>Windows Guide</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'troubleshooting/' %} is-active{% endif %}" href="{{ 'troubleshooting/' | url }}"><span data-icon="alert"></span>Troubleshooting</a>
-    </section>
-
-    <section class="rex-doc-sidebar__section">
-      <h2>Core Systems</h2>
-      <a class="rex-doc-sidebar__item{% if page.url == 'contextdb/' %} is-active{% endif %}" href="{{ 'contextdb/' | url }}"><span data-icon="database"></span>ContextDB</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'token-compression/' %} is-active{% endif %}" href="{{ 'token-compression/' | url }}"><span data-icon="zap"></span>Native Token Compression</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'superpowers/' %} is-active{% endif %}" href="{{ 'superpowers/' | url }}"><span data-icon="spark"></span>Superpowers</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'debug-hub/' %} is-active{% endif %}" href="{{ 'debug-hub/' | url }}"><span data-icon="bug"></span>debug-hub</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'model-router/' %} is-active{% endif %}" href="{{ 'model-router/' | url }}"><span data-icon="route"></span>Model Router</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'codemap/' %} is-active{% endif %}" href="{{ 'codemap/' | url }}"><span data-icon="branch"></span>Codemap</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'route-concurrency-profiles/' %} is-active{% endif %}" href="{{ 'route-concurrency-profiles/' | url }}"><span data-icon="network"></span>Route &amp; Concurrency Profiles</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'advanced-design-skills/' %} is-active{% endif %}" href="{{ 'advanced-design-skills/' | url }}"><span data-icon="layout"></span>Advanced Design Skills</a>
-    </section>
-
-    <section class="rex-doc-sidebar__section">
-      <h2>Collaboration</h2>
-      <a class="rex-doc-sidebar__item{% if page.url == 'team-ops/' %} is-active{% endif %}" href="{{ 'team-ops/' | url }}"><span data-icon="users"></span>Agent Team</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'solo-harness/' %} is-active{% endif %}" href="{{ 'solo-harness/' | url }}"><span data-icon="activity"></span>Solo Harness</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'hud-guide/' %} is-active{% endif %}" href="{{ 'hud-guide/' | url }}"><span data-icon="eye"></span>HUD Guide</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'perception/' %} is-active{% endif %}" href="{{ 'perception/' | url }}"><span data-icon="fork"></span>Perception</a>
-    </section>
-
-    <section class="rex-doc-sidebar__section">
-      <h2>Reference</h2>
-      <a class="rex-doc-sidebar__item{% if page.url == 'architecture/' %} is-active{% endif %}" href="{{ 'architecture/' | url }}"><span data-icon="layout"></span>Architecture</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'use-cases/' %} is-active{% endif %}" href="{{ 'use-cases/' | url }}"><span data-icon="checks"></span>CLI Workflows</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'cli-comparison/' %} is-active{% endif %}" href="{{ 'cli-comparison/' | url }}"><span data-icon="compare"></span>CLI Comparison</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'case-library/' %} is-active{% endif %}" href="{{ 'case-library/' | url }}"><span data-icon="book"></span>Case Library</a>
-      <a class="rex-doc-sidebar__item{% if page.url == 'changelog/' %} is-active{% endif %}" href="{{ 'changelog/' | url }}"><span data-icon="history"></span>Changelog</a>
-    </section>
-  </nav>
+  {% include "partials/rex/docs-sidebar-links.html" %}
 
   <div class="rex-doc-sidebar__status">
     <span>Local Machine</span>
