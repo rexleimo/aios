@@ -12,9 +12,27 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 - Added agent governance coverage to the Team docs, scenario guide, ContextDB reference, and blog.
 - New smoke evidence guidance now points to `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, and `.aios/interception/metrics/agents-smoke-<agent>.jsonl`.
 - Skill edits now point readers to `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` before trusting live agent workflows.
-- **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is now registered as the 7th AIOS client with skills, native, harness, and superpowers capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools directly inside Hermes sessions — `aios_context_pack`, `aios_doctor_suite`, `aios_intercept_compress`, `aios_skill_validate`, and `aios_skill_install`. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
+- **Grok Build as first-class AIOS client**: xAI Grok Build (`grok` CLI, runtime id `grok-build`) is now a full AIOS client with skills, agents, superpowers, native, team, and harness. MCP uses Codex-shaped TOML (`~/.grok/config.toml` / `.grok/config.toml`). See: [Grok Build + AIOS blog post](/blog/2026-07-grok-build-aios-client/).
+- **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is registered with skills, native, harness, and superpowers capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools inside Hermes sessions. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 
 ## Official Release History
+
+## v3.4.0 (2026-07-09) — Grok Build first-class client
+
+### Added
+
+- **Grok Build (`grok` / `grok-build`)** joins Codex, Claude Code, Gemini CLI, OpenCode, and Hermes as a first-class AIOS client.
+- Capabilities: `skills`, `agents`, `superpowers`, `native`, `team`, `harness`.
+- Project skill root: `.grok/skills`; agent root: `.grok/agents`; instruction file: shared `AGENTS.md`.
+- MCP: TOML `[mcp_servers.*]` at home `~/.grok/config.toml` and project `.grok/config.toml`.
+- One-shot / unattended: `grok --always-approve -p "..."`.
+- Harness / team provider: `--provider grok` / `--team-provider grok` / `--agent grok-build`.
+- Codemap injects CRG MCP into Grok home config; `aios init` detects the `grok` CLI.
+
+### Docs
+
+- Quick Start, Use Cases, CLI Comparison, Solo Harness, ContextDB, Troubleshooting, and homepage copy list Grok Build.
+- Blog: [Grok Build Is Now a First-Class AIOS Client](/blog/2026-07-grok-build-aios-client/).
 
 ## v3.3.0 (2026-07-02) — 废弃原生拦截运行时，全自动安装 RTK + Caveman
 

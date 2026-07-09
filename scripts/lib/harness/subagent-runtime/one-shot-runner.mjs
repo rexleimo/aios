@@ -8,6 +8,7 @@ import {
   buildCodexConfigArgs,
   buildCodexUnattendedArgs,
   buildGeminiUnattendedArgs,
+  buildGrokUnattendedArgs,
   buildRoutedExtraArgs,
 } from './client-args.mjs';
 import { normalizeText } from './text.mjs';
@@ -30,6 +31,7 @@ function buildRuntimeInvocation({ clientId, systemPrompt, userPrompt, env, codex
       buildGeminiUnattendedArgs,
       buildCodexConfigArgs,
       buildCodexUnattendedArgs,
+      buildGrokUnattendedArgs,
     },
   });
   return { invocation, routedExtraArgs };

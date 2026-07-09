@@ -326,6 +326,7 @@ export function buildRTKInitCommandForAgent(agent) {
     gemini: '--gemini',
     opencode: '--opencode',
     hermes: '--agent hermes',
+    grok: '--agent grok',
   };
   const rtkFlag = RTK_AGENT_MAP[agent];
   if (rtkFlag === undefined) return null;

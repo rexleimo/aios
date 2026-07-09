@@ -2,6 +2,7 @@ import { ALL_CLIENTS } from '../../clients/registry.mjs';
 import { renderClaudeNativeOutputs } from '../emitters/claude.mjs';
 import { renderCodexNativeOutputs } from '../emitters/codex.mjs';
 import { renderGeminiNativeOutputs } from '../emitters/gemini.mjs';
+import { renderGrokNativeOutputs } from '../emitters/grok.mjs';
 import { renderHermesNativeOutputs } from '../emitters/hermes.mjs';
 import { renderOpencodeNativeOutputs } from '../emitters/opencode.mjs';
 
@@ -12,6 +13,7 @@ const EMITTER_REGISTRY = Object.freeze({
   gemini: renderGeminiNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
   hermes: renderHermesNativeOutputs,
+  grok: renderGrokNativeOutputs,
 });
 
 // Auto-derived from ALL_CLIENTS registry: ensures every client has an emitter.

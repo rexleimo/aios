@@ -38,12 +38,17 @@ function buildHermesInvocation({ extraArgs = [] }) {
   return { cmd: commandForRuntime('hermes-agent'), args: [...extraArgs] };
 }
 
+function buildGrokInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('grok-build'), args: [...extraArgs] };
+}
+
 const INTERACTIVE_BUILDERS = {
   'claude-code': buildClaudeInvocation,
   'gemini-cli': buildGeminiInvocation,
   'codex-cli': buildCodexInvocation,
   'opencode-cli': buildOpenCodeInvocation,
   'hermes-agent': buildHermesInvocation,
+  'grok-build': buildGrokInvocation,
 };
 
 export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {

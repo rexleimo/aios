@@ -11,7 +11,7 @@ description: Harness CLI のルーティングと並列設定を最小変数で�
 
 - `CTXDB_INTERACTIVE_AUTO_ROUTE`: interactive 自動ルーティング（`single/subagent/team/harness`）の有効化
 - `CTXDB_CODEX_DISABLE_MCP`: wrapper 経由 `codex` の MCP 起動をスキップするか
-- `CTXDB_HARNESS_PROVIDER`: 注入される `harness` route の provider（`codex|claude|gemini|opencode`、既定は現在の CLI）
+- `CTXDB_HARNESS_PROVIDER`: 注入される `harness` route の provider（`codex|claude|gemini|opencode|hermes|grok|hermes|grok`、既定は現在の CLI）
 - `CTXDB_HARNESS_MAX_ITERATIONS`: 注入される `harness` route の反復予算（既定 `8`）
 - `CTXDB_TEAM_WORKERS`: `aios team ...` の並列 worker 数
 - `AIOS_SUBAGENT_CONCURRENCY`: `aios orchestrate --execute live` の並列実行数、および GroupChat のラウンドあたり speaker 数（デフォルト: `3`）

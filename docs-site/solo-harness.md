@@ -90,7 +90,7 @@ Dry run creates the session structure but doesn't actually invoke the agent.
 
 ## Agent Self-Trigger
 
-When you're using a wrapped CLI (`codex`, `claude`, `gemini`, `opencode`), your agent can **trigger a harness run itself** when it recognizes a long-running task:
+When you're using a wrapped CLI (`codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok`), your agent can **trigger a harness run itself** when it recognizes a long-running task:
 
 ```
 You: "This refactoring is going to take a while. Keep working on it overnight."

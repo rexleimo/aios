@@ -88,6 +88,10 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('opencode-cli'),
     ['run', ...buildOpenCodeStrictAgentArgs(extraArgs), buildOpenCodePrompt({ prompt })]
   ),
+  'grok-build': ({ prompt, extraArgs }) => runBufferedCommand(
+    commandForRuntime('grok-build'),
+    ['--always-approve', '-p', prompt, ...extraArgs]
+  ),
 };
 
 // Exported for tests only: lets verification assert handlers are registered

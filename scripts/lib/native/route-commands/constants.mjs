@@ -53,4 +53,11 @@ export const CLIENT_LAYOUTS = {
     placeholder: '$ARGUMENTS',
     harnessProvider: 'opencode',
   },
+  grok: {
+    commandDir: 'commands',
+    extension: 'md',
+    trigger: '',
+    placeholder: '$ARGUMENTS',
+    harnessProvider: 'grok',
+  },
 };

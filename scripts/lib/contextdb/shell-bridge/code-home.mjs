@@ -7,6 +7,7 @@ const CLIENT_HOME_ENV_VARS = Object.freeze([
   Object.freeze({ env: 'CLAUDE_HOME', label: 'claude' }),
   Object.freeze({ env: 'GEMINI_HOME', label: 'gemini' }),
   Object.freeze({ env: 'OPENCODE_HOME', label: 'opencode' }),
+  Object.freeze({ env: 'GROK_HOME', label: 'grok' }),
 ]);
 
 function normalizeOneClientHome(env, cwd, { env: envVar, label }) {

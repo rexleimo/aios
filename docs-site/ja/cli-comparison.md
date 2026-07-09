@@ -30,7 +30,7 @@ Harness CLI は Codex、Claude、Gemini CLI の代替ではありません。
 
 ## Harness CLI を追加する場合
 
-- 同じプロジェクトで `codex`、`claude`、`gemini`、`opencode` を切り替える場合。
+- 同じプロジェクトで `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` を切り替える場合。
 - 再起動安全なコンテキストと監査可能な checkpoint を必要とする場合。
 - ブラウザ自動化と認証壁処理、明示的な human handoff を必要とする場合。
 - 設定読み取り中の偶発的なシークレット露出を減らす必要がある場合。

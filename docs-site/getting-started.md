@@ -14,7 +14,7 @@ Sounds good? Let's go.
 Before we start, make sure you have:
 
 - **Node.js 24** (the required LTS baseline) — [download it here](https://nodejs.org/) or use `nvm install 24`
-- **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, or `opencode`
+- **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, `opencode`, `hermes`, or `grok` (Grok Build)
 - **A project folder** — any code project where you want your agent to have memory
 
 Check your Node version:
@@ -263,7 +263,7 @@ When you're inside a running agent, you can trigger Harness CLI features with sh
 
 ### Does Harness CLI replace my coding agent?
 
-**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. Harness CLI adds memory, skills, and teamwork on top of them.
+**No.** You still run `codex`, `claude`, `gemini`, `opencode`, `hermes`, or `grok` (Grok Build). Harness CLI adds memory, skills, and teamwork on top of them.
 
 ### Why do I need `.contextdb-enable`?
 

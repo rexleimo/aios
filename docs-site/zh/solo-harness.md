@@ -46,7 +46,7 @@ aios harness resume --session nightly-demo --max-iterations 10
 
 ## 包装客户端里的 Agent 自触发
 
-启用 shell 包装后，交互式 `codex` / `claude` / `gemini` / `opencode` 会收到 AIOS 路由提示。默认仍然是 `single`；只有明确的长任务、过夜任务、可恢复任务、checkpoint 密集目标，才应该让 agent 自己选择 `harness`。
+启用 shell 包装后，交互式 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 会收到 AIOS 路由提示。默认仍然是 `single`；只有明确的长任务、过夜任务、可恢复任务、checkpoint 密集目标，才应该让 agent 自己选择 `harness`。
 
 这类任务注入的命令形态是：
 
@@ -94,7 +94,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 - `--max-iterations <n>` 控制 `run` / `resume` 的循环预算；CLI 默认是 `20`，包装客户端自触发提示默认注入 `8`。
 - `--workspace <path>` 强制把 ContextDB session artifact 写进指定项目根目录。适合从包装器、外部 checkout 或父目录触发 AIOS 时使用。
-- `--provider <codex|claude|gemini|opencode>` 选择循环底层调用的本地 CLI。
+- `--provider <codex|claude|gemini|opencode|hermes|grok>` 选择循环底层调用的本地 CLI。
 
 ## Solo Harness 会写哪些文件
 

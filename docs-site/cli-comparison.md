@@ -30,7 +30,7 @@ It is a reliability layer on top of them.
 
 ## Add Harness CLI When
 
-- You switch between `codex`, `claude`, `gemini`, or `opencode` in one project.
+- You switch between `codex`, `claude`, `gemini`, `opencode`, `hermes`, or `grok` (Grok Build) in one project.
 - You want restart-safe context and auditable checkpoints.
 - You need browser automation and auth-wall handling with explicit human handoff.
 - You must reduce accidental secret exposure during config reads.

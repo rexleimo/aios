@@ -54,6 +54,7 @@ test('buildRTKInitCommandForAgent uses current RTK flags', () => {
   assert.equal(buildRTKInitCommandForAgent('gemini'), 'rtk init -g --gemini');
   assert.equal(buildRTKInitCommandForAgent('opencode'), 'rtk init -g --opencode');
   assert.equal(buildRTKInitCommandForAgent('hermes'), 'rtk init -g --agent hermes');
+  assert.equal(buildRTKInitCommandForAgent('grok'), 'rtk init -g --agent grok');
   assert.equal(buildRTKInitCommandForAgent('unknown'), null);
 });
 

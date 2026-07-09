@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.4.0] - 2026-07-09
+
+### Added — Grok Build first-class AIOS client
+
+- Register **Grok Build** (`grok` CLI, runtime id `grok-build`) as a first-class AIOS client with skills, agents, superpowers, native, team, and harness capabilities.
+- Native surfaces: `.grok/skills`, `.grok/agents`, shared `AGENTS.md` projection, MCP targets at `~/.grok/config.toml` and project `.grok/config.toml` (TOML `mcp_servers`, Codex-compatible shape).
+- Runtime wiring: `ctx-agent` interactive/one-shot, harness/team provider `grok`, shell-bridge wrap, codemap MCP inject, init detection, route commands.
+- Unattended headless args: `--always-approve` with one-shot `grok -p ...`.
+- Docs/changelog/blog: official site client lists + multi-language blog post.
+
 ## [3.3.4] - 2026-07-07
 
 - improve responsive site reflow and subagent cleanup reliability

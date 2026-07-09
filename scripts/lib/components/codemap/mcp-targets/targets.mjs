@@ -36,6 +36,15 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
       return opencodeHome ? path.join(opencodeHome, 'opencode.json') : '';
     },
   }),
+  Object.freeze({
+    clientKey: 'grok',
+    format: 'codex-toml',
+    createIfMissing: true,
+    resolvePath: (_projectRoot, clientHomes) => {
+      const grokHome = resolveUserPath(clientHomes.grok);
+      return grokHome ? path.join(grokHome, 'config.toml') : '';
+    },
+  }),
 ]);
 
 export function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {

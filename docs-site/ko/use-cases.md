@@ -39,7 +39,7 @@ touch .contextdb-enable
 codex
 ```
 
-이후 같은 프로젝트에서 `codex`, `claude`, `gemini`, `opencode` 를 실행하면 모두 같은 ContextDB 에 연결됩니다.
+이후 같은 프로젝트에서 `codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok` 를 실행하면 모두 같은 ContextDB 에 연결됩니다.
 
 ## 지속 가능한 운영 메모를 쓰고 싶어요 (Memo + Persona)
 
@@ -100,7 +100,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 “한 agent 가 한 목표를 계속 밀어붙이게” 하고 싶다면 [솔로 Harness](solo-harness.md) 를 사용하세요. 작업이 정말 병렬 친화적일 때만 [Agent Team](team-ops.md) 을 쓰면 됩니다.
 
-팁: 래핑된 `codex` / `claude` / `gemini` / `opencode` 에서 시작하고 야간/재개 가능 작업을 명시하면, 시작 route prompt 가 agent 에게 같은 `aios harness run ... --workspace <project-root>` 명령을 자체 트리거하도록 안내합니다. 사용자가 직접 외울 필요가 없습니다.
+팁: 래핑된 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 에서 시작하고 야간/재개 가능 작업을 명시하면, 시작 route prompt 가 agent 에게 같은 `aios harness run ... --workspace <project-root>` 명령을 자체 트리거하도록 안내합니다. 사용자가 직접 외울 필요가 없습니다.
 
 ## Agent Team 을 켜고 싶어요
 
@@ -202,7 +202,7 @@ aios privacy read --file .env
 
 ## 선택 기준
 
-- **일상 개발**: `codex` / `claude` / `gemini` / `opencode`
+- **일상 개발**: `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok`
 - **설치/업데이트**: `aios`
 - **솔로 야간 실행**: `aios harness run --objective "내일 아침 인계 메모 정리" --worktree`
 - **Agent Team (GroupChat)**: `aios team 3:codex "task"` (라운드 기반 공유 대화)

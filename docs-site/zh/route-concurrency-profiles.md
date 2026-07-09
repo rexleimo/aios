@@ -11,7 +11,7 @@ description: 用最少变量选择 Harness CLI 的交互路由与并发执行配
 
 - `CTXDB_INTERACTIVE_AUTO_ROUTE`：是否开启交互自动路由（`single/subagent/team/harness`）
 - `CTXDB_CODEX_DISABLE_MCP`：包装后的 `codex` 是否跳过 MCP 启动（`1` = 启动更快，但该次会话不使用 MCP 工具）
-- `CTXDB_HARNESS_PROVIDER`：注入的 `harness` 路由使用哪个 provider（`codex|claude|gemini|opencode`；默认当前 CLI）
+- `CTXDB_HARNESS_PROVIDER`：注入的 `harness` 路由使用哪个 provider（`codex|claude|gemini|opencode|hermes|grok|hermes|grok`；默认当前 CLI）
 - `CTXDB_HARNESS_MAX_ITERATIONS`：注入的 `harness` 路由迭代预算（默认 `8`）
 - `CTXDB_TEAM_WORKERS`：`aios team ...` 的并行 worker 数
 - `AIOS_SUBAGENT_CONCURRENCY`：`aios orchestrate --execute live` 的并行执行数，以及 GroupChat 每轮并行 speaker 数（默认 `3`）

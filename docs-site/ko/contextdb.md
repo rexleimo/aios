@@ -210,7 +210,7 @@ node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source
 - `agent_private` 기록은 일치하는 `--agent <runtime-client-id>` 가 필요합니다.
 - 다른 클라이언트의 private scratch note 는 필터링됩니다.
 
-Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli`, `hermes-agent` 입니다.
+Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli`, `hermes-agent`, `grok-build` 입니다.
 
 ### 모든 클라이언트 지침 배포
 

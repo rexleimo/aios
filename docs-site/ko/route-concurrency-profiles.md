@@ -11,7 +11,7 @@ description: Harness CLI 라우팅과 병렬 설정을 최소 변수로 선택�
 
 - `CTXDB_INTERACTIVE_AUTO_ROUTE`: interactive 자동 라우팅(`single/subagent/team/harness`) 사용 여부
 - `CTXDB_CODEX_DISABLE_MCP`: wrapper로 실행한 `codex`에서 MCP 시작 건너뛰기 여부 (`1` = 더 빠른 시작, 해당 실행에서 MCP 도구 없음)
-- `CTXDB_HARNESS_PROVIDER`: 주입되는 `harness` route provider (`codex|claude|gemini|opencode`, 기본값은 현재 CLI)
+- `CTXDB_HARNESS_PROVIDER`: 주입되는 `harness` route provider (`codex|claude|gemini|opencode|hermes|grok|hermes|grok`, 기본값은 현재 CLI)
 - `CTXDB_HARNESS_MAX_ITERATIONS`: 주입되는 `harness` route 반복 예산 (기본값 `8`)
 - `CTXDB_TEAM_WORKERS`: `aios team ...` 병렬 worker 수
 - `AIOS_SUBAGENT_CONCURRENCY`: `aios orchestrate --execute live` 및 GroupChat 라운드당 speaker 실행 동시성 (기본값: `3`)

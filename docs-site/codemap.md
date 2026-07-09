@@ -35,7 +35,7 @@ That's it. This single command:
 
 1. Checks `uv` is available (CRG runs via `uvx` — zero global installs)
 2. Builds the initial graph (~5-15s for most projects)
-3. Injects the CRG MCP server into all detected clients (opencode / codex / claude / gemini)
+3. Injects the CRG MCP server into all detected clients (opencode / codex / claude / gemini / grok)
 4. Installs the opencode auto-update plugin (if opencode is detected)
 5. Updates `AGENTS.md` with graph-first decision guidance
 

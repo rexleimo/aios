@@ -46,7 +46,7 @@ aios harness resume --session nightly-demo --max-iterations 10
 
 ## 래핑된 CLI 에서 agent 자체 트리거
 
-shell wrapping 이 켜져 있으면 대화형 `codex` / `claude` / `gemini` / `opencode` 세션이 AIOS route prompt 를 받습니다. 기본은 여전히 `single`이며, 명시적인 장시간/야간/재개 가능/checkpoint 중심 목표에만 agent 가 `harness` 를 선택해야 합니다.
+shell wrapping 이 켜져 있으면 대화형 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 세션이 AIOS route prompt 를 받습니다. 기본은 여전히 `single`이며, 명시적인 장시간/야간/재개 가능/checkpoint 중심 목표에만 agent 가 `harness` 를 선택해야 합니다.
 
 이때 주입되는 명령 형태는 다음과 같습니다:
 
@@ -94,7 +94,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 - `--max-iterations <n>` 은 `run` / `resume` 루프 예산을 제한합니다. CLI 기본값은 `20`, 래핑된 클라이언트 자체 트리거 prompt 기본값은 `8` 입니다.
 - `--workspace <path>` 는 ContextDB session artifact 를 지정한 프로젝트 루트에 쓰도록 강제합니다. wrapper, 외부 checkout, 상위 디렉터리에서 AIOS 를 호출할 때 사용합니다.
-- `--provider <codex|claude|gemini|opencode>` 는 루프가 사용할 로컬 CLI 를 선택합니다.
+- `--provider <codex|claude|gemini|opencode|hermes|grok>` 는 루프가 사용할 로컬 CLI 를 선택합니다.
 
 ## 생성되는 파일
 

@@ -1,11 +1,11 @@
 ---
 title: 개요
-description: Harness CLI는 codex, claude, gemini, opencode에 기억, 협업, 검증을 추가합니다. 워크플로우는 변경되지 않습니다.
+description: Harness CLI는 codex, claude, gemini, opencode, hermes, grok에 기억, 협업, 검증을 추가합니다. 워크플로우는 변경되지 않습니다.
 ---
 
 # Harness CLI (AIOS)
 
-> 로컬 agent 워크플로 레이어. `codex` / `claude` / `gemini` / `opencode` 에 기억, 협업, 검증을 추가합니다.
+> 로컬 agent 워크플로 레이어. `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 에 기억, 협업, 검증을 추가합니다.
 
 같은 명령어를 계속 사용합니다. 워크플로우는 변하지 않습니다. 다만 agent에게 뇌, 팀, 자기 진단이 추가될 뿐입니다.
 
@@ -16,7 +16,7 @@ description: Harness CLI는 codex, claude, gemini, opencode에 기억, 협업, �
 
 | 기능 | 설명 | 명령어 |
 |---|---|---|
-| **ContextDB** | 이벤트, 체크포인트, 컨텍스트 패킷을 가진 크로스 세션 프로젝트 메모리 | `codex` / `claude` / `gemini` / `opencode` 가 자동 로드 |
+| **ContextDB** | 이벤트, 체크포인트, 컨텍스트 패킷을 가진 크로스 세션 프로젝트 메모리 | `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 가 자동 로드 |
 | **Memo Storage** | Git 친화적인 프로젝트 노트. 기본 추가 전용 파일 스토리지 plus 선택적 분할 파일 스토리지 | `aios memo add "note"` / `aios memo storage status` |
 | **Native Route Shortcuts** | single/subagent/team/harness 레인용 클라이언트 네이티브 경로 프롬프트 | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | RTK/Caveman 패턴에 영감을 받은 자체 입력/출력 감소. 경쟁 도구는 설치하지 않음 | `context:pack --token-budget 1200 --token-strategy balanced` |
@@ -33,7 +33,7 @@ description: Harness CLI는 codex, claude, gemini, opencode에 기억, 협업, �
 ## 동작 원리
 
 ```text
-User → codex / claude / gemini / opencode
+User → codex / claude / gemini / opencode / hermes / grok
      → zsh wrapper (투명)
      → ctx-agent.mjs (ContextDB 통합)
         → contextdb CLI (기억 영속화)
@@ -41,7 +41,7 @@ User → codex / claude / gemini / opencode
      → browser MCP (선택적 브라우저 자동화)
 ```
 
-설치 후에는 평소처럼 `codex`, `claude`, `gemini`, `opencode` 를 사용하면 됩니다. Harness CLI가 백그라운드에서 프로젝트 기억을 자동 로드하고 클라이언트가 지원하는 곳에 경로 단축키를 프로비저닝합니다.
+설치 후에는 평소처럼 `codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok` 를 사용하면 됩니다. Harness CLI가 백그라운드에서 프로젝트 기억을 자동 로드하고 클라이언트가 지원하는 곳에 경로 단축키를 프로비저닝합니다.
 
 ## 빠른 둘러보기
 

@@ -39,7 +39,7 @@ touch .contextdb-enable
 codex
 ```
 
-之后在同一项目里运行 `codex`、`claude`、`gemini`、`opencode`，都会接入同一个 ContextDB。
+之后在同一项目里运行 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`，都会接入同一个 ContextDB。
 
 ## 我想要可持续的操作记忆（Memo + Persona）
 
@@ -100,7 +100,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 如果你要的是“一个 agent 盯一个目标持续做”，用 [单 Agent 夜跑](solo-harness.md)。如果任务本身适合并行拆分，再用 [多 Agent 实战](team-ops.md)。
 
-提示：如果你是从包装后的 `codex` / `claude` / `gemini` / `opencode` 开始，并明确提出过夜/可恢复任务，启动路由提示会让 agent 自己触发同样的 `aios harness run ... --workspace <project-root>` 命令，不需要你手动记。
+提示：如果你是从包装后的 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 开始，并明确提出过夜/可恢复任务，启动路由提示会让 agent 自己触发同样的 `aios harness run ... --workspace <project-root>` 命令，不需要你手动记。
 
 ## 我想开多 Agent
 
@@ -202,7 +202,7 @@ aios privacy read --file .env
 
 ## 选择口诀
 
-- **日常开发**：`codex` / `claude` / `gemini` / `opencode`
+- **日常开发**：`codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok`
 - **安装更新**：`aios`
 - **单 Agent 夜跑**：`aios harness run --objective "整理明早交接清单" --worktree`
 - **多 Agent（GroupChat）**：`aios team 3:codex "任务"`（基于轮次的共享对话）

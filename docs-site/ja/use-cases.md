@@ -39,7 +39,7 @@ touch .contextdb-enable
 codex
 ```
 
-以後、同じプロジェクトで `codex`、`claude`、`gemini`、`opencode` を実行すると、すべて同じ ContextDB に接続します。
+以後、同じプロジェクトで `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` を実行すると、すべて同じ ContextDB に接続します。
 
 ## 継続的な運用メモを使いたい（Memo + Persona）
 
@@ -100,7 +100,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 「1つの agent に1つの目標を継続させたい」なら [ソロ Harness](solo-harness.md)。本当に並列化できるなら [Agent Team](team-ops.md) を使います。
 
-ヒント: ラップされた `codex` / `claude` / `gemini` / `opencode` から開始し、夜間・再開可能な作業を明示した場合、起動 route prompt は agent に同じ `aios harness run ... --workspace <project-root>` コマンドを自己トリガーさせます。手動で覚える必要はありません。
+ヒント: ラップされた `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` から開始し、夜間・再開可能な作業を明示した場合、起動 route prompt は agent に同じ `aios harness run ... --workspace <project-root>` コマンドを自己トリガーさせます。手動で覚える必要はありません。
 
 ## Agent Team を使いたい
 
@@ -202,7 +202,7 @@ aios privacy read --file .env
 
 ## 選び方の目安
 
-- **日常開発**: `codex` / `claude` / `gemini` / `opencode`
+- **日常開発**: `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok`
 - **インストール/更新**: `aios`
 - **ソロ夜間実行**: `aios harness run --objective "明朝の引き継ぎメモをまとめる" --worktree`
 - **Agent Team (GroupChat)**: `aios team 3:codex "task"`（ラウンドベースの共有会話）

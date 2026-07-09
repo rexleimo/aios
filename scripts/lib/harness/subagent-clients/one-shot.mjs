@@ -78,6 +78,21 @@ const CLIENT_STRATEGIES = Object.freeze({
       args: ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, ...structuredFlags, '-'],
     };
   },
+  [getClientRuntimeId('grok')]: ({
+    systemText,
+    promptText,
+    routedExtraArgs,
+    adapters,
+    env,
+  }) => ({
+    runner: 'spawn',
+    args: [
+      ...routedExtraArgs,
+      ...adapters.buildGrokUnattendedArgs(env),
+      '-p',
+      combineSystemAndPrompt(systemText, promptText),
+    ],
+  }),
 });
 
 // 纯函数：把不同客户端的一次性调用差异集中到策略表，runOneShot 只负责执行。

@@ -238,7 +238,7 @@ node scripts/check-skills-sync.mjs
 
 ## レポ skills が他プロジェクトでグローバル利用不可
 
-ラッパーと skills は別々に設計されています。明示的に skills をインストールしてください。`--client all` は `codex` / `claude` / `gemini` / `opencode` を対象にします。
+ラッパーと skills は別々に設計されています。明示的に skills をインストールしてください。`--client all` は `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` を対象にします。
 
 === "macOS / Linux"
 

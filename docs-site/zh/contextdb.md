@@ -384,7 +384,7 @@ node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source
 - `agent_private` 需要匹配 `--agent <runtime-client-id>`。
 - 其他客户端的私有草稿会被过滤。
 
-Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`opencode-cli`、`hermes-agent`。
+Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`opencode-cli`、`hermes-agent`、`grok-build`。
 
 ### 全客户端指令覆盖
 

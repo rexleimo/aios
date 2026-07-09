@@ -10,7 +10,15 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 - agent governance 설명을 Team 문서, scenario guide, ContextDB reference, blog에 추가했습니다.
 - 새 smoke 증거 안내는 `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, `.aios/interception/metrics/agents-smoke-<agent>.jsonl`을 가리킵니다.
 - skill을 수정했다면 live workflow를 신뢰하기 전에 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`을 실행하세요.
-- **Hermes Agent가 AIOS 최상위 클라이언트로 승격**: Hermes (Nous Research)가 7번째 AIOS 클라이언트로 등록되어 skills, native, harness, superpowers 4가지 기능을 갖추었습니다. MCP 브리지 서버 (`scripts/aios-mcp-server.mjs`)가 Hermes 세션 내에서 5개 AIOS 도구를 직접 노출 — `aios_context_pack`, `aios_doctor_suite`, `aios_intercept_compress`, `aios_skill_validate`, `aios_skill_install`. 참고: [Hermes Agent + AIOS 블로그 글](/blog/ko/2026-06-hermes-agent-aios-client/)。
+- **Grok Build가 AIOS 최상위 클라이언트로 승격**: xAI Grok Build(`grok` / runtime id `grok-build`)가 skills, agents, superpowers, native, team, harness 로 등록되었습니다. MCP는 Codex 형태 TOML(`~/.grok/config.toml`). 참고: [Grok Build + AIOS](/blog/ko/2026-07-grok-build-aios-client/).
+- **Hermes Agent가 AIOS 최상위 클라이언트로 승격**: skills, native, harness, superpowers. 참고: [Hermes Agent + AIOS 블로그 글](/blog/ko/2026-06-hermes-agent-aios-client/).
+
+## v3.4.0（2026-07-09）— Grok Build 1급 클라이언트
+
+- `grok` / `grok-build` 를 전체 기능 세트로 등록(team + harness 포함)
+- 프로젝트 skills/agents: `.grok/skills`, `.grok/agents`; 지시 파일은 공유 `AGENTS.md`
+- 무인 실행: `grok --always-approve -p "..."`
+- 공식 문서, changelog, 다국어 블로그 동기화
 
 ## v3.3.0（2026-07-02）— 네이티브 인터셉션 런타임 폐기, RTK + Caveman 자동 설치
 
@@ -153,7 +161,7 @@ node scripts/aios.mjs init --dry-run
   - **debug-hub v0.2**: 자동 Trace 물질화(디바운스), agent 디버깅 세션, 구조화 증거 이벤트, `/api/health`, `timeline` / `health` / `compact_context` MCP 도구를 추가했습니다. HTTP 엔드포인트 입력 검증, MCP 인수 검증, 경로 탐색 방지, 대소문자 구분 없는 검색, 디바운스된 트레이스 인덱싱이 포함됩니다. 자세한 내용은 [debug-hub](debug-hub.md)를 참조하세요.
 
 - `1.8.0` (2026-05-08):
-  - 래핑된 `codex`, `claude`, `gemini`, `opencode` 세션용 self-trigger harness routing 을 추가했습니다.
+  - 래핑된 `codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok` 세션용 self-trigger harness routing 을 추가했습니다.
   - **Model Router**: Agent Team 을 위한 지능형 멀티모델 디스패치. 모델 능력 레지스트리 (8개 모델), 태스크 유형별 모델 라우팅, 3가지 CLI 프로토콜 어댑터 (claude/codex/gemini), 비용 오름차순 폴백 체인, 에이전트 호출 가능한 `model-router` 스킬, `AIOS_MODEL_{ROLE}` 환경 변수 오버라이드, 피드백 루프 통합을 포함합니다. 자세한 내용은 [모델 라우터](model-router.md)를 참조하세요.
   - **GroupChat Runtime**: `aios team` 라이브 모드가 이제 공유 대화 히스토리를 갖춘 라운드 기반 에이전트 실행을 사용합니다. 각 라운드의 에이전트는 병렬로 실행되며, 모든 에이전트가 전체 누적 스레드를 볼 수 있습니다. 막힌 에이전트는 자동으로 re-plan 라운드를 트리거합니다. 기존의 일회성 격리 dispatch 모델과 대조됩니다.
   - **OpenCode CLI subagent 지원**: `opencode-cli` 가 모든 orchestration 경로 (subagent, team, GroupChat runtime) 에서 완전히 지원되는 `AIOS_SUBAGENT_CLIENT` 가 되었습니다.
@@ -186,7 +194,7 @@ node scripts/aios.mjs init --dry-run
 
 - `main` (미릴리스):
   - **debug-hub MCP 네이티브 디버그 로그 서비스** (2026-05-06): coding agent 전용 MCP 네이티브 디버그 로그 수집. Node.js/Browser/Go SDK, 내장 Web UI, `~/.debug-hub/` 파일 기반 스토리지, 5개 MCP 도구 (`list_traces`, `get_trace`, `search_logs`, `get_stats`, `clear_logs`) 로 agent 자가 진단 제공. agent 가 인간 개입 없이 자신의 런타임 로그를 내성 가능
-	  - **Agent self-trigger harness routing** (2026-05-05): 래핑된 `codex` / `claude` / `gemini` / `opencode` 세션이 `single/subagent/team/harness` 를 안내합니다; 장시간/야간/재개 가능 목표는 `aios harness run ... --workspace <project-root>` 를 자체 트리거할 수 있고, `--max-iterations` 및 `CTXDB_HARNESS_PROVIDER` / `CTXDB_HARNESS_MAX_ITERATIONS` 로 제어할 수 있습니다
+	  - **Agent self-trigger harness routing** (2026-05-05): 래핑된 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 세션이 `single/subagent/team/harness` 를 안내합니다; 장시간/야간/재개 가능 목표는 `aios harness run ... --workspace <project-root>` 를 자체 트리거할 수 있고, `--max-iterations` 및 `CTXDB_HARNESS_PROVIDER` / `CTXDB_HARNESS_MAX_ITERATIONS` 로 제어할 수 있습니다
   - **래핑된 coding agent 용 Privacy Shield** (2026-04-24): ContextDB shell 대화형 CLI 시작 시 Privacy Guard 상태, 사용자 지정 모델 중계 엔드포인트 감지, `aios privacy read --file <path>` 안전 읽기 경로를 보여주는 컬러 프라이버시 패널을 출력; 자동 프롬프트도 LLM 개인정보 지시는 권고적이며 검증 가능한 보호는 deterministic AIOS gate 에서 수행된다고 명시
   - **ContextDB Shell 시작 최적화** (2026-04-22): `ctx()` 가 `npm run -s contextdb` 대신 컴파일된 `mcp-server/dist/contextdb/cli.js` 를 우선 사용하여 호출당 오버헤드를 ~0.3s 에서 ~0.06s 로 감소; one-shot 에이전트 실행을 ~2.2s 에서 ~0.5s 로 단축(약 78% 빨라짐); shell-bridge 의 `detectRunner` 가 `tsx` 를 더 이상 필요로 하지 않음; 설치 시 `dist/` 가 없으면 자동 빌드하고 빌드 실패 시 npm-run 모드로 우아하게 폴패
   - **기본 core skills 업데이트** (2026-04-19): `awesome-design-md`, `frontend-design`, `cap-commit-push` 를 기본 core skills 로 승격

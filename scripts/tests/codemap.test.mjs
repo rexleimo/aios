@@ -33,15 +33,22 @@ async function readJson(filePath) {
 
 test('codemap MCP targets agree with the client registry (single source of truth)', () => {
   const projectRoot = '/proj';
-  const clientHomes = { codex: '/h/.codex', claude: '/h/.claude', gemini: '/h/.gemini', opencode: '/h/.config/opencode' };
+  const clientHomes = {
+    codex: '/h/.codex',
+    claude: '/h/.claude',
+    gemini: '/h/.gemini',
+    opencode: '/h/.config/opencode',
+    grok: '/h/.grok',
+  };
   const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
   const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
 
-  // codex → home/config.toml ; claude → project/.mcp.json ; gemini → project/.gemini/settings.json ; opencode → home/opencode.json
+  // codex → home/config.toml ; claude → project/.mcp.json ; gemini → project/.gemini/settings.json ; opencode → home/opencode.json ; grok → home/config.toml
   assert.ok(byClient.codex.path.endsWith(path.join('.codex', 'config.toml')));
   assert.ok(byClient.claude.path.endsWith(path.join('proj', '.mcp.json')));
   assert.ok(byClient.gemini.path.endsWith(path.join('proj', '.gemini', 'settings.json')));
   assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
+  assert.ok(byClient.grok.path.endsWith(path.join('.grok', 'config.toml')));
 
   // The registry descriptor must point at the same file basenames codemap actually writes.
   // Clients that share a dedup'd path are absent from byClient — that's correct because
@@ -72,10 +79,13 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const claudeHome = path.join(rootDir, 'home', '.claude');
   const geminiHome = path.join(rootDir, 'home', '.gemini');
   const opencodeHome = path.join(rootDir, 'home', '.config', 'opencode');
+  const grokHome = path.join(rootDir, 'home', '.grok');
 
   await mkdir(codexHome, { recursive: true });
+  await mkdir(grokHome, { recursive: true });
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
+  await writeFile(path.join(grokHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
   await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
   await writeJson(path.join(projectRoot, '.gemini', 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(opencodeHome, 'opencode.json'), { mcp: { existing: { type: 'local', command: ['node', 'server.js'] } } });
@@ -85,12 +95,12 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
     rootDir,
     projectRoot,
     io: silentIo(logs),
-    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome },
+    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, grok: grokHome },
     skipCrgChecks: true,
     crgVersion: 'code-review-graph test',
   });
 
-  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'opencode']);
+  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'grok', 'opencode']);
 
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);
@@ -106,6 +116,10 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const geminiSettings = await readJson(path.join(projectRoot, '.gemini', 'settings.json'));
   assert.equal(geminiSettings.mcpServers['code-review-graph'].cwd, projectRoot);
   assert.equal(geminiSettings.mcpServers.existing.command, 'node');
+
+  const grokToml = await readFile(path.join(grokHome, 'config.toml'), 'utf8');
+  assert.match(grokToml, /\[mcp_servers\.code-review-graph\]/);
+  assert.match(grokToml, /command = "uvx"/);
 
   const opencodeConfig = await readJson(path.join(opencodeHome, 'opencode.json'));
   assert.deepEqual(opencodeConfig.mcp['code-review-graph'].command, ['uvx', 'code-review-graph', 'serve']);

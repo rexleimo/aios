@@ -20,6 +20,7 @@ New to Harness CLI? These posts will get you oriented:
 ## Latest Posts
 
 - [v3.2.0: Harness 可靠性与技能生命周期升级](2026-07-v320-harness-reliability-upgrade.md)
+- [Grok Build Is Now a First-Class AIOS Client](2026-07-grok-build-aios-client.md)
 - [Hermes Agent Is Now a First-Class AIOS Client](2026-06-hermes-agent-aios-client.md)
 - [v2.0.2: Safer Skill Health Records and Cleaner Crush Config](2026-06-v202-ecc-uplift.md)
 - [Agent Governance: Make Team Runs Prove Themselves Before Going Live](2026-06-agent-governance.md)
@@ -59,4 +60,4 @@ Read [Solo Harness](2026-04-solo-harness.md), then check the [Solo Harness docs]
 Read [debug-hub](2026-05-debug-hub-mcp.md), then check the [debug-hub docs](https://cli.rexai.top/debug-hub/).
 
 ### Is Harness CLI a new coding agent?
-No. It wraps around `codex`, `claude`, `gemini`, and `opencode` to add memory, teamwork, and self-diagnostics — without changing how you work.
+No. It wraps around `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` (Grok Build) to add memory, teamwork, and self-diagnostics — without changing how you work.

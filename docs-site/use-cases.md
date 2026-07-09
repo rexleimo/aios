@@ -39,7 +39,7 @@ touch .contextdb-enable
 codex
 ```
 
-After that, `codex`, `claude`, `gemini`, and `opencode` in the same project all connect to the same ContextDB.
+After that, `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` (Grok Build) in the same project all connect to the same ContextDB.
 
 ## I Want Durable Operator Memory (Memo + Persona)
 
@@ -100,7 +100,7 @@ aios harness resume --session nightly-demo --no-hooks
 
 Use [Solo Harness](solo-harness.md) when you want one agent to stay on one objective. Use [Agent Team](team-ops.md) when the work is truly parallel-friendly.
 
-Tip: if you start from wrapped `codex` / `claude` / `gemini` / `opencode` and ask for explicit overnight/resumable work, the startup route prompt tells the agent to self-trigger the same `aios harness run ... --workspace <project-root>` command instead of asking you to remember it manually.
+Tip: if you start from wrapped `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` and ask for explicit overnight/resumable work, the startup route prompt tells the agent to self-trigger the same `aios harness run ... --workspace <project-root>` command instead of asking you to remember it manually.
 
 ## I Want To Start Agent Team
 
@@ -202,7 +202,7 @@ Do not paste `.env`, cookies, tokens, or browser profiles directly into a model.
 
 ## Selection Mnemonic
 
-- **Daily development**: `codex` / `claude` / `gemini` / `opencode`
+- **Daily development**: `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok`
 - **Install/update**: `aios`
 - **Solo overnight run**: `aios harness run --objective "Draft tomorrow handoff" --worktree`
 - **Agent Team (GroupChat)**: `aios team 3:codex "task"` (round-based shared conversation)

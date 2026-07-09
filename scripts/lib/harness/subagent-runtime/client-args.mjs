@@ -10,6 +10,7 @@ import {
   SUBAGENT_CODEX_DISABLE_MCP_ENV,
   SUBAGENT_CODEX_UNATTENDED_ENV,
   SUBAGENT_GEMINI_UNATTENDED_ENV,
+  SUBAGENT_GROK_UNATTENDED_ENV,
 } from './constants.mjs';
 import { normalizeText, parseBooleanEnv } from './text.mjs';
 
@@ -43,6 +44,14 @@ export function buildGeminiUnattendedArgs(env = process.env) {
     return [];
   }
   return ['--yolo'];
+}
+
+export function buildGrokUnattendedArgs(env = process.env) {
+  const enabled = parseBooleanEnv(env?.[SUBAGENT_GROK_UNATTENDED_ENV], true);
+  if (!enabled) {
+    return [];
+  }
+  return ['--always-approve'];
 }
 
 export function buildRoutedExtraArgs(clientId = '', modelRouting = null, env = process.env) {

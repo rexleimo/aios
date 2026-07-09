@@ -76,6 +76,24 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze([]),  // Hermes 没有 --yolo/--dangerously-skip-permissions 模式
   }),
+  // Grok Build (xAI) — TUI coding agent with skills, MCP, subagents, headless mode.
+  // Skills: .grok/skills (also scans .agents/skills and Claude/Cursor compat paths).
+  // MCP: TOML [mcp_servers.*] in ~/.grok/config.toml (and project .grok/config.toml).
+  // Native instruction: AGENTS.md (and Agents.md / CLAUDE.md compat names).
+  // Unattended: --always-approve (headless also documents --yolo).
+  grok: Object.freeze({
+    capabilities: Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']),
+    commandName: 'grok',
+    runtimeClientId: 'grok-build',
+    projectSkillRoot: '.grok/skills',
+    skillFormat: 'markdown-directory',
+    agentTargetRoot: '.grok/agents',
+    nativeMetadataRoot: '.grok',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '-m',
+    unattendedArgs: Object.freeze(['--always-approve']),
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -84,9 +102,9 @@ export const CLIENT_SELECTIONS = Object.freeze(['all', ...ALL_CLIENTS]);
 export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
-  agents: Object.freeze(['claude', 'codex', 'opencode']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'hermes']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode']),
+  agents: Object.freeze(['claude', 'codex', 'opencode', 'grok']),
+  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok']),
   harness: ALL_CLIENTS,
 });
 
@@ -138,6 +156,16 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.mcp.json' }),
       Object.freeze({ scope: 'home', file: 'config.yaml' }),
+    ]),
+  }),
+  // Grok Build MCP — TOML [mcp_servers.*], same shape as Codex.
+  // Home: ~/.grok/config.toml; Project: .grok/config.toml
+  grok: Object.freeze({
+    format: 'toml',
+    namespace: 'mcp_servers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'config.toml' }),
+      Object.freeze({ scope: 'project', file: '.grok/config.toml' }),
     ]),
   }),
 });

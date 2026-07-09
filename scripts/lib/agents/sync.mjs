@@ -9,6 +9,7 @@ import {
   ORCHESTRATOR_AGENT_MARKER_END,
 } from './emitters/shared.mjs';
 import { renderCodexAgent } from './emitters/codex.mjs';
+import { renderGrokAgent } from './emitters/grok.mjs';
 import { renderOpencodeAgent } from './emitters/opencode.mjs';
 import { loadCanonicalAgents } from './source-tree.mjs';
 import { resolveClientAgentTargets } from '../clients/capabilities/index.mjs';
@@ -88,6 +89,7 @@ function buildEmitterMap(emitters = {}) {
     claude: emitters.claude || renderClaudeAgent,
     codex: emitters.codex || renderCodexAgent,
     opencode: emitters.opencode || renderOpencodeAgent,
+    grok: emitters.grok || renderGrokAgent,
   };
 }
 

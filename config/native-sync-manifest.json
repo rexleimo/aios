@@ -51,6 +51,15 @@
         "AGENTS.md",
         ".hermes/skills"
       ]
+    },
+    "grok": {
+      "tier": "deep",
+      "metadataRoot": ".grok",
+      "outputs": [
+        "AGENTS.md",
+        ".grok/agents",
+        ".grok/skills"
+      ]
     }
   }
 }

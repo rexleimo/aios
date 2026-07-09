@@ -116,7 +116,7 @@ Options:
   --objective <text>            (run) Required objective for a new solo harness run
   --session <id>                Explicit ContextDB session id
   --workspace <path>            Workspace root for ContextDB session artifacts (default: current directory)
-  --provider <codex|claude|gemini|opencode> (run) Provider used by the solo harness
+  --provider <codex|claude|gemini|opencode|hermes|grok> (run) Provider used by the solo harness
   --profile <minimal|standard|strict> (run) Harness profile for surrounding checks
   --worktree                    (run) Execute inside an isolated git worktree
   --base-ref <ref>              (run) Git ref used to seed worktree mode (default: HEAD)

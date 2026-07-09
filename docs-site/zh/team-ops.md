@@ -163,7 +163,7 @@ smoke 运行会为每个核心风险 agent 写入三类证据：
 ```bash
 # live 执行必须
 export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli   # 或 claude-code, gemini-cli, opencode-cli
+export AIOS_SUBAGENT_CLIENT=codex-cli   # 或 claude-code, gemini-cli, opencode-cli, grok-build
 
 # 并发（每轮发言者数量）
 export AIOS_SUBAGENT_CONCURRENCY=3      # 默认：3

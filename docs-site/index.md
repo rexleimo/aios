@@ -1,6 +1,6 @@
 ---
 title: Harness CLI — Local-First Agent Layer
-description: Harness CLI (AIOS) adds cross-session memory, multi-agent collaboration, and verification to codex, claude, gemini, and opencode — without changing how you work.
+description: Harness CLI (AIOS) adds cross-session memory, multi-agent collaboration, and verification to codex, claude, gemini, opencode, hermes, and grok (Grok Build) — without changing how you work.
 home: true
 ---
 
@@ -29,7 +29,7 @@ home: true
       <p class="hero-subheadline">
         Harness CLI (AIOS) is a local workflow layer that adds cross-session memory,
         multi-agent collaboration, and verification on top of codex, claude, gemini,
-        and opencode — without changing how you work.
+        opencode, hermes, and grok — without changing how you work.
       </p>
 
       <div class="hero-cta-row">
@@ -93,7 +93,7 @@ home: true
       <span class="capabilities-eyebrow">CORE CAPABILITIES</span>
       <h2 class="capabilities-title">Four systems, working<br>underneath your CLI</h2>
       <p class="capabilities-sub">
-        Four systems working underneath codex, claude, gemini, and opencode —
+        Four systems working underneath codex, claude, gemini, opencode, hermes, and grok —
         memory, collaboration, routing, and safety.
       </p>
     </div>

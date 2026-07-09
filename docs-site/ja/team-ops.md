@@ -187,7 +187,7 @@ smoke 実行は core-risk agent ごとに次の 3 種の証跡を書きます。
 ```bash
 # live 実行に必須
 export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli   # または claude-code, gemini-cli, opencode-cli
+export AIOS_SUBAGENT_CLIENT=codex-cli   # または claude-code, gemini-cli, opencode-cli, grok-build
 
 # 並列数（ラウンドあたりの speaker 数）
 export AIOS_SUBAGENT_CONCURRENCY=3      # デフォルト: 3

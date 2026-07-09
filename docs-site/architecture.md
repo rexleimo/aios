@@ -98,7 +98,7 @@ control-state-store.mjs  # restart-safe control snapshots
 epoch-ledger.mjs         # epoch state + degradation streaks
 replay-pool.mjs          # four-lane routing (positive/neutral/negative/diagnostic)
 reward-engine.mjs       # environment reward + teacher shaping fusion
-teacher-gateway.mjs      # normalized teacher outputs (Codex/Claude/Gemini/opencode)
+teacher-gateway.mjs      # normalized teacher outputs (Codex/Claude/Gemini/opencode/hermes/grok)
 schema.mjs               # shared contract validation
 trainer.mjs              # PPO entry points (online + offline)
 ```

@@ -81,7 +81,7 @@ async function writeRoleMarkdown(rootDir, relativePath, agent, overrides = {}) {
 function buildManifest() {
   return {
     schemaVersion: 1,
-    generatedTargets: ['claude', 'codex', 'opencode'],
+    generatedTargets: ['claude', 'codex', 'opencode', 'grok'],
   };
 }
 

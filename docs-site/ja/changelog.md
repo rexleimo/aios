@@ -10,7 +10,15 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
 - 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
-- **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：Hermes (Nous Research) が 7 番目の AIOS クライアントとして登録され、skills、native、harness、superpowers の 4 能力を備えました。MCP ブリッジサーバー (`scripts/aios-mcp-server.mjs`) が Hermes セッション内で 5 つの AIOSツールを直接公開 — `aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
+- **Grok Build が AIOS ファーストクラスクライアントに昇格**：xAI Grok Build（`grok` / runtime id `grok-build`）が skills、agents、superpowers、native、team、harness を備えて登録されました。MCP は Codex 形式 TOML（`~/.grok/config.toml`）。詳細: [Grok Build + AIOS](/blog/ja/2026-07-grok-build-aios-client/)。
+- **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：skills、native、harness、superpowers。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
+
+## v3.4.0（2026-07-09）— Grok Build ファーストクラスクライアント
+
+- `grok` / `grok-build` をフル能力セットで登録（team + harness 含む）
+- プロジェクト skills/agents: `.grok/skills`、`.grok/agents`；指示ファイルは共有 `AGENTS.md`
+- 無人実行: `grok --always-approve -p "..."`
+- 公式ドキュメント・changelog・多言語ブログを更新
 
 ## v3.3.0（2026-07-02）— ネイティブインターセプションランタイム廃止、RTK + Caveman 全自動インストール
 
@@ -153,7 +161,7 @@ node scripts/aios.mjs init --dry-run
   - **debug-hub v0.2**: 自動 Trace 物化（デバウンス）、agent デバッグセッション、構造化証拠イベント、`/api/health`、`timeline` / `health` / `compact_context` MCP ツールを追加。HTTP エンドポイント入力バリデーション、MCP 引数バリデーション、パストラバーサル保護、大文字小文字を区別しない検索、デバウンスドトレースインデックスを含む。詳細は [debug-hub](debug-hub.md)。
 
 - `1.8.0` (2026-05-08):
-  - ラップされた `codex`、`claude`、`gemini`、`opencode` セッション向けの self-trigger harness routing を追加。
+  - ラップされた `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` セッション向けの self-trigger harness routing を追加。
   - **Model Router**: Agent Team 向けのインテリジェントなマルチモデルディスパッチ。モデル能力レジストリ (8モデル)、タスクタイプからモデルへのルーティング、3つの CLI プロトコルアダプタ (claude/codex/gemini)、コスト昇順のフォールバックチェーン、Agent 呼び出し可能な `model-router` スキル、`AIOS_MODEL_{ROLE}` 環境変数オーバーライド、知覚フィードバックループ統合を含みます。詳細は [モデルルーター](model-router.md) を参照してください。
   - **GroupChat Runtime**: `aios team` の live モードが共有会話履歴を持つラウンドベースのエージェント実行に対応。各ラウンドのエージェントは並列実行され、全エージェントが蓄積されたスレッド全体を参照可能。ブロックされたエージェントは自動的に re-plan ラウンドをトリガー。従来の one-shot 独立 dispatch モデルとの差別化。
   - **OpenCode CLI subagent 対応**: `opencode-cli` がすべての orchestration パス（subagent、team、GroupChat runtime）で完全サポートされる `AIOS_SUBAGENT_CLIENT` に。
@@ -186,7 +194,7 @@ node scripts/aios.mjs init --dry-run
 
 - `main` (未リリース):
   - **debug-hub MCP ネイティブデバッグログサービス** (2026-05-06): coding agent 向けの MCP ネイティブなデバッグログ収集。Node.js/Browser/Go SDK、組み込み Web UI、`~/.debug-hub/` 配下のファイルベースストレージ、agent 自己診断用の 5 つの MCP ツール（`list_traces`、`get_trace`、`search_logs`、`get_stats`、`clear_logs`）を提供。agent は人間の介入なしに自身のランタイムログを内省可能
-	  - **Agent self-trigger harness routing** (2026-05-05): ラップされた `codex` / `claude` / `gemini` / `opencode` セッションが `single/subagent/team/harness` を提示；長時間・夜間・再開可能な目標は `aios harness run ... --workspace <project-root>` を自己トリガーでき、`--max-iterations` と `CTXDB_HARNESS_PROVIDER` / `CTXDB_HARNESS_MAX_ITERATIONS` で制御可能
+	  - **Agent self-trigger harness routing** (2026-05-05): ラップされた `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` セッションが `single/subagent/team/harness` を提示；長時間・夜間・再開可能な目標は `aios harness run ... --workspace <project-root>` を自己トリガーでき、`--max-iterations` と `CTXDB_HARNESS_PROVIDER` / `CTXDB_HARNESS_MAX_ITERATIONS` で制御可能
   - **ラップされた coding agent 向け Privacy Shield** (2026-04-24): ContextDB shell の対話型 CLI 起動時に Privacy Guard 状態、カスタムモデル中継エンドポイント検出、`aios privacy read --file <path>` の安全な読み取りパスを示すカラーのプライバシーパネルを表示；自動プロンプトでも LLM のプライバシー指示は助言的で、検証可能な保護は deterministic な AIOS gate によるものだと明示
   - **ワークスペース認識の routed startup + プロジェクト Node 選択** (2026-04-23): routed `ctx-agent` startup が non-AIOS リポジトリから起動された場合でもアクティブな git ワークスペースを保持；`mcp-server` の npm scripts は `scripts/with-project-node.mjs` 経由で実行され、`.nvmrc` / Node 24 を一貫して尊重するため、組み込み `node:sqlite` により外部 SQLite addon の ABI ドリフトを避け、Node 24 が見つからない場合は明確なエラーを返します
   - **ContextDB Shell 起動最適化** (2026-04-22): `ctx()` が `npm run -s contextdb` よりコンパイル済み `mcp-server/dist/contextdb/cli.js` を優先し、1 回あたりのオーバーヘッドを ~0.3s から ~0.06s に削減；one-shot エージェント起動を ~2.2s から ~0.5s に短縮（約 78% 高速化）；shell-bridge の `detectRunner` が `tsx` を不要に；インストール時に `dist/` がない場合は自動ビルドし、ビルド失敗時は npm-run モードに自動フォールバック

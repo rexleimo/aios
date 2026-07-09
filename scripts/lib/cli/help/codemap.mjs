@@ -13,7 +13,7 @@ Actions:
   status     Show codemap state and graph statistics
 
 Options:
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|hermes|grok>
              Target client config(s). Defaults to all.
   --fix      (doctor) auto-fix issues found
   --dry-run  Preview changes without writing

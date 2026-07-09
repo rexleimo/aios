@@ -10,7 +10,15 @@ description: 版本历史、升级说明与文档变更入口。
 - 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
 - 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
-- **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）现已注册为第七个 AIOS 客户端，具备 skills、native、harness、superpowers 四项能力。新增 MCP 桥接服务器（`scripts/aios-mcp-server.mjs`）在 Hermes 会话内直接暴露 5 个 AIOS 工具——`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
+- **Grok Build 成为 AIOS 一等公民客户端**：xAI Grok Build（`grok` / runtime id `grok-build`）现已支持 skills、agents、superpowers、native、team、harness。MCP 使用 Codex 形态 TOML（`~/.grok/config.toml`）。详见：[Grok Build + AIOS 博客](/blog/zh/2026-07-grok-build-aios-client/)。
+- **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）具备 skills、native、harness、superpowers。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
+
+## v3.4.0（2026-07-09）— Grok Build 一等公民客户端
+
+- 注册 `grok` / `grok-build`，完整能力集（含 team + harness）
+- 项目 skills/agents：`.grok/skills`、`.grok/agents`；指令文件共用 `AGENTS.md`
+- 无人值守：`grok --always-approve -p "..."`
+- 官方文档、更新日志与多语言博客已同步
 
 ## v3.3.0（2026-07-02）— 废弃原生拦截运行时，全自动安装 RTK + Caveman
 
@@ -165,7 +173,7 @@ node scripts/aios.mjs init --dry-run
   - **debug-hub v0.2**：新增自动 Trace 物化（防抖合并）、agent 调试会话、结构化证据事件、`/api/health`，以及 `timeline`、`health`、`compact_context` MCP 工具。包含 HTTP 端点输入校验、MCP 参数校验、路径穿越防护、大小写不敏感搜索和防抖索引优化。详见 [debug-hub](debug-hub.md)。
 
 - `1.8.0`（2026-05-08）：
-  - 新增包装式 `codex`、`claude`、`gemini`、`opencode` 会话的自触发 harness 路由。
+  - 新增包装式 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` 会话的自触发 harness 路由。
   - **Model Router（模型路由器）**：Agent Team 的智能多模型调度。包含模型能力注册表（8个模型）、任务类型到模型的路由、三种CLI协议适配器（claude/codex/gemini）、按成本升序的降级链、Agent可调用的 `model-router` skill、`AIOS_MODEL_{ROLE}` 环境变量覆盖，以及感知反馈循环集成。详见 [Model Router](model-router.md)。
   - **GroupChat Runtime**：`aios team` live 模式现在使用基于轮次的 agent 执行，共享对话历史。每轮中的 agent 并行运行；所有 agent 都能看到完整的累积对话线程。被阻塞的 agent 会触发自动 re-plan 轮次。与旧的单次隔离 dispatch 模式形成对比。
   - **OpenCode CLI subagent 支持**：`opencode-cli` 现已成为所有编排路径（subagent、team 和 GroupChat runtime）完全支持的 `AIOS_SUBAGENT_CLIENT`。
@@ -198,7 +206,7 @@ node scripts/aios.mjs init --dry-run
 
 - `main`（未发布）：
   - **debug-hub MCP 原生调试日志服务**（2026-05-06）：面向 coding agent 的 MCP 原生 debug 日志采集服务，提供 Node.js/Browser/Go 三种 SDK、内嵌 Web UI、`~/.debug-hub/` 文件存储、5 个 MCP 工具供 agent 自我诊断（`list_traces`、`get_trace`、`search_logs`、`get_stats`、`clear_logs`）；agent 无需人工介入即可内省自身运行时日志
-	  - **Agent 自触发 harness 路由**（2026-05-05）：包装后的 `codex` / `claude` / `gemini` / `opencode` 会话现在会提示 `single/subagent/team/harness`；长任务、过夜任务、可恢复目标可自触发 `aios harness run ... --workspace <project-root>`，支持 `--max-iterations`，并可用 `CTXDB_HARNESS_PROVIDER`、`CTXDB_HARNESS_MAX_ITERATIONS` 控制
+	  - **Agent 自触发 harness 路由**（2026-05-05）：包装后的 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 会话现在会提示 `single/subagent/team/harness`；长任务、过夜任务、可恢复目标可自触发 `aios harness run ... --workspace <project-root>`，支持 `--max-iterations`，并可用 `CTXDB_HARNESS_PROVIDER`、`CTXDB_HARNESS_MAX_ITERATIONS` 控制
   - **包装式 coding agent 的 Privacy Shield**（2026-04-24）：ContextDB shell 启动交互式 CLI 时会打印彩色隐私面板，展示 Privacy Guard 状态、自定义模型中转端点检测，以及 `aios privacy read --file <path>` 安全读取路径；自动提示词也明确 LLM 隐私规则只是提示约束，可验证保护来自确定性的 AIOS gate
   - **按工作区路由启动 + 项目级 Node 选择**（2026-04-23）：`ctx-agent` 的路由启动现在会保留当前 git 工作区，即使它是从非 AIOS 仓库触发；`mcp-server` 的 npm scripts 统一经由 `scripts/with-project-node.mjs` 运行，持续遵循 `.nvmrc` / Node 24，使用内置 `node:sqlite` 避免外部 SQLite addon ABI 漂移，并在本机缺少 Node 24 时给出明确报错
   - **ContextDB Shell 启动优化**（2026-04-22）：`ctx()` 优先使用编译后的 `mcp-server/dist/contextdb/cli.js`，单次调用开销从 ~0.3s 降至 ~0.06s；one-shot 代理启动从 ~2.2s 优化到 ~0.5s（快约 78%）；shell-bridge 的 `detectRunner` 不再依赖 `tsx`；安装时如缺少 `dist/` 自动触发 build，build 失败则优雅回退到 npm-run 模式

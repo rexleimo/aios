@@ -5,7 +5,7 @@ description: Harness CLIは、codex、claude、gemini、opencodeに記憶、協�
 
 # Harness CLI (AIOS)
 
-> ローカル agent ワークフローレイヤー。`codex` / `claude` / `gemini` / `opencode` に記憶、協調、検証を追加します。
+> ローカル agent ワークフローレイヤー。`codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` に記憶、協調、検証を追加します。
 
 いつものコマンドを使い続けられます。ワークフローは変わりません。ただ、agent に脳、チーム、自己診断が追加されるだけです。
 
@@ -16,7 +16,7 @@ description: Harness CLIは、codex、claude、gemini、opencodeに記憶、協�
 
 | 機能 | 説明 | コマンド |
 |---|---|---|
-| **ContextDB** | イベント、checkpoint、context pack を持つクロスセッションプロジェクト記憶 | `codex` / `claude` / `gemini` / `opencode` が自動ロード |
+| **ContextDB** | イベント、checkpoint、context pack を持つクロスセッションプロジェクト記憶 | `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` が自動ロード |
 | **Memo Storage** | Git フレンドリーなプロジェクトメモ。デフォルトは追加専用ファイルストレージ | `aios memo add "note"` / `aios memo storage status` |
 | **Native Route Shortcuts** | single/subagent/team/harness レーン向けクライアントネイティブルートプロンプト | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
 | **Native Token Compression** | RTK/Caveman パターンに着想を得た自前入力/出力削減。競合ツールはインストールしません | `context:pack --token-budget 1200 --token-strategy balanced` |
@@ -33,7 +33,7 @@ description: Harness CLIは、codex、claude、gemini、opencodeに記憶、協�
 ## 仕組み
 
 ```text
-User → codex / claude / gemini / opencode
+User → codex / claude / gemini / opencode / hermes / grok
      → zsh wrapper (透過的)
      → ctx-agent.mjs (ContextDB 統合)
         → contextdb CLI (記憶永続化)
@@ -41,7 +41,7 @@ User → codex / claude / gemini / opencode
      → browser MCP (オプションブラウザ自動化)
 ```
 
-インストール後は、いつも通り `codex`、`claude`、`gemini`、`opencode` を使うだけ。Harness CLI はバックグラウンドでプロジェクト記憶を自動ロードし、クライアントがサポートする場所にルートショートカットをプロビジョニングします。
+インストール後は、いつも通り `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` を使うだけ。Harness CLI はバックグラウンドでプロジェクト記憶を自動ロードし、クライアントがサポートする場所にルートショートカットをプロビジョニングします。
 
 ## クイックツアー
 

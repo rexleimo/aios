@@ -10,6 +10,7 @@ import { resolveUserPath } from './runtime-paths.mjs';
    - claude  → <project>/.mcp.json + ~/.claude/.mcp.json（project+home, JSON mcpServers）
    - gemini  → <project>/.gemini/settings.json + ~/.gemini/settings.json（project+home, JSON mcpServers）
    - opencode→ ~/.config/opencode/opencode.json（home, JSON mcp 命名空间）
+   - grok    → ~/.grok/config.toml + <project>/.grok/config.toml（home+project, TOML）
    createIfMissing 策略：project 作用域属于”当前项目”可安全创建；home 作用域属于全局、
    未使用的客户端不应被污染，故只在文件已存在时更新。 */
 export function collectClientMcpTargets({ projectRoot, clientHomes = {} } = {}) {

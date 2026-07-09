@@ -4,7 +4,7 @@ export function getBasicCommandHelpText(command) {
   switch (command) {
     case 'init':
       return `Usage:
-  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode>] [--all] [--dry-run] [--yes-compression-tools]
+  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools]
 
 Options:
   --agent <name>              Init only the specified agent
@@ -19,7 +19,7 @@ Options:
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -36,7 +36,7 @@ Options:
   --skip-self-update            Only update selected integrations
   --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -50,7 +50,7 @@ Options:
 
 Options:
   --components <list>            Comma list: shell,skills,native,agents,browser,superpowers (default: shell,skills)
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills uninstall scope (default: global)
   --skills <list>                Comma list of skill names to uninstall
   -h, --help
@@ -62,7 +62,7 @@ Options:
 Options:
   --strict
   --global-security
-  --client <all|codex|claude|gemini|opencode>
+  --client <all|codex|claude|gemini|opencode|hermes|grok>
   --native
   --verbose
   --fix

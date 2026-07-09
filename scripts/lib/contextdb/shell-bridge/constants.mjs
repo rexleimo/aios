@@ -28,4 +28,10 @@ export const BLOCKED_SUBCOMMANDS = Object.freeze({
     'uninstall', 'serve', 'web', 'models', 'stats', 'export', 'import', 'github', 'pr',
     'session', 'db', 'version', '-h', '--help', '-v', '--version',
   ]),
+  grok: new Set([
+    'agent', 'completions', 'dashboard', 'export', 'help', 'import', 'inspect', 'leader',
+    'login', 'logout', 'mcp', 'memory', 'models', 'plugin', 'sessions', 'setup', 'trace',
+    'update', 'version', 'worktree', 'wrap',
+    '-h', '--help', '-v', '--version',
+  ]),
 });

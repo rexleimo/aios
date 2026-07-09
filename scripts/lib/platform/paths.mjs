@@ -31,6 +31,7 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     gemini: normalizeHomeDir(env.GEMINI_HOME, path.join(homeDir, '.gemini'), homeDir),
     opencode: normalizeHomeDir(env.OPENCODE_HOME, path.join(xdgConfigHome, 'opencode'), homeDir),
     hermes: normalizeHomeDir(env.HERMES_HOME, path.join(homeDir, '.hermes'), homeDir),
+    grok: normalizeHomeDir(env.GROK_HOME, path.join(homeDir, '.grok'), homeDir),
   };
 }
 

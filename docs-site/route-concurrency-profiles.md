@@ -11,7 +11,7 @@ Use this page when you want a **single place** to choose routing + parallel sett
 
 - `CTXDB_INTERACTIVE_AUTO_ROUTE`: enable/disable interactive auto-routing (`single/subagent/team/harness`)
 - `CTXDB_CODEX_DISABLE_MCP`: skip MCP startup for wrapped `codex` sessions (`1` = faster startup, no MCP tools in that run)
-- `CTXDB_HARNESS_PROVIDER`: provider used by the injected `harness` route (`codex|claude|gemini|opencode`; default: current CLI)
+- `CTXDB_HARNESS_PROVIDER`: provider used by the injected `harness` route (`codex|claude|gemini|opencode|hermes|grok`; default: current CLI)
 - `CTXDB_HARNESS_MAX_ITERATIONS`: iteration budget for the injected `harness` route (default: `8`)
 - `CTXDB_TEAM_WORKERS`: worker concurrency for `aios team ...`
 - `AIOS_SUBAGENT_CONCURRENCY`: executor concurrency for `aios orchestrate --execute live` and GroupChat speakers per round (default: `3`)
@@ -74,7 +74,7 @@ codex
 
 ## Notes
 
-- Changing these env vars affects **new sessions**. Restart `codex/claude/gemini/opencode` to apply.
+- Changing these env vars affects **new sessions**. Restart `codex/claude/gemini/opencode/hermes/grok` to apply.
 - Parallel count is controlled by `CTXDB_TEAM_WORKERS` and `AIOS_SUBAGENT_CONCURRENCY`, not by `CTXDB_INTERACTIVE_AUTO_ROUTE`.
 - In GroupChat live mode, `AIOS_SUBAGENT_CONCURRENCY` controls how many agents speak in parallel per round. Each agent sees the full shared conversation history from previous rounds.
 - Harness self-trigger runs one provider loop, not a parallel team. Use `CTXDB_HARNESS_PROVIDER` only when you want the injected harness route to differ from the current CLI.
