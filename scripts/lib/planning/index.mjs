@@ -52,3 +52,10 @@ export {
   syncPlanWithIterationOutcome,
   attachPlanVerificationEvidence,
 } from './plan-runtime.mjs';
+
+export {
+  formatPlanShowText,
+  formatPlanShowHtml,
+  showActivePlan,
+  writePlanShowHtml,
+} from './show.mjs';

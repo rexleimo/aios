@@ -8,6 +8,7 @@ const SHARED_OPTIONS = [
   ['--json', 'Output as JSON'],
   ['--format <text|json>', 'Output format'],
   ['--dry-run', 'Dry run mode'],
+  ['--live', 'Live compliance probe (deterministic local runner)'],
   ['--dashboard', 'Show dashboard'],
   ['--changed', 'Only changed files'],
   ['--base <ref>', 'Base reference (default: HEAD)'],
@@ -51,7 +52,7 @@ export function parseSkillArgs(argv = []) {
   const options = {
     subcommand, json: false, format: 'text', dryRun: false,
     dashboard: false, changed: false, base: 'HEAD', client: 'codex',
-    description: '', id: '', action: '', name: '', path: '', scan: false, policy: false,
+    description: '', id: '', action: '', name: '', path: '', scan: false, policy: false, live: false,
   };
 
   try {
@@ -89,6 +90,7 @@ export function parseSkillArgs(argv = []) {
     if (effectiveFlags.json === true) { options.json = true; options.format = 'json'; }
     if (effectiveFlags.format) options.format = String(effectiveFlags.format);
     if (effectiveFlags.dryRun === true) options.dryRun = true;
+    if (effectiveFlags.live === true) options.live = true;
     if (effectiveFlags.dashboard === true) options.dashboard = true;
     if (effectiveFlags.changed === true) options.changed = true;
     if (effectiveFlags.base) options.base = String(effectiveFlags.base);

@@ -20,8 +20,9 @@ const PLAN_CLI = new Command()
   .option('--acceptance <text>', 'Task acceptance criteria')
   .option('--kind <command|path|test|note>', 'Evidence kind')
   .option('--value <text>', 'Evidence value')
+  .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
-  .option('--format <text|json>', 'Output format');
+  .option('--format <text|json|html|both>', 'Output format');
 
 export function parsePlanArgs(argv) {
   const rest = argv.slice(1);
@@ -30,6 +31,8 @@ export function parsePlanArgs(argv) {
   const known = new Set([
     'start',
     'status',
+    'show',
+    'review',
     'set-status',
     'task',
     'add-evidence',
@@ -76,6 +79,7 @@ export function parsePlanArgs(argv) {
         client: flags.client,
         source: flags.source,
         force: Boolean(flags.force),
+        html: Boolean(flags.html),
         json: Boolean(flags.json),
         format: flags.format,
       },

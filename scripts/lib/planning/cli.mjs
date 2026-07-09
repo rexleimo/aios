@@ -47,6 +47,27 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
     return { exitCode: 0, state };
   }
 
+  if (sub === 'show' || sub === 'review') {
+    const { showActivePlan } = await import('./show.mjs');
+    const format = options.format === 'html' || options.html ? 'both' : (options.format || 'text');
+    const shown = showActivePlan(rootDir, { format: format === 'json' ? 'text' : format });
+    if (json) {
+      stdout.write(`${JSON.stringify({
+        ok: shown.ok,
+        progress: shown.progress,
+        gate: shown.gate,
+        htmlPath: shown.htmlPath,
+        plan: shown.plan,
+      }, null, 2)}\n`);
+    } else {
+      stdout.write(shown.text || 'No active plan.\n');
+      if (shown.htmlPath?.relativePath) {
+        stdout.write(`\nHTML review: ${shown.htmlPath.relativePath}\n`);
+      }
+    }
+    return { exitCode: shown.ok ? 0 : 1, ...shown };
+  }
+
   if (sub === 'set-status') {
     if (!options.status) {
       stderr.write('[err] plan set-status requires --status\n');

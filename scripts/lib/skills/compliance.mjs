@@ -70,9 +70,39 @@ export async function evaluateSkillComplianceDryRun({ rootDir = process.cwd(), t
 }
 
 export async function runSkillComply(options = {}, { rootDir = process.cwd(), stdout = process.stdout } = {}) {
-  if (!options.dryRun) {
-    throw new Error('skill comply currently supports --dry-run only');
+  const live = options.live === true || options.mode === 'live';
+  const dryRun = options.dryRun === true || (!live && options.dryRun !== false);
+
+  if (!live && !dryRun) {
+    throw new Error('skill comply requires --dry-run or --live');
   }
+
+  if (live) {
+    const { evaluateSkillComplianceLive } = await import('./compliance-live.mjs');
+    const report = await evaluateSkillComplianceLive({
+      rootDir,
+      targetPath: options.path,
+      client: options.client || 'codex',
+    });
+    // best-effort health observation
+    try {
+      const { recordSkillObservation } = await import('./health.mjs');
+      const skillId = String(report.target?.name || 'unknown').replace(/[^A-Za-z0-9._-]/g, '-');
+      await recordSkillObservation({
+        rootDir,
+        skillId,
+        status: report.ok ? 'success' : 'failure',
+        failure: report.ok ? '' : `coverage=${report.live?.coverage}`,
+      });
+    } catch {
+      // health module optional shape
+    }
+    stdout.write(options.json || options.format === 'json'
+      ? `${JSON.stringify(report, null, 2)}\n`
+      : `skill comply --live ${report.target.name}: ${report.verdict} (coverage=${(report.live?.coverage || 0).toFixed(2)}, scenarios ${report.live?.passedScenarios}/${report.live?.totalScenarios})\n`);
+    return { exitCode: report.ok ? 0 : 1, report };
+  }
+
   const report = await evaluateSkillComplianceDryRun({
     rootDir,
     targetPath: options.path,

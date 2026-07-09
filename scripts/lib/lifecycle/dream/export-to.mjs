@@ -128,7 +128,85 @@ export async function runDreamExport({
     result.written.push({ kind: 'agents', path: agentsPath });
   }
 
+  // P12: feed durable notes into active intelligent plan as tasks + evidence
+  try {
+    const planSync = await syncDreamLinesToActivePlan(rootDir, durableLines, { mode });
+    if (planSync) result.planSync = planSync;
+  } catch {
+    // plan optional
+  }
+
   return result;
+}
+
+/**
+ * Append durable memo lines as pending plan tasks (and evidence) when a plan is active.
+ */
+export async function syncDreamLinesToActivePlan(rootDir, durableLines = [], { mode = 'preview' } = {}) {
+  const {
+    readActivePlan,
+    addPlanEvidence,
+    resolvePlanningStatePath,
+  } = await import('../../planning/contract.mjs');
+  const fs = await import('node:fs');
+
+  let plan = readActivePlan(rootDir);
+  if (!plan || plan.status === 'done') {
+    return { ok: false, reason: 'no-active-plan' };
+  }
+
+  const lines = Array.isArray(durableLines) ? durableLines.slice(0, 8) : [];
+  if (lines.length === 0) {
+    return { ok: true, addedTasks: 0, reason: 'no-durable-lines' };
+  }
+
+  if (mode !== 'apply') {
+    return {
+      ok: true,
+      preview: true,
+      wouldAddTasks: lines.length,
+      sample: lines.slice(0, 3).map((l) => l.text),
+    };
+  }
+
+  plan = readActivePlan(rootDir);
+  const existing = Array.isArray(plan.tasks) ? [...plan.tasks] : [];
+  const existingTitles = new Set(existing.map((t) => String(t.title || '').toLowerCase()));
+  let added = 0;
+  for (const line of lines) {
+    const title = String(line.text || '').slice(0, 120);
+    if (!title || existingTitles.has(title.toLowerCase())) continue;
+    const id = `dream-${existing.length + added + 1}`;
+    existing.push({
+      id,
+      title,
+      status: 'pending',
+      acceptance: 'Incorporated from dream durable memo export',
+      dependsOn: [],
+    });
+    existingTitles.add(title.toLowerCase());
+    added += 1;
+  }
+
+  plan = {
+    ...plan,
+    schemaVersion: 2,
+    tasks: existing,
+    updatedAt: new Date().toISOString(),
+  };
+  const statePath = resolvePlanningStatePath(rootDir);
+  fs.writeFileSync(statePath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
+
+  try {
+    addPlanEvidence(rootDir, {
+      kind: 'note',
+      value: `dream export added ${added} durable task(s)`,
+    });
+  } catch {
+    // ignore
+  }
+
+  return { ok: true, addedTasks: added, tasksTotal: existing.length };
 }
 
 export { AGENTS_DREAM_BEGIN, AGENTS_DREAM_END, TAXONOMY_CLASSES };
