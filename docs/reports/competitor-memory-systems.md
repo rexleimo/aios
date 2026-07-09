@@ -2,6 +2,10 @@
 
 > 收录对 AIOS 有参考价值的外部 Agent 记忆/上下文压缩方案。
 > 最后更新: 2026-05-22 | 并行Agent分析刷新
+>
+> **权威清单**：以 `docs/reports/competitor-watchlist.json`（schema v3，2026-07-09）为准。
+> 记忆轨现跟踪：TencentDB / mem0 / Graphiti（取代 zep 壳）/ Letta Code（取代 letta 主仓）/ OpenViking。
+> 本文保留历史 deep-dive 细节，元数据与优先级以 watchlist 为准。
 
 ---
 

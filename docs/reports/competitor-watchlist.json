@@ -1,11 +1,46 @@
 {
-  "schemaVersion": 2,
-  "lastUpdated": "2026-06-14",
-  "lastDeepDive": "2026-06-14 (ECC competitor review + dormant-remove-candidate cleanup)",
-  "refreshMethod": "agent-team-parallel-analysis",
+  "schemaVersion": 3,
+  "lastUpdated": "2026-07-09",
+  "lastDeepDive": "2026-07-09 (core-value prune: memo + planning + team workflow)",
+  "refreshMethod": "manual-core-value-filter",
+  "coreValue": {
+    "product": "Harness CLI / AIOS — local agent workflow layer over codex/claude/gemini/opencode/hermes/grok",
+    "pillars": [
+      {
+        "id": "memo-memory",
+        "name": "Memo / ContextDB 记忆",
+        "aiosSurface": [
+          "aios memo",
+          "ContextDB session/event/checkpoint/context:pack",
+          "native token compression / offload"
+        ]
+      },
+      {
+        "id": "intelligent-planning",
+        "name": "智能规划",
+        "aiosSurface": [
+          "superpowers brainstorm/writing-plans/verification",
+          "solo harness loop",
+          "dry-run readiness / abort / evidence gates"
+        ]
+      },
+      {
+        "id": "team-workflow",
+        "name": "Team 与工作流辅助",
+        "aiosSurface": [
+          "aios team / subagent / model-router",
+          "orchestrator blueprints",
+          "skill workshop / install policy / multi-client projection"
+        ]
+      }
+    ],
+    "keepRule": "Keep a competitor only if it still teaches something transferable to one of the three pillars and is active (or is the real core repo of a migrated project).",
+    "removeRule": "Remove archived, GTM-only, desktop-shell, dormant parent shells, and items whose only useful pattern is already absorbed into crossCuttingTrends or AIOS code."
+  },
   "categories": {
-    "memory-systems": {
-      "description": "Agent记忆与上下文管理系统",
+    "memo-memory": {
+      "description": "对 ContextDB / memo / 压缩与回忆有参考价值的记忆系统",
+      "pillar": "memo-memory",
       "competitors": [
         {
           "id": "tencentdb-agent-memory",
@@ -17,14 +52,11 @@
           "lastPush": "2026-06-04",
           "latestRelease": "v0.3.6",
           "releaseDate": "2026-05-28",
-          "signal": "v0.3.6: Recall 上下文预算控制 (maxCharsPerMemory + maxTotalRecallChars), L1/L2/L3 prompt 用户语言自适应, Gateway Bearer+CORS 安全, fast-token-estimate 短路(29s→1.4s). v1.0.0-beta.1 (5/29): 独立 Memory 服务 (v2 REST API + TS/Python SDK + OpenTelemetry/Langfuse), 商业化前兆",
+          "signal": "Recall 预算 (maxCharsPerMemory + maxTotalRecallChars), L0→L3 语义分层, Mermaid 符号化压缩思路, 独立 Memory 服务化路径",
           "license": "MIT",
           "language": "TypeScript",
           "priority": "P0",
-          "priorityHistory": [
-            "P1 (5月22日)",
-            "P0 (6月4日 升级, v1.0 服务化路径重要)"
-          ]
+          "whyKeep": "直接对标 memo 回忆预算与分层压缩；AIOS offload/mermaid 路线的主要外部参照"
         },
         {
           "id": "mem0",
@@ -36,96 +68,101 @@
           "lastPush": "2026-06-03",
           "latestRelease": "cli-node-v0.2.8",
           "releaseDate": "2026-06-01",
-          "signal": "cli-node-v0.2.8 一口气打 8+ 高危 CVE (含 @modelcontextprotocol/sdk ^1.25.4), MCP SDK 进核心依赖. plugin v0.2.4→v0.2.6 三连发: file-context PreToolUse/Read hook, Stop hook 自动写记忆 (90d expiry + 7d dedup), SessionStart activity timeline. @mem0/opencode-plugin v0.1.2 直接对标 AIOS. 5 平台 plugin 矩阵",
-          "license": "Apache-2.0",
-          "language": "Python",
-          "priority": "P0"
-        },
-        {
-          "id": "zep",
-          "name": "Zep (legacy) / Graphiti (core)",
-          "repo": "getzep/zep",
-          "url": "https://github.com/getzep/zep",
-          "stars": 4633,
-          "forks": 632,
-          "lastPush": "2026-04-09",
-          "latestRelease": "zep-crewai-v1.1.1",
-          "releaseDate": "2025-09-11",
-          "signal": "主仓 getzep/zep 已 56 天 dormant, 沦为 examples/integrations 聚合器. 最新 release 是 2025-09-11 的旧 crewai 集成. 实际核心已迁至 getzep/graphiti (27K★, v0.29.1 持续活跃)",
-          "license": "Apache-2.0",
-          "language": "Python",
-          "priority": "P2",
-          "priorityHistory": [
-            "P1 (5月22日)",
-            "P2 (6月4日 降, watch-only, 跟踪迁至 graphiti)"
-          ],
-          "status": "watch-only",
-          "watchAlso": [
-            "getzep/graphiti",
-            "letta-ai/letta-code"
-          ],
-          "coreRepo": {
-            "id": "graphiti",
-            "name": "Graphiti (Zep 实际核心)",
-            "repo": "getzep/graphiti",
-            "url": "https://github.com/getzep/graphiti",
-            "stars": 27028,
-            "forks": 2725,
-            "lastPush": "2026-06-04",
-            "latestRelease": "v0.29.1",
-            "releaseDate": "2026-05-21",
-            "signal": "v0.29.1 attribute-hallucination 3 层防御 (OUTPUT DISCIPLINE block + combined-extraction + provider-level preamble), cap_string_attributes 250 chars, Saga bi-temporal watermark (last_summarized_at vs last_summarized_episode_valid_at), LoCoMo 500-example eval, FalkorDB docker mount 修复",
-            "license": "Apache-2.0",
-            "language": "Python",
-            "priority": "P0",
-            "priorityHistory": [
-              "P0 (新增 6月4日)"
-            ]
-          }
-        },
-        {
-          "id": "letta",
-          "name": "Letta (MemGPT)",
-          "repo": "letta-ai/letta",
-          "url": "https://github.com/letta-ai/letta",
-          "stars": 23128,
-          "forks": 2466,
-          "lastPush": "2026-05-14",
-          "latestRelease": "0.16.8",
-          "releaseDate": "2026-05-14",
-          "signal": "主仓 letta-ai/letta 21 天无 push, 事实休眠. 主战场已迁至 letta-ai/letta-code (2,646★, 10 release 5/29-6/4). v0.27.0 接入 MiniMax M3 (PR #2665), system prompt 版本化 canary (PR #2686), Task* CRUD 家族 (PR #1937), 跨 conversation shared pins, v0.27.2 extensions/adapter 重构",
+          "signal": "多客户端 plugin 矩阵 + OpenCode plugin + Stop/SessionStart 记忆 hook；零 LLM 检索管道",
           "license": "Apache-2.0",
           "language": "Python",
           "priority": "P0",
-          "watchAlso": [
-            "letta-ai/claude-subconscious",
-            "letta-ai/letta-code",
-            "letta-ai/agent-file"
-          ],
-          "coreRepo": {
-            "id": "letta-code",
-            "name": "Letta Code (Letta 实际主战场)",
-            "repo": "letta-ai/letta-code",
-            "url": "https://github.com/letta-ai/letta-code",
-            "stars": 2646,
-            "forks": 291,
-            "lastPush": "2026-06-04",
-            "latestRelease": "v0.27.3",
-            "releaseDate": "2026-06-04",
-            "signal": "10 release 在 5/29-6/4 (v0.26.4→v0.27.3), 平均 1.5 天一版. v0.27.0 接入 MiniMax M3 (PR #2665) — AIOS 选型外部验证. system prompt 版本化 canary (PR #2686) 9 文件改 263 行新文件. Task* CRUD 家族 (PR #1937) 稳定 task_N ID + blocks/blockedBy 依赖边. v0.27.2 extensions/adapter 重构 (PR #2688-2700) 一晚把 extensions 系统重写为统一 channel/adapter 抽象",
-            "license": "Apache-2.0",
-            "language": "Python",
-            "priority": "P0",
-            "priorityHistory": [
-              "P0 (新增 6月4日)"
-            ]
-          }
+          "whyKeep": "跨 CLI 记忆注入模式；对 AIOS memo 自动召回 / client projection 有对照价值"
+        },
+        {
+          "id": "graphiti",
+          "name": "Graphiti (Zep core)",
+          "repo": "getzep/graphiti",
+          "url": "https://github.com/getzep/graphiti",
+          "stars": 27028,
+          "forks": 2725,
+          "lastPush": "2026-06-04",
+          "latestRelease": "v0.29.1",
+          "releaseDate": "2026-05-21",
+          "signal": "时序知识图谱 + 事实失效 (bi-temporal) + attribute-hallucination 防御；getzep/zep 主仓已 dormant 不再跟踪",
+          "license": "Apache-2.0",
+          "language": "Python",
+          "priority": "P0",
+          "whyKeep": "memo 事实失效 / 时序有效性（valid_at/invalid_at）的最佳外部实现",
+          "replaces": "getzep/zep (legacy shell removed 2026-07-09)"
+        },
+        {
+          "id": "letta-code",
+          "name": "Letta Code",
+          "repo": "letta-ai/letta-code",
+          "url": "https://github.com/letta-ai/letta-code",
+          "stars": 2646,
+          "forks": 291,
+          "lastPush": "2026-06-04",
+          "latestRelease": "v0.27.3",
+          "releaseDate": "2026-06-04",
+          "signal": "Sleep-Time 记忆整理、Task* CRUD、system prompt 版本化 canary；letta-ai/letta 主仓已 dormant 不再跟踪",
+          "license": "Apache-2.0",
+          "language": "Python",
+          "priority": "P0",
+          "whyKeep": "跨 session durable knowledge / sleep-time consolidation 对 memo 长期质量关键",
+          "replaces": "letta-ai/letta (parent shell removed 2026-07-09)"
+        },
+        {
+          "id": "openviking",
+          "name": "OpenViking",
+          "repo": "volcengine/OpenViking",
+          "url": "https://github.com/volcengine/OpenViking",
+          "stars": 25117,
+          "forks": 1932,
+          "lastPush": "2026-06-04",
+          "latestRelease": "v0.3.23",
+          "releaseDate": "2026-06-03",
+          "signal": "per-agent 经验命名空间、OVPack 上下文容器、usage/audit schema、Memory V2",
+          "license": "AGPL-3.0",
+          "language": "Python",
+          "priority": "P1",
+          "whyKeep": "ContextDB 多 agent 命名空间与上下文容器设计的对照；月度扫描即可",
+          "deepDiveCadence": "monthly"
         }
       ]
     },
-    "harness-orchestration": {
-      "description": "Agent Harness与任务编排系统",
+    "intelligent-planning": {
+      "description": "对 brainstorm/plan/verify/harness 长循环规划与执行闭环有参考价值",
+      "pillar": "intelligent-planning",
       "competitors": [
+        {
+          "id": "superpowers",
+          "name": "superpowers",
+          "repo": "obra/superpowers",
+          "url": "https://github.com/obra/superpowers",
+          "stars": 217191,
+          "forks": 19334,
+          "lastPush": "2026-06-03",
+          "latestRelease": "v5.1.0",
+          "releaseDate": "2026-05-04",
+          "signal": "brainstorming / writing-plans / verification-before-completion / subagent-driven-development / TDD / systematic-debugging",
+          "license": "MIT",
+          "language": "Shell",
+          "priority": "P0",
+          "whyKeep": "AIOS 智能规划 skill 体系的直接方法论来源；规划轨第一优先级"
+        },
+        {
+          "id": "hermes-agent",
+          "name": "Hermes Agent",
+          "repo": "NousResearch/hermes-agent",
+          "url": "https://github.com/NousResearch/hermes-agent",
+          "stars": 179562,
+          "forks": 30757,
+          "lastPush": "2026-06-04",
+          "latestRelease": "v2026.5.29.2",
+          "releaseDate": "2026-05-29",
+          "signal": "handoff、background skill review、curator、LSP on write、prompt cache；已有 AIOS 映射页",
+          "license": "MIT",
+          "language": "Python",
+          "priority": "P0",
+          "whyKeep": "规划→执行→自改进闭环；部分能力已映射进 AIOS（见 docs/hermes-inspired-capability-mapping.md）"
+        },
         {
           "id": "open-harness",
           "name": "OpenHarness",
@@ -136,25 +173,11 @@
           "lastPush": "2026-06-04",
           "latestRelease": "v0.1.9",
           "releaseDate": "2026-05-07",
-          "signal": "v0.1.8 (5/6) 正式发版 --dry-run ready/warning/blocked + Docker sandbox + 4 新 provider (nvidia/qwen/MiniMax M2.7/gemini) + auto-compaction 增强. v0.1.9 slash-commands 直接触发 skill. autodream/ sleep-time memory consolidation 4 文件模块, swarm/mailbox.py 文件型 mailbox 7 种 MessageType. 主分支今日 push. 5月22日 brief 列的唯一 P0 现已 ship, AIOS 落后",
+          "signal": "dry-run ready/warning/blocked、autodream sleep-time、文件型 mailbox、auto-compaction",
           "license": "MIT",
           "language": "Python",
-          "priority": "P0"
-        },
-        {
-          "id": "gnhf",
-          "name": "gnhf",
-          "repo": "kunchenguid/gnhf",
-          "url": "https://github.com/kunchenguid/gnhf",
-          "stars": 1875,
-          "forks": 129,
-          "lastPush": "2026-05-13",
-          "latestRelease": "gnhf-v0.1.42",
-          "releaseDate": "2026-05-13",
-          "signal": "v0.1.42 recover copilot and opencode JSON output, 22 天静默 (5月22日→6月4日), 节奏放缓但无断裂. orchestrator.ts 843 行核心循环: 60s×2^n 退避, tokensEstimated sticky flag, pre/post-iteration abort reason classifier, interruptibleSleep, buildCommitRepairPrompt",
-          "license": "MIT",
-          "language": "TypeScript",
-          "priority": "P1"
+          "priority": "P0",
+          "whyKeep": "solo harness 预检与长循环记忆整理的主要外部参照"
         },
         {
           "id": "oh-my-openagent",
@@ -166,67 +189,46 @@
           "lastPush": "2026-06-04",
           "latestRelease": "v4.7.5",
           "releaseDate": "2026-06-03",
-          "signal": "13 天 13 个 minor (v4.2.0→v4.7.5), 8 Core 包分层重构 (utils/hashline-core/model-core/rules-engine/agents-md-core/ast-grep-core/comment-checker-core/boulder-state). v4.3.0 default_mode 自动激活 ultrawork/ralph loop (PR #4190), omo-codex 独立包 + triple-publish npm, --platform opencode|codex|both, Per-agent skill filtering (restrictedAgents PR #2827). ROADMAP 公开反对 overstory 11-adapter 模式: 'Premature adapter pattern abstraction causes more pain than duplication'",
+          "signal": "ralph/ultrawork 长循环、per-agent skill filter、multi-platform 包、反对 over-abstract adapter",
           "license": "NOASSERTION",
           "language": "TypeScript",
-          "priority": "P0"
+          "priority": "P0",
+          "whyKeep": "规划执行 mode / 多 client 投影；注意 default_mode 实为运行时 hook 而非 config 字段（见 2026-07-01 gap 分析）"
         },
         {
-          "id": "overstory",
-          "name": "overstory",
-          "repo": "jayminwest/overstory",
-          "url": "https://github.com/jayminwest/overstory",
-          "stars": 1317,
-          "forks": 212,
-          "lastPush": "2026-05-28",
-          "latestRelease": "v0.11.0",
-          "releaseDate": "2026-05-02",
-          "signal": "ARCHIVED 100% 确认 (GitHub API archived: true + README 红色 callout 'No longer maintained'). 5月22日 brief 风险完全物化. 继任者 Warren (云端 sandbox control plane, 不同方向). 模式仍 P2 参考 (worker_died 兜底, ov sling --recover, eventStallTimeoutMs) — 抄模式不抄代码",
+          "id": "gnhf",
+          "name": "gnhf",
+          "repo": "kunchenguid/gnhf",
+          "url": "https://github.com/kunchenguid/gnhf",
+          "stars": 1875,
+          "forks": 129,
+          "lastPush": "2026-05-13",
+          "latestRelease": "gnhf-v0.1.42",
+          "releaseDate": "2026-05-13",
+          "signal": "overnight 单 lane、consecutiveFailures abort、commit repair prompt；退避无 cap 是缺陷勿抄",
           "license": "MIT",
           "language": "TypeScript",
-          "priority": "P3",
-          "priorityHistory": [
-            "P1 (5月22日)",
-            "P3 (6月4日 降, 项目 archived, 仅作模式参考)"
-          ],
-          "status": "archived",
-          "watchNote": "模式可参考 (worker_died, sling --recover, stall timeout), 代码不抄. 5月22日 review-brief 降级判断完全正确"
+          "priority": "P1",
+          "whyKeep": "规划执行可靠性（连续失败 abort）对 solo harness 仍有直接价值"
         },
         {
-          "id": "revfactory-harness",
-          "name": "revfactory/harness",
-          "repo": "revfactory/harness",
-          "url": "https://github.com/revfactory/harness",
-          "stars": 5767,
-          "forks": 766,
-          "lastPush": "2026-05-29",
-          "latestRelease": "main",
-          "license": "Apache-2.0",
-          "language": "HTML",
+          "id": "ecc",
+          "name": "Everything Claude Code / ECC",
+          "repo": "affaan-m/ecc",
+          "url": "https://github.com/affaan-m/ecc",
+          "lastDeepDive": "2026-06-14",
+          "license": "NOASSERTION",
+          "language": "TypeScript/Python/Markdown",
           "priority": "P1",
-          "riskNote": "+2,261★ (64.5% 暴力增长) 但仓库无 .py/.ts runtime 代码, 纯 HTML/markdown GTM 内容. 3 语言 README + 4 GTM launch 内容 + 韩国社区 PR 接力. 技术深度需独立评估"
+          "signal": "OpenCode 显式 projection、skill-comply、skill health/evolution loop、changed-files ledger",
+          "whyKeep": "验证规划 skill 是否真被执行（compliance / health），不是又一个 plan 模板库"
         }
       ]
     },
-    "context-infrastructure": {
-      "description": "ContextDB/记忆基础设施",
+    "team-workflow": {
+      "description": "对 multi-agent team、路由、skill 治理与工作流蓝图有参考价值",
+      "pillar": "team-workflow",
       "competitors": [
-        {
-          "id": "openviking",
-          "name": "OpenViking",
-          "repo": "volcengine/OpenViking",
-          "url": "https://github.com/volcengine/OpenViking",
-          "stars": 25117,
-          "forks": 1932,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.3.23",
-          "releaseDate": "2026-06-03",
-          "signal": "13 天 5 版本 (v0.3.18→v0.3.23). v0.3.19 Console BFF 多时区 + usage_audit schema v3 (7 表 UTC 持久化 + viewer-tz 分桶) + session skill extraction. v0.3.20 server-side cProfile + batch session 100 msgs/req + embedding_template. v0.3.21 trajectory retrieval_anchor + StoredLink derived_from 双向. v0.3.22 memory v1 移除 (V2 GA). v0.3.23 VikingBot per-agent 命名空间 + CJK token + vlm.max_concurrent 100→64. 5月22日 brief 5个 P0 全部 ship 完毕, 转入稳态扩展期, 建议改月度 deep-dive",
-          "license": "AGPL-3.0",
-          "language": "Python",
-          "priority": "P0",
-          "deepDiveCadence": "monthly (was bi-weekly)"
-        },
         {
           "id": "openclaw",
           "name": "OpenClaw",
@@ -237,164 +239,97 @@
           "lastPush": "2026-06-04",
           "latestRelease": "v2026.6.1",
           "releaseDate": "2026-06-03",
-          "signal": "v2026.6.1 Skill Workshop 治理闭环 + 中心化 skills runtime + Plugin 外部化 (npm+ClawHub) + Memory/channel state SQLite 化 + MiniMax M3 OAuth. v2026.6.2-beta.1 Operator install policy 替代 dangerous-code scanner. 13 天 2 stable + 9 beta, CI 流水线化. 生态级平台",
+          "signal": "Skill Workshop 治理闭环、Plugin 外部化、Operator install policy、Memory/channel SQLite",
           "license": "MIT",
           "language": "TypeScript",
           "priority": "P0",
-          "note": "生态级项目, Skill Workshop + Plugin 外部化值得深度研究"
-        }
-      ]
-    },
-    "execution-quality": {
-      "description": "执行质量/规划/编辑安全",
-      "competitors": [
-        {
-          "id": "hermes-agent",
-          "name": "Hermes Agent",
-          "repo": "NousResearch/hermes-agent",
-          "url": "https://github.com/NousResearch/hermes-agent",
-          "stars": 179562,
-          "forks": 30757,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v2026.5.29.2",
-          "releaseDate": "2026-05-29",
-          "signal": "13 天 +17,453★ (watchlist 单一项目最大增长). v0.14.0 Foundation (808 commits / 633 PRs / 12 P0 + 50 P1): LSP 语义诊断 on write, 1h cross-session prompt cache (cache_control 4 breakpoints), OpenAI OAuth proxy (180x 加速 browser_console), /handoff 真正迁移. v0.15.x Velocity. 自我改进闭环 3 文件实装: background_review.py:402-451 (复刻 AIAgent 跑 _SKILL_REVIEW_PROMPT) + skill_provenance.py:37-72 (ContextVar 区分 background/foreground) + curator.py 1843 行 (7d cadence pin/archive/consolidate)",
-          "license": "MIT",
-          "language": "Python",
-          "priority": "P0",
-          "signal2": "自我改进闭环: 3 文件拆分, invariant: curator 只动 agent-created skill, 永不 auto-delete"
-        },
-        {
-          "id": "superpowers",
-          "name": "superpowers",
-          "repo": "obra/superpowers",
-          "url": "https://github.com/obra/superpowers",
-          "stars": 217191,
-          "forks": 19334,
-          "lastPush": "2026-06-03",
-          "latestRelease": "v5.1.0",
-          "releaseDate": "2026-05-04",
-          "signal": "v5.1.0 worktree consent gate (创前问用户, 修 subagent-driven-development 私自创 bug) + two-stage subagent review (spec-reviewer → code-quality-reviewer → final) + .version-bump.json marketplace multi-harness sync. 14 个核心 skill. 5月22日 brief 假设 AIOS 已用 superpowers, 实际是契约式占位符 — 必须 vendor 子集",
-          "license": "MIT",
-          "language": "Shell",
-          "priority": "P0",
-          "note": "Claude Code官方市场插件, 可组合技能方法论. AIOS 当前 superpowers:* 引用是契约式占位符, 需 vendor 子集",
-          "aiosIntegrationGap": "P0-6 — 必须 vendor 8 个核心 skill 子集 (brainstorming/using-superpowers/test-driven-development/systematic-debugging/writing-plans/subagent-driven-development/using-git-worktrees/verification-before-completion), 否则所有 superpowers:* 引用是 noop"
-        },
-        {
-          "id": "the-pair",
-          "name": "the-pair",
-          "repo": "timwuhaotian/the-pair",
-          "url": "https://github.com/timwuhaotian/the-pair",
-          "stars": 337,
-          "forks": 24,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v2.0.2",
-          "releaseDate": "2026-05-25",
-          "signal": "v1.3.1 → v2.0.0/v2.0.1/v2.0.2 (主版本升级), Mentor-Executor 架构完全保持. quality_gate.rs:45-67 4 段结构化 verdict (FILES_REVIEWED/CHECKS/CODE) + validate_review 缺段 reject. v2.0.2 修无变更时跑 typecheck 浪费 token bug (npm test/git diff --check 在文本回合跳过). acceptance.ts JSON extraction 容错 (code-fence/嵌套/{})",
-          "license": "Apache-2.0",
-          "language": "TypeScript",
-          "priority": "P1",
-          "priorityHistory": [
-            "P1 (5月22日)",
-            "P1 (6月4日 维持, 升级 P0 候选 — 4 段 verdict schema 1 周可抄)"
-          ],
-          "signal2": "Mentor-Executor质量门控, 4 段结构化 verdict, v2.0.2 暴露的 bug 提示 acceptance check 不能在无文件变更时还跑 — AIOS harness checkpoint 必吸取"
-        },
-        {
-          "id": "ecc",
-          "name": "Everything Claude Code / ECC",
-          "repo": "affaan-m/ecc",
-          "url": "https://github.com/affaan-m/ecc",
-          "lastDeepDive": "2026-06-14",
-          "license": "NOASSERTION",
-          "language": "TypeScript/Python/Markdown",
-          "priority": "P0",
-          "signal": "OpenCode-first projection via opencode.json; explicit instructions/agent/command/plugin/skills.paths beats passive .opencode/skills discovery. skill-comply measures whether skills/rules are actually followed across supportive/neutral/competing prompts. Skill health/evolution loop tracks observations, failure clusters, amendments, version snapshots, and hook-promotion candidates.",
-          "aiosAction": "Adopt route and mechanisms only: AIOS-native OpenCode opencode.json projection, trigger-smoke, skill compliance dry-run, skill health dashboard, changed-files ledger, and prompt-to-hook promotion policy."
-        }
-      ]
-    },
-    "browser-control-plane": {
-      "description": "浏览器验证/操作员控制面",
-      "competitors": [
-        {
-          "id": "golutra",
-          "name": "golutra",
-          "repo": "golutra/golutra",
-          "url": "https://github.com/golutra/golutra",
-          "stars": 3639,
-          "forks": 416,
-          "lastPush": "2026-05-31",
-          "latestRelease": "v0.2.8",
-          "releaseDate": "2026-05-31",
-          "signal": "v0.2.7/v0.2.8 仅 README delta (28 行), 实质代码最后 commit 3/22. Tauri 2 + Vue 3 + Pinia 桌面端, 4 布局 terminal pane. README 声明的可复用工作流模板系统**在源码中不存在** (skillLibrary.ts 是空 TODO 2026-01-23). 5月22日 brief #8 P0 应撤回, AIOS orchestrator-blueprints.json 已领先",
-          "license": "BSL-1.1",
-          "language": "Rust",
-          "priority": "P2",
-          "priorityHistory": [
-            "P1 (5月22日)",
-            "P2 (6月4日 降, README 声明与代码现实不符)"
-          ],
-          "note": "唯一桌面端竞品, Rust+Tauri. 但 v0.2.6 之后无 feature 提交, slowing"
+          "whyKeep": "skill 生命周期与 install policy 直接对标 AIOS skill-workshop / install-policy"
         }
       ]
     }
   },
   "crossCuttingTrends": [
-    "ECC multi-client projection: OpenCode works best when opencode.json explicitly wires instructions, agents, commands, plugins, and selected skills; project-local skill directories alone are weak triggers.",
-    "ECC strategic compaction: manual /compact guidance plus OpenCode experimental.session.compacting hook preserves task state but does not provide AIOS-style bidirectional data-plane compression metrics.",
-    "受控技能自生成闭环 (proposal/review/background fork/curator) — OpenClaw Skill Workshop v2026.6.1 + Hermes background review fork v0.14.0 + superpowers TDD v5.1.0 + oh-my-openagent 8 Core 包",
-    "default_mode 零配置自动激活 (1 行 config) — oh-my-openagent v4.3.0 + OpenHarness v0.1.9",
-    "Sleep-Time Memory Consolidation / Auto-Dream — OpenHarness autodream/ + TencentDB L0→L3 + Letta /sleeptime",
-    "VikingBot per-agent 经验命名空间隔离 — OpenViking v0.3.23 + mem0 plugin v0.2.5 identity scoping",
-    "OVPack v2 二进制上下文容器 (manifest + JSONL index + dense vector) — OpenViking v0.3.17+ (稳态)",
-    "Operator install policy 替代 dangerous-code scanner — OpenClaw v2026.6.2-beta.1",
-    "MCP SDK 进入 mem0 核心依赖, AIOS 必升 ≥1.25.4 — mem0 cli-node-v0.2.8 (6/1)",
-    "MiniMax M3 被 letta-code 正式接入 (PR #2665) — AIOS 选型外部验证, 强信号",
-    "TencentDB 独立 Memory 服务化 (v1.0.0-beta.1) — 商业化前兆, 5月22日漏判",
-    "oh-my-openagent 公开反对 grand interface 抽象 — 'Premature adapter pattern abstraction causes more pain than duplication'",
-    "自我进化+技能自动生成 (Hermes/superpowers/OpenClaw共同方向)",
-    "多模型路由+Per-Agent模型分配 (OpenViking/oh-my-openagent)",
-    "dry-run readiness 裁定 (OpenHarness v0.1.8 — 已 ship, AIOS 落后)",
-    "零LLM检索管道减少推理成本 (mem0)",
-    "分层上下文渐进披露 (TencentDB/OpenViking)",
-    "Auto-Activated Modes零配置启动 (oh-my-openagent v4.3.0)",
-    "Auto-Compaction+Sleep-Time后台整理 (OpenHarness/Letta汇聚)",
-    "SQLite WAL多Agent消息总线 (overstory, 维持降级, 项目 archived)",
-    "迭代笔记轻量checkpoint (gnhf, 维持)",
-    "Mermaid符号化工具日志压缩 (TencentDB -61% token)",
-    "结构化 mentor verdict (the-pair 4 段) + 两阶段 subagent 审查 (superpowers)",
-    "Recall 上下文预算控制 (TencentDB maxChars × maxTotal)",
-    "Usage/Audit 多时区控制台 (OpenViking v0.3.19, 7 表 schema)",
-    "ECC/OpenCode explicit opencode.json projection: instructions + primary agent + commands + skills.paths is more reliable than passive skill folder discovery.",
-    "Skill compliance measurement is becoming mandatory: generate expected behavior, run supportive/neutral/competing scenarios, then promote low-compliance prompt steps into hooks or quality gates.",
-    "Session-local changed-files ledgers improve reviewer/test/security agent focus before expanding to graph blast-radius analysis.",
-    "Agent catalog compression: load names/descriptions/tools by default; full prompts and skill bodies only when selected."
+    "三支柱过滤：memo 记忆 / 智能规划 / team 工作流 — 不在三支柱内的竞品不进 watchlist",
+    "规划方法论以 superpowers skill 闭环为准，不追 GTM 内容站或桌面壳",
+    "记忆轨优先：Recall 预算、分层压缩、事实失效、sleep-time consolidation、跨 client memo 注入",
+    "规划执行轨优先：dry-run readiness、consecutiveFailures abort、evidence/verification、handoff",
+    "Team 轨优先：skill workshop 治理、install policy、per-agent 隔离、文件型 mailbox（轻量）",
+    "已吸收模式（不再单独立项跟踪）：overstory worker_died/stall → trends；OpenHarness mailbox 优于 SQLite mail bus；oh-my-openagent 反对 premature multi-adapter",
+    "已否决抄法（2026-07-01 源码核实）：the-pair 极简 verdict 记录层、gnhf 无 cap 退避、oh-my-openagent 关键词 default_mode 误读、tokensEstimated sticky 展示层",
+    "ECC：skill compliance + explicit client projection 比被动 skill 目录发现更可靠",
+    "Hermes 能力映射见 docs/hermes-inspired-capability-mapping.md（多项已 Done）"
   ],
   "p0OptimizationTargets": {
-    "harness": "受控技能自生成闭环 + Dry-Run Readiness + Sleep-Time Memory + default_mode + worker_died 兜底",
-    "crossCli": "Vendor superpowers 8 个核心 skill 子集 (紧急, 否则 superpowers:* 引用全是 noop)",
-    "multiAgent": "Per-Agent Memo 命名空间 + 文件型 mailbox (OpenHarness 模式) + 4 段 mentor verdict",
-    "memory": "Recall 预算 + Mermaid压缩 + L0→L3语义金字塔 + Usage/Audit 多时区控制台 + OpenClaw Skill Workshop 治理闭环",
-    "model": "Per-agent 模型路由 + MiniMax M3 long-task benchmark (letta-code 外部验证)"
+    "memo": "Recall 预算 + emergency 压缩兜底 + sleep-time/manual dream + 事实时效字段",
+    "planning": "consecutiveFailures abort + dry-run readiness + runtime directive + superpowers 规划 skill 真执行",
+    "team": "Skill workshop file rollback/stale + install policy + per-agent memo 命名空间"
   },
-  "nextRefresh": "2026-06-18 (2 weeks), focus on OpenViking v0.3.24+ / OpenClaw v2026.6.2 stable / Hermes v0.15.3+ / oh-my-openagent v4.8+ / M3 long-task 实战数据",
+  "nextRefresh": "2026-07-23 or on major release of superpowers / OpenHarness / Hermes / OpenClaw / TencentDB",
+  "removed": {
+    "2026-06-14": [
+      "long-running-tasks (mmTheBest/long-running-tasks)",
+      "openclaw-recall (Felix201209/openclaw-recall)",
+      "execplan-skill (tiann/execplan-skill)",
+      "vision-test-harness (UpGPT-ai/vision-test-harness)"
+    ],
+    "2026-07-09": [
+      {
+        "id": "overstory",
+        "repo": "jayminwest/overstory",
+        "reason": "ARCHIVED；worker_died/recover/stall 已写入 crossCuttingTrends，无持续跟踪价值"
+      },
+      {
+        "id": "revfactory-harness",
+        "repo": "revfactory/harness",
+        "reason": "无 runtime，纯 HTML/GTM 内容站；团队蓝图 AIOS 已有 orchestrator-blueprints.json"
+      },
+      {
+        "id": "golutra",
+        "repo": "golutra/golutra",
+        "reason": "桌面壳；README 工作流模板在源码中不存在；与 memo/规划/team 核心无关"
+      },
+      {
+        "id": "zep",
+        "repo": "getzep/zep",
+        "reason": "主仓 dormant 壳；真实核心已提升为 graphiti 独立条目"
+      },
+      {
+        "id": "letta",
+        "repo": "letta-ai/letta",
+        "reason": "主仓 dormant 壳；真实主战场已提升为 letta-code 独立条目"
+      },
+      {
+        "id": "the-pair",
+        "repo": "timwuhaotian/the-pair",
+        "reason": "verdict schema 为记录层、不改变 agent 规划行为（2026-07-01 评估）；对三支柱无增量"
+      },
+      {
+        "id": "browser-control-plane",
+        "reason": "类别清空后删除；浏览器能力以 AIOS 自有 browser-use MCP 为准，不靠外部桌面竞品"
+      }
+    ]
+  },
   "cleanupNotes": [
     {
       "date": "2026-06-14",
-      "reason": "Removed entries already marked dormant-remove-candidate with no unique remaining tracking value.",
+      "reason": "Removed dormant-remove-candidate entries with no unique remaining tracking value.",
       "removed": [
-        "long-running-tasks (mmTheBest/long-running-tasks)",
-        "openclaw-recall (Felix201209/openclaw-recall)",
-        "execplan-skill (tiann/execplan-skill)",
-        "vision-test-harness (UpGPT-ai/vision-test-harness)"
-      ],
-      "retained": [
-        "overstory retained as archived pattern reference for worker_died/recover/stall timeout",
-        "zep retained because coreRepo graphiti remains P0"
-      ],
-      "rule": "Remove dormant P3 repos when their only useful pattern has been absorbed into crossCuttingTrends or superseded by active P0/P1 projects."
+        "long-running-tasks",
+        "openclaw-recall",
+        "execplan-skill",
+        "vision-test-harness"
+      ]
+    },
+    {
+      "date": "2026-07-09",
+      "reason": "Re-anchor watchlist to product core value: memo memory + intelligent planning + team workflow. Remove low-transfer / archived / GTM / shell / record-only projects.",
+      "beforeCount": 18,
+      "afterCount": 12,
+      "structureChange": "schema v2 five mixed categories → schema v3 three pillar categories (memo-memory / intelligent-planning / team-workflow)",
+      "retainedPatternOnly": [
+        "overstory worker_died / stall timeout (absorbed into crossCuttingTrends)",
+        "the-pair structured review evidence (optional if we ever wire mentor verdict into ContextDB — not a watchlist item)"
+      ]
     }
   ]
 }
