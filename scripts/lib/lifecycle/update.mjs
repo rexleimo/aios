@@ -149,12 +149,41 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   }
 
   if (hasComponent(options.components, 'superpowers')) {
-    await superpowersInstaller({ rootDir: projectRoot, client: options.client, update: true, force: true, io });
+    await superpowersInstaller({
+      rootDir: projectRoot,
+      client: options.client,
+      update: true,
+      force: true,
+      io,
+    });
     if (!options.skipDoctor) {
-      const result = await superpowersDoctor({ client: options.client, io });
+      const result = await superpowersDoctor({
+        client: options.client,
+        rootDir: projectRoot,
+        io,
+      });
       if (result.errors > 0) {
         throw new Error(`doctor-superpowers failed (${result.errors} errors)`);
       }
+    }
+  }
+
+  // skills 或 superpowers 任一更新后，再刷一次 planning 投影（双保险）
+  if (hasComponent(options.components, 'skills') || hasComponent(options.components, 'superpowers')) {
+    try {
+      const { projectPlanningSkills } = await import('../planning/project-skills.mjs');
+      const projection = projectPlanningSkills({
+        rootDir: projectRoot,
+        client: options.client,
+        force: true,
+        io,
+      });
+      if (!projection.ok) {
+        io.log('[warn] planning skill projection incomplete after update');
+        io.log('       Run: node scripts/aios.mjs plan project-skills --force');
+      }
+    } catch (error) {
+      io.log(`[warn] planning skill projection after update failed: ${error.message}`);
     }
   }
 

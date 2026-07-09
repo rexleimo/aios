@@ -9,8 +9,18 @@ import { CLAUDE_PLUGIN_NAME } from './constants.mjs';
 import { resolveSuperpowersClients } from './clients.mjs';
 import { isClaudePluginInstalled, resolveClaudeSkillSource } from './claude-plugin.mjs';
 import { listSkillNames } from './skills.mjs';
+import {
+  MIN_SUPERPOWERS_VERSION,
+  readSuperpowersVersion,
+} from './version.mjs';
 
-export async function doctorSuperpowers({ client = 'all', env = process.env, io = console } = {}) {
+export async function doctorSuperpowers({
+  client = 'all',
+  rootDir = process.cwd(),
+  env = process.env,
+  io = console,
+  checkPlanning = true,
+} = {}) {
   const clientSelection = resolveSuperpowersClients(client);
   if (clientSelection.supported.length === 0) {
     io.log('Superpowers Doctor');
@@ -53,18 +63,35 @@ export async function doctorSuperpowers({ client = 'all', env = process.env, io 
   }
   io.log(`agents_home: ${agentsHome}`);
   io.log(`superpowers_dir: ${superpowersDir}`);
+  io.log(`minimum_version: v${MIN_SUPERPOWERS_VERSION}`);
+
+  const fs = (await import('node:fs')).default;
 
   if (captureCommand('git', ['-C', superpowersDir, 'rev-parse', '--git-dir']).status === 0) {
     ok('superpowers git repo found');
     const remote = captureCommand('git', ['-C', superpowersDir, 'config', '--get', 'remote.origin.url']);
-    if (remote.stdout.trim()) ok(`origin: ${remote.stdout.trim()}`); else warn('origin URL is not configured');
+    if (remote.stdout.trim()) ok(`origin: ${remote.stdout.trim()}`);
+    else warn('origin URL is not configured (cannot auto-update)');
     const head = captureCommand('git', ['-C', superpowersDir, 'rev-parse', '--short', 'HEAD']);
-    if (head.stdout.trim()) ok(`HEAD: ${head.stdout.trim()}`); else warn('cannot read HEAD');
+    if (head.stdout.trim()) ok(`HEAD: ${head.stdout.trim()}`);
+    else warn('cannot read HEAD');
+
+    const versionInfo = readSuperpowersVersion(superpowersDir, { fsModule: fs });
+    if (versionInfo.version) {
+      if (versionInfo.outdated) {
+        warn(`superpowers v${versionInfo.version} is below minimum v${MIN_SUPERPOWERS_VERSION}`);
+        io.log('       Run: node scripts/aios.mjs internal superpowers update --client all');
+      } else {
+        ok(`superpowers version: v${versionInfo.version} (≥ v${MIN_SUPERPOWERS_VERSION})`);
+      }
+    } else {
+      warn(`superpowers version unknown (raw=${versionInfo.raw || 'n/a'}); recommend ≥ v${MIN_SUPERPOWERS_VERSION}`);
+      io.log('       Run: node scripts/aios.mjs internal superpowers update --client all');
+    }
   } else {
     err(`missing superpowers git repo: ${superpowersDir}`);
   }
 
-  const fs = (await import('node:fs')).default;
   if (fs.existsSync(skillsSource)) ok(`skills source found: ${skillsSource}`);
   else err(`missing skills source directory: ${skillsSource}`);
 
@@ -113,7 +140,7 @@ export async function doctorSuperpowers({ client = 'all', env = process.env, io 
       if (availableSkills === expectedSkillNames.length) {
         ok(`Claude Code skills available: ${availableSkills}/${expectedSkillNames.length}`);
       } else {
-        io.log('       Run: node scripts/aios.mjs setup --components superpowers --force');
+        io.log('       Run: node scripts/aios.mjs internal superpowers update --client all --force');
         if (source.sourceKind === 'plugin') {
           io.log('       If plugin cache is stale, run /reload-plugins in Claude Code.');
         }
@@ -123,11 +150,37 @@ export async function doctorSuperpowers({ client = 'all', env = process.env, io 
         ok(`Claude Code managed links healthy: ${managedLinks}/${expectedSkillNames.length}`);
       } else {
         warn(`Claude Code managed links drifted: ${managedLinks}/${expectedSkillNames.length}`);
-        io.log('       Re-run with: node scripts/aios.mjs setup --components superpowers --force');
+        io.log('       Re-run: node scripts/aios.mjs internal superpowers update --client all --force');
       }
     }
   } else {
     io.log('[skip] Claude Code superpowers doctor skipped (client not selected)');
+  }
+
+  // always-on planning discovery gate
+  let planningReport = null;
+  if (checkPlanning && rootDir) {
+    try {
+      const { checkPlanningSkillDiscovery } = await import('../../planning/contract.mjs');
+      planningReport = checkPlanningSkillDiscovery({
+        rootDir,
+        clients: clientSelection.supported,
+        env,
+        homes,
+      });
+      if (planningReport.ok) {
+        ok(`planning skills discoverable on ${clientSelection.supported.length} client(s)`);
+      } else {
+        for (const item of planningReport.reports || []) {
+          if (item.ok) continue;
+          warn(`planning skills missing for ${item.clientId}`);
+          if (item.recommendation) io.log(`       ${item.recommendation}`);
+        }
+        io.log('       Run: node scripts/aios.mjs plan project-skills --force');
+      }
+    } catch (error) {
+      warn(`planning discovery check failed: ${error.message}`);
+    }
   }
 
   if (errors > 0) {
@@ -136,5 +189,11 @@ export async function doctorSuperpowers({ client = 'all', env = process.env, io 
     io.log(`Result: OK (${warnings} warnings)`);
   }
 
-  return { warnings, effectiveWarnings: warnings, errors };
+  return {
+    warnings,
+    effectiveWarnings: warnings,
+    errors,
+    planningReport,
+    version: captureCommand('git', ['-C', superpowersDir, 'describe', '--tags', '--always']).stdout?.trim?.() || null,
+  };
 }

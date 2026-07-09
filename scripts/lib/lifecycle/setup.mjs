@@ -139,9 +139,20 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
   }
 
   if (hasComponent(options.components, 'superpowers')) {
-    await superpowersInstaller({ rootDir: projectRoot, client: options.client, io });
+    // update=true：safe ff-only pull（无 origin 则跳过）；对齐 always-on 规划最低版本
+    await superpowersInstaller({
+      rootDir: projectRoot,
+      client: options.client,
+      update: true,
+      force: Boolean(options.force),
+      io,
+    });
     if (!options.skipDoctor) {
-      const result = await superpowersDoctor({ client: options.client, io });
+      const result = await superpowersDoctor({
+        client: options.client,
+        rootDir: projectRoot,
+        io,
+      });
       if (result.errors > 0) {
         throw new Error(`doctor-superpowers failed (${result.errors} errors)`);
       }

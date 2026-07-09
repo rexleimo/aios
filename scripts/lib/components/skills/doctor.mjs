@@ -98,6 +98,33 @@ export async function doctorContextDbSkills({
     let warnCount = 0;
     for (const entry of entries) {
       const targetPath = path.join(targetRoot, entry.name);
+      // broken symlink / empty skill tree (stale install)
+      try {
+        const lst = fs.lstatSync(targetPath);
+        if (lst.isSymbolicLink()) {
+          let resolvedOk = false;
+          try {
+            resolvedOk = fs.existsSync(fs.realpathSync(targetPath));
+          } catch {
+            resolvedOk = false;
+          }
+          if (!resolvedOk) {
+            io.log(`[warn] ${clientName}: ${entry.name} broken symlink (stale); run update --force or plan project-skills --force`);
+            warnCount += 1;
+            warnings += 1;
+            continue;
+          }
+          const skillMd = path.join(targetPath, 'SKILL.md');
+          if (!fs.existsSync(skillMd)) {
+            io.log(`[warn] ${clientName}: ${entry.name} link target missing SKILL.md`);
+            warnCount += 1;
+            warnings += 1;
+            continue;
+          }
+        }
+      } catch {
+        // path missing — handled below
+      }
       if (matchesManagedInstall(targetPath, entry, clientName, normalizedScope)) {
         const materialized = materializeCatalogEntry({ rootDir, entry, clientName });
         try {
