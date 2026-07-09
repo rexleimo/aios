@@ -50,7 +50,36 @@ jobs:
           echo "$PWD/.ci-bin" >> "$GITHUB_PATH"
 
       - name: Run repo scripts tests
-        run: npm run test:scripts
+        run: |
+          set -o pipefail
+          # package.json pins --test-concurrency=1; tee + summary surface failures without log-admin rights.
+          npm run test:scripts 2>&1 | tee scripts-tests.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo '## scripts-tests failures'
+              echo
+              echo '```'
+              rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' scripts-tests.log | head -120 || true
+              echo '```'
+              echo
+              echo '<details><summary>tail of scripts-tests.log</summary>'
+              echo
+              echo '```'
+              tail -n 120 scripts-tests.log || true
+              echo '```'
+              echo '</details>'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
+      - name: Upload scripts-tests log
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scripts-tests-log
+          path: scripts-tests.log
+          if-no-files-found: ignore
 
   mcp-server-quality:
     runs-on: ${{ matrix.os }}
