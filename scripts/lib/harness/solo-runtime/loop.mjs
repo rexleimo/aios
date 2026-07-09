@@ -142,6 +142,20 @@ export async function runSoloHarnessLoop({
       readContinuitySummary({ workspaceRoot: rootDir, sessionId }),
       findCanvasMermaid(rootDir, sessionId),
     ]);
+    // L3: ensure plan exists and mark next task in progress before the turn
+    try {
+      const { ensurePlanForRuntime, markPlanTaskInProgress } = await import('../../planning/plan-runtime.mjs');
+      ensurePlanForRuntime({
+        rootDir,
+        objective: summary.objective,
+        client: summary.clientId || summary.provider || 'solo-harness',
+        source: 'solo-harness',
+      });
+      markPlanTaskInProgress(rootDir, { io: console });
+    } catch {
+      // plan runtime is best-effort; never block harness
+    }
+
     const rawTurn = await executeTurn({
       rootDir,
       sessionId,
@@ -213,6 +227,28 @@ export async function runSoloHarnessLoop({
       extraLogEntries: [...(rawTurn?.logEntries || []), ...turnLogEntries],
       checkpointWriter,
     });
+
+    // L3: write iteration outcome back to structured plan (tasks + evidence)
+    try {
+      const { syncPlanWithIterationOutcome } = await import('../../planning/plan-runtime.mjs');
+      const planSync = syncPlanWithIterationOutcome({
+        rootDir,
+        objective: summary.objective,
+        iteration,
+        outcome,
+        client: summary.clientId || summary.provider || 'solo-harness',
+        io: console,
+      });
+      if (planSync?.ok && planSync.progress) {
+        summary = {
+          ...summary,
+          planProgress: planSync.progress,
+          planTaskId: planSync.taskId,
+        };
+      }
+    } catch {
+      // plan runtime is best-effort
+    }
 
     // offload turn output + auto-compact canvas
     try {

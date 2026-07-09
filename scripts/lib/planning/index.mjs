@@ -45,3 +45,10 @@ export {
 } from './mcp-compact.mjs';
 
 export { repairStalePlanningSkills } from './repair-skills.mjs';
+
+export {
+  ensurePlanForRuntime,
+  markPlanTaskInProgress,
+  syncPlanWithIterationOutcome,
+  attachPlanVerificationEvidence,
+} from './plan-runtime.mjs';

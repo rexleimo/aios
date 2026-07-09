@@ -236,6 +236,30 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
       findings: validation.value.findings,
       contextSummary: validation.value.contextSummary,
     }).catch(() => {});
+
+    // L3: team/subagent success → plan task progress + evidence crumb
+    try {
+      const { syncPlanWithIterationOutcome } = await import('../../planning/plan-runtime.mjs');
+      syncPlanWithIterationOutcome({
+        rootDir,
+        objective: plan.taskTitle || plan.objective || job.jobId,
+        iteration: 1,
+        outcome: {
+          outcome: 'success',
+          ok: true,
+          summary: `subagent ${job.jobId} completed`,
+          evidence: [
+            `job=${job.jobId}`,
+            `role=${job.role || ''}`,
+            `status=${payloadStatus}`,
+          ],
+        },
+        client: 'subagent-runtime',
+        io,
+      });
+    } catch {
+      // optional
+    }
   }
 
   return buildCompletedPhaseJobRun({

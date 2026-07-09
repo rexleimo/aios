@@ -113,6 +113,19 @@ export async function persistQualityGateEvidence({ rootDir, sessionId, report, e
 
   await writeArtifact(artifactAbsPath, artifactPayload);
 
+  // L3: attach verification artifact to active intelligent plan (if any)
+  try {
+    const { attachPlanVerificationEvidence } = await import('../planning/plan-runtime.mjs');
+    attachPlanVerificationEvidence({
+      rootDir,
+      artifactPath,
+      report,
+      io: null,
+    });
+  } catch {
+    // plan bridge optional
+  }
+
   try {
     const eventTurnId = `quality-gate:${stamp}:summary`;
     const eventArgs = [
