@@ -115,6 +115,7 @@ crush.json
 .opencode/
 .codex/
 .gemini/
+.grok/
 .agents/
 
 # RL/实验运行产物（由测试和训练生成，不提交）
