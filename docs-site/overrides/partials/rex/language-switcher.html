@@ -1,0 +1,38 @@
+{# Language switcher powered by mkdocs-static-i18n → config.extra.alternate #}
+{% if config.extra and config.extra.alternate %}
+  {% set current_locale = i18n_page_locale if i18n_page_locale is defined else (i18n_current_language if i18n_current_language is defined else 'en') %}
+  {% set ns = namespace(current_name='English') %}
+  {% for alt in config.extra.alternate %}
+    {% if alt.lang == current_locale %}
+      {% set ns.current_name = alt.name %}
+    {% endif %}
+  {% endfor %}
+  <details class="rex-lang-switcher">
+    <summary class="rex-lang-switcher__summary" aria-label="Select language">
+      <span class="rex-lang-switcher__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <circle cx="12" cy="12" r="9"></circle>
+          <path d="M3 12h18"></path>
+          <path d="M12 3a14 14 0 0 1 0 18"></path>
+          <path d="M12 3a14 14 0 0 0 0 18"></path>
+        </svg>
+      </span>
+      <span class="rex-lang-switcher__label">{{ ns.current_name }}</span>
+      <span class="rex-lang-switcher__caret" aria-hidden="true"></span>
+    </summary>
+    <ul class="rex-lang-switcher__menu" role="listbox" aria-label="Languages">
+      {% for alt in config.extra.alternate %}
+        {% set is_active = alt.lang == current_locale %}
+        <li role="option" {% if is_active %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
+          <a
+            class="rex-lang-switcher__option{% if is_active %} is-active{% endif %}"
+            href="{{ alt.link | url }}"
+            hreflang="{{ alt.lang }}"
+            lang="{{ alt.lang }}"
+            {% if is_active %}aria-current="true"{% endif %}
+          >{{ alt.name }}</a>
+        </li>
+      {% endfor %}
+    </ul>
+  </details>
+{% endif %}

@@ -45,6 +45,7 @@ home: true
           <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>gemini</span>
           <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>opencode</span>
           <span class="hero-client-chip"><span class="hero-client-chip__dot"></span>hermes</span>
+          <span class="hero-client-chip" title="Grok Build"><span class="hero-client-chip__dot"></span>grok</span>
         </div>
       </div>
     </div>

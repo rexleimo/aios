@@ -71,11 +71,37 @@ test('home HUD markup preserves the Pencil telemetry title row structure', () =>
   assert.match(home, /responsive node grid/);
   assert.match(home, /class="zone-label zone-label--inline"/);
   assert.match(home, /activity overview \+ throughput/);
+  assert.match(home, /class="hero-client-chip"[^>]*>[\s\S]*?codex/);
+  assert.match(home, /class="hero-client-chip"[^>]*>[\s\S]*?hermes/);
+  assert.match(home, /class="hero-client-chip"[^>]*title="Grok Build"[\s\S]*?>[\s\S]*?grok/);
   assert.doesNotMatch(home, /THREE\.JS ZONE · particle field \+ cursor parallax drift/);
   assert.doesNotMatch(home, /INTERACTIVE FIELD · particle field \+ cursor parallax drift/);
   assert.doesNotMatch(home, /THREE\.JS · hover-reactive node grid/);
   assert.doesNotMatch(home, /WEBGL · radar sweep \+ throughput/);
   assert.doesNotMatch(home, /telemetry sweep \+ throughput/);
+});
+
+test('custom shell exposes i18n language switcher on home and docs surfaces', () => {
+  const topbar = read('docs-site/overrides/partials/rex/topbar.html');
+  const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
+  const docsPage = read('docs-site/overrides/partials/rex/docs-page.html');
+  const switcher = read('docs-site/overrides/partials/rex/language-switcher.html');
+  const shellCss = read('docs-site/assets/redesign/shell.css');
+
+  assert.match(topbar, /partials\/rex\/language-switcher\.html/);
+  assert.match(sidebar, /partials\/rex\/language-switcher\.html/);
+  assert.match(docsPage, /partials\/rex\/language-switcher\.html/);
+  assert.match(switcher, /class="rex-lang-switcher"/);
+  assert.match(switcher, /config\.extra\.alternate/);
+  assert.match(switcher, /hreflang="\{\{\s*alt\.lang\s*\}\}"/);
+  assert.match(
+    shellCss,
+    /\.rex-lang-switcher\s*\{[\s\S]*?position:\s*relative;[\s\S]*?display:\s*inline-block;/
+  );
+  assert.match(
+    shellCss,
+    /\.rex-lang-switcher__menu\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?z-index:\s*50;/
+  );
 });
 
 test('home animation entrypoint delegates to a decoupled Pencil WebGL runtime', () => {
@@ -344,7 +370,7 @@ test('home layout CSS pins the berPn desktop section geometry', () => {
     'display: grid;',
     'grid-template-columns: minmax(0, 1fr) 540px;',
     'gap: 80px;',
-    'padding: 120px 80px 80px 120px;',
+    'padding: 120px 80px 132px 120px;',
   ]);
   assertRuleIncludes(homeCss, '.hero-content', [
     'position: relative;',
@@ -376,9 +402,17 @@ test('home layout CSS pins the berPn desktop section geometry', () => {
   ]);
   assertRuleIncludes(homeCss, '.hero-works', [
     'position: relative;',
-    'width: min(100%, 560px);',
+    'z-index: 5;',
+    'width: min(100%, 620px);',
     'padding-top: 0;',
   ]);
+  assertRuleIncludes(homeCss, '.hero-layout', [
+    'padding: 120px 80px 132px 120px;',
+  ]);
+  assert.match(
+    homeCss,
+    /\.hero-section \.home-section__stage > \.zone-label\s*\{[\s\S]*?left:\s*auto;[\s\S]*?right:\s*64px;/
+  );
 
   assertRuleIncludes(homeCss, '.capabilities-section', [
     'height: 610px;',

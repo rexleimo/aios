@@ -133,7 +133,8 @@
   grid-template-columns: minmax(0, 1fr) 540px;
   gap: 80px;
   align-items: center;
-  padding: 120px 80px 80px 120px;
+  /* Extra bottom padding keeps client chips clear of the ambient zone-label. */
+  padding: 120px 80px 132px 120px;
 }
 
 .hero-content {
@@ -271,7 +272,8 @@
 
 .hero-works {
   position: relative;
-  width: min(100%, 560px);
+  z-index: 5;
+  width: min(100%, 620px);
   height: auto;
   margin: 0;
   padding-top: 0;
@@ -428,12 +430,13 @@
 
 .zone-label {
   position: absolute;
-  z-index: 3;
+  z-index: 2;
   left: 64px;
-  bottom: 51px;
+  bottom: 28px;
   display: inline-flex;
   gap: 0.5rem;
   align-items: center;
+  max-width: min(420px, calc(100% - 128px));
   padding: 0.45rem 0.75rem;
   color: var(--rex-muted);
   background: rgba(13, 18, 32, 0.9);
@@ -441,6 +444,16 @@
   border-radius: 6px;
   font-family: var(--rex-font-mono);
   font-size: 0.64rem;
+  line-height: 1.3;
+  pointer-events: none;
+}
+
+/* Keep the ambient label under the right visual, away from left-column chips. */
+.hero-section .home-section__stage > .zone-label {
+  left: auto;
+  right: 64px;
+  bottom: 36px;
+  max-width: min(360px, 42vw);
 }
 
 .capabilities-section .home-section__stage > .zone-label {
@@ -448,6 +461,8 @@
   right: 24px;
   bottom: auto;
   left: auto;
+  max-width: none;
+  pointer-events: auto;
 }
 
 .zone-label__icon {
@@ -1185,7 +1200,13 @@
 
   .zone-label {
     left: 48px;
-    bottom: 32px;
+    bottom: 24px;
+  }
+
+  .hero-section .home-section__stage > .zone-label {
+    left: auto;
+    right: 48px;
+    bottom: 28px;
   }
 
   .capabilities-section {
@@ -1399,6 +1420,12 @@
 
   .zone-label {
     left: 48px;
+    bottom: 20px;
+  }
+
+  .hero-section .home-section__stage > .zone-label {
+    left: auto;
+    right: 48px;
     bottom: 24px;
   }
 }
