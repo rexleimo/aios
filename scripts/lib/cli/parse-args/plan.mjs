@@ -10,12 +10,16 @@ const PLAN_CLI = new Command()
   .option('--title <text>', 'Plan title')
   .option('--task <text>', 'Task / objective text')
   .option('--objective <text>', 'Objective text')
-  .option('--status <status>', 'Plan status for set-status')
+  .option('--status <status>', 'Plan/task status')
   .option('--note <text>', 'Optional status note')
   .option('--client <id>', 'Client id', 'all')
   .option('--source <text>', 'Source label')
-  .option('--force', 'Force replace unmanaged skill links')
+  .option('--force', 'Force (e.g. force done / replace links)')
   .option('--message <text>', 'User message for auto-gate')
+  .option('--task-id <id>', 'Task id for plan task')
+  .option('--acceptance <text>', 'Task acceptance criteria')
+  .option('--kind <command|path|test|note>', 'Evidence kind')
+  .option('--value <text>', 'Evidence value')
   .option('--json', 'JSON output')
   .option('--format <text|json>', 'Output format');
 
@@ -27,6 +31,10 @@ export function parsePlanArgs(argv) {
     'start',
     'status',
     'set-status',
+    'task',
+    'add-evidence',
+    'gate',
+    'check-done',
     'inject',
     'auto-gate',
     'always-on',
@@ -37,7 +45,13 @@ export function parsePlanArgs(argv) {
     'discovery',
   ]);
   const sub = known.has(subcommand) ? subcommand : 'status';
-  const parseArgv = known.has(subcommand) ? rest.slice(1) : rest;
+  let parseArgv = known.has(subcommand) ? rest.slice(1) : rest;
+  // plan task <id> --status done
+  let positionalTaskId = '';
+  if (sub === 'task' && parseArgv[0] && !String(parseArgv[0]).startsWith('-')) {
+    positionalTaskId = String(parseArgv[0]);
+    parseArgv = parseArgv.slice(1);
+  }
 
   try {
     const parsed = PLAN_CLI.parse(parseArgv, { from: 'user' });
@@ -50,10 +64,15 @@ export function parsePlanArgs(argv) {
         subcommand: sub,
         title: flags.title,
         task: flags.task || flags.message,
+        taskId: flags.taskId || positionalTaskId,
+        taskTitle: flags.title,
         objective: flags.objective,
         message: flags.message || flags.task,
         status: flags.status,
         note: flags.note,
+        acceptance: flags.acceptance,
+        kind: flags.kind,
+        value: flags.value,
         client: flags.client,
         source: flags.source,
         force: Boolean(flags.force),

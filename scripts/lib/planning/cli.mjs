@@ -1,9 +1,13 @@
 import {
+  addPlanEvidence,
   checkPlanningSkillDiscovery,
+  evaluateDoneGate,
   formatActivePlanInjection,
   readActivePlan,
   setPlanStatus,
   startPlan,
+  summarizePlanProgress,
+  updatePlanTask,
 } from './contract.mjs';
 import { projectPlanningSkills } from './project-skills.mjs';
 import {
@@ -49,13 +53,80 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       return { exitCode: 1 };
     }
     try {
-      const state = setPlanStatus(rootDir, options.status, { note: options.note || '' });
+      const state = setPlanStatus(rootDir, options.status, {
+        note: options.note || '',
+        force: Boolean(options.force),
+      });
       stdout.write(json ? `${JSON.stringify(state, null, 2)}\n` : `plan status -> ${state.status}\n`);
       return { exitCode: 0, state };
     } catch (error) {
       stderr.write(`[err] ${error.message}\n`);
       return { exitCode: 1 };
     }
+  }
+
+  if (sub === 'task') {
+    const taskId = options.taskId || options.title;
+    if (!taskId) {
+      stderr.write('[err] plan task requires task id (first arg or --task-id)\n');
+      return { exitCode: 1 };
+    }
+    if (!options.status && !options.taskTitle && options.acceptance === undefined) {
+      stderr.write('[err] plan task requires --status and/or --title/--acceptance\n');
+      return { exitCode: 1 };
+    }
+    try {
+      const state = updatePlanTask(rootDir, taskId, {
+        status: options.status,
+        title: options.taskTitle,
+        acceptance: options.acceptance,
+      });
+      const progress = summarizePlanProgress(state);
+      stdout.write(json
+        ? `${JSON.stringify({ state, progress }, null, 2)}\n`
+        : `task ${taskId} updated; progress ${progress.tasksDone}/${progress.tasksTotal}\n`);
+      return { exitCode: 0, state };
+    } catch (error) {
+      stderr.write(`[err] ${error.message}\n`);
+      return { exitCode: 1 };
+    }
+  }
+
+  if (sub === 'add-evidence') {
+    if (!options.value && !options.task) {
+      stderr.write('[err] plan add-evidence requires --value (or --task as value)\n');
+      return { exitCode: 1 };
+    }
+    try {
+      const state = addPlanEvidence(rootDir, {
+        kind: options.kind || 'note',
+        value: options.value || options.task,
+      });
+      stdout.write(json
+        ? `${JSON.stringify(state, null, 2)}\n`
+        : `evidence added (${state.evidence.length} total)\n`);
+      return { exitCode: 0, state };
+    } catch (error) {
+      stderr.write(`[err] ${error.message}\n`);
+      return { exitCode: 1 };
+    }
+  }
+
+  if (sub === 'gate' || sub === 'check-done') {
+    const state = readActivePlan(rootDir);
+    if (!state) {
+      stderr.write('[err] no active plan\n');
+      return { exitCode: 1 };
+    }
+    const gate = evaluateDoneGate(state);
+    const progress = summarizePlanProgress(state);
+    const payload = { ok: gate.ok, reasons: gate.reasons, progress, status: state.status };
+    stdout.write(json ? `${JSON.stringify(payload, null, 2)}\n` : (
+      gate.ok
+        ? `plan ready for done (tasks ${progress.tasksDone}/${progress.tasksTotal}, evidence=${progress.evidenceCount})\n`
+        : `plan NOT ready: ${gate.reasons.join('; ')}\n`
+    ));
+    return { exitCode: gate.ok ? 0 : 1, ...payload };
   }
 
   if (sub === 'inject') {

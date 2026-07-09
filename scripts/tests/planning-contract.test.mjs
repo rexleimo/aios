@@ -30,8 +30,8 @@ async function makeTemp(prefix) {
 test('buildPlanMarkdown includes contract markers', () => {
   const md = buildPlanMarkdown({ title: 'Auth refactor', objective: 'fix login', client: 'claude' });
   assert.match(md, /AIOS Planning Contract/);
-  assert.match(md, /writing-plans/);
-  assert.match(md, /Host plan mode bridge/i);
+  assert.match(md, /schema v2/);
+  assert.match(md, /Verification evidence/);
   assert.match(md, /Auth refactor/);
 });
 
@@ -47,10 +47,14 @@ test('startPlan writes docs/plans artifact and active pointer', async () => {
       now: new Date('2026-07-09T12:00:00.000Z'),
     });
     assert.equal(state.status, 'active');
+    assert.equal(state.schemaVersion, 2);
+    assert.ok(Array.isArray(state.tasks) && state.tasks.length >= 3);
+    assert.ok(state.route);
     assert.ok(state.relativePath.startsWith('docs/plans/'));
     assert.ok(fs.existsSync(path.join(root, state.relativePath)));
     const body = await readFile(path.join(root, state.relativePath), 'utf8');
     assert.match(body, /Ship planning bridge/);
+    assert.match(body, /schema v2/);
     const active = readActivePlan(root);
     assert.equal(active.title, 'Ship planning bridge');
     assert.equal(active.client, 'hermes');
@@ -66,6 +70,25 @@ test('setPlanStatus updates active pointer', async () => {
     const next = setPlanStatus(root, 'approved', { note: 'ready' });
     assert.equal(next.status, 'approved');
     assert.equal(readActivePlan(root).status, 'approved');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('plan done requires tasks complete + evidence', async () => {
+  const root = await makeTemp('aios-plan-done-gate-');
+  try {
+    const { updatePlanTask, addPlanEvidence } = await import('../lib/planning/contract.mjs');
+    startPlan({ rootDir: root, title: 'Done gate', objective: 'fix bug in auth', client: 'cli' });
+    assert.throws(() => setPlanStatus(root, 'done'), /cannot mark plan done/);
+    const plan = readActivePlan(root);
+    for (const t of plan.tasks) {
+      updatePlanTask(root, t.id, { status: 'done' });
+    }
+    assert.throws(() => setPlanStatus(root, 'done'), /evidence/);
+    addPlanEvidence(root, { kind: 'command', value: 'npm test → pass' });
+    const done = setPlanStatus(root, 'done');
+    assert.equal(done.status, 'done');
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -161,8 +184,9 @@ test('A1 lean always-on directive stays under 900 chars', async () => {
     });
     assert.equal(d.mode, 'lean');
     assert.ok(d.chars < 900, `lean inject too large: ${d.chars}`);
-    assert.match(d.text, /AIOS PLAN/);
-    assert.match(d.text, /writing-plans/);
+    assert.match(d.text, /AIOS PLAN v2/);
+    assert.match(d.text, /next:/);
+    assert.match(d.text, /evidence required/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

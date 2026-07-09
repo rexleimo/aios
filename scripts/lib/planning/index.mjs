@@ -8,10 +8,22 @@ export {
   startPlan,
   readActivePlan,
   setPlanStatus,
+  updatePlanTask,
+  addPlanEvidence,
+  evaluateDoneGate,
+  summarizePlanProgress,
   inspectSkillRoot,
   checkPlanningSkillDiscovery,
   formatActivePlanInjection,
 } from './contract.mjs';
+
+export {
+  PLAN_SCHEMA_VERSION,
+  classifyPlanRoute,
+  seedTasksFromObjective,
+  buildStructuredPlanState,
+  skillsForRoute,
+} from './schema.mjs';
 
 export {
   resolveSuperpowersSkillsSource,

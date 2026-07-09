@@ -14,6 +14,7 @@ import {
   setPlanStatus,
   formatActivePlanInjection,
   resolvePlanningStatePath,
+  summarizePlanProgress,
 } from './contract.mjs';
 
 export const ALWAYS_ON_PLANNING_POLICY = Object.freeze({
@@ -107,13 +108,18 @@ export function buildAlwaysOnPlanningDirective({
   const injectMode = String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean';
 
   if (injectMode === 'lean') {
-    // Target: keep under ~900 chars so always-on does not dominate context (superpowers v6 / OMO lean pattern).
+    // Target: keep under ~900 chars; include structured next task (planning quality, not just adoption).
+    const progress = summarizePlanProgress(plan);
+    const next = progress?.nextTask;
+    const skills = Array.isArray(plan.skills) ? plan.skills.slice(0, 3).join('→') : 'writing-plans';
     const lines = [
-      '## AIOS PLAN (always-on)',
-      `plan: \`${plan.relativePath}\` status=${plan.status} gate=${result.action}`,
-      'Required: using-superpowers → writing-plans (brainstorm if unclear) → update this plan → then implement.',
-      'Host Plan UI is draft-only; mirror into the plan file. Finish with verification-before-completion.',
-      message ? `msg: ${clip(message, 280)}` : '',
+      '## AIOS PLAN v2 (always-on)',
+      `plan: \`${plan.relativePath}\` status=${plan.status} route=${plan.route || '?'} gate=${result.action}`,
+      progress ? `progress: ${progress.tasksDone}/${progress.tasksTotal} tasks evidence=${progress.evidenceCount}` : '',
+      next ? `next: ${next.id} ${clip(next.title, 80)}` : 'next: refine tasks in plan',
+      `skills: ${skills}`,
+      'Do task work; `plan task <id> --status done`; evidence required before `plan set-status done`.',
+      message ? `msg: ${clip(message, 200)}` : '',
     ].filter(Boolean);
     const text = `${lines.join('\n')}\n`;
     return {
