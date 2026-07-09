@@ -218,6 +218,13 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 - Token compression is now handled by community tools: **RTK** (https://github.com/rtk-ai/rtk) and **Caveman** (https://github.com/JuliusBrussee/caveman), installed automatically by `aios init`.
 - For migration help, see `.claude/skills/aios-interception-runtime/SKILL.md` (rewritten as RTK/Caveman install guide).
 
+## AIOS Turn Compression Enforcement
+
+- Required metric: `bidirectional-turn-compression`.
+- Every AIOS-managed turn must pass through `pre_send` and `post_receive` compression gates.
+- Direct host output bypass is a policy violation; use the AIOS-managed runner, MCP proxy, or compact packet path instead.
+- Do not claim compression compliance unless both pre-send and post-receive evidence are present.
+
 ## AIOS Self-Trigger Routing
 
 - Continue normally in the active coding client for single-domain work.
@@ -364,8 +371,8 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 ## AIOS Superpowers Workflow
 
 - Before any implementation action, route through the superpowers process skills instead of improvising. Invoke the skill — do not paraphrase or inline its process.
-  - Design / new behavior / new feature → `superpowers:brainstorming`
-  - Multi-step delivery → `superpowers:writing-plans`
+  - Design / new behavior / new feature → `superpowers:brainstorming` (or `brainstorming`)
+  - Multi-step delivery → `superpowers:writing-plans` (or `writing-plans`)
   - Debugging / failure analysis → `superpowers:systematic-debugging`
   - Test-first implementation → `superpowers:test-driven-development`
   - About to claim completion → `superpowers:verification-before-completion`
@@ -373,6 +380,28 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
 - If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
 - Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
+
+## AIOS ALWAYS-ON Intelligent Planning (MANDATORY — every user message)
+
+**Policy: every user input automatically enters AIOS intelligent planning. No exceptions for "small" requests.**
+
+1. On **every** user message (including short ones):
+   - Ensure an active AIOS plan exists under `docs/plans/` + `.aios/planning/active.json`
+   - Prefer: `node scripts/aios.mjs plan auto-gate --task "<user message>" --client <this-client>`
+   - Or MCP: `aios_plan_auto_gate` / `aios_plan_start`
+2. Then run the planning skill path: `using-superpowers` → `writing-plans` (and `brainstorming` if scope is unclear).
+3. Update the plan artifact with tasks for **this** message before implementing.
+4. **Host Plan mode is a draft only** (Claude Plan UI, Hermes native planning). It is incomplete until the AIOS plan file is updated.
+5. Discovery paths: `.claude/skills`, `.codex/skills`, `.hermes/skills`, `.grok/skills`, `.opencode/skills`, `.agents/skills`
+   - Core: `using-superpowers`, `brainstorming`, `writing-plans`, `executing-plans`, `verification-before-completion`
+6. If skills are missing: `node scripts/aios.mjs plan project-skills --force`
+7. Slash shortcut (still valid): `/plan` or `/prompts:plan` — but **auto-gate already runs** via hooks/bootstrap; do not skip planning when the user did not type `/plan`.
+
+### Forbidden
+
+- Answering implementation work without an active AIOS plan pointer
+- Treating host-only Plan UI as done
+- Skipping planning because the user message looks trivial
 
 <!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
 
@@ -475,4 +504,27 @@ This repository provides compatibility-tier native enhancements for OpenCode thr
 When this client is launched through AIOS shell integration, continue normal single-agent work by default. For explicit delegation/parallel requests, run the injected `team` or `subagent` AIOS command. For long-running, overnight, resumable objectives, run `aios harness run --objective "<task>" --worktree --max-iterations 8` and use `aios harness status/resume/stop` for handoff.
 
 OpenCode work in this repository uses community tools (RTK + Caveman) for token compression, installed via `aios init`.
+
+## Turn Compression Compliance
+
+OpenCode compatibility mode still requires `bidirectional-turn-compression`: every managed turn needs `pre_send` and `post_receive` evidence. Direct host output bypass is a policy violation; route tool output through AIOS-managed compression surfaces instead.
+
+## AIOS Native Grok Build Layer
+
+- Prefer repo-local `.grok/skills` and `.grok/agents` for AIOS-enhanced surfaces.
+- Keep work grounded in the AIOS runtime and verification flow.
+- Grok Build also loads shared `.agents/skills` and Claude-compat paths; prefer AIOS-managed roots for project-shared skills.
+- Token compression is handled by community tools RTK + Caveman (installed via `aios init`).
+
+## AIOS Native Hermes Layer
+
+- Prefer repo-local `.hermes/skills` for AIOS planning skills (`writing-plans`, `brainstorming`, `verification-before-completion`, …).
+- **ALWAYS-ON planning:** on **every** user message, call MCP `aios_plan_auto_gate` (or `aios_plan_start` + `aios_plan_status`) **before** Hermes built-in memory/delegate loops for task work.
+- Keep work grounded in the AIOS runtime:
+  1. `aios_plan_auto_gate` with the user message
+  2. Follow `writing-plans` / update `docs/plans/`
+  3. Implement only after the plan artifact reflects this message
+  4. `aios_plan_gate` / verification when finishing
+- Do **not** replace AIOS planning with Hermes-only session_search/memory for engineering tasks.
+- AIOS MCP bridge: `scripts/aios-mcp-server.mjs` — plan tools, context-pack, doctor, skill validate/install.
 <!-- AIOS NATIVE END -->

@@ -5,6 +5,7 @@ import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import {
   parseCanvasArgs,
   parseDreamArgs,
+  parsePlanArgs,
   parseInitArgs,
   parseInternalArgs,
   parseMemoArgs,
@@ -89,6 +90,7 @@ const WORKFLOW_CLI = createSimpleCommandParser('workflow', [
 
 const TOP_LEVEL_COMMANDS = new Set([
   'dream',
+  'plan',
   'setup',
   'update',
   'uninstall',
@@ -268,6 +270,7 @@ export function parseArgs(argv = []) {
   }
 
   if (first === 'memo') return parseMemoArgs(argv);
+  if (first === 'plan') return parsePlanArgs(argv);
   if (first === 'dream' || normalizeTopLevelCommand(first) === 'dream') return parseDreamArgs(argv);
   if (first === 'perception') return parsePerceptionArgs(argv);
   if (first === 'model-router') return parseModelRouterArgs(argv);

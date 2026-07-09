@@ -92,8 +92,13 @@ export function readNativePartials(rootDir, fileNames = []) {
     .filter(Boolean);
 }
 
-export function readClientMarkdownSource(rootDir, client, fileName) {
-  return fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8').trim();
+export function readClientMarkdownSource(rootDir, client, fileName, { optional = false } = {}) {
+  const sourcePath = resolveNativeSourcePath({ rootDir, client, fileName });
+  if (!fs.existsSync(sourcePath)) {
+    if (optional) return '';
+    return fs.readFileSync(sourcePath, 'utf8').trim(); // throw ENOENT for required sources
+  }
+  return fs.readFileSync(sourcePath, 'utf8').trim();
 }
 
 export function readClientJsonSource(rootDir, client, fileName) {

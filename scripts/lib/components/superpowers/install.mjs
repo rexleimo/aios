@@ -138,6 +138,27 @@ export async function installSuperpowers({
     io.log('[skip] Claude Code superpowers sync skipped (client not selected)');
   }
 
+  // 中文注释：把规划核心 skill 投影到每个支持 superpowers 的客户端 skill root（含 Hermes）。
+  // 否则 CLAUDE.md/AGENTS.md 要求 invoke writing-plans，但 Hermes/部分 client 发现不了 skill。
+  let planningProjection = null;
+  try {
+    const { projectPlanningSkills } = await import('../../planning/project-skills.mjs');
+    planningProjection = projectPlanningSkills({
+      rootDir: rootDir || process.cwd(),
+      client,
+      force,
+      env,
+      io,
+    });
+    if (planningProjection.ok) {
+      io.log(`[ok] planning skills projected to ${planningProjection.supportedClients?.length || 0} client(s)`);
+    } else {
+      io.log('[warn] planning skill projection incomplete; run: node scripts/aios.mjs plan project-skills --force');
+    }
+  } catch (error) {
+    io.log(`[warn] planning skill projection failed: ${error.message}`);
+  }
+
   io.log('[done] superpowers install complete');
   return {
     ok: true,
@@ -145,5 +166,6 @@ export async function installSuperpowers({
     clients: clientSelection.selected,
     supportedClients: clientSelection.supported,
     permissionErrors: permissionsResult.errors || 0,
+    planningProjection,
   };
 }

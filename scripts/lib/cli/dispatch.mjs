@@ -299,6 +299,17 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'plan') {
+      const { runPlanCommand } = await import('../planning/cli.mjs');
+      const result = await runPlanCommand(parsed.options, {
+        rootDir: workspaceFor(parsed) || rootDir,
+        stdout,
+        stderr,
+      });
+      applyResultExitCode(result);
+      return;
+    }
+
     if (parsed.command === 'dream') {
       const { runDream } = await import('../lifecycle/dream/index.mjs');
       const workspace = workspaceFor(parsed);

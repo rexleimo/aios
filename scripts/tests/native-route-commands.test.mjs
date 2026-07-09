@@ -37,6 +37,8 @@ async function buildHomeMap() {
     claude: await makeTemp('aios-route-claude-home-'),
     gemini: await makeTemp('aios-route-gemini-home-'),
     opencode: await makeTemp('aios-route-opencode-home-'),
+    grok: await makeTemp('aios-route-grok-home-'),
+    hermes: await makeTemp('aios-route-hermes-home-'),
   };
 }
 
@@ -99,7 +101,8 @@ test('route trigger sync installs slash shortcuts in each client home', async ()
   });
 
   assert.equal(result.ok, true);
-  assert.equal(result.results.reduce((sum, item) => sum + item.installed, 0), 16);
+  // 6 clients (codex/claude/gemini/opencode/grok/hermes) × 5 routes (single/plan/subagent/team/harness)
+  assert.equal(result.results.reduce((sum, item) => sum + item.installed, 0), 30);
 
   const codexSubagent = await readFile(path.join(homeMap.codex, 'prompts', 'subagent.md'), 'utf8');
   assert.match(codexSubagent, /argument-hint: task/u);
@@ -126,6 +129,15 @@ test('route trigger sync installs slash shortcuts in each client home', async ()
   assert.match(opencodeSingle, /\$ARGUMENTS/u);
   assert.match(opencodeSingle, /AIOS \/single/u);
   assert.match(opencodeSingle, /Continue in the current client/u);
+
+  const claudePlan = await readFile(path.join(homeMap.claude, 'commands', 'plan.md'), 'utf8');
+  assert.match(claudePlan, /AIOS intelligent planning/u);
+  assert.match(claudePlan, /writing-plans/u);
+  assert.match(claudePlan, /docs\/plans/u);
+
+  const hermesPlan = await readFile(path.join(homeMap.hermes, 'commands', 'plan.md'), 'utf8');
+  assert.match(hermesPlan, /plan start/u);
+  assert.match(hermesPlan, /--client hermes/u);
 });
 
 test('route trigger sync preserves unmanaged user commands', async () => {
@@ -182,7 +194,7 @@ test('route trigger sync removes only managed route commands on uninstall', asyn
     io: silentIo(),
   });
 
-  assert.equal(uninstall.results[0].removed, 4);
+  assert.equal(uninstall.results[0].removed, 5);
   assert.equal(await readFile(unmanagedPath, 'utf8'), 'keep me\n');
   await assert.rejects(readFile(path.join(homeMap.codex, 'prompts', 'team.md'), 'utf8'), /ENOENT/u);
 });

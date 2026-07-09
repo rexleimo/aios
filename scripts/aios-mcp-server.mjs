@@ -68,6 +68,56 @@ const TOOLS = [
       required: ['source'],
     },
   },
+  {
+    name: 'aios_plan_start',
+    description: 'Start an AIOS planning contract for multi-step work. Creates docs/plans/YYYY-MM-DD-<topic>.md and sets .aios/planning/active.json. Prefer this over Hermes-only or host Plan UI for engineering tasks so all AIOS clients share the same plan artifact.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short plan title' },
+        objective: { type: 'string', description: 'Full task objective / user request' },
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+        client: { type: 'string', description: 'Client id e.g. hermes, claude, codex' },
+      },
+      required: ['title'],
+    },
+  },
+  {
+    name: 'aios_plan_status',
+    description: 'Read the active AIOS plan pointer (.aios/planning/active.json). Use at session start or before implementation to stay aligned with the AIOS planning contract.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+      },
+    },
+  },
+  {
+    name: 'aios_plan_gate',
+    description: 'Set AIOS plan status (active|approved|executing|done|blocked). Use when moving from planning to implementation or when verification finishes.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        status: { type: 'string', enum: ['active', 'approved', 'executing', 'done', 'blocked'], description: 'New plan status' },
+        note: { type: 'string', description: 'Optional status note' },
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+      },
+      required: ['status'],
+    },
+  },
+  {
+    name: 'aios_plan_auto_gate',
+    description: 'ALWAYS-ON intelligent planning gate. Call on EVERY user message before other tools. Creates or reuses docs/plans + .aios/planning/active.json from the message and returns mandatory planning directives. Prefer this over Hermes-only planning loops.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        message: { type: 'string', description: 'The current user message / objective' },
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+        client: { type: 'string', description: 'Client id e.g. hermes' },
+      },
+      required: ['message'],
+    },
+  },
 ];
 
 /* 中文注释：JSON-RPC 2.0 辅助函数 */
@@ -424,6 +474,10 @@ async function handleMessage(message) {
       'aios_intercept_compress': handleInterceptCompress,
       'aios_skill_validate': handleSkillValidate,
       'aios_skill_install': handleSkillInstall,
+      'aios_plan_start': handlePlanStart,
+      'aios_plan_status': handlePlanStatus,
+      'aios_plan_gate': handlePlanGate,
+      'aios_plan_auto_gate': handlePlanAutoGate,
     };
 
     const handler = handlers[toolName];
@@ -461,4 +515,88 @@ if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}` || proc
   }
 }
 
-export { handleMessage, TOOLS, handleContextPack, handleDoctorSuite, handleInterceptCompress, handleSkillValidate, handleSkillInstall };
+/* 中文注释：planning MCP handlers — 委托 lib/planning，保证 Hermes 与 CLI 共用契约 */
+async function handlePlanStart(params) {
+  const workspace = params.workspace || process.cwd();
+  const title = params.title || params.objective;
+  if (!title) {
+    return { content: [{ type: 'text', text: 'aios_plan_start requires title (or objective)' }] };
+  }
+  try {
+    const { startPlan } = await import('./lib/planning/contract.mjs');
+    const state = startPlan({
+      rootDir: workspace,
+      title,
+      objective: params.objective || title,
+      client: params.client || 'hermes',
+      source: 'mcp:aios_plan_start',
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(state, null, 2) }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_plan_start failed: ${err.message}` }] };
+  }
+}
+
+async function handlePlanStatus(params) {
+  const workspace = params.workspace || process.cwd();
+  try {
+    const { readActivePlan, formatActivePlanInjection } = await import('./lib/planning/contract.mjs');
+    const state = readActivePlan(workspace);
+    const injection = formatActivePlanInjection(workspace);
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({ active: state, injection }, null, 2),
+      }],
+    };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_plan_status failed: ${err.message}` }] };
+  }
+}
+
+async function handlePlanGate(params) {
+  const workspace = params.workspace || process.cwd();
+  if (!params.status) {
+    return { content: [{ type: 'text', text: 'aios_plan_gate requires status' }] };
+  }
+  try {
+    const { setPlanStatus } = await import('./lib/planning/contract.mjs');
+    const state = setPlanStatus(workspace, params.status, { note: params.note || '' });
+    return { content: [{ type: 'text', text: JSON.stringify(state, null, 2) }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_plan_gate failed: ${err.message}` }] };
+  }
+}
+
+async function handlePlanAutoGate(params) {
+  const workspace = params.workspace || process.cwd();
+  const message = params.message || params.prompt || params.objective || '';
+  if (!message) {
+    return { content: [{ type: 'text', text: 'aios_plan_auto_gate requires message' }] };
+  }
+  try {
+    const { runAutoGate } = await import('./lib/planning/auto-gate.mjs');
+    const result = runAutoGate({
+      rootDir: workspace,
+      message,
+      client: params.client || 'hermes',
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_plan_auto_gate failed: ${err.message}` }] };
+  }
+}
+
+export {
+  handleMessage,
+  TOOLS,
+  handleContextPack,
+  handleDoctorSuite,
+  handleInterceptCompress,
+  handleSkillValidate,
+  handleSkillInstall,
+  handlePlanStart,
+  handlePlanStatus,
+  handlePlanGate,
+  handlePlanAutoGate,
+};

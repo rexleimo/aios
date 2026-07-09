@@ -8,6 +8,11 @@ export const ROUTE_COMMANDS = [
     purpose: 'keep this task in the current client.',
   },
   {
+    route: 'plan',
+    description: 'AIOS intelligent planning',
+    purpose: 'force AIOS planning contract (writing-plans + docs/plans artifact), not host-only Plan UI.',
+  },
+  {
     route: 'subagent',
     description: 'AIOS route: subagent',
     purpose: 'run one staged AIOS subagent route with verification gates.',
@@ -59,5 +64,12 @@ export const CLIENT_LAYOUTS = {
     trigger: '',
     placeholder: '$ARGUMENTS',
     harnessProvider: 'grok',
+  },
+  hermes: {
+    commandDir: 'commands',
+    extension: 'md',
+    trigger: '',
+    placeholder: '$ARGUMENTS',
+    harnessProvider: 'hermes',
   },
 };

@@ -13,8 +13,9 @@ export function renderCodexNativeOutputs({ rootDir }) {
         // 以便当两者同时选择时其他客户端不再单独写 AGENTS.md（见 opencode/grok emitter 去重）。
         content: joinMarkdownSections([
           composeNativeMarkdown({ rootDir, client: 'codex' }),
-          readClientMarkdownSource(rootDir, 'opencode', 'AIOS.md'),
-          readClientMarkdownSource(rootDir, 'grok', 'AGENTS.md'),
+          readClientMarkdownSource(rootDir, 'opencode', 'AIOS.md', { optional: true }),
+          readClientMarkdownSource(rootDir, 'grok', 'AGENTS.md', { optional: true }),
+          readClientMarkdownSource(rootDir, 'hermes', 'AGENTS.md', { optional: true }),
         ]),
       },
     ],

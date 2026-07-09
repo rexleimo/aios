@@ -64,7 +64,33 @@ export function buildRoutePromptBody({ rootDir, client, route, placeholder }) {
       '',
       'Use the task arguments as the user request. If they are empty, ask for the task.',
       'Route decision: `single`. Do not invoke AIOS `subagent`, `team`, or `harness` commands for this request.',
+      '**ALWAYS-ON planning:** first run `node scripts/aios.mjs plan auto-gate --task "<task arguments>" --client ' + client + '` and follow writing-plans against the AIOS plan artifact before other work.',
       'Continue in the current client and follow the active project instructions, memory, and verification rules.',
+      AIOS_ROUTE_COMMAND_END,
+    ].join('\n');
+  }
+
+  if (route === 'plan') {
+    return [
+      AIOS_ROUTE_COMMAND_BEGIN,
+      `AIOS ${displayTrigger}: ${command.purpose}`,
+      '',
+      taskBlock,
+      '',
+      'This is an **AIOS intelligent planning** request. Do **not** stop at host-only Plan UI (Claude Plan mode, Hermes built-in planning, etc.).',
+      '',
+      'Required steps:',
+      '1. Invoke `using-superpowers` then `brainstorming` (if scope unclear) and `writing-plans`.',
+      '2. Create or update the AIOS plan artifact under `docs/plans/YYYY-MM-DD-<topic>.md`.',
+      '3. Register active plan via shell (or MCP `aios_plan_start`):',
+      '',
+      '```bash',
+      'node scripts/aios.mjs plan start --title "<short-title>" --task "<task arguments>" --client ' + client,
+      '```',
+      '',
+      '4. If host Plan mode was used, **mirror the outcome into that file** before implementation.',
+      '5. Do not implement code until the plan artifact exists, unless the user explicitly asked to skip planning.',
+      '6. When finishing later, use `verification-before-completion` and `node scripts/aios.mjs plan set-status --status done`.',
       AIOS_ROUTE_COMMAND_END,
     ].join('\n');
   }

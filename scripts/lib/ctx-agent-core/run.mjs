@@ -120,7 +120,21 @@ async function writeContinuityAndHandoff(opts, routedPrompt, output, summary, ne
 
 async function executePrompt(opts) {
   const routeDecision = resolveTaskRouteDecision({ prompt: opts.prompt, routeMode: opts.routeMode });
-  const routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
+  let routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
+  // ALWAYS-ON planning for every user prompt through ctx-agent
+  try {
+    const { buildAlwaysOnPlanningDirective } = await import('../planning/auto-gate.mjs');
+    const directive = buildAlwaysOnPlanningDirective({
+      rootDir: opts.workspaceRoot,
+      message: routedPrompt,
+      client: opts.agent || 'cli',
+    });
+    routedPrompt = `${directive.text}\n\n## User request\n\n${routedPrompt}\n`;
+    console.error(`[aios] always-on planning: ${directive.action} -> ${directive.plan?.relativePath || 'n/a'}`);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn(`[warn] always-on planning skipped: ${reason}`);
+  }
   if (routeDecision.routeMode !== 'single') console.log(`[route] mode=${routeDecision.routeMode} (${routeDecision.reason})`);
   if (opts.dryRun) return { ...dryRunPrompt(opts, routeDecision, routedPrompt), routedPrompt };
   let result;

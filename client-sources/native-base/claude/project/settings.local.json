@@ -1,11 +1,21 @@
 {
   "hooks": {
     "SessionStart": [
-      "node scripts/aios.mjs doctor --native"
+      "node scripts/aios.mjs plan auto-gate --client claude"
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/aios.mjs plan hook-user-prompt"
+          }
+        ]
+      }
     ]
   },
   "statusLine": {
     "type": "command",
-    "command": "node scripts/aios.mjs doctor --native"
+    "command": "node scripts/aios.mjs plan status"
   }
 }
