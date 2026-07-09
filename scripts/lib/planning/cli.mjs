@@ -116,6 +116,20 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
     return { exitCode: result.ok ? 0 : 1, result };
   }
 
+  if (sub === 'repair-skills') {
+    const { repairStalePlanningSkills } = await import('./repair-skills.mjs');
+    const result = repairStalePlanningSkills({
+      rootDir,
+      client: options.client || 'all',
+      force: Boolean(options.force) || true,
+      io: { log: (line) => stderr.write(`${line}\n`) },
+    });
+    stdout.write(json
+      ? `${JSON.stringify(result, null, 2)}\n`
+      : `planning skill repair: ok=${result.ok} removed=${result.removed?.length || 0}\n`);
+    return { exitCode: result.ok ? 0 : 1, result };
+  }
+
   if (sub === 'doctor' || sub === 'discovery') {
     const clientOpt = String(options.client || 'all').trim();
     const knownClients = new Set(['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);

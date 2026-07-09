@@ -140,10 +140,29 @@ test('buildAlwaysOnPlanningDirective is mandatory for every message', async () =
       rootDir: root,
       message: 'hi',
       client: 'codex',
+      mode: 'full',
     });
     assert.match(d.text, /ALWAYS-ON INTELLIGENT PLANNING/i);
     assert.match(d.text, /every user input/i);
     assert.ok(d.plan.relativePath);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('A1 lean always-on directive stays under 900 chars', async () => {
+  const root = await makeTemp('aios-plan-lean-');
+  try {
+    const d = buildAlwaysOnPlanningDirective({
+      rootDir: root,
+      message: 'implement feature X with tests and docs',
+      client: 'claude',
+      mode: 'lean',
+    });
+    assert.equal(d.mode, 'lean');
+    assert.ok(d.chars < 900, `lean inject too large: ${d.chars}`);
+    assert.match(d.text, /AIOS PLAN/);
+    assert.match(d.text, /writing-plans/);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

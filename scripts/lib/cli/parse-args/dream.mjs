@@ -9,7 +9,8 @@ const DREAM_CLI = new Command()
   .allowExcessArguments(false)
   .option('--preview', 'Preview consolidation plan (default)')
   .option('--apply', 'Apply consolidation changes')
-  .option('--space <name>', 'Target consolidation space');
+  .option('--space <name>', 'Target consolidation space')
+  .option('--to <pin|agents|both>', 'Export durable notes to pin memo and/or AGENTS.md');
 
 export function parseDreamArgs(argv) {
   const rest = argv.slice(1);
@@ -20,19 +21,20 @@ export function parseDreamArgs(argv) {
     const flags = parsed.opts();
     const mode = flags.apply ? 'apply' : 'preview';
     const spaces = flags.space ? [String(flags.space).trim()] : ['default'];
+    const to = flags.to ? String(flags.to).trim().toLowerCase() : '';
 
     return {
       mode: help ? 'help' : 'command',
       help,
       command: 'dream',
-      options: { mode, spaces },
+      options: { mode, spaces, to },
     };
   } catch {
     return {
       mode: 'help',
       help: true,
       command: 'dream',
-      options: { mode: 'preview', spaces: ['default'] },
+      options: { mode: 'preview', spaces: ['default'], to: '' },
     };
   }
 }

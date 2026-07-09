@@ -32,6 +32,7 @@ export function parsePlanArgs(argv) {
     'always-on',
     'hook-user-prompt',
     'project-skills',
+    'repair-skills',
     'doctor',
     'discovery',
   ]);

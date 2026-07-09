@@ -92,15 +92,40 @@ export function ensurePlanForMessage({
 
 /**
  * Hard instruction block injected on every user turn.
+ * Default mode=lean (A1): short directive; details live in writing-plans skill + plan file.
+ * mode=full: longer block for debugging.
  */
 export function buildAlwaysOnPlanningDirective({
   rootDir,
   message = '',
   client = 'unknown',
   gateResult = null,
+  mode = process.env.AIOS_PLAN_INJECT_MODE || 'lean',
 } = {}) {
   const result = gateResult || ensurePlanForMessage({ rootDir, message, client, source: 'always-on-planning' });
   const plan = result.state;
+  const injectMode = String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean';
+
+  if (injectMode === 'lean') {
+    // Target: keep under ~900 chars so always-on does not dominate context (superpowers v6 / OMO lean pattern).
+    const lines = [
+      '## AIOS PLAN (always-on)',
+      `plan: \`${plan.relativePath}\` status=${plan.status} gate=${result.action}`,
+      'Required: using-superpowers → writing-plans (brainstorm if unclear) → update this plan → then implement.',
+      'Host Plan UI is draft-only; mirror into the plan file. Finish with verification-before-completion.',
+      message ? `msg: ${clip(message, 280)}` : '',
+    ].filter(Boolean);
+    const text = `${lines.join('\n')}\n`;
+    return {
+      text,
+      plan,
+      action: result.action,
+      created: result.created,
+      mode: 'lean',
+      chars: text.length,
+    };
+  }
+
   const lines = [
     '## AIOS ALWAYS-ON INTELLIGENT PLANNING (MANDATORY)',
     '',
@@ -109,40 +134,34 @@ export function buildAlwaysOnPlanningDirective({
     '',
     '### Before any other action on THIS message',
     '1. Treat the user message as a planning request first (even if short).',
-    '2. Invoke `using-superpowers` then route: `brainstorming` (if unclear) → `writing-plans` (always for multi-step or any code change) → later `verification-before-completion`.',
+    '2. Invoke `using-superpowers` then route: `brainstorming` (if unclear) → `writing-plans` → later `verification-before-completion`.',
     '3. Use the active AIOS plan artifact (do not invent a host-only plan):',
     `   - path: \`${plan.relativePath}\``,
     `   - status: \`${plan.status}\``,
     `   - gate: \`${result.action}\``,
     '4. Update the plan file with tasks for this message before implementing.',
-    '5. Host Plan UI (Claude Plan / Hermes native) is only a draft aid — mirror into the AIOS plan file.',
-    '6. Do not claim completion without verification evidence and `aios plan set-status --status done` when the objective is finished.',
-    '',
-    '### Forbidden',
-    '- Skipping planning because the request "looks small" without writing at least a one-task plan update.',
-    '- Implementing only in host Plan mode without updating `docs/plans/`.',
-    '- Ignoring `.aios/planning/active.json`.',
+    '5. Host Plan UI is only a draft aid — mirror into the AIOS plan file.',
+    '6. Do not claim completion without verification evidence and plan set-status done.',
     '',
   ];
 
   if (message) {
-    lines.push('### Current user message (planning objective)');
-    lines.push('');
-    lines.push(clip(message, 1200));
-    lines.push('');
+    lines.push('### Current user message (planning objective)', '', clip(message, 1200), '');
   }
 
   const inject = formatActivePlanInjection(rootDir);
   if (inject) {
-    lines.push(inject.trim());
-    lines.push('');
+    lines.push(inject.trim(), '');
   }
 
+  const text = lines.join('\n');
   return {
-    text: lines.join('\n'),
+    text,
     plan,
     action: result.action,
     created: result.created,
+    mode: 'full',
+    chars: text.length,
   };
 }
 

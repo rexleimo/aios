@@ -11,13 +11,9 @@
 ## 0. TL;DR
 
 1. **07-01 列出的 A/B 项大部分已在 AIOS 落地**（consecutiveFailures abort、dry-run readiness、emergency compact、skill workshop 文件级 rollback/stale、dream Phase A、default_mode + directive inject、recall 预算）。
-2. **真正还值得跟的迭代**集中在：  
-   - 记忆写出为 durable 项目指令（`dream --to AGENTS.md`）  
-   - 规划 token 变瘦（bootstrap 压缩 + 最小 directive 注入）  
-   - 计划可浏览器审阅（Plan Canvas 类）  
-   - team worker 死亡通知**接入调度环**（模块已有、闭环未接）  
-   - skill compliance 从 dry-run 升级为可选实跑  
-3. **不建议跟**: 渠道网关 / 桌面端 / GPU 向量 / 向量库大全家桶 / OpenClaw 移动端 — 偏离三支柱。
+2. **2026-07-09 规划对齐后已追加落地**：always-on 规划、superpowers 版本感知安装、**A1 lean inject**、**A3 death-notice 接线**、**A2 dream --to**、**A4 MCP desc compact**、**B3 skill repair**。验收见 `2026-07-09-competitor-iteration-acceptance.md`。
+3. **下一轮仍可做**：Plan Canvas (B1)、skill comply --live (B2)、记忆时序/pipeline (C*)。
+4. **不建议跟**: 渠道网关 / 桌面端 / GPU 向量 / 向量库大全家桶 / OpenClaw 移动端 — 偏离三支柱。
 
 ---
 
@@ -58,22 +54,23 @@
 
 ## 3. 推荐迭代清单（按三支柱 + ROI）
 
-### A. 本周可做（S–M，直接抬规划/记忆质量）
+### A. 本周项 — 2026-07-09 迭代状态
 
-| # | 功能 | 来源证据 | 为何值得做 | 建议落点 | 工作量 |
-|---|------|----------|------------|----------|--------|
-| **A1** | **Lean bootstrap / 规划 skill 注入瘦身** | superpowers **v6.1.0**：压缩 `using-superpowers`；OMO **v4.16.0**：LazyCodex 只注最小 ultrawork，全文在 skill | 每会话固定税；AIOS 多 client 投影 + superpowers 路由文案偏重，易触 truncation | `skill-sources/*` + native emitter / client projection 模板；启动只注 短 directive，细节按需 skill | **S–M** |
-| **A2** | **`aios dream --to` 写出 durable 指令** | Letta Code **v0.27.28–29**：`dream --to` 维护 AGENTS.md；`--from` 外部源；repo-as-truth | 当前 dream 只整理 memo 事件，**不反哺** `AGENTS.md`/项目记忆；规划质量跨会话断裂 | `scripts/lib/lifecycle/dream/` 扩展：preview 生成 patch → apply 写 `AGENTS.md` 或 `.aios/memo/pins` | **M** |
-| **A3** | **team 环接线 death-notice** | overstory 模式；AIOS 已有模块但 team runtime 未见生产路径 import | worker 僵死时 parent 无结构化信号 → team HUD/orchestrator 无法自动降级 | `team`/`subagent` 退出路径调用 `writeDeathNotice`；status/watch 读取并展示 | **S** |
+| # | 功能 | 状态 | 验收证据 |
+|---|------|------|----------|
+| **A1** | Lean always-on 注入 | **Done** | `auto-gate.mjs` lean &lt;900 chars；test `A1 lean…` |
+| **A2** | `dream --to` pin/agents | **Done** | `dream/export-to.mjs`；CLI `--to`；test `A2 writeAgents…` |
+| **A3** | death-notice 接线 | **Done** | `phase-job.mjs` + `team status` 行；test `A3 death notice…` |
+| **A4** | MCP desc compact | **Done** | `mcp-compact.mjs` + `AIOS_MCP_TOOL_DESC`；test `A4…` |
 
-### B. 本月（M，规划与 skill 治理）
+### B. 本月项
 
-| # | 功能 | 来源证据 | 为何值得做 | 建议落点 | 工作量 |
-|---|------|----------|------------|----------|--------|
-| **B1** | **Plan Canvas（计划浏览器审阅）** | ECC main: `feat: Plan Canvas, a browser review canvas for plans (#2467)` | 规划产物现在多是 md；缺「人一眼看懂 + 点通过」的审阅面 | 静态 HTML/本地 server 渲染 `docs/plans/*.md` 或 harness plan artifact；与 verification gate 挂钩 | **M** |
-| **B2** | **Skill compliance 可选实跑** | ECC skill-comply 理念；AIOS `compliance.mjs` 仍 **仅 dry-run** | dry-run 只抽步骤清单，不能证明 agent 会执行 | `skill comply --live` + 限次 sandbox + 记 health.mjs observation | **M** |
-| **B3** | **Skill install stale repair** | OMO v4.15.1 LazyCodex repair marketplace 坏缓存 | 多 client sync 后 skill 半残状态静默失败 | `sync-skills` / install 路径：检测 broken link → 明确 repair | **S–M** |
-| **B4** | **MCP tool description compact mode** | OpenViking **v0.4.7** MCP compact description | MCP 工具描述膨胀抢规划上下文 | browser/shell MCP list_tools 描述分级：minimal/full | **S** |
+| # | 功能 | 状态 | 验收证据 |
+|---|------|------|----------|
+| **B1** | Plan Canvas | **Pending** | 下一轮 |
+| **B2** | Skill compliance --live | **Pending** | 仍 dry-run only |
+| **B3** | Skill install stale repair | **Done** | `plan repair-skills`；test `B3 repair…` |
+| **B4** | MCP compact（同 A4） | **Done** | 见 A4 |
 
 ### C. 季度级 / 可选（对齐 memo 深度，勿抢优先级）
 

@@ -311,13 +311,24 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'dream') {
-      const { runDream } = await import('../lifecycle/dream/index.mjs');
       const workspace = workspaceFor(parsed);
-      const result = await runDream({
-        rootDir: workspace,
-        mode: parsed.options.mode,
-        spaces: parsed.options.spaces,
-      });
+      let result;
+      if (parsed.options.to) {
+        const { runDreamExport } = await import('../lifecycle/dream/export-to.mjs');
+        result = await runDreamExport({
+          rootDir: workspace,
+          mode: parsed.options.mode,
+          spaces: parsed.options.spaces,
+          to: parsed.options.to,
+        });
+      } else {
+        const { runDream } = await import('../lifecycle/dream/index.mjs');
+        result = await runDream({
+          rootDir: workspace,
+          mode: parsed.options.mode,
+          spaces: parsed.options.spaces,
+        });
+      }
       stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       return;
     }

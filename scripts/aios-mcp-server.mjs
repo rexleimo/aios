@@ -461,7 +461,10 @@ async function handleMessage(message) {
   }
 
   if (message.method === 'tools/list') {
-    return makeResponse(message.id, { tools: TOOLS });
+    // A4: AIOS_MCP_TOOL_DESC=compact|minimal shrinks tool descriptions for lean context
+    const { applyMcpToolDescriptionMode } = await import('./lib/planning/mcp-compact.mjs');
+    const tools = applyMcpToolDescriptionMode(TOOLS, process.env.AIOS_MCP_TOOL_DESC || 'full');
+    return makeResponse(message.id, { tools });
   }
 
   if (message.method === 'tools/call') {

@@ -25,3 +25,11 @@ export {
   runClaudeUserPromptSubmitHook,
   runAutoGate,
 } from './auto-gate.mjs';
+
+export {
+  resolveMcpDescMode,
+  compactToolDescription,
+  applyMcpToolDescriptionMode,
+} from './mcp-compact.mjs';
+
+export { repairStalePlanningSkills } from './repair-skills.mjs';

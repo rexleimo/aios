@@ -19,6 +19,20 @@ import {
 import { persistSkillCandidatePatchTemplateArtifact } from './status-artifacts.mjs';
 import { resolveStatusSkillCandidateOptions } from './status-options.mjs';
 
+async function formatDeathNoticesLine(rootDir, sessionId) {
+  const sid = normalizeText(sessionId);
+  if (!rootDir || !sid) return '';
+  try {
+    const { readDeathNotices } = await import('../death-notice.mjs');
+    const notices = await readDeathNotices(rootDir, sid);
+    if (!notices.length) return '';
+    const latest = notices[notices.length - 1];
+    return `Death notices: count=${notices.length} latest=${latest.agent_id || '?'} reason=${latest.reason || '?'} at=${latest.timestamp || '?'}`;
+  } catch {
+    return '';
+  }
+}
+
 // 纯函数：把 watchdog 状态压缩成 HUD 末尾的一行，避免状态命令关心 watchdog 内部结构。
 function formatWatchdogStatusLine(state = {}) {
   const watchdog = state?.watchdog;
@@ -147,6 +161,13 @@ export async function runTeamStatus(
     if (includeWatchdog) {
       outputBlocks.push(formatWatchdogStatusLine(filteredState));
     }
+
+    // A3: surface worker_died notices for the selected session
+    const deathLine = await formatDeathNoticesLine(
+      rootDir,
+      filteredState.selection?.sessionId || sessionId,
+    );
+    if (deathLine) outputBlocks.push(deathLine);
 
     if (exportSkillCandidatePatchTemplate) {
       const artifact = await persistSkillCandidatePatchTemplateArtifact({
