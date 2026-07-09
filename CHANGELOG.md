@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.5.0] - 2026-07-09
+
+### Added — Intelligent planning product v2
+
+- **Always-on planning** across clients: plan contract (`docs/plans` + `.aios/planning/active.json`), skill projection, Claude `UserPromptSubmit` hook, ctx-agent prompt gate, MCP `aios_plan_*`.
+- **Planning quality schema v2**: route-aware task seeds, progress/next-task inject, `plan task` / `add-evidence` / `gate`, evidence-gated `done`.
+- **L3 runtime loop**: solo harness + team phase-job writeback; quality-gate attaches plan evidence.
+- **Human review**: `aios plan show` text board + `.aios/planning/review.html`.
+- **Skill comply --live**: deterministic local compliance probe with health observations.
+- **Dream → plan**: durable memo lines sync into active plan tasks (`dream --to` / apply).
+- **Superpowers install/update**: safe git pull, minimum v6.1.0 doctor, planning projection gate.
+- Competitor watchlist pruned to memo / planning / team pillars; acceptance reports under `docs/reports/2026-07-09-*`.
+
+### Commands
+
+- `aios plan start|status|show|task|add-evidence|gate|auto-gate|repair-skills|doctor`
+- `aios skill comply <path> --live`
+- `aios dream --to pin|agents|both`
+- `aios internal superpowers update|doctor`
+
 ## [3.4.0] - 2026-07-09
 
 ### Added — Grok Build first-class AIOS client
@@ -671,3 +691,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [3.3.5] - 2026-07-07
 
 - improve blog responsive layouts and navbar dropdown behavior
+
+## [3.5.0] - 2026-07-09
+
+- feat: intelligent planning product v2 (always-on, schema, runtime writeback, show, live comply)
