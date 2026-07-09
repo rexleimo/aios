@@ -68,7 +68,10 @@ export function skillsForRoute(route = 'unknown') {
  * Seed tasks from objective + route (deterministic scaffold — agent refines later).
  */
 export function seedTasksFromObjective(objective = '', route = 'unknown') {
-  const title = String(objective || 'user request').replace(/\s+/g, ' ').trim().slice(0, 120) || 'user request';
+  // Prefer first line + short cap so bulk/sentinel dumps do not pollute task titles
+  // (those titles surface in always-on inject headers and break turn-compression).
+  const firstLine = String(objective || 'user request').split(/\r?\n/u)[0] || 'user request';
+  const title = firstLine.replace(/\s+/g, ' ').trim().slice(0, 72) || 'user request';
   const base = [
     {
       id: 't1-understand',

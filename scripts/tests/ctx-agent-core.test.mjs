@@ -1133,7 +1133,10 @@ test('ctx-agent one-shot OpenCode mode sends only the explicit request', async (
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
     assert.equal(payload.argv[0], 'run');
     assert.deepEqual(payload.argv.slice(1, 3), ['--agent', 'aios-build']);
-    assert.equal(payload.argv[3], 'Summarize the current status.');
+    // single-route always-on planning prepends a lean plan directive, then the user request
+    assert.match(payload.argv[3], /AIOS PLAN v2 \(always-on\)/u);
+    assert.match(payload.argv[3], /## User request/u);
+    assert.match(payload.argv[3], /Summarize the current status\./u);
     assert.doesNotMatch(payload.argv[3], /Read the context packet at/u);
     assert.doesNotMatch(payload.argv[3], /# Context Packet/u);
     assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'context-db', 'exports', `${sessionId}-context.md`)), false);

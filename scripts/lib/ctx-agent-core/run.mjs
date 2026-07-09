@@ -121,7 +121,8 @@ async function writeContinuityAndHandoff(opts, routedPrompt, output, summary, ne
 async function executePrompt(opts) {
   const routeDecision = resolveTaskRouteDecision({ prompt: opts.prompt, routeMode: opts.routeMode });
   let routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
-  // ALWAYS-ON planning for every user prompt through ctx-agent
+  // ALWAYS-ON planning: always create/reuse plan artifact. Only single-route one-shots
+  // get text inject — team/harness/subagent keep a clean task prompt (plan lives on disk).
   try {
     const { buildAlwaysOnPlanningDirective } = await import('../planning/auto-gate.mjs');
     const directive = buildAlwaysOnPlanningDirective({
@@ -129,7 +130,9 @@ async function executePrompt(opts) {
       message: routedPrompt,
       client: opts.agent || 'cli',
     });
-    routedPrompt = `${directive.text}\n\n## User request\n\n${routedPrompt}\n`;
+    if (routeDecision.routeMode === 'single') {
+      routedPrompt = `${directive.text}\n\n## User request\n\n${routedPrompt}\n`;
+    }
     console.error(`[aios] always-on planning: ${directive.action} -> ${directive.plan?.relativePath || 'n/a'}`);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);

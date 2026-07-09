@@ -202,7 +202,9 @@ test('Claude UserPromptSubmit hook returns additionalContext JSON', async () => 
     });
     assert.equal(exitCode, 0);
     assert.match(output.additionalContext, /ALWAYS-ON/i);
-    assert.match(output.hookSpecificOutput.additionalContext, /refactor auth/i);
+    // lean inject points at plan path (slug from message); raw prompt stays in plan file only
+    assert.match(output.hookSpecificOutput.additionalContext, /refactor-auth/i);
+    assert.match(output.hookSpecificOutput.additionalContext, /AIOS PLAN v2/i);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -112,14 +112,16 @@ export function buildAlwaysOnPlanningDirective({
     const progress = summarizePlanProgress(plan);
     const next = progress?.nextTask;
     const skills = Array.isArray(plan.skills) ? plan.skills.slice(0, 3).join('→') : 'writing-plans';
+    // Keep lean inject free of raw user/objective text. Full objective and task titles live
+    // in the plan file; embedding them here leaks bulk into uncompressible headers and
+    // defeats turn-compression (e.g. PRE_SENTINEL in seeded task titles).
     const lines = [
       '## AIOS PLAN v2 (always-on)',
       `plan: \`${plan.relativePath}\` status=${plan.status} route=${plan.route || '?'} gate=${result.action}`,
       progress ? `progress: ${progress.tasksDone}/${progress.tasksTotal} tasks evidence=${progress.evidenceCount}` : '',
-      next ? `next: ${next.id} ${clip(next.title, 80)}` : 'next: refine tasks in plan',
+      next ? `next: ${next.id}` : 'next: refine tasks in plan',
       `skills: ${skills}`,
       'Do task work; `plan task <id> --status done`; evidence required before `plan set-status done`.',
-      message ? `msg: ${clip(message, 200)}` : '',
     ].filter(Boolean);
     const text = `${lines.join('\n')}\n`;
     return {
