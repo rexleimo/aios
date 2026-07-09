@@ -55,8 +55,9 @@ test('collectClientMcpTargets includes project-scoped fallbacks when home is una
   // codex: home scope skipped (no home) → project scope present
   // claude: project scope present
   // gemini: home scope skipped → project scope present
-  // opencode: home only -> skipped (no project scope)
-  assert.deepEqual(clients, ['claude', 'codex', 'gemini']);
+  // grok: home scope skipped → project scope present
+  // opencode/hermes: home only -> skipped (no project scope)
+  assert.deepEqual(clients, ['claude', 'codex', 'gemini', 'grok']);
 });
 
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';

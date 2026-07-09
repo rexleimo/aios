@@ -14,7 +14,7 @@ export {
 } from '../mcp/proxy-inspector.mjs';
 
 export const INTERCEPTION_LEVELS = Object.freeze(['L0', 'L1', 'L2', 'L3']);
-export const CLIENT_ORDER = Object.freeze(['aios-harness', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'cursor', 'generic-mcp']);
+export const CLIENT_ORDER = Object.freeze(['aios-harness', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'cursor', 'generic-mcp']);
 export const REQUIRED_TURN_COMPRESSION = Object.freeze({
   preSendRequired: true,
   postReceiveRequired: true,

@@ -101,6 +101,25 @@
         "uncontrolledHostOutput": "policy-violation"
       }
     },
+    "grok": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket",
+        "controlledShellRunner"
+      ],
+      "limits": [
+        "Do not claim raw host shell L3 unless Grok Build exposes a pre-tool mutation API."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
     "cursor": {
       "targetLevel": "L1",
       "capabilities": [

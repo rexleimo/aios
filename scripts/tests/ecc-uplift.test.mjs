@@ -42,6 +42,7 @@ async function seedNativeRoot(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
+  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project'), { recursive: true });
   for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'browser-mcp', 'superpowers', 'agent-routing', 'codemap', 'team-provider', 'model-router', 'harness']) {
     await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', `${name}.md`), `${name}\n`, 'utf8');
   }
@@ -50,6 +51,8 @@ async function seedNativeRoot(rootDir) {
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'Claude.\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {});
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini.\n', 'utf8');
+  // Codex AGENTS.md composition appends Grok native notes (shared AGENTS.md surface).
+  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project', 'AGENTS.md'), 'Grok.\n', 'utf8');
   await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
     schemaVersion: 1,
     generatedRoots: { opencode: '.opencode/skills' },
