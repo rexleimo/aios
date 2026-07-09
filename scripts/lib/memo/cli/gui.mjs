@@ -73,10 +73,11 @@ export function buildMemoGuiLaunchPlan(
 }
 
 export function runMemoGuiServer(plan) {
-  return new Promise((resolve, reject) => {
+  let child = null;
+  const promise = new Promise((resolve, reject) => {
     const tsxCli = path.join(plan.aiosRootDir, 'mcp-server', 'node_modules', 'tsx', 'dist', 'cli.mjs');
     const contextDbCli = path.join(plan.aiosRootDir, 'mcp-server', 'src', 'contextdb', 'cli.ts');
-    const child = spawn(process.execPath, [tsxCli, contextDbCli, ...plan.contextDbArgs], {
+    child = spawn(process.execPath, [tsxCli, contextDbCli, ...plan.contextDbArgs], {
       cwd: plan.workspaceRoot,
       env: {
         ...process.env,
@@ -95,7 +96,7 @@ export function runMemoGuiServer(plan) {
       else resolve();
     };
     const forwardSignal = (signal) => {
-      if (!child.killed) child.kill(signal);
+      if (child && !child.killed) child.kill(signal);
     };
     const forwardSigint = () => forwardSignal('SIGINT');
     const forwardSigterm = () => forwardSignal('SIGTERM');
@@ -117,4 +118,15 @@ export function runMemoGuiServer(plan) {
       finish();
     });
   });
+
+  // Allow tests (and callers) to stop the server without process.emit races under node:test.
+  promise.kill = (signal = 'SIGTERM') => {
+    if (child && !child.killed) child.kill(signal);
+  };
+  Object.defineProperty(promise, 'pid', {
+    get() {
+      return child?.pid ?? null;
+    },
+  });
+  return promise;
 }

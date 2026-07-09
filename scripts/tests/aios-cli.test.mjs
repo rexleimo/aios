@@ -1311,10 +1311,21 @@ setInterval(() => {}, 1000);
       await new Promise((resolve) => setTimeout(resolve, 20));
     }
     assert.equal(await fs.stat(readyPath).then(() => true).catch(() => false), true);
-    process.emit('SIGTERM');
+    // Prefer direct child.kill over process.emit('SIGTERM') — node:test and other
+    // listeners can race and leave the server marker stuck at "started" under load.
+    if (typeof run.kill === 'function') {
+      run.kill('SIGTERM');
+    } else {
+      process.emit('SIGTERM');
+    }
     await run;
 
-    const marker = JSON.parse(await fs.readFile(markerPath, 'utf8'));
+    // Poll briefly: SIGTERM handler writes marker then exits; avoid reading mid-write.
+    let marker = JSON.parse(await fs.readFile(markerPath, 'utf8'));
+    for (let i = 0; i < 25 && marker.signal === 'started' && process.platform !== 'win32'; i += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      marker = JSON.parse(await fs.readFile(markerPath, 'utf8'));
+    }
     assert.equal(marker.signal, process.platform === 'win32' ? 'started' : 'SIGTERM');
     assert.deepEqual(marker.args, [
       path.join(tmpRoot, 'mcp-server', 'src', 'contextdb', 'cli.ts'),
