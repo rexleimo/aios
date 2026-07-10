@@ -155,7 +155,7 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     namespace: 'mcpServers',
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.mcp.json' }),
-      Object.freeze({ scope: 'home', file: 'config.yaml' }),
+      Object.freeze({ scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers' }),
     ]),
   }),
   // Grok Build MCP — TOML [mcp_servers.*], same shape as Codex.

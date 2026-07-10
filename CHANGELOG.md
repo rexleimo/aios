@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [3.6.0] - 2026-07-10
+
+- Add Headroom MCP and token intelligence workflow
+
 ## [3.5.0] - 2026-07-09
 
 ### Added — Intelligent planning product v2

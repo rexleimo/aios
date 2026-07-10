@@ -1,5 +1,5 @@
 /**
- * P11 — human review surface for active (or specified) plan.
+ * P11 — human review surface for the active plan.
  */
 
 import fs from 'node:fs';

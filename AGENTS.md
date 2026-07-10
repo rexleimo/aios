@@ -3,6 +3,16 @@
 <!-- 中文注释：仓库级薄壳保留工作流路由、验证要求和拦截机制入口，防止长会话压缩后丢失关键规则。 -->
 <!-- AIOS: .aios/context-db/index.json -->
 
+## Path Conventions (路径约定)
+
+**IMPORTANT: All relative paths in this document are relative to the PROJECT ROOT (current working directory), NOT `AIOS_ROOT`.**
+
+- **`AIOS_ROOT`** - AIOS framework installation location (contains `scripts/`, `package.json`)
+- **Project Root** - Current working directory (contains `.aios/`, `.codex/skills/`, project state)
+- Paths like `.aios/`, `.codex/skills/`, `docs/plans/` are **relative to Project Root**
+- Run `pwd` to see Project Root; `echo $AIOS_ROOT` to see framework location
+- See `docs/architecture/path-resolution.md` for detailed path resolution rules
+
 <!-- SUPERPOWERS SKILL ENFORCEMENT - MANDATORY -->
 <IMPORTANT>
 ## Skill Enforcement (REQUIRED)

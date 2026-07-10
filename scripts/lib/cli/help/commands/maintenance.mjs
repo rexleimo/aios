@@ -108,6 +108,7 @@ Options:
     case 'skill':
       return `Usage:
   node scripts/aios.mjs skill comply <path> --dry-run [--client <client>] [--json]
+  node scripts/aios.mjs skill comply <path> --live [--client <client>] [--json]
   node scripts/aios.mjs skill health [--dashboard] [--json]
 
 Subcommands:
@@ -117,10 +118,54 @@ Subcommands:
 Options:
   --client <client>              Target client for compliance scenarios
   --dry-run                      Generate spec/scenarios without live model execution
+  --live                         Run deterministic local compliance scoring
   --dashboard                    Render text dashboard for health
   --format <text|json>
   --json
   -h, --help
+`;
+    case 'plan':
+      return `Usage:
+  node scripts/aios.mjs plan status [--workspace <path>] [--json]
+  node scripts/aios.mjs plan show [--workspace <path>] [--html] [--json]
+  node scripts/aios.mjs plan start --title <text> --task <text> [--workspace <path>] [--json]
+  node scripts/aios.mjs plan auto-gate --task <text> [--workspace <path>] [--json]
+
+Options:
+  --title <text>                 Plan title or task title
+  --task <text>                  Task/objective text
+  --objective <text>             Objective text
+  --status <status>              Plan or task status
+  --workspace <path>             Workspace root for planning state
+  --html                         Also write .aios/planning/review.html
+  --format <text|json|html|both>
+  --json
+  -h, --help
+
+Examples:
+  node scripts/aios.mjs plan show --html
+  node scripts/aios.mjs plan show --workspace /tmp/demo --json
+`;
+    case 'dream':
+      return `Usage:
+  node scripts/aios.mjs dream --preview [--space <name>] [--workspace <path>] [--json]
+  node scripts/aios.mjs dream --apply [--space <name>] [--workspace <path>] [--json]
+  node scripts/aios.mjs dream --preview --to pin [--workspace <path>] [--json]
+  node scripts/aios.mjs dream --apply --to both [--workspace <path>] [--json]
+
+Options:
+  --preview                      Preview dream consolidation/export (default)
+  --apply                        Apply consolidation/export changes
+  --space <name>                 Target consolidation space
+  --to <pin|agents|both>         Export durable notes to pin memo and/or AGENTS.md
+  --workspace <path>             Workspace root for memo/planning state
+  --format <text|json>
+  --json
+  -h, --help
+
+Examples:
+  node scripts/aios.mjs dream --preview --to pin --json
+  node scripts/aios.mjs dream --apply --to both --workspace /tmp/demo --json
 `;
     case 'session':
       return `Usage:

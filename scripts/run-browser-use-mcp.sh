@@ -2,7 +2,14 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+# Use AIOS_ROOT if set, otherwise derive from script location
+if [[ -n "${AIOS_ROOT:-}" ]]; then
+  ROOT_DIR="$AIOS_ROOT"
+elif [[ -n "${AIOS_ROOT_DIR:-}" ]]; then
+  ROOT_DIR="$AIOS_ROOT_DIR"
+else
+  ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 
 expand_path() {
   local value="$1"

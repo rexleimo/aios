@@ -36,7 +36,7 @@ export const AGENT_CONFIG = {
   },
   hermes: {
     cli: 'hermes',
-    bridgeName: 'hermes-cli',
+    bridgeName: 'hermes-agent',
     configFile: 'AGENTS.md',
     hookFile: null,
     hasHook: false,

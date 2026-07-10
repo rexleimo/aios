@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * scripts/lib/aios-init/compression-tools.mjs
- * 自动检测并安装社区 token 压缩工具 RTK + Caveman。
+ * 自动检测并安装社区 token 压缩工具 RTK + Caveman + Headroom。
  * 全自动安装：用户按 y 确认后，自动下载、安装、验证、配置 PATH、初始化客户端。
  *
  * RTK: https://github.com/rtk-ai/rtk
@@ -19,6 +19,10 @@ import { createInterface } from 'node:readline';
 import { platform, arch } from 'node:os';
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { AGENT_CONFIG } from './agent-config.mjs';
+import { ensureHeadroomInstalled } from './headroom-installer.mjs';
+import { ensureHeadroomMcpRegistrations } from './headroom-mcp/index.mjs';
 
 const CAVEMAN_INSTALL_PS_URL = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.ps1';
 const CAVEMAN_INSTALL_SH_URL = 'https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh';
@@ -347,44 +351,92 @@ function initRTKForAgents(agents) {
 
 
 /**
- * 检测并安装 RTK + Caveman — 全自动
+ * 检测并安装 RTK + Caveman + Headroom — 全自动
  * 用户确认后：下载 → 安装 → 验证 → 配置 PATH → 初始化客户端
  * @param {Object} options
  * @param {boolean} options.dryRun - 仅检测不安装
- * @param {boolean} options.yesCompressionTools - 跳过确认提示
+ * @param {boolean} options.yesCompressionTools - 跳过安装确认提示
+ * @param {boolean} options.yesHeadroomMcp - 授权无人值守 Headroom MCP 注册门禁
  * @param {string[]} options.agents - 检测到的客户端列表，用于 rtk init
- * @returns {Promise<{rtk: string, caveman: string}>} 安装状态
+ * @returns {Promise<{rtk: string, caveman: string, headroom: string, headroomMcp: Record<string, string>}>} 安装状态
  */
+const HEADROOM_MCP_AGENTS = Object.freeze(new Set(['gemini', 'hermes', 'grok']));
+
+function buildHeadroomMcpStatus({ agents = [], yesHeadroomMcp = false } = {}) {
+  const detectedRuntimeIds = new Set(
+    agents
+      .filter((agent) => HEADROOM_MCP_AGENTS.has(agent))
+      .map((agent) => AGENT_CONFIG[agent]?.bridgeName)
+      .filter(Boolean),
+  );
+  return Object.fromEntries(['gemini-cli', 'hermes-agent', 'grok-build'].map((runtimeId) => [
+    runtimeId,
+    detectedRuntimeIds.has(runtimeId)
+      ? (yesHeadroomMcp ? 'pending-smoke' : 'pending-consent')
+      : 'not-detected',
+  ]));
+}
+
 export async function ensureCompressionTools(options = {}) {
-  const { dryRun = false, yesCompressionTools = false, agents = [] } = options;
+  const {
+    dryRun = false,
+    yesCompressionTools = false,
+    yesHeadroomMcp = false,
+    agents = [],
+    ensureHeadroomImpl = ensureHeadroomInstalled,
+    ensureHeadroomMcpImpl = ensureHeadroomMcpRegistrations,
+    rtkInstalled: rtkInstalledOverride,
+    cavemanInstalled: cavemanInstalledOverride,
+    initRTKForAgentsImpl = initRTKForAgents,
+  } = options;
 
   // === 检测阶段 ===
-  const rtkInstalled = isToolInstalled('rtk');
-  let cavemanInstalled = false;
-  try {
-    cavemanInstalled = getCavemanVerificationPaths().some((candidate) => fs.existsSync(candidate.path));
-  } catch {
-    // ignore
+  const rtkInstalled = typeof rtkInstalledOverride === 'boolean' ? rtkInstalledOverride : isToolInstalled('rtk');
+  let cavemanInstalled = typeof cavemanInstalledOverride === 'boolean' ? cavemanInstalledOverride : false;
+  if (typeof cavemanInstalledOverride !== 'boolean') {
+    try {
+      cavemanInstalled = getCavemanVerificationPaths().some((candidate) => fs.existsSync(candidate.path));
+    } catch {
+      // ignore
+    }
   }
 
   const result = {
     rtk: rtkInstalled ? 'installed' : 'missing',
     caveman: cavemanInstalled ? 'installed' : 'missing',
+    headroom: 'missing',
+    headroomMcp: buildHeadroomMcpStatus({ agents, yesHeadroomMcp }),
   };
 
   if (dryRun) {
+    const headroomResult = await ensureHeadroomImpl({ dryRun: true });
+    result.headroom = headroomResult.status;
     console.log(`  ? RTK: ${result.rtk}`);
     console.log(`  ? Caveman: ${result.caveman}`);
+    console.log(`  ? Headroom: ${result.headroom}`);
     console.log('    (dry-run: would auto-install after confirmation)');
     return result;
   }
 
   if (rtkInstalled && cavemanInstalled) {
+    const headroomResult = await ensureHeadroomImpl({ dryRun: false });
+    result.headroom = headroomResult.status;
+    if (headroomResult.status === 'installed' && headroomResult.executable) {
+      result.headroomMcp = await ensureHeadroomMcpImpl({
+        agents,
+        headroomPath: headroomResult.executable,
+        consent: yesHeadroomMcp,
+        mode: process.env.AIOS_HEADROOM_MCP || 'auto',
+        dryRun: false,
+        isTTY: Boolean(process.stdin.isTTY),
+      });
+    }
     console.log('  RTK: installed');
     console.log('  Caveman: installed');
+    console.log(`  Headroom: ${result.headroom}`);
     if (agents.length > 0) {
       console.log('  ensuring rtk init for detected agents...');
-      initRTKForAgents(agents);
+      initRTKForAgentsImpl(agents);
     }
     return result;
   }
@@ -414,7 +466,7 @@ export async function ensureCompressionTools(options = {}) {
       if (agents.length > 0) {
         console.log('');
         console.log('=== Initializing RTK for detected agents ===');
-        initRTKForAgents(agents);
+        initRTKForAgentsImpl(agents);
       }
     } else {
       result.rtk = 'failed';
@@ -422,7 +474,7 @@ export async function ensureCompressionTools(options = {}) {
     }
   } else if (agents.length > 0) {
     console.log('  RTK already installed, ensuring init for detected agents...');
-    initRTKForAgents(agents);
+    initRTKForAgentsImpl(agents);
   }
 
   if (!cavemanInstalled) {
@@ -439,13 +491,28 @@ export async function ensureCompressionTools(options = {}) {
     }
   }
 
+  const headroomResult = await ensureHeadroomImpl({ dryRun: false });
+  result.headroom = headroomResult.status;
+  if (headroomResult.status === 'installed' && headroomResult.executable) {
+    result.headroomMcp = await ensureHeadroomMcpImpl({
+      agents,
+      headroomPath: headroomResult.executable,
+      consent: yesHeadroomMcp,
+      mode: process.env.AIOS_HEADROOM_MCP || 'auto',
+      dryRun: false,
+      isTTY: Boolean(process.stdin.isTTY),
+    });
+  }
+
   // === 总结 ===
   console.log('');
   console.log('=== Compression Tools Summary ===');
   const rtkIcon = result.rtk === 'installed' ? '✓' : result.rtk === 'failed' ? '✗' : '?';
   const cavemanIcon = result.caveman === 'installed' ? '✓' : result.caveman === 'failed' ? '✗' : '?';
+  const headroomIcon = result.headroom === 'installed' ? '✓' : result.headroom === 'failed' ? '✗' : '?';
   console.log(`  ${rtkIcon} RTK: ${result.rtk}`);
   console.log(`  ${cavemanIcon} Caveman: ${result.caveman}`);
+  console.log(`  ${headroomIcon} Headroom: ${result.headroom}`);
   if (result.rtk === 'failed' || result.caveman === 'failed') {
     console.log('  some tools failed to install — see manual links above');
   }

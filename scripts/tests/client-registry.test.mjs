@@ -197,6 +197,14 @@ test('client registry exposes per-client MCP target conventions (single source o
     { scope: 'home', file: 'opencode.json' },
   ]);
 
+  const hermesTarget = getClientMcpTarget('hermes');
+  assert.equal(hermesTarget.format, 'json');
+  assert.equal(hermesTarget.namespace, 'mcpServers');
+  assert.deepEqual(hermesTarget.scopes, [
+    { scope: 'project', file: '.mcp.json' },
+    { scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers' },
+  ]);
+
   const grokTarget = getClientMcpTarget('grok');
   assert.equal(grokTarget.format, 'toml');
   assert.equal(grokTarget.namespace, 'mcp_servers');

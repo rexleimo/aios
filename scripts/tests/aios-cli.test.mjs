@@ -282,6 +282,16 @@ test('parseArgs accepts aios init as top-level command', () => {
   assert.equal(result.options.dryRun, true);
 });
 
+test('init parser keeps installation and MCP configuration consent independent', () => {
+  const parsed = parseArgs(['init', '--all', '--yes-compression-tools', '--yes-headroom-mcp']);
+  assert.equal(parsed.options.yesCompressionTools, true);
+  assert.equal(parsed.options.yesHeadroomMcp, true);
+
+  const installOnly = parseArgs(['init', '--all', '--yes-compression-tools']);
+  assert.equal(installOnly.options.yesCompressionTools, true);
+  assert.equal(installOnly.options.yesHeadroomMcp, false);
+});
+
 test('parseArgs normalizes setup options', () => {
   const result = parseArgs(['setup', '--components', 'all', '--mode', 'opt-in', '--client', 'all']);
   assert.equal(result.mode, 'command');

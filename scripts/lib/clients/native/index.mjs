@@ -38,7 +38,12 @@ export function resolveClientMcpTargetPaths(client, { projectRoot = '', clientHo
     .map((s) => {
       const base = s.scope === 'home' ? clientHome : projectRoot;
       if (!base) return null;
-      return { path: path.join(base, s.file), scope: s.scope, format: target.format, namespace: target.namespace };
+      return {
+        path: path.join(base, s.file),
+        scope: s.scope,
+        format: s.format || target.format,
+        namespace: s.namespace || target.namespace,
+      };
     })
     .filter(Boolean);
 }

@@ -5,6 +5,43 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Path Conventions (路径约定)
+
+**IMPORTANT: All relative paths in this document are relative to the PROJECT ROOT (current working directory), NOT `AIOS_ROOT`.**
+
+### Two Key Paths
+
+1. **`AIOS_ROOT` / `AIOS_ROOT_DIR`** - AIOS framework installation location
+   - Contains `scripts/`, `package.json`, core framework code
+   - Example: `/Users/rex/.rexcil/harness-cli` or `~/aios-framework`
+   - Set via environment variable or auto-detected
+
+2. **Project Root** - Your current working directory where you run AIOS commands
+   - Contains `.aios/`, `.claude/skills/`, `docs/plans/`, project-specific state
+   - This is where `pwd` points when you run `aios` commands
+   - All paths in this document like `.aios/context-db/`, `.claude/skills/` are **relative to this directory**
+
+### Why This Matters
+
+- If your `AIOS_ROOT=/Users/rex/.rexcil/harness-cli` but you're working in `/Users/rex/my-project/`:
+  - `.aios/context-db/` means `/Users/rex/my-project/.aios/context-db/` (✓ correct)
+  - NOT `/Users/rex/.rexcil/harness-cli/.aios/context-db/` (✗ wrong)
+- Framework scripts live in `$AIOS_ROOT/scripts/`
+- Your project state lives in `$(pwd)/.aios/`
+
+### Verification Commands
+
+```bash
+# Check your project root
+pwd
+
+# Check AIOS framework location
+echo $AIOS_ROOT
+
+# List your project's AIOS directories
+ls -la .aios/ .claude/skills/ docs/plans/
+```
+
 <!-- SUPERPOWERS SKILL ENFORCEMENT - MANDATORY -->
 <IMPORTANT>
 ## Skill Enforcement (REQUIRED)

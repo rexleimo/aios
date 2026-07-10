@@ -1,8 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-NODE_REQUIRED_MAJOR="$(tr -d '[:space:]' < "$SCRIPT_DIR/../.nvmrc" | sed 's/^v//')"
+# Use AIOS_ROOT if set, otherwise derive from script location
+if [[ -n "${AIOS_ROOT:-}" ]]; then
+  AIOS_DIR="$AIOS_ROOT"
+elif [[ -n "${AIOS_ROOT_DIR:-}" ]]; then
+  AIOS_DIR="$AIOS_ROOT_DIR"
+else
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  AIOS_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
+
+NODE_REQUIRED_MAJOR="$(tr -d '[:space:]' < "$AIOS_DIR/.nvmrc" | sed 's/^v//')"
 
 print_node_help() {
   cat <<'EOF' >&2
@@ -69,4 +78,4 @@ if [[ "$node_major" -lt "$NODE_REQUIRED_MAJOR" ]]; then
   exit 1
 fi
 
-exec node "$SCRIPT_DIR/aios.mjs" "$@"
+exec node "$AIOS_DIR/scripts/aios.mjs" "$@"

@@ -12,7 +12,8 @@ const INIT_CLI = new Command()
   .option('--default-mode <mode>', 'Default initialization mode')
   .option('--all', 'Initialize for all agents')
   .option('--dry-run', 'Preview changes without writing')
-  .option('--yes-compression-tools', 'Skip RTK/Caveman privacy prompt (auto-consent)');
+  .option('--yes-compression-tools', 'Authorize unattended RTK/Caveman/Headroom installation')
+  .option('--yes-headroom-mcp', 'Authorize unattended Gemini/Grok Headroom MCP registration');
 
 export function parseInitArgs(argv) {
   const rest = argv.slice(1);
@@ -36,6 +37,7 @@ export function parseInitArgs(argv) {
         all: flags.all === true,
         dryRun: flags.dryRun === true,
         yesCompressionTools: flags.yesCompressionTools === true,
+        yesHeadroomMcp: flags.yesHeadroomMcp === true,
         defaultMode: String(flags.defaultMode || '').trim(),
       },
     };
@@ -45,7 +47,14 @@ export function parseInitArgs(argv) {
       mode: 'help',
       help: true,
       command: 'init',
-      options: { agent: '', all: false, dryRun: false, yesCompressionTools: false, defaultMode: '' },
+      options: {
+        agent: '',
+        all: false,
+        dryRun: false,
+        yesCompressionTools: false,
+        yesHeadroomMcp: false,
+        defaultMode: '',
+      },
     };
   }
 }

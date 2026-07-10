@@ -17,6 +17,8 @@ Commands:
   status        Show unified AIOS readiness status
   agents        Inspect default agent catalogue and live-readiness gates
   workflow      List and dry-run workflow recipes
+  plan          Review and update the active intelligent-planning state
+  dream         Consolidate durable memo knowledge and export to plan/pins
   memo          Workspace memo + pinned memory helpers
   search        Search project memory, docs, plans, and code references
   refs          Search/read offloaded tool-output refs
@@ -46,6 +48,8 @@ Examples:
   node scripts/aios.mjs status --json
   node scripts/aios.mjs agents doctor --strict --json
   node scripts/aios.mjs workflow run ecc-uplift-governed --task "Borrow ECC safely" --dry-run --json
+  node scripts/aios.mjs plan show --html
+  node scripts/aios.mjs dream --preview --to pin --json
   node scripts/aios.mjs internal native repair list --limit 20
   node scripts/aios.mjs internal native repair show --repair-id latest
   node scripts/aios.mjs internal native rollback --repair-id latest

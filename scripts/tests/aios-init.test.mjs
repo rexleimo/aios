@@ -7,6 +7,7 @@ import test from 'node:test';
 import {
   buildCavemanWindowsInstallCommand,
   buildRTKInitCommandForAgent,
+  ensureCompressionTools,
   getCavemanVerificationPaths,
 } from '../lib/aios-init/compression-tools.mjs';
 import { buildCommandRewriteHookCommand, buildSaveGuardCommand, ensureHook } from '../lib/aios-init/hooks.mjs';
@@ -56,6 +57,23 @@ test('buildRTKInitCommandForAgent uses current RTK flags', () => {
   assert.equal(buildRTKInitCommandForAgent('hermes'), 'rtk init -g --agent hermes');
   assert.equal(buildRTKInitCommandForAgent('grok'), 'rtk init -g --agent grok');
   assert.equal(buildRTKInitCommandForAgent('unknown'), null);
+});
+
+test('ensureCompressionTools reports Headroom and MCP-only runtime consent independently', async () => {
+  const result = await ensureCompressionTools({
+    dryRun: true,
+    yesCompressionTools: true,
+    yesHeadroomMcp: false,
+    agents: ['gemini', 'hermes', 'grok'],
+    ensureHeadroomImpl: async () => ({ status: 'missing', planned: true }),
+  });
+
+  assert.equal(result.headroom, 'missing');
+  assert.deepEqual(result.headroomMcp, {
+    'gemini-cli': 'pending-consent',
+    'hermes-agent': 'pending-consent',
+    'grok-build': 'pending-consent',
+  });
 });
 
 test('buildSaveGuardCommand uses AIOS ctx-agent and save-guard mode for external workspaces', () => {
@@ -241,4 +259,42 @@ test('ensureHook converts top-level Claude save guard hook to nested command sch
   assert.equal(settings.hooks.Stop[0].command, undefined);
   assert.equal(settings.hooks.Stop[0].hooks[0].command, command);
   assert.equal(settings.hooks.Stop[0].hooks[0].type, 'command');
+});
+
+
+test('ensureCompressionTools skips Headroom MCP registration until Headroom is installed', async () => {
+  let mcpCalls = 0;
+  const result = await ensureCompressionTools({
+    dryRun: false,
+    yesCompressionTools: true,
+    yesHeadroomMcp: true,
+    agents: ['gemini'],
+    ensureHeadroomImpl: async () => ({ status: 'missing' }),
+    rtkInstalled: true,
+    cavemanInstalled: true,
+    initRTKForAgentsImpl: () => {},
+    ensureHeadroomMcpImpl: async () => { mcpCalls += 1; return {}; },
+  });
+
+  assert.equal(result.headroom, 'missing');
+  assert.equal(result.headroomMcp['gemini-cli'], 'pending-smoke');
+  assert.equal(mcpCalls, 0);
+});
+
+test('ensureCompressionTools aggregates Headroom MCP registration after Headroom is installed', async () => {
+  const result = await ensureCompressionTools({
+    dryRun: false,
+    yesCompressionTools: true,
+    yesHeadroomMcp: true,
+    agents: ['gemini', 'grok'],
+    ensureHeadroomImpl: async () => ({ status: 'installed', executable: '/opt/headroom' }),
+    rtkInstalled: true,
+    cavemanInstalled: true,
+    initRTKForAgentsImpl: () => {},
+    ensureHeadroomMcpImpl: async ({ agents }) => Object.fromEntries(agents.map((agent) => [agent === 'gemini' ? 'gemini-cli' : 'grok-build', 'registered'])),
+  });
+
+  assert.equal(result.headroom, 'installed');
+  assert.equal(result.headroomMcp['gemini-cli'], 'registered');
+  assert.equal(result.headroomMcp['grok-build'], 'registered');
 });

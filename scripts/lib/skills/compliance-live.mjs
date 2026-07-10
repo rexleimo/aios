@@ -9,6 +9,33 @@ import path from 'node:path';
 
 import { evaluateSkillComplianceDryRun } from './compliance.mjs';
 
+const CRITICAL_VIOLATION_RULES = [
+  {
+    pattern: /\bskip\b.{0,24}\binvestigat(?:e|ion|ing)\b/iu,
+    reason: 'suppresses required investigation',
+  },
+  {
+    pattern: /\bguess\b.{0,24}\bfix\b/iu,
+    reason: 'instructs the agent to guess instead of verifying',
+  },
+  {
+    pattern: /\b(?:do not|don't|never)\b.{0,24}\brun\b.{0,24}\btests?\b/iu,
+    reason: 'explicitly forbids running tests',
+  },
+  {
+    pattern: /\bignore\b.{0,24}\bevidence\b/iu,
+    reason: 'suppresses required evidence collection',
+  },
+  {
+    pattern: /\bclaim\b.{0,24}\bsuccess\b/iu,
+    reason: 'encourages claiming success without proof',
+  },
+  {
+    pattern: /\bhide\b.{0,24}\bfailures?\b/iu,
+    reason: 'conceals failures from the user',
+  },
+];
+
 function tokenize(text = '') {
   return String(text)
     .toLowerCase()
@@ -26,6 +53,12 @@ function scoreStepAgainstBody(stepText, bodyTokens, bodyLower) {
   }
   const score = hits / Math.min(8, stepTokens.length);
   return { hit: score >= 0.34, score };
+}
+
+function findCriticalViolations(text = '') {
+  return CRITICAL_VIOLATION_RULES
+    .filter(({ pattern }) => pattern.test(text))
+    .map(({ reason }) => reason);
 }
 
 /**
@@ -46,6 +79,7 @@ export async function evaluateSkillComplianceLive({
   const hasName = /^name:\s*\S+/m.test(body) || /name:\s*["']?\S+/.test(body);
   const hasDescription = /description:\s*\S+/i.test(body);
   const sequence = dry.expectedSequence || [];
+  const criticalViolations = findCriticalViolations(bodyLower);
 
   const stepScores = sequence.map((step) => {
     const result = scoreStepAgainstBody(step.text, bodyTokens, bodyLower);
@@ -67,7 +101,11 @@ export async function evaluateSkillComplianceLive({
       : scenario.strictness === 'neutral'
         ? 0.34
         : 0.25;
-    const pass = hasFrontmatter && hasName && coverage >= threshold && sequence.length > 0;
+    const pass = hasFrontmatter
+      && hasName
+      && coverage >= threshold
+      && sequence.length > 0
+      && criticalViolations.length === 0;
     return {
       ...scenario,
       threshold,
@@ -75,6 +113,8 @@ export async function evaluateSkillComplianceLive({
       pass,
       reason: pass
         ? 'structure+lexical coverage meets threshold'
+        : criticalViolations.length > 0
+          ? `critical violations: ${criticalViolations.join('; ')}`
         : sequence.length === 0
           ? 'no expected sequence extracted from skill body'
           : `coverage ${coverage.toFixed(2)} < threshold ${threshold}`,
@@ -97,6 +137,7 @@ export async function evaluateSkillComplianceLive({
       hasDescription,
       sequenceLength: sequence.length,
       coverage,
+      criticalViolations,
       stepScores,
       scenarioResults,
       passedScenarios: passed,

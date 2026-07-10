@@ -4,13 +4,17 @@ export function getBasicCommandHelpText(command) {
   switch (command) {
     case 'init':
       return `Usage:
-  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools]
+  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Options:
   --agent <name>              Init only the specified agent
-  --all                       Init all four agents, even if CLI detection misses them
+  --all                       Init all detected agents, even if CLI detection misses them
   --dry-run                   Preview project marker and hook changes without writing files
-  --yes-compression-tools     Skip RTK/Caveman privacy prompt (auto-consent)
+  --yes-compression-tools     Authorize unattended RTK/Caveman/Headroom installation
+  --yes-headroom-mcp          Authorize unattended Gemini/Grok Headroom MCP registration
+
+Unattended example:
+  node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 `;
     case 'setup':
       return `Usage:

@@ -92,14 +92,16 @@ export async function runSkillComply(options = {}, { rootDir = process.cwd(), st
         rootDir,
         skillId,
         status: report.ok ? 'success' : 'failure',
-        failure: report.ok ? '' : `coverage=${report.live?.coverage}`,
+        failure: report.ok
+          ? ''
+          : `coverage=${report.live?.coverage}; critical=${(report.live?.criticalViolations || []).join('|')}`,
       });
     } catch {
       // health module optional shape
     }
     stdout.write(options.json || options.format === 'json'
       ? `${JSON.stringify(report, null, 2)}\n`
-      : `skill comply --live ${report.target.name}: ${report.verdict} (coverage=${(report.live?.coverage || 0).toFixed(2)}, scenarios ${report.live?.passedScenarios}/${report.live?.totalScenarios})\n`);
+      : `skill comply --live ${report.target.name}: ${report.verdict} (coverage=${(report.live?.coverage || 0).toFixed(2)}, scenarios ${report.live?.passedScenarios}/${report.live?.totalScenarios}, critical=${report.live?.criticalViolations?.length || 0})\n`);
     return { exitCode: report.ok ? 0 : 1, report };
   }
 

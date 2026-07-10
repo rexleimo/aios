@@ -10,11 +10,22 @@ const DREAM_CLI = new Command()
   .option('--preview', 'Preview consolidation plan (default)')
   .option('--apply', 'Apply consolidation changes')
   .option('--space <name>', 'Target consolidation space')
+  .option('--workspace <path>', 'Workspace root')
+  .option('--json', 'Output as JSON')
+  .option('--format <text|json>', 'Output format')
   .option('--to <pin|agents|both>', 'Export durable notes to pin memo and/or AGENTS.md');
 
 export function parseDreamArgs(argv) {
   const rest = argv.slice(1);
   const help = rest.includes('-h') || rest.includes('--help');
+  if (help) {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'dream',
+      options: { mode: 'preview', spaces: ['default'], to: '', workspaceRoot: '', json: false, format: 'text' },
+    };
+  }
 
   try {
     const parsed = DREAM_CLI.parse(rest, { from: 'user' });
@@ -22,19 +33,29 @@ export function parseDreamArgs(argv) {
     const mode = flags.apply ? 'apply' : 'preview';
     const spaces = flags.space ? [String(flags.space).trim()] : ['default'];
     const to = flags.to ? String(flags.to).trim().toLowerCase() : '';
+    let format = flags.format ? String(flags.format).trim().toLowerCase() : 'text';
+    const json = Boolean(flags.json || format === 'json');
+    if (json) format = 'json';
 
     return {
-      mode: help ? 'help' : 'command',
-      help,
+      mode: 'command',
+      help: false,
       command: 'dream',
-      options: { mode, spaces, to },
+      options: {
+        mode,
+        spaces,
+        to,
+        workspaceRoot: flags.workspace ? String(flags.workspace).trim() : '',
+        json,
+        format,
+      },
     };
   } catch {
     return {
       mode: 'help',
       help: true,
       command: 'dream',
-      options: { mode: 'preview', spaces: ['default'], to: '' },
+      options: { mode: 'preview', spaces: ['default'], to: '', workspaceRoot: '', json: false, format: 'text' },
     };
   }
 }

@@ -31,7 +31,7 @@ async function ensureWorkspace(workspaceRoot, { dryRun = false } = {}) {
 }
 
 function usage() {
-  console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes>] [--all] [--dry-run] [--yes-compression-tools]
+  console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -39,7 +39,8 @@ Options:
   --agent <name>              Init only the specified agent
   --all                      Init all agents (even if CLI not detected)
   --dry-run                  Preview what would be done without writing files
-  --yes-compression-tools    Skip RTK/Caveman privacy prompt (auto-consent)`);
+  --yes-compression-tools    Authorize unattended RTK/Caveman/Headroom installation
+  --yes-headroom-mcp         Authorize unattended Gemini/Grok Headroom MCP registration`);
 }
 
 export async function main(argv = process.argv.slice(2)) {
@@ -51,11 +52,12 @@ export async function main(argv = process.argv.slice(2)) {
   const dryRun = argv.includes('--dry-run');
   const allFlag = argv.includes('--all');
   const yesCompressionTools = argv.includes('--yes-compression-tools');
+  const yesHeadroomMcp = argv.includes('--yes-headroom-mcp');
   const agentIdx = argv.indexOf('--agent');
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 
   if (requestedAgent && !AGENT_CONFIG[requestedAgent]) {
-    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes`);
+    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok`);
     process.exit(1);
   }
 
@@ -68,7 +70,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (agents.length === 0) {
     console.log('No supported AI coding agents detected.');
-    console.log('Supported: claude, codex, gemini, opencode, hermes');
+    console.log('Supported: claude, codex, gemini, opencode, hermes, grok');
     console.log('Use --all to initialize for all agents regardless of detection.');
     process.exit(0);
   }
@@ -84,10 +86,19 @@ export async function main(argv = process.argv.slice(2)) {
     console.log(`Workspace: ${wsResult.workspace} (${wsResult.skillIndex})`);
   }
 
-  // 1b. 社区压缩工具 RTK + Caveman 自动检测+安装
+  // 1b. 社区压缩工具 RTK + Caveman + Headroom 自动检测+安装
   console.log('');
-  console.log('== Compression Tools (RTK + Caveman) ==');
-  const toolResult = await ensureCompressionTools({ dryRun, yesCompressionTools, agents });
+  console.log('== Compression Tools (RTK + Caveman + Headroom) ==');
+  const toolResult = await ensureCompressionTools({
+    dryRun,
+    yesCompressionTools,
+    yesHeadroomMcp,
+    agents,
+  });
+  console.log(`  Headroom: ${toolResult.headroom}`);
+  for (const [runtimeId, status] of Object.entries(toolResult.headroomMcp)) {
+    console.log(`  Headroom MCP (${runtimeId}): ${status}`);
+  }
   console.log('');
 
   // 2. Per-agent config

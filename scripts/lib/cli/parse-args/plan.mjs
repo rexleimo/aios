@@ -20,6 +20,7 @@ const PLAN_CLI = new Command()
   .option('--acceptance <text>', 'Task acceptance criteria')
   .option('--kind <command|path|test|note>', 'Evidence kind')
   .option('--value <text>', 'Evidence value')
+  .option('--workspace <path>', 'Workspace root')
   .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
   .option('--format <text|json|html|both>', 'Output format');
@@ -48,6 +49,14 @@ export function parsePlanArgs(argv) {
     'discovery',
   ]);
   const sub = known.has(subcommand) ? subcommand : 'status';
+  if (help) {
+    return {
+      mode: 'help',
+      help: true,
+      command: 'plan',
+      options: { subcommand: sub },
+    };
+  }
   let parseArgv = known.has(subcommand) ? rest.slice(1) : rest;
   // plan task <id> --status done
   let positionalTaskId = '';
@@ -78,10 +87,11 @@ export function parsePlanArgs(argv) {
         value: flags.value,
         client: flags.client,
         source: flags.source,
+        workspaceRoot: flags.workspace ? String(flags.workspace).trim() : '',
         force: Boolean(flags.force),
         html: Boolean(flags.html),
         json: Boolean(flags.json),
-        format: flags.format,
+        format: flags.format || (flags.json ? 'json' : ''),
       },
     };
   } catch {

@@ -14,6 +14,25 @@ import { collectEvents } from '../../memo/storage/events-read.mjs';
 
 const AGENTS_DREAM_BEGIN = '<!-- AIOS DREAM BEGIN -->';
 const AGENTS_DREAM_END = '<!-- AIOS DREAM END -->';
+const DREAM_RELEVANCE_TERMS = /\b(plan|task|tasks|evidence|acceptance|objective|review|memo|sync|writeback|dream)\b/iu;
+const DREAM_RELEVANCE_STOPWORDS = new Set([
+  'about',
+  'active',
+  'after',
+  'always',
+  'before',
+  'done',
+  'from',
+  'into',
+  'keep',
+  'notes',
+  'required',
+  'relevant',
+  'should',
+  'that',
+  'this',
+  'with',
+]);
 
 /**
  * Collect durable memo lines (stable preference / durable context) for export.
@@ -55,6 +74,28 @@ function renderDurableMarkdown(lines, { title = 'AIOS dream durable notes' } = {
     body,
     '',
   ].join('\n');
+}
+
+function tokenizeDreamRelevance(text = '') {
+  return String(text)
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/giu, ' ')
+    .split(/\s+/u)
+    .map((token) => token.trim())
+    .filter((token) => token.length >= 4 && !DREAM_RELEVANCE_STOPWORDS.has(token));
+}
+
+export function selectPlanRelevantDreamLines(plan, durableLines = [], { limit = 8 } = {}) {
+  const planTokens = new Set(tokenizeDreamRelevance(`${plan?.title || ''} ${plan?.objective || ''}`));
+  return (Array.isArray(durableLines) ? durableLines : [])
+    .filter((line) => String(line?.text || '').trim())
+    .filter((line) => {
+      const text = String(line.text || '').trim();
+      if (DREAM_RELEVANCE_TERMS.test(text)) return true;
+      const lineTokens = tokenizeDreamRelevance(text);
+      return lineTokens.some((token) => planTokens.has(token));
+    })
+    .slice(0, limit);
 }
 
 /**
@@ -155,7 +196,7 @@ export async function syncDreamLinesToActivePlan(rootDir, durableLines = [], { m
     return { ok: false, reason: 'no-active-plan' };
   }
 
-  const lines = Array.isArray(durableLines) ? durableLines.slice(0, 8) : [];
+  const lines = selectPlanRelevantDreamLines(plan, durableLines, { limit: 8 });
   if (lines.length === 0) {
     return { ok: true, addedTasks: 0, reason: 'no-durable-lines' };
   }
