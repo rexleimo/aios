@@ -60,4 +60,4 @@ Artifact:
 .skillopt/aios-interception-runtime-2026-06-05
 ```
 
-Reference: [Native Token Compression](https://cli.rexai.top/ja/token-compression/#all-client-turn-compression-v1501)
+Reference: [Token インテリジェンスと圧縮](https://cli.rexai.top/ja/token-compression/)

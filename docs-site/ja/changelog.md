@@ -7,11 +7,26 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 ## ドキュメントと workflow のメモ
 
+- **v3.6.0 Headroom token インテリジェンス workflow**：`aios init` は RTK と Caveman に加えてテスト済みの Headroom CLI range を install します。Gemini/Grok の user-scope MCP registration には別途 `--yes-headroom-mcp` consent が必要です。Hermes には実際の TTY が必要で、そうでなければ `pending-interactive` を報告します。既存の external または conflict entry は上書きせず、AIOS 所有 entry は `~/.aios/integrations/headroom-mcp.json` に記録します。MCP-only compression は明示的であり、透過的 input interception を主張しません。詳細：[Token インテリジェンスと圧縮](token-compression.md) と [Headroom + Ponytail の記事](/blog/ja/2026-07-headroom-token-intelligence/)。
 - agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
 - 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
 - **Grok Build が AIOS ファーストクラスクライアントに昇格**：xAI Grok Build（`grok` / runtime id `grok-build`）が skills、agents、superpowers、native、team、harness を備えて登録されました。MCP は Codex 形式 TOML（`~/.grok/config.toml`）。詳細: [Grok Build + AIOS](/blog/ja/2026-07-grok-build-aios-client/)。
 - **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：skills、native、harness、superpowers。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
+
+## v3.6.0（2026-07-10）— Headroom + Ponytail token インテリジェンス workflow
+
+### 追加
+
+- Python 3.10+ が必要な隔離された `uv tool` または `pipx` environment に `headroom-ai[all]>=0.31.0,<0.32.0` を検出・install。
+- 無人 package installation と MCP user-configuration consent を独立に保つため、`--yes-headroom-mcp` を追加。
+- Gemini CLI、Grok Build、Hermes Agent の native MCP command で公式 `headroom mcp serve` を登録。TTY がない Hermes は `pending-interactive` のままです。
+
+### 安全性と互換性
+
+- AIOS 所有の MCP registration fingerprint を `~/.aios/integrations/headroom-mcp.json` に保持し、external または conflict entry を保全。
+- MCP tool（`headroom_compress`、`headroom_retrieve`、`headroom_stats`）が現在の request に対する透過的 interception ではなく、明示的な on-demand compression であることを明確化。
+- RTK、Caveman、ContextDB、Headroom、および Ponytail に着想を得た smallest-correct-change gate を別々の layer として文書化。
 
 ## v3.4.0（2026-07-09）— Grok Build ファーストクラスクライアント
 
@@ -130,7 +145,7 @@ node scripts/aios.mjs init --dry-run
 - **Bypass で偽の節約をしない**: AIOS-managed runner 外の direct host output は `policy-violation` / `non_compliant` として記録され、`saved_bytes=0` になります。
 - **Proof matrix**: `node scripts/aios.mjs interception proof --json` と `doctor --json` が Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` の `turn_compression_matrix` を出力します。
 - **Skill training evidence**: `aios-interception-runtime` は SkillOpt-Lite で training 済みで、artifact は `.skillopt/aios-interception-runtime-2026-06-05` にあります。
-- **Release tutorial**: [v1.50.1 token compression compliance post](/blog/ja/2026-06-v1501-token-compression-compliance/) と [Native Token Compression](token-compression.md#all-client-turn-compression-v1501) を参照してください。
+- **Release tutorial**: [v1.50.1 token compression compliance post](/blog/ja/2026-06-v1501-token-compression-compliance/) と [Token インテリジェンスと圧縮](token-compression.md) を参照してください。
 
 ## v1.50.0（2026-06-04）
 

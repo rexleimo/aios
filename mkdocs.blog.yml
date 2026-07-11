@@ -100,6 +100,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v3.6.0 Headroom + Ponytail Token Intelligence: 2026-07-headroom-token-intelligence.md
       - v2.0.2 ECC Uplift: 2026-06-v202-ecc-uplift.md
       - Agent Governance: 2026-06-agent-governance.md
       - v1.52.0 Shell Output Compression: 2026-06-v152-aios-shell-mcp.md

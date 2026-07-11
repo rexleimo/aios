@@ -6,7 +6,22 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [3.6.0] - 2026-07-10
 
-- Add Headroom MCP and token intelligence workflow
+### Added - Headroom token intelligence workflow
+
+- `aios init` now detects and installs the tested Headroom CLI range (`headroom-ai[all]>=0.31.0,<0.32.0`) alongside RTK and Caveman. Installation requires Python 3.10+ and uses `uv tool` or `pipx`, never a silent system-Python install.
+- `--yes-headroom-mcp` is a separate unattended-consent flag for new user-scope Headroom MCP registrations; `--yes-compression-tools` remains the package-install consent.
+- Gemini CLI, Hermes Agent, and Grok Build can register the official `headroom mcp serve` through their native MCP commands. Hermes remains `pending-interactive` without a real TTY.
+- AIOS keeps a registration ownership ledger at `~/.aios/integrations/headroom-mcp.json` and verifies the post-registration fingerprint.
+
+### Safety and compatibility
+
+- Existing external or conflicting `headroom` MCP entries are reported without being overwritten; removals also require an ownership match.
+- MCP-only compression is explicitly on demand (`headroom_compress`, `headroom_retrieve`, `headroom_stats`). It is not advertised as transparent current-request input compression.
+- The workflow documents separate roles for RTK, Caveman, ContextDB, Headroom, and a Ponytail-inspired smallest-correct-change gate. It does not claim to install or emulate the Ponytail plugin.
+
+### Documentation
+
+- Added the public Token Intelligence and Compression guide and the English/Chinese v3.6.0 Headroom + Ponytail blog post.
 
 ## [3.5.0] - 2026-07-09
 

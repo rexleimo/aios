@@ -9,6 +9,7 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Docs And Workflow Notes
 
+- **v3.6.0 Headroom token intelligence workflow**: `aios init` now installs the tested Headroom CLI range alongside RTK and Caveman, with a separate `--yes-headroom-mcp` consent for Gemini/Grok user-scope MCP registration. Hermes requires a real TTY and reports `pending-interactive` otherwise. Existing external or conflicting entries are not overwritten; AIOS records owned entries in `~/.aios/integrations/headroom-mcp.json`. MCP-only compression is explicit and does not claim transparent input interception. See: [Token Intelligence and Compression](token-compression.md) and the [Headroom + Ponytail post](/blog/2026-07-headroom-token-intelligence/).
 - Added agent governance coverage to the Team docs, scenario guide, ContextDB reference, and blog.
 - New smoke evidence guidance now points to `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, and `.aios/interception/metrics/agents-smoke-<agent>.jsonl`.
 - Skill edits now point readers to `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` before trusting live agent workflows.
@@ -16,6 +17,20 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 - **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is registered with skills, native, harness, and superpowers capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools inside Hermes sessions. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 
 ## Official Release History
+
+## v3.6.0 (2026-07-10) - Headroom + Ponytail token intelligence workflow
+
+### Added
+
+- Detect and install `headroom-ai[all]>=0.31.0,<0.32.0` in an isolated `uv tool` or `pipx` environment; Python 3.10+ is required.
+- Add `--yes-headroom-mcp` so unattended package installation and MCP user-configuration consent stay independent.
+- Register the official `headroom mcp serve` with Gemini CLI, Grok Build, and Hermes Agent through their native MCP commands; Hermes stays `pending-interactive` without a TTY.
+
+### Safety and compatibility
+
+- Persist AIOS-owned MCP registration fingerprints in `~/.aios/integrations/headroom-mcp.json`; preserve external or conflicting entries.
+- Clarify that MCP tools (`headroom_compress`, `headroom_retrieve`, `headroom_stats`) are explicit on-demand compression, not transparent interception for the current request.
+- Document RTK, Caveman, ContextDB, Headroom, and the Ponytail-inspired smallest-correct-change gate as distinct layers.
 
 ## v3.4.0 (2026-07-09) — Grok Build first-class client
 
@@ -148,7 +163,7 @@ All changes verified with 37/37 unit + integration tests passing.
 - **No fake savings for bypasses**: direct host output outside the AIOS-managed runner is recorded as `policy-violation` / `non_compliant`, with `saved_bytes=0`.
 - **Proof matrix**: `node scripts/aios.mjs interception proof --json` and `doctor --json` include `turn_compression_matrix` for Codex, Claude, Gemini, Antigravity, OpenCode, Crush, Cursor, `aios-harness`, and `generic-mcp`.
 - **Skill training evidence**: `aios-interception-runtime` was trained with SkillOpt-Lite; artifacts live under `.skillopt/aios-interception-runtime-2026-06-05`.
-- **Release tutorial**: See the [v1.50.1 token compression compliance post](/blog/2026-06-v1501-token-compression-compliance/) and [Native Token Compression](token-compression.md#all-client-turn-compression-v1501).
+- **Release tutorial**: See the [v1.50.1 token compression compliance post](/blog/2026-06-v1501-token-compression-compliance/) and [Token Intelligence and Compression](token-compression.md).
 
 ## v1.50.0 (2026-06-04)
 

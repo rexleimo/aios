@@ -7,11 +7,26 @@ description: 版本历史、升级说明与文档变更入口。
 
 ## 文档与工作流说明
 
+- **v3.6.0 Headroom token 智能工作流**：`aios init` 现会与 RTK、Caveman 一起安装经过测试范围的 Headroom；Gemini/Grok 的用户级 MCP 注册需单独传 `--yes-headroom-mcp` 授权。Hermes 必须在真实 TTY 中完成，否则显示 `pending-interactive`。已有外部或冲突条目不会被覆盖，AIOS-owned 条目记录在 `~/.aios/integrations/headroom-mcp.json`。MCP-only 是显式按需压缩，不是透明输入拦截。详见：[Token 智能与压缩](token-compression.md) 与 [Headroom + Ponytail 博文](/blog/zh/2026-07-headroom-token-intelligence/)。
 - 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
 - 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
 - **Grok Build 成为 AIOS 一等公民客户端**：xAI Grok Build（`grok` / runtime id `grok-build`）现已支持 skills、agents、superpowers、native、team、harness。MCP 使用 Codex 形态 TOML（`~/.grok/config.toml`）。详见：[Grok Build + AIOS 博客](/blog/zh/2026-07-grok-build-aios-client/)。
 - **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）具备 skills、native、harness、superpowers。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
+
+## v3.6.0（2026-07-10）— Headroom + Ponytail Token 智能工作流
+
+### 新增
+
+- 在隔离的 `uv tool` 或 `pipx` 环境中检测并安装 `headroom-ai[all]>=0.31.0,<0.32.0`；要求 Python 3.10+。
+- 新增 `--yes-headroom-mcp`，让无人值守的包安装授权与 MCP 用户配置授权保持独立。
+- Gemini CLI、Grok Build、Hermes Agent 通过自己的官方 MCP 命令注册 `headroom mcp serve`；Hermes 无真实 TTY 时保留为 `pending-interactive`。
+
+### 安全与兼容
+
+- AIOS-owned MCP 注册指纹写入 `~/.aios/integrations/headroom-mcp.json`；外部或冲突条目保持不动。
+- 明确 `headroom_compress`、`headroom_retrieve`、`headroom_stats` 是模型显式调用的按需压缩，不是当前请求的透明拦截。
+- 文档区分 RTK、Caveman、ContextDB、Headroom 与 Ponytail 启发的最小正确改动门禁。
 
 ## v3.4.0（2026-07-09）— Grok Build 一等公民客户端
 
@@ -135,7 +150,7 @@ node scripts/aios.mjs init --dry-run
 - **绕过不再冒充省 token**：未经过 AIOS-managed runner 的 direct host output 会记录为 `policy-violation` / `non_compliant`，且 `saved_bytes=0`。
 - **Proof 矩阵**：`node scripts/aios.mjs interception proof --json` 和 `doctor --json` 输出 Codex、Claude、Gemini、Antigravity、OpenCode、Crush、Cursor、`aios-harness`、`generic-mcp` 的 `turn_compression_matrix`。
 - **技能训练证据**：`aios-interception-runtime` 已通过 SkillOpt-Lite 训练，产物位于 `.skillopt/aios-interception-runtime-2026-06-05`。
-- **发布教程**：阅读 [v1.50.1 token 压缩合规文章](/blog/zh/2026-06-v1501-token-compression-compliance/) 和 [自研 Token 压缩](token-compression.md#all-client-turn-compression-v1501)。
+- **发布教程**：阅读 [v1.50.1 token 压缩合规文章](/blog/zh/2026-06-v1501-token-compression-compliance/) 和 [Token 智能与压缩](token-compression.md)。
 
 ## v1.50.0（2026-06-04）
 

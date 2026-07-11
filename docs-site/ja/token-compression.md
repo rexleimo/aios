@@ -1,65 +1,49 @@
 ---
-title: Token 圧縮
-description: コミュニティツール RTK + Caveman で token を節約。aios init が自動インストール。
+title: Token インテリジェンスと圧縮
+description: RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートで、有用なコンテキストを小さく保ちます。
 ---
 
-# Token 圧縮
+# Token インテリジェンスと圧縮
 
-## クイックアンサー
+token を節約しても、Agent が正しい判断を下すための証拠を失っては意味がありません。AIOS v3.6.0 は、まず不要な作業を避け、次に各段階で持ち運ぶテキストを減らす層状の workflow を使います。
 
-Harness CLI は 2 つのコミュニティツールを統合して token を節約します：**RTK** (github.com/rtk-ai/rtk) はコマンド出力を 60-90% 圧縮、**Caveman** (github.com/JuliusBrussee/caveman) は agent 出力を ~75% 圧縮。どちらもローカル実行、`aios init` で全自動インストール。
+## 5 つの層
 
-ワークフローは 2 層です。
+| 層 | 役割 | 約束しないこと |
+| --- | --- | --- |
+| Ponytail に着想を得たゲート | 実装前に最小で正しい変更を選ぶ。 | インストールされる Ponytail plugin ではありません。 |
+| RTK | Agent に届く前の shell / tool 出力のノイズを減らす。 | 範囲を絞った command を不要にしたり、生 log の全行を残したりはしません。 |
+| Headroom MCP | 後続 step でも必要な材料を、対応 MCP client が明示的に圧縮できるようにする。 | 現在の model request を透過的に interception しません。 |
+| Caveman | 技術的事実を落とさず、response style を簡潔にする。 | tool や file 自体を圧縮しません。 |
+| ContextDB | 全 history を inject せず、必要な時に project context を recall する。 | runtime history をすべての prompt に自動表示しません。 |
 
-1. **入力圧縮**：ContextDB packet、ブラウザ読み取り、コマンド出力をモデル投入前に削減する。
-2. **出力圧縮**：コマンド、パス、エラー、selector、日付、リスク、検証ギャップを残したまま Agent の回答を短くする。
+planning、test、code-review の証跡、privacy check、verification は別の品質ゲートとして引き続き必要です。
 
-## 入力圧縮
+## インストールと確認
 
-### ContextDB Packet
-
-組み込みの `context:pack` strategy engine を使います。
+インストールの境界として `aios init` を使います。
 
 ```bash
-cd mcp-server
-npm run contextdb -- context:pack \
-  --session <session_id> \
-  --limit 60 \
-  --token-budget 1200 \
-  --token-strategy balanced \
-  --out .aios/context-db/exports/<session_id>-context.md
+# 確認のみ。package と client configuration は変更しません。
+node scripts/aios.mjs init --all --dry-run
+
+# 対話式: 検出された RTK、Caveman、対応する Headroom を install します。
+node scripts/aios.mjs init --all
+
+# CI などの無人インストール。
+node scripts/aios.mjs init --all --yes-compression-tools
+
+# Gemini と Grok 向けの user-scope Headroom MCP registration も許可します。
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 ```
 
-Strategies:
+Headroom には Python 3.10 以降と `uv` または `pipx` が必要です。AIOS はテスト済みの `headroom-ai[all]>=0.31.0,<0.32.0` を隔離された tool environment に install し、system Python environment を無言で変更しません。
 
-| Strategy | 用途 | 振る舞い |
-|----------|------|----------|
-| `legacy` | 厳密な後方互換 | tail-window behavior |
-| `balanced` | 推奨デフォルト | 低シグナル本文を圧縮してから drop |
-| `aggressive` | 厳しい token budget、明示 opt-in | より強い圧縮と clipping |
+`--yes-compression-tools` は package installation を許可します。`--yes-headroom-mcp` は client user configuration の変更を許可するため、意図的に分けています。dry run は package の download や configuration の書き込みをせず、予定状態を報告します。
 
-安全ルール：
+## RTK と Caveman
 
-- 重要エラー、失敗語、ファイルパス、コマンドシグナル、最新状態を保持する。
-- イベントを落とす前に、重複行、stack trace、低シグナル行集合を圧縮する。
-- 保護イベントを切る前に、低優先度イベントを落とす。
-- telemetry: `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` を出力する。
-
-### ブラウザ読み取り
-
-`aios-browser-compress` でコンパクトな証拠を優先します。
-
-1. `page.semantic_snapshot`
-2. targeted `page.extract_text`
-3. full `page.extract_text`
-4. `page.get_html`
-5. 視覚証拠が必要な時だけ screenshot
-
-click、type、publish、delete の前に、圧縮ビューで対象が証明できない場合は狭く再読み取りします。
-
-### CLI 出力
-
-shell hook はインストールしません。ツールに範囲を絞った出力を求めます。
+RTK はローカルの command-output layer です。初期化後、対応 command の出力を Agent が読む前に filter できます。重要な error と path を見失わないよう、範囲を絞った command を使い続けてください。
 
 ```bash
 rg -n "pattern" path
@@ -68,64 +52,68 @@ sed -n '120,180p' file.ts
 tail -n 120 test.log
 ```
 
-## 出力圧縮
+Caveman は Agent の表現を短くするローカル prompt skill です。command、path、error、date、decision、risk、未実施の verification を保持する必要があります。status update や checkpoint に便利ですが、詳しい説明の方が役立つ時は通常の style に戻してください。
 
-`aios-compress` で回答スタイルを制御します。
+## Headroom: MCP は明示的、wrapper 対応は別
 
-| Level | 用途 | 振る舞い |
-|-------|------|----------|
-| `tight` | 通常の開発 | 簡潔な技術回答、無駄なし |
-| `ultra` | harness logs、checkpoints | 1 行の証拠 + 次の action |
-| `precise` | browser actions、安全、不可逆操作 | 完全で明示的な表現 |
+Headroom の upstream CLI には一部 client 向けの公式 `wrap` target があります。wrapped client は Headroom 自身の proxy と lifecycle を使えます。**AIOS v3.6.0 は `aios init` がすべての client launch を自動 wrap するとは主張しません。** Headroom の install と MCP server の registration は別の操作です。
 
-Controls:
+この integration で upstream wrap target がない client では、AIOS は client 自身の MCP command を用いて公式 `headroom mcp serve` process を登録します。
 
-```text
-/compress tight
-/compress ultra
-/compress precise
-stop compress
-```
+| Client | v3.6.0 の経路 | 重要な条件 |
+| --- | --- | --- |
+| Gemini CLI | user-scope の公式 MCP registration | 別途 MCP consent が必要です。 |
+| Grok Build | user-scope の公式 MCP registration | 別途 MCP consent が必要です。 |
+| Hermes Agent | user-scope の公式 MCP registration | 実際の TTY で完了する必要があります。そうでなければ `pending-interactive` です。 |
 
-## なぜネイティブか
+MCP server は `headroom_compress`、`headroom_retrieve`、`headroom_stats` を公開します。model が明示的に呼び出します。通常、圧縮を要求する前に元の材料を既に読んでいるため、現在の turn では token が節約されず、tool call が 1 回増える場合もあります。利点は後続 step にあり、compact result を保持し、必要な時だけ original を reference で retrieve できます。
 
-ネイティブ圧縮は Codex と Claude で監査しやすく、一貫性を保てます。
+AIOS は所有する registration を `~/.aios/integrations/headroom-mcp.json` に記録します。既存の `headroom` entry が external だったり期待する fingerprint と異なったりする場合、installer は `external` または `conflict` を報告し、上書きしません。
 
-- 競合依存なし。
-- グローバルなコマンド書き換えなし。
-- 隠れた shell 挙動なし。
-- docs、skills、code がこの repo にある。
-- 検証で何を圧縮/削除したか確認できる。
+### ContextDB Packet
 
-## 関連ファイル
-
-- `mcp-server/src/contextdb/core.ts`
-- `skill-sources/aios-compress/SKILL.md`
-- `skill-sources/aios-browser-compress/SKILL.md`
-- `.codex/skills/aios-compress/SKILL.md`
-- `.codex/skills/aios-browser-compress/SKILL.md`
-- `.claude/skills/aios-compress/SKILL.md`
-- `.claude/skills/aios-browser-compress/SKILL.md`
-
-## All-Client Turn Compression (v1.50.1) {#all-client-turn-compression-v1501}
-
-v1.50.1 では、token compression を単なる guidance ではなく、計測可能な all-client contract にしました。
-
-すべての AIOS-managed agent turn は共有 metric `bidirectional-turn-compression` を出力する必要があります。
-
-- `pre_send`: prompt/input が target client または model に届く前に圧縮する。
-- `post_receive`: client/model output を AIOS が受け入れる前に圧縮する。
-- `requiredEntrypoint`: `aios-managed-runner`。
-- `directHostBypassAllowed`: `false`。
-- `uncontrolledHostOutput`: `policy-violation`。
-
-現在の matrix を確認します。
+session history の圧縮には次を使います。
 
 ```bash
-node scripts/aios.mjs clients doctor --json
-node scripts/aios.mjs interception proof --json
+npm run contextdb -- context:pack \
+  --session <session-id> \
+  --limit 80 \
+  --token-budget 1200 \
+  --token-strategy balanced
 ```
 
-proof output には Codex、Claude、Gemini、OpenCode、`aios-harness`、`generic-mcp` の `turn_compression_matrix` が含まれます。compliant な client は `pre_send` と `post_receive` の両方で non-zero `saved_bytes` を持ちます。
+| Strategy | 使う場面 | 動作 |
+| --- | --- | --- |
+| `balanced` | Default | 低シグナル text を圧縮し、error と最近の作業を保持します。 |
+| `aggressive` | 非常に小さい budget | 最大限に圧縮し、detail は最小限にします。 |
+| `legacy` | 旧来の挙動 | history の末尾だけを保持します。 |
 
-AIOS-managed runner 外の direct host output は savings として数えません。`policy-violation` / `non_compliant` として記録され、`saved_bytes=0` になります。
+**保持されるもの**（削除しないもの）:
+
+- Error message と failure signal
+- File path と command output
+- 最近の state と decision
+
+## 実践的な判断順序
+
+code、dependency、file、広い context を追加する前に、[Ponytail](https://github.com/DietrichGebert/ponytail) に着想を得た順序を使います。
+
+1. 説明、configuration change、またはより小さな edit で解決できるか。
+2. 既存の function、document、tool が既に対応していないか。
+3. repository、page、log 全体を読む代わりに、focused query を使えないか。
+4. その後で初めて、要件を満たす最小の tested implementation を追加する。
+
+browser 作業では、semantic snapshot、targeted text、full text、full HTML、必要な時だけ screenshot の順で compact evidence を読みます。
+
+## Privacy と測定
+
+- RTK と Caveman はローカルで動作します。Headroom の install は package repository や任意の model resource にアクセスする場合があります。
+- Headroom wrapper または通常の client は、user が設定した model provider へ引き続き model request を送ります。ローカル圧縮は provider traffic がなくなる保証ではありません。
+- upstream saving percentage は upstream benchmark であり、ローカル AIOS の証拠ではありません。`headroom_stats` が compression と正の saved-token total の両方を示した時だけ、測定済み MCP savings を主張してください。
+
+## さらに読む
+
+- [v3.6.0 リリースノート](changelog.md)
+- [Headroom + Ponytail workflow の記事](https://cli.rexai.top/blog/ja/2026-07-headroom-token-intelligence/)
+- [ContextDB](contextdb.md)
+- [Ponytail upstream project](https://github.com/DietrichGebert/ponytail)

@@ -1,53 +1,74 @@
 ---
-title: Token Compression
-description: Save tokens with community tools RTK + Caveman — installed automatically by aios init.
+title: Token Intelligence and Compression
+description: Keep useful context small with RTK, Caveman, Headroom MCP, ContextDB, and a Ponytail-inspired decision gate.
 ---
 
-# Token Compression
+# Token Intelligence and Compression
 
-**AI models have a limit on how much text they can process at once.** Token compression keeps your context small enough to fit, while preserving the important stuff.
+Token savings only help when the agent still has enough evidence to make the right decision. AIOS v3.6.0 uses a layered workflow: avoid unnecessary work first, then reduce the text each stage has to carry.
 
-Harness CLI integrates two community-maintained tools — **RTK** and **Caveman** — installed automatically via `aios init`.
+## The five layers
 
-## The Problem
+| Layer | Responsibility | What it does not promise |
+| --- | --- | --- |
+| Ponytail-inspired gate | Choose the smallest correct change before implementation. | It is a workflow rule, not an installed Ponytail plugin. |
+| RTK | Reduce noisy shell and tool output before it reaches the agent. | It does not replace scoped commands or preserve every line of a raw log. |
+| Headroom MCP | Let supported MCP clients explicitly compress material needed across later steps. | It is not transparent interception of the current model request. |
+| Caveman | Use a concise response style without dropping technical facts. | It does not compress tools or files by itself. |
+| ContextDB | Recall project context on demand instead of injecting all history. | It does not make runtime history automatically appear in every prompt. |
 
-Every time your agent starts a new session, ContextDB loads the history of what happened before. But if your project has months of history, that's a LOT of text — often more than the model can handle.
+Quality controls remain outside this stack: planning, tests, code-review evidence, privacy checks, and verification are still required.
 
-Token compression solves this by:
+## Install and inspect
 
-1. **Keeping** recent work, errors, decisions, and file paths
-2. **Compressing** repeated logs, verbose output, and stack traces
-3. **Dropping** low-priority content only when necessary
-
-## Two Tools
-
-### RTK — Input Compression (command output)
-
-RTK (https://github.com/rtk-ai/rtk) is a Rust CLI proxy that filters and compresses command output 60-90% before it reaches your agent's context. Single binary, <10ms overhead, 100+ supported commands.
-
-Installed and initialized automatically:
+Use `aios init` as the installation boundary:
 
 ```bash
-# aios init handles this, but you can also do it manually:
-rtk init -g                     # Claude Code / Copilot (default)
-rtk init -g --codex             # Codex
-rtk init -g --gemini            # Gemini CLI
-rtk init --agent hermes         # Hermes
+# Preview only; no package or client configuration changes.
+node scripts/aios.mjs init --all --dry-run
+
+# Interactive: install detected RTK, Caveman, and supported Headroom.
+node scripts/aios.mjs init --all
+
+# CI or other unattended installation.
+node scripts/aios.mjs init --all --yes-compression-tools
+
+# Also authorize new user-scope Headroom MCP registrations for Gemini and Grok.
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 ```
 
-After init, commands like `git status` are automatically rewritten to `rtk git status` — your agent receives compact output without any manual effort.
+Headroom needs Python 3.10 or later plus `uv` or `pipx`. AIOS installs the tested range `headroom-ai[all]>=0.31.0,<0.32.0` into an isolated tool environment; it does not silently modify the system Python environment.
 
-### Caveman — Output Compression (agent replies)
+`--yes-compression-tools` authorizes package installation. `--yes-headroom-mcp` is deliberately separate because it authorizes a change to a client user configuration. A dry run reports the planned state without downloading packages or writing configuration.
 
-Caveman (https://github.com/JuliusBrussee/caveman) is a Claude Code skill that cuts ~75% of output tokens while keeping full technical accuracy. It compresses the *style*, not the content.
+## RTK and Caveman
 
-```text
-/caveman              # activate (default: full)
-/caveman lite         # light: drop filler
-/caveman ultra        # telegraphic: minimal
-/caveman wenyan       # classical Chinese (even shorter)
-"normal mode"         # back to normal
+RTK is the local command-output layer. After initialization, it can filter supported command output before the agent reads it. Continue to prefer bounded commands so important errors and paths remain visible:
+
+```bash
+rg -n "pattern" path
+git diff --stat
+sed -n '120,180p' file.ts
+tail -n 120 test.log
 ```
+
+Caveman is a local prompt skill that shortens the agent's wording. It should preserve commands, paths, errors, dates, decisions, risks, and missing verification. It is useful for status updates and checkpoints; switch back to normal style when a detailed explanation is more useful.
+
+## Headroom: MCP is explicit, wrapper support is separate
+
+Headroom's upstream CLI has official `wrap` targets for some clients. A wrapped client can use Headroom's own proxy and lifecycle. **AIOS v3.6.0 does not claim that `aios init` automatically wraps every client launch.** Installing Headroom and registering an MCP server are not the same operation.
+
+For clients without an upstream wrap target in this integration, AIOS uses the client's own MCP command to register the official `headroom mcp serve` process:
+
+| Client | v3.6.0 route | Important condition |
+| --- | --- | --- |
+| Gemini CLI | User-scope official MCP registration | Requires the separate MCP consent. |
+| Grok Build | User-scope official MCP registration | Requires the separate MCP consent. |
+| Hermes Agent | User-scope official MCP registration | Must be completed in a real TTY; otherwise the status is `pending-interactive`. |
+
+The MCP server exposes `headroom_compress`, `headroom_retrieve`, and `headroom_stats`. A model calls these tools explicitly. Usually it has already seen the original material before it requests compression, so the current turn may save nothing and can cost an extra tool call. The benefit is that later steps can retain a compact result and retrieve the original by reference when necessary.
+
+AIOS records registrations it owns in `~/.aios/integrations/headroom-mcp.json`. If an existing `headroom` entry is external or differs from the expected fingerprint, the installer reports `external` or `conflict` and does not overwrite it.
 
 ### ContextDB Packets
 
@@ -62,7 +83,7 @@ npm run contextdb -- context:pack \
 ```
 
 | Strategy | When to use | What it does |
-|---|---|---|
+| --- | --- | --- |
 | `balanced` | Default | Compresses low-signal text, keeps errors and recent work |
 | `aggressive` | Very small budgets | Maximum compression, minimal detail |
 | `legacy` | Old behavior | Only keeps the tail end of history |
@@ -73,36 +94,27 @@ npm run contextdb -- context:pack \
 - File paths and command outputs
 - Recent state and decisions
 
-## Browser Reads
+## Practical decision order
 
-When your agent reads web pages, Harness CLI automatically prefers the most compact format:
+Before adding code, dependencies, files, or broad context, use this decision order inspired by [Ponytail](https://github.com/DietrichGebert/ponytail):
 
-1. Semantic snapshot (smallest)
-2. Targeted text extraction
-3. Full text extraction
-4. Full HTML (largest)
-5. Screenshot (only when visual evidence is needed)
+1. Can the request be solved by an explanation, configuration change, or a smaller edit?
+2. Is there an existing function, document, or tool that already covers it?
+3. Can a focused query replace a full repository, page, or log read?
+4. Only then add the smallest tested implementation that satisfies the requirement.
 
-This means less token waste when agents browse the web.
+For browser work, read compact evidence first: semantic snapshot, targeted text, full text, full HTML, then a screenshot only when visual evidence is necessary.
 
-## Installation
+## Privacy and measurement
 
-```bash
-# automatic — detects, installs, configures, initializes
-node scripts/aios.mjs init --all
 
-# CI/unattended
-node scripts/aios.mjs init --all --yes-compression-tools
+- RTK and Caveman run locally. Installing Headroom can access package repositories and optional model resources.
+- A Headroom wrapper or the user's normal client still sends model requests to the configured model provider; local compression is not a promise that provider traffic disappears.
+- Treat upstream saving percentages as upstream benchmarks, not local AIOS evidence. Claim measured MCP savings only when `headroom_stats` shows both compressions and positive saved-token totals.
 
-# manual
-# RTK:     https://github.com/rtk-ai/rtk#installation
-# Caveman: https://github.com/JuliusBrussee/caveman#install
-```
+## Further reading
 
-Both tools run locally — no external services, no data leaves your machine.
-
-## Where To Go Next
-
-- [ContextDB](contextdb.md) — how memory works with compression
-- [Solo Harness](solo-harness.md) — long runs benefit most from compression
-- [Architecture](architecture.md) — technical details of the compression pipeline
+- [v3.6.0 release notes](changelog.md)
+- [Headroom and Ponytail workflow article](https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/)
+- [ContextDB](contextdb.md)
+- [Ponytail upstream project](https://github.com/DietrichGebert/ponytail)

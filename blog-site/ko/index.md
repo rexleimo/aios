@@ -19,6 +19,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
+- [v3.6.0: Headroom과 Ponytail로 더 안전한 Token 인텔리전스 workflow 만들기](2026-07-headroom-token-intelligence.md)
 - [v3.2.0: Harness 신뢰성 및 스킬 라이프사이클 업그레이드](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build가 AIOS 1급 클라이언트가 되었습니다](2026-07-grok-build-aios-client.md)
 - [Hermes Agent가 AIOS 최상위 클라이언트로 승격](2026-06-hermes-agent-aios-client.md)

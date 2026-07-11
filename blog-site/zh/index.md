@@ -17,6 +17,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v3.6.0：用 Headroom 与 Ponytail 构建更稳的 Token 智能工作流](2026-07-headroom-token-intelligence.md)
 - [v3.2.0：Harness 可靠性与技能生命周期升级](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build 正式成为 AIOS 一等公民客户端](2026-07-grok-build-aios-client.md)
 - [Hermes Agent 正式成为 AIOS 一等公民客户端](2026-06-hermes-agent-aios-client.md)

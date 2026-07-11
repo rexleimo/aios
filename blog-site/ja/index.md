@@ -19,6 +19,7 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新の記事
 
+- [v3.6.0：Headroom と Ponytail でより安全な Token インテリジェンス workflow を作る](2026-07-headroom-token-intelligence.md)
 - [v3.2.0：Harness 信頼性とスキルライフサイクル向上](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build が AIOS のファーストクラスクライアントに](2026-07-grok-build-aios-client.md)
 - [Hermes Agent が AIOS ファーストクラスクライアントに昇格](2026-06-hermes-agent-aios-client.md)
