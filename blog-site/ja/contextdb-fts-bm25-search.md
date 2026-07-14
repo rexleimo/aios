@@ -1,4 +1,13 @@
+---
+title: "ContextDB 検索アップグレード: FTS5/BM25 + 増分インデックス同期"
+description: "SQLite FTS5、BM25、refs 完全一致、可観測な増分同期で AI エージェントのメモリ検索を安定させる方法を説明します。"
+date: 2026-06-18
+tags: ["ContextDB", "FTS5", "BM25", "Agent memory", "検索"]
+---
+
 # ContextDB 検索アップグレード: FTS5/BM25 + 増分インデックス同期（P1.5）
+
+> **Quick Answer:** ContextDB は SQLite FTS5 と BM25 で候補を順位付けし、正規化した `event_refs` で完全一致を行い、`index:sync --stats` で増分同期を観測します。CI では `--jsonl-out` を使って実行履歴を保存できます。
 
 ContextDB は P1 で検索の主経路を SQLite FTS5 + BM25 に移行しました。  
 P1.5 では運用面をさらに強化し、次を追加しています。
@@ -50,3 +59,17 @@ npm run bench:contextdb:refs -- --events 2000 --refs-pool 200 --queries 300 --wa
 - 大規模データでも refs フィルタの誤検出を抑制
 - refs クエリの遅延/ヒット率を CI gate で回帰防止
 - 長時間セッションやクロス CLI 引き継ぎで、毎回フル再構築せず安定運用
+
+## FAQ
+
+### BM25 は refs の完全一致フィルタを置き換えますか？
+
+いいえ。BM25 はテキスト候補の順位付けを担当し、正規化された `event_refs` がその後に完全な参照条件を適用します。
+
+### 毎回インデックス全体を再構築すべきですか？
+
+いいえ。通常の保守には増分 `index:sync` を使い、復旧や移行など明示的に必要な場合だけ `index:rebuild` を使います。
+
+### 現在の実装を確認する公式ドキュメントはどこですか？
+
+[ContextDB ドキュメント](https://cli.rexai.top/ja/contextdb/)、[Token Intelligence](https://cli.rexai.top/ja/token-compression/)、[Troubleshooting](https://cli.rexai.top/ja/troubleshooting/)を参照してください。

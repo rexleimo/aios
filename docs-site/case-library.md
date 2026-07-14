@@ -1,222 +1,143 @@
 ---
-title: Case Library
-description: Official reproducible scenarios that show what Harness CLI can do in real workflows.
+title: Case Library: Reproducible Harness CLI Workflows
+description: Follow evidence-first cases for setup, cross-client handoff, browser authentication, privacy-safe reads, and release verification.
 ---
 
-# Official Case Library
+# Case Library
 
-This page is the canonical capability map for `Harness CLI`.
+## Quick Answer
 
-Each case includes:
+Use these cases when you need a concrete workflow rather than a feature tour. Each case names prerequisites, commands, expected evidence, and the human decision that remains. Start with the case closest to your goal and then read the canonical page it links to.
 
-- `When to use`: decision trigger
-- `Run`: copy-paste commands
-- `Evidence`: what proves success
+## Case 1: Initialize a new project
 
-## Featured English Deep Dives
+**Goal:** create the current project marker and verify native integration.
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_library_featured_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="github_star" }
-[Raw CLI vs Harness CLI Layer](cli-comparison.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="compare_workflows" }
-[Case: Cross-CLI Handoff](case-cross-cli-handoff.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_handoff" }
-[Case: Browser Auth-Wall Flow](case-auth-wall-browser.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_authwall" }
-[Case: Privacy Guard Config Read](case-privacy-guard.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_privacy" }
+Prerequisites: Node.js 24 LTS, Git, a supported client, and a project root.
 
-## Case 1: 5-minute fresh setup on a new machine
+~~~bash
+cd /path/to/project
+aios init --all
+aios doctor --native --verbose
+test -f .aios/context-db/index.json
+~~~
 
-**When to use**
+Expected evidence: doctor reports the actual client checks, and the registry marker exists. Human decision: confirm the project is the intended workspace before allowing memory or configuration changes.
 
-You are onboarding a new laptop or teammate and need a clean baseline quickly.
+Canonical pages: [Quick Start](getting-started.md), [ContextDB](contextdb.md).
 
-**Run**
+## Case 2: Cross-client handoff
 
-```bash
-scripts/setup-all.sh --components all --mode opt-in
-scripts/verify-aios.sh
-```
+**Goal:** analyze in one client, implement in another, and preserve the decision trail.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-all.ps1 -Components all -Mode opt-in
-powershell -ExecutionPolicy Bypass -File .\scripts\verify-aios.ps1
-```
-
-**Evidence**
-
-- `verify-aios` exits with code `0`
-- `doctor-*` checks show no blocking errors
-
-## Case 2: Browser MCP installation and smoke test
-
-**When to use**
-
-You need browser automation (`browser_*`) working for demos or agent workflows.
-
-**Run**
-
-```bash
-scripts/install-browser-mcp.sh
-scripts/doctor-browser-mcp.sh
-```
-
-Then in client chat:
-
-```text
-browser_launch {"profile":"default"}
-browser_navigate {"url":"https://example.com"}
-browser_snapshot {"includeAx":true}
-browser_close {}
-```
-
-**Evidence**
-
-- `doctor-browser-mcp` reports `Result: OK` (warnings are acceptable)
-- Smoke commands return structured tool responses without runtime exceptions
-
-## Case 3: Cross-CLI handoff in one project
-
-**When to use**
-
-You want Claude to analyze, Codex to implement, and Gemini to review without losing context.
-
-**Run**
-
-```bash
+~~~bash
+aios memo add "The auth API stays unchanged"
 claude
 codex
-gemini
-```
+node scripts/aios.mjs search "auth API" --agent codex-cli --json
+~~~
 
-Or deterministic one-shot:
+Expected evidence: the memo or checkpoint is found by unified search, and each client passes its own doctor checks. Human decision: review the changed files and provider boundaries before sharing work.
 
-```bash
-scripts/ctx-agent.sh --agent claude-code --prompt "Summarize blockers and propose next steps"
-scripts/ctx-agent.sh --agent codex-cli --prompt "Implement the top priority fix from latest checkpoint"
-scripts/ctx-agent.sh --agent gemini-cli --prompt "Review risk and missing tests"
-```
+See the detailed [cross-CLI handoff case](case-cross-cli-handoff.md).
 
-**Evidence**
+## Case 3: Browser CDP smoke flow
 
-- New session/checkpoint artifacts under `.aios/context-db/`
-- Later CLI runs can continue using the same project context
+**Goal:** verify that the documented browser-use MCP path is available.
 
-## Case 4: Auth-wall handling (human-in-the-loop)
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-**When to use**
+Expected evidence: browser profile and CDP status are reported. For an interactive run, launch a visible CDP browser, connect, read a semantic snapshot, perform one bounded action, and verify the resulting page state. Human decision: handle authentication walls manually.
 
-Automation reaches login walls (Google, Meta, platform auth) and should not blindly bypass them.
+See the [browser authentication-wall case](case-auth-wall-browser.md).
 
-**Run**
+## Case 4: Privacy-safe configuration read
 
-```text
-browser_launch {"profile":"local"}
-browser_navigate {"url":"https://target.site"}
-browser_auth_check {}
-```
+**Goal:** inspect a configuration file without exposing raw secrets.
 
-If `requiresHumanAction=true`, complete login manually in that browser profile, then continue with `browser_snapshot` / `browser_click` / `browser_type`.
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-**Evidence**
+Expected evidence: the output is redacted according to the local privacy boundary. Human decision: inspect the redacted result and decide whether the remaining fields are safe to share. Never paste raw cookies, tokens, private keys, or browser profiles.
 
-- `browser_auth_check` returns explicit auth state fields
-- Flow resumes after manual login using the same profile
+See the [Privacy Guard case](case-privacy-guard.md).
 
-## Case 5: One-shot auditable execution chain
+## Case 5: Team governance smoke
 
-**When to use**
+**Goal:** prove the agent surface before a live team run.
 
-You need one command to produce an auditable record (`init -> session -> event -> checkpoint -> pack`).
+~~~bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+~~~
 
-**Run**
+Expected evidence: smoke, provenance, and training artifacts are written under .aios/agents/ and .aios/interception/metrics/. Human decision: confirm the provider, client, and changed skill are appropriate for live work.
 
-```bash
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "Continue from latest checkpoint and execute next step"
-```
+Canonical page: [Agent Team](team-ops.md).
 
-**Evidence**
+## Case 6: Resumable long task
 
-- New checkpoint entry in `.aios/context-db/index/checkpoints.jsonl`
-- Exported context packet in `.aios/context-db/exports/`
+**Goal:** run one clear objective with a reviewable journal.
 
-## Case 6: Team skill lifecycle (install/update/doctor/uninstall)
+~~~bash
+aios harness run \
+  --objective "Prepare the release handoff" \
+  --session release-handoff \
+  --worktree \
+  --max-iterations 20
+aios harness status --session release-handoff --json
+aios harness stop --session release-handoff --reason "review checkpoint"
+aios harness resume --session release-handoff
+~~~
 
-**When to use**
+Expected evidence: status, checkpoints, and iteration artifacts identify the current stage. Human decision: review the worktree diff and tests before merge.
 
-You manage shared skills across multiple CLIs and need predictable lifecycle operations.
+Canonical page: [Solo Harness](solo-harness.md).
 
-**Run**
+## Case 7: Dry-run versus live
 
-```bash
-scripts/install-contextdb-skills.sh
-scripts/doctor-contextdb-skills.sh
-scripts/update-contextdb-skills.sh
-# rollback if needed
-scripts/uninstall-contextdb-skills.sh
-```
+**Goal:** distinguish local plan validation from provider execution.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-skills.ps1
-# rollback if needed
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-skills.ps1
-```
+~~~bash
+aios team --provider codex --workers 2 --task "Review the release checklist" --dry-run --json
+aios orchestrate bugfix --task "Fix the release check" --dispatch local --execute dry-run
+~~~
 
-**Evidence**
+Expected evidence: local dispatch and journal state without model calls. Human decision: only enable live after provider, credentials, worktree, and verification scope are ready.
 
-- Doctor output confirms expected targets exist and are healthy
-- Update/uninstall produce no dangling broken links
+## Case 8: Release verification
 
-## Case 7: Shell wrapper recovery and rollback
+**Goal:** collect evidence before publishing a change.
 
-**When to use**
+~~~bash
+aios doctor --native --verbose
+aios quality-gate pre-pr --profile strict
+npm run test:scripts
+git diff --check
+~~~
 
-A user reports command wrapping issues and you need a safe recover path.
+Expected evidence: each command exits successfully or identifies a concrete blocker. Human decision: review claims, links, privacy boundaries, and generated output before release.
 
-**Run**
+## Submit a new official case
 
-```bash
-scripts/doctor-contextdb-shell.sh
-scripts/update-contextdb-shell.sh
-# full rollback if needed
-scripts/uninstall-contextdb-shell.sh
-```
+A useful case includes:
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-shell.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-shell.ps1
-# full rollback if needed
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-shell.ps1
-```
+- one user intent and one primary action;
+- exact commands and prerequisites;
+- expected status, file, or test evidence;
+- human-in-the-loop boundaries;
+- one canonical documentation link and one related case.
 
-**Evidence**
+Do not include credentials, cookies, private paths, or unredacted provider output.
 
-- Wrapper doctor no longer reports blocking issues
-- Native `codex`/`claude`/`gemini` commands work after rollback
+## Next steps
 
-## Case 8: Security hygiene pre-release check
-
-**When to use**
-
-Before publishing updates, verify no unsafe config drift in skills/hooks/MCP settings.
-
-**Run**
-
-```bash
-scripts/doctor-security-config.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-security-config.ps1
-```
-
-**Evidence**
-
-- Security doctor exits `0`
-- Any warnings are reviewed and resolved before release
-
-## Contribute a new official case
-
-To propose a case for this library:
-
-1. Include exact commands with no placeholders.
-2. Define measurable evidence (exit code, file artifact, or tool response).
-3. Add rollback/recovery step when relevant.
+- [Use Cases](use-cases.md) - choose a route.
+- [Troubleshooting](troubleshooting.md) - recover symptoms.
+- [Workflow Policy](workflow-policy.md) - understand the decision boundary.

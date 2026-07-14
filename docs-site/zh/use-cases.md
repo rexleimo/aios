@@ -1,211 +1,136 @@
 ---
-title: 按场景找命令
-description: 不先背概念，直接按“我想做什么”选择 Harness CLI 命令。
+title: 按场景找命令：选择 Harness CLI 路径
+description: 按记忆、搜索、并行工作、可恢复运行、浏览器、隐私和验证目标选择 Harness CLI 命令。
 ---
 
 # 按场景找命令
 
-这页只回答一个问题：**我现在应该敲哪条命令？**
+## 一句话回答
 
-<figure class="rex-visual">
-  <img src="../assets/visual-contextdb-memory-loop.svg" alt="ContextDB 项目记忆循环：创建 .contextdb-enable 后，codex、claude、gemini 共享本地项目记忆">
-  <figcaption>大多数场景都围绕同一个核心：在项目根目录开启 ContextDB，之后不同 CLI 都能接上同一份本地上下文。</figcaption>
-</figure>
+根据当前工作选择命令：安装用 aios init 和 doctor，项目事实用 memo 和统一搜索，独立工作用 aios team，一个长目标用 aios harness，按顺序执行阶段用 aios orchestrate。路径不确定时先看[工作流策略](workflow-policy.md)。
 
-## 我想安装并检查环境
+## 先完成初始化
 
-```bash
-aios
-```
-
-进入 TUI 后按顺序执行：
-
-1. **Setup**：安装 shell 包装、skills、browser 等组件。
-2. **Doctor**：检查 Node、MCP、skills、native 配置。
-3. **Update**：以后升级也优先从这里走。
-
-命令行方式：
-
-```bash
-aios setup --components all --mode opt-in --client all
+~~~bash
+aios init --all
 aios doctor --native --verbose
-```
+~~~
 
-## 我想让 agent 记住当前项目
+在项目根目录执行。标记指向 .aios/context-db/index.json，ContextDB 会按需召回相关来源。
 
-```bash
-cd /path/to/project
-touch .contextdb-enable
+## 选择路径
+
+| 我想要... | 使用 |
+| --- | --- |
+| 提问或检查，不修改文件 | direct |
+| 做一个小而清晰的本地改动 | guarded |
+| 协调多步骤或可恢复目标 | planned / Solo Harness |
+| 拆分独立工作包 | Agent Team |
+| 按顺序执行并带门禁 | Orchestrate |
+| 先理解决策规则 | [工作流策略](workflow-policy.md) |
+
+## 项目记忆和搜索
+
+~~~bash
+aios memo add "保持认证测试严格"
+aios memo search "认证"
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
+~~~
+
+ContextDB 在本地保存项目 session、检查点、导出文件和规范 memo。统一搜索可以在大范围读取前搜索 memory、plans、docs 和 code。
+
+## 跨客户端交接
+
+当集成已同步时，可以在同一项目运行受支持客户端：
+
+~~~bash
+claude
 codex
-```
+gemini
+~~~
 
-之后在同一项目里运行 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`，都会接入同一个 ContextDB。
+重要决策使用显式 memo 和 checkpoint。共享项目存储不等于每个客户端拥有相同路由或 MCP 支持，请用 aios doctor 确认。
 
-## 我想要可持续的操作记忆（Memo + Persona）
+## 一个长目标
 
-如果你希望在 CLI 里快速记录长期偏好/项目约束，用 `aios memo`：
-
-```bash
-aios memo add "Need strict pre-PR checks #quality"
-aios memo pin add "Avoid destructive git commands."
-aios memo recall "quality gate" --limit 5
-aios memo storage status
-aios memo persona add "Response style: concise, direct, evidence-first"
-aios memo user add "Preferred language: zh-CN + technical English terms"
-```
-
-记忆分层规则：
-
-- `memo add/search/recall` -> 规范 `.aios/memo` 存储（仅为兼容性镜像 legacy ContextDB）
-- `memo pin` -> 规范 `.aios/memo` pinned 文件（仅为兼容性镜像 legacy workspace-memory）
-- `memo persona/user` -> 全局身份文件，会注入 `ctx-agent` 的 Memory prelude
-
-默认 storage 是 `file`（`.aios/memo/file/events.jsonl`）。只有想要一条 memo 一个 JSON 文件时，才用 `aios memo storage use split`。`storage rebuild` 只全量重建派生查询文件。
-
-Persona 用来描述 agent 基线（“这个 AI 应该怎么工作”），User profile 用来描述用户稳定偏好（“这个用户希望怎么交付”）。两者注入前都会经过安全扫描和容量限制。
-
-## 我想跨 CLI 接力
-
-```bash
-claude   # 先分析
-codex    # 再实现
-gemini   # 最后复查或对比
-```
-
-只要都在同一个项目目录里，ContextDB 会保存事件和 checkpoint，降低“换工具就丢上下文”的概率。
-
-## 我想让一个 agent 自己过夜跑
-
-适合：目标明确、只需要一个 provider、希望夜里持续推进，而且没必要拆成并行 worker。
-
-```bash
-aios harness run --objective "整理明早交接清单" --session nightly-demo --worktree --max-iterations 20
+~~~bash
+aios harness run \
+  --objective "起草明天的交接" \
+  --session nightly-demo \
+  --worktree \
+  --max-iterations 20
 aios harness status --session nightly-demo --json
-aios hud --session nightly-demo --json
-```
-
-如果你想让它停在安全边界，或者第二天继续：
-
-```bash
-aios harness stop --session nightly-demo --reason "白天人工接手"
+aios harness stop --session nightly-demo --reason "早间审查"
 aios harness resume --session nightly-demo
-```
+~~~
 
-如果你需要 lifecycle hook 证据，可显式指定：
+完整生命周期见 [Solo Harness](solo-harness.md)。dry run 只创建本地日志状态，不测试供应商。
 
-```bash
-aios harness run --objective "整理明早交接清单" --session nightly-demo --hooks
-aios harness resume --session nightly-demo --no-hooks
-```
+## 独立并行工作
 
-如果你要的是“一个 agent 盯一个目标持续做”，用 [单 Agent 夜跑](solo-harness.md)。如果任务本身适合并行拆分，再用 [多 Agent 实战](team-ops.md)。
+只有文件和所有权独立时才启动 Team：
 
-提示：如果你是从包装后的 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 开始，并明确提出过夜/可恢复任务，启动路由提示会让 agent 自己触发同样的 `aios harness run ... --workspace <project-root>` 命令，不需要你手动记。
-
-## 我想开多 Agent
-
-适合：模块独立、任务可以拆、你能接受 token 成本。
-
-```bash
-# Dry-run 预览（安全，不调用模型）
-aios team 3:codex "实现 X，完成前运行测试并总结改动"
-
-# Live GroupChat 执行（基于轮次，共享对话）
-AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli aios team 3:codex "实现 X"
-
-# 监控进度
+~~~bash
+aios team --provider codex --workers 3 --task "实现 X 并更新测试" --dry-run --json
+AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
+  aios team 3:codex "实现 X 并更新测试"
 aios team status --provider codex --watch
-```
+~~~
 
-在 live 模式下，Agent Team 使用 **GroupChat Runtime**：agent 在轮次中运行，共享同一个对话线程。Planner 分析任务，implementer 按轮次并行工作，reviewer 验证。被阻塞的 agent 会触发自动 re-plan 轮次。
+治理、历史、阻塞恢复和证据见 [Agent Team](team-ops.md)。
 
-当你新增 agent、修改路由或更新 workflow skill 时，先记录治理证据再信任 live 运行：
+## 分阶段编排
 
-```bash
-node scripts/aios.mjs agents smoke --dry-run --json
-node scripts/aios.mjs agents smoke --json
-node scripts/aios.mjs skill verify-training --changed --base HEAD --json
-```
+先预览 blueprint：
 
-不适合：需求还模糊、单点 bug、多个 worker 会改同一个文件。此时先用普通 `codex`。
+~~~bash
+aios orchestrate bugfix --task "修复 X" --dispatch local --execute dry-run
+~~~
 
-## 我想看进度和历史
+通过 preflight 和供应商检查后再启用 live：
 
-```bash
-aios hud --provider codex
-aios team status --provider codex --watch
-aios team history --provider codex --limit 20
-```
-
-如果只想快速看最近失败：
-
-```bash
-aios team history --provider codex --quality-failed-only
-```
-
-## 我想让任务有质量门禁
-
-```bash
-aios quality-gate pre-pr --profile strict
-```
-
-适合提交 PR 前或大改后跑一遍。它会把 ContextDB、native/sync、release health 等检查纳入门禁。
-
-如果你想直接看 RL 发布门禁状态和趋势：
-
-```bash
-aios release-status --recent 12
-aios release-status --strict
-```
-
-## 我想让 Harness CLI 分阶段编排
-
-先预览，不调用模型：
-
-```bash
-aios orchestrate feature --task "Ship X" --dispatch local --execute dry-run
-```
-
-确认要 live 执行时再显式打开：
-
-```bash
-export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli
-aios orchestrate --session <session-id> --dispatch local --execute live
-```
-
-新用户优先用 `aios team ...`。`orchestrate live` 更适合已经理解 session、plan、preflight 的维护者。
-
-对于聚焦单点修改的任务，可使用 `bugfix` blueprint（3 轮：plan → implement → review）：
-
-```bash
+~~~bash
 AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
   aios orchestrate bugfix --task "修复 X" --execute live --preflight none
-```
+~~~
 
-## 我想排查浏览器自动化
+当阶段顺序和质量门禁比并行数量更重要时使用 Orchestrate。dry-run 不是实时供应商测试。
 
-```bash
-aios internal browser doctor --fix
+## 浏览器自动化
+
+默认文档路径是 browser-use MCP over CDP：
+
+~~~bash
+aios internal browser doctor
 aios internal browser cdp-status
-```
+~~~
 
-如果页面操作失败，先看 [故障排查](troubleshooting.md)，不要直接重装全部组件。
+交互式浏览器工作先启动可见 CDP 浏览器、连接、读取 semantic snapshot 或定向文本，再执行并验证。认证墙保留人工控制。Playwright MCP 是兼容路径。
 
-## 我想保护密钥和配置
+## 保护敏感信息
 
-```bash
+~~~bash
 aios privacy read --file .env
-```
+aios privacy status
+~~~
 
-不要把 `.env`、cookies、token、浏览器 profile 原样贴给模型。Harness CLI 的 Privacy Guard 会尽量在读取前脱敏。
+不要把 .env、cookie、token、私钥或浏览器 profile 粘贴给模型。脱敏是边界检查，不是分享所有文件的许可。
 
-## 选择口诀
+## 交付前验证
 
-- **日常开发**：`codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok`
-- **安装更新**：`aios`
-- **单 Agent 夜跑**：`aios harness run --objective "整理明早交接清单" --worktree`
-- **多 Agent（GroupChat）**：`aios team 3:codex "任务"`（基于轮次的共享对话）
-- **看进度**：`aios team status --watch`
-- **交付前检查**：`aios quality-gate pre-pr --profile strict`
-- **浏览器问题**：`aios internal browser doctor --fix`
+~~~bash
+aios quality-gate pre-pr --profile strict
+aios doctor --native --verbose
+npm run test:scripts
+~~~
+
+同时运行项目自己的定向测试。状态行或 dry-run 输出不能替代真正证明结论的命令。
+
+## 下一步
+
+- [工作流策略](workflow-policy.md) - 路由语义和继续规则。
+- [ContextDB](contextdb.md) - 记忆和统一搜索。
+- [Agent Team](team-ops.md) - 并行操作。
+- [Solo Harness](solo-harness.md) - 可恢复操作。
+- [故障排查](troubleshooting.md) - 按症状恢复。

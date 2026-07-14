@@ -1,144 +1,108 @@
-# 한 사람이 3개 小红书 계정 관리하는流程 만들었더니, 동료가 너무 좋다고 소리 질렀
-
-한 사람이 3개 계정 管理居然매일 퇴근 잘 됨.
-
-그가有多勤奋가 아니라 **运营流程自动化했기 때문**.
-
-오늘 내 完全流程 공유, 먼저收藏再看.
-
+---
+title: "Automation Playbook: Build a Reliable Browser Content Workflow"
+description: "A practical, human-controlled playbook for browser content operations with queues, review gates, CDP sessions, ContextDB, and measurable outcomes."
+date: 2026-07-14
+tags: ["browser automation", "content operations", "MCP", "ContextDB", "workflow design"]
 ---
 
-## 01. 运营现状
+# Automation Playbook: Build a Reliable Browser Content Workflow
 
-### 之前的我状态
+> **Quick Answer:** The reliable way to automate browser-based content work is to separate planning, drafting, human review, publishing, and measurement. Use a visible CDP browser and explicit MCP actions, keep credentials in the browser profile, respect platform rules and rate limits, and record outcomes in a searchable project context. Automation should remove repetitive steps, not remove accountability.
 
-- 3개 계정, 매일 3-9篇笔记 发布
-- 手動으로 좋아요, 댓글, 팔로우
-- 手動으로 데이터 보고, 手動으로 기록
+Browser automation is often described as a macro: open a page, click a button, paste text, repeat. That model hides the important parts of the workflow: which content is approved, which account is active, what happened after publishing, and how to recover after a browser or network failure.
 
-**매일 2-3시간을 이 中花费.**
+This playbook turns the macro into a small operating system for repeatable content work.
 
-### 现在的我状态
+## The workflow in one page
 
-- 같은 3개 계정
-- 매일**只需要15分钟**
+| Stage | System responsibility | Human responsibility |
+| --- | --- | --- |
+| Plan | Maintain an idea queue and status fields | Set goals, audience, and publishing constraints |
+| Draft | Generate variants and attach source references | Edit for accuracy, tone, and originality |
+| Review | Block unapproved items from the publish queue | Approve the final copy and media |
+| Publish | Navigate the visible browser and report the result | Handle authentication walls and sensitive actions |
+| Measure | Record outcome metrics and timestamps | Interpret results and choose the next experiment |
 
-남은 시간으로 内容想, 女交往, 摸鱼.
+The status model should be explicit: `idea -> draft -> review -> approved -> published -> measured`. A failed browser action is not the same as a rejected draft, so keep operational outcomes separate from content outcomes.
 
----
+## 1. Start with a queue, not a prompt
 
-## 02. 我的自动化流程
+Store one content item per record with:
 
-### 第一步: 内容批量生产
+- a stable content ID;
+- target platform and account label;
+- topic, audience, and intended action;
+- draft text and media references;
+- approval status and reviewer;
+- publish window and actual timestamp;
+- result metrics and follow-up note.
 
-**之前**: 每天想文案想到头禿.
+The queue makes work resumable. If the browser closes after item 12, the next run can query `approved` items rather than asking an agent to infer state from a transcript.
 
-**现在**:
+## 2. Use a visible, bounded browser loop
 
-1. 周末 批量 想 20-30 个 选题
-2. 用 AI 生成 初稿
-3. 人工 审核 修改
-4. 存到 素材库
+For browser work, use the repo's preferred browser-use CDP path:
 
-**耗时**: 周末 2 小时
+1. Launch a visible browser with the intended profile.
+2. Connect through CDP.
+3. Read a semantic snapshot or extract the relevant text.
+4. Perform one visible action.
+5. Wait for the expected state transition.
+6. Re-read the page and record the outcome.
 
-### 第二步: 定时自动发布
+Keep authentication and sensitive outbound actions human-controlled. Do not build a stealth system, rotate identities, bypass platform controls, or claim that random delays make an automation flow compliant. Use official APIs or platform-approved automation where available, and keep a person in the loop for account, policy, and publication decisions.
 
-**之前**: 每天 手動 点 发布, 等 上传, 确认.
+## 3. Make review a real gate
 
-**现在**:
+An approval checkbox is not enough if the publisher ignores it. The publish step should require:
 
-1. 设置 定时任务 (比如 每天 9:00、12:00、18:00)
-2. Harness CLI 自动 登录 → 选图 → 填 文案 → 发布 → 截图 确认
+```text
+status == approved
+reviewer != empty
+media references resolve
+target account matches the selected profile
+```
 
-**耗时**: 0 分钟 (自动跑)
+If any condition fails, stop and report `blocked`. Do not silently downgrade the check to a warning. This is the same principle as the Harness CLI edit gate: a safety boundary must be observable and enforceable.
 
-### 第三步: 智能互动
+## 4. Store useful context, not every transcript
 
-**之前**: 手動 刷 半小时, 点赞 点到手 酸.
+ContextDB is useful for durable facts, queue state, references, and handoff notes. A pull-based workflow can retrieve the item needed for the next action without injecting the entire historical conversation.
 
-**现在**:
+For search and maintenance, see the [ContextDB documentation](https://cli.rexai.top/contextdb/) and the [ContextDB Search article](contextdb-fts-bm25-search.md). Keep personal data, credentials, cookies, and unredacted authorization logs out of public artifacts.
 
-1. 设置 目标 关键词 (比如 "编程"、"AI"、"成长")
-2. Harness CLI 自动 遍历 → 智能 点赞 → 生成 个性化 评论 → 自动 关注
+## 5. Measure outcomes with a stable definition
 
-**耗时**: 0 分钟 (自动跑)
+Record the same fields for each item and platform. Useful measures include exposure, reads, saves, comments, follows, click-throughs, and time from approval to publication. Do not compare a post published for two hours with one measured for seven days without recording the observation window.
 
-### 第四步: 数据监控
+Perception can summarize outcomes, but it does not decide what is true or automatically publish a new variant. The next experiment should state one hypothesis, one changed variable, and one observation window.
 
-**之前**: 每天 打开 小红书 10 次 看 数据.
+## Recovery checklist
 
-**现在**:
+When a run stops, classify the outcome before retrying:
 
-1. 每天 早上 9 点 自动 抓取 数据
-2. 生成 报表 发到 邮箱
+- `blocked`: human approval, login, or policy decision is required;
+- `failed`: the content or requested operation is invalid;
+- `infra-retry`: browser, tool, or network may recover;
+- `published`: publication was verified;
+- `measured`: the observation was recorded.
 
-包含: 曝光量、阅读数、点赞数、收藏数、评论数、粉丝增长...
+Attach the last page state, account label, content ID, and next safe action. A good handoff lets another operator continue without guessing.
 
-**耗时**: 0 分钟 (每天 早上 自动跑)
+## FAQ
 
----
+### Can this workflow publish without human review?
 
-## 03. 核心 工具
+Only when the platform, account owner, and project policy explicitly allow that level of automation. The default playbook keeps approval and sensitive outbound actions human-controlled.
 
-我 用 的 工具 是 **Harness CLI**, 它 解决 了:
+### Should I automate several accounts at once?
 
-| 问题 | 解决 方式 |
-|------|----------|
-| 浏览器 控制 | Playwright MCP |
-| 断点 续跑 | Context DB |
-| 反检测 | 随机 延迟 + 行为 模拟 |
-| 多账号 隔离 | Browser Profile |
+First prove the queue, review, and recovery model with one account. Add isolated profiles and explicit ownership only after the single-account flow is observable and compliant.
 
----
+### What is the smallest useful setup?
 
-## 04. 常见 问题
+Use a content queue, one visible CDP browser profile, an approval gate, and an outcome record. Add ContextDB search and Perception summaries when the volume justifies them.
 
-**Q1: 会被 封号 吗?**
+## Canonical Docs
 
-A: 会, 但 能 避免. 核心 是:
-- 随机 操作 间隔 (5-30 秒)
-- 随机 滑动 轨迹
-- 不要 高频 操作
-
-Harness CLI 默认 开启 这些 配置.
-
-**Q2: 内容 被判 重复 怎么办?**
-
-A: 配置 文案 变体 生成. 同一个 意思, 三种 说法 轮流 用.
-
-**Q3: 登录态 怎么 保持?**
-
-A: Browser Profile 保存 Cookie. 一般 能 撑 1-2 周.
-
----
-
-## 05. 我的 建议
-
-1. **先 从 一个 账号 开始** —— 别 一 上来 就 搞 3 个
-2. **内容 为 王** —— 自动化 省 时间, 但 不能 帮 你 生产 好 内容
-3. **数据 说话** —— 每天 看 数据 报表, 比 盲目 操作 重要 100 倍
-
----
-
-## 06. 工具 获取
-
-官网: [rexai.top](https://rexai.top)
-
-运营 工具 栈: [tool.rexai.top](https://tool.rexai.top)
-
----
-
-## 07. 写在 最后
-
-**自动化 不是 替代 你 思考, 而是 帮 你 省下 那些 不用 思考 的 时间.**
-
-把这 2 小时 省下来, 去 陪 家人、去 学习、去 享受 生活, 不香 吗?
-
----
-
-**你 运营 中 最 头疼 的 是 哪个 环节?**
-
-评论 区 聊聊, 下期 可以 专门 写 你 需要的 部分.
-
-觉得 有用, 点个赞. 关注 rexai.top, 下期 见.
+Start with [Getting Started](https://cli.rexai.top/getting-started/), [Browser Auth-Wall Case](https://cli.rexai.top/case-auth-wall-browser/), [ContextDB](https://cli.rexai.top/contextdb/), and [Troubleshooting](https://cli.rexai.top/troubleshooting/).

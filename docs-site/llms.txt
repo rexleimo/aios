@@ -1,6 +1,6 @@
 # Harness CLI
 
-> AI memory system + orchestration docs for Codex CLI, Claude Code, Gemini CLI, and OpenCode.
+> Local-first AI agent workflow and memory docs for Codex CLI, Claude Code, Gemini CLI, OpenCode, and Grok Build.
 
 ## Search Intents
 - memory system for coding agents
@@ -8,16 +8,20 @@
 - Hermes engine workflow orchestration
 - Agent Team collaboration runtime
 - automatic subagent planning and execution gates
+- adaptive workflow policy: noop, direct, guarded, and planned
+- reliable solo harness runs with explicit failure states and verification evidence
 - privacy-safe coding agent startup with Privacy Shield and Privacy Guard
 - unified AIOS project search across memory, docs, plans, and code
 - all-client native instruction projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
 - measurable all-client turn compression with pre_send and post_receive proof
+- explicit Headroom MCP compression and retrieval (not transparent interception)
 
 ## Canonical
 - https://cli.rexai.top/
 
 ## Core Docs
 - https://cli.rexai.top/getting-started/
+- https://cli.rexai.top/workflow-policy/
 - https://cli.rexai.top/use-cases/
 - https://cli.rexai.top/case-library/
 - https://cli.rexai.top/contextdb/
@@ -31,6 +35,9 @@
 - https://cli.rexai.top/blog/2026-05-token-compression/
 - https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
 - https://cli.rexai.top/blog/2026-06-v1501-token-compression-compliance/
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
+- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
+- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
 
 ## Languages
 - https://cli.rexai.top/zh/

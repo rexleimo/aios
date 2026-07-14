@@ -5,6 +5,12 @@ description: A structural knowledge graph that gives your coding agents instant 
 
 # Code Review Graph (Codemap)
 
+> **Quick Answer:** Codemap builds a local structural graph of the repository so agents can inspect callers, dependents, imports, affected flows, and test coverage before editing. Use it at architecture, impact-radius, and final-review decision points; it complements tests rather than replacing them.
+
+## What Codemap answers first
+
+Before a change, the graph should help answer three questions: what will this touch, which flows depend on it, and what tests already cover the target? If the graph is unavailable, use a targeted repository search and state that fallback in the verification evidence.
+
 **The short version:** Codemap builds a Tree-sitter knowledge graph of your entire codebase and injects it as MCP tools into all your coding agents. Your agents stop blindly grepping files and start making informed decisions — knowing what calls what, what tests cover what, and what will break if you change something.
 
 No external services. No cloud. Just a local SQLite graph in `.code-review-graph/`.
@@ -143,3 +149,17 @@ Dry-run preview:
 ```bash
 aios internal codemap uninstall --dry-run
 ```
+
+## FAQ
+
+### Does Codemap send repository code to an external service?
+
+No. The graph data and the stdio MCP runtime are local; package resolution during first-time setup is a separate installation concern.
+
+### Does a graph result prove a change is safe?
+
+No. It narrows the impact surface. Tests, build checks, and human review still provide the completion evidence.
+
+## Canonical Docs
+
+Read [Architecture](architecture.md), [Workflow Policy](workflow-policy.md), and [Troubleshooting](troubleshooting.md) for the full integration boundary.

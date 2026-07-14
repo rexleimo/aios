@@ -264,12 +264,17 @@ function resolveRelativeDocTarget(fromDocRelPath, target) {
 async function localSiteTargetExists(siteFileSet, siteRoot, resolvedTarget) {
   const normalized = path.posix.normalize(resolvedTarget);
   const cleanPageTarget = normalized.endsWith('/') ? `${normalized.slice(0, -1)}.md` : null;
+  const extensionlessPageTarget = !path.posix.extname(normalized) && !normalized.endsWith('/')
+    ? `${normalized}.md`
+    : null;
 
   return Boolean(
     siteFileSet.has(normalized)
       || (cleanPageTarget && siteFileSet.has(cleanPageTarget))
+      || (extensionlessPageTarget && siteFileSet.has(extensionlessPageTarget))
       || (await fileExists(path.posix.join(siteRoot, normalized)))
       || (cleanPageTarget && (await fileExists(path.posix.join(siteRoot, cleanPageTarget))))
+      || (extensionlessPageTarget && (await fileExists(path.posix.join(siteRoot, extensionlessPageTarget))))
   );
 }
 
@@ -446,4 +451,5 @@ export {
   extractHeadingIds,
   extractNavLabels,
   extractLocaleNavTranslationKeys,
+  localSiteTargetExists,
 };

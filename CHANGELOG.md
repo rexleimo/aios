@@ -718,3 +718,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [4.0.0] - 2026-07-14
 
 - adopt adaptive workflow policy routing
+
+## [4.0.1] - 2026-07-14
+
+- docs: expand public content and SEO/GEO coverage

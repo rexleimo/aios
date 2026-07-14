@@ -5,6 +5,12 @@ description: Automatically pick the right AI model for each task — so you don'
 
 # Model Router
 
+> **Quick Answer:** Model Router matches a task to a model using the task type, routing profile, capability registry, and configured fallback rules. Use `--explain` when you need to see why a model was selected; use a profile or explicit override when the default trade-off is not right for the task.
+
+## Start with an explainable route
+
+The safest first command is an explainable route. It shows the selected model and the signals used by the router, so a routing decision can be reviewed instead of treated as magic.
+
 **Different AI models are good at different things.** Model Router automatically sends each task to the model that's best at it.
 
 Frontend work? Use Kimi K2.6. Security review? Use Claude Opus. Browser automation? Use GPT-5.5. You don't need to memorize this — the router figures it out from your task description.
@@ -223,3 +229,17 @@ Yes. Agent Team uses Model Router by default — each phase of the team gets rou
 - [Agent Team](team-ops.md) — multi-agent collaboration with automatic routing
 - [ContextDB](contextdb.md) — project memory
 - [Solo Harness](solo-harness.md) — long-running single-agent work
+
+## FAQ
+
+### Does Model Router call a model before it chooses one?
+
+No. The router selects a client/model path from task metadata and configured capabilities. The selected client performs the task afterward.
+
+### Can I override the recommendation?
+
+Yes. Use a routing profile or an explicit role/task override when cost, latency, or capability needs differ from the default.
+
+## Canonical Docs
+
+See [Agent Team](team-ops.md), [Workflow Policy](workflow-policy.md), and [ContextDB](contextdb.md) for the surrounding execution contract.

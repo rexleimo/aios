@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -9,9 +11,12 @@ import {
   extractNavLabels,
   isExternalOrRootLink,
   isLocaleDriftLink,
+  localSiteTargetExists,
   resolveRelativeDocTarget,
   splitMarkdownDestination,
 } from '../check-site-sync.mjs';
+
+const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
 
 test('extractMdNavTargets returns only markdown file nav targets', () => {
   const mkdocs = `site_name: demo
@@ -67,6 +72,18 @@ test('link helpers normalize relative paths and classify root/external links', (
   assert.equal(resolveRelativeDocTarget('zh/guides/intro.md', '../../team-ops.md'), 'team-ops.md');
 });
 
+test('site targets resolve extensionless pages and trailing-slash routes', async () => {
+  const files = new Set(['getting-started.md', 'use-cases.md', 'contextdb.md']);
+
+  for (const target of ['getting-started', 'getting-started/', 'use-cases', 'contextdb/']) {
+    assert.equal(await localSiteTargetExists(files, 'docs-site', target), true, target);
+  }
+
+  for (const target of ['/getting-started/', '/use-cases/', '/contextdb/']) {
+    assert.equal(isExternalOrRootLink(target), true, target);
+  }
+});
+
 test('locale drift helper catches localized pages linking to English roots', () => {
   assert.equal(isLocaleDriftLink('docs-site/zh/index.md', '/blog/rl-training-system/'), true);
   assert.equal(isLocaleDriftLink('docs-site/zh/index.md', '/blog/zh/rl-training-system/'), false);
@@ -100,4 +117,13 @@ plugins:
 
   assert.deepEqual([...extractNavLabels(mkdocs)], ['Home', 'Core Features', 'ContextDB', 'HUD Guide']);
   assert.deepEqual([...extractLocaleNavTranslationKeys(mkdocs, 'zh')], ['Home', 'Core Features', 'ContextDB']);
+});
+
+test('the docs nav exposes Workflow Policy in every locale', () => {
+  const mkdocs = fs.readFileSync(path.join(rootDir, 'mkdocs.yml'), 'utf8');
+
+  assert.equal(extractNavLabels(mkdocs).has('Workflow Policy'), true);
+  for (const locale of ['zh', 'ja', 'ko']) {
+    assert.equal(extractLocaleNavTranslationKeys(mkdocs, locale).has('Workflow Policy'), true, locale);
+  }
 });

@@ -1,3 +1,10 @@
+---
+title: "Windows CLI 启动稳定性：保护跨 CLI 可靠性链路"
+description: "Windows cmd 启动修复如何保护 ContextDB 连续性、包裹策略和原生 Codex、Claude、Gemini 启动路径。"
+date: 2026-03-20
+tags: ["Windows", "CLI 可靠性", "ContextDB", "Codex", "Claude"]
+---
+
 # AIOS 的 Windows 更新：不只是“启动修复”，而是跨 CLI 可靠性链路加固
 
 这次内容和 AIOS 核心能力直接相关，不是泛化的 Windows 使用技巧。
@@ -76,3 +83,7 @@ codex
 ### 会影响 token 成本吗？
 
 不会直接影响。这次不涉及模型调用策略，聚焦进程与包裹可靠性。
+
+## 官方文档
+
+当前安装和恢复步骤请看 [Windows 指南](https://cli.rexai.top/zh/windows-guide/)、[快速开始](https://cli.rexai.top/zh/getting-started/)、[ContextDB](https://cli.rexai.top/zh/contextdb/) 和[故障排查](https://cli.rexai.top/zh/troubleshooting/)。

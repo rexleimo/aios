@@ -5,6 +5,17 @@ description: 원시 Codex/Claude/Gemini CLI 워크플로와 Harness CLI 오케�
 
 # 원시 CLI vs Harness CLI 레이어
 
+> **Quick Answer:** 일회성이고 위험이 낮은 작업은 `codex`, `claude`, `gemini`, `opencode` 원시 CLI로 처리합니다. 세션 간 기억, 워크플로 라우팅, 멀티 클라이언트 핸드오프, 브라우저 안전, 검증 근거가 필요하면 Harness CLI를 추가하세요. 이것은 코딩 에이전트를 바꾸지 않는 로컬 레이어입니다.
+
+## 판단표
+
+| 필요한 것 | 권장 경로 |
+| --- | --- |
+| 영속 상태가 없는 짧은 작업 | 원시 CLI |
+| 공유 프로젝트 기억과 검색 가능한 컨텍스트 | Harness CLI + ContextDB |
+| 여러 클라이언트 또는 Agent Team | Harness CLI + Agent Team |
+| 편집 안전과 완료 근거 | Harness CLI + 편집/검증 게이트 |
+
 Harness CLI는 Codex, Claude 또는 Gemini CLI의 대체품이 아닙니다.
 그것은 그 위에 있는 신뢰성 레이어입니다.
 
@@ -62,3 +73,17 @@ ls .aios/context-db
 ## 다음 액션
 
 [GitHub에서 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+
+## FAQ
+
+### Harness CLI가 코딩 에이전트를 대체하나요?
+
+아닙니다. 지원 클라이언트 주변에 로컬 워크플로, 기억, 검증 레이어를 추가합니다.
+
+### 원시 CLI가 더 나은 경우도 있나요?
+
+있습니다. 작고 상태가 없으며 위험이 낮고 추가 컨텍스트가 결과를 개선하지 않는 작업에는 원시 CLI가 더 간단합니다.
+
+## 공식 문서
+
+현재 동작은 [워크플로 정책](workflow-policy.md), [ContextDB](contextdb.md), [빠른 시작](getting-started.md)에서 확인하세요.

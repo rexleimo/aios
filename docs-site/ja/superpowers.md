@@ -5,6 +5,12 @@ description: CLI をより賢くする再利用可能な自動化スキル。使
 
 # Superpowers
 
+> **Quick Answer:** Superpowers は brainstorming、planning、TDD、debugging、verification、parallel dispatch、security review の再利用可能な playbook です。先にワークフロールートを選び、その境界に合う最小の skill だけを使います。
+
+## ルートの後に skill を選ぶ
+
+読み取り専用の質問は direct のままで構いません。ファイルを変更する前の `pre-edit-safety-gate` と、完了を宣言する前の最終検証は、skill の選択とは独立したゲートです。
+
 Superpowers は、一般的なワークフローを自動化する再利用可能なスキルです。Claude Code、Codex、Gemini CLI、OpenCode にフックして、反復タスクを自動処理します。
 
 同じコマンドやプロンプトを繰り返す代わりに、実績のあるワークフローで AI をナビゲートし、ベストプラクティスを適用し、完了前に結果を検証するスキルを呼び出します。
@@ -104,3 +110,19 @@ Superpowers は、一般的なワークフローを自動化する再利用可�
 ---
 
 ## RL トレーニングシステム
+
+AIOS の RL 層は shell、browser、orchestrator のタスクを横断する実験・訓練の制御面です。公開ワークフローの編集ゲートや最終検証を置き換えるものではありません。
+
+## FAQ
+
+### Superpowers はすべての質問で起動しますか？
+
+いいえ。質問や状態確認は direct のままで、設計、順序、デバッグ、委譲、完了証拠が必要なときに playbook を選びます。
+
+### skill はどこにありますか？
+
+リポジトリで発見可能な skill は `.codex/skills/` または `.claude/skills/` に置き、対応するワークフローがクライアントへ投影します。
+
+## 正規ドキュメント
+
+[ワークフローポリシー](workflow-policy.md)、[クイックスタート](getting-started.md)、[Agent Team](team-ops.md)から始めてください。

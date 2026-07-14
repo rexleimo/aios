@@ -1,103 +1,66 @@
 ---
-title: "自研 Token 压缩：为什么 Harness CLI 不安装 RTK 或 Caveman"
+title: "Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP"
+description: "理解 Harness CLI 当前的 token intelligence：pull-based ContextDB、本地 RTK/Caveman 压缩，以及显式 Headroom MCP 检索。"
 date: 2026-05-12
-tags: ["AIOS", "token compression", "ContextDB", "skills", "Harness CLI"]
-description: "Harness CLI 现在原生实现省 token：ContextDB 输入压缩、浏览器紧凑读取、CLI 范围化输出，以及无需竞品依赖的输出压缩技能。"
+tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---
 
-# 自研 Token 压缩：为什么 Harness CLI 不安装 RTK 或 Caveman
+# Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP
 
-Token 成本不只是账单问题，也是稳定性问题。
+> **快速答案：** Harness CLI 把 token 效率拆成多个层次：ContextDB 保存并按需取回有边界的项目上下文；RTK 和 Caveman 在本地压缩命令与输出；Headroom MCP 在后续步骤确实需要时提供显式的 compress/retrieve 工具调用。这些层次互补，Headroom 不是对每个模型请求的透明拦截。
 
-长时间 AI 编程任务最容易被噪声拖垮：完整日志、重复堆栈、页面样板内容、冗长状态更新。最省事的做法是直接安装一个竞品 token 工具，但 Harness CLI 不这么做。
+长时间 Agent 任务容易被日志、浏览器样板内容和重复历史挤满。解决方案不是一个万能开关，而是明确哪些内容要保存、哪些内容可以压缩、下一步需要取回哪些证据。
 
-我们只参考 RTK 风格的输入过滤和 Caveman 风格的输出简写，把能力实现到 AIOS 自己的工作流里。
+## 各层负责什么
 
-## 改了什么
+| 层 | 职责 | 边界 |
+| --- | --- | --- |
+| ContextDB | 保存项目事实、事件、refs 和 handoff，按需检索 | Pull-based，不要求每次注入完整历史 |
+| RTK | 在本地压缩支持的 CLI 输出 | 只处理命令输出，不能替代验证 |
+| Caveman | 通过提示/skill 让 Agent 输出保持简洁 | 不能丢掉错误、路径、命令和风险提示 |
+| Headroom MCP | 为后续步骤显式压缩和取回材料 | 按需 tool call，不是透明拦截 |
 
-Harness CLI 现在把省 token 拆成两层原生能力：
-
-1. **输入压缩**：命令、浏览器、ContextDB 内容进入模型前先降噪。
-2. **输出压缩**：Agent 回答更短，但不丢命令、路径、错误、风险提示。
-
-不安装 RTK。不安装 Caveman。不加会全局改写命令的 shell hook。
-
-## 原生输入压缩
-
-ContextDB 已经有自研 token 策略引擎：
+推荐使用统一初始化：
 
 ```bash
-cd mcp-server
-npm run contextdb -- context:pack \
-  --session <session_id> \
-  --limit 60 \
-  --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<session_id>-context.md
+aios init --all
+aios doctor --native --verbose
 ```
 
-默认策略偏保守：
+可选压缩工具和 Headroom MCP 的安装授权应分开处理。
 
-- 压缩重复行和堆栈噪声；
-- 保留关键错误、文件路径、命令和最新状态；
-- 先丢低优先级事件，再截断受保护事件；
-- 输出 `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` 等遥测信息。
+## ContextDB 是记忆边界
 
-浏览器任务里，新的 `aios-browser-compress` 技能会优先使用更紧凑的读取方式：
-
-1. `page.semantic_snapshot`
-2. 定向 `page.extract_text`
-3. 全页 `page.extract_text`
-4. `page.get_html`
-5. 只有需要视觉证据时才截图
-
-CLI 任务里，Harness CLI 鼓励范围化输出：`rg`、`git diff --stat`、`sed -n`、`head`、`tail` 和定向测试。
-
-## 原生输出压缩
-
-新的 `aios-compress` 技能定义三档回复：
-
-| 档位 | 使用场景 | 行为 |
-|------|----------|------|
-| `tight` | 日常编码 | 短技术回答，无废话 |
-| `ultra` | harness 日志、checkpoint | 一行证据 + 下一步 |
-| `precise` | 浏览器操作、安全、不可逆动作 | 完整明确表达 |
-
-核心原则：压缩不能隐藏风险。错误、命令、路径、选择器、日期和验证缺口必须保留精确表达。
-
-## 为什么不安装竞品工具？
-
-直接安装另一个 token 工具看起来很快，但会引入隐藏耦合：
-
-- 命令行为可能在 Harness CLI 控制之外改变；
-- Codex、Claude、Gemini、opencode 的表现难以一致；
-- 文档更难验证；
-- 用户多一个依赖、升级路径和故障模式。
-
-原生实现让行为可审计。代码、技能、文档都在仓库里。
-
-## 怎么用
-
-ContextDB 包：
+ContextDB 适合保存稳定项目事实、选定任务状态和有用 handoff。可以按 token budget 生成有边界的 context pack：
 
 ```bash
 cd mcp-server
 npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
 ```
 
-Agent 输出：
+通过搜索和 refs 过滤取回下一步真正需要的证据。registry marker 只说明上下文注册信息存在，不代表完整历史会自动注入每一次 prompt。
 
-```text
-/compress tight
-/compress ultra
-/compress precise
-stop compress
-```
+## 压缩不能损失证据
 
-浏览器自动化优先用语义快照和定向抽取，再考虑全页文本。
+有用的压缩结果仍应保留：
 
-## 结论
+- 准确命令、文件路径和时间；
+- 最新状态；
+- 错误、警告和验证缺口；
+- 可以取回原文的引用。
 
-Harness CLI 的省 token 现在是原生能力：ContextDB 和浏览器工作流负责输入压缩，AIOS skill 负责输出压缩，并且没有竞品安装步骤。
+目标是用更小上下文做出同样质量的决策，而不是为了短而短。构建成功也只证明构建，不证明外部 provider、浏览器会话或人工批准。
 
-这样长任务更省、更安静，也更容易验证。
+## 常见问题
+
+### 是否必须安装所有层？
+
+不需要。先使用 ContextDB；日志噪声大时再增加本地命令/输出压缩；后续步骤需要显式压缩和取回时再使用 Headroom MCP。
+
+### Headroom 会自动改写当前模型请求吗？
+
+不会。它是显式 MCP 工具面，由调用方决定压缩或取回什么，并保留原始引用。
+
+### 当前命令去哪里看？
+
+阅读[Token Intelligence](https://cli.rexai.top/zh/token-compression/)、[ContextDB](https://cli.rexai.top/zh/contextdb/)和[故障排查](https://cli.rexai.top/zh/troubleshooting/)。[工作流策略](https://cli.rexai.top/zh/workflow-policy/)说明 token 工作如何进入编辑和验证门禁。

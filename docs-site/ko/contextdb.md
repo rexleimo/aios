@@ -1,406 +1,186 @@
 ---
-title: ContextDB
-description: How your agent remembers things across sessions — explained from the ground up.
+title: ContextDB: pull-based 프로젝트 기억
+description: 로컬 ContextDB registry, memo storage, unified project search, lazy load와 client 간 기억 경계를 설명합니다.
 ---
 
 # ContextDB
 
-**The short version:** ContextDB is a local memory system for your coding agents. It remembers what happened in past sessions so your agent can pick up where it left off.
+## 먼저 답하면
 
-No cloud. No database server. Just files in your project folder.
+ContextDB는 Harness CLI의 로컬 project memory layer입니다. session, event, checkpoint, memo, context pack reference를 project workspace에 저장하여 지원 client가 다른 session의 필요한 사실을 찾게 합니다. 현재 모델은 pull-based입니다. registry가 source를 가리키고 agent가 task에 필요한 evidence만 recall합니다.
 
-## Context Registry (Pull-Based Context)
+## 지금 실행
 
-Starting in v1.13, ContextDB uses a **pull-based** model. Instead of injecting ~30KB of context into every session startup (which took ~5 minutes), the system now injects a ~350 byte **registry pointer** and the agent loads what it needs on demand.
+project root에서:
 
-### How It Works
+~~~bash
+aios init --all
+aios doctor --native --verbose
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+~~~
 
-```
-Agent starts → reads config file (CLAUDE.md / AGENTS.md / GEMINI.md)
-            → sees marker: <!-- AIOS: .aios/context-db/index.json -->
-            → reads .aios/context-db/index.json (the registry)
-            → decides what to load based on the task
+현재 init은 .aios/context-db/index.json을 가리키는 project marker를 추가합니다.
 
-Task: "fix the auth bug"  → loads handoff (1KB) for continuity
-Task: "analyze XHS data"  → loads handoff + perception (~4KB)
-Task: "debug a crash"     → loads handoff + session history (~20KB)
-```
+## 로컬 registry
 
-### Registry Index (index.json)
+일반적인 workspace:
 
-```json
-{
-  "session": "claude-code-20260515T...",
-  "status": "running",
-  "sources": [
-    {"id": "handoff", "cost": "~1KB", "priority": "high",
-     "path": ".aios/context-db/sessions/xxx/handoff.json"},
-    {"id": "session-history", "cost": "~20KB", "priority": "low",
-     "path": ".aios/context-db/exports/latest-claude-code-context.md"},
-    {"id": "perception", "cost": "~3KB", "priority": "low",
-     "path": ".aios/context-db/exports/latest-perception.md"}
-  ]
-}
-```
+~~~text
+.aios/
+  context-db/
+    index.json                 # source registry
+    sessions/<session-id>/     # session event와 checkpoint
+    index/                     # derived search data
+    exports/                   # context pack과 handoff
+  memo/
+    file/events.jsonl          # canonical append-only memo
+    split/                     # 선택적 one-file-per-memo backend
+~~~
 
-### Before vs After
+실제 file은 client와 실행한 command에 따라 달라집니다. registry는 repository 전체의 복사본이 아니라 source pointer입니다.
 
-| | Before (Push) | After (Pull) |
-|---|---|---|
-| Startup injection | ~30KB (~12K tokens) | ~350 bytes |
-| Startup wait | ~5 minutes | Near-instant |
-| Context loading | Everything, every time | On-demand, task-aware |
-| Cross-agent memory | Each agent isolated | Shared ContextDB |
+## Pull-based recall 흐름
 
-### Setup
+~~~text
+client start
+  -> AGENTS.md, CLAUDE.md, GEMINI.md 또는 client guidance 읽기
+  -> .aios/context-db/index.json 찾기
+  -> source metadata와 task relevance 확인
+  -> handoff, memo, checkpoint, context pack 검색 또는 읽기
+  -> 필요한 evidence만 가지고 task 계속
+~~~
 
-```bash
-aios init              # one-time setup for all installed agents
-```
+context control 방식이며 고정 prompt size나 startup time을 보장하지 않습니다. source가 없거나 오래되었거나 다른 project에 있으면 명시적인 pointer가 필요합니다.
 
-The `aios init` command adds the registry marker to each agent's config file and configures save guards so sessions are automatically persisted.
+## 기록되는 것
 
-## Why Does This Matter?
+| Source | 예 | 용도 |
+| --- | --- | --- |
+| Session events | prompt, tool result, error, 변경 path | 발생한 일 복원 |
+| Checkpoints | goal, status, next step, evidence | 장기 task 재개 |
+| Memos | project decision, constraint, reminder | 지속적인 사실 저장 |
+| Context packs | 범위가 제한된 history export | 선택한 context handoff |
+| Unified search | memory, plans, docs, code | 넓은 read 전 evidence 탐색 |
 
-Here's the problem ContextDB solves:
+ContextDB는 검증되지 않은 agent response를 evidence로 바꾸지 않습니다. test, diagnostic, review, privacy check는 별도 quality gate입니다.
 
-```
-Day 1: You work on a feature with your agent. Great progress.
-Day 2: You open the terminal again. Your agent has NO IDEA what happened yesterday.
-       You have to explain everything from scratch. Again.
-```
+## Memory With Memo {#memory-with-memo}
 
-ContextDB fixes this. When you start your agent in a project with ContextDB enabled, it automatically loads context from previous sessions.
+### Workspace Memory AIOS Memo {#workspace-memoryaios-memo}
 
-## How It Works (The Simple Version)
+### Workspace Memory AIOS Memo (legacy anchor) {#workspace-memory-aios-memo}
 
-Think of ContextDB like a **lab notebook** for your agent:
+memo는 durable project note입니다. 기본 canonical backend는 .aios/memo/file/events.jsonl의 append-only JSONL이며 split은 선택 사항입니다.
 
-1. **Events** — Every time you or the agent does something, it's recorded
-2. **Checkpoints** — At important moments, a summary is saved
-3. **Context packs** — When a new session starts, all relevant history is bundled up and given to the agent
-
-```
-┌─────────────────────────────────────────┐
-│  Your Project                           │
-│  ├── .contextdb-enable                  │
-│  └── .aios/context-db/                  │
-│      ├── sessions/                      │  ← Recorded events
-│      ├── index/                         │  ← Search index
-│      └── exports/                       │  ← Context packs
-└─────────────────────────────────────────┘
-```
-
-All of this lives in your project folder. Nothing is sent anywhere.
-
-## Getting Started
-
-### Enable Memory For A Project
-
-```bash
-cd /path/to/your/project
-touch .contextdb-enable
-codex
-```
-
-That's it. From now on, every session in this project is recorded.
-
-### What Gets Remembered?
-
-| Type | Example |
-|---|---|
-| Prompts you sent | "Refactor the auth module" |
-| Code the agent wrote | Files created or modified |
-| Errors encountered | Stack traces, failed builds |
-| Decisions made | "Use Redis for caching instead of Memcached" |
-| What's left to do | "Still need to write integration tests" |
-
-### How Sessions Work
-
-Each time you start your agent, ContextDB creates a new **session**. Sessions are linked together so the agent can see the full history.
-
-Session IDs look like: `claude-code-20260419T095454-e6eb600d` (agent name + timestamp + random ID).
-
-## Memory With Memo
-
-ContextDB is automatic, but sometimes you want to **manually** save important notes. That's what Memo is for.
-Project memos now use Git-friendly canonical storage under `.aios/memo/`: `file` is the default append-only JSONL backend, while `split` stores one JSON file per memo event. ContextDB mirrors are kept only for compatibility/cache.
-
-### Quick Memo Commands
-
-```bash
-# Save a note about this project
-aios memo add "This project uses strict TypeScript — no any types"
-
-# Pin something important (always visible)
-aios memo pin add "Never push directly to main branch"
-
-# Search your notes
-aios memo search "typescript"
-aios memo search "testing"
-
-# Check or switch the storage implementation
+~~~bash
+aios memo add "Keep authentication tests strict"
+aios memo pin add "Do not push directly to main"
+aios memo search "authentication"
+aios memo recall "release readiness" --limit 5
 aios memo storage status
+~~~
+
+storage를 의도적으로 확인하거나 변경합니다.
+
+~~~bash
 aios memo storage use split
 aios memo storage use file
 aios memo storage rebuild
 aios memo storage doctor
-```
+~~~
 
-`aios memo storage rebuild` is a full rebuild of derived query files only; it does not rewrite canonical memo records.
-
-### Recall Across Sessions
-
-```bash
-# Find notes from past sessions about a topic
-aios memo recall "database migration" --limit 5
-```
-
-### Persona: Set Your Agent's Style
-
-Want your agent to always respond in a certain way? Set a persona:
-
-```bash
-aios memo persona init
-aios memo persona add "Response style: concise, direct, evidence-first"
-aios memo persona add "Always explain WHY, not just WHAT"
-```
-
-### User Profile: Set Your Preferences
-
-Tell the agent about yourself:
-
-```bash
-aios memo user init
-aios memo user add "Preferred language: zh-CN + technical English terms"
-aios memo user add "I'm a senior engineer — skip beginner explanations"
-```
-
-Persona and user profile are **global** — they apply to all your projects.
+rebuild는 derived query file만 갱신하고 canonical record를 다시 쓰지 않습니다.
 
 ## 통합 프로젝트 검색(v1.50.0) {#통합-프로젝트-검색v1500}
 
-v1.50.0부터 에이전트와 사용자는 넓은 `grep` 또는 전체 파일 읽기 전에 프로젝트 메모리, 문서, 계획, 코드를 하나의 명령으로 검색할 수 있습니다.
+넓은 grep이나 repository 전체 read 전에 사용합니다.
 
-```bash
-node scripts/aios.mjs search "release readiness" --agent codex-cli --json
-```
+~~~bash
+node scripts/aios.mjs search "native client guidance" --agent codex-cli --json
+node scripts/aios.mjs search "release blocker" --source memory,plans
+node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
+~~~
 
-자주 쓰는 예시:
+| Source | 포함 내용 | 용도 |
+| --- | --- | --- |
+| memory | project-shared와 허용된 private memo | decision과 handoff |
+| plans | docs/plans와 implementation plan | intent와 checkpoint |
+| docs | README, native guidance, public docs | runbook |
+| code | scripts, mcp-server, test, config | implementation fact |
+| all | 모든 source | 첫 targeted lookup |
 
-```bash
-node scripts/aios.mjs search "native client guidance" --agent claude-code
-node scripts/aios.mjs search "v1.50.0" --source memory,plans --limit 10 --json
-node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source docs,code
-```
+project-shared memo는 지원 client 사이에서 보입니다. agent-private note는 codex-cli, claude-code, gemini-cli, opencode-cli, hermes-agent, grok-build 등 matching runtime id가 필요합니다.
 
-### Source 필터
+## Lazy Load (Fast Startup) {#lazy-load}
 
-| Source | 검색 대상 | 적합한 용도 |
-|---|---|---|
-| `memory` | project memo, pinned memory | 결정, handoff, 제약 |
-| `plans` | `docs/plans/`, superpowers plans | 구현 의도와 checkpoint |
-| `docs` | README, AGENTS/CLAUDE/GEMINI, docs-site, docs | runbook, 사용 문서 |
-| `code` | `scripts/`, `mcp-server/src`, tests, packages, config | CLI 구현과 테스트 |
-| `all` | 전체 | targeted read 전 첫 검색 |
+interactive session은 기본적으로 lazy context loading을 사용합니다. compatibility workflow가 full context를 필요로 할 때:
 
-### 크로스 클라이언트 메모리 안전성
+~~~bash
+export CTXDB_LAZY_LOAD=0
+~~~
 
-- `project_shared` 기록은 모든 클라이언트에서 보입니다.
-- `agent_private` 기록은 일치하는 `--agent <runtime-client-id>` 가 필요합니다.
-- 다른 클라이언트의 private scratch note 는 필터링됩니다.
+aios init이 registry marker를 만들면 client가 registry와 facade guidance에서 context를 발견할 수 있습니다. legacy 또는 unwrapped client는 compatibility fallback을 사용할 수 있습니다. lazy loading은 context selection 동작이며 source 존재나 자동 query를 보장하지 않습니다.
 
-Runtime ID 는 `codex-cli`, `claude-code`, `gemini-cli`, `opencode-cli`, `hermes-agent`, `grok-build` 입니다.
+## Context pack과 manual control
 
-### 모든 클라이언트 지침 배포
+handoff나 제한된 history slice에는 bounded context pack을 사용합니다.
 
-검색 가이드는 shared native instructions 에서 생성됩니다. Codex, OpenCode 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini 는 `GEMINI.md` 로 받습니다.
-
-## Searching Your History
-
-ContextDB builds a search index so you (and your agent) can find past work:
-
-```bash
-# Search for past events
-npm run contextdb -- search --query "auth bug" --project my-app
-
-# View a timeline of what happened
-npm run contextdb -- timeline --session <session-id> --limit 30
-```
-
-The search uses SQLite under the hood with full-text search (FTS5 + BM25 ranking).
-
-### Incremental Sync + refs Normalization
-
-ContextDB maintains a normalized `event_refs` table in the SQLite sidecar.  
-`--refs` filtering now uses normalized refs exact matching to reduce false positives from substring matching.
-
-```bash
-npm run contextdb -- index:sync --stats
-npm run contextdb -- index:sync --force --stats
-npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
-```
-
-- `--stats`: Outputs `scanned/upserted` counts for sessions/events/checkpoints, elapsed time, throttle skip, and force flag.
-- `--jsonl-out`: Appends one JSON record per execution (with timestamp) for trend analysis.
-- Only use `index:rebuild` when the sidecar is missing/corrupted or a full schema rebuild is needed.
-
-### refs Query Performance Benchmark
-
-Use the built-in script to monitor refs query latency and run regression gates:
-
-```bash
+~~~bash
 cd mcp-server
-npm run bench:contextdb:refs -- --events 2000 --refs-pool 200 --queries 300 --warmup 30 --json-out test-results/contextdb-refs-bench.local.json
-npm run bench:contextdb:refs:ci
-npm run bench:contextdb:refs:gate
-```
-
-### Optional Semantic Search
-
-Semantic mode is optional; it automatically falls back to lexical search when unavailable.
-
-```bash
-export CONTEXTDB_SEMANTIC=1
-export CONTEXTDB_SEMANTIC_PROVIDER=token
-npm run contextdb -- search --query "issue auth" --project demo --semantic
-```
-
-## Token Compression (Keeping Context Small)
-
-The more history you have, the bigger the context pack gets. Token compression keeps it manageable.
-
-### Why It Matters
-
-AI models have a **context window limit**. If your project history is too long, it won't fit. Token compression:
-
-1. Keeps the most important information (recent work, errors, decisions)
-2. Compresses or removes less important stuff (repeated logs, verbose output)
-3. Fits everything within a budget you control
-
-### How To Use It
-
-```bash
 npm run contextdb -- context:pack \
-  --session <id> \
+  --session <session-id> \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced
-```
+~~~
 
-### Strategies
+storage 진단이나 재현 가능한 handoff가 필요할 때:
 
-| Strategy | When to use |
-|---|---|
-| `balanced` | Default. Keeps recent + important, compresses the rest |
-| `aggressive` | Very small budgets. Maximizes compression |
-| `legacy` | Old behavior. Only keeps the tail end |
-
-## Lazy Load (Fast Startup)
-
-The Context Registry already makes startup near-instant by default (~350 byte injection). For sessions that need full context, lazy loading further optimizes:
-
-- On startup: only the registry pointer is injected
-- The agent reads the registry and loads what it needs on demand
-- A background process rebuilds the full context pack when needed
-
-Lazy load is **on by default** for interactive sessions. To force full context loading:
-
-```bash
-export CTXDB_LAZY_LOAD=0  # Load everything on startup (slower but complete)
-```
-
-When `aios init` has been run, slim mode is used automatically — the agent manages its own context via the registry. For unwrapped agents or legacy setups, full injection is preserved as fallback.
-
-## Route Shortcuts
-
-When you're inside a running agent, you can choose how to handle a task:
-
-| Shortcut | Meaning |
-|---|---|
-| `/single <task>` | Handle in the current agent (default) |
-| `/subagent <task>` | Staged orchestration with verification |
-| `/team <task>` | Split across multiple agents |
-| `/harness <task>` | Long-running overnight job |
-
-These are installed automatically during setup. If they're missing:
-
-```bash
-aios doctor --native --fix
-```
-
-## Advanced: Manual Commands
-
-Most of the time, ContextDB runs automatically. If you need manual control:
-
-```bash
-# Initialize ContextDB in a project
+~~~bash
 npm run contextdb -- init
-
-# Create a new session
 npm run contextdb -- session:new --agent codex-cli --project my-app --goal "fix auth bug"
-
-# Add an event manually
-npm run contextdb -- event:add --session <id> --role user --kind prompt --text "start"
-
-# Create a checkpoint
 npm run contextdb -- checkpoint --session <id> --summary "auth fix done" --status running
-
-# Export a context pack
-npm run contextdb -- context:pack --session <id> --out context.md
-
-# Rebuild the search index
 npm run contextdb -- index:rebuild
-```
+~~~
 
-## Advanced: Configuration
+일반 사용자는 aios init과 native doctor에서 시작하면 됩니다.
 
-| Variable | What it does | Default |
-|---|---|---|
-| `CTXDB_PACK_STRICT` | Fail if context pack can't be built | `0` (warn and continue) |
-| `CTXDB_LAZY_LOAD` | Enable fast startup with lazy loading | `1` (on) |
-| `CTXDB_INTERACTIVE_AUTO_ROUTE` | Show route shortcuts on startup | `1` (on) |
-| `CTXDB_HARNESS_PROVIDER` | Default agent for harness runs | `codex` |
-| `CTXDB_HARNESS_MAX_ITERATIONS` | Max loops for harness runs | `8` |
-| `AIOS_IDENTITY_HOME` | Directory for persona/user files | `~/.aios` |
-| `AIOS_PERSONA_MAX_CHARS` | Max size for persona file | `2400` |
+## Client 간 기억과 privacy
 
-## Common Questions
+integration이 지원되고 sync되어 있으면 여러 client가 하나의 project registry를 공유할 수 있습니다. registry가 다른 client의 private home configuration을 노출하는 것은 아닙니다. 실제 상태는 aios doctor --native --verbose로 확인하세요.
 
-### Is ContextDB a cloud database?
+project file은 로컬이지만 agent가 선택한 내용을 설정된 model provider로 보낼 수 있습니다. package install과 MCP registration에도 각자의 network boundary가 있습니다. 민감한 내용은 redaction workflow를 거쳐 공유하세요.
 
-No. It's just files in your project's `.aios/context-db/` folder. Nothing leaves your machine.
+## Legacy compatibility
 
-### Why does context disappear after `/new` or `/clear`?
+오래된 wrapper와 script는 .contextdb-enable을 opt-in marker로 인식할 수 있습니다. 현재 primary path는 aios init과 .aios/context-db/index.json입니다. compatibility workflow가 명시적으로 요구할 때만 legacy switch를 사용하세요.
 
-Those commands reset the **in-terminal conversation**, but ContextDB is still on disk. To get context back:
+## FAQ
 
-1. Exit the agent and restart it — the wrapper reloads context automatically
-2. Or ask the agent to read the latest snapshot: `@.aios/context-db/exports/latest-*-context.md`
+### ContextDB는 cloud database인가요?
 
-### Do different agents share the same memory?
+아닙니다. registry, session, export, canonical memo는 local workspace file입니다. client provider와 optional integration에는 별도의 network boundary가 있습니다.
 
-Yes. If you run `codex` and then `claude` in the same project, they read and write the same ContextDB. Claude will know what Codex did.
+### 여러 client가 같은 기억을 공유하나요?
 
-### Can I turn it off?
+지원되고 sync된 경우 같은 project ContextDB를 사용할 수 있습니다. 하지만 route, skill, MCP capability가 같다는 뜻은 아닙니다.
 
-Yes. Just delete `.contextdb-enable` from the project root. Existing data stays on disk but new sessions won't be recorded.
+### /new 또는 /clear 뒤에는 어떻게 되나요?
 
-### What's the `.aios/context-db/` folder?
+terminal conversation만 reset되고 project file은 남습니다. 새 session을 시작하고 registry, unified search, named context pack에서 evidence를 recall하세요.
 
-```
-.aios/context-db/
-  sessions/          # Session files (the source of truth)
-  index/             # SQLite search index (auto-rebuilt)
-  exports/           # Context packs for agents to read
-```
+### 기억을 끄려면?
 
-You can safely delete `index/` — it's rebuilt automatically. Don't delete `sessions/` unless you want to erase history.
+client를 중지하고 client guidance에 따라 integration marker를 조정합니다. 오래된 workflow가 .contextdb-enable을 사용했을 때만 해당 file을 삭제하세요. marker 삭제는 기존 .aios data를 지우지 않습니다.
 
-## Where To Go Next
+### 무엇을 삭제해도 되나요?
 
-- [Quick Start](getting-started.md) — if you haven't set up yet
-- [Agent Team](team-ops.md) — when one agent isn't enough
-- [Solo Harness](solo-harness.md) — let agents work overnight
-- [Token Compression](token-compression.md) — deep dive into keeping context small
-- [Troubleshooting](troubleshooting.md) — fix common ContextDB issues
+derived index는 재구축할 수 있습니다. sessions, exports, memo JSONL은 source data이므로 삭제 전에 backup하세요.
+
+## 다음 페이지
+
+- [빠른 시작](getting-started.md)
+- [Workflow Policy](workflow-policy.md)
+- [Token Intelligence](token-compression.md)
+- [아키텍처](architecture.md)
+- [문제 해결](troubleshooting.md)

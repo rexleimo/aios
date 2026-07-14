@@ -5,6 +5,12 @@ description: 各任务自动选择合适的 AI 模型 - 无需自己思考。
 
 # 模型路由器
 
+> **快速答案：** 模型路由器根据任务类型、路由 profile、能力注册表和 fallback 规则选择模型。需要理解选择原因时使用 `--explain`；如果成本、延迟或能力要求不同，再使用 profile 或显式覆盖。
+
+## 先运行可解释路由
+
+第一次使用时优先运行带 explain 的路由。它会显示选中的模型和触发信号，让调度决策可以被复核，而不是看起来像魔法。
+
 **不同的 AI 模型擅长不同的事情。** 模型路由器自动将每个任务发送到最擅长的模型。
 
 前端工作？用 Kimi K2.6。安全审查？用 Claude Opus。浏览器自动化？用 GPT-5.5。不需要记住这些 — 路由器从任务描述中判断。
@@ -230,3 +236,17 @@ preferredModel: claude-opus
 - [Agent Team](team-ops.md) — 带自动路由的多 agent 协作
 - [ContextDB](contextdb.md) — 项目内存
 - [Solo Harness](solo-harness.md) — 长时间运行的单个 agent 工作
+
+## 常见问题
+
+### 模型路由器会在选择模型前调用模型吗？
+
+不会。路由器根据任务元数据和已配置能力选择 client/model 路径，之后才由选中的客户端执行任务。
+
+### 可以覆盖推荐结果吗？
+
+可以。根据成本、延迟或能力要求，使用路由 profile 或按角色/任务的显式覆盖。
+
+## 官方文档
+
+配合阅读[Agent Team](team-ops.md)、[工作流策略](workflow-policy.md)和[ContextDB](contextdb.md)，了解完整执行契约。

@@ -5,116 +5,119 @@ description: Keep useful context small with RTK, Caveman, Headroom MCP, ContextD
 
 # Token Intelligence and Compression
 
-Token savings only help when the agent still has enough evidence to make the right decision. AIOS v3.6.0 uses a layered workflow: avoid unnecessary work first, then reduce the text each stage has to carry.
+## Quick Answer
 
-## The five layers
+Context efficiency is a workflow, not one compression switch. Harness CLI separates the smallest-correct-change gate, RTK shell-output filtering, Caveman response style, explicit Headroom MCP tools, and pull-based ContextDB recall. Each layer has a different owner and none removes the need for tests, privacy checks, or final verification.
 
-| Layer | Responsibility | What it does not promise |
-| --- | --- | --- |
-| Ponytail-inspired gate | Choose the smallest correct change before implementation. | It is a workflow rule, not an installed Ponytail plugin. |
-| RTK | Reduce noisy shell and tool output before it reaches the agent. | It does not replace scoped commands or preserve every line of a raw log. |
-| Headroom MCP | Let supported MCP clients explicitly compress material needed across later steps. | It is not transparent interception of the current model request. |
-| Caveman | Use a concise response style without dropping technical facts. | It does not compress tools or files by itself. |
-| ContextDB | Recall project context on demand instead of injecting all history. | It does not make runtime history automatically appear in every prompt. |
+## Do it now
 
-Quality controls remain outside this stack: planning, tests, code-review evidence, privacy checks, and verification are still required.
+Preview the current installation boundary, then choose the permissions you want:
 
-## Install and inspect
-
-Use `aios init` as the installation boundary:
-
-```bash
-# Preview only; no package or client configuration changes.
+~~~bash
 node scripts/aios.mjs init --all --dry-run
-
-# Interactive: install detected RTK, Caveman, and supported Headroom.
-node scripts/aios.mjs init --all
-
-# CI or other unattended installation.
-node scripts/aios.mjs init --all --yes-compression-tools
-
-# Also authorize new user-scope Headroom MCP registrations for Gemini and Grok.
 node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
-```
+aios doctor --native --verbose
+~~~
 
-Headroom needs Python 3.10 or later plus `uv` or `pipx`. AIOS installs the tested range `headroom-ai[all]>=0.31.0,<0.32.0` into an isolated tool environment; it does not silently modify the system Python environment.
+Headroom requires Python 3.10 or later plus uv or pipx. AIOS installs the tested range headroom-ai[all]>=0.31.0,<0.32.0 in an isolated tool environment.
 
-`--yes-compression-tools` authorizes package installation. `--yes-headroom-mcp` is deliberately separate because it authorizes a change to a client user configuration. A dry run reports the planned state without downloading packages or writing configuration.
+## Five layers
+
+| Layer | Responsibility | Boundary |
+| --- | --- | --- |
+| Ponytail-inspired gate | Prefer an explanation, configuration change, or smaller edit before new work | workflow guidance, not an installed Ponytail plugin |
+| RTK | Filter noisy local shell and tool output before the agent reads it | does not replace scoped commands or preserve every raw log line |
+| Caveman | Use concise response style while retaining technical facts | does not compress files or tools |
+| Headroom MCP | Explicitly compress and retrieve material that later steps need | not transparent interception of the current model request |
+| ContextDB | Recall project context on demand instead of injecting all history | does not make runtime history appear automatically in every prompt |
+
+Planning, code review, privacy, tests, and verification remain separate gates.
 
 ## RTK and Caveman
 
-RTK is the local command-output layer. After initialization, it can filter supported command output before the agent reads it. Continue to prefer bounded commands so important errors and paths remain visible:
+RTK is a local command-output layer. Continue to bound commands so paths and failures remain visible:
 
-```bash
+~~~bash
 rg -n "pattern" path
 git diff --stat
 sed -n '120,180p' file.ts
 tail -n 120 test.log
-```
+~~~
 
-Caveman is a local prompt skill that shortens the agent's wording. It should preserve commands, paths, errors, dates, decisions, risks, and missing verification. It is useful for status updates and checkpoints; switch back to normal style when a detailed explanation is more useful.
+Caveman is a local prompt skill for concise status and checkpoints. It must preserve commands, paths, errors, dates, decisions, risks, and missing verification. Use normal response style when the explanation itself is the useful artifact.
 
-## Headroom: MCP is explicit, wrapper support is separate
+## Headroom MCP is explicit
 
-Headroom's upstream CLI has official `wrap` targets for some clients. A wrapped client can use Headroom's own proxy and lifecycle. **AIOS v3.6.0 does not claim that `aios init` automatically wraps every client launch.** Installing Headroom and registering an MCP server are not the same operation.
+Some Headroom upstream clients have official wrap targets. AIOS v3.6.0 does not claim that aios init automatically wraps every client launch. Installation and MCP registration are separate operations.
 
-For clients without an upstream wrap target in this integration, AIOS uses the client's own MCP command to register the official `headroom mcp serve` process:
+For the supported registration path:
 
-| Client | v3.6.0 route | Important condition |
+| Client | Route | Condition |
 | --- | --- | --- |
-| Gemini CLI | User-scope official MCP registration | Requires the separate MCP consent. |
-| Grok Build | User-scope official MCP registration | Requires the separate MCP consent. |
-| Hermes Agent | User-scope official MCP registration | Must be completed in a real TTY; otherwise the status is `pending-interactive`. |
+| Gemini CLI | user-scope official MCP registration | separate MCP consent |
+| Grok Build | user-scope official MCP registration | separate MCP consent |
+| Hermes Agent | user-scope official MCP registration | real TTY required; otherwise pending-interactive |
 
-The MCP server exposes `headroom_compress`, `headroom_retrieve`, and `headroom_stats`. A model calls these tools explicitly. Usually it has already seen the original material before it requests compression, so the current turn may save nothing and can cost an extra tool call. The benefit is that later steps can retain a compact result and retrieve the original by reference when necessary.
+The server exposes headroom_compress, headroom_retrieve, and headroom_stats. A model calls them explicitly. Because the model may have already seen the original material, the current turn may use an extra tool call; the main benefit is keeping a compact result for later steps and retrieving the original by reference when needed.
 
-AIOS records registrations it owns in `~/.aios/integrations/headroom-mcp.json`. If an existing `headroom` entry is external or differs from the expected fingerprint, the installer reports `external` or `conflict` and does not overwrite it.
+AIOS records owned registrations in ~/.aios/integrations/headroom-mcp.json. External or conflicting entries are reported and not overwritten.
 
-### ContextDB Packets
+## ContextDB context packs
 
-For session history compression:
+For a bounded session handoff:
 
-```bash
+~~~bash
+cd mcp-server
 npm run contextdb -- context:pack \
   --session <session-id> \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced
-```
+~~~
 
-| Strategy | When to use | What it does |
-| --- | --- | --- |
-| `balanced` | Default | Compresses low-signal text, keeps errors and recent work |
-| `aggressive` | Very small budgets | Maximum compression, minimal detail |
-| `legacy` | Old behavior | Only keeps the tail end of history |
+balanced keeps recent work and failure signals; aggressive uses a smaller detail budget; legacy keeps the tail of history for compatibility. ContextDB is documented in [ContextDB](contextdb.md).
 
-**What gets preserved** (never dropped):
+## Decision order
 
-- Error messages and failure signals
-- File paths and command outputs
-- Recent state and decisions
+Before adding code, dependencies, files, or broad context:
 
-## Practical decision order
-
-Before adding code, dependencies, files, or broad context, use this decision order inspired by [Ponytail](https://github.com/DietrichGebert/ponytail):
-
-1. Can the request be solved by an explanation, configuration change, or a smaller edit?
-2. Is there an existing function, document, or tool that already covers it?
+1. Can an explanation or configuration change solve it?
+2. Is an existing function, document, or tool enough?
 3. Can a focused query replace a full repository, page, or log read?
-4. Only then add the smallest tested implementation that satisfies the requirement.
+4. If not, make the smallest tested implementation.
 
-For browser work, read compact evidence first: semantic snapshot, targeted text, full text, full HTML, then a screenshot only when visual evidence is necessary.
+For browser work, start with semantic_snapshot or targeted extract_text, then read more only when needed.
 
-## Privacy and measurement
+## What this does not promise
 
+- No universal token-saving percentage without local measurements.
+- No transparent interception of every model request.
+- No guarantee that provider traffic disappears.
+- No automatic wrap for every supported client.
+- No permission to drop errors, paths, decisions, or verification evidence.
+- No replacement for ContextDB search, tests, privacy review, or final verification.
 
-- RTK and Caveman run locally. Installing Headroom can access package repositories and optional model resources.
-- A Headroom wrapper or the user's normal client still sends model requests to the configured model provider; local compression is not a promise that provider traffic disappears.
-- Treat upstream saving percentages as upstream benchmarks, not local AIOS evidence. Claim measured MCP savings only when `headroom_stats` shows both compressions and positive saved-token totals.
+## FAQ
 
-## Further reading
+### Should I install all layers?
 
-- [v3.6.0 release notes](changelog.md)
-- [Headroom and Ponytail workflow article](https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/)
-- [ContextDB](contextdb.md)
-- [Ponytail upstream project](https://github.com/DietrichGebert/ponytail)
+No. Start with aios init --all and inspect the dry run. Install only the package and client integrations that match your workflow.
+
+### Is Headroom the same as RTK?
+
+No. RTK filters local command output before the agent reads it. Headroom is an explicit MCP tool path for material used in later steps. Caveman only changes response style.
+
+### How do I measure a real Headroom benefit?
+
+Use headroom_stats and confirm both compression events and positive saved-token totals. Upstream benchmark percentages are not local AIOS evidence.
+
+### Can I use ContextDB without these tools?
+
+Yes. ContextDB memory, memo, search, and checkpoints are separate from RTK, Caveman, and Headroom.
+
+## Next steps
+
+- [Quick Start](getting-started.md) - initialize and verify.
+- [ContextDB](contextdb.md) - pull-based memory and unified search.
+- [Workflow Policy](workflow-policy.md) - choose a smaller, safer route.
+- [Headroom + Ponytail workflow article](https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/)

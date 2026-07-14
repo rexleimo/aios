@@ -1,4 +1,13 @@
+---
+title: "Orchestrate Live：安全 opt-in 的 Subagent Runtime"
+description: "理解 dry-run 与 live 编排的区别、受限并行 phase、JSON handoff、ownership 门禁和 provider 就绪度。"
+date: 2026-06-20
+tags: ["编排", "Subagent", "Agent Team", "dry-run", "runtime"]
+---
+
 # Orchestrate Live 终于不是摆设了：Subagent Runtime 正式可用
+
+> **快速答案：** `dry-run` 只在本地生成并验证编排计划，不调用模型 runtime；`live` 是显式 opt-in，会通过选定 CLI 执行受限 phase，验证结构化 handoff，并阻止文件 ownership 冲突。dry-run 通过不等于 provider、浏览器或认证已就绪。
 
 如果你一直把 `aios orchestrate` 当作「蓝图预览 + 本地 dry-run」的安全门禁，那么这次迭代补齐了最关键的一块：`subagent-runtime` 现在可以真正执行编排阶段任务了。
 
@@ -67,3 +76,21 @@ aios orchestrate --session <session-id> --dispatch local --execute live --format
 - timeout 预算目前仍不下调，继续按证据驱动推进（等待 latency-watch 清除及 Windows 主机验证闭环）
 
 实践结论：live 编排已可稳定日常使用，但“降预算”必须等观测信号进一步收敛。
+
+## 常见问题
+
+### dry-run 会消耗模型 token 吗？
+
+不会。dry-run 只在本地验证计划和模拟 handoff；live 会调用选定 CLI，因此可能产生 token 或供应商费用。
+
+### 哪些情况会阻塞 live phase？
+
+常见原因包括 CLI 不存在、handoff 不是合法 JSON、依赖任务被阻塞、文件 ownership 冲突、超时或需要人工门禁。重试前先读取结构化结果。
+
+### live 默认开启吗？
+
+不开启。它需要显式 opt-in，并且选定的 provider/client 必须实际可用。provider 就绪、认证状态和授权范围是三个不同的检查。
+
+## 官方文档
+
+参阅 [Agent Team](https://cli.rexai.top/zh/team-ops/)、[Workflow Policy](https://cli.rexai.top/zh/workflow-policy/)、[Solo Harness](https://cli.rexai.top/zh/solo-harness/) 和[故障排查](https://cli.rexai.top/zh/troubleshooting/)。

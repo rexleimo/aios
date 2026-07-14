@@ -1,4 +1,13 @@
+---
+title: "ContextDB 검색 업그레이드: FTS5/BM25 + 증분 인덱스 동기화"
+description: "SQLite FTS5, BM25, refs 정확 일치, 관측 가능한 증분 동기화로 AI 에이전트 기억 검색을 안정화하는 방법입니다."
+date: 2026-06-18
+tags: ["ContextDB", "FTS5", "BM25", "에이전트 기억", "검색"]
+---
+
 # ContextDB 검색 업그레이드: FTS5/BM25 + 증분 인덱스 동기화(P1.5)
+
+> **Quick Answer:** ContextDB는 SQLite FTS5와 BM25로 후보를 정렬하고 정규화된 `event_refs`로 정확히 필터링하며 `index:sync --stats`로 증분 동기화를 관찰합니다. CI에서는 `--jsonl-out`으로 기계 판독 가능한 실행 이력을 저장할 수 있습니다.
 
 ContextDB는 P1에서 검색 기본 경로를 SQLite FTS5 + BM25로 전환했습니다.  
 P1.5에서는 운영 관측성과 성능 관리까지 확장했습니다.
@@ -50,3 +59,17 @@ npm run bench:contextdb:refs -- --events 2000 --refs-pool 200 --queries 300 --wa
 - 대규모 데이터에서 refs 필터 오탐 감소
 - refs 쿼리 지연/히트율 회귀를 CI gate로 차단
 - 장기 세션/크로스 CLI 핸드오프에서 매번 전체 재구축 없이 안정 운영
+
+## 자주 묻는 질문
+
+### BM25가 refs 정확 일치 필터를 대신하나요?
+
+아닙니다. BM25는 텍스트 후보의 순위를 정하고, 정규화된 `event_refs`가 그 뒤에 정확한 참조 조건을 적용합니다.
+
+### 매번 인덱스 전체를 다시 만들어야 하나요?
+
+아닙니다. 일반 유지 관리에는 증분 `index:sync`를 사용하고, 복구나 마이그레이션처럼 전체 갱신이 명확히 필요한 경우에만 `index:rebuild`를 사용합니다.
+
+### 현재 구현을 확인할 공식 문서는 어디인가요?
+
+[ContextDB 문서](https://cli.rexai.top/ko/contextdb/), [Token Intelligence](https://cli.rexai.top/ko/token-compression/), [Troubleshooting](https://cli.rexai.top/ko/troubleshooting/)를 확인하세요.

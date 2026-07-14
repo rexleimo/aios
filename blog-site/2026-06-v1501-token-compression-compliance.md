@@ -86,4 +86,4 @@ Expected token-compression evidence:
 - every client has non-zero `post_receive.saved_bytes`
 - uncontrolled output is reported as a policy violation, not savings
 
-Read the [Native Token Compression docs](https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501) for the reference contract.
+Read the [Token Intelligence docs](https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501) for the reference contract.

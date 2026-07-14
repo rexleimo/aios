@@ -1,305 +1,170 @@
 ---
-title: 빠른 시작
-description: Install Harness CLI, set it up, and run your first agent with memory — in about 3 minutes.
+title: 빠른 시작: Harness CLI 설치와 검증
+description: 현재 명령으로 Harness CLI를 설치하고 프로젝트 guidance, ContextDB, client sync, 보안 검사를 확인합니다.
 ---
 
 # 빠른 시작
 
-**Goal:** By the end of this page, you'll have Harness CLI installed and your coding agent will remember things across sessions.
+## 먼저 답하면
 
-Sounds good? Let's go.
+Harness CLI는 지원되는 coding client를 위한 로컬 workflow layer입니다. 현재 설치 순서는 release를 설치하고 project root에서 aios init --all을 실행한 뒤 aios doctor --native --verbose로 결과를 확인하는 것입니다. 기존 client를 대체하지 않으며 모든 기록을 매번 prompt에 넣지도 않습니다.
 
-## What You Need
+## 준비물
 
-Before we start, make sure you have:
+- Node.js 24 LTS와 npm
+- Git
+- 지원 client 중 하나: codex, claude, gemini, opencode, hermes, grok(Grok Build)
+- client guidance와 로컬 기억을 둘 project directory
 
-- **Node.js 24** (the required LTS baseline) — [download it here](https://nodejs.org/) or use `nvm install 24`
-- **A coding CLI** — at least one of: `codex`, `claude`, `gemini`, or `opencode`
-- **A project folder** — any code project where you want your agent to have memory
+~~~bash
+node -v
+npm -v
+~~~
 
-Check your Node version:
-
-```bash
-node -v  # Should show v24.x.x
-```
-
-??? note "Need to install or switch Node?"
-    ```bash
-    nvm install 24
-    nvm use 24
-    ```
-
-## Step 1: Install Harness CLI
+## Stable release 설치
 
 === "macOS / Linux"
 
-    ```bash
+    ~~~bash
     curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
-    ```
+    ~~~
 
-    If you use bash instead of zsh, replace `source ~/.zshrc` with `source ~/.bashrc`.
+    bash를 사용한다면 PATH를 관리하는 profile, 예를 들어 source ~/.bashrc를 reload합니다.
 
 === "Windows PowerShell"
 
-    ```powershell
+    ~~~powershell
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
-    ```
+    ~~~
 
-!!! tip "Stable vs. Development"
-    The commands above install the **stable release** (recommended). Only use `git clone` if you specifically want unreleased features from the `main` branch.
+release installer를 권장합니다. 공개되지 않은 main source가 필요할 때만 repository를 clone하세요.
 
-## Step 2: Run Setup
+## 프로젝트 초기화
 
-Open the Harness CLI menu:
+project root에서 실행합니다.
 
-```bash
-aios
-```
+~~~bash
+aios init --all
+aios doctor --native --verbose
+~~~
 
-You'll see a TUI (terminal UI) with several options. Do these two things, **in this order**:
+aios init은 반복 실행해도 됩니다. project integration marker와 저장소에 존재하는 지원 client guidance를 업데이트합니다. marker는 pull-based ContextDB의 로컬 registry인 .aios/context-db/index.json을 가리킵니다.
 
-1. **Choose "Setup"** — this installs the shell wrappers and skills
-2. **Choose "Doctor"** — this checks everything is working correctly
+unattended setup에서는 외부 권한을 명시합니다.
 
-<figure class="rex-visual">
-  <img src="assets/visual-tui-setup-doctor.svg" alt="Setup first, Doctor second">
-  <figcaption>Always run Setup first, then Doctor. If Doctor shows zero critical errors, you're good to go.</figcaption>
-</figure>
+~~~bash
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+~~~
 
-!!! warning "If Doctor shows errors"
-    Don't panic. Most errors are easy fixes — missing PATH entries, wrong Node version, etc. Doctor will tell you exactly what's wrong and often offers to fix it automatically.
+- --yes-compression-tools는 RTK, Caveman, Headroom package의 unattended 설치를 허용합니다.
+- --yes-headroom-mcp는 지원 client의 user-scope Headroom MCP registration을 허용합니다.
+- --dry-run은 다운로드나 client configuration 쓰기 없이 예정 상태만 보여줍니다.
 
-After setup, reload your shell:
+## 첫 client 실행
 
-=== "macOS / Linux"
-    ```bash
-    source ~/.zshrc
-    ```
+같은 project directory에서 실행합니다.
 
-=== "Windows PowerShell"
-    ```powershell
-    . $PROFILE
-    ```
-
-## Step 3: Turn On Memory For Your Project
-
-Go to any project folder where you want your agent to remember things:
-
-```bash
-cd /path/to/your/project
-aios init
-```
-
-That's it. `aios init` detects your installed coding agents (Claude Code, Codex CLI, Gemini CLI, OpenCode) and configures each one to use the memory system. It's **idempotent** — safe to run multiple times.
-
-??? info "How it works"
-    `aios init` adds a lightweight marker (`<!-- AIOS: .aios/context-db/index.json -->`) to each agent's config file (CLAUDE.md, AGENTS.md, GEMINI.md). When your agent starts, it sees the marker, reads the context registry, and loads only what it needs — no more waiting through lengthy context injection.
-
-??? info "Opt-in mode (legacy)"
-    If you prefer the old opt-in method, you can still use:
-
-    === "macOS / Linux"
-        ```bash
-        touch .contextdb-enable
-        ```
-
-    === "Windows PowerShell"
-        ```powershell
-        New-Item -ItemType File -Path .contextdb-enable -Force
-        ```
-
-    The new `aios init` method is recommended — it gives you faster startup and cross-agent memory sharing.
-
-## Step 4: Start Your Agent
-
-Now just start your agent like you normally would:
-
-```bash
+~~~bash
 codex
-# or: claude
-# or: gemini
-```
+# 또는 claude
+# 또는 gemini
+# 또는 opencode
+# 또는 hermes
+# 또는 grok
+~~~
 
-Your agent now has **project memory**. It will remember:
+client는 registry에서 필요한 guidance와 기억을 참조할 수 있습니다. ContextDB는 pull-based이므로 필요할 때 unified search, memo, checkpoint, context pack을 사용합니다.
 
-- What files you worked on
-- What decisions you made
-- What errors you encountered
-- What was left to do
+## 설치 확인
 
-...even after you close the terminal and come back tomorrow.
+client를 실행한 뒤 다시 진단합니다.
 
-## Step 5: Verify It's Working
-
-Run this to check that memory is active:
-
-```bash
+~~~bash
 aios doctor --native --verbose
 ls .aios/context-db/
-```
+~~~
 
-You should see directories like `sessions/`, `index/`, or `exports/`. That means memory is recording.
+진단 출력의 실제 checks와 paths를 근거로 삼으세요. warning은 provider나 live client route가 작동한다는 증거가 아닙니다. live route를 확인하려면 작은 task를 실행하고 status 또는 verification output을 보관합니다.
 
-??? troubleshooting "Don't see the memory directory?"
-    1. Start your agent once normally — Harness CLI creates the directory on first run
-    2. If it still doesn't appear: `aios doctor --native --fix`
+profile을 변경했다면 reload합니다.
 
-**You're all set!** Your agent now has memory. Keep reading to learn what else you can do.
+=== "macOS / Linux"
 
----
+    ~~~bash
+    source ~/.zshrc
+    ~~~
 
-## Beyond The Basics
+=== "Windows PowerShell"
 
-You have memory working. Here are the next things to try, in order of usefulness:
+    ~~~powershell
+    . $PROFILE
+    ~~~
 
-### Save Persistent Notes With Memo
+## Legacy compatibility switch
 
+일부 오래된 compatibility script는 .contextdb-enable을 opt-in marker로 인식합니다. 현재 설치의 primary path는 아닙니다.
 
-Memo lets you save Git-friendly project notes that your agent will see in every session:
+=== "macOS / Linux"
 
-```bash
-# Save a note about this project
-aios memo add "Always use TypeScript strict mode in this project"
+    ~~~bash
+    touch .contextdb-enable
+    ~~~
 
-# Save a reminder
-aios memo pin add "Never push directly to main"
+=== "Windows PowerShell"
 
-# Search your notes later
-aios memo search "typescript"
+    ~~~powershell
+    New-Item -ItemType File -Path .contextdb-enable -Force
+    ~~~
 
-# Inspect the active storage implementation
+오래된 wrapper나 compatibility workflow가 명시적으로 요구할 때만 사용하세요. 현재 project는 aios init과 .aios/context-db/index.json을 사용합니다. legacy file을 만든다고 기존 기억이 마이그레이션되거나 client sync가 증명되는 것은 아닙니다.
+
+## Memo 저장과 검색
+
+~~~bash
+aios memo add "Keep authentication tests strict"
+aios memo search "authentication"
 aios memo storage status
-```
+~~~
 
-By default, project memos are append-only JSONL under `.aios/memo/file/events.jsonl`. Use `aios memo storage use split` only when you prefer one JSON file per memo event; `storage rebuild` regenerates derived query files without rewriting canonical records.
+Memo는 로컬 project data입니다. 기본적으로 .aios/memo/file/events.jsonl의 append-only JSONL을 사용합니다. storage, scope, rebuild, context pack은 [ContextDB](contextdb.md)에서 설명합니다.
 
-### 넓은 파일 읽기 전에 검색하기
+## Recovery commands
 
-프로젝트로 돌아왔을 때 결정, 계획, 구현 위치가 기억나지 않는다면 먼저 통합 AIOS 검색을 사용하세요.
+~~~bash
+aios doctor --native --verbose
+aios doctor --native --fix
+node scripts/aios.mjs init --all --dry-run
+~~~
 
-```bash
-node scripts/aios.mjs search "native client guidance" --agent codex-cli --json
-```
+configuration 또는 package install 변경이 불확실하면 dry run부터 시작하세요. 질문할 때 diagnostic output을 함께 보관합니다.
 
-유용한 패턴:
+## FAQ
 
-```bash
-node scripts/aios.mjs search "release blocker" --source memory,plans
-node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
-node scripts/aios.mjs search "private scratch" --scope agent_private --agent claude-code
-```
+### Harness CLI는 coding client를 대체하나요?
 
-프로젝트 메모리, pinned notes, 계획, 문서, 코드를 함께 검색하면서 cross-client memo safety 를 유지합니다.
+아닙니다. 원래 client를 계속 실행하고 Harness CLI가 기억, workflow route, optional tool, verification guidance를 추가합니다.
 
-### Set Your Agent's Personality
+### aios init이 project memory를 upload하나요?
 
-You can tell Harness CLI how your agent should behave across all projects:
+registry와 memo는 로컬 파일입니다. client provider, package, MCP의 network boundary는 각각 다릅니다. 로컬 설치가 이후 모든 model traffic이 로컬이라는 뜻은 아닙니다.
 
-```bash
-# Set the agent's communication style
-aios memo persona init
-aios memo persona add "Response style: concise, direct, evidence-first"
+### 모든 client가 같은 기억을 공유하나요?
 
-# Set your own preferences
-aios memo user init
-aios memo user add "Preferred language: zh-CN + technical English terms"
-```
+integration이 지원되고 sync된 경우 같은 project의 client가 같은 ContextDB registry를 사용할 수 있습니다. 실제 상태는 aios doctor --native --verbose로 확인하세요.
 
-These profiles apply everywhere — not just one project.
+### 기억을 끄려면 어떻게 하나요?
 
-### Run Multiple Agents Together
+client를 중지하고 client guidance에 따라 project integration marker를 조정합니다. 삭제 전 .aios/를 확인하세요. legacy workflow가 .contextdb-enable을 사용했다면 해당 file을 삭제할 수 있지만 marker 삭제만으로 기존 데이터가 지워지지는 않습니다.
 
-When a task is too big for one agent, split it across multiple workers:
+## 다음 페이지
 
-```bash
-# Start 3 agents working in parallel
-aios team 3:codex "Build the settings page, add tests, and update docs"
-
-# Watch their progress
-aios team status --watch
-```
-
-!!! tip "When to use teams"
-    Use Agent Team only when the task can be **split into independent parts**. For single-file fixes or unclear requirements, stick with one agent.
-
-### Let An Agent Work Overnight
-
-Give your agent a clear objective and let it run while you sleep:
-
-```bash
-aios harness run \
-  --objective "Refactor the auth module and write integration tests" \
-  --worktree \
-  --max-iterations 20
-```
-
-Check progress anytime:
-
-```bash
-aios harness status --session <session-name> --json
-```
-
-### Use Route Shortcuts Inside Agents
-
-When you're inside a running agent, you can trigger Harness CLI features with shortcuts:
-
-| Shortcut | What it does |
-|---|---|
-| `/single <task>` | Handle the task in the current agent |
-| `/team <task>` | Split across multiple agents |
-| `/harness <task>` | Run as a long overnight job |
-
-!!! note "Client differences"
-    - **Claude Code / Gemini / OpenCode**: `/single`, `/team`, `/harness`
-    - **Codex**: `/prompts:single`, `/prompts:team`, `/prompts:harness`
-
-    If shortcuts are missing, run `aios doctor --native --fix`.
-
----
-
-## Common Questions
-
-### Does Harness CLI replace my coding agent?
-
-**No.** You still run `codex`, `claude`, `gemini`, or `opencode`. Harness CLI adds memory, skills, and teamwork on top of them.
-
-### Why do I need `.contextdb-enable`?
-
-It's an opt-in switch. Without it, Harness CLI won't record anything. You choose which projects get memory.
-
-### Will my agents share the same memory?
-
-**Yes.** If you run `codex` and then `claude` in the same project folder, they share the same ContextDB. This means Claude knows what Codex did earlier.
-
-### Do I need to learn everything at once?
-
-**No.** The three things you need on day one are:
-
-1. `aios` — for setup and diagnostics
-2. `touch .contextdb-enable` — to turn on memory
-3. `codex` (or `claude`/`gemini`) — to start coding
-
-Everything else — teams, harness, memo, superpowers — you can learn as you need them.
-
-### How do I update?
-
-```bash
-aios
-# Then choose "Update" from the menu
-```
-
-### How do I uninstall?
-
-```bash
-aios uninstall --components shell,skills,native
-```
-
-## Where To Go Next
-
-- [ContextDB](contextdb.md) — understand how memory works under the hood
-- [Agent Team](team-ops.md) — run multiple agents in parallel
-- [Solo Harness](solo-harness.md) — let agents work overnight
-- [Find Commands By Scenario](use-cases.md) — a command reference organized by task
-- [Troubleshooting](troubleshooting.md) — fix common issues
+| 목적 | 페이지 |
+| --- | --- |
+| project memory와 unified search | [ContextDB](contextdb.md) |
+| direct, guarded, planned 선택 | [Workflow Policy](workflow-policy.md) |
+| 독립 작업 병렬화 | [Agent Team](team-ops.md) |
+| 재개 가능한 장기 작업 | [Solo Harness](solo-harness.md) |
+| 설치 실패 진단 | [문제 해결](troubleshooting.md) |
+| intent별 명령어 | [사용 사례](use-cases.md) |

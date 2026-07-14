@@ -5,6 +5,12 @@ description: CLI를 더 똑똑하게 만드는 재사용 가능한 자동화 스
 
 # Superpowers
 
+> **Quick Answer:** Superpowers는 brainstorming, planning, TDD, debugging, verification, parallel dispatch, security review를 위한 재사용 가능한 playbook입니다. 먼저 워크플로 라우트를 선택하고 그 경계에 맞는 최소 skill만 사용하세요.
+
+## 라우트 다음에 skill 고르기
+
+읽기 전용 질문은 direct로 유지해도 됩니다. 파일 변경 전 `pre-edit-safety-gate`와 완료 주장 전 최종 검증은 skill 선택과 별도의 게이트입니다.
+
 Superpowers는 재사용 가능한 자동화 스킬입니다. Claude Code, Codex, Gemini CLI, OpenCode에 후킹해서 반복 작업을 자동 처리합니다.
 
 같은 명령이나 프롬프트를 반복하는 대신, 검증된 워크플로우를 통해 AI를 안내하고 모범 사례를 시행하며 완료 전에 결과를 검증하는 스킬을 호출하세요.
@@ -104,3 +110,19 @@ Superpowers는 재사용 가능한 자동화 스킬입니다. Claude Code, Codex
 ---
 
 ## RL 훈련 시스템
+
+AIOS RL 계층은 shell, browser, orchestrator 작업을 가로지르는 실험·훈련 제어면입니다. 공개 워크플로의 편집 게이트와 최종 검증을 대체하지 않습니다.
+
+## FAQ
+
+### Superpowers가 모든 질문에서 실행되나요?
+
+아닙니다. 질문과 상태 확인은 direct로 유지하고 설계, 순서, 디버깅, 위임, 완료 근거가 필요할 때 playbook을 고릅니다.
+
+### skill은 어디에 설치되나요?
+
+저장소에서 발견 가능한 skill은 `.codex/skills/` 또는 `.claude/skills/`에 두며 지원 워크플로가 클라이언트에 투영합니다.
+
+## 공식 문서
+
+[워크플로 정책](workflow-policy.md), [빠른 시작](getting-started.md), [Agent Team](team-ops.md)부터 시작하세요.

@@ -5,6 +5,12 @@ description: Reusable skills that automate common workflows — brainstorming, p
 
 # Superpowers
 
+> **Quick Answer:** Superpowers are reusable process playbooks for common agent work: brainstorming, planning, TDD, debugging, verification, parallel dispatch, and security review. Select the smallest playbook that matches the workflow route; do not run every playbook for every request.
+
+## Use a playbook at the right boundary
+
+Route first, then choose a playbook. The pre-edit safety gate remains mandatory before file changes, and final verification remains mandatory before claiming a behavior change is complete.
+
 **Superpowers are like shortcuts for common coding tasks.** Instead of figuring out how to approach a bug fix or a new feature from scratch every time, invoke a skill and let it guide your agent through a proven workflow.
 
 Think of them as "recipes" — each one knows the best way to handle a specific type of task.
@@ -145,3 +151,17 @@ For details, see the [Architecture page](architecture.md#rl-training-layer-aios)
 - [Case Library](case-library.md) — real-world examples of skills in action
 - [ContextDB](contextdb.md) — how skills interact with project memory
 - [Agent Team](team-ops.md) — multi-agent collaboration details
+
+## FAQ
+
+### Do Superpowers run automatically for every question?
+
+No. Read-only questions and status checks can stay direct. Playbooks are selected when the task needs design, sequencing, debugging, delegation, or completion evidence.
+
+### Where are skills installed?
+
+The project keeps discoverable repo-local skills under `.codex/skills/` or `.claude/skills/`, with client-specific projection handled by the supported workflow.
+
+## Canonical Docs
+
+Start with [Workflow Policy](workflow-policy.md), then see [Getting Started](getting-started.md) and [Agent Team](team-ops.md).

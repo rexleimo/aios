@@ -1,6 +1,6 @@
 ---
 title: Blog Hub
-description: Stories, tutorials, and deep dives about Harness CLI — the local agent workflow layer that adds memory, collaboration, and verification to codex, claude, gemini, and opencode.
+description: Stories, tutorials, and deep dives about Harness CLI — the local agent workflow layer that adds memory, collaboration, and verification to codex, claude, gemini, opencode, and Grok Build.
 ---
 
 # Blog
@@ -16,9 +16,15 @@ New to Harness CLI? These posts will get you oriented:
 - [The Story Behind Harness CLI](launch-post.md) — why it was built, and what problems it solves
 - [CLI Comparison: Raw vs. Harness CLI](cli-comparison-post.md) — what changes when you add the layer
 - [Automation Playbook](automation-playbook-post.md) — practical patterns for daily use
+- [v4.0 Adaptive Workflow Policy](2026-07-v400-adaptive-workflow-policy.md) — how the route decision works
+- [Which AI Agent Workflow Should You Choose?](2026-07-choose-agent-workflow.md) — a decision table with examples
+- [From Raw CLI Commands to a Reliable Workflow](2026-07-raw-cli-to-reliable-workflow.md) — boundaries that make automation repeatable
 
 ## Latest Posts
 
+- [v4.0 Adaptive Workflow Policy: How Harness CLI Chooses the Right Amount of Process](2026-07-v400-adaptive-workflow-policy.md)
+- [Which AI Agent Workflow Should You Choose?](2026-07-choose-agent-workflow.md)
+- [From Raw CLI Commands to a Reliable AI Agent Workflow](2026-07-raw-cli-to-reliable-workflow.md)
 - [v3.6.0: A Safer Token Intelligence Workflow with Headroom and Ponytail](2026-07-headroom-token-intelligence.md)
 - [v3.2.0: Harness 可靠性与技能生命周期升级](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build Is Now a First-Class AIOS Client](2026-07-grok-build-aios-client.md)
@@ -30,7 +36,6 @@ New to Harness CLI? These posts will get you oriented:
 - [v1.50.0: Unified AIOS Search Across Memory, Docs, Plans, and Code](2026-06-v150-unified-aios-search.md)
 - [Codemap: Give Your AI Agent a Map of Your Codebase](2026-05-codemap-crg.md)
 - [ContextDB Token Compression: Fit More Memory In Less Space](2026-05-token-compression.md)
-- [Native Token Compression: No Extra Tools Needed](2026-05-native-token-compression.md)
 - [Model Router: The Right Model for Every Task](2026-05-model-router.md)
 - [aios memo GUI: See Your Agent's Memory](2026-05-aios-memo-gui.md)
 - [Solo Harness: Let One Agent Work Overnight](2026-04-solo-harness.md)

@@ -1,255 +1,155 @@
 ---
-title: 故障排查
-description: 常见报错与修复步骤。
+title: Harness CLI 故障排查
+description: 用可观察证据诊断安装、ContextDB、客户端同步、工作流、Team、浏览器、Token 工具和隐私问题。
 ---
 
 # 故障排查
 
-## 快速答案（AI 搜索）
+## 一句话回答
 
-大多数问题来自环境与作用域配置（MCP 依赖缺失、包装未加载、wrap 模式不匹配）。先跑诊断，再改配置。
+先运行一个诊断命令并保留输出：
 
-## ContextDB 切换 Node 后失败
+~~~bash
+aios doctor --native --verbose
+~~~
 
-Harness CLI 现在明确以 **Node 24 LTS** 为运行基线，ContextDB 使用 Node 内置的 `node:sqlite`，不再需要重建外部 SQLite native addon。
+然后按症状分类。不要从 dry-run 推断实时供应商失败，也不要在找到第一个失败命令前删除项目数据。
 
-如果命令直接报 `Unable to resolve a Node runtime matching .nvmrc=24` 或 `[node-version] AIOS requires Node 24.x LTS`，说明本机还没有切到可用的 Node 24，需要先安装再重试。
+## 安装和 Node.js
 
-快速修复：
+**症状：** 找不到 aios，或切换 Node 后 ContextDB 命令失败。
 
-```bash
+~~~bash
 node -v
-source ~/.nvm/nvm.sh
-nvm install 24
-nvm use 24
-cd mcp-server && npm run test:contextdb
-```
+npm -v
+command -v aios
+aios doctor --native --verbose
+~~~
 
-然后重新验证：
+预期是 Node.js 24 LTS 且能解析 aios 路径。macOS/Linux 重新加载 profile 或打开新 shell；Windows 使用 TLS 安全的安装命令并用 . $PROFILE 重新加载。涉及依赖构建时先运行定向测试，不要先删除 node_modules。
 
-```bash
-npm run test:scripts
-```
+## ContextDB 和注册表
 
-## Browser MCP 工具不可用
+**症状：** 客户端找不到项目记忆。
 
-**大多数情况**: browser-use MCP 运行时未安装，或客户端 MCP 配置中缺少 `mcp-browser-use` 别名。
+~~~bash
+test -f .aios/context-db/index.json
+find .aios/context-db -maxdepth 2 -type f | head -n 30
+aios doctor --native --verbose
+~~~
 
-用 Doctor 脚本检查：
+确认是在正确项目根目录执行了 aios init --all。用统一搜索或明确的 memo/checkpoint 测试召回。旧版 .contextdb-enable 只是兼容开关，不代表当前初始化完成。
 
-=== "macOS / Linux"
+**症状：** 搜索结果为空。
 
-    ```bash
-    scripts/doctor-browser-mcp.sh
-    ```
+~~~bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+aios memo storage status
+aios memo storage rebuild
+~~~
 
-=== "Windows (PowerShell)"
+预期应看到来源列表或 storage 状态。检查规范 memo 文件后再重建派生索引。
 
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File .\scripts\doctor-browser-mcp.ps1
-    ```
+## 客户端同步和路由快捷命令
 
-或手动打开对应客户端 MCP 配置，确保包含：
+**症状：** 原生指引或快捷命令缺失。
 
-```json
-{
-  "mcpServers": {
-    "mcp-browser-use": {
-      "command": "node",
-      "args": ["/path/to/rex-ai-boot/scripts/run-browser-use-mcp.sh"]
-    }
-  }
-}
-```
+~~~bash
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --fix
+~~~
 
-## `EXTRA_ARGS[@]: unbound variable`
+应用修复前先阅读 dry-run。客户端能力不同；文件同步成功不代表供应商路由实时可用。
 
-原因：旧版 `ctx-agent.sh` 在 `bash set -u` 空数组展开边界情况下的错误。
+## Workflow Policy 和计划
 
-修复：
+**症状：** 只读问题创建了计划，或小改动被意外阻塞。
 
-1. 拉取最新的 `main`。
-2. 重新打开 shell 并重试 `claude`/`codex`/`gemini`。
+~~~bash
+node scripts/aios.mjs plan auto-gate --task "Explain the current auth flow" --dry-run --json
+node scripts/aios.mjs plan auto-gate --task "Refactor auth across modules" --json
+~~~
 
-最新版本使用统一的运行时核心（`ctx-agent-core.mjs`）来处理 shell 和 Node wrapper，避免了这类漂移。
+查看 disposition 是 noop、direct、guarded 还是 planned，持久化是 none、reuse 还是 create。策略路由独立于编辑前安全门禁和最终验证。详见[工作流策略](workflow-policy.md)。
 
-## 命令完全没有被包装
+## Team 和 Solo Harness
 
-检查这些条件：
+**症状：** Team 或 Harness 停止、阻塞或没有实时进度。
 
-- 你当前在一个 git 仓库里（`git rev-parse --show-toplevel` 能成功）
-- `ROOTPATH/scripts/contextdb-shell.zsh` 存在并且已经被 `source`
-- `CTXDB_WRAP_MODE` 允许当前仓库（`opt-in` 模式需要 `.contextdb-enable`）
+~~~bash
+aios team history --provider codex --limit 5
+aios harness status --session <session-id> --json
+aios hud --session <session-id> --json
+~~~
 
-先跑 wrapper doctor：
+先读第一个失败 job 或 iteration。Team 只重试 blocked 工作：
 
-```bash
-scripts/doctor-contextdb-shell.sh
-```
+~~~bash
+aios team --resume <session-id> --retry-blocked --provider codex --workers 2
+~~~
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-contextdb-shell.ps1
-```
+Solo 运行先带原因停止，修复第一个失败后再恢复：
 
-## `search` 结果异常为空
+~~~bash
+aios harness stop --session <session-id> --reason "诊断第一个失败"
+aios harness resume --session <session-id>
+~~~
 
-如果 `.aios/context-db/index/context.db` 丢失或过期：
+dry-run 只创建本地状态，不测试供应商凭据或实时路由。
 
-1. 执行 `cd mcp-server && npm run contextdb -- index:rebuild`
-2. 重新执行 `search` / `timeline` / `event:get`
+## 浏览器 MCP
 
-## `contextdb context:pack` 失败
+**症状：** 浏览器工具缺失或页面操作失败。
 
-AIOS 会在启动 `codex/claude/gemini` 之前先生成 ContextDB 上下文包（`context:pack`）。
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-如果打包失败，`ctx-agent` 默认会**告警并继续运行**（不注入上下文，也不让 CLI 整体起不来）。
+使用 browser-use CDP 默认路径：启动可见 CDP 浏览器，连接，读取 semantic snapshot 或定向文本，然后执行并验证。认证墙保留人工控制。Playwright MCP 是兼容路径。
 
-如果你希望打包失败直接中断（严格模式）：
+## Token 工具
 
-```bash
-export CTXDB_PACK_STRICT=1
-```
+**症状：** RTK、Caveman 或 Headroom 缺失，或授权流程停止。
 
-注意：shell wrapper（`codex`/`claude`/`gemini`）默认会 fail-open，即便设置了 `CTXDB_PACK_STRICT=1` 也不会让交互式会话直接"起不来"。如果你希望包装层也严格执行：
+~~~bash
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+~~~
 
-```bash
-export CTXDB_PACK_STRICT_INTERACTIVE=1
-```
+包安装授权和用户级 MCP 授权是分开的。修改前检查 external 或 conflict 的 Headroom 注册。没有 headroom_stats 的正 saved-token 总量，不要声称节省。
 
-如果频繁出现，建议先跑仓库门禁（包含 ContextDB 回归检查）：
+## 隐私和敏感文件
 
-```bash
-aios quality-gate pre-pr --profile strict
-```
+**症状：** 命令可能暴露凭据或私有配置。
 
-## `codex /new` 或 `claude/gemini /clear` 后上下文"没了"
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-`/new` / `/clear` 重置的是 **CLI 内部的对话状态**。ContextDB 仍在磁盘上，但包装层只会在 **启动 CLI 进程时** 注入一次 context packet。
+只使用脱敏输出，绝不要分享原始 .env、cookie、token、私钥或浏览器 profile。需要日志时先去掉供应商 token 和个人路径。
 
-处理方式：
+## 常见问题
 
-1. 推荐：退出 CLI，然后在 shell 里重新执行 `codex` / `claude` / `gemini`。
-2. 如果必须在同一进程里继续：在新对话第一句让模型先读取：
-   - `@.aios/context-db/exports/latest-codex-cli-context.md`
-   - `@.aios/context-db/exports/latest-claude-code-context.md`
-   - `@.aios/context-db/exports/latest-gemini-cli-context.md`
+### 应该删除 .aios 来修复问题吗？
 
-如果客户端不支持 `@file` 引用，请把文件内容粘贴为首条消息。
+不要。先定位第一个失败；删除派生数据前备份 sessions、exports 和 memo JSONL。
 
-## `aios orchestrate --execute live` 被阻止/失败
+### dry-run 成功意味着系统可用吗？
 
-确保设置了 `AIOS_EXECUTE_LIVE` 和 `AIOS_SUBAGENT_CLIENT`：
+不意味着。它只证明本地解析和计划状态。涉及供应商和凭据时，运行一个小型 live task。
 
-```bash
-export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli  # 必填（live 目前仅支持 codex-cli）
-```
+### 应该分享哪些输出？
 
-如果你使用 `codex` v0.114+，AIOS 会优先使用 `codex exec` 结构化输出以获得稳定的 JSON handoff（旧版本自动降级）。Codex 子进程默认附加 `--dangerously-bypass-approvals-and-sandbox`，避免 unattended live run 等待 approval/sandbox prompt；只有手动调试时才建议设置 `AIOS_SUBAGENT_CODEX_UNATTENDED=0` 关闭。
+分享命令、退出码、运行时版本和最小的脱敏片段。
 
-如果 routed startup 还在当前这个非 AIOS 仓库里找 `scripts/aios.mjs`，先拉取最新 `main`。最近的版本已经把 routed `ctx-agent` startup 改成按当前工作区感知，而不是假定 source-repo 布局。
+## 下一步
 
-## `CODEX_HOME points to ".codex"` 错误
-
-原因：`CODEX_HOME` 被设置成了相对路径。
-
-修复：
-
-```bash
-export CODEX_HOME="$HOME/.codex"
-mkdir -p "$CODEX_HOME"
-```
-
-最新 wrapper 脚本也会在命令执行时自动规范化相对路径的 `CODEX_HOME`。
-
-## Wrapper 已加载但应该禁用
-
-在 shell 配置中设置：
-
-```zsh
-export CTXDB_WRAP_MODE=off
-```
-
-## 技能意外地在多个项目间共享
-
-技能加载作用域与 ContextDB 包装是分开的：
-
-- 全局技能：`~/.codex/skills`、`~/.claude/skills`、`~/.gemini/skills`、`~/.config/opencode/skills`
-- 仅项目技能：`<repo>/.codex/skills`、`<repo>/.claude/skills`
-
-如果需要隔离，请将自定义技能放在 repo-local 文件夹中。
-
-## 在 Harness CLI 源仓库里执行 `--scope project` 失败
-
-这是 canonical skill source 迁移后的预期行为。
-
-现在：
-
-- `skill-sources/` 是 canonical source tree
-- repo-local 的 `.codex/skills` / `.claude/skills` / `.agents/skills` 是由 sync 管理的生成目录
-- source repo 自己不再允许把 `--scope project` 当作安装入口
-
-正确做法：
-
-```bash
-node scripts/sync-skills.mjs
-node scripts/check-skills-sync.mjs
-```
-
-如果你是想把 skills 安装到别的项目，请切到那个目标工作区再执行 `aios ... --scope project`。
-
-## Repo skills 在其他项目里不可全局使用
-
-wrapper 和 skills 是故意分开的。全局 skills 需要单独安装：
-`--client all` 会同时覆盖 `codex`、`claude`、`gemini` 和 `opencode`。
-
-=== "macOS / Linux"
-
-    ```bash
-    scripts/install-contextdb-skills.sh --client all
-    scripts/doctor-contextdb-skills.sh --client all
-    ```
-
-=== "Windows (PowerShell)"
-
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File .\scripts\install-contextdb-skills.ps1 -Client all
-    powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-skills.ps1 -Client all
-    ```
-
-## GitHub Pages `configure-pages` 找不到
-
-这通常意味着 Pages source 没有完全启用。
-
-在 GitHub 设置中修复：
-
-1. `Settings -> Pages -> Source: GitHub Actions`
-2. 重新运行 `docs-pages` workflow。
-
-## 常见问答
-
-### 浏览器工具不可用时第一步做什么？
-
-先运行 `scripts/doctor-browser-mcp.sh`（或 PowerShell 版本）查看缺失项。
-
-### 为什么输入 `codex` 没有注入上下文？
-
-通常是 wrapper 未加载、`CTXDB_WRAP_MODE` 未覆盖当前工作区，或者当前命令属于透传的管理子命令。
-
-## 把技能放进了错误目录
-
-canonical skill source tree 现在放在：
-
-- `<repo>/skill-sources`
-
-生成后的 repo-local discoverable 输出放在：
-
-- `<repo>/.codex/skills`
-- `<repo>/.claude/skills`
-
-如果你把 `SKILL.md` 放进 `.baoyu-skills/` 之类的平行目录，Codex / Claude 不会把它当作可发现技能。
-
-- `.baoyu-skills/` 只适合放 `EXTEND.md` 一类扩展配置
-- canonical 技能源文件请移动到 `skill-sources/<name>/SKILL.md`
-- 然后执行 `node scripts/sync-skills.mjs` 重建各 client 的兼容目录
-- 运行 `scripts/doctor-contextdb-skills.sh --client all` 检查是否存在错误的技能根目录
+- [快速开始](getting-started.md)
+- [ContextDB](contextdb.md)
+- [工作流策略](workflow-policy.md)
+- [Token Intelligence](token-compression.md)
+- [案例库](case-library.md)

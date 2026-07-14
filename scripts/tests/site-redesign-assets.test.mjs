@@ -34,6 +34,31 @@ test('docs mkdocs config loads decoupled redesign assets and home animation entr
   assert.match(config, /assets\/home-animation\.js/);
 });
 
+test('site shell emits page, breadcrumb, and blog structured-data contracts', () => {
+  const main = read('docs-site/overrides/main.html');
+  const topbar = read('docs-site/overrides/partials/rex/topbar.html');
+  const blogHeader = read('docs-site/overrides/partials/rex/blog-header.html');
+  const homeFooter = read('docs-site/overrides/partials/rex/home-footer.html');
+
+  for (const marker of [
+    '"@type": "WebPage"',
+    '"@type": "BreadcrumbList"',
+    '"@type": "BlogPosting"',
+    'page.canonical_url',
+    'rex_blog.current',
+    'datePublished',
+  ]) {
+    assert.match(main, new RegExp(escapeRegExp(marker)));
+  }
+
+  for (const shell of [topbar, blogHeader, homeFooter]) {
+    assert.match(shell, /Blog/);
+    assert.match(shell, /Friends/);
+    assert.match(shell, /Changelog/);
+    assert.match(shell, /GitHub/);
+  }
+});
+
 test('site override preserves Material header hooks required by the bundle runtime', () => {
   const main = read('docs-site/overrides/main.html');
   const bridgePath = 'docs-site/overrides/partials/rex/material-header-bridge.html';
@@ -340,12 +365,11 @@ test('home HUD CSS matches the Pencil telemetry geometry', () => {
 test('home shell matches the redesigned navigation contract', () => {
   const topbar = read('docs-site/overrides/partials/rex/topbar.html');
 
-  for (const label of ['Capabilities', 'Demo', 'Docs', 'Changelog', 'Star', 'Get Started']) {
+  for (const label of ['Capabilities', 'Demo', 'Docs', 'Blog', 'Changelog', 'Friends', 'Star', 'Get Started']) {
     assert.match(topbar, new RegExp(label));
   }
 
   assert.doesNotMatch(topbar, />Home</);
-  assert.doesNotMatch(topbar, />Blog</);
   assert.doesNotMatch(topbar, />GitHub</);
 });
 
@@ -501,7 +525,8 @@ test('home detail contract preserves berPn non-wrapping controls and terminal fi
   ]);
 
   assert.match(home, /cta-float-card__row/);
-  assert.match(home, /10x faster[\s\S]*10x faster/);
+  assert.doesNotMatch(home, /10x faster/);
+  assert.match(home, /Workflow Policy[\s\S]*Workflow Policy/);
   assert.match(home, /Verified[\s\S]*Verified/);
 
   for (const marker of [

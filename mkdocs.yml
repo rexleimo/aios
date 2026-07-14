@@ -1,6 +1,6 @@
 site_name: Harness CLI Documentation
 site_url: https://cli.rexai.top
-site_description: AI memory system docs for Codex/Claude/Gemini/OpenCode with Hermes workflows, Agent Team runtime, and automatic subagent planning.
+site_description: Local-first AI agent workflow documentation for Codex, Claude, Gemini, OpenCode, Grok Build, ContextDB memory, Agent Team, and verified automation.
 site_author: RexAI
 repo_url: https://github.com/rexleimo/harness-cli
 repo_name: rexleimo/harness-cli
@@ -67,13 +67,13 @@ plugins:
           build: true
           link: /
           site_name: Harness CLI Documentation
-          site_description: AI memory system docs for Codex/Claude/Gemini/OpenCode with Hermes workflows, Agent Team runtime, and automatic subagent planning.
+          site_description: Local-first AI agent workflow documentation for Codex, Claude, Gemini, OpenCode, Grok Build, ContextDB memory, Agent Team, and verified automation.
         - locale: zh
           name: 简体中文
           build: true
           link: /zh/
           site_name: Harness CLI 文档
-          site_description: 面向 Codex/Claude/Gemini/OpenCode 的 AI 记忆系统文档，覆盖 Hermes 工作流、Agent Team 与自动化子代理规划。
+          site_description: 面向 Codex/Claude/Gemini/OpenCode/Grok Build 的本地优先 AI Agent 工作流文档，覆盖 ContextDB、Agent Team 与可靠自动化。
           nav_translations:
             Home: 首页
             Blog: 博客
@@ -83,7 +83,7 @@ plugins:
             Troubleshooting: 故障排查
             Core Features: 功能核心
             ContextDB: ContextDB
-            Native Token Compression: 自研 Token 压缩
+            Token Intelligence: Token 智能
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 模型路由器
@@ -93,6 +93,7 @@ plugins:
             Solo Harness: 单 Agent 夜跑
             Perception: 感知层
             Architecture: 架构
+            Workflow Policy: 工作流策略
             CLI Workflows: 按场景找命令
             Agent Team: 多 Agent 实战
             HUD Guide: HUD 指南
@@ -112,7 +113,7 @@ plugins:
           build: true
           link: /ja/
           site_name: Harness CLI ドキュメント
-          site_description: Codex/Claude/Gemini/OpenCode 向けの AI 記憶システム文書。Hermes ワークフロー、Agent Team、subagent 自動計画をカバー。
+          site_description: Codex/Claude/Gemini/OpenCode/Grok Build 向けのローカル優先 AI エージェントワークフロー文書。ContextDB、Agent Team、検証済み自動化をカバー。
           nav_translations:
             Home: ホーム
             Blog: ブログ
@@ -122,7 +123,7 @@ plugins:
             Troubleshooting: トラブルシューティング
             Core Features: コア機能
             ContextDB: ContextDB
-            Native Token Compression: ネイティブ Token 圧縮
+            Token Intelligence: Token インテリジェンス
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: モデルルーター
@@ -132,6 +133,7 @@ plugins:
             Solo Harness: ソロ Harness
             Perception: パーセプション
             Architecture: アーキテクチャ
+            Workflow Policy: ワークフローポリシー
             CLI Workflows: CLI ワークフロー
             Agent Team: Agent Team
             HUD Guide: HUD ガイド
@@ -151,7 +153,7 @@ plugins:
           build: true
           link: /ko/
           site_name: Harness CLI 문서
-          site_description: Codex/Claude/Gemini/OpenCode용 AI 기억 시스템 문서. Hermes 워크플로, Agent Team, 자동 subagent 계획을 다룹니다.
+          site_description: Codex/Claude/Gemini/OpenCode/Grok Build용 로컬 우선 AI 에이전트 워크플로 문서. ContextDB, Agent Team, 검증된 자동화를 다룹니다.
           nav_translations:
             Home: 홈
             Blog: 블로그
@@ -161,7 +163,7 @@ plugins:
             Troubleshooting: 문제 해결
             Core Features: 핵심 기능
             ContextDB: ContextDB
-            Native Token Compression: 네이티브 Token 압축
+            Token Intelligence: Token 인텔리전스
             Superpowers: Superpowers
             debug-hub: debug-hub
             Model Router: 모델 라우터
@@ -171,6 +173,7 @@ plugins:
             Solo Harness: 솔로 Harness
             Perception: 인식 레이어
             Architecture: 아키텍처
+            Workflow Policy: 워크플로 정책
             CLI Workflows: CLI 워크플로
             Agent Team: Agent Team
             HUD Guide: HUD 가이드
@@ -220,7 +223,7 @@ nav:
       - Troubleshooting: troubleshooting.md
   - Core Features:
       - ContextDB: contextdb.md
-      - Native Token Compression: token-compression.md
+      - Token Intelligence: token-compression.md
       - Superpowers: superpowers.md
       - debug-hub: debug-hub.md
       - Model Router: model-router.md
@@ -232,6 +235,7 @@ nav:
       - HUD Guide: hud-guide.md
       - Perception: perception.md
       - Architecture: architecture.md
+      - Workflow Policy: workflow-policy.md
       - CLI Workflows: use-cases.md
   - Resources:
       - CLI Comparison: cli-comparison.md

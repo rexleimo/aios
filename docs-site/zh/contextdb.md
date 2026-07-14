@@ -1,408 +1,184 @@
 ---
-title: ContextDB
-description: How your agent remembers things across sessions — explained from the ground up.
+title: ContextDB：按需读取的项目记忆
+description: 了解本地 ContextDB 注册表、memo 存储、统一项目搜索、延迟加载和跨客户端记忆边界。
 ---
 
 # ContextDB 上下文数据库
 
-**简述：** ContextDB 是一个本地记忆系统，为你的编码 Agent 工作。它记住过去会话中发生的事情，让你的 Agent 能够在中断处继续。
+## 一句话回答
 
-不依赖云，不依赖数据库服务器。只需项目文件夹中的文件。
+ContextDB 是 Harness CLI 的本地项目记忆层。它把会话、事件、检查点、memo 和上下文包引用保存在项目工作区，让受支持的客户端可以跨会话找到相关事实。当前模式是 pull-based：项目注册表列出可用来源，Agent 根据任务召回需要的证据，而不是每次都收到完整历史。
 
-## 上下文注册表（拉取式上下文）
+## 现在就做
 
-从 v1.13 开始，ContextDB 使用**拉取式**模型。与其在每次会话启动时注入约 30KB 的上下文（需要约 5 分钟），系统现在只注入约 350 字节的**注册表指针**，然后由 Agent 按需加载所需内容。
+在项目根目录执行：
 
-### 工作原理
+~~~bash
+aios init --all
+aios doctor --native --verbose
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+~~~
 
-```
-Agent 启动 → 读取配置文件 (CLAUDE.md / AGENTS.md / GEMINI.md)
-           → 看到标记：<!-- AIOS: .aios/context-db/index.json -->
-           → 读取 .aios/context-db/index.json（注册表）
-           → 根据任务决定加载什么
+当前初始化会添加指向 .aios/context-db/index.json 的项目标记。
 
-任务："修复认证 bug"     → 加载 handoff (1KB) 保持连续性
-任务："分析小红书数据"  → 加载 handoff + perception (~4KB)
-任务："调试崩溃"        → 加载 handoff + session history (~20KB)
-```
+## 本地注册表
 
-### 注册表索引 (index.json)
+注册表是可用来源的小型索引。典型工作区包含：
 
-```json
-{
-  "session": "claude-code-20260515T...",
-  "status": "running",
-  "sources": [
-    {"id": "handoff", "cost": "~1KB", "priority": "high",
-     "path": ".aios/context-db/sessions/xxx/handoff.json"},
-    {"id": "session-history", "cost": "~20KB", "priority": "low",
-     "path": ".aios/context-db/exports/latest-claude-code-context.md"},
-    {"id": "perception", "cost": "~3KB", "priority": "low",
-     "path": ".aios/context-db/exports/latest-perception.md"}
-  ]
-}
-```
+~~~text
+.aios/
+  context-db/
+    index.json                 # 来源注册表
+    sessions/<session-id>/     # 会话事件和检查点
+    index/                     # 派生搜索数据
+    exports/                   # 上下文包和交接资料
+  memo/
+    file/events.jsonl          # 规范的 append-only 项目 memo
+    split/                     # 可选的每条 memo 一个文件
+~~~
 
-### 新旧对比
+实际文件会随客户端和已执行命令变化。注册表只是来源指针，不是整个仓库的副本。
 
-| | 旧（推送） | 新（拉取） |
-|---|---|---|
-| 启动时注入 | ~30KB (~12K tokens) | ~350 bytes |
-| 启动等待 | ~5 分钟 | 瞬时 |
-| 上下文加载 | 每次加载所有内容 | 按需，基于任务 |
-| 跨 Agent 记忆 | 每个 Agent 隔离 | 共享 ContextDB |
+## pull-based 如何工作
 
-### 安装
+~~~text
+客户端启动
+  -> 读取 AGENTS.md、CLAUDE.md、GEMINI.md 或客户端指引
+  -> 找到 .aios/context-db/index.json
+  -> 检查来源元数据和任务相关性
+  -> 搜索或读取 handoff、memo、checkpoint 或 context pack
+  -> 只带着当前任务需要的证据继续
+~~~
 
-```bash
-aios init              # 一次性为所有已安装的 Agent 设置
-```
+这种模式有助于控制上下文，但不保证某个固定的 prompt 大小或启动时间。如果来源缺失、过期或不在当前项目中，客户端仍需要新的明确指针。
 
-`aios init` 命令将注册表标记添加到每个 Agent 的配置文件，并配置保存保护，以便会话自动持久化。
+## 会记录什么
 
-## 为什么这很重要？
+| 来源 | 示例 | 用途 |
+| --- | --- | --- |
+| 会话事件 | prompt、工具结果、错误、修改路径 | 还原发生过什么 |
+| 检查点 | 目标、状态、下一步、证据 | 恢复长任务 |
+| Memo | 项目决策、约束、提醒 | 保存持久事实 |
+| 上下文包 | 有边界的历史导出 | 交接选中的上下文片段 |
+| 统一搜索 | memory、plans、docs、code 引用 | 大范围读取前定位证据 |
 
-以下是 ContextDB 解决的问题：
+ContextDB 不会把未经验证的 Agent 回复变成证据。测试、诊断、审查记录和隐私检查仍是独立门禁。
 
-```
-第 1 天：你和 Agent 一起开发一个功能。进展顺利。
-第 2 天：你再次打开终端。你的 Agent 完全不知道昨天发生了什么。
-         你不得不从头解释一切。再来一次。
-```
+## 使用 Memo 记忆 {#memory-with-memo}
 
-ContextDB 解决了这个问题。当你在启用 ContextDB 的项目中启动 Agent 时，它会自动从之前的会话加载上下文。
+### Workspace Memory AIOS Memo {#workspace-memory-aios-memo}
 
-## 工作原理（简单版）
+Memo 是持久项目笔记。默认规范后端是 .aios/memo/file/events.jsonl 下的 append-only JSONL；split 存储是可选项。
 
-把 ContextDB 想象成 Agent 的**实验记录本**：
-
-1. **事件** — 每次你或 Agent 做什么，都会被记录
-2. **检查点** — 在重要时刻，保存一份摘要
-3. **上下文包** — 当新会话启动时，所有相关历史被打包并提供给 Agent
-
-```
-┌─────────────────────────────────────────┐
-│  你的项目                               │
-│  ├── .contextdb-enable                  │
-│  └── .aios/context-db/                  │
-│      ├── sessions/                      │  ← 记录的事件
-│      ├── index/                         │  ← 搜索索引
-│      └── exports/                       │  ← 上下文包
-└─────────────────────────────────────────┘
-```
-
-所有内容都保存在你的项目文件夹中。不会发送到任何地方。
-
-## 快速开始
-
-### 为项目启用记忆
-
-```bash
-cd /path/to/your/project
-touch .contextdb-enable
-codex
-```
-
-就这样。从现在起，这个项目中的每个会话都会被记录。
-
-### 会记住什么？
-
-| 类型 | 示例 |
-|---|---|
-| 你发送的提示 | "重构认证模块" |
-| Agent 写的代码 | 创建或修改的文件 |
-| 遇到的错误 | 堆栈跟踪、构建失败 |
-| 作出的决策 | "使用 Redis 进行缓存而不是 Memcached" |
-| 剩余待办事项 | "仍需编写集成测试" |
-
-### 会话如何工作
-
-每次启动 Agent 时，ContextDB 都会创建一个新的**会话**。会话相互链接，以便 Agent 能够看到完整的历史。
-
-会话 ID 格式：`claude-code-20260419T095454-e6eb600d`（Agent 名称 + 时间戳 + 随机 ID）。
-
-## 使用 Memo 记忆
-
-ContextDB 是自动的，但有时你想**手动**保存重要笔记。这就是 Memo 的用途。
-项目备忘录现在使用 Git 友好的规范存储在 `.aios/memo/` 下：`file` 是默认的追加式 JSONL 后端，而 `split` 每个备忘录事件存储一个 JSON 文件。ContextDB 镜像仅用于兼容性/缓存。
-
-### 快速 Memo 命令
-
-```bash
-# 保存关于这个项目的笔记
-aios memo add "此项目使用严格的 TypeScript — 禁止 any 类型"
-
-# 固定重要内容（始终可见）
-aios memo pin add "永远不要直接推送到 main 分支"
-
-# 搜索你的笔记
-aios memo search "typescript"
-aios memo search "testing"
-
-# 检查或切换存储实现
+~~~bash
+aios memo add "保持认证测试严格"
+aios memo pin add "不要直接推送到 main"
+aios memo search "认证"
+aios memo recall "release readiness" --limit 5
 aios memo storage status
+~~~
+
+需要时再切换或检查存储：
+
+~~~bash
 aios memo storage use split
 aios memo storage use file
 aios memo storage rebuild
 aios memo storage doctor
-```
+~~~
 
-`aios memo storage rebuild` 是仅重建派生查询文件的完整重建；它不会重写规范备忘录记录。
+rebuild 只更新派生查询文件，不重写规范 memo 记录。
 
-### 跨会话回忆
+## 统一项目搜索（v1.50.0） {#统一项目搜索v1500}
 
-```bash
-# 从过去的会话中查找关于某个主题的笔记
-aios memo recall "数据库迁移" --limit 5
-```
+在大范围 grep 或读取整个仓库前使用统一搜索：
 
-### Persona：设置 Agent 的风格
+~~~bash
+node scripts/aios.mjs search "native client guidance" --agent codex-cli --json
+node scripts/aios.mjs search "release blocker" --source memory,plans
+node scripts/aios.mjs search "browser MCP" --source docs,code --limit 8
+~~~
 
-希望你的 Agent 始终以某种方式回应？设置一个 persona：
+| 来源 | 包含内容 | 适合场景 |
+| --- | --- | --- |
+| memory | 项目共享及被允许的私有 memo | 决策和交接 |
+| plans | docs/plans 和实施计划 | 目标和检查点 |
+| docs | README、原生指引和公开文档 | runbook |
+| code | scripts、mcp-server、测试和配置 | 实现事实 |
+| all | 所有支持来源 | 第一次定向检索 |
 
-```bash
-aios memo persona init
-aios memo persona add "回复风格：简洁、直接、证据优先"
-aios memo persona add "总是解释 WHY，而不只是 WHAT"
-```
+项目共享 memo 对受支持客户端可见。Agent 私有笔记需要匹配运行时客户端 ID，例如 codex-cli、claude-code、gemini-cli、opencode-cli、hermes-agent 或 grok-build。
 
-### 用户个人资料：设置你的偏好
+## 延迟加载（按需读取） {#lazy-load}
 
-告诉 Agent 关于你自己的信息：
+交互式会话默认使用延迟加载。兼容工作流需要完整上下文时可以请求：
 
-```bash
-aios memo user init
-aios memo user add "首选语言：zh-CN + 技术英语术语"
-aios memo user add "我是一名高级工程师 — 跳过入门解释"
-```
+~~~bash
+export CTXDB_LAZY_LOAD=0
+~~~
 
-Persona 和用户个人资料是**全局的** — 它们适用于你所有项目。
+当 aios init 创建了注册表标记后，客户端可以通过注册表和 facade 指引发现上下文。旧版或未包装客户端可能使用兼容回退。延迟加载只是上下文选择行为，不保证每个来源都存在，也不保证客户端会自动查询每个来源。
 
-## 搜索你的历史
+## 上下文包和手动控制
 
-ContextDB 构建一个搜索索引，以便你（和你的 Agent）能够找到过去的工作：
+需要交接或选定历史片段时使用有边界的上下文包：
 
-```bash
-# 搜索过去的事件
-npm run contextdb -- search --query "认证 bug" --project my-app
-
-# 查看发生了什么的时间线
-npm run contextdb -- timeline --session <session-id> --limit 30
-```
-
-搜索在底层使用 SQLite 进行全文搜索（FTS5 + BM25 排名）。
-
-### 增量同步 + refs 规范化
-
-ContextDB 在 SQLite sidecar 中维护一个规范化的 `event_refs` 表。  
-`--refs` 过滤现在使用规范化 refs 精确匹配来减少来自子字符串匹配的误报。
-
-```bash
-npm run contextdb -- index:sync --stats
-npm run contextdb -- index:sync --force --stats
-npm run contextdb -- index:sync --stats --jsonl-out .aios/context-db/exports/index-sync-stats.jsonl
-```
-
-- `--stats`：输出 sessions/events/checkpoints 的 scanned/upserted 计数、耗时、节流跳过和强制标志。
-- `--jsonl-out`：每次执行追加一条 JSON 记录（带时间戳）用于趋势分析。
-- 仅当 sidecar 丢失/损坏或需要完整模式重建时才使用 `index:rebuild`。
-
-### refs 查询性能基准
-
-使用内置脚本监控 refs 查询延迟并运行回归门控：
-
-```bash
+~~~bash
 cd mcp-server
-npm run bench:contextdb:refs -- --events 2000 --refs-pool 200 --queries 300 --warmup 30 --json-out test-results/contextdb-refs-bench.local.json
-npm run bench:contextdb:refs:ci
-npm run bench:contextdb:refs:gate
-```
-
-### 可选的语义搜索
-
-语义模式是可选的；当不可用时，它会自动回退到词汇搜索。
-
-```bash
-export CONTEXTDB_SEMANTIC=1
-export CONTEXTDB_SEMANTIC_PROVIDER=token
-npm run contextdb -- search --query "问题 认证" --project demo --semantic
-```
-
-## Token 压缩（保持上下文精简）
-
-你的历史越多，上下文包就越大。Token 压缩使其可控。
-
-### 为什么重要
-
-AI 模型有**上下文窗口限制**。如果你的项目历史太长，它将无法容纳。Token 压缩：
-
-1. 保留最重要的信息（最近的工作、错误、决策）
-2. 压缩或删除不太重要的内容（重复的日志、冗长的输出）
-3. 将所有内容压缩到你控制的预算范围内
-
-### 如何使用
-
-```bash
 npm run contextdb -- context:pack \
-  --session <id> \
+  --session <session-id> \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced
-```
+~~~
 
-### 策略
+诊断存储或构建可复现交接时，可使用低级 CLI：
 
-| 策略 | 何时使用 |
-|---|---|
-| `balanced` | 默认。保留最近 + 重要的，压缩其余 |
-| `aggressive` | 非常小的预算。最大压缩 |
-| `legacy` | 旧行为。只保留末尾 |
+~~~bash
+npm run contextdb -- init
+npm run contextdb -- session:new --agent codex-cli --project my-app --goal "fix auth bug"
+npm run contextdb -- checkpoint --session <id> --summary "auth fix done" --status running
+npm run contextdb -- index:rebuild
+~~~
 
-## 延迟加载（快速启动）
+普通用户从 aios init 和 native doctor 开始即可。
 
-上下文注册表已经默认使启动接近瞬时（~350 字节注入）。对于需要完整上下文的会话，延迟加载进一步优化：
+## 跨客户端记忆和隐私
 
-- 启动时：只注入注册表指针
-- Agent 读取注册表并按需加载所需内容
-- 后台进程在需要时重建完整上下文包
+当各客户端集成受支持且已同步时，不同客户端可以共享同一个项目注册表。注册表不会让一个客户端自动获得另一个客户端的私有 home 配置。运行 aios doctor --native --verbose 查看实际覆盖范围。
 
-延迟加载在交互式会话中默认**开启**。要强制完整上下文加载：
+项目文件在本地，但 Agent 仍可能把选定内容发送到配置的模型供应商。可选包安装和 MCP 注册也有各自的网络边界。共享敏感文件前，先通过脱敏流程读取。
 
-```bash
-export CTXDB_LAZY_LOAD=0  # 启动时加载所有内容（较慢但完整）
-```
+## 旧版兼容
 
-当 `aios init` 已运行时，自动使用 slim 模式 — Agent 通过注册表管理自己的上下文。对于未包装的 Agent 或旧版设置，保留完整注入作为后备。
-
-## 路由快捷方式
-
-当你在运行中的 Agent 内部时，你可以选择如何处理任务：
-
-| 快捷方式 | 含义 |
-|---|---|
-| `/single <任务>` | 在当前 Agent 中处理（默认） |
-| `/subagent <任务>` | 分阶段编排与验证 |
-| `/team <任务>` | 分发给多个 Agent |
-| `/harness <任务>` | 长时间通宵运行 |
-
-这些在设置期间自动安装。如果它们丢失了：
-
-```bash
-aios doctor --native --fix
-```
-
-## 高级：手动命令
-
-## 高级：配置
-
-| 变量 | 作用 | 默认值 |
-|---|---|---|
-| `CTXDB_PACK_STRICT` | 如果无法构建上下文包则失败 | `0`（警告并继续） |
-| `CTXDB_LAZY_LOAD` | 启用快速启动与延迟加载 | `1`（开启） |
-| `CTXDB_INTERACTIVE_AUTO_ROUTE` | 启动时显示路由快捷方式 | `1`（开启） |
-| `CTXDB_HARNESS_PROVIDER` | harness 运行的默认 Agent | `codex` |
-| `CTXDB_HARNESS_MAX_ITERATIONS` | harness 运行的最大循环次数 | `8` |
-| `AIOS_IDENTITY_HOME` | persona/user 文件的目录 | `~/.aios` |
-| `AIOS_PERSONA_MAX_CHARS` | persona 文件的最大大小 | `2400` |
+旧包装器和脚本可能识别 .contextdb-enable 作为选择加入标记。当前入口是 aios init 和 .aios/context-db/index.json。只有兼容工作流明确要求时才保留旧开关；它不能替代初始化和验证。
 
 ## 常见问题
 
 ### ContextDB 是云数据库吗？
 
-不是。它只是你项目 `.aios/context-db/` 文件夹中的文件。没有任何内容离开你的机器。
+不是。注册表、会话数据、导出文件和规范 memo 都是本地工作区文件。客户端供应商和可选集成有各自的网络边界。
 
-### 为什么在 `/new` 或 `/clear` 后上下文会消失？
+### 不同 Agent 会共享相同记忆吗？
 
-这些命令重置的是**终端内对话**，但 ContextDB 仍在磁盘上。要恢复上下文：
+如果每个客户端都受支持且已同步，它们可以共享同一项目 ContextDB。共享存储不等于每个客户端具有相同的路由、skill 或 MCP 能力。
 
-1. 退出 Agent 并重新启动 — 包装器自动重新加载上下文
-2. 或者让 Agent 读取最新的快照：`@.aios/context-db/exports/latest-*-context.md`
+### /new 或 /clear 之后会怎样？
 
-### 不同的 Agent 会共享相同的记忆吗？
+这些命令只重置终端内对话，项目文件仍然存在。启动新的客户端会话，再使用注册表、统一搜索或命名上下文包召回相关证据。
 
-是的。如果你在同一个项目中先运行 `codex` 然后运行 `claude`，它们读写相同的 ContextDB。Claude 会知道 Codex 之前做了什么。
+### 可以关闭记忆吗？
 
-### 我可以关闭它吗？
+停止客户端，检查项目指引，并按客户端说明移除或调整当前集成标记。只有旧兼容工作流使用了 .contextdb-enable 时才删除它。删除标记不会清除已有 .aios 数据。
 
-可以。只需从项目根目录删除 `.contextdb-enable`。现有数据保留在磁盘上，但新会话不会被记录。
+### 哪些文件可以安全删除？
 
-### `.aios/context-db/` 文件夹是什么？
+派生索引可以重建。sessions、exports 和 memo JSONL 属于源数据，删除前应备份。不要把凭据或客户端配置当作普通清理对象。
 
-```
-.aios/context-db/
-  sessions/          # 会话文件（信息来源）
-  index/             # SQLite 搜索索引（自动重建）
-  exports/           # Agent 读取的上下文包
-```
+## 下一步
 
-你可以安全地删除 `index/` — 它会自动重建。除非你想擦除历史，否则不要删除 `sessions/`。
-
-## 下一步去哪里
-
-- [快速开始](getting-started.md) — 如果你还没有设置
-- [多 Agent 实战](team-ops.md) — 当一个 Agent 不够时
-- [单 Agent 夜跑](solo-harness.md) — 让 Agent 通宵工作
-- [自研 Token 压缩](token-compression.md) — 深入了解如何保持上下文精简
-- [故障排查](troubleshooting.md) — 修复常见 ContextDB 问题
-
-## 统一项目搜索（v1.50.0） {#统一项目搜索v1500}
-
-从 v1.50.0 开始，Agent 和人都可以先用一个命令搜索项目记忆、文档、计划和代码，再决定是否需要大范围 `grep` 或读取整文件：
-
-```bash
-node scripts/aios.mjs search "release readiness" --agent codex-cli --json
-```
-
-常用方式：
-
-```bash
-# 搜索全部来源：memory、docs、plans、code
-node scripts/aios.mjs search "native client guidance" --agent claude-code
-
-# 只搜索记忆和计划
-node scripts/aios.mjs search "v1.50.0" --source memory,plans --limit 10 --json
-
-# 搜索另一个 workspace
-node scripts/aios.mjs search "browser MCP" --workspace /path/to/project --source docs,code
-```
-
-### 来源过滤
-
-| 来源 | 搜索内容 | 适合场景 |
-|---|---|---|
-| `memory` | 项目 memo 和 pinned memory | 决策、交接、约束 |
-| `plans` | `docs/plans/` 和 superpowers plans | 实施意图和 checkpoint |
-| `docs` | README、AGENTS/CLAUDE/GEMINI、docs-site、docs | Runbook 和用户文档 |
-| `code` | `scripts/`、`mcp-server/src`、tests、packages、config | CLI 实现和测试 |
-| `all` | 以上全部 | targeted read 前的第一轮检索 |
-
-### 跨客户端记忆安全
-
-搜索遵循 memo 可见性模型：
-
-- `project_shared` 对所有客户端可见。
-- `agent_private` 需要匹配 `--agent <runtime-client-id>`。
-- 其他客户端的私有草稿会被过滤。
-
-Runtime ID 包括 `codex-cli`、`claude-code`、`gemini-cli`、`opencode-cli`、`hermes-agent`、`grok-build`。
-
-### 全客户端指令覆盖
-
-搜索指令来自 shared native instructions。Codex、OpenCode 通过 `AGENTS.md` 接收；Claude 通过 `CLAUDE.md` 接收；Gemini 通过 `GEMINI.md` 接收。
-### Agent 治理证据
-
-当你新增或重路由 agent，或修改 workflow skill 时，不要把它当成普通文档改动，而是要当成操作规程更新。先记录 smoke 证据，再信任新的 live 路径：
-
-```bash
-node scripts/aios.mjs agents smoke --dry-run --json
-node scripts/aios.mjs agents smoke --json
-node scripts/aios.mjs skill verify-training --changed --base HEAD --json
-```
-
-smoke 运行会为每个 agent 写入这些证据文件：
-
-- `.aios/agents/smoke/<agent>.json`
-- `.aios/agents/provenance/<agent>.json`
-- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
-
-需要解释路由变更或 skill 更新为什么安全时，把这些文件和 session history 一起看。
+- [快速开始](getting-started.md) - 安装并初始化项目。
+- [工作流策略](workflow-policy.md) - 选择 direct、guarded 或 planned。
+- [Token Intelligence](token-compression.md) - 在不夸大压缩能力的前提下保持上下文有效。
+- [架构](architecture.md) - 查看运行时层如何连接。
+- [故障排查](troubleshooting.md) - 恢复缺失注册表或同步失败。

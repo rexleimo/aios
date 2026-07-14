@@ -5,6 +5,12 @@ description: 一个基于 Tree-sitter 的结构化知识图谱，让编程 agent
 
 # 代码审查图谱 (Codemap)
 
+> **快速答案：** Codemap 在本地建立仓库结构图，让 Agent 在修改前查询调用者、依赖、导入关系、受影响流程和测试覆盖。它适合架构、影响半径和最终审查节点，但不能替代测试。
+
+## Codemap 首先回答什么？
+
+一次变更前，图谱应帮助回答三个问题：会影响什么、哪些流程依赖它、目标已有哪类测试覆盖？如果图谱服务不可用，要明确使用定向仓库搜索作为回退，并把这一点写入验证证据。
+
 **一句话：** Codemap 为你的代码库构建 Tree-sitter 知识图谱，作为 MCP 工具注入到所有编码 agent 中。agent 不再盲目 grep 文件，而是做有依据的决策——知道谁调用了什么，什么测试覆盖了什么，改了什么会影响什么。
 
 无需外部服务，无需云端。就是 `.code-review-graph/` 里的一个本地 SQLite 图。
@@ -143,3 +149,17 @@ aios internal codemap uninstall
 ```bash
 aios internal codemap uninstall --dry-run
 ```
+
+## 常见问题
+
+### Codemap 会把仓库代码发送到外部服务吗？
+
+不会。图谱数据和 stdio MCP 运行时保留在本地；首次安装时的包解析是独立的安装依赖。
+
+### 图谱结果能证明修改一定安全吗？
+
+不能。它负责缩小影响范围；测试、构建和人工审查仍然是完成证据。
+
+## 官方文档
+
+继续阅读[架构](architecture.md)、[工作流策略](workflow-policy.md)和[故障排查](troubleshooting.md)。

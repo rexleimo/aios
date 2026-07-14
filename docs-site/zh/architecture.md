@@ -1,127 +1,127 @@
 ---
-title: 架构
-description: wrapper、runner 与 ContextDB 的运行关系。
+title: Harness CLI 架构
+description: 了解客户端指引、ContextDB、工作流策略、Team、Harness、browser-use CDP 和 RL 研究层如何连接。
 ---
 
 # 架构
 
+## 一句话回答
+
+Harness CLI 是围绕现有编码客户端建立的本地边界集合。客户端指引确定项目，ContextDB 保存和召回项目证据，Workflow Policy 选择最小路径，Team、Solo Harness 或 Orchestrate 在任务需要时执行工作。browser-use CDP 是默认浏览器路径；旧版 Playwright MCP 保留为兼容路径。
+
 ## 组件
 
-- `scripts/contextdb-shell.zsh`：接管 `codex/claude/gemini`
-- `scripts/contextdb-shell-bridge.mjs`：包裹/透传决策桥
-- `scripts/ctx-agent.mjs`：统一运行器
-- `mcp-server/src/contextdb/*`：ContextDB 核心与 CLI
+| 层 | 主要入口 | 职责 |
+| --- | --- | --- |
+| 客户端入口 | scripts/contextdb-shell.zsh、client-sources/、原生指引 | 提供项目说明和路由提示 |
+| 启动桥 | scripts/contextdb-shell-bridge.mjs、scripts/ctx-agent.mjs | 决定包装或透传并启动客户端 |
+| ContextDB | mcp-server/src/contextdb/、.aios/context-db/ | 保存会话、memo、检查点、搜索数据和上下文包 |
+| Workflow Policy | scripts/lib/planning/workflow-policy.mjs、auto-gate.mjs、cli.mjs | 分类 noop、direct、guarded、planned |
+| 运行操作 | scripts/aios.mjs、team、harness、orchestrate、HUD | 分发工作、记录状态和呈现证据 |
+| 浏览器 | scripts/run-browser-use-mcp.sh、chrome.*、browser.*、page.* | 通过 CDP 运行 browser-use MCP |
+| 研究层 | scripts/lib/rl-core/、rl-* 适配器 | 隔离 RL 实验和评估 |
 
 ## 运行链路
 
-```text
+~~~text
 用户命令
-  -> zsh wrapper
-  -> contextdb-shell-bridge.mjs
-  -> ctx-agent.mjs
-  -> contextdb CLI
-  -> 启动原生 CLI（注入 context）
-```
+  -> 受支持客户端和原生项目指引
+  -> 可选 shell bridge / ctx-agent 兼容路径
+  -> .aios/context-db/index.json 注册表
+  -> ContextDB 搜索、memo、checkpoint 或 context pack
+  -> Workflow Policy 路由决策
+  -> direct 工作、Team、Solo Harness 或 Orchestrate
+  -> 诊断、测试和验证证据
+~~~
 
-## 存储模型
+路由决策不等于实现完成。修改文件仍需经过编辑前安全门禁和最终验证门禁。
 
-每个被包装的工作区有独立的本地存储（git 根目录，如无则为当前目录）：
+## ContextDB 和存储边界
 
-```text
-.aios/context-db/
-  manifest.json
-  index/sessions.jsonl
-  sessions/<session_id>/
-  exports/<session_id>-context.md
-```
+项目注册表指向本地来源：
 
-## 作用域控制
+~~~text
+.aios/
+  context-db/
+    index.json
+    sessions/
+    index/
+    exports/
+  memo/
+    file/events.jsonl
+    split/
+~~~
 
-- `all`：所有工作区启用，包括非 git 目录
-- `repo-only`：仅 `ROOTPATH` 工作区启用
-- `opt-in`：仅含 `.contextdb-enable` 的工作区启用
-- `off`：关闭包装
+当前公开模型是 pull-based。Agent 按需搜索或召回相关来源，不会自动收到全部历史。旧包装模式和 .contextdb-enable 仍是兼容行为，不是首选安装路径。
 
-如果需要严格按项目控制，使用 `opt-in`。
+## Workflow Policy 边界
 
-## Harness 层（AIOS）
+Workflow Policy 按风险选择：
 
-AIOS 在 ContextDB 之上提供面向运营的 harness：
+| disposition | 用途 |
+| --- | --- |
+| noop | 不需要动作 |
+| direct | 只回答或检查，不创建持久计划 |
+| guarded | 小而清晰的本地改动，仍需编辑和验证门禁 |
+| planned | 多步骤、高风险、委派、可恢复或不明确工作 |
 
-- `aios orchestrate` 基于蓝图生成本地调度 DAG。
-- `dry-run` 使用 `local-dry-run`（免 token，本地模拟）。
-- `live` 使用 `subagent-runtime`，通过外部 CLI（`codex`）执行各阶段任务（当前仅支持 codex-cli）。
-- 当 `AIOS_SUBAGENT_CLIENT=codex-cli` 时，AIOS 会优先使用 `codex exec` 的结构化输出（`--output-schema`、`--output-last-message`、stdin）生成稳定的 JSON handoff（旧版本自动降级）。
+计划可能是 none、reuse 或 create。同会话确认和跨客户端 explicit resume 不是同一件事。详见[工作流策略](workflow-policy.md)。
 
-`live` 默认关闭，需要显式打开：
+## Team、Solo Harness 和 Orchestrate
 
-- `AIOS_EXECUTE_LIVE=1`
-- `AIOS_SUBAGENT_CLIENT=codex-cli`
+- Agent Team 用于可以分别负责的独立工作包，HUD、状态、历史和质量类别提供运行证据。
+- Solo Harness 用于一个明确的长任务目标，支持检查点、阶段日志、worktree 和 resume 状态。
+- Orchestrate 用于阶段性 dispatch DAG 和质量门禁。
+- dry-run 是本地模拟，只能证明解析和计划状态，不能证明实时模型供应商或客户端路由可用。
+- live 子代理执行需要显式启用，并受当前配置的 runtime 边界限制。启用前先检查 doctor 和命令帮助。
 
-### Browser MCP（browser-use CDP）
+相关命令：
 
-自 2026-04-10 起，默认浏览器 MCP 运行时为 **browser-use MCP over CDP**：
+~~~bash
+aios team status --watch
+aios harness status --session <session-name> --json
+aios orchestrate --help
+aios doctor --native --verbose
+~~~
 
-- 启动器：`scripts/run-browser-use-mcp.sh`
-- 迁移命令：`aios internal browser mcp-migrate`
-- 工具：`chrome.launch_cdp`、`browser.connect_cdp`、`page.*`、`diagnostics.sannysoft`
-- Profile 配置：`config/browser-profiles.json`
-- 截图超时保护：`BROWSER_USE_SCREENSHOT_TIMEOUT_MS`（默认：15 秒）
+## 浏览器运行时
 
-旧版 Playwright MCP（`mcp-server/`）仍保留用于兼容，但不再是默认。
+默认文档路径是 browser-use MCP over CDP：
 
-## RL 训练层（AIOS） {#rl-training-layer-aios}
+- 启动：scripts/run-browser-use-mcp.sh
+- 启动浏览器：chrome.launch_cdp
+- 连接：browser.connect_cdp
+- 页面操作：page.semantic_snapshot、page.extract_text、page.goto、page.screenshot
+- profile 配置：config/browser-profiles.json
 
-AIOS 包含一个多环境强化学习系统，持续在 shell、浏览器和编排器任务中改进共享的学生策略。
+使用可见 CDP 浏览器，先读 semantic 或定向文本，并保持 read -> act -> verify 短循环。mcp-server 中的 Playwright MCP 保留为兼容和低级检查路径，不是默认业务流程路径。
 
-### 共享控制平面（`scripts/lib/rl-core/`）
+## RL 研究层 {#rl-training-layer-aios}
 
-```
-campaign-controller.mjs   # epoch 编排（采集 + 监控）
-checkpoint-registry.mjs  # active / pre_update_ref / last_stable 血统追踪
-comparison-engine.mjs     # better / same / worse / comparison_failed
-control-state-store.mjs  # 重启安全的控制快照
-epoch-ledger.mjs         # epoch 状态 + 降级 streak
-replay-pool.mjs          # 四车道路由（positive/neutral/negative/diagnostic）
-reward-engine.mjs        # 环境 reward + teacher 塑形融合
-teacher-gateway.mjs      # 来自 Codex/Claude/Gemini/opencode 的标准化输出
-schema.mjs               # 共享契约验证
-trainer.mjs              # PPO 入口（online + offline）
-```
+AIOS 还包含隔离的多环境 RL 研究表面，普通 Harness CLI 安装或文档工作不需要它。scripts/lib/rl-core/ 负责 campaign 状态、checkpoint 血统、比较结果、replay lane、teacher 信号和 trainer 入口；适配器覆盖 shell、browser、orchestrator 和 mixed 实验。
 
-### 环境适配器
-
-| 适配器 | 路径 | 训练重点 |
-|---------|------|------------|
-| Shell RL | `scripts/lib/rl-shell-v1/` | 合成 bugfix 任务 → 真实仓库 |
-| Browser RL | `scripts/lib/rl-browser-v1/` | 受控真实网页流程 |
-| Orchestrator RL | `scripts/lib/rl-orchestrator-v1/` | 高价值控制决策 |
-| Mixed RL | `scripts/lib/rl-mixed-v1/` | 跨环境联合训练 |
-
-### 核心 RL 概念
-
-- **Episode contract**：统一结构化输出，跨所有环境（taskId, trajectory, outcome, reward, comparison）
-- **三指针 checkpoint 血统**：`active` → `pre_update_ref` → `last_stable`，降级时自动回滚
-- **四车道 replay pool**：positive / neutral / negative / diagnostic_only — 按比较结果确定性路由
-- **Teacher gateway**：来自 Codex CLI、Claude Code、Gemini CLI 和 OpenCode 的标准化信号
-
-### 运行 RL
-
-```bash
-# Shell RL 流程
+~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20
 node scripts/rl-shell-v1.mjs train --epochs 5
 node scripts/rl-shell-v1.mjs eval
-
-# 混合环境 campaign
 node scripts/rl-mixed-v1.mjs mixed --mixed
 node scripts/rl-mixed-v1.mjs mixed-eval
-```
+~~~
 
-### RL 状态
+RL 状态和 benchmark 只属于对应环境和版本范围内的研究证据，不能自动证明生产客户端可靠性或公开性能声明。
 
-- RL Core：稳定（40+ 测试）
-- Shell RL V1：稳定（Phase 1–3）
-- Browser RL V1：beta
-- Orchestrator RL V1：beta
-- Mixed RL：实验性（端到端已验证）
+## 常见边界和恢复
+
+- 缺少注册表：在正确的项目根目录运行 aios init --all。
+- 原生指引过期：运行 aios doctor --native --verbose，先检查 dry run，再使用 --fix。
+- 浏览器需要登录：在认证墙处保留人工确认。
+- live 路由失败：对比 dry-run 证据与实际供应商和客户端状态。
+- 验证失败：保持计划开放，记录第一个失败命令。
+
+## 下一步
+
+- [快速开始](getting-started.md) - 安装和初始化。
+- [工作流策略](workflow-policy.md) - 选择路径。
+- [Agent Team](team-ops.md) - 协调独立工作。
+- [Solo Harness](solo-harness.md) - 运行可恢复目标。
+- [故障排查](troubleshooting.md) - 按症状恢复。

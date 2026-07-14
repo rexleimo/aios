@@ -1,160 +1,116 @@
 ---
-title: 솔로 Harness
-description: ContextDB, run journal, resume/stop 제어, 선택적 worktree 격리로 하나의 coding agent 를 밤새 안전하게 실행합니다.
+title: Solo Harness: 재개 가능한 장기 작업
+description: journal, stop/resume, verification evidence와 선택적 git worktree 격리로 하나의 objective를 실행합니다.
 ---
 
-# 솔로 Harness
+# Solo Harness
 
-`Solo Harness` 는 Harness CLI 의 **단일 agent 장시간 실행 레인**입니다.
+## 먼저 답하면
 
-하나의 provider 가 하나의 목표를 밤새 계속 밀어붙이게 하면서, 읽기 쉬운 run journal, 명시적인 stop/resume 제어, 필요할 때의 git worktree 격리를 유지하고 싶을 때 사용합니다.
+interactive session보다 오래 걸릴 하나의 명확한 objective에 Solo Harness를 사용합니다. parallel worker가 필요한 task에는 맞지 않습니다. run journal과 checkpoint를 기록하고 status, stop, resume과 git worktree 격리를 제공합니다. 독립 module은 Agent Team, ordered quality gate는 Orchestrate를 사용하세요.
 
-## 언제 Solo Harness 를 쓰나요
+## 지금 실행
 
-잘 맞는 경우:
-
-- “내일 아침 인계 메모 정리”, “릴리스 체크리스트 마무리”처럼 목표가 명확함.
-- 여러 worker 로 쪼갤 만큼의 작업은 아님.
-- one-shot 명령보다 재개 가능한 operator loop 가 필요함.
-- 야간 변경을 메인 checkout 과 분리하고 싶음.
-- `--hooks` / `--no-hooks`로 lifecycle hook 증거 기록을 제어하고 싶음.
-
-잘 맞지 않는 경우:
-
-- 작업을 독립 모듈로 나눠 병렬 처리할 수 있음 -> [Agent Team](team-ops.md) 사용.
-- preflight gate 가 있는 단계형 DAG 가 필요함 -> `aios orchestrate ...` 사용.
-- 요구가 아직 모호함 -> 먼저 일반 인터랙티브 `codex` / `claude` 로 분석.
-
-## 빠른 시작
-
-```bash
-# 분리된 worktree 에서 야간 실행 시작
-aios harness run --objective "내일 아침 인계 메모 정리" --session nightly-demo --worktree --max-iterations 20
-
-# 구조화된 상태 확인
-aios harness status --session nightly-demo --json
-
-# 같은 session 을 HUD 로 확인
-aios hud --session nightly-demo --json
-
-# 안전한 경계에서 멈추도록 요청
-aios harness stop --session nightly-demo --reason "아침에 사람이 인계"
-
-# 나중에 같은 session 재개
-aios harness resume --session nightly-demo --max-iterations 10
-```
-
-## 래핑된 CLI 에서 agent 자체 트리거
-
-shell wrapping 이 켜져 있으면 대화형 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 세션이 AIOS route prompt 를 받습니다. 기본은 여전히 `single`이며, 명시적인 장시간/야간/재개 가능/checkpoint 중심 목표에만 agent 가 `harness` 를 선택해야 합니다.
-
-이때 주입되는 명령 형태는 다음과 같습니다:
-
-```bash
-node <AIOS_ROOT>/scripts/aios.mjs harness run \
-  --objective "<task>" \
-  --provider codex \
-  --max-iterations 8 \
+~~~bash
+aios harness run \
+  --objective "Refactor the auth module and write integration tests" \
+  --session nightly-auth \
   --worktree \
-  --workspace <project-root>
-```
+  --max-iterations 20
+~~~
 
-provider 와 루프 예산은 환경 변수로 조정할 수 있습니다:
+~~~bash
+aios harness status --session nightly-auth --json
+aios hud --session nightly-auth --json
+~~~
 
-```bash
-export CTXDB_HARNESS_PROVIDER=claude
-export CTXDB_HARNESS_MAX_ITERATIONS=12
-```
+## 선택 기준
 
-route prompt 를 완전히 끄려면 `CTXDB_INTERACTIVE_AUTO_ROUTE=0` 를 설정하세요.
+| Situation | Route |
+| --- | --- |
+| 하나의 goal, provider, 장기 실행 | Solo Harness |
+| 독립 module과 ownership | [Agent Team](team-ops.md) |
+| ordered phase와 gate | aios orchestrate |
+| 불명확한 요구사항 또는 작은 fix | Workflow Policy와 interactive client |
 
-## 먼저 dry-run
-
-artifact 계약만 먼저 확인하고 token 은 쓰고 싶지 않다면:
-
-```bash
-aios harness run --objective "내일 아침 인계 메모 정리" --session nightly-demo --worktree --max-iterations 3 --dry-run --json
-```
-
-dry-run 은 session journal 만 만들고 provider 는 호출하지 않습니다.
-
-## Hooks 제어
-
-`run`과 `resume`은 hooks를 명시적으로 켜고 끌 수 있습니다:
-
-```bash
-aios harness run --objective "내일 아침 인계 메모 정리" --session nightly-demo --hooks
-aios harness resume --session nightly-demo --no-hooks
-```
-
-- 기본값은 `--hooks`(활성)이며 lifecycle hook 증거를 기록합니다.
-- 저노이즈 실행이 필요하면 `--no-hooks`를 사용하세요.
-
-## 반복 예산과 workspace 제어
-
-- `--max-iterations <n>` 은 `run` / `resume` 루프 예산을 제한합니다. CLI 기본값은 `20`, 래핑된 클라이언트 자체 트리거 prompt 기본값은 `8` 입니다.
-- `--workspace <path>` 는 ContextDB session artifact 를 지정한 프로젝트 루트에 쓰도록 강제합니다. wrapper, 외부 checkout, 상위 디렉터리에서 AIOS 를 호출할 때 사용합니다.
-- `--provider <codex|claude|gemini|opencode|hermes|grok>` 는 루프가 사용할 로컬 CLI 를 선택합니다.
-
-## 생성되는 파일
-
-artifact 는 다음 경로에 저장됩니다:
-
-```text
-.aios/context-db/sessions/<session-id>/artifacts/solo-harness/
-```
-
-핵심 파일:
-
-- `objective.md`: 정규화된 목표.
-- `run-summary.json`: 현재 상태, 반복 횟수, backoff, worktree 정보.
-- `control.json`: stop 요청과 operator 메모.
-- `hook-events.jsonl`: hooks 활성 시 lifecycle 증거 로그.
-- `iteration-0001.json`: 각 반복의 정규화 결과.
-- `iteration-0001.log.jsonl`: 디버깅용 원시 로그.
-
-## 실전 operator 루프
-
-실용적인 야간 루프는 보통 이렇게 갑니다:
-
-1. `aios harness run --worktree` 로 시작.
-2. 자리를 뜨기 전에 `aios harness status --session <id> --json` 확인.
-3. 사람이 읽기 쉬운 스냅샷이 필요하면 `aios hud --session <id>`.
-4. 다음 안전한 경계에서 멈추게 하려면 `aios harness stop --session <id>`.
-5. 다음 날 또는 수동 수정 후 `aios harness resume --session <id>`.
+objective에 scope, 제외 항목, verification을 써서 완료 여부를 다른 사람이 판단할 수 있게 합니다.
 
 ## Worktree 격리
 
-야간 실행에는 `--worktree` 를 강하게 권장합니다.
+--worktree는 선택한 base ref에서 별도 git worktree를 만듭니다. merge 전에 worktree와 diff를 확인하세요. 격리는 unsafe command를 안전하게 만들지 않습니다.
 
-현재 harness session 전용 git worktree 를 만들어 agent 가 메인 checkout 을 직접 수정하지 않게 합니다. 의미 있는 출력이 없으면 임시 worktree 를 자동 정리할 수 있고, 남길 가치가 있는 변경이 있으면 run summary 에 metadata 를 남겨 operator 가 이어받을 수 있게 합니다.
+## Live 전 dry-run
 
-이 흐름은 무차별적인 `git reset --hard` 복구를 전제로 하지 않습니다.
+~~~bash
+aios harness run \
+  --objective "Draft tomorrow's handoff" \
+  --session test-run \
+  --worktree \
+  --max-iterations 3 \
+  --dry-run --json
+~~~
 
-## Provider / Runtime 참고
+dry-run은 argument parsing과 local journal을 확인합니다. provider, client, credential, live route의 증거는 아닙니다.
 
-live 실행은 기존 one-shot `scripts/ctx-agent.mjs` provider 경로를 재사용합니다.
+## Stop, inspect, resume
 
-따라서 해당 로컬 CLI 가 설치되어 직접 실행 가능해야 합니다:
+~~~bash
+aios harness stop --session nightly-auth --reason "morning review"
+aios harness status --session nightly-auth --json
+aios harness resume --session nightly-auth --max-iterations 10
+~~~
 
-- `codex`
-- `claude`
-- `gemini`
-- `opencode`
+resume 전에 status, checkpoint, failure command를 읽습니다. 새 session을 의도적으로 만들지 않는 한 objective를 유지하세요.
 
-provider CLI 가 준비되지 않았다면 먼저 dry-run 으로 artifact 를 확인하고 readiness 를 맞추세요.
+## Hooks와 provider
 
-## Solo Harness 와 Agent Team 선택 기준
+~~~bash
+aios harness run --objective "task" --session demo --hooks
+aios harness resume --session demo --no-hooks
+aios harness run --objective "task" --provider codex --profile strict
+~~~
 
-| 필요 | 더 적합한 것 |
-|---|---|
-| 단일 목표, 단일 provider, 재개 가능한 야간 실행 | `aios harness ...` |
-| 분리 가능한 작업을 여러 worker 로 병렬 실행 | `aios team ...` |
-| preflight gate 가 있는 단계형 orchestration | `aios orchestrate ...` |
+provider와 route는 live check가 필요합니다. dry-run에서 추론하지 마세요.
 
-## 관련 문서
+## Artifacts
 
-- [HUD 가이드](hud-guide.md)
+~~~text
+.aios/context-db/sessions/<session-id>/artifacts/solo-harness/
+  objective.md
+  run-summary.json
+  control.json
+  hook-events.jsonl
+  iteration-0001.json
+  iteration-0001.log
+~~~
+
+log와 checkpoint는 project data입니다. 공유 전에 credential과 private provider output을 redaction하세요.
+
+## 복구 체크리스트
+
+1. status와 최신 iteration log를 읽습니다.
+2. 첫 failure를 찾습니다.
+3. 가장 작은 diagnosis command를 실행합니다.
+4. reason을 붙여 stop 또는 resume합니다.
+5. merge 전에 diff와 test를 verify합니다.
+
+## FAQ
+
+### 하룻밤에 완료된다고 보장하나요?
+
+아닙니다. resumable loop와 evidence를 제공하지만 provider, credential, test, task complexity가 실행을 중단할 수 있습니다.
+
+### 항상 --worktree가 필요한가요?
+
+code edit가 포함되거나 격리가 필요할 때 사용합니다. read-only task도 workspace boundary를 확인하세요.
+
+### client가 harness를 자동 trigger할 수 있나요?
+
+지원되는 native route prompt가 harness route를 제안할 수 있습니다. 실행 후 status, provider, evidence를 확인하세요.
+
+## 다음 페이지
+
 - [Agent Team](team-ops.md)
-- [시나리오별 명령 찾기](use-cases.md)
+- [HUD 가이드](hud-guide.md)
+- [Workflow Policy](workflow-policy.md)
 - [문제 해결](troubleshooting.md)

@@ -5,6 +5,12 @@ description: Content outcome tracking, statistical insight generation, and perce
 
 # Perception Layer
 
+> **Quick Answer:** Perception records structured content outcomes, groups them by dimensions, and produces a bounded summary for later decisions. It is an analytics and feedback layer, not a guarantee that an agent's content is correct or that every session has full history injected.
+
+## A bounded feedback loop
+
+Record an outcome, generate insights after enough samples, and request a summary only when the next decision needs it. Keep the summary bounded so it informs the agent without overwhelming the task context.
+
 > Let your agent learn from content operation results — what worked, what didn't, and why.
 
 The perception loop closes the gap between "agent does something" and "agent knows the result." It records structured outcome snapshots, generates statistical insights by dimension, and injects a perception summary into the agent's context so future decisions are data-informed.
@@ -192,3 +198,17 @@ aios perception summary [--format text|json] [--max-chars <n>]
 | `--format` | text | Output format: text or json |
 | `--max-chars` | 10000 | Max output characters |
 | `--space` | default | Workspace memory space |
+
+## FAQ
+
+### Does Perception automatically publish or optimize content?
+
+No. It records outcomes and produces statistical summaries. Publishing, editing, and external actions remain separate workflows with their own approval and verification requirements.
+
+### How much history is injected into a task?
+
+The summary is bounded by configuration such as `PERCEPTION_MAX_CHARS`; use the pull-based context rules and request only the material needed for the next decision.
+
+## Canonical Docs
+
+Pair [Perception](perception.md) with [ContextDB](contextdb.md), [Workflow Policy](workflow-policy.md), and [Troubleshooting](troubleshooting.md).

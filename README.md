@@ -1,124 +1,106 @@
 # Harness CLI (AIOS)
 
-> A local agent workflow layer that adds memory, collaboration, and verification to `codex` / `claude` / `gemini` / `opencode` / `hermes`.
+> A local-first workflow layer for \`codex\`, \`claude\`, \`gemini\`, \`opencode\`, \`hermes\`, and \`grok\` (Grok Build). It adds project memory, collaboration, routing, and verification without replacing the coding client you already use.
 
-[Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Case Library](https://cli.rexai.top/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
+[Docs](https://cli.rexai.top) | [Quick Start](https://cli.rexai.top/getting-started/) | [Workflow Policy](https://cli.rexai.top/workflow-policy/) | [Blog](https://cli.rexai.top/blog/) | [Friends](https://cli.rexai.top/friends/) | [Changelog](https://cli.rexai.top/changelog/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
-## Install
+## Quick Start
 
 macOS / Linux:
 
-```bash
+\`\`\`bash
 curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc
-aios
-```
+aios init --all
+aios doctor --native --verbose
+\`\`\`
 
 Windows PowerShell:
 
-```powershell
+\`\`\`powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
-aios
-```
+aios init --all
+aios doctor --native --verbose
+\`\`\`
 
-Once started, select `Setup`, run `Doctor`, and you're ready to go.
+Run the commands from a project root when you want project-level client guidance and memory. For unattended setup, use \`node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp\`; these flags explicitly authorize package installation and user-scope MCP registration.
 
-## Core Capabilities
+## What Harness CLI adds
 
-| Capability | Description | Command |
-|------------|-------------|---------|
-| **ContextDB** | Cross-session project memory with events, checkpoints, and context packs | auto-loaded by `codex` / `claude` / `gemini` / `opencode` / `hermes` |
-| **Memo Storage** | Git-friendly project notes; default append-only file storage plus optional split-file storage | `aios memo add "note"` / `aios memo storage status` |
-| **Native Route Shortcuts** | Client-native route prompts for single/subagent/team/harness lanes | Claude/Gemini/OpenCode: `/team <task>`; Codex: `/prompts:team <task>` |
-| **Native Token Compression** | Self-contained input/output token reduction inspired by RTK/Caveman patterns, without installing competitor tools | `context:pack --token-budget 1200 --token-strategy balanced` |
-| **Model Router** | Intelligent multi-model dispatch for Agent Teams — match tasks to optimal model by capability, cost, and success rate | `node scripts/aios.mjs model-router route --task "..."` |
-| **Agent Team** | Multi-agent parallel collaboration with HUD tracking, smoke evidence, and governance checks | `aios team 3:codex "task description"` / `node scripts/aios.mjs agents smoke --json` |
-| **Solo Harness** | Single-agent overnight tasks with resume support and run journal | `aios harness run --objective "goal" --worktree` |
-| **Perception** | Content outcome tracking + statistical insights + perception injection | `aios perception record` / `insights` / `summary` |
-| **Browser MCP** | Stealth browser automation over CDP | `aios internal browser doctor` |
-| **Superpowers** | Reusable workflow skills (brainstorm/plan/debug/verify) | Select from TUI |
-| **Privacy Guard** | Auto-redact sensitive files before sharing | `aios privacy status` |
+Harness CLI is a set of cooperating layers. Each layer has a different responsibility and an explicit boundary:
 
-## Quick Tour
+| Layer | What it provides | Start here |
+| --- | --- | --- |
+| **ContextDB** | Pull-based project memory, memos, checkpoints, and searchable context packs | \`aios init\` and [ContextDB](https://cli.rexai.top/contextdb/) |
+| **Workflow Policy** | Risk-based \`noop\`, \`direct\`, \`guarded\`, and \`planned\` routing, with explicit plan persistence | [Workflow Policy](https://cli.rexai.top/workflow-policy/) |
+| **Agent Team / Solo Harness** | Parallel collaboration or resumable long-running work with status and evidence | \`aios team\` / \`aios harness run\` |
+| **RTK** | Local filtering for noisy shell and tool output | \`aios init --all\` |
+| **Caveman** | A concise response-style skill that keeps technical facts visible | \`aios init --all\` |
+| **Headroom MCP** | Explicit, on-demand compression and retrieval through supported MCP clients | \`aios init --all --yes-headroom-mcp\` |
+| **Verification and Privacy** | Tests, diagnostics, quality gates, and redaction before sensitive sharing | \`aios doctor\` / \`aios privacy\` |
 
-```bash
-# Launch TUI
-aios
+RTK, Caveman, and Headroom have different integration boundaries. Harness CLI does not claim that every client launch is automatically wrapped, that provider traffic disappears, or that a compression percentage applies to your project without measurement.
 
-# Save a Git-friendly project memo
-aios memo add "Remember to keep auth tests strict"
-aios memo storage status
+## A small tour
 
-# Route from inside native clients after setup
-# Claude/Gemini/OpenCode: /team <task>
-# Codex: /prompts:team <task>
+\`\`\`bash
+# Initialize the project marker and detected client guidance.
+aios init --all
 
-# Multi-agent collaboration
-aios team 3:codex "Refactor the auth module and run tests"
+# Inspect installation, native client sync, and safety checks.
+aios doctor --native --verbose
 
-# Single-agent overnight task
-aios harness run --objective "Finish the handoff docs for tomorrow" --worktree
+# Save and search a durable project decision.
+aios memo add "Keep authentication tests strict"
+aios memo search "authentication"
 
-# Intelligent model routing
-node scripts/aios.mjs model-router route --task "Review auth.js for security issues"
+# Choose a route for independent work or a resumable objective.
+aios team 3:codex "Review the auth module and update its tests"
+aios harness run --objective "Finish the release handoff" --worktree
 
-# Native token-compressed ContextDB packet
-cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+# Preview the adaptive workflow decision without creating a live plan.
+node scripts/aios.mjs plan auto-gate --task "Refactor the auth module" --dry-run --json
+\`\`\`
 
-# Content outcome tracking
-aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "Test" --metrics '{"likes":100}'
+The project marker points clients to \`.aios/context-db/index.json\`. ContextDB is pull-based: the agent can search or recall relevant project material instead of receiving the whole history on every prompt. The exact files and commands are described in [ContextDB](https://cli.rexai.top/contextdb/).
 
-# Check task status
-aios team status --provider codex --watch
-```
+## Supported clients
 
-## How It Works
+Harness CLI currently provides native or compatibility integrations for \`codex\`, \`claude\`, \`gemini\`, \`opencode\`, \`hermes\`, and \`grok\` (Grok Build). Feature depth varies by client; run \`aios doctor --native --verbose\` to inspect the local installation rather than assuming every client supports every route.
 
-```text
-User → codex / claude / gemini / opencode / hermes
-     → zsh wrapper (transparent)
-     → ctx-agent.mjs (ContextDB integration)
-        → contextdb CLI (memory persistence)
-        → launch native CLI (with context pack)
-     → browser MCP (optional browser automation)
-```
+## Documentation map
 
-After installation, just use `codex`, `claude`, `gemini`, `opencode`, or `hermes` as usual — Harness CLI automatically loads project memory in the background and provisions route shortcuts where the client supports them.
-
-## Docs
-
-- [Quick Start](https://cli.rexai.top/getting-started/) — Install, configure, first run
-- [Model Router](https://cli.rexai.top/model-router/) — Multi-model dispatch for Agent Teams
-- [ContextDB](https://cli.rexai.top/contextdb/) — Project memory system
-- [Agent Team](https://cli.rexai.top/team-ops/) — Multi-agent collaboration and workflow governance guide
-- [Solo Harness](https://cli.rexai.top/solo-harness/) — Overnight task guide
-- [Perception](https://cli.rexai.top/perception/) — Content outcome tracking & insights
-- [Architecture](https://cli.rexai.top/architecture/) — System architecture
-- [Troubleshooting](https://cli.rexai.top/troubleshooting/) — Common issues
-- [Use Cases](https://cli.rexai.top/use-cases/) — Find commands by scenario
+- [Quick Start](https://cli.rexai.top/getting-started/) - install, initialize, and verify the first project.
+- [Windows Guide](https://cli.rexai.top/windows-guide/) - PowerShell prerequisites and recovery commands.
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) - choose the smallest correct route and understand plan continuation.
+- [ContextDB](https://cli.rexai.top/contextdb/) - local storage, unified search, memo scope, and context packs.
+- [Token Intelligence](https://cli.rexai.top/token-compression/) - RTK, Caveman, Headroom MCP, and safe context boundaries.
+- [Agent Team](https://cli.rexai.top/team-ops/) - governed parallel work with HUD evidence.
+- [Solo Harness](https://cli.rexai.top/solo-harness/) - resumable long-running work.
+- [Use Cases](https://cli.rexai.top/use-cases/) - commands organized by user intent.
+- [Architecture](https://cli.rexai.top/architecture/) - runtime layers and compatibility boundaries.
+- [Troubleshooting](https://cli.rexai.top/troubleshooting/) - observable symptoms and recovery steps.
+- [Blog](https://cli.rexai.top/blog/) - tutorials, release notes, and reproducible workflows.
 
 ## Requirements
 
 - Git
-- Node.js 24 LTS + npm
+- Node.js 24 LTS and npm
 - Windows: PowerShell 5.x or 7
+- At least one supported coding client
 
 ## Development
 
-```bash
+\`\`\`bash
 git clone https://github.com/rexleimo/harness-cli.git
 cd harness-cli
-```
-
-Verify:
-
-```bash
+npm run test:scripts
 cd mcp-server
-npm test
 npm run typecheck
+npm test
 npm run build
-```
+\`\`\`
 
 ## License
 

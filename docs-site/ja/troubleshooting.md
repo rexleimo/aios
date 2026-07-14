@@ -1,292 +1,140 @@
 ---
-title: トラブルシューティング
-description: よくあるセットアップ/ランタイムの問題と直接的な修正方法。
+title: Harness CLI トラブルシューティング
+description: install、ContextDB、client sync、workflow、Team、browser、token tool、privacy の問題を evidence で診断します。
 ---
 
 # トラブルシューティング
 
-## クイックアンサー（AI 検索）
+## まず答え
 
-ほとんどの失敗はセットアップの問題です（MCP ランタイムがない、wrapper がロードされていない、あるいは誤った wrap モード）。まず doctor スクリプトを実行し、wrapper のスコープを確認してください。
+最初に診断 output を保存します。
 
-## ContextDB が Node 切り替え後に失敗
+~~~bash
+aios doctor --native --verbose
+~~~
 
-Harness CLI は **Node 24 LTS** を前提としており、ContextDB は Node 組み込みの `node:sqlite` を使用します。外部 SQLite native addon の rebuild は不要です。
+症状を分類し、dry-run から live provider failure を推測しないでください。最初の failure command を確認する前に project data を削除しないでください。
 
-`Unable to resolve a Node runtime matching .nvmrc=24` または `[node-version] AIOS requires Node 24.x LTS` が出た場合は、まず Node 24 をインストールしてから再試行してください。
+## Install と Node.js
 
-素早い修正:
+**症状：** aios が見つからない、または Node 切り替え後に ContextDB が失敗。
 
-```bash
+~~~bash
 node -v
-source ~/.nvm/nvm.sh
-nvm install 24
-nvm use 24
-cd mcp-server && npm run test:contextdb
-```
+npm -v
+command -v aios
+aios doctor --native --verbose
+~~~
 
-リトライ:
+Node.js 24 LTS と aios path を確認します。profile を reload または新しい shell を開きます。Windows は TLS 1.2 installer と . $PROFILE を使います。
 
-```bash
-npm run test:scripts
-```
+## ContextDB と registry
 
-## Browser MCP ツールが利用不可
+**症状：** client が project memory を見つけない。
 
-**大半の場合**: browser-use MCP ランタイムがないか、クライアント MCP 設定に `mcp-browser-use` エイリアスがありません。
+~~~bash
+test -f .aios/context-db/index.json
+find .aios/context-db -maxdepth 2 -type f | head -n 30
+aios doctor --native --verbose
+~~~
 
-Doctor スクリプトで確認してください:
+正しい project root で aios init --all を実行したか確認します。unified search または明示した memo/checkpoint で recall を確認します。.contextdb-enable は legacy compatibility switch です。
 
-=== "macOS / Linux"
+**症状：** search が空。
 
-    ```bash
-    scripts/doctor-browser-mcp.sh
-    ```
+~~~bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+aios memo storage status
+aios memo storage rebuild
+~~~
 
-=== "Windows (PowerShell)"
+source list または storage status を確認してから derived index を rebuild します。
 
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File .\scripts\doctor-browser-mcp.ps1
-    ```
+## Client sync と route
 
-または該当クライアントの MCP 設定を開き、以下が含まれていることを確認してください:
+**症状：** native guidance または shortcut がない。
 
-```json
-{
-  "mcpServers": {
-    "mcp-browser-use": {
-      "command": "node",
-      "args": ["/path/to/rex-ai-boot/scripts/run-browser-use-mcp.sh"]
-    }
-  }
-}
-```
+~~~bash
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --fix
+~~~
 
-## `EXTRA_ARGS[@]: unbound variable`
+dry-run を読んでから fix します。file sync は provider route が live である証明ではありません。
 
-原因: 旧 `ctx-agent.sh` で `bash set -u` の空配列展開の境界ケースによるエラー。
+## Workflow Policy と plan
 
-修復:
+**症状：** read-only question に plan が作られる、または小さい change が block される。
 
-1. 最新 `main` を pull。
-2. Shell を再起動して `claude`/`codex`/`gemini` を再実行。
+~~~bash
+node scripts/aios.mjs plan auto-gate --task "Explain the current auth flow" --dry-run --json
+node scripts/aios.mjs plan auto-gate --task "Refactor auth across modules" --json
+~~~
 
-最新バージョンは unified ランタイムコア（`ctx-agent-core.mjs`）を使用して、sh/mjs 実装間のドリフトを解消しています。
+noop、direct、guarded、planned と persistence none、reuse、create を確認します。policy は pre-edit safety と final verification とは別です。[Workflow Policy](workflow-policy.md) を参照します。
 
-## `search` がサイドカー損失後に空になる
+## Team と Solo Harness
 
-`.aios/context-db/index/context.db` がない場合または古い場合:
+**症状：** run が stop、blocked、または progress がない。
 
-1. `cd mcp-server && npm run contextdb -- index:rebuild` を実行
-2. `search` / `timeline` / `event:get` を再実行
+~~~bash
+aios team history --provider codex --limit 5
+aios harness status --session <session-id> --json
+aios hud --session <session-id> --json
+~~~
 
-## `contextdb context:pack failed`
+最初の failure を読みます。
 
-`contextdb context:pack` が失敗した場合、`ctx-agent` は **警告して続行** します (コンテキスト未注入で CLI を起動)。
+~~~bash
+aios team --resume <session-id> --retry-blocked --provider codex --workers 2
+aios harness stop --session <session-id> --reason "diagnose first failure"
+aios harness resume --session <session-id>
+~~~
 
-パック失敗を致命的エラーにする場合:
+dry-run は provider credential や live route を test しません。
 
-```bash
-export CTXDB_PACK_STRICT=1
-```
+## Browser MCP
 
-シェルラッパー (`codex`/`claude`/`gemini`) は対話セッションの破損を避けるため、`CTXDB_PACK_STRICT=1` を設定してもデフォルトは fail-open です。対話ラップも厳格化する場合:
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-```bash
-export CTXDB_PACK_STRICT_INTERACTIVE=1
-```
+browser-use MCP over CDP を使い、visible browser、semantic snapshot、targeted text、act、verify の順に進みます。auth wall は human-controlled にします。Playwright MCP は compatibility path です。
 
-頻発する場合は、品質ゲート (ContextDB 回帰チェックを含む) を実行してください:
+## Token tools
 
-```bash
-aios quality-gate pre-pr --profile strict
-```
+~~~bash
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+~~~
 
-## `/new` (Codex) / `/clear` (Claude/Gemini) 後にコンテキストが消える
+package consent と user-scope MCP consent は別です。Headroom の external / conflict registration を確認し、headroom_stats が positive saved-token total を示さない限り savings を主張しません。
 
-これらのコマンドは **CLI 内の会話状態** をリセットします。ContextDB はディスク上に残りますが、ラッパーがコンテキストパケットを注入するのは **CLI プロセス起動時のみ** です。
+## Privacy
 
-復帰方法:
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-- 推奨: CLI を終了し、シェルから `codex` / `claude` / `gemini` を再実行。
-- 同一プロセスで続けたい場合: 新しい会話の最初に最新スナップショットを読ませる:
-  - `@.aios/context-db/exports/latest-codex-cli-context.md`
-  - `@.aios/context-db/exports/latest-claude-code-context.md`
-  - `@.aios/context-db/exports/latest-gemini-cli-context.md`
-
-クライアントが `@file` 参照をサポートしない場合は、ファイル内容を最初のプロンプトとして貼り付けてください。
-
-## `aios orchestrate --execute live` がブロック/失敗する
-
-ライブオーケストレーションはオプトインです。
-
-1. ライブ実行ゲートを有効化:
-
-```bash
-export AIOS_EXECUTE_LIVE=1
-```
-
-2. codex-cli 専用サブエージェントクライアントを設定（必須）:
-
-```bash
-export AIOS_SUBAGENT_CLIENT=codex-cli
-```
-
-3. `codex` が PATH 上にあり、認証済みであることを確認（例: `codex --version`）。
-
-Windows クイックチェック (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-shell.ps1
-codex --version
-codex
-```
-
-期待動作: TTY エラー（`stdout is not a terminal` など）がなく、インタラクティブな `codex` セッションがターミナルに正しくアタッチされる。
-
-ヒント (codex-cli): Codex CLI v0.114+ は `codex exec` 構造化出力をサポート（`--output-schema`、`--output-last-message`、stdin）。AIOS は利用可能な場合、安定した JSON handoff のためにこれらを使用します。Codex child worker は既定で `--dangerously-bypass-approvals-and-sandbox` を付与し、unattended live run が approval/sandbox prompt で待ち続けるのを防ぎます。手動デバッグ時のみ `AIOS_SUBAGENT_CODEX_UNATTENDED=0` で無効化してください。
-
-もし routed startup が current の non-AIOS repo 内で `scripts/aios.mjs` を探し続ける場合は、最新 `main` を pull してください。最近の build では routed `ctx-agent` startup が source-repo レイアウトを前提にせず、workspace-aware に動作します。
-
-ヒント: モデルコールなしで DAG を検証するには、`--execute dry-run` を使用（またはライブランタイム adapter シミュレーション用に `AIOS_SUBAGENT_SIMULATE=1`）。
-
-よくある失敗パターン:
-
-- `type: upstream_error` / `server_error`: 上流の不安定。稍后再试（AIOS は自動的に数回リトライ）。
-- `Timed out after 600000 ms`: `AIOS_SUBAGENT_TIMEOUT_MS` を増加（例 `900000`）、またはコンテキストパックを `AIOS_SUBAGENT_CONTEXT_LIMIT` / `AIOS_SUBAGENT_CONTEXT_TOKEN_BUDGET` で縮小。
-- `invalid_json_schema` (`param: text.format.schema`): バックエンドが構造化出力スキーマを拒否。最新 `main` を pull して再試行。AIOS はスキーマ拒否を検出すると `--output-schema` なしでリトライ。
-
-最小構造化出力スモークチェック (macOS/Linux):
-
-```bash
-printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema scripts/lib/specs/agent-handoff.schema.json -
-```
-
-## コマンドがラップされていない
-
-ラップされていない場合:
-
-- git レポジトリ内有か確認: `git rev-parse --show-toplevel` が動作すること
-- `ROOTPATH/scripts/contextdb-shell.zsh` が存在し、source されていることを確認
-- `CTXDB_WRAP_MODE` が現在のレポジトリを許可しているか確認（`opt-in` の場合は `.contextdb-enable` が必要）
-
-まずラッパー doctor を実行:
-
-```bash
-scripts/doctor-contextdb-shell.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-shell.ps1
-```
-
-## `CODEX_HOME points to ".codex"` エラー
-
-原因: `CODEX_HOME` が相対パスに設定されている。
-
-修復:
-
-```bash
-export CODEX_HOME="$HOME/.codex"
-mkdir -p "$CODEX_HOME"
-```
-
-最新ラッパースクリプトはコマンド実行時に相対 `CODEX_HOME` を自動的に正規化します。
-
-## ラッパーがロードされたが、無効化したい
-
-恒久的に無効にするには:
-
-```zsh
-export CTXDB_WRAP_MODE=off
-```
-
-## Skills が誤ったレポジトリディレクトリに保存された
-
-canonical skill source tree は以下に置かれるようになりました:
-
-- `<repo>/skill-sources`
-
-生成された repo-local 検出可能出力は以下の場所にあります:
-
-- `<repo>/.codex/skills`
-- `<repo>/.claude/skills`
-
-`SKILL.md` を `.baoyu-skills/` のような並行ディレクトリに保存すると、Codex / Claude はそれをスキルとして検出できません。
-
-- `.baoyu-skills/` は `EXTEND.md` のような拡張設定のみに使用
-- 本来のスキルソースファイルは `skill-sources/<name>/SKILL.md` に移動
-- `node scripts/sync-skills.mjs` で各クライアントの互換ディレクトリを再生成
-- `scripts/doctor-contextdb-skills.sh --client all` で未対応のスキルルートディレクトリを検出
-
-## `--scope project` が Harness CLI ソースレポ内で失敗する
-
-canonical skill source tree の移行後に発生します。これは意図的な動作です:
-
-- `skill-sources/` がオーサリングツリー
-- repo-local の `.codex/skills` / `.claude/skills` / `.agents/skills` は sync 管理の生成ディレクトリ
-- ソースレポ自身への `--scope project` インストールは意図的にブロック済み
-
-代わりに以下を実行してください:
-
-```bash
-node scripts/sync-skills.mjs
-node scripts/check-skills-sync.mjs
-```
-
-他のプロジェクトに skills をインストールしたい場合は、そのワークスペースに切り替えてから `aios ... --scope project` を実行してください。
-
-## レポ skills が他プロジェクトでグローバル利用不可
-
-ラッパーと skills は別々に設計されています。明示的に skills をインストールしてください。`--client all` は `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` を対象にします。
-
-=== "macOS / Linux"
-
-    ```bash
-    scripts/install-contextdb-skills.sh --client all
-    scripts/doctor-contextdb-skills.sh --client all
-    ```
-
-=== "Windows (PowerShell)"
-
-    ```powershell
-    powershell -ExecutionPolicy Bypass -File .\scripts\install-contextdb-skills.ps1 -Client all
-    powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-skills.ps1 -Client all
-    ```
-
-## GitHub Pages `configure-pages` が見つからない
-
-これは通常 Pages ソースが完全に有効化されていないことを意味します。
-
-GitHub 設定で修正:
-
-1. `Settings -> Pages -> Source: GitHub Actions`
-2. `docs-pages` ワークフローを再実行
+raw .env、cookie、token、private key、browser profile を共有しないでください。ログから provider token と private path を除きます。
 
 ## FAQ
 
-### ブラウザツールが使えないとき最初は何を実行すべきですか？
+### .aios を削除すべきですか？
 
-再インストール前に `scripts/doctor-browser-mcp.sh`（または PowerShell 版）を実行してください。
+いいえ。最初の failure を特定し、sessions、exports、memo JSONL を backup してから derived data を扱います。
 
-### `codex` を入力してもコンテキストが注入されないのはなぜですか？
+### dry-run が成功すれば動作していますか？
 
-通常、wrapper が読み込まれていない、`CTXDB_WRAP_MODE` が現在のワークスペースをカバーしていない、またはコマンドが透伝管理サブコマンドであるのが原因です。
+いいえ。local parsing と planned state の証拠です。provider と credential は live task で確認します。
 
-## スキルが誤ったレポジトリディレクトリに保存された
+## 次に読む
 
-canonical repo skill sources の場所は以下に変更されました：
-
-- `<repo>/skill-sources`
-
-生成された repo-local 検出可能な出力は以下の場所にあります：
-
-- `<repo>/.codex/skills`
-- `<repo>/.claude/skills`
-
-並行ディレクトリ（例：`.baoyu-skills/`）に `SKILL.md` を保存すると、Codex / Claude はそれを repo-local スキルとして検出できません。
-
-- `.baoyu-skills/` は `EXTEND.md` のような拡張設定のみに使用
-- 本来のスキルソースファイルは `skill-sources/<name>/SKILL.md` に移動
-- `node scripts/sync-skills.mjs` で生成されたクライアントルートを再構築
-- `scripts/doctor-contextdb-skills.sh --client all` で未対応の repo skill roots を検出
+- [クイックスタート](getting-started.md)
+- [ContextDB](contextdb.md)
+- [Workflow Policy](workflow-policy.md)
+- [Token Intelligence](token-compression.md)
+- [ケースライブラリ](case-library.md)

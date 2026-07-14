@@ -1,125 +1,107 @@
 # Harness CLI (AIOS)
 
-> 给 `codex` / `claude` / `gemini` / `opencode` / `hermes` 加上记忆、协作和验证能力的本地 Agent 工作流层。
+> 面向 \`codex\`、\`claude\`、\`gemini\`、\`opencode\`、\`hermes\` 和 \`grok\`（Grok Build）的本地优先工作流层。它为你正在使用的编码客户端增加项目记忆、协作、路由和验证能力，不会取代原有客户端。
 
-[文档站](https://cli.rexai.top) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [官方案例库](https://cli.rexai.top/zh/case-library/) | [GitHub](https://github.com/rexleimo/harness-cli)
+[文档站](https://cli.rexai.top/zh/) | [快速开始](https://cli.rexai.top/zh/getting-started/) | [工作流策略](https://cli.rexai.top/zh/workflow-policy/) | [博客](https://cli.rexai.top/blog/zh/) | [友情链接](https://cli.rexai.top/zh/friends/) | [更新日志](https://cli.rexai.top/zh/changelog/) | [GitHub](https://github.com/rexleimo/harness-cli)
 
-## 安装
+## 快速开始
 
-macOS / Linux:
+macOS / Linux：
 
-```bash
+\`\`\`bash
 curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc
-aios
-```
+aios init --all
+aios doctor --native --verbose
+\`\`\`
 
-Windows PowerShell:
+Windows PowerShell：
 
-```powershell
+\`\`\`powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
-aios
-```
+aios init --all
+aios doctor --native --verbose
+\`\`\`
 
-启动后选择 `Setup`，运行 `Doctor`，即可开始使用。
+如果要启用项目级客户端指引和记忆，请在项目根目录执行这些命令。无人值守安装可以使用 \`node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp\`；这些参数会明确授权安装压缩工具包以及写入用户级 MCP 配置。
 
-## 核心能力
+## Harness CLI 增加了什么
 
-| 能力 | 说明 | 命令 |
-|------|------|------|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `hermes` 自动加载 |
-| **Memo Storage** | 适合 Git 共享的项目 memo；默认 append-only file 存储，也可切到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
-| **原生路由快捷命令** | 在客户端内直接触发 single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
-| **原生 Token 压缩** | 自研输入/输出 token 压缩，参考 RTK/Caveman 思路，但不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
-| **Model Router** | Agent Team 智能多模型调度 — 按能力、成本、成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
-| **Agent Team** | 多 Agent 并行协作，带 HUD 追踪、smoke 证据和治理检查 | `aios team 3:codex "任务描述"` / `node scripts/aios.mjs agents smoke --json` |
-| **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
-| **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
-| **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
-| **Superpowers** | 可复用工作流技能（brainstorm/plan/debug/verify） | TUI 中选择 |
-| **Privacy Guard** | 敏感文件读取前自动脱敏 | `aios privacy status` |
+Harness CLI 由多个职责不同、边界明确的层组成：
+
+| 层 | 提供能力 | 从这里开始 |
+| --- | --- | --- |
+| **ContextDB** | 基于按需读取的项目记忆、memo、检查点和可搜索上下文包 | \`aios init\` 与 [ContextDB](https://cli.rexai.top/zh/contextdb/) |
+| **Workflow Policy** | 按风险选择 \`noop\`、\`direct\`、\`guarded\`、\`planned\`，并明确计划持久化规则 | [工作流策略](https://cli.rexai.top/zh/workflow-policy/) |
+| **Agent Team / Solo Harness** | 有状态和证据的并行协作或可恢复长任务 | \`aios team\` / \`aios harness run\` |
+| **RTK** | 在 Agent 读取前过滤嘈杂的 shell 和工具输出 | \`aios init --all\` |
+| **Caveman** | 保留技术事实的简洁响应风格 skill | \`aios init --all\` |
+| **Headroom MCP** | 通过支持的 MCP 客户端显式按需压缩和取回内容 | \`aios init --all --yes-headroom-mcp\` |
+| **Verification / Privacy** | 测试、诊断、质量门禁以及敏感内容共享前的脱敏 | \`aios doctor\` / \`aios privacy\` |
+
+RTK、Caveman 和 Headroom 的集成边界不同。Harness CLI 不声称每个客户端启动都会自动被包装、不声称模型供应商流量会消失，也不会把未经本地测量的压缩百分比当成项目保证。
 
 ## 快速体验
 
-```bash
-# 启动 TUI
-aios
+\`\`\`bash
+# 初始化项目标记和已检测客户端的指引。
+aios init --all
 
-# 保存适合 Git 共享的项目 memo
-aios memo add "记住 auth 测试要保持严格"
-aios memo storage status
+# 检查安装、原生客户端同步和安全门禁。
+aios doctor --native --verbose
 
-# 在原生客户端内路由任务（setup 后）
-# Claude/Gemini/OpenCode: /team <任务>
-# Codex: /prompts:team <任务>
+# 保存并搜索一条持久项目决策。
+aios memo add "保持认证测试严格"
+aios memo search "认证"
 
-# 多 Agent 协作
-aios team 3:codex "重构登录模块并运行测试"
+# 为独立工作或可恢复目标选择工作流。
+aios team 3:codex "审查 auth 模块并更新测试"
+aios harness run --objective "完成发布交接" --worktree
 
-# 智能模型路由
-node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
+# 预览自适应策略，不创建真实计划。
+node scripts/aios.mjs plan auto-gate --task "重构 auth 模块" --dry-run --json
+\`\`\`
 
-# 自研 token 压缩 ContextDB 包
-cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
+项目标记会把客户端指向 \`.aios/context-db/index.json\`。ContextDB 是按需读取的：Agent 可以搜索或召回相关项目资料，而不是每次提示都收到完整历史。详细文件结构和命令见 [ContextDB](https://cli.rexai.top/zh/contextdb/)。
 
-# 单 Agent 过夜任务
-aios harness run --objective "完成明天的交接文档" --worktree
+## 支持的客户端
 
-# 内容结果追踪（小红书等场景）
-aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "测试" --metrics '{"likes":100}'
+Harness CLI 当前为 \`codex\`、\`claude\`、\`gemini\`、\`opencode\`、\`hermes\` 和 \`grok\`（Grok Build）提供原生或兼容集成。不同客户端的功能深度可能不同，请运行 \`aios doctor --native --verbose\` 查看本机实际状态，不要假设每个客户端都支持全部路由。
 
-# 查看任务状态
-aios team status --provider codex --watch
-```
+## 文档地图
 
-## 工作原理
-
-```text
-用户 → codex / claude / gemini / opencode / hermes
-     → zsh wrapper（透明包装）
-     → ctx-agent.mjs（ContextDB 集成）
-        → contextdb CLI（记忆持久化）
-        → 启动原生 CLI（附带上下文包）
-     → browser MCP（可选浏览器自动化）
-```
-
-安装后，直接使用 `codex`、`claude`、`gemini`、`opencode` 或 `hermes` 命令即可，Harness CLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
-
-## 文档
-
-- [快速开始](https://cli.rexai.top/zh/getting-started/) — 安装、配置、首次运行
-- [Model Router](https://cli.rexai.top/zh/model-router/) — Agent Team 多模型智能调度
-- [ContextDB](https://cli.rexai.top/zh/contextdb/) — 项目记忆系统详解
-- [Agent Team](https://cli.rexai.top/zh/team-ops/) — 多 Agent 协作与工作流治理指南
-- [Solo Harness](https://cli.rexai.top/zh/solo-harness/) — 过夜长任务指南
-- [Perception](https://cli.rexai.top/zh/perception/) — 内容结果追踪与洞察
-- [架构](https://cli.rexai.top/zh/architecture/) — 系统架构说明
-- [故障排查](https://cli.rexai.top/zh/troubleshooting/) — 常见问题解决
-- [按场景找命令](https://cli.rexai.top/zh/use-cases/) — CLI 工作流速查
+- [快速开始](https://cli.rexai.top/zh/getting-started/) - 安装、初始化并验证第一个项目。
+- [Windows 指南](https://cli.rexai.top/zh/windows-guide/) - PowerShell 前置条件和恢复命令。
+- [工作流策略](https://cli.rexai.top/zh/workflow-policy/) - 选择最小正确路径，理解计划如何继续。
+- [ContextDB](https://cli.rexai.top/zh/contextdb/) - 本地存储、统一搜索、memo 作用域和上下文包。
+- [Token Intelligence](https://cli.rexai.top/zh/token-compression/) - RTK、Caveman、Headroom MCP 和安全上下文边界。
+- [Agent Team](https://cli.rexai.top/zh/team-ops/) - 带 HUD 证据的治理型并行工作。
+- [Solo Harness](https://cli.rexai.top/zh/solo-harness/) - 可恢复长任务。
+- [按场景找命令](https://cli.rexai.top/zh/use-cases/) - 按用户意图组织命令。
+- [架构](https://cli.rexai.top/zh/architecture/) - 运行时层和兼容性边界。
+- [故障排查](https://cli.rexai.top/zh/troubleshooting/) - 按可观察症状恢复。
+- [博客](https://cli.rexai.top/blog/zh/) - 教程、版本说明和可复现工作流。
 
 ## 环境要求
 
 - Git
-- Node.js 24 LTS + npm
-- Windows: PowerShell 5.x 或 7
+- Node.js 24 LTS 和 npm
+- Windows：PowerShell 5.x 或 7
+- 至少一个受支持的编码客户端
 
 ## 开发
 
-```bash
+\`\`\`bash
 git clone https://github.com/rexleimo/harness-cli.git
 cd harness-cli
-```
-
-验证:
-
-```bash
+npm run test:scripts
 cd mcp-server
-npm test
 npm run typecheck
+npm test
 npm run build
-```
+\`\`\`
 
 ## 许可
 
-详见 [CHANGELOG.md](CHANGELOG.md) 版本历史。
+版本历史请参阅 [CHANGELOG.md](CHANGELOG.md)。

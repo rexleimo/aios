@@ -33,8 +33,10 @@ home: true
       </p>
 
       <div class="hero-cta-row">
-        <a href="getting-started" class="md-button md-button--primary">Get Started in 3 Minutes</a>
-        <a href="use-cases" class="md-button">See It In Action</a>
+        <a href="getting-started" class="md-button md-button--primary">Start with Quick Start</a>
+        <a href="use-cases" class="md-button">Choose a Use Case</a>
+        <a href="workflow-policy" class="md-button">Understand Workflow Policy</a>
+        <a href="https://cli.rexai.top/blog/" class="md-button">Read the Blog</a>
       </div>
 
       <div class="hero-works">
@@ -106,8 +108,8 @@ home: true
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3"/><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"/><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"/></svg>
         </div>
         <h3 class="capability-card__title">Cross-Session Memory</h3>
-        <p class="capability-card__desc">Project memory with events, checkpoints, and context packs auto-loaded on every launch.</p>
-        <span class="capability-card__cmd">auto-loaded</span>
+        <p class="capability-card__desc">Pull-based project memory with events, checkpoints, and context packs recalled when relevant.</p>
+        <span class="capability-card__cmd">aios init</span>
       </div>
 
       <div class="capability-card capability-card--violet">
@@ -156,9 +158,9 @@ home: true
   <div class="demo-header">
     <span class="demo-eyebrow">LIVE DEMO</span>
     <h2 class="demo-title">Watch it work in real-time</h2>
-    <p class="demo-sub">
-      Same shell, same muscle memory — Harness loads memory, spins up a team,
-      and verifies in the background.
+      <p class="demo-sub">
+      Same shell, same client — Harness can recall project context, route work,
+      and leave verification evidence for the next step.
     </p>
   </div>
 
@@ -242,6 +244,17 @@ home: true
   </div>
 </div>
 
+<div class="home-resource-links">
+  <h2>Read the workflow in context</h2>
+  <p>Use the docs for canonical commands and the blog for release context, decisions, and reproducible cases.</p>
+  <p>
+    <a href="/blog/rl-training-system/">AIOS RL Training System</a> ·
+    <a href="/blog/contextdb-fts-bm25-search/">ContextDB Search Upgrade</a> ·
+    <a href="/blog/windows-cli-startup-stability/">Windows CLI Startup Stability</a> ·
+    <a href="/blog/orchestrate-live/">Orchestrate Live</a>
+  </p>
+</div>
+
 <!-- ============================================================
      Closing CTA — 双栏布局 + 浮动卡片装饰
      设计稿: berPn > Closing CTA (dgsXd)
@@ -253,7 +266,7 @@ home: true
     <span class="cta-section__decor-number">01</span>
     <div class="cta-content">
       <h2 class="cta-heading">Ready to level up?</h2>
-      <p class="cta-sub">Join developers shipping faster with AI-powered workflows.</p>
+      <p class="cta-sub">Start with a small, verifiable workflow and add collaboration when the task needs it.</p>
       <div class="cta-buttons">
         <a href="getting-started" class="md-button md-button--primary">Get Started Free</a>
         <a href="contextdb" class="md-button">Read Docs</a>
@@ -266,11 +279,11 @@ home: true
     <div class="cta-float-card cta-float-card--1">
       <span class="cta-float-card__row">
         <svg class="cta-float-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-        <span class="cta-float-card__label">10x faster</span>
+        <span class="cta-float-card__label">ContextDB</span>
       </span>
       <span class="cta-float-card__row">
         <svg class="cta-float-card__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-        <span class="cta-float-card__label">10x faster</span>
+        <span class="cta-float-card__label">Workflow Policy</span>
       </span>
     </div>
     <div class="cta-float-card cta-float-card--2">

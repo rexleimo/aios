@@ -1,119 +1,117 @@
 ---
-title: Token インテリジェンスと圧縮
-description: RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートで、有用なコンテキストを小さく保ちます。
+title: Token Intelligence と圧縮の境界
+description: RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートを正しく使います。
 ---
 
-# Token インテリジェンスと圧縮
+# Token Intelligence と圧縮
 
-token を節約しても、Agent が正しい判断を下すための証拠を失っては意味がありません。AIOS v3.6.0 は、まず不要な作業を避け、次に各段階で持ち運ぶテキストを減らす層状の workflow を使います。
+## まず答え
+
+context efficiency は一つの compression switch ではなく workflow です。Harness CLI は smallest-correct-change gate、RTK の shell output filter、Caveman の response style、明示的な Headroom MCP tool、pull-based ContextDB recall を分離します。どの層も test、privacy check、final verification の代わりにはなりません。
+
+## 今すぐ実行
+
+~~~bash
+node scripts/aios.mjs init --all --dry-run
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+aios doctor --native --verbose
+~~~
+
+Headroom には Python 3.10 以降と uv または pipx が必要です。AIOS は隔離された tool environment に headroom-ai[all]>=0.31.0,<0.32.0 を install します。
 
 ## 5 つの層
 
-| 層 | 役割 | 約束しないこと |
+| Layer | Responsibility | Boundary |
 | --- | --- | --- |
-| Ponytail に着想を得たゲート | 実装前に最小で正しい変更を選ぶ。 | インストールされる Ponytail plugin ではありません。 |
-| RTK | Agent に届く前の shell / tool 出力のノイズを減らす。 | 範囲を絞った command を不要にしたり、生 log の全行を残したりはしません。 |
-| Headroom MCP | 後続 step でも必要な材料を、対応 MCP client が明示的に圧縮できるようにする。 | 現在の model request を透過的に interception しません。 |
-| Caveman | 技術的事実を落とさず、response style を簡潔にする。 | tool や file 自体を圧縮しません。 |
-| ContextDB | 全 history を inject せず、必要な時に project context を recall する。 | runtime history をすべての prompt に自動表示しません。 |
+| Ponytail-inspired gate | まず explanation、configuration、small edit を検討 | install される Ponytail plugin ではない |
+| RTK | Agent が読む前の local shell / tool output noise を filter | scoped command や raw log の全行の代わりではない |
+| Caveman | technical fact を残して response style を短くする | file や tool 自体は圧縮しない |
+| Headroom MCP | 後続 step で必要な材料を明示的に compress / retrieve | current model request を transparent interception しない |
+| ContextDB | 全 history を inject せず project context を必要時に recall | runtime history を全 prompt に自動表示しない |
 
-planning、test、code-review の証跡、privacy check、verification は別の品質ゲートとして引き続き必要です。
-
-## インストールと確認
-
-インストールの境界として `aios init` を使います。
-
-```bash
-# 確認のみ。package と client configuration は変更しません。
-node scripts/aios.mjs init --all --dry-run
-
-# 対話式: 検出された RTK、Caveman、対応する Headroom を install します。
-node scripts/aios.mjs init --all
-
-# CI などの無人インストール。
-node scripts/aios.mjs init --all --yes-compression-tools
-
-# Gemini と Grok 向けの user-scope Headroom MCP registration も許可します。
-node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
-```
-
-Headroom には Python 3.10 以降と `uv` または `pipx` が必要です。AIOS はテスト済みの `headroom-ai[all]>=0.31.0,<0.32.0` を隔離された tool environment に install し、system Python environment を無言で変更しません。
-
-`--yes-compression-tools` は package installation を許可します。`--yes-headroom-mcp` は client user configuration の変更を許可するため、意図的に分けています。dry run は package の download や configuration の書き込みをせず、予定状態を報告します。
+planning、review、privacy、test、verification は別の quality gate です。
 
 ## RTK と Caveman
 
-RTK はローカルの command-output layer です。初期化後、対応 command の出力を Agent が読む前に filter できます。重要な error と path を見失わないよう、範囲を絞った command を使い続けてください。
+RTK は local command-output layer です。path と failure を残すため、範囲を限定した command を使います。
 
-```bash
+~~~bash
 rg -n "pattern" path
 git diff --stat
 sed -n '120,180p' file.ts
 tail -n 120 test.log
-```
+~~~
 
-Caveman は Agent の表現を短くするローカル prompt skill です。command、path、error、date、decision、risk、未実施の verification を保持する必要があります。status update や checkpoint に便利ですが、詳しい説明の方が役立つ時は通常の style に戻してください。
+Caveman は concise status と checkpoint のための local prompt skill です。command、path、error、date、decision、risk、missing verification を落とさないでください。
 
-## Headroom: MCP は明示的、wrapper 対応は別
+## Headroom MCP は明示的
 
-Headroom の upstream CLI には一部 client 向けの公式 `wrap` target があります。wrapped client は Headroom 自身の proxy と lifecycle を使えます。**AIOS v3.6.0 は `aios init` がすべての client launch を自動 wrap するとは主張しません。** Headroom の install と MCP server の registration は別の操作です。
+Headroom upstream には一部 client 向け official wrap target があります。AIOS v3.6.0 は aios init がすべての client launch を自動 wrap するとは主張しません。install と MCP registration は別です。
 
-この integration で upstream wrap target がない client では、AIOS は client 自身の MCP command を用いて公式 `headroom mcp serve` process を登録します。
-
-| Client | v3.6.0 の経路 | 重要な条件 |
+| Client | Route | Condition |
 | --- | --- | --- |
-| Gemini CLI | user-scope の公式 MCP registration | 別途 MCP consent が必要です。 |
-| Grok Build | user-scope の公式 MCP registration | 別途 MCP consent が必要です。 |
-| Hermes Agent | user-scope の公式 MCP registration | 実際の TTY で完了する必要があります。そうでなければ `pending-interactive` です。 |
+| Gemini CLI | user-scope official MCP registration | separate MCP consent |
+| Grok Build | user-scope official MCP registration | separate MCP consent |
+| Hermes Agent | user-scope official MCP registration | real TTY、なければ pending-interactive |
 
-MCP server は `headroom_compress`、`headroom_retrieve`、`headroom_stats` を公開します。model が明示的に呼び出します。通常、圧縮を要求する前に元の材料を既に読んでいるため、現在の turn では token が節約されず、tool call が 1 回増える場合もあります。利点は後続 step にあり、compact result を保持し、必要な時だけ original を reference で retrieve できます。
+server は headroom_compress、headroom_retrieve、headroom_stats を公開し、model が明示的に呼び出します。model が original を先に見ている場合、現在の turn では節約されず tool call が増えることもあります。主な利点は後続 step で compact result を保持し、必要時に reference から original を retrieve できることです。
 
-AIOS は所有する registration を `~/.aios/integrations/headroom-mcp.json` に記録します。既存の `headroom` entry が external だったり期待する fingerprint と異なったりする場合、installer は `external` または `conflict` を報告し、上書きしません。
+AIOS は所有する registration を ~/.aios/integrations/headroom-mcp.json に記録し、external / conflict entry を上書きしません。
 
-### ContextDB Packet
+## ContextDB context pack
 
-session history の圧縮には次を使います。
-
-```bash
+~~~bash
+cd mcp-server
 npm run contextdb -- context:pack \
   --session <session-id> \
   --limit 80 \
   --token-budget 1200 \
   --token-strategy balanced
-```
+~~~
 
-| Strategy | 使う場面 | 動作 |
-| --- | --- | --- |
-| `balanced` | Default | 低シグナル text を圧縮し、error と最近の作業を保持します。 |
-| `aggressive` | 非常に小さい budget | 最大限に圧縮し、detail は最小限にします。 |
-| `legacy` | 旧来の挙動 | history の末尾だけを保持します。 |
+balanced は最近の作業と failure signal を保ち、aggressive は detail budget を小さくし、legacy は compatibility のため history tail を使います。[ContextDB](contextdb.md) も参照してください。
 
-**保持されるもの**（削除しないもの）:
+## 判断順序
 
-- Error message と failure signal
-- File path と command output
-- 最近の state と decision
+code、dependency、file、広い context を追加する前に：
 
-## 実践的な判断順序
+1. explanation または configuration change で解決できるか。
+2. 既存の function、document、tool を使えるか。
+3. focused query で repository、page、log 全体の read を避けられるか。
+4. それでも足りなければ最小の tested implementation を追加する。
 
-code、dependency、file、広い context を追加する前に、[Ponytail](https://github.com/DietrichGebert/ponytail) に着想を得た順序を使います。
+browser では semantic_snapshot または targeted extract_text から始めます。
 
-1. 説明、configuration change、またはより小さな edit で解決できるか。
-2. 既存の function、document、tool が既に対応していないか。
-3. repository、page、log 全体を読む代わりに、focused query を使えないか。
-4. その後で初めて、要件を満たす最小の tested implementation を追加する。
+## これは約束しない
 
-browser 作業では、semantic snapshot、targeted text、full text、full HTML、必要な時だけ screenshot の順で compact evidence を読みます。
+- local measurement のない universal token saving percentage。
+- すべての model request の transparent interception。
+- provider traffic が消えること。
+- すべての client launch の自動 wrap。
+- error、path、decision、verification evidence の破棄。
+- ContextDB search、test、privacy review、final verification の代替。
 
-## Privacy と測定
+## FAQ
 
-- RTK と Caveman はローカルで動作します。Headroom の install は package repository や任意の model resource にアクセスする場合があります。
-- Headroom wrapper または通常の client は、user が設定した model provider へ引き続き model request を送ります。ローカル圧縮は provider traffic がなくなる保証ではありません。
-- upstream saving percentage は upstream benchmark であり、ローカル AIOS の証拠ではありません。`headroom_stats` が compression と正の saved-token total の両方を示した時だけ、測定済み MCP savings を主張してください。
+### すべての layer を install すべきですか？
 
-## さらに読む
+いいえ。まず aios init --all --dry-run で予定状態を確認し、必要な package と integration だけを選びます。
 
-- [v3.6.0 リリースノート](changelog.md)
-- [Headroom + Ponytail workflow の記事](https://cli.rexai.top/blog/ja/2026-07-headroom-token-intelligence/)
+### Headroom は RTK と同じですか？
+
+いいえ。RTK は local command output を filter し、Headroom は明示的な MCP tool path、Caveman は response style だけを扱います。
+
+### 実際の効果をどう測りますか？
+
+headroom_stats で compression event と正の saved-token total の両方を確認します。upstream benchmark は local AIOS evidence ではありません。
+
+### ContextDB は単独で使えますか？
+
+はい。memory、memo、search、checkpoint は RTK、Caveman、Headroom とは別です。
+
+## 次に読む
+
+- [クイックスタート](getting-started.md)
 - [ContextDB](contextdb.md)
-- [Ponytail upstream project](https://github.com/DietrichGebert/ponytail)
+- [Workflow Policy](workflow-policy.md)
+- [Headroom + Ponytail workflow 記事](https://cli.rexai.top/blog/ja/2026-07-headroom-token-intelligence/)

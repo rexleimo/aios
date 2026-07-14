@@ -5,6 +5,12 @@ description: A structural knowledge graph that gives your coding agents instant 
 
 # Code Review Graph (Codemap)
 
+> **Quick Answer:** Codemap はリポジトリの構造グラフをローカルに作り、編集前に caller、dependent、import、affected flow、テストカバレッジを調べられるようにします。影響半径を絞る道具であり、テストの代わりではありません。
+
+## まず答える 3 つの質問
+
+変更前に、何に影響するか、どのフローが依存するか、対象にどのテストがあるかを確認します。グラフが使えない場合は、対象を絞った検索をフォールバックとして明記します。
+
 **The short version:** Codemap builds a Tree-sitter knowledge graph of your entire codebase and injects it as MCP tools into all your coding agents. Your agents stop blindly grepping files and start making informed decisions — knowing what calls what, what tests cover what, and what will break if you change something.
 
 No external services. No cloud. Just a local SQLite graph in `.code-review-graph/`.
@@ -143,3 +149,17 @@ Dry-run preview:
 ```bash
 aios internal codemap uninstall --dry-run
 ```
+
+## FAQ
+
+### Codemap はリポジトリを外部サービスへ送りますか？
+
+いいえ。グラフデータと stdio MCP はローカルで動作します。初回インストール時のパッケージ解決は別の導入処理です。
+
+### グラフの結果だけで安全だと証明できますか？
+
+できません。影響範囲を絞るだけで、テスト、ビルド、人的レビューが完了証拠になります。
+
+## 正規ドキュメント
+
+[アーキテクチャ](architecture.md)、[ワークフローポリシー](workflow-policy.md)、[トラブルシューティング](troubleshooting.md)を参照してください。

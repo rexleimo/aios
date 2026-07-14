@@ -5,6 +5,17 @@ description: Compare raw Codex/Claude/Gemini CLI workflows with Harness CLI's or
 
 # Raw CLI vs Harness CLI Layer
 
+> **Quick Answer:** Use a raw `codex`, `claude`, `gemini`, or `opencode` CLI for a focused one-off task. Add Harness CLI when the work needs cross-session memory, workflow routing, multi-client handoff, browser safety, or verification evidence. Harness CLI is a local workflow layer; it does not replace the coding client.
+
+## Decision at a glance
+
+| Need | Recommended path |
+| --- | --- |
+| One short task with no durable state | Raw CLI |
+| Shared project memory and searchable context | Harness CLI + ContextDB |
+| Multiple clients or agents with ownership boundaries | Harness CLI + Agent Team |
+| A change that needs safety and completion evidence | Harness CLI + edit and verification gates |
+
 Harness CLI is not a replacement for Codex, Claude, or Gemini CLI.
 It is a reliability layer on top of them.
 
@@ -62,3 +73,17 @@ Expected: `sessions/`, `index/`, `exports/`.
 ## Next Action
 
 [Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+
+## FAQ
+
+### Does Harness CLI replace my coding agent?
+
+No. It adds a local workflow, memory, and verification layer around supported clients.
+
+### Is the raw CLI ever the better choice?
+
+Yes. Keep the raw path for small, stateless, low-risk tasks where extra state would not improve the result.
+
+## Canonical Docs
+
+Read [Workflow Policy](workflow-policy.md), [ContextDB](contextdb.md), and [Getting Started](getting-started.md) for the current behavior.

@@ -1,103 +1,59 @@
 ---
-title: "ネイティブ Token 圧縮：Harness CLI が RTK や Caveman をインストールしない理由"
+title: "Token Intelligence の層: ContextDB、RTK、Caveman、Headroom MCP"
+description: "Harness CLI の現在の token intelligence を解説します。pull-based ContextDB、ローカル圧縮、明示的な Headroom MCP を扱います。"
 date: 2026-05-12
-tags: ["AIOS", "token compression", "ContextDB", "skills", "Harness CLI"]
-description: "Harness CLI は ContextDB 入力圧縮、ブラウザのコンパクト読み取り、CLI 出力の絞り込み、出力圧縮スキルを自前で実装し、競合ツールに依存しません。"
+tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---
 
-# ネイティブ Token 圧縮：Harness CLI が RTK や Caveman をインストールしない理由
+# Token Intelligence の層: ContextDB、RTK、Caveman、Headroom MCP
 
-Token コストは料金だけの問題ではありません。信頼性の問題でもあります。
+> **Quick Answer:** Harness CLI は token 効率を層に分けます。ContextDB は必要なプロジェクトコンテキストを保存・取得し、RTK と Caveman はローカルでコマンドと出力を小さくし、Headroom MCP は後続 step のための明示的な compress/retrieve tool を提供します。Headroom はすべての model request を透明に interception するものではありません。
 
-長時間の AI コーディングでは、巨大ログ、重複したスタックトレース、ページの定型文、冗長な進捗報告がモデルの文脈を汚します。簡単な近道は競合の token ツールを入れることですが、Harness CLI はそれを選びません。
+長い Agent セッションではログ、ブラウザの定型文、重複した履歴が判断に必要な文脈を埋めます。重要なのは万能なスイッチではなく、保存、圧縮、取得の境界を分けることです。
 
-RTK 風の入力フィルタリングと Caveman 風の短い出力という考え方だけを参考にし、AIOS 内で自前実装します。
+## 各層の責任
 
-## 何が変わったか
+| 層 | 責任 | 境界 |
+| --- | --- | --- |
+| ContextDB | 事実、event、refs、handoff を保存し必要なものを取得 | pull-based。全履歴を毎回注入しない |
+| RTK | 対応する CLI 出力をローカルで圧縮 | 検証の代わりではない |
+| Caveman | prompt/skill で出力を簡潔にする | エラー、パス、コマンド、リスクは残す |
+| Headroom MCP | 後続 step で必要な材料を明示的に compress/retrieve | on-demand tool call。透明な interception ではない |
 
-Harness CLI は token 削減を 2 つのネイティブ層に分けました。
-
-1. **入力圧縮**：コマンド、ブラウザ、ContextDB の内容をモデルに入る前に削減する。
-2. **出力圧縮**：コマンド、パス、エラー、リスク警告を残したまま、Agent の回答を短くする。
-
-RTK はインストールしません。Caveman もインストールしません。ユーザーのコマンドをグローバルに書き換える shell hook も使いません。
-
-## ネイティブ入力圧縮
-
-ContextDB には自己完結した token strategy engine があります。
+導入は次から始めます。
 
 ```bash
-cd mcp-server
-npm run contextdb -- context:pack \
-  --session <session_id> \
-  --limit 60 \
-  --token-budget 1200 \
-  --token-strategy balanced \
-  --out memory/context-db/exports/<session_id>-context.md
+aios init --all
+aios doctor --native --verbose
 ```
 
-デフォルトは保守的です。
+任意の圧縮ツールと Headroom MCP のインストール許可は別々に扱います。
 
-- 重複行と stack-run ノイズを圧縮する。
-- 重要なエラー、ファイルパス、コマンド、最新状態を守る。
-- 保護されたイベントを切る前に、低優先度イベントを落とす。
-- `strategy`、`rawTokenUsed`、`compressed`、`dropped`、`truncated` を出力する。
+## ContextDB はメモリの境界
 
-ブラウザ作業では、新しい `aios-browser-compress` スキルがコンパクトな読み取りを優先します。
-
-1. `page.semantic_snapshot`
-2. targeted `page.extract_text`
-3. full `page.extract_text`
-4. `page.get_html`
-5. 視覚証拠が必要な時だけ screenshot
-
-CLI 作業では、全量ダンプではなく `rg`、`git diff --stat`、`sed -n`、`head`、`tail`、対象テストを優先します。
-
-## ネイティブ出力圧縮
-
-新しい `aios-compress` スキルは 3 段階を定義します。
-
-| レベル | 用途 | 振る舞い |
-|--------|------|----------|
-| `tight` | 通常の開発 | 短い技術回答、無駄なし |
-| `ultra` | harness ログ、checkpoint | 1 行の証拠 + 次の行動 |
-| `precise` | ブラウザ操作、安全、不可逆操作 | 完全で明示的な説明 |
-
-重要なルールは、圧縮でリスクを隠さないことです。エラー、コマンド、パス、selector、日付、検証ギャップは正確に残します。
-
-## なぜ競合ツールを入れないのか
-
-別の token ツールを入れるのは速く見えますが、隠れた結合を作ります。
-
-- コマンド挙動が Harness CLI の外で変わる可能性がある。
-- Codex、Claude、Gemini、opencode で挙動を揃えにくい。
-- ドキュメント検証が難しくなる。
-- ユーザーに依存関係、更新経路、故障モードが増える。
-
-ネイティブ実装なら監査できます。コード、スキル、ドキュメントがリポジトリ内にあります。
-
-## 使い方
-
-ContextDB packet:
+安定した事実、選んだ task、handoff を ContextDB に保存し、次の判断に必要なものだけを pull します。context pack は token budget で制限できます。
 
 ```bash
 cd mcp-server
 npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
 ```
 
-Agent 出力:
+registry marker は登録情報の存在を示すだけで、全履歴が各 prompt に自動注入されることを意味しません。
 
-```text
-/compress tight
-/compress ultra
-/compress precise
-stop compress
-```
+## 圧縮しても証拠を失わない
 
-ブラウザ自動化では、全ページテキストの前に semantic snapshot と targeted extraction を使います。
+圧縮結果には正確なコマンド、ファイルパス、最新状態、エラー、警告、検証ギャップ、元の参照を残します。短くすること自体が目的ではなく、同じ判断品質で少ない文脈を使うことが目的です。
 
-## まとめ
+## FAQ
 
-Harness CLI の token 削減はネイティブになりました。入力圧縮は ContextDB とブラウザ workflow、出力圧縮は AIOS skill が担当し、競合ツールのインストール手順はありません。
+### すべての層を導入する必要がありますか？
 
-長時間 Agent 作業を安く、静かに、検証しやすくします。
+いいえ。まず ContextDB を使い、ログが大きい場合にローカル圧縮を追加します。後続 step で明示的な取得が必要な場合だけ Headroom MCP を使います。
+
+### Headroom は現在の model request を自動的に書き換えますか？
+
+いいえ。呼び出し側が compress/retrieve の対象を選ぶ明示的な MCP tool です。
+
+### 現在の仕様はどこですか？
+
+[Token Intelligence](https://cli.rexai.top/ja/token-compression/)、[ContextDB](https://cli.rexai.top/ja/contextdb/)、[トラブルシューティング](https://cli.rexai.top/ja/troubleshooting/)を参照してください。

@@ -5,6 +5,17 @@ description: 将原生 Codex/Claude/Gemini CLI 工作流与 Harness CLI 编排�
 
 # 原生 CLI vs Harness CLI 层
 
+> **快速答案：** 一次性、低风险的小任务可以直接使用 `codex`、`claude`、`gemini` 或 `opencode`。当任务需要跨会话记忆、工作流路由、多客户端交接、浏览器安全或验证证据时，再加上 Harness CLI。它是本地工作流能力层，不会替换你的 coding agent。
+
+## 先看决策
+
+| 需求 | 推荐路径 |
+| --- | --- |
+| 没有持久状态的短任务 | 原生 CLI |
+| 共享项目记忆和可检索上下文 | Harness CLI + ContextDB |
+| 多客户端或多 Agent 协作 | Harness CLI + Agent Team |
+| 需要安全门禁和完成证据的修改 | Harness CLI + 编辑/验证门禁 |
+
 Harness CLI 不是 Codex、Claude 或 Gemini CLI 的替代品。
 它是它们之上的可靠性层。
 
@@ -62,3 +73,17 @@ ls .aios/context-db
 ## 下一步
 
 [在 GitHub 上 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+
+## 常见问题
+
+### Harness CLI 会替换我的 coding agent 吗？
+
+不会。它在支持的客户端外层提供本地工作流、记忆和验证能力。
+
+### 什么时候原生 CLI 更合适？
+
+任务小、无状态、低风险，并且额外的项目上下文不会改善结果时，直接使用原生 CLI 更简单。
+
+## 官方文档
+
+当前行为请继续阅读[工作流策略](workflow-policy.md)、[ContextDB](contextdb.md)和[快速开始](getting-started.md)。

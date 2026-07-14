@@ -5,6 +5,12 @@ description: 각 작업에 맞는 AI 모델을 자동으로 선택 - 직접 생�
 
 # 모델 라우터
 
+> **Quick Answer:** Model Router는 작업 유형, routing profile, 능력 레지스트리, fallback 규칙을 바탕으로 모델을 선택합니다. 선택 이유가 필요하면 `--explain`을 사용하고, 비용·지연·능력 요구가 다르면 profile이나 명시적 override를 사용하세요.
+
+## explain 가능한 라우트부터 시작하기
+
+처음에는 explain 옵션이 있는 라우트를 실행하세요. 선택된 모델과 신호를 확인할 수 있어 결정을 검토할 수 있습니다.
+
 **다른 AI 모델은 서로 다른 것에 능숙합니다.** 모델 라우터는 각 작업을 가장 잘 하는 모델에 자동으로 보냅니다.
 
 프론트엔드 작업? Kimi K2.6 사용. 보안 검토? Claude Opus 사용. 브라우저 자동화? GPT-5.5 사용. 라우터가 작업 설명에서 판단하므로 이것들을 기억할 필요가 없습니다.
@@ -225,3 +231,17 @@ preferredModel: claude-opus
 - [Agent Team](team-ops.md) — 자동 라우팅이 있는 멀티 에이전트 협업
 - [ContextDB](contextdb.md) — 프로젝트 메모리
 - [Solo Harness](solo-harness.md) — 장기 실행 싱글 에이전트 작업
+
+## FAQ
+
+### 모델을 고르기 전에 모델을 호출하나요?
+
+아닙니다. 작업 메타데이터와 능력 설정에서 client/model 경로를 고른 뒤 선택된 클라이언트가 실행합니다.
+
+### 추천을 덮어쓸 수 있나요?
+
+가능합니다. 비용, 지연, 능력 요구에 맞춰 profile이나 role/task override를 지정하세요.
+
+## 공식 문서
+
+[Agent Team](team-ops.md), [워크플로 정책](workflow-policy.md), [ContextDB](contextdb.md)에서 실행 계약을 확인할 수 있습니다.

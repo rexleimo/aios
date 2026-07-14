@@ -5,6 +5,17 @@ description: 生 Codex/Claude/Gemini CLI ワークフローと Harness CLI オ�
 
 # 生 CLI vs Harness CLI 層
 
+> **Quick Answer:** 一回限りで低リスクの作業には `codex`、`claude`、`gemini`、`opencode` の素の CLI を使います。セッションをまたぐ記憶、ワークフロールーティング、複数クライアントの handoff、ブラウザ安全性、検証証拠が必要なら Harness CLI を追加します。これは coding agent を置き換えないローカル層です。
+
+## 判断の早見表
+
+| 必要なもの | 推奨パス |
+| --- | --- |
+| 永続状態のない短いタスク | 素の CLI |
+| 共有プロジェクトメモリと検索可能なコンテキスト | Harness CLI + ContextDB |
+| 複数クライアントまたは Agent Team | Harness CLI + Agent Team |
+| 編集安全性と完了証拠 | Harness CLI + 編集/検証ゲート |
+
 Harness CLI は Codex、Claude、Gemini CLI の代替ではありません。
 それはその上の信頼性レイヤーです。
 
@@ -62,3 +73,17 @@ ls .aios/context-db
 ## 次のアクション
 
 [GitHub で Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+
+## FAQ
+
+### Harness CLI は coding agent を置き換えますか？
+
+いいえ。対応クライアントの周囲にローカルのワークフロー、メモリ、検証層を追加します。
+
+### 素の CLI がよい場合はありますか？
+
+あります。小さく、状態を持たず、低リスクで、追加のコンテキストが結果を改善しない場合は素の CLI が簡潔です。
+
+## 正規ドキュメント
+
+現在の仕様は[ワークフローポリシー](workflow-policy.md)、[ContextDB](contextdb.md)、[クイックスタート](getting-started.md)を参照してください。

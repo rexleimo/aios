@@ -1,222 +1,105 @@
 ---
-title: 공식 사례 라이브러리
-description: Harness CLI로 실제로 무엇을 할 수 있는지 재현 가능한 명령 기준으로 정리.
+title: 사례 라이브러리: 재현 가능한 Harness CLI workflow
+description: setup, cross-client handoff, browser auth, privacy read, release verification을 evidence와 함께 실행합니다.
 ---
 
-# 공식 사례 라이브러리
+# 사례 라이브러리
 
-이 페이지는 `Harness CLI`의 능력 맵입니다.
+## 먼저 답하면
 
-각 사례는 다음을 포함합니다:
+feature tour가 아니라 구체적인 workflow가 필요할 때 사용합니다. 각 사례는 prerequisite, command, expected evidence, human decision을 제시합니다. 목적에 가까운 사례에서 시작해 canonical page를 읽으세요.
 
-- `언제 사용하는가`: 의사결정 트리거
-- `실행`: 복사粘贴 가능한 명령
-- `증거`: 성공을 증명하는 것
+## 사례 1: 새 project 초기화
 
-## 추천 딥다이브
+~~~bash
+cd /path/to/project
+aios init --all
+aios doctor --native --verbose
+test -f .aios/context-db/index.json
+~~~
 
-[GitHub에서 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_library_featured_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="github_star" }
-[워크플로 비교](cli-comparison.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="compare_workflows" }
-[케이스: 크로스 CLI 핸드오프](case-cross-cli-handoff.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_handoff" }
-[케이스: 브라우저 인증벽 플로우](case-auth-wall-browser.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_authwall" }
-[케이스: Privacy Guard 설정 읽기](case-privacy-guard.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_privacy" }
+doctor의 client checks와 registry marker가 evidence입니다. 올바른 project root인지 사람이 확인합니다. [빠른 시작](getting-started.md)과 [ContextDB](contextdb.md)를 보세요.
 
-## 사례 1: 신규 환경 5분 초기 설정
+## 사례 2: Cross-client handoff
 
-**언제 사용하는가**
-
-새 노트북이나 팀원을 온보딩하고 빠르게 깨끗한 베이스라인이 필요한 경우.
-
-**실행**
-
-```bash
-scripts/setup-all.sh --components all --mode opt-in
-scripts/verify-aios.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-all.ps1 -Components all -Mode opt-in
-powershell -ExecutionPolicy Bypass -File .\scripts\verify-aios.ps1
-```
-
-**증거**
-
-- `verify-aios`이 종료 코드 `0`으로 종료
-- `doctor-*` 체크에 블로킹 오류 없음
-
-## 사례 2: Browser MCP 설치와 스모크 테스트
-
-**언제 사용하는가**
-
-데모나 agent 워크플로에 브라우저 자동화(`browser_*`)가 필요한 경우.
-
-**실행**
-
-```bash
-scripts/install-browser-mcp.sh
-scripts/doctor-browser-mcp.sh
-```
-
-클라이언트 채팅에서 실행:
-
-```text
-browser_launch {"profile":"default"}
-browser_navigate {"url":"https://example.com"}
-browser_snapshot {"includeAx":true}
-browser_close {}
-```
-
-**증거**
-
-- `doctor-browser-mcp`가 `Result: OK`를 보고(경고는 허용 가능)
-- 스모크 명령이 구조화된 도구 응답을 반환하고 런타임 예외 없음
-
-## 사례 3: 크로스 CLI 핸드오프
-
-**언제 사용하는가**
-
-Claude에게 분석시키고, Codex에게 구현시키고, Gemini에게 검토하게 하고 싶지만 컨텍스트를 잃고 싶지 않은 경우.
-
-**실행**
-
-```bash
+~~~bash
+aios memo add "Keep the auth API unchanged"
 claude
 codex
-gemini
-```
+node scripts/aios.mjs search "auth API" --agent codex-cli --json
+~~~
 
-또는 결정적 one-shot:
+unified search에서 memo나 checkpoint를 찾고 각 client doctor가 통과하는 것이 evidence입니다. 자세한 내용은 [크로스 CLI 핸드오프](case-cross-cli-handoff.md)입니다.
 
-```bash
-scripts/ctx-agent.sh --agent claude-code --prompt "障碍을 요약하고 다음 스텝을 제안"
-scripts/ctx-agent.sh --agent codex-cli --prompt "최신 checkpoint에서 최우선 수정 구현"
-scripts/ctx-agent.sh --agent gemini-cli --prompt "회귀 위험과 누락된 테스트 검토"
-```
+## 사례 3: Browser CDP smoke
 
-**증거**
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-- `.aios/context-db/`에 새로운 session/checkpoint 아티팩트
-- 이후 CLI 실행이 같은 프로젝트 컨텍스트를 사용하여 계속 가능
+profile과 CDP status를 확인합니다. interactive flow에서는 visible CDP browser, semantic snapshot, bounded action, verification 순으로 진행하고 auth wall은 사람이 조작합니다. [브라우저 인증벽 사례](case-auth-wall-browser.md)를 보세요.
 
-## 사례 4: 인증벽 처리 (인간 개입)
+## 사례 4: Privacy-safe configuration read
 
-**언제 사용하는가**
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-자동화가 로그인벽(Google, Meta, 플랫폼 인증)에 도달하고 맹목적으로 바이패스해서는 안 되는 경우.
+redacted output이 evidence입니다. 공유 가능한 field는 사람이 판단합니다. raw cookie, token, private key, browser profile은 공유하지 않습니다. [Privacy Guard 사례](case-privacy-guard.md)를 보세요.
 
-**실행**
+## 사례 5: Team governance smoke
 
-```text
-browser_launch {"profile":"local"}
-browser_navigate {"url":"https://target.site"}
-browser_auth_check {}
-```
+~~~bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+~~~
 
-`requiresHumanAction=true`이면 같은 브라우저 profile에서 수동 로그인을 완료하고 `browser_snapshot` / `browser_click` / `browser_type`으로 계속.
+.aios/agents/와 .aios/interception/metrics/에 evidence가 생성됩니다. live 전에 provider, client, changed skill을 확인합니다. [Agent Team](team-ops.md)을 참고하세요.
 
-**증거**
+## 사례 6: 재개 가능한 장기 task
 
-- `browser_auth_check`가 명확한 인증 상태 필드를 반환
-- 수동 로그인 후 같은 profile로 플로우 재개
+~~~bash
+aios harness run \
+  --objective "Prepare the release handoff" \
+  --session release-handoff \
+  --worktree \
+  --max-iterations 20
+aios harness status --session release-handoff --json
+aios harness stop --session release-handoff --reason "review checkpoint"
+aios harness resume --session release-handoff
+~~~
 
-## 사례 5: One-shot 감사 가능한 실행 체인
+status, checkpoint, iteration artifact가 current stage evidence입니다. merge 전에 worktree diff와 test를 사람이 확인합니다. [Solo Harness](solo-harness.md)를 보세요.
 
-**언제 사용하는가**
+## 사례 7: dry-run과 live
 
-감사 가능한 레코드(`init -> session -> event -> checkpoint -> pack`)를 단일 명령으로 생성해야 하는 경우.
+~~~bash
+aios team --provider codex --workers 2 --task "Review the release checklist" --dry-run --json
+aios orchestrate bugfix --task "Fix the release check" --dispatch local --execute dry-run
+~~~
 
-**실행**
+local dispatch와 journal state를 확인합니다. provider, credential, worktree, verification scope를 확인한 뒤 live로 진행하세요.
 
-```bash
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "최신 checkpoint에서 다음 작업 실행"
-```
+## 사례 8: release verification
 
-**증거**
+~~~bash
+aios doctor --native --verbose
+aios quality-gate pre-pr --profile strict
+npm run test:scripts
+git diff --check
+~~~
 
-- `.aios/context-db/index/checkpoints.jsonl`에 새 checkpoint 항목
-- `.aios/context-db/exports/`에 내보내기된 context packet
+각 command exit와 blocker를 보관합니다. 공개 전 claim, link, privacy boundary, generated output을 review합니다.
 
-## 사례 6: Skills 라이프사이클 운영
+## 새 사례 제출
 
-**언제 사용하는가**
+intent, primary action, exact command, expected evidence, human-in-the-loop boundary, canonical link, related case를 포함하세요. credential, cookie, private path, unredacted provider output은 포함하지 않습니다.
 
-여러 CLI에서 공유 skills를 관리하고 예측 가능한 라이프사이클 작업이 필요한 경우.
+## 다음 페이지
 
-**실행**
-
-```bash
-scripts/install-contextdb-skills.sh
-scripts/doctor-contextdb-skills.sh
-scripts/update-contextdb-skills.sh
-# 롤백이 필요한 경우
-scripts/uninstall-contextdb-skills.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-skills.ps1
-# 롤백이 필요한 경우
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-skills.ps1
-```
-
-**증거**
-
-- Doctor 출력이 대상이 존재하고 건강한지 확인
-- 업데이트/제거 시 단절된 링크 없음
-
-## 사례 7: Shell 래퍼 복구와 롤백
-
-**언제 사용하는가**
-
-사용자가 명령 래핑 문제를 보고하고 안전한 복구 경로가 필요한 경우.
-
-**실행**
-
-```bash
-scripts/doctor-contextdb-shell.sh
-scripts/update-contextdb-shell.sh
-# 완전한 롤백이 필요한 경우
-scripts/uninstall-contextdb-shell.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-shell.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-shell.ps1
-# 완전한 롤백이 필요한 경우
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-shell.ps1
-```
-
-**증거**
-
-- Wrapper doctor가 더 이상 블로킹 문제를 보고하지 않음
-- 롤백 후 네이티브 `codex`/`claude`/`gemini` 명령이 정상 동작
-
-## 사례 8: 릴리스 전 보안 헬스 체크
-
-**언제 사용하는가**
-
-업데이트를 게시하기 전에 skills/hooks/MCP 설정에서 안전하지 않은 설정 드리프트가 없는지 확인.
-
-**실행**
-
-```bash
-scripts/doctor-security-config.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-security-config.ps1
-```
-
-**증거**
-
-- Security doctor가 `0`으로 종료
-- 모든 경고가 릴리스 전에 검토되고 해결됨
-
-## 신규 공식 사례投稿
-
-이 라이브러리에 사례를 제안하려면:
-
-1. 플레이스홀더 없이 정확한 명령을 포함하세요.
-2. 측정 가능한 증거를 정의하세요(종료 코드, 파일 아티팩트 또는 도구 응답).
-3. 관련 시 롤백/복구 단계를 추가하세요.
+- [사용 사례](use-cases.md)
+- [문제 해결](troubleshooting.md)
+- [Workflow Policy](workflow-policy.md)

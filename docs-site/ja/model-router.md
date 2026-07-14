@@ -5,6 +5,12 @@ description: 各タスクに適切な AI モデルを自動的に選択 - 自分
 
 # モデル路由器
 
+> **Quick Answer:** Model Router はタスクタイプ、routing profile、能力レジストリ、fallback ルールからモデルを選びます。理由を確認するときは `--explain` を使い、コスト・遅延・能力の要件が違う場合は profile または明示的な override を使います。
+
+## explain 付きルートから始める
+
+最初は explain 可能なルートを実行してください。選択されたモデルとシグナルを確認でき、判断をレビューできます。
+
 **異なる AI モデルは異なることに長けています。** モデルルーターは各タスクを最も得意なモデルに自動的に送信します。
 
 フロントエンド作業？Kimi K2.6 を使用。セキュリティレビュー？Claude Opus を使用。ブラウザ自動化？GPT-5.5 を使用。路由器がタスク説明から判断するので、暗記する必要はありません。
@@ -225,3 +231,17 @@ preferredModel: claude-opus
 - [Agent Team](team-ops.md) — 自動ルーティングによるマルチエージェントコラボレーション
 - [ContextDB](contextdb.md) — プロジェクトメモリ
 - [Solo Harness](solo-harness.md) — 長時間実行のシングルエージェント作業
+
+## FAQ
+
+### モデルを選ぶ前にモデルを呼び出しますか？
+
+いいえ。タスクメタデータと能力設定から client/model パスを選び、その後に選択されたクライアントが実行します。
+
+### 推奨を上書きできますか？
+
+できます。コスト、遅延、能力要件に合わせて profile や role/task の override を指定します。
+
+## 正規ドキュメント
+
+[Agent Team](team-ops.md)、[ワークフローポリシー](workflow-policy.md)、[ContextDB](contextdb.md)で実行契約を確認できます。

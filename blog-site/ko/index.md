@@ -1,6 +1,6 @@
 ---
 title: 블로그 허브
-description: Harness CLI — codex, claude, gemini, opencode에 기억, 협업, 검증을 추가하는 로컬 agent 워크플로 레이어에 대한 스토리, 튜토리얼, 심층 분석.
+description: Harness CLI — codex, claude, gemini, opencode, Grok Build에 기억, 협업, 검증을 추가하는 로컬 agent 워크플로 레이어의 실전 가이드.
 ---
 
 # 블로그
@@ -16,9 +16,15 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 - [Harness CLI 이야기](launch-post.md) — 왜 만들었는지, 어떤 문제를 해결하는지
 - [CLI 비교: Raw vs. Harness CLI](cli-comparison-post.md) — 레이어를 추가하면 무엇이 달라지는지
 - [자동화 플레이북](automation-playbook-post.md) — 일상적 사용 패턴
+- [v4.0 적응형 워크플로 정책](2026-07-v400-adaptive-workflow-policy.md) — 라우트와 계획을 고르는 방법
+- [AI 에이전트 워크플로는 어떻게 고를까?](2026-07-choose-agent-workflow.md) — 판단표와 실전 예시
+- [CLI 명령에서 신뢰할 수 있는 워크플로로](2026-07-raw-cli-to-reliable-workflow.md) — 반복 가능한 경계 만들기
 
 ## 최신 글
 
+- [v4.0 적응형 워크플로 정책](2026-07-v400-adaptive-workflow-policy.md)
+- [AI 에이전트 워크플로는 어떻게 고를까?](2026-07-choose-agent-workflow.md)
+- [날것의 CLI 명령에서 신뢰할 수 있는 AI 에이전트 워크플로로](2026-07-raw-cli-to-reliable-workflow.md)
 - [v3.6.0: Headroom과 Ponytail로 더 안전한 Token 인텔리전스 workflow 만들기](2026-07-headroom-token-intelligence.md)
 - [v3.2.0: Harness 신뢰성 및 스킬 라이프사이클 업그레이드](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build가 AIOS 1급 클라이언트가 되었습니다](2026-07-grok-build-aios-client.md)
@@ -30,7 +36,6 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 - [v1.50.0: 기억, 문서, 계획, 코드를 가로지르는 통합 AIOS 검색](2026-06-v150-unified-aios-search.md)
 - [Codemap：AI 에이전트에게 코드베이스 지도를](2026-05-codemap-crg.md)
 - [ContextDB Token 압축: 더 작은 context pack과 안전한 recall](2026-05-token-compression.md)
-- [네이티브 Token 압축: Harness CLI가 RTK나 Caveman을 설치하지 않는 이유](2026-05-native-token-compression.md)
 - [Model Router: 모든 태스크에 맞는 올바른 모델](2026-05-model-router.md)
 - [aios memo GUI: 에이전트의 기억을 살아있는 그래프로 시각화](2026-05-aios-memo-gui.md)
 - [Solo Harness: 한 Agent를 밤새 돌려도 통제를 잃지 않는 방법](2026-04-solo-harness.md)

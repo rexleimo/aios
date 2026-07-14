@@ -1,3 +1,10 @@
+---
+title: "Windows CLI 起動安定性: クロス CLI 信頼性チェーンを守る"
+description: "Windows cmd ランチャーの修正が ContextDB の継続性、wrapper policy、Codex・Claude・Gemini の起動を守る仕組みを説明します。"
+date: 2026-03-20
+tags: ["Windows", "CLI reliability", "ContextDB", "Codex", "Claude"]
+---
+
 # AIOS Windows アップデート: 単なる「起動修正」ではなく、クロス CLI 信頼性チェーン全体の強化
 
 このアップデートは一般的な Windows Tips ではなく、AIOS のコアアーキテクチャに直結しています。
@@ -76,3 +83,7 @@ Windows で 1 つでも切れると「クロス CLI + 記憶」の約束が破�
 ### トークン使用量は変わる？
 
 モデルポリシーの変更は直接ありません。プロセス信頼性とラッパー挙動の改善です。
+
+## 公式ドキュメント
+
+現在のセットアップと復旧手順は [Windows Guide](https://cli.rexai.top/ja/windows-guide/)、[Getting Started](https://cli.rexai.top/ja/getting-started/)、[ContextDB](https://cli.rexai.top/ja/contextdb/)、[Troubleshooting](https://cli.rexai.top/ja/troubleshooting/)を参照してください。

@@ -1,139 +1,94 @@
 ---
-title: 概览
-description: Harness CLI (AIOS) 给你正在用的 codex / claude / gemini / opencode / hermes / grok 加一层记忆、协作和验证能力——不换工具，不改习惯。
+title: Harness CLI 概览
+description: Harness CLI 为 codex、claude、gemini、opencode、hermes 和 grok 增加项目记忆、协作、工作流路由和验证入口。
 ---
 
 # Harness CLI (AIOS)
 
-> 给 `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 加上记忆、协作和验证能力的本地 Agent 工作流层。
+Harness CLI 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），再补上跨会话项目记忆、并行协作、可恢复运行和验证门禁。
 
-[3 分钟快速开始](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[多 Agent 怎么用](team-ops.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="team_ops" }
-[按场景找命令](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
-[GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=zh_onboarding&utm_content=home_hero_star){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github_star" }
+[开始快速安装](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
+[按场景选择](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
+[查看工作流策略](workflow-policy.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="workflow_policy" }
+[阅读博客](/blog/zh/){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="blog" }
+[GitHub](https://github.com/rexleimo/harness-cli){ .md-button }
+
+## 一句话回答
+
+如果你需要让 Agent 在不同会话和不同客户端之间共享项目事实、把独立工作交给多个 Agent，或让长任务能够暂停后继续，Harness CLI 提供了这些能力的本地工作流层。它不会替换底层编码客户端，也不会把所有历史自动塞进每个提示。
 
 ## 核心能力
 
-| 能力 | 说明 | 命令 |
+| 能力 | 作用 | 起点 |
 |---|---|---|
-| **ContextDB** | 跨会话项目记忆，事件/检查点/上下文包持久化 | `codex` / `claude` / `gemini` / `opencode` / `hermes` / `grok` 自动加载 |
-| **Memo Storage** | Git-friendly 项目笔记；默认 append-only file 存储，也可切换到 split 文件存储 | `aios memo add "note"` / `aios memo storage status` |
-| **原生路由快捷命令** | 客户端原生路由提示，single/subagent/team/harness 通道 | Claude/Gemini/OpenCode: `/team <任务>`；Codex: `/prompts:team <任务>` |
-| **原生 Token 压缩** | 自研输入/输出压缩，参考 RTK/Caveman 思路，不安装竞品工具 | `context:pack --token-budget 1200 --token-strategy balanced` |
-| **Model Router** | Agent Team 智能多模型调度 — 按能力、成本和历史成功率匹配最优模型 | `node scripts/aios.mjs model-router route --task "..."` |
-| **Codemap** | Tree-sitter 代码知识图谱 — 一行命令安装，所有 agent 瞬间获得代码库的结构化理解 | `aios internal codemap install` / `doctor` |
-| **Agent Team** | 多 Agent 并行协作，带 HUD 追踪、smoke 证据和治理检查 | `aios team 3:codex "任务描述"` / `node scripts/aios.mjs agents smoke --json` |
-| **Solo Harness** | 单 Agent 过夜长任务，可恢复、有运行日志 | `aios harness run --objective "目标" --worktree` |
-| **Perception** | 内容结果追踪 + 统计洞察 + 感知注入 | `aios perception record` / `insights` / `summary` |
-| **Browser MCP** | 隐身浏览器自动化，CDP 协议 | `aios internal browser doctor` |
-| **Hermes Agent** | 第七个 AIOS 客户端，MCP 桥接暴露 5 个 AIOS 工具 | `aios setup --client hermes` → Hermes 中 `@aios_context_pack` |
-| **Superpowers** | 可复用工作流技能（brainstorm/plan/debug/verify） | TUI 中选择 |
-| **Privacy Guard** | 敏感文件读取前自动脱敏 | `aios privacy status` |
+| **ContextDB** | 按需读取的项目记忆、memo、检查点和上下文包 | aios init / [ContextDB](contextdb.md) |
+| **Workflow Policy** | 用 noop、direct、guarded、planned 选择风险匹配的路径 | [工作流策略](workflow-policy.md) |
+| **Agent Team** | 有治理和 HUD 证据的独立任务并行协作 | aios team / [Agent Team](team-ops.md) |
+| **Solo Harness** | 带运行日志和恢复入口的长任务 | aios harness run / [Solo Harness](solo-harness.md) |
+| **RTK / Caveman** | 分别处理本地输出噪声和响应表达长度 | [Token Intelligence](token-compression.md) |
+| **Headroom MCP** | 通过支持的 MCP 客户端显式压缩和取回内容 | [Token Intelligence](token-compression.md) |
+| **Verification / Privacy** | 诊断、测试、质量门禁和敏感内容脱敏 | [故障排查](troubleshooting.md) |
 
-你继续使用原有命令，工作流程完全不变——只是你的 agents 多了记忆、协作和自诊断能力。
+## 现在就做
 
-[快速开始](getting-started.md){ .md-button .md-button--primary }
-[按场景找命令](use-cases.md){ .md-button }
+~~~bash
+# 在项目根目录初始化客户端指引和项目标记。
+aios init --all
 
-## 工作原理
+# 查看原生同步、运行时和安全检查结果。
+aios doctor --native --verbose
+~~~
 
-```text
-User → codex / claude / gemini / opencode / hermes / grok
-     → zsh wrapper（透明包装）
-     → ctx-agent.mjs（ContextDB 集成）
-        → contextdb CLI（记忆持久化）
-        → 启动原生 CLI（附带上下文包）
-     → browser MCP（可选浏览器自动化）
-```
+项目标记指向 .aios/context-db/index.json。ContextDB 使用 pull-based 读取：Agent 需要时搜索相关资料，而不是每次启动都读取完整历史。
 
-安装后，直接使用 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` 命令即可，Harness CLI 自动在后台加载项目记忆，并在客户端支持时安装路由快捷命令。
+## 选择正确路径
 
-## 快速体验
-
-```bash
-# 启动 TUI
-aios
-
-# 保存适合 Git 共享的项目 memo
-aios memo add "记住 auth 测试要保持严格"
-aios memo storage status
-
-# 在原生客户端内路由任务（setup 后）
-# Claude/Gemini/OpenCode: /team <任务>
-# Codex: /prompts:team <任务>
-
-# 多 Agent 协作
-aios team 3:codex "重构登录模块并运行测试"
-
-# 单 Agent 过夜任务
-aios harness run --objective "完成明天的交接文档" --worktree
-
-# 智能模型路由
-node scripts/aios.mjs model-router route --task "审查 auth.js 安全漏洞"
-
-# 自研 token 压缩 ContextDB 包
-cd mcp-server && npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --token-strategy balanced
-
-# 内容结果追踪（小红书等场景）
-aios perception record --content-id note_001 --platform xiaohongshu --content-type note --title "测试" --metrics '{"likes":100}'
-
-# 查看任务状态
-aios team status --provider codex --watch
-```
-
-## 第一次使用？
-
-**从这里开始：** [快速开始](getting-started.md) — 安装、配置、第一次运行，大约 3 分钟。
-
-**已经安装好了？** 直接跳转到你需要的部分：
-
-| 我想... | 去往 |
+| 你的目标 | 推荐入口 |
 |---|---|
-| 给 agent 添加项目记忆 | [ContextDB](contextdb.md) |
-| 多个 agents 一起工作 | [Agent Team](team-ops.md) |
-| 一个 agent 过夜运行 | [Solo Harness](solo-harness.md) |
-| 智能路由任务 | [Model Router](model-router.md) |
-| 减少 token 使用 | [Token Compression](token-compression.md) |
-| 按场景找命令 | [Commands By Scenario](use-cases.md) |
+| 先问一个问题或查看资料 | [Workflow Policy](workflow-policy.md) 的 direct |
+| 做一个小而清晰的本地改动 | guarded + [Verification](troubleshooting.md) |
+| 多步骤、跨文件或需要恢复的工作 | planned / [Solo Harness](solo-harness.md) |
+| 两个以上互不依赖的工作包 | [Agent Team](team-ops.md) |
+| 阶段性编排和质量证据 | [Use Cases](use-cases.md) |
 
-## 环境要求
+## 运行时边界
 
-- Git
-- Node.js 24 LTS + npm
-- Windows: PowerShell 5.x 或 7
+~~~text
+用户
+  -> codex / claude / gemini / opencode / hermes / grok
+  -> native guidance + .aios/context-db/index.json
+  -> ContextDB 按需搜索 / memo / checkpoint
+  -> Team、Solo Harness、Orchestrate（按任务需要）
+  -> browser-use CDP（浏览器任务需要时）
+~~~
 
-## 开发
+Playwright MCP 保留为兼容路径；当前浏览器文档默认使用 browser-use CDP。RTK、Caveman 和 Headroom MCP 也各有独立的安装、授权和验证边界。
 
-```bash
-git clone https://github.com/rexleimo/harness-cli.git
-cd harness-cli
-```
+## 第一次使用
 
-验证：
+1. 阅读 [快速开始](getting-started.md)，执行 aios init --all。
+2. 执行 aios doctor --native --verbose，根据证据处理警告。
+3. 在项目中启动一个支持的客户端。
+4. 需要长期记忆时阅读 [ContextDB](contextdb.md)，需要选择路径时阅读 [工作流策略](workflow-policy.md)。
 
-```bash
-cd mcp-server
-npm test
-npm run typecheck
-npm run build
-```
+## 相关入口
 
-## 文档
-
-- [快速开始](getting-started.md) — 安装、配置、首次运行
-- [Model Router](model-router.md) — Agent Team 多模型智能调度
-- [ContextDB](contextdb.md) — 项目记忆系统
-- [Agent Team](team-ops.md) — 多 Agent 协作与工作流治理指南
-- [Solo Harness](solo-harness.md) — 过夜长任务指南
-- [Perception](perception.md) — 内容结果追踪与洞察
-- [架构](architecture.md) — 系统架构
-- [故障排查](troubleshooting.md) — 常见问题
-- [按场景找命令](use-cases.md) — CLI 工作流速查
+- [Windows 指南](windows-guide.md) - PowerShell 安装和恢复。
+- [架构](architecture.md) - 运行时层和兼容性边界。
+- [案例库](case-library.md) - 可复现的跨客户端、浏览器和隐私案例。
+- [友情链接](friends.md) - 生态和相关项目。
+- [博客](/blog/zh/) - 工作流教程、版本说明和技术深挖。
 
 ## 博客精选
 
+- [4.0.0 自适应工作流策略](/blog/zh/2026-07-v400-adaptive-workflow-policy/)
+- [如何选择 Agent 工作流](/blog/zh/2026-07-choose-agent-workflow/)
+- [从裸 CLI 到可靠工作流](/blog/zh/2026-07-raw-cli-to-reliable-workflow/)
+- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
+
+## 更多核心文章
+
 - [AIOS RL Training System](/blog/zh/rl-training-system/)
-- [Agent 治理：让 Team live 运行先证明自己](/blog/zh/2026-06-agent-governance/)
 - [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
 - [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)
 - [Orchestrate Live](/blog/zh/orchestrate-live/)

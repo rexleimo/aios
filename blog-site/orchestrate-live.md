@@ -1,4 +1,13 @@
+---
+title: "Orchestrate Live: Safe Opt-In Subagent Runtime for Codex, Claude, and Gemini"
+description: "Understand the difference between dry-run and live orchestration, bounded parallel phases, JSON handoffs, ownership gates, and provider readiness."
+date: 2026-06-20
+tags: ["orchestration", "subagents", "Agent Team", "dry-run", "runtime"]
+---
+
 # Orchestrate Live Is Now Real: Subagent Runtime for Codex / Claude / Gemini
+
+> **Quick Answer:** `dry-run` builds and validates the orchestration plan without calling a model runtime. `live` is an explicit opt-in path that dispatches bounded phase jobs through a selected CLI, validates structured handoffs, and blocks conflicting file ownership. A successful dry-run does not prove provider, browser, or authentication readiness.
 
 If you've been using `aios orchestrate` as a safe “plan + dry-run” harness, this is the missing piece: `subagent-runtime` can now execute orchestration phases via your chosen CLI.
 
@@ -25,7 +34,7 @@ export AIOS_SUBAGENT_CLIENT=codex-cli  # or claude-code, gemini-cli
 aios orchestrate --session <session-id> --dispatch local --execute live --format json
 ```
 
-Tip (codex-cli): Codex CLI v0.114+ supports `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin). AIOS uses them when available for more reliable JSON handoffs, and Codex child workers run with `--dangerously-bypass-approvals-and-sandbox` by default so unattended runs do not wait on prompts.
+Tip (codex-cli): Codex CLI v0.114+ supports `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin). AIOS uses them when available for more reliable JSON handoffs. Review the approval and sandbox policy of the selected client before enabling unattended execution.
 
 Token cost:
 
@@ -67,3 +76,21 @@ Since this post was published, we continued live sampling on the same session to
 - Timeout budgets are intentionally unchanged until latency-watch clears and Windows-host validation evidence is fully closed
 
 Practical takeaway: live orchestration is stable enough for routine use, but budget tightening should remain evidence-driven.
+
+## FAQ
+
+### Does dry-run spend model tokens?
+
+No. Dry-run validates the plan and simulated handoffs locally. Live execution calls the selected CLI and can spend tokens or incur provider costs.
+
+### What blocks a live phase?
+
+A missing CLI, invalid JSON handoff, blocked dependency, ownership conflict, timeout, or human gate can mark a phase as blocked. Read the structured result before retrying.
+
+### Is live execution enabled by default?
+
+No. It requires an explicit opt-in and a provider/client that is actually available. Treat readiness and authorization as separate checks.
+
+## Canonical Docs
+
+Read [Agent Team](https://cli.rexai.top/team-ops/), [Workflow Policy](https://cli.rexai.top/workflow-policy/), [Solo Harness](https://cli.rexai.top/solo-harness/), and [Troubleshooting](https://cli.rexai.top/troubleshooting/).

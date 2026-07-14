@@ -1,3 +1,10 @@
+---
+title: "Windows CLI Startup Stability: Protect the Cross-CLI Reliability Chain"
+description: "How the Windows cmd launcher fix protects ContextDB continuity, wrapper policy, and native Codex, Claude, and Gemini startup paths."
+date: 2026-03-20
+tags: ["Windows", "CLI reliability", "ContextDB", "Codex", "Claude"]
+---
+
 # AIOS Windows Update: Not Just "Startup Fix", But a Full Cross-CLI Reliability Chain
 
 This update is directly tied to AIOS core architecture, not a generic Windows tip post.
@@ -76,3 +83,7 @@ No. It is a startup-layer fix with workflow-level impact in AIOS because wrappin
 ### Does this change token usage?
 
 No direct model policy change. This update targets process reliability and wrapper behavior.
+
+## Canonical Docs
+
+Use [Windows Guide](https://cli.rexai.top/windows-guide/), [Getting Started](https://cli.rexai.top/getting-started/), [ContextDB](https://cli.rexai.top/contextdb/), and [Troubleshooting](https://cli.rexai.top/troubleshooting/) for current setup instructions.

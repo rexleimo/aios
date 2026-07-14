@@ -1,15 +1,19 @@
 # Harness CLI full index
 
 ## Intent Summary
-- AI memory system for coding agents (`ContextDB`)
+- Local-first AI agent workflow and memory system for coding agents (`ContextDB`)
 - Token-compressed ContextDB context packs for bounded prompt budgets
 - Hermes-style workflow orchestration (`team`, `orchestrate`)
 - Agent Team collaboration and monitoring (`team-ops`, `hud`)
 - Automatic subagent planning with verification gates
+- Adaptive workflow routes: `noop`, `direct`, `guarded`, and `planned`
+- Plan persistence states: `none`, `reuse`, and `create`
+- Reliable solo harness runs with failure taxonomy, bounded backoff, and dry-run readiness
 - Privacy Shield startup notices for wrapped Codex, Claude, Gemini, and OpenCode sessions
 - v1.50.0 unified AIOS search across memory, docs, plans, and code
 - v1.50.1 all-client turn compression compliance with pre_send/post_receive proof
 - All-client native guidance projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
+- Grok Build is supported as a first-class client surface; current support should be checked in the Quick Start docs
 
 ## Overview
 - https://cli.rexai.top/
@@ -19,6 +23,7 @@
 
 ## Setup
 - https://cli.rexai.top/getting-started/
+- https://cli.rexai.top/workflow-policy/
 - https://cli.rexai.top/contextdb/
 - https://cli.rexai.top/contextdb/#unified-project-search-v1500
 - https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501
@@ -38,8 +43,12 @@
 - https://cli.rexai.top/blog/launch-post/
 - https://cli.rexai.top/blog/cli-comparison-post/
 - https://cli.rexai.top/blog/automation-playbook-post/
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
+- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
+- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
 
 ## SEO / GEO notes
 - Prefer feature docs with clear task intent and stable entity names.
+- Put the direct answer, decision criteria, and FAQ near the top of a page.
 - Use changelog-linked docs for current behavior.
 - For localized content use language roots: `/zh/`, `/ja/`, `/ko/`.

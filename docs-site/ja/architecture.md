@@ -1,124 +1,121 @@
 ---
-title: アーキテクチャ
-description: wrapper / runner / ContextDB の構成。
+title: Harness CLI アーキテクチャ
+description: client guidance、ContextDB、Workflow Policy、Team、Harness、browser-use CDP、RL research の接続を説明します。
 ---
 
 # アーキテクチャ
 
+## まず答え
+
+Harness CLI は既存の coding client の周囲にローカル境界を提供します。client guidance が project を識別し、ContextDB が evidence を保存・recall し、Workflow Policy が最小の route を選びます。必要に応じて Team、Solo Harness、Orchestrate が task を実行します。ブラウザの既定 path は browser-use CDP で、古い Playwright MCP は compatibility path です。
+
 ## Components
 
-- `scripts/contextdb-shell.zsh`: CLI ラッパー
-- `scripts/contextdb-shell-bridge.mjs`: wrap / passthrough 判定ブリッジ
-- `scripts/ctx-agent.mjs`: 実行ランナー
-- `mcp-server/src/contextdb/*`: ContextDB 実装
+| Layer | Main surface | Responsibility |
+| --- | --- | --- |
+| Client entry | scripts/contextdb-shell.zsh、client-sources/、native guidance | project instruction と route hint |
+| Startup bridge | scripts/contextdb-shell-bridge.mjs、scripts/ctx-agent.mjs | wrapper / passthrough を判断し client を起動 |
+| ContextDB | mcp-server/src/contextdb/、.aios/context-db/ | session、memo、checkpoint、search、context pack |
+| Workflow Policy | scripts/lib/planning/workflow-policy.mjs、auto-gate.mjs、cli.mjs | noop、direct、guarded、planned の分類 |
+| Operations | scripts/aios.mjs、team、harness、orchestrate、HUD | dispatch、status、evidence |
+| Browser | scripts/run-browser-use-mcp.sh、chrome.*、browser.*、page.* | CDP 上の browser-use MCP |
+| Research | scripts/lib/rl-core/、rl-* adapter | RL experiment と evaluation |
 
 ## Runtime Flow
 
-```text
-ユーザーコマンド -> zsh wrapper -> contextdb-shell-bridge.mjs -> ctx-agent.mjs -> contextdb CLI -> ネイティブ CLI
-```
+~~~text
+user command
+  -> supported client + native project guidance
+  -> optional shell bridge / ctx-agent compatibility path
+  -> .aios/context-db/index.json registry
+  -> ContextDB search、memo、checkpoint、context pack
+  -> Workflow Policy route decision
+  -> direct、Team、Solo Harness、または Orchestrate
+  -> diagnostic、test、verification evidence
+~~~
 
-## Storage Model
+route decision は implementation complete と同じではありません。file edit には pre-edit safety と final verification が必要です。
 
-各ラップされたワークスペースは独立したローカルストレージを持ちます（git ルートがある場合はそれを使用、なければカレントディレクトリ）：
+## ContextDB と storage boundary
 
-```text
-.aios/context-db/
-  manifest.json
-  index/sessions.jsonl
-  sessions/<session_id>/
-  exports/<session_id>-context.md
-```
+~~~text
+.aios/
+  context-db/
+    index.json
+    sessions/
+    index/
+    exports/
+  memo/
+    file/events.jsonl
+    split/
+~~~
 
-## Isolation Controls
+public な model は pull-based です。agent は必要な source だけを検索・recall し、全 history が自動的に渡されるわけではありません。.contextdb-enable と旧 wrapper mode は compatibility として残りますが、primary onboarding ではありません。
 
-`CTXDB_WRAP_MODE` でラッパースコープを設定：
+## Workflow Policy boundary
 
-- `all`：全ワークスペースで有効化（非 git ディレクトリを含む）
-- `repo-only`：`ROOTPATH` ワークスペースのみ
-- `opt-in`：マーカー（`.contextdb-enable`）が存在するワークスペースのみ
-- `off`：ラップ無効
+| Disposition | 用途 |
+| --- | --- |
+| noop | action 不要 |
+| direct | 回答または inspection。persistent plan なし |
+| guarded | 小さく明確な local change。edit と verification は必要 |
+| planned | multi-step、risk、delegation、resume、または不明確な task |
 
-`opt-in` はプロジェクト単位の厳格制御が必要な場合に推奨されます。
+plan の persistence は none、reuse、create です。同じ session の acknowledgement と別 client からの explicit resume は別の動作です。[Workflow Policy](workflow-policy.md) を参照してください。
 
-## Harness Layer (AIOS)
+## Team、Solo Harness、Orchestrate
 
-AIOS は ContextDB の上にオペレータ向け harness を提供します:
+- Agent Team は独立した work package の並列協調です。HUD、status、history、quality category が evidence になります。
+- Solo Harness は checkpoint、stage journal、worktree、resume status を持つ一つの長い objective 向けです。
+- Orchestrate は staged dispatch DAG と quality-gated phase 向けです。
+- dry-run は local simulation であり、live provider や client route が動くことの証明ではありません。
+- live subagent は opt-in で、実行前に doctor と command help を確認します。
 
-- `aios orchestrate` は blueprints からローカル dispatch DAG を生成
-- `dry-run` は `local-dry-run` を使用 (トークン消費なし)
-- `live` は `subagent-runtime` を使用し、外部 CLI (`codex`) でフェーズを実行 (現状 codex-cli のみ)
-- `AIOS_SUBAGENT_CLIENT=codex-cli` の場合、AIOS は `codex exec` の構造化出力 (`--output-schema`, `--output-last-message`, stdin) を優先して JSON handoff を安定化します (旧版はフォールバック)。
+~~~bash
+aios team status --watch
+aios harness status --session <session-name> --json
+aios orchestrate --help
+aios doctor --native --verbose
+~~~
 
-`live` はデフォルトで無効です。以下が必要です:
+## Browser runtime
 
-- `AIOS_EXECUTE_LIVE=1`
-- `AIOS_SUBAGENT_CLIENT=codex-cli`
+既定の browser path は browser-use MCP over CDP です。
 
-### Browser MCP (browser-use CDP)
+- launcher: scripts/run-browser-use-mcp.sh
+- launch: chrome.launch_cdp
+- connect: browser.connect_cdp
+- page: page.semantic_snapshot、page.extract_text、page.goto、page.screenshot
+- profile: config/browser-profiles.json
 
-2026-04-10 より、デフォルトのブラウザ MCP ランタイムは **browser-use MCP over CDP** です:
+visible CDP browser を使い、semantic または targeted text を先に読み、read -> act -> verify を短く保ちます。mcp-server の Playwright MCP は compatibility と低レベル inspection 用で、既定の business-flow path ではありません。
 
-- ランチャー：`scripts/run-browser-use-mcp.sh`
-- マイグレーション：`aios internal browser mcp-migrate`
-- ツール：`chrome.launch_cdp`、`browser.connect_cdp`、`page.*`、`diagnostics.sannysoft`
-- プロファイル設定：`config/browser-profiles.json`
-- スクリーンショットタイムアウトガード：`BROWSER_USE_SCREENSHOT_TIMEOUT_MS`（デフォルト：15 秒）
+## RL Training Layer (AIOS) {#rl-training-layer-aios}
 
-レガシー Playwright MCP (`mcp-server/`) は互換性のために残されていますが、デフォルトではありません。
+AIOS には通常の Harness CLI setup とは分離された multi-environment RL research surface もあります。scripts/lib/rl-core/ は campaign state、checkpoint lineage、comparison、replay、teacher signal、trainer entry point を扱い、shell、browser、orchestrator、mixed adapter を提供します。
 
-## RL Training Layer (AIOS)
-
-AIOS にはマルチ環境の強化学習システムが含まれており、シェル、ブラウザ、オーケストレータータスク間で共有生徒ポリシーを継続的に改善します。
-
-### Shared Control Plane (`scripts/lib/rl-core/`)
-
-```
-campaign-controller.mjs   # epoch オーケストレーション（収集 + 監視）
-checkpoint-registry.mjs  # active / pre_update_ref / last_stable の系列追跡
-comparison-engine.mjs     # better / same / worse / comparison_failed
-control-state-store.mjs  # 再起動安全な制御スナップショット
-epoch-ledger.mjs         # epoch 状態 + 劣化 streak
-replay-pool.mjs          # 4レーンルーティング（positive/neutral/negative/diagnostic）
-reward-engine.mjs        # 環境 reward + teacher 成形融合
-teacher-gateway.mjs      # Codex/Claude/Gemini/opencode からの正規化出力
-schema.mjs               # 共有コントラクト検証
-trainer.mjs              # PPO エントリーポイント（online + offline）
-```
-
-### Environment Adapters
-
-| Adapter | Path | Training Focus |
-|---------|------|---------------|
-| Shell RL | `scripts/lib/rl-shell-v1/` | 合成バグ修正タスク → 実リポジトリ |
-| Browser RL | `scripts/lib/rl-browser-v1/` | 管理された実際のウェブフロー |
-| Orchestrator RL | `scripts/lib/rl-orchestrator-v1/` | 高価値制御意思決定 |
-| Mixed RL | `scripts/lib/rl-mixed-v1/` | 跨環境連合トレーニング |
-
-### Key RL Concepts
-
-- **Episode contract**: 全環境で統一の構造化出力（taskId, trajectory, outcome, reward, comparison）
-- **3ポインター checkpoint 系列**：`active` → `pre_update_ref` → `last_stable`、劣化時に自動ロールバック
-- **4レーン replay pool**：positive / neutral / negative / diagnostic_only — 比較結果による確定的ルーティング
-- **Teacher gateway**：Codex CLI、Claude Code、Gemini CLI、OpenCode からの正規化信号
-
-### Running RL
-
-```bash
-# Shell RL パイプライン
+~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20
 node scripts/rl-shell-v1.mjs train --epochs 5
 node scripts/rl-shell-v1.mjs eval
-
-# 混合環境 campaign
 node scripts/rl-mixed-v1.mjs mixed --mixed
 node scripts/rl-mixed-v1.mjs mixed-eval
-```
+~~~
 
-### RL Status
+RL status と benchmark は対象 environment と version に限定した research evidence です。production reliability や公開 performance claim を自動的に証明するものではありません。
 
-- RL Core：安定（40+ テスト）
-- Shell RL V1：安定（Phase 1–3）
-- Browser RL V1：beta
-- Orchestrator RL V1：beta
-- Mixed RL：実験的（エンドツーエンド検証済み）
+## Failure boundaries
+
+- registry がない：意図した project root で aios init --all。
+- native guidance が古い：aios doctor --native --verbose、dry-run、必要なら --fix。
+- browser auth：認証 wall では human-in-the-loop を維持。
+- live route failure：dry-run と実際の provider / client status を比較。
+- verification failure：plan を閉じず、最初の failure command を記録。
+
+## 次に読む
+
+- [クイックスタート](getting-started.md)
+- [Workflow Policy](workflow-policy.md)
+- [Agent Team](team-ops.md)
+- [Solo Harness](solo-harness.md)
+- [トラブルシューティング](troubleshooting.md)

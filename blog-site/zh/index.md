@@ -1,6 +1,6 @@
 ---
 title: 博客中心
-description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Agent harness、Agent Team、浏览器自动化和自研 token 压缩。
+description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Agent harness、Agent Team、浏览器自动化、工作流策略和多客户端实践。
 ---
 
 # 博客中心
@@ -14,9 +14,15 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 - [发布文章](launch-post.md) — 为什么做这个，它解决什么问题
 - [CLI 对比](cli-comparison-post.md) — 加了这层之后有什么变化
 - [自动化作战手册](automation-playbook-post.md) — 日常使用的实用模式
+- [v4.0 自适应工作流策略](2026-07-v400-adaptive-workflow-policy.md) — 路由和计划如何选择
+- [AI Agent 工作流怎么选](2026-07-choose-agent-workflow.md) — 决策表与实战示例
+- [从 CLI 命令到可靠工作流](2026-07-raw-cli-to-reliable-workflow.md) — 让自动化可复用、可恢复
 
 ## 最新文章
 
+- [v4.0 自适应工作流策略：Harness CLI 如何选择合适的工程流程](2026-07-v400-adaptive-workflow-policy.md)
+- [AI Agent 工作流怎么选？Harness CLI 路由决策指南](2026-07-choose-agent-workflow.md)
+- [从零散 CLI 命令到可靠的 AI Agent 工作流](2026-07-raw-cli-to-reliable-workflow.md)
 - [v3.6.0：用 Headroom 与 Ponytail 构建更稳的 Token 智能工作流](2026-07-headroom-token-intelligence.md)
 - [v3.2.0：Harness 可靠性与技能生命周期升级](2026-07-v320-harness-reliability-upgrade.md)
 - [Grok Build 正式成为 AIOS 一等公民客户端](2026-07-grok-build-aios-client.md)
@@ -28,7 +34,6 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 - [v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码](2026-06-v150-unified-aios-search.md)
 - [Codemap：给你的 AI Agent 一张代码地图](2026-05-codemap-crg.md)
 - [ContextDB Token 压缩：更小的上下文包，更稳的回忆能力](2026-05-token-compression.md)
-- [自研 Token 压缩：为什么 Harness CLI 不安装 RTK 或 Caveman](2026-05-native-token-compression.md)
 - [aios memo GUI：把 Agent 的记忆变成一张活的图谱](2026-05-aios-memo-gui.md)
 - [Model Router：Agent Team 的智能多模型调度层](2026-05-model-router.md)
 - [Solo Harness：让一个 Agent 过夜跑，但你依然可控](2026-04-solo-harness.md)

@@ -1,276 +1,155 @@
 ---
-title: Troubleshooting
-description: Common setup/runtime issues and direct fixes.
+title: Troubleshooting Harness CLI
+description: Diagnose setup, ContextDB, client sync, workflow, team, browser, token-tool, and privacy failures with observable evidence.
 ---
 
 # Troubleshooting
 
-## Quick Answer (AI Search)
+## Quick Answer
 
-Most failures are setup-scope issues (missing MCP runtime, wrapper not loaded, or wrong wrap mode). Start with doctor scripts, then check wrapper scope.
+Start with one diagnostic command and keep its output:
 
-## ContextDB fails after switching Node
+~~~bash
+aios doctor --native --verbose
+~~~
 
-Harness CLI targets **Node 24 LTS** and uses Node's built-in `node:sqlite` for ContextDB, so there is no external SQLite native addon to rebuild.
+Then classify the symptom. Do not infer a live provider failure from a dry-run, and do not delete project data before identifying the first failing command.
 
-If a command exits with `Unable to resolve a Node runtime matching .nvmrc=24` or `[node-version] AIOS requires Node 24.x LTS`, install/use Node 24 first, then retry.
+## Installation and Node.js
 
-Quick fix:
+**Symptom:** aios is missing or ContextDB commands fail after switching Node.
 
-```bash
+~~~bash
 node -v
-source ~/.nvm/nvm.sh
-nvm install 24
-nvm use 24
-cd mcp-server && npm run test:contextdb
-```
+npm -v
+command -v aios
+aios doctor --native --verbose
+~~~
 
-Then retry:
+Expected evidence is Node.js 24 LTS and a resolved aios path. On macOS or Linux, reload the profile or open a new shell. On Windows, run the TLS-safe installer and reload PowerShell with . $PROFILE. If a dependency build is involved, run the project-specific test rather than deleting node_modules first.
 
-```bash
-npm run test:scripts
-```
+## ContextDB and registry
 
-## Browser MCP tools unavailable
+**Symptom:** the client cannot find project memory.
 
-Run (macOS / Linux):
+~~~bash
+test -f .aios/context-db/index.json
+find .aios/context-db -maxdepth 2 -type f | head -n 30
+aios doctor --native --verbose
+~~~
 
-```bash
-scripts/doctor-browser-mcp.sh
-```
+Confirm that aios init --all ran from the intended project root. Use unified search or an explicit memo/checkpoint to test recall. The legacy .contextdb-enable file is only a compatibility switch; it is not proof of current initialization.
 
-Run (Windows PowerShell):
+**Symptom:** a search returns no results.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-browser-mcp.ps1
-```
+~~~bash
+node scripts/aios.mjs search "release readiness" --agent codex-cli --json
+aios memo storage status
+aios memo storage rebuild
+~~~
 
-If doctor reports missing dependencies, run installer:
+Expected evidence is a source list or a storage status report. Rebuild derived indexes only after checking the canonical memo files.
 
-```bash
-scripts/install-browser-mcp.sh
-```
+## Client sync and route shortcuts
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\install-browser-mcp.ps1
-```
+**Symptom:** native instructions or shortcuts are missing.
 
-## `EXTRA_ARGS[@]: unbound variable`
+~~~bash
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --fix
+~~~
 
-Cause: old `ctx-agent.sh` with `bash set -u` empty-array expansion edge case.
+Read the dry-run plan before applying a fix. Client capability varies; a synced file does not prove that a provider route is live.
 
-Fix:
+## Workflow Policy and plans
 
-1. Pull latest `main`.
-2. Re-open shell and retry `claude`/`codex`/`gemini`.
+**Symptom:** a plan was created for a read-only question, or a small change is unexpectedly blocked.
 
-Latest versions use a unified runtime core (`ctx-agent-core.mjs`) for both shell and Node wrappers to avoid this drift.
+~~~bash
+node scripts/aios.mjs plan auto-gate --task "Explain the current auth flow" --dry-run --json
+node scripts/aios.mjs plan auto-gate --task "Refactor auth across modules" --json
+~~~
 
-## `search` returns empty after sidecar loss
+Check whether the disposition is noop, direct, guarded, or planned, and whether persistence is none, reuse, or create. Policy routing is separate from pre-edit safety and final verification. See [Workflow Policy](workflow-policy.md).
 
-If `.aios/context-db/index/context.db` is missing or stale:
+## Team and Solo Harness
 
-1. Run `cd mcp-server && npm run contextdb -- index:rebuild`
-2. Retry `search` / `timeline` / `event:get`
+**Symptom:** a team or harness run stops, is blocked, or shows no live progress.
 
-## `contextdb context:pack failed`
+~~~bash
+aios team history --provider codex --limit 5
+aios harness status --session <session-id> --json
+aios hud --session <session-id> --json
+~~~
 
-AIOS wraps `codex`/`claude`/`gemini` by generating a ContextDB “context packet” (`context:pack`) first.
+Read the first failed job or iteration. For a blocked team, retry only the blocked work:
 
-If packing fails, `ctx-agent` will **warn and continue** (it runs the CLI without injected context rather than crashing).
+~~~bash
+aios team --resume <session-id> --retry-blocked --provider codex --workers 2
+~~~
 
-To make packing failures fatal (strict mode):
+For a solo run, stop with a reason and resume after fixing the first failure:
 
-```bash
-export CTXDB_PACK_STRICT=1
-```
+~~~bash
+aios harness stop --session <session-id> --reason "diagnose first failure"
+aios harness resume --session <session-id>
+~~~
 
-Note: shell wrappers (`codex`/`claude`/`gemini`) default to fail-open even if `CTXDB_PACK_STRICT=1` is set, to avoid bricking interactive sessions. To enforce strict packing for wrapped CLI runs too:
+A dry-run creates local state but does not test provider credentials or live routes.
 
-```bash
-export CTXDB_PACK_STRICT_INTERACTIVE=1
-```
+## Browser MCP
 
-If this keeps happening, run the quality gate (includes ContextDB regression checks):
+**Symptom:** browser tools are missing or page actions fail.
 
-```bash
-aios quality-gate pre-pr --profile strict
-```
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-## Context disappears after `/new` (Codex) or `/clear` (Claude/Gemini)
+Use the documented browser-use CDP path: launch a visible CDP browser, connect, read a semantic snapshot or targeted text, then act and verify. Keep authentication walls human-controlled. Playwright MCP is a compatibility path.
 
-`/new` and `/clear` reset the **in-CLI conversation state**. ContextDB is still stored on disk, but the wrapper only injects a context packet when the CLI process starts.
+## Token tools
 
-Fix:
+**Symptom:** RTK, Caveman, or Headroom is missing or the consent flow stops.
 
-1. Preferred: exit the CLI and re-run `codex` / `claude` / `gemini` from your shell.
-2. If you must stay in the same process: in the new conversation, ask the agent to read:
-   - `@.aios/context-db/exports/latest-codex-cli-context.md`
-   - `@.aios/context-db/exports/latest-claude-code-context.md`
-   - `@.aios/context-db/exports/latest-gemini-cli-context.md`
+~~~bash
+node scripts/aios.mjs init --all --dry-run
+aios doctor --native --verbose
+node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+~~~
 
-If `@file` mentions are not supported, paste the file contents as your first prompt.
+The package-install consent and user-scope MCP consent are separate. Inspect external or conflict Headroom registrations before changing them. Do not claim savings without headroom_stats showing positive saved-token totals.
 
-## `aios orchestrate --execute live` is blocked or fails
+## Privacy and sensitive files
 
-Live orchestration is opt-in.
+**Symptom:** a command would expose credentials or private configuration.
 
-1. Enable live execution gate:
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-```bash
-export AIOS_EXECUTE_LIVE=1
-```
-
-2. Set the codex-only subagent client (required):
-
-```bash
-export AIOS_SUBAGENT_CLIENT=codex-cli
-```
-
-3. Ensure `codex` exists on `PATH` and is authenticated (for example, `codex --version`).
-
-Windows quick check (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-contextdb-shell.ps1
-codex --version
-codex
-```
-
-Expected: no TTY errors like `stdout is not a terminal`, and the interactive `codex` session attaches to the terminal correctly.
-
-Tip (codex-cli): Codex CLI v0.114+ supports `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin). AIOS uses them when available for more reliable JSON handoffs. Codex child workers also run with `--dangerously-bypass-approvals-and-sandbox` by default to prevent unattended live runs from waiting on approval or sandbox prompts; set `AIOS_SUBAGENT_CODEX_UNATTENDED=0` only for manual debugging.
-
-If routed startup is still looking for `scripts/aios.mjs` inside the current non-AIOS repo, pull latest `main`; recent builds make routed `ctx-agent` startup workspace-aware instead of assuming the source-repo layout.
-
-Tip: to validate the DAG without any model calls, use `--execute dry-run` (or set `AIOS_SUBAGENT_SIMULATE=1` for the live runtime adapter simulation).
-
-Common failure signatures:
-
-- `type: upstream_error` / `server_error`: upstream instability. Retry later (AIOS retries a couple times automatically).
-- `Timed out after 600000 ms`: increase `AIOS_SUBAGENT_TIMEOUT_MS` (for example `900000`) or shrink the context packet via `AIOS_SUBAGENT_CONTEXT_LIMIT` / `AIOS_SUBAGENT_CONTEXT_TOKEN_BUDGET`.
-- `invalid_json_schema` (`param: text.format.schema`): the backend rejected the structured output schema. Pull latest `main` and retry; AIOS will also retry without `--output-schema` when it detects schema rejection.
-
-Minimal structured-output smoke check (macOS/Linux):
-
-```bash
-printf '%s' 'Return a JSON object matching the schema.' | codex exec --output-schema scripts/lib/specs/agent-handoff.schema.json -
-```
-
-## Commands not wrapped
-
-Check these conditions:
-
-- You are inside a git repo (`git rev-parse --show-toplevel` works).
-- `ROOTPATH/scripts/contextdb-shell.zsh` exists and is sourced.
-- `CTXDB_WRAP_MODE` allows current repo (`opt-in` requires `.contextdb-enable`).
-
-Run wrapper doctor first:
-
-```bash
-scripts/doctor-contextdb-shell.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-contextdb-shell.ps1
-```
-
-## `CODEX_HOME points to ".codex"` error
-
-Cause: `CODEX_HOME` is set to a relative path.
-
-Fix:
-
-```bash
-export CODEX_HOME="$HOME/.codex"
-mkdir -p "$CODEX_HOME"
-```
-
-Latest wrapper scripts also auto-normalize relative `CODEX_HOME` during command execution.
-
-## Wrapper loaded but should be disabled
-
-Set in shell config:
-
-```zsh
-export CTXDB_WRAP_MODE=off
-```
-
-## Skills unexpectedly shared across projects
-
-Skill loading scope is separate from ContextDB wrapping:
-
-- Global skills: `~/.codex/skills`, `~/.claude/skills`, `~/.gemini/skills`, `~/.config/opencode/skills`, `~/.hermes/skills`, `~/.grok/skills`
-- Project-only skills: `<repo>/.codex/skills`, `<repo>/.claude/skills`
-
-If you need isolation, keep custom skills in repo-local folders.
-
-## `--scope project` fails inside the Harness CLI source repo
-
-This is expected after the canonical skill-source migration.
-
-- `skill-sources/` is the authoring tree
-- repo-local `.codex/skills` / `.claude/skills` / `.agents/skills` are sync-owned generated outputs
-- installing `--scope project` into the source repo is blocked on purpose
-
-Use this instead:
-
-```bash
-node scripts/sync-skills.mjs
-node scripts/check-skills-sync.mjs
-```
-
-If you want to install skills into some other repo, run `aios ... --scope project` from that target workspace.
-
-## Repo skills are not available globally
-
-Wrappers and skills are separate by design. Install skills explicitly:
-`--client all` installs for `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok`.
-
-```bash
-scripts/install-contextdb-skills.sh --client all
-scripts/doctor-contextdb-skills.sh --client all
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\install-contextdb-skills.ps1 -Client all
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-contextdb-skills.ps1 -Client all
-```
-
-## GitHub Pages `configure-pages` Not Found
-
-This usually means Pages source is not fully enabled.
-
-Fix in GitHub settings:
-
-1. `Settings -> Pages -> Source: GitHub Actions`
-2. Re-run `docs-pages` workflow.
+Use the redacted output, never raw .env, cookies, tokens, private keys, or browser profiles. If a report needs logs, remove provider tokens and personal paths first.
 
 ## FAQ
 
-### What is the first command to run when browser tools fail?
+### Should I delete .aios to fix a problem?
 
-Run `scripts/doctor-browser-mcp.sh` (or PowerShell variant) before reinstalling.
+No. Identify the first failure and back up sessions, exports, and memo JSONL before removing derived data.
 
-### Why is context not injected after I type `codex`?
+### Does a successful dry-run mean the system works?
 
-Usually because the wrapper is not loaded, wrapper scope (`CTXDB_WRAP_MODE`) excludes the current workspace, or the command is a passthrough management subcommand.
+No. It proves local parsing and planned state. Run a small live task when provider and credential checks are in scope.
 
+### Which output should I share?
 
-## Skills were saved into the wrong repo directory
+Share the command, exit code, runtime versions, and the smallest redacted excerpt that proves the symptom.
 
-Canonical repo skill sources now live in:
+## Next steps
 
-- `<repo>/skill-sources`
-
-Generated repo-local discoverable outputs live in:
-
-- `<repo>/.codex/skills`
-- `<repo>/.claude/skills`
-
-If you save a `SKILL.md` under a parallel directory such as `.baoyu-skills/`, Codex / Claude will not discover it as a repo-local skill.
-
-- Use `.baoyu-skills/` only for extension config such as `EXTEND.md`
-- Move real canonical skill source files to `skill-sources/<name>/SKILL.md`
-- Rebuild generated client roots with `node scripts/sync-skills.mjs`
-- Run `scripts/doctor-contextdb-skills.sh --client all` to detect unsupported repo skill roots
+- [Quick Start](getting-started.md)
+- [ContextDB](contextdb.md)
+- [Workflow Policy](workflow-policy.md)
+- [Token Intelligence](token-compression.md)
+- [Case Library](case-library.md)

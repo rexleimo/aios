@@ -5,6 +5,12 @@ description: Content outcome tracking, statistical insight generation, and perce
 
 # Perception Layer
 
+> **Quick Answer:** Perception は構造化されたコンテンツ結果を記録し、次の判断に必要な範囲の統計サマリーを作ります。分析とフィードバックの層であり、コンテンツの正しさや全履歴の自動注入を保証するものではありません。
+
+## 有界なフィードバックループ
+
+結果を記録し、十分なサンプルが集まったら insight を生成し、必要なときだけ summary を pull します。コンテキストを履歴で埋めないよう、出力サイズを制限します。
+
 > Let your agent learn from content operation results — what worked, what didn't, and why.
 
 The perception loop closes the gap between "agent does something" and "agent knows the result." It records structured outcome snapshots, generates statistical insights by dimension, and injects a perception summary into the agent's context so future decisions are data-informed.
@@ -192,3 +198,17 @@ aios perception summary [--format text|json] [--max-chars <n>]
 | `--format` | text | Output format: text or json |
 | `--max-chars` | 10000 | Max output characters |
 | `--space` | default | Workspace memory space |
+
+## FAQ
+
+### Perception はコンテンツを自動公開・最適化しますか？
+
+いいえ。結果を記録して統計サマリーを作るだけです。公開、編集、外部操作には別の承認と検証が必要です。
+
+### どれだけの履歴がタスクに入りますか？
+
+`PERCEPTION_MAX_CHARS` などで summary の上限を設定します。pull-based のルールに従い、次の判断に必要な材料だけを読み込みます。
+
+## 正規ドキュメント
+
+[ContextDB](contextdb.md)、[ワークフローポリシー](workflow-policy.md)、[トラブルシューティング](troubleshooting.md)と組み合わせてください。

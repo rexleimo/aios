@@ -1,267 +1,119 @@
 ---
-title: Agent Team
-description: When to use multiple agents, how to start and monitor them, and when NOT to use teams.
+title: Agent Team: Parallel Work with Evidence
+description: Choose independent work packages, start an Agent Team, monitor HUD status, and recover blocked jobs safely.
 ---
 
 # Agent Team
 
-**One agent is good. Multiple agents working together can be great — but only when the task actually calls for it.**
+## Quick Answer
 
-Agent Team lets you split a task across multiple coding agents working in parallel. Each agent handles part of the work, and you can monitor their progress in real time.
+Use Agent Team when a task can be split into two or more independent work packages with clear ownership and acceptance criteria. Use one client for a small or coupled change, Solo Harness for one long objective, and Orchestrate for staged quality-gated execution. A dry run checks local dispatch state; it does not prove that a live provider is available.
 
-## The One Command To Remember
+## Do it now
 
-```bash
-# Start 3 agents on a task
-aios team 3:codex "Build the settings page, add tests, and update docs"
+Preview the dispatch first:
 
-# Watch them work
-aios team status --provider codex --watch
-```
+~~~bash
+aios team --provider codex --workers 3 --task "Review auth, tests, and docs" --dry-run --json
+~~~
 
-## When To Use Teams (And When Not To)
+When the task and live provider are ready:
 
-### Good fit for Agent Team
-
-- The task has **independent parts** (frontend + backend + tests + docs)
-- You already know the **acceptance criteria** ("tests must pass", "docs must be updated")
-- The work can be split without agents **editing the same files**
-- You're OK spending extra tokens for faster parallel execution
-
-### Bad fit for Agent Team
-
-- The requirement is still **unclear** — you're still figuring out what to build
-- It's a **small bug** or **single-file fix**
-- Multiple agents would **step on each other's toes** (editing the same files)
-- You're **debugging** something that needs stable, reproducible steps
-
-!!! tip "When in doubt, use one agent"
-    ```bash
-    codex  # Start with a single agent
-    ```
-    If the task turns out to be parallelizable, you can always start a team later.
-
-### Quick Checklist
-
-Before starting a team, confirm all three:
-
-- [ ] The task splits into 2+ independent modules
-- [ ] Workers will NOT edit the same files
-- [ ] You can describe the acceptance criteria in one sentence
-
-## The 10-Minute Flow
-
-### 1. Write A Clear Task
-
-A good task description has three parts: **goal**, **boundary**, and **acceptance criteria**.
-
-```bash
-aios team 3:codex \
-  "Improve login form error messages; \
-   do not change the auth API; \
-   run related tests and update docs before finishing"
-```
-
-### 2. Start Monitoring
-
-```bash
-aios team status --provider codex --watch
-```
-
-For a lighter view:
-
-```bash
-aios team status --provider codex --watch --preset minimal --fast
-```
-
-### 3. Check History And Failures
-
-```bash
-# Recent team runs
-aios team history --provider codex --limit 20
-
-# Only failed runs
-aios team history --provider codex --quality-failed-only
-```
-
-### 4. Run A Quality Check Before Finishing
-
-```bash
-aios quality-gate pre-pr --profile strict
-```
-
-If the quality gate fails, **inspect the failure first**. Don't just start more workers.
-
-## How Many Agents Should I Use?
-
-| Count | Command | Best for |
-|---|---|---|
-| 2 | `aios team 2:codex "task"` | First time, or when files might overlap |
-| 3 | `aios team 3:codex "task"` | Most daily features (recommended) |
-| 4 | `aios team 4:codex "task"` | Very independent modules with clear tests |
-
-If you see conflicts or duplicate edits, **reduce** the count — don't increase it.
-
-## Choosing A Provider
-
-```bash
-aios team 3:codex "task"       # Good for daily implementation
-aios team 2:claude "task"      # Good for analysis or planning
-aios team 2:gemini "task" --dry-run  # Preview without running
-```
-
-## If Something Goes Wrong
-
-### A run was interrupted
-
-Check what happened first:
-
-```bash
-aios team history --provider codex --limit 5
-```
-
-Then retry only the blocked parts:
-
-```bash
-aios team --resume <session-id> --retry-blocked --provider codex --workers 2
-```
-
-!!! warning "Don't just start a bigger team"
-    Figure out why the previous run failed before starting a new one. More agents on a broken task won't help.
-
-## How Team Works Under The Hood
-
-When you start a team, Harness CLI uses a **GroupChat Runtime** — a round-based system where agents share a conversation thread:
-
-```
-Round 1 → Planner analyzes the task and creates work items
-Round 2 → N implementers work in parallel (one per work item)
-Round 3 → Reviewer checks the results
-```
-
-If an agent gets stuck, the planner **automatically re-plans** the next round.
-
-### Blueprints
-
-| Blueprint | Rounds | Best for |
-|---|---|---|
-| `bugfix` | plan → implement → review | Simple fixes, small scope |
-| `feature` | plan → implement → review + security | New features with quality checks |
-| `refactor` | plan → implement → review | Pure refactoring, no new features |
-| `security` | assess → plan → implement → review | Security-sensitive changes |
-
-Use the smallest blueprint that fits your task.
-
-Blueprints, role cards, runtime manifests, executor manifests, and handoff schemas are packaged under `scripts/lib/specs/`. Team run state and evidence are still written to `.aios/context-db/`; `.aios/memo/` is only for project memo records and is not the team runtime store.
-
-## Agent Governance And Smoke Evidence
-
-As the agent surface grows, treat every workflow change like a contract change. Before you let a team or harness run go live, prove that the new behavior still fits the system with smoke evidence and training checks.
-
-```bash
-# Preview the agent smoke path without live execution
-node scripts/aios.mjs agents smoke --dry-run --json
-
-# Record smoke evidence for the active agent set
-node scripts/aios.mjs agents smoke --json
-
-# Confirm changed skills were trained before live use
-node scripts/aios.mjs skill verify-training --changed --base HEAD --json
-```
-
-Smoke runs now write three evidence streams for each core-risk agent:
-
-- `.aios/agents/smoke/<agent>.json`
-- `.aios/agents/provenance/<agent>.json`
-- `.aios/interception/metrics/agents-smoke-<agent>.jsonl`
-
-Use that evidence to decide whether a docs change, skill update, or routing tweak is ready for live workflows. If the skill changed, training verification is part of the definition of done.
-
-### Configuration
-
-```bash
-# Required for live execution
-export AIOS_EXECUTE_LIVE=1
-export AIOS_SUBAGENT_CLIENT=codex-cli  # or claude-code, gemini-cli
-
-# How many agents run at once per round (default: 3)
-export AIOS_SUBAGENT_CONCURRENCY=3
-
-# Timeout per agent turn in ms (default: 10 min)
-export AIOS_SUBAGENT_TIMEOUT_MS=600000
-```
-
-## Team vs. Harness vs. Orchestrate
-
-| Need | Use |
-|---|---|
-| Multiple agents on one task | `aios team ...` |
-| One agent working overnight | `aios harness run ...` |
-| Staged execution with gates | `aios orchestrate ...` |
-
-New users should start with `team`. Orchestration is for advanced users who need strict staged execution.
-
-## Command Reference
-
-```bash
-# Start a team (dry-run by default)
-aios team 3:codex "Ship feature X"
-
-# Start a team with live execution
+~~~bash
 AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
-  aios team 3:codex "Ship feature X"
+  aios team 3:codex "Review auth, tests, and docs"
+~~~
 
-# Watch current status
+## Choose the right route
+
+| Need | Route |
+| --- | --- |
+| Answer, inspect, or one small local change | direct or guarded |
+| One clear long-running objective | [Solo Harness](solo-harness.md) |
+| Two or more independent work packages | Agent Team |
+| Ordered phases with explicit gates | aios orchestrate |
+| Requirements are still unclear | interactive client first |
+
+## Before starting
+
+Write one sentence that includes the goal, boundary, and acceptance evidence:
+
+~~~text
+Goal: update the login form
+Boundary: do not change the auth API
+Evidence: focused tests pass and the changed docs link to the new behavior
+~~~
+
+Confirm that workers will not edit the same files. If the files overlap, keep ownership sequential or use one agent.
+
+## Monitor and review
+
+~~~bash
 aios team status --provider codex --watch
-
-# Recent history
+aios hud --provider codex
 aios team history --provider codex --limit 20
-
-# Failures only
 aios team history --provider codex --quality-failed-only
+aios quality-gate pre-pr --profile strict
+~~~
 
-# Retry blocked jobs
+Review changed files and quality categories before merging any worker output. Status is operational evidence, not proof that the code is correct.
+
+## Governance evidence
+
+When adding agents, changing routing, or updating workflow skills, run the smoke and training checks before relying on a live team:
+
+~~~bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+~~~
+
+These checks write evidence under .aios/agents/ and .aios/interception/metrics/. Keep sensitive provider output out of public issues.
+
+## Recovery
+
+Inspect the latest session before retrying:
+
+~~~bash
+aios team history --provider codex --limit 5
 aios team --resume <session-id> --retry-blocked --provider codex --workers 2
+~~~
 
-# Current session HUD
-aios hud --provider codex
-```
+Reduce worker count when jobs conflict. Use --force only when you understand the safety guard that would otherwise stop the retry.
 
-## Advanced Operations Reference
+## How the runtime is organized
 
-The following commands are recommended for advanced users who are familiar with the basic flow.
+A normal live team uses rounds:
 
-### HUD Presets
+~~~text
+planner -> independent implementers -> reviewer
+                 |
+                 +-> blocked work can cause a replanning round
+~~~
 
-| Preset | Use case |
-|---|---|
-| `minimal` | Long-running watches |
-| `compact` | Terminal-friendly summary |
-| `focused` | Balanced default |
-| `full` | Full diagnostics |
+Blueprints are selected by the runtime: feature, bugfix, refactor, or security. Choose the smallest blueprint that matches the work and keep the task artifact available when preflight needs it.
 
-```bash
-aios hud --provider codex
-aios hud --watch --preset focused
-aios hud --session <session-id> --json
-```
+## FAQ
 
-### Skill Candidates
+### Is Team always faster?
 
-Skill candidates are improvement suggestions extracted from failed sessions. Review them during failure retrospectives — not as a first step.
+No. It adds coordination and provider work. It is useful when ownership is truly independent, not for a single-file fix.
 
-```bash
-aios team status --show-skill-candidates
-aios team skill-candidates list --session <session-id>
-aios team skill-candidates export --session <session-id> --output ./candidate.patch.md
-```
+### Does dry-run test the provider?
 
-!!! warning "Human review required"
-    Always review skill candidate patches before applying them, especially suggestions that modify skills, hooks, or MCP configuration.
+No. It tests local parsing and planned dispatch. A live smoke task is required to test a provider and client route.
 
-## Where To Go Next
+### How many workers should I use?
 
-- [Solo Harness](solo-harness.md) — when you need one agent working overnight
-- [HUD Guide](hud-guide.md) — monitoring dashboard details
-- [Find Commands By Scenario](use-cases.md) — more command examples
-- [Troubleshooting](troubleshooting.md) — fix common issues
+Start with two for uncertain boundaries and three for clearly independent daily work. More workers increase coordination and overlap risk.
+
+### Can I resume a blocked run?
+
+Yes. Read history, identify the blocked job, then use resume with retry-blocked. Do not restart the whole team blindly.
+
+## Next steps
+
+- [HUD Guide](hud-guide.md) - inspect detailed session evidence.
+- [Workflow Policy](workflow-policy.md) - understand planned and team route hints.
+- [Solo Harness](solo-harness.md) - run one long objective.
+- [Use Cases](use-cases.md) - compare commands by intent.

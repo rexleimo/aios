@@ -1,153 +1,131 @@
 ---
-title: Solo Harness
-description: Let one agent work overnight on a clear task — with journals, stop/resume controls, and optional git worktree isolation.
+title: Solo Harness: Resumable Long-Running Work
+description: Run one clear objective with journals, stop and resume controls, verification evidence, and optional git worktree isolation.
 ---
 
 # Solo Harness
 
-**Give your agent a task before you go to sleep. Check the results in the morning.**
+## Quick Answer
 
-Solo Harness is for when you have **one clear objective** that's worth running for a long time. It keeps a journal of everything the agent does, and you can stop, check status, or resume at any time.
+Use Solo Harness for one explicit objective that may outlast an interactive session but does not need parallel workers. It records a run journal and checkpoints, supports status, stop, and resume, and can isolate changes in a git worktree. Use Agent Team for independent modules and Orchestrate for ordered quality-gated phases.
 
-## When To Use Solo Harness
+## Do it now
 
-### Good fit
+Start a bounded run in an isolated worktree:
 
-- You have **one clear goal** — like "refactor the auth module" or "write integration tests for the payment flow"
-- The task is **too big for a single session** but doesn't need multiple agents
-- You want the agent to keep working **while you're away**
-- You want changes **isolated** from your main branch (with `--worktree`)
-
-### Not a good fit
-
-- The task could be **split across independent modules** — use [Agent Team](team-ops.md) instead
-- You need **staged execution with quality gates** — use `aios orchestrate ...`
-- You're still **figuring out the requirements** — start with a normal interactive session first
-
-## Quick Start
-
-```bash
-# Start an overnight run in an isolated worktree
+~~~bash
 aios harness run \
   --objective "Refactor the auth module and write integration tests" \
   --session nightly-auth \
   --worktree \
   --max-iterations 20
+~~~
 
-# Check status anytime
+Inspect it:
+
+~~~bash
 aios harness status --session nightly-auth --json
-
-# Monitor in HUD
 aios hud --session nightly-auth --json
+~~~
 
-# Tell it to stop (at the next safe point)
-aios harness stop --session nightly-auth --reason "morning review"
+## Choose Solo Harness when
 
-# Continue later
-aios harness resume --session nightly-auth --max-iterations 10
-```
+| Situation | Route |
+| --- | --- |
+| one clear goal, one provider, long-running | Solo Harness |
+| independent modules with separate ownership | [Agent Team](team-ops.md) |
+| staged phases and gates | aios orchestrate |
+| unclear requirements or a small fix | interactive client with Workflow Policy |
 
-## The Overnight Workflow
+Write the objective so another person can tell whether it is complete. Include scope, exclusions, and expected verification.
 
-Here's how a typical overnight session works:
+## Worktree isolation
 
-```
-Evening:
-  1. Write a clear objective
-  2. Start with --worktree (isolates changes from your main branch)
-  3. Check status once to confirm it started OK
-  4. Go to sleep
+The --worktree option runs the objective in a separate git worktree seeded from the selected base ref. Review the worktree and its diff before merging or copying anything back. Worktree isolation does not make unsafe commands safe and does not bypass repository policies.
 
-Morning:
-  5. Check status or HUD to see what happened
-  6. If done: review the changes in the worktree
-  7. If stuck: read the journal, fix issues, and resume
-```
+## Dry run before live
 
-## Why Use `--worktree`?
+Create the journal without invoking a provider:
 
-The `--worktree` flag creates a **separate git worktree** — a copy of your repo where the agent can make changes without affecting your main branch.
-
-- If the agent produces great work: merge it in
-- If the agent goes off track: just delete the worktree, no harm done
-
-**This is recommended for all overnight runs.**
-
-## Try Before You Commit (Dry Run)
-
-Want to see what would happen without spending tokens?
-
-```bash
+~~~bash
 aios harness run \
-  --objective "Draft tomorrow handoff" \
+  --objective "Draft tomorrow's handoff" \
   --session test-run \
   --worktree \
   --max-iterations 3 \
   --dry-run --json
-```
+~~~
 
-Dry run creates the session structure but doesn't actually invoke the agent.
+A dry run proves argument parsing and local journal creation. It does not prove that the provider, client, credentials, or live route work.
 
-## Agent Self-Trigger
+## Stop, inspect, and resume
 
-When you're using a wrapped CLI (`codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok`), your agent can **trigger a harness run itself** when it recognizes a long-running task:
+~~~bash
+aios harness stop --session nightly-auth --reason "morning review"
+aios harness status --session nightly-auth --json
+aios harness resume --session nightly-auth --max-iterations 10
+~~~
 
-```
-You: "This refactoring is going to take a while. Keep working on it overnight."
-Agent: *triggers harness run with the current objective*
-```
+Resume only after reading the last status, checkpoint, and failing command. Keep the same objective unless you intentionally start a new session.
 
-You can control this behavior:
+## Hooks and provider controls
 
-```bash
-# Change the default agent
-export CTXDB_HARNESS_PROVIDER=claude
+Lifecycle hooks are enabled by default and record stage evidence. You can opt out for a specific run:
 
-# Change the max iterations
-export CTXDB_HARNESS_MAX_ITERATIONS=12
+~~~bash
+aios harness run --objective "task" --session demo --hooks
+aios harness resume --session demo --no-hooks
+~~~
 
-# Disable the auto-route prompt
-export CTXDB_INTERACTIVE_AUTO_ROUTE=0
-```
+The provider can be selected explicitly:
 
-## Hook Controls
+~~~bash
+aios harness run --objective "task" --provider codex --profile strict
+~~~
 
-By default, harness runs record lifecycle hooks (evidence of what happened at each step). You can toggle this:
+Provider availability and route support still need a live check. Do not infer them from a dry-run result.
 
-```bash
-# With hooks (default)
-aios harness run --objective "task" --session my-run --hooks
+## What gets written
 
-# Without hooks (less noise)
-aios harness resume --session my-run --no-hooks
-```
+Run artifacts are stored under the project ContextDB session:
 
-## What Gets Written
-
-All artifacts live in your project:
-
-```
+~~~text
 .aios/context-db/sessions/<session-id>/artifacts/solo-harness/
-  ├── objective.md           # The goal you gave it
-  ├── run-summary.json       # Current state and progress
-  ├── control.json           # Stop requests and notes
-  ├── hook-events.jsonl      # Lifecycle evidence
-  ├── iteration-0001.json    # What happened in iteration 1
-  ├── iteration-0001.log     # Raw log for debugging
-  └── ...
-```
+  objective.md
+  run-summary.json
+  control.json
+  hook-events.jsonl
+  iteration-0001.json
+  iteration-0001.log
+~~~
 
-## Solo Harness vs. Agent Team
+Treat logs and checkpoints as project data. Redact credentials and private provider output before sharing them.
 
-| Need | Use |
-|---|---|
-| One agent, one goal, long-running | `aios harness run ...` |
-| Multiple agents on a splittable task | `aios team ...` |
-| Staged execution with preflight gates | `aios orchestrate ...` |
+## Recovery checklist
 
-## Where To Go Next
+1. Read status and the latest iteration log.
+2. Identify the first failure, not only the last symptom.
+3. Run the smallest diagnosis command.
+4. Stop or resume with an explicit reason.
+5. Verify the resulting diff and tests before merge.
 
-- [Agent Team](team-ops.md) — when one agent isn't enough
-- [HUD Guide](hud-guide.md) — monitoring dashboard
-- [Find Commands By Scenario](use-cases.md) — more command examples
-- [Troubleshooting](troubleshooting.md) — fix common issues
+## FAQ
+
+### Does Solo Harness guarantee an overnight result?
+
+No. It provides a resumable loop and evidence. Provider limits, credentials, tests, and task complexity can still stop a run.
+
+### Should I use --worktree every time?
+
+Use it when you want isolation or the objective may edit code. A documentation-only or read-only run may not need it, but review the workspace boundary explicitly.
+
+### Can a wrapped client trigger a harness run?
+
+Native route prompts can suggest a harness route when supported. Treat the resulting command as a normal run: inspect status, provider, and evidence.
+
+## Next steps
+
+- [Agent Team](team-ops.md) - split independent work.
+- [HUD Guide](hud-guide.md) - monitor session details.
+- [Workflow Policy](workflow-policy.md) - decide whether the task is planned.
+- [Troubleshooting](troubleshooting.md) - recover a failed runtime.

@@ -1,141 +1,131 @@
 ---
-title: Architecture
-description: Runtime architecture for wrappers, runner, and filesystem ContextDB.
+title: Harness CLI Architecture
+description: See how client guidance, ContextDB, workflow policy, Team, Harness, browser-use CDP, and RL research surfaces connect.
 ---
 
 # Architecture
 
+## Quick Answer
+
+Harness CLI is a set of local boundaries around an existing coding client. Shell and native guidance identify the project, ContextDB stores and retrieves project evidence, Workflow Policy chooses the smallest route, and Team, Solo Harness, or Orchestrate run work when the task requires it. Browser-use CDP is the default browser path; the legacy Playwright MCP server remains a compatibility path.
+
 ## Components
 
-- `scripts/contextdb-shell.zsh`: shell wrappers for `codex/claude/gemini`
-- `scripts/contextdb-shell-bridge.mjs`: wrap/passthrough decision bridge
-- `scripts/ctx-agent.mjs`: unified runtime runner
-- `mcp-server/src/contextdb/*`: ContextDB core and CLI commands
+| Layer | Main surface | Responsibility |
+| --- | --- | --- |
+| Client entry | scripts/contextdb-shell.zsh, client-sources/, native guidance | expose project instructions and route hints |
+| Startup bridge | scripts/contextdb-shell-bridge.mjs, scripts/ctx-agent.mjs | decide wrapper or passthrough behavior and launch the client |
+| ContextDB | mcp-server/src/contextdb/, .aios/context-db/ | persist sessions, memo, checkpoints, search data, and context packs |
+| Workflow Policy | scripts/lib/planning/workflow-policy.mjs, auto-gate.mjs, cli.mjs | classify noop, direct, guarded, or planned work |
+| Operations | scripts/aios.mjs, team, harness, orchestrate, HUD | dispatch work, record status, and surface evidence |
+| Browser | scripts/run-browser-use-mcp.sh, chrome.*, browser.*, page.* | run browser-use MCP over CDP |
+| Research | scripts/lib/rl-core/, rl-* adapters | isolated RL experiments and evaluation |
 
-## Runtime Flow
+## Runtime flow
 
-```text
-User command (codex/claude/gemini)
-  -> zsh wrapper
-  -> contextdb-shell-bridge.mjs
-  -> ctx-agent.mjs
-  -> contextdb CLI (init/session/pack/...)
-  -> native CLI launch with packed context
-```
+~~~text
+user command
+  -> supported client and native project guidance
+  -> optional shell bridge / ctx-agent compatibility path
+  -> .aios/context-db/index.json registry
+  -> ContextDB search, memo, checkpoint, or context pack
+  -> Workflow Policy route decision
+  -> direct work, Team, Solo Harness, or Orchestrate
+  -> diagnostics, tests, and verification evidence
+~~~
 
-## Storage Model
+A route decision is not a completed implementation. File edits still pass pre-edit safety and final verification gates.
 
-Each wrapped workspace has its own local store (git root if available, otherwise current directory):
+## ContextDB and storage boundaries
 
-```text
-.aios/context-db/
-  manifest.json
-  index/sessions.jsonl
-  sessions/<session_id>/
-  exports/<session_id>-context.md
-```
+The project registry points to local sources:
 
-## Isolation Controls
+~~~text
+.aios/
+  context-db/
+    index.json
+    sessions/
+    index/
+    exports/
+  memo/
+    file/events.jsonl
+    split/
+~~~
 
-Set wrapper scope with `CTXDB_WRAP_MODE`:
+The current public model is pull-based. The agent searches or recalls relevant sources instead of receiving all history automatically. Older wrapper modes and .contextdb-enable remain compatibility behavior and are not the preferred onboarding path.
 
-- `all`: wrap in all workspaces, including non-git directories
-- `repo-only`: only wrap in the `ROOTPATH` workspace
-- `opt-in`: wrap only when marker exists (default marker: `.contextdb-enable`)
-- `off`: disable wrapping
+## Workflow Policy boundary
 
-Use `opt-in` if you want strict project-by-project control.
+Workflow Policy is risk-based:
 
-## Harness Layer (AIOS)
+| Disposition | Use |
+| --- | --- |
+| noop | no action is required |
+| direct | answer or inspect without a persistent plan |
+| guarded | small, clear local change with edit and verification gates |
+| planned | multi-step, risky, delegated, resumable, or unclear work |
 
-AIOS adds an operator-facing harness on top of ContextDB:
+Plans can be none, reused, or newly created. Same-session acknowledgement is distinct from explicit cross-client resume. See [Workflow Policy](workflow-policy.md) for the canonical rules.
 
-- `aios orchestrate` builds a local dispatch DAG from blueprints.
-- `dry-run` execution uses `local-dry-run` (token-free simulation).
-- `live` execution uses `subagent-runtime` and runs phase jobs via Codex CLI (`codex`) (currently codex-only).
-- When using `AIOS_SUBAGENT_CLIENT=codex-cli`, AIOS prefers `codex exec` structured outputs (`--output-schema`, `--output-last-message`, stdin) for stable JSON handoffs (falls back for older versions).
-- Solo harness iterations record an explicit stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) plus evidence, then persist per-iteration ContextDB checkpoints when a session exists.
+## Team, Solo Harness, and Orchestrate
 
-### Team Operations (HUD & Team Status)
+- Agent Team is for independent work packages that can be owned separately. HUD, status, history, and quality categories provide operational evidence.
+- Solo Harness is for one explicit long-running objective with checkpoints, stage journals, worktree support, and resume status.
+- Orchestrate is for staged dispatch DAGs and quality-gated phase execution.
+- dry-run is a local simulation. It confirms parsing and planned state, not that a live model provider or client route will work.
+- live subagent execution is opt-in and currently uses the configured subagent runtime boundary. Inspect the current doctor and command help before enabling it.
 
-AIOS provides real-time visibility into agent sessions:
+Relevant controls:
 
-- **HUD** (`aios hud`): Per-session dashboard showing goal, dispatch status, quality-gate outcomes, and skill candidates
-- **Team Status** (`aios team status`): Aggregated view across recent sessions
-- **Team History** (`aios team history`): Historical analysis with quality-gate filtering and hindsight patterns
-- **Skill Candidates** (`aios team skill-candidates`): Automated improvement suggestions from failed sessions
+~~~bash
+aios team status --watch
+aios harness status --session <session-name> --json
+aios orchestrate --help
+aios doctor --native --verbose
+~~~
 
-See [Agent Team & HUD](team-ops.md) for usage details.
+## Browser runtime
 
-Live execution is opt-in and gated by:
+The documented default is browser-use MCP over CDP:
 
-- `AIOS_EXECUTE_LIVE=1`
-- `AIOS_SUBAGENT_CLIENT=codex-cli`
+- launcher: scripts/run-browser-use-mcp.sh
+- launch: chrome.launch_cdp
+- connect: browser.connect_cdp
+- page actions: page.semantic_snapshot, page.extract_text, page.goto, page.screenshot
+- profile configuration: config/browser-profiles.json
 
-### Browser MCP (browser-use CDP)
+Use a visible CDP browser, read semantic or targeted text first, and keep read -> act -> verify loops short. The legacy Playwright MCP in mcp-server is retained for compatibility and low-level inspection; it is not the default business-flow path.
 
-As of 2026-04-10, the default browser MCP runtime is **browser-use MCP over CDP**:
+## RL research surface
 
-- Launcher: `scripts/run-browser-use-mcp.sh`
-- Migration: `aios internal browser mcp-migrate`
-- Tools: `chrome.launch_cdp`, `browser.connect_cdp`, `page.*`, `diagnostics.sannysoft`
-- Profile config: `config/browser-profiles.json`
-- Screenshot timeout guard: `BROWSER_USE_SCREENSHOT_TIMEOUT_MS` (default: 15s)
+AIOS also contains isolated multi-environment RL research surfaces. They are not required for normal Harness CLI installation or documentation workflows.
 
-Legacy Playwright MCP (`mcp-server/`) is retained for compatibility but is no longer the default.
+### RL Training Layer (AIOS) {#rl-training-layer-aios}
 
-## RL Training Layer (AIOS)
+The shared control plane under scripts/lib/rl-core/ tracks campaign state, checkpoint lineage, comparison results, replay lanes, teacher signals, and trainer entry points. Adapters cover shell, browser, orchestrator, and mixed experiments.
 
-AIOS includes a multi-environment reinforcement learning system that continuously improves a shared student policy across shell, browser, and orchestrator tasks.
-
-### Shared Control Plane (`scripts/lib/rl-core/`)
-
-```
-campaign-controller.mjs   # epoch orchestration (collection + monitoring)
-checkpoint-registry.mjs  # active / pre_update_ref / last_stable lineage
-comparison-engine.mjs    # better / same / worse / comparison_failed
-control-state-store.mjs  # restart-safe control snapshots
-epoch-ledger.mjs         # epoch state + degradation streaks
-replay-pool.mjs          # four-lane routing (positive/neutral/negative/diagnostic)
-reward-engine.mjs       # environment reward + teacher shaping fusion
-teacher-gateway.mjs      # normalized teacher outputs (Codex/Claude/Gemini/opencode/hermes/grok)
-schema.mjs               # shared contract validation
-trainer.mjs              # PPO entry points (online + offline)
-```
-
-### Environment Adapters
-
-| Adapter | Path | Training Focus |
-|---------|------|---------------|
-| Shell RL | `scripts/lib/rl-shell-v1/` | Synthetic bugfix tasks → real repositories |
-| Browser RL | `scripts/lib/rl-browser-v1/` | Controlled real web flows |
-| Orchestrator RL | `scripts/lib/rl-orchestrator-v1/` | High-value control decisions |
-| Mixed RL | `scripts/lib/rl-mixed-v1/` | Cross-environment joint training |
-
-### Key RL Concepts
-
-- **Episode contract**: uniform structured output across all environments (taskId, trajectory, outcome, reward, comparison)
-- **Three-pointer checkpoint lineage**: `active` → `pre_update_ref` → `last_stable` with automatic rollback on degradation
-- **Four-lane replay pool**: positive / neutral / negative / diagnostic_only — deterministic routing by comparison result
-- **Teacher gateway**: normalized signal from Codex CLI, Claude Code, Gemini CLI, and OpenCode
-
-### Running RL
-
-```bash
-# Shell RL pipeline
+~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20
 node scripts/rl-shell-v1.mjs train --epochs 5
 node scripts/rl-shell-v1.mjs eval
-
-# Mixed-environment campaign
 node scripts/rl-mixed-v1.mjs mixed --mixed
 node scripts/rl-mixed-v1.mjs mixed-eval
-```
+~~~
 
-### RL Status
+Treat RL status and benchmarks as research evidence with their own environment and version scope. They do not automatically prove production client reliability or public performance claims.
 
-- RL Core: stable (40+ tests)
-- Shell RL V1: stable (Phase 1–3)
-- Browser RL V1: beta
-- Orchestrator RL V1: beta
-- Mixed RL: experimental (end-to-end validated)
+## Failure boundaries
+
+- Missing registry: run aios init --all from the intended project root.
+- Stale native guidance: run aios doctor --native --verbose, then inspect a dry run before --fix.
+- Missing browser auth: keep the human in the loop at the authentication wall.
+- Failed live route: compare dry-run evidence with the actual provider and client status.
+- Failed verification: keep the plan open and record the first failing command.
+
+## Next steps
+
+- [Quick Start](getting-started.md) - install and initialize.
+- [Workflow Policy](workflow-policy.md) - choose the route.
+- [Agent Team](team-ops.md) - coordinate independent work.
+- [Solo Harness](solo-harness.md) - run a resumable objective.
+- [Troubleshooting](troubleshooting.md) - recover an observable failure.

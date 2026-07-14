@@ -1,222 +1,143 @@
 ---
-title: 官方案例库
-description: 用可复现命令说明 Harness CLI 在真实场景里能做什么。
+title: 案例库：可复现的 Harness CLI 工作流
+description: 用证据优先的案例完成初始化、跨客户端交接、浏览器认证、隐私读取和发布验证。
 ---
 
-# 官方案例库
+# 案例库
 
-这页是 `Harness CLI` 的能力地图。
+## 一句话回答
 
-每个案例都包含：
+当你需要具体工作流而不是功能介绍时，使用这些案例。每个案例都说明前置条件、命令、预期证据和仍需人工做出的决定。选择最接近目标的案例，再阅读它链接的规范页面。
 
-- `何时使用`：决策触发点
-- `运行`：可复制粘贴的命令
-- `证据`：什么证明成功
+## 案例 1：初始化新项目
 
-## 推荐深度阅读
+**目标：** 创建当前项目标记并验证原生集成。
 
-[在 GitHub 上 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_library_featured_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="github_star" }
-[对比工作流](cli-comparison.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="compare_workflows" }
-[案例：跨 CLI 接力](case-cross-cli-handoff.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_handoff" }
-[案例：浏览器认证墙流程](case-auth-wall-browser.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_authwall" }
-[案例：Privacy Guard 配置读取](case-privacy-guard.md){ data-rex-track="cta_click" data-rex-location="case_library_featured" data-rex-target="case_privacy" }
+前置条件：Node.js 24 LTS、Git、受支持客户端和项目根目录。
 
-## 案例 1：新机器 5 分钟完成初始化
+~~~bash
+cd /path/to/project
+aios init --all
+aios doctor --native --verbose
+test -f .aios/context-db/index.json
+~~~
 
-**何时使用**
+预期证据：doctor 报告实际客户端检查，注册表标记存在。人工决定：确认项目根目录正确，再允许记忆或配置变化。
 
-你正在给新笔记本或队友配置环境，需要快速建立干净基线。
+规范页面：[快速开始](getting-started.md)、[ContextDB](contextdb.md)。
 
-**运行**
+## 案例 2：跨客户端交接
 
-```bash
-scripts/setup-all.sh --components all --mode opt-in
-scripts/verify-aios.sh
-```
+**目标：** 在一个客户端分析，在另一个客户端实现，并保留决策轨迹。
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\setup-all.ps1 -Components all -Mode opt-in
-powershell -ExecutionPolicy Bypass -File .\scripts\verify-aios.ps1
-```
-
-**证据**
-
-- `verify-aios` 退出码为 `0`
-- `doctor-*` 检查无阻塞错误
-
-## 案例 2：浏览器 MCP 安装与冒烟测试
-
-**何时使用**
-
-你需要浏览器自动化（`browser_*`）用于演示或 agent 工作流。
-
-**运行**
-
-```bash
-scripts/install-browser-mcp.sh
-scripts/doctor-browser-mcp.sh
-```
-
-然后在客户端对话中执行：
-
-```text
-browser_launch {"profile":"default"}
-browser_navigate {"url":"https://example.com"}
-browser_snapshot {"includeAx":true}
-browser_close {}
-```
-
-**证据**
-
-- `doctor-browser-mcp` 报告 `Result: OK`（警告可接受）
-- 冒烟命令返回结构化工具响应，无运行时异常
-
-## 案例 3：跨 CLI 接力
-
-**何时使用**
-
-你希望 Claude 分析、Codex 实现、Gemini 复核，且不丢失上下文。
-
-**运行**
-
-```bash
+~~~bash
+aios memo add "auth API 保持不变"
 claude
 codex
-gemini
-```
+node scripts/aios.mjs search "auth API" --agent codex-cli --json
+~~~
 
-或确定性 one-shot：
+预期证据：统一搜索找到 memo 或 checkpoint，每个客户端通过自己的 doctor 检查。人工决定：分享工作前检查变更文件和供应商边界。
 
-```bash
-scripts/ctx-agent.sh --agent claude-code --prompt "总结阻塞并提出下一步"
-scripts/ctx-agent.sh --agent codex-cli --prompt "根据最新 checkpoint 实现首要修复"
-scripts/ctx-agent.sh --agent gemini-cli --prompt "审查回归风险和缺失的测试"
-```
+详见[跨 CLI 交接案例](case-cross-cli-handoff.md)。
 
-**证据**
+## 案例 3：浏览器 CDP 冒烟
 
-- `.aios/context-db/` 下有新的 session/checkpoint 产物
-- 后续 CLI 运行可继续使用同一项目上下文
+**目标：** 验证 browser-use MCP 默认路径可用。
 
-## 案例 4：认证墙处理（人机协同）
+~~~bash
+aios internal browser doctor
+aios internal browser cdp-status
+~~~
 
-**何时使用**
+预期证据：报告浏览器 profile 和 CDP 状态。交互式运行时启动可见 CDP 浏览器，连接，读取 semantic snapshot，执行一个有边界的动作，再验证页面状态。认证墙由人工处理。
 
-自动化遇到登录墙（Google、Meta、平台认证），不应盲目绕过。
+详见[浏览器认证墙案例](case-auth-wall-browser.md)。
 
-**运行**
+## 案例 4：隐私安全读取配置
 
-```text
-browser_launch {"profile":"local"}
-browser_navigate {"url":"https://target.site"}
-browser_auth_check {}
-```
+**目标：** 读取配置文件而不暴露原始秘密。
 
-如果 `requiresHumanAction=true`，在同浏览器 profile 中手动完成登录，然后继续用 `browser_snapshot` / `browser_click` / `browser_type`。
+~~~bash
+aios privacy status
+aios privacy read --file .env
+~~~
 
-**证据**
+预期证据：输出按照本地隐私边界完成脱敏。人工决定：检查脱敏结果，决定剩余字段是否可以分享。不要粘贴原始 cookie、token、私钥或浏览器 profile。
 
-- `browser_auth_check` 返回明确的认证状态字段
-- 手动登录后用同一 profile 恢复流程
+详见[Privacy Guard 案例](case-privacy-guard.md)。
 
-## 案例 5：One-shot 审计执行链
+## 案例 5：Team 治理冒烟
 
-**何时使用**
+**目标：** 在 live Team 前验证 Agent 表面。
 
-你需要一条命令产生可审计记录（`init -> session -> event -> checkpoint -> pack`）。
+~~~bash
+node scripts/aios.mjs agents smoke --dry-run --json
+node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill verify-training --changed --base HEAD --json
+~~~
 
-**运行**
+预期证据：smoke、provenance 和 training 产物写入 .aios/agents/ 与 .aios/interception/metrics/。人工决定：确认供应商、客户端和变更 skill 适合 live 工作。
 
-```bash
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "从最新 checkpoint 继续并执行下一步"
-```
+规范页面：[Agent Team](team-ops.md)。
 
-**证据**
+## 案例 6：可恢复长任务
 
-- `.aios/context-db/index/checkpoints.jsonl` 有新 checkpoint 条目
-- `.aios/context-db/exports/` 有导出 context packet
+**目标：** 用可审查日志运行一个明确目标。
 
-## 案例 6：Skills 生命周期运维
+~~~bash
+aios harness run \
+  --objective "准备发布交接" \
+  --session release-handoff \
+  --worktree \
+  --max-iterations 20
+aios harness status --session release-handoff --json
+aios harness stop --session release-handoff --reason "检查点审查"
+aios harness resume --session release-handoff
+~~~
 
-**何时使用**
+预期证据：status、检查点和 iteration 产物标明当前阶段。人工决定：合并前检查 worktree diff 和测试。
 
-你在多个 CLI 间管理共享 skills，需要可预测的生命周期操作。
+规范页面：[Solo Harness](solo-harness.md)。
 
-**运行**
+## 案例 7：dry-run 与 live 的区别
 
-```bash
-scripts/install-contextdb-skills.sh
-scripts/doctor-contextdb-skills.sh
-scripts/update-contextdb-skills.sh
-# 需要回滚时
-scripts/uninstall-contextdb-skills.sh
-```
+**目标：** 区分本地计划验证和供应商执行。
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\install-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-skills.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-skills.ps1
-# 需要回滚时
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-skills.ps1
-```
+~~~bash
+aios team --provider codex --workers 2 --task "审查发布清单" --dry-run --json
+aios orchestrate bugfix --task "修复发布检查" --dispatch local --execute dry-run
+~~~
 
-**证据**
+预期证据：没有模型调用，但产生本地 dispatch 和日志状态。人工决定：确认供应商、凭据、worktree 和验证范围后再启用 live。
 
-- Doctor 输出确认目标存在且健康
-- 更新/卸载不产生悬空损坏链接
+## 案例 8：发布验证
 
-## 案例 7：Shell 包装层修复与回滚
+**目标：** 发布变更前收集证据。
 
-**何时使用**
+~~~bash
+aios doctor --native --verbose
+aios quality-gate pre-pr --profile strict
+npm run test:scripts
+git diff --check
+~~~
 
-用户报告命令包装问题，需要安全的恢复路径。
+预期证据：每条命令成功，或指出具体阻塞。人工决定：发布前复查声明、链接、隐私边界和生成输出。
 
-**运行**
+## 提交新案例
 
-```bash
-scripts/doctor-contextdb-shell.sh
-scripts/update-contextdb-shell.sh
-# 需要完全回滚时
-scripts/uninstall-contextdb-shell.sh
-```
+有用的案例应包含：
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-contextdb-shell.ps1
-powershell -ExecutionPolicy Bypass -File .\scripts\update-contextdb-shell.ps1
-# 需要完全回滚时
-powershell -ExecutionPolicy Bypass -File .\scripts\uninstall-contextdb-shell.ps1
-```
+- 一个用户意图和一个主要动作；
+- 精确命令和前置条件；
+- 预期状态、文件或测试证据；
+- 人机协同边界；
+- 一个规范文档链接和一个相关案例。
 
-**证据**
+不要包含凭据、cookie、私有路径或未脱敏的供应商输出。
 
-- Wrapper doctor 不再报告阻塞问题
-- 回滚后原生 `codex`/`claude`/`gemini` 命令正常工作
+## 下一步
 
-## 案例 8：发布前安全体检
-
-**何时使用**
-
-发布更新前，验证 skills/hooks/MCP 设置中无不安全配置漂移。
-
-**运行**
-
-```bash
-scripts/doctor-security-config.sh
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\doctor-security-config.ps1
-```
-
-**证据**
-
-- Security doctor 退出 `0`
-- 所有警告在发布前审查并解决
-
-## 投稿新官方案例
-
-提案格式要求：
-
-1. 包含精确命令，无占位符。
-2. 定义可衡量的证据（退出码、文件产物或工具响应）。
-3. 必要时添加回滚/恢复步骤。
+- [按场景找命令](use-cases.md)
+- [故障排查](troubleshooting.md)
+- [工作流策略](workflow-policy.md)
