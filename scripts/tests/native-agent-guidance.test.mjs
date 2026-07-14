@@ -16,6 +16,42 @@ test('native agent instructions explain client capability gates and memo scope u
   assert.match(markdown, /project memory, docs, plans, and code references/i);
 });
 
+test('native instructions use adaptive workflow dispositions instead of every-message planning', () => {
+  for (const client of resolveNativeClients('all')) {
+    const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
+    assert.match(markdown, /AIOS Workflow Policy/, `${client} missing workflow policy`);
+    assert.match(markdown, /`direct`/, `${client} missing direct disposition`);
+    assert.match(markdown, /`guarded`/, `${client} missing guarded disposition`);
+    assert.match(markdown, /`planned`/, `${client} missing planned disposition`);
+    assert.doesNotMatch(markdown, /AIOS ALWAYS-ON Intelligent Planning/i, `${client} still forces always-on planning`);
+    assert.doesNotMatch(markdown, /every user input automatically enters AIOS intelligent planning/i, `${client} still plans every input`);
+  }
+});
+
+test('root instruction files keep Superpowers on demand', () => {
+  for (const file of ['AGENTS.md', 'CLAUDE.md']) {
+    const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
+    assert.match(markdown, /AIOS Workflow Policy/, `${file} missing workflow policy`);
+    assert.doesNotMatch(markdown, /Superpowers skills MUST be invoked before any implementation action/i, `${file} still globally requires Superpowers`);
+    assert.doesNotMatch(markdown, /Invoke `using-superpowers` skill first/i, `${file} still bootstraps using-superpowers globally`);
+  }
+});
+
+test('Codex and Claude native sources use their verified workflow surfaces', () => {
+  const codex = readFileSync(path.join(process.cwd(), 'client-sources/native-base/codex/project/AGENTS.md'), 'utf8');
+  const claude = readFileSync(path.join(process.cwd(), 'client-sources/native-base/claude/project/CLAUDE.md'), 'utf8');
+  const claudeSettings = JSON.parse(readFileSync(
+    path.join(process.cwd(), 'client-sources/native-base/claude/project/settings.local.json'),
+    'utf8'
+  ));
+
+  assert.match(codex, /native skill discovery.*no SessionStart bootstrap/i);
+  assert.match(claude, /SessionStart.*read-only status/i);
+  assert.match(claude, /UserPromptSubmit.*workflow-policy adapter/i);
+  assert.deepEqual(claudeSettings.hooks.SessionStart, ['node scripts/aios.mjs plan status --client claude']);
+  assert.equal(claudeSettings.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt');
+});
+
 test('all native clients inherit unified search guidance from shared instructions', () => {
   for (const client of resolveNativeClients('all')) {
     const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });

@@ -714,3 +714,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [3.5.0] - 2026-07-09
 
 - feat: intelligent planning product v2 (always-on, schema, runtime writeback, show, live comply)
+
+## [4.0.0] - 2026-07-14
+
+- adopt adaptive workflow policy routing

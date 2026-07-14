@@ -28,6 +28,8 @@ export const PLAN_ROUTES = Object.freeze([
   'debug',
   'verify',
   'ops',
+  'team',
+  'harness',
   'unknown',
 ]);
 
@@ -51,16 +53,20 @@ export function classifyPlanRoute(message = '') {
 export function skillsForRoute(route = 'unknown') {
   switch (route) {
     case 'design':
-      return ['using-superpowers', 'brainstorming', 'writing-plans', 'verification-before-completion'];
+      return ['brainstorming', 'writing-plans'];
     case 'debug':
-      return ['using-superpowers', 'systematic-debugging', 'verification-before-completion'];
+      return ['systematic-debugging'];
     case 'verify':
-      return ['using-superpowers', 'verification-before-completion'];
+      return ['verification-before-completion'];
     case 'ops':
-      return ['using-superpowers', 'writing-plans', 'verification-before-completion'];
+      return ['writing-plans'];
+    case 'team':
+      return ['writing-plans', 'dispatching-parallel-agents'];
+    case 'harness':
+      return ['writing-plans', 'aios-long-running-harness'];
     case 'implement':
     default:
-      return ['using-superpowers', 'writing-plans', 'test-driven-development', 'verification-before-completion'];
+      return ['writing-plans', 'test-driven-development'];
   }
 }
 
@@ -212,12 +218,14 @@ export function buildStructuredPlanState({
   title,
   objective,
   client = 'unknown',
+  sessionId = '',
   source = 'aios-plan',
   relativePath = '',
   absolutePath = '',
   createdAt = new Date().toISOString(),
   status = 'active',
   route = null,
+  skills = null,
   tasks = null,
   evidence = [],
 } = {}) {
@@ -234,11 +242,14 @@ export function buildStructuredPlanState({
     relativePath,
     absolutePath,
     client,
+    sessionId: String(sessionId || '').trim(),
     source,
     createdAt,
     updatedAt: createdAt,
     route: resolvedRoute,
-    skills: skillsForRoute(resolvedRoute),
+    skills: Array.isArray(skills) && skills.length > 0
+      ? [...new Set(skills.map((skill) => String(skill || '').trim()).filter(Boolean))]
+      : skillsForRoute(resolvedRoute),
     tasks: resolvedTasks,
     evidence: (Array.isArray(evidence) ? evidence : []).map(normalizeEvidence).filter((e) => e.value),
   };

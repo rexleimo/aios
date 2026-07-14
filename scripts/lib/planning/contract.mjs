@@ -60,6 +60,7 @@ export function buildPlanMarkdown({
   title = 'Untitled plan',
   objective = '',
   client = 'unknown',
+  sessionId = '',
   source = 'aios-plan',
   createdAt = new Date().toISOString(),
   route = 'unknown',
@@ -81,6 +82,7 @@ export function buildPlanMarkdown({
     `> AIOS Planning Contract (schema v2)`,
     `> created: ${createdAt}`,
     `> client: ${client}`,
+    ...(sessionId ? [`> session: ${sessionId}`] : []),
     `> source: ${source}`,
     `> route: ${route}`,
     '',
@@ -96,6 +98,22 @@ export function buildPlanMarkdown({
     '',
     ...taskLines,
     '',
+    '## Progress',
+    '',
+    '- status: active',
+    '',
+    '## Decision Log',
+    '',
+    '- (none yet)',
+    '',
+    '## Acceptance',
+    '',
+    '- Complete planned tasks and record verification evidence.',
+    '',
+    '## Next Actions',
+    '',
+    '- Start with the first pending task.',
+    '',
     '## Verification evidence',
     '',
     '- Attach via `aios plan add-evidence --kind command|path|test --value "..."`',
@@ -108,11 +126,46 @@ export function buildPlanMarkdown({
   ].join('\n');
 }
 
+function writeTextAtomically(filePath, content) {
+  const directory = path.dirname(filePath);
+  const tempPath = path.join(
+    directory,
+    `.${path.basename(filePath)}.${process.pid}.${Date.now()}.${Math.random().toString(36).slice(2)}.tmp`,
+  );
+  fs.writeFileSync(tempPath, content, 'utf8');
+  try {
+    fs.renameSync(tempPath, filePath);
+  } finally {
+    if (fs.existsSync(tempPath)) fs.rmSync(tempPath, { force: true });
+  }
+}
+
 function writeActivePlan(rootDir, state) {
   const statePath = resolvePlanningStatePath(rootDir);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
-  fs.writeFileSync(statePath, `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+  writeTextAtomically(statePath, `${JSON.stringify(state, null, 2)}\n`);
   return state;
+}
+
+function reservePlanArtifact(plansDir, baseFileName) {
+  const parsed = path.parse(baseFileName);
+  for (let attempt = 1; attempt <= 1000; attempt += 1) {
+    const fileName = attempt === 1
+      ? baseFileName
+      : `${parsed.name}-${attempt}${parsed.ext}`;
+    const absolutePath = path.join(plansDir, fileName);
+    try {
+      const descriptor = fs.openSync(absolutePath, 'wx');
+      return {
+        descriptor,
+        absolutePath,
+        relativePath: path.join(PLANS_DIR_REL, fileName).split(path.sep).join('/'),
+      };
+    } catch (error) {
+      if (error?.code !== 'EEXIST') throw error;
+    }
+  }
+  throw new Error(`unable to reserve a unique plan path for ${baseFileName}`);
 }
 
 /**
@@ -123,9 +176,11 @@ export function startPlan({
   title,
   objective = '',
   client = 'unknown',
+  sessionId = '',
   source = 'aios-plan',
   now = new Date(),
   route = null,
+  skills = null,
   tasks = null,
 } = {}) {
   if (!rootDir) throw new Error('startPlan requires rootDir');
@@ -133,35 +188,46 @@ export function startPlan({
   const createdAt = now.toISOString();
   const fileName = `${todayStamp(now)}-${slugify(safeTitle)}.md`;
   const plansDir = resolvePlansDir(rootDir);
-  const relativePath = path.join(PLANS_DIR_REL, fileName);
-  const absolutePath = path.join(rootDir, relativePath);
-
-  const state = buildStructuredPlanState({
-    title: safeTitle,
-    objective: objective || safeTitle,
-    client,
-    source,
-    relativePath: relativePath.split(path.sep).join('/'),
-    absolutePath,
-    createdAt,
-    status: 'active',
-    route,
-    tasks,
-  });
-
   fs.mkdirSync(plansDir, { recursive: true });
-  const content = buildPlanMarkdown({
-    title: state.title,
-    objective: state.objective,
-    client: state.client,
-    source: state.source,
-    createdAt: state.createdAt,
-    route: state.route,
-    skills: state.skills,
-    tasks: state.tasks,
-  });
-  fs.writeFileSync(absolutePath, content, 'utf8');
-  return writeActivePlan(rootDir, state);
+  const reservation = reservePlanArtifact(plansDir, fileName);
+  let descriptorOpen = true;
+
+  try {
+    const state = buildStructuredPlanState({
+      title: safeTitle,
+      objective: objective || safeTitle,
+      client,
+      sessionId,
+      source,
+      relativePath: reservation.relativePath,
+      absolutePath: reservation.absolutePath,
+      createdAt,
+      status: 'active',
+      route,
+      skills,
+      tasks,
+    });
+
+    const content = buildPlanMarkdown({
+      title: state.title,
+      objective: state.objective,
+      client: state.client,
+      sessionId: state.sessionId,
+      source: state.source,
+      createdAt: state.createdAt,
+      route: state.route,
+      skills: state.skills,
+      tasks: state.tasks,
+    });
+    fs.writeFileSync(reservation.descriptor, content, 'utf8');
+    fs.closeSync(reservation.descriptor);
+    descriptorOpen = false;
+    return writeActivePlan(rootDir, state);
+  } catch (error) {
+    if (descriptorOpen) fs.closeSync(reservation.descriptor);
+    fs.rmSync(reservation.absolutePath, { force: true });
+    throw error;
+  }
 }
 
 export function readActivePlan(rootDir) {

@@ -5,10 +5,10 @@ const AIOS_CONFIG_FILE = 'config.json';
 const DEFAULT_MODE_PRESETS = {
   'strict-primary': {
     label: 'Strict AIOS Primary Agent',
-    skills: ['superpowers:using-superpowers', 'pre-edit-safety-gate', 'verification-loop'],
+    skills: [],
     systemPromptAdditions: [
-      'You must follow the superpowers workflow before any implementation action.',
-      'Invoke verification-before-completion before claiming a task is done.',
+      'Evaluate the AIOS workflow policy before creating a plan or selecting a skill.',
+      'Do not bootstrap a global skill chain; invoke only the policy-selected safety and process gates.',
     ],
   },
   'harness-runner': {
@@ -21,10 +21,10 @@ const DEFAULT_MODE_PRESETS = {
   },
   'team-worker': {
     label: 'AIOS Team Worker',
-    skills: ['superpowers:using-superpowers'],
+    skills: [],
     systemPromptAdditions: [
       'You are running as an AIOS team worker subagent.',
-      'Stay within assigned scope. Report a clear handoff note when done.',
+      'Evaluate the AIOS workflow policy for the assigned work item; invoke only the required skills and report a clear handoff note when done.',
     ],
   },
 };

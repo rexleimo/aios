@@ -13,6 +13,9 @@ const PLAN_CLI = new Command()
   .option('--status <status>', 'Plan/task status')
   .option('--note <text>', 'Optional status note')
   .option('--client <id>', 'Client id', 'all')
+  .option('--session <id>', 'Client session id for continuation matching')
+  .option('--policy-mode <adaptive|strict>', 'Workflow policy mode')
+  .option('--dry-run', 'Evaluate without persisting a planned artifact')
   .option('--source <text>', 'Source label')
   .option('--force', 'Force (e.g. force done / replace links)')
   .option('--message <text>', 'User message for auto-gate')
@@ -86,6 +89,9 @@ export function parsePlanArgs(argv) {
         kind: flags.kind,
         value: flags.value,
         client: flags.client,
+        sessionId: flags.session,
+        policyMode: flags.policyMode,
+        dryRun: Boolean(flags.dryRun),
         source: flags.source,
         workspaceRoot: flags.workspace ? String(flags.workspace).trim() : '',
         force: Boolean(flags.force),

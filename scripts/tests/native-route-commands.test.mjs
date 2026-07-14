@@ -128,11 +128,16 @@ test('route trigger sync installs slash shortcuts in each client home', async ()
   assert.match(opencodeSingle, /description: AIOS route: single/u);
   assert.match(opencodeSingle, /\$ARGUMENTS/u);
   assert.match(opencodeSingle, /AIOS \/single/u);
+  assert.match(opencodeSingle, /AIOS workflow policy/u);
+  assert.match(opencodeSingle, /`direct`/u);
+  assert.doesNotMatch(opencodeSingle, /ALWAYS-ON planning/u);
   assert.match(opencodeSingle, /Continue in the current client/u);
 
   const claudePlan = await readFile(path.join(homeMap.claude, 'commands', 'plan.md'), 'utf8');
   assert.match(claudePlan, /AIOS intelligent planning/u);
+  assert.match(claudePlan, /planned work item/u);
   assert.match(claudePlan, /writing-plans/u);
+  assert.doesNotMatch(claudePlan, /Invoke `using-superpowers`/u);
   assert.match(claudePlan, /docs\/plans/u);
 
   const hermesPlan = await readFile(path.join(homeMap.hermes, 'commands', 'plan.md'), 'utf8');

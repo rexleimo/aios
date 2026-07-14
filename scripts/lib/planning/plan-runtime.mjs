@@ -6,17 +6,18 @@
 import {
   addPlanEvidence,
   readActivePlan,
-  startPlan,
   updatePlanTask,
 } from './contract.mjs';
 import { summarizePlanProgress } from './schema.mjs';
+import { isTerminalPlan } from './workflow-policy.mjs';
 
 function normalizeText(value = '') {
   return String(value || '').trim();
 }
 
 /**
- * Ensure there is an active structured plan for this objective (create if missing).
+ * Return the plan already persisted by the workflow-policy adapter. Runtime
+ * loops must never create a second plan as a side effect of execution.
  */
 export function ensurePlanForRuntime({
   rootDir,
@@ -26,18 +27,10 @@ export function ensurePlanForRuntime({
 } = {}) {
   if (!rootDir) return null;
   const existing = readActivePlan(rootDir);
-  if (existing && existing.status !== 'done') {
+  if (existing && !isTerminalPlan(existing)) {
     return { action: 'reuse', plan: existing };
   }
-  const title = normalizeText(objective).slice(0, 72) || 'solo harness run';
-  const plan = startPlan({
-    rootDir,
-    title,
-    objective: objective || title,
-    client,
-    source,
-  });
-  return { action: 'started', plan };
+  return { action: 'none', plan: null };
 }
 
 function findWritableTask(plan) {
@@ -53,7 +46,7 @@ function findWritableTask(plan) {
 export function markPlanTaskInProgress(rootDir, { io = null } = {}) {
   try {
     const plan = readActivePlan(rootDir);
-    if (!plan || plan.status === 'done') return { ok: false, reason: 'no-active-plan' };
+    if (!plan || isTerminalPlan(plan)) return { ok: false, reason: 'no-active-plan' };
     const task = findWritableTask(plan);
     if (!task) return { ok: false, reason: 'no-open-task', plan };
     if (task.status === 'in_progress') return { ok: true, action: 'already', task, plan };
@@ -82,9 +75,9 @@ export function syncPlanWithIterationOutcome({
   if (!rootDir) return { ok: false, reason: 'root-required' };
 
   try {
-    ensurePlanForRuntime({ rootDir, objective, client, source: 'solo-runtime' });
-    let plan = readActivePlan(rootDir);
-    if (!plan) return { ok: false, reason: 'plan-missing' };
+    const active = ensurePlanForRuntime({ rootDir, objective, client, source: 'solo-runtime' });
+    let plan = active?.plan || null;
+    if (!plan) return { ok: false, reason: 'no-active-policy-plan' };
 
     const outcomeName = normalizeText(outcome.outcome) || 'unknown';
     const isHardFail = outcomeName === 'failed'
@@ -158,7 +151,7 @@ export function attachPlanVerificationEvidence({
   if (!rootDir) return { ok: false, reason: 'root-required' };
   try {
     const plan = readActivePlan(rootDir);
-    if (!plan || plan.status === 'done') return { ok: false, reason: 'no-active-plan' };
+    if (!plan || isTerminalPlan(plan)) return { ok: false, reason: 'no-active-plan' };
 
     if (normalizeText(artifactPath)) {
       addPlanEvidence(rootDir, { kind: 'path', value: artifactPath });

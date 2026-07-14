@@ -41,9 +41,10 @@ async function main() {
 
 main().catch((error) => {
   process.stderr.write(`[aios-plan-hook] ${error.message}\n`);
-  // Fail open with a minimal directive so planning still surfaces
+  // Fail open without reintroducing a global planning/skill chain.
   process.stdout.write(`${JSON.stringify({
-    additionalContext: '## AIOS ALWAYS-ON PLANNING\nHook error — still run writing-plans and update docs/plans before implementing.\n',
+    additionalContext: '',
+    decision: { disposition: 'direct', persistence: 'none', reason: 'hook-error' },
   })}\n`);
   process.exitCode = 0;
 });

@@ -9,6 +9,7 @@ import {
   evaluatePlanEvidence,
   mergeReadinessVerdicts,
 } from '../lib/lifecycle/preflight-contracts.mjs';
+import { buildPlanMarkdown } from '../lib/planning/contract.mjs';
 
 const COMPLETE_PLAN = `# Example Plan
 
@@ -61,6 +62,23 @@ test('evaluatePlanEvidence accepts complete plan markdown and compact heading al
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }
+});
+
+test('evaluatePlanEvidence accepts the canonical schema-v2 planning contract', async () => {
+  const result = await evaluatePlanEvidence({
+    markdown: buildPlanMarkdown({
+      title: 'Canonical plan',
+      objective: 'Dispatch only after policy persistence',
+      client: 'codex',
+      route: 'team',
+      skills: ['writing-plans', 'dispatching-parallel-agents'],
+      tasks: [{ id: 't1', title: 'Dispatch', status: 'pending', acceptance: 'Plan is readable' }],
+    }),
+  });
+
+  assert.equal(result.verdict, 'ready');
+  assert.deepEqual(result.blockedReasons, []);
+  assert.match(result.evidence[0].summary, /schema-v2 planning contract/i);
 });
 
 test('evaluateOwnershipEvidence blocks write-capable work without owned paths', () => {

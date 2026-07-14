@@ -622,6 +622,7 @@ test('ctx-agent one-shot dry-run route harness prints trigger command', async ()
         'u'
       )
     );
+    assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'planning', 'active.json')), false);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -665,6 +666,7 @@ test('ctx-agent one-shot dry-run route team prints trigger command', async () =>
         'u'
       )
     );
+    assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'planning', 'active.json')), false);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
   }
@@ -1082,7 +1084,7 @@ test('ctx-agent interactive Claude startup passes no implicit prompt', async () 
   }
 });
 
-test('ctx-agent one-shot OpenCode mode sends only the explicit request', async () => {
+test('ctx-agent one-shot OpenCode mode keeps direct requests free of planning injection', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-opencode-one-shot-'));
   const sessionId = 'ctx-opencode-one-shot';
   const fakeBin = await createFakeOpenCodeCommand();
@@ -1133,12 +1135,10 @@ test('ctx-agent one-shot OpenCode mode sends only the explicit request', async (
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
     assert.equal(payload.argv[0], 'run');
     assert.deepEqual(payload.argv.slice(1, 3), ['--agent', 'aios-build']);
-    // single-route always-on planning prepends a lean plan directive, then the user request
-    assert.match(payload.argv[3], /AIOS PLAN v2 \(always-on\)/u);
-    assert.match(payload.argv[3], /## User request/u);
-    assert.match(payload.argv[3], /Summarize the current status\./u);
+    assert.equal(payload.argv[3], 'Summarize the current status.');
     assert.doesNotMatch(payload.argv[3], /Read the context packet at/u);
     assert.doesNotMatch(payload.argv[3], /# Context Packet/u);
+    assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'planning', 'active.json')), false);
     assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'context-db', 'exports', `${sessionId}-context.md`)), false);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });

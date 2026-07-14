@@ -2,7 +2,6 @@ import {
   addPlanEvidence,
   checkPlanningSkillDiscovery,
   evaluateDoneGate,
-  formatActivePlanInjection,
   readActivePlan,
   setPlanStatus,
   startPlan,
@@ -31,6 +30,7 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       title,
       objective: options.objective || options.task || title,
       client: (options.client && options.client !== 'all') ? options.client : 'cli',
+      sessionId: options.sessionId || '',
       source: options.source || 'aios plan start',
     });
     stdout.write(json ? `${JSON.stringify(state, null, 2)}\n` : `plan started: ${state.relativePath}\n`);
@@ -151,20 +151,15 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
   }
 
   if (sub === 'inject') {
-    // Always-on: inject creates/refreshes plan from --task if provided
-    if (options.task || options.objective || options.title) {
-      const directive = buildAlwaysOnPlanningDirective({
-        rootDir,
-        message: options.task || options.objective || options.title || '',
-        client: (options.client && options.client !== 'all') ? options.client : 'cli',
-      });
-      stdout.write(directive.text || '');
-      return { exitCode: 0, text: directive.text, plan: directive.plan };
-    }
-    const text = formatActivePlanInjection(rootDir)
-      || buildAlwaysOnPlanningDirective({ rootDir, message: '', client: 'cli' }).text;
-    stdout.write(text || '');
-    return { exitCode: 0, text };
+    const directive = buildAlwaysOnPlanningDirective({
+      rootDir,
+      message: options.task || options.objective || options.title || '',
+      client: (options.client && options.client !== 'all') ? options.client : 'cli',
+      sessionId: options.sessionId || '',
+      policyMode: options.policyMode,
+    });
+    stdout.write(directive.text || '');
+    return { exitCode: 0, text: directive.text, plan: directive.plan, decision: directive.decision };
   }
 
   if (sub === 'auto-gate' || sub === 'always-on') {
@@ -173,6 +168,10 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       rootDir,
       message,
       client: (options.client && options.client !== 'all') ? options.client : 'cli',
+      sessionId: options.sessionId || '',
+      source: options.source || 'aios plan auto-gate',
+      policyMode: options.policyMode,
+      dryRun: Boolean(options.dryRun),
       json,
     });
     if (json) {

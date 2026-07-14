@@ -16,36 +16,8 @@
  */
 
 import { readFileSync, existsSync } from 'node:fs';
-import { resolveDefaultModeInjections } from '../options/default-mode.mjs';
+import { getModePreset, resolveDefaultModeInjections } from '../options/default-mode.mjs';
 import { join } from 'node:path';
-
-// 内置 presets（和 default-mode.mjs 保持一致，同步版本直接引用）
-const BUILTIN_PRESETS = {
-  'strict-primary': {
-    label: 'Strict AIOS Primary Agent',
-    skills: ['superpowers:using-superpowers', 'pre-edit-safety-gate', 'verification-loop'],
-    systemPromptAdditions: [
-      'You must follow the superpowers workflow before any implementation action.',
-      'Invoke verification-before-completion before claiming a task is done.',
-    ],
-  },
-  'harness-runner': {
-    label: 'Harness Solo Runner',
-    skills: ['aios-long-running-harness', 'harness-init-runner'],
-    systemPromptAdditions: [
-      'You are running inside the AIOS solo harness.',
-      'Record progress with aios memo add after each significant change.',
-    ],
-  },
-  'team-worker': {
-    label: 'AIOS Team Worker',
-    skills: ['superpowers:using-superpowers'],
-    systemPromptAdditions: [
-      'You are running as an AIOS team worker subagent.',
-      'Stay within assigned scope. Report a clear handoff note when done.',
-    ],
-  },
-};
 
 /**
  * 同步版本: 从 rootDir 读取 .aios/config.json，返回 active mode 的 injections。
@@ -76,17 +48,14 @@ export function resolveRuntimeDirectiveInjections(rootDir) {
 
   const modeName = config.default_mode;
 
-  // 先查内置 preset
-  if (BUILTIN_PRESETS[modeName]) {
-    return { modeName, ...BUILTIN_PRESETS[modeName] };
-  }
-
-  // 再查 config.mode_presets 中的自定义 preset
-  if (config.mode_presets?.[modeName]) {
-    return { modeName, ...config.mode_presets[modeName] };
-  }
-
-  return null;
+  const preset = getModePreset(modeName, config);
+  if (!preset) return null;
+  return {
+    modeName,
+    label: preset.label,
+    skills: preset.skills || [],
+    systemPromptAdditions: preset.systemPromptAdditions || [],
+  };
 }
 
 /**

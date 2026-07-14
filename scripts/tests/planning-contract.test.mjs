@@ -63,6 +63,36 @@ test('startPlan writes docs/plans artifact and active pointer', async () => {
   }
 });
 
+test('startPlan disambiguates same-title artifacts and leaves a valid active pointer', async () => {
+  const root = await makeTemp('aios-plan-collision-');
+  try {
+    const now = new Date('2026-07-14T12:00:00.000Z');
+    const first = startPlan({ rootDir: root, title: 'Same title', client: 'codex', now });
+    const second = startPlan({ rootDir: root, title: 'Same title', client: 'codex', now });
+
+    assert.notEqual(first.relativePath, second.relativePath);
+    assert.ok(fs.existsSync(path.join(root, first.relativePath)));
+    assert.ok(fs.existsSync(path.join(root, second.relativePath)));
+    const activeRaw = await readFile(path.join(root, '.aios', 'planning', 'active.json'), 'utf8');
+    assert.equal(JSON.parse(activeRaw).relativePath, second.relativePath);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('startPlan preserves an explicit team or harness route', async () => {
+  const root = await makeTemp('aios-plan-orchestration-route-');
+  try {
+    const team = startPlan({ rootDir: root, title: 'Team review', route: 'team', client: 'codex' });
+    const harness = startPlan({ rootDir: root, title: 'Harness run', route: 'harness', client: 'codex' });
+
+    assert.equal(team.route, 'team');
+    assert.equal(harness.route, 'harness');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
 test('setPlanStatus updates active pointer', async () => {
   const root = await makeTemp('aios-plan-status-');
   try {
@@ -123,100 +153,155 @@ test('inspectSkillRoot reports missing skills', async () => {
   }
 });
 
-test('ensurePlanForMessage creates plan for any user input', async () => {
+test('auto-gate keeps direct messages and plan injection read-only', async () => {
   const root = await makeTemp('aios-plan-always-');
   try {
-    const first = ensurePlanForMessage({
+    const direct = runAutoGate({
       rootDir: root,
-      message: 'fix the flaky login test',
-      client: 'claude',
-      source: 'test',
-    });
-    assert.equal(first.created, true);
-    assert.equal(first.state.status, 'active');
-    assert.ok(fs.existsSync(path.join(root, first.state.relativePath)));
-
-    const reuse = ensurePlanForMessage({
-      rootDir: root,
-      message: 'fix the flaky login test',
-      client: 'claude',
-    });
-    assert.equal(reuse.created, false);
-    assert.equal(reuse.action, 'reuse');
-
-    const next = ensurePlanForMessage({
-      rootDir: root,
-      message: 'completely different objective about docs site',
-      client: 'hermes',
-    });
-    assert.equal(next.created, true);
-    assert.match(next.state.relativePath, /docs\/plans\//);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test('buildAlwaysOnPlanningDirective is mandatory for every message', async () => {
-  const root = await makeTemp('aios-plan-directive-');
-  try {
-    const d = buildAlwaysOnPlanningDirective({
-      rootDir: root,
-      message: 'hi',
+      message: '为什么会死循环？',
       client: 'codex',
-      mode: 'full',
+      sessionId: 'turn-direct',
     });
-    assert.match(d.text, /ALWAYS-ON INTELLIGENT PLANNING/i);
-    assert.match(d.text, /every user input/i);
-    assert.ok(d.plan.relativePath);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
+    assert.equal(direct.ok, true);
+    assert.equal(direct.decision.disposition, 'direct');
+    assert.equal(direct.decision.persistence, 'none');
+    assert.equal(direct.created, false);
+    assert.equal(readActivePlan(root), null);
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'plans')), false);
 
-test('A1 lean always-on directive stays under 900 chars', async () => {
-  const root = await makeTemp('aios-plan-lean-');
-  try {
-    const d = buildAlwaysOnPlanningDirective({
+    const injection = buildAlwaysOnPlanningDirective({
       rootDir: root,
-      message: 'implement feature X with tests and docs',
-      client: 'claude',
+      message: '只读分析当前状态',
+      client: 'codex',
       mode: 'lean',
     });
-    assert.equal(d.mode, 'lean');
-    assert.ok(d.chars < 900, `lean inject too large: ${d.chars}`);
-    assert.match(d.text, /AIOS PLAN v2/);
-    assert.match(d.text, /next:/);
-    assert.match(d.text, /evidence required/);
+    assert.equal(injection.plan, null);
+    assert.equal(injection.created, false);
+    assert.equal(readActivePlan(root), null);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-test('Claude UserPromptSubmit hook returns additionalContext JSON', async () => {
+test('auto-gate reports an explicit non-writing continuation decision without an active plan', async () => {
+  const root = await makeTemp('aios-plan-continuation-missing-');
+  try {
+    const result = runAutoGate({
+      rootDir: root,
+      message: '继续',
+      client: 'codex',
+      sessionId: 'turn-continuation',
+    });
+    assert.equal(result.decision.continuation, 'missing');
+    assert.equal(result.decision.action, 'none');
+    assert.equal(result.decision.persistence, 'none');
+    assert.equal(result.created, false);
+    assert.equal(readActivePlan(root), null);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('/single keeps substantive changes behind the workflow safety decision', async () => {
+  const root = await makeTemp('aios-plan-single-safety-');
+  try {
+    const result = runAutoGate({
+      rootDir: root,
+      message: '/single update one parser rule',
+      client: 'codex',
+      sessionId: 'turn-single',
+      policyMode: 'adaptive',
+    });
+    assert.equal(result.decision.disposition, 'guarded');
+    assert.equal(result.decision.requiresPreEditSafety, true);
+    assert.equal(result.created, false);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('/subagent is an explicit planned work-item route', async () => {
+  const root = await makeTemp('aios-plan-subagent-route-');
+  try {
+    const result = runAutoGate({
+      rootDir: root,
+      message: '/subagent repair two isolated workflow modules',
+      client: 'codex',
+      sessionId: 'turn-subagent',
+    });
+
+    assert.equal(result.decision.disposition, 'planned');
+    assert.equal(result.decision.routeHint, 'team');
+    assert.equal(result.created, true);
+    assert.equal(result.plan.route, 'team');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('explicit plan requests persist once and same-session continuation reuses without rewriting it', async () => {
+  const root = await makeTemp('aios-plan-continuation-reuse-');
+  try {
+    const first = runAutoGate({
+      rootDir: root,
+      message: '/plan 重构工作流策略',
+      client: 'codex',
+      sessionId: 'turn-plan',
+    });
+    assert.equal(first.decision.disposition, 'planned');
+    assert.equal(first.created, true);
+    assert.ok(first.plan?.relativePath);
+    assert.deepEqual(first.plan.skills, ['writing-plans']);
+    const activePath = path.join(root, '.aios', 'planning', 'active.json');
+    const before = await readFile(activePath, 'utf8');
+
+    const continuation = runAutoGate({
+      rootDir: root,
+      message: '继续',
+      client: 'codex',
+      sessionId: 'turn-plan',
+    });
+    assert.equal(continuation.created, false);
+    assert.equal(continuation.plan.relativePath, first.plan.relativePath);
+    assert.equal(await readFile(activePath, 'utf8'), before);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('Claude UserPromptSubmit hook exposes the policy decision without forcing a direct plan', async () => {
   const root = await makeTemp('aios-plan-hook-');
   try {
     const { exitCode, output } = await runClaudeUserPromptSubmitHook({
       rootDir: root,
-      stdinText: JSON.stringify({ prompt: 'refactor auth', cwd: root }),
+      stdinText: JSON.stringify({ prompt: '解释当前计划状态', cwd: root }),
       client: 'claude',
     });
     assert.equal(exitCode, 0);
-    assert.match(output.additionalContext, /ALWAYS-ON/i);
-    // lean inject points at plan path (slug from message); raw prompt stays in plan file only
-    assert.match(output.hookSpecificOutput.additionalContext, /refactor-auth/i);
-    assert.match(output.hookSpecificOutput.additionalContext, /AIOS PLAN v2/i);
+    assert.equal(output.decision.disposition, 'direct');
+    assert.equal(readActivePlan(root), null);
+    assert.doesNotMatch(output.additionalContext, /writing-plans/u);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
 });
 
-test('runAutoGate returns injection + plan', async () => {
+test('runAutoGate retains legacy fields and adds a structured policy decision', async () => {
   const root = await makeTemp('aios-plan-autogate-');
   try {
-    const result = runAutoGate({ rootDir: root, message: 'ship always-on planning', client: 'grok' });
+    const result = runAutoGate({
+      rootDir: root,
+      message: '/plan ship workflow policy',
+      client: 'grok',
+      sessionId: 'turn-legacy',
+      policyMode: 'strict',
+    });
     assert.equal(result.ok, true);
-    assert.equal(result.policy.mode, 'always');
-    assert.match(result.injection, /writing-plans/);
+    assert.equal(result.policy.mode, 'strict');
+    assert.ok(result.plan?.relativePath);
+    assert.equal(result.action, result.decision.action);
+    assert.equal(result.created, true);
+    assert.equal(result.decision.disposition, 'planned');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

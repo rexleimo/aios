@@ -10,7 +10,7 @@ export const ROUTE_COMMANDS = [
   {
     route: 'plan',
     description: 'AIOS intelligent planning',
-    purpose: 'force AIOS planning contract (writing-plans + docs/plans artifact), not host-only Plan UI.',
+    purpose: 'create or reuse one explicit planned work-item artifact, not a host-only Plan UI.',
   },
   {
     route: 'subagent',

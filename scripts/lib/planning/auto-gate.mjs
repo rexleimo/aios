@@ -1,181 +1,228 @@
 /**
- * Always-on intelligent planning gate.
- * Every user message is forced into the AIOS planning contract:
- * - ensure an active plan (create/refresh from this message)
- * - return hard instruction text for hooks / SessionStart / MCP
+ * Workflow-policy adapter for legacy auto-gate callers.
+ * Policy evaluation is pure; this module is the single place that persists a
+ * plan after a decision explicitly asks for one.
  */
 
-import fs from 'node:fs';
 import path from 'node:path';
 
 import {
   readActivePlan,
   startPlan,
-  setPlanStatus,
-  formatActivePlanInjection,
-  resolvePlanningStatePath,
   summarizePlanProgress,
 } from './contract.mjs';
+import {
+  evaluateWorkflowPolicy,
+  normalizeWorkflowPolicyMode,
+} from './workflow-policy.mjs';
 
 export const ALWAYS_ON_PLANNING_POLICY = Object.freeze({
-  schemaVersion: 1,
-  mode: 'always',
-  description: 'Every user input enters AIOS intelligent planning before other work.',
+  schemaVersion: 2,
+  mode: 'adaptive',
+  description: 'Risk-based workflow policy: persist plans only for planned work.',
 });
 
-function clip(text = '', max = 240) {
-  const normalized = String(text || '').replace(/\s+/g, ' ').trim();
+function clip(value = '', max = 240) {
+  const normalized = String(value || '').replace(/\s+/gu, ' ').trim();
   if (normalized.length <= max) return normalized;
-  return `${normalized.slice(0, Math.max(0, max - 1)).trimEnd()}…`;
+  return `${normalized.slice(0, Math.max(0, max - 1)).trimEnd()}...`;
+}
+
+function parseWorkflowCommand(message = '') {
+  const value = String(message || '').trim();
+  const match = /^\/(plan|team|subagent|harness|single)\b[:\s-]*/iu.exec(value);
+  if (!match) return { message: value, explicitIntent: null };
+  const command = String(match[1] || '').toLowerCase();
+  return {
+    message: value.slice(match[0].length).trim() || value,
+    // /single selects an execution route, never an unsafe direct disposition.
+    explicitIntent: command === 'single' ? null : (command === 'subagent' ? 'team' : command),
+  };
+}
+
+function resolveExplicitIntent(message, explicitIntent) {
+  if (explicitIntent) return explicitIntent;
+  return parseWorkflowCommand(message).explicitIntent;
 }
 
 function titleFromMessage(message = '') {
-  const clipped = clip(message, 72);
-  return clipped || 'user-request';
+  const parsed = parseWorkflowCommand(message);
+  return clip(parsed.message, 72) || 'user-request';
 }
 
-function sameObjective(plan, message) {
-  if (!plan) return false;
-  const left = clip(plan.title || '', 120).toLowerCase();
-  const right = clip(message, 120).toLowerCase();
-  if (!left || !right) return false;
-  return left === right || right.includes(left) || left.includes(right);
+function routeForPlan(routeHint = '') {
+  const route = String(routeHint || '').trim().toLowerCase();
+  return ['design', 'implement', 'debug', 'verify', 'ops', 'team', 'harness'].includes(route)
+    ? route
+    : 'implement';
+}
+
+function policyDescriptor(policyMode) {
+  return {
+    ...ALWAYS_ON_PLANNING_POLICY,
+    mode: normalizeWorkflowPolicyMode(policyMode),
+  };
+}
+
+/** Evaluate the policy using the current active state without writing files. */
+export function evaluateAutoGateDecision({
+  rootDir,
+  message = '',
+  client = 'unknown',
+  sessionId = '',
+  policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
+  explicitIntent = null,
+} = {}) {
+  if (!rootDir) throw new Error('evaluateAutoGateDecision requires rootDir');
+  return evaluateWorkflowPolicy({
+    message,
+    activePlan: readActivePlan(rootDir),
+    policyMode: normalizeWorkflowPolicyMode(policyMode),
+    client,
+    sessionId,
+    explicitIntent: resolveExplicitIntent(message, explicitIntent),
+  });
 }
 
 /**
- * Ensure planning state exists for this user message.
- * If no active plan or objective changed materially → start a new plan.
- * If active plan matches → keep and optionally mark executing.
+ * Apply a pure workflow decision. Direct, guarded, noop, and dry-run paths
+ * never write a plan; reuse returns the original plan object untouched.
+ */
+export function applyWorkflowDecision({
+  rootDir,
+  decision,
+  message = '',
+  client = 'unknown',
+  sessionId = '',
+  source = 'auto-gate',
+  dryRun = false,
+} = {}) {
+  if (!rootDir) throw new Error('applyWorkflowDecision requires rootDir');
+  if (!decision || typeof decision !== 'object') {
+    return { action: 'none', created: false, plan: null, state: null };
+  }
+
+  if (dryRun || decision.persistence === 'none') {
+    return { action: decision.action || 'none', created: false, plan: null, state: null };
+  }
+
+  if (decision.persistence === 'reuse') {
+    const plan = decision.plan || null;
+    return { action: decision.action || 'reuse', created: false, plan, state: plan };
+  }
+
+  if (decision.persistence === 'create') {
+    const plan = startPlan({
+      rootDir,
+      title: titleFromMessage(message),
+      objective: parseWorkflowCommand(message).message || titleFromMessage(message),
+      client,
+      sessionId,
+      source,
+      route: routeForPlan(decision.routeHint),
+      skills: decision.requiredSkills,
+    });
+    return { action: decision.action || 'started', created: true, plan, state: plan };
+  }
+
+  return { action: decision.action || 'none', created: false, plan: null, state: null };
+}
+
+/**
+ * Legacy imperative entry point. It now obeys the workflow policy instead of
+ * creating a plan for every message.
  */
 export function ensurePlanForMessage({
   rootDir,
   message = '',
   client = 'unknown',
+  sessionId = '',
   source = 'auto-gate',
   forceNew = false,
+  policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
+  explicitIntent = null,
+  dryRun = false,
 } = {}) {
-  if (!rootDir) throw new Error('ensurePlanForMessage requires rootDir');
-  const text = String(message || '').trim();
-  const existing = readActivePlan(rootDir);
-
-  if (!forceNew && existing && existing.status !== 'done' && existing.status !== 'blocked') {
-    if (!text || sameObjective(existing, text)) {
-      // Touch updatedAt so sessions see fresh activity
-      const touched = {
-        ...existing,
-        updatedAt: new Date().toISOString(),
-        lastUserMessage: clip(text, 400),
-        client: client || existing.client,
-        source: source || existing.source,
-      };
-      fs.mkdirSync(path.dirname(resolvePlanningStatePath(rootDir)), { recursive: true });
-      fs.writeFileSync(resolvePlanningStatePath(rootDir), `${JSON.stringify(touched, null, 2)}\n`, 'utf8');
-      return { action: 'reuse', state: touched, created: false };
-    }
-  }
-
-  // New plan for this message (or no active plan)
-  if (existing && (existing.status === 'done' || existing.status === 'blocked' || !sameObjective(existing, text))) {
-    // leave previous artifact on disk; start a new active pointer
-  }
-
-  const state = startPlan({
+  const result = runAutoGate({
     rootDir,
-    title: titleFromMessage(text || existing?.title || 'session'),
-    objective: text || existing?.title || 'Continue AIOS planning session',
+    message,
     client,
+    sessionId,
     source,
+    policyMode,
+    explicitIntent: forceNew ? 'plan' : explicitIntent,
+    dryRun,
   });
-  state.lastUserMessage = clip(text, 400);
-  fs.writeFileSync(resolvePlanningStatePath(rootDir), `${JSON.stringify(state, null, 2)}\n`, 'utf8');
-  return { action: 'started', state, created: true };
+  return {
+    action: result.action,
+    state: result.plan,
+    created: result.created,
+    decision: result.decision,
+  };
+}
+
+function buildDirectiveText({ decision, plan, mode = 'lean' } = {}) {
+  if (!plan) return '';
+
+  const injectMode = String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean';
+  const progress = summarizePlanProgress(plan);
+  const skills = Array.isArray(decision?.requiredSkills) ? decision.requiredSkills : [];
+  const lines = [
+    '## AIOS WORKFLOW',
+    `plan: \`${plan.relativePath}\` status=${plan.status} route=${decision?.routeHint || plan.route || 'implement'} decision=${decision?.action || 'none'}`,
+    progress ? `progress: ${progress.tasksDone}/${progress.tasksTotal} tasks evidence=${progress.evidenceCount}` : '',
+    progress?.nextTask ? `next: ${progress.nextTask.id}` : '',
+    skills.length ? `skills: ${skills.join(' -> ')}` : '',
+  ].filter(Boolean);
+
+  if (injectMode === 'full') {
+    lines.push(
+      `workflow: ${decision?.disposition || 'planned'} persistence=${decision?.persistence || 'none'}`,
+      'Record plan evidence before marking the active plan done.',
+    );
+  }
+  return `${lines.join('\n')}\n`;
 }
 
 /**
- * Hard instruction block injected on every user turn.
- * Default mode=lean (A1): short directive; details live in writing-plans skill + plan file.
- * mode=full: longer block for debugging.
+ * Compatibility name for plan-context injection. This is deliberately pure:
+ * callers must run auto-gate first if they need a planned artifact persisted.
  */
 export function buildAlwaysOnPlanningDirective({
   rootDir,
   message = '',
   client = 'unknown',
+  sessionId = '',
   gateResult = null,
   mode = process.env.AIOS_PLAN_INJECT_MODE || 'lean',
+  policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
+  explicitIntent = null,
 } = {}) {
-  const result = gateResult || ensurePlanForMessage({ rootDir, message, client, source: 'always-on-planning' });
-  const plan = result.state;
-  const injectMode = String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean';
-
-  if (injectMode === 'lean') {
-    // Target: keep under ~900 chars; include structured next task (planning quality, not just adoption).
-    const progress = summarizePlanProgress(plan);
-    const next = progress?.nextTask;
-    const skills = Array.isArray(plan.skills) ? plan.skills.slice(0, 3).join('→') : 'writing-plans';
-    // Keep lean inject free of raw user/objective text. Full objective and task titles live
-    // in the plan file; embedding them here leaks bulk into uncompressible headers and
-    // defeats turn-compression (e.g. PRE_SENTINEL in seeded task titles).
-    const lines = [
-      '## AIOS PLAN v2 (always-on)',
-      `plan: \`${plan.relativePath}\` status=${plan.status} route=${plan.route || '?'} gate=${result.action}`,
-      progress ? `progress: ${progress.tasksDone}/${progress.tasksTotal} tasks evidence=${progress.evidenceCount}` : '',
-      next ? `next: ${next.id}` : 'next: refine tasks in plan',
-      `skills: ${skills}`,
-      'Do task work; `plan task <id> --status done`; evidence required before `plan set-status done`.',
-    ].filter(Boolean);
-    const text = `${lines.join('\n')}\n`;
-    return {
-      text,
-      plan,
-      action: result.action,
-      created: result.created,
-      mode: 'lean',
-      chars: text.length,
-    };
-  }
-
-  const lines = [
-    '## AIOS ALWAYS-ON INTELLIGENT PLANNING (MANDATORY)',
-    '',
-    'Policy: **Every user input automatically enters AIOS intelligent planning.**',
-    'This overrides host Plan mode, Hermes built-in loops, and ad-hoc improvisation.',
-    '',
-    '### Before any other action on THIS message',
-    '1. Treat the user message as a planning request first (even if short).',
-    '2. Invoke `using-superpowers` then route: `brainstorming` (if unclear) → `writing-plans` → later `verification-before-completion`.',
-    '3. Use the active AIOS plan artifact (do not invent a host-only plan):',
-    `   - path: \`${plan.relativePath}\``,
-    `   - status: \`${plan.status}\``,
-    `   - gate: \`${result.action}\``,
-    '4. Update the plan file with tasks for this message before implementing.',
-    '5. Host Plan UI is only a draft aid — mirror into the AIOS plan file.',
-    '6. Do not claim completion without verification evidence and plan set-status done.',
-    '',
-  ];
-
-  if (message) {
-    lines.push('### Current user message (planning objective)', '', clip(message, 1200), '');
-  }
-
-  const inject = formatActivePlanInjection(rootDir);
-  if (inject) {
-    lines.push(inject.trim(), '');
-  }
-
-  const text = lines.join('\n');
+  if (!rootDir) throw new Error('buildAlwaysOnPlanningDirective requires rootDir');
+  const decision = gateResult?.decision || evaluateAutoGateDecision({
+    rootDir,
+    message,
+    client,
+    sessionId,
+    policyMode,
+    explicitIntent,
+  });
+  const plan = gateResult?.plan || (decision.persistence === 'reuse' ? decision.plan : null);
+  const text = buildDirectiveText({ decision, plan, mode });
   return {
     text,
     plan,
-    action: result.action,
-    created: result.created,
-    mode: 'full',
+    decision,
+    action: decision.action,
+    created: false,
+    mode: String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean',
     chars: text.length,
   };
 }
 
 /**
- * Claude Code UserPromptSubmit hook entry.
- * Reads JSON from stdin; writes JSON with additionalContext to stdout.
+ * Claude Code UserPromptSubmit hook entry. Its output has the legacy context
+ * fields plus the policy decision for clients that understand structured data.
  */
 export async function runClaudeUserPromptSubmitHook({
   rootDir = process.cwd(),
@@ -190,40 +237,79 @@ export async function runClaudeUserPromptSubmitHook({
   }
   const prompt = String(payload.prompt || payload.message || '').trim();
   const cwd = payload.cwd && path.isAbsolute(payload.cwd) ? payload.cwd : rootDir;
-  const directive = buildAlwaysOnPlanningDirective({
+  const sessionId = String(payload.sessionId || payload.session_id || payload.session?.id || '').trim();
+  const result = runAutoGate({
     rootDir: cwd,
     message: prompt,
     client,
+    sessionId,
+    policyMode: payload.policyMode || payload.policy_mode || process.env.AIOS_WORKFLOW_POLICY_MODE,
   });
 
-  // Claude Code hook shape: additionalContext / hookSpecificOutput
   const output = {
     hookSpecificOutput: {
       hookEventName: 'UserPromptSubmit',
-      additionalContext: directive.text,
+      additionalContext: result.injection,
     },
-    // older / alternate readers
-    additionalContext: directive.text,
+    additionalContext: result.injection,
+    decision: result.decision,
+    policy: result.policy,
+    plan: result.plan,
+    created: result.created,
   };
-  return { exitCode: 0, output, directive };
+  return { exitCode: 0, output, directive: result };
 }
 
-/**
- * CLI-friendly auto-gate for any client.
- */
+/** CLI- and MCP-friendly policy adapter. */
 export function runAutoGate({
   rootDir,
   message = '',
   client = 'cli',
+  sessionId = '',
+  source = 'auto-gate',
+  policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
+  explicitIntent = null,
+  dryRun = false,
   json = false,
 } = {}) {
-  const directive = buildAlwaysOnPlanningDirective({ rootDir, message, client });
+  const resolvedMode = normalizeWorkflowPolicyMode(policyMode);
+  const decision = evaluateAutoGateDecision({
+    rootDir,
+    message,
+    client,
+    sessionId,
+    policyMode: resolvedMode,
+    explicitIntent,
+  });
+  const applied = applyWorkflowDecision({
+    rootDir,
+    decision,
+    message,
+    client,
+    sessionId,
+    source,
+    dryRun: Boolean(dryRun),
+  });
+  const directive = buildAlwaysOnPlanningDirective({
+    rootDir,
+    message,
+    client,
+    sessionId,
+    policyMode: resolvedMode,
+    explicitIntent,
+    gateResult: { decision, plan: applied.plan },
+  });
+
   return {
     ok: true,
-    policy: ALWAYS_ON_PLANNING_POLICY,
-    action: directive.action,
-    created: directive.created,
-    plan: directive.plan,
+    policy: policyDescriptor(resolvedMode),
+    action: decision.action,
+    created: applied.created,
+    plan: applied.plan,
+    state: applied.state,
     injection: directive.text,
+    decision,
+    dryRun: Boolean(dryRun),
+    json: Boolean(json),
   };
 }

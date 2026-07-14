@@ -11,6 +11,7 @@ import {
   resolveDefaultModeInjections,
   writeAiosConfig,
 } from '../lib/lifecycle/options/default-mode.mjs';
+import { resolveRuntimeDirectiveInjections } from '../lib/lifecycle/harness/directive-inject.mjs';
 
 test('readAiosConfig returns null when config file does not exist', async () => {
   const tmpDir = await mkdtemp();
@@ -64,7 +65,8 @@ test('getModePreset returns built-in presets', () => {
   const preset = getModePreset('strict-primary', {});
   assert.equal(preset.label, 'Strict AIOS Primary Agent');
   assert.equal(preset.builtin, true);
-  assert.ok(preset.skills.length > 0);
+  assert.deepEqual(preset.skills, []);
+  assert.match(preset.systemPromptAdditions.join('\n'), /workflow policy/i);
 });
 
 test('getModePreset returns custom presets from config', () => {
@@ -100,8 +102,25 @@ test('resolveDefaultModeInjections returns injections for strict-primary', async
     const result = await resolveDefaultModeInjections(tmpDir);
     assert.equal(result.modeName, 'strict-primary');
     assert.equal(result.label, 'Strict AIOS Primary Agent');
-    assert.ok(result.skills.includes('superpowers:using-superpowers'));
-    assert.ok(result.systemPromptAdditions.length > 0);
+    assert.deepEqual(result.skills, []);
+    assert.match(result.systemPromptAdditions.join('\n'), /workflow policy/i);
+    assert.doesNotMatch(result.systemPromptAdditions.join('\n'), /superpowers workflow before any implementation/i);
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true });
+  }
+});
+
+test('runtime directive presets keep Superpowers on demand', async () => {
+  const tmpDir = await mkdtemp();
+  try {
+    await mkdir(path.join(tmpDir, '.aios'), { recursive: true });
+    await writeFile(path.join(tmpDir, '.aios', 'config.json'), JSON.stringify({ default_mode: 'team-worker' }));
+
+    const result = resolveRuntimeDirectiveInjections(tmpDir);
+    assert.equal(result.modeName, 'team-worker');
+    assert.deepEqual(result.skills, []);
+    assert.match(result.systemPromptAdditions.join('\n'), /workflow policy/i);
+    assert.doesNotMatch(result.systemPromptAdditions.join('\n'), /superpowers workflow before any implementation/i);
   } finally {
     await rm(tmpDir, { recursive: true, force: true });
   }

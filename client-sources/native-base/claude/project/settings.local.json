@@ -1,7 +1,7 @@
 {
   "hooks": {
     "SessionStart": [
-      "node scripts/aios.mjs plan auto-gate --client claude"
+      "node scripts/aios.mjs plan status --client claude"
     ],
     "UserPromptSubmit": [
       {

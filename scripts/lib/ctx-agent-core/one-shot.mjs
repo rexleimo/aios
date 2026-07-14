@@ -6,39 +6,6 @@ import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.m
 
 const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set([]);
 
-async function ensurePlanArtifact(rootDir, taskTitle) {
-  const { promises: fs } = await import('node:fs');
-  const pathMod = await import('node:path');
-  const date = new Date().toISOString().slice(0, 10);
-  const slug = String(taskTitle || 'task').toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 40) || 'task';
-  const planDir = pathMod.join(rootDir, 'docs', 'plans');
-  const planPath = pathMod.join(planDir, `${date}-${slug}.md`);
-  try {
-    await fs.access(planPath);
-    return planPath;
-  } catch {}
-  await fs.mkdir(planDir, { recursive: true });
-  const content = [
-    `# ${taskTitle || 'Task'}`,
-    '',
-    '## Progress',
-    '- Plan auto-generated for team dispatch.',
-    '',
-    '## Decision Log',
-    '- (none yet)',
-    '',
-    '## Acceptance',
-    '- Task completed and verified.',
-    '',
-    '## Next Actions',
-    '- Execute team dispatch.',
-    '',
-  ].join('\n');
-  await fs.writeFile(planPath, content, 'utf8');
-  return planPath;
-}
-
 export function classifyOneShotFailure(detail) {
   if (!detail) return undefined;
   const normalized = String(detail).toLowerCase();
@@ -173,7 +140,16 @@ export async function runRoutedOneShotTask(options = {}) {
   const useGroupChat = spec.routeMode === 'team' && spec.executionMode === 'live';
   const rootDir = options.workspaceRoot || process.cwd();
   const taskTitle = String(options.taskPrompt || '').trim();
-  const planPath = await ensurePlanArtifact(rootDir, taskTitle);
+  const planPath = String(options.planPath || '').trim();
+  if (!planPath && spec.executionMode === 'live') {
+    return {
+      output: formatRoutedOutput(spec, '[workflow] live routed execution requires a persisted policy plan.'),
+      exitCode: 1,
+      preview: spec.preview,
+      routeMode: spec.routeMode,
+      executionMode: spec.executionMode,
+    };
+  }
   const result = await runOrchestrate({
     blueprint: spec.routeMode === 'subagent' ? spec.blueprint : options.blueprint,
     taskTitle,

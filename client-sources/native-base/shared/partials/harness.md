@@ -4,6 +4,7 @@
 
 When this client is launched by AIOS solo harness (`aios harness run`):
 
+- The harness owns one explicit `planned` work item. Do not start it for direct questions, acknowledgements, or an unscoped conversation.
 - **Objective-driven**: The harness provides a multi-line objective and runs iterative loops. Each iteration should advance toward the objective.
 - **Checkpoints**: After each significant change, record progress via `aios memo add`. The harness reads these for recovery.
 - **Session state**: All state is persisted in `.aios/context-db/` and `.aios/workspace/`. On resume, read these first to continue where you left off.

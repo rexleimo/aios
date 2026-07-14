@@ -78,6 +78,7 @@ const TOOLS = [
         objective: { type: 'string', description: 'Full task objective / user request' },
         workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
         client: { type: 'string', description: 'Client id e.g. hermes, claude, codex' },
+        sessionId: { type: 'string', description: 'Client session id for acknowledgement continuation matching' },
       },
       required: ['title'],
     },
@@ -107,15 +108,17 @@ const TOOLS = [
   },
   {
     name: 'aios_plan_auto_gate',
-    description: 'ALWAYS-ON intelligent planning gate. Call on EVERY user message before other tools. Creates or reuses docs/plans + .aios/planning/active.json from the message and returns mandatory planning directives. Prefer this over Hermes-only planning loops.',
+    description: 'Evaluate the client-neutral workflow policy for a user turn. Only planned, non-dry-run work persists docs/plans + .aios/planning/active.json; direct and guarded work return a structured decision without creating artifacts.',
     inputSchema: {
       type: 'object',
       properties: {
-        message: { type: 'string', description: 'The current user message / objective' },
+        message: { type: 'string', description: 'The current user message / objective (empty returns noop)' },
         workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
         client: { type: 'string', description: 'Client id e.g. hermes' },
+        sessionId: { type: 'string', description: 'Client session id for acknowledgement continuation matching' },
+        policyMode: { type: 'string', enum: ['adaptive', 'strict'], description: 'Workflow policy mode; defaults to AIOS_WORKFLOW_POLICY_MODE or adaptive' },
+        dryRun: { type: 'boolean', description: 'Evaluate and return a decision without persisting a planned artifact' },
       },
-      required: ['message'],
     },
   },
 ];
@@ -531,7 +534,8 @@ async function handlePlanStart(params) {
       rootDir: workspace,
       title,
       objective: params.objective || title,
-      client: params.client || 'hermes',
+      client: params.client || 'unknown',
+      sessionId: params.sessionId || params.session_id || '',
       source: 'mcp:aios_plan_start',
     });
     return { content: [{ type: 'text', text: JSON.stringify(state, null, 2) }] };
@@ -574,15 +578,15 @@ async function handlePlanGate(params) {
 async function handlePlanAutoGate(params) {
   const workspace = params.workspace || process.cwd();
   const message = params.message || params.prompt || params.objective || '';
-  if (!message) {
-    return { content: [{ type: 'text', text: 'aios_plan_auto_gate requires message' }] };
-  }
   try {
     const { runAutoGate } = await import('./lib/planning/auto-gate.mjs');
     const result = runAutoGate({
       rootDir: workspace,
       message,
-      client: params.client || 'hermes',
+      client: params.client || 'unknown',
+      sessionId: params.sessionId || params.session_id || '',
+      policyMode: params.policyMode || params.policy_mode || process.env.AIOS_WORKFLOW_POLICY_MODE,
+      dryRun: Boolean(params.dryRun || params.dry_run),
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   } catch (err) {

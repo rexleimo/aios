@@ -187,7 +187,7 @@ test('native sync writes compatibility docs for gemini and opencode', async () =
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.opencode')).tier, 'compatibility');
 });
 
-test('native sync installs an OpenCode primary agent that fails closed on missing skills', async () => {
+test('native sync installs an OpenCode primary agent with adaptive workflow guidance', async () => {
   const rootDir = await makeTemp('aios-native-sync-opencode-primary-agent-root-');
   await seedNativeRoot(rootDir);
 
@@ -198,9 +198,11 @@ test('native sync installs an OpenCode primary agent that fails closed on missin
   assert.equal(result.ok, true);
   assert.match(primaryAgent, /^---\nname: aios-build\n/m);
   assert.match(primaryAgent, /^mode: primary$/m);
-  assert.match(primaryAgent, /invoke `using-superpowers` before any response or action/u);
+  assert.match(primaryAgent, /Evaluate the AIOS workflow policy before selecting a skill/u);
+  assert.match(primaryAgent, /`direct`, `guarded`, and `planned`/u);
+  assert.doesNotMatch(primaryAgent, /invoke `using-superpowers` before any response or action/u);
   assert.match(primaryAgent, /`superpowers:brainstorming` -> `brainstorming`/u);
-  assert.match(primaryAgent, /If a required skill is unavailable, stop/u);
+  assert.match(primaryAgent, /If a policy-selected required skill is unavailable, stop/u);
   assert.equal(primaryAgent.startsWith('---\n'), true);
   assert.ok(metadata.managedTargets.includes('.opencode/agent/aios-build.md'));
 });

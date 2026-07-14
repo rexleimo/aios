@@ -4,6 +4,18 @@ AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
 
+## AIOS Workflow Policy
+
+Evaluate the work item before creating a plan, selecting a skill, or dispatching agents. The default policy mode is `adaptive`:
+
+- `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
+- `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then select only the relevant workflow playbooks.
+
+Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
+
+Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
+
 ## AIOS Interception Runtime (Deprecated)
 
 <!-- 中文注释：原生拦截运行时已废弃，改为使用社区维护的 RTK + Caveman。 -->
@@ -21,9 +33,9 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 ## AIOS Self-Trigger Routing
 
-- Continue normally in the active coding client for single-domain work.
-- If the user asks for delegation, parallel work, or 2+ clearly independent domains, trigger AIOS directly instead of asking the user to run it manually: `aios team ...` or `node <AIOS_ROOT>/scripts/ctx-agent.mjs --route team|subagent ...`.
-- If the user asks for a long-running, overnight, resumable, checkpoint-heavy objective, trigger the solo harness directly: `aios harness run --objective "<task>" --worktree --max-iterations 8`.
+- Continue normally in the active coding client for `direct` and `guarded` work.
+- Start `team`, `subagent`, or `harness` only after the workflow policy identifies one explicit `planned` work item. Do not dispatch an acknowledgement, a question, or an unscoped conversation.
+- For planned independent domains, trigger `aios team ...` or `node <AIOS_ROOT>/scripts/ctx-agent.mjs --route team|subagent ...`; for a planned long-running resumable objective, use `aios harness run --objective "<task>" --worktree --max-iterations 8`.
 - Use `aios harness status --session <id>`, `aios hud --session <id>`, `aios harness stop --session <id> --reason "<why>"`, and `aios harness resume --session <id>` for handoff and recovery.
 - Do not ask the user to manually trigger AIOS commands unless they requested dry-run/preview or the environment lacks permission to run shell commands.
 

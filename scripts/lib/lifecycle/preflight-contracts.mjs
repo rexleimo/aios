@@ -40,6 +40,10 @@ function extractHeadings(markdown = '') {
   return headings;
 }
 
+function hasSchemaV2PlanningContract(markdown = '') {
+  return />\s*AIOS Planning Contract \(schema v2\)/iu.test(String(markdown || ''));
+}
+
 function normalizePlanPath(rootDir = process.cwd(), planPath = '') {
   const raw = normalizeText(planPath);
   if (!raw) return { raw: '', displayPath: '', absPath: '' };
@@ -102,11 +106,16 @@ export async function evaluatePlanEvidence(input = {}) {
     });
   }
 
+  const canonicalSchema = hasSchemaV2PlanningContract(markdown);
+  const summary = canonicalSchema
+    ? 'Plan artifact includes a schema-v2 planning contract and required headings.'
+    : `Plan artifact includes required headings: ${REQUIRED_PLAN_HEADINGS.join(', ')}.`;
+
   return readiness({
     verdict: 'ready',
     evidence: displayPath
-      ? [{ type: 'file', path: displayPath, summary: `Plan artifact includes required headings: ${REQUIRED_PLAN_HEADINGS.join(', ')}.`, createdAt: nowIso() }]
-      : [{ type: 'inline', summary: `Inline plan markdown includes required headings: ${REQUIRED_PLAN_HEADINGS.join(', ')}.`, createdAt: nowIso() }],
+      ? [{ type: 'file', path: displayPath, summary, createdAt: nowIso() }]
+      : [{ type: 'inline', summary, createdAt: nowIso() }],
   });
 }
 

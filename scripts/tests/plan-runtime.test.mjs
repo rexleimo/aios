@@ -10,17 +10,43 @@ import {
   syncPlanWithIterationOutcome,
   attachPlanVerificationEvidence,
 } from '../lib/planning/plan-runtime.mjs';
-import { readActivePlan, evaluateDoneGate } from '../lib/planning/contract.mjs';
+import { startPlan, readActivePlan, evaluateDoneGate } from '../lib/planning/contract.mjs';
 
 async function makeTemp() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-plan-runtime-'));
 }
 
-test('solo iteration success advances plan task and adds evidence', async () => {
+test('runtime plan helpers never create a plan outside policy persistence', async () => {
   const root = await makeTemp();
   try {
-    ensurePlanForRuntime({
+    const result = ensurePlanForRuntime({
       rootDir: root,
+      objective: 'implement feature X',
+      client: 'solo-harness',
+    });
+    assert.equal(result.action, 'none');
+    assert.equal(result.plan, null);
+    assert.equal(readActivePlan(root), null);
+
+    const sync = syncPlanWithIterationOutcome({
+      rootDir: root,
+      objective: 'implement feature X',
+      iteration: 1,
+      outcome: { outcome: 'success', ok: true },
+    });
+    assert.equal(sync.ok, false);
+    assert.equal(readActivePlan(root), null);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('solo iteration success advances an explicitly persisted plan task and adds evidence', async () => {
+  const root = await makeTemp();
+  try {
+    startPlan({
+      rootDir: root,
+      title: 'implement feature X',
       objective: 'implement feature X',
       client: 'solo-harness',
     });
@@ -55,7 +81,7 @@ test('solo iteration success advances plan task and adds evidence', async () => 
 test('hard fail marks current task blocked', async () => {
   const root = await makeTemp();
   try {
-    ensurePlanForRuntime({ rootDir: root, objective: 'fix crash', client: 'solo' });
+    startPlan({ rootDir: root, title: 'fix crash', objective: 'fix crash', client: 'solo' });
     markPlanTaskInProgress(root);
     syncPlanWithIterationOutcome({
       rootDir: root,
@@ -77,7 +103,7 @@ test('hard fail marks current task blocked', async () => {
 test('quality-gate evidence attaches to plan', async () => {
   const root = await makeTemp();
   try {
-    ensurePlanForRuntime({ rootDir: root, objective: 'verify suite', client: 'quality-gate' });
+    startPlan({ rootDir: root, title: 'verify suite', objective: 'verify suite', client: 'quality-gate' });
     const result = attachPlanVerificationEvidence({
       rootDir: root,
       artifactPath: '.aios/context-db/sessions/s1/artifacts/quality-gate-1.json',
@@ -95,7 +121,7 @@ test('quality-gate evidence attaches to plan', async () => {
 test('multiple successful iterations can complete all tasks and gate opens after evidence', async () => {
   const root = await makeTemp();
   try {
-    ensurePlanForRuntime({ rootDir: root, objective: 'ship small fix', client: 'solo' });
+    startPlan({ rootDir: root, title: 'ship small fix', objective: 'ship small fix', client: 'solo' });
     let plan = readActivePlan(root);
     const n = plan.tasks.length;
     for (let i = 0; i < n; i += 1) {

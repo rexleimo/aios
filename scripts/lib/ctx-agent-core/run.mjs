@@ -119,35 +119,64 @@ async function writeContinuityAndHandoff(opts, routedPrompt, output, summary, ne
 }
 
 async function executePrompt(opts) {
-  const routeDecision = resolveTaskRouteDecision({ prompt: opts.prompt, routeMode: opts.routeMode });
-  let routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
-  // ALWAYS-ON planning: always create/reuse plan artifact. Only single-route one-shots
-  // get text inject — team/harness/subagent keep a clean task prompt (plan lives on disk).
+  // Parse an explicit execution route first, then let the policy decide whether
+  // this turn is eligible for routing or plan persistence at all.
+  const requestedRoute = resolveTaskRouteDecision({ prompt: opts.prompt, routeMode: opts.routeMode });
+  const explicitIntent = requestedRoute.explicitTrigger && requestedRoute.routeMode !== 'single'
+    ? (requestedRoute.routeMode === 'subagent' ? 'team' : requestedRoute.routeMode)
+    : null;
+  let workflow = null;
   try {
-    const { buildAlwaysOnPlanningDirective } = await import('../planning/auto-gate.mjs');
-    const directive = buildAlwaysOnPlanningDirective({
+    const { runAutoGate } = await import('../planning/auto-gate.mjs');
+    workflow = runAutoGate({
       rootDir: opts.workspaceRoot,
-      message: routedPrompt,
+      message: opts.prompt,
       client: opts.agent || 'cli',
+      sessionId: opts.sessionId || '',
+      source: 'ctx-agent',
+      explicitIntent,
+      dryRun: Boolean(opts.dryRun || opts.routeExecutionMode === 'dry-run'),
     });
-    if (routeDecision.routeMode === 'single') {
-      routedPrompt = `${directive.text}\n\n## User request\n\n${routedPrompt}\n`;
-    }
-    console.error(`[aios] always-on planning: ${directive.action} -> ${directive.plan?.relativePath || 'n/a'}`);
+    console.error(`[aios] workflow: ${workflow.decision.disposition}/${workflow.decision.action} -> ${workflow.plan?.relativePath || 'n/a'}`);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
-    console.warn(`[warn] always-on planning skipped: ${reason}`);
+    console.warn(`[warn] workflow policy skipped: ${reason}`);
+  }
+
+  let routeDecision = requestedRoute;
+  if (workflow?.decision?.disposition !== 'planned') {
+    routeDecision = {
+      ...requestedRoute,
+      routeMode: 'single',
+      reason: `workflow ${workflow?.decision?.disposition || 'direct'}`,
+    };
+  } else if (!requestedRoute.explicitTrigger && ['team', 'harness'].includes(workflow.decision.routeHint)) {
+    routeDecision = {
+      ...requestedRoute,
+      routeMode: workflow.decision.routeHint,
+      reason: `workflow route=${workflow.decision.routeHint}`,
+    };
+  }
+
+  let routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
+  if (routeDecision.routeMode === 'single' && workflow?.injection) {
+    routedPrompt = `${workflow.injection}\n## User request\n\n${routedPrompt}\n`;
   }
   if (routeDecision.routeMode !== 'single') console.log(`[route] mode=${routeDecision.routeMode} (${routeDecision.reason})`);
-  if (opts.dryRun) return { ...dryRunPrompt(opts, routeDecision, routedPrompt), routedPrompt };
+  if (opts.dryRun) return { ...dryRunPrompt(opts, routeDecision, routedPrompt), routedPrompt, workflow };
   let result;
   if (routeDecision.routeMode === 'single') {
     const outbound = await compactCtxAgentPreSend({ opts, routedPrompt });
     result = runOneShotAgent(opts.agent, outbound.prompt, opts.extraArgs);
   } else {
-    result = await runRoutedOneShotTask({ ...opts, taskPrompt: routedPrompt, routeMode: routeDecision.routeMode });
+    result = await runRoutedOneShotTask({
+      ...opts,
+      taskPrompt: routedPrompt,
+      routeMode: routeDecision.routeMode,
+      planPath: workflow?.plan?.absolutePath || '',
+    });
   }
-  return { ...result, routedPrompt, turnCompression: routeDecision.routeMode === 'single' };
+  return { ...result, routedPrompt, turnCompression: routeDecision.routeMode === 'single', workflow };
 }
 
 async function compactCtxAgentPreSend({ opts, routedPrompt }) {

@@ -42,23 +42,19 @@ echo $AIOS_ROOT
 ls -la .aios/ .claude/skills/ docs/plans/
 ```
 
-<!-- SUPERPOWERS SKILL ENFORCEMENT - MANDATORY -->
+<!-- AIOS WORKFLOW POLICY - MANDATORY -->
 <IMPORTANT>
-## Skill Enforcement (REQUIRED)
+## Workflow Selection (REQUIRED)
 
-**Superpowers skills MUST be invoked before any implementation action.** This is not optional.
+Evaluate the AIOS workflow policy before creating a plan, selecting a skill, or dispatching work.
 
-1. **Invoke `using-superpowers` skill first** — it determines which process skill applies.
-2. **Process skills are mandatory, not optional:**
-   - Design/new behavior/creating features → MUST invoke `superpowers:brainstorming`
-   - Multi-step delivery → MUST invoke `superpowers:writing-plans`
-   - Debug/failure analysis → MUST invoke `superpowers:systematic-debugging`
-   - Test-first implementation → MUST invoke `superpowers:test-driven-development`
-   - About to claim completion → MUST invoke `superpowers:verification-before-completion`
-3. **Use `aios-workflow-router` as a routing aid** — it helps classify task type and dispatches to the correct superpowers skill. It does NOT replace superpowers skills.
-4. **Do NOT inline superpowers workflows** — always invoke the skill, never paraphrase its process.
+1. `direct` and `noop` turns do not create a persistent plan or invoke a skill chain.
+2. `guarded` turns use only the required edit and verification gates.
+3. `planned` turns create or reuse one work-item plan, then invoke only the relevant Superpowers playbook.
+4. Do not use `using-superpowers` as a global bootstrap. `aios-workflow-router` helps classify work but does not replace selected process skills.
+5. Invoke a selected process skill rather than paraphrasing it; use `verification-before-completion` before claiming a changed behavior is complete.
 </IMPORTANT>
-<!-- END SUPERPOWERS SKILL ENFORCEMENT -->
+<!-- END AIOS WORKFLOW POLICY -->
 
 ## Project Overview
 
@@ -278,6 +274,18 @@ AIOS native enhancements are active in this repository.
 
 Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc behavior.
 
+## AIOS Workflow Policy
+
+Evaluate the work item before creating a plan, selecting a skill, or dispatching agents. The default policy mode is `adaptive`:
+
+- `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
+- `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then select only the relevant workflow playbooks.
+
+Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
+
+Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
+
 ## AIOS Interception Runtime (Deprecated)
 
 <!-- 中文注释：原生拦截运行时已废弃，改为使用社区维护的 RTK + Caveman。 -->
@@ -295,9 +303,9 @@ Use repo-local skills, agents, and bootstrap docs before falling back to ad-hoc 
 
 ## AIOS Self-Trigger Routing
 
-- Continue normally in the active coding client for single-domain work.
-- If the user asks for delegation, parallel work, or 2+ clearly independent domains, trigger AIOS directly instead of asking the user to run it manually: `aios team ...` or `node <AIOS_ROOT>/scripts/ctx-agent.mjs --route team|subagent ...`.
-- If the user asks for a long-running, overnight, resumable, checkpoint-heavy objective, trigger the solo harness directly: `aios harness run --objective "<task>" --worktree --max-iterations 8`.
+- Continue normally in the active coding client for `direct` and `guarded` work.
+- Start `team`, `subagent`, or `harness` only after the workflow policy identifies one explicit `planned` work item. Do not dispatch an acknowledgement, a question, or an unscoped conversation.
+- For planned independent domains, trigger `aios team ...` or `node <AIOS_ROOT>/scripts/ctx-agent.mjs --route team|subagent ...`; for a planned long-running resumable objective, use `aios harness run --objective "<task>" --worktree --max-iterations 8`.
 - Use `aios harness status --session <id>`, `aios hud --session <id>`, `aios harness stop --session <id> --reason "<why>"`, and `aios harness resume --session <id>` for handoff and recovery.
 - Do not ask the user to manually trigger AIOS commands unless they requested dry-run/preview or the environment lacks permission to run shell commands.
 
@@ -434,50 +442,30 @@ Keep MCP surfaces lean. Disable low-value MCP servers when the active client alr
 
 Token profiles are a pre-context hygiene layer. Deep token compression (output/input/data-plane) is handled by community tools RTK + Caveman, installed via `aios init`.
 
-<!-- 中文注释：superpowers 流程强制段，仅对具备 superpowers 能力的客户端下发，避免向无此技能的宿主发指令。 -->
+<!-- 中文注释：Superpowers 是按需工程 playbook，不是每轮启动注入。 -->
 
-## AIOS Superpowers Workflow
+## AIOS Superpowers Playbooks
 
-- Before any implementation action, route through the superpowers process skills instead of improvising. Invoke the skill — do not paraphrase or inline its process.
-  - Design / new behavior / new feature → `superpowers:brainstorming` (or `brainstorming`)
-  - Multi-step delivery → `superpowers:writing-plans` (or `writing-plans`)
-  - Debugging / failure analysis → `superpowers:systematic-debugging`
-  - Test-first implementation → `superpowers:test-driven-development`
-  - About to claim completion → `superpowers:verification-before-completion`
+- Do not invoke `using-superpowers` as a global bootstrap. The AIOS workflow policy chooses the smallest applicable playbook after it classifies the work item.
+- For a `planned` work item, invoke the selected skill rather than paraphrasing its process:
+  - unclear design or a new capability → `superpowers:brainstorming` (or `brainstorming`)
+  - explicit multi-step plan → `superpowers:writing-plans` (or `writing-plans`)
+  - observed failure or regression → `superpowers:systematic-debugging`
+  - behavior change or bug fix → `superpowers:test-driven-development`
+  - before delivery, completion, commit, or release → `superpowers:verification-before-completion`
+- `direct` work does not need a Superpowers chain. `guarded` work uses the edit and verification gates below; it only adds a process skill when the policy selects one.
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
 - If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
-- Close a task only after `superpowers:verification-before-completion` passes with concrete artifact evidence.
-
-## AIOS ALWAYS-ON Intelligent Planning (MANDATORY — every user message)
-
-**Policy: every user input automatically enters AIOS intelligent planning. No exceptions for "small" requests.**
-
-1. On **every** user message (including short ones):
-   - Ensure an active AIOS plan exists under `docs/plans/` + `.aios/planning/active.json`
-   - Prefer: `node scripts/aios.mjs plan auto-gate --task "<user message>" --client <this-client>`
-   - Or MCP: `aios_plan_auto_gate` / `aios_plan_start`
-2. Then run the planning skill path: `using-superpowers` → `writing-plans` (and `brainstorming` if scope is unclear).
-3. Update the plan artifact with tasks for **this** message before implementing.
-4. **Host Plan mode is a draft only** (Claude Plan UI, Hermes native planning). It is incomplete until the AIOS plan file is updated.
-5. Discovery paths: `.claude/skills`, `.codex/skills`, `.hermes/skills`, `.grok/skills`, `.opencode/skills`, `.agents/skills`
-   - Core: `using-superpowers`, `brainstorming`, `writing-plans`, `executing-plans`, `verification-before-completion`
-6. If skills are missing: `node scripts/aios.mjs plan project-skills --force`
-7. Slash shortcut (still valid): `/plan` or `/prompts:plan` — but **auto-gate already runs** via hooks/bootstrap; do not skip planning when the user did not type `/plan`.
-
-### Forbidden
-
-- Answering implementation work without an active AIOS plan pointer
-- Treating host-only Plan UI as done
-- Skipping planning because the user message looks trivial
+- Close a changed behavior only after the selected verification process has concrete artifact evidence. A host Plan UI is a draft aid; when the disposition is `planned`, persist the approved work item in the AIOS plan artifact.
 
 <!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
 
 ## AIOS Subagent Dispatch
 
 - This client ships repo-local agent definitions; prefer them over ad-hoc roles.
-- Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
-- Use `superpowers:dispatching-parallel-agents` to fan out, then converge with a verification pass before merge.
+- Dispatch only one explicit `planned` work item at a time. Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
+- Use `superpowers:dispatching-parallel-agents` only when the policy selects team work, then converge with a verification pass before merge. Do not re-run the global bootstrap or create a new plan in each worker.
 - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
 - When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.
 
@@ -517,6 +505,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 
 When this client is launched by AIOS as a team worker (`ctx-agent.mjs --route team`), it runs in unattended mode. Key behaviors:
 
+- **Work-item scope**: The orchestrator owns the plan and assigns one bounded work item. Do not create a replacement plan or re-run workflow bootstrap inside the worker.
 - **Unattended execution**: The client is launched with auto-approve flags (e.g., `--yolo`, `--dangerously-skip-permissions`). Do not prompt for permissions — assume all operations are pre-authorized by the AIOS orchestrator.
 - **Model routing**: The `--team-provider` flag and `AIOS_MODEL_ROUTER` env var determine which model each phase uses. Check `AIOS_MODEL_*` env vars for per-role model assignments.
 - **Output format**: Results are captured by the AIOS ctx-agent runtime. Produce structured, parseable output — avoid interactive-only output (TUI elements, spinners, progress bars).
@@ -550,6 +539,7 @@ This enables heterogeneous team workflows where different roles use different LL
 
 When this client is launched by AIOS solo harness (`aios harness run`):
 
+- The harness owns one explicit `planned` work item. Do not start it for direct questions, acknowledgements, or an unscoped conversation.
 - **Objective-driven**: The harness provides a multi-line objective and runs iterative loops. Each iteration should advance toward the objective.
 - **Checkpoints**: After each significant change, record progress via `aios memo add`. The harness reads these for recovery.
 - **Session state**: All state is persisted in `.aios/context-db/` and `.aios/workspace/`. On resume, read these first to continue where you left off.
@@ -561,5 +551,7 @@ When this client is launched by AIOS solo harness (`aios harness run`):
 ## AIOS Native Claude Layer
 
 - Prefer repo-local `.claude/skills` and `.claude/agents`.
-- Keep work grounded in the AIOS runtime and verification flow.
+- SessionStart is read-only status output; it must not create a plan or inject a workflow chain.
+- UserPromptSubmit calls the workflow-policy adapter. It decides `direct`, `guarded`, or `planned` before a plan or skill is selected.
+- Keep work grounded in the AIOS runtime and verification flow after that decision.
 <!-- AIOS NATIVE END -->

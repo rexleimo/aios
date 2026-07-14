@@ -26,12 +26,30 @@ export {
 } from './schema.mjs';
 
 export {
+  WORKFLOW_POLICY_MODES,
+  WORKFLOW_DISPOSITIONS,
+  WORKFLOW_CONTINUATIONS,
+  WORKFLOW_PERSISTENCE,
+  normalizeWorkflowPolicyMode,
+  isTerminalPlan,
+  hasUsableActivePlan,
+  isSameSessionPlan,
+  isAcknowledgementMessage,
+  isExplicitResumeMessage,
+  hasNewActionableObjective,
+  isReadOnlyMessage,
+  evaluateWorkflowPolicy,
+} from './workflow-policy.mjs';
+
+export {
   resolveSuperpowersSkillsSource,
   projectPlanningSkills,
 } from './project-skills.mjs';
 
 export {
   ALWAYS_ON_PLANNING_POLICY,
+  evaluateAutoGateDecision,
+  applyWorkflowDecision,
   ensurePlanForMessage,
   buildAlwaysOnPlanningDirective,
   runClaudeUserPromptSubmitHook,
