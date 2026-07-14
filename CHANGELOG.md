@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [4.0.1] - 2026-07-14
+
+- docs: expand public content and SEO/GEO coverage
+
+## [4.0.0] - 2026-07-14
+
+- adopt adaptive workflow policy routing
+
 ## [3.6.0] - 2026-07-10
 
 ### Added - Headroom token intelligence workflow
@@ -714,11 +722,3 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ## [3.5.0] - 2026-07-09
 
 - feat: intelligent planning product v2 (always-on, schema, runtime writeback, show, live comply)
-
-## [4.0.0] - 2026-07-14
-
-- adopt adaptive workflow policy routing
-
-## [4.0.1] - 2026-07-14
-
-- docs: expand public content and SEO/GEO coverage

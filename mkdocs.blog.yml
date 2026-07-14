@@ -81,6 +81,7 @@ plugins:
 
 hooks:
   - scripts/mkdocs_blog_content.py
+  - scripts/mkdocs_version.py
 
 extra:
   links:

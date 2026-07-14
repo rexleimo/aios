@@ -18,6 +18,17 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ## Official Release History
 
+## v4.0.1 (2026-07-14) - Public content and SEO/GEO coverage
+
+- Synchronize the documentation version badge, the root `VERSION`, the GitHub release, and public changelog records around `4.0.1`.
+- Expand the public documentation and blog coverage for current AIOS workflows, release navigation, and search-friendly explanations.
+
+## v4.0.0 (2026-07-14) - Adaptive workflow policy
+
+- Add adaptive routing for `noop`, `direct`, `guarded`, and `planned` work so each request receives an appropriate level of process.
+- Document persistent plans, edit-safety gates, and evidence-based verification for multi-step AI agent work.
+- Read the release story: [v4.0 Adaptive Workflow Policy](/blog/2026-07-v400-adaptive-workflow-policy/).
+
 ## v3.6.0 (2026-07-10) - Headroom + Ponytail token intelligence workflow
 
 ### Added

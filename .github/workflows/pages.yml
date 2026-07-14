@@ -6,8 +6,10 @@ on:
     paths:
       - "mkdocs.yml"
       - "mkdocs.blog.yml"
+      - "VERSION"
       - "docs-site/**"
       - "blog-site/**"
+      - "scripts/mkdocs_version.py"
       - "docs-requirements.txt"
       - ".github/workflows/pages.yml"
   workflow_dispatch:

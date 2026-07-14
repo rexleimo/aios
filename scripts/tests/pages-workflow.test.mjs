@@ -23,3 +23,10 @@ test('docs-pages workflow retries GitHub Pages deployment once before failing', 
     /steps\.deployment_attempt_1\.outcome == 'failure'\s+&&\s+steps\.deployment_attempt_2\.outcome == 'failure'/
   );
 });
+
+test('docs-pages workflow rebuilds when the shared version source or hook changes', () => {
+  const workflow = read('.github/workflows/pages.yml');
+
+  assert.match(workflow, /- "VERSION"/);
+  assert.match(workflow, /- "scripts\/mkdocs_version\.py"/);
+});

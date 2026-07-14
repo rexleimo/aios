@@ -5,6 +5,17 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v4.0.1（2026-07-14）— 公開コンテンツと SEO/GEO カバレッジ
+
+- ドキュメントのバージョン表示、ルートの `VERSION`、GitHub Release、公開 changelog を `4.0.1` に同期しました。
+- 現在の AIOS workflow、リリースナビゲーション、検索と AI answer engine が理解しやすい公開ドキュメントとブログを拡充しました。
+
+## v4.0.0（2026-07-14）— 適応型ワークフローポリシー
+
+- `noop`、`direct`、`guarded`、`planned` の適応型ルーティングを追加し、依頼に合った開発プロセスを選べるようにしました。
+- 複数ステップの AI agent 作業に向けて、永続化された計画、編集安全ゲート、証拠ベースの検証を文書化しました。
+- リリース記事：[v4.0 適応型ワークフローポリシー](/blog/ja/2026-07-v400-adaptive-workflow-policy/)。
+
 ## ドキュメントと workflow のメモ
 
 - **v3.6.0 Headroom token インテリジェンス workflow**：`aios init` は RTK と Caveman に加えてテスト済みの Headroom CLI range を install します。Gemini/Grok の user-scope MCP registration には別途 `--yes-headroom-mcp` consent が必要です。Hermes には実際の TTY が必要で、そうでなければ `pending-interactive` を報告します。既存の external または conflict entry は上書きせず、AIOS 所有 entry は `~/.aios/integrations/headroom-mcp.json` に記録します。MCP-only compression は明示的であり、透過的 input interception を主張しません。詳細：[Token インテリジェンスと圧縮](token-compression.md) と [Headroom + Ponytail の記事](/blog/ja/2026-07-headroom-token-intelligence/)。

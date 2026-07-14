@@ -5,6 +5,17 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v4.0.1（2026-07-14）— 公共内容与 SEO/GEO 覆盖
+
+- 同步文档版本徽标、根目录 `VERSION`、GitHub Release 与公开更新日志，使它们统一指向 `4.0.1`。
+- 补齐当前 AIOS 工作流、发布导航以及更适合搜索和 AI 答案引擎理解的公开文档与博客内容。
+
+## v4.0.0（2026-07-14）— 自适应工作流策略
+
+- 新增 `noop`、`direct`、`guarded`、`planned` 自适应路由，为不同请求选择合适的工程流程。
+- 补充持久化计划、编辑安全门和基于证据的验证说明，覆盖多步骤 AI Agent 工作。
+- 阅读发布文章：[v4.0 自适应工作流策略](/blog/zh/2026-07-v400-adaptive-workflow-policy/)。
+
 ## 文档与工作流说明
 
 - **v3.6.0 Headroom token 智能工作流**：`aios init` 现会与 RTK、Caveman 一起安装经过测试范围的 Headroom；Gemini/Grok 的用户级 MCP 注册需单独传 `--yes-headroom-mcp` 授权。Hermes 必须在真实 TTY 中完成，否则显示 `pending-interactive`。已有外部或冲突条目不会被覆盖，AIOS-owned 条目记录在 `~/.aios/integrations/headroom-mcp.json`。MCP-only 是显式按需压缩，不是透明输入拦截。详见：[Token 智能与压缩](token-compression.md) 与 [Headroom + Ponytail 博文](/blog/zh/2026-07-headroom-token-intelligence/)。

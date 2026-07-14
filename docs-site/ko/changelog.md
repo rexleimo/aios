@@ -5,6 +5,17 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v4.0.1 (2026-07-14) - 공개 콘텐츠와 SEO/GEO 범위
+
+- 문서 버전 배지, 루트 `VERSION`, GitHub Release, 공개 changelog를 `4.0.1`로 동기화했습니다.
+- 현재 AIOS workflow, 릴리스 탐색, 검색 및 AI answer engine이 이해하기 쉬운 공개 문서와 블로그 콘텐츠를 확장했습니다.
+
+## v4.0.0 (2026-07-14) - 적응형 워크플로 정책
+
+- `noop`, `direct`, `guarded`, `planned` 적응형 라우팅을 추가하여 요청에 맞는 개발 절차를 선택합니다.
+- 여러 단계의 AI agent 작업을 위해 영속 계획, 편집 안전 게이트, 증거 기반 검증을 문서화했습니다.
+- 릴리스 글: [v4.0 적응형 워크플로 정책](/blog/ko/2026-07-v400-adaptive-workflow-policy/).
+
 ## 문서와 workflow 메모
 
 - **v3.6.0 Headroom token 인텔리전스 workflow**: `aios init`은 RTK와 Caveman에 더해 검증된 Headroom CLI range를 install합니다. Gemini/Grok의 user-scope MCP registration에는 별도 `--yes-headroom-mcp` consent가 필요합니다. Hermes는 실제 TTY가 필요하며 그렇지 않으면 `pending-interactive`를 보고합니다. 기존 external 또는 conflict entry는 덮어쓰지 않고 AIOS 소유 entry는 `~/.aios/integrations/headroom-mcp.json`에 기록합니다. MCP-only compression은 명시적이며 투명한 input interception을 주장하지 않습니다. 자세한 내용: [Token 인텔리전스와 압축](token-compression.md) 및 [Headroom + Ponytail 글](/blog/ko/2026-07-headroom-token-intelligence/).

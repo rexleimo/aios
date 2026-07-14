@@ -189,6 +189,9 @@ plugins:
             External: 외부 링크
             Project: 프로젝트
 
+hooks:
+  - scripts/mkdocs_version.py
+
 extra:
   links:
     product: https://cli.rexai.top

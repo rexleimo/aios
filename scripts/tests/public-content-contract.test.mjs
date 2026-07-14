@@ -87,3 +87,32 @@ test('public onboarding uses the current init, doctor, and token-intelligence bo
     assert.match(windows, /aios doctor/);
   }
 });
+
+test('docs shells read the current VERSION through the shared MkDocs hook', () => {
+  const version = read('VERSION').trim();
+  assert.match(version, /^\d+\.\d+\.\d+$/);
+
+  for (const relPath of [
+    'docs-site/overrides/partials/rex/docs-sidebar.html',
+    'docs-site/overrides/partials/rex/docs-page.html',
+  ]) {
+    const template = read(relPath);
+    assert.match(template, /config\.extra\.aios_version/);
+    assert.doesNotMatch(template, /aios v3\.3\.2/);
+  }
+
+  assert.match(read('mkdocs.yml'), /hooks:\s*\n\s+- scripts\/mkdocs_version\.py/);
+  assert.match(read('mkdocs.blog.yml'), /scripts\/mkdocs_version\.py/);
+});
+
+test('localized docs changelogs expose the current 4.0 release records', () => {
+  const rootChangelog = read('CHANGELOG.md');
+  assert.ok(rootChangelog.indexOf('## [4.0.1]') < rootChangelog.indexOf('## [3.6.0]'));
+
+  for (const locale of locales) {
+    const relPath = path.posix.join('docs-site', locale, 'changelog.md');
+    const changelog = read(relPath);
+    assert.match(changelog, /v4\.0\.1/);
+    assert.match(changelog, /v4\.0\.0/);
+  }
+});
