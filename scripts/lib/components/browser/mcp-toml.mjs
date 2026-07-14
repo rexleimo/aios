@@ -13,11 +13,7 @@ function escapeTomlString(value) {
   return String(value ?? '').replace(/\\/gu, '\\\\').replace(/"/gu, '\\"');
 }
 
-function escapeRegex(value) {
-  return String(value).replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-}
-
-// 把 {type, command, args[], env{}} 序列化为单个 [mcp_servers.alias] 段；env 用 inline table 保证整段无嵌套 [。
+// 把 {type, command, args[], env{}} 序列化为 Codex 当前使用的父段 + env 子段。
 function serializeTomlServer(alias, server) {
   const lines = [`[mcp_servers.${alias}]`];
   if (server.type) {
@@ -27,59 +23,106 @@ function serializeTomlServer(alias, server) {
   const args = Array.isArray(server.args) ? server.args : [];
   lines.push(`args = [${args.map((arg) => `"${escapeTomlString(arg)}"`).join(', ')}]`);
   const env = server.env && typeof server.env === 'object' && !Array.isArray(server.env) ? server.env : {};
-  const envPairs = Object.entries(env).map(([key, value]) => `"${escapeTomlString(key)}" = "${escapeTomlString(String(value))}"`);
-  lines.push(`env = { ${envPairs.join(', ')} }`);
+  const envEntries = Object.entries(env);
+  if (envEntries.length > 0) {
+    lines.push(
+      '',
+      `[mcp_servers.${alias}.env]`,
+      ...envEntries.map(([key, value]) => `${formatTomlKey(key)} = "${escapeTomlString(String(value))}"`),
+    );
+  }
   return lines.join('\n');
 }
 
-function sectionPattern(alias) {
-  return new RegExp(`(^|\\n)\\[mcp_servers\\.${escapeRegex(alias)}\\][\\s\\S]*?(?=\\n\\[|$)`, 'u');
+function readTomlSectionName(line) {
+  const match = /^\s*(\[+)([^\]]+)(\]+)\s*$/u.exec(line);
+  if (!match || match[1].length !== match[3].length) {
+    return null;
+  }
+  return match[2].trim();
 }
 
 function removeSection(raw, alias) {
-  const pattern = sectionPattern(alias);
-  if (!pattern.test(raw)) {
-    return raw;
+  const kept = [];
+  let removing = false;
+  for (const line of String(raw).split(/\r?\n/u)) {
+    const sectionName = readTomlSectionName(line);
+    if (sectionName) {
+      removing = isManagedMcpSection(sectionName, alias);
+      if (removing) {
+        continue;
+      }
+    }
+    if (!removing) {
+      kept.push(line);
+    }
   }
-  return raw.replace(pattern, '$1').replace(/\n{3,}/gu, '\n\n');
+  return kept.join('\n').replace(/\n{3,}/gu, '\n\n');
 }
 
 function unescapeTomlString(value) {
   return String(value).replace(/\\(["\\])/gu, '$1');
 }
 
+function isManagedMcpSection(sectionName, alias) {
+  const root = `mcp_servers.${alias}`;
+  return sectionName === root || sectionName.startsWith(`${root}.`);
+}
+
+function formatTomlKey(key) {
+  const value = String(key);
+  return /^[A-Za-z0-9_-]+$/u.test(value) ? value : `"${escapeTomlString(value)}"`;
+}
+
 function parseTomlInlineStringTable(rawTable) {
   const parsed = {};
-  const pattern = /"((?:\\.|[^"])*)"\s*=\s*"((?:\\.|[^"])*)"/gu;
+  const pattern = /(?:"((?:\\.|[^"\\])*)"|([A-Za-z0-9_-]+))\s*=\s*"((?:\\.|[^"\\])*)"/gu;
   for (const match of rawTable.matchAll(pattern)) {
-    parsed[unescapeTomlString(match[1])] = unescapeTomlString(match[2]);
+    const key = match[1] ?? match[2];
+    parsed[unescapeTomlString(key)] = unescapeTomlString(match[3]);
   }
   return parsed;
 }
 
+function parseTomlSections(raw) {
+  const sections = [];
+  let current = null;
+  for (const line of String(raw).split(/\r?\n/u)) {
+    const name = readTomlSectionName(line);
+    if (name) {
+      current = { name, lines: [] };
+      sections.push(current);
+    } else if (current) {
+      current.lines.push(line);
+    }
+  }
+  return sections;
+}
+
 function readExistingBrowserEnv(raw) {
   for (const alias of BROWSER_MCP_ALIASES) {
-    const sectionMatch = raw.match(sectionPattern(alias));
-    if (!sectionMatch) {
+    const sections = parseTomlSections(raw).filter(({ name }) => (
+      name === `mcp_servers.${alias}` || name === `mcp_servers.${alias}.env`
+    ));
+    if (sections.length === 0) {
       continue;
     }
 
-    const section = sectionMatch[0].replace(/^\n/u, '');
-    const envLine = section
-      .split('\n')
-      .map((line) => line.trim())
-      .find((line) => line.startsWith('env = {'));
-    if (!envLine) {
-      return {};
+    const inlineEnv = {};
+    const nestedEnv = {};
+    for (const section of sections) {
+      if (section.name === `mcp_servers.${alias}`) {
+        for (const line of section.lines) {
+          const envMatch = /^\s*env\s*=\s*\{([\s\S]*)\}\s*$/u.exec(line);
+          if (envMatch) {
+            Object.assign(inlineEnv, parseTomlInlineStringTable(envMatch[1]));
+          }
+        }
+      } else {
+        Object.assign(nestedEnv, parseTomlInlineStringTable(section.lines.join('\n')));
+      }
     }
-
-    const openBrace = envLine.indexOf('{');
-    const closeBrace = envLine.lastIndexOf('}');
-    if (openBrace === -1 || closeBrace === -1 || closeBrace <= openBrace) {
-      return {};
-    }
-
-    return parseTomlInlineStringTable(envLine.slice(openBrace + 1, closeBrace));
+    return { ...inlineEnv, ...nestedEnv };
   }
 
   return {};

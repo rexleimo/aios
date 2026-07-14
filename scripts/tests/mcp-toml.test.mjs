@@ -27,7 +27,8 @@ test('migrateOneMcpToml creates codex mcp_servers sections for browser + auth al
   assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${SHELL_ALIAS}\\]`));
   assert.match(result.nextRaw, /command = "/);
   assert.match(result.nextRaw, /args = \[/);
-  assert.match(result.nextRaw, /env = \{/);
+  assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\.env\\]`));
+  assert.doesNotMatch(result.nextRaw, /env = \{/);
 });
 
 test('migrateOneMcpToml preserves unrelated codex config and is idempotent', async () => {
@@ -93,7 +94,40 @@ test('migrateOneMcpToml removes legacy browser aliases and preserves env from th
   assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\]`));
   assert.doesNotMatch(result.nextRaw, /\[mcp_servers\.puppeteer-stealth\]/);
   assert.doesNotMatch(result.nextRaw, /\[mcp_servers\.playwright-browser-mcp\]/);
-  assert.match(result.nextRaw, /"CUSTOM_FLAG" = "from-puppeteer"/);
-  assert.match(result.nextRaw, /"KEEP_ME" = "yes"/);
-  assert.match(result.nextRaw, /"BROWSER_USE_CDP_URL" = "http:\/\/127\.0\.0\.1:9333"/);
+  assert.match(result.nextRaw, /CUSTOM_FLAG = "from-puppeteer"/);
+  assert.match(result.nextRaw, /KEEP_ME = "yes"/);
+  assert.match(result.nextRaw, /BROWSER_USE_CDP_URL = "http:\/\/127\.0\.0\.1:9333"/);
+});
+
+test('migrateOneMcpToml normalizes mixed inline and nested env tables without losing values', async () => {
+  const rootDir = process.cwd();
+  const dir = await makeTemp();
+  const filePath = path.join(dir, 'config.toml');
+  await writeFile(filePath, [
+    'model = "gpt-5"',
+    '',
+    `[mcp_servers.${PRIMARY_BROWSER_ALIAS}]`,
+    'type = "stdio"',
+    'command = "node"',
+    'args = ["legacy-browser.mjs"]',
+    'env = { "INLINE_FLAG" = "inline" }',
+    '',
+    `[mcp_servers.${PRIMARY_BROWSER_ALIAS}.env]`,
+    'NESTED_FLAG = "nested"',
+    '',
+    '[mcp_servers.user-server]',
+    'command = "node"',
+    'args = ["keep.mjs"]',
+    '',
+  ].join('\n'), 'utf8');
+
+  const result = migrateOneMcpToml(filePath, rootDir);
+
+  assert.equal(result.status, 'updated');
+  assert.match(result.nextRaw, new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\.env\\]`));
+  assert.match(result.nextRaw, /INLINE_FLAG = "inline"/);
+  assert.match(result.nextRaw, /NESTED_FLAG = "nested"/);
+  assert.doesNotMatch(result.nextRaw, /env = \{/);
+  assert.equal((result.nextRaw.match(new RegExp(`\\[mcp_servers\\.${PRIMARY_BROWSER_ALIAS}\\.env\\]`, 'gu')) || []).length, 1);
+  assert.match(result.nextRaw, /\[mcp_servers\.user-server\]/);
 });

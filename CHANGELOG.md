@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [4.0.2] - 2026-07-14
+
+- Fix Codex MCP nested env configuration migration
+
 ## [4.0.1] - 2026-07-14
 
 - docs: expand public content and SEO/GEO coverage
