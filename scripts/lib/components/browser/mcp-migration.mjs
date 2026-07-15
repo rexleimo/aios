@@ -10,6 +10,7 @@ import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer }
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
 import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
+import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
 import { resolveLauncherScript } from './runtime-paths.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。 */
@@ -85,6 +86,8 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
       result = migrateOneMcpToml(absPath, rootDir);
     } else if (target.format === 'opencode-json') {
       result = migrateOneMcpOpencodeJson(absPath, rootDir);
+    } else if (target.format === 'yaml') {
+      result = migrateOneHermesYaml(absPath, rootDir);
     } else {
       result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace });
     }

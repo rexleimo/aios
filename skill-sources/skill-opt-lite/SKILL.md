@@ -3,13 +3,13 @@ name: skill-opt-lite
 description: "Train and optimize skill documents using the SkillOpt methodology — the agent acts as both target and optimizer, running tasks, reflecting on failures, proposing edits, and validating improvements in a self-contained training loop. TRIGGER: optimize skill, train skill, improve skill, skill training, skill optimization, SkillOpt, skill evolution, skill iteration loop, skill feedback loop, skill tuning."
 
 installCatalogName: skill-opt-lite
-clients: [codex, claude, gemini, opencode]
+clients: [codex, claude, gemini, opencode, hermes]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: true
 tags: [skill, training, optimization, SkillOpt, iteration]
-repoTargets: [codex, claude, gemini, opencode]
+repoTargets: [codex, claude, gemini, opencode, hermes]
 ---
 
 # SkillOpt-Lite: Agent-Native Skill Training

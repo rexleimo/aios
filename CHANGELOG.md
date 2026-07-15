@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [4.0.3] - 2026-07-15
+
+- Install repository client skills into supported global client homes during `aios init` and native sync.
+- Add Hermes to 24 canonical client-skill projections, including the correct public path for the system `skill-creator` skill.
+- Create and migrate client home MCP configurations, including comment-preserving Hermes `config.yaml` support.
+- Verify changed client skills with accepted SkillOpt evidence and recognize namespaced system skills in the training gate.
+
 ## [4.0.2] - 2026-07-14
 
 - Fix Codex MCP nested env configuration migration

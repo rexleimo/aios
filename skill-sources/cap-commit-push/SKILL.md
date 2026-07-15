@@ -3,13 +3,13 @@ name: cap-commit-push
 description: Use when the user sends `cap` or asks for a fast commit-and-push shortcut for current repository changes.
 
 installCatalogName: cap-commit-push
-clients: [codex, claude]
+clients: [codex, claude, hermes]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, git, essential]
-repoTargets: [codex, claude, gemini, opencode]
+repoTargets: [codex, claude, gemini, opencode, hermes]
 ---
 
 # Cap Commit Push

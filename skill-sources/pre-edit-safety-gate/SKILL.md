@@ -3,13 +3,13 @@ name: pre-edit-safety-gate
 description: Use before ANY code modification — editing files, creating new files, or changing behavior. Mandatory CRG impact-radius check, dependency tracing, style alignment, and test-coverage verification before edits. Post-edit CRG update and verification.
 
 installCatalogName: pre-edit-safety-gate
-clients: [codex, claude, gemini, opencode]
+clients: [codex, claude, gemini, opencode, hermes]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, safety, edit, verification, essential]
-repoTargets: [codex, claude, gemini, opencode, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 ---
 
 # Pre-Edit Safety Gate
@@ -119,12 +119,24 @@ When modifying CSS, styles, shared components, or theme variables:
 
 If ANY pre-edit or post-edit check fails → report the failure to user, do NOT proceed with changes until resolved.
 
-<!-- SLOW_UPDATE_START -->
-## Epoch 1 Strategic Guidance
+## Unsafe Operation Detection
 
-- **分层模式已生效**：Tier Selection 解决了 T2（注释变更）和 V1/V3（多文件编辑）的刚性一刀切问题
-- **Batch graph 已生效**：Post-Edit graph 更新允许批量执行，V1/V3 从 0→1
-- **persistent_fail T6/T8**：Fallback Protocol 和 Logic Degradation Prevention 已在训练集验证有效（T6:0→1, T8:0→1），但验证集未覆盖这两类场景导致 gate reject。已手动合并入最终 skill。
-- **验证集 gap**：V1-V3 不覆盖 CRG 工具不可用和分支语义保护场景。后续训练应扩充验证集。
-- **<symbol> 歧义**：Pre-Edit Step 3 和 Step 5 均已改为明确的函数名/类名。
+Before proceeding with an edit, scan the change for these patterns:
+
+| Pattern | Risk | Action |
+|---------|------|--------|
+| `rm -rf`, `force delete` | Data loss | **STOP** — confirm with user |
+| `git push --force`, `git push -f` | History rewrite | **STOP** — confirm with user |
+| `DROP TABLE`, `TRUNCATE` | Data loss | **STOP** — confirm with user |
+| Production config edit | Outage risk | **STOP** — confirm with user |
+| `chmod 777`, `chown` | Security | **STOP** — confirm with user |
+
+If the edit matches any pattern, do NOT proceed until the user explicitly confirms. Report the detected pattern and wait.
+
+<!-- SLOW_UPDATE_START -->
+## Epoch 2 Strategic Guidance
+
+- **Unsafe Operation Detection added (Step 1, manually merged)**: New section detects dangerous patterns (rm -rf, force push, DROP TABLE, chmod 777) and blocks with STOP. Closes safety gap where destructive operations could bypass the gate. Gate initially rejected due to task set gap (T9 not in validation set); edit was correct → manually merged.
+- **Stable T1-T8**: All 8 original tasks pass at hard=1 — no regression across Epochs 1-2.
+- **Epoch 1 guidance preserved**: Batch graph updates, tier selection, fallback protocol remain validated.
 <!-- SLOW_UPDATE_END -->

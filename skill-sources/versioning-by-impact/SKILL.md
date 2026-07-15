@@ -3,13 +3,13 @@ name: versioning-by-impact
 description: Use when completing a task and deciding whether repository changes require a semantic version bump and changelog entry before commit/push.
 
 installCatalogName: versioning-by-impact
-clients: [codex, claude, gemini, opencode]
+clients: [codex, claude, gemini, opencode, hermes]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, release]
-repoTargets: [codex, claude, gemini, opencode]
+repoTargets: [codex, claude, gemini, opencode, hermes]
 ---
 
 # Versioning by Impact

@@ -6,13 +6,13 @@ description: >
   see AGENTS.md decision checkpoints. Requires `aios internal codemap install`.
 
 installCatalogName: aios-codemap-ops
-clients: [codex, claude, gemini, opencode]
+clients: [codex, claude, gemini, opencode, hermes]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, codemap, code-review, crg, reference]
-repoTargets: [codex, claude, gemini, opencode]
+repoTargets: [codex, claude, gemini, opencode, hermes]
 ---
 
 ## CRG Tool Quick Reference

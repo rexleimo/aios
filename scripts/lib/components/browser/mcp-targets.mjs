@@ -9,10 +9,10 @@ import { resolveUserPath } from './runtime-paths.mjs';
    - codex   → ~/.codex/config.toml + <project>/.codex/config.toml（home+project, TOML）
    - claude  → <project>/.mcp.json + ~/.claude/.mcp.json（project+home, JSON mcpServers）
    - gemini  → <project>/.gemini/settings.json + ~/.gemini/settings.json（project+home, JSON mcpServers）
-   - opencode→ ~/.config/opencode/opencode.json（home, JSON mcp 命名空间）
+   - opencode→ ~/.config/opencode/opencode.json（home, opencode-json mcp 命名空间）
+   - hermes  → <project>/.mcp.json + ~/.hermes/config.yaml（project+home, JSON mcpServers / YAML mcp_servers）
    - grok    → ~/.grok/config.toml + <project>/.grok/config.toml（home+project, TOML）
-   createIfMissing 策略：project 作用域属于”当前项目”可安全创建；home 作用域属于全局、
-   未使用的客户端不应被污染，故只在文件已存在时更新。 */
+   createIfMissing 策略：project 作用域可安全创建；home 作用域默认不创建（需 scopeEntry 显式声明 createIfMissing: true）。 */
 export function collectClientMcpTargets({ projectRoot, clientHomes = {} } = {}) {
   const targets = [];
   const seen = new Set();
@@ -35,9 +35,9 @@ export function collectClientMcpTargets({ projectRoot, clientHomes = {} } = {}) 
         path: absPath,
         client,
         scope: scopeEntry.scope,
-        format: desc.format,
-        namespace: desc.namespace,
-        createIfMissing: scopeEntry.scope === 'project',
+        format: scopeEntry.format || desc.format,
+        namespace: scopeEntry.namespace || desc.namespace,
+        createIfMissing: scopeEntry.createIfMissing ?? (scopeEntry.scope === 'project'),
       });
     }
   }

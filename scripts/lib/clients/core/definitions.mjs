@@ -112,15 +112,15 @@ export const SHARED_AGENT_SKILL_ROOT = '.agents/skills';
 
 // 每个客户端 MCP 配置的真实落点——全系统单一事实来源（取代之前错误的 home/mcp.json 假设）。
 // 双作用域：大多数客户端同时支持项目级和用户级 MCP 配置，各有独立文件。
-// format: 'json'(标准 mcpServers) | 'toml'(codex 的 [mcp_servers]) | 'opencode-json'(opencode 的 mcp 命名空间 + 本地条目形状)
+// format: 'json'(标准 mcpServers) | 'toml'(codex 的 [mcp_servers]) | 'opencode-json'(opencode 的 mcp 命名空间 + 本地条目形状) | 'yaml'(hermes config.yaml 的 mcp_servers)
 // namespace: JSON 顶层键 / TOML 表前缀。
-// createIfMissing 由各消费方按自身语义决定，不在此处编码。
+// createIfMissing: true 表示即使目标文件不存在也可创建；null/undefined 按消费方默认（home scope 默认 false，project scope 默认 true）。
 export const CLIENT_MCP_TARGETS = Object.freeze({
   codex: Object.freeze({
     format: 'toml',
     namespace: 'mcp_servers',
     scopes: Object.freeze([
-      Object.freeze({ scope: 'home', file: 'config.toml' }),
+      Object.freeze({ scope: 'home', file: 'config.toml', createIfMissing: true }),
       Object.freeze({ scope: 'project', file: '.codex/config.toml' }),
     ]),
   }),
@@ -129,7 +129,7 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     namespace: 'mcpServers',
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.mcp.json' }),
-      Object.freeze({ scope: 'home', file: '.mcp.json' }),
+      Object.freeze({ scope: 'home', file: '.mcp.json', createIfMissing: true }),
     ]),
   }),
   gemini: Object.freeze({
@@ -137,14 +137,14 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     namespace: 'mcpServers',
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.gemini/settings.json' }),
-      Object.freeze({ scope: 'home', file: 'settings.json' }),
+      Object.freeze({ scope: 'home', file: 'settings.json', createIfMissing: true }),
     ]),
   }),
   opencode: Object.freeze({
     format: 'opencode-json',
     namespace: 'mcp',
     scopes: Object.freeze([
-      Object.freeze({ scope: 'home', file: 'opencode.json' }),
+      Object.freeze({ scope: 'home', file: 'opencode.json', createIfMissing: true }),
     ]),
   }),
   // Hermes Agent MCP — JSON stdio format, mcpServers namespace.
@@ -155,7 +155,7 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     namespace: 'mcpServers',
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.mcp.json' }),
-      Object.freeze({ scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers' }),
+      Object.freeze({ scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers', createIfMissing: true }),
     ]),
   }),
   // Grok Build MCP — TOML [mcp_servers.*], same shape as Codex.
@@ -164,7 +164,7 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     format: 'toml',
     namespace: 'mcp_servers',
     scopes: Object.freeze([
-      Object.freeze({ scope: 'home', file: 'config.toml' }),
+      Object.freeze({ scope: 'home', file: 'config.toml', createIfMissing: true }),
       Object.freeze({ scope: 'project', file: '.grok/config.toml' }),
     ]),
   }),

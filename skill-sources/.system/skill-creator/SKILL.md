@@ -9,12 +9,13 @@ clients: null
 scopes: null
 defaultInstall: null
 tags: null
-repoTargets: [codex, claude, gemini, opencode]
+repoTargets: [codex, claude, gemini, opencode, hermes]
 targetRelativePathBySurface:
   codex: ".system/skill-creator"
   claude: "skill-creator"
   gemini: "skill-creator"
   opencode: "skill-creator"
+  hermes: "skill-creator"
 ---
 
 # Skill Creator

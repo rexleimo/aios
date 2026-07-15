@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 
 function normalizeSkillIdFromPath(filePath) {
   const normalized = String(filePath || '').replace(/\\/g, '/');
-  const match = normalized.match(/(?:^|\/)skill-sources\/([^/]+)\/SKILL\.md$/);
+  const match = normalized.match(/(?:^|\/)skill-sources\/(.+)\/SKILL\.md$/);
   return match ? match[1] : '';
 }
 
@@ -28,25 +28,35 @@ async function findSkillOptEvidence(rootDir, skillId) {
   }
 
   const candidates = entries
-    .filter((entry) => entry.isDirectory() && entry.name.startsWith(`${skillId}-`))
-    .map((entry) => entry.name)
-    .sort()
-    .reverse();
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+
+  let bestEvidence = null;
+  let bestScore = -1;
 
   for (const dirName of candidates) {
     const statePath = path.join(skillOptRoot, dirName, 'state.json');
     const state = await readJson(statePath);
     if (!state) continue;
+    const stateSkillId = String(state.skillId || '').replace(/\\/g, '/');
+    if (stateSkillId ? stateSkillId !== skillId : !dirName.startsWith(`${skillId}-`)) continue;
     const accepted = ['accepted', 'pass', 'passed', 'verified'].includes(String(state.status || state.gate || state.result || '').toLowerCase());
     const nonRegression = state.nonRegression === true || state.non_regression === true || state.regression === false;
-    if (accepted && nonRegression) {
-      return {
+    if (!accepted || !nonRegression) continue;
+    const score = typeof state.metrics?.complianceScore === 'number' ? state.metrics.complianceScore
+      : typeof state.metrics?.bestHard === 'number' ? state.metrics.bestHard
+      : 0;
+    if (score > bestScore) {
+      bestScore = score;
+      bestEvidence = {
         status: 'accepted',
         ref: path.relative(rootDir, statePath),
+        score,
       };
     }
   }
-  return null;
+
+  return bestEvidence;
 }
 
 function changedSkillFilesFromGit({ rootDir, base }) {

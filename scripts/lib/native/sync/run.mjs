@@ -6,6 +6,7 @@ import { syncGeneratedSkills } from '../../skills/sync.mjs';
 import { supportsClientCapability } from '../../clients/registry.mjs';
 import { buildNativeOutputPlan, loadNativeSyncManifest, resolveNativeClients } from '../source-tree.mjs';
 
+import { installContextDbSkills } from '../../components/skills/install.mjs';
 import { applyRenderedOperations } from './apply.mjs';
 import { EMITTERS, SYNC_LOCK_NAME } from './constants.mjs';
 import { areSamePath, createDefaultFsOps, normalizeRepairOptions } from './fs-ops.mjs';
@@ -37,6 +38,7 @@ export async function syncNativeEnhancementsUnlocked({
   const ops = fsOps ? { ...createDefaultFsOps(), ...fsOps } : createDefaultFsOps();
   const repairOptions = normalizeRepairOptions(repair);
   const results = [];
+  const globalInstalled = new Set(); // 避免重复写入共享 home 目录
 
   for (const currentClient of selectedClients) {
     if (mode !== 'uninstall') {
@@ -47,6 +49,22 @@ export async function syncNativeEnhancementsUnlocked({
         surfaces: [currentClient],
         withLock: false,
       });
+
+      // 全局 scope skill 安装：写入各客户端 home 目录（~/.hermes/skills/ 等），去重避免重复写入共享目录
+      if (!globalInstalled.has(currentClient)) {
+        globalInstalled.add(currentClient);
+        try {
+          await installContextDbSkills({
+            rootDir: sourceRootDir,
+            client: currentClient,
+            scope: 'global',
+            installMode: 'copy',
+            io,
+          });
+        } catch (err) {
+          io.log(`[warn] global skill install skipped for ${currentClient}: ${err.message}`);
+        }
+      }
       if (supportsClientCapability(currentClient, 'agents')) {
         await syncCanonicalAgents({
           rootDir: sourceRootDir,

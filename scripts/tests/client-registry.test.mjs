@@ -170,7 +170,7 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(codexTarget.format, 'toml');
   assert.equal(codexTarget.namespace, 'mcp_servers');
   assert.deepEqual(codexTarget.scopes, [
-    { scope: 'home', file: 'config.toml' },
+    { scope: 'home', file: 'config.toml', createIfMissing: true },
     { scope: 'project', file: '.codex/config.toml' },
   ]);
 
@@ -179,7 +179,7 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(claudeTarget.namespace, 'mcpServers');
   assert.deepEqual(claudeTarget.scopes, [
     { scope: 'project', file: '.mcp.json' },
-    { scope: 'home', file: '.mcp.json' },
+    { scope: 'home', file: '.mcp.json', createIfMissing: true },
   ]);
 
   const geminiTarget = getClientMcpTarget('gemini');
@@ -187,14 +187,14 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(geminiTarget.namespace, 'mcpServers');
   assert.deepEqual(geminiTarget.scopes, [
     { scope: 'project', file: '.gemini/settings.json' },
-    { scope: 'home', file: 'settings.json' },
+    { scope: 'home', file: 'settings.json', createIfMissing: true },
   ]);
 
   const ocTarget = getClientMcpTarget('opencode');
   assert.equal(ocTarget.format, 'opencode-json');
   assert.equal(ocTarget.namespace, 'mcp');
   assert.deepEqual(ocTarget.scopes, [
-    { scope: 'home', file: 'opencode.json' },
+    { scope: 'home', file: 'opencode.json', createIfMissing: true },
   ]);
 
   const hermesTarget = getClientMcpTarget('hermes');
@@ -202,14 +202,14 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(hermesTarget.namespace, 'mcpServers');
   assert.deepEqual(hermesTarget.scopes, [
     { scope: 'project', file: '.mcp.json' },
-    { scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers' },
+    { scope: 'home', file: 'config.yaml', format: 'yaml', namespace: 'mcp_servers', createIfMissing: true },
   ]);
 
   const grokTarget = getClientMcpTarget('grok');
   assert.equal(grokTarget.format, 'toml');
   assert.equal(grokTarget.namespace, 'mcp_servers');
   assert.deepEqual(grokTarget.scopes, [
-    { scope: 'home', file: 'config.toml' },
+    { scope: 'home', file: 'config.toml', createIfMissing: true },
     { scope: 'project', file: '.grok/config.toml' },
   ]);
 });

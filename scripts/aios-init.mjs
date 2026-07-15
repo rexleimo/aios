@@ -127,6 +127,38 @@ export async function main(argv = process.argv.slice(2)) {
     }
   }
 
+  // 2b. MCP config migration — write browser/auth/shell MCP servers to all client home configs
+  console.log('');
+  console.log('== MCP Config Migration ==');
+  try {
+    const { migrateBrowserMcpConfig } = await import('./lib/components/browser/mcp-migration.mjs');
+    const mcpResult = await migrateBrowserMcpConfig({ rootDir: workspaceRoot, io: console, dryRun });
+    console.log(`  MCP: created=${mcpResult.created} updated=${mcpResult.updated} unchanged=${mcpResult.unchanged} errors=${mcpResult.errors}`);
+  } catch (err) {
+    console.warn(`[warn] MCP config migration: ${err.message}`);
+  }
+
+  // 3. Global scope skill install — copy skills to each client's home directory
+  if (dryRun) {
+    console.log('\n== Global Skill Install ==');
+    console.log('  (dry-run: would install skills globally)');
+  } else {
+    console.log('');
+    console.log('== Global Skill Install ==');
+    try {
+      const { installContextDbSkills } = await import('./lib/components/skills/install.mjs');
+      await installContextDbSkills({
+        rootDir: workspaceRoot,
+        client: 'all',
+        scope: 'global',
+        installMode: 'copy',
+        io: console,
+      });
+    } catch (err) {
+      console.warn(`[warn] global skill install: ${err.message}`);
+    }
+  }
+
   if (dryRun) {
     console.log('\nDry-run complete. Run without --dry-run to apply.');
   } else {

@@ -18,7 +18,7 @@ test('collectClientMcpTargets routes each client to its real location/format wit
   const codexTargets = targets.filter((t) => t.client === 'codex');
   assert.equal(codexTargets.length, 2);
   assert.equal(codexTargets.find((t) => t.scope === 'home').path, path.resolve('/home/u/.codex/config.toml'));
-  assert.equal(codexTargets.find((t) => t.scope === 'home').createIfMissing, false);
+  assert.equal(codexTargets.find((t) => t.scope === 'home').createIfMissing, true);
   assert.equal(codexTargets.find((t) => t.scope === 'project').path, path.resolve('/proj/.codex/config.toml'));
   assert.equal(codexTargets.find((t) => t.scope === 'project').format, 'toml');
   assert.equal(codexTargets.find((t) => t.scope === 'project').createIfMissing, true);
@@ -46,7 +46,7 @@ test('collectClientMcpTargets routes each client to its real location/format wit
   assert.equal(ocTargets[0].path, path.resolve('/home/u/.config/opencode/opencode.json'));
   assert.equal(ocTargets[0].format, 'opencode-json');
   assert.equal(ocTargets[0].namespace, 'mcp');
-  assert.equal(ocTargets[0].createIfMissing, false);
+  assert.equal(ocTargets[0].createIfMissing, true);
 });
 
 test('collectClientMcpTargets includes project-scoped fallbacks when home is unavailable', () => {

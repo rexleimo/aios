@@ -257,3 +257,26 @@ test('skill training gate blocks changed skills without accepted SkillOpt eviden
   assert.equal(verified.status, 'verified');
   assert.equal(verified.skills[0].evidence.status, 'accepted');
 });
+
+test('skill training gate verifies namespaced system skills by state skillId', async () => {
+  const rootDir = await makeTemp('aios-system-skill-training-root-');
+  await mkdir(path.join(rootDir, 'skill-sources', '.system', 'skill-creator'), { recursive: true });
+  await writeFile(path.join(rootDir, 'skill-sources', '.system', 'skill-creator', 'SKILL.md'), '---\nname: skill-creator\ndescription: Create skills\n---\n# Skill Creator\n', 'utf8');
+  await writeJson(path.join(rootDir, '.skillopt', 'system-skill-creator-client-surfaces-test', 'state.json'), {
+    skillId: '.system/skill-creator',
+    status: 'accepted',
+    nonRegression: true,
+    metrics: { complianceScore: 1 },
+  });
+
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const report = await verifySkillTrainingGate({
+    rootDir,
+    changedFiles: ['skill-sources/.system/skill-creator/SKILL.md'],
+  });
+
+  assert.equal(report.status, 'verified');
+  assert.equal(report.skills.length, 1);
+  assert.equal(report.skills[0].skillId, '.system/skill-creator');
+  assert.equal(report.skills[0].evidence.score, 1);
+});
