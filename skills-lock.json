@@ -6,48 +6,6 @@
       "sourceType": "github",
       "computedHash": "6412eb4eb3b91595ebab937f0c69501240e7ba761b3d82510b5cf506ec5c7adc"
     },
-    "matt-requirements": {
-      "source": "mattpocock/skills",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "8fa395ebd1ffa7a7e25287d9c8af3b0c30a53ebb855fe9e046cfa180775c9510",
-      "note": "AIOS-adapted requirement, domain-modeling, and to-spec guidance."
-    },
-    "matt-test-design": {
-      "source": "mattpocock/skills",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "409bd7aa387192a74c1638c8ec9e023c7bc22b157262797f2819c2eb4f47fa67",
-      "note": "AIOS-adapted behavior-focused TDD seam guidance."
-    },
-    "matt-implement": {
-      "source": "mattpocock/skills",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "cf8ab204c0c617d1def145d4fc32499b4eb07dbd2b9daa349910f1d595c121df",
-      "note": "AIOS-adapted lightweight implementation guidance."
-    },
-    "matt-code-review": {
-      "source": "mattpocock/skills",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "e08cf1e8b10c3110fb2a723a899105363e0eb5055a1980c8227aa6beee77722f",
-      "note": "AIOS-adapted Standards and Spec review rubric."
-    },
-    "matt-wayfinder": {
-      "source": "mattpocock/skills",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "f1e0a25c6b375e23a068a25008570fa21010ba5806edaaa8925d40ad3c8f9d52",
-      "note": "AIOS-adapted decision-map planning guidance."
-    },
-    "ponytail-minimize": {
-      "source": "DietrichGebert/ponytail",
-      "sourceType": "github-derived",
-      "license": "MIT",
-      "computedHash": "f5bae5e51eb03ba79a282d23bf041c6394a18ce9bc8dbeea17d7acf9451d6630",
-      "note": "AIOS Provider projection for the rex-harness minimal implementation Capability."
-    },
     "brainstorming": {
       "source": "obra/superpowers",
       "sourceType": "github",

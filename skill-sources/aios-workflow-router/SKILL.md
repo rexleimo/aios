@@ -19,7 +19,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 ## 所有权
 
 - AIOS：`direct | guarded | planned`、最终 Provider Binding、计划和 Activation 持久化、Skill/Agent/模型执行、安全、验证、Team、Harness、恢复和重试。
-- rex-harness：Observation -> Fact、Capability 选择、Capability Recipe、Evidence Contract、下一条语义 Command、软件 Workflow Recipe，以及独立可用的 rex-native Provider；宿主只能显式启用外部兼容覆盖。
+- rex-harness：Observation -> Fact、Capability 选择、Capability Recipe、Evidence Contract、下一条语义 Command、软件 Workflow Recipe，以及独立可用的 rex-native Provider；AIOS 不再绑定外部兼容 Provider。
 - Skill / Playbook / Agent：执行已经选中的一个阶段，不根据关键词自行激活，也不决定后续阶段。
 
 ## 路由流程
@@ -37,12 +37,10 @@ repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 
 ## Provider 规则
 
-- 当前 Command 的 `provider.id` 是 `matt-*` 时，只执行对应的有边界 Skill。
-- 当前 Command 的 `provider.id` 是一个 `superpowers:*` playbook 时，只执行该 playbook。
-- 当前 Command 的 `provider.id` 是 `ponytail-minimize` 时，只执行最小实现阶梯，不直接实现方案。
-- 当前 Command 的 Provider 是 `ecc-specialist` 时，AIOS 再按已记录的风险领域解析具体 Reviewer。
+- 当前 Command 的 `provider.id` 以 `rex-` 开头时，仅执行 rex-harness 打包的对应 Skill。
+- 当前 Command 的 Provider 是风险领域 Agent 时，AIOS 仅按已记录的风险证据解析一名 rex Reviewer。
 
-不得在首次请求中注入 `matt-requirements -> matt-test-design -> matt-implement -> matt-code-review` 整条链；每一步必须由上一阶段证据解锁。不得把 `Fast | Balanced | Deep` 作为输入路由，它们只用于总结实际 Activation。
+不得在首次请求中注入任何固定 Provider 链；每一步必须由上一阶段证据解锁。不得把 `Fast | Balanced | Deep` 作为输入路由，它们只用于总结实际 Activation。
 
 ## 宿主升级
 

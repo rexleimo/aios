@@ -273,10 +273,10 @@ Only Claude has a verified prompt-hook projection. Other clients must not claim 
 - Control loop: `Observation -> Fact -> Activation -> Command -> Provider -> Evidence`. rex owns the semantic transitions and can persist them independently under `.rex-harness/`; AIOS persists a host projection under `.aios/workflow-activations/`.
 - `rex-harness` owns software-engineering Facts, Capability selection, Workflow Activation, stage order, Evidence Contracts, standalone `start/status/evidence/resume`, and portable default Provider hints. AIOS adds `direct | guarded | planned`, final executable Provider Binding, process execution, ContextDB, recovery, safety, Team, and Harness.
 - Standalone coding clients load `rex-workflow` and use the compact CLI by default; `--full` is diagnostic-only. AIOS calls the complete rex JS API directly and does not register a core rex MCP server.
-- Run only the Provider returned by the current `capabilityDecision`. Do not inject a complete Matt or Superpowers chain on the first turn.
+- Run only the Provider returned by the current `capabilityDecision`. Do not inject a fixed Provider chain on the first turn.
 - AIOS stores the complete rex Workflow Activation under `.aios/workflow-activations/workflows/`; top-level Capability files are compatibility projections. After a Provider returns evidence, advance through the rex runtime instead of reselecting the next stage in AIOS.
 - AIOS recipe definitions expose one command-scoped projection of `adaptive-software-delivery`; conditional Capability candidates are not a fixed pipeline and must not all be required at once. AIOS-only runtime and governance recipes remain host-owned.
-- Current default Providers are the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. Matt, Superpowers, Ponytail, and ECC bindings exist only in explicit AIOS compatibility mode and are never required for rex-harness standalone readiness.
+- AIOS binds only the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. External Skills and playbooks may be installed for explicit user requests, but cannot replace a rex Provider or advance a rex Activation.
 - `Fast | Balanced | Deep` are post-run analytics derived from actual Activations. They are not request routes and must not be guessed from prompt length or keywords.
 
 ## AIOS Interception Runtime (Deprecated)
@@ -439,14 +439,14 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 
 ## AIOS Superpowers Playbooks
 
-- Do not invoke `using-superpowers` as a global bootstrap. The current rex Command, not a second prompt classifier, selects a Superpowers playbook.
+- Do not invoke `using-superpowers` as a global bootstrap. Superpowers is not a rex Provider and cannot select or advance a rex workflow stage.
 - Software workflow ownership and default Provider implementation belong to `rex-harness`. AIOS invokes only the current Provider from the rex Capability Command and never preloads a fixed stack.
-- AIOS defaults to bundled rex-native Providers. Matt, Superpowers, Ponytail, and ECC are optional compatibility replacements selected only when the caller explicitly enables compatibility mode; they do not participate in default readiness or routing.
+- AIOS binds only bundled rex-native Providers. External Skills, playbooks, and reviewers are not compatibility replacements and do not participate in rex readiness or routing.
 - A Provider completing successfully is not enough to advance. Return the required evidence kinds to the AIOS Activation Ledger and let rex evaluate the transition.
-- Invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` only when that playbook is the Provider in the current rex Command; then follow the selected process instead of paraphrasing it.
+- Do not invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` to select or replace a rex stage; they remain standalone tools only for an explicit user request outside a rex Activation.
 - Do not translate user wording such as "new capability", "multi-step", "bug fix", or "failure" directly into a Superpowers playbook. Those observations must pass through rex Fact and Capability selection first.
 - `verification-before-completion` remains an AIOS host completion gate before delivery, commit, or release; it does not choose or advance a rex Capability.
-- `direct` work does not need a Superpowers chain. `guarded` work uses the edit and verification gates below; it only adds a process skill when the policy selects one.
+- `direct` work does not need a Superpowers chain. `guarded` and `planned` work invoke only the currently selected Provider.
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
 - If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
@@ -459,6 +459,7 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 - This client ships repo-local agent definitions; prefer them over ad-hoc roles.
 - Dispatch only one explicit `planned` work item at a time. Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
 - Use `superpowers:dispatching-parallel-agents` only when the policy selects team work, then converge with a verification pass before merge. Do not re-run the global bootstrap or create a new plan in each worker.
+- Do not dispatch ECC-inspired roles merely because a request looks complex. Dispatch a specialist only after rex selects `software.review.specialist` and AIOS capability plus smoke gates permit the role.
 - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
 - When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.
 

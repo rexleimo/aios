@@ -28,17 +28,17 @@ test('native instructions use adaptive workflow dispositions instead of every-me
   }
 });
 
-test('native instructions describe rex workflow ownership without a fixed Matt chain', () => {
+test('native instructions describe rex-only workflow ownership without a fixed Provider chain', () => {
   for (const client of resolveNativeClients('all')) {
     const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
     assert.match(markdown, /rex-harness Software Workflow/, `${client} missing rex workflow guidance`);
-    assert.match(markdown, /Current default Providers are the bundled `rex-\*` Skills/, `${client} missing rex-native default`);
-    assert.match(markdown, /explicit AIOS compatibility mode/, `${client} missing external compatibility boundary`);
+    assert.match(markdown, /AIOS binds only the bundled `rex-\*` Skills/, `${client} missing rex-only Provider binding`);
+    assert.match(markdown, /cannot replace a rex Provider/i, `${client} must prevent external Provider replacement`);
     assert.match(markdown, /current `capabilityDecision`/i, `${client} must execute only the current Capability`);
     assert.match(markdown, /Observation -> Fact -> Activation -> Command -> Provider -> Evidence/u, `${client} missing the executable workflow loop`);
     assert.match(markdown, /command-scoped projection.*not a fixed pipeline/i, `${client} missing adaptive recipe projection boundary`);
     assert.match(markdown, /persist them independently under `.rex-harness\/`/i, `${client} missing standalone rex persistence boundary`);
-    assert.doesNotMatch(markdown, /matt-requirements`?\s*->\s*`?matt-test-design`?\s*->/i, `${client} still injects a fixed Matt chain`);
+    assert.doesNotMatch(markdown, /mattpocock|ponytail-minimize|ecc-specialist/iu, `${client} still exposes legacy compatibility Providers`);
     assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${client} still routes Superpowers from user intent`);
     assert.doesNotMatch(markdown, /behavior change or bug fix.*test-driven-development/i, `${client} still routes Superpowers from user intent`);
   }

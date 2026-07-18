@@ -21,10 +21,10 @@ Only Claude has a verified prompt-hook projection. Other clients must not claim 
 - Control loop: `Observation -> Fact -> Activation -> Command -> Provider -> Evidence`. rex owns the semantic transitions and can persist them independently under `.rex-harness/`; AIOS persists a host projection under `.aios/workflow-activations/`.
 - `rex-harness` owns software-engineering Facts, Capability selection, Workflow Activation, stage order, Evidence Contracts, standalone `start/status/evidence/resume`, and portable default Provider hints. AIOS adds `direct | guarded | planned`, final executable Provider Binding, process execution, ContextDB, recovery, safety, Team, and Harness.
 - Standalone coding clients load `rex-workflow` and use the compact CLI by default; `--full` is diagnostic-only. AIOS calls the complete rex JS API directly and does not register a core rex MCP server.
-- Run only the Provider returned by the current `capabilityDecision`. Do not inject a complete Matt or Superpowers chain on the first turn.
+- Run only the Provider returned by the current `capabilityDecision`. Do not inject a fixed Provider chain on the first turn.
 - AIOS stores the complete rex Workflow Activation under `.aios/workflow-activations/workflows/`; top-level Capability files are compatibility projections. After a Provider returns evidence, advance through the rex runtime instead of reselecting the next stage in AIOS.
 - AIOS recipe definitions expose one command-scoped projection of `adaptive-software-delivery`; conditional Capability candidates are not a fixed pipeline and must not all be required at once. AIOS-only runtime and governance recipes remain host-owned.
-- Current default Providers are the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. Matt, Superpowers, Ponytail, and ECC bindings exist only in explicit AIOS compatibility mode and are never required for rex-harness standalone readiness.
+- AIOS binds only the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. External Skills and playbooks may be installed for explicit user requests, but cannot replace a rex Provider or advance a rex Activation.
 - `Fast | Balanced | Deep` are post-run analytics derived from actual Activations. They are not request routes and must not be guessed from prompt length or keywords.
 
 ## AIOS Interception Runtime (Deprecated)

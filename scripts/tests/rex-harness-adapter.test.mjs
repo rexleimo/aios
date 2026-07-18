@@ -7,7 +7,6 @@ import { createRexCapabilityPack, supportedClients } from '../../rex-harness/src
 import { resolveClientsWithCapability } from '../lib/clients/capabilities/index.mjs';
 import {
   AIOS_REX_PROVIDER_BINDINGS,
-  AIOS_REX_COMPATIBILITY_PROVIDER_BINDINGS,
   advanceAiosSoftwareWorkflow,
   buildRexWorkflowDefinitions,
   evaluateAiosSoftwareRequest,
@@ -138,34 +137,6 @@ test('AIOS team or harness promotion does not replace the current rex Provider',
   }
 });
 
-test('explicit compatibility mode survives workflow advancement without changing the default route', () => {
-  const started = startAiosSoftwareWorkflow({
-    workflowActivationId: 'workflow-aios-compatibility',
-    workItemKey: 'checkout-compatibility',
-    compatibilityMode: true,
-    request: {
-      message: 'Clarify acceptance criteria before implementing checkout.',
-    },
-    createActivationId: () => 'activation-aios-compatibility-requirements',
-  });
-
-  assert.equal(started.aiosProviderMode, 'compatibility');
-  assert.equal(started.currentCommand.provider.id, 'matt-requirements');
-
-  const advanced = advanceAiosSoftwareWorkflow(started, [
-    { kind: 'acceptance-criteria-recorded', refs: ['artifact:compatibility-requirements'] },
-    { kind: 'non-goals-recorded', refs: ['artifact:compatibility-requirements'] },
-    { kind: 'first-slice-identified', refs: ['artifact:compatibility-requirements'] },
-  ], {
-    createActivationId: () => 'activation-aios-compatibility-test-design',
-  });
-
-  assert.equal(advanced.workflow.aiosProviderMode, 'compatibility');
-  assert.equal(advanced.workflow.currentCapabilityId, 'software.testing.design');
-  assert.equal(advanced.workflow.currentCommand.provider.id, 'matt-test-design');
-  assert.ok(AIOS_REX_PROVIDER_BINDINGS.every((binding) => binding.provider.id.startsWith('rex-')));
-});
-
 test('AIOS workflow definitions project rex semantics into agent roles without reordering stages', () => {
   const definitions = buildRexWorkflowDefinitions();
   const [adaptive] = definitions;
@@ -199,18 +170,13 @@ test('default AIOS Provider skills come from the packaged rex-harness sources', 
   }
 });
 
-test('external projects replace rex Providers only in explicit compatibility mode', () => {
-  assert.ok(AIOS_REX_PROVIDER_BINDINGS.every((binding) => binding.provider.id.startsWith('rex-')));
-  assert.equal(
-    AIOS_REX_COMPATIBILITY_PROVIDER_BINDINGS
-      .find((binding) => binding.capabilityId === 'software.requirements.clarify')
-      .provider.id,
-    'matt-requirements',
-  );
-
-  const compatible = evaluateAiosSoftwareRequest({
+test('AIOS ignores legacy compatibility options and remains rex-native', () => {
+  const result = evaluateAiosSoftwareRequest({
     message: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
     compatibilityMode: true,
   });
-  assert.equal(compatible.decision.provider.id, 'matt-requirements');
+
+  assert.equal(result.providerMode, 'rex-native');
+  assert.equal(result.decision.provider.id, 'rex-requirements');
+  assert.ok(AIOS_REX_PROVIDER_BINDINGS.every((binding) => binding.provider.id.startsWith('rex-')));
 });

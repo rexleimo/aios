@@ -1,6 +1,6 @@
 /**
  * AIOS 与 rex-harness 的唯一适配边界。
- * rex-native Provider 是默认执行路径；外部项目只能通过显式兼容模式覆盖。
+ * 工作流始终使用 rex 内置 Provider，避免宿主重新引入另一套语义路由。
  */
 import {
   CAPABILITY,
@@ -15,69 +15,11 @@ import {
 } from '../../../rex-harness/src/index.mjs';
 import { resolveAiosAgentProvider } from './rex-agent-provider.mjs';
 
-const EXTERNAL_COMPATIBILITY_OVERRIDES = Object.freeze([
-  Object.freeze({
-    capabilityId: CAPABILITY.REQUIREMENTS_CLARIFY,
-    provider: Object.freeze({ kind: 'skill', id: 'matt-requirements', provenance: 'mattpocock/skills' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.DESIGN_RESOLVE,
-    provider: Object.freeze({ kind: 'playbook', id: 'superpowers:brainstorming' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.PLANNING_SEQUENCE,
-    provider: Object.freeze({ kind: 'playbook', id: 'superpowers:writing-plans' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.TESTING_DESIGN,
-    provider: Object.freeze({ kind: 'skill', id: 'matt-test-design', provenance: 'mattpocock/skills' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.TESTING_STRICT_TDD,
-    provider: Object.freeze({ kind: 'playbook', id: 'superpowers:test-driven-development' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.DEBUG_ROOT_CAUSE,
-    provider: Object.freeze({ kind: 'playbook', id: 'superpowers:systematic-debugging' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.IMPLEMENTATION_EXECUTE,
-    provider: Object.freeze({ kind: 'skill', id: 'matt-implement', provenance: 'mattpocock/skills' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.REVIEW_STANDARDS_SPEC,
-    provider: Object.freeze({ kind: 'skill', id: 'matt-code-review', provenance: 'mattpocock/skills' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.REVIEW_SPECIALIST,
-    provider: Object.freeze({ kind: 'agent', id: 'ecc-specialist', selector: 'risk-domain' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.NAVIGATION_WAYFIND,
-    provider: Object.freeze({ kind: 'skill', id: 'matt-wayfinder', provenance: 'mattpocock/skills' }),
-  }),
-  Object.freeze({
-    capabilityId: CAPABILITY.IMPLEMENTATION_MINIMIZE,
-    provider: Object.freeze({ kind: 'skill', id: 'ponytail-minimize', provenance: 'DietrichGebert/ponytail' }),
-  }),
-]);
-
-function mergeProviderBindings(overrides = []) {
-  const byCapability = new Map(
-    rexNativeProviderBindings.map((binding) => [binding.capabilityId, binding]),
-  );
-  for (const binding of overrides) byCapability.set(binding.capabilityId, binding);
-  return Object.freeze([...byCapability.values()]);
-}
-
-export function createAiosRexProviderBindings({ compatibilityMode = false } = {}) {
-  return mergeProviderBindings(compatibilityMode ? EXTERNAL_COMPATIBILITY_OVERRIDES : []);
+export function createAiosRexProviderBindings() {
+  return Object.freeze([...rexNativeProviderBindings]);
 }
 
 export const AIOS_REX_PROVIDER_BINDINGS = createAiosRexProviderBindings();
-export const AIOS_REX_COMPATIBILITY_PROVIDER_BINDINGS = createAiosRexProviderBindings({
-  compatibilityMode: true,
-});
 
 const DEFAULT_AGENT_ROLE = new Map([
   [CAPABILITY.REQUIREMENTS_CLARIFY, 'planner'],
@@ -117,16 +59,10 @@ const ROUTE_BY_CAPABILITY = new Map([
   [CAPABILITY.REVIEW_SPECIALIST, 'verify'],
 ]);
 
-function bindingContext(options = {}, workflow = null) {
-  const compatibilityMode = options.compatibilityMode === true
-    || (options.compatibilityMode === undefined && workflow?.aiosProviderMode === 'compatibility');
-  const base = createAiosRexProviderBindings({ compatibilityMode });
-  const bindings = Array.isArray(options.providerBindings)
-    ? mergeProviderBindings([...base, ...options.providerBindings])
-    : base;
+function bindingContext() {
+  const bindings = AIOS_REX_PROVIDER_BINDINGS;
   return Object.freeze({
-    compatibilityMode,
-    providerMode: compatibilityMode ? 'compatibility' : 'rex-native',
+    providerMode: 'rex-native',
     bindings,
     byCapability: new Map(bindings.map((binding) => [binding.capabilityId, binding.provider])),
   });
@@ -134,7 +70,6 @@ function bindingContext(options = {}, workflow = null) {
 
 function coreOptions(options = {}) {
   const {
-    compatibilityMode: _compatibilityMode,
     providerBindings: _providerBindings,
     ...rest
   } = options;
@@ -222,7 +157,7 @@ export function startAiosSoftwareWorkflow(options = {}) {
   const request = options.request || {};
   const evaluated = options.decision
     ? Object.freeze({ facts: Object.freeze([]), decision: bindDecision(options.decision, context), promotion: null })
-    : evaluateAiosSoftwareRequest({ ...request, compatibilityMode: context.compatibilityMode });
+    : evaluateAiosSoftwareRequest(request);
   const workflow = startSoftwareWorkflow({
     ...coreOptions(options),
     request,
@@ -234,7 +169,7 @@ export function startAiosSoftwareWorkflow(options = {}) {
 }
 
 export function advanceAiosSoftwareWorkflow(workflow, evidence = [], options = {}) {
-  const context = bindingContext(options, workflow);
+  const context = bindingContext();
   const advanced = advanceSoftwareWorkflow(workflow, evidence, {
     ...coreOptions(options),
     providerBindings: context.bindings,

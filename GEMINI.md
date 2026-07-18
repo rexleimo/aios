@@ -41,11 +41,22 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then select only the relevant workflow playbooks.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
+
+## rex-harness Software Workflow
+
+- Control loop: `Observation -> Fact -> Activation -> Command -> Provider -> Evidence`. rex owns the semantic transitions and can persist them independently under `.rex-harness/`; AIOS persists a host projection under `.aios/workflow-activations/`.
+- `rex-harness` owns software-engineering Facts, Capability selection, Workflow Activation, stage order, Evidence Contracts, standalone `start/status/evidence/resume`, and portable default Provider hints. AIOS adds `direct | guarded | planned`, final executable Provider Binding, process execution, ContextDB, recovery, safety, Team, and Harness.
+- Standalone coding clients load `rex-workflow` and use the compact CLI by default; `--full` is diagnostic-only. AIOS calls the complete rex JS API directly and does not register a core rex MCP server.
+- Run only the Provider returned by the current `capabilityDecision`. Do not inject a fixed Provider chain on the first turn.
+- AIOS stores the complete rex Workflow Activation under `.aios/workflow-activations/workflows/`; top-level Capability files are compatibility projections. After a Provider returns evidence, advance through the rex runtime instead of reselecting the next stage in AIOS.
+- AIOS recipe definitions expose one command-scoped projection of `adaptive-software-delivery`; conditional Capability candidates are not a fixed pipeline and must not all be required at once. AIOS-only runtime and governance recipes remain host-owned.
+- AIOS binds only the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. External Skills and playbooks may be installed for explicit user requests, but cannot replace a rex Provider or advance a rex Activation.
+- `Fast | Balanced | Deep` are post-run analytics derived from actual Activations. They are not request routes and must not be guessed from prompt length or keywords.
 
 ## AIOS Interception Runtime (Deprecated)
 
@@ -207,14 +218,14 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 
 ## AIOS Superpowers Playbooks
 
-- Do not invoke `using-superpowers` as a global bootstrap. The AIOS workflow policy chooses the smallest applicable playbook after it classifies the work item.
-- For a `planned` work item, invoke the selected skill rather than paraphrasing its process:
-  - unclear design or a new capability → `superpowers:brainstorming` (or `brainstorming`)
-  - explicit multi-step plan → `superpowers:writing-plans` (or `writing-plans`)
-  - observed failure or regression → `superpowers:systematic-debugging`
-  - behavior change or bug fix → `superpowers:test-driven-development`
-  - before delivery, completion, commit, or release → `superpowers:verification-before-completion`
-- `direct` work does not need a Superpowers chain. `guarded` work uses the edit and verification gates below; it only adds a process skill when the policy selects one.
+- Do not invoke `using-superpowers` as a global bootstrap. Superpowers is not a rex Provider and cannot select or advance a rex workflow stage.
+- Software workflow ownership and default Provider implementation belong to `rex-harness`. AIOS invokes only the current Provider from the rex Capability Command and never preloads a fixed stack.
+- AIOS binds only bundled rex-native Providers. External Skills, playbooks, and reviewers are not compatibility replacements and do not participate in rex readiness or routing.
+- A Provider completing successfully is not enough to advance. Return the required evidence kinds to the AIOS Activation Ledger and let rex evaluate the transition.
+- Do not invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` to select or replace a rex stage; they remain standalone tools only for an explicit user request outside a rex Activation.
+- Do not translate user wording such as "new capability", "multi-step", "bug fix", or "failure" directly into a Superpowers playbook. Those observations must pass through rex Fact and Capability selection first.
+- `verification-before-completion` remains an AIOS host completion gate before delivery, commit, or release; it does not choose or advance a rex Capability.
+- `direct` work does not need a Superpowers chain. `guarded` and `planned` work invoke only the currently selected Provider.
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
 - If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.

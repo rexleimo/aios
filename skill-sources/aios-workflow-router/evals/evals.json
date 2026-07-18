@@ -3,8 +3,8 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "AIOS returned a planned decision whose current rex capability is software.requirements.clarify and provider is matt-requirements. Route this request to clarify checkout vocabulary and acceptance criteria before implementation.",
-      "expected_output": "Invoke only matt-requirements, preserve the current Activation evidence contract, and do not preload test-design, implementation, review, Team, or a second plan.",
+      "prompt": "AIOS returned a planned decision whose current rex capability is software.requirements.clarify and provider is rex-requirements. Route this request to clarify checkout vocabulary and acceptance criteria before implementation.",
+      "expected_output": "Invoke only rex-requirements, preserve the current Activation evidence contract, and do not preload test-design, implementation, review, Team, or a second plan.",
       "files": []
     },
     {
