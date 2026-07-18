@@ -1,0 +1,17 @@
+{
+  "skill_name": "matt-requirements",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "rex selected software.requirements.clarify for a checkout change with missing acceptance criteria. Clarify one executable vertical slice and return the required evidence.",
+      "expected_output": "Acceptance criteria, non-goals, first slice, and evidence refs without invoking test design or creating another plan.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The requirements Activation found that the destination is clear but the implementation path is still unknown. Finish the current stage correctly.",
+      "expected_output": "Record the unresolved path as an observation and return control without invoking Wayfinder directly.",
+      "files": []
+    }
+  ]
+}

@@ -231,7 +231,8 @@ test('/subagent is an explicit planned work-item route', async () => {
     });
 
     assert.equal(result.decision.disposition, 'planned');
-    assert.equal(result.decision.routeHint, 'team');
+    assert.equal(result.decision.routeHint, 'implement');
+    assert.equal(result.decision.executionHost, 'team');
     assert.equal(result.created, true);
     assert.equal(result.plan.route, 'team');
   } finally {
@@ -251,7 +252,7 @@ test('explicit plan requests persist once and same-session continuation reuses w
     assert.equal(first.decision.disposition, 'planned');
     assert.equal(first.created, true);
     assert.ok(first.plan?.relativePath);
-    assert.deepEqual(first.plan.skills, ['writing-plans']);
+    assert.deepEqual(first.plan.skills, ['rex-planning']);
     const activePath = path.join(root, '.aios', 'planning', 'active.json');
     const before = await readFile(activePath, 'utf8');
 

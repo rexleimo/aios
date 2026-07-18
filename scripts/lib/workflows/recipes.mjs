@@ -15,6 +15,7 @@ export async function listWorkflowRecipes({
 } = {}) {
   const catalogue = agentCatalogue || await buildAgentCatalogue({ rootDir, evidenceRoot, generatedAt });
   const recipes = await Promise.all(RECIPES.map(async (recipe) => {
+    const commandScoped = Boolean(recipe.runtimeManaged);
     const stages = recipe.stages.map((stage) => {
       const agent = agentForRole(catalogue, stage.agentRole);
       return {
@@ -24,18 +25,25 @@ export async function listWorkflowRecipes({
         workflowEnabled: Boolean(agent?.workflowEnabled),
       };
     });
-    const blockers = stages
-      .filter((stage) => !stage.workflowEnabled)
-      .map((stage) => `${stage.id} requires ${stage.agentId || stage.agentRole} to be smoke-verified before live workflow`);
-    const qualityGateEvidence = await evidenceForQualityGates(recipe.qualityGates, { rootDir, evidenceRoot });
-    const qualityGateBlockers = qualityGateEvidence
-      .filter((gate) => gate.status !== 'verified')
-      .map((gate) => `quality gate ${gate.gate} requires verified evidence: ${gate.missing || gate.validator}`);
+    // rex 自适应工作流只校验当前 Command；不能要求所有条件候选 Provider 同时就绪。
+    const blockers = commandScoped
+      ? []
+      : stages
+        .filter((stage) => !stage.workflowEnabled)
+        .map((stage) => `${stage.id} requires ${stage.agentId || stage.agentRole} to be smoke-verified before live workflow`);
+    const qualityGateEvidence = commandScoped
+      ? []
+      : await evidenceForQualityGates(recipe.qualityGates, { rootDir, evidenceRoot });
+    const qualityGateBlockers = commandScoped
+      ? []
+      : qualityGateEvidence
+        .filter((gate) => gate.status !== 'verified')
+        .map((gate) => `quality gate ${gate.gate} requires verified evidence: ${gate.missing || gate.validator}`);
     return {
       ...recipe,
       stages,
       qualityGateEvidence,
-      liveReady: blockers.length === 0 && qualityGateBlockers.length === 0,
+      liveReady: commandScoped || (blockers.length === 0 && qualityGateBlockers.length === 0),
       blockers: [...blockers, ...qualityGateBlockers],
     };
   }));
@@ -52,7 +60,7 @@ export async function listWorkflowRecipes({
 export async function buildWorkflowDryRun({
   rootDir = process.cwd(),
   evidenceRoot = rootDir,
-  workflowId = 'plan-build-review',
+  workflowId = 'adaptive-software-delivery',
   task = '',
   generatedAt = new Date().toISOString(),
 } = {}) {
@@ -60,6 +68,27 @@ export async function buildWorkflowDryRun({
   const recipe = recipes.recipes.find((item) => item.workflowId === workflowId);
   if (!recipe) {
     throw new Error(`unknown workflow recipe: ${workflowId}`);
+  }
+  if (recipe.runtimeManaged) {
+    return {
+      schemaVersion: 1,
+      kind: 'aios.orchestration-run.v1',
+      runId: `dry-run-${randomUUID()}`,
+      workflowId: recipe.workflowId,
+      task,
+      executionMode: 'dry-run',
+      status: 'ready',
+      generatedAt,
+      stages: recipe.stages.map((stage) => ({
+        ...stage,
+        status: 'conditional',
+        evidenceRequired: stage.requiredEvidence,
+      })),
+      qualityGates: [],
+      qualityGateEvidence: [],
+      blockers: [],
+      nextAction: 'start or resume the rex workflow and execute only its current Command',
+    };
   }
   const stages = recipe.stages.map((stage) => ({
     ...stage,

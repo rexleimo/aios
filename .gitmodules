@@ -1,0 +1,3 @@
+[submodule "rex-harness"]
+	path = rex-harness
+	url = git@github.com:rexleimo/rex-harness.git

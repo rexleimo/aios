@@ -50,7 +50,7 @@ test('evaluatePlanEvidence blocks when required headings are missing', async () 
 test('evaluatePlanEvidence accepts complete plan markdown and compact heading aliases', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-ready-'));
   try {
-    const planPath = path.join('docs', 'plans', 'ready.md');
+    const planPath = 'docs/plans/ready.md';
     await mkdir(path.join(rootDir, 'docs', 'plans'), { recursive: true });
     await writeFile(path.join(rootDir, planPath), COMPLETE_PLAN, 'utf8');
 

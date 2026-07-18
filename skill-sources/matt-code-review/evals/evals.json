@@ -1,0 +1,17 @@
+{
+  "skill_name": "matt-code-review",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "rex selected software.review.standards-spec for a bounded diff with a written spec. Review both axes and return evidence.",
+      "expected_output": "Separate Standards and Spec findings plus both review evidence refs, without dispatching agents.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The Review Activation has repository standards but no originating spec artifact. Produce an honest result.",
+      "expected_output": "Standards findings and an explicit no-spec verdict rather than invented requirements, with traceable review refs.",
+      "files": []
+    }
+  ]
+}

@@ -121,6 +121,35 @@ const TOOLS = [
       },
     },
   },
+  {
+    name: 'aios_capability_evidence',
+    description: 'Persist typed Provider evidence for the current rex-harness Capability Activation, advance its Evidence gate, and return the next provider-neutral Command when available.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        activationId: { type: 'string', description: 'Current rex Capability Activation id' },
+        commandToken: { type: 'string', description: 'Execution token from the current persisted Provider Command' },
+        evidence: {
+          type: 'array',
+          description: 'Typed evidence items produced by the current Provider stage',
+          items: {
+            type: 'object',
+            properties: {
+              kind: { type: 'string', description: 'Evidence kind required by the current Command' },
+              refs: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Artifact, command, diff, or log references proving the evidence',
+              },
+            },
+            required: ['kind', 'refs'],
+          },
+        },
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+      },
+      required: ['activationId', 'commandToken', 'evidence'],
+    },
+  },
 ];
 
 /* 中文注释：JSON-RPC 2.0 辅助函数 */
@@ -484,6 +513,7 @@ async function handleMessage(message) {
       'aios_plan_status': handlePlanStatus,
       'aios_plan_gate': handlePlanGate,
       'aios_plan_auto_gate': handlePlanAutoGate,
+      'aios_capability_evidence': handleCapabilityEvidence,
     };
 
     const handler = handlers[toolName];
@@ -594,6 +624,22 @@ async function handlePlanAutoGate(params) {
   }
 }
 
+async function handleCapabilityEvidence(params) {
+  const workspace = params.workspace || process.cwd();
+  try {
+    const { recordAiosCapabilityEvidence } = await import('./lib/workflows/rex-capability-runtime.mjs');
+    const result = recordAiosCapabilityEvidence({
+      rootDir: workspace,
+      activationId: params.activationId || params.activation_id,
+      commandToken: params.commandToken || params.command_token,
+      evidence: params.evidence,
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_capability_evidence failed: ${err.message}` }] };
+  }
+}
+
 export {
   handleMessage,
   TOOLS,
@@ -606,4 +652,5 @@ export {
   handlePlanStatus,
   handlePlanGate,
   handlePlanAutoGate,
+  handleCapabilityEvidence,
 };

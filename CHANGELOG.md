@@ -4,6 +4,67 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [4.2.2] - 2026-07-17
+
+### Added
+
+- Add auditable SkillOpt evidence for `rex-tdd` with a no-Skill control, isolated baseline and candidate rollouts, independent exact-quote scoring, 10 training tasks, and 5 validation tasks.
+- Include the `rex-tdd` evidence contract in the default AIOS rex integration test command.
+- Accept the `rex-tdd` v7 candidate against a newly isolated orthogonal holdout, including a frozen-observation package that preserves selected commands and observable execution evidence.
+
+### Fixed
+
+- Keep baseline TDD inside the user-confirmed Test Scope Contract, require reproducible command/output evidence, and prevent self-upgrading to strict TDD without a risk-backed rex Command.
+- Keep historic v6 evidence assertions independent from later v7 state and artifacts, so the full training timeline remains verifiable after acceptance.
+
+## [4.2.1] - 2026-07-17
+
+### Added
+
+- Add auditable two-step SkillOpt evidence for `rex-workflow` with isolated raw outputs, independent per-assertion scoring, 10 training tasks, and 5 validation tasks.
+- Add rex standalone failure, multilingual routing, host-promotion, and nested Skill training-gate scenarios.
+
+### Fixed
+
+- Discover tracked and untracked Skills under `rex-harness/skill-sources/**` in the AIOS training gate, and reject missing or stale accepted-content hashes.
+- Classify read-only and mixed mutation requests by actionable clauses, including shorthand and coordinated negated-action lists, so negation order cannot create or erase a rex Capability.
+- Fail closed when a compact rex response claims `completed` while retaining a Command or missing Evidence.
+
+## [4.2.0] - 2026-07-17
+
+### Added
+
+- Add Hermes and Grok Build rex Skill projections with an AIOS registry-parity contract.
+- Add the `rex-workflow` native client Skill so standalone coding agents can drive the rex evidence loop through Shell without an AIOS host.
+- Add a compact CLI Command protocol with explicit `--full` diagnostics while preserving the complete rex JS API for host integrations.
+
+### Changed
+
+- Make standalone rex clients load only the current Provider instructions and keep complete Activation history under `.rex-harness/`.
+- Package the risk-backed specialist Reviewer Catalog as an on-demand `rex-workflow` reference installed with native client projections.
+- Keep AIOS on the direct rex JS API boundary; it does not parse CLI output or register a rex MCP server.
+
+### Removed
+
+- Remove the rex core MCP server, MCP CLI command, SDK dependency, tool exports, and packaged MCP sources.
+
+## [4.1.0] - 2026-07-16
+
+### Added
+
+- Add `rex-harness` as a standalone software-engineering control plane with its own adaptive workflow runtime, CLI, MCP server, local state, command-token rotation, and typed Evidence Journal.
+- Add bundled rex-native Providers for requirements, design, planning, test design, baseline and strict TDD, debugging, minimal construction, implementation, review, and wayfinding, plus a risk-backed Reviewer Catalog.
+- Add a test-scope contract that must align targets, non-goals, acceptance mapping, and test seams before baseline or strict TDD can start.
+- Add conflict-safe rex Skill projection for Codex, Claude, Gemini, and OpenCode.
+
+### Changed
+
+- Make AIOS consume the rex-owned workflow runtime through an adapter instead of independently reselecting or reordering software-engineering stages.
+- Default AIOS execution to rex-native Providers; Matt, Superpowers, Ponytail, and ECC replace only the current Provider when explicit compatibility mode is enabled.
+- Separate semantic Provider selection from the `single | team | harness` execution host so runtime promotion never replaces the current rex Command.
+- Derive `Fast | Balanced | Deep` from completed Activations as post-run analytics instead of classifying requests by prompt wording or length.
+- Prevent `implementation-ready` observations from bypassing the Test Scope Contract or scheduling a duplicate implementation after TDD GREEN.
+
 ## [4.0.3] - 2026-07-15
 
 - Install repository client skills into supported global client homes during `aios init` and native sync.

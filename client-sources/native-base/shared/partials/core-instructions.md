@@ -10,11 +10,22 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then select only the relevant workflow playbooks.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
+
+## rex-harness Software Workflow
+
+- Control loop: `Observation -> Fact -> Activation -> Command -> Provider -> Evidence`. rex owns the semantic transitions and can persist them independently under `.rex-harness/`; AIOS persists a host projection under `.aios/workflow-activations/`.
+- `rex-harness` owns software-engineering Facts, Capability selection, Workflow Activation, stage order, Evidence Contracts, standalone `start/status/evidence/resume`, and portable default Provider hints. AIOS adds `direct | guarded | planned`, final executable Provider Binding, process execution, ContextDB, recovery, safety, Team, and Harness.
+- Standalone coding clients load `rex-workflow` and use the compact CLI by default; `--full` is diagnostic-only. AIOS calls the complete rex JS API directly and does not register a core rex MCP server.
+- Run only the Provider returned by the current `capabilityDecision`. Do not inject a complete Matt or Superpowers chain on the first turn.
+- AIOS stores the complete rex Workflow Activation under `.aios/workflow-activations/workflows/`; top-level Capability files are compatibility projections. After a Provider returns evidence, advance through the rex runtime instead of reselecting the next stage in AIOS.
+- AIOS recipe definitions expose one command-scoped projection of `adaptive-software-delivery`; conditional Capability candidates are not a fixed pipeline and must not all be required at once. AIOS-only runtime and governance recipes remain host-owned.
+- Current default Providers are the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. Matt, Superpowers, Ponytail, and ECC bindings exist only in explicit AIOS compatibility mode and are never required for rex-harness standalone readiness.
+- `Fast | Balanced | Deep` are post-run analytics derived from actual Activations. They are not request routes and must not be guessed from prompt length or keywords.
 
 ## AIOS Interception Runtime (Deprecated)
 

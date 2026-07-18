@@ -76,6 +76,18 @@ if ! command -v node >/dev/null 2>&1; then
   exit 1
 fi
 
+for rex_file in \
+  "$ROOT_DIR/rex-harness/package.json" \
+  "$ROOT_DIR/rex-harness/src/index.mjs" \
+  "$ROOT_DIR/rex-harness/bin/rex-harness.mjs" \
+  "$ROOT_DIR/rex-harness/skill-sources/rex-workflow/SKILL.md"; do
+  if [[ ! -f "$rex_file" ]]; then
+    echo "missing required rex-harness release file: $rex_file" >&2
+    echo "initialize the submodule with: git -C \"$ROOT_DIR\" submodule update --init --recursive -- rex-harness" >&2
+    exit 1
+  fi
+done
+
 if ! node "$ROOT_DIR/scripts/check-skills-sync.mjs" --materialize-temp >/dev/null; then
   echo "skills sync drift detected; run: node scripts/sync-skills.mjs" >&2
   exit 1
@@ -106,6 +118,7 @@ echo "  VERSION:   $VERSION"
 echo "  CHANGELOG: has ## [$EXPECTED_VERSION] - YYYY-MM-DD"
 echo "  SKILLS:    generated roots match skill-sources/"
 echo "  NATIVE:    generated native outputs match client-sources/native-base/"
+echo "  REX:       rex-harness planning kernel is materialized"
 if [[ -f "$ROOT_DIR/agent-sources/manifest.json" ]]; then
   echo "  AGENTS:    export-only regeneration passed"
 fi

@@ -26,6 +26,8 @@ aios doctor --native --verbose
 
 如果要启用项目级客户端指引和记忆，请在项目根目录执行这些命令。无人值守安装可以使用 \`node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp\`；这些参数会明确授权安装压缩工具包以及写入用户级 MCP 配置。
 
+`rex-harness` 是 AIOS 智能规划的必需运行时。Release 安装包已经携带固定版本的 submodule 内容，不需要额外安装 npm 包，也不需要启动 rex MCP 服务。源码开发建议使用 `git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git`；如果普通 clone 没有拉取 submodule，`aios init`/`aios setup` 会自动尝试执行 `git submodule update --init --recursive -- rex-harness`，无法修复时会明确提示重新安装或重新初始化。
+
 ## Harness CLI 增加了什么
 
 Harness CLI 由多个职责不同、边界明确的层组成：

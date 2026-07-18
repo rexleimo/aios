@@ -130,12 +130,17 @@ Options:
   node scripts/aios.mjs plan show [--workspace <path>] [--html] [--json]
   node scripts/aios.mjs plan start --title <text> --task <text> [--workspace <path>] [--json]
   node scripts/aios.mjs plan auto-gate --task <text> [--workspace <path>] [--json]
+  node scripts/aios.mjs plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--workspace <path>] [--json]
 
 Options:
   --title <text>                 Plan title or task title
   --task <text>                  Task/objective text
   --objective <text>             Objective text
   --status <status>              Plan or task status
+  --activation <id>              Current rex Capability Activation id
+  --evidence-kind <kind>         Evidence kind required by the current Command
+  --command-token <token>        Execution token from the current persisted Command
+  --evidence-ref <ref>           Artifact, command, diff, or log reference
   --workspace <path>             Workspace root for planning state
   --html                         Also write .aios/planning/review.html
   --format <text|json|html|both>
@@ -145,6 +150,7 @@ Options:
 Examples:
   node scripts/aios.mjs plan show --html
   node scripts/aios.mjs plan show --workspace /tmp/demo --json
+  node scripts/aios.mjs plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref command:test --json
 `;
     case 'dream':
       return `Usage:

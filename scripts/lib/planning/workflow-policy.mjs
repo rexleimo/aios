@@ -3,6 +3,11 @@
  * decision; this module never reads or writes planning state.
  */
 
+import {
+  describeAiosCapability,
+  evaluateAiosSoftwareRequest,
+} from '../workflows/rex-harness-adapter.mjs';
+
 export const WORKFLOW_POLICY_MODES = Object.freeze(['adaptive', 'strict']);
 
 export const WORKFLOW_DISPOSITIONS = Object.freeze([
@@ -125,7 +130,7 @@ function routeForText(message, intent) {
 }
 
 function isExplicitPlanIntent(intent) {
-  return ['planned', 'plan', 'team', 'harness', 'design'].includes(intent);
+  return ['planned', 'plan', 'team', 'harness', 'design', 'wayfinder'].includes(intent);
 }
 
 function isExplicitDirectIntent(intent) {
@@ -144,7 +149,25 @@ function isPotentialCodeChange(route) {
   return ['implement', 'debug', 'ops', 'team', 'harness'].includes(route);
 }
 
-function skillsForDecision(disposition, route, { explicitPlan = false } = {}) {
+function skillsForDecision(disposition, route, {
+  explicitPlan = false,
+  capabilityDecision = null,
+  executionHost = 'single',
+} = {}) {
+  const providerKind = String(capabilityDecision?.provider?.kind || '').trim();
+  const selectedProvider = ['skill', 'playbook'].includes(providerKind)
+    ? String(capabilityDecision?.provider?.id || '').trim()
+    : '';
+  // rex 当前 Command 始终优先；Team/Harness 只是承载这条 Command 的执行宿主。
+  if (selectedProvider) return [selectedProvider];
+  if (providerKind === 'agent') return [];
+  if (executionHost === 'team') return disposition === 'planned'
+    ? ['writing-plans', 'dispatching-parallel-agents']
+    : [];
+  if (executionHost === 'harness') return disposition === 'planned'
+    ? ['writing-plans', 'aios-long-running-harness']
+    : [];
+
   if (disposition === 'guarded') {
     if (route === 'debug') return ['systematic-debugging', 'test-driven-development'];
     if (route === 'implement') return ['test-driven-development'];
@@ -152,8 +175,6 @@ function skillsForDecision(disposition, route, { explicitPlan = false } = {}) {
   }
 
   if (disposition !== 'planned') return [];
-  if (route === 'team') return ['writing-plans', 'dispatching-parallel-agents'];
-  if (route === 'harness') return ['writing-plans', 'aios-long-running-harness'];
   if (route === 'design') return ['brainstorming', 'writing-plans'];
   if (route === 'debug') return ['systematic-debugging'];
   if (route === 'verify') return ['verification-before-completion'];
@@ -162,27 +183,38 @@ function skillsForDecision(disposition, route, { explicitPlan = false } = {}) {
   return ['writing-plans', 'test-driven-development'];
 }
 
+function agentForDecision(capabilityDecision) {
+  if (capabilityDecision?.provider?.kind !== 'agent') return null;
+  return String(capabilityDecision.provider.id || '').trim() || null;
+}
+
 function decision({
   disposition,
   continuation = 'none',
   persistence = 'none',
   requiredSkills = [],
+  requiredAgent = null,
   requiresPreEditSafety = false,
   verificationScope = 'none',
   routeHint = 'none',
+  executionHost = 'single',
   reason,
   plan = null,
+  capabilityDecision = null,
 }) {
   return {
     disposition,
     continuation,
     persistence,
     requiredSkills,
+    requiredAgent,
     requiresPreEditSafety,
     verificationScope,
     routeHint,
+    executionHost,
     reason,
     plan,
+    capabilityDecision,
     // Existing auto-gate consumers use started/reuse action labels.
     action: persistence === 'create' ? 'started' : persistence,
   };
@@ -256,7 +288,8 @@ export function isReadOnlyMessage(message = '') {
   return READ_ONLY_PATTERN.test(value) && !ACTION_PATTERN.test(value);
 }
 
-function isSubstantiveMessage(message, intent) {
+function isSubstantiveMessage(message, intent, capabilityDecision = null) {
+  if (capabilityDecision) return true;
   if (isExplicitPlanIntent(intent) || ['guarded', 'implement', 'debug', 'verify', 'ops'].includes(intent)) {
     return true;
   }
@@ -267,11 +300,12 @@ function isSubstantiveMessage(message, intent) {
     || PLANNED_SIGNAL.test(message);
 }
 
-function needsPlan(message, intent, route, policyMode) {
+function needsPlan(message, intent, route, policyMode, capabilityPolicy) {
   if (policyMode === 'strict') return true;
   if (intent === 'guarded') return false;
   if (isExplicitPlanIntent(intent)) return true;
   if (route === 'team' || route === 'harness' || route === 'design') return true;
+  if (capabilityPolicy.plannedByDefault) return true;
   return PLANNED_SIGNAL.test(message);
 }
 
@@ -286,6 +320,8 @@ export function evaluateWorkflowPolicy({
   client = '',
   sessionId = '',
   explicitIntent = null,
+  observations = [],
+  completedCapabilities = [],
 } = {}) {
   const value = text(message);
   const mode = normalizeWorkflowPolicyMode(policyMode);
@@ -303,7 +339,8 @@ export function evaluateWorkflowPolicy({
         disposition: 'direct',
         continuation: 'explicit-resume',
         persistence: 'reuse',
-        routeHint: routeFromPlan(activePlan),
+        routeHint: ['team', 'harness'].includes(routeFromPlan(activePlan)) ? 'implement' : routeFromPlan(activePlan),
+        executionHost: ['team', 'harness'].includes(routeFromPlan(activePlan)) ? routeFromPlan(activePlan) : 'single',
         reason: 'explicit-resume',
         plan: activePlan,
       });
@@ -323,7 +360,8 @@ export function evaluateWorkflowPolicy({
         disposition: 'direct',
         continuation: 'same-session-ack',
         persistence: 'reuse',
-        routeHint: routeFromPlan(activePlan),
+        routeHint: ['team', 'harness'].includes(routeFromPlan(activePlan)) ? 'implement' : routeFromPlan(activePlan),
+        executionHost: ['team', 'harness'].includes(routeFromPlan(activePlan)) ? routeFromPlan(activePlan) : 'single',
         reason: 'same-session-acknowledgement',
         plan: activePlan,
       });
@@ -356,7 +394,16 @@ export function evaluateWorkflowPolicy({
     });
   }
 
-  if (!isSubstantiveMessage(value, intent)) {
+  const software = evaluateAiosSoftwareRequest({
+    message: value,
+    explicitIntent,
+    observations,
+    completedCapabilities,
+  });
+  const capabilityDecision = software.decision;
+  const capabilityPolicy = describeAiosCapability(capabilityDecision);
+
+  if (!isSubstantiveMessage(value, intent, capabilityDecision)) {
     return decision({
       disposition: 'direct',
       routeHint: 'direct',
@@ -364,19 +411,39 @@ export function evaluateWorkflowPolicy({
     });
   }
 
-  const route = routeForText(value, intent);
-  const planned = needsPlan(value, intent, route, mode);
+  const genericRoute = routeForText(value, intent);
+  const promotedHost = ['team', 'harness'].includes(software.promotion?.target)
+    ? software.promotion.target
+    : null;
+  const executionHost = promotedHost
+    || (['team', 'harness'].includes(genericRoute) ? genericRoute : 'single');
+  const route = genericRoute === 'ops'
+    ? 'ops'
+    : (capabilityDecision ? capabilityPolicy.routeHint : 'implement');
+  const planned = executionHost !== 'single'
+    || needsPlan(value, intent, route, mode, capabilityPolicy);
   const disposition = planned ? 'planned' : 'guarded';
   const explicitPlan = intent === 'plan' || intent === 'planned';
   return decision({
     disposition,
     persistence: planned ? 'create' : 'none',
-    requiredSkills: skillsForDecision(disposition, route, { explicitPlan }),
-    requiresPreEditSafety: isPotentialCodeChange(route),
+    requiredSkills: skillsForDecision(disposition, route, {
+      explicitPlan,
+      capabilityDecision,
+      executionHost,
+    }),
+    requiredAgent: agentForDecision(capabilityDecision),
+    requiresPreEditSafety: capabilityDecision
+      ? capabilityPolicy.mayEdit
+      : isPotentialCodeChange(route),
     verificationScope: planned ? 'full' : 'focused',
     routeHint: route,
-    reason: planned
-      ? (mode === 'strict' ? 'strict-substantive-change' : 'planned-substantive-change')
-      : 'adaptive-guarded-change',
+    executionHost,
+    reason: capabilityDecision
+      ? `rex-capability-selected:${capabilityDecision.capabilityId}`
+      : planned
+        ? (mode === 'strict' ? 'strict-substantive-change' : 'planned-substantive-change')
+        : 'adaptive-guarded-change',
+    capabilityDecision,
   });
 }

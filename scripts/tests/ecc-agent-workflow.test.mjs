@@ -220,8 +220,11 @@ test('workflow recipes include ECC orchestrate-style agent choreography and bloc
   assert.ok(recipes.summary.blockedWorkflowIds.includes('ecc-uplift-governed'));
   const byId = Object.fromEntries(recipes.recipes.map((recipe) => [recipe.workflowId, recipe]));
   assert.ok(byId['ecc-uplift-governed']);
-  assert.ok(byId['plan-build-review']);
-  assert.ok(byId['tdd-implementation']);
+  assert.ok(byId['adaptive-software-delivery']);
+  assert.equal(byId['adaptive-software-delivery'].source, 'rex-harness');
+  assert.equal(byId['adaptive-software-delivery'].runtimeManaged, true);
+  assert.equal(byId['adaptive-software-delivery'].readinessScope, 'current-command');
+  assert.ok(byId['adaptive-software-delivery'].stages.every((stage) => stage.mode === 'conditional'));
   assert.deepEqual(
     byId['ecc-uplift-governed'].stages.map((stage) => stage.agentRole),
     [
@@ -253,57 +256,35 @@ test('workflow recipes include ECC orchestrate-style agent choreography and bloc
   assert.ok(dryRun.qualityGateEvidence.every((gate) => gate.status === 'blocked'));
 });
 
-test('workflow recipes stay blocked when agent stages are ready but quality-gate evidence is missing', async () => {
+test('adaptive rex workflow readiness is command-scoped instead of requiring every conditional Provider', async () => {
   const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workflow-missing-gates-'));
-  const agentCatalogue = readyCatalogueForRoles([
-    'planner',
-    'architect',
-    'implementer',
-    'code-reviewer',
-    'security-reviewer',
-    'evidence-auditor',
-  ]);
+  const agentCatalogue = readyCatalogueForRoles([]);
 
   const recipes = await listWorkflowRecipes({
     rootDir: process.cwd(),
     evidenceRoot,
     agentCatalogue,
   });
-  const recipe = recipes.recipes.find((item) => item.workflowId === 'plan-build-review');
-
-  assert.ok(recipe.stages.every((stage) => stage.workflowEnabled), 'test fixture should isolate quality gates');
-  assert.equal(recipe.liveReady, false);
-  assert.ok(recipe.qualityGateEvidence.every((gate) => gate.status === 'blocked'));
-  assert.match(recipe.blockers.join('\n'), /quality gate tests-pass/i);
-});
-
-test('workflow recipes require content-verified quality-gate evidence before live readiness', async () => {
-  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workflow-valid-gates-'));
-  await writeQualityGateEvidence(evidenceRoot, 'tests-pass', { result: 'passed' });
-  await writeQualityGateEvidence(evidenceRoot, 'security-review-pass', {
-    findings: { critical: 0, high: 0 },
-  });
-  await writeEvidenceManifest(evidenceRoot);
-  const agentCatalogue = readyCatalogueForRoles([
-    'planner',
-    'architect',
-    'implementer',
-    'code-reviewer',
-    'security-reviewer',
-    'evidence-auditor',
-  ]);
-
-  const recipes = await listWorkflowRecipes({
-    rootDir: process.cwd(),
-    evidenceRoot,
-    agentCatalogue,
-  });
-  const recipe = recipes.recipes.find((item) => item.workflowId === 'plan-build-review');
+  const recipe = recipes.recipes.find((item) => item.workflowId === 'adaptive-software-delivery');
 
   assert.equal(recipe.liveReady, true);
   assert.deepEqual(recipe.blockers, []);
-  assert.ok(recipe.qualityGateEvidence.every((gate) => gate.status === 'verified'));
-  assert.equal(recipes.summary.blockedWorkflowIds.includes('plan-build-review'), false);
+  assert.deepEqual(recipe.qualityGateEvidence, []);
+  assert.ok(recipe.stages.every((stage) => stage.workflowEnabled === false));
+});
+
+test('adaptive rex workflow dry-run asks the runtime for one current Command', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-workflow-valid-gates-'));
+  const dryRun = await buildWorkflowDryRun({
+    rootDir: process.cwd(),
+    evidenceRoot,
+    workflowId: 'adaptive-software-delivery',
+    task: 'Implement checkout safely',
+  });
+
+  assert.equal(dryRun.status, 'ready');
+  assert.ok(dryRun.stages.every((stage) => stage.status === 'conditional'));
+  assert.match(dryRun.nextAction, /current Command/u);
 });
 
 test('ECC uplift workflow rejects shallow pass-only quality-gate evidence', async () => {

@@ -32,3 +32,13 @@ test('long-running harness documents ContextDB as storage rather than prompt rep
   assert.match(skill, /Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills/);
   assert.doesNotMatch(skill, /^# Context Packet$/m);
 });
+
+test('long-running harness follows rex-native Commands instead of a default external workflow chain', async () => {
+  const skill = await readSkill('skill-sources/aios-long-running-harness/SKILL.md');
+  const standalone = await readSkill('skill-sources/harness-init-runner/SKILL.md');
+
+  assert.match(skill, /execute only the Provider selected by the current rex Command/);
+  assert.match(skill, /explicit compatibility mode/);
+  assert.doesNotMatch(skill, /Plan step should be produced through `superpowers:writing-plans`/);
+  assert.doesNotMatch(standalone, /superpowers pairing/iu);
+});

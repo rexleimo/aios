@@ -61,6 +61,10 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'VERSION', '1.2.3\n');
   await writeFixtureFile(rootDir, 'package.json', '{"name":"fixture-aios","type":"module","dependencies":{"ink":"^4.4.1"},"devDependencies":{"tsx":"^4.21.0"}}\n');
   await writeFixtureFile(rootDir, 'package-lock.json', '{"name":"fixture-aios","lockfileVersion":3,"packages":{}}\n');
+  await writeFixtureFile(rootDir, 'rex-harness/package.json', '{"name":"@rexleimo/rex-harness","version":"0.4.2"}\n');
+  await writeFixtureFile(rootDir, 'rex-harness/src/index.mjs', 'export const fixtureRex = true;\n');
+  await writeFixtureFile(rootDir, 'rex-harness/bin/rex-harness.mjs', '#!/usr/bin/env node\n');
+  await writeFixtureFile(rootDir, 'rex-harness/skill-sources/rex-workflow/SKILL.md', '# rex workflow fixture\n');
   await writeFixtureFile(rootDir, 'README.md', '# README\n');
   await writeFixtureFile(rootDir, 'README-zh.md', '# README-ZH\n');
   await writeFixtureFile(rootDir, 'skills-lock.json', '{}\n');
@@ -113,7 +117,7 @@ async function seedFixtureRepo(rootDir, {
   assertOk(run('git', ['commit', '-m', 'fixture'], { cwd: rootDir }));
 }
 
-test('package-release.sh emits stable assets that include native, skill, and agent assets', async () => {
+test('package-release emits stable assets including the rex-harness planning kernel', async () => {
   const rootDir = await makeTemp('rex-release-assets-fixture-');
   await seedFixtureRepo(rootDir);
 
@@ -163,6 +167,44 @@ test('package-release.sh emits stable assets that include native, skill, and age
     path.join(extractDir, 'harness-cli', 'package-lock.json'),
     'harness-cli.tar.gz did not include root package-lock.json for direct release installs'
   );
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
+    'harness-cli.tar.gz did not include rex-harness/src/index.mjs'
+  );
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md'),
+    'harness-cli.tar.gz did not include rex-harness/skill-sources/rex-workflow/SKILL.md'
+  );
+
+  const zipExtractDir = await makeTemp('rex-release-assets-zip-extract-');
+  assertOk(run('tar', ['-xf', path.join(outDir, 'harness-cli.zip'), '-C', zipExtractDir]));
+  await assertFileExists(
+    path.join(zipExtractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
+    'harness-cli.zip did not include rex-harness/src/index.mjs'
+  );
+});
+
+test('release scripts and CI require a materialized rex-harness submodule', async () => {
+  const workspaceRoot = process.cwd();
+  const shellScript = await readFile(path.join(workspaceRoot, 'scripts', 'package-release.sh'), 'utf8');
+  const powershellScript = await readFile(path.join(workspaceRoot, 'scripts', 'package-release.ps1'), 'utf8');
+  const initScript = await readFile(path.join(workspaceRoot, 'scripts', 'aios-init.mjs'), 'utf8');
+
+  assert.match(shellScript, /rex-harness/u);
+  assert.match(powershellScript, /rex-harness/u);
+  assert.match(initScript, /ensureAiosPlanningKernel/u);
+  for (const workflowName of [
+    'ci-main.yml',
+    'codeql.yml',
+    'contextdb-quality.yml',
+    'pages.yml',
+    'release-health-watch.yml',
+    'release.yml',
+    'windows-shell-smoke.yml',
+  ]) {
+    const workflow = await readFile(path.join(workspaceRoot, '.github', 'workflows', workflowName), 'utf8');
+    assert.match(workflow, /submodules:\s+recursive/u, `${workflowName} must initialize rex-harness`);
+  }
 });
 
 test('one-liner installers bootstrap root runtime dependencies for direct release installs', async () => {

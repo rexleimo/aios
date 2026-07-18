@@ -27,7 +27,14 @@ function commandForRuntime(agent) {
 
 function runBufferedCommand(command, args) {
   const result = runCommand(command, args);
-  return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
+  const protocolOutput = String(result.stdout || '');
+  const diagnostics = String(result.stderr || '');
+  return {
+    output: `${protocolOutput}${diagnostics}`,
+    protocolOutput,
+    diagnostics,
+    exitCode: result.status ?? 1,
+  };
 }
 
 export function buildCodexOneShotArgs({ configArgs = buildCodexMcpDisableArgs(process.env), extraArgs = [] } = {}) {
@@ -38,7 +45,14 @@ function runCodexOneShot(prompt, extraArgs) {
   const cmd = commandForRuntime('codex-cli');
   const args = buildCodexOneShotArgs({ extraArgs });
   const result = runCommandWithInput(cmd, args, prompt);
-  return { output: `${result.stdout || ''}${result.stderr || ''}`, exitCode: result.status ?? 1 };
+  const protocolOutput = String(result.stdout || '');
+  const diagnostics = String(result.stderr || '');
+  return {
+    output: `${protocolOutput}${diagnostics}`,
+    protocolOutput,
+    diagnostics,
+    exitCode: result.status ?? 1,
+  };
 }
 
 const ONE_SHOT_HANDLERS = {
@@ -69,6 +83,8 @@ export function runOneShotAgent(agent, prompt, extraArgs) {
   if (PENDING_SMOKE_ONE_SHOT_AGENTS.has(agent)) {
     return {
       output: `${agent} is pending-smoke: live one-shot execution is blocked until CLI arguments, MCP config, and unattended smoke evidence are verified.\n`,
+      protocolOutput: '',
+      diagnostics: `${agent} is pending-smoke`,
       exitCode: 1,
     };
   }
@@ -76,6 +92,8 @@ export function runOneShotAgent(agent, prompt, extraArgs) {
   if (!handler) {
     return {
       output: `${agent} is unsupported for one-shot execution; no verified handler is registered.\n`,
+      protocolOutput: '',
+      diagnostics: `${agent} is unsupported for one-shot execution`,
       exitCode: 1,
     };
   }

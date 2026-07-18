@@ -16,6 +16,7 @@ import { installNativeEnhancements } from '../components/native.mjs';
 import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from '../components/shell.mjs';
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers, installSuperpowers } from '../components/superpowers.mjs';
+import { ensureRexHarness, isAiosRuntimeRoot } from '../rex-harness/runtime.mjs';
 
 function isMissingBrowserUseRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
@@ -85,6 +86,14 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
   const superpowersInstaller = deps.installSuperpowers ?? installSuperpowers;
   const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
   io.log(`Setup components: ${options.components.join(',')}`);
+
+  // 中文注释：AIOS 规划依赖 rex-harness；源码 checkout 缺少 submodule 时由 setup 自动修复。
+  if (isAiosRuntimeRoot(rootDir)) {
+    const rexResult = await (deps.ensureRexHarness ?? ensureRexHarness)({ rootDir, fix: true, io });
+    if (!rexResult.ready) {
+      throw new Error(`rex-harness is required for AIOS intelligent planning: ${rexResult.fixHint}`);
+    }
+  }
 
   if (hasComponent(options.components, 'browser')) {
     let browserInstallReady = true;

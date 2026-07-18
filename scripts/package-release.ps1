@@ -13,8 +13,33 @@ function Require-Command([string]$Name) {
   }
 }
 
+function Invoke-Checked([string]$Command, [string[]]$Arguments) {
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = 'Continue'
+  try {
+    & $Command @Arguments
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
+  if ($null -ne $exitCode -and $exitCode -ne 0) {
+    throw ("Command failed with exit code {0}: {1} {2}" -f $exitCode, $Command, ($Arguments -join " "))
+  }
+}
+
 Require-Command git
 Require-Command tar
+
+$rexHarnessRoot = Join-Path $RootDir "rex-harness"
+foreach ($required in @(
+  (Join-Path $rexHarnessRoot "src/index.mjs"),
+  (Join-Path $rexHarnessRoot "bin/rex-harness.mjs"),
+  (Join-Path $rexHarnessRoot "skill-sources/rex-workflow/SKILL.md")
+)) {
+  if (-not (Test-Path -LiteralPath $required)) {
+    throw "Missing required rex-harness runtime: $required. Initialize the submodule first: git -C `"$RootDir`" submodule update --init --recursive -- rex-harness"
+  }
+}
 
 New-Item -Path $Out -ItemType Directory -Force | Out-Null
 
@@ -37,6 +62,7 @@ try {
     "client-sources",
     "agent-sources",
     "skill-sources",
+    "rex-harness",
     "config",
     "scripts",
     "mcp-server",
@@ -79,16 +105,53 @@ try {
   New-Item -Path $extractDir -ItemType Directory -Force | Out-Null
 
   Write-Host "+ git archive (tar) -> $tarPath"
-  & git -C $RootDir archive --format=tar --prefix="harness-cli/" -o $tarPath HEAD @archivePaths
+  Invoke-Checked -Command "git" -Arguments @("-C", $RootDir, "archive", "--format=tar", "--prefix=harness-cli/", "-o", $tarPath, "HEAD") + $archivePaths
 
   Write-Host "+ extract tar -> $extractDir"
-  & tar -xf $tarPath -C $extractDir
+  Invoke-Checked -Command "tar" -Arguments @("-xf", $tarPath, "-C", $extractDir)
+
+  # 中文注释：git archive 不会展开 gitlink，单独物化 submodule 的固定提交。
+  # Materialize the pinned submodule because git archive stores only a gitlink.
+  $rexArchiveRoot = Join-Path $extractDir "harness-cli/rex-harness"
+  $rexGitDir = Join-Path $rexHarnessRoot ".git"
+  if (Test-Path -LiteralPath $rexGitDir) {
+    if (Test-Path -LiteralPath $rexArchiveRoot -PathType Leaf) {
+      Remove-Item -LiteralPath $rexArchiveRoot -Force
+    }
+    $rexTarPath = Join-Path $tmp "rex-harness.tar"
+    Invoke-Checked -Command "git" -Arguments @("-C", $rexHarnessRoot, "archive", "--format=tar", "--prefix=harness-cli/rex-harness/", "-o", $rexTarPath, "HEAD")
+    Invoke-Checked -Command "tar" -Arguments @("-xf", $rexTarPath, "-C", $extractDir)
+  } else {
+    New-Item -Path $rexArchiveRoot -ItemType Directory -Force | Out-Null
+    Get-ChildItem -LiteralPath $rexHarnessRoot -Force |
+      Where-Object { $_.Name -notin @('.git', 'node_modules', '.rex-harness') } |
+      ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $rexArchiveRoot -Recurse -Force }
+  }
+  if (-not (Test-Path -LiteralPath (Join-Path $extractDir "harness-cli/rex-harness/src/index.mjs"))) {
+    throw "Release archive did not materialize rex-harness/src/index.mjs"
+  }
 
   Write-Host "+ tar.gz -> $tarGz"
-  & tar -czf $tarGz -C $extractDir "harness-cli"
+  Invoke-Checked -Command "tar" -Arguments @("-czf", $tarGz, "-C", $extractDir, "harness-cli")
 
-  Write-Host "+ git archive (zip) -> $zip"
-  & git -C $RootDir archive --format=zip --prefix="harness-cli/" -o $zip HEAD @archivePaths
+  Write-Host "+ zip -> $zip"
+  # 中文注释：Windows 自带 bsdtar 不保证支持 ZIP 输出，使用 .NET 从物化目录打包，保留隐藏客户端目录。
+  Add-Type -AssemblyName System.IO.Compression.FileSystem
+  if (Test-Path -LiteralPath $zip) {
+    Remove-Item -LiteralPath $zip -Force
+  }
+  [System.IO.Compression.ZipFile]::CreateFromDirectory(
+    $extractDir,
+    $zip,
+    [System.IO.Compression.CompressionLevel]::Optimal,
+    $false
+  )
+
+  $zipExtract = Join-Path $tmp "zip-check"
+  Expand-Archive -LiteralPath $zip -DestinationPath $zipExtract -Force
+  if (-not (Test-Path -LiteralPath (Join-Path $zipExtract "harness-cli/rex-harness/src/index.mjs"))) {
+    throw "Release ZIP did not materialize rex-harness/src/index.mjs"
+  }
 
   Write-Host ""
   Write-Host "Done. Assets:"

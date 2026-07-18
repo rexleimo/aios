@@ -5,7 +5,12 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { handlePlanAutoGate, handlePlanStart } from '../aios-mcp-server.mjs';
+import {
+  TOOLS,
+  handleCapabilityEvidence,
+  handlePlanAutoGate,
+  handlePlanStart,
+} from '../aios-mcp-server.mjs';
 import { parsePlanArgs } from '../lib/cli/parse-args/plan.mjs';
 import { runPlanCommand } from '../lib/planning/cli.mjs';
 
@@ -43,6 +48,35 @@ test('plan CLI parses policy mode, session, and dry-run separately from injectio
   assert.equal(parsed.options.sessionId, 'cli-turn');
   assert.equal(parsed.options.dryRun, true);
   assert.equal(parsed.options.format, 'json');
+});
+
+test('plan CLI parses the typed rex capability evidence contract', () => {
+  const parsed = parsePlanArgs([
+    'plan',
+    'capability-evidence',
+    '--activation',
+    'activation-1',
+    '--command-token',
+    'command-token-1',
+    '--evidence-kind',
+    'acceptance-criteria-recorded',
+    '--evidence-ref',
+    'artifact:requirements',
+    '--json',
+  ]);
+
+  assert.equal(parsed.mode, 'command');
+  assert.equal(parsed.options.subcommand, 'capability-evidence');
+  assert.equal(parsed.options.activationId, 'activation-1');
+  assert.equal(parsed.options.commandToken, 'command-token-1');
+  assert.equal(parsed.options.evidenceKind, 'acceptance-criteria-recorded');
+  assert.equal(parsed.options.evidenceRef, 'artifact:requirements');
+});
+
+test('MCP publishes the typed rex capability evidence tool', () => {
+  const tool = TOOLS.find((item) => item.name === 'aios_capability_evidence');
+  assert.ok(tool);
+  assert.deepEqual(tool.inputSchema.required, ['activationId', 'commandToken', 'evidence']);
 });
 
 test('CLI auto-gate leaves a planned dry-run and pure injection without artifacts', async () => {
@@ -123,6 +157,58 @@ test('MCP plan start preserves the caller session for acknowledgement matching',
 
     assert.equal(plan.client, 'codex');
     assert.equal(plan.sessionId, 'mcp-start-session');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI and MCP evidence adapters advance the same persisted rex contract', async () => {
+  const root = await makeTemp('aios-capability-evidence-');
+  try {
+    const io = makeIo();
+    const started = await runPlanCommand({
+      subcommand: 'auto-gate',
+      task: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+      client: 'codex',
+      sessionId: 'evidence-session',
+      json: true,
+    }, { rootDir: root, ...io });
+    const activationId = started.result.capabilityActivation.activationId;
+    const commandToken = started.result.capabilityCommand.executionToken;
+
+    const partial = await runPlanCommand({
+      subcommand: 'capability-evidence',
+      activationId,
+      commandToken,
+      evidenceKind: 'acceptance-criteria-recorded',
+      evidenceRef: 'artifact:requirements',
+      json: true,
+    }, { rootDir: root, ...io });
+    assert.equal(partial.exitCode, 0);
+    assert.equal(partial.result.outcome, 'blocked');
+
+    const replayed = await handleCapabilityEvidence({
+      workspace: root,
+      activationId,
+      commandToken,
+      evidence: [
+        { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
+      ],
+    });
+    assert.match(replayed.content[0].text, /requires the current Command token/u);
+
+    const response = await handleCapabilityEvidence({
+      workspace: root,
+      activationId,
+      commandToken: partial.result.command.executionToken,
+      evidence: [
+        { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
+        { kind: 'first-slice-identified', refs: ['artifact:requirements'] },
+      ],
+    });
+    const completed = JSON.parse(response.content[0].text);
+    assert.equal(completed.outcome, 'completed');
+    assert.equal(completed.nextCapability.command.provider.id, 'rex-test-design');
   } finally {
     await rm(root, { recursive: true, force: true });
   }

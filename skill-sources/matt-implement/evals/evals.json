@@ -1,0 +1,17 @@
+{
+  "skill_name": "matt-implement",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "rex selected software.implementation.execute for one approved parser slice. Implement it with focused verification and return evidence.",
+      "expected_output": "A bounded implementation with diff and focused-test evidence, without invoking Review or another workflow.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "During implementation a new ambiguous requirement appears. Handle it without breaking Activation ownership.",
+      "expected_output": "Stop widening the change, record the ambiguity observation, and return control instead of invoking requirements directly.",
+      "files": []
+    }
+  ]
+}

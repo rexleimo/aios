@@ -57,6 +57,13 @@ require_cmd() {
 require_cmd git
 require_cmd gzip
 
+rex_harness_root="$ROOT_DIR/rex-harness"
+if [[ ! -f "$rex_harness_root/src/index.mjs" || ! -f "$rex_harness_root/bin/rex-harness.mjs" || ! -f "$rex_harness_root/skill-sources/rex-workflow/SKILL.md" ]]; then
+  echo "Missing required rex-harness runtime. Initialize the submodule first:" >&2
+  echo "  git -C \"$ROOT_DIR\" submodule update --init --recursive -- rex-harness" >&2
+  exit 1
+fi
+
 install_sh="$ROOT_DIR/scripts/aios-install.sh"
 install_ps1="$ROOT_DIR/scripts/aios-install.ps1"
 
@@ -74,7 +81,7 @@ release_paths=(
   package.json package-lock.json
   README.md README-zh.md
   skills-lock.json
-  client-sources agent-sources skill-sources
+  client-sources agent-sources skill-sources rex-harness
   config scripts mcp-server src
   .claude/agents .claude/skills
   .codex/skills .codex/agents
@@ -104,6 +111,8 @@ mkdir -p "$tar_stage/harness-cli"
     --exclude='.git' \
     --exclude='node_modules' \
     --exclude='mcp-server/.npm-cache' \
+    --exclude='rex-harness/.git' \
+    --exclude='rex-harness/.git/*' \
     --exclude='dist' \
     --exclude='__pycache__' \
     --exclude='.mypy_cache' \
@@ -112,6 +121,10 @@ mkdir -p "$tar_stage/harness-cli"
     --exclude='.DS_Store' \
     "${existing_release_paths[@]}" | (cd "$tar_stage/harness-cli" && tar -xf -)
 )
+if [[ ! -f "$tar_stage/harness-cli/rex-harness/src/index.mjs" ]]; then
+  echo "Release archive did not materialize rex-harness/src/index.mjs" >&2
+  exit 1
+fi
 (
   cd "$tar_stage"
   tar -czf "$OUT_DIR/harness-cli.tar.gz" harness-cli
@@ -122,7 +135,7 @@ echo "+ zip -> $OUT_DIR/harness-cli.zip"
   cd "$ROOT_DIR"
   zip -r "$OUT_DIR/harness-cli.zip" \
     "${existing_release_paths[@]}" \
-    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'mcp-server/.npm-cache/*' -x 'dist/*' -x '.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
+    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'mcp-server/.npm-cache/*' -x 'dist/*' -x '.git/*' -x 'rex-harness/.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
 )
 
 echo ""

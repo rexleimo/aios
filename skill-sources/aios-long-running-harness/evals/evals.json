@@ -1,0 +1,38 @@
+{
+  "skill_name": "aios-long-running-harness",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这个任务需要跨多轮恢复，当前 rex Command 指向 rex-implement。请启动 AIOS 长任务 Harness 并继续执行。",
+      "expected_output": "Harness 只执行当前 rex-implement Provider，记录 Command 要求的 Evidence，再由 rex 决定下一步；不会预加载外部工作流链。",
+      "files": [],
+      "assertions": [
+        "明确当前 rex Command 是唯一软件工程执行指令",
+        "没有自行选择下一项 Capability",
+        "包含 Evidence 和恢复检查点"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "为这个可恢复工作项显式开启 compatibility mode，当前 Command 选择了 superpowers:systematic-debugging。",
+      "expected_output": "Harness 允许执行当前显式兼容 Provider，但仍只运行这一条 Command，并把证据返回 rex，而不是启动完整 Superpowers 链。",
+      "files": [],
+      "assertions": [
+        "识别 explicit compatibility mode",
+        "只执行当前被选择的兼容 Provider",
+        "不把兼容模式变成默认路由"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "继续昨天中断的长任务，已有 rex Workflow Activation 和 AIOS checkpoint。",
+      "expected_output": "先等待或确认明确的恢复意图，只读取所需 checkpoint 与当前 rex Command，然后恢复单步执行和证据记录。",
+      "files": [],
+      "assertions": [
+        "只召回恢复所需的最小上下文",
+        "保持原 Workflow Activation 和 Command",
+        "不重做工作流分类"
+      ]
+    }
+  ]
+}

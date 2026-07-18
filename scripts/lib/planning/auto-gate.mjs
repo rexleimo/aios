@@ -4,6 +4,7 @@
  * plan after a decision explicitly asks for one.
  */
 
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 import {
@@ -15,6 +16,10 @@ import {
   evaluateWorkflowPolicy,
   normalizeWorkflowPolicyMode,
 } from './workflow-policy.mjs';
+import {
+  findStoredAiosCapabilityActivation,
+  startStoredAiosCapabilityActivation,
+} from '../workflows/rex-activation-store.mjs';
 
 export const ALWAYS_ON_PLANNING_POLICY = Object.freeze({
   schemaVersion: 2,
@@ -64,6 +69,18 @@ function policyDescriptor(policyMode) {
   };
 }
 
+function guardedWorkItemKey({ message, explicitIntent, client, sessionId }) {
+  const normalizedMessage = String(message || '').replace(/\s+/gu, ' ').trim();
+  const normalizedIntent = typeof explicitIntent === 'string'
+    ? explicitIntent.trim().toLowerCase()
+    : JSON.stringify(explicitIntent || null);
+  const objectiveHash = createHash('sha256')
+    .update(JSON.stringify({ message: normalizedMessage, explicitIntent: normalizedIntent }))
+    .digest('hex')
+    .slice(0, 16);
+  return `turn:${client || 'unknown'}:${sessionId || 'anonymous'}:${objectiveHash}`;
+}
+
 /** Evaluate the policy using the current active state without writing files. */
 export function evaluateAutoGateDecision({
   rootDir,
@@ -95,20 +112,56 @@ export function applyWorkflowDecision({
   client = 'unknown',
   sessionId = '',
   source = 'auto-gate',
+  explicitIntent = null,
   dryRun = false,
 } = {}) {
   if (!rootDir) throw new Error('applyWorkflowDecision requires rootDir');
   if (!decision || typeof decision !== 'object') {
-    return { action: 'none', created: false, plan: null, state: null };
+    return {
+      action: 'none', created: false, plan: null, state: null, capabilityActivation: null, capabilityCommand: null,
+    };
   }
 
+  const startCapability = (plan = null) => {
+    if (dryRun || !decision.capabilityDecision) return null;
+    const workItemKey = plan?.relativePath
+      || guardedWorkItemKey({ message, explicitIntent, client, sessionId });
+    return startStoredAiosCapabilityActivation({
+      rootDir,
+      decision: decision.capabilityDecision,
+      workItemKey,
+      request: {
+        message,
+        explicitIntent,
+      },
+    });
+  };
+
   if (dryRun || decision.persistence === 'none') {
-    return { action: decision.action || 'none', created: false, plan: null, state: null };
+    const capability = startCapability();
+    return {
+      action: decision.action || 'none',
+      created: false,
+      plan: null,
+      state: null,
+      capabilityActivation: capability?.activation || null,
+      capabilityCommand: capability?.command || null,
+    };
   }
 
   if (decision.persistence === 'reuse') {
     const plan = decision.plan || null;
-    return { action: decision.action || 'reuse', created: false, plan, state: plan };
+    const capability = plan?.relativePath
+      ? findStoredAiosCapabilityActivation({ rootDir, workItemKey: plan.relativePath })
+      : null;
+    return {
+      action: decision.action || 'reuse',
+      created: false,
+      plan,
+      state: plan,
+      capabilityActivation: capability?.activation || null,
+      capabilityCommand: capability?.command || null,
+    };
   }
 
   if (decision.persistence === 'create') {
@@ -119,13 +172,32 @@ export function applyWorkflowDecision({
       client,
       sessionId,
       source,
-      route: routeForPlan(decision.routeHint),
+      route: routeForPlan(
+        ['team', 'harness'].includes(decision.executionHost)
+          ? decision.executionHost
+          : decision.routeHint,
+      ),
       skills: decision.requiredSkills,
     });
-    return { action: decision.action || 'started', created: true, plan, state: plan };
+    const capability = startCapability(plan);
+    return {
+      action: decision.action || 'started',
+      created: true,
+      plan,
+      state: plan,
+      capabilityActivation: capability?.activation || null,
+      capabilityCommand: capability?.command || null,
+    };
   }
 
-  return { action: decision.action || 'none', created: false, plan: null, state: null };
+  return {
+    action: decision.action || 'none',
+    created: false,
+    plan: null,
+    state: null,
+    capabilityActivation: null,
+    capabilityCommand: null,
+  };
 }
 
 /**
@@ -161,18 +233,48 @@ export function ensurePlanForMessage({
   };
 }
 
-function buildDirectiveText({ decision, plan, mode = 'lean' } = {}) {
-  if (!plan) return '';
+function buildDirectiveText({ decision, plan, command = null, mode = 'lean' } = {}) {
+  if (!plan && !command) return '';
 
   const injectMode = String(mode || 'lean').toLowerCase() === 'full' ? 'full' : 'lean';
   const progress = summarizePlanProgress(plan);
   const skills = Array.isArray(decision?.requiredSkills) ? decision.requiredSkills : [];
+  const agentId = command?.provider?.kind === 'agent'
+    ? command.provider.id
+    : decision?.requiredAgent;
+  // Provider 只能回写当前 Command 要求的证据；Runner 会校验 activationId 后再推进状态机。
+  const evidenceEnvelope = command && command.provider?.kind !== 'agent'
+    ? `AIOS_REX_EVIDENCE=${JSON.stringify({
+      schemaVersion: 1,
+      activationId: command.activationId,
+      evidence: command.expectedEvidence.map((kind) => ({
+        kind,
+        refs: ['artifact-or-command-ref'],
+      })),
+    })}`
+    : '';
   const lines = [
     '## AIOS WORKFLOW',
-    `plan: \`${plan.relativePath}\` status=${plan.status} route=${decision?.routeHint || plan.route || 'implement'} decision=${decision?.action || 'none'}`,
+    plan
+      ? `plan: \`${plan.relativePath}\` status=${plan.status} route=${decision?.routeHint || plan.route || 'implement'} decision=${decision?.action || 'none'}`
+      : `plan: none route=${decision?.routeHint || 'implement'} decision=${decision?.action || 'none'}`,
     progress ? `progress: ${progress.tasksDone}/${progress.tasksTotal} tasks evidence=${progress.evidenceCount}` : '',
     progress?.nextTask ? `next: ${progress.nextTask.id}` : '',
     skills.length ? `skills: ${skills.join(' -> ')}` : '',
+    agentId ? `agent: ${agentId}${command?.provider?.role ? ` role=${command.provider.role}` : ''}` : '',
+    command ? `capability: ${command.capabilityId} recipe=${command.recipeId} stage=${command.stageId}` : '',
+    command?.reasonCode ? `trigger: ${command.reasonCode} refs=${command.triggerEvidenceRefs.join(', ')}` : '',
+    command ? `provider: ${command.provider.kind}:${command.provider.id}` : '',
+    command ? `objective: ${command.objective}` : '',
+    command?.expectedEvidence?.length ? `expected-evidence: ${command.expectedEvidence.join(', ')}` : '',
+    evidenceEnvelope ? `evidence-output: End the Provider response with exactly one line: ${evidenceEnvelope}` : '',
+    evidenceEnvelope ? 'evidence-rule: Report only refs that actually exist; do not invoke the next Provider.' : '',
+    command?.provider?.kind === 'agent'
+      ? 'handoff-output: Return exactly one JSON handoff object; do not output AIOS_REX_EVIDENCE.'
+      : '',
+    command?.provider?.kind === 'agent'
+      ? 'handoff-rule: agentId and role must match the current Provider; do not invoke the next Provider.'
+      : '',
   ].filter(Boolean);
 
   if (injectMode === 'full') {
@@ -208,10 +310,12 @@ export function buildAlwaysOnPlanningDirective({
     explicitIntent,
   });
   const plan = gateResult?.plan || (decision.persistence === 'reuse' ? decision.plan : null);
-  const text = buildDirectiveText({ decision, plan, mode });
+  const command = gateResult?.capabilityCommand || null;
+  const text = buildDirectiveText({ decision, plan, command, mode });
   return {
     text,
     plan,
+    capabilityCommand: command,
     decision,
     action: decision.action,
     created: false,
@@ -255,6 +359,8 @@ export async function runClaudeUserPromptSubmitHook({
     decision: result.decision,
     policy: result.policy,
     plan: result.plan,
+    capabilityActivation: result.capabilityActivation,
+    capabilityCommand: result.capabilityCommand,
     created: result.created,
   };
   return { exitCode: 0, output, directive: result };
@@ -288,6 +394,7 @@ export function runAutoGate({
     client,
     sessionId,
     source,
+    explicitIntent,
     dryRun: Boolean(dryRun),
   });
   const directive = buildAlwaysOnPlanningDirective({
@@ -297,7 +404,11 @@ export function runAutoGate({
     sessionId,
     policyMode: resolvedMode,
     explicitIntent,
-    gateResult: { decision, plan: applied.plan },
+    gateResult: {
+      decision,
+      plan: applied.plan,
+      capabilityCommand: applied.capabilityCommand,
+    },
   });
 
   return {
@@ -307,6 +418,8 @@ export function runAutoGate({
     created: applied.created,
     plan: applied.plan,
     state: applied.state,
+    capabilityActivation: applied.capabilityActivation,
+    capabilityCommand: applied.capabilityCommand,
     injection: directive.text,
     decision,
     dryRun: Boolean(dryRun),

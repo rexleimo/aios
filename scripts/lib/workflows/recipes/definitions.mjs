@@ -1,6 +1,8 @@
 // scripts/lib/workflows/recipes/definitions.mjs — 工作流配方定义
 // 从 recipes.mjs 拆分：QUALITY_GATE_EVIDENCE 常量 + RECIPES 数据 + 辅助函数
 
+import { buildRexWorkflowDefinitions } from '../rex-harness-adapter.mjs';
+
 /** 质量门常规定义 */
 export const QUALITY_GATE_EVIDENCE = Object.freeze({
   'tests-pass': {
@@ -70,34 +72,12 @@ export const QUALITY_GATE_EVIDENCE = Object.freeze({
   },
 });
 
-/** 默认工作流配方列表 */
+/**
+ * 默认工作流注册表：软件工程 Recipe 只读投影自 rex-harness；
+ * 治理和长循环 Recipe 才由 AIOS 在本文件中直接定义。
+ */
 export const RECIPES = Object.freeze([
-  {
-    workflowId: 'plan-build-review',
-    trigger: 'orchestrate feature',
-    description: 'Plan, architecture review, implementation, code review, security review, and evidence audit.',
-    stages: [
-      { id: 'plan', agentRole: 'planner', mode: 'sequential' },
-      { id: 'architecture', agentRole: 'architect', mode: 'sequential' },
-      { id: 'implementation', agentRole: 'implementer', mode: 'sequential' },
-      { id: 'code-review', agentRole: 'code-reviewer', mode: 'parallel', group: 'final-checks' },
-      { id: 'security-review', agentRole: 'security-reviewer', mode: 'parallel', group: 'final-checks' },
-      { id: 'evidence-audit', agentRole: 'evidence-auditor', mode: 'sequential' },
-    ],
-    qualityGates: ['tests-pass', 'security-review-pass', 'evidence-manifest-present'],
-  },
-  {
-    workflowId: 'tdd-implementation',
-    trigger: 'tdd',
-    description: 'Define failing tests, implement minimally, resolve build failures, and review coverage.',
-    stages: [
-      { id: 'test-design', agentRole: 'tdd-guide', mode: 'sequential' },
-      { id: 'implementation', agentRole: 'implementer', mode: 'sequential' },
-      { id: 'build-resolution', agentRole: 'build-error-resolver', mode: 'sequential' },
-      { id: 'review', agentRole: 'code-reviewer', mode: 'parallel', group: 'final-checks' },
-    ],
-    qualityGates: ['failing-test-observed', 'tests-pass', 'review-pass'],
-  },
+  ...buildRexWorkflowDefinitions(),
   {
     workflowId: 'ecc-uplift-governed',
     trigger: 'orchestrate ecc-uplift',
@@ -117,17 +97,6 @@ export const RECIPES = Object.freeze([
       'interception-metrics-present',
       'evidence-manifest-present',
     ],
-  },
-  {
-    workflowId: 'build-failure-resolution',
-    trigger: 'build-error',
-    description: 'Root-cause build/type/test failures before proposing implementation fixes.',
-    stages: [
-      { id: 'failure-analysis', agentRole: 'build-error-resolver', mode: 'sequential' },
-      { id: 'implementation-plan', agentRole: 'planner', mode: 'sequential' },
-      { id: 'review', agentRole: 'code-reviewer', mode: 'parallel', group: 'final-checks' },
-    ],
-    qualityGates: ['root-cause-recorded', 'tests-pass'],
   },
   {
     workflowId: 'loop-operation',

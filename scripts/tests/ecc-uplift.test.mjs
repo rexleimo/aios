@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { cp, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -23,6 +25,10 @@ async function makeTemp(prefix) {
 async function writeJson(filePath, payload) {
   await mkdir(path.dirname(filePath), { recursive: true });
   await writeFile(filePath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8');
+}
+
+function sha256(value) {
+  return createHash('sha256').update(value).digest('hex');
 }
 
 async function seedNativeRoot(rootDir) {
@@ -232,8 +238,9 @@ test('session changed-files rejects traversal session identifiers', async () => 
 
 test('skill training gate blocks changed skills without accepted SkillOpt evidence', async () => {
   const rootDir = await makeTemp('aios-skill-training-root-');
+  const skillContents = '---\nname: search-first\ndescription: Search first\n---\n# Search First\n';
   await mkdir(path.join(rootDir, 'skill-sources', 'search-first'), { recursive: true });
-  await writeFile(path.join(rootDir, 'skill-sources', 'search-first', 'SKILL.md'), '---\nname: search-first\ndescription: Search first\n---\n# Search First\n', 'utf8');
+  await writeFile(path.join(rootDir, 'skill-sources', 'search-first', 'SKILL.md'), skillContents, 'utf8');
 
   const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
   const blocked = await verifySkillTrainingGate({
@@ -250,6 +257,20 @@ test('skill training gate blocks changed skills without accepted SkillOpt eviden
     gate: 'accepted',
     nonRegression: true,
   });
+  const missingHash = await verifySkillTrainingGate({
+    rootDir,
+    changedFiles: ['skill-sources/search-first/SKILL.md'],
+  });
+  assert.equal(missingHash.status, 'blocked');
+  assert.match(missingHash.skills[0].reason, /hash/i);
+
+  await writeJson(path.join(rootDir, '.skillopt', 'search-first-2026-06-15', 'state.json'), {
+    skillId: 'search-first',
+    status: 'accepted',
+    gate: 'accepted',
+    nonRegression: true,
+    acceptedSkillHash: sha256(skillContents),
+  });
   const verified = await verifySkillTrainingGate({
     rootDir,
     changedFiles: ['skill-sources/search-first/SKILL.md'],
@@ -260,13 +281,15 @@ test('skill training gate blocks changed skills without accepted SkillOpt eviden
 
 test('skill training gate verifies namespaced system skills by state skillId', async () => {
   const rootDir = await makeTemp('aios-system-skill-training-root-');
+  const skillContents = '---\nname: skill-creator\ndescription: Create skills\n---\n# Skill Creator\n';
   await mkdir(path.join(rootDir, 'skill-sources', '.system', 'skill-creator'), { recursive: true });
-  await writeFile(path.join(rootDir, 'skill-sources', '.system', 'skill-creator', 'SKILL.md'), '---\nname: skill-creator\ndescription: Create skills\n---\n# Skill Creator\n', 'utf8');
+  await writeFile(path.join(rootDir, 'skill-sources', '.system', 'skill-creator', 'SKILL.md'), skillContents, 'utf8');
   await writeJson(path.join(rootDir, '.skillopt', 'system-skill-creator-client-surfaces-test', 'state.json'), {
     skillId: '.system/skill-creator',
     status: 'accepted',
     nonRegression: true,
     metrics: { complianceScore: 1 },
+    acceptedSkillHash: sha256(skillContents),
   });
 
   const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
@@ -279,4 +302,87 @@ test('skill training gate verifies namespaced system skills by state skillId', a
   assert.equal(report.skills.length, 1);
   assert.equal(report.skills[0].skillId, '.system/skill-creator');
   assert.equal(report.skills[0].evidence.score, 1);
+});
+
+test('skill training gate discovers changed rex-harness Skill sources', async () => {
+  const rootDir = await makeTemp('aios-rex-training-root-');
+  const skillFile = path.join(rootDir, 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md');
+  await mkdir(path.dirname(skillFile), { recursive: true });
+  await writeFile(skillFile, '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n', 'utf8');
+  execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+  execFileSync('git', ['config', 'user.email', 'rex-test@example.invalid'], { cwd: rootDir });
+  execFileSync('git', ['config', 'user.name', 'Rex Test'], { cwd: rootDir });
+  execFileSync('git', ['add', '.'], { cwd: rootDir });
+  execFileSync('git', ['commit', '-m', 'test fixture'], { cwd: rootDir, stdio: 'ignore' });
+  await writeFile(skillFile, `${await readFile(skillFile, 'utf8')}\nUpdated.\n`, 'utf8');
+  await writeJson(path.join(rootDir, '.skillopt', 'rex-workflow-2026-07-17', 'state.json'), {
+    skillId: 'rex-workflow',
+    status: 'accepted',
+    nonRegression: true,
+    metrics: { bestHard: 1 },
+    acceptedSkillHash: sha256(await readFile(skillFile, 'utf8')),
+  });
+
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD' });
+
+  assert.deepEqual(report.changedFiles, [
+    'rex-harness/skill-sources/rex-workflow/SKILL.md',
+  ]);
+  assert.equal(report.status, 'verified');
+  assert.equal(report.skills[0].skillId, 'rex-workflow');
+});
+
+test('skill training gate discovers untracked rex-harness Skill sources', async () => {
+  const rootDir = await makeTemp('aios-rex-untracked-training-root-');
+  execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+  execFileSync('git', ['config', 'user.email', 'rex-test@example.invalid'], { cwd: rootDir });
+  execFileSync('git', ['config', 'user.name', 'Rex Test'], { cwd: rootDir });
+  execFileSync('git', ['commit', '--allow-empty', '-m', 'empty fixture'], {
+    cwd: rootDir,
+    stdio: 'ignore',
+  });
+
+  const skillFile = path.join(rootDir, 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md');
+  await mkdir(path.dirname(skillFile), { recursive: true });
+  await writeFile(skillFile, '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n', 'utf8');
+  await writeJson(path.join(rootDir, '.skillopt', 'rex-workflow-2026-07-17', 'state.json'), {
+    skillId: 'rex-workflow',
+    status: 'accepted',
+    nonRegression: true,
+    metrics: { bestHard: 1 },
+    acceptedSkillHash: sha256(await readFile(skillFile, 'utf8')),
+  });
+
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD' });
+
+  assert.deepEqual(report.changedFiles, [
+    'rex-harness/skill-sources/rex-workflow/SKILL.md',
+  ]);
+  assert.equal(report.status, 'verified');
+});
+
+test('skill training gate rejects accepted evidence after Skill content changes', async () => {
+  const rootDir = await makeTemp('aios-stale-skill-training-root-');
+  const skillFile = path.join(rootDir, 'skill-sources', 'search-first', 'SKILL.md');
+  const trainedContents = '---\nname: search-first\ndescription: Search first\n---\n# Search First\n';
+  await mkdir(path.dirname(skillFile), { recursive: true });
+  await writeFile(skillFile, trainedContents, 'utf8');
+  await writeJson(path.join(rootDir, '.skillopt', 'search-first-2026-07-17', 'state.json'), {
+    skillId: 'search-first',
+    status: 'accepted',
+    nonRegression: true,
+    acceptedSkillHash: sha256(trainedContents),
+  });
+  await writeFile(skillFile, `${trainedContents}\nUntrained behavior change.\n`, 'utf8');
+
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const report = await verifySkillTrainingGate({
+    rootDir,
+    changedFiles: ['skill-sources/search-first/SKILL.md'],
+  });
+
+  assert.equal(report.status, 'blocked');
+  assert.match(report.skills[0].reason, /stale|hash|content/i);
 });

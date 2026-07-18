@@ -10,6 +10,7 @@ import { ensureWorkspaceMemorySession } from './lib/memo/workspace-memory.mjs';
 import { AGENT_CONFIG, detectAgents, ensureMarker } from './lib/aios-init/agent-config.mjs';
 import { ensureHook } from './lib/aios-init/hooks.mjs';
 import { ensureCompressionTools } from './lib/aios-init/compression-tools.mjs';
+import { ensureRexHarness } from './lib/rex-harness/runtime.mjs';
 
 const AIOS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -28,6 +29,35 @@ async function ensureWorkspace(workspaceRoot, { dryRun = false } = {}) {
     workspace: ws.created ? 'created' : 'existing',
     skillIndex: `${index.skills.length} skills indexed`,
   };
+}
+
+/**
+ * 中文注释：AIOS 的规划入口必须先确认 rex-harness 存在；源码 checkout 可在 init 时补齐 submodule，
+ * Release 安装则直接使用随包分发的固定内容。
+ */
+export async function ensureAiosPlanningKernel({
+  rootDir = AIOS_ROOT,
+  dryRun = false,
+  io = console,
+  ensureRexHarnessImpl = ensureRexHarness,
+} = {}) {
+  let report = await ensureRexHarnessImpl({ rootDir, fix: false, io });
+  if (report.ready) {
+    io.log(`[ok] rex-harness planning kernel ready${report.version ? ` (v${report.version})` : ''}`);
+    return report;
+  }
+
+  if (dryRun) {
+    io.log(`[plan] initialize required rex-harness: ${report.fixHint}`);
+    return report;
+  }
+
+  report = await ensureRexHarnessImpl({ rootDir, fix: true, io });
+  if (!report.ready) {
+    throw new Error(`rex-harness is required for AIOS intelligent planning: ${report.fixHint}`);
+  }
+  io.log(`[ok] rex-harness planning kernel ready${report.version ? ` (v${report.version})` : ''}`);
+  return report;
 }
 
 function usage() {
@@ -62,6 +92,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const workspaceRoot = resolve(process.cwd());
+  await ensureAiosPlanningKernel({ rootDir: AIOS_ROOT, dryRun, io: console });
   const agents = requestedAgent
     ? [requestedAgent]
     : allFlag

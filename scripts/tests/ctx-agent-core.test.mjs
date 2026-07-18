@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmod, mkdtemp, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -11,6 +11,8 @@ import {
   resolveTaskRouteDecision,
 } from '../ctx-agent-core.mjs';
 import { runContextDbCli } from '../lib/contextdb-cli.mjs';
+import { runAutoGate } from '../lib/planning/auto-gate.mjs';
+import { advanceStoredAiosCapabilityActivation } from '../lib/workflows/rex-activation-store.mjs';
 
 const CTX_AGENT_CLI = path.resolve('scripts', 'ctx-agent.mjs');
 const AIOS_CLI = path.resolve('scripts', 'aios.mjs');
@@ -575,6 +577,253 @@ test('ctx-agent one-shot compresses prompt before client stdin and compacts rece
     const records = (await readFile(metricsPath, 'utf8')).trim().split(/\r?\n/).map((line) => JSON.parse(line));
     assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'codex-cli'), true);
     assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'codex-cli'), true);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(binDir, { recursive: true, force: true });
+  }
+});
+
+test('ctx-agent one-shot ingests typed rex evidence before post-receive compression', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-rex-evidence-'));
+  const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-rex-bin-'));
+  const sessionId = 'ctx-rex-evidence';
+
+  try {
+    const fakeCodex = path.join(binDir, process.platform === 'win32' ? 'codex-rex-fake.mjs' : 'codex');
+    await writeFile(fakeCodex, `#!/usr/bin/env node
+import { readFileSync } from 'node:fs';
+const input = readFileSync(0, 'utf8');
+const match = input.match(/AIOS_REX_EVIDENCE=(\\{[^\\r\\n]+\\})/u);
+if (!match) {
+  process.stderr.write('missing rex evidence template\\n');
+  process.exit(2);
+}
+const payload = JSON.parse(match[1]);
+payload.evidence = payload.evidence.slice(0, 1).map((item) => ({ ...item, refs: ['artifact:runner'] }));
+process.stdout.write('provider complete\\nAIOS_REX_EVIDENCE=' + JSON.stringify(payload) + '\\n');
+`, 'utf8');
+    await chmod(fakeCodex, 0o755);
+    if (process.platform === 'win32') {
+      await writeFile(path.join(binDir, 'codex.cmd'), `@echo off\r\nnode "${fakeCodex}" %*\r\n`, 'utf8');
+    }
+
+    runContextDbCli([
+      'session:new',
+      '--workspace', workspaceRoot,
+      '--agent', 'codex-cli',
+      '--project', 'tmp-project',
+      '--goal', 'Verify rex evidence ingestion',
+      '--session-id', sessionId,
+    ]);
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent', 'codex-cli',
+        '--workspace', workspaceRoot,
+        '--project', 'tmp-project',
+        '--session', sessionId,
+        '--prompt', 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+        '--no-bootstrap',
+        '--no-auto-checkpoint',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+        },
+      }
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stderr, /\[aios\] rex evidence: blocked/u);
+
+    const activationDir = path.join(workspaceRoot, '.aios', 'workflow-activations');
+    // workflows/ 保存 rex 的规范工作流状态；这里只有顶层 JSON 才是 AIOS 兼容投影。
+    const records = (await readdir(activationDir))
+      .filter((name) => name.endsWith('.json'));
+    assert.equal(records.length, 1);
+    const record = JSON.parse(await readFile(path.join(activationDir, records[0]), 'utf8'));
+    assert.equal(record.outcome, 'blocked');
+    assert.equal(record.activation.evidence[0].kind, 'acceptance-criteria-recorded');
+    assert.deepEqual(record.activation.evidence[0].refs, ['artifact:runner']);
+  } finally {
+    await rm(workspaceRoot, { recursive: true, force: true });
+    await rm(binDir, { recursive: true, force: true });
+  }
+});
+
+test('ctx-agent one-shot executes a promoted rex Agent Provider and adapts its JSON handoff', async () => {
+  const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-rex-agent-'));
+  const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-rex-agent-bin-'));
+  const sessionId = 'ctx-rex-agent-provider';
+  const capturePath = path.join(workspaceRoot, 'captured-agent-provider.txt');
+  const agentId = 'rex-security-reviewer';
+
+  try {
+    const smokeDir = path.join(workspaceRoot, '.aios', 'agents', 'smoke');
+    const provenanceDir = path.join(workspaceRoot, '.aios', 'agents', 'provenance');
+    const metricsDir = path.join(workspaceRoot, '.aios', 'interception', 'metrics');
+    await Promise.all([
+      mkdir(smokeDir, { recursive: true }),
+      mkdir(provenanceDir, { recursive: true }),
+      mkdir(metricsDir, { recursive: true }),
+    ]);
+    await Promise.all([
+      writeFile(
+        path.join(smokeDir, `${agentId}.json`),
+        `${JSON.stringify({ agentId, status: 'pass' })}\n`,
+        'utf8',
+      ),
+      writeFile(
+        path.join(provenanceDir, `${agentId}.json`),
+        `${JSON.stringify({ agentId, status: 'verified' })}\n`,
+        'utf8',
+      ),
+      writeFile(
+        path.join(metricsDir, 'agent-provider.jsonl'),
+        [
+          JSON.stringify({ agent_id: agentId, event_kind: 'pre_send', saved_bytes: 1 }),
+          JSON.stringify({ agent_id: agentId, event_kind: 'post_receive', saved_bytes: 1 }),
+        ].join('\n'),
+        'utf8',
+      ),
+    ]);
+
+    runContextDbCli([
+      'session:new',
+      '--workspace', workspaceRoot,
+      '--agent', 'codex-cli',
+      '--project', 'tmp-project',
+      '--goal', 'Verify rex Agent Provider execution',
+      '--session-id', sessionId,
+    ]);
+
+    const started = runAutoGate({
+      rootDir: workspaceRoot,
+      message: '修改鉴权 token 和 session 校验逻辑。',
+      client: 'codex-cli',
+      sessionId,
+    });
+    const testDesignCompleted = advanceStoredAiosCapabilityActivation({
+      rootDir: workspaceRoot,
+      activationId: started.capabilityActivation.activationId,
+      evidence: [
+        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+      ],
+    });
+    const strictGreen = advanceStoredAiosCapabilityActivation({
+      rootDir: workspaceRoot,
+      activationId: testDesignCompleted.nextCapability.activation.activationId,
+      evidence: [
+        { kind: 'failing-test-observed', refs: ['command:test:red'] },
+        { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
+      ],
+    });
+    const strictRefactor = advanceStoredAiosCapabilityActivation({
+      rootDir: workspaceRoot,
+      activationId: strictGreen.activation.activationId,
+      evidence: [
+        { kind: 'passing-test-observed', refs: ['command:test:green'] },
+        { kind: 'implementation-diff-recorded', refs: ['diff:working-tree'] },
+      ],
+    });
+    const strictCompleted = advanceStoredAiosCapabilityActivation({
+      rootDir: workspaceRoot,
+      activationId: strictRefactor.activation.activationId,
+      evidence: [
+        { kind: 'refactor-check-recorded', refs: ['command:test:refactor'] },
+        { kind: 'test-strength-check-recorded', refs: ['command:test:strength'] },
+        { kind: 'test-diff-review-recorded', refs: ['artifact:test-diff-review'] },
+      ],
+    });
+    const specialistActivationId = strictCompleted.nextCapability.activation.activationId;
+
+    const fakeCodex = path.join(binDir, process.platform === 'win32' ? 'codex-rex-agent-fake.mjs' : 'codex');
+    await writeFile(fakeCodex, `#!/usr/bin/env node
+import { readFileSync, writeFileSync } from 'node:fs';
+const input = readFileSync(0, 'utf8');
+writeFileSync(process.env.AIOS_TEST_CAPTURE_PATH, input);
+if (!input.includes('# Security Review Agent') || !input.includes('rex-security-reviewer')) {
+  process.stderr.write('missing canonical security role card\\n');
+  process.exit(2);
+}
+if (input.includes('AIOS_REX_EVIDENCE=')) {
+  process.stderr.write('agent prompt must not contain rex evidence envelope\\n');
+  process.exit(3);
+}
+process.stderr.write('provider diagnostic on stderr\\n');
+process.stdout.write(JSON.stringify({
+  schemaVersion: 1,
+  agentId: 'rex-security-reviewer',
+  role: 'security-reviewer',
+  status: 'pass',
+  findings: ['scripts/lib/auth.mjs 未发现 token 泄露。'],
+  blockers: [],
+  evidenceRefs: ['command:test:security'],
+  filesReviewed: ['scripts/lib/auth.mjs'],
+  recommendedNextSteps: ['继续标准与规格审查。']
+}) + '\\n');
+`, 'utf8');
+    await chmod(fakeCodex, 0o755);
+    if (process.platform === 'win32') {
+      await writeFile(path.join(binDir, 'codex.cmd'), `@echo off\r\nnode "${fakeCodex}" %*\r\n`, 'utf8');
+    }
+
+    const result = spawnSync(
+      process.execPath,
+      [
+        'scripts/ctx-agent.mjs',
+        '--agent', 'codex-cli',
+        '--workspace', workspaceRoot,
+        '--project', 'tmp-project',
+        '--session', sessionId,
+        '--prompt', '继续',
+        '--no-bootstrap',
+        '--no-auto-checkpoint',
+      ],
+      {
+        cwd: process.cwd(),
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+          AIOS_TEST_CAPTURE_PATH: capturePath,
+        },
+      },
+    );
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.match(result.stderr, /\[aios\] rex evidence: completed/u);
+    const captured = await readFile(capturePath, 'utf8');
+    assert.match(captured, /# Security Review Agent/u);
+    assert.doesNotMatch(captured, /AIOS_REX_EVIDENCE=/u);
+
+    const artifactPath = path.join(
+      workspaceRoot,
+      '.aios',
+      'evidence',
+      'agent-providers',
+      `${specialistActivationId}.json`,
+    );
+    const artifact = JSON.parse(await readFile(artifactPath, 'utf8'));
+    assert.equal(artifact.handoff.status, 'pass');
+    assert.equal(artifact.handoff.agentId, agentId);
+
+    const activationRecord = JSON.parse(await readFile(
+      path.join(workspaceRoot, '.aios', 'workflow-activations', `${specialistActivationId}.json`),
+      'utf8',
+    ));
+    assert.equal(activationRecord.activation.status, 'completed');
+    assert.deepEqual(
+      activationRecord.activation.evidence.map((item) => item.kind),
+      ['specialist-scope-recorded', 'specialist-verdict-recorded'],
+    );
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
     await rm(binDir, { recursive: true, force: true });

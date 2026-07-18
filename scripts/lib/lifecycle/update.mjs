@@ -17,6 +17,7 @@ import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers, installSuperpowers } from '../components/superpowers.mjs';
 import { updateHarnessRuntime } from './self-update.mjs';
+import { ensureRexHarness, isAiosRuntimeRoot } from '../rex-harness/runtime.mjs';
 
 function isMissingBrowserUseRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
@@ -88,6 +89,14 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   const superpowersInstaller = deps.installSuperpowers ?? installSuperpowers;
   const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
   const runtimeUpdater = deps.updateHarnessRuntime ?? updateHarnessRuntime;
+
+  // 中文注释：更新前先保证规划内核存在，避免更新完成后才在 workflow import 阶段失败。
+  if (isAiosRuntimeRoot(rootDir)) {
+    const rexResult = await (deps.ensureRexHarness ?? ensureRexHarness)({ rootDir, fix: true, io });
+    if (!rexResult.ready) {
+      throw new Error(`rex-harness is required for AIOS intelligent planning: ${rexResult.fixHint}`);
+    }
+  }
 
   if (options.selfUpdate) {
     await runtimeUpdater({ rootDir, io });

@@ -23,6 +23,10 @@ const PLAN_CLI = new Command()
   .option('--acceptance <text>', 'Task acceptance criteria')
   .option('--kind <command|path|test|note>', 'Evidence kind')
   .option('--value <text>', 'Evidence value')
+  .option('--activation <id>', 'Rex capability activation id')
+  .option('--command-token <token>', 'Current Rex Provider Command execution token')
+  .option('--evidence-kind <kind>', 'Rex capability evidence kind')
+  .option('--evidence-ref <ref>', 'Rex capability evidence artifact or command ref')
   .option('--workspace <path>', 'Workspace root')
   .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
@@ -40,6 +44,7 @@ export function parsePlanArgs(argv) {
     'set-status',
     'task',
     'add-evidence',
+    'capability-evidence',
     'gate',
     'check-done',
     'inject',
@@ -88,6 +93,10 @@ export function parsePlanArgs(argv) {
         acceptance: flags.acceptance,
         kind: flags.kind,
         value: flags.value,
+        activationId: flags.activation,
+        commandToken: flags.commandToken,
+        evidenceKind: flags.evidenceKind,
+        evidenceRef: flags.evidenceRef,
         client: flags.client,
         sessionId: flags.session,
         policyMode: flags.policyMode,

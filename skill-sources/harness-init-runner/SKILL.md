@@ -1,6 +1,6 @@
 ---
 name: harness-init-runner
-description: Initialize a lightweight repo-local Node.js harness (harness/ + .harness/) WITHOUT AIOS dependency. Use ONLY when you need a standalone, portable harness. If AIOS is installed, use `aios-long-running-harness` instead — it has ContextDB integration, superpowers pairing, and checkpoint recovery.
+description: Initialize a lightweight repo-local Node.js harness (harness/ + .harness/) WITHOUT AIOS dependency. Use ONLY when you need a standalone, portable harness. If AIOS is installed, use `aios-long-running-harness` instead — it has rex Command hosting, ContextDB integration, and checkpoint recovery.
 
 installCatalogName: harness-init-runner
 clients: [codex, claude, gemini, opencode, hermes]

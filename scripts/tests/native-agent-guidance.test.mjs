@@ -28,12 +28,30 @@ test('native instructions use adaptive workflow dispositions instead of every-me
   }
 });
 
+test('native instructions describe rex workflow ownership without a fixed Matt chain', () => {
+  for (const client of resolveNativeClients('all')) {
+    const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
+    assert.match(markdown, /rex-harness Software Workflow/, `${client} missing rex workflow guidance`);
+    assert.match(markdown, /Current default Providers are the bundled `rex-\*` Skills/, `${client} missing rex-native default`);
+    assert.match(markdown, /explicit AIOS compatibility mode/, `${client} missing external compatibility boundary`);
+    assert.match(markdown, /current `capabilityDecision`/i, `${client} must execute only the current Capability`);
+    assert.match(markdown, /Observation -> Fact -> Activation -> Command -> Provider -> Evidence/u, `${client} missing the executable workflow loop`);
+    assert.match(markdown, /command-scoped projection.*not a fixed pipeline/i, `${client} missing adaptive recipe projection boundary`);
+    assert.match(markdown, /persist them independently under `.rex-harness\/`/i, `${client} missing standalone rex persistence boundary`);
+    assert.doesNotMatch(markdown, /matt-requirements`?\s*->\s*`?matt-test-design`?\s*->/i, `${client} still injects a fixed Matt chain`);
+    assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${client} still routes Superpowers from user intent`);
+    assert.doesNotMatch(markdown, /behavior change or bug fix.*test-driven-development/i, `${client} still routes Superpowers from user intent`);
+  }
+});
+
 test('root instruction files keep Superpowers on demand', () => {
   for (const file of ['AGENTS.md', 'CLAUDE.md']) {
     const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
     assert.match(markdown, /AIOS Workflow Policy/, `${file} missing workflow policy`);
     assert.doesNotMatch(markdown, /Superpowers skills MUST be invoked before any implementation action/i, `${file} still globally requires Superpowers`);
     assert.doesNotMatch(markdown, /Invoke `using-superpowers` skill first/i, `${file} still bootstraps using-superpowers globally`);
+    assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${file} still routes Superpowers outside rex`);
+    assert.doesNotMatch(markdown, /behavior change or bug fix.*test-driven-development/i, `${file} still routes Superpowers outside rex`);
   }
 });
 

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>rex-workflow SkillOpt Review</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { max-width: 960px; margin: 40px auto; padding: 0 24px; line-height: 1.6; }
+    .score { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+    .card { border: 1px solid #8886; border-radius: 10px; padding: 16px; }
+    .pass { color: #17813b; font-weight: 700; }
+    .reject { color: #b05a00; font-weight: 700; }
+    table { width: 100%; border-collapse: collapse; margin: 18px 0; }
+    th, td { border: 1px solid #8886; padding: 8px 10px; text-align: left; }
+    code { overflow-wrap: anywhere; }
+  </style>
+</head>
+<body>
+  <h1>rex-workflow SkillOpt 稳定性评审</h1>
+  <p class="pass">ACCEPTED - isolated validation hard 0.8 → 1.0, no training regression</p>
+  <div class="score">
+    <div class="card"><strong>旧版</strong><br>训练 10/10；验证 4/5</div>
+    <div class="card"><strong>Step 1</strong><br><span class="reject">训练回归，拒绝</span></div>
+    <div class="card"><strong>Step 2</strong><br>15/15；59/59 assertions</div>
+    <div class="card"><strong>确定性测试</strong><br>rex 74；gate 13 PASS</div>
+  </div>
+  <h2>两步 Gate</h2>
+  <table>
+    <thead><tr><th>版本</th><th>训练</th><th>验证</th><th>结果</th></tr></thead>
+    <tbody>
+      <tr><td>skill_v0000</td><td>1.0</td><td>0.8</td><td>baseline</td></tr>
+      <tr><td>skill_v0001</td><td>0.9</td><td>1.0</td><td>reject_regression</td></tr>
+      <tr><td>skill_v0002</td><td>1.0</td><td>1.0</td><td>accept_new_best</td></tr>
+    </tbody>
+  </table>
+  <h2>最终 compact 契约</h2>
+  <table>
+    <thead><tr><th>status</th><th>command</th><th>missingEvidence</th><th>动作</th></tr></thead>
+    <tbody>
+      <tr><td>active</td><td>非空</td><td>可为空或列出缺口</td><td>只执行当前 Command</td></tr>
+      <tr><td>completed</td><td>null</td><td>空数组</td><td>停止并确认完成</td></tr>
+      <tr><td colspan="3">其他组合</td><td>fail-closed；不执行、不声明完成、不伪造 Evidence</td></tr>
+    </tbody>
+  </table>
+  <h2>证据</h2>
+  <ul>
+    <li>target 与 scorer 均为无会话历史的隔离 Agent；原始回答和 59 条逐断言引用已落盘。</li>
+    <li>accepted SHA-256：<code>cdb457ea162c467cf84caa20579564db1773ccbce13d6f7fba00487f2b242bcd</code></li>
+    <li>workflow-specific gate：verified；repo-wide gate：blocked 20 个尚未逐个训练的 Skill。</li>
+  </ul>
+  <p>完整任务、隔离输出、独立评分和两步 Gate 位于 <code>.skillopt/rex-workflow-2026-07-17/</code>。</p>
+</body>
+</html>

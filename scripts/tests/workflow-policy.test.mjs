@@ -41,11 +41,14 @@ test('blank input is a noop with no persistence', () => {
       continuation: 'none',
       persistence: 'none',
       requiredSkills: [],
+      requiredAgent: null,
       requiresPreEditSafety: false,
       verificationScope: 'none',
       routeHint: 'none',
+      executionHost: 'single',
       reason: 'empty-message',
       plan: null,
+      capabilityDecision: null,
       action: 'none',
     });
   }
@@ -180,6 +183,8 @@ test('an acknowledgement with a new actionable objective is new work', () => {
   assert.equal(decision.plan, null);
   assert.equal(decision.routeHint, 'ops');
   assert.equal(decision.requiresPreEditSafety, true);
+  assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
   assert.equal(decision.verificationScope, 'focused');
 });
 
@@ -194,7 +199,8 @@ test('adaptive mode keeps a small explicit implementation change guarded', () =>
   assert.equal(decision.disposition, 'guarded');
   assert.equal(decision.persistence, 'none');
   assert.equal(decision.routeHint, 'implement');
-  assert.deepEqual(decision.requiredSkills, ['test-driven-development']);
+  assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
   assert.equal(decision.requiresPreEditSafety, true);
   assert.equal(decision.verificationScope, 'focused');
   assert.equal(decision.action, 'none');
@@ -212,7 +218,8 @@ test('strict mode plans the same substantive implementation request', () => {
   assert.equal(decision.disposition, 'planned');
   assert.equal(decision.persistence, 'create');
   assert.equal(decision.routeHint, 'implement');
-  assert.deepEqual(decision.requiredSkills, ['writing-plans', 'test-driven-development']);
+  assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
   assert.equal(decision.requiresPreEditSafety, true);
   assert.equal(decision.verificationScope, 'full');
   assert.equal(decision.action, 'started');
@@ -229,14 +236,67 @@ test('multi-step work is planned in adaptive mode', () => {
   assert.equal(decision.disposition, 'planned');
   assert.equal(decision.persistence, 'create');
   assert.equal(decision.routeHint, 'implement');
-  assert.deepEqual(decision.requiredSkills, ['writing-plans', 'test-driven-development']);
-  assert.equal(decision.requiresPreEditSafety, true);
+  assert.deepEqual(decision.requiredSkills, ['rex-planning']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.planning.sequence');
+  assert.equal(decision.requiresPreEditSafety, false);
   assert.equal(decision.verificationScope, 'full');
 });
 
-test('explicit team intent is planned without a global bootstrap chain', () => {
+test('ambiguous domain work selects only the current rex requirements provider', () => {
   const decision = evaluateWorkflowPolicy({
-    message: '审核这份工作流方案',
+    message: 'Clarify the domain vocabulary and acceptance criteria before implementing checkout.',
+    activePlan: null,
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+
+  assert.equal(decision.disposition, 'planned');
+  assert.equal(decision.routeHint, 'implement');
+  assert.equal(decision.requiresPreEditSafety, false);
+  assert.deepEqual(decision.requiredSkills, ['rex-requirements']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.requirements.clarify');
+  assert.equal(decision.capabilityDecision.recipeId, 'software.requirements.clarify.recipe');
+  assert.equal(decision.capabilityDecision.stageId, 'clarify');
+  assert.ok(!decision.requiredSkills.includes('writing-plans'));
+  assert.ok(!decision.requiredSkills.includes('using-superpowers'));
+});
+
+test('wayfinder is a rex capability under the generic implement host route', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: 'Map the unknown migration decisions across several future sessions.',
+    activePlan: null,
+    explicitIntent: 'wayfinder',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+
+  assert.equal(decision.disposition, 'planned');
+  assert.equal(decision.routeHint, 'implement');
+  assert.equal(decision.requiresPreEditSafety, false);
+  assert.deepEqual(decision.requiredSkills, ['rex-wayfinder']);
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.navigation.wayfind');
+});
+
+test('agent Provider uses requiredAgent instead of being injected as a Skill', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: '修改鉴权 token 和 session 校验逻辑。',
+    activePlan: null,
+    client: 'codex',
+    sessionId: 'session-a',
+    completedCapabilities: [
+      'software.testing.design',
+      'software.implementation.execute',
+    ],
+  });
+
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.review.specialist');
+  assert.deepEqual(decision.requiredSkills, []);
+  assert.equal(decision.requiredAgent, 'rex-security-reviewer');
+});
+
+test('explicit team intent selects an execution host without replacing the rex Provider', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: '并行实现一个新的支付模块',
     activePlan: null,
     explicitIntent: 'team',
     client: 'codex',
@@ -245,9 +305,30 @@ test('explicit team intent is planned without a global bootstrap chain', () => {
 
   assert.equal(decision.disposition, 'planned');
   assert.equal(decision.persistence, 'create');
-  assert.equal(decision.routeHint, 'team');
-  assert.deepEqual(decision.requiredSkills, ['writing-plans', 'dispatching-parallel-agents']);
+  assert.equal(decision.routeHint, 'implement');
+  assert.equal(decision.executionHost, 'team');
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.implementation.minimize');
+  assert.deepEqual(decision.requiredSkills, ['rex-minimal-construction']);
   assert.ok(!decision.requiredSkills.includes('using-superpowers'));
+});
+
+test('harness execution host preserves a selected Agent Provider', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: '修改鉴权 token 和 session 校验逻辑。',
+    activePlan: null,
+    explicitIntent: 'harness',
+    client: 'codex',
+    sessionId: 'session-a',
+    completedCapabilities: [
+      'software.testing.design',
+      'software.implementation.execute',
+    ],
+  });
+
+  assert.equal(decision.executionHost, 'harness');
+  assert.equal(decision.routeHint, 'verify');
+  assert.equal(decision.requiredAgent, 'rex-security-reviewer');
+  assert.deepEqual(decision.requiredSkills, []);
 });
 
 test('plan helpers distinguish terminal plans and same-session ownership', () => {

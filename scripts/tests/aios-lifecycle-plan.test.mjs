@@ -1,4 +1,7 @@
 import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import { planDoctor } from '../lib/lifecycle/doctor.mjs';
@@ -189,6 +192,58 @@ test('runUpdate performs runtime self-update when requested', async () => {
   assert.equal(calls[0].kind, 'runtime');
   assert.equal(calls[0].options.rootDir, '/tmp/aios-test');
   assert.equal(calls[1].kind, 'skills');
+});
+
+test('runSetup repairs the required rex-harness source submodule before component work', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-setup-rex-'));
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(rootDir, '.gitmodules'), '[submodule "rex-harness"]\n', 'utf8');
+  const calls = [];
+
+  await runSetup({ components: ['skills'], skipDoctor: true }, {
+    rootDir,
+    projectRoot: rootDir,
+    io: { log: () => {} },
+    deps: {
+      ensureRexHarness: async (options) => {
+        calls.push({ kind: 'rex', options });
+        return { ready: true, version: '0.4.2', missing: [], fixHint: '' };
+      },
+      installContextDbSkills: async () => { calls.push({ kind: 'skills' }); },
+    },
+  });
+
+  assert.equal(calls[0].kind, 'rex');
+  assert.equal(calls[0].options.fix, true);
+  assert.equal(calls[1].kind, 'skills');
+});
+
+test('runUpdate blocks component work when the required rex-harness kernel cannot be repaired', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-update-rex-'));
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  const calls = [];
+
+  await assert.rejects(
+    runUpdate({ components: ['skills'], skipDoctor: true }, {
+      rootDir,
+      projectRoot: rootDir,
+      io: { log: () => {} },
+      deps: {
+        ensureRexHarness: async (options) => {
+          calls.push({ kind: 'rex', options });
+          return { ready: false, fixHint: 'reinstall the AIOS release' };
+        },
+        installContextDbSkills: async () => { calls.push({ kind: 'skills' }); },
+      },
+    }),
+    /rex-harness is required for AIOS intelligent planning/u,
+  );
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].kind, 'rex');
+  assert.equal(calls[0].options.fix, true);
 });
 
 test('runSetup scopes native, agents, and superpowers project writes to projectRoot and client', async () => {

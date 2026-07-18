@@ -9,6 +9,7 @@ import { doctorContextDbSkills } from '../components/skills.mjs';
 import { doctorSuperpowers } from '../components/superpowers.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
 import { commandExists, captureCommand, runCommand } from '../platform/process.mjs';
+import { doctorRexHarness, isAiosRuntimeRoot } from '../rex-harness/runtime.mjs';
 import { inspectTokenDiscipline, printTokenDisciplineReport } from '../token-discipline/index.mjs';
 import { runNativeOnlyDoctor } from './aggregate/native-only.mjs';
 import { addDoctorCheck, countEffectiveWarnLines, logSkippedGate, printCaptured, printDoctorCheckSummary } from './aggregate/reporting.mjs';
@@ -58,6 +59,29 @@ export async function runDoctorSuite({
       dryRun,
       env,
       io,
+    });
+  }
+
+  io.log('');
+  io.log('== doctor-rex-harness ==');
+  if (isAiosRuntimeRoot(rootDir)) {
+    // 中文注释：rex-harness 是 AIOS 智能规划的硬依赖，不随 token/profile 门禁关闭。
+    const rexResult = await doctorRexHarness({ rootDir, fix, io });
+    effectiveWarns += rexResult.effectiveWarnings + rexResult.errors;
+    addDoctorCheck(checks, {
+      id: 'doctor:rex-harness',
+      item: 'rex-harness intelligent-planning kernel',
+      status: rexResult.errors > 0 ? 'error' : 'ok',
+      fix: rexResult.fixHint || 'Bundled rex-harness is ready.',
+      note: `ready=${rexResult.ready}; version=${rexResult.version || 'unknown'}; attemptedFix=${rexResult.attemptedFix}`,
+    });
+  } else {
+    addDoctorCheck(checks, {
+      id: 'doctor:rex-harness',
+      item: 'rex-harness intelligent-planning kernel',
+      status: 'skip',
+      fix: 'Run doctor from an AIOS runtime root to validate the bundled planning kernel.',
+      note: 'root is not an AIOS runtime checkout or release install',
     });
   }
 

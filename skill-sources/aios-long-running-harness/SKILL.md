@@ -1,6 +1,6 @@
 ---
 name: aios-long-running-harness
-description: AIOS-native long-running agent harness with ContextDB, superpowers pairing, checkpoint recovery, and evidence capture. Use when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
+description: AIOS-native long-running agent harness with rex Command execution, ContextDB, checkpoint recovery, and evidence capture. Use for a planned resumable objective when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
 
 installCatalogName: aios-long-running-harness
 clients: [codex, claude, hermes]
@@ -26,11 +26,13 @@ Use this harness to keep long tasks stable under UI drift, model variability, an
 6. Recover: on failure, classify and retry only with a changed hypothesis.
 7. Complete: run final verification and write summary doc.
 
-## Pairing with Superpowers Skills
-- Plan step should be produced through `superpowers:writing-plans` (or `superpowers:brainstorming` first when scope is unclear).
-- For 2+ independent domains, use `superpowers:dispatching-parallel-agents`; for coupled domains, run sequentially.
-- If the runtime has no true subagent tool, emulate dispatch with explicit per-domain task queues and only parallelize safe independent reads/checks.
-- Always finish with `superpowers:verification-before-completion` before claiming run success.
+## rex Command Boundary
+
+- The harness is an execution and recovery host, not a second software-workflow router. When a rex Workflow Activation exists, execute only the Provider selected by the current rex Command.
+- Return the Command's required Evidence to rex before advancing. Do not choose the next Capability in the harness or preload a fixed Provider chain.
+- Bundled `rex-*` Providers are the default. Matt, Superpowers, ECC, and Ponytail may replace a selected Provider only when the caller enables explicit compatibility mode.
+- Dispatch parallel agents only after the AIOS policy selects one planned work item with independent domains; keep coupled or shared-state changes sequential.
+- Before claiming run success, apply the AIOS host verification gate and record concrete artifact evidence.
 
 ## Context Boundary
 

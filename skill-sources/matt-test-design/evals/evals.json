@@ -1,0 +1,17 @@
+{
+  "skill_name": "matt-test-design",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "rex selected software.testing.design for a bounded validation change. Map acceptance behavior to a public test seam and return evidence.",
+      "expected_output": "A minimal acceptance mapping and test seam with the two required evidence refs, without implementing code.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "While designing tests you discover the change crosses an authentication boundary. Decide what the Provider should do next.",
+      "expected_output": "Record the high-risk observation and return control; do not invoke strict TDD itself.",
+      "files": []
+    }
+  ]
+}

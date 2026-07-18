@@ -1,0 +1,23 @@
+{
+  "skill_name": "aios-workflow-router",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "AIOS returned a planned decision whose current rex capability is software.requirements.clarify and provider is matt-requirements. Route this request to clarify checkout vocabulary and acceptance criteria before implementation.",
+      "expected_output": "Invoke only matt-requirements, preserve the current Activation evidence contract, and do not preload test-design, implementation, review, Team, or a second plan.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "The current rex Activation is software.testing.strict-tdd at stage red and expects failing-test-observed. The test unexpectedly passes. Decide the workflow transition.",
+      "expected_output": "Keep the Activation blocked at red, report failing-test-observed as missing, and do not advance to implementation or green until valid evidence is recorded.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "A bounded implementation Activation completed and rex selected software.review.specialist because a security risk domain and a reviewable diff are both evidenced. AIOS smoke gates permit the specialist.",
+      "expected_output": "Invoke one scoped ECC security specialist Provider, require specialist scope and verdict evidence, and keep Team or Harness promotion separate from the review Capability.",
+      "files": []
+    }
+  ]
+}

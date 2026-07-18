@@ -88,6 +88,17 @@ if (-not (Get-Command node -ErrorAction SilentlyContinue)) {
   throw "missing required command: node"
 }
 
+foreach ($rexFile in @(
+  (Join-Path $RootDir "rex-harness/package.json"),
+  (Join-Path $RootDir "rex-harness/src/index.mjs"),
+  (Join-Path $RootDir "rex-harness/bin/rex-harness.mjs"),
+  (Join-Path $RootDir "rex-harness/skill-sources/rex-workflow/SKILL.md")
+)) {
+  if (-not (Test-Path -LiteralPath $rexFile)) {
+    throw "missing required rex-harness release file: $rexFile. Initialize the submodule with: git -C `"$RootDir`" submodule update --init --recursive -- rex-harness"
+  }
+}
+
 Invoke-NodeCheck `
   -ScriptPath (Join-Path $RootDir "scripts/check-skills-sync.mjs") `
   -Arguments @("--materialize-temp") `
@@ -118,6 +129,7 @@ Write-Host "  VERSION:   $Version"
 Write-Host "  CHANGELOG: has ## [$ExpectedVersion] - YYYY-MM-DD"
 Write-Host "  SKILLS:    generated roots match skill-sources/"
 Write-Host "  NATIVE:    generated native outputs match client-sources/native-base/"
+Write-Host "  REX:       rex-harness planning kernel is materialized"
 if ($HasAgentManifest) {
   Write-Host "  AGENTS:    export-only regeneration passed"
 }

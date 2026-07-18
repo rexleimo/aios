@@ -6,7 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { doctorBrowserMcp } from '../lib/components/browser.mjs';
-import { countEffectiveWarnLines } from '../lib/doctor/aggregate.mjs';
+import { countEffectiveWarnLines, runDoctorSuite } from '../lib/doctor/aggregate.mjs';
 
 test('countEffectiveWarnLines ignores missing codex/claude/gemini path warnings', () => {
   const count = countEffectiveWarnLines([
@@ -23,6 +23,38 @@ test('countEffectiveWarnLines counts actionable warnings', () => {
     '[warn] CODEX_HOME directory does not exist (/tmp/.codex)',
   ]);
   assert.equal(count, 2);
+});
+
+test('runDoctorSuite reports rex-harness as a hard AIOS planning dependency', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-doctor-rex-'));
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  const logs = [];
+  const disabledGates = [
+    'doctor:token-discipline',
+    'doctor:shell',
+    'doctor:skills',
+    'doctor:native',
+    'doctor:superpowers',
+    'doctor:security',
+    'doctor:bootstrap',
+    'doctor:browser',
+    'doctor:codemap',
+    'doctor:mcp-build',
+  ].join(',');
+
+  const result = await runDoctorSuite({
+    rootDir,
+    projectRoot: rootDir,
+    profile: 'minimal',
+    env: { AIOS_DISABLED_GATES: disabledGates },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  assert.equal(result.exitCode, 0);
+  assert.match(logs.join('\n'), /\[error\] rex-harness is required for AIOS intelligent planning/u);
+  assert.match(logs.join('\n'), /\[check\] doctor:rex-harness/u);
+  assert.match(logs.join('\n'), /\[summary\] effective_warn=2/u);
 });
 
 test('doctor-security-config scans agent-sources markdown role cards', async () => {

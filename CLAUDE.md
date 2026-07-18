@@ -50,9 +50,9 @@ Evaluate the AIOS workflow policy before creating a plan, selecting a skill, or 
 
 1. `direct` and `noop` turns do not create a persistent plan or invoke a skill chain.
 2. `guarded` turns use only the required edit and verification gates.
-3. `planned` turns create or reuse one work-item plan, then invoke only the relevant Superpowers playbook.
+3. `planned` turns create or reuse one work-item plan, then execute only the Provider selected by the current rex Command.
 4. Do not use `using-superpowers` as a global bootstrap. `aios-workflow-router` helps classify work but does not replace selected process skills.
-5. Invoke a selected process skill rather than paraphrasing it; use `verification-before-completion` before claiming a changed behavior is complete.
+5. Invoke the selected Provider rather than paraphrasing it; use `verification-before-completion` before claiming a changed behavior is complete.
 </IMPORTANT>
 <!-- END AIOS WORKFLOW POLICY -->
 
@@ -218,27 +218,9 @@ Token compression is handled by community-maintained tools: **RTK** and **Cavema
 - If multiple browser MCPs are installed, reserve `chrome-devtools` for low-level debugging only
 - For interactive work, prefer `chrome.launch_cdp {"port":9222}` then `browser.connect_cdp`
 - The system maintains a file-based memory system in JSON format
-- Before executing any plan, use `superpowers:brainstorming` skill
-- When implementing features, use `superpowers:test-driven-development`
-- Before claiming completion, use `superpowers:verification-before-completion`
-
-## Default Task Route (Superpowers + Harness)
-
-For substantial tasks, route execution in this order:
-
-1. Process selection
-   - `superpowers:brainstorming` for design/new behavior
-   - `superpowers:writing-plans` for multi-step implementation
-   - `superpowers:systematic-debugging` for failures
-2. Write a plan artifact in `docs/plans/YYYY-MM-DD-<topic>.md`.
-3. Use `aios-long-running-harness` controls (preflight budgets, evidence checkpoints, retry classes).
-4. Persist session state with ContextDB (`init -> session -> event -> checkpoint -> context:pack`).
-5. Dispatch strategy
-   - Independent domains: use `superpowers:dispatching-parallel-agents`.
-   - Coupled/shared-state changes: stay sequential.
-   - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
-6. Close only after `superpowers:verification-before-completion` and concrete artifact evidence.
-
+- Substantive software work executes only the Provider selected by the current rex Command; bundled `rex-*` Providers are the default
+- Matt, Superpowers, ECC, and Ponytail integrations are optional compatibility replacements and require explicit compatibility mode
+- Before claiming completion, run the host verification gate and record concrete artifact evidence
 
 <!-- AIOS CODEMAP BEGIN -->
 ## MCP Tools: code-review-graph
@@ -280,11 +262,22 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then select only the relevant workflow playbooks.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
+
+## rex-harness Software Workflow
+
+- Control loop: `Observation -> Fact -> Activation -> Command -> Provider -> Evidence`. rex owns the semantic transitions and can persist them independently under `.rex-harness/`; AIOS persists a host projection under `.aios/workflow-activations/`.
+- `rex-harness` owns software-engineering Facts, Capability selection, Workflow Activation, stage order, Evidence Contracts, standalone `start/status/evidence/resume`, and portable default Provider hints. AIOS adds `direct | guarded | planned`, final executable Provider Binding, process execution, ContextDB, recovery, safety, Team, and Harness.
+- Standalone coding clients load `rex-workflow` and use the compact CLI by default; `--full` is diagnostic-only. AIOS calls the complete rex JS API directly and does not register a core rex MCP server.
+- Run only the Provider returned by the current `capabilityDecision`. Do not inject a complete Matt or Superpowers chain on the first turn.
+- AIOS stores the complete rex Workflow Activation under `.aios/workflow-activations/workflows/`; top-level Capability files are compatibility projections. After a Provider returns evidence, advance through the rex runtime instead of reselecting the next stage in AIOS.
+- AIOS recipe definitions expose one command-scoped projection of `adaptive-software-delivery`; conditional Capability candidates are not a fixed pipeline and must not all be required at once. AIOS-only runtime and governance recipes remain host-owned.
+- Current default Providers are the bundled `rex-*` Skills and `rex-specialist-review`; invoke only the Provider returned by the current Command. Matt, Superpowers, Ponytail, and ECC bindings exist only in explicit AIOS compatibility mode and are never required for rex-harness standalone readiness.
+- `Fast | Balanced | Deep` are post-run analytics derived from actual Activations. They are not request routes and must not be guessed from prompt length or keywords.
 
 ## AIOS Interception Runtime (Deprecated)
 
@@ -446,13 +439,13 @@ Token profiles are a pre-context hygiene layer. Deep token compression (output/i
 
 ## AIOS Superpowers Playbooks
 
-- Do not invoke `using-superpowers` as a global bootstrap. The AIOS workflow policy chooses the smallest applicable playbook after it classifies the work item.
-- For a `planned` work item, invoke the selected skill rather than paraphrasing its process:
-  - unclear design or a new capability → `superpowers:brainstorming` (or `brainstorming`)
-  - explicit multi-step plan → `superpowers:writing-plans` (or `writing-plans`)
-  - observed failure or regression → `superpowers:systematic-debugging`
-  - behavior change or bug fix → `superpowers:test-driven-development`
-  - before delivery, completion, commit, or release → `superpowers:verification-before-completion`
+- Do not invoke `using-superpowers` as a global bootstrap. The current rex Command, not a second prompt classifier, selects a Superpowers playbook.
+- Software workflow ownership and default Provider implementation belong to `rex-harness`. AIOS invokes only the current Provider from the rex Capability Command and never preloads a fixed stack.
+- AIOS defaults to bundled rex-native Providers. Matt, Superpowers, Ponytail, and ECC are optional compatibility replacements selected only when the caller explicitly enables compatibility mode; they do not participate in default readiness or routing.
+- A Provider completing successfully is not enough to advance. Return the required evidence kinds to the AIOS Activation Ledger and let rex evaluate the transition.
+- Invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` only when that playbook is the Provider in the current rex Command; then follow the selected process instead of paraphrasing it.
+- Do not translate user wording such as "new capability", "multi-step", "bug fix", or "failure" directly into a Superpowers playbook. Those observations must pass through rex Fact and Capability selection first.
+- `verification-before-completion` remains an AIOS host completion gate before delivery, commit, or release; it does not choose or advance a rex Capability.
 - `direct` work does not need a Superpowers chain. `guarded` work uses the edit and verification gates below; it only adds a process skill when the policy selects one.
 - **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
 - Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.

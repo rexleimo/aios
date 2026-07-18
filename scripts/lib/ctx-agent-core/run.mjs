@@ -150,33 +150,50 @@ async function executePrompt(opts) {
       routeMode: 'single',
       reason: `workflow ${workflow?.decision?.disposition || 'direct'}`,
     };
-  } else if (!requestedRoute.explicitTrigger && ['team', 'harness'].includes(workflow.decision.routeHint)) {
+  } else if (!requestedRoute.explicitTrigger && ['team', 'harness'].includes(workflow.decision.executionHost)) {
     routeDecision = {
       ...requestedRoute,
-      routeMode: workflow.decision.routeHint,
-      reason: `workflow route=${workflow.decision.routeHint}`,
+      routeMode: workflow.decision.executionHost,
+      reason: `workflow executionHost=${workflow.decision.executionHost}`,
     };
   }
 
-  let routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
-  if (routeDecision.routeMode === 'single' && workflow?.injection) {
-    routedPrompt = `${workflow.injection}\n## User request\n\n${routedPrompt}\n`;
-  }
+  const routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
   if (routeDecision.routeMode !== 'single') console.log(`[route] mode=${routeDecision.routeMode} (${routeDecision.reason})`);
-  if (opts.dryRun) return { ...dryRunPrompt(opts, routeDecision, routedPrompt), routedPrompt, workflow };
+  if (opts.dryRun) {
+    const previewPrompt = workflow?.injection
+      ? `${workflow.injection}\n## User request\n\n${routedPrompt}\n`
+      : routedPrompt;
+    return { ...dryRunPrompt(opts, routeDecision, previewPrompt), routedPrompt, workflow };
+  }
+  // single/team/harness 共用同一外层 pre_send；执行宿主不能绕过压缩门或丢失当前 rex Command。
+  const outbound = await compactCtxAgentPreSend({ opts, routedPrompt });
+  let providerPrompt = workflow?.injection
+    ? `${workflow.injection}\n## User request\n\n${outbound.prompt}\n`
+    : outbound.prompt;
+  if (workflow?.capabilityCommand?.provider?.kind === 'agent') {
+    const { prepareAiosAgentProviderExecution } = await import('../workflows/rex-agent-provider.mjs');
+    const prepared = await prepareAiosAgentProviderExecution({
+      command: workflow.capabilityCommand,
+      evidenceRoot: opts.workspaceRoot,
+      workflowDirective: workflow.injection,
+      userRequest: outbound.prompt,
+    });
+    providerPrompt = prepared.prompt;
+  }
+
   let result;
   if (routeDecision.routeMode === 'single') {
-    const outbound = await compactCtxAgentPreSend({ opts, routedPrompt });
-    result = runOneShotAgent(opts.agent, outbound.prompt, opts.extraArgs);
+    result = runOneShotAgent(opts.agent, providerPrompt, opts.extraArgs);
   } else {
     result = await runRoutedOneShotTask({
       ...opts,
-      taskPrompt: routedPrompt,
+      taskPrompt: providerPrompt,
       routeMode: routeDecision.routeMode,
       planPath: workflow?.plan?.absolutePath || '',
     });
   }
-  return { ...result, routedPrompt, turnCompression: routeDecision.routeMode === 'single', workflow };
+  return { ...result, routedPrompt, turnCompression: true, workflow };
 }
 
 async function compactCtxAgentPreSend({ opts, routedPrompt }) {
@@ -238,6 +255,42 @@ async function compactCtxAgentPostReceive(opts, output) {
   return packet?.refs?.length ? JSON.stringify(packet, null, 2) : output;
 }
 
+async function ingestRexProviderEvidence(opts, workflow, output, exitCode) {
+  const command = workflow?.capabilityCommand;
+  const activationId = command?.activationId || workflow?.capabilityActivation?.activationId;
+  if (!activationId || !command) return Object.freeze({ required: false, ingested: true, reason: '' });
+  if (exitCode !== 0) {
+    return Object.freeze({ required: true, ingested: false, reason: 'provider-exit-nonzero' });
+  }
+
+  try {
+    const { ingestCapabilityProviderOutput } = await import('../workflows/rex-capability-runtime.mjs');
+    const ingestion = ingestCapabilityProviderOutput({
+      rootDir: opts.workspaceRoot,
+      command,
+      output,
+    });
+    if (!ingestion.ingested) {
+      console.warn(`[warn] rex evidence not recorded: ${ingestion.reason}; activation=${activationId}`);
+      return Object.freeze({ required: true, ...ingestion });
+    }
+
+    const result = ingestion.result;
+    const nextCommand = result.command || result.nextCapability?.command || null;
+    console.error([
+      `[aios] rex evidence: ${result.outcome}`,
+      `activation=${activationId}`,
+      `missing=${result.missingEvidence.length}`,
+      `next=${nextCommand?.provider?.id || 'none'}`,
+    ].join(' '));
+    return Object.freeze({ required: true, ...ingestion });
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    console.warn(`[warn] rex evidence rejected: ${reason}; activation=${activationId}`);
+    return Object.freeze({ required: true, ingested: false, reason });
+  }
+}
+
 function dryRunPrompt(opts, routeDecision, routedPrompt) {
   if (routeDecision.routeMode === 'single') {
     return { output: `[dry-run] ${opts.agent} would execute prompt without injected context.\nPrompt: ${routedPrompt}`, exitCode: 0 };
@@ -252,14 +305,26 @@ async function runPromptFlow(opts) {
   const responseTurnId = `oneshot:${opts.sessionId}:${oneShotTurnSeed}:response`;
   addPromptEvent(opts, promptTurnId);
   const startedAt = Date.now();
-  const { output, exitCode, routedPrompt, turnCompression } = await executePrompt(opts);
-  const compactOutput = turnCompression ? await compactCtxAgentPostReceive(opts, output) : output;
+  const {
+    output,
+    protocolOutput = output,
+    exitCode,
+    routedPrompt,
+    workflow,
+  } = await executePrompt(opts);
+  // 先从原始 Provider 输出摄取证据，再执行 post_receive 压缩；压缩结果不能作为状态机输入。
+  const ingestion = await ingestRexProviderEvidence(opts, workflow, protocolOutput, exitCode);
+  const effectiveExitCode = exitCode === 0 && ingestion.required && !ingestion.ingested ? 1 : exitCode;
+  const blockedOutput = effectiveExitCode !== exitCode
+    ? `${output}${output.endsWith('\n') ? '' : '\n'}[aios] blocked: rex Provider evidence contract failed (${ingestion.reason}).\n`
+    : output;
+  const compactOutput = await compactCtxAgentPostReceive(opts, blockedOutput);
   const elapsedMs = Date.now() - startedAt;
   process.stdout.write(compactOutput.endsWith('\n') ? compactOutput : `${compactOutput}\n`);
-  const responseStatus = exitCode !== 0 ? 'blocked' : opts.checkpointStatus;
-  addResponseEvent(opts, responseTurnId, promptTurnId, compactOutput, exitCode);
-  if (opts.autoCheckpoint) await writeAutoCheckpoint(opts, routedPrompt, compactOutput, responseStatus, elapsedMs, exitCode);
-  if (exitCode !== 0) process.exit(exitCode);
+  const responseStatus = effectiveExitCode !== 0 ? 'blocked' : opts.checkpointStatus;
+  addResponseEvent(opts, responseTurnId, promptTurnId, compactOutput, effectiveExitCode);
+  if (opts.autoCheckpoint) await writeAutoCheckpoint(opts, routedPrompt, compactOutput, responseStatus, elapsedMs, effectiveExitCode);
+  if (effectiveExitCode !== 0) process.exitCode = effectiveExitCode;
 }
 
 export async function runCtxAgent(argv = process.argv.slice(2)) {

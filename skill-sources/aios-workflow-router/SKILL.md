@@ -1,6 +1,6 @@
 ---
 name: aios-workflow-router
-description: "Route tasks to appropriate superpowers workflows. TRIGGER: 分析、设计、实现、调试、并发、并行、agent team、长任务、harness、plan、计划、brainstorm、头脑风暴、debug、调试、multi-step、多步骤"
+description: "Route AIOS host dispositions and execute the current rex-harness software Capability Command. TRIGGER: 分析、设计、实现、调试、并发、agent team、长任务、harness、plan、工作流、多步骤"
 
 installCatalogName: aios-workflow-router
 clients: [codex, claude, gemini, opencode, hermes]
@@ -14,90 +14,50 @@ repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 
 # AIOS Workflow Router
 
-**This skill is a routing layer ONLY — it classifies tasks and dispatches to the correct superpowers skill. It MUST NOT implement any workflow logic itself.**
+这个 Skill 只协调宿主路由和 rex 返回的当前命令，不拥有软件工程步骤顺序。
 
-## Quick Decision Tree
+## 所有权
 
-```
-用户请求 → 任务类型判断 → MUST invoke 对应的 superpowers skill
-```
+- AIOS：`direct | guarded | planned`、最终 Provider Binding、计划和 Activation 持久化、Skill/Agent/模型执行、安全、验证、Team、Harness、恢复和重试。
+- rex-harness：Observation -> Fact、Capability 选择、Capability Recipe、Evidence Contract、下一条语义 Command、软件 Workflow Recipe，以及独立可用的 rex-native Provider；宿主只能显式启用外部兼容覆盖。
+- Skill / Playbook / Agent：执行已经选中的一个阶段，不根据关键词自行激活，也不决定后续阶段。
 
-## Skill Name Resolution (cross-client)
+## 路由流程
 
-Routes below reference target skills by name. The `superpowers:` prefix is the canonical superpowers-plugin namespace; if the current client does not expose that namespace, invoke the same skill by its plain installed name (e.g. `superpowers:brainstorming` → `brainstorming`, `superpowers:writing-plans` → `writing-plans`). Resolve the name to whatever the current client exposes, then invoke through that client's skill mechanism.
+1. 先读取 AIOS workflow-policy 的结构化 Decision。
+2. `direct`：只读回答，不创建计划，不启动 Capability 链。
+3. `guarded`：执行当前 `capabilityDecision.provider`；如果当前阶段会改文件，先执行 `pre-edit-safety-gate`。
+4. `planned`：创建或复用一个 AIOS 工作项，然后仍然只执行当前 Provider。
+5. Provider 完成后，把 Command 要求的 Evidence Kind 和 Artifact Ref 写回 Activation Ledger。
+6. 由 rex 推进 Activation：
+   - `blocked`：补齐明确列出的缺失 Evidence；
+   - `next`：执行新 Command 的一个 Provider；
+   - `completed`：关闭当前 Capability，并让 AIOS 自动评估下一个 Capability；
+   - Promotion Request：由 AIOS 决定是否接受 Team 或 Harness 升级。
 
-## Routing Rules
+## Provider 规则
 
-**This router is a dispatcher, not a replacement.** AIOS always has superpowers installed. Every route below MUST invoke the target skill through the current client's skill mechanism (e.g. the Skill tool in Claude Code / Copilot CLI, `activate_skill` in Gemini CLI, or the equivalent skill invocation in Codex/OpenCode) — never inline the process.
+- 当前 Command 的 `provider.id` 是 `matt-*` 时，只执行对应的有边界 Skill。
+- 当前 Command 的 `provider.id` 是一个 `superpowers:*` playbook 时，只执行该 playbook。
+- 当前 Command 的 `provider.id` 是 `ponytail-minimize` 时，只执行最小实现阶梯，不直接实现方案。
+- 当前 Command 的 Provider 是 `ecc-specialist` 时，AIOS 再按已记录的风险领域解析具体 Reviewer。
 
-### 0. Mandatory Pre-Edit Safety Gate (ALL task types)
+不得在首次请求中注入 `matt-requirements -> matt-test-design -> matt-implement -> matt-code-review` 整条链；每一步必须由上一阶段证据解锁。不得把 `Fast | Balanced | Deep` 作为输入路由，它们只用于总结实际 Activation。
 
-**BEFORE any code modification** (editing, creating, deleting files), regardless of task type, MUST invoke: `pre-edit-safety-gate`
+## 宿主升级
 
-This gate checks CRG impact radius, dependencies, style alignment, and test coverage before edits, and enforces CRG graph update + detect_changes + typecheck + test after edits. It applies to ALL task types below. Do not skip.
+- `team`：只有独立工作流事实成立，并且当前工作项已经是 `planned` 时使用。
+- `harness`：只有连续性、恢复或长运行事实成立，并且当前工作项已经是 `planned` 时使用。
+- 没有真实并行域时保持顺序执行；没有可恢复目标时不启动 Harness。
 
-### 1. Design/Creative Tasks (设计/创意任务)
-**Keywords**: 设计、创意、新功能、新特性、build、create、implement、brainstorm、头脑风暴
+## 完成门
 
-**MUST invoke**: `superpowers:brainstorming`
+改动行为后必须执行 `verification-before-completion` 或当前客户端暴露的等价验证 Skill。只有测试、类型检查、Review 和 Evidence Contract 都有具体引用时，才能声称完成。
 
-This skill does NOT contain any brainstorming logic. The full process (Visual Companion, spec self-review, user approval gates) lives exclusively in `superpowers:brainstorming`.
+## 资源
 
-### 2. Debug/Failure Tasks (调试/故障任务)
-**Keywords**: 调试、bug、错误、失败、error、fail、debug、修复、fix、不工作、broken
-
-**MUST invoke**: `superpowers:systematic-debugging`
-
-For AIOS-specific debugging with MCP tooling, also consider `debug-hub` or `debug` skills.
-
-### 3. Multi-step/Long-running Tasks (多步骤/长任务)
-**Keywords**: 长任务、多步骤、harness、checkpoint、evidence、long-running、multi-step、复杂任务、orchestrat
-
-**MUST invoke**: `aios-long-running-harness`
-
-### 4. Parallel/Agent Team Tasks (并行/团队任务)
-**Keywords**: 并发、并行、agent team、团队、多agent、多个独立、dispatch、parallel、concurrent
-
-**MUST invoke**: `superpowers:dispatching-parallel-agents`
-
-If no subagent tool available, emulate with explicit task queues. Emit heartbeat progress every ~30s; if no worker completes after ~120s, fall back to sequential execution.
-
-### 5. Implementation Tasks (实现任务)
-**Keywords**: 实现、implement、开发、develop、编码、code、写代码
-
-**MUST invoke**:
-1. If no plan exists: `superpowers:brainstorming` first, then `superpowers:writing-plans`
-2. If plan exists: `superpowers:test-driven-development`
-
-**Agent workflow note**: when the change adds or reshapes agent roles, also require the repo's agent smoke plan and skill training gate before the new workflow can be considered live-ready.
-
-### 6. Analysis Tasks (分析任务)
-**Keywords**: 分析、analysis、研究、research、investigate、调查、为什么、why
-
-**Route to**: Direct execution (no superpowers skill required)
-1. Gather information from codebase, logs, history
-2. Document findings
-3. Present recommendations
-4. Default to single-agent execution; do not dispatch explorer/parallel agents unless the user explicitly asks for delegation or parallel work
-
-## Workflow Execution
-
-### Standard Flow
-
-```
-1. Route → 2. Invoke Skill → 3. Follow Skill → 4. Verify → 5. Complete
-```
-
-### Model Selection
-
-After routing, if the task involves model dispatch (e.g., selecting between models for cost/capability), invoke `model-router` skill for model selection. This router handles workflow routing only.
-
-## Completion Gate
-
-**MUST invoke**: `superpowers:verification-before-completion` before claiming any task complete.
-
-## Resource Links
-
-- `scripts/lib/specs/` - Runtime and safety specifications
-- `docs/plans/` - Implementation plans
-- `.aios/context-db/` - Runtime operation records
+- `rex-harness/docs/architecture.md`
+- `rex-harness/docs/capability-lifecycle.md`
+- `rex-harness/docs/workflow-ownership.md`
+- `.aios/workflow-activations/`
+- `docs/plans/`

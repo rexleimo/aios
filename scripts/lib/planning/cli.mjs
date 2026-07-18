@@ -14,6 +14,7 @@ import {
   runAutoGate,
   runClaudeUserPromptSubmitHook,
 } from './auto-gate.mjs';
+import { recordAiosCapabilityEvidence } from '../workflows/rex-capability-runtime.mjs';
 
 export async function runPlanCommand(options = {}, { rootDir = process.cwd(), stdout = process.stdout, stderr = process.stderr } = {}) {
   const sub = String(options.subcommand || 'status').trim();
@@ -127,6 +128,28 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
         ? `${JSON.stringify(state, null, 2)}\n`
         : `evidence added (${state.evidence.length} total)\n`);
       return { exitCode: 0, state };
+    } catch (error) {
+      stderr.write(`[err] ${error.message}\n`);
+      return { exitCode: 1 };
+    }
+  }
+
+  if (sub === 'capability-evidence') {
+    if (!options.activationId || !options.commandToken || !options.evidenceKind || !options.evidenceRef) {
+      stderr.write('[err] plan capability-evidence requires --activation, --command-token, --evidence-kind, and --evidence-ref\n');
+      return { exitCode: 1 };
+    }
+    try {
+      const result = recordAiosCapabilityEvidence({
+        rootDir,
+        activationId: options.activationId,
+        commandToken: options.commandToken,
+        evidence: [{ kind: options.evidenceKind, refs: [options.evidenceRef] }],
+      });
+      stdout.write(json
+        ? `${JSON.stringify(result, null, 2)}\n`
+        : `capability evidence -> ${result.outcome}; activation=${result.activationId}\n`);
+      return { exitCode: 0, result };
     } catch (error) {
       stderr.write(`[err] ${error.message}\n`);
       return { exitCode: 1 };
