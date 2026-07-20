@@ -113,6 +113,8 @@ mkdir -p "$tar_stage/harness-cli"
     --exclude='mcp-server/.npm-cache' \
     --exclude='rex-harness/.git' \
     --exclude='rex-harness/.git/*' \
+    --exclude='scripts/lib/components/superpowers' \
+    --exclude='scripts/lib/components/superpowers/*' \
     --exclude='dist' \
     --exclude='__pycache__' \
     --exclude='.mypy_cache' \
@@ -125,17 +127,21 @@ if [[ ! -f "$tar_stage/harness-cli/rex-harness/src/index.mjs" ]]; then
   echo "Release archive did not materialize rex-harness/src/index.mjs" >&2
   exit 1
 fi
+# A deleted legacy directory can remain ignored in a developer worktree. Do not
+# preserve its empty directory entry in either release archive.
+rmdir "$tar_stage/harness-cli/scripts/lib/components/superpowers" 2>/dev/null || true
 (
   cd "$tar_stage"
   tar -czf "$OUT_DIR/harness-cli.tar.gz" harness-cli
 )
 
 echo "+ zip -> $OUT_DIR/harness-cli.zip"
+rm -f "$OUT_DIR/harness-cli.zip"
 (
   cd "$tar_stage"
   zip -r "$OUT_DIR/harness-cli.zip" \
     harness-cli \
-    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
+    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
 )
 
 echo ""

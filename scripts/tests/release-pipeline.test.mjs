@@ -73,6 +73,8 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp","scripts":{"typecheck":"node -e \\\"process.exit(0)\\\"","test":"node -e \\\"process.exit(0)\\\"","build":"node -e \\\"process.exit(0)\\\""}}\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
+  // A stale ignored directory must never leak an obsolete workflow into a release archive.
+  await writeFixtureFile(rootDir, 'scripts/lib/components/superpowers/legacy.mjs', 'export const legacy = true;\n');
   await cp(path.join(workspaceRoot, 'agent-sources'), path.join(rootDir, 'agent-sources'), { recursive: true });
   await writeFixtureFile(rootDir, '.codex/skills/sample-skill/SKILL.md', '# codex\n');
   await writeFixtureFile(rootDir, '.codex/agents/rex.toml', '# codex agent\n');
@@ -103,7 +105,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/check-skills-sync.mjs', checkSkillsSyncScript);
   await writeFixtureFile(rootDir, 'scripts/check-native-sync.mjs', checkNativeSyncScript);
   await writeFixtureFile(rootDir, 'scripts/aios.mjs', `
-if (process.argv.slice(2).join(' ') !== 'skill verify-training --changed --base HEAD^ --json') {
+if (process.argv.slice(2).join(' ') !== 'skill verify-training --changed --base v1.2.2 --json') {
   process.exit(2);
 }
 process.stdout.write('{"status":"verified"}\\n');
@@ -132,6 +134,7 @@ process.stdout.write('{"status":"verified"}\\n');
   assertOk(run('git', ['add', '-A'], { cwd: rootDir }));
   assertOk(run('git', ['commit', '-m', 'fixture'], { cwd: rootDir }));
   assertOk(run('git', ['commit', '--allow-empty', '-m', 'release base'], { cwd: rootDir }));
+  assertOk(run('git', ['tag', 'v1.2.2', 'HEAD^'], { cwd: rootDir }));
 }
 
 test('package-release emits stable assets including the rex-harness planning kernel', async () => {
@@ -214,6 +217,14 @@ test('package-release emits stable assets including the rex-harness planning ker
       `harness-cli.tar.gz must not ship stale client skill projections: ${relativePath}`
     );
   }
+  await assertFileMissing(
+    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
+    'harness-cli.tar.gz must not ship retired Superpowers workflow code'
+  );
+  await assertFileMissing(
+    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers'),
+    'harness-cli.tar.gz must not ship a retired Superpowers workflow directory'
+  );
 
   const zipExtractDir = await makeTemp('rex-release-assets-zip-extract-');
   assertOk(run('tar', ['-xf', path.join(outDir, 'harness-cli.zip'), '-C', zipExtractDir]));
@@ -229,15 +240,26 @@ test('package-release emits stable assets including the rex-harness planning ker
     path.join(zipExtractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
     'harness-cli.zip did not include the global Rex client projection entrypoint'
   );
+  await assertFileMissing(
+    path.join(zipExtractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
+    'harness-cli.zip must not ship retired Superpowers workflow code'
+  );
+  await assertFileMissing(
+    path.join(zipExtractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers'),
+    'harness-cli.zip must not ship a retired Superpowers workflow directory'
+  );
 });
 
 test('release scripts and CI require a materialized rex-harness submodule', async () => {
   const workspaceRoot = process.cwd();
   const shellScript = await readFile(path.join(workspaceRoot, 'scripts', 'package-release.sh'), 'utf8');
   const powershellScript = await readFile(path.join(workspaceRoot, 'scripts', 'package-release.ps1'), 'utf8');
+  const preflightShell = await readFile(path.join(workspaceRoot, 'scripts', 'release-preflight.sh'), 'utf8');
   const initScript = await readFile(path.join(workspaceRoot, 'scripts', 'aios-init.mjs'), 'utf8');
 
   assert.match(shellScript, /rex-harness/u);
+  assert.match(shellScript, /rm -f "\$OUT_DIR\/harness-cli\.zip"/u);
+  assert.match(preflightShell, /describe --tags --abbrev=0 --match 'v\[0-9\]\*' HEAD\^/u);
   assert.match(powershellScript, /rex-harness/u);
   assert.match(initScript, /ensureAiosPlanningKernel/u);
   for (const workflowName of [

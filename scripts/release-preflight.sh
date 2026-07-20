@@ -119,7 +119,11 @@ if ! git -C "$ROOT_DIR" rev-parse --verify --quiet HEAD^ >/dev/null; then
   echo "release training verification requires a parent commit" >&2
   exit 1
 fi
-if ! node "$ROOT_DIR/scripts/aios.mjs" skill verify-training --changed --base HEAD^ --json; then
+TRAINING_BASE="$(git -C "$ROOT_DIR" describe --tags --abbrev=0 --match 'v[0-9]*' HEAD^ 2>/dev/null || true)"
+if [[ -z "$TRAINING_BASE" ]]; then
+  TRAINING_BASE="HEAD^"
+fi
+if ! node "$ROOT_DIR/scripts/aios.mjs" skill verify-training --changed --base "$TRAINING_BASE" --json; then
   echo "changed Skills lack reproducible training evidence for this release" >&2
   exit 1
 fi
@@ -146,7 +150,7 @@ echo "  SKILLS:    generated roots match skill-sources/"
 echo "  NATIVE:    generated native outputs match client-sources/native-base/"
 echo "  REX:       rex-harness planning kernel is materialized"
 echo "  TESTS:     root and MCP-server verification passed"
-echo "  TRAINING:  changed Skill evidence recomputed from committed artifacts"
+echo "  TRAINING:  changed Skill evidence recomputed since $TRAINING_BASE"
 if [[ -f "$ROOT_DIR/agent-sources/manifest.json" ]]; then
   echo "  AGENTS:    export-only regeneration passed"
 fi

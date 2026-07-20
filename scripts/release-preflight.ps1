@@ -137,9 +137,13 @@ Invoke-NpmCheck -WorkingDirectory $McpServerDir -Arguments @("run", "build") -Fa
 if ($LASTEXITCODE -ne 0) {
   throw "release training verification requires a parent commit"
 }
+$trainingBase = (& git -C $RootDir describe --tags --abbrev=0 --match "v[0-9]*" HEAD^ 2>$null).Trim()
+if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($trainingBase)) {
+  $trainingBase = "HEAD^"
+}
 Invoke-NodeCheck `
   -ScriptPath (Join-Path $RootDir "scripts/aios.mjs") `
-  -Arguments @("skill", "verify-training", "--changed", "--base", "HEAD^", "--json") `
+  -Arguments @("skill", "verify-training", "--changed", "--base", $trainingBase, "--json") `
   -FailureMessage "changed Skills lack reproducible training evidence for this release"
 
 $AgentManifest = Join-Path $RootDir "agent-sources/manifest.json"
@@ -164,7 +168,7 @@ Write-Host "  SKILLS:    generated roots match skill-sources/"
 Write-Host "  NATIVE:    generated native outputs match client-sources/native-base/"
 Write-Host "  REX:       rex-harness planning kernel is materialized"
 Write-Host "  TESTS:     root and MCP-server verification passed"
-Write-Host "  TRAINING:  changed Skill evidence recomputed from committed artifacts"
+Write-Host "  TRAINING:  changed Skill evidence recomputed since $trainingBase"
 if ($HasAgentManifest) {
   Write-Host "  AGENTS:    export-only regeneration passed"
 }

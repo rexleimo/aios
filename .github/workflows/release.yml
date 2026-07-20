@@ -52,7 +52,8 @@ jobs:
 
       - name: Verify changed Skill training evidence
         run: |
-          node scripts/aios.mjs skill verify-training --changed --base HEAD^ --json
+          training_base="$(git describe --tags --abbrev=0 --match 'v[0-9]*' HEAD^ 2>/dev/null || printf 'HEAD^')"
+          node scripts/aios.mjs skill verify-training --changed --base "$training_base" --json
 
       - name: Materialize ignored local release outputs
         run: |
