@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-20-v5-release-ci-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "the v5 root release test entry: node --test scripts/tests/interception-cli.test.mjs",
+    "setup": "From the active evidence root, run a Node wrapper that changes into the tracked v5.0.0 isolated detached worktree after CI-equivalent dependency installation, without creating the ignored repository-root .mcp.json.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--input-type=module",
+        "-e",
+        "import { spawnSync } from 'node:child_process'; process.chdir('/var/folders/mn/9882vg792430hn5rh1k1bh_40000gn/T/aios-v5-release-ztuogc/repo'); const result = spawnSync(process.execPath, ['--test', 'scripts/tests/interception-cli.test.mjs'], { stdio: 'inherit' }); process.exitCode = result.status ?? 1;"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The release test runs successfully from a clean checkout and its temporary workspace supplies all MCP input required by interception doctor migration.",
+    "observed": "The real clean-worktree command exited with status 1 before the CLI scenario ran because the test attempted to copy the absent repository-root .mcp.json into its temporary workspace.",
+    "failureReason": "The test fixture improperly depends on an ignored operator configuration instead of creating a self-contained MCP input fixture.",
+    "receiptRef": "receipt:76691e71-e71c-4e16-bbe3-97db68921cda"
+  }
+}

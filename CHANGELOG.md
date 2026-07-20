@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.0.1] - 2026-07-20
+
+- fix(release): make interception CI fixture self-contained
+
 ## [5.0.0] - 2026-07-20
 
 ### Changed

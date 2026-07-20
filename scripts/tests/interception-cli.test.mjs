@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { copyFile, mkdir, mkdtemp, rm } from 'node:fs/promises';
-import { chmod, readFile } from 'node:fs/promises';
+import { chmod, readFile, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -64,7 +64,24 @@ test('interception doctor and mcp migration keep browser MCP proxied', async () 
     path.join(process.cwd(), 'config', 'host-capabilities.json'),
     path.join(workspaceRoot, 'config', 'host-capabilities.json')
   );
-  await copyFile(path.join(process.cwd(), '.mcp.json'), path.join(workspaceRoot, '.mcp.json'));
+  await writeFile(
+    path.join(workspaceRoot, '.mcp.json'),
+    `${JSON.stringify({
+      mcpServers: {
+        'mcp-browser-use': {
+          type: 'stdio',
+          command: process.execPath,
+          args: [
+            path.join(process.cwd(), 'scripts', 'aios-mcp-proxy.mjs'),
+            '--workspace', workspaceRoot,
+            '--host', 'mcp-browser-use',
+            '--', process.execPath, 'browser-use.mjs',
+          ],
+        },
+      },
+    }, null, 2)}\n`,
+    'utf8'
+  );
   const env = { AIOS_HOME: path.join(workspaceRoot, 'home') };
   const result = runAios(['interception', 'doctor', '--fix', '--workspace', workspaceRoot, '--json'], env);
   assert.equal(result.status, 0, result.stderr || result.stdout);
