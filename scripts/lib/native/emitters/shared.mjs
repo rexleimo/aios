@@ -86,9 +86,18 @@ export function readSharedMarkdownParts(rootDir) {
 }
 
 // 读取一组共享 native partials，按给定顺序返回非空段落，供能力感知渲染器选取。
+// Missing partials are skipped (not thrown): self-update can replace the install
+// tree mid-process while an older in-memory SHARED_SECTION_PLAN still names a
+// retired file such as superpowers.md.
 export function readNativePartials(rootDir, fileNames = []) {
   return fileNames
-    .map((fileName) => fs.readFileSync(resolveSharedNativePartialPath({ rootDir, fileName }), 'utf8').trim())
+    .map((fileName) => {
+      const partialPath = resolveSharedNativePartialPath({ rootDir, fileName });
+      if (!fs.existsSync(partialPath)) {
+        return '';
+      }
+      return fs.readFileSync(partialPath, 'utf8').trim();
+    })
     .filter(Boolean);
 }
 

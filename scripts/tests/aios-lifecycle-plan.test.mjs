@@ -185,7 +185,11 @@ test('runUpdate performs runtime self-update when requested', async () => {
     projectRoot: '/tmp/aios-test',
     io: { log: () => {} },
     deps: {
-      updateHarnessRuntime: async (options) => { calls.push({ kind: 'runtime', options }); },
+      // skipped/no-op replace keeps component work in-process
+      updateHarnessRuntime: async (options) => {
+        calls.push({ kind: 'runtime', options });
+        return { updated: false, skipped: true };
+      },
       installContextDbSkills: async (options) => { calls.push({ kind: 'skills', options }); },
       installRexClientProjections: async () => {},
     },
@@ -194,6 +198,39 @@ test('runUpdate performs runtime self-update when requested', async () => {
   assert.equal(calls[0].kind, 'runtime');
   assert.equal(calls[0].options.rootDir, '/tmp/aios-test');
   assert.equal(calls[1].kind, 'skills');
+});
+
+test('runUpdate re-execs component update after a successful runtime replace', async () => {
+  const calls = [];
+  const result = await runUpdate({
+    selfUpdate: true,
+    components: ['skills', 'native'],
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-test',
+    projectRoot: '/tmp/aios-project',
+    io: { log: () => {} },
+    deps: {
+      updateHarnessRuntime: async (options) => {
+        calls.push({ kind: 'runtime', options });
+        return { updated: true, skipped: false, method: 'release-installer' };
+      },
+      reexecUpdateAfterRuntimeReplace: async (options) => {
+        calls.push({ kind: 'reexec', options });
+        return { reexec: true, exitCode: 0 };
+      },
+      installContextDbSkills: async () => {
+        calls.push({ kind: 'skills-should-not-run' });
+      },
+      updateNativeEnhancements: async () => {
+        calls.push({ kind: 'native-should-not-run' });
+      },
+    },
+  });
+
+  assert.deepEqual(calls.map((entry) => entry.kind), ['runtime', 'reexec']);
+  assert.equal(result.reexec, true);
+  assert.equal(calls[1].options.rootDir, '/tmp/aios-test');
 });
 
 test('runSetup projects Rex workflow skills for Grok after AIOS skills install', async () => {

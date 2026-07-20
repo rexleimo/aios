@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.0.3] - 2026-07-21
+
+### Fixed
+
+- fix(update): after a successful runtime self-update, re-exec component update in a fresh process so ESM cannot keep a pre-update native compose plan
+- fix(native): skip missing shared partials (e.g. retired `superpowers.md`) instead of crashing with ENOENT during mid-update native sync
+
 ## [5.0.2] - 2026-07-21
 
 ### Fixed

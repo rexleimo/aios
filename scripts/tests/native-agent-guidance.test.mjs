@@ -1,10 +1,27 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 import { resolveNativeClients } from '../lib/native/source-tree.mjs';
 import { composeNativeMarkdown } from '../lib/native/emitters/compose.mjs';
+import { readNativePartials } from '../lib/native/emitters/shared.mjs';
+
+test('readNativePartials skips missing retired partials instead of throwing ENOENT', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-native-partials-'));
+  try {
+    const partialsDir = path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials');
+    await mkdir(partialsDir, { recursive: true });
+    await writeFile(path.join(partialsDir, 'core-instructions.md'), '# core\n', 'utf8');
+    // Intentionally omit superpowers.md (retired) while still requesting it.
+    const sections = readNativePartials(rootDir, ['core-instructions.md', 'superpowers.md']);
+    assert.deepEqual(sections, ['# core']);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
 
 test('native agent instructions explain client capability gates and memo scope usage', () => {
   const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client: 'codex' });

@@ -1,3 +1,6 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+
 import {
   createDefaultUpdateOptions,
   hasComponent,
@@ -18,6 +21,62 @@ import { doctorContextDbSkills, installContextDbSkills } from '../components/ski
 import { installRexClientProjections } from '../rex-harness/client-projection.mjs';
 import { updateHarnessRuntime } from './self-update.mjs';
 import { prepareRexWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
+
+/**
+ * After a successful runtime replace, re-run update in a fresh Node process so
+ * ESM module cache cannot keep pre-update compose/partials (e.g. retired
+ * superpowers.md) while the on-disk install already deleted them.
+ */
+export function buildPostSelfUpdateArgv(rawOptions = {}) {
+  const { options } = planUpdate({ ...rawOptions, selfUpdate: false });
+  const args = [
+    'update',
+    '--skip-self-update',
+    '--components', options.components.join(','),
+    '--mode', options.wrapMode,
+    '--client', options.client,
+    '--scope', options.scope,
+    '--install-mode', options.installMode,
+    '--token-profile', options.tokenProfile,
+  ];
+  if (options.adoptLegacySuperpowers) args.push('--adopt-legacy-superpowers');
+  if (options.skills.length > 0) args.push('--skills', options.skills.join(','));
+  if (options.applyClientCostSettings) args.push('--apply-client-cost-settings');
+  if (options.withPlaywrightInstall) args.push('--with-playwright-install');
+  if (options.skipDoctor) args.push('--skip-doctor');
+  return args;
+}
+
+export function reexecUpdateAfterRuntimeReplace({
+  rootDir,
+  rawOptions = {},
+  io = console,
+  spawnImpl = spawnSync,
+  execPath = process.execPath,
+} = {}) {
+  const entry = path.join(path.resolve(rootDir), 'scripts', 'aios.mjs');
+  const args = buildPostSelfUpdateArgv(rawOptions);
+  io.log('[info] runtime files replaced; continuing update in a fresh process to reload modules');
+  io.log(`[info] ${execPath} ${entry} ${args.join(' ')}`);
+  const result = spawnImpl(execPath, [entry, ...args], {
+    cwd: process.cwd(),
+    env: process.env,
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  if (result.stdout) io.log(String(result.stdout).trimEnd());
+  if (result.stderr) {
+    if (typeof io.error === 'function') io.error(String(result.stderr).trimEnd());
+    else io.log(String(result.stderr).trimEnd());
+  }
+  if ((result.status ?? 1) !== 0) {
+    throw new Error(
+      result.error?.message
+        || `post-self-update component update failed with exit ${result.status ?? 1}`
+    );
+  }
+  return { reexec: true, exitCode: 0, args };
+}
 
 function isMissingBrowserUseRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
@@ -107,7 +166,20 @@ export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDi
   }
 
   if (options.selfUpdate) {
-    await runtimeUpdater({ rootDir, io });
+    const runtimeResult = await runtimeUpdater({ rootDir, io });
+    // When the install tree was replaced, continue in a child process so native
+    // emitters re-read the new compose plan / partials from disk.
+    if (runtimeResult?.updated === true && runtimeResult?.skipped !== true) {
+      const reexec = deps.reexecUpdateAfterRuntimeReplace ?? reexecUpdateAfterRuntimeReplace;
+      return reexec({
+        rootDir,
+        projectRoot,
+        rawOptions,
+        io,
+        spawnImpl: deps.spawnImpl,
+        execPath: deps.execPath,
+      });
+    }
   }
 
   io.log(`Update components: ${options.components.join(',')}`);
