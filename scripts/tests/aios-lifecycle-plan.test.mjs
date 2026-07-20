@@ -11,13 +11,14 @@ import { planSetup, runSetup } from '../lib/lifecycle/setup.mjs';
 import { planUninstall } from '../lib/lifecycle/uninstall.mjs';
 import { runUpdate } from '../lib/lifecycle/update.mjs';
 
-test('planSetup uses the current lifecycle defaults', () => {
+test('planSetup defaults to Rex-only workflow components', () => {
   const plan = planSetup();
   assert.equal(plan.command, 'setup');
-  assert.deepEqual(plan.options.components, ['browser', 'shell', 'skills', 'native', 'superpowers']);
+  assert.deepEqual(plan.options.components, ['browser', 'shell', 'skills', 'native']);
   assert.equal(plan.options.wrapMode, 'opt-in');
   assert.equal(plan.options.client, 'all');
-  assert.match(plan.preview, /setup --components browser,shell,skills,native,superpowers/);
+  assert.match(plan.preview, /setup --components browser,shell,skills,native/);
+  assert.doesNotMatch(plan.preview, /superpowers/u);
 });
 
 test('planUninstall defaults to shell and skills only', () => {
@@ -186,12 +187,58 @@ test('runUpdate performs runtime self-update when requested', async () => {
     deps: {
       updateHarnessRuntime: async (options) => { calls.push({ kind: 'runtime', options }); },
       installContextDbSkills: async (options) => { calls.push({ kind: 'skills', options }); },
+      installRexClientProjections: async () => {},
     },
   });
 
   assert.equal(calls[0].kind, 'runtime');
   assert.equal(calls[0].options.rootDir, '/tmp/aios-test');
   assert.equal(calls[1].kind, 'skills');
+});
+
+test('runSetup projects Rex workflow skills for Grok after AIOS skills install', async () => {
+  const calls = [];
+  await runSetup({
+    components: ['skills'],
+    client: 'grok',
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-install',
+    projectRoot: '/tmp/grok-project',
+    io: { log: () => {} },
+    deps: {
+      installContextDbSkills: async (options) => { calls.push({ kind: 'aios-skills', options }); },
+      installRexClientProjections: async (options) => { calls.push({ kind: 'rex-skills', options }); },
+    },
+  });
+
+  assert.deepEqual(calls.map((entry) => entry.kind), ['aios-skills', 'rex-skills']);
+  assert.equal(calls[1].options.rootDir, '/tmp/aios-install');
+  assert.equal(calls[1].options.projectRoot, '/tmp/grok-project');
+  assert.equal(calls[1].options.client, 'grok');
+  assert.equal(calls[1].options.scope, 'global');
+});
+
+test('runUpdate projects Rex workflow skills for all supported clients', async () => {
+  const calls = [];
+  await runUpdate({
+    components: ['skills'],
+    client: 'all',
+    skipDoctor: true,
+  }, {
+    rootDir: '/tmp/aios-install',
+    projectRoot: '/tmp/all-clients-project',
+    io: { log: () => {} },
+    deps: {
+      installContextDbSkills: async (options) => { calls.push({ kind: 'aios-skills', options }); },
+      installRexClientProjections: async (options) => { calls.push({ kind: 'rex-skills', options }); },
+    },
+  });
+
+  assert.deepEqual(calls.map((entry) => entry.kind), ['aios-skills', 'rex-skills']);
+  assert.equal(calls[1].options.client, 'all');
+  assert.equal(calls[1].options.projectRoot, '/tmp/all-clients-project');
+  assert.equal(calls[1].options.scope, 'global');
 });
 
 test('runSetup repairs the required rex-harness source submodule before component work', async () => {
@@ -210,13 +257,52 @@ test('runSetup repairs the required rex-harness source submodule before componen
         calls.push({ kind: 'rex', options });
         return { ready: true, version: '0.4.2', missing: [], fixHint: '' };
       },
+      reconcileRexWorkflowSurface: async (options) => {
+        calls.push({ kind: 'reconcile', options });
+        return { status: 'already-converged', removed: [], conflicts: [] };
+      },
       installContextDbSkills: async () => { calls.push({ kind: 'skills' }); },
+      installRexClientProjections: async () => {},
     },
   });
 
   assert.equal(calls[0].kind, 'rex');
   assert.equal(calls[0].options.fix, true);
-  assert.equal(calls[1].kind, 'skills');
+  assert.equal(calls[1].kind, 'reconcile');
+  assert.equal(calls[1].options.adoptLegacySuperpowers, false);
+  assert.equal(calls[2].kind, 'skills');
+});
+
+test('runUpdate automatically reconciles the Rex workflow surface after Rex is ready', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-update-rex-'));
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  const calls = [];
+
+  await runUpdate({
+    components: ['skills'],
+    skipDoctor: true,
+    adoptLegacySuperpowers: true,
+  }, {
+    rootDir,
+    projectRoot: rootDir,
+    io: { log: () => {} },
+    deps: {
+      ensureRexHarness: async () => {
+        calls.push({ kind: 'rex' });
+        return { ready: true, version: '0.4.2', missing: [], fixHint: '' };
+      },
+      reconcileRexWorkflowSurface: async (options) => {
+        calls.push({ kind: 'reconcile', options });
+        return { status: 'already-converged', removed: [], conflicts: [] };
+      },
+      installContextDbSkills: async () => { calls.push({ kind: 'skills' }); },
+      installRexClientProjections: async () => {},
+    },
+  });
+
+  assert.deepEqual(calls.map((entry) => entry.kind), ['rex', 'reconcile', 'skills']);
+  assert.equal(calls[1].options.adoptLegacySuperpowers, true);
 });
 
 test('runUpdate blocks component work when the required rex-harness kernel cannot be repaired', async () => {
@@ -246,10 +332,10 @@ test('runUpdate blocks component work when the required rex-harness kernel canno
   assert.equal(calls[0].options.fix, true);
 });
 
-test('runSetup scopes native, agents, and superpowers project writes to projectRoot and client', async () => {
+test('runSetup scopes native and agent project writes to projectRoot and client', async () => {
   const calls = [];
   await runSetup({
-    components: ['native', 'agents', 'superpowers'],
+    components: ['native', 'agents'],
     client: 'opencode',
     skipDoctor: true,
   }, {
@@ -259,7 +345,6 @@ test('runSetup scopes native, agents, and superpowers project writes to projectR
     deps: {
       installNativeEnhancements: async (options) => { calls.push({ kind: 'native', options }); },
       installOrchestratorAgents: async (options) => { calls.push({ kind: 'agents', options }); },
-      installSuperpowers: async (options) => { calls.push({ kind: 'superpowers', options }); },
     },
   });
 
@@ -271,15 +356,13 @@ test('runSetup scopes native, agents, and superpowers project writes to projectR
   assert.equal(calls[1].options.rootDir, '/tmp/aios-install');
   assert.equal(calls[1].options.projectRoot, '/tmp/user-project');
   assert.equal(calls[1].options.client, 'opencode');
-  assert.equal(calls[2].kind, 'superpowers');
-  assert.equal(calls[2].options.rootDir, '/tmp/user-project');
-  assert.equal(calls[2].options.client, 'opencode');
+  assert.equal(calls.length, 2);
 });
 
-test('runUpdate scopes native, agents, and superpowers project writes to projectRoot and client', async () => {
+test('runUpdate scopes native and agent project writes to projectRoot and client', async () => {
   const calls = [];
   await runUpdate({
-    components: ['native', 'agents', 'superpowers'],
+    components: ['native', 'agents'],
     client: 'claude',
     skipDoctor: true,
   }, {
@@ -289,7 +372,6 @@ test('runUpdate scopes native, agents, and superpowers project writes to project
     deps: {
       updateNativeEnhancements: async (options) => { calls.push({ kind: 'native', options }); },
       installOrchestratorAgents: async (options) => { calls.push({ kind: 'agents', options }); },
-      installSuperpowers: async (options) => { calls.push({ kind: 'superpowers', options }); },
     },
   });
 
@@ -301,9 +383,7 @@ test('runUpdate scopes native, agents, and superpowers project writes to project
   assert.equal(calls[1].options.rootDir, '/tmp/aios-install');
   assert.equal(calls[1].options.projectRoot, '/tmp/user-project');
   assert.equal(calls[1].options.client, 'claude');
-  assert.equal(calls[2].kind, 'superpowers');
-  assert.equal(calls[2].options.rootDir, '/tmp/user-project');
-  assert.equal(calls[2].options.client, 'claude');
+  assert.equal(calls.length, 2);
 });
 
 test('runUpdate browser flow does not block lifecycle when browser-use runtime is missing', async () => {

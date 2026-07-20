@@ -11,7 +11,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const projectRoot = process.cwd();
 
 function isUsageError(message) {
-  return /^(Unknown command|Unknown option|Missing value|--.+ must|.+ requires )/u.test(message);
+  return /^(?:error: )?(Unknown command|Unknown option|Missing value|too many arguments|--.+ must|.+ requires )/u.test(message);
 }
 
 async function main(argv = process.argv) {

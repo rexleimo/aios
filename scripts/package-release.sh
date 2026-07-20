@@ -56,6 +56,7 @@ require_cmd() {
 
 require_cmd git
 require_cmd gzip
+require_cmd zip
 
 rex_harness_root="$ROOT_DIR/rex-harness"
 if [[ ! -f "$rex_harness_root/src/index.mjs" || ! -f "$rex_harness_root/bin/rex-harness.mjs" || ! -f "$rex_harness_root/skill-sources/rex-workflow/SKILL.md" ]]; then
@@ -83,11 +84,10 @@ release_paths=(
   skills-lock.json
   client-sources agent-sources skill-sources rex-harness
   config scripts mcp-server src
-  .claude/agents .claude/skills
-  .codex/skills .codex/agents
-  .agents/skills .opencode/skills .opencode/agents
-  .gemini/skills .gemini/commands
 )
+
+# Client roots are local generated projections. Shipping them would reintroduce
+# stale Superpowers files; installers project only the current Rex skills.
 
 existing_release_paths=()
 for release_path in "${release_paths[@]}"; do
@@ -132,10 +132,10 @@ fi
 
 echo "+ zip -> $OUT_DIR/harness-cli.zip"
 (
-  cd "$ROOT_DIR"
+  cd "$tar_stage"
   zip -r "$OUT_DIR/harness-cli.zip" \
-    "${existing_release_paths[@]}" \
-    -x '*.pyc' -x '__pycache__/*' -x 'node_modules/*' -x 'mcp-server/.npm-cache/*' -x 'dist/*' -x '.git/*' -x 'rex-harness/.git/*' -x '.aios/*' -x '.mypy_cache/*' -x '.DS_Store'
+    harness-cli \
+    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
 )
 
 echo ""

@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#rex-long-running-transition-test-scope",
+  "redCandidate": {
+    "publicEntry": "rex-harness advanceLongRunningDelivery()",
+    "setup": "Create a temporary root, capture matching baseline and F1 receipts, initialize a two-feature delivery ledger, then submit F1's public acceptance evidence.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/workflows/long-running-delivery.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The public Rex transition API accepts F1's matching receipt and returns continue for F2.",
+    "observed": "The initializer test passed, while the transition test observed rex.advanceLongRunningDelivery as undefined.",
+    "failureReason": "Rex has no public long-running evidence transition API, so it cannot advance the feature ledger from accepted F1 to F2.",
+    "receiptRef": "receipt:720b1ff2-afbc-4813-9226-12807ef39928"
+  }
+}

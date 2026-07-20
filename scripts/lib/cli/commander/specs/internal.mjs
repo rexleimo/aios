@@ -9,7 +9,6 @@ export const INTERNAL_COMMAND_SPECS = [
       ['--skills <list>', 'Skill names'],
       ['--install-mode <mode>', 'Skill install mode'],
       ['--rc-file <path>', 'Shell rc file path'],
-      ['--repo <url>', 'Superpowers repo URL'],
       ['--repair-id <id>', 'Repair id'],
       ['--limit <n>', 'Result limit'],
       ['--force', 'Force operation'],

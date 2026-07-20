@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#long-running-tdd-red-observation",
+  "redCandidate": {
+    "publicEntry": "rex-harness startLongRunningDelivery()",
+    "setup": "Create a temporary workspace, capture a real passing baseline receipt, and initialize two ordered feature acceptance scenarios.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/workflows/long-running-delivery.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The public initializer validates the baseline and selects only the first feature with a continue decision.",
+    "observed": "The public Rex API is absent, so the initializer is undefined.",
+    "failureReason": "No Rex long-running delivery initializer or feature-ledger contract has been implemented.",
+    "receiptRef": "receipt:354a83e4-b75c-4a0f-80ac-640a7f531317"
+  }
+}

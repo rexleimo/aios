@@ -11,6 +11,7 @@ import { AGENT_CONFIG, detectAgents, ensureMarker } from './lib/aios-init/agent-
 import { ensureHook } from './lib/aios-init/hooks.mjs';
 import { ensureCompressionTools } from './lib/aios-init/compression-tools.mjs';
 import { ensureRexHarness } from './lib/rex-harness/runtime.mjs';
+import { reconcileLegacyWorkflowSurface } from './lib/workflows/rex-workflow-surface-lifecycle.mjs';
 
 const AIOS_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -38,13 +39,20 @@ async function ensureWorkspace(workspaceRoot, { dryRun = false } = {}) {
 export async function ensureAiosPlanningKernel({
   rootDir = AIOS_ROOT,
   dryRun = false,
+  adoptLegacySuperpowers = false,
   io = console,
   ensureRexHarnessImpl = ensureRexHarness,
+  reconcileLegacyWorkflowSurfaceImpl = reconcileLegacyWorkflowSurface,
 } = {}) {
   let report = await ensureRexHarnessImpl({ rootDir, fix: false, io });
   if (report.ready) {
     io.log(`[ok] rex-harness planning kernel ready${report.version ? ` (v${report.version})` : ''}`);
-    return report;
+    const reconciliation = await reconcileLegacyWorkflowSurfaceImpl({
+      io,
+      dryRun,
+      adoptLegacySuperpowers,
+    });
+    return Object.freeze({ ...report, reconciliation });
   }
 
   if (dryRun) {
@@ -57,11 +65,47 @@ export async function ensureAiosPlanningKernel({
     throw new Error(`rex-harness is required for AIOS intelligent planning: ${report.fixHint}`);
   }
   io.log(`[ok] rex-harness planning kernel ready${report.version ? ` (v${report.version})` : ''}`);
-  return report;
+  const reconciliation = await reconcileLegacyWorkflowSurfaceImpl({
+    io,
+    dryRun,
+    adoptLegacySuperpowers,
+  });
+  return Object.freeze({ ...report, reconciliation });
+}
+
+/**
+ * Init determines the installed client set, then lets the bundled Rex API
+ * project the same workflow entry into their global discovery roots.
+ */
+export async function installRexWorkflowSkills({
+  agents = [],
+  workspaceRoot,
+  rootDir = AIOS_ROOT,
+  dryRun = false,
+  io = console,
+  installRexClientProjectionsImpl = null,
+} = {}) {
+  if (agents.length === 0) {
+    return Object.freeze({ status: 'unchanged', clients: [] });
+  }
+  if (dryRun) {
+    io.log(`[plan] would project Rex workflow skills for: ${agents.join(', ')}`);
+    return Object.freeze({ status: 'would-install', clients: Object.freeze([...agents]) });
+  }
+
+  const installRexClientProjections = installRexClientProjectionsImpl
+    ?? (await import('./lib/rex-harness/client-projection.mjs')).installRexClientProjections;
+  return installRexClientProjections({
+    rootDir,
+    projectRoot: workspaceRoot,
+    client: agents,
+    scope: 'global',
+    io,
+  });
 }
 
 function usage() {
-  console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools] [--yes-headroom-mcp]
+console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -69,6 +113,7 @@ Options:
   --agent <name>              Init only the specified agent
   --all                      Init all agents (even if CLI not detected)
   --dry-run                  Preview what would be done without writing files
+  --adopt-legacy-superpowers Explicit cleanup; preview first with --dry-run
   --yes-compression-tools    Authorize unattended RTK/Caveman/Headroom installation
   --yes-headroom-mcp         Authorize unattended Gemini/Grok Headroom MCP registration`);
 }
@@ -80,6 +125,7 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const dryRun = argv.includes('--dry-run');
+  const adoptLegacySuperpowers = argv.includes('--adopt-legacy-superpowers');
   const allFlag = argv.includes('--all');
   const yesCompressionTools = argv.includes('--yes-compression-tools');
   const yesHeadroomMcp = argv.includes('--yes-headroom-mcp');
@@ -92,7 +138,12 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   const workspaceRoot = resolve(process.cwd());
-  await ensureAiosPlanningKernel({ rootDir: AIOS_ROOT, dryRun, io: console });
+  await ensureAiosPlanningKernel({
+    rootDir: AIOS_ROOT,
+    dryRun,
+    adoptLegacySuperpowers,
+    io: console,
+  });
   const agents = requestedAgent
     ? [requestedAgent]
     : allFlag
@@ -188,6 +239,20 @@ export async function main(argv = process.argv.slice(2)) {
     } catch (err) {
       console.warn(`[warn] global skill install: ${err.message}`);
     }
+  }
+
+  console.log('');
+  console.log('== Rex Workflow Skills ==');
+  try {
+    await installRexWorkflowSkills({
+      agents,
+      workspaceRoot,
+      rootDir: AIOS_ROOT,
+      dryRun,
+      io: console,
+    });
+  } catch (err) {
+    console.warn(`[warn] Rex workflow skill projection: ${err.message}`);
   }
 
   if (dryRun) {

@@ -12,12 +12,26 @@ const INIT_CLI = new Command()
   .option('--default-mode <mode>', 'Default initialization mode')
   .option('--all', 'Initialize for all agents')
   .option('--dry-run', 'Preview changes without writing')
+  .option('--adopt-legacy-superpowers', 'Explicit cleanup; preview first with --dry-run')
   .option('--yes-compression-tools', 'Authorize unattended RTK/Caveman/Headroom installation')
   .option('--yes-headroom-mcp', 'Authorize unattended Gemini/Grok Headroom MCP registration');
 
 export function parseInitArgs(argv) {
   const rest = argv.slice(1);
   const help = rest.includes('-h') || rest.includes('--help');
+  const defaultOptions = {
+    agent: '',
+    all: false,
+    dryRun: false,
+    adoptLegacySuperpowers: false,
+    yesCompressionTools: false,
+    yesHeadroomMcp: false,
+    defaultMode: '',
+  };
+
+  if (help) {
+    return { mode: 'help', help: true, command: 'init', options: defaultOptions };
+  }
 
   try {
     const parsed = INIT_CLI.parse(rest, { from: 'user' });
@@ -36,25 +50,22 @@ export function parseInitArgs(argv) {
         agent: agent || '',
         all: flags.all === true,
         dryRun: flags.dryRun === true,
+        adoptLegacySuperpowers: flags.adoptLegacySuperpowers === true,
         yesCompressionTools: flags.yesCompressionTools === true,
         yesHeadroomMcp: flags.yesHeadroomMcp === true,
         defaultMode: String(flags.defaultMode || '').trim(),
       },
     };
   } catch (e) {
-    if (e instanceof Error && e.message.includes('--agent must be one of')) throw e;
+    if (e instanceof Error && (
+      e.message.includes('--agent must be one of')
+      || e.message.includes('too many arguments')
+    )) throw e;
     return {
       mode: 'help',
       help: true,
       command: 'init',
-      options: {
-        agent: '',
-        all: false,
-        dryRun: false,
-        yesCompressionTools: false,
-        yesHeadroomMcp: false,
-        defaultMode: '',
-      },
+      options: defaultOptions,
     };
   }
 }

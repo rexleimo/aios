@@ -73,43 +73,6 @@ export async function runInternal(options, { rootDir, projectRoot } = {}) {
     }
   }
 
-  if (target === 'superpowers') {
-    const module = await import('../../components/superpowers.mjs');
-    const superpowersProjectRoot = projectRoot || rootDir;
-    // install 默认也尝试 update（safe pull）；显式 --update 保持兼容
-    if (action === 'install') {
-      return module.installSuperpowers({
-        rootDir: superpowersProjectRoot,
-        client: options.client ?? 'all',
-        repoUrl: options.repoUrl,
-        update: options.update === undefined ? true : Boolean(options.update),
-        force: Boolean(options.force),
-      });
-    }
-    if (action === 'update') {
-      return module.installSuperpowers({
-        rootDir: superpowersProjectRoot,
-        client: options.client ?? 'all',
-        repoUrl: options.repoUrl,
-        update: true,
-        force: true,
-      });
-    }
-    if (action === 'doctor') {
-      return module.doctorSuperpowers({
-        client: options.client ?? 'all',
-        rootDir: superpowersProjectRoot,
-      });
-    }
-    if (action === 'sync-claude-permissions') {
-      return module.syncClaudeSkillPermissions({
-        rootDir: superpowersProjectRoot,
-        includeGlobal: true,
-        includeProject: true,
-      });
-    }
-  }
-
   if (target === 'browser') {
     const module = await import('../../components/browser.mjs');
     if (action === 'install') return module.installBrowserMcp({ rootDir, dryRun: Boolean(options.dryRun), skipPlaywrightInstall: Boolean(options.skipPlaywrightInstall) });

@@ -79,7 +79,6 @@ async function seedMinimalNativeRoot(rootDir) {
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'client-capabilities.md'), 'client-capabilities\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'token-discipline.md'), 'token-discipline\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'browser-mcp.md'), 'browser\n', 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'superpowers\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'agent-routing\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'codemap.md'), 'codemap\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'team-provider.md'), 'team-provider\n', 'utf8');
@@ -136,7 +135,8 @@ test('route trigger sync installs slash shortcuts in each client home', async ()
   const claudePlan = await readFile(path.join(homeMap.claude, 'commands', 'plan.md'), 'utf8');
   assert.match(claudePlan, /AIOS intelligent planning/u);
   assert.match(claudePlan, /planned work item/u);
-  assert.match(claudePlan, /writing-plans/u);
+  assert.match(claudePlan, /Rex Capability Command/u);
+  assert.match(claudePlan, /Provider returned by Rex/u);
   assert.doesNotMatch(claudePlan, /Invoke `using-superpowers`/u);
   assert.match(claudePlan, /docs\/plans/u);
 

@@ -109,7 +109,7 @@ export async function doctorContextDbSkills({
             resolvedOk = false;
           }
           if (!resolvedOk) {
-            io.log(`[warn] ${clientName}: ${entry.name} broken symlink (stale); run update --force or plan project-skills --force`);
+            io.log(`[warn] ${clientName}: ${entry.name} broken symlink (stale); run update --force`);
             warnCount += 1;
             warnings += 1;
             continue;

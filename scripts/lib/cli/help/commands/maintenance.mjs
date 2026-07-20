@@ -19,15 +19,24 @@ Options:
       return `Usage:
   node scripts/aios.mjs agents list [options]
   node scripts/aios.mjs agents doctor --strict [options]
+  node scripts/aios.mjs agents smoke --live --client <name> [options]
 
 Description:
   Inspect the aios.agent-catalogue.v1 agent catalogue for default agents.
   Agents may be projected statically before they are smoke-verified; strict
   doctor fails when candidate agents are not yet enabled for live workflow
-  orchestration.
+  orchestration. Smoke is fail-closed until --live and --client <name> are
+  both explicit.
+
+Warning:
+  agents smoke --live --client <name> invokes an external coding client. It
+  may consume that client's quota or incur charges; do not run it as a local
+  test or without the operator's explicit approval.
 
 Options:
   --strict             Fail when candidate agents are missing smoke evidence
+  --live               Required before smoke invokes an external client
+  --client <name>      Required client for live smoke, for example codex-cli
   --format <text|json>
   --json
   -h, --help
@@ -110,10 +119,14 @@ Options:
   node scripts/aios.mjs skill comply <path> --dry-run [--client <client>] [--json]
   node scripts/aios.mjs skill comply <path> --live [--client <client>] [--json]
   node scripts/aios.mjs skill health [--dashboard] [--json]
+  node scripts/aios.mjs skill certify --changed [--base <ref>] [--json]
+  node scripts/aios.mjs skill verify-training --changed [--base <ref>] [--json]
 
 Subcommands:
   comply       Generate expected skill behavior and trigger-smoke scenarios
   health       Report skill observation success rates and failure clusters
+  certify      Record reproducible V2 training evidence for changed Skills
+  verify-training Recompute and validate recorded training evidence
 
 Options:
   --client <client>              Target client for compliance scenarios
@@ -130,7 +143,7 @@ Options:
   node scripts/aios.mjs plan show [--workspace <path>] [--html] [--json]
   node scripts/aios.mjs plan start --title <text> --task <text> [--workspace <path>] [--json]
   node scripts/aios.mjs plan auto-gate --task <text> [--workspace <path>] [--json]
-  node scripts/aios.mjs plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--workspace <path>] [--json]
+  node scripts/aios.mjs plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--testability-file <path>] [--workspace <path>] [--json]
 
 Options:
   --title <text>                 Plan title or task title
@@ -141,6 +154,7 @@ Options:
   --evidence-kind <kind>         Evidence kind required by the current Command
   --command-token <token>        Execution token from the current persisted Command
   --evidence-ref <ref>           Artifact, command, diff, or log reference
+  --testability-file <path>      Typed testability decision JSON for decide-testability
   --workspace <path>             Workspace root for planning state
   --html                         Also write .aios/planning/review.html
   --format <text|json|html|both>
@@ -150,7 +164,7 @@ Options:
 Examples:
   node scripts/aios.mjs plan show --html
   node scripts/aios.mjs plan show --workspace /tmp/demo --json
-  node scripts/aios.mjs plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref command:test --json
+  node scripts/aios.mjs plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref receipt:<id> --json
 `;
     case 'dream':
       return `Usage:

@@ -10,11 +10,76 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
 import { runAutoGate } from '../lib/planning/auto-gate.mjs';
 import {
   advanceStoredAiosCapabilityActivation,
+  continueStoredAiosSoftwareWorkflow,
   readStoredAiosCapabilityActivation,
 } from '../lib/workflows/rex-activation-store.mjs';
+
+const SCENARIO_GREEN_MARKER = '.rex-scenario-green';
+const SCENARIO_ARGS = Object.freeze([
+  '-e',
+  `const fs = require('node:fs'); process.exit(fs.existsSync('${SCENARIO_GREEN_MARKER}') ? 0 : 7);`,
+]);
+
+function scenarioCommand(rootDir) {
+  return {
+    executable: process.execPath,
+    args: SCENARIO_ARGS,
+    cwd: rootDir,
+  };
+}
+
+function captureScenarioReceipt(rootDir) {
+  return captureStandaloneExecutionReceipt({
+    rootDir,
+    ...scenarioCommand(rootDir),
+  }).ref;
+}
+
+async function markScenarioGreen(rootDir) {
+  await writeFile(path.join(rootDir, SCENARIO_GREEN_MARKER), 'green\n', 'utf8');
+}
+
+function honestRedDecision(rootDir, receiptRef) {
+  return {
+    kind: 'behavior-delta',
+    decisionRef: 'artifact:testability-decision',
+    redCandidate: {
+      publicEntry: 'public checkout validation',
+      setup: 'A checkout request that requires the requested validation behavior.',
+      command: scenarioCommand(rootDir),
+      expected: 'The requested validation rejects the invalid checkout.',
+      observed: 'The invalid checkout is accepted before implementation.',
+      failureReason: 'The requested validation behavior is absent.',
+      receiptRef,
+    },
+  };
+}
+
+function completeTestDesign(rootDir, activationId) {
+  const designed = advanceStoredAiosCapabilityActivation({
+    rootDir,
+    activationId,
+    evidence: [
+      { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+      { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+      { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+    ],
+  });
+  assert.equal(designed.command.stageId, 'decide-testability');
+  const redReceipt = captureScenarioReceipt(rootDir);
+  return advanceStoredAiosCapabilityActivation({
+    rootDir,
+    activationId: designed.activation.activationId,
+    evidence: [
+      { kind: 'testability-decision-recorded', refs: ['artifact:testability-decision'] },
+    ],
+    testabilityDecision: honestRedDecision(rootDir, redReceipt),
+  });
+}
 
 test('auto-gate persists the current rex activation and exposes one executable command', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-activation-'));
@@ -66,33 +131,38 @@ test('auto-gate persists the current rex activation and exposes one executable c
     assert.equal(completed.nextCapability.activation.capabilityId, 'software.testing.design');
     assert.equal(completed.nextCapability.command.provider.id, 'rex-test-design');
 
-    const testDesignCompleted = advanceStoredAiosCapabilityActivation({
+    const testDesignCompleted = completeTestDesign(
       rootDir,
-      activationId: completed.nextCapability.activation.activationId,
-      evidence: [
-        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
-        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
-        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
-      ],
-    });
+      completed.nextCapability.activation.activationId,
+    );
     assert.equal(testDesignCompleted.nextCapability.activation.capabilityId, 'software.testing.tdd');
     assert.equal(testDesignCompleted.nextCapability.command.provider.id, 'rex-tdd');
+
+    assert.throws(() => advanceStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: testDesignCompleted.nextCapability.activation.activationId,
+      evidence: [
+        { kind: 'failing-test-observed', refs: ['command:claimed-red'] },
+        { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
+      ],
+    }), /requires at least one receipt/u);
 
     const tddGreen = advanceStoredAiosCapabilityActivation({
       rootDir,
       activationId: testDesignCompleted.nextCapability.activation.activationId,
       evidence: [
-        { kind: 'failing-test-observed', refs: ['command:test:red'] },
+        { kind: 'failing-test-observed', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
       ],
     });
     assert.equal(tddGreen.command.stageId, 'green');
 
+    await markScenarioGreen(rootDir);
     const tddRefactor = advanceStoredAiosCapabilityActivation({
       rootDir,
       activationId: tddGreen.activation.activationId,
       evidence: [
-        { kind: 'passing-test-observed', refs: ['command:test:green'] },
+        { kind: 'passing-test-observed', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'implementation-diff-recorded', refs: ['diff:working-tree'] },
       ],
     });
@@ -102,7 +172,7 @@ test('auto-gate persists the current rex activation and exposes one executable c
       rootDir,
       activationId: tddRefactor.activation.activationId,
       evidence: [
-        { kind: 'refactor-check-recorded', refs: ['command:test:refactor'] },
+        { kind: 'refactor-check-recorded', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'test-diff-review-recorded', refs: ['artifact:test-diff-review'] },
       ],
     });
@@ -220,6 +290,57 @@ test('planned continuation restores the active activation and current command', 
   }
 });
 
+test('blocked testability becomes a terminal replan projection instead of redispatching the old command', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-replan-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: '更新结账校验行为。',
+      client: 'codex',
+      sessionId: 'session-replan',
+    });
+    const designed = advanceStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: started.capabilityActivation.activationId,
+      evidence: [
+        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+      ],
+    });
+    const replanned = advanceStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: designed.activation.activationId,
+      evidence: [
+        { kind: 'testability-decision-recorded', refs: ['artifact:testability-blocked'] },
+      ],
+      testabilityDecision: {
+        kind: 'blocked',
+        decisionRef: 'artifact:testability-blocked',
+        reason: 'The requested behavior has no observable public acceptance path.',
+        missingAcceptance: 'Provide a user-observable acceptance scenario and expected result.',
+      },
+    });
+
+    assert.equal(replanned.outcome, 'replan');
+    assert.equal(replanned.command, null);
+    assert.equal(replanned.nextCapability, null);
+    assert.equal(replanned.activation.status, 'completed');
+    assert.equal(replanned.workflow.status, 'blocked');
+    assert.equal(replanned.workflow.currentCommand, null);
+    const stored = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: designed.activation.activationId,
+    });
+    assert.equal(
+      continueStoredAiosSoftwareWorkflow({ rootDir, workItemKey: stored.workItemKey }),
+      null,
+    );
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('planned continuation restores a concrete Agent command without an Evidence Envelope', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-agent-resume-'));
   try {
@@ -229,28 +350,24 @@ test('planned continuation restores a concrete Agent command without an Evidence
       client: 'codex',
       sessionId: 'session-agent-resume',
     });
-    const testDesignCompleted = advanceStoredAiosCapabilityActivation({
+    const testDesignCompleted = completeTestDesign(
       rootDir,
-      activationId: first.capabilityActivation.activationId,
-      evidence: [
-        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
-        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
-        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
-      ],
-    });
+      first.capabilityActivation.activationId,
+    );
     const strictGreen = advanceStoredAiosCapabilityActivation({
       rootDir,
       activationId: testDesignCompleted.nextCapability.activation.activationId,
       evidence: [
-        { kind: 'failing-test-observed', refs: ['command:test:red'] },
+        { kind: 'failing-test-observed', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
       ],
     });
+    await markScenarioGreen(rootDir);
     const strictRefactor = advanceStoredAiosCapabilityActivation({
       rootDir,
       activationId: strictGreen.activation.activationId,
       evidence: [
-        { kind: 'passing-test-observed', refs: ['command:test:green'] },
+        { kind: 'passing-test-observed', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'implementation-diff-recorded', refs: ['diff:working-tree'] },
       ],
     });
@@ -258,8 +375,7 @@ test('planned continuation restores a concrete Agent command without an Evidence
       rootDir,
       activationId: strictRefactor.activation.activationId,
       evidence: [
-        { kind: 'refactor-check-recorded', refs: ['command:test:refactor'] },
-        { kind: 'test-strength-check-recorded', refs: ['command:test:strength'] },
+        { kind: 'refactor-check-recorded', refs: [captureScenarioReceipt(rootDir)] },
         { kind: 'test-diff-review-recorded', refs: ['artifact:test-diff-review'] },
       ],
     });

@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-20-localized-rex-migration-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "Localized published /superpowers/ routes and MkDocs localized navigation",
+    "setup": "Read the three localized public migration pages and the checked-in MkDocs navigation configuration from the project root.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--input-type=module",
+        "-e",
+        "import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs'; const guides = ['docs-site/zh/superpowers.md', 'docs-site/ja/superpowers.md', 'docs-site/ko/superpowers.md']; for (const file of guides) { const guide = readFileSync(file, 'utf8'); assert.match(guide, /rex-harness/iu, file); assert.match(guide, /aios update --adopt-legacy-superpowers/u, file); } const navigation = readFileSync('mkdocs.yml', 'utf8'); assert.match(navigation, /Rex Workflow Migration:\\s*Rex 工作流迁移/u); assert.match(navigation, /Rex Workflow Migration:\\s*Rex ワークフロー移行/u); assert.match(navigation, /Rex Workflow Migration:\\s*Rex 워크플로 마이그레이션/u); assert.doesNotMatch(navigation, /^\\s+Superpowers:/mu);"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "Every localized migration route describes Rex-only explicit legacy cleanup, and localized navigation presents the retained route as Rex Workflow Migration.",
+    "observed": "The real public scenario exited with status 1 because docs-site/zh/superpowers.md remains the former Superpowers playbook catalog and does not contain rex-harness.",
+    "failureReason": "The earlier public documentation migration updated only the English route while the localized route bodies and navigation translation keys remained active Superpowers content.",
+    "receiptRef": "receipt:b5ae0162-4e1e-444c-991c-0c226f1bb62a"
+  }
+}

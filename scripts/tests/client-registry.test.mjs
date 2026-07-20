@@ -55,7 +55,7 @@ function resolveRepoRoot() {
 test('client registry exposes stable canonical client order', () => {
   assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
   assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
-  assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
+  assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
@@ -67,12 +67,11 @@ test('client registry validation returns normalized values for reuse', () => {
   assert.equal(assertKnownClient('  CODEX  '), 'codex');
   assert.equal(assertKnownCapability('  AGENTS  '), 'agents');
   assert.equal(isKnownClient(' OpenCode '), true);
-  assert.equal(isKnownCapability(' SuperPowers '), true);
+  assert.equal(isKnownCapability(' SuperPowers '), false);
 });
 
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('superpowers', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
   assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok']);
   assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
 });
@@ -151,8 +150,7 @@ test('client registry reports capability support explicitly', () => {
   assert.equal(supportsClientCapability('codex', 'agents'), true);
   assert.equal(supportsClientCapability(' CODEX ', ' AGENTS '), true);
   assert.equal(supportsClientCapability('opencode', 'agents'), true);
-  assert.equal(getClientCapability('opencode', 'superpowers'), true);
-  assert.equal(getClientCapability('gemini', 'superpowers'), true);
+  assert.throws(() => getClientCapability('opencode', 'superpowers'), /unsupported client capability: superpowers/u);
   assert.equal(supportsClientCapability('gemini', 'agents'), false);
 });
 

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -13,6 +13,12 @@ import {
 } from '../aios-mcp-server.mjs';
 import { parsePlanArgs } from '../lib/cli/parse-args/plan.mjs';
 import { runPlanCommand } from '../lib/planning/cli.mjs';
+import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
+import { evaluateAiosSoftwareRequest } from '../lib/workflows/rex-harness-adapter.mjs';
+import {
+  advanceStoredAiosCapabilityActivation,
+  startStoredAiosCapabilityActivation,
+} from '../lib/workflows/rex-activation-store.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -62,6 +68,8 @@ test('plan CLI parses the typed rex capability evidence contract', () => {
     'acceptance-criteria-recorded',
     '--evidence-ref',
     'artifact:requirements',
+    '--testability-file',
+    'testability.json',
     '--json',
   ]);
 
@@ -71,6 +79,73 @@ test('plan CLI parses the typed rex capability evidence contract', () => {
   assert.equal(parsed.options.commandToken, 'command-token-1');
   assert.equal(parsed.options.evidenceKind, 'acceptance-criteria-recorded');
   assert.equal(parsed.options.evidenceRef, 'artifact:requirements');
+  assert.equal(parsed.options.testabilityFile, 'testability.json');
+});
+
+test('plan CLI submits a typed testability decision from a file with a real receipt', async () => {
+  const root = await makeTemp('aios-plan-testability-');
+  try {
+    const software = evaluateAiosSoftwareRequest({
+      message: 'Update checkout validation behavior.',
+      completedCapabilities: ['software.requirements.clarify'],
+    });
+    const started = startStoredAiosCapabilityActivation({
+      rootDir: root,
+      decision: software.decision,
+      activationId: 'activation-plan-testability',
+      workItemKey: 'work-item:plan-testability',
+      request: { message: 'Update checkout validation behavior.' },
+    });
+    const designed = advanceStoredAiosCapabilityActivation({
+      rootDir: root,
+      activationId: started.activation.activationId,
+      evidence: [
+        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+      ],
+    });
+    assert.equal(designed.command.stageId, 'decide-testability');
+
+    const receipt = captureStandaloneExecutionReceipt({
+      rootDir: root,
+      executable: process.execPath,
+      args: ['-e', 'process.exit(7)'],
+    });
+    await writeFile(path.join(root, 'testability.json'), `${JSON.stringify({
+      kind: 'behavior-delta',
+      decisionRef: 'artifact:testability-decision',
+      redCandidate: {
+        publicEntry: 'checkout validation endpoint',
+        setup: 'Submit an invalid checkout request.',
+        command: {
+          executable: process.execPath,
+          args: ['-e', 'process.exit(7)'],
+          cwd: root,
+        },
+        expected: 'The invalid checkout is rejected.',
+        observed: 'The invalid checkout is accepted before implementation.',
+        failureReason: 'The requested validation behavior is absent.',
+        receiptRef: receipt.ref,
+      },
+    })}\n`, 'utf8');
+
+    const io = makeIo();
+    const submitted = await runPlanCommand({
+      subcommand: 'capability-evidence',
+      activationId: designed.activation.activationId,
+      commandToken: designed.command.executionToken,
+      evidenceKind: 'testability-decision-recorded',
+      evidenceRef: 'artifact:testability-decision',
+      testabilityFile: 'testability.json',
+      json: true,
+    }, { rootDir: root, ...io });
+
+    assert.equal(submitted.exitCode, 0);
+    assert.equal(submitted.result.nextCapability.command.provider.id, 'rex-tdd');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
 });
 
 test('MCP publishes the typed rex capability evidence tool', () => {

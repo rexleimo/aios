@@ -5,6 +5,13 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.0.0（2026-07-20）— Rex-only 工作流迁移
+
+- `rex-harness` 是新 AIOS 安装和托管客户端投影的唯一默认软件工程工作流；Superpowers 已从 AIOS 工作流和安装组件中退役。
+- 普通的 `aios update`、`aios init` 或 `aios setup` 会收敛 Rex，但会保留缺少 AIOS 所属证明的旧 Superpowers 投影并报告 conflict。
+- 仅在需要清理经精确识别的 AIOS 旧链接时使用 `aios update --adopt-legacy-superpowers --dry-run`，确认后再执行 adopt。覆盖 Codex、Claude、Gemini、OpenCode、Hermes、Grok 和共享 `.agents` 投影。
+- 变更 skill 时使用 `skill certify --changed` 生成已纳入版本控制、可复算的证据；发布门会重新执行确定性探针，不会只信任状态文件或内容 hash。
+
 ## v4.0.1（2026-07-14）— 公共内容与 SEO/GEO 覆盖
 
 - 同步文档版本徽标、根目录 `VERSION`、GitHub Release 与公开更新日志，使它们统一指向 `4.0.1`。
@@ -22,8 +29,8 @@ description: 版本历史、升级说明与文档变更入口。
 - 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
 - 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
-- **Grok Build 成为 AIOS 一等公民客户端**：xAI Grok Build（`grok` / runtime id `grok-build`）现已支持 skills、agents、superpowers、native、team、harness。MCP 使用 Codex 形态 TOML（`~/.grok/config.toml`）。详见：[Grok Build + AIOS 博客](/blog/zh/2026-07-grok-build-aios-client/)。
-- **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）具备 skills、native、harness、superpowers。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
+- **Grok Build 成为 AIOS 一等公民客户端**：xAI Grok Build（`grok` / runtime id `grok-build`）现已支持 skills、agents、native、team、harness。MCP 使用 Codex 形态 TOML（`~/.grok/config.toml`）。详见：[Grok Build + AIOS 博客](/blog/zh/2026-07-grok-build-aios-client/)。
+- **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）具备 skills、native、harness。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
 
 ## v3.6.0（2026-07-10）— Headroom + Ponytail Token 智能工作流
 

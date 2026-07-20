@@ -155,32 +155,19 @@ function skillsForDecision(disposition, route, {
   executionHost = 'single',
 } = {}) {
   const providerKind = String(capabilityDecision?.provider?.kind || '').trim();
-  const selectedProvider = ['skill', 'playbook'].includes(providerKind)
+  const selectedProvider = providerKind === 'skill'
     ? String(capabilityDecision?.provider?.id || '').trim()
     : '';
   // rex 当前 Command 始终优先；Team/Harness 只是承载这条 Command 的执行宿主。
   if (selectedProvider) return [selectedProvider];
   if (providerKind === 'agent') return [];
-  if (executionHost === 'team') return disposition === 'planned'
-    ? ['writing-plans', 'dispatching-parallel-agents']
-    : [];
-  if (executionHost === 'harness') return disposition === 'planned'
-    ? ['writing-plans', 'aios-long-running-harness']
-    : [];
-
-  if (disposition === 'guarded') {
-    if (route === 'debug') return ['systematic-debugging', 'test-driven-development'];
-    if (route === 'implement') return ['test-driven-development'];
-    return [];
-  }
-
-  if (disposition !== 'planned') return [];
-  if (route === 'design') return ['brainstorming', 'writing-plans'];
-  if (route === 'debug') return ['systematic-debugging'];
-  if (route === 'verify') return ['verification-before-completion'];
-  if (route === 'ops') return ['writing-plans'];
-  if (explicitPlan) return ['writing-plans'];
-  return ['writing-plans', 'test-driven-development'];
+  // Only a current Rex Command may name a Provider. Hosts never revive a
+  // compatibility playbook chain when Rex has not selected one.
+  void disposition;
+  void route;
+  void explicitPlan;
+  void executionHost;
+  return [];
 }
 
 function agentForDecision(capabilityDecision) {

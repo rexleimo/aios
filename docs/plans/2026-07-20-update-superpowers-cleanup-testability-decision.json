@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "artifact:docs/plans/2026-07-20-update-superpowers-cleanup-testability-decision.json",
+  "baseline": {
+    "publicEntry": "AIOS runUpdate() lifecycle and the Rex workflow-surface reconciliation seam",
+    "setup": "The focused Node test suites create isolated temporary roots and client-home paths. They exercise update option forwarding and the production workflow-surface reconciler without touching the operator's home directory.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/aios-lifecycle-plan.test.mjs",
+        "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The update lifecycle forwards the explicit adoption option, while the reconciliation suite preserves unproven links by default and removes only exact adopted legacy Superpowers projections in isolated homes.",
+    "observed": "The focused public test command completed with exit code 0; its Rex receipt records the exact command, working directory, and output hashes.",
+    "receiptRef": "receipt:85cd3cf0-4c35-43e0-85a4-cb26dd908336"
+  }
+}

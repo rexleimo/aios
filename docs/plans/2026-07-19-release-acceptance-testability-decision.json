@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-release-acceptance-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "npm run test:scripts",
+    "setup": "Run the focused Rex integration tests in the checkout without creating any live agent or SkillOpt evidence.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/rex-agent-provider.test.mjs",
+        "scripts/tests/rex-tdd-training-evidence.test.mjs",
+        "scripts/tests/rex-workflow-training-evidence.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The release test contract is hermetic: temporary fixtures validate parsers, while missing real evidence remains blocked.",
+    "observed": "The command exited 1: the agent test supplied v1 evidence rejected by the v2 validator, and 16 assertions read missing ignored historical .skillopt artifacts.",
+    "receiptRef": "receipt:0e48a292-59b2-45f6-98a2-8a1d42833e5c",
+    "failureReason": "The test suite depended on undeclared local history instead of isolated fixtures and explicit fail-closed assertions."
+  }
+}

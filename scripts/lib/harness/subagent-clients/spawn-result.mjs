@@ -29,3 +29,10 @@ export function normalizeSpawnResult(result, timeoutMs) {
   }
   return attachAttemptMeta(result, { exitCode, stdout, stderr, error: '' });
 }
+
+export function attachExecutedArgs(result, args) {
+  return {
+    ...result,
+    executedArgs: Array.isArray(args) ? [...args] : [],
+  };
+}

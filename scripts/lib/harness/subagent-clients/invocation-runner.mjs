@@ -1,10 +1,10 @@
 import { spawnCommand } from '../../platform/process.mjs';
 import { runCodexInvocation } from './codex-exec.mjs';
-import { normalizeSpawnResult } from './spawn-result.mjs';
+import { attachExecutedArgs, normalizeSpawnResult } from './spawn-result.mjs';
 
 async function runSpawnInvocation(command, invocation, { env, timeoutMs, cwd }) {
   const result = await spawnCommand(command, invocation.args, { env, timeoutMs, cwd: cwd || undefined });
-  return normalizeSpawnResult(result, timeoutMs);
+  return attachExecutedArgs(normalizeSpawnResult(result, timeoutMs), invocation.args);
 }
 
 const CLIENT_INVOCATION_RUNNERS = Object.freeze({

@@ -56,3 +56,18 @@ test('canonical skill frontmatter is safe for strict YAML parsers', async () => 
     assertPlainScalarsAreYamlSafe(await extractFrontmatter(await readFile(filePath, 'utf8'), filePath), filePath);
   }
 });
+
+test('pre-edit safety gate prepares a current, reusable development environment without blocking normal refactors', async () => {
+  const skillPath = path.join(process.cwd(), 'skill-sources', 'pre-edit-safety-gate', 'SKILL.md');
+  const content = await readFile(skillPath, 'utf8');
+
+  assert.match(content, /git pull --ff-only/);
+  assert.match(content, /CRG.*(更新|update)|(?:更新|update).*CRG/i);
+  assert.match(content, /抽象/);
+  assert.match(content, /封装/);
+  assert.match(content, /解耦/);
+  assert.match(content, /目录/);
+  assert.doesNotMatch(content, /Wait for user approval/);
+  assert.match(content, /rather than after every edit/);
+  assert.doesNotMatch(content, /Run tests after every code change/);
+});

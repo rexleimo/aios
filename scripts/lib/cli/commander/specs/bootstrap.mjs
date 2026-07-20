@@ -6,6 +6,7 @@ export const BOOTSTRAP_COMMAND_SPECS = [
       ['--agent <agent>', 'Init only the specified agent'],
       ['--all', 'Init all supported agents'],
       ['--dry-run', 'Preview changes without writing files'],
+      ['--adopt-legacy-superpowers', 'Explicit cleanup; preview first with --dry-run'],
       ['--yes-compression-tools', 'Authorize unattended RTK/Caveman/Headroom installation'],
       ['--yes-headroom-mcp', 'Authorize unattended Gemini/Grok Headroom MCP registration'],
     ],

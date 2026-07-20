@@ -1,38 +1,60 @@
 ---
-title: Superpowers
-description: 让 CLI 更智能的可复用自动化技能，按使用场景分类整理。
+title: Rex 工作流迁移
+description: 安全地从已退役的 Superpowers 工作流迁移到仅使用 Rex 的 AIOS 工作流。
 ---
 
-# Superpowers 超能力
+# Rex 工作流迁移
 
-> **快速答案：** Superpowers 是一组可复用的工程 playbook，覆盖头脑风暴、写计划、TDD、调试、验证、并行委派和安全检查。先选工作流路由，再选择最小适用的技能，不要对每个问题都启动完整流程。
+对于新的 AIOS 安装和受管工作流投影，`rex-harness` 是唯一默认的软件工程工作流。Superpowers 已从 AIOS 安装组件和工作流中退役。原有的 `/superpowers/` 地址保留为本迁移指南，使既有链接说明当前行为，而不是继续教授已退役的工作流。
 
-Superpowers 是可复用的技能，用于自动化常见工作流。它们接入 Claude Code、Codex、Gemini CLI 和 OpenCode 来自动处理重复任务。
+## 有哪些变化
 
-不用再重复输入相同的命令或提示，只需调用一个技能，它会引导 AI 完成经过验证的工作流、强制执行最佳实践，并在完成前验证结果。
+Rex 拥有软件工程控制循环：Facts、Capability 选择、Workflow Activation、Command、Evidence Contract 和恢复状态。AIOS 在 Rex 控制面周围提供宿主路由、客户端投影、ContextDB、安全检查、团队执行和长期 harness 支持。
 
----
+新安装会为 Codex、Claude、Gemini、OpenCode、Hermes 和 Grok 安装 Rex 投影；在客户端支持时也会安装共享 `.agents` 投影。没有可启用的 Superpowers TUI 选项或独立 Superpowers 工作流。
 
-## 技能总览
-## 如何使用技能
-## 我应该使用哪个技能？
-## 强化学习训练系统
-## 下一步去哪里
+## 安全升级行为
 
-- [官方案例库](case-library.md) - 真实使用示例
-- [ContextDB](contextdb.md) - 记忆如何跨会话持久化
-- [多 Agent 实战](team-ops.md) - 多 agent 协作详情
+照常执行普通升级：
 
-## 常见问题
+```bash
+aios update
+```
 
-### Superpowers 会自动处理每个问题吗？
+普通升级会安装并收敛仅使用 Rex 的工作流。缺少 AIOS 所属证明的历史 Superpowers 投影会被保留并报告为 conflict。这个默认的失败关闭策略避免 AIOS 仅因路径名称类似旧投影就删除用户管理的路径。
 
-不会。提问和状态查询可以保持 direct；只有需要设计、排序、调试、委派或交付证据时才选择 playbook。
+## 显式清理旧投影
 
-### 技能安装在哪里？
+如果希望 AIOS 接管并删除经精确识别的旧 Superpowers 投影，请先预览结果，再运行显式清理：
 
-仓库可发现技能放在 `.codex/skills/` 或 `.claude/skills/`，由支持的工作流负责同步到客户端。
+```bash
+aios update --adopt-legacy-superpowers --dry-run
+aios update --adopt-legacy-superpowers
+```
 
-## 官方文档
+对于不通过 `aios update` 升级的用户，同一显式选项也可用于：
 
-从[工作流策略](workflow-policy.md)开始，再看[快速开始](getting-started.md)和[Agent Team](team-ops.md)。
+```bash
+aios init --all --adopt-legacy-superpowers
+aios setup --adopt-legacy-superpowers
+```
+
+显式接管覆盖 Codex、Claude、Gemini、OpenCode、Hermes、Grok 和共享 `.agents` 投影中经识别的 AIOS 旧链接。它不会删除未知、已修改或没有所属证明的用户路径。确认所属关系后，请手动处理这些 conflict。
+
+## 验证迁移
+
+```bash
+aios doctor --native --verbose
+```
+
+doctor 输出会显示客户端投影和工作流诊断。对于源码安装，还应确认已提供内置的 `rex-harness` 子模块：
+
+```bash
+git submodule update --init --recursive -- rex-harness
+```
+
+## 相关文档
+
+- [工作流策略](workflow-policy.md) - 围绕当前 Rex Command 选择 `direct`、`guarded` 或 `planned` 宿主路由。
+- [快速开始](getting-started.md) - 安装并初始化 AIOS。
+- [更新日志](changelog.md) - 查看版本级迁移说明。

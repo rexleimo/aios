@@ -10,13 +10,11 @@ SCRIPTS_TO_FIX=(
   "doctor-contextdb-shell.sh"
   "doctor-contextdb-skills.sh"
   "doctor-security-config.sh"
-  "doctor-superpowers.sh"
   "install-browser-mcp.sh"
   "install-codemap.sh"
   "install-contextdb-skills.sh"
   "install-contextdb-shell.sh"
   "install-privacy-guard.sh"
-  "install-superpowers.sh"
 )
 
 for script in "${SCRIPTS_TO_FIX[@]}"; do

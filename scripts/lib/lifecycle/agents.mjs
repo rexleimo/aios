@@ -13,10 +13,15 @@ export async function runAgentsCommand(
     throw new Error('agents requires subcommand: doctor, list, or smoke');
   }
   if (subcommand === 'smoke') {
-    const report = await runAgentsSmoke({ rootDir, dryRun: options.dryRun !== false });
+    const report = await runAgentsSmoke({
+      rootDir,
+      dryRun: options.dryRun === true,
+      live: options.live === true,
+      clientId: options.clientId || '',
+    });
     const json = options.json || options.format === 'json';
     stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : renderAgentsSmokeText(report));
-    return { exitCode: report.missingRoles?.length ? 1 : 0, report };
+    return { exitCode: report.dryRun || report.status === 'pass' ? 0 : 1, report };
   }
   const report = await buildAgentCatalogue({ rootDir });
   const json = options.json || options.format === 'json';
@@ -28,7 +33,7 @@ export async function runAgentsCommand(
 function renderAgentsSmokeText(report) {
   const lines = [
     `AIOS agents smoke ${report.dryRun ? 'dry-run' : 'record'} (${report.policy})`,
-    `agents=${report.agents.length} missing=${report.missingRoles.length}`,
+    `agents=${report.agents.length} missing=${report.missingRoles.length} status=${report.status || 'planned'}`,
   ];
   for (const agent of report.agents) {
     lines.push(`- ${agent.agentId || agent.role}: ${agent.status}`);

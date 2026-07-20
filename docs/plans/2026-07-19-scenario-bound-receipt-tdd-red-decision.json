@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#scenario-bound-receipt-contract-tdd-red-observation",
+  "redCandidate": {
+    "publicEntry": "rex-harness standalone evidence command",
+    "setup": "The standalone CLI runs the public scenario-bound receipt regression, which declares checkout validation but captures a separately executed non-zero command.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/standalone/standalone-cli.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The public CLI rejects a receipt that does not match the declared executable, arguments, and working directory.",
+    "observed": "The CLI accepted the unrelated receipt and returned status 0 before the scenario-bound contract exists.",
+    "failureReason": "Receipt validation checks only a resolvable non-zero exit code and does not bind it to the declared scenario command.",
+    "receiptRef": "receipt:aca4bfdd-4287-4f78-8212-68a1e67aec87"
+  }
+}

@@ -41,9 +41,16 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current Rex Capability Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
+
+## Rex Provider and Change Gates
+
+- The current Rex Capability Command is the only authority that selects a software Provider or advances a software stage. A successful Provider run is not enough to advance: return the Command's required evidence to the AIOS Activation Ledger and let Rex evaluate the transition.
+- Before a cohesive code, workflow, or migration batch, invoke `pre-edit-safety-gate`: establish a safe Git baseline, refresh CRG when available, and plan reuse, abstraction, encapsulation, decoupling, and clear directory ownership. It supports authorized TDD and refactors.
+- `direct` work does not invoke a Provider. `guarded` and `planned` work invoke only the Provider selected by the current Rex Capability Command.
+- When workflow surfaces or skills change, collect the required client smoke and skill-training evidence before treating the rollout as ready.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
 
@@ -213,23 +220,6 @@ Avoid compacting in the middle of implementation, active debugging, or a multi-f
 Keep MCP surfaces lean. Disable low-value MCP servers when the active client already has enough native tooling.
 
 Token profiles are a pre-context hygiene layer. Deep token compression (output/input/data-plane) is handled by community tools RTK + Caveman, installed via `aios init`.
-
-<!-- 中文注释：Superpowers 是按需工程 playbook，不是每轮启动注入。 -->
-
-## AIOS Superpowers Playbooks
-
-- Do not invoke `using-superpowers` as a global bootstrap. Superpowers is not a rex Provider and cannot select or advance a rex workflow stage.
-- Software workflow ownership and default Provider implementation belong to `rex-harness`. AIOS invokes only the current Provider from the rex Capability Command and never preloads a fixed stack.
-- AIOS binds only bundled rex-native Providers. External Skills, playbooks, and reviewers are not compatibility replacements and do not participate in rex readiness or routing.
-- A Provider completing successfully is not enough to advance. Return the required evidence kinds to the AIOS Activation Ledger and let rex evaluate the transition.
-- Do not invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` to select or replace a rex stage; they remain standalone tools only for an explicit user request outside a rex Activation.
-- Do not translate user wording such as "new capability", "multi-step", "bug fix", or "failure" directly into a Superpowers playbook. Those observations must pass through rex Fact and Capability selection first.
-- `verification-before-completion` remains an AIOS host completion gate before delivery, commit, or release; it does not choose or advance a rex Capability.
-- `direct` work does not need a Superpowers chain. `guarded` and `planned` work invoke only the currently selected Provider.
-- **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
-- Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
-- If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
-- Close a changed behavior only after the selected verification process has concrete artifact evidence. A host Plan UI is a draft aid; when the disposition is `planned`, persist the approved work item in the AIOS plan artifact.
 
 <!-- 中文注释：code-review-graph（codemap）MCP 决策检查点。所有已注册 MCP 的客户端均下发，让 gemini/opencode 也能用结构图。 -->
 

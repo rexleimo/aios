@@ -2,7 +2,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 
-import { validateCommandEvidence } from '../../../rex-harness/src/index.mjs';
+import {
+  resolveStandaloneExecutionReceipt,
+  validateCommandEvidence,
+} from '../../../rex-harness/src/index.mjs';
 import {
   addPlanEvidence,
   readActivePlan,
@@ -24,6 +27,12 @@ const AGENT_HANDOFF_FIELDS = Object.freeze([
   'evidenceRefs',
   'filesReviewed',
   'recommendedNextSteps',
+]);
+const EVIDENCE_ENVELOPE_FIELDS = Object.freeze([
+  'schemaVersion',
+  'activationId',
+  'evidence',
+  'testabilityDecision',
 ]);
 const AGENT_HANDOFF_STATUSES = new Set(['pass', 'blocked', 'needs-input', 'fail']);
 const PLACEHOLDER_REF = /artifact-or-command-ref|placeholder|真实存在|todo|tbd/iu;
@@ -154,6 +163,11 @@ export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = 
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
     throw new TypeError('rex evidence envelope must be an object');
   }
+  for (const key of Object.keys(payload)) {
+    if (!EVIDENCE_ENVELOPE_FIELDS.includes(key)) {
+      throw new Error(`rex evidence envelope has unknown field: ${key}`);
+    }
+  }
   if (payload.schemaVersion !== 1) {
     throw new Error(`unsupported rex evidence schemaVersion: ${payload.schemaVersion}`);
   }
@@ -169,6 +183,7 @@ export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = 
     schemaVersion: 1,
     activationId: envelopeActivationId,
     evidence: normalizeEnvelopeEvidence(payload.evidence),
+    testabilityDecision: payload.testabilityDecision,
   });
 }
 
@@ -195,6 +210,7 @@ function recordValidatedCapabilityEvidence({
   rootDir,
   command,
   evidence = [],
+  testabilityDecision,
   allowAgent = false,
   now = new Date(),
 } = {}) {
@@ -203,12 +219,15 @@ function recordValidatedCapabilityEvidence({
     throw new Error('Agent Provider evidence requires a validated native Handoff');
   }
   // standalone 与 AIOS 共用 rex 公共校验器，避免证据类型、引用协议和占位符规则漂移。
-  const normalizedEvidence = validateCommandEvidence(command, evidence);
+  const resolveReceipt = (ref) => resolveStandaloneExecutionReceipt({ rootDir, ref });
+  const normalizedEvidence = validateCommandEvidence(command, evidence, { resolveReceipt });
 
   const advanced = advanceStoredAiosCapabilityActivation({
     rootDir,
     activationId: command.activationId,
     evidence: normalizedEvidence,
+    testabilityDecision,
+    resolveReceipt,
     now,
   });
   const planEvidence = syncEvidenceToMatchingPlan({
@@ -239,6 +258,7 @@ export function recordAiosCapabilityEvidence({
   activationId,
   commandToken,
   evidence = [],
+  testabilityDecision,
   now = new Date(),
 } = {}) {
   const current = readStoredAiosCapabilityActivation({ rootDir, activationId });
@@ -251,6 +271,7 @@ export function recordAiosCapabilityEvidence({
     rootDir,
     command: current.command,
     evidence,
+    testabilityDecision,
     now,
   });
 }
@@ -266,6 +287,7 @@ export function ingestCapabilityEvidenceOutput({ rootDir, command, output, now =
     rootDir,
     command,
     evidence: envelope.evidence,
+    testabilityDecision: envelope.testabilityDecision,
     now,
   });
   return Object.freeze({ ingested: true, reason: '', envelope, result });

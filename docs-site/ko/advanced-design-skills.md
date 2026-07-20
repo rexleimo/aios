@@ -80,6 +80,6 @@ npx --yes getdesign@latest add linear --force
 
 ## 관련 링크
 
-- [Superpowers](superpowers.md)
+- [Rex 워크플로 마이그레이션](superpowers.md)
 - [Skill Candidates Guide](skill-candidates.md)
 - [고급 디자인 스킬 실전(블로그)](/blog/ko/advanced-design-skills-page-building/)

@@ -56,6 +56,7 @@ redacted output が evidence です。共有できる fields は human が判断
 ~~~bash
 node scripts/aios.mjs agents smoke --dry-run --json
 node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill certify --changed --base HEAD --json
 node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 ~~~
 

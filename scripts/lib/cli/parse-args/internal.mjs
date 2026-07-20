@@ -56,7 +56,6 @@ function buildInternalCli(target, action) {
   program.option('--mode <mode>', 'Operation mode');
   program.option('--client <name>', 'Target client');
   program.option('--rc-file <path>', 'RC file path');
-  program.option('--repo <url>', 'Repository URL');
   program.option('--skip-playwright-install', 'Skip Playwright install');
 
   if (target === 'offload') {
@@ -115,7 +114,6 @@ export function parseInternalArgs(argv) {
     if (flags.skills) options.skills = normalizeSkillNames(flags.skills);
     if (flags.installMode) options.installMode = normalizeSkillInstallMode(flags.installMode);
     if (flags.rcFile) options.rcFile = flags.rcFile;
-    if (flags.repo) options.repoUrl = flags.repo;
     if (flags.repairId) options.repairId = flags.repairId;
     if (flags.limit) options.limit = parsePositiveInteger(flags.limit, '--limit');
     if (flags.verbose) options.verbose = true;

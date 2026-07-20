@@ -23,6 +23,8 @@ Client config targets:
   claude   <project>/.mcp.json
   gemini   <project>/.gemini/settings.json
   opencode ~/.config/opencode/opencode.json + CRG plugin
+  hermes   ~/.hermes/config.yaml (mcp_servers.code-review-graph)
+  grok     ~/.grok/config.toml ([mcp_servers.code-review-graph])
 
 Restart the selected client after install/doctor --fix so it reloads MCP config.
 

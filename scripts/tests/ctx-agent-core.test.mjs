@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { chmod, mkdtemp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -11,8 +12,10 @@ import {
   resolveTaskRouteDecision,
 } from '../ctx-agent-core.mjs';
 import { runContextDbCli } from '../lib/contextdb-cli.mjs';
+import { readRawRef } from '../lib/interception/refs/raw-ref-store.mjs';
 import { runAutoGate } from '../lib/planning/auto-gate.mjs';
 import { advanceStoredAiosCapabilityActivation } from '../lib/workflows/rex-activation-store.mjs';
+import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
 
 const CTX_AGENT_CLI = path.resolve('scripts', 'ctx-agent.mjs');
 const AIOS_CLI = path.resolve('scripts', 'aios.mjs');
@@ -26,6 +29,115 @@ function formatPreviewArg(value = '') {
   return /^[A-Za-z0-9_./:@=-]+$/u.test(text)
     ? text
     : `"${text.replace(/(["`$])/g, '\\$1')}"`;
+}
+
+function captureReceipt(rootDir, command) {
+  return captureStandaloneExecutionReceipt({
+    rootDir,
+    ...command,
+  }).ref;
+}
+
+function scenarioCommand(rootDir, args) {
+  return {
+    executable: process.execPath,
+    args,
+    cwd: rootDir,
+  };
+}
+
+async function assertCompressedDispatchRun(stdout, workspaceRoot) {
+  const packetStart = stdout.indexOf('\n{');
+  assert.notEqual(packetStart, -1, stdout);
+  const packet = JSON.parse(stdout.slice(packetStart + 1));
+  assert.equal(packet.type, 'aios.compact_packet');
+  assert.equal(packet.event_kind, 'post_receive');
+  assert.equal(packet.refs.length, 1);
+
+  const { raw } = await readRawRef({
+    workspaceRoot,
+    sessionId: packet.sessionId,
+    refId: packet.refs[0].ref_id,
+  });
+  assert.match(raw, /"dispatchRun"/u);
+}
+
+// Test-only records for a temporary workspace; they never attest a live client run.
+async function writePromotionEvidenceFixture(rootDir, agentId) {
+  const smokeDir = path.join(rootDir, '.aios', 'agents', 'smoke');
+  const provenanceDir = path.join(rootDir, '.aios', 'agents', 'provenance');
+  const metricsDir = path.join(rootDir, '.aios', 'interception', 'metrics');
+  await Promise.all([
+    mkdir(smokeDir, { recursive: true }),
+    mkdir(provenanceDir, { recursive: true }),
+    mkdir(metricsDir, { recursive: true }),
+  ]);
+
+  const clientId = 'test-client';
+  const sessionId = 'test-session';
+  const receiptId = 'test-receipt';
+  const preSendRefId = 'test-pre-send';
+  const postReceiveRefId = 'test-post-receive';
+  const hash = (value) => createHash('sha256').update(value, 'utf8').digest('hex');
+  const execution = {
+    runner: 'aios.harness.one-shot.v1',
+    receiptId,
+    clientId,
+    agentId,
+    sessionId,
+    invocation: {
+      command: 'test-client',
+      argsSha256: hash('[]'),
+      cwd: rootDir,
+    },
+    exitCode: 0,
+    stdoutSha256: hash('test output'),
+    stderrSha256: hash(''),
+    observedAt: '2026-07-20T00:00:00.000Z',
+  };
+  const metrics = [
+    ['pre_send', preSendRefId],
+    ['post_receive', postReceiveRefId],
+  ].map(([eventKind, refId]) => JSON.stringify({
+    session_id: sessionId,
+    client_id: clientId,
+    agent_id: agentId,
+    event_kind: eventKind,
+    ref_id: refId,
+    saved_bytes: 1,
+    refs_count: 1,
+  })).join('\n');
+
+  await Promise.all([
+    writeFile(
+      path.join(smokeDir, `${agentId}.json`),
+      `${JSON.stringify({
+        schemaVersion: 2,
+        kind: 'aios.agent-live-smoke.v2',
+        status: 'pass',
+        clientId,
+        agentId,
+        sessionId,
+        execution,
+        metrics: { sessionId, preSendRefId, postReceiveRefId },
+      })}\n`,
+      'utf8',
+    ),
+    writeFile(
+      path.join(provenanceDir, `${agentId}.json`),
+      `${JSON.stringify({
+        schemaVersion: 2,
+        kind: 'aios.live-execution-provenance.v2',
+        status: 'verified',
+        clientId,
+        agentId,
+        sessionId,
+        receiptId,
+      })}\n`,
+      'utf8',
+    ),
+    writeFile(path.join(metricsDir, 'agent-provider.jsonl'), `${metrics}\n`, 'utf8'),
+  ]);
 }
 
 async function createFakeCliCommand(commandName, marker) {
@@ -664,34 +776,7 @@ test('ctx-agent one-shot executes a promoted rex Agent Provider and adapts its J
   const agentId = 'rex-security-reviewer';
 
   try {
-    const smokeDir = path.join(workspaceRoot, '.aios', 'agents', 'smoke');
-    const provenanceDir = path.join(workspaceRoot, '.aios', 'agents', 'provenance');
-    const metricsDir = path.join(workspaceRoot, '.aios', 'interception', 'metrics');
-    await Promise.all([
-      mkdir(smokeDir, { recursive: true }),
-      mkdir(provenanceDir, { recursive: true }),
-      mkdir(metricsDir, { recursive: true }),
-    ]);
-    await Promise.all([
-      writeFile(
-        path.join(smokeDir, `${agentId}.json`),
-        `${JSON.stringify({ agentId, status: 'pass' })}\n`,
-        'utf8',
-      ),
-      writeFile(
-        path.join(provenanceDir, `${agentId}.json`),
-        `${JSON.stringify({ agentId, status: 'verified' })}\n`,
-        'utf8',
-      ),
-      writeFile(
-        path.join(metricsDir, 'agent-provider.jsonl'),
-        [
-          JSON.stringify({ agent_id: agentId, event_kind: 'pre_send', saved_bytes: 1 }),
-          JSON.stringify({ agent_id: agentId, event_kind: 'post_receive', saved_bytes: 1 }),
-        ].join('\n'),
-        'utf8',
-      ),
-    ]);
+    await writePromotionEvidenceFixture(workspaceRoot, agentId);
 
     runContextDbCli([
       'session:new',
@@ -717,19 +802,50 @@ test('ctx-agent one-shot executes a promoted rex Agent Provider and adapts its J
         { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
       ],
     });
+    const scenarioRunner = path.join(workspaceRoot, 'token-validation-scenario.mjs');
+    const scenarioControl = path.join(workspaceRoot, 'token-validation-exit.txt');
+    await writeFile(
+      scenarioRunner,
+      "import { readFileSync } from 'node:fs';\nprocess.exit(Number(readFileSync(process.argv[2], 'utf8')));\n",
+      'utf8',
+    );
+    await writeFile(scenarioControl, '7', 'utf8');
+    const tokenValidationCommand = scenarioCommand(workspaceRoot, [scenarioRunner, scenarioControl]);
+    const redReceipt = captureReceipt(workspaceRoot, tokenValidationCommand);
+    const testabilitySelected = advanceStoredAiosCapabilityActivation({
+      rootDir: workspaceRoot,
+      activationId: testDesignCompleted.activation.activationId,
+      evidence: [
+        { kind: 'testability-decision-recorded', refs: ['artifact:testability-decision'] },
+      ],
+      testabilityDecision: {
+        kind: 'behavior-delta',
+        decisionRef: 'artifact:testability-decision',
+        redCandidate: {
+          publicEntry: 'authentication request boundary',
+          setup: 'Submit a request that requires the requested token validation behavior.',
+          command: tokenValidationCommand,
+          expected: 'The invalid token is rejected.',
+          observed: 'The invalid token is accepted before implementation.',
+          failureReason: 'The requested token validation behavior is absent.',
+          receiptRef: redReceipt,
+        },
+      },
+    });
     const strictGreen = advanceStoredAiosCapabilityActivation({
       rootDir: workspaceRoot,
-      activationId: testDesignCompleted.nextCapability.activation.activationId,
+      activationId: testabilitySelected.nextCapability.activation.activationId,
       evidence: [
-        { kind: 'failing-test-observed', refs: ['command:test:red'] },
+        { kind: 'failing-test-observed', refs: [redReceipt] },
         { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
       ],
     });
+    await writeFile(scenarioControl, '0', 'utf8');
     const strictRefactor = advanceStoredAiosCapabilityActivation({
       rootDir: workspaceRoot,
       activationId: strictGreen.activation.activationId,
       evidence: [
-        { kind: 'passing-test-observed', refs: ['command:test:green'] },
+        { kind: 'passing-test-observed', refs: [captureReceipt(workspaceRoot, tokenValidationCommand)] },
         { kind: 'implementation-diff-recorded', refs: ['diff:working-tree'] },
       ],
     });
@@ -737,8 +853,7 @@ test('ctx-agent one-shot executes a promoted rex Agent Provider and adapts its J
       rootDir: workspaceRoot,
       activationId: strictRefactor.activation.activationId,
       evidence: [
-        { kind: 'refactor-check-recorded', refs: ['command:test:refactor'] },
-        { kind: 'test-strength-check-recorded', refs: ['command:test:strength'] },
+        { kind: 'refactor-check-recorded', refs: [captureReceipt(workspaceRoot, tokenValidationCommand)] },
         { kind: 'test-diff-review-recorded', refs: ['artifact:test-diff-review'] },
       ],
     });
@@ -951,7 +1066,7 @@ test('ctx-agent executes routed team dry-run from a non-AIOS workspace', async (
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /\[ctx-agent route\] mode=team execute=dry-run/u);
-    assert.match(result.stdout, /"dispatchRun"/u);
+    await assertCompressedDispatchRun(result.stdout, workspaceRoot);
     assert.doesNotMatch(result.stdout, /MODULE_NOT_FOUND/u);
     assert.doesNotMatch(result.stdout, /--preflight requires --session/u);
   } finally {
@@ -989,7 +1104,7 @@ test('ctx-agent executes routed subagent dry-run from a non-AIOS workspace', asy
 
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stdout, /\[ctx-agent route\] mode=subagent execute=dry-run/u);
-    assert.match(result.stdout, /"dispatchRun"/u);
+    await assertCompressedDispatchRun(result.stdout, workspaceRoot);
     assert.doesNotMatch(result.stdout, /MODULE_NOT_FOUND/u);
     assert.doesNotMatch(result.stdout, /--preflight requires --session/u);
   } finally {

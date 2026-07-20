@@ -74,6 +74,7 @@ aios privacy read --file .env
 ~~~bash
 node scripts/aios.mjs agents smoke --dry-run --json
 node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill certify --changed --base HEAD --json
 node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 ~~~
 

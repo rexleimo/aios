@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import { MANAGED_RUNNER } from '../lib/evidence/live-execution.mjs';
 import {
   prepareAiosAgentProviderExecution,
   resolveAiosAgentProvider,
@@ -55,7 +57,88 @@ test('legacy ECC abstract id remains available only as an explicit compatibility
   assert.equal(resolved.abstractId, 'ecc-specialist');
 });
 
-async function writePromotionEvidence(rootDir, agentId) {
+/**
+ * Test-only synthetic records for a temporary evidenceRoot. They never attest
+ * a live client run and must not be written under the repository's .aios tree.
+ */
+async function writePromotionEvidenceFixture(rootDir, agentId, {
+  provenanceReceiptId = 'test-receipt',
+} = {}) {
+  const smokeDir = path.join(rootDir, '.aios', 'agents', 'smoke');
+  const provenanceDir = path.join(rootDir, '.aios', 'agents', 'provenance');
+  const metricsDir = path.join(rootDir, '.aios', 'interception', 'metrics');
+  await Promise.all([
+    mkdir(smokeDir, { recursive: true }),
+    mkdir(provenanceDir, { recursive: true }),
+    mkdir(metricsDir, { recursive: true }),
+  ]);
+  const clientId = 'test-client';
+  const sessionId = 'test-session';
+  const receiptId = 'test-receipt';
+  const preSendRefId = 'test-pre-send';
+  const postReceiveRefId = 'test-post-receive';
+  const hash = (value) => createHash('sha256').update(value, 'utf8').digest('hex');
+  const execution = {
+    runner: MANAGED_RUNNER,
+    receiptId,
+    clientId,
+    agentId,
+    sessionId,
+    invocation: {
+      command: 'test-client',
+      argsSha256: hash('[]'),
+      cwd: rootDir,
+    },
+    exitCode: 0,
+    stdoutSha256: hash('test output'),
+    stderrSha256: hash(''),
+    observedAt: '2026-07-19T00:00:00.000Z',
+  };
+  const metrics = [
+    ['pre_send', preSendRefId],
+    ['post_receive', postReceiveRefId],
+  ].map(([eventKind, refId]) => JSON.stringify({
+    session_id: sessionId,
+    client_id: clientId,
+    agent_id: agentId,
+    event_kind: eventKind,
+    ref_id: refId,
+    saved_bytes: 1,
+    refs_count: 1,
+  })).join('\n');
+  await Promise.all([
+    writeFile(
+      path.join(smokeDir, `${agentId}.json`),
+      `${JSON.stringify({
+        schemaVersion: 2,
+        kind: 'aios.agent-live-smoke.v2',
+        status: 'pass',
+        clientId,
+        agentId,
+        sessionId,
+        execution,
+        metrics: { sessionId, preSendRefId, postReceiveRefId },
+      })}\n`,
+      'utf8',
+    ),
+    writeFile(
+      path.join(provenanceDir, `${agentId}.json`),
+      `${JSON.stringify({
+        schemaVersion: 2,
+        kind: 'aios.live-execution-provenance.v2',
+        status: 'verified',
+        clientId,
+        agentId,
+        sessionId,
+        receiptId: provenanceReceiptId,
+      })}\n`,
+      'utf8',
+    ),
+    writeFile(path.join(metricsDir, 'agent-provider.jsonl'), `${metrics}\n`, 'utf8'),
+  ]);
+}
+
+async function writeLegacyPromotionEvidenceFixture(rootDir, agentId) {
   const smokeDir = path.join(rootDir, '.aios', 'agents', 'smoke');
   const provenanceDir = path.join(rootDir, '.aios', 'agents', 'provenance');
   const metricsDir = path.join(rootDir, '.aios', 'interception', 'metrics');
@@ -65,22 +148,11 @@ async function writePromotionEvidence(rootDir, agentId) {
     mkdir(metricsDir, { recursive: true }),
   ]);
   await Promise.all([
-    writeFile(
-      path.join(smokeDir, `${agentId}.json`),
-      `${JSON.stringify({ agentId, status: 'pass' })}\n`,
-      'utf8',
-    ),
-    writeFile(
-      path.join(provenanceDir, `${agentId}.json`),
-      `${JSON.stringify({ agentId, status: 'verified' })}\n`,
-      'utf8',
-    ),
+    writeFile(path.join(smokeDir, `${agentId}.json`), `${JSON.stringify({ agentId, status: 'pass' })}\n`, 'utf8'),
+    writeFile(path.join(provenanceDir, `${agentId}.json`), `${JSON.stringify({ agentId, status: 'verified' })}\n`, 'utf8'),
     writeFile(
       path.join(metricsDir, 'agent-provider.jsonl'),
-      [
-        JSON.stringify({ agent_id: agentId, event_kind: 'pre_send', saved_bytes: 1 }),
-        JSON.stringify({ agent_id: agentId, event_kind: 'post_receive', saved_bytes: 1 }),
-      ].join('\n'),
+      `${JSON.stringify({ agent_id: agentId, event_kind: 'pre_send', saved_bytes: 1 })}\n`,
       'utf8',
     ),
   ]);
@@ -102,9 +174,10 @@ function securityCommand() {
   };
 }
 
-test('agent execution requires promotion evidence and includes the canonical role card', async () => {
-  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-agent-provider-'));
+test('agent execution rejects legacy or tampered evidence before accepting an isolated v2 fixture', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-agent-provider-fixture-'));
   try {
+    assert.ok(!path.relative(os.tmpdir(), evidenceRoot).startsWith('..'));
     await assert.rejects(
       () => prepareAiosAgentProviderExecution({
         command: securityCommand(),
@@ -114,7 +187,17 @@ test('agent execution requires promotion evidence and includes the canonical rol
       /is not workflow-enabled/u,
     );
 
-    await writePromotionEvidence(evidenceRoot, 'rex-security-reviewer');
+    await writeLegacyPromotionEvidenceFixture(evidenceRoot, 'rex-security-reviewer');
+    await assert.rejects(
+      () => prepareAiosAgentProviderExecution({
+        command: securityCommand(),
+        evidenceRoot,
+        userRequest: '审查当前变更。',
+      }),
+      /is not workflow-enabled/u,
+    );
+
+    await writePromotionEvidenceFixture(evidenceRoot, 'rex-security-reviewer');
     const prepared = await prepareAiosAgentProviderExecution({
       command: securityCommand(),
       evidenceRoot,
@@ -124,10 +207,23 @@ test('agent execution requires promotion evidence and includes the canonical rol
 
     assert.equal(prepared.agent.agentId, 'rex-security-reviewer');
     assert.equal(prepared.agent.workflowEnabled, true);
+    assert.match(prepared.agent.verification.refs.smoke, /aios-rex-agent-provider-fixture-/u);
     assert.match(prepared.prompt, /# Security Review Agent/u);
     assert.match(prepared.prompt, /"agentId":"rex-security-reviewer"/u);
     assert.match(prepared.prompt, /Return one JSON handoff object only/u);
     assert.doesNotMatch(prepared.prompt, /AIOS_REX_EVIDENCE=/u);
+
+    await writePromotionEvidenceFixture(evidenceRoot, 'rex-security-reviewer', {
+      provenanceReceiptId: 'tampered-receipt',
+    });
+    await assert.rejects(
+      () => prepareAiosAgentProviderExecution({
+        command: securityCommand(),
+        evidenceRoot,
+        userRequest: '审查当前变更。',
+      }),
+      /is not workflow-enabled/u,
+    );
   } finally {
     await rm(evidenceRoot, { recursive: true, force: true });
   }

@@ -8,6 +8,7 @@ import { pathToFileURL } from 'node:url';
 import { doctorCodemap, installCodemap } from '../lib/components/codemap.mjs';
 import { collectCodemapMcpTargets } from '../lib/components/codemap/mcp-targets.mjs';
 import { collectCodemapInstructionFiles } from '../lib/components/codemap/instructions.mjs';
+import { getCodemapHelpText } from '../lib/cli/help/codemap.mjs';
 import { getClientMcpTarget, getClientInstructionFileName, ALL_CLIENTS } from '../lib/clients/registry.mjs';
 
 async function makeTemp(prefix) {
@@ -38,16 +39,18 @@ test('codemap MCP targets agree with the client registry (single source of truth
     claude: '/h/.claude',
     gemini: '/h/.gemini',
     opencode: '/h/.config/opencode',
+    hermes: '/h/.hermes',
     grok: '/h/.grok',
   };
   const targets = collectCodemapMcpTargets(projectRoot, clientHomes, 'all');
   const byClient = Object.fromEntries(targets.map((t) => [t.clientKey, t]));
 
-  // codex → home/config.toml ; claude → project/.mcp.json ; gemini → project/.gemini/settings.json ; opencode → home/opencode.json ; grok → home/config.toml
+  // Codemap uses the registry's native config format for every supported client.
   assert.ok(byClient.codex.path.endsWith(path.join('.codex', 'config.toml')));
   assert.ok(byClient.claude.path.endsWith(path.join('proj', '.mcp.json')));
   assert.ok(byClient.gemini.path.endsWith(path.join('proj', '.gemini', 'settings.json')));
   assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
+  assert.ok(byClient.hermes.path.endsWith(path.join('.hermes', 'config.yaml')));
   assert.ok(byClient.grok.path.endsWith(path.join('.grok', 'config.toml')));
 
   // The registry descriptor must point at the same file basenames codemap actually writes.
@@ -61,6 +64,14 @@ test('codemap MCP targets agree with the client registry (single source of truth
     const scopeFiles = desc.scopes.map((s) => s.file.split('/').join(path.sep));
     assert.ok(scopeFiles.some((f) => target.path.endsWith(f)),
       `${client}: registry scope files [${scopeFiles}] must match codemap target ${target.path}`);
+  }
+});
+
+test('codemap help names code-review-graph and every supported client', () => {
+  const help = getCodemapHelpText();
+  assert.match(help, /code-review-graph/u);
+  for (const client of ALL_CLIENTS) {
+    assert.match(help, new RegExp(`\\b${client}\\b`, 'u'));
   }
 });
 
@@ -79,9 +90,11 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const claudeHome = path.join(rootDir, 'home', '.claude');
   const geminiHome = path.join(rootDir, 'home', '.gemini');
   const opencodeHome = path.join(rootDir, 'home', '.config', 'opencode');
+  const hermesHome = path.join(rootDir, 'home', '.hermes');
   const grokHome = path.join(rootDir, 'home', '.grok');
 
   await mkdir(codexHome, { recursive: true });
+  await mkdir(hermesHome, { recursive: true });
   await mkdir(grokHome, { recursive: true });
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
@@ -89,18 +102,19 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
   await writeJson(path.join(projectRoot, '.gemini', 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(opencodeHome, 'opencode.json'), { mcp: { existing: { type: 'local', command: ['node', 'server.js'] } } });
+  await writeFile(path.join(hermesHome, 'config.yaml'), 'mcp_servers:\n  existing:\n    command: node\n', 'utf8');
 
   const logs = [];
   const result = await installCodemap({
     rootDir,
     projectRoot,
     io: silentIo(logs),
-    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, grok: grokHome },
+    clientHomes: { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, hermes: hermesHome, grok: grokHome },
     skipCrgChecks: true,
     crgVersion: 'code-review-graph test',
   });
 
-  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'grok', 'opencode']);
+  assert.deepEqual(result.injectedClients.sort(), ['claude', 'codex', 'gemini', 'grok', 'hermes', 'opencode']);
 
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);
@@ -127,6 +141,13 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   assert.equal(opencodeConfig.mcp['code-review-graph'].enabled, true);
   assert.deepEqual(opencodeConfig.mcp.existing.command, ['node', 'server.js']);
 
+  const hermesConfig = await readFile(path.join(hermesHome, 'config.yaml'), 'utf8');
+  assert.match(hermesConfig, /code-review-graph:/u);
+  assert.match(hermesConfig, /command: uvx/u);
+  assert.match(hermesConfig, /- code-review-graph/u);
+  assert.match(hermesConfig, /- serve/u);
+  assert.match(hermesConfig, /existing:\n\s+command: node/u);
+
   assert.match(await readFile(path.join(projectRoot, 'CLAUDE.md'), 'utf8'), /MCP Tools: code-review-graph/);
   assert.match(await readFile(path.join(projectRoot, 'GEMINI.md'), 'utf8'), /MCP Tools: code-review-graph/);
   const agentsMd = await readFile(path.join(projectRoot, 'AGENTS.md'), 'utf8');
@@ -142,10 +163,11 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   const claudeHome = path.join(rootDir, 'home', '.claude');
   const geminiHome = path.join(rootDir, 'home', '.gemini');
   const opencodeHome = path.join(rootDir, 'home', '.config', 'opencode');
+  const hermesHome = path.join(rootDir, 'home', '.hermes');
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
   await mkdir(codexHome, { recursive: true });
 
-  const clientHomes = { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome };
+  const clientHomes = { codex: codexHome, claude: claudeHome, gemini: geminiHome, opencode: opencodeHome, hermes: hermesHome };
   const firstLogs = [];
   const first = await doctorCodemap({
     rootDir,
@@ -157,11 +179,12 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   });
 
   assert.equal(first.errors, 0);
-  assert.ok(first.effectiveWarnings >= 4);
+  assert.ok(first.effectiveWarnings >= 5);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*config\.toml \(codex\)/);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*\.mcp\.json \(claude\)/);
   assert.match(firstLogs.join('\n').replace(/\\/g, '/'), /code-review-graph missing in .*\.gemini\/settings\.json \(gemini\)/);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*opencode\.json \(opencode\)/);
+  assert.match(firstLogs.join('\n').replace(/\\/g, '/'), /code-review-graph missing in .*\.hermes\/config\.yaml \(hermes\)/);
 
   const fixLogs = [];
   await doctorCodemap({
@@ -192,6 +215,7 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   assert.match(normalizedSecondLogs, /code-review-graph found in .*\.mcp\.json \(claude\)/);
   assert.match(normalizedSecondLogs, /code-review-graph found in .*\.gemini\/settings\.json \(gemini\)/);
   assert.match(normalizedSecondLogs, /code-review-graph found in .*opencode\.json \(opencode\)/);
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*\.hermes\/config\.yaml \(hermes\)/);
 });
 
 test('codemap component keeps client config responsibilities in focused modules', async () => {

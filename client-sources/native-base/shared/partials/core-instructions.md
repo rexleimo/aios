@@ -10,9 +10,16 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current Rex Capability Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
+
+## Rex Provider and Change Gates
+
+- The current Rex Capability Command is the only authority that selects a software Provider or advances a software stage. A successful Provider run is not enough to advance: return the Command's required evidence to the AIOS Activation Ledger and let Rex evaluate the transition.
+- Before a cohesive code, workflow, or migration batch, invoke `pre-edit-safety-gate`: establish a safe Git baseline, refresh CRG when available, and plan reuse, abstraction, encapsulation, decoupling, and clear directory ownership. It supports authorized TDD and refactors.
+- `direct` work does not invoke a Provider. `guarded` and `planned` work invoke only the Provider selected by the current Rex Capability Command.
+- When workflow surfaces or skills change, collect the required client smoke and skill-training evidence before treating the rollout as ready.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
 

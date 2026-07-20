@@ -1,5 +1,6 @@
 import { inspectJsonNamespace, injectCrgIntoMcpJson, injectCrgIntoOpencodeJson, removeCrgFromMcpJson, removeCrgFromOpencodeJson } from './json.mjs';
 import { inspectCodexToml, removeCrgFromCodexToml, upsertCodexMcpToml } from './toml.mjs';
+import { inspectHermesYaml, removeCrgFromHermesYaml, upsertCrgIntoHermesYaml } from './yaml.mjs';
 
 const CODEMAP_TARGET_FORMATS = Object.freeze({
   'codex-toml': Object.freeze({
@@ -16,6 +17,11 @@ const CODEMAP_TARGET_FORMATS = Object.freeze({
     inject: (target, projectRoot, options) => injectCrgIntoMcpJson(target.path, target.clientKey, projectRoot, options),
     remove: (target, options) => removeCrgFromMcpJson(target.path, options),
     inspect: (raw) => inspectJsonNamespace(raw, 'mcpServers'),
+  }),
+  'hermes-yaml': Object.freeze({
+    inject: (target, projectRoot, options) => upsertCrgIntoHermesYaml(target.path, projectRoot, options),
+    remove: (target, options) => removeCrgFromHermesYaml(target.path, options),
+    inspect: (raw) => inspectHermesYaml(raw),
   }),
 });
 

@@ -43,8 +43,11 @@ function getCommandProgram(command, defaults) {
     .name(command)
     .helpOption(false)
     .exitOverride()
-    .allowUnknownOption(true)
-    .allowExcessArguments(true);
+    .allowUnknownOption(true);
+
+  // Lifecycle commands have no positional arguments. Reject a stray boolean
+  // value before it can accompany a destructive opt-in flag.
+  program.allowExcessArguments(!['setup', 'update'].includes(command));
 
   // 通用选项——所有命令共享
   program.option('--dry-run', 'Preview without writing');
@@ -59,6 +62,7 @@ function getCommandProgram(command, defaults) {
       .option('--skills <names>', 'Skill names (comma-separated)')
       .option('--install-mode <mode>', 'Skill install mode')
       .option('--token-profile <profile>', 'Token discipline profile')
+      .option('--adopt-legacy-superpowers', 'Explicit cleanup; preview first with the standalone reconciler')
       .option('--apply-client-cost-settings', 'Apply client cost settings')
       .option('--skip-playwright-install', 'Skip Playwright install')
       .option('--with-playwright-install', 'Include Playwright install');
@@ -177,6 +181,7 @@ export function parseTopLevelArgs(command, argv) {
       }
       if (flags.installMode != null) options.installMode = normalizeSkillInstallMode(flags.installMode);
       if (flags.tokenProfile) options.tokenProfile = normalizeTokenProfile(flags.tokenProfile);
+      if (flags.adoptLegacySuperpowers) options.adoptLegacySuperpowers = true;
       if (flags.applyClientCostSettings) options.applyClientCostSettings = true;
       if (flags.skipPlaywrightInstall) options.skipPlaywrightInstall = true;
       if (flags.withPlaywrightInstall) options.withPlaywrightInstall = true;
@@ -260,7 +265,8 @@ export function parseTopLevelArgs(command, argv) {
       e.message.includes('must be a positive integer') ||
       e.message.includes('must be a number') ||
       e.message.includes('must not be empty') ||
-      e.message.includes('Missing value'))) throw e;
+      e.message.includes('Missing value') ||
+      e.message.includes('too many arguments'))) throw e;
     return {
       mode: 'help',
       help: true,

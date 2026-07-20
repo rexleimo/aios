@@ -84,7 +84,7 @@ plugins:
             Core Features: 功能核心
             ContextDB: ContextDB
             Token Intelligence: Token 智能
-            Superpowers: Superpowers
+            Rex Workflow Migration: Rex 工作流迁移
             debug-hub: debug-hub
             Model Router: 模型路由器
             Code Review Graph / Codemap: 代码审查图谱 / Codemap
@@ -124,7 +124,7 @@ plugins:
             Core Features: コア機能
             ContextDB: ContextDB
             Token Intelligence: Token インテリジェンス
-            Superpowers: Superpowers
+            Rex Workflow Migration: Rex ワークフロー移行
             debug-hub: debug-hub
             Model Router: モデルルーター
             Code Review Graph / Codemap: コードレビューグラフ / Codemap
@@ -164,7 +164,7 @@ plugins:
             Core Features: 핵심 기능
             ContextDB: ContextDB
             Token Intelligence: Token 인텔리전스
-            Superpowers: Superpowers
+            Rex Workflow Migration: Rex 워크플로 마이그레이션
             debug-hub: debug-hub
             Model Router: 모델 라우터
             Code Review Graph / Codemap: 코드 리뷰 그래프 / Codemap
@@ -227,7 +227,7 @@ nav:
   - Core Features:
       - ContextDB: contextdb.md
       - Token Intelligence: token-compression.md
-      - Superpowers: superpowers.md
+      - Rex Workflow Migration: superpowers.md
       - debug-hub: debug-hub.md
       - Model Router: model-router.md
       - Code Review Graph / Codemap: codemap.md

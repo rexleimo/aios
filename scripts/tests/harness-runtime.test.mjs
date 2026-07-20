@@ -28,6 +28,7 @@ import {
   shouldUseClientStructuredOutput,
 } from '../lib/harness/subagent-clients/structured-output.mjs';
 import { buildOneShotInvocation } from '../lib/harness/subagent-clients/one-shot.mjs';
+import { runOneShot } from '../lib/harness/subagent-runtime/one-shot-runner.mjs';
 
 async function pathExists(targetPath) {
   try {
@@ -58,6 +59,32 @@ async function writeFakeCli(binDir, name) {
     await chmod(filePath, 0o755);
   }
   return filePath;
+}
+
+async function writeFallbackCodexCommand(binDir, argsLogPath) {
+  await mkdir(binDir, { recursive: true });
+  const scriptPath = path.join(binDir, 'codex-fallback.js');
+  const script = [
+    "const fs = require('node:fs');",
+    'const args = process.argv.slice(2);',
+    `fs.appendFileSync(${JSON.stringify(argsLogPath)}, JSON.stringify(args) + '\\n', 'utf8');`,
+    "if (args.includes('--output-schema')) {",
+    "  process.stderr.write(\"unexpected argument '--output-schema'\\n\");",
+    '  process.exit(1);',
+    '}',
+    "process.stdout.write('fake Codex acknowledgement\\n');",
+  ].join('\n');
+  await writeFile(scriptPath, `${script}\n`, 'utf8');
+
+  const extension = process.platform === 'win32' ? '.cmd' : '';
+  const commandPath = path.join(binDir, `codex${extension}`);
+  if (process.platform === 'win32') {
+    await writeFile(commandPath, `@echo off\r\n"${process.execPath}" "${scriptPath}" %*\r\n`, 'utf8');
+  } else {
+    await writeFile(commandPath, `#!/usr/bin/env sh\nexec "${process.execPath}" "${scriptPath}" "$@"\n`, 'utf8');
+    await chmod(commandPath, 0o755);
+  }
+  return commandPath;
 }
 
 test('harness init human gate warns but does not block background safety references', async () => {
@@ -229,6 +256,69 @@ test('one-shot subagent invocation strategies cover every harness client', () =>
       '-',
     ],
   });
+});
+
+test('runOneShot records the final Codex fallback argv for managed provenance', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'aios-codex-final-argv-'));
+  const binDir = path.join(tempDir, 'bin');
+  const argsLogPath = path.join(tempDir, 'argv.jsonl');
+
+  try {
+    await writeFallbackCodexCommand(binDir, argsLogPath);
+    const result = await runOneShot('codex-cli', {
+      systemPrompt: 'system instruction',
+      userPrompt: 'user request',
+      codexOutput: {
+        schemaPath: path.join(tempDir, 'schema.json'),
+        lastMessagePath: path.join(tempDir, 'last-message.json'),
+        color: 'never',
+      },
+      env: {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+      },
+    });
+
+    assert.equal(result.exitCode, 0, result.error || result.stderr);
+    const attempts = (await readFile(argsLogPath, 'utf8'))
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+    assert.equal(attempts.length, 2);
+    assert.equal(attempts[0].includes('--output-schema'), true);
+    assert.equal(attempts[1].includes('--output-schema'), false);
+    assert.deepEqual(result.managedInvocation.args, attempts[1]);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
+});
+
+test('runOneShot records the successful primary Codex argv for managed provenance', async () => {
+  const tempDir = await mkdtemp(path.join(os.tmpdir(), 'aios-codex-primary-argv-'));
+  const binDir = path.join(tempDir, 'bin');
+  const argsLogPath = path.join(tempDir, 'argv.jsonl');
+
+  try {
+    await writeFallbackCodexCommand(binDir, argsLogPath);
+    const result = await runOneShot('codex-cli', {
+      systemPrompt: 'system instruction',
+      userPrompt: 'user request',
+      env: {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+      },
+    });
+
+    assert.equal(result.exitCode, 0, result.error || result.stderr);
+    const attempts = (await readFile(argsLogPath, 'utf8'))
+      .split(/\r?\n/)
+      .filter(Boolean)
+      .map((line) => JSON.parse(line));
+    assert.equal(attempts.length, 1);
+    assert.deepEqual(result.managedInvocation.args, attempts[0]);
+  } finally {
+    await rm(tempDir, { recursive: true, force: true });
+  }
 });
 
 

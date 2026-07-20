@@ -92,7 +92,6 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When \`mcp-browser-use\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
 `, 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'Superpowers section.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'Agent routing section.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'team-provider.md'), 'Team provider section.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'model-router.md'), 'Model router section.\n', 'utf8');

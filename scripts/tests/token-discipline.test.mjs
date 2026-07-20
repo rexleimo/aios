@@ -60,7 +60,7 @@ async function seedNativeRoot(rootDir) {
   });
   const partials = path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials');
   await mkdir(partials, { recursive: true });
-  for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'superpowers', 'agent-routing', 'codemap', 'browser-mcp', 'team-provider', 'model-router', 'harness']) {
+  for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'agent-routing', 'codemap', 'browser-mcp', 'team-provider', 'model-router', 'harness']) {
     await writeFile(path.join(partials, `${name}.md`), `${name} partial\n`, 'utf8');
   }
   await writeFile(
@@ -140,7 +140,6 @@ test('doctor reports token discipline MCP budget warnings', async () => {
       doctorContextDbShell: async () => ({ effectiveWarnings: 0 }),
       doctorContextDbSkills: async () => ({ effectiveWarnings: 0 }),
       doctorNativeEnhancements: async () => ({ effectiveWarnings: 0, errors: 0 }),
-      doctorSuperpowers: async () => ({ effectiveWarnings: 0, errors: 0 }),
     },
   });
 

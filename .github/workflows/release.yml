@@ -39,11 +39,20 @@ jobs:
           cd mcp-server
           npm ci
 
-      - name: Typecheck + build mcp-server
+      - name: Run root release tests
+        run: |
+          npm run test:scripts
+
+      - name: Verify mcp-server
         run: |
           cd mcp-server
           npm run typecheck
+          npm test
           npm run build
+
+      - name: Verify changed Skill training evidence
+        run: |
+          node scripts/aios.mjs skill verify-training --changed --base HEAD^ --json
 
       - name: Materialize ignored local release outputs
         run: |

@@ -18,7 +18,7 @@ test('buildSmokeInvocation throws for unknown client', () => {
 
 test('runClientTriggerLiveSmoke records OpenCode trigger evidence', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-opencode-live-smoke-root-'));
-  await writeFile(path.join(rootDir, 'AGENTS.md'), 'AIOS Token Discipline\nAIOS Superpowers Workflow\n', 'utf8');
+  await writeFile(path.join(rootDir, 'AGENTS.md'), 'AIOS Token Discipline\nRex Capability Command\n', 'utf8');
   await mkdir(path.join(rootDir, '.opencode', 'agent'), { recursive: true });
   await writeFile(path.join(rootDir, '.opencode', 'agent', 'aios-build.md'), 'Use AGENTS.md and AIOS skills.\n', 'utf8');
   await mkdir(path.join(rootDir, '.opencode', 'skills'), { recursive: true });
@@ -31,7 +31,7 @@ test('runClientTriggerLiveSmoke records OpenCode trigger evidence', async () => 
       spawnCalls.push({ command, args });
       return {
         status: 0,
-        stdout: 'AIOS_TRIGGER_OK: token discipline, superpowers, skills loaded\n',
+        stdout: 'AIOS_TRIGGER_OK: token discipline, rex workflow, skills loaded\n',
         stderr: '',
       };
     },

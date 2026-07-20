@@ -15,14 +15,26 @@ Usage:
 Optional environment variables:
   AIOS_REPO           GitHub repo, default: rexleimo/harness-cli
   AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/harness-cli
+  AIOS_STATE_DIR      state dir for installer-owned config, default: parent of install dir
   AIOS_WRAP_MODE      all|repo-only|opt-in|off (default: opt-in)
+  AIOS_ASSET_URL      override harness-cli.tar.gz URL for offline install tests
 USAGE
 }
 
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-  usage
-  exit 0
-fi
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      echo "Unknown option: $1" >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+  shift
+done
 
 AIOS_REPO="${AIOS_REPO:-$DEFAULT_REPO}"
 AIOS_INSTALL_DIR="${AIOS_INSTALL_DIR:-$DEFAULT_INSTALL_DIR}"
@@ -36,7 +48,7 @@ case "$AIOS_WRAP_MODE" in
     ;;
 esac
 
-asset_url="https://github.com/${AIOS_REPO}/releases/latest/download/harness-cli.tar.gz"
+asset_url="${AIOS_ASSET_URL:-https://github.com/${AIOS_REPO}/releases/latest/download/harness-cli.tar.gz}"
 
 require_cmd() {
   local cmd="$1"
@@ -144,6 +156,11 @@ for rel in "${preserve_paths[@]}"; do
   fi
 done
 
+# Child wrappers must use this newly installed runtime, never an inherited
+# AIOS_ROOT left behind by an older installation or an enclosing shell.
+AIOS_RUNTIME_ROOT="$(cd "$AIOS_INSTALL_DIR" && pwd -P)"
+AIOS_STATE_DIR="${AIOS_STATE_DIR:-$(dirname "$AIOS_RUNTIME_ROOT")}"
+
 root_package_json="$AIOS_INSTALL_DIR/package.json"
 root_tsx_bin="$AIOS_INSTALL_DIR/node_modules/.bin/tsx"
 if [[ -f "$root_package_json" ]]; then
@@ -164,7 +181,8 @@ fi
 shell_installer="$AIOS_INSTALL_DIR/scripts/install-contextdb-shell.sh"
 if [[ -f "$shell_installer" ]]; then
   echo "+ install shell integration (zsh): $shell_installer --mode $AIOS_WRAP_MODE --force"
-  bash "$shell_installer" --mode "$AIOS_WRAP_MODE" --force
+  AIOS_ROOT_DIR="$AIOS_RUNTIME_ROOT" AIOS_ROOT="$AIOS_RUNTIME_ROOT" ROOTPATH="$AIOS_RUNTIME_ROOT" \
+    bash "$shell_installer" --mode "$AIOS_WRAP_MODE" --force
 else
   echo "[warn] missing shell installer: $shell_installer" >&2
 fi
@@ -174,7 +192,9 @@ if [[ -f "$privacy_installer" ]]; then
   if command -v node >/dev/null 2>&1; then
     echo "+ init privacy guard: $privacy_installer"
     set +e
-    bash "$privacy_installer" --enable
+    AIOS_ROOT_DIR="$AIOS_RUNTIME_ROOT" AIOS_ROOT="$AIOS_RUNTIME_ROOT" ROOTPATH="$AIOS_RUNTIME_ROOT" \
+      REXCIL_HOME="${REXCIL_HOME:-$AIOS_STATE_DIR}" \
+      bash "$privacy_installer" --enable
     status=$?
     set -e
     if [[ $status -ne 0 ]]; then
@@ -184,6 +204,23 @@ if [[ -f "$privacy_installer" ]]; then
   else
     echo "[warn] node not found; skip privacy guard init" >&2
   fi
+fi
+
+workflow_reconciler="$AIOS_INSTALL_DIR/scripts/reconcile-rex-workflow-surface.mjs"
+if [[ -f "$workflow_reconciler" ]]; then
+  echo "+ reconcile AIOS-managed legacy workflow projections"
+  workflow_reconcile_args=(--root "$AIOS_INSTALL_DIR")
+  node "$workflow_reconciler" "${workflow_reconcile_args[@]}"
+else
+  echo "[warn] missing Rex workflow reconciler: $workflow_reconciler" >&2
+fi
+
+rex_projector="$AIOS_INSTALL_DIR/scripts/install-rex-client-projections.mjs"
+if [[ -f "$rex_projector" ]]; then
+  echo "+ install Rex workflow skills for all supported clients"
+  node "$rex_projector" --root "$AIOS_INSTALL_DIR" --client all --scope global
+else
+  echo "[warn] missing Rex client skill projector: $rex_projector" >&2
 fi
 
 rc_file="${ZDOTDIR:-$HOME}/.zshrc"

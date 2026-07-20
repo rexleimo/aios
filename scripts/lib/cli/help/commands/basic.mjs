@@ -4,12 +4,13 @@ export function getBasicCommandHelpText(command) {
   switch (command) {
     case 'init':
       return `Usage:
-  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--yes-compression-tools] [--yes-headroom-mcp]
+  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Options:
   --agent <name>              Init only the specified agent
   --all                       Init all detected agents, even if CLI detection misses them
   --dry-run                   Preview project marker and hook changes without writing files
+  --adopt-legacy-superpowers  Explicit cleanup; preview first with --dry-run
   --yes-compression-tools     Authorize unattended RTK/Caveman/Headroom installation
   --yes-headroom-mcp          Authorize unattended Gemini/Grok Headroom MCP registration
 
@@ -21,12 +22,13 @@ Unattended example:
   node scripts/aios.mjs setup [options]
 
 Options:
-  --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
+  --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
   --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
+  --adopt-legacy-superpowers     Explicit cleanup; preview first with the standalone reconciler --dry-run
   --skip-playwright-install     Skip browser-use runtime installation (legacy flag name)
   --skip-doctor
   -h, --help
@@ -38,12 +40,13 @@ Options:
 Options:
   --self-update                 Refresh Harness CLI itself before component updates (default for CLI)
   --skip-self-update            Only update selected integrations
-  --components <list>            Comma list: browser,shell,skills,native,agents,superpowers (default: browser,shell,skills,native,superpowers)
+  --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
   --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
+  --adopt-legacy-superpowers     Explicit cleanup; preview first with the standalone reconciler --dry-run
   --with-playwright-install     Force browser-use runtime installation (legacy flag name)
   --skip-doctor
   -h, --help
@@ -53,7 +56,7 @@ Options:
   node scripts/aios.mjs uninstall [options]
 
 Options:
-  --components <list>            Comma list: shell,skills,native,agents,browser,superpowers (default: shell,skills)
+  --components <list>            Comma list: shell,skills,native,agents,browser (default: shell,skills)
   --client <all|codex|claude|gemini|opencode|hermes|grok>
   --scope <global|project>       Skills uninstall scope (default: global)
   --skills <list>                Comma list of skill names to uninstall

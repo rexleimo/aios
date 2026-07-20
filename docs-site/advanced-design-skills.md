@@ -80,6 +80,6 @@ When user intent is vague, classify into Patch/Restyle/Flow first. Lock style wi
 
 ## Related
 
-- [Superpowers](superpowers.md)
+- [Rex Workflow Migration](superpowers.md)
 - [Skill Candidates Guide](skill-candidates.md)
 - [Advanced Design Skills Playbook (Blog)](/blog/advanced-design-skills-page-building/)

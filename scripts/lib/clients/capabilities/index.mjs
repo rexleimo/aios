@@ -53,11 +53,6 @@ export function resolveClientAgentTargets(client = 'all') {
   return resolveClientsWithCapability('agents', client);
 }
 
-// 纯函数：聚合 superpowers 能力的客户端目标，隐藏能力名常量。
-export function resolveClientSuperpowersClients(client = 'all') {
-  return resolveClientsWithCapability('superpowers', client);
-}
-
 // 纯函数：聚合 native 能力的客户端目标，隐藏能力名常量。
 export function resolveClientNativeClients(client = 'all') {
   return resolveClientsWithCapability('native', client);

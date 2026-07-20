@@ -5,6 +5,13 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.0.0 (2026-07-20) - Rex-only 워크플로 마이그레이션
+
+- `rex-harness`는 새 AIOS 설치와 관리되는 클라이언트 투영의 유일한 기본 소프트웨어 엔지니어링 워크플로입니다. Superpowers는 AIOS 워크플로와 설치 구성요소에서 제거되었습니다.
+- 일반 `aios update`, `aios init`, `aios setup`은 Rex를 정리하지만 AIOS 소유 증명이 없는 이전 Superpowers 투영은 보존하고 conflict로 보고합니다.
+- 정확히 인식된 AIOS 이전 링크만 정리하려면 먼저 `aios update --adopt-legacy-superpowers --dry-run`을 실행하고 확인 후 adopt하세요. Codex, Claude, Gemini, OpenCode, Hermes, Grok, 공유 `.agents` 투영을 포함합니다.
+- 변경된 skill은 `skill certify --changed`로 version control에 포함된 재계산 가능한 evidence를 만듭니다. release gate는 status file이나 content hash만 신뢰하지 않고 deterministic probe를 다시 실행합니다.
+
 ## v4.0.1 (2026-07-14) - 공개 콘텐츠와 SEO/GEO 범위
 
 - 문서 버전 배지, 루트 `VERSION`, GitHub Release, 공개 changelog를 `4.0.1`로 동기화했습니다.
@@ -22,8 +29,8 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 - agent governance 설명을 Team 문서, scenario guide, ContextDB reference, blog에 추가했습니다.
 - 새 smoke 증거 안내는 `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, `.aios/interception/metrics/agents-smoke-<agent>.jsonl`을 가리킵니다.
 - skill을 수정했다면 live workflow를 신뢰하기 전에 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`을 실행하세요.
-- **Grok Build가 AIOS 최상위 클라이언트로 승격**: xAI Grok Build(`grok` / runtime id `grok-build`)가 skills, agents, superpowers, native, team, harness 로 등록되었습니다. MCP는 Codex 형태 TOML(`~/.grok/config.toml`). 참고: [Grok Build + AIOS](/blog/ko/2026-07-grok-build-aios-client/).
-- **Hermes Agent가 AIOS 최상위 클라이언트로 승격**: skills, native, harness, superpowers. 참고: [Hermes Agent + AIOS 블로그 글](/blog/ko/2026-06-hermes-agent-aios-client/).
+- **Grok Build가 AIOS 최상위 클라이언트로 승격**: xAI Grok Build(`grok` / runtime id `grok-build`)가 skills, agents, native, team, harness 로 등록되었습니다. MCP는 Codex 형태 TOML(`~/.grok/config.toml`). 참고: [Grok Build + AIOS](/blog/ko/2026-07-grok-build-aios-client/).
+- **Hermes Agent가 AIOS 최상위 클라이언트로 승격**: skills, native, harness. 참고: [Hermes Agent + AIOS 블로그 글](/blog/ko/2026-06-hermes-agent-aios-client/).
 
 ## v3.6.0（2026-07-10）— Headroom + Ponytail token 인텔리전스 workflow
 

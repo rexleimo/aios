@@ -1,0 +1,24 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-20-rex-only-operator-cleanup-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "AIOS init/setup/update lifecycle commands and the standalone Rex workflow-surface reconciler",
+    "setup": "Run the CLI parser, lifecycle adapters, and standalone reconciler help contract in isolated test fixtures. The standalone help case uses a temporary non-runtime root, so the baseline cannot touch a real client home.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/aios-cli.test.mjs",
+        "scripts/tests/aios-init.test.mjs",
+        "scripts/tests/aios-lifecycle-plan.test.mjs",
+        "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "Every lifecycle command accepts and forwards an explicit --adopt-legacy-superpowers request while defaults remain false; the standalone reconciler documents dry-run-before-adoption and rejects unknown options without reconciling.",
+    "observed": "The command exited 1 with seven focused failures: init parsing and dispatch reject or drop the option, setup/update drop it, lifecycle adapters do not forward it, init help omits it, and the standalone reconciler emits no help and ignores unknown options.",
+    "receiptRef": "receipt:1f2c3020-01da-4508-b279-61ffee22bdcc",
+    "failureReason": "The reconciliation domain has an explicit safe adoption capability, but the public lifecycle and standalone CLI contracts neither expose nor reliably propagate it."
+  }
+}
+

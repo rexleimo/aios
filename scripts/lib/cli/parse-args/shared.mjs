@@ -78,7 +78,7 @@ export {
   normalizeWrapMode,
 };
 
-export const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'superpowers', 'browser', 'privacy', 'offload', 'codemap']);
+export const INTERNAL_TARGETS = new Set(['shell', 'skills', 'native', 'browser', 'privacy', 'offload', 'codemap']);
 export const PRIVACY_MODES = new Set(['regex', 'ollama', 'hybrid']);
 export const TEAM_PROVIDERS = new Set(resolveClientTeamProviders('all'));
 export const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);

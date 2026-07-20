@@ -62,7 +62,6 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
 - For complex browser tasks, first summarize the current page, then state the next single action, then execute it.
 - When \`mcp-browser-use\` is available, use its browser-use toolchain (\`chrome.*\` / \`browser.*\` / \`page.*\`) for normal business flows instead of \`chrome-devtools\`.
 `, 'utf8');
-  await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'superpowers.md'), 'Section SUPERPOWERS-CAP only.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'agent-routing.md'), 'Section AGENT-ROUTING-CAP only.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'codemap.md'), 'Section CODEMAP-NATIVE for all.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'team-provider.md'), 'Section TEAM-PROVIDER-CAP only.\n', 'utf8');
@@ -121,13 +120,13 @@ test('native sync gates instruction sections by client capability', async () => 
   const agentsDoc = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
   const geminiDoc = await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8');
 
-  // codex has superpowers + agents + native �?all gated sections present.
-  assert.match(agentsDoc, /SUPERPOWERS-CAP/);
+  // Codex has agents and native sections; no Superpowers compatibility partial remains.
+  assert.doesNotMatch(agentsDoc, /SUPERPOWERS-CAP/);
   assert.match(agentsDoc, /AGENT-ROUTING-CAP/);
   assert.match(agentsDoc, /CODEMAP-NATIVE/);
 
-  // gemini has superpowers + native but NOT agents �?superpowers + codemap present, agent-routing absent.
-  assert.match(geminiDoc, /SUPERPOWERS-CAP/);
+  // Gemini has native guidance but no agent or Superpowers compatibility section.
+  assert.doesNotMatch(geminiDoc, /SUPERPOWERS-CAP/);
   assert.doesNotMatch(geminiDoc, /AGENT-ROUTING-CAP/);
   assert.match(geminiDoc, /CODEMAP-NATIVE/);
 });
@@ -201,7 +200,8 @@ test('native sync installs an OpenCode primary agent with adaptive workflow guid
   assert.match(primaryAgent, /Evaluate the AIOS workflow policy before selecting a skill/u);
   assert.match(primaryAgent, /`direct`, `guarded`, and `planned`/u);
   assert.doesNotMatch(primaryAgent, /invoke `using-superpowers` before any response or action/u);
-  assert.match(primaryAgent, /`superpowers:brainstorming` -> `brainstorming`/u);
+  assert.match(primaryAgent, /current Rex Capability Command/u);
+  assert.match(primaryAgent, /canonical bundled Rex Provider/u);
   assert.match(primaryAgent, /If a policy-selected required skill is unavailable, stop/u);
   assert.equal(primaryAgent.startsWith('---\n'), true);
   assert.ok(metadata.managedTargets.includes('.opencode/agent/aios-build.md'));

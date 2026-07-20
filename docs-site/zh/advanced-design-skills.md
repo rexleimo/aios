@@ -80,6 +80,6 @@ npx --yes getdesign@latest add linear --force
 
 ## 相关阅读
 
-- [Superpowers](superpowers.md)
+- [Rex 工作流迁移](superpowers.md)
 - [Skill Candidates 指南](skill-candidates.md)
 - [高级设计技能实战（博客）](/blog/zh/advanced-design-skills-page-building/)

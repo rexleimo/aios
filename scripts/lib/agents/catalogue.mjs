@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { loadCanonicalAgents } from './source-tree.mjs';
+import { validateManagedLiveEvidence } from '../evidence/live-execution.mjs';
 
 const ECC_ROLE_FAMILIES = new Map([
   ['planner', 'core-planning'],
@@ -15,7 +16,6 @@ const ECC_ROLE_FAMILIES = new Map([
   ['refactor-cleaner', 'maintenance'],
   ['doc-updater', 'documentation'],
   ['e2e-runner', 'verification'],
-  ['loop-operator', 'workflow-operations'],
   ['evidence-auditor', 'governance'],
   ['client-surface-reviewer', 'governance'],
   ['install-governance-reviewer', 'governance'],
@@ -82,27 +82,15 @@ async function findLatestValidJsonl(dirPath, validator) {
   }
 }
 
-async function isPassingSmokeFile(filePath, agentId) {
-  const parsed = await readJsonFile(filePath);
-  const evidenceAgentId = parsed?.agentId || parsed?.agent_id || parsed?.agent;
-  return evidenceAgentId === agentId && parsed?.status === 'pass';
-}
-
-async function isValidProvenanceFile(filePath, agentId) {
-  const parsed = await readJsonFile(filePath);
-  const evidenceAgentId = parsed?.agentId || parsed?.agent_id || parsed?.agent;
-  return evidenceAgentId === agentId && ['verified', 'pass'].includes(parsed?.status);
-}
-
-async function hasAgentBidirectionalMetrics(filePath, agentId) {
+async function readMetricsRecords(filePath) {
   let raw = '';
   try {
     raw = await fs.readFile(filePath, 'utf8');
   } catch (error) {
-    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) return false;
+    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) return [];
     throw error;
   }
-  const seen = new Set();
+  const records = [];
   for (const line of raw.split(/\r?\n/u)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
@@ -112,18 +100,9 @@ async function hasAgentBidirectionalMetrics(filePath, agentId) {
     } catch {
       continue;
     }
-    const evidenceAgentId = parsed.agent_id || parsed.agentId || parsed.agent;
-    if (
-      evidenceAgentId === agentId
-      && parsed.uncontrolled !== true
-      && parsed.policy_violation !== true
-      && Number(parsed.saved_bytes || 0) > 0
-      && ['pre_send', 'post_receive'].includes(parsed.event_kind)
-    ) {
-      seen.add(parsed.event_kind);
-    }
+    records.push(parsed);
   }
-  return seen.has('pre_send') && seen.has('post_receive');
+  return records;
 }
 
 async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot }) {
@@ -132,22 +111,26 @@ async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot }) {
 
   for (const root of roots) {
     const smokePath = path.join(root, '.aios', 'agents', 'smoke', `${agentId}.json`);
-    if (!refs.smoke && await fileExists(smokePath) && await isPassingSmokeFile(smokePath, agentId)) {
-      refs.smoke = path.relative(rootDir, smokePath);
-    }
-
     const provenancePath = path.join(root, '.aios', 'agents', 'provenance', `${agentId}.json`);
-    if (!refs.provenance && await fileExists(provenancePath) && await isValidProvenanceFile(provenancePath, agentId)) {
-      refs.provenance = path.relative(rootDir, provenancePath);
-    }
-
-    if (!refs.metrics) {
-      const metricsPath = await findLatestValidJsonl(
-        path.join(root, '.aios', 'interception', 'metrics'),
-        (filePath) => hasAgentBidirectionalMetrics(filePath, agentId)
-      );
-      if (metricsPath) refs.metrics = path.relative(rootDir, metricsPath);
-    }
+    if (!await fileExists(smokePath) || !await fileExists(provenancePath)) continue;
+    const smoke = await readJsonFile(smokePath);
+    const provenance = await readJsonFile(provenancePath);
+    const metricsPath = await findLatestValidJsonl(
+      path.join(root, '.aios', 'interception', 'metrics'),
+      async (filePath) => validateManagedLiveEvidence({
+        subject: 'agent',
+        clientId: smoke?.clientId,
+        agentId,
+        smoke,
+        provenance,
+        metricsRecords: await readMetricsRecords(filePath),
+      }).valid,
+    );
+    if (!metricsPath) continue;
+    refs.smoke = path.relative(rootDir, smokePath);
+    refs.provenance = path.relative(rootDir, provenancePath);
+    refs.metrics = path.relative(rootDir, metricsPath);
+    break;
   }
 
   const missing = REQUIRED_EVIDENCE_KINDS.filter((kind) => !refs[kind]);

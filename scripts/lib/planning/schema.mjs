@@ -1,7 +1,7 @@
 /**
  * Structured intelligent planning schema (quality layer).
- * Competitors: superpowers writing-plans task breakdown, gnhf/OpenHarness objective loops,
- * ECC verification gates — mapped to machine-readable tasks + evidence, not host Plan UI.
+ * Prior planning patterns, OpenHarness objective loops, and verification gates
+ * are mapped to machine-readable tasks and evidence, not host Plan UI.
  */
 
 export const PLAN_SCHEMA_VERSION = 2;
@@ -47,27 +47,10 @@ export function classifyPlanRoute(message = '') {
   return 'implement';
 }
 
-/**
- * Default skill sequence for a route (maps superpowers process skills).
- */
+/** Rex owns provider selection; host plans do not inject a fixed skill chain. */
 export function skillsForRoute(route = 'unknown') {
-  switch (route) {
-    case 'design':
-      return ['brainstorming', 'writing-plans'];
-    case 'debug':
-      return ['systematic-debugging'];
-    case 'verify':
-      return ['verification-before-completion'];
-    case 'ops':
-      return ['writing-plans'];
-    case 'team':
-      return ['writing-plans', 'dispatching-parallel-agents'];
-    case 'harness':
-      return ['writing-plans', 'aios-long-running-harness'];
-    case 'implement':
-    default:
-      return ['writing-plans', 'test-driven-development'];
-  }
+  void route;
+  return [];
 }
 
 /**

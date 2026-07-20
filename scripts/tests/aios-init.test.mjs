@@ -11,6 +11,7 @@ import {
   getCavemanVerificationPaths,
 } from '../lib/aios-init/compression-tools.mjs';
 import { buildCommandRewriteHookCommand, buildSaveGuardCommand, ensureHook } from '../lib/aios-init/hooks.mjs';
+import { ensureAiosPlanningKernel, installRexWorkflowSkills } from '../aios-init.mjs';
 
 function normalizeSlashes(value) {
   return String(value).replace(/\\/g, '/');
@@ -23,6 +24,51 @@ function runtimeScriptPath(rootDir, scriptName) {
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
+
+test('init reconciles an owned legacy workflow surface after the Rex kernel is ready', async () => {
+  const calls = [];
+  const report = await ensureAiosPlanningKernel({
+    rootDir: '/tmp/aios-init-rex-surface',
+    adoptLegacySuperpowers: true,
+    io: { log: () => {} },
+    ensureRexHarnessImpl: async (options) => {
+      calls.push({ kind: 'rex', options });
+      return { ready: true, version: '0.4.2', fixHint: '' };
+    },
+    reconcileLegacyWorkflowSurfaceImpl: async (options) => {
+      calls.push({ kind: 'reconcile', options });
+      return { status: 'already-converged', removed: [], conflicts: [] };
+    },
+  });
+
+  assert.equal(report.ready, true);
+  assert.deepEqual(calls.map((entry) => entry.kind), ['rex', 'reconcile']);
+  assert.equal(calls[1].options.dryRun, false);
+  assert.equal(calls[1].options.adoptLegacySuperpowers, true);
+});
+
+test('init projects Rex workflow skills for the agents it initialized', async () => {
+  const calls = [];
+  const io = { log: () => {} };
+  const result = await installRexWorkflowSkills({
+    agents: ['grok', 'hermes'],
+    workspaceRoot: '/tmp/aios-init-project',
+    rootDir: '/tmp/aios-runtime',
+    io,
+    installRexClientProjectionsImpl: async (options) => {
+      calls.push(options);
+      return { status: 'installed', clients: options.client };
+    },
+  });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].rootDir, '/tmp/aios-runtime');
+  assert.equal(calls[0].projectRoot, '/tmp/aios-init-project');
+  assert.deepEqual(calls[0].client, ['grok', 'hermes']);
+  assert.equal(calls[0].scope, 'global');
+  assert.equal(calls[0].io, io);
+  assert.equal(result.status, 'installed');
+});
 
 test('buildCavemanWindowsInstallCommand downloads install.ps1 before execution', () => {
   const command = buildCavemanWindowsInstallCommand();

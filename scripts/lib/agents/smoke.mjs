@@ -1,8 +1,11 @@
 import { promises as fs } from 'node:fs';
+import { createHash, randomUUID } from 'node:crypto';
 import path from 'node:path';
 
-import { compressPostReceiveTurn, compressPreSendTurn } from '../interception/index.mjs';
+import { compressPostReceiveTurn, compressPreSendTurn, requireTurnCompression } from '../interception/index.mjs';
 import { loadCanonicalAgents } from './source-tree.mjs';
+import { runOneShot } from '../harness/subagent-runtime/one-shot-runner.mjs';
+import { MANAGED_RUNNER } from '../evidence/live-execution.mjs';
 
 export const CORE_RISK_ROLES = Object.freeze([
   'planner',
@@ -14,7 +17,6 @@ export const CORE_RISK_ROLES = Object.freeze([
   'evidence-auditor',
   'tdd-guide',
   'build-error-resolver',
-  'loop-operator',
   'e2e-runner',
   'smoke-runner',
   'token-steward',
@@ -57,65 +59,217 @@ export async function buildAgentsSmokePlan({
   };
 }
 
-export async function runAgentsSmoke({ rootDir = process.cwd(), dryRun = true, now = new Date() } = {}) {
-  const plan = await buildAgentsSmokePlan({ rootDir, dryRun, generatedAt: now.toISOString() });
-  if (dryRun) return plan;
+const SMOKE_ACKNOWLEDGEMENT = 'AIOS_AGENT_SMOKE_OK';
+const SMOKE_TIMEOUT_MS = 30_000;
 
-  await fs.mkdir(path.join(rootDir, '.aios', 'agents', 'smoke'), { recursive: true });
-  await fs.mkdir(path.join(rootDir, '.aios', 'agents', 'provenance'), { recursive: true });
-  for (const agent of plan.agents.filter((item) => item.agentId)) {
-    await fs.writeFile(
-      path.join(rootDir, '.aios', 'agents', 'smoke', `${agent.agentId}.json`),
-      `${JSON.stringify({
-        schemaVersion: 1,
-        agentId: agent.agentId,
-        role: agent.role,
-        status: 'pass',
-        timestamp: plan.generatedAt,
-        dryRun: false,
-      }, null, 2)}\n`,
-      'utf8'
-    );
-    await fs.writeFile(
-      path.join(rootDir, '.aios', 'agents', 'provenance', `${agent.agentId}.json`),
-      `${JSON.stringify({
-        schemaVersion: 1,
-        agentId: agent.agentId,
-        role: agent.role,
-        status: 'verified',
-        timestamp: plan.generatedAt,
-        evidence: {
-          smoke: `.aios/agents/smoke/${agent.agentId}.json`,
-          metricsSession: `agents-smoke-${agent.agentId}`,
-        },
-      }, null, 2)}\n`,
-      'utf8'
-    );
+function hash(value) {
+  return createHash('sha256').update(String(value), 'utf8').digest('hex');
+}
 
-    const sessionId = `agents-smoke-${agent.agentId}`;
-    const prompt = `AIOS smoke evidence for ${agent.agentId} (${agent.role}). ${agent.agentId} `.repeat(20);
-    await compressPreSendTurn({
-      workspaceRoot: rootDir,
-      cwd: rootDir,
-      sessionId,
-      clientId: 'agents-smoke',
-      agentId: agent.agentId,
-      hostLevel: 'L2',
-      thresholds: { minRawBytes: 16 },
-      metrics: { enabled: true },
-      prompt: prompt.repeat(5),
-    });
-    await compressPostReceiveTurn({
-      workspaceRoot: rootDir,
-      cwd: rootDir,
-      sessionId,
-      clientId: 'agents-smoke',
-      agentId: agent.agentId,
-      hostLevel: 'L2',
-      thresholds: { minRawBytes: 16 },
-      metrics: { enabled: true },
-      output: `Verified smoke evidence for ${agent.agentId}. ${agent.role} `.repeat(5),
-    });
+function smokeSessionId(agentId, now) {
+  return `agents-smoke-${agentId}-${now.getTime()}`;
+}
+
+function buildSmokePrompt(agent) {
+  return [
+    `Reply with ${SMOKE_ACKNOWLEDGEMENT} for managed agent ${agent.id}.`,
+    'Include this audit payload verbatim so the managed post-receive compression boundary has meaningful output:',
+    `agent=${agent.id};role=${agent.role};`.repeat(96),
+  ].join('\n');
+}
+
+function buildBlockedReport(plan, reason) {
+  return {
+    ...plan,
+    dryRun: false,
+    live: false,
+    status: 'blocked',
+    blockedReason: reason,
+    recorded: 0,
+    agents: plan.agents.map((agent) => ({
+      ...agent,
+      status: agent.agentId ? 'blocked' : 'missing',
+      blocker: agent.agentId ? reason : 'missing-canonical-agent',
+    })),
+  };
+}
+
+function hasCompressionReference(packet) {
+  const refId = packet?.refs?.[0]?.ref_id;
+  return typeof refId === 'string' && refId.length > 0;
+}
+
+async function writeLiveEvidence({ rootDir, agent, clientId, sessionId, now, result, preSendPacket, postReceivePacket }) {
+  const invocation = result?.managedInvocation;
+  if (result?.exitCode !== 0) return { ok: false, reason: 'live-command-failed' };
+  if (invocation?.runner !== MANAGED_RUNNER) return { ok: false, reason: 'managed-runner-proof-missing' };
+  if (typeof invocation.command !== 'string' || invocation.command.length === 0) {
+    return { ok: false, reason: 'managed-command-proof-missing' };
   }
-  return { ...plan, dryRun: false, recorded: plan.agents.filter((agent) => agent.agentId).length };
+  if (!Array.isArray(invocation.args)) return { ok: false, reason: 'managed-args-proof-missing' };
+  if (!String(result?.stdout || '').includes(SMOKE_ACKNOWLEDGEMENT)) {
+    return { ok: false, reason: 'smoke-acknowledgement-missing' };
+  }
+  if (!hasCompressionReference(preSendPacket)) return { ok: false, reason: 'pre-send-compression-proof-missing' };
+  if (!hasCompressionReference(postReceivePacket)) return { ok: false, reason: 'post-receive-compression-proof-missing' };
+
+  const receiptId = randomUUID();
+  const execution = {
+    runner: MANAGED_RUNNER,
+    receiptId,
+    clientId,
+    agentId: agent.id,
+    sessionId,
+    invocation: {
+      command: invocation.command,
+      argsSha256: hash(JSON.stringify(invocation.args)),
+      cwd: rootDir,
+    },
+    exitCode: result.exitCode,
+    stdoutSha256: hash(result.stdout || ''),
+    stderrSha256: hash(result.stderr || ''),
+    observedAt: now.toISOString(),
+  };
+  const smoke = {
+    schemaVersion: 2,
+    kind: 'aios.agent-live-smoke.v2',
+    status: 'pass',
+    clientId,
+    agentId: agent.id,
+    role: agent.role,
+    sessionId,
+    execution,
+    metrics: {
+      sessionId,
+      preSendRefId: preSendPacket.refs[0].ref_id,
+      postReceiveRefId: postReceivePacket.refs[0].ref_id,
+    },
+  };
+  const provenance = {
+    schemaVersion: 2,
+    kind: 'aios.live-execution-provenance.v2',
+    status: 'verified',
+    clientId,
+    agentId: agent.id,
+    sessionId,
+    receiptId,
+  };
+  const smokePath = path.join(rootDir, '.aios', 'agents', 'smoke', `${agent.id}.json`);
+  const provenancePath = path.join(rootDir, '.aios', 'agents', 'provenance', `${agent.id}.json`);
+  await fs.mkdir(path.dirname(smokePath), { recursive: true });
+  await fs.mkdir(path.dirname(provenancePath), { recursive: true });
+  await fs.writeFile(smokePath, `${JSON.stringify(smoke, null, 2)}\n`, 'utf8');
+  await fs.writeFile(provenancePath, `${JSON.stringify(provenance, null, 2)}\n`, 'utf8');
+  return { ok: true, smokePath, provenancePath, receiptId };
+}
+
+export async function runAgentsSmoke({
+  rootDir = process.cwd(),
+  roles = CORE_RISK_ROLES,
+  dryRun = false,
+  live = false,
+  clientId = '',
+  now = new Date(),
+  runOneShotImpl = runOneShot,
+} = {}) {
+  const plan = await buildAgentsSmokePlan({ rootDir, roles, dryRun, generatedAt: now.toISOString() });
+  if (dryRun) return plan;
+  if (!live) return buildBlockedReport(plan, 'explicit-live-required');
+  if (!clientId) return buildBlockedReport(plan, 'explicit-client-required');
+
+  const source = await loadCanonicalAgents({ rootDir });
+  const agents = [];
+  let recorded = 0;
+  for (const item of plan.agents) {
+    if (!item.agentId) {
+      agents.push(item);
+      continue;
+    }
+    const agent = source.agentsById[item.agentId];
+    const sessionId = smokeSessionId(agent.id, now);
+    const prompt = buildSmokePrompt(agent);
+    try {
+      const preSendPacket = await requireTurnCompression({
+        workspaceRoot: rootDir,
+        cwd: rootDir,
+        sessionId,
+        clientId,
+        agentId: agent.id,
+        hostLevel: 'L2',
+        mode: 'tight',
+        eventKind: 'pre_send',
+        text: prompt,
+        run: () => compressPreSendTurn({
+          workspaceRoot: rootDir,
+          cwd: rootDir,
+          sessionId,
+          clientId,
+          agentId: agent.id,
+          hostLevel: 'L2',
+          mode: 'tight',
+          metrics: { enabled: true },
+          prompt,
+        }),
+      });
+      const result = await runOneShotImpl(clientId, {
+        systemPrompt: agent.systemPrompt,
+        userPrompt: prompt,
+        timeoutMs: SMOKE_TIMEOUT_MS,
+        env: process.env,
+        cwd: rootDir,
+      });
+      const output = `${result?.stdout || ''}\n${result?.stderr || ''}`;
+      const postReceivePacket = await requireTurnCompression({
+        workspaceRoot: rootDir,
+        cwd: rootDir,
+        sessionId,
+        clientId,
+        agentId: agent.id,
+        hostLevel: 'L2',
+        mode: 'tight',
+        eventKind: 'post_receive',
+        text: output,
+        run: () => compressPostReceiveTurn({
+          workspaceRoot: rootDir,
+          cwd: rootDir,
+          sessionId,
+          clientId,
+          agentId: agent.id,
+          hostLevel: 'L2',
+          mode: 'tight',
+          metrics: { enabled: true },
+          output,
+        }),
+      });
+      const evidence = await writeLiveEvidence({
+        rootDir,
+        agent,
+        clientId,
+        sessionId,
+        now,
+        result,
+        preSendPacket,
+        postReceivePacket,
+      });
+      if (!evidence.ok) {
+        agents.push({ ...item, status: 'blocked', blocker: evidence.reason });
+        continue;
+      }
+      recorded += 1;
+      agents.push({ ...item, status: 'pass', sessionId, receiptId: evidence.receiptId });
+    } catch (error) {
+      agents.push({ ...item, status: 'blocked', blocker: error instanceof Error ? error.message : String(error) });
+    }
+  }
+
+  const liveAttempted = agents.filter((agent) => agent.agentId).length;
+  return {
+    ...plan,
+    dryRun: false,
+    live: true,
+    clientId,
+    status: recorded === liveAttempted && plan.missingRoles.length === 0 ? 'pass' : 'blocked',
+    recorded,
+    agents,
+  };
 }

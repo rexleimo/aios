@@ -28,6 +28,27 @@ test('aios --version prints the Harness CLI version', async () => {
   assert.equal(result.stdout.trim(), `Harness CLI ${version}`);
 });
 
+test('setup and update help omit Superpowers from their default components', () => {
+  for (const command of ['setup', 'update']) {
+    const help = getCommandHelpText(command);
+    assert.match(help, /default: browser,shell,skills,native\)/u);
+    assert.doesNotMatch(help, /default: [^\n]*superpowers/u);
+  }
+});
+
+test('agents smoke help discloses its explicit live external-client cost boundary', () => {
+  const result = spawnSync(process.execPath, ['scripts/aios.mjs', 'agents', 'smoke', '--help'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /agents smoke/u);
+  assert.match(result.stdout, /--live/u);
+  assert.match(result.stdout, /--client <name>/u);
+  assert.match(result.stdout, /(external|quota|charges|billable)/iu);
+});
+
 test('parseArgs accepts version aliases', () => {
   for (const arg of ['--version', '-v', '-V', 'version']) {
     const result = parseArgs([arg]);
@@ -116,6 +137,32 @@ test('the CLI dispatcher factory can be imported independently of the launcher',
   await dispatch({ mode: 'command', command: 'version', options: {} });
 
   assert.match(output, /Harness CLI/u);
+});
+
+test('the CLI dispatcher forwards the explicit legacy Superpowers adoption option to init', async () => {
+  const { createAiosDispatch } = await import('../lib/cli/dispatch.mjs');
+  const initCalls = [];
+  const dispatch = createAiosDispatch({
+    rootDir: process.cwd(),
+    projectRoot: process.cwd(),
+    runAiosInit: async (args) => { initCalls.push(args); },
+  });
+
+  await dispatch({
+    mode: 'command',
+    command: 'init',
+    options: {
+      agent: '',
+      all: false,
+      dryRun: true,
+      yesCompressionTools: false,
+      yesHeadroomMcp: false,
+      adoptLegacySuperpowers: true,
+      defaultMode: '',
+    },
+  });
+
+  assert.deepEqual(initCalls, [['--dry-run', '--adopt-legacy-superpowers']]);
 });
 
 test('applyResultExitCode clears stale failures when a command succeeds', async () => {
@@ -290,6 +337,20 @@ test('init parser keeps installation and MCP configuration consent independent',
   const installOnly = parseArgs(['init', '--all', '--yes-compression-tools']);
   assert.equal(installOnly.options.yesCompressionTools, true);
   assert.equal(installOnly.options.yesHeadroomMcp, false);
+
+  const adoptionFlag = parseArgs(['init', '--adopt-legacy-superpowers']);
+  assert.equal(adoptionFlag.mode, 'command');
+  assert.equal(adoptionFlag.options.adoptLegacySuperpowers, true);
+});
+
+test('aios init help documents the explicit legacy Superpowers adoption option', () => {
+  const result = spawnSync(process.execPath, ['scripts/aios.mjs', 'init', '--help'], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /--adopt-legacy-superpowers/u);
 });
 
 test('parseArgs normalizes setup options', () => {
@@ -308,6 +369,30 @@ test('parseArgs enables runtime self-update for aios update by default', () => {
 
   const defaultResult = parseArgs(['update', '--components', 'skills']);
   assert.equal(defaultResult.options.selfUpdate, true);
+});
+
+test('parseArgs accepts the explicit legacy Superpowers adoption option for setup and update', () => {
+  assert.equal(parseArgs(['setup', '--adopt-legacy-superpowers']).options.adoptLegacySuperpowers, true);
+  assert.equal(parseArgs(['update', '--adopt-legacy-superpowers']).options.adoptLegacySuperpowers, true);
+});
+
+test('parseArgs rejects a value supplied to the boolean legacy Superpowers adoption option', () => {
+  for (const command of ['init', 'setup', 'update']) {
+    assert.throws(
+      () => parseArgs([command, '--adopt-legacy-superpowers', 'true']),
+      /too many arguments/u,
+      command,
+    );
+
+    const result = spawnSync(process.execPath, [
+      'scripts/aios.mjs', command, '--adopt-legacy-superpowers', 'true',
+    ], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+    });
+    assert.notEqual(result.status, 0, command);
+    assert.match(result.stderr, /too many arguments/u, command);
+  }
 });
 
 test('parseArgs accepts skills scope and selected skill names', () => {
@@ -512,11 +597,10 @@ test('parseArgs accepts native component, internal native target, and native-onl
   assert.equal(internalDoctor.options.fix, true);
   assert.equal(internalDoctor.options.dryRun, true);
 
-  const internalSuperpowersDoctor = parseArgs(['internal', 'superpowers', 'doctor', '--client', 'opencode']);
-  assert.equal(internalSuperpowersDoctor.command, 'internal');
-  assert.equal(internalSuperpowersDoctor.options.target, 'superpowers');
-  assert.equal(internalSuperpowersDoctor.options.action, 'doctor');
-  assert.equal(internalSuperpowersDoctor.options.client, 'opencode');
+  assert.throws(
+    () => parseArgs(['internal', 'superpowers', 'doctor', '--client', 'opencode']),
+    /Unknown internal target: superpowers/u,
+  );
 
   const internalRollback = parseArgs(['internal', 'native', 'rollback', '--repair-id', 'latest', '--dry-run']);
   assert.equal(internalRollback.command, 'internal');

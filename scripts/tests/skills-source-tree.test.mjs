@@ -135,3 +135,18 @@ test('materializeSkillTree excludes the clients subtree from emitted output', as
     materialized.cleanup();
   }
 });
+
+test('workflow router is cataloged and generated for Grok with Rex-only guidance', async () => {
+  const rootDir = path.resolve('.');
+  const manifest = loadSkillsSyncManifest(rootDir);
+  const router = manifest.skills.find((skill) => skill.relativeSkillPath === 'aios-workflow-router');
+
+  assert.ok(router, 'expected the AIOS workflow router in the canonical skill catalog');
+  assert.ok(router.clients.includes('grok'));
+  assert.ok(router.repoTargets.includes('grok'));
+
+  const grokRouter = resolveGeneratedTargetPath({ rootDir, entry: router, surface: 'grok', manifest });
+  const content = await readFile(path.join(grokRouter, 'SKILL.md'), 'utf8');
+  assert.match(content, /current rex-harness software Capability Command/u);
+  assert.doesNotMatch(content, /superpowers:/u);
+});

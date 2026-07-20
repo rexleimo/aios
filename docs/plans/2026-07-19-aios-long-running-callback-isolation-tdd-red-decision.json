@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#aios-long-running-callback-isolation-test-scope",
+  "redCandidate": {
+    "publicEntry": "AIOS runAiosLongRunningDeliveryIteration() callback contract",
+    "setup": "Persist and reload a real two-feature Rex ledger in a temporary AIOS root, then run one adapter iteration with real F1 receipt evidence.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/rex-long-running-delivery-store.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The only callback context is the non-semantic delivery ID and Rex's persisted F1 continue decision; no ledger is exposed before Rex evaluates evidence.",
+    "observed": "The callback context contains the complete rehydrated Rex ledger in addition to the delivery ID and F1 decision.",
+    "failureReason": "The adapter leaks mutable persisted Rex state to the host callback, allowing host-side mutation before the Rex domain transition.",
+    "receiptRef": "receipt:72a12e7c-325e-4fc3-99cb-b47d06043f2a"
+  }
+}

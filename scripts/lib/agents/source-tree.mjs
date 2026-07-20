@@ -17,7 +17,6 @@ const OPTIONAL_ROLE_IDS = [
   'evidence-auditor',
   'install-governance-reviewer',
   'interception-reviewer',
-  'loop-operator',
   'react-reviewer',
   'refactor-cleaner',
   'tdd-guide',

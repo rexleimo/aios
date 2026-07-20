@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, repo]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 ---
 
 # AIOS Project System
@@ -17,7 +17,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes]
 ## Overview
 Use this skill as the repository map for `aios`. It explains where state lives, how automation actually runs, and which files are authoritative before you edit tasks, workflows, or browser operations.
 
-**This skill is a map, not a router.** For task routing, use `aios-workflow-router`. For process skills, use `superpowers:*`.
+**This skill is a map, not a router.** For task routing, use `aios-workflow-router`; execute only the Provider selected by the current Rex Capability Command.
 
 ## Core Topology
 - `CLAUDE.md` / `AGENTS.md` / `GEMINI.md`: per-client project-level behavior contract and architecture overview (each client loads its own instruction file).

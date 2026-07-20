@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -201,16 +202,19 @@ test('agents smoke --dry-run produces first-stage core-risk plan without writing
   await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
 });
 
-test('agents smoke records smoke, provenance, and metrics evidence for core-risk roles', async () => {
+test('agents smoke requires explicit live execution before it can record promotion evidence', async () => {
   const rootDir = await makeRootDir();
   await copyCanonicalSource(rootDir);
 
   const { parseArgs } = await import('../lib/cli/parse-args.mjs');
   const { runAgentsCommand } = await import('../lib/lifecycle/agents.mjs');
-  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
   const parsed = parseArgs(['agents', 'smoke', '--json']);
   assert.equal(parsed.options.subcommand, 'smoke');
   assert.equal(parsed.options.dryRun, false);
+
+  const liveParsed = parseArgs(['agents', 'smoke', '--live', '--client', 'codex', '--json']);
+  assert.equal(liveParsed.options.live, true);
+  assert.equal(liveParsed.options.clientId, 'codex');
 
   let output = '';
   const result = await runAgentsCommand(parsed.options, {
@@ -218,23 +222,93 @@ test('agents smoke records smoke, provenance, and metrics evidence for core-risk
     stdout: { write: (chunk) => { output += String(chunk); } },
   });
 
-  assert.equal(result.exitCode, 0);
+  assert.equal(result.exitCode, 1);
   const report = JSON.parse(output);
   assert.equal(report.kind, 'aios.agents.smoke-plan.v1');
   assert.equal(report.dryRun, false);
-  assert.equal(report.recorded, 16);
+  assert.equal(report.status, 'blocked');
+  assert.equal(report.recorded, 0);
 
+  await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
+  await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'provenance', 'rex-planner.json'), 'utf8'));
+  await assert.rejects(() => fs.readdir(path.join(rootDir, '.aios', 'interception', 'metrics')));
+});
+
+test('agents smoke emits schema-v2 evidence only from a managed live invocation', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  const { readMetricsRecords } = await import('../lib/interception/metrics/metrics-sink.mjs');
+  const { buildAgentCatalogue } = await import('../lib/agents/catalogue.mjs');
+  const stdout = `AIOS_AGENT_SMOKE_OK ${'planner-audit-payload '.repeat(96)}`;
+  const result = await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    now: new Date('2026-07-19T00:00:00.000Z'),
+    runOneShotImpl: async (clientId, options) => {
+      assert.equal(clientId, 'codex');
+      assert.match(options.userPrompt, /AIOS_AGENT_SMOKE_OK/);
+      return {
+        exitCode: 0,
+        stdout,
+        stderr: '',
+        managedInvocation: {
+          runner: 'aios.harness.one-shot.v1',
+          command: 'codex',
+          args: ['exec', '--dangerously-bypass-approvals-and-sandbox', '-'],
+        },
+      };
+    },
+  });
+
+  assert.equal(result.status, 'pass');
+  assert.equal(result.recorded, 1);
   const smoke = JSON.parse(await fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
   const provenance = JSON.parse(await fs.readFile(path.join(rootDir, '.aios', 'agents', 'provenance', 'rex-planner.json'), 'utf8'));
-  const metrics = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'agents-smoke-rex-planner' });
+  const digest = (value) => createHash('sha256').update(value, 'utf8').digest('hex');
 
-  assert.equal(smoke.status, 'pass');
-  assert.equal(provenance.status, 'verified');
-  assert.equal(provenance.agentId, 'rex-planner');
+  assert.equal(smoke.schemaVersion, 2);
+  assert.equal(smoke.kind, 'aios.agent-live-smoke.v2');
+  assert.equal(smoke.execution.runner, 'aios.harness.one-shot.v1');
+  assert.equal(smoke.execution.invocation.command, 'codex');
+  assert.equal(smoke.execution.invocation.argsSha256, digest(JSON.stringify(['exec', '--dangerously-bypass-approvals-and-sandbox', '-'])));
+  assert.equal(smoke.execution.stdoutSha256, digest(stdout));
+  assert.equal(smoke.execution.stderrSha256, digest(''));
+  assert.equal(provenance.receiptId, smoke.execution.receiptId);
+
+  const metrics = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: smoke.sessionId });
   assert.deepEqual(metrics.map((record) => record.event_kind), ['pre_send', 'post_receive']);
-  assert.deepEqual(metrics.map((record) => record.agent_id), ['rex-planner', 'rex-planner']);
-  assert.ok(metrics.every((record) => Number(record.saved_bytes) > 0));
-  assert.ok(metrics.every((record) => record.refs_count > 0));
+  assert.deepEqual(metrics.map((record) => record.ref_id), [smoke.metrics.preSendRefId, smoke.metrics.postReceiveRefId]);
+  assert.ok(metrics.every((record) => record.agent_id === 'rex-planner' && record.client_id === 'codex'));
+
+  const catalogue = await buildAgentCatalogue({ rootDir });
+  const planner = catalogue.agents.find((agent) => agent.agentId === 'rex-planner');
+  assert.equal(planner.workflowEnabled, true);
+});
+
+test('agents smoke does not mint promotion files when a live result lacks managed invocation proof', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  const result = await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    runOneShotImpl: async () => ({
+      exitCode: 0,
+      stdout: `AIOS_AGENT_SMOKE_OK ${'unbound-output '.repeat(96)}`,
+      stderr: '',
+    }),
+  });
+
+  assert.equal(result.status, 'blocked');
+  assert.equal(result.recorded, 0);
+  assert.equal(result.agents[0].blocker, 'managed-runner-proof-missing');
+  await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));
+  await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'provenance', 'rex-planner.json'), 'utf8'));
 });
 
 

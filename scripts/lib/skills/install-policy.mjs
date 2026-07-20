@@ -6,7 +6,7 @@
  * whether a given skill name is allowed to be installed/applied.
  *
  * Policy schema (globs use simple `star` and `?`, no `star-star` or braces):
- *   allow:             e.g. skill-sources/<star>, superpowers/<star>
+ *   allow:             e.g. skill-sources/<star>
  *   deny:              e.g. <star>/experimental-<star>
  *   requireProvenance: boolean
  *   version:           number
@@ -28,7 +28,7 @@ import path from 'node:path';
 
 /** Default permissive policy used when no policy file is present. */
 export const DEFAULT_POLICY = Object.freeze({
-  allow: ['skill-sources/*', 'superpowers/*'],
+  allow: ['skill-sources/*'],
   deny: [],
   requireProvenance: false,
   version: 1,

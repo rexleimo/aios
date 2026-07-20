@@ -1,6 +1,6 @@
 import { CLIENT_SELECTIONS, resolveClientHarnessProviders } from '../../clients/registry.mjs';
 
-export const COMPONENT_NAMES = ['browser', 'shell', 'skills', 'native', 'agents', 'superpowers'];
+export const COMPONENT_NAMES = ['browser', 'shell', 'skills', 'native', 'agents'];
 export const WRAP_MODES = ['all', 'repo-only', 'opt-in', 'off'];
 export const CLIENT_NAMES = CLIENT_SELECTIONS;
 export const SKILL_SCOPE_NAMES = ['global', 'project'];

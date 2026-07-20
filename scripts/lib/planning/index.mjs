@@ -1,5 +1,4 @@
 export {
-  PLANNING_CORE_SKILLS,
   PLANNING_STATE_REL,
   PLANS_DIR_REL,
   resolvePlansDir,
@@ -12,8 +11,6 @@ export {
   addPlanEvidence,
   evaluateDoneGate,
   summarizePlanProgress,
-  inspectSkillRoot,
-  checkPlanningSkillDiscovery,
   formatActivePlanInjection,
 } from './contract.mjs';
 
@@ -42,11 +39,6 @@ export {
 } from './workflow-policy.mjs';
 
 export {
-  resolveSuperpowersSkillsSource,
-  projectPlanningSkills,
-} from './project-skills.mjs';
-
-export {
   ALWAYS_ON_PLANNING_POLICY,
   evaluateAutoGateDecision,
   applyWorkflowDecision,
@@ -61,8 +53,6 @@ export {
   compactToolDescription,
   applyMcpToolDescriptionMode,
 } from './mcp-compact.mjs';
-
-export { repairStalePlanningSkills } from './repair-skills.mjs';
 
 export {
   ensurePlanForRuntime,

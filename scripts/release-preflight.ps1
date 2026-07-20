@@ -18,6 +18,8 @@ Validates:
   - tag format is vX.Y.Z
   - VERSION matches X.Y.Z
   - CHANGELOG.md contains ## [X.Y.Z] - YYYY-MM-DD
+  - root and MCP-server test/build checks pass
+  - changed Skills have reproducible, committed training evidence
   - generated skill roots materialize from skill-sources via scripts/check-skills-sync.mjs
   - generated native outputs materialize from client-sources/native-base via scripts/check-native-sync.mjs
 "@
@@ -42,6 +44,18 @@ function Invoke-NodeCheck([string]$ScriptPath, [string]$FailureMessage, [string[
   } finally {
     Remove-Item -LiteralPath $stdoutFile -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $stderrFile -Force -ErrorAction SilentlyContinue
+  }
+}
+
+function Invoke-NpmCheck([string]$WorkingDirectory, [string[]]$Arguments, [string]$FailureMessage) {
+  Push-Location $WorkingDirectory
+  try {
+    & npm @Arguments
+    if ($LASTEXITCODE -ne 0) {
+      throw $FailureMessage
+    }
+  } finally {
+    Pop-Location
   }
 }
 
@@ -109,6 +123,25 @@ Invoke-NodeCheck `
   -Arguments @("--materialize-temp") `
   -FailureMessage "native sync drift detected; run: node scripts/sync-native.mjs"
 
+Invoke-NpmCheck `
+  -WorkingDirectory $RootDir `
+  -Arguments @("run", "test:scripts") `
+  -FailureMessage "root release test suite failed: npm run test:scripts"
+
+$McpServerDir = Join-Path $RootDir "mcp-server"
+Invoke-NpmCheck -WorkingDirectory $McpServerDir -Arguments @("run", "typecheck") -FailureMessage "MCP-server typecheck failed"
+Invoke-NpmCheck -WorkingDirectory $McpServerDir -Arguments @("test") -FailureMessage "MCP-server test suite failed"
+Invoke-NpmCheck -WorkingDirectory $McpServerDir -Arguments @("run", "build") -FailureMessage "MCP-server build failed"
+
+& git -C $RootDir rev-parse --verify --quiet HEAD^ *> $null
+if ($LASTEXITCODE -ne 0) {
+  throw "release training verification requires a parent commit"
+}
+Invoke-NodeCheck `
+  -ScriptPath (Join-Path $RootDir "scripts/aios.mjs") `
+  -Arguments @("skill", "verify-training", "--changed", "--base", "HEAD^", "--json") `
+  -FailureMessage "changed Skills lack reproducible training evidence for this release"
+
 $AgentManifest = Join-Path $RootDir "agent-sources/manifest.json"
 $HasAgentManifest = Test-Path -LiteralPath $AgentManifest
 if ($HasAgentManifest) {
@@ -130,6 +163,8 @@ Write-Host "  CHANGELOG: has ## [$ExpectedVersion] - YYYY-MM-DD"
 Write-Host "  SKILLS:    generated roots match skill-sources/"
 Write-Host "  NATIVE:    generated native outputs match client-sources/native-base/"
 Write-Host "  REX:       rex-harness planning kernel is materialized"
+Write-Host "  TESTS:     root and MCP-server verification passed"
+Write-Host "  TRAINING:  changed Skill evidence recomputed from committed artifacts"
 if ($HasAgentManifest) {
   Write-Host "  AGENTS:    export-only regeneration passed"
 }

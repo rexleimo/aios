@@ -32,9 +32,4 @@ export {
   uninstallContextDbSkills,
 } from './skills.mjs';
 
-export {
-  doctorSuperpowers,
-  installSuperpowers,
-} from './superpowers.mjs';
-
 export { PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './browser/constants.mjs';

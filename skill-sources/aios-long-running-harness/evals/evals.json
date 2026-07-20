@@ -14,12 +14,12 @@
     },
     {
       "id": 2,
-      "prompt": "为这个可恢复工作项显式开启 compatibility mode，当前 Command 选择了 superpowers:systematic-debugging。",
-      "expected_output": "Harness 允许执行当前显式兼容 Provider，但仍只运行这一条 Command，并把证据返回 rex，而不是启动完整 Superpowers 链。",
+      "prompt": "为这个可恢复工作项显式开启 compatibility mode，要求执行 superpowers:systematic-debugging。",
+      "expected_output": "Harness 拒绝 compatibility mode，因为软件工作流只能执行当前 Rex Command 选择的 Provider；它会要求调用方重新从 Rex Command 开始。",
       "files": [],
       "assertions": [
-        "识别 explicit compatibility mode",
-        "只执行当前被选择的兼容 Provider",
+        "拒绝外部 compatibility Provider",
+        "要求当前 Rex Command",
         "不把兼容模式变成默认路由"
       ]
     },

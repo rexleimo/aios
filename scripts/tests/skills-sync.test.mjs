@@ -116,6 +116,134 @@ test('syncGeneratedSkills can replace configured legacy targets', async () => {
   assert.equal(readGeneratedSkillMetadata(path.join(rootDir, '.claude', 'skills', 'skill-creator')).targetSurface, 'claude');
 });
 
+test('syncGeneratedSkills repairs an AIOS-managed target with a stale surface projection', async () => {
+  const rootDir = await makeTemp('aios-skills-sync-stale-surface-root-');
+  await writeSkill(rootDir, 'find-skills', '# canonical Rex-only skill\n');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      agents: '.agents/skills',
+    },
+    skills: [
+      {
+        relativeSkillPath: 'find-skills',
+        installCatalogName: 'find-skills',
+        repoTargets: ['agents'],
+      },
+    ],
+    legacyUnmanaged: [],
+  });
+  const targetDir = path.join(rootDir, '.agents', 'skills', 'find-skills');
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(path.join(targetDir, 'SKILL.md'), '# legacy Superpowers skill\n', 'utf8');
+  await writeJson(path.join(targetDir, '.aios-skill-sync.json'), {
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'generated-skill',
+    relativeSkillPath: 'find-skills',
+    targetSurface: 'claude',
+    targetRelativePath: 'find-skills',
+    source: 'skill-sources/find-skills',
+  });
+
+  const logs = [];
+  const result = await syncGeneratedSkills({ rootDir, io: { log: (line) => logs.push(String(line)) } });
+
+  assert.equal(result.results[0].updated, 1);
+  assert.match(logs.join('\n'), /migrated legacy managed target/);
+  assert.match(await readFile(path.join(targetDir, 'SKILL.md'), 'utf8'), /canonical Rex-only skill/);
+  assert.equal(readGeneratedSkillMetadata(targetDir).targetSurface, 'agents');
+});
+
+test('syncGeneratedSkills removes a misprojected AIOS-managed target not selected for its root', async () => {
+  const rootDir = await makeTemp('aios-skills-sync-misprojected-root-');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      agents: '.agents/skills',
+    },
+    skills: [],
+    legacyUnmanaged: [],
+  });
+  const targetDir = path.join(rootDir, '.agents', 'skills', 'legacy-skill');
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(path.join(targetDir, 'SKILL.md'), '# stale AIOS projection\n', 'utf8');
+  await writeJson(path.join(targetDir, '.aios-skill-sync.json'), {
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'generated-skill',
+    relativeSkillPath: 'legacy-skill',
+    targetSurface: 'claude',
+    targetRelativePath: 'legacy-skill',
+    source: 'skill-sources/legacy-skill',
+  });
+
+  const logs = [];
+  const result = await syncGeneratedSkills({ rootDir, io: { log: (line) => logs.push(String(line)) } });
+
+  assert.equal(result.results[0].removed, 1);
+  assert.match(logs.join('\n'), /removed misprojected legacy managed target/);
+  await assert.rejects(() => readFile(path.join(targetDir, 'SKILL.md'), 'utf8'));
+});
+
+test('syncGeneratedSkills preserves a misprojected target with an untrusted source identity', async () => {
+  const rootDir = await makeTemp('aios-skills-sync-untrusted-misprojection-root-');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      agents: '.agents/skills',
+    },
+    skills: [],
+    legacyUnmanaged: [],
+  });
+  const targetDir = path.join(rootDir, '.agents', 'skills', 'manual-skill');
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(path.join(targetDir, 'SKILL.md'), '# user-owned content\n', 'utf8');
+  await writeJson(path.join(targetDir, '.aios-skill-sync.json'), {
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'generated-skill',
+    relativeSkillPath: 'manual-skill',
+    targetSurface: 'claude',
+    targetRelativePath: 'manual-skill',
+    source: 'skill-sources/some-other-skill',
+  });
+
+  const result = await syncGeneratedSkills({ rootDir, io: { log() {} } });
+
+  assert.equal(result.results[0].removed, 0);
+  assert.match(await readFile(path.join(targetDir, 'SKILL.md'), 'utf8'), /user-owned content/);
+});
+
+test('syncGeneratedSkills preserves a misprojected target with a noncanonical skill path', async () => {
+  const rootDir = await makeTemp('aios-skills-sync-noncanonical-misprojection-root-');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      agents: '.agents/skills',
+    },
+    skills: [],
+    legacyUnmanaged: [],
+  });
+  const targetDir = path.join(rootDir, '.agents', 'skills', 'manual-skill');
+  await mkdir(targetDir, { recursive: true });
+  await writeFile(path.join(targetDir, 'SKILL.md'), '# user-owned content\n', 'utf8');
+  await writeJson(path.join(targetDir, '.aios-skill-sync.json'), {
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'generated-skill',
+    relativeSkillPath: 'retired/../../manual-skill',
+    targetSurface: 'claude',
+    targetRelativePath: 'manual-skill',
+    source: 'manual-skill',
+  });
+
+  const result = await syncGeneratedSkills({ rootDir, io: { log() {} } });
+
+  assert.equal(result.results[0].removed, 0);
+  assert.match(await readFile(path.join(targetDir, 'SKILL.md'), 'utf8'), /user-owned content/);
+});
+
 test('checkGeneratedSkillsSync reports stale generated outputs', async () => {
   const rootDir = await makeTemp('aios-skills-sync-check-root-');
   await writeSkill(rootDir, 'find-skills');

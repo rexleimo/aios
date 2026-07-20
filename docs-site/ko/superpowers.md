@@ -1,128 +1,60 @@
 ---
-title: Superpowers
-description: CLI를 더 똑똑하게 만드는 재사용 가능한 자동화 스킬. 사용 사례별로 정리되어 있습니다.
+title: Rex 워크플로 마이그레이션
+description: 폐기된 Superpowers 워크플로에서 Rex-only AIOS 워크플로로 안전하게 마이그레이션합니다.
 ---
 
-# Superpowers
+# Rex 워크플로 마이그레이션
 
-> **Quick Answer:** Superpowers는 brainstorming, planning, TDD, debugging, verification, parallel dispatch, security review를 위한 재사용 가능한 playbook입니다. 먼저 워크플로 라우트를 선택하고 그 경계에 맞는 최소 skill만 사용하세요.
+새 AIOS 설치와 관리되는 워크플로 투영에서 `rex-harness`는 유일한 기본 소프트웨어 엔지니어링 워크플로입니다. Superpowers는 AIOS 설치 구성요소와 워크플로에서 폐기되었습니다. 기존 `/superpowers/` URL은 이 마이그레이션 가이드로 유지되어, 폐기된 워크플로를 안내하는 대신 현재 동작을 설명합니다.
 
-## 라우트 다음에 skill 고르기
+## 변경 사항
 
-읽기 전용 질문은 direct로 유지해도 됩니다. 파일 변경 전 `pre-edit-safety-gate`와 완료 주장 전 최종 검증은 skill 선택과 별도의 게이트입니다.
+Rex는 소프트웨어 엔지니어링 제어 루프, 즉 Facts, Capability 선택, Workflow Activation, Command, Evidence Contract, 복구 상태를 소유합니다. AIOS는 Rex 제어면 주위에서 호스트 라우팅, 클라이언트 투영, ContextDB, 안전 검사, team 실행, 장기 실행 harness를 제공합니다.
 
-Superpowers는 재사용 가능한 자동화 스킬입니다. Claude Code, Codex, Gemini CLI, OpenCode에 후킹해서 반복 작업을 자동 처리합니다.
+새 설치는 Codex, Claude, Gemini, OpenCode, Hermes, Grok용 Rex 투영을 사용하며, 클라이언트가 지원하면 공유 `.agents` 투영도 사용합니다. 활성화할 Superpowers TUI 옵션이나 별도 Superpowers 워크플로는 없습니다.
 
-같은 명령이나 프롬프트를 반복하는 대신, 검증된 워크플로우를 통해 AI를 안내하고 모범 사례를 시행하며 완료 전에 결과를 검증하는 스킬을 호출하세요.
+## 안전한 업그레이드 동작
 
----
+평소처럼 일반 업데이트를 실행합니다.
 
-## 🚀 시작하기
+```bash
+aios update
+```
 
-명확성과 구조를 갖춘 새 작업을 시작하는 스킬.
+일반 업데이트는 Rex-only 워크플로를 설치하고 정리합니다. AIOS 소유 증명이 없는 과거 Superpowers 투영은 보존되고 conflict로 보고됩니다. 이 fail-closed 기본값은 이름이 이전 투영과 비슷하다는 이유만으로 AIOS가 사용자가 관리하는 경로를 삭제하지 않도록 합니다.
 
-<div class="skill-grid">
-  <div class="skill-card skill-card--start">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">💡</div>
-      <div class="skill-card__name">brainstorming</div>
-    </div>
-    <div class="skill-card__desc">창작 작업 시작 전에 의도를 명확히. 컨텍스트 탐색, 명확화 질문, 트레이드오프가 있는 접근법 제안, 코딩 전 승인 받기.</div>
-    <div class="skill-card__example">brainstorming으로 이 기능을 어떻게 구현할지 생각해줘</div>
-  </div>
-  <div class="skill-card skill-card--start">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">📝</div>
-      <div class="skill-card__name">writing-plans</div>
-    </div>
-    <div class="skill-card__desc">요구사항을 실행 가능한 계획으로 변환. 요구사항 분석, 순차적 스텝 분해, 의존성 파악, 상세 계획 문서 출력.</div>
-    <div class="skill-card__example">writing-plans으로 이 요구사항을 단계로 나눠줘</div>
-  </div>
-</div>
+## 명시적인 이전 투영 정리
 
----
+AIOS가 정확히 인식한 이전 Superpowers 투영을 채택하고 제거하도록 하려면 먼저 결과를 미리 본 뒤 명시적 정리를 실행하세요.
 
-## 🐛 디버깅 및 검증
+```bash
+aios update --adopt-legacy-superpowers --dry-run
+aios update --adopt-legacy-superpowers
+```
 
-증거에 기반해 버그를 수정하고 품질을 보장하는 스킬.
+`aios update`로 업그레이드하지 않는 사용자도 같은 opt-in을 사용할 수 있습니다.
 
-<div class="skill-grid">
-  <div class="skill-card skill-card--debug">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">🔍</div>
-      <div class="skill-card__name">systematic-debugging</div>
-    </div>
-    <div class="skill-card__desc">증거로 버그 고치기. 증상과 에러 메시지 수집, 가설 형성, 체계적 테스트, 수정 검증.</div>
-    <div class="skill-card__example">버그가 있어, systematic-debugging 사용해줘</div>
-  </div>
-  <div class="skill-card skill-card--debug">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">✅</div>
-      <div class="skill-card__name">verification-before-completion</div>
-    </div>
-    <div class="skill-card__desc">증거 없이 완료라고 말하지 마. 검증 명령 실행, 출력이 기대대로인지 확인, 성공 주장 전 구체적 증거 필요.</div>
-    <div class="skill-card__example">완료 전에 verification-before-completion으로 검증해줘</div>
-  </div>
-</div>
+```bash
+aios init --all --adopt-legacy-superpowers
+aios setup --adopt-legacy-superpowers
+```
 
----
+명시적 채택은 Codex, Claude, Gemini, OpenCode, Hermes, Grok, 공유 `.agents` 투영에서 인식된 AIOS 이전 링크를 대상으로 합니다. 알 수 없거나 수정되었거나 사용자 소유임을 증명할 수 없는 경로는 제거하지 않습니다. 소유권을 확인한 뒤 보고된 conflict를 수동으로 해결하세요.
 
-## ⚡ 효율성 및 협업
+## 마이그레이션 확인
 
-더 빠르게 실행하고 규모 있게 협업하는 스킬.
+```bash
+aios doctor --native --verbose
+```
 
-<div class="skill-grid">
-  <div class="skill-card skill-card--efficiency">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">⚡</div>
-      <div class="skill-card__name">dispatching-parallel-agents</div>
-    </div>
-    <div class="skill-card__desc">여러 독립 작업을 한번에 실행. 독립 워크플로 식별, 병렬 에이전트 기동, 결과 취합, 우아한 실패 처리.</div>
-    <div class="skill-card__example">dispatching-parallel-agents로 이걸 병렬 처리해줘</div>
-  </div>
-  <div class="skill-card skill-card--efficiency">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">👥</div>
-      <div class="skill-card__name">team-ops</div>
-    </div>
-    <div class="skill-card__desc">HUD와 Team 상태 도구로 다중 에이전트 협업 모니터링 및 관리. 실시간 세션 상태 보기, 결과 추적, 스킬 개선 후보 발견.</div>
-    <div class="skill-card__example">team-ops 모니터링 패널 보여줘</div>
-  </div>
-</div>
+doctor 출력은 클라이언트 투영과 워크플로 진단을 보여줍니다. 소스 기반 설치에서는 번들 `rex-harness` submodule도 사용할 수 있는지 확인하세요.
 
----
+```bash
+git submodule update --init --recursive -- rex-harness
+```
 
-## 🔒 보안 및 규정 준수
+## 관련 문서
 
-자동화를 안전하게 유지하는 스킬.
-
-<div class="skill-grid">
-  <div class="skill-card skill-card--security">
-    <div class="skill-card__header">
-      <div class="skill-card__icon">🔒</div>
-      <div class="skill-card__name">security-scan</div>
-    </div>
-    <div class="skill-card__desc">자동화 전에 설정의 보안 문제 확인. 스킬, 훅, MCP 설정 스캔, 노출된 시크릿 식별, 수정 제안.</div>
-    <div class="skill-card__example">security-scan 실행해서 설정 보안 확인해줘</div>
-  </div>
-</div>
-
----
-
-## RL 훈련 시스템
-
-AIOS RL 계층은 shell, browser, orchestrator 작업을 가로지르는 실험·훈련 제어면입니다. 공개 워크플로의 편집 게이트와 최종 검증을 대체하지 않습니다.
-
-## FAQ
-
-### Superpowers가 모든 질문에서 실행되나요?
-
-아닙니다. 질문과 상태 확인은 direct로 유지하고 설계, 순서, 디버깅, 위임, 완료 근거가 필요할 때 playbook을 고릅니다.
-
-### skill은 어디에 설치되나요?
-
-저장소에서 발견 가능한 skill은 `.codex/skills/` 또는 `.claude/skills/`에 두며 지원 워크플로가 클라이언트에 투영합니다.
-
-## 공식 문서
-
-[워크플로 정책](workflow-policy.md), [빠른 시작](getting-started.md), [Agent Team](team-ops.md)부터 시작하세요.
+- [워크플로 정책](workflow-policy.md) - 현재 Rex Command 주위에서 `direct`, `guarded`, `planned` 호스트 라우팅을 선택합니다.
+- [시작하기](getting-started.md) - AIOS를 설치하고 초기화합니다.
+- [변경 로그](changelog.md) - 릴리스별 마이그레이션 정보를 확인합니다.

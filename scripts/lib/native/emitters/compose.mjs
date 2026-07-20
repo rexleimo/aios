@@ -11,13 +11,12 @@ import {
 
 // 共享 section 计划：固定顺序，避免 managed-block 输出抖动。
 // capability 为空表示对所有客户端发出；否则仅当客户端具备该能力时发出，
-// 这样 gemini/opencode 不会被告知去用它们并未安装的 superpowers/agents。
+// 这样不支持 agents 的客户端不会收到不适用的调度说明。
 const SHARED_SECTION_PLAN = Object.freeze([
   { file: 'core-instructions.md' },
   { file: 'contextdb.md' },
   { file: 'client-capabilities.md' },
   { file: 'token-discipline.md' },
-  { file: 'superpowers.md', capability: 'superpowers' },
   { file: 'agent-routing.md', capability: 'agents' },
   { file: 'codemap.md', capability: 'native' },
   { file: 'browser-mcp.md' },

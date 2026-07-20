@@ -26,13 +26,12 @@ interface UpdateScreenProps {
   onRun: () => void;
 }
 
-const COMPONENTS_KEYS: (keyof ComponentsConfig)[] = ['browser', 'shell', 'skills', 'native', 'superpowers'];
+const COMPONENTS_KEYS: (keyof ComponentsConfig)[] = ['browser', 'shell', 'skills', 'native'];
 const COMPONENTS_LABELS: Record<keyof ComponentsConfig, string> = {
   browser: 'Browser MCP',
   shell: 'Shell wrappers',
   skills: 'Skills',
   native: 'Native enhancements',
-  superpowers: 'Superpowers',
 };
 
 export function UpdateScreen({
@@ -52,7 +51,7 @@ export function UpdateScreen({
 }: UpdateScreenProps) {
   const navigate = useNavigate();
   const [cursor, setCursor] = useState(0);
-  const maxCursor = 12;
+  const maxCursor = 11;
 
   useInput(
     useCallback(
@@ -62,47 +61,47 @@ export function UpdateScreen({
         } else if (key.downArrow) {
           setCursor(prev => Math.min(maxCursor, prev + 1));
         } else if (input === ' ') {
-          if (cursor >= 0 && cursor <= 4) {
+          if (cursor >= 0 && cursor <= 3) {
             onToggleComponent(COMPONENTS_KEYS[cursor]);
-          } else if (cursor === 5) {
+          } else if (cursor === 4) {
             onCycleWrapMode();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleScope();
-          } else if (cursor === 7) {
+          } else if (cursor === 6) {
             onCycleClient();
-          } else if (cursor === 8) {
+          } else if (cursor === 7) {
             onToggleWithPlaywright();
-          } else if (cursor === 9) {
+          } else if (cursor === 8) {
             onToggleSkipDoctor();
           }
         } else if (key.rightArrow) {
-          if (cursor >= 0 && cursor <= 4) {
+          if (cursor >= 0 && cursor <= 3) {
             onToggleComponent(COMPONENTS_KEYS[cursor]);
-          } else if (cursor === 5) {
+          } else if (cursor === 4) {
             onCycleWrapMode();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleScope();
-          } else if (cursor === 7) {
+          } else if (cursor === 6) {
             onCycleClient();
-          } else if (cursor === 8) {
+          } else if (cursor === 7) {
             onToggleWithPlaywright();
-          } else if (cursor === 9) {
+          } else if (cursor === 8) {
             onToggleSkipDoctor();
           }
         } else if (key.leftArrow) {
-          if (cursor === 5) {
+          if (cursor === 4) {
             onCycleWrapModePrevious();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleScopePrevious();
-          } else if (cursor === 7) {
+          } else if (cursor === 6) {
             onCycleClientPrevious();
           }
         } else if (key.return) {
-          if (cursor === 10) {
+          if (cursor === 9) {
             onSelectSkills();
-          } else if (cursor === 11) {
+          } else if (cursor === 10) {
             onRun();
-          } else if (cursor === 12) {
+          } else if (cursor === 11) {
             navigate('/');
           }
         } else if (input === 'b' || input === 'B') {
@@ -157,22 +156,22 @@ export function UpdateScreen({
             active={cursor === idx}
           />
         ))}
-        {renderValueItem('Mode', options.wrapMode, 5)}
-        {renderValueItem('Skills scope', options.scope, 6)}
-        {renderValueItem('Client', options.client, 7)}
+        {renderValueItem('Mode', options.wrapMode, 4)}
+        {renderValueItem('Skills scope', options.scope, 5)}
+        {renderValueItem('Client', options.client, 6)}
         <Checkbox
           label="With Playwright install"
           checked={options.withPlaywrightInstall}
-          active={cursor === 8}
+          active={cursor === 7}
         />
         <Checkbox
           label="Skip doctor"
           checked={options.skipDoctor}
-          active={cursor === 9}
+          active={cursor === 8}
         />
-        {renderValueItem('Selected skills', selectedSkillsDisplay, 10)}
-        {renderActionItem('Run update', 11)}
-        {renderActionItem('Back', 12)}
+        {renderValueItem('Selected skills', selectedSkillsDisplay, 9)}
+        {renderActionItem('Run update', 10)}
+        {renderActionItem('Back', 11)}
       </Box>
       <Box flexDirection="column">
         {options.components.native ? (

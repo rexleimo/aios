@@ -1,6 +1,5 @@
 import {
   addPlanEvidence,
-  checkPlanningSkillDiscovery,
   evaluateDoneGate,
   readActivePlan,
   setPlanStatus,
@@ -8,13 +7,22 @@ import {
   summarizePlanProgress,
   updatePlanTask,
 } from './contract.mjs';
-import { projectPlanningSkills } from './project-skills.mjs';
 import {
   buildAlwaysOnPlanningDirective,
   runAutoGate,
   runClaudeUserPromptSubmitHook,
 } from './auto-gate.mjs';
 import { recordAiosCapabilityEvidence } from '../workflows/rex-capability-runtime.mjs';
+
+function readTestabilityDecision(source, rootDir) {
+  if (!source) return undefined;
+  const target = path.resolve(rootDir, source);
+  try {
+    return JSON.parse(fs.readFileSync(target, 'utf8'));
+  } catch (error) {
+    throw new Error(`invalid --testability-file: ${target}: ${error.message}`, { cause: error });
+  }
+}
 
 export async function runPlanCommand(options = {}, { rootDir = process.cwd(), stdout = process.stdout, stderr = process.stderr } = {}) {
   const sub = String(options.subcommand || 'status').trim();
@@ -145,6 +153,7 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
         activationId: options.activationId,
         commandToken: options.commandToken,
         evidence: [{ kind: options.evidenceKind, refs: [options.evidenceRef] }],
+        testabilityDecision: readTestabilityDecision(options.testabilityFile, rootDir),
       });
       stdout.write(json
         ? `${JSON.stringify(result, null, 2)}\n`
@@ -219,55 +228,9 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
     return { exitCode };
   }
 
-  if (sub === 'project-skills') {
-    const result = projectPlanningSkills({
-      rootDir,
-      client: options.client || 'all',
-      force: Boolean(options.force),
-      io: { log: (line) => stderr.write(`${line}\n`) },
-    });
-    stdout.write(json ? `${JSON.stringify(result, null, 2)}\n` : `planning skills projected: ok=${result.ok} source=${result.sourceRoot}\n`);
-    return { exitCode: result.ok ? 0 : 1, result };
-  }
-
-  if (sub === 'repair-skills') {
-    const { repairStalePlanningSkills } = await import('./repair-skills.mjs');
-    const result = repairStalePlanningSkills({
-      rootDir,
-      client: options.client || 'all',
-      force: Boolean(options.force) || true,
-      io: { log: (line) => stderr.write(`${line}\n`) },
-    });
-    stdout.write(json
-      ? `${JSON.stringify(result, null, 2)}\n`
-      : `planning skill repair: ok=${result.ok} removed=${result.removed?.length || 0}\n`);
-    return { exitCode: result.ok ? 0 : 1, result };
-  }
-
-  if (sub === 'doctor' || sub === 'discovery') {
-    const clientOpt = String(options.client || 'all').trim();
-    const knownClients = new Set(['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
-    const report = checkPlanningSkillDiscovery({
-      rootDir,
-      clients: clientOpt && clientOpt !== 'all' && knownClients.has(clientOpt)
-        ? [clientOpt]
-        : undefined,
-    });
-    stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : formatDiscoveryText(report));
-    return { exitCode: report.ok ? 0 : 1, report };
-  }
-
   stderr.write(`[err] unknown plan subcommand: ${sub}\n`);
   return { exitCode: 1 };
 }
 
-function formatDiscoveryText(report) {
-  const lines = [`planning skill discovery: ${report.ok ? 'ok' : 'MISSING'}`];
-  for (const item of report.reports || []) {
-    const projectOk = item.project?.ok ? 'ok' : `missing ${item.project?.missing?.length || '?'}`;
-    const homeOk = item.home?.ok ? 'ok' : `missing ${item.home?.missing?.length || '?'}`;
-    lines.push(`- ${item.clientId}: project=${projectOk} home=${homeOk}`);
-    if (item.recommendation) lines.push(`  fix: ${item.recommendation}`);
-  }
-  return `${lines.join('\n')}\n`;
-}
+import fs from 'node:fs';
+import path from 'node:path';

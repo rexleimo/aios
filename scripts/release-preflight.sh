@@ -14,6 +14,8 @@ Validates:
   - tag format is vX.Y.Z
   - VERSION matches X.Y.Z
   - CHANGELOG.md contains ## [X.Y.Z] - YYYY-MM-DD
+  - root and MCP-server test/build checks pass
+  - changed Skills have reproducible, committed training evidence
   - generated skill roots materialize from skill-sources via scripts/check-skills-sync.mjs
   - generated native outputs materialize from client-sources/native-base via scripts/check-native-sync.mjs
 EOF
@@ -98,6 +100,30 @@ if ! node "$ROOT_DIR/scripts/check-native-sync.mjs" --materialize-temp >/dev/nul
   exit 1
 fi
 
+if ! npm --prefix "$ROOT_DIR" run test:scripts; then
+  echo "root release test suite failed: npm run test:scripts" >&2
+  exit 1
+fi
+
+if ! (
+  cd "$ROOT_DIR/mcp-server"
+  npm run typecheck
+  npm test
+  npm run build
+); then
+  echo "MCP-server verification failed: typecheck, test, or build" >&2
+  exit 1
+fi
+
+if ! git -C "$ROOT_DIR" rev-parse --verify --quiet HEAD^ >/dev/null; then
+  echo "release training verification requires a parent commit" >&2
+  exit 1
+fi
+if ! node "$ROOT_DIR/scripts/aios.mjs" skill verify-training --changed --base HEAD^ --json; then
+  echo "changed Skills lack reproducible training evidence for this release" >&2
+  exit 1
+fi
+
 if [[ -f "$ROOT_DIR/agent-sources/manifest.json" ]]; then
   if ! git -C "$ROOT_DIR" diff --quiet -- scripts/lib/specs/orchestrator-agents.json; then
     echo "agent export drift detected; run: node scripts/generate-orchestrator-agents.mjs --export-only and commit scripts/lib/specs/orchestrator-agents.json" >&2
@@ -119,6 +145,8 @@ echo "  CHANGELOG: has ## [$EXPECTED_VERSION] - YYYY-MM-DD"
 echo "  SKILLS:    generated roots match skill-sources/"
 echo "  NATIVE:    generated native outputs match client-sources/native-base/"
 echo "  REX:       rex-harness planning kernel is materialized"
+echo "  TESTS:     root and MCP-server verification passed"
+echo "  TRAINING:  changed Skill evidence recomputed from committed artifacts"
 if [[ -f "$ROOT_DIR/agent-sources/manifest.json" ]]; then
   echo "  AGENTS:    export-only regeneration passed"
 fi

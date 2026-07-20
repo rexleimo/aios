@@ -10,7 +10,6 @@ echo ""
 # 需要修复的install脚本列表
 INSTALL_SCRIPTS=(
   "install-contextdb-shell.sh"
-  "install-superpowers.sh"
   "install-codemap.sh"
   "install-privacy-guard.sh"
   "install-contextdb-skills.sh"

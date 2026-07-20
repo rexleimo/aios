@@ -77,5 +77,14 @@ export async function runOneShot(clientId, {
     return { exitCode: 1, stdout: '', stderr: '', error: `Unsupported subagent client: ${clientId}` };
   }
 
-  return runClientInvocation(command, invocation, { env, timeoutMs, cwd, io, codexOutput, routedExtraArgs });
+  const result = await runClientInvocation(command, invocation, { env, timeoutMs, cwd, io, codexOutput, routedExtraArgs });
+  return {
+    ...result,
+    // Evidence must name the final argv that produced this runner result.
+    managedInvocation: {
+      runner: 'aios.harness.one-shot.v1',
+      command,
+      args: [...(result.executedArgs || [])],
+    },
+  };
 }

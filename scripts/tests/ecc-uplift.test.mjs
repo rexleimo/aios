@@ -49,7 +49,7 @@ async function seedNativeRoot(rootDir) {
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project'), { recursive: true });
   await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project'), { recursive: true });
-  for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'browser-mcp', 'superpowers', 'agent-routing', 'codemap', 'team-provider', 'model-router', 'harness']) {
+  for (const name of ['core-instructions', 'contextdb', 'client-capabilities', 'token-discipline', 'browser-mcp', 'agent-routing', 'codemap', 'team-provider', 'model-router', 'harness']) {
     await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', `${name}.md`), `${name}\n`, 'utf8');
   }
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'OpenCode AIOS instructions.\n', 'utf8');
@@ -105,6 +105,12 @@ test('parseArgs accepts clients trigger-smoke and skill/session subcommands', ()
   assert.equal(trainingGate.options.subcommand, 'verify-training');
   assert.equal(trainingGate.options.changed, true);
   assert.equal(trainingGate.options.base, 'HEAD~1');
+
+  const certification = parseArgs(['skill', 'certify', '--changed', '--base', 'HEAD~1', '--json']);
+  assert.equal(certification.command, 'skill');
+  assert.equal(certification.options.subcommand, 'certify');
+  assert.equal(certification.options.changed, true);
+  assert.equal(certification.options.base, 'HEAD~1');
 
   const trigger = parseArgs(['clients', 'trigger-smoke', '--client', 'opencode', '--json']);
   assert.equal(trigger.command, 'clients');
@@ -236,7 +242,7 @@ test('session changed-files rejects traversal session identifiers', async () => 
 });
 
 
-test('skill training gate blocks changed skills without accepted SkillOpt evidence', async () => {
+test('skill training gate rejects legacy state without auditable V2 artifacts', async () => {
   const rootDir = await makeTemp('aios-skill-training-root-');
   const skillContents = '---\nname: search-first\ndescription: Search first\n---\n# Search First\n';
   await mkdir(path.join(rootDir, 'skill-sources', 'search-first'), { recursive: true });
@@ -249,7 +255,7 @@ test('skill training gate blocks changed skills without accepted SkillOpt eviden
   });
   assert.equal(blocked.status, 'blocked');
   assert.equal(blocked.skills[0].skillId, 'search-first');
-  assert.match(blocked.skills[0].reason, /SkillOpt/i);
+  assert.match(blocked.skills[0].reason, /training evidence/i);
 
   await writeJson(path.join(rootDir, '.skillopt', 'search-first-2026-06-15', 'state.json'), {
     skillId: 'search-first',
@@ -271,15 +277,15 @@ test('skill training gate blocks changed skills without accepted SkillOpt eviden
     nonRegression: true,
     acceptedSkillHash: sha256(skillContents),
   });
-  const verified = await verifySkillTrainingGate({
+  const forged = await verifySkillTrainingGate({
     rootDir,
     changedFiles: ['skill-sources/search-first/SKILL.md'],
   });
-  assert.equal(verified.status, 'verified');
-  assert.equal(verified.skills[0].evidence.status, 'accepted');
+  assert.equal(forged.status, 'blocked');
+  assert.match(forged.skills[0].reason, /evidence/i);
 });
 
-test('skill training gate verifies namespaced system skills by state skillId', async () => {
+test('skill training gate rejects legacy namespaced state by state skillId', async () => {
   const rootDir = await makeTemp('aios-system-skill-training-root-');
   const skillContents = '---\nname: skill-creator\ndescription: Create skills\n---\n# Skill Creator\n';
   await mkdir(path.join(rootDir, 'skill-sources', '.system', 'skill-creator'), { recursive: true });
@@ -289,7 +295,7 @@ test('skill training gate verifies namespaced system skills by state skillId', a
     status: 'accepted',
     nonRegression: true,
     metrics: { complianceScore: 1 },
-    acceptedSkillHash: sha256(skillContents),
+    acceptedSkillHash: 'a'.repeat(64),
   });
 
   const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
@@ -298,32 +304,70 @@ test('skill training gate verifies namespaced system skills by state skillId', a
     changedFiles: ['skill-sources/.system/skill-creator/SKILL.md'],
   });
 
-  assert.equal(report.status, 'verified');
+  assert.equal(report.status, 'blocked');
   assert.equal(report.skills.length, 1);
   assert.equal(report.skills[0].skillId, '.system/skill-creator');
-  assert.equal(report.skills[0].evidence.score, 1);
+  assert.match(report.skills[0].reason, /hash|evidence/i);
 });
 
 test('skill training gate discovers changed rex-harness Skill sources', async () => {
   const rootDir = await makeTemp('aios-rex-training-root-');
   const skillFile = path.join(rootDir, 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md');
   await mkdir(path.dirname(skillFile), { recursive: true });
-  await writeFile(skillFile, '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n', 'utf8');
+  await writeFile(skillFile, '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n\n- Record Rex evidence.\n', 'utf8');
   execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
   execFileSync('git', ['config', 'user.email', 'rex-test@example.invalid'], { cwd: rootDir });
   execFileSync('git', ['config', 'user.name', 'Rex Test'], { cwd: rootDir });
   execFileSync('git', ['add', '.'], { cwd: rootDir });
   execFileSync('git', ['commit', '-m', 'test fixture'], { cwd: rootDir, stdio: 'ignore' });
   await writeFile(skillFile, `${await readFile(skillFile, 'utf8')}\nUpdated.\n`, 'utf8');
-  await writeJson(path.join(rootDir, '.skillopt', 'rex-workflow-2026-07-17', 'state.json'), {
-    skillId: 'rex-workflow',
-    status: 'accepted',
-    nonRegression: true,
-    metrics: { bestHard: 1 },
-    acceptedSkillHash: sha256(await readFile(skillFile, 'utf8')),
-  });
-
+  const { certifySkillTraining } = await import('../lib/skills/training-certification.mjs');
   const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const certification = await certifySkillTraining({
+    rootDir,
+    changedFiles: ['rex-harness/skill-sources/rex-workflow/SKILL.md'],
+    base: 'HEAD',
+  });
+  assert.equal(certification.status, 'verified', JSON.stringify(certification));
+  const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD' });
+
+  assert.deepEqual(report.changedFiles, [
+    'rex-harness/skill-sources/rex-workflow/SKILL.md',
+  ]);
+  assert.equal(report.status, 'verified');
+  assert.equal(report.skills[0].skillId, 'rex-workflow');
+});
+
+test('skill training gate discovers changed Rex Skills in a nested Git worktree', async () => {
+  const rootDir = await makeTemp('aios-nested-rex-training-root-');
+  const rexRoot = path.join(rootDir, 'rex-harness');
+  const skillFile = path.join(rexRoot, 'skill-sources', 'rex-workflow', 'SKILL.md');
+  const initialContents = '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n\n- Record Rex evidence.\n';
+  await mkdir(path.dirname(skillFile), { recursive: true });
+  await writeFile(skillFile, initialContents, 'utf8');
+
+  execFileSync('git', ['init'], { cwd: rexRoot, stdio: 'ignore' });
+  execFileSync('git', ['config', 'user.email', 'rex-test@example.invalid'], { cwd: rexRoot });
+  execFileSync('git', ['config', 'user.name', 'Rex Test'], { cwd: rexRoot });
+  execFileSync('git', ['add', '.'], { cwd: rexRoot });
+  execFileSync('git', ['commit', '-m', 'nested rex fixture'], { cwd: rexRoot, stdio: 'ignore' });
+
+  execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+  execFileSync('git', ['config', 'user.email', 'aios-test@example.invalid'], { cwd: rootDir });
+  execFileSync('git', ['config', 'user.name', 'AIOS Test'], { cwd: rootDir });
+  execFileSync('git', ['add', 'rex-harness'], { cwd: rootDir, stdio: 'ignore' });
+  execFileSync('git', ['commit', '-m', 'root fixture'], { cwd: rootDir, stdio: 'ignore' });
+
+  const changedContents = `${initialContents}\nChanged in the nested worktree.\n`;
+  await writeFile(skillFile, changedContents, 'utf8');
+  const { certifySkillTraining } = await import('../lib/skills/training-certification.mjs');
+  const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
+  const certification = await certifySkillTraining({
+    rootDir,
+    changedFiles: ['rex-harness/skill-sources/rex-workflow/SKILL.md'],
+    base: 'HEAD',
+  });
+  assert.equal(certification.status, 'verified', JSON.stringify(certification));
   const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD' });
 
   assert.deepEqual(report.changedFiles, [
@@ -346,21 +390,14 @@ test('skill training gate discovers untracked rex-harness Skill sources', async 
   const skillFile = path.join(rootDir, 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md');
   await mkdir(path.dirname(skillFile), { recursive: true });
   await writeFile(skillFile, '---\nname: rex-workflow\ndescription: Use when testing rex.\n---\n# Rex\n', 'utf8');
-  await writeJson(path.join(rootDir, '.skillopt', 'rex-workflow-2026-07-17', 'state.json'), {
-    skillId: 'rex-workflow',
-    status: 'accepted',
-    nonRegression: true,
-    metrics: { bestHard: 1 },
-    acceptedSkillHash: sha256(await readFile(skillFile, 'utf8')),
-  });
-
   const { verifySkillTrainingGate } = await import('../lib/skills/training-gate.mjs');
   const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD' });
 
   assert.deepEqual(report.changedFiles, [
     'rex-harness/skill-sources/rex-workflow/SKILL.md',
   ]);
-  assert.equal(report.status, 'verified');
+  assert.equal(report.status, 'blocked');
+  assert.match(report.skills[0].reason, /evidence/i);
 });
 
 test('skill training gate rejects accepted evidence after Skill content changes', async () => {
@@ -373,7 +410,7 @@ test('skill training gate rejects accepted evidence after Skill content changes'
     skillId: 'search-first',
     status: 'accepted',
     nonRegression: true,
-    acceptedSkillHash: sha256(trainedContents),
+    acceptedSkillHash: 'b'.repeat(64),
   });
   await writeFile(skillFile, `${trainedContents}\nUntrained behavior change.\n`, 'utf8');
 

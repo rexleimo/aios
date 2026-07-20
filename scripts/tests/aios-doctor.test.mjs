@@ -35,7 +35,6 @@ test('runDoctorSuite reports rex-harness as a hard AIOS planning dependency', as
     'doctor:shell',
     'doctor:skills',
     'doctor:native',
-    'doctor:superpowers',
     'doctor:security',
     'doctor:bootstrap',
     'doctor:browser',
@@ -55,6 +54,46 @@ test('runDoctorSuite reports rex-harness as a hard AIOS planning dependency', as
   assert.match(logs.join('\n'), /\[error\] rex-harness is required for AIOS intelligent planning/u);
   assert.match(logs.join('\n'), /\[check\] doctor:rex-harness/u);
   assert.match(logs.join('\n'), /\[summary\] effective_warn=2/u);
+});
+
+test('doctor --fix reconciles the Rex workflow surface only after Rex is ready', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-doctor-rex-surface-'));
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  const calls = [];
+  const disabledGates = [
+    'doctor:token-discipline',
+    'doctor:shell',
+    'doctor:skills',
+    'doctor:native',
+    'doctor:security',
+    'doctor:bootstrap',
+    'doctor:browser',
+    'doctor:codemap',
+    'doctor:mcp-build',
+  ].join(',');
+
+  await runDoctorSuite({
+    rootDir,
+    projectRoot: rootDir,
+    fix: true,
+    profile: 'minimal',
+    env: { AIOS_DISABLED_GATES: disabledGates },
+    io: { log: () => {} },
+    deps: {
+      doctorRexHarness: async () => {
+        calls.push({ kind: 'rex' });
+        return { ready: true, version: '0.4.2', errors: 0, effectiveWarnings: 0, fixHint: '', attemptedFix: false };
+      },
+      reconcileRexWorkflowSurface: async (options) => {
+        calls.push({ kind: 'reconcile', options });
+        return { status: 'removed', removed: ['/tmp/owned-projection'], conflicts: [] };
+      },
+    },
+  });
+
+  assert.deepEqual(calls.map((entry) => entry.kind), ['rex', 'reconcile']);
+  assert.equal(calls[1].options.dryRun, false);
 });
 
 test('doctor-security-config scans agent-sources markdown role cards', async () => {

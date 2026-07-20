@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile, readFile, symlink } from 'node:fs/promises';
-import fs from 'node:fs';
+import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -10,8 +9,6 @@ import {
   compactToolDescription,
   resolveMcpDescMode,
 } from '../lib/planning/mcp-compact.mjs';
-import { repairStalePlanningSkills } from '../lib/planning/repair-skills.mjs';
-import { PLANNING_CORE_SKILLS } from '../lib/planning/contract.mjs';
 import {
   collectDurableMemoLines,
   writeAgentsDreamBlock,
@@ -72,47 +69,6 @@ test('A2 writeAgentsDreamBlock is idempotent managed section', async () => {
     assert.equal(text.split(AGENTS_DREAM_BEGIN).length - 1, 1);
     assert.match(text, /updated note/);
   } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test('B3 repair removes broken planning skill symlink and reprojects when source exists', async () => {
-  const home = await makeTemp('aios-repair-home-');
-  const root = await makeTemp('aios-repair-ws-');
-  const source = path.join(home, '.codex', 'superpowers', 'skills');
-  try {
-    for (const name of PLANNING_CORE_SKILLS) {
-      await mkdir(path.join(source, name), { recursive: true });
-      await writeFile(path.join(source, name, 'SKILL.md'), `---\nname: ${name}\n---\n`, 'utf8');
-    }
-    const hermesSkills = path.join(root, '.hermes', 'skills');
-    await mkdir(hermesSkills, { recursive: true });
-    const broken = path.join(hermesSkills, 'writing-plans');
-    await symlink(path.join(home, 'missing-target'), broken);
-
-    const env = {
-      HOME: home,
-      CODEX_HOME: path.join(home, '.codex'),
-      CLAUDE_HOME: path.join(home, '.claude'),
-      HERMES_HOME: path.join(home, '.hermes'),
-      GEMINI_HOME: path.join(home, '.gemini'),
-      OPENCODE_HOME: path.join(home, '.config', 'opencode'),
-      GROK_HOME: path.join(home, '.grok'),
-      AGENTS_HOME: path.join(home, '.agents'),
-    };
-
-    const result = repairStalePlanningSkills({
-      rootDir: root,
-      client: 'hermes',
-      env,
-      force: true,
-      io: { log() {} },
-    });
-    assert.ok(result.removed.some((p) => p.includes('writing-plans')));
-    assert.equal(result.ok, true);
-    assert.ok(fs.existsSync(path.join(hermesSkills, 'writing-plans', 'SKILL.md')));
-  } finally {
-    await rm(home, { recursive: true, force: true });
     await rm(root, { recursive: true, force: true });
   }
 });

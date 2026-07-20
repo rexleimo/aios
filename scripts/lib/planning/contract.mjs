@@ -6,8 +6,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { CLIENT_DEFINITIONS } from '../clients/core/definitions.mjs';
-import { getClientHomes } from '../platform/paths.mjs';
 import {
   buildStructuredPlanState,
   evaluateDoneGate,
@@ -16,18 +14,6 @@ import {
   summarizePlanProgress,
   skillsForRoute,
 } from './schema.mjs';
-
-/** Core superpowers skills that must be discoverable for intelligent planning. */
-export const PLANNING_CORE_SKILLS = Object.freeze([
-  'using-superpowers',
-  'brainstorming',
-  'writing-plans',
-  'executing-plans',
-  'verification-before-completion',
-  'systematic-debugging',
-  'test-driven-development',
-  'subagent-driven-development',
-]);
 
 export const PLANNING_STATE_REL = path.join('.aios', 'planning', 'active.json');
 export const PLANS_DIR_REL = path.join('docs', 'plans');
@@ -67,7 +53,7 @@ export function buildPlanMarkdown({
   skills = [],
   tasks = [],
 } = {}) {
-  const skillLines = (skills.length ? skills : PLANNING_CORE_SKILLS.slice(0, 4))
+  const skillLines = (skills.length ? skills : ['Rex selects the current provider'])
     .map((s, i) => `${i + 1}. \`${s}\``);
   const taskLines = (tasks.length ? tasks : [{ id: 't1', title: 'Task 1', status: 'pending', acceptance: '' }])
     .map((t) => {
@@ -317,76 +303,6 @@ export function addPlanEvidence(rootDir, { kind = 'note', value } = {}) {
     updatedAt: new Date().toISOString(),
   };
   return writeActivePlan(rootDir, next);
-}
-
-/**
- * Check whether planning core skills are discoverable for a client skill root.
- */
-export function inspectSkillRoot(skillRoot, skillNames = PLANNING_CORE_SKILLS) {
-  const missing = [];
-  const present = [];
-  if (!skillRoot || !fs.existsSync(skillRoot)) {
-    return {
-      skillRoot: skillRoot || '',
-      exists: false,
-      present: [],
-      missing: [...skillNames],
-      ok: false,
-    };
-  }
-  for (const name of skillNames) {
-    const skillMd = path.join(skillRoot, name, 'SKILL.md');
-    if (fs.existsSync(skillMd)) present.push(name);
-    else missing.push(name);
-  }
-  return {
-    skillRoot,
-    exists: true,
-    present,
-    missing,
-    ok: missing.length === 0,
-  };
-}
-
-/**
- * Per-client discovery report for planning skills (project root + home).
- */
-export function checkPlanningSkillDiscovery({
-  rootDir,
-  clients = Object.keys(CLIENT_DEFINITIONS),
-  env = process.env,
-  homes = null,
-} = {}) {
-  const homeMap = homes || getClientHomes(env);
-  const reports = [];
-
-  for (const clientId of clients) {
-    const def = CLIENT_DEFINITIONS[clientId];
-    if (!def) continue;
-    const projectRoot = rootDir ? path.join(rootDir, def.projectSkillRoot) : '';
-    const homeSkills = path.join(homeMap[clientId] || '', 'skills');
-    // Claude superpowers often land flat under ~/.claude/skills (linked skill names).
-    // Hermes uses project .hermes/skills and optionally home skills.
-    const projectReport = projectRoot ? inspectSkillRoot(projectRoot) : null;
-    const homeReport = inspectSkillRoot(homeSkills);
-    const ok = Boolean((projectReport && projectReport.ok) || homeReport.ok);
-    reports.push({
-      clientId,
-      project: projectReport,
-      home: homeReport,
-      ok,
-      recommendation: ok
-        ? null
-        : `Run: node scripts/aios.mjs plan project-skills --client ${clientId} --force`,
-    });
-  }
-
-  return {
-    schemaVersion: 1,
-    kind: 'aios.planning.discovery.v1',
-    ok: reports.every((r) => r.ok),
-    reports,
-  };
 }
 
 /**

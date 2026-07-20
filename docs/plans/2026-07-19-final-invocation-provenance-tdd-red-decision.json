@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#final-invocation-provenance-and-live-smoke-disclosure-test-scope",
+  "redCandidate": {
+    "publicEntry": "runOneShot('codex-cli', { codexOutput }) and node scripts/aios.mjs agents smoke --help",
+    "setup": "A temporary test-local codex executable records argv, rejects --output-schema, and then acknowledges the structured fallback. The CLI help entry is invoked without running a smoke command or a model client.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/harness-runtime.test.mjs",
+        "scripts/tests/aios-cli.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The successful fallback's argv is exactly result.managedInvocation.args, a normal successful invocation retains its primary argv, and agents smoke help exposes --live --client <name> plus the external quota/charge boundary.",
+    "observed": "The temporary fake received two calls and the second successful argv omitted --output-schema, but result.managedInvocation.args retained the rejected primary --output-schema args. agents smoke --help listed only list and doctor, so it did not disclose smoke, explicit live authorization, client selection, or possible external cost.",
+    "failureReason": "runOneShot() serializes invocation.args instead of the final args selected by its execution runner, while the agents maintenance help omits the smoke subcommand and its live/billable warning.",
+    "receiptRef": "receipt:a8f3e232-ae24-4a27-b610-0ba5ae5fd68b"
+  }
+}

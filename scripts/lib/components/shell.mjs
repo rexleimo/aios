@@ -63,6 +63,10 @@ function resolveNativeShimDir({ homeDir = os.homedir() } = {}) {
   return path.join(homeDir, '.aios', 'bin');
 }
 
+function resolveNativeShimCommandNames() {
+  return ['aios', ...resolveClientCommandNames('all')];
+}
+
 function envPathEntries(env = process.env) {
   const pathKey = Object.keys(env || {}).find((key) => key.toLowerCase() === 'path') || 'PATH';
   return String(env?.[pathKey] || '').split(path.delimiter).filter(Boolean);
@@ -111,10 +115,57 @@ function buildWindowsNativeShim({ rootDir, command, runtimeId }) {
   return `@echo off\r\nrem ${NATIVE_SHIM_MARK}: ${command}\r\nif "%AIOS_ROOT_DIR%"=="" set "AIOS_ROOT_DIR=${rootDir}"\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" (\r\n  if exist "${rootDir}\\scripts\\contextdb-shell-bridge.mjs" set "AIOS_ROOT_DIR=${rootDir}"\r\n)\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" (\r\n  where /q "${command}" 2>nul\r\n  if not errorlevel 1 (\r\n    for /f "tokens=*" %%i in ('where "${command}"') do set "_aios_real_bin=%%i"\r\n    if not "%_aios_real_bin%"=="%~f0" (\r\n      "%_aios_real_bin%" %*\r\n      exit /b %ERRORLEVEL%\r\n    )\r\n  )\r\n  echo [aios-shim] FATAL: cannot find contextdb-shell-bridge.mjs or real ${command} 1>&2\r\n  exit /b 127\r\n)\r\nif "%AIOS_ROOT%"=="" set "AIOS_ROOT=%AIOS_ROOT_DIR%"\r\nif "%ROOTPATH%"=="" set "ROOTPATH=%AIOS_ROOT_DIR%"\r\nset "AIOS_NATIVE_SHIM_DIR=%~dp0"\r\nnode "%AIOS_ROOT_DIR%\\scripts\\contextdb-shell-bridge.mjs" --agent ${quoteWindowsArg(runtimeId)} --command ${quoteWindowsArg(command)} -- %*\r\nexit /b %ERRORLEVEL%\r\n`;
 }
 
+function buildPosixAiosLauncher({ rootDir }) {
+  const quotedRoot = quotePosixSingle(rootDir);
+  return `#!/usr/bin/env sh
+# ${NATIVE_SHIM_MARK}: aios
+_aios_root_baked=${quotedRoot}
+if [ -f "\${AIOS_ROOT_DIR:-}/scripts/aios.sh" ]; then
+  :
+elif [ -f "$_aios_root_baked/scripts/aios.sh" ]; then
+  AIOS_ROOT_DIR="$_aios_root_baked"
+else
+  for _aios_probe_dir in "$HOME/.rexcil/harness-cli" "$HOME/cool.cnb/rex-ai-boot"; do
+    if [ -f "$_aios_probe_dir/scripts/aios.sh" ]; then
+      AIOS_ROOT_DIR="$_aios_probe_dir"
+      break
+    fi
+  done
+fi
+if [ ! -f "\${AIOS_ROOT_DIR:-}/scripts/aios.sh" ]; then
+  echo "[aios] FATAL: cannot find scripts/aios.sh for the managed AIOS runtime" >&2
+  exit 127
+fi
+AIOS_ROOT="$AIOS_ROOT_DIR"
+ROOTPATH="$AIOS_ROOT_DIR"
+AIOS_NATIVE_SHIM_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+export AIOS_ROOT_DIR AIOS_ROOT ROOTPATH AIOS_NATIVE_SHIM_DIR
+exec "$AIOS_ROOT_DIR/scripts/aios.sh" "$@"
+`;
+}
+
+function buildWindowsAiosLauncher({ rootDir }) {
+  return `@echo off\r\nrem ${NATIVE_SHIM_MARK}: aios\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\aios.mjs" set "AIOS_ROOT_DIR=${rootDir}"\r\nif not exist "%AIOS_ROOT_DIR%\\scripts\\aios.mjs" (\r\n  echo [aios] FATAL: cannot find scripts\\aios.mjs for the managed AIOS runtime 1>&2\r\n  exit /b 127\r\n)\r\nset "AIOS_ROOT=%AIOS_ROOT_DIR%"\r\nset "ROOTPATH=%AIOS_ROOT_DIR%"\r\nset "AIOS_NATIVE_SHIM_DIR=%~dp0"\r\nnode "%AIOS_ROOT_DIR%\\scripts\\aios.mjs" %*\r\nexit /b %ERRORLEVEL%\r\n`;
+}
+
+function buildNativeShim({ rootDir, platform, command }) {
+  if (command === 'aios') {
+    return platform === 'win32'
+      ? buildWindowsAiosLauncher({ rootDir })
+      : buildPosixAiosLauncher({ rootDir });
+  }
+
+  const client = resolveClientFromCommandName(command);
+  const runtimeId = getClientRuntimeId(client);
+  return platform === 'win32'
+    ? buildWindowsNativeShim({ rootDir, command, runtimeId })
+    : buildPosixNativeShim({ rootDir, command, runtimeId });
+}
+
 function installNativeShims({ rootDir, platform = process.platform, homeDir = os.homedir() } = {}) {
   const shimDir = resolveNativeShimDir({ homeDir });
   fs.mkdirSync(shimDir, { recursive: true });
-  const targets = resolveClientCommandNames('all').map((command) => {
+  const targets = resolveNativeShimCommandNames().map((command) => {
     const fileName = platform === 'win32' ? `${command}.cmd` : command;
     return { command, targetPath: path.join(shimDir, fileName) };
   });
@@ -128,11 +179,7 @@ function installNativeShims({ rootDir, platform = process.platform, homeDir = os
     throw new Error(`Refusing to overwrite unmanaged native shim(s): ${files}`);
   }
   for (const { command, targetPath } of targets) {
-    const client = resolveClientFromCommandName(command);
-    const runtimeId = getClientRuntimeId(client);
-    const content = platform === 'win32'
-      ? buildWindowsNativeShim({ rootDir, command, runtimeId })
-      : buildPosixNativeShim({ rootDir, command, runtimeId });
+    const content = buildNativeShim({ rootDir, platform, command });
     fs.writeFileSync(targetPath, content, 'utf8');
     if (platform !== 'win32') fs.chmodSync(targetPath, 0o755);
   }
@@ -141,7 +188,7 @@ function installNativeShims({ rootDir, platform = process.platform, homeDir = os
 
 function uninstallNativeShims({ platform = process.platform, homeDir = os.homedir() } = {}) {
   const shimDir = resolveNativeShimDir({ homeDir });
-  for (const command of resolveClientCommandNames('all')) {
+  for (const command of resolveNativeShimCommandNames()) {
     const fileName = platform === 'win32' ? `${command}.cmd` : command;
     const targetPath = path.join(shimDir, fileName);
     const content = readTextIfExists(targetPath);
@@ -339,7 +386,7 @@ export async function doctorContextDbShell({
     }
   }
 
-  for (const command of resolveClientCommandNames('all')) {
+  for (const command of resolveNativeShimCommandNames()) {
     if (commandExists(command, { platform, env })) {
       io.log(`[ok] ${command} found in PATH`);
     } else {
@@ -357,7 +404,7 @@ export async function doctorContextDbShell({
     io.log(`[ok] native shim dir is first in PATH: ${shimDir}`);
   }
 
-  for (const command of resolveClientCommandNames('all')) {
+  for (const command of resolveNativeShimCommandNames()) {
     const fileName = platform === 'win32' ? `${command}.cmd` : command;
     const shimPath = path.join(shimDir, fileName);
     const content = readTextIfExists(shimPath);

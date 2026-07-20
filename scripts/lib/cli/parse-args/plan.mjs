@@ -27,6 +27,7 @@ const PLAN_CLI = new Command()
   .option('--command-token <token>', 'Current Rex Provider Command execution token')
   .option('--evidence-kind <kind>', 'Rex capability evidence kind')
   .option('--evidence-ref <ref>', 'Rex capability evidence artifact or command ref')
+  .option('--testability-file <path>', 'Typed Rex testability decision JSON file')
   .option('--workspace <path>', 'Workspace root')
   .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
@@ -51,10 +52,6 @@ export function parsePlanArgs(argv) {
     'auto-gate',
     'always-on',
     'hook-user-prompt',
-    'project-skills',
-    'repair-skills',
-    'doctor',
-    'discovery',
   ]);
   const sub = known.has(subcommand) ? subcommand : 'status';
   if (help) {
@@ -97,6 +94,7 @@ export function parsePlanArgs(argv) {
         commandToken: flags.commandToken,
         evidenceKind: flags.evidenceKind,
         evidenceRef: flags.evidenceRef,
+        testabilityFile: flags.testabilityFile ? String(flags.testabilityFile).trim() : '',
         client: flags.client,
         sessionId: flags.session,
         policyMode: flags.policyMode,

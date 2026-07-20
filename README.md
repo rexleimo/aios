@@ -28,6 +28,10 @@ Run the commands from a project root when you want project-level client guidance
 
 `rex-harness` is a required AIOS planning runtime. Release installers bundle the pinned submodule contents automatically, so a release install does not need a second npm package or MCP service. When working from source, prefer `git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git`; if the repository was cloned without submodules, `aios init`/`aios setup` automatically attempts `git submodule update --init --recursive -- rex-harness` and stops with a remediation message if it cannot recover the kernel.
 
+Rex is the default workflow for new installs. Superpowers is retired as an AIOS workflow and installation component. Normal `aios init`, `aios setup`, and `aios update` preserve a legacy Superpowers path when AIOS cannot prove ownership; use `--adopt-legacy-superpowers` with a dry-run first when you want to remove only recognized AIOS legacy links. See the [Rex Workflow Migration](https://cli.rexai.top/superpowers/) guide.
+
+When a canonical Skill changes, create and check its deterministic release evidence before committing: `node scripts/aios.mjs skill certify --changed --base HEAD --json`, then `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`. The checked-in artifacts under `docs/evidence/skill-training/` are recomputed by the release gate; a hand-written acceptance state is not sufficient.
+
 ## What Harness CLI adds
 
 Harness CLI is a set of cooperating layers. Each layer has a different responsibility and an explicit boundary:
@@ -79,6 +83,7 @@ Harness CLI currently provides native or compatibility integrations for \`codex\
 - [Quick Start](https://cli.rexai.top/getting-started/) - install, initialize, and verify the first project.
 - [Windows Guide](https://cli.rexai.top/windows-guide/) - PowerShell prerequisites and recovery commands.
 - [Workflow Policy](https://cli.rexai.top/workflow-policy/) - choose the smallest correct route and understand plan continuation.
+- [Rex Workflow Migration](https://cli.rexai.top/superpowers/) - safely retire legacy Superpowers projections.
 - [ContextDB](https://cli.rexai.top/contextdb/) - local storage, unified search, memo scope, and context packs.
 - [Token Intelligence](https://cli.rexai.top/token-compression/) - RTK, Caveman, Headroom MCP, and safe context boundaries.
 - [Agent Team](https://cli.rexai.top/team-ops/) - governed parallel work with HUD evidence.

@@ -279,7 +279,7 @@ test('rollback restores previous lock entry', async () => {
     version: 1,
     skills: {
       'test-skill': {
-        source: 'obra/superpowers',
+        source: 'example/test-skill',
         sourceType: 'github',
         version: '1.0.0',
         path: 'skill-sources/test-skill/SKILL.md',
@@ -316,7 +316,7 @@ test('rollback errors on skill with no history', async () => {
     version: 1,
     skills: {
       'test-skill': {
-        source: 'obra/superpowers',
+        source: 'example/test-skill',
         sourceType: 'github',
         version: '1.0.0',
         path: 'skill-sources/test-skill/SKILL.md',

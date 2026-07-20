@@ -7,14 +7,22 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.0.0 (2026-07-20) - Rex-only workflow migration
+
+- `rex-harness` is the only default software-engineering workflow for new AIOS installations and managed client projections. Superpowers is retired as an AIOS workflow and installation component.
+- Normal `aios update`, `aios init`, and `aios setup` reconcile Rex without deleting a historical Superpowers projection that lacks AIOS ownership proof; that path is preserved and reported as a conflict.
+- Run `aios update --adopt-legacy-superpowers --dry-run` before the explicit adoption command when you want to remove only recognized AIOS legacy links. The coverage includes Codex, Claude, Gemini, OpenCode, Hermes, Grok, and shared `.agents` projections.
+- The previous [Superpowers](/superpowers/) URL now provides the migration guide.
+- Changed Skills use `skill certify --changed` to create checked-in, reproducible evidence; the release gate reruns the deterministic probe instead of trusting a status file or content hash alone.
+
 ## Docs And Workflow Notes
 
 - **v3.6.0 Headroom token intelligence workflow**: `aios init` now installs the tested Headroom CLI range alongside RTK and Caveman, with a separate `--yes-headroom-mcp` consent for Gemini/Grok user-scope MCP registration. Hermes requires a real TTY and reports `pending-interactive` otherwise. Existing external or conflicting entries are not overwritten; AIOS records owned entries in `~/.aios/integrations/headroom-mcp.json`. MCP-only compression is explicit and does not claim transparent input interception. See: [Token Intelligence and Compression](token-compression.md) and the [Headroom + Ponytail post](/blog/2026-07-headroom-token-intelligence/).
 - Added agent governance coverage to the Team docs, scenario guide, ContextDB reference, and blog.
 - New smoke evidence guidance now points to `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, and `.aios/interception/metrics/agents-smoke-<agent>.jsonl`.
 - Skill edits now point readers to `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` before trusting live agent workflows.
-- **Grok Build as first-class AIOS client**: xAI Grok Build (`grok` CLI, runtime id `grok-build`) is now a full AIOS client with skills, agents, superpowers, native, team, and harness. MCP uses Codex-shaped TOML (`~/.grok/config.toml` / `.grok/config.toml`). See: [Grok Build + AIOS blog post](/blog/2026-07-grok-build-aios-client/).
-- **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is registered with skills, native, harness, and superpowers capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools inside Hermes sessions. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
+- **Grok Build as first-class AIOS client**: xAI Grok Build (`grok` CLI, runtime id `grok-build`) is now a full AIOS client with skills, agents, native, team, and harness. MCP uses Codex-shaped TOML (`~/.grok/config.toml` / `.grok/config.toml`). See: [Grok Build + AIOS blog post](/blog/2026-07-grok-build-aios-client/).
+- **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is registered with skills, native, and harness capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools inside Hermes sessions. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 
 ## Official Release History
 

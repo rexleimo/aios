@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-20-superpowers-retirement-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "AIOS setup/update workflow-surface reconciliation",
+    "setup": "Run the reconciliation public seam against an isolated home containing the exact historical Codex Superpowers checkout, the shared .agents Superpowers projection, a Claude legacy skill projection, and the historical Superpowers-routing shared router.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "--test-name-pattern=reconciliation automatically retires the exact historical AIOS Superpowers surface",
+        "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "A normal lifecycle reconciliation removes every exact legacy discovery projection and router, moves the exact historical checkout into an AIOS recovery location outside client discovery roots, and returns a conflict-free removed report.",
+    "observed": "The command exited 1 because reconciliation returned legacy-workflow-conflict instead of removed; the default path retained the legacy projections and did not retire the checkout or router.",
+    "receiptRef": "receipt:6386c40b-464d-452a-95ae-5a6b550d081f",
+    "failureReason": "Legacy cleanup requires the removed --adopt-legacy-superpowers opt-in and the reconciliation module has no source-checkout retirement or historical shared-router migration behavior."
+  }
+}

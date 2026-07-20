@@ -70,12 +70,14 @@ const CLIENTS_CLI = createSimpleCommandParser('clients', [
 const AGENTS_CLI = createSimpleCommandParser('agents', [
   { name: 'doctor', description: 'Run agents doctor checks', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
   { name: 'list', description: 'List agents', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format']] },
-  { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
+  { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run'], ['--live', 'Run managed live client probes'], ['--client <name>', 'Client used for live probes']] },
 ], [
   ['--json', 'Output as JSON'],
   ['--format <text|json>', 'Output format'],
   ['--strict', 'Strict check'],
   ['--dry-run', 'Dry run'],
+  ['--live', 'Run managed live client probes'],
+  ['--client <name>', 'Client used for live probes'],
 ]);
 
 const WORKFLOW_CLI = createSimpleCommandParser('workflow', [
@@ -172,7 +174,15 @@ function parseAgentsArgs(argv) {
       mode: help ? 'help' : 'command',
       help,
       command: 'agents',
-      options: { subcommand, json, format, strict: flags.strict === true, dryRun: flags.dryRun === true },
+      options: {
+        subcommand,
+        json,
+        format,
+        strict: flags.strict === true,
+        dryRun: flags.dryRun === true,
+        live: flags.live === true,
+        clientId: flags.client || '',
+      },
     };
   } catch (e) {
     if (e instanceof Error && (e.message.includes('requires subcommand') || e.message.includes('--format'))) throw e;

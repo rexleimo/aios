@@ -15,8 +15,8 @@ import { doctorBrowserMcp } from '../components/browser.mjs';
 import { installNativeEnhancements } from '../components/native.mjs';
 import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from '../components/shell.mjs';
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
-import { doctorSuperpowers, installSuperpowers } from '../components/superpowers.mjs';
-import { ensureRexHarness, isAiosRuntimeRoot } from '../rex-harness/runtime.mjs';
+import { installRexClientProjections } from '../rex-harness/client-projection.mjs';
+import { prepareRexWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
 
 function isMissingBrowserUseRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
@@ -44,6 +44,7 @@ export function normalizeSetupOptions(rawOptions = {}) {
     installMode: normalizeSkillInstallMode(rawOptions.installMode ?? defaults.installMode),
     skills: normalizeSkillNames(rawOptions.skills ?? defaults.skills),
     tokenProfile: normalizeTokenProfile(rawOptions.tokenProfile ?? defaults.tokenProfile),
+    adoptLegacySuperpowers: Boolean(rawOptions.adoptLegacySuperpowers ?? defaults.adoptLegacySuperpowers),
     applyClientCostSettings: Boolean(rawOptions.applyClientCostSettings ?? defaults.applyClientCostSettings),
     skipPlaywrightInstall: Boolean(rawOptions.skipPlaywrightInstall ?? defaults.skipPlaywrightInstall),
     skipDoctor: Boolean(rawOptions.skipDoctor ?? defaults.skipDoctor),
@@ -61,6 +62,7 @@ export function planSetup(rawOptions = {}) {
     '--install-mode', options.installMode,
     '--token-profile', options.tokenProfile,
   ];
+  if (options.adoptLegacySuperpowers) args.push('--adopt-legacy-superpowers');
   if (options.skills.length > 0) args.push('--skills', options.skills.join(','));
   if (options.applyClientCostSettings) args.push('--apply-client-cost-settings');
   if (options.skipPlaywrightInstall) args.push('--skip-playwright-install');
@@ -81,17 +83,23 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
   const shellDoctor = deps.doctorContextDbShell ?? doctorContextDbShell;
   const skillsInstaller = deps.installContextDbSkills ?? installContextDbSkills;
   const skillsDoctor = deps.doctorContextDbSkills ?? doctorContextDbSkills;
+  const rexSkillsInstaller = deps.installRexClientProjections ?? installRexClientProjections;
   const nativeInstaller = deps.installNativeEnhancements ?? installNativeEnhancements;
   const agentsInstaller = deps.installOrchestratorAgents ?? installOrchestratorAgents;
-  const superpowersInstaller = deps.installSuperpowers ?? installSuperpowers;
-  const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
   io.log(`Setup components: ${options.components.join(',')}`);
 
   // 中文注释：AIOS 规划依赖 rex-harness；源码 checkout 缺少 submodule 时由 setup 自动修复。
-  if (isAiosRuntimeRoot(rootDir)) {
-    const rexResult = await (deps.ensureRexHarness ?? ensureRexHarness)({ rootDir, fix: true, io });
-    if (!rexResult.ready) {
-      throw new Error(`rex-harness is required for AIOS intelligent planning: ${rexResult.fixHint}`);
+  {
+    const workflowSurface = await prepareRexWorkflowSurface({
+      rootDir,
+      fix: true,
+      io,
+      adoptLegacySuperpowers: options.adoptLegacySuperpowers,
+      ensureRexHarnessImpl: deps.ensureRexHarness,
+      reconciler: deps.reconcileRexWorkflowSurface,
+    });
+    if (workflowSurface.runtime && !workflowSurface.rex.ready) {
+      throw new Error(`rex-harness is required for AIOS intelligent planning: ${workflowSurface.rex.fixHint}`);
     }
   }
 
@@ -129,6 +137,13 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
       selectedSkills: options.skills,
       io,
     });
+    await rexSkillsInstaller({
+      rootDir,
+      projectRoot,
+      client: options.client,
+      scope: options.scope,
+      io,
+    });
     if (!options.skipDoctor) {
       await skillsDoctor({ rootDir, projectRoot, client: options.client, scope: options.scope, selectedSkills: options.skills, io });
     }
@@ -145,27 +160,6 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
 
   if (hasComponent(options.components, 'agents')) {
     await agentsInstaller({ rootDir, projectRoot, client: options.client, io });
-  }
-
-  if (hasComponent(options.components, 'superpowers')) {
-    // update=true：safe ff-only pull（无 origin 则跳过）；对齐 always-on 规划最低版本
-    await superpowersInstaller({
-      rootDir: projectRoot,
-      client: options.client,
-      update: true,
-      force: Boolean(options.force),
-      io,
-    });
-    if (!options.skipDoctor) {
-      const result = await superpowersDoctor({
-        client: options.client,
-        rootDir: projectRoot,
-        io,
-      });
-      if (result.errors > 0) {
-        throw new Error(`doctor-superpowers failed (${result.errors} errors)`);
-      }
-    }
   }
 
   if (hasComponent(options.components, 'shell')) {

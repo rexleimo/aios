@@ -54,6 +54,7 @@ redacted output이 evidence입니다. 공유 가능한 field는 사람이 판단
 ~~~bash
 node scripts/aios.mjs agents smoke --dry-run --json
 node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill certify --changed --base HEAD --json
 node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 ~~~
 

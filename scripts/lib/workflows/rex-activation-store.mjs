@@ -3,6 +3,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
+  resolveStandaloneExecutionReceipt,
+  validateCommandEvidence,
+} from '../../../rex-harness/src/index.mjs';
+
+import {
   advanceAiosSoftwareWorkflow,
   startAiosSoftwareWorkflow,
 } from './rex-harness-adapter.mjs';
@@ -185,6 +190,8 @@ export function advanceStoredAiosCapabilityActivation({
   rootDir,
   activationId,
   evidence = [],
+  testabilityDecision,
+  resolveReceipt,
   now = new Date(),
 } = {}) {
   const current = readStoredAiosCapabilityActivation({ rootDir, activationId });
@@ -196,14 +203,24 @@ export function advanceStoredAiosCapabilityActivation({
     throw new Error(`rex activation does not match current software workflow command: ${activationId}`);
   }
 
-  const advanced = advanceAiosSoftwareWorkflow(current.workflow, evidence, { now });
+  const receiptResolver = resolveReceipt
+    || ((ref) => resolveStandaloneExecutionReceipt({ rootDir, ref }));
+  const normalizedEvidence = validateCommandEvidence(current.command, evidence, {
+    resolveReceipt: receiptResolver,
+  });
+  const advanced = advanceAiosSoftwareWorkflow(current.workflow, normalizedEvidence, {
+    now,
+    testabilityDecision,
+    resolveReceipt: receiptResolver,
+  });
   const workflow = sealWorkflowCommand(advanced.workflow);
   writeWorkflow(rootDir, workflow);
   const completed = advanced.outcome === 'completed';
-  const projectedActivation = completed
+  const terminal = completed || advanced.outcome === 'replan';
+  const projectedActivation = terminal
     ? advanced.completedActivation
     : workflow.currentActivation;
-  const projectedCommand = completed ? null : workflow.currentCommand;
+  const projectedCommand = terminal ? null : workflow.currentCommand;
   const record = buildRecord({
     workflow,
     activation: projectedActivation,

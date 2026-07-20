@@ -56,38 +56,6 @@ export function getInternalHelpText(target, action) {
 `;
   }
 
-  if (target === 'superpowers' && action === 'install') {
-    return `Usage:
-  node scripts/aios.mjs internal superpowers install [--client <all|codex|claude|gemini|opencode|hermes|grok>] [--repo <url>] [--update] [--force]
-
-  Default: safe git pull --ff-only when origin exists (always-on planning recommends ≥ v6.1.0).
-  Links skills and projects planning core skills to selected clients.
-`;
-  }
-
-  if (target === 'superpowers' && action === 'update') {
-    return `Usage:
-  node scripts/aios.mjs internal superpowers update [--client <all|codex|claude|gemini|opencode|hermes|grok>] [--repo <url>] [--force]
-
-  Recommended user-facing Superpowers version upgrade.
-  Equivalent to install with update+force; re-projects planning skills.
-`;
-  }
-
-  if (target === 'superpowers' && action === 'doctor') {
-    return `Usage:
-  node scripts/aios.mjs internal superpowers doctor [--client <all|codex|claude|gemini|opencode|hermes|grok>]
-
-  Checks git checkout, version ≥ v6.1.0, skill links, and planning skill discovery.
-`;
-  }
-
-  if (target === 'superpowers' && action === 'sync-claude-permissions') {
-    return `Usage:
-  node scripts/aios.mjs internal superpowers sync-claude-permissions
-`;
-  }
-
   if (target === 'browser' && action === 'install') {
     return `Usage:
   node scripts/aios.mjs internal browser install [--dry-run] [--skip-playwright-install]

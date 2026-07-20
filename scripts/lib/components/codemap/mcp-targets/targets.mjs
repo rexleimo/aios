@@ -37,6 +37,15 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
     },
   }),
   Object.freeze({
+    clientKey: 'hermes',
+    format: 'hermes-yaml',
+    createIfMissing: true,
+    resolvePath: (_projectRoot, clientHomes) => {
+      const hermesHome = resolveUserPath(clientHomes.hermes);
+      return hermesHome ? path.join(hermesHome, 'config.yaml') : '';
+    },
+  }),
+  Object.freeze({
     clientKey: 'grok',
     format: 'codex-toml',
     createIfMissing: true,

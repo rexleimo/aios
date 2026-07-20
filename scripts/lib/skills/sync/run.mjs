@@ -8,7 +8,9 @@ import { getClientSkillFormat } from '../../clients/registry.mjs';
 import {
   buildGeneratedSkillMetadata,
   GENERATED_SKILL_META_FILE,
+  isLegacyManagedGeneratedSkillProjection,
   isManagedGeneratedSkill,
+  isMisprojectedManagedGeneratedSkillProjection,
   readGeneratedSkillMetadata,
   writeGeneratedSkillMetadata,
 } from '../install-metadata.mjs';
@@ -184,6 +186,12 @@ async function syncGeneratedSkillsUnlocked({
         targetRelativePath,
         source: path.posix.join('skill-sources', entry.relativeSkillPath.split(path.sep).join('/')),
       });
+      const expectedGeneratedSkill = {
+        relativeSkillPath: entry.relativeSkillPath,
+        targetSurface: surface,
+        targetRelativePath,
+        source: metadata.source,
+      };
 
       if (entryFormat === 'toml-command') {
         installed += syncTomlCommandTarget({
@@ -209,11 +217,13 @@ async function syncGeneratedSkillsUnlocked({
           continue;
         }
 
-        if (!isManagedGeneratedSkill(targetPath, {
-          relativeSkillPath: entry.relativeSkillPath,
-          targetSurface: surface,
-          targetRelativePath,
-        })) {
+        if (!isManagedGeneratedSkill(targetPath, expectedGeneratedSkill)) {
+          if (isLegacyManagedGeneratedSkillProjection(targetPath, expectedGeneratedSkill)) {
+            writeMaterializedTarget({ materializedPath: materialized.directoryPath, targetPath, metadata });
+            io.log(`[skills] migrated legacy managed target: ${formatTargetPath(resolvedTargetRootDir, targetPath)}`);
+            updated += 1;
+            continue;
+          }
           const currentSnapshot = snapshotDirectory(targetPath);
           const nextSnapshot = snapshotDirectory(materialized.directoryPath);
           if (snapshotsEqual(currentSnapshot, nextSnapshot)) {
@@ -267,11 +277,15 @@ async function syncGeneratedSkillsUnlocked({
         if (expected.has(managedTargetPath)) {
           continue;
         }
-        const meta = readGeneratedSkillMetadata(managedTargetPath);
-        if (!meta || meta.targetSurface !== surface) {
+        const targetRelativePath = path.relative(rootAbs, managedTargetPath).split(path.sep).join('/');
+        if (!isMisprojectedManagedGeneratedSkillProjection(managedTargetPath, {
+          targetSurface: surface,
+          targetRelativePath,
+        })) {
           continue;
         }
         fs.rmSync(managedTargetPath, { recursive: true, force: true });
+        io.log(`[skills] removed misprojected legacy managed target: ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
         removed += 1;
       }
     }

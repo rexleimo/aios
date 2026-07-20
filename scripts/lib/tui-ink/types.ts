@@ -10,7 +10,6 @@ export interface ComponentsConfig {
   shell: boolean;
   skills: boolean;
   native: boolean;
-  superpowers: boolean;
 }
 
 export interface SetupOptions {

@@ -22,7 +22,6 @@ import {
   uninstallOrchestratorAgents,
 } from '../lib/components/agents.mjs';
 import { installBrowserMcp, migrateBrowserMcpConfig } from '../lib/components/browser.mjs';
-import { doctorSuperpowers, installSuperpowers, syncClaudeSkillPermissions } from '../lib/components/superpowers.mjs';
 import {
   commandExists,
   getCommandSpawnSpec,
@@ -259,12 +258,6 @@ async function writeTestManifest(rootDir, skills) {
   }, null, 2), 'utf8');
 }
 
-async function writeSuperpowersSkill(codexHome, skillName) {
-  const skillDir = path.join(codexHome, 'superpowers', 'skills', skillName);
-  await mkdir(skillDir, { recursive: true });
-  await writeFile(path.join(skillDir, 'SKILL.md'), `# ${skillName}\n`, 'utf8');
-}
-
 async function copyCanonicalAgentSource(rootDir) {
   await cp(path.join(process.cwd(), 'agent-sources'), path.join(rootDir, 'agent-sources'), {
     recursive: true,
@@ -298,6 +291,47 @@ test('shell install pins and quotes AIOS_ROOT_DIR for paths with spaces', async 
   assert.match(installed, /source "\$AIOS_ROOT_DIR\/scripts\/contextdb-shell\.zsh"/u);
   assert.match(await readFile(path.join(shimDir, 'codex'), 'utf8'), /--agent '?codex-cli'? --command '?codex'?/u);
   assert.match(await readFile(path.join(shimDir, 'claude'), 'utf8'), /--agent '?claude-code'? --command '?claude'?/u);
+});
+
+test('shell install exposes the aios launcher from the managed shim directory', async () => {
+  if (!hasFunctionalBash()) {
+    return;
+  }
+
+  const rootDir = await makeTemp('aios-shell-cli-root-');
+  const homeDir = await makeTemp('aios-shell-cli-home-');
+  const otherCwd = await makeTemp('aios-shell-cli-cwd-');
+  const rcFile = path.join(rootDir, '.zshrc');
+  const aiosScript = path.join(rootDir, 'scripts', 'aios.sh');
+  await mkdir(path.dirname(aiosScript), { recursive: true });
+  await writeExecutable(aiosScript, '#!/usr/bin/env sh\nprintf "AIOS_ROOT_DIR=%s\\nARGS=%s\\n" "$AIOS_ROOT_DIR" "$*"\n');
+  await makeFakeMcpServer(rootDir);
+
+  await installContextDbShell({
+    rootDir,
+    rcFile,
+    mode: 'opt-in',
+    platform: 'darwin',
+    homeDir,
+    commandRunner: () => {},
+  });
+
+  const launcher = path.join(homeDir, '.aios', 'bin', 'aios');
+  assert.equal(existsSync(launcher), true);
+  const result = spawnSync(launcher, ['doctor', '--json'], {
+    cwd: otherCwd,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      AIOS_ROOT_DIR: '',
+      AIOS_ROOT: '',
+      ROOTPATH: '',
+    },
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, new RegExp(`AIOS_ROOT_DIR=${escapeRegExp(rootDir)}`, 'u'));
+  assert.match(result.stdout, /ARGS=doctor --json/u);
 });
 
 test('shell install keeps the native shim dir first when sourced by zsh with PATH already containing it later', async () => {
@@ -387,6 +421,7 @@ test('shell install writes managed block and uninstall removes it', async () => 
   assert.match(installed, /CTXDB_WRAP_MODE:-repo-only/);
   assert.equal(existsSync(path.join(shimDir, 'codex')), true);
   assert.equal(existsSync(path.join(shimDir, 'opencode')), true);
+  assert.equal(existsSync(path.join(shimDir, 'aios')), true);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args, ['install']);
@@ -444,6 +479,7 @@ test('windows shell install writes managed block to both PowerShell profiles', a
   assert.match(pwshContent, /\$env:AIOS_ROOT = \$env:AIOS_ROOT_DIR/);
   assert.match(pwshContent, /\$env:ROOTPATH = \$env:AIOS_ROOT_DIR/);
   assert.match(await readFile(path.join(homeDir, '.aios', 'bin', 'codex.cmd'), 'utf8'), /--agent "codex-cli" --command "codex"/u);
+  assert.match(await readFile(path.join(homeDir, '.aios', 'bin', 'aios.cmd'), 'utf8'), /scripts\\aios\.mjs/u);
   assert.equal(calls.length, 2);
   assert.equal(calls[0].command, 'npm');
   assert.deepEqual(calls[0].args, ['install']);
@@ -582,150 +618,6 @@ test('skills install copies repo-managed skills by default and uninstall removes
     missing = true;
   }
   assert.equal(missing, true);
-});
-
-test('syncClaudeSkillPermissions adds missing Skill(...) allowlist entries for project settings', async () => {
-  const rootDir = await makeTemp('aios-superpowers-perms-project-root-');
-  const codexHome = await makeTemp('aios-superpowers-perms-project-codex-home-');
-  const claudeHome = await makeTemp('aios-superpowers-perms-project-claude-home-');
-  const projectSettingsPath = path.join(rootDir, '.claude', 'settings.local.json');
-
-  await writeSuperpowersSkill(codexHome, 'writing-plans');
-  await writeSuperpowersSkill(codexHome, 'systematic-debugging');
-  await mkdir(path.dirname(projectSettingsPath), { recursive: true });
-  await writeFile(projectSettingsPath, `${JSON.stringify({
-    permissions: {
-      allow: ['Bash(git:*)', 'Skill(writing-plans)'],
-    },
-  }, null, 2)}\n`, 'utf8');
-
-  const result = await syncClaudeSkillPermissions({
-    rootDir,
-    includeGlobal: false,
-    includeProject: true,
-    env: {
-      ...process.env,
-      CODEX_HOME: codexHome,
-      CLAUDE_HOME: claudeHome,
-    },
-    io: { log: () => {} },
-  });
-
-  const updated = JSON.parse(await readFile(projectSettingsPath, 'utf8'));
-  assert.equal(result.errors, 0);
-  assert.equal(updated.permissions.allow.includes('Bash(git:*)'), true);
-  assert.equal(updated.permissions.allow.includes('Skill(writing-plans)'), true);
-  assert.equal(updated.permissions.allow.includes('Skill(systematic-debugging)'), true);
-  assert.equal(updated.permissions.allow.includes('Skill(aios-long-running-harness)'), true);
-});
-
-test('syncClaudeSkillPermissions can seed global Claude settings when requested', async () => {
-  const codexHome = await makeTemp('aios-superpowers-perms-global-codex-home-');
-  const claudeHome = await makeTemp('aios-superpowers-perms-global-claude-home-');
-  const globalSettingsPath = path.join(claudeHome, 'settings.local.json');
-
-  await writeSuperpowersSkill(codexHome, 'dispatching-parallel-agents');
-  await writeSuperpowersSkill(codexHome, 'subagent-driven-development');
-
-  const result = await syncClaudeSkillPermissions({
-    includeGlobal: true,
-    includeProject: false,
-    env: {
-      ...process.env,
-      CODEX_HOME: codexHome,
-      CLAUDE_HOME: claudeHome,
-    },
-    io: { log: () => {} },
-  });
-
-  const seeded = JSON.parse(await readFile(globalSettingsPath, 'utf8'));
-  assert.equal(result.errors, 0);
-  assert.equal(Array.isArray(seeded.permissions.allow), true);
-  assert.equal(seeded.permissions.allow.includes('Skill(dispatching-parallel-agents)'), true);
-  assert.equal(seeded.permissions.allow.includes('Skill(subagent-driven-development)'), true);
-});
-
-test('installSuperpowers includes opencode via the shared ~/.agents/skills link', async () => {
-  if (!commandExists('git')) return;
-
-  const rootDir = await makeTemp('aios-superpowers-opencode-root-');
-  const codexHome = await makeTemp('aios-superpowers-opencode-codex-home-');
-  const claudeHome = await makeTemp('aios-superpowers-opencode-claude-home-');
-  const agentsHome = await makeTemp('aios-superpowers-opencode-agents-home-');
-  const superpowersDir = path.join(codexHome, 'superpowers');
-  const logs = [];
-
-  // Pre-seed a local superpowers git repo so install reuses it instead of cloning from the network.
-  await mkdir(superpowersDir, { recursive: true });
-  await writeSuperpowersSkill(codexHome, 'using-superpowers');
-  spawnSync('git', ['init', superpowersDir], { stdio: 'ignore' });
-
-  const result = await installSuperpowers({
-    rootDir,
-    client: 'opencode',
-    installClaudePlugin: false,
-    env: {
-      ...process.env,
-      CODEX_HOME: codexHome,
-      CLAUDE_HOME: claudeHome,
-      AGENTS_HOME: agentsHome,
-    },
-    io: { log: (line) => logs.push(String(line)) },
-  });
-
-  // opencode now supports superpowers, so install is NOT skipped and the shared link is created.
-  assert.equal(result.skipped, false);
-  assert.ok(result.supportedClients.includes('opencode'));
-  // opencode discovers superpowers via the shared ~/.agents/skills/superpowers link (external skill scan).
-  const linkedSkill = await readFile(
-    path.join(agentsHome, 'skills', 'superpowers', 'using-superpowers', 'SKILL.md'),
-    'utf8'
-  );
-  assert.match(linkedSkill, /using-superpowers/);
-  // opencode-only install must not touch claude project settings.
-  await assert.rejects(() => readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
-});
-
-test('doctorSuperpowers skips Claude checks for codex-only client', async () => {
-  if (!commandExists('git')) return;
-
-  const rootDir = await makeTemp('aios-superpowers-doctor-codex-root-');
-  const codexHome = await makeTemp('aios-superpowers-doctor-codex-home-');
-  const claudeHome = await makeTemp('aios-superpowers-doctor-claude-home-');
-  const agentsHome = await makeTemp('aios-superpowers-doctor-agents-home-');
-  const superpowersDir = path.join(codexHome, 'superpowers');
-  const env = {
-    ...process.env,
-    CODEX_HOME: codexHome,
-    CLAUDE_HOME: claudeHome,
-    AGENTS_HOME: agentsHome,
-  };
-
-  await mkdir(superpowersDir, { recursive: true });
-  await writeSuperpowersSkill(codexHome, 'using-superpowers');
-  spawnSync('git', ['init', superpowersDir], { stdio: 'ignore' });
-
-  await installSuperpowers({
-    rootDir,
-    client: 'codex',
-    installClaudePlugin: false,
-    env,
-    io: { log() {} },
-  });
-
-  const logs = [];
-  const result = await doctorSuperpowers({
-    client: 'codex',
-    env,
-    io: { log: (line) => logs.push(String(line)) },
-  });
-
-  const rendered = logs.join('\n');
-  assert.equal(result.errors, 0);
-  assert.doesNotMatch(rendered, /claude_home/i);
-  assert.doesNotMatch(rendered, /Claude Code skill/i);
-  assert.match(rendered, /client: codex/i);
-  assert.match(rendered, /Claude Code superpowers doctor skipped/i);
 });
 
 test('browser installer runtime files do not embed author machine paths', async () => {

@@ -62,11 +62,6 @@ export async function runUninstall(rawOptions = {}, { io = console, rootDir, pro
     io.log('[info] It is safe to keep mcp-server build/runtime artifacts.');
   }
 
-  if (hasComponent(options.components, 'superpowers')) {
-    io.log('[info] Superpowers has no destructive auto-uninstall script.');
-    io.log('[info] It is safe to keep ~/.codex/superpowers.');
-  }
-
   if (hasComponent(options.components, 'shell')) {
     io.log('');
     io.log(process.platform === 'win32' ? 'Run: . $PROFILE' : 'Run: source ~/.zshrc');

@@ -71,7 +71,7 @@ test('evaluatePlanEvidence accepts the canonical schema-v2 planning contract', a
       objective: 'Dispatch only after policy persistence',
       client: 'codex',
       route: 'team',
-      skills: ['writing-plans', 'dispatching-parallel-agents'],
+      skills: ['rex-planning'],
       tasks: [{ id: 't1', title: 'Dispatch', status: 'pending', acceptance: 'Plan is readable' }],
     }),
   });

@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdir, mkdtemp, rm, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile } from 'node:fs/promises';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -7,15 +7,11 @@ import test from 'node:test';
 
 import {
   buildPlanMarkdown,
-  checkPlanningSkillDiscovery,
   formatActivePlanInjection,
-  inspectSkillRoot,
-  PLANNING_CORE_SKILLS,
   readActivePlan,
   setPlanStatus,
   startPlan,
 } from '../lib/planning/contract.mjs';
-import { projectPlanningSkills } from '../lib/planning/project-skills.mjs';
 import {
   buildAlwaysOnPlanningDirective,
   ensurePlanForMessage,
@@ -133,26 +129,6 @@ test('formatActivePlanInjection returns null when no plan', async () => {
   }
 });
 
-test('inspectSkillRoot reports missing skills', async () => {
-  const root = await makeTemp('aios-plan-skills-');
-  try {
-    const empty = inspectSkillRoot(path.join(root, 'missing'));
-    assert.equal(empty.ok, false);
-    assert.equal(empty.missing.length, PLANNING_CORE_SKILLS.length);
-
-    const skillRoot = path.join(root, 'skills');
-    for (const name of PLANNING_CORE_SKILLS) {
-      await mkdir(path.join(skillRoot, name), { recursive: true });
-      await writeFile(path.join(skillRoot, name, 'SKILL.md'), `# ${name}\n`, 'utf8');
-    }
-    const full = inspectSkillRoot(skillRoot);
-    assert.equal(full.ok, true);
-    assert.equal(full.missing.length, 0);
-  } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
 test('auto-gate keeps direct messages and plan injection read-only', async () => {
   const root = await makeTemp('aios-plan-always-');
   try {
@@ -253,6 +229,8 @@ test('explicit plan requests persist once and same-session continuation reuses w
     assert.equal(first.created, true);
     assert.ok(first.plan?.relativePath);
     assert.deepEqual(first.plan.skills, ['rex-planning']);
+    assert.ok(!first.plan.skills.includes('writing-plans'));
+    assert.ok(!first.plan.skills.includes('using-superpowers'));
     const activePath = path.join(root, '.aios', 'planning', 'active.json');
     const before = await readFile(activePath, 'utf8');
 
@@ -304,52 +282,6 @@ test('runAutoGate retains legacy fields and adds a structured policy decision', 
     assert.equal(result.created, true);
     assert.equal(result.decision.disposition, 'planned');
   } finally {
-    await rm(root, { recursive: true, force: true });
-  }
-});
-
-test('projectPlanningSkills links into hermes project skill root', async () => {
-  const home = await makeTemp('aios-plan-home-');
-  const root = await makeTemp('aios-plan-ws-');
-  const source = path.join(home, '.codex', 'superpowers', 'skills');
-  try {
-    for (const name of PLANNING_CORE_SKILLS) {
-      await mkdir(path.join(source, name), { recursive: true });
-      await writeFile(path.join(source, name, 'SKILL.md'), `---\nname: ${name}\n---\n`, 'utf8');
-    }
-    const env = {
-      HOME: home,
-      CODEX_HOME: path.join(home, '.codex'),
-      CLAUDE_HOME: path.join(home, '.claude'),
-      HERMES_HOME: path.join(home, '.hermes'),
-      GEMINI_HOME: path.join(home, '.gemini'),
-      OPENCODE_HOME: path.join(home, '.config', 'opencode'),
-      GROK_HOME: path.join(home, '.grok'),
-      AGENTS_HOME: path.join(home, '.agents'),
-    };
-    const result = projectPlanningSkills({
-      rootDir: root,
-      client: 'hermes',
-      force: true,
-      env,
-      homeDir: home,
-      io: { log() {} },
-    });
-    assert.equal(result.ok, true);
-    assert.ok(fs.existsSync(path.join(root, '.hermes', 'skills', 'writing-plans', 'SKILL.md')));
-    assert.ok(fs.existsSync(path.join(home, '.hermes', 'skills', 'writing-plans', 'SKILL.md')));
-
-    const discovery = checkPlanningSkillDiscovery({
-      rootDir: root,
-      clients: ['hermes'],
-      env,
-      homes: {
-        hermes: path.join(home, '.hermes'),
-      },
-    });
-    assert.equal(discovery.ok, true);
-  } finally {
-    await rm(home, { recursive: true, force: true });
     await rm(root, { recursive: true, force: true });
   }
 });

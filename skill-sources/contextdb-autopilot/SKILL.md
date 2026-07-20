@@ -40,7 +40,7 @@ Script path: `scripts/ctx-agent.sh`
 - You need automatic session creation, event logging, checkpoints, and continuity/handoff artifact writes.
 - You want to retrieve prior facts explicitly before continuing work.
 
-Do not use this skill just to execute a normal coding task. Use the project workflow/superpowers skills for task execution.
+Do not use this skill just to execute a normal coding task. Let the current Rex Capability Command select the task Provider.
 
 ## Required Pattern
 Use one-shot mode (`--prompt`) when you want automatic logging around a single explicit request. The prompt is not augmented with ContextDB state.

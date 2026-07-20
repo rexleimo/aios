@@ -22,13 +22,12 @@ interface UninstallScreenProps {
   onRun: () => void;
 }
 
-const COMPONENTS_KEYS: (keyof ComponentsConfig)[] = ['browser', 'shell', 'skills', 'native', 'superpowers'];
+const COMPONENTS_KEYS: (keyof ComponentsConfig)[] = ['browser', 'shell', 'skills', 'native'];
 const COMPONENTS_LABELS: Record<keyof ComponentsConfig, string> = {
   browser: 'Browser MCP',
   shell: 'Shell wrappers',
   skills: 'Skills',
   native: 'Native enhancements',
-  superpowers: 'Superpowers',
 };
 
 export function UninstallScreen({
@@ -44,7 +43,7 @@ export function UninstallScreen({
 }: UninstallScreenProps) {
   const navigate = useNavigate();
   const [cursor, setCursor] = useState(0);
-  const maxCursor = 9;
+  const maxCursor = 8;
 
   useInput(
     useCallback(
@@ -54,33 +53,33 @@ export function UninstallScreen({
         } else if (key.downArrow) {
           setCursor(prev => Math.min(maxCursor, prev + 1));
         } else if (input === ' ') {
-          if (cursor >= 0 && cursor <= 4) {
+          if (cursor >= 0 && cursor <= 3) {
             onToggleComponent(COMPONENTS_KEYS[cursor]);
-          } else if (cursor === 5) {
+          } else if (cursor === 4) {
             onCycleScope();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleClient();
           }
         } else if (key.rightArrow) {
-          if (cursor >= 0 && cursor <= 4) {
+          if (cursor >= 0 && cursor <= 3) {
             onToggleComponent(COMPONENTS_KEYS[cursor]);
-          } else if (cursor === 5) {
+          } else if (cursor === 4) {
             onCycleScope();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleClient();
           }
         } else if (key.leftArrow) {
-          if (cursor === 5) {
+          if (cursor === 4) {
             onCycleScopePrevious();
-          } else if (cursor === 6) {
+          } else if (cursor === 5) {
             onCycleClientPrevious();
           }
         } else if (key.return) {
-          if (cursor === 7) {
+          if (cursor === 6) {
             onSelectSkills();
-          } else if (cursor === 8) {
+          } else if (cursor === 7) {
             onRun();
-          } else if (cursor === 9) {
+          } else if (cursor === 8) {
             navigate('/');
           }
         } else if (input === 'b' || input === 'B') {
@@ -131,11 +130,11 @@ export function UninstallScreen({
             active={cursor === idx}
           />
         ))}
-        {renderValueItem('Skills scope', options.scope, 5)}
-        {renderValueItem('Client', options.client, 6)}
-        {renderValueItem('Selected skills', selectedSkillsDisplay, 7)}
-        {renderActionItem('Run uninstall', 8)}
-        {renderActionItem('Back', 9)}
+        {renderValueItem('Skills scope', options.scope, 4)}
+        {renderValueItem('Client', options.client, 5)}
+        {renderValueItem('Selected skills', selectedSkillsDisplay, 6)}
+        {renderActionItem('Run uninstall', 7)}
+        {renderActionItem('Back', 8)}
       </Box>
       <Box flexDirection="column">
         {options.components.native ? (

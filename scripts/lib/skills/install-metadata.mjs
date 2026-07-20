@@ -101,6 +101,60 @@ export function isManagedGeneratedSkill(targetDir, expected = {}) {
   return true;
 }
 
+// Older AIOS projections could be written under a different discovery root
+// while retaining their original managed-source identity. They remain AIOS
+// owned only when every source identity field still matches.
+export function isLegacyManagedGeneratedSkillProjection(targetDir, expected = {}) {
+  const meta = readGeneratedSkillMetadata(targetDir);
+  if (!meta || meta.managedBy !== 'aios' || meta.kind !== 'generated-skill') {
+    return false;
+  }
+  if (expected.relativeSkillPath && meta.relativeSkillPath !== expected.relativeSkillPath) {
+    return false;
+  }
+  if (expected.targetRelativePath && meta.targetRelativePath !== expected.targetRelativePath) {
+    return false;
+  }
+  if (expected.source && meta.source !== expected.source) {
+    return false;
+  }
+  return Boolean(
+    expected.targetSurface
+    && meta.targetSurface
+    && meta.targetSurface !== expected.targetSurface
+  );
+}
+
+// A legacy projection can be retired only when its metadata still describes
+// this exact target and canonical source; a stale surface alone is not enough.
+export function isMisprojectedManagedGeneratedSkillProjection(targetDir, expected = {}) {
+  const meta = readGeneratedSkillMetadata(targetDir);
+  const targetSurface = String(expected.targetSurface || '').trim();
+  const targetRelativePath = String(expected.targetRelativePath || '').trim();
+  const relativeSkillPath = String(meta?.relativeSkillPath || '').trim();
+  const normalizedSkillPath = relativeSkillPath.replaceAll('\\', '/');
+
+  if (
+    !targetSurface
+    || !targetRelativePath
+    || !relativeSkillPath
+    || normalizedSkillPath === '.'
+    || normalizedSkillPath === '..'
+    || normalizedSkillPath.startsWith('../')
+    || path.posix.isAbsolute(normalizedSkillPath)
+    || path.posix.normalize(normalizedSkillPath) !== normalizedSkillPath
+  ) {
+    return false;
+  }
+
+  return isLegacyManagedGeneratedSkillProjection(targetDir, {
+    relativeSkillPath,
+    targetSurface,
+    targetRelativePath,
+    source: path.posix.join('skill-sources', normalizedSkillPath),
+  });
+}
+
 export function isManagedInstalledSkill(targetDir, expected = {}) {
   const meta = readInstalledSkillMetadata(targetDir);
   if (!meta || meta.managedBy !== 'aios' || meta.kind !== 'installed-skill') {

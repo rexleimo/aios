@@ -110,7 +110,7 @@ test('resolveDefaultModeInjections returns injections for strict-primary', async
   }
 });
 
-test('runtime directive presets keep Superpowers on demand', async () => {
+test('runtime directive presets avoid fixed Provider injection', async () => {
   const tmpDir = await mkdtemp();
   try {
     await mkdir(path.join(tmpDir, '.aios'), { recursive: true });

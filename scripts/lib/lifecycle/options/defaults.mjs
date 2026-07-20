@@ -1,12 +1,13 @@
 export function createDefaultSetupOptions() {
   return {
-    components: ['browser', 'shell', 'skills', 'native', 'superpowers'],
+    components: ['browser', 'shell', 'skills', 'native'],
     wrapMode: 'opt-in',
     client: 'all',
     scope: 'global',
     installMode: 'copy',
     skills: [],
     tokenProfile: 'balanced',
+    adoptLegacySuperpowers: false,
     applyClientCostSettings: false,
     skipPlaywrightInstall: false,
     skipDoctor: false,
@@ -16,13 +17,14 @@ export function createDefaultSetupOptions() {
 export function createDefaultUpdateOptions() {
   return {
     selfUpdate: false,
-    components: ['browser', 'shell', 'skills', 'native', 'superpowers'],
+    components: ['browser', 'shell', 'skills', 'native'],
     wrapMode: 'opt-in',
     client: 'all',
     scope: 'global',
     installMode: 'copy',
     skills: [],
     tokenProfile: 'balanced',
+    adoptLegacySuperpowers: false,
     applyClientCostSettings: false,
     withPlaywrightInstall: false,
     skipDoctor: false,

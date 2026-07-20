@@ -4,7 +4,7 @@ import {
   SUBAGENT_UPSTREAM_MAX_ATTEMPTS_ENV,
 } from '../subagent-runtime/constants.mjs';
 import { parsePositiveInt } from '../subagent-runtime/text.mjs';
-import { normalizeSpawnResult } from './spawn-result.mjs';
+import { attachExecutedArgs, normalizeSpawnResult } from './spawn-result.mjs';
 
 function isUnsupportedCodexFlagError(text, flags = []) {
   const normalized = String(text || '').toLowerCase();
@@ -88,7 +88,7 @@ async function runCodexStructuredFallbacks(command, invocation, { env, timeoutMs
   fallbackArgs.push('-');
 
   const fallback = await runCodexExecWithRetry(command, fallbackArgs, { env, timeoutMs, cwd, input: fullPrompt, io });
-  const normalized = normalizeSpawnResult(fallback, timeoutMs);
+  const normalized = attachExecutedArgs(normalizeSpawnResult(fallback, timeoutMs), fallbackArgs);
   if (normalized.error || normalized.exitCode === 0) return normalized;
 
   const fallbackCombined = `${normalized.stdout}\n${normalized.stderr}`.trim();
@@ -97,14 +97,15 @@ async function runCodexStructuredFallbacks(command, invocation, { env, timeoutMs
     return normalized;
   }
 
-  const plainFallback = await runCodexExecWithRetry(command, ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, '-'], {
+  const plainFallbackArgs = ['exec', ...codexUnattendedArgs, ...codexConfigArgs, ...routedExtraArgs, '-'];
+  const plainFallback = await runCodexExecWithRetry(command, plainFallbackArgs, {
     env,
     timeoutMs,
     cwd,
     input: fullPrompt,
     io,
   });
-  return normalizeSpawnResult(plainFallback, timeoutMs);
+  return attachExecutedArgs(normalizeSpawnResult(plainFallback, timeoutMs), plainFallbackArgs);
 }
 
 export async function runCodexInvocation(command, invocation, options) {
@@ -116,7 +117,7 @@ export async function runCodexInvocation(command, invocation, options) {
     input: invocation.fullPrompt,
     io,
   });
-  const normalized = normalizeSpawnResult(result, timeoutMs);
+  const normalized = attachExecutedArgs(normalizeSpawnResult(result, timeoutMs), invocation.args);
   if (normalized.error || normalized.exitCode === 0 || invocation.structuredFlags.length === 0) {
     return normalized;
   }

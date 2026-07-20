@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#live-evidence-tdd-red-observation",
+  "redCandidate": {
+    "publicEntry": "buildAgentCatalogue() via aios agents doctor",
+    "setup": "An isolated evidence root contains the exact schema-v1 smoke, provenance, and bidirectional metric artifacts formerly minted by aios agents smoke without launching a client process.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/ecc-agent-workflow.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "A projected agent remains blocked when its only evidence is a self-attested legacy artifact set.",
+    "observed": "The new assertion received verification.status=verified for rex-planner.",
+    "failureReason": "Admission accepts v1 status strings and independently shaped metric records without a managed execution receipt that binds runner, invocation, output, client, agent, and session.",
+    "receiptRef": "receipt:400e4778-f8bd-42cd-93a0-86e4bb0afd27"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "aios-workflow-router",
+  "sourcePath": "skill-sources/aios-workflow-router/SKILL.md",
+  "base": "HEAD",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "dae1f07b65569bfcf38cd9ce94cf5dd9b3956e94cab7dfd3441ab6dc094e5fb7",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "e726f174c9e3159a300a4afdb9c0adfe8d9d71f051342b6b15cb941a9c860e4a"
+  },
+  "candidate": {
+    "contentSha256": "dae1f07b65569bfcf38cd9ce94cf5dd9b3956e94cab7dfd3441ab6dc094e5fb7"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-07-20T05:18:02.434Z"
+}

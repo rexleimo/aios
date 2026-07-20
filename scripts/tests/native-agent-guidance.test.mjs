@@ -44,10 +44,11 @@ test('native instructions describe rex-only workflow ownership without a fixed P
   }
 });
 
-test('root instruction files keep Superpowers on demand', () => {
+test('root instruction files retain Rex-only workflow ownership', () => {
   for (const file of ['AGENTS.md', 'CLAUDE.md']) {
     const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
     assert.match(markdown, /AIOS Workflow Policy/, `${file} missing workflow policy`);
+    assert.match(markdown, /current Rex Capability Command|current `capabilityDecision`/u, `${file} missing Rex command ownership`);
     assert.doesNotMatch(markdown, /Superpowers skills MUST be invoked before any implementation action/i, `${file} still globally requires Superpowers`);
     assert.doesNotMatch(markdown, /Invoke `using-superpowers` skill first/i, `${file} still bootstraps using-superpowers globally`);
     assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${file} still routes Superpowers outside rex`);

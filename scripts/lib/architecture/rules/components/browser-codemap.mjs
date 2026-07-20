@@ -1,4 +1,4 @@
-/* 中文注释：browser/codemap/skills/superpowers 组件规则按安装组件聚合。 */
+/* 中文注释：browser/codemap/skills 组件规则按安装组件聚合。 */
 export const BROWSER_CODEMAP_COMPONENT_RULES = Object.freeze([
   Object.freeze({
     id: 'codemap-component-facade',
@@ -76,21 +76,6 @@ export const BROWSER_CODEMAP_COMPONENT_RULES = Object.freeze([
       'scripts/lib/components/skills/install.mjs',
       'scripts/lib/components/skills/uninstall.mjs',
       'scripts/lib/components/skills/doctor.mjs',
-    ]),
-  }),
-  Object.freeze({
-    id: 'superpowers-component-facade',
-    label: 'Superpowers Component Facade',
-    path: 'scripts/lib/components/superpowers.mjs',
-    maxLines: 80,
-    requiredModules: Object.freeze([
-      'scripts/lib/components/superpowers/constants.mjs',
-      'scripts/lib/components/superpowers/clients.mjs',
-      'scripts/lib/components/superpowers/claude-plugin.mjs',
-      'scripts/lib/components/superpowers/skills.mjs',
-      'scripts/lib/components/superpowers/permissions.mjs',
-      'scripts/lib/components/superpowers/install.mjs',
-      'scripts/lib/components/superpowers/doctor.mjs',
     ]),
   }),
 ]);

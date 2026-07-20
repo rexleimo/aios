@@ -21,7 +21,6 @@ export {
   resolveClientAgentTargets,
   resolveClientCapabilitySelection,
   resolveClientNativeClients,
-  resolveClientSuperpowersClients,
   resolveClientsWithCapability,
   supportsClientCapability,
 } from './capabilities/index.mjs';

@@ -6,11 +6,11 @@ import { doctorCodemap } from '../components/codemap.mjs';
 import { doctorNativeEnhancements } from '../components/native.mjs';
 import { doctorContextDbShell } from '../components/shell.mjs';
 import { doctorContextDbSkills } from '../components/skills.mjs';
-import { doctorSuperpowers } from '../components/superpowers.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
 import { commandExists, captureCommand, runCommand } from '../platform/process.mjs';
 import { doctorRexHarness, isAiosRuntimeRoot } from '../rex-harness/runtime.mjs';
 import { inspectTokenDiscipline, printTokenDisciplineReport } from '../token-discipline/index.mjs';
+import { reconcileLegacyWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
 import { runNativeOnlyDoctor } from './aggregate/native-only.mjs';
 import { addDoctorCheck, countEffectiveWarnLines, logSkippedGate, printCaptured, printDoctorCheckSummary } from './aggregate/reporting.mjs';
 
@@ -66,7 +66,8 @@ export async function runDoctorSuite({
   io.log('== doctor-rex-harness ==');
   if (isAiosRuntimeRoot(rootDir)) {
     // 中文注释：rex-harness 是 AIOS 智能规划的硬依赖，不随 token/profile 门禁关闭。
-    const rexResult = await doctorRexHarness({ rootDir, fix, io });
+    const rexDoctor = deps.doctorRexHarness ?? doctorRexHarness;
+    const rexResult = await rexDoctor({ rootDir, fix, io });
     effectiveWarns += rexResult.effectiveWarnings + rexResult.errors;
     addDoctorCheck(checks, {
       id: 'doctor:rex-harness',
@@ -75,6 +76,26 @@ export async function runDoctorSuite({
       fix: rexResult.fixHint || 'Bundled rex-harness is ready.',
       note: `ready=${rexResult.ready}; version=${rexResult.version || 'unknown'}; attemptedFix=${rexResult.attemptedFix}`,
     });
+    if (rexResult.ready) {
+      const workflowSurface = await reconcileLegacyWorkflowSurface({
+        reconciler: deps.reconcileRexWorkflowSurface,
+        dryRun: dryRun || !fix,
+        io,
+      });
+      const workflowStatus = workflowSurface.status === 'inspection-failed'
+        ? 'error'
+        : workflowSurface.conflicts.length > 0 ? 'warn' : 'ok';
+      if (workflowStatus !== 'ok') effectiveWarns += 1;
+      addDoctorCheck(checks, {
+        id: 'doctor:rex-workflow-surface',
+        item: 'AIOS-managed legacy Superpowers workflow projection',
+        status: workflowStatus,
+        fix: workflowStatus === 'ok'
+          ? 'Rex workflow surface is converged.'
+          : 'Run doctor --fix after resolving the reported ownership conflict.',
+        note: `status=${workflowSurface.status}; removed=${workflowSurface.removed.length}; conflicts=${workflowSurface.conflicts.length}`,
+      });
+    }
   } else {
     addDoctorCheck(checks, {
       id: 'doctor:rex-harness',
@@ -177,33 +198,6 @@ export async function runDoctorSuite({
     addDoctorCheck(checks, {
       id: 'doctor:native',
       item: 'Repo-local native enhancement surfaces',
-      status: 'skip',
-      fix: 'Enable gate or run doctor with --profile standard/strict.',
-      note: `disabled for profile=${profile}`,
-    });
-  }
-
-  io.log('');
-  io.log('== doctor-superpowers ==');
-  if (isHarnessGateEnabled('doctor:superpowers', { profile, disabledGates, profiles: ['minimal', 'standard', 'strict'] })) {
-    const superpowersDoctor = deps.doctorSuperpowers ?? doctorSuperpowers;
-    const superpowersResult = await superpowersDoctor({ client, io });
-    addDoctorCheck(checks, {
-      id: 'doctor:superpowers',
-      item: 'Superpowers repository and managed links',
-      status: superpowersResult.errors > 0 ? 'error' : (superpowersResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: `Run: node scripts/aios.mjs internal superpowers install --client ${client} --update`,
-      note: `errors=${superpowersResult.errors}; effectiveWarnings=${superpowersResult.effectiveWarnings}`,
-    });
-    if (superpowersResult.errors > 0) {
-      throw new Error(`doctor-superpowers failed (${superpowersResult.errors} errors)`);
-    }
-    effectiveWarns += superpowersResult.effectiveWarnings;
-  } else {
-    logSkippedGate(io, 'doctor:superpowers', profile);
-    addDoctorCheck(checks, {
-      id: 'doctor:superpowers',
-      item: 'Superpowers repository and managed links',
       status: 'skip',
       fix: 'Enable gate or run doctor with --profile standard/strict.',
       note: `disabled for profile=${profile}`,

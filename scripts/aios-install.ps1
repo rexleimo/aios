@@ -175,6 +175,23 @@ try {
     }
   }
 
+  $workflowReconciler = Join-Path $InstallDir "scripts/reconcile-rex-workflow-surface.mjs"
+  if (Test-Path -LiteralPath $workflowReconciler) {
+    Write-Host "+ reconcile AIOS-managed legacy workflow projections"
+    $workflowReconcilerArgs = @($workflowReconciler, "--root", $InstallDir)
+    Invoke-Checked -Command "node" -Arguments $workflowReconcilerArgs
+  } else {
+    Write-Host "[warn] missing Rex workflow reconciler: $workflowReconciler"
+  }
+
+  $rexProjector = Join-Path $InstallDir "scripts/install-rex-client-projections.mjs"
+  if (Test-Path -LiteralPath $rexProjector) {
+    Write-Host "+ install Rex workflow skills for all supported clients"
+    Invoke-Checked -Command "node" -Arguments @($rexProjector, "--root", $InstallDir, "--client", "all", "--scope", "global")
+  } else {
+    Write-Host "[warn] missing Rex client skill projector: $rexProjector"
+  }
+
   Write-Host ""
   Write-Host "[ok] Installed AIOS:"
   Write-Host ("  Repo:        {0}" -f $Repo)

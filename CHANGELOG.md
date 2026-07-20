@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+## [5.0.0] - 2026-07-20
+
+### Changed
+
+- Rex-only workflow migration: `rex-harness` is now the default software-engineering control plane for new AIOS installations and managed client projections. Superpowers is retired as an AIOS workflow and installation component.
+- Keep the former public Superpowers documentation route as a Rex migration guide instead of an active workflow catalog.
+- Make changed Skill certification reproducible: release evidence is checked into `docs/evidence/skill-training/` and the release gate reruns the deterministic probe instead of trusting a hand-written status or hash.
+
+### Migration
+
+- A normal `aios update`, `aios init`, or `aios setup` reconciles Rex projections but preserves a historical Superpowers projection without AIOS ownership proof and reports it as a conflict.
+- Use `--adopt-legacy-superpowers` explicitly, preferably after `--dry-run`, to adopt and remove only recognized AIOS legacy links for Codex, Claude, Gemini, OpenCode, Hermes, Grok, and shared `.agents` projections.
+
 ## [4.2.2] - 2026-07-17
 
 ### Added

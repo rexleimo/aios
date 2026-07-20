@@ -14,6 +14,7 @@ import {
 } from '../lib/workflows/rex-capability-runtime.mjs';
 import { evaluateAiosSoftwareRequest } from '../lib/workflows/rex-harness-adapter.mjs';
 import { startStoredAiosCapabilityActivation } from '../lib/workflows/rex-activation-store.mjs';
+import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
 
 test('provider output parser accepts one typed evidence envelope and ignores ordinary prose', () => {
   const activationId = 'activation-envelope';
@@ -45,6 +46,107 @@ test('provider output parser rejects evidence for a different activation', () =>
     () => parseCapabilityEvidenceEnvelope(output, { activationId: 'activation-current' }),
     /activationId mismatch/u,
   );
+});
+
+test('provider output parser rejects unknown envelope fields', () => {
+  const output = `AIOS_REX_EVIDENCE=${JSON.stringify({
+    schemaVersion: 1,
+    activationId: 'activation-current',
+    evidence: [{ kind: 'focused-tests-pass', refs: ['receipt:known'] }],
+    claimedSuccess: true,
+  })}`;
+
+  assert.throws(
+    () => parseCapabilityEvidenceEnvelope(output, { activationId: 'activation-current' }),
+    /unknown field: claimedSuccess/u,
+  );
+});
+
+test('AIOS envelope accepts an honest typed decision and rejects a claimed RED', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-envelope-testability-'));
+  try {
+    const software = evaluateAiosSoftwareRequest({
+      message: 'Update checkout validation behavior.',
+      completedCapabilities: ['software.requirements.clarify'],
+    });
+    const started = startStoredAiosCapabilityActivation({
+      rootDir,
+      decision: software.decision,
+      activationId: 'activation-envelope-testability',
+      workItemKey: 'work-item:envelope-testability',
+      request: { message: 'Update checkout validation behavior.' },
+    });
+    assert.equal(started.command.provider.id, 'rex-test-design');
+
+    const scoped = ingestCapabilityEvidenceOutput({
+      rootDir,
+      command: started.command,
+      output: `AIOS_REX_EVIDENCE=${JSON.stringify({
+        schemaVersion: 1,
+        activationId: started.command.activationId,
+        evidence: [
+          { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+          { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+          { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+        ],
+      })}`,
+    });
+    assert.equal(scoped.result.command.stageId, 'decide-testability');
+
+    const receipt = captureStandaloneExecutionReceipt({
+      rootDir,
+      executable: process.execPath,
+      args: ['-e', 'process.exit(7)'],
+    });
+    const selected = ingestCapabilityEvidenceOutput({
+      rootDir,
+      command: scoped.result.command,
+      output: `AIOS_REX_EVIDENCE=${JSON.stringify({
+        schemaVersion: 1,
+        activationId: scoped.result.command.activationId,
+        evidence: [
+          { kind: 'testability-decision-recorded', refs: ['artifact:testability-decision'] },
+        ],
+        testabilityDecision: {
+          kind: 'behavior-delta',
+          decisionRef: 'artifact:testability-decision',
+          redCandidate: {
+            publicEntry: 'checkout validation endpoint',
+            setup: 'Submit an invalid checkout request.',
+            command: {
+              executable: process.execPath,
+              args: ['-e', 'process.exit(7)'],
+              cwd: rootDir,
+            },
+            expected: 'The invalid checkout is rejected.',
+            observed: 'The invalid checkout is accepted before implementation.',
+            failureReason: 'The requested validation behavior is absent.',
+            receiptRef: receipt.ref,
+          },
+        },
+      })}`,
+    });
+    const tddCommand = selected.result.nextCapability.command;
+    assert.equal(tddCommand.provider.id, 'rex-tdd');
+
+    assert.throws(
+      () => ingestCapabilityEvidenceOutput({
+        rootDir,
+        command: tddCommand,
+        output: `AIOS_REX_EVIDENCE=${JSON.stringify({
+          schemaVersion: 1,
+          activationId: tddCommand.activationId,
+          evidence: [
+            { kind: 'failing-test-observed', refs: ['command:claimed-red'] },
+            { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
+          ],
+        })}`,
+      }),
+      /requires at least one receipt/u,
+    );
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('runner evidence ingestion advances only when a valid envelope is present', async () => {

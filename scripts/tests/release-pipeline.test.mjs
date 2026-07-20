@@ -59,7 +59,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'AGENTS.md', '# fixture\n');
   await writeFixtureFile(rootDir, 'CHANGELOG.md', '## [1.2.3] - 2026-03-17\n');
   await writeFixtureFile(rootDir, 'VERSION', '1.2.3\n');
-  await writeFixtureFile(rootDir, 'package.json', '{"name":"fixture-aios","type":"module","dependencies":{"ink":"^4.4.1"},"devDependencies":{"tsx":"^4.21.0"}}\n');
+  await writeFixtureFile(rootDir, 'package.json', '{"name":"fixture-aios","type":"module","scripts":{"test:scripts":"node -e \\\"process.exit(0)\\\""}}\n');
   await writeFixtureFile(rootDir, 'package-lock.json', '{"name":"fixture-aios","lockfileVersion":3,"packages":{}}\n');
   await writeFixtureFile(rootDir, 'rex-harness/package.json', '{"name":"@rexleimo/rex-harness","version":"0.4.2"}\n');
   await writeFixtureFile(rootDir, 'rex-harness/src/index.mjs', 'export const fixtureRex = true;\n');
@@ -70,7 +70,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'skills-lock.json', '{}\n');
   await writeFixtureFile(rootDir, 'config/skills-sync-manifest.json', '{"schemaVersion":1,"generatedRoots":{"codex":".codex/skills","claude":".claude/skills"},"skills":[],"legacyUnmanaged":[],"legacyReplaceable":[]}\n');
   await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":["GEMINI.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":["AGENTS.md",".opencode/skills"]}}}\n');
-  await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp"}\n');
+  await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp","scripts":{"typecheck":"node -e \\\"process.exit(0)\\\"","test":"node -e \\\"process.exit(0)\\\"","build":"node -e \\\"process.exit(0)\\\""}}\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
   await cp(path.join(workspaceRoot, 'agent-sources'), path.join(rootDir, 'agent-sources'), { recursive: true });
@@ -90,8 +90,24 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/generate-orchestrator-agents.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'generate-orchestrator-agents.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/aios-install.sh', '#!/usr/bin/env bash\n');
   await writeFixtureFile(rootDir, 'scripts/aios-install.ps1', "Write-Host 'fixture'\n");
+  await writeFixtureFile(
+    rootDir,
+    'scripts/reconcile-rex-workflow-surface.mjs',
+    await readFile(path.join(workspaceRoot, 'scripts', 'reconcile-rex-workflow-surface.mjs'), 'utf8'),
+  );
+  await writeFixtureFile(
+    rootDir,
+    'scripts/install-rex-client-projections.mjs',
+    await readFile(path.join(workspaceRoot, 'scripts', 'install-rex-client-projections.mjs'), 'utf8'),
+  );
   await writeFixtureFile(rootDir, 'scripts/check-skills-sync.mjs', checkSkillsSyncScript);
   await writeFixtureFile(rootDir, 'scripts/check-native-sync.mjs', checkNativeSyncScript);
+  await writeFixtureFile(rootDir, 'scripts/aios.mjs', `
+if (process.argv.slice(2).join(' ') !== 'skill verify-training --changed --base HEAD^ --json') {
+  process.exit(2);
+}
+process.stdout.write('{"status":"verified"}\\n');
+`);
   await writeFixtureFile(rootDir, 'scripts/sync-native.mjs', "console.log('[ok] native sync');\n");
   await writeFixtureFile(rootDir, 'scripts/lib/fs/atomic-write.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'fs', 'atomic-write.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/skills/frontmatter.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'skills', 'frontmatter.mjs'), 'utf8'));
@@ -115,6 +131,7 @@ async function seedFixtureRepo(rootDir, {
   assertOk(run('git', ['config', 'user.name', 'Fixture'], { cwd: rootDir }));
   assertOk(run('git', ['add', '-A'], { cwd: rootDir }));
   assertOk(run('git', ['commit', '-m', 'fixture'], { cwd: rootDir }));
+  assertOk(run('git', ['commit', '--allow-empty', '-m', 'release base'], { cwd: rootDir }));
 }
 
 test('package-release emits stable assets including the rex-harness planning kernel', async () => {
@@ -175,12 +192,42 @@ test('package-release emits stable assets including the rex-harness planning ker
     path.join(extractDir, 'harness-cli', 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md'),
     'harness-cli.tar.gz did not include rex-harness/skill-sources/rex-workflow/SKILL.md'
   );
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
+    'harness-cli.tar.gz did not include the Rex workflow reconciliation entrypoint'
+  );
+  await assertFileExists(
+    path.join(extractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
+    'harness-cli.tar.gz did not include the global Rex client projection entrypoint'
+  );
+  for (const relativePath of [
+    '.codex/skills',
+    '.claude/skills',
+    '.gemini/skills',
+    '.agents/skills',
+    '.opencode/skills',
+    '.hermes/skills',
+    '.grok/skills',
+  ]) {
+    await assertFileMissing(
+      path.join(extractDir, 'harness-cli', relativePath),
+      `harness-cli.tar.gz must not ship stale client skill projections: ${relativePath}`
+    );
+  }
 
   const zipExtractDir = await makeTemp('rex-release-assets-zip-extract-');
   assertOk(run('tar', ['-xf', path.join(outDir, 'harness-cli.zip'), '-C', zipExtractDir]));
   await assertFileExists(
     path.join(zipExtractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
     'harness-cli.zip did not include rex-harness/src/index.mjs'
+  );
+  await assertFileExists(
+    path.join(zipExtractDir, 'harness-cli', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
+    'harness-cli.zip did not include the Rex workflow reconciliation entrypoint'
+  );
+  await assertFileExists(
+    path.join(zipExtractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
+    'harness-cli.zip did not include the global Rex client projection entrypoint'
   );
 });
 
@@ -216,6 +263,76 @@ test('one-liner installers bootstrap root runtime dependencies for direct releas
   assert.match(installSh, /node_modules\/\.bin\/tsx/);
   assert.match(installPs1, /npm install --include=dev/);
   assert.match(installPs1, /node_modules\/\.bin\/tsx\.cmd/);
+  assert.match(installSh, /reconcile-rex-workflow-surface\.mjs/);
+  assert.match(installPs1, /reconcile-rex-workflow-surface\.mjs/);
+  assert.match(installSh, /install-rex-client-projections\.mjs/);
+  assert.match(installPs1, /install-rex-client-projections\.mjs/);
+  assert.match(installSh, /--client all --scope global/);
+  assert.match(installPs1, /--client", "all", "--scope", "global"/);
+  assert.match(installSh, /workflow_reconcile_args=\(--root "\$AIOS_INSTALL_DIR"\)/);
+  assert.doesNotMatch(installSh, /superpowers/iu);
+  assert.doesNotMatch(installPs1, /superpowers/iu);
+});
+
+test('public release documentation describes ownership-safe Rex-only migration', async () => {
+  const workspaceRoot = process.cwd();
+  const [rootChangelog, migrationGuide, navigation, sidebar] = await Promise.all([
+    readFile(path.join(workspaceRoot, 'CHANGELOG.md'), 'utf8'),
+    readFile(path.join(workspaceRoot, 'docs-site', 'superpowers.md'), 'utf8'),
+    readFile(path.join(workspaceRoot, 'mkdocs.yml'), 'utf8'),
+    readFile(path.join(workspaceRoot, 'docs-site', 'overrides', 'partials', 'rex', 'docs-sidebar-links.html'), 'utf8'),
+  ]);
+
+  assert.match(migrationGuide, /`rex-harness`\s+is the only default software-engineering workflow/u);
+  assert.match(migrationGuide, /aios update --adopt-legacy-superpowers/u);
+  assert.match(migrationGuide, /without AIOS ownership proof is preserved and reported\s+as a conflict/u);
+  for (const client of ['Codex', 'Claude', 'Gemini', 'OpenCode', 'Hermes', 'Grok', '.agents']) {
+    assert.match(migrationGuide, new RegExp(client.replace('.', '\\.'), 'u'));
+  }
+  assert.doesNotMatch(migrationGuide, /Superpowers are reusable process playbooks/u);
+  assert.match(rootChangelog, /Rex-only workflow migration/u);
+  assert.match(navigation, /Rex Workflow Migration: superpowers\.md/u);
+  assert.match(sidebar, /Rex Workflow Migration/u);
+
+  const localizedAssertions = [
+    ['changelog.md', /Rex-only workflow migration/u],
+    [path.join('zh', 'changelog.md'), /Rex-only 工作流迁移/u],
+    [path.join('ja', 'changelog.md'), /Rex-only ワークフロー移行/u],
+    [path.join('ko', 'changelog.md'), /Rex-only 워크플로 마이그레이션/u],
+  ];
+  for (const [relativePath, expected] of localizedAssertions) {
+    const changelog = await readFile(path.join(workspaceRoot, 'docs-site', relativePath), 'utf8');
+    assert.match(changelog, expected, `${relativePath} is missing the Rex-only migration note`);
+  }
+
+  const localizedMigrationGuides = [
+    [path.join('zh', 'superpowers.md'), /# Rex 工作流迁移/u],
+    [path.join('ja', 'superpowers.md'), /# Rex ワークフロー移行/u],
+    [path.join('ko', 'superpowers.md'), /# Rex 워크플로 마이그레이션/u],
+  ];
+  for (const [relativePath, expectedHeading] of localizedMigrationGuides) {
+    const guide = await readFile(path.join(workspaceRoot, 'docs-site', relativePath), 'utf8');
+    assert.match(guide, expectedHeading, `${relativePath} is missing its Rex migration heading`);
+    assert.match(guide, /rex-harness/iu, `${relativePath} does not describe the Rex workflow`);
+    assert.match(guide, /aios update --adopt-legacy-superpowers/u, `${relativePath} is missing explicit legacy cleanup guidance`);
+  }
+  for (const label of ['Rex 工作流迁移', 'Rex ワークフロー移行', 'Rex 워크플로 마이그레이션']) {
+    assert.match(navigation, new RegExp(`Rex Workflow Migration:\\s*${label}`, 'u'));
+  }
+  assert.doesNotMatch(navigation, /^\s+Superpowers:/mu, 'localized navigation must not present Superpowers as an active route');
+
+  const currentNoteSlices = [
+    ['changelog.md', '## Docs And Workflow Notes', '## Official Release History'],
+    [path.join('zh', 'changelog.md'), '## 文档与工作流说明', '## v3.6.0'],
+    [path.join('ja', 'changelog.md'), '## ドキュメントと workflow のメモ', '## v3.6.0'],
+    [path.join('ko', 'changelog.md'), '## 문서와 workflow 메모', '## v3.6.0'],
+  ];
+  for (const [relativePath, startHeading, endHeading] of currentNoteSlices) {
+    const changelog = await readFile(path.join(workspaceRoot, 'docs-site', relativePath), 'utf8');
+    const currentNotes = changelog.split(startHeading)[1]?.split(endHeading)[0];
+    assert.ok(currentNotes, `${relativePath} is missing its current-notes section`);
+    assert.doesNotMatch(currentNotes, /superpowers/iu, `${relativePath} still advertises Superpowers as a current capability`);
+  }
 });
 
 test('PowerShell installer enables TLS 1.2 before release asset downloads', async () => {
@@ -233,6 +350,57 @@ test('PowerShell installer can use a local asset URL for install smoke tests', a
   assert.match(installPs1, /AIOS_ASSET_URL/);
   assert.match(installPs1, /\$assetUrl = if \(\$AssetUrl\)/);
   assert.match(installPs1, /Copy-Item -LiteralPath \$localPath -Destination \$OutFile -Force/);
+});
+
+test('Bash installer can use a local asset URL for install smoke tests', async () => {
+  const workspaceRoot = process.cwd();
+  const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');
+
+  assert.match(installSh, /asset_url="\$\{AIOS_ASSET_URL:-https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/harness-cli\.tar\.gz\}"/u);
+});
+
+test('Bash installer isolates nested runtime and privacy paths from inherited host paths', async () => {
+  const workspaceRoot = process.cwd();
+  const rootDir = await makeTemp('rex-installer-nested-env-');
+  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
+  const assetPath = path.join(rootDir, 'harness-cli.tar.gz');
+  const installDir = path.join(rootDir, 'installed', 'harness-cli');
+
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/install-contextdb-shell.sh',
+    '#!/usr/bin/env bash\nprintf "%s|%s|%s\\n" "$AIOS_ROOT_DIR" "$AIOS_ROOT" "$ROOTPATH" > "$(dirname "$0")/shell-env.txt"\n',
+  );
+  await writeFixtureFile(
+    packageRoot,
+    'scripts/install-privacy-guard.sh',
+    '#!/usr/bin/env bash\nprintf "%s|%s|%s|%s\\n" "$AIOS_ROOT_DIR" "$AIOS_ROOT" "$ROOTPATH" "$REXCIL_HOME" > "$(dirname "$0")/privacy-env.txt"\n',
+  );
+
+  assertOk(run('tar', ['-czf', assetPath, '-C', path.join(rootDir, 'package'), 'harness-cli']));
+
+  const result = run('bash', [path.join(workspaceRoot, 'scripts', 'aios-install.sh')], {
+    env: {
+      ...process.env,
+      AIOS_ASSET_URL: `file://${assetPath}`,
+      AIOS_INSTALL_DIR: installDir,
+      AIOS_WRAP_MODE: 'off',
+      AIOS_ROOT_DIR: '/unexpected/host/runtime',
+      AIOS_ROOT: '/unexpected/host/runtime',
+      ROOTPATH: '/unexpected/host/runtime',
+      REXCIL_HOME: '',
+    },
+  });
+
+  assertOk(result);
+  assert.equal(
+    await readFile(path.join(installDir, 'scripts', 'shell-env.txt'), 'utf8'),
+    `${installDir}|${installDir}|${installDir}\n`,
+  );
+  assert.equal(
+    await readFile(path.join(installDir, 'scripts', 'privacy-env.txt'), 'utf8'),
+    `${installDir}|${installDir}|${installDir}|${path.dirname(installDir)}\n`,
+  );
 });
 
 windowsInstallerTest('PowerShell installer smoke extracts local asset and installs shell wrapper', async () => {
@@ -373,6 +541,8 @@ test('release-preflight.sh validates matching tag, VERSION, changelog, and nativ
   assert.match(ok.stdout, /SKILLS:\s+generated roots match skill-sources\//);
   assert.match(ok.stdout, /NATIVE:\s+generated native outputs match client-sources\/native-base\//);
   assert.match(ok.stdout, /AGENTS:\s+export-only regeneration passed/);
+  assert.match(ok.stdout, /TESTS:\s+root and MCP-server verification passed/);
+  assert.match(ok.stdout, /TRAINING:\s+changed Skill evidence recomputed/);
 
   const failingRoot = await makeTemp('rex-release-preflight-fail-');
   await seedFixtureRepo(failingRoot, {

@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-20-aios-cli-and-crg-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "managed shell installation and codemap install/doctor",
+    "setup": "Run the component-level public launcher and code-review-graph configuration tests in an isolated temporary home and project.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/aios-components.test.mjs",
+        "scripts/tests/codemap.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "Shell setup exposes a managed aios command from any working directory, and codemap configures code-review-graph for every registered client including Hermes without overwriting unrelated MCP entries.",
+    "observed": "The command exited 1 with six contract failures: aios and aios.cmd launchers were absent; Hermes had no codemap target, install projection, or doctor repair entry.",
+    "receiptRef": "receipt:87e30fe9-a4cd-41e1-996e-fd77bb1cebe3",
+    "failureReason": "The shell shim catalog only contains client commands, and the codemap target catalog omits Hermes YAML even though Hermes is in the shared client registry."
+  }
+}

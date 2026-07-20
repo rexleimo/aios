@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 
 const WORKSHOP_SUBCOMMANDS = new Set(['propose', 'review', 'apply', 'rollback', 'index']);
-const ALL_SUBCOMMANDS = ['comply', 'health', 'verify-training', 'propose', 'review', 'apply', 'rollback', 'index'];
+const ALL_SUBCOMMANDS = ['comply', 'health', 'certify', 'verify-training', 'propose', 'review', 'apply', 'rollback', 'index'];
 
 const SHARED_OPTIONS = [
   ['--json', 'Output as JSON'],
@@ -58,7 +58,7 @@ export function parseSkillArgs(argv = []) {
   try {
     if (!subcommand) {
       if (rawSubcommand && !rawSubcommand.startsWith('-') && !help) {
-        throw new Error('skill requires subcommand: comply, health, verify-training, propose, review, apply, rollback, or index');
+        throw new Error('skill requires subcommand: comply, health, certify, verify-training, propose, review, apply, rollback, or index');
       }
       return { mode: 'help', help: true, command: 'skill', options };
     }
@@ -107,6 +107,7 @@ export function parseSkillArgs(argv = []) {
     if (subcommand === 'apply' && !options.id) throw new Error('skill apply requires a proposal id');
     if (subcommand === 'rollback' && !options.name) throw new Error('skill rollback requires a skill name');
     if (subcommand === 'comply' && !options.path) throw new Error('skill comply requires a path');
+    if (subcommand === 'certify' && !options.changed) throw new Error('skill certify requires --changed');
     if (subcommand === 'index') options.scan = true;
 
     return { mode: 'command', help: false, command: 'skill', options };

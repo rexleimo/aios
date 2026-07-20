@@ -46,6 +46,80 @@ async function writeAgentEvidence(rootDir, agentId, {
   );
 }
 
+async function writeManagedAgentEvidence(rootDir, agentId, {
+  clientId = 'codex',
+  sessionId = `live-${agentId}`,
+} = {}) {
+  const timestamp = '2026-06-15T00:00:00.000Z';
+  const preSendRefId = `pre-${agentId}`;
+  const postReceiveRefId = `post-${agentId}`;
+  const receiptId = `receipt-${agentId}`;
+  const execution = {
+    runner: 'aios.harness.one-shot.v1',
+    receiptId,
+    clientId,
+    agentId,
+    sessionId,
+    invocation: {
+      command: 'codex',
+      argsSha256: 'a'.repeat(64),
+      cwd: rootDir,
+    },
+    exitCode: 0,
+    stdoutSha256: 'b'.repeat(64),
+    stderrSha256: 'c'.repeat(64),
+    observedAt: timestamp,
+  };
+  await writeFile(
+    path.join(rootDir, '.aios', 'agents', 'smoke', `${agentId}.json`),
+    `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'aios.agent-live-smoke.v2',
+      status: 'pass',
+      clientId,
+      agentId,
+      sessionId,
+      execution,
+      metrics: { sessionId, preSendRefId, postReceiveRefId },
+    }, null, 2)}\n`,
+    'utf8'
+  );
+  await writeFile(
+    path.join(rootDir, '.aios', 'agents', 'provenance', `${agentId}.json`),
+    `${JSON.stringify({
+      schemaVersion: 2,
+      kind: 'aios.live-execution-provenance.v2',
+      status: 'verified',
+      clientId,
+      agentId,
+      sessionId,
+      receiptId,
+    }, null, 2)}\n`,
+    'utf8'
+  );
+  const metricLines = [
+    ['pre_send', preSendRefId],
+    ['post_receive', postReceiveRefId],
+  ].map(([eventKind, refId]) => JSON.stringify({
+    ts: timestamp,
+    session_id: sessionId,
+    event_kind: eventKind,
+    client_id: clientId,
+    agent_id: agentId,
+    ref_id: refId,
+    mode: 'tight',
+    uncontrolled: false,
+    policy_violation: false,
+    saved_bytes: 128,
+    refs_count: 1,
+  })).join('\n');
+  await writeFile(
+    path.join(rootDir, '.aios', 'interception', 'metrics', `${agentId}-live.jsonl`),
+    `${metricLines}\n`,
+    'utf8'
+  );
+}
+
 async function writeQualityGateEvidence(rootDir, gate, payload = {}) {
   await mkdir(path.join(rootDir, '.aios', 'evidence', 'quality-gates'), { recursive: true });
   await writeFile(
@@ -108,7 +182,6 @@ test('agent catalogue exposes ECC-inspired default agent families with strict li
     'rex-security-reviewer',
     'rex-build-error-resolver',
     'rex-evidence-auditor',
-    'rex-loop-operator',
     'rex-typescript-reviewer',
     'rex-react-reviewer',
   ]) {
@@ -144,13 +217,32 @@ test('agent promotion evidence must be passing, agent-scoped, and bidirectional 
   assert.equal(planner.workflowEnabled, false);
 });
 
+test('legacy self-attested agent smoke artifacts cannot enable a projected agent', async () => {
+  const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-agent-legacy-self-attested-'));
+  await mkdir(path.join(evidenceRoot, '.aios', 'agents', 'smoke'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'agents', 'provenance'), { recursive: true });
+  await mkdir(path.join(evidenceRoot, '.aios', 'interception', 'metrics'), { recursive: true });
+
+  // This is exactly the v1 shape formerly minted by `aios agents smoke` without a client run.
+  await writeAgentEvidence(evidenceRoot, 'rex-planner');
+
+  const catalogue = await buildAgentCatalogue({
+    rootDir: process.cwd(),
+    evidenceRoot,
+  });
+  const planner = catalogue.agents.find((agent) => agent.agentId === 'rex-planner');
+
+  assert.equal(planner.verification.status, 'blocked');
+  assert.equal(planner.workflowEnabled, false);
+});
+
 test('valid agent evidence can promote projected agents but not candidate-only agents', async () => {
   const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-agent-valid-evidence-'));
   await mkdir(path.join(evidenceRoot, '.aios', 'agents', 'smoke'), { recursive: true });
   await mkdir(path.join(evidenceRoot, '.aios', 'agents', 'provenance'), { recursive: true });
   await mkdir(path.join(evidenceRoot, '.aios', 'interception', 'metrics'), { recursive: true });
-  await writeAgentEvidence(evidenceRoot, 'rex-planner');
-  await writeAgentEvidence(evidenceRoot, 'rex-evidence-auditor');
+  await writeManagedAgentEvidence(evidenceRoot, 'rex-planner');
+  await writeManagedAgentEvidence(evidenceRoot, 'rex-evidence-auditor');
 
   const catalogue = await buildAgentCatalogue({
     rootDir: process.cwd(),

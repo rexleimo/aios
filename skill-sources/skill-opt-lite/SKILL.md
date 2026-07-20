@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: true
 tags: [skill, training, optimization, SkillOpt, iteration]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 ---
 
 # SkillOpt-Lite: Agent-Native Skill Training
@@ -147,8 +147,8 @@ Agent:
 ## Integration with AIOS
 
 - Works with `aios-long-running-harness` for multi-session checkpoint/recovery
-- Use `superpowers:verification-before-completion` before declaring training success
-- Use `superpowers:brainstorming` first if the skill domain is unclear
+- Use `verification-loop` before declaring training success
+- If the skill domain is unclear, obtain requirements through the current Rex Capability Command before training
 - Training results can be committed via `cap`
 
 ## References

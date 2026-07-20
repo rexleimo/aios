@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#rex-terminal-decision-test-scope",
+  "redCandidate": {
+    "publicEntry": "rex-harness advanceLongRunningDelivery()",
+    "setup": "Create a temporary two-feature ledger whose stable scenario scripts read control files, then capture matching nonzero, zero, and cross-feature receipts through the standalone receipt store.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/workflows/long-running-delivery.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "Rex returns retry, blocked, human-gate, or completed decisions from the current feature evidence without a terminal next feature.",
+    "observed": "Existing initialization, F1-to-F2, and final completion tests pass; matching F1 nonzero evidence throws a zero-exit error and missing evidence throws a TypeError instead of returning the required decisions.",
+    "failureReason": "The Rex transition function recognizes only successful feature verification and does not yet normalize failure, missing, cross-feature, or unresolved acceptance evidence into the long-running decision contract.",
+    "receiptRef": "receipt:b1f8a1c2-6b8a-43b5-97e3-66d5917aeb33"
+  }
+}

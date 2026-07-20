@@ -18,8 +18,9 @@ const cli = createCliParser({
   ],
 });
 
-const parsed = cli.parse(process.argv.slice(2));
-if (parsed.help) {
+const rawArgs = process.argv.slice(2);
+const parsed = cli.parse(rawArgs);
+if (parsed.help && rawArgs.some((arg) => arg === '--help' || arg === '-h')) {
   console.log(cli.program.helpInformation());
   process.exit(0);
 }

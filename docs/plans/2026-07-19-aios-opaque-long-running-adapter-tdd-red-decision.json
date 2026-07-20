@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-19-rex-workflow-upgrade-migration-convergence.md#aios-opaque-long-running-ledger-adapter-test-scope",
+  "redCandidate": {
+    "publicEntry": "AIOS persistAiosLongRunningDelivery(), readAiosLongRunningDelivery(), and runAiosLongRunningDeliveryIteration()",
+    "setup": "Create a temporary two-feature Rex ledger with a real passing baseline receipt, persist it under a temporary AIOS project root, reload it after a simulated restart, and submit real F1 receipt evidence through exactly one callback.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/rex-long-running-delivery-store.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "AIOS reloads the opaque Rex result, invokes the callback once with Rex's F1 continue decision, persists the Rex-produced F2 decision, and returns that result without host-side workflow selection.",
+    "observed": "The public test fails before its scenario runs because the dedicated scripts/lib/workflows/rex-long-running-delivery-store.mjs module does not exist.",
+    "failureReason": "The requested AIOS-owned opaque persistence and one-iteration adapter boundary has not been implemented; this is the absent public behavior under test, not a fixture, receipt, or command failure.",
+    "receiptRef": "receipt:a3414010-f557-4722-8e1a-2cc334119946"
+  }
+}

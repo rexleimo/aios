@@ -105,7 +105,7 @@ export function DoctorScreen({
         <Text dimColor>
           {options.nativeOnly
             ? 'Native only mode checks repo-local native surfaces only.'
-            : 'Full doctor mode includes native plus shell, skills, browser, and superpowers gates.'}
+            : 'Full doctor mode includes native plus shell, skills, and browser gates.'}
           {options.verbose ? ' Verbose mode prints extra diagnostics.' : ''}
           {options.dryRun && !options.fix ? ' Dry-run is effective when auto-fix is enabled.' : ''}
         </Text>

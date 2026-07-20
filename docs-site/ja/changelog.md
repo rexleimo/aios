@@ -5,6 +5,13 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.0.0（2026-07-20）— Rex-only ワークフロー移行
+
+- `rex-harness` は新規 AIOS インストールと管理されたクライアント投影の唯一の既定ソフトウェアエンジニアリングワークフローです。Superpowers は AIOS ワークフローとインストールコンポーネントから廃止されました。
+- 通常の `aios update`、`aios init`、`aios setup` は Rex を収束しますが、AIOS の所有証明がない旧 Superpowers 投影は保存され、conflict として報告されます。
+- 正確に認識された AIOS 旧リンクのみを清掃する場合は、まず `aios update --adopt-legacy-superpowers --dry-run` を実行し、確認後に adopt してください。Codex、Claude、Gemini、OpenCode、Hermes、Grok、共有 `.agents` 投影が対象です。
+- 変更した skill は `skill certify --changed` で version control 下の再計算可能な evidence を作成します。release gate は status file や content hash だけを信頼せず、deterministic probe を再実行します。
+
 ## v4.0.1（2026-07-14）— 公開コンテンツと SEO/GEO カバレッジ
 
 - ドキュメントのバージョン表示、ルートの `VERSION`、GitHub Release、公開 changelog を `4.0.1` に同期しました。
@@ -22,8 +29,8 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
 - 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
-- **Grok Build が AIOS ファーストクラスクライアントに昇格**：xAI Grok Build（`grok` / runtime id `grok-build`）が skills、agents、superpowers、native、team、harness を備えて登録されました。MCP は Codex 形式 TOML（`~/.grok/config.toml`）。詳細: [Grok Build + AIOS](/blog/ja/2026-07-grok-build-aios-client/)。
-- **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：skills、native、harness、superpowers。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
+- **Grok Build が AIOS ファーストクラスクライアントに昇格**：xAI Grok Build（`grok` / runtime id `grok-build`）が skills、agents、native、team、harness を備えて登録されました。MCP は Codex 形式 TOML（`~/.grok/config.toml`）。詳細: [Grok Build + AIOS](/blog/ja/2026-07-grok-build-aios-client/)。
+- **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：skills、native、harness。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
 
 ## v3.6.0（2026-07-10）— Headroom + Ponytail token インテリジェンス workflow
 

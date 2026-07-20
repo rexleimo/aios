@@ -22,7 +22,7 @@ Evaluate the AIOS workflow policy before creating a plan, selecting a skill, or 
 1. `direct` and `noop` turns do not create a persistent plan or invoke a skill chain.
 2. `guarded` turns use only the required edit and verification gates.
 3. `planned` turns create or reuse one work-item plan, then execute only the Provider selected by the current rex Command.
-4. Do not use `using-superpowers` as a global bootstrap. `aios-workflow-router` helps classify work but does not replace selected process skills.
+4. Do not insert a global bootstrap or compatibility skill chain. `aios-workflow-router` helps classify work but does not replace the Provider selected by the current Rex Capability Command.
 5. Invoke the selected Provider rather than paraphrasing it; use `verification-before-completion` before claiming a changed behavior is complete.
 </IMPORTANT>
 <!-- END AIOS WORKFLOW POLICY -->
@@ -212,9 +212,16 @@ Evaluate the work item before creating a plan, selecting a skill, or dispatching
 
 - `direct`: questions, read-only analysis, status checks, and empty input. Do not create a persistent plan or invoke a skill chain.
 - `guarded`: a small, clear local change. Before an edit, use `pre-edit-safety-gate`; then run focused verification. Do not create a persistent plan solely for this disposition.
-- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current rex Command.
+- `planned`: an unclear, multi-step, risky, delegated, team, or harness work item. Create or reuse one AIOS plan, then execute only the Provider selected by the current Rex Capability Command.
 
 Short same-session acknowledgements reuse a nonterminal active plan; explicit `continue` / `resume` may reuse one across clients. If no eligible active plan exists, report that condition instead of creating a plan from the acknowledgement. Do not treat a new objective as a continuation.
+
+## Rex Provider and Change Gates
+
+- The current Rex Capability Command is the only authority that selects a software Provider or advances a software stage. A successful Provider run is not enough to advance: return the Command's required evidence to the AIOS Activation Ledger and let Rex evaluate the transition.
+- Before a cohesive code, workflow, or migration batch, invoke `pre-edit-safety-gate`: establish a safe Git baseline, refresh CRG when available, and plan reuse, abstraction, encapsulation, decoupling, and clear directory ownership. It supports authorized TDD and refactors.
+- `direct` work does not invoke a Provider. `guarded` and `planned` work invoke only the Provider selected by the current Rex Capability Command.
+- When workflow surfaces or skills change, collect the required client smoke and skill-training evidence before treating the rollout as ready.
 
 Only Claude has a verified prompt-hook projection. Other clients must not claim a SessionStart or prompt hook; use their native skill discovery, explicit route commands, or the AIOS CLI/MCP policy adapter when available.
 
@@ -385,30 +392,14 @@ Keep MCP surfaces lean. Disable low-value MCP servers when the active client alr
 
 Token profiles are a pre-context hygiene layer. Deep token compression (output/input/data-plane) is handled by community tools RTK + Caveman, installed via `aios init`.
 
-<!-- 中文注释：Superpowers 是按需工程 playbook，不是每轮启动注入。 -->
-
-## AIOS Superpowers Playbooks
-
-- Do not invoke `using-superpowers` as a global bootstrap. Superpowers is not a rex Provider and cannot select or advance a rex workflow stage.
-- Software workflow ownership and default Provider implementation belong to `rex-harness`. AIOS invokes only the current Provider from the rex Capability Command and never preloads a fixed stack.
-- AIOS binds only bundled rex-native Providers. External Skills, playbooks, and reviewers are not compatibility replacements and do not participate in rex readiness or routing.
-- A Provider completing successfully is not enough to advance. Return the required evidence kinds to the AIOS Activation Ledger and let rex evaluate the transition.
-- Do not invoke `brainstorming`, `writing-plans`, `test-driven-development`, or `systematic-debugging` to select or replace a rex stage; they remain standalone tools only for an explicit user request outside a rex Activation.
-- Do not translate user wording such as "new capability", "multi-step", "bug fix", or "failure" directly into a Superpowers playbook. Those observations must pass through rex Fact and Capability selection first.
-- `verification-before-completion` remains an AIOS host completion gate before delivery, commit, or release; it does not choose or advance a rex Capability.
-- `direct` work does not need a Superpowers chain. `guarded` and `planned` work invoke only the currently selected Provider.
-- **Before any code modification** (any edit/create/delete), invoke `pre-edit-safety-gate` — checks CRG impact radius, dependencies, test coverage, and style alignment. CRG graph update + detect_changes + typecheck + test enforced after every edit. This gate applies across ALL task types.
-- Use `aios-workflow-router` only as a routing aid; it does not replace the superpowers skills.
-- If the task changes agent workflow surfaces or skills, also enforce `agents smoke` for rollout evidence and `skill verify-training` for changed skills.
-- Close a changed behavior only after the selected verification process has concrete artifact evidence. A host Plan UI is a draft aid; when the disposition is `planned`, persist the approved work item in the AIOS plan artifact.
-
 <!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
 
 ## AIOS Subagent Dispatch
 
 - This client ships repo-local agent definitions; prefer them over ad-hoc roles.
 - Dispatch only one explicit `planned` work item at a time. Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
-- Use `superpowers:dispatching-parallel-agents` only when the policy selects team work, then converge with a verification pass before merge. Do not re-run the global bootstrap or create a new plan in each worker.
+- Every dispatched worker runs only the Provider selected by the current Rex Capability Command.
+- Dispatch parallel workers only when the policy selects team work, then converge with a verification pass before merge. Do not create a replacement plan in each worker.
 - Do not dispatch ECC-inspired roles merely because a request looks complex. Dispatch a specialist only after rex selects `software.review.specialist` and AIOS capability plus smoke gates permit the role.
 - If no true subagent tool is available, emulate parallelism with explicit domain queues and only safe parallel reads/checks.
 - When agent roles are added or promoted, run the core-risk smoke plan first and require accepted SkillOpt training evidence before live workflow participation.
@@ -495,7 +486,7 @@ When this client is launched by AIOS solo harness (`aios harness run`):
 ## AIOS Native Codex Layer
 
 - Prefer repo-local `.codex/skills` and `.codex/agents`.
-- Codex native skill discovery is sufficient; use no SessionStart bootstrap and do not inject `using-superpowers` for every turn.
+- Codex native skill discovery is sufficient; use no SessionStart bootstrap or fixed global skill chain.
 - Let the shared workflow policy choose `direct`, `guarded`, or `planned`, then keep work grounded in the AIOS runtime and verification flow.
 
 # AIOS For OpenCode
@@ -522,9 +513,9 @@ OpenCode compatibility mode still requires `bidirectional-turn-compression`: eve
 
 ## AIOS Native Hermes Layer
 
-- Prefer repo-local `.hermes/skills` for AIOS workflow playbooks (`writing-plans`, `brainstorming`, `verification-before-completion`, …).
+- Load repo-local skills only when the current Rex Capability Command selects one as its Provider.
 - Evaluate the shared workflow policy before Hermes built-in memory/delegate loops for task work. `direct` and `guarded` work stay local; only `planned` work creates or reuses an AIOS plan.
-- For `planned` work, select the relevant playbook, update the one work-item artifact under `docs/plans/`, and use verification when finishing.
+- For `planned` work, persist one work-item artifact under `docs/plans/`, run only the Provider returned by Rex, and return fresh evidence before finishing.
 - Do **not** replace AIOS workflow policy with Hermes-only session_search/memory for engineering tasks.
 - AIOS MCP bridge: `scripts/aios-mcp-server.mjs` — plan tools, context-pack, doctor, skill validate/install.
 <!-- AIOS NATIVE END -->

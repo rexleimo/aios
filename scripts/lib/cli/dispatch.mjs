@@ -11,7 +11,7 @@ import { printHelp, applyResultExitCode, runInteractiveTui } from './dispatch/he
 export { applyResultExitCode } from './dispatch/helpers.mjs';
 
 /** 所有 CLI 命令的路由表；新增能力必须在这里接入才能被真实调用 */
-export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdout, stderr = process.stderr } = {}) {
+export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdout, stderr = process.stderr, runAiosInit = null } = {}) {
   const context = { rootDir, projectRoot };
   /** workspace 参数优先；没传时用当前 projectRoot，确保 proof/refs 写到用户正在操作的工作区 */
   const workspaceFor = (parsed) => resolveRuntimeWorkspace(parsed.command, parsed.options, context);
@@ -54,11 +54,12 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'init') {
-      const { main: runAiosInit } = await import('../../aios-init.mjs');
+      const runInit = runAiosInit || (await import('../../aios-init.mjs')).main;
       const args = [];
       if (parsed.options.agent) args.push('--agent', parsed.options.agent);
       if (parsed.options.all) args.push('--all');
       if (parsed.options.dryRun) args.push('--dry-run');
+      if (parsed.options.adoptLegacySuperpowers) args.push('--adopt-legacy-superpowers');
       if (parsed.options.yesCompressionTools) args.push('--yes-compression-tools');
       if (parsed.options.yesHeadroomMcp) args.push('--yes-headroom-mcp');
       if (parsed.options.defaultMode) {
@@ -66,7 +67,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         await writeAiosConfig(rootDir, { defaultMode: parsed.options.defaultMode });
         args.push('--default-mode', parsed.options.defaultMode);
       }
-      await runAiosInit(args);
+      await runInit(args);
       return;
     }
 
@@ -121,6 +122,11 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       if (parsed.options.subcommand === 'health') {
         const { runSkillHealth } = await import('../skills/health.mjs');
         applyResultExitCode(await runSkillHealth(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
+      if (parsed.options.subcommand === 'certify') {
+        const { runSkillTrainingCertification } = await import('../skills/training-gate.mjs');
+        applyResultExitCode(await runSkillTrainingCertification(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
         return;
       }
       if (parsed.options.subcommand === 'verify-training') {

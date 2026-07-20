@@ -69,11 +69,11 @@ fs.writeFileSync(path.join(tmp, '.aios', 'config.json'), JSON.stringify({ defaul
 const inj = resolveRuntimeDirectiveInjections(tmp);
 check('strict-primary modeName', inj?.modeName === 'strict-primary');
 check('strict-primary label', inj?.label === 'Strict AIOS Primary Agent');
-check('strict-primary skills', inj?.skills?.length === 3);
+check('strict-primary skills', inj?.skills?.length === 0);
 check('strict-primary additions', inj?.systemPromptAdditions?.length === 2);
 const prompt = buildIterationPrompt({ objective: 'test', iteration: 1, rootDir: tmp });
 check('prompt has Runtime Directive', prompt.includes('--- Runtime Directive ---'));
-check('prompt has superpowers', prompt.includes('superpowers workflow'));
+check('prompt has workflow policy', prompt.includes('AIOS workflow policy'));
 check('prompt has End Directive', prompt.includes('--- End Runtime Directive ---'));
 const promptNoDir = buildIterationPrompt({ objective: 'test', iteration: 1, rootDir: null });
 check('no rootDir no directive', !promptNoDir.includes('--- Runtime Directive ---'));

@@ -65,6 +65,7 @@ agent、route、workflow skill を変更した場合：
 ~~~bash
 node scripts/aios.mjs agents smoke --dry-run --json
 node scripts/aios.mjs agents smoke --json
+node scripts/aios.mjs skill certify --changed --base HEAD --json
 node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 ~~~
 

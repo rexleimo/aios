@@ -1,4 +1,4 @@
-export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']);
+export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'native', 'team', 'harness']);
 
 // Per-client skill format: 'markdown-directory' = SKILL.md in a dir (all clients including gemini).
 // 'toml-command' = single .toml file, used only for route commands (.gemini/commands/*.toml), not skills.
@@ -7,7 +7,7 @@ export const DEFAULT_SKILL_FORMAT = 'markdown-directory';
 
 export const CLIENT_DEFINITIONS = Object.freeze({
   codex: Object.freeze({
-    capabilities: Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']),
+    capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'codex',
     runtimeClientId: 'codex-cli',
     projectSkillRoot: '.codex/skills',
@@ -21,7 +21,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     unattendedInsertAfterToken: 'exec',
   }),
   claude: Object.freeze({
-    capabilities: Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']),
+    capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'claude',
     runtimeClientId: 'claude-code',
     projectSkillRoot: '.claude/skills',
@@ -34,7 +34,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
   }),
   gemini: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'team', 'harness', 'superpowers']),
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'gemini',
     runtimeClientId: 'gemini-cli',
     projectSkillRoot: '.gemini/skills',
@@ -47,7 +47,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     deprecated: true,  // Gemini CLI superseded; keep syncing but no new features
   }),
   opencode: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers', 'agents', 'team']),
+    capabilities: Object.freeze(['skills', 'native', 'harness', 'agents', 'team']),
     commandName: 'opencode',
     runtimeClientId: 'opencode-cli',
     projectSkillRoot: '.opencode/skills',
@@ -65,7 +65,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   // Native instruction: AGENTS.md (auto-loaded from project root).
   // No built-in unattended mode; harness orchestration uses delegate_task instead.
   hermes: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness', 'superpowers']),
+    capabilities: Object.freeze(['skills', 'native', 'harness']),
     commandName: 'hermes',
     runtimeClientId: 'hermes-agent',
     projectSkillRoot: '.hermes/skills',
@@ -82,7 +82,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   // Native instruction: AGENTS.md (and Agents.md / CLAUDE.md compat names).
   // Unattended: --always-approve (headless also documents --yolo).
   grok: Object.freeze({
-    capabilities: Object.freeze(['skills', 'agents', 'superpowers', 'native', 'team', 'harness']),
+    capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'grok',
     runtimeClientId: 'grok-build',
     projectSkillRoot: '.grok/skills',
@@ -103,7 +103,6 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'grok']),
-  superpowers: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']),
   team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok']),
   harness: ALL_CLIENTS,
 });

@@ -9,7 +9,7 @@ defaultInstall:
   global: true
   project: false
 tags: [aios, harness]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents]
 ---
 
 # AIOS Long-Running Harness
@@ -30,7 +30,7 @@ Use this harness to keep long tasks stable under UI drift, model variability, an
 
 - The harness is an execution and recovery host, not a second software-workflow router. When a rex Workflow Activation exists, execute only the Provider selected by the current rex Command.
 - Return the Command's required Evidence to rex before advancing. Do not choose the next Capability in the harness or preload a fixed Provider chain.
-- Bundled `rex-*` Providers are the default. Matt, Superpowers, ECC, and Ponytail may replace a selected Provider only when the caller enables explicit compatibility mode.
+- Bundled `rex-*` Providers are the only software-workflow Providers. Do not enable compatibility substitutions or run an external playbook chain.
 - Dispatch parallel agents only after the AIOS policy selects one planned work item with independent domains; keep coupled or shared-state changes sequential.
 - Before claiming run success, apply the AIOS host verification gate and record concrete artifact evidence.
 

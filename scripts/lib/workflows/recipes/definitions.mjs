@@ -55,26 +55,11 @@ export const QUALITY_GATE_EVIDENCE = Object.freeze({
     artifactRefPattern: 'debug/root-cause handoff JSON',
     validator: 'rootCause field is populated before fixes',
   },
-  'checkpoint-written': {
-    producer: 'rex-loop-operator',
-    artifactRefPattern: '.aios/context-db/**/checkpoints.jsonl',
-    validator: 'latest checkpoint includes status and next action',
-  },
-  'status-readable': {
-    producer: 'rex-loop-operator',
-    artifactRefPattern: 'aios.status.v1 JSON output',
-    validator: 'status command exits with expected ready/blocked code',
-  },
-  'resume-token-present': {
-    producer: 'rex-loop-operator',
-    artifactRefPattern: '.aios/context-db/**/handoff*.json',
-    validator: 'handoff includes session id and resume command',
-  },
 });
 
 /**
  * 默认工作流注册表：软件工程 Recipe 只读投影自 rex-harness；
- * 治理和长循环 Recipe 才由 AIOS 在本文件中直接定义。
+ * AIOS 仅保留宿主治理 Recipe；长运行软件循环由 Rex 定义和推进。
  */
 export const RECIPES = Object.freeze([
   ...buildRexWorkflowDefinitions(),
@@ -97,17 +82,6 @@ export const RECIPES = Object.freeze([
       'interception-metrics-present',
       'evidence-manifest-present',
     ],
-  },
-  {
-    workflowId: 'loop-operation',
-    trigger: 'loop-start',
-    description: 'Long-running checkpointed operation with status, stop conditions, and resume evidence.',
-    stages: [
-      { id: 'loop-plan', agentRole: 'loop-operator', mode: 'sequential' },
-      { id: 'smoke', agentRole: 'e2e-runner', mode: 'parallel', group: 'verification' },
-      { id: 'evidence-audit', agentRole: 'evidence-auditor', mode: 'sequential' },
-    ],
-    qualityGates: ['checkpoint-written', 'status-readable', 'resume-token-present'],
   },
 ]);
 
