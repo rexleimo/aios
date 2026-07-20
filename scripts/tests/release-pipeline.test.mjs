@@ -227,7 +227,13 @@ test('package-release emits stable assets including the rex-harness planning ker
   );
 
   const zipExtractDir = await makeTemp('rex-release-assets-zip-extract-');
-  assertOk(run('tar', ['-xf', path.join(outDir, 'harness-cli.zip'), '-C', zipExtractDir]));
+  // GNU tar on Linux cannot extract zip; use unzip (CI installs it). macOS has unzip too.
+  const zipPath = path.join(outDir, 'harness-cli.zip');
+  const unzipResult = run('unzip', ['-q', zipPath, '-d', zipExtractDir]);
+  if (unzipResult.status !== 0) {
+    // Fallback: BSD tar on macOS can open zip archives.
+    assertOk(run('tar', ['-xf', zipPath, '-C', zipExtractDir]), unzipResult.stderr || unzipResult.stdout || 'unzip failed');
+  }
   await assertFileExists(
     path.join(zipExtractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
     'harness-cli.zip did not include rex-harness/src/index.mjs'

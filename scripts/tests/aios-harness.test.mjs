@@ -16,6 +16,7 @@ import { planDoctor } from '../lib/lifecycle/doctor.mjs';
 import { executeEntropyGc } from '../lib/lifecycle/entropy-gc.mjs';
 import { planQualityGate, runQualityGate } from '../lib/lifecycle/quality-gate.mjs';
 import { DEFAULT_ARCHITECTURE_RULES, evaluateArchitectureGovernance } from '../lib/architecture/governance.mjs';
+import { commandExists } from '../lib/platform/process.mjs';
 
 async function makeRootDir() {
   return await mkdtemp(path.join(os.tmpdir(), 'aios-quality-gate-'));
@@ -114,7 +115,12 @@ test('planQualityGate includes session when provided', () => {
   assert.match(plan.preview, /quality-gate full --session session-123/);
 });
 
-test('runQualityGate log audit excludes cli entrypoints and tests', async () => {
+test('runQualityGate log audit excludes cli entrypoints and tests', async (t) => {
+  if (!commandExists('rg')) {
+    t.skip('rg is required for live console.log audit exclude regression');
+    return;
+  }
+
   const rootDir = await makeRootDir();
   await mkdir(path.join(rootDir, 'scripts', 'lib', 'lifecycle'), { recursive: true });
   await mkdir(path.join(rootDir, 'scripts', 'tests'), { recursive: true });
@@ -144,6 +150,34 @@ test('runQualityGate log audit excludes cli entrypoints and tests', async () => 
   assert.equal(logsResult?.detail, '1 console.log hits');
   assert.deepEqual(report.failedChecks, ['Logs']);
   assert.equal(report.failureCategory, 'quality-logs');
+});
+
+test('runQualityGate log audit fails closed when rg is unavailable', async () => {
+  const rootDir = await makeRootDir();
+  await mkdir(path.join(rootDir, 'scripts', 'lib'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'lib', 'bad.mjs'), "console.log('bad');\n", 'utf8');
+
+  const report = await runQualityGate(
+    { mode: 'full' },
+    {
+      rootDir,
+      io: { log() {} },
+      env: {
+        AIOS_DISABLED_GATES: 'quality:build,quality:types,quality:scripts,quality:contextdb,quality:architecture,quality:git,quality:release',
+      },
+      checkRunner: () => ({
+        status: 1,
+        stdout: '',
+        stderr: '',
+        error: Object.assign(new Error('spawn rg ENOENT'), { code: 'ENOENT' }),
+      }),
+    }
+  );
+
+  const logsResult = report.results.find((item) => item.label === 'Logs');
+  assert.equal(logsResult?.status, 'FAIL');
+  assert.match(String(logsResult?.detail || ''), /ENOENT|unavailable|rg/i);
+  assert.deepEqual(report.failedChecks, ['Logs']);
 });
 
 test('architecture governance reports facade budget and module ownership failures', async () => {

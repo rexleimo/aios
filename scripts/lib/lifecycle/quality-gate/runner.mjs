@@ -37,6 +37,13 @@ function pushLogAuditGate(results, { rootDir, options, disabledGates, checkRunne
   }
 
   const result = auditConsoleLogs(rootDir, { checkRunner });
+  // rg: 0 = matches, 1 = no matches, other / error = tooling failure.
+  // Missing rg used to map status=1 (ENOENT) and was misreported as OK.
+  if (result.error) {
+    const detail = (result.error?.message || result.stderr || result.stdout || 'rg unavailable').trim();
+    results.push({ label: 'Logs', status: 'FAIL', detail });
+    return;
+  }
   if (result.status === 0) {
     const count = countNonEmptyLines(result.stdout);
     results.push({
@@ -47,7 +54,7 @@ function pushLogAuditGate(results, { rootDir, options, disabledGates, checkRunne
   } else if (result.status === 1) {
     results.push({ label: 'Logs', status: 'OK', detail: '0 console.log hits' });
   } else {
-    const detail = (result.error?.message || result.stderr || result.stdout || `rg exit=${result.status}`).trim();
+    const detail = (result.stderr || result.stdout || `rg exit=${result.status}`).trim();
     results.push({ label: 'Logs', status: 'FAIL', detail });
   }
 }

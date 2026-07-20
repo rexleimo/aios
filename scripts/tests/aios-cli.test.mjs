@@ -845,9 +845,21 @@ test('aios harness honors --workspace outside the current cwd', async () => {
   const repoRoot = process.cwd();
   const launchRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-harness-launch-cwd-'));
   const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-harness-workspace-root-'));
+  const binDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-harness-fake-bin-'));
   const cliPath = path.join(repoRoot, 'scripts', 'aios.mjs');
 
   try {
+    // Dry-run readiness blocks when provider CLI is missing; CI runners lack codex.
+    const fakeCodex = path.join(binDir, process.platform === 'win32' ? 'codex.cmd' : 'codex');
+    await fs.writeFile(
+      fakeCodex,
+      process.platform === 'win32' ? '@echo off\r\necho fake\r\n' : '#!/usr/bin/env sh\necho fake\n',
+      'utf8'
+    );
+    if (process.platform !== 'win32') {
+      await fs.chmod(fakeCodex, 0o755);
+    }
+
     const result = spawnSync(
       'node',
       [
@@ -868,6 +880,11 @@ test('aios harness honors --workspace outside the current cwd', async () => {
       {
         cwd: launchRoot,
         encoding: 'utf8',
+        env: {
+          ...process.env,
+          PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
+          Path: `${binDir}${path.delimiter}${process.env.Path || process.env.PATH || ''}`,
+        },
       }
     );
 
@@ -880,6 +897,7 @@ test('aios harness honors --workspace outside the current cwd', async () => {
   } finally {
     await fs.rm(launchRoot, { recursive: true, force: true });
     await fs.rm(workspaceRoot, { recursive: true, force: true });
+    await fs.rm(binDir, { recursive: true, force: true });
   }
 });
 

@@ -33,7 +33,7 @@ jobs:
       - name: Install repo script test system deps
         run: |
           sudo apt-get update
-          sudo apt-get install -y ripgrep zip
+          sudo apt-get install -y ripgrep zip unzip
 
       - name: Install repo script deps
         run: npm ci

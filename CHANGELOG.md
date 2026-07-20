@@ -6,6 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.0.2] - 2026-07-21
+
+### Fixed
+
+- fix(release): make release CI match ci-main harness deps (ripgrep, unzip, provider CLI shims)
+- fix(quality-gate): fail closed when `rg` is unavailable instead of reporting zero log hits
+- fix(tests): isolate harness dry-run readiness from host provider installs; extract release zip with unzip on Linux
+
 ## [5.0.1] - 2026-07-20
 
 - fix(release): make interception CI fixture self-contained
