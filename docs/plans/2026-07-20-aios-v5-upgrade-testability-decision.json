@@ -1,0 +1,19 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-07-20-aios-v5-upgrade-testability-decision.json",
+  "baseline": {
+    "publicEntry": "AIOS lifecycle update entry point runUpdate(...) exercised by the repository's isolated client-home regression",
+    "setup": "The test creates disposable client-home fixtures for native roots and shared .agents, seeds recognized and unproven legacy Superpowers projections, and removes the fixtures after execution.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The isolated lifecycle regression exits zero after observing Rex installation, default conflict preservation, and explicit adopted-link removal across all supported client roots.",
+    "observed": "The recorded isolated lifecycle regression exited zero (receipt 803dafea-e256-495e-a89d-a0691b51dc19). No operator client-home directory was used.",
+    "receiptRef": "receipt:803dafea-e256-495e-a89d-a0691b51dc19"
+  }
+}
