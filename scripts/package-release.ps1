@@ -29,6 +29,7 @@ function Invoke-Checked([string]$Command, [string[]]$Arguments) {
 
 Require-Command git
 Require-Command tar
+Require-Command npm
 
 $rexHarnessRoot = Join-Path $RootDir "rex-harness"
 foreach ($required in @(
@@ -66,6 +67,7 @@ try {
     "config",
     "scripts",
     "mcp-server",
+    "packages/debug-hub",
     "src",
     ".claude/agents",
     ".claude/skills",
@@ -96,6 +98,13 @@ try {
 
   Copy-Item -LiteralPath $installSh -Destination (Join-Path $Out "aios-install.sh") -Force
   Copy-Item -LiteralPath $installPs1 -Destination (Join-Path $Out "aios-install.ps1") -Force
+
+  $debugHubRoot = Join-Path $RootDir "packages/debug-hub"
+  if (-not (Test-Path -LiteralPath (Join-Path $debugHubRoot "package.json"))) {
+    throw "Missing required debug-hub package: $(Join-Path $debugHubRoot 'package.json')"
+  }
+  Write-Host "+ build debug-hub"
+  Invoke-Checked -Command "npm" -Arguments @("--prefix", $debugHubRoot, "run", "build")
 
   $tarGz = Join-Path $Out "harness-cli.tar.gz"
   $zip = Join-Path $Out "harness-cli.zip"
@@ -129,6 +138,26 @@ try {
   }
   if (-not (Test-Path -LiteralPath (Join-Path $extractDir "harness-cli/rex-harness/src/index.mjs"))) {
     throw "Release archive did not materialize rex-harness/src/index.mjs"
+  }
+
+  # mcp-server/dist is generated output and must not be shipped in releases.
+  $mcpDistArchive = Join-Path $extractDir "harness-cli/mcp-server/dist"
+  if (Test-Path -LiteralPath $mcpDistArchive) {
+    Remove-Item -LiteralPath $mcpDistArchive -Recurse -Force
+  }
+
+  # git archive omits ignored build output; materialize the bundled debug-hub dist.
+  $debugArchiveRoot = Join-Path $extractDir "harness-cli/packages/debug-hub"
+  $debugDist = Join-Path $debugHubRoot "dist"
+  if (-not (Test-Path -LiteralPath $debugDist)) {
+    throw "debug-hub build did not produce: $debugDist"
+  }
+  New-Item -Path $debugArchiveRoot -ItemType Directory -Force | Out-Null
+  Copy-Item -LiteralPath $debugDist -Destination $debugArchiveRoot -Recurse -Force
+  foreach ($requiredDebugFile in @("dist/cli.js", "dist/server.js", "dist/ui.html")) {
+    if (-not (Test-Path -LiteralPath (Join-Path $debugArchiveRoot $requiredDebugFile))) {
+      throw "Release archive did not materialize packages/debug-hub/$requiredDebugFile"
+    }
   }
 
   Write-Host "+ tar.gz -> $tarGz"

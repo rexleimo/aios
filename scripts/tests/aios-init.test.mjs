@@ -278,6 +278,78 @@ test('ensureHook upgrades stale Claude PreToolUse rewrite hook without clobberin
   assert.doesNotMatch(normalizedCommand, new RegExp(`${escapeRegExp(normalizeSlashes(workspaceRoot))}\\/scripts\\/hooks\\/claude\\/aios-rewrite\\.sh`, 'u'));
 });
 
+test('ensureHook migrates all stale Windows AIOS hook paths without clobbering user hooks', () => {
+  const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-init-claude-windows-hooks-'));
+  const legacyRuntime = String.raw`C:\Users\Administrator\.rexcil\harness-cli`;
+  const legacyWorkspace = String.raw`E:\coding\inkloom.im`;
+  fs.mkdirSync(path.join(workspaceRoot, '.claude'), { recursive: true });
+  fs.writeFileSync(path.join(workspaceRoot, '.claude', 'settings.local.json'), `${JSON.stringify({
+    hooks: {
+      Stop: [
+        { matcher: '', hooks: [{ type: 'command', command: 'echo user-stop' }] },
+        {
+          matcher: '',
+          hooks: [{
+            type: 'command',
+            command: `node ${legacyRuntime}\\scripts\\ctx-agent.mjs --agent claude-code --workspace ${legacyWorkspace} --checkpoint-status completed`,
+          }],
+        },
+      ],
+      PreToolUse: [
+        { matcher: 'Edit', hooks: [{ type: 'command', command: 'echo user-pre' }] },
+        {
+          matcher: 'Bash',
+          hooks: [{
+            type: 'command',
+            command: `AIOS_ROOT_DIR=${legacyRuntime} bash ${legacyRuntime}\\scripts\\hooks\\claude\\aios-rewrite.sh`,
+          }],
+        },
+      ],
+      PostToolUse: [
+        { matcher: '', hooks: [{ type: 'command', command: 'echo user-post' }] },
+        {
+          matcher: '',
+          hooks: [{
+            type: 'command',
+            command: `AIOS_OFFLOAD_CLIENT=claude node ${legacyRuntime}\\scripts\\aios.mjs internal offload capture --workspace ${legacyWorkspace}`,
+          }],
+        },
+      ],
+    },
+  }, null, 2)}\n`, 'utf8');
+
+  const result = ensureHook(workspaceRoot, 'claude', {
+    env: { AIOS_ROOT_DIR: legacyRuntime },
+    aiosRoot: '/opt/aios-runtime',
+  });
+
+  assert.equal(result.action, 'updated');
+  const settings = JSON.parse(fs.readFileSync(path.join(workspaceRoot, '.claude', 'settings.local.json'), 'utf8'));
+  assert.equal(settings.hooks.Stop.length, 2);
+  assert.equal(settings.hooks.PreToolUse.length, 2);
+  assert.equal(settings.hooks.PostToolUse.length, 2);
+  assert.equal(settings.hooks.Stop[0].hooks[0].command, 'echo user-stop');
+  assert.equal(settings.hooks.PreToolUse[0].hooks[0].command, 'echo user-pre');
+  assert.equal(settings.hooks.PostToolUse[0].hooks[0].command, 'echo user-post');
+
+  const managedCommands = [
+    settings.hooks.Stop[1].hooks[0].command,
+    settings.hooks.PreToolUse[1].hooks[0].command,
+    settings.hooks.PostToolUse[1].hooks[0].command,
+  ].map(normalizeSlashes);
+  for (const command of managedCommands) {
+    assert.doesNotMatch(command, /C:\\/u);
+    assert.doesNotMatch(command, /E:\\/u);
+    assert.match(command, /opt\/aios-runtime/u);
+  }
+  assert.match(managedCommands[0], /--save-guard/u);
+  assert.match(managedCommands[1], /aios-rewrite\.sh/u);
+  assert.match(managedCommands[2], /internal offload capture/u);
+  assert.match(managedCommands[0], new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'ctx-agent.mjs')), 'u'));
+  assert.match(managedCommands[1], new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'hooks/claude/aios-rewrite.sh')), 'u'));
+  assert.match(managedCommands[2], new RegExp(escapeRegExp(runtimeScriptPath('/opt/aios-runtime', 'aios.mjs')), 'u'));
+});
+
 test('ensureHook converts top-level Claude save guard hook to nested command schema', () => {
   const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-init-claude-top-level-hook-'));
   const command = buildSaveGuardCommand('claude', workspaceRoot, {

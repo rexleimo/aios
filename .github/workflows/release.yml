@@ -23,7 +23,9 @@ jobs:
         with:
           node-version: "24"
           cache: "npm"
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            packages/debug-hub/package-lock.json
 
       - name: Ensure packaging deps
         run: |
@@ -39,6 +41,10 @@ jobs:
         run: |
           cd mcp-server
           npm ci
+
+      - name: Install debug-hub deps
+        run: |
+          npm ci --prefix packages/debug-hub
 
       # Match ci-main: harness dry-run readiness treats missing provider CLIs as blocked.
       - name: Install test CLI shims
@@ -60,6 +66,12 @@ jobs:
           npm run typecheck
           npm test
           npm run build
+
+      - name: Verify debug-hub
+        run: |
+          npm --prefix packages/debug-hub run typecheck
+          npm --prefix packages/debug-hub test
+          npm --prefix packages/debug-hub run build
 
       - name: Verify changed Skill training evidence
         run: |

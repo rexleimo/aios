@@ -1,4 +1,4 @@
-import { createServer, type IncomingMessage, type ServerResponse, type Server } from 'node:http';
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import type { Storage } from './storage.js';
 import type { EventBus } from './events.js';
 import type { LogEntry, LogLevel } from './types.js';
@@ -177,27 +177,49 @@ export function createApiServer(storage: Storage, events: EventBus): ApiServer {
     }
   });
 
-  let httpServer: Server;
+  let ownsHttpServer = false;
 
   return {
     storage,
     listen(port: number): Promise<void> {
-      return new Promise((resolve) => {
-        httpServer = server.listen(port, '127.0.0.1', () => {
+      if (server.listening) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        const onError = (error: Error) => {
+          server.removeListener('listening', onListening);
+          reject(error);
+        };
+        const onListening = () => {
+          server.removeListener('error', onError);
+          ownsHttpServer = true;
+          resolve();
+        };
+        server.once('error', onError);
+        server.once('listening', onListening);
+        server.listen(port, '127.0.0.1');
+      });
+    },
+    close(): Promise<void> {
+      return new Promise((resolve, reject) => {
+        for (const client of clients) {
+          client.end();
+        }
+        if (!ownsHttpServer || !server.listening) {
+          ownsHttpServer = false;
+          resolve();
+          return;
+        }
+        server.close((error) => {
+          ownsHttpServer = false;
+          if (error) {
+            reject(error);
+            return;
+          }
           resolve();
         });
       });
     },
-    close(): Promise<void> {
-      return new Promise((resolve) => {
-        for (const client of clients) {
-          client.end();
-        }
-        httpServer.close(() => resolve());
-      });
-    },
     address(): { port: number } {
-      const addr = httpServer.address();
+      const addr = server.address();
       if (typeof addr === 'string' || !addr) return { port: 0 };
       return { port: addr.port };
     },

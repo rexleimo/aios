@@ -1,5 +1,6 @@
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
@@ -14,6 +15,7 @@ import { homedir } from 'node:os';
 export interface ServerOptions {
   port?: number;
   dataDir?: string;
+  transport?: Transport;
 }
 
 export async function startServer(options: ServerOptions = {}): Promise<{ http: ApiServer; mcp: Server }> {
@@ -26,11 +28,22 @@ export async function startServer(options: ServerOptions = {}): Promise<{ http: 
 
   // Start HTTP API
   const http = createApiServer(storage, events);
-  await http.listen(port);
+  let httpPort = port;
+  let ownsHttpPort = true;
+  try {
+    await http.listen(port);
+    httpPort = http.address().port;
+  } catch (error) {
+    if (!(error instanceof Error && (error as NodeJS.ErrnoException).code === 'EADDRINUSE')) {
+      throw error;
+    }
+    ownsHttpPort = false;
+    console.error(`⚠ debug-hub HTTP API port ${port} is already in use; continuing MCP on stdio`);
+  }
 
   // Create MCP server
   const mcp = new Server(
-    { name: 'debug-hub', version: '0.2.0' },
+    { name: 'debug-hub', version: '0.3.0' },
     { capabilities: { tools: {} } }
   );
 
@@ -53,13 +66,13 @@ export async function startServer(options: ServerOptions = {}): Promise<{ http: 
     }
   });
 
-  // Connect MCP stdio transport
-  const transport = new StdioServerTransport();
+  // Keep MCP startup independent from optional HTTP port ownership.
+  const transport = options.transport ?? new StdioServerTransport();
   await mcp.connect(transport);
 
   console.error(`✓ debug-hub server started`);
-  console.error(`  HTTP API:  http://127.0.0.1:${port}/api`);
-  console.error(`  Web UI:    http://127.0.0.1:${port}`);
+  console.error(`  HTTP API:  http://127.0.0.1:${httpPort}/api${ownsHttpPort ? '' : ' (existing listener)'}`);
+  console.error(`  Web UI:    http://127.0.0.1:${httpPort}${ownsHttpPort ? '' : ' (existing listener)'}`);
   console.error(`  MCP:       stdio mode`);
 
   return { http, mcp };

@@ -4,7 +4,7 @@
   "type": "module",
   "description": "Debug log collection service for coding agents",
   "engines": {
-    "node": ">=22 <23"
+    "node": ">=22 <25"
   },
   "bin": {
     "debug-hub": "./dist/cli.js"
@@ -12,14 +12,14 @@
   "main": "./dist/server.js",
   "types": "./dist/server.d.ts",
   "scripts": {
-    "build": "tsc",
+    "build": "node ../../scripts/build-debug-hub.mjs",
     "dev": "tsx src/cli.ts",
     "start": "node dist/cli.js",
     "test": "tsx --test tests/*.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.29.0"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.0.4] - 2026-07-22
+
+- make debug-hub release-safe
+
 ## [5.0.3] - 2026-07-21
 
 ### Fixed

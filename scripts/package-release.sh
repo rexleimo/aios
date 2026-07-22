@@ -57,6 +57,7 @@ require_cmd() {
 require_cmd git
 require_cmd gzip
 require_cmd zip
+require_cmd npm
 
 rex_harness_root="$ROOT_DIR/rex-harness"
 if [[ ! -f "$rex_harness_root/src/index.mjs" || ! -f "$rex_harness_root/bin/rex-harness.mjs" || ! -f "$rex_harness_root/skill-sources/rex-workflow/SKILL.md" ]]; then
@@ -83,7 +84,7 @@ release_paths=(
   README.md README-zh.md
   skills-lock.json
   client-sources agent-sources skill-sources rex-harness
-  config scripts mcp-server src
+  config scripts mcp-server src packages/debug-hub
 )
 
 # Client roots are local generated projections. Shipping them would reintroduce
@@ -95,6 +96,14 @@ for release_path in "${release_paths[@]}"; do
     existing_release_paths+=("$release_path")
   fi
 done
+
+debug_hub_root="$ROOT_DIR/packages/debug-hub"
+if [[ ! -f "$debug_hub_root/package.json" ]]; then
+  echo "Missing required debug-hub package: $debug_hub_root/package.json" >&2
+  exit 1
+fi
+echo "+ build debug-hub"
+npm --prefix "$debug_hub_root" run build
 
 echo "+ cp installers -> $OUT_DIR"
 cp "$install_sh" "$OUT_DIR/aios-install.sh"
@@ -115,7 +124,8 @@ mkdir -p "$tar_stage/harness-cli"
     --exclude='rex-harness/.git/*' \
     --exclude='scripts/lib/components/superpowers' \
     --exclude='scripts/lib/components/superpowers/*' \
-    --exclude='dist' \
+    --exclude='mcp-server/dist' \
+    --exclude='mcp-server/dist/*' \
     --exclude='__pycache__' \
     --exclude='.mypy_cache' \
     --exclude='.aios' \
@@ -141,7 +151,7 @@ rm -f "$OUT_DIR/harness-cli.zip"
   cd "$tar_stage"
   zip -r "$OUT_DIR/harness-cli.zip" \
     harness-cli \
-    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
+    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
 )
 
 echo ""

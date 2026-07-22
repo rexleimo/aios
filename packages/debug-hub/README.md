@@ -16,13 +16,15 @@ Server starts at `http://localhost:39200` (Web UI) with MCP stdio mode.
 
 ### As MCP Server (for coding agents)
 
-Add to your MCP server config:
+Add the installed runtime launcher to your MCP server config. The launcher
+resolves its own installation directory, so the MCP client does not depend on
+its current working directory or the source checkout:
 
 ```json
 {
   "debug-hub": {
     "command": "node",
-    "args": ["packages/debug-hub/dist/cli.js"]
+    "args": ["/path/to/aios-install/scripts/run-debug-hub.mjs"]
   }
 }
 ```

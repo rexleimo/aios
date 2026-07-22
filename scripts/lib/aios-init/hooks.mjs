@@ -12,6 +12,9 @@ function shellQuote(value) {
 }
 
 export function resolveAiosRuntimeRoot(env = process.env, aiosRoot) {
+  const explicitRoot = String(aiosRoot || '').trim();
+  if (explicitRoot) return resolve(explicitRoot);
+
   const candidates = [env.AIOS_ROOT_DIR, env.AIOS_ROOT, env.ROOTPATH, env.AIOS_INSTALL_DIR];
   for (const candidate of candidates) {
     const root = String(candidate || '').trim();

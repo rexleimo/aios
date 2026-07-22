@@ -71,6 +71,11 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'config/skills-sync-manifest.json', '{"schemaVersion":1,"generatedRoots":{"codex":".codex/skills","claude":".claude/skills"},"skills":[],"legacyUnmanaged":[],"legacyReplaceable":[]}\n');
   await writeFixtureFile(rootDir, 'config/native-sync-manifest.json', '{"schemaVersion":1,"managedBy":"aios","markers":{"markdownBegin":"<!-- AIOS NATIVE BEGIN -->","markdownEnd":"<!-- AIOS NATIVE END -->"},"clients":{"codex":{"tier":"deep","metadataRoot":".codex","outputs":["AGENTS.md",".codex/agents",".codex/skills"]},"claude":{"tier":"deep","metadataRoot":".claude","outputs":["CLAUDE.md",".claude/settings.local.json",".claude/agents",".claude/skills"]},"gemini":{"tier":"compatibility","metadataRoot":".gemini","outputs":["GEMINI.md",".gemini/skills"]},"opencode":{"tier":"compatibility","metadataRoot":".opencode","outputs":["AGENTS.md",".opencode/skills"]}}}\n');
   await writeFixtureFile(rootDir, 'mcp-server/package.json', '{"name":"fixture-mcp","scripts":{"typecheck":"node -e \\\"process.exit(0)\\\"","test":"node -e \\\"process.exit(0)\\\"","build":"node -e \\\"process.exit(0)\\\""}}\n');
+  await writeFixtureFile(rootDir, 'mcp-server/dist/generated.js', 'export const generated = true;\n');
+  await writeFixtureFile(rootDir, 'packages/debug-hub/package.json', '{"name":"fixture-debug-hub","version":"0.3.0","private":true,"scripts":{"build":"node -e \\\"process.exit(0)\\\""}}\n');
+  await writeFixtureFile(rootDir, 'packages/debug-hub/dist/cli.js', '#!/usr/bin/env node\n');
+  await writeFixtureFile(rootDir, 'packages/debug-hub/dist/server.js', 'export const server = true;\n');
+  await writeFixtureFile(rootDir, 'packages/debug-hub/dist/ui.html', '<!doctype html>\n');
   await writeFixtureFile(rootDir, 'skill-sources/sample-skill/SKILL.md', '# canonical\n');
   await writeFixtureFile(rootDir, 'client-sources/native-base/gemini/project/AIOS.md', '# native gemini\n');
   // A stale ignored directory must never leak an obsolete workflow into a release archive.
@@ -92,6 +97,7 @@ async function seedFixtureRepo(rootDir, {
   await writeFixtureFile(rootDir, 'scripts/generate-orchestrator-agents.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'generate-orchestrator-agents.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/aios-install.sh', '#!/usr/bin/env bash\n');
   await writeFixtureFile(rootDir, 'scripts/aios-install.ps1', "Write-Host 'fixture'\n");
+  await writeFixtureFile(rootDir, 'scripts/run-debug-hub.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'run-debug-hub.mjs'), 'utf8'));
   await writeFixtureFile(
     rootDir,
     'scripts/reconcile-rex-workflow-surface.mjs',
@@ -195,6 +201,21 @@ test('package-release emits stable assets including the rex-harness planning ker
     path.join(extractDir, 'harness-cli', 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md'),
     'harness-cli.tar.gz did not include rex-harness/skill-sources/rex-workflow/SKILL.md'
   );
+  for (const relativePath of [
+    'packages/debug-hub/dist/cli.js',
+    'packages/debug-hub/dist/server.js',
+    'packages/debug-hub/dist/ui.html',
+    'scripts/run-debug-hub.mjs',
+  ]) {
+    await assertFileExists(
+      path.join(extractDir, 'harness-cli', relativePath),
+      `harness-cli.tar.gz did not include ${relativePath}`
+    );
+  }
+  await assertFileMissing(
+    path.join(extractDir, 'harness-cli', 'mcp-server', 'dist'),
+    'harness-cli.tar.gz must not include generated mcp-server/dist output'
+  );
   await assertFileExists(
     path.join(extractDir, 'harness-cli', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
     'harness-cli.tar.gz did not include the Rex workflow reconciliation entrypoint'
@@ -246,6 +267,21 @@ test('package-release emits stable assets including the rex-harness planning ker
     path.join(zipExtractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
     'harness-cli.zip did not include the global Rex client projection entrypoint'
   );
+  for (const relativePath of [
+    'packages/debug-hub/dist/cli.js',
+    'packages/debug-hub/dist/server.js',
+    'packages/debug-hub/dist/ui.html',
+    'scripts/run-debug-hub.mjs',
+  ]) {
+    await assertFileExists(
+      path.join(zipExtractDir, 'harness-cli', relativePath),
+      `harness-cli.zip did not include ${relativePath}`
+    );
+  }
+  await assertFileMissing(
+    path.join(zipExtractDir, 'harness-cli', 'mcp-server', 'dist'),
+    'harness-cli.zip must not include generated mcp-server/dist output'
+  );
   await assertFileMissing(
     path.join(zipExtractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
     'harness-cli.zip must not ship retired Superpowers workflow code'
@@ -262,12 +298,17 @@ test('release scripts and CI require a materialized rex-harness submodule', asyn
   const powershellScript = await readFile(path.join(workspaceRoot, 'scripts', 'package-release.ps1'), 'utf8');
   const preflightShell = await readFile(path.join(workspaceRoot, 'scripts', 'release-preflight.sh'), 'utf8');
   const initScript = await readFile(path.join(workspaceRoot, 'scripts', 'aios-init.mjs'), 'utf8');
+  const releaseWorkflow = await readFile(path.join(workspaceRoot, '.github', 'workflows', 'release.yml'), 'utf8');
 
   assert.match(shellScript, /rex-harness/u);
   assert.match(shellScript, /rm -f "\$OUT_DIR\/harness-cli\.zip"/u);
   assert.match(preflightShell, /describe --tags --abbrev=0 --match 'v\[0-9\]\*' HEAD\^/u);
   assert.match(powershellScript, /rex-harness/u);
   assert.match(initScript, /ensureAiosPlanningKernel/u);
+  assert.match(releaseWorkflow, /npm ci --prefix packages\/debug-hub/u);
+  assert.match(releaseWorkflow, /npm --prefix packages\/debug-hub run typecheck/u);
+  assert.match(releaseWorkflow, /npm --prefix packages\/debug-hub test/u);
+  assert.match(releaseWorkflow, /npm --prefix packages\/debug-hub run build/u);
   for (const workflowName of [
     'ci-main.yml',
     'codeql.yml',

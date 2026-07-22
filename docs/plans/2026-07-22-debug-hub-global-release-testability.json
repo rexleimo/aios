@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-debug-hub-global-release-testability.json",
+  "redCandidate": {
+    "publicEntry": "scripts/package-release.sh release archive",
+    "setup": "Package the current v5.0.3 checkout into a temporary release directory and inspect the generated Unix archive.",
+    "command": {
+      "executable": "bash",
+      "args": [
+        "-lc",
+        "set -e; receipt_out=$(mktemp -d); trap \"rm -rf $receipt_out\" EXIT; bash scripts/package-release.sh --out \"$receipt_out\" >/dev/null; tar -tzf \"$receipt_out/harness-cli.tar.gz\" | rg -q \"harness-cli/packages/debug-hub/dist/cli.js\""
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The release archive contains the runnable bundled debug-hub MCP entrypoint at packages/debug-hub/dist/cli.js.",
+    "observed": "The packaging command exited with code 1 because the archive did not contain packages/debug-hub/dist/cli.js.",
+    "failureReason": "The release path list excludes packages/debug-hub and the source checkout has no tracked compiled dist output.",
+    "receiptRef": "receipt:172ad5c1-721a-4ab2-87b7-29aeaa3deef2"
+  }
+}
