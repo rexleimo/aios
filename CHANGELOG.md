@@ -6,6 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.1.0] - 2026-07-22
+
+### Changed
+
+- Route new browser-use MCP configurations directly to the upstream launcher so multimodal tool results are delivered without the deprecated interception proxy rewriting the protocol payload.
+- Report browser content delivery separately from retained shell interception in `interception doctor` output.
+
+### Fixed
+
+- Preserve MCP `tools/call` text, image, audio, resource, and unknown content blocks exactly as returned by the upstream server while attaching AIOS observations only under `_meta.aios`.
+- Keep binary payloads out of AIOS observation metadata and raw references by recording safe content descriptors instead.
+- Harden Windows release packaging and tests around native file URLs, executable resolution, temporary client homes, PowerShell archive arguments, generated release contents, and unusable WSL Bash placeholders.
+
 ## [5.0.4] - 2026-07-22
 
 - make debug-hub release-safe

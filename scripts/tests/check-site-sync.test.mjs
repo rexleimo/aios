@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import {
   extractHeadingIds,
@@ -16,7 +17,7 @@ import {
   splitMarkdownDestination,
 } from '../check-site-sync.mjs';
 
-const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
+const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 test('extractMdNavTargets returns only markdown file nav targets', () => {
   const mkdocs = `site_name: demo

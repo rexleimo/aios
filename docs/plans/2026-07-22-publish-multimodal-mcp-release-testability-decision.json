@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-07-22-publish-multimodal-mcp-release-testability-decision.json",
+  "baseline": {
+    "publicEntry": "The JSON-RPC MCP proxy, browser MCP configuration builder, printed browser snippet, and interception doctor CLI.",
+    "setup": "Run the focused tests from the repository with temporary workspaces and temporary client homes; do not read or write real client configuration.",
+    "command": {
+      "executable": "rtk",
+      "args": [
+        "node",
+        "--test",
+        "scripts/tests/interception-mcp-proxy.test.mjs",
+        "scripts/tests/aios-components.test.mjs",
+        "scripts/tests/interception-cli.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Client-visible multimodal content is preserved, binary payloads are absent from AIOS metadata, browser entries are direct, and doctor reports direct browser delivery as healthy.",
+    "observed": "The focused suite exited with status 0.",
+    "receiptRef": "receipt:7cae3879-bcb6-455a-91d4-3b65c8a2f153"
+  }
+}

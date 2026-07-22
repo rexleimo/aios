@@ -6,6 +6,10 @@ function rel(rootDir, targetPath) {
   return path.relative(rootDir, absolute).replace(/\\/g, '/');
 }
 
+export function normalizeSkillText(text = '') {
+  return String(text).replace(/\r\n/g, '\n');
+}
+
 function extractName(text, targetPath) {
   const match = /^name:\s*"?([^"\n]+)"?/m.exec(text);
   return match ? match[1].trim() : path.basename(path.dirname(targetPath));
@@ -47,7 +51,7 @@ function buildScenarios(name) {
 export async function evaluateSkillComplianceDryRun({ rootDir = process.cwd(), targetPath, client = 'codex' } = {}) {
   if (!targetPath) throw new Error('skill comply requires a target path');
   const absolute = path.isAbsolute(targetPath) ? targetPath : path.join(rootDir, targetPath);
-  const text = await fs.readFile(absolute, 'utf8');
+  const text = normalizeSkillText(await fs.readFile(absolute, 'utf8'));
   const name = extractName(text, absolute);
   const expectedSequence = extractExpectedSequence(text);
   return {

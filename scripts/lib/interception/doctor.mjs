@@ -8,19 +8,27 @@ import { buildCapabilityMatrix, inspectMcpProxyTargets } from './clients/capabil
 import { runInterceptionProof } from './proof.mjs';
 import { resolveMetricsFile } from './tail.mjs';
 
-/* 中文注释：把每个 MCP 配置文件的检查结果折成健康状态，required 目标未代理直接失败。 */
+/* 中文注释：浏览器 MCP 必须直连；shell MCP 保留代理时只作为兼容状态展示。 */
 function statusFromTargets(targets = []) {
   const existing = targets.filter((item) => item.exists);
-  const required = targets.filter((item) => item.required);
-  const unproxiedRequired = required.filter((item) => !item.exists || !item.proxied);
-  const unproxiedExisting = existing.filter((item) => item.hasAlias && !item.proxied);
+  const browserResults = targets.flatMap((item) => item.aliasResults || [])
+    .filter((item) => item.alias === PRIMARY_BROWSER_ALIAS);
+  const requiredBrowserResults = targets.filter((item) => item.required).map((item) => (
+    (item.aliasResults || []).find((result) => result.alias === PRIMARY_BROWSER_ALIAS)
+  ));
+  const shellResults = targets.flatMap((item) => item.aliasResults || [])
+    .filter((item) => item.alias === SHELL_ALIAS);
+  const missingRequiredBrowser = requiredBrowserResults.filter((item) => !item?.hasAlias).length;
+  const legacyRequiredBrowserProxy = requiredBrowserResults.filter((item) => item?.hasAlias && item.proxied).length;
   return {
     total: targets.length,
     existing: existing.length,
-    proxied: targets.filter((item) => item.proxied).length,
-    unproxied_required: unproxiedRequired.length,
-    unproxied_existing: unproxiedExisting.length,
-    ok: unproxiedRequired.length === 0 && unproxiedExisting.length === 0,
+    direct_browser: browserResults.filter((item) => item.hasAlias && !item.proxied).length,
+    legacy_browser_proxy: browserResults.filter((item) => item.hasAlias && item.proxied).length,
+    missing_required_browser: missingRequiredBrowser,
+    legacy_required_browser_proxy: legacyRequiredBrowserProxy,
+    proxied_shell: shellResults.filter((item) => item.hasAlias && item.proxied).length,
+    ok: missingRequiredBrowser === 0 && legacyRequiredBrowserProxy === 0,
   };
 }
 
@@ -82,7 +90,7 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
     : Promise.resolve({ ok: true, enforced: false });
   let migrationResult = null;
   if (options.fix) {
-    /* 中文注释：--fix 只负责把 MCP 配置切到 AIOS proxy，不改变上游 browser-use 服务本身。 */
+    /* 中文注释：--fix 只迁移浏览器 MCP 到直连 launcher，不写入未托管的上游服务。 */
     migrationResult = await migrateBrowserMcpConfig({
       rootDir,
       dryRun: Boolean(options.dryRun),
@@ -93,16 +101,16 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
   const afterTargets = inspectMcpProxyTargets({ rootDir, clientHomes: homes, aliases: mcpAliases });
   /* 中文注释：配置看起来正确不代表链路真的压缩，所以 doctor 必须再跑一次 live proof。 */
   const proof = await runInterceptionProof({ sessionId: options.sessionId || options.session, json: false }, { rootDir: projectRoot || rootDir, io: { log() {} }, clientHomes: homes });
-  const mcpProxy = statusFromTargets(afterTargets);
+  const mcpDelivery = statusFromTargets(afterTargets);
   const turnCompliance = { enforced: shouldEnforceTurns, ...(await turnCompliancePromise) };
   const result = {
-    ok: proof.ok && mcpProxy.ok && turnCompliance.ok,
-    exitCode: proof.ok && mcpProxy.ok && turnCompliance.ok ? 0 : 1,
+    ok: proof.ok && mcpDelivery.ok && turnCompliance.ok,
+    exitCode: proof.ok && mcpDelivery.ok && turnCompliance.ok ? 0 : 1,
     rootDir,
     projectRoot,
     fix: Boolean(options.fix),
     dryRun: Boolean(options.dryRun),
-    mcp_proxy: mcpProxy,
+    mcp_delivery: mcpDelivery,
     migration: migrationResult,
     targets_before: beforeTargets,
     targets_after: afterTargets,
@@ -123,7 +131,7 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
   } else {
     io.log('AIOS Interception Doctor');
     io.log('------------------------');
-    io.log(`MCP proxy: proxied=${mcpProxy.proxied}/${mcpProxy.total} existing=${mcpProxy.existing} unproxied_required=${mcpProxy.unproxied_required} unproxied_existing=${mcpProxy.unproxied_existing}`);
+    io.log(`MCP delivery: direct_browser=${mcpDelivery.direct_browser} legacy_browser_proxy=${mcpDelivery.legacy_browser_proxy} missing_required_browser=${mcpDelivery.missing_required_browser} proxied_shell=${mcpDelivery.proxied_shell}`);
     if (migrationResult) {
       io.log(`Migration: created=${migrationResult.created} updated=${migrationResult.updated} unchanged=${migrationResult.unchanged} errors=${migrationResult.errors} dryRun=${migrationResult.dryRun}`);
     }
@@ -133,7 +141,7 @@ export async function runInterceptionDoctor(options = {}, { rootDir = process.cw
     } else {
       io.log('Turn compliance: not enforced; pass --enforce-turns to check latest real agent metrics');
     }
-    io.log(result.ok ? '[ok] interception runtime verified' : '[fail] interception runtime has unproxied targets or missing turn compression');
+    io.log(result.ok ? '[ok] MCP delivery and interception runtime verified' : '[fail] browser MCP needs direct migration or turn compression is missing');
   }
   return result;
 }

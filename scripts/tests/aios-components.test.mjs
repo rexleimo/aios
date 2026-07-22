@@ -29,6 +29,7 @@ import {
 import { getClientHomes } from '../lib/platform/paths.mjs';
 import { buildPreferredMcpServer } from '../lib/components/browser/mcp-server-builders.mjs';
 import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
+import { printSnippet } from '../lib/components/browser/mcp-snippet.mjs';
 import { resolveShellCommand } from '../lib/components/browser/runtime-paths.mjs';
 
 async function makeTemp(prefix) {
@@ -77,25 +78,14 @@ async function writeBrowserLauncherFixture(scriptsDir) {
 }
 
 function expectedBrowserMcpCommand() {
-  return process.execPath;
+  return resolveShellCommand(process.platform);
 }
 
 function expectedBrowserMcpArgs(rootDir) {
   const launcher = browserLauncherPath(rootDir);
-  const upstreamArgs = process.platform === 'win32'
+  return process.platform === 'win32'
     ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcher]
     : [launcher];
-  const upstreamCommand = resolveShellCommand(process.platform);
-  return [
-    path.join(rootDir, 'scripts', 'aios-mcp-proxy.mjs'),
-    '--workspace',
-    rootDir,
-    '--host',
-    PRIMARY_BROWSER_ALIAS,
-    '--',
-    upstreamCommand,
-    ...upstreamArgs,
-  ];
 }
 
 test('browser shell command falls back to Windows PowerShell when pwsh is unavailable', () => {
@@ -117,14 +107,23 @@ test('browser MCP server keeps bash launcher semantics on macOS and Linux', () =
         return true;
       },
     });
-    const sep = server.args.indexOf('--');
-
-    assert.equal(server.args[sep + 1], 'bash');
-    assert.deepEqual(server.args.slice(sep + 2), [
+    assert.equal(server.command, 'bash');
+    assert.deepEqual(server.args, [
       path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh'),
     ]);
     assert.equal(probedWindowsShells, false);
   }
+});
+
+test('browser MCP snippet connects directly to the launcher', () => {
+  const lines = [];
+  const launcherPath = path.join('/repo', 'scripts', 'run-browser-use-mcp.sh');
+  printSnippet({ log: (line) => lines.push(line) }, launcherPath, 'http://127.0.0.1:9222');
+
+  const snippet = lines.join('\n');
+  assert.doesNotMatch(snippet, /aios-mcp-proxy\.mjs/);
+  assert.match(snippet, new RegExp(`"command": "${escapeRegExp(resolveShellCommand(process.platform))}"`));
+  assert.match(snippet, /run-browser-use-mcp\.sh/);
 });
 
 async function makeFakeWindowsNodeInstall({ withNpxCli = true } = {}) {

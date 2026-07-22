@@ -49,6 +49,7 @@ function quotePowerShellSingle(value) {
 }
 
 const windowsInstallerTest = process.platform === 'win32' ? test : test.skip;
+const bashInstallerTest = run('bash', ['--version']).status === 0 ? test : test.skip;
 
 async function seedFixtureRepo(rootDir, {
   checkSkillsSyncScript = 'process.exit(0);\n',
@@ -428,7 +429,7 @@ test('Bash installer can use a local asset URL for install smoke tests', async (
   assert.match(installSh, /asset_url="\$\{AIOS_ASSET_URL:-https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/harness-cli\.tar\.gz\}"/u);
 });
 
-test('Bash installer isolates nested runtime and privacy paths from inherited host paths', async () => {
+bashInstallerTest('Bash installer isolates nested runtime and privacy paths from inherited host paths', async () => {
   const workspaceRoot = process.cwd();
   const rootDir = await makeTemp('rex-installer-nested-env-');
   const packageRoot = path.join(rootDir, 'package', 'harness-cli');

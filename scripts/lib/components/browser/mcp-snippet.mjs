@@ -1,6 +1,4 @@
 /* 中文注释：手动配置片段只负责展示给用户复制的 MCP block，不参与迁移写文件。 */
-import path from 'node:path';
-
 import { PRIMARY_BROWSER_ALIAS } from './constants.mjs';
 import { resolveShellCommand } from './runtime-paths.mjs';
 
@@ -19,8 +17,8 @@ export function printSnippet(io, launcherPath, cdpUrl) {
   io.log('  "mcpServers": {');
   io.log(`    "${PRIMARY_BROWSER_ALIAS}": {`);
   io.log('      "type": "stdio",');
-  io.log(`      "command": "${process.execPath}",`);
-  io.log(`      "args": ["${path.join(path.dirname(launcherPath), 'aios-mcp-proxy.mjs')}", "--workspace", "<workspace>", "--host", "${PRIMARY_BROWSER_ALIAS}", "--", "${shellCmd}", ${argsStr}],`);
+  io.log(`      "command": "${shellCmd}",`);
+  io.log(`      "args": [${argsStr}],`);
   io.log('      "env": {');
   io.log(`        "BROWSER_USE_CDP_URL": "${cdpUrl}"`);
   io.log('      }');

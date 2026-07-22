@@ -11,9 +11,16 @@ import { readRawRef } from '../lib/interception/refs/raw-ref-store.mjs';
 
 const SENTINEL = 'UNIQUE_MCP_RAW_PAYLOAD_SENTINEL';
 
-test('json-rpc proxy keeps tools/call MCP shape and stores AIOS metadata by ref', async () => {
+test('json-rpc proxy preserves multimodal tools/call content and stores AIOS metadata by ref', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-mcp-proxy-'));
   const calls = [];
+  const content = [
+    { type: 'text', text: `HTML <main>${SENTINEL.repeat(20)}</main>` },
+    { type: 'image', data: 'c2NyZWVuc2hvdC1ieXRlcw==', mimeType: 'image/png' },
+    { type: 'audio', data: 'YXVkaW8tYnl0ZXM=', mimeType: 'audio/wav' },
+    { type: 'resource', resource: { uri: 'file:///page-state.bin', mimeType: 'application/octet-stream', blob: 'cmVzb3VyY2UtYnl0ZXM=' } },
+    { type: 'future-binary', payload: 'ZnV0dXJlLWJ5dGVz' },
+  ];
   try {
     const handler = createJsonRpcProxyHandler({
       workspaceRoot,
@@ -28,9 +35,7 @@ test('json-rpc proxy keeps tools/call MCP shape and stores AIOS metadata by ref'
           jsonrpc: '2.0',
           id: message.id,
           result: {
-            content: [
-              { type: 'text', text: `HTML <main>${SENTINEL.repeat(20)}</main>` },
-            ],
+            content,
           },
         };
       },
@@ -46,12 +51,14 @@ test('json-rpc proxy keeps tools/call MCP shape and stores AIOS metadata by ref'
     assert.equal(response.jsonrpc, '2.0');
     assert.equal(response.id, 7);
     assert.equal(calls.length, 1);
-    assert.equal(JSON.stringify(response).includes(SENTINEL), false);
-    assert.equal(response.result.content.length, 1);
-    assert.equal(response.result.content[0].type, 'text');
-    assert.match(response.result.content[0].text, /aios\.compact_packet/);
-    assert.equal(response.result._meta.aios.type, 'aios.compact_packet');
+    assert.deepEqual(response.result.content, content);
     assert.equal(response.result._meta.aios.refs.length, 1);
+    assert.equal(JSON.stringify(response.result._meta.aios).includes(SENTINEL), false);
+    assert.equal(JSON.stringify(response.result._meta.aios).includes(content[1].data), false);
+    assert.equal(JSON.stringify(response.result._meta.aios).includes(content[2].data), false);
+    assert.equal(JSON.stringify(response.result._meta.aios).includes(content[3].resource.blob), false);
+    assert.equal(JSON.stringify(response.result._meta.aios).includes(content[4].payload), false);
+    assert.equal(response.result._meta.aios.type, 'aios.compact_packet');
 
     const metrics = await readMetricsRecords({ workspaceRoot, sessionId: 'mcp-session' });
     assert.equal(metrics.length, 1);

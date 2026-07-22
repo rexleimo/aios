@@ -30,10 +30,20 @@ function decodeEnvelopeFromWrappedCommand(command) {
 }
 
 function runAios(args, env = {}) {
+  const testHome = env.AIOS_HOME ? path.join(env.AIOS_HOME, 'clients') : '';
+  const clientHomes = testHome
+    ? {
+      CODEX_HOME: path.join(testHome, 'codex'),
+      CLAUDE_HOME: path.join(testHome, 'claude'),
+      GEMINI_HOME: path.join(testHome, 'gemini'),
+      OPENCODE_HOME: path.join(testHome, 'opencode'),
+      GROK_HOME: path.join(testHome, 'grok'),
+    }
+    : {};
   return spawnSync(process.execPath, [cli, ...args], {
     cwd: process.cwd(),
     encoding: 'utf8',
-    env: { ...process.env, ...env },
+    env: { ...process.env, ...clientHomes, ...env },
   });
 }
 
@@ -57,7 +67,7 @@ test('interception proof command emits savings and capability matrix', async () 
   }
 });
 
-test('interception doctor and mcp migration keep browser MCP proxied', async () => {
+test('interception doctor and mcp migration make browser MCP direct', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-interception-doctor-'));
   await mkdir(path.join(workspaceRoot, 'config'), { recursive: true });
   await copyFile(
@@ -87,14 +97,15 @@ test('interception doctor and mcp migration keep browser MCP proxied', async () 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const parsed = JSON.parse(result.stdout);
   assert.equal(parsed.ok, true);
-  assert.equal(parsed.mcp_proxy.ok, true);
+  assert.equal(parsed.mcp_delivery.ok, true);
+  assert.equal(parsed.mcp_delivery.legacy_browser_proxy, 0);
   assert.equal(parsed.proof.metrics.records, 2);
   assert.equal(parsed.proof.turn_compression_matrix.ok, true);
   assert.equal(parsed.proof.turn_compression_matrix.clients.length, parsed.capability_matrix.length);
-  assert.equal(parsed.targets_after.some((item) => item.client === 'project' && item.proxied), true);
-
-  const mcpRaw = await readFile(path.join(workspaceRoot, '.mcp.json'), 'utf8');
-  assert.match(mcpRaw, /aios-mcp-proxy\.mjs/);
+  const codexConfig = await readFile(path.join(env.AIOS_HOME, 'clients', 'codex', 'config.toml'), 'utf8');
+  const browserSection = codexConfig.split('[mcp_servers.aios-auth-tools]')[0];
+  assert.doesNotMatch(browserSection, /aios-mcp-proxy\.mjs/);
+  assert.match(browserSection, /run-browser-use-mcp/);
 });
 
 test('interception tail --latest returns the newest proof session with recent pre/post metrics', async () => {

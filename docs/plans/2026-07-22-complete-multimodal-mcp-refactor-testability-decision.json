@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-22-complete-multimodal-mcp-refactor-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "The JSON-RPC MCP proxy, browser MCP configuration builder, printed browser snippet, and interception doctor CLI.",
+    "setup": "Run focused tests using temporary workspaces and temporary client homes; no real client configuration is read or written.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/interception-mcp-proxy.test.mjs",
+        "scripts/tests/aios-components.test.mjs",
+        "scripts/tests/interception-cli.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Binary data is absent from proxy metadata, generated browser MCP entries and snippets are direct, and doctor reports direct browser delivery as healthy.",
+    "observed": "The focused tests exited with status 1: audio/resource/unknown payloads remain in metadata, browser configuration still uses aios-mcp-proxy, and doctor has no direct-delivery status.",
+    "failureReason": "The remaining legacy observation and browser configuration logic has not been refactored to the approved multimodal delivery contract.",
+    "receiptRef": "receipt:59700746-f571-4c0c-9d17-bf0280fcdd88"
+  }
+}

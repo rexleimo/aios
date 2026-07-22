@@ -38,7 +38,7 @@ export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 
     if (message?.method === 'tools/call') {
       if (!isObjectRecord(response.result) || !Array.isArray(response.result.content)) return response;
       const engine = createInterceptionEngine({ workspaceRoot, thresholds, now, metrics });
-      /* 中文注释：tools/call 结果先展开成文本，再复用同一个 engine，保证 MCP 和 shell 的 packet/metrics 一致。 */
+      /* 中文注释：tools/call 的内容仅用于生成观测 packet；协议载荷必须原样交给客户端。 */
       const text = extractToolCallText(response.result);
       const packet = await engine.interceptToolResult({
         kind: 'mcp.tools_call',
@@ -54,13 +54,7 @@ export function createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId = 
       });
       return {
         ...response,
-        result: attachAiosMetadata(
-          {
-            ...response.result,
-            content: [{ type: 'text', text: JSON.stringify(packet, null, 2) }],
-          },
-          packet,
-        ),
+        result: attachAiosMetadata(response.result, packet),
       };
     }
 

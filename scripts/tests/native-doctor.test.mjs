@@ -28,6 +28,8 @@ async function buildRouteHomeMap() {
     claude: await makeTemp('aios-native-doctor-claude-home-'),
     gemini: await makeTemp('aios-native-doctor-gemini-home-'),
     opencode: await makeTemp('aios-native-doctor-opencode-home-'),
+    hermes: await makeTemp('aios-native-doctor-hermes-home-'),
+    grok: await makeTemp('aios-native-doctor-grok-home-'),
   };
 }
 
@@ -37,6 +39,8 @@ function buildRouteEnv(homeMap) {
     CLAUDE_HOME: homeMap.claude,
     GEMINI_HOME: homeMap.gemini,
     OPENCODE_HOME: homeMap.opencode,
+    HERMES_HOME: homeMap.hermes,
+    GROK_HOME: homeMap.grok,
   };
 }
 

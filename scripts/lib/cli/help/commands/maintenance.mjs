@@ -229,7 +229,7 @@ Subcommands:
   proof        Run deterministic shell + MCP sentinel proof and print savings metrics
   tail         Show recent interception metric events from the latest or selected session
   rewrite      Rewrite shell commands for host-native tool hooks
-  mcp-migrate  Force MCP configs through scripts/aios-mcp-proxy.mjs
+  mcp-migrate  Migrate browser MCP configs to direct browser-use delivery
   audit        Hourly token usage aggregation with timezone-aware query
 
 Options:

@@ -12,7 +12,7 @@ import {
   resolveShellCommand,
 } from './runtime-paths.mjs';
 
-/* 中文注释：主浏览器 MCP 必须包上 aios-mcp-proxy，大 HTML/截图文本才会进入 interception 数据面。 */
+/* 中文注释：浏览器 MCP 直连上游，避免已弃用代理改写多模态 tools/call 结果。 */
 export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {}) {
   const platform = runtime.platform || process.platform;
   const launcherScript = resolveLauncherScript(rootDir, platform);
@@ -24,6 +24,9 @@ export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {
     ...existingEnv,
     BROWSER_USE_CDP_URL: existingEnv.BROWSER_USE_CDP_URL || cdpUrl,
   };
+  delete nextEnv.AIOS_INTERCEPTION_METRICS;
+  delete nextEnv.AIOS_MCP_PROXY;
+  delete nextEnv.AIOS_MCP_UPSTREAM_HOST;
   if (browserUseRepo) {
     nextEnv.AIOS_BROWSER_USE_REPO = browserUseRepo;
   } else if (isLegacyBrowserUseFallback(nextEnv.AIOS_BROWSER_USE_REPO)) {
@@ -41,12 +44,7 @@ export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {
     args,
     env: nextEnv,
   };
-  return buildAiosMcpProxyServer({
-    rootDir,
-    upstream,
-    host: PRIMARY_BROWSER_ALIAS,
-    workspaceRoot: rootDir,
-  });
+  return upstream;
 }
 
 /* 中文注释：auth-tools 仍保持直连，因为它是小型辅助服务，不承载大页面输出。 */

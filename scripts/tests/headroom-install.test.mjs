@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -29,18 +30,20 @@ test('Headroom version and installer policy is fixed to 0.31.x in an isolated to
 
 test('ensureHeadroomInstalled verifies four CLI surfaces and dry-run never spawns an installer', async () => {
   const calls = [];
+  const executable = path.resolve('fixtures', 'headroom', 'bin', 'headroom');
+  const resolverCommand = process.platform === 'win32' ? 'where.exe' : 'which';
   const result = await ensureHeadroomInstalled({
     dryRun: false,
     probe: { status: 'missing', pythonVersion: '3.12.2', uvAvailable: true, pipxAvailable: false },
     runImpl: async (command, args) => { calls.push([command, args]); return { status: 0 }; },
     captureImpl: (command, args) => ({
       status: 0,
-      stdout: command === 'which' ? '/opt/headroom/bin/headroom' : args[0] === '--version' ? 'headroom 0.31.0' : '',
+      stdout: command === resolverCommand ? executable : args[0] === '--version' ? 'headroom 0.31.0' : '',
       stderr: '',
     }),
   });
   assert.equal(result.status, 'installed');
-  assert.equal(result.executable, '/opt/headroom/bin/headroom');
+  assert.equal(result.executable, executable);
   assert.deepEqual(calls[0], ['uv', ['tool', 'install', HEADROOM_PACKAGE_SPEC]]);
   assert.deepEqual(result.smoke.map((item) => item.args), [
     ['--version'], ['--help'], ['wrap', '--help'], ['mcp', 'serve', '--help'],
@@ -58,19 +61,21 @@ test('ensureHeadroomInstalled verifies four CLI surfaces and dry-run never spawn
 });
 
 test('ensureHeadroomInstalled verifies existing installs and returns an absolute executable for MCP registration', async () => {
+  const executable = path.resolve('fixtures', 'headroom', 'existing', 'headroom');
+  const resolverCommand = process.platform === 'win32' ? 'where.exe' : 'which';
   const result = await ensureHeadroomInstalled({
     dryRun: false,
     probe: { status: 'installed', installedVersion: '0.31.2', pythonVersion: '3.12.2', uvAvailable: true, pipxAvailable: false },
     runImpl: async () => { throw new Error('installer should not run for existing Headroom'); },
     captureImpl: (command, args) => ({
       status: 0,
-      stdout: command === 'which' ? '/Users/test/.local/bin/headroom' : args[0] === '--version' ? 'headroom 0.31.2' : '',
+      stdout: command === resolverCommand ? executable : args[0] === '--version' ? 'headroom 0.31.2' : '',
       stderr: '',
     }),
   });
   assert.equal(result.status, 'installed');
   assert.equal(result.version, '0.31.2');
-  assert.equal(result.executable, '/Users/test/.local/bin/headroom');
+  assert.equal(result.executable, executable);
   assert.deepEqual(result.smoke.map((item) => item.args), [
     ['--version'], ['--help'], ['wrap', '--help'], ['mcp', 'serve', '--help'],
   ]);

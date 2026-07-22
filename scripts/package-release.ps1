@@ -70,13 +70,8 @@ try {
     "packages/debug-hub",
     "src",
     ".claude/agents",
-    ".claude/skills",
-    ".codex/skills",
     ".codex/agents",
-    ".agents/skills",
-    ".opencode/skills",
     ".opencode/agents",
-    ".gemini/skills",
     ".gemini/commands"
   )
 
@@ -114,7 +109,7 @@ try {
   New-Item -Path $extractDir -ItemType Directory -Force | Out-Null
 
   Write-Host "+ git archive (tar) -> $tarPath"
-  Invoke-Checked -Command "git" -Arguments @("-C", $RootDir, "archive", "--format=tar", "--prefix=harness-cli/", "-o", $tarPath, "HEAD") + $archivePaths
+  Invoke-Checked -Command "git" -Arguments (@("-C", $RootDir, "archive", "--format=tar", "--prefix=harness-cli/", "-o", $tarPath, "HEAD") + $archivePaths)
 
   Write-Host "+ extract tar -> $extractDir"
   Invoke-Checked -Command "tar" -Arguments @("-xf", $tarPath, "-C", $extractDir)
@@ -144,6 +139,12 @@ try {
   $mcpDistArchive = Join-Path $extractDir "harness-cli/mcp-server/dist"
   if (Test-Path -LiteralPath $mcpDistArchive) {
     Remove-Item -LiteralPath $mcpDistArchive -Recurse -Force
+  }
+
+  # Generated client projections and retired workflow code are materialized at install time.
+  $legacySuperpowersArchive = Join-Path $extractDir "harness-cli/scripts/lib/components/superpowers"
+  if (Test-Path -LiteralPath $legacySuperpowersArchive) {
+    Remove-Item -LiteralPath $legacySuperpowersArchive -Recurse -Force
   }
 
   # git archive omits ignored build output; materialize the bundled debug-hub dist.

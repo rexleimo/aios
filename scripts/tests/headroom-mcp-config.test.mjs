@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -56,10 +57,10 @@ test('Hermes home target is YAML and named profiles resolve below profiles/<name
     env: {},
   });
 
-  assert.equal(targets.user.path, '/home/test/.hermes/profiles/research/config.yaml');
+  assert.equal(targets.user.path, path.join('/home/test', '.hermes', 'profiles', 'research', 'config.yaml'));
   assert.equal(targets.user.format, 'yaml');
   assert.equal(targets.user.namespace, 'mcp_servers');
-  assert.equal(targets.project.path, '/work/app/.mcp.json');
+  assert.equal(targets.project.path, path.join('/work/app', '.mcp.json'));
   assert.equal(targets.project.format, 'json');
 });
 

@@ -7,7 +7,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-import { evaluateSkillComplianceDryRun } from './compliance.mjs';
+import { evaluateSkillComplianceDryRun, normalizeSkillText } from './compliance.mjs';
 
 const CRITICAL_VIOLATION_RULES = [
   {
@@ -71,7 +71,7 @@ export async function evaluateSkillComplianceLive({
 } = {}) {
   const dry = await evaluateSkillComplianceDryRun({ rootDir, targetPath, client });
   const absolute = path.isAbsolute(targetPath) ? targetPath : path.join(rootDir, targetPath);
-  const body = await fs.readFile(absolute, 'utf8');
+  const body = normalizeSkillText(await fs.readFile(absolute, 'utf8'));
   const bodyLower = body.toLowerCase();
   const bodyTokens = new Set(tokenize(body));
 
