@@ -76,7 +76,7 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
   });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
-  // Codex AGENTS.md composition appends Grok native notes (shared AGENTS.md surface).
+  // Keep this source to verify Grok notes stay out of the shared AGENTS.md projection.
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project', 'AGENTS.md'), 'Grok native block.\n', 'utf8');
 }
 
@@ -111,7 +111,7 @@ async function seedNativeRoot(rootDir) {
   await writeAgentSources(rootDir);
 }
 
-test('native sync gates instruction sections by client capability', async () => {
+test('native sync writes a client-neutral shared AGENTS block and per-client overlays', async () => {
   const rootDir = await makeTemp('aios-native-sync-capability-root-');
   await seedNativeRoot(rootDir);
 
@@ -120,15 +120,17 @@ test('native sync gates instruction sections by client capability', async () => 
   const agentsDoc = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
   const geminiDoc = await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8');
 
-  // Codex has agents and native sections; no Superpowers compatibility partial remains.
+  // Every AGENTS.md client receives only the compact shared core.
   assert.doesNotMatch(agentsDoc, /SUPERPOWERS-CAP/);
-  assert.match(agentsDoc, /AGENT-ROUTING-CAP/);
-  assert.match(agentsDoc, /CODEMAP-NATIVE/);
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /AGENT-ROUTING-CAP|CODEMAP-NATIVE|Codex native block|Opencode compatibility|Grok native block/);
 
-  // Gemini has native guidance but no agent or Superpowers compatibility section.
+  // Gemini retains its own overlay without receiving route-specific manuals.
   assert.doesNotMatch(geminiDoc, /SUPERPOWERS-CAP/);
   assert.doesNotMatch(geminiDoc, /AGENT-ROUTING-CAP/);
-  assert.match(geminiDoc, /CODEMAP-NATIVE/);
+  assert.match(geminiDoc, /Shared native instructions/);
+  assert.match(geminiDoc, /Gemini compatibility/);
+  assert.doesNotMatch(geminiDoc, /CODEMAP-NATIVE/);
 });
 
 test('native sync injects a managed block into AGENTS.md without deleting user text', async () => {
@@ -143,9 +145,8 @@ test('native sync injects a managed block into AGENTS.md without deleting user t
   assert.match(agentsDoc, /User preface/);
   assert.match(agentsDoc, /User tail/);
   assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
-  assert.match(agentsDoc, /Codex native block/);
-  assert.match(agentsDoc, /page\.extract_text/);
-  assert.match(agentsDoc, /read -> act -> verify/i);
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /Codex native block|page\.extract_text|read -> act -> verify/i);
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.codex')).client, 'codex');
 });
 
@@ -173,13 +174,15 @@ test('native sync merges claude settings.local.json without clobbering non-AIOS 
   assert.match(claudeDoc, /AIOS NATIVE BEGIN/);
 });
 
-test('native sync writes compatibility docs for gemini and opencode', async () => {
+test('native sync keeps OpenCode compatibility details out of shared AGENTS.md', async () => {
   const rootDir = await makeTemp('aios-native-sync-compat-root-');
   await seedNativeRoot(rootDir);
 
   await syncNativeEnhancements({ rootDir, client: 'all' });
 
-  assert.match(await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8'), /Opencode compatibility/);
+  const agentsDoc = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /Opencode compatibility/);
   assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
   // OpenCode reads AGENTS.md (managed by the shared Codex/OpenCode emitter); no separate AIOS.md file needed.
   assert.equal(readNativeSyncMetadata(path.join(rootDir, '.gemini')).tier, 'compatibility');
@@ -256,7 +259,8 @@ test('native sync can install codex project outputs outside the AIOS source root
   const agentsDoc = await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8');
   assert.match(agentsDoc, /Project intro/);
   assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
-  assert.match(agentsDoc, /Codex native block/);
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /Codex native block/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.codex', 'agents', 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.equal(readNativeSyncMetadata(path.join(targetRootDir, '.codex')).client, 'codex');
@@ -271,8 +275,9 @@ test('native sync can install all client project outputs outside the AIOS source
   const result = await syncNativeEnhancements({ rootDir, targetRootDir, client: 'all' });
   assert.equal(result.ok, true);
 
-  assert.match(await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8'), /Codex native block/);
-  assert.match(await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8'), /Opencode compatibility/);
+  const agentsDoc = await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8');
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /Codex native block|Opencode compatibility/);
   assert.match(await readFile(path.join(targetRootDir, 'CLAUDE.md'), 'utf8'), /Claude native block/);
   assert.match(await readFile(path.join(targetRootDir, 'GEMINI.md'), 'utf8'), /Gemini compatibility/);
   assert.match(await readFile(path.join(targetRootDir, '.claude', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
@@ -296,8 +301,8 @@ test('native sync can install opencode standalone instructions outside the AIOS 
 
   const agentsDoc = await readFile(path.join(targetRootDir, 'AGENTS.md'), 'utf8');
   assert.match(agentsDoc, /AIOS NATIVE BEGIN/);
-  assert.match(agentsDoc, /Opencode compatibility/);
-  assert.doesNotMatch(agentsDoc, /Codex native block/);
+  assert.match(agentsDoc, /Shared native instructions/);
+  assert.doesNotMatch(agentsDoc, /Opencode compatibility|Codex native block/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'skills', 'find-skills', 'SKILL.md'), 'utf8'), /native skill/);
   assert.match(await readFile(path.join(targetRootDir, '.opencode', 'agent', 'aios-build.md'), 'utf8'), /^mode: primary$/m);
   assert.equal(JSON.parse(await readFile(path.join(targetRootDir, 'opencode.json'), 'utf8')).skills.paths[0], '.opencode/skills');

@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-proportional-capability-evidence-gates-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "decideNextCapability() from the rex-harness package entry point",
+    "setup": "Provide confirmed behavior-change, test-scope, and honest-RED Facts plus an evidence-bearing change-external-effect Fact whose value is external.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/scenarios/proportional-gates.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public capability decision is software.testing.strict-tdd and includes test-strength-check-recorded in its evidence contract.",
+    "observed": "The focused public test exits 1 because the existing decision is software.testing.tdd instead of software.testing.strict-tdd.",
+    "failureReason": "Structured external-effect facts are currently ignored by the strict-TDD eligibility policy; this is the requested missing proportional gate, not test infrastructure failure.",
+    "receiptRef": "receipt:51cf462b-91f0-4138-85a1-4a9e7c55153d"
+  }
+}

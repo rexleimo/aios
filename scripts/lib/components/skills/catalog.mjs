@@ -77,9 +77,26 @@ export function resolveGeneratedSourceDetails({ rootDir, clientName, relativeSki
   };
 }
 
-export function resolveCatalogEntries({ rootDir, catalog, clientName, scope, selectedSkills, manifest }) {
+function compareStableStrings(left, right) {
+  if (left === right) return 0;
+  return left < right ? -1 : 1;
+}
+
+function compareResolvedCatalogEntries(left, right) {
+  return compareStableStrings(left.name, right.name)
+    || compareStableStrings(left.sourcePath, right.sourcePath)
+    || compareStableStrings(left.relativeSkillPath, right.relativeSkillPath);
+}
+
+function formatCatalogConflicts(conflicts) {
+  return conflicts
+    .map((conflict) => `${conflict.name} (${conflict.sources.join(', ')})`)
+    .join('; ');
+}
+
+export function analyzeCatalogEntries({ rootDir, catalog, clientName, scope, selectedSkills, manifest }) {
   const selected = new Set(normalizeSelectedSkills(selectedSkills));
-  return catalog
+  const entries = catalog
     .filter((entry) => entry.clients.includes(clientName))
     .filter((entry) => entry.scopes.includes(scope))
     .filter((entry) => selected.size === 0 || selected.has(entry.name))
@@ -112,7 +129,46 @@ export function resolveCatalogEntries({ rootDir, catalog, clientName, scope, sel
         linkSourcePath: needsGeneratedLinkSource ? generatedSourcePath : sourcePath,
         legacyLinkSourcePath: generatedSourcePath,
       };
-    });
+    })
+    .sort(compareResolvedCatalogEntries);
+
+  const entriesByName = new Map();
+  for (const entry of entries) {
+    const sources = entriesByName.get(entry.name) || new Map();
+    if (!sources.has(entry.sourcePath)) {
+      sources.set(entry.sourcePath, entry);
+    }
+    entriesByName.set(entry.name, sources);
+  }
+
+  const uniqueEntries = [];
+  const conflicts = [];
+  for (const [name, sources] of entriesByName) {
+    const sourcePaths = [...sources.keys()].sort(compareStableStrings);
+    uniqueEntries.push(...sourcePaths.map((sourcePath) => sources.get(sourcePath)));
+    if (sourcePaths.length > 1) {
+      conflicts.push(Object.freeze({
+        client: clientName,
+        scope,
+        name,
+        sources: Object.freeze(sourcePaths),
+      }));
+    }
+  }
+
+  return Object.freeze({
+    entries: Object.freeze(uniqueEntries),
+    conflicts: Object.freeze(conflicts),
+  });
+}
+
+export function resolveCatalogEntries(options) {
+  const analysis = analyzeCatalogEntries(options);
+  if (analysis.conflicts.length > 0) {
+    const { clientName, scope } = options;
+    throw new Error(`Ambiguous skills for ${clientName} scope=${scope}: ${formatCatalogConflicts(analysis.conflicts)}`);
+  }
+  return analysis.entries;
 }
 
 export function loadSkillsCatalog(rootDir) {

@@ -4,7 +4,7 @@ import path from 'node:path';
 import { collectUnexpectedSkillRootFindings } from '../../platform/fs.mjs';
 import { resolveClientSelection } from '../../clients/registry.mjs';
 
-import { loadSkillsCatalog, resolveCatalogEntries, resolveTargetRoot, tryLoadSkillsSyncManifest } from './catalog.mjs';
+import { analyzeCatalogEntries, loadSkillsCatalog, resolveTargetRoot, tryLoadSkillsSyncManifest } from './catalog.mjs';
 import {
   INSTALLED_SKILL_META_FILE,
   isLegacyManagedLinkInstall,
@@ -29,14 +29,18 @@ export function collectOverrideWarnings({ rootDir, projectRoot, catalog, clientN
 
   const globalRoot = resolveTargetRoot({ rootDir, projectRoot, clientName, scope: 'global', homes });
   const projectScopeRoot = resolveTargetRoot({ rootDir, projectRoot, clientName, scope: 'project', homes });
-  const entries = resolveCatalogEntries({
+  const analysis = analyzeCatalogEntries({
     rootDir,
     catalog,
     clientName,
     scope: 'global',
     selectedSkills,
     manifest,
-  }).filter((entry) => entry.scopes.includes('project'));
+  });
+  const conflictingNames = new Set(analysis.conflicts.map((conflict) => conflict.name));
+  const entries = analysis.entries
+    .filter((entry) => entry.scopes.includes('project'))
+    .filter((entry) => !conflictingNames.has(entry.name));
 
   let warnings = 0;
   for (const entry of entries) {
@@ -69,6 +73,7 @@ export async function doctorContextDbSkills({
   const catalog = loadSkillsCatalog(rootDir);
   const manifest = tryLoadSkillsSyncManifest(rootDir);
   let warnings = 0;
+  let errors = 0;
 
   io.log('ContextDB Skills Doctor');
   io.log('-----------------------');
@@ -86,8 +91,17 @@ export async function doctorContextDbSkills({
 
   for (const clientName of resolveClientSelection(client)) {
     const targetRoot = resolveTargetRoot({ rootDir, projectRoot, clientName, scope: normalizedScope, homes });
-    const entries = resolveCatalogEntries({ rootDir, catalog, clientName, scope: normalizedScope, selectedSkills, manifest });
     io.log(`${clientName} target root: ${formatDisplayPath(targetRoot)}`);
+    const analysis = analyzeCatalogEntries({ rootDir, catalog, clientName, scope: normalizedScope, selectedSkills, manifest });
+    if (analysis.conflicts.length > 0) {
+      for (const conflict of analysis.conflicts) {
+        const sources = conflict.sources.map(formatDisplayPath).join(', ');
+        io.log(`[error] ${clientName}: ambiguous skill ${conflict.name} scope=${normalizedScope}; canonical sources: ${sources}; remove or rename one source`);
+        errors += 1;
+      }
+      continue;
+    }
+    const entries = analysis.entries;
     if (entries.length === 0) {
       io.log(`[warn] ${clientName} no catalog skills matched scope=${normalizedScope}.`);
       warnings += 1;
@@ -168,5 +182,5 @@ export async function doctorContextDbSkills({
     warnings += collectOverrideWarnings({ rootDir, projectRoot, catalog, clientName, selectedSkills, homes, io, manifest });
   }
 
-  return { warnings, effectiveWarnings: warnings, errors: 0 };
+  return { warnings, effectiveWarnings: warnings + errors, errors };
 }

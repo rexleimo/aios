@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-22-native-sync-shared-agents-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "syncNativeEnhancements() through the temporary-root integration seam in scripts/tests/native-sync.test.mjs",
+    "setup": "The fixture creates the same minimal native source tree used by the synchronization integration tests, then synchronizes individual and all-client targets into a temporary project root.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/native-sync.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Every AGENTS.md target contains only the shared compact core, while CLAUDE.md and GEMINI.md retain their own overlays; no OpenCode, Grok, Hermes, or Codex manual is appended to the shared AGENTS.md block.",
+    "observed": "The recorded integration run exited with status 1. Six assertions still require retired client-specific and route-specific text such as AGENT-ROUTING-CAP, Codex native block, or Opencode compatibility in the shared AGENTS.md surface.",
+    "failureReason": "The fixture and expectations encode the previous client-dependent composition contract, while the approved Phase 1 composer now emits a client-neutral shared AGENTS.md projection.",
+    "receiptRef": "receipt:7cc51325-9e54-4098-832a-b8ffeb9e1095"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-structured-rex-change-risk-facts-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "deriveSoftwareFacts() from the rex-harness package entry point",
+    "setup": "Submit one evidence-bearing change.risk-assessed observation with a complete behavioral/component/external/compensatable/medium assessment.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/application/change-risk-facts.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public API returns five immutable change-risk facts with the supplied values and assessment evidence reference.",
+    "observed": "The new public test exits 1 before any implementation because OBSERVATION.CHANGE_RISK_ASSESSED is absent and observation normalization throws 'observation 0 requires kind'.",
+    "failureReason": "The public observation kind and its structured fact projection are not implemented yet; this is the requested missing behavior, not test infrastructure failure.",
+    "receiptRef": "receipt:f8c01ac9-4ea2-4da2-bf29-6fab94077dea"
+  }
+}

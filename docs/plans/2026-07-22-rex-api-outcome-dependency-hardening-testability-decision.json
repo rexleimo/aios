@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-api-outcome-dependency-hardening-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "startLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Declare a two-feature delivery with the dependent feature first and its prerequisite second, then start it with a verified zero-exit baseline receipt.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The ledger preserves dependent.dependsOn as ['prerequisite'] and selects prerequisite as its sole current feature.",
+    "observed": "The focused public test exits 1 because the initialized ledger omits dependent.dependsOn.",
+    "failureReason": "Long-running delivery currently discards dependency declarations and activates the first declared feature, so it cannot enforce dependency-ready ordering.",
+    "receiptRef": "receipt:dda7b0d4-cf3f-4c2e-97b5-b032fad1b9aa"
+  }
+}

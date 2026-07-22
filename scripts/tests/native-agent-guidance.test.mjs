@@ -7,7 +7,40 @@ import test from 'node:test';
 
 import { resolveNativeClients } from '../lib/native/source-tree.mjs';
 import { composeNativeMarkdown } from '../lib/native/emitters/compose.mjs';
+import { renderCodexNativeOutputs } from '../lib/native/emitters/codex.mjs';
+import { renderGrokNativeOutputs } from '../lib/native/emitters/grok.mjs';
+import { renderHermesNativeOutputs } from '../lib/native/emitters/hermes.mjs';
+import { renderOpencodeNativeOutputs } from '../lib/native/emitters/opencode.mjs';
 import { readNativePartials } from '../lib/native/emitters/shared.mjs';
+
+const AGENTS_CLIENTS = Object.freeze(['codex', 'opencode', 'hermes', 'grok']);
+const LEGACY_ALWAYS_LOADED_PARTIALS = Object.freeze([
+  'core-instructions.md',
+  'contextdb.md',
+  'client-capabilities.md',
+  'token-discipline.md',
+  'agent-routing.md',
+  'codemap.md',
+  'browser-mcp.md',
+  'team-provider.md',
+  'model-router.md',
+  'harness.md',
+]);
+
+function markdownOperationContent(rendered) {
+  return rendered.operations.find((operation) => (
+    operation.kind === 'markdown-block' && operation.targetPath === 'AGENTS.md'
+  ))?.content;
+}
+
+function readManagedNativeBlock(file) {
+  const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
+  const begin = markdown.indexOf('<!-- AIOS NATIVE BEGIN -->');
+  const end = markdown.indexOf('<!-- AIOS NATIVE END -->');
+  assert.ok(begin >= 0, `${file} is missing the AIOS native begin marker`);
+  assert.ok(end > begin, `${file} is missing the AIOS native end marker`);
+  return markdown.slice(begin, end);
+}
 
 test('readNativePartials skips missing retired partials instead of throwing ENOENT', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-native-partials-'));
@@ -15,7 +48,6 @@ test('readNativePartials skips missing retired partials instead of throwing ENOE
     const partialsDir = path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials');
     await mkdir(partialsDir, { recursive: true });
     await writeFile(path.join(partialsDir, 'core-instructions.md'), '# core\n', 'utf8');
-    // Intentionally omit superpowers.md (retired) while still requesting it.
     const sections = readNativePartials(rootDir, ['core-instructions.md', 'superpowers.md']);
     assert.deepEqual(sections, ['# core']);
   } finally {
@@ -23,102 +55,111 @@ test('readNativePartials skips missing retired partials instead of throwing ENOE
   }
 });
 
-test('native agent instructions explain client capability gates and memo scope usage', () => {
-  const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client: 'codex' });
-  assert.match(markdown, /node scripts\/aios\.mjs clients doctor --json/);
-  assert.match(markdown, /pending-smoke/i);
-  assert.match(markdown, /project_shared/);
-  assert.match(markdown, /agent_private/);
-  assert.match(markdown, /node scripts\/aios\.mjs search/);
-  assert.match(markdown, /project memory, docs, plans, and code references/i);
+test('clients sharing AGENTS.md receive one deterministic client-neutral projection', () => {
+  const composed = AGENTS_CLIENTS.map((client) => (
+    composeNativeMarkdown({ rootDir: process.cwd(), client })
+  ));
+  assert.equal(new Set(composed).size, 1);
+
+  const rendered = [
+    renderCodexNativeOutputs({ rootDir: process.cwd() }),
+    renderOpencodeNativeOutputs({ rootDir: process.cwd(), selectedClients: ['opencode'] }),
+    renderHermesNativeOutputs({ rootDir: process.cwd(), selectedClients: ['hermes'] }),
+    renderGrokNativeOutputs({ rootDir: process.cwd(), selectedClients: ['grok'] }),
+  ].map(markdownOperationContent);
+
+  assert.ok(rendered.every(Boolean));
+  assert.equal(new Set(rendered).size, 1);
+  assert.equal(rendered[0], composed[0]);
+  assert.doesNotMatch(rendered[0], /AIOS For OpenCode|AIOS Native Hermes|AIOS Native Grok/u);
 });
 
-test('native instructions use adaptive workflow dispositions instead of every-message planning', () => {
+test('all six native projections keep compact workflow invariants and route details on demand', () => {
+  const legacyBytes = LEGACY_ALWAYS_LOADED_PARTIALS.reduce((total, file) => {
+    const source = readFileSync(path.join(
+      process.cwd(),
+      'client-sources',
+      'native-base',
+      'shared',
+      'partials',
+      file,
+    ));
+    return total + source.byteLength;
+  }, 0);
+
   for (const client of resolveNativeClients('all')) {
     const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
-    assert.match(markdown, /AIOS Workflow Policy/, `${client} missing workflow policy`);
-    assert.match(markdown, /`direct`/, `${client} missing direct disposition`);
-    assert.match(markdown, /`guarded`/, `${client} missing guarded disposition`);
-    assert.match(markdown, /`planned`/, `${client} missing planned disposition`);
-    assert.doesNotMatch(markdown, /AIOS ALWAYS-ON Intelligent Planning/i, `${client} still forces always-on planning`);
-    assert.doesNotMatch(markdown, /every user input automatically enters AIOS intelligent planning/i, `${client} still plans every input`);
+    assert.match(markdown, /AIOS Workflow Policy/u, `${client} missing workflow policy`);
+    assert.match(markdown, /`direct`/u, `${client} missing direct disposition`);
+    assert.match(markdown, /`guarded`/u, `${client} missing guarded disposition`);
+    assert.match(markdown, /`planned`/u, `${client} missing planned disposition`);
+    assert.match(markdown, /current Rex Capability Command/u, `${client} missing Rex command ownership`);
+    assert.match(markdown, /pre-edit-safety-gate/u, `${client} missing edit safety gate`);
+    assert.match(markdown, /verification-before-completion/u, `${client} missing completion gate`);
+    assert.match(markdown, /reversible project-local/u, `${client} missing local-safe boundary`);
+    assert.match(markdown, /destructive or hard-to-reverse/u, `${client} missing approval boundary`);
+    assert.match(markdown, /Never expose secrets/u, `${client} missing privacy boundary`);
+    assert.match(markdown, /On-Demand Routes/u, `${client} missing lazy route guidance`);
+    assert.match(markdown, /aios-codemap-ops/u, `${client} missing codemap route`);
+    assert.match(markdown, /contextdb-autopilot/u, `${client} missing ContextDB route`);
+    assert.match(markdown, /aios-long-running-harness/u, `${client} missing harness route`);
+    assert.match(markdown, /model-router/u, `${client} missing model route`);
+
+    assert.doesNotMatch(markdown, /## Context System|## AIOS Client Capability Gates|## AIOS Token Discipline/u);
+    assert.doesNotMatch(markdown, /## AIOS Subagent Dispatch|## AIOS Code-Review-Graph|## AIOS Team Provider/u);
+    assert.doesNotMatch(markdown, /## AIOS Model Router|## AIOS Interception Runtime/u);
+    assert.doesNotMatch(markdown, /chrome\.launch_cdp|memo recall --limit|clients doctor --json|aios harness run/u);
+    assert.ok(markdown.length <= 8_000, `${client} ordinary guidance exceeds 8,000 characters`);
   }
+
+  const sharedAgents = composeNativeMarkdown({ rootDir: process.cwd(), client: 'codex' });
+  assert.ok(
+    Buffer.byteLength(sharedAgents) <= Math.floor(legacyBytes * 0.4),
+    'shared AGENTS guidance must be at least 60% smaller than the legacy partial chain',
+  );
 });
 
-test('native instructions describe rex-only workflow ownership without a fixed Provider chain', () => {
-  for (const client of resolveNativeClients('all')) {
+test('native overlays claim only verified client capabilities', () => {
+  const claude = composeNativeMarkdown({ rootDir: process.cwd(), client: 'claude' });
+  const gemini = composeNativeMarkdown({ rootDir: process.cwd(), client: 'gemini' });
+
+  assert.match(claude, /SessionStart.*read-only status/is);
+  assert.match(claude, /UserPromptSubmit.*workflow-policy adapter/is);
+  assert.match(gemini, /compatibility-tier/i);
+  assert.doesNotMatch(gemini, /SessionStart|UserPromptSubmit/u);
+
+  for (const client of AGENTS_CLIENTS) {
     const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
-    assert.match(markdown, /rex-harness Software Workflow/, `${client} missing rex workflow guidance`);
-    assert.match(markdown, /AIOS binds only the bundled `rex-\*` Skills/, `${client} missing rex-only Provider binding`);
-    assert.match(markdown, /cannot replace a rex Provider/i, `${client} must prevent external Provider replacement`);
-    assert.match(markdown, /current `capabilityDecision`/i, `${client} must execute only the current Capability`);
-    assert.match(markdown, /Observation -> Fact -> Activation -> Command -> Provider -> Evidence/u, `${client} missing the executable workflow loop`);
-    assert.match(markdown, /command-scoped projection.*not a fixed pipeline/i, `${client} missing adaptive recipe projection boundary`);
-    assert.match(markdown, /persist them independently under `.rex-harness\/`/i, `${client} missing standalone rex persistence boundary`);
-    assert.doesNotMatch(markdown, /mattpocock|ponytail-minimize|ecc-specialist/iu, `${client} still exposes legacy compatibility Providers`);
-    assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${client} still routes Superpowers from user intent`);
-    assert.doesNotMatch(markdown, /behavior change or bug fix.*test-driven-development/i, `${client} still routes Superpowers from user intent`);
+    assert.doesNotMatch(markdown, /SessionStart|UserPromptSubmit/u, `${client} claims an unverified hook`);
   }
+
+  const hermes = composeNativeMarkdown({ rootDir: process.cwd(), client: 'hermes' });
+  assert.doesNotMatch(hermes, /Hermes built-in memory|\.hermes\/agents|start team|dispatch agents/iu);
 });
 
-test('root instruction files retain Rex-only workflow ownership', () => {
-  for (const file of ['AGENTS.md', 'CLAUDE.md']) {
-    const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
+test('root native instruction projections are compact and retain Rex ownership', () => {
+  for (const file of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md']) {
+    const markdown = readManagedNativeBlock(file);
     assert.match(markdown, /AIOS Workflow Policy/, `${file} missing workflow policy`);
-    assert.match(markdown, /current Rex Capability Command|current `capabilityDecision`/u, `${file} missing Rex command ownership`);
-    assert.doesNotMatch(markdown, /Superpowers skills MUST be invoked before any implementation action/i, `${file} still globally requires Superpowers`);
-    assert.doesNotMatch(markdown, /Invoke `using-superpowers` skill first/i, `${file} still bootstraps using-superpowers globally`);
-    assert.doesNotMatch(markdown, /unclear design or a new capability.*brainstorming/i, `${file} still routes Superpowers outside rex`);
-    assert.doesNotMatch(markdown, /behavior change or bug fix.*test-driven-development/i, `${file} still routes Superpowers outside rex`);
+    assert.match(markdown, /current Rex Capability Command/u, `${file} missing Rex command ownership`);
+    assert.match(markdown, /On-Demand Routes/u, `${file} missing lazy route guidance`);
+    assert.doesNotMatch(markdown, /## Context System|## AIOS Team Provider|chrome\.launch_cdp/u);
   }
 });
 
-test('Codex and Claude native sources use their verified workflow surfaces', () => {
+test('Claude is the only checked-in native source with prompt-hook settings', () => {
   const codex = readFileSync(path.join(process.cwd(), 'client-sources/native-base/codex/project/AGENTS.md'), 'utf8');
   const claude = readFileSync(path.join(process.cwd(), 'client-sources/native-base/claude/project/CLAUDE.md'), 'utf8');
+  const gemini = readFileSync(path.join(process.cwd(), 'client-sources/native-base/gemini/project/GEMINI.md'), 'utf8');
   const claudeSettings = JSON.parse(readFileSync(
     path.join(process.cwd(), 'client-sources/native-base/claude/project/settings.local.json'),
-    'utf8'
+    'utf8',
   ));
 
   assert.match(codex, /native skill discovery.*no SessionStart bootstrap/i);
   assert.match(claude, /SessionStart.*read-only status/i);
   assert.match(claude, /UserPromptSubmit.*workflow-policy adapter/i);
+  assert.doesNotMatch(gemini, /SessionStart|UserPromptSubmit/u);
   assert.deepEqual(claudeSettings.hooks.SessionStart, ['node scripts/aios.mjs plan status --client claude']);
   assert.equal(claudeSettings.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt');
-});
-
-test('all native clients inherit unified search guidance from shared instructions', () => {
-  for (const client of resolveNativeClients('all')) {
-    const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
-    assert.match(markdown, /Unified Project Search/, `${client} missing search heading`);
-    assert.match(markdown, /node scripts\/aios\.mjs search/, `${client} missing search command`);
-    assert.match(markdown, /project_shared/, `${client} missing shared memory scope guidance`);
-    assert.match(markdown, /agent_private/, `${client} missing private memory scope guidance`);
-  }
-});
-
-test('all native clients inherit strict AIOS turn compression enforcement', () => {
-  for (const client of resolveNativeClients('all')) {
-    const markdown = composeNativeMarkdown({ rootDir: process.cwd(), client });
-    assert.match(markdown, /AIOS Turn Compression Enforcement/, `${client} missing turn compression heading`);
-    assert.match(markdown, /bidirectional-turn-compression/, `${client} missing shared compression metric`);
-    assert.match(markdown, /pre_send/, `${client} missing pre_send requirement`);
-    assert.match(markdown, /post_receive/, `${client} missing post_receive requirement`);
-    assert.match(markdown, /direct host/i, `${client} missing direct host bypass policy`);
-    assert.match(markdown, /policy violation/i, `${client} missing policy violation wording`);
-  }
-});
-
-test('compatibility client project notes repeat the turn compression policy', () => {
-  for (const file of [
-    'client-sources/native-base/opencode/project/AIOS.md',
-  ]) {
-    const markdown = readFileSync(path.join(process.cwd(), file), 'utf8');
-    assert.match(markdown, /Turn Compression Compliance/, `${file} missing compatibility heading`);
-    assert.match(markdown, /bidirectional-turn-compression/, `${file} missing shared compression metric`);
-    assert.match(markdown, /pre_send/, `${file} missing pre_send wording`);
-    assert.match(markdown, /post_receive/, `${file} missing post_receive wording`);
-    assert.match(markdown, /policy violation/i, `${file} missing violation wording`);
-  }
 });
