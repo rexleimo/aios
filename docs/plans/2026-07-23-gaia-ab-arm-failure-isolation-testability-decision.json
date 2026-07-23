@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-arm-failure-isolation-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node --test scripts/tests/gaia-ab-live-runner.test.mjs",
+    "setup": "The public runner receives a verified temporary two-task local manifest, ready fake browser, fake client, local artifact collection, and a fake estimator that returns 11 USD only for the first Codex baseline task against the 10 USD shared cap. Every other task costs and spends 0.1 USD.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/gaia-ab-live-runner.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The cost-limited job records one redacted cost_limit artifact, launches neither of its tasks, and leaves the other five jobs to complete their two selected tasks under the shared spend boundary.",
+    "observed": "The runner exits with Error: GAIA live task cost estimate exceeds remaining spend before it returns artifacts for the other jobs.",
+    "failureReason": "The per-task catch writes an artifact and rethrows the budget exception, which terminates the complete nested job loop instead of isolating the affected arm.",
+    "receiptRef": "receipt:a4956786-2c01-48c7-b1e3-b1eb48585a3b"
+  }
+}

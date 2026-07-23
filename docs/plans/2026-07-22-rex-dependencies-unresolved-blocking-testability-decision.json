@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-dependencies-unresolved-blocking-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Advance an active blocker feature in a valid ledger whose remaining prerequisite is human-gated and whose dependent remains pending.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "The decision is blocked with reason dependencies-unresolved, the ledger remains blocked, and currentFeatureId is null.",
+    "observed": "The recorded focused suite exits 1 because the transition marks the ledger completed when no ready pending feature is found.",
+    "failureReason": "The transition treats no selected next feature as successful completion without distinguishing unresolved pending dependencies.",
+    "receiptRef": "receipt:466fc6ca-9ab1-4e6f-a0c2-255e72babaf9"
+  }
+}

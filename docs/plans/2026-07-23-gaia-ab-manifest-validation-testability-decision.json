@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-manifest-validation-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "scripts/gaia-ab-eval.mjs offline dry-run command",
+    "setup": "Use the local valid three-client JSON fixture. It contains distinct Codex, Claude, and Hermes records, pins Hermes to deepseek-v4-pro, and has matching baseline and optimized controls.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/gaia-ab-eval.mjs",
+        "--config",
+        "scripts/tests/fixtures/gaia-ab-eval-valid.json",
+        "--dry-run"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The CLI validates the local manifest, exits successfully, and prints separate Codex, Claude, and Hermes dry-run entries without any model, dataset, browser, or leaderboard access.",
+    "observed": "The CLI exits with code 1 and prints that the evaluator is not ready to run.",
+    "failureReason": "The public CLI does not yet parse or validate an offline manifest, so it cannot enforce fair A/B pairing or the Hermes deepseek-v4-pro policy.",
+    "receiptRef": "receipt:c2531cb4-06c5-4087-bd1b-d05ddc2f05c7"
+  }
+}

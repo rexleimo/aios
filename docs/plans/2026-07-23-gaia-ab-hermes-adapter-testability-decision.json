@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-hermes-adapter-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "buildGaiaClientInvocation()",
+    "setup": "The local adapter test requests the pinned Hermes model with a usage-file path and a task containing a sentinel expected answer. No executable is invoked.",
+    "command": {
+      "executable": "rtk",
+      "args": ["node", "--test", "scripts/tests/gaia-ab-client-adapters.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public factory returns a Hermes one-shot invocation using deepseek-v4-pro and the given usage path while omitting the sentinel answer.",
+    "observed": "The test exits with code 1 because the current factory rejects Hermes as unconfigured.",
+    "failureReason": "The existing adapter supports Codex and Claude only; Hermes has no command-construction branch.",
+    "receiptRef": "receipt:f21083a7-b926-44b7-ad4f-952f7c0f7efa"
+  }
+}

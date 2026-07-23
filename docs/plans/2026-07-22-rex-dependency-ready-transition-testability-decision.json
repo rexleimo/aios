@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-dependency-ready-transition-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Start a verified two-feature delivery where dependent is declared before prerequisite and depends on prerequisite, then submit a matching zero-exit receipt for prerequisite.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "The decision continues with dependent as the sole current feature after prerequisite is accepted.",
+    "observed": "The recorded focused suite exits 1 because the current index-based transition completes after prerequisite instead of selecting earlier dependent.",
+    "failureReason": "advanceLongRunningDelivery selects only pending features after the current array index and ignores dependency acceptance state.",
+    "receiptRef": "receipt:d6ef0ee0-88b4-4da8-9e0b-fdb73c86059c"
+  }
+}

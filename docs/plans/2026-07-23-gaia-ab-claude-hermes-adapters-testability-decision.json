@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-claude-hermes-adapters-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "buildGaiaClientInvocation()",
+    "setup": "The focused local Node test requests a pinned Claude task invocation with an optimized arm, task budget, and a sentinel expected answer. It runs no client executable.",
+    "command": {
+      "executable": "rtk",
+      "args": ["node", "--test", "scripts/tests/gaia-ab-client-adapters.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The factory returns the noninteractive Claude print command, pinned claude-sonnet-5 JSON output, budget cap, normal rule loading, and a task envelope without the sentinel answer.",
+    "observed": "The focused test exits with code 1 because the current factory rejects Claude as an unconfigured client.",
+    "failureReason": "Only the Codex adapter slice exists; Claude has no pinned command contract.",
+    "receiptRef": "receipt:115b265f-8530-474b-8abd-86f6fb901452"
+  }
+}

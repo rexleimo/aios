@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-production-execution-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node scripts/gaia-ab-eval.mjs --execute",
+    "setup": "Run the existing public GAIA CLI locally with the proposed explicit live-mode flag and without a task manifest. The command performs no browser, network, client, dataset, or paid operation because it rejects before configuration loading.",
+    "command": {
+      "executable": "rtk",
+      "args": [
+        "node",
+        "scripts/gaia-ab-eval.mjs",
+        "--execute"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public production-oriented entry point recognizes an explicit execute request, then refuses safely only for a missing or invalid configuration, failed local preflight, or an unavailable approved client. It must not launch a client before those checks.",
+    "observed": "The existing public CLI exits with code 1 before configuration handling and reports that GAIA A/B evaluation supports only --dry-run until live execution is explicitly authorized.",
+    "failureReason": "There is no public production CLI or command adapter boundary. The only public entry point deliberately implements offline manifest validation, so it cannot execute the requested operator-gated local A/B path.",
+    "receiptRef": "receipt:6968f6e4-466c-4865-9902-e6799aebeee8"
+  }
+}

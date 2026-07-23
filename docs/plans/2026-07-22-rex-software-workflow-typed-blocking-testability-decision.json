@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-software-workflow-typed-blocking-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceSoftwareWorkflow() from the rex-harness package entry point",
+    "setup": "Advance the selected TDD RED stage with a claimed command reference instead of a receipt reference.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/application/software-workflow-runtime.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "Return outcome blocked and blockedReason evidence-invalid while retaining workflow, activation, and command identity.",
+    "observed": "The recorded suite exits 1 because validateCommandEvidence throws before a public result is returned.",
+    "failureReason": "Evidence-validation errors escape the public workflow API as exception text instead of a typed fail-closed result.",
+    "receiptRef": "receipt:d079aad7-edea-4b15-8e0c-e1fe2bbf3156"
+  }
+}

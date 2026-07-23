@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-client-adapter-contracts-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "buildGaiaClientInvocation()",
+    "setup": "The focused Node test calls the intended public adapter function with a pinned Codex job and a task that contains a sentinel expected answer. No process adapter or external executable is constructed.",
+    "command": {
+      "executable": "rtk",
+      "args": [
+        "node",
+        "--test",
+        "scripts/tests/gaia-ab-client-adapters.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The adapter returns the exact noninteractive Codex command for gpt-5.6-terra and a task envelope containing only permitted task and control data, never the expected answer.",
+    "observed": "The focused test exits with code 1 because the public client-adapters module and buildGaiaClientInvocation export do not exist.",
+    "failureReason": "There is no production command-adapter boundary between the pinned live-runner job and the local Codex CLI, so the required safe task envelope cannot yet be built or tested.",
+    "receiptRef": "receipt:9bd06d06-75bb-452f-a838-36002f68fb0c"
+  }
+}

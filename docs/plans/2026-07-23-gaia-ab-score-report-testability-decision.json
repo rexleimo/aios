@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-score-report-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node --test scripts/tests/gaia-ab-score-report.test.mjs",
+    "setup": "Run the new local-only public-module contract. Its inline fixtures exercise GAIA-compatible answer comparison, L1/L2/L3 score summaries, paired A/B outcomes per client/model, and invalid artifact rejection without a client, browser, network request, credential, or GAIA dataset download.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/gaia-ab-score-report.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The test imports the public scorer and report modules, then exits successfully after proving GAIA-compatible answer matching, per-level summaries, per-model paired isolation, explicit inconclusive conclusions, and artifact validation.",
+    "observed": "Node exits with code 1 before executing assertions because scripts/lib/gaia-ab-eval/scorer.mjs cannot be resolved (ERR_MODULE_NOT_FOUND).",
+    "failureReason": "The promised public offline scorer and report modules do not yet exist, so the requested observable score/report behavior cannot be exercised.",
+    "receiptRef": "receipt:19af16b0-44cd-4547-886e-18dfde9a3503"
+  }
+}

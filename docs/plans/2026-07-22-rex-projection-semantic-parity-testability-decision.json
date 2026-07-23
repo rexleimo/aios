@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-projection-semantic-parity-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "presentCliWorkflow() compact standalone Rex CLI projection",
+    "setup": "Project a blocked workflow result with blockedReason evidence-invalid through the normal compact CLI projection.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--input-type=module",
+        "-e",
+        "import assert from 'node:assert/strict'; import { presentCliWorkflow } from './rex-harness/src/cli/workflow-output.mjs'; const result={outcome:'blocked',blockedReason:'evidence-invalid',workflow:{status:'active',workflowActivationId:'workflow',workItemKey:'key'},missingEvidence:[]}; assert.equal(presentCliWorkflow(result).blockedReason,'evidence-invalid');"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The compact public result preserves blockedReason evidence-invalid together with its established compact workflow fields.",
+    "observed": "The recorded public assertion exits 1 because presentCliWorkflow() returns undefined for blockedReason.",
+    "failureReason": "The compact CLI projection drops the Rex-owned blockedReason even though the core blocked result carries it.",
+    "receiptRef": "receipt:7dc44e1f-8268-47ff-8d2c-dbc698569bfe"
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-token-discipline-native-sync-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "native sync invoked by the token-discipline public integration test",
+    "setup": "Generate a managed native instruction block through the normal sync path.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/token-discipline.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The generated managed block contains AIOS Token Discipline guidance.",
+    "observed": "The generated block contains only the begin marker, core-instructions partial, and end marker.",
+    "failureReason": "The native sync path emits an incomplete managed core-instructions projection that omits the required token guidance.",
+    "receiptRef": "receipt:b665526b-9636-46f7-ac25-51a04fd7090a"
+  }
+}

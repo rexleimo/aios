@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-actual-spend-breach-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node --test scripts/tests/gaia-ab-live-runner.test.mjs",
+    "setup": "A verified temporary two-task task manifest runs only through ready fake browser, local reader, fake estimator, fake client, and local artifact writer. The first Codex baseline client result reports 11 USD after receiving a 10 USD budget boundary; every later fake result is normal.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/gaia-ab-live-runner.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The runner produces one redacted spend_limit_breach artifact, returns a visible global terminal state with zero remaining budget, and makes no second client launch.",
+    "observed": "The public test observes 11 client launches instead of 1, so the generic client-error path continues later jobs after the reported spend breach.",
+    "failureReason": "The result-spend validation raises into the ordinary per-arm catch, which retains only the estimate and breaks only the current job rather than triggering a global fail-closed terminal outcome.",
+    "receiptRef": "receipt:79ac0fce-4712-47c1-9b7b-9f382fd9b3d2"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-native-guidance-token-test-update-testability-decision.json",
+  "baseline": {
+    "publicEntry": "native guidance projection rendered for supported clients",
+    "setup": "Compose native guidance through the normal renderer with the repository's shared core and on-demand route policy.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/native-agent-guidance.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Ordinary guidance is compact and excludes the AIOS Token Discipline heading while retaining on-demand routes.",
+    "observed": "The native guidance projection test passes with that compact, pull-based behavior.",
+    "receiptRef": "receipt:9352dea6-e06d-484a-aa7c-9f2dfe6cedaa"
+  }
+}

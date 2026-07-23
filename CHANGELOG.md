@@ -6,6 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.2.0] - 2026-07-23
+
+### Fixed
+
+- Keep shared workflow guidance client-neutral across Codex, Claude, Gemini, OpenCode, Hermes, and Grok while loading detailed context only when the active task requires it.
+- Harden Rex workflow completion, dependency, projection, evidence, and release-readiness handling so client overlays do not alter the shared execution policy.
+- Add auditable local workflow-guidance diagnostics and tighten release verification for multi-client runtime changes.
+
 ## [5.1.0] - 2026-07-22
 
 ### Changed

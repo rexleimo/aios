@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-agent-ab-evaluation-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "scripts/gaia-ab-eval.mjs command-line interface",
+    "setup": "Run the documented public entry point with --help from the project root; this is offline and does not load a GAIA dataset, invoke a model, or submit to a leaderboard.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/gaia-ab-eval.mjs",
+        "--help"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The CLI exists and prints help for a reproducible offline GAIA A/B configuration validation and reporting workflow.",
+    "observed": "Node exits with code 1 because scripts/gaia-ab-eval.mjs does not yet exist.",
+    "failureReason": "The requested public offline evaluation entry point is absent, so users cannot validate a fair A/B manifest or generate isolated reports.",
+    "receiptRef": "receipt:9bf7e9df-61bb-474e-bb1e-c83e33b0d344"
+  }
+}

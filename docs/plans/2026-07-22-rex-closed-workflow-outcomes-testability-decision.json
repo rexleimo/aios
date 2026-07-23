@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-closed-workflow-outcomes-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Start a verified delivery and submit no evidence for its active feature.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "The public decision is `{ kind: 'blocked', reason: 'evidence-missing' }` and keeps its active feature.",
+    "observed": "The recorded suite exits 1 because the decision contains only `{ kind: 'blocked' }`.",
+    "failureReason": "The delivery evidence-rejection branch has no typed reason field, forcing callers to infer a cause from unstructured context.",
+    "receiptRef": "receipt:7c4e6261-4301-4e94-8654-08de1a08d17b"
+  }
+}

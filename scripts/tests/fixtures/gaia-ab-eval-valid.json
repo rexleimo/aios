@@ -1,0 +1,74 @@
+{
+  "schemaVersion": 1,
+  "report": {
+    "aggregateAcrossModels": false
+  },
+  "runs": [
+    {
+      "client": "codex",
+      "model": "gpt-5.6-terra",
+      "arms": {
+        "baseline": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        },
+        "optimized": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        }
+      }
+    },
+    {
+      "client": "claude",
+      "model": "claude-sonnet-5",
+      "arms": {
+        "baseline": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        },
+        "optimized": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        }
+      }
+    },
+    {
+      "client": "hermes",
+      "model": "deepseek-v4-pro",
+      "arms": {
+        "baseline": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        },
+        "optimized": {
+          "taskSet": "gaia-validation-sample",
+          "toolProfile": "common-tools-v1",
+          "browserProfile": "common-browser-v1",
+          "timeoutSeconds": 300,
+          "retryPolicy": "none",
+          "concurrency": 1
+        }
+      }
+    }
+  ]
+}

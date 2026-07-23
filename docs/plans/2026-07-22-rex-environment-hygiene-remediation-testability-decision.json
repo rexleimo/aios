@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-environment-hygiene-remediation-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "inspectTokenDiscipline() for the current project MCP configuration",
+    "setup": "Use the checked-in project configuration, whose independent .mcp.json, .gemini/settings.json, and .codex/config.toml surfaces contain 4, 4, and 9 MCP servers respectively while the configured per-client budget is 10.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--input-type=module",
+        "-e",
+        "const assert = await import(`node:assert/strict`); const { inspectTokenDiscipline } = await import(`./scripts/lib/token-discipline/index.mjs`); const report = inspectTokenDiscipline({ rootDir: process.cwd(), projectRoot: process.cwd() }); assert.equal(report.enabledMcpServers, 9); assert.equal(report.warnings.some((warning) => warning.startsWith(`enabledMcpServers=`)), false);"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public diagnostic reports 9, the largest active client configuration surface, and emits no aggregate MCP-budget warning.",
+    "observed": "The command exits nonzero because the current public diagnostic sums independent surfaces to 17 before comparing with the budget.",
+    "failureReason": "The inspector adds all candidate configuration counts even though those files describe different client runtimes rather than one simultaneously active MCP set.",
+    "receiptRef": "receipt:aaac2878-1156-46dd-84eb-a1da187025d0"
+  }
+}

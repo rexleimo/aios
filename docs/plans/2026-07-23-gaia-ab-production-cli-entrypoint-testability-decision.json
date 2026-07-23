@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-production-cli-entrypoint-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "scripts/gaia-ab-eval.mjs through its public Node CLI test",
+    "setup": "The focused Node test starts the public CLI with --execute and no configuration. It asserts that the request is recognized as a gated local execution mode, makes no client launch, and reports that --config is required. The child process has no model adapter, browser adapter, or network setup.",
+    "command": {
+      "executable": "rtk",
+      "args": [
+        "node",
+        "--test",
+        "scripts/tests/gaia-ab-eval.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "All focused tests pass; the --execute scenario exits from the public CLI without launching a client and exposes a missing-configuration error rather than the obsolete offline-only restriction.",
+    "observed": "The focused test exits with code 1 because the public CLI reports that only --dry-run is supported, so the --execute scenario cannot reach its configuration gate.",
+    "failureReason": "The offline-only CLI has no explicit execute-mode option or production dispatch boundary, which prevents implementation of later local preflight and adapter checks.",
+    "receiptRef": "receipt:7e02e0aa-5f42-4da4-b8f4-14ba2b29ebb0"
+  }
+}

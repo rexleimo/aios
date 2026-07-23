@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-native-update-dry-run-purity-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "runUpdate({ components: ['native'], dryRun: true })",
+    "setup": "Run the exported lifecycle entry with the native updater replaced by an explicit throwing dependency, so the public dry-run path can be observed without writing managed client files.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--input-type=module",
+        "-e",
+        "import { runUpdate } from './scripts/lib/lifecycle/update.mjs'; await runUpdate({ components: ['native'], dryRun: true }, { rootDir: process.cwd(), projectRoot: process.cwd(), io: { log() {} }, deps: { updateNativeEnhancements: async () => { throw new Error('native updater reached during dry-run'); } } });"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "A dry-run returns its update plan without preparing the workflow surface or invoking any runtime or component updater.",
+    "observed": "The command exits nonzero after reaching the injected native updater despite dryRun being true.",
+    "failureReason": "normalizeUpdateOptions drops dryRun, so runUpdate executes its ordinary workflow preparation and native update path.",
+    "receiptRef": "receipt:6e87e818-6a5f-4d38-98c6-4e54bd9c62c9"
+  }
+}

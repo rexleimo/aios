@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-diagnostic-intelligence-smoke-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "scripts/workflow-diagnostic-ab.mjs through its public Node CLI test",
+    "setup": "The focused local-only test creates one temporary non-GAIA task manifest and one temporary diagnostic configuration. It asks the public CLI for --dry-run, which must resolve the two committed AGENTS.md policy sources, verify the local task digest, and emit an isolated single-client summary. The test has no model client, browser, MCP server, network request, credential, or GAIA dataset.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/workflow-diagnostic-ab.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public dry-run CLI exits zero, reports the one task and identical run controls, and exposes distinct SHA-256 digests for c3b9197853bfb93ec264b03a838162cca9a035c4:AGENTS.md and 4a77ad3d0eb0c5e2043bd9aaea91e3107d6210e9:AGENTS.md before a client could be launched.",
+    "observed": "The focused test exits with code 1 because Node cannot resolve scripts/workflow-diagnostic-ab.mjs; no client process is started.",
+    "failureReason": "There is no public no-browser diagnostic CLI or policy-source locking boundary. The existing GAIA CLI deliberately rejects --execute and its live runner requires browser preflight, so it cannot supply the requested diagnostic behavior without conflating it with GAIA.",
+    "receiptRef": "receipt:7a4d4c2f-38b1-489e-b1b6-01bd4212870b"
+  }
+}

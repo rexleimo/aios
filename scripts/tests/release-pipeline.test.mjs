@@ -324,6 +324,26 @@ test('release scripts and CI require a materialized rex-harness submodule', asyn
   }
 });
 
+test('release health watcher treats an absent local policy state as a neutral observable state', async () => {
+  const workspaceRoot = process.cwd();
+  const workflow = await readFile(
+    path.join(workspaceRoot, '.github', 'workflows', 'release-health-watch.yml'),
+    'utf8'
+  );
+
+  assert.match(
+    workflow,
+    /policy_state_path="\.aios\/experiments\/rl-mixed-v1\/release\/orchestrator-policy-release\.state\.json"/u
+  );
+  assert.match(
+    workflow,
+    /if \[\[ -f "\$policy_state_path" \]\]; then\s+node scripts\/aios\.mjs release-status\s+\\?\s+--strict/su
+  );
+  assert.match(workflow, /status: 'not_configured'/u);
+  assert.match(workflow, /gatePassed: true/u);
+  assert.match(workflow, /release-history\.csv/u);
+});
+
 test('one-liner installers bootstrap root runtime dependencies for direct release installs', async () => {
   const workspaceRoot = process.cwd();
   const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');

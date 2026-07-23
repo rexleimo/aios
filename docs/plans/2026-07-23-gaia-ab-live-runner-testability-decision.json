@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-live-runner-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node --test scripts/tests/gaia-ab-live-runner.test.mjs",
+    "setup": "Run the local-only public runner contract. Its inline three-client manifest pins the selected model IDs, a local task-manifest digest, maxTasks, maxSpendUsd, timeout, common tool/browser controls, and two context-policy arms. It supplies fake process and browser adapters only.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/gaia-ab-live-runner.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The test imports the public live manifest and runner modules, proves the explicit limits and client pins, creates six dry-run jobs without a client launch, and blocks every execute launch when browser preflight fails.",
+    "observed": "Node exits with code 1 before assertions because scripts/lib/gaia-ab-eval/live-manifest.mjs cannot be resolved (ERR_MODULE_NOT_FOUND).",
+    "failureReason": "The controlled live-manifest and live-runner public modules do not exist, so no local preflight can enforce fair, bounded, or browser-safe live A/B execution.",
+    "receiptRef": "receipt:6cc5a37a-31dd-43d3-a0e3-e9ab8f11e3ac"
+  }
+}

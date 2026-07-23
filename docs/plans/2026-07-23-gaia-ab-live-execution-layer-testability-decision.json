@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-23-gaia-ab-live-execution-layer-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "node --test scripts/tests/gaia-ab-live-runner.test.mjs",
+    "setup": "The public live runner receives a temporary, locally written GAIA task JSON and its configured SHA-256 digest. The test injects ready fake browser, client, cost, and artifact adapters, with two tasks available but maxTasks set to one. It runs the six isolated client/model/arm jobs without browser, model, network, dataset, or leaderboard access.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/gaia-ab-live-runner.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Each isolated job executes only the deterministic first task through its fake client, receives the configured 300-second timeout and spend boundary, omits expected answers from the model task, writes a redacted local artifact, and produces a score-compatible record.",
+    "observed": "Three gate tests pass, but the execution-slice test fails with Error: GAIA live task execution is not implemented yet.",
+    "failureReason": "The live runner has no verified task loader, cost ledger, task-client adapter invocation, or redacted artifact writer, so it cannot safely execute even the bounded fake task slice.",
+    "receiptRef": "receipt:103e62de-1297-47cf-a46a-9d85736c58ec"
+  }
+}

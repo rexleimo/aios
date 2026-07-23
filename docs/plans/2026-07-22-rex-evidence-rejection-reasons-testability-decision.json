@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-evidence-rejection-reasons-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Start a real controlled delivery, then submit a matching receipt for a different pending feature than the active feature.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "The delivery stays active and returns `{ kind: 'blocked', reason: 'evidence-feature-mismatch' }`.",
+    "observed": "The recorded suite exits 1 because the current decision has only `{ kind: 'blocked' }`.",
+    "failureReason": "The wrong-feature branch rejects safely but omits a machine-readable reason, leaving callers unable to distinguish it from missing or invalid evidence.",
+    "receiptRef": "receipt:32e2594c-9274-41f8-a79f-67a412285e46"
+  }
+}

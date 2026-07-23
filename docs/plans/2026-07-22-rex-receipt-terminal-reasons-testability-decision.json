@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-07-22-rex-receipt-terminal-reasons-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
+    "setup": "Submit a real receipt for the active feature ID whose recorded command is for another feature's verification scenario.",
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "The delivery remains active and returns `{ kind: 'blocked', reason: 'evidence-rejected' }`.",
+    "observed": "The recorded suite exits 1 because the decision has only `{ kind: 'blocked' }`.",
+    "failureReason": "Receipt validation catches command mismatch but collapses it into an untyped blocked decision.",
+    "receiptRef": "receipt:3874bb71-80d4-47f8-94f9-7676fb755915"
+  }
+}
