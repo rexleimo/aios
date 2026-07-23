@@ -1,0 +1,26 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/pre-edit-safety-gate-training-testability-decision.json",
+  "baseline": {
+    "publicEntry": "AIOS skill compliance entry point for the canonical pre-edit-safety-gate source",
+    "setup": "Use the current canonical skill source and the Codex client compliance scenario without changing application behavior.",
+    "command": {
+      "executable": "rtk",
+      "args": [
+        "node",
+        "scripts/aios.mjs",
+        "skill",
+        "comply",
+        "skill-sources/pre-edit-safety-gate/SKILL.md",
+        "--live",
+        "--client",
+        "codex",
+        "--json"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The canonical skill is evaluated through its public compliance path with a zero exit code.",
+    "observed": "The compliance run exited zero before training edits; this is a guidance-quality hardening task, not a new application behavior delta.",
+    "receiptRef": "receipt:4938b09f-4797-4bb3-9b8d-568336b3b562"
+  }
+}

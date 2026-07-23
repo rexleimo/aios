@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.2.1] - 2026-07-23
+
+- train pre-edit safety gate decision guidance
+
 ## [5.2.0] - 2026-07-23
 
 ### Fixed

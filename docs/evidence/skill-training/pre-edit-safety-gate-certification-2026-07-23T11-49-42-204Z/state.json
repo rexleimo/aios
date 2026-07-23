@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "pre-edit-safety-gate",
+  "sourcePath": "skill-sources/pre-edit-safety-gate/SKILL.md",
+  "base": "HEAD",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "0d6e2b440bacb84cb8e909199a4bc577c94cc18901dd311fee83a97a99659a6c",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "f0fb21af12253ebae71eed1e63e5b9e28ba51ac296c90dd069d793bdbb7925cf"
+  },
+  "candidate": {
+    "contentSha256": "0d6e2b440bacb84cb8e909199a4bc577c94cc18901dd311fee83a97a99659a6c"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-07-23T11:49:42.204Z"
+}
