@@ -109,6 +109,7 @@ export function normalizeUpdateOptions(rawOptions = {}) {
     applyClientCostSettings: Boolean(rawOptions.applyClientCostSettings ?? defaults.applyClientCostSettings),
     withPlaywrightInstall: Boolean(rawOptions.withPlaywrightInstall ?? defaults.withPlaywrightInstall),
     skipDoctor: Boolean(rawOptions.skipDoctor ?? defaults.skipDoctor),
+    dryRun: Boolean(rawOptions.dryRun ?? defaults.dryRun),
   };
 }
 
@@ -129,6 +130,7 @@ export function planUpdate(rawOptions = {}) {
   if (options.applyClientCostSettings) args.push('--apply-client-cost-settings');
   if (options.withPlaywrightInstall) args.push('--with-playwright-install');
   if (options.skipDoctor) args.push('--skip-doctor');
+  if (options.dryRun) args.push('--dry-run');
   return {
     command: 'update',
     options,
@@ -137,7 +139,12 @@ export function planUpdate(rawOptions = {}) {
 }
 
 export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDir, io = console, deps = {} } = {}) {
-  const { options } = planUpdate(rawOptions);
+  const plan = planUpdate(rawOptions);
+  const { options } = plan;
+  if (options.dryRun) {
+    io.log(`[plan] ${plan.preview}`);
+    return plan;
+  }
   const browserInstaller = deps.installBrowserMcp ?? installBrowserMcp;
   const browserDoctor = deps.doctorBrowserMcp ?? doctorBrowserMcp;
   const shellInstaller = deps.installContextDbShell ?? installContextDbShell;

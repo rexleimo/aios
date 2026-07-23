@@ -3,7 +3,12 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-import { createRexCapabilityPack, supportedClients } from '../../rex-harness/src/index.mjs';
+import {
+  advanceSoftwareWorkflow,
+  createRexCapabilityPack,
+  startSoftwareWorkflow,
+  supportedClients,
+} from '../../rex-harness/src/index.mjs';
 import { resolveClientsWithCapability } from '../lib/clients/capabilities/index.mjs';
 import {
   AIOS_REX_PROVIDER_BINDINGS,
@@ -13,6 +18,75 @@ import {
   startAiosCapabilityActivation,
   startAiosSoftwareWorkflow,
 } from '../lib/workflows/rex-harness-adapter.mjs';
+
+const ADAPTER_PARITY_SCENARIO = Object.freeze({
+  executable: 'node',
+  args: ['--test', 'scripts/tests/rex-harness-adapter.test.mjs'],
+  cwd: '/tmp/rex-adapter-parity',
+});
+
+function sequentialIds(prefix) {
+  let index = 0;
+  return () => `${prefix}-${index++}`;
+}
+
+function parityReceipt(ref) {
+  return {
+    receiptId: ref.slice('receipt:'.length),
+    command: ADAPTER_PARITY_SCENARIO,
+    exitCode: 1,
+    stdoutSha256: 'a'.repeat(64),
+    stderrSha256: 'b'.repeat(64),
+    observedAt: '2026-07-22T00:00:00.000Z',
+  };
+}
+
+function prepareTddWorkflow(started, advance, createActivationId) {
+  const designed = advance(started, [
+    { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+    { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+    { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+  ], { createActivationId });
+  const tdd = advance(designed.workflow, [
+    { kind: 'testability-decision-recorded', refs: ['artifact:testability-decision'] },
+  ], {
+    createActivationId,
+    resolveReceipt: (ref) => ref === 'receipt:adapter-red' ? parityReceipt(ref) : null,
+    testabilityDecision: {
+      kind: 'behavior-delta',
+      decisionRef: 'artifact:testability-decision',
+      redCandidate: {
+        publicEntry: 'checkout validation endpoint',
+        setup: 'Submit an invalid checkout request.',
+        command: ADAPTER_PARITY_SCENARIO,
+        expected: 'The invalid checkout is rejected.',
+        observed: 'The invalid checkout is accepted before implementation.',
+        failureReason: 'The requested validation behavior is absent.',
+        receiptRef: 'receipt:adapter-red',
+      },
+    },
+  });
+  return tdd.workflow;
+}
+
+function rexOwnedBlockedSemantics(result) {
+  const workflow = result.workflow;
+  const command = workflow.currentCommand;
+  return {
+    outcome: result.outcome,
+    blockedReason: result.blockedReason,
+    status: workflow.status,
+    workflowActivationId: workflow.workflowActivationId,
+    workItemKey: workflow.workItemKey,
+    command: {
+      activationId: command.activationId,
+      executionToken: command.executionToken,
+      capabilityId: command.capabilityId,
+      stageId: command.stageId,
+    },
+    missingEvidence: result.missingEvidence,
+  };
+}
 
 test('rex client projections stay aligned with the AIOS Skill-capable client registry', () => {
   assert.deepEqual(
@@ -117,6 +191,33 @@ test('AIOS adapter advances the rex-owned workflow runtime with rex-native Provi
   assert.equal(advanced.workflow.currentCapabilityId, 'software.testing.design');
   assert.equal(advanced.workflow.currentCommand.provider.id, 'rex-test-design');
   assert.equal(advanced.workflow.activationHistory.length, 1);
+});
+
+test('AIOS adapter preserves Rex-owned blocked workflow semantics', () => {
+  const request = { message: 'Update checkout validation behavior.' };
+  const directIds = sequentialIds('direct');
+  const aiosIds = sequentialIds('direct');
+  const directWorkflow = prepareTddWorkflow(startSoftwareWorkflow({
+    workflowActivationId: 'workflow-adapter-parity',
+    workItemKey: 'adapter-parity',
+    request,
+    createActivationId: directIds,
+  }), advanceSoftwareWorkflow, directIds);
+  const aiosWorkflow = prepareTddWorkflow(startAiosSoftwareWorkflow({
+    workflowActivationId: 'workflow-adapter-parity',
+    workItemKey: 'adapter-parity',
+    request,
+    createActivationId: aiosIds,
+  }), advanceAiosSoftwareWorkflow, aiosIds);
+  const evidence = [
+    { kind: 'failing-test-observed', refs: ['command:claimed-red'] },
+    { kind: 'red-failure-reason-recorded', refs: ['artifact:red-reason'] },
+  ];
+  const directBlocked = advanceSoftwareWorkflow(directWorkflow, evidence, { createActivationId: directIds });
+  const aiosBlocked = advanceAiosSoftwareWorkflow(aiosWorkflow, evidence, { createActivationId: aiosIds });
+
+  assert.deepEqual(rexOwnedBlockedSemantics(aiosBlocked), rexOwnedBlockedSemantics(directBlocked));
+  assert.equal(aiosBlocked.workflow.currentCommand.provider.id, 'rex-tdd');
 });
 
 test('AIOS team or harness promotion does not replace the current rex Provider', () => {

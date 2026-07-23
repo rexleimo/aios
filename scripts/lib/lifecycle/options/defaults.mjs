@@ -28,6 +28,7 @@ export function createDefaultUpdateOptions() {
     applyClientCostSettings: false,
     withPlaywrightInstall: false,
     skipDoctor: false,
+    dryRun: false,
   };
 }
 

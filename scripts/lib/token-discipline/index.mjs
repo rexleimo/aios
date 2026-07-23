@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { PRIMARY_BROWSER_ALIAS } from '../components/browser/constants.mjs';
+
 export const TOKEN_PROFILE_NAMES = Object.freeze(['minimal', 'balanced', 'full']);
 
 const DEFAULT_CONFIG = Object.freeze({
@@ -108,7 +110,11 @@ function classifyLowValueMcpServers({ projectRoot, mcpBudget = {} } = {}) {
         reason = 'configured-low-value';
       } else if (noisy.has(server.name)) {
         reason = 'configured-noisy-output';
-      } else if (/browser|html|crawl|search/iu.test(server.name) && !isAiosProxySpec(server.spec)) {
+      } else if (
+        server.name !== PRIMARY_BROWSER_ALIAS
+        && /browser|html|crawl|search/iu.test(server.name)
+        && !isAiosProxySpec(server.spec)
+      ) {
         reason = 'not-routed-through-aios-proxy';
       }
       if (reason) {
@@ -191,7 +197,8 @@ export function inspectTokenDiscipline({ rootDir, projectRoot = rootDir, profile
       ? countTomlMcpServers(candidate.file)
       : countJsonMcpServers(candidate.file, candidate.namespace);
     if (count > 0) {
-      enabledMcpServers += count;
+      // Client configuration files are alternative runtime surfaces, not one MCP set.
+      enabledMcpServers = Math.max(enabledMcpServers, count);
       sources.push({ path: path.relative(projectRoot, candidate.file).replace(/\\/g, '/'), count });
     }
   }

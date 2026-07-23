@@ -11,6 +11,7 @@ import { planSetup } from '../lib/lifecycle/setup.mjs';
 import { planUpdate } from '../lib/lifecycle/update.mjs';
 import { syncNativeEnhancements } from '../lib/native/sync.mjs';
 import {
+  inspectTokenDiscipline,
   loadTokenDisciplineConfig,
   planTokenDiscipline,
   planClientCostSettings,
@@ -150,6 +151,34 @@ test('doctor reports token discipline MCP budget warnings', async () => {
   assert.match(rendered, /Use --token-profile minimal or disable low-value MCP servers/);
 });
 
+test('token discipline evaluates MCP budgets per client configuration surface', async () => {
+  const rootDir = await makeTemp('aios-token-discipline-client-budget-root-');
+  await writeJson(path.join(rootDir, 'config', 'token-discipline.json'), {
+    schemaVersion: 1,
+    defaultProfile: 'balanced',
+    mcpBudget: { maxEnabledServers: 10 },
+  });
+  const fourServers = { one: {}, two: {}, three: {}, four: {} };
+  await writeJson(path.join(rootDir, '.mcp.json'), { mcpServers: fourServers });
+  await writeJson(path.join(rootDir, '.gemini', 'settings.json'), { mcpServers: fourServers });
+  await mkdir(path.join(rootDir, '.codex'), { recursive: true });
+  await writeFile(
+    path.join(rootDir, '.codex', 'config.toml'),
+    Array.from({ length: 9 }, (_, index) => `[mcp_servers.server${index}]`).join('\n'),
+    'utf8',
+  );
+
+  const report = inspectTokenDiscipline({ rootDir, projectRoot: rootDir });
+
+  assert.equal(report.enabledMcpServers, 9);
+  assert.deepEqual(report.sources, [
+    { path: '.mcp.json', count: 4 },
+    { path: '.gemini/settings.json', count: 4 },
+    { path: '.codex/config.toml', count: 9 },
+  ]);
+  assert.doesNotMatch(report.warnings.join('\n'), /enabledMcpServers=/);
+});
+
 test('token discipline detects low-value MCP servers and plans opt-in cost settings', async () => {
   const rootDir = await makeTemp('aios-token-discipline-low-value-root-');
   await writeJson(path.join(rootDir, 'config', 'token-discipline.json'), {
@@ -172,7 +201,7 @@ test('token discipline detects low-value MCP servers and plans opt-in cost setti
     mcpServers: {
       'legacy-browser': { command: 'node', args: ['legacy.js'] },
       'raw-html': { command: 'node', args: ['raw.js'] },
-      'mcp-browser-use': { command: 'node', args: ['scripts/aios-mcp-proxy.mjs', '--', 'browser.js'] },
+      'mcp-browser-use': { command: 'node', args: ['browser.js'] },
       'browser-direct': { command: 'node', args: ['browser.js'] },
     },
   });
@@ -187,6 +216,7 @@ test('token discipline detects low-value MCP servers and plans opt-in cost setti
   assert.ok(report.lowValueMcpServers.some((item) => item.name === 'legacy-browser' && item.reason === 'configured-low-value'));
   assert.ok(report.lowValueMcpServers.some((item) => item.name === 'raw-html' && item.reason === 'configured-noisy-output'));
   assert.ok(report.lowValueMcpServers.some((item) => item.name === 'browser-direct' && item.reason === 'not-routed-through-aios-proxy'));
+  assert.ok(!report.lowValueMcpServers.some((item) => item.name === 'mcp-browser-use'));
 
   const dryRun = planClientCostSettings({ client: 'claude', config: loadTokenDisciplineConfig(rootDir), dryRun: true });
   assert.equal(dryRun.client, 'claude');
@@ -196,16 +226,41 @@ test('token discipline detects low-value MCP servers and plans opt-in cost setti
   assert.equal(dryRun.actions[0].subagentModel, 'haiku');
 });
 
-test('native sync emits strategic compact and token profile guidance', async () => {
+test('token discipline preserves explicit policy for the primary browser MCP', async () => {
+  const rootDir = await makeTemp('aios-token-discipline-primary-policy-root-');
+  await writeJson(path.join(rootDir, 'config', 'token-discipline.json'), {
+    schemaVersion: 1,
+    defaultProfile: 'balanced',
+    mcpBudget: { lowValueServerNames: ['mcp-browser-use'] },
+  });
+  await writeJson(path.join(rootDir, '.mcp.json'), {
+    mcpServers: {
+      'mcp-browser-use': { command: 'node', args: ['browser.js'] },
+    },
+  });
+
+  const report = planTokenDiscipline({
+    profile: 'balanced',
+    config: loadTokenDisciplineConfig(rootDir),
+    projectRoot: rootDir,
+  });
+
+  assert.deepEqual(report.lowValueMcpServers, [{
+    name: 'mcp-browser-use',
+    reason: 'configured-low-value',
+    source: '.mcp.json',
+  }]);
+});
+
+test('native sync keeps token discipline out of ordinary shared guidance', async () => {
   const rootDir = await makeTemp('aios-token-discipline-native-root-');
   await seedNativeRoot(rootDir);
 
   await syncNativeEnhancements({ rootDir, client: 'codex' });
   const agents = await readFile(path.join(rootDir, 'AGENTS.md'), 'utf8');
 
-  assert.match(agents, /AIOS Token Discipline/);
-  assert.match(agents, /minimal \| balanced \| full/);
-  assert.match(agents, /strategic compact/i);
-  assert.match(agents, /after exploration, before implementation/i);
-  assert.match(agents, /Do not replace AIOS interception runtime/i);
+  assert.match(agents, /<!-- AIOS NATIVE BEGIN -->/);
+  assert.match(agents, /core-instructions partial/);
+  assert.doesNotMatch(agents, /AIOS Token Discipline/);
+  assert.doesNotMatch(agents, /strategic compact/i);
 });

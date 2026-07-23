@@ -9,7 +9,7 @@ import { planEntropyGc } from '../lib/lifecycle/entropy-gc.mjs';
 import { planReleaseStatus } from '../lib/lifecycle/release-status.mjs';
 import { planSetup, runSetup } from '../lib/lifecycle/setup.mjs';
 import { planUninstall } from '../lib/lifecycle/uninstall.mjs';
-import { runUpdate } from '../lib/lifecycle/update.mjs';
+import { planUpdate, runUpdate } from '../lib/lifecycle/update.mjs';
 
 test('planSetup defaults to Rex-only workflow components', () => {
   const plan = planSetup();
@@ -26,6 +26,31 @@ test('planUninstall defaults to shell and skills only', () => {
   assert.equal(plan.command, 'uninstall');
   assert.deepEqual(plan.options.components, ['shell', 'skills']);
   assert.equal(plan.options.client, 'all');
+});
+
+test('planUpdate retains dry-run in its preview', () => {
+  const plan = planUpdate({ components: ['native'], dryRun: true });
+
+  assert.equal(plan.options.dryRun, true);
+  assert.match(plan.preview, /update --components native .*--dry-run/);
+});
+
+test('runUpdate dry-run returns its plan before component updates', async () => {
+  const calls = [];
+  const logs = [];
+  const result = await runUpdate({ components: ['native'], dryRun: true }, {
+    rootDir: '/tmp/aios-test',
+    projectRoot: '/tmp/aios-test',
+    io: { log: (message) => logs.push(message) },
+    deps: {
+      updateNativeEnhancements: async () => { calls.push('native'); },
+    },
+  });
+
+  assert.deepEqual(calls, []);
+  assert.equal(result.options.dryRun, true);
+  assert.match(result.preview, /update --components native .*--dry-run/);
+  assert.match(logs.join('\n'), /^\[plan\] node scripts\/aios\.mjs update/m);
 });
 
 test('planDoctor preserves strict and global security flags', () => {
