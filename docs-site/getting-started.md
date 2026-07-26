@@ -1,6 +1,6 @@
 ---
-title: Quick Start: Install and Verify Harness CLI
-description: Install Harness CLI, initialize project guidance, and verify ContextDB, client sync, and local safety checks with current commands.
+title: Quick Start — Install Harness CLI for Claude Code, Codex, and Gemini
+description: Install Harness CLI on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
 ---
 
 # Quick Start

@@ -23,10 +23,12 @@
     "@id": "https://cli.rexai.top/#organization",
     "name": "RexAI",
     "url": "https://cli.rexai.top",
+    "logo": "https://cli.rexai.top/assets/og-cover.png",
     "sameAs": [
       "https://cli.rexai.top",
       "https://rexai.top",
-      "https://tool.rexai.top"
+      "https://tool.rexai.top",
+      "https://github.com/rexleimo/harness-cli"
     ]
   }
   </script>
@@ -36,33 +38,75 @@
     "@type": "WebSite",
     "@id": "https://cli.rexai.top/#website",
     "name": "Harness CLI Documentation",
+    "alternateName": ["AIOS", "Harness CLI", "AI coding agent workflow"],
     "url": "https://cli.rexai.top",
     "publisher": {"@id": "https://cli.rexai.top/#organization"},
-    "potentialAction": {
-      "@type": "SearchAction",
-      "target": "https://cli.rexai.top/?q={search_term_string}",
-      "query-input": "required name=search_term_string"
+    "inLanguage": ["en", "zh", "ja", "ko"]
+  }
+  </script>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Harness CLI",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "Windows, macOS, Linux",
+    "url": "https://cli.rexai.top",
+    "downloadUrl": "https://github.com/rexleimo/harness-cli/releases/latest",
+    "description": "Local-first agent workflow layer that adds project memory, adaptive routing, multi-agent collaboration, and verification to coding CLIs.",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
     }
   }
   </script>
 
   {% set page_url = page.canonical_url if page and page.canonical_url else (page.abs_url if page and page.abs_url else config.site_url) %}
   {% set page_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
+  {% set page_title = page.title if page else config.site_name %}
+  {% set og_image = "https://cli.rexai.top/assets/og-cover.png" %}
   {% set blog_current = rex_blog.current if rex_blog is defined and rex_blog and rex_blog.current else none %}
   {% set parent_url = page_url %}
   {% if page and page.parent and page.parent.url %}
     {% set parent_url = page.parent.url %}
   {% endif %}
+
+  <!-- Open Graph / Twitter — critical for share previews and social discovery -->
+  <meta property="og:type" content="{{ 'article' if blog_current else 'website' }}">
+  <meta property="og:site_name" content="Harness CLI">
+  <meta property="og:title" content="{{ page_title }}">
+  <meta property="og:description" content="{{ page_description }}">
+  <meta property="og:url" content="{{ page_url }}">
+  <meta property="og:image" content="{{ og_image }}">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="{{ 'zh_CN' if (config.theme.language or 'en') == 'zh' else ('ja_JP' if (config.theme.language or 'en') == 'ja' else ('ko_KR' if (config.theme.language or 'en') == 'ko' else 'en_US')) }}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ page_title }}">
+  <meta name="twitter:description" content="{{ page_description }}">
+  <meta name="twitter:image" content="{{ og_image }}">
+  <meta name="theme-color" content="#0b1220">
+  <link rel="alternate" type="text/plain" title="LLM index" href="https://cli.rexai.top/llms.txt">
+
+  {% if page and page.meta and page.meta.home %}
+  <script>
+    /* Apply home classes before first paint to avoid layout flash */
+    document.documentElement.classList.add('md-home', 'rex-home');
+  </script>
+  {% endif %}
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
     "@type": "WebPage",
     "@id": {{ (page_url ~ '#webpage') | tojson }},
     "url": {{ page_url | tojson }},
-    "name": {{ (page.title if page else config.site_name) | tojson }},
+    "name": {{ page_title | tojson }},
     "description": {{ page_description | tojson }},
     "isPartOf": {"@id": "https://cli.rexai.top/#website"},
-    "inLanguage": {{ (config.theme.language or 'en') | tojson }}
+    "inLanguage": {{ (config.theme.language or 'en') | tojson }},
+    "primaryImageOfPage": {"@type": "ImageObject", "url": {{ og_image | tojson }}}
   }
   </script>
   <script type="application/ld+json">
@@ -123,21 +167,17 @@
   </script>
   {% endif %}
 
-  <!-- 首页标记 — 给 body 加 md-home class 用于 CSS 区分 -->
-  {% if page and page.meta and page.meta.home %}
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      document.body.classList.add('md-home');
-    });
-  </script>
-  {% endif %}
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var path = window.location.pathname;
       var body = document.body;
       var isHome = {{ 'true' if page and page.meta and page.meta.home else 'false' }};
 
-      body.classList.add(isHome ? 'rex-home' : 'rex-doc-page');
+      if (isHome) {
+        body.classList.add('md-home', 'rex-home');
+      } else {
+        body.classList.add('rex-doc-page');
+      }
 
       if (path.indexOf('/blog/') === 0) {
         body.classList.add('rex-blog');

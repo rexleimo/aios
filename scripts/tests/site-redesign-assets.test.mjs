@@ -526,8 +526,14 @@ test('home detail contract preserves berPn non-wrapping controls and terminal fi
 
   assert.match(home, /cta-float-card__row/);
   assert.doesNotMatch(home, /10x faster/);
-  assert.match(home, /Workflow Policy[\s\S]*Workflow Policy/);
+  // Hero keeps two primary CTAs; deeper docs stay as secondary text links.
+  assert.match(home, /hero-secondary-links/);
+  assert.match(home, /Install in 30 seconds/);
+  assert.match(home, /View on GitHub/);
+  assert.match(home, /Workflow [Pp]olicy/);
   assert.match(home, /Verified[\s\S]*Verified/);
+  const heroCtaBlock = home.match(/<div class="hero-cta-row">[\s\S]*?<\/div>/)?.[0] || '';
+  assert.equal((heroCtaBlock.match(/class="md-button(?:\s|")/g) || []).length, 2);
 
   for (const marker of [
     'uSmokeBias',

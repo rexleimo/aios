@@ -1,6 +1,6 @@
 ---
-title: Harness CLI — Local-First Agent Layer
-description: Harness CLI (AIOS) adds cross-session memory, multi-agent collaboration, and verification to codex, claude, gemini, opencode, hermes, and grok (Grok Build) — without changing how you work.
+title: Harness CLI — Local-First AI Coding Agent Workflow
+description: Add project memory, adaptive workflow routing, multi-agent teams, and verification to Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing your coding client.
 home: true
 ---
 
@@ -33,11 +33,18 @@ home: true
       </p>
 
       <div class="hero-cta-row">
-        <a href="getting-started" class="md-button md-button--primary">Start with Quick Start</a>
-        <a href="use-cases" class="md-button">Choose a Use Case</a>
-        <a href="workflow-policy" class="md-button">Understand Workflow Policy</a>
-        <a href="https://cli.rexai.top/blog/" class="md-button">Read the Blog</a>
+        <a href="getting-started" class="md-button md-button--primary">Install in 30 seconds</a>
+        <a href="https://github.com/rexleimo/harness-cli" class="md-button">View on GitHub</a>
       </div>
+      <p class="hero-secondary-links">
+        <a href="use-cases">Use cases</a>
+        ·
+        <a href="workflow-policy">Workflow policy</a>
+        ·
+        <a href="https://cli.rexai.top/blog/">Blog</a>
+        ·
+        <a href="architecture">Architecture</a>
+      </p>
 
       <div class="hero-works">
         <span class="hero-works__label">WORKS INSIDE THE CLIENTS YOU ALREADY USE</span>

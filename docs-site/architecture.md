@@ -1,6 +1,6 @@
 ---
-title: Harness CLI Architecture
-description: See how client guidance, ContextDB, workflow policy, Team, Harness, browser-use CDP, and RL research surfaces connect.
+title: Harness CLI Architecture — Layers under Coding Agents
+description: Architecture of Harness CLI: coding clients, Workflow Policy, ContextDB memory, rex-harness control plane, Agent Team, browser-use CDP, and verification gates.
 ---
 
 # Architecture
@@ -8,6 +8,8 @@ description: See how client guidance, ContextDB, workflow policy, Team, Harness,
 ## Quick Answer
 
 Harness CLI is a set of local boundaries around an existing coding client. Shell and native guidance identify the project, ContextDB stores and retrieves project evidence, Workflow Policy chooses the smallest route, and Team, Solo Harness, or Orchestrate run work when the task requires it. Browser-use CDP is the default browser path; the legacy Playwright MCP server remains a compatibility path.
+
+![Harness CLI architecture overview](assets/visual-architecture-overview.svg)
 
 ## Components
 
@@ -23,6 +25,8 @@ Harness CLI is a set of local boundaries around an existing coding client. Shell
 
 ## Runtime flow
 
+![Workflow policy routes](assets/visual-workflow-policy.svg)
+
 ~~~text
 user command
   -> supported client and native project guidance
@@ -37,6 +41,8 @@ user command
 A route decision is not a completed implementation. File edits still pass pre-edit safety and final verification gates.
 
 ## ContextDB and storage boundaries
+
+![ContextDB memory loop](assets/visual-contextdb-memory-loop.svg)
 
 The project registry points to local sources:
 

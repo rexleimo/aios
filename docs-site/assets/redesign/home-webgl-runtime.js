@@ -4,6 +4,26 @@ const REDUCED_MOTION = '(prefers-reduced-motion: reduce)';
 
 let threePromise;
 
+function isLowPowerDevice() {
+  if (typeof navigator === 'undefined') return false;
+  if (navigator.connection && (navigator.connection.saveData || /2g/i.test(navigator.connection.effectiveType || ''))) {
+    return true;
+  }
+  if (typeof navigator.hardwareConcurrency === 'number' && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 4) {
+    return true;
+  }
+  if (typeof navigator.deviceMemory === 'number' && navigator.deviceMemory > 0 && navigator.deviceMemory <= 4) {
+    return true;
+  }
+  return false;
+}
+
+function resolvePixelRatio() {
+  const dpr = window.devicePixelRatio || 1;
+  // Cap harder on weak devices to keep the homepage scroll smooth.
+  return Math.min(dpr, isLowPowerDevice() ? 1 : 1.5);
+}
+
 export function loadThree() {
   if (window.THREE) return Promise.resolve(window.THREE);
   if (!threePromise) {
@@ -53,11 +73,11 @@ class WebGLStage {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       alpha: true,
-      antialias: true,
-      powerPreference: 'high-performance',
+      antialias: !isLowPowerDevice(),
+      powerPreference: isLowPowerDevice() ? 'low-power' : 'high-performance',
     });
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.renderer.setPixelRatio(resolvePixelRatio());
     if (THREE.SRGBColorSpace) this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this.clock = new THREE.Clock();

@@ -1,5 +1,11 @@
 # Browser MCP Integration
 
+[![Parent project](https://img.shields.io/badge/parent-harness--cli-0ea5e9)](https://github.com/rexleimo/harness-cli)
+
+> Browser automation surface for Harness CLI / AIOS.
+> **Default path:** browser-use MCP over CDP (`scripts/run-browser-use-mcp.sh`).
+> **Compatibility path:** Playwright MCP under `mcp-server/` for legacy workflows.
+
 Default browser MCP runtime is now browser-use (CDP) via `scripts/run-browser-use-mcp.sh`.
 `mcp-server/` Playwright implementation is retained for legacy/compatibility workflows.
 

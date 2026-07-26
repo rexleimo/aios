@@ -1,6 +1,6 @@
 site_name: Harness CLI Documentation
 site_url: https://cli.rexai.top
-site_description: Local-first AI agent workflow documentation for Codex, Claude, Gemini, OpenCode, Grok Build, ContextDB memory, Agent Team, and verified automation.
+site_description: Local-first AI coding agent workflow for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Project memory, adaptive routing, multi-agent teams, and verification.
 site_author: RexAI
 repo_url: https://github.com/rexleimo/harness-cli
 repo_name: rexleimo/harness-cli
@@ -67,13 +67,13 @@ plugins:
           build: true
           link: /
           site_name: Harness CLI Documentation
-          site_description: Local-first AI agent workflow documentation for Codex, Claude, Gemini, OpenCode, Grok Build, ContextDB memory, Agent Team, and verified automation.
+          site_description: Local-first AI coding agent workflow for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Project memory, adaptive routing, multi-agent teams, and verification.
         - locale: zh
           name: 简体中文
           build: true
           link: /zh/
           site_name: Harness CLI 文档
-          site_description: 面向 Codex/Claude/Gemini/OpenCode/Grok Build 的本地优先 AI Agent 工作流文档，覆盖 ContextDB、Agent Team 与可靠自动化。
+          site_description: 面向 Claude Code / Codex / Gemini / OpenCode / Grok 的本地优先 AI 编码 Agent 工作流：项目记忆、自适应路由、多 Agent 协作与验证门禁。
           nav_translations:
             Home: 首页
             Blog: 博客

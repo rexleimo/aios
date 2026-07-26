@@ -1,20 +1,20 @@
 # Harness CLI
 
-> Local-first AI agent workflow and memory docs for Codex CLI, Claude Code, Gemini CLI, OpenCode, and Grok Build.
+> Local-first AI coding agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Adds project memory, adaptive routing, multi-agent collaboration, and verification without replacing your client.
 
 ## Search Intents
-- memory system for coding agents
-- token-compressed ContextDB packets for bounded agent memory
-- Hermes engine workflow orchestration
-- Agent Team collaboration runtime
-- automatic subagent planning and execution gates
-- adaptive workflow policy: noop, direct, guarded, and planned
-- reliable solo harness runs with explicit failure states and verification evidence
-- privacy-safe coding agent startup with Privacy Shield and Privacy Guard
-- unified AIOS project search across memory, docs, plans, and code
-- all-client native instruction projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
-- measurable all-client turn compression with pre_send and post_receive proof
-- explicit Headroom MCP compression and retrieval (not transparent interception)
+- AI coding agent workflow
+- Claude Code project memory
+- Codex CLI multi-agent collaboration
+- local memory system for coding agents
+- adaptive agent workflow policy direct guarded planned
+- ContextDB token-compressed project memory
+- multi-agent coding CLI team
+- solo harness overnight coding agent
+- AI agent verification and privacy redaction
+- Headroom MCP compression for coding agents
+- install Harness CLI Windows PowerShell
+- coding agent harness vs bare CLI
 
 ## Canonical
 - https://cli.rexai.top/
@@ -23,21 +23,20 @@
 - https://cli.rexai.top/getting-started/
 - https://cli.rexai.top/workflow-policy/
 - https://cli.rexai.top/use-cases/
+- https://cli.rexai.top/architecture/
 - https://cli.rexai.top/case-library/
 - https://cli.rexai.top/contextdb/
-- https://cli.rexai.top/contextdb/#unified-project-search-v1500
-- https://cli.rexai.top/token-compression/#all-client-turn-compression-v1501
+- https://cli.rexai.top/token-compression/
 - https://cli.rexai.top/troubleshooting/
 - https://cli.rexai.top/changelog/
 
 ## Blog
 - https://cli.rexai.top/blog/
-- https://cli.rexai.top/blog/2026-05-token-compression/
-- https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
-- https://cli.rexai.top/blog/2026-06-v1501-token-compression-compliance/
-- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
 - https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
 - https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
+- https://cli.rexai.top/blog/2026-05-token-compression/
+- https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
 
 ## Languages
 - https://cli.rexai.top/zh/
@@ -47,3 +46,4 @@
 ## Related Sites
 - https://rexai.top/
 - https://tool.rexai.top/
+- https://github.com/rexleimo/harness-cli

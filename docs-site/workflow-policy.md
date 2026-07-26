@@ -1,6 +1,6 @@
 ---
-title: Workflow Policy
-description: Choose direct, guarded, or planned agent work with Harness CLI's adaptive workflow policy.
+title: Workflow Policy — direct, guarded, or planned Agent Work
+description: Choose the smallest correct AI coding agent route with Harness CLI adaptive workflow policy: direct answers, guarded edits, or planned multi-step work with evidence.
 ---
 
 # Workflow Policy

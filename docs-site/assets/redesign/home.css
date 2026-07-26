@@ -285,6 +285,26 @@
   width: auto;
 }
 
+.hero-secondary-links {
+  position: relative;
+  z-index: 5;
+  margin: 0.85rem 0 0;
+  color: var(--rex-soft, #94a3b8);
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.hero-secondary-links a {
+  color: #cbd5e1;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+}
+
+.hero-secondary-links a:hover {
+  color: var(--rex-cyan, #22d3ee);
+  border-bottom-color: currentColor;
+}
+
 .hero-works__label {
   display: block;
   margin-bottom: 0.7rem;

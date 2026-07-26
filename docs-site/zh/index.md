@@ -1,17 +1,16 @@
 ---
-title: Harness CLI 概览
-description: Harness CLI 为 codex、claude、gemini、opencode、hermes 和 grok 增加项目记忆、协作、工作流路由和验证入口。
+title: Harness CLI — 本地优先的 AI 编码 Agent 工作流
+description: 为 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok 增加项目记忆、自适应路由、多 Agent 协作与验证，不替换你现有的编码客户端。
 ---
 
 # Harness CLI (AIOS)
 
 Harness CLI 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），再补上跨会话项目记忆、并行协作、可恢复运行和验证门禁。
 
-[开始快速安装](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[按场景选择](use-cases.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="use_cases" }
-[查看工作流策略](workflow-policy.md){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="workflow_policy" }
-[阅读博客](/blog/zh/){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="blog" }
-[GitHub](https://github.com/rexleimo/harness-cli){ .md-button }
+[30 秒安装](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
+[GitHub](https://github.com/rexleimo/harness-cli){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github" }
+
+[按场景选择](use-cases.md) · [工作流策略](workflow-policy.md) · [架构](architecture.md) · [博客](/blog/zh/)
 
 ## 一句话回答
 

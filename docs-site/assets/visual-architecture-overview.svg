@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
+<title id="title">Harness CLI architecture overview</title>
+<desc id="desc">Coding clients sit above Harness CLI layers: guidance, ContextDB, workflow policy, rex-harness, team, and verification.</desc>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b1220"/><stop offset="1" stop-color="#111827"/></linearGradient>
+  <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee"/><stop offset="1" stop-color="#34d399"/></linearGradient>
+  <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%"><feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000" flood-opacity="0.35"/></filter>
+  <style>
+    .t{font:700 28px 'Segoe UI',Arial,sans-serif;fill:#f8fafc}
+    .s{font:500 15px 'Segoe UI',Arial,sans-serif;fill:#94a3b8}
+    .l{font:700 15px 'Segoe UI',Arial,sans-serif;fill:#e2e8f0}
+    .m{font:500 12px ui-monospace,Consolas,monospace;fill:#cbd5e1}
+    .card{fill:#0f172a;stroke:#334155;stroke-width:1.4;filter:url(#shadow)}
+    .chip{fill:#164e63;stroke:#22d3ee;stroke-width:1.2}
+    .green{fill:#064e3b;stroke:#34d399;stroke-width:1.2}
+    .violet{fill:#2e1065;stroke:#a78bfa;stroke-width:1.2}
+    .amber{fill:#78350f;stroke:#fbbf24;stroke-width:1.2}
+    .rose{fill:#4c0519;stroke:#fb7185;stroke-width:1.2}
+    .line{stroke:#64748b;stroke-width:2;fill:none;stroke-linecap:round}
+  </style>
+  <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#64748b"/></marker>
+</defs>
+<rect width="1200" height="640" rx="28" fill="url(#bg)"/>
+<text x="56" y="58" class="t">Harness CLI architecture</text>
+<text x="56" y="86" class="s">Local workflow layer under the coding clients you already use</text>
+
+<!-- Clients -->
+<rect x="56" y="120" width="1088" height="88" rx="18" class="card"/>
+<text x="80" y="155" class="l">Coding clients (unchanged UX)</text>
+<rect x="80" y="170" width="120" height="24" rx="8" class="chip"/><text x="100" y="187" class="m">codex</text>
+<rect x="214" y="170" width="120" height="24" rx="8" class="chip"/><text x="230" y="187" class="m">claude</text>
+<rect x="348" y="170" width="120" height="24" rx="8" class="chip"/><text x="364" y="187" class="m">gemini</text>
+<rect x="482" y="170" width="130" height="24" rx="8" class="chip"/><text x="498" y="187" class="m">opencode</text>
+<rect x="626" y="170" width="120" height="24" rx="8" class="chip"/><text x="642" y="187" class="m">hermes</text>
+<rect x="760" y="170" width="120" height="24" rx="8" class="chip"/><text x="786" y="187" class="m">grok</text>
+
+<path d="M600 208 L600 236" class="line" marker-end="url(#arr)"/>
+
+<!-- Core row -->
+<rect x="56" y="246" width="340" height="150" rx="18" class="card"/>
+<rect x="56" y="246" width="340" height="8" rx="4" fill="url(#accent)"/>
+<text x="80" y="290" class="l">Guidance + Workflow Policy</text>
+<text x="80" y="320" class="m">direct · guarded · planned</text>
+<text x="80" y="346" class="m">project instructions · auto-gate</text>
+<text x="80" y="372" class="s">smallest correct route</text>
+
+<rect x="430" y="246" width="340" height="150" rx="18" class="card"/>
+<rect x="430" y="246" width="340" height="8" rx="4" fill="#34d399"/>
+<text x="454" y="290" class="l">ContextDB</text>
+<text x="454" y="320" class="m">memo · checkpoints · packs</text>
+<text x="454" y="346" class="m">pull-based local memory</text>
+<text x="454" y="372" class="s">search, don't dump history</text>
+
+<rect x="804" y="246" width="340" height="150" rx="18" class="card"/>
+<rect x="804" y="246" width="340" height="8" rx="4" fill="#a78bfa"/>
+<text x="828" y="290" class="l">rex-harness control plane</text>
+<text x="828" y="320" class="m">Fact → Capability → Evidence</text>
+<text x="828" y="346" class="m">one current command</text>
+<text x="828" y="372" class="s">standalone software kernel</text>
+
+<!-- Bottom row -->
+<rect x="56" y="430" width="340" height="130" rx="18" class="card"/>
+<rect x="70" y="450" width="90" height="22" rx="8" class="violet"/><text x="86" y="466" class="m">Team</text>
+<text x="80" y="500" class="l">Agent Team / Solo Harness</text>
+<text x="80" y="528" class="m">parallel work · resume · HUD</text>
+
+<rect x="430" y="430" width="340" height="130" rx="18" class="card"/>
+<rect x="444" y="450" width="110" height="22" rx="8" class="amber"/><text x="458" y="466" class="m">Browser</text>
+<text x="454" y="500" class="l">browser-use CDP (default)</text>
+<text x="454" y="528" class="m">Playwright MCP = compat</text>
+
+<rect x="804" y="430" width="340" height="130" rx="18" class="card"/>
+<rect x="818" y="450" width="120" height="22" rx="8" class="rose"/><text x="834" y="466" class="m">Safety</text>
+<text x="828" y="500" class="l">Doctor · Privacy · Verify</text>
+<text x="828" y="528" class="m">tests · redaction · gates</text>
+
+<text x="56" y="600" class="s">Does not replace your client · local-first · evidence before “done”</text>
+</svg>
