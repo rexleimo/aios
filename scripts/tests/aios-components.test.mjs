@@ -59,6 +59,37 @@ function hasFunctionalBash() {
   return result.status === 0 && result.stdout === 'ok';
 }
 
+// A directory printed by a POSIX shell and the same directory as node sees it
+// are two spellings of one path on Windows: bash reports the MSYS form
+// (/tmp/x), node the native form (C:\Users\...\Temp\x). Compare through cygpath
+// so the assertion is about the directory rather than the spelling. On
+// non-Windows the two forms are already identical and nothing is converted.
+function toComparablePath(value) {
+  const raw = String(value || '');
+  if (process.platform !== 'win32' || !raw) return raw;
+  const converted = spawnSync('cygpath', ['-m', raw], { encoding: 'utf8' });
+  if (converted.status !== 0) return raw;
+  return converted.stdout.trim().toLowerCase();
+}
+
+function assertSamePath(actual, expected, message = '') {
+  assert.equal(
+    toComparablePath(actual),
+    toComparablePath(expected),
+    message || `expected the same directory, got ${actual} and ${expected}`,
+  );
+}
+
+// POSIX shells cannot consume a native Windows path: backslashes are escapes,
+// and a `C:\...` entry inside a `:`-separated PATH parses as two entries. Tests
+// that hand a path to bash convert it to the shell's own form first.
+function toPosixPath(value) {
+  const raw = String(value || '');
+  if (process.platform !== 'win32' || !raw) return raw;
+  const converted = spawnSync('cygpath', ['-u', raw], { encoding: 'utf8' });
+  return converted.status === 0 ? converted.stdout.trim() : raw;
+}
+
 function hasFunctionalZsh() {
   if (!commandExists('zsh')) return false;
   const result = spawnSync('zsh', ['-fc', 'printf ok'], { encoding: 'utf8' });
@@ -317,7 +348,12 @@ test('shell install exposes the aios launcher from the managed shim directory', 
 
   const launcher = path.join(homeDir, '.aios', 'bin', 'aios');
   assert.equal(existsSync(launcher), true);
-  const result = spawnSync(launcher, ['doctor', '--json'], {
+  // The shim is a POSIX sh script with a shebang. Windows cannot execute it
+  // directly, so it runs through bash there — same script, same assertions.
+  const [launcherCommand, launcherArgs] = process.platform === 'win32'
+    ? ['bash', [toPosixPath(launcher), 'doctor', '--json']]
+    : [launcher, ['doctor', '--json']];
+  const result = spawnSync(launcherCommand, launcherArgs, {
     cwd: otherCwd,
     encoding: 'utf8',
     env: {
@@ -366,7 +402,12 @@ test('shell install keeps the native shim dir first when sourced by zsh with PAT
 });
 
 test('shell install keeps the native shim dir first when sourced by bash with PATH already containing it later', async () => {
-  if (!hasFunctionalBash()) {
+  // The rc file this asserts on is written by a `platform: 'darwin'` install,
+  // so its exported shim dir is a native path. On Windows that means a `C:\...`
+  // entry inside a `:`-separated PATH, which the shell splits at the drive
+  // letter — a combination no real install produces, since Windows installs
+  // write the PowerShell profile instead. Not skipped for lack of bash.
+  if (process.platform === 'win32' || !hasFunctionalBash()) {
     return;
   }
 
@@ -385,16 +426,19 @@ test('shell install keeps the native shim dir first when sourced by bash with PA
   });
 
   const shimDir = path.join(homeDir, '.aios', 'bin');
-  const result = spawnSync('/bin/bash', ['-c', 'source "$1"; printf "%s\n" "$PATH"', '--', rcFile], {
+  // `bash` from PATH rather than /bin/bash — the latter does not exist on
+  // every POSIX host (NixOS, some containers).
+  const posixShimDir = toPosixPath(shimDir);
+  const result = spawnSync('bash', ['-c', 'source "$1"; printf "%s\n" "$PATH"', '--', toPosixPath(rcFile)], {
     cwd: rootDir,
     encoding: 'utf8',
-    env: { ...process.env, PATH: `/usr/bin:${process.env.PATH || ''}:${shimDir}` },
+    env: { ...process.env, PATH: `/usr/bin:${process.env.PATH || ''}:${posixShimDir}` },
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   const pathEntries = result.stdout.trim().split(':');
-  assert.equal(pathEntries[0], shimDir);
-  assert.equal(pathEntries.filter((entry) => entry === shimDir).length, 1);
+  assertSamePath(pathEntries[0], posixShimDir);
+  assert.equal(pathEntries.filter((entry) => entry === posixShimDir).length, 1);
 });
 
 test('shell install writes managed block and uninstall removes it', async () => {
@@ -671,7 +715,7 @@ test('browser install accepts AIOS_BROWSER_USE_REPO pointing at the browser-use 
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout.trim(), expectedRepoRoot);
+  assertSamePath(result.stdout.trim(), expectedRepoRoot);
   assert.doesNotMatch(result.stderr, /mcp-browser-use project not found/u);
 });
 
@@ -704,7 +748,7 @@ print(ns['_resolve_browser_use_repo']())
   });
 
   assert.equal(result.status, 0, result.stderr);
-  assert.equal(result.stdout.trim(), expectedRepoRoot);
+  assertSamePath(result.stdout.trim(), expectedRepoRoot);
 });
 
 test('browser mcp-migrate omits unresolved browser-use repo instead of writing author path', async () => {

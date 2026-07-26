@@ -27,8 +27,21 @@ function Invoke-Checked([string]$Command, [string[]]$Arguments) {
   }
 }
 
+# 中文注释：Windows 上 PATH 里排第一的通常是 Git Bash 附带的 GNU tar。GNU tar 把
+# `C:\...` 当成 `host:path` 远程规格解析，报 "Cannot connect to C: resolve failed"。
+# 系统自带的 bsdtar（System32\tar.exe）认盘符，所以 Windows 优先用它；
+# 其他平台（含 Linux 上的 PowerShell Core）仍走 PATH。
+function Resolve-Tar {
+  if ($env:SystemRoot) {
+    $systemTar = Join-Path $env:SystemRoot "System32\tar.exe"
+    if (Test-Path -LiteralPath $systemTar) { return $systemTar }
+  }
+  return "tar"
+}
+
 Require-Command git
-Require-Command tar
+$TarCommand = Resolve-Tar
+Require-Command $TarCommand
 Require-Command npm
 
 $rexHarnessRoot = Join-Path $RootDir "rex-harness"
@@ -112,7 +125,7 @@ try {
   Invoke-Checked -Command "git" -Arguments (@("-C", $RootDir, "archive", "--format=tar", "--prefix=harness-cli/", "-o", $tarPath, "HEAD") + $archivePaths)
 
   Write-Host "+ extract tar -> $extractDir"
-  Invoke-Checked -Command "tar" -Arguments @("-xf", $tarPath, "-C", $extractDir)
+  Invoke-Checked -Command $TarCommand -Arguments @("-xf", $tarPath, "-C", $extractDir)
 
   # 中文注释：git archive 不会展开 gitlink，单独物化 submodule 的固定提交。
   # Materialize the pinned submodule because git archive stores only a gitlink.
@@ -124,7 +137,7 @@ try {
     }
     $rexTarPath = Join-Path $tmp "rex-harness.tar"
     Invoke-Checked -Command "git" -Arguments @("-C", $rexHarnessRoot, "archive", "--format=tar", "--prefix=harness-cli/rex-harness/", "-o", $rexTarPath, "HEAD")
-    Invoke-Checked -Command "tar" -Arguments @("-xf", $rexTarPath, "-C", $extractDir)
+    Invoke-Checked -Command $TarCommand -Arguments @("-xf", $rexTarPath, "-C", $extractDir)
   } else {
     New-Item -Path $rexArchiveRoot -ItemType Directory -Force | Out-Null
     Get-ChildItem -LiteralPath $rexHarnessRoot -Force |
@@ -162,7 +175,7 @@ try {
   }
 
   Write-Host "+ tar.gz -> $tarGz"
-  Invoke-Checked -Command "tar" -Arguments @("-czf", $tarGz, "-C", $extractDir, "harness-cli")
+  Invoke-Checked -Command $TarCommand -Arguments @("-czf", $tarGz, "-C", $extractDir, "harness-cli")
 
   Write-Host "+ zip -> $zip"
   # 中文注释：Windows 自带 bsdtar 不保证支持 ZIP 输出，使用 .NET 从物化目录打包，保留隐藏客户端目录。

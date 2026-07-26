@@ -1,8 +1,33 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import { cp, mkdtemp, mkdir, readFile, stat, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
+
+// The tar first on PATH under Git Bash is GNU tar, which reads `C:\...` as a
+// `host:path` remote spec and fails with "Cannot connect to C: resolve failed".
+// Windows ships bsdtar, which understands drive letters. Mirrors Resolve-Tar in
+// scripts/package-release.ps1 so the test and the script agree on the binary.
+function resolveTar() {
+  if (process.platform !== 'win32') return 'tar';
+  const systemRoot = process.env.SystemRoot || process.env.SYSTEMROOT || 'C:\\Windows';
+  const systemTar = path.join(systemRoot, 'System32', 'tar.exe');
+  return existsSync(systemTar) ? systemTar : 'tar';
+}
+
+const TAR = resolveTar();
+
+// POSIX scripts under test report paths in the shell's own form. On Windows
+// that is the MSYS form (/e/coding/...), not node's native form (E:\coding\...).
+// Convert before comparing so the assertion is about the directory, not the
+// spelling. A no-op everywhere else.
+function toPosixPath(value) {
+  const raw = String(value || '');
+  if (process.platform !== 'win32' || !raw) return raw;
+  const converted = spawnSync('cygpath', ['-u', raw], { encoding: 'utf8' });
+  return converted.status === 0 ? converted.stdout.trim() : raw;
+}
 
 async function makeTemp(prefix) {
   const tempRoot = path.join(process.cwd(), 'temp');
@@ -161,7 +186,7 @@ test('package-release emits stable assets including the rex-harness planning ker
   }
 
   const extractDir = await makeTemp('rex-release-assets-extract-');
-  assertOk(run('tar', ['-xzf', path.join(outDir, 'harness-cli.tar.gz'), '-C', extractDir]));
+  assertOk(run(TAR, ['-xzf', path.join(outDir, 'harness-cli.tar.gz'), '-C', extractDir]));
   await assertFileExists(
     path.join(extractDir, 'harness-cli', 'skill-sources', 'sample-skill', 'SKILL.md'),
     'harness-cli.tar.gz did not include skill-sources/sample-skill/SKILL.md'
@@ -254,7 +279,7 @@ test('package-release emits stable assets including the rex-harness planning ker
   const unzipResult = run('unzip', ['-q', zipPath, '-d', zipExtractDir]);
   if (unzipResult.status !== 0) {
     // Fallback: BSD tar on macOS can open zip archives.
-    assertOk(run('tar', ['-xf', zipPath, '-C', zipExtractDir]), unzipResult.stderr || unzipResult.stdout || 'unzip failed');
+    assertOk(run(TAR, ['-xf', zipPath, '-C', zipExtractDir]), unzipResult.stderr || unzipResult.stdout || 'unzip failed');
   }
   await assertFileExists(
     path.join(zipExtractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
@@ -467,7 +492,7 @@ bashInstallerTest('Bash installer isolates nested runtime and privacy paths from
     '#!/usr/bin/env bash\nprintf "%s|%s|%s|%s\\n" "$AIOS_ROOT_DIR" "$AIOS_ROOT" "$ROOTPATH" "$REXCIL_HOME" > "$(dirname "$0")/privacy-env.txt"\n',
   );
 
-  assertOk(run('tar', ['-czf', assetPath, '-C', path.join(rootDir, 'package'), 'harness-cli']));
+  assertOk(run(TAR, ['-czf', assetPath, '-C', path.join(rootDir, 'package'), 'harness-cli']));
 
   const result = run('bash', [path.join(workspaceRoot, 'scripts', 'aios-install.sh')], {
     env: {
@@ -483,13 +508,18 @@ bashInstallerTest('Bash installer isolates nested runtime and privacy paths from
   });
 
   assertOk(result);
+  // The installer is a POSIX script, so on Windows it reports the MSYS form of
+  // the install dir. Same directory, different spelling — compare in the
+  // shell's own form rather than node's.
+  const installDirAsShellSees = toPosixPath(installDir);
+  const homeDirAsShellSees = toPosixPath(path.dirname(installDir));
   assert.equal(
     await readFile(path.join(installDir, 'scripts', 'shell-env.txt'), 'utf8'),
-    `${installDir}|${installDir}|${installDir}\n`,
+    `${installDirAsShellSees}|${installDirAsShellSees}|${installDirAsShellSees}\n`,
   );
   assert.equal(
     await readFile(path.join(installDir, 'scripts', 'privacy-env.txt'), 'utf8'),
-    `${installDir}|${installDir}|${installDir}|${path.dirname(installDir)}\n`,
+    `${installDirAsShellSees}|${installDirAsShellSees}|${installDirAsShellSees}|${homeDirAsShellSees}\n`,
   );
 });
 
