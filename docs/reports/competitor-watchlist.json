@@ -1,8 +1,8 @@
 {
   "schemaVersion": 3,
-  "lastUpdated": "2026-07-09",
-  "lastDeepDive": "2026-07-09 (core-value prune: memo + planning + team workflow)",
-  "refreshMethod": "manual-core-value-filter",
+  "lastUpdated": "2026-07-26",
+  "lastDeepDive": "2026-07-26 (full source pull via codeload; 12/12 trees local, see docs/reports/2026-07-26-competitor-refresh-review.md §6)",
+  "refreshMethod": "codeload-tarball + api.github.com metadata (github.com:443 unreachable from this host)",
   "coreValue": {
     "product": "Harness CLI / AIOS — local agent workflow layer over codex/claude/gemini/opencode/hermes/grok",
     "pillars": [
@@ -145,7 +145,7 @@
           "license": "MIT",
           "language": "Shell",
           "priority": "P0",
-          "whyKeep": "AIOS 智能规划 skill 体系的直接方法论来源；规划轨第一优先级"
+          "whyKeep": "方法论参考来源（brainstorming / writing-plans / verification-before-completion / TDD / systematic-debugging）。注意：自 v5.0.0（2026-07-20）起 superpowers 已不再是 AIOS 的工作流或安装组件，rex-harness 为唯一控制面；此条仅作 skill 写法与规划方法论的对照，不作为架构来源"
         },
         {
           "id": "hermes-agent",
@@ -255,7 +255,9 @@
     "规划执行轨优先：dry-run readiness、consecutiveFailures abort、evidence/verification、handoff",
     "Team 轨优先：skill workshop 治理、install policy、per-agent 隔离、文件型 mailbox（轻量）",
     "已吸收模式（不再单独立项跟踪）：overstory worker_died/stall → trends；OpenHarness mailbox 优于 SQLite mail bus；oh-my-openagent 反对 premature multi-adapter",
-    "已否决抄法（2026-07-01 源码核实）：the-pair 极简 verdict 记录层、gnhf 无 cap 退避、oh-my-openagent 关键词 default_mode 误读、tokensEstimated sticky 展示层",
+    "已否决抄法（2026-07-01 源码核实，2026-07-26 复核）：the-pair 极简 verdict 记录层、gnhf 无 cap 退避、tokensEstimated sticky 展示层、OpenHarness PREVIEW 纯提示词写保护",
+    "已撤回的记录（2026-07-26 实拉修正）：旧条目称 oh-my-openagent 无 default_mode 字段属误记 —— assets/oh-my-opencode.schema.json:6907、docs/reference/features.md:397,400、CHANGELOG.md:167 均证实该字段存在；且配置 schema 已迁至 packages/omo-opencode/src/config/schema/，07-01 引用的 config/schema.ts 路径不复存在",
+    "反向信号（2026-07-26）：OpenClaw CHANGELOG:21 将 skill workshop 的 agent 自主 apply/reject/quarantine 默认改为免二次确认，人工审批降为 opt-in。不跟进 —— 其前提是 quarantine 兜底健全，我们内容扫描尚未接入（见 2026-07-26 报告 F8）",
     "ECC：skill compliance + explicit client projection 比被动 skill 目录发现更可靠",
     "Hermes 能力映射见 docs/hermes-inspired-capability-mapping.md（多项已 Done）"
   ],
@@ -264,7 +266,7 @@
     "planning": "consecutiveFailures abort + dry-run readiness + runtime directive + superpowers 规划 skill 真执行",
     "team": "Skill workshop file rollback/stale + install policy + per-agent memo 命名空间"
   },
-  "nextRefresh": "2026-07-23 or on major release of superpowers / OpenHarness / Hermes / OpenClaw / TencentDB",
+  "nextRefresh": "2026-08-09 or on major release of OpenHarness / Hermes / OpenClaw / TencentDB / Graphiti",
   "removed": {
     "2026-06-14": [
       "long-running-tasks (mmTheBest/long-running-tasks)",
