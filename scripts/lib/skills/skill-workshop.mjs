@@ -13,6 +13,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { assertWorkspaceMemoryContentSafe } from '../memo/safety.mjs';
 import { scanSkillsSources } from './source-tree.mjs';
 import { readInstallPolicy, checkPolicy, policyDenialError } from './install-policy.mjs';
 
@@ -175,6 +176,37 @@ export function review({ rootDir, id, action = '', stdout = process.stdout, stde
 // apply — copy an approved proposal into skill-sources/ and update lock
 // ---------------------------------------------------------------------------
 
+function markdownFilesIn(dir) {
+  const output = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      output.push(...markdownFilesIn(full));
+    } else if (entry.isFile() && entry.name.toLowerCase().endsWith('.md')) {
+      output.push(full);
+    }
+  }
+  return output;
+}
+
+// An applied skill becomes instruction text the agent will later follow, so it
+// gets the same injection/exfiltration screen as workspace memory. Returns the
+// blocking error, or null when every markdown file in the proposal is clean.
+function findUnsafeSkillDoc(proposalPath) {
+  for (const file of markdownFilesIn(proposalPath)) {
+    try {
+      assertWorkspaceMemoryContentSafe(fs.readFileSync(file, 'utf8'), {
+        allowEmpty: true,
+        target: `skill file ${path.relative(proposalPath, file).replace(/\\/gu, '/')}`,
+      });
+    } catch (error) {
+      if (error?.code !== 'AIOS_MEMO_UNSAFE_CONTENT') throw error;
+      return error;
+    }
+  }
+  return null;
+}
+
 export function apply({ rootDir, id, policyCheck = false, stdout = process.stdout, stderr = process.stderr } = {}) {
   const proposalPath = path.join(proposalsDir(rootDir), id);
   const propFile = path.join(proposalPath, 'proposal.json');
@@ -198,6 +230,14 @@ export function apply({ rootDir, id, policyCheck = false, stdout = process.stdou
 
   // Use the ID as skill name; user can rename later
   const skillName = id;
+
+  // --- Content safety scan -----------------------------------------------
+  // Runs before the policy gate so a dry run surfaces unsafe content too.
+  const unsafe = findUnsafeSkillDoc(proposalPath);
+  if (unsafe) {
+    stderr.write(`[err] ${unsafe.message}\n`);
+    return { exitCode: 1, unsafe: true };
+  }
 
   // --- Operator install policy check -------------------------------------
   // The policy gates which skills may be installed. The name checked against
