@@ -6,7 +6,53 @@ import { canvasJsonPath, canvasMmdPath, canvasJsonlPath } from './refs-store.mjs
 import { writeFileAtomic } from '../fs/atomic-write.mjs';
 
 const CANVAS_VERSION = 1;
-const CANVAS_RECALL_MAX_CHARS = 12_000;
+
+// ── context-window scaling ──
+//
+// The canvas budget used to be fixed at numbers tuned for a 200K-token window.
+// A 1M-token model was compacting its canvas five times more often than it
+// needed to, and a 64K model not often enough. Everything below is expressed
+// relative to that same reference window, so the default behaviour is
+// unchanged and a declared window simply scales it.
+
+const REFERENCE_CONTEXT_WINDOW_TOKENS = 200_000;
+const REFERENCE_RECALL_MAX_CHARS = 12_000;
+const REFERENCE_COMPACT_MILD_NODES = 20;
+const REFERENCE_COMPACT_AGGRESSIVE_NODES = 50;
+const REFERENCE_COMPACT_EMERGENCY_NODES = 100;
+const MIN_CONTEXT_SCALE = 0.25;
+const MAX_CONTEXT_SCALE = 8;
+
+// Accepts the registry's display form ("200K", "1M") as well as a raw count.
+export function parseContextWindowTokens(raw) {
+  if (Number.isFinite(raw) && raw > 0) return raw;
+  const value = String(raw || '').trim().toUpperCase().replace(/[_,\s]/gu, '');
+  if (!value) return 0;
+  const match = value.match(/^(\d+(?:\.\d+)?)([KM])?$/u);
+  if (!match) return 0;
+  const size = Number.parseFloat(match[1]);
+  if (!Number.isFinite(size) || size <= 0) return 0;
+  const multiplier = match[2] === 'M' ? 1_000_000 : match[2] === 'K' ? 1_000 : 1;
+  return size * multiplier;
+}
+
+function contextScale(contextWindow, env = process.env) {
+  const tokens = parseContextWindowTokens(contextWindow) || parseContextWindowTokens(env.AIOS_CONTEXT_WINDOW);
+  if (!tokens) return 1;
+  const scale = tokens / REFERENCE_CONTEXT_WINDOW_TOKENS;
+  return Math.min(Math.max(scale, MIN_CONTEXT_SCALE), MAX_CONTEXT_SCALE);
+}
+
+export function resolveCanvasThresholds({ contextWindow = '', env = process.env } = {}) {
+  const scale = contextScale(contextWindow, env);
+  return {
+    scale,
+    recallMaxChars: Math.round(REFERENCE_RECALL_MAX_CHARS * scale),
+    mildNodes: Math.max(1, Math.round(REFERENCE_COMPACT_MILD_NODES * scale)),
+    aggressiveNodes: Math.max(2, Math.round(REFERENCE_COMPACT_AGGRESSIVE_NODES * scale)),
+    emergencyNodes: Math.max(3, Math.round(REFERENCE_COMPACT_EMERGENCY_NODES * scale)),
+  };
+}
 
 // ── load / create ──
 
@@ -167,7 +213,7 @@ export function getCanvasPaths(workspaceRoot, sessionId, storage) {
   };
 }
 
-export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStorage = '') {
+export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStorage = '', { contextWindow = '' } = {}) {
   const storages = [];
   if (preferredStorage === 'file' || preferredStorage === 'split') {
     storages.push(preferredStorage);
@@ -193,9 +239,10 @@ export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStora
   if (!selected) return null;
 
   const raw = await readFile(selected.filePath, 'utf8');
-  const truncated = raw.length > CANVAS_RECALL_MAX_CHARS;
+  const { recallMaxChars } = resolveCanvasThresholds({ contextWindow });
+  const truncated = raw.length > recallMaxChars;
   const mermaid = truncated
-    ? `${raw.slice(0, CANVAS_RECALL_MAX_CHARS).trimEnd()}\n%% [truncated: canvas exceeds ${CANVAS_RECALL_MAX_CHARS} chars]\n`
+    ? `${raw.slice(0, recallMaxChars).trimEnd()}\n%% [truncated: canvas exceeds ${recallMaxChars} chars]\n`
     : raw;
   const root = path.resolve(workspaceRoot || process.cwd());
   const relativePath = path.relative(root, selected.filePath).replace(/\\/g, '/');
@@ -211,22 +258,20 @@ export async function findCanvasMermaid(workspaceRoot, sessionId, preferredStora
 
 // ── auto-compaction ──
 
-const COMPACT_MILD_NODES = 20;
-const COMPACT_AGGRESSIVE_NODES = 50;
-const COMPACT_EMERGENCY_NODES = 100;
 const COMPACT_KEEP_RECENT = 10;
 const COMPACT_EMERGENCY_KEEP_RECENT = 5;
 
-export function computeCompactAction(nodeCount) {
-  if (nodeCount >= COMPACT_EMERGENCY_NODES) return 'emergency';
-  if (nodeCount >= COMPACT_AGGRESSIVE_NODES) return 'aggressive';
-  if (nodeCount >= COMPACT_MILD_NODES) return 'mild';
+export function computeCompactAction(nodeCount, { contextWindow = '' } = {}) {
+  const { mildNodes, aggressiveNodes, emergencyNodes } = resolveCanvasThresholds({ contextWindow });
+  if (nodeCount >= emergencyNodes) return 'emergency';
+  if (nodeCount >= aggressiveNodes) return 'aggressive';
+  if (nodeCount >= mildNodes) return 'mild';
   return 'none';
 }
 
-export async function compactCanvas(workspaceRoot, sessionId, storage, { maxRecent = COMPACT_KEEP_RECENT } = {}) {
+export async function compactCanvas(workspaceRoot, sessionId, storage, { maxRecent = COMPACT_KEEP_RECENT, contextWindow = '' } = {}) {
   const canvas = await loadCanvas(workspaceRoot, sessionId, storage);
-  const action = computeCompactAction(canvas.nodes.length);
+  const action = computeCompactAction(canvas.nodes.length, { contextWindow });
   if (action === 'none') return { action: 'none', canvas };
 
   // emergency 压缩比 aggressive 更激进：只保留最近 5 个节点（而非 10 个），
