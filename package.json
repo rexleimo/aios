@@ -23,7 +23,7 @@
     "test:site-redesign": "node --test scripts/tests/site-redesign-assets.test.mjs scripts/tests/site-redesign-responsive.test.mjs",
     "perf:orchestrate-learn-eval:smoke": "node scripts/perf-orchestrate-learn-eval-smoke.mjs",
     "perf:team-status-watch:smoke": "node scripts/perf-team-status-watch-smoke.mjs",
-    "pretest:scripts": "node scripts/check-node-version.mjs && node --test scripts/tests/gaia-ab-eval.test.mjs scripts/tests/gaia-ab-score-report.test.mjs scripts/tests/gaia-ab-live-runner.test.mjs && npm run test:workflow-policy && npm run test:rex-harness && npm run test:rex-integration",
+    "pretest:scripts": "node scripts/check-node-version.mjs && node --test scripts/tests/gaia-ab-eval.test.mjs scripts/tests/gaia-ab-score-report.test.mjs scripts/tests/gaia-ab-live-runner.test.mjs scripts/tests/gaia-ab-client-adapters.test.mjs scripts/tests/workflow-diagnostic-ab.test.mjs scripts/tests/workflow-diagnostic-invocation.test.mjs && npm run test:workflow-policy && npm run test:rex-harness && npm run test:rex-integration",
     "test:workflow-policy": "node --test scripts/tests/default-mode.test.mjs scripts/tests/workflow-policy.test.mjs scripts/tests/workflow-adapters.test.mjs scripts/tests/planning-contract.test.mjs scripts/tests/preflight-contracts.test.mjs",
     "test:rex-harness": "npm --prefix rex-harness test && npm --prefix rex-harness run doctor",
     "test:rex-integration": "node --test scripts/tests/rex-activation-store.test.mjs scripts/tests/rex-agent-provider.test.mjs scripts/tests/rex-capability-runtime.test.mjs scripts/tests/rex-harness-adapter.test.mjs scripts/tests/training-certification.test.mjs scripts/tests/rex-workflow-training-evidence.test.mjs scripts/tests/rex-tdd-training-evidence.test.mjs",
