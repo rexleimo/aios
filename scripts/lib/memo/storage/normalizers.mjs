@@ -3,6 +3,7 @@ import {
   SUPPORTED_MEMO_STORAGES,
 } from './constants.mjs';
 import { sha256Hex } from './fs-io.mjs';
+import { normalizeIsoTimestamp, toSupersedes } from './temporal.mjs';
 
 export function normalizeSpaceName(raw) {
   const value = String(raw || '').trim();
@@ -66,6 +67,7 @@ export function normalizeEventRows(events, { fallbackStorage = DEFAULT_MEMO_STOR
     .map((event) => {
       const space = normalizeSpaceName(event.space || event.spaceName || 'default');
       const spaceKey = event.spaceKey || sanitizeSpace(space);
+      const ts = event.ts ? String(event.ts) : '';
       return {
         schemaVersion: Number.isFinite(event.schemaVersion) ? event.schemaVersion : 1,
         eventId: String(event.eventId || ''),
@@ -73,13 +75,15 @@ export function normalizeEventRows(events, { fallbackStorage = DEFAULT_MEMO_STOR
         space,
         spaceKey,
         seq: Number.isFinite(event.seq) ? event.seq : undefined,
-        ts: event.ts ? String(event.ts) : '',
+        ts: ts,
         role: event.role ? String(event.role) : 'user',
         kind: event.kind ? String(event.kind) : 'memo',
         text: event.text ? String(event.text) : '',
         refs: toRefs(event.refs || []),
         scope: normalizeMemoScope(event.scope || event.memoryScope || 'project_shared'),
         agent: normalizeMemoAgent(event.agent || event.agentNamespace || ''),
+        validAt: normalizeIsoTimestamp(event.validAt) || normalizeIsoTimestamp(ts),
+        supersedes: toSupersedes(event.supersedes),
         turn: event.turn && typeof event.turn === 'object' ? event.turn : undefined,
         legacy: event.legacy && typeof event.legacy === 'object' ? event.legacy : undefined,
       };

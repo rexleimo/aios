@@ -16,6 +16,7 @@ import {
   fileEventsPath,
   splitEventDir,
 } from './paths.mjs';
+import { normalizeIsoTimestamp, toSupersedes } from './temporal.mjs';
 
 async function nextFileSeq(workspaceRoot) {
   const { events } = await readJsonlEvents(fileEventsPath(workspaceRoot), { tolerateMalformed: false });
@@ -36,7 +37,7 @@ function paddedSeq(seq) {
   return String(seq).padStart(12, '0');
 }
 
-export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy, scope, agent }) {
+export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy, scope, agent, validAt, supersedes }) {
   const normalizedSpace = normalizeSpaceName(space);
   const safeSpace = sanitizeSpace(normalizedSpace);
   const timestamp = ts ? String(ts) : new Date().toISOString();
@@ -55,6 +56,10 @@ export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId
     refs: toRefs(refs),
     scope: normalizeMemoScope(scope),
     agent: normalizeMemoAgent(agent),
+    // `validAt` is when the fact became true, which is not always when it was
+    // recorded — backfilled knowledge can predate its own memo entry.
+    validAt: normalizeIsoTimestamp(validAt) || normalizeIsoTimestamp(timestamp),
+    ...(toSupersedes(supersedes).length > 0 ? { supersedes: toSupersedes(supersedes) } : {}),
     ...(turn && typeof turn === 'object' ? { turn } : {}),
     ...(legacy && typeof legacy === 'object' ? { legacy } : {}),
   };
@@ -107,7 +112,7 @@ export async function writeExistingEvents(workspaceRoot, storage, events) {
   }
 }
 
-export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined, scope = 'project_shared', agent = '' } = {}) {
+export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined, scope = 'project_shared', agent = '', validAt = '', supersedes = [] } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const content = String(text ?? '').trim();
   if (!content) {
@@ -126,6 +131,8 @@ export async function appendMemoEvent({ workspaceRoot, storage, space = 'default
     turn,
     scope,
     agent,
+    validAt,
+    supersedes,
     seq,
   });
 

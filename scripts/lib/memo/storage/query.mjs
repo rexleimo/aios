@@ -7,6 +7,7 @@ import {
   normalizeMemoStorageName,
   sortEventsDescending,
 } from './normalizers.mjs';
+import { filterTemporal } from './temporal.mjs';
 
 function eventMatchesQuery(event, query) {
   const normalizedQuery = String(query || '').trim().toLowerCase();
@@ -45,11 +46,18 @@ function filterMemoIdentity(events, { scope = '', agent = '' } = {}) {
     .filter((event) => eventVisibleForAgent(event, agent));
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', maxCharsPerMemory = Infinity, maxTotalChars = Infinity } = {}) {
+// Supersede links are resolved against the whole space before scope or agent
+// filtering, so a fact stays retired even when the event that replaced it is
+// private to another agent.
+function selectVisibleEvents(events, { scope, agent, asOf, includeInvalid }) {
+  return filterMemoIdentity(filterTemporal(events, { asOf, includeInvalid }), { scope, agent });
+}
+
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
-  const scored = sortEventsDescending(filterMemoIdentity(events, { scope, agent }))
+  const scored = sortEventsDescending(selectVisibleEvents(events, { scope, agent, asOf, includeInvalid }))
     .filter((event) => eventMatchesQuery(event, query))
     .map((event) => ({ ...event, matchScore: scoreEvent(event, query) }))
     .sort((a, b) => {
@@ -68,8 +76,8 @@ export async function searchMemoEvents(workspaceRoot, { storage, space = 'defaul
   return scored;
 }
 
-export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '' } = {}) {
+export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
-  return sortEventsDescending(filterMemoIdentity(events, { scope, agent })).slice(0, normalizeLimit(limit));
+  return sortEventsDescending(selectVisibleEvents(events, { scope, agent, asOf, includeInvalid })).slice(0, normalizeLimit(limit));
 }

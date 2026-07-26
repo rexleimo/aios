@@ -66,6 +66,9 @@ export function getMemoHelpText(argv = []) {
 
 Subcommands:
   add <text>                          Append memo event (supports #tag)
+  add <text> --supersedes <id,...>    Append and retire the facts it replaces
+  add <text> --valid-at <iso>         Append a fact that became true earlier
+  add <text> --no-supersede-hint      Do not report likely earlier revisions
   pin show                            Print pinned memory
   pin set <text>                      Replace pinned memory
   pin add <text>                      Append to pinned memory
@@ -75,9 +78,11 @@ Subcommands:
   user init|show|path                 Initialize/read global user profile memory
   user set <text>                     Replace global user profile memory
   user add <text>                     Append to global user profile memory
-  search <query> [--limit N] [--semantic]
-                                      Search memos
-  recall [query] [--limit N] [--highlight-limit N]
+  search <query> [--limit N] [--semantic] [--as-of ISO] [--include-invalid]
+                                      Search memos; superseded facts are hidden by default
+  supersede [--threshold N] [--apply]
+                                      Detect facts a later entry has replaced (dry run by default)
+  recall [query] [--limit N] [--highlight-limit N] [--as-of ISO]
                                       Human-readable session recall digest
   gui [--port N] [--project name] [--no-open]
                                       Open project-local ContextDB memory genealogy graph

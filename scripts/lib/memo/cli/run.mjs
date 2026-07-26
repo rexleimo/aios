@@ -15,6 +15,7 @@ import { handleMemoAddCommand, handleMemoListCommand, handleMemoRecallCommand, h
 import { handleMemoPinCommand } from './commands/pin.mjs';
 import { handleMemoSpaceCommand } from './commands/space.mjs';
 import { handleMemoStorageCommand } from './commands/storage.mjs';
+import { handleMemoSupersedeCommand } from './commands/supersede.mjs';
 import { handlePersonaCommand } from './commands/persona.mjs';
 
 function resolveWorkspaceMemoLimits(env = process.env) {
@@ -116,6 +117,11 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
 
   if (primary === 'search') {
     await handleMemoSearchCommand({ argv, workspaceRoot, activeSpace, io });
+    return;
+  }
+
+  if (primary === 'supersede') {
+    await handleMemoSupersedeCommand({ argv, workspaceRoot, activeSpace, io });
     return;
   }
 
