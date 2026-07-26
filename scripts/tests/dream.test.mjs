@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { classifyEvent, isExpired, TAXONOMY_CLASSES } from '../lib/lifecycle/dream/taxonomy.mjs';
-import { textSimilarity, findDuplicateClusters, pickKeepWinner, dedupDecisions } from '../lib/lifecycle/dream/dedup.mjs';
+import { textSimilarity, textTokens, findDuplicateClusters, pickKeepWinner, dedupDecisions } from '../lib/lifecycle/dream/dedup.mjs';
 import { runDream } from '../lib/lifecycle/dream/index.mjs';
 
 // ----------------------------------------------------------------------------
@@ -165,6 +165,36 @@ test('textSimilarity: both empty returns 1', () => {
 test('textSimilarity: one empty returns 0', () => {
   const sim = textSimilarity('hello', '');
   assert.equal(sim, 0.0);
+});
+
+// ----------------------------------------------------------------------------
+// Unspaced-script tokenization
+// ----------------------------------------------------------------------------
+
+test('textTokens leaves spaced-script text exactly as whitespace splitting did', () => {
+  assert.deepEqual([...textTokens('us-east-1 region v2.0')], ['us-east-1', 'region', 'v2.0']);
+  assert.deepEqual([...textTokens('  Hello   World  ')], ['hello', 'world']);
+});
+
+test('textTokens decomposes unspaced scripts into character bigrams', () => {
+  assert.deepEqual([...textTokens('包管理器')], ['包管', '管理', '理器']);
+  // Latin runs inside a mixed token stay whole, punctuation separates runs.
+  assert.deepEqual([...textTokens('华东二区，v2')], ['华东', '东二', '二区', 'v2']);
+  assert.deepEqual([...textTokens('区')], ['区']);
+});
+
+test('textSimilarity scores Chinese rewordings instead of collapsing them to zero', () => {
+  const before = '项目使用 pnpm 作为包管理器，锁文件提交到仓库';
+  const after = '项目使用 npm 作为包管理器，锁文件提交到仓库';
+  // Whitespace-only splitting scored this pair 0 because each sentence was a
+  // single token, which made Chinese memos invisible to dedup and supersede.
+  assert.ok(textSimilarity(before, after) > 0.8);
+});
+
+test('textSimilarity still separates a genuine Chinese decision reversal', () => {
+  const before = '浏览器自动化复用长期 cookie 会话';
+  const after = '每次都要人工完成登录墙，禁止复用凭据缓存';
+  assert.ok(textSimilarity(before, after) < 0.2, 'a reversal must not be merged as a duplicate');
 });
 
 // ----------------------------------------------------------------------------

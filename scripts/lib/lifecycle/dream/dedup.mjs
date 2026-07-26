@@ -3,14 +3,84 @@
  * Pure deterministic, no LLM calls.
  */
 
+// Scripts that do not separate words with whitespace. Splitting these on
+// whitespace collapses a whole sentence into one token, which makes every
+// non-identical pair score 0 — so Chinese and Japanese memos were invisible to
+// both dedup and supersede detection.
+const UNSPACED_SCRIPT = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}]/u;
+const SEPARATOR = /[\p{P}\p{S}]/u;
+
+// Character bigrams are the standard cheap stand-in for a segmenter: "包管理器"
+// becomes 包管/管理/理器, so two sentences that share most of their characters
+// in the same order also share most of their tokens.
+function characterBigrams(run) {
+  if (run.length < 2) return [run];
+  const grams = [];
+  for (let index = 0; index + 1 < run.length; index += 1) {
+    grams.push(run.slice(index, index + 2));
+  }
+  return grams;
+}
+
+// Only tokens that actually contain an unspaced script are decomposed. A token
+// made purely of latin letters, digits, or punctuation comes back untouched, so
+// existing English corpora score exactly as they did before.
+function expandToken(token) {
+  if (!UNSPACED_SCRIPT.test(token)) return [token];
+
+  const parts = [];
+  let unspacedRun = '';
+  let spacedRun = '';
+  const flushUnspaced = () => {
+    if (unspacedRun) parts.push(...characterBigrams(unspacedRun));
+    unspacedRun = '';
+  };
+  const flushSpaced = () => {
+    if (spacedRun) parts.push(spacedRun);
+    spacedRun = '';
+  };
+
+  for (const char of token) {
+    if (UNSPACED_SCRIPT.test(char)) {
+      flushSpaced();
+      unspacedRun += char;
+    } else if (SEPARATOR.test(char)) {
+      flushUnspaced();
+      flushSpaced();
+    } else {
+      flushUnspaced();
+      spacedRun += char;
+    }
+  }
+  flushUnspaced();
+  flushSpaced();
+  return parts;
+}
+
+/**
+ * Split text into the token set used for similarity.
+ * Whitespace-delimited for spaced scripts, character bigrams for unspaced ones.
+ */
+export function textTokens(value) {
+  const tokens = new Set();
+  for (const word of String(value || '').toLowerCase().split(/\s+/u)) {
+    if (word.length === 0) continue;
+    for (const token of expandToken(word)) {
+      if (token.length > 0) tokens.add(token);
+    }
+  }
+  return tokens;
+}
+
 /**
  * Compute Jaccard similarity between two texts based on word sets.
- * Words are obtained by splitting on whitespace and lowercasing.
+ * Words are obtained by splitting on whitespace and lowercasing; text in
+ * unspaced scripts is decomposed into character bigrams instead.
  * Returns a value between 0 (no overlap) and 1 (identical word sets).
  */
 export function textSimilarity(a, b) {
-  const wordsA = new Set(String(a || '').toLowerCase().split(/\s+/u).filter((w) => w.length > 0));
-  const wordsB = new Set(String(b || '').toLowerCase().split(/\s+/u).filter((w) => w.length > 0));
+  const wordsA = textTokens(a);
+  const wordsB = textTokens(b);
 
   if (wordsA.size === 0 && wordsB.size === 0) return 1; // both empty → identical
   if (wordsA.size === 0 || wordsB.size === 0) return 0; // one empty → no overlap
