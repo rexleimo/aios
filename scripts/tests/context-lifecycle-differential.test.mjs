@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -15,7 +15,12 @@ import {
   parsePinnedSubmoduleCommit,
   resolveImmutableCommit,
 } from '../benchmarks/context-lifecycle-v1-differential.mjs';
-import { commandObservation, isDifferentialRunnerOverlayStatus, isMainEntryPoint } from '../benchmarks/context-lifecycle-v1.mjs';
+import {
+  collectBenchmarkWorktreeStatus,
+  commandObservation,
+  isDifferentialRunnerOverlayStatus,
+  isMainEntryPoint,
+} from '../benchmarks/context-lifecycle-v1.mjs';
 
 function git(rootDir, args) {
   const result = spawnSync('git', ['-C', rootDir, ...args], {
@@ -158,4 +163,20 @@ test('failed command observations retain separate redacted stream tails', () => 
   const modulePath = path.resolve('scripts/benchmarks/context-lifecycle-v1.mjs');
   const invocationPath = process.platform === 'win32' ? modulePath.toUpperCase() : modulePath;
   assert.equal(isMainEntryPoint(invocationPath, modulePath), true);
+});
+
+test('worktree status preserves a differential runner overlay in an otherwise absent directory', async () => {
+  await withGitRoot(async (rootDir) => {
+    const overlayPath = path.join(rootDir, 'scripts', 'benchmarks', '.context-lifecycle-differential-123-baseline.mjs');
+    await mkdir(path.dirname(overlayPath), { recursive: true });
+    await writeFile(overlayPath, 'export {};\n', 'utf8');
+
+    assert.deepEqual(collectBenchmarkWorktreeStatus(rootDir), {
+      worktreeDirty: false,
+      worktreeOverlayFiles: ['scripts/benchmarks/.context-lifecycle-differential-123-baseline.mjs'],
+    });
+
+    await writeFile(path.join(rootDir, 'scripts', 'benchmarks', 'unexpected.mjs'), 'export {};\n', 'utf8');
+    assert.equal(collectBenchmarkWorktreeStatus(rootDir).worktreeDirty, true);
+  });
 });
