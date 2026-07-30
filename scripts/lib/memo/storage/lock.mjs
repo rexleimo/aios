@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { mkdir, open, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, open, readFile, readdir, rename, rm } from 'node:fs/promises';
 import path from 'node:path';
 
 import { resolveMemoRoot } from '../../aios/state-root.mjs';
@@ -88,6 +88,90 @@ export async function inspectMemoRootLocks(workspaceRoot, { env = process.env } 
     });
   }
   return { locksDir, locks };
+}
+
+async function acquireRecoveryGuard(guardPath) {
+  try {
+    const handle = await open(guardPath, 'wx');
+    try {
+      await handle.writeFile(`${JSON.stringify({ pid: process.pid, acquiredAt: new Date().toISOString() })}\n`, 'utf8');
+    } finally {
+      await handle.close();
+    }
+    return true;
+  } catch (error) {
+    if (error?.code === 'EEXIST') return false;
+    throw error;
+  }
+}
+
+/**
+ * Explicitly quarantine a dead-owner lock. Normal writers never call this,
+ * and the original lock bytes remain available for operator inspection.
+ */
+export async function recoverStaleMemoRootLock({
+  workspaceRoot,
+  lockName,
+  lockPath: explicitLockPath = '',
+  env = process.env,
+} = {}) {
+  if (!workspaceRoot) throw new Error('recoverStaleMemoRootLock requires workspaceRoot');
+  const lockPath = explicitLockPath || resolveMemoRootLockPath(workspaceRoot, lockName, { env });
+  const name = explicitLockPath ? path.basename(lockPath, '.lock') : normalizeLockName(lockName);
+  const guardPath = `${lockPath}.repair`;
+  await mkdir(path.dirname(lockPath), { recursive: true });
+  if (!await acquireRecoveryGuard(guardPath)) {
+    return { name, path: lockPath, status: 'skipped', reason: 'recovery_in_progress' };
+  }
+
+  try {
+    let metadata;
+    try {
+      metadata = JSON.parse(await readFile(lockPath, 'utf8'));
+    } catch (error) {
+      if (error?.code === 'ENOENT') return { name, path: lockPath, status: 'skipped', reason: 'missing' };
+      return { name, path: lockPath, status: 'skipped', reason: 'malformed' };
+    }
+    const pid = Number(metadata?.pid);
+    if (!Number.isInteger(pid) || pid <= 0) {
+      return { name, path: lockPath, status: 'skipped', reason: 'invalid_pid' };
+    }
+    if (processIsAlive(pid)) {
+      return { name, path: lockPath, status: 'skipped', reason: 'owner_active', pid };
+    }
+
+    const quarantineDir = path.join(path.dirname(lockPath), '.quarantine');
+    await mkdir(quarantineDir, { recursive: true });
+    const quarantinePath = path.join(quarantineDir, `${path.basename(lockPath)}.${Date.now()}.${randomUUID()}.stale`);
+    try {
+      await rename(lockPath, quarantinePath);
+    } catch (error) {
+      if (error?.code === 'ENOENT') return { name, path: lockPath, status: 'skipped', reason: 'changed' };
+      throw error;
+    }
+    return { name, path: lockPath, status: 'recovered', pid, quarantinePath };
+  } finally {
+    await rm(guardPath, { force: true });
+  }
+}
+
+export async function recoverStaleMemoRootLocks(workspaceRoot, { env = process.env } = {}) {
+  const report = await inspectMemoRootLocks(workspaceRoot, { env });
+  const results = [];
+  for (const lock of report.locks) {
+    if (!lock.stale) continue;
+    try {
+      results.push(await recoverStaleMemoRootLock({
+        workspaceRoot,
+        lockName: lock.name,
+        lockPath: lock.path,
+        env,
+      }));
+    } catch (error) {
+      results.push({ name: lock.name, path: lock.path, status: 'error', reason: String(error?.message || error) });
+    }
+  }
+  return { locksDir: report.locksDir, results };
 }
 
 async function acquireLock(lockPath) {

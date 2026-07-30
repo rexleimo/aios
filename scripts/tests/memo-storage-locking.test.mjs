@@ -9,6 +9,7 @@ import { appendMemoEvent, listMemoEvents } from '../lib/memo/storage.mjs';
 import {
   MEMO_STORAGE_LOCK_TIMEOUT_CODE,
   inspectMemoRootLocks,
+  recoverStaleMemoRootLock,
   resolveMemoStorageLockPath,
   withMemoStorageLock,
 } from '../lib/memo/storage/lock.mjs';
@@ -180,5 +181,73 @@ test('memo lock inspection reports a crashed owner without stealing the lock', a
     assert.equal(report.locks[0].stale, true);
     assert.equal(report.locks[0].path, lockPath);
     await access(lockPath);
+  });
+});
+
+test('explicit stale lock recovery quarantines a crashed owner before later writes acquire the lock', async () => {
+  await withRoot(async (rootDir) => {
+    const lockPath = resolveMemoStorageLockPath(rootDir);
+    const { mkdir, readFile, writeFile } = await import('node:fs/promises');
+    const staleContent = `${JSON.stringify({ pid: 99999999, acquiredAt: '2026-07-29T00:00:00.000Z' })}\n`;
+    await mkdir(path.dirname(lockPath), { recursive: true });
+    await writeFile(lockPath, staleContent, 'utf8');
+
+    const recovery = await recoverStaleMemoRootLock({ workspaceRoot: rootDir, lockName: 'canonical-events' });
+    assert.equal(recovery.status, 'recovered');
+    assert.equal(recovery.pid, 99999999);
+    await assert.rejects(access(lockPath), { code: 'ENOENT' });
+    assert.equal(await readFile(recovery.quarantinePath, 'utf8'), staleContent);
+
+    let acquired = false;
+    await withMemoStorageLock({ workspaceRoot: rootDir }, async () => {
+      acquired = true;
+    });
+    assert.equal(acquired, true);
+  });
+});
+
+test('explicit stale lock recovery preserves active and malformed locks', async () => {
+  await withRoot(async (rootDir) => {
+    const lockPath = resolveMemoStorageLockPath(rootDir);
+    await withMemoStorageLock({ workspaceRoot: rootDir }, async () => {
+      const active = await recoverStaleMemoRootLock({ workspaceRoot: rootDir, lockName: 'canonical-events' });
+      assert.deepEqual(active, {
+        name: 'canonical-events',
+        path: lockPath,
+        status: 'skipped',
+        reason: 'owner_active',
+        pid: process.pid,
+      });
+      await access(lockPath);
+    });
+
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    await mkdir(path.dirname(lockPath), { recursive: true });
+    await writeFile(lockPath, '{not-json\n', 'utf8');
+    const malformed = await recoverStaleMemoRootLock({ workspaceRoot: rootDir, lockName: 'canonical-events' });
+    assert.deepEqual(malformed, {
+      name: 'canonical-events',
+      path: lockPath,
+      status: 'skipped',
+      reason: 'malformed',
+    });
+    await access(lockPath);
+  });
+});
+
+test('concurrent explicit stale lock recovery quarantines the lock at most once', async () => {
+  await withRoot(async (rootDir) => {
+    const lockPath = resolveMemoStorageLockPath(rootDir);
+    const { mkdir, readdir, writeFile } = await import('node:fs/promises');
+    await mkdir(path.dirname(lockPath), { recursive: true });
+    await writeFile(lockPath, `${JSON.stringify({ pid: 99999999, acquiredAt: '2026-07-29T00:00:00.000Z' })}\n`, 'utf8');
+
+    const results = await Promise.all([
+      recoverStaleMemoRootLock({ workspaceRoot: rootDir, lockName: 'canonical-events' }),
+      recoverStaleMemoRootLock({ workspaceRoot: rootDir, lockName: 'canonical-events' }),
+    ]);
+    assert.equal(results.filter((result) => result.status === 'recovered').length, 1);
+    assert.equal(results.filter((result) => result.status === 'skipped').length, 1);
+    assert.equal((await readdir(path.join(path.dirname(lockPath), '.quarantine'))).length, 1);
   });
 });

@@ -141,6 +141,31 @@ test('aios memo storage doctor prints actionable stale-derived detail', async ()
   });
 });
 
+test('aios memo storage repair-locks quarantines a crashed owner without deleting its evidence', async () => {
+  await withWorkspace('aios-memo-cli-repair-locks-', async (workspaceRoot) => {
+    const locksDir = path.join(workspaceRoot, '.aios', 'memo', '.locks');
+    const lockPath = path.join(locksDir, 'canonical-events.lock');
+    const staleContent = `${JSON.stringify({ pid: 99999999, acquiredAt: '2026-07-29T00:00:00.000Z' })}\n`;
+    await fs.mkdir(locksDir, { recursive: true });
+    await fs.writeFile(lockPath, staleContent, 'utf8');
+
+    const repair = runMemo(workspaceRoot, ['storage', 'repair-locks']);
+    assert.equal(repair.status, 0, repair.stderr || repair.stdout);
+    assert.match(repair.stdout, /storage-lock-repair: ok - quarantined stale lock\(s\): canonical-events/);
+    await assert.rejects(fs.access(lockPath), { code: 'ENOENT' });
+
+    const quarantineFiles = await fs.readdir(path.join(locksDir, '.quarantine'));
+    assert.equal(quarantineFiles.length, 1);
+    assert.equal(await fs.readFile(path.join(locksDir, '.quarantine', quarantineFiles[0]), 'utf8'), staleContent);
+
+    await fs.writeFile(lockPath, staleContent, 'utf8');
+    const doctorRepair = runMemo(workspaceRoot, ['storage', 'doctor', '--repair-stale-locks']);
+    assert.equal(doctorRepair.status, 0, doctorRepair.stderr || doctorRepair.stdout);
+    assert.match(doctorRepair.stdout, /storage-lock-repair: ok - quarantined stale lock\(s\): canonical-events/);
+    await assert.rejects(fs.access(lockPath), { code: 'ENOENT' });
+  });
+});
+
 test('aios memo storage rebuild preserves canonical source event bytes', async () => {
   await withWorkspace('aios-memo-cli-rebuild-', async (workspaceRoot) => {
     const add = runMemo(workspaceRoot, ['add', 'rebuild should not rewrite source bytes']);

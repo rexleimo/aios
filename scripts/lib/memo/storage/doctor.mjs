@@ -6,7 +6,7 @@ import {
 import { readDerivedManifest, sourceDigest } from './derived.mjs';
 import { readJsonlEvents, readSplitEvents } from './events-read.mjs';
 import { pathExists } from './fs-io.mjs';
-import { inspectMemoRootLocks } from './lock.mjs';
+import { inspectMemoRootLocks, recoverStaleMemoRootLocks } from './lock.mjs';
 import {
   normalizeEventRows,
   normalizeMemoStorageName,
@@ -16,7 +16,11 @@ function check(id, status, detail = '') {
   return { id, status, ...(detail ? { detail } : {}) };
 }
 
-export async function runMemoStorageDoctor(workspaceRoot, { storage } = {}) {
+export async function runMemoStorageDoctor(workspaceRoot, {
+  storage,
+  repairStaleLocks = false,
+  env = process.env,
+} = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const checks = [];
   const config = await readConfig(workspaceRoot).catch((error) => ({ error }));
@@ -62,8 +66,24 @@ export async function runMemoStorageDoctor(workspaceRoot, { storage } = {}) {
     checks.push(check('derived-manifest', 'error', error.message));
   }
 
+  let lockRecovery = [];
   try {
-    const lockReport = await inspectMemoRootLocks(workspaceRoot);
+    if (repairStaleLocks) {
+      const recovery = await recoverStaleMemoRootLocks(workspaceRoot, { env });
+      lockRecovery = recovery.results;
+      const recovered = lockRecovery.filter((result) => result.status === 'recovered');
+      const failed = lockRecovery.filter((result) => result.status === 'error');
+      const skipped = lockRecovery.filter((result) => result.status === 'skipped');
+      if (failed.length > 0) {
+        checks.push(check('storage-lock-repair', 'error', failed.map((result) => `${result.name}: ${result.reason}`).join('; ')));
+      } else if (recovered.length > 0) {
+        checks.push(check('storage-lock-repair', 'ok', `quarantined stale lock(s): ${recovered.map((result) => result.name).join(', ')}`));
+      } else if (skipped.length > 0) {
+        checks.push(check('storage-lock-repair', 'warning', skipped.map((result) => `${result.name}: ${result.reason}`).join('; ')));
+      }
+    }
+
+    const lockReport = await inspectMemoRootLocks(workspaceRoot, { env });
     const stale = lockReport.locks.filter((lock) => lock.stale);
     const malformed = lockReport.locks.filter((lock) => lock.malformed);
     if (stale.length > 0) {
@@ -89,5 +109,6 @@ export async function runMemoStorageDoctor(workspaceRoot, { storage } = {}) {
     ok: checks.every((item) => item.status !== 'error'),
     storage: resolvedStorage,
     checks,
+    lockRecovery,
   };
 }

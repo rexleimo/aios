@@ -75,7 +75,7 @@ export async function runMemo(rawOptions = {}, {
   }
 
   if (primary === 'storage') {
-    await handleMemoStorageCommand({ secondary, rest, workspaceRoot, io });
+    await handleMemoStorageCommand({ secondary, rest, workspaceRoot, io, env: process.env });
     return;
   }
 

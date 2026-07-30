@@ -2,7 +2,7 @@ import { printMemoDoctorReport, printMemoStorageStatus } from '../rendering.mjs'
 import { usageError } from '../shared.mjs';
 import { getActiveMemoStorage, loadMemoStorageApi } from '../storage-api.mjs';
 
-export async function handleMemoStorageCommand({ secondary, rest, workspaceRoot, io }) {
+export async function handleMemoStorageCommand({ secondary, rest, workspaceRoot, io, env = process.env }) {
   const action = String(secondary || 'status').toLowerCase();
   const storageApi = await loadMemoStorageApi();
 
@@ -34,9 +34,10 @@ export async function handleMemoStorageCommand({ secondary, rest, workspaceRoot,
     return true;
   }
 
-  if (action === 'doctor') {
+  if (action === 'doctor' || action === 'repair-locks') {
     const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
-    const report = await storageApi.runMemoStorageDoctor(workspaceRoot, { storage });
+    const repairStaleLocks = action === 'repair-locks' || rest.includes('--repair-stale-locks');
+    const report = await storageApi.runMemoStorageDoctor(workspaceRoot, { storage, repairStaleLocks, env });
     printMemoDoctorReport(io, report);
     if (report?.ok === false) {
       process.exitCode = 1;

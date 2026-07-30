@@ -37,9 +37,15 @@ Run a full rebuild of derived memo query files without rewriting canonical memo 
 `;
     case 'doctor':
       return `Usage:
-  node scripts/aios.mjs memo storage doctor
+  node scripts/aios.mjs memo storage doctor [--repair-stale-locks]
 
 Check memo storage health and report repair guidance.
+`;
+    case 'repair-locks':
+      return `Usage:
+  node scripts/aios.mjs memo storage repair-locks
+
+Quarantine memo locks whose recorded owners are confirmed dead. Live or malformed locks remain untouched.
 `;
     default:
       return `Usage:
@@ -51,6 +57,7 @@ Subcommands:
   use file        Switch active memo storage to append-only file
   rebuild         Run a full rebuild of derived query files
   doctor          Check memo storage health
+  repair-locks    Quarantine stale memo locks after a dead-owner check
 `;
   }
 }
