@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -59,7 +59,7 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   let added = false;
   try {
     runGit(evaluatorRoot, ['worktree', 'add', '--detach', tempRoot, commit]);
-    runGit(tempRoot, ['submodule', 'update', '--init', '--recursive']);
+    await materializeStableSubmodule(evaluatorRoot, tempRoot, commit, 'rex-harness');
     added = true;
     return await run(tempRoot);
   } finally {
@@ -77,6 +77,27 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
       // The primary result or error remains more useful than cleanup noise.
     }
   }
+}
+
+async function materializeStableSubmodule(evaluatorRoot, subjectRoot, commit, relativePath) {
+  const sourcePath = path.join(evaluatorRoot, relativePath);
+  const targetPath = path.join(subjectRoot, relativePath);
+  let sourceCommit;
+  try {
+    sourceCommit = runGit(sourcePath, ['rev-parse', 'HEAD']);
+  } catch {
+    return;
+  }
+  const treeEntry = runGit(evaluatorRoot, ['ls-tree', commit, relativePath]);
+  const expectedCommit = String(treeEntry.split(/\s+/u)[2] || '').trim();
+  if (expectedCommit && sourceCommit !== expectedCommit) {
+    throw new Error(`submodule ${relativePath} is not at ${expectedCommit}; found ${sourceCommit}`);
+  }
+  await rm(targetPath, { recursive: true, force: true });
+  await cp(sourcePath, targetPath, {
+    recursive: true,
+    filter: (source) => path.basename(source) !== '.git',
+  });
 }
 
 async function runSubject({ evaluatorRoot, subjectRoot, profile, outputDir, label }) {
