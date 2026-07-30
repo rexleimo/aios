@@ -99,7 +99,17 @@ async function runSubject({ evaluatorRoot, subjectRoot, profile, outputDir, labe
       timeout: 600_000,
       maxBuffer: 4 * 1024 * 1024,
     });
-    const summary = JSON.parse(await readFile(jsonPath, 'utf8'));
+    let summary;
+    try {
+      summary = JSON.parse(await readFile(jsonPath, 'utf8'));
+    } catch (error) {
+      throw new Error([
+        `benchmark ${label} produced no readable JSON output: ${error?.message || error}`,
+        `exitCode=${processResult.status}`,
+        `stdout=${String(processResult.stdout || '').trim()}`,
+        `stderr=${String(processResult.stderr || processResult.error?.message || '').trim()}`,
+      ].join('\n'));
+    }
     return {
       summary,
       exitCode: Number.isInteger(processResult.status) ? processResult.status : -1,
