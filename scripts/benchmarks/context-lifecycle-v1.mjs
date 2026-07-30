@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { access, appendFile, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,18 +49,43 @@ function sha256(value) {
   return createHash('sha256').update(String(value || '')).digest('hex');
 }
 
-function redactDiagnostic(value) {
+function comparablePath(value) {
+  try {
+    return realpathSync(value);
+  } catch {
+    return path.resolve(value);
+  }
+}
+
+export function isMainEntryPoint(invokedPath, modulePath) {
+  if (!invokedPath) return false;
+  const normalize = (value) => {
+    const resolved = comparablePath(value);
+    return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+  };
+  return normalize(invokedPath) === normalize(modulePath);
+}
+
+export function redactDiagnostic(value) {
   let redacted = String(value || '');
-  const replacements = [
-    [os.tmpdir(), '<tmp>'],
-    [os.homedir(), '<home>'],
-  ];
-  for (const [source, replacement] of replacements) {
-    for (const variant of new Set([source, source.replaceAll('\\', '/'), source.replaceAll('/', '\\')])) {
+  const sources = [os.tmpdir(), os.homedir(), process.env.TEMP, process.env.TMP]
+    .filter(Boolean);
+  for (const source of sources) {
+    const variants = new Set([source, source.replaceAll('\\', '/'), source.replaceAll('/', '\\')]);
+    try {
+      const resolved = realpathSync(source);
+      variants.add(resolved);
+      variants.add(resolved.replaceAll('\\', '/'));
+      variants.add(resolved.replaceAll('/', '\\'));
+    } catch {
+      // Keep the configured path variants when the directory no longer exists.
+    }
+    const replacement = source === os.homedir() ? '<home>' : '<tmp>';
+    for (const variant of variants) {
       if (variant) redacted = redacted.split(variant).join(replacement);
     }
   }
-  return redacted;
+  return redacted.replace(/<tmp>[\\/](?:context-lifecycle|hermes-verify|xsapp)[^\\/]*/gu, '<tmp>/<workspace>');
 }
 
 function diagnosticTail(value, limit = 25) {
@@ -1068,7 +1094,7 @@ async function main() {
   process.exitCode = summary.passed ? 0 : 1;
 }
 
-const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+const isMain = isMainEntryPoint(process.argv[1], fileURLToPath(import.meta.url));
 if (isMain) {
   main().catch((error) => {
     process.stderr.write(`${error?.stack || error}\n`);

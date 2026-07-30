@@ -9,12 +9,13 @@ import {
   assertCleanEvaluator,
   assertSubmodulePin,
   dependencyManifestProvenance,
+  installedPackagesMatchCommittedLock,
   materializeLocalDependency,
   materializeStableSubmodule,
   parsePinnedSubmoduleCommit,
   resolveImmutableCommit,
 } from '../benchmarks/context-lifecycle-v1-differential.mjs';
-import { commandObservation, isDifferentialRunnerOverlayStatus } from '../benchmarks/context-lifecycle-v1.mjs';
+import { commandObservation, isDifferentialRunnerOverlayStatus, isMainEntryPoint } from '../benchmarks/context-lifecycle-v1.mjs';
 
 function git(rootDir, args) {
   const result = spawnSync('git', ['-C', rootDir, ...args], {
@@ -89,6 +90,56 @@ test('dependency provenance exposes manifest drift instead of silently reusing d
   });
 });
 
+test('corrupt manifests do not collapse into a matching missing state', async () => {
+  await withGitRoot(async (rootDir) => {
+    await writeFile(path.join(rootDir, 'package.json'), '{invalid\n', 'utf8');
+    git(rootDir, ['add', 'package.json']);
+    git(rootDir, ['commit', '-m', 'add corrupt manifest fixture']);
+    const head = git(rootDir, ['rev-parse', 'HEAD']);
+    const provenance = dependencyManifestProvenance(rootDir, head, head);
+    assert.equal(provenance.manifests['package.json'].evaluatorSurfaceStatus, 'invalid');
+    assert.equal(provenance.manifests['package.json'].subjectSurfaceStatus, 'invalid');
+    assert.equal(provenance.manifests['package.json'].matches, false);
+  });
+});
+
+test('package script-only drift keeps dependency surface parity while recording blob drift', async () => {
+  await withGitRoot(async (rootDir) => {
+    await writeFile(path.join(rootDir, 'package.json'), '{"scripts":{"test":"old"},"dependencies":{"fixture":"1.0.0"}}\n', 'utf8');
+    git(rootDir, ['add', 'package.json']);
+    git(rootDir, ['commit', '-m', 'add package manifest']);
+    const subjectCommit = git(rootDir, ['rev-parse', 'HEAD']);
+    await writeFile(path.join(rootDir, 'package.json'), '{"scripts":{"test":"new"},"dependencies":{"fixture":"1.0.0"}}\n', 'utf8');
+    git(rootDir, ['add', 'package.json']);
+    git(rootDir, ['commit', '-m', 'change scripts only']);
+    const evaluatorCommit = git(rootDir, ['rev-parse', 'HEAD']);
+    const provenance = dependencyManifestProvenance(rootDir, evaluatorCommit, subjectCommit);
+    assert.equal(provenance.allMatch, true);
+    assert.equal(provenance.manifests['package.json'].fullBlobMatches, false);
+    assert.equal(provenance.manifests['package.json'].dependencySurfaceMatches, true);
+  });
+});
+
+test('installed dependency inventory accepts npm omitted optional packages but rejects version drift', () => {
+  const committed = JSON.stringify({ packages: {
+    '': { version: '1.0.0' },
+    'node_modules/fixture': { version: '1.0.0' },
+    'node_modules/required-two': { version: '3.0.0' },
+    'node_modules/optional-platform': { version: '2.0.0', optional: true },
+  } });
+  const installed = JSON.stringify({ packages: {
+    'node_modules/fixture': { version: '1.0.0' },
+    'node_modules/required-two': { version: '3.0.0' },
+  } });
+  const stale = JSON.stringify({ packages: {
+    'node_modules/fixture': { version: '0.9.0' },
+  } });
+  assert.equal(installedPackagesMatchCommittedLock(installed, committed), true);
+  assert.equal(installedPackagesMatchCommittedLock(stale, committed), false);
+  assert.equal(installedPackagesMatchCommittedLock('{"packages":{}}', committed), false);
+  assert.equal(installedPackagesMatchCommittedLock(JSON.stringify({ packages: { 'node_modules/fixture': { version: '1.0.0' } } }), committed), false);
+});
+
 test('failed command observations retain separate redacted stream tails', () => {
   const script = [
     'for (let i = 0; i < 30; i += 1) console.log(`stdout-${i}`);',
@@ -104,4 +155,7 @@ test('failed command observations retain separate redacted stream tails', () => 
   assert.equal(observation.cwd, '<tmp>');
   assert.equal(isDifferentialRunnerOverlayStatus('?? scripts/benchmarks/.context-lifecycle-differential-123-baseline.mjs'), true);
   assert.equal(isDifferentialRunnerOverlayStatus(' M scripts/benchmarks/context-lifecycle-v1.mjs'), false);
+  const modulePath = path.resolve('scripts/benchmarks/context-lifecycle-v1.mjs');
+  const invocationPath = process.platform === 'win32' ? modulePath.toUpperCase() : modulePath;
+  assert.equal(isMainEntryPoint(invocationPath, modulePath), true);
 });
