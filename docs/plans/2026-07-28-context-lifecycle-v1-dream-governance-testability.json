@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-dream-governance-test-design.md#RED-验收",
+  "redCandidate": {
+    "publicEntry": "Dream proposal governance API, query projection, GC snapshot restore, and CLI",
+    "setup": "Focused tests create isolated file/split duplicate events, private and unapproved candidate controls, Dream proposals, runtime steward identities, custom roots, stale manifests, retention timestamps, and CLI subprocesses.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/dream-governance.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "6/6 pass for approve/reject/archive/restore/gc, source-hash checks, retention, file/split snapshots, custom roots, candidate/private exclusion, query projection, and CLI.",
+    "observed": "0 pass, 1 fail, 5 skip because scripts/lib/lifecycle/dream/governance.mjs does not exist.",
+    "failureReason": "Dream currently stops at proposal-only and has no reviewed state machine, archive projection, retention GC, restore snapshot, or governance CLI.",
+    "receiptRef": "receipt:a88103be-1194-46c5-8e01-5582d481447c"
+  }
+}

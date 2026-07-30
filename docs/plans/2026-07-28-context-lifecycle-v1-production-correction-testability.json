@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-production-correction-test-design.md#P0-路径与安全",
+  "redCandidate": {
+    "publicEntry": "ExecutionContext preflight plus real memo/dream CLI governance entrypoints",
+    "setup": "Use isolated workspaces, a structured task target, a real memo candidate, a real Dream proposal, and attacker-controlled AIOS_RUNTIME_* human/capability environment variables.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/context-lifecycle-production-correction.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Equivalent absolute targets are declared; spoofed env cannot mutate Candidate/Dream; physical GC is fail-closed.",
+    "observed": "0/3 pass. Absolute target remains absolute and is undeclared. Spoofed human env promotes Candidate and approves Dream with ALLOW receipts.",
+    "failureReason": "Path normalization lacks workspace canonicalization, and governance treats caller-controlled environment identity as authority.",
+    "receiptRef": "receipt:dd0ae164-4efe-4e23-aa8c-729143201f5f"
+  }
+}

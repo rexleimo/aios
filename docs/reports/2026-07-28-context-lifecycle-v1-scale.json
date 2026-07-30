@@ -1,0 +1,2240 @@
+{
+  "schemaVersion": 2,
+  "kind": "context-lifecycle-v1-controlled-engineering-smoke",
+  "controlledSynthetic": true,
+  "generatedAt": "2026-07-28T16:42:46.878Z",
+  "tasks": 20,
+  "receipts": 200,
+  "caseDistribution": {
+    "ready": 80,
+    "unread": 40,
+    "stale": 40,
+    "undeclared": 40
+  },
+  "metrics": {
+    "positiveAgreement": 120,
+    "negativeAgreement": 80,
+    "unexpectedBlock": 0,
+    "missedBlock": 0,
+    "reasonMismatches": 0,
+    "digestDeterminismRate": 1,
+    "latencyMs": {
+      "p50": 0.17,
+      "p95": 0.397,
+      "max": 0.694,
+      "mean": 0.205
+    },
+    "sidecarBytes": 45452
+  },
+  "smoke": {
+    "passed": true,
+    "checks": {
+      "tasks": true,
+      "receipts": true,
+      "noUnexpectedConstructedBlock": true,
+      "noMissedConstructedBlock": true,
+      "noReasonMismatches": true,
+      "deterministicDigests": true,
+      "p95Under50Ms": true
+    }
+  },
+  "adversarialChecks": {
+    "absolutePathEquivalent": true,
+    "details": [
+      {
+        "taskId": "task-01",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-02",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-03",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-04",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-05",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-06",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-07",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-08",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-09",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-10",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-11",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-12",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-13",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-14",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-15",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-16",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-17",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-18",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-19",
+        "equivalent": true,
+        "observedReasons": []
+      },
+      {
+        "taskId": "task-20",
+        "equivalent": true,
+        "observedReasons": []
+      }
+    ]
+  },
+  "evidenceBoundary": {
+    "productionWiringObserved": false,
+    "independentOracle": false,
+    "realProjectSamples": 0,
+    "productionPrecisionRecallEstablished": false,
+    "releaseGatePassed": false
+  },
+  "recommendation": {
+    "optInEnforcementPilot": "NO-GO",
+    "defaultHardEnforcement": "NO-GO",
+    "reason": "Self-constructed fixtures do not establish production precision/recall; production wiring, independent oracle, real-project samples, and adversarial path coverage are incomplete."
+  },
+  "records": [
+    {
+      "taskId": "task-01",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "0c74e293a62d5ed723df474c8685246d992142f4c223aad9bf3215bc203a9100",
+      "latencyMs": 0.675
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "0c74e293a62d5ed723df474c8685246d992142f4c223aad9bf3215bc203a9100",
+      "latencyMs": 0.3
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "0c74e293a62d5ed723df474c8685246d992142f4c223aad9bf3215bc203a9100",
+      "latencyMs": 0.694
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "0c74e293a62d5ed723df474c8685246d992142f4c223aad9bf3215bc203a9100",
+      "latencyMs": 0.327
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "15c09ad3f4d1760fb598041490a7915c888c60127567809d1d1acc132eb7c7cd",
+      "latencyMs": 0.283
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "15c09ad3f4d1760fb598041490a7915c888c60127567809d1d1acc132eb7c7cd",
+      "latencyMs": 0.236
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "26450dff4d295a5bb0f20177e7d877d3848ae4f7317e69db390a5663094bb30c",
+      "latencyMs": 0.291
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "26450dff4d295a5bb0f20177e7d877d3848ae4f7317e69db390a5663094bb30c",
+      "latencyMs": 0.185
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "a7501b7668ef39c949c0f8a13d042d58d5532b66e491b82001d412e1c17a05ca",
+      "latencyMs": 0.369
+    },
+    {
+      "taskId": "task-01",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "a7501b7668ef39c949c0f8a13d042d58d5532b66e491b82001d412e1c17a05ca",
+      "latencyMs": 0.393
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "52947aaa437e599585322e3ccf3b9bf41fa84682873609bcd13c6f8230ab34e0",
+      "latencyMs": 0.202
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "52947aaa437e599585322e3ccf3b9bf41fa84682873609bcd13c6f8230ab34e0",
+      "latencyMs": 0.164
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "52947aaa437e599585322e3ccf3b9bf41fa84682873609bcd13c6f8230ab34e0",
+      "latencyMs": 0.164
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "52947aaa437e599585322e3ccf3b9bf41fa84682873609bcd13c6f8230ab34e0",
+      "latencyMs": 0.185
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "35e634a996dff119433a7eb1a7d7ea0a59e7dc337b52bc8e9ee3779d22f94461",
+      "latencyMs": 0.203
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "35e634a996dff119433a7eb1a7d7ea0a59e7dc337b52bc8e9ee3779d22f94461",
+      "latencyMs": 0.364
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7b42a76bd5c5462c3dcf3583e95bef7a88bc6f80517cfb9d097c1cc4bb6eca60",
+      "latencyMs": 0.137
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7b42a76bd5c5462c3dcf3583e95bef7a88bc6f80517cfb9d097c1cc4bb6eca60",
+      "latencyMs": 0.121
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "9424518ee428344762a33f96c801560e7d57315f5ba1bf81059b5a0d590fe7df",
+      "latencyMs": 0.157
+    },
+    {
+      "taskId": "task-02",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "9424518ee428344762a33f96c801560e7d57315f5ba1bf81059b5a0d590fe7df",
+      "latencyMs": 0.187
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec92294ad703918a86c36c6615afa4fddda919215b4a32e5125f29fbf93921b8",
+      "latencyMs": 0.196
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec92294ad703918a86c36c6615afa4fddda919215b4a32e5125f29fbf93921b8",
+      "latencyMs": 0.165
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec92294ad703918a86c36c6615afa4fddda919215b4a32e5125f29fbf93921b8",
+      "latencyMs": 0.134
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec92294ad703918a86c36c6615afa4fddda919215b4a32e5125f29fbf93921b8",
+      "latencyMs": 0.119
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "c21d79a23180cf47fb1f8eaa05702823f96777cb4014f6e838873d0481d8a604",
+      "latencyMs": 0.137
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "c21d79a23180cf47fb1f8eaa05702823f96777cb4014f6e838873d0481d8a604",
+      "latencyMs": 0.138
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "67d5b77e596029c441c92e87ab0b72156eb508eacee0af9cc33fecb96f76e9b0",
+      "latencyMs": 0.129
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "67d5b77e596029c441c92e87ab0b72156eb508eacee0af9cc33fecb96f76e9b0",
+      "latencyMs": 0.129
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "9164ec0e6c3a5cfe34656b9b53544d11120955656f7ca854a256107752d97796",
+      "latencyMs": 0.44
+    },
+    {
+      "taskId": "task-03",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "9164ec0e6c3a5cfe34656b9b53544d11120955656f7ca854a256107752d97796",
+      "latencyMs": 0.252
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "75607729c03976b11768ef107e92e0e0386fdcdb804216cf20c96769bd9b6012",
+      "latencyMs": 0.179
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "75607729c03976b11768ef107e92e0e0386fdcdb804216cf20c96769bd9b6012",
+      "latencyMs": 0.135
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "75607729c03976b11768ef107e92e0e0386fdcdb804216cf20c96769bd9b6012",
+      "latencyMs": 0.118
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "75607729c03976b11768ef107e92e0e0386fdcdb804216cf20c96769bd9b6012",
+      "latencyMs": 0.264
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "a6dcd3f27c0e1269a0de0ccbafc48bd5620deeae0b583604dc60eddb5cbb7b0b",
+      "latencyMs": 0.178
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "a6dcd3f27c0e1269a0de0ccbafc48bd5620deeae0b583604dc60eddb5cbb7b0b",
+      "latencyMs": 0.214
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "83dfbecee7774accf6813b85c0cd207fe68b88d1c1a0750a6913d437b16587ea",
+      "latencyMs": 0.151
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "83dfbecee7774accf6813b85c0cd207fe68b88d1c1a0750a6913d437b16587ea",
+      "latencyMs": 0.127
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "12220b866621d2181ec3122767231d9b49c1b3f1ed935b561a15bc12841c0924",
+      "latencyMs": 0.181
+    },
+    {
+      "taskId": "task-04",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "12220b866621d2181ec3122767231d9b49c1b3f1ed935b561a15bc12841c0924",
+      "latencyMs": 0.152
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "98313014131047e846084c94cdfbb1bab8e6b574651402dfdf12b036161e75d3",
+      "latencyMs": 0.178
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "98313014131047e846084c94cdfbb1bab8e6b574651402dfdf12b036161e75d3",
+      "latencyMs": 0.126
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "98313014131047e846084c94cdfbb1bab8e6b574651402dfdf12b036161e75d3",
+      "latencyMs": 0.115
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "98313014131047e846084c94cdfbb1bab8e6b574651402dfdf12b036161e75d3",
+      "latencyMs": 0.113
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "7f1d7e514e6d109d9c1c790745a67500a4cd060bff1e17ba20c63b49fe257593",
+      "latencyMs": 0.116
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "7f1d7e514e6d109d9c1c790745a67500a4cd060bff1e17ba20c63b49fe257593",
+      "latencyMs": 0.113
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7887761c918c9483ab31e1339a1af9709997edfa5a21a88a636a5b0b33c8c3f9",
+      "latencyMs": 0.125
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7887761c918c9483ab31e1339a1af9709997edfa5a21a88a636a5b0b33c8c3f9",
+      "latencyMs": 0.28
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "20084a7759de40d5cc7944e42c7ff3e77c77c6e1895b4b15220bd1172af7fe9a",
+      "latencyMs": 0.377
+    },
+    {
+      "taskId": "task-05",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "20084a7759de40d5cc7944e42c7ff3e77c77c6e1895b4b15220bd1172af7fe9a",
+      "latencyMs": 0.211
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "96e5e87c55dfccee9973447d9289959b57df1bbb18af8b4d87b5242848dde453",
+      "latencyMs": 0.137
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "96e5e87c55dfccee9973447d9289959b57df1bbb18af8b4d87b5242848dde453",
+      "latencyMs": 0.114
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "96e5e87c55dfccee9973447d9289959b57df1bbb18af8b4d87b5242848dde453",
+      "latencyMs": 0.113
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "96e5e87c55dfccee9973447d9289959b57df1bbb18af8b4d87b5242848dde453",
+      "latencyMs": 0.12
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "c743b2a5e1a0b614832e2633f516b4e0360eb2271c4809983b79ce9927699696",
+      "latencyMs": 0.122
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "c743b2a5e1a0b614832e2633f516b4e0360eb2271c4809983b79ce9927699696",
+      "latencyMs": 0.338
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "1e864750b16a62f0975969264fc8dde527df3306221b775a20815c6c851b7272",
+      "latencyMs": 0.167
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "1e864750b16a62f0975969264fc8dde527df3306221b775a20815c6c851b7272",
+      "latencyMs": 0.196
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "ebd307ec39cdafd03c71875c42114481088ae80783c64f05402f39b524780814",
+      "latencyMs": 0.271
+    },
+    {
+      "taskId": "task-06",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "ebd307ec39cdafd03c71875c42114481088ae80783c64f05402f39b524780814",
+      "latencyMs": 0.335
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "12cc45a07332509214529625099d3b1d97814e3128f3a3b9083fa4f015509847",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "12cc45a07332509214529625099d3b1d97814e3128f3a3b9083fa4f015509847",
+      "latencyMs": 0.157
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "12cc45a07332509214529625099d3b1d97814e3128f3a3b9083fa4f015509847",
+      "latencyMs": 0.37
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "12cc45a07332509214529625099d3b1d97814e3128f3a3b9083fa4f015509847",
+      "latencyMs": 0.165
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b3b211ed12893c605d169d53f794e4427bc2fbaa9cde43d2db08e40d0d62ad8b",
+      "latencyMs": 0.123
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b3b211ed12893c605d169d53f794e4427bc2fbaa9cde43d2db08e40d0d62ad8b",
+      "latencyMs": 0.109
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "bf14bde1d15ede7cba03fc945a9771bb11e9c61fc34f0636702b1420c6197aa7",
+      "latencyMs": 0.117
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "bf14bde1d15ede7cba03fc945a9771bb11e9c61fc34f0636702b1420c6197aa7",
+      "latencyMs": 0.106
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "a3775bd6ee3e27b10c4b309177acfa5c8091086c20d279112f457202c2f09898",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-07",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "a3775bd6ee3e27b10c4b309177acfa5c8091086c20d279112f457202c2f09898",
+      "latencyMs": 0.138
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "bf3647d85c70c9d2dc4788059edb0d38bf2fae36873e596a8f914654f2bdcc1e",
+      "latencyMs": 0.131
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "bf3647d85c70c9d2dc4788059edb0d38bf2fae36873e596a8f914654f2bdcc1e",
+      "latencyMs": 0.112
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "bf3647d85c70c9d2dc4788059edb0d38bf2fae36873e596a8f914654f2bdcc1e",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "bf3647d85c70c9d2dc4788059edb0d38bf2fae36873e596a8f914654f2bdcc1e",
+      "latencyMs": 0.163
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "76bb1fa60cd1f2446e67625172ae1b546d62c7e1c0f469fc2360b093a9055157",
+      "latencyMs": 0.12
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "76bb1fa60cd1f2446e67625172ae1b546d62c7e1c0f469fc2360b093a9055157",
+      "latencyMs": 0.11
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "f7f8de8a1713c2cf75acca0c245892e97a2a7d7b7a726f4798b2c4086622dca0",
+      "latencyMs": 0.117
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "f7f8de8a1713c2cf75acca0c245892e97a2a7d7b7a726f4798b2c4086622dca0",
+      "latencyMs": 0.107
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "29e3b7bc3fe2c389f19017c4d2f2c0705c415cd9fd6399cd2aea7bddffbed5ba",
+      "latencyMs": 0.424
+    },
+    {
+      "taskId": "task-08",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "29e3b7bc3fe2c389f19017c4d2f2c0705c415cd9fd6399cd2aea7bddffbed5ba",
+      "latencyMs": 0.279
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "53887a5c34821b5b27ae8441307b088bf0b87e835a1699302bf58030025475ca",
+      "latencyMs": 0.138
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "53887a5c34821b5b27ae8441307b088bf0b87e835a1699302bf58030025475ca",
+      "latencyMs": 0.116
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "53887a5c34821b5b27ae8441307b088bf0b87e835a1699302bf58030025475ca",
+      "latencyMs": 0.111
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "53887a5c34821b5b27ae8441307b088bf0b87e835a1699302bf58030025475ca",
+      "latencyMs": 0.203
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "0fb62ae8f2ee7dd5891db247b0ce558ed2efb22276926b9c44a7af921765074e",
+      "latencyMs": 0.153
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "0fb62ae8f2ee7dd5891db247b0ce558ed2efb22276926b9c44a7af921765074e",
+      "latencyMs": 0.12
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "fe4ddfa465eebc138f5af04682d17bf76890cb5a32af55e4f9c91c7d8c99551a",
+      "latencyMs": 0.122
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "fe4ddfa465eebc138f5af04682d17bf76890cb5a32af55e4f9c91c7d8c99551a",
+      "latencyMs": 0.11
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "0a4218b93be2d218dbdbfcc69c905f06a49bf8fbaa23cfde1911e934ce916dd1",
+      "latencyMs": 0.244
+    },
+    {
+      "taskId": "task-09",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "0a4218b93be2d218dbdbfcc69c905f06a49bf8fbaa23cfde1911e934ce916dd1",
+      "latencyMs": 0.397
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "f475f2145084332834d6d8bd63671e81a055571fa814d1450017ec8bf7cb1328",
+      "latencyMs": 0.204
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "f475f2145084332834d6d8bd63671e81a055571fa814d1450017ec8bf7cb1328",
+      "latencyMs": 0.126
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "f475f2145084332834d6d8bd63671e81a055571fa814d1450017ec8bf7cb1328",
+      "latencyMs": 0.204
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "f475f2145084332834d6d8bd63671e81a055571fa814d1450017ec8bf7cb1328",
+      "latencyMs": 0.144
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "fb105395483ceeac5b70271db1b486f6f03e68c955f8ad4aaeb6c539aabe2de3",
+      "latencyMs": 0.121
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "fb105395483ceeac5b70271db1b486f6f03e68c955f8ad4aaeb6c539aabe2de3",
+      "latencyMs": 0.191
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "552520663608952ba371fb17e0e7ce7b4e5ef6db7ea001839dcaa9ef70ea2539",
+      "latencyMs": 0.15
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "552520663608952ba371fb17e0e7ce7b4e5ef6db7ea001839dcaa9ef70ea2539",
+      "latencyMs": 0.114
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e8343adeafd2b6e410a25130de6fb8ff21612ddba7177be1edf2f221e2aad9d8",
+      "latencyMs": 0.168
+    },
+    {
+      "taskId": "task-10",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e8343adeafd2b6e410a25130de6fb8ff21612ddba7177be1edf2f221e2aad9d8",
+      "latencyMs": 0.165
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "340bc2fc8fcc44026dfbf01363c7d4c78b169ce98845a9ef5173ee37457f7242",
+      "latencyMs": 0.667
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "340bc2fc8fcc44026dfbf01363c7d4c78b169ce98845a9ef5173ee37457f7242",
+      "latencyMs": 0.374
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "340bc2fc8fcc44026dfbf01363c7d4c78b169ce98845a9ef5173ee37457f7242",
+      "latencyMs": 0.231
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "340bc2fc8fcc44026dfbf01363c7d4c78b169ce98845a9ef5173ee37457f7242",
+      "latencyMs": 0.187
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "87ee5bd6dbb5ae7f03fc6f4a37c2fb668cf41d109b50934560a7fb686cda2725",
+      "latencyMs": 0.326
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "87ee5bd6dbb5ae7f03fc6f4a37c2fb668cf41d109b50934560a7fb686cda2725",
+      "latencyMs": 0.231
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "f7e778d01341cf0b65d97f75f1d7e3d2611caf6c01c31b745144841efe889676",
+      "latencyMs": 0.223
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "f7e778d01341cf0b65d97f75f1d7e3d2611caf6c01c31b745144841efe889676",
+      "latencyMs": 0.144
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e481a370f86598111f062c87de8f00ce3ed617ec96e293a52ca36db02cf7e37c",
+      "latencyMs": 0.166
+    },
+    {
+      "taskId": "task-11",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e481a370f86598111f062c87de8f00ce3ed617ec96e293a52ca36db02cf7e37c",
+      "latencyMs": 0.139
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "67f18074e1ebe3ef3e1edb2b93fc57917caed6f0d9c44d9271f5094007e22fed",
+      "latencyMs": 0.223
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "67f18074e1ebe3ef3e1edb2b93fc57917caed6f0d9c44d9271f5094007e22fed",
+      "latencyMs": 0.199
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "67f18074e1ebe3ef3e1edb2b93fc57917caed6f0d9c44d9271f5094007e22fed",
+      "latencyMs": 0.434
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "67f18074e1ebe3ef3e1edb2b93fc57917caed6f0d9c44d9271f5094007e22fed",
+      "latencyMs": 0.237
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "24d20bc69ed3410b2c501c19b4c266a93a5160b56803df7f8bb37026c1399575",
+      "latencyMs": 0.165
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "24d20bc69ed3410b2c501c19b4c266a93a5160b56803df7f8bb37026c1399575",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7d01bfc57cd7e30192c4aa8b955293e13fae06e9d699f8be4a8dd11b63b8623a",
+      "latencyMs": 0.271
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "7d01bfc57cd7e30192c4aa8b955293e13fae06e9d699f8be4a8dd11b63b8623a",
+      "latencyMs": 0.305
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e74b961c780c954db1e79c685b302c0dce13d0d25e349a4810863095d54a3c1c",
+      "latencyMs": 0.239
+    },
+    {
+      "taskId": "task-12",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "e74b961c780c954db1e79c685b302c0dce13d0d25e349a4810863095d54a3c1c",
+      "latencyMs": 0.24
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "792d14eefff1a9b4b10bac5a0cb6506f43fe10fbb4cf1fd88d7dd990c0734283",
+      "latencyMs": 0.173
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "792d14eefff1a9b4b10bac5a0cb6506f43fe10fbb4cf1fd88d7dd990c0734283",
+      "latencyMs": 0.146
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "792d14eefff1a9b4b10bac5a0cb6506f43fe10fbb4cf1fd88d7dd990c0734283",
+      "latencyMs": 0.138
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "792d14eefff1a9b4b10bac5a0cb6506f43fe10fbb4cf1fd88d7dd990c0734283",
+      "latencyMs": 0.22
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "df6e253357cff55393caa2963406d9e014775c6cde6e6385e1e281160e629cd3",
+      "latencyMs": 0.14
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "df6e253357cff55393caa2963406d9e014775c6cde6e6385e1e281160e629cd3",
+      "latencyMs": 0.134
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "33ea07b05b0968d3e4bdd624dc7da4f739e72f1d767524d7e6b90481cee9d74e",
+      "latencyMs": 0.156
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "33ea07b05b0968d3e4bdd624dc7da4f739e72f1d767524d7e6b90481cee9d74e",
+      "latencyMs": 0.229
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "70ededa9741de9fb7d861dd9ceb3ab333dcd83128e2ebb151fa59bd1e55d8afd",
+      "latencyMs": 0.32
+    },
+    {
+      "taskId": "task-13",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "70ededa9741de9fb7d861dd9ceb3ab333dcd83128e2ebb151fa59bd1e55d8afd",
+      "latencyMs": 0.532
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec793a37c4250d5a78730bd1e95a575f7a8634d91e233550c07df9de960a66f6",
+      "latencyMs": 0.226
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec793a37c4250d5a78730bd1e95a575f7a8634d91e233550c07df9de960a66f6",
+      "latencyMs": 0.208
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec793a37c4250d5a78730bd1e95a575f7a8634d91e233550c07df9de960a66f6",
+      "latencyMs": 0.212
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "ec793a37c4250d5a78730bd1e95a575f7a8634d91e233550c07df9de960a66f6",
+      "latencyMs": 0.238
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "0f473daffb009426593139ed1a5f2bbe987afd07e6f6704a5973e88950771aec",
+      "latencyMs": 0.222
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "0f473daffb009426593139ed1a5f2bbe987afd07e6f6704a5973e88950771aec",
+      "latencyMs": 0.427
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "dd0fb1ecd16e83a6c1726b0b9f6585e53fef8c4c88ede49200c9de30cd232e9d",
+      "latencyMs": 0.221
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "dd0fb1ecd16e83a6c1726b0b9f6585e53fef8c4c88ede49200c9de30cd232e9d",
+      "latencyMs": 0.22
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "6a0fb6568b36bffc050ef3e47e36b337c9ba562560a0355774faeb7c485e5a86",
+      "latencyMs": 0.261
+    },
+    {
+      "taskId": "task-14",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "6a0fb6568b36bffc050ef3e47e36b337c9ba562560a0355774faeb7c485e5a86",
+      "latencyMs": 0.351
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "8c3424a3f4e0bb3325a95c9a37afba86819838c7695ae9fa10b5495c4ba256f8",
+      "latencyMs": 0.17
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "8c3424a3f4e0bb3325a95c9a37afba86819838c7695ae9fa10b5495c4ba256f8",
+      "latencyMs": 0.157
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "8c3424a3f4e0bb3325a95c9a37afba86819838c7695ae9fa10b5495c4ba256f8",
+      "latencyMs": 0.176
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "8c3424a3f4e0bb3325a95c9a37afba86819838c7695ae9fa10b5495c4ba256f8",
+      "latencyMs": 0.165
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "900d01288e4faa3a7397cd165acd6a6c192173df118a85bba50feffcc949d6dc",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "900d01288e4faa3a7397cd165acd6a6c192173df118a85bba50feffcc949d6dc",
+      "latencyMs": 0.141
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "a35a338281ae34708d179b2c51b8d9a58eeb49a6787c4662d595eb30bc43623d",
+      "latencyMs": 0.203
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "a35a338281ae34708d179b2c51b8d9a58eeb49a6787c4662d595eb30bc43623d",
+      "latencyMs": 0.176
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "5a2cb530bf892e3a7808adee05bb20a06ecb88a5ae10146f32afa6a18497f663",
+      "latencyMs": 0.213
+    },
+    {
+      "taskId": "task-15",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "5a2cb530bf892e3a7808adee05bb20a06ecb88a5ae10146f32afa6a18497f663",
+      "latencyMs": 0.216
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "d0a3861601fc723aba2a48e89270b5aa8ff94a3ed11d84251aee38ab540969e4",
+      "latencyMs": 0.157
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "d0a3861601fc723aba2a48e89270b5aa8ff94a3ed11d84251aee38ab540969e4",
+      "latencyMs": 0.123
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "d0a3861601fc723aba2a48e89270b5aa8ff94a3ed11d84251aee38ab540969e4",
+      "latencyMs": 0.115
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "d0a3861601fc723aba2a48e89270b5aa8ff94a3ed11d84251aee38ab540969e4",
+      "latencyMs": 0.147
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b3e4eeb17a403ba73e47e64467779786feaf6e858f793c08eff012966274f057",
+      "latencyMs": 0.154
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b3e4eeb17a403ba73e47e64467779786feaf6e858f793c08eff012966274f057",
+      "latencyMs": 0.122
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "bca55902505846d48abbfaae90f5dc676a9cf98aace8a22a4d16eb4e60691528",
+      "latencyMs": 0.126
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "bca55902505846d48abbfaae90f5dc676a9cf98aace8a22a4d16eb4e60691528",
+      "latencyMs": 0.116
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "5302b28ea9c7a10f3c241b0e13b98f83a888a39a2399264380a633a566ec5429",
+      "latencyMs": 0.323
+    },
+    {
+      "taskId": "task-16",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "5302b28ea9c7a10f3c241b0e13b98f83a888a39a2399264380a633a566ec5429",
+      "latencyMs": 0.327
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "6e7ff20140d21fbda7052b8179a1b4650138c3474c4b0cadfebc5fc14f317408",
+      "latencyMs": 0.244
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "6e7ff20140d21fbda7052b8179a1b4650138c3474c4b0cadfebc5fc14f317408",
+      "latencyMs": 0.294
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "6e7ff20140d21fbda7052b8179a1b4650138c3474c4b0cadfebc5fc14f317408",
+      "latencyMs": 0.265
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "6e7ff20140d21fbda7052b8179a1b4650138c3474c4b0cadfebc5fc14f317408",
+      "latencyMs": 0.337
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "2aa9fdb12a4806311231f148b6251aaadc804d42adcd41f61aa9acf566cfe3e8",
+      "latencyMs": 0.173
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "2aa9fdb12a4806311231f148b6251aaadc804d42adcd41f61aa9acf566cfe3e8",
+      "latencyMs": 0.277
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "104917101db75971df894b1a4d962459f570f80e92ea3bbffa1168dfafef8585",
+      "latencyMs": 0.242
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "104917101db75971df894b1a4d962459f570f80e92ea3bbffa1168dfafef8585",
+      "latencyMs": 0.316
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "14297ade9330bfb7d9980cbd4e1120cd7ad09a673d605c9a48c4905f2d128f79",
+      "latencyMs": 0.24
+    },
+    {
+      "taskId": "task-17",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "14297ade9330bfb7d9980cbd4e1120cd7ad09a673d605c9a48c4905f2d128f79",
+      "latencyMs": 0.213
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7216828cab82ce667374f976caec38c3d1c36c0adaf692fa5b9a5a3076331ae1",
+      "latencyMs": 0.148
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7216828cab82ce667374f976caec38c3d1c36c0adaf692fa5b9a5a3076331ae1",
+      "latencyMs": 0.118
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7216828cab82ce667374f976caec38c3d1c36c0adaf692fa5b9a5a3076331ae1",
+      "latencyMs": 0.122
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7216828cab82ce667374f976caec38c3d1c36c0adaf692fa5b9a5a3076331ae1",
+      "latencyMs": 0.234
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "2151d498c931e183d0b1a53adfedcb91132f9eb2429841ebc0333702aa5e556a",
+      "latencyMs": 0.569
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "2151d498c931e183d0b1a53adfedcb91132f9eb2429841ebc0333702aa5e556a",
+      "latencyMs": 0.231
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "818fec12b33b367a64f43b27802bb1a975a6dea919b85149915dbef4ff12bcbc",
+      "latencyMs": 0.175
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "818fec12b33b367a64f43b27802bb1a975a6dea919b85149915dbef4ff12bcbc",
+      "latencyMs": 0.17
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "59dc93f3933316d24a24b198332e38327b7b6784e5328ed027b1aa1225199a25",
+      "latencyMs": 0.171
+    },
+    {
+      "taskId": "task-18",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "59dc93f3933316d24a24b198332e38327b7b6784e5328ed027b1aa1225199a25",
+      "latencyMs": 0.152
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "1365a622db127b3bcd63bef45749528664536bce9970b91df16afff542b219d9",
+      "latencyMs": 0.13
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "1365a622db127b3bcd63bef45749528664536bce9970b91df16afff542b219d9",
+      "latencyMs": 0.108
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "1365a622db127b3bcd63bef45749528664536bce9970b91df16afff542b219d9",
+      "latencyMs": 0.199
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "1365a622db127b3bcd63bef45749528664536bce9970b91df16afff542b219d9",
+      "latencyMs": 0.398
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "99977e6547db36934b8ae843d5095e94ab84141e79477c5dac56dfce6a0caac9",
+      "latencyMs": 0.149
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "99977e6547db36934b8ae843d5095e94ab84141e79477c5dac56dfce6a0caac9",
+      "latencyMs": 0.111
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "22f1c9be1897051c7196cff41cebe2c7603f4a2d84c68bd6172131e0f37ee4b8",
+      "latencyMs": 0.142
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "22f1c9be1897051c7196cff41cebe2c7603f4a2d84c68bd6172131e0f37ee4b8",
+      "latencyMs": 0.111
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "301384af2df612db835e00332f72f2eb77453a4a08e8d9b59aeab170075c2ccc",
+      "latencyMs": 0.164
+    },
+    {
+      "taskId": "task-19",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "301384af2df612db835e00332f72f2eb77453a4a08e8d9b59aeab170075c2ccc",
+      "latencyMs": 0.138
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7556cc9018579354364c8d8e7b9d40d6b4943a353c7d2b6222ebc1f78cf936ca",
+      "latencyMs": 0.164
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7556cc9018579354364c8d8e7b9d40d6b4943a353c7d2b6222ebc1f78cf936ca",
+      "latencyMs": 0.175
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7556cc9018579354364c8d8e7b9d40d6b4943a353c7d2b6222ebc1f78cf936ca",
+      "latencyMs": 0.203
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "ready",
+      "expectedReasons": [],
+      "observedReasons": [],
+      "decisionDigest": "7556cc9018579354364c8d8e7b9d40d6b4943a353c7d2b6222ebc1f78cf936ca",
+      "latencyMs": 0.167
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b47d1d8dab1857ec1b4b10f27017682c29c22e5a4c227d93762e42178caec7ac",
+      "latencyMs": 0.13
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "unread",
+      "expectedReasons": [
+        "required_context_unread"
+      ],
+      "observedReasons": [
+        "required_context_unread"
+      ],
+      "decisionDigest": "b47d1d8dab1857ec1b4b10f27017682c29c22e5a4c227d93762e42178caec7ac",
+      "latencyMs": 0.114
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "38661385e2081d1a4a3c4e1b01f945805e29845250292f5e9467d8f8afadd8ba",
+      "latencyMs": 0.233
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "stale",
+      "expectedReasons": [
+        "required_context_stale"
+      ],
+      "observedReasons": [
+        "required_context_stale"
+      ],
+      "decisionDigest": "38661385e2081d1a4a3c4e1b01f945805e29845250292f5e9467d8f8afadd8ba",
+      "latencyMs": 0.145
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "41bf146c0da6cfd6381da183281b8c1805d820e1e6c4f9cd98e8dd4cb7cf7bfd",
+      "latencyMs": 0.237
+    },
+    {
+      "taskId": "task-20",
+      "caseType": "undeclared",
+      "expectedReasons": [
+        "undeclared_target"
+      ],
+      "observedReasons": [
+        "undeclared_target"
+      ],
+      "decisionDigest": "41bf146c0da6cfd6381da183281b8c1805d820e1e6c4f9cd98e8dd4cb7cf7bfd",
+      "latencyMs": 0.199
+    }
+  ]
+}

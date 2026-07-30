@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-dream-archive-index-test-design.md#First vertical RED/GREEN slice",
+  "redCandidate": {
+    "publicEntry": "readDreamArchivedEventIds() plus listMemoEvents() archive filtering",
+    "setup": "Create an isolated file-storage memo workspace, generate a real Dream proposal, append canonical ALLOW approve/archive receipts, then invoke the existing archive-ID read seam and public memo readers.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/memo-archive-index.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Canonical archive visibility remains correct and the first archive-filtering read materializes a durable derived archive-index sidecar without memo text.",
+    "observed": "The archived ID and public default/includeArchived visibility were correct, but reading the expected durable archive-index sidecar failed with ENOENT.",
+    "failureReason": "readDreamArchivedEventIds folds proposal and governance source directly on every call and does not materialize a reusable derived archive-ID index.",
+    "receiptRef": "receipt:0632e1a4-bec8-4a9b-a70e-c80d43b77214"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-memo-storage-locking-test-design.md#First vertical RED/GREEN slice",
+  "redCandidate": {
+    "publicEntry": "appendMemoEvent() followed by listMemoEvents()",
+    "setup": "Create an isolated workspace and issue 12 concurrent file-storage appendMemoEvent calls with distinct text through the public memo API.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/memo-storage-locking.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Every successfully returned event remains readable and the 12 canonical file-storage sequence values are unique.",
+    "observed": "All 12 appends returned events and remained readable, but the assertion observed only one distinct canonical sequence value instead of 12.",
+    "failureReason": "Concurrent appendMemoEvent callers derive nextFileSeq from the same pre-write JSONL snapshot because no canonical memo storage lock serializes sequence allocation and append.",
+    "receiptRef": "receipt:43bc045c-334f-403b-8a59-6c711d1ae078"
+  }
+}

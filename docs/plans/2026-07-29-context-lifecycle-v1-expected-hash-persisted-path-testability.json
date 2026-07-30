@@ -1,0 +1,15 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-expected-hash-persisted-path-test-design.md#Acceptance-to-test mapping",
+  "publicEntry": "buildExecutionContextPacket() and updateExecutionContextExpectedHash()",
+  "setup": "Create a real temporary workspace with a required context source, build a packet with controlled storage metadata, and attempt persisted updates using external, traversal, malformed, and custom-state-root paths.",
+  "expected": "Persisted updates write only the derived ContextDB packet sidecar, reject invalid storage metadata and mismatched source hashes, preserve persist:false compatibility, and never overwrite or leak the external/source sentinel.",
+  "observed": "Focused execution-context packet tests and the S2/production-correction regressions cover controlled persistence, legacy fail-closed behavior, source-hash validation, physical containment, and custom state roots.",
+  "verification": {
+    "commands": [
+      "node --test --test-concurrency=1 scripts/tests/execution-context-packet.test.mjs",
+      "node --test --test-concurrency=1 scripts/tests/context-lifecycle-s2.test.mjs scripts/tests/context-lifecycle-production-correction.test.mjs"
+    ],
+    "evidenceBoundary": "Local filesystem-backed regression evidence; not production authority evidence."
+  }
+}

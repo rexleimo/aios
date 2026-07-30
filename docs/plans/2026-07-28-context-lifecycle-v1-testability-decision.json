@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-benchmark.md#CL-01",
+  "redCandidate": {
+    "publicEntry": "memo append/list 的真实 file storage 场景",
+    "setup": "在隔离临时 workspace 写入 Agent A 的 project_shared 事实，再由 Agent B 写入 agent_private 事实并 supersede 前者，最后以 Agent A 身份查询 live memo。",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "C:\\Users\\Administrator\\AppData\\Local\\Temp\\hermes-verify-7z8pqrta.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Agent A 查询结果仍包含其共享事实；Agent B 的私有记录无权让该事实失效。",
+    "observed": "命令退出码为 1：Agent A 的 live memo 中不存在共享事实，断言“Agent B private memo must not invalidate Agent A shared fact”失败。",
+    "failureReason": "当前读取流程先对整个 space 应用 temporal supersede，再按 Agent 可见性过滤；private supersede 因而能影响其他主体可见的 shared fact。",
+    "receiptRef": "receipt:1a69fbc3-b5ae-4cb5-a585-98dfa95970f9"
+  }
+}

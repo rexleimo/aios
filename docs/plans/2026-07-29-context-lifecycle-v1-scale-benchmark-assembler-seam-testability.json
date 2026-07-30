@@ -1,0 +1,15 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-scale-benchmark-assembler-seam-test-design.md#Acceptance-to-test mapping",
+  "publicEntry": "scripts/benchmarks/context-lifecycle-v1-scale.mjs and its focused benchmark test",
+  "setup": "Run the public scale benchmark in temporary workspaces. Construct positive ready/stale/undeclared records through assembleExecutionContext() and construct unread records through direct packet construction without delivery evidence.",
+  "expected": "The runner reports 20 tasks and 200 receipts; positive cases preserve assembler evidence, unread cases report required_context_unread, stale cases report required_context_stale, undeclared cases report undeclared_target without artificial unread, and the output remains explicitly controlled synthetic NO-GO evidence.",
+  "observed": "The assembler-seam benchmark and focused test cover the positive delivery path, fail-closed unread path, CJK/custom-root fixtures, deterministic receipts, output labels, and temporary-workspace cleanup.",
+  "verification": {
+    "commands": [
+      "npm run benchmark:context-lifecycle-v1-scale",
+      "node --test --test-concurrency=1 scripts/tests/context-lifecycle-benchmark.test.mjs"
+    ],
+    "evidenceBoundary": "Controlled synthetic engineering smoke; no production samples, independent oracle, or enforcement authorization."
+  }
+}

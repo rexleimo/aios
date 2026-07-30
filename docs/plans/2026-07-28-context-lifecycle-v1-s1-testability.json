@@ -1,0 +1,25 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-s1-test-design.md#RED-命令",
+  "redCandidate": {
+    "publicEntry": "Context Lifecycle V1 benchmark runner 的 s1 profile",
+    "setup": "隔离 workspace 中声明 plan targets/required context，并构造带真实 ref 的预算压力 context items；S0 安全场景和兼容控制同时运行。",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/benchmarks/context-lifecycle-v1.mjs",
+        "--profile",
+        "s1",
+        "--json-out",
+        "temp/context-lifecycle-v1/s1-current.json",
+        "--markdown-out",
+        "temp/context-lifecycle-v1/s1-current.md"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "S1 profile 7/7 匹配：CL-05 和 CL-08 达到 observe-only Packet/Receipt 目标，CL-06 继续是预期 known failure，S0 与兼容场景不回退。",
+    "observed": "当前 5/7：CL-05 和 CL-08 因 execution-context module 缺失而不匹配；CL-01/02/03/10 通过，CL-06 按 S1 预期保持 known failure。",
+    "failureReason": "Planning v2 丢弃任务上下文字段，且 ContextDB 尚无独立 ExecutionContextPacket、ContextReceipt 和预算表示 projection。",
+    "receiptRef": "receipt:40e1a7e6-ea94-47c7-b52f-0fe7d471767e"
+  }
+}

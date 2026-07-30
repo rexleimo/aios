@@ -1,0 +1,737 @@
+{
+  "schemaVersion": 1,
+  "kind": "context-lifecycle-v1-benchmark-result",
+  "profile": "s2",
+  "startedAt": "2026-07-28T13:27:50.307Z",
+  "completedAt": "2026-07-28T13:28:01.852Z",
+  "gitCommit": "bfb9ce239339715bea330a6e2e2719ead5a16784",
+  "worktreeDirty": true,
+  "runnerSha256": "d3dbbfbe1c8c5572a87c5b2611720400a05bbb26e976ad716fd538db12cd2670",
+  "node": "v24.16.0",
+  "platform": "win32-x64",
+  "total": 12,
+  "matched": 12,
+  "targetMetCount": 12,
+  "knownFailureCount": 0,
+  "passed": true,
+  "scenarios": [
+    {
+      "id": "CL-01",
+      "title": "private memo 不得失效其他 Agent 的 shared fact",
+      "targetMet": true,
+      "actual": "Agent A 仍能看到 shared fact。",
+      "evidence": {
+        "sharedEventId": "memo:default:20260728132750310-2af7c912",
+        "privateEventId": "memo:default:20260728132750313-1c6ff791",
+        "visibleToAgentA": [
+          "memo:default:20260728132750310-2af7c912"
+        ]
+      },
+      "workspace": "context-lifecycle-cl01-WFiz1M",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-02",
+      "title": "session close 只生成 candidate，不自动晋升 shared memo",
+      "targetMet": true,
+      "actual": "未 promotion 的 session summary 不在 shared recall。",
+      "evidence": {
+        "scope": "project_shared",
+        "status": "candidate",
+        "sharedVisible": false
+      },
+      "workspace": "context-lifecycle-cl02-ZFg0Es",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-03",
+      "title": "Dream retention 前不得物理删除 shared evidence",
+      "targetMet": true,
+      "actual": "Dream 只记录逻辑 proposal/archive，原始事件仍可达。",
+      "evidence": {
+        "beforeCount": 2,
+        "afterCount": 2,
+        "previewAffected": 0,
+        "removedCount": 0
+      },
+      "workspace": "context-lifecycle-cl03-AzcdEZ",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-04",
+      "title": "runtime producer 必须覆盖不可信身份文本和普通参数",
+      "targetMet": true,
+      "actual": "可信 runtime provenance 完整，agent shared candidate 未进入 active recall，legacy row 仍可读。",
+      "evidence": {
+        "role": "assistant",
+        "agent": "agent-a",
+        "claimStatus": "candidate",
+        "provenance": {
+          "schemaVersion": 1,
+          "trust": "runtime_attested",
+          "producerType": "agent",
+          "principalId": "principal:agent-a",
+          "agentId": "agent-a",
+          "sessionId": "session-a",
+          "runId": "run-a",
+          "activationId": "activation-a",
+          "policyRevision": "memo-policy-v1",
+          "sourceRef": "contextdb:session-a#turn-1",
+          "sourceHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "capabilities": []
+        },
+        "activeIds": [
+          "legacy-shared-row"
+        ],
+        "reviewIds": [
+          "memo:default:20260728132750343-118db0e0",
+          "legacy-shared-row"
+        ],
+        "legacyTrust": "legacy_unknown"
+      },
+      "workspace": "context-lifecycle-cl04-WXB2il",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-05",
+      "title": "计划必须生成 required-context observe receipt",
+      "targetMet": true,
+      "actual": "Plan v3、ExecutionContextPacket 和 observe receipt 完整记录 required/read/unread。",
+      "evidence": {
+        "schemaVersion": 3,
+        "normalizedTaskKeys": [
+          "acceptance",
+          "allowedWrites",
+          "contextRequirements",
+          "contextRevision",
+          "dependsOn",
+          "id",
+          "interfaces",
+          "status",
+          "targets",
+          "title",
+          "updatedAt",
+          "verification"
+        ],
+        "packetItemCount": 3,
+        "receiptSummary": {
+          "required": 3,
+          "read": 0,
+          "unread": 3,
+          "missing": 0
+        },
+        "decisionDigest": "bf49af1e97d7b7a0f368ae5a85cacc9dfd29ce6c6a9bd64e6dd8ebebfadeccbe",
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl05-wIEeez",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-06",
+      "title": "required file 读取后被外部修改必须产生 stale shadow verdict",
+      "targetMet": true,
+      "actual": "Shadow preflight 检测 stale/unread/undeclared，并接受同 session expected-hash 更新。",
+      "evidence": {
+        "baseHash": "c8d047c381af5cfb43a8f1ff402fb478d2102c2587d305892a8f2bb729fe115c",
+        "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+        "staleVerdict": {
+          "schemaVersion": 1,
+          "kind": "contextdb.execution-context-preflight",
+          "mode": "shadow",
+          "verdict": "warning",
+          "wouldBlock": true,
+          "wouldBlockReasons": [
+            "required_context_stale"
+          ],
+          "admissionChanged": false,
+          "contextRevision": "697db88309cd2580f39c5dbc631d57c0d72cec957ae8a8d17b2a4b980816e05c",
+          "decisionDigest": "6cfafca9fe5d92443577a859db2753b93a756df0d4d4ab473afdebcfc311108b",
+          "required": [
+            {
+              "ref": "src/auth/policy.mjs",
+              "expectedHash": "c8d047c381af5cfb43a8f1ff402fb478d2102c2587d305892a8f2bb729fe115c",
+              "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "read": true,
+              "reasons": [
+                "required_context_stale"
+              ]
+            }
+          ],
+          "mutations": [
+            {
+              "ref": "src/auth/login.mjs",
+              "declared": true
+            }
+          ]
+        },
+        "refreshedVerdict": {
+          "schemaVersion": 1,
+          "kind": "contextdb.execution-context-preflight",
+          "mode": "shadow",
+          "verdict": "ready",
+          "wouldBlock": false,
+          "wouldBlockReasons": [],
+          "admissionChanged": false,
+          "contextRevision": "4c3b5ca2d3bd705e9f70ed8026e4fa735dcc784da92f90ce9b7d43eb374f5d32",
+          "decisionDigest": "bc02d4018faec0921cd1ac5c30414ced350ec14ccbc0343d5da66f742813232c",
+          "required": [
+            {
+              "ref": "src/auth/policy.mjs",
+              "expectedHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "read": true,
+              "reasons": []
+            }
+          ],
+          "mutations": [
+            {
+              "ref": "src/auth/login.mjs",
+              "declared": true
+            }
+          ]
+        },
+        "unreadVerdict": {
+          "schemaVersion": 1,
+          "kind": "contextdb.execution-context-preflight",
+          "mode": "shadow",
+          "verdict": "warning",
+          "wouldBlock": true,
+          "wouldBlockReasons": [
+            "required_context_unread"
+          ],
+          "admissionChanged": false,
+          "contextRevision": "e3f3f36aaca353e289e563fece839ff4adcc12ddab1b767e3068d4d24959756c",
+          "decisionDigest": "87f7c77308b6ab748887ddc9a538fe6a682429094d2207ab5d68b70f6561565c",
+          "required": [
+            {
+              "ref": "src/auth/policy.mjs",
+              "expectedHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "read": false,
+              "reasons": [
+                "required_context_unread"
+              ]
+            }
+          ],
+          "mutations": [
+            {
+              "ref": "src/auth/login.mjs",
+              "declared": true
+            }
+          ]
+        },
+        "undeclaredVerdict": {
+          "schemaVersion": 1,
+          "kind": "contextdb.execution-context-preflight",
+          "mode": "shadow",
+          "verdict": "warning",
+          "wouldBlock": true,
+          "wouldBlockReasons": [
+            "undeclared_target"
+          ],
+          "admissionChanged": false,
+          "contextRevision": "4c3b5ca2d3bd705e9f70ed8026e4fa735dcc784da92f90ce9b7d43eb374f5d32",
+          "decisionDigest": "5f723f661224af0d6b06c08487dec3799095cedd145e80a63cd4254dfb0dbd3a",
+          "required": [
+            {
+              "ref": "src/auth/policy.mjs",
+              "expectedHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+              "read": true,
+              "reasons": []
+            }
+          ],
+          "mutations": [
+            {
+              "ref": "src/payment/charge.mjs",
+              "declared": false
+            }
+          ]
+        },
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl06-9ojljU",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-07",
+      "title": "执行后必须以 ledger 与 Git 保守并集对账声明 target",
+      "targetMet": true,
+      "actual": "Reconciliation 捕获 ledger 遗漏的 Git path，记录 undeclared drift 且未回滚。",
+      "evidence": {
+        "gitCommands": [
+          {
+            "executable": "git",
+            "args": [
+              "init"
+            ],
+            "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE",
+            "exitCode": 0,
+            "stdoutSha256": "4c9a955782d63a35f910decd26b3e39814494136bc5fa68350e13a27303c1385",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": null,
+            "error": ""
+          },
+          {
+            "executable": "git",
+            "args": [
+              "config",
+              "user.email",
+              "context-lifecycle@example.invalid"
+            ],
+            "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE",
+            "exitCode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": null,
+            "error": ""
+          },
+          {
+            "executable": "git",
+            "args": [
+              "config",
+              "user.name",
+              "Context Lifecycle Benchmark"
+            ],
+            "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE",
+            "exitCode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": null,
+            "error": ""
+          },
+          {
+            "executable": "git",
+            "args": [
+              "add",
+              "."
+            ],
+            "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE",
+            "exitCode": 0,
+            "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "stderrSha256": "f20bc15933e392d41a267bbb7437ec491bf02b2d2930646cc2f44027fc85e9e0",
+            "testCount": null,
+            "error": ""
+          },
+          {
+            "executable": "git",
+            "args": [
+              "commit",
+              "-m",
+              "baseline"
+            ],
+            "cwd": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE",
+            "exitCode": 0,
+            "stdoutSha256": "db26c0184b97df612d5c76c6981e0cab87caba89248f0709d867d8839bac0fe0",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": null,
+            "error": ""
+          }
+        ],
+        "result": {
+          "schemaVersion": 1,
+          "kind": "contextdb.context-reconciliation-receipt",
+          "mode": "shadow",
+          "generatedAt": "2026-07-28T13:27:50.573Z",
+          "decisionDigest": "04cb54e2551eca0a16dcba0fc1f61b3879899671d76ca451b0256b63a4b5e08d",
+          "contextRevision": "9dacfb601c8eb07971d2ec283df851ed9e97111ab6618bb4048cc8e3551f6702",
+          "sessionId": "session-reconcile",
+          "declaredPaths": [
+            "src/auth/login.mjs"
+          ],
+          "derivedPrefixes": [
+            ".aios",
+            ".aios/context-db"
+          ],
+          "ledgerPaths": [
+            "src/auth/login.mjs"
+          ],
+          "gitPaths": [
+            "src/auth/login.mjs",
+            "src/payment/charge.mjs"
+          ],
+          "actualPaths": [
+            "src/auth/login.mjs",
+            "src/payment/charge.mjs"
+          ],
+          "undeclaredPaths": [
+            "src/payment/charge.mjs"
+          ],
+          "missingDeclaredPaths": [],
+          "gitAvailable": true,
+          "gitObservations": [
+            {
+              "exitCode": 0,
+              "paths": [
+                "src/auth/login.mjs",
+                "src/payment/charge.mjs"
+              ],
+              "error": "warning: in the working copy of 'src/auth/login.mjs', LF will be replaced by CRLF the next time Git touches it\nwarning: in the working copy of 'src/payment/charge.mjs', LF will be replaced by CRLF the next time Git touches it"
+            },
+            {
+              "exitCode": 0,
+              "paths": [],
+              "error": ""
+            },
+            {
+              "exitCode": 0,
+              "paths": [
+                ".aios/sessions/session-reconcile/changed-files.jsonl"
+              ],
+              "error": ""
+            }
+          ],
+          "wouldBlock": true,
+          "wouldBlockReasons": [
+            "undeclared_target"
+          ],
+          "admissionChanged": false,
+          "receiptPath": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl07-oyOfuE\\.aios\\context-db\\reconciliation\\session-reconcile\\04cb54e2551eca0a16dcba0f.json"
+        },
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl07-oyOfuE",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-08",
+      "title": "预算压力下每个 context item 必须有可恢复表示决策",
+      "targetMet": true,
+      "actual": "所有 considered item 均有确定 receipt 决策，且 hard constraint 未静默降级。",
+      "evidence": {
+        "decisionCount": 3,
+        "categories": [
+          "recoverable:degraded:summary+ref",
+          "no-ref:excluded:none",
+          "hard-rule:included:full"
+        ],
+        "decisionDigest": "1b0a75d01aa077cc85523edd54067d241cdb422b1adae043fadde2b15f5e887b",
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl08-9M7OFx",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-09",
+      "title": "handoff 必须携带 revision/ref lineage 并在漂移时要求重验证",
+      "targetMet": true,
+      "actual": "Handoff v2 保持兼容，v3 lineage 对 revision mismatch 给出 revalidation。",
+      "evidence": {
+        "v2": {
+          "schemaVersion": 2,
+          "fromAgent": {
+            "sessionId": "session-v2",
+            "agentType": "codex",
+            "role": "implementer"
+          },
+          "intent": "Legacy handoff",
+          "progress": "",
+          "nextActions": [],
+          "blockers": [],
+          "touchedFiles": [],
+          "workspaceChanges": [],
+          "pendingWrites": [],
+          "confidence": "medium",
+          "assumptions": [],
+          "updatedAt": "2026-07-28T13:27:50.663Z"
+        },
+        "v3": {
+          "schemaVersion": 3,
+          "fromAgent": {
+            "sessionId": "session-v3",
+            "agentType": "codex",
+            "role": "implementer"
+          },
+          "intent": "Revision-aware handoff",
+          "progress": "",
+          "nextActions": [],
+          "blockers": [],
+          "touchedFiles": [],
+          "workspaceChanges": [],
+          "pendingWrites": [],
+          "confidence": "medium",
+          "assumptions": [],
+          "updatedAt": "2026-07-28T13:27:50.663Z",
+          "baseRevision": "base-1",
+          "contextRevision": "context-1",
+          "packetRef": "contextdb:execution-context/packet.json",
+          "receiptRef": "contextdb:execution-context/receipt.json",
+          "verificationRefs": [
+            "receipt:test-1"
+          ]
+        },
+        "mismatch": {
+          "schemaVersion": 1,
+          "kind": "contextdb.handoff-lineage-verdict",
+          "mode": "shadow",
+          "revalidationRequired": true,
+          "reasons": [
+            "context_revision_mismatch"
+          ],
+          "admissionChanged": false,
+          "decisionDigest": "103f8bd9d863b73c8467b277e7b27825d13f62e7eae94415a6a527f1a3bc346a"
+        },
+        "ready": {
+          "schemaVersion": 1,
+          "kind": "contextdb.handoff-lineage-verdict",
+          "mode": "shadow",
+          "revalidationRequired": false,
+          "reasons": [],
+          "admissionChanged": false,
+          "decisionDigest": "bc362ba52ae2ab534aaadd567260502b95061021ced7a75177a5a1feda742907"
+        },
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl09-eYoN1I",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-10",
+      "title": "现有 148 个定向兼容测试必须保持通过",
+      "targetMet": true,
+      "actual": "94 + 42 + 39 个定向测试全部通过。",
+      "evidence": {
+        "commands": [
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "--test",
+              "scripts/tests/memo-temporal.test.mjs",
+              "scripts/tests/memo-scope.test.mjs",
+              "scripts/tests/memo-provenance.test.mjs",
+              "scripts/tests/memo-candidate-governance.test.mjs",
+              "scripts/tests/dream-governance.test.mjs",
+              "scripts/tests/context-lifecycle-s2.test.mjs",
+              "scripts/tests/contextdb-continuity.test.mjs",
+              "scripts/tests/contextdb-facade.test.mjs",
+              "scripts/tests/handoff.test.mjs",
+              "scripts/tests/canvas-context-scaling.test.mjs",
+              "scripts/tests/offload-tool-offload.test.mjs"
+            ],
+            "cwd": "E:\\coding\\harness-cli",
+            "exitCode": 0,
+            "stdoutSha256": "a0bdf9a4679b95bb75aa6caafe93c7de12891707ae4bdbfc6420acf0ec45ba4b",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 94,
+            "error": ""
+          },
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "--test",
+              "scripts/tests/workflow-policy.test.mjs",
+              "scripts/tests/planning-contract.test.mjs",
+              "scripts/tests/preflight-contracts.test.mjs"
+            ],
+            "cwd": "E:\\coding\\harness-cli",
+            "exitCode": 0,
+            "stdoutSha256": "71a3813822808bbd637ab624dcabbda9756596e0ffe9238bd544526f04cdab91",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 42,
+            "error": ""
+          },
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "scripts/with-project-node.mjs",
+              "./node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "tests/contextdb.test.ts"
+            ],
+            "cwd": "E:\\coding\\harness-cli\\mcp-server",
+            "exitCode": 0,
+            "stdoutSha256": "5ec875689bd8e0068c5c11bdfd74c34b5c4bd56f108049280cbda4492e442241",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 39,
+            "error": ""
+          }
+        ],
+        "minimumCounts": [
+          69,
+          40,
+          39
+        ],
+        "observedCounts": [
+          94,
+          42,
+          39
+        ]
+      },
+      "workspace": "context-lifecycle-cl10-FJfeOz",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-11",
+      "title": "direct/read-only 路径不得强制创建 packet 或 preflight",
+      "targetMet": true,
+      "actual": "Direct/read-only 保持无持久化，planned 对照仍声明 pre-edit safety。",
+      "evidence": {
+        "readOnly": {
+          "disposition": "direct",
+          "continuation": "none",
+          "persistence": "none",
+          "requiredSkills": [],
+          "requiredAgent": null,
+          "requiresPreEditSafety": false,
+          "verificationScope": "none",
+          "routeHint": "direct",
+          "executionHost": "single",
+          "reason": "read-only-request",
+          "plan": null,
+          "capabilityDecision": null,
+          "action": "none"
+        },
+        "planned": {
+          "disposition": "planned",
+          "continuation": "none",
+          "persistence": "create",
+          "requiredSkills": [
+            "rex-test-design"
+          ],
+          "requiredAgent": null,
+          "requiresPreEditSafety": true,
+          "verificationScope": "full",
+          "routeHint": "implement",
+          "executionHost": "single",
+          "reason": "rex-capability-selected:software.testing.design",
+          "plan": null,
+          "capabilityDecision": {
+            "capabilityId": "software.testing.design",
+            "reasonCode": "behavior-change",
+            "evidenceRefs": [
+              "request:current"
+            ],
+            "requiredEvidence": [
+              "test-scope-contract-recorded",
+              "acceptance-test-mapping-recorded",
+              "test-seam-recorded",
+              "testability-decision-recorded"
+            ],
+            "recipeId": "software.testing.design.recipe",
+            "stageId": "design-tests",
+            "provider": {
+              "kind": "skill",
+              "id": "rex-test-design",
+              "source": "bundled",
+              "instructionsRef": "skill-sources/rex-test-design/SKILL.md"
+            }
+          },
+          "action": "started"
+        },
+        "packetPathExists": false
+      },
+      "workspace": "context-lifecycle-cl11-syy9CV",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-12",
+      "title": "CJK 与 custom state root 必须覆盖 packet、preflight 和 changed-files",
+      "targetMet": true,
+      "actual": "中文 ref/hash 正常，所有 derived state 写入 custom root。",
+      "evidence": {
+        "packetPath": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl12-76aXSQ\\自定义状态\\context-db\\execution-context\\plan-6fbf0e142c5f\\task\\packet.json",
+        "ledger": {
+          "schemaVersion": 1,
+          "kind": "session.changed-files",
+          "sessionId": "session-cjk",
+          "files": [
+            {
+              "path": "源码/登录.mjs",
+              "changeType": "modified",
+              "firstSeenAt": "2026-07-28T13:28:01.775Z",
+              "lastSeenAt": "2026-07-28T13:28:01.775Z",
+              "count": 1
+            }
+          ]
+        },
+        "customLedgerPath": "C:\\Users\\Administrator\\AppData\\Local\\Temp\\context-lifecycle-cl12-76aXSQ\\自定义状态\\sessions\\session-cjk\\changed-files.jsonl",
+        "customLedgerExists": true,
+        "defaultStateExists": false,
+        "verdict": {
+          "schemaVersion": 1,
+          "kind": "contextdb.execution-context-preflight",
+          "mode": "shadow",
+          "verdict": "ready",
+          "wouldBlock": false,
+          "wouldBlockReasons": [],
+          "admissionChanged": false,
+          "contextRevision": "1171e10417e2ab2350770394597312062091d9a2de3a3f444b7c3d92670c8b69",
+          "decisionDigest": "208a76804266c4b56ee7388a8817cdbaa5fb753429543e39d8598426f84f88dc",
+          "required": [
+            {
+              "ref": "资料/认证规则.md",
+              "expectedHash": "f1626f9199441c3e8d8bfe50b8e0bb0f0684f7a65d531414abc93fde43178c01",
+              "currentHash": "f1626f9199441c3e8d8bfe50b8e0bb0f0684f7a65d531414abc93fde43178c01",
+              "read": true,
+              "reasons": []
+            }
+          ],
+          "mutations": [
+            {
+              "ref": "源码/登录.mjs",
+              "declared": true
+            }
+          ]
+        },
+        "moduleError": ""
+      },
+      "workspace": "context-lifecycle-cl12-76aXSQ",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "profileRequirement": "true",
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    }
+  ],
+  "evidenceBoundary": {
+    "scope": "benchmark-test-evaluator-acceptance",
+    "productionWiringObserved": false,
+    "productCompletionEstablished": false,
+    "note": "Preflight/reconciliation APIs have no production mutation/lifecycle caller."
+  },
+  "authoritativeCorrection": "docs/reports/2026-07-28-context-lifecycle-v1-corrective-audit.md"
+}

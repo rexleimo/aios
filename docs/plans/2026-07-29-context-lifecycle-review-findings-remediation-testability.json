@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-review-findings-remediation-test-scope.md#acceptance-mapping",
+  "redCandidate": {
+    "publicEntry": "AIOS plan task CLI plus default orchestration and durable dream archive-index recall",
+    "setup": "Use isolated workspaces. Start a real plan, declare task metadata through the public CLI, invoke default local dry-run orchestration without --context-task, and rewrite an existing dream proposal at the same path after materializing its archive index.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs",
+        "scripts/tests/memo-archive-index.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "CLI task declarations persist and deliver non-empty context through default orchestration; the earliest dependency-ready pending task is selected; a same-path proposal rewrite rebuilds the archive index before filtering memo events.",
+    "observed": "10/13 tests pass and three behavior tests fail. plan task emits usage rather than declaration JSON, a multi-task plan reports not_applicable instead of observed, and a rewritten proposal remains hidden by the stale archive index.",
+    "failureReason": "The CLI has no declaration flags or persistence path, default task selection rejects multiple candidates, and the archive source token signs only the proposals directory rather than its file contents.",
+    "receiptRef": "receipt:02278bbc-eb92-499b-b088-1016ab1fcdd2"
+  }
+}

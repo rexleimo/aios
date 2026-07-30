@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-plan-path-containment-test-design.md#First vertical RED/GREEN slice",
+  "redCandidate": {
+    "publicEntry": "evaluatePlanEvidence() used by runOrchestrate() auto preflight",
+    "setup": "Create an isolated workspace with a valid in-root plan and a separate temporary directory containing a valid external plan, then invoke the public readiness policy with relative, absolute in-root, and external plan paths.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/preflight-contracts.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Equivalent in-root plan paths are represented as the same relative evidence ref; external plan paths are blocked with invalid_plan_path before they can become valid readiness evidence.",
+    "observed": "The absolute in-root path was emitted as an absolute evidence ref, and an external complete plan returned ready rather than blocked.",
+    "failureReason": "normalizePlanPath accepts absolute inputs and path.join(rootDir, ../...) without validating lexical or physical workspace containment before fs.readFile().",
+    "receiptRef": "receipt:5b5de28d-bed2-49a4-85bf-903979cce3fb"
+  }
+}

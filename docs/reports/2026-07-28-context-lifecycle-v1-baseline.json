@@ -1,0 +1,207 @@
+{
+  "schemaVersion": 1,
+  "kind": "context-lifecycle-v1-benchmark-result",
+  "profile": "baseline",
+  "startedAt": "2026-07-28T07:19:19.247Z",
+  "completedAt": "2026-07-28T07:19:30.007Z",
+  "gitCommit": "bfb9ce239339715bea330a6e2e2719ead5a16784",
+  "worktreeDirty": true,
+  "runnerSha256": "ca07550dd02217f5560dc42c9c7845193251c61017c22a52f0ec335853217850",
+  "node": "v24.16.0",
+  "platform": "win32-x64",
+  "total": 6,
+  "matched": 6,
+  "targetMetCount": 1,
+  "knownFailureCount": 5,
+  "passed": true,
+  "scenarios": [
+    {
+      "id": "CL-01",
+      "title": "private memo 不得失效其他 Agent 的 shared fact",
+      "targetMet": false,
+      "actual": "Agent A 的 live memo 中没有 shared fact。",
+      "evidence": {
+        "sharedEventId": "memo:default:20260728071919249-109ca5b8",
+        "privateEventId": "memo:default:20260728071919252-34e8fba7",
+        "visibleToAgentA": []
+      },
+      "workspace": "context-lifecycle-cl01-mI7gfy",
+      "cleanup": "removed",
+      "expectedTargetMet": false,
+      "qualityVerdict": "known_failure",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-02",
+      "title": "session close 只生成 candidate，不自动晋升 shared memo",
+      "targetMet": false,
+      "actual": "assistant-derived session summary 已进入 active shared recall。",
+      "evidence": {
+        "eventId": "memo:default:20260728071919258-2c4eac6d",
+        "scope": "project_shared",
+        "status": "",
+        "sharedVisible": true
+      },
+      "workspace": "context-lifecycle-cl02-v5uJuX",
+      "cleanup": "removed",
+      "expectedTargetMet": false,
+      "qualityVerdict": "known_failure",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-03",
+      "title": "Dream retention 前不得物理删除 shared evidence",
+      "targetMet": false,
+      "actual": "Dream apply 移除了 1 条事件。",
+      "evidence": {
+        "beforeCount": 2,
+        "afterCount": 1,
+        "previewAffected": 1,
+        "removedCount": 1
+      },
+      "workspace": "context-lifecycle-cl03-T1insU",
+      "cleanup": "removed",
+      "expectedTargetMet": false,
+      "qualityVerdict": "known_failure",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-05",
+      "title": "计划必须保留 required context 与 targets",
+      "targetMet": false,
+      "actual": "Plan normalization 丢弃了 targets/contextRequirements，无法报告缺失上下文。",
+      "evidence": {
+        "schemaVersion": 2,
+        "normalizedTaskKeys": [
+          "acceptance",
+          "dependsOn",
+          "id",
+          "status",
+          "title",
+          "updatedAt"
+        ]
+      },
+      "workspace": "context-lifecycle-cl05-iltOtI",
+      "cleanup": "removed",
+      "expectedTargetMet": false,
+      "qualityVerdict": "known_failure",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-06",
+      "title": "required file 读取后被外部修改必须产生 stale verdict",
+      "targetMet": false,
+      "actual": "Readiness 未检测 required file 的 hash 已变化。",
+      "evidence": {
+        "baseHash": "c8d047c381af5cfb43a8f1ff402fb478d2102c2587d305892a8f2bb729fe115c",
+        "currentHash": "6540d5e80ad1fce5e87813b9ef01da7514bf4c70e2cce6dc9327768a0aad9ff5",
+        "verdict": {
+          "verdict": "ready",
+          "blockedReasons": [],
+          "warnings": [
+            "No ContextDB sessions found — will create new session on first run.",
+            "No config/settings.json found — using defaults."
+          ],
+          "nextActions": [],
+          "evidence": [
+            {
+              "type": "plans",
+              "path": "docs/plans/",
+              "summary": "Found 1 plan file(s)",
+              "createdAt": "2026-07-28T07:19:19.284Z"
+            },
+            {
+              "type": "model-router",
+              "summary": "Model router is enabled",
+              "createdAt": "2026-07-28T07:19:19.313Z"
+            }
+          ]
+        }
+      },
+      "workspace": "context-lifecycle-cl06-ckTaE7",
+      "cleanup": "removed",
+      "expectedTargetMet": false,
+      "qualityVerdict": "known_failure",
+      "matchesProfile": true
+    },
+    {
+      "id": "CL-10",
+      "title": "现有 148 个定向兼容测试必须保持通过",
+      "targetMet": true,
+      "actual": "69 + 40 + 39 个定向测试全部通过。",
+      "evidence": {
+        "commands": [
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "--test",
+              "scripts/tests/memo-temporal.test.mjs",
+              "scripts/tests/memo-scope.test.mjs",
+              "scripts/tests/contextdb-continuity.test.mjs",
+              "scripts/tests/contextdb-facade.test.mjs",
+              "scripts/tests/handoff.test.mjs",
+              "scripts/tests/canvas-context-scaling.test.mjs",
+              "scripts/tests/offload-tool-offload.test.mjs"
+            ],
+            "cwd": "E:\\coding\\harness-cli",
+            "exitCode": 0,
+            "stdoutSha256": "b54c0979db94065368e1ecf3301ff834db6cb1055cfc33ef775ae7d157571222",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 69,
+            "error": ""
+          },
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "--test",
+              "scripts/tests/workflow-policy.test.mjs",
+              "scripts/tests/planning-contract.test.mjs",
+              "scripts/tests/preflight-contracts.test.mjs"
+            ],
+            "cwd": "E:\\coding\\harness-cli",
+            "exitCode": 0,
+            "stdoutSha256": "cf4000512dcdeb512da18de5323dee26ac05dae3735210caa7c92bfefffd786c",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 40,
+            "error": ""
+          },
+          {
+            "executable": "D:\\Program Files\\nodejs\\node.exe",
+            "args": [
+              "scripts/with-project-node.mjs",
+              "./node_modules/tsx/dist/cli.mjs",
+              "--test",
+              "tests/contextdb.test.ts"
+            ],
+            "cwd": "E:\\coding\\harness-cli\\mcp-server",
+            "exitCode": 0,
+            "stdoutSha256": "b4ed6d89514f58d5b444c71fe18d34d8ca20077f3811ca74d56c6845a0f3d61c",
+            "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+            "testCount": 39,
+            "error": ""
+          }
+        ],
+        "expectedCounts": [
+          69,
+          40,
+          39
+        ],
+        "observedCounts": [
+          69,
+          40,
+          39
+        ]
+      },
+      "workspace": "context-lifecycle-cl10-TxlFJG",
+      "cleanup": "removed",
+      "expectedTargetMet": true,
+      "qualityVerdict": "pass",
+      "matchesProfile": true
+    }
+  ],
+  "evidenceBoundary": {
+    "scenarioCount": 6,
+    "fullTwelveScenarioBeforeAfterComparable": false,
+    "note": "Only scenarios present in this baseline may be compared; absent scenarios are N/A. The later 12-scenario runner has a different SHA-256."
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-s2-test-design.md#RED-命令",
+  "redCandidate": {
+    "publicEntry": "Context Lifecycle V1 cumulative benchmark runner 的 s2 profile",
+    "setup": "隔离 workspace 中构造 required-file hash 漂移、local Git 与 changed-files ledger 分歧、handoff revision mismatch、direct/read-only 对照及 custom-state/CJK fixture；每个 workspace 都在场景结束后删除。",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/benchmarks/context-lifecycle-v1.mjs",
+        "--profile",
+        "s2",
+        "--json-out",
+        "temp/context-lifecycle-v1/s2-current.json",
+        "--markdown-out",
+        "temp/context-lifecycle-v1/s2-current.md"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "S2 profile 12/12：CL-06/07/09/12 达到 shadow preflight、reconciliation、handoff lineage 和 custom-root/CJK 目标；CL-11 direct/read-only 及全部 S0/S1/compatibility 场景不回退。",
+    "observed": "当前 8/12：CL-06 缺少 S2 preflight API，CL-07 缺少 reconciliation module，CL-09 缺少 handoff lineage API，CL-12 缺少 preflight/custom changed-files；其余八项通过。",
+    "failureReason": "尚无 stale/unread/undeclared shadow evaluator、expected-hash 更新、ledger+Git 保守并集、handoff v3 lineage，以及 changed-files custom state root 支持。",
+    "receiptRef": "receipt:638845a9-dbdf-4594-b390-f79f83aee15c"
+  }
+}

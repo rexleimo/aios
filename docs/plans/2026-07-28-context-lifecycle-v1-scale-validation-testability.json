@@ -1,0 +1,24 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-scale-validation-design.md#决策边界",
+  "baseline": {
+    "publicEntry": "Context Lifecycle V1 cumulative s2 benchmark and public ExecutionContext APIs",
+    "setup": "Run the latest cumulative 12-scenario S2 profile before adding a controlled synthetic scale runner. The scale runner only calls public APIs and writes reports; it does not change product verdict logic.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/benchmarks/context-lifecycle-v1.mjs",
+        "--profile",
+        "s2",
+        "--json-out",
+        "temp/context-lifecycle-v1/s2-current.json",
+        "--markdown-out",
+        "temp/context-lifecycle-v1/s2-current.md"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The latest cumulative S2 profile exits zero with 12/12 before scale instrumentation is added.",
+    "observed": "The latest cumulative S2 profile exited zero with all 12 scenarios matched.",
+    "receiptRef": "receipt:5959e1f1-686f-4007-b291-affe2adc92a8"
+  }
+}

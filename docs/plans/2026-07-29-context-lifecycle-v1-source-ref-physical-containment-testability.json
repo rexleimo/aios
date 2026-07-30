@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-source-ref-physical-containment-test-design.md#First vertical RED/GREEN slice",
+  "redCandidate": {
+    "publicEntry": "buildExecutionContextPacket() and assembleExecutionContext()",
+    "setup": "Create an external sentinel file, create a file symlink to it under a temporary workspace docs/ directory, then declare that apparently in-workspace path as required context in a structured plan.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/execution-context-packet.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The linked ref is invalid_ref, has no accepted source hash, and cannot contribute external text to assembled runtime context.",
+    "observed": "The direct packet reported the external symlink source exists=true, proving the lexical resolver allowed a physical external file to be read.",
+    "failureReason": "resolveLocalRef validates only lexical path containment while inspectSource and readAssemblySource read the unresolved symlink path.",
+    "receiptRef": "receipt:b44ba15b-81ce-476b-b626-d7c3fbf7838e"
+  }
+}

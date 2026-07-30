@@ -1,0 +1,25 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-benchmark.md#S0",
+  "redCandidate": {
+    "publicEntry": "Context Lifecycle V1 benchmark runner 的 s0 profile",
+    "setup": "在隔离临时工作区执行 CL-01 private supersede、CL-02 session-close promotion、CL-03 Dream apply，同时重跑 CL-05、CL-06 和 CL-10 兼容控制。",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/benchmarks/context-lifecycle-v1.mjs",
+        "--profile",
+        "s0",
+        "--json-out",
+        "temp/context-lifecycle-v1/s0-current.json",
+        "--markdown-out",
+        "temp/context-lifecycle-v1/s0-current.md"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "s0 profile 退出码为 0，CL-01、CL-02、CL-03 的 targetMet=true，CL-05/CL-06 保持当前 S0 预期，CL-10 的 69+40+39 个兼容测试继续通过。",
+    "observed": "命令退出码为 1，仅 3/6 与 s0 profile 匹配；CL-01、CL-02、CL-03 均为 known_failure。",
+    "failureReason": "当前 private memo 可失效 shared fact；session close 直接写 project_shared；Dream apply 物理删除 dedup/expired 事件。",
+    "receiptRef": "receipt:ccf3a781-aab2-4ecf-b34e-437b8c347674"
+  }
+}

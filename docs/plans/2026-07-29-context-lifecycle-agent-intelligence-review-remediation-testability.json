@@ -1,0 +1,23 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-agent-intelligence-review-remediation-test-scope.md#acceptance-mapping",
+  "redCandidate": {
+    "publicEntry": "default aios_orchestrate MCP selection, aios_plan_task JSON response, and candidate proposal confirmation",
+    "setup": "Use isolated multi-task plans, malicious task IDs, and temporary node:sqlite codemap fixtures.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "scripts/tests/planning-context-candidates.test.mjs",
+        "scripts/tests/context-lifecycle-mcp-integration.test.mjs",
+        "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Default orchestration chooses persisted contextual pending work, MCP returns structured argv rather than shell text, and codemap relations survive candidate limits.",
+    "observed": "Four tests fail: shell command interpolation is returned, default selection chooses an empty earlier task, and direct targets exhaust the candidate limit.",
+    "failureReason": "Selection ranks only topology; confirmation output renders untrusted task IDs as shell text; candidate truncation ranks targets above all codemap relations.",
+    "receiptRef": "receipt:a453a82a-fc75-4e5e-8dbb-83fde0d25294"
+  }
+}

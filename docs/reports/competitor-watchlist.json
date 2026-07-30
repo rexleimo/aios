@@ -1,8 +1,43 @@
 {
-  "schemaVersion": 3,
-  "lastUpdated": "2026-07-26",
-  "lastDeepDive": "2026-07-26 (full source pull via codeload; 12/12 trees local, see docs/reports/2026-07-26-competitor-refresh-review.md §6)",
-  "refreshMethod": "codeload-tarball + api.github.com metadata (github.com:443 unreachable from this host)",
+  "schemaVersion": 4,
+  "lastUpdated": "2026-07-28",
+  "lastDeepDive": "2026-07-28 (12/12 GitHub metadata; 12/12 complete local source trees; current source coverage for 8/12 and targeted verification for 4 post-snapshot movers; see docs/reports/2026-07-28-context-lifecycle-competitor-analysis-and-plan.md)",
+  "refreshMethod": "api.github.com metadata + codeload tarballs + source-level local review; GitHub release feeds were unreachable on 2026-07-28, so existing latestRelease fields were not used as fresh evidence",
+  "portfolioPolicy": {
+    "objective": "Minimize future maintenance cost by keeping only references that own a distinct, decision-relevant question.",
+    "decisionDate": "2026-07-28",
+    "baselineProjectCount": 12,
+    "activeRefreshTiers": [
+      "core-reference",
+      "specialist-reference"
+    ],
+    "activeRefreshCount": 5,
+    "fullSourceDeepDiveCount": 3,
+    "tierCounts": {
+      "core-reference": 3,
+      "specialist-reference": 2,
+      "archive-reference": 5,
+      "remove": 2
+    },
+    "maintenanceReduction": {
+      "activeRefresh": "12 → 5 (-58%)",
+      "fullSourceDeepDive": "12 → 3 (-75%)",
+      "scheduledFullPortfolioRefresh": "removed"
+    },
+    "tierDefinitions": {
+      "core-reference": "Review relevant source changes when the project-specific trigger fires; only this tier receives full source deep dives.",
+      "specialist-reference": "Retain for exactly one narrow question; no broad repository review and only low-cadence metadata checks.",
+      "archive-reference": "Preserve the 2026-07-28 evidence snapshot; no scheduled metadata or source refresh.",
+      "remove": "No remaining distinct question; do not refresh and do not carry volatile metadata forward."
+    },
+    "decisionRules": [
+      "When two projects answer the same question, keep the stronger source and archive or remove the other.",
+      "Popularity, ecosystem size, generic agent breadth and already-absorbed basics are not retention reasons.",
+      "A counterexample can justify an archive snapshot, not an active refresh slot.",
+      "A new candidate must answer an uncovered planned question or displace an existing reference; it cannot only expand the list.",
+      "Stars, forks and routine release numbers are no longer maintained because they do not trigger product decisions."
+    ]
+  },
   "coreValue": {
     "product": "Harness CLI / AIOS — local agent workflow layer over codex/claude/gemini/opencode/hermes/grok",
     "pillars": [
@@ -19,7 +54,7 @@
         "id": "intelligent-planning",
         "name": "智能规划",
         "aiosSurface": [
-          "superpowers brainstorm/writing-plans/verification",
+          "rex-harness capability / command / evidence workflow",
           "solo harness loop",
           "dry-run readiness / abort / evidence gates"
         ]
@@ -34,223 +69,216 @@
         ]
       }
     ],
-    "keepRule": "Keep a competitor only if it still teaches something transferable to one of the three pillars and is active (or is the real core repo of a migrated project).",
-    "removeRule": "Remove archived, GTM-only, desktop-shell, dormant parent shells, and items whose only useful pattern is already absorbed into crossCuttingTrends or AIOS code."
+    "keepRule": "Keep an active reference only when it is the strongest source for one distinct question tied to memo/context, intelligent planning, or Team workflow decisions.",
+    "removeRule": "Archive absorbed or overlapping evidence; remove entries with no distinct remaining question. Popularity and project breadth never override this rule."
   },
-  "categories": {
-    "memo-memory": {
-      "description": "对 ContextDB / memo / 压缩与回忆有参考价值的记忆系统",
-      "pillar": "memo-memory",
-      "competitors": [
-        {
-          "id": "tencentdb-agent-memory",
-          "name": "TencentDB-Agent-Memory",
-          "repo": "TencentCloud/TencentDB-Agent-Memory",
-          "url": "https://github.com/TencentCloud/TencentDB-Agent-Memory",
-          "stars": 4768,
-          "forks": 402,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.3.6",
-          "releaseDate": "2026-05-28",
-          "signal": "Recall 预算 (maxCharsPerMemory + maxTotalRecallChars), L0→L3 语义分层, Mermaid 符号化压缩思路, 独立 Memory 服务化路径",
-          "license": "MIT",
-          "language": "TypeScript",
-          "priority": "P0",
-          "whyKeep": "直接对标 memo 回忆预算与分层压缩；AIOS offload/mermaid 路线的主要外部参照"
-        },
-        {
-          "id": "mem0",
-          "name": "mem0",
-          "repo": "mem0ai/mem0",
-          "url": "https://github.com/mem0ai/mem0",
-          "stars": 57641,
-          "forks": 6584,
-          "lastPush": "2026-06-03",
-          "latestRelease": "cli-node-v0.2.8",
-          "releaseDate": "2026-06-01",
-          "signal": "多客户端 plugin 矩阵 + OpenCode plugin + Stop/SessionStart 记忆 hook；零 LLM 检索管道",
-          "license": "Apache-2.0",
-          "language": "Python",
-          "priority": "P0",
-          "whyKeep": "跨 CLI 记忆注入模式；对 AIOS memo 自动召回 / client projection 有对照价值"
-        },
-        {
-          "id": "graphiti",
-          "name": "Graphiti (Zep core)",
-          "repo": "getzep/graphiti",
-          "url": "https://github.com/getzep/graphiti",
-          "stars": 27028,
-          "forks": 2725,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.29.1",
-          "releaseDate": "2026-05-21",
-          "signal": "时序知识图谱 + 事实失效 (bi-temporal) + attribute-hallucination 防御；getzep/zep 主仓已 dormant 不再跟踪",
-          "license": "Apache-2.0",
-          "language": "Python",
-          "priority": "P0",
-          "whyKeep": "memo 事实失效 / 时序有效性（valid_at/invalid_at）的最佳外部实现",
-          "replaces": "getzep/zep (legacy shell removed 2026-07-09)"
-        },
-        {
-          "id": "letta-code",
-          "name": "Letta Code",
-          "repo": "letta-ai/letta-code",
-          "url": "https://github.com/letta-ai/letta-code",
-          "stars": 2646,
-          "forks": 291,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.27.3",
-          "releaseDate": "2026-06-04",
-          "signal": "Sleep-Time 记忆整理、Task* CRUD、system prompt 版本化 canary；letta-ai/letta 主仓已 dormant 不再跟踪",
-          "license": "Apache-2.0",
-          "language": "Python",
-          "priority": "P0",
-          "whyKeep": "跨 session durable knowledge / sleep-time consolidation 对 memo 长期质量关键",
-          "replaces": "letta-ai/letta (parent shell removed 2026-07-09)"
-        },
-        {
-          "id": "openviking",
-          "name": "OpenViking",
-          "repo": "volcengine/OpenViking",
-          "url": "https://github.com/volcengine/OpenViking",
-          "stars": 25117,
-          "forks": 1932,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.3.23",
-          "releaseDate": "2026-06-03",
-          "signal": "per-agent 经验命名空间、OVPack 上下文容器、usage/audit schema、Memory V2",
-          "license": "AGPL-3.0",
-          "language": "Python",
-          "priority": "P1",
-          "whyKeep": "ContextDB 多 agent 命名空间与上下文容器设计的对照；月度扫描即可",
-          "deepDiveCadence": "monthly"
-        }
-      ]
-    },
-    "intelligent-planning": {
-      "description": "对 brainstorm/plan/verify/harness 长循环规划与执行闭环有参考价值",
-      "pillar": "intelligent-planning",
-      "competitors": [
-        {
-          "id": "superpowers",
-          "name": "superpowers",
-          "repo": "obra/superpowers",
-          "url": "https://github.com/obra/superpowers",
-          "stars": 217191,
-          "forks": 19334,
-          "lastPush": "2026-06-03",
-          "latestRelease": "v5.1.0",
-          "releaseDate": "2026-05-04",
-          "signal": "brainstorming / writing-plans / verification-before-completion / subagent-driven-development / TDD / systematic-debugging",
-          "license": "MIT",
-          "language": "Shell",
-          "priority": "P0",
-          "whyKeep": "方法论参考来源（brainstorming / writing-plans / verification-before-completion / TDD / systematic-debugging）。注意：自 v5.0.0（2026-07-20）起 superpowers 已不再是 AIOS 的工作流或安装组件，rex-harness 为唯一控制面；此条仅作 skill 写法与规划方法论的对照，不作为架构来源"
-        },
-        {
-          "id": "hermes-agent",
-          "name": "Hermes Agent",
-          "repo": "NousResearch/hermes-agent",
-          "url": "https://github.com/NousResearch/hermes-agent",
-          "stars": 179562,
-          "forks": 30757,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v2026.5.29.2",
-          "releaseDate": "2026-05-29",
-          "signal": "handoff、background skill review、curator、LSP on write、prompt cache；已有 AIOS 映射页",
-          "license": "MIT",
-          "language": "Python",
-          "priority": "P0",
-          "whyKeep": "规划→执行→自改进闭环；部分能力已映射进 AIOS（见 docs/hermes-inspired-capability-mapping.md）"
-        },
-        {
-          "id": "open-harness",
-          "name": "OpenHarness",
-          "repo": "HKUDS/OpenHarness",
-          "url": "https://github.com/HKUDS/OpenHarness",
-          "stars": 13502,
-          "forks": 2211,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v0.1.9",
-          "releaseDate": "2026-05-07",
-          "signal": "dry-run ready/warning/blocked、autodream sleep-time、文件型 mailbox、auto-compaction",
-          "license": "MIT",
-          "language": "Python",
-          "priority": "P0",
-          "whyKeep": "solo harness 预检与长循环记忆整理的主要外部参照"
-        },
-        {
-          "id": "oh-my-openagent",
-          "name": "oh-my-openagent",
-          "repo": "code-yeongyu/oh-my-openagent",
-          "url": "https://github.com/code-yeongyu/oh-my-openagent",
-          "stars": 60924,
-          "forks": 4941,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v4.7.5",
-          "releaseDate": "2026-06-03",
-          "signal": "ralph/ultrawork 长循环、per-agent skill filter、multi-platform 包、反对 over-abstract adapter",
-          "license": "NOASSERTION",
-          "language": "TypeScript",
-          "priority": "P0",
-          "whyKeep": "规划执行 mode / 多 client 投影；注意 default_mode 实为运行时 hook 而非 config 字段（见 2026-07-01 gap 分析）"
-        },
-        {
-          "id": "gnhf",
-          "name": "gnhf",
-          "repo": "kunchenguid/gnhf",
-          "url": "https://github.com/kunchenguid/gnhf",
-          "stars": 1875,
-          "forks": 129,
-          "lastPush": "2026-05-13",
-          "latestRelease": "gnhf-v0.1.42",
-          "releaseDate": "2026-05-13",
-          "signal": "overnight 单 lane、consecutiveFailures abort、commit repair prompt；退避无 cap 是缺陷勿抄",
-          "license": "MIT",
-          "language": "TypeScript",
-          "priority": "P1",
-          "whyKeep": "规划执行可靠性（连续失败 abort）对 solo harness 仍有直接价值"
-        },
-        {
-          "id": "ecc",
-          "name": "Everything Claude Code / ECC",
-          "repo": "affaan-m/ecc",
-          "url": "https://github.com/affaan-m/ecc",
-          "lastDeepDive": "2026-06-14",
-          "license": "NOASSERTION",
-          "language": "TypeScript/Python/Markdown",
-          "priority": "P1",
-          "signal": "OpenCode 显式 projection、skill-comply、skill health/evolution loop、changed-files ledger",
-          "whyKeep": "验证规划 skill 是否真被执行（compliance / health），不是又一个 plan 模板库"
-        }
-      ]
-    },
-    "team-workflow": {
-      "description": "对 multi-agent team、路由、skill 治理与工作流蓝图有参考价值",
-      "pillar": "team-workflow",
-      "competitors": [
-        {
-          "id": "openclaw",
-          "name": "OpenClaw",
-          "repo": "openclaw/openclaw",
-          "url": "https://github.com/openclaw/openclaw",
-          "stars": 376649,
-          "forks": 78704,
-          "lastPush": "2026-06-04",
-          "latestRelease": "v2026.6.1",
-          "releaseDate": "2026-06-03",
-          "signal": "Skill Workshop 治理闭环、Plugin 外部化、Operator install policy、Memory/channel SQLite",
-          "license": "MIT",
-          "language": "TypeScript",
-          "priority": "P0",
-          "whyKeep": "skill 生命周期与 install policy 直接对标 AIOS skill-workshop / install-policy"
-        }
-      ]
-    }
+  "portfolio": {
+    "core-reference": [
+      {
+        "id": "tencentdb-agent-memory",
+        "name": "TencentDB-Agent-Memory",
+        "repo": "TencentCloud/TencentDB-Agent-Memory",
+        "url": "https://github.com/TencentCloud/TencentDB-Agent-Memory",
+        "pillar": "memo-memory",
+        "tier": "core-reference",
+        "uniqueReferenceQuestion": "上下文超预算时，如何把工具结果和记忆从 full 降级为 summary+ref / ref-only，同时保留可恢复原文与来源链？",
+        "refreshCadence": "event-driven; quarterly metadata-only check",
+        "refreshTrigger": "其 auto-recall、offload 或 result-ref 机制发生相关源码变化；或 AIOS 修改 recall budget / validated compaction 合同时。普通版本号、star 变化不触发 deep dive。",
+        "rationale": "12 项中对预算降级、分层 offload 与 ref provenance 的组合最直接，且 TypeScript 实现便于双侧源码核对；保留为唯一的预算/表示层核心参照。",
+        "evidenceSnapshot": "Recall 预算 (maxCharsPerMemory + maxTotalRecallChars), L0→L3 语义分层, Mermaid 符号化压缩思路, 独立 Memory 服务化路径",
+        "license": "MIT",
+        "language": "TypeScript",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "oh-my-openagent",
+        "name": "oh-my-openagent",
+        "repo": "code-yeongyu/oh-my-openagent",
+        "url": "https://github.com/code-yeongyu/oh-my-openagent",
+        "pillar": "intelligent-planning",
+        "tier": "core-reference",
+        "uniqueReferenceQuestion": "恢复或继续 active work 时，如何绑定 session lineage、主动装配工作上下文，并在写入前识别 stale content？",
+        "refreshCadence": "event-driven; quarterly metadata-only check",
+        "refreshTrigger": "active-work discovery、continuation/lineage、Hashline stale-write guard 或相关配置 schema 发生源码变化；或 AIOS 进入 ExecutionContextPacket / write preflight 实施阶段。",
+        "rationale": "它是当前组合中唯一同时覆盖主动恢复、lineage 与内容新鲜度写保护的实现；保留为规划到修改前工作集的核心参照，不再跟踪其泛化 agent 功能。",
+        "evidenceSnapshot": "active work 发现与主动恢复、session lineage/continuation、Hashline stale-write guard、per-agent skill filter",
+        "license": "NOASSERTION",
+        "language": "TypeScript",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "openclaw",
+        "name": "OpenClaw",
+        "repo": "openclaw/openclaw",
+        "url": "https://github.com/openclaw/openclaw",
+        "pillar": "team-workflow",
+        "tier": "core-reference",
+        "uniqueReferenceQuestion": "Agent 提出的 skill 或共享状态变更，如何通过 proposal → review → apply / rollback / quarantine，并用 provenance 与 stale hash 安全发布？",
+        "refreshCadence": "event-driven; quarterly metadata-only check",
+        "refreshTrigger": "skill workshop、install policy、proposal/review/apply/rollback/quarantine、provenance 或 stale-hash admission 发生相关源码变化；或 AIOS 准备开启 Team shared-canonical 写入。",
+        "rationale": "其治理状态机和反向安全信号最完整，是 Team 发布门与可回滚治理的唯一核心参照；只审查治理路径，不扫描其渠道、桌面或通用插件面。",
+        "evidenceSnapshot": "Skill Workshop 治理闭环、Plugin 外部化、Operator install policy、Memory/channel SQLite",
+        "license": "MIT",
+        "language": "TypeScript",
+        "sourceEvidenceAsOf": "2026-07-28"
+      }
+    ],
+    "specialist-reference": [
+      {
+        "id": "graphiti",
+        "name": "Graphiti (Zep core)",
+        "repo": "getzep/graphiti",
+        "url": "https://github.com/getzep/graphiti",
+        "pillar": "memo-memory",
+        "tier": "specialist-reference",
+        "uniqueReferenceQuestion": "不复制图数据库时，事实的现实有效期、系统失效时间与原始 episode provenance 应如何共同建模？",
+        "refreshCadence": "event-driven; semiannual metadata-only check",
+        "refreshTrigger": "Graphiti 的 EntityEdge temporal/provenance contract 发生相关源码变化；或 AIOS 修改 ContextItem validity / supersede schema。除此之外不做仓库级刷新。",
+        "rationale": "双时态与 episode provenance 仍是最强窄域证据，但图检索和数据库架构不属于版本目标；降为只回答 temporal semantics 的 specialist。",
+        "evidenceSnapshot": "时序知识图谱 + 事实失效 (bi-temporal) + attribute-hallucination 防御；getzep/zep 主仓已 dormant 不再跟踪",
+        "license": "Apache-2.0",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "letta-code",
+        "name": "Letta Code",
+        "repo": "letta-ai/letta-code",
+        "url": "https://github.com/letta-ai/letta-code",
+        "pillar": "memo-memory",
+        "tier": "specialist-reference",
+        "uniqueReferenceQuestion": "如何只对模型实际读取过的记忆生成不可伪造、可回查的 citation / context receipt？",
+        "refreshCadence": "event-driven; semiannual metadata-only check",
+        "refreshTrigger": "memory-citations 从 prototype 升级、其实际读取观测链发生相关源码变化；或 AIOS 开始实现 ContextReceipt。其他 sleep-time / agent 功能不触发刷新。",
+        "rationale": "实际读取驱动 citation 是独立且直接对应 ContextReceipt 的窄问题；实现仍是 prototype，不足以进入 core，也不值得全仓持续扫描。",
+        "evidenceSnapshot": "Sleep-Time 记忆整理、Task* CRUD、system prompt 版本化 canary；letta-ai/letta 主仓已 dormant 不再跟踪",
+        "license": "Apache-2.0",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      }
+    ],
+    "archive-reference": [
+      {
+        "id": "mem0",
+        "name": "mem0",
+        "repo": "mem0ai/mem0",
+        "url": "https://github.com/mem0ai/mem0",
+        "pillar": "memo-memory",
+        "tier": "archive-reference",
+        "uniqueReferenceQuestion": "跨 Codex、Claude 与 OpenCode 的 SessionStart / Stop / PreCompact hook，如何以最低接入成本捕获和注入记忆？",
+        "refreshCadence": "none",
+        "refreshTrigger": "不主动刷新；只有发布可验证的 promotion gate 或跨客户端生命周期协议，且 AIOS 现有 projection 无法覆盖时，才作为新候选重新评审。",
+        "rationale": "hook 矩阵的历史证据已充分，自动捕获同时暴露未验证内容晋升风险；该问题已被 AIOS client projection 与 candidate-gate 方向吸收，继续追踪大仓成本高于增量价值。",
+        "evidenceSnapshot": "多客户端 plugin 矩阵 + OpenCode plugin + Stop/SessionStart 记忆 hook；零 LLM 检索管道",
+        "license": "Apache-2.0",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "openviking",
+        "name": "OpenViking",
+        "repo": "volcengine/OpenViking",
+        "url": "https://github.com/volcengine/OpenViking",
+        "pillar": "memo-memory",
+        "tier": "archive-reference",
+        "uniqueReferenceQuestion": "URI 级 agent namespace 与 link-only 预算降级如何组合成可审计的 context container？",
+        "refreshCadence": "none",
+        "refreshTrigger": "不主动刷新；只有出现 local-first/embedded 路径，并提供 AIOS 核心参照无法覆盖的 ACL 强制或审计证据时，才重新评审。",
+        "rationale": "namespace、ref-only 与 audit 信号分别已由 OpenClaw、TencentDB-Agent-Memory 等更聚焦来源覆盖；AGPL 与服务化形态还增加迁移噪声，保留历史证据即可。",
+        "evidenceSnapshot": "per-agent 经验命名空间、OVPack 上下文容器、usage/audit schema、Memory V2",
+        "license": "AGPL-3.0",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "superpowers",
+        "name": "superpowers",
+        "repo": "obra/superpowers",
+        "url": "https://github.com/obra/superpowers",
+        "pillar": "intelligent-planning",
+        "tier": "archive-reference",
+        "uniqueReferenceQuestion": "brainstorm → plan → verification 的过程方法，如何写成可读、可复用的 agent skill？",
+        "refreshCadence": "none",
+        "refreshTrigger": "不主动刷新；只有出现超出 prose skill 的机器可执行 enforcement / receipt 机制，且 Rex 当前能力未覆盖时，才重新评审。",
+        "rationale": "方法论已经吸收，且 Rex 是唯一工作流控制面；继续跟踪 skill 文案变化不会改变下一版本架构，保留来源归因而退出活跃刷新。",
+        "evidenceSnapshot": "brainstorming / writing-plans / verification-before-completion / subagent-driven-development / TDD / systematic-debugging",
+        "license": "MIT",
+        "language": "Shell",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "hermes-agent",
+        "name": "Hermes Agent",
+        "repo": "NousResearch/hermes-agent",
+        "url": "https://github.com/NousResearch/hermes-agent",
+        "pillar": "intelligent-planning",
+        "tier": "archive-reference",
+        "uniqueReferenceQuestion": "后台 skill review 与 curator 如何形成可审计的自改进闭环？",
+        "refreshCadence": "none",
+        "refreshTrigger": "不主动刷新；只有出现影响 Context Lifecycle / handoff 的新 enforcement 机制，且 docs/hermes-inspired-capability-mapping.md 尚未覆盖时，才重新评审。",
+        "rationale": "已有专门能力映射，curator/skill 治理又与 OpenClaw 核心问题重叠；活跃跟踪整个 Hermes 仓库会重复维护，历史映射足够。",
+        "evidenceSnapshot": "handoff、background skill review、curator、LSP on write、prompt cache；已有 AIOS 映射页",
+        "license": "MIT",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "open-harness",
+        "name": "OpenHarness",
+        "repo": "HKUDS/OpenHarness",
+        "url": "https://github.com/HKUDS/OpenHarness",
+        "pillar": "intelligent-planning",
+        "tier": "archive-reference",
+        "uniqueReferenceQuestion": "长循环启动前如何表达 ready / warning / blocked，并把记忆整理拆成 preview / apply？",
+        "refreshCadence": "none",
+        "refreshTrigger": "不主动刷新；只有 readiness 接入真实 write admission，或 preview 变成有 hash、proposal 与 rollback 的强制协议时，才重新评审。",
+        "rationale": "readiness 结构已被 AIOS 吸收，PREVIEW 仅提示词写保护则作为反例记录；现有信号不足以支持持续源码刷新。",
+        "evidenceSnapshot": "dry-run ready/warning/blocked、autodream sleep-time、文件型 mailbox、auto-compaction",
+        "license": "MIT",
+        "language": "Python",
+        "sourceEvidenceAsOf": "2026-07-28"
+      }
+    ],
+    "remove": [
+      {
+        "id": "gnhf",
+        "name": "gnhf",
+        "repo": "kunchenguid/gnhf",
+        "url": "https://github.com/kunchenguid/gnhf",
+        "pillar": "intelligent-planning",
+        "tier": "remove",
+        "uniqueReferenceQuestion": "无：连续失败中止已是 AIOS 基线，剩余的无上限退避还是明确反例。",
+        "refreshCadence": "none",
+        "refreshTrigger": "不刷新；未来若出现全新机制，必须作为新候选重新与当前 core 比较，不能自动回到 watchlist。",
+        "rationale": "唯一正向模式 consecutiveFailures abort 已吸收，commit repair 过于 Git-specific，uncapped backoff 不应复制；没有剩余独立问题。",
+        "evidenceSnapshot": "overnight 单 lane、consecutiveFailures abort、commit repair prompt；退避无 cap 是缺陷勿抄",
+        "license": "MIT",
+        "language": "TypeScript",
+        "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "ecc",
+        "name": "Everything Claude Code / ECC",
+        "repo": "affaan-m/ecc",
+        "url": "https://github.com/affaan-m/ecc",
+        "pillar": "intelligent-planning",
+        "tier": "remove",
+        "uniqueReferenceQuestion": "无：skill compliance 与 changed-files ledger 已被 Rex evidence/reconciliation 及 retained 的 stale-write 问题覆盖。",
+        "refreshCadence": "none",
+        "refreshTrigger": "不刷新；只有形成单一、可源码验证的 runtime enforcement，且能替代现有 core 项时，才按新候选重新进入。",
+        "rationale": "内容与模板面过宽，缺少比现有 Rex evidence 和 oh-my-openagent 写前/写后链更强的独立 runtime 问题；保留会把模板规模误当架构价值。",
+        "evidenceSnapshot": "OpenCode 显式 projection、skill-comply、skill health/evolution loop、changed-files ledger",
+        "license": "NOASSERTION",
+        "language": "TypeScript/Python/Markdown",
+        "sourceEvidenceAsOf": "2026-07-28"
+      }
+    ]
   },
   "crossCuttingTrends": [
+    "2026-07-28 W2 强制收缩：12 项中仅 5 项保留活跃刷新（3 core + 2 specialist）；5 项仅存档，2 项移除；取消 12 项定期全量刷新。",
+    "活跃问题所有权：TencentDB-Agent-Memory=预算/降级/ref，oh-my-openagent=active work/lineage/stale write，OpenClaw=proposal/review/apply/rollback 治理，Graphiti=双时态事实语义，Letta Code=实际读取 citation/receipt。",
     "三支柱过滤：memo 记忆 / 智能规划 / team 工作流 — 不在三支柱内的竞品不进 watchlist",
-    "规划方法论以 superpowers skill 闭环为准，不追 GTM 内容站或桌面壳",
+    "superpowers 方法论已吸收；rex-harness 是唯一控制面，方法论或 skill 文案变化不再单独触发 refresh",
     "记忆轨优先：Recall 预算、分层压缩、事实失效、sleep-time consolidation、跨 client memo 注入",
     "规划执行轨优先：dry-run readiness、consecutiveFailures abort、evidence/verification、handoff",
     "Team 轨优先：skill workshop 治理、install policy、per-agent 隔离、文件型 mailbox（轻量）",
@@ -258,15 +286,24 @@
     "已否决抄法（2026-07-01 源码核实，2026-07-26 复核）：the-pair 极简 verdict 记录层、gnhf 无 cap 退避、tokensEstimated sticky 展示层、OpenHarness PREVIEW 纯提示词写保护",
     "已撤回的记录（2026-07-26 实拉修正）：旧条目称 oh-my-openagent 无 default_mode 字段属误记 —— assets/oh-my-opencode.schema.json:6907、docs/reference/features.md:397,400、CHANGELOG.md:167 均证实该字段存在；且配置 schema 已迁至 packages/omo-opencode/src/config/schema/，07-01 引用的 config/schema.ts 路径不复存在",
     "反向信号（2026-07-26）：OpenClaw CHANGELOG:21 将 skill workshop 的 agent 自主 apply/reject/quarantine 默认改为免二次确认，人工审批降为 opt-in。不跟进 —— 其前提是 quarantine 兜底健全，我们内容扫描尚未接入（见 2026-07-26 报告 F8）",
-    "ECC：skill compliance + explicit client projection 比被动 skill 目录发现更可靠",
-    "Hermes 能力映射见 docs/hermes-inspired-capability-mapping.md（多项已 Done）"
+    "ECC 的 skill compliance / changed-files ledger 作为已吸收历史信号保留，不再单独跟踪",
+    "Hermes 能力映射见 docs/hermes-inspired-capability-mapping.md（多项已 Done）；映射页替代全仓持续刷新",
+    "2026-07-28 Context Lifecycle：下一阶段重点不是新增 memory backend，而是把 architecting / ingesting / scoping / anticipating / validated compaction 串成闭环",
+    "ContextCard + ContextReceipt：work item 的目标、验收、约束、假设、证据与实际注入来源必须有 revision、scope、trust 和 hash",
+    "预算降级策略：full → summary+ref → ref-only；不得因超预算静默丢失，压缩必须验证 must-preserve 与 evidence 可达性",
+    "Anticipating V1 采用确定性 Change Context Resolver（目标符号、影响面、测试、项目约束、最近失败），有真实 receipt 数据后才评估预测式预取"
   ],
   "p0OptimizationTargets": {
-    "memo": "Recall 预算 + emergency 压缩兜底 + sleep-time/manual dream + 事实时效字段",
-    "planning": "consecutiveFailures abort + dry-run readiness + runtime directive + superpowers 规划 skill 真执行",
-    "team": "Skill workshop file rollback/stale + install policy + per-agent memo 命名空间"
+    "memo": "Supersede ACL/publish gate + runtime provenance + ContextItem validity + candidate promotion + proposal-only consolidation",
+    "planning": "Plan v3 Context Impact Set + ExecutionContextPacket + read evidence/stale preflight + post-change reconciliation",
+    "team": "Steward-governed shared canonical memory + revisioned evidence handoff + ContextReceipt + ACL-sticky compaction"
   },
-  "nextRefresh": "2026-08-09 or on major release of OpenHarness / Hermes / OpenClaw / TencentDB / Graphiti",
+  "nextRefresh": {
+    "coreMetadataCheck": "2026-10-28",
+    "specialistMetadataCheck": "2027-01-28",
+    "fullPortfolioRefresh": null,
+    "policy": "Metadata checks only detect staleness or archived status. A source deep dive occurs only when the project-specific refreshTrigger fires."
+  },
   "removed": {
     "2026-06-14": [
       "long-running-tasks (mmTheBest/long-running-tasks)",
@@ -309,6 +346,18 @@
         "id": "browser-control-plane",
         "reason": "类别清空后删除；浏览器能力以 AIOS 自有 browser-use MCP 为准，不靠外部桌面竞品"
       }
+    ],
+    "2026-07-28": [
+      {
+        "id": "gnhf",
+        "repo": "kunchenguid/gnhf",
+        "reason": "consecutiveFailures abort 已吸收；其余信号为 Git-specific repair 或 uncapped backoff 反例，无独立参考问题。"
+      },
+      {
+        "id": "ecc",
+        "repo": "affaan-m/ecc",
+        "reason": "skill compliance / changed-files ledger 与 Rex evidence、reconciliation 和 retained stale-write 问题重叠，无更强 canonical runtime。"
+      }
     ]
   },
   "cleanupNotes": [
@@ -332,6 +381,17 @@
         "overstory worker_died / stall timeout (absorbed into crossCuttingTrends)",
         "the-pair structured review evidence (optional if we ever wire mentor verdict into ContextDB — not a watchlist item)"
       ]
+    },
+    {
+      "date": "2026-07-28",
+      "reason": "W2 forced portfolio contraction: optimize for lower maintenance cost rather than finding a retention argument for every project.",
+      "beforeCount": 12,
+      "activeRefreshAfterCount": 5,
+      "coreReferenceCount": 3,
+      "specialistReferenceCount": 2,
+      "archiveReferenceCount": 5,
+      "removeCount": 2,
+      "scheduledFullPortfolioRefresh": false
     }
   ]
 }

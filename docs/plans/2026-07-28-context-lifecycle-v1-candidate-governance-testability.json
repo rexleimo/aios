@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-candidate-governance-test-design.md#RED-验收",
+  "redCandidate": {
+    "publicEntry": "memo candidate governance storage API and CLI",
+    "setup": "The focused test creates isolated file/split memo candidates, Session Close candidates, runtime reviewer identities, custom state roots, and CLI subprocesses; module absence leaves behavior tests skipped behind one explicit public-seam failure.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/memo-candidate-governance.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "6/6 pass: authorized promotion is append-only and idempotent, DENY receipts preserve pending state, reject/expire remain unpublished, Session Close works, custom roots are honored, and CLI uses the same authority boundary.",
+    "observed": "0 pass, 1 fail, 5 skip because scripts/lib/memo/storage/candidates.mjs does not exist.",
+    "failureReason": "There is no candidate governance state machine, receipt log, promotion API, or CLI command surface.",
+    "receiptRef": "receipt:f657a647-3e35-4cd7-afc5-00a3127bcbfa"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-v1-caller-read-evidence-boundary-test-design.md#First vertical RED/GREEN slice",
+  "redCandidate": {
+    "publicEntry": "buildExecutionContextPacket() and evaluateExecutionContextPreflight()",
+    "setup": "Create real required context files and a structured plan, then invoke the public packet builder with readRefs for a required source and readEvidenceSource set to broker_verified.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/execution-context-packet.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "Legacy caller assertions remain compatible inputs but produce zero trusted read decisions, an evidence boundary of none/not broker verified, and required_context_unread during direct preflight.",
+    "observed": "The forged caller input produced one required read decision and reduced unread required context from three to two.",
+    "failureReason": "buildExecutionContextPacket directly converts caller-supplied readRefs into read decisions and copies caller-provided readEvidenceSource into receipt metadata.",
+    "receiptRef": "receipt:684484b0-5f93-4c5c-92a5-296d9bc4aaf5"
+  }
+}

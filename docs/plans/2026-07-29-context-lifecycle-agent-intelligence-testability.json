@@ -1,0 +1,21 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-29-context-lifecycle-agent-intelligence-test-scope.md#acceptance-mapping",
+  "redCandidate": {
+    "publicEntry": "aios_plan_task MCP proposal, human aios plan task confirmation, and aios_orchestrate MCP delivery",
+    "setup": "Use isolated workspaces with an active structured plan, source files, and a temporary .code-review-graph/graph.db fixture containing CALLS and TESTED_BY relationships.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "--test-concurrency=1",
+        "scripts/tests/planning-context-candidates.test.mjs"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "An agent proposal derives deterministic target and codemap candidates without mutating active.json; explicit human confirmation persists selected candidates and rejects stale proposals.",
+    "observed": "The test process fails before execution because scripts/lib/planning/context-candidates.mjs does not exist.",
+    "failureReason": "There is no candidate owner, codemap query adapter, durable proposal store, or confirmation-to-plan boundary.",
+    "receiptRef": "receipt:a76f1639-7524-4909-9d8c-0c3d2f5cdbd0"
+  }
+}

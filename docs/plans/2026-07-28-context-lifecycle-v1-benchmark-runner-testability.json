@@ -1,0 +1,25 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-07-28-context-lifecycle-v1-benchmark.md#基准运行模型",
+  "redCandidate": {
+    "publicEntry": "Context Lifecycle V1 基准 runner CLI",
+    "setup": "在仓库根目录运行 baseline profile，要求在隔离临时工作区执行 CL-01、CL-02、CL-03、CL-05、CL-06、CL-10，并输出 JSON 与 Markdown 基线工件。",
+    "command": {
+      "executable": "node",
+      "args": [
+        "scripts/benchmarks/context-lifecycle-v1.mjs",
+        "--profile",
+        "baseline",
+        "--json-out",
+        "temp/context-lifecycle-v1/baseline.json",
+        "--markdown-out",
+        "temp/context-lifecycle-v1/baseline.md"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "命令退出码为 0，六个场景都有 actual observation、qualityVerdict 和证据摘要，并生成 baseline.json 与 baseline.md。",
+    "observed": "命令退出码为 1，目标 runner 文件尚不存在，没有生成基线工件。",
+    "failureReason": "可重复的 Context Lifecycle 基准 runner 和六场景 fixture 尚未实现。",
+    "receiptRef": "receipt:7005518c-75ff-4cc8-8cf8-3f5f05432a0d"
+  }
+}
