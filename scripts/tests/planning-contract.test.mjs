@@ -26,7 +26,7 @@ async function makeTemp(prefix) {
 test('buildPlanMarkdown includes contract markers', () => {
   const md = buildPlanMarkdown({ title: 'Auth refactor', objective: 'fix login', client: 'claude' });
   assert.match(md, /AIOS Planning Contract/);
-  assert.match(md, /schema v2/);
+  assert.match(md, /schema v3/);
   assert.match(md, /Verification evidence/);
   assert.match(md, /Auth refactor/);
 });
@@ -43,17 +43,75 @@ test('startPlan writes docs/plans artifact and active pointer', async () => {
       now: new Date('2026-07-09T12:00:00.000Z'),
     });
     assert.equal(state.status, 'active');
-    assert.equal(state.schemaVersion, 2);
+    assert.equal(state.schemaVersion, 3);
     assert.ok(Array.isArray(state.tasks) && state.tasks.length >= 3);
     assert.ok(state.route);
     assert.ok(state.relativePath.startsWith('docs/plans/'));
     assert.ok(fs.existsSync(path.join(root, state.relativePath)));
     const body = await readFile(path.join(root, state.relativePath), 'utf8');
     assert.match(body, /Ship planning bridge/);
-    assert.match(body, /schema v2/);
+    assert.match(body, /schema v3/);
     const active = readActivePlan(root);
     assert.equal(active.title, 'Ship planning bridge');
     assert.equal(active.client, 'hermes');
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('startPlan persists task targets, required context, and verification in v3', async () => {
+  const root = await makeTemp('aios-plan-context-v3-');
+  try {
+    const state = startPlan({
+      rootDir: root,
+      title: 'Auth context',
+      tasks: [{
+        id: 'auth',
+        title: 'Update login',
+        targets: ['src/auth/login.mjs'],
+        allowedWrites: ['src/auth/**'],
+        contextRequirements: [{ ref: 'src/auth/policy.mjs', reason: 'Policy dependency' }],
+        verification: ['node --test tests/auth.test.mjs'],
+      }],
+    });
+    const task = state.tasks[0];
+    assert.deepEqual(task.targets, ['src/auth/login.mjs']);
+    assert.deepEqual(task.allowedWrites, ['src/auth/**']);
+    assert.equal(task.contextRequirements[0].ref, 'src/auth/policy.mjs');
+    assert.deepEqual(task.verification, ['node --test tests/auth.test.mjs']);
+
+    const body = await readFile(path.join(root, state.relativePath), 'utf8');
+    assert.match(body, /targets: src\/auth\/login\.mjs/u);
+    assert.match(body, /context \(required\): src\/auth\/policy\.mjs/u);
+    assert.match(body, /verification: node --test tests\/auth\.test\.mjs/u);
+  } finally {
+    await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('readActivePlan preserves v2 until an explicit write upgrades it to v3', async () => {
+  const root = await makeTemp('aios-plan-v2-compat-');
+  try {
+    const statePath = path.join(root, '.aios', 'planning', 'active.json');
+    fs.mkdirSync(path.dirname(statePath), { recursive: true });
+    fs.writeFileSync(statePath, `${JSON.stringify({
+      schemaVersion: 2,
+      title: 'Legacy v2',
+      objective: 'Keep readable',
+      status: 'active',
+      tasks: [{ id: 'legacy', title: 'Legacy task', status: 'pending', acceptance: '', dependsOn: [] }],
+      evidence: [],
+    }, null, 2)}\n`, 'utf8');
+
+    const legacy = readActivePlan(root);
+    assert.equal(legacy.schemaVersion, 2);
+    assert.equal(Object.hasOwn(legacy.tasks[0], 'targets'), false);
+
+    const upgraded = setPlanStatus(root, 'approved');
+    assert.equal(upgraded.schemaVersion, 3);
+    assert.deepEqual(upgraded.tasks[0].targets, []);
+    assert.deepEqual(upgraded.tasks[0].contextRequirements, []);
+    assert.equal(JSON.parse(fs.readFileSync(statePath, 'utf8')).schemaVersion, 3);
   } finally {
     await rm(root, { recursive: true, force: true });
   }
