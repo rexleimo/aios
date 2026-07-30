@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFile, cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { access, copyFile, cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -54,16 +54,63 @@ export function assertCleanEvaluator(rootDir) {
   return runGit(rootDir, ['rev-parse', '--verify', 'HEAD^{commit}']);
 }
 
+const DEPENDENCY_MANIFESTS = Object.freeze([
+  'package.json',
+  'package-lock.json',
+  'mcp-server/package.json',
+  'mcp-server/package-lock.json',
+]);
+
+function resolveBlobHash(rootDir, commit, relativePath) {
+  const result = spawnSync('git', ['-C', rootDir, 'rev-parse', `${commit}:${relativePath}`], {
+    encoding: 'utf8',
+    windowsHide: true,
+  });
+  return result.status === 0 ? String(result.stdout || '').trim() : null;
+}
+
+export function dependencyManifestProvenance(rootDir, evaluatorCommit, subjectCommit) {
+  const manifests = Object.fromEntries(DEPENDENCY_MANIFESTS.map((relativePath) => {
+    const evaluatorHash = resolveBlobHash(rootDir, evaluatorCommit, relativePath);
+    const subjectHash = resolveBlobHash(rootDir, subjectCommit, relativePath);
+    return [relativePath, {
+      evaluator: evaluatorHash,
+      subject: subjectHash,
+      matches: evaluatorHash === subjectHash,
+    }];
+  }));
+  return {
+    evaluatorCommit,
+    subjectCommit,
+    manifests,
+    allMatch: Object.values(manifests).every((manifest) => manifest.matches),
+  };
+}
+
+function assertDependencyManifestParity(provenance) {
+  if (provenance.allMatch) return;
+  const mismatches = Object.entries(provenance.manifests)
+    .filter(([, manifest]) => !manifest.matches)
+    .map(([relativePath, manifest]) => `${relativePath}: evaluator=${manifest.evaluator || 'missing'}, subject=${manifest.subject || 'missing'}`);
+  throw new Error(`dependency manifest mismatch for ${provenance.subjectCommit}: ${mismatches.join('; ')}`);
+}
+
 async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), `context-lifecycle-${label}-`));
   let added = false;
   try {
     runGit(evaluatorRoot, ['worktree', 'add', '--detach', tempRoot, commit]);
-    await materializeStableSubmodule(evaluatorRoot, tempRoot, commit, 'rex-harness');
-    await materializeLocalDependency(evaluatorRoot, tempRoot, 'node_modules');
-    await materializeLocalDependency(evaluatorRoot, tempRoot, 'mcp-server/node_modules');
     added = true;
-    return await run(tempRoot);
+    const submodule = await materializeStableSubmodule(evaluatorRoot, tempRoot, commit, 'rex-harness');
+    const linkedDependencies = [];
+    for (const relativePath of ['node_modules', 'mcp-server/node_modules']) {
+      linkedDependencies.push(await materializeLocalDependency(evaluatorRoot, tempRoot, relativePath));
+    }
+    const result = await run(tempRoot);
+    return {
+      ...result,
+      materialization: { submodule, linkedDependencies },
+    };
   } finally {
     if (added) {
       try {
@@ -81,37 +128,57 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   }
 }
 
-async function materializeStableSubmodule(evaluatorRoot, subjectRoot, commit, relativePath) {
-  const sourcePath = path.join(evaluatorRoot, relativePath);
-  const targetPath = path.join(subjectRoot, relativePath);
-  let sourceCommit;
-  try {
-    sourceCommit = runGit(sourcePath, ['rev-parse', 'HEAD']);
-  } catch {
-    return;
+function normalizePathForCompare(value) {
+  const resolved = path.resolve(value);
+  return process.platform === 'win32' ? resolved.toLowerCase() : resolved;
+}
+
+export function parsePinnedSubmoduleCommit(treeEntry, relativePath) {
+  const match = /^160000 commit ([0-9a-f]+)\t(.+)$/u.exec(String(treeEntry || '').trim());
+  if (!match || match[2] !== relativePath) {
+    throw new Error(`commit does not contain a pinned submodule at ${relativePath}`);
   }
-  const treeEntry = runGit(evaluatorRoot, ['ls-tree', commit, relativePath]);
-  const expectedCommit = String(treeEntry.split(/\s+/u)[2] || '').trim();
-  if (expectedCommit && sourceCommit !== expectedCommit) {
+  return match[1];
+}
+
+export function assertSubmodulePin(expectedCommit, sourceCommit, relativePath) {
+  if (expectedCommit !== sourceCommit) {
     throw new Error(`submodule ${relativePath} is not at ${expectedCommit}; found ${sourceCommit}`);
   }
+}
+
+export async function materializeStableSubmodule(evaluatorRoot, subjectRoot, commit, relativePath) {
+  const treeEntry = runGit(evaluatorRoot, ['ls-tree', commit, relativePath]);
+  const expectedCommit = parsePinnedSubmoduleCommit(treeEntry, relativePath);
+  const sourcePath = path.join(evaluatorRoot, relativePath);
+  const targetPath = path.join(subjectRoot, relativePath);
+  try {
+    await access(path.join(sourcePath, '.git'));
+  } catch {
+    throw new Error(`submodule ${relativePath} is absent or uninitialized at ${sourcePath}`);
+  }
+  const sourceTopLevel = runGit(sourcePath, ['rev-parse', '--show-toplevel']);
+  if (normalizePathForCompare(sourceTopLevel) !== normalizePathForCompare(sourcePath)) {
+    throw new Error(`submodule ${relativePath} is not an independent checkout at ${sourcePath}`);
+  }
+  const sourceCommit = runGit(sourcePath, ['rev-parse', 'HEAD']);
+  assertSubmodulePin(expectedCommit, sourceCommit, relativePath);
   await rm(targetPath, { recursive: true, force: true });
   await cp(sourcePath, targetPath, {
     recursive: true,
     filter: (source) => path.basename(source) !== '.git',
   });
+  return { path: relativePath, commit: sourceCommit };
 }
 
-async function materializeLocalDependency(evaluatorRoot, subjectRoot, relativePath) {
+export async function materializeLocalDependency(evaluatorRoot, subjectRoot, relativePath) {
   const sourcePath = path.join(evaluatorRoot, relativePath);
   const targetPath = path.join(subjectRoot, relativePath);
-  try {
-    await rm(targetPath, { recursive: true, force: true });
-    await mkdir(path.dirname(targetPath), { recursive: true });
-    await symlink(sourcePath, targetPath, process.platform === 'win32' ? 'junction' : 'dir');
-  } catch (error) {
-    if (error?.code !== 'ENOENT') throw error;
-  }
+  await access(sourcePath);
+  await rm(targetPath, { recursive: true, force: true });
+  await mkdir(path.dirname(targetPath), { recursive: true });
+  await symlink(sourcePath, targetPath, process.platform === 'win32' ? 'junction' : 'dir');
+  return relativePath;
 }
 
 async function runSubject({ evaluatorRoot, subjectRoot, profile, outputDir, label }) {
@@ -168,10 +235,14 @@ function renderMarkdown(result) {
     `- Runner SHA-256: \`${result.runnerSha256}\``,
     `- Comparable scenarios: ${result.comparableScenarioIds.join(', ') || '(none)'}`,
     `- N/A scenarios: ${result.notApplicableScenarioIds.join(', ') || '(none)'}`,
+    `- Baseline overlay: ${result.subjects.baseline.materialization.submodule.path}@${result.subjects.baseline.materialization.submodule.commit}; linked ${result.subjects.baseline.materialization.linkedDependencies.join(', ') || '(none)'}`,
+    `- Post overlay: ${result.subjects.post.materialization.submodule.path}@${result.subjects.post.materialization.submodule.commit}; linked ${result.subjects.post.materialization.linkedDependencies.join(', ') || '(none)'}`,
+    `- Dependency manifest parity: baseline=${result.dependencyProvenance.baseline.allMatch ? 'match' : 'mismatch'}, post=${result.dependencyProvenance.post.allMatch ? 'match' : 'mismatch'}`,
     '',
     '## Evidence boundary',
     '',
     '- Both subjects were resolved to immutable commits from a clean evaluator checkout.',
+    '- The subject commit identity is immutable, but the benchmark overlays a verified local submodule and linked evaluator dependencies; those overlays are recorded below.',
     '- This is same-runner controlled synthetic validation, not independent-oracle or real-project validation.',
     '- It cannot enable pilot or default enforcement.',
     '',
@@ -190,6 +261,12 @@ async function main() {
   const baselineCommit = resolveImmutableCommit(options.evaluatorRoot, options.baselineRef);
   const postCommit = resolveImmutableCommit(options.evaluatorRoot, options.postRef);
   if (baselineCommit === postCommit) throw new Error('baseline and post must resolve to different commits');
+  const dependencyProvenance = {
+    baseline: dependencyManifestProvenance(options.evaluatorRoot, evaluatorCommit, baselineCommit),
+    post: dependencyManifestProvenance(options.evaluatorRoot, evaluatorCommit, postCommit),
+  };
+  assertDependencyManifestParity(dependencyProvenance.baseline);
+  assertDependencyManifestParity(dependencyProvenance.post);
   await mkdir(options.outputDir, { recursive: true });
 
   const baselineRun = await withDetachedWorktree(options.evaluatorRoot, baselineCommit, 'baseline', async (subjectRoot) => await runSubject({
@@ -212,13 +289,16 @@ async function main() {
     kind: 'context-lifecycle-v1-immutable-differential',
     evaluator: { commit: evaluatorCommit },
     subjects: {
-      baseline: { commit: baselineCommit },
-      post: { commit: postCommit },
+      baseline: { commit: baselineCommit, materialization: baselineRun.materialization },
+      post: { commit: postCommit, materialization: postRun.materialization },
     },
+    dependencyProvenance,
     commandExitCodes: { baseline: baselineRun.exitCode, post: postRun.exitCode },
     evidenceBoundary: {
       controlledSynthetic: true,
-      immutableSubjects: true,
+      immutableSubjectCommits: true,
+      immutableSubjects: false,
+      controlledOverlays: true,
       cleanEvaluator: true,
       independentOracle: false,
       realProjectSamples: 0,

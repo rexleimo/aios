@@ -48,29 +48,46 @@ function sha256(value) {
   return createHash('sha256').update(String(value || '')).digest('hex');
 }
 
+function redactDiagnostic(value) {
+  let redacted = String(value || '');
+  const replacements = [
+    [os.tmpdir(), '<tmp>'],
+    [os.homedir(), '<home>'],
+  ];
+  for (const [source, replacement] of replacements) {
+    for (const variant of new Set([source, source.replaceAll('\\', '/'), source.replaceAll('/', '\\')])) {
+      if (variant) redacted = redacted.split(variant).join(replacement);
+    }
+  }
+  return redacted;
+}
+
+function diagnosticTail(value, limit = 25) {
+  return redactDiagnostic(String(value || '').split(/\r?\n/u).filter(Boolean).slice(-limit).join('\n'));
+}
+
 function resolveOutput(target) {
   if (!target) return '';
   return path.isAbsolute(target) ? target : path.join(ROOT, target);
 }
 
-function commandObservation(executable, args, cwd = ROOT) {
+export function commandObservation(executable, args, cwd = ROOT) {
   const result = spawnSync(executable, args, { cwd, encoding: 'utf8', windowsHide: true });
   const testCountMatch = /(?:ℹ|#)\s*tests\s+(\d+)/u.exec(result.stdout || '');
-  const failureOutput = result.status === 0
-    ? ''
-    : [...String(result.stdout || '').split(/\r?\n/u), ...String(result.stderr || '').split(/\r?\n/u)]
-      .filter(Boolean)
-      .slice(-25)
-      .join('\n');
+  const failureExcerpt = result.status === 0 ? null : {
+    stdout: diagnosticTail(result.stdout),
+    stderr: diagnosticTail(result.stderr),
+  };
   return {
     executable,
     args,
-    cwd,
+    cwd: redactDiagnostic(cwd),
     exitCode: Number.isInteger(result.status) ? result.status : -1,
     stdoutSha256: sha256(result.stdout),
     stderrSha256: sha256(result.stderr || result.error?.message || ''),
     testCount: testCountMatch ? Number(testCountMatch[1]) : null,
-    error: failureOutput || String(result.error?.message || '').trim(),
+    error: redactDiagnostic(String(result.error?.message || '').trim()),
+    failureExcerpt,
   };
 }
 
@@ -1044,7 +1061,10 @@ async function main() {
   process.exitCode = summary.passed ? 0 : 1;
 }
 
-main().catch((error) => {
-  process.stderr.write(`${error?.stack || error}\n`);
-  process.exitCode = 1;
-});
+const isMain = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  main().catch((error) => {
+    process.stderr.write(`${error?.stack || error}\n`);
+    process.exitCode = 1;
+  });
+}

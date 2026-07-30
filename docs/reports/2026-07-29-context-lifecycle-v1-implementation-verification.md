@@ -30,7 +30,7 @@ The supported `aios orchestrate` / `aios_orchestrate` paths are reachable and ve
   - delivered-budget accounting: PASS
   - p95 latency remained below the controlled 50 ms smoke threshold
 - Local same-runner comparison remains a development diagnostic only. It is not an immutable release comparison.
-- `context-lifecycle-v1-differential.mjs` now performs immutable same-runner comparison only from a clean evaluator checkout and two distinct committed subject refs.
+- `context-lifecycle-v1-differential.mjs` now resolves two distinct committed subject refs from a clean evaluator checkout. Subject commit identity is immutable, but the runner uses a verified local `rex-harness` submodule copy and linked evaluator dependencies; submodule pin, dependency manifest parity, and overlays are recorded in the differential evidence, so this is not a pure-checkout comparison.
 - `context-lifecycle-v1-evidence-gate.mjs` verifies detached Ed25519 oracle and observation signatures, requires evidence refs, and can only return `REVIEW_REQUIRED`.
 
 ## Named controlled verification
@@ -52,7 +52,7 @@ The controlled results above do **not** demonstrate any of the following:
 
 A valid release/pilot review still requires all of:
 
-1. a clean committed candidate and an immutable differential run;
+1. a clean committed candidate and an immutable-subject-commit differential run with verified overlay and dependency provenance;
 2. a separately signed oracle and signed observations;
 3. at least 20 independently reviewed real planned tasks and 200 mutation/receipt samples;
 4. human review of false positives and unexplained block reasons;
