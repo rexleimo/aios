@@ -9,7 +9,10 @@ import test from 'node:test';
 import { createDispatchRuntimeRegistry } from '../lib/harness/orchestrator-runtimes.mjs';
 import { runOrchestrate } from '../lib/lifecycle/orchestrate.mjs';
 import { startPlan } from '../lib/planning/contract.mjs';
-import { captureSessionWorkspaceSnapshot } from '../lib/session/changed-files.mjs';
+import {
+  captureSessionWorkspaceSnapshot,
+  SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE,
+} from '../lib/session/changed-files.mjs';
 
 const cliPath = path.resolve(process.cwd(), 'scripts', 'aios.mjs');
 
@@ -408,5 +411,62 @@ test('workspace snapshots skip generated, build, cache, and virtualenv trees', a
     const snapshot = await captureSessionWorkspaceSnapshot({ rootDir });
     assert.equal(snapshot.available, true);
     assert.deepEqual([...snapshot.entries.keys()], ['src/kept.mjs']);
+  });
+});
+
+test('workspace snapshots stop after the configured traversal budget', async () => {
+  await withRoot('context-workspace-snapshot-budget-', async (rootDir) => {
+    for (let index = 0; index < 20; index += 1) {
+      const relativePath = `src/large-${index}.mjs`;
+      await mkdir(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+      await writeFile(path.join(rootDir, relativePath), 'export {};\n', 'utf8');
+    }
+
+    const snapshot = await captureSessionWorkspaceSnapshot({ rootDir, maxEntries: 2 });
+    assert.equal(snapshot.available, false);
+    assert.equal(snapshot.reasonCode, SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE);
+    assert.equal(snapshot.maxEntries, 2);
+    assert.equal(snapshot.visitedEntries, 2);
+    assert.match(snapshot.error, /exceeded 2 filesystem entries/);
+  });
+});
+
+test('a bounded non-Git snapshot fails reconciliation closed instead of silently omitting mutations', async () => {
+  await withRoot('context-workspace-snapshot-fail-closed-', async (rootDir) => {
+    await createContextPlan(rootDir);
+    const logs = [];
+    const dispatchRuntimeRegistry = createDispatchRuntimeRegistry({
+      executeDryRunPlan() {
+        writeFileSync(path.join(rootDir, 'docs', 'undeclared-with-budget.mjs'), 'export const changed = true;\n', 'utf8');
+        return {
+          mode: 'dry-run',
+          ok: true,
+          executorRegistry: [],
+          executorDetails: [],
+          jobRuns: [],
+          finalOutputs: [],
+        };
+      },
+    });
+
+    await runOrchestrate({
+      taskTitle: 'Bound snapshot work',
+      contextTaskId: 'deliver-context',
+      dispatchMode: 'local',
+      executionMode: 'dry-run',
+      format: 'json',
+    }, {
+      rootDir,
+      env: { ...process.env, AIOS_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES: '2' },
+      io: { log: (line) => logs.push(line) },
+      dispatchRuntimeRegistry,
+    });
+    const report = parseJsonLogs(logs);
+    const observation = report.contextLifecycle.mutationObservation;
+    const reconciliation = report.contextLifecycle.reconciliation;
+
+    assert.equal(observation.available, false);
+    assert.match(observation.reason, /exceeded 2 filesystem entries/);
+    assert.ok(reconciliation.wouldBlockReasons.includes('reconciliation_git_unavailable'));
   });
 });

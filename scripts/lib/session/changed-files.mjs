@@ -12,6 +12,8 @@ const SNAPSHOT_EXCLUDED_DIRECTORIES = new Set([
   'coverage',
   '.venv',
 ]);
+export const DEFAULT_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES = 20_000;
+export const SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE = 'AIOS_SESSION_WORKSPACE_SNAPSHOT_LIMIT';
 
 export function normalizeSessionId(sessionId) {
   const normalized = String(sessionId || 'default').trim() || 'default';
@@ -51,14 +53,32 @@ function snapshotPathExcluded(relativePath, entryName, excludedPrefixes) {
   return excludedPrefixes.some((prefix) => relativePath === prefix || relativePath.startsWith(`${prefix}/`));
 }
 
-async function collectWorkspaceSnapshotEntries(rootDir, currentDir, excludedPrefixes, entries) {
+function normalizeSnapshotMaxEntries(value) {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : DEFAULT_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES;
+}
+
+function consumeSnapshotBudget(budget) {
+  if (budget.visitedEntries >= budget.maxEntries) {
+    const error = new Error(`workspace snapshot exceeded ${budget.maxEntries} filesystem entries`);
+    error.code = SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE;
+    error.maxEntries = budget.maxEntries;
+    error.visitedEntries = budget.visitedEntries;
+    throw error;
+  }
+  budget.visitedEntries += 1;
+}
+
+async function collectWorkspaceSnapshotEntries(rootDir, currentDir, excludedPrefixes, entries, budget) {
+  consumeSnapshotBudget(budget);
   const directoryEntries = await fs.readdir(currentDir, { withFileTypes: true });
-  for (const entry of directoryEntries.sort((left, right) => left.name.localeCompare(right.name))) {
+  for (const entry of directoryEntries) {
+    consumeSnapshotBudget(budget);
     const absolutePath = path.join(currentDir, entry.name);
     const relativePath = normalizePath(path.relative(rootDir, absolutePath));
     if (!relativePath || snapshotPathExcluded(relativePath, entry.name, excludedPrefixes)) continue;
     if (entry.isDirectory()) {
-      await collectWorkspaceSnapshotEntries(rootDir, absolutePath, excludedPrefixes, entries);
+      await collectWorkspaceSnapshotEntries(rootDir, absolutePath, excludedPrefixes, entries, budget);
       continue;
     }
     if (!entry.isFile() && !entry.isSymbolicLink()) continue;
@@ -71,15 +91,24 @@ async function collectWorkspaceSnapshotEntries(rootDir, currentDir, excludedPref
  * Capture a runtime-owned, content-free workspace state for post-dispatch
  * reconciliation. Derived AIOS state and expensive dependency trees are omitted.
  */
-export async function captureSessionWorkspaceSnapshot({ rootDir = process.cwd(), env = process.env } = {}) {
+export async function captureSessionWorkspaceSnapshot({
+  rootDir = process.cwd(),
+  env = process.env,
+  maxEntries = env.AIOS_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES,
+} = {}) {
   const resolvedRoot = path.resolve(rootDir);
   const entries = new Map();
+  const budget = {
+    maxEntries: normalizeSnapshotMaxEntries(maxEntries),
+    visitedEntries: 0,
+  };
   try {
     await collectWorkspaceSnapshotEntries(
       resolvedRoot,
       resolvedRoot,
       snapshotExcludedPrefixes(resolvedRoot, env),
       entries,
+      budget,
     );
     return {
       schemaVersion: 1,
@@ -87,6 +116,8 @@ export async function captureSessionWorkspaceSnapshot({ rootDir = process.cwd(),
       available: true,
       rootDir: resolvedRoot,
       entries,
+      maxEntries: budget.maxEntries,
+      visitedEntries: budget.visitedEntries,
     };
   } catch (error) {
     return {
@@ -96,6 +127,9 @@ export async function captureSessionWorkspaceSnapshot({ rootDir = process.cwd(),
       rootDir: resolvedRoot,
       entries,
       error: String(error?.message || error),
+      reasonCode: String(error?.code || ''),
+      maxEntries: budget.maxEntries,
+      visitedEntries: budget.visitedEntries,
     };
   }
 }
