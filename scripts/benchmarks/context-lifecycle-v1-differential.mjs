@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFile, cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -60,6 +60,7 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   try {
     runGit(evaluatorRoot, ['worktree', 'add', '--detach', tempRoot, commit]);
     await materializeStableSubmodule(evaluatorRoot, tempRoot, commit, 'rex-harness');
+    await materializeLocalDependency(evaluatorRoot, tempRoot, 'node_modules');
     await materializeLocalDependency(evaluatorRoot, tempRoot, 'mcp-server/node_modules');
     added = true;
     return await run(tempRoot);
@@ -105,7 +106,9 @@ async function materializeLocalDependency(evaluatorRoot, subjectRoot, relativePa
   const sourcePath = path.join(evaluatorRoot, relativePath);
   const targetPath = path.join(subjectRoot, relativePath);
   try {
-    await cp(sourcePath, targetPath, { recursive: true, force: true });
+    await rm(targetPath, { recursive: true, force: true });
+    await mkdir(path.dirname(targetPath), { recursive: true });
+    await symlink(sourcePath, targetPath, process.platform === 'win32' ? 'junction' : 'dir');
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
   }
