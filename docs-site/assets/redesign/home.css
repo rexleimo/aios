@@ -1,7 +1,14 @@
+html.md-home,
+html.rex-home,
+body.md-home,
+body.rex-home {
+  --md-header-height: 0px;
+}
+
 .rex-home-main {
   --rex-home-design-width: 1440px;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .rex-home-main > h1:first-child {
@@ -133,8 +140,7 @@
   grid-template-columns: minmax(0, 1fr) 540px;
   gap: 80px;
   align-items: center;
-  /* Extra bottom padding keeps client chips clear of the ambient zone-label. */
-  padding: 120px 80px 132px 120px;
+  padding: clamp(5rem, 8.33vw, 7.5rem) clamp(1.5rem, 5.56vw, 5rem) clamp(4rem, 9.17vw, 8.25rem) clamp(3rem, 8.33vw, 7.5rem);
 }
 
 .hero-content {
@@ -1166,7 +1172,7 @@
 
 @keyframes rexBlink { 50% { opacity: 0; } }
 
-@media (max-width: 1180px) {
+@media (max-width: 1440px) {
   .hero-layout {
     min-height: 720px;
     grid-template-columns: minmax(0, 1fr) 420px;

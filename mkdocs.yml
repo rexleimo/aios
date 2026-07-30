@@ -193,6 +193,19 @@ hooks:
   - scripts/mkdocs_version.py
 
 extra:
+  alternate:
+    - name: English
+      link: /
+      lang: en
+    - name: 简体中文
+      link: /zh/
+      lang: zh
+    - name: 日本語
+      link: /ja/
+      lang: ja
+    - name: 한국어
+      link: /ko/
+      lang: ko
   links:
     product: https://cli.rexai.top
     blog: https://cli.rexai.top/blog/

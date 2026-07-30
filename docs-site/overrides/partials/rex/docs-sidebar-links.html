@@ -1,37 +1,147 @@
+{% set locale = i18n_page_locale if i18n_page_locale is defined else (i18n_current_language if i18n_current_language is defined else 'en') %}
+{% set labels = {
+  'en': {
+    'getting_started': 'Getting Started',
+    'core_systems': 'Core Systems',
+    'collaboration': 'Collaboration',
+    'reference': 'Reference',
+    'quick_start': 'Quick Start',
+    'windows_guide': 'Windows Guide',
+    'troubleshooting': 'Troubleshooting',
+    'contextdb': 'ContextDB',
+    'token_intelligence': 'Token Intelligence',
+    'rex_workflow_migration': 'Rex Workflow Migration',
+    'debug_hub': 'debug-hub',
+    'model_router': 'Model Router',
+    'codemap': 'Codemap',
+    'route_concurrency_profiles': 'Route & Concurrency Profiles',
+    'advanced_design_skills': 'Advanced Design Skills',
+    'agent_team': 'Agent Team',
+    'solo_harness': 'Solo Harness',
+    'hud_guide': 'HUD Guide',
+    'perception': 'Perception',
+    'architecture': 'Architecture',
+    'cli_workflows': 'CLI Workflows',
+    'cli_comparison': 'CLI Comparison',
+    'case_library': 'Case Library',
+    'changelog': 'Changelog'
+  },
+  'zh': {
+    'getting_started': '快速入门',
+    'core_systems': '核心系统',
+    'collaboration': '协作',
+    'reference': '参考',
+    'quick_start': '快速开始',
+    'windows_guide': 'Windows 安装指南',
+    'troubleshooting': '故障排查',
+    'contextdb': 'ContextDB',
+    'token_intelligence': 'Token 智能',
+    'rex_workflow_migration': 'Rex 工作流迁移',
+    'debug_hub': 'debug-hub',
+    'model_router': '模型路由器',
+    'codemap': '代码审查图谱 / Codemap',
+    'route_concurrency_profiles': '路由与并发档位',
+    'advanced_design_skills': '高级设计技能',
+    'agent_team': '多 Agent 实战',
+    'solo_harness': '单 Agent 夜跑',
+    'hud_guide': 'HUD 指南',
+    'perception': '感知层',
+    'architecture': '架构',
+    'cli_workflows': '按场景找命令',
+    'cli_comparison': 'CLI 对比',
+    'case_library': '官方案例库',
+    'changelog': '更新日志'
+  },
+  'ja': {
+    'getting_started': 'クイックスタート',
+    'core_systems': 'コアシステム',
+    'collaboration': 'コラボレーション',
+    'reference': 'リファレンス',
+    'quick_start': 'クイックスタート',
+    'windows_guide': 'Windows ガイド',
+    'troubleshooting': 'トラブルシューティング',
+    'contextdb': 'ContextDB',
+    'token_intelligence': 'Token インテリジェンス',
+    'rex_workflow_migration': 'Rex ワークフロー移行',
+    'debug_hub': 'debug-hub',
+    'model_router': 'モデルルーター',
+    'codemap': 'コードレビューグラフ / Codemap',
+    'route_concurrency_profiles': 'ルーティングと並列プロファイル',
+    'advanced_design_skills': '高度デザインスキル',
+    'agent_team': 'Agent Team',
+    'solo_harness': 'ソロ Harness',
+    'hud_guide': 'HUD ガイド',
+    'perception': 'パーセプション',
+    'architecture': 'アーキテクチャ',
+    'cli_workflows': 'CLI ワークフロー',
+    'cli_comparison': 'CLI 比較',
+    'case_library': '公式ケースライブラリ',
+    'changelog': '変更履歴'
+  },
+  'ko': {
+    'getting_started': '시작하기',
+    'core_systems': '핵심 시스템',
+    'collaboration': '협업',
+    'reference': '참조',
+    'quick_start': '빠른 시작',
+    'windows_guide': 'Windows 가이드',
+    'troubleshooting': '문제 해결',
+    'contextdb': 'ContextDB',
+    'token_intelligence': 'Token 인텔리전스',
+    'rex_workflow_migration': 'Rex 워크플로 마이그레이션',
+    'debug_hub': 'debug-hub',
+    'model_router': '모델 라우터',
+    'codemap': '코드 리뷰 그래프 / Codemap',
+    'route_concurrency_profiles': '라우팅/병렬 프로필',
+    'advanced_design_skills': '고급 디자인 스킬',
+    'agent_team': 'Agent Team',
+    'solo_harness': '솔로 Harness',
+    'hud_guide': 'HUD 가이드',
+    'perception': '인식 레이어',
+    'architecture': '아키텍처',
+    'cli_workflows': 'CLI 워크플로',
+    'cli_comparison': 'CLI 비교',
+    'case_library': '공식 사례 라이브러리',
+    'changelog': '변경 로그'
+  }
+} %}
+{% set t = labels[locale] if locale in labels else labels['en'] %}
+{% set current_path = page.url if page and page.url else '' %}
+
 <nav class="rex-doc-sidebar__nav">
   <section class="rex-doc-sidebar__section">
-    <h2>Getting Started</h2>
-    <a class="rex-doc-sidebar__item{% if page.url == 'getting-started/' %} is-active{% endif %}" href="{{ 'getting-started/' | url }}"><span data-icon="terminal"></span>Quick Start</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'windows-guide/' %} is-active{% endif %}" href="{{ 'windows-guide/' | url }}"><span data-icon="monitor"></span>Windows Guide</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'troubleshooting/' %} is-active{% endif %}" href="{{ 'troubleshooting/' | url }}"><span data-icon="alert"></span>Troubleshooting</a>
+    <h2>{{ t['getting_started'] }}</h2>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('getting-started/') %} is-active{% endif %}" href="{{ 'getting-started/' | url }}"><span data-icon="terminal"></span>{{ t['quick_start'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('windows-guide/') %} is-active{% endif %}" href="{{ 'windows-guide/' | url }}"><span data-icon="monitor"></span>{{ t['windows_guide'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('troubleshooting/') %} is-active{% endif %}" href="{{ 'troubleshooting/' | url }}"><span data-icon="alert"></span>{{ t['troubleshooting'] }}</a>
   </section>
 
   <section class="rex-doc-sidebar__section">
-    <h2>Core Systems</h2>
-    <a class="rex-doc-sidebar__item{% if page.url == 'contextdb/' %} is-active{% endif %}" href="{{ 'contextdb/' | url }}"><span data-icon="database"></span>ContextDB</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'token-compression/' %} is-active{% endif %}" href="{{ 'token-compression/' | url }}"><span data-icon="zap"></span>Token Intelligence</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'superpowers/' %} is-active{% endif %}" href="{{ 'superpowers/' | url }}"><span data-icon="spark"></span>Rex Workflow Migration</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'debug-hub/' %} is-active{% endif %}" href="{{ 'debug-hub/' | url }}"><span data-icon="bug"></span>debug-hub</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'model-router/' %} is-active{% endif %}" href="{{ 'model-router/' | url }}"><span data-icon="route"></span>Model Router</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'codemap/' %} is-active{% endif %}" href="{{ 'codemap/' | url }}"><span data-icon="branch"></span>Codemap</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'route-concurrency-profiles/' %} is-active{% endif %}" href="{{ 'route-concurrency-profiles/' | url }}"><span data-icon="network"></span>Route &amp; Concurrency Profiles</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'advanced-design-skills/' %} is-active{% endif %}" href="{{ 'advanced-design-skills/' | url }}"><span data-icon="layout"></span>Advanced Design Skills</a>
+    <h2>{{ t['core_systems'] }}</h2>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('contextdb/') %} is-active{% endif %}" href="{{ 'contextdb/' | url }}"><span data-icon="database"></span>{{ t['contextdb'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('token-compression/') %} is-active{% endif %}" href="{{ 'token-compression/' | url }}"><span data-icon="zap"></span>{{ t['token_intelligence'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('superpowers/') %} is-active{% endif %}" href="{{ 'superpowers/' | url }}"><span data-icon="spark"></span>{{ t['rex_workflow_migration'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('debug-hub/') %} is-active{% endif %}" href="{{ 'debug-hub/' | url }}"><span data-icon="bug"></span>{{ t['debug_hub'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('model-router/') %} is-active{% endif %}" href="{{ 'model-router/' | url }}"><span data-icon="route"></span>{{ t['model_router'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('codemap/') %} is-active{% endif %}" href="{{ 'codemap/' | url }}"><span data-icon="branch"></span>{{ t['codemap'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('route-concurrency-profiles/') %} is-active{% endif %}" href="{{ 'route-concurrency-profiles/' | url }}"><span data-icon="network"></span>{{ t['route_concurrency_profiles'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('advanced-design-skills/') %} is-active{% endif %}" href="{{ 'advanced-design-skills/' | url }}"><span data-icon="layout"></span>{{ t['advanced_design_skills'] }}</a>
   </section>
 
   <section class="rex-doc-sidebar__section">
-    <h2>Collaboration</h2>
-    <a class="rex-doc-sidebar__item{% if page.url == 'team-ops/' %} is-active{% endif %}" href="{{ 'team-ops/' | url }}"><span data-icon="users"></span>Agent Team</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'solo-harness/' %} is-active{% endif %}" href="{{ 'solo-harness/' | url }}"><span data-icon="activity"></span>Solo Harness</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'hud-guide/' %} is-active{% endif %}" href="{{ 'hud-guide/' | url }}"><span data-icon="eye"></span>HUD Guide</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'perception/' %} is-active{% endif %}" href="{{ 'perception/' | url }}"><span data-icon="fork"></span>Perception</a>
+    <h2>{{ t['collaboration'] }}</h2>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('team-ops/') %} is-active{% endif %}" href="{{ 'team-ops/' | url }}"><span data-icon="users"></span>{{ t['agent_team'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('solo-harness/') %} is-active{% endif %}" href="{{ 'solo-harness/' | url }}"><span data-icon="activity"></span>{{ t['solo_harness'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('hud-guide/') %} is-active{% endif %}" href="{{ 'hud-guide/' | url }}"><span data-icon="eye"></span>{{ t['hud_guide'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('perception/') %} is-active{% endif %}" href="{{ 'perception/' | url }}"><span data-icon="fork"></span>{{ t['perception'] }}</a>
   </section>
 
   <section class="rex-doc-sidebar__section">
-    <h2>Reference</h2>
-    <a class="rex-doc-sidebar__item{% if page.url == 'architecture/' %} is-active{% endif %}" href="{{ 'architecture/' | url }}"><span data-icon="layout"></span>Architecture</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'use-cases/' %} is-active{% endif %}" href="{{ 'use-cases/' | url }}"><span data-icon="checks"></span>CLI Workflows</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'cli-comparison/' %} is-active{% endif %}" href="{{ 'cli-comparison/' | url }}"><span data-icon="compare"></span>CLI Comparison</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'case-library/' %} is-active{% endif %}" href="{{ 'case-library/' | url }}"><span data-icon="book"></span>Case Library</a>
-    <a class="rex-doc-sidebar__item{% if page.url == 'changelog/' %} is-active{% endif %}" href="{{ 'changelog/' | url }}"><span data-icon="history"></span>Changelog</a>
+    <h2>{{ t['reference'] }}</h2>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('architecture/') %} is-active{% endif %}" href="{{ 'architecture/' | url }}"><span data-icon="layout"></span>{{ t['architecture'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('use-cases/') %} is-active{% endif %}" href="{{ 'use-cases/' | url }}"><span data-icon="checks"></span>{{ t['cli_workflows'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('cli-comparison/') %} is-active{% endif %}" href="{{ 'cli-comparison/' | url }}"><span data-icon="compare"></span>{{ t['cli_comparison'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('case-library/') %} is-active{% endif %}" href="{{ 'case-library/' | url }}"><span data-icon="book"></span>{{ t['case_library'] }}</a>
+    <a class="rex-doc-sidebar__item{% if current_path.endswith('changelog/') %} is-active{% endif %}" href="{{ 'changelog/' | url }}"><span data-icon="history"></span>{{ t['changelog'] }}</a>
   </section>
 </nav>

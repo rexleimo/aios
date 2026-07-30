@@ -4,7 +4,4 @@
 @import url("redesign/blog-post.css");
 @import url("redesign/blog-cards.css");
 
-/* Blog build keeps a separate asset root; shared docs CSS is intentionally not imported here. */
-:root {
-  --rex-blog-accent: #FF8400;
-}
+/* Blog keeps its own asset root but follows the shared typography token contract. */

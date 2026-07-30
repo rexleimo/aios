@@ -1,6 +1,16 @@
+.rex-material-header-bridge {
+  display: none !important;
+}
+
 .md-main {
   min-height: 100vh;
   background: transparent;
+}
+
+/* Material wrappers must not establish a sticky scroll container. */
+.md-main,
+.md-main__inner {
+  overflow: visible !important;
 }
 
 .md-main__inner {
@@ -389,7 +399,7 @@
 
 .rex-doc-layout {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: 244px minmax(0, 1fr);
 }
 
 .rex-doc-shell {
@@ -412,11 +422,14 @@
 .rex-doc-sidebar {
   position: sticky;
   top: 0;
+  align-self: start;
   display: flex;
-  height: 100vh;
-  min-height: 100vh;
+  height: auto;
+  min-height: 0;
+  max-height: 100vh;
   flex-direction: column;
   overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 24px 18px;
   background:
     linear-gradient(180deg, rgba(13, 18, 32, 0.98), rgba(6, 7, 13, 0.98)),

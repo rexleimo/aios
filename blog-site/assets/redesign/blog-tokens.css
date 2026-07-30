@@ -1,13 +1,54 @@
+/* Mirrors the docs typography contract while keeping blog asset builds self-contained. */
 :root {
-  --rex-blog-bg: #111111;
-  --rex-blog-panel: #1A1A1A;
-  --rex-blog-panel-strong: #2E2E2E;
-  --rex-blog-border: #2E2E2E;
-  --rex-blog-accent: #FF8400;
-  --rex-blog-text: #FFFFFF;
-  --rex-blog-muted: #B8B9B6;
-  --rex-blog-soft: #7A7A76;
+  --rex-text-strong: #F8FAFC;
+  --rex-text-body: #DCE5F0;
+  --rex-text-muted: #A8B6C9;
+  --rex-text-soft: #8494AB;
+
+  --rex-text-xs: 0.75rem;
+  --rex-text-sm: 0.8rem;
+  --rex-text-base: 0.85rem;
+  --rex-text-lg: 1rem;
+  --rex-text-h4: 1.05rem;
+  --rex-text-h3: 1.3rem;
+  --rex-text-h2: 1.7rem;
+  --rex-text-h1: 2.3rem;
+
+  --rex-lh-tight: 1.15;
+  --rex-lh-snug: 1.4;
+  --rex-lh-base: 1.7;
+
+  --rex-space-1: 0.2rem;
+  --rex-space-2: 0.4rem;
+  --rex-space-3: 0.6rem;
+  --rex-space-4: 0.8rem;
+  --rex-space-6: 1.2rem;
+  --rex-space-8: 1.6rem;
+  --rex-space-12: 2.4rem;
+  --rex-space-16: 3.2rem;
+
+  --rex-measure: 34rem;
+  --rex-content-max: 42rem;
+  --rex-layout-max: 52rem;
+
+  --rex-elev-0: none;
+  --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
+
+  --rex-blog-bg: #06070D;
+  --rex-blog-panel: #0D1220;
+  --rex-blog-panel-soft: #101728;
+  --rex-blog-panel-strong: #121B2D;
+  --rex-blog-border: #1B2437;
+  --rex-blog-accent: #22D3EE;
+  --rex-blog-category: #FF8400;
+  --rex-blog-text: var(--rex-text-strong);
+  --rex-blog-body: var(--rex-text-body);
+  --rex-blog-muted: var(--rex-text-muted);
+  --rex-blog-soft: var(--rex-text-soft);
   --rex-blog-radius: 12px;
-  --rex-blog-font-display: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  --rex-blog-font-body: "Geist", "Inter", system-ui, sans-serif;
+  --rex-blog-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --rex-blog-font-body: "Inter", system-ui, sans-serif;
+  --rex-blog-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
 }

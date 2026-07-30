@@ -7,22 +7,60 @@
   --rex-panel-strong: #121B2D;
   --rex-border: #1B2437;
   --rex-border-soft: rgba(148, 163, 184, 0.14);
+
   --rex-text: #F8FAFC;
-  --rex-muted: #94A3B8;
-  --rex-soft: #64748B;
+  --rex-text-strong: var(--rex-text);
+  --rex-text-body: #DCE5F0;
+  --rex-text-muted: #A8B6C9;
+  --rex-text-soft: #8494AB;
+  --rex-muted: var(--rex-text-muted);
+  --rex-soft: var(--rex-text-soft);
+
   --rex-cyan: #22D3EE;
   --rex-blue: #3B82F6;
   --rex-violet: #8B5CF6;
   --rex-green: #34D399;
   --rex-orange: #FF8400;
   --rex-danger: #F87171;
+
+  --rex-text-xs: 0.75rem;
+  --rex-text-sm: 0.8rem;
+  --rex-text-base: 0.85rem;
+  --rex-text-lg: 1rem;
+  --rex-text-h4: 1.05rem;
+  --rex-text-h3: 1.3rem;
+  --rex-text-h2: 1.7rem;
+  --rex-text-h1: 2.3rem;
+
+  --rex-lh-tight: 1.15;
+  --rex-lh-snug: 1.4;
+  --rex-lh-base: 1.7;
+
+  --rex-space-1: 0.2rem;
+  --rex-space-2: 0.4rem;
+  --rex-space-3: 0.6rem;
+  --rex-space-4: 0.8rem;
+  --rex-space-6: 1.2rem;
+  --rex-space-8: 1.6rem;
+  --rex-space-12: 2.4rem;
+  --rex-space-16: 3.2rem;
+
+  --rex-measure: 34rem;
+  --rex-content-max: 42rem;
+  --rex-layout-max: 52rem;
+
   --rex-radius-sm: 8px;
   --rex-radius-md: 12px;
   --rex-radius-lg: 16px;
   --rex-radius-xl: 24px;
-  --rex-max: 1200px;
-  --rex-shadow-soft: 0 18px 60px rgba(0, 0, 0, 0.34);
+
+  --rex-elev-0: none;
+  --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
+  --rex-shadow-soft: var(--rex-elev-3);
   --rex-shadow-cyan: 0 0 36px rgba(34, 211, 238, 0.22);
+
   --rex-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --rex-font-body: "Inter", system-ui, sans-serif;
   --rex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -33,7 +71,7 @@ html {
 }
 
 body {
-  color: var(--rex-text);
+  color: var(--rex-text-body);
   background:
     radial-gradient(circle at 14% 0%, rgba(18, 48, 110, 0.34), transparent 35rem),
     radial-gradient(circle at 86% 18%, rgba(91, 42, 158, 0.2), transparent 30rem),

@@ -1,8 +1,9 @@
-{# Language switcher powered by mkdocs-static-i18n → config.extra.alternate #}
-{% if config.extra and config.extra.alternate %}
+{# Use configured alternates so the control does not depend on plugin injection. #}
+{% set alternates = config.extra.alternate if config.extra and config.extra.alternate else [] %}
+{% if alternates %}
   {% set current_locale = i18n_page_locale if i18n_page_locale is defined else (i18n_current_language if i18n_current_language is defined else 'en') %}
   {% set ns = namespace(current_name='English') %}
-  {% for alt in config.extra.alternate %}
+  {% for alt in alternates %}
     {% if alt.lang == current_locale %}
       {% set ns.current_name = alt.name %}
     {% endif %}
@@ -21,7 +22,7 @@
       <span class="rex-lang-switcher__caret" aria-hidden="true"></span>
     </summary>
     <ul class="rex-lang-switcher__menu" role="listbox" aria-label="Languages">
-      {% for alt in config.extra.alternate %}
+      {% for alt in alternates %}
         {% set is_active = alt.lang == current_locale %}
         <li role="option" {% if is_active %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
           <a
