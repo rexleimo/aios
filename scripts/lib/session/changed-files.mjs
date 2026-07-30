@@ -14,6 +14,7 @@ const SNAPSHOT_EXCLUDED_DIRECTORIES = new Set([
 ]);
 export const DEFAULT_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES = 20_000;
 export const SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE = 'AIOS_SESSION_WORKSPACE_SNAPSHOT_LIMIT';
+export const SESSION_WORKSPACE_SNAPSHOT_ROOT_CODE = 'AIOS_SESSION_WORKSPACE_SNAPSHOT_ROOT';
 
 export function normalizeSessionId(sessionId) {
   const normalized = String(sessionId || 'default').trim() || 'default';
@@ -87,14 +88,71 @@ async function collectWorkspaceSnapshotEntries(rootDir, currentDir, excludedPref
   }
 }
 
+function snapshotPathKey(filePath) {
+  const normalized = path.resolve(filePath);
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
+function invalidSnapshotRoot(rootDir, candidate) {
+  const error = new Error(`workspace snapshot root escapes workspace: ${candidate}`);
+  error.code = SESSION_WORKSPACE_SNAPSHOT_ROOT_CODE;
+  error.rootDir = rootDir;
+  return error;
+}
+
+function normalizeSnapshotRoots(rootDir, roots) {
+  if (!Array.isArray(roots)) throw new TypeError('workspace snapshot roots must be an array');
+  const resolvedRoot = path.resolve(rootDir);
+  const candidates = new Map();
+  for (const rawRoot of roots) {
+    const value = String(rawRoot || '').trim();
+    const candidate = value ? path.resolve(resolvedRoot, value) : resolvedRoot;
+    if (!isContainedPath(resolvedRoot, candidate)) throw invalidSnapshotRoot(resolvedRoot, value);
+    candidates.set(snapshotPathKey(candidate), candidate);
+  }
+  const normalized = [...candidates.values()].sort((left, right) => left.length - right.length || left.localeCompare(right));
+  return normalized.filter((candidate) => !normalized.some((ancestor) => ancestor !== candidate && isContainedPath(ancestor, candidate)));
+}
+
+function snapshotRootLabel(rootDir, candidate) {
+  return normalizePath(path.relative(rootDir, candidate)) || '.';
+}
+
+async function collectWorkspaceSnapshotRoot(rootDir, candidate, excludedPrefixes, entries, budget) {
+  const relativePath = normalizePath(path.relative(rootDir, candidate));
+  const entryName = path.basename(candidate);
+  if (relativePath && snapshotPathExcluded(relativePath, entryName, excludedPrefixes)) return;
+  if (candidate === rootDir) {
+    await collectWorkspaceSnapshotEntries(rootDir, candidate, excludedPrefixes, entries, budget);
+    return;
+  }
+
+  consumeSnapshotBudget(budget);
+  let stats;
+  try {
+    stats = await fs.lstat(candidate);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return;
+    throw error;
+  }
+  if (stats.isDirectory()) {
+    await collectWorkspaceSnapshotEntries(rootDir, candidate, excludedPrefixes, entries, budget);
+    return;
+  }
+  if (!stats.isFile() && !stats.isSymbolicLink()) return;
+  entries.set(relativePath, `${stats.mode}:${stats.size}:${stats.mtimeMs}:${stats.ctimeMs}`);
+}
+
 /**
  * Capture a runtime-owned, content-free workspace state for post-dispatch
  * reconciliation. Derived AIOS state and expensive dependency trees are omitted.
+ * Supplying roots limits traversal to workspace-contained paths only.
  */
 export async function captureSessionWorkspaceSnapshot({
   rootDir = process.cwd(),
   env = process.env,
-  maxEntries = env.AIOS_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES,
+  maxEntries = env?.AIOS_SESSION_WORKSPACE_SNAPSHOT_MAX_ENTRIES,
+  roots,
 } = {}) {
   const resolvedRoot = path.resolve(rootDir);
   const entries = new Map();
@@ -102,20 +160,22 @@ export async function captureSessionWorkspaceSnapshot({
     maxEntries: normalizeSnapshotMaxEntries(maxEntries),
     visitedEntries: 0,
   };
+  let snapshotRoots = [];
+  const strategy = roots === undefined ? 'full_workspace' : 'scoped_roots';
   try {
-    await collectWorkspaceSnapshotEntries(
-      resolvedRoot,
-      resolvedRoot,
-      snapshotExcludedPrefixes(resolvedRoot, env),
-      entries,
-      budget,
-    );
+    const excludedPrefixes = snapshotExcludedPrefixes(resolvedRoot, env);
+    snapshotRoots = roots === undefined ? [resolvedRoot] : normalizeSnapshotRoots(resolvedRoot, roots);
+    for (const candidate of snapshotRoots) {
+      await collectWorkspaceSnapshotRoot(resolvedRoot, candidate, excludedPrefixes, entries, budget);
+    }
     return {
       schemaVersion: 1,
       kind: 'session.workspace-snapshot',
       available: true,
       rootDir: resolvedRoot,
       entries,
+      strategy,
+      roots: snapshotRoots.map((candidate) => snapshotRootLabel(resolvedRoot, candidate)),
       maxEntries: budget.maxEntries,
       visitedEntries: budget.visitedEntries,
     };
@@ -126,6 +186,8 @@ export async function captureSessionWorkspaceSnapshot({
       available: false,
       rootDir: resolvedRoot,
       entries,
+      strategy,
+      roots: snapshotRoots.map((candidate) => snapshotRootLabel(resolvedRoot, candidate)),
       error: String(error?.message || error),
       reasonCode: String(error?.code || ''),
       maxEntries: budget.maxEntries,
@@ -147,6 +209,7 @@ export async function recordSessionWorkspaceChanges({
       kind: 'session.workspace-mutation-observation',
       available: false,
       files: [],
+      snapshotStrategy: before?.strategy === after?.strategy ? before?.strategy || '' : 'mixed',
       reason: before?.error || after?.error || 'workspace_snapshot_unavailable',
     };
   }
@@ -168,6 +231,7 @@ export async function recordSessionWorkspaceChanges({
     kind: 'session.workspace-mutation-observation',
     available: true,
     files,
+    snapshotStrategy: before.strategy === after.strategy ? before.strategy || '' : 'mixed',
   };
 }
 

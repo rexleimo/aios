@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
@@ -11,7 +11,9 @@ import { runOrchestrate } from '../lib/lifecycle/orchestrate.mjs';
 import { startPlan } from '../lib/planning/contract.mjs';
 import {
   captureSessionWorkspaceSnapshot,
+  recordSessionWorkspaceChanges,
   SESSION_WORKSPACE_SNAPSHOT_LIMIT_CODE,
+  SESSION_WORKSPACE_SNAPSHOT_ROOT_CODE,
 } from '../lib/session/changed-files.mjs';
 
 const cliPath = path.resolve(process.cwd(), 'scripts', 'aios.mjs');
@@ -50,6 +52,19 @@ async function createContextPlan(rootDir) {
       ],
     }],
   });
+}
+
+function runGit(rootDir, args) {
+  const result = spawnSync('git', args, { cwd: rootDir, encoding: 'utf8', windowsHide: true });
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+}
+
+function initializeGitRepository(rootDir) {
+  runGit(rootDir, ['init', '--quiet']);
+  runGit(rootDir, ['config', 'user.email', 'test@example.invalid']);
+  runGit(rootDir, ['config', 'user.name', 'Harness Test']);
+  runGit(rootDir, ['add', '.']);
+  runGit(rootDir, ['commit', '--quiet', '-m', 'initial']);
 }
 
 function parseJsonLogs(logs) {
@@ -187,10 +202,72 @@ test('runOrchestrate records runtime-observed mutations before reconciliation in
     const reconciliation = report.contextLifecycle.reconciliation;
 
     assert.equal(observation.available, true);
+    assert.equal(observation.snapshotStrategy, 'full_workspace');
     assert.deepEqual(observation.files, [{ path: 'docs/undeclared.mjs', changeType: 'created' }]);
     assert.ok(reconciliation.ledgerPaths.includes('docs/undeclared.mjs'));
     assert.ok(reconciliation.actualPaths.includes('docs/undeclared.mjs'));
     assert.ok(reconciliation.undeclaredPaths.includes('docs/undeclared.mjs'));
+    assert.ok(reconciliation.wouldBlockReasons.includes('undeclared_target'));
+  });
+});
+
+test('runOrchestrate combines Git-visible and Git-ignored runtime mutations without a full workspace snapshot', async () => {
+  await withRoot('context-orchestrate-git-ignored-mutations-', async (rootDir) => {
+    await mkdir(path.join(rootDir, 'ignored'), { recursive: true });
+    await mkdir(path.join(rootDir, 'src'), { recursive: true });
+    await writeFile(path.join(rootDir, '.gitignore'), '.aios/\nignored/\n', 'utf8');
+    await writeFile(path.join(rootDir, 'src', 'feature.mjs'), 'export const feature = true;\n', 'utf8');
+    await writeFile(path.join(rootDir, 'ignored', 'existing.txt'), 'before\n', 'utf8');
+    await writeFile(path.join(rootDir, 'ignored', 'deleted.txt'), 'delete me\n', 'utf8');
+    initializeGitRepository(rootDir);
+    await createContextPlan(rootDir);
+
+    const logs = [];
+    const dispatchRuntimeRegistry = createDispatchRuntimeRegistry({
+      executeDryRunPlan() {
+        writeFileSync(path.join(rootDir, 'docs', 'undeclared.mjs'), 'export const changed = true;\n', 'utf8');
+        writeFileSync(path.join(rootDir, 'ignored', 'existing.txt'), 'after\n', 'utf8');
+        writeFileSync(path.join(rootDir, 'ignored', 'new.txt'), 'new\n', 'utf8');
+        rmSync(path.join(rootDir, 'ignored', 'deleted.txt'));
+        return {
+          mode: 'dry-run',
+          ok: true,
+          executorRegistry: [],
+          executorDetails: [],
+          jobRuns: [],
+          finalOutputs: [],
+        };
+      },
+    });
+
+    await runOrchestrate({
+      taskTitle: 'Observe Git and ignored mutations',
+      contextTaskId: 'deliver-context',
+      dispatchMode: 'local',
+      executionMode: 'dry-run',
+      format: 'json',
+    }, {
+      rootDir,
+      io: { log: (line) => logs.push(line) },
+      dispatchRuntimeRegistry,
+    });
+    const report = parseJsonLogs(logs);
+    const observation = report.contextLifecycle.mutationObservation;
+    const reconciliation = report.contextLifecycle.reconciliation;
+
+    assert.equal(observation.available, true);
+    assert.equal(observation.snapshotStrategy, 'scoped_roots');
+    assert.deepEqual(observation.files, [
+      { path: 'ignored/deleted.txt', changeType: 'deleted' },
+      { path: 'ignored/existing.txt', changeType: 'modified' },
+      { path: 'ignored/new.txt', changeType: 'created' },
+    ]);
+    assert.equal(observation.files.some((file) => file.path === 'docs/undeclared.mjs'), false);
+    assert.ok(reconciliation.gitPaths.includes('docs/undeclared.mjs'));
+    for (const filePath of ['docs/undeclared.mjs', 'ignored/deleted.txt', 'ignored/existing.txt', 'ignored/new.txt']) {
+      assert.ok(reconciliation.actualPaths.includes(filePath));
+      assert.ok(reconciliation.undeclaredPaths.includes(filePath));
+    }
     assert.ok(reconciliation.wouldBlockReasons.includes('undeclared_target'));
   });
 });
@@ -414,6 +491,52 @@ test('workspace snapshots skip generated, build, cache, and virtualenv trees', a
   });
 });
 
+test('scoped workspace snapshots observe only safe supplied roots and preserve deletion evidence', async () => {
+  await withRoot('context-workspace-snapshot-roots-', async (rootDir) => {
+    for (const relativePath of [
+      'ignored/keep.txt',
+      'ignored/nested/keep.txt',
+      'node_modules/hidden.js',
+      'src/not-in-scope.mjs',
+    ]) {
+      await mkdir(path.dirname(path.join(rootDir, relativePath)), { recursive: true });
+      await writeFile(path.join(rootDir, relativePath), relativePath, 'utf8');
+    }
+
+    const scoped = await captureSessionWorkspaceSnapshot({
+      rootDir,
+      roots: ['ignored/', 'ignored/nested/', 'node_modules/'],
+    });
+    assert.equal(scoped.available, true);
+    assert.equal(scoped.strategy, 'scoped_roots');
+    assert.deepEqual(scoped.roots, ['ignored', 'node_modules']);
+    assert.deepEqual([...scoped.entries.keys()].sort(), ['ignored/keep.txt', 'ignored/nested/keep.txt']);
+
+    const empty = await captureSessionWorkspaceSnapshot({ rootDir, roots: [] });
+    assert.equal(empty.available, true);
+    assert.equal(empty.entries.size, 0);
+    assert.equal(empty.visitedEntries, 0);
+
+    const before = await captureSessionWorkspaceSnapshot({ rootDir, roots: ['ignored'] });
+    await rm(path.join(rootDir, 'ignored'), { recursive: true, force: true });
+    const after = await captureSessionWorkspaceSnapshot({ rootDir, roots: ['ignored'] });
+    const observation = await recordSessionWorkspaceChanges({
+      rootDir,
+      sessionId: 'scoped-deletion',
+      before,
+      after,
+    });
+    assert.deepEqual(observation.files, [
+      { path: 'ignored/keep.txt', changeType: 'deleted' },
+      { path: 'ignored/nested/keep.txt', changeType: 'deleted' },
+    ]);
+
+    const outside = await captureSessionWorkspaceSnapshot({ rootDir, roots: ['../outside'] });
+    assert.equal(outside.available, false);
+    assert.equal(outside.reasonCode, SESSION_WORKSPACE_SNAPSHOT_ROOT_CODE);
+  });
+});
+
 test('workspace snapshots stop after the configured traversal budget', async () => {
   await withRoot('context-workspace-snapshot-budget-', async (rootDir) => {
     for (let index = 0; index < 20; index += 1) {
@@ -467,6 +590,7 @@ test('a bounded non-Git snapshot fails reconciliation closed instead of silently
 
     assert.equal(observation.available, false);
     assert.match(observation.reason, /exceeded 2 filesystem entries/);
+    assert.ok(reconciliation.wouldBlockReasons.includes('workspace_observation_unavailable'));
     assert.ok(reconciliation.wouldBlockReasons.includes('reconciliation_git_unavailable'));
   });
 });

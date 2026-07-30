@@ -38,8 +38,32 @@ function gitNameOnly(rootDir, args) {
   return {
     exitCode: Number.isInteger(result.status) ? result.status : 1,
     paths: String(result.stdout || '').split('\0').map(normalizePath).filter(Boolean),
-    error: String(result.stderr || result.error?.message || '').trim(),
+    error: result.error ? String(result.error?.message || result.error) : '',
+    stderr: String(result.stderr || '').trim(),
   };
+}
+
+function isContainedPath(rootDir, candidate) {
+  const relative = path.relative(path.resolve(rootDir), path.resolve(candidate));
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+function normalizeGitIgnoredRoots(rootDir, paths) {
+  const resolvedRoot = path.resolve(rootDir);
+  const candidates = new Map();
+  for (const rawPath of paths) {
+    const relativePath = normalizePath(rawPath).replace(/\/+$/u, '');
+    const candidate = path.resolve(resolvedRoot, relativePath || '.');
+    if (!isContainedPath(resolvedRoot, candidate)) {
+      throw new Error(`git ignored root escapes workspace: ${rawPath}`);
+    }
+    const key = process.platform === 'win32' ? candidate.toLowerCase() : candidate;
+    candidates.set(key, candidate);
+  }
+  const sorted = [...candidates.values()].sort((left, right) => left.length - right.length || left.localeCompare(right));
+  return sorted
+    .filter((candidate) => !sorted.some((ancestor) => ancestor !== candidate && isContainedPath(ancestor, candidate)))
+    .map((candidate) => normalizePath(path.relative(resolvedRoot, candidate)) || '.');
 }
 
 export function collectGitChangedFiles(rootDir) {
@@ -49,16 +73,40 @@ export function collectGitChangedFiles(rootDir) {
     gitNameOnly(rootDir, ['ls-files', '--others', '--exclude-standard', '-z']),
   ];
   return {
-    available: observations.every((item) => item.exitCode === 0),
+    available: observations.every((item) => item.exitCode === 0 && !item.error),
     paths: uniqueSorted(observations.flatMap((item) => item.paths)),
     observations,
   };
+}
+
+export function collectGitIgnoredWorkspaceRoots(rootDir) {
+  const observation = gitNameOnly(rootDir, ['ls-files', '--others', '--ignored', '--exclude-standard', '--directory', '-z']);
+  if (observation.exitCode !== 0 || observation.error) {
+    return { available: false, roots: [], observation };
+  }
+  try {
+    return {
+      available: true,
+      roots: normalizeGitIgnoredRoots(rootDir, observation.paths),
+      observation,
+    };
+  } catch (error) {
+    return {
+      available: false,
+      roots: [],
+      observation: {
+        ...observation,
+        error: String(error?.message || error),
+      },
+    };
+  }
 }
 
 export async function evaluateContextReconciliation({
   rootDir,
   sessionId = 'default',
   packet,
+  workspaceObservation = null,
   env = process.env,
   persist = true,
   now = new Date(),
@@ -81,14 +129,17 @@ export async function evaluateContextReconciliation({
   const undeclaredPaths = actualPaths.filter((filePath) => !isExecutionContextMutationDeclared(packet, filePath, { rootDir }));
   const actualPathKeys = new Set(actualPaths.map(comparisonPath));
   const missingDeclaredPaths = declaredPaths.filter((filePath) => !actualPathKeys.has(comparisonPath(filePath)));
+  const workspaceObservationUnavailable = workspaceObservation?.available === false;
   const wouldBlockReasons = [
     ...(undeclaredPaths.length > 0 ? ['undeclared_target'] : []),
+    ...(workspaceObservationUnavailable ? ['workspace_observation_unavailable'] : []),
     ...(!git.available ? ['reconciliation_git_unavailable'] : []),
   ];
   const generatedAt = new Date(now).toISOString();
   const decisionDigest = sha256Hex(JSON.stringify({
     contextRevision: packet.contextRevision,
     sessionId: safeSessionId,
+    workspaceObservationUnavailable,
     declaredPaths,
     derivedPrefixes,
     ledgerPaths,
@@ -113,6 +164,7 @@ export async function evaluateContextReconciliation({
     decisionDigest,
     contextRevision: packet.contextRevision,
     sessionId: safeSessionId,
+    workspaceObservationUnavailable,
     declaredPaths,
     derivedPrefixes,
     ledgerPaths,

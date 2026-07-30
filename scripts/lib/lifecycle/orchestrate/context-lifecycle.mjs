@@ -187,6 +187,7 @@ export async function finalizeOrchestrateContextLifecycle({
   rootDir,
   options,
   prepared,
+  mutationObservation = null,
   env = process.env,
 } = {}) {
   if (!prepared?.packet || prepared?.report?.status !== 'observed') return prepared?.report || null;
@@ -195,6 +196,7 @@ export async function finalizeOrchestrateContextLifecycle({
       rootDir,
       sessionId: options?.sessionId || prepared.packet.plan?.sessionId || 'orchestrate',
       packet: prepared.packet,
+      workspaceObservation: mutationObservation,
       env,
       persist: true,
     });

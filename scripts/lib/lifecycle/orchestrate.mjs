@@ -48,12 +48,23 @@ import {
   captureSessionWorkspaceSnapshot,
   recordSessionWorkspaceChanges,
 } from '../session/changed-files.mjs';
+import { collectGitIgnoredWorkspaceRoots } from './context-reconciliation.mjs';
 const DEFAULT_PREFLIGHT_ADAPTERS = {
   qualityGate: runQualityGate,
   releaseStatus: runReleaseStatus,
   doctor: runDoctor,
   orchestrate: runOrchestrate,
 };
+
+function unavailableWorkspaceSnapshot(reason) {
+  return {
+    schemaVersion: 1,
+    kind: 'session.workspace-snapshot',
+    available: false,
+    entries: new Map(),
+    error: reason,
+  };
+}
 
 export async function runOrchestrate(
   rawOptions = {},
@@ -299,8 +310,15 @@ export async function runOrchestrate(
   if (capabilityGuardResult) return capabilityGuardResult;
 
   const contextSessionId = options.sessionId || preparedContextLifecycle?.packet?.plan?.sessionId || 'orchestrate';
-  const beforeDispatchSnapshot = dispatchRuntime && preparedContextLifecycle?.packet
-    ? await captureSessionWorkspaceSnapshot({ rootDir, env })
+  const shouldObserveWorkspace = Boolean(dispatchRuntime && preparedContextLifecycle?.packet);
+  const beforeIgnoredRoots = shouldObserveWorkspace ? collectGitIgnoredWorkspaceRoots(rootDir) : null;
+  const snapshotUsesGitIgnoredRoots = Boolean(beforeIgnoredRoots?.available);
+  const beforeDispatchSnapshot = shouldObserveWorkspace
+    ? await captureSessionWorkspaceSnapshot({
+      rootDir,
+      env,
+      ...(snapshotUsesGitIgnoredRoots ? { roots: beforeIgnoredRoots.roots } : {}),
+    })
     : null;
   let rawDispatchRun = null;
   let dispatchRun = null;
@@ -325,7 +343,15 @@ export async function runOrchestrate(
 
   let mutationObservation = null;
   if (beforeDispatchSnapshot) {
-    const afterDispatchSnapshot = await captureSessionWorkspaceSnapshot({ rootDir, env });
+    let afterDispatchSnapshot;
+    if (snapshotUsesGitIgnoredRoots) {
+      const afterIgnoredRoots = collectGitIgnoredWorkspaceRoots(rootDir);
+      afterDispatchSnapshot = afterIgnoredRoots.available
+        ? await captureSessionWorkspaceSnapshot({ rootDir, env, roots: afterIgnoredRoots.roots })
+        : unavailableWorkspaceSnapshot('git ignored-root observation unavailable after dispatch');
+    } else {
+      afterDispatchSnapshot = await captureSessionWorkspaceSnapshot({ rootDir, env });
+    }
     try {
       mutationObservation = await recordSessionWorkspaceChanges({
         rootDir,
@@ -349,6 +375,7 @@ export async function runOrchestrate(
     rootDir,
     options,
     prepared: preparedContextLifecycle,
+    mutationObservation,
     env,
   });
   if (contextLifecycle && mutationObservation) {
