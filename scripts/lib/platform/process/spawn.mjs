@@ -67,6 +67,41 @@ export function captureCommand(command, args = [], options = {}) {
   };
 }
 
+function terminateTimedOutChild(child) {
+  let terminated = false;
+  if (process.platform === 'win32' && Number.isInteger(child?.pid) && child.pid > 0) {
+    try {
+      // Shell shims can leave the real CLI alive after child.kill().
+      const result = spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+      terminated = result.status === 0;
+    } catch {
+      terminated = false;
+    }
+  }
+  if (!terminated) {
+    try {
+      child.kill();
+    } catch {
+      // A close or error event may have won the timeout race.
+    }
+  }
+  for (const stream of [child.stdin, child.stdout, child.stderr]) {
+    try {
+      stream?.destroy();
+    } catch {
+      // Streams may already be closed by the process exit race.
+    }
+  }
+  try {
+    child.unref();
+  } catch {
+    // Older child-process handles can omit unref.
+  }
+}
+
 /* 中文注释：异步 spawn 捕获 stdout/stderr，给 harness/interception 提供可压缩的完整输出。 */
 export function spawnCommand(command, args = [], options = {}) {
   const { timeoutMs, ...rest } = options || {};
@@ -116,11 +151,14 @@ export function spawnCommand(command, args = [], options = {}) {
     if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
       timer = setTimeout(() => {
         timedOut = true;
-        try {
-          child.kill();
-        } catch {
-          /* 中文注释：忽略 kill 失败，close/error 会统一收敛结果。 */
-        }
+        terminateTimedOutChild(child);
+        finalize({
+          status: 1,
+          stdout,
+          stderr,
+          error: null,
+          timedOut: true,
+        });
       }, Math.floor(timeoutMs));
     }
 
@@ -210,11 +248,14 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
     if (Number.isFinite(timeoutMs) && timeoutMs > 0) {
       timer = setTimeout(() => {
         timedOut = true;
-        try {
-          child.kill();
-        } catch {
-          /* 中文注释：忽略 kill 失败，close/error 会统一收敛结果。 */
-        }
+        terminateTimedOutChild(child);
+        finalize({
+          status: 1,
+          stdout,
+          stderr,
+          error: null,
+          timedOut: true,
+        });
       }, Math.floor(timeoutMs));
     }
 
