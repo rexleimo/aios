@@ -4,28 +4,26 @@
  * NO LLM calls. NO daemon. CLI command called manually or at session end.
  */
 
-import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
 import { classifyEvent, isExpired, TAXONOMY_CLASSES } from './taxonomy.mjs';
-import { dedupDecisions, findDuplicateClusters, pickKeepWinner } from './dedup.mjs';
+import { dedupDecisions } from './dedup.mjs';
+import { resolveMemoRoot } from '../../aios/state-root.mjs';
 import { collectEvents } from '../../memo/storage/events-read.mjs';
 import { getActiveMemoStorage } from '../../memo/storage/config.mjs';
-import { normalizeMemoStorageName } from '../../memo/storage/normalizers.mjs';
-import { atomicWriteText } from '../../memo/storage/fs-io.mjs';
-import { fileEventsPath } from '../../memo/storage/paths.mjs';
+import { atomicWriteText, sha256Hex } from '../../memo/storage/fs-io.mjs';
 import { readPinnedMemo } from '../../memo/storage/pinned.mjs';
-import { listMemoEvents } from '../../memo/storage/query.mjs';
+
 
 /**
  * Load all memo events for specified spaces, respecting the active storage config.
  */
-async function loadEvents(rootDir, spaces) {
-  const storage = await getActiveMemoStorage(rootDir);
+async function loadEvents(rootDir, spaces, env = process.env) {
+  const storage = await getActiveMemoStorage(rootDir, { env });
   const allEvents = [];
 
   for (const space of spaces) {
-    const { events } = await collectEvents(rootDir, { storage, space });
+    const { events } = await collectEvents(rootDir, { storage, space, env });
     allEvents.push(...events);
   }
 
@@ -37,13 +35,13 @@ async function loadEvents(rootDir, spaces) {
  * An event is considered pinned if its text content appears in the pinned file
  * for its space, OR if it has a "pinned" ref tag.
  */
-async function enrichPinnedState(rootDir, events, storage) {
+async function enrichPinnedState(rootDir, events, storage, env = process.env) {
   const pinnedTextBySpace = new Map();
 
   for (const event of events) {
     const spaceKey = event.spaceKey || 'default';
     if (!pinnedTextBySpace.has(spaceKey)) {
-      const pinnedContent = await readPinnedMemo(rootDir, { storage, space: event.space || 'default' });
+      const pinnedContent = await readPinnedMemo(rootDir, { storage, space: event.space || 'default', env });
       pinnedTextBySpace.set(spaceKey, pinnedContent);
     }
   }
@@ -100,6 +98,67 @@ function classifyWithPinned(event, now = Date.now()) {
   return { class: TAXONOMY_CLASSES.RECENT_SNAPSHOT, ttlDays: 7, event };
 }
 
+function ownerKey(event = {}) {
+  return `${String(event.scope || 'project_shared').trim().toLowerCase()}:${String(event.agent || '').trim().toLowerCase() || 'legacy'}`;
+}
+
+function dedupWithinOwner(events = []) {
+  const groups = new Map();
+  for (const event of events) {
+    const key = ownerKey(event);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(event);
+  }
+  return [...groups.values()].flatMap((group) => dedupDecisions(group));
+}
+
+function buildTombstoneActions(plan) {
+  const actions = plan.expire.map((eventId) => ({
+    action: 'tombstone',
+    eventId,
+    reason: 'ttl_expired',
+  }));
+  for (const decision of plan.dedup) {
+    for (const eventId of decision.drop) {
+      actions.push({
+        action: 'tombstone',
+        eventId,
+        reason: 'deduplicate',
+        keepEventId: decision.keep,
+      });
+    }
+  }
+  return actions;
+}
+
+async function writeDreamProposal({ rootDir, storage, spaces, plan, events, createdAt, env = process.env }) {
+  const actions = buildTombstoneActions(plan);
+  const byId = new Map(events.map((event) => [event.eventId, event]));
+  const proposalId = `dream:${createdAt.replace(/[-:.TZ]/gu, '')}:${sha256Hex(JSON.stringify(actions)).slice(0, 8)}`;
+  const proposal = {
+    schemaVersion: 1,
+    kind: 'memo.dream-consolidation-proposal',
+    proposalId,
+    status: 'proposed',
+    createdAt,
+    source: { storage, spaces },
+    summary: plan.summary,
+    actions,
+    sourceManifest: actions.map((action) => {
+      const event = byId.get(action.eventId);
+      return {
+        eventId: action.eventId,
+        scope: event?.scope || 'project_shared',
+        agent: event?.agent || '',
+        sourceHash: event ? sha256Hex(JSON.stringify(event)) : '',
+      };
+    }),
+  };
+  const target = path.join(resolveMemoRoot(rootDir, { env }), 'dream', 'proposals', `${proposalId.replace(/:/gu, '-')}.json`);
+  await atomicWriteText(target, `${JSON.stringify(proposal, null, 2)}\n`);
+  return { proposal, proposalPath: target };
+}
+
 /**
  * Main entry point for dream consolidation.
  *
@@ -109,12 +168,13 @@ function classifyWithPinned(event, now = Date.now()) {
  * @param {Array} options.spaces - Spaces to process (default: ['default'])
  * @returns {Object} Plan or execution result
  */
-export async function runDream({ rootDir, mode = 'preview', spaces = ['default'] } = {}) {
+export async function runDream({ rootDir, mode = 'preview', spaces = ['default'], env = process.env } = {}) {
   const now = Date.now();
-  const { events: rawEvents, storage } = await loadEvents(rootDir, spaces);
+  const { events: rawEvents, storage } = await loadEvents(rootDir, spaces, env);
 
   // Enrich with pinned state from actual pinned files
-  const events = await enrichPinnedState(rootDir, rawEvents, storage);
+  const governableEvents = rawEvents.filter((event) => event.claimStatus !== 'candidate');
+  const events = await enrichPinnedState(rootDir, governableEvents, storage, env);
 
   // Classify all events
   const classified = events.map((event) => classifyWithPinned(event, now));
@@ -132,7 +192,7 @@ export async function runDream({ rootDir, mode = 'preview', spaces = ['default']
 
   // Find duplicate clusters among non-expired, non-sensitive events
   const stillActive = nonSensitive.filter((c) => !expiredIds.includes(c.event.eventId));
-  const dedupResults = dedupDecisions(stillActive.map((c) => c.event));
+  const dedupResults = dedupWithinOwner(stillActive.map((c) => c.event));
 
   // Build the plan
   const plan = {
@@ -153,59 +213,43 @@ export async function runDream({ rootDir, mode = 'preview', spaces = ['default']
     return plan;
   }
 
-  // Apply mode: actually remove expired and dedup-loser events from storage
-  const idsToRemove = new Set(expiredIds);
-  for (const d of dedupResults) {
-    for (const dropId of d.drop) {
-      idsToRemove.add(dropId);
-    }
-  }
-
-  // Reload all events from storage and filter out removed ones
-  const { events: allStoredEvents } = await collectEvents(rootDir, { storage });
-  const survivors = allStoredEvents.filter((e) => !idsToRemove.has(e.eventId));
-
-  // Rewrite the storage with survivors only
-  if (storage === 'file') {
-    // For file storage, rewrite the JSONL atomically
-    const lines = survivors.map((e) => JSON.stringify(e)).join('\n');
-    const content = lines.length > 0 ? `${lines}\n` : '';
-    await atomicWriteText(fileEventsPath(rootDir), content);
-  } else {
-    // For split storage, delete the individual JSON files for removed events
-    // and keep the rest. We need to find each removed event's file.
-    const { collectRecursiveFiles } = await import('../../memo/storage/fs-io.mjs');
-    const { splitEventsRoot } = await import('../../memo/storage/paths.mjs');
-    const { sanitizeSpace } = await import('../../memo/storage/normalizers.mjs');
-
-    const removedEvents = allStoredEvents.filter((e) => idsToRemove.has(e.eventId));
-
-    for (const removed of removedEvents) {
-      const safeSpace = removed.spaceKey || sanitizeSpace(removed.space || 'default');
-      const seq = Number.isFinite(removed.seq) ? removed.seq : 0;
-      const paddedSeq = String(seq).padStart(12, '0');
-      const filePath = path.join(splitEventsRoot(rootDir), safeSpace, `${paddedSeq}.json`);
-      try {
-        await fs.unlink(filePath);
-      } catch (error) {
-        if (error?.code !== 'ENOENT') throw error;
-        // File already gone — fine
-      }
-    }
-  }
-
-  // Rebuild derived index after mutation
-  try {
-    const { rebuildMemoStorage } = await import('../../memo/storage/derived.mjs');
-    await rebuildMemoStorage(rootDir, { storage });
-  } catch {
-    // Derived rebuild is optional — don't fail the whole dream if it's missing
-  }
+  // Apply persists an auditable tombstone proposal. Source memo rows remain
+  // immutable until a separate reviewed retention step is introduced.
+  const { events: allStoredEvents } = await collectEvents(rootDir, { storage, env });
+  const createdAt = new Date(now).toISOString();
+  const { proposal, proposalPath } = await writeDreamProposal({
+    rootDir,
+    storage,
+    spaces,
+    plan,
+    events: allStoredEvents,
+    createdAt,
+    env,
+  });
 
   return {
     ...plan,
     applied: true,
-    removedCount: idsToRemove.size,
-    survivorsCount: survivors.length,
+    application: 'proposal-only',
+    proposalOnly: true,
+    sourceMutated: false,
+    proposalId: proposal.proposalId,
+    proposalPath,
+    proposedRemovalCount: proposal.actions.length,
+    removedCount: 0,
+    survivorsCount: allStoredEvents.length,
   };
 }
+
+export {
+  approveDreamProposal,
+  archiveDreamProposal,
+  gcDreamProposal,
+  inspectDreamProposal,
+  listDreamProposals,
+  readDreamArchivedEventIds,
+  readDreamGovernanceReceipts,
+  rejectDreamProposal,
+  restoreDreamProposal,
+  runDreamGovernanceCommand,
+} from './governance.mjs';

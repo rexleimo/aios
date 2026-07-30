@@ -7,6 +7,8 @@ import test from 'node:test';
 import { classifyEvent, isExpired, TAXONOMY_CLASSES } from '../lib/lifecycle/dream/taxonomy.mjs';
 import { textSimilarity, textTokens, findDuplicateClusters, pickKeepWinner, dedupDecisions } from '../lib/lifecycle/dream/dedup.mjs';
 import { runDream } from '../lib/lifecycle/dream/index.mjs';
+import { appendMemoEvent } from '../lib/memo/storage/events-write.mjs';
+import { setActiveMemoStorage } from '../lib/memo/storage/config.mjs';
 
 // ----------------------------------------------------------------------------
 // Helpers
@@ -295,10 +297,12 @@ test('pickKeepWinner: tiebreaker is longer text', () => {
 });
 
 test('dedupDecisions: returns keep/drop array', () => {
+  const sameTimestamp = '2026-06-01T00:00:00.000Z';
   const events = [
-    makeEvent({ eventId: 'e1', text: 'the quick brown fox jumps over lazy dog' }),
-    makeEvent({ eventId: 'e2', text: 'the quick brown fox jumps over lazy' }),
-    makeEvent({ eventId: 'e3', text: 'something completely unrelated here' }),
+    // Explicit tie: verify the length tiebreaker rather than insertion timing.
+    makeEvent({ eventId: 'e1', ts: sameTimestamp, text: 'the quick brown fox jumps over lazy dog' }),
+    makeEvent({ eventId: 'e2', ts: sameTimestamp, text: 'the quick brown fox jumps over lazy' }),
+    makeEvent({ eventId: 'e3', ts: sameTimestamp, text: 'something completely unrelated here' }),
   ];
   const decisions = dedupDecisions(events, 0.7);
   // e1: 8 words, e2: 7 words. Intersection=7, union=8, sim=0.875 >= 0.7
@@ -311,6 +315,24 @@ test('dedupDecisions: returns keep/drop array', () => {
 // ----------------------------------------------------------------------------
 // Integration: preview vs apply
 // ----------------------------------------------------------------------------
+
+test('runDream honors an explicit state root for source events and proposal persistence', async () => {
+  await withTempRoot('dream-explicit-state-root-', async (root) => {
+    const env = { ...process.env, AIOS_PROJECT_STATE_DIR: 'custom-state' };
+    const event = makeEvent({ eventId: 'custom-root-event', text: 'custom root event', ts: new Date().toISOString() });
+    const customFileDir = path.join(root, 'custom-state', 'memo', 'file');
+    await fs.mkdir(customFileDir, { recursive: true });
+    await fs.writeFile(path.join(customFileDir, 'events.jsonl'), `${JSON.stringify(event)}\n`, 'utf8');
+
+    const result = await runDream({ rootDir: root, mode: 'apply', env });
+    const proposal = JSON.parse(await fs.readFile(result.proposalPath, 'utf8'));
+
+    assert.equal(result.summary.totalEvents, 1);
+    assert.equal(result.survivorsCount, 1);
+    assert.ok(result.proposalPath.startsWith(path.join(root, 'custom-state', 'memo', 'dream')));
+    assert.equal(proposal.summary.totalEvents, 1);
+  });
+});
 
 test('runDream: preview returns plan without modifying storage', async () => {
   await withTempRoot('dream-preview-', async (root) => {
@@ -357,7 +379,7 @@ test('runDream: preview returns plan without modifying storage', async () => {
   });
 });
 
-test('runDream: apply removes expired events and rewrites storage', async () => {
+test('runDream: apply writes an expiry tombstone proposal without mutating storage', async () => {
   await withTempRoot('dream-apply-', async (root) => {
     const now = Date.now();
     const events = [
@@ -374,52 +396,121 @@ test('runDream: apply removes expired events and rewrites storage', async () => 
     ];
     await writeEventsJsonl(root, events);
 
-    // Sanity check: 2 events before
-    const before = await fs.readFile(path.join(root, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8');
-    assert.equal(before.trim().split('\n').filter(Boolean).length, 2);
-
+    const eventsPath = path.join(root, '.aios', 'memo', 'file', 'events.jsonl');
+    const before = await fs.readFile(eventsPath, 'utf8');
     const result = await runDream({ rootDir: root, mode: 'apply', spaces: ['default'] });
-    assert.equal(result.applied, true);
-    assert.ok(result.removedCount >= 1);
 
-    // After: only 1 event should survive
-    const after = await fs.readFile(path.join(root, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8');
-    const lines = after.trim().split('\n').filter(Boolean);
-    assert.equal(lines.length, 1, 'one event should remain after apply');
-    const survivor = JSON.parse(lines[0]);
-    assert.equal(survivor.eventId, 'apply-keep-1');
+    assert.equal(result.applied, true);
+    assert.equal(result.application, 'proposal-only');
+    assert.equal(result.proposalOnly, true);
+    assert.equal(result.sourceMutated, false);
+    assert.equal(result.removedCount, 0);
+    assert.ok(result.proposedRemovalCount >= 1);
+    assert.equal(await fs.readFile(eventsPath, 'utf8'), before);
+
+    const proposal = JSON.parse(await fs.readFile(result.proposalPath, 'utf8'));
+    assert.equal(proposal.kind, 'memo.dream-consolidation-proposal');
+    assert.equal(proposal.status, 'proposed');
+    assert.ok(proposal.actions.some((action) => (
+      action.eventId === 'apply-expire-1'
+      && action.action === 'tombstone'
+      && action.reason === 'ttl_expired'
+    )));
+    assert.ok(proposal.sourceManifest.every((entry) => !Object.hasOwn(entry, 'text')));
   });
 });
 
-test('runDream: dedup removes duplicate losers on apply', async () => {
+test('runDream: split storage source files remain intact after apply', async () => {
+  await withTempRoot('dream-split-proposal-', async (root) => {
+    await setActiveMemoStorage(root, 'split');
+    const expired = await appendMemoEvent({
+      workspaceRoot: root,
+      storage: 'split',
+      text: 'old split memo for proposal',
+    });
+    await appendMemoEvent({
+      workspaceRoot: root,
+      storage: 'split',
+      text: 'recent split memo to keep',
+    });
+    const splitDir = path.join(root, '.aios', 'memo', 'split', 'events', 'default');
+    const expiredPath = path.join(splitDir, `${String(expired.seq).padStart(12, '0')}.json`);
+    const expiredRow = JSON.parse(await fs.readFile(expiredPath, 'utf8'));
+    expiredRow.ts = new Date(Date.now() - 100 * 24 * 60 * 60 * 1000).toISOString();
+    expiredRow.validAt = expiredRow.ts;
+    await fs.writeFile(expiredPath, `${JSON.stringify(expiredRow, null, 2)}\n`, 'utf8');
+    const beforeFiles = (await fs.readdir(splitDir)).sort();
+
+    const result = await runDream({ rootDir: root, mode: 'apply', spaces: ['default'] });
+
+    assert.equal(result.removedCount, 0);
+    assert.deepEqual((await fs.readdir(splitDir)).sort(), beforeFiles);
+    const proposal = JSON.parse(await fs.readFile(result.proposalPath, 'utf8'));
+    assert.ok(proposal.actions.some((action) => action.eventId === expired.eventId));
+  });
+});
+
+test('runDream: dedup writes a tombstone proposal without dropping the loser', async () => {
   await withTempRoot('dream-dedup-apply-', async (root) => {
+    const now = Date.now();
     const events = [
       makeEvent({
         eventId: 'dedup-keep',
-        ts: '2026-06-01T12:00:00.000Z',
+        ts: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
         text: 'the project uses react for the frontend framework with typescript',
       }),
       makeEvent({
         eventId: 'dedup-drop',
-        ts: '2026-06-01T10:00:00.000Z',
+        ts: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
         text: 'the project uses react for the frontend framework',
       }),
     ];
     await writeEventsJsonl(root, events);
 
+    const eventsPath = path.join(root, '.aios', 'memo', 'file', 'events.jsonl');
+    const before = await fs.readFile(eventsPath, 'utf8');
     const result = await runDream({ rootDir: root, mode: 'apply', spaces: ['default'] });
-    assert.equal(result.applied, true);
 
-    // The duplicate should be dropped (same space, high similarity)
-    const after = await fs.readFile(path.join(root, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8');
-    const lines = after.trim().split('\n').filter(Boolean);
-    assert.equal(lines.length, 1, 'duplicate should be removed');
-    const survivor = JSON.parse(lines[0]);
-    assert.equal(survivor.eventId, 'dedup-keep');
+    assert.equal(result.applied, true);
+    assert.equal(result.removedCount, 0);
+    assert.equal(await fs.readFile(eventsPath, 'utf8'), before);
+    const proposal = JSON.parse(await fs.readFile(result.proposalPath, 'utf8'));
+    assert.ok(proposal.actions.some((action) => (
+      action.eventId === 'dedup-drop'
+      && action.keepEventId === 'dedup-keep'
+      && action.reason === 'deduplicate'
+    )));
   });
 });
 
-test('runDream: agent_private events are never touched', async () => {
+test('runDream: shared events from different agents are not auto-deduplicated', async () => {
+  await withTempRoot('dream-owner-isolation-', async (root) => {
+    const now = Date.now();
+    await writeEventsJsonl(root, [
+      makeEvent({
+        eventId: 'owner-a',
+        agent: 'agent-a',
+        ts: new Date(now - 2 * 24 * 60 * 60 * 1000).toISOString(),
+        text: 'the project uses react for the frontend framework with typescript',
+      }),
+      makeEvent({
+        eventId: 'owner-b',
+        agent: 'agent-b',
+        ts: new Date(now - 3 * 24 * 60 * 60 * 1000).toISOString(),
+        text: 'the project uses react for the frontend framework',
+      }),
+    ]);
+
+    const preview = await runDream({ rootDir: root, mode: 'preview', spaces: ['default'] });
+    assert.deepEqual(preview.dedup, []);
+    const applied = await runDream({ rootDir: root, mode: 'apply', spaces: ['default'] });
+    assert.equal(applied.proposedRemovalCount, 0);
+    const proposal = JSON.parse(await fs.readFile(applied.proposalPath, 'utf8'));
+    assert.deepEqual(proposal.actions, []);
+  });
+});
+
+test('runDream: proposal never includes agent_private events', async () => {
   await withTempRoot('dream-sensitive-', async (root) => {
     const now = Date.now();
     const events = [
@@ -438,15 +529,17 @@ test('runDream: agent_private events are never touched', async () => {
     ];
     await writeEventsJsonl(root, events);
 
+    const eventsPath = path.join(root, '.aios', 'memo', 'file', 'events.jsonl');
+    const before = await fs.readFile(eventsPath, 'utf8');
     const result = await runDream({ rootDir: root, mode: 'apply', spaces: ['default'] });
-    assert.equal(result.applied, true);
 
-    // sensitive event should still be there
-    const after = await fs.readFile(path.join(root, '.aios', 'memo', 'file', 'events.jsonl'), 'utf8');
-    const lines = after.trim().split('\n').filter(Boolean);
-    assert.equal(lines.length, 1, 'only sensitive event should survive');
-    const survivor = JSON.parse(lines[0]);
-    assert.equal(survivor.eventId, 'sensitive-old');
+    assert.equal(result.applied, true);
+    assert.equal(result.removedCount, 0);
+    assert.equal(await fs.readFile(eventsPath, 'utf8'), before);
+    const proposal = JSON.parse(await fs.readFile(result.proposalPath, 'utf8'));
+    assert.equal(proposal.actions.some((action) => action.eventId === 'sensitive-old'), false);
+    assert.equal(proposal.sourceManifest.some((entry) => entry.eventId === 'sensitive-old'), false);
+    assert.ok(proposal.actions.some((action) => action.eventId === 'public-old'));
   });
 });
 

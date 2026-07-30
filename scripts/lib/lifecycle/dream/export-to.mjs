@@ -187,9 +187,8 @@ export async function syncDreamLinesToActivePlan(rootDir, durableLines = [], { m
   const {
     readActivePlan,
     addPlanEvidence,
-    resolvePlanningStatePath,
+    replacePlanTasks,
   } = await import('../../planning/contract.mjs');
-  const fs = await import('node:fs');
 
   let plan = readActivePlan(rootDir);
   if (!plan || plan.status === 'done') {
@@ -229,14 +228,7 @@ export async function syncDreamLinesToActivePlan(rootDir, durableLines = [], { m
     added += 1;
   }
 
-  plan = {
-    ...plan,
-    schemaVersion: 2,
-    tasks: existing,
-    updatedAt: new Date().toISOString(),
-  };
-  const statePath = resolvePlanningStatePath(rootDir);
-  fs.writeFileSync(statePath, `${JSON.stringify(plan, null, 2)}\n`, 'utf8');
+  plan = replacePlanTasks(rootDir, existing);
 
   try {
     addPlanEvidence(rootDir, {

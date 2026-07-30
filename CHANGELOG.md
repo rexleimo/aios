@@ -6,6 +6,26 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+
+- Add `aios_plan_task` MCP context proposals that derive target, caller, callee, import, and test candidates from the workspace codemap without mutating the active plan.
+- Add explicit `aios plan task <id> --confirm-context-candidates` human confirmation before selected inferred context can be delivered to orchestration.
+- Prefer pending tasks with persisted execution context during default orchestration, return confirmation as structured argv instead of shell text, and make candidate confirmation recoverable after interruption.
+
+### Changed
+
+- Context Lifecycle V1 session close now writes a candidate sidecar instead of publishing a shared memo automatically.
+- Context Lifecycle V1 Dream governance mutations (approve, reject, archive, restore, and GC) return DENY audit receipts until a trusted broker/concurrency authority is available; dream apply remains proposal-only.
+- Structured plans are written as schema v3 on the next explicit plan write; older runtimes cannot read the upgraded state.
+- Plan and execution-context paths must resolve inside the workspace; external absolute paths are blocked as invalid_plan_path.
+
+### Migration
+
+- Review and promote desired session-close memories with memo candidate promote instead of relying on automatic shared-memo publication.
+- Treat dream proposals as review artifacts; do not rely on dream apply or GC to delete canonical memo events.
+- Back up plan state before downgrading AIOS, or keep a v3-capable runtime available to read an upgraded plan.
+- Move plan and context source files under the selected workspace before orchestrating them.
+
 ## [5.2.1] - 2026-07-23
 
 - train pre-edit safety gate decision guidance

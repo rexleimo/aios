@@ -142,6 +142,9 @@ Options:
   node scripts/aios.mjs plan status [--workspace <path>] [--json]
   node scripts/aios.mjs plan show [--workspace <path>] [--html] [--json]
   node scripts/aios.mjs plan start --title <text> --task <text> [--workspace <path>] [--json]
+  node scripts/aios.mjs plan task <id> [--context <ref[:reason]>] [--target <path>] [--allow-write <glob>] [--workspace <path>] [--json]
+  node scripts/aios.mjs plan task <id> --propose-context [--target <path>] [--workspace <path>] [--json]
+  node scripts/aios.mjs plan task <id> --confirm-context-candidates [--candidate-ref <ref>] [--workspace <path>] [--json]
   node scripts/aios.mjs plan auto-gate --task <text> [--workspace <path>] [--json]
   node scripts/aios.mjs plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--testability-file <path>] [--workspace <path>] [--json]
 
@@ -150,6 +153,13 @@ Options:
   --task <text>                  Task/objective text
   --objective <text>             Objective text
   --status <status>              Plan or task status
+  --context <ref[:reason]>       Required task context; repeat to add more
+  --target <path>                Declared task target; repeat to add more
+  --allow-write <glob>           Allowed task write glob; repeat to add more
+  --propose-context               Derive reviewable target/codemap context candidates
+  --confirm-context-candidates    Human-confirm the current candidate proposal
+  --candidate-ref <ref>           Candidate ref to confirm; repeat to select a subset
+  --confirmed-by <text>           Human confirmation label
   --activation <id>              Current rex Capability Activation id
   --evidence-kind <kind>         Evidence kind required by the current Command
   --command-token <token>        Execution token from the current persisted Command
@@ -164,6 +174,8 @@ Options:
 Examples:
   node scripts/aios.mjs plan show --html
   node scripts/aios.mjs plan show --workspace /tmp/demo --json
+  node scripts/aios.mjs plan task t3-implement --propose-context --target src/feature.mjs
+  node scripts/aios.mjs plan task t3-implement --confirm-context-candidates --candidate-ref src/feature.mjs
   node scripts/aios.mjs plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref receipt:<id> --json
 `;
     case 'dream':
@@ -172,12 +184,18 @@ Examples:
   node scripts/aios.mjs dream --apply [--space <name>] [--workspace <path>] [--json]
   node scripts/aios.mjs dream --preview --to pin [--workspace <path>] [--json]
   node scripts/aios.mjs dream --apply --to both [--workspace <path>] [--json]
+  node scripts/aios.mjs dream --governance <list|inspect> [--proposal <id>] [--json]
+  node scripts/aios.mjs dream --governance <approve|reject|archive|restore|gc> [--proposal <id>] [--reason <text>] [--json]
 
 Options:
   --preview                      Preview dream consolidation/export (default)
   --apply                        Apply consolidation/export changes
   --space <name>                 Target consolidation space
   --to <pin|agents|both>         Export durable notes to pin memo and/or AGENTS.md
+  --governance <action>          Review proposal lifecycle action
+  --proposal <id>                Dream proposal id for inspect/mutation
+  --reason <text>                Required mutation reason; mutations currently only produce DENY audit receipts until a trusted broker is available
+  --retention-days <n>           Days between archive and GC (default: 30)
   --workspace <path>             Workspace root for memo/planning state
   --format <text|json>
   --json
@@ -186,6 +204,7 @@ Options:
 Examples:
   node scripts/aios.mjs dream --preview --to pin --json
   node scripts/aios.mjs dream --apply --to both --workspace /tmp/demo --json
+  node scripts/aios.mjs dream --governance list --json
 `;
     case 'session':
       return `Usage:

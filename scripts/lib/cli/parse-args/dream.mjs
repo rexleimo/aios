@@ -13,7 +13,11 @@ const DREAM_CLI = new Command()
   .option('--workspace <path>', 'Workspace root')
   .option('--json', 'Output as JSON')
   .option('--format <text|json>', 'Output format')
-  .option('--to <pin|agents|both>', 'Export durable notes to pin memo and/or AGENTS.md');
+  .option('--to <pin|agents|both>', 'Export durable notes to pin memo and/or AGENTS.md')
+  .option('--governance <action>', 'list|inspect|approve|reject|archive|restore|gc')
+  .option('--proposal <id>', 'Dream proposal id')
+  .option('--reason <text>', 'Governance decision reason')
+  .option('--retention-days <n>', 'Retention days before GC');
 
 export function parseDreamArgs(argv) {
   const rest = argv.slice(1);
@@ -23,7 +27,7 @@ export function parseDreamArgs(argv) {
       mode: 'help',
       help: true,
       command: 'dream',
-      options: { mode: 'preview', spaces: ['default'], to: '', workspaceRoot: '', json: false, format: 'text' },
+      options: { mode: 'preview', spaces: ['default'], to: '', governanceAction: '', proposalId: '', reason: '', retentionDays: 30, workspaceRoot: '', json: false, format: 'text' },
     };
   }
 
@@ -33,6 +37,10 @@ export function parseDreamArgs(argv) {
     const mode = flags.apply ? 'apply' : 'preview';
     const spaces = flags.space ? [String(flags.space).trim()] : ['default'];
     const to = flags.to ? String(flags.to).trim().toLowerCase() : '';
+    const governanceAction = flags.governance ? String(flags.governance).trim().toLowerCase() : '';
+    if (governanceAction && !['list', 'inspect', 'approve', 'reject', 'archive', 'restore', 'gc'].includes(governanceAction)) {
+      throw new Error('invalid Dream governance action');
+    }
     let format = flags.format ? String(flags.format).trim().toLowerCase() : 'text';
     const json = Boolean(flags.json || format === 'json');
     if (json) format = 'json';
@@ -45,6 +53,10 @@ export function parseDreamArgs(argv) {
         mode,
         spaces,
         to,
+        governanceAction,
+        proposalId: flags.proposal ? String(flags.proposal).trim() : '',
+        reason: flags.reason ? String(flags.reason).trim() : '',
+        retentionDays: flags.retentionDays ? Number.parseInt(flags.retentionDays, 10) : 30,
         workspaceRoot: flags.workspace ? String(flags.workspace).trim() : '',
         json,
         format,
@@ -55,7 +67,7 @@ export function parseDreamArgs(argv) {
       mode: 'help',
       help: true,
       command: 'dream',
-      options: { mode: 'preview', spaces: ['default'], to: '', workspaceRoot: '', json: false, format: 'text' },
+      options: { mode: 'preview', spaces: ['default'], to: '', governanceAction: '', proposalId: '', reason: '', retentionDays: 30, workspaceRoot: '', json: false, format: 'text' },
     };
   }
 }

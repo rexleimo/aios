@@ -320,7 +320,13 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     if (parsed.command === 'dream') {
       const workspace = workspaceFor(parsed);
       let result;
-      if (parsed.options.to) {
+      if (parsed.options.governanceAction) {
+        const { runDreamGovernanceCommand } = await import('../lifecycle/dream/governance.mjs');
+        result = await runDreamGovernanceCommand(parsed.options, {
+          rootDir: workspace,
+          env: process.env,
+        });
+      } else if (parsed.options.to) {
         const { runDreamExport } = await import('../lifecycle/dream/export-to.mjs');
         result = await runDreamExport({
           rootDir: workspace,
@@ -337,6 +343,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
         });
       }
       stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+      applyResultExitCode(result);
       return;
     }
 

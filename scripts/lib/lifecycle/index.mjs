@@ -2,6 +2,10 @@
 export { runOrchestrate } from './orchestrate.mjs';
 export { buildTeamWatchdogState } from './watchdog.mjs';
 export {
+  collectGitChangedFiles,
+  evaluateContextReconciliation,
+} from './context-reconciliation.mjs';
+export {
   createDefaultDoctorOptions,
   createDefaultEntropyGcOptions,
   createDefaultHarnessResumeOptions,
