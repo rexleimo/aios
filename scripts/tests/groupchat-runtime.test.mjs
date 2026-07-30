@@ -794,6 +794,47 @@ test('runGroupChat compresses large pre-send prompts and post-receive raw output
   }
 });
 
+test('runGroupChat records redacted runtime delivery before send without changing the model prompt', async () => {
+  const { runGroupChat } = await import('../lib/harness/groupchat-runtime.mjs');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-groupchat-runtime-context-'));
+  const secret = 'GROUPCHAT_RUNTIME_CONTEXT_SECRET';
+  const captured = [];
+
+  try {
+    const result = await runGroupChat({
+      taskTitle: 'Observe runtime delivery',
+      contextSummary: 'safe report summary',
+      executionContext: {
+        text: `[context ref=docs/contract.md]\n${secret}`,
+        redactionTexts: [secret],
+      },
+      blueprint: 'bugfix',
+      spawnFn: async (args) => {
+        captured.push(args);
+        return {
+          exitCode: 0,
+          handoff: makeHandoff({ fromRole: args.role, toRole: 'done', findings: ['done'] }),
+          rawOutput: 'safe output',
+          elapsedMs: 1,
+        };
+      },
+      rootDir,
+      config: { maxRounds: 1, concurrency: 1, sessionId: 'group-runtime-context' },
+      io: stubIo().io,
+    });
+
+    assert.equal(result.conversationHistory.length, 1);
+    assert.equal(captured.some((args) => String(args.userPrompt).includes(secret)), true);
+
+    const records = await readMetricsRecords({ workspaceRoot: rootDir, sessionId: 'group-runtime-context' });
+    assert.equal(records.some((record) => record.event_kind === 'pre_send' && record.client_id === 'aios-groupchat'), true);
+    assert.equal(records.some((record) => record.event_kind === 'post_receive' && record.client_id === 'aios-groupchat'), true);
+    assert.equal(JSON.stringify(records).includes(secret), false);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 // ---------------------------------------------------------------------------
 // DEFAULT_GROUPCHAT_CONFIG
 // ---------------------------------------------------------------------------

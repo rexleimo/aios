@@ -3,6 +3,7 @@ import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, r
 import { resolveModelRoutingForRole } from '../../model-router.mjs';
 import agentSpec from '../../specs/orchestrator-agents.json' with { type: 'json' };
 
+import { redactExecutionContextText } from '../runtime-context-redaction.mjs';
 import { resolveBlueprintRounds } from './blueprint-rounds.mjs';
 import { normalizeGroupChatConfig } from './config.mjs';
 import { executeRound } from './execution.mjs';
@@ -66,35 +67,35 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
     const fullPrompt = `${systemPrompt}\n\n${conversationPrompt}\n${rolePrompt}`;
     const rawUserPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
     const hasRuntimeDelivery = Boolean(String(executionContext?.text || '').trim());
-    // An assembled runtime packet is already the governed compact delivery; avoid compacting it twice.
-    const preSendPacket = hasRuntimeDelivery
-      ? null
-      : await requireTurnCompression({
+    // Observe runtime delivery through a redacted copy, but keep the governed prompt intact for the model.
+    const preSendText = hasRuntimeDelivery
+      ? redactExecutionContextText(rawUserPrompt, executionContext)
+      : rawUserPrompt;
+    const preSendPacket = await requireTurnCompression({
+      workspaceRoot: rootDir || process.cwd(),
+      cwd: rootDir || process.cwd(),
+      sessionId,
+      clientId: 'aios-groupchat',
+      hostLevel: 'L3',
+      mode: 'tight',
+      eventKind: 'pre_send',
+      text: preSendText,
+      run: () => compressPreSendTurn({
         workspaceRoot: rootDir || process.cwd(),
         cwd: rootDir || process.cwd(),
         sessionId,
         clientId: 'aios-groupchat',
         hostLevel: 'L3',
+        prompt: preSendText,
         mode: 'tight',
-        eventKind: 'pre_send',
-        text: rawUserPrompt,
-        run: () => compressPreSendTurn({
-          workspaceRoot: rootDir || process.cwd(),
-          cwd: rootDir || process.cwd(),
-          sessionId,
-          clientId: 'aios-groupchat',
-          hostLevel: 'L3',
-          prompt: rawUserPrompt,
-          mode: 'tight',
-          metrics: { enabled: true },
-        }),
-      });
-    if (preSendPacket) {
-      emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
-    }
-    const compactPrompt = preSendPacket?.refs?.length ? stringifyTurnPacket(preSendPacket, rawUserPrompt) : rawUserPrompt;
-    const compactSystemPrompt = preSendPacket?.refs?.length ? compactPrompt : systemPrompt;
-    const outboundModelRouting = compactModelRoutingForTurn(modelRouting, preSendPacket?.refs?.length);
+        metrics: { enabled: true },
+      }),
+    });
+    emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
+    const compactedForExecution = !hasRuntimeDelivery && preSendPacket?.refs?.length;
+    const compactPrompt = compactedForExecution ? stringifyTurnPacket(preSendPacket, rawUserPrompt) : rawUserPrompt;
+    const compactSystemPrompt = compactedForExecution ? compactPrompt : systemPrompt;
+    const outboundModelRouting = compactModelRoutingForTurn(modelRouting, compactedForExecution);
     const result = await spawnFn({
       role,
       speaker,
