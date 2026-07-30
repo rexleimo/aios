@@ -57,6 +57,34 @@ test('syncGeneratedSkills writes managed repo-local skill trees with metadata', 
   });
 });
 
+test('syncGeneratedSkills propagates codemap planning guidance to every selected surface', async () => {
+  const rootDir = await makeTemp('aios-codemap-skill-sync-root-');
+  const body = '# codemap skill\n\n## Planning context proposals\n\nUse explicit confirmation.\n';
+  await writeSkill(rootDir, 'aios-codemap-ops', body);
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      codex: '.codex/skills',
+      claude: '.claude/skills',
+    },
+    skills: [{
+      relativeSkillPath: 'aios-codemap-ops',
+      installCatalogName: 'aios-codemap-ops',
+      repoTargets: ['codex', 'claude'],
+    }],
+    legacyUnmanaged: [],
+  });
+
+  const result = await syncGeneratedSkills({ rootDir });
+  assert.equal(result.ok, true);
+  for (const surface of ['.codex', '.claude']) {
+    assert.equal(
+      await readFile(path.join(rootDir, surface, 'skills', 'aios-codemap-ops', 'SKILL.md'), 'utf8'),
+      body,
+    );
+  }
+});
+
 test('syncGeneratedSkills skips unmanaged blockers and reports them', async () => {
   const rootDir = await makeTemp('aios-skills-sync-blocker-root-');
   await writeSkill(rootDir, 'find-skills');

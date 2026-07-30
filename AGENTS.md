@@ -197,6 +197,13 @@ This project has a structural knowledge graph. **Use it at each decision point i
 
 - Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
 - Follow `next_tool_suggestions` from each response for the next tool to call
+
+### Planning context proposals
+
+- When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, its `task_id`, and workspace-relative `targets` if the task has none.
+- The tool derives target, caller, callee, and test candidates from this codemap, but it **does not** modify the active plan.
+- Present the proposed refs to a human and have that person activate selected refs with `aios plan task <id> --confirm-context-candidates` (optionally repeat `--candidate-ref <ref>`).
+- Do not claim that context will be delivered, or invoke context-dependent orchestration, until that explicit confirmation succeeds.
 <!-- AIOS CODEMAP END -->
 
 <!-- AIOS NATIVE BEGIN -->

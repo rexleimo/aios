@@ -27,7 +27,31 @@ This project has a structural knowledge graph. **Use it at each decision point i
 ### Parameters
 
 - Always use \`detail_level="minimal"\`; escalate to "standard" only when insufficient
-- Follow \`next_tool_suggestions\` from each response for the next tool to call`;
+- Follow \`next_tool_suggestions\` from each response for the next tool to call
+
+### Planning context proposals
+
+- When an active structured-plan task has implementation targets, call AIOS MCP \`aios_plan_task\` with \`action="propose_context"\`, its \`task_id\`, and workspace-relative \`targets\` if the task has none.
+- The tool derives target, caller, callee, and test candidates from this codemap, but it **does not** modify the active plan.
+- Present the proposed refs to a human and have that person activate selected refs with \`aios plan task <id> --confirm-context-candidates\` (optionally repeat \`--candidate-ref <ref>\`).
+- Do not claim that context will be delivered, or invoke context-dependent orchestration, until that explicit confirmation succeeds.`;
+
+export function getCodemapInstructionSection() {
+  return AGENTS_MD_CRG_SECTION;
+}
+
+export function inspectCodemapInstructionMarkers(raw = '') {
+  const beginCount = String(raw).split(AGENTS_MD_MARKERS.begin).length - 1;
+  const endCount = String(raw).split(AGENTS_MD_MARKERS.end).length - 1;
+  const beginIndex = String(raw).indexOf(AGENTS_MD_MARKERS.begin);
+  const endIndex = String(raw).indexOf(AGENTS_MD_MARKERS.end);
+  return {
+    beginCount,
+    endCount,
+    ordered: beginIndex >= 0 && endIndex > beginIndex,
+    valid: beginCount === 1 && endCount === 1 && beginIndex >= 0 && endIndex > beginIndex,
+  };
+}
 
 export function collectCodemapInstructionFiles(client = 'all') {
   const enabled = new Set(normalizeClientList(client));

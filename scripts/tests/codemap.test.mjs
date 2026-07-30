@@ -7,7 +7,12 @@ import { pathToFileURL } from 'node:url';
 
 import { doctorCodemap, installCodemap } from '../lib/components/codemap.mjs';
 import { collectCodemapMcpTargets } from '../lib/components/codemap/mcp-targets.mjs';
-import { collectCodemapInstructionFiles } from '../lib/components/codemap/instructions.mjs';
+import {
+  collectCodemapInstructionFiles,
+  getCodemapInstructionSection,
+  injectCrgIntoInstructionFiles,
+} from '../lib/components/codemap/instructions.mjs';
+import { AGENTS_MD_MARKERS } from '../lib/components/codemap/constants.mjs';
 import { getCodemapHelpText } from '../lib/cli/help/codemap.mjs';
 import { getClientMcpTarget, getClientInstructionFileName, ALL_CLIENTS } from '../lib/clients/registry.mjs';
 
@@ -153,7 +158,44 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   const agentsMd = await readFile(path.join(projectRoot, 'AGENTS.md'), 'utf8');
   assert.match(agentsMd, /MCP Tools: code-review-graph/);
   assert.match(agentsMd, /`detect_changes` → `get_review_context`/u);
+  assert.match(agentsMd, /aios_plan_task/u);
+  assert.match(agentsMd, /confirm-context-candidates/u);
   assert.doesNotMatch(agentsMd, /[\u922b]\??/u);
+});
+
+test('tracked codemap instruction sections match the generator template exactly', async () => {
+  const expected = [
+    AGENTS_MD_MARKERS.begin,
+    getCodemapInstructionSection(),
+    AGENTS_MD_MARKERS.end,
+  ].join('\n');
+  for (const fileName of ['AGENTS.md', 'CLAUDE.md', 'GEMINI.md']) {
+    const raw = (await readFile(path.resolve(fileName), 'utf8')).split(String.fromCharCode(13, 10)).join(String.fromCharCode(10));
+    const begin = raw.indexOf(AGENTS_MD_MARKERS.begin);
+    const end = raw.indexOf(AGENTS_MD_MARKERS.end);
+    assert.equal(raw.split(AGENTS_MD_MARKERS.begin).length - 1, 1, `${fileName} should have one begin marker`);
+    assert.equal(raw.split(AGENTS_MD_MARKERS.end).length - 1, 1, `${fileName} should have one end marker`);
+    assert.ok(begin >= 0 && end > begin, `${fileName} markers should be ordered`);
+    assert.equal(
+      raw.slice(begin, end + AGENTS_MD_MARKERS.end.length),
+      expected,
+      `${fileName} drifted from codemap template`,
+    );
+  }
+});
+
+test('tracked codemap instruction files have a dry-run drift guard', () => {
+  const logs = [];
+  injectCrgIntoInstructionFiles(path.resolve('.'), {
+    dryRun: true,
+    io: silentIo(logs),
+    client: 'all',
+  });
+  assert.deepEqual(logs, [
+    'OK   codemap AGENTS.md CRG section unchanged',
+    'OK   codemap CLAUDE.md CRG section unchanged',
+    'OK   codemap GEMINI.md CRG section unchanged',
+  ]);
 });
 
 test('codemap doctor reports missing per-client MCP config and --fix heals it', async () => {

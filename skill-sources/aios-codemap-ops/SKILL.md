@@ -30,6 +30,15 @@ repoTargets: [codex, claude, gemini, opencode, hermes]
 
 If a client cannot see CRG tools, run `aios internal codemap doctor --fix --client <client>` from the target project, then restart that client.
 
+## Structured-plan context candidates
+
+When you know a structured-plan task's implementation target, do not ask a human to hand-author every supporting context reference.
+
+1. Call AIOS MCP `aios_plan_task` with `action: "propose_context"`, the active `task_id`, and workspace-relative `targets` when the task has no targets yet.
+2. AIOS derives a durable proposal from the target plus CRG callers, callees/imports, and tests. This proposal is reviewable only; it does not alter `.aios/planning/active.json`.
+3. Present the refs and reasons to the human. Ask a human to activate all candidates with `aios plan task <id> --confirm-context-candidates`, or select a subset by repeating `--candidate-ref <ref>`; this is an explicit process step, not an identity/authentication boundary.
+4. Only after confirmation may you say that the task has active execution context or invoke context-dependent orchestration.
+
 ### query_graph patterns
 
 | Pattern | Returns |

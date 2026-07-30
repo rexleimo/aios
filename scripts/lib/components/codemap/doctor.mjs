@@ -6,7 +6,7 @@ import { commandExists } from '../../platform/process.mjs';
 import { AGENTS_MD_MARKERS, CRG_DATA_DIR, CRG_MCP_ALIAS } from './constants.mjs';
 import { captureCrgCommand } from './crg.mjs';
 import { resolveClientHomes } from './environment.mjs';
-import { collectCodemapInstructionFiles } from './instructions.mjs';
+import { collectCodemapInstructionFiles, inspectCodemapInstructionMarkers } from './instructions.mjs';
 import { installCodemap } from './install.mjs';
 import { collectCodemapMcpTargets, inspectCodemapMcpTarget } from './mcp-targets.mjs';
 import { readState, stateFilePath } from './state-store.mjs';
@@ -80,10 +80,11 @@ function checkDoctorStateAndDocs({ projectRootPath, client, counters }) {
       continue;
     }
     const raw = fs.readFileSync(instructionPath, 'utf8');
-    if (raw.includes(AGENTS_MD_MARKERS.begin) && raw.includes(AGENTS_MD_MARKERS.end)) {
+    const markers = inspectCodemapInstructionMarkers(raw);
+    if (markers.valid) {
       counters.ok(`${target.fileName} CRG section present`);
     } else {
-      counters.warn(`${target.fileName} CRG section missing`);
+      counters.warn(`${target.fileName} CRG section malformed or missing`);
     }
   }
 }
