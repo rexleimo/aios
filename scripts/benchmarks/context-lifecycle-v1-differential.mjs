@@ -289,8 +289,18 @@ async function main() {
     kind: 'context-lifecycle-v1-immutable-differential',
     evaluator: { commit: evaluatorCommit },
     subjects: {
-      baseline: { commit: baselineCommit, materialization: baselineRun.materialization },
-      post: { commit: postCommit, materialization: postRun.materialization },
+      baseline: {
+        commit: baselineCommit,
+        worktreeDirty: baselineRun.summary.worktreeDirty,
+        worktreeOverlayFiles: baselineRun.summary.worktreeOverlayFiles || [],
+        materialization: baselineRun.materialization,
+      },
+      post: {
+        commit: postCommit,
+        worktreeDirty: postRun.summary.worktreeDirty,
+        worktreeOverlayFiles: postRun.summary.worktreeOverlayFiles || [],
+        materialization: postRun.materialization,
+      },
     },
     dependencyProvenance,
     commandExitCodes: { baseline: baselineRun.exitCode, post: postRun.exitCode },
