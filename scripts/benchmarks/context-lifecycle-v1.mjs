@@ -91,6 +91,10 @@ export function commandObservation(executable, args, cwd = ROOT) {
   };
 }
 
+export function isDifferentialRunnerOverlayStatus(statusLine) {
+  return /^\?\?\s+scripts[\\/]benchmarks[\\/]\.context-lifecycle-differential-\d+-(?:baseline|post)\.mjs$/u.test(statusLine);
+}
+
 async function withWorkspace(prefix, scenario) {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), prefix));
   try {
@@ -1023,7 +1027,9 @@ async function main() {
   const gitRevision = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: ROOT, encoding: 'utf8', windowsHide: true });
   const gitStatus = spawnSync('git', ['status', '--short'], { cwd: ROOT, encoding: 'utf8', windowsHide: true });
   const gitCommit = gitRevision.status === 0 ? gitRevision.stdout.trim() : 'unknown';
-  const worktreeDirty = gitStatus.status !== 0 || Boolean(gitStatus.stdout.trim());
+  const statusLines = String(gitStatus.stdout || '').split(/\r?\n/u).filter(Boolean);
+  const worktreeOverlayFiles = statusLines.filter(isDifferentialRunnerOverlayStatus).map((line) => line.slice(3));
+  const worktreeDirty = gitStatus.status !== 0 || statusLines.some((line) => !isDifferentialRunnerOverlayStatus(line));
   const runnerSha256 = sha256(await readFile(fileURLToPath(import.meta.url), 'utf8'));
   const matched = scenarios.filter((scenario) => scenario.matchesProfile).length;
   const targetMetCount = scenarios.filter((scenario) => scenario.targetMet).length;
@@ -1036,6 +1042,7 @@ async function main() {
     completedAt: new Date().toISOString(),
     gitCommit,
     worktreeDirty,
+    worktreeOverlayFiles,
     runnerSha256,
     node: process.version,
     platform: `${process.platform}-${process.arch}`,

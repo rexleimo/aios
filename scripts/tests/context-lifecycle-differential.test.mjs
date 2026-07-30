@@ -14,7 +14,7 @@ import {
   parsePinnedSubmoduleCommit,
   resolveImmutableCommit,
 } from '../benchmarks/context-lifecycle-v1-differential.mjs';
-import { commandObservation } from '../benchmarks/context-lifecycle-v1.mjs';
+import { commandObservation, isDifferentialRunnerOverlayStatus } from '../benchmarks/context-lifecycle-v1.mjs';
 
 function git(rootDir, args) {
   const result = spawnSync('git', ['-C', rootDir, ...args], {
@@ -102,4 +102,6 @@ test('failed command observations retain separate redacted stream tails', () => 
   assert.match(observation.failureExcerpt.stderr, /stderr-29/u);
   assert.doesNotMatch(observation.failureExcerpt.stdout, /stderr-/u);
   assert.equal(observation.cwd, '<tmp>');
+  assert.equal(isDifferentialRunnerOverlayStatus('?? scripts/benchmarks/.context-lifecycle-differential-123-baseline.mjs'), true);
+  assert.equal(isDifferentialRunnerOverlayStatus(' M scripts/benchmarks/context-lifecycle-v1.mjs'), false);
 });
