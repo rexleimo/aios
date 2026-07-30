@@ -1,7 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { resolveContextDbRoot, resolveTasksRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
-import { readHandoffPacket } from '../contextdb/handoff.mjs';
+import { evaluateHandoffLineage, readHandoffPacket } from '../contextdb/handoff.mjs';
 
 const ACTIVE_TASK_STATUSES = new Set(['pending', 'running', 'blocked']);
 const ACTIVE_SESSION_STATUSES = new Set(['pending', 'running', 'blocked']);
@@ -84,6 +84,7 @@ async function collectLatestHandoff(workspaceRoot, facade) {
 
   const handoff = await readHandoffPacket(workspaceRoot, sessionId);
   if (!handoff || (!handoff.nextActions?.length && !handoff.blockers?.length && !handoff.progress)) return [];
+  const lineageVerdict = evaluateHandoffLineage(handoff);
   return [{
     kind: 'handoff',
     title: String(facade?.goal || handoff.intent || sessionId).trim(),
@@ -92,6 +93,7 @@ async function collectLatestHandoff(workspaceRoot, facade) {
     description: String(handoff.progress || '').trim(),
     nextActions: Array.isArray(handoff.nextActions) ? handoff.nextActions.slice(0, 3) : [],
     blockers: Array.isArray(handoff.blockers) ? handoff.blockers.slice(0, 3) : [],
+    lineageVerdict,
   }];
 }
 

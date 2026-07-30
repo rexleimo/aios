@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -32,6 +32,54 @@ function makeIo() {
     stderr: { write(chunk) { stderrText += String(chunk); } },
     read() { return { stdoutText, stderrText }; },
   };
+}
+
+async function prepareTestabilityActivation(rootDir, suffix = '') {
+  const software = evaluateAiosSoftwareRequest({
+    message: 'Update checkout validation behavior.',
+    completedCapabilities: ['software.requirements.clarify'],
+  });
+  const started = startStoredAiosCapabilityActivation({
+    rootDir,
+    decision: software.decision,
+    activationId: `activation-plan-testability-${suffix || 'default'}`,
+    workItemKey: `work-item:plan-testability-${suffix || 'default'}`,
+    request: { message: 'Update checkout validation behavior.' },
+  });
+  return advanceStoredAiosCapabilityActivation({
+    rootDir,
+    activationId: started.activation.activationId,
+    evidence: [
+      { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
+      { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
+      { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+    ],
+  });
+}
+
+async function writeValidTestabilityDecision(rootDir, filePath) {
+  const receipt = captureStandaloneExecutionReceipt({
+    rootDir,
+    executable: process.execPath,
+    args: ['-e', 'process.exit(7)'],
+  });
+  await writeFile(filePath, `${JSON.stringify({
+    kind: 'behavior-delta',
+    decisionRef: 'artifact:testability-decision',
+    redCandidate: {
+      publicEntry: 'checkout validation endpoint',
+      setup: 'Submit an invalid checkout request.',
+      command: {
+        executable: process.execPath,
+        args: ['-e', 'process.exit(7)'],
+        cwd: rootDir,
+      },
+      expected: 'The invalid checkout is rejected.',
+      observed: 'The invalid checkout is accepted before implementation.',
+      failureReason: 'The requested validation behavior is absent.',
+      receiptRef: receipt.ref,
+    },
+  })}\n`, 'utf8');
 }
 
 test('plan CLI parses policy mode, session, and dry-run separately from injection format', () => {
@@ -145,6 +193,73 @@ test('plan CLI submits a typed testability decision from a file with a real rece
     assert.equal(submitted.result.nextCapability.command.provider.id, 'rex-tdd');
   } finally {
     await rm(root, { recursive: true, force: true });
+  }
+});
+
+test('plan CLI rejects an external typed testability decision file', async () => {
+  const root = await makeTemp('aios-plan-testability-contained-');
+  const external = await makeTemp('aios-plan-testability-external-');
+  try {
+    const designed = await prepareTestabilityActivation(root, 'external');
+    const externalDecisionPath = path.join(external, 'testability.json');
+    await writeValidTestabilityDecision(root, externalDecisionPath);
+    const io = makeIo();
+
+    const submitted = await runPlanCommand({
+      subcommand: 'capability-evidence',
+      activationId: designed.activation.activationId,
+      commandToken: designed.command.executionToken,
+      evidenceKind: 'testability-decision-recorded',
+      evidenceRef: 'artifact:testability-decision',
+      testabilityFile: externalDecisionPath,
+      json: true,
+    }, { rootDir: root, ...io });
+
+    assert.equal(submitted.exitCode, 1);
+    assert.match(io.read().stderrText, /testability file must resolve inside the selected workspace/u);
+    assert.doesNotMatch(io.read().stderrText, new RegExp(external.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&'), 'u'));
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(external, { recursive: true, force: true });
+  }
+});
+
+test('plan CLI rejects traversal and external symlink testability files', async (t) => {
+  const root = await makeTemp('aios-plan-testability-traversal-');
+  const external = await makeTemp('aios-plan-testability-traversal-external-');
+  try {
+    const externalDecisionPath = path.join(external, 'testability.json');
+    await writeValidTestabilityDecision(root, externalDecisionPath);
+    const traversal = path.relative(root, externalDecisionPath);
+    const linkPath = path.join(root, 'linked-testability.json');
+    try {
+      await symlink(externalDecisionPath, linkPath, 'file');
+    } catch (error) {
+      if (['EACCES', 'EPERM', 'ENOTSUP'].includes(error?.code)) {
+        t.skip(`symlink unavailable in this test environment: ${error.code}`);
+        return;
+      }
+      throw error;
+    }
+
+    for (const [suffix, testabilityFile] of [['traversal', traversal], ['symlink', 'linked-testability.json']]) {
+      const designed = await prepareTestabilityActivation(root, suffix);
+      const io = makeIo();
+      const submitted = await runPlanCommand({
+        subcommand: 'capability-evidence',
+        activationId: designed.activation.activationId,
+        commandToken: designed.command.executionToken,
+        evidenceKind: 'testability-decision-recorded',
+        evidenceRef: 'artifact:testability-decision',
+        testabilityFile,
+        json: true,
+      }, { rootDir: root, ...io });
+      assert.equal(submitted.exitCode, 1, suffix);
+      assert.match(io.read().stderrText, /testability file must resolve inside the selected workspace/u);
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
+    await rm(external, { recursive: true, force: true });
   }
 });
 

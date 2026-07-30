@@ -5,9 +5,24 @@ export {
   writeContinuitySummary,
 } from './continuity.mjs';
 
-export { readHandoffPacket } from './handoff.mjs';
+export {
+  evaluateHandoffLineage,
+  normalizeHandoffPacket,
+  readHandoffPacket,
+  renderHandoffInjection,
+  writeHandoffPacket,
+} from './handoff.mjs';
 
 export {
   generateFacadeFromSession,
   loadFacade,
 } from './facade.mjs';
+
+export {
+  buildExecutionContextPacket,
+  evaluateExecutionContextPreflight,
+  isExecutionContextMutationDeclared,
+  projectContextItems,
+  resolveExecutionContextPaths,
+  updateExecutionContextExpectedHash,
+} from './execution-context.mjs';

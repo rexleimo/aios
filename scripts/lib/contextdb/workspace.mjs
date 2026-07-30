@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { resolveContextDbRoot, resolveWorkspaceStateRoot } from '../aios/state-root.mjs';
+import { evaluateHandoffLineage } from './handoff.mjs';
 
 export class OptimisticLockError extends Error {
   constructor(expected, actual) {
@@ -163,6 +164,7 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
       relevantSkills: [],
       activeTasks: [],
       continuity: null,
+      continuityLineage: null,
     };
   }
 
@@ -175,6 +177,7 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
     : index.skills;
 
   let continuity = null;
+  let continuityLineage = null;
   try {
     const sessionsDir = path.join(
       resolveContextDbRoot(path.resolve(workspaceRoot), { preferLegacyExisting: true }),
@@ -200,6 +203,7 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
     }
     if (latestSessionId) {
       continuity = await readHandoffPacket(workspaceRoot, latestSessionId);
+      if (continuity) continuityLineage = evaluateHandoffLineage(continuity);
     }
   } catch {
     // no sessions
@@ -212,5 +216,6 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
     relevantSkills,
     activeTasks: [],
     continuity,
+    continuityLineage,
   };
 }

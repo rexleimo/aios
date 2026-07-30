@@ -1,6 +1,7 @@
 /* 中文注释：Subagent turn 压缩集中在这里，避免 phase-job 同时承担 prompt/result 网关细节。 */
 import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, requireTurnCompression } from '../../interception/index.mjs';
 import { normalizeText } from './text.mjs';
+import { redactExecutionContextText } from '../runtime-context-redaction.mjs';
 
 export async function prepareSubagentTurnPrompts({
   rootDir,
@@ -9,10 +10,13 @@ export async function prepareSubagentTurnPrompts({
   agentId = '',
   systemPrompt,
   userPrompt,
+  executionContext = null,
   io = null,
 }) {
   const sessionId = resolveTurnSessionId(job);
-  const text = `${systemPrompt}\n\n${userPrompt}`;
+  const rawText = `${systemPrompt}\n\n${userPrompt}`;
+  // Redact only the copy sent to interception; the executable prompt keeps its original delivery text.
+  const text = redactExecutionContextText(rawText, executionContext);
   const packet = await requireTurnCompression({
     workspaceRoot: rootDir || process.cwd(),
     cwd: rootDir || process.cwd(),

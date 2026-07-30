@@ -32,6 +32,10 @@ import { executeDispatchPreflight } from './orchestrate/preflight.mjs';
 import { handleUnknownCapabilityGuard } from './orchestrate/runtime-capability-guard.mjs';
 import { buildPostDispatchReport } from './orchestrate/post-dispatch-report.mjs';
 import {
+  finalizeOrchestrateContextLifecycle,
+  prepareOrchestrateContextLifecycle,
+} from './orchestrate/context-lifecycle.mjs';
+import {
   applyReleaseGuardBlock,
   buildReleaseGuardAction,
 } from './orchestrate/release-guard.mjs';
@@ -40,6 +44,10 @@ import { runDoctor } from './doctor.mjs';
 import { runQualityGate } from './quality-gate.mjs';
 import { runReleaseStatus } from './release-status.mjs';
 import { evaluateOwnershipEvidence, evaluatePlanEvidence, mergeReadinessVerdicts } from './preflight-contracts.mjs';
+import {
+  captureSessionWorkspaceSnapshot,
+  recordSessionWorkspaceChanges,
+} from '../session/changed-files.mjs';
 const DEFAULT_PREFLIGHT_ADAPTERS = {
   qualityGate: runQualityGate,
   releaseStatus: runReleaseStatus,
@@ -66,6 +74,9 @@ export async function runOrchestrate(
   let learnEvalOverlay = null;
   let learnEvalReport = null;
   let readiness = null;
+  let reportContextSummary = '';
+  let runtimeExecutionContext = null;
+  let preparedContextLifecycle = null;
 
   if (options.sessionId) {
     learnEvalReport = await buildLearnEvalReport(
@@ -133,6 +144,18 @@ export async function runOrchestrate(
     }
   }
 
+  reportContextSummary = contextSummary;
+  preparedContextLifecycle = await prepareOrchestrateContextLifecycle({ rootDir, options, env });
+  if (preparedContextLifecycle.contextText) {
+    runtimeExecutionContext = {
+      text: preparedContextLifecycle.contextText,
+      redactionTexts: preparedContextLifecycle.redactionTexts || [],
+      packetRef: preparedContextLifecycle.report?.packetRef || '',
+      receiptRef: preparedContextLifecycle.report?.receiptRef || '',
+      taskId: preparedContextLifecycle.report?.taskId || '',
+    };
+  }
+
   const rawDispatchPolicy = buildDispatchPolicy({
     learnEvalReport,
     learnEvalOverlay,
@@ -174,6 +197,7 @@ export async function runOrchestrate(
     blueprint,
     taskTitle,
     contextSummary,
+    executionContext: runtimeExecutionContext,
     learnEvalOverlay,
     dispatchPolicy: rawDispatchPolicy,
     dispatchPreflight,
@@ -233,6 +257,7 @@ export async function runOrchestrate(
       executionMode: 'live',
       message,
       ...basePlan,
+      contextLifecycle: preparedContextLifecycle?.report || null,
       readiness,
       suggestedCommands,
       ...(dispatchPlan ? { dispatchPlan } : {}),
@@ -273,19 +298,63 @@ export async function runOrchestrate(
   });
   if (capabilityGuardResult) return capabilityGuardResult;
 
-  const rawDispatchRun = dispatchRuntime
-    ? await dispatchRuntime.execute({
-      plan: dagPlan,
-      dispatchPlan,
-      dispatchPolicy: effectiveDispatchPolicy,
-      io,
-      env,
-      rootDir,
-    })
+  const contextSessionId = options.sessionId || preparedContextLifecycle?.packet?.plan?.sessionId || 'orchestrate';
+  const beforeDispatchSnapshot = dispatchRuntime && preparedContextLifecycle?.packet
+    ? await captureSessionWorkspaceSnapshot({ rootDir, env })
     : null;
-  const dispatchRun = dispatchRuntime && rawDispatchRun
-    ? normalizeDispatchRuntimeResult(rawDispatchRun, dispatchRuntime, options.executionMode)
-    : null;
+  let rawDispatchRun = null;
+  let dispatchRun = null;
+  let dispatchError = null;
+  try {
+    rawDispatchRun = dispatchRuntime
+      ? await dispatchRuntime.execute({
+        plan: dagPlan,
+        dispatchPlan,
+        dispatchPolicy: effectiveDispatchPolicy,
+        io,
+        env,
+        rootDir,
+      })
+      : null;
+    dispatchRun = dispatchRuntime && rawDispatchRun
+      ? normalizeDispatchRuntimeResult(rawDispatchRun, dispatchRuntime, options.executionMode)
+      : null;
+  } catch (error) {
+    dispatchError = error;
+  }
+
+  let mutationObservation = null;
+  if (beforeDispatchSnapshot) {
+    const afterDispatchSnapshot = await captureSessionWorkspaceSnapshot({ rootDir, env });
+    try {
+      mutationObservation = await recordSessionWorkspaceChanges({
+        rootDir,
+        sessionId: contextSessionId,
+        before: beforeDispatchSnapshot,
+        after: afterDispatchSnapshot,
+        env,
+      });
+    } catch (error) {
+      mutationObservation = {
+        schemaVersion: 1,
+        kind: 'session.workspace-mutation-observation',
+        available: false,
+        files: [],
+        reason: String(error?.message || error),
+      };
+    }
+  }
+
+  let contextLifecycle = await finalizeOrchestrateContextLifecycle({
+    rootDir,
+    options,
+    prepared: preparedContextLifecycle,
+    env,
+  });
+  if (contextLifecycle && mutationObservation) {
+    contextLifecycle = { ...contextLifecycle, mutationObservation };
+  }
+  if (dispatchError) throw dispatchError;
 
   const report = await buildPostDispatchReport({
     rootDir,
@@ -293,7 +362,7 @@ export async function runOrchestrate(
     options,
     blueprint,
     taskTitle,
-    contextSummary,
+    contextSummary: reportContextSummary,
     learnEvalOverlay,
     rawDispatchPolicy,
     preflightDispatchPolicy,
@@ -305,6 +374,7 @@ export async function runOrchestrate(
     executorCapabilityManifest,
     readiness,
     retryReplay,
+    contextLifecycle,
     dispatchRunStartedAt,
   });
 

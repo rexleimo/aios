@@ -14,6 +14,8 @@ export function normalizeOrchestrateOptions(rawOptions = {}) {
   const blueprintRaw = String(rawOptions.blueprint || '').trim();
   const taskTitleRaw = String(rawOptions.taskTitle || '').trim();
   const planPath = String(rawOptions.planPath || '').trim();
+  const contextTaskId = String(rawOptions.contextTaskId || '').trim();
+  const contextBudgetUnits = normalizePositiveInteger(rawOptions.contextBudgetUnits, 12_000);
   const resumeSessionIdRaw = String(rawOptions.resumeSessionId || '').trim();
   let sessionId = String(rawOptions.sessionId || '').trim();
   if (!sessionId && resumeSessionIdRaw) {
@@ -71,6 +73,8 @@ export function normalizeOrchestrateOptions(rawOptions = {}) {
     taskTitleExplicit: taskTitleRaw.length > 0,
     contextSummary: String(rawOptions.contextSummary || '').trim(),
     planPath,
+    contextTaskId,
+    contextBudgetUnits,
     sessionId,
     resumeSessionId,
     retryBlocked,
@@ -101,6 +105,12 @@ export function planOrchestrate(rawOptions = {}) {
   }
   if (options.planPath) {
     args.push('--plan', options.planPath);
+  }
+  if (options.contextTaskId) {
+    args.push('--context-task', options.contextTaskId);
+  }
+  if (options.contextBudgetUnits !== 12_000) {
+    args.push('--context-budget', String(options.contextBudgetUnits));
   }
   if (options.sessionId) {
     args.push('--session', options.sessionId);

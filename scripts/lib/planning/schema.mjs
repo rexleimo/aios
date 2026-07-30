@@ -4,7 +4,7 @@
  * are mapped to machine-readable tasks and evidence, not host Plan UI.
  */
 
-export const PLAN_SCHEMA_VERSION = 2;
+export const PLAN_SCHEMA_VERSION = 3;
 
 export const PLAN_STATUSES = Object.freeze([
   'active',
@@ -172,6 +172,33 @@ export function seedTasksFromObjective(objective = '', route = 'unknown') {
   ];
 }
 
+function normalizeStringList(raw = []) {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.map((value) => String(value || '').trim()).filter(Boolean))];
+}
+
+export function normalizeContextRequirement(raw, index = 0) {
+  if (typeof raw === 'string') {
+    const ref = raw.trim();
+    return ref ? {
+      ref,
+      reason: 'Declared required context',
+      required: true,
+      verification: [],
+    } : null;
+  }
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+  const ref = String(raw.ref || raw.path || '').trim();
+  if (!ref) return null;
+  return {
+    ref,
+    reason: String(raw.reason || `Declared context requirement ${index + 1}`).trim(),
+    required: raw.required !== false,
+    verification: normalizeStringList(raw.verification),
+    ...(raw.expectedHash ? { expectedHash: String(raw.expectedHash).trim() } : {}),
+  };
+}
+
 export function normalizeTask(raw = {}, index = 0) {
   const id = String(raw.id || `t${index + 1}`).trim();
   const status = TASK_STATUSES.includes(raw.status) ? raw.status : 'pending';
@@ -181,6 +208,15 @@ export function normalizeTask(raw = {}, index = 0) {
     status,
     acceptance: String(raw.acceptance || '').trim(),
     dependsOn: Array.isArray(raw.dependsOn) ? raw.dependsOn.map(String) : [],
+    targets: normalizeStringList(raw.targets),
+    allowedWrites: normalizeStringList(raw.allowedWrites),
+    contextRequirements: (Array.isArray(raw.contextRequirements) ? raw.contextRequirements : [])
+      .map((requirement, requirementIndex) => normalizeContextRequirement(requirement, requirementIndex))
+      .filter(Boolean),
+    interfaces: normalizeStringList(raw.interfaces),
+    verification: normalizeStringList(raw.verification),
+    contextRevision: String(raw.contextRevision || '').trim(),
+    contextCandidateConfirmationId: String(raw.contextCandidateConfirmationId || '').trim(),
     updatedAt: raw.updatedAt || null,
   };
 }
@@ -195,7 +231,7 @@ export function normalizeEvidence(raw = {}) {
 }
 
 /**
- * Build structured plan state (schema v2).
+ * Build structured plan state (schema v3).
  */
 export function buildStructuredPlanState({
   title,
@@ -208,14 +244,16 @@ export function buildStructuredPlanState({
   createdAt = new Date().toISOString(),
   status = 'active',
   route = null,
+  contextRevision = '',
   skills = null,
   tasks = null,
   evidence = [],
 } = {}) {
   const resolvedRoute = PLAN_ROUTES.includes(route) ? route : classifyPlanRoute(objective || title);
-  const resolvedTasks = Array.isArray(tasks) && tasks.length > 0
-    ? tasks.map((t, i) => normalizeTask(t, i))
+  const taskSource = Array.isArray(tasks) && tasks.length > 0
+    ? tasks
     : seedTasksFromObjective(objective || title, resolvedRoute);
+  const resolvedTasks = taskSource.map((task, index) => normalizeTask(task, index));
 
   return {
     schemaVersion: PLAN_SCHEMA_VERSION,
@@ -230,6 +268,7 @@ export function buildStructuredPlanState({
     createdAt,
     updatedAt: createdAt,
     route: resolvedRoute,
+    contextRevision: String(contextRevision || '').trim(),
     skills: Array.isArray(skills) && skills.length > 0
       ? [...new Set(skills.map((skill) => String(skill || '').trim()).filter(Boolean))]
       : skillsForRoute(resolvedRoute),

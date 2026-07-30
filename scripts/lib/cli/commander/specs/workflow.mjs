@@ -16,6 +16,8 @@ export const WORKFLOW_COMMAND_SPECS = [
       ['--task <title>', 'Task title'],
       ['--context <summary>', 'Context summary'],
       ['--plan <path>', 'Plan artifact path'],
+      ['--context-task <id>', 'Structured plan task id for execution context'],
+      ['--context-budget <n>', 'Execution context delivery budget units'],
       ['--session <id>', 'ContextDB session id'],
       ['--limit <n>', 'Checkpoint inspection limit'],
       ['--recommendation <id>', 'Pinned recommendation id'],

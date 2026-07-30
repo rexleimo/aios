@@ -16,6 +16,9 @@ export function createPhaseJob(
   env = process.env
 ) {
   const contextSources = ['orchestration-plan'];
+  if (plan?.executionContext?.text) {
+    contextSources.push('execution-context-delivery');
+  }
   if (plan.learnEvalOverlay) {
     contextSources.push('learn-eval-overlay');
   }

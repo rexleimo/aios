@@ -69,6 +69,22 @@ const TOOLS = [
     },
   },
   {
+    name: 'aios_orchestrate',
+    description: 'Run the local dry-run orchestration lifecycle through AIOS, including active structured-plan execution-context assembly, shadow preflight, and reconciliation. Context source bodies are delivered only to the runtime channel and are not returned by this tool.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task: { type: 'string', description: 'Task title for orchestration' },
+        context_task: { type: 'string', description: 'Active structured plan task id to assemble' },
+        context_budget: { type: 'number', description: 'Runtime context delivery budget units (default: 12000)' },
+        sessionId: { type: 'string', description: 'Optional ContextDB session id' },
+        plan_path: { type: 'string', description: 'Optional plan artifact path for existing readiness preflight' },
+        preflight: { type: 'string', enum: ['none', 'auto'], description: 'Existing orchestrate readiness preflight mode (default: none)' },
+        workspace: { type: 'string', description: 'Workspace root path (defaults to CWD)' },
+      },
+    },
+  },
+  {
     name: 'aios_plan_start',
     description: 'Start an AIOS planning contract for multi-step work. Creates docs/plans/YYYY-MM-DD-<topic>.md and sets .aios/planning/active.json. Prefer this over Hermes-only or host Plan UI for engineering tasks so all AIOS clients share the same plan artifact.',
     inputSchema: {
@@ -81,6 +97,21 @@ const TOOLS = [
         sessionId: { type: 'string', description: 'Client session id for acknowledgement continuation matching' },
       },
       required: ['title'],
+    },
+  },
+  {
+    name: 'aios_plan_task',
+    description: 'Ask AIOS to derive a durable, reviewable context-candidate proposal for an existing structured-plan task. Provide workspace-relative targets when the task has none. This tool never changes active-plan targets or contextRequirements: show the returned candidates to a human, then require an explicit human-controlled aios plan task <id> --confirm-context-candidates process step before orchestration can use them; this is not an identity/authentication boundary.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        task_id: { type: 'string', description: 'Existing active structured-plan task id' },
+        action: { type: 'string', enum: ['propose_context', 'status'], description: 'propose_context derives target and codemap candidates; status reads the current proposal' },
+        targets: { type: 'array', items: { type: 'string' }, description: 'Workspace-relative implementation targets the agent proposes for this task; required when the task has no targets' },
+        max_candidates: { type: 'number', description: 'Maximum candidates to return (default: 12, max: 50)' },
+        workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+      },
+      required: ['task_id'],
     },
   },
   {
@@ -509,7 +540,9 @@ async function handleMessage(message) {
       'aios_intercept_compress': handleInterceptCompress,
       'aios_skill_validate': handleSkillValidate,
       'aios_skill_install': handleSkillInstall,
+      'aios_orchestrate': handleOrchestrate,
       'aios_plan_start': handlePlanStart,
+      'aios_plan_task': handlePlanTask,
       'aios_plan_status': handlePlanStatus,
       'aios_plan_gate': handlePlanGate,
       'aios_plan_auto_gate': handlePlanAutoGate,
@@ -551,6 +584,33 @@ if (import.meta.url === `file://${process.argv[1]?.replace(/\\/g, '/')}` || proc
   }
 }
 
+/* 中文注释：MCP orchestration 永远限制为本地 dry-run；不允许 tool 参数升级为 live dispatch。 */
+async function handleOrchestrate(params = {}) {
+  const workspace = params.workspace || process.cwd();
+  try {
+    const { runOrchestrate } = await import('./lib/lifecycle/orchestrate.mjs');
+    const contextTaskId = String(params.context_task || params.contextTaskId || '').trim();
+    const contextBudgetUnits = Number(params.context_budget || params.contextBudget || 12_000);
+    const runResult = await runOrchestrate({
+      taskTitle: String(params.task || params.taskTitle || '').trim() || (contextTaskId ? `Structured task ${contextTaskId}` : 'MCP orchestration'),
+      contextTaskId,
+      contextBudgetUnits: Number.isFinite(contextBudgetUnits) && contextBudgetUnits > 0 ? contextBudgetUnits : 12_000,
+      sessionId: String(params.sessionId || params.session_id || '').trim(),
+      planPath: String(params.plan_path || params.planPath || '').trim(),
+      preflightMode: params.preflight === 'auto' ? 'auto' : 'none',
+      dispatchMode: 'local',
+      executionMode: 'dry-run',
+      format: 'json',
+    }, {
+      rootDir: workspace,
+      io: { log() {}, error() {} },
+    });
+    return { content: [{ type: 'text', text: JSON.stringify(runResult.report, null, 2) }] };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_orchestrate failed: ${err.message}` }] };
+  }
+}
+
 /* 中文注释：planning MCP handlers — 委托 lib/planning，保证 Hermes 与 CLI 共用契约 */
 async function handlePlanStart(params) {
   const workspace = params.workspace || process.cwd();
@@ -571,6 +631,50 @@ async function handlePlanStart(params) {
     return { content: [{ type: 'text', text: JSON.stringify(state, null, 2) }] };
   } catch (err) {
     return { content: [{ type: 'text', text: `aios_plan_start failed: ${err.message}` }] };
+  }
+}
+
+async function handlePlanTask(params = {}) {
+  const workspace = params.workspace || process.cwd();
+  const taskId = String(params.task_id || params.taskId || '').trim();
+  if (!taskId) {
+    return { content: [{ type: 'text', text: 'aios_plan_task requires task_id' }] };
+  }
+  const action = String(params.action || 'propose_context').trim();
+  try {
+    const {
+      proposeTaskContextCandidates,
+      readTaskContextCandidate,
+    } = await import('./lib/planning/context-candidates.mjs');
+    if (action === 'status') {
+      const proposal = await readTaskContextCandidate(workspace, taskId);
+      return { content: [{ type: 'text', text: JSON.stringify({ proposal }, null, 2) }] };
+    }
+    if (action !== 'propose_context') {
+      return { content: [{ type: 'text', text: 'aios_plan_task action must be propose_context or status' }] };
+    }
+    const proposal = await proposeTaskContextCandidates({
+      rootDir: workspace,
+      taskId,
+      targets: Array.isArray(params.targets) ? params.targets : [],
+      maxCandidates: params.max_candidates || params.maxCandidates,
+      proposedBy: 'mcp:aios_plan_task',
+    });
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          proposal,
+          confirmationRequired: true,
+          confirmationCommand: {
+            executable: 'aios',
+            args: ['plan', 'task', taskId, '--confirm-context-candidates'],
+          },
+        }, null, 2),
+      }],
+    };
+  } catch (err) {
+    return { content: [{ type: 'text', text: `aios_plan_task failed: ${err.message}` }] };
   }
 }
 
@@ -648,7 +752,9 @@ export {
   handleInterceptCompress,
   handleSkillValidate,
   handleSkillInstall,
+  handleOrchestrate,
   handlePlanStart,
+  handlePlanTask,
   handlePlanStatus,
   handlePlanGate,
   handlePlanAutoGate,

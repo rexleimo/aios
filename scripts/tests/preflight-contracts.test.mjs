@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, rm, symlink } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -64,21 +64,111 @@ test('evaluatePlanEvidence accepts complete plan markdown and compact heading al
   }
 });
 
-test('evaluatePlanEvidence accepts the canonical schema-v2 planning contract', async () => {
-  const result = await evaluatePlanEvidence({
-    markdown: buildPlanMarkdown({
-      title: 'Canonical plan',
-      objective: 'Dispatch only after policy persistence',
-      client: 'codex',
-      route: 'team',
-      skills: ['rex-planning'],
-      tasks: [{ id: 't1', title: 'Dispatch', status: 'pending', acceptance: 'Plan is readable' }],
-    }),
-  });
+test('evaluatePlanEvidence normalizes equivalent in-root absolute paths', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-contained-'));
+  try {
+    const relativePlanPath = 'docs/plans/ready.md';
+    const absolutePlanPath = path.join(rootDir, relativePlanPath);
+    await mkdir(path.dirname(absolutePlanPath), { recursive: true });
+    await writeFile(absolutePlanPath, COMPLETE_PLAN, 'utf8');
 
-  assert.equal(result.verdict, 'ready');
-  assert.deepEqual(result.blockedReasons, []);
-  assert.match(result.evidence[0].summary, /schema-v2 planning contract/i);
+    const relative = await evaluatePlanEvidence({ rootDir, planPath: relativePlanPath });
+    const absolute = await evaluatePlanEvidence({ rootDir, planPath: absolutePlanPath });
+
+    assert.equal(relative.verdict, 'ready');
+    assert.equal(absolute.verdict, 'ready');
+    assert.equal(relative.evidence[0].path, relativePlanPath);
+    assert.equal(absolute.evidence[0].path, relativePlanPath);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('evaluatePlanEvidence rejects external plan evidence before it can become ready', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-contained-'));
+  const externalDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-external-'));
+  try {
+    const externalPlanPath = path.join(externalDir, 'valid-external.md');
+    await writeFile(externalPlanPath, COMPLETE_PLAN, 'utf8');
+
+    const external = await evaluatePlanEvidence({ rootDir, planPath: externalPlanPath });
+
+    assert.equal(external.verdict, 'blocked');
+    assert.deepEqual(external.blockedReasons, ['invalid_plan_path']);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+    await rm(externalDir, { recursive: true, force: true });
+  }
+});
+
+test('evaluatePlanEvidence rejects traversal and inline markdown paired with an external plan path', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-contained-'));
+  const externalDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-external-'));
+  try {
+    const externalPlanPath = path.join(externalDir, 'valid-external.md');
+    await writeFile(externalPlanPath, COMPLETE_PLAN, 'utf8');
+    const traversal = path.relative(rootDir, externalPlanPath);
+
+    const traversalResult = await evaluatePlanEvidence({ rootDir, planPath: traversal });
+    const inlineResult = await evaluatePlanEvidence({
+      rootDir,
+      planPath: externalPlanPath,
+      markdown: COMPLETE_PLAN,
+    });
+
+    assert.deepEqual(traversalResult.blockedReasons, ['invalid_plan_path']);
+    assert.deepEqual(inlineResult.blockedReasons, ['invalid_plan_path']);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+    await rm(externalDir, { recursive: true, force: true });
+  }
+});
+
+test('evaluatePlanEvidence rejects an in-workspace symlink to an external plan', async (t) => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-contained-'));
+  const externalDir = await mkdtemp(path.join(os.tmpdir(), 'aios-preflight-plan-external-'));
+  try {
+    const externalPlanPath = path.join(externalDir, 'valid-external.md');
+    const linkPath = path.join(rootDir, 'docs', 'plans', 'external-link.md');
+    await writeFile(externalPlanPath, COMPLETE_PLAN, 'utf8');
+    await mkdir(path.dirname(linkPath), { recursive: true });
+    try {
+      await symlink(externalPlanPath, linkPath, 'file');
+    } catch (error) {
+      if (['EACCES', 'EPERM', 'ENOTSUP'].includes(error?.code)) {
+        t.skip(`symlink unavailable in this test environment: ${error.code}`);
+        return;
+      }
+      throw error;
+    }
+
+    const result = await evaluatePlanEvidence({ rootDir, planPath: 'docs/plans/external-link.md' });
+    assert.equal(result.verdict, 'blocked');
+    assert.deepEqual(result.blockedReasons, ['invalid_plan_path']);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+    await rm(externalDir, { recursive: true, force: true });
+  }
+});
+
+test('evaluatePlanEvidence accepts supported schema-v2 and schema-v3 planning contracts', async () => {
+  for (const schemaVersion of [2, 3]) {
+    const result = await evaluatePlanEvidence({
+      markdown: buildPlanMarkdown({
+        title: 'Canonical plan',
+        objective: 'Dispatch only after policy persistence',
+        client: 'codex',
+        route: 'team',
+        skills: ['rex-planning'],
+        tasks: [{ id: 't1', title: 'Dispatch', status: 'pending', acceptance: 'Plan is readable' }],
+        schemaVersion,
+      }),
+    });
+
+    assert.equal(result.verdict, 'ready', `schema v${schemaVersion}`);
+    assert.deepEqual(result.blockedReasons, [], `schema v${schemaVersion}`);
+    assert.match(result.evidence[0].summary, /supported structured planning contract/iu);
+  }
 });
 
 test('evaluateOwnershipEvidence blocks write-capable work without owned paths', () => {

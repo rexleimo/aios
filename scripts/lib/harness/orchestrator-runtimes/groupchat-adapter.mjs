@@ -4,6 +4,7 @@ import { runGroupChat } from '../groupchat-runtime.mjs';
 import { isModelRouterEnabled, normalizeModelRouting, recordModelDispatch } from '../../model-router.mjs';
 import { runOneShot } from '../subagent-runtime.mjs';
 import { extractHandoffJson } from './handoff-json.mjs';
+import { redactExecutionContextText, redactExecutionContextValue } from '../runtime-context-redaction.mjs';
 
 export function resolveGroupChatClientId(defaultClientId = '', modelRouting = null, env = process.env) {
   const route = normalizeModelRouting(modelRouting);
@@ -26,7 +27,7 @@ export function recordGroupChatModelDispatch({ rootDir, role, modelRouting, succ
   });
 }
 
-export function buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io }) {
+export function buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io, executionContext = null }) {
   return async ({ role, speaker, workItem, conversationPrompt, userPrompt, modelRouting = null }) => {
     const promptText = String(userPrompt || conversationPrompt || '').trim();
     if (!promptText) {
@@ -61,8 +62,11 @@ export function buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io })
     }
 
     const elapsedMs = Date.now() - startedAt;
-    const rawOutput = [result.stdout, result.stderr].filter(Boolean).join('\n').trim();
-    const handoffJson = extractHandoffJson(rawOutput);
+    const rawOutput = redactExecutionContextText(
+      [result.stdout, result.stderr].filter(Boolean).join('\n').trim(),
+      executionContext,
+    );
+    const handoffJson = redactExecutionContextValue(extractHandoffJson(rawOutput), executionContext);
     const handoff = handoffJson
       ? normalizeHandoffPayload(handoffJson)
       : normalizeHandoffPayload({
@@ -158,10 +162,18 @@ export async function executeGroupChatRuntime({ plan, dispatchPlan, io, env, roo
     return Number.isFinite(value) && value > 0 ? value : 10 * 60 * 1000;
   })();
 
-  const spawnFn = buildGroupChatSpawnFn({ clientId, timeoutMs, env, rootDir, io });
+  const spawnFn = buildGroupChatSpawnFn({
+    clientId,
+    timeoutMs,
+    env,
+    rootDir,
+    io,
+    executionContext: plan?.executionContext || null,
+  });
   const groupChatResult = await runGroupChat({
     taskTitle: String(plan?.taskTitle || '').trim() || 'Untitled task',
     contextSummary: String(plan?.contextSummary || '').trim(),
+    executionContext: plan?.executionContext || null,
     workItems: Array.isArray(plan?.workItems) ? plan.workItems : null,
     blueprint: String(plan?.blueprint || 'feature').trim(),
     spawnFn,

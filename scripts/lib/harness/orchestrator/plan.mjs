@@ -62,6 +62,7 @@ export function buildOrchestrationPlan({
   blueprint = 'feature',
   taskTitle = '',
   contextSummary = '',
+  executionContext = null,
   workItems = null,
   learnEvalOverlay = null,
   dispatchPlan = null,
@@ -83,12 +84,18 @@ export function buildOrchestrationPlan({
       contextSummary: resolvedContextSummary,
     })
   );
+  const runtimeExecutionContext = executionContext
+    && typeof executionContext === 'object'
+    && String(executionContext.text || '')
+    ? { ...executionContext, text: String(executionContext.text) }
+    : null;
 
   return {
     blueprint: resolved.name,
     description: resolved.description,
     taskTitle: resolvedTaskTitle,
     contextSummary: resolvedContextSummary,
+    ...(runtimeExecutionContext ? { executionContext: runtimeExecutionContext } : {}),
     workItems: decomposedWorkItems,
     learnEvalOverlay: normalizeLearnEvalOverlay(learnEvalOverlay),
     dispatchPlan: normalizeDispatchPlan(dispatchPlan),

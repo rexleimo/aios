@@ -82,8 +82,15 @@ export function normalizeHandoffPacket(input = {}) {
     throw new Error(`invalid confidence: ${confidence}`);
   }
 
-  return {
-    schemaVersion: 2,
+  const baseRevision = normalizeText(input.baseRevision, '');
+  const contextRevision = normalizeText(input.contextRevision, '');
+  const packetRef = normalizeText(input.packetRef, '');
+  const receiptRef = normalizeText(input.receiptRef, '');
+  const verificationRefs = normalizeStringArray(input.verificationRefs);
+  const hasLineage = Number(input.schemaVersion) >= 3
+    || Boolean(baseRevision || contextRevision || packetRef || receiptRef || verificationRefs.length > 0);
+  const packet = {
+    schemaVersion: hasLineage ? 3 : 2,
     fromAgent: {
       sessionId: fromSessionId,
       agentType,
@@ -105,6 +112,15 @@ export function normalizeHandoffPacket(input = {}) {
     confidence,
     assumptions: normalizeStringArray(input.assumptions),
     updatedAt: normalizeText(input.updatedAt, new Date().toISOString()),
+  };
+  if (!hasLineage) return packet;
+  return {
+    ...packet,
+    baseRevision,
+    contextRevision,
+    packetRef,
+    receiptRef,
+    verificationRefs,
   };
 }
 
@@ -132,6 +148,51 @@ export async function readHandoffPacket(workspaceRoot, sessionId) {
   } catch {
     return null;
   }
+}
+
+export function evaluateHandoffLineage(packet, {
+  currentBaseRevision = '',
+  currentContextRevision = '',
+  requiredVerificationRefs = [],
+} = {}) {
+  const normalized = normalizeHandoffPacket(packet);
+  const reasons = [];
+  if (normalized.schemaVersion < 3) reasons.push('legacy_handoff_requires_revalidation');
+  if (normalized.schemaVersion >= 3 && !normalized.contextRevision) reasons.push('missing_context_revision');
+  if (normalized.schemaVersion >= 3 && !normalized.packetRef) reasons.push('missing_packet_ref');
+  if (normalized.schemaVersion >= 3 && !normalized.receiptRef) reasons.push('missing_receipt_ref');
+  if (currentBaseRevision && normalized.baseRevision && currentBaseRevision !== normalized.baseRevision) {
+    reasons.push('base_revision_mismatch');
+  }
+  if (currentContextRevision
+      && normalized.contextRevision
+      && currentContextRevision !== normalized.contextRevision) {
+    reasons.push('context_revision_mismatch');
+  }
+  const verificationRefs = new Set(normalized.verificationRefs || []);
+  if (normalizeStringArray(requiredVerificationRefs).some((ref) => !verificationRefs.has(ref))) {
+    reasons.push('missing_verification_ref');
+  }
+  const decisionDigest = crypto.createHash('sha256').update(JSON.stringify({
+    baseRevision: normalized.baseRevision || '',
+    contextRevision: normalized.contextRevision || '',
+    packetRef: normalized.packetRef || '',
+    receiptRef: normalized.receiptRef || '',
+    verificationRefs: normalized.verificationRefs || [],
+    currentBaseRevision,
+    currentContextRevision,
+    requiredVerificationRefs: normalizeStringArray(requiredVerificationRefs),
+    reasons,
+  })).digest('hex');
+  return {
+    schemaVersion: 1,
+    kind: 'contextdb.handoff-lineage-verdict',
+    mode: 'shadow',
+    revalidationRequired: reasons.length > 0,
+    reasons,
+    admissionChanged: false,
+    decisionDigest,
+  };
 }
 
 export function renderHandoffInjection(packet) {
@@ -165,6 +226,16 @@ export function renderHandoffInjection(packet) {
     '### Next Actions',
     nextActionsText,
   ];
+
+  if (normalized.schemaVersion >= 3) {
+    const lineage = [
+      normalized.baseRevision ? `- **Base Revision:** ${normalized.baseRevision}` : '',
+      normalized.contextRevision ? `- **Context Revision:** ${normalized.contextRevision}` : '',
+      normalized.packetRef ? `- **Packet:** ${normalized.packetRef}` : '',
+      normalized.receiptRef ? `- **Receipt:** ${normalized.receiptRef}` : '',
+    ].filter(Boolean);
+    parts.splice(5, 0, ...lineage);
+  }
 
   if (blockersText) {
     parts.push('', '### Blockers', blockersText);

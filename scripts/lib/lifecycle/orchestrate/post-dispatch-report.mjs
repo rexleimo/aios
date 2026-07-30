@@ -78,6 +78,7 @@ export async function buildPostDispatchReport({
   executorCapabilityManifest,
   readiness,
   retryReplay,
+  contextLifecycle,
   dispatchRunStartedAt,
 } = {}) {
   const postDispatchPolicy = buildDispatchPolicy({
@@ -184,6 +185,7 @@ export async function buildPostDispatchReport({
         ...(dispatchInsights ? { dispatchInsights } : {}),
         ...(codemapAnalysis ? { codemapAnalysis } : {}),
         ...(retryReplay ? { retryReplay } : {}),
+        ...(contextLifecycle ? { contextLifecycle } : {}),
         ...(readiness ? { readiness } : {}),
       },
       elapsedMs: Date.now() - dispatchRunStartedAt,
@@ -202,6 +204,7 @@ export async function buildPostDispatchReport({
     ...(workItemTelemetry ? { workItemTelemetry } : {}),
     ...(dispatchInsights ? { dispatchInsights } : {}),
     ...(retryReplay ? { retryReplay } : {}),
+    ...(contextLifecycle ? { contextLifecycle } : {}),
     ...(readiness ? { readiness } : {}),
     ...(dispatchEvidence ? { dispatchEvidence } : {}),
   };

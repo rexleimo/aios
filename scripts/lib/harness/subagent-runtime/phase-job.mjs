@@ -21,6 +21,7 @@ import { appendJobFindingsToRoleMemory } from './role-memory.mjs';
 import { collectCostTelemetry, hasCostTelemetry } from './telemetry.mjs';
 import { normalizeText } from './text.mjs';
 import { compactSubagentTurnOutput, prepareSubagentTurnPrompts } from './turn-compression.mjs';
+import { redactExecutionContextText, redactExecutionContextValue } from '../runtime-context-redaction.mjs';
 
 export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   clientId,
@@ -41,8 +42,16 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);
   const agentId = normalizeText(job?.launchSpec?.agentRefId);
-  const outbound = await prepareSubagentTurnPrompts({ rootDir, job, executionClientId, agentId, systemPrompt, userPrompt, io });
-
+  const outbound = await prepareSubagentTurnPrompts({
+    rootDir,
+    job,
+    executionClientId,
+    agentId,
+    systemPrompt,
+    userPrompt,
+    executionContext: plan?.executionContext || null,
+    io,
+  });
   const startedAt = Date.now();
   const result = await runOneShotImpl(executionClientId, {
     systemPrompt: outbound.systemPrompt,
@@ -56,20 +65,24 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   });
   const elapsedMs = Date.now() - startedAt;
   const rawCommandOutput = `${result.stdout || ''}\n${result.stderr || ''}`.trim();
-  const outputText = await readSubagentOutputText({ structuredOutput, rawCommandOutput });
+  const outputText = redactExecutionContextText(
+    await readSubagentOutputText({ structuredOutput, rawCommandOutput }),
+    plan?.executionContext,
+  );
+  const redactedRawCommandOutput = redactExecutionContextText(rawCommandOutput, plan?.executionContext);
   const compacted = await compactSubagentTurnOutput({
     rootDir,
     sessionId: outbound.sessionId,
     executionClientId,
     agentId,
     outputText,
-    rawCommandOutput,
+    rawCommandOutput: redactedRawCommandOutput,
     io,
   });
   const compactOutputText = compacted.outputText;
   const compactRawCommandOutput = compacted.rawCommandOutput;
-  const rawJson = extractJsonCandidate(outputText);
-  const costTelemetry = collectCostTelemetry({ rawText: rawCommandOutput, rawJson });
+  const rawJson = redactExecutionContextValue(extractJsonCandidate(outputText), plan?.executionContext);
+  const costTelemetry = collectCostTelemetry({ rawText: redactedRawCommandOutput, rawJson });
   const attempts = normalizeResultAttempts(result);
   const block = (reason, options = {}) => buildBlockedPhaseJobRun({
     plan,
@@ -86,17 +99,15 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
     io,
     dispatchDescription: options.dispatchDescription,
   });
-
   const allowTimedOutHandoff = result.exitCode !== 0
     && /timed out/i.test(String(result.error || ''))
     && Boolean(rawJson);
-
   if (result.exitCode !== 0 && !allowTimedOutHandoff) {
     const attemptCount = normalizeResultAttempts(result, 1);
     const failureReason = buildFailureReason({
       baseReason: result.error || `exit=${result.exitCode}${attemptCount > 1 ? ` after ${attemptCount} attempts` : ''}`,
       exitCode: result.exitCode,
-      rawCommandOutput,
+      rawCommandOutput: redactedRawCommandOutput,
     });
     await maybeRecordWorkerDeathNotice({
       rootDir,
@@ -124,7 +135,6 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
       dispatchDescription: 'Invalid handoff payload',
     });
   }
-
   const filePolicy = evaluatePhaseFilePolicy(validation.value, phase, job);
   if (!filePolicy.ok) {
     return block(summarizeFilePolicyViolation(filePolicy.violations), { rawOutput: compactOutputText });

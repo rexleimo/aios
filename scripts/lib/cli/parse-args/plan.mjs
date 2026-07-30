@@ -1,6 +1,10 @@
 /* 中文注释：plan 命令参数解析 */
 import { Command } from 'commander';
 
+function collectOptionValue(value, previous = []) {
+  return [...(Array.isArray(previous) ? previous : []), String(value || '')];
+}
+
 const PLAN_CLI = new Command()
   .name('plan')
   .helpOption(false)
@@ -21,6 +25,13 @@ const PLAN_CLI = new Command()
   .option('--message <text>', 'User message for auto-gate')
   .option('--task-id <id>', 'Task id for plan task')
   .option('--acceptance <text>', 'Task acceptance criteria')
+  .option('--context <ref[:reason]>', 'Required context declaration; repeat to add more', collectOptionValue, [])
+  .option('--target <path>', 'Declared task target; repeat to add more', collectOptionValue, [])
+  .option('--allow-write <glob>', 'Allowed write glob; repeat to add more', collectOptionValue, [])
+  .option('--propose-context', 'Derive context candidates from task targets and codemap')
+  .option('--confirm-context-candidates', 'Human-confirm the current context candidate proposal')
+  .option('--candidate-ref <ref>', 'Candidate ref to confirm; repeat to select a subset', collectOptionValue, [])
+  .option('--confirmed-by <text>', 'Human confirmation label')
   .option('--kind <command|path|test|note>', 'Evidence kind')
   .option('--value <text>', 'Evidence value')
   .option('--activation <id>', 'Rex capability activation id')
@@ -88,6 +99,13 @@ export function parsePlanArgs(argv) {
         status: flags.status,
         note: flags.note,
         acceptance: flags.acceptance,
+        contextRequirements: Array.isArray(flags.context) ? flags.context : [],
+        targets: Array.isArray(flags.target) ? flags.target : [],
+        allowedWrites: Array.isArray(flags.allowWrite) ? flags.allowWrite : [],
+        proposeContext: Boolean(flags.proposeContext),
+        confirmContextCandidates: Boolean(flags.confirmContextCandidates),
+        candidateRefs: Array.isArray(flags.candidateRef) ? flags.candidateRef : [],
+        confirmedBy: flags.confirmedBy ? String(flags.confirmedBy).trim() : '',
         kind: flags.kind,
         value: flags.value,
         activationId: flags.activation,

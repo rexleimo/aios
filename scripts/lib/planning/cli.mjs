@@ -1,3 +1,6 @@
+import fs from 'node:fs';
+import path from 'node:path';
+
 import {
   addPlanEvidence,
   evaluateDoneGate,
@@ -12,16 +15,84 @@ import {
   runAutoGate,
   runClaudeUserPromptSubmitHook,
 } from './auto-gate.mjs';
+import {
+  confirmTaskContextCandidates,
+  proposeTaskContextCandidates,
+} from './context-candidates.mjs';
 import { recordAiosCapabilityEvidence } from '../workflows/rex-capability-runtime.mjs';
+
+function isContainedPath(rootPath, candidatePath) {
+  const relative = path.relative(rootPath, candidatePath);
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+function invalidTestabilityPath() {
+  const error = new Error('testability file must resolve inside the selected workspace');
+  error.code = 'AIOS_INVALID_TESTABILITY_PATH';
+  return error;
+}
+
+function resolveTestabilityDecisionPath(source, rootDir) {
+  const rootPath = path.resolve(rootDir);
+  const targetPath = path.resolve(rootPath, String(source || '').trim());
+  if (!isContainedPath(rootPath, targetPath)) throw invalidTestabilityPath();
+  try {
+    const realRoot = fs.realpathSync(rootPath);
+    const realTarget = fs.realpathSync(targetPath);
+    if (!isContainedPath(realRoot, realTarget)) throw invalidTestabilityPath();
+    return realTarget;
+  } catch (error) {
+    if (error?.code === 'AIOS_INVALID_TESTABILITY_PATH') throw error;
+    if (error?.code === 'ENOENT') return targetPath;
+    throw invalidTestabilityPath();
+  }
+}
 
 function readTestabilityDecision(source, rootDir) {
   if (!source) return undefined;
-  const target = path.resolve(rootDir, source);
+  let target;
+  try {
+    target = resolveTestabilityDecisionPath(source, rootDir);
+  } catch (error) {
+    throw new Error(`invalid --testability-file: ${error.message}`, { cause: error });
+  }
   try {
     return JSON.parse(fs.readFileSync(target, 'utf8'));
   } catch (error) {
     throw new Error(`invalid --testability-file: ${target}: ${error.message}`, { cause: error });
   }
+}
+
+function stringDeclarations(values, optionName) {
+  const normalized = (Array.isArray(values) ? values : []).map((value) => String(value || '').trim());
+  if (normalized.some((value) => !value)) {
+    throw new Error(`${optionName} requires a non-empty value`);
+  }
+  return [...new Set(normalized)];
+}
+
+function parseContextDeclaration(value) {
+  const declaration = String(value || '').trim();
+  const separator = declaration.indexOf(':', path.win32.isAbsolute(declaration) ? 2 : 0);
+  const ref = (separator < 0 ? declaration : declaration.slice(0, separator)).trim();
+  if (!ref) throw new Error('--context requires a non-empty ref');
+  const reason = separator < 0 ? '' : declaration.slice(separator + 1).trim();
+  return {
+    ref,
+    reason: reason || 'Declared via aios plan task',
+    required: true,
+  };
+}
+
+function taskDeclarations(options) {
+  const contextValues = stringDeclarations(options.contextRequirements, '--context');
+  const targets = stringDeclarations(options.targets, '--target');
+  const allowedWrites = stringDeclarations(options.allowedWrites, '--allow-write');
+  return {
+    contextRequirements: contextValues.length ? contextValues.map(parseContextDeclaration) : undefined,
+    targets: targets.length ? targets : undefined,
+    allowedWrites: allowedWrites.length ? allowedWrites : undefined,
+  };
 }
 
 export async function runPlanCommand(options = {}, { rootDir = process.cwd(), stdout = process.stdout, stderr = process.stderr } = {}) {
@@ -101,15 +172,49 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       stderr.write('[err] plan task requires task id (first arg or --task-id)\n');
       return { exitCode: 1 };
     }
-    if (!options.status && !options.taskTitle && options.acceptance === undefined) {
-      stderr.write('[err] plan task requires --status and/or --title/--acceptance\n');
+    if (options.proposeContext && options.confirmContextCandidates) {
+      stderr.write('[err] plan task cannot propose and confirm context candidates in one command\n');
       return { exitCode: 1 };
     }
     try {
+      if (options.proposeContext) {
+        const proposal = await proposeTaskContextCandidates({
+          rootDir,
+          taskId,
+          targets: options.targets,
+          proposedBy: 'cli:aios-plan-task',
+        });
+        const payload = { proposal, confirmationRequired: true };
+        stdout.write(json
+          ? `${JSON.stringify(payload, null, 2)}\n`
+          : 'context candidates proposed; confirm the reviewed proposal with aios plan task <task-id> --confirm-context-candidates\n');
+        return { exitCode: 0, ...payload };
+      }
+      if (options.confirmContextCandidates) {
+        const confirmed = await confirmTaskContextCandidates({
+          rootDir,
+          taskId,
+          refs: options.candidateRefs,
+          confirmedBy: options.confirmedBy || 'human-cli',
+        });
+        const progress = summarizePlanProgress(confirmed.state);
+        const payload = { state: confirmed.state, proposal: confirmed.proposal, progress };
+        stdout.write(json
+          ? `${JSON.stringify(payload, null, 2)}\n`
+          : `context candidates confirmed for ${taskId}; progress ${progress.tasksDone}/${progress.tasksTotal}\n`);
+        return { exitCode: 0, ...payload };
+      }
+      const declarations = taskDeclarations(options);
+      const hasDeclarations = Object.values(declarations).some((value) => Array.isArray(value) && value.length > 0);
+      if (!options.status && !options.taskTitle && options.acceptance === undefined && !hasDeclarations) {
+        stderr.write('[err] plan task requires --status, --title/--acceptance, context declarations, --propose-context, or --confirm-context-candidates\n');
+        return { exitCode: 1 };
+      }
       const state = updatePlanTask(rootDir, taskId, {
         status: options.status,
         title: options.taskTitle,
         acceptance: options.acceptance,
+        ...declarations,
       });
       const progress = summarizePlanProgress(state);
       stdout.write(json
@@ -231,6 +336,3 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
   stderr.write(`[err] unknown plan subcommand: ${sub}\n`);
   return { exitCode: 1 };
 }
-
-import fs from 'node:fs';
-import path from 'node:path';

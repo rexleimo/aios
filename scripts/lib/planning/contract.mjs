@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
+  PLAN_SCHEMA_VERSION,
   buildStructuredPlanState,
   evaluateDoneGate,
   normalizeEvidence,
@@ -52,20 +53,28 @@ export function buildPlanMarkdown({
   route = 'unknown',
   skills = [],
   tasks = [],
+  schemaVersion = PLAN_SCHEMA_VERSION,
 } = {}) {
   const skillLines = (skills.length ? skills : ['Rex selects the current provider'])
     .map((s, i) => `${i + 1}. \`${s}\``);
   const taskLines = (tasks.length ? tasks : [{ id: 't1', title: 'Task 1', status: 'pending', acceptance: '' }])
-    .map((t) => {
+    .flatMap((t) => {
       const box = t.status === 'done' || t.status === 'skipped' ? '[x]' : '[ ]';
       const acc = t.acceptance ? ` — _${t.acceptance}_` : '';
-      return `- ${box} **${t.id}**: ${t.title}${acc}`;
+      const details = [];
+      if (t.targets?.length) details.push(`  - targets: ${t.targets.join(', ')}`);
+      if (t.allowedWrites?.length) details.push(`  - allowed writes: ${t.allowedWrites.join(', ')}`);
+      for (const requirement of t.contextRequirements || []) {
+        details.push(`  - context (${requirement.required === false ? 'optional' : 'required'}): ${requirement.ref} — ${requirement.reason}`);
+      }
+      if (t.verification?.length) details.push(`  - verification: ${t.verification.join(' | ')}`);
+      return [`- ${box} **${t.id}**: ${t.title}${acc}`, ...details];
     });
 
   return [
     `# ${title}`,
     '',
-    `> AIOS Planning Contract (schema v2)`,
+    `> AIOS Planning Contract (schema v${schemaVersion})`,
     `> created: ${createdAt}`,
     `> client: ${client}`,
     ...(sessionId ? [`> session: ${sessionId}`] : []),
@@ -126,11 +135,21 @@ function writeTextAtomically(filePath, content) {
   }
 }
 
+function normalizePlanForWrite(state) {
+  return {
+    ...state,
+    schemaVersion: Math.max(PLAN_SCHEMA_VERSION, Number(state?.schemaVersion) || PLAN_SCHEMA_VERSION),
+    contextRevision: String(state?.contextRevision || '').trim(),
+    tasks: (Array.isArray(state?.tasks) ? state.tasks : []).map((task, index) => normalizeTask(task, index)),
+  };
+}
+
 function writeActivePlan(rootDir, state) {
   const statePath = resolvePlanningStatePath(rootDir);
   fs.mkdirSync(path.dirname(statePath), { recursive: true });
-  writeTextAtomically(statePath, `${JSON.stringify(state, null, 2)}\n`);
-  return state;
+  const normalized = normalizePlanForWrite(state);
+  writeTextAtomically(statePath, `${JSON.stringify(normalized, null, 2)}\n`);
+  return normalized;
 }
 
 function reservePlanArtifact(plansDir, baseFileName) {
@@ -155,7 +174,7 @@ function reservePlanArtifact(plansDir, baseFileName) {
 }
 
 /**
- * Create a plan artifact under docs/plans and set it active (schema v2 structured).
+ * Create a plan artifact under docs/plans and set it active (schema v3 structured).
  */
 export function startPlan({
   rootDir,
@@ -204,6 +223,7 @@ export function startPlan({
       route: state.route,
       skills: state.skills,
       tasks: state.tasks,
+      schemaVersion: state.schemaVersion,
     });
     fs.writeFileSync(reservation.descriptor, content, 'utf8');
     fs.closeSync(reservation.descriptor);
@@ -222,7 +242,7 @@ export function readActivePlan(rootDir) {
   try {
     const raw = JSON.parse(fs.readFileSync(statePath, 'utf8'));
     if (!raw || typeof raw !== 'object') return null;
-    // Migrate schema v1 → v2 in memory (and persist on next write)
+    // Migrate schema v1 in memory; v2 remains readable and upgrades only on an explicit write.
     if (!raw.schemaVersion || raw.schemaVersion < 2) {
       return buildStructuredPlanState({
         ...raw,
@@ -251,7 +271,6 @@ export function setPlanStatus(rootDir, status, { note = '', force = false } = {}
 
   const next = {
     ...current,
-    schemaVersion: Math.max(2, Number(current.schemaVersion) || 2),
     status,
     note: note || current.note || '',
     updatedAt: new Date().toISOString(),
@@ -260,12 +279,20 @@ export function setPlanStatus(rootDir, status, { note = '', force = false } = {}
 }
 
 /**
- * Update a task status on the active plan.
+ * Update a task on the active plan.
  */
-export function updatePlanTask(rootDir, taskId, { status, title, acceptance } = {}) {
+export function updatePlanTask(rootDir, taskId, {
+  status,
+  title,
+  acceptance,
+  targets,
+  allowedWrites,
+  contextRequirements,
+  contextCandidateConfirmationId,
+} = {}) {
   const current = readActivePlan(rootDir);
   if (!current) throw new Error('no active plan');
-  const tasks = Array.isArray(current.tasks) ? [...current.tasks] : [];
+  const tasks = (Array.isArray(current.tasks) ? current.tasks : []).map((task, index) => normalizeTask(task, index));
   const idx = tasks.findIndex((t) => t.id === taskId);
   if (idx < 0) throw new Error(`task not found: ${taskId}`);
   const nextTask = normalizeTask({
@@ -273,18 +300,32 @@ export function updatePlanTask(rootDir, taskId, { status, title, acceptance } = 
     ...(status ? { status } : {}),
     ...(title ? { title } : {}),
     ...(acceptance !== undefined ? { acceptance } : {}),
+    ...(targets !== undefined ? { targets } : {}),
+    ...(allowedWrites !== undefined ? { allowedWrites } : {}),
+    ...(contextRequirements !== undefined ? { contextRequirements } : {}),
+    ...(contextCandidateConfirmationId !== undefined ? { contextCandidateConfirmationId } : {}),
     updatedAt: new Date().toISOString(),
   }, idx);
   tasks[idx] = nextTask;
   const allDone = tasks.every((t) => t.status === 'done' || t.status === 'skipped');
   const next = {
     ...current,
-    schemaVersion: 2,
     tasks,
     status: current.status === 'done' ? current.status : (allDone ? 'executing' : current.status === 'active' ? 'executing' : current.status),
     updatedAt: new Date().toISOString(),
   };
   return writeActivePlan(rootDir, next);
+}
+
+export function replacePlanTasks(rootDir, tasks = []) {
+  const current = readActivePlan(rootDir);
+  if (!current) throw new Error('no active plan');
+  const nextTasks = (Array.isArray(tasks) ? tasks : []).map((task, index) => normalizeTask(task, index));
+  return writeActivePlan(rootDir, {
+    ...current,
+    tasks: nextTasks,
+    updatedAt: new Date().toISOString(),
+  });
 }
 
 /**
@@ -298,7 +339,6 @@ export function addPlanEvidence(rootDir, { kind = 'note', value } = {}) {
   const evidence = [...(Array.isArray(current.evidence) ? current.evidence : []), evidenceItem];
   const next = {
     ...current,
-    schemaVersion: 2,
     evidence,
     updatedAt: new Date().toISOString(),
   };
@@ -314,7 +354,7 @@ export function formatActivePlanInjection(rootDir) {
   const progress = summarizePlanProgress(plan);
   const next = progress?.nextTask;
   return [
-    '## AIOS active plan (v2)',
+    `## AIOS active plan (v${plan.schemaVersion || 2})`,
     '',
     `- title: ${plan.title}`,
     `- status: ${plan.status} route=${plan.route || 'unknown'}`,

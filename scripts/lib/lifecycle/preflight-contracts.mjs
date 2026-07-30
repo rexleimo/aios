@@ -40,18 +40,44 @@ function extractHeadings(markdown = '') {
   return headings;
 }
 
-function hasSchemaV2PlanningContract(markdown = '') {
-  return />\s*AIOS Planning Contract \(schema v2\)/iu.test(String(markdown || ''));
+function hasSupportedPlanningContract(markdown = '') {
+  return />\s*AIOS Planning Contract \(schema v[23]\)/iu.test(String(markdown || ''));
 }
 
-function normalizePlanPath(rootDir = process.cwd(), planPath = '') {
+function isContainedPath(rootPath, candidatePath) {
+  const relative = path.relative(rootPath, candidatePath);
+  return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
+}
+
+async function resolvePlanPath(rootDir = process.cwd(), planPath = '') {
   const raw = normalizeText(planPath);
-  if (!raw) return { raw: '', displayPath: '', absPath: '' };
-  const displayPath = raw.replace(/\\/g, '/').replace(/^\.\//, '');
-  const absPath = path.isAbsolute(raw)
-    ? raw
-    : path.join(rootDir || process.cwd(), raw);
-  return { raw, displayPath, absPath };
+  if (!raw) return { raw: '', displayPath: '', absPath: '', valid: true };
+
+  const rootPath = path.resolve(rootDir || process.cwd());
+  const absPath = path.resolve(rootPath, raw);
+  if (!isContainedPath(rootPath, absPath)) {
+    return { raw, displayPath: '', absPath: '', valid: false };
+  }
+
+  const displayPath = path.relative(rootPath, absPath).split(path.sep).join('/');
+  let realRoot;
+  try {
+    realRoot = await fs.realpath(rootPath);
+  } catch {
+    return { raw, displayPath: '', absPath: '', valid: false };
+  }
+  try {
+    const realPath = await fs.realpath(absPath);
+    if (!isContainedPath(realRoot, realPath)) {
+      return { raw, displayPath: '', absPath: '', valid: false };
+    }
+  } catch (error) {
+    if (error?.code !== 'ENOENT') {
+      return { raw, displayPath: '', absPath: '', valid: false };
+    }
+  }
+
+  return { raw, displayPath, absPath, valid: true };
 }
 
 function readiness({ verdict = 'ready', blockedReasons = [], warnings = [], nextActions = [], evidence = [] } = {}) {
@@ -67,7 +93,15 @@ function readiness({ verdict = 'ready', blockedReasons = [], warnings = [], next
 export async function evaluatePlanEvidence(input = {}) {
   const rootDir = input.rootDir || input.workspaceRoot || process.cwd();
   const hasMarkdown = typeof input.markdown === 'string';
-  const { displayPath, absPath } = normalizePlanPath(rootDir, input.planPath);
+  const { displayPath, absPath, valid: validPlanPath } = await resolvePlanPath(rootDir, input.planPath);
+  if (!validPlanPath) {
+    return readiness({
+      verdict: 'blocked',
+      blockedReasons: ['invalid_plan_path'],
+      warnings: ['Plan artifact path must resolve inside the selected workspace.'],
+      nextActions: ['Use a workspace-contained plan artifact path.'],
+    });
+  }
   let markdown = hasMarkdown ? String(input.markdown || '') : '';
 
   if (!hasMarkdown) {
@@ -106,9 +140,9 @@ export async function evaluatePlanEvidence(input = {}) {
     });
   }
 
-  const canonicalSchema = hasSchemaV2PlanningContract(markdown);
+  const canonicalSchema = hasSupportedPlanningContract(markdown);
   const summary = canonicalSchema
-    ? 'Plan artifact includes a schema-v2 planning contract and required headings.'
+    ? 'Plan artifact includes a supported structured planning contract and required headings.'
     : `Plan artifact includes required headings: ${REQUIRED_PLAN_HEADINGS.join(', ')}.`;
 
   return readiness({

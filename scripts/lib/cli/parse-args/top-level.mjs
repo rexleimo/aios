@@ -99,6 +99,8 @@ function getCommandProgram(command, defaults) {
     program
       .option('--blueprint <name>', 'Orchestrate blueprint')
       .option('--plan <path>', 'Plan file path')
+      .option('--context-task <id>', 'Structured plan task id for execution context')
+      .option('--context-budget <n>', 'Execution context delivery budget units')
       .option('--recommendation <id>', 'Recommendation ID')
       .option('--dispatch <mode>', 'Dispatch mode')
       .option('--execute <mode>', 'Execution mode')
@@ -212,6 +214,8 @@ export function parseTopLevelArgs(command, argv) {
 
     if (command === 'orchestrate') {
       if (flags.plan) options.planPath = flags.plan;
+      if (flags.contextTask) options.contextTaskId = flags.contextTask;
+      if (flags.contextBudget) options.contextBudgetUnits = parsePositiveInteger(flags.contextBudget, '--context-budget');
       if (flags.recommendation) options.recommendationId = flags.recommendation;
       if (flags.dispatch) options.dispatchMode = normalizeOrchestrateDispatchMode(flags.dispatch);
       if (flags.execute) options.executionMode = normalizeOrchestrateExecutionMode(flags.execute);

@@ -36,7 +36,7 @@ function compactModelRoutingForTurn(modelRouting, compacted) {
   return copy;
 }
 
-function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId, io }) {
+function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, executionContext, workItems, rootDir, env, sessionId, io }) {
   return async ({ role, speaker, workItem, conversationHistory }) => {
     const agent = agentSpecNormalized.agents[resolveAgentId(role)] || null;
     const modelRouting = resolveModelRoutingForRole({
@@ -60,32 +60,39 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
       role,
       taskTitle,
       contextSummary,
+      executionContext,
       workItems: workItem ? [workItem] : (Array.isArray(workItems) ? workItems : []),
     });
     const fullPrompt = `${systemPrompt}\n\n${conversationPrompt}\n${rolePrompt}`;
     const rawUserPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
-    const preSendPacket = await requireTurnCompression({
-      workspaceRoot: rootDir || process.cwd(),
-      cwd: rootDir || process.cwd(),
-      sessionId,
-      clientId: 'aios-groupchat',
-      hostLevel: 'L3',
-      mode: 'tight',
-      eventKind: 'pre_send',
-      text: rawUserPrompt,
-      run: () => compressPreSendTurn({
+    const hasRuntimeDelivery = Boolean(String(executionContext?.text || '').trim());
+    // An assembled runtime packet is already the governed compact delivery; avoid compacting it twice.
+    const preSendPacket = hasRuntimeDelivery
+      ? null
+      : await requireTurnCompression({
         workspaceRoot: rootDir || process.cwd(),
         cwd: rootDir || process.cwd(),
         sessionId,
         clientId: 'aios-groupchat',
         hostLevel: 'L3',
-        prompt: rawUserPrompt,
         mode: 'tight',
-        metrics: { enabled: true },
-      }),
-    });
-    emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
-    const compactPrompt = stringifyTurnPacket(preSendPacket, rawUserPrompt);
+        eventKind: 'pre_send',
+        text: rawUserPrompt,
+        run: () => compressPreSendTurn({
+          workspaceRoot: rootDir || process.cwd(),
+          cwd: rootDir || process.cwd(),
+          sessionId,
+          clientId: 'aios-groupchat',
+          hostLevel: 'L3',
+          prompt: rawUserPrompt,
+          mode: 'tight',
+          metrics: { enabled: true },
+        }),
+      });
+    if (preSendPacket) {
+      emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
+    }
+    const compactPrompt = preSendPacket?.refs?.length ? stringifyTurnPacket(preSendPacket, rawUserPrompt) : rawUserPrompt;
     const compactSystemPrompt = preSendPacket?.refs?.length ? compactPrompt : systemPrompt;
     const outboundModelRouting = compactModelRoutingForTurn(modelRouting, preSendPacket?.refs?.length);
     const result = await spawnFn({
@@ -134,6 +141,7 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
 export async function runGroupChat({
   taskTitle = '',
   contextSummary = '',
+  executionContext = null,
   workItems = null,
   blueprint = 'feature',
   spawnFn,
@@ -188,7 +196,7 @@ export async function runGroupChat({
       roundNumber,
       speakers,
       history,
-      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, workItems, rootDir, env, sessionId: cfg.sessionId, io }),
+      spawnFn: buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, executionContext, workItems, rootDir, env, sessionId: cfg.sessionId, io }),
       timeoutMs: cfg.timeoutMs,
       concurrency: cfg.concurrency,
       io,

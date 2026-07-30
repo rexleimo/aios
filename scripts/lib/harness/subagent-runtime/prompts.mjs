@@ -13,6 +13,10 @@ export function renderDependencyContext(dependencyRuns = []) {
   return handoffs.map((payload, index) => `- upstream[${index + 1}]: ${JSON.stringify(payload)}`).join('\n');
 }
 
+function deliveredExecutionContext(plan) {
+  return String(plan?.executionContext?.text || '').trim();
+}
+
 export function buildSystemPrompt({ agent, plan, job, phase }) {
   const lines = [];
   if (agent?.systemPrompt) {
@@ -46,6 +50,9 @@ export function buildSystemPrompt({ agent, plan, job, phase }) {
   lines.push(`- taskTitle=${normalizeText(plan?.taskTitle)}`);
   if (normalizeText(plan?.contextSummary)) {
     lines.push(`- contextSummary=${normalizeText(plan?.contextSummary)}`);
+  }
+  if (deliveredExecutionContext(plan)) {
+    lines.push(`- executionContextDelivery=${normalizeText(plan?.executionContext?.receiptRef) || 'present'}`);
   }
   if (workItemRefs.length > 0) {
     lines.push(`- workItemRefs=${workItemRefs.join(', ')}`);
@@ -104,6 +111,14 @@ export function buildUserPrompt({ plan, job, phase, dependencyRuns }) {
       const summary = normalizeText(item.summary) || normalizeText(item.title);
       lines.push(`- [${normalizeText(item.type) || 'general'}] ${itemId}: ${summary}`);
     }
+    lines.push('');
+  }
+
+  const contextDelivery = deliveredExecutionContext(plan);
+  if (contextDelivery) {
+    lines.push('## Orchestrator-Delivered Context');
+    lines.push('Use this delivery to perform the task. Do not copy raw delivered source text into the JSON handoff; refer to its ref/hash and summarize only necessary findings.');
+    lines.push(contextDelivery);
     lines.push('');
   }
 

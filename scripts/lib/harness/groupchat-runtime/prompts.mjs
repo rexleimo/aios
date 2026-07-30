@@ -2,7 +2,11 @@ import { buildPersonaOverlay } from '../../memo/persona.mjs';
 import { buildModelRouterPromptSection } from '../../model-router.mjs';
 import { normalizeText } from './shared.mjs';
 
-export function buildRolePrompt({ role, taskTitle, contextSummary, workItems }) {
+function deliveredExecutionContext(executionContext) {
+  return String(executionContext?.text || '').trim();
+}
+
+export function buildRolePrompt({ role, taskTitle, contextSummary, workItems, executionContext = null }) {
   const lines = [];
   lines.push('# Task');
   lines.push(`taskTitle: ${normalizeText(taskTitle) || 'Untitled'}`);
@@ -16,6 +20,14 @@ export function buildRolePrompt({ role, taskTitle, contextSummary, workItems }) 
     for (const item of workItems) {
       lines.push(`- [${normalizeText(item.type) || 'general'}] ${normalizeText(item.itemId)}: ${normalizeText(item.summary)}`);
     }
+    lines.push('');
+  }
+
+  const contextDelivery = deliveredExecutionContext(executionContext);
+  if (contextDelivery) {
+    lines.push('## Orchestrator-Delivered Context');
+    lines.push('Use this delivery for the task. Do not copy raw delivered source text into the JSON handoff; summarize findings and cite ref/hash only.');
+    lines.push(contextDelivery);
     lines.push('');
   }
 
