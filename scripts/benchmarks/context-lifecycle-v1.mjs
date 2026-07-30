@@ -56,6 +56,12 @@ function resolveOutput(target) {
 function commandObservation(executable, args, cwd = ROOT) {
   const result = spawnSync(executable, args, { cwd, encoding: 'utf8', windowsHide: true });
   const testCountMatch = /(?:ℹ|#)\s*tests\s+(\d+)/u.exec(result.stdout || '');
+  const failureOutput = result.status === 0
+    ? ''
+    : [...String(result.stdout || '').split(/\r?\n/u), ...String(result.stderr || '').split(/\r?\n/u)]
+      .filter(Boolean)
+      .slice(-25)
+      .join('\n');
   return {
     executable,
     args,
@@ -64,7 +70,7 @@ function commandObservation(executable, args, cwd = ROOT) {
     stdoutSha256: sha256(result.stdout),
     stderrSha256: sha256(result.stderr || result.error?.message || ''),
     testCount: testCountMatch ? Number(testCountMatch[1]) : null,
-    error: result.error?.message || '',
+    error: failureOutput || String(result.error?.message || '').trim(),
   };
 }
 
