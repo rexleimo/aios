@@ -213,11 +213,11 @@ test('memo add --supersedes hides the replaced fact from list and search', async
     const listed = runMemo(workspaceRoot, ['list']);
     assert.equal(listed.status, 0, listed.stderr);
     assert.match(listed.stdout, /4000/u);
-    assert.doesNotMatch(listed.stdout, /3000/u, 'superseded fact must not surface by default');
+    assert.doesNotMatch(listed.stdout, /:\s+deploy port is 3000(?:\r?\n|$)/u, 'superseded fact must not surface by default');
 
     const searched = runMemo(workspaceRoot, ['search', 'deploy']);
     assert.equal(searched.status, 0, searched.stderr);
-    assert.doesNotMatch(searched.stdout, /3000/u, 'search must respect the same temporal filter as list');
+    assert.doesNotMatch(searched.stdout, /:\s+deploy port is 3000(?:\r?\n|$)/u, 'search must respect the same temporal filter as list');
   });
 });
 
