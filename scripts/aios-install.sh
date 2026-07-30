@@ -62,6 +62,19 @@ download() {
   local url="$1"
   local out="$2"
 
+  if [[ "$url" == file://* ]]; then
+    local source_path="${url#file://}"
+    if command -v cygpath >/dev/null 2>&1 && [[ "$source_path" =~ ^/?[A-Za-z]:[\\/].* ]]; then
+      source_path="$(cygpath -u "$source_path")"
+    fi
+    if [[ ! -f "$source_path" ]]; then
+      echo "Local asset not found: $source_path" >&2
+      return 1
+    fi
+    cp -- "$source_path" "$out"
+    return 0
+  fi
+
   if command -v curl >/dev/null 2>&1; then
     curl -fL --retry 3 --connect-timeout 10 --max-time 600 -o "$out" "$url"
     return 0
