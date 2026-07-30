@@ -58,7 +58,8 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   const tempRoot = await mkdtemp(path.join(os.tmpdir(), `context-lifecycle-${label}-`));
   let added = false;
   try {
-    runGit(evaluatorRoot, ['worktree', 'add', '--detach', '--recurse-submodules', tempRoot, commit]);
+    runGit(evaluatorRoot, ['worktree', 'add', '--detach', tempRoot, commit]);
+    runGit(tempRoot, ['submodule', 'update', '--init', '--recursive']);
     added = true;
     return await run(tempRoot);
   } finally {
