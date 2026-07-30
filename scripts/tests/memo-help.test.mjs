@@ -62,6 +62,7 @@ test('memo storage help lists approved storage commands', () => {
   assert.match(stdout, /\buse file\b/);
   assert.match(stdout, /\brebuild\b/);
   assert.match(stdout, /\bdoctor\b/);
+  assert.match(stdout, /\brepair-locks\b/);
   assertNoHiddenStorageTerms(stdout);
 });
 
@@ -89,4 +90,11 @@ test('memo storage doctor help prints doctor-specific usage', () => {
   const stdout = assertHelp(['memo', 'storage', 'doctor', '--help']);
   assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage doctor/);
   assert.match(stdout, /Check memo storage health/);
+});
+
+test('memo storage repair-locks help explains its safe recovery boundary', () => {
+  const stdout = assertHelp(['memo', 'storage', 'repair-locks', '--help']);
+  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage repair-locks/);
+  assert.match(stdout, /Quarantine memo locks/);
+  assert.match(stdout, /Live or malformed locks remain untouched/);
 });

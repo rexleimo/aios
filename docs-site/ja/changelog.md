@@ -29,6 +29,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - agent governance の説明を Team ドキュメント、シナリオガイド、ContextDB リファレンス、ブログに追加しました。
 - 新しい smoke 証跡ガイドでは `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json`、`.aios/interception/metrics/agents-smoke-<agent>.jsonl` を参照します。
 - skill を変更したら、live workflow を信頼する前に `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` を実行してください。
+- **Memo stale-lock repair**：`aios memo storage repair-locks` は記録された owner PID の終了を確認した lock だけを quarantine し、active または malformed な lock file は保持します。
 - **Grok Build が AIOS ファーストクラスクライアントに昇格**：xAI Grok Build（`grok` / runtime id `grok-build`）が skills、agents、native、team、harness を備えて登録されました。MCP は Codex 形式 TOML（`~/.grok/config.toml`）。詳細: [Grok Build + AIOS](/blog/ja/2026-07-grok-build-aios-client/)。
 - **Hermes Agent が AIOS ファーストクラスクライアントに昇格**：skills、native、harness。詳細: [Hermes Agent + AIOS ブログ記事](/blog/ja/2026-06-hermes-agent-aios-client/)。
 

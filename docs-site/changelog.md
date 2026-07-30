@@ -21,6 +21,7 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 - Added agent governance coverage to the Team docs, scenario guide, ContextDB reference, and blog.
 - New smoke evidence guidance now points to `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, and `.aios/interception/metrics/agents-smoke-<agent>.jsonl`.
 - Skill edits now point readers to `node scripts/aios.mjs skill verify-training --changed --base HEAD --json` before trusting live agent workflows.
+- **Memo stale-lock repair**: `aios memo storage repair-locks` quarantines only locks whose recorded owner PID is confirmed dead; active and malformed lock files remain untouched.
 - **Grok Build as first-class AIOS client**: xAI Grok Build (`grok` CLI, runtime id `grok-build`) is now a full AIOS client with skills, agents, native, team, and harness. MCP uses Codex-shaped TOML (`~/.grok/config.toml` / `.grok/config.toml`). See: [Grok Build + AIOS blog post](/blog/2026-07-grok-build-aios-client/).
 - **Hermes Agent as first-class AIOS client**: Hermes (Nous Research) is registered with skills, native, and harness capabilities. An MCP bridge server (`scripts/aios-mcp-server.mjs`) exposes 5 AIOS tools inside Hermes sessions. See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 

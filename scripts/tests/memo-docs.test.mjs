@@ -44,6 +44,7 @@ const requiredStorageCommands = [
   'aios memo storage use file',
   'aios memo storage rebuild',
   'aios memo storage doctor',
+  'aios memo storage repair-locks',
 ];
 
 function readRepoFile(relativePath) {

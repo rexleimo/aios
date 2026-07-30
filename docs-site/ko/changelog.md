@@ -29,6 +29,7 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 - agent governance 설명을 Team 문서, scenario guide, ContextDB reference, blog에 추가했습니다.
 - 새 smoke 증거 안내는 `.aios/agents/smoke/<agent>.json`, `.aios/agents/provenance/<agent>.json`, `.aios/interception/metrics/agents-smoke-<agent>.jsonl`을 가리킵니다.
 - skill을 수정했다면 live workflow를 신뢰하기 전에 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`을 실행하세요.
+- **Memo stale-lock repair**: `aios memo storage repair-locks`는 기록된 owner PID가 종료된 것으로 확인된 lock만 quarantine하며 active 또는 malformed lock file은 유지합니다.
 - **Grok Build가 AIOS 최상위 클라이언트로 승격**: xAI Grok Build(`grok` / runtime id `grok-build`)가 skills, agents, native, team, harness 로 등록되었습니다. MCP는 Codex 형태 TOML(`~/.grok/config.toml`). 참고: [Grok Build + AIOS](/blog/ko/2026-07-grok-build-aios-client/).
 - **Hermes Agent가 AIOS 최상위 클라이언트로 승격**: skills, native, harness. 참고: [Hermes Agent + AIOS 블로그 글](/blog/ko/2026-06-hermes-agent-aios-client/).
 

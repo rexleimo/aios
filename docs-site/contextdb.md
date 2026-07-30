@@ -85,9 +85,11 @@ aios memo storage use split
 aios memo storage use file
 aios memo storage rebuild
 aios memo storage doctor
+aios memo storage repair-locks
 ~~~
 
 Rebuild updates derived query files; it does not rewrite canonical memo records.
+`repair-locks` only quarantines a lock after its recorded owner PID is confirmed dead; it leaves live and malformed locks untouched.
 
 ## Unified Project Search (v1.50.0) {#unified-project-search-v1500}
 

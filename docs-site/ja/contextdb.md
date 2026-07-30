@@ -87,9 +87,11 @@ aios memo storage use split
 aios memo storage use file
 aios memo storage rebuild
 aios memo storage doctor
+aios memo storage repair-locks
 ~~~
 
 rebuild は derived query file を更新するだけで canonical record を書き換えません。
+`repair-locks` は記録された owner PID の終了を確認した lock だけを quarantine し、active または malformed な lock には触れません。
 
 ## 統合プロジェクト検索（v1.50.0） {#統合プロジェクト検索v1500}
 

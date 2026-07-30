@@ -29,6 +29,7 @@ description: 版本历史、升级说明与文档变更入口。
 - 已把 agent 治理说明补到 Team 文档、按场景指南、ContextDB 参考页和博客中。
 - 新的 smoke 证据说明会指向 `.aios/agents/smoke/<agent>.json`、`.aios/agents/provenance/<agent>.json` 和 `.aios/interception/metrics/agents-smoke-<agent>.jsonl`。
 - skill 修改后的 live 使用前，请先运行 `node scripts/aios.mjs skill verify-training --changed --base HEAD --json`。
+- **Memo 陈旧锁修复**：`aios memo storage repair-locks` 只隔离已确认记录 owner PID 死亡的锁；活动锁和格式错误的锁文件保持不变。
 - **Grok Build 成为 AIOS 一等公民客户端**：xAI Grok Build（`grok` / runtime id `grok-build`）现已支持 skills、agents、native、team、harness。MCP 使用 Codex 形态 TOML（`~/.grok/config.toml`）。详见：[Grok Build + AIOS 博客](/blog/zh/2026-07-grok-build-aios-client/)。
 - **Hermes Agent 成为 AIOS 一等公民客户端**：Hermes（Nous Research）具备 skills、native、harness。详见：[Hermes Agent + AIOS 博客文章](/blog/zh/2026-06-hermes-agent-aios-client/)。
 

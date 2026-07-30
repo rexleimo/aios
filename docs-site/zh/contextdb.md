@@ -85,9 +85,11 @@ aios memo storage use split
 aios memo storage use file
 aios memo storage rebuild
 aios memo storage doctor
+aios memo storage repair-locks
 ~~~
 
 rebuild 只更新派生查询文件，不重写规范 memo 记录。
+`repair-locks` 只会隔离已确认记录 owner PID 死亡的锁；活动锁和格式错误的锁不会被修改。
 
 ## 统一项目搜索（v1.50.0） {#统一项目搜索v1500}
 
