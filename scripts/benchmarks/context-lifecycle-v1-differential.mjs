@@ -60,6 +60,7 @@ async function withDetachedWorktree(evaluatorRoot, commit, label, run) {
   try {
     runGit(evaluatorRoot, ['worktree', 'add', '--detach', tempRoot, commit]);
     await materializeStableSubmodule(evaluatorRoot, tempRoot, commit, 'rex-harness');
+    await materializeLocalDependency(evaluatorRoot, tempRoot, 'mcp-server/node_modules');
     added = true;
     return await run(tempRoot);
   } finally {
@@ -98,6 +99,16 @@ async function materializeStableSubmodule(evaluatorRoot, subjectRoot, commit, re
     recursive: true,
     filter: (source) => path.basename(source) !== '.git',
   });
+}
+
+async function materializeLocalDependency(evaluatorRoot, subjectRoot, relativePath) {
+  const sourcePath = path.join(evaluatorRoot, relativePath);
+  const targetPath = path.join(subjectRoot, relativePath);
+  try {
+    await cp(sourcePath, targetPath, { recursive: true, force: true });
+  } catch (error) {
+    if (error?.code !== 'ENOENT') throw error;
+  }
 }
 
 async function runSubject({ evaluatorRoot, subjectRoot, profile, outputDir, label }) {
