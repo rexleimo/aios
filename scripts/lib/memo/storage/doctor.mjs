@@ -6,6 +6,7 @@ import {
 import { readDerivedManifest, sourceDigest } from './derived.mjs';
 import { readJsonlEvents, readSplitEvents } from './events-read.mjs';
 import { pathExists } from './fs-io.mjs';
+import { inspectMemoRootLocks } from './lock.mjs';
 import {
   normalizeEventRows,
   normalizeMemoStorageName,
@@ -59,6 +60,29 @@ export async function runMemoStorageDoctor(workspaceRoot, { storage } = {}) {
     }
   } catch (error) {
     checks.push(check('derived-manifest', 'error', error.message));
+  }
+
+  try {
+    const lockReport = await inspectMemoRootLocks(workspaceRoot);
+    const stale = lockReport.locks.filter((lock) => lock.stale);
+    const malformed = lockReport.locks.filter((lock) => lock.malformed);
+    if (stale.length > 0) {
+      checks.push(check(
+        'storage-locks',
+        'warning',
+        `stale lock(s) found; verify owner PIDs are gone before removing: ${stale.map((lock) => lock.path).join(', ')}`,
+      ));
+    } else if (malformed.length > 0) {
+      checks.push(check(
+        'storage-locks',
+        'warning',
+        `lock metadata is unreadable; inspect manually before removing: ${malformed.map((lock) => lock.path).join(', ')}`,
+      ));
+    } else {
+      checks.push(check('storage-locks', 'ok'));
+    }
+  } catch (error) {
+    checks.push(check('storage-locks', 'error', error.message));
   }
 
   return {

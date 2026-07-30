@@ -19,6 +19,7 @@ export function parseMemoArgs(argv) {
     // 提取 -- 后的透传参数
     const doubleDashIdx = rest.indexOf('--');
     let passthrough;
+    let workspaceRoot = '';
     if (doubleDashIdx !== -1) {
       passthrough = rest.slice(doubleDashIdx + 1);
     } else {
@@ -26,11 +27,28 @@ export function parseMemoArgs(argv) {
       passthrough = (parsed.args || []).filter(a => !['-h', '--help', 'help'].includes(a));
     }
 
+    const filtered = [];
+    for (let index = 0; index < passthrough.length; index += 1) {
+      const value = String(passthrough[index] || '');
+      if (value === '--workspace') {
+        workspaceRoot = String(passthrough[index + 1] || '').trim();
+        if (!workspaceRoot) throw new Error('memo --workspace requires a path');
+        index += 1;
+        continue;
+      }
+      if (value.startsWith('--workspace=')) {
+        workspaceRoot = value.slice('--workspace='.length).trim();
+        if (!workspaceRoot) throw new Error('memo --workspace requires a path');
+        continue;
+      }
+      filtered.push(passthrough[index]);
+    }
+
     return {
       mode: help ? 'help' : 'command',
       help,
       command: 'memo',
-      options: { argv: passthrough },
+      options: { argv: filtered, workspaceRoot },
     };
   } catch {
     return {

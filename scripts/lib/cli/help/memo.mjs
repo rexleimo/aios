@@ -82,6 +82,12 @@ Subcommands:
                                       Search memos; superseded facts are hidden by default
   supersede [--threshold N] [--apply]
                                       Detect facts a later entry has replaced (dry run by default)
+  candidate list [--status name] [--json]
+                                      List candidate metadata without body text
+  candidate inspect <id> [--json]     Inspect with runtime review authority
+  candidate promote <id> --reason x   Publish through authorized append-only promotion
+  candidate reject <id> --reason x    Reject without publishing
+  candidate expire <id> --reason x    Expire without publishing
   recall [query] [--limit N] [--highlight-limit N] [--as-of ISO]
                                       Human-readable session recall digest
   gui [--port N] [--project name] [--no-open]

@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -32,7 +32,7 @@ export async function writeText(filePath, content) {
 
 export async function atomicWriteText(filePath, content) {
   await ensureParentDir(filePath);
-  const tempPath = path.join(path.dirname(filePath), `.${path.basename(filePath)}.${process.pid}.${Date.now()}.tmp`);
+  const tempPath = path.join(path.dirname(filePath), `.${path.basename(filePath)}.${process.pid}.${randomUUID()}.tmp`);
   await fs.writeFile(tempPath, content, 'utf8');
   await fs.rename(tempPath, filePath);
 }

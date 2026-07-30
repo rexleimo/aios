@@ -17,6 +17,18 @@ export {
   searchMemoEvents,
 } from './storage/query.mjs';
 export {
+  buildMemoAuthority,
+  normalizeRuntimeIdentity,
+} from './storage/provenance.mjs';
+export {
+  expireMemoryCandidate,
+  inspectMemoryCandidate,
+  listMemoryCandidates,
+  promoteMemoryCandidate,
+  readCandidateGovernanceReceipts,
+  rejectMemoryCandidate,
+} from './storage/candidates.mjs';
+export {
   appendPinnedMemo,
   readPinnedMemo,
   writePinnedMemo,

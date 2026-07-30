@@ -55,21 +55,21 @@ export async function readJsonlEvents(filePath, { tolerateMalformed = false } = 
   return { events, malformed, raw };
 }
 
-export async function readSplitEvents(workspaceRoot, { space, tolerateMalformed = false } = {}) {
+export async function readSplitEvents(workspaceRoot, { space, tolerateMalformed = false, env = process.env } = {}) {
   const requestedSpace = space ? sanitizeSpace(space) : '';
   const roots = [];
   if (requestedSpace) {
-    roots.push({ safeSpace: requestedSpace, dir: splitEventDir(workspaceRoot, requestedSpace) });
+    roots.push({ safeSpace: requestedSpace, dir: splitEventDir(workspaceRoot, requestedSpace, { env }) });
   } else {
     let entries = [];
     try {
-      entries = await fs.readdir(splitEventsRoot(workspaceRoot), { withFileTypes: true });
+      entries = await fs.readdir(splitEventsRoot(workspaceRoot, { env }), { withFileTypes: true });
     } catch (error) {
       if (error?.code !== 'ENOENT') throw error;
     }
     for (const entry of entries) {
       if (entry.isDirectory()) {
-        roots.push({ safeSpace: entry.name, dir: path.join(splitEventsRoot(workspaceRoot), entry.name) });
+        roots.push({ safeSpace: entry.name, dir: path.join(splitEventsRoot(workspaceRoot, { env }), entry.name) });
       }
     }
   }
@@ -99,16 +99,16 @@ export async function readSplitEvents(workspaceRoot, { space, tolerateMalformed 
   return { events, malformed };
 }
 
-export async function collectEvents(workspaceRoot, { storage, space, tolerateMalformed = false } = {}) {
-  const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
+export async function collectEvents(workspaceRoot, { storage, space, tolerateMalformed = false, env = process.env } = {}) {
+  const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot, { env });
   if (resolvedStorage === 'file') {
-    const { events, malformed } = await readJsonlEvents(fileEventsPath(workspaceRoot), { tolerateMalformed });
+    const { events, malformed } = await readJsonlEvents(fileEventsPath(workspaceRoot, { env }), { tolerateMalformed });
     return {
       events: normalizeEventRows(events, { fallbackStorage: resolvedStorage }).filter((event) => !space || event.spaceKey === sanitizeSpace(space)),
       malformed,
     };
   }
-  const { events, malformed } = await readSplitEvents(workspaceRoot, { space, tolerateMalformed });
+  const { events, malformed } = await readSplitEvents(workspaceRoot, { space, tolerateMalformed, env });
   return {
     events: normalizeEventRows(events, { fallbackStorage: resolvedStorage || DEFAULT_MEMO_STORAGE }),
     malformed,

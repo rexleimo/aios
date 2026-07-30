@@ -8,6 +8,7 @@ import {
   sortEventsDescending,
 } from './normalizers.mjs';
 import { filterTemporal } from './temporal.mjs';
+import { readDreamArchivedEventIds } from '../../lifecycle/dream/governance.mjs';
 
 function eventMatchesQuery(event, query) {
   const normalizedQuery = String(query || '').trim().toLowerCase();
@@ -39,25 +40,29 @@ function eventVisibleForAgent(event, agent) {
   return normalizeMemoAgent(event.agent) === normalizedAgent;
 }
 
-function filterMemoIdentity(events, { scope = '', agent = '' } = {}) {
+function filterMemoIdentity(events, { scope = '', agent = '', includeCandidates = false } = {}) {
   const normalizedScope = scope ? normalizeMemoScope(scope) : '';
   return events
+    .filter((event) => includeCandidates || event.claimStatus !== 'candidate')
     .filter((event) => !normalizedScope || normalizeMemoScope(event.scope || 'project_shared') === normalizedScope)
     .filter((event) => eventVisibleForAgent(event, agent));
 }
 
-// Supersede links are resolved against the whole space before scope or agent
-// filtering, so a fact stays retired even when the event that replaced it is
-// private to another agent.
-function selectVisibleEvents(events, { scope, agent, asOf, includeInvalid }) {
-  return filterMemoIdentity(filterTemporal(events, { asOf, includeInvalid }), { scope, agent });
+// Temporal links are resolved across the whole space before scope filtering;
+// temporal policy itself ignores unauthorized and unpromoted candidate links.
+function selectVisibleEvents(events, { scope, agent, asOf, includeInvalid, includeCandidates }) {
+  return filterMemoIdentity(filterTemporal(events, { asOf, includeInvalid }), { scope, agent, includeCandidates });
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity } = {}) {
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
-  const scored = sortEventsDescending(selectVisibleEvents(events, { scope, agent, asOf, includeInvalid }))
+  const archivedIds = includeArchived ? new Set() : await readDreamArchivedEventIds({ rootDir: workspaceRoot });
+  const scored = sortEventsDescending(selectVisibleEvents(
+    events.filter((event) => !archivedIds.has(event.eventId)),
+    { scope, agent, asOf, includeInvalid, includeCandidates },
+  ))
     .filter((event) => eventMatchesQuery(event, query))
     .map((event) => ({ ...event, matchScore: scoreEvent(event, query) }))
     .sort((a, b) => {
@@ -76,8 +81,12 @@ export async function searchMemoEvents(workspaceRoot, { storage, space = 'defaul
   return scored;
 }
 
-export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false } = {}) {
+export async function listMemoEvents(workspaceRoot, { storage, space = 'default', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
-  return sortEventsDescending(selectVisibleEvents(events, { scope, agent, asOf, includeInvalid })).slice(0, normalizeLimit(limit));
+  const archivedIds = includeArchived ? new Set() : await readDreamArchivedEventIds({ rootDir: workspaceRoot });
+  return sortEventsDescending(selectVisibleEvents(
+    events.filter((event) => !archivedIds.has(event.eventId)),
+    { scope, agent, asOf, includeInvalid, includeCandidates },
+  )).slice(0, normalizeLimit(limit));
 }

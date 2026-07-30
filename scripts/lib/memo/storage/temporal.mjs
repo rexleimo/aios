@@ -34,6 +34,63 @@ export function toSupersedes(raw = []) {
   return output;
 }
 
+export function toSupersedeDenials(raw = []) {
+  if (!Array.isArray(raw)) return [];
+  const output = [];
+  const seen = new Set();
+  for (const entry of raw) {
+    const eventId = String(entry?.eventId || '').trim();
+    if (!eventId || seen.has(eventId)) continue;
+    seen.add(eventId);
+    output.push({
+      eventId,
+      reason: String(entry?.reason || 'scope_or_principal_mismatch').trim() || 'scope_or_principal_mismatch',
+    });
+  }
+  return output;
+}
+
+function eventScope(event = {}) {
+  const value = String(event.scope || 'project_shared').trim().toLowerCase().replace(/[-\s]+/gu, '_');
+  if (value === 'shared' || value === 'project' || value === 'global') return 'project_shared';
+  if (value === 'private' || value === 'agent') return 'agent_private';
+  return value;
+}
+
+function eventAgent(event = {}) {
+  return String(event.agent || event.agentNamespace || '').trim().toLowerCase();
+}
+
+function eventSpace(event = {}) {
+  return String(event.spaceKey || event.space || 'default').trim().toLowerCase();
+}
+
+export function canSupersedeEvent(source = {}, target = {}) {
+  if (eventSpace(source) !== eventSpace(target)) return false;
+  const sourceScope = eventScope(source);
+  const targetScope = eventScope(target);
+  if (sourceScope !== targetScope) return false;
+  if (sourceScope === 'project_shared') return true;
+  if (!['agent_private', 'agent_ephemeral'].includes(sourceScope)) return false;
+  const sourceAgent = eventAgent(source);
+  return Boolean(sourceAgent) && sourceAgent === eventAgent(target);
+}
+
+export function partitionSupersedes(source = {}, events = []) {
+  const byId = new Map(events.filter(Boolean).map((event) => [event.eventId, event]));
+  const allowed = [];
+  const denied = [];
+  for (const eventId of toSupersedes(source.supersedes)) {
+    const target = byId.get(eventId);
+    if (!target || canSupersedeEvent(source, target)) {
+      allowed.push(eventId);
+    } else {
+      denied.push({ eventId, reason: 'scope_or_principal_mismatch' });
+    }
+  }
+  return { allowed, denied };
+}
+
 // Applies every supersede link across the set. Returns fresh objects so the
 // caller never mutates rows that may still be cached upstream.
 export function foldTemporalLinks(events = []) {
@@ -44,6 +101,7 @@ export function foldTemporalLinks(events = []) {
   }
 
   for (const row of rows) {
+    if (row.claimStatus === 'candidate') continue;
     const targets = toSupersedes(row.supersedes);
     if (targets.length === 0) continue;
     const supersedeAt = normalizeIsoTimestamp(row.validAt || row.ts);
@@ -53,6 +111,7 @@ export function foldTemporalLinks(events = []) {
       if (targetId === row.eventId) continue; // self-supersede is a no-op
       const target = byId.get(targetId);
       if (!target) continue; // dangling link: the target lives in another space
+      if (!canSupersedeEvent(row, target)) continue;
       // Earliest supersede wins, so a later duplicate cannot resurrect a fact.
       if (target.invalidAt && target.invalidAt <= supersedeAt) continue;
       target.invalidAt = supersedeAt;
@@ -104,6 +163,7 @@ export function proposeSupersedes(events = [], { threshold = DEFAULT_SUPERSEDE_T
       for (let j = i - 1; j >= 0; j -= 1) {
         const older = ordered[j];
         if (claimed.has(older.eventId)) continue;
+        if (!canSupersedeEvent(candidate, older)) continue;
         const score = textSimilarity(candidate.text, older.text);
         if (score < threshold) continue;
         claimed.add(older.eventId);

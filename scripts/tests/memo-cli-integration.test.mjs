@@ -193,7 +193,11 @@ test('aios memo recall emits readable digest from active storage records', async
 
 import { appendMemoEvent } from '../lib/memo/storage/events-write.mjs';
 import { listMemoEvents } from '../lib/memo/storage/query.mjs';
-import { autoMemoSessionClose } from '../lib/lifecycle/session-hooks/close.mjs';
+import {
+  autoMemoSessionClose,
+  readSessionCloseCandidate,
+  sessionCloseCandidatePath,
+} from '../lib/lifecycle/session-hooks/close.mjs';
 import { renderActivityTimeline } from '../lib/lifecycle/session-hooks/start-timeline.mjs';
 import { recordSessionChangedFile } from '../lib/session/changed-files.mjs';
 import { resolveContextDbRoot } from '../lib/aios/state-root.mjs';
@@ -211,60 +215,78 @@ async function seedSessionEvents(rootDir, sessionId, events) {
   await fs.writeFile(eventsPath, lines + '\n', 'utf8');
 }
 
-test('session close hook writes a memo event with summary', async () => {
+test('session close hook writes a reviewable candidate without publishing shared memo', async () => {
   await withWorkspace('aios-session-close-', async (workspaceRoot) => {
     const sessionId = 'test-session-close-1';
 
-    // Seed l2-events.jsonl with a few events, including an assistant message
     await seedSessionEvents(workspaceRoot, sessionId, [
       { role: 'user', text: 'Refactor the database module', ts: new Date().toISOString() },
       { role: 'assistant', text: 'I have refactored the database module and updated the connection pool.', ts: new Date().toISOString() },
       { role: 'tool', text: '{"status":"ok"}', ts: new Date().toISOString() },
     ]);
-
-    // Record some touched files
     await recordSessionChangedFile({ rootDir: workspaceRoot, sessionId, filePath: 'src/db/connection.mjs', changeType: 'modified' });
     await recordSessionChangedFile({ rootDir: workspaceRoot, sessionId, filePath: 'src/db/pool.mjs', changeType: 'created' });
 
-    // Run the close hook
-    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+    const candidate = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
 
-    // Verify the memo event structure
-    assert.ok(event, 'should return an event object');
-    assert.equal(event.kind, 'memo', 'event kind should be memo');
-    assert.equal(event.role, 'user', 'event role should be user');
-    assert.ok(event.eventId, 'event should have an eventId');
-    assert.ok(event.ts, 'event should have a timestamp');
-    assert.equal(event.scope, 'project_shared', 'scope should be project_shared');
-    assert.ok(event.text.includes('Session test-session-close-1 completed.'), 'text should include session id');
-    assert.ok(event.text.includes('Summary:'), 'text should include Summary prefix');
-    assert.ok(event.text.includes('database'), 'text should include key content from assistant message');
-    assert.ok(event.turn, 'event should have turn metadata');
-    assert.equal(event.turn.expiryDays, 90, 'turn expiryDays should be 90');
+    assert.equal(candidate.kind, 'session-close-memory-candidate');
+    assert.equal(candidate.status, 'candidate');
+    assert.equal(candidate.claimStatus, 'candidate');
+    assert.equal(candidate.scope, 'project_shared');
+    assert.equal(candidate.sessionId, sessionId);
+    assert.ok(candidate.candidateId);
+    assert.ok(candidate.createdAt);
+    assert.ok(candidate.text.includes('Session test-session-close-1 completed.'));
+    assert.ok(candidate.text.includes('Summary:'));
+    assert.ok(candidate.text.includes('database'));
+    assert.deepEqual(candidate.refs.sort(), ['src/db/connection.mjs', 'src/db/pool.mjs']);
+    assert.equal(candidate.turn.expiryDays, 90);
+    assert.equal(candidate.source.eventsPath, 'l2-events.jsonl');
 
-    // Verify the event was actually persisted — read it back via listMemoEvents
+    const persisted = await readSessionCloseCandidate({ rootDir: workspaceRoot, sessionId });
+    assert.deepEqual(persisted, candidate);
+    await fs.access(sessionCloseCandidatePath(workspaceRoot, sessionId));
+
     const recent = await listMemoEvents(workspaceRoot, { limit: 5 });
-    assert.ok(recent.length >= 1, 'at least one memo event should exist after close');
-
-    const found = recent.find((e) => e.text.includes('test-session-close-1'));
-    assert.ok(found, 'the close memo event should be findable via listMemoEvents');
+    assert.equal(recent.some((event) => event.text.includes('test-session-close-1')), false);
   });
 });
 
-test('session close hook handles empty session gracefully', async () => {
+test('session close hook handles empty session as a candidate', async () => {
   await withWorkspace('aios-session-close-empty-', async (workspaceRoot) => {
     const sessionId = 'empty-session';
+    const candidate = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
 
-    // No events file, no changed-files — just run the hook
-    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+    assert.equal(candidate.kind, 'session-close-memory-candidate');
+    assert.equal(candidate.status, 'candidate');
+    assert.ok(candidate.text.includes('Session empty-session completed.'));
+    assert.deepEqual(candidate.refs, []);
 
-    assert.ok(event, 'should return an event even for empty session');
-    assert.equal(event.kind, 'memo');
-    assert.ok(event.text.includes('Session empty-session completed.'), 'text should include session id');
-
-    // Verify persistence
     const recent = await listMemoEvents(workspaceRoot, { limit: 5 });
-    assert.ok(recent.some((e) => e.text.includes('empty-session')), 'empty session memo should be findable');
+    assert.equal(recent.some((event) => event.text.includes('empty-session')), false);
+    assert.deepEqual(await readSessionCloseCandidate({ rootDir: workspaceRoot, sessionId }), candidate);
+  });
+});
+
+test('session close candidate write is idempotent for the same session', async () => {
+  await withWorkspace('aios-session-close-repeat-', async (workspaceRoot) => {
+    const sessionId = 'repeat-session';
+    const first = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+    const second = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+
+    assert.equal(second.candidateId, first.candidateId);
+    assert.deepEqual(await readSessionCloseCandidate({ rootDir: workspaceRoot, sessionId }), second);
+    const recent = await listMemoEvents(workspaceRoot, { limit: 5 });
+    assert.equal(recent.length, 0);
+  });
+});
+
+test('session close rejects an unsafe session id before accessing its path', async () => {
+  await withWorkspace('aios-session-close-unsafe-', async (workspaceRoot) => {
+    await assert.rejects(
+      autoMemoSessionClose({ rootDir: workspaceRoot, sessionId: '../outside' }),
+      /unsafe sessionId/u,
+    );
   });
 });
 
@@ -304,7 +326,7 @@ test('session start timeline handles empty state gracefully', async () => {
   });
 });
 
-test('session close memo text is truncated to 200 chars', async () => {
+test('session close candidate summary is truncated to 200 chars', async () => {
   await withWorkspace('aios-session-close-trunc-', async (workspaceRoot) => {
     const sessionId = 'trunc-test';
     const longMsg = 'A'.repeat(500);
@@ -313,9 +335,9 @@ test('session close memo text is truncated to 200 chars', async () => {
       { role: 'assistant', text: longMsg, ts: new Date().toISOString() },
     ]);
 
-    const event = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
+    const candidate = await autoMemoSessionClose({ rootDir: workspaceRoot, sessionId });
     // The extracted last assistant content is truncated to 200 chars
-    const summaryContent = event.text;
+    const summaryContent = candidate.text;
     // The summary includes "Session <id> completed. Key files: ... Summary: <truncated>"
     // The truncated assistant content should be at most 200 chars
     const summaryMatch = summaryContent.match(/Summary: (.+)$/);

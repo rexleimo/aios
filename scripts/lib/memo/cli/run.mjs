@@ -1,3 +1,5 @@
+import path from 'node:path';
+
 import { getMemoHelpText } from '../../cli/help.mjs';
 import {
   DEFAULT_AIOS_ROOT_DIR,
@@ -16,6 +18,7 @@ import { handleMemoPinCommand } from './commands/pin.mjs';
 import { handleMemoSpaceCommand } from './commands/space.mjs';
 import { handleMemoStorageCommand } from './commands/storage.mjs';
 import { handleMemoSupersedeCommand } from './commands/supersede.mjs';
+import { handleMemoCandidateCommand } from './commands/candidates.mjs';
 import { handlePersonaCommand } from './commands/persona.mjs';
 
 function resolveWorkspaceMemoLimits(env = process.env) {
@@ -33,9 +36,14 @@ function resolveWorkspaceMemoLimits(env = process.env) {
   };
 }
 
-export async function runMemo(rawOptions = {}, { io = console } = {}) {
+export async function runMemo(rawOptions = {}, {
+  io = console,
+  rootDir = '',
+  // Broker-reserved seam: explicit runtime identity is carried for audit/future authority, while CLI environment values are not authority.
+  runtimeIdentity = null,
+} = {}) {
   const argv = Array.isArray(rawOptions.argv) ? rawOptions.argv : [];
-  const workspaceRoot = detectWorkspaceRoot(process.cwd());
+  const workspaceRoot = rootDir ? path.resolve(rootDir) : detectWorkspaceRoot(process.cwd());
   const activeSpace = resolveActiveSpace(workspaceRoot);
   const {
     workspaceMemoEntryMaxChars,
@@ -101,6 +109,7 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
       activeSpace,
       workspaceMemoEntryMaxChars,
       io,
+      runtimeIdentity,
     });
     return;
   }
@@ -122,6 +131,19 @@ export async function runMemo(rawOptions = {}, { io = console } = {}) {
 
   if (primary === 'supersede') {
     await handleMemoSupersedeCommand({ argv, workspaceRoot, activeSpace, io });
+    return;
+  }
+
+  if (primary === 'candidate') {
+    await handleMemoCandidateCommand({
+      secondary,
+      rest,
+      workspaceRoot,
+      activeSpace,
+      io,
+      runtimeIdentity,
+      env: process.env,
+    });
     return;
   }
 

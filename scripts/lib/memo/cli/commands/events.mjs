@@ -55,6 +55,7 @@ export async function handleMemoAddCommand({
   activeSpace,
   workspaceMemoEntryMaxChars,
   io,
+  runtimeIdentity = null,
 }) {
   const { positionals, flags } = splitFlags(['add', secondary, ...rest].filter((part) => part !== undefined));
   const text = positionals.slice(1).join(' ').trim();
@@ -75,6 +76,7 @@ export async function handleMemoAddCommand({
     refs,
     scope: flags.scope || 'project_shared',
     agent: resolveMemoAgent(flags),
+    runtimeIdentity,
     validAt: flags.validAt,
     supersedes: flags.supersedes,
     role: 'user',
@@ -87,7 +89,9 @@ export async function handleMemoAddCommand({
       outcome: 'success',
     },
   });
-  const legacy = mirrorMemoEventToLegacy(workspaceRoot, { space, text, refs, turnId, record });
+  const legacy = record?.claimStatus === 'candidate'
+    ? { eventId: record.eventId }
+    : mirrorMemoEventToLegacy(workspaceRoot, { space, text, refs, turnId, record });
   const eventId = record?.eventId || legacy.eventId || '';
   io.log(`Memo added${eventId ? `: ${eventId}` : '.'}`);
 

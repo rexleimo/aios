@@ -8,12 +8,14 @@ import { fileURLToPath } from 'node:url';
 
 import { appendMemoEvent, listMemoEvents } from '../lib/memo/storage.mjs';
 import {
+  canSupersedeEvent,
   DEFAULT_HINT_THRESHOLD,
   filterTemporal,
   findSupersedeCandidates,
   foldTemporalLinks,
   isEventLiveAt,
   normalizeIsoTimestamp,
+  partitionSupersedes,
   proposeSupersedes,
   toSupersedes,
 } from '../lib/memo/storage/temporal.mjs';
@@ -96,6 +98,38 @@ test('foldTemporalLinks ignores self-supersede and dangling targets', () => {
   const [folded] = foldTemporalLinks([selfLink]);
   assert.equal(folded.invalidAt, undefined);
   assert.equal(folded.supersededBy, undefined);
+});
+
+test('canSupersedeEvent requires the same scope and private principal', () => {
+  const shared = makeEvent({ eventId: 'shared', scope: 'project_shared', agent: 'agent-a' });
+  const privateA = makeEvent({ eventId: 'private-a', scope: 'agent_private', agent: 'agent-a' });
+  const privateB = makeEvent({ eventId: 'private-b', scope: 'agent_private', agent: 'agent-b' });
+
+  assert.equal(canSupersedeEvent(makeEvent({ scope: 'project_shared', agent: 'agent-b' }), shared), true);
+  assert.equal(canSupersedeEvent(privateA, privateA), true);
+  assert.equal(canSupersedeEvent(privateB, privateA), false);
+  assert.equal(canSupersedeEvent(privateB, shared), false);
+  assert.equal(canSupersedeEvent(shared, privateA), false);
+});
+
+test('foldTemporalLinks ignores legacy private-to-shared supersede links', () => {
+  const shared = makeEvent({ eventId: 'shared', scope: 'project_shared', agent: 'agent-a' });
+  const privateReplacement = makeEvent({
+    eventId: 'private',
+    scope: 'agent_private',
+    agent: 'agent-b',
+    validAt: '2026-02-01T00:00:00.000Z',
+    supersedes: ['shared'],
+  });
+
+  const folded = foldTemporalLinks([shared, privateReplacement]);
+  const foldedShared = folded.find((event) => event.eventId === 'shared');
+  assert.equal(foldedShared.invalidAt, undefined);
+  assert.equal(foldedShared.supersededBy, undefined);
+  assert.deepEqual(partitionSupersedes(privateReplacement, [shared]), {
+    allowed: [],
+    denied: [{ eventId: 'shared', reason: 'scope_or_principal_mismatch' }],
+  });
 });
 
 test('foldTemporalLinks keeps the earliest supersede when several claim the same fact', () => {
@@ -236,6 +270,35 @@ test('supersede semantics are identical on file and split storage', async () => 
       const replaced = withHistory.find((row) => row.eventId === older.eventId);
       assert.equal(replaced.invalidAt, '2026-02-01T00:00:00.000Z', `storage=${storage}`);
       assert.ok(replaced.supersededBy, `storage=${storage} must record who replaced the fact`);
+    });
+  }
+});
+
+test('private supersede cannot hide shared facts on file or split storage', async () => {
+  for (const storage of ['file', 'split']) {
+    await withTempRoot(`aios-memo-private-supersede-${storage}-`, async (workspaceRoot) => {
+      const shared = await appendMemoEvent({
+        workspaceRoot,
+        storage,
+        text: 'shared architecture decision',
+        scope: 'project_shared',
+        agent: 'agent-a',
+      });
+      const privateReplacement = await appendMemoEvent({
+        workspaceRoot,
+        storage,
+        text: 'private replacement attempt',
+        scope: 'agent_private',
+        agent: 'agent-b',
+        supersedes: [shared.eventId],
+      });
+
+      assert.deepEqual(privateReplacement.supersedes || [], [], `storage=${storage}`);
+      assert.deepEqual(privateReplacement.supersedeDenied, [
+        { eventId: shared.eventId, reason: 'scope_or_principal_mismatch' },
+      ]);
+      const visibleToAgentA = await listMemoEvents(workspaceRoot, { storage, agent: 'agent-a' });
+      assert.ok(visibleToAgentA.some((event) => event.eventId === shared.eventId), `storage=${storage}`);
     });
   }
 });

@@ -8,8 +8,8 @@ import {
 import { normalizeMemoStorageName } from './normalizers.mjs';
 import { configPath } from './paths.mjs';
 
-export async function readConfig(workspaceRoot) {
-  const filePath = configPath(workspaceRoot);
+export async function readConfig(workspaceRoot, { env = process.env } = {}) {
+  const filePath = configPath(workspaceRoot, { env });
   const raw = await readTextIfExists(filePath);
   if (!raw.trim()) return { exists: false, active: DEFAULT_MEMO_STORAGE, path: filePath };
   try {
@@ -22,15 +22,15 @@ export async function readConfig(workspaceRoot) {
   }
 }
 
-export async function getActiveMemoStorage(workspaceRoot) {
-  const config = await readConfig(workspaceRoot);
+export async function getActiveMemoStorage(workspaceRoot, { env = process.env } = {}) {
+  const config = await readConfig(workspaceRoot, { env });
   return config.active || DEFAULT_MEMO_STORAGE;
 }
 
-export async function setActiveMemoStorage(workspaceRoot, storage) {
+export async function setActiveMemoStorage(workspaceRoot, storage, { env = process.env } = {}) {
   const active = normalizeMemoStorageName(storage);
   await atomicWriteText(
-    configPath(workspaceRoot),
+    configPath(workspaceRoot, { env }),
     `${JSON.stringify({
       schemaVersion: 1,
       active,
