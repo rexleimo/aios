@@ -7,6 +7,19 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.3.0 (2026-07-30) - Context Lifecycle safety and compatibility
+
+### Breaking changes
+
+- Structured plans are upgraded to schema v3 on the next explicit plan write; older runtimes cannot read upgraded plan state.
+- Session close writes a reviewable memo candidate sidecar instead of publishing a shared memo automatically.
+- Dream approve, reject, archive, restore, and GC return DENY receipts until a trusted broker and concurrency authority exist; Dream apply remains proposal-only.
+
+### Availability boundary
+
+- Context Lifecycle V1 is released as S0-S2 observe/shadow instrumentation only. Selective enforcement, opt-in pilots, and default hard enforcement are not enabled or claimed by this release.
+- Context proposals require explicit human confirmation. Plans without confirmed targets or context can deliver zero execution-context units; this release does not promise out-of-the-box context intelligence.
+
 ## v5.0.0 (2026-07-20) - Rex-only workflow migration
 
 - `rex-harness` is the only default software-engineering workflow for new AIOS installations and managed client projections. Superpowers is retired as an AIOS workflow and installation component.

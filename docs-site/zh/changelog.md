@@ -5,6 +5,19 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.3.0（2026-07-30）— Context Lifecycle 安全与兼容性
+
+### 破坏性变更
+
+- 下次显式写入计划时，结构化计划会升级为 schema v3；旧运行时无法读取升级后的计划状态。
+- Session close 改为写入可审查的 memo candidate sidecar，不再自动发布 shared memo。
+- 在具备可信 broker 与并发控制 authority 前，Dream approve、reject、archive、restore 与 GC 均返回 DENY receipt；Dream apply 仍仅产生 proposal。
+
+### 可用性边界
+
+- Context Lifecycle V1 仅以 S0-S2 observe/shadow instrumentation 发布；本版本未启用或宣称 selective enforcement、opt-in pilot 或默认 hard enforcement。
+- Context proposal 必须经人工显式确认。未确认 targets 或 context 的计划可能投递零个 execution-context unit；本版本不承诺开箱即用的上下文智能。
+
 ## v5.0.0（2026-07-20）— Rex-only 工作流迁移
 
 - `rex-harness` 是新 AIOS 安装和托管客户端投影的唯一默认软件工程工作流；Superpowers 已从 AIOS 工作流和安装组件中退役。

@@ -5,6 +5,19 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.3.0 (2026-07-30) - Context Lifecycle 안전성과 호환성
+
+### 호환성이 깨지는 변경
+
+- 다음 명시적 plan write에서 structured plan은 schema v3로 업그레이드되며, 이전 runtime은 업그레이드된 plan state를 읽을 수 없습니다.
+- Session close는 shared memo를 자동 게시하지 않고 검토 가능한 memo candidate sidecar를 작성합니다.
+- trusted broker와 concurrency authority가 마련되기 전까지 Dream approve, reject, archive, restore, GC는 DENY receipt를 반환하며 Dream apply는 proposal-only 상태를 유지합니다.
+
+### 제공 범위 경계
+
+- Context Lifecycle V1은 S0-S2 observe/shadow instrumentation으로만 릴리스됩니다. 이 릴리스는 selective enforcement, opt-in pilot, default hard enforcement를 활성화하거나 주장하지 않습니다.
+- Context proposal에는 명시적인 human confirmation이 필요합니다. confirmed targets 또는 context가 없는 plan은 execution-context unit을 전혀 전달하지 않을 수 있으며, 이 릴리스는 out-of-the-box context intelligence를 약속하지 않습니다.
+
 ## v5.0.0 (2026-07-20) - Rex-only 워크플로 마이그레이션
 
 - `rex-harness`는 새 AIOS 설치와 관리되는 클라이언트 투영의 유일한 기본 소프트웨어 엔지니어링 워크플로입니다. Superpowers는 AIOS 워크플로와 설치 구성요소에서 제거되었습니다.
