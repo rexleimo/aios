@@ -1,8 +1,26 @@
 {
   "schemaVersion": 4,
-  "lastUpdated": "2026-07-28",
+  "lastUpdated": "2026-07-31",
+  "lastMetadataCheck": "2026-07-31 (5/5 active projects; GitHub REST API metadata + releases + recent PRs; WEB/REL evidence level; no source deep dive this pass)",
   "lastDeepDive": "2026-07-28 (12/12 GitHub metadata; 12/12 complete local source trees; current source coverage for 8/12 and targeted verification for 4 post-snapshot movers; see docs/reports/2026-07-28-context-lifecycle-competitor-analysis-and-plan.md)",
   "refreshMethod": "api.github.com metadata + codeload tarballs + source-level local review; GitHub release feeds were unreachable on 2026-07-28, so existing latestRelease fields were not used as fresh evidence",
+  "pendingDeepDive": [
+    {
+      "id": "tencentdb-agent-memory",
+      "reason": "v2.0.0-beta.1 (2026-07-22) 首次完整开源四类资产：Chat Memory (L0→L3)、Skill SOP、Wiki、CodeGraph；Memory Hub 新增三级 ACL (private/team/restricted) + Agent Loadout。refreshTrigger 满足：offload/recall/result-ref 机制发生变化。",
+      "addedOn": "2026-07-31",
+      "targetAreas": [
+        "L0→L3 分层实现",
+        "Skill 资产提炼机制",
+        "Agent Loadout ACL 实现",
+        "CodeGraph impact analysis 与 AIOS codemap 对比"
+      ],
+      "blocksAIOSTasks": [
+        "memo P0 — Supersede ACL/publish gate",
+        "team P0 — Steward-governed shared canonical memory"
+      ]
+    }
+  ],
   "portfolioPolicy": {
     "objective": "Minimize future maintenance cost by keeping only references that own a distinct, decision-relevant question.",
     "decisionDate": "2026-07-28",
@@ -191,22 +209,6 @@
         "sourceEvidenceAsOf": "2026-07-28"
       },
       {
-        "id": "superpowers",
-        "name": "superpowers",
-        "repo": "obra/superpowers",
-        "url": "https://github.com/obra/superpowers",
-        "pillar": "intelligent-planning",
-        "tier": "archive-reference",
-        "uniqueReferenceQuestion": "brainstorm → plan → verification 的过程方法，如何写成可读、可复用的 agent skill？",
-        "refreshCadence": "none",
-        "refreshTrigger": "不主动刷新；只有出现超出 prose skill 的机器可执行 enforcement / receipt 机制，且 Rex 当前能力未覆盖时，才重新评审。",
-        "rationale": "方法论已经吸收，且 Rex 是唯一工作流控制面；继续跟踪 skill 文案变化不会改变下一版本架构，保留来源归因而退出活跃刷新。",
-        "evidenceSnapshot": "brainstorming / writing-plans / verification-before-completion / subagent-driven-development / TDD / systematic-debugging",
-        "license": "MIT",
-        "language": "Shell",
-        "sourceEvidenceAsOf": "2026-07-28"
-      },
-      {
         "id": "hermes-agent",
         "name": "Hermes Agent",
         "repo": "NousResearch/hermes-agent",
@@ -271,6 +273,12 @@
         "license": "NOASSERTION",
         "language": "TypeScript/Python/Markdown",
         "sourceEvidenceAsOf": "2026-07-28"
+      },
+      {
+        "id": "superpowers",
+        "name": "superpowers",
+        "url": "https://github.com/obra/superpowers",
+        "reason": "太重，与 rex-harness 工作流方向不符，不再参考（user decision 2026-07-31）"
       }
     ]
   },
@@ -291,7 +299,13 @@
     "2026-07-28 Context Lifecycle：下一阶段重点不是新增 memory backend，而是把 architecting / ingesting / scoping / anticipating / validated compaction 串成闭环",
     "ContextCard + ContextReceipt：work item 的目标、验收、约束、假设、证据与实际注入来源必须有 revision、scope、trust 和 hash",
     "预算降级策略：full → summary+ref → ref-only；不得因超预算静默丢失，压缩必须验证 must-preserve 与 evidence 可达性",
-    "Anticipating V1 采用确定性 Change Context Resolver（目标符号、影响面、测试、项目约束、最近失败），有真实 receipt 数据后才评估预测式预取"
+    "Anticipating V1 采用确定性 Change Context Resolver（目标符号、影响面、测试、项目约束、最近失败），有真实 receipt 数据后才评估预测式预取",
+    "2026-07-31 元数据检查：5/5 活跃项目均非 archived，全部持续活跃（pushed_at 均在 3 天内）。无项目触发 dormant 降级。",
+    "TencentDB v2.0.0-beta.1（2026-07-22）首次完整开源：Chat Memory L0→L3 / Skill SOP / Wiki / CodeGraph 四类资产；Memory Hub 新增 private/team/restricted 三级 ACL + Agent Loadout 绑定机制。refreshTrigger 满足，排入 pendingDeepDive。",
+    "oh-my-openagent 2026-07-31 密集合并：① task_summary 字段（maxLength:80）让 footer/widget 显示 delegated 内容；② ulw-research delivery gates 内化进 skill（16 次手工引导 → skill 内结构化门控）；③ steering excursions 有界绕行机制（触发条件：与锁定声明冲突/改变最终答案/打开新源领域，执行后须 surface back）；④ ultrabrain/unspecified-low/quick/visual-engineering 四类 fallback chain 重调。",
+    "letta-code v0.29.10-12（2026-07-28-31）：subagent frontmatter-as-overlay 覆盖模式（bodyless MD 只改 model 等字段，保留 bundled prompt 持续更新）；memory repo 并发 git config 写操作串行化；/mcp 端点暴露 server-side MCP server 列表。",
+    "Graphiti v0.29.3（2026-07-27）：纯依赖维护（redis/azure-identity/google-genai），temporal/provenance 合同未动，不触发 refreshTrigger。",
+    "OpenClaw 2026.7.2-beta.5（2026-07-28）：今日提交均为 bug fix，无 skill workshop / proposal/review/apply/rollback 架构变化，不触发 refreshTrigger。"
   ],
   "p0OptimizationTargets": {
     "memo": "Supersede ACL/publish gate + runtime provenance + ContextItem validity + candidate promotion + proposal-only consolidation",
@@ -299,9 +313,11 @@
     "team": "Steward-governed shared canonical memory + revisioned evidence handoff + ContextReceipt + ACL-sticky compaction"
   },
   "nextRefresh": {
-    "coreMetadataCheck": "2026-10-28",
-    "specialistMetadataCheck": "2027-01-28",
+    "lastMetadataCheckDate": "2026-07-31",
+    "coreMetadataCheck": "2026-10-31",
+    "specialistMetadataCheck": "2027-01-31",
     "fullPortfolioRefresh": null,
+    "pendingDeepDiveWork": "tencentdb-agent-memory v2.0.0-beta.1 — schedule when AIOS enters memo P0 / team P0 implementation sprint",
     "policy": "Metadata checks only detect staleness or archived status. A source deep dive occurs only when the project-specific refreshTrigger fires."
   },
   "removed": {
@@ -392,6 +408,7 @@
       "archiveReferenceCount": 5,
       "removeCount": 2,
       "scheduledFullPortfolioRefresh": false
-    }
+    },
+    "2026-07-31: superpowers moved archive→remove (user decision: too heavy, not aligned)."
   ]
 }
