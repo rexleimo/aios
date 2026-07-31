@@ -5,6 +5,14 @@ body.rex-home {
   --md-header-height: 0px;
 }
 
+/* The home shell supplies its own navigation, never Material's drawer. */
+.md-home .md-sidebar,
+.md-home .md-drawer,
+.md-home [data-md-component="sidebar"],
+.md-home label[for="__drawer"] {
+  display: none !important;
+}
+
 .rex-home-main {
   --rex-home-design-width: 1440px;
   min-height: 0;
@@ -30,6 +38,35 @@ body.rex-home {
 .rex-home .md-content,
 .md-home .md-content {
   max-width: none;
+}
+
+.home-resource-links {
+  display: grid;
+  width: min(100%, var(--rex-home-design-width));
+  gap: 0.9rem;
+  margin: 0 auto;
+  padding: clamp(56px, 7vw, 80px) clamp(24px, 5.56vw, 80px);
+  box-sizing: border-box;
+  background: var(--rex-bg);
+}
+
+.home-resource-links h2,
+.home-resource-links p {
+  margin: 0;
+}
+
+.home-resource-links h2 {
+  padding: 0;
+  border: 0;
+}
+
+.home-resource-links p {
+  max-width: 48rem;
+  color: var(--rex-muted);
+}
+
+.home-resource-links p:last-child {
+  line-height: 1.7;
 }
 
 .hero-section,
@@ -63,7 +100,7 @@ body.rex-home {
 
 .hero-section {
   --rex-section-height: 770px;
-  height: 770px;
+  height: auto;
   min-height: 770px;
   isolation: isolate;
   background: var(--rex-bg);
@@ -140,7 +177,7 @@ body.rex-home {
   grid-template-columns: minmax(0, 1fr) 540px;
   gap: 80px;
   align-items: center;
-  padding: clamp(5rem, 8.33vw, 7.5rem) clamp(1.5rem, 5.56vw, 5rem) clamp(4rem, 9.17vw, 8.25rem) clamp(3rem, 8.33vw, 7.5rem);
+  padding: clamp(80px, 8.33vw, 120px) clamp(24px, 5.56vw, 80px) clamp(64px, 9.17vw, 132px) clamp(48px, 8.33vw, 120px);
 }
 
 .hero-content {
@@ -1012,12 +1049,13 @@ body.rex-home {
   display: block;
   height: 520px;
   min-height: 520px;
+  box-sizing: border-box;
   background: var(--rex-bg);
 }
 
 .cta-section .home-section__stage {
   display: grid;
-  grid-template-columns: 720px 720px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   background:
     radial-gradient(circle at 20% 10%, rgba(18, 48, 110, 0.34), transparent 32rem),
     radial-gradient(circle at 72% 30%, rgba(91, 42, 158, 0.25), transparent 28rem),
@@ -1027,22 +1065,25 @@ body.rex-home {
 .cta-section__left,
 .cta-section__right {
   position: relative;
+  min-width: 0;
   height: 520px;
   min-height: 520px;
 }
 
 .cta-section__left {
-  padding-left: 0;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  isolation: isolate;
   background: linear-gradient(135deg, rgba(13, 18, 32, 0.92), rgba(6, 7, 13, 0.98) 68%);
 }
 
 .cta-content {
-  position: absolute;
-  top: 180px;
-  left: 80px;
+  position: relative;
   z-index: 2;
-  width: 480px;
-  max-width: 480px;
+  width: min(100%, 34rem);
+  max-width: none;
+  padding: clamp(48px, 6vw, 80px);
 }
 
 .cta-heading {
@@ -1087,6 +1128,7 @@ body.rex-home {
 
 .cta-section__right {
   overflow: hidden;
+  isolation: isolate;
 }
 
 .cta-section__right::before {
@@ -1173,6 +1215,10 @@ body.rex-home {
 @keyframes rexBlink { 50% { opacity: 0; } }
 
 @media (max-width: 1440px) {
+  .home-resource-links {
+    padding: clamp(3rem, 6vw, 4rem) 48px;
+  }
+
   .hero-layout {
     min-height: 720px;
     grid-template-columns: minmax(0, 1fr) 420px;
@@ -1601,6 +1647,10 @@ body.rex-home {
 }
 
 @media (max-width: 860px) {
+  .home-resource-links {
+    padding: 3rem 24px;
+  }
+
   .hero-section {
     height: auto;
     min-height: 0;
@@ -1760,6 +1810,10 @@ body.rex-home {
 }
 
 @media (max-width: 720px) {
+  .home-resource-links {
+    padding: 2.5rem 20px;
+  }
+
   .hero-layout {
     padding: 88px 20px 24px;
   }
