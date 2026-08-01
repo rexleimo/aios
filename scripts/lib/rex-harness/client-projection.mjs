@@ -76,25 +76,54 @@ export async function installRexClientProjections({
   const conflicts = results.flatMap((result) => result.conflicts.map((skill) => ({
     client: result.client,
     skill,
+    ...(result.conflictDetails?.find((detail) => detail.skillId === skill) || {}),
   })));
   const installed = results.flatMap((result) => result.installed.map((skill) => ({
     client: result.client,
     skill,
+  })));
+  const updated = results.flatMap((result) => (result.updated || []).map((skill) => ({
+    client: result.client,
+    skill,
+  })));
+  const adopted = results.flatMap((result) => (result.adopted || []).map((skill) => ({
+    client: result.client,
+    skill,
+  })));
+  const migrated = results.flatMap((result) => (result.migrated || []).map((skill) => ({
+    client: result.client,
+    skill,
+  })));
+  const errors = results.flatMap((result) => (result.errors || []).map((error) => ({
+    client: result.client,
+    ...error,
+  })));
+  const recoveries = results.flatMap((result) => (result.recoveries || []).map((recovery) => ({
+    client: result.client,
+    ...recovery,
   })));
 
   for (const result of results) {
     io.log(`[rex] ${result.client} workflow skills: ${result.status}`);
   }
   for (const conflict of conflicts) {
-    io.log(`[warn] Rex workflow skill retained because it is user-managed: ${conflict.client}/${conflict.skill}`);
+    const detail = conflict.reason ? ` (${conflict.reason})` : '';
+    io.log(`[warn] Rex workflow skill retained because it is user-managed: ${conflict.client}/${conflict.skill}${detail}`);
   }
 
   return Object.freeze({
     kind: 'aios.rex-client-projections.v1',
-    status: conflicts.length > 0 ? 'conflicts' : installed.length > 0 ? 'installed' : 'unchanged',
+    status: conflicts.length > 0 || errors.length > 0
+      ? 'conflicts'
+      : installed.length + updated.length + adopted.length + migrated.length > 0 ? 'installed' : 'unchanged',
     clients: selectedClients,
     installed: Object.freeze(installed),
+    updated: Object.freeze(updated),
+    adopted: Object.freeze(adopted),
+    migrated: Object.freeze(migrated),
     conflicts: Object.freeze(conflicts),
+    errors: Object.freeze(errors),
+    recoveries: Object.freeze(recoveries),
     results: Object.freeze(results),
   });
 }

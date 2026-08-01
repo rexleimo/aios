@@ -4,6 +4,8 @@ import { isDeepStrictEqual } from 'node:util';
 
 import {
   resolveStandaloneExecutionReceipt,
+  normalizeRequirementsDecision,
+  expectedScenarioCommandForWorkflow,
   validateCommandEvidence,
 } from '../../../rex-harness/src/index.mjs';
 import {
@@ -33,7 +35,9 @@ const EVIDENCE_ENVELOPE_FIELDS = Object.freeze([
   'activationId',
   'evidence',
   'testabilityDecision',
+  'requirementsDecision',
 ]);
+const EVIDENCE_ITEM_FIELDS = new Set(['kind', 'refs']);
 const AGENT_HANDOFF_STATUSES = new Set(['pass', 'blocked', 'needs-input', 'fail']);
 const PLACEHOLDER_REF = /artifact-or-command-ref|placeholder|真实存在|todo|tbd/iu;
 
@@ -45,6 +49,9 @@ function normalizeEnvelopeEvidence(evidence) {
 
   return Object.freeze(evidence.map((item, index) => {
     if (!item || typeof item !== 'object') throw new TypeError(`evidence ${index} must be an object`);
+    if (Object.keys(item).some((key) => !EVIDENCE_ITEM_FIELDS.has(key))) {
+      throw new TypeError(`evidence ${index} contains an unknown field`);
+    }
     const kind = String(item.kind || '').trim();
     const refs = Array.isArray(item.refs)
       ? item.refs.map((ref) => String(ref).trim()).filter(Boolean)
@@ -184,6 +191,9 @@ export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = 
     activationId: envelopeActivationId,
     evidence: normalizeEnvelopeEvidence(payload.evidence),
     testabilityDecision: payload.testabilityDecision,
+    requirementsDecision: Object.hasOwn(payload, 'requirementsDecision')
+      ? normalizeRequirementsDecision(payload.requirementsDecision)
+      : undefined,
   });
 }
 
@@ -211,6 +221,7 @@ function recordValidatedCapabilityEvidence({
   command,
   evidence = [],
   testabilityDecision,
+  requirementsDecision,
   allowAgent = false,
   now = new Date(),
 } = {}) {
@@ -218,15 +229,19 @@ function recordValidatedCapabilityEvidence({
   if (command.provider?.kind === 'agent' && !allowAgent) {
     throw new Error('Agent Provider evidence requires a validated native Handoff');
   }
-  // standalone 与 AIOS 共用 rex 公共校验器，避免证据类型、引用协议和占位符规则漂移。
   const resolveReceipt = (ref) => resolveStandaloneExecutionReceipt({ rootDir, ref });
-  const normalizedEvidence = validateCommandEvidence(command, evidence, { resolveReceipt });
+  // Match the typed testability scenario before any state or plan write.
+  const normalizedEvidence = validateCommandEvidence(command, evidence, {
+    resolveReceipt,
+    expectedScenarioCommand: expectedScenarioCommandForWorkflow(current.workflow),
+  });
 
   const advanced = advanceStoredAiosCapabilityActivation({
     rootDir,
     activationId: command.activationId,
     evidence: normalizedEvidence,
     testabilityDecision,
+    requirementsDecision,
     resolveReceipt,
     now,
   });
@@ -259,6 +274,7 @@ export function recordAiosCapabilityEvidence({
   commandToken,
   evidence = [],
   testabilityDecision,
+  requirementsDecision,
   now = new Date(),
 } = {}) {
   const current = readStoredAiosCapabilityActivation({ rootDir, activationId });
@@ -272,6 +288,7 @@ export function recordAiosCapabilityEvidence({
     command: current.command,
     evidence,
     testabilityDecision,
+    requirementsDecision,
     now,
   });
 }
@@ -288,6 +305,7 @@ export function ingestCapabilityEvidenceOutput({ rootDir, command, output, now =
     command,
     evidence: envelope.evidence,
     testabilityDecision: envelope.testabilityDecision,
+    requirementsDecision: envelope.requirementsDecision,
     now,
   });
   return Object.freeze({ ingested: true, reason: '', envelope, result });

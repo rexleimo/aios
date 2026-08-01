@@ -1,15 +1,18 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
+import { fileURLToPath } from 'node:url';
 
 import { MANAGED_RUNNER } from '../lib/evidence/live-execution.mjs';
 import {
   prepareAiosAgentProviderExecution,
   resolveAiosAgentProvider,
 } from '../lib/workflows/rex-agent-provider.mjs';
+
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 
 const ABSTRACT_SPECIALIST = Object.freeze({
   kind: 'agent',
@@ -158,6 +161,14 @@ async function writeLegacyPromotionEvidenceFixture(rootDir, agentId) {
   ]);
 }
 
+async function copyCanonicalAgentFixture(rootDir) {
+  const canonicalRoot = path.join(rootDir, 'agent-sources');
+  await mkdir(canonicalRoot, { recursive: true });
+  await cp(path.join(REPO_ROOT, 'agent-sources', 'manifest.json'), path.join(canonicalRoot, 'manifest.json'));
+  await cp(path.join(REPO_ROOT, 'agent-sources', 'roles'), path.join(canonicalRoot, 'roles'), { recursive: true });
+  return canonicalRoot;
+}
+
 function securityCommand() {
   return {
     schemaVersion: 1,
@@ -176,11 +187,14 @@ function securityCommand() {
 
 test('agent execution rejects legacy or tampered evidence before accepting an isolated v2 fixture', async () => {
   const evidenceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-agent-provider-fixture-'));
+  const aiosRoot = path.join(evidenceRoot, 'aios-root');
   try {
+    await copyCanonicalAgentFixture(aiosRoot);
     assert.ok(!path.relative(os.tmpdir(), evidenceRoot).startsWith('..'));
     await assert.rejects(
       () => prepareAiosAgentProviderExecution({
         command: securityCommand(),
+        aiosRoot,
         evidenceRoot,
         userRequest: '审查当前变更。',
       }),
@@ -191,6 +205,7 @@ test('agent execution rejects legacy or tampered evidence before accepting an is
     await assert.rejects(
       () => prepareAiosAgentProviderExecution({
         command: securityCommand(),
+        aiosRoot,
         evidenceRoot,
         userRequest: '审查当前变更。',
       }),
@@ -200,6 +215,7 @@ test('agent execution rejects legacy or tampered evidence before accepting an is
     await writePromotionEvidenceFixture(evidenceRoot, 'rex-security-reviewer');
     const prepared = await prepareAiosAgentProviderExecution({
       command: securityCommand(),
+      aiosRoot,
       evidenceRoot,
       workflowDirective: '## AIOS WORKFLOW',
       userRequest: '审查当前变更。',
@@ -207,7 +223,7 @@ test('agent execution rejects legacy or tampered evidence before accepting an is
 
     assert.equal(prepared.agent.agentId, 'rex-security-reviewer');
     assert.equal(prepared.agent.workflowEnabled, true);
-    assert.match(prepared.agent.verification.refs.smoke, /aios-rex-agent-provider-fixture-/u);
+    assert.match(prepared.agent.verification.refs.smoke, /\.aios[\\/\\\\]agents[\\/\\\\]smoke/u);
     assert.match(prepared.prompt, /# Security Review Agent/u);
     assert.match(prepared.prompt, /"agentId":"rex-security-reviewer"/u);
     assert.match(prepared.prompt, /Return one JSON handoff object only/u);
@@ -219,6 +235,7 @@ test('agent execution rejects legacy or tampered evidence before accepting an is
     await assert.rejects(
       () => prepareAiosAgentProviderExecution({
         command: securityCommand(),
+        aiosRoot,
         evidenceRoot,
         userRequest: '审查当前变更。',
       }),

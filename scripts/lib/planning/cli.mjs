@@ -57,9 +57,30 @@ function readTestabilityDecision(source, rootDir) {
     throw new Error(`invalid --testability-file: ${error.message}`, { cause: error });
   }
   try {
-    return JSON.parse(fs.readFileSync(target, 'utf8'));
+    const content = fs.readFileSync(target, 'utf8');
+    const verifiedTarget = resolveTestabilityDecisionPath(source, rootDir);
+    if (verifiedTarget !== target) throw invalidTestabilityPath();
+    return JSON.parse(content);
   } catch (error) {
     throw new Error(`invalid --testability-file: ${target}: ${error.message}`, { cause: error });
+  }
+}
+
+function readRequirementsDecision(source, rootDir) {
+  if (!source) return undefined;
+  let target;
+  try {
+    target = resolveTestabilityDecisionPath(source, rootDir);
+  } catch (error) {
+    throw new Error(`invalid --requirements-file: ${error.message}`, { cause: error });
+  }
+  try {
+    const content = fs.readFileSync(target, 'utf8');
+    const verifiedTarget = resolveTestabilityDecisionPath(source, rootDir);
+    if (verifiedTarget !== target) throw invalidTestabilityPath();
+    return JSON.parse(content);
+  } catch (error) {
+    throw new Error(`invalid --requirements-file: ${target}: ${error.message}`, { cause: error });
   }
 }
 
@@ -259,6 +280,7 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
         commandToken: options.commandToken,
         evidence: [{ kind: options.evidenceKind, refs: [options.evidenceRef] }],
         testabilityDecision: readTestabilityDecision(options.testabilityFile, rootDir),
+        requirementsDecision: readRequirementsDecision(options.requirementsFile, rootDir),
       });
       stdout.write(json
         ? `${JSON.stringify(result, null, 2)}\n`

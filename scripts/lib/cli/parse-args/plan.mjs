@@ -39,6 +39,7 @@ const PLAN_CLI = new Command()
   .option('--evidence-kind <kind>', 'Rex capability evidence kind')
   .option('--evidence-ref <ref>', 'Rex capability evidence artifact or command ref')
   .option('--testability-file <path>', 'Typed Rex testability decision JSON file')
+  .option('--requirements-file <path>', 'Typed Rex requirements decision JSON file')
   .option('--workspace <path>', 'Workspace root')
   .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
@@ -113,6 +114,7 @@ export function parsePlanArgs(argv) {
         evidenceKind: flags.evidenceKind,
         evidenceRef: flags.evidenceRef,
         testabilityFile: flags.testabilityFile ? String(flags.testabilityFile).trim() : '',
+        requirementsFile: flags.requirementsFile ? String(flags.requirementsFile).trim() : '',
         client: flags.client,
         sessionId: flags.session,
         policyMode: flags.policyMode,

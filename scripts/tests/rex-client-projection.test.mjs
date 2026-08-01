@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
+import { cp, mkdtemp, readFile, rm, symlink } from 'node:fs/promises';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -79,6 +79,30 @@ test('Rex projects to every client global discovery root when global scope is se
   }
 });
 
+test('AIOS reports identical unmarked Rex projections as adopted changes', async () => {
+  const rootDir = path.resolve('.');
+  const projectRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-adopt-projection-'));
+  const targetRoot = path.join(projectRoot, CLIENT_SKILL_ROOTS.claude);
+  try {
+    await cp(path.join(rootDir, 'rex-harness', 'skill-sources'), targetRoot, { recursive: true });
+
+    const result = await installRexClientProjections({
+      rootDir,
+      projectRoot,
+      client: 'claude',
+      io: { log: () => {} },
+    });
+
+    assert.equal(result.status, 'installed');
+    assert.deepEqual(result.installed, []);
+    assert.equal(result.adopted.length, 13);
+    assert.deepEqual(result.updated, []);
+    assert.deepEqual(result.conflicts, []);
+  } finally {
+    await rm(projectRoot, { recursive: true, force: true });
+  }
+});
+
 test('standalone installer entrypoint defaults to an all-client global Rex projection', async () => {
   const calls = [];
   const result = await installRexClientSkills([], {
@@ -101,7 +125,7 @@ test('standalone installer entrypoint defaults to an all-client global Rex proje
 
 test('standalone installer entrypoint validates arguments and keeps help side-effect free', async () => {
   assert.deepEqual(parseRexClientProjectionArgs(['--root', '/tmp/aios', '--client', 'grok', '--scope', 'project']), {
-    rootDir: '/tmp/aios',
+    rootDir: path.resolve('/tmp/aios'),
     client: 'grok',
     scope: 'project',
   });

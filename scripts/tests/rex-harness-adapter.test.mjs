@@ -18,6 +18,7 @@ import {
   startAiosCapabilityActivation,
   startAiosSoftwareWorkflow,
 } from '../lib/workflows/rex-harness-adapter.mjs';
+import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
 
 const ADAPTER_PARITY_SCENARIO = Object.freeze({
   executable: 'node',
@@ -184,8 +185,10 @@ test('AIOS adapter advances the rex-owned workflow runtime with rex-native Provi
     { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
     { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
     { kind: 'first-slice-identified', refs: ['artifact:requirements'] },
+    { kind: 'requirements-decision-recorded', refs: [REQUIREMENTS_DECISION_FIXTURE.decisionRef] },
   ], {
     createActivationId: () => 'activation-aios-test-design',
+    requirementsDecision: REQUIREMENTS_DECISION_FIXTURE,
   });
 
   assert.equal(advanced.workflow.currentCapabilityId, 'software.testing.design');
@@ -266,7 +269,11 @@ test('default AIOS Provider skills come from the packaged rex-harness sources', 
     assert.match(content, /AIOS_REX_EVIDENCE/u);
     assert.match(content, /恰好一个.*信封/u);
     assert.match(content, /真实.*引用/u);
-    assert.match(content, /不要.*下一个 Provider/u);
+    assert.match(content, /不要.*下一个 (?:Provider|Capability)|停止.*等待.*下一条.*Command/u);
+    if (providerId === 'rex-implement') {
+      assert.match(content, /Self-check gate/u);
+      assert.match(content, /不要.*第二条工作流/u);
+    }
     assert.doesNotMatch(content, /Fast\s*\|\s*Balanced\s*\|\s*Deep/iu);
   }
 });

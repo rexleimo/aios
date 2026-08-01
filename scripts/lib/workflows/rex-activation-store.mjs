@@ -3,6 +3,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import {
+  assertSoftwareWorkflowCommandContract,
+  expectedScenarioCommandForWorkflow,
   resolveStandaloneExecutionReceipt,
   validateCommandEvidence,
 } from '../../../rex-harness/src/index.mjs';
@@ -96,6 +98,11 @@ function parseWorkflow(target) {
   if (workflow?.kind !== 'rex.software-workflow-activation.v1') {
     throw new Error(`invalid rex workflow record: ${target}`);
   }
+  try {
+    assertSoftwareWorkflowCommandContract(workflow);
+  } catch (error) {
+    throw new Error(`invalid rex workflow command contract: ${target}: ${error.message}`, { cause: error });
+  }
   return workflow;
 }
 
@@ -114,6 +121,11 @@ function parseRecord(rootDir, target) {
     ? parseWorkflow(workflowPath(rootDir, record.workflowActivationId))
     : null);
   if (!workflow) throw new Error(`invalid rex activation record: ${target}: missing workflow reference`);
+  try {
+    assertSoftwareWorkflowCommandContract(workflow);
+  } catch (error) {
+    throw new Error(`invalid rex activation workflow contract: ${target}: ${error.message}`, { cause: error });
+  }
   return Object.freeze({ ...record, workflow });
 }
 
@@ -191,6 +203,7 @@ export function advanceStoredAiosCapabilityActivation({
   activationId,
   evidence = [],
   testabilityDecision,
+  requirementsDecision,
   resolveReceipt,
   now = new Date(),
 } = {}) {
@@ -207,13 +220,17 @@ export function advanceStoredAiosCapabilityActivation({
     || ((ref) => resolveStandaloneExecutionReceipt({ rootDir, ref }));
   const normalizedEvidence = validateCommandEvidence(current.command, evidence, {
     resolveReceipt: receiptResolver,
+    expectedScenarioCommand: expectedScenarioCommandForWorkflow(current.workflow),
   });
   const advanced = advanceAiosSoftwareWorkflow(current.workflow, normalizedEvidence, {
     now,
     testabilityDecision,
+    requirementsDecision,
     resolveReceipt: receiptResolver,
   });
-  const workflow = sealWorkflowCommand(advanced.workflow);
+  const workflow = advanced.blockedReason === undefined
+    ? sealWorkflowCommand(advanced.workflow)
+    : advanced.workflow;
   writeWorkflow(rootDir, workflow);
   const completed = advanced.outcome === 'completed';
   const terminal = completed || advanced.outcome === 'replan';

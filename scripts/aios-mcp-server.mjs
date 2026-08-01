@@ -177,6 +177,10 @@ const TOOLS = [
           },
         },
         workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
+        requirementsDecision: {
+          type: 'object',
+          description: 'Typed rex.requirements-decision.v1 payload; accepted only with requirements-decision-recorded evidence',
+        },
       },
       required: ['activationId', 'commandToken', 'evidence'],
     },
@@ -737,6 +741,7 @@ async function handleCapabilityEvidence(params) {
       activationId: params.activationId || params.activation_id,
       commandToken: params.commandToken || params.command_token,
       evidence: params.evidence,
+      requirementsDecision: params.requirementsDecision || params.requirements_decision,
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   } catch (err) {

@@ -13,8 +13,12 @@ import {
   recordAiosCapabilityEvidence,
 } from '../lib/workflows/rex-capability-runtime.mjs';
 import { evaluateAiosSoftwareRequest } from '../lib/workflows/rex-harness-adapter.mjs';
-import { startStoredAiosCapabilityActivation } from '../lib/workflows/rex-activation-store.mjs';
+import {
+  readStoredAiosCapabilityActivation,
+  startStoredAiosCapabilityActivation,
+} from '../lib/workflows/rex-activation-store.mjs';
 import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
+import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
 
 test('provider output parser accepts one typed evidence envelope and ignores ordinary prose', () => {
   const activationId = 'activation-envelope';
@@ -60,6 +64,63 @@ test('provider output parser rejects unknown envelope fields', () => {
     () => parseCapabilityEvidenceEnvelope(output, { activationId: 'activation-current' }),
     /unknown field: claimedSuccess/u,
   );
+});
+
+test('provider output parser rejects unknown nested evidence fields', () => {
+  const output = `AIOS_REX_EVIDENCE=${JSON.stringify({
+    schemaVersion: 1,
+    activationId: 'activation-current',
+    evidence: [{ kind: 'focused-tests-pass', refs: ['receipt:known'], claimedSuccess: true }],
+  })}`;
+
+  assert.throws(
+    () => parseCapabilityEvidenceEnvelope(output, { activationId: 'activation-current' }),
+    /evidence 0 contains an unknown field/u,
+  );
+});
+
+test('AIOS Requirements envelope persists the typed decision and advances the workflow', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-requirements-envelope-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: '把用户登录改一下',
+      client: 'codex',
+      sessionId: 'requirements-envelope',
+    });
+    assert.equal(started.capabilityActivation.capabilityId, 'software.requirements.clarify');
+
+    const ingested = ingestCapabilityEvidenceOutput({
+      rootDir,
+      command: started.capabilityCommand,
+      output: `AIOS_REX_EVIDENCE=${JSON.stringify({
+        schemaVersion: 1,
+        activationId: started.capabilityCommand.activationId,
+        evidence: [
+          { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
+          { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
+          { kind: 'first-slice-identified', refs: ['artifact:requirements'] },
+          { kind: 'requirements-decision-recorded', refs: [REQUIREMENTS_DECISION_FIXTURE.decisionRef] },
+        ],
+        requirementsDecision: REQUIREMENTS_DECISION_FIXTURE,
+      })}`,
+    });
+
+    assert.equal(ingested.ingested, true);
+    assert.equal(ingested.result.outcome, 'completed');
+    assert.equal(ingested.result.nextCapability.command.provider.id, 'rex-test-design');
+    assert.deepEqual(ingested.result.activation.evidence.at(-1), {
+      kind: 'requirements-decision-recorded',
+      refs: [REQUIREMENTS_DECISION_FIXTURE.decisionRef],
+    });
+    const nextStored = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: ingested.result.nextCapability.activation.activationId,
+    });
+    assert.equal(nextStored.workflow.requirementsDecision.decisionRef, REQUIREMENTS_DECISION_FIXTURE.decisionRef);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
 });
 
 test('AIOS envelope accepts an honest typed decision and rejects a claimed RED', async () => {
@@ -199,7 +260,11 @@ test('runner evidence ingestion advances only when a valid envelope is present',
     });
     assert.equal(ingested.ingested, true);
     assert.equal(ingested.result.outcome, 'blocked');
-    assert.deepEqual(ingested.result.missingEvidence, ['non-goals-recorded', 'first-slice-identified']);
+    assert.deepEqual(ingested.result.missingEvidence, [
+      'non-goals-recorded',
+      'first-slice-identified',
+      'requirements-decision-recorded',
+    ]);
 
     assert.throws(() => recordAiosCapabilityEvidence({
       rootDir,

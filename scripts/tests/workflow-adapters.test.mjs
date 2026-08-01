@@ -14,6 +14,7 @@ import {
 import { parsePlanArgs } from '../lib/cli/parse-args/plan.mjs';
 import { runPlanCommand } from '../lib/planning/cli.mjs';
 import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
+import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
 import { evaluateAiosSoftwareRequest } from '../lib/workflows/rex-harness-adapter.mjs';
 import {
   advanceStoredAiosCapabilityActivation,
@@ -118,6 +119,8 @@ test('plan CLI parses the typed rex capability evidence contract', () => {
     'artifact:requirements',
     '--testability-file',
     'testability.json',
+    '--requirements-file',
+    'requirements.json',
     '--json',
   ]);
 
@@ -128,6 +131,7 @@ test('plan CLI parses the typed rex capability evidence contract', () => {
   assert.equal(parsed.options.evidenceKind, 'acceptance-criteria-recorded');
   assert.equal(parsed.options.evidenceRef, 'artifact:requirements');
   assert.equal(parsed.options.testabilityFile, 'testability.json');
+  assert.equal(parsed.options.requirementsFile, 'requirements.json');
 });
 
 test('plan CLI submits a typed testability decision from a file with a real receipt', async () => {
@@ -355,6 +359,11 @@ test('MCP plan start preserves the caller session for acknowledgement matching',
 test('CLI and MCP evidence adapters advance the same persisted rex contract', async () => {
   const root = await makeTemp('aios-capability-evidence-');
   try {
+    await writeFile(
+      path.join(root, 'requirements.json'),
+      `${JSON.stringify(REQUIREMENTS_DECISION_FIXTURE, null, 2)}\n`,
+      'utf8',
+    );
     const io = makeIo();
     const started = await runPlanCommand({
       subcommand: 'auto-gate',
@@ -394,7 +403,9 @@ test('CLI and MCP evidence adapters advance the same persisted rex contract', as
       evidence: [
         { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
         { kind: 'first-slice-identified', refs: ['artifact:requirements'] },
+        { kind: 'requirements-decision-recorded', refs: [REQUIREMENTS_DECISION_FIXTURE.decisionRef] },
       ],
+      requirementsDecision: REQUIREMENTS_DECISION_FIXTURE,
     });
     const completed = JSON.parse(response.content[0].text);
     assert.equal(completed.outcome, 'completed');

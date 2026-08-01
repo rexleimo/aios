@@ -158,7 +158,12 @@ export function startAiosSoftwareWorkflow(options = {}) {
   const context = bindingContext(options);
   const request = options.request || {};
   const evaluated = options.decision
-    ? Object.freeze({ facts: Object.freeze([]), decision: bindDecision(options.decision, context), promotion: null })
+    ? Object.freeze({
+      facts: Object.freeze([]),
+      decision: bindDecision(options.decision, context),
+      promotion: null,
+      requirementsDecision: options.requirementsDecision || request.requirementsDecision || null,
+    })
     : evaluateAiosSoftwareRequest(request);
   const workflow = startSoftwareWorkflow({
     ...coreOptions(options),

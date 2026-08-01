@@ -11,6 +11,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
+import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
 import { runAutoGate } from '../lib/planning/auto-gate.mjs';
 import {
   advanceStoredAiosCapabilityActivation,
@@ -81,6 +82,47 @@ function completeTestDesign(rootDir, activationId) {
   });
 }
 
+test('AIOS rejects a scenario-mismatched receipt without rotating the command or writing evidence', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-scenario-invalid-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: '更新结账校验行为。',
+      client: 'codex',
+      sessionId: 'session-scenario-invalid',
+    });
+    const designed = completeTestDesign(rootDir, started.capabilityActivation.activationId);
+    const before = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: designed.nextCapability.activation.activationId,
+    });
+    const mismatchedReceipt = captureStandaloneExecutionReceipt({
+      rootDir,
+      executable: process.execPath,
+      args: ['-e', 'process.exit(1)'],
+      cwd: rootDir,
+    }).ref;
+
+    assert.throws(() => advanceStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: before.activation.activationId,
+      evidence: [
+        { kind: 'failing-test-observed', refs: [mismatchedReceipt] },
+        { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
+      ],
+    }), /scenario|command/u);
+
+    const after = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: before.activation.activationId,
+    });
+    assert.equal(after.command.executionToken, before.command.executionToken);
+    assert.deepEqual(after.workflow.currentActivation.evidence, before.workflow.currentActivation.evidence);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('auto-gate persists the current rex activation and exposes one executable command', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-activation-'));
   try {
@@ -116,7 +158,11 @@ test('auto-gate persists the current rex activation and exposes one executable c
       ],
     });
     assert.equal(blocked.outcome, 'blocked');
-    assert.deepEqual(blocked.missingEvidence, ['non-goals-recorded', 'first-slice-identified']);
+    assert.deepEqual(blocked.missingEvidence, [
+      'non-goals-recorded',
+      'first-slice-identified',
+      'requirements-decision-recorded',
+    ]);
 
     const completed = advanceStoredAiosCapabilityActivation({
       rootDir,
@@ -124,7 +170,9 @@ test('auto-gate persists the current rex activation and exposes one executable c
       evidence: [
         { kind: 'non-goals-recorded', refs: ['artifact:requirements'] },
         { kind: 'first-slice-identified', refs: ['artifact:requirements'] },
+        { kind: 'requirements-decision-recorded', refs: [REQUIREMENTS_DECISION_FIXTURE.decisionRef] },
       ],
+      requirementsDecision: REQUIREMENTS_DECISION_FIXTURE,
     });
     assert.equal(completed.outcome, 'completed');
     assert.equal(completed.command, null);
