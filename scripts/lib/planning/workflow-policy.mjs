@@ -15,6 +15,7 @@ export const WORKFLOW_DISPOSITIONS = Object.freeze([
   'direct',
   'guarded',
   'planned',
+  'blocked',
 ]);
 
 export const WORKFLOW_CONTINUATIONS = Object.freeze([
@@ -113,6 +114,12 @@ function explicitIntentValue(explicitIntent) {
 }
 
 function routeForText(message, intent) {
+  if (intent === 'implement') return 'implement';
+  if (intent === 'tickets') return 'planning';
+  if (intent === 'spec' || intent === 'grill') return 'requirements';
+  if (intent === 'review') return 'verify';
+  if (intent === 'debug') return 'debug';
+  if (intent === 'wayfinder') return 'implement';
   if (intent === 'team') return 'team';
   if (intent === 'harness') return 'harness';
   if (intent === 'design') return 'design';
@@ -130,11 +137,11 @@ function routeForText(message, intent) {
 }
 
 function isExplicitPlanIntent(intent) {
-  return ['planned', 'plan', 'team', 'harness', 'design', 'wayfinder'].includes(intent);
+  return ['planned', 'plan', 'tickets', 'spec', 'grill', 'team', 'harness', 'design', 'wayfinder'].includes(intent);
 }
 
 function isExplicitDirectIntent(intent) {
-  return ['direct', 'read-only', 'readonly', 'analysis', 'review', 'status'].includes(intent);
+  return ['direct', 'read-only', 'readonly', 'analysis', 'status', 'explain'].includes(intent);
 }
 
 function isExplicitAcknowledgement(intent) {
@@ -373,7 +380,7 @@ export function evaluateWorkflowPolicy({
     });
   }
 
-  if (isReadOnlyMessage(value)) {
+  if (isReadOnlyMessage(value) && (!intent || isExplicitDirectIntent(intent))) {
     return decision({
       disposition: 'direct',
       routeHint: 'direct',
@@ -390,6 +397,15 @@ export function evaluateWorkflowPolicy({
   const capabilityDecision = software.decision;
   const capabilityPolicy = describeAiosCapability(capabilityDecision);
 
+  if (capabilityDecision?.blocked) {
+    return decision({
+      disposition: 'blocked',
+      routeHint: 'blocked',
+      reason: capabilityDecision.blockedReason || 'rex-capability-blocked',
+      capabilityDecision,
+    });
+  }
+
   if (!isSubstantiveMessage(value, intent, capabilityDecision)) {
     return decision({
       disposition: 'direct',
@@ -404,9 +420,19 @@ export function evaluateWorkflowPolicy({
     : null;
   const executionHost = promotedHost
     || (['team', 'harness'].includes(genericRoute) ? genericRoute : 'single');
-  const route = genericRoute === 'ops'
-    ? 'ops'
-    : (capabilityDecision ? capabilityPolicy.routeHint : 'implement');
+  const explicitRoute = {
+    grill: 'requirements',
+    spec: 'requirements',
+    tickets: 'planning',
+    review: 'verify',
+    debug: 'debug',
+    implement: 'implement',
+    wayfinder: 'implement',
+  }[intent] || null;
+  const route = explicitRoute
+    || (genericRoute === 'ops'
+      ? 'ops'
+      : (capabilityDecision ? capabilityPolicy.routeHint : 'implement'));
   const planned = executionHost !== 'single'
     || needsPlan(value, intent, route, mode, capabilityPolicy);
   const disposition = planned ? 'planned' : 'guarded';

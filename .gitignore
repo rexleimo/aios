@@ -119,6 +119,9 @@ crush.json
 .grok/
 .agents/
 
+# Generated Skill certification/training run evidence (keep local or upload as CI artifacts; commit stable reports only)
+docs/evidence/skill-training/*
+
 # RL/实验运行产物（由测试和训练生成，不提交）
 experiments/rl-shell-v1/campaigns/
 experiments/rl-shell-v1/runs/

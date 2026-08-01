@@ -6,6 +6,29 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.4.0] - 2026-08-01
+
+### Added
+
+- Rex activation store now writes through a write-ahead transaction (`.aios/workflow-activations/transactions/`): Workflow and Activation projection writes are atomic, an incomplete transaction rolls forward automatically on restart, and reads validate consistency between the two, failing closed on divergence.
+- Add Wayfinder Artifact schema validation (`rex-harness` `src/domain/wayfinder-artifact.mjs`): Navigation Map, Decision Graph, Decision Ticket, and Next Slice structure validation; a partial artifact cannot claim a Decision Ticket or Next Slice.
+- Add Planning Artifact schema validation (`src/domain/planning-artifact.mjs`): Frontier ready/blocked mutual exclusion, Parallel Group cross-group uniqueness, Convergence Gate, and Runtime Artifact Contract validation.
+- Add `normalizeEvidenceRefs()`: every Artifact evidence ref must carry a protocol prefix and reject TODO/TBD/placeholder values, covering all Wayfinder, Planning, and Requirements artifacts.
+- Add `wayfinderArtifact` / `planningArtifact` tool parameters to the AIOS MCP server, supporting typed artifact submission for the Wayfinding and Planning capabilities.
+- Complete the S1-S5 Skill source and eval batches in `rex-harness`; all 13 canonical Skills pass an independent SkillOpt gate, and current digests are appended to `projection-history.json`.
+
+### Fixed
+
+- Client projection now re-validates the backup marker digest against managed history before restoring an interrupted backup, preventing a forged junction from being promoted to a live Skill directory (`interrupted-backup-untrusted`).
+- The same Command token can no longer be advanced twice concurrently; a store file lock makes concurrent writers receive `AIOS_REX_STORE_BUSY`.
+- Plan evidence mirroring (`syncEvidenceToMatchingPlan`) no longer throws on failure; it returns `planEvidence.status = 'failed'` instead, keeping already-committed Rex state visible to the caller.
+- The AIOS adapter no longer forwards a `provider` field for a blocked workflow decision, preventing hosts from misusing a blocked provider binding.
+
+### Changed
+
+- `rex-harness` version bumps `0.4.3` -> `0.5.0` (includes all Added/Fixed changes above).
+- `recoverInterruptedArtifacts` signature changes from `(targetRoot, skillId)` to `(targetRoot, plan)`, letting callers pass digest history without the function re-reading the history file.
+
 ## [5.3.0] - 2026-07-30
 
 ### Added

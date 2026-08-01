@@ -22,6 +22,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.4.0: Workflow Iteration v2.1 — Activation Safety, Typed Evidence Contracts, and Full Skill Audit](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 Adaptive Workflow Policy: How Harness CLI Chooses the Right Amount of Process](2026-07-v400-adaptive-workflow-policy.md)
 - [Which AI Agent Workflow Should You Choose?](2026-07-choose-agent-workflow.md)
 - [From Raw CLI Commands to a Reliable AI Agent Workflow](2026-07-raw-cli-to-reliable-workflow.md)

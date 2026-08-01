@@ -22,6 +22,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
+- [v5.4.0: 워크플로 이터레이션 v2.1 — Activation 안전성, 타입 Evidence 계약, 전체 Skill 감사](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 적응형 워크플로 정책](2026-07-v400-adaptive-workflow-policy.md)
 - [AI 에이전트 워크플로는 어떻게 고를까?](2026-07-choose-agent-workflow.md)
 - [날것의 CLI 명령에서 신뢰할 수 있는 AI 에이전트 워크플로로](2026-07-raw-cli-to-reliable-workflow.md)

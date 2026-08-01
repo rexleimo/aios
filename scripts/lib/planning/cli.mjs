@@ -84,6 +84,24 @@ function readRequirementsDecision(source, rootDir) {
   }
 }
 
+function readWorkspaceArtifact(source, rootDir, label) {
+  if (!source) return undefined;
+  let target;
+  try {
+    target = resolveTestabilityDecisionPath(source, rootDir);
+  } catch (error) {
+    throw new Error(`invalid --${label}-file: ${error.message}`, { cause: error });
+  }
+  try {
+    const content = fs.readFileSync(target, 'utf8');
+    const verifiedTarget = resolveTestabilityDecisionPath(source, rootDir);
+    if (verifiedTarget !== target) throw invalidTestabilityPath();
+    return JSON.parse(content);
+  } catch (error) {
+    throw new Error(`invalid --${label}-file: ${target}: ${error.message}`, { cause: error });
+  }
+}
+
 function stringDeclarations(values, optionName) {
   const normalized = (Array.isArray(values) ? values : []).map((value) => String(value || '').trim());
   if (normalized.some((value) => !value)) {
@@ -281,6 +299,8 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
         evidence: [{ kind: options.evidenceKind, refs: [options.evidenceRef] }],
         testabilityDecision: readTestabilityDecision(options.testabilityFile, rootDir),
         requirementsDecision: readRequirementsDecision(options.requirementsFile, rootDir),
+        wayfinderArtifact: readWorkspaceArtifact(options.wayfinderFile, rootDir, 'wayfinder'),
+        planningArtifact: readWorkspaceArtifact(options.planningFile, rootDir, 'planning'),
       });
       stdout.write(json
         ? `${JSON.stringify(result, null, 2)}\n`

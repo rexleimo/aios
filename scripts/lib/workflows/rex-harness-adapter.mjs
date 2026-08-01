@@ -80,6 +80,7 @@ function coreOptions(options = {}) {
 
 function bindDecision(decision, context) {
   if (!decision) return null;
+  if (decision.blocked) return Object.freeze({ ...decision, provider: null });
   const configured = context.byCapability.get(decision.capabilityId) || decision.provider;
   return Object.freeze({
     ...decision,

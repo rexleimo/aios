@@ -5,6 +5,25 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.4.0（2026-08-01）— ワークフローイテレーション v2.1：Activation 安全性と型付き Evidence コントラクト
+
+### 主な変更
+
+- Rex activation store が先行書き込みトランザクション方式に変更（`.aios/workflow-activations/transactions/`）：Workflow と Activation 投影がアトミックに永続化され、再起動時に残存トランザクションを自動ロールフォワード、読み取り時に両者の一致性を検証し、不一致時は fail-closed（`stale-activation-projection`）。
+- store ファイルロックで Command token の進行を直列化：並行呼び出しは `AIOS_REX_STORE_BUSY` を受け取り、同一 token の二重消費を防止。
+- Wayfinder Artifact 型 schema（`wayfinder-artifact.mjs`）を追加：Navigation Map、Decision Graph、Decision Ticket、Next Slice の構造検証；partial/blocked 状態は Ticket または Next Slice を宣言不可。
+- Planning Artifact 型 schema（`planning-artifact.mjs`）を追加：Frontier の ready/blocked 相互排他・重複なし、Parallel Group の複数グループ間一意性、Convergence Gate、Runtime Artifact Contract 検証。
+- `normalizeEvidenceRefs()` を追加：evidence ref にプロトコルプレフィックス（`artifact:`、`receipt:` 等）が必須、TODO/TBD/placeholder を拒否；Wayfinder、Planning、Requirements 全成果物を対象。
+- Client projection が中断バックアップ復元前にマーカーダイジェストを `projection-history.json` で再検証、偽造 junction の昇格を防止（`interrupted-backup-untrusted`）。
+- Plan evidence mirror（`syncEvidenceToMatchingPlan`）失敗時は構造化 `planEvidence.status = 'failed'` を返すように変更、既コミット Rex 状態を可視に保持。
+- AIOS MCP server に `wayfinderArtifact` / `planningArtifact` ツールパラメータを追加。
+- S1–S5 全バッチで 13 の canonical Skill が SkillOpt eval を完了、digest が `projection-history.json` に追記。
+
+### 利用可能性の境界
+
+- 本バージョンの型付き artifact schema は rex runtime 内部でのみ検証；既存の `.aios/workflow-activations/` 状態は後方互換で、マイグレーション不要。
+- Evidence ref プロトコルプレフィックス検証は本バージョン以降の新規 evidence に適用；既存保存済み ref は遡及検証されません。
+
 ## v5.3.0（2026-07-30）— Context Lifecycle の安全性と互換性
 
 ### 破壊的変更

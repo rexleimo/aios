@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import {
   mkdir,
   mkdtemp,
@@ -118,6 +119,59 @@ test('AIOS rejects a scenario-mismatched receipt without rotating the command or
     });
     assert.equal(after.command.executionToken, before.command.executionToken);
     assert.deepEqual(after.workflow.currentActivation.evidence, before.workflow.currentActivation.evidence);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('AIOS state transaction rolls forward after an activation projection write failure', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-atomicity-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: 'Clarify the acceptance criteria for checkout.',
+      client: 'codex',
+      sessionId: 'session-atomicity',
+    });
+    const activationId = started.capabilityActivation.activationId;
+    const before = readStoredAiosCapabilityActivation({ rootDir, activationId });
+    const originalRename = fs.renameSync;
+    let injected = false;
+    fs.renameSync = (source, destination) => {
+      const isActivationProjection = path.basename(destination) === `${activationId}.json`
+        && path.basename(path.dirname(destination)) === 'workflow-activations';
+      if (!injected && isActivationProjection) {
+        injected = true;
+        const error = new Error('injected activation projection write failure');
+        error.code = 'EIO';
+        throw error;
+      }
+      return originalRename(source, destination);
+    };
+    try {
+      assert.throws(() => advanceStoredAiosCapabilityActivation({
+        rootDir,
+        activationId,
+        evidence: [{ kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] }],
+      }), /injected activation projection write failure/u);
+    } finally {
+      fs.renameSync = originalRename;
+    }
+
+    const recovered = readStoredAiosCapabilityActivation({ rootDir, activationId });
+    assert.deepEqual(recovered.activation, recovered.workflow.currentActivation);
+    assert.deepEqual(recovered.command, recovered.workflow.currentCommand);
+    assert.notEqual(recovered.command.executionToken, before.command.executionToken);
+    assert.deepEqual(recovered.activation.evidence, [
+      { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
+    ]);
+    const transactionDir = path.join(rootDir, '.aios', 'workflow-activations', 'transactions');
+    assert.deepEqual(
+      fs.existsSync(transactionDir)
+        ? fs.readdirSync(transactionDir).filter((entry) => entry.endsWith('.json'))
+        : [],
+      [],
+    );
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }
@@ -306,6 +360,30 @@ test('a corrupted activation ledger fails closed instead of starting a duplicate
       client: 'codex',
       sessionId: 'session-corrupt',
     }), /invalid rex activation record/u);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('a stale activation projection fails closed against its workflow source of truth', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-stale-projection-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: 'Clarify the acceptance criteria before implementation.',
+      client: 'codex',
+      sessionId: 'session-stale-projection',
+    });
+    const activationId = started.capabilityActivation.activationId;
+    const recordPath = path.join(rootDir, '.aios', 'workflow-activations', `${activationId}.json`);
+    const record = JSON.parse(await readFile(recordPath, 'utf8'));
+    record.command.executionToken = 'stale-command-token';
+    await writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
+
+    assert.throws(
+      () => readStoredAiosCapabilityActivation({ rootDir, activationId }),
+      /activation projection.*workflow/u,
+    );
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }

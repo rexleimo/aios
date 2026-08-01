@@ -40,6 +40,8 @@ const PLAN_CLI = new Command()
   .option('--evidence-ref <ref>', 'Rex capability evidence artifact or command ref')
   .option('--testability-file <path>', 'Typed Rex testability decision JSON file')
   .option('--requirements-file <path>', 'Typed Rex requirements decision JSON file')
+  .option('--wayfinder-file <path>', 'Typed Rex Wayfinder artifact JSON file')
+  .option('--planning-file <path>', 'Typed Rex Delivery Ticket JSON file')
   .option('--workspace <path>', 'Workspace root')
   .option('--html', 'Also write HTML plan review board')
   .option('--json', 'JSON output')
@@ -115,6 +117,8 @@ export function parsePlanArgs(argv) {
         evidenceRef: flags.evidenceRef,
         testabilityFile: flags.testabilityFile ? String(flags.testabilityFile).trim() : '',
         requirementsFile: flags.requirementsFile ? String(flags.requirementsFile).trim() : '',
+        wayfinderFile: flags.wayfinderFile ? String(flags.wayfinderFile).trim() : '',
+        planningFile: flags.planningFile ? String(flags.planningFile).trim() : '',
         client: flags.client,
         sessionId: flags.session,
         policyMode: flags.policyMode,

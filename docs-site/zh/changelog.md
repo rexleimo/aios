@@ -5,6 +5,25 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.4.0（2026-08-01）— 工作流迭代 v2.1：Activation 安全与类型化 Evidence 契约
+
+### 主要变更
+
+- Rex activation store 改为写前事务机制（`.aios/workflow-activations/transactions/`）：Workflow 与 Activation 投影原子落盘，重启自动 roll-forward 残留事务，读取时校验两者一致性，不一致 fail-closed（`stale-activation-projection`）。
+- 新增 store 文件锁序列化 Command token 推进：并发调用返回 `AIOS_REX_STORE_BUSY`，防止同一 token 被双重消费。
+- 新增 Wayfinder Artifact 类型 schema（`wayfinder-artifact.mjs`）：Navigation Map、Decision Graph、Decision Ticket、Next Slice 结构验证；partial/blocked 状态不得声明 Ticket 或 Next Slice。
+- 新增 Planning Artifact 类型 schema（`planning-artifact.mjs`）：Frontier ready/blocked 互斥无重叠、Parallel Group 跨组唯一性、Convergence Gate、Runtime Artifact Contract 校验。
+- 新增 `normalizeEvidenceRefs()`：evidence ref 必须带协议前缀（`artifact:`、`receipt:` 等），拒绝 TODO/TBD/placeholder；覆盖 Wayfinder、Planning、Requirements 全部产物。
+- Client projection 中断备份恢复前重新校验 marker digest 是否在 `projection-history.json` 受管历史中，防止伪造 junction 被提升（`interrupted-backup-untrusted`）。
+- Plan evidence mirror（`syncEvidenceToMatchingPlan`）失败时改为返回结构化 `planEvidence.status = 'failed'`，保留已提交 Rex 状态可见。
+- AIOS MCP server 新增 `wayfinderArtifact` / `planningArtifact` 工具参数。
+- S1–S5 全批次 13 个 canonical Skill 完成 SkillOpt eval 更新，digest 追加至 `projection-history.json`。
+
+### 可用性边界
+
+- 本版本涉及的 typed artifact schema 仅在 rex runtime 内部校验；现有 `.aios/workflow-activations/` 状态向后兼容，无需迁移。
+- Evidence ref 协议前缀校验从本版本提交起对新 evidence 生效；历史已存储的 ref 不会被追溯性拒绝。
+
 ## v5.3.0（2026-07-30）— Context Lifecycle 安全与兼容性
 
 ### 破坏性变更

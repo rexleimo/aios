@@ -27,6 +27,19 @@ export const ALWAYS_ON_PLANNING_POLICY = Object.freeze({
   description: 'Risk-based workflow policy: persist plans only for planned work.',
 });
 
+const WORKFLOW_COMMAND_PATTERN = /^\/(plan|team|subagent|harness|single|grill|spec|tickets|review|implement|debug|wayfinder)\b[:\s-]*/iu;
+const WORKFLOW_INTENT_ALIASES = Object.freeze({
+  subagent: 'team',
+  planning: 'tickets',
+  ticket: 'tickets',
+  implementation: 'implement',
+  clarification: 'grill',
+  clarify: 'grill',
+  specification: 'spec',
+  'root-cause': 'debug',
+  readonly: 'read-only',
+});
+
 function clip(value = '', max = 240) {
   const normalized = String(value || '').replace(/\s+/gu, ' ').trim();
   if (normalized.length <= max) return normalized;
@@ -35,18 +48,25 @@ function clip(value = '', max = 240) {
 
 function parseWorkflowCommand(message = '') {
   const value = String(message || '').trim();
-  const match = /^\/(plan|team|subagent|harness|single)\b[:\s-]*/iu.exec(value);
+  const match = WORKFLOW_COMMAND_PATTERN.exec(value);
   if (!match) return { message: value, explicitIntent: null };
   const command = String(match[1] || '').toLowerCase();
+  const explicitIntent = command === 'single'
+    ? null
+    : (WORKFLOW_INTENT_ALIASES[command] || command);
   return {
     message: value.slice(match[0].length).trim() || value,
-    // /single selects an execution route, never an unsafe direct disposition.
-    explicitIntent: command === 'single' ? null : (command === 'subagent' ? 'team' : command),
+    explicitIntent,
   };
 }
 
 function resolveExplicitIntent(message, explicitIntent) {
-  if (explicitIntent) return explicitIntent;
+  if (explicitIntent) {
+    const value = typeof explicitIntent === 'string'
+      ? explicitIntent.trim().toLowerCase()
+      : String(explicitIntent.intent || explicitIntent.kind || explicitIntent.route || '').trim().toLowerCase();
+    return WORKFLOW_INTENT_ALIASES[value] || value;
+  }
   return parseWorkflowCommand(message).explicitIntent;
 }
 

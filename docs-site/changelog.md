@@ -7,6 +7,25 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.4.0 (2026-08-01) — Workflow Iteration v2.1: Activation Safety and Typed Evidence Contracts
+
+### What changed
+
+- The Rex activation store now writes through a write-ahead transaction (`.aios/workflow-activations/transactions/`): Workflow and Activation projection writes are atomic, restart rolls forward any incomplete transaction automatically, and reads validate consistency between the two, failing closed on divergence (`stale-activation-projection`).
+- Add a store file lock that serializes Command token advancement: concurrent calls now receive `AIOS_REX_STORE_BUSY` instead of silently double-consuming the same token.
+- Add a typed Wayfinder Artifact schema (`wayfinder-artifact.mjs`): Navigation Map, Decision Graph, Decision Ticket, and Next Slice structure validation; a partial/blocked artifact cannot claim a Decision Ticket or Next Slice.
+- Add a typed Planning Artifact schema (`planning-artifact.mjs`): Frontier ready/blocked mutual exclusion with no overlap, Parallel Group cross-group uniqueness, Convergence Gate, and Runtime Artifact Contract validation.
+- Add `normalizeEvidenceRefs()`: evidence refs must carry a protocol prefix (`artifact:`, `receipt:`, etc.) and reject TODO/TBD/placeholder values, across Wayfinder, Planning, and Requirements artifacts.
+- Client projection now re-validates the backup marker digest against `projection-history.json` before restoring an interrupted backup, preventing a forged junction from being promoted (`interrupted-backup-untrusted`).
+- Plan evidence mirroring (`syncEvidenceToMatchingPlan`) returns a structured `planEvidence.status = 'failed'` on failure instead of throwing, keeping already-committed Rex state visible.
+- The AIOS MCP server gains `wayfinderArtifact` / `planningArtifact` tool parameters.
+- All 13 canonical Skills complete the S1-S5 SkillOpt eval batches; digests are appended to `projection-history.json`.
+
+### Availability boundary
+
+- The typed artifact schemas in this release validate inside the rex runtime only; existing `.aios/workflow-activations/` state is backward compatible and needs no migration.
+- Protocol-prefix evidence-ref validation applies to evidence submitted from this release forward; previously stored refs are not retroactively rejected.
+
 ## v5.3.0 (2026-07-30) - Context Lifecycle safety and compatibility
 
 ### Breaking changes

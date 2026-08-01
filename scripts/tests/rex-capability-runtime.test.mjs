@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -19,6 +20,201 @@ import {
 } from '../lib/workflows/rex-activation-store.mjs';
 import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
 import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
+
+const WAYFINDER_ARTIFACT = Object.freeze({
+  schemaVersion: 1,
+  kind: 'rex.wayfinding-artifact.v1',
+  status: 'complete',
+  destination: {
+    name: 'activation recovery',
+    successSignal: 'one resumable checkpoint is identified',
+    scope: ['workflow runtime'],
+    evidenceRefs: ['artifact:destination'],
+  },
+  decisionGraph: {
+    nodes: [{
+      id: 'node-start',
+      question: 'where is the checkpoint?',
+      fact: 'checkpoint is persisted',
+      decision: 'inspect the activation store',
+      evidenceRefs: ['artifact:decision-graph'],
+    }],
+    edges: [],
+  },
+  unknowns: [{
+    id: 'unknown-owner',
+    question: 'who owns the checkpoint?',
+    impact: 'resume must not duplicate work',
+    evidenceRefs: ['artifact:unknowns'],
+  }],
+  decisionTicket: {
+    ticketId: 'decision-activation-recovery',
+    facts: ['fact:checkpoint-persisted'],
+    decision: 'use the stored activation as the resume source',
+    consequences: ['resume remains bounded to one command'],
+    evidenceRefs: ['artifact:decision-ticket'],
+  },
+  nextSlice: {
+    id: 'slice-resume-command',
+    outcome: 'return one compact resume command',
+    verification: 'node --test scripts/tests/rex-capability-runtime.test.mjs',
+    evidenceRefs: ['artifact:next-slice'],
+  },
+});
+
+const PLANNING_ARTIFACT = Object.freeze({
+  schemaVersion: 1,
+  kind: 'rex.delivery-ticket.v1',
+  status: 'ready',
+  objective: 'persist a bounded activation artifact',
+  decisionTicketRef: 'artifact:decision-ticket:activation-recovery',
+  workItems: [{
+    id: 'work-store-artifact',
+    title: 'store artifact',
+    outcome: 'activation record contains the typed artifact',
+    completionCriteria: ['artifact is readable after restart'],
+    verification: ['node --test scripts/tests/rex-capability-runtime.test.mjs'],
+    evidenceRefs: ['artifact:delivery-ticket'],
+    dependsOn: [],
+  }],
+  frontier: { ready: ['work-store-artifact'], blocked: [] },
+  parallelGroups: [['work-store-artifact']],
+  convergenceGate: {
+    requiredEvidenceRefs: ['artifact:delivery-ticket'],
+    verification: 'read the persisted activation record',
+    joinCondition: 'all ready work items have evidence',
+  },
+  completionClaim: 'soft',
+  runtimeArtifactContract: null,
+});
+
+test('provider output parser validates capability-specific Wayfinder and Planning artifacts', () => {
+  const wayfinderOutput = `AIOS_REX_EVIDENCE=${JSON.stringify({
+    schemaVersion: 1,
+    activationId: 'activation-wayfinder-artifact',
+    evidence: [{ kind: 'destination-recorded', refs: ['artifact:destination'] }],
+    wayfinderArtifact: WAYFINDER_ARTIFACT,
+  })}`;
+  const wayfinder = parseCapabilityEvidenceEnvelope(wayfinderOutput, {
+    activationId: 'activation-wayfinder-artifact',
+    capabilityId: 'software.navigation.wayfind',
+  });
+  assert.equal(wayfinder.wayfinderArtifact.nextSlice.id, 'slice-resume-command');
+
+  const planningOutput = `AIOS_REX_EVIDENCE=${JSON.stringify({
+    schemaVersion: 1,
+    activationId: 'activation-planning-artifact',
+    evidence: [{ kind: 'dependency-graph-recorded', refs: ['artifact:delivery-ticket'] }],
+    planningArtifact: PLANNING_ARTIFACT,
+  })}`;
+  const planning = parseCapabilityEvidenceEnvelope(planningOutput, {
+    activationId: 'activation-planning-artifact',
+    capabilityId: 'software.planning.sequence',
+  });
+  assert.equal(planning.planningArtifact.workItems[0].id, 'work-store-artifact');
+});
+
+test('provider output parser rejects missing, partial, and mismatched capability artifacts', () => {
+  const base = {
+    schemaVersion: 1,
+    activationId: 'activation-artifact-boundary',
+    evidence: [{ kind: 'destination-recorded', refs: ['artifact:destination'] }],
+  };
+  assert.throws(
+    () => parseCapabilityEvidenceEnvelope(`AIOS_REX_EVIDENCE=${JSON.stringify(base)}`, {
+      activationId: base.activationId,
+      capabilityId: 'software.navigation.wayfind',
+    }),
+    /requires wayfinderArtifact/u,
+  );
+  assert.throws(
+    () => parseCapabilityEvidenceEnvelope(`AIOS_REX_EVIDENCE=${JSON.stringify({
+      ...base,
+      wayfinderArtifact: { ...WAYFINDER_ARTIFACT, status: 'partial', decisionTicket: null, nextSlice: null },
+    })}`, {
+      activationId: base.activationId,
+      capabilityId: 'software.navigation.wayfind',
+    }),
+    /requires a complete artifact/u,
+  );
+  assert.throws(
+    () => parseCapabilityEvidenceEnvelope(`AIOS_REX_EVIDENCE=${JSON.stringify({
+      ...base,
+      planningArtifact: PLANNING_ARTIFACT,
+    })}`, {
+      activationId: base.activationId,
+      capabilityId: 'software.navigation.wayfind',
+    }),
+    /requires wayfinderArtifact|cannot include planningArtifact/u,
+  );
+});
+
+
+test('AIOS persists normalized Wayfinder and Planning artifacts on completed activations', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-artifact-persistence-'));
+  try {
+    const wayfinderDecision = evaluateAiosSoftwareRequest({
+      message: 'Map the unknown execution path.',
+      explicitIntent: 'wayfinder',
+    }).decision;
+    const wayfinder = startStoredAiosCapabilityActivation({
+      rootDir,
+      decision: wayfinderDecision,
+      activationId: 'activation-wayfinder-persisted',
+      workItemKey: 'work-item:wayfinder-persisted',
+      request: { message: 'Map the unknown execution path.', explicitIntent: 'wayfinder' },
+    });
+    const wayfinderResult = recordAiosCapabilityEvidence({
+      rootDir,
+      activationId: wayfinder.activation.activationId,
+      commandToken: wayfinder.command.executionToken,
+      evidence: [
+        { kind: 'destination-recorded', refs: ['artifact:destination'] },
+        { kind: 'decision-map-recorded', refs: ['artifact:decision-graph'] },
+        { kind: 'next-slice-identified', refs: ['artifact:next-slice'] },
+      ],
+      wayfinderArtifact: WAYFINDER_ARTIFACT,
+    });
+    assert.equal(wayfinderResult.outcome, 'completed');
+    const storedWayfinder = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: wayfinder.activation.activationId,
+    });
+    assert.equal(storedWayfinder.artifacts.wayfinderArtifact.kind, 'rex.wayfinding-artifact.v1');
+    assert.equal(storedWayfinder.artifacts.wayfinderArtifact.nextSlice.id, 'slice-resume-command');
+
+    const planningDecision = evaluateAiosSoftwareRequest({
+      message: 'Split the confirmed objective into delivery tickets.',
+      explicitIntent: 'tickets',
+    }).decision;
+    const planning = startStoredAiosCapabilityActivation({
+      rootDir,
+      decision: planningDecision,
+      activationId: 'activation-planning-persisted',
+      workItemKey: 'work-item:planning-persisted',
+      request: { message: 'Split the confirmed objective into delivery tickets.', explicitIntent: 'tickets' },
+    });
+    const planningResult = recordAiosCapabilityEvidence({
+      rootDir,
+      activationId: planning.activation.activationId,
+      commandToken: planning.command.executionToken,
+      evidence: [
+        { kind: 'dependency-graph-recorded', refs: ['artifact:delivery-ticket'] },
+        { kind: 'step-verification-recorded', refs: ['artifact:delivery-ticket'] },
+      ],
+      planningArtifact: PLANNING_ARTIFACT,
+    });
+    assert.equal(planningResult.outcome, 'completed');
+    const storedPlanning = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: planning.activation.activationId,
+    });
+    assert.equal(storedPlanning.artifacts.planningArtifact.kind, 'rex.delivery-ticket.v1');
+    assert.equal(storedPlanning.artifacts.planningArtifact.workItems[0].id, 'work-store-artifact');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
 
 test('provider output parser accepts one typed evidence envelope and ignores ordinary prose', () => {
   const activationId = 'activation-envelope';
@@ -279,6 +475,111 @@ test('runner evidence ingestion advances only when a valid envelope is present',
       commandToken: currentCommand.executionToken,
       evidence: [{ kind: 'specialist-verdict-recorded', refs: ['artifact:forged-review'] }],
     }), /unexpected rex evidence kind/u);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('AIOS serializes evidence writes so one Command token cannot advance twice', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-token-race-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: 'Clarify the acceptance criteria before implementation.',
+      client: 'codex',
+      sessionId: 'token-race',
+    });
+    const activationId = started.capabilityActivation.activationId;
+    const commandToken = started.capabilityCommand.executionToken;
+    const originalRename = fs.renameSync;
+    let nestedError = null;
+    let triggered = false;
+    fs.renameSync = (source, destination) => {
+      const isTransaction = path.basename(path.dirname(destination)) === 'transactions'
+        && path.extname(destination) === '.json';
+      if (!triggered && isTransaction) {
+        triggered = true;
+        try {
+          recordAiosCapabilityEvidence({
+            rootDir,
+            activationId,
+            commandToken,
+            evidence: [{ kind: 'non-goals-recorded', refs: ['artifact:requirements'] }],
+          });
+        } catch (error) {
+          nestedError = error;
+        }
+      }
+      return originalRename(source, destination);
+    };
+
+    let outer;
+    try {
+      outer = recordAiosCapabilityEvidence({
+        rootDir,
+        activationId,
+        commandToken,
+        evidence: [{ kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] }],
+      });
+    } finally {
+      fs.renameSync = originalRename;
+    }
+
+    assert.equal(outer.outcome, 'blocked');
+    assert.equal(nestedError?.code, 'AIOS_REX_STORE_BUSY');
+    const stored = readStoredAiosCapabilityActivation({ rootDir, activationId });
+    assert.deepEqual(stored.activation.evidence, [
+      { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
+    ]);
+    assert.notEqual(stored.command.executionToken, commandToken);
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('AIOS reports plan evidence mirror failures without hiding committed Rex state', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-plan-mirror-'));
+  try {
+    const started = runAutoGate({
+      rootDir,
+      message: 'Clarify the acceptance criteria before implementation.',
+      client: 'codex',
+      sessionId: 'plan-mirror',
+    });
+    const activationId = started.capabilityActivation.activationId;
+    const originalRename = fs.renameSync;
+    let injected = false;
+    fs.renameSync = (source, destination) => {
+      const isActivePlan = path.basename(destination) === 'active.json'
+        && path.basename(path.dirname(destination)) === 'planning';
+      if (!injected && isActivePlan) {
+        injected = true;
+        const error = new Error('injected plan evidence write failure');
+        error.code = 'EIO';
+        throw error;
+      }
+      return originalRename(source, destination);
+    };
+
+    let result;
+    try {
+      result = recordAiosCapabilityEvidence({
+        rootDir,
+        activationId,
+        commandToken: started.capabilityCommand.executionToken,
+        evidence: [{ kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] }],
+      });
+    } finally {
+      fs.renameSync = originalRename;
+    }
+
+    assert.equal(result.outcome, 'blocked');
+    assert.equal(result.planEvidence.status, 'failed');
+    assert.equal(result.planEvidence.error.code, 'EIO');
+    const stored = readStoredAiosCapabilityActivation({ rootDir, activationId });
+    assert.deepEqual(stored.activation.evidence, [
+      { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
+    ]);
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }

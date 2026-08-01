@@ -181,6 +181,14 @@ const TOOLS = [
           type: 'object',
           description: 'Typed rex.requirements-decision.v1 payload; accepted only with requirements-decision-recorded evidence',
         },
+        wayfinderArtifact: {
+          type: 'object',
+          description: 'Typed rex.wayfinding-artifact.v1 payload; required by the Wayfinder capability',
+        },
+        planningArtifact: {
+          type: 'object',
+          description: 'Typed rex.delivery-ticket.v1 payload; required by the Planning capability',
+        },
       },
       required: ['activationId', 'commandToken', 'evidence'],
     },
@@ -742,6 +750,8 @@ async function handleCapabilityEvidence(params) {
       commandToken: params.commandToken || params.command_token,
       evidence: params.evidence,
       requirementsDecision: params.requirementsDecision || params.requirements_decision,
+      wayfinderArtifact: params.wayfinderArtifact || params.wayfinder_artifact,
+      planningArtifact: params.planningArtifact || params.planning_artifact,
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   } catch (err) {

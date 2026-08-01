@@ -3,8 +3,11 @@ import path from 'node:path';
 import { isDeepStrictEqual } from 'node:util';
 
 import {
-  resolveStandaloneExecutionReceipt,
+  CAPABILITY,
+  normalizePlanningArtifact,
   normalizeRequirementsDecision,
+  normalizeWayfinderArtifact,
+  resolveStandaloneExecutionReceipt,
   expectedScenarioCommandForWorkflow,
   validateCommandEvidence,
 } from '../../../rex-harness/src/index.mjs';
@@ -36,6 +39,8 @@ const EVIDENCE_ENVELOPE_FIELDS = Object.freeze([
   'evidence',
   'testabilityDecision',
   'requirementsDecision',
+  'wayfinderArtifact',
+  'planningArtifact',
 ]);
 const EVIDENCE_ITEM_FIELDS = new Set(['kind', 'refs']);
 const AGENT_HANDOFF_STATUSES = new Set(['pass', 'blocked', 'needs-input', 'fail']);
@@ -66,6 +71,31 @@ function normalizeEnvelopeEvidence(evidence) {
     }
     return Object.freeze({ kind, refs: Object.freeze(refs) });
   }));
+}
+
+function normalizeCapabilityArtifacts({
+  capabilityId,
+  wayfinderArtifact,
+  planningArtifact,
+} = {}) {
+  if (capabilityId === CAPABILITY.NAVIGATION_WAYFIND) {
+    if (planningArtifact !== undefined) throw new TypeError('Wayfinder evidence cannot include planningArtifact');
+    if (wayfinderArtifact === undefined) throw new TypeError('Wayfinder capability requires wayfinderArtifact');
+    const artifact = normalizeWayfinderArtifact(wayfinderArtifact);
+    if (artifact.status !== 'complete') throw new Error('Wayfinder capability requires a complete artifact before advancing');
+    return Object.freeze({ wayfinderArtifact: artifact });
+  }
+  if (capabilityId === CAPABILITY.PLANNING_SEQUENCE) {
+    if (wayfinderArtifact !== undefined) throw new TypeError('Planning evidence cannot include wayfinderArtifact');
+    if (planningArtifact === undefined) throw new TypeError('Planning capability requires planningArtifact');
+    const artifact = normalizePlanningArtifact(planningArtifact);
+    if (!['ready', 'complete'].includes(artifact.status)) throw new Error('Planning capability requires a ready or complete artifact before advancing');
+    return Object.freeze({ planningArtifact: artifact });
+  }
+  if (wayfinderArtifact !== undefined || planningArtifact !== undefined) {
+    throw new TypeError('capability artifact does not match the current capability');
+  }
+  return Object.freeze({});
 }
 
 function normalizeHandoffList(handoff, key, { nonEmpty = false } = {}) {
@@ -149,7 +179,7 @@ export function parseAgentProviderHandoff(output, { command } = {}) {
  * 只解析 Provider 最终输出中的单行 Evidence Envelope。
  * 普通自然语言不会被猜测成证据，多条 Envelope 也会被拒绝，避免推进错状态。
  */
-export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = {}) {
+export function parseCapabilityEvidenceEnvelope(output, { activationId = '', capabilityId = '' } = {}) {
   const lines = String(output || '')
     .split(/\r?\n/gu)
     .map((line) => line.trim())
@@ -186,6 +216,11 @@ export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = 
     throw new Error(`rex evidence activationId mismatch: expected ${expectedActivationId}, received ${envelopeActivationId}`);
   }
 
+  const artifacts = normalizeCapabilityArtifacts({
+    capabilityId,
+    wayfinderArtifact: payload.wayfinderArtifact,
+    planningArtifact: payload.planningArtifact,
+  });
   return Object.freeze({
     schemaVersion: 1,
     activationId: envelopeActivationId,
@@ -194,25 +229,50 @@ export function parseCapabilityEvidenceEnvelope(output, { activationId = '' } = 
     requirementsDecision: Object.hasOwn(payload, 'requirementsDecision')
       ? normalizeRequirementsDecision(payload.requirementsDecision)
       : undefined,
+    ...artifacts,
   });
 }
 
 function syncEvidenceToMatchingPlan({ rootDir, workItemKey, activationId, evidence }) {
-  const plan = readActivePlan(rootDir);
-  if (!plan || plan.relativePath !== workItemKey) {
-    return Object.freeze({ matched: false, recorded: Object.freeze([]) });
-  }
-
-  const existing = new Set((plan.evidence || []).map((item) => String(item.value || '')));
+  let matched = false;
   const recorded = [];
-  for (const item of evidence) {
-    const value = `rex:${activationId}:${item.kind} -> ${item.refs.join(', ')}`;
-    if (existing.has(value)) continue;
-    addPlanEvidence(rootDir, { kind: 'note', value });
-    existing.add(value);
-    recorded.push(value);
+  try {
+    const plan = readActivePlan(rootDir);
+    if (!plan || plan.relativePath !== workItemKey) {
+      return Object.freeze({
+        matched: false,
+        status: 'not-matched',
+        recorded: Object.freeze([]),
+        error: null,
+      });
+    }
+    matched = true;
+
+    const existing = new Set((plan.evidence || []).map((item) => String(item.value || '')));
+    for (const item of evidence) {
+      const value = `rex:${activationId}:${item.kind} -> ${item.refs.join(', ')}`;
+      if (existing.has(value)) continue;
+      addPlanEvidence(rootDir, { kind: 'note', value });
+      existing.add(value);
+      recorded.push(value);
+    }
+    return Object.freeze({
+      matched: true,
+      status: 'synced',
+      recorded: Object.freeze(recorded),
+      error: null,
+    });
+  } catch (error) {
+    return Object.freeze({
+      matched,
+      status: 'failed',
+      recorded: Object.freeze(recorded),
+      error: Object.freeze({
+        code: String(error?.code || 'ERR_REX_PLAN_EVIDENCE_SYNC'),
+        message: String(error?.message || error),
+      }),
+    });
   }
-  return Object.freeze({ matched: true, recorded: Object.freeze(recorded) });
 }
 
 /** 已校验 Command 的内部推进边界；Agent 只能从原生 Handoff 适配后进入。 */
@@ -222,6 +282,8 @@ function recordValidatedCapabilityEvidence({
   evidence = [],
   testabilityDecision,
   requirementsDecision,
+  wayfinderArtifact,
+  planningArtifact,
   allowAgent = false,
   now = new Date(),
 } = {}) {
@@ -229,6 +291,11 @@ function recordValidatedCapabilityEvidence({
   if (command.provider?.kind === 'agent' && !allowAgent) {
     throw new Error('Agent Provider evidence requires a validated native Handoff');
   }
+  const artifacts = normalizeCapabilityArtifacts({
+    capabilityId: command.capabilityId,
+    wayfinderArtifact,
+    planningArtifact,
+  });
   const resolveReceipt = (ref) => resolveStandaloneExecutionReceipt({ rootDir, ref });
   // Match the typed testability scenario before any state or plan write.
   const normalizedEvidence = validateCommandEvidence(command, evidence, {
@@ -242,6 +309,8 @@ function recordValidatedCapabilityEvidence({
     evidence: normalizedEvidence,
     testabilityDecision,
     requirementsDecision,
+    artifacts,
+    expectedCommand: command,
     resolveReceipt,
     now,
   });
@@ -260,6 +329,7 @@ function recordValidatedCapabilityEvidence({
     activation: advanced.activation,
     missingEvidence: advanced.missingEvidence,
     command: advanced.command,
+    artifacts,
     nextCapability: advanced.nextCapability,
     planEvidence,
   });
@@ -275,6 +345,8 @@ export function recordAiosCapabilityEvidence({
   evidence = [],
   testabilityDecision,
   requirementsDecision,
+  wayfinderArtifact,
+  planningArtifact,
   now = new Date(),
 } = {}) {
   const current = readStoredAiosCapabilityActivation({ rootDir, activationId });
@@ -289,6 +361,8 @@ export function recordAiosCapabilityEvidence({
     evidence,
     testabilityDecision,
     requirementsDecision,
+    wayfinderArtifact,
+    planningArtifact,
     now,
   });
 }
@@ -296,7 +370,10 @@ export function recordAiosCapabilityEvidence({
 /** Runner 入口：没有结构化 Envelope 时返回未摄取，绝不根据自然语言伪造证据。 */
 export function ingestCapabilityEvidenceOutput({ rootDir, command, output, now = new Date() } = {}) {
   assertStoredProviderCommand({ rootDir, command });
-  const envelope = parseCapabilityEvidenceEnvelope(output, { activationId: command?.activationId });
+  const envelope = parseCapabilityEvidenceEnvelope(output, {
+    activationId: command?.activationId,
+    capabilityId: command?.capabilityId,
+  });
   if (!envelope) {
     return Object.freeze({ ingested: false, reason: 'missing-envelope', envelope: null, result: null });
   }
@@ -306,6 +383,8 @@ export function ingestCapabilityEvidenceOutput({ rootDir, command, output, now =
     evidence: envelope.evidence,
     testabilityDecision: envelope.testabilityDecision,
     requirementsDecision: envelope.requirementsDecision,
+    wayfinderArtifact: envelope.wayfinderArtifact,
+    planningArtifact: envelope.planningArtifact,
     now,
   });
   return Object.freeze({ ingested: true, reason: '', envelope, result });

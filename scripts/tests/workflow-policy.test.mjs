@@ -18,6 +18,55 @@ function activePlan(overrides = {}) {
   };
 }
 
+test('explicit intent allowlist keeps implement guarded behind the Rex capability chain', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: 'Update authentication behavior.',
+    explicitIntent: { intent: 'IMPLEMENT' },
+    policyMode: 'adaptive',
+    client: 'codex',
+    sessionId: 'intent-session',
+  });
+
+  assert.equal(decision.disposition, 'guarded');
+  assert.equal(decision.routeHint, 'implement');
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
+  assert.equal(decision.requiresPreEditSafety, true);
+});
+
+test('explicit tickets intent plans through Planning instead of Requirements', () => {
+  const decision = evaluateWorkflowPolicy({
+    message: '把登录逻辑改一下。',
+    explicitIntent: 'tickets',
+    policyMode: 'adaptive',
+    client: 'codex',
+    sessionId: 'intent-session',
+  });
+
+  assert.equal(decision.disposition, 'planned');
+  assert.equal(decision.persistence, 'create');
+  assert.equal(decision.routeHint, 'planning');
+  assert.equal(decision.capabilityDecision.capabilityId, 'software.planning.sequence');
+});
+
+test('unknown, review-without-diff, and debug-without-failure intents block fail-closed', () => {
+  for (const [explicitIntent, expectedReason] of [
+    ['teleport', 'explicit-intent-unknown'],
+    ['review', 'review-requires-diff'],
+    ['debug', 'debug-requires-reproducible-failure'],
+  ]) {
+    const decision = evaluateWorkflowPolicy({
+      message: 'Explain the current request.',
+      explicitIntent,
+      policyMode: 'adaptive',
+      client: 'codex',
+      sessionId: 'intent-session',
+    });
+    assert.equal(decision.disposition, 'blocked');
+    assert.equal(decision.reason, expectedReason);
+    assert.equal(decision.persistence, 'none');
+  }
+});
+
 test('planning public index exposes the workflow policy API', async () => {
   const planning = await import('../lib/planning/index.mjs');
   assert.equal(typeof planning.evaluateWorkflowPolicy, 'function');
