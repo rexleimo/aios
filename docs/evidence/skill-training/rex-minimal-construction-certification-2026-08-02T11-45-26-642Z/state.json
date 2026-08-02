@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "rex-minimal-construction",
+  "sourcePath": "rex-harness/skill-sources/rex-minimal-construction/SKILL.md",
+  "base": "v5.3.0",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "8c229945fba43a9e4491ee475b4372af30430d487bd615696a80954978cbb3a7",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "c3b5dc4321c10fe004812621bb96a021965e155dce87edd88fa1971d45299ca6"
+  },
+  "candidate": {
+    "contentSha256": "8c229945fba43a9e4491ee475b4372af30430d487bd615696a80954978cbb3a7"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-08-02T11:45:26.642Z"
+}
