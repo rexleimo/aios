@@ -20,6 +20,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v5.4.1：为什么 Windows 上 "aios update" 会坏，以及我们怎么修好的自更新](2026-08-v541-windows-self-update-safety.md)
 - [并行 coding agent 不是免费的：Git worktree 隔离文件，隔离不了状态](2026-08-parallel-coding-agents.md)
 - [Agent 安全是状态机问题：Codex 安全讨论遗漏的部分](2026-08-ai-agent-security.md)
 - [AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么](2026-08-ai-coding-cost-crisis.md)

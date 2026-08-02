@@ -6,6 +6,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.4.1] - 2026-08-02
+
+### Fixed
+
+- `aios update` runtime self-update is now safe on Windows release installs. Previously, running update from inside the install tree left the process cwd in the directory that the installer needs to delete; Windows cannot delete a cwd-held directory, so the remove step failed silently and the new version ended up nested at `<install>/harness-cli/`, breaking the post-update re-exec with `MODULE_NOT_FOUND`. The updater now moves the working directory outside the install tree before running the installer, the installer verifies the old directory was actually removed (failing loudly instead of nesting), and the re-exec checks its entry point and emits a clear remediation message.
+- The updater now prefers the local `scripts/aios-install.ps1` for release-installer updates instead of always fetching it remotely, so defensive installer fixes take effect immediately.
+- Remove the leftover untracked `agent-sources/skills/` directory (gitlink removed in an earlier commit) that broke the token-discipline sync test.
+
 ## [5.4.0] - 2026-08-01
 
 ### Added

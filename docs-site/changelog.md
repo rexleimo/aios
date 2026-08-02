@@ -7,6 +7,19 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.4.1 (2026-08-02) — Safe Runtime Self-Update on Windows
+
+### What changed
+
+- `aios update` self-update is now safe on Windows release installs. Running update from inside the install tree previously left the process working directory in the directory the installer must delete; Windows cannot delete a cwd-held directory, so removal failed silently and the new version was nested at `<install>/harness-cli/`, breaking the follow-up update with `MODULE_NOT_FOUND`.
+- The updater now moves its working directory outside the install tree before running the release installer, the installer verifies the old directory was actually removed (failing loudly instead of continuing into a nested install), and the post-update re-exec checks its entry point and prints a clear remediation message when the replace went wrong.
+- The updater prefers the local `scripts/aios-install.ps1` for release-installer updates, so defensive installer fixes take effect immediately instead of waiting for a remote fetch.
+- Removed the leftover untracked `agent-sources/skills/` directory (gitlink removed earlier) that broke the token-discipline sync test.
+
+### Upgrade notes
+
+- Existing installs can update with `aios update` once this release is installed; the fix itself is in the release assets.
+
 ## v5.4.0 (2026-08-01) — Workflow Iteration v2.1: Activation Safety and Typed Evidence Contracts
 
 ### What changed

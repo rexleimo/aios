@@ -5,6 +5,19 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.4.1（2026-08-02）— Windows 运行时自更新安全修复
+
+### 主要变更
+
+- `aios update` 自更新在 Windows release 安装上现在是安全的。之前从安装目录内运行更新时，进程工作目录停留在安装器需要删除的目录中；Windows 无法删除被进程 cwd 占用的目录，删除静默失败，新版本被嵌套到 `<install>/harness-cli/`，导致后续更新以 `MODULE_NOT_FOUND` 失败。
+- 更新器现在会在运行 release 安装器之前把工作目录移出安装树；安装器会验证旧目录确实被删除（失败时显式报错，而不是继续嵌套安装）；更新后的重执行会检查入口点，替换出错时输出清晰的修复指引。
+- 更新器优先使用本地 `scripts/aios-install.ps1` 执行 release-installer 更新，防御性安装器修复立即生效，不再依赖远程拉取。
+- 移除了遗留的未跟踪 `agent-sources/skills/` 目录（此前已删除 gitlink），该目录导致 token-discipline 同步测试失败。
+
+### 升级说明
+
+- 已安装用户安装本版本后即可用 `aios update` 正常更新；修复本身包含在发布资产中。
+
 ## v5.4.0（2026-08-01）— 工作流迭代 v2.1：Activation 安全与类型化 Evidence 契约
 
 ### 主要变更
