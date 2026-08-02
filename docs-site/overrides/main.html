@@ -64,7 +64,7 @@
 
   {% set page_url = page.canonical_url if page and page.canonical_url else (page.abs_url if page and page.abs_url else config.site_url) %}
   {% set page_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
-  {% set page_title = page.title if page else config.site_name %}
+  {% set page_title = page.meta.title if page and page.meta and page.meta.title else (page.title if page else config.site_name) %}
   {% set og_image = "https://cli.rexai.top/assets/og-cover.png" %}
   {% set blog_current = rex_blog.current if rex_blog is defined and rex_blog and rex_blog.current else none %}
   {% set parent_url = page_url %}
@@ -88,6 +88,31 @@
   <meta name="twitter:image" content="{{ og_image }}">
   <meta name="theme-color" content="#0b1220">
   <link rel="alternate" type="text/plain" title="LLM index" href="https://cli.rexai.top/llms.txt">
+
+  <!-- hreflang alternates (absolute URLs, x-default included) -->
+  {% set current_lang = 'en' %}
+  {% if page and page.file %}
+    {% set src_uri = page.file.src_uri %}
+    {% if src_uri.startswith('zh/') %}{% set current_lang = 'zh' %}
+    {% elif src_uri.startswith('ja/') %}{% set current_lang = 'ja' %}
+    {% elif src_uri.startswith('ko/') %}{% set current_lang = 'ko' %}
+    {% endif %}
+  {% endif %}
+  {% set page_slug = page.url if page else '' %}
+  {% if current_lang != 'en' and page_slug.startswith(current_lang ~ '/') %}
+    {% set page_slug = page_slug | replace(current_lang ~ '/', '', 1) %}
+  {% endif %}
+  {% if config.extra and config.extra.alternate %}
+    {% for alt in config.extra.alternate %}
+      {% if alt.lang != current_lang %}
+        {% set alt_slug = ('' if alt.lang == 'en' else alt.lang ~ '/') ~ page_slug %}
+        {% if alt_slug | translation_exists %}
+          <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ config.site_url ~ alt_slug }}">
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+  {% endif %}
+  <link rel="alternate" hreflang="x-default" href="{{ config.site_url }}">
 
   {% if page and page.meta and page.meta.home %}
   <script>

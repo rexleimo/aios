@@ -15,6 +15,8 @@
 - Headroom MCP compression for coding agents
 - install Harness CLI Windows PowerShell
 - coding agent harness vs bare CLI
+- agent workflow activation safety and crash recovery
+- typed evidence contracts and artifact schema validation
 
 ## Canonical
 - https://cli.rexai.top/
@@ -32,9 +34,16 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-08-parallel-coding-agents/
+- https://cli.rexai.top/blog/2026-08-ai-agent-security/
+- https://cli.rexai.top/blog/2026-08-ai-coding-cost-crisis/
+- https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
+- https://cli.rexai.top/blog/2026-07-v320-harness-reliability-upgrade/
+- https://cli.rexai.top/blog/2026-07-grok-build-aios-client/
+- https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/
 - https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
 - https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
-- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
 - https://cli.rexai.top/blog/2026-05-token-compression/
 - https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
 

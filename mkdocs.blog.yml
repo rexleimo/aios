@@ -84,6 +84,19 @@ hooks:
   - scripts/mkdocs_version.py
 
 extra:
+  alternate:
+    - name: English
+      link: /blog/
+      lang: en
+    - name: 简体中文
+      link: /blog/zh/
+      lang: zh
+    - name: 日本語
+      link: /blog/ja/
+      lang: ja
+    - name: 한국어
+      link: /blog/ko/
+      lang: ko
   links:
     docs: https://cli.rexai.top/
     product: https://cli.rexai.top/
@@ -101,6 +114,10 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - Parallel Coding Agents Are Not Free: 2026-08-parallel-coding-agents.md
+      - Agent Security Is a State Machine Problem: 2026-08-ai-agent-security.md
+      - AI Coding Costs Are Out of Control: 2026-08-ai-coding-cost-crisis.md
+      - v5.4.0 Workflow Iteration v2.1: 2026-08-v540-workflow-iteration-v21.md
       - v4.0 Adaptive Workflow Policy: 2026-07-v400-adaptive-workflow-policy.md
       - Choose an AI Agent Workflow: 2026-07-choose-agent-workflow.md
       - Raw CLI to Reliable Workflow: 2026-07-raw-cli-to-reliable-workflow.md

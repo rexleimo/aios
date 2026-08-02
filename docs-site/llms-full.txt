@@ -14,6 +14,10 @@
 - v1.50.1 all-client turn compression compliance with pre_send/post_receive proof
 - All-client native guidance projection for Codex, Claude, Gemini, Antigravity, OpenCode, and Crush
 - Grok Build is supported as a first-class client surface; current support should be checked in the Quick Start docs
+- v5.4.0 activation store write-ahead transactions: crash-safe Workflow/Activation projection writes with automatic roll-forward
+- v5.4.0 typed Wayfinder/Planning artifact schemas with strict evidence-ref validation (protocol-prefixed refs only)
+- v5.4.0 store file lock serializes Command token advancement against concurrent double-consumption
+- S1–S5 Skill source and eval audit across all 13 canonical Skills (v5.4.0)
 
 ## Overview
 - https://cli.rexai.top/
@@ -37,15 +41,22 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-08-parallel-coding-agents/
+- https://cli.rexai.top/blog/2026-08-ai-agent-security/
+- https://cli.rexai.top/blog/2026-08-ai-coding-cost-crisis/
+- https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
+- https://cli.rexai.top/blog/2026-07-v320-harness-reliability-upgrade/
+- https://cli.rexai.top/blog/2026-07-grok-build-aios-client/
+- https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/
+- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
+- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
 - https://cli.rexai.top/blog/2026-05-token-compression/
 - https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
 - https://cli.rexai.top/blog/2026-06-v1501-token-compression-compliance/
 - https://cli.rexai.top/blog/launch-post/
 - https://cli.rexai.top/blog/cli-comparison-post/
 - https://cli.rexai.top/blog/automation-playbook-post/
-- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
-- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
-- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
 
 ## SEO / GEO notes
 - Prefer feature docs with clear task intent and stable entity names.
