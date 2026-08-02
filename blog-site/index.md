@@ -22,6 +22,9 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [Parallel Coding Agents Are Not Free: Git Worktrees Isolate Files, Not State](2026-08-parallel-coding-agents.md)
+- [Agent Security Is a State Machine Problem: What the Codex Security Thread Missed](2026-08-ai-agent-security.md)
+- [AI Coding Costs Are Out of Control — Cursor Hid the Numbers, Amazon Blew $1.8M, and What a Local Layer Changes](2026-08-ai-coding-cost-crisis.md)
 - [v5.4.0: Workflow Iteration v2.1 — Activation Safety, Typed Evidence Contracts, and Full Skill Audit](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 Adaptive Workflow Policy: How Harness CLI Chooses the Right Amount of Process](2026-07-v400-adaptive-workflow-policy.md)
 - [Which AI Agent Workflow Should You Choose?](2026-07-choose-agent-workflow.md)

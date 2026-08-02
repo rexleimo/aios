@@ -13,13 +13,10 @@ import yaml
 
 PAGE_SIZE = 6
 DEFAULT_AUTHOR = "RexAI Team"
+# Single neutral theme class: keeps article accents consistent across all posts
+# instead of randomly rotating through six colors.
 THEME_CLASSES = (
-    "is-orange",
-    "is-blue",
-    "is-green",
-    "is-violet",
-    "is-red",
-    "is-teal",
+    "is-neutral",
 )
 LOCALES = ("en", "zh", "ja", "ko")
 LOCALIZED_COPY = {

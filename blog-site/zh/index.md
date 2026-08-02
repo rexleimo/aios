@@ -20,6 +20,9 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [并行 coding agent 不是免费的：Git worktree 隔离文件，隔离不了状态](2026-08-parallel-coding-agents.md)
+- [Agent 安全是状态机问题：Codex 安全讨论遗漏的部分](2026-08-ai-agent-security.md)
+- [AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么](2026-08-ai-coding-cost-crisis.md)
 - [v5.4.0：工作流迭代 v2.1 — Activation 安全、类型化 Evidence 契约与全量 Skill 审查](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 自适应工作流策略：Harness CLI 如何选择合适的工程流程](2026-07-v400-adaptive-workflow-policy.md)
 - [AI Agent 工作流怎么选？Harness CLI 路由决策指南](2026-07-choose-agent-workflow.md)
