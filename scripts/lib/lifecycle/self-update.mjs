@@ -1,4 +1,5 @@
 import { access, readFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
@@ -91,11 +92,19 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
   if (process.platform === 'win32') {
     const psRepo = quotePowerShellSingleString(repo);
     const psRootDir = quotePowerShellSingleString(rootDir);
+    // Prefer the local installer when present: it carries the same defensive
+    // remove-then-verify logic as the released script and avoids depending on
+    // a remote fetch for the exact code being executed. Remote is the fallback
+    // for minimal checkouts that shipped without scripts/aios-install.ps1.
+    const localInstaller = path.join(rootDir, 'scripts', 'aios-install.ps1');
+    const installerCmd = await pathExists(localInstaller)
+      ? `& '${quotePowerShellSingleString(localInstaller)}'`
+      : `irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex`;
     const script = [
       '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12',
       `$env:AIOS_REPO='${psRepo}'`,
       `$env:AIOS_INSTALL_DIR='${psRootDir}'`,
-      'irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex',
+      installerCmd,
     ].join('; ');
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');
     await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.USERPROFILE || process.env.HOME || rootDir, env, io });
@@ -108,6 +117,28 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
   return { method: 'release-installer', updated: true, skipped: false };
 }
 
+/**
+ * Windows cannot delete a directory that is the current working directory of a
+ * running process. The installer replaces the install tree in place, so if this
+ * process's cwd is inside the install tree the remove step fails silently and
+ * the new version ends up nested at <install>/harness-cli/, breaking re-exec.
+ * Move the working directory outside the install tree before running the
+ * release installer.
+ *
+ * @returns {boolean} true when the working directory was moved.
+ */
+export function ensureWorkingDirectoryOutsideInstallTree(rootDir, io = console) {
+  const resolved = path.resolve(rootDir);
+  const cwd = process.cwd();
+  if (cwd !== resolved && !cwd.startsWith(resolved + path.sep)) {
+    return false;
+  }
+  const outside = process.env.USERPROFILE || process.env.HOME || os.tmpdir();
+  process.chdir(outside);
+  io.log(`[info] moved working directory out of install tree: ${outside}`);
+  return true;
+}
+
 export async function updateHarnessRuntime({ rootDir, repo = process.env.AIOS_REPO || DEFAULT_REPO, io = console } = {}) {
   const before = await readVersion(rootDir);
   if (before) {
@@ -116,7 +147,8 @@ export async function updateHarnessRuntime({ rootDir, repo = process.env.AIOS_RE
 
   const result = await hasGitWorktree(rootDir)
     ? await updateFromGit(rootDir, io)
-    : await updateFromReleaseInstaller(rootDir, { repo, io });
+    : (ensureWorkingDirectoryOutsideInstallTree(rootDir, io),
+       await updateFromReleaseInstaller(rootDir, { repo, io }));
 
   const after = await readVersion(rootDir);
   if (after && after !== before) {

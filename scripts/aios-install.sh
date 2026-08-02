@@ -155,6 +155,10 @@ if [[ -d "$AIOS_INSTALL_DIR" ]]; then
 
   echo "+ remove old install dir -> $AIOS_INSTALL_DIR"
   safe_rm_rf "$AIOS_INSTALL_DIR"
+  if [ -d "$AIOS_INSTALL_DIR" ]; then
+    echo "[error] failed to remove existing install dir: $AIOS_INSTALL_DIR (files may be locked by a running process)" >&2
+    exit 1
+  fi
 fi
 
 echo "+ install -> $AIOS_INSTALL_DIR"

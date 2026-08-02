@@ -116,6 +116,9 @@ try {
 
     Write-Host "+ remove old install dir -> $InstallDir"
     Safe-RemoveDir -Path $InstallDir
+    if (Test-Path -LiteralPath $InstallDir) {
+      throw "Failed to remove existing install dir: $InstallDir (files may be locked by a running aios/node process). Close it and re-run the installer."
+    }
   }
 
   Write-Host "+ install -> $InstallDir"

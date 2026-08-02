@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
 import {
@@ -55,6 +56,14 @@ export function reexecUpdateAfterRuntimeReplace({
   execPath = process.execPath,
 } = {}) {
   const entry = path.join(path.resolve(rootDir), 'scripts', 'aios.mjs');
+  if (!existsSync(entry)) {
+    throw new Error(
+      `post-self-update re-exec entry missing after runtime replace: ${entry}. `
+      + 'The installer likely failed to replace the install tree (locked files, '
+      + 'or the working directory was inside the install tree on Windows). '
+      + 'Close other aios/node processes and re-run the installer manually.'
+    );
+  }
   const args = buildPostSelfUpdateArgv(rawOptions);
   io.log('[info] runtime files replaced; continuing update in a fresh process to reload modules');
   io.log(`[info] ${execPath} ${entry} ${args.join(' ')}`);
