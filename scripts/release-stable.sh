@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if command -v cygpath >/dev/null 2>&1; then
+  ROOT_DIR="$(cygpath -w "$ROOT_DIR")"
+fi
 VERSION_FILE="$ROOT_DIR/VERSION"
 CHANGELOG_FILE="$ROOT_DIR/CHANGELOG.md"
 

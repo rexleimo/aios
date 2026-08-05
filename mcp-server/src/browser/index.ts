@@ -10,6 +10,7 @@ import { screenshot } from './actions/screenshot.js';
 import { authCheck, normalizeRlAuthState } from './actions/auth-check.js';
 import { challengeCheck, normalizeRlChallengeState } from './actions/challenge-check.js';
 import { compactRlSnapshot } from './actions/snapshot.js';
+import { getBrowserHealth } from './health.js';
 
 export {
   profileManager,
@@ -25,10 +26,19 @@ export {
   compactRlSnapshot,
   normalizeRlAuthState,
   normalizeRlChallengeState,
+  getBrowserHealth,
 };
 
-// MCP 工具定义
+// MCP tool definitions
 export const tools = [
+  {
+    name: 'browser_health',
+    description: 'Report MCP, profile, CDP, and active browser health without launching a browser.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+    },
+  },
   {
     name: 'browser_launch',
     description: 'Launch browser. Defaults to a visible (headful) browser window unless headless mode is explicitly requested.',

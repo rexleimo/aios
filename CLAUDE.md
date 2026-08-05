@@ -58,12 +58,12 @@ Evaluate the AIOS workflow policy before creating a plan, selecting a skill, or 
 
 ## Project Overview
 
-This is a **Xiaohongshu (小红书) Operations Assistant** - an AI agent framework that uses Claude Code with the repo-local browser MCP (`mcp-browser-use` alias routed to browser-use MCP) to automate operations on Xiaohongshu (xiaohongshu.com), a Chinese social media platform.
+This is a **Xiaohongshu (小红书) Operations Assistant** - an AI agent framework that uses Claude Code with the repo-local Node/Playwright browser MCP (`mcp-browser-use` alias) to automate operations on Xiaohongshu (xiaohongshu.com), a Chinese social media platform.
 
 ## Core Architecture
 
 ```
-User Task → Claude Code → repo-local browser MCP (`chrome.launch_cdp` / `browser.connect_cdp` / `page.*`) → Xiaohongshu Web
+User Task → Claude Code → repo-local Node/Playwright browser MCP (`browser_launch` / `browser_navigate` / `browser_snapshot`) → Xiaohongshu Web
                      ↓
               Memory System (JSON files)
               - skills/      # Learned skills
@@ -97,7 +97,7 @@ This is not a traditional code project with build/test commands. Instead:
 
 1. **Task Execution**: User gives natural language tasks (e.g., "帮我发布一篇笔记", "关注10个博主")
 2. **Skill Retrieval**: Claude Code looks up relevant skills in `.claude/skills/`
-3. **Browser Control**: Uses the repo-local browser-use MCP tools (`chrome.launch_cdp`, `browser.connect_cdp`, `page.*`) to execute operations
+3. **Browser Control**: Uses the repo-local Node/Playwright MCP tools (`browser_launch`, `browser_navigate`, `browser_snapshot`) to execute operations
 4. **Learning**: Results are recorded under `.aios/context-db/` and `.aios/memo/` for future improvement
 
 ## Images Directory
@@ -164,43 +164,40 @@ aios/
   - `.claude/skills/skill-constraints/SKILL.md` - human behavior
   - `config/stealth-chrome-args.json` - Chrome args
 
-## Browser MCP (browser-use CDP)
+## Browser MCP (repository-local Node/Playwright)
 
-The project now defaults to **browser-use MCP over CDP**:
+The project uses the repository-local Node/Playwright MCP runtime:
 
 ### MCP Server
 
-- **Launcher**: `scripts/run-browser-use-mcp.sh`
-- **Migration command**: `node scripts/aios.mjs internal browser mcp-migrate`
+- **Launcher**: `scripts/run-local-browser-mcp.mjs`
+- **Install**: `node scripts/aios.mjs internal browser install`
 - **Doctor**: `node scripts/aios.mjs internal browser doctor --fix --dry-run`
 
 ### Available Tools
 
 | Tool | Description |
 |------|-------------|
-| `chrome.launch_cdp` | Launch local Chrome/Chromium with CDP and profile dir |
-| `browser.connect_cdp` | Connect to CDP browser and create session |
-| `page.goto` | Navigate to URL |
-| `page.click` / `page.type` / `page.press` | Interaction primitives |
-| `page.extract_text` / `page.get_html` | Text/HTML extraction |
-| `page.screenshot` | Take screenshot |
-| `browser.close` | Close browser session |
-| `diagnostics.sannysoft` | Fingerprint diagnostics snapshot |
+| `browser_health` | Report MCP/browser readiness |
+| `browser_launch` | Launch or attach a configured browser profile |
+| `browser_navigate` | Navigate the active page |
+| `browser_click` / `browser_type` | Interaction primitives |
+| `browser_snapshot` | Read accessible page state |
+| `browser_screenshot` | Capture a page screenshot |
+| `browser_close` | Close the browser session |
 
 ### Profile Support
 
-Multi-profile support for isolated browser instances:
-- Each profile has independent user data directory
-- Config: `config/browser-profiles.json`
-- Recommended convention: `default` = CDP fingerprint browser
-- Login pages (Google/Meta/Jimeng auth walls) require human completion; automation should resume after login
+Multi-profile support is provided by `config/browser-profiles.json`:
+- A profile can launch a local Playwright browser.
+- `cdpPort` or `cdpUrl` can attach to an externally started browser.
+- Login pages and auth walls require human completion; automation should resume after login.
 
 ### Tech Stack
 
-- browser-use + MCP (Python runtime)
-- CDP real Chrome profile reuse
-- TypeScript
-- MCP SDK
+- Node.js + Playwright
+- TypeScript MCP SDK
+- Optional external CDP browser attachment
 
 ## Token Optimization (Community Tools + AIOS Hygiene)
 
@@ -214,9 +211,9 @@ Token compression is handled by community-maintained tools: **RTK** and **Cavema
 
 ## Important Notes
 
-- All normal browser automation should use the repo-local `mcp-browser-use` MCP alias and browser-use tools (`chrome.launch_cdp` + `browser.connect_cdp` + `page.*`)
-- If multiple browser MCPs are installed, reserve `chrome-devtools` for low-level debugging only
-- For interactive work, prefer `chrome.launch_cdp {"port":9222}` then `browser.connect_cdp`
+- All normal browser automation should use the repo-local `mcp-browser-use` MCP alias and local tools (`browser_launch` + `browser_navigate` + `browser_snapshot`).
+- If multiple browser MCPs are installed, reserve `chrome-devtools` for low-level debugging only.
+- For interactive work, use `browser_launch` for a local browser or configure the profile with `cdpPort`/`cdpUrl` for an external CDP browser.
 - The system maintains a file-based memory system in JSON format
 - Substantive software work executes only the Provider selected by the current rex Command; bundled `rex-*` Providers are the default
 - External compatibility integrations do not select or advance a Rex workflow

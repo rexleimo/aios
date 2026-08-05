@@ -67,6 +67,12 @@ jobs:
           npm test
           npm run build
 
+      - name: Verify local browser MCP install path
+        run: |
+          node --check scripts/run-local-browser-mcp.mjs
+          node scripts/aios.mjs internal browser install --dry-run --skip-playwright-install
+          npm --prefix mcp-server exec -- playwright install chromium
+
       - name: Verify debug-hub
         run: |
           npm --prefix packages/debug-hub run typecheck

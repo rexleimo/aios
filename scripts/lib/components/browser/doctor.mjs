@@ -2,20 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { captureCommand, commandExists } from '../../platform/process.mjs';
 import {
-  BROWSER_USE_PROJECT_DIR_NAME,
-  BROWSER_USE_REPO_DIR_NAME,
-} from './constants.mjs';
-import {
   startBrowserCdpService,
   testPortOpen,
 } from './cdp-service.mjs';
 import {
-  findBrowserUseRepo,
-  getBrowserUseRepoCandidates,
-  resolveLauncherScript,
-  resolvePythonCommand,
-  resolveShellCommand,
-  resolveVenvPythonPath,
+  resolveLocalBrowserMcpScript,
 } from './runtime-paths.mjs';
 import { formatErrorMessage } from './shared.mjs';
 
@@ -89,17 +80,10 @@ async function autoHealDefaultCdpPort({
 
 export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dryRun = false, runtime = {} } = {}) {
   const doctorRuntime = resolveBrowserDoctorRuntime(runtime);
-  const launcherScript = resolveLauncherScript(rootDir, doctorRuntime.platform);
-  const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
-  const browserUseRepo = findBrowserUseRepo(rootDir);
-  const browserUseProjectDir = browserUseRepo
-    ? path.join(browserUseRepo, BROWSER_USE_PROJECT_DIR_NAME)
-    : path.join(
-      getBrowserUseRepoCandidates(rootDir)[0] || path.resolve(rootDir, '..', BROWSER_USE_REPO_DIR_NAME),
-      BROWSER_USE_PROJECT_DIR_NAME,
-    );
-  const browserUsePyproject = path.join(browserUseProjectDir, 'pyproject.toml');
-  const browserUsePython = resolveVenvPythonPath(browserUseProjectDir, doctorRuntime.platform);
+  const localBrowserMcpScript = resolveLocalBrowserMcpScript(rootDir);
+  const localBrowserMcpAvailable = fs.existsSync(localBrowserMcpScript);
+  const localMcpPackage = path.join(rootDir, 'mcp-server', 'package.json');
+  const localMcpDependency = path.join(rootDir, 'mcp-server', 'node_modules', 'playwright', 'package.json');
   const profileConfig = path.join(rootDir, 'config', 'browser-profiles.json');
 
   let warnings = 0;
@@ -123,16 +107,8 @@ export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dry
   io.log(`Repo: ${rootDir}`);
   io.log('');
   io.log('[1/6] Command checks');
-  for (const command of ['node', resolveShellCommand(doctorRuntime.platform)]) {
+  for (const command of ['node', 'npm']) {
     if (doctorRuntime.commandExists(command)) ok(`command exists: ${command}`); else err(`missing command: ${command}`);
-  }
-  const pythonCommand = resolvePythonCommand(doctorRuntime.platform);
-  if (doctorRuntime.commandExists('uv')) {
-    ok('command exists: uv');
-  } else if (doctorRuntime.commandExists(pythonCommand)) {
-    ok(`command exists: ${pythonCommand}`);
-  } else {
-    err(`missing command: uv or ${pythonCommand}`);
   }
 
   const version = doctorRuntime.captureCommand('node', ['-p', 'process.versions.node']);
@@ -142,23 +118,24 @@ export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dry
   }
 
   io.log('');
-  io.log('[2/6] launcher and repo paths');
-  if (fs.existsSync(launcherScript)) ok(`launcher script found: ${launcherScript}`); else err(`missing launcher script: ${launcherScript}`);
-  if (fs.existsSync(bootstrapScript)) ok(`bootstrap script found: ${bootstrapScript}`); else err(`missing bootstrap script: ${bootstrapScript}`);
-  if (fs.existsSync(browserUsePyproject)) {
-    ok(`browser-use project found: ${browserUseProjectDir}`);
+  io.log('[2/6] local browser MCP paths');
+  if (!localBrowserMcpAvailable) {
+    err(`missing local browser MCP launcher: ${localBrowserMcpScript}`);
   } else {
-    err(`browser-use project missing: ${browserUseProjectDir} (set AIOS_BROWSER_USE_REPO)`);
+    ok(`local browser MCP launcher found: ${localBrowserMcpScript}`);
+  }
+  if (fs.existsSync(localMcpPackage)) {
+    ok(`local browser MCP package found: ${localMcpPackage}`);
+  } else {
+    err(`local browser MCP package missing: ${localMcpPackage}`);
   }
 
   io.log('');
-  io.log('[3/6] browser-use runtime');
-  if (fs.existsSync(browserUsePython)) {
-    ok(`browser-use venv python found: ${browserUsePython}`);
-  } else if (fs.existsSync(browserUsePyproject)) {
-    warn(`browser-use venv python missing: ${browserUsePython}; run internal browser install`);
+  io.log('[3/6] local browser runtime');
+  if (fs.existsSync(localMcpDependency)) {
+    ok(`local browser MCP dependencies found: ${localMcpDependency}`);
   } else {
-    warn('browser-use runtime check skipped because project path is missing');
+    warn(`local browser MCP dependencies missing: ${localMcpDependency}; run internal browser install`);
   }
 
   io.log('');
@@ -215,22 +192,27 @@ export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dry
       warn(`default CDP port is not reachable: ${port} (browser.connect_cdp will fail until CDP is available)`);
     }
   } else {
-    warn('default profile has no cdpUrl/cdpPort; browser-use requires a CDP endpoint');
+    warn('default profile has no cdpUrl/cdpPort; local Playwright launch remains available, while explicit CDP connections need an endpoint');
   }
 
   io.log('');
   io.log('[6/6] quick next steps');
-  io.log('- Recommended: keep default profile CDP service healthy');
-  io.log('  node scripts/aios.mjs internal browser cdp-start');
-  io.log('  node scripts/aios.mjs internal browser cdp-status');
-  io.log('- Browser doctor auto-heal:');
+  io.log('- Recommended: keep the selected browser profile healthy');
+  io.log('  node scripts/aios.mjs internal browser doctor');
+  if (localBrowserMcpAvailable) {
+    io.log('- Local browser MCP install/update:');
+    io.log('  node scripts/aios.mjs internal browser install');
+    io.log('  npm --prefix mcp-server run build');
+  } else {
+    io.log('- Restore the repository-local browser MCP launcher and rerun install:');
+    io.log(`  ${localBrowserMcpScript}`);
+  }
+  io.log('- Browser doctor auto-heal (macOS CDP service only):');
   io.log('  node scripts/aios.mjs internal browser doctor --fix');
   if (fix) {
     io.log(`  [fix] planned=${autoFixPlanned} attempted=${autoFixApplied} healed=${autoFixHealed}`);
   }
-  io.log('- If ERR exists: run install script first');
-  io.log('  node scripts/aios.mjs setup --components browser');
-  io.log('- Then smoke test in client chat: chrome.launch_cdp -> browser.connect_cdp -> page.goto -> page.screenshot -> browser.close');
+  io.log('- Then smoke test in client chat: browser_health -> browser_launch -> browser_navigate -> browser_screenshot -> browser_close');
 
   io.log('');
   if (errors > 0) io.log(`Result: FAILED (${errors} errors, ${warnings} warnings)`);

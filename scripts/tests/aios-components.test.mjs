@@ -1,7 +1,7 @@
 /* 中文注释：组件测试覆盖 MCP 配置迁移和技能同步，保证客户端薄壳不会绕过拦截层。 */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmod, cp, lstat, mkdtemp, mkdir, realpath, readFile, writeFile } from 'node:fs/promises';
+import { chmod, cp, lstat, mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -30,7 +30,6 @@ import { getClientHomes } from '../lib/platform/paths.mjs';
 import { buildPreferredMcpServer } from '../lib/components/browser/mcp-server-builders.mjs';
 import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
 import { printSnippet } from '../lib/components/browser/mcp-snippet.mjs';
-import { resolveShellCommand } from '../lib/components/browser/runtime-paths.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -40,17 +39,28 @@ function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+async function makeFakeWindowsNodeInstall({ withNpxCli = true } = {}) {
+  const rootDir = await makeTemp('aios-node-install-');
+  const binDir = path.join(rootDir, 'bin');
+  const npmBinDir = path.join(rootDir, 'lib', 'node_modules', 'npm', 'bin');
+  const execPath = path.join(binDir, 'node.exe');
+  const npmCli = path.join(npmBinDir, 'npm-cli.js');
+  const npxCli = path.join(npmBinDir, 'npx-cli.js');
+
+  await mkdir(npmBinDir, { recursive: true });
+  await mkdir(binDir, { recursive: true });
+  await writeFile(execPath, '', 'utf8');
+  await writeFile(npmCli, '', 'utf8');
+  if (withNpxCli) {
+    await writeFile(npxCli, '', 'utf8');
+  }
+
+  return { execPath, npmCli, npxCli };
+}
+
 async function writeExecutable(filePath, content) {
   await writeFile(filePath, content, 'utf8');
   await chmod(filePath, 0o755);
-}
-
-function browserLauncherName() {
-  return process.platform === 'win32' ? 'run-browser-use-mcp.ps1' : 'run-browser-use-mcp.sh';
-}
-
-function browserLauncherPath(rootDir) {
-  return path.join(rootDir, 'scripts', browserLauncherName());
 }
 
 function hasFunctionalBash() {
@@ -95,86 +105,33 @@ function hasFunctionalZsh() {
   const result = spawnSync('zsh', ['-fc', 'printf ok'], { encoding: 'utf8' });
   return result.status === 0 && result.stdout === 'ok';
 }
-
-async function writeBrowserLauncherFixture(scriptsDir) {
-  const filePath = path.join(scriptsDir, browserLauncherName());
-  const content = process.platform === 'win32'
-    ? '# browser-use MCP PowerShell fixture\n'
-    : '#!/usr/bin/env bash\n';
-  await writeFile(filePath, content, 'utf8');
-  if (process.platform !== 'win32') {
-    await chmod(filePath, 0o755);
-  }
-  return filePath;
-}
-
 function expectedBrowserMcpCommand() {
-  return resolveShellCommand(process.platform);
+  return 'node';
 }
 
 function expectedBrowserMcpArgs(rootDir) {
-  const launcher = browserLauncherPath(rootDir);
-  return process.platform === 'win32'
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcher]
-    : [launcher];
+  return [path.join(rootDir, 'scripts', 'run-local-browser-mcp.mjs')];
 }
 
-test('browser shell command falls back to Windows PowerShell when pwsh is unavailable', () => {
-  const command = resolveShellCommand('win32', {
-    commandExists: (candidate) => candidate === 'powershell',
-  });
-
-  assert.equal(command, 'powershell');
+test('browser MCP always uses the repository-local Node entrypoint', () => {
+  const rootDir = path.join(os.tmpdir(), 'aios-browser-local');
+  const server = buildPreferredMcpServer(rootDir);
+  assert.equal(server.command, 'node');
+  assert.deepEqual(server.args, expectedBrowserMcpArgs(rootDir));
+  assert.equal(server.cwd, rootDir);
+  assert.equal(server.env.AIOS_BROWSER_USE_REPO, undefined);
 });
 
-test('browser MCP server keeps bash launcher semantics on macOS and Linux', () => {
-  for (const platform of ['darwin', 'linux']) {
-    let probedWindowsShells = false;
-    const rootDir = path.join(os.tmpdir(), `aios-browser-${platform}`);
-    const server = buildPreferredMcpServer(rootDir, {}, {
-      platform,
-      commandExists: () => {
-        probedWindowsShells = true;
-        return true;
-      },
-    });
-    assert.equal(server.command, 'bash');
-    assert.deepEqual(server.args, [
-      path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh'),
-    ]);
-    assert.equal(probedWindowsShells, false);
-  }
-});
-
-test('browser MCP snippet connects directly to the launcher', () => {
+test('browser MCP snippet starts the local launcher directly', () => {
   const lines = [];
-  const launcherPath = path.join('/repo', 'scripts', 'run-browser-use-mcp.sh');
+  const launcherPath = path.join('/repo', 'scripts', 'run-local-browser-mcp.mjs');
   printSnippet({ log: (line) => lines.push(line) }, launcherPath, 'http://127.0.0.1:9222');
 
   const snippet = lines.join('\n');
   assert.doesNotMatch(snippet, /aios-mcp-proxy\.mjs/);
-  assert.match(snippet, new RegExp(`"command": "${escapeRegExp(resolveShellCommand(process.platform))}"`));
-  assert.match(snippet, /run-browser-use-mcp\.sh/);
+  assert.match(snippet, /"command": "node"/);
+  assert.match(snippet, /run-local-browser-mcp\.mjs/);
 });
-
-async function makeFakeWindowsNodeInstall({ withNpxCli = true } = {}) {
-  const rootDir = await makeTemp('aios-node-install-');
-  const binDir = path.join(rootDir, 'bin');
-  const npmBinDir = path.join(rootDir, 'lib', 'node_modules', 'npm', 'bin');
-  const execPath = path.join(binDir, 'node.exe');
-  const npmCli = path.join(npmBinDir, 'npm-cli.js');
-  const npxCli = path.join(npmBinDir, 'npx-cli.js');
-
-  await mkdir(npmBinDir, { recursive: true });
-  await mkdir(binDir, { recursive: true });
-  await writeFile(execPath, '', 'utf8');
-  await writeFile(npmCli, '', 'utf8');
-  if (withNpxCli) {
-    await writeFile(npxCli, '', 'utf8');
-  }
-
-  return { execPath, npmCli, npxCli };
-}
 
 async function makeFakeWindowsAgentLauncher(command, scriptRelativePath) {
   const rootDir = await makeTemp(`aios-win-${command}-launcher-`);
@@ -182,21 +139,20 @@ async function makeFakeWindowsAgentLauncher(command, scriptRelativePath) {
   const execPath = path.join(binDir, 'node.exe');
   const scriptPath = path.join(binDir, ...String(scriptRelativePath).split('/'));
   const launcherPath = path.join(binDir, `${command}.cmd`);
-  const windowsRelPath = String(scriptRelativePath).split('/').join('\\');
+  const windowsRelPath = String(scriptRelativePath).split('/').join(path.win32.sep);
 
   await mkdir(path.dirname(scriptPath), { recursive: true });
   await mkdir(binDir, { recursive: true });
   await writeFile(execPath, '', 'utf8');
   await writeFile(scriptPath, '', 'utf8');
-  await writeFile(
-    launcherPath,
-    `@ECHO off\r\n"%~dp0\\node.exe" "%~dp0\\${windowsRelPath}" %*\r\n`,
-    'utf8'
-  );
+  const launcherBody = [
+    '@ECHO off',
+    `"%~dp0${path.win32.sep}node.exe" "%~dp0${path.win32.sep}${windowsRelPath}" %*`,
+  ].join(String.fromCharCode(13, 10)) + String.fromCharCode(13, 10);
+  await writeFile(launcherPath, launcherBody, 'utf8');
 
   return { binDir, execPath, scriptPath, launcherPath };
 }
-
 async function makeFakeWindowsNativeLauncher(command, executableRelativePath) {
   const rootDir = await makeTemp(`aios-win-${command}-native-launcher-`);
   const binDir = path.join(rootDir, 'bin');
@@ -663,12 +619,12 @@ test('skills install copies repo-managed skills by default and uninstall removes
   assert.equal(missing, true);
 });
 
-test('browser installer runtime files do not embed author machine paths', async () => {
+test('browser installer runtime files use only repository-local paths', async () => {
   const workspaceRoot = process.cwd();
   const files = [
-    'scripts/run-browser-use-mcp.sh',
-    'scripts/browser-use-bootstrap.py',
-    'scripts/lib/components/browser.mjs',
+    'scripts/run-local-browser-mcp.mjs',
+    'scripts/lib/components/browser/install.mjs',
+    'scripts/lib/components/browser/mcp-migration.mjs',
   ];
 
   for (const relativePath of files) {
@@ -678,123 +634,59 @@ test('browser installer runtime files do not embed author machine paths', async 
   }
 });
 
-test('browser install accepts AIOS_BROWSER_USE_REPO pointing at the browser-use project dir', async () => {
-  if (!hasFunctionalBash()) {
-    return;
-  }
-
-  const workspaceRoot = await makeTemp('aios-browser-install-project-dir-root-');
-  const launcherDir = path.join(workspaceRoot, 'scripts');
-  const repoRoot = await makeTemp('aios-browser-install-project-dir-repo-');
-  const projectDir = path.join(repoRoot, 'mcp-browser-use');
-  const fakeBinDir = path.join(workspaceRoot, 'fake-bin');
-  const launcherScript = path.join(launcherDir, 'run-browser-use-mcp.sh');
-  const bootstrapScript = path.join(launcherDir, 'browser-use-bootstrap.py');
-  const venvPython = path.join(projectDir, '.venv', 'bin', 'python');
-
-  await mkdir(launcherDir, { recursive: true });
-  await mkdir(path.dirname(venvPython), { recursive: true });
-  await mkdir(fakeBinDir, { recursive: true });
-  await cp(path.join(process.cwd(), 'scripts', 'run-browser-use-mcp.sh'), launcherScript);
-  await writeFile(bootstrapScript, 'print("ok")\n', 'utf8');
-  await writeFile(path.join(projectDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
-  await writeExecutable(venvPython, '#!/usr/bin/env bash\nprintf "%s" "$AIOS_BROWSER_USE_REPO"\n');
-  await writeExecutable(path.join(fakeBinDir, 'security'), '#!/usr/bin/env bash\nexit 1\n');
-  const expectedRepoRoot = await realpath(repoRoot);
-
-  const result = spawnSync('bash', [launcherScript], {
-    cwd: workspaceRoot,
-    env: {
-      ...process.env,
-      PATH: `${fakeBinDir}${path.delimiter}${process.env.PATH || ''}`,
-      HOME: process.env.HOME || os.homedir(),
-      AIOS_BROWSER_USE_REPO: projectDir,
-      BROWSER_USE_CDP_URL: 'http://127.0.0.1:9222',
-    },
-    encoding: 'utf8',
-  });
-
-  assert.equal(result.status, 0, result.stderr);
-  assertSamePath(result.stdout.trim(), expectedRepoRoot);
-  assert.doesNotMatch(result.stderr, /mcp-browser-use project not found/u);
-});
-
-test('browser bootstrap accepts AIOS_BROWSER_USE_REPO pointing at the browser-use project dir', async () => {
-  const pythonCmd = commandExists('python3') ? 'python3' : commandExists('python') ? 'python' : '';
-  if (!pythonCmd) {
-    return;
-  }
-
-  const workspaceRoot = await makeTemp('aios-browser-bootstrap-project-dir-root-');
-  const repoRoot = await makeTemp('aios-browser-bootstrap-project-dir-repo-');
-  const projectDir = path.join(repoRoot, 'mcp-browser-use');
-  const bootstrapScript = path.join(process.cwd(), 'scripts', 'browser-use-bootstrap.py');
-  await mkdir(projectDir, { recursive: true });
-  await writeFile(path.join(projectDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
-
-  const expectedRepoRoot = await realpath(repoRoot);
-  const result = spawnSync(pythonCmd, ['-c', `
-import pathlib
-import runpy
-ns = runpy.run_path(${JSON.stringify(bootstrapScript)})
-print(ns['_resolve_browser_use_repo']())
-`], {
-    cwd: workspaceRoot,
-    env: {
-      ...process.env,
-      AIOS_BROWSER_USE_REPO: projectDir,
-    },
-    encoding: 'utf8',
-  });
-
-  assert.equal(result.status, 0, result.stderr);
-  assertSamePath(result.stdout.trim(), expectedRepoRoot);
-});
-
-test('browser mcp-migrate omits unresolved browser-use repo instead of writing author path', async () => {
-  const rootDir = await makeTemp('aios-browser-migrate-portable-root-');
+test('browser install uses only the repository-local Node runtime', async () => {
+  const rootDir = await makeTemp('aios-browser-install-local-root-');
   const scriptsDir = path.join(rootDir, 'scripts');
+  const mcpServerDir = path.join(rootDir, 'mcp-server');
   const configDir = path.join(rootDir, 'config');
+  const dependencyDir = path.join(mcpServerDir, 'node_modules', 'playwright');
+  const logs = [];
 
   await mkdir(scriptsDir, { recursive: true });
+  await mkdir(mcpServerDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
+  await mkdir(dependencyDir, { recursive: true });
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp","scripts":{"build":"node --version"}}\n', 'utf8');
+  await writeFile(path.join(dependencyDir, 'package.json'), '{"name":"playwright"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
-    profiles: {
-      default: { cdpPort: 9222 },
-    },
+    profiles: { default: { cdpPort: 9222 } },
   }, null, 2), 'utf8');
 
-  await migrateBrowserMcpConfig({
+  const result = await installBrowserMcp({
     rootDir,
-    io: { log: () => {} },
+    skipPlaywrightInstall: true,
+    io: { log: (line) => logs.push(String(line)) },
     clientHomes: {},
   });
 
-  const raw = await readFile(path.join(rootDir, '.mcp.json'), 'utf8');
-  const parsed = JSON.parse(raw);
-  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO, undefined);
-  assert.doesNotMatch(raw, /\/Users\/molei\/codes\//u);
-  assert.doesNotMatch(raw, /\/Users\/rex\/cool\.cnb\//u);
+  assert.equal(result.browserUseProjectDir, null);
+  assert.equal(result.launcherPath, path.join(scriptsDir, 'run-local-browser-mcp.mjs'));
+  assert.equal(result.migrationResult.errors, 0);
+  assert.match(logs.join('\n'), /repository-local Node\/Playwright MCP/u);
+
+  const parsed = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
+  const browser = parsed.mcpServers[PRIMARY_BROWSER_ALIAS];
+  assert.equal(browser.command, 'node');
+  assertSamePath(browser.args[0], path.join(rootDir, 'scripts', 'run-local-browser-mcp.mjs'));
+  assert.equal(browser.env.AIOS_BROWSER_USE_REPO, undefined);
 });
 
-test('browser mcp-migrate removes stale unresolved AIOS_BROWSER_USE_REPO values', async () => {
+test('browser mcp-migrate removes stale external env values', async () => {
   const rootDir = await makeTemp('aios-browser-migrate-stale-root-');
   const scriptsDir = path.join(rootDir, 'scripts');
+  const mcpServerDir = path.join(rootDir, 'mcp-server');
   const configDir = path.join(rootDir, 'config');
 
   await mkdir(scriptsDir, { recursive: true });
+  await mkdir(mcpServerDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
-    profiles: {
-      default: { cdpPort: 9222 },
-    },
+    profiles: { default: { cdpPort: 9222 } },
   }, null, 2), 'utf8');
-
-  const staleConfig = {
+  await writeFile(path.join(rootDir, '.mcp.json'), `${JSON.stringify({
     mcpServers: {
       [PRIMARY_BROWSER_ALIAS]: {
         command: 'bash',
@@ -805,128 +697,25 @@ test('browser mcp-migrate removes stale unresolved AIOS_BROWSER_USE_REPO values'
         },
       },
     },
-  };
-  await writeFile(path.join(rootDir, '.mcp.json'), `${JSON.stringify(staleConfig, null, 2)}\n`, 'utf8');
+  }, null, 2)}\n`, 'utf8');
 
-  await migrateBrowserMcpConfig({
-    rootDir,
-    io: { log: () => {} },
-    clientHomes: {},
-  });
+  await migrateBrowserMcpConfig({ rootDir, io: { log: () => {} }, clientHomes: {} });
 
-  const raw = await readFile(path.join(rootDir, '.mcp.json'), 'utf8');
-  const parsed = JSON.parse(raw);
-  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO, undefined);
-  assert.equal(parsed.mcpServers[PRIMARY_BROWSER_ALIAS].env.KEEP_ME, '1');
-  assert.doesNotMatch(raw, /molei/u);
+  const parsed = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
+  const browser = parsed.mcpServers[PRIMARY_BROWSER_ALIAS];
+  assert.equal(browser.command, 'node');
+  assert.equal(browser.env.AIOS_BROWSER_USE_REPO, undefined);
+  assert.equal(browser.env.KEEP_ME, '1');
 });
 
-test('browser install missing external runtime reports portable repo-relative candidates', async () => {
-  const rootDir = await makeTemp('aios-browser-install-portable-root-');
-  const scriptsDir = path.join(rootDir, 'scripts');
-  await mkdir(scriptsDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
+test('browser install fails clearly when the local runtime is missing', async () => {
+  const rootDir = await makeTemp('aios-browser-install-missing-local-root-');
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
 
-  const previous = process.env.AIOS_BROWSER_USE_REPO;
-  delete process.env.AIOS_BROWSER_USE_REPO;
-  try {
-    await assert.rejects(
-      () => installBrowserMcp({
-        rootDir,
-        skipPlaywrightInstall: true,
-        io: { log: () => {} },
-      }),
-      (error) => {
-        const message = error instanceof Error ? error.message : String(error);
-        const escapedRoot = rootDir.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-        assert.match(message, /Set AIOS_BROWSER_USE_REPO/u);
-        assert.match(message, new RegExp(`${escapedRoot}.*ai-browser-book`, 'u'));
-        assert.doesNotMatch(message, /\/Users\/molei\/codes\//u);
-        assert.doesNotMatch(message, /\/Users\/rex\/cool\.cnb\//u);
-        return true;
-      }
-    );
-  } finally {
-    if (previous === undefined) delete process.env.AIOS_BROWSER_USE_REPO;
-    else process.env.AIOS_BROWSER_USE_REPO = previous;
-  }
-});
-
-test('browser install auto-writes mcp configs when adjacent ai-browser-book checkout exists', async () => {
-  const sandboxDir = await makeTemp('aios-browser-install-autoconfig-');
-  const rootDir = path.join(sandboxDir, 'rex-ai-boot');
-  const adjacentRepo = path.join(sandboxDir, 'ai-browser-book');
-  const browserUseProjectDir = path.join(adjacentRepo, 'mcp-browser-use');
-  const scriptsDir = path.join(rootDir, 'scripts');
-  const configDir = path.join(rootDir, 'config');
-  const claudeHome = await makeTemp('aios-browser-install-autoconfig-claude-');
-
-  await mkdir(scriptsDir, { recursive: true });
-  await mkdir(configDir, { recursive: true });
-  await mkdir(browserUseProjectDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
-  await writeFile(path.join(browserUseProjectDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
-  await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
-    profiles: {
-      default: { cdpPort: 9555 },
-    },
-  }, null, 2), 'utf8');
-  await mkdir(claudeHome, { recursive: true });
-  await writeFile(path.join(claudeHome, 'mcp.json'), JSON.stringify({
-    mcpServers: {
-      'user-server': {
-        command: 'node',
-        args: ['/user/server.js'],
-      },
-    },
-  }, null, 2), 'utf8');
-
-  const previous = process.env.AIOS_BROWSER_USE_REPO;
-  delete process.env.AIOS_BROWSER_USE_REPO;
-
-  try {
-    const result = await installBrowserMcp({
-      rootDir,
-      skipPlaywrightInstall: true,
-      io: { log: () => {} },
-      clientHomes: {
-        codex: '',
-        claude: claudeHome,
-        gemini: '',
-        opencode: '',
-      },
-    });
-
-    const expectedRepoRoot = await realpath(adjacentRepo);
-    assert.equal(await realpath(result.browserUseProjectDir), path.join(expectedRepoRoot, 'mcp-browser-use'));
-    assert.equal(result.migrationResult !== null, true);
-    assert.equal(result.migrationResult.errors, 0);
-    assert.equal(result.migrationResult.created + result.migrationResult.updated >= 2, true);
-
-    const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-    assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
-    assert.deepEqual(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
-    assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9555');
-    assert.equal(
-      await realpath(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.AIOS_BROWSER_USE_REPO),
-      expectedRepoRoot
-    );
-
-    const mcpServerMcp = JSON.parse(await readFile(path.join(rootDir, 'mcp-server', '.mcp.json'), 'utf8'));
-    assert.equal(mcpServerMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
-    assert.deepEqual(mcpServerMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
-
-    // claude is PROJECT-scoped: its MCP target is <project>/.mcp.json (rootMcp above),
-    // NOT ~/.claude/mcp.json. The pre-existing home file is left untouched.
-    const homeClaude = JSON.parse(await readFile(path.join(claudeHome, 'mcp.json'), 'utf8'));
-    assert.ok(homeClaude.mcpServers['user-server'], 'home file untouched');
-    assert.equal(homeClaude.mcpServers[PRIMARY_BROWSER_ALIAS], undefined, 'no new primary alias in home file');
-  } finally {
-    if (previous === undefined) delete process.env.AIOS_BROWSER_USE_REPO;
-    else process.env.AIOS_BROWSER_USE_REPO = previous;
-  }
+  await assert.rejects(
+    () => installBrowserMcp({ rootDir, skipPlaywrightInstall: true, io: { log: () => {} } }),
+    /repository-local browser MCP is unavailable/u,
+  );
 });
 
 test('browser mcp-migrate updates local and client mcp json configs', async () => {
@@ -942,8 +731,8 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   await mkdir(scriptsDir, { recursive: true });
   await mkdir(mcpServerDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
       default: { cdpPort: 9333 },
@@ -987,18 +776,18 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   assert.equal(result.updated >= 3, true);
 
   const rootMcp = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
-  assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+  assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand(rootDir));
   assert.deepEqual(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].args, expectedBrowserMcpArgs(rootDir));
   assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.KEEP_ME, '1');
   assert.equal(rootMcp.mcpServers[PRIMARY_BROWSER_ALIAS].env.BROWSER_USE_CDP_URL, 'http://127.0.0.1:9333');
 
   // claude: project .mcp.json IS the claude target (NOT ~/.claude/mcp.json)
   const claudeMcp = rootMcp;
-  assert.equal(claudeMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+  assert.equal(claudeMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand(rootDir));
 
   // gemini: project .gemini/settings.json, preserves unrelated keys
   const geminiMcp = JSON.parse(await readFile(path.join(rootDir, '.gemini', 'settings.json'), 'utf8'));
-  assert.equal(geminiMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand());
+  assert.equal(geminiMcp.mcpServers[PRIMARY_BROWSER_ALIAS].command, expectedBrowserMcpCommand(rootDir));
 
   // codex: home config.toml (TOML), preserves unrelated model line
   const codexToml = await readFile(path.join(codexHome, 'config.toml'), 'utf8');
@@ -1019,12 +808,14 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
 test('browser mcp-migrate --dry-run does not modify files', async () => {
   const rootDir = await makeTemp('aios-browser-migrate-dry-run-root-');
   const scriptsDir = path.join(rootDir, 'scripts');
+  const mcpServerDir = path.join(rootDir, 'mcp-server');
   const configDir = path.join(rootDir, 'config');
 
   await mkdir(scriptsDir, { recursive: true });
+  await mkdir(mcpServerDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeBrowserLauncherFixture(scriptsDir);
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
       default: { cdpPort: 9222 },

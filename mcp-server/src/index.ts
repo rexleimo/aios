@@ -20,10 +20,14 @@ import {
   screenshot,
   authCheck,
   challengeCheck,
+  getBrowserHealth,
 } from './browser/index.js';
 
 // 工具处理器映射
 const toolHandlers: Record<string, (args: any) => Promise<any>> = {
+  browser_health: async () => {
+    return await getBrowserHealth();
+  },
   browser_launch: async (args) => {
     const { profile = 'default', url, headless, visible } = args ?? {};
     const state = await browserLauncher.launch(profile, url, headless, visible);

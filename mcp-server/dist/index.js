@@ -5,9 +5,12 @@ import { createMcpExpressApp } from '@modelcontextprotocol/sdk/server/express.js
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { CallToolRequestSchema, ListToolsRequestSchema, isInitializeRequest, } from '@modelcontextprotocol/sdk/types.js';
-import { tools as browserTools, browserLauncher, navigate, click, type, setInputFiles, snapshot, screenshot, authCheck, challengeCheck, } from './browser/index.js';
+import { tools as browserTools, browserLauncher, navigate, click, type, setInputFiles, snapshot, screenshot, authCheck, challengeCheck, getBrowserHealth, } from './browser/index.js';
 // 工具处理器映射
 const toolHandlers = {
+    browser_health: async () => {
+        return await getBrowserHealth();
+    },
     browser_launch: async (args) => {
         const { profile = 'default', url, headless, visible } = args ?? {};
         const state = await browserLauncher.launch(profile, url, headless, visible);

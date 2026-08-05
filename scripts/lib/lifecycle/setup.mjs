@@ -18,19 +18,19 @@ import { doctorContextDbSkills, installContextDbSkills } from '../components/ski
 import { installRexClientProjections } from '../rex-harness/client-projection.mjs';
 import { prepareRexWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
 
-function isMissingBrowserUseRuntimeError(error) {
+function isMissingBrowserMcpRuntimeError(error) {
   const message = error instanceof Error ? error.message : String(error || '');
-  return message.includes('browser-use MCP project not found')
-    || message.includes('mcp-browser-use project not found');
+  return message.includes('repository-local browser MCP is unavailable')
+    || message.includes('repository-local browser MCP launcher not found')
+    || message.includes('repository-local browser MCP package not found');
 }
 
-function logBrowserUseRuntimeWarning(io, error) {
+function logBrowserMcpRuntimeWarning(io, error) {
   const message = error instanceof Error ? error.message : String(error || '');
-  const [firstLine = message] = message.split(/\r?\n/u).filter(Boolean);
+  const [firstLine = message] = message.split(String.fromCharCode(10)).filter(Boolean);
   io.log(`[warn] browser component skipped: ${firstLine}`);
-  io.log('[warn] Browser MCP needs the external ai-browser-book/mcp-browser-use checkout.');
-  io.log('[warn] Auto-discovery checks ../ai-browser-book and ./ai-browser-book from this repo root.');
-  io.log('[warn] If your checkout is elsewhere, set AIOS_BROWSER_USE_REPO to that path.');
+  io.log('[warn] Browser MCP uses the repository-local Node/Playwright runtime.');
+  io.log('[warn] Install recovery: node scripts/aios.mjs internal browser install');
   io.log('[warn] Browser-only recovery: node scripts/aios.mjs internal browser doctor --fix');
 }
 
@@ -108,11 +108,11 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
     try {
       await browserInstaller({ rootDir, skipPlaywrightInstall: options.skipPlaywrightInstall, io });
     } catch (error) {
-      if (!isMissingBrowserUseRuntimeError(error)) {
+      if (!isMissingBrowserMcpRuntimeError(error)) {
         throw error;
       }
       browserInstallReady = false;
-      logBrowserUseRuntimeWarning(io, error);
+      logBrowserMcpRuntimeWarning(io, error);
     }
     if (!options.skipDoctor) {
       await browserDoctor({ rootDir, fix: browserInstallReady, io });

@@ -2,6 +2,9 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+if command -v cygpath >/dev/null 2>&1; then
+  ROOT_DIR="$(cygpath -w "$ROOT_DIR")"
+fi
 OUT_DIR="$ROOT_DIR/dist/release"
 
 usage() {
@@ -40,6 +43,9 @@ done
 if [[ "$OUT_DIR" == "~/"* ]]; then
   OUT_DIR="$HOME/${OUT_DIR#\~/}"
 fi
+if command -v cygpath >/dev/null 2>&1 && [[ "${OUT_DIR:1:1}" == ":" ]]; then
+  OUT_DIR="$(cygpath -u "$OUT_DIR")"
+fi
 if [[ "$OUT_DIR" != /* ]]; then
   OUT_DIR="$ROOT_DIR/$OUT_DIR"
 fi
@@ -56,8 +62,21 @@ require_cmd() {
 
 require_cmd git
 require_cmd gzip
-require_cmd zip
 require_cmd npm
+if command -v powershell.exe >/dev/null 2>&1 && command -v cygpath >/dev/null 2>&1; then
+  ZIP_MODE="powershell"
+  ZIP_BIN=""
+elif [[ -x /usr/bin/zip ]]; then
+  ZIP_MODE="zip"
+  ZIP_BIN="/usr/bin/zip"
+else
+  ZIP_MODE="zip"
+  ZIP_BIN="$(command -v zip || true)"
+fi
+if [[ "$ZIP_MODE" == "zip" && -z "$ZIP_BIN" ]]; then
+  echo "Missing required command: zip" >&2
+  exit 1
+fi
 
 rex_harness_root="$ROOT_DIR/rex-harness"
 if [[ ! -f "$rex_harness_root/src/index.mjs" || ! -f "$rex_harness_root/bin/rex-harness.mjs" || ! -f "$rex_harness_root/skill-sources/rex-workflow/SKILL.md" ]]; then
@@ -144,15 +163,30 @@ rmdir "$tar_stage/harness-cli/scripts/lib/components/superpowers" 2>/dev/null ||
   cd "$tar_stage"
   tar -czf "$OUT_DIR/harness-cli.tar.gz" harness-cli
 )
+if [[ ! -s "$OUT_DIR/harness-cli.tar.gz" ]]; then
+  echo "tar archive was not created: $OUT_DIR/harness-cli.tar.gz" >&2
+  exit 1
+fi
 
 echo "+ zip -> $OUT_DIR/harness-cli.zip"
 rm -f "$OUT_DIR/harness-cli.zip"
-(
-  cd "$tar_stage"
-  zip -r "$OUT_DIR/harness-cli.zip" \
-    harness-cli \
-    -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
-)
+if [[ "$ZIP_MODE" == "powershell" ]]; then
+  zip_source_win="$(cygpath -w "$tar_stage/harness-cli")"
+  zip_output_win="$(cygpath -w "$OUT_DIR/harness-cli.zip")"
+  ps_command="\$source = '$zip_source_win'; \$destination = '$zip_output_win'; Compress-Archive -Path \$source -DestinationPath \$destination -Force"
+  powershell.exe -NoLogo -NoProfile -NonInteractive -Command "$ps_command"
+else
+  (
+    cd "$tar_stage"
+    "$ZIP_BIN" -r "$OUT_DIR/harness-cli.zip" \
+      harness-cli \
+      -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
+  )
+fi
+if [[ ! -s "$OUT_DIR/harness-cli.zip" ]]; then
+  echo "zip archive was not created: $OUT_DIR/harness-cli.zip" >&2
+  exit 1
+fi
 
 echo ""
 echo "Done. Assets:"

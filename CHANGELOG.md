@@ -6,6 +6,15 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.4.2] - 2026-08-05
+
+### Fixed
+
+- Remove the retired `ai-browser-book` and `AIOS_BROWSER_USE_REPO` runtime dependency from browser MCP selection, installation, migration, and lifecycle recovery.
+- Make the repository-local Node/Playwright MCP (`scripts/run-local-browser-mcp.mjs`) the only browser MCP entrypoint, with complete-dist validation and source/tsx fallback.
+- Make browser installation install local MCP dependencies, Playwright Chromium, build the MCP server, migrate client configuration, and expose `browser_health` for runtime readiness checks.
+- Add cross-platform browser MCP regression coverage, Hermes migration coverage, and a GitHub release workflow check for the local browser installation path.
+
 ## [5.4.1] - 2026-08-02
 
 ### Fixed

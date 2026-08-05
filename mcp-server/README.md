@@ -3,28 +3,19 @@
 [![Parent project](https://img.shields.io/badge/parent-harness--cli-0ea5e9)](https://github.com/rexleimo/harness-cli)
 
 > Browser automation surface for Harness CLI / AIOS.
-> **Default path:** browser-use MCP over CDP (`scripts/run-browser-use-mcp.sh`).
-> **Compatibility path:** Playwright MCP under `mcp-server/` for legacy workflows.
+> **Default path:** repository-local Node/Playwright MCP (`scripts/run-local-browser-mcp.mjs`).
+> **Browser mode:** Playwright can launch a local browser or attach to an externally started CDP browser.
 
-Default browser MCP runtime is now browser-use (CDP) via `scripts/run-browser-use-mcp.sh`.
-`mcp-server/` Playwright implementation is retained for legacy/compatibility workflows.
+The repository-local MCP server is the only supported browser runtime. `mcp-server/` contains its implementation and build entrypoint.
 
 ## Quick Start
 
-macOS / Linux:
+Run from the repository root on Windows, macOS, or Linux:
 
 ```bash
-scripts/install-browser-mcp.sh
-scripts/doctor-browser-mcp.sh
+node scripts/aios.mjs internal browser install
+node scripts/aios.mjs internal browser doctor
 ```
-
-Windows (PowerShell):
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\\scripts\\install-browser-mcp.ps1
-powershell -ExecutionPolicy Bypass -File .\\scripts\\doctor-browser-mcp.ps1
-```
-
 Migrate/refresh client MCP config:
 
 ```bash
@@ -39,8 +30,8 @@ Expected MCP block:
   "mcpServers": {
     "mcp-browser-use": {
       "type": "stdio",
-      "command": "bash",
-      "args": ["/ABS/PATH/aios/scripts/run-browser-use-mcp.sh"],
+      "command": "node",
+      "args": ["/ABS/PATH/aios/scripts/run-local-browser-mcp.mjs"],
       "env": {
         "BROWSER_USE_CDP_URL": "http://127.0.0.1:9222"
       }
@@ -81,43 +72,37 @@ curl -sS -X POST "http://127.0.0.1:43110/mcp" \
 
 Then restart your client and smoke test:
 
-1. `chrome.launch_cdp` `{"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}`
-2. `browser.connect_cdp` `{"cdp_url":"http://127.0.0.1:9222"}`
-3. `page.goto` `{"session_id":"<id>","url":"https://example.com"}`
-4. `page.screenshot` `{"session_id":"<id>"}`
-5. `browser.close` `{"session_id":"<id>"}`
+1. `browser_health`
+2. `browser_launch` with the `local` profile or a configured CDP profile
+3. `browser_navigate` to `https://example.com`
+4. `browser_snapshot` and `browser_screenshot`
+5. `browser_close`
 
-## Installer and Doctor Scripts
+## Installer and Doctor
 
-- `scripts/install-browser-mcp.sh`
-  - checks browser-use launcher and runtime
-  - installs browser-use runtime when needed (`uv sync` or `python -m venv + pip`)
-  - prints ready-to-copy MCP config snippet
-- `scripts/install-browser-mcp.ps1` (Windows PowerShell variant)
-- `scripts/doctor-browser-mcp.sh`
-  - checks Node/bash and browser-use runtime
-  - checks launcher/bootstrap scripts and browser-use project path
-  - validates `config/browser-profiles.json`
-  - warns if default CDP endpoint is not reachable
-- `scripts/doctor-browser-mcp.ps1` (Windows PowerShell variant)
+Use the AIOS commands from the repository root:
 
-## Available Tools (Default browser-use runtime)
+```bash
+node scripts/aios.mjs internal browser install
+node scripts/aios.mjs internal browser doctor
+```
 
-- `chrome.launch_cdp`
-- `browser.connect_cdp`
-- `browser.close`
-- `page.goto`
-- `page.wait`
-- `page.click`
-- `page.type`
-- `page.press`
-- `page.scroll`
-- `page.evaluate`
-- `page.set_input_files`
-- `page.screenshot`
-- `page.extract_text`
-- `page.get_html`
-- `diagnostics.sannysoft`
+The installer installs `mcp-server` dependencies, installs Playwright Chromium unless skipped, migrates client MCP configuration, and prints a local `node` server block.
+
+## Available Tools
+
+- `browser_health`
+- `browser_launch`
+- `browser_navigate`
+- `browser_click`
+- `browser_type`
+- `browser_set_input_files`
+- `browser_snapshot`
+- `browser_auth_check`
+- `browser_challenge_check`
+- `browser_screenshot`
+- `browser_close`
+- `browser_list_tabs`
 
 ## Profile Config
 
@@ -141,25 +126,23 @@ Use `config/browser-profiles.json` (project root):
 
 Priority for launch mode:
 1. `cdpUrl` / `cdpPort` from `config/browser-profiles.json`
-2. `chrome.launch_cdp` with explicit `user_data_dir`
+2. local Playwright launch through `browser_launch`
 
 ## Crash Troubleshooting (Google Chrome for Testing)
 
 If CDP connection fails:
 
-1. Start fingerprint browser with remote debugging on `9222` and keep it running.
+1. Start the external browser with remote debugging on `9222` and keep it running.
 2. Verify port status: `node scripts/aios.mjs internal browser cdp-status`
-3. Use `chrome.launch_cdp` then `browser.connect_cdp`.
+3. Use `browser_launch` with the configured CDP profile, then `browser_navigate`.
 
 ## Notes
 
 - The server auto-detects workspace root by locating `config/browser-profiles.json`.
 - For local persistent profiles, if `userDataDir` is locked by another browser process, server retries with an isolated runtime profile directory by default (`isolateOnLock=true`).
-- Default toolchain is `chrome.launch_cdp` -> `browser.connect_cdp` -> `page.*` under the `mcp-browser-use` alias.
-- Recommended reasoning order: `page.extract_text` -> `page.get_html` -> `page.screenshot` (visual fallback only).
-- For interactive agent work, prefer `chrome.launch_cdp {"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}` and then `browser.connect_cdp`.
+- The default toolchain is `browser_health` -> `browser_launch` -> `browser_navigate` -> `browser_snapshot` under the `mcp-browser-use` alias.
+- Prefer `browser_snapshot` before `browser_screenshot` when page state is sufficient from accessibility data.
 - Keep login/challenge/captcha as human-in-the-loop; resume automation only after manual completion.
-- Legacy Playwright `browser_*` behavior (`browser_snapshot`, `browser_auth_check`, etc.) applies only when running `mcp-server/` directly as compatibility mode.
 - Recommended policy: keep third-party account sign-in (Google/Meta/Jimeng auth walls) as human-in-the-loop.
 
 ## Action Pacing (Reliability)

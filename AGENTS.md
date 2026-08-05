@@ -30,9 +30,8 @@ Evaluate the AIOS workflow policy before creating a plan, selecting a skill, or 
 ## Project Structure & Module Organization
 This repository is a local-first AI agent workspace centered on browser automation via MCP.
 
-- `mcp-server/`: TypeScript Playwright MCP server (legacy/compat runtime code).
-- `scripts/run-browser-use-mcp.sh`: default MCP launcher that bridges to `ai-browser-book/mcp-browser-use` via `AIOS_BROWSER_USE_REPO` or repo-relative discovery.
-- `scripts/browser-use-bootstrap.py`: browser-use bootstrap with optional module shims.
+- `mcp-server/`: TypeScript Playwright MCP server and local browser runtime.
+- `scripts/run-local-browser-mcp.mjs`: default MCP launcher for the repository-local Node/Playwright server.
 - `mcp-server/src/index.ts`: MCP server entry point and tool routing.
 - `mcp-server/src/browser/`: browser launcher, profile manager, auth checks, and tool actions.
 - `config/`: runtime configuration such as `browser-profiles.json` and safety-related settings.
@@ -63,7 +62,7 @@ npm run typecheck && npm run build
 - Language: TypeScript (ESM, strict mode).
 - Indentation: 2 spaces; keep semicolons.
 - File names: kebab-case for action modules (for example `auth-check.ts`), `index.ts` for module entry points.
-- For `mcp-server` internals, tool names follow `browser_*`. For default runtime (browser-use), use `chrome.launch_cdp` / `browser.connect_cdp` / `page.*`.
+- For `mcp-server` internals, tool names follow `browser_*`; browser sessions may launch locally or attach to a configured CDP endpoint.
 - Keep configuration JSON keys stable; prefer additive changes over renaming.
 - Repo-local discoverable skills must live under `.codex/skills/` or `.claude/skills/` (optionally `.agents/skills/` only when the target client actually supports it). Do not invent parallel skill roots such as `.baoyu-skills/*/SKILL.md`; those are non-discoverable and should be plain docs or extension config only.
 
@@ -73,7 +72,7 @@ Minimum verification for behavior changes:
 
 1. `npm run test:scripts` (repo root)
 2. `cd mcp-server && npm run typecheck && npm run test && npm run build`
-3. Manual MCP smoke test (`chrome.launch_cdp` -> `browser.connect_cdp` -> `page.goto` -> `page.screenshot` -> `browser.close`) when browser-flow behavior changes
+3. Manual MCP smoke test (`browser_health` -> `browser_launch` -> `browser_navigate` -> `browser_snapshot` -> `browser_close`) when browser-flow behavior changes.
 
 Document manual test steps in PRs when behavior changes.
 
@@ -95,10 +94,10 @@ PRs should include:
 - Preserve human-in-the-loop checks for auth walls and sensitive outbound actions.
 
 ## Browser MCP Selection
-- In this repo, prefer the `mcp-browser-use` MCP server alias (browser-use runtime via `scripts/run-browser-use-mcp.sh`).
-- For interactive browser work, use `chrome.launch_cdp {"port":9222,"user_data_dir":"~/.chrome-cdp-profile"}` then `browser.connect_cdp`.
+- In this repo, use the `mcp-browser-use` alias backed by `scripts/run-local-browser-mcp.mjs`.
+- Use `browser_launch` for a local browser or configure the profile with `cdpPort`/`cdpUrl` for an externally started browser.
 - If multiple browser MCPs are available, do **not** use `chrome-devtools` for normal business flows; reserve it for low-level inspection/debugging only.
-- Default reasoning order for page understanding: `page.semantic_snapshot` / targeted `page.extract_text` first, `page.get_html` and `page.screenshot` as fallbacks.
+- Default reasoning order for page understanding: `browser_snapshot` first, then targeted HTML or screenshots as fallbacks.
 
 ## Token Optimization (Community Tools + AIOS Hygiene)
 - Token compression is handled by community-maintained tools: **RTK** and **Caveman**. The AIOS native interception runtime is deprecated (see `scripts/aios-mcp-proxy.mjs` header).

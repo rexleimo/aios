@@ -4,47 +4,41 @@ import path from 'node:path';
 import { buildAiosMcpProxyServer } from '../../interception/mcp/proxy-config.mjs';
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import {
-  findBrowserUseRepo,
-  isLegacyBrowserUseFallback,
   resolveDefaultCdpUrl,
-  resolveLauncherScript,
+  resolveLocalBrowserMcpScript,
   resolvePythonCommand,
-  resolveShellCommand,
 } from './runtime-paths.mjs';
 
-/* 中文注释：浏览器 MCP 直连上游，避免已弃用代理改写多模态 tools/call 结果。 */
+/* 中文注释：当外部 browser-use checkout 不存在时，回退到仓库内的 Playwright MCP。 */
+export function buildLocalBrowserMcpServer(rootDir, existingAlias = {}, runtime = {}) {
+  const existingEnv = existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {};
+  const nextEnv = { ...existingEnv };
+  delete nextEnv.AIOS_BROWSER_USE_REPO;
+  delete nextEnv.AIOS_INTERCEPTION_METRICS;
+  delete nextEnv.AIOS_MCP_PROXY;
+  delete nextEnv.AIOS_MCP_UPSTREAM_HOST;
+  return {
+    type: 'stdio',
+    command: runtime.nodeCommand || 'node',
+    args: [resolveLocalBrowserMcpScript(rootDir)],
+    cwd: rootDir,
+    env: nextEnv,
+  };
+}
+
+/* 中文注释：本地 Node/Playwright MCP 是唯一的浏览器运行入口。 */
 export function buildPreferredMcpServer(rootDir, existingAlias = {}, runtime = {}) {
-  const platform = runtime.platform || process.platform;
-  const launcherScript = resolveLauncherScript(rootDir, platform);
-  const shellCommand = resolveShellCommand(platform, runtime);
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
   const existingEnv = existingAlias && typeof existingAlias.env === 'object' ? existingAlias.env : {};
-  const browserUseRepo = findBrowserUseRepo(rootDir, existingEnv);
   const nextEnv = {
     ...existingEnv,
     BROWSER_USE_CDP_URL: existingEnv.BROWSER_USE_CDP_URL || cdpUrl,
   };
+  delete nextEnv.AIOS_BROWSER_USE_REPO;
   delete nextEnv.AIOS_INTERCEPTION_METRICS;
   delete nextEnv.AIOS_MCP_PROXY;
   delete nextEnv.AIOS_MCP_UPSTREAM_HOST;
-  if (browserUseRepo) {
-    nextEnv.AIOS_BROWSER_USE_REPO = browserUseRepo;
-  } else if (isLegacyBrowserUseFallback(nextEnv.AIOS_BROWSER_USE_REPO)) {
-    delete nextEnv.AIOS_BROWSER_USE_REPO;
-  }
-
-  const isPowerShell = ['pwsh', 'powershell', 'powershell.exe'].includes(shellCommand.toLowerCase());
-  const args = isPowerShell
-    ? ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', launcherScript]
-    : [launcherScript];
-
-  const upstream = {
-    type: 'stdio',
-    command: shellCommand,
-    args,
-    env: nextEnv,
-  };
-  return upstream;
+  return buildLocalBrowserMcpServer(rootDir, { ...existingAlias, env: nextEnv }, runtime);
 }
 
 /* 中文注释：auth-tools 仍保持直连，因为它是小型辅助服务，不承载大页面输出。 */

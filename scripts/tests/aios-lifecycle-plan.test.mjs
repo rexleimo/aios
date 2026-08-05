@@ -163,7 +163,7 @@ test('runSetup browser flow does not block lifecycle when browser-use runtime is
     io: { log: (line) => logs.push(String(line)) },
     deps: {
       installBrowserMcp: async () => {
-        throw new Error('browser-use MCP project not found.\nSet AIOS_BROWSER_USE_REPO to your ai-browser-book repository path.');
+        throw new Error('repository-local browser MCP is unavailable: scripts/run-local-browser-mcp.mjs');
       },
       doctorBrowserMcp: async (options) => { calls.push({ kind: 'doctor', options }); },
     },
@@ -461,7 +461,7 @@ test('runUpdate browser flow does not block lifecycle when browser-use runtime i
     io: { log: (line) => logs.push(String(line)) },
     deps: {
       installBrowserMcp: async () => {
-        throw new Error('browser-use MCP project not found.\nSet AIOS_BROWSER_USE_REPO to your ai-browser-book repository path.');
+        throw new Error('repository-local browser MCP is unavailable: scripts/run-local-browser-mcp.mjs');
       },
       doctorBrowserMcp: async (options) => { calls.push({ kind: 'doctor', options }); },
     },

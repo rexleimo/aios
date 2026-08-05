@@ -14,7 +14,7 @@ function countSourceLines(source) {
   return trimmed ? trimmed.split(/\r?\n/u).length : 0;
 }
 
-describe('MCP Server Config - Platform Detection (static analysis)', () => {
+describe('MCP Server Config - Local Runtime (static analysis)', () => {
   const browserFacadeSrc = readRepoSource('scripts', 'lib', 'components', 'browser.mjs');
   const browserRuntimePathsSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'runtime-paths.mjs');
   const browserMcpBuilderSrc = readRepoSource('scripts', 'lib', 'components', 'browser', 'mcp-server-builders.mjs');
@@ -24,95 +24,49 @@ describe('MCP Server Config - Platform Detection (static analysis)', () => {
   it('browser component entrypoint stays a thin facade over focused modules', () => {
     assert.equal(countSourceLines(browserFacadeSrc) <= 40, true,
       'browser.mjs should stay a facade and keep browser responsibilities under components/browser/*');
-    assert.ok(browserFacadeSrc.includes("from './browser/mcp-config.mjs'"),
-      'facade should re-export MCP config module');
-    assert.ok(browserFacadeSrc.includes("from './browser/install.mjs'"),
-      'facade should re-export install module');
-    assert.ok(browserFacadeSrc.includes("from './browser/cdp-service.mjs'"),
-      'facade should re-export CDP service module');
-    assert.ok(browserFacadeSrc.includes("from './browser/doctor.mjs'"),
-      'facade should re-export doctor module');
+    assert.ok(browserFacadeSrc.includes("from './browser/mcp-config.mjs'"));
+    assert.ok(browserFacadeSrc.includes("from './browser/install.mjs'"));
+    assert.ok(browserFacadeSrc.includes("from './browser/cdp-service.mjs'"));
+    assert.ok(browserFacadeSrc.includes("from './browser/doctor.mjs'"));
   });
 
-  it('buildPreferredMcpServer uses resolveShellCommand for platform-aware shell', () => {
-    assert.ok(browserMcpBuilderSrc.includes('const platform = runtime.platform || process.platform'),
-      'buildPreferredMcpServer should accept an injectable platform for cross-platform config tests');
-    assert.ok(browserMcpBuilderSrc.includes('const shellCommand = resolveShellCommand(platform, runtime)'),
-      'buildPreferredMcpServer should call resolveShellCommand with platform/runtime');
-    assert.ok(browserRuntimePathsSrc.includes('resolveShellCommand(platform'),
-      'resolveShellCommand should accept platform param');
+  it('preferred browser MCP always uses the repository-local Node launcher', () => {
+    assert.ok(browserMcpBuilderSrc.includes('buildLocalBrowserMcpServer'));
+    assert.ok(browserMcpBuilderSrc.includes('resolveLocalBrowserMcpScript'));
+    assert.ok(!browserMcpBuilderSrc.includes('findBrowserUseRepo'));
+    assert.ok(!browserMcpBuilderSrc.includes('resolveLauncherScript'));
+    assert.ok(browserRuntimePathsSrc.includes('run-local-browser-mcp.mjs'));
   });
 
-  it('resolveShellCommand prefers pwsh and falls back to Windows PowerShell', () => {
-    assert.ok(browserRuntimePathsSrc.includes("return 'bash'"),
-      'resolveShellCommand should keep bash for non-Windows platforms');
-    assert.ok(browserRuntimePathsSrc.includes("exists('pwsh')"),
-      'resolveShellCommand should prefer pwsh on Windows');
-    assert.ok(browserRuntimePathsSrc.includes("exists('powershell')"),
-      'resolveShellCommand should fall back to Windows PowerShell');
+  it('local runtime keeps Python command only for auth-tools compatibility', () => {
+    assert.ok(browserRuntimePathsSrc.includes("? 'python' : 'python3'"));
+    assert.ok(!browserRuntimePathsSrc.includes('resolveVenvPythonPath'));
+    assert.ok(!browserRuntimePathsSrc.includes('ai-browser-book'));
   });
 
-  it('resolvePythonCommand returns python on win32, python3 otherwise', () => {
-    assert.ok(browserRuntimePathsSrc.includes("? 'python' : 'python3'"),
-      'resolvePythonCommand should have python/python3 ternary');
-  });
-
-  it('resolveVenvPythonPath has Scripts for win32, bin for others', () => {
-    assert.ok(browserRuntimePathsSrc.includes("'Scripts'"),
-      'resolveVenvPythonPath should reference Windows Scripts dir');
-    assert.ok(browserRuntimePathsSrc.includes("'bin'"),
-      'resolveVenvPythonPath should reference POSIX bin dir');
-  });
-
-  it('PowerShell args include -NoProfile -ExecutionPolicy Bypass -File', () => {
-    assert.ok(browserMcpBuilderSrc.includes('isPowerShell'),
-      'builder should classify both pwsh and powershell as PowerShell');
-    assert.ok(browserMcpBuilderSrc.includes('-NoProfile'),
-      'PowerShell args should include -NoProfile');
-    assert.ok(browserMcpBuilderSrc.includes('ExecutionPolicy'),
-      'PowerShell args should include -ExecutionPolicy Bypass');
+  it('doctor checks the local package and launcher instead of an external checkout', () => {
+    assert.ok(browserDoctorSrc.includes('localMcpPackage'));
+    assert.ok(browserDoctorSrc.includes('localMcpDependency'));
+    assert.ok(!browserDoctorSrc.includes('browserUseProjectDir'));
+    assert.ok(!browserDoctorSrc.includes('browser-use bootstrap'));
   });
 
   it('resolveCdpServiceLayout has USERPROFILE fallback', () => {
     assert.ok(browserCdpServiceSrc.includes('process.env.USERPROFILE'),
       'resolveCdpServiceLayout should reference USERPROFILE');
   });
-
-  it('doctorBrowserMcp uses resolveVenvPythonPath instead of hardcoded path', () => {
-    assert.ok(browserDoctorSrc.includes('resolveVenvPythonPath(browserUseProjectDir'),
-      'doctorBrowserMcp should use resolveVenvPythonPath');
-    assert.ok(!browserDoctorSrc.includes(".join(browserUseProjectDir, '.venv', 'bin', 'python')"),
-      'doctorBrowserMcp should NOT hardcode .venv/bin/python');
-  });
-
-  it('doctorBrowserMcp uses resolveLauncherScript', () => {
-    assert.ok(browserDoctorSrc.includes('resolveLauncherScript(rootDir'),
-      'doctorBrowserMcp should use resolveLauncherScript');
-  });
 });
 
-describe('Launcher Script Files — Existence Check', () => {
-  it('run-browser-use-mcp.sh exists', () => {
-    const shPath = path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh');
-    assert.ok(fs.existsSync(shPath), `.sh launcher missing: ${shPath}`);
+describe('Local Browser MCP Launcher Files', () => {
+  it('repository-local launcher exists', () => {
+    const localPath = path.join(rootDir, 'scripts', 'run-local-browser-mcp.mjs');
+    assert.ok(fs.existsSync(localPath), `local launcher missing: ${localPath}`);
   });
 
-  it('run-browser-use-mcp.ps1 exists', () => {
-    const psPath = path.join(rootDir, 'scripts', 'run-browser-use-mcp.ps1');
-    assert.ok(fs.existsSync(psPath), `.ps1 launcher missing: ${psPath}`);
-  });
-
-  it('.ps1 script has no macOS Keychain call', () => {
-    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'run-browser-use-mcp.ps1'), 'utf8');
-    assert.ok(!content.includes('security find-generic-password'), '.ps1 should not call security CLI');
-    assert.ok(content.includes('.venv'), '.ps1 should reference venv');
-    assert.ok(content.includes('Scripts'), '.ps1 should reference Windows Scripts dir');
-  });
-
-  it('.sh script has uname guard for security', () => {
-    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh'), 'utf8');
-    assert.ok(content.includes('$(uname)'), '.sh should check uname');
-    assert.ok(content.includes('not macOS'), '.sh should log skip message');
+  it('external browser-use launchers are removed', () => {
+    assert.equal(fs.existsSync(path.join(rootDir, 'scripts', 'run-browser-use-mcp.sh')), false);
+    assert.equal(fs.existsSync(path.join(rootDir, 'scripts', 'run-browser-use-mcp.ps1')), false);
+    assert.equal(fs.existsSync(path.join(rootDir, 'scripts', 'browser-use-bootstrap.py')), false);
   });
 });
 

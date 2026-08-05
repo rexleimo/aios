@@ -11,7 +11,7 @@ import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
 import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
 import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
-import { resolveLauncherScript } from './runtime-paths.mjs';
+import { resolveLocalBrowserMcpScript } from './runtime-paths.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。 */
 export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers' } = {}) {
@@ -57,13 +57,13 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
 }
 
 export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = false, clientHomes = null } = {}) {
-  const launcherScript = resolveLauncherScript(rootDir);
-  const bootstrapScript = path.join(rootDir, 'scripts', 'browser-use-bootstrap.py');
-  if (!fs.existsSync(launcherScript)) {
-    throw new Error(`browser-use launcher script not found: ${launcherScript}`);
+  const localMcpScript = resolveLocalBrowserMcpScript(rootDir);
+  const localMcpPackage = path.join(rootDir, 'mcp-server', 'package.json');
+  if (!fs.existsSync(localMcpScript)) {
+    throw new Error(`repository-local browser MCP launcher not found: ${localMcpScript}`);
   }
-  if (!fs.existsSync(bootstrapScript)) {
-    throw new Error(`browser-use bootstrap script not found: ${bootstrapScript}`);
+  if (!fs.existsSync(localMcpPackage)) {
+    throw new Error(`repository-local browser MCP package not found: ${localMcpPackage}`);
   }
 
   const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());

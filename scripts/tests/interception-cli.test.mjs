@@ -105,7 +105,7 @@ test('interception doctor and mcp migration make browser MCP direct', async () =
   const codexConfig = await readFile(path.join(env.AIOS_HOME, 'clients', 'codex', 'config.toml'), 'utf8');
   const browserSection = codexConfig.split('[mcp_servers.aios-auth-tools]')[0];
   assert.doesNotMatch(browserSection, /aios-mcp-proxy\.mjs/);
-  assert.match(browserSection, /run-browser-use-mcp/);
+  assert.match(browserSection, /run-local-browser-mcp\.mjs/);
 });
 
 test('interception tail --latest returns the newest proof session with recent pre/post metrics', async () => {

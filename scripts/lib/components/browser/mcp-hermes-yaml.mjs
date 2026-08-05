@@ -6,7 +6,12 @@ import { isDeepStrictEqual } from 'node:util';
 
 import { parseDocument } from 'yaml';
 
-import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
+import {
+  AUTH_TOOLS_ALIAS,
+  LEGACY_HERMES_BROWSER_ALIASES,
+  PRIMARY_BROWSER_ALIAS,
+  SHELL_ALIAS,
+} from './constants.mjs';
 import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 
 /** 把 JSON 风格的 MCP server 对象转为 Hermes YAML 兼容的 plain object（剥离 type: 'stdio'，保留 command/args/env） */
@@ -73,8 +78,7 @@ export function migrateOneHermesYaml(filePath, rootDir) {
   }
 
   // 移除可能遗留的旧 browser alias
-  const LEGACY_BROWSER_ALIASES = new Set(['browser-use', 'mcp-browser', 'ai-browser-use']);
-  for (const legacy of LEGACY_BROWSER_ALIASES) {
+  for (const legacy of LEGACY_HERMES_BROWSER_ALIASES) {
     if (Object.hasOwn(existing, legacy) && legacy !== PRIMARY_BROWSER_ALIAS) {
       document.deleteIn(['mcp_servers', legacy]);
       changed = true;

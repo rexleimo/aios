@@ -159,14 +159,15 @@ test('doctorBrowserMcp --fix auto-heals default cdpPort when service start succe
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-browser-doctor-fix-root-'));
   const scriptsDir = path.join(rootDir, 'scripts');
   const configDir = path.join(rootDir, 'config');
-  const browserUseDir = path.join(rootDir, 'ai-browser-book', 'mcp-browser-use');
+  const mcpServerDir = path.join(rootDir, 'mcp-server');
+  const dependencyDir = path.join(mcpServerDir, 'node_modules', 'playwright');
   await mkdir(scriptsDir, { recursive: true });
-  await mkdir(path.join(browserUseDir, '.venv', 'bin'), { recursive: true });
+  await mkdir(mcpServerDir, { recursive: true });
+  await mkdir(dependencyDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
-  await writeFile(path.join(browserUseDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
-  await writeFile(path.join(browserUseDir, '.venv', 'bin', 'python'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp"}\n', 'utf8');
+  await writeFile(path.join(dependencyDir, 'package.json'), '{"name":"playwright"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
       default: { cdpPort: 9333 },
@@ -211,14 +212,15 @@ test('doctorBrowserMcp --fix --dry-run reports plan without starting CDP service
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-browser-doctor-dry-run-root-'));
   const scriptsDir = path.join(rootDir, 'scripts');
   const configDir = path.join(rootDir, 'config');
-  const browserUseDir = path.join(rootDir, 'ai-browser-book', 'mcp-browser-use');
+  const mcpServerDir = path.join(rootDir, 'mcp-server');
+  const dependencyDir = path.join(mcpServerDir, 'node_modules', 'playwright');
   await mkdir(scriptsDir, { recursive: true });
-  await mkdir(path.join(browserUseDir, '.venv', 'bin'), { recursive: true });
+  await mkdir(mcpServerDir, { recursive: true });
+  await mkdir(dependencyDir, { recursive: true });
   await mkdir(configDir, { recursive: true });
-  await writeFile(path.join(scriptsDir, 'run-browser-use-mcp.sh'), '#!/usr/bin/env bash\n', 'utf8');
-  await writeFile(path.join(scriptsDir, 'browser-use-bootstrap.py'), 'print("ok")\n', 'utf8');
-  await writeFile(path.join(browserUseDir, 'pyproject.toml'), '[project]\nname="mcp-browser-use"\n', 'utf8');
-  await writeFile(path.join(browserUseDir, '.venv', 'bin', 'python'), '#!/usr/bin/env bash\n', 'utf8');
+  await writeFile(path.join(scriptsDir, 'run-local-browser-mcp.mjs'), '#!/usr/bin/env node\n', 'utf8');
+  await writeFile(path.join(mcpServerDir, 'package.json'), '{"name":"local-mcp"}\n', 'utf8');
+  await writeFile(path.join(dependencyDir, 'package.json'), '{"name":"playwright"}\n', 'utf8');
   await writeFile(path.join(configDir, 'browser-profiles.json'), JSON.stringify({
     profiles: {
       default: { cdpPort: 9333 },
