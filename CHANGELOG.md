@@ -6,6 +6,17 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.4.3] - 2026-08-06
+
+### Added
+
+- Add CRG (code-review-graph) decision checkpoints to the workflow layer: `aios-workflow-router` and `rex-workflow` now call `get_minimal_context` before acting, `get_impact_radius` + `query_graph(tests_for)` before editing, `semantic_search_nodes`/`query_graph` before searching code, and `detect_changes` after each stage; when CRG is unavailable the flow degrades to `rg` + file reads without blocking.
+- Add `aios init` `--yes` / `--retry` / `--force` options with a new `install-state` module that tracks component installation state for idempotent setup/update runs.
+
+### Changed
+
+- Rename the solo harness journal directory from `solo-harness` to `worker-journal` (session artifacts now live under `artifacts/worker-journal/`); legacy `solo-harness` directories are migrated automatically on first read, and solo worktree temp prefixes follow the new name.
+
 ## [5.4.2] - 2026-08-05
 
 ### Fixed

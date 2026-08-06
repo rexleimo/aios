@@ -5,6 +5,28 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.4.3 (2026-08-06) - CRG 결정 체크포인트와 Worker Journal 이름 변경
+
+### 주요 변경 사항
+
+- 워크플로 레이어에 CRG(code-review-graph) 결정 체크포인트 도입: `aios-workflow-router`와 `rex-workflow`는 작업 전 `get_minimal_context`, 편집 전 `get_impact_radius` + `query_graph(tests_for)`, 코드 검색 시 `semantic_search_nodes`/`query_graph` 우선, 각 단계 종료 시 `detect_changes`를 호출합니다. CRG를 사용할 수 없으면 `rg` + 파일 읽기로 폴백하며 흐름을 차단하지 않습니다.
+- `aios init`에 `--yes` / `--retry` / `--force` 옵션 추가 및 새 `install-state` 모듈로 설정/업데이트를 멱등화(미설치 컴포넌트에서 재개 또는 강제 클린 재설치).
+- solo harness 저널 디렉터리를 `solo-harness`에서 `worker-journal`로 이름 변경. 세션 산출물은 이제 `artifacts/worker-journal/`에 위치합니다. 기존 `solo-harness` 디렉터리는 첫 읽기 시 자동 마이그레이션되며, solo worktree 임시 접두사도 새 이름을 따릅니다.
+- 클라이언트 프롬프트(AGENTS.md / CLAUDE.md / GEMINI.md)에 CRG 워크플로 섹션 동기화.
+
+### 업그레이드 메모
+
+- 기존 설치본은 `aios update`로 업데이트할 수 있습니다. 기존 `solo-harness` 세션 디렉터리는 자동 마이그레이션되므로 수동 작업이 필요 없습니다.
+
+## v5.4.2 (2026-08-05) - 로컬 Browser MCP를 단일 브라우저 진입점으로
+
+### 주요 변경 사항
+
+- 브라우저 MCP 선택·설치·마이그레이션·수명주기 복구에서 은퇴한 `ai-browser-book` / `AIOS_BROWSER_USE_REPO` 런타임 의존성을 제거.
+- 리포지토리 내 Node/Playwright MCP(`scripts/run-local-browser-mcp.mjs`)를 유일한 브라우저 MCP 진입점으로 통일하고, 완전한 dist 검증과 source/tsx 폴백을 구현.
+- 브라우저 설치 시 로컬 MCP 의존성·Playwright Chromium 설치, MCP 서버 빌드, 클라이언트 설정 마이그레이션을 수행하고 `browser_health`로 런타임 준비 상태 확인을 공개.
+- 크로스플랫폼 브라우저 MCP 회귀 커버리지, Hermes 마이그레이션 커버리지, GitHub release 워크플로의 로컬 브라우저 설치 경로 검증 추가.
+
 ## v5.4.1 (2026-08-02) - Windows 런타임 자체 업데이트 안전성 수정
 
 ### 주요 변경 사항

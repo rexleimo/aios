@@ -5,6 +5,28 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.4.3（2026-08-06）— CRG 決定チェックポイントと Worker Journal リネーム
+
+### 主な変更
+
+- ワークフロー層に CRG（code-review-graph）決定チェックポイントを導入：`aios-workflow-router` と `rex-workflow` は作業前に `get_minimal_context`、編集前に `get_impact_radius` + `query_graph(tests_for)`、コード検索は `semantic_search_nodes`/`query_graph` を優先、各段階の終了時に `detect_changes` を呼びます。CRG が利用できない場合は `rg` + ファイル読み取りにフォールバックし、フローをブロックしません。
+- `aios init` に `--yes` / `--retry` / `--force` オプションを追加し、新しい `install-state` モジュールでセットアップ/アップデートを冪等化（未インストールのコンポーネントから再開、または強制クリーン再インストール）。
+- solo harness ジャーナルディレクトリを `solo-harness` から `worker-journal` にリネーム。セッション成果物は `artifacts/worker-journal/` に配置されます。旧 `solo-harness` ディレクトリは初回読み取り時に自動移行され、solo worktree の一時プレフィックスも新名に追従します。
+- クライアントプロンプト（AGENTS.md / CLAUDE.md / GEMINI.md）に CRG ワークフロー節を同期。
+
+### アップグレードメモ
+
+- 既存インストールは `aios update` で更新できます。旧 `solo-harness` セッションディレクトリは自動移行され、手動操作は不要です。
+
+## v5.4.2（2026-08-05）— ローカル Browser MCP を唯一のブラウザエントリポイントに
+
+### 主な変更
+
+- ブラウザ MCP の選択・インストール・移行・ライフサイクル復旧から、退役した `ai-browser-book` / `AIOS_BROWSER_USE_REPO` ランタイム依存を削除。
+- リポジトリ内 Node/Playwright MCP（`scripts/run-local-browser-mcp.mjs`）を唯一のブラウザ MCP エントリポイントに統一し、完全な dist 検証と source/tsx フォールバックを実装。
+- ブラウザインストールはローカル MCP 依存・Playwright Chromium のインストール、MCP サーバーのビルド、クライアント設定の移行を行い、`browser_health` で実行時レディネスチェックを公開。
+- クロスプラットフォームのブラウザ MCP 回帰カバレッジ、Hermes 移行カバレッジ、GitHub release ワークフローのローカルブラウザインストールパス検証を追加。
+
 ## v5.4.1（2026-08-02）— Windows ランタイム自己更新の安全性修正
 
 ### 主な変更

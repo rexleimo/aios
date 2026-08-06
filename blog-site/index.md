@@ -22,6 +22,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.4.3: CRG Decision Checkpoints, Worker Journal Rename, and Idempotent aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1: Why "aios update" Broke on Windows and How We Fixed Self-Updating](2026-08-v541-windows-self-update-safety.md)
 - [Parallel Coding Agents Are Not Free: Git Worktrees Isolate Files, Not State](2026-08-parallel-coding-agents.md)
 - [Agent Security Is a State Machine Problem: What the Codex Security Thread Missed](2026-08-ai-agent-security.md)

@@ -22,6 +22,7 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新の記事
 
+- [v5.4.3：CRG 決定チェックポイント、Worker Journal リネーム、冪等な aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正](2026-08-v541-windows-self-update-safety.md)
 - [v5.4.0：ワークフローイテレーション v2.1 — Activation の安全性、型付き Evidence 契約、全 Skill 監査](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 適応型ワークフローポリシー](2026-07-v400-adaptive-workflow-policy.md)

@@ -7,6 +7,28 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.4.3 (2026-08-06) — CRG Decision Checkpoints and Worker Journal Rename
+
+### What changed
+
+- The workflow layer now uses CRG (code-review-graph) decision checkpoints: `aios-workflow-router` and `rex-workflow` call `get_minimal_context` before acting, `get_impact_radius` + `query_graph(tests_for)` before editing, `semantic_search_nodes`/`query_graph` before searching code, and `detect_changes` after each stage. When CRG is unavailable the flow degrades to `rg` + file reads and never blocks.
+- `aios init` gains `--yes` / `--retry` / `--force` options backed by a new `install-state` module, making setup/update runs idempotent (resume from not-yet-installed components, or force a clean reinstall).
+- The solo harness journal directory is renamed from `solo-harness` to `worker-journal`; session artifacts now live under `artifacts/worker-journal/`. Legacy `solo-harness` directories are migrated automatically on first read, and solo worktree temp prefixes follow the new name.
+- Client prompt surfaces (AGENTS.md / CLAUDE.md / GEMINI.md) are updated with the CRG workflow section.
+
+### Upgrade notes
+
+- Existing installs can update with `aios update`. Legacy `solo-harness` session directories are migrated automatically — no manual action needed.
+
+## v5.4.2 (2026-08-05) — Local Browser MCP as the Single Browser Entrypoint
+
+### What changed
+
+- The retired `ai-browser-book` / `AIOS_BROWSER_USE_REPO` runtime dependency is removed from browser MCP selection, installation, migration, and lifecycle recovery.
+- The repository-local Node/Playwright MCP (`scripts/run-local-browser-mcp.mjs`) is now the only browser MCP entrypoint, with complete-dist validation and source/tsx fallback.
+- Browser installation now installs local MCP dependencies, Playwright Chromium, builds the MCP server, migrates client configuration, and exposes `browser_health` for runtime readiness checks.
+- Cross-platform browser MCP regression coverage, Hermes migration coverage, and a GitHub release workflow check for the local browser installation path are added.
+
 ## v5.4.1 (2026-08-02) — Safe Runtime Self-Update on Windows
 
 ### What changed

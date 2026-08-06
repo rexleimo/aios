@@ -5,6 +5,28 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.4.3（2026-08-06）— CRG 决策检查点与 Worker Journal 改名
+
+### 主要变更
+
+- 工作流层接入 CRG（code-review-graph）决策检查点：`aios-workflow-router` 与 `rex-workflow` 在动手前调用 `get_minimal_context`、改文件前调用 `get_impact_radius` + `query_graph(tests_for)`、查代码优先 `semantic_search_nodes`/`query_graph`、每个阶段结束后调用 `detect_changes`。CRG 不可用时降级为 `rg` + 读文件，不阻塞流程。
+- `aios init` 新增 `--yes` / `--retry` / `--force` 选项，并由新的 `install-state` 模块支撑，setup/update 具备幂等性（从未安装的组件恢复，或强制全新重装）。
+- solo harness 日志目录从 `solo-harness` 更名为 `worker-journal`；会话产物现在位于 `artifacts/worker-journal/`。旧的 `solo-harness` 目录在首次读取时自动迁移，solo worktree 临时前缀同步跟随新名。
+- 客户端提示面（AGENTS.md / CLAUDE.md / GEMINI.md）同步 CRG 工作流章节。
+
+### 升级说明
+
+- 已安装用户可直接 `aios update` 升级。旧 `solo-harness` 会话目录自动迁移，无需手动操作。
+
+## v5.4.2（2026-08-05）— 本地 Browser MCP 作为唯一浏览器入口
+
+### 主要变更
+
+- 从浏览器 MCP 的选择、安装、迁移与生命周期恢复中移除已退役的 `ai-browser-book` / `AIOS_BROWSER_USE_REPO` 运行时依赖。
+- 仓库内 Node/Playwright MCP（`scripts/run-local-browser-mcp.mjs`）成为唯一浏览器 MCP 入口，带完整 dist 校验与 source/tsx 回退。
+- 浏览器安装现在会安装本地 MCP 依赖、Playwright Chromium、构建 MCP 服务、迁移客户端配置，并通过 `browser_health` 暴露运行时就绪检查。
+- 新增跨平台浏览器 MCP 回归覆盖、Hermes 迁移覆盖，以及 GitHub release 工作流中本地浏览器安装路径的检查。
+
 ## v5.4.1（2026-08-02）— Windows 运行时自更新安全修复
 
 ### 主要变更
