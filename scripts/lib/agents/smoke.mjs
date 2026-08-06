@@ -62,7 +62,21 @@ export async function buildAgentsSmokePlan({
 
 const SMOKE_ACKNOWLEDGEMENT = 'AIOS_AGENT_SMOKE_OK';
 const SMOKE_TIMEOUT_MS_ENV = 'AIOS_AGENT_SMOKE_TIMEOUT_MS';
-const SMOKE_TIMEOUT_MS = 30_000;
+/* 中文注释：默认 60s：覆盖客户端进程冷启动 + 模型首 token 延迟。真实任务执行不受此限制（SUBAGENT_TIMEOUT_MS 默认 10 分钟）。 */
+const SMOKE_TIMEOUT_MS = 60_000;
+/* 中文注释：超时自动升级序列（倍数）：首次用基准超时，超时后翻倍重试，仍失败才 blocked，避免一次瞬时慢响应造成永久卡死。 */
+const SMOKE_RETRY_ESCALATIONS = Object.freeze([1, 2, 4]);
+
+function isSmokeTimeout(resultOrError) {
+  const message = String(resultOrError?.error || resultOrError?.message || resultOrError || '');
+  return /timed out after \d+ ms/i.test(message) || resultOrError?.exitCode === 124;
+}
+
+function buildTimeoutBlocker(attemptTimeoutMs, attempts, clientId) {
+  return `smoke probe timed out after ${attemptTimeoutMs} ms (attempt ${attempts}/${SMOKE_RETRY_ESCALATIONS.length})`
+    + `; if the client is slow to cold-start, re-run with a larger budget:`
+    + ` aios agents smoke --live --client ${clientId} --timeout-ms <ms> (or set ${SMOKE_TIMEOUT_MS_ENV})`;
+}
 
 function hash(value) {
   return createHash('sha256').update(String(value), 'utf8').digest('hex');
@@ -214,8 +228,10 @@ export async function runAgentsSmoke({
     const agent = source.agentsById[item.agentId];
     const sessionId = smokeSessionId(agent.id, now);
     const prompt = buildSmokePrompt(agent);
+    /* 中文注释：pre_send 压缩只跑一次（prompt 固定，packet 结果不变）；重试循环只重跑客户端调用与 post_receive。 */
+    let preSendPacket = null;
     try {
-      const preSendPacket = await requireTurnCompression({
+      preSendPacket = await requireTurnCompression({
         workspaceRoot: rootDir,
         cwd: rootDir,
         sessionId,
@@ -237,25 +253,32 @@ export async function runAgentsSmoke({
           prompt,
         }),
       });
-      const result = await runOneShotImpl(clientId, {
-        systemPrompt: agent.systemPrompt,
-        userPrompt: prompt,
-        timeoutMs,
-        env: process.env,
-        cwd: rootDir,
-      });
-      const output = `${result?.stdout || ''}\n${result?.stderr || ''}`;
-      const postReceivePacket = await requireTurnCompression({
-        workspaceRoot: rootDir,
-        cwd: rootDir,
-        sessionId,
-        clientId,
-        agentId: agent.id,
-        hostLevel: 'L2',
-        mode: 'tight',
-        eventKind: 'post_receive',
-        text: output,
-        run: () => compressPostReceiveTurn({
+    } catch (error) {
+      agents.push({ ...item, status: 'blocked', blocker: error instanceof Error ? error.message : String(error), attempts: 0 });
+      continue;
+    }
+    let result = null;
+    let postReceivePacket = null;
+    let attempts = 0;
+    let blocker = '';
+    for (const multiplier of SMOKE_RETRY_ESCALATIONS) {
+      attempts += 1;
+      const attemptTimeoutMs = Math.round(timeoutMs * multiplier);
+      try {
+        result = await runOneShotImpl(clientId, {
+          systemPrompt: agent.systemPrompt,
+          userPrompt: prompt,
+          timeoutMs: attemptTimeoutMs,
+          env: process.env,
+          cwd: rootDir,
+        });
+        if (isSmokeTimeout(result)) {
+          /* 中文注释：瞬时慢响应不判死：升级超时后重试，全部耗尽才 blocked。 */
+          blocker = buildTimeoutBlocker(attemptTimeoutMs, attempts, clientId);
+          continue;
+        }
+        const output = `${result?.stdout || ''}\n${result?.stderr || ''}`;
+        postReceivePacket = await requireTurnCompression({
           workspaceRoot: rootDir,
           cwd: rootDir,
           sessionId,
@@ -263,11 +286,38 @@ export async function runAgentsSmoke({
           agentId: agent.id,
           hostLevel: 'L2',
           mode: 'tight',
-          metrics: { enabled: true },
-          output,
-        }),
-      });
-      const evidence = await writeLiveEvidence({
+          eventKind: 'post_receive',
+          text: output,
+          run: () => compressPostReceiveTurn({
+            workspaceRoot: rootDir,
+            cwd: rootDir,
+            sessionId,
+            clientId,
+            agentId: agent.id,
+            hostLevel: 'L2',
+            mode: 'tight',
+            metrics: { enabled: true },
+            output,
+          }),
+        });
+        blocker = '';
+        break;
+      } catch (error) {
+        if (isSmokeTimeout(error)) {
+          blocker = buildTimeoutBlocker(attemptTimeoutMs, attempts, clientId);
+          continue;
+        }
+        blocker = error instanceof Error ? error.message : String(error);
+        break;
+      }
+    }
+    if (blocker) {
+      agents.push({ ...item, status: 'blocked', blocker, attempts });
+      continue;
+    }
+    let evidence;
+    try {
+      evidence = await writeLiveEvidence({
         rootDir,
         agent,
         clientId,
@@ -277,15 +327,16 @@ export async function runAgentsSmoke({
         preSendPacket,
         postReceivePacket,
       });
-      if (!evidence.ok) {
-        agents.push({ ...item, status: 'blocked', blocker: evidence.reason });
-        continue;
-      }
-      recorded += 1;
-      agents.push({ ...item, status: 'pass', sessionId, receiptId: evidence.receiptId });
     } catch (error) {
-      agents.push({ ...item, status: 'blocked', blocker: error instanceof Error ? error.message : String(error) });
+      agents.push({ ...item, status: 'blocked', blocker: error instanceof Error ? error.message : String(error), attempts });
+      continue;
     }
+    if (!evidence.ok) {
+      agents.push({ ...item, status: 'blocked', blocker: evidence.reason, attempts });
+      continue;
+    }
+    recorded += 1;
+    agents.push({ ...item, status: 'pass', sessionId, receiptId: evidence.receiptId, attempts });
   }
 
   const liveAttempted = agents.filter((agent) => agent.agentId).length;

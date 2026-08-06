@@ -70,7 +70,7 @@ const CLIENTS_CLI = createSimpleCommandParser('clients', [
 const AGENTS_CLI = createSimpleCommandParser('agents', [
   { name: 'doctor', description: 'Run agents doctor checks', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
   { name: 'list', description: 'List agents', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format']] },
-  { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run'], ['--live', 'Run managed live client probes'], ['--client <name>', 'Client used for live probes'], ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 30000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)']] },
+  { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run'], ['--live', 'Run managed live client probes'], ['--client <name>', 'Client used for live probes'], ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 60000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)']] },
 ], [
   ['--json', 'Output as JSON'],
   ['--format <text|json>', 'Output format'],
@@ -78,7 +78,7 @@ const AGENTS_CLI = createSimpleCommandParser('agents', [
   ['--dry-run', 'Dry run'],
   ['--live', 'Run managed live client probes'],
   ['--client <name>', 'Client used for live probes'],
-  ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 30000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)'],
+  ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 60000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)'],
 ]);
 
 const WORKFLOW_CLI = createSimpleCommandParser('workflow', [

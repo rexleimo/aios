@@ -37,6 +37,8 @@ Options:
   --strict             Fail when candidate agents are missing smoke evidence
   --live               Required before smoke invokes an external client
   --client <name>      Required client for live smoke, for example codex-cli
+  --dry-run            Print the smoke plan without invoking any client
+  --timeout-ms <ms>    Per-agent live probe timeout (default 60000, or AIOS_AGENT_SMOKE_TIMEOUT_MS); timeouts auto-retry at 2x/4x before blocking
   --format <text|json>
   --json
   -h, --help

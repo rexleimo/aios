@@ -375,6 +375,77 @@ test('agents smoke prompt overrides the JSON output contract for probes', async 
   assert.match(seenPrompt, /reply with the ACK marker only/);
 });
 
+test('agents smoke escalates timeout on transient slow probes and recovers', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  const seenTimeouts = [];
+  const result = await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    runOneShotImpl: async (clientId, options) => {
+      seenTimeouts.push(options.timeoutMs);
+      if (seenTimeouts.length === 1) {
+        return {
+          exitCode: 124,
+          stdout: '',
+          stderr: '',
+          error: `Timed out after ${options.timeoutMs} ms`,
+        };
+      }
+      return {
+        exitCode: 0,
+        stdout: `AIOS_AGENT_SMOKE_OK ${'probe-audit-payload '.repeat(96)}`,
+        stderr: '',
+        managedInvocation: {
+          runner: 'aios.harness.one-shot.v1',
+          command: 'codex',
+          args: ['exec', '-'],
+        },
+      };
+    },
+  });
+
+  // 第一次 60s 超时 -> 自动升级到 120s 重试 -> 成功
+  assert.equal(result.status, 'pass');
+  assert.equal(result.recorded, 1);
+  assert.deepEqual(seenTimeouts, [60000, 120000]);
+  assert.equal(result.agents[0].attempts, 2);
+});
+
+test('agents smoke blocks with recovery hint after exhausting all timeout escalations', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  const seenTimeouts = [];
+  const result = await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    runOneShotImpl: async (clientId, options) => {
+      seenTimeouts.push(options.timeoutMs);
+      return {
+        exitCode: 124,
+        stdout: '',
+        stderr: '',
+        error: `Timed out after ${options.timeoutMs} ms`,
+      };
+    },
+  });
+
+  assert.equal(result.status, 'blocked');
+  assert.equal(result.recorded, 0);
+  // 60s -> 120s -> 240s 全耗尽
+  assert.deepEqual(seenTimeouts, [60000, 120000, 240000]);
+  assert.equal(result.agents[0].attempts, 3);
+  assert.match(result.agents[0].blocker, /timed out after 240000 ms \(attempt 3\/3\)/);
+  assert.match(result.agents[0].blocker, /--timeout-ms <ms>/);
+  assert.match(result.agents[0].blocker, /AIOS_AGENT_SMOKE_TIMEOUT_MS/);
+});
+
 
 test('generate-orchestrator-agents --export-only skips generated target sync', () => {
   const result = run(process.execPath, ['scripts/generate-orchestrator-agents.mjs', '--export-only'], {
