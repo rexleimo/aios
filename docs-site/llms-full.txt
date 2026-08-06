@@ -41,6 +41,7 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/
 - https://cli.rexai.top/blog/2026-08-v543-crg-decision-checkpoints/
 - https://cli.rexai.top/blog/2026-08-v541-windows-self-update-safety/
 - https://cli.rexai.top/blog/2026-08-parallel-coding-agents/

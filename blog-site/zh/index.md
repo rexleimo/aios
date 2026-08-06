@@ -20,6 +20,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3：CRG 决策检查点、Worker Journal 改名与幂等的 aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1：为什么 Windows 上 "aios update" 会坏，以及我们怎么修好的自更新](2026-08-v541-windows-self-update-safety.md)
 - [并行 coding agent 不是免费的：Git worktree 隔离文件，隔离不了状态](2026-08-parallel-coding-agents.md)

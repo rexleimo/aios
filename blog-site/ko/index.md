@@ -22,6 +22,7 @@ Harness CLI를 처음 사용하시나요? 이 게시물들이 방향을 잡아�
 
 ## 최신 글
 
+- [v5.4.4: 에이전트 스모크 테스트 신뢰성——출력 계약 클라이언트와 타임아웃 자동 에스컬레이션](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3: CRG 결정 체크포인트, Worker Journal 이름 변경, 멱등한 aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1: Windows에서 "aios update"가 깨진 이유와 자체 업데이트 수정](2026-08-v541-windows-self-update-safety.md)
 - [v5.4.0: 워크플로 이터레이션 v2.1 — Activation 안전성, 타입 Evidence 계약, 전체 Skill 감사](2026-08-v540-workflow-iteration-v21.md)

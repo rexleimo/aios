@@ -7,6 +7,18 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `Harness CLI` and jump to release-related docs.
 
+## v5.4.4 (2026-08-06) — Reliable Agent Smoke: Output-Contract Clients and Escalating Probe Timeouts
+
+### What changed
+
+- `agents smoke --live` no longer fails for clients (e.g. Codex) that wrap replies in their JSON output contract. The probe prompt now explicitly overrides the contract with an ACK-only marker, ACK detection tolerates JSON-wrapped replies, the post-receive compression proof applies only to outputs at or above `minRawBytes` (short outputs are inlined by design), and empty compression refs no longer crash evidence recording.
+- The hardcoded 30s live probe timeout is replaced by `AIOS_AGENT_SMOKE_TIMEOUT_MS` and `agents smoke --timeout-ms <ms>` (default raised to 60s).
+- Probes now auto-retry with escalated timeouts (60s → 120s → 240s) on transient slow responses before blocking an agent — one slow client cold start or model queue delay no longer leaves agents permanently workflow-disabled. The final blocker message includes the recovery command.
+
+### Upgrade notes
+
+- Existing installs can update with `aios update`. If your environment previously hit "command 无效 / workflow 卡死" (agents blocked by live smoke evidence drift), re-run `aios agents smoke --live --client <name> --timeout-ms <ms>` to regenerate v2 evidence — no data migration needed.
+
 ## v5.4.3 (2026-08-06) — CRG Decision Checkpoints and Worker Journal Rename
 
 ### What changed

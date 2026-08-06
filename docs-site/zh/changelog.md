@@ -5,6 +5,18 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.4.4（2026-08-06）— Agent 冒烟检测可靠性：输出契约客户端与超时自动升级
+
+### 主要变更
+
+- `agents smoke --live` 不再因走 JSON 输出契约的客户端（如 Codex）而失败。探测 prompt 现在显式覆写契约为纯 ACK 标记，ACK 检测兼容 JSON 包裹的回复，post-receive 压缩证明只对达到 `minRawBytes` 的输出生效（短输出按设计内联），空压缩 refs 不再导致证据记录崩溃。
+- 硬编码的 30 秒探测超时替换为 `AIOS_AGENT_SMOKE_TIMEOUT_MS` 与 `agents smoke --timeout-ms <ms>`（默认提升至 60 秒）。
+- 探测遇到瞬时慢响应会自动重试并升级超时（60s → 120s → 240s），全部耗尽才判定 blocked——一次慢客户端冷启动或模型排队延迟不再让 Agent 永久失去工作流启用状态。最终 blocker 信息自带恢复命令。
+
+### 升级说明
+
+- 已安装用户可直接 `aios update` 升级。如果你此前遇到过"command 无效 / workflow 卡死"（Agent 因 live smoke 证据漂移被 blocked），重新执行 `aios agents smoke --live --client <名字> --timeout-ms <ms>` 重新生成 v2 证据即可，无需数据迁移。
+
 ## v5.4.3（2026-08-06）— CRG 决策检查点与 Worker Journal 改名
 
 ### 主要变更
