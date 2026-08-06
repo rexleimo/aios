@@ -6,6 +6,11 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Fixed
+
+- `agents smoke --live` no longer fails for clients that wrap probe replies in their JSON output contract (e.g. Codex): the probe prompt now explicitly overrides the output contract with an ACK-only marker, ACK detection tolerates JSON-wrapped replies, the post-receive compression proof is required only for outputs at or above `minRawBytes` (short outputs are inlined by design and no longer fail the smoke), and empty compression refs no longer crash evidence recording.
+- Add `AIOS_AGENT_SMOKE_TIMEOUT_MS` env var and `agents smoke --timeout-ms <ms>` CLI flag to replace the hardcoded 30s live probe timeout.
+
 ## [5.4.3] - 2026-08-06
 
 ### Added

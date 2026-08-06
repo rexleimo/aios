@@ -13,11 +13,13 @@ export async function runAgentsCommand(
     throw new Error('agents requires subcommand: doctor, list, or smoke');
   }
   if (subcommand === 'smoke') {
+    const explicitTimeout = Number.isFinite(options.timeoutMs) && options.timeoutMs > 0 ? options.timeoutMs : undefined;
     const report = await runAgentsSmoke({
       rootDir,
       dryRun: options.dryRun === true,
       live: options.live === true,
       clientId: options.clientId || '',
+      timeoutMs: explicitTimeout,
     });
     const json = options.json || options.format === 'json';
     stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : renderAgentsSmokeText(report));

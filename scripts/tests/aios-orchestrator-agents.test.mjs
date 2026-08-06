@@ -311,6 +311,70 @@ test('agents smoke does not mint promotion files when a live result lacks manage
   await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'provenance', 'rex-planner.json'), 'utf8'));
 });
 
+test('agents smoke accepts an ACK wrapped inside output-contract JSON', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  const result = await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    runOneShotImpl: async () => ({
+      exitCode: 0,
+      stdout: JSON.stringify({
+        schemaVersion: 1,
+        agentId: 'rex-planner',
+        role: 'planner',
+        status: 'ok',
+        findings: [],
+        blockers: [],
+        evidenceRefs: ['AIOS_AGENT_SMOKE_OK'],
+        filesReviewed: [],
+        recommendedNextSteps: [],
+      }),
+      stderr: '',
+      managedInvocation: {
+        runner: 'aios.harness.one-shot.v1',
+        command: 'codex',
+        args: ['exec', '-'],
+      },
+    }),
+  });
+
+  assert.equal(result.status, 'pass');
+  assert.equal(result.recorded, 1);
+});
+
+test('agents smoke prompt overrides the JSON output contract for probes', async () => {
+  const rootDir = await makeRootDir();
+  await copyCanonicalSource(rootDir);
+  const { runAgentsSmoke } = await import('../lib/agents/smoke.mjs');
+  let seenPrompt = '';
+  await runAgentsSmoke({
+    rootDir,
+    roles: ['planner'],
+    live: true,
+    clientId: 'codex',
+    runOneShotImpl: async (clientId, options) => {
+      seenPrompt = options.userPrompt;
+      return {
+        exitCode: 0,
+        stdout: `AIOS_AGENT_SMOKE_OK ${'probe-audit-payload '.repeat(96)}`,
+        stderr: '',
+        managedInvocation: {
+          runner: 'aios.harness.one-shot.v1',
+          command: 'codex',
+          args: ['exec', '-'],
+        },
+      };
+    },
+  });
+
+  assert.match(seenPrompt, /Do NOT return a JSON handoff object/);
+  assert.match(seenPrompt, /reply with the ACK marker only/);
+});
+
 
 test('generate-orchestrator-agents --export-only skips generated target sync', () => {
   const result = run(process.execPath, ['scripts/generate-orchestrator-agents.mjs', '--export-only'], {
