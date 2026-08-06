@@ -105,7 +105,7 @@ export async function installRexWorkflowSkills({
 }
 
 function usage() {
-console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
+console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -114,6 +114,7 @@ Options:
   --all                      Init all agents (even if CLI not detected)
   --dry-run                  Preview what would be done without writing files
   --adopt-legacy-superpowers Explicit cleanup; preview first with --dry-run
+  --yes                        Authorize unattended installs (RTK/Caveman/Headroom + MCP)
   --yes-compression-tools    Authorize unattended RTK/Caveman/Headroom installation
   --yes-headroom-mcp         Authorize unattended Gemini/Grok Headroom MCP registration`);
 }
@@ -127,8 +128,9 @@ export async function main(argv = process.argv.slice(2)) {
   const dryRun = argv.includes('--dry-run');
   const adoptLegacySuperpowers = argv.includes('--adopt-legacy-superpowers');
   const allFlag = argv.includes('--all');
-  const yesCompressionTools = argv.includes('--yes-compression-tools');
-  const yesHeadroomMcp = argv.includes('--yes-headroom-mcp');
+  const yesFlag = argv.includes('--yes');
+  const yesCompressionTools = yesFlag || argv.includes('--yes-compression-tools');
+  const yesHeadroomMcp = yesFlag || argv.includes('--yes-headroom-mcp');
   const agentIdx = argv.indexOf('--agent');
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 

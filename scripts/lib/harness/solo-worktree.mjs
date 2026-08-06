@@ -46,7 +46,7 @@ export async function prepareSoloWorktree({
     };
   }
 
-  const prefix = `aios-solo-harness-${normalizeText(sessionId, 'session')}-`;
+  const prefix = `aios-worker-journal-${normalizeText(sessionId, 'session')}-`;
   const workspacePath = await mkdtemp(path.join(os.tmpdir(), prefix));
   await mkdir(workspacePath, { recursive: true });
   const worktreePath = path.join(workspacePath, 'repo');

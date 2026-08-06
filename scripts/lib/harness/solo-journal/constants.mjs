@@ -4,5 +4,5 @@ export const CONTROL_FILENAME = 'control.json';
 export const OBJECTIVE_FILENAME = 'objective.md';
 export const OPERATOR_NOTES_FILENAME = 'operator-notes.md';
 export const HOOK_EVENTS_FILENAME = 'hook-events.jsonl';
-export const SOLO_HARNESS_DIRNAME = 'solo-harness';
+export const SOLO_HARNESS_DIRNAME = 'worker-journal';
 export const SOLO_STAGES = new Set(['research', 'requirements', 'planning', 'development', 'validation', 'handoff']);

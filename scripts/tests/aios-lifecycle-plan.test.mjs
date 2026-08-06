@@ -134,6 +134,7 @@ test('runSetup browser flow enables doctor auto-heal by default', async () => {
     components: ['browser'],
     skipPlaywrightInstall: true,
     skipDoctor: false,
+    force: true,
   }, {
     rootDir: '/tmp/aios-test',
     projectRoot: '/tmp/aios-test',
@@ -157,6 +158,7 @@ test('runSetup browser flow does not block lifecycle when browser-use runtime is
     components: ['browser'],
     skipPlaywrightInstall: true,
     skipDoctor: false,
+    force: true,
   }, {
     rootDir: '/tmp/aios-test',
     projectRoot: '/tmp/aios-test',
@@ -264,6 +266,7 @@ test('runSetup projects Rex workflow skills for Grok after AIOS skills install',
     components: ['skills'],
     client: 'grok',
     skipDoctor: true,
+    force: true,
   }, {
     rootDir: '/tmp/aios-install',
     projectRoot: '/tmp/grok-project',
@@ -400,6 +403,7 @@ test('runSetup scopes native and agent project writes to projectRoot and client'
     components: ['native', 'agents'],
     client: 'opencode',
     skipDoctor: true,
+    force: true,
   }, {
     rootDir: '/tmp/aios-install',
     projectRoot: '/tmp/user-project',

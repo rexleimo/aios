@@ -27,6 +27,12 @@ This project has a structural knowledge graph. **Use it at each decision point i
 - Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
 - Follow `next_tool_suggestions` from each response for the next tool to call
 
+### Accelerated prompt workflows
+
+- Pre-built workflows are available as MCP prompts: run `list_prompts` to see them, then `get_prompt(name="...", arguments={...})` to load one instead of hand-assembling the tool sequence.
+- Ready-made entries include `review_changes` (pre-commit review), `debug_issue` (guided debugging), `pre_merge_check` (PR readiness), `architecture_map` (structure docs), and `onboard_developer` (new-dev orientation).
+- Prefer loading a matching prompt over composing the same steps manually — it is faster and follows the maintained workflow.
+
 ### Planning context proposals
 
 - When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, its `task_id`, and workspace-relative `targets` if the task has none.

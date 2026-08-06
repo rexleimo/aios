@@ -11,6 +11,9 @@ export function createDefaultSetupOptions() {
     applyClientCostSettings: false,
     skipPlaywrightInstall: false,
     skipDoctor: false,
+    yes: false,
+    retry: false,
+    force: false,
   };
 }
 

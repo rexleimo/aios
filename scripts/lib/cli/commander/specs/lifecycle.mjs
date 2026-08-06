@@ -29,6 +29,9 @@ export const LIFECYCLE_COMMAND_SPECS = [
       ['--adopt-legacy-superpowers', 'Explicit cleanup; preview first with the standalone reconciler --dry-run'],
       ['--skip-playwright-install', 'Skip browser-use runtime installation'],
       ['--skip-doctor', 'Skip post-install doctor checks'],
+      ['--yes', 'Skip interactive confirmations'],
+      ['--retry', 'Resume from components that are not yet installed'],
+      ['--force', 'Reinstall all components even if already installed'],
     ],
   },
   {
