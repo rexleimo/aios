@@ -1,0 +1,42 @@
+{
+  "kind": "rex.standards-spec-review.v1",
+  "fixedPoint": "b83b94fbb9486ef16380e016fd2393e789bae2be",
+  "diffRef": "git:worktree-against-b83b94fbb9486ef16380e016fd2393e789bae2be",
+  "specSources": [
+    "file:docs/plans/2026-08-08-chrome-autostart-test-design.md",
+    "user:提交推送并正式发布修复版本"
+  ],
+  "standards": {
+    "findings": [],
+    "checked": [
+      "AGENTS.md Coding Style & Naming Conventions",
+      "AGENTS.md Testing Guidelines",
+      "AGENTS.md Commit & Pull Request Guidelines",
+      "Mysterious Name",
+      "Duplicated Code",
+      "Feature Envy",
+      "Data Clumps",
+      "Primitive Obsession",
+      "Repeated Switches",
+      "Shotgun Surgery",
+      "Divergent Change",
+      "Speculative Generality",
+      "Message Chains",
+      "Middle Man",
+      "Refused Bequest"
+    ],
+    "summary": "No standards or smell findings in the bounded launch-agent policy, regression test, patch version, and changelog diff."
+  },
+  "spec": {
+    "findings": [],
+    "summary": "The generated launch-agent policy is opt-in, regression coverage is present, and the backward-compatible fix is recorded as patch version 5.5.2."
+  },
+  "verdict": "approved",
+  "evidenceRefs": [
+    "file:scripts/lib/components/browser/cdp-service.mjs",
+    "file:scripts/tests/aios-components.test.mjs",
+    "file:VERSION",
+    "file:CHANGELOG.md",
+    "receipt:8fe4c325-5c85-4b5e-ad38-aa6f519ac984"
+  ]
+}

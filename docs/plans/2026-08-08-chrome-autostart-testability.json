@@ -1,0 +1,22 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-08-08-chrome-autostart-testability.json",
+  "redCandidate": {
+    "publicEntry": "node scripts/aios.mjs internal browser cdp-start, which installs the macOS launch-agent policy",
+    "setup": "Render the AIOS-managed CDP launch-agent plist for the default port and assert that login and process-exit events cannot launch or revive Chrome without an explicit CDP start request.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "--test-name-pattern",
+        "browser CDP launch agent only starts Chrome on an explicit request",
+        "scripts/tests/aios-components.test.mjs"
+      ],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "The generated plist does not set RunAtLoad or KeepAlive to true, while explicit cdp-start remains the action that kickstarts Chrome.",
+    "observed": "The generated plist sets both RunAtLoad and KeepAlive to true.",
+    "failureReason": "The AIOS-managed launchd policy explicitly starts Chrome at login and restarts it after exit, so browser launch is not gated by an explicit user browser action.",
+    "receiptRef": "receipt:32a2a095-ffb9-4e27-b2bb-a5e1f65fcda7"
+  }
+}

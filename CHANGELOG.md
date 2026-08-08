@@ -40,6 +40,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.5.2] - 2026-08-08
+
+- Disable Chrome launch-agent autostart
+
 ## [5.4.4] - 2026-08-06
 
 ### Fixed

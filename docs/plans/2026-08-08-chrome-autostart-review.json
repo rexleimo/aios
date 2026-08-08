@@ -1,0 +1,45 @@
+{
+  "kind": "rex.standards-spec-review.v1",
+  "fixedPoint": "b83b94fbb9486ef16380e016fd2393e789bae2be",
+  "diffRef": "git:worktree-against-b83b94fbb9486ef16380e016fd2393e789bae2be",
+  "specSources": [
+    "file:docs/plans/2026-08-08-chrome-autostart-test-design.md",
+    "user:修复开机和启动coding-agent时默认启动Google-Chrome"
+  ],
+  "standards": {
+    "findings": [],
+    "checked": [
+      "AGENTS.md Coding Style & Naming Conventions",
+      "Mysterious Name",
+      "Duplicated Code",
+      "Feature Envy",
+      "Data Clumps",
+      "Primitive Obsession",
+      "Repeated Switches",
+      "Shotgun Surgery",
+      "Divergent Change",
+      "Speculative Generality",
+      "Message Chains",
+      "Middle Man",
+      "Refused Bequest"
+    ],
+    "summary": "No standards or smell finding in the bounded plist-policy and acceptance-test diff."
+  },
+  "spec": {
+    "findings": [
+      {
+        "location": "scripts/lib/components/browser/cdp-service.mjs:117-140",
+        "evidence": "The new generated plist disables RunAtLoad and KeepAlive, but the already-installed ~/Library/LaunchAgents/com.aios.cdp9222.plist still contains true for both keys and can remain loaded.",
+        "severity": "hard",
+        "fix": "Unload the proven AIOS-managed com.aios.cdp9222 job and remove or regenerate its plist before claiming the current machine is fixed."
+      }
+    ],
+    "summary": "The future generated policy matches the spec; current-machine cleanup is still required."
+  },
+  "verdict": "changes-requested",
+  "evidenceRefs": [
+    "file:scripts/lib/components/browser/cdp-service.mjs",
+    "file:scripts/tests/aios-components.test.mjs",
+    "file:/Users/rex/Library/LaunchAgents/com.aios.cdp9222.plist"
+  ]
+}

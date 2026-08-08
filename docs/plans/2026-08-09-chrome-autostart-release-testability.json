@@ -1,0 +1,16 @@
+{
+  "kind": "behavior-preserving-hardening",
+  "decisionRef": "file:docs/plans/2026-08-09-chrome-autostart-release-testability.json",
+  "baseline": {
+    "publicEntry": "node --test scripts/tests/aios-components.test.mjs",
+    "setup": "Run the complete browser component test file against the already implemented Chrome CDP launch-agent policy.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/aios-components.test.mjs"],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "All browser component tests pass, including the assertion that the generated launch agent cannot auto-start or keep Chrome alive.",
+    "observed": "The browser component suite passed with 36 tests and 0 failures.",
+    "receiptRef": "receipt:546b3221-3e85-44ee-9f83-21dfd599055b"
+  }
+}

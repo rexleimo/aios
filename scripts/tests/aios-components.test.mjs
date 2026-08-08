@@ -23,6 +23,10 @@ import {
 } from '../lib/components/agents.mjs';
 import { installBrowserMcp, migrateBrowserMcpConfig } from '../lib/components/browser.mjs';
 import {
+  renderCdpLaunchAgentPlist,
+  resolveCdpServiceLayout,
+} from '../lib/components/browser/cdp-service.mjs';
+import {
   commandExists,
   getCommandSpawnSpec,
 } from '../lib/platform/process.mjs';
@@ -131,6 +135,14 @@ test('browser MCP snippet starts the local launcher directly', () => {
   assert.doesNotMatch(snippet, /aios-mcp-proxy\.mjs/);
   assert.match(snippet, /"command": "node"/);
   assert.match(snippet, /run-local-browser-mcp\.mjs/);
+});
+
+test('browser CDP launch agent only starts Chrome on an explicit request', () => {
+  const layout = resolveCdpServiceLayout('/repo', 9222);
+  const plist = renderCdpLaunchAgentPlist(layout);
+
+  assert.doesNotMatch(plist, /<key>RunAtLoad<\/key>\s*<true\/>/u);
+  assert.doesNotMatch(plist, /<key>KeepAlive<\/key>\s*<true\/>/u);
 });
 
 async function makeFakeWindowsAgentLauncher(command, scriptRelativePath) {

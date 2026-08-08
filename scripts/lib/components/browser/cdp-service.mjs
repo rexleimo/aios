@@ -126,9 +126,9 @@ export function renderCdpLaunchAgentPlist(layout) {
     <string>${layout.launcherPath}</string>
   </array>
   <key>RunAtLoad</key>
-  <true/>
+  <false/>
   <key>KeepAlive</key>
-  <true/>
+  <false/>
   <key>WorkingDirectory</key>
   <string>${layout.rootDir}</string>
   <key>StandardOutPath</key>
