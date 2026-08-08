@@ -119,6 +119,29 @@ Classify substantive work before selecting process controls. Do not create a pla
 4. Use `aios-long-running-harness` only for a planned resumable objective. Dispatch parallel agents only for a planned item with independent domains; keep coupled changes sequential.
 5. Before delivery, gather concrete verification evidence. For long tasks, announce the selected route in the first progress update.
 
+## Ask-First 行为准则（需求对齐）
+
+目标：交付**用户想要的东西**，而不是"完成一个任务"。规划/设计/实现过程中遇到不清晰，按优先级链处理，**提问是最后手段**：
+
+1. **查**：从环境查证（文件、代码、历史证据、已有 requirements decision）；
+2. **推**：从上下文推断（用户已做决定、仓库约束、领域惯例）；
+3. **猜**：采用合理默认值并明确标注"这是假设"；
+4. **问**：前三步都失败、且该问题会改变实现或验收方式时，主动停下来询问用户。
+
+**提问规则：**
+- 带假设提问：给出你的理解 + 选项 + 默认值（"我理解是 X，对吗？若不是，是 A 还是 B？"），用户可低成本确认；
+- 一次只问一个决策性问题，不批量轰炸；
+- 宁可多问一次，不可猜错方向——"停下来问"不是失败；
+- 用户不回答或回答"你决定"时，采用默认假设继续，永不卡住。
+
+**澄清预算（防死循环）：**
+- 每次提问必须让状态前进（解决一个歧义或收敛到可开工）；
+- 累计 3 轮未收敛 → 停止询问，把未决项记录为**假设清单**（`assumptions-recorded`），解锁执行；
+- 假设清单随交付物一起交付，用户验收时可见；
+- 已确认的 requirements decision 后续直接引用，不重复询问。
+
+**前端 UI 专项：** 界面/风格方向不清晰时，先给出 1-2 个方向（风格/布局/交互）让用户选择确认，确认后才实现。
+
 ## Agent Shortcut Conventions
 - `cap` is a repository shortcut for `commit + push`.
 - Trigger: when the user message is exactly `cap`, execute this flow in the current repo.
