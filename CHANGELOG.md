@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [5.5.0] - 2026-08-08
+
+### Added
+
+- **需求对齐（Ask-First）**：工作流现在会主动识别模糊请求（如"优化一下前端页面"、"Improve the landing page."），在规划前自动进入需求澄清（rex-requirements / Grilling 模式），与用户对齐可观察行为后再开发，交付用户想要的东西而不是"完成一个任务"。
+- **思考优先级链**：`rex-requirements` 与 build agent 增加"查 → 推 → 猜 → 问"行为准则——先从环境查证、再从上下文推断、必要时采用标注假设的默认值，**提问是最后手段**；提问必须携带理解 + 选项 + 默认值（Ask-with-hypothesis），用户不回答时自动采用默认继续，永不卡住。
+- **澄清预算与假设收敛（防死循环）**：requirements 澄清契约新增 `anyOf` 收敛组（`acceptance-criteria-recorded` 或 `assumptions-recorded` 二选一），澄清会话有明确时间盒出口；累计 3 轮未收敛时把未决项记录为假设清单（`assumptions-recorded`）随交付物一起交付，用户验收时可见。未决项不阻塞，杜绝"无限询问、永不执行"。
+- 类型化 `requirements-decision` 工件（`requirements-decision-recorded` 证据）加入澄清证据契约，确认一次后同需求不再重复触发澄清。
+
+### Changed
+
+- `derive-facts` 结构性推导：泛化优化目标 + 无验收描述 + 无特指功能实体 → 自动产生 `acceptance-criteria-missing`，不再依赖用户措辞中出现"需求不清/验收标准"等关键词；排除完成时态与名词化陈述（如"优化方案提交了"）的误报。
+- `rex-requirements` 证据契约：验收标准/非目标可与假设记录二选一收敛；`validate-command-evidence`、`capability-pack`、`software-workflow-runtime` 契约校验支持 `anyOf` 收敛组。
+- 前端 UI 专项：界面/风格方向不清晰时先给出 1-2 个方向（风格/布局/交互）让用户选择确认，确认后才实现。
+
+### Fixed
+
+- 修复 `rex-harness` 子模块与主仓库 gitlink 漂移导致的主仓库 workflow 测试失败（`assertSoftwareWorkflowCommandContract` 导出缺失）。
+- `commandContract` 校验不再把 `anyOf` 收敛组误判为非法 expectedEvidence。
+
+## [Unreleased]
+
 ## [5.4.4] - 2026-08-06
 
 ### Fixed

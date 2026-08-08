@@ -22,6 +22,7 @@ Harness CLI を初めて使う方へ。これらの投稿で概要を把握で�
 
 ## 最新の記事
 
+- [v5.5.0: Ask-First 要件アライメント——エージェントが不要なものを届けなくなる](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：エージェントスモークテストの信頼性——出力コントラクトクライアントとタイムアウト自動エスカレーション](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3：CRG 決定チェックポイント、Worker Journal リネーム、冪等な aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正](2026-08-v541-windows-self-update-safety.md)
