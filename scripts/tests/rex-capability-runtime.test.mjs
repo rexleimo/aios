@@ -457,7 +457,7 @@ test('runner evidence ingestion advances only when a valid envelope is present',
     assert.equal(ingested.ingested, true);
     assert.equal(ingested.result.outcome, 'blocked');
     assert.deepEqual(ingested.result.missingEvidence, [
-      'non-goals-recorded',
+      { anyOf: ['non-goals-recorded', 'assumptions-recorded'] },
       'first-slice-identified',
       'requirements-decision-recorded',
     ]);

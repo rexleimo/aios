@@ -213,7 +213,7 @@ test('auto-gate persists the current rex activation and exposes one executable c
     });
     assert.equal(blocked.outcome, 'blocked');
     assert.deepEqual(blocked.missingEvidence, [
-      'non-goals-recorded',
+      { anyOf: ['non-goals-recorded', 'assumptions-recorded'] },
       'first-slice-identified',
       'requirements-decision-recorded',
     ]);
