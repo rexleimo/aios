@@ -28,12 +28,13 @@ export const CORE_RISK_ROLES = Object.freeze([
 
 export async function buildAgentsSmokePlan({
   rootDir = process.cwd(),
-  roles = CORE_RISK_ROLES,
+  roles = null,
   dryRun = true,
   generatedAt = new Date().toISOString(),
 } = {}) {
   const source = await loadCanonicalAgents({ rootDir });
-  const agents = roles.map((role) => {
+  const selectedRoles = roles || Object.keys(source.roleMap).sort();
+  const agents = selectedRoles.map((role) => {
     const agentId = source.roleMap[role];
     const agent = agentId ? source.agentsById[agentId] : null;
     return {
@@ -204,7 +205,7 @@ async function writeLiveEvidence({ rootDir, agent, clientId, sessionId, now, res
 
 export async function runAgentsSmoke({
   rootDir = process.cwd(),
-  roles = CORE_RISK_ROLES,
+  roles = null,
   dryRun = false,
   live = false,
   clientId = '',

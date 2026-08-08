@@ -20,6 +20,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 最新文章
 
+- [v5.5.1：基于证据的 Agent 生命周期晋级](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3：CRG 决策检查点、Worker Journal 改名与幂等的 aios init](2026-08-v543-crg-decision-checkpoints.md)

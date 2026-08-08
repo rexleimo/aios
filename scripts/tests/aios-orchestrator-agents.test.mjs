@@ -177,7 +177,7 @@ test('turn compression metrics preserve agent_id for catalogue promotion evidenc
   assert.deepEqual(records.map((record) => record.event_kind), ['pre_send', 'post_receive']);
 });
 
-test('agents smoke --dry-run produces first-stage core-risk plan without writing evidence', async () => {
+test('agents smoke --dry-run covers every canonical role without writing evidence', async () => {
   const rootDir = await makeRootDir();
   await copyCanonicalSource(rootDir);
 
@@ -197,6 +197,8 @@ test('agents smoke --dry-run produces first-stage core-risk plan without writing
   const report = JSON.parse(output);
   assert.equal(report.kind, 'aios.agents.smoke-plan.v1');
   assert.equal(report.dryRun, true);
+  assert.equal(report.agents.length, 19);
+  assert.equal(new Set(report.agents.map((agent) => agent.agentId)).size, 19);
   assert.ok(report.agents.some((agent) => agent.agentId === 'rex-evidence-auditor'));
   assert.ok(report.agents.some((agent) => agent.agentId === 'rex-install-governance-reviewer'));
   await assert.rejects(() => fs.readFile(path.join(rootDir, '.aios', 'agents', 'smoke', 'rex-planner.json'), 'utf8'));

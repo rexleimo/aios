@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [5.5.1] - 2026-08-08
+
+### Fixed
+
+- Agent lifecycle promotion now follows verified managed smoke, provenance, and bidirectional metrics evidence instead of a hardcoded six-agent allowlist. All canonical Agent roles can be promoted without weakening fail-closed evidence validation.
+- `agents smoke` now covers all 19 canonical roles by default, including documentation, React, refactor, and TypeScript specialists.
+- AIOS status now reports workflow blockers as unmet agent or quality gates instead of incorrectly attributing every blocked recipe to missing Agent smoke evidence.
+- macOS `/var` and `/private/var` path aliases are canonicalized in the client projection contract test.
+
+### Verification
+
+- 19/19 managed Agent live smoke probes pass with Codex, including smoke, provenance, and pre/post metrics evidence.
+- Rex workflow policy: 74/74; Rex integration: 52/52; full root test suite: 1033 tests, 1023 passed, 10 skipped, 0 failed.
+
 ## [5.5.0] - 2026-08-08
 
 ### Added

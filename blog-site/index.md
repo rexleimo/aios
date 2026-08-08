@@ -22,6 +22,7 @@ New to Harness CLI? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.5.1: Evidence-Driven Agent Lifecycle Promotion](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First Requirements Alignment — Agents Stop Building the Wrong Thing](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4: Reliable Agent Smoke — Output-Contract Clients and Escalating Probe Timeouts](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3: CRG Decision Checkpoints, Worker Journal Rename, and Idempotent aios init](2026-08-v543-crg-decision-checkpoints.md)

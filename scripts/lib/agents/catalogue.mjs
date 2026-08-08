@@ -142,7 +142,10 @@ async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot }) {
   };
 }
 
-function lifecycleForAgent(agent) {
+function lifecycleForAgent(agent, verification) {
+  // Managed evidence is the promotion signal. Static allowlists remain a
+  // compatibility fallback for projected roles before their first local run.
+  if (verification.status === 'verified') return 'projected';
   if (LIVE_VERIFIED_AGENT_IDS.has(agent.id)) return 'projected';
   if (PROJECTED_AGENT_IDS.has(agent.id)) return 'projected';
   return 'candidate';
@@ -182,8 +185,8 @@ export async function buildAgentCatalogue({
 } = {}) {
   const source = await loadCanonicalAgents({ rootDir });
   const agents = await Promise.all(Object.values(source.agentsById).map(async (agent) => {
-    const lifecycleState = lifecycleForAgent(agent);
     const verification = await readAgentPromotionEvidence(agent.id, { rootDir, evidenceRoot });
+    const lifecycleState = lifecycleForAgent(agent, verification);
     const blockers = buildBlockers(agent, lifecycleState, verification);
     return {
       agentId: agent.id,

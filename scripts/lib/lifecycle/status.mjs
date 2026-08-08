@@ -2,11 +2,15 @@ import { buildAgentCatalogue } from '../agents/catalogue.mjs';
 import { buildClientCapabilityReport } from '../clients/capability-report.mjs';
 import { listWorkflowRecipes } from '../workflows/recipes.mjs';
 
-export async function buildAiosStatus({ rootDir = process.cwd(), generatedAt = new Date().toISOString() } = {}) {
+export async function buildAiosStatus({
+  rootDir = process.cwd(),
+  evidenceRoot = rootDir,
+  generatedAt = new Date().toISOString(),
+} = {}) {
   const [agentCatalogueReport, workflowRecipeReport, clientCapabilityReport] = await Promise.all([
-    buildAgentCatalogue({ rootDir, generatedAt }),
-    listWorkflowRecipes({ rootDir, generatedAt }),
-    buildClientCapabilityReport({ rootDir }),
+    buildAgentCatalogue({ rootDir, evidenceRoot, generatedAt }),
+    listWorkflowRecipes({ rootDir, evidenceRoot, generatedAt }),
+    buildClientCapabilityReport({ rootDir, evidenceRoot }),
   ]);
 
   const blockers = [];
@@ -17,7 +21,7 @@ export async function buildAiosStatus({ rootDir = process.cwd(), generatedAt = n
     .filter((recipe) => !recipe.liveReady)
     .map((recipe) => recipe.workflowId);
   if (blockedWorkflowIds.length > 0) {
-    blockers.push(`${blockedWorkflowIds.length} workflow recipes are blocked by unverified agents`);
+    blockers.push(`${blockedWorkflowIds.length} workflow recipes are blocked by unmet agent or quality gates`);
   }
   const pendingClients = clientCapabilityReport.clients
     .filter((client) => client.status === 'pending-smoke')
