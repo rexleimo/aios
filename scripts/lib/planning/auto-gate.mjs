@@ -28,6 +28,21 @@ export const ALWAYS_ON_PLANNING_POLICY = Object.freeze({
 });
 
 const WORKFLOW_COMMAND_PATTERN = /^\/(plan|team|subagent|harness|single|grill|spec|tickets|review|implement|debug|wayfinder)\b[:\s-]*/iu;
+
+// expectedEvidence 支持 anyOf 收敛组（如验收标准或假设记录二选一）：
+// 组内 kind 都是可提交的证据种类，Provider 提交其一即可满足该契约项。
+// 展开后用于证据信封与提示文本，避免把 anyOf 对象序列化成 [object Object]。
+export function flattenExpectedEvidence(expectedEvidence = []) {
+  const items = [];
+  for (const item of expectedEvidence) {
+    if (item && typeof item === 'object' && Array.isArray(item.anyOf)) {
+      for (const kind of item.anyOf) items.push(kind);
+    } else if (typeof item === 'string') {
+      items.push(item);
+    }
+  }
+  return items;
+}
 const WORKFLOW_INTENT_ALIASES = Object.freeze({
   subagent: 'team',
   planning: 'tickets',
@@ -267,7 +282,7 @@ function buildDirectiveText({ decision, plan, command = null, mode = 'lean' } = 
     ? `AIOS_REX_EVIDENCE=${JSON.stringify({
       schemaVersion: 1,
       activationId: command.activationId,
-      evidence: command.expectedEvidence.map((kind) => ({
+      evidence: flattenExpectedEvidence(command.expectedEvidence).map((kind) => ({
         kind,
         refs: ['artifact-or-command-ref'],
       })),
@@ -286,7 +301,7 @@ function buildDirectiveText({ decision, plan, command = null, mode = 'lean' } = 
     command?.reasonCode ? `trigger: ${command.reasonCode} refs=${command.triggerEvidenceRefs.join(', ')}` : '',
     command ? `provider: ${command.provider.kind}:${command.provider.id}` : '',
     command ? `objective: ${command.objective}` : '',
-    command?.expectedEvidence?.length ? `expected-evidence: ${command.expectedEvidence.join(', ')}` : '',
+    command ? `expected-evidence: ${flattenExpectedEvidence(command.expectedEvidence).join(', ')}` : '',
     evidenceEnvelope ? `evidence-output: End the Provider response with exactly one line: ${evidenceEnvelope}` : '',
     evidenceEnvelope ? 'evidence-rule: Report only refs that actually exist; do not invoke the next Provider.' : '',
     command?.provider?.kind === 'agent'
