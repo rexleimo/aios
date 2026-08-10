@@ -153,3 +153,9 @@ hermes
 ---
 
 전체 가이드는 [AIOS 문서](https://cli.rexai.top/ko/)를 참조. 다중 클라이언트 워크플로우 안전성은 [Agent Governance](/blog/ko/2026-06-agent-governance/)에서 확인하세요.
+
+## 관련 문서
+
+- [빠른 시작](https://cli.rexai.top/ko/getting-started/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

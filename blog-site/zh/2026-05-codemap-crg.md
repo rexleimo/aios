@@ -117,3 +117,9 @@ aios internal codemap doctor
 ```
 
 [完整文档 →](/zh/codemap/){ .md-button }
+
+## 相关文档
+
+- [Codemap](https://cli.rexai.top/zh/codemap/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

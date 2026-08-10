@@ -127,3 +127,9 @@ The entry point detects TTY and automatically invokes the Ink version.
 - Ink UI docs: <https://github.com/vadimdemedes/ink-ui>
 - Design doc: `docs/superpowers/specs/2026-04-02-ink-tui-design.md`
 - Implementation plan: `docs/superpowers/plans/2026-04-02-ink-tui-refactor.md`
+
+## Related
+
+- [Getting Started](https://cli.rexai.top/getting-started/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

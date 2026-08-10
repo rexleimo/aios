@@ -122,3 +122,9 @@ If any signal fires, the agent reads the full history via `@file` or tool-use �
 ---
 
 **Try it:** Open any AIOS-wrapped CLI in a project with session history. You should see `Context packet: (lazy-load; agent self-discovers memory)` instead of the usual pack path. Ask the agent to "continue from last time" and watch it load the history on demand.
+
+## Related
+
+- [ContextDB](https://cli.rexai.top/contextdb/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

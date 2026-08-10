@@ -39,6 +39,9 @@ jobs:
 
       - name: Install docs dependencies
         run: |
+          sudo apt-get update
+          # social plugin card rendering: cairo (cairosvg) + freetype + CJK fonts
+          sudo apt-get install -y libcairo2-dev libfreetype6-dev fontconfig fonts-noto-core fonts-noto-cjk
           python -m pip install --upgrade pip
           pip install -r docs-requirements.txt
 

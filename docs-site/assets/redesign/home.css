@@ -1985,3 +1985,58 @@ body.rex-home {
   .hud-panel__canvas,
   .cta-section__canvas { opacity: 0.28; }
 }
+
+/* Hero one-line install block (SEO/GEO first-screen action) */
+.hero-install {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: min(100%, 620px);
+  margin: 1.25rem 0 0;
+  padding: 0.55rem 0.55rem 0.55rem 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 12px;
+  background: rgba(6, 7, 13, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.hero-install__cmd {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  color: var(--rex-cyan, #22d3ee);
+  font-family: var(--rex-font-code, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.86rem;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.hero-install__copy {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  border-radius: 8px;
+  background: rgba(34, 211, 238, 0.1);
+  color: var(--rex-cyan, #22d3ee);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.hero-install__copy:hover {
+  background: rgba(34, 211, 238, 0.22);
+}
+
+@media (max-width: 640px) {
+  .hero-install {
+    flex-wrap: wrap;
+    padding: 0.6rem;
+  }
+  .hero-install__cmd {
+    width: 100%;
+    font-size: 0.78rem;
+  }
+}

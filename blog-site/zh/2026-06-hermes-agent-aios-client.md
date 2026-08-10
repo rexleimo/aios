@@ -155,3 +155,9 @@ hermes
 ---
 
 阅读 [AIOS 官方文档](https://cli.rexai.top/zh/) 获取完整使用指南，或查看 [Agent 治理文章](/blog/zh/2026-06-agent-governance/) 了解 AIOS 如何保证多客户端工作流的安全性。
+
+## 相关文档
+
+- [快速开始](https://cli.rexai.top/zh/getting-started/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

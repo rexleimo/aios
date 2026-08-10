@@ -122,3 +122,9 @@ AIOS로 래핑된 CLI를 열 때마다 ContextDB는 `init → session → pack �
 ---
 
 **사용해 보세요:** 세션 히스토리가 있는 프로젝트에서 AIOS 래핑 CLI를 엽니다. 일반적인 팩 경로 대신 `Context packet: (lazy-load; agent self-discovers memory)`가 표시되어야 합니다. 에이전트에게 "지난번에 이어서"라고 말하면 필요에 따라 히스토리를 로드합니다.
+
+## 관련 문서
+
+- [ContextDB](https://cli.rexai.top/ko/contextdb/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

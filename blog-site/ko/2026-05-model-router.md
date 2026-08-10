@@ -103,3 +103,9 @@ Model Router 는 Agent Team 에 내장되어 있습니다 — 팀 실행의 각 
 ---
 
 *Model Router 는 [AIOS](https://cli.rexai.top) 의 일부입니다. 모든 모델, 규칙, 설정 옵션은 [전체 문서](https://cli.rexai.top/ko/model-router/)를 참조하세요.*
+
+## 관련 문서
+
+- [모델 라우터](https://cli.rexai.top/ko/model-router/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

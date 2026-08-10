@@ -1,6 +1,8 @@
 ---
 title: Model Router
 description: Automatically pick the right AI model for each task — so you don't have to think about it.
+schema_type: techarticle
+date: 2026-05-08
 ---
 
 # Model Router

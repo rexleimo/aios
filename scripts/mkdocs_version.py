@@ -37,6 +37,14 @@ def on_config(config: Any) -> Any:
     return config
 
 
+def on_page_markdown(markdown: str, page: Any, config: Any, **kwargs: Any) -> str:
+    """Replace the {{ aios_version }} placeholder in page markdown with the VERSION value."""
+    version = config.extra.get("aios_version", "")
+    if not version:
+        return markdown
+    return markdown.replace("{{ aios_version }}", version)
+
+
 def on_env(env: Any, config: Any, **kwargs: Any) -> Any:
     """Register a filter so hreflang tags only point at translations that exist."""
     docs_dir = Path(config["docs_dir"])

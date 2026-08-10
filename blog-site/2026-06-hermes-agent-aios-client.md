@@ -154,3 +154,9 @@ hermes
 ---
 
 Read the [AIOS docs](https://cli.rexai.top/) for the full guide, or check [Agent Governance](/blog/2026-06-agent-governance/) to see how AIOS keeps multi-client workflows safe.
+
+## Related
+
+- [Getting Started](https://cli.rexai.top/getting-started/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

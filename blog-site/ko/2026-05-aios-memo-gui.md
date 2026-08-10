@@ -94,3 +94,9 @@ AIOS가 처음이신가요? [퀵스타트 가이드](https://cli.rexai.top/ko/ge
 ---
 
 *aios memo GUI는 [AIOS](https://cli.rexai.top) 생태계의 일부입니다.[시작하기](https://cli.rexai.top/ko/getting-started/) 또는 [ContextDB 문서](https://cli.rexai.top/ko/contextdb/)를 읽고 에이전트 기억에 대해 자세히 알아보세요.*
+
+## 관련 문서
+
+- [ContextDB](https://cli.rexai.top/ko/contextdb/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

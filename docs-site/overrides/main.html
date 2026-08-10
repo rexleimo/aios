@@ -65,7 +65,15 @@
   {% set page_url = page.canonical_url if page and page.canonical_url else (page.abs_url if page and page.abs_url else config.site_url) %}
   {% set page_description = page.meta.description if page and page.meta and page.meta.description else config.site_description %}
   {% set page_title = page.meta.title if page and page.meta and page.meta.title else (page.title if page else config.site_name) %}
-  {% set og_image = "https://cli.rexai.top/assets/og-cover.png" %}
+  {% if page and page.meta and page.meta.image %}
+    {% if page.meta.image.startswith('http') %}
+      {% set og_image = page.meta.image %}
+    {% else %}
+      {% set og_image = config.site_url ~ '/' ~ page.meta.image.lstrip('/') %}
+    {% endif %}
+  {% else %}
+    {% set og_image = "https://cli.rexai.top/assets/og-cover.png" %}
+  {% endif %}
   {% set blog_current = rex_blog.current if rex_blog is defined and rex_blog and rex_blog.current else none %}
   {% set parent_url = page_url %}
   {% if page and page.parent and page.parent.url %}
@@ -172,6 +180,59 @@
     ]
   }
   </script>
+  {% if page and page.meta and page.meta.schema_type == 'faq' and page.meta.faq %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {% for item in page.meta.faq %}
+      {
+        "@type": "Question",
+        "name": {{ item.q | tojson }},
+        "acceptedAnswer": {"@type": "Answer", "text": {{ item.a | tojson }}}
+      }{{ ',' if not loop.last }}
+      {% endfor %}
+    ]
+  }
+  </script>
+  {% endif %}
+  {% if page and page.meta and page.meta.schema_type == 'howto' and page.meta.howto_steps %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    "name": {{ page_title | tojson }},
+    "description": {{ page_description | tojson }},
+    "step": [
+      {% for step in page.meta.howto_steps %}
+      {
+        "@type": "HowToStep",
+        "name": {{ step.name | tojson }},
+        "text": {{ step.text | tojson }}
+      }{{ ',' if not loop.last }}
+      {% endfor %}
+    ]
+  }
+  </script>
+  {% endif %}
+  {% if page and page.meta and page.meta.schema_type == 'techarticle' %}
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "TechArticle",
+    "@id": {{ (page_url ~ '#article') | tojson }},
+    "url": {{ page_url | tojson }},
+    "headline": {{ page_title | tojson }},
+    "description": {{ page_description | tojson }},
+    "datePublished": {{ (page.meta.date or '2026-01-01') | string | tojson }},
+    "dateModified": {{ (page.meta.date or '2026-01-01') | string | tojson }},
+    "inLanguage": {{ (config.theme.language or 'en') | tojson }},
+    "publisher": {"@id": "https://cli.rexai.top/#organization"},
+    "mainEntityOfPage": {{ page_url | tojson }}
+  }
+  </script>
+  {% endif %}
   {% if blog_current %}
   <script type="application/ld+json">
   {

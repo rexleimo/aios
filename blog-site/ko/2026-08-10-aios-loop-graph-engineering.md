@@ -20,10 +20,10 @@ tags: ["Graph Engineering", "Loop Engineering", "AIOS", "에이전트 오케스�
 | Graph Engineering 루프 도구 | AIOS가 제공하는 것 |
 | --- | --- |
 | **더 나은 검증기** | 증거 게이트——`verification-before-completion`, doctor 검사, 계약 검증이 있는 테스트 증거. 노드의 산출물은 에이전트가 "끝났다"고 말한다고 끝난 것이 아니라, 결정적 검사를 통과해야 합니다. |
-| **안정적인 종료 조건** | Workflow Policy가 위험도에 따라 각 요청을 `direct` / `guarded` / `planned`으로 분류하고, `aios plan auto-gate`가 런타임에 경로를 선택합니다. 루프는 라우트 계약이 정한 지점에서 멈추지, 예산이 소진될 때까지 돌지 않습니다. |
-| **더 깨끗한 상태 파일** | ContextDB가 프로젝트 기억(memo, checkpoint, 검색 가능 팩)을 디스크에 저장합니다. pull-based이므로 루프가 죽어도 세션 전체를 재생하지 않고 중단 지점에서 재개할 수 있습니다. |
+| **안정적인 종료 조건** | [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/)가 위험도에 따라 각 요청을 `direct` / `guarded` / `planned`으로 분류하고, `aios plan auto-gate`가 런타임에 경로를 선택합니다. 루프는 라우트 계약이 정한 지점에서 멈추지, 예산이 소진될 때까지 돌지 않습니다. |
+| **더 깨끗한 상태 파일** | [ContextDB](https://cli.rexai.top/ko/contextdb/)가 프로젝트 기억(memo, checkpoint, 검색 가능 팩)을 디스크에 저장합니다. pull-based이므로 루프가 죽어도 세션 전체를 재생하지 않고 중단 지점에서 재개할 수 있습니다. |
 
-여기에 `aios harness run --objective "..." --worktree`를 더하면, 중단에도 복구되는 장기 루프가 완성됩니다: 상태를 checkpoint하고, 마지막으로 수용된 증거부터 재개하며, 실행 중인 파일은 git worktree로 격리합니다.
+여기에 `aios harness run --objective "..." --worktree`를 더하면, 중단에도 복구되는 장기 루프가 완성됩니다: 상태를 checkpoint하고, 마지막으로 수용된 증거부터 재개하며, 실행 중인 파일은 [git worktree](https://cli.rexai.top/ko/solo-harness/)로 격리합니다.
 
 이것이 "루프"의 절반이며, 대부분의 팀이 실제로 서 있는 자리이기도 합니다. 그들은 아직 그래프가 필요하지 않습니다——조용히 표류하지 않는 루프 하나가 필요합니다.
 
@@ -42,11 +42,11 @@ tags: ["Graph Engineering", "Loop Engineering", "AIOS", "에이전트 오케스�
 
 실전 매뉴얼에서 가장 가치 있는 토폴로지는 AIOS에서는 개념이 아니라 명령어입니다.
 
-- **팬아웃 / 팬인(`parallel()`)** → `aios team 3:codex "..."`: N개의 독립 노드를 한 번에 파견하고, 배리어에서 대기한 뒤 전체 결과 집합을 수집하고 실패를 필터링합니다(여기서도 `.filter(Boolean)`은 한 줄입니다).
+- **팬아웃 / 팬인(`parallel()`)** → [`aios team 3:codex "..."`](https://cli.rexai.top/ko/team-ops/): N개의 독립 노드를 한 번에 파견하고, 배리어에서 대기한 뒤 전체 결과 집합을 수집하고 실패를 필터링합니다(여기서도 `.filter(Boolean)`은 한 줄입니다).
 - **다이아몬드: 파견 → 환원 → 합성** → team 실행 후 증거 환원 병합 단계: HUD가 에이전트별 상태를 보고하고, 합성 노드는 수집된 증거만 봅니다. 모두의 전체 컨텍스트를 짊어지지 않습니다.
 - **대항적 검증** → 증거 감사: doctor, 계약 테스트, 검증 게이트는 어떤 "완료" 주장이 받아들여지기 전에 그것을 반박하려 시도하는 것 자체가 목적입니다.
 - **격리(`git worktree`)** → `aios harness run --worktree`: 병렬로 쓰는 에이전트는 각자 자신의 워크트리에서 작업해 서로를 밟지 않습니다.
-- **모델 계층화** → `model-router`: 경계가 있고 반복적인 작업(추출, 분류)은 저렴한 계층으로, 합성 노드는 강한 모델 유지——토큰은 습관이 아니라 판단력을 따라 쓰입니다.
+- **모델 계층화** → [`model-router`](https://cli.rexai.top/ko/model-router/): 경계가 있고 반복적인 작업(추출, 분류)은 저렴한 계층으로, 합성 노드는 강한 모델 유지——토큰은 습관이 아니라 판단력을 따라 쓰입니다.
 - **동적 워크플로(모델이 그래프를 그리게 하기)** → `aios plan auto-gate`: 목표를 기술하면 런타임에 경로가 선택된 계획이 반환됩니다——매뉴얼의 "자기 라우팅" 단계입니다.
 
 ## 로컬 퍼스트가 해자
@@ -65,3 +65,17 @@ tags: ["Graph Engineering", "Loop Engineering", "AIOS", "에이전트 오케스�
 Loop Engineering은 죽지 않았습니다. 그것은 Graph Engineering의 노드 정의가 되었습니다. 진짜 발전 경로는: 루프 하나를 안정화 → 계약 부여 → 조건부 엣지로 연결 → 상태 공유 → 실패 라우팅입니다. AIOS는 이 경로를 로컬 퍼스트 Agent Harness로 구현합니다: `aios harness`가 루프를, `aios team`과 `aios plan auto-gate`가 그래프를, ContextDB가 공유 상태를, 증거 게이트가 실패 라우팅을 담당하며, 모두 이미 사용 중인 코딩 클라이언트 아래에서 동작합니다.
 
 아직 "불안정한 루프 하나" 단계라면 거기서 시작하세요: `aios init --all`, 그리고 `aios doctor --native --verbose`. 루프가 안정되면 그래프는 여전히 원래 자리에서 당신을 기다립니다.
+
+## FAQ
+
+**Loop Engineering은 죽었나요?**
+아닙니다——그것은 Graph Engineering의 노드 정의가 되었습니다. 그래프 실전 매뉴얼은 그래프를 짜기 전에 안정적인 단일 루프를 요구하며, AIOS는 바로 그 루프를 먼저 단단히 만듭니다(검증기, 종료 조건, 상태 파일).
+
+**그래프가 필요한가요?**
+작업이 명확한 역할로 분해되고, 진짜 병렬 서브태스크가 있으며, 실패 라우팅 비용을 감당할 수 있을 때만 필요합니다. 그렇지 않으면 안정적인 루프가 더 저렴하고 빠릅니다——게다가 AIOS는 두 레이어를 모두 제공합니다.
+
+**AIOS는 데이터를 클라우드로 보내나요?**
+아닙니다. 엔진, ContextDB 기억, 토큰 압축(RTK / Caveman / Headroom), 브라우저, 프라이버시 가드가 모두 로컬에서 동작하며, 데이터는 머신 밖으로 나가지 않습니다.
+
+**어떻게 시작하나요?**
+`aios init --all`을 실행한 뒤 `aios doctor --native --verbose`를 실행하세요. 먼저 안정적인 루프 하나로 시작하고(`aios harness run --objective "..."`), 작업이 실제로 분해되면 팀을 추가하세요(`aios team`). 전체 Graph Engineering 매핑은 [아키텍처 문서](https://cli.rexai.top/ko/architecture/)를 참조하세요.

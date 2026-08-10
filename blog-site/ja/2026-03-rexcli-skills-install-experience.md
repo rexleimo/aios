@@ -56,3 +56,9 @@ Skills インストールはようになりました明示的なスコープ選�
 
 - ドキュメント: `/superpowers/`
 - レポ: <https://github.com/rexleimo/aios>
+
+## 関連ドキュメント
+
+- [クイックスタート](https://cli.rexai.top/ja/getting-started/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

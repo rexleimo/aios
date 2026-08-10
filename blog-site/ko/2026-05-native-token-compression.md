@@ -57,3 +57,9 @@ registry marker는 등록 정보가 있다는 뜻일 뿐 전체 이력이 모든
 ### 현재 동작은 어디서 확인하나요?
 
 [Token Intelligence](https://cli.rexai.top/ko/token-compression/), [ContextDB](https://cli.rexai.top/ko/contextdb/), [문제 해결](https://cli.rexai.top/ko/troubleshooting/)을 참고하세요.
+
+## 관련 문서
+
+- [토큰 인텔리전스](https://cli.rexai.top/ko/token-compression/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

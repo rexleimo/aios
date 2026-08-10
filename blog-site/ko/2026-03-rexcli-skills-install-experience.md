@@ -56,3 +56,9 @@ Skills 설치는 이제 명시적 스코프 선택을 지원합니다:
 
 - 문서: `/superpowers/`
 - 레포: <https://github.com/rexleimo/aios>
+
+## 관련 문서
+
+- [빠른 시작](https://cli.rexai.top/ko/getting-started/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

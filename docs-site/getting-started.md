@@ -1,6 +1,16 @@
 ---
 title: Quick Start — Install AIOS for Claude Code, Codex, and Gemini
 description: Install AIOS on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
+schema_type: howto
+howto_steps:
+  - name: "Install the stable release"
+    text: "Run curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash on macOS/Linux, or the aios-install.ps1 one-liner on Windows PowerShell."
+  - name: "Initialize a project"
+    text: "Run aios init --all from the project root to create the .aios marker and detect supported coding clients."
+  - name: "Start the first client"
+    text: "Open codex, claude, gemini, opencode, hermes, or grok in the project directory so the detected guidance is available."
+  - name: "Verify the installation"
+    text: "Run aios doctor --native --verbose to confirm ContextDB, client sync, and safety checks."
 ---
 
 # Quick Start

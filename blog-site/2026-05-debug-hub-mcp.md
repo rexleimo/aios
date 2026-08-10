@@ -113,3 +113,9 @@ When your agents can debug themselves, you can trust them to run longer, handle 
 ---
 
 *debug-hub is at v0.3.0 and is part of [AIOS](https://cli.rexai.top). Try it and give your agents the power of self-reflection.*
+
+## Related
+
+- [debug-hub](https://cli.rexai.top/debug-hub/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

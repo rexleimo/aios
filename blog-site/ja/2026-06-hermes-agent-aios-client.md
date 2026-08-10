@@ -153,3 +153,9 @@ hermes
 ---
 
 完全なガイドは [AIOS ドキュメント](https://cli.rexai.top/ja/) を参照。多クライアントワークフローの安全性については [Agent Governance](/blog/ja/2026-06-agent-governance/) を確認してください。
+
+## 関連ドキュメント
+
+- [クイックスタート](https://cli.rexai.top/ja/getting-started/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

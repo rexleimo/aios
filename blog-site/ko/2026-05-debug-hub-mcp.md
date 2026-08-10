@@ -113,3 +113,9 @@ Agent 가 스스로 디버깅할 수 있으면, 더 오래 실행하고, 더 복
 ---
 
 *debug-hub 는 v0.3.0 이며 [AIOS](https://cli.rexai.top) 의 일부입니다. 사용해 보고 agent 에게 자기 성찰의 힘을 주세요.*
+
+## 관련 문서
+
+- [debug-hub](https://cli.rexai.top/ko/debug-hub/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

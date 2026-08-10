@@ -56,3 +56,9 @@ tags: [RexCli, Skills, TUI, Onboarding, AI Development]
 
 - Docs: `/superpowers/`
 - Repo: <https://github.com/rexleimo/aios>
+
+## 相关文档
+
+- [快速开始](https://cli.rexai.top/zh/getting-started/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

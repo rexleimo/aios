@@ -1,6 +1,8 @@
 ---
 title: debug-hub
 description: Let your coding agents debug themselves — query logs, trace errors, and self-diagnose without your help.
+schema_type: techarticle
+date: 2026-05-06
 ---
 
 # debug-hub

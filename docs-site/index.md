@@ -17,13 +17,13 @@ home: true
     <div class="hero-content">
       <div class="hero-badge">
         <svg class="hero-badge__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        LOCAL-FIRST AGENT HARNESS
+        LOCAL-FIRST AGENT HARNESS · v{{ aios_version }}
       </div>
 
       <div class="hero-headline">
-        <h1 class="hero-headline__line hero-headline__line--muted">Same commands.</h1>
-        <div class="hero-headline__line hero-headline__line--primary">Now with a brain,</div>
-        <div class="hero-headline__line hero-headline__line--accent">a team &amp; self-diagnostics.</div>
+        <h1 class="hero-headline__line hero-headline__line--primary">Give your AI coding agent memory,</h1>
+        <div class="hero-headline__line hero-headline__line--muted">a team &amp; verification.</div>
+        <div class="hero-headline__line hero-headline__line--accent">Same commands. Now with a brain.</div>
       </div>
 
       <p class="hero-subheadline">
@@ -31,6 +31,25 @@ home: true
         adaptive routing, multi-agent collaboration, and verification on top of
         codex, claude, gemini, opencode, hermes, and grok — without changing how you work.
       </p>
+
+      <div class="hero-install" role="group" aria-label="One-line install">
+        <code class="hero-install__cmd" id="hero-install-cmd">curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash</code>
+        <button class="hero-install__copy" type="button" data-copy-target="hero-install-cmd">Copy</button>
+      </div>
+      <script>
+        (function () {
+          var btn = document.querySelector('[data-copy-target="hero-install-cmd"]');
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            var text = document.getElementById('hero-install-cmd').textContent.trim();
+            navigator.clipboard.writeText(text).then(function () {
+              var label = btn.textContent;
+              btn.textContent = 'Copied ✓';
+              setTimeout(function () { btn.textContent = label; }, 1600);
+            });
+          });
+        })();
+      </script>
 
       <div class="hero-cta-row">
         <a href="getting-started" class="md-button md-button--primary">Install in 30 seconds</a>

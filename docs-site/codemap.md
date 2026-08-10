@@ -1,6 +1,8 @@
 ---
 title: Code Review Graph (Codemap)
 description: A structural knowledge graph that gives your coding agents instant codebase understanding — callers, dependents, test coverage, and blast radius at every decision point.
+schema_type: techarticle
+date: 2026-05-21
 ---
 
 # Code Review Graph (Codemap)

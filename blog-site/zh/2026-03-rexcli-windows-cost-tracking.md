@@ -43,3 +43,9 @@ RexCli 现在集成了 OpenCode Agent 支持，让你可以：
 
 - Docs: `/getting-started/`
 - Repo: <https://github.com/rexleimo/aios>
+
+## 相关文档
+
+- [Windows 指南](https://cli.rexai.top/zh/windows-guide/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

@@ -57,6 +57,10 @@ plugins:
         - zh
         - ja
         - ko
+  - social:
+      cards_layout_options:
+        background_color: "#0b1220"
+        color: "#ffffff"
   - i18n:
       docs_structure: folder
       reconfigure_material: true
@@ -78,6 +82,13 @@ plugins:
             Home: 首页
             Blog: 博客
             Getting Started: 快速开始
+            Problem-First Guides: 问题导向指南
+            Why Agents Forget Context: 为什么 Agent 会失忆
+            Reduce Agent Token Costs: 降低 Token 成本
+            Claude Code vs Codex vs Gemini: Claude Code / Codex / Gemini 对比
+            Overnight Agent Runs: 隔夜 Agent 运行
+            Multi-Agent Code Review: 多 Agent 代码评审
+            Windows AI Coding Agent Setup: Windows AI 编码 Agent 搭建
             Quick Start: 快速开始
             Windows Guide: Windows 安装指南
             Troubleshooting: 故障排查
@@ -118,6 +129,13 @@ plugins:
             Home: ホーム
             Blog: ブログ
             Getting Started: クイックスタート
+            Problem-First Guides: 問題ファーストガイド
+            Why Agents Forget Context: エージェントがコンテキストを忘れる理由
+            Reduce Agent Token Costs: Token コスト削減
+            Claude Code vs Codex vs Gemini: Claude Code / Codex / Gemini 比較
+            Overnight Agent Runs: 夜通しのエージェント実行
+            Multi-Agent Code Review: マルチエージェントコードレビュー
+            Windows AI Coding Agent Setup: Windows での AI コーディングエージェント構築
             Quick Start: クイックスタート
             Windows Guide: Windows ガイド
             Troubleshooting: トラブルシューティング
@@ -157,7 +175,14 @@ plugins:
           nav_translations:
             Home: 홈
             Blog: 블로그
-            Getting Started: 시작하기
+            Getting Started: 빠른 시작
+            Problem-First Guides: 문제 우선 가이드
+            Why Agents Forget Context: 에이전트가 컨텍스트를 잊는 이유
+            Reduce Agent Token Costs: 토큰 비용 절감
+            Claude Code vs Codex vs Gemini: Claude Code / Codex / Gemini 비교
+            Overnight Agent Runs: 밤새 에이전트 실행
+            Multi-Agent Code Review: 멀티에이전트 코드 리뷰
+            Windows AI Coding Agent Setup: Windows AI 코딩 에이전트 설정
             Quick Start: 빠른 시작
             Windows Guide: Windows 가이드
             Troubleshooting: 문제 해결
@@ -237,6 +262,13 @@ nav:
       - Quick Start: getting-started.md
       - Windows Guide: windows-guide.md
       - Troubleshooting: troubleshooting.md
+  - Problem-First Guides:
+      - Why Agents Forget Context: why-agents-forget-context.md
+      - Reduce Agent Token Costs: reduce-agent-token-cost.md
+      - Claude Code vs Codex vs Gemini: claude-code-vs-codex-vs-gemini.md
+      - Overnight Agent Runs: overnight-agent-runs.md
+      - Multi-Agent Code Review: multi-agent-code-review.md
+      - Windows AI Coding Agent Setup: windows-ai-coding-agent-setup.md
   - Core Features:
       - ContextDB: contextdb.md
       - Token Intelligence: token-compression.md

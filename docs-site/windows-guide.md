@@ -1,6 +1,14 @@
 ---
 title: Windows Guide: PowerShell Setup and Recovery
 description: Install AIOS on Windows with PowerShell, initialize a project, verify client sync, and recover common PATH or configuration issues.
+schema_type: howto
+howto_steps:
+  - name: "Install and reload PowerShell"
+    text: "Run [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex, then reload the profile."
+  - name: "Initialize and verify a project"
+    text: "Run aios init --all from the project root, then aios doctor --native --verbose."
+  - name: "Recover common failures"
+    text: "If aios is not recognized, fix the PATH entry; if initialization fails, re-run init and inspect the first actionable error."
 ---
 
 # Windows Guide

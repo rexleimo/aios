@@ -65,3 +65,9 @@ No. It is an explicit MCP tool surface. The caller chooses what to compress or r
 ### Where are the current commands documented?
 
 Use [Token Intelligence](https://cli.rexai.top/token-compression/), [ContextDB](https://cli.rexai.top/contextdb/), and [Troubleshooting](https://cli.rexai.top/troubleshooting/). The [Workflow Policy](https://cli.rexai.top/workflow-policy/) explains how token work fits into edit and verification gates.
+
+## Related
+
+- [Token Intelligence](https://cli.rexai.top/token-compression/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

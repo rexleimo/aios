@@ -113,3 +113,9 @@ debug-hub 是 AIOS **可观测性层**的一部分。它与以下工具协同工
 ---
 
 *debug-hub 目前版本 v0.3.0，是 [AIOS](https://cli.rexai.top) 的一部分。试试看，给你的 agent 自我反思的能力。*
+
+## 相关文档
+
+- [debug-hub](https://cli.rexai.top/zh/debug-hub/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

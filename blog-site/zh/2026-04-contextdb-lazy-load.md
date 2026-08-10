@@ -122,3 +122,9 @@ tags: [ContextDB, 懒加载, Agent 记忆, AIOS, 性能]
 ---
 
 **试试看：** 在有会话历史的项目中打开 AIOS 封装的 CLI。你应该会看到 `Context packet: (lazy-load; agent self-discovers memory)` 而不是通常的 Pack 路径。告诉 Agent "继续上次的工作"，观察它按需加载历史记录。
+
+## 相关文档
+
+- [ContextDB](https://cli.rexai.top/zh/contextdb/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

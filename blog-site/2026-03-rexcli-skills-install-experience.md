@@ -56,3 +56,9 @@ The practical outcome:
 
 - Docs: `/superpowers/`
 - Repo: <https://github.com/rexleimo/aios>
+
+## Related
+
+- [Getting Started](https://cli.rexai.top/getting-started/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes

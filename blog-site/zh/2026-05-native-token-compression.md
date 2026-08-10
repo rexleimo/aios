@@ -64,3 +64,9 @@ npm run contextdb -- context:pack --session <session_id> --token-budget 1200 --t
 ### 当前命令去哪里看？
 
 阅读[Token Intelligence](https://cli.rexai.top/zh/token-compression/)、[ContextDB](https://cli.rexai.top/zh/contextdb/)和[故障排查](https://cli.rexai.top/zh/troubleshooting/)。[工作流策略](https://cli.rexai.top/zh/workflow-policy/)说明 token 工作如何进入编辑和验证门禁。
+
+## 相关文档
+
+- [Token 智能](https://cli.rexai.top/zh/token-compression/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

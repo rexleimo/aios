@@ -94,3 +94,9 @@ AIOS は初めてですか？ [クイックスタートガイド](https://cli.re
 ---
 
 *aios memo GUI は [AIOS](https://cli.rexai.top) エコシステムの一部です。[始める](https://cli.rexai.top/ja/getting-started/)か、[ContextDB ドキュメント](https://cli.rexai.top/ja/contextdb/)を読んで、Agent の記憶について詳しく学びましょう。*
+
+## 関連ドキュメント
+
+- [ContextDB](https://cli.rexai.top/ja/contextdb/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

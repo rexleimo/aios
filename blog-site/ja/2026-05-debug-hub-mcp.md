@@ -113,3 +113,9 @@ agent が自分自身をデバッグできるようになれば、より長く�
 ---
 
 *debug-hub は v0.3.0 で、[AIOS](https://cli.rexai.top) の一部です。試して、あなたの agent に自己省察の力を与えてください。*
+
+## 関連ドキュメント
+
+- [debug-hub](https://cli.rexai.top/ja/debug-hub/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

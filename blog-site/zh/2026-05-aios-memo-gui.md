@@ -94,3 +94,9 @@ aios memo GUI 是 **ContextDB** 生态系统的一部分 — 这个记忆系统�
 ---
 
 *aios memo GUI 是 [AIOS](https://cli.rexai.top) 生态的一部分。[开始使用](https://cli.rexai.top/zh/getting-started/)或[阅读 ContextDB 文档](https://cli.rexai.top/zh/contextdb/)，了解更多关于 Agent 记忆的内容。*
+
+## 相关文档
+
+- [ContextDB](https://cli.rexai.top/zh/contextdb/)
+- [Quick Start](https://cli.rexai.top/zh/getting-started/) — 30 秒安装 AIOS
+- [Workflow Policy](https://cli.rexai.top/zh/workflow-policy/) — direct / guarded / planned 路由

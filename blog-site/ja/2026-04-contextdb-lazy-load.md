@@ -122,3 +122,9 @@ AIOS でラップされた CLI を開くたびに、ContextDB は `init → sess
 ---
 
 **お試しください:** セッション履歴のあるプロジェクトで AIOS ラップ CLI を開きます。通常のパックパスの代わりに `Context packet: (lazy-load; agent self-discovers memory)` と表示されるはずです。「前回の続きを」とエージェントに伝えると、必要に応じて履歴を読み込みます。
+
+## 関連ドキュメント
+
+- [ContextDB](https://cli.rexai.top/ja/contextdb/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

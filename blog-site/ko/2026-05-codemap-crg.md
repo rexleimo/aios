@@ -117,3 +117,9 @@ aios internal codemap doctor
 ```
 
 [전체 문서 →](/ko/codemap/){ .md-button }
+
+## 관련 문서
+
+- [Codemap](https://cli.rexai.top/ko/codemap/)
+- [Quick Start](https://cli.rexai.top/ko/getting-started/) — 30초 안에 AIOS 설치
+- [Workflow Policy](https://cli.rexai.top/ko/workflow-policy/) — direct / guarded / planned 라우트

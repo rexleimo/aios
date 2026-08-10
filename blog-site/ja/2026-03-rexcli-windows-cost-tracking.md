@@ -44,3 +44,9 @@ AIOS は OpenCode Agent サポートを統合し、以下を可能にします:
 
 - ドキュメント: `/getting-started/`
 - レポ: <https://github.com/rexleimo/aios>
+
+## 関連ドキュメント
+
+- [Windows ガイド](https://cli.rexai.top/ja/windows-guide/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

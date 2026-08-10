@@ -1,61 +1,77 @@
 # AIOS
 
-> Local-first AI coding agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Adds project memory, adaptive routing, multi-agent collaboration, and verification without replacing your client.
+> Local-first agent harness for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Runs stable agent loops (verification gates, exit conditions, state files) and wires them into graphs (routed edges, shared ContextDB state, failure routing) entirely on your machine. Version: v5.5.2 · Updated: 2026-08-10.
 
 ## Search Intents
-- AI coding agent workflow
-- Claude Code project memory
-- Codex CLI multi-agent collaboration
-- local memory system for coding agents
+- how do I give Claude Code persistent memory
+- why does my coding agent forget context between sessions
+- codex cli multi agent team setup
+- reduce token cost claude code / codex
+- what is Graph Engineering for AI agents
+- what is Loop Engineering and why does it matter
+- how to run a coding agent overnight without crashing
+- local-first AI coding agent vs cloud agent
 - adaptive agent workflow policy direct guarded planned
-- ContextDB token-compressed project memory
-- multi-agent coding CLI team
-- solo harness overnight coding agent
-- AI agent verification and privacy redaction
-- Headroom MCP compression for coding agents
-- install AIOS Windows PowerShell
-- coding agent harness vs bare CLI
-- agent workflow activation safety and crash recovery
-- typed evidence contracts and artifact schema validation
+- agent harness vs bare coding CLI
+- ContextDB local project memory
+- multi-agent code review with parallel coding agents
+- model router cheaper tier for repeated agent tasks
+- windows AI coding agent setup
+- AIOS vs mem0 / agent memory solutions
+- agent verification gates and evidence contracts
+- token compression RTK Caveman Headroom
+- how to resume an interrupted long-running agent task
+- git worktree isolation for parallel agents
+- privacy-safe coding agent (no data leaves the machine)
 
 ## Canonical
-- https://cli.rexai.top/
+- https://cli.rexai.top/ — docs home, local-first agent harness overview
 
 ## Core Docs
-- https://cli.rexai.top/getting-started/
-- https://cli.rexai.top/workflow-policy/
-- https://cli.rexai.top/use-cases/
-- https://cli.rexai.top/architecture/
-- https://cli.rexai.top/case-library/
-- https://cli.rexai.top/contextdb/
-- https://cli.rexai.top/token-compression/
-- https://cli.rexai.top/troubleshooting/
-- https://cli.rexai.top/changelog/
+- https://cli.rexai.top/getting-started/ — 30-second install and first `aios doctor` run
+- https://cli.rexai.top/workflow-policy/ — direct / guarded / planned route decisions
+- https://cli.rexai.top/use-cases/ — commands by intent
+- https://cli.rexai.top/architecture/ — runtime layers and Graph Engineering mapping
+- https://cli.rexai.top/case-library/ — real-world case studies
+- https://cli.rexai.top/contextdb/ — local project memory store
+- https://cli.rexai.top/token-compression/ — local token budget control
+- https://cli.rexai.top/troubleshooting/ — recovery procedures
+- https://cli.rexai.top/changelog/ — version history
+
+## Problem-First Guides
+- https://cli.rexai.top/why-agents-forget-context/ — fix coding agent cross-session memory loss with ContextDB
+- https://cli.rexai.top/reduce-agent-token-cost/ — cut Claude Code / Codex token spend with local compression
+- https://cli.rexai.top/claude-code-vs-codex-vs-gemini/ — which coding agent CLI to choose and why
+- https://cli.rexai.top/overnight-agent-runs/ — keep a coding agent running overnight with checkpoints and gates
+- https://cli.rexai.top/multi-agent-code-review/ — reliable parallel code review with agent teams
+- https://cli.rexai.top/windows-ai-coding-agent-setup/ — Windows AI coding agent setup in 10 minutes
 
 ## Blog
-- https://cli.rexai.top/blog/
-- https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/
-- https://cli.rexai.top/blog/2026-08-v543-crg-decision-checkpoints/
-- https://cli.rexai.top/blog/2026-08-v541-windows-self-update-safety/
-- https://cli.rexai.top/blog/2026-08-parallel-coding-agents/
-- https://cli.rexai.top/blog/2026-08-ai-agent-security/
-- https://cli.rexai.top/blog/2026-08-ai-coding-cost-crisis/
-- https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/
-- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/
-- https://cli.rexai.top/blog/2026-07-v320-harness-reliability-upgrade/
-- https://cli.rexai.top/blog/2026-07-grok-build-aios-client/
-- https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/
-- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/
-- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/
-- https://cli.rexai.top/blog/2026-05-token-compression/
-- https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/
+- https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Loop Engineering → Graph Engineering: AIOS as a local-first agent harness
+- https://cli.rexai.top/blog/2026-08-v551-agent-lifecycle-promotion/ — evidence-driven agent promotion
+- https://cli.rexai.top/blog/2026-08-v550-ask-first-requirements-alignment/ — Ask-First requirements alignment
+- https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/ — output-contract smoke tests
+- https://cli.rexai.top/blog/2026-08-v543-crg-decision-checkpoints/ — CRG decision checkpoints
+- https://cli.rexai.top/blog/2026-08-v541-windows-self-update-safety/ — Windows self-update fix
+- https://cli.rexai.top/blog/2026-08-parallel-coding-agents/ — why worktrees isolate files, not state
+- https://cli.rexai.top/blog/2026-08-ai-agent-security/ — agent security practices
+- https://cli.rexai.top/blog/2026-08-ai-coding-cost-crisis/ — coding agent cost control
+- https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/ — workflow iteration v2.1
+- https://cli.rexai.top/blog/2026-07-v400-adaptive-workflow-policy/ — how route selection works
+- https://cli.rexai.top/blog/2026-07-v320-harness-reliability-upgrade/ — harness reliability upgrade
+- https://cli.rexai.top/blog/2026-07-grok-build-aios-client/ — Grok Build first-class client
+- https://cli.rexai.top/blog/2026-07-headroom-token-intelligence/ — Headroom token intelligence
+- https://cli.rexai.top/blog/2026-07-choose-agent-workflow/ — workflow decision table
+- https://cli.rexai.top/blog/2026-07-raw-cli-to-reliable-workflow/ — boundaries that make automation repeatable
+- https://cli.rexai.top/blog/2026-06-v150-unified-aios-search/ — unified search across memory/docs/plans
+- https://cli.rexai.top/blog/2026-05-token-compression/ — token compression introduction
 
 ## Languages
-- https://cli.rexai.top/zh/
-- https://cli.rexai.top/ja/
-- https://cli.rexai.top/ko/
+- https://cli.rexai.top/zh/ — 简体中文 docs (local-first agent harness 定位)
+- https://cli.rexai.top/ja/ — 日本語 docs
+- https://cli.rexai.top/ko/ — 한국어 docs
 
 ## Related Sites
 - https://rexai.top/
 - https://tool.rexai.top/
-- https://github.com/rexleimo/aios
+- https://github.com/rexleimo/aios — source, installers, releases

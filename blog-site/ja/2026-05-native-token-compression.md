@@ -57,3 +57,9 @@ registry marker は登録情報の存在を示すだけで、全履歴が各 pro
 ### 現在の仕様はどこですか？
 
 [Token Intelligence](https://cli.rexai.top/ja/token-compression/)、[ContextDB](https://cli.rexai.top/ja/contextdb/)、[トラブルシューティング](https://cli.rexai.top/ja/troubleshooting/)を参照してください。
+
+## 関連ドキュメント
+
+- [トークンインテリジェンス](https://cli.rexai.top/ja/token-compression/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

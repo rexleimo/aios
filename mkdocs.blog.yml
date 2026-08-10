@@ -41,6 +41,10 @@ plugins:
         - zh
         - ja
         - ko
+  - social:
+      cards_layout_options:
+        background_color: "#0b1220"
+        color: "#ffffff"
   - i18n:
       docs_structure: folder
       reconfigure_material: true
@@ -131,11 +135,21 @@ nav:
       - Grok Build First-Class Client: 2026-07-grok-build-aios-client.md
       - v1.40 Multi-Client Expansion: 2026-05-v140-multi-client-expansion.md
       - v2.0.2 ECC Uplift: 2026-06-v202-ecc-uplift.md
+      - Hermes Agent Is Now a First-Class AIOS Client: 2026-06-hermes-agent-aios-client.md
       - Agent Governance: 2026-06-agent-governance.md
       - v1.52.0 Shell Output Compression: 2026-06-v152-aios-shell-mcp.md
       - v1.50.1 Token Compression Compliance: 2026-06-v1501-token-compression-compliance.md
       - v1.50.0 Unified AIOS Search: 2026-06-v150-unified-aios-search.md
       - ContextDB Token Compression: 2026-05-token-compression.md
+      - "Token Intelligence Architecture: RTK, Caveman, Headroom MCP": 2026-05-native-token-compression.md
+      - "Model Router: Stop Guessing Which AI Model To Use": 2026-05-model-router.md
+      - "debug-hub: When Your Agent Can Debug Itself": 2026-05-debug-hub-mcp.md
+      - "Codemap: Give Your AI Agent a Map of Your Codebase": 2026-05-codemap-crg.md
+      - "aios memo GUI: See Your Agent's Memory As a Living Graph": 2026-05-aios-memo-gui.md
+      - "AIOS TUI Refactor: Modern Terminal UI with React Ink": 2026-04-rexcli-ink-tui-refactor.md
+      - "ContextDB Lazy Load: Agentic Self-Discovery": 2026-04-contextdb-lazy-load.md
+      - AIOS Windows Native Support + Live Cost Tracking: 2026-03-rexcli-windows-cost-tracking.md
+      - AIOS Skills Install Experience Update: 2026-03-rexcli-skills-install-experience.md
       - Solo Harness Overnight Runs: 2026-04-solo-harness.md
       - Browser MCP Weak-Model Upgrade: 2026-04-browser-mcp-weak-model-upgrade.md
       - Advanced Design Skills Playbook: advanced-design-skills-page-building.md

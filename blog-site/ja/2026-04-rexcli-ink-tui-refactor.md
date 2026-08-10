@@ -127,3 +127,9 @@ aios doctor
 - Ink UI ドキュメント：<https://github.com/vadimdemedes/ink-ui>
 - 設計ドキュメント：`docs/superpowers/specs/2026-04-02-ink-tui-design.md`
 - 実装計画：`docs/superpowers/plans/2026-04-02-ink-tui-refactor.md`
+
+## 関連ドキュメント
+
+- [クイックスタート](https://cli.rexai.top/ja/getting-started/)
+- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート

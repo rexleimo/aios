@@ -1,6 +1,16 @@
 ---
 title: Troubleshooting AIOS
 description: Diagnose setup, ContextDB, client sync, workflow, team, browser, token-tool, and privacy failures with observable evidence.
+schema_type: faq
+faq:
+  - q: "Should I delete .aios to fix a problem?"
+    a: "No. Identify the first failure and back up sessions, exports, and memo JSONL before removing derived data."
+  - q: "Does a successful dry-run mean the system works?"
+    a: "No. It proves local parsing and planned state. Run a small live task when provider and credential checks are in scope."
+  - q: "Which output should I share?"
+    a: "Share the command, exit code, runtime versions, and the smallest redacted excerpt that proves the symptom."
+  - q: "How do I recover a failed AIOS installation?"
+    a: "Run aios doctor --native --verbose to find the first actionable issue, then re-run aios init --all from the intended project root."
 ---
 
 # Troubleshooting

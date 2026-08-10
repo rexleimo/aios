@@ -1,6 +1,14 @@
 ---
 title: CLI Comparison
 description: Compare raw Codex/Claude/Gemini CLI workflows with AIOS's orchestration layer.
+schema_type: faq
+faq:
+  - q: "Does AIOS replace my coding agent?"
+    a: "No. It adds a local workflow, memory, and verification layer around supported clients."
+  - q: "Is the raw CLI ever the better choice?"
+    a: "Yes. Keep the raw path for small, stateless, low-risk tasks where extra state would not improve the result."
+  - q: "What does AIOS add on top of a raw CLI?"
+    a: "Cross-session ContextDB memory, direct/guarded/planned workflow routing, multi-client handoff, browser safety, and verification evidence."
 ---
 
 # Raw CLI vs AIOS Layer

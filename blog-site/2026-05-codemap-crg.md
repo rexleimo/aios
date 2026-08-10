@@ -117,3 +117,9 @@ aios internal codemap doctor
 ```
 
 [Full Documentation →](/codemap/){ .md-button }
+
+## Related
+
+- [Codemap](https://cli.rexai.top/codemap/)
+- [Quick Start](https://cli.rexai.top/getting-started/) — install AIOS in 30 seconds
+- [Workflow Policy](https://cli.rexai.top/workflow-policy/) — direct / guarded / planned routes
