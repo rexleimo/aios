@@ -1,6 +1,8 @@
 import { OPENCODE_STRICT_PRIMARY_AGENT_NAME, OPENCODE_STRICT_PRIMARY_AGENT_PATH } from './strict-primary-agent.mjs';
 
 export const OPENCODE_CONFIG_PATH = 'opencode.json';
+export const OPENCODE_MAX_STEPS = 24;
+export const OPENCODE_MCP_TIMEOUT_MS = 90_000;
 
 export function buildOpenCodeConfig() {
   return {
@@ -17,6 +19,7 @@ export function buildOpenCodeConfig() {
       [OPENCODE_STRICT_PRIMARY_AGENT_NAME]: {
         description: 'AIOS strict primary agent for skill enforcement, turn compression, and verification.',
         mode: 'primary',
+        steps: OPENCODE_MAX_STEPS,
         tools: {
           read: true,
           bash: true,
@@ -25,6 +28,9 @@ export function buildOpenCodeConfig() {
           'changed-files': true,
         },
       },
+    },
+    experimental: {
+      mcp_timeout: OPENCODE_MCP_TIMEOUT_MS,
     },
     command: {
       verify: {

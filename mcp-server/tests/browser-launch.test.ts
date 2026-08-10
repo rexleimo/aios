@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import { tools } from '../src/browser/index.js';
 import {
+  BrowserLauncher,
   isUserDataDirLockedError,
   resolveLaunchHeadless,
   resolveRequireCdp,
@@ -71,4 +72,55 @@ test('isUserDataDirLockedError ignores unrelated launch errors', () => {
     isUserDataDirLockedError(new Error('net::ERR_NAME_NOT_RESOLVED')),
     false
   );
+});
+
+test('BrowserLauncher closes stale profiles and removes them from state', async () => {
+  const launcher = new BrowserLauncher();
+  const closed: string[] = [];
+  const fakeState = {
+    browser: {
+      close: async () => { closed.push('browser'); },
+      isConnected: () => true,
+    },
+    context: {
+      close: async () => { closed.push('context'); },
+    },
+    pages: new Map(),
+    activePageId: null,
+    connectedOverCdp: false,
+    isolated: false,
+    lastUsedAt: 1_000,
+  };
+  (launcher as any).state.set('stale', fakeState);
+
+  const profiles = await launcher.closeIdle(500, 2_000);
+
+  assert.deepEqual(profiles, ['stale']);
+  assert.deepEqual(closed, ['context', 'browser']);
+  assert.equal(launcher.getState('stale'), undefined);
+});
+
+test('BrowserLauncher removes profile state when a close step fails', async () => {
+  const launcher = new BrowserLauncher();
+  let browserCloseAttempted = false;
+  const fakeState = {
+    browser: {
+      close: async () => { browserCloseAttempted = true; },
+      isConnected: () => true,
+    },
+    context: {
+      close: async () => { throw new Error('context close failed'); },
+    },
+    pages: new Map(),
+    activePageId: null,
+    connectedOverCdp: false,
+    isolated: false,
+    lastUsedAt: 1_000,
+  };
+  (launcher as any).state.set('broken', fakeState);
+
+  await assert.rejects(launcher.close('broken'), /context close failed/u);
+
+  assert.equal(browserCloseAttempted, true);
+  assert.equal(launcher.getState('broken'), undefined);
 });

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+## [5.5.3] - 2026-08-10
+
+### Fixed
+
+- Stabilize AIOS-managed OpenCode launches by defaulting to `--pure`, while preserving an explicit `AIOS_OPENCODE_ENABLE_EXTERNAL_PLUGINS=1` opt-out. This bypasses external-plugin dependency waits and incompatible global plugins without disabling built-in plugins or MCP servers.
+- Bound OpenCode work with a 24-step agent budget, a 90-second MCP timeout, a default shell timeout, deduplicated external Skill discovery, and workflow guidance that prevents recursive code-review-graph suggestion loops.
+- Replace the obsolete OpenCode CRG `app.on` integration with current hooks, debounce and time-limit graph refreshes, and automatically close idle or orphaned browser profiles to prevent long-lived Chrome process trees.
+
 ## [5.5.1] - 2026-08-08
 
 ### Fixed

@@ -7,8 +7,50 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import {
+  applyOpenCodeRuntimeDefaults,
+  OPENCODE_DEFAULT_BASH_TIMEOUT_MS,
+} from '../lib/opencode/runtime-env.mjs';
+import {
+  buildOpenCodeStrictAgentArgs,
+  shouldUseOpenCodePureMode,
+} from '../lib/opencode/strict-primary-agent.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const BRIDGE = path.join(ROOT, 'scripts', 'contextdb-shell-bridge.mjs');
+
+test('managed OpenCode runtime defaults bound shell waits and disable duplicate external skills', () => {
+  const env = applyOpenCodeRuntimeDefaults({ KEEP_ME: 'yes' }, { managed: true });
+
+  assert.equal(env.KEEP_ME, 'yes');
+  assert.equal(env.OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS, String(OPENCODE_DEFAULT_BASH_TIMEOUT_MS));
+  assert.equal(env.OPENCODE_DISABLE_EXTERNAL_SKILLS, '1');
+});
+
+test('OpenCode runtime defaults preserve explicit user overrides', () => {
+  const env = applyOpenCodeRuntimeDefaults({
+    OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS: '600000',
+    OPENCODE_DISABLE_EXTERNAL_SKILLS: '0',
+  }, { managed: true });
+
+  assert.equal(env.OPENCODE_EXPERIMENTAL_BASH_DEFAULT_TIMEOUT_MS, '600000');
+  assert.equal(env.OPENCODE_DISABLE_EXTERNAL_SKILLS, '0');
+});
+
+test('unmanaged OpenCode runs retain external skill discovery', () => {
+  const env = applyOpenCodeRuntimeDefaults({}, { managed: false });
+
+  assert.equal('OPENCODE_DISABLE_EXTERNAL_SKILLS' in env, false);
+});
+
+test('AIOS OpenCode invocations default to pure mode and allow an explicit plugin opt-out', () => {
+  assert.equal(shouldUseOpenCodePureMode({}), true);
+  assert.deepEqual(buildOpenCodeStrictAgentArgs([], {}), ['--agent', 'aios-build', '--pure']);
+
+  const env = { AIOS_OPENCODE_ENABLE_EXTERNAL_PLUGINS: '1' };
+  assert.equal(shouldUseOpenCodePureMode(env), false);
+  assert.deepEqual(buildOpenCodeStrictAgentArgs([], env), ['--agent', 'aios-build']);
+});
 
 async function createFakeCodexCommand() {
   const binDir = await mkdtemp(path.join(os.tmpdir(), 'aios-bridge-bin-'));

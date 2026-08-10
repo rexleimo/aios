@@ -6,6 +6,7 @@ import { logBridgeDecision } from './debug.mjs';
 import { buildPrivacyBanner, shouldPrintPrivacyBanner } from './privacy.mjs';
 import { extractOneShotPrompt, isInteractivePassthrough } from './prompts.mjs';
 import { spawnInherited } from './process-runner.mjs';
+import { applyOpenCodeRuntimeDefaults } from '../../opencode/runtime-env.mjs';
 import {
   detectAiosMarker,
   detectRunner,
@@ -90,11 +91,13 @@ function samePathEntry(left, right) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
 }
 
-function buildChildEnv(env) {
-  const shimDir = String(env.AIOS_NATIVE_SHIM_DIR || '').trim();
-  if (!shimDir) return env;
+function buildChildEnv(env, { command = '', managed = false } = {}) {
+  const next = command === 'opencode'
+    ? applyOpenCodeRuntimeDefaults(env, { managed })
+    : { ...env };
+  const shimDir = String(next.AIOS_NATIVE_SHIM_DIR || '').trim();
+  if (!shimDir) return next;
 
-  const next = { ...env };
   for (const key of resolvePathKeys(next)) {
     const entries = String(next[key] || '').split(path.delimiter);
     next[key] = entries.filter((entry) => entry && !samePathEntry(entry, shimDir)).join(path.delimiter);
@@ -182,11 +185,17 @@ export async function main(argv = process.argv.slice(2)) {
   }
 
   if (!shouldWrap) {
-    const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, buildChildEnv(env));
+    const code = spawnInherited(opts.command, normalizedArgs, opts.cwd, buildChildEnv(env, {
+      command: opts.command,
+      managed: aiosInitDone,
+    }));
     process.exit(code);
   }
 
   const args = buildWrappedRunnerArgs({ runner, workspace, opts, project, aiosInitDone });
-  const code = spawnInherited(runner.command, args, opts.cwd, buildChildEnv(env));
+  const code = spawnInherited(runner.command, args, opts.cwd, buildChildEnv(env, {
+    command: opts.command,
+    managed: aiosInitDone,
+  }));
   process.exit(code);
 }

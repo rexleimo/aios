@@ -1499,9 +1499,10 @@ test('ctx-agent one-shot OpenCode mode keeps direct requests free of planning in
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
     assert.equal(payload.argv[0], 'run');
     assert.deepEqual(payload.argv.slice(1, 3), ['--agent', 'aios-build']);
-    assert.equal(payload.argv[3], 'Summarize the current status.');
-    assert.doesNotMatch(payload.argv[3], /Read the context packet at/u);
-    assert.doesNotMatch(payload.argv[3], /# Context Packet/u);
+    assert.equal(payload.argv[3], '--pure');
+    assert.equal(payload.argv[4], 'Summarize the current status.');
+    assert.doesNotMatch(payload.argv[4], /Read the context packet at/u);
+    assert.doesNotMatch(payload.argv[4], /# Context Packet/u);
     assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'planning', 'active.json')), false);
     assert.equal(await pathExists(path.join(workspaceRoot, '.aios', 'context-db', 'exports', `${sessionId}-context.md`)), false);
   } finally {
@@ -1558,6 +1559,7 @@ test('ctx-agent interactive OpenCode mode does not send context handoff prompt',
     const payload = parseLastJsonPayload(result.stdout);
     assert.equal(payload.marker, 'FAKE_OPENCODE_OK');
     const argv = Array.isArray(payload.argv) ? payload.argv : [];
+    assert.equal(argv.includes('--pure'), true);
     assert.equal(argv.includes('--prompt'), false);
     assert.equal(argv.some((arg) => String(arg).includes('Read the context packet at')), false);
   } finally {

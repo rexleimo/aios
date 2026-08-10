@@ -5,6 +5,15 @@ import {
 
 export const OPENCODE_STRICT_PRIMARY_AGENT_NAME = 'aios-build';
 export const OPENCODE_STRICT_PRIMARY_AGENT_PATH = `.opencode/agent/${OPENCODE_STRICT_PRIMARY_AGENT_NAME}.md`;
+export const AIOS_OPENCODE_ENABLE_EXTERNAL_PLUGINS_ENV = 'AIOS_OPENCODE_ENABLE_EXTERNAL_PLUGINS';
+
+function envFlagEnabled(value) {
+  return ['1', 'true', 'yes', 'on'].includes(String(value || '').trim().toLowerCase());
+}
+
+export function shouldUseOpenCodePureMode(env = process.env) {
+  return !envFlagEnabled(env[AIOS_OPENCODE_ENABLE_EXTERNAL_PLUGINS_ENV]);
+}
 
 export function withoutOpenCodeAgentArgs(extraArgs = []) {
   return extraArgs.filter((arg, index) => {
@@ -19,11 +28,16 @@ export function withoutOpenCodeAgentArgs(extraArgs = []) {
   });
 }
 
-export function buildOpenCodeStrictAgentArgs(extraArgs = []) {
+export function buildOpenCodeStrictAgentArgs(extraArgs = [], env = process.env) {
+  const cleaned = withoutOpenCodeAgentArgs(extraArgs);
+  const pureArgs = shouldUseOpenCodePureMode(env) && !cleaned.includes('--pure')
+    ? ['--pure']
+    : [];
   return [
     '--agent',
     OPENCODE_STRICT_PRIMARY_AGENT_NAME,
-    ...withoutOpenCodeAgentArgs(extraArgs),
+    ...pureArgs,
+    ...cleaned,
   ];
 }
 
@@ -45,9 +59,16 @@ export function renderOpenCodeStrictPrimaryAgent() {
     '- `direct`: answer or inspect without a persistent plan or fixed skill chain.',
     '- `guarded`: make a small clear change only after `pre-edit-safety-gate`, then run focused verification.',
     '- `planned`: create or reuse one work-item plan, then invoke only the Provider selected by the current Rex Capability Command.',
-    '- Before any edit, invoke `pre-edit-safety-gate` and write tests first when coverage is missing.',
-    '- Before claiming completion, invoke `verification-before-completion` and report fresh evidence only.',
+    '- Before the first edit in one cohesive guarded or planned batch, invoke `pre-edit-safety-gate`; do not repeat it before every file edit.',
+    '- Before claiming completion, invoke `verification-before-completion` once and report focused fresh evidence only.',
     '- Keep live work inside the AIOS-managed runner so pre_send and post_receive compression both run.',
+    '',
+    'Runtime budgets:',
+    '- Treat one user request as one bounded work item. Stop and report a blocker after two consecutive tool actions that add no new evidence.',
+    '- Use at most three code-review-graph calls per work item. Never follow `next_tool_suggestions` recursively.',
+    '- Keep a normal work item below ten changed files. Split larger objectives into explicit batches instead of extending one session indefinitely.',
+    '- Give shell commands an explicit timeout when they can block. Use 120 seconds by default and extend only for a known long build or test.',
+    '- Close every browser profile after browser work unless the user explicitly asks to keep it open.',
     '',
     'OpenCode provider resolution:',
     '- Prefer the canonical bundled Rex Provider named by the current command.',

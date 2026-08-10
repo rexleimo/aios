@@ -5,45 +5,93 @@ import { backupFilePath, resolveUserPath } from './paths.mjs';
 
 const OPENCODE_CRG_PLUGIN = `import type { Plugin } from "@opencode-ai/plugin"
 
-/**
- * AIOS code-review-graph plugin for OpenCode.
- * Keeps the graph fresh without blocking normal coding sessions.
- */
-export default (_app: any) => {
-  const app = _app
+const UPDATE_DELAY_MS = 3_000
+const COMMAND_TIMEOUT_MS = 30_000
 
-  app.on("file.edited", async ({ $ }: { $: any }) => {
-    try {
-      await $\`uvx code-review-graph update --skip-flows\`.quiet()
-    } catch {
-      // Graph updates are best-effort and must never block edits.
-    }
+async function runCrg(cwd: string, args: string[]): Promise<string> {
+  const proc = Bun.spawn(["uvx", "code-review-graph", ...args], {
+    cwd,
+    stdin: "ignore",
+    stdout: "pipe",
+    stderr: "ignore",
   })
+  const timer = setTimeout(() => {
+    try {
+      proc.kill()
+    } catch {
+      // The process may have already exited.
+    }
+  }, COMMAND_TIMEOUT_MS)
 
-  app.on("session.created", async ({ $ }: { $: any }) => {
-    try {
-      const result = await $\`uvx code-review-graph status\`.quiet()
-      const output = result.stdout?.toString().trim()
-      if (output) console.log("[code-review-graph]", output)
-    } catch {
-      // Some projects may not have a graph yet.
-    }
-  })
-
-  app.on("tool.execute.before", async (ctx: any) => {
-    try {
-      const input = ctx?.input ?? ctx?.params ?? {}
-      const cmd = input.command ?? input.cmd ?? input.content ?? ""
-      if (typeof cmd === "string" && /^git\\s+commit/i.test(cmd)) {
-        const result = await ctx.$\`uvx code-review-graph detect-changes --brief\`.quiet()
-        const output = result.stdout?.toString().trim()
-        if (output) console.log("[code-review-graph] Pre-commit analysis:\\n" + output)
-      }
-    } catch {
-      // Never block commits.
-    }
-  })
+  try {
+    const [exitCode, stdout] = await Promise.all([
+      proc.exited,
+      new Response(proc.stdout).text(),
+    ])
+    return exitCode === 0 ? stdout.trim() : ""
+  } catch {
+    return ""
+  } finally {
+    clearTimeout(timer)
+  }
 }
+
+export const CodeReviewGraphPlugin: Plugin = async ({ directory }) => {
+  let updateTimer: ReturnType<typeof setTimeout> | undefined
+  let updateRunning = false
+  let updatePending = false
+  let disposed = false
+
+  const runUpdate = async () => {
+    if (disposed) return
+    if (updateRunning) {
+      updatePending = true
+      return
+    }
+
+    updateRunning = true
+    try {
+      await runCrg(directory, ["update", "--skip-flows"])
+    } finally {
+      updateRunning = false
+      if (updatePending && !disposed) {
+        updatePending = false
+        scheduleUpdate()
+      }
+    }
+  }
+
+  const scheduleUpdate = () => {
+    if (disposed) return
+    if (updateTimer) clearTimeout(updateTimer)
+    updateTimer = setTimeout(() => {
+      updateTimer = undefined
+      void runUpdate()
+    }, UPDATE_DELAY_MS)
+  }
+
+  return {
+    "tool.execute.after": async (input) => {
+      if (["edit", "write", "apply_patch"].includes(input.tool)) {
+        scheduleUpdate()
+      }
+    },
+    "tool.execute.before": async (input, output) => {
+      if (input.tool !== "bash") return
+      const command = output.args?.command
+      if (typeof command !== "string" || !/(^|[;&|]\\s*)git\\s+commit\\b/i.test(command)) return
+
+      const result = await runCrg(directory, ["detect-changes", "--brief"])
+      if (result) console.log("[code-review-graph] Pre-commit analysis:\\n" + result)
+    },
+    dispose: async () => {
+      disposed = true
+      if (updateTimer) clearTimeout(updateTimer)
+    },
+  }
+}
+
+export default CodeReviewGraphPlugin
 `;
 
 export function ensureOpencodePlugin(opencodeHome, { dryRun = false, io = console } = {}) {

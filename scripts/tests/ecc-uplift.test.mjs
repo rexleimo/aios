@@ -84,7 +84,9 @@ test('native sync writes OpenCode opencode.json with explicit AIOS trigger surfa
   assert.ok(config.instructions.includes('.opencode/agent/aios-build.md'));
   assert.deepEqual(config.skills.paths, ['.opencode/skills']);
   assert.equal(config.agent['aios-build'].mode, 'primary');
+  assert.equal(config.agent['aios-build'].steps, 24);
   assert.equal(config.agent['aios-build'].tools['changed-files'], true);
+  assert.equal(config.experimental.mcp_timeout, 90_000);
   assert.equal(config.command.verify.agent, 'aios-build');
   assert.equal(config.command['skill-comply'].agent, 'aios-build');
   assert.equal(config.command['skill-health'].agent, 'aios-build');

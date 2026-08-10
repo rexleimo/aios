@@ -275,6 +275,7 @@ export class BrowserLauncher {
     if (this.state.has(profileName)) {
       const existing = this.state.get(profileName)!;
       if (existing.browser?.isConnected()) {
+        existing.lastUsedAt = Date.now();
         return existing;
       }
     }
@@ -413,6 +414,7 @@ export class BrowserLauncher {
       userDataDir,
       baseUserDataDir,
       isolated,
+      lastUsedAt: Date.now(),
     };
 
     this.state.set(profileName, state);
@@ -430,11 +432,13 @@ export class BrowserLauncher {
   }
 
   getState(profileName: string): ProfileState | undefined {
-    return this.state.get(profileName);
+    const state = this.state.get(profileName);
+    if (state) state.lastUsedAt = Date.now();
+    return state;
   }
 
   getActivePage(profileName: string) {
-    const state = this.state.get(profileName);
+    const state = this.getState(profileName);
     if (!state || state.activePageId === null) return null;
     return state.pages.get(state.activePageId);
   }
@@ -443,15 +447,29 @@ export class BrowserLauncher {
     const state = this.state.get(profileName);
     if (!state) return;
 
+    const closeErrors: unknown[] = [];
+
     if (state.connectedOverCdp) {
       // CDP 模式下 close() 只断开连接，不关闭外部浏览器进程。
-      await state.browser?.close();
+      try {
+        await state.browser?.close();
+      } catch (error) {
+        closeErrors.push(error);
+      }
     } else {
       if (state.context) {
-        await state.context.close();
+        try {
+          await state.context.close();
+        } catch (error) {
+          closeErrors.push(error);
+        }
       }
       if (state.browser) {
-        await state.browser.close();
+        try {
+          await state.browser.close();
+        } catch (error) {
+          closeErrors.push(error);
+        }
       }
     }
 
@@ -465,6 +483,35 @@ export class BrowserLauncher {
     }
 
     this.state.delete(profileName);
+    if (closeErrors.length > 0) throw closeErrors[0];
+  }
+
+  async closeIdle(maxIdleMs: number, now: number = Date.now()): Promise<string[]> {
+    if (!Number.isFinite(maxIdleMs) || maxIdleMs <= 0) return [];
+    const expired = [...this.state.entries()]
+      .filter(([, state]) => now - state.lastUsedAt >= maxIdleMs)
+      .map(([profileName]) => profileName);
+
+    for (const profileName of expired) {
+      try {
+        await this.close(profileName);
+      } catch (error) {
+        console.error(`[browser_idle_cleanup] failed to close profile ${profileName}: ${toErrorMessage(error)}`);
+      }
+    }
+    return expired;
+  }
+
+  async closeAll(): Promise<string[]> {
+    const profiles = [...this.state.keys()];
+    for (const profileName of profiles) {
+      try {
+        await this.close(profileName);
+      } catch (error) {
+        console.error(`[browser_shutdown] failed to close profile ${profileName}: ${toErrorMessage(error)}`);
+      }
+    }
+    return profiles;
   }
 }
 

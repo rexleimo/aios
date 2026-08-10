@@ -118,6 +118,42 @@ function parseDurationMsEnv(value, fallback) {
         return fallback;
     return parsed;
 }
+function startBrowserIdleCleanup() {
+    const idleTtlMs = parseDurationMsEnv(process.env.BROWSER_IDLE_TTL_MS, 30 * 60 * 1000);
+    const timer = setInterval(() => {
+        void browserLauncher.closeIdle(idleTtlMs).then((closed) => {
+            if (closed.length > 0) {
+                console.error(`[browser_idle_cleanup] closed profiles: ${closed.join(', ')}`);
+            }
+        });
+    }, Math.min(idleTtlMs, 60_000));
+    timer.unref?.();
+    return () => clearInterval(timer);
+}
+function installBrowserShutdownHandlers(stopIdleCleanup) {
+    let closePromise;
+    const closeBrowsers = async (reason, exitAfter) => {
+        if (!closePromise) {
+            stopIdleCleanup();
+            closePromise = browserLauncher.closeAll();
+        }
+        const closed = await closePromise;
+        if (closed.length > 0) {
+            console.error(`[browser_shutdown] ${reason}; closed profiles: ${closed.join(', ')}`);
+        }
+        if (exitAfter)
+            process.exit(0);
+    };
+    process.once('SIGTERM', () => {
+        void closeBrowsers('SIGTERM', true);
+    });
+    process.once('SIGINT', () => {
+        void closeBrowsers('SIGINT', true);
+    });
+    process.stdin.once('end', () => {
+        void closeBrowsers('stdin closed', false);
+    });
+}
 function safeTimingEqual(a, b) {
     const aBuf = Buffer.from(a, 'utf8');
     const bBuf = Buffer.from(b, 'utf8');
@@ -331,6 +367,8 @@ async function startHttpServer() {
 }
 // 启动服务器
 async function main() {
+    const stopIdleCleanup = startBrowserIdleCleanup();
+    installBrowserShutdownHandlers(stopIdleCleanup);
     await startStdioServer();
     if (parseBoolEnv(process.env.MCP_HTTP, false)) {
         await startHttpServer();

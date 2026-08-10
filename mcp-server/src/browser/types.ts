@@ -33,6 +33,7 @@ export interface ProfileState {
   userDataDir?: string;
   baseUserDataDir?: string;
   isolated?: boolean;
+  lastUsedAt: number;
 }
 
 export interface BrowserState {

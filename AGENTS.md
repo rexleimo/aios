@@ -197,41 +197,20 @@ Fall back to Grep/Glob/Read **only** when the graph doesn't cover what you need.
 <!-- AIOS CODEMAP BEGIN -->
 ## MCP Tools: code-review-graph
 
-This project has a structural knowledge graph. **Use it at each decision point in your workflow.**
+This project exposes a structural knowledge graph via the `code-review-graph` MCP. Use it only when structural relationships materially affect the current decision; do not turn routine work into a graph-tool loop.
 
-### Decision checkpoints (mandatory)
+### Bounded checkpoints
 
-| When | Call | Why |
-|------|------|-----|
-| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
-| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
-| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
-| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
-| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
-
-### Search rules
-
-- Finding code: `semantic_search_nodes` before grep
-- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
-- Code review: `detect_changes` → `get_review_context` before reading entire files
-
-### Parameters
-
-- Always use `detail_level="minimal"`; escalate to "standard" only when insufficient
-- Follow `next_tool_suggestions` from each response for the next tool to call
-
-### Accelerated prompt workflows
-
-- Pre-built workflows are available as MCP prompts: run `list_prompts` to see them, then `get_prompt(name="...", arguments={...})` to load one instead of hand-assembling the tool sequence.
-- Ready-made entries include `review_changes` (pre-commit review), `debug_issue` (guided debugging), `pre_merge_check` (PR readiness), `architecture_map` (structure docs), and `onboard_developer` (new-dev orientation).
-- Prefer loading a matching prompt over composing the same steps manually — it is faster and follows the maintained workflow.
+- Initial orientation: call `get_minimal_context(task="...")` at most once when repository structure is not already clear.
+- Before a risky or multi-file change: use `get_impact_radius(detail_level="minimal")`; call `query_graph(pattern="tests_for", target="...")` only for the concrete target being changed.
+- After edits: call `detect_changes(detail_level="minimal")` once when the graph was used or the change has meaningful blast radius.
+- Before submitting: use `get_affected_flows()` or `get_suggested_questions()` only if unresolved structural risk remains.
+- Finding code: prefer `semantic_search_nodes` when semantic graph search is likely to beat a direct repository search.
+- Budget: no more than three graph calls per work item. Treat `next_tool_suggestions` as optional hints and never follow them recursively.
 
 ### Planning context proposals
 
-- When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, its `task_id`, and workspace-relative `targets` if the task has none.
-- The tool derives target, caller, callee, and test candidates from this codemap, but it **does not** modify the active plan.
-- Present the proposed refs to a human and have that person activate selected refs with `aios plan task <id> --confirm-context-candidates` (optionally repeat `--candidate-ref <ref>`).
-- Do not claim that context will be delivered, or invoke context-dependent orchestration, until that explicit confirmation succeeds.
+When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, the task id, and workspace-relative targets when the task has none. The tool derives target, caller, callee, and test candidates from codemap, but it does not modify the active plan. Present the candidate refs to a human. An explicit human-controlled CLI confirmation with `aios plan task <id> --confirm-context-candidates` (optionally repeated `--candidate-ref <ref>`) activates selected refs for orchestration; it is a process boundary, not an identity/authentication boundary. Do not claim context will be delivered before that command succeeds.
 <!-- AIOS CODEMAP END -->
 
 <!-- AIOS NATIVE BEGIN -->

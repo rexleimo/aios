@@ -13,6 +13,7 @@ import {
   injectCrgIntoInstructionFiles,
 } from '../lib/components/codemap/instructions.mjs';
 import { AGENTS_MD_MARKERS } from '../lib/components/codemap/constants.mjs';
+import { ensureOpencodePlugin } from '../lib/components/codemap/opencode-plugin.mjs';
 import { getCodemapHelpText } from '../lib/cli/help/codemap.mjs';
 import { getClientMcpTarget, getClientInstructionFileName, ALL_CLIENTS } from '../lib/clients/registry.mjs';
 
@@ -157,7 +158,9 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   assert.match(await readFile(path.join(projectRoot, 'GEMINI.md'), 'utf8'), /MCP Tools: code-review-graph/);
   const agentsMd = await readFile(path.join(projectRoot, 'AGENTS.md'), 'utf8');
   assert.match(agentsMd, /MCP Tools: code-review-graph/);
-  assert.match(agentsMd, /`detect_changes` → `get_review_context`/u);
+  assert.match(agentsMd, /no more than three graph calls per work item/u);
+  assert.match(agentsMd, /never follow them recursively/u);
+  assert.doesNotMatch(agentsMd, /Use it at each decision point/u);
   assert.match(agentsMd, /aios_plan_task/u);
   assert.match(agentsMd, /confirm-context-candidates/u);
   assert.doesNotMatch(agentsMd, /[\u922b]\??/u);
@@ -280,4 +283,16 @@ test('codemap component keeps client config responsibilities in focused modules'
       assert.equal(typeof mod[exportName], exportName === 'CRG_MCP_ALIAS' || exportName === 'CRG_DATA_DIR' ? 'string' : 'function', `${moduleDef.file} should export ${exportName}`);
     }
   }
+});
+
+test('OpenCode codemap plugin uses current hooks and bounds background graph commands', async () => {
+  const home = await makeTemp('aios-opencode-crg-plugin-');
+  const result = ensureOpencodePlugin(home, { io: silentIo() });
+  const source = await readFile(result.path, 'utf8');
+
+  assert.match(source, /export const CodeReviewGraphPlugin: Plugin/u);
+  assert.match(source, /"tool\.execute\.after"/u);
+  assert.match(source, /COMMAND_TIMEOUT_MS = 30_000/u);
+  assert.match(source, /Bun\.spawn/u);
+  assert.doesNotMatch(source, /app\.on\(/u);
 });

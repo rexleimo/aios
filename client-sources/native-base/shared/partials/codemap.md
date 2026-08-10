@@ -2,13 +2,14 @@
 
 ## AIOS Code-Review-Graph (codemap) MCP
 
-This project exposes a structural knowledge graph via the `code-review-graph` MCP. Use it at each decision point in your workflow.
+This project exposes a structural knowledge graph via the `code-review-graph` MCP. Use it only when structural relationships materially affect the current decision; do not turn routine work into a graph-tool loop.
 
-- Before doing anything: `get_minimal_context(task="...")` for project context and suggested next steps.
-- Before modifying code: `get_impact_radius(detail_level="minimal")` to check blast radius, and `query_graph(pattern="tests_for", target="...")` to confirm tests exist (write tests first if not).
-- After modifying code: `detect_changes(detail_level="minimal")` to verify actual impact matches expectations.
-- Before submitting: `get_affected_flows()` plus `get_suggested_questions()` as a final safety net.
-- Finding code: `semantic_search_nodes` before grep. Always use `detail_level="minimal"` and follow each response's `next_tool_suggestions`.
+- Initial orientation: call `get_minimal_context(task="...")` at most once when repository structure is not already clear.
+- Before a risky or multi-file change: use `get_impact_radius(detail_level="minimal")`; call `query_graph(pattern="tests_for", target="...")` only for the concrete target being changed.
+- After edits: call `detect_changes(detail_level="minimal")` once when the graph was used or the change has meaningful blast radius.
+- Before submitting: use `get_affected_flows()` or `get_suggested_questions()` only if unresolved structural risk remains.
+- Finding code: prefer `semantic_search_nodes` when semantic graph search is likely to beat a direct repository search.
+- Budget: no more than three graph calls per work item. Treat `next_tool_suggestions` as optional hints and never follow them recursively.
 
 ## Planning context proposals
 

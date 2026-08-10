@@ -163,7 +163,7 @@ test('one-shot subagent invocation strategies cover every harness client', () =>
   });
   assert.deepEqual(buildOneShotInvocation({ clientId: 'opencode-cli', ...common }), {
     runner: 'spawn',
-    args: ['run', '--agent', 'aios-build', '-m', 'model-a', 'system\n\n## New User Request\nprompt'],
+    args: ['run', '--agent', 'aios-build', '--pure', '-m', 'model-a', 'system\n\n## New User Request\nprompt'],
   });
   assert.deepEqual(buildOneShotInvocation({ clientId: 'codex-cli', ...common }), {
     runner: 'codex-exec',
