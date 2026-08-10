@@ -1,5 +1,5 @@
 ---
-title: Troubleshooting Harness CLI
+title: Troubleshooting AIOS
 description: Diagnose setup, ContextDB, client sync, workflow, team, browser, token-tool, and privacy failures with observable evidence.
 ---
 

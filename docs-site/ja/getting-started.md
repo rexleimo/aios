@@ -1,13 +1,13 @@
 ---
-title: クイックスタート：Harness CLI をインストールして確認する
-description: 現在のコマンドで Harness CLI をインストールし、プロジェクト guidance、ContextDB、client sync、安全チェックを確認します。
+title: クイックスタート：AIOS をインストールして確認する
+description: 現在のコマンドで AIOS をインストールし、プロジェクト guidance、ContextDB、client sync、安全チェックを確認します。
 ---
 
 # クイックスタート
 
 ## まず答え
 
-Harness CLI は対応する coding client 向けのローカル workflow layer です。現在の導入は、release を install し、project root で aios init --all を実行し、その後 aios doctor --native --verbose で結果を確認します。既存の client を置き換えず、全履歴を毎回の prompt に入れるものでもありません。
+AIOS は対応する coding client 向けのローカル workflow layer です。現在の導入は、release を install し、project root で aios init --all を実行し、その後 aios doctor --native --verbose で結果を確認します。既存の client を置き換えず、全履歴を毎回の prompt に入れるものでもありません。
 
 ## 必要なもの
 
@@ -26,7 +26,7 @@ npm -v
 === "macOS / Linux"
 
     ~~~bash
-    curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+    curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
     ~~~
 
@@ -35,7 +35,7 @@ npm -v
 === "Windows PowerShell"
 
     ~~~powershell
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ~~~
 
@@ -142,9 +142,9 @@ configuration や package install の変更が不明な場合は dry run から�
 
 ## FAQ
 
-### Harness CLI は coding client を置き換えますか？
+### AIOS は coding client を置き換えますか？
 
-いいえ。元の client をそのまま起動し、Harness CLI が記憶、workflow route、optional tool、verification guidance を追加します。
+いいえ。元の client をそのまま起動し、AIOS が記憶、workflow route、optional tool、verification guidance を追加します。
 
 ### aios init は project memory を upload しますか？
 

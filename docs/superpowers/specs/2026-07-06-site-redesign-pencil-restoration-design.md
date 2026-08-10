@@ -1,13 +1,13 @@
-# Harness CLI Site Pencil Restoration - Design
+# AIOS Site Pencil Restoration - Design
 
 > Date: 2026-07-06
 > Source design: `/Users/rex/Downloads/cli.rexai.top.pen`
-> Primary node: `CZd5Q` (`Harness CLI Pages`)
+> Primary node: `CZd5Q` (`AIOS Pages`)
 > Supporting nodes: `o2Bi8` (`Specs & Demos`), `yZfz0` (`Technical Documentation`)
 
 ## Goal
 
-Restore the current Harness CLI website to match the Pencil design in `CZd5Q` as closely as practical while preserving the existing written content.
+Restore the current AIOS website to match the Pencil design in `CZd5Q` as closely as practical while preserving the existing written content.
 
 The redesign covers both generated MkDocs sites:
 
@@ -116,17 +116,17 @@ Use the black/orange design from the Blog Index and Blog Post frames:
 
 | Current route/source | Pencil source | Notes |
 | --- | --- | --- |
-| `docs-site/index.md` | `Harness CLI - Home (Redesign)` (`berPn`) | Keep current Home copy, match Hero/Capabilities/Demo/CTA/Footer layout and animations. |
-| `docs-site/getting-started.md` and general docs shell | `Harness CLI - Docs Page (Redesign)` (`pchPW`) | Apply sidebar/content shell and card treatment to generated docs content. |
-| `docs-site/contextdb.md` | `Harness CLI - ContextDB Page` (`Is28X`) | Preserve current content, match page shell and active nav style. |
-| `docs-site/team-ops.md` | `Harness CLI - Agent Team Page` (`knaJ0`) | Preserve content, match Agent Team page layout language. |
-| `docs-site/superpowers.md` | `Harness CLI - Superpowers Page` (`n1BoR`) | Preserve content, apply dark content system. |
-| `docs-site/cli-comparison.md` | `Harness CLI - Comparison Page` (`pMduD`) | Preserve comparison copy and tables, match comparison page style. |
-| `docs-site/windows-guide.md` | `Harness CLI - Windows Guide` (`RJ42T`) | Preserve Windows copy, match guide shell. |
-| `docs-site/architecture.md` | `Harness CLI - Architecture` (`Ht5Jj`) | Preserve architecture copy, match long-form docs layout. |
-| `docs-site/changelog.md` | `Harness CLI - Changelog` (`gVrq4`) | Preserve changelog entries, match changelog shell. |
-| `blog-site/index.md` | `Harness CLI - Blog Index` (`C6Bnp`) | Keep current blog index copy/posts, use Blog Index visual structure. |
-| `blog-site/*.md` posts | `Harness CLI - Blog Post` (`fj4lo`) | Keep article body and metadata, use Blog Post layout. |
+| `docs-site/index.md` | `AIOS - Home (Redesign)` (`berPn`) | Keep current Home copy, match Hero/Capabilities/Demo/CTA/Footer layout and animations. |
+| `docs-site/getting-started.md` and general docs shell | `AIOS - Docs Page (Redesign)` (`pchPW`) | Apply sidebar/content shell and card treatment to generated docs content. |
+| `docs-site/contextdb.md` | `AIOS - ContextDB Page` (`Is28X`) | Preserve current content, match page shell and active nav style. |
+| `docs-site/team-ops.md` | `AIOS - Agent Team Page` (`knaJ0`) | Preserve content, match Agent Team page layout language. |
+| `docs-site/superpowers.md` | `AIOS - Superpowers Page` (`n1BoR`) | Preserve content, apply dark content system. |
+| `docs-site/cli-comparison.md` | `AIOS - Comparison Page` (`pMduD`) | Preserve comparison copy and tables, match comparison page style. |
+| `docs-site/windows-guide.md` | `AIOS - Windows Guide` (`RJ42T`) | Preserve Windows copy, match guide shell. |
+| `docs-site/architecture.md` | `AIOS - Architecture` (`Ht5Jj`) | Preserve architecture copy, match long-form docs layout. |
+| `docs-site/changelog.md` | `AIOS - Changelog` (`gVrq4`) | Preserve changelog entries, match changelog shell. |
+| `blog-site/index.md` | `AIOS - Blog Index` (`C6Bnp`) | Keep current blog index copy/posts, use Blog Index visual structure. |
+| `blog-site/*.md` posts | `AIOS - Blog Post` (`fj4lo`) | Keep article body and metadata, use Blog Post layout. |
 
 Other docs pages inherit the closest matching generated docs shell unless a dedicated `CZd5Q` page exists.
 

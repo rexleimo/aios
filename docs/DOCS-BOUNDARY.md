@@ -11,7 +11,7 @@ Allowed locations:
 - `README-zh.md`
 
 Rules:
-- Must be useful for developers using Harness CLI.
+- Must be useful for developers using AIOS.
 - No private planning notes, KPI pressure notes, or operator-only instructions.
 - Keep messaging product-focused and reproducible.
 

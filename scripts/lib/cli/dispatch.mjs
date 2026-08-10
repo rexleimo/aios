@@ -39,7 +39,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'version') {
-      stdout.write(`Harness CLI ${await getRuntimeVersion(rootDir)}\n`);
+      stdout.write(`AIOS ${await getRuntimeVersion(rootDir)}\n`);
       return;
     }
 

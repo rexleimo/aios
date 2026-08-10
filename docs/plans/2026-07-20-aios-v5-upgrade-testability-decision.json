@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The isolated lifecycle regression exits zero after observing Rex installation, default conflict preservation, and explicit adopted-link removal across all supported client roots.",
     "observed": "The recorded isolated lifecycle regression exited zero (receipt 803dafea-e256-495e-a89d-a0691b51dc19). No operator client-home directory was used.",

@@ -75,7 +75,7 @@ nav:
       - Post Templates: community/post-templates.md
       - Posting Policy: community/posting-policy.md
   - External:
-      - Project: https://github.com/rexleimo/harness-cli
+      - Project: https://github.com/rexleimo/aios
 ```
 
 ### i18n 适配

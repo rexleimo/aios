@@ -11,7 +11,7 @@
         "--test-concurrency=1",
         "scripts/tests/planning-context-candidates.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "An agent proposal derives deterministic target and codemap candidates without mutating active.json; explicit human confirmation persists selected candidates and rejects stale proposals.",
     "observed": "The test process fails before execution because scripts/lib/planning/context-candidates.mjs does not exist.",

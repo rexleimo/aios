@@ -1,13 +1,13 @@
 ---
 title: "Token Intelligence 계층: ContextDB, RTK, Caveman, Headroom MCP"
-description: "Harness CLI의 현재 token intelligence를 설명합니다. pull-based ContextDB, 로컬 압축, 명시적 Headroom MCP를 다룹니다."
+description: "AIOS의 현재 token intelligence를 설명합니다. pull-based ContextDB, 로컬 압축, 명시적 Headroom MCP를 다룹니다."
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---
 
 # Token Intelligence 계층: ContextDB, RTK, Caveman, Headroom MCP
 
-> **Quick Answer:** Harness CLI는 token 효율을 여러 계층으로 나눕니다. ContextDB는 필요한 프로젝트 컨텍스트를 저장·검색하고, RTK와 Caveman은 로컬에서 명령과 출력을 줄이며, Headroom MCP는 다음 단계에 필요한 자료를 명시적으로 compress/retrieve하는 도구를 제공합니다. Headroom은 모든 model request를 투명하게 interception하는 기능이 아닙니다.
+> **Quick Answer:** AIOS는 token 효율을 여러 계층으로 나눕니다. ContextDB는 필요한 프로젝트 컨텍스트를 저장·검색하고, RTK와 Caveman은 로컬에서 명령과 출력을 줄이며, Headroom MCP는 다음 단계에 필요한 자료를 명시적으로 compress/retrieve하는 도구를 제공합니다. Headroom은 모든 model request를 투명하게 interception하는 기능이 아닙니다.
 
 긴 Agent 세션에서는 로그, 브라우저 boilerplate, 반복 이력이 실제 판단에 필요한 컨텍스트를 가립니다. 중요한 것은 만능 스위치가 아니라 저장, 압축, 검색의 경계를 분리하는 것입니다.
 

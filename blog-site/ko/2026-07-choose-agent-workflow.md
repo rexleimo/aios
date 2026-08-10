@@ -1,11 +1,11 @@
 ---
-title: "AI 에이전트 워크플로는 어떻게 고를까? Harness CLI 판단 가이드"
+title: "AI 에이전트 워크플로는 어떻게 고를까? AIOS 판단 가이드"
 description: "결정표와 예제로 noop, direct, guarded, planned를 선택하고 실행면과 검증 항목까지 정리합니다."
 date: 2026-07-14
-tags: ["AI 에이전트", "Harness CLI", "Codex", "Claude Code", "개발 도구"]
+tags: ["AI 에이전트", "AIOS", "Codex", "Claude Code", "개발 도구"]
 ---
 
-# AI 에이전트 워크플로는 어떻게 고를까? Harness CLI 판단 가이드
+# AI 에이전트 워크플로는 어떻게 고를까? AIOS 판단 가이드
 
 > **Quick Answer:** 질문과 읽기 전용 조사는 `direct`, 작고 명확한 변경은 `guarded`, 여러 단계·불확실성·위험·위임·재개가 필요한 작업은 `planned`를 사용합니다. 실행 가능한 요청이 없으면 `noop`입니다. 라우트는 사용하는 클라이언트의 브랜드가 아니라 작업의 성격으로 결정됩니다.
 

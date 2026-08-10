@@ -1,8 +1,8 @@
 ---
 title: "v3.20 Harness 可靠性升级：失败分类、退避上限与 dry-run 就绪度"
-description: "了解 Harness CLI v3.20 如何区分业务失败与基础设施失败，并用有上限的退避和 dry-run readiness 改善长任务稳定性。"
+description: "了解 AIOS v3.20 如何区分业务失败与基础设施失败，并用有上限的退避和 dry-run readiness 改善长任务稳定性。"
 date: 2026-07-12
-tags: ["Harness CLI", "可靠性", "solo harness", "失败处理", "release"]
+tags: ["AIOS", "可靠性", "solo harness", "失败处理", "release"]
 ---
 
 # v3.20 Harness 可靠性升级：失败分类、退避上限与 dry-run 就绪度

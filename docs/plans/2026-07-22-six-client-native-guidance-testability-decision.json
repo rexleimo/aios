@@ -11,7 +11,7 @@
         "-e",
         "import assert from 'node:assert/strict'; import { composeNativeMarkdown } from './scripts/lib/native/emitters/compose.mjs'; const clients = ['codex','opencode','hermes','grok']; const outputs = clients.map((client) => composeNativeMarkdown({ rootDir: process.cwd(), client })); assert.equal(new Set(outputs).size, 1, 'shared AGENTS projection must be byte-identical'); assert.doesNotMatch(outputs[0], /AIOS For OpenCode|AIOS Native Hermes|AIOS Native Grok/u);"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "All four clients that consume AGENTS.md receive one byte-identical client-neutral projection with no OpenCode, Hermes, or Grok operating manual appended.",
     "observed": "The recorded public scenario exited with status 1 because composeNativeMarkdown appends a different client project source for each AGENTS consumer.",

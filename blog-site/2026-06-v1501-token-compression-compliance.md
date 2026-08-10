@@ -1,6 +1,6 @@
 ---
 title: "v1.50.1: All-Client Token Compression Compliance"
-description: "Harness CLI v1.50.1 makes token savings measurable across every AIOS client with pre_send, post_receive, proof matrices, and no fake savings for direct host bypasses."
+description: "AIOS v1.50.1 makes token savings measurable across every AIOS client with pre_send, post_receive, proof matrices, and no fake savings for direct host bypasses."
 date: 2026-06-05
 tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 
 Token savings are only useful when they are measurable. A short answer from an agent is not enough. A raw host output that bypasses AIOS is not savings. And a single harness proof does not prove every client follows the same contract.
 
-Harness CLI v1.50.1 closes that gap with a shared metric for every AIOS-managed client: `bidirectional-turn-compression`.
+AIOS v1.50.1 closes that gap with a shared metric for every AIOS-managed client: `bidirectional-turn-compression`.
 
 ## The Contract
 

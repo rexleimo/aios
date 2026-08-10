@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/execution-context-packet.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The linked ref is invalid_ref, has no accepted source hash, and cannot contribute external text to assembled runtime context.",
     "observed": "The direct packet reported the external symlink source exists=true, proving the lexical resolver allowed a physical external file to be read.",

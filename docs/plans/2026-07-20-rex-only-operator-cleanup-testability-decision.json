@@ -13,7 +13,7 @@
         "scripts/tests/aios-lifecycle-plan.test.mjs",
         "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "Every lifecycle command accepts and forwards an explicit --adopt-legacy-superpowers request while defaults remain false; the standalone reconciler documents dry-run-before-adoption and rejects unknown options without reconciling.",
     "observed": "The command exited 1 with seven focused failures: init parsing and dispatch reject or drop the option, setup/update drop it, lifecycle adapters do not forward it, init help omits it, and the standalone reconciler emits no help and ignores unknown options.",

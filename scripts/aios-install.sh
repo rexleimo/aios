@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_REPO="rexleimo/harness-cli"
-DEFAULT_INSTALL_DIR="$HOME/.rexcil/harness-cli"
+DEFAULT_REPO="rexleimo/aios"
+DEFAULT_INSTALL_DIR="$HOME/.rexcil/aios"
 DEFAULT_WRAP_MODE="opt-in"
 
 usage() {
@@ -10,14 +10,14 @@ usage() {
 AIOS one-liner installer (Releases-first)
 
 Usage:
-  curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+  curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
 
 Optional environment variables:
-  AIOS_REPO           GitHub repo, default: rexleimo/harness-cli
-  AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/harness-cli
+  AIOS_REPO           GitHub repo, default: rexleimo/aios
+  AIOS_INSTALL_DIR    install dir, default: ~/.rexcil/aios
   AIOS_STATE_DIR      state dir for installer-owned config, default: parent of install dir
   AIOS_WRAP_MODE      all|repo-only|opt-in|off (default: opt-in)
-  AIOS_ASSET_URL      override harness-cli.tar.gz URL for offline install tests
+  AIOS_ASSET_URL      override aios.tar.gz URL for offline install tests
 USAGE
 }
 
@@ -48,7 +48,7 @@ case "$AIOS_WRAP_MODE" in
     ;;
 esac
 
-asset_url="${AIOS_ASSET_URL:-https://github.com/${AIOS_REPO}/releases/latest/download/harness-cli.tar.gz}"
+asset_url="${AIOS_ASSET_URL:-https://github.com/${AIOS_REPO}/releases/latest/download/aios.tar.gz}"
 
 require_cmd() {
   local cmd="$1"
@@ -107,7 +107,7 @@ parent_dir="$(dirname "$AIOS_INSTALL_DIR")"
 mkdir -p "$parent_dir"
 
 tmp_dir="$(mktemp -d)"
-archive_path="$tmp_dir/harness-cli.tar.gz"
+archive_path="$tmp_dir/aios.tar.gz"
 extract_dir="$tmp_dir/extract"
 preserve_dir="$tmp_dir/preserve"
 
@@ -130,14 +130,14 @@ mkdir -p "$extract_dir"
 echo "+ extract -> $extract_dir"
 tar -xzf "$archive_path" -C "$extract_dir"
 
-# Detect archive layout: prefer harness-cli/ prefix, fall back to root
-if [[ -d "$extract_dir/harness-cli" ]]; then
-  extracted_root="$extract_dir/harness-cli"
+# Detect archive layout: prefer aios/ prefix, fall back to root
+if [[ -d "$extract_dir/aios" ]]; then
+  extracted_root="$extract_dir/aios"
 elif [[ -f "$extract_dir/package.json" ]]; then
-  echo "[info] archive layout: no harness-cli/ prefix, using extract root"
+  echo "[info] archive layout: no aios/ prefix, using extract root"
   extracted_root="$extract_dir"
 else
-  echo "Archive layout unexpected: neither harness-cli/ prefix nor expected files found in $extract_dir" >&2
+  echo "Archive layout unexpected: neither aios/ prefix nor expected files found in $extract_dir" >&2
   exit 1
 fi
 

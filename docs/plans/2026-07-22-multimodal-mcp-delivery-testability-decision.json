@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/interception-mcp-proxy.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The response preserves the original content array, including the exact image data, while attaching binary-safe AIOS metadata.",
     "observed": "The focused test exited with status 1 because the proxy replaces all content blocks with a single text compact packet.",

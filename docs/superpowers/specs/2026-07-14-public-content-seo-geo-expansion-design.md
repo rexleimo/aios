@@ -6,7 +6,7 @@
 
 ## Goal
 
-Make Harness CLI easier to understand, install, evaluate, and share by turning the public documentation and blog into one fact-checked content system.
+Make AIOS easier to understand, install, evaluate, and share by turning the public documentation and blog into one fact-checked content system.
 
 The system must:
 
@@ -42,7 +42,7 @@ English remains the canonical source for page structure and slugs. Chinese recei
 
 | User intent | Canonical docs | Blog cluster | Primary action |
 | --- | --- | --- | --- |
-| Understand Harness CLI | Home, README, CLI Comparison | Launch story, raw CLI comparison | Quick Start |
+| Understand AIOS | Home, README, CLI Comparison | Launch story, raw CLI comparison | Quick Start |
 | Install and start | Quick Start, Windows Guide | Three-minute setup and troubleshooting | `aios init` and `aios doctor` |
 | Persist and search memory | ContextDB | ContextDB memory and search tutorials | Initialize project memory |
 | Choose a workflow route | Workflow Policy | v4.0 adaptive policy article | `aios plan auto-gate` |
@@ -195,7 +195,7 @@ git diff --check
 
 Acceptance criteria:
 
-1. A new user can identify what Harness CLI is and reach a working installation path from the first screen.
+1. A new user can identify what AIOS is and reach a working installation path from the first screen.
 2. The current `4.0.0` adaptive policy is documented with accurate route, persistence, continuation, and verification behavior.
 3. README, Quick Start, ContextDB, Architecture, and Token Intelligence no longer contradict the implementation or one another.
 4. The docs and blog builds pass in strict mode without generated-output edits.

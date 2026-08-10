@@ -164,5 +164,5 @@ The next milestone is **Phase D/E validation**: confirming that mixed-environmen
 ## Read More
 
 - [AIOS Architecture](/architecture/)
-- [RL Core Design Spec](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md)
-- [Browser + Orchestrator RL Design](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md)
+- [RL Core Design Spec](https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md)
+- [Browser + Orchestrator RL Design](https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md)

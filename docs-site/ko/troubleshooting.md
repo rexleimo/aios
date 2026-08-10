@@ -1,5 +1,5 @@
 ---
-title: Harness CLI 문제 해결
+title: AIOS 문제 해결
 description: install, ContextDB, client sync, workflow, Team, browser, token tool, privacy 문제를 evidence로 진단합니다.
 ---
 

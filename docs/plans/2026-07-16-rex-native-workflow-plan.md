@@ -2,7 +2,7 @@
 
 ## 目标
 
-将 `rex-harness` 完善为可以脱离 `harness-cli / AIOS` 独立工作的软件工程控制面。默认执行路径只使用 rex 自有 Capability、Provider、Skill、Reviewer 和 Evidence Contract；外部 Matt、Ponytail、Superpowers、ECC 只保留为显式兼容适配器，不参与默认解析。
+将 `rex-harness` 完善为可以脱离 `aios / AIOS` 独立工作的软件工程控制面。默认执行路径只使用 rex 自有 Capability、Provider、Skill、Reviewer 和 Evidence Contract；外部 Matt、Ponytail、Superpowers、ECC 只保留为显式兼容适配器，不参与默认解析。
 
 ## Search-first 决策
 

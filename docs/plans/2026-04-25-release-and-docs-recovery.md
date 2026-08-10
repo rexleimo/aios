@@ -1,6 +1,6 @@
 # Release Recovery And Docs Onboarding Plan
 
-**Goal:** Restore GitHub Releases to the current stable version and make the Chinese docs easier for new users to start using Harness CLI.
+**Goal:** Restore GitHub Releases to the current stable version and make the Chinese docs easier for new users to start using AIOS.
 
 **Release recovery:**
 - Root cause: `v1.6.0` tag reached GitHub, but the release workflow failed during `scripts/release-preflight.sh` because archived/generated skill outputs drift on Linux: Codex `.system` generated skills are ignored locally and the Claude `skill-creator` license filename differs by case.

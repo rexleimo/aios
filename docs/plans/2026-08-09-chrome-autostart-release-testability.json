@@ -7,7 +7,7 @@
     "command": {
       "executable": "node",
       "args": ["--test", "scripts/tests/aios-components.test.mjs"],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "All browser component tests pass, including the assertion that the generated launch agent cannot auto-start or keep Chrome alive.",
     "observed": "The browser component suite passed with 36 tests and 0 failures.",

@@ -1,13 +1,13 @@
 ---
 title: 워크플로 정책
-description: Harness CLI의 adaptive workflow policy로 direct, guarded, planned 작업을 선택하는 방법을 설명합니다.
+description: AIOS의 adaptive workflow policy로 direct, guarded, planned 작업을 선택하는 방법을 설명합니다.
 ---
 
 # 워크플로 정책
 
 ## 빠른 답변
 
-Harness CLI는 위험 기반 workflow policy를 사용합니다. adaptive 모드에서는 읽기 전용 질문은 direct로, 작은 코드 변경은 guarded로, 여러 단계 작업이나 명시적으로 route를 지정한 작업은 영속 plan으로 처리합니다. strict 모드는 substantive work를 planned로 만들지만 빈 메시지나 읽기 전용 질문까지 plan으로 만들지는 않습니다. Policy는 turn을 어떻게 처리할지만 결정하며 구현 완료를 증명하지는 않습니다.
+AIOS는 위험 기반 workflow policy를 사용합니다. adaptive 모드에서는 읽기 전용 질문은 direct로, 작은 코드 변경은 guarded로, 여러 단계 작업이나 명시적으로 route를 지정한 작업은 영속 plan으로 처리합니다. strict 모드는 substantive work를 planned로 만들지만 빈 메시지나 읽기 전용 질문까지 plan으로 만들지는 않습니다. Policy는 turn을 어떻게 처리할지만 결정하며 구현 완료를 증명하지는 않습니다.
 
 ## 지금 실행하기
 

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="640" viewBox="0 0 1200 640" role="img" aria-labelledby="title desc">
-<title id="title">Harness CLI 新手三步路径</title><desc id="desc">安装并运行 Doctor，启用项目记忆，再按需开启多 Agent。</desc>
+<title id="title">AIOS 新手三步路径</title><desc id="desc">安装并运行 Doctor，启用项目记忆，再按需开启多 Agent。</desc>
 <defs>
   <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8fbff"/><stop offset="1" stop-color="#eaf4ff"/></linearGradient>
   <linearGradient id="ink" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#1a73e8"/><stop offset="1" stop-color="#00a884"/></linearGradient>
@@ -10,7 +10,7 @@
   <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#6c8fb8"/></marker>
 </defs>
 <rect width="1200" height="640" rx="34" fill="url(#bg)"/>
-<text x="70" y="78" class="title">3 分钟跑通 Harness CLI</text>
+<text x="70" y="78" class="title">3 分钟跑通 AIOS</text>
 <text x="70" y="108" class="subtitle">先跑通最短路径，再按需打开多 Agent 和高级门禁。</text>
 <path d="M245 326 H954" class="line arrow"/>
 <g transform="translate(70,170)"><rect class="card" width="285" height="280" rx="26"/><circle cx="54" cy="55" r="24" fill="#e8f0fe"/><text x="46" y="63" class="label" fill="#1a73e8">1</text><text x="92" y="62" class="label">安装 + Doctor</text><rect x="34" y="96" width="216" height="90" rx="14" class="terminal"/><circle cx="55" cy="116" r="5" fill="#ff5f56"/><circle cx="73" cy="116" r="5" fill="#ffbd2e"/><circle cx="91" cy="116" r="5" fill="#27c93f"/><text x="50" y="148" class="termText">$ aios</text><text x="50" y="170" class="termText">Setup → Doctor</text><text x="34" y="226" class="small">目标：关键错误为 0</text></g>

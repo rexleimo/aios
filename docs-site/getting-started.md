@@ -1,13 +1,13 @@
 ---
-title: Quick Start — Install Harness CLI for Claude Code, Codex, and Gemini
-description: Install Harness CLI on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
+title: Quick Start — Install AIOS for Claude Code, Codex, and Gemini
+description: Install AIOS on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
 ---
 
 # Quick Start
 
 ## Quick Answer
 
-Harness CLI is a local workflow layer for supported coding clients. The current onboarding path is: install the release, run aios init --all from the project root, then inspect the result with aios doctor --native --verbose. This creates or updates project guidance and the ContextDB registry marker; it does not replace your client or inject every historical event into every prompt.
+AIOS is a local workflow layer for supported coding clients. The current onboarding path is: install the release, run aios init --all from the project root, then inspect the result with aios doctor --native --verbose. This creates or updates project guidance and the ContextDB registry marker; it does not replace your client or inject every historical event into every prompt.
 
 ## What you need
 
@@ -28,7 +28,7 @@ npm -v
 === "macOS / Linux"
 
     ~~~bash
-    curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+    curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
     ~~~
 
@@ -37,7 +37,7 @@ npm -v
 === "Windows PowerShell"
 
     ~~~powershell
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ~~~
 
@@ -144,9 +144,9 @@ Use the dry run first when you are unsure whether a client configuration or pack
 
 ## FAQ
 
-### Does Harness CLI replace codex, claude, or another client?
+### Does AIOS replace codex, claude, or another client?
 
-No. You continue to launch the underlying client. Harness CLI adds local memory, workflow routes, optional tools, and verification guidance around it.
+No. You continue to launch the underlying client. AIOS adds local memory, workflow routes, optional tools, and verification guidance around it.
 
 ### Does aios init upload project memory?
 

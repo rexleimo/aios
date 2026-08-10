@@ -7,7 +7,7 @@
     "command": {
       "executable": "node",
       "args": ["--test", "scripts/tests/memo-candidate-governance.test.mjs"],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "6/6 pass: authorized promotion is append-only and idempotent, DENY receipts preserve pending state, reject/expire remain unpublished, Session Close works, custom roots are honored, and CLI uses the same authority boundary.",
     "observed": "0 pass, 1 fail, 5 skip because scripts/lib/memo/storage/candidates.mjs does not exist.",

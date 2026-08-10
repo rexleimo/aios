@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/gaia-ab-live-runner.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The test imports the public live manifest and runner modules, proves the explicit limits and client pins, creates six dry-run jobs without a client launch, and blocks every execute launch when browser preflight fails.",
     "observed": "Node exits with code 1 before assertions because scripts/lib/gaia-ab-eval/live-manifest.mjs cannot be resolved (ERR_MODULE_NOT_FOUND).",

@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
     "setup": "Start a verified two-feature delivery where dependent is declared before prerequisite and depends on prerequisite, then submit a matching zero-exit receipt for prerequisite.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "The decision continues with dependent as the sole current feature after prerequisite is accepted.",
     "observed": "The recorded focused suite exits 1 because the current index-based transition completes after prerequisite instead of selecting earlier dependent.",
     "failureReason": "advanceLongRunningDelivery selects only pending features after the current array index and ignores dependency acceptance state.",

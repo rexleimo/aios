@@ -11,7 +11,7 @@
         "-e",
         "import { runUpdate } from './scripts/lib/lifecycle/update.mjs'; await runUpdate({ components: ['native'], dryRun: true }, { rootDir: process.cwd(), projectRoot: process.cwd(), io: { log() {} }, deps: { updateNativeEnhancements: async () => { throw new Error('native updater reached during dry-run'); } } });"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "A dry-run returns its update plan without preparing the workflow surface or invoking any runtime or component updater.",
     "observed": "The command exits nonzero after reaching the injected native updater despite dryRun being true.",

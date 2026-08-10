@@ -6,7 +6,7 @@ New users should not see `doctor-superpowers` errors immediately after running t
 
 ## Evidence
 
-- Latest release API reports `v1.11.2` with `aios-install.sh`, `aios-install.ps1`, `harness-cli.tar.gz`, and `harness-cli.zip`.
+- Latest release API reports `v1.11.2` with `aios-install.sh`, `aios-install.ps1`, `aios.tar.gz`, and `aios.zip`.
 - Fresh install simulation in `/private/tmp/rex-new-home` and `/private/tmp/rex-new-install` reproduced the failure:
   - `aios doctor` exited `1`
   - `doctor-superpowers` reported missing `~/.codex/superpowers`, missing `~/.codex/superpowers/skills`, and missing `~/.agents/skills/superpowers`

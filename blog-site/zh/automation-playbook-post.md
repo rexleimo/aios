@@ -62,7 +62,7 @@ media references resolve
 target account matches the selected profile
 ```
 
-任何条件不满足，都应停止并标记为 `blocked`，同时报告下一步安全动作，而不是悄悄把检查降级为提示。这和 Harness CLI 的最小正确变更门禁是同一个原则：安全边界必须可观察、可执行。
+任何条件不满足，都应停止并标记为 `blocked`，同时报告下一步安全动作，而不是悄悄把检查降级为提示。这和 AIOS 的最小正确变更门禁是同一个原则：安全边界必须可观察、可执行。
 
 ## 4. 用 ContextDB 保存有用上下文
 

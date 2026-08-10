@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
     "setup": "Submit a real receipt for the active feature ID whose recorded command is for another feature's verification scenario.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "The delivery remains active and returns `{ kind: 'blocked', reason: 'evidence-rejected' }`.",
     "observed": "The recorded suite exits 1 because the decision has only `{ kind: 'blocked' }`.",
     "failureReason": "Receipt validation catches command mismatch but collapses it into an untyped blocked decision.",

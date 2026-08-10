@@ -35,7 +35,7 @@ Every turn re-sends the relevant context. If your "memory" is just a giant promp
 
 ## What a local layer changes
 
-Harness CLI is a local-first workflow layer that sits on top of Claude Code, Codex, Gemini CLI, OpenCode, and Grok Build. It does not replace your client; it adds the missing observability and memory around it. Concretely, against the three causes above:
+AIOS is a local-first workflow layer that sits on top of Claude Code, Codex, Gemini CLI, OpenCode, and Grok Build. It does not replace your client; it adds the missing observability and memory around it. Concretely, against the three causes above:
 
 ### Visibility: every dispatch is priced
 
@@ -74,7 +74,7 @@ Both. Threshold warnings stop runaway runs, routing sends cheap work to cheap mo
 
 ### Do I need to stop using my current coding tool?
 
-No. Harness CLI works with the clients you already use (Claude Code, Codex, Gemini CLI, OpenCode, Grok Build). It adds the observability and memory layer around them.
+No. AIOS works with the clients you already use (Claude Code, Codex, Gemini CLI, OpenCode, Grok Build). It adds the observability and memory layer around them.
 
 ### Where can I see the details?
 

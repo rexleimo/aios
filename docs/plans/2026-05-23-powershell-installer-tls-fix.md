@@ -5,7 +5,7 @@
 Windows users can see this before the installer script is downloaded:
 
 ```powershell
-irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 # Invoke-RestMethod: The request was aborted: The connection was closed unexpectedly.
 ```
 
@@ -13,7 +13,7 @@ irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-instal
 
 The failure happens on the first GitHub HTTPS request. Windows PowerShell 5.1 can start with a legacy or default .NET security protocol configuration that does not guarantee TLS 1.2, and GitHub closes non-compliant TLS handshakes before returning the release asset.
 
-The already-downloaded installer also needs the same guard before it fetches `harness-cli.zip`.
+The already-downloaded installer also needs the same guard before it fetches `aios.zip`.
 
 A second Windows failure mode can leave `aios` installed but non-operational: native commands such as `npm install --include=dev` can fail without PowerShell throwing, because external process exit codes do not trigger `$ErrorActionPreference = 'Stop'`. That can skip required TUI dependencies (`commander`, `ink`, `@inkjs/ui`, `tsx`) and make `aios` fail after install.
 

@@ -1,4 +1,4 @@
-# Harness CLI full index
+# AIOS full index
 
 ## Intent Summary
 - Local-first AI agent workflow and memory system for coding agents (`ContextDB`)
@@ -36,8 +36,8 @@
 
 ## Releases
 - https://cli.rexai.top/changelog/
-- https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md
-- https://github.com/rexleimo/harness-cli/releases
+- https://github.com/rexleimo/aios/blob/main/CHANGELOG.md
+- https://github.com/rexleimo/aios/releases
 
 ## Blog
 - https://cli.rexai.top/blog/

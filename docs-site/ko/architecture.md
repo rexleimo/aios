@@ -1,5 +1,5 @@
 ---
-title: Harness CLI 아키텍처
+title: AIOS 아키텍처
 description: client guidance, ContextDB, Workflow Policy, Team, Harness, browser-use CDP, RL research의 연결을 설명합니다.
 ---
 
@@ -7,7 +7,7 @@ description: client guidance, ContextDB, Workflow Policy, Team, Harness, browser
 
 ## 먼저 답하면
 
-Harness CLI는 기존 coding client 주변에 로컬 경계를 제공합니다. client guidance가 project를 식별하고 ContextDB가 evidence를 저장하고 recall하며 Workflow Policy가 가장 작은 route를 선택합니다. 필요하면 Team, Solo Harness, Orchestrate가 task를 실행합니다. 브라우저 기본 path는 browser-use CDP이고 오래된 Playwright MCP는 compatibility path입니다.
+AIOS는 기존 coding client 주변에 로컬 경계를 제공합니다. client guidance가 project를 식별하고 ContextDB가 evidence를 저장하고 recall하며 Workflow Policy가 가장 작은 route를 선택합니다. 필요하면 Team, Solo Harness, Orchestrate가 task를 실행합니다. 브라우저 기본 path는 browser-use CDP이고 오래된 Playwright MCP는 compatibility path입니다.
 
 ## Components
 
@@ -92,7 +92,7 @@ visible CDP browser를 사용하고 semantic 또는 targeted text를 먼저 읽�
 
 ## RL Training Layer (AIOS) {#rl-training-layer-aios}
 
-AIOS에는 일반 Harness CLI setup과 분리된 multi-environment RL research surface도 있습니다. scripts/lib/rl-core/가 campaign state, checkpoint lineage, comparison, replay, teacher signal, trainer entry point를 다루며 shell, browser, orchestrator, mixed adapter를 제공합니다.
+AIOS에는 일반 AIOS setup과 분리된 multi-environment RL research surface도 있습니다. scripts/lib/rl-core/가 campaign state, checkpoint lineage, comparison, replay, teacher signal, trainer entry point를 다루며 shell, browser, orchestrator, mixed adapter를 제공합니다.
 
 ~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20

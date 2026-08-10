@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Make GitHub Releases the working stable installation channel for `Harness CLI`, so `releases/latest/download/aios-install.sh` and related assets resolve after an official versioned release.
+**Goal:** Make GitHub Releases the working stable installation channel for `AIOS`, so `releases/latest/download/aios-install.sh` and related assets resolve after an official versioned release.
 
 **Architecture:** Tighten the release workflow around semver tags, add explicit version/tag/changelog consistency checks, define one supported development install path (`git clone main`), and document a maintainer release flow that reliably publishes installer assets to GitHub Releases.
 
@@ -30,7 +30,7 @@
 
 - [ ] **Step 1: Remove unrestricted stable publishing from `workflow_dispatch`, or gate it behind an explicit semver tag input resolved to that exact tag**
 - [ ] **Step 2: Add workflow preflight checks that fail if tag name, `VERSION`, and changelog release heading do not match**
-- [ ] **Step 3: Ensure release packaging always uploads `aios-install.sh`, `aios-install.ps1`, `harness-cli.tar.gz`, and `harness-cli.zip`**
+- [ ] **Step 3: Ensure release packaging always uploads `aios-install.sh`, `aios-install.ps1`, `aios.tar.gz`, and `aios.zip`**
 - [ ] **Step 4: Re-run focused release pipeline tests and local packaging verification**
 
 ### Task 3: Add a maintainer release helper flow

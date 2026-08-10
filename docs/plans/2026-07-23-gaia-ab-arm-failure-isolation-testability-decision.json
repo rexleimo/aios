@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/gaia-ab-live-runner.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The cost-limited job records one redacted cost_limit artifact, launches neither of its tasks, and leaves the other five jobs to complete their two selected tasks under the shared spend boundary.",
     "observed": "The runner exits with Error: GAIA live task cost estimate exceeds remaining spend before it returns artifacts for the other jobs.",

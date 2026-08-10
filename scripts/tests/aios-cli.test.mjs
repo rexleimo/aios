@@ -17,7 +17,7 @@ test('parseArgs returns interactive mode when no args are provided', () => {
   assert.equal(result.command, 'tui');
 });
 
-test('aios --version prints the Harness CLI version', async () => {
+test('aios --version prints the AIOS version', async () => {
   const version = (await fs.readFile(path.join(process.cwd(), 'VERSION'), 'utf8')).trim();
   const result = spawnSync(process.execPath, ['scripts/aios.mjs', '--version'], {
     cwd: process.cwd(),
@@ -25,7 +25,7 @@ test('aios --version prints the Harness CLI version', async () => {
   });
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
-  assert.equal(result.stdout.trim(), `Harness CLI ${version}`);
+  assert.equal(result.stdout.trim(), `AIOS ${version}`);
 });
 
 test('setup and update help omit Superpowers from their default components', () => {
@@ -136,7 +136,7 @@ test('the CLI dispatcher factory can be imported independently of the launcher',
   });
   await dispatch({ mode: 'command', command: 'version', options: {} });
 
-  assert.match(output, /Harness CLI/u);
+  assert.match(output, /AIOS/u);
 });
 
 test('the CLI dispatcher forwards the explicit legacy Superpowers adoption option to init', async () => {
@@ -273,7 +273,7 @@ test('createAiosDispatch clears stale exit codes between invocations', async () 
 
     await dispatch({ mode: 'command', command: 'version', options: {} });
     assert.equal(process.exitCode, 0);
-    assert.match(stdout, /Harness CLI/u);
+    assert.match(stdout, /AIOS/u);
     assert.match(stderr, /Usage: aios refs grep/u);
   } finally {
     process.exitCode = previousExitCode;

@@ -10,7 +10,7 @@
         "scripts/gaia-ab-eval.mjs",
         "--help"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The CLI exists and prints help for a reproducible offline GAIA A/B configuration validation and reporting workflow.",
     "observed": "Node exits with code 1 because scripts/gaia-ab-eval.mjs does not yet exist.",

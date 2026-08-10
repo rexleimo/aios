@@ -11,7 +11,7 @@
         "-e",
         "import assert from 'node:assert/strict'; import { resolveCatalogEntries } from './scripts/lib/components/skills/catalog.mjs'; const catalog=[{name:'duplicate-provider',source:'skill-sources/aios-codemap-ops',clients:['codex'],scopes:['global']},{name:'duplicate-provider',source:'skill-sources/aios-interception-runtime',clients:['codex'],scopes:['global']}]; assert.throws(() => resolveCatalogEntries({rootDir:process.cwd(),catalog,clientName:'codex',scope:'global',selectedSkills:[],manifest:null}), /duplicate-provider/);"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "An ambiguous same-name target is rejected with an error that identifies duplicate-provider instead of yielding a first-match result.",
     "observed": "The recorded scenario exited with status 1 because resolveCatalogEntries() returned both entries without rejecting the ambiguity, so the assertion that it throws failed.",

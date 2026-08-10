@@ -1,6 +1,6 @@
 ---
 title: "v2.0.2: Safer Skill Health Records and Cleaner Crush Config"
-description: "Harness CLI v2.0.2 は skill health telemetry、help routing、repository からの Crush config 除外を改善します。"
+description: "AIOS v2.0.2 は skill health telemetry、help routing、repository からの Crush config 除外を改善します。"
 date: 2026-06-15
 tags: ["release", "CLI", "skills", "Crush", "configuration"]
 ---

@@ -11,7 +11,7 @@
         "scripts/tests/harness-runtime.test.mjs",
         "scripts/tests/aios-cli.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The successful fallback's argv is exactly result.managedInvocation.args, a normal successful invocation retains its primary argv, and agents smoke help exposes --live --client <name> plus the external quota/charge boundary.",
     "observed": "The temporary fake received two calls and the second successful argv omitted --output-schema, but result.managedInvocation.args retained the rejected primary --output-schema args. agents smoke --help listed only list and doctor, so it did not disclose smoke, explicit live authorization, client selection, or possible external cost.",

@@ -1,8 +1,8 @@
-# Harness CLI Site Template Restoration Design
+# AIOS Site Template Restoration Design
 
 ## Goal
 
-Restore the Harness CLI docs and blog site to the Pencil page system in `/Users/rex/Downloads/cli.rexai.top.pen` by rebuilding the page shells and content structures, not by applying cosmetic CSS over MkDocs Material defaults.
+Restore the AIOS docs and blog site to the Pencil page system in `/Users/rex/Downloads/cli.rexai.top.pen` by rebuilding the page shells and content structures, not by applying cosmetic CSS over MkDocs Material defaults.
 
 Source nodes:
 
@@ -92,7 +92,7 @@ Add structural tests before implementation. Tests must fail against the current 
 Required assertions:
 
 - `main.html` overrides `header`, `tabs`, `site_nav`, `container`, and `footer` blocks.
-- `docs-site/overrides/partials/rex/docs-sidebar.html` exists and includes sidebar markers such as `rex-doc-sidebar`, `HARNESS CLI`, grouped nav labels, and bottom version/status markers.
+- `docs-site/overrides/partials/rex/docs-sidebar.html` exists and includes sidebar markers such as `rex-doc-sidebar`, `AIOS`, grouped nav labels, and bottom version/status markers.
 - `docs-site/overrides/partials/rex/docs-page.html` exists and includes `rex-doc-layout`, `rex-doc-outline`, and uses MkDocs content rendering.
 - Blog partials exist for index and post shells and include featured, card grid, article header, and related-reading markers.
 - CSS manifests import the new shell-specific files.

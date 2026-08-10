@@ -193,7 +193,7 @@ aios() {
     -h|--help|help)
       echo "Usage:"
       echo "  aios                     # interactive TUI"
-      echo "  aios --version           # print Harness CLI version"
+      echo "  aios --version           # print AIOS version"
       echo "  aios <doctor|update|privacy> [args]"
       return 0
       ;;

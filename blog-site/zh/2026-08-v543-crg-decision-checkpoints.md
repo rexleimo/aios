@@ -2,7 +2,7 @@
 title: "v5.4.3：CRG 决策检查点、Worker Journal 改名与幂等的 aios init"
 description: "v5.4.3 把 code-review-graph 决策检查点接入工作流层——agent 在改文件前先看爆炸半径；solo harness 日志目录更名为 worker-journal（旧目录自动迁移）；aios init 新增 --yes/--retry/--force 实现幂等安装。"
 date: 2026-08-06
-tags: ["Harness CLI", "CRG", "code-review-graph", "工作流", "aios init", "发布"]
+tags: ["AIOS", "CRG", "code-review-graph", "工作流", "aios init", "发布"]
 ---
 
 # v5.4.3：CRG 决策检查点、Worker Journal 改名与幂等的 `aios init`

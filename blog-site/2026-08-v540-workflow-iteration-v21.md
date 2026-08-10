@@ -1,8 +1,8 @@
 ---
 title: "v5.4.0: Workflow Iteration v2.1 — Activation Safety, Typed Evidence Contracts, and Full Skill Audit"
-description: "Harness CLI v5.4.0 ships atomic activation state, a concurrent-token lock, typed Wayfinder/Planning artifact schemas, strict evidence-ref validation, and a full S1–S5 Skill audit. Here is what changed and why it matters."
+description: "AIOS v5.4.0 ships atomic activation state, a concurrent-token lock, typed Wayfinder/Planning artifact schemas, strict evidence-ref validation, and a full S1–S5 Skill audit. Here is what changed and why it matters."
 date: 2026-08-01
-tags: ["Harness CLI", "rex-harness", "workflow", "evidence contracts", "activation store", "skill audit", "developer productivity"]
+tags: ["AIOS", "rex-harness", "workflow", "evidence contracts", "activation store", "skill audit", "developer productivity"]
 ---
 
 # v5.4.0: Workflow Iteration v2.1 — Activation Safety, Typed Evidence Contracts, and Full Skill Audit

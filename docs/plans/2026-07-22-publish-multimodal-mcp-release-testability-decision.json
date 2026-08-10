@@ -13,7 +13,7 @@
         "scripts/tests/aios-components.test.mjs",
         "scripts/tests/interception-cli.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Client-visible multimodal content is preserved, binary payloads are absent from AIOS metadata, browser entries are direct, and doctor reports direct browser delivery as healthy.",
     "observed": "The focused suite exited with status 0.",

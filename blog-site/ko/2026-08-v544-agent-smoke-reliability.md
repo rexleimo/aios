@@ -2,7 +2,7 @@
 title: "v5.4.4: 에이전트 스모크 테스트 신뢰성——출력 계약 클라이언트와 타임아웃 자동 에스컬레이션"
 description: "v5.4.4는 에이전트가 'command 무효 / workflow 스턱' 상태에 빠지는 문제를 수정했습니다. live smoke가 Codex 같은 출력 계약 클라이언트에서 동작하고, 하드코딩된 30초 프로브 타임아웃은 설정 가능해졌으며(기본 60초), 프로브는 2x/4x로 자동 에스컬레이션하며 재시도해 한 번의 타임아웃으로 에이전트가 영구적으로 비활성화되지 않습니다."
 date: 2026-08-06
-tags: ["Harness CLI", "agents", "smoke", "timeout", "reliability", "release"]
+tags: ["AIOS", "agents", "smoke", "timeout", "reliability", "release"]
 ---
 
 # v5.4.4: 에이전트 스모크 테스트 신뢰성——출력 계약 클라이언트와 타임아웃 자동 에스컬레이션

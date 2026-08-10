@@ -23,7 +23,7 @@ nav:
   - Overview: index.md
   - Blog: https://cli.rexai.top/blog/
   - Friends: friends.md
-  - Project: https://github.com/rexleimo/harness-cli
+  - Project: https://github.com/rexleimo/aios
   - Quick Start: getting-started.md
   - Changelog: changelog.md
   - CLI Workflows: use-cases.md
@@ -54,7 +54,7 @@ nav:
       - Post Templates: community/post-templates.md
       - Posting Policy: community/postting-policy.md
   - External:
-      - Project: https://github.com/rexleimo/harness-cli
+      - Project: https://github.com/rexleimo/aios
 ```
 
 注意: community/posting-policy.md 文件名是 posting-policy (没有 i)

@@ -1,5 +1,5 @@
 ---
-title: Harness CLI アーキテクチャ
+title: AIOS アーキテクチャ
 description: client guidance、ContextDB、Workflow Policy、Team、Harness、browser-use CDP、RL research の接続を説明します。
 ---
 
@@ -7,7 +7,7 @@ description: client guidance、ContextDB、Workflow Policy、Team、Harness、br
 
 ## まず答え
 
-Harness CLI は既存の coding client の周囲にローカル境界を提供します。client guidance が project を識別し、ContextDB が evidence を保存・recall し、Workflow Policy が最小の route を選びます。必要に応じて Team、Solo Harness、Orchestrate が task を実行します。ブラウザの既定 path は browser-use CDP で、古い Playwright MCP は compatibility path です。
+AIOS は既存の coding client の周囲にローカル境界を提供します。client guidance が project を識別し、ContextDB が evidence を保存・recall し、Workflow Policy が最小の route を選びます。必要に応じて Team、Solo Harness、Orchestrate が task を実行します。ブラウザの既定 path は browser-use CDP で、古い Playwright MCP は compatibility path です。
 
 ## Components
 
@@ -92,7 +92,7 @@ visible CDP browser を使い、semantic または targeted text を先に読み
 
 ## RL Training Layer (AIOS) {#rl-training-layer-aios}
 
-AIOS には通常の Harness CLI setup とは分離された multi-environment RL research surface もあります。scripts/lib/rl-core/ は campaign state、checkpoint lineage、comparison、replay、teacher signal、trainer entry point を扱い、shell、browser、orchestrator、mixed adapter を提供します。
+AIOS には通常の AIOS setup とは分離された multi-environment RL research surface もあります。scripts/lib/rl-core/ は campaign state、checkpoint lineage、comparison、replay、teacher signal、trainer entry point を扱い、shell、browser、orchestrator、mixed adapter を提供します。
 
 ~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20

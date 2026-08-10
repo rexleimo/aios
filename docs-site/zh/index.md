@@ -1,20 +1,20 @@
 ---
-title: Harness CLI — 本地优先的 AI 编码 Agent 工作流
+title: AIOS — 本地优先的 AI 编码 Agent 工作流
 description: 为 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok 增加项目记忆、自适应路由、多 Agent 协作与验证，不替换你现有的编码客户端。
 ---
 
-# Harness CLI (AIOS)
+# AIOS
 
-Harness CLI 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），再补上跨会话项目记忆、并行协作、可恢复运行和验证门禁。
+AIOS 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），再补上跨会话项目记忆、并行协作、可恢复运行和验证门禁。
 
 [30 秒安装](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[GitHub](https://github.com/rexleimo/harness-cli){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github" }
+[GitHub](https://github.com/rexleimo/aios){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github" }
 
 [按场景选择](use-cases.md) · [工作流策略](workflow-policy.md) · [架构](architecture.md) · [博客](/blog/zh/)
 
 ## 一句话回答
 
-如果你需要让 Agent 在不同会话和不同客户端之间共享项目事实、把独立工作交给多个 Agent，或让长任务能够暂停后继续，Harness CLI 提供了这些能力的本地工作流层。它不会替换底层编码客户端，也不会把所有历史自动塞进每个提示。
+如果你需要让 Agent 在不同会话和不同客户端之间共享项目事实、把独立工作交给多个 Agent，或让长任务能够暂停后继续，AIOS 提供了这些能力的本地工作流层。它不会替换底层编码客户端，也不会把所有历史自动塞进每个提示。
 
 ## 核心能力
 

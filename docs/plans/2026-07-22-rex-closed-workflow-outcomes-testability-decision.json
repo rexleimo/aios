@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
     "setup": "Start a verified delivery and submit no evidence for its active feature.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "The public decision is `{ kind: 'blocked', reason: 'evidence-missing' }` and keeps its active feature.",
     "observed": "The recorded suite exits 1 because the decision contains only `{ kind: 'blocked' }`.",
     "failureReason": "The delivery evidence-rejection branch has no typed reason field, forcing callers to infer a cause from unstructured context.",

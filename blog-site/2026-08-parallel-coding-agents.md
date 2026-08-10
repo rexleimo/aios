@@ -37,7 +37,7 @@ Three things separate "parallel agents that work" from "parallel agents that cor
 
 ### 1. Transactional state writes
 
-State updates must be atomic and crash-safe. If an agent crashes mid-write, the next run rolls forward or fails closed — it never trusts a half-written projection. Harness CLI v5.4.0 makes activation writes transactional (write-ahead transactions, automatic roll-forward on restart, read-side consistency validation with `stale-activation-projection` failure).
+State updates must be atomic and crash-safe. If an agent crashes mid-write, the next run rolls forward or fails closed — it never trusts a half-written projection. AIOS v5.4.0 makes activation writes transactional (write-ahead transactions, automatic roll-forward on restart, read-side consistency validation with `stale-activation-projection` failure).
 
 ### 2. A real lock on shared tokens
 
@@ -45,7 +45,7 @@ Parallel agents must not double-consume the same Command token. A store file loc
 
 ### 3. Explicit coordination, not implicit trust
 
-Parallelism needs a coordination layer: independent work packages with clear ownership, monitoring (who is stuck?), and safe recovery (what happens when a worker dies?). Harness CLI's Agent Team route splits work into independent packages with acceptance criteria and a HUD for live status; Solo Harness offers worktree isolation for one long objective with journals and stop/resume — the two are different tools for different jobs.
+Parallelism needs a coordination layer: independent work packages with clear ownership, monitoring (who is stuck?), and safe recovery (what happens when a worker dies?). AIOS's Agent Team route splits work into independent packages with acceptance criteria and a HUD for live status; Solo Harness offers worktree isolation for one long objective with journals and stop/resume — the two are different tools for different jobs.
 
 ## The rule of thumb
 

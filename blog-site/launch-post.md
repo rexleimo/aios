@@ -1,7 +1,7 @@
 ---
 title: "I Finally Built the Tool That Ends the 'Which AI Coding Tool Is Better' Debate"
 publish_date: 2026-03-10
-description: "The story behind Harness CLI — a workflow layer that unifies Claude Code, Codex, and Gemini without replacing any of them."
+description: "The story behind AIOS — a workflow layer that unifies Claude Code, Codex, and Gemini without replacing any of them."
 ---
 
 # I Finally Built the Tool That Ends the 'Which AI Coding Tool Is Better' Debate
@@ -40,9 +40,9 @@ Gemini: Who am I, where am I?
 
 ---
 
-## 02. What Is Harness CLI?
+## 02. What Is AIOS?
 
-**Harness CLI = Claude Code + Codex + Gemini working together, without fighting each other.**
+**AIOS = Claude Code + Codex + Gemini working together, without fighting each other.**
 
 ### Core Capabilities
 
@@ -57,7 +57,7 @@ Gemini: Who am I, where am I?
 ```
 You type codex/claude/gemini
        ↓
-Harness CLI intercepts automatically
+AIOS intercepts automatically
        ↓
 Decision: wrap or pass through?
        ↓
@@ -109,10 +109,10 @@ claude
 
 ```bash
 # 1. Clone
-git clone https://github.com/rexleimo/harness-cli.git
+git clone https://github.com/rexleimo/aios.git
 
 # 2. Install
-cd harness-cli
+cd aios
 ./scripts/setup-all.sh --components all
 
 # 3. Launch
@@ -134,13 +134,13 @@ Every day I was switching between three tools — losing context, duplicating co
 
 Rather than endure it, I built a solution.
 
-**Harness CLI is my personal project, and it's the tool I use every single day.**
+**AIOS is my personal project, and it's the tool I use every single day.**
 
 ---
 
 ## 06. Closing Thoughts
 
-**Harness CLI isn't trying to replace Claude Code or Codex.**
+**AIOS isn't trying to replace Claude Code or Codex.**
 
 It's just a "glue layer" that helps existing tools work better together.
 

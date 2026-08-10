@@ -2,7 +2,7 @@
 title: "v5.5.1: 증거 기반 Agent 라이프사이클 승격"
 description: "v5.5.1은 Agent 승격의 하드코딩 병목을 제거하고 모든 canonical role을 smoke 대상으로 삼아 검증된 evidence로 live workflow에 진입하게 합니다."
 date: 2026-08-08
-tags: ["Harness CLI", "agents", "smoke", "workflow", "release"]
+tags: ["AIOS", "agents", "smoke", "workflow", "release"]
 ---
 
 # v5.5.1: 증거 기반 Agent 라이프사이클 승격

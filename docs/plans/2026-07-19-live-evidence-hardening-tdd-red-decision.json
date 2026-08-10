@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/ecc-agent-workflow.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "A projected agent remains blocked when its only evidence is a self-attested legacy artifact set.",
     "observed": "The new assertion received verification.status=verified for rex-planner.",

@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceSoftwareWorkflow() from the rex-harness package entry point",
     "setup": "Advance the selected TDD RED stage with a claimed command reference instead of a receipt reference.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/application/software-workflow-runtime.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/application/software-workflow-runtime.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "Return outcome blocked and blockedReason evidence-invalid while retaining workflow, activation, and command identity.",
     "observed": "The recorded suite exits 1 because validateCommandEvidence throws before a public result is returned.",
     "failureReason": "Evidence-validation errors escape the public workflow API as exception text instead of a typed fail-closed result.",

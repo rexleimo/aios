@@ -1,18 +1,18 @@
 ---
-title: "Harness CLI Skills インストール体験アップデート: Global/Project スコープとより明確なピッカー"
+title: "AIOS Skills インストール体験アップデート: Global/Project スコープとより明確なピッカー"
 description: "このアップデートは skills のインストール/アンインストール体験を改善し、canonical source を skill-sources/ に統合し、デフォルトインストールモードをポータブルコピーに切り替え、Node ランタイムベースラインを 22 LTS に標準化しました。"
 date: 2026-03-17
-tags: [Harness CLI, Skills, TUI, オンボーディング, AI Development]
+tags: [AIOS, Skills, TUI, オンボーディング, AI Development]
 ---
 
-# Harness CLI Skills インストール体験アップデート: Global/Project スコープとより明確なピッカー
+# AIOS Skills インストール体験アップデート: Global/Project スコープとより明確なピッカー
 
 このイテレーションは2つの実用的な問題に集中しました:
 
 1. すべてのスキルがすべてのプロジェクトにデフォルトで表示するべきではありません。特に強力なビジネス的またはレポ固有の意味論を持つスキルについてはそうです。
 2. 「スキルソースファイル」と「インストール済みスキルターゲット」を同じディレクトリツリーに混在させると、跨マシン・跨プロジェクトの同期が維持困難になります。
 
-これらを解決するために、Harness CLI は skills のライフサイクル（インストール/アンインストール/同期）を整理し、以下の境界を明確化しました:
+これらを解決するために、AIOS は skills のライフサイクル（インストール/アンインストール/同期）を整理し、以下の境界を明確化しました:
 
 - システムコア機能
 - オプション拡張
@@ -55,4 +55,4 @@ Skills インストールはようになりました明示的なスコープ選�
 ## 関連リンク
 
 - ドキュメント: `/superpowers/`
-- レポ: <https://github.com/rexleimo/harness-cli>
+- レポ: <https://github.com/rexleimo/aios>

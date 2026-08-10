@@ -18,7 +18,7 @@ description: RexAI 생태계 주요 링크 모음.
 
 RexAI 생태계 주요 링크:
 
-- [⭐ GitHub에서 Harness CLI에 Star](https://github.com/rexleimo/harness-cli)
+- [⭐ GitHub에서 AIOS에 Star](https://github.com/rexleimo/aios)
 - [RexAI 문서 홈](https://cli.rexai.top)
 - [RexAI 블로그](https://cli.rexai.top/blog/ko/)
 - [RexOS Agent OS](https://os.rexai.top)
@@ -33,7 +33,7 @@ RexAI 생태계 주요 링크:
 
 ### 버그는 어디에 신고하나요?
 
-[GitHub 저장소](https://github.com/rexleimo/harness-cli)에 최소 재현과 검증 결과를 첨부해 주세요.
+[GitHub 저장소](https://github.com/rexleimo/aios)에 최소 재현과 검증 결과를 첨부해 주세요.
 
 ## 공식 문서
 

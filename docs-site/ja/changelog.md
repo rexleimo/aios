@@ -43,7 +43,7 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 ### 主な変更
 
-- `aios update` の自己更新が Windows release インストールで安全になりました。以前はインストールツリー内から更新を実行すると、プロセスの作業ディレクトリがインストーラーが削除するディレクトリに残り、Windows は cwd に保持されたディレクトリを削除できないため、削除が静かに失敗し、新バージョンが `<install>/harness-cli/` にネストされ、後続の更新が `MODULE_NOT_FOUND` で失敗していました。
+- `aios update` の自己更新が Windows release インストールで安全になりました。以前はインストールツリー内から更新を実行すると、プロセスの作業ディレクトリがインストーラーが削除するディレクトリに残り、Windows は cwd に保持されたディレクトリを削除できないため、削除が静かに失敗し、新バージョンが `<install>/aios/` にネストされ、後続の更新が `MODULE_NOT_FOUND` で失敗していました。
 - アップデータは release インストーラーを実行する前に作業ディレクトリをインストールツリーの外へ移動します。インストーラーは旧ディレクトリが実際に削除されたことを検証し（失敗時はネストせず明示的にエラー）、更新後の再実行はエントリポイントを確認し、置き換え失敗時に明確な修復メッセージを出力します。
 - アップデータは release-installer 更新にローカルの `scripts/aios-install.ps1` を優先して使用するため、防御的なインストーラー修正が即座に反映されます。
 - 以前に gitlink を削除した後に残っていた未追跡の `agent-sources/skills/` ディレクトリを削除しました（token-discipline 同期テストを壊していました）。
@@ -252,12 +252,12 @@ node scripts/aios.mjs init --dry-run
 - **全 client への native guidance**：Codex/OpenCode/Crush は `AGENTS.md`、Claude は `CLAUDE.md`、Gemini/Antigravity は `GEMINI.md` で同じ search 指示を受け取ります。
 - **リリース tutorial**：[v1.50.0 統合検索 tutorial](/blog/ja/2026-06-v150-unified-aios-search/) と [ContextDB](contextdb.md#統合プロジェクト検索v1500) を参照してください。
 
-このページでは `Harness CLI` の変更点を追跡し、関連ドキュメントへ移動できます。
+このページでは `AIOS` の変更点を追跡し、関連ドキュメントへ移動できます。
 
 ## 公式リリース履歴
 
-[⭐ GitHub で Star](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
-[📦 Releases を見る](https://github.com/rexleimo/harness-cli/releases){ .md-button }
+[⭐ GitHub で Star](https://github.com/rexleimo/aios){ .md-button .md-button--primary }
+[📦 Releases を見る](https://github.com/rexleimo/aios/releases){ .md-button }
 
 ## 最新安定版
 

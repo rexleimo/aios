@@ -107,7 +107,7 @@ jobs:
         run: |
           gh release create "${GITHUB_REF_NAME}" \
             --generate-notes \
-            dist/release/harness-cli.tar.gz \
-            dist/release/harness-cli.zip \
+            dist/release/aios.tar.gz \
+            dist/release/aios.zip \
             dist/release/aios-install.sh \
             dist/release/aios-install.ps1

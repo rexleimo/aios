@@ -1,8 +1,8 @@
 ---
 title: "v5.4.0：工作流迭代 v2.1 — Activation 安全、类型化 Evidence 契约与全量 Skill 审查"
-description: "Harness CLI v5.4.0 新增原子化 Activation 状态写前事务、并发 token 锁、类型化 Wayfinder/Planning Artifact schema、严格 evidence ref 校验，并完成 S1–S5 全批次 Skill 审查。"
+description: "AIOS v5.4.0 新增原子化 Activation 状态写前事务、并发 token 锁、类型化 Wayfinder/Planning Artifact schema、严格 evidence ref 校验，并完成 S1–S5 全批次 Skill 审查。"
 date: 2026-08-01
-tags: ["Harness CLI", "rex-harness", "工作流", "evidence 契约", "activation store", "Skill 审查", "开发效率"]
+tags: ["AIOS", "rex-harness", "工作流", "evidence 契约", "activation store", "Skill 审查", "开发效率"]
 ---
 
 # v5.4.0：工作流迭代 v2.1 — Activation 安全、类型化 Evidence 契约与全量 Skill 审查

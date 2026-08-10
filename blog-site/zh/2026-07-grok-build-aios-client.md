@@ -1,13 +1,13 @@
 ---
 title: "Grok Build 正式成为 AIOS 一等公民客户端"
-description: "Harness CLI 现已将 xAI Grok Build 注册为一等公民 AIOS 客户端：skills、agents、native 同步、Codex 形态 TOML MCP、team/harness，runtime id 为 grok-build。"
+description: "AIOS 现已将 xAI Grok Build 注册为一等公民 AIOS 客户端：skills、agents、native 同步、Codex 形态 TOML MCP、team/harness，runtime id 为 grok-build。"
 date: 2026-07-09
 tags: ["Grok Build", "AIOS", "MCP", "客户端", "Skills", "xAI"]
 ---
 
 # Grok Build 正式成为 AIOS 一等公民客户端
 
-xAI **Grok Build**（`grok` CLI）现已与 Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes Agent 并列，成为 Harness CLI 的一等公民 AIOS 客户端。
+xAI **Grok Build**（`grok` CLI）现已与 Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes Agent 并列，成为 AIOS 的一等公民 AIOS 客户端。
 
 这不是配置文件里的一行提及。Grok Build 接入了驱动 native sync、skills 安装、codemap MCP 注入、`ctx-agent` 交互/one-shot，以及 solo harness / team provider 的同一套 client registry。
 

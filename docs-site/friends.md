@@ -18,7 +18,7 @@ description: Partner and ecosystem links for quick discovery.
 
 Useful links across the RexAI ecosystem:
 
-- [⭐ Star Harness CLI on GitHub](https://github.com/rexleimo/harness-cli)
+- [⭐ Star AIOS on GitHub](https://github.com/rexleimo/aios)
 - [RexAI Docs Home](https://cli.rexai.top)
 - [RexAI Blog](https://cli.rexai.top/blog/)
 - [RexOS Agent OS](https://os.rexai.top)
@@ -33,7 +33,7 @@ Use [RexAI Docs](https://cli.rexai.top) and the linked changelog. Blog posts pro
 
 ### Where should I send a bug report?
 
-Use the [GitHub repository](https://github.com/rexleimo/harness-cli) with a minimal reproduction and the verification output you observed.
+Use the [GitHub repository](https://github.com/rexleimo/aios) with a minimal reproduction and the verification output you observed.
 
 ## Canonical Docs
 

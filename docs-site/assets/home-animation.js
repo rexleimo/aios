@@ -16,7 +16,7 @@
       document.documentElement.classList.add('rex-webgl-ready');
     } catch (error) {
       document.documentElement.classList.add('rex-webgl-fallback');
-      console.warn('[Harness CLI] Home WebGL effects disabled.', error);
+      console.warn('[AIOS] Home WebGL effects disabled.', error);
     }
   }
 

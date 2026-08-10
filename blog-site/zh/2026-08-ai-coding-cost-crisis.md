@@ -35,7 +35,7 @@ tags: ["AI 编程成本", "token 预算", "成本透明", "Cursor", "Claude Code
 
 ## 本地层能改变什么
 
-Harness CLI 是一个本地优先的工作流层，运行在 Claude Code、Codex、Gemini CLI、OpenCode 和 Grok Build 之上。它不替换你的客户端，而是在周围补上缺失的可观测性和记忆。对应上面三个原因：
+AIOS 是一个本地优先的工作流层，运行在 Claude Code、Codex、Gemini CLI、OpenCode 和 Grok Build 之上。它不替换你的客户端，而是在周围补上缺失的可观测性和记忆。对应上面三个原因：
 
 ### 可见性：每次 dispatch 都带价格
 
@@ -74,7 +74,7 @@ aios doctor --native --verbose
 
 ### 我需要停用现在的编码工具吗？
 
-不需要。Harness CLI 兼容你正在用的客户端（Claude Code、Codex、Gemini CLI、OpenCode、Grok Build），它只是在周围增加可观测性和记忆层。
+不需要。AIOS 兼容你正在用的客户端（Claude Code、Codex、Gemini CLI、OpenCode、Grok Build），它只是在周围增加可观测性和记忆层。
 
 ### 细节在哪里看？
 

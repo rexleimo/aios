@@ -2,7 +2,7 @@
 title: "v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西"
 description: "v5.5.0 让工作流主动识别模糊请求（如“优化一下前端页面”），在规划前暂停并与用户对齐。澄清预算 + 假设兜底保证不会无限询问，智能体交付的是用户想要的，而不是它猜的。"
 date: 2026-08-08
-tags: ["Harness CLI", "workflow", "requirements", "Ask-First", "澄清", "对齐", "release"]
+tags: ["AIOS", "workflow", "requirements", "Ask-First", "澄清", "对齐", "release"]
 ---
 
 # v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西

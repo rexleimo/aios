@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The ledger preserves dependent.dependsOn as ['prerequisite'] and selects prerequisite as its sole current feature.",
     "observed": "The focused public test exits 1 because the initialized ledger omits dependent.dependsOn.",

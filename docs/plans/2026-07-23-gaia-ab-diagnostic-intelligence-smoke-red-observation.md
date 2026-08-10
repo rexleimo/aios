@@ -35,7 +35,7 @@ not launch a model client.
 Node fails before the assertion can parse a summary:
 
 ```text
-Error: Cannot find module 'E:\\coding\\harness-cli\\scripts\\workflow-diagnostic-ab.mjs'
+Error: Cannot find module 'E:\\coding\\aios\\scripts\\workflow-diagnostic-ab.mjs'
 ```
 
 The focused test reports one failure and zero passes. No client process,

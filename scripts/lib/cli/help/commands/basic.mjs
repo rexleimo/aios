@@ -38,7 +38,7 @@ Options:
   node scripts/aios.mjs update [options]
 
 Options:
-  --self-update                 Refresh Harness CLI itself before component updates (default for CLI)
+  --self-update                 Refresh AIOS itself before component updates (default for CLI)
   --skip-self-update            Only update selected integrations
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>

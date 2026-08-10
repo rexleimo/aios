@@ -1,7 +1,7 @@
 ---
 title: "드디어 'AI 코딩 도구 중 뭐가 더 좋은지' 논쟁에 종지부를 찍는 도구를 만들었다"
 publish_date: 2026-03-10
-description: "Harness CLI의 이야기 — Claude Code, Codex, Gemini를 교체없이 통합하는 워크플로 레이어."
+description: "AIOS의 이야기 — Claude Code, Codex, Gemini를 교체없이 통합하는 워크플로 레이어."
 ---
 
 # 드디어 'AI 코딩 도구 중 뭐가 더 좋은지' 논쟁에 종지부를 찍는 도구를 만들었다
@@ -40,9 +40,9 @@ Gemini: 나는 누구, 여긴 어디?
 
 ---
 
-## 02. Harness CLI란 무엇인가?
+## 02. AIOS란 무엇인가?
 
-**Harness CLI = Claude Code + Codex + Gemini가協力動作, 서로 싸우지 않는다.**
+**AIOS = Claude Code + Codex + Gemini가協力動作, 서로 싸우지 않는다.**
 
 ### 핵심 기능
 
@@ -57,7 +57,7 @@ Gemini: 나는 누구, 여긴 어디?
 ```
 あなたがcodex/claude/geminiと入力
        ↓
-Harness CLI가 자동 가로챈다
+AIOS가 자동 가로챈다
        ↓
 판단: 래핑할까直通할까?
        ↓
@@ -109,10 +109,10 @@ claude
 
 ```bash
 # 1. 클론
-git clone https://github.com/rexleimo/harness-cli.git
+git clone https://github.com/rexleimo/aios.git
 
 # 2. 설치
-cd harness-cli
+cd aios
 ./scripts/setup-all.sh --components all
 
 # 3. 실행
@@ -134,13 +134,13 @@ codex
 
 참는 것보다 해결책을 만들었다.
 
-**Harness CLI는저의개인프로젝트로，매일사용하는 도구다。**
+**AIOS는저의개인프로젝트로，매일사용하는 도구다。**
 
 ---
 
 ## 06. 마치며
 
-**Harness CLI는 Claude Code나 Codex를 교체하려는 것이 아니다.**
+**AIOS는 Claude Code나 Codex를 교체하려는 것이 아니다.**
 
 그냥 기존 도구들이 더 잘 협력하도록 도와주는「접착제 레이어」에 불과하다.
 

@@ -1,5 +1,5 @@
 ---
-title: 사례 라이브러리: 재현 가능한 Harness CLI workflow
+title: 사례 라이브러리: 재현 가능한 AIOS workflow
 description: setup, cross-client handoff, browser auth, privacy read, release verification을 evidence와 함께 실행합니다.
 ---
 

@@ -1,6 +1,6 @@
 ---
 title: "Hermes Agent가 AIOS 최상위 클라이언트로 승격"
-description: "Harness CLI가 Hermes Agent (Nous Research)를 최상위 AIOS 클라이언트로 등록했습니다. MCP 브리지 서버가 5개 코어 도구(context-pack, doctor, token compression, skill validation, skill installation)를 Hermes 세션 내에서 직접 사용 가능하게 합니다."
+description: "AIOS가 Hermes Agent (Nous Research)를 최상위 AIOS 클라이언트로 등록했습니다. MCP 브리지 서버가 5개 코어 도구(context-pack, doctor, token compression, skill validation, skill installation)를 Hermes 세션 내에서 직접 사용 가능하게 합니다."
 date: 2026-06-30
 tags: ["Hermes Agent", "AIOS", "MCP", "클라이언트", "Skills", "Token Compression"]
 ---

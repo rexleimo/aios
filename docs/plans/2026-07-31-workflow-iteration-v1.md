@@ -96,7 +96,7 @@
 rex-harness (子模块):
   92af46c feat(skills): upgrade code-review, implement, requirements
 
-harness-cli (父仓库):
+aios (父仓库):
   b23a88ad feat(workflow): upgrade rex skills, remove superpowers ref, clean empty matt dirs
 ```
 

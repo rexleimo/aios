@@ -1,13 +1,13 @@
 ---
-title: 빠른 시작: Harness CLI 설치와 검증
-description: 현재 명령으로 Harness CLI를 설치하고 프로젝트 guidance, ContextDB, client sync, 보안 검사를 확인합니다.
+title: 빠른 시작: AIOS 설치와 검증
+description: 현재 명령으로 AIOS를 설치하고 프로젝트 guidance, ContextDB, client sync, 보안 검사를 확인합니다.
 ---
 
 # 빠른 시작
 
 ## 먼저 답하면
 
-Harness CLI는 지원되는 coding client를 위한 로컬 workflow layer입니다. 현재 설치 순서는 release를 설치하고 project root에서 aios init --all을 실행한 뒤 aios doctor --native --verbose로 결과를 확인하는 것입니다. 기존 client를 대체하지 않으며 모든 기록을 매번 prompt에 넣지도 않습니다.
+AIOS는 지원되는 coding client를 위한 로컬 workflow layer입니다. 현재 설치 순서는 release를 설치하고 project root에서 aios init --all을 실행한 뒤 aios doctor --native --verbose로 결과를 확인하는 것입니다. 기존 client를 대체하지 않으며 모든 기록을 매번 prompt에 넣지도 않습니다.
 
 ## 준비물
 
@@ -26,7 +26,7 @@ npm -v
 === "macOS / Linux"
 
     ~~~bash
-    curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+    curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
     ~~~
 
@@ -35,7 +35,7 @@ npm -v
 === "Windows PowerShell"
 
     ~~~powershell
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ~~~
 
@@ -142,9 +142,9 @@ configuration 또는 package install 변경이 불확실하면 dry run부터 시
 
 ## FAQ
 
-### Harness CLI는 coding client를 대체하나요?
+### AIOS는 coding client를 대체하나요?
 
-아닙니다. 원래 client를 계속 실행하고 Harness CLI가 기억, workflow route, optional tool, verification guidance를 추가합니다.
+아닙니다. 원래 client를 계속 실행하고 AIOS가 기억, workflow route, optional tool, verification guidance를 추가합니다.
 
 ### aios init이 project memory를 upload하나요?
 

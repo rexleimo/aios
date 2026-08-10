@@ -18,7 +18,7 @@ description: RexAI エコシステムへの主要リンク。
 
 RexAI エコシステムの主要リンク:
 
-- [⭐ GitHub で Harness CLI に Star](https://github.com/rexleimo/harness-cli)
+- [⭐ GitHub で AIOS に Star](https://github.com/rexleimo/aios)
 - [RexAI ドキュメント](https://cli.rexai.top)
 - [RexAI ブログ](https://cli.rexai.top/blog/ja/)
 - [RexOS Agent OS](https://os.rexai.top)
@@ -33,7 +33,7 @@ RexAI エコシステムの主要リンク:
 
 ### バグはどこへ報告しますか？
 
-[GitHub リポジトリ](https://github.com/rexleimo/harness-cli)に最小再現と検証結果を添えて報告してください。
+[GitHub リポジトリ](https://github.com/rexleimo/aios)に最小再現と検証結果を添えて報告してください。
 
 ## 正規ドキュメント
 

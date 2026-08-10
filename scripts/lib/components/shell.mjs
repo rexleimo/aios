@@ -88,7 +88,7 @@ if [ -f "\${AIOS_ROOT_DIR:-}/scripts/contextdb-shell-bridge.mjs" ]; then
 elif [ -f "$_aios_root_baked/scripts/contextdb-shell-bridge.mjs" ]; then
   AIOS_ROOT_DIR="$_aios_root_baked"
 else
-  for _aios_probe_dir in "$HOME/.rexcil/harness-cli" "$HOME/cool.cnb/rex-ai-boot"; do
+  for _aios_probe_dir in "$HOME/.rexcil/aios" "$HOME/cool.cnb/rex-ai-boot"; do
     if [ -f "$_aios_probe_dir/scripts/contextdb-shell-bridge.mjs" ]; then
       AIOS_ROOT_DIR="$_aios_probe_dir"
       break
@@ -125,7 +125,7 @@ if [ -f "\${AIOS_ROOT_DIR:-}/scripts/aios.sh" ]; then
 elif [ -f "$_aios_root_baked/scripts/aios.sh" ]; then
   AIOS_ROOT_DIR="$_aios_root_baked"
 else
-  for _aios_probe_dir in "$HOME/.rexcil/harness-cli" "$HOME/cool.cnb/rex-ai-boot"; do
+  for _aios_probe_dir in "$HOME/.rexcil/aios" "$HOME/cool.cnb/rex-ai-boot"; do
     if [ -f "$_aios_probe_dir/scripts/aios.sh" ]; then
       AIOS_ROOT_DIR="$_aios_probe_dir"
       break

@@ -1,13 +1,13 @@
 ---
 title: "Hermes Agent 正式成为 AIOS 一等公民客户端"
-description: "Harness CLI 现在把 Hermes Agent (Nous Research) 注册为一等公民 AIOS 客户端，并通过 MCP 桥接服务器暴露 5 个核心工具，让 Hermes 用户直接享受 AIOS 的上下文记忆、Doctor 健康检查、Token 压缩、Skill 验证和 Skill 安装能力。"
+description: "AIOS 现在把 Hermes Agent (Nous Research) 注册为一等公民 AIOS 客户端，并通过 MCP 桥接服务器暴露 5 个核心工具，让 Hermes 用户直接享受 AIOS 的上下文记忆、Doctor 健康检查、Token 压缩、Skill 验证和 Skill 安装能力。"
 date: 2026-06-30
 tags: ["Hermes Agent", "AIOS", "MCP", "客户端", "Skills", "Token Compression"]
 ---
 
 # Hermes Agent 正式成为 AIOS 一等公民客户端
 
-Hermes Agent（Nous Research 开源的 CLI AI Agent）现在和 Codex CLI、Claude Code、Gemini CLI、OpenCode、Crush 并列——成为 Harness CLI (AIOS) 的第七个一等公民客户端。
+Hermes Agent（Nous Research 开源的 CLI AI Agent）现在和 Codex CLI、Claude Code、Gemini CLI、OpenCode、Crush 并列——成为 AIOS 的第七个一等公民客户端。
 
 这不是简单地在配置文件里加一行。这次集成的核心是 **MCP 桥接服务器**——把 AIOS 最有价值的 5 个能力直接暴露为 Hermes 可以调用的 MCP 工具。
 

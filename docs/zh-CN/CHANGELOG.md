@@ -143,7 +143,7 @@
 
 ## [1.20.3] - 2026-05-22
 
-- fix(install): 处理带或不带 harness-cli/ 前缀的归档（Windows + bash）
+- fix(install): 处理带或不带 aios/ 前缀的归档（Windows + bash）
 - fix(codemap): 修复多客户端 CRG 安装循环
 
 ## [1.20.2] - 2026-05-21
@@ -160,15 +160,15 @@
 
 ## [1.18.7] - 2026-05-19
 
-- docs: 更新仓库 URL 到 harness-cli
+- docs: 更新仓库 URL 到 aios
 
 ## [1.18.6] - 2026-05-19
 
-- fix: 将发布归档重命名为 harness-cli
+- fix: 将发布归档重命名为 aios
 
 ## [1.18.5] - 2026-05-19
 
-- docs: 将产品品牌重命名为 Harness CLI
+- docs: 将产品品牌重命名为 AIOS
 
 ## [1.18.4] - 2026-05-19
 

@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/workflows/long-running-delivery.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The public initializer validates the baseline and selects only the first feature with a continue decision.",
     "observed": "The public Rex API is absent, so the initializer is undefined.",

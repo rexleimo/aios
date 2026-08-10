@@ -24,7 +24,7 @@ test('buildBrowserHealth reports configured profiles and running state', () => {
   const result = buildBrowserHealth({
     platform: 'win32',
     nodeVersion: 'v24.0.0',
-    workspaceRoot: 'E:/coding/harness-cli',
+    workspaceRoot: 'E:/coding/aios',
     profiles: [
       ['default', {
         name: 'default',

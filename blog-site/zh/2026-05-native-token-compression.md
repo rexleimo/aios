@@ -1,13 +1,13 @@
 ---
 title: "Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP"
-description: "理解 Harness CLI 当前的 token intelligence：pull-based ContextDB、本地 RTK/Caveman 压缩，以及显式 Headroom MCP 检索。"
+description: "理解 AIOS 当前的 token intelligence：pull-based ContextDB、本地 RTK/Caveman 压缩，以及显式 Headroom MCP 检索。"
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---
 
 # Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP
 
-> **快速答案：** Harness CLI 把 token 效率拆成多个层次：ContextDB 保存并按需取回有边界的项目上下文；RTK 和 Caveman 在本地压缩命令与输出；Headroom MCP 在后续步骤确实需要时提供显式的 compress/retrieve 工具调用。这些层次互补，Headroom 不是对每个模型请求的透明拦截。
+> **快速答案：** AIOS 把 token 效率拆成多个层次：ContextDB 保存并按需取回有边界的项目上下文；RTK 和 Caveman 在本地压缩命令与输出；Headroom MCP 在后续步骤确实需要时提供显式的 compress/retrieve 工具调用。这些层次互补，Headroom 不是对每个模型请求的透明拦截。
 
 长时间 Agent 任务容易被日志、浏览器样板内容和重复历史挤满。解决方案不是一个万能开关，而是明确哪些内容要保存、哪些内容可以压缩、下一步需要取回哪些证据。
 

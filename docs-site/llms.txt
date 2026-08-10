@@ -1,4 +1,4 @@
-# Harness CLI
+# AIOS
 
 > Local-first AI coding agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Adds project memory, adaptive routing, multi-agent collaboration, and verification without replacing your client.
 
@@ -13,7 +13,7 @@
 - solo harness overnight coding agent
 - AI agent verification and privacy redaction
 - Headroom MCP compression for coding agents
-- install Harness CLI Windows PowerShell
+- install AIOS Windows PowerShell
 - coding agent harness vs bare CLI
 - agent workflow activation safety and crash recovery
 - typed evidence contracts and artifact schema validation
@@ -58,4 +58,4 @@
 ## Related Sites
 - https://rexai.top/
 - https://tool.rexai.top/
-- https://github.com/rexleimo/harness-cli
+- https://github.com/rexleimo/aios

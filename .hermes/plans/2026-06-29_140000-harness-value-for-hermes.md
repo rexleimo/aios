@@ -1,10 +1,10 @@
-# harness-cli 项目对 Hermes Agent 的价值分析
+# aios 项目对 Hermes Agent 的价值分析
 
-> **For Hermes:** 本文档是分析型计划，不是实施计划。目标是梳理 harness-cli 中哪些能力可以直接反馈给 Hermes Agent 生态，让 Hermes 用户受益。
+> **For Hermes:** 本文档是分析型计划，不是实施计划。目标是梳理 aios 中哪些能力可以直接反馈给 Hermes Agent 生态，让 Hermes 用户受益。
 
-**目标:** 从代码结构出发，系统梳理 harness-cli 项目中已经具备的、对 Hermes Agent 用户有实际帮助的能力模块，并评估哪些可以提炼为 Hermes 原生 skill/plugin。
+**目标:** 从代码结构出发，系统梳理 aios 项目中已经具备的、对 Hermes Agent 用户有实际帮助的能力模块，并评估哪些可以提炼为 Hermes 原生 skill/plugin。
 
-**架构:** harness-cli 是一个 local-first AI agent workspace，核心围绕浏览器自动化 MCP + ContextDB 会话持久化 + 多客户端 orchestration。项目已经部分与 Hermes 生态打通（`.hermes-tmp` 目录、AGENTS.md 中引用 Hermes skill 体系）。
+**架构:** aios 是一个 local-first AI agent workspace，核心围绕浏览器自动化 MCP + ContextDB 会话持久化 + 多客户端 orchestration。项目已经部分与 Hermes 生态打通（`.hermes-tmp` 目录、AGENTS.md 中引用 Hermes skill 体系）。
 
 **技术栈:** TypeScript/JavaScript (MCP server + CLI), Python (skill 工具链 + browser bootstrap), Shell (安装脚本 + MCP launcher)
 
@@ -87,7 +87,7 @@ Hermes 的 `delegate_task` 和工具输出直接进入 context window，没有�
 
 **对 Hermes 的价值:**
 Hermes 有 `delegate_task` 和 `cronjob`，但缺少：
-1. **多客户端编排** — Hermes 只能派 Hermes 子 agent，不能跨 Claude/Codex/Gemini 编排。harness-cli 的 orchestrate 可以同时启动多个不同 AI 客户端协作
+1. **多客户端编排** — Hermes 只能派 Hermes 子 agent，不能跨 Claude/Codex/Gemini 编排。aios 的 orchestrate 可以同时启动多个不同 AI 客户端协作
 2. **Doctor 健康检查** — `runDoctorSuite` 检查 MCP 配置、Node 版本、数据库完整性，比 Hermes 的零散 debug 更系统化
 3. **Evidence 持久化** — 每次编排都把 evidence 写入 ContextDB，形成可追溯的因果链
 
@@ -107,7 +107,7 @@ Hermes 有 `delegate_task` 和 `cronjob`，但缺少：
 - `skill-installer/list-skills.py` — 列出已安装 + 可安装的 skill
 
 **对 Hermes 的价值:**
-Hermes 有 `skill_manage` 和 `skills_list`，但功能偏基础。harness-cli 的 skill 工具链提供了：
+Hermes 有 `skill_manage` 和 `skills_list`，但功能偏基础。aios 的 skill 工具链提供了：
 1. **结构验证** — `quick_validate` 检查 frontmatter 必须字段（name, description, version, author），Hermes 的 `skill_manage` 不做内容验证
 2. **GitHub 安装** — sparse checkout 从远程仓库安装 skill，Hermes 只能本地创建
 3. **OpenAI YAML 生成** — 自动将 SKILL.md 转为 OpenAI 格式，便于跨平台复用
@@ -241,14 +241,14 @@ Hermes 如果做 browser 自动化，auth gate 是必备：
 
 1. **ContextDB vs Hermes session_search 的重叠** — 两者都做会话检索，但数据格式不同（JSONL+SQLite vs 纯 SQLite）。需要决定是并行引入还是逐步迁移。
 2. **MCP proxy 需要 Hermes 核心架构改动** — 目前 Hermes 的 tool_result 直接进入 context，要加拦截层需要改 agent runtime。
-3. **多客户端编排 vs Hermes ACP** — Hermes 已经支持 ACP（如 Copilot CLI），但 harness-cli 的编排更成熟（evidence 持久化 + checkpoint 恢复 + human gate）。如何融合两者？
-4. **Skill 格式兼容** — harness-cli 用 SKILL.md frontmatter，Hermes 也用 SKILL.md，但字段定义可能有细微差异。需要做格式映射。
+3. **多客户端编排 vs Hermes ACP** — Hermes 已经支持 ACP（如 Copilot CLI），但 aios 的编排更成熟（evidence 持久化 + checkpoint 恢复 + human gate）。如何融合两者？
+4. **Skill 格式兼容** — aios 用 SKILL.md frontmatter，Hermes 也用 SKILL.md，但字段定义可能有细微差异。需要做格式映射。
 
 ---
 
 ## 七、结论
 
-harness-cli 项目对 Hermes Agent 的核心价值集中在三个方向：
+aios 项目对 Hermes Agent 的核心价值集中在三个方向：
 
 1. **上下文管理** — ContextDB 的策略化召回、压缩、血缘追踪，直接填补 Hermes 长会话的上下文衰减问题
 2. **安全编排** — Human gate + auth gate + doctor 检查，补齐 Hermes 在长时间自主运行中的安全缺失

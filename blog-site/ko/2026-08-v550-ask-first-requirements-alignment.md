@@ -2,7 +2,7 @@
 title: "v5.5.0: Ask-First 요구사항 정렬 — 에이전트가 원치 않는 것을 더 이상 만들지 않습니다"
 description: "v5.5.0은 워크플로가 모호한 요청(예: '랜딩 페이지 최적화')을 능동적으로 감지하고, 계획 수립 전에 멈춰 사용자와 정렬합니다. 명확화 예산 + 가정 폴백으로 무한 질문을 방지하여, 에이전트는 추측이 아니라 사용자가 원하는 것을 전달합니다."
 date: 2026-08-08
-tags: ["Harness CLI", "workflow", "requirements", "Ask-First", "명확화", "정렬", "release"]
+tags: ["AIOS", "workflow", "requirements", "Ask-First", "명확화", "정렬", "release"]
 ---
 
 # v5.5.0: Ask-First 요구사항 정렬 — 에이전트가 원치 않는 것을 더 이상 만들지 않습니다

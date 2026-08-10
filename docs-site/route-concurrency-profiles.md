@@ -1,6 +1,6 @@
 ---
 title: Route & Concurrency Profiles
-description: Minimal env profiles for interactive routing and parallel execution in Harness CLI.
+description: Minimal env profiles for interactive routing and parallel execution in AIOS.
 ---
 
 # Route & Concurrency Profiles

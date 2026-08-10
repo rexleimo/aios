@@ -2,7 +2,7 @@
 title: "v5.5.1：基于证据的 Agent 生命周期晋级"
 description: "v5.5.1 移除了 Agent 晋级的硬编码瓶颈：默认覆盖全部 canonical roles，完整 managed evidence 通过后即可进入 live workflow。"
 date: 2026-08-08
-tags: ["Harness CLI", "agents", "smoke", "workflow", "release"]
+tags: ["AIOS", "agents", "smoke", "workflow", "release"]
 ---
 
 # v5.5.1：基于证据的 Agent 生命周期晋级

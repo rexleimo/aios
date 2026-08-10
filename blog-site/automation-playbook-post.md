@@ -63,7 +63,7 @@ media references resolve
 target account matches the selected profile
 ```
 
-If any condition fails, stop and report `blocked`. Do not silently downgrade the check to a warning. This is the same principle as the Harness CLI edit gate: a safety boundary must be observable and enforceable.
+If any condition fails, stop and report `blocked`. Do not silently downgrade the check to a warning. This is the same principle as the AIOS edit gate: a safety boundary must be observable and enforceable.
 
 ## 4. Store useful context, not every transcript
 

@@ -1,6 +1,6 @@
 ---
 title: Windows 指南：PowerShell 安装与恢复
-description: 在 Windows 上使用 PowerShell 安装 Harness CLI，初始化项目，验证客户端同步，并处理常见 PATH 和配置问题。
+description: 在 Windows 上使用 PowerShell 安装 AIOS，初始化项目，验证客户端同步，并处理常见 PATH 和配置问题。
 ---
 
 # Windows 指南
@@ -25,7 +25,7 @@ git --version
 ## 安装并重新加载 PowerShell
 
 ~~~powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 ~~~
 
@@ -112,7 +112,7 @@ aios doctor --native --verbose
 
 ### Windows 安装器会取代我的编码客户端吗？
 
-不会。它安装 Harness CLI 层及其受支持的集成。你仍然运行 codex、claude、gemini、opencode、hermes 或 grok。
+不会。它安装 AIOS 层及其受支持的集成。你仍然运行 codex、claude、gemini、opencode、hermes 或 grok。
 
 ### 为什么要明确设置 TLS 1.2？
 

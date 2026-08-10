@@ -1,11 +1,11 @@
 ---
-title: "AI エージェントのワークフローはどう選ぶ？ Harness CLI の判断ガイド"
+title: "AI エージェントのワークフローはどう選ぶ？ AIOS の判断ガイド"
 description: "決定表と例を使って noop、direct、guarded、planned を選び、実行面と検証項目まで整理します。"
 date: 2026-07-14
-tags: ["AI エージェント", "Harness CLI", "Codex", "Claude Code", "開発ツール"]
+tags: ["AI エージェント", "AIOS", "Codex", "Claude Code", "開発ツール"]
 ---
 
-# AI エージェントのワークフローはどう選ぶ？ Harness CLI の判断ガイド
+# AI エージェントのワークフローはどう選ぶ？ AIOS の判断ガイド
 
 > **Quick Answer:** 質問や読み取り専用の調査には `direct`、小さく明確な変更には `guarded`、複数ステップ・不確実性・リスク・委譲・再開がある場合には `planned` を使います。実行可能な依頼がない場合は `noop` です。ルートはクライアント名ではなくタスクの性質で決まります。
 

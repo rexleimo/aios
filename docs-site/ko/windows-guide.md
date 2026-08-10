@@ -1,6 +1,6 @@
 ---
 title: Windows 가이드: PowerShell 설정과 복구
-description: Windows PowerShell에서 Harness CLI를 설치하고 프로젝트를 초기화하며 client sync, PATH, 구성 문제를 확인합니다.
+description: Windows PowerShell에서 AIOS를 설치하고 프로젝트를 초기화하며 client sync, PATH, 구성 문제를 확인합니다.
 ---
 
 # Windows 가이드
@@ -23,7 +23,7 @@ Node.js 24 LTS를 사용합니다. execution policy로 설치가 막히면 조�
 ## 설치와 PowerShell profile reload
 
 ~~~powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 ~~~
 
@@ -110,7 +110,7 @@ aios doctor --native --verbose
 
 ### Windows installer가 coding client를 대체하나요?
 
-아닙니다. Harness CLI layer와 지원 integration을 설치합니다. codex, claude, gemini, opencode, hermes, grok은 계속 사용합니다.
+아닙니다. AIOS layer와 지원 integration을 설치합니다. codex, claude, gemini, opencode, hermes, grok은 계속 사용합니다.
 
 ### TLS 1.2를 지정하는 이유는?
 

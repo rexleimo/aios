@@ -53,7 +53,7 @@ aios memo GUI 是 ContextDB 的可视化界面 — 它把 Agent 的会话历史�
 
 ## 快速上手
 
-aios memo GUI 直接读取你现有的 ContextDB 数据。如果你已经在项目中设置了 Harness CLI 并启用了 `.contextdb-enable`，你的数据已经就绪。
+aios memo GUI 直接读取你现有的 ContextDB 数据。如果你已经在项目中设置了 AIOS 并启用了 `.contextdb-enable`，你的数据已经就绪。
 
 1. 打开 GUI，指向你的项目
 2. 点击 **Load** 导入 ContextDB 数据
@@ -87,10 +87,10 @@ aios memo GUI 是 **ContextDB** 生态系统的一部分 — 这个记忆系统�
 
 ## 试试看
 
-如果你已经在使用 Harness CLI 并启用了 ContextDB，你的数据已经准备好了。打开 aios memo GUI 开始探索。
+如果你已经在使用 AIOS 并启用了 ContextDB，你的数据已经准备好了。打开 aios memo GUI 开始探索。
 
-刚接触 Harness CLI？从 [快速上手指南](https://cli.rexai.top/zh/getting-started/) 开始，在项目中启用 ContextDB，然后回来看看你的 Agent 记忆长什么样。
+刚接触 AIOS？从 [快速上手指南](https://cli.rexai.top/zh/getting-started/) 开始，在项目中启用 ContextDB，然后回来看看你的 Agent 记忆长什么样。
 
 ---
 
-*aios memo GUI 是 [Harness CLI](https://cli.rexai.top) 生态的一部分。[开始使用](https://cli.rexai.top/zh/getting-started/)或[阅读 ContextDB 文档](https://cli.rexai.top/zh/contextdb/)，了解更多关于 Agent 记忆的内容。*
+*aios memo GUI 是 [AIOS](https://cli.rexai.top) 生态的一部分。[开始使用](https://cli.rexai.top/zh/getting-started/)或[阅读 ContextDB 文档](https://cli.rexai.top/zh/contextdb/)，了解更多关于 Agent 记忆的内容。*

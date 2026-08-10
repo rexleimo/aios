@@ -1,5 +1,5 @@
 ---
-title: ケースライブラリ：再現可能な Harness CLI workflow
+title: ケースライブラリ：再現可能な AIOS workflow
 description: setup、cross-client handoff、browser auth、privacy read、release verification を evidence 付きで実行します。
 ---
 

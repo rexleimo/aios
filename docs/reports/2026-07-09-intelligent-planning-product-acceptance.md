@@ -70,7 +70,7 @@ node scripts/aios.mjs plan doctor --json
 
 # P4–P5
 WORKDIR=$(mktemp -d) && cd "$WORKDIR"
- node /path/to/harness-cli/scripts/aios.mjs plan start \
+ node /path/to/aios/scripts/aios.mjs plan start \
   --title "accept-probe" --task "fix login regression bug" --json
 node .../aios.mjs plan gate --json          # ok:false
 node .../aios.mjs plan set-status --status done  # err cannot mark plan done

@@ -15,7 +15,7 @@
         "--markdown-out",
         "temp/context-lifecycle-v1/baseline.md"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "命令退出码为 0，六个场景都有 actual observation、qualityVerdict 和证据摘要，并生成 baseline.json 与 baseline.md。",
     "observed": "命令退出码为 1，目标 runner 文件尚不存在，没有生成基线工件。",

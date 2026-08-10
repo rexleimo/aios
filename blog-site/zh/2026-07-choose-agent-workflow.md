@@ -1,11 +1,11 @@
 ---
-title: "AI Agent 工作流怎么选？Harness CLI 路由决策指南"
+title: "AI Agent 工作流怎么选？AIOS 路由决策指南"
 description: "用一张决策表选择 noop、direct、guarded、planned 工作流，并配套示例、执行面和验证清单。"
 date: 2026-07-14
-tags: ["AI Agent 工作流", "Harness CLI", "Codex", "Claude Code", "开发工具"]
+tags: ["AI Agent 工作流", "AIOS", "Codex", "Claude Code", "开发工具"]
 ---
 
-# AI Agent 工作流怎么选？Harness CLI 路由决策指南
+# AI Agent 工作流怎么选？AIOS 路由决策指南
 
 > **快速答案：** 提问和只读检查使用 `direct`，一个小而明确的修改使用 `guarded`，包含多步骤、不确定性、风险、委派或恢复需求时使用 `planned`。没有可执行任务时使用 `noop`。路由取决于任务本身，而不是你使用哪一个编程客户端。
 

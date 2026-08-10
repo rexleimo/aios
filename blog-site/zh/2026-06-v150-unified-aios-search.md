@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码"
-description: "Harness CLI v1.50.0 为所有支持的 coding client 提供统一搜索入口，覆盖项目记忆、pinned memo、文档、计划和代码，并保留作用域隔离。"
+description: "AIOS v1.50.0 为所有支持的 coding client 提供统一搜索入口，覆盖项目记忆、pinned memo、文档、计划和代码，并保留作用域隔离。"
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 
 Agent 的智力经常不是输在模型本身，而是输在重复找上下文：计划在一个文件里，pinned memo 在另一个地方，文档没有先读，最后直接 grep 代码，却不知道当初为什么这样实现。
 
-Harness CLI v1.50.0 把这条路径合并成一个搜索面。现在每个支持的客户端都可以用同一条命令搜索项目记忆、pinned memo、文档、计划和代码。
+AIOS v1.50.0 把这条路径合并成一个搜索面。现在每个支持的客户端都可以用同一条命令搜索项目记忆、pinned memo、文档、计划和代码。
 
 ## 主命令
 

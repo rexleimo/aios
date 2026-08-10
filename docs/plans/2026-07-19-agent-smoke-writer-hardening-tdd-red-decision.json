@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/aios-orchestrator-agents.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The command is blocked with exit code 1, records zero promotion artifacts, and does not create smoke, provenance, or metric files before an explicit managed live invocation.",
     "observed": "The command returned exit code 0 and the legacy writer created status pass/verified artifacts plus synthetic compression metrics.",

@@ -15,7 +15,7 @@
         "--markdown-out",
         "temp/context-lifecycle-v1/s2-current.md"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "S2 profile 12/12：CL-06/07/09/12 达到 shadow preflight、reconciliation、handoff lineage 和 custom-root/CJK 目标；CL-11 direct/read-only 及全部 S0/S1/compatibility 场景不回退。",
     "observed": "当前 8/12：CL-06 缺少 S2 preflight API，CL-07 缺少 reconciliation module，CL-09 缺少 handoff lineage API，CL-12 缺少 preflight/custom changed-files；其余八项通过。",

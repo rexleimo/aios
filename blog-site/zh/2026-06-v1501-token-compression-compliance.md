@@ -1,6 +1,6 @@
 ---
 title: "v1.50.1：全客户端 Token 压缩合规"
-description: "Harness CLI v1.50.1 用 pre_send、post_receive、proof 矩阵和 direct host bypass 违规记录，让所有 AIOS 客户端的省 token 指标可度量。"
+description: "AIOS v1.50.1 用 pre_send、post_receive、proof 矩阵和 direct host bypass 违规记录，让所有 AIOS 客户端的省 token 指标可度量。"
 date: 2026-06-05
 tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 
 省 token 不能靠感觉。Agent 回答短一点不等于真的省。绕过 AIOS 的 raw host output 也不能算 savings。只证明 harness 一条链路，也不能说明所有客户端都遵循同一套合同。
 
-Harness CLI v1.50.1 把这件事收敛到一个统一指标：`bidirectional-turn-compression`。
+AIOS v1.50.1 把这件事收敛到一个统一指标：`bidirectional-turn-compression`。
 
 ## 合同
 

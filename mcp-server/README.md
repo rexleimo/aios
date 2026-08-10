@@ -1,8 +1,8 @@
 # Browser MCP Integration
 
-[![Parent project](https://img.shields.io/badge/parent-harness--cli-0ea5e9)](https://github.com/rexleimo/harness-cli)
+[![Parent project](https://img.shields.io/badge/parent-harness--cli-0ea5e9)](https://github.com/rexleimo/aios)
 
-> Browser automation surface for Harness CLI / AIOS.
+> Browser automation surface for AIOS / AIOS.
 > **Default path:** repository-local Node/Playwright MCP (`scripts/run-local-browser-mcp.mjs`).
 > **Browser mode:** Playwright can launch a local browser or attach to an externally started CDP browser.
 

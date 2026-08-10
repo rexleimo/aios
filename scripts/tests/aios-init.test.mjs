@@ -280,7 +280,7 @@ test('ensureHook upgrades stale Claude PreToolUse rewrite hook without clobberin
 
 test('ensureHook migrates all stale Windows AIOS hook paths without clobbering user hooks', () => {
   const workspaceRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-init-claude-windows-hooks-'));
-  const legacyRuntime = String.raw`C:\Users\Administrator\.rexcil\harness-cli`;
+  const legacyRuntime = String.raw`C:\Users\Administrator\.rexcil\aios`;
   const legacyWorkspace = String.raw`E:\coding\inkloom.im`;
   fs.mkdirSync(path.join(workspaceRoot, '.claude'), { recursive: true });
   fs.writeFileSync(path.join(workspaceRoot, '.claude', 'settings.local.json'), `${JSON.stringify({

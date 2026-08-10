@@ -1,6 +1,6 @@
 ---
-title: 按场景找命令：选择 Harness CLI 路径
-description: 按记忆、搜索、并行工作、可恢复运行、浏览器、隐私和验证目标选择 Harness CLI 命令。
+title: 按场景找命令：选择 AIOS 路径
+description: 按记忆、搜索、并行工作、可恢复运行、浏览器、隐私和验证目标选择 AIOS 命令。
 ---
 
 # 按场景找命令

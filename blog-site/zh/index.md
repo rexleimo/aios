@@ -1,6 +1,6 @@
 ---
 title: 博客中心
-description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Agent harness、Agent Team、浏览器自动化、工作流策略和多客户端实践。
+description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Agent Team、浏览器自动化、工作流策略和多客户端实践。
 ---
 
 # 博客中心
@@ -9,7 +9,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 
 ## 从这里开始
 
-刚接触 Harness CLI？从这里开始：
+刚接触 AIOS？从这里开始：
 
 - [发布文章](launch-post.md) — 为什么做这个，它解决什么问题
 - [CLI 对比](cli-comparison-post.md) — 加了这层之后有什么变化
@@ -29,8 +29,8 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 - [Agent 安全是状态机问题：Codex 安全讨论遗漏的部分](2026-08-ai-agent-security.md)
 - [AI 编程账单失控：Cursor 隐藏成本、亚马逊烧掉 180 万美元，本地层能改变什么](2026-08-ai-coding-cost-crisis.md)
 - [v5.4.0：工作流迭代 v2.1 — Activation 安全、类型化 Evidence 契约与全量 Skill 审查](2026-08-v540-workflow-iteration-v21.md)
-- [v4.0 自适应工作流策略：Harness CLI 如何选择合适的工程流程](2026-07-v400-adaptive-workflow-policy.md)
-- [AI Agent 工作流怎么选？Harness CLI 路由决策指南](2026-07-choose-agent-workflow.md)
+- [v4.0 自适应工作流策略：AIOS 如何选择合适的工程流程](2026-07-v400-adaptive-workflow-policy.md)
+- [AI Agent 工作流怎么选？AIOS 路由决策指南](2026-07-choose-agent-workflow.md)
 - [从零散 CLI 命令到可靠的 AI Agent 工作流](2026-07-raw-cli-to-reliable-workflow.md)
 - [v3.6.0：用 Headroom 与 Ponytail 构建更稳的 Token 智能工作流](2026-07-headroom-token-intelligence.md)
 - [v3.2.0：Harness 可靠性与技能生命周期升级](2026-07-v320-harness-reliability-upgrade.md)
@@ -49,7 +49,7 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 - [debug-hub：让 Agent 自己查日志](2026-05-debug-hub-mcp.md)
 - [Browser MCP 弱模型升级：语义快照 + 文本点击](2026-04-browser-mcp-weak-model-upgrade.md)
 - [高级设计技能页面制作：把模糊提示词变成可生产 UI](advanced-design-skills-page-building.md)
-- [Harness CLI TUI 重构：基于 React Ink 的现代终端交互](2026-04-rexcli-ink-tui-refactor.md)
+- [AIOS TUI 重构：基于 React Ink 的现代终端交互](2026-04-rexcli-ink-tui-refactor.md)
 - [Windows 启动稳定性更新：cmd 包装器下的 CLI 启动更稳了](windows-cli-startup-stability.md)
 
 ## 深度文章
@@ -69,5 +69,5 @@ description: Harness CLI（AIOS）工程与增长博客：记忆系统、单 Age
 ### Agent Team 和子代理编排更新看哪里？
 重点看 [Orchestrate Live：Subagent Runtime 正式可用](orchestrate-live.md)。
 
-### Harness CLI 是新的 coding agent 吗？
+### AIOS 是新的 coding agent 吗？
 不是。它是一个本地优先的能力层，给你正在用的 `codex` / `claude` / `gemini` / `opencode` 加上记忆、协作和验证能力——不换工具，不改习惯。

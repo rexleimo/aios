@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/rex-long-running-delivery-store.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "AIOS reloads the opaque Rex result, invokes the callback once with Rex's F1 continue decision, persists the Rex-produced F2 decision, and returns that result without host-side workflow selection.",
     "observed": "The public test fails before its scenario runs because the dedicated scripts/lib/workflows/rex-long-running-delivery-store.mjs module does not exist.",

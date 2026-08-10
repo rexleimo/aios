@@ -7,7 +7,7 @@ description: RTK, Caveman, Headroom MCP, ContextDB와 Ponytail에서 영감을 �
 
 ## 먼저 답하면
 
-context efficiency는 하나의 compression switch가 아니라 workflow입니다. Harness CLI는 smallest-correct-change gate, RTK shell output filter, Caveman response style, 명시적인 Headroom MCP tool, pull-based ContextDB recall을 분리합니다. 어떤 계층도 test, privacy check, final verification을 대신하지 않습니다.
+context efficiency는 하나의 compression switch가 아니라 workflow입니다. AIOS는 smallest-correct-change gate, RTK shell output filter, Caveman response style, 명시적인 Headroom MCP tool, pull-based ContextDB recall을 분리합니다. 어떤 계층도 test, privacy check, final verification을 대신하지 않습니다.
 
 ## 지금 실행
 

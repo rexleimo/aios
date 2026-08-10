@@ -180,52 +180,52 @@ test('package-release emits stable assets including the rex-harness planning ker
 
   assertOk(result);
 
-  for (const fileName of ['aios-install.sh', 'aios-install.ps1', 'harness-cli.tar.gz', 'harness-cli.zip']) {
+  for (const fileName of ['aios-install.sh', 'aios-install.ps1', 'aios.tar.gz', 'aios.zip']) {
     const filePath = path.join(outDir, fileName);
     await assertFileExists(filePath, `${fileName} was not produced`);
   }
 
   const extractDir = await makeTemp('rex-release-assets-extract-');
-  assertOk(run(TAR, ['-xzf', path.join(outDir, 'harness-cli.tar.gz'), '-C', extractDir]));
+  assertOk(run(TAR, ['-xzf', path.join(outDir, 'aios.tar.gz'), '-C', extractDir]));
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'skill-sources', 'sample-skill', 'SKILL.md'),
-    'harness-cli.tar.gz did not include skill-sources/sample-skill/SKILL.md'
+    path.join(extractDir, 'aios', 'skill-sources', 'sample-skill', 'SKILL.md'),
+    'aios.tar.gz did not include skill-sources/sample-skill/SKILL.md'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'agent-sources', 'manifest.json'),
-    'harness-cli.tar.gz did not include agent-sources/manifest.json'
+    path.join(extractDir, 'aios', 'agent-sources', 'manifest.json'),
+    'aios.tar.gz did not include agent-sources/manifest.json'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'agent-sources', 'roles', 'rex-planner.md'),
-    'harness-cli.tar.gz did not include markdown role cards'
+    path.join(extractDir, 'aios', 'agent-sources', 'roles', 'rex-planner.md'),
+    'aios.tar.gz did not include markdown role cards'
   );
   await assertFileMissing(
-    path.join(extractDir, 'harness-cli', 'agent-sources', 'roles', 'rex-planner.json'),
-    'harness-cli.tar.gz should not include legacy JSON role cards'
+    path.join(extractDir, 'aios', 'agent-sources', 'roles', 'rex-planner.json'),
+    'aios.tar.gz should not include legacy JSON role cards'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'specs', 'orchestrator-agents.json'),
-    'harness-cli.tar.gz did not include bundled runtime specs'
+    path.join(extractDir, 'aios', 'scripts', 'lib', 'specs', 'orchestrator-agents.json'),
+    'aios.tar.gz did not include bundled runtime specs'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'),
-    'harness-cli.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
+    path.join(extractDir, 'aios', 'client-sources', 'native-base', 'gemini', 'project', 'AIOS.md'),
+    'aios.tar.gz did not include client-sources/native-base/gemini/project/AIOS.md'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'package.json'),
-    'harness-cli.tar.gz did not include root package.json for direct release installs'
+    path.join(extractDir, 'aios', 'package.json'),
+    'aios.tar.gz did not include root package.json for direct release installs'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'package-lock.json'),
-    'harness-cli.tar.gz did not include root package-lock.json for direct release installs'
+    path.join(extractDir, 'aios', 'package-lock.json'),
+    'aios.tar.gz did not include root package-lock.json for direct release installs'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
-    'harness-cli.tar.gz did not include rex-harness/src/index.mjs'
+    path.join(extractDir, 'aios', 'rex-harness', 'src', 'index.mjs'),
+    'aios.tar.gz did not include rex-harness/src/index.mjs'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md'),
-    'harness-cli.tar.gz did not include rex-harness/skill-sources/rex-workflow/SKILL.md'
+    path.join(extractDir, 'aios', 'rex-harness', 'skill-sources', 'rex-workflow', 'SKILL.md'),
+    'aios.tar.gz did not include rex-harness/skill-sources/rex-workflow/SKILL.md'
   );
   for (const relativePath of [
     'packages/debug-hub/dist/cli.js',
@@ -234,21 +234,21 @@ test('package-release emits stable assets including the rex-harness planning ker
     'scripts/run-debug-hub.mjs',
   ]) {
     await assertFileExists(
-      path.join(extractDir, 'harness-cli', relativePath),
-      `harness-cli.tar.gz did not include ${relativePath}`
+      path.join(extractDir, 'aios', relativePath),
+      `aios.tar.gz did not include ${relativePath}`
     );
   }
   await assertFileMissing(
-    path.join(extractDir, 'harness-cli', 'mcp-server', 'dist'),
-    'harness-cli.tar.gz must not include generated mcp-server/dist output'
+    path.join(extractDir, 'aios', 'mcp-server', 'dist'),
+    'aios.tar.gz must not include generated mcp-server/dist output'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
-    'harness-cli.tar.gz did not include the Rex workflow reconciliation entrypoint'
+    path.join(extractDir, 'aios', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
+    'aios.tar.gz did not include the Rex workflow reconciliation entrypoint'
   );
   await assertFileExists(
-    path.join(extractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
-    'harness-cli.tar.gz did not include the global Rex client projection entrypoint'
+    path.join(extractDir, 'aios', 'scripts', 'install-rex-client-projections.mjs'),
+    'aios.tar.gz did not include the global Rex client projection entrypoint'
   );
   for (const relativePath of [
     '.codex/skills',
@@ -260,38 +260,38 @@ test('package-release emits stable assets including the rex-harness planning ker
     '.grok/skills',
   ]) {
     await assertFileMissing(
-      path.join(extractDir, 'harness-cli', relativePath),
-      `harness-cli.tar.gz must not ship stale client skill projections: ${relativePath}`
+      path.join(extractDir, 'aios', relativePath),
+      `aios.tar.gz must not ship stale client skill projections: ${relativePath}`
     );
   }
   await assertFileMissing(
-    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
-    'harness-cli.tar.gz must not ship retired Superpowers workflow code'
+    path.join(extractDir, 'aios', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
+    'aios.tar.gz must not ship retired Superpowers workflow code'
   );
   await assertFileMissing(
-    path.join(extractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers'),
-    'harness-cli.tar.gz must not ship a retired Superpowers workflow directory'
+    path.join(extractDir, 'aios', 'scripts', 'lib', 'components', 'superpowers'),
+    'aios.tar.gz must not ship a retired Superpowers workflow directory'
   );
 
   const zipExtractDir = await makeTemp('rex-release-assets-zip-extract-');
   // GNU tar on Linux cannot extract zip; use unzip (CI installs it). macOS has unzip too.
-  const zipPath = path.join(outDir, 'harness-cli.zip');
+  const zipPath = path.join(outDir, 'aios.zip');
   const unzipResult = run('unzip', ['-q', zipPath, '-d', zipExtractDir]);
   if (unzipResult.status !== 0) {
     // Fallback: BSD tar on macOS can open zip archives.
     assertOk(run(TAR, ['-xf', zipPath, '-C', zipExtractDir]), unzipResult.stderr || unzipResult.stdout || 'unzip failed');
   }
   await assertFileExists(
-    path.join(zipExtractDir, 'harness-cli', 'rex-harness', 'src', 'index.mjs'),
-    'harness-cli.zip did not include rex-harness/src/index.mjs'
+    path.join(zipExtractDir, 'aios', 'rex-harness', 'src', 'index.mjs'),
+    'aios.zip did not include rex-harness/src/index.mjs'
   );
   await assertFileExists(
-    path.join(zipExtractDir, 'harness-cli', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
-    'harness-cli.zip did not include the Rex workflow reconciliation entrypoint'
+    path.join(zipExtractDir, 'aios', 'scripts', 'reconcile-rex-workflow-surface.mjs'),
+    'aios.zip did not include the Rex workflow reconciliation entrypoint'
   );
   await assertFileExists(
-    path.join(zipExtractDir, 'harness-cli', 'scripts', 'install-rex-client-projections.mjs'),
-    'harness-cli.zip did not include the global Rex client projection entrypoint'
+    path.join(zipExtractDir, 'aios', 'scripts', 'install-rex-client-projections.mjs'),
+    'aios.zip did not include the global Rex client projection entrypoint'
   );
   for (const relativePath of [
     'packages/debug-hub/dist/cli.js',
@@ -300,21 +300,21 @@ test('package-release emits stable assets including the rex-harness planning ker
     'scripts/run-debug-hub.mjs',
   ]) {
     await assertFileExists(
-      path.join(zipExtractDir, 'harness-cli', relativePath),
-      `harness-cli.zip did not include ${relativePath}`
+      path.join(zipExtractDir, 'aios', relativePath),
+      `aios.zip did not include ${relativePath}`
     );
   }
   await assertFileMissing(
-    path.join(zipExtractDir, 'harness-cli', 'mcp-server', 'dist'),
-    'harness-cli.zip must not include generated mcp-server/dist output'
+    path.join(zipExtractDir, 'aios', 'mcp-server', 'dist'),
+    'aios.zip must not include generated mcp-server/dist output'
   );
   await assertFileMissing(
-    path.join(zipExtractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
-    'harness-cli.zip must not ship retired Superpowers workflow code'
+    path.join(zipExtractDir, 'aios', 'scripts', 'lib', 'components', 'superpowers', 'legacy.mjs'),
+    'aios.zip must not ship retired Superpowers workflow code'
   );
   await assertFileMissing(
-    path.join(zipExtractDir, 'harness-cli', 'scripts', 'lib', 'components', 'superpowers'),
-    'harness-cli.zip must not ship a retired Superpowers workflow directory'
+    path.join(zipExtractDir, 'aios', 'scripts', 'lib', 'components', 'superpowers'),
+    'aios.zip must not ship a retired Superpowers workflow directory'
   );
 });
 
@@ -327,7 +327,7 @@ test('release scripts and CI require a materialized rex-harness submodule', asyn
   const releaseWorkflow = await readFile(path.join(workspaceRoot, '.github', 'workflows', 'release.yml'), 'utf8');
 
   assert.match(shellScript, /rex-harness/u);
-  assert.match(shellScript, /rm -f "\$OUT_DIR\/harness-cli\.zip"/u);
+  assert.match(shellScript, /rm -f "\$OUT_DIR\/aios\.zip"/u);
   assert.match(preflightShell, /describe --tags --abbrev=0 --match 'v\[0-9\]\*' HEAD\^/u);
   assert.match(powershellScript, /rex-harness/u);
   assert.match(initScript, /ensureAiosPlanningKernel/u);
@@ -471,15 +471,15 @@ test('Bash installer can use a local asset URL for install smoke tests', async (
   const workspaceRoot = process.cwd();
   const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');
 
-  assert.match(installSh, /asset_url="\$\{AIOS_ASSET_URL:-https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/harness-cli\.tar\.gz\}"/u);
+  assert.match(installSh, /asset_url="\$\{AIOS_ASSET_URL:-https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/aios\.tar\.gz\}"/u);
 });
 
 bashInstallerTest('Bash installer isolates nested runtime and privacy paths from inherited host paths', async () => {
   const workspaceRoot = process.cwd();
   const rootDir = await makeTemp('rex-installer-nested-env-');
-  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
-  const assetPath = path.join(rootDir, 'harness-cli.tar.gz');
-  const installDir = path.join(rootDir, 'installed', 'harness-cli');
+  const packageRoot = path.join(rootDir, 'package', 'aios');
+  const assetPath = path.join(rootDir, 'aios.tar.gz');
+  const installDir = path.join(rootDir, 'installed', 'aios');
 
   await writeFixtureFile(
     packageRoot,
@@ -492,7 +492,7 @@ bashInstallerTest('Bash installer isolates nested runtime and privacy paths from
     '#!/usr/bin/env bash\nprintf "%s|%s|%s|%s\\n" "$AIOS_ROOT_DIR" "$AIOS_ROOT" "$ROOTPATH" "$REXCIL_HOME" > "$(dirname "$0")/privacy-env.txt"\n',
   );
 
-  assertOk(run(TAR, ['-czf', assetPath, '-C', path.join(rootDir, 'package'), 'harness-cli']));
+  assertOk(run(TAR, ['-czf', assetPath, '-C', path.join(rootDir, 'package'), 'aios']));
 
   const result = run('bash', [path.join(workspaceRoot, 'scripts', 'aios-install.sh')], {
     env: {
@@ -526,8 +526,8 @@ bashInstallerTest('Bash installer isolates nested runtime and privacy paths from
 windowsInstallerTest('PowerShell installer smoke extracts local asset and installs shell wrapper', async () => {
   const workspaceRoot = process.cwd();
   const rootDir = await makeTemp('rex-installer-smoke-');
-  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
-  const zipPath = path.join(rootDir, 'harness-cli.zip');
+  const packageRoot = path.join(rootDir, 'package', 'aios');
+  const zipPath = path.join(rootDir, 'aios.zip');
   const installDir = path.join(rootDir, 'install');
 
   await writeFixtureFile(packageRoot, 'package.json', '{"name":"installer-smoke","type":"module"}\n');
@@ -577,8 +577,8 @@ exit 0
 windowsInstallerTest('PowerShell one-liner installer tolerates successful native stderr', async () => {
   const workspaceRoot = process.cwd();
   const rootDir = await makeTemp('rex-installer-iex-stderr-');
-  const packageRoot = path.join(rootDir, 'package', 'harness-cli');
-  const zipPath = path.join(rootDir, 'harness-cli.zip');
+  const packageRoot = path.join(rootDir, 'package', 'aios');
+  const zipPath = path.join(rootDir, 'aios.zip');
   const installDir = path.join(rootDir, 'install');
   const profilePath = path.join(rootDir, 'profile.ps1');
 

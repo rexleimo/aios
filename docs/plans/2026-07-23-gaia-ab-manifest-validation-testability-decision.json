@@ -12,7 +12,7 @@
         "scripts/tests/fixtures/gaia-ab-eval-valid.json",
         "--dry-run"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The CLI validates the local manifest, exits successfully, and prints separate Codex, Claude, and Hermes dry-run entries without any model, dataset, browser, or leaderboard access.",
     "observed": "The CLI exits with code 1 and prints that the evaluator is not ready to run.",

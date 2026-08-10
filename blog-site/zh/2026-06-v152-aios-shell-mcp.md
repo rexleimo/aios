@@ -1,6 +1,6 @@
 ---
 title: "v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩"
-description: "Harness CLI v1.52.0 引入 aios_shell — 一个 MCP 工具，为所有 AIOS 客户端提供 99% 压缩率的确定性 shell 输出压缩，同时带来了 shim 自愈和敏感命令守卫功能。"
+description: "AIOS v1.52.0 引入 aios_shell — 一个 MCP 工具，为所有 AIOS 客户端提供 99% 压缩率的确定性 shell 输出压缩，同时带来了 shim 自愈和敏感命令守卫功能。"
 date: 2026-06-11
 tags: ["release", "token-compression", "shell", "MCP", "multi-client", "shim"]
 ---
@@ -56,7 +56,7 @@ agent → aios_shell → MCP proxy → 411 bytes (98.7% 压缩) + ref 召回
 
 1. 检查环境变量 `AIOS_ROOT_DIR`
 2. 检查 baked-in 回退路径
-3. 探测 `~/.rexcil/harness-cli`
+3. 探测 `~/.rexcil/aios`
 4. 探测 `~/cool.cnb/rex-ai-boot`
 
 如果全部探测失败 —— shim 直接 `exec` 真实客户端二进制文件，不再 `exit 127` 导致进程僵死。

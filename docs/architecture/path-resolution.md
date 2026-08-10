@@ -33,7 +33,7 @@ export const DEFAULT_AIOS_ROOT_DIR = path.resolve(
 - Core AIOS runtime code
 
 **Example**:
-- `/Users/rex/.rexcil/harness-cli`
+- `/Users/rex/.rexcil/aios`
 - `~/.aios-framework`
 - `/opt/aios`
 
@@ -91,9 +91,9 @@ export const CLIENT_DEFINITIONS = {
 ### Scenario 1: Framework and Project in Same Directory
 
 ```bash
-AIOS_ROOT=/Users/rex/codes/harness-cli
+AIOS_ROOT=/Users/rex/codes/aios
 pwd
-# /Users/rex/codes/harness-cli
+# /Users/rex/codes/aios
 
 # Paths resolve to:
 $AIOS_ROOT/scripts/aios.mjs               # Framework script
@@ -104,7 +104,7 @@ $(pwd)/.claude/skills/                    # Project skills
 ### Scenario 2: Framework Installed Globally
 
 ```bash
-AIOS_ROOT=/Users/rex/.rexcil/harness-cli
+AIOS_ROOT=/Users/rex/.rexcil/aios
 pwd
 # /Users/rex/my-project
 
@@ -196,7 +196,7 @@ Read skills from `.claude/skills/` (relative to project root, not AIOS_ROOT)
 ```bash
 # Where is AIOS framework installed?
 echo $AIOS_ROOT
-# Example: /Users/rex/.rexcil/harness-cli
+# Example: /Users/rex/.rexcil/aios
 
 # Where is your project?
 pwd

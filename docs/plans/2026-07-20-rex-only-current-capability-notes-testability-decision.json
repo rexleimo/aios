@@ -11,7 +11,7 @@
         "-e",
         "import assert from 'node:assert/strict'; import { readFileSync } from 'node:fs'; const docs = readFileSync('docs-site/changelog.md', 'utf8'); const currentNotes = docs.split('## Docs And Workflow Notes')[1].split('## Official Release History')[0]; assert.doesNotMatch(currentNotes, /superpowers/iu);"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The current capability notes do not advertise Superpowers as an active AIOS capability.",
     "observed": "The real assertion exited with status 1 because the current Grok and Hermes notes still contain superpowers capability claims.",

@@ -1,5 +1,5 @@
 ---
-title: Harness CLI — Local-First AI Coding Agent Workflow
+title: AIOS — Local-First Agent Harness
 description: Add project memory, adaptive workflow routing, multi-agent teams, and verification to Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing your coding client.
 home: true
 ---
@@ -17,7 +17,7 @@ home: true
     <div class="hero-content">
       <div class="hero-badge">
         <svg class="hero-badge__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        LOCAL-FIRST AGENT LAYER
+        LOCAL-FIRST AGENT HARNESS
       </div>
 
       <div class="hero-headline">
@@ -27,14 +27,14 @@ home: true
       </div>
 
       <p class="hero-subheadline">
-        Harness CLI (AIOS) is a local workflow layer that adds cross-session memory,
-        multi-agent collaboration, and verification on top of codex, claude, gemini,
-        opencode, hermes, and grok — without changing how you work.
+        AIOS is a local-first agent harness that adds cross-session memory,
+        adaptive routing, multi-agent collaboration, and verification on top of
+        codex, claude, gemini, opencode, hermes, and grok — without changing how you work.
       </p>
 
       <div class="hero-cta-row">
         <a href="getting-started" class="md-button md-button--primary">Install in 30 seconds</a>
-        <a href="https://github.com/rexleimo/harness-cli" class="md-button">View on GitHub</a>
+        <a href="https://github.com/rexleimo/aios" class="md-button">View on GitHub</a>
       </div>
       <p class="hero-secondary-links">
         <a href="use-cases">Use cases</a>

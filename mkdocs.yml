@@ -1,9 +1,9 @@
-site_name: Harness CLI Documentation
+site_name: AIOS Documentation
 site_url: https://cli.rexai.top
 site_description: Local-first AI coding agent workflow for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Project memory, adaptive routing, multi-agent teams, and verification.
 site_author: RexAI
-repo_url: https://github.com/rexleimo/harness-cli
-repo_name: rexleimo/harness-cli
+repo_url: https://github.com/rexleimo/aios
+repo_name: rexleimo/aios
 
 docs_dir: docs-site
 site_dir: site
@@ -66,13 +66,13 @@ plugins:
           default: true
           build: true
           link: /
-          site_name: Harness CLI Documentation
-          site_description: Local-first AI coding agent workflow for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Project memory, adaptive routing, multi-agent teams, and verification.
+          site_name: AIOS Documentation
+          site_description: Local-first agent harness for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Local engines, project memory, adaptive routing, multi-agent teams, and verification.
         - locale: zh
           name: 简体中文
           build: true
           link: /zh/
-          site_name: Harness CLI 文档
+          site_name: AIOS 文档
           site_description: 面向 Claude Code / Codex / Gemini / OpenCode / Grok 的本地优先 AI 编码 Agent 工作流：项目记忆、自适应路由、多 Agent 协作与验证门禁。
           nav_translations:
             Home: 首页
@@ -112,7 +112,7 @@ plugins:
           name: 日本語
           build: true
           link: /ja/
-          site_name: Harness CLI ドキュメント
+          site_name: AIOS ドキュメント
           site_description: Codex/Claude/Gemini/OpenCode/Grok Build 向けのローカル優先 AI エージェントワークフロー文書。ContextDB、Agent Team、検証済み自動化をカバー。
           nav_translations:
             Home: ホーム
@@ -152,7 +152,7 @@ plugins:
           name: 한국어
           build: true
           link: /ko/
-          site_name: Harness CLI 문서
+          site_name: AIOS 문서
           site_description: Codex/Claude/Gemini/OpenCode/Grok Build용 로컬 우선 AI 에이전트 워크플로 문서. ContextDB, Agent Team, 검증된 자동화를 다룹니다.
           nav_translations:
             Home: 홈
@@ -263,4 +263,4 @@ nav:
       - Changelog: changelog.md
       - Friends: friends.md
   - External:
-      - Project: https://github.com/rexleimo/harness-cli
+      - Project: https://github.com/rexleimo/aios

@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/application/change-risk-facts.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The public API returns five immutable change-risk facts with the supplied values and assessment evidence reference.",
     "observed": "The new public test exits 1 before any implementation because OBSERVATION.CHANGE_RISK_ASSESSED is absent and observation normalization throws 'observation 0 requires kind'.",

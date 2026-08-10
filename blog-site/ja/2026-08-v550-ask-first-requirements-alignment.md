@@ -2,7 +2,7 @@
 title: "v5.5.0：Ask-First 要件アライメント——エージェントが不要なものを届けなくなる"
 description: "v5.5.0 はワークフローが曖昧なリクエスト（「ランディングページを最適化して」など）を能動的に検出し、計画前に一時停止してユーザーとアライメントします。明確化予算＋仮定フォールバックで無限質問を防止し、エージェントは推測ではなくユーザーが欲しいものを届けます。"
 date: 2026-08-08
-tags: ["Harness CLI", "workflow", "requirements", "Ask-First", "明確化", "アライメント", "release"]
+tags: ["AIOS", "workflow", "requirements", "Ask-First", "明確化", "アライメント", "release"]
 ---
 
 # v5.5.0：Ask-First 要件アライメント——エージェントが不要なものを届けなくなる

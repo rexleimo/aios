@@ -7,7 +7,7 @@ tags: ["AI agent security", "Codex", "activation state", "concurrency", "evidenc
 
 # Agent Security Is a State Machine Problem: What the Codex Security Thread Missed
 
-> **Quick Answer:** This week's biggest AI coding thread — the Codex security discussion — generated 500+ points and 200+ comments, and most of the advice centered on prompt injection and sandboxing. Those matter, but the failure modes that actually bite in daily agent workflows are state machine problems: a crash that leaves activation state split, two concurrent calls consuming the same token, and placeholder evidence that passes schema validation. Harness CLI v5.4.0 ships exactly these three fixes — write-ahead activation transactions, a store file lock, and typed artifact schemas with strict evidence-ref validation.
+> **Quick Answer:** This week's biggest AI coding thread — the Codex security discussion — generated 500+ points and 200+ comments, and most of the advice centered on prompt injection and sandboxing. Those matter, but the failure modes that actually bite in daily agent workflows are state machine problems: a crash that leaves activation state split, two concurrent calls consuming the same token, and placeholder evidence that passes schema validation. AIOS v5.4.0 ships exactly these three fixes — write-ahead activation transactions, a store file lock, and typed artifact schemas with strict evidence-ref validation.
 
 ## The thread everyone is talking about
 
@@ -31,7 +31,7 @@ Prompt injection tries to trick the model. State corruption tricks the *process*
 
 ## What v5.4.0 actually does about it
 
-Harness CLI is a local-first workflow layer on top of Claude Code, Codex, Gemini CLI, OpenCode, and Grok Build. v5.4.0 hardened the state machine directly:
+AIOS is a local-first workflow layer on top of Claude Code, Codex, Gemini CLI, OpenCode, and Grok Build. v5.4.0 hardened the state machine directly:
 
 ### Write-ahead activation transactions
 

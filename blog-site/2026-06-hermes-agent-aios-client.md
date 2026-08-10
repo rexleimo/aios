@@ -1,13 +1,13 @@
 ---
 title: "Hermes Agent Is Now a First-Class AIOS Client"
-description: "Harness CLI now registers Hermes Agent (Nous Research) as a first-class AIOS client, with an MCP bridge server exposing 5 core tools — context-pack, doctor, token compression, skill validation, and skill installation — directly inside Hermes sessions."
+description: "AIOS now registers Hermes Agent (Nous Research) as a first-class AIOS client, with an MCP bridge server exposing 5 core tools — context-pack, doctor, token compression, skill validation, and skill installation — directly inside Hermes sessions."
 date: 2026-06-30
 tags: ["Hermes Agent", "AIOS", "MCP", "client", "Skills", "Token Compression"]
 ---
 
 # Hermes Agent Is Now a First-Class AIOS Client
 
-Hermes Agent (the open-source CLI AI agent by Nous Research) now joins Codex CLI, Claude Code, Gemini CLI, OpenCode, and Crush as the seventh first-class AIOS client in Harness CLI.
+Hermes Agent (the open-source CLI AI agent by Nous Research) now joins Codex CLI, Claude Code, Gemini CLI, OpenCode, and Crush as the seventh first-class AIOS client in AIOS.
 
 This isn't just a config entry. The core of this integration is an **MCP bridge server** — exposing AIOS's five most valuable capabilities as MCP tools that Hermes can call directly.
 

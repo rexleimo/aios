@@ -1,6 +1,6 @@
 ---
-title: Use Cases: Choose a Harness CLI Route
-description: Pick the right Harness CLI command for memory, search, parallel work, resumable runs, browser automation, privacy, and verification.
+title: Use Cases: Choose a AIOS Route
+description: Pick the right AIOS command for memory, search, parallel work, resumable runs, browser automation, privacy, and verification.
 ---
 
 # Find Commands By Scenario

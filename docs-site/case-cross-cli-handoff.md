@@ -5,7 +5,7 @@ description: Reproducible flow for Claude analysis, Codex implementation, and Ge
 
 # Case: Cross-CLI Handoff
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
 [Compare Workflows](cli-comparison.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="compare_workflows" }
 [Case Library](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="case_library" }
 
@@ -16,9 +16,9 @@ Use this when one model should analyze, another should implement, and another sh
 ## Run
 
 ```bash
-scripts/ctx-agent.sh --agent claude-code --project Harness CLI --prompt "Analyze blockers and propose top fix."
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "Implement the top fix from latest checkpoint."
-scripts/ctx-agent.sh --agent gemini-cli --project Harness CLI --prompt "Review regression risk and missing tests."
+scripts/ctx-agent.sh --agent claude-code --project AIOS --prompt "Analyze blockers and propose top fix."
+scripts/ctx-agent.sh --agent codex-cli --project AIOS --prompt "Implement the top fix from latest checkpoint."
+scripts/ctx-agent.sh --agent gemini-cli --project AIOS --prompt "Review regression risk and missing tests."
 ```
 
 ## Evidence
@@ -33,7 +33,7 @@ ls .aios/context-db/sessions
 
 ```bash
 cd mcp-server
-npm run -s contextdb -- timeline --project Harness CLI --limit 12
+npm run -s contextdb -- timeline --project AIOS --limit 12
 ```
 
 3. Exported context packet exists for latest session:
@@ -45,6 +45,6 @@ ls .aios/context-db/exports | tail -n 5
 ## Why This Matters
 
 Without a shared layer, cross-agent handoff often degrades into copy/paste context.
-With Harness CLI, all agents read/write the same project context path and checkpoint stream.
+With AIOS, all agents read/write the same project context path and checkpoint stream.
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }

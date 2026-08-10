@@ -1,6 +1,6 @@
 ---
 title: "v1.50.1: All-Client Token Compression Compliance"
-description: "Harness CLI v1.50.1 は pre_send、post_receive、proof matrix、direct host bypass の違反記録で、すべての AIOS client の token savings を計測可能にします。"
+description: "AIOS v1.50.1 は pre_send、post_receive、proof matrix、direct host bypass の違反記録で、すべての AIOS client の token savings を計測可能にします。"
 date: 2026-06-05
 tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 
 Token savings は感覚ではなく証拠で確認する必要があります。Agent の回答が短いだけでは不十分です。AIOS を bypass した raw host output も savings ではありません。1 つの harness proof だけでは、すべての client が同じ contract に従うとは言えません。
 
-Harness CLI v1.50.1 は共有 metric `bidirectional-turn-compression` でこの gap を閉じます。
+AIOS v1.50.1 は共有 metric `bidirectional-turn-compression` でこの gap を閉じます。
 
 ## Contract
 

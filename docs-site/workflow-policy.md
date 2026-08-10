@@ -1,13 +1,13 @@
 ---
 title: Workflow Policy — direct, guarded, or planned Agent Work
-description: Choose the smallest correct AI coding agent route with Harness CLI adaptive workflow policy: direct answers, guarded edits, or planned multi-step work with evidence.
+description: Choose the smallest correct AI coding agent route with AIOS adaptive workflow policy: direct answers, guarded edits, or planned multi-step work with evidence.
 ---
 
 # Workflow Policy
 
 ## Quick Answer
 
-Harness CLI uses a risk-based workflow policy. In adaptive mode, a read-only question stays direct, a small code change is guarded, and multi-step or explicitly routed work gets a persistent plan. Strict mode makes substantive work planned, but it does not turn an empty message or a read-only question into a plan. The policy decides how a turn should be handled; it does not prove that an implementation is complete.
+AIOS uses a risk-based workflow policy. In adaptive mode, a read-only question stays direct, a small code change is guarded, and multi-step or explicitly routed work gets a persistent plan. Strict mode makes substantive work planned, but it does not turn an empty message or a read-only question into a plan. The policy decides how a turn should be handled; it does not prove that an implementation is complete.
 
 ## Do It Now
 

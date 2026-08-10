@@ -15,7 +15,7 @@
         "--markdown-out",
         "temp/context-lifecycle-v1/s0-current.md"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "s0 profile 退出码为 0，CL-01、CL-02、CL-03 的 targetMet=true，CL-05/CL-06 保持当前 S0 预期，CL-10 的 69+40+39 个兼容测试继续通过。",
     "observed": "命令退出码为 1，仅 3/6 与 s0 profile 匹配；CL-01、CL-02、CL-03 均为 known_failure。",

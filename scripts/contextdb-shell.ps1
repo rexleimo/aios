@@ -245,7 +245,7 @@ function aios {
 
   Write-Host "Usage:"
   Write-Host "  aios                     # interactive TUI"
-  Write-Host "  aios --version           # print Harness CLI version"
+  Write-Host "  aios --version           # print AIOS version"
   Write-Host "  aios <doctor|update|privacy> [args]"
   $global:LASTEXITCODE = 0
 }

@@ -1,6 +1,6 @@
 ---
 title: "v3.6.0: Headroom と Ponytail でより安全な Token インテリジェンス workflow を作る"
-description: "Harness CLI は RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートを組み合わせ、client configuration の所有権を明示的に保ちます。"
+description: "AIOS は RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートを組み合わせ、client configuration の所有権を明示的に保ちます。"
 date: 2026-07-10
 tags: ["AIOS", "Headroom", "Ponytail", "RTK", "Caveman", "MCP", "token compression"]
 ---

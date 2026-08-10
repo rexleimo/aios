@@ -1,31 +1,31 @@
 ---
 title: CLI Comparison
-description: Compare raw Codex/Claude/Gemini CLI workflows with Harness CLI's orchestration layer.
+description: Compare raw Codex/Claude/Gemini CLI workflows with AIOS's orchestration layer.
 ---
 
-# Raw CLI vs Harness CLI Layer
+# Raw CLI vs AIOS Layer
 
-> **Quick Answer:** Use a raw `codex`, `claude`, `gemini`, or `opencode` CLI for a focused one-off task. Add Harness CLI when the work needs cross-session memory, workflow routing, multi-client handoff, browser safety, or verification evidence. Harness CLI is a local workflow layer; it does not replace the coding client.
+> **Quick Answer:** Use a raw `codex`, `claude`, `gemini`, or `opencode` CLI for a focused one-off task. Add AIOS when the work needs cross-session memory, workflow routing, multi-client handoff, browser safety, or verification evidence. AIOS is a local workflow layer; it does not replace the coding client.
 
 ## Decision at a glance
 
 | Need | Recommended path |
 | --- | --- |
 | One short task with no durable state | Raw CLI |
-| Shared project memory and searchable context | Harness CLI + ContextDB |
-| Multiple clients or agents with ownership boundaries | Harness CLI + Agent Team |
-| A change that needs safety and completion evidence | Harness CLI + edit and verification gates |
+| Shared project memory and searchable context | AIOS + ContextDB |
+| Multiple clients or agents with ownership boundaries | AIOS + Agent Team |
+| A change that needs safety and completion evidence | AIOS + edit and verification gates |
 
-Harness CLI is not a replacement for Codex, Claude, or Gemini CLI.
+AIOS is not a replacement for Codex, Claude, or Gemini CLI.
 It is a reliability layer on top of them.
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="github_star" }
 [Quick Start](getting-started.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="quick_start" }
 [Case Library](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="comparison_hero" data-rex-target="case_library" }
 
-## What Changes With Harness CLI
+## What Changes With AIOS
 
-| Workflow Need | Raw CLI Only | With Harness CLI Layer |
+| Workflow Need | Raw CLI Only | With AIOS Layer |
 |---|---|---|
 | Cross-session memory | Manual copy/paste context | Project ContextDB resume by default |
 | Cross-agent handoff | Ad hoc and fragile | Shared session/checkpoint artifacts |
@@ -39,7 +39,7 @@ It is a reliability layer on top of them.
 - You do not need session persistence or workflow traceability.
 - You are experimenting in a throwaway environment.
 
-## Add Harness CLI When
+## Add AIOS When
 
 - You switch between `codex`, `claude`, `gemini`, `opencode`, `hermes`, or `grok` (Grok Build) in one project.
 - You want restart-safe context and auditable checkpoints.
@@ -49,8 +49,8 @@ It is a reliability layer on top of them.
 ## Fast Proof (5 Minutes)
 
 ```bash
-git clone https://github.com/rexleimo/harness-cli.git
-cd harness-cli
+git clone https://github.com/rexleimo/aios.git
+cd aios
 scripts/setup-all.sh --components all --mode opt-in
 source ~/.zshrc
 codex
@@ -72,11 +72,11 @@ Expected: `sessions/`, `index/`, `exports/`.
 
 ## Next Action
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=comparison_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="comparison_footer" data-rex-target="github_star" }
 
 ## FAQ
 
-### Does Harness CLI replace my coding agent?
+### Does AIOS replace my coding agent?
 
 No. It adds a local workflow, memory, and verification layer around supported clients.
 

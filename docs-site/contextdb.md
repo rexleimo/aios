@@ -7,7 +7,7 @@ description: Understand the local ContextDB registry, memo storage, unified proj
 
 ## Quick Answer
 
-ContextDB is Harness CLI's local project-memory layer. It records sessions, events, checkpoints, memos, and context-pack references under the project workspace so a supported client can find relevant facts across sessions. The current setup is pull-based: the project registry points the client to available sources, and the agent recalls what the task needs instead of receiving the entire history every time.
+ContextDB is AIOS's local project-memory layer. It records sessions, events, checkpoints, memos, and context-pack references under the project workspace so a supported client can find relevant facts across sessions. The current setup is pull-based: the project registry points the client to available sources, and the agent recalls what the task needs instead of receiving the entire history every time.
 
 ## Do it now
 

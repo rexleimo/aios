@@ -15,7 +15,7 @@
         "--markdown-out",
         "temp/context-lifecycle-v1/s1-current.md"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "S1 profile 7/7 匹配：CL-05 和 CL-08 达到 observe-only Packet/Receipt 目标，CL-06 继续是预期 known failure，S0 与兼容场景不回退。",
     "observed": "当前 5/7：CL-05 和 CL-08 因 execution-context module 缺失而不匹配；CL-01/02/03/10 通过，CL-06 按 S1 预期保持 known failure。",

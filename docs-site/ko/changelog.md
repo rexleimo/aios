@@ -43,7 +43,7 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 ### 주요 변경 사항
 
-- `aios update` 자체 업데이트가 Windows 릴리스 설치에서 안전해졌습니다. 이전에는 설치 트리 내부에서 업데이트를 실행하면 프로세스 작업 디렉터리가 설치 프로그램이 삭제해야 하는 디렉터리에 남아 있었고, Windows는 cwd가 유지하는 디렉터리를 삭제할 수 없어 삭제가 조용히 실패하고 새 버전이 `<install>/harness-cli/`에 중첩되어 이후 업데이트가 `MODULE_NOT_FOUND`로 실패했습니다.
+- `aios update` 자체 업데이트가 Windows 릴리스 설치에서 안전해졌습니다. 이전에는 설치 트리 내부에서 업데이트를 실행하면 프로세스 작업 디렉터리가 설치 프로그램이 삭제해야 하는 디렉터리에 남아 있었고, Windows는 cwd가 유지하는 디렉터리를 삭제할 수 없어 삭제가 조용히 실패하고 새 버전이 `<install>/aios/`에 중첩되어 이후 업데이트가 `MODULE_NOT_FOUND`로 실패했습니다.
 - 업데이터는 릴리스 설치 프로그램을 실행하기 전에 작업 디렉터리를 설치 트리 밖으로 이동합니다. 설치 프로그램은 이전 디렉터리가 실제로 삭제되었는지 검증하고(실패 시 중첩하지 않고 명시적으로 오류), 업데이트 후 재실행은 진입점을 확인하고 교체 실패 시 명확한 복구 메시지를 출력합니다.
 - 업데이터는 릴리스 설치 프로그램 업데이트에 로컬 `scripts/aios-install.ps1`을 우선 사용하므로 방어적 설치 프로그램 수정이 즉시 적용됩니다.
 - 이전에 gitlink를 제거한 후 남아 있던 추적되지 않은 `agent-sources/skills/` 디렉터리를 제거했습니다(token-discipline 동기화 테스트를 깨뜨리고 있었습니다).
@@ -252,12 +252,12 @@ node scripts/aios.mjs init --dry-run
 - **모든 클라이언트 native guidance**: Codex/OpenCode/Crush 는 `AGENTS.md`, Claude 는 `CLAUDE.md`, Gemini/Antigravity 는 `GEMINI.md` 로 같은 search 지침을 받습니다.
 - **릴리스 튜토리얼**: [v1.50.0 통합 검색 튜토리얼](/blog/ko/2026-06-v150-unified-aios-search/) 과 [ContextDB](contextdb.md#통합-프로젝트-검색v1500) 를 참고하세요.
 
-이 페이지에서 `Harness CLI` 변경 이력을 추적하고 관련 문서로 이동할 수 있습니다.
+이 페이지에서 `AIOS` 변경 이력을 추적하고 관련 문서로 이동할 수 있습니다.
 
 ## 공식 릴리스 이력
 
-[⭐ GitHub에서 Star](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
-[📦 Releases 보기](https://github.com/rexleimo/harness-cli/releases){ .md-button }
+[⭐ GitHub에서 Star](https://github.com/rexleimo/aios){ .md-button .md-button--primary }
+[📦 Releases 보기](https://github.com/rexleimo/aios/releases){ .md-button }
 
 ## 최신 안정 버전
 

@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/rex-long-running-delivery-store.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The only callback context is the non-semantic delivery ID and Rex's persisted F1 continue decision; no ledger is exposed before Rex evaluates evidence.",
     "observed": "The callback context contains the complete rehydrated Rex ledger in addition to the delivery ID and F1 decision.",

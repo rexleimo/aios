@@ -102,7 +102,7 @@ curl -X POST http://localhost:39200/api/logs/single \
 
 ## 更大的图景
 
-debug-hub 是 Harness CLI **可观测性层**的一部分。它与以下工具协同工作：
+debug-hub 是 AIOS **可观测性层**的一部分。它与以下工具协同工作：
 
 - [ContextDB](https://cli.rexai.top/zh/contextdb/) — 跨会话的记忆
 - [Solo Harness](https://cli.rexai.top/zh/solo-harness/) — 可自诊断的过夜运行
@@ -112,4 +112,4 @@ debug-hub 是 Harness CLI **可观测性层**的一部分。它与以下工具�
 
 ---
 
-*debug-hub 目前版本 v0.3.0，是 [Harness CLI](https://cli.rexai.top) 的一部分。试试看，给你的 agent 自我反思的能力。*
+*debug-hub 目前版本 v0.3.0，是 [AIOS](https://cli.rexai.top) 的一部分。试试看，给你的 agent 自我反思的能力。*

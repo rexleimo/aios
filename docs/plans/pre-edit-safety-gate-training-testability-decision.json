@@ -17,7 +17,7 @@
         "codex",
         "--json"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The canonical skill is evaluated through its public compliance path with a zero exit code.",
     "observed": "The compliance run exited zero before training edits; this is a guidance-quality hardening task, not a new application behavior delta.",

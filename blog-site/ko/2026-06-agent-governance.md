@@ -1,6 +1,6 @@
 ---
 title: "Agent Governance: Team live 실행 전에 증거 남기기"
-description: "Harness CLI가 smoke 증거, provenance, token-compression metrics, skill training gate로 많은 agents를 하나의 workflow에 통합하는 방법."
+description: "AIOS가 smoke 증거, provenance, token-compression metrics, skill training gate로 많은 agents를 하나의 workflow에 통합하는 방법."
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 
 agents를 더 추가하는 일은 어렵지 않습니다. 어려운 일은 실제 workflow 안에서 신뢰할 수 있을 만큼 안전하게 만드는 것입니다.
 
-Harness CLI는 agent routing, team execution, skill update를 evidence 문제로 다룹니다. workflow가 live로 들어가기 전에 세 가지를 증명해야 합니다.
+AIOS는 agent routing, team execution, skill update를 evidence 문제로 다룹니다. workflow가 live로 들어가기 전에 세 가지를 증명해야 합니다.
 
 1. agent가 smoke path를 실행할 수 있음,
 2. 실행이 provenance와 token-compression metrics를 남김,
@@ -95,7 +95,7 @@ node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 
 > admission, provenance, compression, training이 observable할 때만 더 많은 agents를 받아들인다.
 
-이것이 Harness CLI가 더 많은 agents를 하나의 system workflow에 통합하는 방식입니다. team run을 trust fall로 만들지 않습니다.
+이것이 AIOS가 더 많은 agents를 하나의 system workflow에 통합하는 방식입니다. team run을 trust fall로 만들지 않습니다.
 
 ---
 

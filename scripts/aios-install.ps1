@@ -1,7 +1,7 @@
 param(
-  [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/harness-cli" }),
+  [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/aios" }),
   [string]$AssetUrl = $(if ($env:AIOS_ASSET_URL) { $env:AIOS_ASSET_URL } else { "" }),
-  [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/harness-cli") }),
+  [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/aios") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
   [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" })
 )
@@ -64,7 +64,7 @@ function Safe-RemoveDir([string]$Path) {
   Remove-Item -LiteralPath $full -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-$assetUrl = if ($AssetUrl) { $AssetUrl } else { "https://github.com/$Repo/releases/latest/download/harness-cli.zip" }
+$assetUrl = if ($AssetUrl) { $AssetUrl } else { "https://github.com/$Repo/releases/latest/download/aios.zip" }
 
 Enable-Tls12
 
@@ -75,7 +75,7 @@ $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("aios-install-" + [guid]::Ne
 New-Item -Path $tmp -ItemType Directory -Force | Out-Null
 
 try {
-  $zipPath = Join-Path $tmp "harness-cli.zip"
+  $zipPath = Join-Path $tmp "aios.zip"
   $extract = Join-Path $tmp "extract"
   $preserve = Join-Path $tmp "preserve"
 
@@ -84,15 +84,15 @@ try {
   Write-Host "+ extract -> $extract"
   Expand-Archive -LiteralPath $zipPath -DestinationPath $extract -Force
 
-  # Detect archive layout: prefer harness-cli/ prefix, fall back to root
-  $candidate = Join-Path $extract "harness-cli"
+  # Detect archive layout: prefer aios/ prefix, fall back to root
+  $candidate = Join-Path $extract "aios"
   if (Test-Path -LiteralPath $candidate) {
     $extractedRoot = $candidate
   } elseif (Test-Path -LiteralPath (Join-Path $extract "package.json")) {
-    Write-Host "[info] archive layout: no harness-cli/ prefix, using extract root"
+    Write-Host "[info] archive layout: no aios/ prefix, using extract root"
     $extractedRoot = $extract
   } else {
-    throw "Archive layout unexpected: neither harness-cli/ prefix nor expected files found in $extract"
+    throw "Archive layout unexpected: neither aios/ prefix nor expected files found in $extract"
   }
 
   if (Test-Path -LiteralPath $InstallDir) {

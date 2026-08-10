@@ -43,7 +43,7 @@ description: 版本历史、升级说明与文档变更入口。
 
 ### 主要变更
 
-- `aios update` 自更新在 Windows release 安装上现在是安全的。之前从安装目录内运行更新时，进程工作目录停留在安装器需要删除的目录中；Windows 无法删除被进程 cwd 占用的目录，删除静默失败，新版本被嵌套到 `<install>/harness-cli/`，导致后续更新以 `MODULE_NOT_FOUND` 失败。
+- `aios update` 自更新在 Windows release 安装上现在是安全的。之前从安装目录内运行更新时，进程工作目录停留在安装器需要删除的目录中；Windows 无法删除被进程 cwd 占用的目录，删除静默失败，新版本被嵌套到 `<install>/aios/`，导致后续更新以 `MODULE_NOT_FOUND` 失败。
 - 更新器现在会在运行 release 安装器之前把工作目录移出安装树；安装器会验证旧目录确实被删除（失败时显式报错，而不是继续嵌套安装）；更新后的重执行会检查入口点，替换出错时输出清晰的修复指引。
 - 更新器优先使用本地 `scripts/aios-install.ps1` 执行 release-installer 更新，防御性安装器修复立即生效，不再依赖远程拉取。
 - 移除了遗留的未跟踪 `agent-sources/skills/` 目录（此前已删除 gitlink），该目录导致 token-discipline 同步测试失败。
@@ -232,7 +232,7 @@ node scripts/aios.mjs init --dry-run
 
 - **aios_shell MCP 工具**：通过 `aios-shell` MCP 别名实现跨所有客户端的确定性 shell 输出压缩。shell 命令通过 `scripts/shell-mcp-server.mjs` 执行，输出由 MCP proxy 自动压缩，**压缩率超过 99%**。
 - **三层拦截防线**：MCP 工具（全客户端）→ shim+hook（Claude/全客户端）→ 提示词引导。无单点故障。
-- **Shim 自愈**：原生 shim 探测 4 条回退路径（`AIOS_ROOT_DIR` → baked root → `~/.rexcil/harness-cli` → `~/cool.cnb/rex-ai-boot`），全部失败后 fail-open 执行真实客户端。
+- **Shim 自愈**：原生 shim 探测 4 条回退路径（`AIOS_ROOT_DIR` → baked root → `~/.rexcil/aios` → `~/cool.cnb/rex-ai-boot`），全部失败后 fail-open 执行真实客户端。
 - **敏感命令守卫**：`git push` 和 `npm publish` 在执行前被拦截，需宿主权限审查。
 - **aios-shell 注册到全客户端配置**：通过 `doctor --fix` 注册到 `.mcp.json`、`.codex/config.toml`、`.gemini/settings.json`、`opencode.json`、`crush.json`。
 - 详情参见：[v1.52.0 博客文章](/blog/zh/2026-06-v152-aios-shell-mcp/)。
@@ -257,12 +257,12 @@ node scripts/aios.mjs init --dry-run
 - **全客户端 native 指令**：Codex/OpenCode/Crush 通过 `AGENTS.md`，Claude 通过 `CLAUDE.md`，Gemini/Antigravity 通过 `GEMINI.md` 接收同一套 search 指令。
 - **发布教程**：阅读 [v1.50.0 统一搜索教程](/blog/zh/2026-06-v150-unified-aios-search/) 和 [ContextDB](contextdb.md#统一项目搜索v1500)。
 
-本页用于追踪 `Harness CLI` 的版本变化，并快速跳转到相关文档。
+本页用于追踪 `AIOS` 的版本变化，并快速跳转到相关文档。
 
 ## 官方发布记录
 
-[⭐ 在 GitHub 上 Star](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
-[📦 查看 Releases](https://github.com/rexleimo/harness-cli/releases){ .md-button }
+[⭐ 在 GitHub 上 Star](https://github.com/rexleimo/aios){ .md-button .md-button--primary }
+[📦 查看 Releases](https://github.com/rexleimo/aios/releases){ .md-button }
 
 ## 最新稳定版
 

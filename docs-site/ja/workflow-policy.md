@@ -1,13 +1,13 @@
 ---
 title: ワークフローポリシー
-description: Harness CLI の adaptive workflow policy で direct、guarded、planned の使い分けを理解します。
+description: AIOS の adaptive workflow policy で direct、guarded、planned の使い分けを理解します。
 ---
 
 # ワークフローポリシー
 
 ## クイックアンサー
 
-Harness CLI はリスクベースの workflow policy を使います。adaptive モードでは、読み取り専用の質問は direct、小さなコード変更は guarded、複数ステップまたは明示的に route を指定した作業は永続 plan になります。strict モードでは substantive work が planned になりますが、空のメッセージや読み取り専用の質問まで plan にはしません。Policy が決めるのは turn の扱い方であり、実装完了の証明ではありません。
+AIOS はリスクベースの workflow policy を使います。adaptive モードでは、読み取り専用の質問は direct、小さなコード変更は guarded、複数ステップまたは明示的に route を指定した作業は永続 plan になります。strict モードでは substantive work が planned になりますが、空のメッセージや読み取り専用の質問まで plan にはしません。Policy が決めるのは turn の扱い方であり、実装完了の証明ではありません。
 
 ## 今すぐ実行
 

@@ -7,7 +7,7 @@ tags: ["AI Agent 安全", "Codex", "激活状态", "并发", "evidence", "提示
 
 # Agent 安全是状态机问题：Codex 安全讨论遗漏的部分
 
-> **快速回答：** 本周最大的 AI 编程话题——Codex 安全讨论——拿到 500+ 赞、200+ 评论，但多数建议集中在提示注入和沙箱。这些当然重要，但日常 agent 工作流里真正咬人的失败模式是状态机问题：崩溃导致激活状态分裂、两个并发调用消费同一个 token、占位符 evidence 通过了无类型校验。Harness CLI v5.4.0 恰好加固了这三处——写前激活事务、存储文件锁、带严格 evidence-ref 校验的类型化 artifact schema。
+> **快速回答：** 本周最大的 AI 编程话题——Codex 安全讨论——拿到 500+ 赞、200+ 评论，但多数建议集中在提示注入和沙箱。这些当然重要，但日常 agent 工作流里真正咬人的失败模式是状态机问题：崩溃导致激活状态分裂、两个并发调用消费同一个 token、占位符 evidence 通过了无类型校验。AIOS v5.4.0 恰好加固了这三处——写前激活事务、存储文件锁、带严格 evidence-ref 校验的类型化 artifact schema。
 
 ## 大家都在讨论的那个帖子
 
@@ -31,7 +31,7 @@ Codex 安全帖本周登顶 Hacker News，数百条评论。关于提示注入�
 
 ## v5.4.0 实际做了什么
 
-Harness CLI 是运行在 Claude Code、Codex、Gemini CLI、OpenCode 和 Grok Build 之上的本地优先工作流层。v5.4.0 直接加固了状态机：
+AIOS 是运行在 Claude Code、Codex、Gemini CLI、OpenCode 和 Grok Build 之上的本地优先工作流层。v5.4.0 直接加固了状态机：
 
 ### 写前激活事务
 

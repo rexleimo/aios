@@ -1,6 +1,6 @@
 ---
 title: "Agent 治理：让 Team live 运行先证明自己"
-description: "Harness CLI 如何用 smoke 证据、provenance、token 压缩指标和 skill training gate，把更多 agents 融入统一工作流。"
+description: "AIOS 如何用 smoke 证据、provenance、token 压缩指标和 skill training gate，把更多 agents 融入统一工作流。"
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 
 添加更多 agents 并不难，难的是让它们足够可靠，可以进入真实 workflow。
 
-Harness CLI 现在把 agent routing、team execution 和 skill update 都当成证据问题处理。workflow 进入 live 前，需要证明三件事：
+AIOS 现在把 agent routing、team execution 和 skill update 都当成证据问题处理。workflow 进入 live 前，需要证明三件事：
 
 1. agent 能跑通 smoke path，
 2. 运行会留下 provenance 和 token-compression metrics，
@@ -95,7 +95,7 @@ node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 
 > 只有 admission、provenance、compression 和 training 都可观测时，才接纳更多 agents。
 
-这就是 Harness CLI 把更多 agents 融入同一个 system workflow 的方式，而不是让每次 team run 都变成信任跳跃。
+这就是 AIOS 把更多 agents 融入同一个 system workflow 的方式，而不是让每次 team run 都变成信任跳跃。
 
 ---
 

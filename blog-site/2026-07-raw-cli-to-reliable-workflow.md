@@ -2,12 +2,12 @@
 title: "From Raw CLI Commands to a Reliable AI Agent Workflow"
 description: "Turn a collection of AI CLI commands into a repeatable workflow with routing, edit gates, checkpoints, and verification evidence."
 date: 2026-07-14
-tags: ["AI CLI", "reliable automation", "workflow design", "Harness CLI", "MCP"]
+tags: ["AI CLI", "reliable automation", "workflow design", "AIOS", "MCP"]
 ---
 
 # From Raw CLI Commands to a Reliable AI Agent Workflow
 
-> **Quick Answer:** Reliability comes from adding explicit boundaries around a command sequence: classify the request, select the smallest route, protect edits, persist only resumable work, and verify the result with evidence. Harness CLI provides these boundaries without forcing every read-only question through a heavyweight plan.
+> **Quick Answer:** Reliability comes from adding explicit boundaries around a command sequence: classify the request, select the smallest route, protect edits, persist only resumable work, and verify the result with evidence. AIOS provides these boundaries without forcing every read-only question through a heavyweight plan.
 
 A shell alias can start an AI coding client. It cannot, by itself, explain whether the task was safe to edit, whether a previous attempt should be resumed, or whether a green command actually covered the changed surface. The difference between a raw CLI wrapper and a reliable workflow is the contract around execution.
 

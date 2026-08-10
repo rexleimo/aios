@@ -13,7 +13,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 1. **`AIOS_ROOT` / `AIOS_ROOT_DIR`** - AIOS framework installation location
    - Contains `scripts/`, `package.json`, core framework code
-   - Example: `/Users/rex/.rexcil/harness-cli` or `~/aios-framework`
+   - Example: `/Users/rex/.rexcil/aios` or `~/aios-framework`
    - Set via environment variable or auto-detected
 
 2. **Project Root** - Your current working directory where you run AIOS commands
@@ -23,9 +23,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Why This Matters
 
-- If your `AIOS_ROOT=/Users/rex/.rexcil/harness-cli` but you're working in `/Users/rex/my-project/`:
+- If your `AIOS_ROOT=/Users/rex/.rexcil/aios` but you're working in `/Users/rex/my-project/`:
   - `.aios/context-db/` means `/Users/rex/my-project/.aios/context-db/` (✓ correct)
-  - NOT `/Users/rex/.rexcil/harness-cli/.aios/context-db/` (✗ wrong)
+  - NOT `/Users/rex/.rexcil/aios/.aios/context-db/` (✗ wrong)
 - Framework scripts live in `$AIOS_ROOT/scripts/`
 - Your project state lives in `$(pwd)/.aios/`
 

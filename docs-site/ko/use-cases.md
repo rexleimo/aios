@@ -1,5 +1,5 @@
 ---
-title: 사용 사례: Harness CLI route 선택
+title: 사용 사례: AIOS route 선택
 description: memory, search, parallel work, resumable run, browser, privacy, verification 목적에 맞는 command를 선택합니다.
 ---
 

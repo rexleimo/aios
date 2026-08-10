@@ -1,8 +1,8 @@
 ---
 title: "v3.20 Harness の信頼性向上: 失敗分類、バックオフ上限、dry-run readiness"
-description: "Harness CLI v3.20 が通常の失敗とインフラ障害を分け、有界バックオフと dry-run readiness で長時間タスクを安定させる方法を解説します。"
+description: "AIOS v3.20 が通常の失敗とインフラ障害を分け、有界バックオフと dry-run readiness で長時間タスクを安定させる方法を解説します。"
 date: 2026-07-12
-tags: ["Harness CLI", "信頼性", "solo harness", "失敗処理", "release"]
+tags: ["AIOS", "信頼性", "solo harness", "失敗処理", "release"]
 ---
 
 # v3.20 Harness の信頼性向上: 失敗分類、バックオフ上限、dry-run readiness

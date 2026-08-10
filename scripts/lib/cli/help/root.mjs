@@ -9,9 +9,9 @@ Usage:
 
 Commands:
   init          Initialize ContextDB registry markers for this project
-  version       Print the installed Harness CLI version
+  version       Print the installed AIOS version
   setup         Install AIOS integrations
-  update        Update Harness CLI and AIOS integrations
+  update        Update AIOS and AIOS integrations
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   status        Show unified AIOS readiness status

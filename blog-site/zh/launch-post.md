@@ -1,4 +1,4 @@
-# 终于等到了！我做了 Harness CLI，让 AI 编程工具不再互相"打架"
+# 终于等到了！我做了 AIOS，让 AI 编程工具不再互相"打架"
 
 说出来你可能不信，我曾经被三个 AI 编程工具折磨到崩溃。
 
@@ -34,9 +34,9 @@ Gemini：我是谁，我在哪？
 
 ---
 
-## 02. Harness CLI 是什么？
+## 02. AIOS 是什么？
 
-**Harness CLI = 让 Claude Code + Codex + Gemini 协同工作，不再互相打架。**
+**AIOS = 让 Claude Code + Codex + Gemini 协同工作，不再互相打架。**
 
 ### 核心能力
 
@@ -51,7 +51,7 @@ Gemini：我是谁，我在哪？
 ```
 你输入 codex/claude/gemini
        ↓
-Harness CLI 自动拦截
+AIOS 自动拦截
        ↓
 判断：是该包裹还是透传？
        ↓
@@ -103,10 +103,10 @@ claude
 
 ```bash
 # 1. 克隆
-git clone https://github.com/rexleimo/harness-cli.git
+git clone https://github.com/rexleimo/aios.git
 
 # 2. 安装
-cd harness-cli
+cd aios
 ./scripts/setup-all.sh --components all
 
 # 3. 启动
@@ -129,13 +129,13 @@ codex
 
 与其忍，不如自己动手。
 
-**Harness CLI 是我的个人作品，也是我每天都在用的工具。**
+**AIOS 是我的个人作品，也是我每天都在用的工具。**
 
 ---
 
 ## 06. 写在最后
 
-**Harness CLI 不是要替代 Claude Code 或 Codex。**
+**AIOS 不是要替代 Claude Code 或 Codex。**
 
 它只是一个"粘合剂"，让现有的工具更好地协同工作。
 

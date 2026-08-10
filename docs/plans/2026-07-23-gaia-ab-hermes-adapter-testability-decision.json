@@ -7,7 +7,7 @@
     "command": {
       "executable": "rtk",
       "args": ["node", "--test", "scripts/tests/gaia-ab-client-adapters.test.mjs"],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The public factory returns a Hermes one-shot invocation using deepseek-v4-pro and the given usage path while omitting the sentinel answer.",
     "observed": "The test exits with code 1 because the current factory rejects Hermes as unconfigured.",

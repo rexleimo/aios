@@ -18,7 +18,7 @@ description: RexAI 生态站点与项目入口。
 
 RexAI 生态常用入口：
 
-- [⭐ 在 GitHub 上 Star Harness CLI](https://github.com/rexleimo/harness-cli)
+- [⭐ 在 GitHub 上 Star AIOS](https://github.com/rexleimo/aios)
 - [RexAI 文档首页](https://cli.rexai.top)
 - [RexAI 博客](https://cli.rexai.top/blog/zh/)
 - [RexOS Agent OS](https://os.rexai.top)
@@ -33,7 +33,7 @@ RexAI 生态常用入口：
 
 ### 发现问题应该去哪里反馈？
 
-前往[GitHub 仓库](https://github.com/rexleimo/harness-cli)，附上最小复现和实际验证输出。
+前往[GitHub 仓库](https://github.com/rexleimo/aios)，附上最小复现和实际验证输出。
 
 ## 官方文档
 

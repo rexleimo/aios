@@ -11,7 +11,7 @@
         "--test-name-pattern=reconciliation automatically retires the exact historical AIOS Superpowers surface",
         "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "A normal lifecycle reconciliation removes every exact legacy discovery projection and router, moves the exact historical checkout into an AIOS recovery location outside client discovery roots, and returns a conflict-free removed report.",
     "observed": "The command exited 1 because reconciliation returned legacy-workflow-conflict instead of removed; the default path retained the legacy projections and did not retire the checkout or router.",

@@ -1934,7 +1934,7 @@ tests can cover each stage without duplicating a second implementation.
   baseline stage. AIOS continues through the same public Rex validator rather
   than maintaining a host-specific comparison.
 - Exact command: `rtk node rex-harness/bin/rex-harness.mjs receipt --root
-  /Users/rex/codes/harness-cli -- node --test
+  /Users/rex/codes/aios -- node --test
   rex-harness/tests/application/validate-command-evidence.test.mjs
   rex-harness/tests/application/software-workflow-runtime.test.mjs
   rex-harness/tests/standalone/standalone-cli.test.mjs`.
@@ -2055,7 +2055,7 @@ after that public Rex behavior is green.
   baseline receipt before making the missing API assertion. It does not fail
   from a bad test command, unavailable fixture, mock, or unrelated dependency.
 - Receipt: `receipt:354a83e4-b75c-4a0f-80ac-640a7f531317` captures that exact
-  failing public test command from `/Users/rex/codes/harness-cli` with a
+  failing public test command from `/Users/rex/codes/aios` with a
   non-zero exit.
 - Classification: valid behavior-delta RED. The required user-visible Rex
   initialization contract is absent; no implementation has been applied.
@@ -2525,7 +2525,7 @@ agents remain disabled even with valid evidence, retaining the lifecycle
 boundary.
 
 Command actually re-run for the refactor check:
-`rtk node rex-harness/bin/rex-harness.mjs receipt --root /Users/rex/codes/harness-cli -- node --test scripts/tests/ecc-agent-workflow.test.mjs`.
+`rtk node rex-harness/bin/rex-harness.mjs receipt --root /Users/rex/codes/aios -- node --test scripts/tests/ecc-agent-workflow.test.mjs`.
 Observed result: exit 0; the receipt is
 `receipt:33476344-8ebc-4d7a-919c-d01f036490ff`. `rtk git diff --check` also
 completed without whitespace errors.
@@ -2634,7 +2634,7 @@ continues to use the shared `live-execution.mjs` validator, so producer and
 consumer share one schema boundary rather than accepting a second local format.
 
 The focused command was re-run through Rex:
-`rtk node rex-harness/bin/rex-harness.mjs receipt --root /Users/rex/codes/harness-cli -- node --test scripts/tests/aios-orchestrator-agents.test.mjs`.
+`rtk node rex-harness/bin/rex-harness.mjs receipt --root /Users/rex/codes/aios -- node --test scripts/tests/aios-orchestrator-agents.test.mjs`.
 It exited 0 with 17 passing tests and receipt
 `receipt:7c8d50a6-3d24-4589-b11b-8e406c77d599`. Coverage includes no-live
 blocking, CLI option parsing, v2 command/output/metric binding, catalogue

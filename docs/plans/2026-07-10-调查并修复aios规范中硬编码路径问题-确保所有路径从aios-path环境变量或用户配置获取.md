@@ -31,17 +31,17 @@
 - 问题核心：文档说明不清晰，非代码bug
 - CLAUDE.md/AGENTS.md中的相对路径（`.aios/`, `.claude/skills/`）没有明确说明是相对于"项目根目录"
 - 用户容易混淆：
-  - `AIOS_ROOT` = 框架安装位置（例：`/Users/rex/.rexcil/harness-cli`）
+  - `AIOS_ROOT` = 框架安装位置（例：`/Users/rex/.rexcil/aios`）
   - `Project Root` = 当前工作目录（`pwd`）
 - 代码实现经验证是正确的（使用相对路径，在运行时相对于项目根目录解析）
 
 ### t2-repro (✓ done)
 
 **用户场景重现：**
-- `AIOS_ROOT=/Users/rex/.rexcil/harness-cli` (框架在此)
+- `AIOS_ROOT=/Users/rex/.rexcil/aios` (框架在此)
 - 用户在`/Users/rex/my-project`工作
 - 看到文档中的`.aios/context-db/`，不确定是指：
-  - `/Users/rex/.rexcil/harness-cli/.aios/context-db/` ❌
+  - `/Users/rex/.rexcil/aios/.aios/context-db/` ❌
   - `/Users/rex/my-project/.aios/context-db/` ✓
 - 根本原因：文档缺少明确的路径约定说明
 

@@ -1,5 +1,5 @@
 ---
-title: Harness CLI 故障排查
+title: AIOS 故障排查
 description: 用可观察证据诊断安装、ContextDB、客户端同步、工作流、Team、浏览器、Token 工具和隐私问题。
 ---
 

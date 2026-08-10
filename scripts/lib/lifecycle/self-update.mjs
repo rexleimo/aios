@@ -3,7 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-const DEFAULT_REPO = 'rexleimo/harness-cli';
+const DEFAULT_REPO = 'rexleimo/aios';
 
 async function pathExists(filePath) {
   try {
@@ -121,7 +121,7 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
  * Windows cannot delete a directory that is the current working directory of a
  * running process. The installer replaces the install tree in place, so if this
  * process's cwd is inside the install tree the remove step fails silently and
- * the new version ends up nested at <install>/harness-cli/, breaking re-exec.
+ * the new version ends up nested at <install>/aios/, breaking re-exec.
  * Move the working directory outside the install tree before running the
  * release installer.
  *

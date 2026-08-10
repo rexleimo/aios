@@ -2,7 +2,7 @@
 title: "Token Compression: 몇 달의 Agent 기억을 하나의 프롬프트에 담기"
 description: "ContextDB 가 이제 agent 의 히스토리를 token 예산에 맞게 압축합니다 — 중요한 것은 남기고, 그렇지 않은 것은 줄입니다."
 date: 2026-05-12
-tags: ["ContextDB", "token compression", "AI 메모리", "Harness CLI"]
+tags: ["ContextDB", "token compression", "AI 메모리", "AIOS"]
 ---
 
 # Token Compression: 몇 달의 Agent 기억을 하나의 프롬프트에 담기
@@ -104,4 +104,4 @@ npm run contextdb -- context:pack \
 
 ---
 
-*Token compression 은 [ContextDB](https://cli.rexai.top/ko/contextdb/) 에 내장되어 있으며, [Harness CLI](https://cli.rexai.top) 의 일부입니다. 추가 도구가 필요하지 않습니다.*
+*Token compression 은 [ContextDB](https://cli.rexai.top/ko/contextdb/) 에 내장되어 있으며, [AIOS](https://cli.rexai.top) 의 일부입니다. 추가 도구가 필요하지 않습니다.*

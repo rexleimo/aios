@@ -2,7 +2,7 @@
 title: "v5.5.1：証拠駆動の Agent ライフサイクル昇格"
 description: "v5.5.1 は Agent 昇格のハードコードされたボトルネックを解消し、全 canonical role を smoke 対象にして、検証済み evidence で live workflow へ昇格します。"
 date: 2026-08-08
-tags: ["Harness CLI", "agents", "smoke", "workflow", "release"]
+tags: ["AIOS", "agents", "smoke", "workflow", "release"]
 ---
 
 # v5.5.1：証拠駆動の Agent ライフサイクル昇格

@@ -1,5 +1,5 @@
 ---
-title: ユースケース：Harness CLI の route を選ぶ
+title: ユースケース：AIOS の route を選ぶ
 description: memory、search、parallel work、resumable run、browser、privacy、verification の目的別に command を選びます。
 ---
 

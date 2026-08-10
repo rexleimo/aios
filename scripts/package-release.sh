@@ -15,8 +15,8 @@ Usage:
   scripts/package-release.sh [--out <dir>]
 
 Outputs:
-  - harness-cli.tar.gz      (macOS/Linux)
-  - harness-cli.zip         (Windows)
+  - aios.tar.gz      (macOS/Linux)
+  - aios.zip         (Windows)
   - aios-install.sh     (one-liner installer, bash/zsh)
   - aios-install.ps1    (one-liner installer, PowerShell)
 USAGE
@@ -129,10 +129,10 @@ cp "$install_sh" "$OUT_DIR/aios-install.sh"
 cp "$install_ps1" "$OUT_DIR/aios-install.ps1"
 chmod +x "$OUT_DIR/aios-install.sh" || true
 
-echo "+ tar -> $OUT_DIR/harness-cli.tar.gz"
+echo "+ tar -> $OUT_DIR/aios.tar.gz"
 tar_stage="$(mktemp -d)"
 trap 'rm -rf "$tar_stage"' EXIT
-mkdir -p "$tar_stage/harness-cli"
+mkdir -p "$tar_stage/aios"
 (
   cd "$ROOT_DIR"
   tar -cf - \
@@ -150,41 +150,41 @@ mkdir -p "$tar_stage/harness-cli"
     --exclude='.aios' \
     --exclude='*.pyc' \
     --exclude='.DS_Store' \
-    "${existing_release_paths[@]}" | (cd "$tar_stage/harness-cli" && tar -xf -)
+    "${existing_release_paths[@]}" | (cd "$tar_stage/aios" && tar -xf -)
 )
-if [[ ! -f "$tar_stage/harness-cli/rex-harness/src/index.mjs" ]]; then
+if [[ ! -f "$tar_stage/aios/rex-harness/src/index.mjs" ]]; then
   echo "Release archive did not materialize rex-harness/src/index.mjs" >&2
   exit 1
 fi
 # A deleted legacy directory can remain ignored in a developer worktree. Do not
 # preserve its empty directory entry in either release archive.
-rmdir "$tar_stage/harness-cli/scripts/lib/components/superpowers" 2>/dev/null || true
+rmdir "$tar_stage/aios/scripts/lib/components/superpowers" 2>/dev/null || true
 (
   cd "$tar_stage"
-  tar -czf "$OUT_DIR/harness-cli.tar.gz" harness-cli
+  tar -czf "$OUT_DIR/aios.tar.gz" aios
 )
-if [[ ! -s "$OUT_DIR/harness-cli.tar.gz" ]]; then
-  echo "tar archive was not created: $OUT_DIR/harness-cli.tar.gz" >&2
+if [[ ! -s "$OUT_DIR/aios.tar.gz" ]]; then
+  echo "tar archive was not created: $OUT_DIR/aios.tar.gz" >&2
   exit 1
 fi
 
-echo "+ zip -> $OUT_DIR/harness-cli.zip"
-rm -f "$OUT_DIR/harness-cli.zip"
+echo "+ zip -> $OUT_DIR/aios.zip"
+rm -f "$OUT_DIR/aios.zip"
 if [[ "$ZIP_MODE" == "powershell" ]]; then
-  zip_source_win="$(cygpath -w "$tar_stage/harness-cli")"
-  zip_output_win="$(cygpath -w "$OUT_DIR/harness-cli.zip")"
+  zip_source_win="$(cygpath -w "$tar_stage/aios")"
+  zip_output_win="$(cygpath -w "$OUT_DIR/aios.zip")"
   ps_command="\$source = '$zip_source_win'; \$destination = '$zip_output_win'; Compress-Archive -Path \$source -DestinationPath \$destination -Force"
   powershell.exe -NoLogo -NoProfile -NonInteractive -Command "$ps_command"
 else
   (
     cd "$tar_stage"
-    "$ZIP_BIN" -r "$OUT_DIR/harness-cli.zip" \
-      harness-cli \
+    "$ZIP_BIN" -r "$OUT_DIR/aios.zip" \
+      aios \
       -x '*.pyc' -x '*/__pycache__/*' -x '*/node_modules/*' -x '*/mcp-server/.npm-cache/*' -x '*/scripts/lib/components/superpowers' -x '*/scripts/lib/components/superpowers/*' -x '*/mcp-server/dist' -x '*/mcp-server/dist/*' -x '*/.git/*' -x '*/rex-harness/.git/*' -x '*/.aios/*' -x '*/.mypy_cache/*' -x '*/.DS_Store'
   )
 fi
-if [[ ! -s "$OUT_DIR/harness-cli.zip" ]]; then
-  echo "zip archive was not created: $OUT_DIR/harness-cli.zip" >&2
+if [[ ! -s "$OUT_DIR/aios.zip" ]]; then
+  echo "zip archive was not created: $OUT_DIR/aios.zip" >&2
   exit 1
 fi
 

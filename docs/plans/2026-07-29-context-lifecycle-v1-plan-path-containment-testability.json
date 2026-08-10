@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/preflight-contracts.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Equivalent in-root plan paths are represented as the same relative evidence ref; external plan paths are blocked with invalid_plan_path before they can become valid readiness evidence.",
     "observed": "The absolute in-root path was emitted as an absolute evidence ref, and an external complete plan returned ready rather than blocked.",

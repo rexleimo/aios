@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
     "setup": "Advance an active blocker feature in a valid ledger whose remaining prerequisite is human-gated and whose dependent remains pending.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/contract/workflow-outcome-dependencies.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "The decision is blocked with reason dependencies-unresolved, the ledger remains blocked, and currentFeatureId is null.",
     "observed": "The recorded focused suite exits 1 because the transition marks the ledger completed when no ready pending feature is found.",
     "failureReason": "The transition treats no selected next feature as successful completion without distinguishing unresolved pending dependencies.",

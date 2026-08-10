@@ -57,7 +57,7 @@
     ]
   },
   "coreValue": {
-    "product": "Harness CLI / AIOS — local agent workflow layer over codex/claude/gemini/opencode/hermes/grok",
+    "product": "AIOS / AIOS — local agent workflow layer over codex/claude/gemini/opencode/hermes/grok",
     "pillars": [
       {
         "id": "memo-memory",

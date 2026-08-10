@@ -8,9 +8,9 @@
       "executable": "bash",
       "args": [
         "-lc",
-        "set -e; receipt_out=$(mktemp -d); trap \"rm -rf $receipt_out\" EXIT; bash scripts/package-release.sh --out \"$receipt_out\" >/dev/null; tar -tzf \"$receipt_out/harness-cli.tar.gz\" | rg -q \"harness-cli/packages/debug-hub/dist/cli.js\""
+        "set -e; receipt_out=$(mktemp -d); trap \"rm -rf $receipt_out\" EXIT; bash scripts/package-release.sh --out \"$receipt_out\" >/dev/null; tar -tzf \"$receipt_out/aios.tar.gz\" | rg -q \"aios/packages/debug-hub/dist/cli.js\""
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The release archive contains the runnable bundled debug-hub MCP entrypoint at packages/debug-hub/dist/cli.js.",
     "observed": "The packaging command exited with code 1 because the archive did not contain packages/debug-hub/dist/cli.js.",

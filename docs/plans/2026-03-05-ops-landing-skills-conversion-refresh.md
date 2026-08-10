@@ -6,7 +6,7 @@ Date: 2026-03-05
 
 Improve top-of-funnel conversion on docs landing pages by clearly answering:
 
-- What can Harness CLI do right now?
+- What can AIOS do right now?
 - Which reusable skills are available?
 - What is the single primary action for new visitors?
 

@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0: 기억, 문서, 계획, 코드를 가로지르는 통합 AIOS 검색"
-description: "Harness CLI v1.50.0은 지원되는 모든 coding client에 project memory, pinned memo, docs, plans, code를 아우르는 안전한 검색 경로를 제공합니다."
+description: "AIOS v1.50.0은 지원되는 모든 coding client에 project memory, pinned memo, docs, plans, code를 아우르는 안전한 검색 경로를 제공합니다."
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 
 Agent의 지능은 모델 성능만으로 결정되지 않습니다. 같은 project fact를 여러 위치에서 다시 찾다 보면 계획, pinned memo, 문서, 코드가 서로 분리됩니다.
 
-Harness CLI v1.50.0은 이 탐색 경로를 하나로 합칩니다. 지원되는 모든 client가 project memory, pinned memo, docs, plans, code를 같은 명령으로 검색할 수 있습니다.
+AIOS v1.50.0은 이 탐색 경로를 하나로 합칩니다. 지원되는 모든 client가 project memory, pinned memo, docs, plans, code를 같은 명령으로 검색할 수 있습니다.
 
 ## 기본 명령
 

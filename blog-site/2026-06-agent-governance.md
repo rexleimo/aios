@@ -1,6 +1,6 @@
 ---
 title: "Agent Governance: Make Team Runs Prove Themselves Before Going Live"
-description: "How Harness CLI folds many agents into one workflow with smoke evidence, provenance, token-compression metrics, and skill training gates."
+description: "How AIOS folds many agents into one workflow with smoke evidence, provenance, token-compression metrics, and skill training gates."
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 
 Adding more agents is not the hard part. The hard part is making them safe enough to trust inside a real workflow.
 
-Harness CLI now treats agent routing, team execution, and skill updates as an evidence problem. Before a workflow goes live, it should prove three things:
+AIOS now treats agent routing, team execution, and skill updates as an evidence problem. Before a workflow goes live, it should prove three things:
 
 1. the agent can run the smoke path,
 2. the run leaves provenance and token-compression metrics,
@@ -95,7 +95,7 @@ The rule for a larger agent system is straightforward:
 
 > More agents are welcome only when admission, provenance, compression, and training are observable.
 
-That is how Harness CLI folds more agents into one system workflow without turning every team run into a trust fall.
+That is how AIOS folds more agents into one system workflow without turning every team run into a trust fall.
 
 ---
 

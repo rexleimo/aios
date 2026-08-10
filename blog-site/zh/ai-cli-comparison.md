@@ -21,7 +21,7 @@ Claude Code、Codex CLI、Gemini CLI...
 | 写核心业务代码 | Claude Code | 上下文理解最强，代码质量最高 |
 | 跑自动化脚本 / 浏览器操作 | Codex | 开箱即用，稳定可靠 |
 | Google 生态开发者 | Gemini | Workspace 集成无缝 |
-| **我全都要** | **Harness CLI** | 三者优点整合 + 额外加成 |
+| **我全都要** | **AIOS** | 三者优点整合 + 额外加成 |
 
 如果你是急性子，直接跳到最后一节。
 
@@ -159,27 +159,27 @@ Google 家 CLI 一言难尽...功能性 OK，但体验有点糙。
 
 有的，兄弟。
 
-我做了 Harness CLI，一个开源工作流工具。核心思路是：**不重新造轮子，而是让现有的 Claude Code、Codex、Gemini 协同工作。**
+我做了 AIOS，一个开源工作流工具。核心思路是：**不重新造轮子，而是让现有的 Claude Code、Codex、Gemini 协同工作。**
 
-### Harness CLI 解决了什么问题？
+### AIOS 解决了什么问题？
 
 **问题一：工具切换丢失上下文**
 
 以前用 Codex 跑了一半，想让 Claude 帮忙优化一下？不好意思，上下文全丢了，得重来。
 
-Harness CLI 的 Context DB 会记住任务进度，切换工具不断档。
+AIOS 的 Context DB 会记住任务进度，切换工具不断档。
 
 **问题二：浏览器自动化配置麻烦**
 
 每个工具配置 MCP 的方式不一样，烦不烦？
 
-Harness CLI 统一了 `browser_*` 工具，不管你用 Codex 还是 Claude，都能用同一套命令操作浏览器。
+AIOS 统一了 `browser_*` 工具，不管你用 Codex 还是 Claude，都能用同一套命令操作浏览器。
 
 **问题三：密钥泄露风险**
 
 你跑脚本时，API Key 会不会不小心泄露到日志里？
 
-Harness CLI 有 Privacy Guard，配置文件读取前自动脱敏，保护你的密钥。
+AIOS 有 Privacy Guard，配置文件读取前自动脱敏，保护你的密钥。
 
 ### 怎么用？
 
@@ -207,7 +207,7 @@ gemini
 | 写核心业务代码 | Claude Code |
 | 跑自动化脚本 / 浏览器操作 | Codex |
 | Google 生态开发者 | Gemini |
-| 想要鱼和熊掌兼得 | Harness CLI |
+| 想要鱼和熊掌兼得 | AIOS |
 
 **我的选择**：日常脚本用 Codex，复杂代码重构用 Claude，需要时用 Gemini 查资料。工具是手段，不是目的。
 
@@ -219,13 +219,13 @@ gemini
 
 **真正影响效率的是工作流连续性**——你的任务能不能记住上次做到哪了，切换工具会不会丢上下文。
 
-从这个角度，Harness CLI 可能是目前最完整的方案。
+从这个角度，AIOS 可能是目前最完整的方案。
 
 ---
 
 ## 09. 下期预告
 
-下期我会详细讲讲 **Harness CLI 的技术架构**，以及怎么用它在三个 CLI 之间无缝切换。
+下期我会详细讲讲 **AIOS 的技术架构**，以及怎么用它在三个 CLI 之间无缝切换。
 
 敬请期待。
 
@@ -233,6 +233,6 @@ gemini
 
 **你现在用的是哪个 AI 编程工具？最头疼的问题是什么？**
 
-评论区聊聊，点赞最高的送一个 Harness CLI 入门指导。
+评论区聊聊，点赞最高的送一个 AIOS 入门指导。
 
 想了解更多？关注 [rexai.top](https://rexai.top)，下期见！

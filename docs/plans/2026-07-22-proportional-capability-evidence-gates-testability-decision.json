@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/scenarios/proportional-gates.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The public capability decision is software.testing.strict-tdd and includes test-strength-check-recorded in its evidence contract.",
     "observed": "The focused public test exits 1 because the existing decision is software.testing.tdd instead of software.testing.strict-tdd.",

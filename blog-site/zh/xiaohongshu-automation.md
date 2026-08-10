@@ -43,7 +43,7 @@
 codex
 ```
 
-Harness CLI 自动完成：登录 → 选图 → 写文案 → 发布 → 截图确认。
+AIOS 自动完成：登录 → 选图 → 写文案 → 发布 → 截图确认。
 
 不是梦，我真测试了 100 次，成功率 98%。
 
@@ -53,7 +53,7 @@ Harness CLI 自动完成：登录 → 选图 → 写文案 → 发布 → 截图
 
 **现在**：
 
-设定好关键词（比如"编程"、"AI"、"成长"）， Harness CLI 自动：
+设定好关键词（比如"编程"、"AI"、"成长"）， AIOS 自动：
 - 遍历目标用户
 - 智能点赞
 - 生成个性化评论（不是那种"互粉必回"的垃圾评论）
@@ -69,15 +69,15 @@ Harness CLI 自动完成：登录 → 选图 → 写文案 → 发布 → 截图
 
 ---
 
-## 03. 核心技术：凭什么是 Harness CLI？
+## 03. 核心技术：凭什么是 AIOS？
 
 你可能想过：淘宝上代运营服务才 99/月，我为啥要自己折腾？
 
 好问题。我来说区别。
 
-### 普通脚本 vs Harness CLI
+### 普通脚本 vs AIOS
 
-| 对比项 | 某宝脚本 | Harness CLI |
+| 对比项 | 某宝脚本 | AIOS |
 |--------|----------|--------|
 | 浏览器控制 | 无或模拟 | 真实 Playwright |
 | 断点续跑 | ❌ 断了重来 | ✅ Context DB 记住进度 |
@@ -108,7 +108,7 @@ Harness CLI 自动完成：登录 → 选图 → 写文案 → 发布 → 截图
 - 随机点击位置
 - 不要在短时间内高频操作
 
-Harness CLI 默认开了这些配置，别手贱关掉。
+AIOS 默认开了这些配置，别手贱关掉。
 
 **Q2：小红书登录态怎么保持？**
 
@@ -124,10 +124,10 @@ Harness CLI 默认开了这些配置，别手贱关掉。
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/rexleimo/harness-cli.git
+git clone https://github.com/rexleimo/aios.git
 
 # 2. 安装
-cd harness-cli
+cd aios
 ./scripts/setup-all.sh --components all
 
 # 3. 启动
@@ -158,6 +158,6 @@ codex
 
 **觉得有用的话，点个赞支持一下。**
 
-想了解 Harness CLI 更多用法，关注 [rexai.top](https://rexai.top)，我会持续分享 AI 自动化实战。
+想了解 AIOS 更多用法，关注 [rexai.top](https://rexai.top)，我会持续分享 AI 自动化实战。
 
-下期预告：**如何用 Harness CLI 同时管理 10 个小红书账号而不被封**
+下期预告：**如何用 AIOS 同时管理 10 个小红书账号而不被封**

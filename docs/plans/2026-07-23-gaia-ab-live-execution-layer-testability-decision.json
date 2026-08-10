@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/gaia-ab-live-runner.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Each isolated job executes only the deterministic first task through its fake client, receives the configured 300-second timeout and spend boundary, omits expected answers from the model task, writes a redacted local artifact, and produces a score-compatible record.",
     "observed": "Three gate tests pass, but the execution-slice test fails with Error: GAIA live task execution is not implemented yet.",

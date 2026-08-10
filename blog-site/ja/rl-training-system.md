@@ -165,5 +165,5 @@ node scripts/rl-mixed-v1.mjs mixed-eval
 ## 追加リンク
 
 - [AIOS Architecture](/ja/architecture/)
-- [RL Core Design Spec](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md)
-- [Browser + Orchestrator RL Design](https://github.com/rexleimo/harness-cli/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md)
+- [RL Core Design Spec](https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-22-aios-rl-core-design.md)
+- [Browser + Orchestrator RL Design](https://github.com/rexleimo/aios/blob/main/docs/superpowers/specs/2026-03-23-aios-browser-orchestrator-rl-design.md)

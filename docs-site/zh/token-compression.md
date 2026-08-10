@@ -7,7 +7,7 @@ description: 使用 RTK、Caveman、Headroom MCP、ContextDB 和 Ponytail 启发
 
 ## 一句话回答
 
-上下文效率不是一个压缩开关，而是一套工作流。Harness CLI 将最小正确改动门、RTK shell 输出过滤、Caveman 响应风格、显式 Headroom MCP 工具和 pull-based ContextDB 召回分开。每层职责不同，任何一层都不能替代测试、隐私检查或最终验证。
+上下文效率不是一个压缩开关，而是一套工作流。AIOS 将最小正确改动门、RTK shell 输出过滤、Caveman 响应风格、显式 Headroom MCP 工具和 pull-based ContextDB 召回分开。每层职责不同，任何一层都不能替代测试、隐私检查或最终验证。
 
 ## 现在就做
 

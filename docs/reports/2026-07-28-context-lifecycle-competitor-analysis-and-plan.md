@@ -1,7 +1,7 @@
 # Context Lifecycle 竞品全量刷新、源码审计与落地方案
 
 > 日期：2026-07-28
-> 目标仓库：`E:\coding\harness-cli`
+> 目标仓库：`E:\coding\aios`
 > 本项目基线：`main` / `bfb9ce2`
 > 问题输入：微信文章 `https://mp.weixin.qq.com/s/_TJ8MmRoCx5h19UbMMtoAA` 与原始论文 arXiv:2607.21503
 

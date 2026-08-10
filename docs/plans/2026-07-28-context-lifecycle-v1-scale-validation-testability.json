@@ -15,7 +15,7 @@
         "--markdown-out",
         "temp/context-lifecycle-v1/s2-current.md"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The latest cumulative S2 profile exits zero with 12/12 before scale instrumentation is added.",
     "observed": "The latest cumulative S2 profile exited zero with all 12 scenarios matched.",

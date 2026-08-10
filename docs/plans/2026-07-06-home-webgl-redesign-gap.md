@@ -1,6 +1,6 @@
 # Home WebGL Redesign Gap Plan
 
-**Goal:** Bring the docs home page much closer to `/Users/rex/Downloads/Harness CLI - Home (Redesign).png` by replacing Canvas 2D placeholders with real Three.js/WebGL visual layers and tightening the page layout.
+**Goal:** Bring the docs home page much closer to `/Users/rex/Downloads/AIOS - Home (Redesign).png` by replacing Canvas 2D placeholders with real Three.js/WebGL visual layers and tightening the page layout.
 
 **Root cause:** `docs-site/assets/home-animation.js` currently uses only `canvas.getContext('2d')`. The Pencil node `yZfz0` requires Three.js/WebGL animations (`THREE.WebGLRenderer`, particle field, hover-reactive grid, radar sweep, nebula glow). The current layout also diverges from the PNG in top navigation labels, hero scale, hero nebula density, capability card stagger, CTA composition, and footer structure.
 

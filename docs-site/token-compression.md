@@ -7,7 +7,7 @@ description: Keep useful context small with RTK, Caveman, Headroom MCP, ContextD
 
 ## Quick Answer
 
-Context efficiency is a workflow, not one compression switch. Harness CLI separates the smallest-correct-change gate, RTK shell-output filtering, Caveman response style, explicit Headroom MCP tools, and pull-based ContextDB recall. Each layer has a different owner and none removes the need for tests, privacy checks, or final verification.
+Context efficiency is a workflow, not one compression switch. AIOS separates the smallest-correct-change gate, RTK shell-output filtering, Caveman response style, explicit Headroom MCP tools, and pull-based ContextDB recall. Each layer has a different owner and none removes the need for tests, privacy checks, or final verification.
 
 ## Do it now
 

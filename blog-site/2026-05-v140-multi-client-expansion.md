@@ -1,19 +1,19 @@
 ---
 title: "v1.40: Now Supporting 6 AI Coding Clients"
-description: "Harness CLI expands from 4 to 6 supported clients with Antigravity CLI and Crush, plus full superpowers parity across all clients."
+description: "AIOS expands from 4 to 6 supported clients with Antigravity CLI and Crush, plus full superpowers parity across all clients."
 date: 2026-05-31
 tags: ["release", "multi-client", "antigravity", "crush", "superpowers", "AIOS"]
 ---
 
 # v1.40: Now Supporting 6 AI Coding Clients
 
-Harness CLI just got a lot bigger. Version 1.40 adds two new AI coding client integrations — **Antigravity CLI** and **Crush** — and brings **superpowers workflow skills to every supported client**.
+AIOS just got a lot bigger. Version 1.40 adds two new AI coding client integrations — **Antigravity CLI** and **Crush** — and brings **superpowers workflow skills to every supported client**.
 
 ## What's New
 
 ### Antigravity CLI Support
 
-Antigravity CLI (the successor to Gemini CLI) is now a first-class Harness CLI client. It gets:
+Antigravity CLI (the successor to Gemini CLI) is now a first-class AIOS client. It gets:
 
 - **Skills** — all AIOS skills auto-discovered via `.gemini/skills/` (Antigravity's native path)
 - **Native instructions** — `GEMINI.md` with ContextDB, codemap, and browser MCP guidance
@@ -24,7 +24,7 @@ If you were using Gemini CLI before, Antigravity is a drop-in replacement. Same 
 
 ### Crush (charmbracelet) Support
 
-Crush is a new terminal-based AI coding client from the charmbracelet team. Harness CLI now supports:
+Crush is a new terminal-based AI coding client from the charmbracelet team. AIOS now supports:
 
 - **Agent emitters** — Crush-specific agent definitions in `.crush/agents/`
 - **Model flags** — `--model` argument passthrough for model selection
@@ -58,10 +58,10 @@ Before v1.40, superpowers workflow skills (brainstorming, planning, debugging, T
 
 ```bash
 # macOS / Linux
-curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
 
 # Windows PowerShell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 ```
 
 Or update in-place: `aios` → `Update` → `Doctor`.
@@ -72,4 +72,4 @@ Or update in-place: `aios` → `Update` → `Doctor`.
 - Cross-client agent migration (move agent definitions between clients)
 - Enhanced model routing per client type
 
-See the full [changelog](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md) for all details.
+See the full [changelog](https://github.com/rexleimo/aios/blob/main/CHANGELOG.md) for all details.

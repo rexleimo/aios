@@ -1,6 +1,6 @@
 ---
 title: Windows Guide: PowerShell Setup and Recovery
-description: Install Harness CLI on Windows with PowerShell, initialize a project, verify client sync, and recover common PATH or configuration issues.
+description: Install AIOS on Windows with PowerShell, initialize a project, verify client sync, and recover common PATH or configuration issues.
 ---
 
 # Windows Guide
@@ -25,7 +25,7 @@ Use Node.js 24 LTS. If the installer is blocked by an execution policy, follow y
 ## Install and reload PowerShell
 
 ~~~powershell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 ~~~
 
@@ -112,7 +112,7 @@ Confirm that you ran aios init from the intended project root. The legacy .conte
 
 ### Does the Windows installer replace my coding client?
 
-No. It installs the Harness CLI layer and its supported integrations. You still run codex, claude, gemini, opencode, hermes, or grok.
+No. It installs the AIOS layer and its supported integrations. You still run codex, claude, gemini, opencode, hermes, or grok.
 
 ### Why force TLS 1.2?
 

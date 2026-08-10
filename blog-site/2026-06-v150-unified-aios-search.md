@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0: Unified AIOS Search Across Memory, Docs, Plans, and Code"
-description: "Harness CLI v1.50.0 gives every supported coding client one search path for project memory, pinned memo, documentation, plans, and code with scoped visibility."
+description: "AIOS v1.50.0 gives every supported coding client one search path for project memory, pinned memo, documentation, plans, and code with scoped visibility."
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 
 Agents lose intelligence when they have to rediscover the same project facts in different places. A coding agent might remember a plan, miss a pinned memo, scan docs too late, then grep the codebase without the context that explains why a pattern exists.
 
-Harness CLI v1.50.0 makes that loop shorter. The new AIOS search surface lets every supported client ask one question across the project knowledge layer: memory, pinned memo, docs, plans, and code.
+AIOS v1.50.0 makes that loop shorter. The new AIOS search surface lets every supported client ask one question across the project knowledge layer: memory, pinned memo, docs, plans, and code.
 
 ## The Main Command
 

@@ -10,7 +10,7 @@
         "--test",
         "C:\\Users\\Administrator\\AppData\\Local\\Temp\\hermes-verify-7z8pqrta.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Agent A 查询结果仍包含其共享事实；Agent B 的私有记录无权让该事实失效。",
     "observed": "命令退出码为 1：Agent A 的 live memo 中不存在共享事实，断言“Agent B private memo must not invalidate Agent A shared fact”失败。",

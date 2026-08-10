@@ -1,15 +1,15 @@
 ---
-title: Harness CLI Architecture — Layers under Coding Agents
-description: Architecture of Harness CLI: coding clients, Workflow Policy, ContextDB memory, rex-harness control plane, Agent Team, browser-use CDP, and verification gates.
+title: AIOS Architecture — Layers under Coding Agents
+description: Architecture of AIOS: coding clients, Workflow Policy, ContextDB memory, rex-harness control plane, Agent Team, browser-use CDP, and verification gates.
 ---
 
 # Architecture
 
 ## Quick Answer
 
-Harness CLI is a set of local boundaries around an existing coding client. Shell and native guidance identify the project, ContextDB stores and retrieves project evidence, Workflow Policy chooses the smallest route, and Team, Solo Harness, or Orchestrate run work when the task requires it. Browser-use CDP is the default browser path; the legacy Playwright MCP server remains a compatibility path.
+AIOS is a set of local boundaries around an existing coding client. Shell and native guidance identify the project, ContextDB stores and retrieves project evidence, Workflow Policy chooses the smallest route, and Team, Solo Harness, or Orchestrate run work when the task requires it. Browser-use CDP is the default browser path; the legacy Playwright MCP server remains a compatibility path.
 
-![Harness CLI architecture overview](assets/visual-architecture-overview.svg)
+![AIOS architecture overview](assets/visual-architecture-overview.svg)
 
 ## Components
 
@@ -104,7 +104,7 @@ Use a visible CDP browser, read semantic or targeted text first, and keep read -
 
 ## RL research surface
 
-AIOS also contains isolated multi-environment RL research surfaces. They are not required for normal Harness CLI installation or documentation workflows.
+AIOS also contains isolated multi-environment RL research surfaces. They are not required for normal AIOS installation or documentation workflows.
 
 ### RL Training Layer (AIOS) {#rl-training-layer-aios}
 

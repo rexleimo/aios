@@ -1,13 +1,13 @@
 ---
 title: "v1.40: AI コーディングクライアントを 6 種類へ拡張"
-description: "Harness CLI v1.40 で Antigravity CLI と Crush を加え、複数 AI コーディングクライアントの共通ワークフローを整えた記録です。"
+description: "AIOS v1.40 で Antigravity CLI と Crush を加え、複数 AI コーディングクライアントの共通ワークフローを整えた記録です。"
 date: 2026-05-31
 tags: ["release", "multi-client", "Antigravity", "Crush", "superpowers", "AIOS"]
 ---
 
 # v1.40: AI コーディングクライアントを 6 種類へ拡張
 
-> **Quick Answer:** v1.40 では Harness CLI の対応範囲を 4 クライアントから 6 クライアントへ広げ、Antigravity CLI と Crush を追加しました。各クライアントの操作方法が違っても、Skills、ワークフロー、検証の共有契約を保つことが目的です。
+> **Quick Answer:** v1.40 では AIOS の対応範囲を 4 クライアントから 6 クライアントへ広げ、Antigravity CLI と Crush を追加しました。各クライアントの操作方法が違っても、Skills、ワークフロー、検証の共有契約を保つことが目的です。
 
 この投稿は v1.40 時点の拡張を記録したものです。現在の対応クライアントや導入方法は、最新の[クイックスタート](https://cli.rexai.top/ja/getting-started/)と[アーキテクチャ](https://cli.rexai.top/ja/architecture/)を優先してください。
 

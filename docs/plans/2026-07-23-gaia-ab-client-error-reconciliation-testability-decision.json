@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/gaia-ab-live-runner.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The runner preserves the 2 USD reservation and writes client_error after a rejected client call, then demonstrates that a 2 USD estimate with 0.5 USD actual spend gives the next job 9.5 USD remaining.",
     "observed": "The focused public test exits zero with all nine scenarios passing, including client-error isolation and successful-spend reconciliation, using no external adapter.",

@@ -40,5 +40,5 @@
 - [ ] Run: `bash scripts/release-version.sh patch "fix(windows): preserve AIOS PowerShell wrapper arguments"`.
 - [ ] Run: `bash scripts/release-stable.sh --dry-run --allow-dirty`.
 - [ ] Package assets with `bash scripts/package-release.sh --out dist/release-check`.
-- [ ] Verify these assets exist: `harness-cli.tar.gz`, `harness-cli.zip`, `aios-install.sh`, `aios-install.ps1`.
+- [ ] Verify these assets exist: `aios.tar.gz`, `aios.zip`, `aios-install.sh`, `aios-install.ps1`.
 - [ ] Commit, push `main`, tag `vX.Y.Z`, and push the tag to trigger `.github/workflows/release.yml`.

@@ -1,4 +1,4 @@
-# Harness CLI 站点 SEO / GEO / 运营优化方案
+# AIOS 站点 SEO / GEO / 运营优化方案
 
 > 版本基线：`VERSION` = 5.3.0 · 站点：`cli.rexai.top`（docs）+ `cli.rexai.top/blog/`（blog）
 > 制定日期：2026-07-30
@@ -62,7 +62,7 @@
 
 **B1 — 5.3.0 零发布内容。**
 博客最新 release 文是 v4.0.0（`2026-07-v400-adaptive-workflow-policy.md`）。5.0.0 / 5.3.0 只在 `docs-site/changelog.md` 里，且 changelog 是单页 28.8K，5.3.0 埋在里面。
-影响：`harness cli 5.3`、`aios 5.3.0 changelog` 这类品牌+版本词无独立落地页；每次发版本该有的一波自然流量完全没接。
+影响：`aios 5.3`、`aios 5.3.0 changelog` 这类品牌+版本词无独立落地页；每次发版本该有的一波自然流量完全没接。
 
 **B2 — `llms.txt` 内容停在 v4.0 时代**，`llms-full.txt` 特性列表最新只到 v1.50.1。AI 抓到的是过期版本画像。
 
@@ -139,7 +139,7 @@ GEO 和 SEO 的差别：SEO 争排名，GEO 争**被引用为答案的出处**�
 在 H1 下、正文前，插 40–60 词的直接答案段。AI 抓取时优先取这一段。
 模板：
 ```markdown
-> **What it is:** ContextDB is Harness CLI's local project-memory store.
+> **What it is:** ContextDB is AIOS's local project-memory store.
 > **What it does:** Keeps cross-session context for codex / claude / gemini
 > without sending project data to a server.
 > **Who it's for:** Developers running multi-day agent tasks in one repo.
@@ -192,7 +192,7 @@ AI 不引用"更快更好"，引用"token 用量从 X 降到 Y，在 Z 版本实
 ### 4.2 拆 changelog，每个版本独立 URL
 
 28.8K 单页 → `/releases/5.3.0/`、`/releases/5.0.0/`… 保留 `/changelog/` 作为索引页（列表 + 摘要 + 链接）。
-理由：品牌+版本词（`harness cli 5.3.0`）有稳定长尾；单页塞不下也无法为每个版本单独排名。
+理由：品牌+版本词（`aios 5.3.0`）有稳定长尾；单页塞不下也无法为每个版本单独排名。
 加 `SoftwareApplication` + `softwareVersion` + `releaseNotes` schema。
 
 ### 4.3 建 `/whats-new/` 页
@@ -219,7 +219,7 @@ AI 不引用"更快更好"，引用"token 用量从 X 降到 Y，在 Z 版本实
 │      Now with a brain.                                   │
 │                                                          │
 │  ┌────────────────────────────────────────┐  [Copy]      │
-│  │ $ npm i -g @rexai/harness-cli && aios init │          │
+│  │ $ npm i -g @rexai/aios && aios init │          │
 │  └────────────────────────────────────────┘              │
 │                                                          │
 │  [Quick Start →]  [GitHub ★]                             │
@@ -260,7 +260,7 @@ README 有 badge，站点没有。header 放实时 star 数（`shields.io` 或 G
 4. `llms.txt` 刷新
 5. 外部分发（下条）
 
-5.3.0 已经错过，**建议现在补发一篇 5.x 综合文**：`Harness CLI 5.x: What Changed Since 4.0`，覆盖 5.0 Rex 迁移 + 5.3 Context Lifecycle，一篇顶三篇。
+5.3.0 已经错过，**建议现在补发一篇 5.x 综合文**：`AIOS 5.x: What Changed Since 4.0`，覆盖 5.0 Rex 迁移 + 5.3 Context Lifecycle，一篇顶三篇。
 
 ### 6.2 外部分发清单（每篇内容至少走 3 条）
 
@@ -284,13 +284,13 @@ README 有 badge，站点没有。header 放实时 star 数（`shields.io` 或 G
 补三类：
 
 **教程类（拉新，占比应最高）**
-- 「用 Harness CLI 在一晚上重构一个 5 万行项目」——真实过程、真实失败、真实数字
+- 「用 AIOS 在一晚上重构一个 5 万行项目」——真实过程、真实失败、真实数字
 - 「让 Claude Code 记住你的项目：ContextDB 30 分钟上手」
 - 「Windows 上跑 AI coding agent 的 7 个坑」
 
 **对比类（截需求流量）**
 - 「Claude Code vs Codex vs Gemini CLI：2026 实测」——带 benchmark，不带立场
-- 「Harness CLI vs mem0 vs Letta：agent 记忆方案怎么选」（`temp/competitor-repos/` 里已有 mem0 源码，可做实证对比）
+- 「AIOS vs mem0 vs Letta：agent 记忆方案怎么选」（`temp/competitor-repos/` 里已有 mem0 源码，可做实证对比）
 
 **观点类（建立权威，AI 爱引用）**
 - 「为什么 agent 需要工作流策略，而不是更大的 context window」

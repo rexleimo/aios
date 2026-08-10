@@ -2,7 +2,7 @@
 
 > **For Hermes:** Use subagent-driven-development skill to implement this plan task-by-task.
 
-**Goal:** 借鉴 Hermes Agent 的成熟架构和竞品分析报告中的落地经验，为 harness-cli（AIOS）项目补齐对 Claude Code、Codex、OpenCode 三大客户端的开发体验支撑，让多客户端协作从"契约式占位符"升级为"实装可用的闭环"。
+**Goal:** 借鉴 Hermes Agent 的成熟架构和竞品分析报告中的落地经验，为 AIOS 项目补齐对 Claude Code、Codex、OpenCode 三大客户端的开发体验支撑，让多客户端协作从"契约式占位符"升级为"实装可用的闭环"。
 
 **Architecture:** 三层改造：(1) 基础层 — vendor superpowers skill 子集 + native-sync 配置标准化；(2) 闭环层 — 受控技能自生成 + 干运行预检 + 默认模式自动激活；(3) 运维层 — Usage/Audit 控制台 + 会话结束自动写记忆。每层独立交付、不互相阻塞。
 
@@ -14,7 +14,7 @@
 
 ### 项目现状
 
-harness-cli 是一个 local-first AI agent workspace（AIOS），核心价值是跨客户端（Claude Code、Codex CLI、OpenCode）统一 skill/memory/interception/harness 体验。当前已有：
+aios 是一个 local-first AI agent workspace（AIOS），核心价值是跨客户端（Claude Code、Codex CLI、OpenCode）统一 skill/memory/interception/harness 体验。当前已有：
 
 - **skills 系统**: `skill-sources/` 源 + `scripts/lib/skills/` 管理 + `.codex/skills/` / `.claude/skills/` / `.opencode/skills/` 三路同步（native-sync）
 - **memo 系统**: `aios memo add/recall/search/pin` + git-friendly markdown + `project_shared` 跨客户端可见

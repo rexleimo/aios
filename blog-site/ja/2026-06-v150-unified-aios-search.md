@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0：記憶、ドキュメント、計画、コードを横断する統合 AIOS 検索"
-description: "Harness CLI v1.50.0 は、対応するすべての coding client に project memory、pinned memo、docs、plans、code を横断する安全な検索面を提供します。"
+description: "AIOS v1.50.0 は、対応するすべての coding client に project memory、pinned memo、docs、plans、code を横断する安全な検索面を提供します。"
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---
@@ -9,7 +9,7 @@ tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 
 Agent の知性は、モデルだけで決まりません。同じ project fact を何度も探すと、計画、pinned memo、docs、code の関係が切れてしまいます。
 
-Harness CLI v1.50.0 では、その探索経路を 1 つの検索面に統合しました。対応するすべての client が、project memory、pinned memo、docs、plans、code を同じコマンドで検索できます。
+AIOS v1.50.0 では、その探索経路を 1 つの検索面に統合しました。対応するすべての client が、project memory、pinned memo、docs、plans、code を同じコマンドで検索できます。
 
 ## 基本コマンド
 

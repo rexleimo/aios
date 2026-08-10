@@ -102,4 +102,4 @@ Model Router is built into Agent Team — each phase of a team run automatically
 
 ---
 
-*Model Router is part of [Harness CLI](https://cli.rexai.top). See the [full docs](https://cli.rexai.top/model-router/) for all models, rules, and configuration options.*
+*Model Router is part of [AIOS](https://cli.rexai.top). See the [full docs](https://cli.rexai.top/model-router/) for all models, rules, and configuration options.*

@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/standalone/standalone-cli.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The public CLI rejects a receipt that does not match the declared executable, arguments, and working directory.",
     "observed": "The CLI accepted the unrelated receipt and returned status 0 before the scenario-bound contract exists.",

@@ -1,6 +1,6 @@
 ---
 title: "v1.52.0: Deterministic Shell Output Compression via MCP"
-description: "Harness CLI v1.52.0 introduces aios_shell — an MCP tool that gives every AIOS client deterministic shell output compression at 99% saving ratio, plus shim self-healing and sensitive-command guards."
+description: "AIOS v1.52.0 introduces aios_shell — an MCP tool that gives every AIOS client deterministic shell output compression at 99% saving ratio, plus shim self-healing and sensitive-command guards."
 date: 2026-06-11
 tags: ["release", "token-compression", "shell", "MCP", "multi-client", "shim"]
 ---
@@ -56,7 +56,7 @@ Native shims now include a self-healing sequence:
 
 1. Check `AIOS_ROOT_DIR` from environment
 2. Check baked-in fallback path
-3. Probe `~/.rexcil/harness-cli`
+3. Probe `~/.rexcil/aios`
 4. Probe `~/cool.cnb/rex-ai-boot`
 
 If all probes fail — the shim `exec`s the real client binary directly. No more `exit 127` dead ends.

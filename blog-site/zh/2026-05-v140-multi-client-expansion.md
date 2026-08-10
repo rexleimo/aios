@@ -1,19 +1,19 @@
 ---
 title: "v1.40：现已支持 6 个 AI 编程客户端"
-description: "Harness CLI 从 4 个扩展到 6 个支持的客户端，新增 Antigravity CLI 和 Crush，所有客户端均获得 superpowers 工作流技能。"
+description: "AIOS 从 4 个扩展到 6 个支持的客户端，新增 Antigravity CLI 和 Crush，所有客户端均获得 superpowers 工作流技能。"
 date: 2026-05-31
 tags: ["release", "multi-client", "antigravity", "crush", "superpowers", "AIOS"]
 ---
 
 # v1.40：现已支持 6 个 AI 编程客户端
 
-Harness CLI 迎来重大更新。v1.40 新增两个 AI 编程客户端集成 —— **Antigravity CLI** 和 **Crush**，并为**所有支持的客户端带来 superpowers 工作流技能**。
+AIOS 迎来重大更新。v1.40 新增两个 AI 编程客户端集成 —— **Antigravity CLI** 和 **Crush**，并为**所有支持的客户端带来 superpowers 工作流技能**。
 
 ## 更新内容
 
 ### Antigravity CLI 支持
 
-Antigravity CLI（Gemini CLI 的继任者）现在是一等公民级别的 Harness CLI 客户端，支持：
+Antigravity CLI（Gemini CLI 的继任者）现在是一等公民级别的 AIOS 客户端，支持：
 
 - **Skills** — 所有 AIOS 技能通过 `.gemini/skills/`（Antigravity 的原生路径）自动发现
 - **原生指令** — `GEMINI.md` 包含 ContextDB、codemap 和 Browser MCP 指引
@@ -24,7 +24,7 @@ Antigravity CLI（Gemini CLI 的继任者）现在是一等公民级别的 Harne
 
 ### Crush (charmbracelet) 支持
 
-Crush 是 charmbracelet 团队推出的新型终端 AI 编程客户端。Harness CLI 现已支持：
+Crush 是 charmbracelet 团队推出的新型终端 AI 编程客户端。AIOS 现已支持：
 
 - **Agent 生成器** — Crush 专属的 agent 定义，位于 `.crush/agents/`
 - **模型参数** — `--model` 参数透传，支持模型选择
@@ -58,10 +58,10 @@ Crush 非常适合无头/CI 环境，在不需要交互提示的情况下进行 
 
 ```bash
 # macOS / Linux
-curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
 
 # Windows PowerShell
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 ```
 
 或在原地更新：`aios` → `Update` → `Doctor`。
@@ -72,4 +72,4 @@ curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios
 - 跨客户端 agent 迁移（在客户端之间移动 agent 定义）
 - 按客户端类型的增强模型路由
 
-完整变更日志请查看 [CHANGELOG](https://github.com/rexleimo/harness-cli/blob/main/CHANGELOG.md)。
+完整变更日志请查看 [CHANGELOG](https://github.com/rexleimo/aios/blob/main/CHANGELOG.md)。

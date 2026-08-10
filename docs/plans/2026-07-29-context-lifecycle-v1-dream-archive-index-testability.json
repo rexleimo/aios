@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/memo-archive-index.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Canonical archive visibility remains correct and the first archive-filtering read materializes a durable derived archive-index sidecar without memo text.",
     "observed": "The archived ID and public default/includeArchived visibility were correct, but reading the expected durable archive-index sidecar failed with ENOENT.",

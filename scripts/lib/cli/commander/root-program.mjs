@@ -12,8 +12,8 @@ export function createAiosProgram({ version = 'unknown', dispatch } = {}) {
   const program = new Command()
     .name('aios')
     .description('AIOS unified entry (Node-first CLI + TUI)')
-    .version(`Harness CLI ${version}`, '-V, --version', 'Print the installed Harness CLI version')
-    .option('-v, --legacy-version', 'Print the installed Harness CLI version')
+    .version(`AIOS ${version}`, '-V, --version', 'Print the installed AIOS version')
+    .option('-v, --legacy-version', 'Print the installed AIOS version')
     .helpOption(false)
     .allowUnknownOption(true)
     .allowExcessArguments(true)
@@ -30,7 +30,7 @@ export function createAiosProgram({ version = 'unknown', dispatch } = {}) {
 
   program
     .command('version')
-    .description('Print the installed Harness CLI version')
+    .description('Print the installed AIOS version')
     .helpOption(false)
     .action(async () => {
       await dispatch(parseArgs(['version']));

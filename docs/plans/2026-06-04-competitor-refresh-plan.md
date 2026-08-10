@@ -6,7 +6,7 @@
 
 ## 目标
 
-拉取 `competitor-watchlist.json` 内的全部 **19 个竞品**（5 大类），刷新元数据并完成一次端到端 deep-dive，输出对 **Harness CLI / AIOS** 有参考价值的功能清单（P0/P1/P2）。
+拉取 `competitor-watchlist.json` 内的全部 **19 个竞品**（5 大类），刷新元数据并完成一次端到端 deep-dive，输出对 **AIOS / AIOS** 有参考价值的功能清单（P0/P1/P2）。
 
 ## 竞品范围
 

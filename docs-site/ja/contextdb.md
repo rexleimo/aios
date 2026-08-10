@@ -7,7 +7,7 @@ description: ローカル ContextDB registry、memo storage、unified project se
 
 ## まず答え
 
-ContextDB は Harness CLI のローカル project memory layer です。session、event、checkpoint、memo、context pack の参照を project workspace に保存し、対応する client が別の session から必要な事実を見つけられるようにします。現在のモデルは pull-based です。registry が source を示し、agent が task に必要な evidence だけを recall します。
+ContextDB は AIOS のローカル project memory layer です。session、event、checkpoint、memo、context pack の参照を project workspace に保存し、対応する client が別の session から必要な事実を見つけられるようにします。現在のモデルは pull-based です。registry が source を示し、agent が task に必要な evidence だけを recall します。
 
 ## 今すぐ実行
 

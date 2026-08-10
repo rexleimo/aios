@@ -1,13 +1,13 @@
 ---
-title: "v4.0 Adaptive Workflow Policy: How Harness CLI Chooses the Right Amount of Process"
-description: "A practical guide to Harness CLI v4.0's noop, direct, guarded, and planned workflow routes, persistent plans, and evidence gates."
+title: "v4.0 Adaptive Workflow Policy: How AIOS Chooses the Right Amount of Process"
+description: "A practical guide to AIOS v4.0's noop, direct, guarded, and planned workflow routes, persistent plans, and evidence gates."
 date: 2026-07-14
-tags: ["Harness CLI", "AI agent workflow", "workflow policy", "developer productivity", "SEO"]
+tags: ["AIOS", "AI agent workflow", "workflow policy", "developer productivity", "SEO"]
 ---
 
-# v4.0 Adaptive Workflow Policy: How Harness CLI Chooses the Right Amount of Process
+# v4.0 Adaptive Workflow Policy: How AIOS Chooses the Right Amount of Process
 
-> **Quick Answer:** Harness CLI v4.0 classifies work before it adds process. A question can be `noop` or `direct`, a small local edit can be `guarded`, and a multi-step or risky objective can be `planned`. The policy also separates plan persistence (`none`, `reuse`, or `create`) from workflow route selection, so a short acknowledgement does not accidentally start a new plan.
+> **Quick Answer:** AIOS v4.0 classifies work before it adds process. A question can be `noop` or `direct`, a small local edit can be `guarded`, and a multi-step or risky objective can be `planned`. The policy also separates plan persistence (`none`, `reuse`, or `create`) from workflow route selection, so a short acknowledgement does not accidentally start a new plan.
 
 AI coding tools become difficult to trust when every request triggers the same ceremony. A one-line lookup should not create a work item, while a change that spans documentation, tests, and release evidence should not rely on memory alone. v4.0 makes that distinction explicit and inspectable.
 

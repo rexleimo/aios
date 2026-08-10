@@ -1,8 +1,8 @@
 ---
 title: "v5.4.0: 워크플로 Iteration v2.1 — Activation 안전성, 타입 기반 Evidence 계약, 전량 Skill 감사"
-description: "Harness CLI v5.4.0은 원자적 Activation 상태, 병렬 토큰 잠금, 타입 기반 Wayfinder/Planning Artifact 스키마, 엄격한 evidence-ref 검증, S1–S5 전체 배치 Skill 감사를 추가합니다."
+description: "AIOS v5.4.0은 원자적 Activation 상태, 병렬 토큰 잠금, 타입 기반 Wayfinder/Planning Artifact 스키마, 엄격한 evidence-ref 검증, S1–S5 전체 배치 Skill 감사를 추가합니다."
 date: 2026-08-01
-tags: ["Harness CLI", "rex-harness", "워크플로", "evidence 계약", "activation store", "Skill 감사", "개발 생산성"]
+tags: ["AIOS", "rex-harness", "워크플로", "evidence 계약", "activation store", "Skill 감사", "개발 생산성"]
 ---
 
 # v5.4.0: 워크플로 Iteration v2.1 — Activation 안전성, 타입 기반 Evidence 계약, 전량 Skill 감사

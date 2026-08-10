@@ -1,8 +1,8 @@
-# Harness CLI Site Template Restoration Implementation Plan
+# AIOS Site Template Restoration Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rebuild the Harness CLI docs and blog site shells so the generated pages match the Pencil layout system instead of the default MkDocs Material layout.
+**Goal:** Rebuild the AIOS docs and blog site shells so the generated pages match the Pencil layout system instead of the default MkDocs Material layout.
 
 **Architecture:** Keep MkDocs for routing, Markdown, search, i18n, and generation. Override Material template blocks and route pages into custom Home, Docs, Blog Index, and Blog Post shells. Split templates and CSS by responsibility so each page type can evolve independently.
 
@@ -69,7 +69,7 @@
 Add tests that assert:
 
 - `main.html` contains `{% block header %}`, `{% block tabs %}`, `{% block site_nav %}`, `{% block container %}`, and `{% block footer %}`.
-- `docs-site/overrides/partials/rex/docs-sidebar.html` includes `rex-doc-sidebar`, `HARNESS CLI`, `Getting Started`, `Core Systems`, `Collaboration`, `Reference`, `Local Machine`, and `aios v`.
+- `docs-site/overrides/partials/rex/docs-sidebar.html` includes `rex-doc-sidebar`, `AIOS`, `Getting Started`, `Core Systems`, `Collaboration`, `Reference`, `Local Machine`, and `aios v`.
 - `docs-site/overrides/partials/rex/docs-page.html` includes `rex-doc-layout`, `rex-doc-outline`, `On This Page`, and `{% include "partials/content.html" %}`.
 - Blog partials include `rex-blog-featured`, `rex-blog-card-grid`, `rex-blog-article-header`, and `rex-related-reading`.
 - Blog CSS manifest imports `blog-shell.css`, `blog-index.css`, `blog-post.css`, and `blog-cards.css`.

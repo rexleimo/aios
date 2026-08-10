@@ -4,7 +4,7 @@
   "redCandidate": {
     "publicEntry": "advanceLongRunningDelivery() from the rex-harness package entry point",
     "setup": "Run a controlled feature verification command with a nonzero exit twice against maxRetries 1.",
-    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "command": { "executable": "node", "args": ["--test", "rex-harness/tests/workflows/long-running-delivery.test.mjs"], "cwd": "E:\\coding\\aios" },
     "expected": "The second failure preserves the human gate and returns `{ kind: 'human-gate', reason: 'verification-failed' }`.",
     "observed": "The recorded suite exits 1 because the terminal decision contains only `{ kind: 'human-gate' }`.",
     "failureReason": "The exhausted-retry terminal branch records evidence and retry count but does not expose the failure cause in its public decision.",

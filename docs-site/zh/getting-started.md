@@ -1,13 +1,13 @@
 ---
-title: 快速开始：安装并验证 Harness CLI
-description: 使用当前命令安装 Harness CLI，初始化项目指引，并验证 ContextDB、客户端同步和本地安全检查。
+title: 快速开始：安装并验证 AIOS
+description: 使用当前命令安装 AIOS，初始化项目指引，并验证 ContextDB、客户端同步和本地安全检查。
 ---
 
 # 快速开始
 
 ## 一句话回答
 
-Harness CLI 是面向受支持编码客户端的本地工作流层。当前安装路径是：安装稳定版，在项目根目录执行 aios init --all，再用 aios doctor --native --verbose 查看结果。它会创建或更新项目指引和 ContextDB 注册表标记，不会取代你的客户端，也不会把所有历史事件塞进每个提示。
+AIOS 是面向受支持编码客户端的本地工作流层。当前安装路径是：安装稳定版，在项目根目录执行 aios init --all，再用 aios doctor --native --verbose 查看结果。它会创建或更新项目指引和 ContextDB 注册表标记，不会取代你的客户端，也不会把所有历史事件塞进每个提示。
 
 ## 准备工作
 
@@ -28,7 +28,7 @@ npm -v
 === "macOS / Linux"
 
     ~~~bash
-    curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+    curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
     source ~/.zshrc
     ~~~
 
@@ -37,7 +37,7 @@ npm -v
 === "Windows PowerShell"
 
     ~~~powershell
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
     . $PROFILE
     ~~~
 
@@ -144,9 +144,9 @@ node scripts/aios.mjs init --all --dry-run
 
 ## 常见问题
 
-### Harness CLI 会取代 codex、claude 或其他客户端吗？
+### AIOS 会取代 codex、claude 或其他客户端吗？
 
-不会。你仍然启动底层客户端。Harness CLI 在外层增加本地记忆、工作流路由、可选工具和验证指引。
+不会。你仍然启动底层客户端。AIOS 在外层增加本地记忆、工作流路由、可选工具和验证指引。
 
 ### aios init 会上传项目记忆吗？
 

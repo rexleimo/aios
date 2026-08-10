@@ -102,7 +102,7 @@ http://localhost:39200 を開いてダッシュボードで確認できます。
 
 ## 大きな絵
 
-debug-hub は Harness CLI の **可観測性レイヤー** の一部です。次のものと連携します:
+debug-hub は AIOS の **可観測性レイヤー** の一部です。次のものと連携します:
 
 - [ContextDB](https://cli.rexai.top/ja/contextdb/) — セッションをまたぐメモリ
 - [Solo Harness](https://cli.rexai.top/ja/solo-harness/) — 自己診断できる夜間実行
@@ -112,4 +112,4 @@ agent が自分自身をデバッグできるようになれば、より長く�
 
 ---
 
-*debug-hub は v0.3.0 で、[Harness CLI](https://cli.rexai.top) の一部です。試して、あなたの agent に自己省察の力を与えてください。*
+*debug-hub は v0.3.0 で、[AIOS](https://cli.rexai.top) の一部です。試して、あなたの agent に自己省察の力を与えてください。*

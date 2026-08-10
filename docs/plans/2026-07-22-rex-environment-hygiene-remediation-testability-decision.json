@@ -11,7 +11,7 @@
         "-e",
         "const assert = await import(`node:assert/strict`); const { inspectTokenDiscipline } = await import(`./scripts/lib/token-discipline/index.mjs`); const report = inspectTokenDiscipline({ rootDir: process.cwd(), projectRoot: process.cwd() }); assert.equal(report.enabledMcpServers, 9); assert.equal(report.warnings.some((warning) => warning.startsWith(`enabledMcpServers=`)), false);"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The public diagnostic reports 9, the largest active client configuration surface, and emits no aggregate MCP-budget warning.",
     "observed": "The command exits nonzero because the current public diagnostic sums independent surfaces to 17 before comparing with the budget.",

@@ -1,13 +1,13 @@
 ---
 title: "Grok Build が AIOS のファーストクラスクライアントに"
-description: "Harness CLI が xAI Grok Build を skills / agents / native / team / harness 付きのファーストクラス AIOS クライアントとして登録。runtime id は grok-build。"
+description: "AIOS が xAI Grok Build を skills / agents / native / team / harness 付きのファーストクラス AIOS クライアントとして登録。runtime id は grok-build。"
 date: 2026-07-09
 tags: ["Grok Build", "AIOS", "MCP", "client", "Skills", "xAI"]
 ---
 
 # Grok Build が AIOS のファーストクラスクライアントに
 
-xAI の **Grok Build**（`grok` CLI）が、Codex CLI・Claude Code・Gemini CLI・OpenCode・Hermes Agent と並び、Harness CLI のファーストクラス AIOS クライアントになりました。
+xAI の **Grok Build**（`grok` CLI）が、Codex CLI・Claude Code・Gemini CLI・OpenCode・Hermes Agent と並び、AIOS のファーストクラス AIOS クライアントになりました。
 
 単なる設定追記ではなく、native sync、skills インストール、codemap MCP 注入、`ctx-agent`、solo harness / team provider を駆動する client registry に正式登録されています。
 

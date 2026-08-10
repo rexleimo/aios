@@ -13,7 +13,7 @@
         "scripts/tests/context-lifecycle-mcp-integration.test.mjs",
         "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Default orchestration chooses persisted contextual pending work, MCP returns structured argv rather than shell text, and codemap relations survive candidate limits.",
     "observed": "Four tests fail: shell command interpolation is returned, default selection chooses an empty earlier task, and direct targets exhaust the candidate limit.",

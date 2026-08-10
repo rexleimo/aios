@@ -5,7 +5,7 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 # Changelog
 
-Use this page to track what changed in `Harness CLI` and jump to release-related docs.
+Use this page to track what changed in `AIOS` and jump to release-related docs.
 
 ## v5.4.4 (2026-08-06) — Reliable Agent Smoke: Output-Contract Clients and Escalating Probe Timeouts
 
@@ -45,7 +45,7 @@ Use this page to track what changed in `Harness CLI` and jump to release-related
 
 ### What changed
 
-- `aios update` self-update is now safe on Windows release installs. Running update from inside the install tree previously left the process working directory in the directory the installer must delete; Windows cannot delete a cwd-held directory, so removal failed silently and the new version was nested at `<install>/harness-cli/`, breaking the follow-up update with `MODULE_NOT_FOUND`.
+- `aios update` self-update is now safe on Windows release installs. Running update from inside the install tree previously left the process working directory in the directory the installer must delete; Windows cannot delete a cwd-held directory, so removal failed silently and the new version was nested at `<install>/aios/`, breaking the follow-up update with `MODULE_NOT_FOUND`.
 - The updater now moves its working directory outside the install tree before running the release installer, the installer verifies the old directory was actually removed (failing loudly instead of continuing into a nested install), and the post-update re-exec checks its entry point and prints a clear remediation message when the replace went wrong.
 - The updater prefers the local `scripts/aios-install.ps1` for release-installer updates, so defensive installer fixes take effect immediately instead of waiting for a remote fetch.
 - Removed the leftover untracked `agent-sources/skills/` directory (gitlink removed earlier) that broke the token-discipline sync test.
@@ -245,7 +245,7 @@ All changes verified with 37/37 unit + integration tests passing.
 
 - **aios_shell MCP tool**: deterministic shell output compression across all clients via `aios-shell` MCP alias. Shell commands execute through `scripts/shell-mcp-server.mjs` and output is automatically compressed by the MCP proxy at **99%+ saving ratio**.
 - **Three-layer interception defense**: MCP tool (all clients) → shim+hook (Claude/all) → prompt guidance. No single point of failure.
-- **Shim self-healing**: native shims probe 4 fallback paths (`AIOS_ROOT_DIR` → baked root → `~/.rexcil/harness-cli` → `~/cool.cnb/rex-ai-boot`) before failing open to the real client binary.
+- **Shim self-healing**: native shims probe 4 fallback paths (`AIOS_ROOT_DIR` → baked root → `~/.rexcil/aios` → `~/cool.cnb/rex-ai-boot`) before failing open to the real client binary.
 - **Sensitive command guard**: `git push` and `npm publish` are intercepted before execution and require host permission review.
 - **aios-shell in all client configs**: registered via `doctor --fix` in `.mcp.json`, `.codex/config.toml`, `.gemini/settings.json`, `opencode.json`, and `crush.json`.
 - See: [v1.52.0 blog post](/blog/2026-06-v152-aios-shell-mcp/).
@@ -271,8 +271,8 @@ All changes verified with 37/37 unit + integration tests passing.
 - **All-client native guidance**: The same search instruction is projected to Codex/OpenCode/Crush through `AGENTS.md`, Claude through `CLAUDE.md`, and Gemini/Antigravity through `GEMINI.md`.
 - **Release tutorials**: See the [v1.50.0 unified search tutorial](/blog/2026-06-v150-unified-aios-search/) and [ContextDB](contextdb.md#unified-project-search-v1500).
 
-[⭐ Star on GitHub](https://github.com/rexleimo/harness-cli){ .md-button .md-button--primary }
-[📦 View Releases](https://github.com/rexleimo/harness-cli/releases){ .md-button }
+[⭐ Star on GitHub](https://github.com/rexleimo/aios){ .md-button .md-button--primary }
+[📦 View Releases](https://github.com/rexleimo/aios/releases){ .md-button }
 
 ## Latest Stable
 

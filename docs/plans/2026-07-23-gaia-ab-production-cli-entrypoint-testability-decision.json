@@ -11,7 +11,7 @@
         "--test",
         "scripts/tests/gaia-ab-eval.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "All focused tests pass; the --execute scenario exits from the public CLI without launching a client and exposes a missing-configuration error rather than the obsolete offline-only restriction.",
     "observed": "The focused test exits with code 1 because the public CLI reports that only --dry-run is supported, so the --execute scenario cannot reach its configuration gate.",

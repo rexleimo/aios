@@ -11,7 +11,7 @@
         "scripts/gaia-ab-eval.mjs",
         "--execute"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The public production-oriented entry point recognizes an explicit execute request, then refuses safely only for a missing or invalid configuration, failed local preflight, or an unavailable approved client. It must not launch a client before those checks.",
     "observed": "The existing public CLI exits with code 1 before configuration handling and reports that GAIA A/B evaluation supports only --dry-run until live execution is explicitly authorized.",

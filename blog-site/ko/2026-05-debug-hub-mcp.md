@@ -102,7 +102,7 @@ http://localhost:39200 을 열어 대시보드에서 확인하세요.
 
 ## 더 큰 그림
 
-debug-hub 는 Harness CLI 의 **관측가능성 레이어** 의 일부입니다. 다음과 함께 작동합니다:
+debug-hub 는 AIOS 의 **관측가능성 레이어** 의 일부입니다. 다음과 함께 작동합니다:
 
 - [ContextDB](https://cli.rexai.top/ko/contextdb/) — 세션 간 메모리
 - [Solo Harness](https://cli.rexai.top/ko/solo-harness/) — 자가 진단 가능한 야간 실행
@@ -112,4 +112,4 @@ Agent 가 스스로 디버깅할 수 있으면, 더 오래 실행하고, 더 복
 
 ---
 
-*debug-hub 는 v0.3.0 이며 [Harness CLI](https://cli.rexai.top) 의 일부입니다. 사용해 보고 agent 에게 자기 성찰의 힘을 주세요.*
+*debug-hub 는 v0.3.0 이며 [AIOS](https://cli.rexai.top) 의 일부입니다. 사용해 보고 agent 에게 자기 성찰의 힘을 주세요.*

@@ -62,7 +62,7 @@ media references resolve
 target account matches the selected profile
 ```
 
-하나라도 충족하지 않으면 `blocked`로 멈추고 안전한 다음 동작을 보고합니다. 검사를 단순한 경고로 낮추지 않는 것이 중요합니다. Harness CLI의 최소 올바른 변경 게이트와 같은 원칙입니다.
+하나라도 충족하지 않으면 `blocked`로 멈추고 안전한 다음 동작을 보고합니다. 검사를 단순한 경고로 낮추지 않는 것이 중요합니다. AIOS의 최소 올바른 변경 게이트와 같은 원칙입니다.
 
 ## 4. ContextDB에는 유용한 컨텍스트만 저장한다
 

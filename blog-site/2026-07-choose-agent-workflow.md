@@ -1,11 +1,11 @@
 ---
-title: "Which AI Agent Workflow Should You Choose? A Practical Harness CLI Decision Guide"
+title: "Which AI Agent Workflow Should You Choose? A Practical AIOS Decision Guide"
 description: "Choose noop, direct, guarded, or planned AI agent workflows with a simple decision table, examples, and verification checklist."
 date: 2026-07-14
-tags: ["AI agent workflow", "Harness CLI", "Codex", "Claude Code", "developer tools"]
+tags: ["AI agent workflow", "AIOS", "Codex", "Claude Code", "developer tools"]
 ---
 
-# Which AI Agent Workflow Should You Choose? A Practical Harness CLI Decision Guide
+# Which AI Agent Workflow Should You Choose? A Practical AIOS Decision Guide
 
 > **Quick Answer:** Use `direct` for questions and inspection, `guarded` for one small and clear edit, and `planned` when the work has multiple steps, uncertainty, risk, delegation, or a resume requirement. Use `noop` when there is no actionable task. The route is about the work, not the brand of coding client you use.
 

@@ -1,21 +1,21 @@
 ---
-title: Harness CLI 概要
-description: Harness CLI は codex、claude、gemini、opencode、hermes、grok にプロジェクト記憶、協調、ルーティング、検証を追加します。
+title: AIOS 概要
+description: AIOS は codex、claude、gemini、opencode、hermes、grok にプロジェクト記憶、協調、ルーティング、検証を追加します。
 ---
 
-# Harness CLI (AIOS)
+# AIOS
 
-Harness CLI はローカル優先の agent ワークフローレイヤーです。普段使っている codex、claude、gemini、opencode、hermes、grok（Grok Build）を置き換えず、セッション間のプロジェクト記憶、並列協調、再開可能な実行、検証ゲートを追加します。
+AIOS はローカル優先の agent ワークフローレイヤーです。普段使っている codex、claude、gemini、opencode、hermes、grok（Grok Build）を置き換えず、セッション間のプロジェクト記憶、並列協調、再開可能な実行、検証ゲートを追加します。
 
 [クイックスタート](getting-started.md){ .md-button .md-button--primary }
 [ユースケースを見る](use-cases.md){ .md-button }
 [Workflow Policy を読む](workflow-policy.md){ .md-button }
 [ブログを読む](/blog/ja/){ .md-button }
-[GitHub](https://github.com/rexleimo/harness-cli){ .md-button }
+[GitHub](https://github.com/rexleimo/aios){ .md-button }
 
 ## まず答え
 
-複数のセッションやクライアントでプロジェクトの事実を共有したい場合、独立した作業を複数の agent に分けたい場合、または長い作業を一時停止して後で再開したい場合に Harness CLI が役立ちます。基底の coding client を置き換えるものではなく、すべての履歴を毎回の prompt に自動注入するものでもありません。
+複数のセッションやクライアントでプロジェクトの事実を共有したい場合、独立した作業を複数の agent に分けたい場合、または長い作業を一時停止して後で再開したい場合に AIOS が役立ちます。基底の coding client を置き換えるものではなく、すべての履歴を毎回の prompt に自動注入するものでもありません。
 
 ## コア機能
 

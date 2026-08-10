@@ -21,9 +21,9 @@ THEME_CLASSES = (
 LOCALES = ("en", "zh", "ja", "ko")
 LOCALIZED_COPY = {
     "en": {
-        "hero_badge": "THE HARNESS CLI BLOG",
+        "hero_badge": "THE AIOS BLOG",
         "hero_title": "Notes from the local agent layer",
-        "hero_body": "Deep dives, release notes, and field reports on memory, orchestration, and verification from the team building Harness CLI.",
+        "hero_body": "Deep dives, release notes, and field reports on memory, orchestration, and verification from the team building AIOS.",
         "all_posts": "All posts",
         "all_tag": "All",
         "featured_badge": "FEATURED",
@@ -42,9 +42,9 @@ LOCALIZED_COPY = {
         "updates": "Updates",
     },
     "zh": {
-        "hero_badge": "HARNESS CLI BLOG",
+        "hero_badge": "AIOS BLOG",
         "hero_title": "来自本地 agent layer 的笔记",
-        "hero_body": "围绕记忆系统、编排与验证的深度文章、发布说明与实战记录，全部来自 Harness CLI 一线构建过程。",
+        "hero_body": "围绕记忆系统、编排与验证的深度文章、发布说明与实战记录，全部来自 AIOS 一线构建过程。",
         "all_posts": "全部文章",
         "all_tag": "全部",
         "featured_badge": "精选",
@@ -63,9 +63,9 @@ LOCALIZED_COPY = {
         "updates": "更新",
     },
     "ja": {
-        "hero_badge": "HARNESS CLI BLOG",
+        "hero_badge": "AIOS BLOG",
         "hero_title": "local agent layer からのノート",
-        "hero_body": "メモリ、オーケストレーション、検証に関する深掘り記事とリリースノート、現場レポートを Harness CLI チームから届けます。",
+        "hero_body": "メモリ、オーケストレーション、検証に関する深掘り記事とリリースノート、現場レポートを AIOS チームから届けます。",
         "all_posts": "すべての記事",
         "all_tag": "すべて",
         "featured_badge": "FEATURED",
@@ -84,9 +84,9 @@ LOCALIZED_COPY = {
         "updates": "Updates",
     },
     "ko": {
-        "hero_badge": "HARNESS CLI BLOG",
+        "hero_badge": "AIOS BLOG",
         "hero_title": "local agent layer notes",
-        "hero_body": "Harness CLI 팀이 만드는 메모리, 오케스트레이션, 검증에 관한 심층 글과 릴리스 노트, 현장 기록입니다.",
+        "hero_body": "AIOS 팀이 만드는 메모리, 오케스트레이션, 검증에 관한 심층 글과 릴리스 노트, 현장 기록입니다.",
         "all_posts": "모든 글",
         "all_tag": "전체",
         "featured_badge": "FEATURED",

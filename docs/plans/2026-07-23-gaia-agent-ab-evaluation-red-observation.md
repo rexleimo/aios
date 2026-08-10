@@ -28,7 +28,7 @@ is authorized.
 
 The focused test exits with code 1. Its assertion receives Node's
 `MODULE_NOT_FOUND` error for
-`E:\\coding\\harness-cli\\scripts\\gaia-ab-eval.mjs`, then observes
+`E:\\coding\\aios\\scripts\\gaia-ab-eval.mjs`, then observes
 `1 !== 0` instead of the required successful help command.
 
 ## Failure Classification

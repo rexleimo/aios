@@ -12,7 +12,7 @@
         "browser CDP launch agent only starts Chrome on an explicit request",
         "scripts/tests/aios-components.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The generated plist does not set RunAtLoad or KeepAlive to true, while explicit cdp-start remains the action that kickstarts Chrome.",
     "observed": "The generated plist sets both RunAtLoad and KeepAlive to true.",

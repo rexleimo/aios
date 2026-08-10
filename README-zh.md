@@ -1,22 +1,27 @@
-# Harness CLI (AIOS)
+# AIOS
 
-[![Release](https://img.shields.io/github/v/release/rexleimo/harness-cli?display_name=tag&sort=semver)](https://github.com/rexleimo/harness-cli/releases)
+[![Release](https://img.shields.io/github/v/release/rexleimo/aios?display_name=tag&sort=semver)](https://github.com/rexleimo/aios/releases)
 [![Docs](https://img.shields.io/badge/docs-cli.rexai.top-0ea5e9)](https://cli.rexai.top/zh/)
-[![License](https://img.shields.io/github/license/rexleimo/harness-cli)](https://github.com/rexleimo/harness-cli)
+[![License](https://img.shields.io/github/license/rexleimo/aios)](https://github.com/rexleimo/aios)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933)](https://nodejs.org)
 
-> **本地优先的 Agent 工作流层**，面向 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`（Grok Build）。
+> **本地优先的 Agent Harness**，面向 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`（Grok Build）。
 > 不替换你正在用的编码客户端，只补上：项目记忆、自适应路由、多 Agent 协作、验证门禁。
 
 [文档站](https://cli.rexai.top/zh/) · [快速开始](https://cli.rexai.top/zh/getting-started/) · [工作流策略](https://cli.rexai.top/zh/workflow-policy/) · [博客](https://cli.rexai.top/blog/zh/) · [English](README.md)
 
-![Harness CLI 架构总览](docs-site/assets/visual-architecture-overview.svg)
+![AIOS 架构总览](docs-site/assets/visual-architecture-overview.svg)
 
-## 为什么需要 Harness CLI
+## 为什么需要 AIOS
+
+AIOS 把两个概念合在一起：**Local（本地引擎）** 与 **Harness（编排马甲）**。
+
+- **Local** — 编码引擎（Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok）跑在你的机器上；AIOS 再补上本地项目记忆（ContextDB）、本地 Token 压缩（RTK / Caveman / Headroom）、本地浏览器与隐私守卫。数据不出本机。
+- **Harness** — AIOS 是这些引擎之上的编排层：自适应路由（`direct` / `guarded` / `planned`）、并行 Agent 团队（扇出 / 扇入）、可恢复的长任务循环（`aios harness`）、带契约校验的证据门禁、按节点分配模型档位。这与 Graph Engineering 是同一套构件——节点、边、共享状态、失败路由——只是围绕「运行本地循环的 Agent」来组织。
 
 裸编码 CLI 很擅长改代码，但常见痛点是：
 
-| 裸 CLI 的痛点 | Harness CLI 补上的能力 |
+| 裸 CLI 的痛点 | AIOS 补上的能力 |
 | --- | --- |
 | 换会话就丢上下文 | **ContextDB** 项目记忆（memo / checkpoint / 可搜索包） |
 | 所有任务都像同一个聊天窗 | **Workflow Policy**：按风险选 `direct` / `guarded` / `planned` |
@@ -25,14 +30,14 @@
 | 工具输出把模型上下文淹没 | **RTK / Caveman / Headroom** 本地压缩边界 |
 | “做完了”只是感觉 | **Doctor、测试、隐私脱敏、验证门禁** |
 
-Harness CLI **不会**取代 Codex / Claude Code / Gemini CLI / OpenCode / Hermes / Grok Build，而是作为它们之下的本地工作流层。
+AIOS **不会**取代 Codex / Claude Code / Gemini CLI / OpenCode / Hermes / Grok Build，而是作为它们之下的本地工作流层。
 
 ## 30 秒安装
 
 macOS / Linux：
 
 ```bash
-curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc   # 或 ~/.bashrc
 aios init --all
 aios doctor --native --verbose
@@ -42,7 +47,7 @@ Windows PowerShell：
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 aios init --all
 aios doctor --native --verbose
@@ -62,7 +67,7 @@ node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 你的编码客户端（codex / claude / gemini / opencode / hermes / grok）
         │
         ▼
-  Harness CLI 指引 + Workflow Policy
+  AIOS 指引 + Workflow Policy
         │
         ├── ContextDB    本地项目记忆（按需拉取）
         ├── rex-harness  软件工程控制面（Fact → Capability → Evidence）
@@ -75,7 +80,7 @@ node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 `rex-harness` 是 AIOS 规划运行时的必需内核。Release 安装包已内置固定版本 submodule，**不需要**再装第二个 npm 包，也不需要单独起 rex MCP。源码开发建议：
 
 ```bash
-git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git
+git clone --recurse-submodules https://github.com/rexleimo/aios.git
 ```
 
 若普通 clone 没拉 submodule，`aios init` / `aios setup` 会尝试 `git submodule update --init --recursive -- rex-harness`，失败时给出明确修复提示。
@@ -138,8 +143,8 @@ node scripts/aios.mjs plan auto-gate --task "重构 auth 模块" --dry-run --jso
 ## 开发
 
 ```bash
-git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git
-cd harness-cli
+git clone --recurse-submodules https://github.com/rexleimo/aios.git
+cd aios
 npm run test:scripts
 cd mcp-server && npm run typecheck && npm test && npm run build
 ```

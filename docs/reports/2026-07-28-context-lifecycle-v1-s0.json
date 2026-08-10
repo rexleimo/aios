@@ -544,7 +544,7 @@
               "scripts/tests/canvas-context-scaling.test.mjs",
               "scripts/tests/offload-tool-offload.test.mjs"
             ],
-            "cwd": "E:\\coding\\harness-cli",
+            "cwd": "E:\\coding\\aios",
             "exitCode": 0,
             "stdoutSha256": "7a01051f2d09324976ff757e691df91d12092d474a52075849278281d9c5b366",
             "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -559,7 +559,7 @@
               "scripts/tests/planning-contract.test.mjs",
               "scripts/tests/preflight-contracts.test.mjs"
             ],
-            "cwd": "E:\\coding\\harness-cli",
+            "cwd": "E:\\coding\\aios",
             "exitCode": 0,
             "stdoutSha256": "e98f65d6aa1999305c4dbe758b0e71113fc6f65bc0753e1c0e1323e0c781fe9a",
             "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
@@ -574,7 +574,7 @@
               "--test",
               "tests/contextdb.test.ts"
             ],
-            "cwd": "E:\\coding\\harness-cli\\mcp-server",
+            "cwd": "E:\\coding\\aios\\mcp-server",
             "exitCode": 0,
             "stdoutSha256": "5ecdcf9ba7b510864110ec8d0ea088d10fc7e5b9199142caa9525b08a3b6cbae",
             "stderrSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",

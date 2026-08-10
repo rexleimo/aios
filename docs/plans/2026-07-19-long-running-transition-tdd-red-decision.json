@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/workflows/long-running-delivery.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The public Rex transition API accepts F1's matching receipt and returns continue for F2.",
     "observed": "The initializer test passed, while the transition test observed rex.advanceLongRunningDelivery as undefined.",

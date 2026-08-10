@@ -1,13 +1,13 @@
 ---
-title: "v4.0 自适应工作流策略：Harness CLI 如何选择合适的工程流程"
-description: "用实际例子理解 Harness CLI v4.0 的 noop、direct、guarded、planned 路由、计划持久化和最终验证门禁。"
+title: "v4.0 自适应工作流策略：AIOS 如何选择合适的工程流程"
+description: "用实际例子理解 AIOS v4.0 的 noop、direct、guarded、planned 路由、计划持久化和最终验证门禁。"
 date: 2026-07-14
-tags: ["Harness CLI", "AI Agent 工作流", "工作流策略", "开发效率", "SEO"]
+tags: ["AIOS", "AI Agent 工作流", "工作流策略", "开发效率", "SEO"]
 ---
 
-# v4.0 自适应工作流策略：Harness CLI 如何选择合适的工程流程
+# v4.0 自适应工作流策略：AIOS 如何选择合适的工程流程
 
-> **快速答案：** Harness CLI v4.0 会先判断任务，再决定需要多少流程。问题和只读检查可以走 `noop` 或 `direct`；小而明确的本地修改走 `guarded`；多步骤、风险较高、需要委派或需要恢复的目标走 `planned`。计划状态另行判断为 `none`、`reuse` 或 `create`，因此一句“继续”不会被误判成新任务。
+> **快速答案：** AIOS v4.0 会先判断任务，再决定需要多少流程。问题和只读检查可以走 `noop` 或 `direct`；小而明确的本地修改走 `guarded`；多步骤、风险较高、需要委派或需要恢复的目标走 `planned`。计划状态另行判断为 `none`、`reuse` 或 `create`，因此一句“继续”不会被误判成新任务。
 
 当每个请求都触发同样的工程仪式时，AI 编程工具很快就会变得笨重。一行查询不应该生成工作项，而涉及文档、测试和交付证据的变更也不应该只依赖上下文记忆。v4.0 把这条边界变成了可解释、可检查的策略。
 

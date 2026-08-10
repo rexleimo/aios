@@ -10,7 +10,7 @@
         "--test",
         "scripts/tests/gaia-ab-live-runner.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "The runner produces one redacted spend_limit_breach artifact, returns a visible global terminal state with zero remaining budget, and makes no second client launch.",
     "observed": "The public test observes 11 client launches instead of 1, so the generic client-error path continues later jobs after the reported spend breach.",

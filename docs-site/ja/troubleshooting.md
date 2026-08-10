@@ -1,5 +1,5 @@
 ---
-title: Harness CLI トラブルシューティング
+title: AIOS トラブルシューティング
 description: install、ContextDB、client sync、workflow、Team、browser、token tool、privacy の問題を evidence で診断します。
 ---
 

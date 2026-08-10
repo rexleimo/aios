@@ -1,13 +1,13 @@
 ---
 title: "Token Intelligence Architecture: ContextDB, RTK, Caveman, and Headroom MCP"
-description: "A current guide to Harness CLI token intelligence: pull-based ContextDB context, local RTK/Caveman compression, and explicit Headroom MCP retrieval."
+description: "A current guide to AIOS token intelligence: pull-based ContextDB context, local RTK/Caveman compression, and explicit Headroom MCP retrieval."
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---
 
 # Token Intelligence Architecture: ContextDB, RTK, Caveman, and Headroom MCP
 
-> **Quick Answer:** Harness CLI treats token efficiency as a layered concern. ContextDB stores and retrieves bounded project context, RTK and Caveman provide local command/output compression, and Headroom MCP offers explicit compress/retrieve tools when a later step needs them. These layers are complementary; Headroom is not transparent interception of every model request.
+> **Quick Answer:** AIOS treats token efficiency as a layered concern. ContextDB stores and retrieves bounded project context, RTK and Caveman provide local command/output compression, and Headroom MCP offers explicit compress/retrieve tools when a later step needs them. These layers are complementary; Headroom is not transparent interception of every model request.
 
 Long agent sessions become unreliable when logs, browser boilerplate, and repeated history crowd out the decision the model actually needs. The fix is not one universal compression switch. It is a clear contract for what gets stored, what gets compressed, and what gets retrieved.
 

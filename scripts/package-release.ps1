@@ -114,29 +114,29 @@ try {
   Write-Host "+ build debug-hub"
   Invoke-Checked -Command "npm" -Arguments @("--prefix", $debugHubRoot, "run", "build")
 
-  $tarGz = Join-Path $Out "harness-cli.tar.gz"
-  $zip = Join-Path $Out "harness-cli.zip"
+  $tarGz = Join-Path $Out "aios.tar.gz"
+  $zip = Join-Path $Out "aios.zip"
 
   $tarPath = Join-Path $tmp "rex-cli.tar"
   $extractDir = Join-Path $tmp "extract"
   New-Item -Path $extractDir -ItemType Directory -Force | Out-Null
 
   Write-Host "+ git archive (tar) -> $tarPath"
-  Invoke-Checked -Command "git" -Arguments (@("-C", $RootDir, "archive", "--format=tar", "--prefix=harness-cli/", "-o", $tarPath, "HEAD") + $archivePaths)
+  Invoke-Checked -Command "git" -Arguments (@("-C", $RootDir, "archive", "--format=tar", "--prefix=aios/", "-o", $tarPath, "HEAD") + $archivePaths)
 
   Write-Host "+ extract tar -> $extractDir"
   Invoke-Checked -Command $TarCommand -Arguments @("-xf", $tarPath, "-C", $extractDir)
 
   # 中文注释：git archive 不会展开 gitlink，单独物化 submodule 的固定提交。
   # Materialize the pinned submodule because git archive stores only a gitlink.
-  $rexArchiveRoot = Join-Path $extractDir "harness-cli/rex-harness"
+  $rexArchiveRoot = Join-Path $extractDir "aios/rex-harness"
   $rexGitDir = Join-Path $rexHarnessRoot ".git"
   if (Test-Path -LiteralPath $rexGitDir) {
     if (Test-Path -LiteralPath $rexArchiveRoot -PathType Leaf) {
       Remove-Item -LiteralPath $rexArchiveRoot -Force
     }
     $rexTarPath = Join-Path $tmp "rex-harness.tar"
-    Invoke-Checked -Command "git" -Arguments @("-C", $rexHarnessRoot, "archive", "--format=tar", "--prefix=harness-cli/rex-harness/", "-o", $rexTarPath, "HEAD")
+    Invoke-Checked -Command "git" -Arguments @("-C", $rexHarnessRoot, "archive", "--format=tar", "--prefix=aios/rex-harness/", "-o", $rexTarPath, "HEAD")
     Invoke-Checked -Command $TarCommand -Arguments @("-xf", $rexTarPath, "-C", $extractDir)
   } else {
     New-Item -Path $rexArchiveRoot -ItemType Directory -Force | Out-Null
@@ -144,24 +144,24 @@ try {
       Where-Object { $_.Name -notin @('.git', 'node_modules', '.rex-harness') } |
       ForEach-Object { Copy-Item -LiteralPath $_.FullName -Destination $rexArchiveRoot -Recurse -Force }
   }
-  if (-not (Test-Path -LiteralPath (Join-Path $extractDir "harness-cli/rex-harness/src/index.mjs"))) {
+  if (-not (Test-Path -LiteralPath (Join-Path $extractDir "aios/rex-harness/src/index.mjs"))) {
     throw "Release archive did not materialize rex-harness/src/index.mjs"
   }
 
   # mcp-server/dist is generated output and must not be shipped in releases.
-  $mcpDistArchive = Join-Path $extractDir "harness-cli/mcp-server/dist"
+  $mcpDistArchive = Join-Path $extractDir "aios/mcp-server/dist"
   if (Test-Path -LiteralPath $mcpDistArchive) {
     Remove-Item -LiteralPath $mcpDistArchive -Recurse -Force
   }
 
   # Generated client projections and retired workflow code are materialized at install time.
-  $legacySuperpowersArchive = Join-Path $extractDir "harness-cli/scripts/lib/components/superpowers"
+  $legacySuperpowersArchive = Join-Path $extractDir "aios/scripts/lib/components/superpowers"
   if (Test-Path -LiteralPath $legacySuperpowersArchive) {
     Remove-Item -LiteralPath $legacySuperpowersArchive -Recurse -Force
   }
 
   # git archive omits ignored build output; materialize the bundled debug-hub dist.
-  $debugArchiveRoot = Join-Path $extractDir "harness-cli/packages/debug-hub"
+  $debugArchiveRoot = Join-Path $extractDir "aios/packages/debug-hub"
   $debugDist = Join-Path $debugHubRoot "dist"
   if (-not (Test-Path -LiteralPath $debugDist)) {
     throw "debug-hub build did not produce: $debugDist"
@@ -175,7 +175,7 @@ try {
   }
 
   Write-Host "+ tar.gz -> $tarGz"
-  Invoke-Checked -Command $TarCommand -Arguments @("-czf", $tarGz, "-C", $extractDir, "harness-cli")
+  Invoke-Checked -Command $TarCommand -Arguments @("-czf", $tarGz, "-C", $extractDir, "aios")
 
   Write-Host "+ zip -> $zip"
   # 中文注释：Windows 自带 bsdtar 不保证支持 ZIP 输出，使用 .NET 从物化目录打包，保留隐藏客户端目录。
@@ -192,7 +192,7 @@ try {
 
   $zipExtract = Join-Path $tmp "zip-check"
   Expand-Archive -LiteralPath $zip -DestinationPath $zipExtract -Force
-  if (-not (Test-Path -LiteralPath (Join-Path $zipExtract "harness-cli/rex-harness/src/index.mjs"))) {
+  if (-not (Test-Path -LiteralPath (Join-Path $zipExtract "aios/rex-harness/src/index.mjs"))) {
     throw "Release ZIP did not materialize rex-harness/src/index.mjs"
   }
 

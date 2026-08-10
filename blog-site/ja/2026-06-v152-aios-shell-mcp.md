@@ -1,6 +1,6 @@
 ---
 title: "v1.52.0: Deterministic Shell Output Compression via MCP"
-description: "Harness CLI v1.52.0 introduces aios_shell for deterministic shell output compression across AIOS clients."
+description: "AIOS v1.52.0 introduces aios_shell for deterministic shell output compression across AIOS clients."
 date: 2026-06-11
 tags: ["release", "token-compression", "shell", "MCP", "multi-client", "shim"]
 ---

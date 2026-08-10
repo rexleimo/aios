@@ -1,13 +1,13 @@
 ---
 title: 工作流策略
-description: 了解 Harness CLI 如何用自适应工作流策略选择 direct、guarded 或 planned 路由。
+description: 了解 AIOS 如何用自适应工作流策略选择 direct、guarded 或 planned 路由。
 ---
 
 # 工作流策略
 
 ## 快速答案
 
-Harness CLI 使用基于风险的工作流策略。在 adaptive 模式下，只读问题保持 direct，小型代码修改进入 guarded，多步骤或明确指定路由的工作进入持久化 plan。strict 模式会让实质性工作进入 planned，但不会把空消息或只读问题变成 plan。策略只决定当前 turn 应如何处理，并不证明实现已经完成。
+AIOS 使用基于风险的工作流策略。在 adaptive 模式下，只读问题保持 direct，小型代码修改进入 guarded，多步骤或明确指定路由的工作进入持久化 plan。strict 模式会让实质性工作进入 planned，但不会把空消息或只读问题变成 plan。策略只决定当前 turn 应如何处理，并不证明实现已经完成。
 
 ## 现在就做
 

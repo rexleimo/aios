@@ -5,7 +5,7 @@ description: 共有 ContextDB で Claude 分析、Codex 実装、Gemini レビ�
 
 # ケース：クロス CLI handoff
 
-[GitHub で Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
+[GitHub で Star](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
 [ワークフロー比較](cli-comparison.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="compare_workflows" }
 [ケース集](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="case_library" }
 
@@ -16,9 +16,9 @@ description: 共有 ContextDB で Claude 分析、Codex 実装、Gemini レビ�
 ## 実行
 
 ```bash
-scripts/ctx-agent.sh --agent claude-code --project Harness CLI --prompt "障碍を分析し、主な修正案を提案する。"
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "最新の checkpoint から主な修正を実装する。"
-scripts/ctx-agent.sh --agent gemini-cli --project Harness CLI --prompt "回帰リスクと欠落しているテストをレビューする。"
+scripts/ctx-agent.sh --agent claude-code --project AIOS --prompt "障碍を分析し、主な修正案を提案する。"
+scripts/ctx-agent.sh --agent codex-cli --project AIOS --prompt "最新の checkpoint から主な修正を実装する。"
+scripts/ctx-agent.sh --agent gemini-cli --project AIOS --prompt "回帰リスクと欠落しているテストをレビューする。"
 ```
 
 ## 証拠
@@ -33,7 +33,7 @@ ls .aios/context-db/sessions
 
 ```bash
 cd mcp-server
-npm run -s contextdb -- timeline --project Harness CLI --limit 12
+npm run -s contextdb -- timeline --project AIOS --limit 12
 ```
 
 3. 最新 session のエクスポート済み context packet が存在：
@@ -45,6 +45,6 @@ ls .aios/context-db/exports | tail -n 5
 ## なぜ重要か
 
 共有レイヤーなしでは、クロース agent handoff はしばしばコピー/ペーストコンテキストに退化します。
-Harness CLI では、すべての agent が同じプロジェクトコンテキストパスと checkpoint ストリームを読み書きします。
+AIOS では、すべての agent が同じプロジェクトコンテキストパスと checkpoint ストリームを読み書きします。
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }

@@ -5,7 +5,7 @@ description: 使用共享 ContextDB 实现 Claude 分析、Codex 实现和 Gemin
 
 # 案例：跨 CLI 接力
 
-[在 GitHub 上 Star](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
+[在 GitHub 上 Star](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_hero_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="github_star" }
 [对比工作流](cli-comparison.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="compare_workflows" }
 [案例集](case-library.md){ .md-button data-rex-track="cta_click" data-rex-location="case_handoff_hero" data-rex-target="case_library" }
 
@@ -16,9 +16,9 @@ description: 使用共享 ContextDB 实现 Claude 分析、Codex 实现和 Gemin
 ## 运行
 
 ```bash
-scripts/ctx-agent.sh --agent claude-code --project Harness CLI --prompt "分析障碍并提出首要修复方案。"
-scripts/ctx-agent.sh --agent codex-cli --project Harness CLI --prompt "根据最新 checkpoint 实现首要修复。"
-scripts/ctx-agent.sh --agent gemini-cli --project Harness CLI --prompt "审查回归风险和缺失的测试。"
+scripts/ctx-agent.sh --agent claude-code --project AIOS --prompt "分析障碍并提出首要修复方案。"
+scripts/ctx-agent.sh --agent codex-cli --project AIOS --prompt "根据最新 checkpoint 实现首要修复。"
+scripts/ctx-agent.sh --agent gemini-cli --project AIOS --prompt "审查回归风险和缺失的测试。"
 ```
 
 ## 证据
@@ -33,7 +33,7 @@ ls .aios/context-db/sessions
 
 ```bash
 cd mcp-server
-npm run -s contextdb -- timeline --project Harness CLI --limit 12
+npm run -s contextdb -- timeline --project AIOS --limit 12
 ```
 
 3. 最新 session 存在导出的 context packet：
@@ -45,6 +45,6 @@ ls .aios/context-db/exports | tail -n 5
 ## 为什么重要
 
 没有共享层，跨 agent 接力往往会退化为复制粘贴上下文。
-有了 Harness CLI，所有 agent 都读写同一个项目上下文路径和 checkpoint 流。
+有了 AIOS，所有 agent 都读写同一个项目上下文路径和 checkpoint 流。
 
-[Star on GitHub](https://github.com/rexleimo/harness-cli?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }
+[Star on GitHub](https://github.com/rexleimo/aios?utm_source=cli_rexai_top&utm_medium=docs&utm_campaign=english_growth&utm_content=case_handoff_footer_star){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="case_handoff_footer" data-rex-target="github_star" }

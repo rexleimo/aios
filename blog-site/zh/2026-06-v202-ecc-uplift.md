@@ -1,6 +1,6 @@
 ---
 title: "v2.0.2：更安全的技能健康记录与更干净的 Crush 配置"
-description: "Harness CLI v2.0.2 强化技能健康遥测，修复新增 CLI 入口的 help 路由，并从仓库中移除 tracked Crush 配置文件。"
+description: "AIOS v2.0.2 强化技能健康遥测，修复新增 CLI 入口的 help 路由，并从仓库中移除 tracked Crush 配置文件。"
 date: 2026-06-15
 tags: ["release", "CLI", "skills", "Crush", "configuration"]
 ---

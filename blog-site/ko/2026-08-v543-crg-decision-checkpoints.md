@@ -2,7 +2,7 @@
 title: "v5.4.3: CRG 결정 체크포인트, Worker Journal 이름 변경, 멱등한 aios init"
 description: "v5.4.3은 워크플로 레이어에 code-review-graph 결정 체크포인트를 연결하고(편집 전 영향 범위 확인, 코드 변경 전 테스트 존재 확인, 각 단계 후 실제 변경 검증), solo harness 저널 디렉터리를 worker-journal로 이름 변경(기존 디렉터리는 자동 마이그레이션)하며, aios init에 --yes/--retry/--force를 추가해 멱등화했습니다."
 date: 2026-08-06
-tags: ["Harness CLI", "CRG", "code-review-graph", "워크플로", "aios init", "릴리스"]
+tags: ["AIOS", "CRG", "code-review-graph", "워크플로", "aios init", "릴리스"]
 ---
 
 # v5.4.3: CRG 결정 체크포인트, Worker Journal 이름 변경, 멱등한 `aios init`

@@ -1,5 +1,5 @@
 ---
-title: Harness CLI 架构
+title: AIOS 架构
 description: 了解客户端指引、ContextDB、工作流策略、Team、Harness、browser-use CDP 和 RL 研究层如何连接。
 ---
 
@@ -7,7 +7,7 @@ description: 了解客户端指引、ContextDB、工作流策略、Team、Harnes
 
 ## 一句话回答
 
-Harness CLI 是围绕现有编码客户端建立的本地边界集合。客户端指引确定项目，ContextDB 保存和召回项目证据，Workflow Policy 选择最小路径，Team、Solo Harness 或 Orchestrate 在任务需要时执行工作。browser-use CDP 是默认浏览器路径；旧版 Playwright MCP 保留为兼容路径。
+AIOS 是围绕现有编码客户端建立的本地边界集合。客户端指引确定项目，ContextDB 保存和召回项目证据，Workflow Policy 选择最小路径，Team、Solo Harness 或 Orchestrate 在任务需要时执行工作。browser-use CDP 是默认浏览器路径；旧版 Playwright MCP 保留为兼容路径。
 
 ## 组件
 
@@ -98,7 +98,7 @@ aios doctor --native --verbose
 
 ## RL 研究层 {#rl-training-layer-aios}
 
-AIOS 还包含隔离的多环境 RL 研究表面，普通 Harness CLI 安装或文档工作不需要它。scripts/lib/rl-core/ 负责 campaign 状态、checkpoint 血统、比较结果、replay lane、teacher 信号和 trainer 入口；适配器覆盖 shell、browser、orchestrator 和 mixed 实验。
+AIOS 还包含隔离的多环境 RL 研究表面，普通 AIOS 安装或文档工作不需要它。scripts/lib/rl-core/ 负责 campaign 状态、checkpoint 血统、比较结果、replay lane、teacher 信号和 trainer 入口；适配器覆盖 shell、browser、orchestrator 和 mixed 实验。
 
 ~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20

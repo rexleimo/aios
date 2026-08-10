@@ -12,7 +12,7 @@
         "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs",
         "scripts/tests/memo-archive-index.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "CLI task declarations persist and deliver non-empty context through default orchestration; the earliest dependency-ready pending task is selected; a same-path proposal rewrite rebuilds the archive index before filtering memo events.",
     "observed": "10/13 tests pass and three behavior tests fail. plan task emits usage rather than declaration JSON, a multi-task plan reports not_applicable instead of observed, and a rewritten proposal remains hidden by the stale archive index.",

@@ -21,7 +21,7 @@ Today, no fluff. I'll tell you straight.
 | Complex code refactoring | Claude Code | Strongest context understanding |
 | Browser automation | Codex | Out of the box, stable |
 | Quick research | Gemini | Deep Google search integration |
-| **All of the above** | **Harness CLI** | Cross-tool collaboration, seamless switching |
+| **All of the above** | **AIOS** | Cross-tool collaboration, seamless switching |
 
 ---
 
@@ -113,7 +113,7 @@ Long tasks that get interrupted often fail to resume cleanly.
 
 ## 04. Is There a Better Way?
 
-Yes. Harness CLI.
+Yes. AIOS.
 
 One tool to make them all work together — without losing context when you switch.
 
@@ -128,7 +128,7 @@ Website: [rexai.top](https://rexai.top)
 | Core code writing | Claude Code |
 | Browser automation | Codex |
 | Research | Gemini |
-| Seamless switching | Harness CLI |
+| Seamless switching | AIOS |
 
 Tools are a means, not an end.
 

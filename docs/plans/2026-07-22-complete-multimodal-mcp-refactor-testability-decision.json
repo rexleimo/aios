@@ -12,7 +12,7 @@
         "scripts/tests/aios-components.test.mjs",
         "scripts/tests/interception-cli.test.mjs"
       ],
-      "cwd": "E:\\coding\\harness-cli"
+      "cwd": "E:\\coding\\aios"
     },
     "expected": "Binary data is absent from proxy metadata, generated browser MCP entries and snippets are direct, and doctor reports direct browser delivery as healthy.",
     "observed": "The focused tests exited with status 1: audio/resource/unknown payloads remain in metadata, browser configuration still uses aios-mcp-proxy, and doctor has no direct-delivery status.",

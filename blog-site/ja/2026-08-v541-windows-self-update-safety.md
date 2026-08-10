@@ -2,19 +2,19 @@
 title: "v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正"
 description: "v5.4.1 は Windows 限定の自己更新失敗を修正しました。インストールツリー内から「aios update」を実行すると、インストーラーが削除すべきディレクトリがロックされ、新バージョンが静かにネストされ、後続の更新が MODULE_NOT_FOUND でクラッシュしていました。根本原因と3層の修正を説明します。"
 date: 2026-08-02
-tags: ["Harness CLI", "自己更新", "Windows", "インストーラー", "リリース", "バグ修正"]
+tags: ["AIOS", "自己更新", "Windows", "インストーラー", "リリース", "バグ修正"]
 ---
 
 # v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正
 
-> **クイックアンサー：** v5.4.1 は Windows 限定の自己更新失敗を修正しました。インストールツリー内から `aios update` を実行すると、プロセスの作業ディレクトリがインストーラーが削除すべきディレクトリを固定し、Windows は cwd に保持されたディレクトリを削除できないため、削除が静かに失敗し、新バージョンが `<install>/harness-cli/` にネストされ、後続の更新が `MODULE_NOT_FOUND` でクラッシュしていました。修正は、作業ディレクトリをインストールツリーの外へ移動し、インストーラーが旧ディレクトリの削除を検証し（ネストせず明示的に失敗）、再実行時に明確なエラーを出すという3層です。
+> **クイックアンサー：** v5.4.1 は Windows 限定の自己更新失敗を修正しました。インストールツリー内から `aios update` を実行すると、プロセスの作業ディレクトリがインストーラーが削除すべきディレクトリを固定し、Windows は cwd に保持されたディレクトリを削除できないため、削除が静かに失敗し、新バージョンが `<install>/aios/` にネストされ、後続の更新が `MODULE_NOT_FOUND` でクラッシュしていました。修正は、作業ディレクトリをインストールツリーの外へ移動し、インストーラーが旧ディレクトリの削除を検証し（ネストせず明示的に失敗）、再実行時に明確なエラーを出すという3層です。
 
 ## バグ：Windows で自己更新がインストールを壊す可能性
 
-リリースインストール（git ワークツリーなし）の `aios update` は、リリースインストーラーをその場で再実行します。Windows では、**実行中プロセスの cwd であるディレクトリは削除できません**。`~/.rexcil/harness-cli` の中から update を実行すると——最も自然な操作ですが——プロセス cwd がインストールツリーを固定します：
+リリースインストール（git ワークツリーなし）の `aios update` は、リリースインストーラーをその場で再実行します。Windows では、**実行中プロセスの cwd であるディレクトリは削除できません**。`~/.rexcil/aios` の中から update を実行すると——最も自然な操作ですが——プロセス cwd がインストールツリーを固定します：
 
 1. インストーラーの削除ステップが静かに失敗（`-ErrorAction SilentlyContinue` がエラーを飲み込む）。
-2. `Move-Item` がターゲットディレクトリの存在を確認し、新バージョンを `<install>/harness-cli/` にネスト。
+2. `Move-Item` がターゲットディレクトリの存在を確認し、新バージョンを `<install>/aios/` にネスト。
 3. 更新後の再実行が `scripts/aios.mjs` を見つけられず、素の `MODULE_NOT_FOUND` でクラッシュし、半分置き換えられたインストールが残る。
 
 これは「ツールが壊れた」ように見えて、実際は「自分が立っているディレクトリは削除できない」という Windows API のルール1本によるバグでした。
@@ -29,8 +29,8 @@ tags: ["Harness CLI", "自己更新", "Windows", "インストーラー", "リ�
 
 ## あなたがすべきこと
 
-- 5.4.0 以前で `aios update` 後に `MODULE_NOT_FOUND` を見た場合：一度インストーラーを再実行してください（`irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex`）。以後の `aios update` は安全です。
-- 失敗した更新の残骸として `~/.rexcil/harness-cli/harness-cli/` に奇妙なネストがある場合：削除（または再インストール）してください。
+- 5.4.0 以前で `aios update` 後に `MODULE_NOT_FOUND` を見た場合：一度インストーラーを再実行してください（`irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex`）。以後の `aios update` は安全です。
+- 失敗した更新の残骸として `~/.rexcil/aios/aios/` に奇妙なネストがある場合：削除（または再インストール）してください。
 
 ## FAQ
 

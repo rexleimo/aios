@@ -11,7 +11,7 @@
         "scripts/tests/aios-lifecycle-plan.test.mjs",
         "scripts/tests/rex-workflow-surface-reconciliation.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The update lifecycle forwards the explicit adoption option, while the reconciliation suite preserves unproven links by default and removes only exact adopted legacy Superpowers projections in isolated homes.",
     "observed": "The focused public test command completed with exit code 0; its Rex receipt records the exact command, working directory, and output hashes.",

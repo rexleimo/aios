@@ -62,7 +62,7 @@ media references resolve
 target account matches the selected profile
 ```
 
-条件を 1 つでも満たさなければ `blocked` として停止し、安全な次の操作を報告します。チェックを警告だけに下げないことが重要です。これは Harness CLI の最小正解変更ゲートと同じ考え方です。
+条件を 1 つでも満たさなければ `blocked` として停止し、安全な次の操作を報告します。チェックを警告だけに下げないことが重要です。これは AIOS の最小正解変更ゲートと同じ考え方です。
 
 ## 4. ContextDB には役立つコンテキストだけを保存する
 

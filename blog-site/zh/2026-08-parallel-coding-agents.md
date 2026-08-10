@@ -37,7 +37,7 @@ tags: ["并行 coding agent", "git worktree", "并发", "Agent Team", "状态隔
 
 ### 1. 事务性状态写入
 
-状态更新必须原子且崩溃安全。如果 agent 写入中途崩溃，下一次运行要么回滚前滚，要么失败关闭——绝不信任半写的投影。Harness CLI v5.4.0 让激活写入事务化（写前事务、重启自动前滚、读侧一致性校验，不一致时 `stale-activation-projection` 失败）。
+状态更新必须原子且崩溃安全。如果 agent 写入中途崩溃，下一次运行要么回滚前滚，要么失败关闭——绝不信任半写的投影。AIOS v5.4.0 让激活写入事务化（写前事务、重启自动前滚、读侧一致性校验，不一致时 `stale-activation-projection` 失败）。
 
 ### 2. 共享 token 上的真锁
 
@@ -45,7 +45,7 @@ tags: ["并行 coding agent", "git worktree", "并发", "Agent Team", "状态隔
 
 ### 3. 显式协调，而不是隐式信任
 
-并行需要协调层：带明确归属的独立工作包、监控（谁卡住了？）、安全恢复（worker 死了怎么办？）。Harness CLI 的 Agent Team 路由把工作拆成带验收标准的独立包并用 HUD 实时监控；Solo Harness 为单个长目标提供带 journal 和 stop/resume 的 worktree 隔离——两者是不同任务的不同工具。
+并行需要协调层：带明确归属的独立工作包、监控（谁卡住了？）、安全恢复（worker 死了怎么办？）。AIOS 的 Agent Team 路由把工作拆成带验收标准的独立包并用 HUD 实时监控；Solo Harness 为单个长目标提供带 journal 和 stop/resume 的 worktree 隔离——两者是不同任务的不同工具。
 
 ## 经验法则
 

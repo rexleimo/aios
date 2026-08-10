@@ -699,7 +699,7 @@ test('docs shell partials expose the Pencil application layout contract', () => 
   const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
   for (const marker of [
     'rex-doc-sidebar',
-    'HARNESS CLI',
+    'AIOS',
     'docs-sidebar-links.html',
     'Local Machine',
     'aios v',

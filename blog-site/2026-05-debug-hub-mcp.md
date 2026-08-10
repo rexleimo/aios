@@ -102,7 +102,7 @@ Open http://localhost:39200 to see it in the dashboard.
 
 ## The Bigger Picture
 
-debug-hub is part of Harness CLI's **observability layer**. It works alongside:
+debug-hub is part of AIOS's **observability layer**. It works alongside:
 
 - [ContextDB](https://cli.rexai.top/contextdb/) — for memory across sessions
 - [Solo Harness](https://cli.rexai.top/solo-harness/) — for overnight runs that can self-diagnose
@@ -112,4 +112,4 @@ When your agents can debug themselves, you can trust them to run longer, handle 
 
 ---
 
-*debug-hub is at v0.3.0 and is part of [Harness CLI](https://cli.rexai.top). Try it and give your agents the power of self-reflection.*
+*debug-hub is at v0.3.0 and is part of [AIOS](https://cli.rexai.top). Try it and give your agents the power of self-reflection.*

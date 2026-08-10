@@ -203,12 +203,12 @@ function makeError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
 }
 
-/* 中文注释：resolve AIOS root — 查找 harness-cli 安装路径 */
+/* 中文注释：resolve AIOS root — 查找 aios 安装路径 */
 function resolveAiosRoot() {
   /* 从环境变量或脚本自身路径推断 */
   if (process.env.AIOS_ROOT && existsSync(process.env.AIOS_ROOT)) return process.env.AIOS_ROOT;
   const scriptDir = path.dirname(new URL(import.meta.url).pathname.replace(/^file:\/\//, ''));
-  /* scripts/aios-mcp-server.mjs 的上级目录就是 harness-cli root */
+  /* scripts/aios-mcp-server.mjs 的上级目录就是 aios root */
   const candidate = path.resolve(scriptDir, '..');
   if (existsSync(path.join(candidate, 'scripts', 'aios.mjs'))) return candidate;
   return process.cwd();

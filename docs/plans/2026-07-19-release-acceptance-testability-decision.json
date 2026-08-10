@@ -12,7 +12,7 @@
         "scripts/tests/rex-tdd-training-evidence.test.mjs",
         "scripts/tests/rex-workflow-training-evidence.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "The release test contract is hermetic: temporary fixtures validate parsers, while missing real evidence remains blocked.",
     "observed": "The command exited 1: the agent test supplied v1 evidence rejected by the v2 validator, and 16 assertions read missing ignored historical .skillopt artifacts.",

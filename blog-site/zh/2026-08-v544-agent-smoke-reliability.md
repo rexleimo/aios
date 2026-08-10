@@ -2,7 +2,7 @@
 title: "v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级"
 description: "v5.4.4 修复了 Agent 卡在'command 无效 / workflow 卡死'状态的问题：live smoke 现在兼容 Codex 等输出契约客户端，硬编码的 30 秒探测超时改为可配置（默认 60 秒），探测遇到超时会按 2x/4x 自动升级重试，不再一次超时就把 Agent 永久判死。"
 date: 2026-08-06
-tags: ["Harness CLI", "agents", "smoke", "timeout", "reliability", "release"]
+tags: ["AIOS", "agents", "smoke", "timeout", "reliability", "release"]
 ---
 
 # v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级

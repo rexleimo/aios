@@ -1,9 +1,9 @@
-site_name: Harness CLI Blog
+site_name: AIOS Blog
 site_url: https://cli.rexai.top/blog/
 site_description: Practical engineering and growth guides for AI agent workflows, ContextDB memory, reliable harness runs, multi-client operations, and SEO-ready documentation.
 site_author: RexAI
-repo_url: https://github.com/rexleimo/harness-cli
-repo_name: rexleimo/harness-cli
+repo_url: https://github.com/rexleimo/aios
+repo_name: rexleimo/aios
 
 docs_dir: blog-site
 site_dir: site/blog
@@ -49,12 +49,12 @@ plugins:
           name: English
           default: true
           build: true
-          site_name: Harness CLI Blog
+          site_name: AIOS Blog
           site_description: Practical engineering and growth guides for AI agent workflows, ContextDB memory, reliable harness runs, multi-client operations, and SEO-ready documentation.
         - locale: zh
           name: 简体中文
           build: true
-          site_name: Harness CLI 博客
+          site_name: AIOS 博客
           site_description: 面向 AI Agent 工作流、ContextDB 记忆、可靠 harness 运行、多客户端协作和可发现文档的工程与增长博客。
           nav_translations:
             Docs Home: 文档首页
@@ -63,7 +63,7 @@ plugins:
         - locale: ja
           name: 日本語
           build: true
-          site_name: Harness CLI ブログ
+          site_name: AIOS ブログ
           site_description: AI エージェントワークフロー、ContextDB、信頼できる harness 実行、複数クライアント運用向けの技術・成長ブログ。
           nav_translations:
             Docs Home: ドキュメントホーム
@@ -72,7 +72,7 @@ plugins:
         - locale: ko
           name: 한국어
           build: true
-          site_name: Harness CLI 블로그
+          site_name: AIOS 블로그
           site_description: AI 에이전트 워크플로, ContextDB, 신뢰할 수 있는 harness 실행, 멀티 클라이언트 운영을 다루는 엔지니어링/성장 블로그.
           nav_translations:
             Docs Home: 문서 홈

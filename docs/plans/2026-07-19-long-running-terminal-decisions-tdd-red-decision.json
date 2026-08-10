@@ -10,7 +10,7 @@
         "--test",
         "rex-harness/tests/workflows/long-running-delivery.test.mjs"
       ],
-      "cwd": "/Users/rex/codes/harness-cli"
+      "cwd": "/Users/rex/codes/aios"
     },
     "expected": "Rex returns retry, blocked, human-gate, or completed decisions from the current feature evidence without a terminal next feature.",
     "observed": "Existing initialization, F1-to-F2, and final completion tests pass; matching F1 nonzero evidence throws a zero-exit error and missing evidence throws a TypeError instead of returning the required decisions.",

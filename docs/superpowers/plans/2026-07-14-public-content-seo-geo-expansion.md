@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Rebuild the public docs and blog content system around the current Harness CLI implementation so users can discover, understand, install, and share the product without encountering stale claims or broken localized links.
+**Goal:** Rebuild the public docs and blog content system around the current AIOS implementation so users can discover, understand, install, and share the product without encountering stale claims or broken localized links.
 
 **Architecture:** `docs-site/` remains the authoritative product documentation source and `blog-site/` remains the public storytelling/tutorial source. Existing Markdown front matter, MkDocs i18n, the blog content hook, and the override templates stay in place; the work adds a Workflow Policy page, aligns P0/P1 pages to current runtime behavior, exposes answer-first content, and uses site-sync/build checks as the publishing gate.
 
@@ -177,7 +177,7 @@
 
 - [ ] **Step 2: Rewrite the English and Chinese home pages around one primary intent.**
 
-  Keep the accepted visual structure, but make the visible copy answer “What is Harness CLI?”, link the first CTA to `/getting-started/`, link the second CTA to `/use-cases/`, add a visible Blog link, and remove both `10x faster` labels. Use evidence-based phrases such as “cross-session memory”, “parallel agent collaboration”, “resumable runs”, and “verification gates”.
+  Keep the accepted visual structure, but make the visible copy answer “What is AIOS?”, link the first CTA to `/getting-started/`, link the second CTA to `/use-cases/`, add a visible Blog link, and remove both `10x faster` labels. Use evidence-based phrases such as “cross-session memory”, “parallel agent collaboration”, “resumable runs”, and “verification gates”.
 
 - [ ] **Step 3: Synchronize the Japanese and Korean home pages and onboarding entry points.**
 
@@ -471,7 +471,7 @@
 
 - [ ] **Step 3: Write the Raw CLI to Reliable Workflow tutorial.**
 
-  Show a realistic progression from one-off CLI use to ContextDB memory, unified search, verification, and resumable execution. Avoid claiming that Harness CLI replaces the underlying coding client.
+  Show a realistic progression from one-off CLI use to ContextDB memory, unified search, verification, and resumable execution. Avoid claiming that AIOS replaces the underlying coding client.
 
 - [ ] **Step 4: Add the missing v3.2 and v1.40 localized posts.**
 

@@ -78,7 +78,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ### Fixed
 
-- `aios update` runtime self-update is now safe on Windows release installs. Previously, running update from inside the install tree left the process cwd in the directory that the installer needs to delete; Windows cannot delete a cwd-held directory, so the remove step failed silently and the new version ended up nested at `<install>/harness-cli/`, breaking the post-update re-exec with `MODULE_NOT_FOUND`. The updater now moves the working directory outside the install tree before running the installer, the installer verifies the old directory was actually removed (failing loudly instead of nesting), and the re-exec checks its entry point and emits a clear remediation message.
+- `aios update` runtime self-update is now safe on Windows release installs. Previously, running update from inside the install tree left the process cwd in the directory that the installer needs to delete; Windows cannot delete a cwd-held directory, so the remove step failed silently and the new version ended up nested at `<install>/aios/`, breaking the post-update re-exec with `MODULE_NOT_FOUND`. The updater now moves the working directory outside the install tree before running the installer, the installer verifies the old directory was actually removed (failing loudly instead of nesting), and the re-exec checks its entry point and emits a clear remediation message.
 - The updater now prefers the local `scripts/aios-install.ps1` for release-installer updates instead of always fetching it remotely, so defensive installer fixes take effect immediately.
 - Remove the leftover untracked `agent-sources/skills/` directory (gitlink removed in an earlier commit) that broke the token-discipline sync test.
 
@@ -603,7 +603,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [1.20.3] - 2026-05-22
 
-- fix(install): handle archives with or without harness-cli/ prefix (Windows + bash)
+- fix(install): handle archives with or without aios/ prefix (Windows + bash)
 - fix(codemap): repair multi-client CRG install loop
 
 ## [1.20.2] - 2026-05-21
@@ -620,15 +620,15 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [1.18.7] - 2026-05-19
 
-- docs: update repository URL to harness-cli
+- docs: update repository URL to aios
 
 ## [1.18.6] - 2026-05-19
 
-- fix: rename release archives to harness-cli
+- fix: rename release archives to aios
 
 ## [1.18.5] - 2026-05-19
 
-- docs: rename product brand to Harness CLI
+- docs: rename product brand to AIOS
 
 ## [1.18.4] - 2026-05-19
 

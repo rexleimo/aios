@@ -1,22 +1,27 @@
-# Harness CLI (AIOS)
+# AIOS
 
-[![Release](https://img.shields.io/github/v/release/rexleimo/harness-cli?display_name=tag&sort=semver)](https://github.com/rexleimo/harness-cli/releases)
+[![Release](https://img.shields.io/github/v/release/rexleimo/aios?display_name=tag&sort=semver)](https://github.com/rexleimo/aios/releases)
 [![Docs](https://img.shields.io/badge/docs-cli.rexai.top-0ea5e9)](https://cli.rexai.top)
-[![License](https://img.shields.io/github/license/rexleimo/harness-cli)](https://github.com/rexleimo/harness-cli)
+[![License](https://img.shields.io/github/license/rexleimo/aios)](https://github.com/rexleimo/aios)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933)](https://nodejs.org)
 
-> **Local-first agent workflow layer** for `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` (Grok Build).
+> **Local-first agent harness** for `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` (Grok Build).
 > Keep the coding client you already use. Add project memory, adaptive routing, multi-agent collaboration, and verification.
 
 [Docs](https://cli.rexai.top) · [Quick Start](https://cli.rexai.top/getting-started/) · [Workflow Policy](https://cli.rexai.top/workflow-policy/) · [Blog](https://cli.rexai.top/blog/) · [中文](README-zh.md)
 
-![Harness CLI architecture overview](docs-site/assets/visual-architecture-overview.svg)
+![AIOS architecture overview](docs-site/assets/visual-architecture-overview.svg)
 
-## Why Harness CLI
+## Why AIOS
+
+AIOS brings two ideas together: **local engines** and **agent harnesses**.
+
+- **Local** — the coding engines (Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok) run on your machine. AIOS adds local project memory (ContextDB), local token compression (RTK / Caveman / Headroom), and a local browser + privacy guard. Data does not leave the machine.
+- **Harness** — AIOS is an orchestration harness over those engines: adaptive routing (`direct` / `guarded` / `planned`), parallel agent teams (fan-out / fan-in), resumable long-running loops (`aios harness`), contract-checked evidence gates, and per-node model tiering. Same building blocks as Graph Engineering — nodes, edges, shared state, failure routing — organized around agents that run local loops.
 
 Bare coding CLIs are great at editing files. They are weaker at:
 
-| Pain with raw CLI | What Harness CLI adds |
+| Pain with raw CLI | What AIOS adds |
 | --- | --- |
 | Context disappears between sessions | **ContextDB** project memory (memo, checkpoints, searchable packs) |
 | Every task feels like the same chat | **Workflow Policy**: `direct` / `guarded` / `planned` by risk |
@@ -25,14 +30,14 @@ Bare coding CLIs are great at editing files. They are weaker at:
 | Tool output floods the model | **RTK / Caveman / Headroom** local compression boundaries |
 | “Done” is a vibe | **Doctor, tests, privacy redaction, verification gates** |
 
-Harness CLI does **not** replace Codex, Claude Code, Gemini CLI, OpenCode, Hermes, or Grok Build. It sits underneath them as a local workflow layer.
+AIOS does **not** replace Codex, Claude Code, Gemini CLI, OpenCode, Hermes, or Grok Build. It sits underneath them as a local workflow layer.
 
 ## Install in 30 seconds
 
 macOS / Linux:
 
 ```bash
-curl -fsSL https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.sh | bash
+curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash
 source ~/.zshrc   # or ~/.bashrc
 aios init --all
 aios doctor --native --verbose
@@ -42,7 +47,7 @@ Windows PowerShell:
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-irm https://github.com/rexleimo/harness-cli/releases/latest/download/aios-install.ps1 | iex
+irm https://github.com/rexleimo/aios/releases/latest/download/aios-install.ps1 | iex
 . $PROFILE
 aios init --all
 aios doctor --native --verbose
@@ -62,7 +67,7 @@ node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 Your coding client (codex / claude / gemini / opencode / hermes / grok)
         │
         ▼
-  Harness CLI guidance + Workflow Policy
+  AIOS guidance + Workflow Policy
         │
         ├── ContextDB   local project memory (pull-based)
         ├── rex-harness software control plane (Fact → Capability → Evidence)
@@ -75,7 +80,7 @@ Your coding client (codex / claude / gemini / opencode / hermes / grok)
 `rex-harness` is a required planning runtime for AIOS. Release installers already bundle the pinned submodule, so a normal release install does **not** need a second npm package or MCP service. From source:
 
 ```bash
-git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git
+git clone --recurse-submodules https://github.com/rexleimo/aios.git
 ```
 
 If the clone skipped submodules, `aios init` / `aios setup` will try `git submodule update --init --recursive -- rex-harness` and stop with a clear fix if recovery fails.
@@ -140,8 +145,8 @@ Feature depth varies by client. Run `aios doctor --native --verbose` instead of 
 ## Development
 
 ```bash
-git clone --recurse-submodules https://github.com/rexleimo/harness-cli.git
-cd harness-cli
+git clone --recurse-submodules https://github.com/rexleimo/aios.git
+cd aios
 npm run test:scripts
 cd mcp-server && npm run typecheck && npm test && npm run build
 ```
