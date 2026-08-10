@@ -120,6 +120,23 @@ node scripts/rl-mixed-v1.mjs mixed-eval
 
 Treat RL status and benchmarks as research evidence with their own environment and version scope. They do not automatically prove production client reliability or public performance claims.
 
+## Graph Engineering view
+
+The same architecture reads naturally as Graph Engineering: AIOS is a local-first agent harness that organizes agent loops into a graph.
+
+| Graph Engineering component | AIOS implementation |
+| --- | --- |
+| Nodes (one loop per node, with a contract) | `rex-harness` capability nodes: Fact → Capability → Evidence with bounded contracts |
+| Edges (routing by checks) | Workflow Policy `direct` / `guarded` / `planned`; `aios plan auto-gate` runtime routing |
+| Shared State | ContextDB project memory (memo, checkpoints, searchable packs), pull-based |
+| Failure Routing | Evidence gates and terminal `blocked` outcomes: replan, escalate, or stop |
+| Fan-out / fan-in | `aios team` parallel agents with a barrier and evidence reduction |
+| Isolation | `aios harness run --worktree` git worktree isolation |
+| Model tiering | `model-router` per-node model selection |
+| Dynamic workflows | `aios plan auto-gate --dry-run` describes the objective, the route is selected at runtime |
+
+Start with a stable loop (`aios harness`, verification gates, ContextDB state), then wire loops into a graph (`aios team`, workflow routing) when the work actually splits into roles and parallel sub-tasks.
+
 ## Failure boundaries
 
 - Missing registry: run aios init --all from the intended project root.

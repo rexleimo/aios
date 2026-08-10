@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [Loop Engineering から Graph Engineering へ：AIOS はローカルファーストの Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：証拠駆動の Agent ライフサイクル昇格](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First 要件アライメント——エージェントが不要なものを届けなくなる](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：エージェントスモークテストの信頼性——出力コントラクトクライアントとタイムアウト自動エスカレーション](2026-08-v544-agent-smoke-reliability.md)

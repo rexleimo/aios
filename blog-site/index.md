@@ -7,7 +7,7 @@ description: Stories, tutorials, and deep dives about AIOS — the local agent w
 
 Stories, tutorials, and deep dives about making AI coding agents smarter, more reliable, and easier to work with.
 
-AIOS (also called AIOS) is a local agent workflow layer — not a new coding agent, but a layer that makes your existing `codex`, `claude`, `gemini`, and `opencode` better with memory, teamwork, and self-diagnostics.
+AIOS is a local agent workflow layer — not a new coding agent, but a layer that makes your existing `codex`, `claude`, `gemini`, and `opencode` better with memory, teamwork, and self-diagnostics.
 
 ## Start Here
 
@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [From Loop Engineering to Graph Engineering: AIOS Is a Local-First Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1: Evidence-Driven Agent Lifecycle Promotion](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First Requirements Alignment — Agents Stop Building the Wrong Thing](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4: Reliable Agent Smoke — Output-Contract Clients and Escalating Probe Timeouts](2026-08-v544-agent-smoke-reliability.md)

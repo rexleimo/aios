@@ -20,6 +20,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 
 ## 最新文章
 
+- [从 Loop Engineering 到 Graph Engineering：AIOS 是一个本地优先的 Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：基于证据的 Agent 生命周期晋级](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级](2026-08-v544-agent-smoke-reliability.md)
