@@ -101,6 +101,7 @@ aios memo add "保持认证测试严格"
 aios memo search "认证"
 
 # 并行工作或可恢复目标
+aios work "审查 auth 模块并更新测试"
 aios team 3:codex "审查 auth 模块并更新测试"
 aios harness run --objective "完成发布交接" --worktree
 

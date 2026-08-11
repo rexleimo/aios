@@ -2,6 +2,8 @@
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 
+import { buildDispatchRuntimeEnv } from '../../harness/orchestrator-runtimes/env.mjs';
+
 const WORKSPACE_SCOPED_COMMANDS = new Set([
   'plan',
   'dream',
@@ -10,6 +12,7 @@ const WORKSPACE_SCOPED_COMMANDS = new Set([
   'memo',
   'orchestrate',
   'team',
+  'work',
   'quality-gate',
   'snapshot-rollback',
   'entropy-gc',
@@ -49,22 +52,11 @@ export async function getRuntimeVersion(rootDir) {
   }
 }
 
-/* 中文注释：team runtime env 把 CLI 参数转成子 agent 可读取的环境变量，保持 orchestrate 入参简洁。 */
+/* 中文注释：team runtime env 把 CLI 参数转成子 agent 可读取的环境变量；实现委托共享构建器，避免 team/work 双份翻译。 */
 export function buildTeamRuntimeEnv(options = {}, baseEnv = process.env) {
-  const runtimeEnv = { ...baseEnv };
-  const clientId = String(options.clientId || '').trim();
-  if (clientId) {
-    runtimeEnv.AIOS_SUBAGENT_CLIENT = clientId;
-  }
-  if (runtimeEnv.AIOS_MODEL_ROUTER === undefined) {
-    runtimeEnv.AIOS_MODEL_ROUTER = '1';
-  }
-  const workers = Number.parseInt(String(options.workers ?? '').trim(), 10);
-  if (Number.isFinite(workers) && workers > 0) {
-    runtimeEnv.AIOS_SUBAGENT_CONCURRENCY = String(workers);
-  }
-  if (String(options.executionMode || '').trim().toLowerCase() === 'live') {
-    runtimeEnv.AIOS_EXECUTE_LIVE = '1';
-  }
-  return runtimeEnv;
+  return buildDispatchRuntimeEnv({
+    clientId: options.clientId,
+    workers: options.workers,
+    executionMode: options.executionMode,
+  }, baseEnv);
 }

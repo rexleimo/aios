@@ -1,6 +1,6 @@
 /* 中文注释：参数解析层识别 interception/refs 子命令，并把它们交给专用分发器。 */
 import { Command } from 'commander';
-import { parseHarnessArgs, parseHudArgs, parseTeamArgs } from './parse-args/execution.mjs';
+import { parseHarnessArgs, parseHudArgs, parseTeamArgs, parseWorkArgs } from './parse-args/execution.mjs';
 import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import {
   parseCanvasArgs,
@@ -293,6 +293,7 @@ export function parseArgs(argv = []) {
   if (first === 'canvas') return parseCanvasArgs(argv);
   if (first === 'internal') return parseInternalArgs(argv.slice(1));
   if (first === 'team') return parseTeamArgs(argv);
+  if (first === 'work') return parseWorkArgs(argv);
   if (first === 'hud') return parseHudArgs(argv);
   if (first === 'harness') return parseHarnessArgs(argv);
   if (first === 'interception') return parseInterceptionArgs(argv);

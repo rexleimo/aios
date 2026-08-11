@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.6.0] - 2026-08-11
+
+- feat: aios work concurrent multi-agent dispatch entry
+
 ## [5.5.3] - 2026-08-10
 
 ### Fixed

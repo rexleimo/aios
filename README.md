@@ -101,6 +101,7 @@ aios memo add "Keep authentication tests strict"
 aios memo search "authentication"
 
 # Parallel work or a resumable objective
+aios work "Review the auth module and update its tests"
 aios team 3:codex "Review the auth module and update its tests"
 aios harness run --objective "Finish the release handoff" --worktree
 

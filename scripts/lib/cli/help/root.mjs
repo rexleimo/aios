@@ -27,6 +27,7 @@ Commands:
   perception    Content outcome recording, insight generation, and perception summary
   quality-gate  Run repo quality checks with harness profiles
   orchestrate   Preview reusable subagent workflow blueprints
+  work          Run a task with automatic planning + concurrent multi-agent dispatch (live by default)
   team          One-click multi-client live team runtime (codex/claude/gemini)
   harness       Solo overnight harness with run journal + resume controls
   hud           Show ContextDB + dispatch HUD (CLI/TUI)
@@ -64,6 +65,10 @@ Examples:
   node scripts/aios.mjs interception doctor --enforce-turns --json
   node scripts/aios.mjs quality-gate pre-pr --profile strict
   node scripts/aios.mjs orchestrate feature --task "Ship orchestrator blueprints"
+  node scripts/aios.mjs work --task "Ship the release checklist"
+  node scripts/aios.mjs work --task "重构 mcp-server 并补测试" --client codex-cli --concurrency 4
+  node scripts/aios.mjs work --task "..." --serial
+  node scripts/aios.mjs work --task "..." --dry-run --json
   node scripts/aios.mjs team 3:codex "Ship orchestrator blueprints"
   node scripts/aios.mjs team 2:claude --session codex-cli-20260303T080437-065e16c0 --dry-run
   node scripts/aios.mjs harness run --objective "Ship release checklist" --worktree

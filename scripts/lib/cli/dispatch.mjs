@@ -197,6 +197,13 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'work') {
+      /* work 是统一并发调度入口：默认 live（AIOS_EXECUTE_LIVE=1），语义翻译在 lifecycle/work.mjs */
+      const { runWorkCommand } = await import('../lifecycle/work.mjs');
+      applyResultExitCode(await runWorkCommand(parsed.options, { rootDir: workspaceFor(parsed) }));
+      return;
+    }
+
     if (parsed.command === 'snapshot-rollback') {
       const { runSnapshotRollback } = await import('../lifecycle/snapshot-rollback.mjs');
       applyResultExitCode(await runSnapshotRollback(parsed.options, { rootDir: workspaceFor(parsed) }));

@@ -4,6 +4,7 @@
     "files": [
       "scripts/tests/model-router.test.mjs",
       "scripts/tests/aios-cli.test.mjs",
+      "scripts/tests/aios-work.test.mjs",
       "scripts/tests/aios-init.test.mjs",
       "scripts/tests/headroom-install.test.mjs",
       "scripts/tests/headroom-mcp-config.test.mjs",
