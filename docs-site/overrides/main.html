@@ -112,15 +112,13 @@
   {% endif %}
   {% if config.extra and config.extra.alternate %}
     {% for alt in config.extra.alternate %}
-      {% if alt.lang != current_lang %}
-        {% set alt_slug = ('' if alt.lang == 'en' else alt.lang ~ '/') ~ page_slug %}
-        {% if alt_slug | translation_exists %}
-          <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ config.site_url ~ alt_slug }}">
-        {% endif %}
+      {% set alt_slug = ('' if alt.lang == 'en' else alt.lang ~ '/') ~ page_slug %}
+      {% if alt_slug | translation_exists %}
+        <link rel="alternate" hreflang="{{ alt.lang }}" href="{{ config.site_url ~ alt_slug }}">
       {% endif %}
     {% endfor %}
   {% endif %}
-  <link rel="alternate" hreflang="x-default" href="{{ config.site_url }}">
+  <link rel="alternate" hreflang="x-default" href="{{ config.site_url ~ page_slug }}">
 
   {% if page and page.meta and page.meta.home %}
   <script>

@@ -51,6 +51,9 @@ test('site shell emits page, breadcrumb, and blog structured-data contracts', ()
     assert.match(main, new RegExp(escapeRegExp(marker)));
   }
 
+  assert.doesNotMatch(main, /alt\.lang != current_lang/);
+  assert.match(main, /hreflang="x-default" href="\{\{ config\.site_url ~ page_slug \}\}"/);
+
   for (const shell of [topbar, blogHeader, homeFooter]) {
     assert.match(shell, /Blog/);
     assert.match(shell, /Friends/);
@@ -106,16 +109,19 @@ test('home HUD markup preserves the Pencil telemetry title row structure', () =>
   assert.doesNotMatch(home, /telemetry sweep \+ throughput/);
 });
 
-test('custom shell exposes i18n language switcher on home and docs surfaces', () => {
+test('custom shell exposes i18n language switcher on home, docs, and blog surfaces', () => {
   const topbar = read('docs-site/overrides/partials/rex/topbar.html');
   const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
   const docsPage = read('docs-site/overrides/partials/rex/docs-page.html');
+  const blogHeader = read('docs-site/overrides/partials/rex/blog-header.html');
   const switcher = read('docs-site/overrides/partials/rex/language-switcher.html');
   const shellCss = read('docs-site/assets/redesign/shell.css');
+  const blogShellCss = read('blog-site/assets/redesign/blog-shell.css');
 
   assert.match(topbar, /partials\/rex\/language-switcher\.html/);
   assert.match(sidebar, /partials\/rex\/language-switcher\.html/);
   assert.match(docsPage, /partials\/rex\/language-switcher\.html/);
+  assert.match(blogHeader, /partials\/rex\/language-switcher\.html/);
   assert.match(switcher, /class="rex-lang-switcher"/);
   assert.match(switcher, /config\.extra\.alternate/);
   assert.match(switcher, /hreflang="\{\{\s*alt\.lang\s*\}\}"/);
@@ -126,6 +132,10 @@ test('custom shell exposes i18n language switcher on home and docs surfaces', ()
   assert.match(
     shellCss,
     /\.rex-lang-switcher__menu\s*\{[\s\S]*?position:\s*absolute;[\s\S]*?z-index:\s*50;/
+  );
+  assert.match(
+    blogShellCss,
+    /\.rex-blog-header__actions \.rex-lang-switcher\s*\{[\s\S]*?position:\s*relative;/
   );
 });
 

@@ -292,6 +292,63 @@ async function checkFileContains(errors, relPath, needles = []) {
   }
 }
 
+function findBlogLocaleParityErrors(blogMarkdownFiles, locales = ['zh', 'ja', 'ko']) {
+  const files = new Set(blogMarkdownFiles.map((file) => file.split(path.sep).join('/')));
+  const canonicalPosts = [...files]
+    .filter((file) => file !== 'index.md' && !file.includes('/'))
+    .sort();
+  const errors = [];
+
+  for (const fileName of canonicalPosts) {
+    for (const locale of locales) {
+      const localized = `${locale}/${fileName}`;
+      if (!files.has(localized)) {
+        errors.push(`missing blog translation (${locale}): blog-site/${localized}`);
+      }
+    }
+  }
+
+  for (const locale of locales) {
+    const prefix = `${locale}/`;
+    const localizedPosts = [...files]
+      .filter((file) => file.startsWith(prefix) && file !== `${prefix}index.md`)
+      .map((file) => file.slice(prefix.length))
+      .filter((file) => !file.includes('/'))
+      .sort();
+    for (const fileName of localizedPosts) {
+      if (!files.has(fileName)) {
+        errors.push(`missing blog canonical: blog-site/${fileName} (found ${locale}/${fileName})`);
+      }
+    }
+  }
+
+  return errors;
+}
+
+function findCurrentReleaseBlogErrors(version, blogMarkdownByFile, locales = ['en', 'zh', 'ja', 'ko']) {
+  const marker = `v${String(version || '').trim()}`;
+  const entries = blogMarkdownByFile instanceof Map
+    ? [...blogMarkdownByFile.entries()]
+    : Object.entries(blogMarkdownByFile || {});
+  const errors = [];
+
+  for (const locale of locales) {
+    const prefix = locale === 'en' ? '' : `${locale}/`;
+    const hasReleasePost = entries.some(([file, markdown]) => {
+      if (!file.startsWith(prefix)) return false;
+      const relative = file.slice(prefix.length);
+      if (!relative || relative === 'index.md' || relative.includes('/')) return false;
+      const frontMatter = String(markdown).match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1] || '';
+      return frontMatter.includes(marker);
+    });
+    if (!hasReleasePost) {
+      errors.push(`missing current release blog post (${locale}): ${marker}`);
+    }
+  }
+
+  return errors;
+}
+
 async function main() {
   const errors = [];
 
@@ -305,6 +362,17 @@ async function main() {
   const docsFileSet = new Set(docsMarkdownFiles);
   const blogFileSet = new Set(blogMarkdownFiles);
   const navLabels = extractNavLabels(mkdocsText);
+  const version = (await readUtf8('VERSION')).trim();
+  const blogMarkdownByFile = new Map();
+
+  for (const file of blogMarkdownFiles) {
+    if (/^(?:(?:zh|ja|ko)\/)?[^/]+\.md$/.test(file)) {
+      blogMarkdownByFile.set(file, await readUtf8(path.join('blog-site', file)));
+    }
+  }
+
+  errors.push(...findBlogLocaleParityErrors(blogMarkdownFiles));
+  errors.push(...findCurrentReleaseBlogErrors(version, blogMarkdownByFile));
 
   // mkdocs nav entries pointing to markdown files must exist under docs-site.
   for (const navTarget of extractMdNavTargets(mkdocsText)) {
@@ -451,5 +519,7 @@ export {
   extractHeadingIds,
   extractNavLabels,
   extractLocaleNavTranslationKeys,
+  findBlogLocaleParityErrors,
+  findCurrentReleaseBlogErrors,
   localSiteTargetExists,
 };

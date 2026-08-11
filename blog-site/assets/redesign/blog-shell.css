@@ -139,6 +139,98 @@ body {
   gap: 0.8rem;
 }
 
+.rex-blog-header__actions .rex-lang-switcher {
+  position: relative;
+  display: inline-block;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__summary {
+  display: inline-flex;
+  min-height: 38px;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0 0.75rem;
+  color: var(--rex-blog-muted);
+  list-style: none;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--rex-blog-border);
+  border-radius: 999px;
+  font-size: var(--rex-text-sm);
+  font-weight: 800;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__summary::-webkit-details-marker {
+  display: none;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__summary::marker {
+  content: "";
+}
+
+.rex-blog-header__actions .rex-lang-switcher__summary:is(:hover, :focus-visible),
+.rex-blog-header__actions .rex-lang-switcher[open] .rex-lang-switcher__summary {
+  color: var(--rex-blog-accent);
+  border-color: rgba(34, 211, 238, 0.45);
+  outline: none;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__icon {
+  display: grid;
+  width: 0.9rem;
+  height: 0.9rem;
+  place-items: center;
+  color: var(--rex-blog-accent);
+}
+
+.rex-blog-header__actions .rex-lang-switcher__icon svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__caret {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.rex-blog-header__actions .rex-lang-switcher__menu {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 0.45rem);
+  right: 0;
+  min-width: 10.5rem;
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  background: rgba(8, 10, 18, 0.98);
+  border: 1px solid var(--rex-blog-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+}
+
+.rex-blog-header__actions .rex-lang-switcher__option {
+  display: block;
+  padding: 0.55rem 0.7rem;
+  color: var(--rex-blog-muted);
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.rex-blog-header__actions .rex-lang-switcher__option:is(:hover, :focus-visible),
+.rex-blog-header__actions .rex-lang-switcher__option.is-active {
+  color: var(--rex-blog-accent);
+  background: rgba(34, 211, 238, 0.1);
+  outline: none;
+}
+
 .rex-blog-header__cta {
   min-height: 38px;
   padding: 0.55rem 1rem;

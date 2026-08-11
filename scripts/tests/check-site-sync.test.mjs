@@ -10,6 +10,8 @@ import {
   extractMarkdownLinkTargets,
   extractMdNavTargets,
   extractNavLabels,
+  findBlogLocaleParityErrors,
+  findCurrentReleaseBlogErrors,
   isExternalOrRootLink,
   isLocaleDriftLink,
   localSiteTargetExists,
@@ -18,6 +20,37 @@ import {
 } from '../check-site-sync.mjs';
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+
+test('blog locale parity reports every missing translation', () => {
+  const files = [
+    'post-a.md',
+    'post-b.md',
+    'zh/post-a.md',
+    'zh/post-b.md',
+    'ja/post-a.md',
+    'ja/post-b.md',
+    'ko/post-a.md',
+    'ja/post-c.md',
+  ];
+
+  assert.deepEqual(findBlogLocaleParityErrors(files), [
+    'missing blog translation (ko): blog-site/ko/post-b.md',
+    'missing blog canonical: blog-site/post-c.md (found ja/post-c.md)',
+  ]);
+});
+
+test('current release blog coverage requires a tagged post in every locale', () => {
+  const posts = new Map([
+    ['release.md', '---\ntitle: v5.6.0 release\ntags: ["v5.6.0"]\n---\n'],
+    ['zh/release.md', '---\ntitle: v5.6.0 release\ntags: ["v5.6.0"]\n---\n'],
+    ['ja/release.md', '---\ntitle: v5.6.0 release\ntags: ["v5.6.0"]\n---\n'],
+    ['ko/older.md', '---\ntitle: v5.5.0 release\ntags: ["v5.5.0"]\n---\n'],
+  ]);
+
+  assert.deepEqual(findCurrentReleaseBlogErrors('5.6.0', posts), [
+    'missing current release blog post (ko): v5.6.0',
+  ]);
+});
 
 test('extractMdNavTargets returns only markdown file nav targets', () => {
   const mkdocs = `site_name: demo
