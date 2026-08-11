@@ -118,6 +118,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v5.6.0 Parallel Multi-Agent Coding: 2026-08-v560-aios-work-concurrent-dispatch.md
       - v5.5.1 Evidence-Driven Agent Lifecycle Promotion: 2026-08-v551-agent-lifecycle-promotion.md
       - v5.5.0 Ask-First Requirements Alignment: 2026-08-v550-ask-first-requirements-alignment.md
       - v5.4.4 Reliable Agent Smoke: 2026-08-v544-agent-smoke-reliability.md

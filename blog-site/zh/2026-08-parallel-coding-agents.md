@@ -58,7 +58,7 @@ aios init --all
 aios doctor --native --verbose
 ```
 
-阅读 [Agent Team 指南](https://cli.rexai.top/team-ops/)了解独立工作包和 HUD 监控，[Solo Harness 指南](https://cli.rexai.top/solo-harness/)了解带 worktree 隔离的可恢复长任务，[工作流策略](https://cli.rexai.top/workflow-policy/)了解何时耦合变更必须保持串行。
+阅读 [Agent Team 指南](https://cli.rexai.top/zh/team-ops/)了解独立工作包和 HUD 监控，[Solo Harness 指南](https://cli.rexai.top/zh/solo-harness/)了解带 worktree 隔离的可恢复长任务，[工作流策略](https://cli.rexai.top/zh/workflow-policy/)了解何时耦合变更必须保持串行。
 
 ## FAQ
 
@@ -76,6 +76,6 @@ merge queue 协调的是*代码*——分支何时合并。它不协调*状态*�
 
 ### 细节在哪里看？
 
-[更新日志](https://cli.rexai.top/changelog/)覆盖了 v5.4.0 的状态加固，发布文章[工作流迭代 v2.1](https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/)解释了被关闭的并发失败模式。
+[更新日志](https://cli.rexai.top/zh/changelog/)覆盖了 v5.4.0 的状态加固，发布文章[工作流迭代 v2.1](https://cli.rexai.top/blog/zh/2026-08-v540-workflow-iteration-v21/)解释了被关闭的并发失败模式。
 
 并行是乘数——对吞吐量如此，对破坏亦然。文件该隔离就隔离。状态也必须隔离，否则 agent 会替你隔离，以最糟糕的方式。

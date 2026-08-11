@@ -60,7 +60,7 @@ aios init --all
 aios doctor --native --verbose
 ```
 
-然后参考[模型路由器文档](https://cli.rexai.top/model-router/)为 dispatch 设置 token 预警阈值、把便宜任务路由给便宜模型，再读[Token 智能文档](https://cli.rexai.top/token-compression/)了解压缩保留什么、丢弃什么。
+然后参考[模型路由器文档](https://cli.rexai.top/zh/model-router/)为 dispatch 设置 token 预警阈值、把便宜任务路由给便宜模型，再读[Token 智能文档](https://cli.rexai.top/zh/token-compression/)了解压缩保留什么、丢弃什么。
 
 ## FAQ
 
@@ -78,6 +78,6 @@ aios doctor --native --verbose
 
 ### 细节在哪里看？
 
-[更新日志](https://cli.rexai.top/changelog/)按版本列出了成本相关改动，[架构文档](https://cli.rexai.top/architecture/)解释了 dispatch 事件、evidence 和成本在系统中如何流转。
+[更新日志](https://cli.rexai.top/zh/changelog/)按版本列出了成本相关改动，[架构文档](https://cli.rexai.top/zh/architecture/)解释了 dispatch 事件、evidence 和成本在系统中如何流转。
 
 计量表消失不是因为成本没问题，而是因为数字本身就是新闻——在你的数字被别人替你读出之前，确保它们自己可读。

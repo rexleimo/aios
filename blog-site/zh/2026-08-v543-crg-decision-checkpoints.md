@@ -51,6 +51,6 @@ solo harness 日志目录从 `solo-harness` 更名为 `worker-journal`，与已�
 
 ### 在哪里看细节？
 
-[更新日志](https://cli.rexai.top/changelog/) 记录了 v5.4.3 的全部语言版本。
+[更新日志](https://cli.rexai.top/zh/changelog/) 记录了 v5.4.3 的全部语言版本。
 
 小版本把「想改什么」和「验证改了什么」之间的回路收紧，长期运行的 agent 工作会因此可靠得多。

@@ -7,7 +7,7 @@ description: 选择独立工作包，启动 Agent Team，监控 HUD 状态，并
 
 ## 一句话回答
 
-当任务可以拆成两个或更多独立工作包，并且每个包都有明确负责人和验收证据时，使用 Agent Team。小改动或强耦合工作用一个客户端，单个长目标用 Solo Harness，分阶段质量门禁用 Orchestrate。dry-run 只能检查本地 dispatch 状态，不能证明实时供应商可用。
+当任务可以拆成两个或更多独立工作包，并且每个包都有明确负责人和验收证据时，使用 Agent Team。小改动或强耦合工作用一个客户端，单个长目标用 Solo Harness，分阶段质量门禁用 Orchestrate。日常可分解成独立项的任务用 `aios work`，默认 live 并行调度。dry-run 只能检查本地 dispatch 状态，不能证明实时供应商可用。
 
 ## 现在就做
 
@@ -31,6 +31,7 @@ AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
 | 回答、检查或一个小的本地改动 | direct 或 guarded |
 | 一个明确的长任务目标 | [Solo Harness](solo-harness.md) |
 | 两个或更多独立工作包 | Agent Team |
+| 可分解成独立项的日常任务 | `aios work`（默认 live） |
 | 按顺序执行并有门禁的阶段 | aios orchestrate |
 | 需求仍不明确 | 先使用交互式客户端 |
 

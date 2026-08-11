@@ -20,6 +20,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 
 ## 最新文章
 
+- [v5.6.0：一条命令并行多 Agent 编码 — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [从 Loop Engineering 到 Graph Engineering：AIOS 是一个本地优先的 Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：基于证据的 Agent 生命周期晋级](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西](2026-08-v550-ask-first-requirements-alignment.md)

@@ -5,6 +5,18 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.6.0（2026-08-11）——`aios work`: 병렬 멀티 에이전트 디스패치를 한 줄의 명령으로
+
+### 변경 내용
+
+- 새 명령 `aios work`: 계획된 동시 멀티 에이전트 디스패치를 하나의 진입점으로 통합——planner, implementer, reviewer, security-reviewer를 유계 병렬(기본 동시성 3)로 실행하고 merge gate로 수렴. live는 기본으로 활성.
+- `--dry-run`으로 DAG와 작업 항목을 제로 비용으로 미리 보기. `--serial`로 결합도가 높은 작업을 동시성 1로 강제. `--client` / `--concurrency`로 subagent 런타임 조정. `--session` / `--resume --retry-blocked`로 기존 디스패치 상태 재사용.
+- 기존 오케스트레이션 엔진과 모든 안전 가드(preflight readiness, capability guard, owned-path file policy, merge gate)를 재사용. 단계별 모델 라우팅은 기본으로 활성 유지.
+
+### 업그레이드 안내
+
+- `aios update`로 업데이트. 설정 마이그레이션 불필요. `aios team`과 `aios orchestrate` 동작은 변하지 않습니다.
+
 ## v5.4.4（2026-08-06）— 에이전트 스모크 테스트 신뢰성: 출력 계약 클라이언트와 타임아웃 자동 에스컬레이션
 
 ### 주요 변경 사항

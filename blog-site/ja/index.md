@@ -22,12 +22,16 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.6.0: 並列マルチエージェントコーディングを1コマンドで — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [Loop Engineering から Graph Engineering へ：AIOS はローカルファーストの Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：証拠駆動の Agent ライフサイクル昇格](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First 要件アライメント——エージェントが不要なものを届けなくなる](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：エージェントスモークテストの信頼性——出力コントラクトクライアントとタイムアウト自動エスカレーション](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3：CRG 決定チェックポイント、Worker Journal リネーム、冪等な aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1：Windows で「aios update」が壊れていた理由と、自己更新の修正](2026-08-v541-windows-self-update-safety.md)
+- [並列コーディングエージェントは無料ではない: Git Worktree はファイルを隔離し、状態は隔離しない](2026-08-parallel-coding-agents.md)
+- [Agent セキュリティは状態機械の問題: Codex セキュリティスレッドが見逃したもの](2026-08-ai-agent-security.md)
+- [AI コーディングコストは制御不能: Cursor は数字を隠し、Amazon は 180 万ドルを溶かし、ローカルレイヤーが変えるもの](2026-08-ai-coding-cost-crisis.md)
 - [v5.4.0：ワークフローイテレーション v2.1 — Activation の安全性、型付き Evidence 契約、全 Skill 監査](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 適応型ワークフローポリシー](2026-07-v400-adaptive-workflow-policy.md)
 - [AI エージェントのワークフローはどう選ぶ？](2026-07-choose-agent-workflow.md)

@@ -60,7 +60,7 @@ aios init --all
 aios doctor --native --verbose
 ```
 
-阅读[工作流策略文档](https://cli.rexai.top/workflow-policy/)了解路由矩阵和验证门禁，[架构文档](https://cli.rexai.top/architecture/)了解状态如何流转，[Privacy Guard 案例](https://cli.rexai.top/case-privacy-guard/)了解安全读取敏感文件。
+阅读[工作流策略文档](https://cli.rexai.top/zh/workflow-policy/)了解路由矩阵和验证门禁，[架构文档](https://cli.rexai.top/zh/architecture/)了解状态如何流转，[Privacy Guard 案例](https://cli.rexai.top/zh/case-privacy-guard/)了解安全读取敏感文件。
 
 ## FAQ
 
@@ -78,6 +78,6 @@ aios doctor --native --verbose
 
 ### 实现细节在哪里？
 
-[更新日志](https://cli.rexai.top/changelog/)按版本列出了 v5.4.0 加固项，发布文章[工作流迭代 v2.1](https://cli.rexai.top/blog/2026-08-v540-workflow-iteration-v21/)解释了被关闭的三类静默失败。
+[更新日志](https://cli.rexai.top/zh/changelog/)按版本列出了 v5.4.0 加固项，发布文章[工作流迭代 v2.1](https://cli.rexai.top/blog/zh/2026-08-v540-workflow-iteration-v21/)解释了被关闭的三类静默失败。
 
 下一个安全头条大概还是关于提示的。真正让你损失一周的，会是那个悄悄把你的状态机推进了两次的故障。

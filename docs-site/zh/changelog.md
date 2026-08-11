@@ -5,6 +5,18 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.6.0（2026-08-11）——`aios work`：一条命令并行多 Agent 调度
+
+### 主要变更
+
+- 新增 `aios work` 命令：统一的规划 + 并发多 Agent 调度入口——planner、implementer、reviewer、security-reviewer 以有界并行（默认并发 3）执行并经 merge gate 收口，live 默认开启。
+- `--dry-run` 零成本预览 DAG 与工作项；`--serial` 强制并发 1 处理耦合任务；`--client` / `--concurrency` 调整 subagent 运行时；`--session` / `--resume --retry-blocked` 复用既有调度状态。
+- 复用既有编排引擎与全部安全门（preflight readiness、capability guard、owned-path file policy、merge gate）；按阶段模型路由默认保持开启。
+
+### 升级说明
+
+- 用 `aios update` 更新。无需配置迁移；`aios team` 与 `aios orchestrate` 行为不变。
+
 ## v5.4.4（2026-08-06）— Agent 冒烟检测可靠性：输出契约客户端与超时自动升级
 
 ### 主要变更

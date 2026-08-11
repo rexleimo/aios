@@ -15,6 +15,7 @@ description: 用最少变量选择 AIOS 的交互路由与并发执行配置。
 - `CTXDB_HARNESS_MAX_ITERATIONS`：注入的 `harness` 路由迭代预算（默认 `8`）
 - `CTXDB_TEAM_WORKERS`：`aios team ...` 的并行 worker 数
 - `AIOS_SUBAGENT_CONCURRENCY`：`aios orchestrate --execute live` 的并行执行数，以及 GroupChat 每轮并行 speaker 数（默认 `3`）
+- `aios work`：一条命令并行调度——默认 live（并发 `3`，走 `AIOS_SUBAGENT_CONCURRENCY`），`--serial` 强制 `1`，`--dry-run` 预览 DAG
 - `AIOS_SUBAGENT_TIMEOUT_MS`：live 执行中每个 agent turn 的超时毫秒数（默认 `600000` = 10 分钟）
 - `AIOS_ALLOW_UNKNOWN_CAPABILITIES`：跳过 live 执行的能力预检门禁（`1` = 接受风险）
 

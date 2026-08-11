@@ -7,6 +7,18 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs.
 
+## v5.6.0 (2026-08-11) — `aios work`: Parallel Multi-Agent Dispatch in One Command
+
+### What changed
+
+- New `aios work` command: one entry for planned, concurrent multi-agent dispatch — planner, implementer, reviewer, and security-reviewer jobs run with bounded parallelism (default concurrency 3) and a merge gate, live by default.
+- `--dry-run` previews the DAG and work items without spawning clients; `--serial` forces concurrency 1 for coupled work; `--client` / `--concurrency` tune the subagent runtime; `--session` / `--resume --retry-blocked` reuse prior dispatch state.
+- Reuses the existing orchestration engine and safety gates (preflight readiness, capability guard, owned-path file policy, merge gate); per-phase model routing stays enabled by default.
+
+### Upgrade notes
+
+- Update with `aios update`. No config migration needed; `aios team` and `aios orchestrate` are unchanged.
+
 ## v5.4.4 (2026-08-06) — Reliable Agent Smoke: Output-Contract Clients and Escalating Probe Timeouts
 
 ### What changed

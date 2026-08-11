@@ -15,6 +15,7 @@ Use this page when you want a **single place** to choose routing + parallel sett
 - `CTXDB_HARNESS_MAX_ITERATIONS`: iteration budget for the injected `harness` route (default: `8`)
 - `CTXDB_TEAM_WORKERS`: worker concurrency for `aios team ...`
 - `AIOS_SUBAGENT_CONCURRENCY`: executor concurrency for `aios orchestrate --execute live` and GroupChat speakers per round (default: `3`)
+- `aios work`: one-command parallel dispatch — live by default (concurrency `3`, via `AIOS_SUBAGENT_CONCURRENCY`), `--serial` forces `1`, `--dry-run` previews the DAG.
 - `AIOS_SUBAGENT_TIMEOUT_MS`: per-agent-turn timeout in milliseconds for live execution (default: `600000` = 10 min)
 - `AIOS_ALLOW_UNKNOWN_CAPABILITIES`: skip the capability guard when running live execution (`1` = accept risk)
 

@@ -15,6 +15,7 @@ description: AIOS 라우팅과 병렬 설정을 최소 변수로 선택하는 �
 - `CTXDB_HARNESS_MAX_ITERATIONS`: 주입되는 `harness` route 반복 예산 (기본값 `8`)
 - `CTXDB_TEAM_WORKERS`: `aios team ...` 병렬 worker 수
 - `AIOS_SUBAGENT_CONCURRENCY`: `aios orchestrate --execute live` 및 GroupChat 라운드당 speaker 실행 동시성 (기본값: `3`)
+- `aios work`: 한 줄의 명령으로 병렬 디스패치——기본으로 live(동시성 `3`, `AIOS_SUBAGENT_CONCURRENCY` 사용), `--serial`로 `1` 강제, `--dry-run`으로 DAG 미리 보기
 - `AIOS_SUBAGENT_TIMEOUT_MS`: 라이브 실행 시 에이전트 턴당 타임아웃 (밀리초, 기본값: `600000` = 10분)
 - `AIOS_ALLOW_UNKNOWN_CAPABILITIES`: 라이브 실행 시 capability guard 건너뛰기 (`1` = 위험 감수)
 

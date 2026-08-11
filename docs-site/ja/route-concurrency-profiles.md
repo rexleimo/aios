@@ -15,6 +15,7 @@ description: AIOS のルーティングと並列設定を最小変数で選ぶ�
 - `CTXDB_HARNESS_MAX_ITERATIONS`: 注入される `harness` route の反復予算（既定 `8`）
 - `CTXDB_TEAM_WORKERS`: `aios team ...` の並列 worker 数
 - `AIOS_SUBAGENT_CONCURRENCY`: `aios orchestrate --execute live` の並列実行数、および GroupChat のラウンドあたり speaker 数（デフォルト: `3`）
+- `aios work`: 1コマンドで並列ディスパッチ——既定で live（並列度 `3`、`AIOS_SUBAGENT_CONCURRENCY` に従う）、`--serial` で `1` に強制、`--dry-run` で DAG をプレビュー
 - `AIOS_SUBAGENT_TIMEOUT_MS`: live 実行のエージェントターンあたりタイムアウト（ミリ秒）（デフォルト: `600000` = 10 分）
 - `AIOS_ALLOW_UNKNOWN_CAPABILITIES`: live 実行時の capability guard をスキップ（`1` = リスク受容）
 

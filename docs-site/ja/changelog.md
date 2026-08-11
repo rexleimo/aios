@@ -5,6 +5,18 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.6.0（2026-08-11）——`aios work`: 並列マルチエージェントディスパッチを1コマンドで
+
+### 変更内容
+
+- 新コマンド `aios work`: 計画済みの並列マルチエージェントディスパッチを1つの入口に統合——planner・implementer・reviewer・security-reviewer を有界並列（デフォルト並列度3）で実行し、マージゲートで収束。live はデフォルトで有効。
+- `--dry-run` で DAG と作業項目をゼロコストでプレビュー。`--serial` で結合度の高い作業を並列度1に強制。`--client` / `--concurrency` で subagent ランタイムを調整。`--session` / `--resume --retry-blocked` で既存のディスパッチ状態を再利用。
+- 既存のオーケストレーションエンジンと全安全ガード（preflight readiness、capability guard、owned-path file policy、merge gate）を再利用。フェーズごとのモデルルーティングはデフォルトで有効のまま。
+
+### アップグレード情報
+
+- `aios update` で更新。設定移行は不要。`aios team` と `aios orchestrate` の動作は変わりません。
+
 ## v5.4.4（2026-08-06）— エージェントスモークテストの信頼性：出力コントラクトクライアントとタイムアウト自動エスカレーション
 
 ### 主な変更

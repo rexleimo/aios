@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.6.0: Parallel Multi-Agent Coding with One Command — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [From Loop Engineering to Graph Engineering: AIOS Is a Local-First Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1: Evidence-Driven Agent Lifecycle Promotion](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First Requirements Alignment — Agents Stop Building the Wrong Thing](2026-08-v550-ask-first-requirements-alignment.md)

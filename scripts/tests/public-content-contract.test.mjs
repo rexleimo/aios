@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
-const rootDir = path.resolve(new URL('../..', import.meta.url).pathname);
+// 中文注释：Windows 下 URL.pathname 会产生 /E:/ 前缀，path.resolve 会拼成 E:\E:\...；用 fileURLToPath 保持跨平台。
+const rootDir = path.resolve(fileURLToPath(new URL('../..', import.meta.url)));
 
 const read = (relPath) => fs.readFileSync(path.join(rootDir, relPath), 'utf8');
 const exists = (relPath) => fs.existsSync(path.join(rootDir, relPath));
@@ -28,7 +30,9 @@ const locales = ['', 'zh', 'ja', 'ko'];
 const promotedBlogPosts = ['2026-07-v400-adaptive-workflow-policy.md'];
 
 function frontMatterHas(markdown, key) {
-  const match = markdown.match(/^---\n([\s\S]*?)\n---(?:\n|$)/);
+  // 中文注释：Windows autocrlf 检出为 CRLF，先归一化再匹配 frontmatter。
+  const normalized = markdown.replace(/\r\n/g, '\n');
+  const match = normalized.match(/^---\n([\s\S]*?)\n---(?:\n|$)/);
   return Boolean(match && new RegExp(`^${key}:\\s*.+$`, 'm').test(match[1]));
 }
 

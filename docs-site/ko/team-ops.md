@@ -7,7 +7,7 @@ description: 독립 work package를 선택하고 Agent Team을 시작하며 HUD 
 
 ## 먼저 답하면
 
-두 개 이상의 독립 work package로 나눌 수 있고 owner와 acceptance evidence가 명확할 때 Agent Team을 사용합니다. 작거나 결합된 변경은 하나의 client, 하나의 긴 objective는 Solo Harness, 단계별 quality gate는 Orchestrate를 사용하세요. dry-run은 local dispatch 상태만 확인하며 live provider 사용 가능성을 증명하지 않습니다.
+두 개 이상의 독립 work package로 나눌 수 있고 owner와 acceptance evidence가 명확할 때 Agent Team을 사용합니다. 작거나 결합된 변경은 하나의 client, 하나의 긴 objective는 Solo Harness, 단계별 quality gate는 Orchestrate를 사용하세요. 독립 항목으로 분해 가능한 일상 작업은 `aios work`를 사용하세요——같은 디스패치를 live 병렬로 실행합니다. dry-run은 local dispatch 상태만 확인하며 live provider 사용 가능성을 증명하지 않습니다.
 
 ## 지금 실행
 
@@ -31,6 +31,7 @@ AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
 | 답변, inspection, 작은 local change | direct 또는 guarded |
 | 하나의 긴 objective | [Solo Harness](solo-harness.md) |
 | 두 개 이상의 독립 work package | Agent Team |
+| 독립 항목으로 분해 가능한 일상 작업 | `aios work`（live 기본） |
 | ordered phase와 gate | aios orchestrate |
 | 요구사항이 불명확함 | 먼저 interactive client |
 

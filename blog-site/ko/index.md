@@ -22,12 +22,16 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.6.0: 병렬 멀티 에이전트 코딩을 한 줄의 명령으로 — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [Loop Engineering에서 Graph Engineering으로: AIOS는 로컬 퍼스트 Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1: 증거 기반 Agent 라이프사이클 승격](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First 요구사항 정렬 — 에이전트가 원치 않는 것을 더 이상 만들지 않습니다](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4: 에이전트 스모크 테스트 신뢰성——출력 계약 클라이언트와 타임아웃 자동 에스컬레이션](2026-08-v544-agent-smoke-reliability.md)
 - [v5.4.3: CRG 결정 체크포인트, Worker Journal 이름 변경, 멱등한 aios init](2026-08-v543-crg-decision-checkpoints.md)
 - [v5.4.1: Windows에서 "aios update"가 깨진 이유와 자체 업데이트 수정](2026-08-v541-windows-self-update-safety.md)
+- [병렬 코딩 에이전트는 공짜가 아니다: Git Worktree는 파일을 격리하고 상태는 격리하지 않는다](2026-08-parallel-coding-agents.md)
+- [Agent 보안은 상태 머신 문제: Codex 보안 스레드가 놓친 것](2026-08-ai-agent-security.md)
+- [AI 코딩 비용이 통제 불능: Cursor는 숫자를 숨기고 Amazon은 180만 달러를 태웠으며, 로컬 레이어가 바꾸는 것](2026-08-ai-coding-cost-crisis.md)
 - [v5.4.0: 워크플로 이터레이션 v2.1 — Activation 안전성, 타입 Evidence 계약, 전체 Skill 감사](2026-08-v540-workflow-iteration-v21.md)
 - [v4.0 적응형 워크플로 정책](2026-07-v400-adaptive-workflow-policy.md)
 - [AI 에이전트 워크플로는 어떻게 고를까?](2026-07-choose-agent-workflow.md)

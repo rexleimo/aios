@@ -7,7 +7,7 @@ description: Choose independent work packages, start an Agent Team, monitor HUD 
 
 ## Quick Answer
 
-Use Agent Team when a task can be split into two or more independent work packages with clear ownership and acceptance criteria. Use one client for a small or coupled change, Solo Harness for one long objective, and Orchestrate for staged quality-gated execution. A dry run checks local dispatch state; it does not prove that a live provider is available.
+Use Agent Team when a task can be split into two or more independent work packages with clear ownership and acceptance criteria. Use one client for a small or coupled change, Solo Harness for one long objective, and Orchestrate for staged quality-gated execution. For daily work that can decompose into independent items, `aios work` runs the same dispatch with live parallelism by default. A dry run checks local dispatch state; it does not prove that a live provider is available.
 
 ## Do it now
 
@@ -31,6 +31,7 @@ AIOS_EXECUTE_LIVE=1 AIOS_SUBAGENT_CLIENT=codex-cli \
 | Answer, inspect, or one small local change | direct or guarded |
 | One clear long-running objective | [Solo Harness](solo-harness.md) |
 | Two or more independent work packages | Agent Team |
+| Daily task that decomposes into independent items | `aios work` (live by default) |
 | Ordered phases with explicit gates | aios orchestrate |
 | Requirements are still unclear | interactive client first |
 

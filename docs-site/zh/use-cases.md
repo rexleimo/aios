@@ -7,7 +7,7 @@ description: 按记忆、搜索、并行工作、可恢复运行、浏览器、�
 
 ## 一句话回答
 
-根据当前工作选择命令：安装用 aios init 和 doctor，项目事实用 memo 和统一搜索，独立工作用 aios team，一个长目标用 aios harness，按顺序执行阶段用 aios orchestrate。路径不确定时先看[工作流策略](workflow-policy.md)。
+根据当前工作选择命令：安装用 aios init 和 doctor，项目事实用 memo 和统一搜索，独立工作用 aios team，可分解成独立项的日常任务用 aios work（默认并行），一个长目标用 aios harness，按顺序执行阶段用 aios orchestrate。路径不确定时先看[工作流策略](workflow-policy.md)。
 
 ## 先完成初始化
 

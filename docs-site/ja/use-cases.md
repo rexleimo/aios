@@ -7,7 +7,7 @@ description: memory、search、parallel work、resumable run、browser、privacy
 
 ## まず答え
 
-setup は aios init と doctor、project fact は memo と unified search、独立作業は aios team、一つの長い objective は aios harness、ordered phase は aios orchestrate を使います。route が不明なら [Workflow Policy](workflow-policy.md) を先に読みます。
+setup は aios init と doctor、project fact は memo と unified search、独立作業は aios team、独立項目に分解できる日常タスクは aios work（既定で並列）、一つの長い objective は aios harness、ordered phase は aios orchestrate を使います。route が不明なら [Workflow Policy](workflow-policy.md) を先に読みます。
 
 ## Setup
 

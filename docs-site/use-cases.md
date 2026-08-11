@@ -7,7 +7,7 @@ description: Pick the right AIOS command for memory, search, parallel work, resu
 
 ## Quick Answer
 
-Choose the command by the work you need now: aios init and doctor for setup, memo and unified search for project facts, aios team for independent work, aios harness for one long objective, and aios orchestrate for ordered phases. Use the Workflow Policy page when the route is unclear.
+Choose the command by the work you need now: aios init and doctor for setup, memo and unified search for project facts, aios team for independent work, aios work for daily tasks that decompose into independent items (parallel by default), aios harness for one long objective, and aios orchestrate for ordered phases. Use the Workflow Policy page when the route is unclear.
 
 ## Start with setup
 
