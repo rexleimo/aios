@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "kind": "rex.standards-spec-review.v1",
+  "status": "complete",
+  "fixedPoint": "origin/main",
+  "diffRef": "diff:working-tree-origin-main",
+  "specStatus": "available",
+  "specSource": "docs/plans/2026-08-11-regression-test-scope-contract.json",
+  "standardsFindings": [],
+  "specFindings": [],
+  "verdict": "pass",
+  "evidenceRefs": ["diff:working-tree-origin-main", "artifact:test-scope:test-pool-cleanup-20260811"]
+}

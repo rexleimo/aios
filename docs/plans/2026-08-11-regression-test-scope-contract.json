@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "kind": "rex.test-scope-contract.v1",
+  "contractRef": "artifact:test-scope:test-pool-cleanup-20260811",
+  "userGoal": "Reduce regression feedback time and make test ownership easier to maintain.",
+  "nonGoals": [
+    "Do not force shared-state tests into four-way concurrency.",
+    "Do not alter production behavior or weaken assertions.",
+    "Do not remove test coverage."
+  ],
+  "inScope": [
+    "Classify test files by isolation and runtime cost.",
+    "Expose explicit unit, shared-state, and regression suite commands.",
+    "Run proven isolated unit tests with --test-concurrency=4.",
+    "Record baseline and post-change runtime plus repeated-run stability."
+  ],
+  "outOfScope": [
+    "Browser parallelism.",
+    "Changing test assertions solely to make concurrency pass.",
+    "Deleting or rewriting unrelated tests."
+  ],
+  "allowedTestSeams": [
+    "npm test scripts and package test commands",
+    "Node.js built-in test runner discovery and concurrency flags",
+    "Test directory structure and suite manifests"
+  ],
+  "completionCriteria": [
+    "Existing regression scope remains covered.",
+    "Isolated suite passes at four-way concurrency.",
+    "Shared-resource suite remains controlled.",
+    "Repeated runs show no new flaky failures.",
+    "Runtime comparison is recorded."
+  ]
+}

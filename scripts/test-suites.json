@@ -1,0 +1,170 @@
+{
+  "regression": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/model-router.test.mjs",
+      "scripts/tests/aios-cli.test.mjs",
+      "scripts/tests/aios-init.test.mjs",
+      "scripts/tests/headroom-install.test.mjs",
+      "scripts/tests/headroom-mcp-config.test.mjs",
+      "scripts/tests/headroom-mcp-registration.test.mjs",
+      "scripts/tests/interception-capabilities.test.mjs",
+      "scripts/tests/interception-cli.test.mjs",
+      "scripts/tests/offload-tool-offload.test.mjs",
+      "scripts/tests/memo-storage.test.mjs",
+      "scripts/tests/memo-help.test.mjs",
+      "scripts/tests/memo-docs.test.mjs",
+      "scripts/tests/memo-cli-integration.test.mjs",
+      "scripts/tests/memo-provenance.test.mjs",
+      "scripts/tests/memo-candidate-governance.test.mjs",
+      "scripts/tests/execution-context-packet.test.mjs",
+      "scripts/tests/context-lifecycle-s2.test.mjs",
+      "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs",
+      "scripts/tests/context-lifecycle-mcp-integration.test.mjs",
+      "scripts/tests/planning-context-candidates.test.mjs",
+      "scripts/tests/context-lifecycle-production-correction.test.mjs",
+      "scripts/tests/context-lifecycle-benchmark.test.mjs",
+      "scripts/tests/context-lifecycle-evidence-gate.test.mjs",
+      "scripts/tests/context-lifecycle-differential.test.mjs",
+      "scripts/tests/context-lifecycle-untrusted-control-text.test.mjs",
+      "scripts/tests/runtime-context-delivery.test.mjs",
+      "scripts/tests/memo-archive-index.test.mjs",
+      "scripts/tests/memo-storage-locking.test.mjs",
+      "scripts/tests/aios-state-root.test.mjs",
+      "scripts/tests/workspace.test.mjs",
+      "scripts/tests/skills-frontmatter.test.mjs",
+      "scripts/tests/skills-component.test.mjs",
+      "scripts/tests/skill-index.test.mjs",
+      "scripts/tests/handoff.test.mjs",
+      "scripts/tests/doctor.test.mjs",
+      "scripts/tests/hud-state.test.mjs",
+      "scripts/tests/team-watchdog.test.mjs",
+      "scripts/tests/ctx-agent-core.test.mjs",
+      "scripts/tests/check-site-sync.test.mjs",
+      "scripts/tests/contextdb-continuity.test.mjs",
+      "scripts/tests/contextdb-facade.test.mjs",
+      "scripts/tests/contextdb-lazy-load.test.mjs",
+      "scripts/tests/contextdb-shell-bridge-codex-home.test.mjs",
+      "scripts/tests/aios-components.test.mjs",
+      "scripts/tests/browser-local-mcp.test.mjs",
+      "scripts/tests/aios-doctor.test.mjs",
+      "scripts/tests/aios-harness.test.mjs",
+      "scripts/tests/aios-orchestrator.test.mjs",
+      "scripts/tests/aios-orchestrator-agents.test.mjs",
+      "scripts/tests/aios-learn-eval.test.mjs",
+      "scripts/tests/aios-lifecycle-plan.test.mjs",
+      "scripts/tests/plan-runtime.test.mjs",
+      "scripts/tests/planning-product-l3.test.mjs",
+      "scripts/tests/skill-comply-live.test.mjs",
+      "scripts/tests/plan-dream-cli-contract.test.mjs",
+      "scripts/tests/dream-plan-sync.test.mjs",
+      "scripts/tests/dream.test.mjs",
+      "scripts/tests/dream-governance.test.mjs",
+      "scripts/tests/aios-wrappers.test.mjs",
+      "scripts/tests/atomic-write.test.mjs",
+      "scripts/tests/process-spawn-timeout.test.mjs",
+      "scripts/tests/harness-journal.test.mjs",
+      "scripts/tests/harness-runtime.test.mjs",
+      "scripts/tests/harness-worktree.test.mjs",
+      "scripts/tests/harness-profiles.test.mjs",
+      "scripts/tests/repo-lock.test.mjs",
+      "scripts/tests/client-registry.test.mjs",
+      "scripts/tests/native-source-tree.test.mjs",
+      "scripts/tests/native-route-commands.test.mjs",
+      "scripts/tests/native-sync.test.mjs",
+      "scripts/tests/native-doctor.test.mjs",
+      "scripts/tests/native-repairs.test.mjs",
+      "scripts/tests/codemap.test.mjs",
+      "scripts/tests/mcp-targets.test.mjs",
+      "scripts/tests/mcp-hermes-yaml.test.mjs",
+      "scripts/tests/mcp-migration.test.mjs",
+      "scripts/tests/mcp-toml.test.mjs",
+      "scripts/tests/mcp-opencode.test.mjs",
+      "scripts/tests/release-pipeline.test.mjs",
+      "scripts/tests/rex-harness-runtime.test.mjs",
+      "scripts/tests/client-capabilities.test.mjs",
+      "scripts/tests/client-smoke.test.mjs",
+      "scripts/tests/ecc-uplift.test.mjs",
+      "scripts/tests/token-discipline.test.mjs",
+      "scripts/tests/ctx-agent-pending-smoke.test.mjs",
+      "scripts/tests/memo-scope.test.mjs",
+      "scripts/tests/memo-temporal.test.mjs",
+      "scripts/tests/memo-ab-eval.test.mjs",
+      "scripts/tests/canvas-context-scaling.test.mjs",
+      "scripts/tests/native-agent-guidance.test.mjs",
+      "scripts/tests/pages-workflow.test.mjs"
+    ]
+  },
+  "browser": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/headroom-mcp-config.test.mjs",
+      "scripts/tests/headroom-mcp-registration.test.mjs",
+      "scripts/tests/browser-local-mcp.test.mjs",
+      "scripts/tests/mcp-targets.test.mjs",
+      "scripts/tests/mcp-hermes-yaml.test.mjs",
+      "scripts/tests/mcp-migration.test.mjs",
+      "scripts/tests/mcp-toml.test.mjs",
+      "scripts/tests/mcp-opencode.test.mjs"
+    ]
+  },
+  "context": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/execution-context-packet.test.mjs",
+      "scripts/tests/context-lifecycle-s2.test.mjs",
+      "scripts/tests/context-lifecycle-orchestrate-integration.test.mjs",
+      "scripts/tests/context-lifecycle-mcp-integration.test.mjs",
+      "scripts/tests/planning-context-candidates.test.mjs",
+      "scripts/tests/context-lifecycle-production-correction.test.mjs",
+      "scripts/tests/context-lifecycle-benchmark.test.mjs",
+      "scripts/tests/context-lifecycle-evidence-gate.test.mjs",
+      "scripts/tests/context-lifecycle-differential.test.mjs",
+      "scripts/tests/context-lifecycle-untrusted-control-text.test.mjs",
+      "scripts/tests/runtime-context-delivery.test.mjs",
+      "scripts/tests/contextdb-continuity.test.mjs",
+      "scripts/tests/contextdb-facade.test.mjs",
+      "scripts/tests/contextdb-lazy-load.test.mjs",
+      "scripts/tests/contextdb-shell-bridge-codex-home.test.mjs",
+      "scripts/tests/canvas-context-scaling.test.mjs"
+    ]
+  },
+  "client": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/client-registry.test.mjs",
+      "scripts/tests/client-capabilities.test.mjs",
+      "scripts/tests/client-smoke.test.mjs",
+      "scripts/tests/pages-workflow.test.mjs"
+    ]
+  },
+  "orchestrator": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/aios-orchestrator.test.mjs",
+      "scripts/tests/aios-orchestrator-agents.test.mjs"
+    ]
+  },
+  "harness": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/aios-harness.test.mjs",
+      "scripts/tests/harness-journal.test.mjs",
+      "scripts/tests/harness-runtime.test.mjs",
+      "scripts/tests/harness-worktree.test.mjs",
+      "scripts/tests/harness-profiles.test.mjs"
+    ]
+  },
+  "team": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/team-watchdog.test.mjs"
+    ]
+  },
+  "rex": {
+    "concurrency": 1,
+    "files": [
+      "scripts/tests/rex-harness-runtime.test.mjs"
+    ]
+  }
+}

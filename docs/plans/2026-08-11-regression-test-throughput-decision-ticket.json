@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "kind": "rex.decision-ticket.v1",
+  "decisionTicketRef": "artifact:decision-ticket:test-pool-cleanup-20260811",
+  "objective": "Improve regression feedback time while preserving coverage and isolating unsafe concurrent tests.",
+  "decision": "Classify tests by execution isolation, run proven isolated unit tests with four-way concurrency, and keep shared-state suites separately controlled.",
+  "approvedBy": "user",
+  "nonGoals": [
+    "Force all tests into four-way concurrency.",
+    "Remove existing test coverage."
+  ]
+}

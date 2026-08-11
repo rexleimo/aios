@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "kind": "rex.delivery-ticket.v1",
+  "status": "ready",
+  "objective": "Improve regression feedback time while keeping test coverage and making test ownership easier to maintain.",
+  "decisionTicketRef": "artifact:decision-ticket:test-pool-cleanup-20260811",
+  "workItems": [
+    {
+      "id": "work-test-inventory",
+      "title": "Inventory test cost and shared state",
+      "outcome": "Current test files are classified by runtime cost, isolation, and resource ownership.",
+      "completionCriteria": [
+        "Slow files and shared resources have named evidence.",
+        "Candidate four-way pool contains only isolated tests."
+      ],
+      "verification": ["npm run test:scripts"],
+      "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"],
+      "dependsOn": []
+    },
+    {
+      "id": "work-suite-boundaries",
+      "title": "Create maintainable suite boundaries",
+      "outcome": "Tests are grouped by execution isolation without changing assertions or dropping coverage.",
+      "completionCriteria": [
+        "Unit and shared-state suite entry points exist.",
+        "Existing regression scope remains reachable."
+      ],
+      "verification": ["npm run test:scripts"],
+      "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"],
+      "dependsOn": ["work-test-inventory"]
+    },
+    {
+      "id": "work-four-way-pool",
+      "title": "Enable safe four-way concurrency",
+      "outcome": "Isolated unit tests run with four-way concurrency while unsafe tests stay controlled.",
+      "completionCriteria": [
+        "Four-way command is explicit and reproducible.",
+        "Repeated runs show no concurrency flake in migrated tests."
+      ],
+      "verification": ["npm run test:unit"],
+      "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"],
+      "dependsOn": ["work-suite-boundaries"]
+    },
+    {
+      "id": "work-regression-verification",
+      "title": "Verify regression speed and stability",
+      "outcome": "Regression runtime and stability are compared with serial baseline.",
+      "completionCriteria": [
+        "Full regression passes.",
+        "Runtime comparison is recorded.",
+        "Repeated regression runs remain stable."
+      ],
+      "verification": ["npm run test:regression", "npm run test:scripts"],
+      "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"],
+      "dependsOn": ["work-four-way-pool"]
+    }
+  ],
+  "frontier": {
+    "ready": ["work-test-inventory"],
+    "blocked": [
+      {"workItemId": "work-suite-boundaries", "reason": "Requires inventory classification.", "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"]},
+      {"workItemId": "work-four-way-pool", "reason": "Requires suite boundaries.", "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"]},
+      {"workItemId": "work-regression-verification", "reason": "Requires concurrency implementation.", "evidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"]}
+    ]
+  },
+  "parallelGroups": [],
+  "convergenceGate": {
+    "requiredEvidenceRefs": ["artifact:plan:test-pool-cleanup-20260811"],
+    "verification": "Full regression and repeated concurrency runs pass with recorded runtime comparison.",
+    "joinCondition": "All work items complete without coverage loss or concurrency flake."
+  },
+  "completionClaim": "soft"
+}
