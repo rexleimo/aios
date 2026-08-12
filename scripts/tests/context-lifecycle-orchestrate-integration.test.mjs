@@ -594,3 +594,99 @@ test('a bounded non-Git snapshot fails reconciliation closed instead of silently
     assert.ok(reconciliation.wouldBlockReasons.includes('reconciliation_git_unavailable'));
   });
 });
+
+test('active-plan tasks decompose into concurrent work items with dependencies and ownership', async () => {
+  await withRoot('context-orchestrate-plan-items-', async (rootDir) => {
+    await mkdir(path.join(rootDir, 'docs'), { recursive: true });
+    await mkdir(path.join(rootDir, 'src'), { recursive: true });
+    await startPlan({
+      rootDir,
+      title: 'Parallel plan bridge',
+      sessionId: 'parallel-plan-bridge-session',
+      tasks: [
+        {
+          id: 't1',
+          title: 'Extract auth validation module',
+          status: 'pending',
+          targets: ['src/auth-validation.mjs'],
+          allowedWrites: ['src/auth-validation.mjs'],
+          acceptance: 'Validation isolated and existing tests pass',
+          dependsOn: [],
+        },
+        {
+          id: 't2',
+          title: 'Extract token signing logic',
+          status: 'pending',
+          targets: ['src/token.mjs'],
+          allowedWrites: ['src/token.mjs'],
+          acceptance: 'Token signing isolated and existing tests pass',
+          dependsOn: [],
+        },
+        {
+          id: 't3',
+          title: 'Update auth architecture docs',
+          status: 'pending',
+          targets: ['docs/auth-architecture.md'],
+          allowedWrites: ['docs/**'],
+          acceptance: 'Docs describe new module boundaries',
+          dependsOn: ['t1'],
+        },
+      ],
+    });
+
+    const logs = [];
+    let dispatchedPlan = null;
+    const dispatchRuntimeRegistry = createDispatchRuntimeRegistry({
+      executeDryRunPlan(plan) {
+        dispatchedPlan = plan;
+        return {
+          mode: 'dry-run',
+          ok: true,
+          executorRegistry: [],
+          executorDetails: [],
+          jobRuns: [],
+          finalOutputs: [],
+        };
+      },
+    });
+
+    const result = await runOrchestrate({
+      taskTitle: 'Parallel plan bridge',
+      dispatchMode: 'local',
+      executionMode: 'dry-run',
+      format: 'json',
+    }, {
+      rootDir,
+      io: { log: (line) => logs.push(line) },
+      dispatchRuntimeRegistry,
+    });
+
+    assert.equal(result.exitCode, 0);
+    assert.ok(dispatchedPlan, 'expected dispatched dry-run plan');
+    const items = dispatchedPlan.workItems;
+    assert.equal(items.length, 3, 'expected all three eligible plan tasks as work items');
+
+    const byId = new Map(items.map((item) => [item.itemId, item]));
+    const t1 = byId.get('t1');
+    const t2 = byId.get('t2');
+    const t3 = byId.get('t3');
+    assert.ok(t1 && t2 && t3, 'expected plan task ids preserved as work item ids');
+
+    for (const item of [t1, t2, t3]) {
+      assert.equal(item.source, 'active-plan', item.itemId);
+      assert.equal(item.status, 'queued', item.itemId);
+    }
+
+    assert.deepEqual(t1.ownedPathHints, ['src/auth-validation.mjs']);
+    assert.deepEqual(t2.ownedPathHints, ['src/token.mjs']);
+    assert.ok(t3.ownedPathHints.includes('docs/auth-architecture.md'));
+    assert.ok(t3.ownedPathHints.includes('docs/**'));
+
+    assert.deepEqual(t1.dependsOn, []);
+    assert.deepEqual(t2.dependsOn, []);
+    assert.deepEqual(t3.dependsOn, ['t1']);
+
+    assert.equal(t1.acceptance, 'Validation isolated and existing tests pass');
+    assert.equal(t3.acceptance, 'Docs describe new module boundaries');
+  });
+});

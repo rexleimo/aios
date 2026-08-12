@@ -118,6 +118,7 @@ export async function prepareOrchestrateContextLifecycle({
       redactionTexts: [],
       packet: null,
       receipt: null,
+      planTasks: null,
       report: { status: 'not_applicable', reason: 'no_active_structured_plan' },
     };
   }
@@ -128,6 +129,7 @@ export async function prepareOrchestrateContextLifecycle({
       redactionTexts: [],
       packet: null,
       receipt: null,
+      planTasks: plan.tasks || null,
       report: {
         status: 'not_applicable',
         reason: selected.reason,
@@ -158,6 +160,7 @@ export async function prepareOrchestrateContextLifecycle({
       redactionTexts: assembled.assembly.redactionTexts,
       packet: assembled.packet,
       receipt: assembled.receipt,
+      planTasks: plan.tasks || null,
       report: {
         status: 'observed',
         activePlan: { relativePath: String(plan.relativePath || ''), sessionId: String(plan.sessionId || '') },
@@ -174,6 +177,7 @@ export async function prepareOrchestrateContextLifecycle({
       redactionTexts: [],
       packet: null,
       receipt: null,
+      planTasks: null,
       report: {
         status: 'observation_error',
         reason: 'context_assembly_failed',

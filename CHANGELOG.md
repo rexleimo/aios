@@ -6,6 +6,20 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.6.1] - 2026-08-12
+
+### Added
+
+- `aios work` now decomposes concurrent work items from the active structured plan: eligible plan tasks become work items with dependencies, owned paths (`targets` + `allowedWrites`), and acceptance criteria preserved. Semicolon-separated `--context` remains the fallback, so no-plan invocations are unchanged.
+
+### Fixed
+
+- Post-dispatch report recomputed work items without the active-plan task source, so the report's top-level `workItems` could disagree with the executed dispatch plan; the report now preserves the plan-driven decomposition.
+
+### Changed
+
+- New canonical `aios-work-dispatch` skill teaches agents when to enter `aios work` parallel dispatch (planned disposition, at least two independent work items, disjoint file ownership, no strict ordering), how to express decomposition (structured plan tasks first, `;`-separated context fallback), and the preview/approval boundary. `aios-workflow-router` now routes parallel-capable planned work to the dispatch skill.
+
 ## [5.6.0] - 2026-08-11
 
 - feat: aios work concurrent multi-agent dispatch entry

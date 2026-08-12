@@ -80,6 +80,7 @@ export async function buildPostDispatchReport({
   retryReplay,
   contextLifecycle,
   dispatchRunStartedAt,
+  planTasks,
 } = {}) {
   const postDispatchPolicy = buildDispatchPolicy({
     learnEvalReport: effectiveLearnEvalReport,
@@ -161,6 +162,7 @@ export async function buildPostDispatchReport({
     blueprint,
     taskTitle,
     contextSummary,
+    planTasks,
     learnEvalOverlay,
     dispatchPolicy,
     dispatchPreflight,

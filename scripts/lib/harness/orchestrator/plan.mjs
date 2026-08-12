@@ -64,6 +64,7 @@ export function buildOrchestrationPlan({
   contextSummary = '',
   executionContext = null,
   workItems = null,
+  planTasks = null,
   learnEvalOverlay = null,
   dispatchPlan = null,
   dispatchRun = null,
@@ -82,6 +83,7 @@ export function buildOrchestrationPlan({
     buildDecomposedWorkItems({
       taskTitle: resolvedTaskTitle,
       contextSummary: resolvedContextSummary,
+      planTasks,
     })
   );
   const runtimeExecutionContext = executionContext

@@ -53,6 +53,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents]
 
 - `team`：只有独立工作流事实成立，并且当前工作项已经是 `planned` 时使用。
 - `harness`：只有连续性、恢复或长运行事实成立，并且当前工作项已经是 `planned` 时使用。
+- `aios work`（并行派发）：当 disposition 为 `planned`、任务可分解为至少两个独立可执行工作项、文件所有权不重叠且无严格前置顺序时，加载 `aios-work-dispatch` 并按它的门槛执行（先 `--dry-run --json` 预览，获得明确用户批准后才允许 live 派发）。条件未全部成立时保持串行，不进入 `aios work`。
 - 没有真实并行域时保持顺序执行；没有可恢复目标时不启动 Harness。
 
 ## 完成门

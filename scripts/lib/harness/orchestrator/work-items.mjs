@@ -120,6 +120,7 @@ export function normalizeWorkItem(rawItem = {}, index = 0) {
       ? rawItem.dependsOn.map((item) => normalizeText(item)).filter(Boolean)
       : [],
     ownedPathHints: normalizeOwnedPathHints(rawItem.ownedPathHints),
+    acceptance: normalizeText(rawItem.acceptance),
   };
 }
 
@@ -183,7 +184,46 @@ export function buildWorkItemFallback(taskTitle = '', contextSummary = '') {
   }];
 }
 
-export function buildDecomposedWorkItems({ taskTitle = '', contextSummary = '', limit = DEFAULT_WORK_ITEM_LIMIT } = {}) {
+/**
+ * Map eligible structured-plan tasks (schema v3) to work items.
+ * Dependencies, ownership (targets + allowedWrites), and acceptance come from
+ * the plan itself instead of rule-based inference over a context string.
+ */
+export function buildPlanTaskWorkItems(planTasks = []) {
+  const eligible = (Array.isArray(planTasks) ? planTasks : [])
+    .filter((task) => task && !['done', 'skipped'].includes(String(task?.status || 'pending')))
+    .map((task, index) => {
+      const title = normalizeText(task?.title) || normalizeText(task?.id) || `Work item ${index + 1}`;
+      return {
+        itemId: normalizeText(task?.id) || `wi.${index + 1}`,
+        title,
+        summary: title,
+        type: inferWorkItemType(title),
+        source: 'active-plan',
+        status: 'queued',
+        dependsOn: Array.isArray(task?.dependsOn)
+          ? task.dependsOn.map((item) => normalizeText(item)).filter(Boolean)
+          : [],
+        ownedPathHints: normalizeOwnedPathHints([
+          ...(Array.isArray(task?.targets) ? task.targets : []),
+          ...(Array.isArray(task?.allowedWrites) ? task.allowedWrites : []),
+        ]),
+        acceptance: normalizeText(task?.acceptance),
+      };
+    });
+  return normalizeWorkItems(eligible);
+}
+
+export function buildDecomposedWorkItems({ taskTitle = '', contextSummary = '', limit = DEFAULT_WORK_ITEM_LIMIT, planTasks = null } = {}) {
+  // Structured active-plan tasks are the authoritative decomposition source:
+  // they carry explicit dependencies, ownership, and acceptance criteria.
+  if (Array.isArray(planTasks)) {
+    const planned = buildPlanTaskWorkItems(planTasks);
+    if (planned.length >= 2) {
+      return planned;
+    }
+  }
+
   const maxItems = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : DEFAULT_WORK_ITEM_LIMIT;
   const candidates = splitWorkItemCandidates(contextSummary);
   const deduped = [];

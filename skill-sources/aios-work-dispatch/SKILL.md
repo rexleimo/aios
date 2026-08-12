@@ -1,6 +1,6 @@
 ---
 name: aios-work-dispatch
-description: "Decide when a coding agent may use aios work for independent parallel work, preview the dispatch, and require explicit approval before live model execution."
+description: "Decide when a coding agent may use aios work for independent parallel work, preview the dispatch, and require explicit approval before live model execution. TRIGGER: aios work、parallel dispatch、并发派发、independent work items、独立工作项并行、多 agent 派发、multi-agent dispatch"
 installCatalogName: aios-work-dispatch
 clients: [codex, claude, gemini, opencode, hermes, grok]
 scopes: [global, project]
@@ -38,6 +38,39 @@ If any condition is unproven, keep execution serial and do not launch `aios work
 - Unclear ownership, missing acceptance criteria, or unknown client readiness: stop and clarify or remain serial.
 
 ## Required execution sequence
+
+### 0. Plan the decomposition first (user need -> work items)
+
+`aios work` decomposes from a structured plan when one is active, otherwise from
+the `--context` string. Plan first so the engine can use real dependencies and
+ownership instead of guessing:
+
+```bash
+aios plan start --title "<objective>" --task "<user need>"
+aios plan task <id> --target <path> --allow-write <glob>   # declare ownership
+aios plan task <id> --context <ref>                         # per-task context
+```
+
+Independent tasks get empty `dependsOn`; coupled tasks declare their prerequisite
+ids. Tasks that share file ownership are NOT independent — merge gate blocks them.
+After the plan has at least two eligible (pending) tasks, dispatch reads it:
+
+```bash
+aios work --task "<objective>" --dry-run --json
+```
+
+Eligible plan tasks become work items automatically (id, dependencies, ownership,
+acceptance preserved). No plan yet, or fewer than two eligible tasks? Fall back to
+a semicolon-separated `--context`; each segment is one independent work item:
+
+```bash
+aios work --task "<task>" --context "<independent item 1>; <independent item 2>" --dry-run --json
+```
+
+Write independent items as one `;`-separated value (or bullet lines), not newlines
+alone — the rule-based decomposer splits on semicolons/bullets. One sentence that
+cannot be split into independent items means one work item, i.e. no parallelism;
+decide consciously whether to keep serial.
 
 ### 1. Plan and preview
 
@@ -93,6 +126,8 @@ Never retry blocked work blindly. Re-check ownership, readiness, client selectio
 
 ```text
 planned + independent + owned + acceptance + no strict order
+  -> structured plan with independent tasks (aios plan start/task)
+     or semicolon-separated --context
   -> dry-run preview
   -> explicit live approval
   -> bounded aios work dispatch
@@ -101,3 +136,12 @@ planned + independent + owned + acceptance + no strict order
 anything unproven
   -> serial execution or clarification
 ```
+
+## Who decides what
+
+- Agent: whether the task is worth decomposing (six conditions) and how to
+  express the decomposition (plan tasks or `;`-separated context).
+- Engine: whether the decomposition is real — dry-run preview shows work items,
+  dependencies, owned-path overlap, and blocked readiness.
+- Preflight: plan/ownership contracts (hard blocked/ready verdicts).
+- User: whether live dispatch is approved. Preview never authorizes execution.

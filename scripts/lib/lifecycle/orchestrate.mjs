@@ -209,6 +209,7 @@ export async function runOrchestrate(
     taskTitle,
     contextSummary,
     executionContext: runtimeExecutionContext,
+    planTasks: preparedContextLifecycle?.planTasks || null,
     learnEvalOverlay,
     dispatchPolicy: rawDispatchPolicy,
     dispatchPreflight,
@@ -403,6 +404,7 @@ export async function runOrchestrate(
     retryReplay,
     contextLifecycle,
     dispatchRunStartedAt,
+    planTasks: preparedContextLifecycle?.planTasks || null,
   });
 
   if (options.format === 'json') {

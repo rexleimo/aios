@@ -151,6 +151,32 @@ test('workflow router is cataloged and generated for Grok with Rex-only guidance
   assert.doesNotMatch(content, /superpowers:/u);
 });
 
+test('workflow router routes parallel dispatch to the aios work dispatch skill', async () => {
+  const rootDir = path.resolve('.');
+  const manifest = loadSkillsSyncManifest(rootDir);
+  const router = manifest.skills.find((skill) => skill.relativeSkillPath === 'aios-workflow-router');
+  const workDispatch = manifest.skills.find((skill) => skill.relativeSkillPath === 'aios-work-dispatch');
+
+  assert.ok(router, 'expected the AIOS workflow router in the canonical skill catalog');
+  assert.ok(workDispatch, 'expected the AIOS work dispatch skill in the canonical skill catalog');
+
+  const routerSource = await readFile(path.join(rootDir, 'skill-sources', 'aios-workflow-router', 'SKILL.md'), 'utf8');
+  const workDispatchSource = await readFile(path.join(rootDir, 'skill-sources', 'aios-work-dispatch', 'SKILL.md'), 'utf8');
+
+  // Router must name the dispatch skill so agents can reach it from the disposition decision.
+  for (const marker of ['aios-work-dispatch', '`aios work`', '独立可执行工作项']) {
+    assert.match(routerSource, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  // Dispatch skill description must carry explicit trigger words so semantic matching
+  // can fire it for parallel-dispatch tasks instead of routing those tasks to the router only.
+  const description = workDispatchSource.match(/^description: (.+)$/m);
+  assert.ok(description, 'expected a description line in aios-work-dispatch frontmatter');
+  for (const trigger of ['aios work', 'parallel dispatch', 'independent work item']) {
+    assert.match(description[1], new RegExp(trigger.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')), trigger);
+  }
+});
+
 test('aios work dispatch skill is cataloged for every client with safe agent trigger gates', async () => {
   const rootDir = path.resolve('.');
   const manifest = loadSkillsSyncManifest(rootDir);
@@ -171,6 +197,9 @@ test('aios work dispatch skill is cataloged for every client with safe agent tri
     'obtain explicit user approval',
     'may start real model clients, consume money, and modify files',
     'Rex workflow remains owner of staged Provider selection',
+    'aios plan start',
+    '--allow-write',
+    'semicolon-separated',
   ]) {
     assert.match(content, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
   }
