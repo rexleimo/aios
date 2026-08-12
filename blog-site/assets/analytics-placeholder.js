@@ -20,6 +20,8 @@
     var anchors = document.querySelectorAll("a[href]");
 
     anchors.forEach(function (anchor) {
+      if (anchor.hasAttribute("hreflang") || anchor.closest(".rex-lang-switcher")) return;
+
       var href = anchor.getAttribute("href");
       if (!href) return;
 

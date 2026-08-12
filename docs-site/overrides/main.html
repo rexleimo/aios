@@ -265,7 +265,8 @@
 
       if (path.indexOf('/blog/') === 0) {
         body.classList.add('rex-blog');
-        if (path !== '/blog/' && !path.endsWith('/blog/')) {
+        var isBlogIndex = /^\/blog\/(?:[a-z]{2}\/)?$/.test(path);
+        if (!isBlogIndex) {
           body.classList.add('rex-blog-post');
         }
       }
@@ -284,6 +285,7 @@
 {% block container %}
   {% set is_home = page and page.meta and page.meta.home %}
   {% set is_blog_build = config.site_url and '/blog/' in config.site_url %}
+  {% set is_blog_index = page and page.file and (page.file.src_uri == 'index.md' or page.file.src_uri.endswith('/index.md')) %}
 
   {% if not page %}
     {{ super() }}
@@ -296,7 +298,7 @@
       {% include "partials/rex/home-footer.html" %}
     </div>
   {% elif is_blog_build %}
-    {% if page.is_homepage %}
+    {% if is_blog_index %}
       {% include "partials/rex/blog-index.html" %}
     {% else %}
       {% include "partials/rex/blog-post.html" %}

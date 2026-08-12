@@ -168,6 +168,18 @@ test('blog shell responsive contract switches to a dropdown menu on tablet and m
     shellCss,
     /@media \(max-width: 767px\)[\s\S]*\.rex-blog-header__actions\s*\{[\s\S]*flex-direction: column;[\s\S]*align-items: stretch;/
   );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-header__actions \.rex-lang-switcher\s*\{[\s\S]*width: 100%;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-header__actions \.rex-lang-switcher__menu\s*\{[\s\S]*position: static;[\s\S]*width: 100%;/
+  );
+  assert.match(
+    shellCss,
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-header__actions \.rex-lang-switcher__option\s*\{[\s\S]*min-height: 0;[\s\S]*border: 0;/
+  );
 
   assert.match(runtime, /\[data-rex-shell="blog-header"\]/);
   assert.match(runtime, /data-rex-blog-menu-toggle/);

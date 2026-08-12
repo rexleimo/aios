@@ -139,6 +139,24 @@ test('custom shell exposes i18n language switcher on home, docs, and blog surfac
   );
 });
 
+test('blog locales share the English shell and language options preserve corresponding slugs', () => {
+  const main = read('docs-site/overrides/main.html');
+  const switcher = read('docs-site/overrides/partials/rex/language-switcher.html');
+  const analytics = read('blog-site/assets/analytics-placeholder.js');
+
+  assert.match(main, /is_blog_index/);
+  assert.match(main, /page\.file\.src_uri\.endswith\('\/index\.md'\)/);
+  assert.match(main, /is_blog_index[\s\S]*partials\/rex\/blog-index\.html/);
+  assert.ok(main.includes("var isBlogIndex = /^\\/blog\\/(?:[a-z]{2}\\/)?$/.test(path);"));
+
+  assert.match(switcher, /page_slug/);
+  assert.match(switcher, /alt_slug/);
+  assert.match(switcher, /config\.site_url ~ alt_slug/);
+  assert.doesNotMatch(switcher, /alt\.link\s*\|\s*url/);
+  assert.match(analytics, /anchor\.hasAttribute\("hreflang"\)/);
+  assert.match(analytics, /anchor\.closest\("\.rex-lang-switcher"\)/);
+});
+
 test('home animation entrypoint delegates to a decoupled Pencil WebGL runtime', () => {
   const animation = read('docs-site/assets/home-animation.js');
   const runtimePath = 'docs-site/assets/redesign/home-webgl-runtime.js';

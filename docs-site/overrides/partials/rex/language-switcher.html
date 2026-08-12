@@ -1,7 +1,18 @@
-{# Use configured alternates so the control does not depend on plugin injection. #}
+{# Build targets from the current page so plugin-rewritten links cannot cross locales incorrectly. #}
 {% set alternates = config.extra.alternate if config.extra and config.extra.alternate else [] %}
 {% if alternates %}
-  {% set current_locale = i18n_page_locale if i18n_page_locale is defined else (i18n_current_language if i18n_current_language is defined else 'en') %}
+  {% set current_locale = 'en' %}
+  {% if page and page.file %}
+    {% set src_uri = page.file.src_uri %}
+    {% if src_uri.startswith('zh/') %}{% set current_locale = 'zh' %}
+    {% elif src_uri.startswith('ja/') %}{% set current_locale = 'ja' %}
+    {% elif src_uri.startswith('ko/') %}{% set current_locale = 'ko' %}
+    {% endif %}
+  {% endif %}
+  {% set page_slug = page.url if page else '' %}
+  {% if current_locale != 'en' and page_slug.startswith(current_locale ~ '/') %}
+    {% set page_slug = page_slug | replace(current_locale ~ '/', '', 1) %}
+  {% endif %}
   {% set ns = namespace(current_name='English') %}
   {% for alt in alternates %}
     {% if alt.lang == current_locale %}
@@ -23,16 +34,19 @@
     </summary>
     <ul class="rex-lang-switcher__menu" role="listbox" aria-label="Languages">
       {% for alt in alternates %}
-        {% set is_active = alt.lang == current_locale %}
-        <li role="option" {% if is_active %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
-          <a
-            class="rex-lang-switcher__option{% if is_active %} is-active{% endif %}"
-            href="{{ alt.link | url }}"
-            hreflang="{{ alt.lang }}"
-            lang="{{ alt.lang }}"
-            {% if is_active %}aria-current="true"{% endif %}
-          >{{ alt.name }}</a>
-        </li>
+        {% set alt_slug = ('' if alt.lang == 'en' else alt.lang ~ '/') ~ page_slug %}
+        {% if alt_slug | translation_exists %}
+          {% set is_active = alt.lang == current_locale %}
+          <li role="option" {% if is_active %}aria-selected="true"{% else %}aria-selected="false"{% endif %}>
+            <a
+              class="rex-lang-switcher__option{% if is_active %} is-active{% endif %}"
+              href="{{ config.site_url ~ alt_slug }}"
+              hreflang="{{ alt.lang }}"
+              lang="{{ alt.lang }}"
+              {% if is_active %}aria-current="true"{% endif %}
+            >{{ alt.name }}</a>
+          </li>
+        {% endif %}
       {% endfor %}
     </ul>
   </details>
