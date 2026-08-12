@@ -117,6 +117,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'search',
   'skill',
   'session',
+  'rex',
 ]);
 
 /* 中文注释：兼容别名在解析层归一化，分发层只处理标准命令名。 */
@@ -302,6 +303,9 @@ export function parseArgs(argv = []) {
   if (first === 'agents') return parseAgentsArgs(argv);
   if (first === 'clients') return parseClientsArgs(argv);
   if (first === 'workflow') return parseWorkflowArgs(argv);
+  if (first === 'rex') {
+    return { mode: 'command', help: false, command: 'rex', options: { args: argv.slice(1) } };
+  }
 
   const command = normalizeTopLevelCommand(first);
   if (!TOP_LEVEL_COMMANDS.has(command)) {

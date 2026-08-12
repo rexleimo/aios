@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-08-12-aios-managed-rex-harness-release-v2-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "aios rex doctor",
+    "setup": "Invoke the installed AIOS command through its public Commander route with a fixture bundled Rex executable.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/rex-command-cli.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "AIOS resolves and invokes its managed Rex executable without a global PATH command.",
+    "observed": "The public command test exits non-zero before a runtime-root-aware CLI entry can execute the fixture Rex command.",
+    "failureReason": "The public entrypoint derives its runtime root from source location and does not yet support installed runtime root selection.",
+    "receiptRef": "receipt:5605be26-4d01-42a3-8d10-9e2b949a411b"
+  }
+}

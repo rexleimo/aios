@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-08-12-aios-managed-rex-harness-testability-decision.json",
+  "redCandidate": {
+    "publicEntry": "aios rex doctor",
+    "setup": "Run the AIOS CLI from an isolated runtime with a managed Rex executable fixture.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/tests/rex-harness-command.test.mjs"],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "The public AIOS command resolves and forwards to managed Rex.",
+    "observed": "The new public command test fails because the managed Rex command module does not exist.",
+    "failureReason": "New acceptance behavior has no existing implementation or test coverage.",
+    "receiptRef": "receipt:e137294e-3e78-40b6-be1a-d45aeecd8f19"
+  }
+}

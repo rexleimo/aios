@@ -12,6 +12,7 @@ Commands:
   version       Print the installed AIOS version
   setup         Install AIOS integrations
   update        Update AIOS and AIOS integrations
+  rex           Run bundled Rex Harness without global PATH installation
   uninstall     Remove selected AIOS integrations
   doctor        Verify AIOS installation and repo health
   status        Show unified AIOS readiness status

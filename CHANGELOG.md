@@ -11,6 +11,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Added
 
 - `aios work` now decomposes concurrent work items from the active structured plan: eligible plan tasks become work items with dependencies, owned paths (`targets` + `allowedWrites`), and acceptance criteria preserved. Semicolon-separated `--context` remains the fallback, so no-plan invocations are unchanged.
+- Added stable `aios rex ...` forwarding to the bundled Rex Harness executable, without requiring global `PATH` installation or mutation.
 
 ### Fixed
 

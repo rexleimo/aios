@@ -43,6 +43,14 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'rex') {
+      const { createRexCommandRunner } = await import('../rex-harness/command.mjs');
+      const runRex = createRexCommandRunner({ rootDir: process.env.AIOS_REX_ROOT || rootDir });
+      const result = await runRex(parsed.options.args, { write: (value) => stdout.write(value) });
+      process.exitCode = result.exitCode;
+      return;
+    }
+
     if (parsed.mode === 'interactive') {
       runInteractiveTui(context);
       return;

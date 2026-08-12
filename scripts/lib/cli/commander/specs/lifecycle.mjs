@@ -1,5 +1,9 @@
 export const LIFECYCLE_COMMAND_SPECS = [
   {
+    name: 'rex [args...]',
+    description: 'Run bundled rex-harness without a global PATH installation',
+  },
+  {
     name: 'status',
     description: 'Show unified AIOS readiness status',
     options: [

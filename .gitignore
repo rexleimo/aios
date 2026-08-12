@@ -103,6 +103,8 @@ memory/memo/
 
 # Client-local MCP config — per-machine paths, not to be committed
 .opencode.json
+opencode.json
+.hermes/.aios-native-sync.json
 .crush.json
 crush.json
 

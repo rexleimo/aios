@@ -26,8 +26,12 @@ export function registerPassthroughCommand(program, spec, dispatch) {
     .description(spec.description)
     .helpOption(false)
     .allowUnknownOption(true)
-    .allowExcessArguments(true)
-    .argument('[args...]');
+    .allowExcessArguments(true);
+
+  // Specs with a variadic name already declare their sole positional argument.
+  if (!spec.name.includes('...')) {
+    command.argument('[args...]');
+  }
 
   for (const alias of spec.aliases || []) {
     command.alias(alias);
