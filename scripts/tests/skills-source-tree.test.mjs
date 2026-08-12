@@ -150,3 +150,34 @@ test('workflow router is cataloged and generated for Grok with Rex-only guidance
   assert.match(content, /current rex-harness software Capability Command/u);
   assert.doesNotMatch(content, /superpowers:/u);
 });
+
+test('aios work dispatch skill is cataloged for every client with safe agent trigger gates', async () => {
+  const rootDir = path.resolve('.');
+  const manifest = loadSkillsSyncManifest(rootDir);
+  const workDispatch = manifest.skills.find((skill) => skill.relativeSkillPath === 'aios-work-dispatch');
+
+  assert.ok(workDispatch, 'expected a canonical AIOS work dispatch skill');
+  for (const client of ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']) {
+    assert.ok(workDispatch.clients.includes(client), client);
+    assert.ok(workDispatch.repoTargets.includes(client), client);
+  }
+
+  const content = await readFile(path.join(rootDir, 'skill-sources', 'aios-work-dispatch', 'SKILL.md'), 'utf8');
+  for (const marker of [
+    'Current AIOS disposition is `planned`',
+    'at least two independently executable work items',
+    'file ownership does not overlap',
+    '`--dry-run --json`',
+    'obtain explicit user approval',
+    'may start real model clients, consume money, and modify files',
+    'Rex workflow remains owner of staged Provider selection',
+  ]) {
+    assert.match(content, new RegExp(marker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
+  }
+
+  for (const surface of ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'agents']) {
+    const target = resolveGeneratedTargetPath({ rootDir, entry: workDispatch, surface, manifest });
+    const projected = await readFile(path.join(target, 'SKILL.md'), 'utf8');
+    assert.match(projected, /# AIOS Work Dispatch/u, surface);
+  }
+});
