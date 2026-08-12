@@ -5,6 +5,18 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.6.1（2026-08-12）——`aios work`：计划驱动的多 Agent 调度
+
+### 主要变更
+
+- `aios work` 现在从活动结构化计划分解并发工作项：合格计划任务变成带依赖、路径归属（`targets` + `allowedWrites`）和验收标准的工作项。`;` 分隔的 `--context` 仍是无计划场景的回退路径。
+- 调度后报告保留计划驱动分解，顶层 `workItems` 始终与实际执行的调度计划一致。
+- 新增规范 `aios-work-dispatch` 技能：何时进入并行调度（planned disposition、至少两个独立项、文件归属不重叠、无严格顺序）、如何表达分解、以及预览/批准边界。`aios-workflow-router` 把可并行的计划型工作路由到调度技能。
+
+### 升级说明
+
+- 用 `aios update` 更新。无需配置迁移。如果移动项目或安装目录后 MCP 服务器显示"连接关闭"，在新项目根目录重跑 `aios update` 或 `aios internal browser mcp-migrate`，然后重启客户端（见[故障排查](troubleshooting.md)）。
+
 ## v5.6.0（2026-08-11）——`aios work`：一条命令并行多 Agent 调度
 
 ### 主要变更

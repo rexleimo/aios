@@ -11,6 +11,8 @@ faq:
     a: "Share the command, exit code, runtime versions, and the smallest redacted excerpt that proves the symptom."
   - q: "How do I recover a failed AIOS installation?"
     a: "Run aios doctor --native --verbose to find the first actionable issue, then re-run aios init --all from the intended project root."
+  - q: "Why are my MCP servers closed after an upgrade or after moving the project?"
+    a: "MCP entries store absolute script paths. After moving the project or install directory, re-run aios update or aios internal browser mcp-migrate from the new root, then restart the client."
 ---
 
 # Troubleshooting
@@ -118,6 +120,15 @@ aios internal browser cdp-status
 ~~~
 
 Use the documented browser-use CDP path: launch a visible CDP browser, connect, read a semantic snapshot or targeted text, then act and verify. Keep authentication walls human-controlled. Playwright MCP is a compatibility path.
+
+**Symptom:** MCP servers show "connection closed" after an upgrade or after moving the project/install directory.
+
+~~~bash
+aios internal browser mcp-migrate
+aios update
+~~~
+
+MCP entries in client configs (for example `~/.config/opencode/opencode.json`) store absolute paths to this repository's `scripts/` launchers. After the project or install directory is physically moved, those entries point at a path that no longer exists, so the servers fail to start. `aios update` rewrites them by default (the browser component is in the default update set); `aios internal browser mcp-migrate` rewrites them directly. Run either from the new project root, then restart the client. `aios doctor` checks the launcher paths without rewriting anything.
 
 ## Token tools
 

@@ -7,6 +7,18 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs.
 
+## v5.6.1 (2026-08-12) — `aios work`: Plan-Driven Multi-Agent Dispatch
+
+### What changed
+
+- `aios work` now decomposes concurrent work items from the active structured plan: eligible plan tasks become work items with dependencies, owned paths (`targets` + `allowedWrites`), and acceptance criteria preserved from the plan. Semicolon-separated `--context` remains the fallback for no-plan runs.
+- The post-dispatch report preserves the plan-driven decomposition, so its top-level `workItems` always match the executed dispatch plan.
+- New canonical `aios-work-dispatch` skill teaches when to enter parallel dispatch (planned disposition, at least two independent items, disjoint file ownership, no strict ordering), how to express decomposition, and the preview/approval boundary. `aios-workflow-router` routes parallel-capable planned work to the dispatch skill.
+
+### Upgrade notes
+
+- Update with `aios update`. No config migration needed. If MCP servers show "connection closed" after moving the project or install directory, re-run `aios update` or `aios internal browser mcp-migrate` from the new project root and restart the client (see [Troubleshooting](troubleshooting.md)).
+
 ## v5.6.0 (2026-08-11) — `aios work`: Parallel Multi-Agent Dispatch in One Command
 
 ### What changed

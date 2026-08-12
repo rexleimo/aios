@@ -102,6 +102,15 @@ aios internal browser cdp-status
 
 browser-use MCP over CDP を使い、visible browser、semantic snapshot、targeted text、act、verify の順に進みます。auth wall は human-controlled にします。Playwright MCP は compatibility path です。
 
+**Symptom:** アップグレード後、またはプロジェクト／インストールディレクトリを移動した後に、MCP server が "connection closed" になる。
+
+~~~bash
+aios internal browser mcp-migrate
+aios update
+~~~
+
+クライアント設定（例：`~/.config/opencode/opencode.json`）の MCP エントリは、このリポジトリの `scripts/` ランチャーへの**絶対パス**を保存しています。プロジェクトやインストールディレクトリを物理的に移動すると、そのパスは存在しなくなり、server が起動できません。`aios update` はデフォルトでこれを書き直します（browser コンポーネントはデフォルト更新セットに含まれます）。`aios internal browser mcp-migrate` は直接書き直します。どちらかを新しいプロジェクトルートで実行し、クライアントを再起動してください。`aios doctor` はランチャーパスの確認のみで、書き換えは行いません。
+
 ## Token tools
 
 ~~~bash

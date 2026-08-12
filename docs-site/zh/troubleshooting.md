@@ -109,6 +109,15 @@ aios internal browser cdp-status
 
 使用 browser-use CDP 默认路径：启动可见 CDP 浏览器，连接，读取 semantic snapshot 或定向文本，然后执行并验证。认证墙保留人工控制。Playwright MCP 是兼容路径。
 
+**症状：** 升级后或移动项目/安装目录后，MCP 服务器显示"连接关闭"。
+
+~~~bash
+aios internal browser mcp-migrate
+aios update
+~~~
+
+客户端配置（如 `~/.config/opencode/opencode.json`）里的 MCP 条目存的是本仓库 `scripts/` 启动器的**绝对路径**。项目或安装目录被物理移动后，这些条目指向的路径已不存在，服务器启动失败。`aios update` 默认会重写它们（browser 组件在默认更新集合里）；`aios internal browser mcp-migrate` 直接重写。任选其一在新项目根目录运行，然后重启客户端。`aios doctor` 只检查启动器路径，不重写任何内容。
+
 ## Token 工具
 
 **症状：** RTK、Caveman 或 Headroom 缺失，或授权流程停止。

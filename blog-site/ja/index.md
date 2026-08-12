@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.6.1: プラン駆動のマルチエージェントディスパッチ — aios work がプランを読む](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0: 並列マルチエージェントコーディングを1コマンドで — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [Loop Engineering から Graph Engineering へ：AIOS はローカルファーストの Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：証拠駆動の Agent ライフサイクル昇格](2026-08-v551-agent-lifecycle-promotion.md)
