@@ -147,3 +147,6 @@ undefined/
 .skillopt/
 # Windows drive-letter path join artifacts (installer temp dirs written relative to cwd)
 C:/
+
+# mkdocs social plugin cache
+.cache/
