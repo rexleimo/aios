@@ -150,3 +150,6 @@ C:/
 
 # mkdocs social plugin cache
 .cache/
+
+# Pencil design sources (kept out of repo per convention)
+pen/
