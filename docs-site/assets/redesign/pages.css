@@ -58,7 +58,7 @@
   margin: 0 0 var(--rex-space-8);
   padding: 0 0 0 var(--rex-space-6);
   border: 0;
-  border-left: 1px solid rgba(34, 211, 238, 0.34);
+  border-left: 1px solid color-mix(in srgb, var(--rex-accent) 34%, transparent);
   border-radius: 0;
   box-shadow: var(--rex-elev-0);
 }
@@ -77,9 +77,9 @@
 .rex-doc-outline__title span {
   width: 0.42rem;
   height: 0.42rem;
-  background: var(--rex-cyan);
+  background: var(--rex-accent);
   border-radius: 999px;
-  box-shadow: 0 0 12px rgba(34, 211, 238, 0.55);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rex-accent) 55%, transparent);
 }
 
 .rex-doc-outline ul {
@@ -108,9 +108,9 @@
 }
 
 .rex-doc-outline li a:is(:hover, :focus-visible) {
-  color: var(--rex-cyan);
-  background: rgba(34, 211, 238, 0.06);
-  border-color: rgba(34, 211, 238, 0.26);
+  color: var(--rex-accent);
+  background: color-mix(in srgb, var(--rex-accent) 6%, transparent);
+  border-color: color-mix(in srgb, var(--rex-accent) 26%, transparent);
 }
 
 .rex-doc-content {

@@ -1,27 +1,37 @@
-:root {
-  --rex-bg: #06070D;
-  --rex-bg-elevated: #080A12;
-  --rex-header: #0A0E1A;
-  --rex-panel: #0D1220;
-  --rex-panel-soft: #101728;
-  --rex-panel-strong: #121B2D;
-  --rex-border: #1B2437;
-  --rex-border-soft: rgba(148, 163, 184, 0.14);
+:root,
+:root[data-rex-theme="light"] {
+  /* v8 light palette (default) */
+  --rex-bg: #FFFFFF;
+  --rex-bg-elevated: #FFFFFF;
+  --rex-header: rgba(255, 255, 255, 0.92);
+  --rex-panel: #F6F8FA;
+  --rex-panel-soft: #F0F3F6;
+  --rex-panel-strong: #EAECEF;
+  --rex-border: #EAECEF;
+  --rex-border-soft: rgba(16, 24, 40, 0.08);
 
-  --rex-text: #F8FAFC;
+  --rex-text: #0A0A0A;
   --rex-text-strong: var(--rex-text);
-  --rex-text-body: #DCE5F0;
-  --rex-text-muted: #A8B6C9;
-  --rex-text-soft: #8494AB;
+  --rex-text-body: #3A4452;
+  --rex-text-muted: #5B6573;
+  --rex-text-soft: #98A2B3;
   --rex-muted: var(--rex-text-muted);
   --rex-soft: var(--rex-text-soft);
 
-  --rex-cyan: #22D3EE;
-  --rex-blue: #3B82F6;
-  --rex-violet: #8B5CF6;
-  --rex-green: #34D399;
+  --rex-cyan: #0066FF;
+  --rex-blue: #0066FF;
+  --rex-violet: #7C3AED;
+  --rex-green: #16A34A;
   --rex-orange: #FF8400;
-  --rex-danger: #F87171;
+  --rex-danger: #DC2626;
+  --rex-accent: var(--rex-cyan);
+
+  --rex-elev-0: none;
+  --rex-elev-1: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --rex-elev-2: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --rex-elev-3: 0 18px 60px rgba(16, 24, 40, 0.12);
+  --rex-shadow-soft: var(--rex-elev-3);
+  --rex-shadow-cyan: 0 0 36px rgba(0, 102, 255, 0.16);
 
   --rex-text-xs: 0.75rem;
   --rex-text-sm: 0.8rem;
@@ -54,16 +64,80 @@
   --rex-radius-lg: 16px;
   --rex-radius-xl: 24px;
 
+  --rex-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --rex-font-body: "Inter", system-ui, sans-serif;
+  --rex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-rex-theme="dark"] {
+  /* v7 dark palette (manual override) */
+  --rex-bg: #06070D;
+  --rex-bg-elevated: #080A12;
+  --rex-header: rgba(10, 14, 26, 0.94);
+  --rex-panel: #0D1220;
+  --rex-panel-soft: #101728;
+  --rex-panel-strong: #121B2D;
+  --rex-border: #1B2437;
+  --rex-border-soft: rgba(148, 163, 184, 0.14);
+
+  --rex-text: #F8FAFC;
+  --rex-text-strong: var(--rex-text);
+  --rex-text-body: #DCE5F0;
+  --rex-text-muted: #A8B6C9;
+  --rex-text-soft: #6B7689;
+  --rex-muted: var(--rex-text-muted);
+  --rex-soft: var(--rex-text-soft);
+
+  --rex-cyan: #22D3EE;
+  --rex-blue: #3B82F6;
+  --rex-violet: #8B5CF6;
+  --rex-green: #34D399;
+  --rex-orange: #FF8400;
+  --rex-danger: #F87171;
+  --rex-accent: var(--rex-cyan);
+
   --rex-elev-0: none;
   --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
   --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
   --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
   --rex-shadow-soft: var(--rex-elev-3);
   --rex-shadow-cyan: 0 0 36px rgba(34, 211, 238, 0.22);
+}
 
-  --rex-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --rex-font-body: "Inter", system-ui, sans-serif;
-  --rex-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+@media (prefers-color-scheme: dark) {
+  :root:not([data-rex-theme="light"]) {
+    /* v7 dark palette (system preference) */
+    --rex-bg: #06070D;
+    --rex-bg-elevated: #080A12;
+    --rex-header: rgba(10, 14, 26, 0.94);
+    --rex-panel: #0D1220;
+    --rex-panel-soft: #101728;
+    --rex-panel-strong: #121B2D;
+    --rex-border: #1B2437;
+    --rex-border-soft: rgba(148, 163, 184, 0.14);
+
+    --rex-text: #F8FAFC;
+    --rex-text-strong: var(--rex-text);
+    --rex-text-body: #DCE5F0;
+    --rex-text-muted: #A8B6C9;
+    --rex-text-soft: #6B7689;
+    --rex-muted: var(--rex-text-muted);
+    --rex-soft: var(--rex-text-soft);
+
+    --rex-cyan: #22D3EE;
+    --rex-blue: #3B82F6;
+    --rex-violet: #8B5CF6;
+    --rex-green: #34D399;
+    --rex-orange: #FF8400;
+    --rex-danger: #F87171;
+    --rex-accent: var(--rex-cyan);
+
+    --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
+    --rex-shadow-soft: var(--rex-elev-3);
+    --rex-shadow-cyan: 0 0 36px rgba(34, 211, 238, 0.22);
+  }
 }
 
 html {
@@ -73,13 +147,13 @@ html {
 body {
   color: var(--rex-text-body);
   background:
-    radial-gradient(circle at 14% 0%, rgba(18, 48, 110, 0.34), transparent 35rem),
-    radial-gradient(circle at 86% 18%, rgba(91, 42, 158, 0.2), transparent 30rem),
+    radial-gradient(circle at 14% 0%, rgba(0, 102, 255, 0.06), transparent 35rem),
+    radial-gradient(circle at 86% 18%, rgba(124, 58, 237, 0.05), transparent 30rem),
     var(--rex-bg);
   font-family: var(--rex-font-body);
 }
 
 ::selection {
-  color: #031018;
+  color: #FFFFFF;
   background: var(--rex-cyan);
 }
