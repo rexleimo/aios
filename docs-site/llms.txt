@@ -1,8 +1,12 @@
 # AIOS
 
-> Local-first agent harness for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Runs stable agent loops (verification gates, exit conditions, state files) and wires them into graphs (routed edges, shared ContextDB state, failure routing) entirely on your machine. Version: v5.5.2 · Updated: 2026-08-10.
+> Local-first agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Adds cross-session project memory (ContextDB), adaptive workflow routing (noop/direct/guarded/planned), multi-agent collaboration, and verification gates on top of the coding clients you already use — without replacing them. Entirely local: memory, logs, and evidence stay on your machine. Version: v5.6.1 · Updated: 2026-08-14.
+
+## One-Line Definition
+AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok) cross-session project memory, adaptive routing, multi-agent teams, and verification — same commands, now with a brain.
 
 ## Search Intents
+- what is AIOS
 - how do I give Claude Code persistent memory
 - why does my coding agent forget context between sessions
 - codex cli multi agent team setup

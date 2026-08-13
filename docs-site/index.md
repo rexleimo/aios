@@ -2,6 +2,18 @@
 title: AIOS — Local-First Agent Harness
 description: Add project memory, adaptive workflow routing, multi-agent teams, and verification to Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing your coding client.
 home: true
+schema_type: faq
+faq:
+  - q: What is AIOS?
+    a: AIOS is a local-first agent workflow layer that adds cross-session project memory, adaptive routing, multi-agent collaboration, and verification to coding CLIs like Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing them.
+  - q: Does AIOS replace my coding client?
+    a: No. AIOS works inside the clients you already use. It adds memory, routing, teams, and verification gates on top, so your existing commands and workflows stay the same.
+  - q: How does AIOS keep project memory across sessions?
+    a: AIOS stores project facts, memos, checkpoints, and context packs in a local ContextDB. Agents pull relevant context on demand instead of injecting full history into every prompt.
+  - q: Is AIOS private?
+    a: Yes. AIOS is local-first: memory, logs, and verification evidence stay on your machine. No prompt or code data leaves your environment.
+  - q: How do I install AIOS?
+    a: Run the one-line installer from the releases page, then aios init --all in your project root and aios doctor --native --verbose to verify the setup.
 ---
 
 <!-- ============================================================

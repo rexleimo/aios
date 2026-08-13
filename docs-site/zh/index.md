@@ -2,6 +2,18 @@
 title: AIOS — 本地优先的 AI 编码 Agent 工作流
 description: 为 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok 增加项目记忆、自适应路由、多 Agent 协作与验证，不替换你现有的编码客户端。
 home: true
+schema_type: faq
+faq:
+  - q: AIOS 是什么？
+    a: AIOS 是一个本地优先的 Agent 工作流层，为 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok 等编码 CLI 增加跨会话项目记忆、自适应路由、多 Agent 协作与验证门禁，不替换它们。
+  - q: AIOS 会替换我的编码客户端吗？
+    a: 不会。AIOS 运行在你已使用的客户端之内，在其上增加记忆、路由、团队与验证门禁，你现有的命令与工作流保持不变。
+  - q: AIOS 如何跨会话保存项目记忆？
+    a: AIOS 把项目事实、memo、检查点与上下文包存入本地 ContextDB，Agent 按需读取相关内容，而不是把完整历史注入每个提示。
+  - q: AIOS 隐私吗？
+    a: 是。AIOS 本地优先：记忆、日志与验证证据都留在你的机器上，提示与代码数据不会离开你的环境。
+  - q: 如何安装 AIOS？
+    a: 从 releases 页面运行一行安装脚本，然后在项目根目录执行 aios init --all，再用 aios doctor --native --verbose 验证安装。
 ---
 
 <!-- ============================================================
