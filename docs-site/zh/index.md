@@ -1,93 +1,207 @@
 ---
 title: AIOS — 本地优先的 AI 编码 Agent 工作流
 description: 为 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok 增加项目记忆、自适应路由、多 Agent 协作与验证，不替换你现有的编码客户端。
+home: true
 ---
 
-# AIOS
+<!-- ============================================================
+     Hero Section (v8 / ZIK3q) — 标题 + 人像图 + 通栏展示图
+     ============================================================ -->
 
-AIOS 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），再补上跨会话项目记忆、并行协作、可恢复运行和验证门禁。
+<div class="rex-hero">
+  <div class="rex-hero__inner">
+    <div class="rex-hero__content">
+      <div class="rex-hero__badge">
+        <svg class="rex-hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
+        本地优先 Agent 工作流 · v{{ aios_version }}
+      </div>
 
-[30 秒安装](getting-started.md){ .md-button .md-button--primary data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="quick_start" }
-[GitHub](https://github.com/rexleimo/aios){ .md-button data-rex-track="cta_click" data-rex-location="home_hero" data-rex-target="github" }
+      <h1 class="rex-hero__title">给你的 AI 编码 Agent 记忆、团队与验证。</h1>
 
-[按场景选择](use-cases.md) · [工作流策略](workflow-policy.md) · [架构](architecture.md) · [博客](/blog/zh/)
+      <p class="rex-hero__sub">
+        AIOS 是一个本地优先的 Agent 工作流层。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），
+        再补上跨会话项目记忆、自适应路由、多 Agent 协作与验证门禁——不改变你的工作方式。
+      </p>
 
-## 一句话回答
+      <div class="rex-hero__cta">
+        <a href="getting-started" class="md-button md-button--primary">30 秒安装</a>
+        <a href="https://github.com/rexleimo/aios" class="md-button">查看 GitHub</a>
+      </div>
 
-如果你需要让 Agent 在不同会话和不同客户端之间共享项目事实、把独立工作交给多个 Agent，或让长任务能够暂停后继续，AIOS 提供了这些能力的本地工作流层。它不会替换底层编码客户端，也不会把所有历史自动塞进每个提示。
+      <div class="rex-hero__install" role="group" aria-label="一行安装">
+        <code class="rex-hero__install-cmd" id="hero-install-cmd">curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash</code>
+        <button class="rex-hero__install-copy" type="button" data-copy-target="hero-install-cmd">复制</button>
+      </div>
+      <script>
+        (function () {
+          var btn = document.querySelector('[data-copy-target="hero-install-cmd"]');
+          if (!btn) return;
+          btn.addEventListener('click', function () {
+            var text = document.getElementById('hero-install-cmd').textContent.trim();
+            navigator.clipboard.writeText(text).then(function () {
+              var label = btn.textContent;
+              btn.textContent = '已复制 ✓';
+              setTimeout(function () { btn.textContent = label; }, 1600);
+            });
+          });
+        })();
+      </script>
+    </div>
 
-## 核心能力
+    <figure class="rex-hero__portrait">
+      <img src="../assets/home/hero-portrait.png" alt="AIOS Agent 工作流概览" width="1254" height="1254" loading="eager" fetchpriority="high" />
+    </figure>
+  </div>
 
-| 能力 | 作用 | 起点 |
-|---|---|---|
-| **ContextDB** | 按需读取的项目记忆、memo、检查点和上下文包 | aios init / [ContextDB](contextdb.md) |
-| **Workflow Policy** | 用 noop、direct、guarded、planned 选择风险匹配的路径 | [工作流策略](workflow-policy.md) |
-| **Agent Team** | 有治理和 HUD 证据的独立任务并行协作 | aios team / [Agent Team](team-ops.md) |
-| **Solo Harness** | 带运行日志和恢复入口的长任务 | aios harness run / [Solo Harness](solo-harness.md) |
-| **RTK / Caveman** | 分别处理本地输出噪声和响应表达长度 | [Token Intelligence](token-compression.md) |
-| **Headroom MCP** | 通过支持的 MCP 客户端显式压缩和取回内容 | [Token Intelligence](token-compression.md) |
-| **Verification / Privacy** | 诊断、测试、质量门禁和敏感内容脱敏 | [故障排查](troubleshooting.md) |
+  <figure class="rex-hero__showcase">
+    <img src="../assets/home/hero2.png" alt="AIOS 本地优先 Agent 工作流总览" width="1536" height="768" loading="lazy" />
+  </figure>
+</div>
 
-## 现在就做
+<!-- ============================================================
+     Logo 墙 — 客户端名
+     ============================================================ -->
 
-~~~bash
-# 在项目根目录初始化客户端指引和项目标记。
-aios init --all
+<div class="rex-logowall" aria-label="兼容你已使用的客户端">
+  <span class="rex-logowall__label">兼容你已使用的客户端</span>
+  <div class="rex-logowall__chips">
+    <span class="rex-logowall__chip">codex</span>
+    <span class="rex-logowall__chip">claude</span>
+    <span class="rex-logowall__chip">gemini</span>
+    <span class="rex-logowall__chip">opencode</span>
+    <span class="rex-logowall__chip">hermes</span>
+    <span class="rex-logowall__chip">grok</span>
+  </div>
+</div>
 
-# 查看原生同步、运行时和安全检查结果。
-aios doctor --native --verbose
-~~~
+<!-- ============================================================
+     Team 特性带 — 图左文右
+     ============================================================ -->
 
-项目标记指向 .aios/context-db/index.json。ContextDB 使用 pull-based 读取：Agent 需要时搜索相关资料，而不是每次启动都读取完整历史。
+<div id="capabilities" class="rex-band rex-band--team">
+  <figure class="rex-band__media">
+    <img src="../assets/home/team2.png" alt="AIOS 多 Agent 团队协作" width="1536" height="1024" loading="lazy" />
+  </figure>
+  <div class="rex-band__content">
+    <span class="rex-band__eyebrow">多 AGENT 团队</span>
+    <h2 class="rex-band__title">有治理的并行协作，而不是混乱</h2>
+    <p class="rex-band__text">
+      把独立工作项拆分并派发给多个 Agent，带实时 HUD 追踪、证据门禁和内置治理。
+      耦合改动保持串行；独立领域并行运行。
+    </p>
+    <a class="rex-band__link" href="team-ops">了解 Agent Team <span aria-hidden="true">→</span></a>
+  </div>
+</div>
 
-## 选择正确路径
+<!-- ============================================================
+     Verification 特性带 — 文左图右
+     ============================================================ -->
 
-| 你的目标 | 推荐入口 |
-|---|---|
-| 先问一个问题或查看资料 | [Workflow Policy](workflow-policy.md) 的 direct |
-| 做一个小而清晰的本地改动 | guarded + [Verification](troubleshooting.md) |
-| 多步骤、跨文件或需要恢复的工作 | planned / [Solo Harness](solo-harness.md) |
-| 两个以上互不依赖的工作包 | [Agent Team](team-ops.md) |
-| 阶段性编排和质量证据 | [Use Cases](use-cases.md) |
+<div class="rex-band rex-band--verify">
+  <div class="rex-band__content">
+    <span class="rex-band__eyebrow">验证 / 隐私</span>
+    <h2 class="rex-band__title">先有证据，再谈完成</h2>
+    <p class="rex-band__text">
+      自诊断、编辑前安全检查、验证循环与隐私脱敏，让每次改动在交付前都可验证。
+      敏感数据永不离开你的机器。
+    </p>
+    <a class="rex-band__link" href="troubleshooting">了解验证 <span aria-hidden="true">→</span></a>
+  </div>
+  <figure class="rex-band__media">
+    <img src="../assets/home/doctor2.png" alt="AIOS 验证与诊断" width="1536" height="1024" loading="lazy" />
+  </figure>
+</div>
 
-## 运行时边界
+<!-- ============================================================
+     Run 层 2×2
+     ============================================================ -->
 
-~~~text
-用户
-  -> codex / claude / gemini / opencode / hermes / grok
-  -> native guidance + .aios/context-db/index.json
-  -> ContextDB 按需搜索 / memo / checkpoint
-  -> Team、Solo Harness、Orchestrate（按任务需要）
-  -> browser-use CDP（浏览器任务需要时）
-~~~
+<div id="demo" class="rex-run">
+  <div class="rex-run__header">
+    <span class="rex-run__eyebrow">RUN 层</span>
+    <h2 class="rex-run__title">四个系统，运行在你的 CLI 之下</h2>
+    <p class="rex-run__sub">记忆、路由、协作与安全——按需读取，始终在线。</p>
+  </div>
+  <div class="rex-run__grid">
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">ContextDB</h3>
+      <p class="rex-run__card-text">按需读取的项目记忆——memo、检查点与上下文包在相关时召回，绝不盲目注入。</p>
+      <code class="rex-run__card-cmd">aios init</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">自适应工作流</h3>
+      <p class="rex-run__card-text">按风险路由每个任务：noop、direct、guarded 或 planned——每阶段配对的证据门禁。</p>
+      <code class="rex-run__card-cmd">aios work</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">Agent Team</h3>
+      <p class="rex-run__card-text">带实时 HUD、治理与证据收集的并行独立工作——不注入全局技能链。</p>
+      <code class="rex-run__card-cmd">aios team</code>
+    </article>
+    <article class="rex-run__card">
+      <h3 class="rex-run__card-title">验证</h3>
+      <p class="rex-run__card-text">编辑前安全检查、验证循环与隐私脱敏，让每次改动在交付前都可验证。</p>
+      <code class="rex-run__card-cmd">aios verify</code>
+    </article>
+  </div>
+</div>
 
-Playwright MCP 保留为兼容路径；当前浏览器文档默认使用 browser-use CDP。RTK、Caveman 和 Headroom MCP 也各有独立的安装、授权和验证边界。
+<!-- ============================================================
+     全宽安装块
+     ============================================================ -->
 
-## 第一次使用
+<div class="rex-install">
+  <div class="rex-install__inner">
+    <h2 class="rex-install__title">30 秒安装</h2>
+    <p class="rex-install__text">在项目根目录初始化客户端指引、项目标记与运行时检查。</p>
+    <div class="rex-install__cmds" role="group" aria-label="安装命令">
+      <code class="rex-install__cmd">aios init --all</code>
+      <code class="rex-install__cmd">aios doctor --native --verbose</code>
+    </div>
+    <a href="getting-started" class="md-button md-button--primary rex-install__cta">免费开始 <span aria-hidden="true">→</span></a>
+  </div>
+</div>
 
-1. 阅读 [快速开始](getting-started.md)，执行 aios init --all。
-2. 执行 aios doctor --native --verbose，根据证据处理警告。
-3. 在项目中启动一个支持的客户端。
-4. 需要长期记忆时阅读 [ContextDB](contextdb.md)，需要选择路径时阅读 [工作流策略](workflow-policy.md)。
+<!-- ============================================================
+     博客列表（3 条）
+     ============================================================ -->
 
-## 相关入口
+<div class="rex-bloglist">
+  <div class="rex-bloglist__header">
+    <span class="rex-bloglist__eyebrow">来自博客</span>
+    <h2 class="rex-bloglist__title">最新工作流指南</h2>
+    <a class="rex-bloglist__more" href="https://cli.rexai.top/blog/">全部文章 <span aria-hidden="true">→</span></a>
+  </div>
+  <div class="rex-bloglist__grid">
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">工作流</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-07-v400-adaptive-workflow-policy/">4.0.0 自适应工作流策略</a></h3>
+      <p class="rex-bloglist__card-text">先分类工作，再选择流程控制——noop、direct、guarded、planned。</p>
+    </article>
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">团队</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-08-parallel-coding-agents/">并行编码 Agent</a></h3>
+      <p class="rex-bloglist__card-text">独立工作项何时可以并行——以及何时绝不能。</p>
+    </article>
+    <article class="rex-bloglist__card">
+      <span class="rex-bloglist__tag">可靠性</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-07-raw-cli-to-reliable-workflow/">从裸 CLI 到可靠工作流</a></h3>
+      <p class="rex-bloglist__card-text">把裸编码 CLI 变成可恢复、证据驱动的工作流。</p>
+    </article>
+  </div>
+</div>
 
-- [Windows 指南](windows-guide.md) - PowerShell 安装和恢复。
-- [架构](architecture.md) - 运行时层和兼容性边界。
-- [案例库](case-library.md) - 可复现的跨客户端、浏览器和隐私案例。
-- [友情链接](friends.md) - 生态和相关项目。
-- [博客](/blog/zh/) - 工作流教程、版本说明和技术深挖。
+<!-- ============================================================
+     收尾 CTA
+     ============================================================ -->
 
-## 博客精选
-
-- [4.0.0 自适应工作流策略](/blog/zh/2026-07-v400-adaptive-workflow-policy/)
-- [如何选择 Agent 工作流](/blog/zh/2026-07-choose-agent-workflow/)
-- [从裸 CLI 到可靠工作流](/blog/zh/2026-07-raw-cli-to-reliable-workflow/)
-- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
-
-## 更多核心文章
-
-- [AIOS RL Training System](/blog/zh/rl-training-system/)
-- [ContextDB Search Upgrade](/blog/zh/contextdb-fts-bm25-search/)
-- [Windows CLI Startup Stability](/blog/zh/windows-cli-startup-stability/)
-- [Orchestrate Live](/blog/zh/orchestrate-live/)
+<div class="rex-cta">
+  <div class="rex-cta__inner">
+    <h2 class="rex-cta__title">准备好升级了吗？</h2>
+    <p class="rex-cta__text">从一个小而可验证的工作流开始，任务需要时再加入协作。</p>
+    <div class="rex-cta__buttons">
+      <a href="getting-started" class="md-button md-button--primary">免费开始</a>
+      <a href="contextdb" class="md-button">阅读文档</a>
+    </div>
+  </div>
+</div>
