@@ -1,9 +1,10 @@
 /* Mirrors the docs typography contract while keeping blog asset builds self-contained. */
-:root {
-  --rex-text-strong: #F8FAFC;
-  --rex-text-body: #DCE5F0;
-  --rex-text-muted: #A8B6C9;
-  --rex-text-soft: #8494AB;
+:root,
+:root[data-rex-theme="light"] {
+  --rex-text-strong: #0A0A0A;
+  --rex-text-body: #3A4452;
+  --rex-text-muted: #5B6573;
+  --rex-text-soft: #98A2B3;
 
   --rex-text-xs: 0.75rem;
   --rex-text-sm: 0.8rem;
@@ -32,6 +33,34 @@
   --rex-layout-max: 52rem;
 
   --rex-elev-0: none;
+  --rex-elev-1: 0 1px 2px rgba(16, 24, 40, 0.06);
+  --rex-elev-2: 0 8px 24px rgba(16, 24, 40, 0.08);
+  --rex-elev-3: 0 18px 60px rgba(16, 24, 40, 0.12);
+
+  --rex-blog-bg: #FFFFFF;
+  --rex-blog-panel: #F6F8FA;
+  --rex-blog-panel-soft: #F0F3F6;
+  --rex-blog-panel-strong: #EAECEF;
+  --rex-blog-border: #EAECEF;
+  --rex-blog-border-soft: rgba(16, 24, 40, 0.08);
+  --rex-blog-accent: #0066FF;
+  --rex-blog-category: #0066FF;
+  --rex-blog-text: var(--rex-text-strong);
+  --rex-blog-body: var(--rex-text-body);
+  --rex-blog-muted: var(--rex-text-muted);
+  --rex-blog-soft: var(--rex-text-soft);
+  --rex-blog-radius: 12px;
+  --rex-blog-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --rex-blog-font-body: "Inter", system-ui, sans-serif;
+  --rex-blog-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root[data-rex-theme="dark"] {
+  --rex-text-strong: #F8FAFC;
+  --rex-text-body: #DCE5F0;
+  --rex-text-muted: #A8B6C9;
+  --rex-text-soft: #6B7689;
+
   --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
   --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
   --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
@@ -41,14 +70,29 @@
   --rex-blog-panel-soft: #101728;
   --rex-blog-panel-strong: #121B2D;
   --rex-blog-border: #1B2437;
+  --rex-blog-border-soft: rgba(148, 163, 184, 0.14);
   --rex-blog-accent: #22D3EE;
-  --rex-blog-category: #FF8400;
-  --rex-blog-text: var(--rex-text-strong);
-  --rex-blog-body: var(--rex-text-body);
-  --rex-blog-muted: var(--rex-text-muted);
-  --rex-blog-soft: var(--rex-text-soft);
-  --rex-blog-radius: 12px;
-  --rex-blog-font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
-  --rex-blog-font-body: "Inter", system-ui, sans-serif;
-  --rex-blog-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --rex-blog-category: #22D3EE;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-rex-theme="light"]) {
+    --rex-text-strong: #F8FAFC;
+    --rex-text-body: #DCE5F0;
+    --rex-text-muted: #A8B6C9;
+    --rex-text-soft: #6B7689;
+
+    --rex-elev-1: 0 1px 2px rgba(0, 0, 0, 0.28);
+    --rex-elev-2: 0 8px 24px rgba(0, 0, 0, 0.3);
+    --rex-elev-3: 0 18px 60px rgba(0, 0, 0, 0.34);
+
+    --rex-blog-bg: #06070D;
+    --rex-blog-panel: #0D1220;
+    --rex-blog-panel-soft: #101728;
+    --rex-blog-panel-strong: #121B2D;
+    --rex-blog-border: #1B2437;
+    --rex-blog-border-soft: rgba(148, 163, 184, 0.14);
+    --rex-blog-accent: #22D3EE;
+    --rex-blog-category: #22D3EE;
+  }
 }

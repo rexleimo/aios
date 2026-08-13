@@ -3,6 +3,17 @@
 <div class="rex-blog-shell rex-blog-index" data-rex-shell="blog-index" data-rex-blog-index data-page-size="{{ blog.page_size if blog else 6 }}">
   {% include "partials/rex/blog-header.html" %}
   <main class="rex-blog-index__main">
+    <section class="rex-blog-adspot-leaderboard" aria-label="Sponsor">
+      <a class="rex-blog-adspot-leaderboard__link" href="https://imklom.im" target="_blank" rel="noopener">
+        <img class="rex-blog-adspot-leaderboard__img" src="{{ config.site_url }}assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy" />
+        <span class="rex-blog-adspot-leaderboard__body">
+          <span class="rex-blog-adspot-leaderboard__tag">赞助 · Sponsor</span>
+          <strong>imklom.im</strong>
+          <span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span>
+        </span>
+      </a>
+    </section>
+
     <section class="rex-blog-hero">
       <span class="rex-blog-hero__badge">{{ blog.strings.hero_badge }}</span>
       <h1>{{ blog.strings.hero_title }}</h1>
@@ -27,6 +38,27 @@
           <div class="rex-blog-author"><span>{{ featured.initials }}</span><strong>{{ featured.author }}</strong><small>{{ featured.date_label }}</small></div>
         </div>
       {% endif %}
+    </section>
+
+    <section class="rex-blog-adspots" aria-label="Sponsors">
+      <div class="rex-blog-adspots__grid">
+        <a class="rex-blog-adspot" href="https://imklom.im" target="_blank" rel="noopener">
+          <img class="rex-blog-adspot__img" src="{{ config.site_url }}assets/ads/imklom.png" alt="imklom.im — AI 图像生成" loading="lazy" />
+          <span class="rex-blog-adspot__body">
+            <span class="rex-blog-adspot__tag">赞助 · Sponsor</span>
+            <strong>imklom.im</strong>
+            <span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span>
+          </span>
+        </a>
+        <a class="rex-blog-adspot" href="https://tool.rexai.top" target="_blank" rel="noopener">
+          <img class="rex-blog-adspot__img" src="{{ config.site_url }}assets/ads/relay.png" alt="relay 中转站服务" loading="lazy" />
+          <span class="rex-blog-adspot__body">
+            <span class="rex-blog-adspot__tag">赞助 · Sponsor</span>
+            <strong>relay 中转站</strong>
+            <span>稳定可靠的 AI API 中转服务 / Reliable AI API relay.</span>
+          </span>
+        </a>
+      </div>
     </section>
 
     <section class="rex-blog-posts" aria-label="{{ blog.strings.all_posts }}">
