@@ -127,6 +127,17 @@
   </script>
   {% endif %}
 
+  <!-- Theme toggle: honor saved preference before first paint, else system -->
+  <script>
+    (function () {
+      var saved = null;
+      try { saved = localStorage.getItem('rex-theme'); } catch (e) {}
+      if (saved === 'light' || saved === 'dark') {
+        document.documentElement.setAttribute('data-rex-theme', saved);
+      }
+    })();
+  </script>
+
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -269,6 +280,17 @@
         if (!isBlogIndex) {
           body.classList.add('rex-blog-post');
         }
+      }
+
+      // Theme toggle wiring (shared across home/docs/blog shells)
+      var toggles = document.querySelectorAll('[data-rex-theme-toggle]');
+      for (var i = 0; i < toggles.length; i++) {
+        toggles[i].addEventListener('click', function () {
+          var root = document.documentElement;
+          var next = root.getAttribute('data-rex-theme') === 'dark' ? 'light' : 'dark';
+          root.setAttribute('data-rex-theme', next);
+          try { localStorage.setItem('rex-theme', next); } catch (e) {}
+        });
       }
     });
   </script>
