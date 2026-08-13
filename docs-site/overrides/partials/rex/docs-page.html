@@ -1,4 +1,6 @@
 <div class="rex-doc-layout rex-doc-page" data-rex-shell="docs">
+  {% include "partials/rex/topbar.html" %}
+  <div class="rex-doc-layout__body">
   {% include "partials/rex/docs-sidebar.html" %}
   <div class="rex-doc-shell">
     <details class="rex-doc-device-nav rex-doc-device-nav--tablet">
@@ -113,6 +115,25 @@
         <article class="rex-doc-content md-typeset">
           {% include "partials/content.html" %}
         </article>
+
+        {% if page.previous_page or page.next_page %}
+        <nav class="rex-doc-pager" aria-label="Previous and next pages">
+          {% if page.previous_page %}
+            <a class="rex-doc-pager__item" href="{{ page.previous_page.url | url }}">
+              <span class="rex-doc-pager__label">Previous</span>
+              <strong>{{ page.previous_page.title }}</strong>
+            </a>
+          {% else %}
+            <span class="rex-doc-pager__item is-empty"></span>
+          {% endif %}
+          {% if page.next_page %}
+            <a class="rex-doc-pager__item is-next" href="{{ page.next_page.url | url }}">
+              <span class="rex-doc-pager__label">Next</span>
+              <strong>{{ page.next_page.title }}</strong>
+            </a>
+          {% endif %}
+        </nav>
+        {% endif %}
       </div>
     </main>
   </div>

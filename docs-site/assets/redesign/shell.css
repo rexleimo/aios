@@ -416,6 +416,11 @@
 }
 
 .rex-doc-layout {
+  display: block;
+  min-width: 0;
+}
+
+.rex-doc-layout__body {
   display: grid;
   min-width: 0;
   grid-template-columns: 244px minmax(0, 1fr);
@@ -440,12 +445,12 @@
 
 .rex-doc-sidebar {
   position: sticky;
-  top: 0;
+  top: 70px;
   align-self: start;
   display: flex;
   height: auto;
   min-height: 0;
-  max-height: 100vh;
+  max-height: calc(100vh - 70px);
   flex-direction: column;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -647,6 +652,11 @@
     display: block;
     width: 100%;
     max-width: 100%;
+  }
+
+  .rex-doc-layout__body {
+    display: block;
+    width: 100%;
   }
 
   .rex-doc-sidebar {
