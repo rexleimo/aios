@@ -20,7 +20,8 @@
         "write": true,
         "edit": true,
         "changed-files": true
-      }
+      },
+      "steps": 24
     }
   },
   "command": {
@@ -47,5 +48,8 @@
   },
   "permission": {
     "mcp_*": "ask"
+  },
+  "experimental": {
+    "mcp_timeout": 90000
   }
 }
