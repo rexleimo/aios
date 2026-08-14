@@ -79,13 +79,19 @@ body {
   letter-spacing: -0.03em;
 }
 
-.rex-blog-header__mark,
-.rex-blog-footer__brand span {
+.rex-blog-header__mark {
+  display: grid;
   width: 34px;
   height: 34px;
-  background: var(--rex-blog-accent);
-  border-radius: 999px;
-  box-shadow: 0 0 34px color-mix(in srgb, var(--rex-blog-accent) 34%, transparent);
+  place-items: center;
+  color: #F8FAFC;
+  background: #0A0A0A;
+  border-radius: 10px;
+}
+
+.rex-blog-header__mark svg {
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .rex-blog-header__nav {
@@ -260,6 +266,11 @@ body {
 
 .rex-blog-footer__brand span {
   display: inline-block;
+  width: 14px;
+  height: 14px;
+}
+
+.rex-blog-footer__brand span svg {
   width: 14px;
   height: 14px;
 }

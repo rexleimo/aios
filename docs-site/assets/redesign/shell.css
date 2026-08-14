@@ -423,7 +423,7 @@
 .rex-doc-layout__body {
   display: grid;
   min-width: 0;
-  grid-template-columns: 244px minmax(0, 1fr);
+  grid-template-columns: 244px minmax(0, 1fr) 240px;
 }
 
 .rex-doc-shell {
@@ -476,13 +476,18 @@
 }
 
 .rex-doc-sidebar__logo {
+  display: grid;
   width: 34px;
   height: 34px;
-  background:
-    linear-gradient(135deg, var(--rex-cyan), var(--rex-blue)),
-    var(--rex-panel);
+  place-items: center;
+  color: #F8FAFC;
+  background: #0A0A0A;
   border-radius: 10px;
-  box-shadow: var(--rex-shadow-cyan);
+}
+
+.rex-doc-sidebar__logo svg {
+  width: 1.05rem;
+  height: 1.05rem;
 }
 
 .rex-doc-sidebar__nav {
@@ -841,5 +846,143 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-rex-theme="light"]) .rex-theme-toggle__moon {
     display: block;
+  }
+}
+
+/* Right-hand TOC column (v9 docs, csK3H) */
+.rex-doc-toc {
+  position: sticky;
+  top: 70px;
+  align-self: start;
+  min-width: 0;
+  max-height: calc(100vh - 70px);
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  padding: 28px 8px 24px 22px;
+  border-left: 1px solid var(--rex-border);
+}
+
+.rex-doc-toc__label {
+  display: block;
+  margin-bottom: 0.9rem;
+  color: var(--rex-text-soft);
+  font-family: var(--rex-font-mono);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.rex-doc-toc nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.rex-doc-toc nav a {
+  padding: 0.32rem 0.6rem;
+  color: var(--rex-text-muted);
+  border-left: 2px solid transparent;
+  border-radius: 0 8px 8px 0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.rex-doc-toc nav a.is-child {
+  padding-left: 1.1rem;
+  color: var(--rex-text-soft);
+  font-size: 0.74rem;
+}
+
+.rex-doc-toc nav a.is-active {
+  color: var(--rex-accent);
+  border-left-color: var(--rex-accent);
+  background: color-mix(in srgb, var(--rex-accent) 6%, transparent);
+  font-weight: 700;
+}
+
+.rex-doc-toc nav a:is(:hover, :focus-visible) {
+  color: var(--rex-accent);
+  border-left-color: color-mix(in srgb, var(--rex-accent) 60%, transparent);
+}
+
+/* Doc meta line (v9 docs, csK3H) */
+.rex-doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin: -0.5rem 0 var(--rex-space-8);
+  color: var(--rex-text-soft);
+  font-family: var(--rex-font-mono);
+  font-size: 0.72rem;
+}
+
+.rex-doc-meta time {
+  color: var(--rex-text-soft);
+}
+
+/* Topbar search (docs pages) */
+.rex-topbar__search {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 300px;
+  min-height: 34px;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.75rem;
+  color: var(--rex-text-soft);
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.rex-topbar__search:hover {
+  color: var(--rex-text-muted);
+  border-color: color-mix(in srgb, var(--rex-accent) 45%, transparent);
+  box-shadow: var(--rex-shadow-cyan);
+}
+
+.rex-topbar__search svg {
+  flex: 0 0 auto;
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rex-topbar__search span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rex-topbar__search kbd {
+  margin-left: auto;
+  padding: 0.1rem 0.4rem;
+  color: var(--rex-text-soft);
+  background: var(--rex-panel-strong);
+  border: 1px solid var(--rex-border);
+  border-radius: 6px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.64rem;
+}
+
+@media (max-width: 1240px) {
+  .rex-doc-layout__body {
+    grid-template-columns: 244px minmax(0, 1fr);
+  }
+
+  .rex-doc-toc {
+    display: none;
   }
 }

@@ -1,4 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="AIOS">
-  <rect width="120" height="120" rx="20" fill="#06070D"/>
-  <path d="M28 90V30h34c17 0 28 9 28 24 0 11-6 18-15 21l17 15H75L61 77H44v13H28zm16-27h16c9 0 14-3 14-10s-5-10-14-10H44v20z" fill="#22D3EE"/>
+  <rect width="120" height="120" rx="26" fill="#0A0A0A"/>
+  <circle cx="60" cy="60" r="47.5" fill="none" stroke="#F8FAFC" stroke-width="6.25" stroke-linecap="round"/>
+  <path d="M37.5 77.5 L60 40 L82.5 77.5" fill="none" stroke="#F8FAFC" stroke-width="6.25" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M46.25 62.5 L73.75 62.5" fill="none" stroke="#F8FAFC" stroke-width="6.25" stroke-linecap="round"/>
+  <circle cx="60" cy="37.5" r="5" fill="#F8FAFC"/>
 </svg>
