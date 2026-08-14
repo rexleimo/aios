@@ -114,6 +114,15 @@ export function readClientJsonSource(rootDir, client, fileName) {
   return JSON.parse(fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8'));
 }
 
+export function readOptionalClientJson(rootDir, client, fileName) {
+  try {
+    return readClientJsonSource(rootDir, client, fileName);
+  } catch (error) {
+    if (error?.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+
 export function joinMarkdownSections(sections = []) {
   return sections.map((item) => String(item || '').trim()).filter(Boolean).join('\n\n').trim();
 }

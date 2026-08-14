@@ -13,8 +13,8 @@ import {
 import {
   buildAlwaysOnPlanningDirective,
   runAutoGate,
-  runClaudeUserPromptSubmitHook,
 } from './auto-gate.mjs';
+import { runUserPromptSubmitHook } from './user-prompt-submit.mjs';
 import {
   confirmTaskContextCandidates,
   proposeTaskContextCandidates,
@@ -362,14 +362,13 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
   }
 
   if (sub === 'hook-user-prompt') {
-    // Claude UserPromptSubmit: read stdin, write hook JSON
     const chunks = [];
     for await (const chunk of process.stdin) chunks.push(chunk);
     const stdinText = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString('utf8');
-    const { exitCode, output } = await runClaudeUserPromptSubmitHook({
+    const { exitCode, output } = await runUserPromptSubmitHook({
       rootDir,
       stdinText,
-      client: 'claude',
+      client: options.client,
     });
     stdout.write(`${JSON.stringify(output)}\n`);
     return { exitCode };

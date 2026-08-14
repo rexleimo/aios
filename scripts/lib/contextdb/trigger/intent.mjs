@@ -1,20 +1,4 @@
-const RECALL_PATTERNS = [
-  /\bremember\b/i,
-  /\brecall\b/i,
-  /之前/,
-  /上次/,
-  /上次说/,
-  /\bprevious\b/i,
-  /\blast\s+time\b/i,
-];
-
-const CONTINUATION_PATTERNS = [
-  /继续/,
-  /接着/,
-  /\bresume\b/i,
-  /\bpick\s+up\s+where\b/i,
-  /\bwhere\s+did\s+we\s+leave\s+off\b/i,
-];
+import { CONTINUATION_PATTERNS, RECALL_PATTERNS } from '../../planning/resume-phrases.mjs';
 
 const REFERENCE_PATTERNS = [
   /那个文件/,

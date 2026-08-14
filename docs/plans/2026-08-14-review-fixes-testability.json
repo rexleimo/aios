@@ -1,0 +1,25 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-08-14-review-fixes-testability.json",
+  "redCandidate": {
+    "publicEntry": "node --test focused review-fix tests",
+    "setup": "Working tree after rex-code-review findings, with new public assertions for CCRG query, work-item reuse, fail-closed bind, hook --client, and XAI_API_KEY.",
+    "command": {
+      "executable": "node",
+      "args": [
+        "--test",
+        "scripts/tests/turn-recall.test.mjs",
+        "scripts/tests/hook-user-prompt.test.mjs",
+        "scripts/tests/work-item-rex-isolation.test.mjs",
+        "scripts/tests/rex-activation-store.test.mjs",
+        "--test-name-pattern",
+        "CCRG|reuses an active|does not launch|XAI_API_KEY|hook sources pass|--client"
+      ],
+      "cwd": "E:\\coding\\harness-cli"
+    },
+    "expected": "P1–P4 public assertions pass.",
+    "observed": "CCRG still emits a get_minimal_context hint; startStored overwrites the work-item index; editable jobs launch without prefixes or after a failed bind; hook sources omit --client; XAI_API_KEY still classifies grok.",
+    "failureReason": "Review-fix acceptance behaviors are absent from the current implementation.",
+    "receiptRef": "receipt:f441c78a-6091-4560-9d1d-ab23562716ef"
+  }
+}

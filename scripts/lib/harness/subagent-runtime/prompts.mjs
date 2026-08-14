@@ -17,7 +17,7 @@ function deliveredExecutionContext(plan) {
   return String(plan?.executionContext?.text || '').trim();
 }
 
-export function buildSystemPrompt({ agent, plan, job, phase }) {
+export function buildSystemPrompt({ agent, plan, job, phase, rexBinding = null }) {
   const lines = [];
   if (agent?.systemPrompt) {
     lines.push(agent.systemPrompt);
@@ -60,17 +60,27 @@ export function buildSystemPrompt({ agent, plan, job, phase }) {
   if (normalizeText(ownedPrefixes)) {
     lines.push(`- ownedPathPrefixes=${ownedPrefixes}`);
   }
+  if (rexBinding?.workItemKey) {
+    lines.push(`- rexWorkItem=${normalizeText(rexBinding.workItemKey)}`);
+    if (rexBinding.capabilityId) lines.push(`- rexCapability=${normalizeText(rexBinding.capabilityId)}`);
+    if (rexBinding.providerId) lines.push(`- rexProvider=${normalizeText(rexBinding.providerId)}`);
+    lines.push('- Stay inside ownedPathPrefixes. Do not advance another work item\'s Rex command.');
+  }
   lines.push('');
 
   return lines.join('\n');
 }
 
-export function buildUserPrompt({ plan, job, phase, dependencyRuns }) {
+export function buildUserPrompt({ plan, job, phase, dependencyRuns, rexBinding = null }) {
   const lines = [];
   lines.push('# Orchestration Phase');
   lines.push(`jobId: ${normalizeText(job?.jobId)}`);
   lines.push(`role: ${normalizeText(job?.role)}`);
   lines.push(`taskTitle: ${normalizeText(plan?.taskTitle)}`);
+  if (rexBinding?.workItemKey) {
+    lines.push(`rexWorkItem: ${normalizeText(rexBinding.workItemKey)}`);
+    lines.push(`rexActivation: ${normalizeText(rexBinding.activationId)}`);
+  }
   lines.push('');
 
   if (phase) {

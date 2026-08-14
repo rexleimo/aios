@@ -7,6 +7,7 @@ import {
   describeAiosCapability,
   evaluateAiosSoftwareRequest,
 } from '../workflows/rex-harness-adapter.mjs';
+import { RESUME_PREFIX } from './resume-phrases.mjs';
 
 export const WORKFLOW_POLICY_MODES = Object.freeze(['adaptive', 'strict']);
 
@@ -61,7 +62,6 @@ const ACKNOWLEDGEMENTS = new Set([
 ]);
 
 const ACKNOWLEDGEMENT_PREFIX = /^(?:ok(?:ay)?|yes|y|sure|approved?|confirmed?|go\s+ahead|sounds\s+good|\u53ef\u4ee5\u7684?|\u597d\u7684?|\u6536\u5230|\u540c\u610f|\u8ba4\u53ef|\u786e\u8ba4|\u6ca1\u95ee\u9898)[\s,;:!?\u3002\u3001\uff0c\uff01\uff1f-]*/iu;
-const RESUME_PREFIX = /^(?:(?:please\s+)?(?:resume|continue|pick\s+up|carry\s+on)|\u7ee7\u7eed|\u63a5\u7740|\u6062\u590d|\u7eed\u4e0a)[\s,;:!?\u3002\u3001\uff0c\uff01\uff1f-]*/iu;
 const NEW_OBJECTIVE_MARKER = /\b(?:also|additionally|instead|switch|new\s+(?:task|objective|project|feature)|another\s+(?:task|objective|project|feature)|separately)\b|\u987a\u4fbf|\u53e6\u5916|\u6539\u4e3a|\u6362\u6210|\u65b0\u4efb\u52a1|\u65b0\u76ee\u6807|\u53e6\u8d77/iu;
 const ACTION_PATTERN = /\b(?:implement|add|build|create|write|change|update|modify|refactor|fix|remove|delete|migrate|integrate|install|configure|deploy|test|run|launch|execute|develop|code|optimi[sz]e|replace|enable|disable|sync|commit|push)\b|\u5b9e\u73b0|\u65b0\u589e|\u6dfb\u52a0|\u5f00\u53d1|\u4fee\u6539|\u66f4\u65b0|\u91cd\u6784|\u4fee\u590d|\u5220\u9664|\u8fc1\u79fb|\u96c6\u6210|\u5b89\u88c5|\u914d\u7f6e|\u90e8\u7f72|\u6d4b\u8bd5|\u8fd0\u884c|\u6267\u884c|\u7f16\u5199|\u4f18\u5316|\u6539\u9020|\u8c03\u6574|\u66ff\u6362|\u5173\u95ed|\u542f\u7528|\u7981\u7528|\u540c\u6b65|\u63d0\u4ea4|\u63a8\u9001/iu;
 const QUESTION_PREFIX = /^(?:why|what|how|when|where|is|are|do|does|did|why\s+did|\u4e3a\u4ec0\u4e48|\u600e\u4e48|\u5982\u4f55|\u662f\u5426|\u4ec0\u4e48|\u8bf7\u95ee)/iu;

@@ -12,7 +12,8 @@
       "outputs": [
         "AGENTS.md",
         ".codex/agents",
-        ".codex/skills"
+        ".codex/skills",
+        ".codex/hooks.json"
       ]
     },
     "claude": {
@@ -58,7 +59,8 @@
       "outputs": [
         "AGENTS.md",
         ".grok/agents",
-        ".grok/skills"
+        ".grok/skills",
+        ".grok/hooks/aios-workflow.json"
       ]
     }
   }

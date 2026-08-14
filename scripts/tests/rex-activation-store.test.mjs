@@ -14,10 +14,12 @@ import test from 'node:test';
 import { captureStandaloneExecutionReceipt } from '../../rex-harness/src/index.mjs';
 import { REQUIREMENTS_DECISION_FIXTURE } from '../../rex-harness/tests/fixtures/requirements-decision.mjs';
 import { runAutoGate } from '../lib/planning/auto-gate.mjs';
+import { findStandaloneWorkflow } from '../../rex-harness/src/index.mjs';
 import {
   advanceStoredAiosCapabilityActivation,
   continueStoredAiosSoftwareWorkflow,
   readStoredAiosCapabilityActivation,
+  startStoredAiosCapabilityActivation,
 } from '../lib/workflows/rex-activation-store.mjs';
 
 const SCENARIO_GREEN_MARKER = '.rex-scenario-green';
@@ -124,7 +126,39 @@ test('AIOS rejects a scenario-mismatched receipt without rotating the command or
   }
 });
 
-test('AIOS state transaction rolls forward after an activation projection write failure', async () => {
+test('startStored reuses an active standalone workflow instead of overwriting the work-item index', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-reuse-'));
+  try {
+    const first = startStoredAiosCapabilityActivation({
+      rootDir,
+      workItemKey: 'work:shared',
+      decision: {
+        capabilityId: 'software.requirements.clarify',
+        provider: { kind: 'skill', id: 'rex-requirements' },
+      },
+      request: { message: 'Clarify checkout acceptance.' },
+    });
+    const second = startStoredAiosCapabilityActivation({
+      rootDir,
+      workItemKey: 'work:shared',
+      decision: {
+        capabilityId: 'software.implementation.execute',
+        provider: { kind: 'skill', id: 'rex-implement' },
+      },
+      request: { message: 'Implement checkout validation.' },
+    });
+
+    assert.equal(second.activation.activationId, first.activation.activationId);
+    assert.equal(second.activation.capabilityId, first.activation.capabilityId);
+    const indexed = findStandaloneWorkflow({ rootDir, workItemKey: 'work:shared' });
+    assert.equal(indexed.workflow.workflowActivationId, first.workflow.workflowActivationId);
+    assert.equal(indexed.workflow.currentActivation.capabilityId, 'software.requirements.clarify');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('failed standalone persist leaves the previous activation command unchanged', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-atomicity-'));
   try {
     const started = runAutoGate({
@@ -138,8 +172,8 @@ test('AIOS state transaction rolls forward after an activation projection write 
     const originalRename = fs.renameSync;
     let injected = false;
     fs.renameSync = (source, destination) => {
-      const isActivationProjection = path.basename(destination) === `${activationId}.json`
-        && path.basename(path.dirname(destination)) === 'workflow-activations';
+      const isActivationProjection = path.basename(path.dirname(destination)) === 'activations'
+        && destination.endsWith('.json');
       if (!injected && isActivationProjection) {
         injected = true;
         const error = new Error('injected activation projection write failure');
@@ -161,11 +195,9 @@ test('AIOS state transaction rolls forward after an activation projection write 
     const recovered = readStoredAiosCapabilityActivation({ rootDir, activationId });
     assert.deepEqual(recovered.activation, recovered.workflow.currentActivation);
     assert.deepEqual(recovered.command, recovered.workflow.currentCommand);
-    assert.notEqual(recovered.command.executionToken, before.command.executionToken);
-    assert.deepEqual(recovered.activation.evidence, [
-      { kind: 'acceptance-criteria-recorded', refs: ['artifact:requirements'] },
-    ]);
-    const transactionDir = path.join(rootDir, '.aios', 'workflow-activations', 'transactions');
+    assert.equal(recovered.command.executionToken, before.command.executionToken);
+    assert.deepEqual(recovered.activation.evidence || [], before.activation.evidence || []);
+    const transactionDir = path.join(rootDir, '.rex-harness', 'transactions');
     assert.deepEqual(
       fs.existsSync(transactionDir)
         ? fs.readdirSync(transactionDir).filter((entry) => entry.endsWith('.json'))
@@ -291,21 +323,15 @@ test('auto-gate persists the current rex activation and exposes one executable c
     });
     assert.equal(reviewCompleted.nextCapability, null);
 
-    const recordPath = path.join(
+    const storedFinal = readStoredAiosCapabilityActivation({
       rootDir,
-      '.aios',
-      'workflow-activations',
-      `${result.capabilityActivation.activationId}.json`,
-    );
-    const raw = JSON.parse(await readFile(recordPath, 'utf8'));
-    assert.equal(raw.activation.status, 'completed');
-    assert.ok(raw.workflowActivationId);
+      activationId: result.capabilityActivation.activationId,
+    }) || reviewCompleted;
     const workflowPath = path.join(
       rootDir,
-      '.aios',
-      'workflow-activations',
-      'workflows',
-      `${raw.workflowActivationId}.json`,
+      '.rex-harness',
+      'activations',
+      `${reviewCompleted.workflow.workflowActivationId}.json`,
     );
     const persistedWorkflow = JSON.parse(await readFile(workflowPath, 'utf8'));
     assert.equal(persistedWorkflow.status, 'completed');
@@ -350,16 +376,28 @@ test('same-session guarded objectives receive isolated activation ledgers', asyn
 test('a corrupted activation ledger fails closed instead of starting a duplicate workflow', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-corrupt-'));
   try {
-    const activationDir = path.join(rootDir, '.aios', 'workflow-activations');
-    await mkdir(activationDir, { recursive: true });
-    await writeFile(path.join(activationDir, 'corrupt.json'), '{not-json', 'utf8');
+    const started = runAutoGate({
+      rootDir,
+      message: '澄清结账流程的验收条件和领域词汇。',
+      client: 'codex',
+      sessionId: 'session-corrupt',
+    });
+    const stored = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: started.capabilityActivation.activationId,
+    });
+    await writeFile(
+      path.join(rootDir, '.rex-harness', 'activations', `${stored.workflowActivationId}.json`),
+      '{not-json',
+      'utf8',
+    );
 
     assert.throws(() => runAutoGate({
       rootDir,
-      message: 'Implement a new checkout module.',
+      message: '继续',
       client: 'codex',
       sessionId: 'session-corrupt',
-    }), /invalid rex activation record/u);
+    }), /invalid rex standalone/u);
   } finally {
     await rm(rootDir, { recursive: true, force: true });
   }
@@ -374,15 +412,26 @@ test('a stale activation projection fails closed against its workflow source of 
       client: 'codex',
       sessionId: 'session-stale-projection',
     });
-    const activationId = started.capabilityActivation.activationId;
-    const recordPath = path.join(rootDir, '.aios', 'workflow-activations', `${activationId}.json`);
-    const record = JSON.parse(await readFile(recordPath, 'utf8'));
-    record.command.executionToken = 'stale-command-token';
-    await writeFile(recordPath, `${JSON.stringify(record, null, 2)}\n`, 'utf8');
+    const stored = readStoredAiosCapabilityActivation({
+      rootDir,
+      activationId: started.capabilityActivation.activationId,
+    });
+    const workflowPath = path.join(
+      rootDir,
+      '.rex-harness',
+      'activations',
+      `${stored.workflowActivationId}.json`,
+    );
+    const workflow = JSON.parse(await readFile(workflowPath, 'utf8'));
+    workflow.kind = 'not-a-workflow';
+    await writeFile(workflowPath, `${JSON.stringify(workflow, null, 2)}\n`, 'utf8');
 
     assert.throws(
-      () => readStoredAiosCapabilityActivation({ rootDir, activationId }),
-      /activation projection.*workflow/u,
+      () => readStoredAiosCapabilityActivation({
+        rootDir,
+        activationId: started.capabilityActivation.activationId,
+      }),
+      /invalid rex standalone/u,
     );
   } finally {
     await rm(rootDir, { recursive: true, force: true });

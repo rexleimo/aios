@@ -2,7 +2,7 @@ import { normalizeModelRouting } from '../../model-router.mjs';
 import { validateHandoffPayload } from '../handoff.mjs';
 import { shouldUseClientStructuredOutput } from '../subagent-clients/structured-output.mjs';
 import { recordPhaseModelDispatch, resolveExecutionClientId } from './client-args.mjs';
-import { evaluatePhaseFilePolicy, summarizeFilePolicyViolation } from './file-policy.mjs';
+import { evaluatePhaseFilePolicy, resolveOwnedPathPrefixes, summarizeFilePolicyViolation } from './file-policy.mjs';
 import { extractJsonCandidate } from './handoff-output.mjs';
 import { buildFailureReason } from './job-runs.mjs';
 import { runOneShot } from './one-shot-runner.mjs';
@@ -22,6 +22,55 @@ import { collectCostTelemetry, hasCostTelemetry } from './telemetry.mjs';
 import { normalizeText } from './text.mjs';
 import { compactSubagentTurnOutput, prepareSubagentTurnPrompts } from './turn-compression.mjs';
 import { redactExecutionContextText, redactExecutionContextValue } from '../runtime-context-redaction.mjs';
+import { evaluateAiosSoftwareRequest } from '../../workflows/rex-harness-adapter.mjs';
+import { startStoredAiosCapabilityActivation } from '../../workflows/rex-activation-store.mjs';
+
+export function bindPhaseJobRexActivation({ rootDir, plan, job, phase }) {
+  const workItemRef = Array.isArray(job?.launchSpec?.workItemRefs)
+    ? job.launchSpec.workItemRefs.map((item) => String(item || '').trim()).find(Boolean)
+    : '';
+  const workItemKey = workItemRef || String(job?.jobId || '').trim();
+  if (!rootDir || !workItemKey) {
+    return { ok: false, reason: 'rex-bind-missing-identity' };
+  }
+  const message = [
+    String(plan?.taskTitle || '').trim(),
+    String(phase?.responsibility || job?.label || '').trim(),
+  ].filter(Boolean).join(' — ');
+  try {
+    const decision = evaluateAiosSoftwareRequest({
+      message,
+      explicitIntent: job?.launchSpec?.canEditFiles ? 'implement' : null,
+    }).decision;
+    if (!decision || decision.blocked) {
+      return { ok: false, reason: 'rex-bind-blocked' };
+    }
+    const stored = startStoredAiosCapabilityActivation({
+      rootDir,
+      decision,
+      workItemKey: `work:${workItemKey}`,
+      request: {
+        message,
+        ownedPathPrefixes: job?.launchSpec?.ownedPathPrefixes || [],
+        jobId: job?.jobId,
+      },
+    });
+    return {
+      ok: true,
+      workItemKey: `work:${workItemKey}`,
+      ownedPathPrefixes: job?.launchSpec?.ownedPathPrefixes || [],
+      activationId: stored.activation?.activationId || '',
+      capabilityId: stored.command?.capabilityId || decision.capabilityId || '',
+      providerId: stored.command?.provider?.id || '',
+      stageId: stored.command?.stageId || '',
+    };
+  } catch (error) {
+    return {
+      ok: false,
+      reason: String(error?.message || 'rex-bind-failed'),
+    };
+  }
+}
 
 export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   clientId,
@@ -34,10 +83,44 @@ export async function executePhaseJob(plan, job, phase, dependencyRuns, {
   structuredOutputTempDir,
   runOneShotImpl = runOneShot,
   appendJobFindingsToRoleMemoryImpl = appendJobFindingsToRoleMemory,
+  bindRexActivationImpl = bindPhaseJobRexActivation,
 }) {
   const agent = resolveAgentForJob(job, agentSpecNormalized);
-  const systemPrompt = buildSystemPrompt({ agent, plan, job, phase });
-  const userPrompt = buildUserPrompt({ plan, job, phase, dependencyRuns });
+  const canEditFiles = phase?.canEditFiles === true || job?.launchSpec?.canEditFiles === true;
+  const ownedPathPrefixes = resolveOwnedPathPrefixes(phase, job);
+  if (canEditFiles && ownedPathPrefixes.length === 0) {
+    return buildBlockedPhaseJobRun({
+      plan,
+      job,
+      dependencyRuns,
+      executorLabel,
+      reason: 'ownedPathPrefixes missing for editable phase',
+      elapsedMs: 0,
+      rootDir,
+      io,
+    });
+  }
+  let rexBinding;
+  try {
+    rexBinding = bindRexActivationImpl({ rootDir, plan, job, phase });
+  } catch (error) {
+    rexBinding = { ok: false, reason: String(error?.message || 'rex-bind-failed') };
+  }
+  if (canEditFiles && !rexBinding?.ok) {
+    return buildBlockedPhaseJobRun({
+      plan,
+      job,
+      dependencyRuns,
+      executorLabel,
+      reason: `Rex isolation bind failed: ${rexBinding?.reason || 'missing'}`,
+      elapsedMs: 0,
+      rootDir,
+      io,
+    });
+  }
+  const promptBinding = rexBinding?.ok ? rexBinding : null;
+  const systemPrompt = buildSystemPrompt({ agent, plan, job, phase, rexBinding: promptBinding });
+  const userPrompt = buildUserPrompt({ plan, job, phase, dependencyRuns, rexBinding: promptBinding });
   const structuredOutput = buildStructuredOutput({ clientId, structuredOutputTempDir, rootDir, job });
   const modelRouting = normalizeModelRouting(job?.launchSpec?.modelRouting);
   const executionClientId = resolveExecutionClientId(clientId, modelRouting, env);

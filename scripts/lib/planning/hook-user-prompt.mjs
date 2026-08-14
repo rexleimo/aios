@@ -1,39 +1,39 @@
 #!/usr/bin/env node
 /**
- * Claude Code UserPromptSubmit hook runner.
+ * UserPromptSubmit hook runner for Claude / Codex / Grok.
  * Usage: node scripts/lib/planning/hook-user-prompt.mjs
  * Reads hook JSON from stdin, writes JSON additionalContext to stdout.
  */
 
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { runClaudeUserPromptSubmitHook } from './auto-gate.mjs';
+import { detectHookClient, runUserPromptSubmitHook } from './user-prompt-submit.mjs';
 
 async function main() {
   const chunks = [];
   for await (const chunk of process.stdin) chunks.push(chunk);
   const stdinText = Buffer.concat(chunks.map((c) => Buffer.from(c))).toString('utf8');
 
-  // Prefer CLAUDE_PROJECT_DIR / cwd from payload later; default repo root near this file
   const here = path.dirname(fileURLToPath(import.meta.url));
   const defaultRoot = process.env.CLAUDE_PROJECT_DIR
     || process.env.AIOS_ROOT
     || path.resolve(here, '../../..');
 
   let cwd = defaultRoot;
+  let payload = {};
   try {
-    const parsed = JSON.parse(stdinText || '{}');
-    if (parsed.cwd && path.isAbsolute(parsed.cwd)) cwd = parsed.cwd;
+    payload = JSON.parse(stdinText || '{}');
+    if (payload.cwd && path.isAbsolute(payload.cwd)) cwd = payload.cwd;
+    else if (payload.workspaceRoot && path.isAbsolute(payload.workspaceRoot)) cwd = payload.workspaceRoot;
   } catch {
-    // ignore
+    payload = {};
   }
 
-  const { exitCode, output } = await runClaudeUserPromptSubmitHook({
+  const { exitCode, output } = await runUserPromptSubmitHook({
     rootDir: cwd,
     stdinText,
-    client: 'claude',
+    client: detectHookClient(payload),
   });
   process.stdout.write(`${JSON.stringify(output)}\n`);
   process.exitCode = exitCode;
@@ -41,7 +41,6 @@ async function main() {
 
 main().catch((error) => {
   process.stderr.write(`[aios-plan-hook] ${error.message}\n`);
-  // Fail open without reintroducing a global planning/skill chain.
   process.stdout.write(`${JSON.stringify({
     additionalContext: '',
     decision: { disposition: 'direct', persistence: 'none', reason: 'hook-error' },

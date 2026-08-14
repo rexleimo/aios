@@ -1,0 +1,14 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node scripts/aios.mjs plan hook-user-prompt --client codex"
+          }
+        ]
+      }
+    ]
+  }
+}

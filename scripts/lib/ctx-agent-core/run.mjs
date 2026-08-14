@@ -138,6 +138,13 @@ async function executePrompt(opts) {
       dryRun: Boolean(opts.dryRun || opts.routeExecutionMode === 'dry-run'),
     });
     console.error(`[aios] workflow: ${workflow.decision.disposition}/${workflow.decision.action} -> ${workflow.plan?.relativePath || 'n/a'}`);
+    const { collectTurnRecall } = await import('../planning/turn-recall.mjs');
+    const recall = await collectTurnRecall({
+      rootDir: opts.workspaceRoot,
+      message: opts.prompt,
+      decision: workflow.decision,
+    });
+    if (recall) workflow.recall = recall;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.warn(`[warn] workflow policy skipped: ${reason}`);
@@ -161,16 +168,24 @@ async function executePrompt(opts) {
   const routedPrompt = String(routeDecision.taskPrompt || '').trim() || String(opts.prompt || '').trim();
   if (routeDecision.routeMode !== 'single') console.log(`[route] mode=${routeDecision.routeMode} (${routeDecision.reason})`);
   if (opts.dryRun) {
-    const previewPrompt = workflow?.injection
-      ? `${workflow.injection}\n## User request\n\n${routedPrompt}\n`
-      : routedPrompt;
+    const previewPrompt = attachTurnRecall({
+      prompt: workflow?.injection
+        ? `${workflow.injection}\n## User request\n\n${routedPrompt}\n`
+        : routedPrompt,
+      recall: workflow?.recall,
+      routeMode: routeDecision.routeMode,
+    });
     return { ...dryRunPrompt(opts, routeDecision, previewPrompt), routedPrompt, workflow };
   }
   // single/team/harness 共用同一外层 pre_send；执行宿主不能绕过压缩门或丢失当前 rex Command。
   const outbound = await compactCtxAgentPreSend({ opts, routedPrompt });
-  let providerPrompt = workflow?.injection
-    ? `${workflow.injection}\n## User request\n\n${outbound.prompt}\n`
-    : outbound.prompt;
+  let providerPrompt = attachTurnRecall({
+    prompt: workflow?.injection
+      ? `${workflow.injection}\n## User request\n\n${outbound.prompt}\n`
+      : outbound.prompt,
+    recall: workflow?.recall,
+    routeMode: routeDecision.routeMode,
+  });
   if (workflow?.capabilityCommand?.provider?.kind === 'agent') {
     const { prepareAiosAgentProviderExecution } = await import('../workflows/rex-agent-provider.mjs');
     const prepared = await prepareAiosAgentProviderExecution({
@@ -289,6 +304,12 @@ async function ingestRexProviderEvidence(opts, workflow, output, exitCode) {
     console.warn(`[warn] rex evidence rejected: ${reason}; activation=${activationId}`);
     return Object.freeze({ required: true, ingested: false, reason });
   }
+}
+
+export function attachTurnRecall({ prompt = '', recall = '', routeMode = 'single' } = {}) {
+  const recallBlock = String(recall || '').trim();
+  if (!recallBlock || routeMode !== 'single') return prompt;
+  return `${recallBlock}\n${prompt}`;
 }
 
 function dryRunPrompt(opts, routeDecision, routedPrompt) {

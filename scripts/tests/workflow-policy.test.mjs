@@ -178,6 +178,20 @@ test('an unknown client acknowledgement never uses the sessionless fallback', ()
   assert.equal(decision.reason, 'acknowledgement-without-same-session-plan');
 });
 
+test('extra resume phrases reuse a nonterminal plan', () => {
+  for (const message of ['接着做', '下一步', 'keep going', 'next step']) {
+    const decision = evaluateWorkflowPolicy({
+      message,
+      client: 'codex',
+      sessionId: 'session-b',
+      activePlan: activePlan({ client: 'claude', sessionId: 'session-a' }),
+    });
+    assert.equal(decision.disposition, 'direct', message);
+    assert.equal(decision.continuation, 'explicit-resume', message);
+    assert.equal(decision.persistence, 'reuse', message);
+  }
+});
+
 test('an explicit resume can reuse a nonterminal plan across clients', () => {
   const plan = activePlan({ client: 'claude', sessionId: 'claude-session', route: 'debug' });
   const decision = evaluateWorkflowPolicy({

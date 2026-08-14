@@ -147,19 +147,30 @@ test('root native instruction projections are compact and retain Rex ownership',
   }
 });
 
-test('Claude is the only checked-in native source with prompt-hook settings', () => {
+test('Claude, Codex, and Grok declare UserPromptSubmit workflow hooks', () => {
   const codex = readFileSync(path.join(process.cwd(), 'client-sources/native-base/codex/project/AGENTS.md'), 'utf8');
   const claude = readFileSync(path.join(process.cwd(), 'client-sources/native-base/claude/project/CLAUDE.md'), 'utf8');
+  const grok = readFileSync(path.join(process.cwd(), 'client-sources/native-base/grok/project/AGENTS.md'), 'utf8');
   const gemini = readFileSync(path.join(process.cwd(), 'client-sources/native-base/gemini/project/GEMINI.md'), 'utf8');
   const claudeSettings = JSON.parse(readFileSync(
     path.join(process.cwd(), 'client-sources/native-base/claude/project/settings.local.json'),
     'utf8',
   ));
+  const codexHooks = JSON.parse(readFileSync(
+    path.join(process.cwd(), 'client-sources/native-base/codex/project/hooks.json'),
+    'utf8',
+  ));
+  const grokHooks = JSON.parse(readFileSync(
+    path.join(process.cwd(), 'client-sources/native-base/grok/project/hooks/aios-workflow.json'),
+    'utf8',
+  ));
 
-  assert.match(codex, /native skill discovery.*no SessionStart bootstrap/i);
-  assert.match(claude, /SessionStart.*read-only status/i);
+  assert.match(codex, /Native sync writes `\.codex\/hooks\.json`/i);
   assert.match(claude, /UserPromptSubmit.*workflow-policy adapter/i);
+  assert.match(grok, /Native sync writes `\.grok\/hooks\/aios-workflow\.json`/i);
   assert.doesNotMatch(gemini, /SessionStart|UserPromptSubmit/u);
   assert.deepEqual(claudeSettings.hooks.SessionStart, ['node scripts/aios.mjs plan status --client claude']);
   assert.equal(claudeSettings.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt');
+  assert.equal(codexHooks.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt --client codex');
+  assert.equal(grokHooks.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt --client grok');
 });

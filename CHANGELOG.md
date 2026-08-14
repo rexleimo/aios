@@ -6,6 +6,26 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.7.0] - 2026-08-15
+
+### Added
+
+- Planned and resume turns collect budgeted ContextDB hits plus a real CCRG `graph.db` query (`ccrg: queried|unavailable|skipped`).
+- Codex and Grok `UserPromptSubmit` hooks: native sources, `--client` on `aios plan hook-user-prompt`, and managed outputs `.codex/hooks.json` / `.grok/hooks/aios-workflow.json`.
+- Parallel `aios work` items get isolated rex ledgers and fail closed when `ownedPathPrefixes` are missing or rex bind fails.
+
+### Changed
+
+- AIOS capability state write-through to `.rex-harness/` so standalone rex-harness can run without `.aios/workflow-activations`. Old activation files are not migrated.
+- Resume/recall phrases live in one table shared by workflow policy and ContextDB intent.
+- `rex-harness` standalone store can find/persist workflows and restart a completed or blocked work item.
+
+### Fixed
+
+- `startStored` reuses an already-active work-item workflow instead of overwriting the index.
+- `XAI_API_KEY` no longer identifies the hook client as Grok.
+- Team and harness routes do not put `## AIOS RECALL` into `--objective`.
+
 ## [5.6.1] - 2026-08-12
 
 ### Added

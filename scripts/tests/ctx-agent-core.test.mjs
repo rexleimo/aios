@@ -7,6 +7,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import {
+  attachTurnRecall,
   classifyOneShotFailure,
   resolveRoutedSubagentClient,
   resolveTaskRouteDecision,
@@ -753,15 +754,14 @@ process.stdout.write('provider complete\\nAIOS_REX_EVIDENCE=' + JSON.stringify(p
     assert.equal(result.status, 0, result.stderr || result.stdout);
     assert.match(result.stderr, /\[aios\] rex evidence: blocked/u);
 
-    const activationDir = path.join(workspaceRoot, '.aios', 'workflow-activations');
-    // workflows/ 保存 rex 的规范工作流状态；这里只有顶层 JSON 才是 AIOS 兼容投影。
+    const activationDir = path.join(workspaceRoot, '.rex-harness', 'activations');
     const records = (await readdir(activationDir))
       .filter((name) => name.endsWith('.json'));
     assert.equal(records.length, 1);
     const record = JSON.parse(await readFile(path.join(activationDir, records[0]), 'utf8'));
-    assert.equal(record.outcome, 'blocked');
-    assert.equal(record.activation.evidence[0].kind, 'acceptance-criteria-recorded');
-    assert.deepEqual(record.activation.evidence[0].refs, ['artifact:runner']);
+    assert.equal(record.status, 'active');
+    assert.equal(record.currentActivation.evidence[0].kind, 'acceptance-criteria-recorded');
+    assert.deepEqual(record.currentActivation.evidence[0].refs, ['artifact:runner']);
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
     await rm(binDir, { recursive: true, force: true });
@@ -930,18 +930,64 @@ process.stdout.write(JSON.stringify({
     assert.equal(artifact.handoff.status, 'pass');
     assert.equal(artifact.handoff.agentId, agentId);
 
-    const activationRecord = JSON.parse(await readFile(
-      path.join(workspaceRoot, '.aios', 'workflow-activations', `${specialistActivationId}.json`),
-      'utf8',
-    ));
-    assert.equal(activationRecord.activation.status, 'completed');
+    const activationDir = path.join(workspaceRoot, '.rex-harness', 'activations');
+    const workflowFiles = (await readdir(activationDir)).filter((name) => name.endsWith('.json'));
+    assert.equal(workflowFiles.length, 1);
+    const activationRecord = JSON.parse(await readFile(path.join(activationDir, workflowFiles[0]), 'utf8'));
+    const specialist = (activationRecord.activationHistory || []).find(
+      (item) => item.activationId === specialistActivationId,
+    ) || activationRecord.currentActivation;
+    assert.equal(specialist.status, 'completed');
     assert.deepEqual(
-      activationRecord.activation.evidence.map((item) => item.kind),
+      specialist.evidence.map((item) => item.kind),
       ['specialist-scope-recorded', 'specialist-verdict-recorded'],
     );
   } finally {
     await rm(workspaceRoot, { recursive: true, force: true });
     await rm(binDir, { recursive: true, force: true });
+  }
+});
+
+test('turn recall stays off team and harness objectives', async () => {
+  const recall = '## AIOS RECALL\nquery: 继续做结账验收\nccrg: unavailable\n';
+  assert.match(attachTurnRecall({ prompt: 'user task', recall, routeMode: 'single' }), /## AIOS RECALL/u);
+  assert.doesNotMatch(attachTurnRecall({ prompt: 'user task', recall, routeMode: 'team' }), /## AIOS RECALL/u);
+  assert.doesNotMatch(attachTurnRecall({ prompt: 'user task', recall, routeMode: 'harness' }), /## AIOS RECALL/u);
+
+  for (const route of ['team', 'harness']) {
+    const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), `aios-ctx-agent-recall-${route}-`));
+    try {
+      const result = spawnSync(
+        process.execPath,
+        [
+          'scripts/ctx-agent.mjs',
+          '--agent',
+          'codex-cli',
+          '--workspace',
+          workspaceRoot,
+          '--project',
+          'tmp-project',
+          '--route',
+          route,
+          '--route-execute',
+          'dry-run',
+          '--prompt',
+          '先澄清结账验收标准，再实现校验逻辑。',
+          '--dry-run',
+          '--no-bootstrap',
+        ],
+        {
+          cwd: process.cwd(),
+          encoding: 'utf8',
+        },
+      );
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      assert.match(result.stdout, new RegExp(`\\[route\\] mode=${route}`, 'u'));
+      assert.match(String(result.stderr || ''), /workflow: planned/u);
+      assert.doesNotMatch(result.stdout, /## AIOS RECALL/u);
+    } finally {
+      await rm(workspaceRoot, { recursive: true, force: true });
+    }
   }
 });
 

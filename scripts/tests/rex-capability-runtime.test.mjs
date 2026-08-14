@@ -495,7 +495,7 @@ test('AIOS serializes evidence writes so one Command token cannot advance twice'
     let nestedError = null;
     let triggered = false;
     fs.renameSync = (source, destination) => {
-      const isTransaction = path.basename(path.dirname(destination)) === 'transactions'
+      const isTransaction = path.basename(path.dirname(destination)) === 'activations'
         && path.extname(destination) === '.json';
       if (!triggered && isTransaction) {
         triggered = true;

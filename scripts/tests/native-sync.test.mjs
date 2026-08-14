@@ -30,10 +30,11 @@ async function writeNativeManifest(rootDir) {
       markdownEnd: '<!-- AIOS NATIVE END -->',
     },
     clients: {
-      codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills'] },
+      codex: { tier: 'deep', metadataRoot: '.codex', outputs: ['AGENTS.md', '.codex/agents', '.codex/skills', '.codex/hooks.json'] },
       claude: { tier: 'deep', metadataRoot: '.claude', outputs: ['CLAUDE.md', '.claude/settings.local.json', '.claude/agents', '.claude/skills'] },
       gemini: { tier: 'compatibility', metadataRoot: '.gemini', outputs: ['GEMINI.md', '.gemini/skills'] },
       opencode: { tier: 'compatibility', metadataRoot: '.opencode', outputs: ['AGENTS.md', '.opencode/agent/aios-build.md', '.opencode/agents', '.opencode/skills', 'opencode.json'] },
+      grok: { tier: 'deep', metadataRoot: '.grok', outputs: ['AGENTS.md', '.grok/agents', '.grok/skills', '.grok/hooks/aios-workflow.json'] },
     },
   });
 }
@@ -68,6 +69,17 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'model-router.md'), 'Section MODEL-ROUTER-CAP only.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'shared', 'partials', 'harness.md'), 'Section HARNESS for all.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'codex', 'project', 'AGENTS.md'), 'Codex native block.\n', 'utf8');
+  await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'codex', 'project', 'hooks.json'), {
+    hooks: {
+      UserPromptSubmit: [{ hooks: [{ type: 'command', command: 'node scripts/aios.mjs plan hook-user-prompt --client codex' }] }],
+    },
+  });
+  await mkdir(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project', 'hooks'), { recursive: true });
+  await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'grok', 'project', 'hooks', 'aios-workflow.json'), {
+    hooks: {
+      UserPromptSubmit: [{ hooks: [{ type: 'command', command: 'node scripts/aios.mjs plan hook-user-prompt --client grok', timeout: 20 }] }],
+    },
+  });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'CLAUDE.md'), 'Claude native block.\n', 'utf8');
   await writeJson(path.join(rootDir, 'client-sources', 'native-base', 'claude', 'project', 'settings.local.json'), {
     hooks: {
@@ -110,6 +122,24 @@ async function seedNativeRoot(rootDir) {
   await writeSkillSources(rootDir);
   await writeAgentSources(rootDir);
 }
+
+test('native sync writes Codex and Grok UserPromptSubmit hook files', async () => {
+  const rootDir = await makeTemp('aios-native-sync-hooks-root-');
+  await seedNativeRoot(rootDir);
+
+  await syncNativeEnhancements({ rootDir, client: 'all' });
+
+  const codexHooks = JSON.parse(await readFile(path.join(rootDir, '.codex', 'hooks.json'), 'utf8'));
+  const grokHooks = JSON.parse(await readFile(path.join(rootDir, '.grok', 'hooks', 'aios-workflow.json'), 'utf8'));
+  assert.equal(
+    codexHooks.hooks.UserPromptSubmit[0].hooks[0].command,
+    'node scripts/aios.mjs plan hook-user-prompt --client codex',
+  );
+  assert.equal(
+    grokHooks.hooks.UserPromptSubmit[0].hooks[0].command,
+    'node scripts/aios.mjs plan hook-user-prompt --client grok',
+  );
+});
 
 test('native sync writes a client-neutral shared AGENTS block and per-client overlays', async () => {
   const rootDir = await makeTemp('aios-native-sync-capability-root-');
