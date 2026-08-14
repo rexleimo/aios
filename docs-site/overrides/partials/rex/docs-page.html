@@ -96,20 +96,11 @@
           {% endif %}
         </header>
 
-        {% if page.toc %}
-          <section class="rex-doc-outline" aria-label="On this page">
-            <div class="rex-doc-outline__title"><span aria-hidden="true"></span>On This Page</div>
-            <ul>
-              {% for toc_item in page.toc %}
-                <li><a href="#{{ toc_item.id }}">{{ toc_item.title }}</a></li>
-                {% if toc_item.children %}
-                  {% for child in toc_item.children %}
-                    <li class="is-child"><a href="#{{ child.id }}">{{ child.title }}</a></li>
-                  {% endfor %}
-                {% endif %}
-              {% endfor %}
-            </ul>
-          </section>
+        {% if page.meta and (page.meta.date or page.meta.author) %}
+        <div class="rex-doc-meta">
+          {% if page.meta.author %}<span>{{ page.meta.author }}</span>{% endif %}
+          {% if page.meta.date %}<time datetime="{{ page.meta.date }}">{{ page.meta.date }}</time>{% endif %}
+        </div>
         {% endif %}
 
         <article class="rex-doc-content md-typeset">
@@ -136,5 +127,23 @@
         {% endif %}
       </div>
     </main>
+
+    {% if page.toc %}
+    <aside class="rex-doc-toc" aria-label="On this page">
+      <div class="rex-doc-toc__inner">
+        <span class="rex-doc-toc__label">On This Page</span>
+        <nav>
+          {% for toc_item in page.toc %}
+            <a href="#{{ toc_item.id }}"{% if loop.first %} class="is-active"{% endif %}>{{ toc_item.title }}</a>
+            {% if toc_item.children %}
+              {% for child in toc_item.children %}
+                <a class="is-child" href="#{{ child.id }}">{{ child.title }}</a>
+              {% endfor %}
+            {% endif %}
+          {% endfor %}
+        </nav>
+      </div>
+    </aside>
+    {% endif %}
   </div>
 </div>

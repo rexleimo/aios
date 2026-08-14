@@ -194,8 +194,8 @@
 .md-typeset .admonition,
 .md-typeset details {
   color: var(--rex-text-body);
-  background: color-mix(in srgb, var(--rex-text-soft) 6%, transparent);
-  border: 1px solid var(--rex-border-soft);
+  background: color-mix(in srgb, var(--rex-accent) 7%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rex-accent) 22%, transparent);
   border-left: 3px solid var(--rex-accent);
   border-radius: var(--rex-radius-md);
   box-shadow: var(--rex-elev-0);
