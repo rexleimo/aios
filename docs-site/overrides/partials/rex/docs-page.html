@@ -1,4 +1,6 @@
-<div class="rex-doc-layout rex-doc-page" data-rex-shell="docs">
+﻿<div class="rex-doc-layout rex-doc-page" data-rex-shell="docs">
+  {% set locale = i18n_page_locale if i18n_page_locale is defined else (i18n_current_language if i18n_current_language is defined else 'en') %}
+  {% set lp = locale ~ '/' if locale != 'en' else '' %}
   {% include "partials/rex/docs-header.html" %}
   <div class="rex-doc-layout__body">
   {% include "partials/rex/docs-sidebar.html" %}
@@ -78,7 +80,7 @@
     <main class="rex-doc-main" id="rex-doc-main">
       <div class="rex-doc-main__inner">
         <nav class="rex-doc-breadcrumb" aria-label="Breadcrumb">
-          <a href="{{ '/' | url }}">Home</a>
+          <a href="{{ (lp ~ '/') | url }}">Home</a>
           {% if page.parent %}
             <span>/</span>
             <span>{{ page.parent.title }}</span>
@@ -89,23 +91,28 @@
 
         <header class="rex-doc-hero">
           <h1>{{ page.title }}</h1>
-          {% if page.meta and page.meta.description %}
-            <p>{{ page.meta.description }}</p>
-          {% elif config.site_description %}
-            <p>{{ config.site_description }}</p>
-          {% endif %}
         </header>
 
-        {% if page.meta and (page.meta.date or page.meta.author) %}
         <div class="rex-doc-meta">
-          {% if page.meta.author %}<span>{{ page.meta.author }}</span>{% endif %}
-          {% if page.meta.date %}<time datetime="{{ page.meta.date }}">{{ page.meta.date }}</time>{% endif %}
+          {% if page.meta and page.meta.date %}<time datetime="{{ page.meta.date }}">Updated {{ page.meta.date }}</time>{% else %}<span>AIOS Documentation</span>{% endif %}
+          {% if page.meta and page.meta.author %}<span>{{ page.meta.author }}</span>{% endif %}
         </div>
+
+        {% if page.meta and page.meta.description %}
+          <p class="rex-doc-intro">{{ page.meta.description }}</p>
+        {% elif config.site_description %}
+          <p class="rex-doc-intro">{{ config.site_description }}</p>
         {% endif %}
 
         <article class="rex-doc-content md-typeset">
           {% include "partials/content.html" %}
         </article>
+
+        <a class="rex-doc-adspot rex-doc-adspot--leaderboard" href="https://imklom.im" target="_blank" rel="noopener">
+          <img class="rex-doc-adspot__img" src="{{ 'assets/ads/imklom.png' | url }}" alt="imklom.im — AI 图像生成" loading="lazy" />
+          <span class="rex-doc-adspot__body"><strong>imklom.im</strong><span>AI 做图 · 一句话生成高质量图片 / AI image generation.</span></span>
+          <span class="rex-doc-adspot__tag">赞助 · Sponsor</span>
+        </a>
 
         {% if page.previous_page or page.next_page %}
         <nav class="rex-doc-pager" aria-label="Previous and next pages">
@@ -142,6 +149,11 @@
             {% endif %}
           {% endfor %}
         </nav>
+        <a class="rex-doc-adspot rex-doc-adspot--side" href="https://tool.rexai.top" target="_blank" rel="noopener">
+          <img class="rex-doc-adspot__img" src="{{ 'assets/ads/relay.png' | url }}" alt="RexAI 工具站" loading="lazy" />
+          <span class="rex-doc-adspot__body"><strong>RexAI 工具站</strong><span>免费无广告的在线 AI 工具集 / Free no-ad online tools.</span></span>
+          <span class="rex-doc-adspot__tag">赞助 · Sponsor</span>
+        </a>
       </div>
     </aside>
     {% endif %}

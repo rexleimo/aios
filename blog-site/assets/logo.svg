@@ -1,4 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="RexAI">
-  <rect width="120" height="120" rx="20" fill="#0b1f3a"/>
-  <path d="M28 90V30h34c17 0 28 9 28 24 0 11-6 18-15 21l17 15H75L61 77H44v13H28zm16-27h16c9 0 14-3 14-10s-5-10-14-10H44v20z" fill="#50e3c2"/>
-</svg>
+﻿<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="AIOS"><path d="M48 10a38 38 0 1 0 0 76 38 38 0 1 0 0-76" fill="none" stroke="#50e3c2" stroke-width="5" stroke-linecap="round"/><path d="M30 62l18-30 18 30" fill="none" stroke="#50e3c2" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/><path d="M37 50l22 0" fill="none" stroke="#50e3c2" stroke-width="5" stroke-linecap="round"/><ellipse cx="48" cy="30" rx="4" ry="4" fill="#50e3c2"/></svg>

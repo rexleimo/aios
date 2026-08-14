@@ -1,4 +1,4 @@
----
+﻿---
 title: AIOS Architecture — Layers under Coding Agents
 description: Architecture of AIOS: coding clients, Workflow Policy, ContextDB memory, rex-harness control plane, Agent Team, browser-use CDP, and verification gates.
 ---

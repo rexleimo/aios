@@ -1,4 +1,4 @@
-site_name: AIOS Documentation
+﻿site_name: AIOS Documentation
 site_url: https://cli.rexai.top
 site_description: Local-first AI coding agent workflow for Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok. Project memory, adaptive routing, multi-agent teams, and verification.
 site_author: RexAI

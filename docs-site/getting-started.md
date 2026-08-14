@@ -1,4 +1,4 @@
----
+﻿---
 title: Quick Start — Install AIOS for Claude Code, Codex, and Gemini
 description: Install AIOS on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
 schema_type: howto

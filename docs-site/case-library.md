@@ -1,4 +1,4 @@
----
+﻿---
 title: Case Library: Reproducible AIOS Workflows
 description: Follow evidence-first cases for setup, cross-client handoff, browser authentication, privacy-safe reads, and release verification.
 ---

@@ -1,4 +1,4 @@
----
+﻿---
 title: AIOS アーキテクチャ
 description: client guidance、ContextDB、Workflow Policy、Team、Harness、browser-use CDP、RL research の接続を説明します。
 ---

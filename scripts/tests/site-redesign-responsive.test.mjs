@@ -15,7 +15,7 @@ test('home responsive contract uses real reflow instead of scale-based shrinking
 
   assert.match(
     homeCss,
-    /@media \(max-width: 1180px\)[\s\S]*\.hero-layout\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 420px;/
+    /@media \(max-width: 1440px\)[\s\S]*\.hero-layout\s*\{[\s\S]*grid-template-columns: minmax\(0, 1fr\) 420px;/
   );
   assert.match(
     homeCss,
@@ -28,7 +28,7 @@ test('home responsive contract progressively reflows capability demo and cta sec
 
   assert.match(
     homeCss,
-    /@media \(max-width: 1180px\)[\s\S]*\.capabilities-cards\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/
+    /@media \(max-width: 1440px\)[\s\S]*\.capabilities-cards\s*\{[\s\S]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/
   );
   assert.match(
     homeCss,
@@ -40,7 +40,7 @@ test('home responsive contract progressively reflows capability demo and cta sec
   );
   assert.match(
     homeCss,
-    /@media \(max-width: 1180px\)[\s\S]*\.cta-section \.home-section__stage\s*\{[\s\S]*grid-template-columns: 1fr;/
+    /@media \(max-width: 1440px\)[\s\S]*\.cta-section \.home-section__stage\s*\{[\s\S]*grid-template-columns: 1fr;/
   );
 });
 
@@ -199,7 +199,7 @@ test('blog article responsive contract keeps post layouts readable on tablet and
   );
   assert.match(
     blogPostCss,
-    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-article-hero\s*\{[\s\S]*height: 300px;/
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-blog-article-hero\s*\{[\s\S]*height: 240px;/
   );
   assert.match(
     blogPostCss,
@@ -211,7 +211,7 @@ test('blog article responsive contract keeps post layouts readable on tablet and
   );
   assert.match(
     blogPostCss,
-    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-article-header h1\s*\{[\s\S]*font-size: clamp\(2rem, 12vw, 2\.8rem\);/
+    /@media \(max-width: 767px\)[\s\S]*\.rex-blog-article-header h1\s*\{[\s\S]*font-size: clamp\(2rem, 11vw, 2\.65rem\);/
   );
   assert.match(
     blogCardsCss,
@@ -223,10 +223,20 @@ test('docs responsive contract switches between desktop sidebar, tablet header, 
   const shellCss = read('docs-site/assets/redesign/shell.css');
   const pagesCss = read('docs-site/assets/redesign/pages.css');
 
+  // csK3H three-column body: sidebar | content | toc
   assert.match(
     shellCss,
-    /\.rex-doc-layout\s*\{[\s\S]*grid-template-columns: 220px minmax\(0, 1fr\);/
+    /\.rex-doc-layout__body\s*\{[\s\S]*grid-template-columns: 256px minmax\(0, 1fr\) 240px;/
   );
+  assert.match(
+    shellCss,
+    /@media \(min-width: 1280px\)[\s\S]*\.rex-doc-layout__body\s*\{[\s\S]*grid-template-columns: 288px 776px minmax\(0, 1fr\);/
+  );
+  assert.match(
+    shellCss,
+    /@media \(min-width: 1024px\)[\s\S]*\.rex-doc-shell\s*\{[\s\S]*display: contents;/
+  );
+
   assert.match(
     shellCss,
     /@media \(max-width: 1023px\)[\s\S]*\.rex-doc-sidebar\s*\{[\s\S]*display: none;/
@@ -252,24 +262,21 @@ test('docs responsive contract switches between desktop sidebar, tablet header, 
     /@media \(max-width: 767px\)[\s\S]*\.rex-doc-device-bar--mobile\s*\{[\s\S]*min-height: 56px;/
   );
 
+  // Hero title uses the display face; csK3H sets the exact 40px reading size.
   assert.match(
     pagesCss,
-    /\.rex-doc-hero h1\s*\{[\s\S]*font-family: var\(--rex-font-mono\);[\s\S]*font-size: 2rem;/
+    /\.rex-doc-hero h1\s*\{[\s\S]*font-family: var\(--rex-font-display\);[\s\S]*font-size: 40px;/
   );
   assert.match(
     pagesCss,
-    /@media \(max-width: 1023px\)[\s\S]*\.rex-doc-main\s*\{[\s\S]*padding: 24px 20px 3rem;/
+    /@media \(max-width: 1023px\)[\s\S]*\.rex-doc-main\s*\{[\s\S]*padding-bottom: 3\.5rem;/
   );
   assert.match(
     pagesCss,
-    /@media \(max-width: 1023px\)[\s\S]*\.rex-doc-hero h1\s*\{[\s\S]*font-size: 1\.75rem;/
+    /@media \(max-width: 767px\)[\s\S]*\.rex-doc-main\s*\{[\s\S]*padding: 1\.25rem 1rem 3rem;/
   );
   assert.match(
     pagesCss,
-    /@media \(max-width: 767px\)[\s\S]*\.rex-doc-main\s*\{[\s\S]*padding: 16px 16px 2\.5rem;/
-  );
-  assert.match(
-    pagesCss,
-    /@media \(max-width: 767px\)[\s\S]*\.rex-doc-hero h1\s*\{[\s\S]*font-size: 1\.5rem;/
+    /@media \(max-width: 767px\)[\s\S]*\.rex-doc-hero h1\s*\{[\s\S]*font-size: clamp\(1\.8rem, 9vw, 2\.15rem\);/
   );
 });

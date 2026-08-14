@@ -269,3 +269,218 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* csK3H exact reading column */
+.rex-doc-main {
+  padding: 28px 32px 5rem;
+}
+
+.rex-doc-main__inner {
+  width: min(680px, 100%);
+  margin: 0;
+}
+
+.rex-doc-breadcrumb {
+  gap: 0.4rem;
+  margin: 0 0 14px;
+  color: var(--rex-text-soft);
+  font-family: var(--rex-font-mono);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.rex-doc-breadcrumb a {
+  color: var(--rex-text-soft);
+}
+
+.rex-doc-breadcrumb strong {
+  color: var(--rex-text-soft);
+  font-weight: 400;
+}
+
+.rex-doc-hero {
+  max-width: 680px;
+  margin: 0;
+}
+
+.rex-doc-hero h1 {
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-size: 40px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.2;
+}
+
+.rex-doc-meta {
+  gap: 0.75rem;
+  margin: 10px 0 24px;
+  color: var(--rex-text-soft);
+  font-family: var(--rex-font-body);
+  font-size: 13px;
+  line-height: 19px;
+}
+
+.rex-doc-intro {
+  max-width: 680px;
+  margin: 0 0 40px;
+  color: var(--rex-text-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.rex-doc-content > :is(p, ul, ol, blockquote, details, .admonition, h2, h3, h4, hr) {
+  max-width: 680px;
+}
+
+.rex-doc-content h2 {
+  margin-top: 40px;
+  margin-bottom: 16px;
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  line-height: 1.3;
+}
+
+.rex-doc-content > p {
+  color: var(--rex-text-muted);
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.rex-doc-content > :is(pre, .highlight) {
+  max-width: 680px;
+  margin: 24px 0;
+  padding: 24px;
+  background: var(--rex-panel) !important;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.rex-doc-content .highlight > pre {
+  margin: 0;
+  padding: 0;
+}
+
+.rex-doc-content .admonition,
+.rex-doc-content details,
+.rex-doc-content blockquote {
+  max-width: 680px;
+  margin: 24px 0;
+  padding: 20px 24px;
+  background: #EFF4FF;
+  border: 0;
+  border-radius: 10px;
+  box-shadow: none;
+}
+
+.rex-doc-content .admonition-title,
+.rex-doc-content summary {
+  padding: 0;
+  background: transparent;
+}
+
+:root[data-rex-theme="dark"] .rex-doc-content .admonition,
+:root[data-rex-theme="dark"] .rex-doc-content details,
+:root[data-rex-theme="dark"] .rex-doc-content blockquote {
+  background: color-mix(in srgb, var(--rex-accent) 12%, var(--rex-panel));
+}
+
+.rex-doc-pager {
+  width: min(720px, 100%);
+  margin-top: 56px;
+  padding-top: 28px;
+}
+
+/* RexAI docs ad spots */
+.rex-doc-adspot {
+  display: flex;
+  gap: 0.85rem;
+  align-items: center;
+  max-width: 680px;
+  padding: 12px 16px;
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: 12px;
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.rex-doc-adspot:hover,
+.rex-doc-adspot:focus-visible {
+  border-color: color-mix(in srgb, var(--rex-accent) 45%, transparent);
+  box-shadow: var(--rex-shadow-cyan);
+}
+
+.rex-doc-adspot__img {
+  flex: 0 0 auto;
+  width: 96px;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  object-position: center;
+  border-radius: 8px;
+}
+
+.rex-doc-adspot__body {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.rex-doc-adspot__body strong {
+  color: var(--rex-text);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.rex-doc-adspot__body span {
+  color: var(--rex-text-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.rex-doc-adspot--leaderboard {
+  margin: 24px 0 0;
+}
+
+.rex-doc-adspot--side {
+  display: flex;
+  max-width: none;
+  flex-direction: row;
+  align-items: center;
+  margin-top: 20px;
+  padding: 10px;
+}
+
+.rex-doc-adspot--side .rex-doc-adspot__img {
+  width: 80px;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  object-position: center;
+}
+
+.rex-doc-adspot__tag {
+  flex: 0 0 auto;
+  margin-left: auto;
+  padding: 2px 7px;
+  color: var(--rex-text-soft);
+  background: transparent;
+  border: 1px solid var(--rex-border);
+  border-radius: 999px;
+  font-family: var(--rex-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+}
+
+.rex-doc-adspot--side .rex-doc-adspot__tag {
+  align-self: auto;
+  margin-top: 0;
+  margin-left: auto;
+}

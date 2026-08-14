@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+﻿{% extends "base.html" %}
 
 {% block extrahead %}
   {{ super() }}
@@ -21,7 +21,7 @@
     "@context": "https://schema.org",
     "@type": "Organization",
     "@id": "https://cli.rexai.top/#organization",
-    "name": "RexAI",
+    "name": "AIOS",
     "url": "https://cli.rexai.top",
     "logo": "https://cli.rexai.top/assets/og-cover.png",
     "sameAs": [
@@ -127,14 +127,23 @@
   </script>
   {% endif %}
 
-  <!-- Theme toggle: honor saved preference before first paint, else system -->
+  <!-- Theme toggle: honor saved preference before first paint, else system.
+       Sync BOTH our custom scheme (data-rex-theme) and mkdocs-material's
+       native scheme (data-md-color-scheme) so native components (code,
+       tabs, inline code, admonitions) follow dark mode too. -->
   <script>
     (function () {
+      var root = document.documentElement;
       var saved = null;
       try { saved = localStorage.getItem('rex-theme'); } catch (e) {}
-      if (saved === 'light' || saved === 'dark') {
-        document.documentElement.setAttribute('data-rex-theme', saved);
+      var theme = saved;
+      if (theme !== 'light' && theme !== 'dark') {
+        var systemDark = window.matchMedia &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches;
+        theme = systemDark ? 'dark' : 'light';
       }
+      root.setAttribute('data-rex-theme', theme);
+      root.setAttribute('data-md-color-scheme', theme === 'dark' ? 'slate' : 'default');
     })();
   </script>
 
@@ -289,6 +298,7 @@
           var root = document.documentElement;
           var next = root.getAttribute('data-rex-theme') === 'dark' ? 'light' : 'dark';
           root.setAttribute('data-rex-theme', next);
+          root.setAttribute('data-md-color-scheme', next === 'dark' ? 'slate' : 'default');
           try { localStorage.setItem('rex-theme', next); } catch (e) {}
         });
       }

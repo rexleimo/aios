@@ -1,4 +1,4 @@
----
+﻿---
 title: AIOS — Local-First Agent Harness
 description: Add project memory, adaptive workflow routing, multi-agent teams, and verification to Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing your coding client.
 home: true

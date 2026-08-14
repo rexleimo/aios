@@ -1,4 +1,4 @@
----
+﻿---
 title: AIOS 概要
 description: AIOS は codex、claude、gemini、opencode、hermes、grok にプロジェクト記憶、協調、ルーティング、検証を追加します。
 ---
