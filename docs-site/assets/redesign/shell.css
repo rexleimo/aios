@@ -423,7 +423,7 @@
 .rex-doc-layout__body {
   display: grid;
   min-width: 0;
-  grid-template-columns: 244px minmax(0, 1fr) 240px;
+  grid-template-columns: 256px minmax(0, 1fr) 240px;
 }
 
 .rex-doc-shell {
@@ -445,12 +445,12 @@
 
 .rex-doc-sidebar {
   position: sticky;
-  top: 70px;
+  top: 64px;
   align-self: start;
   display: flex;
   height: auto;
   min-height: 0;
-  max-height: calc(100vh - 70px);
+  max-height: calc(100vh - 64px);
   flex-direction: column;
   overflow-y: auto;
   overscroll-behavior-y: contain;
@@ -499,7 +499,7 @@
 
 .rex-doc-sidebar__section h2 {
   margin: 0 0 0.55rem;
-  color: var(--rex-soft);
+  color: var(--rex-accent);
   font-family: var(--rex-font-mono);
   font-size: 0.64rem;
   font-weight: 900;
@@ -549,10 +549,11 @@
 }
 
 .rex-doc-sidebar__item.is-active {
-  color: var(--rex-cyan);
+  color: var(--rex-accent);
   background: color-mix(in srgb, var(--rex-accent) 12%, transparent);
   border-color: color-mix(in srgb, var(--rex-accent) 32%, transparent);
   box-shadow: inset 3px 0 0 var(--rex-accent);
+  font-weight: 800;
 }
 
 .rex-doc-sidebar__status {
@@ -852,10 +853,10 @@
 /* Right-hand TOC column (v9 docs, csK3H) */
 .rex-doc-toc {
   position: sticky;
-  top: 70px;
+  top: 64px;
   align-self: start;
   min-width: 0;
-  max-height: calc(100vh - 70px);
+  max-height: calc(100vh - 64px);
   overflow-y: auto;
   overscroll-behavior-y: contain;
   padding: 28px 8px 24px 22px;
@@ -979,10 +980,207 @@
 
 @media (max-width: 1240px) {
   .rex-doc-layout__body {
-    grid-template-columns: 244px minmax(0, 1fr);
+    grid-template-columns: 256px minmax(0, 1fr);
   }
 
   .rex-doc-toc {
+    display: none;
+  }
+}
+
+/* Docs header (v9 csK3H: logo + search + minimal nav + actions, 64px) */
+.rex-doc-header {
+  position: sticky;
+  z-index: 40;
+  top: 0;
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--rex-header);
+  border-bottom: 1px solid var(--rex-border);
+  backdrop-filter: blur(18px);
+}
+
+.rex-doc-header__inner {
+  display: grid;
+  width: min(100%, 1440px);
+  min-height: 64px;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  gap: clamp(1rem, 2vw, 2rem);
+  align-items: center;
+  padding: 0 clamp(1.25rem, 3vw, 2.5rem);
+  box-sizing: border-box;
+}
+
+.rex-doc-header a {
+  text-decoration: none;
+}
+
+.rex-doc-header__brand {
+  display: inline-flex;
+  gap: 0.7rem;
+  align-items: center;
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+
+.rex-doc-header__mark {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  place-items: center;
+  color: #F8FAFC;
+  background: #0A0A0A;
+  border-radius: 7px;
+}
+
+.rex-doc-header__mark svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.rex-doc-header__search {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 320px;
+  min-height: 34px;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.75rem;
+  color: var(--rex-text-soft);
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 650;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.rex-doc-header__search:hover {
+  color: var(--rex-text-muted);
+  border-color: color-mix(in srgb, var(--rex-accent) 45%, transparent);
+  box-shadow: var(--rex-shadow-cyan);
+}
+
+.rex-doc-header__search svg {
+  flex: 0 0 auto;
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rex-doc-header__search span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rex-doc-header__search kbd {
+  margin-left: auto;
+  padding: 0.1rem 0.4rem;
+  color: var(--rex-text-soft);
+  background: var(--rex-panel-strong);
+  border: 1px solid var(--rex-border);
+  border-radius: 6px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.64rem;
+}
+
+.rex-doc-header__nav {
+  display: flex;
+  gap: 1.2rem;
+  justify-content: flex-end;
+}
+
+.rex-doc-header__nav a {
+  color: var(--rex-text-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  transition: color 160ms ease;
+}
+
+.rex-doc-header__nav a:is(:hover, :focus-visible) {
+  color: var(--rex-accent);
+}
+
+.rex-doc-header__actions {
+  display: flex;
+  gap: 0.7rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.rex-doc-header__github {
+  display: inline-flex;
+  min-height: 34px;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0 0.8rem;
+  color: var(--rex-text-muted);
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 750;
+  transition: color 160ms ease, border-color 160ms ease;
+}
+
+.rex-doc-header__github:hover {
+  color: var(--rex-accent);
+  border-color: color-mix(in srgb, var(--rex-accent) 45%, transparent);
+}
+
+.rex-doc-header__github svg {
+  width: 0.9rem;
+  height: 0.9rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.rex-doc-header__cta {
+  display: inline-flex;
+  min-height: 36px;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0 1rem;
+  color: #FFFFFF;
+  background: var(--rex-accent);
+  border: 1px solid var(--rex-accent);
+  border-radius: 999px;
+  box-shadow: var(--rex-shadow-cyan);
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+:root[data-rex-theme="dark"] .rex-doc-header__cta {
+  color: #031018;
+}
+
+@media (max-width: 1023px) {
+  .rex-doc-header__inner {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .rex-doc-header__nav {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .rex-doc-header__search {
     display: none;
   }
 }
