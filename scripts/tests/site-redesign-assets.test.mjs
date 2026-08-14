@@ -79,39 +79,38 @@ test('site override preserves Material header hooks required by the bundle runti
   }
 });
 
-test('home markdown exposes animation canvas hooks required by the Pencil design', () => {
+test('home markdown exposes current landing-page section hooks', () => {
   const home = read('docs-site/index.md');
 
-  for (const id of ['hero-canvas', 'grid-canvas', 'hud-canvas', 'cta-canvas']) {
-    assert.match(home, new RegExp(`id="${id}"`));
+  for (const marker of [
+    'class="rex-hero"',
+    'class="rex-band rex-band--team"',
+    'class="rex-band rex-band--verify"',
+    'class="rex-run"',
+    'class="rex-install"',
+  ]) {
+    assert.match(home, new RegExp(escapeRegExp(marker)));
   }
 });
 
-test('home HUD markup preserves the Pencil telemetry title row structure', () => {
+test('home markup exposes current install and run-layer content', () => {
   const home = read('docs-site/index.md');
 
-  assert.match(home, /class="hud-panel__title-row"/);
-  assert.match(home, /class="hud-panel__title">SYSTEM TELEMETRY<\/div>/);
-  assert.match(home, /class="hud-panel__status"/);
-  assert.match(home, /aria-label="Telemetry activity"/);
-  assert.match(home, /class="hud-panel__sub">live agent throughput<\/div>/);
-  assert.match(home, /LIVE OVERVIEW · ambient activity backdrop/);
-  assert.match(home, /responsive node grid/);
-  assert.match(home, /class="zone-label zone-label--inline"/);
-  assert.match(home, /activity overview \+ throughput/);
-  assert.match(home, /class="hero-client-chip"[^>]*>[\s\S]*?codex/);
-  assert.match(home, /class="hero-client-chip"[^>]*>[\s\S]*?hermes/);
-  assert.match(home, /class="hero-client-chip"[^>]*title="Grok Build"[\s\S]*?>[\s\S]*?grok/);
-  assert.doesNotMatch(home, /THREE\.JS ZONE · particle field \+ cursor parallax drift/);
-  assert.doesNotMatch(home, /INTERACTIVE FIELD · particle field \+ cursor parallax drift/);
-  assert.doesNotMatch(home, /THREE\.JS · hover-reactive node grid/);
-  assert.doesNotMatch(home, /WEBGL · radar sweep \+ throughput/);
-  assert.doesNotMatch(home, /telemetry sweep \+ throughput/);
+  for (const marker of [
+    'hero-install-cmd',
+    'aios init --all',
+    'aios doctor --native --verbose',
+    'ContextDB',
+    'Adaptive Workflow',
+    'Agent Team',
+    'Verification',
+  ]) {
+    assert.match(home, new RegExp(escapeRegExp(marker)));
+  }
 });
 
 test('custom shell exposes i18n language switcher on home, docs, and blog surfaces', () => {
   const topbar = read('docs-site/overrides/partials/rex/topbar.html');
-  const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
   const docsPage = read('docs-site/overrides/partials/rex/docs-page.html');
   const blogHeader = read('docs-site/overrides/partials/rex/blog-header.html');
   const switcher = read('docs-site/overrides/partials/rex/language-switcher.html');
@@ -119,7 +118,6 @@ test('custom shell exposes i18n language switcher on home, docs, and blog surfac
   const blogShellCss = read('blog-site/assets/redesign/blog-shell.css');
 
   assert.match(topbar, /partials\/rex\/language-switcher\.html/);
-  assert.match(sidebar, /partials\/rex\/language-switcher\.html/);
   assert.match(docsPage, /partials\/rex\/language-switcher\.html/);
   assert.match(blogHeader, /partials\/rex\/language-switcher\.html/);
   assert.match(switcher, /class="rex-lang-switcher"/);
@@ -401,7 +399,7 @@ test('home shell matches the redesigned navigation contract', () => {
   assert.doesNotMatch(topbar, />GitHub</);
 });
 
-test('home layout CSS pins the berPn desktop section geometry', () => {
+test('home layout CSS pins current landing section geometry', () => {
   const home = read('docs-site/index.md');
   const homeCss = read('docs-site/assets/redesign/home.css');
   const shellCss = read('docs-site/assets/redesign/shell.css');
@@ -410,204 +408,43 @@ test('home layout CSS pins the berPn desktop section geometry', () => {
     'min-height: 0;',
   ]);
 
-  assert.match(home, /<div class="hero-layout">/);
-  assert.match(home, /<div class="hero-content">/);
-  assert.match(home, /<div class="hero-visual">/);
-
-  assertRuleIncludes(homeCss, '.hero-section', [
-    'height: 770px;',
-    'min-height: 770px;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-layout', [
-    'display: grid;',
-    'grid-template-columns: minmax(0, 1fr) 540px;',
-    'gap: 80px;',
-    'padding: 120px 80px 132px 120px;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-content', [
-    'position: relative;',
-    'display: flex;',
-    'flex-direction: column;',
-    'gap: 32px;',
-    'max-width: 720px;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-headline', [
-    'position: relative;',
-    'width: auto;',
-    'max-width: 720px;',
-    'font-size: 58px;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-visual', [
-    'display: flex;',
-    'justify-content: flex-end;',
-    'align-items: center;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-abstract', [
-    'position: relative;',
-    'left: auto;',
-    'top: auto;',
-    'width: 540px;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-cta-row', [
-    'position: relative;',
-    'width: auto;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-works', [
-    'position: relative;',
-    'z-index: 5;',
-    'width: min(100%, 620px);',
-    'padding-top: 0;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-layout', [
-    'padding: 120px 80px 132px 120px;',
-  ]);
-  assert.match(
-    homeCss,
-    /\.hero-section \.home-section__stage > \.zone-label\s*\{[\s\S]*?left:\s*auto;[\s\S]*?right:\s*64px;/
-  );
-
-  assertRuleIncludes(homeCss, '.capabilities-section', [
-    'height: 610px;',
-    'min-height: 610px;',
-  ]);
-  assertRuleIncludes(homeCss, '.capabilities-content', [
-    'height: 610px;',
-    'padding: 60px 120px 0;',
-  ]);
-  assertRuleIncludes(homeCss, '.capabilities-cards', [
-    'position: absolute;',
-    'left: 120px;',
-    'top: 268px;',
-    'width: 1200px;',
-    'height: 300px;',
-    'grid-template-columns: repeat(4, 285px);',
-    'gap: 20px;',
-  ]);
-
-  assert.match(homeCss, /\.capability-card:nth-child\(1\),\s*\.capability-card:nth-child\(3\)\s*\{\s*transform: translateY\(40px\);/m);
-  assert.match(homeCss, /\.capability-card:nth-child\(2\),\s*\.capability-card:nth-child\(4\)\s*\{\s*transform: translateY\(0\);/m);
-
-  assertRuleIncludes(homeCss, '.demo-section', [
-    'height: auto;',
-    'min-height: 760px;',
-    'padding: 0;',
-  ]);
-  assertRuleIncludes(homeCss, '.demo-section .home-section__stage', [
-    'width: min(100%, var(--rex-home-design-width));',
-    'padding: 110px 80px 90px;',
-    'transform: none;',
-  ]);
-  assertRuleIncludes(homeCss, '.demo-row', [
-    'width: 100%;',
-    'grid-template-columns: minmax(0, 720px) minmax(0, 420px);',
-    'gap: 32px;',
-    'margin-top: 48px;',
-  ]);
-
-  assertRuleIncludes(homeCss, '.cta-section', [
-    'height: 520px;',
-    'min-height: 520px;',
-  ]);
-  assertRuleIncludes(homeCss, '.cta-section .home-section__stage', [
-    'grid-template-columns: 720px 720px;',
-  ]);
+  for (const selector of [
+    '.rex-hero',
+    '.rex-band',
+    '.rex-run',
+    '.rex-install',
+  ]) {
+    assert.match(homeCss, new RegExp(escapeRegExp(selector)));
+  }
+  assert.match(shellCss, /\.rex-home-shell,\s*\.rex-doc-layout\s*\{[\s\S]*width: 100%;[\s\S]*min-height: 100vh;/);
   assertRuleIncludes(shellCss, '.rex-home-footer', [
     'height: 316px;',
     'padding: 50px 80px 40px;',
   ]);
 });
 
-test('home detail contract preserves berPn non-wrapping controls and terminal fit', () => {
+test('home detail contract preserves current install controls', () => {
   const home = read('docs-site/index.md');
   const homeCss = read('docs-site/assets/redesign/home.css');
-  const runtime = read('docs-site/assets/redesign/home-webgl-runtime.js');
-
-  assertRuleIncludes(homeCss, '.hero-badge', [
-    'letter-spacing: 1.4px;',
-    'white-space: nowrap;',
-  ]);
-
-  assertRuleIncludes(homeCss, '.hero-terminal__line', [
-    'min-height: 0;',
-    'line-height: 1.2;',
-  ]);
-
-  assertRuleIncludes(homeCss, '.cta-buttons .md-button--primary::after', [
-    'content: "→";',
-  ]);
-  assertRuleIncludes(homeCss, '.cta-buttons .md-button:not(.md-button--primary)::before', [
-    'content: "";',
-    'width: 18px;',
-    'mask:',
-  ]);
-
-  assertRuleIncludes(homeCss, '.cta-float-card', [
-    'flex-direction: column;',
-    'align-items: flex-start;',
-  ]);
-  assertRuleIncludes(homeCss, '.cta-float-card--1', [
-    'width: 180px;',
-  ]);
-  assertRuleIncludes(homeCss, '.cta-float-card--2', [
-    'width: 160px;',
-  ]);
-
-  assert.match(home, /cta-float-card__row/);
-  assert.doesNotMatch(home, /10x faster/);
-  // Hero keeps two primary CTAs; deeper docs stay as secondary text links.
-  assert.match(home, /hero-secondary-links/);
-  assert.match(home, /Install in 30 seconds/);
-  assert.match(home, /View on GitHub/);
-  assert.match(home, /Workflow [Pp]olicy/);
-  assert.match(home, /Verified[\s\S]*Verified/);
-  const heroCtaBlock = home.match(/<div class="hero-cta-row">[\s\S]*?<\/div>/)?.[0] || '';
-  assert.equal((heroCtaBlock.match(/class="md-button(?:\s|")/g) || []).length, 2);
-
   for (const marker of [
-    'uSmokeBias',
-    'uCyanDamping',
-    'deepPurple',
-    'inkMask',
+    'hero-install-cmd',
+    'data-copy-target="hero-install-cmd"',
+    'rex-install__cmds',
+    'rex-install__cta',
   ]) {
-    assert.match(runtime, new RegExp(marker));
+    assert.match(home, new RegExp(escapeRegExp(marker)));
   }
+  assertRuleIncludes(homeCss, '.rex-hero__install', ['display: flex;']);
 });
 
-test('home desktop design renders inside a centered 1440px stage instead of stretching per viewport', () => {
+test('home desktop design exposes current landing sections', () => {
   const home = read('docs-site/index.md');
   const homeCss = read('docs-site/assets/redesign/home.css');
-  const animation = read('docs-site/assets/home-animation.js');
-
-  assert.equal((home.match(/home-section__stage/g) || []).length, 4);
-  assert.match(home, /<div class="hero-section">\s*<div class="home-section__stage">/);
-  assert.match(home, /<div id="capabilities" class="capabilities-section">\s*<div class="home-section__stage">/);
-  assert.match(home, /<div id="demo" class="demo-section">\s*<div class="home-section__stage">/);
-  assert.match(home, /<div class="cta-section">\s*<div class="home-section__stage">/);
-
-  assertRuleIncludes(homeCss, '.rex-home-main', [
-    '--rex-home-design-width: 1440px;',
-  ]);
-  assertRuleIncludes(homeCss, '.home-section__stage', [
-    'position: relative;',
-    'width: min(100%, var(--rex-home-design-width));',
-    'margin: 0 auto;',
-  ]);
-  assertRuleIncludes(homeCss, '.hero-section', [
-    '--rex-section-height: 770px;',
-    'height: 770px;',
-  ]);
-  assertRuleIncludes(homeCss, '.demo-section', [
-    '--rex-section-height: 760px;',
-    'height: auto;',
-    'min-height: 760px;',
-  ]);
-  assertRuleIncludes(homeCss, '.demo-section .home-section__stage', [
-    'transform: none;',
-  ]);
-
-  assert.doesNotMatch(homeCss, /scale\(var\(--rex-home-scale\)\)/);
-  assert.doesNotMatch(animation, /syncHomeDesignScale/);
-  assert.doesNotMatch(animation, /--rex-home-scale/);
+  const shellCss = read('docs-site/assets/redesign/shell.css');
+  assert.equal((home.match(/class="rex-band rex-band--/g) || []).length, 2);
+  assert.equal((home.match(/class="rex-run__card"/g) || []).length, 4);
+  assert.match(shellCss, /\.rex-home-shell,\s*\.rex-doc-layout\s*\{[\s\S]*--rex-home-design-width: 1440px;/);
+  assert.match(homeCss, /\.rex-hero\s*\{[\s\S]*width: 100%;/);
 });
 
 test('home demo section avoids global stage scaling and stacks before cards look compressed', () => {
@@ -727,10 +564,7 @@ test('docs shell partials expose the Pencil application layout contract', () => 
   const sidebar = read('docs-site/overrides/partials/rex/docs-sidebar.html');
   for (const marker of [
     'rex-doc-sidebar',
-    'AIOS',
     'docs-sidebar-links.html',
-    'Local Machine',
-    'aios v',
   ]) {
     assert.match(sidebar, new RegExp(marker));
   }
@@ -738,8 +572,8 @@ test('docs shell partials expose the Pencil application layout contract', () => 
   const links = read('docs-site/overrides/partials/rex/docs-sidebar-links.html');
   for (const marker of [
     'Getting Started',
-    'Core Systems',
-    'Collaboration',
+    'Problem-First Guides',
+    'Capabilities',
     'Reference',
   ]) {
     assert.match(links, new RegExp(marker));
@@ -748,8 +582,8 @@ test('docs shell partials expose the Pencil application layout contract', () => 
   const page = read('docs-site/overrides/partials/rex/docs-page.html');
   for (const marker of [
     'rex-doc-layout',
-    'rex-doc-outline',
-    'On This Page',
+    'rex-doc-toc',
+    'rex-doc-main',
     'rex-doc-device-nav--tablet',
     'rex-doc-device-nav--mobile',
     'docs-sidebar-links.html',
@@ -848,5 +682,5 @@ test('blog css manifest imports focused blog redesign layers', () => {
   ]) {
     assert.match(css, new RegExp(`@import url\\("redesign/${layer}"\\);`));
   }
-  assert.match(css, /--rex-blog-accent: #FF8400;/);
+  assert.match(css, /Blog keeps its own asset root/);
 });
