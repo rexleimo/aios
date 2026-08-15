@@ -25,6 +25,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - `startStored` reuses an already-active work-item workflow instead of overwriting the index.
 - `XAI_API_KEY` no longer identifies the hook client as Grok.
 - Team and harness routes do not put `## AIOS RECALL` into `--objective`.
+- Rex isolation only fail-closes work-item jobs that already have owned path prefixes and a real `rootDir`; generic orchestrate dispatch keeps launching.
 
 ## [5.6.1] - 2026-08-12
 

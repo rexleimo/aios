@@ -65,7 +65,7 @@ test('parallel work items get isolated rex ledgers and prompts', async () => {
   }
 });
 
-test('editable phase job does not launch without ownedPathPrefixes', async () => {
+test('editable phase job without ownedPathPrefixes still launches and file policy stays post-handoff', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-work-rex-prefix-'));
   let launched = false;
   try {
@@ -95,11 +95,26 @@ test('editable phase job does not launch without ownedPathPrefixes', async () =>
         rootDir,
         runOneShotImpl: async () => {
           launched = true;
-          return { exitCode: 0, stdout: '{}', stderr: '' };
+          return {
+            exitCode: 0,
+            stdout: JSON.stringify({
+              schemaVersion: 1,
+              status: 'completed',
+              fromRole: 'implementer',
+              toRole: 'reviewer',
+              taskTitle: 'Missing prefixes',
+              contextSummary: 'Touched a file.',
+              findings: [],
+              filesTouched: ['docs-site/index.html'],
+              openQuestions: [],
+              recommendations: [],
+            }),
+            stderr: '',
+          };
         },
       },
     );
-    assert.equal(launched, false);
+    assert.equal(launched, true);
     assert.equal(run.status, 'blocked');
     assert.match(String(run.output?.error || ''), /ownedPathPrefixes/u);
   } finally {
