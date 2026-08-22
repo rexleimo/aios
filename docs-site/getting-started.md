@@ -1,23 +1,23 @@
 ﻿---
-title: Quick Start — Install AIOS for Claude Code, Codex, and Gemini
-description: Install AIOS on macOS, Linux, or Windows, run aios init --all, and verify ContextDB plus client sync with aios doctor in under five minutes.
+title: "Quick Start — Install AIOS in 30 Seconds"
+description: "Install AIOS, run aios init --all, and start finishing complex tasks with one sentence. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 schema_type: howto
 howto_steps:
-  - name: "Install the stable release"
-    text: "Run curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash on macOS/Linux, or the aios-install.ps1 one-liner on Windows PowerShell."
-  - name: "Initialize a project"
-    text: "Run aios init --all from the project root to create the .aios marker and detect supported coding clients."
-  - name: "Start the first client"
-    text: "Open codex, claude, gemini, opencode, hermes, or grok in the project directory so the detected guidance is available."
-  - name: "Verify the installation"
-    text: "Run aios doctor --native --verbose to confirm ContextDB, client sync, and safety checks."
+  - name: "Install AIOS"
+    text: "One command: curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash (macOS/Linux), or the PowerShell one-liner on Windows."
+  - name: "Initialize your project"
+    text: "Run aios init --all from your project root. This sets up memory and detects your coding client."
+  - name: "Start your coding client"
+    text: "Open codex, claude, gemini, opencode, hermes, or grok in the project directory."
+  - name: "Verify everything works"
+    text: "Run aios doctor --native --verbose to confirm memory, client sync, and safety checks are all good."
 ---
 
 # Quick Start
 
 ## Quick Answer
 
-AIOS is a local workflow layer for supported coding clients. The current onboarding path is: install the release, run aios init --all from the project root, then inspect the result with aios doctor --native --verbose. This creates or updates project guidance and the ContextDB registry marker; it does not replace your client or inject every historical event into every prompt.
+AIOS makes your AI coding agent actually finish complex tasks — from a single sentence. Install the release, run `aios init --all` in your project root, then verify with `aios doctor --native --verbose`. That's it. You don't replace your coding client or change how you work. AIOS adds memory, verification, and coordination underneath.
 
 ## What you need
 

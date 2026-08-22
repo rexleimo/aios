@@ -1,19 +1,19 @@
 ﻿---
-title: AIOS — Local-First Agent Harness
-description: Add project memory, adaptive workflow routing, multi-agent teams, and verification to Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing your coding client.
+title: AIOS — One Sentence. Any Complex Task. Done.
+description: "AIOS makes your AI coding agent actually finish the job. Just tell it what you need in one sentence — memory, verification, and multi-agent collaboration handle the rest. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 home: true
 schema_type: faq
 faq:
   - q: What is AIOS?
-    a: "AIOS is a local-first agent workflow layer that adds cross-session project memory, adaptive routing, multi-agent collaboration, and verification to coding CLIs like Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok — without replacing them."
+    a: "AIOS is a one-command layer that makes your AI coding agent (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, or Grok) actually finish complex tasks. You describe what you need in one sentence; AIOS adds the memory, verification, and coordination the agent needs to get it right."
   - q: Does AIOS replace my coding client?
-    a: "No. AIOS works inside the clients you already use. It adds memory, routing, teams, and verification gates on top, so your existing commands and workflows stay the same."
-  - q: How does AIOS keep project memory across sessions?
-    a: "AIOS stores project facts, memos, checkpoints, and context packs in a local ContextDB. Agents pull relevant context on demand instead of injecting full history into every prompt."
-  - q: Is AIOS private?
-    a: "Yes. AIOS is local-first: memory, logs, and verification evidence stay on your machine. No prompt or code data leaves your environment."
+    a: "No. You keep using Claude Code, Codex, Gemini CLI, OpenCode, Hermes, or Grok exactly as before. AIOS sits underneath and adds what they are missing — persistent memory across sessions, automatic task routing, and verification before delivery."
+  - q: How does AIOS remember context across sessions?
+    a: "AIOS stores your project decisions, constraints, and progress in a local memory store called ContextDB. When you start a new session, the agent pulls only the relevant context instead of starting from scratch."
+  - q: Is my code private with AIOS?
+    a: "Yes. Everything — memory, logs, verification evidence — stays on your machine. No code or prompt data is sent to any external server."
   - q: How do I install AIOS?
-    a: "Run the one-line installer from the releases page, then aios init --all in your project root and aios doctor --native --verbose to verify the setup."
+    a: "One command: curl -fsSL https://github.com/rexleimo/aios/releases/latest/download/aios-install.sh | bash, then aios init --all in your project. Takes under 30 seconds."
 ---
 
 <!-- ============================================================
@@ -25,15 +25,16 @@ faq:
     <div class="rex-hero__content">
       <div class="rex-hero__badge">
         <svg class="rex-hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        LOCAL-FIRST AGENT HARNESS · v{{ aios_version }}
+        ONE SENTENCE. ANY TASK. DONE. · v{{ aios_version }}
       </div>
 
-      <h1 class="rex-hero__title">Give your AI coding agent memory, a team &amp; verification.</h1>
+      <h1 class="rex-hero__title">One sentence. Any complex task. Done.</h1>
 
       <p class="rex-hero__sub">
-        AIOS is a local-first agent workflow layer that adds cross-session project memory,
-        adaptive routing, multi-agent collaboration, and verification on top of
-        codex, claude, gemini, opencode, hermes, and grok — without changing how you work.
+        Tell your AI coding agent what you need — just one sentence. AIOS adds the
+        memory, verification, and multi-agent coordination it needs to actually
+        finish the job. Works inside Claude Code, Codex, Gemini, OpenCode, Hermes,
+        and Grok — you don't change how you work.
       </p>
 
       <div class="rex-hero__cta">
@@ -97,13 +98,13 @@ faq:
   </figure>
   <div class="rex-band__content">
     <span class="rex-band__eyebrow">MULTI-AGENT TEAMS</span>
-    <h2 class="rex-band__title">Parallel work with governance, not chaos</h2>
+    <h2 class="rex-band__title">Say it once. Multiple agents handle it in parallel.</h2>
     <p class="rex-band__text">
-      Decompose independent work items and dispatch them to multiple agents with live
-      HUD tracking, evidence gates, and built-in governance. Coupled changes stay
-      sequential; independent domains run in parallel.
+      One sentence from you, and AIOS splits the work across multiple agents
+      automatically. Independent tasks run in parallel, coupled changes stay in
+      order — you just wait for the result.
     </p>
-    <a class="rex-band__link" href="team-ops">Explore Agent Team <span aria-hidden="true">→</span></a>
+    <a class="rex-band__link" href="team-ops">See how it works <span aria-hidden="true">→</span></a>
   </div>
 </div>
 
@@ -114,13 +115,13 @@ faq:
 <div class="rex-band rex-band--verify">
   <div class="rex-band__content">
     <span class="rex-band__eyebrow">VERIFICATION / PRIVACY</span>
-    <h2 class="rex-band__title">Evidence before claims, everywhere</h2>
+    <h2 class="rex-band__title">It checks its own work before showing you</h2>
     <p class="rex-band__text">
-      Self-diagnostics, pre-edit safety gates, verification loops, and privacy redaction
-      keep every change verifiable — before anything ships. Sensitive data never leaves
-      your machine.
+      AIOS runs self-diagnostics, safety gates, and verification loops on every
+      change — so you see a working result, not a broken draft. Your code and data
+      never leave your machine.
     </p>
-    <a class="rex-band__link" href="troubleshooting">See Verification <span aria-hidden="true">→</span></a>
+    <a class="rex-band__link" href="troubleshooting">See how verification works <span aria-hidden="true">→</span></a>
   </div>
   <figure class="rex-band__media">
     <img src="assets/home/doctor2.png" alt="AIOS verification and diagnostics" width="1536" height="1024" loading="lazy" />
@@ -133,29 +134,29 @@ faq:
 
 <div id="demo" class="rex-run">
   <div class="rex-run__header">
-    <span class="rex-run__eyebrow">RUN LAYER</span>
-    <h2 class="rex-run__title">Four systems, underneath your CLI</h2>
-    <p class="rex-run__sub">Memory, routing, collaboration, and safety — pull-based and always on.</p>
+    <span class="rex-run__eyebrow">HOW IT WORKS</span>
+    <h2 class="rex-run__title">One sentence triggers four systems</h2>
+    <p class="rex-run__sub">Memory, routing, collaboration, and safety — all working behind the scenes.</p>
   </div>
   <div class="rex-run__grid">
     <article class="rex-run__card">
-      <h3 class="rex-run__card-title">ContextDB</h3>
-      <p class="rex-run__card-text">On-demand project memory — memo, checkpoints, and context packs recalled when relevant, never injected blindly.</p>
+      <h3 class="rex-run__card-title">Remembers everything</h3>
+      <p class="rex-run__card-text">Your project decisions, constraints, and progress are saved locally. Next session, the agent picks up where it left off — no re-explaining needed.</p>
       <code class="rex-run__card-cmd">aios init</code>
     </article>
     <article class="rex-run__card">
-      <h3 class="rex-run__card-title">Adaptive Workflow</h3>
-      <p class="rex-run__card-text">Route each task by risk: noop, direct, guarded, or planned — with the right evidence gates at every stage.</p>
+      <h3 class="rex-run__card-title">Picks the right approach</h3>
+      <p class="rex-run__card-text">AIOS automatically chooses the simplest path for your task — quick answer, careful edit, or full plan — so you don't have to think about process.</p>
       <code class="rex-run__card-cmd">aios work</code>
     </article>
     <article class="rex-run__card">
-      <h3 class="rex-run__card-title">Agent Team</h3>
-      <p class="rex-run__card-text">Parallel independent work with live HUD, governance, and evidence collection — without a global skill chain.</p>
+      <h3 class="rex-run__card-title">Splits work automatically</h3>
+      <p class="rex-run__card-text">When your task has independent parts, AIOS runs them in parallel with multiple agents — you just say what you want once.</p>
       <code class="rex-run__card-cmd">aios team</code>
     </article>
     <article class="rex-run__card">
-      <h3 class="rex-run__card-title">Verification</h3>
-      <p class="rex-run__card-text">Pre-edit safety gates, verification loops, and privacy redaction keep every change verifiable before it ships.</p>
+      <h3 class="rex-run__card-title">Checks before delivery</h3>
+      <p class="rex-run__card-text">Safety gates and verification loops run on every change. You get a working result, not a broken draft that needs fixing.</p>
       <code class="rex-run__card-cmd">aios verify</code>
     </article>
   </div>
@@ -167,8 +168,8 @@ faq:
 
 <div class="rex-install">
   <div class="rex-install__inner">
-    <h2 class="rex-install__title">Install in 30 seconds</h2>
-    <p class="rex-install__text">Initializes client guidance, project markers, and runtime checks in your project root.</p>
+    <h2 class="rex-install__title">30 seconds to your first one-sentence task</h2>
+    <p class="rex-install__text">Install, initialize in your project, and start telling your agent what to do.</p>
     <div class="rex-install__cmds" role="group" aria-label="Install commands">
       <code class="rex-install__cmd">aios init --all</code>
       <code class="rex-install__cmd">aios doctor --native --verbose</code>
@@ -212,8 +213,8 @@ faq:
 
 <div class="rex-cta">
   <div class="rex-cta__inner">
-    <h2 class="rex-cta__title">Ready to level up?</h2>
-    <p class="rex-cta__text">Start with a small, verifiable workflow and add collaboration when the task needs it.</p>
+    <h2 class="rex-cta__title">Ready to stop explaining and start finishing?</h2>
+    <p class="rex-cta__text">One sentence is all it takes. Install AIOS and let your agent do the rest.</p>
     <div class="rex-cta__buttons">
       <a href="getting-started" class="md-button md-button--primary">Get Started Free</a>
       <a href="contextdb" class="md-button">Read Docs</a>

@@ -1,13 +1,13 @@
 ---
 title: "Why Your AI Coding Agent Forgets Context Between Sessions (and How to Fix It)"
-description: "Coding agents lose context between sessions because each CLI run starts with an empty window. Learn how local project memory (ContextDB) gives Claude Code, Codex, Gemini CLI, and OpenCode durable memory without sending data to a server."
+description: "Your coding agent forgets everything between sessions. AIOS gives it memory automatically — you say one sentence, it remembers your project decisions, constraints, and progress across sessions. Works with Claude Code, Codex, Gemini, OpenCode, Hermes, Grok. All local."
 date: 2026-08-10
 schema_type: techarticle
 ---
 
 # Why Your AI Coding Agent Forgets Context Between Sessions (and How to Fix It)
 
-> **Quick Answer:** Your coding agent forgets context between sessions because every new session starts with an empty prompt window — the previous decisions, file maps, and constraints are not in the conversation. The fix is durable **local project memory**: store decisions, checkpoints, and searchable context on disk in the project, and let the agent pull what it needs when it needs it. AIOS provides this as ContextDB, a pull-based memory store that works with `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` without sending project data to a server.
+> **Quick Answer:** Your coding agent forgets context between sessions because every new session starts with an empty prompt window. The fix is automatic project memory: AIOS stores your decisions, checkpoints, and searchable context on disk, and pulls what the agent needs when it needs it — no re-explaining required. You say what you want in one sentence, and it picks up where you left off. Works with Claude Code, Codex, Gemini, OpenCode, Hermes, and Grok. All local, no data leaves your machine.
 
 ## The problem: every session is a fresh amnesiac
 

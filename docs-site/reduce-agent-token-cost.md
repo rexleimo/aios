@@ -1,13 +1,13 @@
 ---
-title: "Reduce AI Coding Agent Token Costs: Claude Code and Codex Budget Control"
-description: "Claude Code and Codex token bills grow from injected context, repeated history, and oversized tool output. Learn local compression boundaries (RTK, Caveman, Headroom MCP, ContextDB) that cut token use without changing how you work."
+title: "Reduce AI Coding Agent Token Costs: One Sentence, Less Waste"
+description: "Coding agent token bills grow from wasted context, repeated history, and oversized tool output. AIOS cuts costs by remembering your project locally, routing tasks efficiently, and compressing output — all from one sentence instead of manual configuration."
 date: 2026-08-10
 schema_type: techarticle
 ---
 
-# Reduce AI Coding Agent Token Costs: Claude Code and Codex Budget Control
+# Reduce AI Coding Agent Token Costs: One Sentence, Less Waste
 
-> **Quick Answer:** Coding agent token bills grow from three silent leaks: injected context that is never used, conversation history that repeats itself, and tool output that floods the model window. You reduce cost with **compression boundaries**: pull-based context instead of injection, local output compression (RTK / Caveman), explicit retrieval instead of full history (Headroom MCP), and project memory that survives sessions without being re-read. AIOS wires all four locally — no data leaves the machine.
+> **Quick Answer:** Your coding agent burns tokens on context you never asked for. AIOS cuts the waste automatically: it remembers your project locally (no re-explaining), routes each task to the simplest approach, and compresses tool output — all from one sentence. You don't configure anything. You just say what you need, and AIOS handles the rest. No data leaves your machine.
 
 ## Where the tokens actually go
 

@@ -5,32 +5,29 @@
 [![License](https://img.shields.io/github/license/rexleimo/aios)](https://github.com/rexleimo/aios)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933)](https://nodejs.org)
 
-> **本地优先的 Agent Harness**，面向 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`（Grok Build）。
-> 不替换你正在用的编码客户端，只补上：项目记忆、自适应路由、多 Agent 协作、验证门禁。
+> **一句话，搞定任何复杂任务。**
+> AIOS 让你的 AI 编码助手真正完成任务——记忆、验证、多 Agent 协作，一句话搞定。支持 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`。
 
-[文档站](https://cli.rexai.top/zh/) · [快速开始](https://cli.rexai.top/zh/getting-started/) · [工作流策略](https://cli.rexai.top/zh/workflow-policy/) · [博客](https://cli.rexai.top/blog/zh/) · [English](README.md)
+[文档站](https://cli.rexai.top/zh/) · [快速开始](https://cli.rexai.top/zh/getting-started/) · [博客](https://cli.rexai.top/blog/zh/) · [English](README.md)
 
 ![AIOS 架构总览](docs-site/assets/visual-architecture-overview.svg)
 
 ## 为什么需要 AIOS
 
-AIOS 把两个概念合在一起：**Local（本地引擎）** 与 **Harness（编排马甲）**。
+**一句话，搞定任何复杂任务。** 这就是 AIOS 的承诺。
 
-- **Local** — 编码引擎（Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok）跑在你的机器上；AIOS 再补上本地项目记忆（ContextDB）、本地 Token 压缩（RTK / Caveman / Headroom）、本地浏览器与隐私守卫。数据不出本机。
-- **Harness** — AIOS 是这些引擎之上的编排层：自适应路由（`direct` / `guarded` / `planned`）、并行 Agent 团队（扇出 / 扇入）、可恢复的长任务循环（`aios harness`）、带契约校验的证据门禁、按节点分配模型档位。这与 Graph Engineering 是同一套构件——节点、边、共享状态、失败路由——只是围绕「运行本地循环的 Agent」来组织。
+你的 AI 编码助手（Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok）很聪明——但它在会话之间会忘记一切，无法协调复杂的多步骤工作，也无法验证自己的输出。AIOS 解决所有这些问题：
 
-裸编码 CLI 很擅长改代码，但常见痛点是：
-
-| 裸 CLI 的痛点 | AIOS 补上的能力 |
+| 你说 | AIOS 做 |
 | --- | --- |
-| 换会话就丢上下文 | **ContextDB** 项目记忆（memo / checkpoint / 可搜索包） |
-| 所有任务都像同一个聊天窗 | **Workflow Policy**：按风险选 `direct` / `guarded` / `planned` |
-| 多步骤任务容易断线 | **rex-harness** 控制面 + Solo Harness 可恢复长任务 |
-| 并行 Agent 全靠手搓 | **Agent Team**（状态、HUD、证据） |
-| 工具输出把模型上下文淹没 | **RTK / Caveman / Headroom** 本地压缩边界 |
-| “做完了”只是感觉 | **Doctor、测试、隐私脱敏、验证门禁** |
+| "重构认证模块" | 记住上周的决策，选择正确的方法，完成修改，并验证它有效 |
+| "审查这个 PR 并更新测试" | 将工作分配给多个并行 Agent，保持耦合变更的顺序，收集证据 |
+| "今晚完成发布交接" | 运行完整目标，设置检查点，中断后可恢复，交付经过验证的结果 |
+| "修复登录 bug" | 召回相关上下文，路由到最简单的修复路径，修复后先检查再给你看 |
 
-AIOS **不会**取代 Codex / Claude Code / Gemini CLI / OpenCode / Hermes / Grok Build，而是作为它们之下的本地工作流层。
+**你的数据保持本地。** 一切——记忆、日志、验证——都在你的机器上运行。什么都不离开。
+
+**你不需要改变工作方式。** 继续使用你已有的编码客户端。AIOS 补上它缺少的能力。
 
 ## 30 秒安装
 

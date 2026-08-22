@@ -1,13 +1,13 @@
 ---
-title: "How to Run a Coding Agent Overnight Without It Crashing or Drifting"
-description: "Overnight agent runs fail from crashes, context drift, and unrecoverable state. Learn how Solo Harness checkpoints, verification gates, and git worktree isolation keep a coding agent working through the night."
+title: "Run Coding Agents Overnight: One Sentence, Resumable, Verified"
+description: "Overnight agent runs crash, drift, or leave unrecoverable state. AIOS makes overnight work resumable from one sentence: checkpoint state, gate milestones with evidence, isolate in git worktrees, and resume from the last accepted checkpoint. One command, done by morning."
 date: 2026-08-10
 schema_type: techarticle
 ---
 
-# How to Run a Coding Agent Overnight Without It Crashing or Drifting
+# Run Coding Agents Overnight: One Sentence, Resumable, Verified
 
-> **Quick Answer:** Overnight agent runs die in three ways: the process crashes, the context drifts off-task, or the worktree state becomes unrecoverable. The fix is a **resumable harness**: checkpoint state to disk, gate every milestone with evidence, isolate files in a git worktree, and resume from the last accepted checkpoint after any interruption. AIOS's Solo Harness (`aios harness run --objective "..." --worktree`) is built exactly for this.
+> **Quick Answer:** Overnight agent runs fail in three ways: the process crashes, context drifts off-task, or the worktree state becomes unrecoverable. AIOS fixes all three from one sentence: checkpoint state to disk, gate every milestone with evidence, isolate files in a git worktree, and resume from the last accepted checkpoint after any interruption. You say what you want, and it finishes by morning — verified and resumable if anything breaks.
 
 ## Why overnight runs fail
 

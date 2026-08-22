@@ -1,13 +1,13 @@
 ﻿---
-title: AIOS Architecture — Layers under Coding Agents
-description: Architecture of AIOS: coding clients, Workflow Policy, ContextDB memory, rex-harness control plane, Agent Team, browser-use CDP, and verification gates.
+title: "How AIOS Works: One Sentence Triggers Memory, Routing, Teams, and Verification"
+description: "AIOS makes your AI coding agent finish complex tasks from one sentence. See how memory, automatic routing, parallel teams, and verification work together underneath your existing Claude Code, Codex, Gemini, OpenCode, Hermes, or Grok client."
 ---
 
-# Architecture
+# How AIOS Works
 
 ## Quick Answer
 
-AIOS is a set of local boundaries around an existing coding client. Shell and native guidance identify the project, ContextDB stores and retrieves project evidence, Workflow Policy chooses the smallest route, and Team, Solo Harness, or Orchestrate run work when the task requires it. Browser-use CDP is the default browser path; the legacy Playwright MCP server remains a compatibility path.
+You tell your AI coding agent what you need — in one sentence. AIOS makes it actually finish the job. It remembers your project context across sessions, picks the right approach for each task, dispatches parallel work when needed, and verifies every change before showing you results. All locally. All without changing how you work.
 
 ![AIOS architecture overview](assets/visual-architecture-overview.svg)
 

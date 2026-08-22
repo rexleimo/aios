@@ -1,17 +1,17 @@
 ---
-title: CLI Comparison
-description: Compare raw Codex/Claude/Gemini CLI workflows with AIOS's orchestration layer.
+title: "Raw CLI vs AIOS: One Sentence vs Manual Work"
+description: "Compare raw coding agents (Claude Code, Codex, Gemini) with AIOS. Raw CLI requires manual memory, routing, and verification. AIOS finishes complex tasks from one sentence — you say what you want, it handles the rest."
 schema_type: faq
 faq:
   - q: "Does AIOS replace my coding agent?"
-    a: "No. It adds a local workflow, memory, and verification layer around supported clients."
-  - q: "Is the raw CLI ever the better choice?"
-    a: "Yes. Keep the raw path for small, stateless, low-risk tasks where extra state would not improve the result."
-  - q: "What does AIOS add on top of a raw CLI?"
-    a: "Cross-session ContextDB memory, direct/guarded/planned workflow routing, multi-client handoff, browser safety, and verification evidence."
+    a: "No. You keep using Claude Code, Codex, Gemini, OpenCode, Hermes, or Grok exactly as before. AIOS adds memory, routing, and verification underneath."
+  - q: "When should I use raw CLI instead of AIOS?"
+    a: "For tiny, one-off changes where you don't need memory or verification. For anything complex or multi-step, AIOS finishes the job from one sentence."
+  - q: "What does AIOS add that raw CLI doesn't have?"
+    a: "Cross-session memory (your project decisions and context survive sessions), automatic task routing (AIOS picks the right approach), parallel work (multiple agents handle independent pieces), and verification (changes are checked before you see them)."
 ---
 
-# Raw CLI vs AIOS Layer
+# Raw CLI vs AIOS: One Sentence vs Manual Work
 
 > **Quick Answer:** Use a raw `codex`, `claude`, `gemini`, or `opencode` CLI for a focused one-off task. Add AIOS when the work needs cross-session memory, workflow routing, multi-client handoff, browser safety, or verification evidence. AIOS is a local workflow layer; it does not replace the coding client.
 

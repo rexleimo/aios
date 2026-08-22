@@ -1,13 +1,13 @@
 ---
-title: "Multi-Agent Code Review: Parallel Coding Agents That Actually Help"
-description: "Parallel coding agents for code review fail when they share state badly, duplicate work, or merge unreviewed results. Learn how agent teams with evidence gates, HUD status, and worktree isolation make multi-agent review reliable."
+title: "Multi-Agent Code Review: One Sentence, Parallel Agents, Verified Results"
+description: "Parallel coding agents for code review fail when they share state badly, duplicate work, or merge unreviewed results. AIOS makes multi-agent review work from one sentence: split into independent nodes, isolate each in a worktree, and collect verified evidence instead of raw opinions."
 date: 2026-08-10
 schema_type: techarticle
 ---
 
-# Multi-Agent Code Review: Parallel Coding Agents That Actually Help
+# Multi-Agent Code Review: One Sentence, Parallel Agents, Verified Results
 
-> **Quick Answer:** Parallel coding agents help with code review only when three things hold: the work is split into independent nodes, each node writes to an isolated worktree, and the merge step consumes verified evidence instead of raw opinions. AIOS's Agent Team (`aios team 3:codex "Review the auth module"`) dispatches N agents in parallel, waits at a barrier, and returns a collected result set you can filter and synthesize — with HUD status and evidence gates along the way.
+> **Quick Answer:** Parallel coding agents help with code review only when three things hold: the work is split into independent nodes, each node writes to an isolated worktree, and the merge step consumes verified evidence instead of raw opinions. You say "Review the auth module" in one sentence, and AIOS dispatches N agents in parallel, waits at a barrier, and returns a collected result set you can filter and synthesize — with status tracking and evidence gates along the way.
 
 ## Why naive parallel agents fail
 

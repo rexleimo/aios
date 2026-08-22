@@ -5,32 +5,29 @@
 [![License](https://img.shields.io/github/license/rexleimo/aios)](https://github.com/rexleimo/aios)
 [![Node](https://img.shields.io/badge/node-24%20LTS-339933)](https://nodejs.org)
 
-> **Local-first agent harness** for `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok` (Grok Build).
-> Keep the coding client you already use. Add project memory, adaptive routing, multi-agent collaboration, and verification.
+> **One sentence. Any complex task. Done.**
+> AIOS makes your AI coding agent actually finish the job — memory, verification, and multi-agent collaboration, all from a single instruction. Works with `codex`, `claude`, `gemini`, `opencode`, `hermes`, and `grok`.
 
-[Docs](https://cli.rexai.top) · [Quick Start](https://cli.rexai.top/getting-started/) · [Workflow Policy](https://cli.rexai.top/workflow-policy/) · [Blog](https://cli.rexai.top/blog/) · [中文](README-zh.md)
+[Docs](https://cli.rexai.top) · [Quick Start](https://cli.rexai.top/getting-started/) · [Blog](https://cli.rexai.top/blog/) · [中文](README-zh.md)
 
 ![AIOS architecture overview](docs-site/assets/visual-architecture-overview.svg)
 
 ## Why AIOS
 
-AIOS brings two ideas together: **local engines** and **agent harnesses**.
+**One sentence. Any complex task. Done.** That's the promise.
 
-- **Local** — the coding engines (Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok) run on your machine. AIOS adds local project memory (ContextDB), local token compression (RTK / Caveman / Headroom), and a local browser + privacy guard. Data does not leave the machine.
-- **Harness** — AIOS is an orchestration harness over those engines: adaptive routing (`direct` / `guarded` / `planned`), parallel agent teams (fan-out / fan-in), resumable long-running loops (`aios harness`), contract-checked evidence gates, and per-node model tiering. Same building blocks as Graph Engineering — nodes, edges, shared state, failure routing — organized around agents that run local loops.
+Your AI coding agent (Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok) is smart — but it forgets everything between sessions, can't coordinate complex multi-step work, and has no way to verify its own output. AIOS fixes all of that:
 
-Bare coding CLIs are great at editing files. They are weaker at:
+| You say | AIOS does |
+| —- | --- |
+| "Refactor the auth module" | Remembers last week's decisions, picks the right approach, makes the change, and verifies it works |
+| "Review this PR and update tests" | Splits the work across parallel agents, keeps coupled changes in order, collects evidence |
+| "Finish the release handoff overnight" | Runs the full objective with checkpoints, resumes if interrupted, delivers verified results |
+| "Fix the login bug" | Recalls relevant context, routes to the simplest fix path, checks the fix before showing you |
 
-| Pain with raw CLI | What AIOS adds |
-| --- | --- |
-| Context disappears between sessions | **ContextDB** project memory (memo, checkpoints, searchable packs) |
-| Every task feels like the same chat | **Workflow Policy**: `direct` / `guarded` / `planned` by risk |
-| Multi-step work loses the thread | **rex-harness** control plane + Solo Harness resume |
-| Parallel agents are ad-hoc | **Agent Team** with status, HUD, and evidence |
-| Tool output floods the model | **RTK / Caveman / Headroom** local compression boundaries |
-| “Done” is a vibe | **Doctor, tests, privacy redaction, verification gates** |
+**Your data stays local.** Everything — memory, logs, verification — runs on your machine. Nothing leaves.
 
-AIOS does **not** replace Codex, Claude Code, Gemini CLI, OpenCode, Hermes, or Grok Build. It sits underneath them as a local workflow layer.
+**You don't change how you work.** Keep using the coding client you already have. AIOS adds what it's missing.
 
 ## Install in 30 seconds
 

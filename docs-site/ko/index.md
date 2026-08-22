@@ -1,11 +1,11 @@
 ﻿---
-title: AIOS 개요
-description: AIOS는 codex, claude, gemini, opencode, hermes, grok에 프로젝트 기억, 협업, 라우팅, 검증을 추가합니다.
+title: "AIOS — 한 문장으로 어떤 복잡한 작업이든 완료"
+description: "AIOS가 AI 코딩 에이전트에 기억, 검증, 멀티에이전트 협업을 추가합니다. 한 문장으로 지시하면 복잡한 작업을 완료합니다. Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok 지원."
 ---
 
 # AIOS
 
-AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 codex, claude, gemini, opencode, hermes, grok(Grok Build)을 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
+**한 문장으로 어떤 복잡한 작업이든 완료.** AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 codex, claude, gemini, opencode, hermes, grok을 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
 
 [빠른 시작](getting-started.md){ .md-button .md-button--primary }
 [사용 사례 보기](use-cases.md){ .md-button }
@@ -15,7 +15,7 @@ AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는
 
 ## 먼저 답하면
 
-여러 세션과 client 사이에서 프로젝트 사실을 공유하거나, 독립 작업을 여러 agent에 나누거나, 긴 작업을 멈췄다가 나중에 재개해야 할 때 AIOS를 사용할 수 있습니다. 기본 coding client를 바꾸지 않으며 모든 기록을 매번 prompt에 자동으로 넣는 시스템도 아닙니다.
+한 문장으로 지시하면 AIOS가 프로젝트 사실을 기억하고, 독립 작업을 여러 agent에 분산하며, 긴 작업을 멈췄다가 나중에 재개합니다. 기본 coding client를 바꾸지 않으며 모든 기록을 매번 prompt에 자동으로 넣는 시스템도 아닙니다.
 
 ## 핵심 기능
 

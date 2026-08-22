@@ -1,13 +1,13 @@
 ---
-title: Use Cases: Choose a AIOS Route
-description: Pick the right AIOS command for memory, search, parallel work, resumable runs, browser automation, privacy, and verification.
+title: "AIOS Commands: Find What You Need in One Sentence"
+description: "Every AIOS command explained by what you want to do — memory, parallel work, overnight runs, browser automation, privacy, and verification. One sentence, one command, done."
 ---
 
-# Find Commands By Scenario
+# Find Commands By What You Want To Do
 
 ## Quick Answer
 
-Choose the command by the work you need now: aios init and doctor for setup, memo and unified search for project facts, aios team for independent work, aios work for daily tasks that decompose into independent items (parallel by default), aios harness for one long objective, and aios orchestrate for ordered phases. Use the Workflow Policy page when the route is unclear.
+Tell AIOS what you need — it picks the right command. `aios init` for setup, `aios work` for daily tasks, `aios team` for parallel work, `aios harness` for long overnight runs, and `aios verify` to check everything before delivery. You describe the task in one sentence; AIOS handles the rest.
 
 ## Start with setup
 
