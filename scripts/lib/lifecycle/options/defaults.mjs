@@ -20,6 +20,7 @@ export function createDefaultSetupOptions() {
 export function createDefaultUpdateOptions() {
   return {
     selfUpdate: false,
+    check: false,
     components: ['browser', 'shell', 'skills', 'native'],
     wrapMode: 'opt-in',
     client: 'all',

@@ -5,7 +5,23 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 # Changelog
 
-Use this page to track what changed in `AIOS` and jump to release-related docs.
+Use this page to track what changed in `AIOS` and jump to release-related docs updates.
+
+## v5.8.0 (2026-08-22) — Governed Self-Evolution and Memo Trigger Closure
+
+### What changed
+
+- Session close now generates an idempotent, reviewable memory candidate on normal completion, abort, timeout, and exception paths. Candidates remain outside active shared recall until governance approves them.
+- Added explicit evolution trigger/status support: manual, five-candidate threshold, and 24-hour cooldown schedule. `aios evolution status` explains pending candidates and why consolidation has or has not fired.
+- Added deterministic acceptance contracts for schema, provenance, safety, scope, baseHash freshness, replay, holdout, regression metrics, memory conflicts, and trusted-core protection.
+- Added versioned promotion states from `candidate` through `validated`, `proposed`, `canary`, `active`, and `stable`, with audit events and rollback to the previous stable version.
+- Added semver-aware update notices for patch/minor/major releases, stable/beta/dev channels, security updates, active tasks, dirty worktrees, notification deduplication, and failed network checks.
+
+### Upgrade notes
+
+- Run `aios update --check` to inspect compatible updates.
+- Run `aios evolution status` to inspect pending candidates and consolidation eligibility.
+- Existing memo data needs no migration. New session-close candidates are generated from future session exits.
 
 ## v5.6.1 (2026-08-12) — `aios work`: Plan-Driven Multi-Agent Dispatch
 

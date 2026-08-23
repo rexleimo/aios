@@ -22,6 +22,36 @@ import { doctorContextDbSkills, installContextDbSkills } from '../components/ski
 import { installRexClientProjections } from '../rex-harness/client-projection.mjs';
 import { updateHarnessRuntime } from './self-update.mjs';
 import { prepareRexWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
+import { checkForUpdate, renderUpdateNotice } from './update-notice.mjs';
+
+async function fetchLatestAiosRelease() {
+  const response = await fetch('https://api.github.com/repos/rexleimo/aios/releases/latest', {
+    headers: {
+      accept: 'application/vnd.github+json',
+      'user-agent': 'aios-update-check',
+    },
+    signal: AbortSignal.timeout(8000),
+  });
+  if (!response.ok) throw new Error(`GitHub release lookup returned HTTP ${response.status}`);
+  const payload = await response.json();
+  return {
+    version: String(payload.tag_name || '').replace(/^v/u, ''),
+    security: Boolean(payload.security_advisory || payload.security),
+  };
+}
+
+async function runUpdateCheck({ rootDir, io, rawOptions }) {
+  const notice = await checkForUpdate({
+    aiosRoot: rootDir,
+    rootDir,
+    fetchLatest: fetchLatestAiosRelease,
+    workspace: { dirty: false, activeTask: false },
+    policy: rawOptions.policy,
+  });
+  if (rawOptions.json) io.log(JSON.stringify(notice, null, 2));
+  else io.log(renderUpdateNotice(notice) || `[update] ${notice.status}: ${notice.reason}`);
+  return { checkOnly: true, notice, exitCode: 0 };
+}
 
 /**
  * After a successful runtime replace, re-run update in a fresh Node process so
@@ -107,6 +137,7 @@ export function normalizeUpdateOptions(rawOptions = {}) {
   const defaults = createDefaultUpdateOptions();
   return {
     selfUpdate: Boolean(rawOptions.selfUpdate ?? defaults.selfUpdate),
+    check: Boolean(rawOptions.check ?? defaults.check),
     components: normalizeComponents(rawOptions.components, defaults.components),
     wrapMode: normalizeWrapMode(rawOptions.wrapMode ?? defaults.wrapMode),
     client: normalizeClient(rawOptions.client ?? defaults.client),
@@ -150,6 +181,9 @@ export function planUpdate(rawOptions = {}) {
 export async function runUpdate(rawOptions = {}, { rootDir, projectRoot = rootDir, io = console, deps = {} } = {}) {
   const plan = planUpdate(rawOptions);
   const { options } = plan;
+  if (options.check) {
+    return runUpdateCheck({ rootDir, io, rawOptions: { ...rawOptions, ...options } });
+  }
   if (options.dryRun) {
     io.log(`[plan] ${plan.preview}`);
     return plan;

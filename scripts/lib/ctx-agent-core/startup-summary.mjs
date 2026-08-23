@@ -2,6 +2,8 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { resolveContextDbRoot, resolveTasksRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
 import { evaluateHandoffLineage, readHandoffPacket } from '../contextdb/handoff.mjs';
+import { checkForUpdate, readCurrentVersion, readNoticeState } from '../lifecycle/update-notice.mjs';
+import { reconcileUnclosedSessions } from '../lifecycle/session-hooks/reconcile.mjs';
 
 const ACTIVE_TASK_STATUSES = new Set(['pending', 'running', 'blocked']);
 const ACTIVE_SESSION_STATUSES = new Set(['pending', 'running', 'blocked']);
@@ -129,8 +131,53 @@ export function renderStartupSummary(items = []) {
   return lines.join('\n');
 }
 
+async function fetchLatestAiosRelease() {
+  const response = await fetch('https://api.github.com/repos/rexleimo/aios/releases/latest', {
+    headers: { accept: 'application/vnd.github+json', 'user-agent': 'aios-session-start' },
+    signal: AbortSignal.timeout(2500),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  return {
+    version: String(payload.tag_name || '').replace(/^v/u, ''),
+    security: Boolean(payload.security_advisory || payload.security),
+  };
+}
+
+async function readStartupUpdateNotice(workspaceRoot) {
+  try {
+    if (!await readCurrentVersion(workspaceRoot)) return '';
+    const state = await readNoticeState(workspaceRoot);
+    if (state.lastCheckAt && (Date.now() - new Date(state.lastCheckAt).getTime()) < 24 * 60 * 60 * 1000) {
+      return '';
+    }
+    const notice = await checkForUpdate({
+      aiosRoot: workspaceRoot,
+      rootDir: workspaceRoot,
+      fetchLatest: fetchLatestAiosRelease,
+      workspace: { dirty: false, activeTask: false },
+    });
+    if (!notice.shouldNotify) return '';
+    const security = notice.security ? ' [SECURITY]' : '';
+    return `[update] AIOS ${notice.currentVersion} -> ${notice.latestVersion} available${security}; run: aios update --check`;
+  } catch {
+    // Version checks never block session startup.
+    return '';
+  }
+}
+
 export async function printStartupSummary(workspaceRoot, facade = null, stream = process.stderr) {
+  const reconciliation = await reconcileUnclosedSessions({
+    rootDir: workspaceRoot,
+    activeSessionId: facade?.sessionId || '',
+    logger: { log: () => {}, error: () => {} },
+  });
+  if (reconciliation.reconciled.length > 0) {
+    stream.write(`[recovery] recorded ${reconciliation.reconciled.length} interrupted session(s); candidates await review.\n`);
+  }
   const summaries = await collectStartupSummaries(workspaceRoot, facade);
   stream.write(`${renderStartupSummary(summaries)}\n`);
+  const updateLine = await readStartupUpdateNotice(workspaceRoot);
+  if (updateLine) stream.write(`${updateLine}\n`);
   return summaries;
 }

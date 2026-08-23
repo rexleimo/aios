@@ -5,6 +5,22 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.8.0（2026-08-22）——거버넌스 기반 자기 진화와 Memo 트리거 수정
+
+### 변경 내용
+
+- 세션 종료 시 검토 가능한 memory candidate를 멱등적으로 생성하며 active shared recall에 직접 공개하지 않습니다.
+- manual, 후보 5개 threshold, 24시간 cooldown evolution trigger와 실행 이유를 보여주는 `aios evolution status`를 추가했습니다.
+- schema, provenance, 안전성, scope, baseHash, replay, holdout, 회귀, memory conflict, trusted core 수용 게이트를 추가했습니다.
+- candidate에서 canary, active, stable로 이어지는 버전 상태 머신, 감사 기록, rollback을 추가했습니다.
+- patch/minor/major, channel, 보안 업데이트, 알림 중복 제거를 지원하는 업데이트 알림을 추가했습니다.
+
+### 업그레이드
+
+- `aios update --check`로 호환 업데이트를 확인합니다.
+- `aios evolution status`로 후보와 consolidation 상태를 확인합니다.
+- 기존 memo 데이터 마이그레이션은 필요하지 않습니다.
+
 ## v5.6.1（2026-08-12）——`aios work`: 플랜 기반 멀티 에이전트 디스패치
 
 ### 변경 내용

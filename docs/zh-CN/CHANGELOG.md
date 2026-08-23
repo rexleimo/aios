@@ -4,6 +4,18 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
+> 当前主线版本：**v5.8.0（2026-08-22）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+>
+> v5.8.0 重点包含：session close 自动生成 reviewable memo candidate、显式 evolution trigger/status、确定性 verdict 与 replay/holdout 验收、canary/rollback 晋级，以及 AIOS 版本更新通知。现有 memo 数据无需迁移。
+
+## [5.8.0] - 2026-08-22
+
+### 新增
+
+- 受治理的自我迭代管道：candidate、verdict、replay/holdout、canary、审计和 rollback。
+- session close 自动生成待审核候选；`aios evolution status` 显示触发状态。
+- `aios update --check` 提供 semver 兼容检查和去重更新提醒。
+
 ## [3.2.0] - 2026-07-01
 ### 新增
 - feat(harness): 新增 consecutiveFailures 双计数器，连续失败 5 次后自动 abort session，避免无限重试浪费 token

@@ -5,6 +5,22 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.8.0（2026-08-22）——ガバナンス付き自己進化と Memo トリガー修正
+
+### 変更内容
+
+- session 終了時にレビュー可能な memory candidate を冪等に生成し、active shared recall への直接公開を防止。
+- manual、候補数 5、24 時間 cooldown の evolution trigger と、未実行理由を表示する `aios evolution status` を追加。
+- schema、provenance、安全性、scope、baseHash、replay、holdout、回帰、memory conflict、trusted core の受入ゲートを追加。
+- candidate から canary、active、stable へ進むバージョン付き状態機械、監査、ロールバックを追加。
+- patch/minor/major と channel、セキュリティ更新、通知重複排除に対応する更新通知を追加。
+
+### アップグレード
+
+- `aios update --check` で互換更新を確認。
+- `aios evolution status` で候補と consolidation 状態を確認。
+- 既存 memo データの移行は不要。
+
 ## v5.6.1（2026-08-12）——`aios work`: プラン駆動のマルチエージェントディスパッチ
 
 ### 変更内容

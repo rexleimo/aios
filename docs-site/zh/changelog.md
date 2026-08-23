@@ -5,6 +5,23 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.8.0（2026-08-22）——受治理的自我迭代与 Memo 触发链修复
+
+### 主要变更
+
+- session 结束时自动生成幂等、可审核的 memory candidate；候选不会直接进入 active shared recall。
+- 新增 manual、5 个候选阈值和 24 小时 cooldown 三种 evolution trigger；`aios evolution status` 会解释为什么触发或没有触发。
+- 新增 schema、provenance、安全、scope、baseHash、replay、holdout、回归指标、memory conflict 和 trusted core 验收门禁。
+- 新增 candidate 到 canary、active、stable 的版本化晋级状态、审计事件和回滚。
+- 新增 patch/minor/major、channel、安全更新、任务占用和通知去重的版本更新提醒。
+- Solo session 新增 owner PID/heartbeat、每轮 started/completed 标记、SIGINT/SIGTERM 优雅停止和启动时 crash/stale-running 对账。
+
+### 升级说明
+
+- 使用 `aios update --check` 查看兼容更新。
+- 使用 `aios evolution status` 查看候选和 consolidation 状态。
+- 现有 memo 数据无需迁移；新的 session close 候选从后续会话退出开始生成。
+
 ## v5.6.1（2026-08-12）——`aios work`：计划驱动的多 Agent 调度
 
 ### 主要变更

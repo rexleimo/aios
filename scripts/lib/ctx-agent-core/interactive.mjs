@@ -7,6 +7,7 @@ import { getClientCommandName, resolveClientFromRuntimeId } from '../clients/reg
 import { ROOT_DIR, runCommand } from './common.mjs';
 import { buildCodexMcpDisableArgs } from './routes.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../opencode/strict-primary-agent.mjs';
+import { finalizeSession } from '../lifecycle/session-hooks/finalize.mjs';
 
 function commandForRuntime(agent) {
   const client = resolveClientFromRuntimeId(agent);
@@ -75,6 +76,16 @@ export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {
       spawnSync('node', [path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs'), '--agent', agent, '--workspace', workspaceRoot, '--project', opts.project || 'aios', '--save-guard', '--status', 'done'], { stdio: 'ignore', timeout: 10000 });
     } catch {
       // best-effort
+    }
+
+    // Generate session-close memory candidate (fire-and-forget, errors isolated)
+    if (sessionId && workspaceRoot) {
+      finalizeSession({
+        rootDir: workspaceRoot,
+        sessionId,
+        reason: 'session-end',
+        status: 'done',
+      }).catch(() => {});
     }
   };
 

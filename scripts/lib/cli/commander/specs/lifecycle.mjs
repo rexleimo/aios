@@ -43,6 +43,7 @@ export const LIFECYCLE_COMMAND_SPECS = [
     description: 'Update AIOS and AIOS integrations',
     options: [
       ['--self-update', 'Refresh AIOS before component updates'],
+      ['--check', 'Check for a compatible AIOS update without installing'],
       ['--skip-self-update', 'Only update selected integrations'],
       ['--components <list>', 'Comma list of components to update'],
       ['--mode <mode>', 'Integration mode: all, repo-only, opt-in, off'],

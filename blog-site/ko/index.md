@@ -22,6 +22,7 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.8.0: AIOS의 안전한 자기 진화 — Session Memory, 증거 게이트, 롤백 가능한 승격](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1: 플랜 기반 멀티 에이전트 디스패치 — aios work가 플랜을 읽습니다](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0: 병렬 멀티 에이전트 코딩을 한 줄의 명령으로 — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
 - [Loop Engineering에서 Graph Engineering으로: AIOS는 로컬 퍼스트 Agent Harness](2026-08-10-aios-loop-graph-engineering.md)

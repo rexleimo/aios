@@ -6,6 +6,29 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.8.0] - 2026-08-22
+
+### Added
+
+- Self-evolution pipeline under `scripts/lib/lifecycle/evolution/`: structured verdict contracts (`verdict.mjs`), promotion state machine with audit trail and rollback (`promotion.mjs`), deterministic acceptance evaluator (`evaluator.mjs`), and an integration bridge to existing memo-candidate and dream governance (`integration.mjs`).
+- Explicit evolution triggers (`evolution/trigger.mjs`) with manual / threshold / schedule modes, configurable `minCandidates` (default 5) and `cooldownHours` (default 24), plus workspace lock to prevent concurrent runs.
+- Evolution status reporter (`evolution/status.mjs`) that explains why consolidation has not fired (pending candidate count, last run, next eligible time).
+- AIOS version compatibility and update notice (`lifecycle/update-notice.mjs`): six states (`up_to_date`, `update_available`, `update_allowed`, `update_blocked`, `update_incompatible`, `update_check_failed`), semver-aware policy (patch/minor/major), channel gating (stable/beta/dev), deduplicated notifications with security-update override, and graceful degradation when the update check fails.
+- Deterministic evolution test fixtures (`scripts/tests/fixtures/evolution/`): failing trajectory, replay/holdout tasks, malicious content sample, conflicting and superseding memories, stale baseHash, and trusted-core mutation scenarios.
+- Release regression coverage for the full lifecycle: session finalize/recovery → candidate → trigger → verdict → promotion → canary → rollback, plus version-notice behavior.
+
+### Changed
+
+- Session finalizer (`lifecycle/session-hooks/finalize.mjs`) now runs on every session exit path (normal completion, abort, timeout, exception) via `onSessionEnd` hook and the interactive exit guard, generating reviewable memory candidates automatically. Previously `autoMemoSessionClose()` was only reachable through the manual `aios session close` CLI.
+- Verdict hashes are computed over decision-relevant fields only (excluding timestamps), so identical evaluations produce identical hashes and acceptance decisions are reproducible.
+- `aios update --check [--json]` is now wired to the version notice service and performs a network-bounded, check-only release lookup without installing components.
+- Solo sessions now persist an owner PID/heartbeat and per-iteration `started`/`completed` markers. Graceful SIGINT/SIGTERM requests are checkpointed, while startup reconciliation distinguishes live owners, crashed iterations, and stale sessions before generating interruption candidates.
+
+### Fixed
+
+- `aios memo` / `dream` auto-trigger chain was broken: session end only performed a save guard and never called `autoMemoSessionClose()`, so no candidates were generated and consolidation never fired. The chain is now closed: session end → candidate → threshold check → dream → proposal → gated promotion.
+- `createPromotion` now accepts `previousStableVersion` so rollback can restore the prior stable version.
+
 ## [5.7.0] - 2026-08-15
 
 ### Added

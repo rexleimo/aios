@@ -2,6 +2,7 @@
 import { Command } from 'commander';
 import { parseHarnessArgs, parseHudArgs, parseTeamArgs, parseWorkArgs } from './parse-args/execution.mjs';
 import { parseInterceptionArgs } from './parse-args/interception.mjs';
+import { parseEvolutionArgs } from './parse-args/evolution.mjs';
 import {
   parseCanvasArgs,
   parseDreamArgs,
@@ -282,6 +283,7 @@ export function parseArgs(argv = []) {
     };
   }
 
+  if (first === 'evolution') return parseEvolutionArgs(argv);
   if (first === 'memo') return parseMemoArgs(argv);
   if (first === 'plan') return parsePlanArgs(argv);
   if (first === 'dream' || normalizeTopLevelCommand(first) === 'dream') return parseDreamArgs(argv);

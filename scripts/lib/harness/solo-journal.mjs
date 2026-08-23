@@ -13,6 +13,8 @@ export { initSoloRunJournal } from './solo-journal/init.mjs';
 export { renderObjectiveMarkdown, safeReadJson } from './solo-journal/io.mjs';
 export { appendSoloIteration } from './solo-journal/iteration.mjs';
 export { appendSoloHookEvent } from './solo-journal/hooks.mjs';
+export { claimSessionOwner, isProcessAlive, readSessionOwner } from './solo-journal/owner.mjs';
+export { installSessionSignalHandlers } from './solo-journal/signals.mjs';
 export {
   defaultBackoff,
   defaultControl,

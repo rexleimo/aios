@@ -19,6 +19,7 @@ Commands:
   agents        Inspect default agent catalogue and live-readiness gates
   workflow      List and dry-run workflow recipes
   plan          Review and update the active intelligent-planning state
+  evolution     Inspect and run governed self-evolution proposals
   dream         Consolidate durable memo knowledge and export to plan/pins
   memo          Workspace memo + pinned memory helpers
   search        Search project memory, docs, plans, and code references

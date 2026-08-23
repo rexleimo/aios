@@ -70,7 +70,8 @@ function getCommandProgram(command, defaults) {
       program
         .option('--self-update', 'Update Hermes CLI itself')
         .option('--skip-self-update', 'Skip self-update')
-        .option('--skip-doctor', 'Skip post-update doctor');
+      .option('--check', 'Check for a compatible AIOS update without installing')
+      .option('--skip-doctor', 'Skip post-update doctor');
     }
   }
 
@@ -190,6 +191,7 @@ export function parseTopLevelArgs(command, argv) {
       if (command === 'update') {
         if (flags.skipDoctor) options.skipDoctor = true;
         if (flags.selfUpdate !== undefined) options.selfUpdate = flags.selfUpdate;
+        if (flags.check) options.check = true;
         if (flags.skipSelfUpdate) options.selfUpdate = false;
       }
     }

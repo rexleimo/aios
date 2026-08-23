@@ -321,6 +321,16 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'evolution') {
+      const { runEvolutionCommand } = await import('../lifecycle/evolution-cli.mjs');
+      applyResultExitCode(await runEvolutionCommand(parsed.options, {
+        rootDir: workspaceFor(parsed) || rootDir,
+        stdout,
+        stderr,
+      }));
+      return;
+    }
+
     if (parsed.command === 'plan') {
       const { runPlanCommand } = await import('../planning/cli.mjs');
       const result = await runPlanCommand(parsed.options, {

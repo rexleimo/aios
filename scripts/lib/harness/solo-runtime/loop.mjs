@@ -2,7 +2,7 @@ import { Buffer } from 'node:buffer';
 import { readContinuitySummary } from '../../contextdb/continuity.mjs';
 import { findCanvasMermaid, compactCanvas } from '../../offload/mermaid-canvas.mjs';
 import { capture, resolveStorage, resolveConfig } from '../../offload/tool-offload.mjs';
-import { readSoloControl, readSoloRunSummary, writeSoloRunSummary } from '../solo-journal.mjs';
+import { readSoloControl, readSoloRunSummary, writeSoloRunSummary, appendSoloHookEvent, claimSessionOwner, installSessionSignalHandlers } from '../solo-journal.mjs';
 import { sleep, resolveSoloBackoffState, shouldAbortForConsecutiveFailures, maxConsecutiveFailures } from './backoff.mjs';
 import { evaluateDryRunReadiness, formatDryRunReadiness } from './dry-run-readiness.mjs';
 import { writeSoloIterationCheckpoint } from './checkpoint.mjs';
@@ -41,6 +41,29 @@ export async function runSoloHarnessLoop({
     });
   }
 
+  const ownerLease = await claimSessionOwner({ rootDir, sessionId });
+  const signalHandlers = installSessionSignalHandlers({ rootDir, sessionId });
+
+  // Each turn writes a durable start marker before invoking the external agent.
+  // If the process dies mid-turn, recovery can identify the incomplete iteration.
+  const recordIterationEvent = async (event) => {
+    try {
+      await appendSoloHookEvent({ rootDir, sessionId, event: {
+        kind: 'iteration-lifecycle',
+        ...event,
+        ts: new Date().toISOString(),
+      } });
+    } catch {
+      // Journal diagnostics must never block the agent loop.
+    }
+  };
+
+  const finish = async (value) => {
+    signalHandlers.stop();
+    await ownerLease?.stop?.();
+    return value;
+  };
+
   // ── Dry-run readiness preflight ──
   // 在进入主循环前检测环境问题，避免 agent 跑到一半才失败。
   // blocked 级别直接拒绝启动；warning 级别记录但继续。
@@ -69,7 +92,7 @@ export async function runSoloHarnessLoop({
       outcome: blockedOutcome,
       checkpointWriter,
     });
-    return { summary, stoppedByControl: false, readiness };
+    return finish({ summary, stoppedByControl: false, readiness });
   }
 
   let iteration = Number.isFinite(summary.lastIteration) ? summary.lastIteration + 1 : 1;
@@ -102,10 +125,10 @@ export async function runSoloHarnessLoop({
           reason: 'control-stop-request',
         },
       });
-      return {
+      return finish({
         summary,
         stoppedByControl: true,
-      };
+      });
     }
 
     const nowMs = Date.now();
@@ -156,6 +179,7 @@ export async function runSoloHarnessLoop({
       // plan runtime is best-effort; never block harness
     }
 
+    await recordIterationEvent({ iteration, status: 'started' });
     const rawTurn = await executeTurn({
       rootDir,
       sessionId,
@@ -227,6 +251,7 @@ export async function runSoloHarnessLoop({
       extraLogEntries: [...(rawTurn?.logEntries || []), ...turnLogEntries],
       checkpointWriter,
     });
+    await recordIterationEvent({ iteration, status: 'completed', outcome: outcome.outcome });
 
     // L3: write iteration outcome back to structured plan (tasks + evidence)
     try {
@@ -293,10 +318,10 @@ export async function runSoloHarnessLoop({
           reason: 'iteration-stop',
         },
       });
-      return {
+      return finish({
         summary,
         stoppedByControl: false,
-      };
+      });
     }
 
     // 连续失败 abort：避免 agent 在不可恢复的故障中无限重试浪费 token
@@ -336,10 +361,10 @@ export async function runSoloHarnessLoop({
           reason: 'consecutive-failures-abort',
         },
       });
-      return {
+      return finish({
         summary,
         stoppedByControl: false,
-      };
+      });
     }
 
     iteration += 1;
@@ -382,8 +407,8 @@ export async function runSoloHarnessLoop({
     },
   });
 
-  return {
+  return finish({
     summary,
     stoppedByControl: false,
-  };
+  });
 }
