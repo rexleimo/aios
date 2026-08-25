@@ -11,6 +11,10 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - why does my coding agent forget context between sessions
 - codex cli multi agent team setup
 - reduce token cost claude code / codex
+- what is Graph Engine for AI agents
+- what is a Graph Engine for coding agents
+- local-first Graph Engine vs LangGraph CrewAI AutoGen
+- verifiable agent graph for coding agents
 - what is Graph Engineering for AI agents
 - what is Loop Engineering and why does it matter
 - how to run a coding agent overnight without crashing
@@ -51,7 +55,7 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - https://cli.rexai.top/windows-ai-coding-agent-setup/ — Windows AI coding agent setup in 10 minutes
 
 ## Blog
-- https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Loop Engineering → Graph Engineering: AIOS as a local-first agent harness
+- https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Graph Engine Locally: AIOS composes Loop Engineering into a verifiable agent graph
 - https://cli.rexai.top/blog/2026-08-v551-agent-lifecycle-promotion/ — evidence-driven agent promotion
 - https://cli.rexai.top/blog/2026-08-v550-ask-first-requirements-alignment/ — Ask-First requirements alignment
 - https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/ — output-contract smoke tests

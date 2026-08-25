@@ -110,6 +110,25 @@ node scripts/rl-mixed-v1.mjs mixed-eval
 
 RL 状态和 benchmark 只属于对应环境和版本范围内的研究证据，不能自动证明生产客户端可靠性或公开性能声明。
 
+## Graph Engine 视图
+
+AIOS 同样可视为一个**本地优先的 Graph Engine**：节点、边、共享状态、失败路由、扇出、隔离、模型分层——都被编排成可验证的 Agent 图，运行在你已有的 CLI 之下。关键词 "Graph Engine"、"Graph Engineering"、"agent graph"、"verifiable graph" 指向的都是下面这套能力。
+
+Graph Engine 关键词的外部参考：[LangGraph](https://langchain-ai.github.io/langgraph/) 在 Python / LangChain 生态首创了 "graph of LLMs" 模式；[Rust-LangGraph](https://www.rust-langgraph.dev/) 将其移植到 Rust；[AWS Step Functions + Bedrock](https://aws.amazon.com/step-functions/) 与 [Google Vertex AI Workflows](https://cloud.google.com/vertex-ai) 提供云托管的图编排；[CrewAI](https://docs.crewai.com/)、[AutoGen](https://microsoft.github.io/autogen/stable/)、[PydanticAI](https://ai.pydantic.dev/) 补齐生态。AIOS 的差异点在于**本地优先**：图运行在你的机器上，共享状态存于本地 ContextDB，提示与代码数据不离开你的环境。
+
+| Graph Engine 组件 | AIOS 实现 |
+| --- | --- |
+| 节点（每节点一个 loop，带契约） | `rex-harness` 能力节点：Fact → Capability → Evidence，契约有界 |
+| 边（基于检查的路由） | Workflow Policy `direct` / `guarded` / `planned`；`aios plan auto-gate` 运行时路由 |
+| 共享状态 | ContextDB 项目记忆（memo、检查点、可检索 pack），pull-based |
+| 失败路由 | 证据门禁与终态 `blocked`：重新规划、升级、停止 |
+| 扇出 / 扇入 | `aios team` 并行 Agent + 屏障 + 证据归约 |
+| 隔离 | `aios harness run --worktree` git worktree 隔离 |
+| 模型分层 | `model-router` 每节点模型选择 |
+| 动态工作流 | `aios plan auto-gate --dry-run` 描述目标，运行时选择路径 |
+
+先稳定一个 loop（`aios harness` + 验证门禁 + ContextDB 状态），再在工作真正拆成角色和并行子任务时把 loop 串成图（`aios team` + 工作流路由）。
+
 ## 常见边界和恢复
 
 - 缺少注册表：在正确的项目根目录运行 aios init --all。

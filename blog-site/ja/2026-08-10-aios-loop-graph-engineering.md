@@ -1,6 +1,6 @@
 ---
-title: "Loop Engineering から Graph Engineering へ：AIOS はローカルファーストの Agent Harness"
-description: "Loop Engineering のツールキット（検証器、終了条件、状態ファイル）と Graph Engineering の構成要素（ノード、エッジ、共有状態、失敗ルーティング）を、ローカルファーストの Agent Harness である AIOS にどうマッピングするかを解説します。"
+title: "Graph Engine とローカルエージェント：AIOS が Loop Engineering を Graph Engineering へ接続する仕組み"
+description: "Graph Engine ローカル実装：AIOS が Loop Engineering のツールキット（検証器、終了条件、状態ファイル）とノード、エッジ、共有状態、失敗ルーティングを Verifiable Graph に統合する方法。LangGraph、CrewAI、AutoGen とも比較。"
 date: 2026-08-10
 tags: ["Graph Engineering", "Loop Engineering", "AIOS", "Agent オーケストレーション", "ローカルファースト", "Agent Harness"]
 ---

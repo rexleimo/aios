@@ -1,6 +1,6 @@
 ---
-title: "Loop Engineering에서 Graph Engineering으로: AIOS는 로컬 퍼스트 Agent Harness"
-description: "Loop Engineering 도구(검증기, 종료 조건, 상태 파일)와 Graph Engineering 구성 요소(노드, 엣지, 공유 상태, 실패 라우팅)를 로컬 퍼스트 Agent Harness인 AIOS에 어떻게 매핑하는지 설명합니다."
+title: "Graph Engine 로컬 구현: AIOS가 Loop Engineering을 Agent Graph로 연결하는 방법"
+description: "Graph Engine 로컬 구현: AIOS가 Loop Engineering 도구(검증기, 종료 조건, 상태 파일)와 노드, 엣지, 공유 상태, 실패 라우팅을 검증 가능한 Agent Graph로 통합하는 방법. LangGraph, CrewAI, AutoGen 비교."
 date: 2026-08-10
 tags: ["Graph Engineering", "Loop Engineering", "AIOS", "에이전트 오케스트레이션", "로컬 퍼스트", "Agent Harness"]
 ---

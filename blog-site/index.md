@@ -25,7 +25,7 @@ New to AIOS? These posts will get you oriented:
 - [v5.8.0: AIOS Learns Safely — Session Memory, Evidence Gates, and Governed Self-Evolution](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1: Plan-Driven Multi-Agent Dispatch — aios work Reads Your Plan](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0: Parallel Multi-Agent Coding with One Command — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
-- [From Loop Engineering to Graph Engineering: AIOS Is a Local-First Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
+- [Graph Engine Locally: AIOS Composes Loop Engineering Into a Verifiable Agent Graph](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1: Evidence-Driven Agent Lifecycle Promotion](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First Requirements Alignment — Agents Stop Building the Wrong Thing](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4: Reliable Agent Smoke — Output-Contract Clients and Escalating Probe Timeouts](2026-08-v544-agent-smoke-reliability.md)

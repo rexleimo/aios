@@ -25,7 +25,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 - [v5.8.0: AIOS が安全に自己進化する — Session Memory、証拠ゲート、ロールバック可能な昇格](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1: プラン駆動のマルチエージェントディスパッチ — aios work がプランを読む](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0: 並列マルチエージェントコーディングを1コマンドで — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
-- [Loop Engineering から Graph Engineering へ：AIOS はローカルファーストの Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
+- [Graph Engine とローカルエージェント：AIOS が Loop Engineering を Graph Engineering へ接続する仕組み](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：証拠駆動の Agent ライフサイクル昇格](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0: Ask-First 要件アライメント——エージェントが不要なものを届けなくなる](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：エージェントスモークテストの信頼性——出力コントラクトクライアントとタイムアウト自動エスカレーション](2026-08-v544-agent-smoke-reliability.md)

@@ -1,6 +1,6 @@
 ---
-title: "从 Loop Engineering 到 Graph Engineering：AIOS 是一个本地优先的 Agent Harness"
-description: "把 Loop Engineering 工具箱（验证器、退出条件、状态文件）与 Graph Engineering 四大构件（节点、边、共享状态、失败路由）逐一映射到 AIOS 这个本地优先的 Agent Harness 上。"
+title: "Graph Engine 本地实现：AIOS 将 Loop Engineering 与图节点连接成可验证的 Agent 图"
+description: "Graph Engine 本地实现：AIOS 如何把 Loop Engineering 工具箱（验证器、退出条件、状态文件）与图节点、边、共享状态、失败路由组合成可验证的 Agent 图，并对比 LangGraph、CrewAI、AutoGen 等生态。"
 date: 2026-08-10
 tags: ["Graph Engineering", "Loop Engineering", "AIOS", "Agent 编排", "本地优先", "Agent Harness"]
 ---

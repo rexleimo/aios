@@ -1,6 +1,6 @@
-﻿---
+---
 title: AIOS — 一句话，搞定任何复杂任务
-description: "AIOS 让你的 AI 编码助手真正完成任务——记忆、验证、多 Agent 协作，一句话搞定。支持 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok。"
+description: "AIOS 让你的 AI 编码助手真正完成任务——本地优先的 Graph Engine 把记忆、验证、多 Agent 协作编排成可验证的 Agent 图，一句话搞定。支持 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok。"
 home: true
 schema_type: faq
 faq:
@@ -31,9 +31,7 @@ faq:
       <h1 class="rex-hero__title">一句话，搞定任何复杂任务。</h1>
 
       <p class="rex-hero__sub">
-        告诉你的 AI 编码助手你要什么——就一句话。AIOS 自动补上记忆、验证和多 Agent 协作，
-        让它真正完成任务。支持 Claude Code、Codex、Gemini、OpenCode、Hermes、Grok——
-        你不需要改变任何工作方式。
+        告诉你的 AI 编码助手你要什么——就一句话。AIOS 是一个本地优先的 Graph Engine，它把记忆、验证和多 Agent 协作编排成可验证的 Agent 图，让它真正完成任务。支持 Claude Code、Codex、Gemini、OpenCode、Hermes、Grok——你不需要改变任何工作方式。
       </p>
 
       <div class="rex-hero__cta">
@@ -187,9 +185,9 @@ faq:
   </div>
   <div class="rex-bloglist__grid">
     <article class="rex-bloglist__card">
-      <span class="rex-bloglist__tag">工作流</span>
-      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-07-v400-adaptive-workflow-policy/">4.0.0 自适应工作流策略</a></h3>
-      <p class="rex-bloglist__card-text">先分类工作，再选择流程控制——noop、direct、guarded、planned。</p>
+      <span class="rex-bloglist__tag">Graph Engine</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-08-10-aios-loop-graph-engineering/">Graph Engine 本地实现</a></h3>
+      <p class="rex-bloglist__card-text">把 loop 工具箱与图节点组合成可验证的 Agent 图，数据始终留在本机。</p>
     </article>
     <article class="rex-bloglist__card">
       <span class="rex-bloglist__tag">团队</span>
@@ -197,9 +195,9 @@ faq:
       <p class="rex-bloglist__card-text">独立工作项何时可以并行——以及何时绝不能。</p>
     </article>
     <article class="rex-bloglist__card">
-      <span class="rex-bloglist__tag">可靠性</span>
-      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-07-raw-cli-to-reliable-workflow/">从裸 CLI 到可靠工作流</a></h3>
-      <p class="rex-bloglist__card-text">把裸编码 CLI 变成可恢复、证据驱动的工作流。</p>
+      <span class="rex-bloglist__tag">工作流</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/zh/2026-07-v400-adaptive-workflow-policy/">4.0.0 自适应工作流策略</a></h3>
+      <p class="rex-bloglist__card-text">先分类工作，再选择流程控制——noop、direct、guarded、planned。</p>
     </article>
   </div>
 </div>

@@ -25,6 +25,22 @@ RexAI 生态常用入口：
 - [RexAI 内容站](https://rexai.top)
 - [RexAI 免费工具](https://tool.rexai.top)
 
+## Graph Engine 生态
+
+AIOS 是一个本地优先的 Graph Engine。以下为同类图编排 Agent 框架生态的参考入口：
+
+| 项目 | 简介 |
+| --- | --- |
+| [LangGraph](https://langchain-ai.github.io/langgraph/) | Python / LangChain 的图式 LLM 编排框架，"Graph Engine" 关键词的核心来源 |
+| [Rust-LangGraph](https://www.rust-langgraph.dev/) | LangGraph 在 Rust 上的实现 |
+| [CrewAI](https://docs.crewai.com/) | 基于角色分工的多 Agent 编排框架 |
+| [Microsoft AutoGen](https://microsoft.github.io/autogen/stable/) | Microsoft 多 Agent 对话框架 |
+| [PydanticAI](https://ai.pydantic.dev/) | 基于 Pydantic 的图式 Agent 框架 |
+| [AWS Step Functions + Bedrock](https://aws.amazon.com/step-functions/) | 云托管的 LLM 工作流 / 图编排 |
+| [Google Vertex AI Workflows](https://cloud.google.com/vertex-ai) | 云托管的 AI 工作流编排 |
+
+AIOS 的差异点：**本地优先**。图、记忆、验证证据全部运行在你的机器上，提示与代码数据不会离开你的环境。
+
 ## 常见问题
 
 ### 产品行为以哪个入口为准？

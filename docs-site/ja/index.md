@@ -1,6 +1,6 @@
-﻿---
+---
 title: "AIOS — 一言で、どんな複雑なタスクも完了"
-description: "AIOSはAIコーディングエージェントに記憶・検証・マルチエージェント協調を追加。一言で指示するだけで複雑なタスクを完了します。Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grokに対応。"
+description: "一言で、どんな複雑なタスクも完了。AIOSはローカルファーストの Graph Engine として、AIコーディングエージェントに記憶・検証・マルチエージェント協調を追加し、Verifiable Graph を完成させます。Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grokに対応。"
 ---
 
 # AIOS

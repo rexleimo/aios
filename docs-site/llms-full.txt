@@ -7,7 +7,9 @@
 - Agent Team collaboration and monitoring (`team-ops`, `hud`)
 - Automatic subagent planning with verification gates
 - Adaptive workflow routes: `noop`, `direct`, `guarded`, and `planned`
-- Plan persistence states: `none`, `reuse`, and `create`
+- Local-first Graph Engine for coding agents — composes loop toolkit and graph building blocks into a verifiable agent graph
+- What is a Graph Engine for AI agents; how AIOS differs from LangGraph / CrewAI / AutoGen
+- Verifiable agent graph with local ContextDB shared state
 - Reliable solo harness runs with failure taxonomy, bounded backoff, and dry-run readiness
 - Privacy Shield startup notices for wrapped Codex, Claude, Gemini, and OpenCode sessions
 - v1.50.0 unified AIOS search across memory, docs, plans, and code
@@ -41,7 +43,7 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
-- https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Loop Engineering → Graph Engineering mapping on a local-first agent harness
+- https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Graph Engine Locally: AIOS composes Loop Engineering into a verifiable agent graph
 - https://cli.rexai.top/blog/2026-08-v551-agent-lifecycle-promotion/
 - https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/
 - https://cli.rexai.top/blog/2026-08-v543-crg-decision-checkpoints/

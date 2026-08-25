@@ -122,9 +122,11 @@ Treat RL status and benchmarks as research evidence with their own environment a
 
 ## Graph Engineering view
 
-The same architecture reads naturally as Graph Engineering: AIOS is a local-first agent harness that organizes agent loops into a graph.
+AIOS implements the same architecture as a **local-first Graph Engine for coding agents**: nodes, edges, shared state, failure routing, fan-out, isolation, and model tiering — all composed into a verifiable graph underneath the CLI you already use. The keyword "Graph Engine" and its building blocks (Graph Engineering, agent graph, verifiable graph) describe the same capability below.
 
-| Graph Engineering component | AIOS implementation |
+For external reference points on the Graph Engine keyword: [LangGraph](https://langchain-ai.github.io/langgraph/) pioneered the "graph of LLMs" pattern in the Python / LangChain ecosystem; [Rust-LangGraph](https://www.rust-langgraph.dev/) ported it to Rust; [AWS Step Functions + Amazon Bedrock](https://aws.amazon.com/step-functions/) and [Google Vertex AI Workflows](https://cloud.google.com/vertex-ai) offer cloud-managed graph orchestration; and [CrewAI](https://docs.crewai.com/), [AutoGen](https://microsoft.github.io/autogen/stable/) and [PydanticAI](https://ai.pydantic.dev/) complete the ecosystem. AIOS differs by being **local-first**: the graph runs on your machine, shared state lives in the local ContextDB, and no prompt or code data leaves your environment.
+
+| Graph Engine component | AIOS implementation |
 | --- | --- |
 | Nodes (one loop per node, with a contract) | `rex-harness` capability nodes: Fact → Capability → Evidence with bounded contracts |
 | Edges (routing by checks) | Workflow Policy `direct` / `guarded` / `planned`; `aios plan auto-gate` runtime routing |

@@ -25,6 +25,22 @@ Useful links across the RexAI ecosystem:
 - [RexAI Content Hub](https://rexai.top)
 - [RexAI Free Tools](https://tool.rexai.top)
 
+## Graph Engine ecosystem
+
+AIOS is a local-first Graph Engine for coding agents. Related graph-based agent orchestration projects in the open ecosystem:
+
+| Project | What it is |
+| --- | --- |
+| [LangGraph](https://langchain-ai.github.io/langgraph/) | Python / LangChain graph-of-LLMs framework; the origin of the "Graph Engine" keyword in this space |
+| [Rust-LangGraph](https://www.rust-langgraph.dev/) | Rust implementation of the LangGraph pattern |
+| [CrewAI](https://docs.crewai.com/) | Multi-agent role-based orchestration framework |
+| [Microsoft AutoGen](https://microsoft.github.io/autogen/stable/) | Microsoft's multi-agent conversable framework |
+| [PydanticAI](https://ai.pydantic.dev/) | Graph-based agent framework on top of Pydantic |
+| [AWS Step Functions + Bedrock](https://aws.amazon.com/step-functions/) | Cloud-managed workflow / graph orchestration for LLMs |
+| [Google Vertex AI Workflows](https://cloud.google.com/vertex-ai) | Cloud-managed AI orchestration workflows |
+
+AIOS's differentiator: **local-first**. The graph, memory, and evidence run on your machine — no prompt or code leaves your environment.
+
 ## FAQ
 
 ### Which link is canonical for product behavior?

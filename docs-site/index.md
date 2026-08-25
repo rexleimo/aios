@@ -1,6 +1,6 @@
-﻿---
+---
 title: AIOS — One Sentence. Any Complex Task. Done.
-description: "AIOS makes your AI coding agent actually finish the job. Just tell it what you need in one sentence — memory, verification, and multi-agent collaboration handle the rest. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
+description: "One sentence. Any complex task. Done. AIOS is a local-first Graph Engine for coding agents — it composes memory, verification, and multi-agent collaboration into a verifiable graph so your agent actually finishes the job. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 home: true
 schema_type: faq
 faq:
@@ -31,10 +31,7 @@ faq:
       <h1 class="rex-hero__title">One sentence. Any complex task. Done.</h1>
 
       <p class="rex-hero__sub">
-        Tell your AI coding agent what you need — just one sentence. AIOS adds the
-        memory, verification, and multi-agent coordination it needs to actually
-        finish the job. Works inside Claude Code, Codex, Gemini, OpenCode, Hermes,
-        and Grok — you don't change how you work.
+        Tell your AI coding agent what you need — just one sentence. AIOS is a local-first Graph Engine that composes the memory, verification, and multi-agent coordination it needs into a verifiable graph, so it actually finishes the job. Works inside Claude Code, Codex, Gemini, OpenCode, Hermes, and Grok — you don't change how you work.
       </p>
 
       <div class="rex-hero__cta">
@@ -190,9 +187,9 @@ faq:
   </div>
   <div class="rex-bloglist__grid">
     <article class="rex-bloglist__card">
-      <span class="rex-bloglist__tag">Workflow</span>
-      <h3 class="rex-bloglist__card-title"><a href="/blog/2026-07-v400-adaptive-workflow-policy/">4.0.0 Adaptive Workflow Policy</a></h3>
-      <p class="rex-bloglist__card-text">Classify work before choosing process controls — noop, direct, guarded, planned.</p>
+      <span class="rex-bloglist__tag">Graph Engine</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/2026-08-10-aios-loop-graph-engineering/">Graph Engine Locally</a></h3>
+      <p class="rex-bloglist__card-text">Compose loop toolkit and graph nodes into a verifiable agent graph, with no data leaving your machine.</p>
     </article>
     <article class="rex-bloglist__card">
       <span class="rex-bloglist__tag">Teams</span>
@@ -200,9 +197,9 @@ faq:
       <p class="rex-bloglist__card-text">When independent work items can run in parallel — and when they must not.</p>
     </article>
     <article class="rex-bloglist__card">
-      <span class="rex-bloglist__tag">Reliability</span>
-      <h3 class="rex-bloglist__card-title"><a href="/blog/2026-07-raw-cli-to-reliable-workflow/">From Raw CLI to Reliable Workflow</a></h3>
-      <p class="rex-bloglist__card-text">Turn a bare coding CLI into a resumable, evidence-driven workflow.</p>
+      <span class="rex-bloglist__tag">Workflow</span>
+      <h3 class="rex-bloglist__card-title"><a href="/blog/2026-07-v400-adaptive-workflow-policy/">4.0.0 Adaptive Workflow Policy</a></h3>
+      <p class="rex-bloglist__card-text">Classify work before choosing process controls — noop, direct, guarded, planned.</p>
     </article>
   </div>
 </div>

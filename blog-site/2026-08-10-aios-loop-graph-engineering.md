@@ -1,13 +1,13 @@
 ---
-title: "From Loop Engineering to Graph Engineering: AIOS Is a Local-First Agent Harness"
-description: "How AIOS maps the Loop Engineering toolkit (verifier, exit conditions, state files) and Graph Engineering building blocks (nodes, edges, shared state, failure routing) onto a local-first agent harness."
+title: "Graph Engine Locally: AIOS Composes Loop Engineering Into a Verifiable Agent Graph"
+description: "How AIOS implements the Graph Engine locally — composes the Loop Engineering toolkit (verifier, exit conditions, state files) with graph nodes, edges, shared state, and failure routing into a verifiable agent graph. Compared with LangGraph, CrewAI, AutoGen."
 date: 2026-08-10
-tags: ["Graph Engineering", "Loop Engineering", "AIOS", "agent orchestration", "local-first", "agent harness"]
+tags: ["Graph Engine", "Graph Engineering", "Loop Engineering", "AIOS", "agent orchestration", "local-first", "agent harness"]
 ---
 
-# From Loop Engineering to Graph Engineering: AIOS Is a Local-First Agent Harness
+# Graph Engine Locally: AIOS Composes Loop Engineering Into a Verifiable Agent Graph
 
-> **Quick Answer:** "Loop Engineering is dead, Graph Engineering is forever" is a false choice. The Graph Engineering playbook itself says the first rule is: get one loop stable before you build a graph. AIOS is built as a local-first agent harness that covers both layers — the loop toolkit (verifiers, exit conditions, state files) and the graph building blocks (nodes, edges, shared state, failure routing) — so you can start with a stable loop and wire loops into a graph when the work actually needs it.
+> **Quick Answer:** "Loop Engineering is dead, Graph Engineering is forever" is a false choice. The Graph Engine playbook itself says the first rule is: get one loop stable before you build a graph. AIOS implements the Graph Engine locally — it covers the loop toolkit (verifiers, exit conditions, state files) and the graph building blocks (nodes, edges, shared state, failure routing) so you can start with a stable loop and wire loops into a verifiable agent graph when the work actually needs it, without data leaving your machine.
 
 Two weeks ago the hot word was Loop Engineering. This week it is Graph Engineering, and someone has already declared the old word dead. Before you pick a side, notice what the graph playbook actually argues: the most important question is whether you already have a stable single loop. No stable loop, no graph. Graphs are an organization of loops, not a replacement for them.
 

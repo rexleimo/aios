@@ -23,7 +23,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 - [v5.8.0：AIOS 安全地自我迭代——Session Memory、证据门禁与可回滚晋级](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1：计划驱动的多 Agent 调度 — aios work 读取你的计划](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0：一条命令并行多 Agent 编码 — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)
-- [从 Loop Engineering 到 Graph Engineering：AIOS 是一个本地优先的 Agent Harness](2026-08-10-aios-loop-graph-engineering.md)
+- [Graph Engine 本地实现：AIOS 将 Loop Engineering 与图节点连接成可验证的 Agent 图](2026-08-10-aios-loop-graph-engineering.md)
 - [v5.5.1：基于证据的 Agent 生命周期晋级](2026-08-v551-agent-lifecycle-promotion.md)
 - [v5.5.0：Ask-First 需求对齐——智能体不再交付你不需要的东西](2026-08-v550-ask-first-requirements-alignment.md)
 - [v5.4.4：Agent 冒烟检测可靠性——输出契约客户端与超时自动升级](2026-08-v544-agent-smoke-reliability.md)
