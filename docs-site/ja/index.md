@@ -1,6 +1,6 @@
 ---
-title: "AIOS — 一言で、どんな複雑なタスクも完了"
-description: "一言で、どんな複雑なタスクも完了。AIOSはローカルファーストの Graph Engine として、AIコーディングエージェントに記憶・検証・マルチエージェント協調を追加し、Verifiable Graph を完成させます。Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grokに対応。"
+title: "AIOS — Local-First Graph Engine"
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 ---
 
 # AIOS

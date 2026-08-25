@@ -1,6 +1,6 @@
 ---
-title: AIOS — 一句话，搞定任何复杂任务
-description: "AIOS 让你的 AI 编码助手真正完成任务——本地优先的 Graph Engine 把记忆、验证、多 Agent 协作编排成可验证的 Agent 图，一句话搞定。支持 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok。"
+title: AIOS — 本地优先 Graph Engine
+description: "面向 Claude Code / Codex / Gemini / OpenCode / Grok 的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端。"
 home: true
 schema_type: faq
 faq:
@@ -25,13 +25,14 @@ faq:
     <div class="rex-hero__content">
       <div class="rex-hero__badge">
         <svg class="rex-hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        一句话，搞定任何任务 · v{{ aios_version }}
+        本地优先 Graph Engine · v{{ aios_version }}
       </div>
 
-      <h1 class="rex-hero__title">一句话，搞定任何复杂任务。</h1>
+      <h1 class="rex-hero__title">给你的 AI 编码 Agent 一个本地优先的 Graph Engine。</h1>
 
       <p class="rex-hero__sub">
-        告诉你的 AI 编码助手你要什么——就一句话。AIOS 是一个本地优先的 Graph Engine，它把记忆、验证和多 Agent 协作编排成可验证的 Agent 图，让它真正完成任务。支持 Claude Code、Codex、Gemini、OpenCode、Hermes、Grok——你不需要改变任何工作方式。
+        AIOS 是一个本地优先的 Graph Engine。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），
+        再把跨会话项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图——不改变你的工作方式。
       </p>
 
       <div class="rex-hero__cta">

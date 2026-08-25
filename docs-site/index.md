@@ -1,6 +1,6 @@
 ---
-title: AIOS — One Sentence. Any Complex Task. Done.
-description: "One sentence. Any complex task. Done. AIOS is a local-first Graph Engine for coding agents — it composes memory, verification, and multi-agent collaboration into a verifiable graph so your agent actually finishes the job. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
+title: AIOS — Local-First Graph Engine
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 home: true
 schema_type: faq
 faq:
@@ -25,13 +25,15 @@ faq:
     <div class="rex-hero__content">
       <div class="rex-hero__badge">
         <svg class="rex-hero__badge-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="m19 15 .8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg>
-        ONE SENTENCE. ANY TASK. DONE. · v{{ aios_version }}
+        LOCAL-FIRST GRAPH ENGINE · v{{ aios_version }}
       </div>
 
-      <h1 class="rex-hero__title">One sentence. Any complex task. Done.</h1>
+      <h1 class="rex-hero__title">A local-first Graph Engine for your AI coding agent.</h1>
 
       <p class="rex-hero__sub">
-        Tell your AI coding agent what you need — just one sentence. AIOS is a local-first Graph Engine that composes the memory, verification, and multi-agent coordination it needs into a verifiable graph, so it actually finishes the job. Works inside Claude Code, Codex, Gemini, OpenCode, Hermes, and Grok — you don't change how you work.
+        AIOS is a local-first Graph Engine for coding agents. It composes cross-session project memory,
+        adaptive routing, multi-agent collaboration, and verification into a verifiable graph on top of
+        codex, claude, gemini, opencode, hermes, and grok — without changing how you work.
       </p>
 
       <div class="rex-hero__cta">

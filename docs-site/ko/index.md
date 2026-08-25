@@ -1,11 +1,11 @@
 ---
-title: "AIOS — 한 문장으로 어떤 복잡한 작업이든 완료"
-description: "한 문장으로 어떤 복잡한 작업이든 완료. AIOS는 로컬 우선 Graph Engine으로 AI 코딩 에이전트에 기억, 검증, 멀티에이전트 협업을 추가해 검증 가능한 에이전트 그래프를 완성합니다. Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok 지원."
+title: "AIOS — Local-First Graph Engine"
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 ---
 
 # AIOS
 
-**한 문장으로 어떤 복잡한 작업이든 완료.** AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 codex, claude, gemini, opencode, hermes, grok을 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
+**로컬 우선 Graph Engine.** AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 codex, claude, gemini, opencode, hermes, grok을 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
 
 [빠른 시작](getting-started.md){ .md-button .md-button--primary }
 [사용 사례 보기](use-cases.md){ .md-button }
