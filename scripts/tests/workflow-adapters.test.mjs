@@ -368,6 +368,7 @@ test('CLI and MCP evidence adapters advance the same persisted rex contract', as
     const started = await runPlanCommand({
       subcommand: 'auto-gate',
       task: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+      intent: 'grill',
       client: 'codex',
       sessionId: 'evidence-session',
       json: true,

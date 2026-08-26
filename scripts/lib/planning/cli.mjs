@@ -350,6 +350,7 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       sessionId: options.sessionId || '',
       source: options.source || 'aios plan auto-gate',
       policyMode: options.policyMode,
+      explicitIntent: options.intent || options.explicitIntent || null,
       dryRun: Boolean(options.dryRun),
       json,
     });

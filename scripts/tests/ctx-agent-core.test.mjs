@@ -737,7 +737,7 @@ process.stdout.write('provider complete\\nAIOS_REX_EVIDENCE=' + JSON.stringify(p
         '--workspace', workspaceRoot,
         '--project', 'tmp-project',
         '--session', sessionId,
-        '--prompt', 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+        '--prompt', '/grill Clarify the domain vocabulary and acceptance criteria before implementation.',
         '--no-bootstrap',
         '--no-auto-checkpoint',
       ],

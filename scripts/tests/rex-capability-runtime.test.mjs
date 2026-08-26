@@ -281,6 +281,7 @@ test('AIOS Requirements envelope persists the typed decision and advances the wo
     const started = runAutoGate({
       rootDir,
       message: '把用户登录改一下',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'requirements-envelope',
     });
@@ -412,6 +413,7 @@ test('runner evidence ingestion advances only when a valid envelope is present',
     const started = runAutoGate({
       rootDir,
       message: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'runtime-evidence',
     });
@@ -486,6 +488,7 @@ test('AIOS serializes evidence writes so one Command token cannot advance twice'
     const started = runAutoGate({
       rootDir,
       message: 'Clarify the acceptance criteria before implementation.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'token-race',
     });
@@ -543,6 +546,7 @@ test('AIOS reports plan evidence mirror failures without hiding committed Rex st
     const started = runAutoGate({
       rootDir,
       message: 'Clarify the acceptance criteria before implementation.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'plan-mirror',
     });

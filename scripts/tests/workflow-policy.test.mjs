@@ -308,13 +308,14 @@ test('multi-step work is planned in adaptive mode', () => {
 test('ambiguous domain work selects only the current rex requirements provider', () => {
   const decision = evaluateWorkflowPolicy({
     message: 'Clarify the domain vocabulary and acceptance criteria before implementing checkout.',
+    explicitIntent: 'grill',
     activePlan: null,
     client: 'codex',
     sessionId: 'session-a',
   });
 
   assert.equal(decision.disposition, 'planned');
-  assert.equal(decision.routeHint, 'implement');
+  assert.equal(decision.routeHint, 'requirements');
   assert.equal(decision.requiresPreEditSafety, false);
   assert.deepEqual(decision.requiredSkills, ['rex-requirements']);
   assert.equal(decision.capabilityDecision.capabilityId, 'software.requirements.clarify');

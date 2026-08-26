@@ -137,6 +137,7 @@ test('startStored reuses an active standalone workflow instead of overwriting th
         provider: { kind: 'skill', id: 'rex-requirements' },
       },
       request: { message: 'Clarify checkout acceptance.' },
+      explicitIntent: 'grill',
     });
     const second = startStoredAiosCapabilityActivation({
       rootDir,
@@ -164,6 +165,7 @@ test('failed standalone persist leaves the previous activation command unchanged
     const started = runAutoGate({
       rootDir,
       message: 'Clarify the acceptance criteria for checkout.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'session-atomicity',
     });
@@ -215,6 +217,7 @@ test('auto-gate persists the current rex activation and exposes one executable c
     const result = runAutoGate({
       rootDir,
       message: 'Clarify the domain vocabulary and acceptance criteria before implementing checkout.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'session-rex',
     });
@@ -379,6 +382,7 @@ test('a corrupted activation ledger fails closed instead of starting a duplicate
     const started = runAutoGate({
       rootDir,
       message: '澄清结账流程的验收条件和领域词汇。',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'session-corrupt',
     });
@@ -409,6 +413,7 @@ test('a stale activation projection fails closed against its workflow source of 
     const started = runAutoGate({
       rootDir,
       message: 'Clarify the acceptance criteria before implementation.',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'session-stale-projection',
     });
@@ -444,6 +449,7 @@ test('planned continuation restores the active activation and current command', 
     const first = runAutoGate({
       rootDir,
       message: '澄清结账流程的验收条件和领域词汇。',
+      explicitIntent: 'grill',
       client: 'codex',
       sessionId: 'session-resume',
     });

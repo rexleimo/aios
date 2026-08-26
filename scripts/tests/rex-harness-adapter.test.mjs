@@ -112,6 +112,7 @@ test('AIOS owns an explicit executable Provider binding for every enabled rex Ca
 test('AIOS adapter keeps the selected rex-native Provider by default', () => {
   const result = evaluateAiosSoftwareRequest({
     message: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+    explicitIntent: 'grill',
   });
 
   assert.equal(result.decision.capabilityId, 'software.requirements.clarify');
@@ -172,6 +173,7 @@ test('AIOS adapter enhances the abstract rex specialist with a concrete risk-dom
 test('AIOS adapter advances the rex-owned workflow runtime with rex-native Providers', () => {
   const request = {
     message: 'Clarify acceptance criteria before implementing checkout.',
+    explicitIntent: 'grill',
   };
   const started = startAiosSoftwareWorkflow({
     workflowActivationId: 'workflow-aios-runtime',
@@ -265,7 +267,15 @@ test('default AIOS Provider skills come from the packaged rex-harness sources', 
     const skillPath = path.join(process.cwd(), 'rex-harness', 'skill-sources', providerId, 'SKILL.md');
     const content = await readFile(skillPath, 'utf8');
 
-    assert.match(content, /^description: Use only after rex-harness selects .+ and supplies the current Command\.$/mu);
+    const descriptionLine = content.split('\n').find((line) => line.startsWith('description:'));
+    // rex-requirements 使用双触发 description（LLM 语义自助触发 + rex-harness 激活）；
+    // 其余 rex-* skill 保持"仅 rex-harness 激活"格式。
+    if (providerId === 'rex-requirements') {
+      assert.match(descriptionLine, /Use when a request is vague, underspecified/u);
+      assert.match(descriptionLine, /Also use after rex-harness selects software requirements clarification/u);
+    } else {
+      assert.match(descriptionLine, /^description: Use only after rex-harness selects .+ and supplies the current Command\.$/u);
+    }
     assert.match(content, /AIOS_REX_EVIDENCE/u);
     assert.match(content, /恰好一个.*信封/u);
     assert.match(content, /真实.*引用/u);
@@ -281,6 +291,7 @@ test('default AIOS Provider skills come from the packaged rex-harness sources', 
 test('AIOS ignores legacy compatibility options and remains rex-native', () => {
   const result = evaluateAiosSoftwareRequest({
     message: 'Clarify the domain vocabulary and acceptance criteria before implementation.',
+    explicitIntent: 'grill',
     compatibilityMode: true,
   });
 
