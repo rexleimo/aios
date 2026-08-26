@@ -20,6 +20,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 
 ## 最新文章
 
+- [v5.8.1：Agent 不再卡死——aios-shell 冻结修复与 LLM 语义判断的需求澄清](2026-08-v581-stall-fix-llm-judged-grilling.md)
 - [v5.8.0：AIOS 安全地自我迭代——Session Memory、证据门禁与可回滚晋级](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1：计划驱动的多 Agent 调度 — aios work 读取你的计划](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0：一条命令并行多 Agent 编码 — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)

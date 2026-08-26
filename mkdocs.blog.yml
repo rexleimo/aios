@@ -1,4 +1,4 @@
-﻿site_name: AIOS Blog
+site_name: AIOS Blog
 site_url: https://cli.rexai.top/blog/
 site_description: Practical engineering and growth guides for AI agent workflows, ContextDB memory, reliable harness runs, multi-client operations, and SEO-ready documentation.
 site_author: RexAI
@@ -118,6 +118,8 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v5.8.1 Stall Fix + LLM-Judged Grilling: 2026-08-v581-stall-fix-llm-judged-grilling.md
+      - v5.8.0 Governed Self-Evolution: 2026-08-v580-governed-self-evolution.md
       - v5.6.1 Plan-Driven Multi-Agent Dispatch: 2026-08-v561-aios-work-plan-driven-dispatch.md
       - v5.6.0 Parallel Multi-Agent Coding: 2026-08-v560-aios-work-concurrent-dispatch.md
       - "Graph Engine Locally: AIOS Composes Loop Engineering Into a Verifiable Agent Graph": 2026-08-10-aios-loop-graph-engineering.md

@@ -4,7 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
-## [Unreleased]
+## [5.8.1] - 2026-08-26
+
+### Fixed
+
+- **aios-shell MCP 卡死/空转**：客户端（opencode/codex）在执行 `aios_shell` 长命令期间完全无响应，需要 Esc 中断再发"继续"才恢复。根因是 MCP server 与 stdio proxy 主循环**串行处理** JSON-RPC——一条长命令阻塞全部后续请求（包括 Esc 触发的 `notifications/cancelled`），客户端取消不了命令也收不到任何响应。现在：
+  - `shell-mcp-server.mjs` 主循环并发处理：长命令执行期间 ping / cancelled / 其它请求仍即时响应；
+  - `stdio-proxy.mjs` 主循环并发转发（代理层同样不再被上游长命令阻塞）；
+  - 支持 `notifications/cancelled`：客户端中断时按 requestId 立即终止命令，不再等到超时；
+  - Windows 下用 `taskkill /T /F` 杀整个进程树，避免 cmd.exe 退出但 node/npm/git 子进程残留；
+  - stdin 关闭时清理所有在途命令，杜绝孤儿进程。
+- **保留 aios-shell 代理链路与观测数据面**：aios-shell 仍经 `aios-mcp-proxy.mjs` 提供 `_meta.aios` 观测元数据与本地 ref 存储（RTK/Caveman 为客户端侧唯一输出压缩，不与之冲突），修复只落在并发处理与取消转发，不改变配置生成。`SHELL_TOOL.description` 已移除过时的 "compression via AIOS MCP proxy" 承诺（代理不压缩工具输出，原样转发）。
+- **MCP server 启动超时兜底**：Codex `config.toml` 生成的 browser/auth/shell server 段均带 `startup_timeout_sec`（60/30/30）；OpenCode 全局 `opencode.json` 迁移时若缺失则注入 `experimental.mcp_timeout: 90000`，作为并发修复之外的防御性兜底，避免 MCP server 启动挂起时客户端无限等待。
+- **rex-harness 需求澄清触发改为 LLM 语义判断（去掉正则）**：旧实现用正则从请求措辞推断"需求模糊"（`MISSING_REQUIREMENTS_PATTERN` / `VAGUE_BEHAVIOR_PATTERN` / `VAGUE_GOAL_PATTERN`），只能命中显式措辞，语义层模糊（点名具体功能但缺验收标准/范围/成功标准）永远不触发。现在：
+  - `derive-facts.mjs` 删除全部模糊正则与 `hasMissingRequirementsSignal()`，不再生产 `ACCEPTANCE_CRITERIA_MISSING`；
+  - `requirementsCapability.activate()` 仅由 `grill`/`spec` explicit intent 或领域词汇歧义 observation 触发——模糊与否由 LLM 语义判断并归类为 intent；
+  - `rex-requirements` SKILL.md 重写为**执行期内嵌问询**：grill 是制作过程中遇到决策点才停下来问的交互（一次一题、带假设、3 轮收敛），不是流水线开头的前置审问会；description 双触发（LLM 自助判断模糊信号 / rex-harness 激活）；
+  - 阶段边界插入天然支持：`advanceSoftwareWorkflow` 在每个 Capability 完成后重新选择，delivery 中途遇到决策点可在下个阶段边界插入 requirements 澄清，澄清完成后继续原 Capability。
+
+### Changed
+
+- `serializeTomlServer`（`scripts/lib/components/browser/mcp-toml.mjs`）支持 `startup_timeout_sec` 字段；`buildAiosMcpProxyServer` / `buildAiosShellMcpServer` 支持透传 `startupTimeoutSec`。
+- `rex-code-review` skill 新增**场景化子代理验收模式（Acceptance）**：验收子代理无上下文污染、独立执行正常/边界/异常场景矩阵并回收证据；`references/acceptance-scenario-matrix.md` 提供场景矩阵与 prompt 模板。
 
 ## [5.8.0] - 2026-08-22
 

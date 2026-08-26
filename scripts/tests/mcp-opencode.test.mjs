@@ -40,6 +40,41 @@ test('migrateOneMcpOpencodeJson writes opencode local-shape entries under the mc
   assert.ok(Array.isArray(shell.command), 'shell command is an array');
 });
 
+test('migrateOneMcpOpencodeJson keeps aios-shell proxy chain and injects mcp_timeout', async () => {
+  const rootDir = process.cwd();
+  const dir = await makeTemp();
+  const filePath = path.join(dir, 'opencode.json');
+
+  const result = migrateOneMcpOpencodeJson(filePath, rootDir);
+  assert.equal(result.status, 'created');
+  const parsed = JSON.parse(result.nextRaw);
+
+  // 代理链路保留：shell 命令含 aios-mcp-proxy.mjs + shell-mcp-server.mjs 上游
+  const shellCommand = parsed.mcp[SHELL_ALIAS].command.join(' ');
+  assert.ok(shellCommand.includes('aios-mcp-proxy.mjs'), 'proxy chain retained');
+  assert.ok(shellCommand.includes('shell-mcp-server.mjs'), 'upstream shell server retained');
+  // 代理 env 保留（压缩/观测依赖这些变量）
+  const shellEnv = parsed.mcp[SHELL_ALIAS].environment || {};
+  assert.equal(shellEnv.AIOS_MCP_PROXY, '1', 'proxy env var retained');
+  assert.equal(shellEnv.AIOS_MCP_UPSTREAM_HOST, 'aios-shell', 'proxy host env retained');
+
+  // 全局 opencode.json 注入 experimental.mcp_timeout 兜底，避免工具挂起时无限等待
+  assert.ok(parsed.experimental, 'experimental namespace injected');
+  assert.equal(parsed.experimental.mcp_timeout, 90_000, 'mcp_timeout default injected');
+
+  // 用户已有的 mcp_timeout 不被覆盖
+  const dir2 = await makeTemp();
+  const filePath2 = path.join(dir2, 'opencode.json');
+  await writeFile(filePath2, JSON.stringify({
+    experimental: { mcp_timeout: 42_000 },
+    mcp: {},
+  }, null, 2), 'utf8');
+  const kept = migrateOneMcpOpencodeJson(filePath2, rootDir);
+  assert.equal(kept.status, 'updated');
+  const keptParsed = JSON.parse(kept.nextRaw);
+  assert.equal(keptParsed.experimental.mcp_timeout, 42_000, 'existing mcp_timeout preserved');
+});
+
 test('migrateOneMcpOpencodeJson preserves unrelated keys and is idempotent', async () => {
   const rootDir = process.cwd();
   const dir = await makeTemp();

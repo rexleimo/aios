@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.8.1: No More Frozen Agents — aios-shell Stall Fix and LLM-Judged Requirements Clarification](2026-08-v581-stall-fix-llm-judged-grilling.md)
 - [v5.8.0: AIOS Learns Safely — Session Memory, Evidence Gates, and Governed Self-Evolution](2026-08-v580-governed-self-evolution.md)
 - [v5.6.1: Plan-Driven Multi-Agent Dispatch — aios work Reads Your Plan](2026-08-v561-aios-work-plan-driven-dispatch.md)
 - [v5.6.0: Parallel Multi-Agent Coding with One Command — aios work](2026-08-v560-aios-work-concurrent-dispatch.md)

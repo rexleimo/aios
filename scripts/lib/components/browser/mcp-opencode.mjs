@@ -54,6 +54,16 @@ export function migrateOneMcpOpencodeJson(filePath, rootDir) {
     parsed.mcp = {};
   }
 
+  /* 中文注释：注入全局 MCP 工具调用超时（若缺失），避免工具挂起时客户端无限等待。
+     项目根 opencode.json 的 buildOpenCodeConfig 已带 mcp_timeout；
+     这里保证 home 作用域的全局 opencode.json 也有同样兜底。 */
+  if (!isObjectRecord(parsed.experimental)) {
+    parsed.experimental = {};
+  }
+  if (typeof parsed.experimental.mcp_timeout !== 'number' || parsed.experimental.mcp_timeout <= 0) {
+    parsed.experimental.mcp_timeout = 90_000;
+  }
+
   const mcp = parsed.mcp;
   const existingBrowser = findFirstBrowserServerEntry(mcp);
   removeLegacyBrowserServerEntries(mcp);

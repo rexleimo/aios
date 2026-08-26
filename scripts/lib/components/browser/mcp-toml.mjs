@@ -22,6 +22,10 @@ function serializeTomlServer(alias, server) {
   lines.push(`command = "${escapeTomlString(server.command)}"`);
   const args = Array.isArray(server.args) ? server.args : [];
   lines.push(`args = [${args.map((arg) => `"${escapeTomlString(arg)}"`).join(', ')}]`);
+  const timeout = Number(server.startupTimeoutSec ?? 0);
+  if (Number.isFinite(timeout) && timeout > 0) {
+    lines.push(`startup_timeout_sec = ${timeout}`);
+  }
   const env = server.env && typeof server.env === 'object' && !Array.isArray(server.env) ? server.env : {};
   const envEntries = Object.entries(env);
   if (envEntries.length > 0) {

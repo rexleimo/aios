@@ -43,6 +43,8 @@
 
 ## Blog
 - https://cli.rexai.top/blog/
+- https://cli.rexai.top/blog/2026-08-v581-stall-fix-llm-judged-grilling/ — aios-shell stall fix + LLM-judged requirements grilling
+- https://cli.rexai.top/blog/2026-08-v580-governed-self-evolution/ — governed self-evolution release
 - https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Graph Engine Locally: AIOS composes Loop Engineering into a verifiable agent graph
 - https://cli.rexai.top/blog/2026-08-v551-agent-lifecycle-promotion/
 - https://cli.rexai.top/blog/2026-08-v544-agent-smoke-reliability/

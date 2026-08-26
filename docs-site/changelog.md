@@ -7,6 +7,22 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v5.8.1 (2026-08-26) — LLM-Judged Requirements Clarification and aios-shell Stall Fix
+
+### What changed
+
+- **aios-shell MCP no longer freezes on long commands**: the shell server and stdio proxy now process JSON-RPC concurrently — ping, cancel, and other requests stay responsive while a command runs. `notifications/cancelled` terminates the in-flight command by requestId instead of waiting for timeout, `taskkill /T /F` reaps the whole process tree on Windows, and stdin close cleans up all pending commands.
+- **The aios-shell proxy chain is preserved**: `aios-mcp-proxy.mjs` still supplies `_meta.aios` observation metadata and local ref storage; RTK/Caveman remain the only client-side output compression. The stale "compression via AIOS MCP proxy" claim in `SHELL_TOOL.description` was removed (the proxy forwards output unchanged).
+- **MCP server startup timeouts as a safety net**: generated Codex `config.toml` servers carry `startup_timeout_sec` (60/30/30); OpenCode `opencode.json` migration injects `experimental.mcp_timeout: 90000` when missing.
+- **Requirements clarification is now triggered by LLM semantic judgment instead of regex**: the old regex patterns (`MISSING_REQUIREMENTS_PATTERN` / `VAGUE_BEHAVIOR_PATTERN` / `VAGUE_GOAL_PATTERN`) only caught explicit wording and missed semantic ambiguity — a concrete feature name with no acceptance criteria, scope, or success definition. Now `derive-facts.mjs` no longer produces `ACCEPTANCE_CRITERIA_MISSING` from wording; `requirementsCapability.activate()` fires only on `grill`/`spec` explicit intent or a domain-vocabulary observation. The `rex-requirements` skill was rewritten as **embedded in-execution grilling**: ask one decision question at a time with a recommended answer, converge in three rounds, and only when you hit a real decision point — not as a front-loaded interrogation gate. Its description is dual-trigger: the LLM may self-trigger on vague/underspecified requests, or rex-harness may activate it.
+- **Stage-boundary insertion**: `advanceSoftwareWorkflow` re-selects after every completed Capability, so requirements clarification can be inserted at the next stage boundary mid-delivery and the original Capability resumes afterwards.
+
+### Upgrade notes
+
+- Update with `aios update`. No config migration needed.
+- After updating, restart opencode/codex clients so the new shell server and proxy take effect.
+- `rex-code-review` gained a **scenario-based subagent acceptance mode** (normal/boundary/abnormal scenario matrix with evidence collection); see `references/acceptance-scenario-matrix.md`.
+
 ## v5.8.0 (2026-08-22) — Governed Self-Evolution and Memo Trigger Closure
 
 ### What changed

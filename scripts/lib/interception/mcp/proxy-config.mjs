@@ -12,7 +12,7 @@ export function isAiosMcpProxyEntry(entry, rootDir = '') {
 }
 
 /* 中文注释：把原 upstream 包一层 stdio proxy；alias 不变，客户端无感接入 interception 数据面。 */
-export function buildAiosMcpProxyServer({ rootDir, upstream, host = 'generic-mcp', workspaceRoot = rootDir } = {}) {
+export function buildAiosMcpProxyServer({ rootDir, upstream, host = 'generic-mcp', workspaceRoot = rootDir, startupTimeoutSec } = {}) {
   if (!rootDir) throw new Error('rootDir is required for AIOS MCP proxy config');
   if (!upstream || typeof upstream !== 'object') throw new Error('upstream MCP server entry is required');
   const upstreamCommand = String(upstream.command || '').trim();
@@ -20,7 +20,7 @@ export function buildAiosMcpProxyServer({ rootDir, upstream, host = 'generic-mcp
   const upstreamArgs = Array.isArray(upstream.args) ? upstream.args.map(String) : [];
   const upstreamEnv = upstream && typeof upstream.env === 'object' && !Array.isArray(upstream.env) ? upstream.env : {};
 
-  return {
+  const server = {
     type: 'stdio',
     command: process.execPath,
     args: [
@@ -40,8 +40,14 @@ export function buildAiosMcpProxyServer({ rootDir, upstream, host = 'generic-mcp
       AIOS_MCP_UPSTREAM_HOST: host,
     },
   };
+  if (Number.isFinite(Number(startupTimeoutSec)) && Number(startupTimeoutSec) > 0) {
+    server.startupTimeoutSec = Number(startupTimeoutSec);
+  }
+  return server;
 }
 
+/* 中文注释：aios-shell 仍走 interception proxy（输出压缩/观测在代理层做）。
+   卡死问题由 stdio-proxy 的并发主循环 + cancelled 通知转发修复，而不是去掉代理。 */
 export function buildAiosShellMcpServer({ rootDir, workspaceRoot = rootDir } = {}) {
   if (!rootDir) throw new Error('rootDir is required for AIOS shell MCP server config');
   return {
@@ -57,6 +63,7 @@ export function buildAiosShellMcpServer({ rootDir, workspaceRoot = rootDir } = {
       process.execPath,
       path.join(rootDir, 'scripts', 'shell-mcp-server.mjs'),
     ],
+    startupTimeoutSec: 30,
     env: {
       AIOS_INTERCEPTION_METRICS: '1',
       AIOS_MCP_PROXY: '1',

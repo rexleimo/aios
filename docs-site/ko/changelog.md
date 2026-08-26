@@ -5,6 +5,22 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.8.1（2026-08-26）——LLM 의미 판단 기반 요구사항 명확화와 aios-shell 멈춤 수정
+
+### 변경 내용
+
+- **aios-shell MCP가 긴 명령에서 더 이상 멈추지 않습니다**：shell server와 stdio proxy가 JSON-RPC를 동시 처리하여 명령 실행 중에도 ping·취소·기타 요청에 즉시 응답합니다. `notifications/cancelled`는 requestId 단위로 실행 중인 명령을 타임아웃 대기가 아닌 즉시 종료하고, Windows에서는 `taskkill /T /F`로 프로세스 트리 전체를 정리하며, stdin 닫힘 시 모든 진행 중 명령을 정리합니다.
+- **aios-shell 프록시 체인 유지**：`aios-mcp-proxy.mjs`가 `_meta.aios` 관측 메타데이터와 로컬 ref 저장소를 계속 제공합니다（RTK/Caveman은 계속 클라이언트 측 유일한 출력 압축입니다）. `SHELL_TOOL.description`의 낡은 "compression via AIOS MCP proxy" 설명은 제거했습니다（프록시는 출력을 그대로 전달하며 압축하지 않습니다）.
+- **MCP server 시작 타임아웃 안전망**：생성되는 Codex `config.toml` server 섹션에 `startup_timeout_sec`（60/30/30）을 부여하고, OpenCode `opencode.json` 마이그레이션 시 누락되면 `experimental.mcp_timeout: 90000`을 주입합니다.
+- **요구사항 명확화 트리거를 정규식에서 LLM 의미 판단으로 변경**：기존 정규식（`MISSING_REQUIREMENTS_PATTERN` / `VAGUE_BEHAVIOR_PATTERN` / `VAGUE_GOAL_PATTERN`）은 명시적 표현만 감지했고, 구체적인 기능 이름은 있지만 수용 기준·범위·성공 정의가 없는 '의미 수준의 모호함'은 잡지 못했습니다. 이제 `derive-facts.mjs`는 문구에서 `ACCEPTANCE_CRITERIA_MISSING`을 생성하지 않으며, `requirementsCapability.activate()`는 `grill`/`spec` 명시 인텐트 또는 도메인 용어 모호성 observation으로만 발화합니다. `rex-requirements` 스킬은 **실행 중에 내장된 질문(grilling)**으로 다시 작성했습니다：한 번에 한 질문·추천 답변 포함·3라운드 수렴, 진짜 결정 지점에서만 질문합니다——시작의 심문 게이트가 아닙니다. description은 이중 트리거（LLM이 모호한 요청을 자체 판단으로 트리거하거나 rex-harness가 활성화）입니다.
+- **단계 경계 삽입**：`advanceSoftwareWorkflow`가 각 Capability 완료 후 다시 선택하므로, 실행 중간에 결정 지점을 만나도 다음 단계 경계에서 요구사항 명확화를 삽입하고, 명확화 완료 후 원래 Capability를 재개합니다.
+
+### 업그레이드 안내
+
+- `aios update`로 업데이트하세요. 설정 마이그레이션은 필요 없습니다.
+- 업데이트 후 opencode/codex 클라이언트를 재시작하여 새 shell server와 프록시를 반영하세요.
+- `rex-code-review`에 **시나리오 기반 서브에이전트 수용 모드**（정상/경계/비정상 시나리오 매트릭스 + 증거 수집）를 추가했습니다. `references/acceptance-scenario-matrix.md`를 참조하세요.
+
 ## v5.8.0（2026-08-22）——거버넌스 기반 자기 진화와 Memo 트리거 수정
 
 ### 변경 내용

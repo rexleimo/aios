@@ -38,12 +38,16 @@ export async function runJsonRpcStdioProxy({ command, args = [], cwd = process.c
   });
 
   const handler = createJsonRpcProxyHandler({ forward, workspaceRoot, sessionId, host, metrics });
-  /* 中文注释：逐行处理 stdin 是 MCP stdio 协议的基本单元；每一行 JSON 都独立解析、转发、压缩、写回。 */
+  /* 中文注释：并发处理 stdin 的每条 JSON-RPC 消息，不 await 串行。
+     长命令执行期间（上游 tools/call 等待中），ping / notifications/cancelled / 其它
+     请求仍能即时转发到上游，避免客户端在工具调用期间完全无响应（空转卡死）。
+     通知类消息（无 id）由 handler 内部 fire-and-forget 转发，天然不受长命令阻塞。 */
   const inputLines = createInterface({ input: stdin });
   for await (const line of inputLines) {
     if (!line.trim()) continue;
-    const response = await handleJsonRpcProxyLine(line, handler);
-    if (response) stdout.write(`${JSON.stringify(response)}\n`);
+    Promise.resolve(handleJsonRpcProxyLine(line, handler)).then((response) => {
+      if (response) stdout.write(`${JSON.stringify(response)}\n`);
+    });
   }
 
   child.stdin.end();

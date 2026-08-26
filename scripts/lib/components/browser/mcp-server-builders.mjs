@@ -22,6 +22,7 @@ export function buildLocalBrowserMcpServer(rootDir, existingAlias = {}, runtime 
     command: runtime.nodeCommand || 'node',
     args: [resolveLocalBrowserMcpScript(rootDir)],
     cwd: rootDir,
+    startupTimeoutSec: 60,
     env: nextEnv,
   };
 }
@@ -54,6 +55,7 @@ export function buildAuthToolsMcpServer(rootDir, existingEntry = {}) {
     type: 'stdio',
     command: resolvePythonCommand(),
     args: ['-u', authScript],
+    startupTimeoutSec: 30,
     env: nextEnv,
   };
 }
@@ -70,5 +72,6 @@ export function buildShellMcpServer(rootDir) {
     },
     host: SHELL_ALIAS,
     workspaceRoot: rootDir,
+    startupTimeoutSec: 30,
   });
 }

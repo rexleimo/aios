@@ -55,6 +55,8 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - https://cli.rexai.top/windows-ai-coding-agent-setup/ — Windows AI coding agent setup in 10 minutes
 
 ## Blog
+- https://cli.rexai.top/blog/2026-08-v581-stall-fix-llm-judged-grilling/ — aios-shell stall fix + LLM-judged requirements grilling
+- https://cli.rexai.top/blog/2026-08-v580-governed-self-evolution/ — governed self-evolution release
 - https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Graph Engine Locally: AIOS composes Loop Engineering into a verifiable agent graph
 - https://cli.rexai.top/blog/2026-08-v551-agent-lifecycle-promotion/ — evidence-driven agent promotion
 - https://cli.rexai.top/blog/2026-08-v550-ask-first-requirements-alignment/ — Ask-First requirements alignment

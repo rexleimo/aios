@@ -5,6 +5,22 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.8.1（2026-08-26）——LLM 语义判断的需求澄清与 aios-shell 卡死修复
+
+### 主要变更
+
+- **aios-shell MCP 长命令不再卡死**：shell server 与 stdio proxy 现在并发处理 JSON-RPC——命令执行期间 ping、取消和其它请求仍即时响应。`notifications/cancelled` 按 requestId 立即终止在途命令而不是等超时；Windows 下用 `taskkill /T /F` 清理整棵进程树；stdin 关闭时清理所有在途命令。
+- **保留 aios-shell 代理链路**：`aios-mcp-proxy.mjs` 仍提供 `_meta.aios` 观测元数据与本地 ref 存储；RTK/Caveman 仍是客户端侧唯一输出压缩。`SHELL_TOOL.description` 中过时的 "compression via AIOS MCP proxy" 承诺已移除（代理原样转发输出，不压缩）。
+- **MCP server 启动超时兜底**：生成的 Codex `config.toml` server 段带 `startup_timeout_sec`（60/30/30）；OpenCode `opencode.json` 迁移时缺失则注入 `experimental.mcp_timeout: 90000`。
+- **需求澄清改为 LLM 语义判断触发（去掉正则）**：旧正则（`MISSING_REQUIREMENTS_PATTERN` / `VAGUE_BEHAVIOR_PATTERN` / `VAGUE_GOAL_PATTERN`）只能命中显式措辞，识别不了语义层模糊——点名具体功能但缺验收标准、范围或成功标准。现在 `derive-facts.mjs` 不再从措辞生产 `ACCEPTANCE_CRITERIA_MISSING`；`requirementsCapability.activate()` 仅由 `grill`/`spec` intent 或领域词汇歧义 observation 触发。`rex-requirements` 技能重写为**执行期内嵌问询**：一次一题、带推荐答案、3 轮收敛，遇到真正决策点才问——不是开头的前置审问会。description 双触发：LLM 可自助判断模糊请求触发，rex-harness 也可激活。
+- **阶段边界插入**：`advanceSoftwareWorkflow` 在每个 Capability 完成后重新选择，delivery 中途遇到决策点可在下个阶段边界插入需求澄清，澄清完成后继续原 Capability。
+
+### 升级说明
+
+- 使用 `aios update` 更新，无需配置迁移。
+- 更新后重启 opencode/codex 客户端，让新的 shell server 与代理生效。
+- `rex-code-review` 新增**场景化子代理验收模式**（正常/边界/异常场景矩阵 + 证据回收）；见 `references/acceptance-scenario-matrix.md`。
+
 ## v5.8.0（2026-08-22）——受治理的自我迭代与 Memo 触发链修复
 
 ### 主要变更
