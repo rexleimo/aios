@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+
+- **计划任务状态回写不再越级（Harness/CTX/Rex 控制面）**：`syncPlanWithIterationOutcome` 过去在每轮同步时用 `findWritableTask()` 重新挑任务，而不是绑定 provider 明确返回的任务 ID；只要外层 `solo-runtime/loop.mjs` 与内部 `subagent/phase finalize` 两条路径对同一个成功 turn 各触发一次同步，第二次就会把**尚未执行的下一个 pending 任务**直接标成 `done`。现在：
+  - 完成状态只认显式 ID——新增 `taskId` 入参，并接受 outcome 里的 `outcome.taskId`（`normalizeSoloIterationOutcome` 已保留该字段），`loop.mjs` 在 turn 开始拿到 `markPlanTaskInProgress()` 返回的任务 ID 后原样回传；
+  - 没有显式 taskId 时**只落证据、不标 done**，绝不猜一个待办任务去完成；
+  - 写 `done` 前做证据校验：outcome 必须带 evidence/keyChanges/summary，且任务声明的 `targets` 必须在 `git diff --name-only` 里有实际改动，否则保持 open 并打印原因；
+  - hard fail 分支同理，只标显式任务或当前 `in_progress` 任务为 `blocked`；
+  - `attachPlanVerificationEvidence` 质量门通过时只结算当前 `in_progress` 任务，不再 fallback 到 pending。
+  - **进一步收敛（回归修复）**：`syncPlanWithIterationOutcome` 内部**不再调用 `markPlanTaskInProgress`**。`subagent-runtime/phase-plan-sync.mjs` 以无 `taskId` 的 `success` outcome 调用 sync 时，旧实现仍会把下一个 pending 任务强制置为 `in_progress`——虽不标 `done`，但错误推进了计划状态（越级的 in_progress 形态）。现在 sync 只记录证据 + 处理显式 `taskId`，`in_progress` 状态完全由 harness loop 持有；死代码 `hasCommitEvidence` 一并移除，`hasTargetFileChanges` 修正绝对/相对路径匹配。
+
+### Added
+
+- **WorkBuddy 作为受支持的 AIOS agent**：新增 `workbuddy` 客户端注册，native 同步可为其生成项目级 AIOS 工作流指令与 skills 目录。
+  - 客户端定义：`projectSkillRoot=.workbuddy/skills`、`nativeMetadataRoot=.workbuddy`、指令文件 `AGENTS.md`、runtime id `workbuddy-agent`；MCP 落点 `~/.workbuddy/mcp.json`（`mcpServers`），home 目录支持 `WORKBUDDY_HOME` 覆盖；
+  - **可作为 solo-harness provider 被驱动**：WorkBuddy 应用内自带 CLI
+    `/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin/codebuddy`（别名 `cbc`，
+    v2.115.0），支持 `-p/--print` 非交互、`--output-format json`、`--model`、`--worktree`、`--acp`
+    与 `-y/--dangerously-skip-permissions`。据此把 `commandName` 定为 `codebuddy`
+    （此前误填 `workbuddy`——真实二进制不叫这个名字，会让 shim 与 readiness 检查整条链断掉），
+    并登记 `modelArgFlag=--model`、`unattendedArgs=['--dangerously-skip-permissions']`，
+    在 `ctx-agent-core` 的 one-shot / interactive 注册表补上 `workbuddy-agent` handler。
+    实测 `codebuddy -p "<prompt>" --dangerously-skip-permissions` → exitCode 0 / stdout `OK`；
+    `aios harness run --provider workbuddy --dry-run` → `Provider CLI (workbuddy): found on PATH`。
+    该二进制默认**不在 PATH**，需自行加入：
+    `export PATH="/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin:$PATH"`
+  - 能力声明 `skills` + `native` + `harness`；不声明 `team`/`agents`：该 CLI 的
+    subagent/groupchat 路由尚未验证，不做承诺；
+  - 新增 emitter `scripts/lib/native/emitters/workbuddy.mjs`，并把 AGENTS.md 共写方收敛为单一常量 `AGENTS_MD_COWRITERS`（codex → opencode → grok → hermes → workbuddy），同批次只由优先级最高的客户端写入，杜绝互相覆盖；
+  - `detectHookClient` 支持 `WORKBUDDY_HOME`；codemap 的 AGENTS.md 目标客户端加入 workbuddy。
+  - **MCP 全链路接入**：注册 `~/.workbuddy/mcp.json` 后，遍历 registry 的写入面自动覆盖——browser / shell / auth MCP 迁移与代理注入（走 `collectClientMcpTargets`）、interception proxy 巡检；codemap（CRG）走的是硬编码目标表 `CODEMAP_MCP_TARGETS`，已单独补入 workbuddy 条目，`internal codemap install --client workbuddy` 实测可规划注入 `/Users/rex/.workbuddy/mcp.json`。
+  - interception 能力矩阵同步：`CLIENT_ORDER` 与 `config/host-capabilities.json` 均加入 workbuddy（L2：`mcpProxy` + `compactPacket`，限制为无 CLI、无 shell 拦截）。两处必须一起改，否则 `capability_matrix`（只取 `CLIENT_ORDER`）与 `turn_compression_matrix`（`CLIENT_ORDER ∪ ALL_CLIENTS`）长度不一致。
+  - **skills 全量覆盖**：`skill-sources/*/SKILL.md` 的 frontmatter `clients` / `repoTargets` 与 `config/skills-sync-manifest.json` 的 `generatedRoots` 是三处独立白名单，漏掉任何一处 skills 都装不上（表现是 `no catalog skills matched` / `No generated target root configured for surface`）。三处均已加入 workbuddy，`sync-skills.mjs` 实测 `workbuddy -> installed=24`。
+  - `.gitignore` 增加 `.workbuddy/skills/`（与其它客户端的 skill 投影一致，属可再生产物）。
+
 ## [5.8.1] - 2026-08-26
 
 ### Fixed

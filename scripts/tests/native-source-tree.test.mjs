@@ -38,7 +38,7 @@ test('native manifest resolves deep and compatibility tiers by client', async ()
   });
 
   const manifest = loadNativeSyncManifest(rootDir);
-  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
+  assert.deepEqual(resolveNativeClients('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
   assert.equal(manifest.clients.codex.tier, 'deep');
   assert.equal(manifest.clients.claude.tier, 'deep');
   assert.equal(manifest.clients.gemini.tier, 'compatibility');

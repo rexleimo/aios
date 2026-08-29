@@ -94,6 +94,28 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--always-approve']),
   }),
+  // WorkBuddy — desktop AI agent that ALSO ships a real CLI inside the app bundle:
+  //   /Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin/codebuddy
+  // (aliased as `cbc`). It supports non-interactive one-shot (`-p` / --print),
+  // JSON output, `--model`, `--worktree`, `--acp` stdio, and `-y`/--dangerously-skip-permissions,
+  // so it can be driven as a solo-harness provider exactly like codex/claude.
+  // The binary is NOT on PATH by default — add the app's cli/bin dir to PATH.
+  // Skills: user-level ~/.workbuddy/skills + project-level .workbuddy/skills (markdown-directory).
+  // MCP: JSON ~/.workbuddy/mcp.json with mcpServers namespace.
+  // Native instruction: AGENTS.md (project root, auto-loaded as project guidance).
+  // No `team`/`agents` capability: subagent/groupchat routing is unverified for this CLI.
+  workbuddy: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'harness']),
+    commandName: 'codebuddy',
+    runtimeClientId: 'workbuddy-agent',
+    projectSkillRoot: '.workbuddy/skills',
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.workbuddy',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '--model',
+    unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -165,6 +187,15 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     scopes: Object.freeze([
       Object.freeze({ scope: 'home', file: 'config.toml', createIfMissing: true }),
       Object.freeze({ scope: 'project', file: '.grok/config.toml' }),
+    ]),
+  }),
+  // WorkBuddy MCP — JSON stdio format, mcpServers namespace, single home scope.
+  // Home: ~/.workbuddy/mcp.json (clientHome already resolves to ~/.workbuddy).
+  workbuddy: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'mcp.json', createIfMissing: true }),
     ]),
   }),
 });

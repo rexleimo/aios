@@ -3,13 +3,13 @@ name: aios-long-running-harness
 description: AIOS-native long-running agent harness with rex Command execution, ContextDB, checkpoint recovery, and evidence capture. Use for a planned resumable objective when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
 
 installCatalogName: aios-long-running-harness
-clients: [codex, claude, hermes]
+clients: [codex, claude, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, harness]
-repoTargets: [codex, claude, gemini, opencode, hermes, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy]
 ---
 
 # AIOS Long-Running Harness

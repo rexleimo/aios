@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -73,7 +73,7 @@ test('client registry validation returns normalized values for reuse', () => {
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
   assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -84,10 +84,12 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.opencode/skills',
     '.hermes/skills',
     '.grok/skills',
+    '.workbuddy/skills',
     '.agents/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
   assert.deepEqual(resolveClientSkillRoots('grok'), ['.grok/skills', '.agents/skills']);
+  assert.deepEqual(resolveClientSkillRoots('workbuddy'), ['.workbuddy/skills', '.agents/skills']);
 });
 
 test('native sync manifest declares generated agent outputs for every agent-capable client', async () => {
@@ -108,8 +110,8 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
@@ -117,6 +119,7 @@ test('client registry exposes runtime command and client identifiers', () => {
     'opencode-cli': 'opencode',
     'hermes-agent': 'hermes',
     'grok-build': 'grok',
+    'workbuddy-agent': 'workbuddy',
   });
 });
 
@@ -160,6 +163,7 @@ test('client registry exposes native instruction filenames per client', () => {
   assert.equal(getClientInstructionFileName('gemini'), 'GEMINI.md');
   assert.equal(getClientInstructionFileName('opencode'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('grok'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('workbuddy'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
 });
 
@@ -210,6 +214,13 @@ test('client registry exposes per-client MCP target conventions (single source o
     { scope: 'home', file: 'config.toml', createIfMissing: true },
     { scope: 'project', file: '.grok/config.toml' },
   ]);
+
+  const workbuddyTarget = getClientMcpTarget('workbuddy');
+  assert.equal(workbuddyTarget.format, 'json');
+  assert.equal(workbuddyTarget.namespace, 'mcpServers');
+  assert.deepEqual(workbuddyTarget.scopes, [
+    { scope: 'home', file: 'mcp.json', createIfMissing: true },
+  ]);
 });
 
 test('resolveClientMcpTargetPath honors home vs project scope', () => {
@@ -230,6 +241,11 @@ test('resolveClientMcpTargetPath honors home vs project scope', () => {
   assert.equal(
     slash(resolveClientMcpTargetPath('grok', { projectRoot: '/proj' })),
     '/proj/.grok/config.toml',
+  );
+  // workbuddy is home-only: ~/.workbuddy/mcp.json, no project-scope MCP file
+  assert.equal(
+    slash(resolveClientMcpTargetPath('workbuddy', { projectRoot: '/proj', clientHome: '/home/.workbuddy' })),
+    '/home/.workbuddy/mcp.json',
   );
   // project-scoped clients resolve under the project root
   assert.equal(

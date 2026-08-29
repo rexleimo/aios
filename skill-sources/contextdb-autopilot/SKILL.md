@@ -3,13 +3,13 @@ name: contextdb-autopilot
 description: "Automatic ContextDB session lifecycle — init, session events, checkpoints, and continuity artifacts. Use when you need AIOS context persistence without prompt injection. NOT for general task execution — only for ContextDB session management. TRIGGER: contextdb、session persist、checkpoint save."
 
 installCatalogName: contextdb-autopilot
-clients: [codex, claude, hermes]
+clients: [codex, claude, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, contextdb]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 # ContextDB Autopilot

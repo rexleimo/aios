@@ -145,6 +145,8 @@ undefined/
 .grok/
 .claude/
 .skillopt/
+# WorkBuddy: only the generated skill projection is disposable; .workbuddy/memory is kept
+.workbuddy/skills/
 # Windows drive-letter path join artifacts (installer temp dirs written relative to cwd)
 C:/
 

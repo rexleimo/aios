@@ -120,6 +120,25 @@
         "uncontrolledHostOutput": "policy-violation"
       }
     },
+    "workbuddy": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy",
+        "compactPacket"
+      ],
+      "limits": [
+        "No standalone CLI binary: AIOS cannot wrap the host shell or spawn WorkBuddy as a subprocess.",
+        "Shell interception and harness/team routes are unavailable; orchestration runs inside the agent session."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
     "cursor": {
       "targetLevel": "L1",
       "capabilities": [

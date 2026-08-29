@@ -22,25 +22,25 @@ export function getInternalHelpText(target, action) {
 
   if (target === 'skills' && (action === 'install' || action === 'update')) {
     return `Usage:
-  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
+  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
 `;
   }
 
   if (target === 'skills' && (action === 'uninstall' || action === 'doctor')) {
     return `Usage:
-  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok>] [--scope <global|project>] [--skills <list>]
+  node scripts/aios.mjs internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--scope <global|project>] [--skills <list>]
 `;
   }
 
   if (target === 'native' && (action === 'install' || action === 'update' || action === 'uninstall')) {
     return `Usage:
-  node scripts/aios.mjs internal native ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok>]
+  node scripts/aios.mjs internal native ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>]
 `;
   }
 
   if (target === 'native' && action === 'doctor') {
     return `Usage:
-  node scripts/aios.mjs internal native doctor [--client <all|codex|claude|gemini|opencode|hermes|grok>] [--verbose] [--fix] [--dry-run]
+  node scripts/aios.mjs internal native doctor [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--verbose] [--fix] [--dry-run]
 `;
   }
 

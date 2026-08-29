@@ -3,13 +3,13 @@ name: model-router
 description: "当需要调度不同模型执行子任务时使用。根据任务类型匹配模型能力，自动选择最优模型并生成调用指令。TRIGGER: 模型调度、model dispatch、选模型、分派任务、多模型协作、路由到模型"
 
 installCatalogName: model-router
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, model-router, orchestration, dispatch, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 # Model Router

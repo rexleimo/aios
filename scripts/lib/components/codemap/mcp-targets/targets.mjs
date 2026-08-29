@@ -54,6 +54,15 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
       return grokHome ? path.join(grokHome, 'config.toml') : '';
     },
   }),
+  Object.freeze({
+    clientKey: 'workbuddy',
+    format: 'mcp-json',
+    createIfMissing: true,
+    resolvePath: (_projectRoot, clientHomes) => {
+      const workbuddyHome = resolveUserPath(clientHomes.workbuddy);
+      return workbuddyHome ? path.join(workbuddyHome, 'mcp.json') : '';
+    },
+  }),
 ]);
 
 export function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {

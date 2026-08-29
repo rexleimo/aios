@@ -62,6 +62,14 @@
         ".grok/skills",
         ".grok/hooks/aios-workflow.json"
       ]
+    },
+    "workbuddy": {
+      "tier": "compatibility",
+      "metadataRoot": ".workbuddy",
+      "outputs": [
+        "AGENTS.md",
+        ".workbuddy/skills"
+      ]
     }
   }
 }

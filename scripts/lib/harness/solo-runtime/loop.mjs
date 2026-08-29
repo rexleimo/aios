@@ -166,6 +166,7 @@ export async function runSoloHarnessLoop({
       findCanvasMermaid(rootDir, sessionId),
     ]);
     // L3: ensure plan exists and mark next task in progress before the turn
+    let currentPlanTaskId = null;
     try {
       const { ensurePlanForRuntime, markPlanTaskInProgress } = await import('../../planning/plan-runtime.mjs');
       ensurePlanForRuntime({
@@ -174,7 +175,8 @@ export async function runSoloHarnessLoop({
         client: summary.clientId || summary.provider || 'solo-harness',
         source: 'solo-harness',
       });
-      markPlanTaskInProgress(rootDir, { io: console });
+      const inProgressResult = markPlanTaskInProgress(rootDir, { io: console });
+      currentPlanTaskId = inProgressResult?.task?.id || null;
     } catch {
       // plan runtime is best-effort; never block harness
     }
@@ -262,6 +264,7 @@ export async function runSoloHarnessLoop({
         iteration,
         outcome,
         client: summary.clientId || summary.provider || 'solo-harness',
+        taskId: currentPlanTaskId,
         io: console,
       });
       if (planSync?.ok && planSync.progress) {

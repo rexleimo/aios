@@ -2,13 +2,13 @@
 name: aios-work-dispatch
 description: "Decide when a coding agent may use aios work for independent parallel work, preview the dispatch, and require explicit approval before live model execution. TRIGGER: aios work、parallel dispatch、并发派发、independent work items、独立工作项并行、多 agent 派发、multi-agent dispatch"
 installCatalogName: aios-work-dispatch
-clients: [codex, claude, gemini, opencode, hermes, grok]
+clients: [codex, claude, gemini, opencode, hermes, grok, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, workflow, parallel, safety, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents, workbuddy]
 ---
 
 # AIOS Work Dispatch

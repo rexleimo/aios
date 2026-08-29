@@ -7,6 +7,7 @@ export function detectHookClient(payload = {}, env = process.env) {
   if (env.CLAUDE_PROJECT_DIR) return 'claude';
   if (env.CODEX_HOME || env.CODEX_THREAD_ID) return 'codex';
   if (env.GROK_HOME) return 'grok';
+  if (env.WORKBUDDY_HOME) return 'workbuddy';
   return 'claude';
 }
 

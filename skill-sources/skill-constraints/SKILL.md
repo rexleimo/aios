@@ -3,13 +3,13 @@ name: skill-constraints
 description: Enforce browser automation safety constraints — tool usage order, anti-detection rules, screenshot discipline, and human-in-the-loop checks. Use when setting up or verifying browser/MCP tool operations, NOT for every skill execution.
 
 installCatalogName: skill-constraints
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, safety]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 # 浏览器操作约束

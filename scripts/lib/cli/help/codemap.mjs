@@ -13,7 +13,7 @@ Actions:
   status     Show codemap state and graph statistics
 
 Options:
-  --client <all|codex|claude|gemini|opencode|hermes|grok>
+  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
              Target client config(s). Defaults to all.
   --fix      (doctor) auto-fix issues found
   --dry-run  Preview changes without writing
@@ -25,6 +25,7 @@ Client config targets:
   opencode ~/.config/opencode/opencode.json + CRG plugin
   hermes   ~/.hermes/config.yaml (mcp_servers.code-review-graph)
   grok     ~/.grok/config.toml ([mcp_servers.code-review-graph])
+  workbuddy ~/.workbuddy/mcp.json
 
 Restart the selected client after install/doctor --fix so it reloads MCP config.
 

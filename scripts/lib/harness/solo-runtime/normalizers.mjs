@@ -96,6 +96,7 @@ export function normalizeSoloIterationOutcome(input = {}) {
     sessionId,
     iteration,
     outcome,
+    taskId: normalizeText(input.taskId),
     summary: normalizeText(input.summary, 'No summary recorded.'),
     stage: normalizeStage(input.stage),
     evidence: deriveEvidence(input),

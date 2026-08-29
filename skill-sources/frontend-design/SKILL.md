@@ -4,13 +4,13 @@ description: Build production-grade frontend UI with distinctive design. Use AFT
 license: Complete terms in LICENSE.txt
 
 installCatalogName: frontend-design
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, frontend, design, ui, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.

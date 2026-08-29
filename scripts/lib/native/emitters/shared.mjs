@@ -7,6 +7,16 @@ export const AIOS_NATIVE_BEGIN_MARK = '<!-- AIOS NATIVE BEGIN -->';
 export const AIOS_NATIVE_END_MARK = '<!-- AIOS NATIVE END -->';
 export const AIOS_NATIVE_JSON_KEY = 'aiosNative';
 
+// AGENTS.md 是多个客户端共用的指令文件，一次同步只能由一个写入方负责，否则互相覆盖。
+// 顺序即优先级：靠前者已选中时，靠后者不再重复写 AGENTS.md。
+export const AGENTS_MD_COWRITERS = Object.freeze(['codex', 'opencode', 'grok', 'hermes', 'workbuddy']);
+
+// 纯函数：判断同批次里是否已有更高优先级的共写方负责 AGENTS.md。
+export function isAgentsMdClaimedByPeer(selectedClients = [], self = '') {
+  const selected = new Set(Array.isArray(selectedClients) ? selectedClients : []);
+  return AGENTS_MD_COWRITERS.some((client) => client !== self && selected.has(client));
+}
+
 import { normalizeText } from '../../../../src/shared/normalize.mjs';
 
 // 注：normalizeText 由 src/shared/normalize.mjs 提供（trim 语义），原 emitters 内联实现已被替换。

@@ -43,6 +43,10 @@ function buildGrokInvocation({ extraArgs = [] }) {
   return { cmd: commandForRuntime('grok-build'), args: [...extraArgs] };
 }
 
+function buildWorkbuddyInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('workbuddy-agent'), args: [...extraArgs] };
+}
+
 const INTERACTIVE_BUILDERS = {
   'claude-code': buildClaudeInvocation,
   'gemini-cli': buildGeminiInvocation,
@@ -50,6 +54,7 @@ const INTERACTIVE_BUILDERS = {
   'opencode-cli': buildOpenCodeInvocation,
   'hermes-agent': buildHermesInvocation,
   'grok-build': buildGrokInvocation,
+  'workbuddy-agent': buildWorkbuddyInvocation,
 };
 
 export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {

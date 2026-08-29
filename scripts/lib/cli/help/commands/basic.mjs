@@ -24,7 +24,7 @@ Unattended example:
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode|hermes|grok>
+  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -42,7 +42,7 @@ Options:
   --skip-self-update            Only update selected integrations
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode|hermes|grok>
+  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -57,7 +57,7 @@ Options:
 
 Options:
   --components <list>            Comma list: shell,skills,native,agents,browser (default: shell,skills)
-  --client <all|codex|claude|gemini|opencode|hermes|grok>
+  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
   --scope <global|project>       Skills uninstall scope (default: global)
   --skills <list>                Comma list of skill names to uninstall
   -h, --help
@@ -69,7 +69,7 @@ Options:
 Options:
   --strict
   --global-security
-  --client <all|codex|claude|gemini|opencode|hermes|grok>
+  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
   --native
   --verbose
   --fix

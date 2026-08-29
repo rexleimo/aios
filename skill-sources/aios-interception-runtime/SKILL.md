@@ -4,13 +4,13 @@ description: RTK + Caveman community token compression tools install and config 
 primary: false
 
 installCatalogName: aios-interception-runtime
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, token, compression, rtk, caveman, community]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 <!-- 中文注释：Skill 已重写为 RTK + Caveman 社区工具安装配置指南。原生拦截运行时已废弃。 -->

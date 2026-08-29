@@ -3,13 +3,13 @@ name: pre-edit-safety-gate
 description: Prepare a safe, current, and maintainable code change before editing. Use before a cohesive code or workflow change to assess the request and existing structure, then choose a local change, reuse, extension, or necessary refactor with clear ownership. Do not use to block ordinary TDD or authorized refactors.
 
 installCatalogName: pre-edit-safety-gate
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, safety, edit, architecture, maintainability, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy]
 ---
 
 # Mutation Safety Preflight

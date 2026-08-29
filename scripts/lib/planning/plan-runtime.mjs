@@ -3,6 +3,9 @@
  * Closes P9: harness writeback so intelligent planning product can reach overall PASS.
  */
 
+import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+
 import {
   addPlanEvidence,
   readActivePlan,
@@ -13,6 +16,51 @@ import { isTerminalPlan } from './workflow-policy.mjs';
 
 function normalizeText(value = '') {
   return String(value || '').trim();
+}
+
+function normalizeStringList(raw = []) {
+  if (!Array.isArray(raw)) return [];
+  return [...new Set(raw.map((value) => String(value || '').trim()).filter(Boolean))];
+}
+
+function resolveTaskById(plan, taskId) {
+  const tasks = Array.isArray(plan?.tasks) ? plan.tasks : [];
+  return tasks.find((t) => t.id === taskId) || null;
+}
+
+function hasMeaningfulEvidence(outcome = {}) {
+  const evidence = Array.isArray(outcome.evidence) ? outcome.evidence : [];
+  if (evidence.some((item) => normalizeText(item))) return true;
+  const keyChanges = Array.isArray(outcome.keyChanges) ? outcome.keyChanges : [];
+  if (keyChanges.some((item) => normalizeText(item))) return true;
+  if (normalizeText(outcome.summary)) return true;
+  return false;
+}
+
+function hasTargetFileChanges(rootDir, targets = []) {
+  const files = normalizeStringList(targets);
+  if (files.length === 0) return true;
+  try {
+    const changed = execFileSync('git', ['-C', rootDir, 'diff', '--name-only'], {
+      encoding: 'utf8',
+      timeout: 5000,
+    });
+    const names = changed.split(/\r?\n/u).map((line) => line.trim()).filter(Boolean);
+    return files.some((target) => {
+      const rel = path.isAbsolute(target) ? path.relative(rootDir, target) : target;
+      return names.includes(rel);
+    });
+  } catch {
+    return false;
+  }
+}
+
+function canMarkTaskDone({ rootDir, task, outcome }) {
+  if (!task) return false;
+  if (!hasMeaningfulEvidence(outcome)) return false;
+  const targets = normalizeStringList(task.targets);
+  if (targets.length > 0 && !hasTargetFileChanges(rootDir, targets)) return false;
+  return true;
 }
 
 /**
@@ -70,6 +118,7 @@ export function syncPlanWithIterationOutcome({
   iteration = 0,
   outcome = {},
   client = 'solo-harness',
+  taskId = '',
   io = null,
 } = {}) {
   if (!rootDir) return { ok: false, reason: 'root-required' };
@@ -93,10 +142,10 @@ export function syncPlanWithIterationOutcome({
       || (outcome.shouldStop === true && !outcome.failureClass && outcomeName !== 'stopped')
     );
 
-    // Ensure a task is in progress
-    markPlanTaskInProgress(rootDir, { io });
-    plan = readActivePlan(rootDir);
-    const task = findWritableTask(plan);
+    // The provider must explicitly tell us which task it completed. If it does not,
+    // we only record evidence and never advance or guess a pending task. Sync must
+    // not mutate in_progress state — that transition is owned by the harness loop.
+    const explicitTaskId = normalizeText(taskId || outcome.taskId);
 
     // Always attach iteration evidence crumbs when present
     const evidenceLines = [];
@@ -117,12 +166,41 @@ export function syncPlanWithIterationOutcome({
       }
     }
 
-    if (task && isSuccess && !isHardFail) {
-      plan = updatePlanTask(rootDir, task.id, { status: 'done' });
-      io?.log?.(`[plan-runtime] task ${task.id} -> done (iter=${iteration})`);
-    } else if (task && isHardFail) {
-      plan = updatePlanTask(rootDir, task.id, { status: 'blocked' });
-      io?.log?.(`[plan-runtime] task ${task.id} -> blocked (iter=${iteration})`);
+    let resolvedTaskId = explicitTaskId || null;
+    let task = null;
+    if (explicitTaskId) {
+      task = resolveTaskById(plan, explicitTaskId);
+    }
+
+    // Hard fail: mark the explicitly referenced task, or the current in_progress task, blocked.
+    if (isHardFail) {
+      const blockedTaskId = explicitTaskId || plan.tasks.find((t) => t.status === 'in_progress')?.id;
+      if (blockedTaskId) {
+        plan = updatePlanTask(rootDir, blockedTaskId, { status: 'blocked' });
+        io?.log?.(`[plan-runtime] task ${blockedTaskId} -> blocked (iter=${iteration})`);
+        resolvedTaskId = blockedTaskId;
+      }
+      const progress = summarizePlanProgress(readActivePlan(rootDir));
+      return {
+        ok: true,
+        plan: readActivePlan(rootDir),
+        progress,
+        taskId: resolvedTaskId,
+        outcome: outcomeName,
+      };
+    }
+
+    // Success: only mark done when the provider returned a task id and we can verify
+    // meaningful evidence for that task. Otherwise keep the task open and just record evidence.
+    if (isSuccess && task) {
+      if (canMarkTaskDone({ rootDir, task, outcome })) {
+        plan = updatePlanTask(rootDir, task.id, { status: 'done' });
+        io?.log?.(`[plan-runtime] task ${task.id} -> done (iter=${iteration})`);
+      } else {
+        io?.log?.(`[plan-runtime] task ${task.id} success received but evidence/target-changes missing; leaving open`);
+      }
+    } else if (isSuccess && !explicitTaskId) {
+      io?.log?.(`[plan-runtime] success without explicit taskId; evidence recorded, no task marked done`);
     }
 
     const progress = summarizePlanProgress(readActivePlan(rootDir));
@@ -130,7 +208,7 @@ export function syncPlanWithIterationOutcome({
       ok: true,
       plan: readActivePlan(rootDir),
       progress,
-      taskId: task?.id || null,
+      taskId: resolvedTaskId,
       outcome: outcomeName,
     };
   } catch (error) {
@@ -163,14 +241,16 @@ export function attachPlanVerificationEvidence({
       : 'quality-gate recorded';
     addPlanEvidence(rootDir, { kind: 'test', value: summary });
 
-    // On pass, complete current verification-ish open task if any
+    // On pass, complete the current in_progress task only. Never fall back to a
+    // pending task, so verification gates cannot accidentally skip ahead.
     if (ok === true) {
-      markPlanTaskInProgress(rootDir, { io });
       const current = readActivePlan(rootDir);
-      const task = findWritableTask(current);
+      const task = current?.tasks?.find((t) => t.status === 'in_progress') || null;
       if (task) {
         updatePlanTask(rootDir, task.id, { status: 'done' });
         io?.log?.(`[plan-runtime] verification pass → task ${task.id} done`);
+      } else {
+        io?.log?.('[plan-runtime] verification pass but no in_progress task; leaving plan unchanged');
       }
     }
 

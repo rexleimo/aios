@@ -3,13 +3,13 @@ name: aios-workflow-router
 description: "Route AIOS host dispositions and execute the current rex-harness software Capability Command. TRIGGER: 分析、设计、实现、调试、并发、agent team、长任务、harness、plan、工作流、多步骤"
 
 installCatalogName: aios-workflow-router
-clients: [codex, claude, gemini, opencode, hermes, grok]
+clients: [codex, claude, gemini, opencode, hermes, grok, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, workflow, routing, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents, workbuddy]
 ---
 
 # AIOS Workflow Router

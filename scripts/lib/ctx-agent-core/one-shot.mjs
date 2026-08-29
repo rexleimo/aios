@@ -73,6 +73,11 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('grok-build'),
     ['--always-approve', '-p', prompt, ...extraArgs]
   ),
+  // WorkBuddy / CodeBuddy CLI: `-p` prints the response and exits (non-interactive).
+  'workbuddy-agent': ({ prompt, extraArgs }) => runBufferedCommand(
+    commandForRuntime('workbuddy-agent'),
+    ['-p', prompt, ...extraArgs]
+  ),
 };
 
 // Exported for tests only: lets verification assert handlers are registered

@@ -3,13 +3,13 @@ name: aios-project-system
 description: Use when operating in the aios repository and needing the canonical architecture, memory schema, MCP browser tool behavior, and execution constraints before changing workflows.
 
 installCatalogName: aios-project-system
-clients: [codex, claude, hermes]
+clients: [codex, claude, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, repo]
-repoTargets: [codex, claude, gemini, opencode, hermes, agents]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy]
 ---
 
 # AIOS Project System

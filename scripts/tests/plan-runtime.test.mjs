@@ -65,6 +65,7 @@ test('solo iteration success advances an explicitly persisted plan task and adds
         evidence: ['edited src/foo.ts'],
       },
       client: 'solo-harness',
+      taskId: before.tasks.find((t) => t.status === 'in_progress')?.id,
     });
 
     assert.equal(sync.ok, true);
@@ -125,10 +126,12 @@ test('multiple successful iterations can complete all tasks and gate opens after
     let plan = readActivePlan(root);
     const n = plan.tasks.length;
     for (let i = 0; i < n; i += 1) {
+      const currentTask = plan.tasks.find((t) => t.status === 'in_progress') || plan.tasks.find((t) => t.status === 'pending');
       syncPlanWithIterationOutcome({
         rootDir: root,
         objective: 'ship small fix',
         iteration: i + 1,
+        taskId: currentTask?.id,
         outcome: {
           outcome: 'success',
           ok: true,
@@ -136,6 +139,7 @@ test('multiple successful iterations can complete all tasks and gate opens after
           evidence: [`step-${i + 1}`],
         },
       });
+      plan = readActivePlan(root);
     }
     plan = readActivePlan(root);
     const open = plan.tasks.filter((t) => t.status !== 'done' && t.status !== 'skipped');

@@ -3,13 +3,13 @@ name: awesome-design-md
 description: Create a DESIGN.md style baseline BEFORE building UI. Use FIRST when no design draft exists — installs a proven visual style, then invoke `frontend-design` to implement. For borrowing a known product style, getting consistent typography/colors/spacing, or needing a fast visual starting point.
 
 installCatalogName: awesome-design-md
-clients: [codex, claude, gemini, opencode, hermes]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, design, ui, essential]
-repoTargets: [codex, claude, gemini, opencode, hermes]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 ---
 
 # Awesome DESIGN.md
