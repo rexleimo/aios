@@ -48,7 +48,7 @@ export async function installRexClientProjections({
   env = process.env,
   io = console,
 } = {}) {
-  const selectedClients = resolveRexProjectionClients(client);
+  let selectedClients = resolveRexProjectionClients(client);
   const normalizedScope = normalizeScope(scope);
   const homes = resolveHomeMap(homeMap, env);
   const rex = await loadRexClientInstaller(rootDir);
@@ -59,7 +59,14 @@ export async function installRexClientProjections({
   const supported = new Set(rex.supportedClients());
   const unsupported = selectedClients.filter((clientId) => !supported.has(clientId));
   if (unsupported.length > 0) {
-    throw new Error(`bundled rex-harness does not support AIOS client projection(s): ${unsupported.join(', ')}`);
+    // rex-harness may lag behind AIOS's client registry (e.g. a freshly added
+    // client it has not learned to project yet). Skip those gracefully instead
+    // of aborting the whole install; only hard-fail when it supports nothing.
+    if (supported.size === 0) {
+      throw new Error(`bundled rex-harness does not support any AIOS client projection(s): ${unsupported.join(', ')}`);
+    }
+    io.log(`[warn] skipping unsupported client projection(s): ${unsupported.join(', ')}`);
+    selectedClients = selectedClients.filter((clientId) => supported.has(clientId));
   }
 
   const results = selectedClients.map((clientId) => rex.installClientProjection({
