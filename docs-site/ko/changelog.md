@@ -5,6 +5,21 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.8.2（2026-08-29）——플랜 상태가 더 이상 먼저 나서지 않음, WorkBuddy 클라이언트 지원
+
+### 변경 내용
+
+- **플랜 상태 동기화가 더 이상 먼저 나서지 않습니다**：`syncPlanWithIterationOutcome`은 sync할 때마다 `markPlanTaskInProgress`를 호출하지 않습니다. 서브에이전트 런타임이 명시적 task id 없이 성공을 보고하면 다음 pending 작업이 강제로 `in_progress`가 되던 문제를 해결했습니다；이제 sync는 증거만 기록하고 명시적인 `taskId`가 있을 때만 동작하며, `in_progress`는 오직 harness loop만 소유합니다. 죽은 코드 `hasCommitEvidence` 헬퍼를 제거하고 `hasTargetFileChanges`의 절대/상대 경로 매칭도 수정했습니다.
+- **WorkBuddy가 제1급 AIOS 클라이언트로**：네이티브 워크플로/스킬 생성, `~/.workbuddy/mcp.json`에 기록되는 MCP 설정, 완전한 24/24 스킬 동기화, 그리고 동봉된 `codebuddy` CLI를 통한 solo-harness 구동까지 모두 연결됐습니다. `aios harness run --provider workbuddy`가 프로바이더를 해석해 실행합니다.
+
+### 업그레이드 안내
+
+- `aios update`로 업데이트하세요. 설정 마이그레이션은 필요 없습니다.
+- `codebuddy` 바이너리는 기본적으로 PATH에 없습니다. 다음을 셸 설정에 추가하고 클라이언트를 재시작하세요.
+
+```bash
+export PATH="/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin:$PATH"
+```
 ## v5.8.1（2026-08-26）——LLM 의미 판단 기반 요구사항 명확화와 aios-shell 멈춤 수정
 
 ### 변경 내용

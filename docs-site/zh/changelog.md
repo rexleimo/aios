@@ -5,6 +5,20 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.8.2（2026-08-29）——计划状态不再越级，WorkBuddy 客户端支持
+
+### 主要变更
+
+- **计划状态同步不再越级推进任务**：`syncPlanWithIterationOutcome` 不再在每次 sync 时调用 `markPlanTaskInProgress`。当子代理运行时上报成功但缺少显式 task id 时，下一个 pending 任务会被强制置为 `in_progress`；现在 sync 只记录证据，并仅在收到显式 `taskId` 时才行动，`in_progress` 完全由 harness loop 持有。死代码 `hasCommitEvidence` 辅助函数已删除，`hasTargetFileChanges` 的绝对/相对路径匹配也已修复。
+- **WorkBuddy 现在是头等 AIOS 客户端**：原生工作流/技能生成、写入 `~/.workbuddy/mcp.json` 的 MCP 配置、完整的 24/24 技能同步，以及通过内置 `codebuddy` CLI 驱动的 solo-harness 已全部接好。`aios harness run --provider workbuddy` 可解析出该 provider 并运行。
+
+### 升级说明
+
+- 使用 `aios update` 更新，无需配置迁移。
+- `codebuddy` 二进制默认不在 PATH 中；请将
+  `export PATH="/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin:$PATH"`
+  加入你的 shell 配置并重启客户端。
+
 ## v5.8.1（2026-08-26）——LLM 语义判断的需求澄清与 aios-shell 卡死修复
 
 ### 主要变更
