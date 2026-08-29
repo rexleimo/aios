@@ -165,4 +165,10 @@ node scripts/aios.mjs skill verify-training --changed --base HEAD --json
 
 ## License
 
-See [CHANGELOG.md](CHANGELOG.md) for version history and release notes.
+Licensed under the [MIT License](LICENSE).
+
+Copyright (c) 2026 Rex.
+
+You may use, modify, and distribute this software, including for derivative
+works, provided that the original copyright notice and permission notice are
+retained in all copies or substantial portions of the Software.
