@@ -118,6 +118,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v5.8.2 Plan Status No Longer Over-Advances + WorkBuddy Client: 2026-08-v582-plan-sync-workbuddy.md
       - v5.8.1 Stall Fix + LLM-Judged Grilling: 2026-08-v581-stall-fix-llm-judged-grilling.md
       - v5.8.0 Governed Self-Evolution: 2026-08-v580-governed-self-evolution.md
       - v5.6.1 Plan-Driven Multi-Agent Dispatch: 2026-08-v561-aios-work-plan-driven-dispatch.md
