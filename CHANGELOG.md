@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.8.2] - 2026-08-29
+
 ### Fixed
 
 - **计划任务状态回写不再越级（Harness/CTX/Rex 控制面）**：`syncPlanWithIterationOutcome` 过去在每轮同步时用 `findWritableTask()` 重新挑任务，而不是绑定 provider 明确返回的任务 ID；只要外层 `solo-runtime/loop.mjs` 与内部 `subagent/phase finalize` 两条路径对同一个成功 turn 各触发一次同步，第二次就会把**尚未执行的下一个 pending 任务**直接标成 `done`。现在：

@@ -7,6 +7,18 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v5.8.2 (2026-08-29) — Plan Status No Longer Over-Advances, WorkBuddy Client Support
+
+### What changed
+
+- **Plan status sync no longer over-advances tasks**: `syncPlanWithIterationOutcome` no longer calls `markPlanTaskInProgress` on every sync. When the subagent runtime reported a success without an explicit task id, the next pending task was forced into `in_progress`; now sync only records evidence and acts on an explicit `taskId`, with `in_progress` owned solely by the harness loop. The dead `hasCommitEvidence` helper was removed and `hasTargetFileChanges` absolute/relative path matching was fixed.
+- **WorkBuddy is now a first-class AIOS client**: native workflow/skills generation, MCP config at `~/.workbuddy/mcp.json`, full 24/24 skills sync, and solo-harness driving via the bundled `codebuddy` CLI are wired up. `aios harness run --provider workbuddy` resolves the provider CLI.
+
+### Upgrade notes
+
+- Update with `aios update`. No config migration needed.
+- The `codebuddy` binary is not on PATH by default; add `export PATH="/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin:$PATH"` to your shell profile and restart the client.
+
 ## v5.8.1 (2026-08-26) — LLM-Judged Requirements Clarification and aios-shell Stall Fix
 
 ### What changed
