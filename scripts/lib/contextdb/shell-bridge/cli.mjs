@@ -1,5 +1,7 @@
 import { Command } from 'commander';
 import {
+  CLIENT_DEFINITIONS,
+  getClientCommandName,
   resolveClientCommandNames,
   resolveClientRuntimeIds,
 } from '../../clients/registry.mjs';
@@ -18,7 +20,7 @@ const SHELL_BRIDGE_CLI = new Command()
 
 export function usage() {
   console.log(`Usage:
-  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli|hermes-agent|grok-build> --command <codex|claude|gemini|opencode|hermes|grok> [--cwd <path>] [-- <args...>]
+  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli|hermes-agent|grok-build|workbuddy-agent> --command <codex|claude|gemini|opencode|hermes|grok|codebuddy> [--cwd <path>] [-- <args...>]
 
 Environment:
   AIOS_ROOT_DIR          AIOS install root containing scripts/ctx-agent.mjs
@@ -77,7 +79,12 @@ export function parseArgs(argv, cwd = process.cwd()) {
 
 export function validateOptions(opts) {
   const validAgents = new Set(resolveClientRuntimeIds('all'));
-  const validCommands = new Set(resolveClientCommandNames('all'));
+  // 命令名(commandName)与客户端 id(clientId) 都接受；clientId 归一化到 commandName
+  // 再用于 spawn（如 workbuddy -> codebuddy），避免 shim 以 clientId 调用时误报。
+  const validCommands = new Set([
+    ...resolveClientCommandNames('all'),
+    ...Object.keys(CLIENT_DEFINITIONS),
+  ]);
 
   if (!validAgents.has(opts.agent)) {
     throw new Error(`--agent must be one of: ${[...validAgents].join(', ')}`);
@@ -85,5 +92,9 @@ export function validateOptions(opts) {
 
   if (!validCommands.has(opts.command)) {
     throw new Error(`--command must be one of: ${[...validCommands].join(', ')}`);
+  }
+
+  if (CLIENT_DEFINITIONS[opts.command]) {
+    opts.command = getClientCommandName(opts.command);
   }
 }

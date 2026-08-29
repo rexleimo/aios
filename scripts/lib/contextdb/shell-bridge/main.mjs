@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { existsSync } from 'node:fs';
 import { normalizeCodeHome } from './code-home.mjs';
 import { parseArgs, usage, validateOptions } from './cli.mjs';
 import { writeBridgeContextIndex } from './context-index.mjs';
@@ -91,16 +92,36 @@ function samePathEntry(left, right) {
   return process.platform === 'win32' ? a.toLowerCase() === b.toLowerCase() : a === b;
 }
 
+// 中文注释：WorkBuddy 自带 CLI（codebuddy）默认不在 PATH，桥接器 spawn 前把 app 内的
+// cli/bin 目录注入子进程 PATH，否则 codebuddy 无法被驱动。
+function resolveWorkBuddyCliBinDir() {
+  if (process.platform === 'win32') return '';
+  const candidates = [
+    '/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cli/bin',
+  ];
+  return candidates.find(existsSync) || '';
+}
+
 function buildChildEnv(env, { command = '', managed = false } = {}) {
   const next = command === 'opencode'
     ? applyOpenCodeRuntimeDefaults(env, { managed })
     : { ...env };
   const shimDir = String(next.AIOS_NATIVE_SHIM_DIR || '').trim();
-  if (!shimDir) return next;
-
-  for (const key of resolvePathKeys(next)) {
-    const entries = String(next[key] || '').split(path.delimiter);
-    next[key] = entries.filter((entry) => entry && !samePathEntry(entry, shimDir)).join(path.delimiter);
+  if (shimDir) {
+    for (const key of resolvePathKeys(next)) {
+      const entries = String(next[key] || '').split(path.delimiter);
+      next[key] = entries.filter((entry) => entry && !samePathEntry(entry, shimDir)).join(path.delimiter);
+    }
+  }
+  if (command === 'codebuddy') {
+    const wbBin = resolveWorkBuddyCliBinDir();
+    if (wbBin) {
+      const pathKey = resolvePathKeys(next)[0];
+      const current = String(next[pathKey] || '');
+      next[pathKey] = current
+        ? `${wbBin}${path.delimiter}${current}`
+        : wbBin;
+    }
   }
   return next;
 }
