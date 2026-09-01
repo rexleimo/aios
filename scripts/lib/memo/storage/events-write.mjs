@@ -160,6 +160,8 @@ export async function appendMemoEvent({ workspaceRoot, storage, space = 'default
         spaceKey: safeSpace,
         scope: normalizedScope,
         agent: authority.agent,
+        claimStatus: authority.claimStatus,
+        promotionOf: String(promotionOf || '').trim(),
         supersedes: requestedSupersedes,
       }, events);
       allowedSupersedes = partition.allowed;

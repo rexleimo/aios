@@ -37,7 +37,8 @@ export async function runUserPromptSubmitHook({
     decision: output.decision,
   });
   if (recall) {
-    output.additionalContext = `${output.additionalContext || ''}${output.additionalContext ? '\n' : ''}${recall}`;
+    const { buildMemoryDeclarationInstruction } = await import('../memo/declaration.mjs');
+    output.additionalContext = `${output.additionalContext || ''}${output.additionalContext ? '\n' : ''}${recall}\n${buildMemoryDeclarationInstruction()}`;
     if (output.hookSpecificOutput) {
       output.hookSpecificOutput.additionalContext = output.additionalContext;
     }

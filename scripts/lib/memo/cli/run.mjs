@@ -15,6 +15,7 @@ import {
 } from './workspace-state.mjs';
 import { handleMemoAddCommand, handleMemoListCommand, handleMemoRecallCommand, handleMemoSearchCommand } from './commands/events.mjs';
 import { handleMemoPinCommand } from './commands/pin.mjs';
+import { handleMemoUsefulCommand } from './commands/useful.mjs';
 import { handleMemoSpaceCommand } from './commands/space.mjs';
 import { handleMemoStorageCommand } from './commands/storage.mjs';
 import { handleMemoSupersedeCommand } from './commands/supersede.mjs';
@@ -96,6 +97,16 @@ export async function runMemo(rawOptions = {}, {
       workspaceRoot,
       activeSpace,
       workspacePinnedMaxChars,
+      io,
+    });
+    return;
+  }
+
+  if (primary === 'useful') {
+    await handleMemoUsefulCommand({
+      secondary,
+      rest,
+      workspaceRoot,
       io,
     });
     return;

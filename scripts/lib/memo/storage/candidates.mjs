@@ -235,7 +235,7 @@ function authorize(identity, action, reason) {
   };
 }
 
-function receiptRow({ candidate, candidateId, action, decision, reason, reasonCode, identity, capability, promotedEventId = '' }) {
+function receiptRow({ candidate, candidateId, action, decision, reason, reasonCode, identity, capability, promotedEventId = '', autoMemoryPromotion = null }) {
   const receiptId = randomUUID();
   return {
     schemaVersion: 1,
@@ -266,6 +266,7 @@ function receiptRow({ candidate, candidateId, action, decision, reason, reasonCo
       hash: candidate?.sourceHash || '',
     },
     ...(promotedEventId ? { promotedEventId } : {}),
+    ...(autoMemoryPromotion ? { autoMemoryPromotion } : {}),
   };
 }
 
@@ -309,6 +310,7 @@ async function decideCandidate(action, {
   }
 
   let promotedEvent = null;
+  let autoMemoryPromotion = null;
   if (action === 'promote') {
     const resolvedStorage = storage || candidate.storage || await getActiveMemoStorage(workspaceRoot);
     try {
@@ -346,6 +348,27 @@ async function decideCandidate(action, {
       error.receipt = receipt;
       throw error;
     }
+    // A session-close candidate only carries the summary; the interactive auto
+    // memories for that session stay agent_private forever unless promotion
+    // publishes them too. Dynamic import: the storage layer must not statically
+    // depend on the autopilot module above it.
+    const sessionId = text(candidate.source?.sessionId, 200)
+      || (candidate.sourceType === 'session-close' ? text(candidate.candidateId).replace(/^.*?:/u, '') : '');
+    if (sessionId) {
+      try {
+        const { promoteAutoMemoriesForSession } = await import('../autopilot.mjs');
+        autoMemoryPromotion = await promoteAutoMemoriesForSession({
+          workspaceRoot,
+          sessionId,
+          storage: resolvedStorage,
+          space: candidate.space || 'default',
+          promotionOf: candidate.candidateId,
+          env,
+        });
+      } catch {
+        autoMemoryPromotion = null; // Non-fatal: candidate promotion succeeded.
+      }
+    }
   }
 
   const receipt = receiptRow({
@@ -358,6 +381,7 @@ async function decideCandidate(action, {
     identity,
     capability: authorization.capability,
     promotedEventId: promotedEvent?.eventId || '',
+    autoMemoryPromotion,
   });
   await writeReceipt(workspaceRoot, env, receipt);
   return { ok: true, receipt, ...(promotedEvent ? { promotedEvent } : {}) };

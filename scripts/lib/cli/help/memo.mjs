@@ -79,6 +79,7 @@ Subcommands:
   pin show                            Print pinned memory
   pin set <text>                      Replace pinned memory
   pin add <text>                      Append to pinned memory
+  useful <eventId,...>                Mark recalled memo(s) as adopted (recall feedback)
   persona init|show|path              Initialize/read global persona baseline
   persona set <text>                  Replace global persona baseline
   persona add <text>                  Append to global persona baseline

@@ -13,6 +13,7 @@ import { classifyOneShotFailure, buildRoutedCommandSpec, runOneShotAgent, runRou
 import { runInteractiveAgentWithSaveGuard } from './interactive.mjs';
 import { handleWorkspaceCommand, runSaveGuardCheckpoint } from './workspace-commands.mjs';
 import { parseArgs, resolveInitialWorkspace, validateOpts } from './args.mjs';
+import { buildMemoryDeclarationInstruction } from '../memo/declaration.mjs';
 
 async function maybeCreateBootstrapTask(opts) {
   if (!opts.autoBootstrap || !isBootstrapEnabled(process.env)) return;
@@ -39,7 +40,7 @@ async function runInteractiveStartup(opts) {
   sessionId = facadeResult.facade?.sessionId || sessionId;
   await printStartupSummary(opts.workspaceRoot, facadeResult.facade);
 
-  runInteractiveAgentWithSaveGuard(opts.agent, opts.extraArgs, {
+  await runInteractiveAgentWithSaveGuard(opts.agent, opts.extraArgs, {
     ...opts,
     sessionId,
   });
@@ -138,17 +139,56 @@ async function executePrompt(opts) {
       dryRun: Boolean(opts.dryRun || opts.routeExecutionMode === 'dry-run'),
     });
     console.error(`[aios] workflow: ${workflow.decision.disposition}/${workflow.decision.action} -> ${workflow.plan?.relativePath || 'n/a'}`);
-    const { collectTurnRecall } = await import('../planning/turn-recall.mjs');
-    const recall = await collectTurnRecall({
-      rootDir: opts.workspaceRoot,
-      message: opts.prompt,
-      decision: workflow.decision,
-    });
-    if (recall) workflow.recall = recall;
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
     console.warn(`[warn] workflow policy skipped: ${reason}`);
   }
+
+  let memory = {
+    // Corrections are no longer auto-detected by regex. The agent owns the
+    // judgment "am I correcting a previously recorded fact" and expresses it
+    // through the memory declaration block (verified/supersede path), not a
+    // program guessing at natural language. See memo/declaration.mjs.
+    correction: { status: 'not-run' },
+    recall: { status: 'skipped', reason: 'workflow-unavailable', hits: 0 },
+  };
+  try {
+    const { collectTurnRecallResult } = await import('../planning/turn-recall.mjs');
+    const recallResult = await collectTurnRecallResult({
+      rootDir: opts.workspaceRoot,
+      message: opts.prompt,
+      decision: workflow?.decision || { disposition: 'direct', continuation: '' },
+      sessionId: opts.sessionId,
+      agent: opts.agent,
+    });
+    memory.recall = recallResult;
+    if (workflow) {
+      workflow.recall = recallResult.text;
+      workflow.memory = memory;
+    }
+    console.error(`[aios] memory.recall status=${recallResult.status} hits=${recallResult.hits} reason=${recallResult.reason || 'none'}`);
+  } catch (error) {
+    memory.recall = {
+      status: 'error',
+      reason: error instanceof Error ? error.message : String(error),
+      hits: 0,
+    };
+    console.warn(`[warn] memory recall skipped: ${memory.recall.reason}`);
+  }
+  if (memory.correction.status !== 'not-detected' && memory.correction.status !== 'not-run') {
+    console.error(`[aios] memory.correction status=${memory.correction.status} targets=${memory.correction.targetIds?.length || 0}`);
+  }
+
+  if (!workflow) {
+    workflow = {
+      decision: { disposition: 'direct', persistence: 'none', action: 'none', continuation: '' },
+      injection: '',
+      plan: null,
+      capabilityCommand: null,
+    };
+  }
+  workflow.recall = memory.recall?.text || '';
+  workflow.memory = memory;
 
   let routeDecision = requestedRoute;
   if (workflow?.decision?.disposition !== 'planned') {
@@ -309,7 +349,10 @@ async function ingestRexProviderEvidence(opts, workflow, output, exitCode) {
 export function attachTurnRecall({ prompt = '', recall = '', routeMode = 'single' } = {}) {
   const recallBlock = String(recall || '').trim();
   if (!recallBlock || routeMode !== 'single') return prompt;
-  return `${recallBlock}\n${prompt}`;
+  // The recall block carries the memos the agent may reference; the declaration
+  // instruction tells it how to report verified / useful / conclusion so the
+  // harness never has to guess semantics from prose.
+  return `${recallBlock}\n${buildMemoryDeclarationInstruction()}\n${prompt}`;
 }
 
 function dryRunPrompt(opts, routeDecision, routedPrompt) {
@@ -344,6 +387,76 @@ async function runPromptFlow(opts) {
   process.stdout.write(compactOutput.endsWith('\n') ? compactOutput : `${compactOutput}\n`);
   const responseStatus = effectiveExitCode !== 0 ? 'blocked' : opts.checkpointStatus;
   addResponseEvent(opts, responseTurnId, promptTurnId, compactOutput, effectiveExitCode);
+
+  let memoryWrite = { status: 'not-run' };
+  try {
+    const { parseMemoryDeclaration } = await import('../memo/declaration.mjs');
+    const declaration = parseMemoryDeclaration(output || protocolOutput || compactOutput);
+
+    // Soft-trigger: the harness never decides whether a turn is worth keeping.
+    // Only when the model itself declared verified=yes (this turn produced a
+    // confirmed, durable fact) do we persist it. A missing declaration or an
+    // explicit verified=no means "not worth recording" and we skip the write —
+    // the program executes the model's judgment instead of making one.
+    if (!declaration.found) {
+      memoryWrite = { status: 'skipped', reason: 'no-declaration' };
+    } else if (declaration.verified !== true) {
+      memoryWrite = { status: 'skipped', reason: `declared-verified=${String(declaration.verified)}` };
+    } else {
+      const { recordAutomaticMemory } = await import('../memo/autopilot.mjs');
+      const refs = extractTouchedFilesFromText({ workspaceRoot: opts.workspaceRoot }, opts.prompt, output || protocolOutput || compactOutput);
+      memoryWrite = await recordAutomaticMemory({
+        workspaceRoot: opts.workspaceRoot,
+        sessionId: opts.sessionId,
+        agent: opts.agent,
+        turnId: responseTurnId,
+        runId: promptTurnId,
+        prompt: opts.prompt,
+        response: output || protocolOutput || compactOutput,
+        outcome: responseStatus === 'blocked' ? 'failed' : 'success',
+        refs,
+        verified: true,
+        declaredConclusion: declaration.conclusion || '',
+        sourceRef: `contextdb:${opts.sessionId}#${responseTurnId}`,
+      });
+    }
+    console.error(`[aios] memory.write status=${memoryWrite.status} scope=${memoryWrite.scope || 'none'} event=${memoryWrite.eventId || 'none'} reason=${memoryWrite.reason || 'none'}`);
+  } catch (error) {
+    memoryWrite = {
+      status: 'error',
+      reason: error instanceof Error ? error.message : String(error),
+    };
+    console.warn(`[warn] automatic memory write skipped: ${memoryWrite.reason}`);
+  }
+  if (workflow?.memory && typeof workflow.memory === 'object') workflow.memory.write = memoryWrite;
+
+  // Recall feedback, adoption side: a successful turn whose response restates
+  // Recall feedback, adoption side: the agent declares in its memory block
+  // which recalled memos it actually used; those get marked useful. Best-effort
+  // — must never fail the turn.
+  try {
+    const { inferUsefulRecallEventIds } = await import('../planning/turn-recall.mjs');
+    const { markMemoUseful } = await import('../memo/autopilot.mjs');
+    const usefulIds = effectiveExitCode === 0
+      ? inferUsefulRecallEventIds({
+        results: memory.recall?.results || [],
+        response: output || protocolOutput || compactOutput,
+      })
+      : [];
+    if (usefulIds.length > 0) {
+      const feedback = await markMemoUseful({
+        workspaceRoot: opts.workspaceRoot,
+        eventIds: usefulIds,
+        query: opts.prompt,
+        sessionId: opts.sessionId,
+        agent: opts.agent,
+      });
+      console.error(`[aios] memory.useful count=${feedback.recorded || 0}`);
+    }
+  } catch (error) {
+    console.warn(`[warn] memory useful feedback skipped: ${error instanceof Error ? error.message : String(error)}`);
+  }
+
   if (opts.autoCheckpoint) await writeAutoCheckpoint(opts, routedPrompt, compactOutput, responseStatus, elapsedMs, effectiveExitCode);
   if (effectiveExitCode !== 0) process.exitCode = effectiveExitCode;
 }

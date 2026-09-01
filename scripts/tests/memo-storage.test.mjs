@@ -182,3 +182,21 @@ test('sqlite cache files are ignored as canonical memo storage', async () => {
     assert.equal(status.available.split.records, 0);
   });
 });
+
+test('searchMemoEvents tokenizes unspaced Chinese so shared keywords still recall', async () => {
+  await withTempRoot('memo-cjk-token-', async (root) => {
+    // Memory written in the same surface words as a later natural-language query.
+    await appendMemoEvent({
+      workspaceRoot: root,
+      space: 'default',
+      text: 'mkdocs.blog.yml 的 nav 是硬编码清单，新文章必须登记到 nav.Posts 才会发布。',
+      scope: 'project_shared',
+    });
+    // Query shares content words (发布/新文章) with the memory.
+    const hit = await searchMemoEvents(root, { query: '新文章怎么发布', limit: 5 });
+    assert.equal(hit.length, 1);
+    // An unrelated question shares no content words and must not be recalled.
+    const unrelated = await searchMemoEvents(root, { query: '午餐吃什么比较好', limit: 5 });
+    assert.equal(unrelated.length, 0);
+  });
+});

@@ -1,5 +1,5 @@
-/* 中文注释：交互启动只保留 CLI 透传与退出保存保护，不再注入 ContextDB/自动提示词。 */
-import { spawnSync } from 'node:child_process';
+/* Interactive startup keeps the client prompt untouched while the bridge owns
+ * durable session finalization after the client process exits. */
 import { statSync } from 'node:fs';
 import path from 'node:path';
 import { workspaceMemoryEventsPath } from '../memo/workspace-memory.mjs';
@@ -31,8 +31,7 @@ function buildCodexInvocation({ extraArgs = [] }) {
 
 function buildOpenCodeInvocation({ extraArgs = [] }) {
   const cmd = commandForRuntime('opencode-cli');
-  const strictAgentArgs = buildOpenCodeStrictAgentArgs(extraArgs);
-  return { cmd, args: strictAgentArgs };
+  return { cmd, args: buildOpenCodeStrictAgentArgs(extraArgs) };
 }
 
 function buildHermesInvocation({ extraArgs = [] }) {
@@ -57,58 +56,96 @@ const INTERACTIVE_BUILDERS = {
   'workbuddy-agent': buildWorkbuddyInvocation,
 };
 
-export function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts) {
+function captureWorkspaceMemoryMtime(sessionId, workspaceRoot) {
+  if (!sessionId || !workspaceRoot) return 0;
+  try {
+    return statSync(workspaceMemoryEventsPath(workspaceRoot, sessionId)).mtimeMs;
+  } catch {
+    return 0;
+  }
+}
+
+function workspaceMemoryChanged(sessionId, workspaceRoot, initialMtimeMs) {
+  if (!sessionId || !workspaceRoot) return false;
+  try {
+    return statSync(workspaceMemoryEventsPath(workspaceRoot, sessionId)).mtimeMs > initialMtimeMs;
+  } catch {
+    return false;
+  }
+}
+
+function writeSaveGuardCheckpoint(agent, opts) {
+  if (!opts.workspaceRoot) return;
+  const project = opts.project || 'aios';
+  const result = runCommand(process.execPath, [
+    path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs'),
+    '--agent', agent,
+    '--workspace', opts.workspaceRoot,
+    '--project', project,
+    '--save-guard',
+    '--status', 'done',
+  ], {
+    cwd: opts.workspaceRoot,
+    stdio: 'ignore',
+  });
+  if (result.error || result.status !== 0) {
+    const detail = result.error?.message || `exit=${result.status ?? 1}`;
+    console.warn(`[warn] interactive save guard skipped: ${detail}`);
+  }
+}
+
+async function finalizeInteractiveSession(agent, opts, initialMtimeMs, exitCode) {
   const sessionId = opts.sessionId || '';
   const workspaceRoot = opts.workspaceRoot || '';
-  let eventsMtimeMs = 0;
-  if (sessionId && workspaceRoot) {
-    try {
-      eventsMtimeMs = statSync(workspaceMemoryEventsPath(workspaceRoot, sessionId)).mtimeMs;
-    } catch {
-      // 文件尚不存在时保持 0，退出钩子会写入保护 checkpoint。
-    }
+  if (!sessionId || !workspaceRoot) return { checkpoint: 'skipped', candidate: null };
+
+  let checkpoint = 'existing';
+  if (!workspaceMemoryChanged(sessionId, workspaceRoot, initialMtimeMs)) {
+    writeSaveGuardCheckpoint(agent, opts);
+    checkpoint = 'save-guard';
   }
 
-  const saveGuard = () => {
-    if (sessionId && workspaceRoot) {
-      try {
-        if (statSync(workspaceMemoryEventsPath(workspaceRoot, sessionId)).mtimeMs > eventsMtimeMs) return;
-      } catch {
-        // 读取失败时仍尝试写 checkpoint，避免丢失停机状态。
-      }
-    }
-    try {
-      spawnSync('node', [path.join(ROOT_DIR, 'scripts', 'ctx-agent.mjs'), '--agent', agent, '--workspace', workspaceRoot, '--project', opts.project || 'aios', '--save-guard', '--status', 'done'], { stdio: 'ignore', timeout: 10000 });
-    } catch {
-      // best-effort
-    }
+  const status = exitCode === 0 ? 'done' : 'error';
+  const reason = exitCode === 0 ? 'interactive-exit' : `interactive-exit-${exitCode}`;
+  // Session-end memory is governed, not auto-written. finalizeSession records a
+  // session-close *candidate* that requires human review/promotion before it
+  // reaches shared recall. The program no longer silently persists an
+  // agent-private session memo — persisting a session is the model/human's
+  // judgment, expressed through the governed candidate path, not a side effect
+  // of a clean client exit.
+  const candidate = await finalizeSession({
+    rootDir: workspaceRoot,
+    sessionId,
+    reason,
+    status,
+    logger: { log: (...args) => console.error(...args), error: (...args) => console.error(...args) },
+  });
+  console.error(`[aios] memory.session-finalize checkpoint=${checkpoint} candidate=${candidate?.candidateId || 'none'} status=${status}`);
+  return { checkpoint, candidate, sessionMemo: { status: 'governed' } };
+}
 
-    // Generate session-close memory candidate (fire-and-forget, errors isolated)
-    if (sessionId && workspaceRoot) {
-      finalizeSession({
-        rootDir: workspaceRoot,
-        sessionId,
-        reason: 'session-end',
-        status: 'done',
-      }).catch(() => {});
-    }
-  };
+export async function runInteractiveAgentWithSaveGuard(agent, extraArgs, opts = {}) {
+  const initialMtimeMs = captureWorkspaceMemoryMtime(opts.sessionId || '', opts.workspaceRoot || '');
+  let result;
+  try {
+    result = runInteractiveAgent(agent, extraArgs, opts);
+  } catch (error) {
+    await finalizeInteractiveSession(agent, opts, initialMtimeMs, 1).catch((finalizeError) => {
+      console.warn(`[warn] interactive session finalization failed: ${finalizeError.message || finalizeError}`);
+    });
+    throw error;
+  }
 
-  process.on('exit', saveGuard);
-  runInteractiveAgent(agent, extraArgs, opts);
+  const exitCode = result?.status ?? (result?.error ? 1 : 0);
+  await finalizeInteractiveSession(agent, opts, initialMtimeMs, exitCode).catch((error) => {
+    console.warn(`[warn] interactive session finalization failed: ${error.message || error}`);
+  });
+  return result;
 }
 
 export function runInteractiveAgent(agent, extraArgs, opts = {}) {
   const builder = INTERACTIVE_BUILDERS[agent];
-  if (!builder) {
-    console.error(`Unsupported interactive agent: ${agent}`);
-    process.exit(1);
-  }
+  if (!builder) throw new Error(`Unsupported interactive agent: ${agent}`);
   const { cmd, args } = builder({ extraArgs, ...opts });
-  const result = runCommand(cmd, args, { stdio: 'inherit' });
-  if (result.error) {
-    console.error(result.error.message || String(result.error));
-    process.exit(1);
-  }
-  process.exit(result.status ?? 1);
+  return runCommand(cmd, args, { cwd: opts.workspaceRoot, stdio: 'inherit' });
 }
