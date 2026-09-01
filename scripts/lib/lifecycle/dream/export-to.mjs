@@ -11,28 +11,10 @@ import { getActiveMemoStorage } from '../../memo/storage/config.mjs';
 import { runDream } from './index.mjs';
 import { TAXONOMY_CLASSES } from './taxonomy.mjs';
 import { collectEvents } from '../../memo/storage/events-read.mjs';
+import { segmentWords } from '../../memo/storage/query.mjs';
 
 const AGENTS_DREAM_BEGIN = '<!-- AIOS DREAM BEGIN -->';
 const AGENTS_DREAM_END = '<!-- AIOS DREAM END -->';
-const DREAM_RELEVANCE_TERMS = /\b(plan|task|tasks|evidence|acceptance|objective|review|memo|sync|writeback|dream)\b/iu;
-const DREAM_RELEVANCE_STOPWORDS = new Set([
-  'about',
-  'active',
-  'after',
-  'always',
-  'before',
-  'done',
-  'from',
-  'into',
-  'keep',
-  'notes',
-  'required',
-  'relevant',
-  'should',
-  'that',
-  'this',
-  'with',
-]);
 
 /**
  * Collect durable memo lines (stable preference / durable context) for export.
@@ -46,10 +28,13 @@ export async function collectDurableMemoLines(rootDir, { spaces = ['default'], l
       const text = String(event.text || '').trim();
       if (!text || text.length < 12) continue;
       const refs = Array.isArray(event.refs) ? event.refs : [];
+      // Durability is an explicit marker (pinned ref / [decision] / [durable]
+      // prefix written by the model or human), not a keyword guess that a line
+      // containing "MUST/架构/约定" is durable. The program only reads explicit
+      // signals; judging "is this actually durable" is the model/human's call.
       const looksDurable = refs.includes('pinned')
         || text.startsWith('[decision]')
-        || text.startsWith('[durable]')
-        || /MUST|always|never|convention|架构|约定/i.test(text);
+        || text.startsWith('[durable]');
       if (!looksDurable) continue;
       lines.push({
         space,
@@ -76,13 +61,14 @@ function renderDurableMarkdown(lines, { title = 'AIOS dream durable notes' } = {
   ].join('\n');
 }
 
+/* Tokenization is the standard library (Intl.Segmenter) — deterministic
+ * bookkeeping, no hand-typed stop-word table. Relevance is a token-overlap
+ * check; whether a line is actually worth exporting is left to the consumer. */
 function tokenizeDreamRelevance(text = '') {
-  return String(text)
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fff\s-]/giu, ' ')
-    .split(/\s+/u)
-    .map((token) => token.trim())
-    .filter((token) => token.length >= 4 && !DREAM_RELEVANCE_STOPWORDS.has(token));
+  return [...new Set(
+    segmentWords(String(text || '').toLowerCase())
+      .filter((word) => word.length >= 2),
+  )];
 }
 
 export function selectPlanRelevantDreamLines(plan, durableLines = [], { limit = 8 } = {}) {
@@ -90,9 +76,7 @@ export function selectPlanRelevantDreamLines(plan, durableLines = [], { limit = 
   return (Array.isArray(durableLines) ? durableLines : [])
     .filter((line) => String(line?.text || '').trim())
     .filter((line) => {
-      const text = String(line.text || '').trim();
-      if (DREAM_RELEVANCE_TERMS.test(text)) return true;
-      const lineTokens = tokenizeDreamRelevance(text);
+      const lineTokens = tokenizeDreamRelevance(line.text);
       return lineTokens.some((token) => planTokens.has(token));
     })
     .slice(0, limit);
