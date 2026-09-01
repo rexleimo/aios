@@ -7,6 +7,7 @@ import { collectEvents } from '../../memo/storage/events-read.mjs';
 import { appendText, atomicWriteText, collectRecursiveFiles, readTextIfExists, sha256Hex } from '../../memo/storage/fs-io.mjs';
 import { fileEventsPath, splitEventsRoot } from '../../memo/storage/paths.mjs';
 import { normalizeRuntimeIdentity } from '../../memo/storage/provenance.mjs';
+import { withMemoStorageLock } from '../../memo/storage/lock.mjs';
 import { readOrRebuildDreamArchiveIndex } from './archive-index.mjs';
 
 const ACTIONS = new Set(['approve', 'reject', 'archive', 'restore', 'gc']);
@@ -346,10 +347,10 @@ async function decide(action, {
   if (authorization.allowed && transition) {
     authorization = { allowed: false, reasonCode: transition, capability: authorization.capability };
   }
-  if (action === 'gc') {
+  if (action === 'gc' && !['file', 'split'].includes(String(proposal?.source?.storage || 'file'))) {
     authorization = {
       allowed: false,
-      reasonCode: 'gc_disabled_pending_concurrency_control',
+      reasonCode: 'gc_unsupported_storage',
       capability: 'broker:gc',
     };
   }
@@ -387,10 +388,18 @@ async function decide(action, {
 
   let snapshotRef = '';
   if (action === 'gc') {
-    const snapshot = await createGcSnapshot(rootDir, proposal, env, now);
-    snapshotRef = `file:${snapshot.target}`;
+    // GC physically deletes archived events; run under the same storage lock
+    // appendMemoEvent uses so a concurrent writer cannot interleave with the
+    // snapshot-then-rewrite. This replaces the old blanket
+    // `gc_disabled_pending_concurrency_control` denial.
+    const gcResult = await withMemoStorageLock({ workspaceRoot: rootDir, env }, async () =>
+      createGcSnapshot(rootDir, proposal, env, now));
+    snapshotRef = `file:${gcResult.target}`;
   } else if (action === 'restore' && state.status === 'gc') {
-    snapshotRef = (await restoreSnapshot(rootDir, proposalId, env)).snapshotRef;
+    // Restore writes back into the live event files; hold the storage lock for
+    // the same reason GC does.
+    snapshotRef = (await withMemoStorageLock({ workspaceRoot: rootDir, env }, async () =>
+      restoreSnapshot(rootDir, proposalId, env))).snapshotRef;
   }
   const receipt = receiptRow({
     proposal,

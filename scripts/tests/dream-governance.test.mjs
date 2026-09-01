@@ -196,9 +196,9 @@ test('all raw-identity Dream mutations DENY and proposal remains proposed', asyn
   });
 });
 
-test('physical GC is disabled and cannot mutate file or split canonical storage', async () => {
+test('physical GC is broker-gated and cannot mutate file or split canonical storage', async () => {
   for (const storage of ['file', 'split']) {
-    await withRoot(`dream-gc-disabled-${storage}-`, async (rootDir) => {
+    await withRoot(`dream-gc-gated-${storage}-`, async (rootDir) => {
       const fixture = await createProposal(rootDir, storage);
       const targetId = fixture.proposal.actions[0].eventId;
       const before = await listMemoEvents(rootDir, {
@@ -214,7 +214,7 @@ test('physical GC is disabled and cannot mutate file or split canonical storage'
         runtimeIdentity: spoofedIdentity(),
       });
       assert.equal(result.ok, false);
-      assert.equal(result.receipt.reasonCode, 'gc_disabled_pending_concurrency_control');
+      assert.equal(result.receipt.reasonCode, 'trusted_authority_unavailable');
       const after = await listMemoEvents(rootDir, {
         storage,
         limit: 50,

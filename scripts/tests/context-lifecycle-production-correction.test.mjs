@@ -208,6 +208,6 @@ test('spoofed env cannot approve Dream and physical GC is fail-closed', async ()
       },
     });
     assert.equal(gc.ok, false);
-    assert.equal(gc.receipt.reasonCode, 'gc_disabled_pending_concurrency_control');
+    assert.equal(gc.receipt.reasonCode, 'trusted_authority_unavailable');
   });
 });
