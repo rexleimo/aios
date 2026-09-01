@@ -1,4 +1,5 @@
 import { textSimilarity } from '../../lifecycle/dream/dedup.mjs';
+import { normalizeClaimStatus } from './provenance.mjs';
 
 // Bi-temporal fact lifecycle for memo events.
 //
@@ -69,8 +70,18 @@ export function canSupersedeEvent(source = {}, target = {}) {
   if (eventSpace(source) !== eventSpace(target)) return false;
   const sourceScope = eventScope(source);
   const targetScope = eventScope(target);
+  if (sourceScope === 'project_shared') {
+    // Governed promotion may retire the agent_private draft it publishes:
+    // only a verified shared event that carries `promotionOf` (produced by an
+    // authorized candidate promotion) qualifies. Arbitrary shared events can
+    // never hide private memories from their owner.
+    if (targetScope === 'agent_private') {
+      return String(source.promotionOf || '').trim().length > 0
+        && normalizeClaimStatus(source.claimStatus, source.provenance) === 'verified';
+    }
+    return true;
+  }
   if (sourceScope !== targetScope) return false;
-  if (sourceScope === 'project_shared') return true;
   if (!['agent_private', 'agent_ephemeral'].includes(sourceScope)) return false;
   const sourceAgent = eventAgent(source);
   return Boolean(sourceAgent) && sourceAgent === eventAgent(target);

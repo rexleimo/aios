@@ -6,15 +6,18 @@ import {
   readPinnedMemo,
   searchMemoEvents,
 } from '../memo/storage.mjs';
+import { resolveContextDbRoot } from '../aios/state-root.mjs';
 
-const DEFAULT_SOURCES = Object.freeze(['memory', 'docs', 'plans', 'code']);
+const DEFAULT_SOURCES = Object.freeze(['memory', 'contextdb', 'docs', 'plans', 'code']);
 const SOURCE_WEIGHTS = Object.freeze({
   memory: 5,
+  contextdb: 4,
   plans: 4,
   docs: 3,
   code: 2,
 });
 const MAX_FILE_BYTES = 256 * 1024;
+const MAX_CONTEXT_DB_BYTES = 16 * 1024 * 1024;
 const TEXT_EXTENSIONS = new Set([
   '.md',
   '.mdx',
@@ -236,6 +239,88 @@ async function searchMemory(workspaceRoot, { query, limit, scope, agent, space, 
   return results.sort(compareResults).slice(0, limit);
 }
 
+async function readContextDbIndexRows(filePath) {
+  try {
+    const stat = await fs.stat(filePath);
+    if (stat.size > MAX_CONTEXT_DB_BYTES) return [];
+    const raw = await fs.readFile(filePath, 'utf8');
+    return raw.split(/\r?\n/u)
+      .filter((line) => line.trim())
+      .flatMap((line) => {
+        try {
+          const row = JSON.parse(line);
+          return row && typeof row === 'object' ? [row] : [];
+        } catch {
+          return [];
+        }
+      });
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+function contextDbRowMatches(row, { query, project = '', sessionId = '', excludeSessionId = '', agent = '' } = {}) {
+  if (project && String(row.project || '') !== String(project)) return false;
+  if (sessionId && String(row.sessionId || '') !== String(sessionId)) return false;
+  if (excludeSessionId && String(row.sessionId || '') === String(excludeSessionId)) return false;
+  if (agent && String(row.agent || '') !== String(agent)) return false;
+  const text = [
+    row.text || '',
+    row.summary || '',
+    row.project || '',
+    row.agent || '',
+    row.sessionId || '',
+    row.kind || '',
+    row.status || '',
+    ...(Array.isArray(row.refs) ? row.refs : []),
+    ...(Array.isArray(row.artifacts) ? row.artifacts : []),
+  ].join(' ');
+  return textMatches(text, query);
+}
+
+function toContextDbSearchResult(row, itemType, query) {
+  const text = itemType === 'checkpoint' ? row.summary || '' : row.text || '';
+  const id = row.eventId || row.checkpointId || `${row.sessionId || 'session'}#${row.seq || '?'}`;
+  const kind = itemType === 'checkpoint'
+    ? `checkpoint:${row.status || 'unknown'}`
+    : `event:${row.role || 'unknown'}:${row.kind || 'message'}`;
+  const refs = itemType === 'checkpoint'
+    ? [...(Array.isArray(row.artifacts) ? row.artifacts : []), ...(Array.isArray(row.refs) ? row.refs : [])]
+    : Array.isArray(row.refs) ? row.refs : [];
+  return {
+    source: 'contextdb',
+    kind,
+    eventId: id,
+    title: `${row.sessionId || 'session'} ${kind}`,
+    text: excerptForQuery(text, query),
+    score: scoreText(`${text} ${refs.join(' ')}`, query, 'contextdb'),
+    ts: row.ts || '',
+    refs,
+    sessionId: row.sessionId || '',
+    project: row.project || '',
+    agent: row.agent || '',
+  };
+}
+
+async function searchContextDb(workspaceRoot, { query, limit, project = '', sessionId = '', excludeSessionId = '', agent = '' }) {
+  const contextDbRoot = resolveContextDbRoot(workspaceRoot, { preferLegacyExisting: true });
+  const indexRoot = path.join(contextDbRoot, 'index');
+  const [events, checkpoints] = await Promise.all([
+    readContextDbIndexRows(path.join(indexRoot, 'events.jsonl')),
+    readContextDbIndexRows(path.join(indexRoot, 'checkpoints.jsonl')),
+  ]);
+  const results = [
+    ...events
+      .filter((row) => contextDbRowMatches(row, { query, project, sessionId, excludeSessionId, agent }))
+      .map((row) => toContextDbSearchResult(row, 'event', query)),
+    ...checkpoints
+      .filter((row) => contextDbRowMatches(row, { query, project, sessionId, excludeSessionId, agent }))
+      .map((row) => toContextDbSearchResult(row, 'checkpoint', query)),
+  ];
+  return results.sort(compareResults).slice(0, limit);
+}
+
 function compareResults(a, b) {
   const scoreCompare = Number(b.score || 0) - Number(a.score || 0);
   if (scoreCompare !== 0) return scoreCompare;
@@ -276,6 +361,16 @@ export async function searchAiosProject(workspaceRoot, options = {}) {
       space: options.space || 'default',
       maxCharsPerMemory,
       maxTotalChars,
+    }));
+  }
+  if (sources.includes('contextdb')) {
+    results.push(...await searchContextDb(root, {
+      query,
+      limit: perSourceLimit,
+      project: options.project || '',
+      sessionId: options.sessionId || '',
+      excludeSessionId: options.excludeSessionId || '',
+      agent: options.agent || '',
     }));
   }
   if (sources.includes('plans')) {
