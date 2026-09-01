@@ -298,8 +298,9 @@ test('resolveTaskRouteDecision honors explicit prompt route triggers', () => {
   assert.equal(harness.explicitTrigger, true);
 });
 
-test('resolveTaskRouteDecision auto-routes complex prompts to team', () => {
-  const decision = resolveTaskRouteDecision({
+test('resolveTaskRouteDecision auto with no explicit route falls back to single (no guessing)', () => {
+  // 北极星原则：auto 模式下程序不猜 team/subagent/harness，无显式声明一律回退 single。
+  const complex = resolveTaskRouteDecision({
     routeMode: 'auto',
     prompt: [
       '我们要并行推进一个多模块交付：',
@@ -308,12 +309,11 @@ test('resolveTaskRouteDecision auto-routes complex prompts to team', () => {
       '3. 文档与发布清单同步',
     ].join('\n'),
   });
-  assert.equal(decision.routeMode, 'team');
-  assert.equal(decision.explicitTrigger, false);
-});
+  assert.equal(complex.routeMode, 'single');
+  assert.equal(complex.explicitTrigger, false);
+  assert.match(complex.reason, /no explicit route declared/u);
 
-test('resolveTaskRouteDecision auto-routes medium complexity prompts to subagent', () => {
-  const decision = resolveTaskRouteDecision({
+  const medium = resolveTaskRouteDecision({
     routeMode: 'auto',
     prompt: [
       '请完成以下任务：',
@@ -321,18 +321,15 @@ test('resolveTaskRouteDecision auto-routes medium complexity prompts to subagent
       '2. 增加测试并更新文档',
     ].join('\n'),
   });
-  assert.equal(decision.routeMode, 'subagent');
-  assert.equal(decision.explicitTrigger, false);
-});
+  assert.equal(medium.routeMode, 'single');
 
-test('resolveTaskRouteDecision auto-routes long-running resumable prompts to harness', () => {
-  const decision = resolveTaskRouteDecision({
+  const harnessLike = resolveTaskRouteDecision({
     routeMode: 'auto',
     prompt: '请过夜持续推进这个长任务，保留 checkpoint 和明早交接 journal',
   });
-  assert.equal(decision.routeMode, 'harness');
-  assert.equal(decision.explicitTrigger, false);
-  assert.match(decision.reason, /harness keyword signal/u);
+  assert.equal(harnessLike.routeMode, 'single');
+  assert.equal(harnessLike.explicitTrigger, false);
+  assert.match(harnessLike.reason, /no explicit route declared/u);
 });
 
 test('resolveRoutedSubagentClient falls back to provider-supported runtimes', () => {
