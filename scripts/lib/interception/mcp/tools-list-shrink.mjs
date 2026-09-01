@@ -21,7 +21,7 @@ function shrinkTool(tool) {
     description: compactDescription(tool?.description || ''),
     required: Array.isArray(schema?.required) ? schema.required.map(String) : [],
     optional: properties.filter(name => !(schema?.required || []).includes(name)),
-    safety: inferSafetyNotes(tool),
+    safety: explicitSafetyNotes(tool),
   };
 }
 
@@ -33,12 +33,16 @@ function compactDescription(description) {
     : oneLine;
 }
 
-/* 中文注释：安全提示是启发式红线，帮助 Agent 在调用前识别会写入外部状态或产生大输出的工具。 */
-function inferSafetyNotes(tool) {
-  const text = `${tool?.name || ''} ${tool?.description || ''}`.toLowerCase();
-  const notes = [];
-  if (/delete|remove|payment|publish|send|write/.test(text)) notes.push('may mutate external state');
-  if (/html|screenshot|base64|full/.test(text)) notes.push('may return large output');
+/* 中文注释：安全提示只读工具显式声明的字段（safetyNotes / mutation），
+ * 不靠扫描名字/描述里的关键词猜"这个工具危险"。是否危险由工具 schema 声明、
+ * 模型自行判断，程序只透传显式信息，避免把名字里带 delete/write 的正常工具误判。 */
+function explicitSafetyNotes(tool) {
+  const notes = Array.isArray(tool?.safetyNotes)
+    ? tool.safetyNotes.map(String)
+    : Array.isArray(tool?.safety_notes)
+      ? tool.safety_notes.map(String)
+      : [];
+  if (typeof tool?.mutation === 'string' && tool.mutation.trim()) notes.push(tool.mutation.trim());
   return notes;
 }
 

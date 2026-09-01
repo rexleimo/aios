@@ -1,8 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { PRIMARY_BROWSER_ALIAS } from '../components/browser/constants.mjs';
-
 export const TOKEN_PROFILE_NAMES = Object.freeze(['minimal', 'balanced', 'full']);
 
 const DEFAULT_CONFIG = Object.freeze({
@@ -82,12 +80,6 @@ function listJsonMcpServers(filePath, namespace) {
   return Object.entries(bucket).map(([name, spec]) => ({ name, spec }));
 }
 
-function isAiosProxySpec(spec = {}) {
-  const command = String(spec?.command || '');
-  const args = Array.isArray(spec?.args) ? spec.args.map(String) : [];
-  return command.includes('aios-mcp-proxy.mjs') || args.some((arg) => arg.includes('aios-mcp-proxy.mjs'));
-}
-
 function classifyLowValueMcpServers({ projectRoot, mcpBudget = {} } = {}) {
   if (!projectRoot) return [];
   const lowValue = new Set(normalizeStringList(mcpBudget.lowValueServerNames));
@@ -106,16 +98,13 @@ function classifyLowValueMcpServers({ projectRoot, mcpBudget = {} } = {}) {
       if (seen.has(key)) continue;
       seen.add(key);
       let reason = '';
+      // Only explicit config declarations mark a server low-value / noisy.
+      // Judging "is this tool useful" from a server *name* keyword is a semantic
+      // guess the program must not make — that call belongs to the model.
       if (lowValue.has(server.name)) {
         reason = 'configured-low-value';
       } else if (noisy.has(server.name)) {
         reason = 'configured-noisy-output';
-      } else if (
-        server.name !== PRIMARY_BROWSER_ALIAS
-        && /browser|html|crawl|search/iu.test(server.name)
-        && !isAiosProxySpec(server.spec)
-      ) {
-        reason = 'not-routed-through-aios-proxy';
       }
       if (reason) {
         findings.push({

@@ -186,7 +186,7 @@ test('token discipline detects low-value MCP servers and plans opt-in cost setti
     defaultProfile: 'balanced',
     mcpBudget: {
       maxEnabledServers: 4,
-      lowValueServerNames: ['legacy-browser', 'unused-search'],
+      lowValueServerNames: ['legacy-browser', 'unused-search', 'browser-direct'],
       noisyServerNames: ['raw-html'],
     },
     clientCostRecommendations: {
@@ -215,7 +215,7 @@ test('token discipline detects low-value MCP servers and plans opt-in cost setti
   assert.equal(report.lowValueMcpServers.length, 3);
   assert.ok(report.lowValueMcpServers.some((item) => item.name === 'legacy-browser' && item.reason === 'configured-low-value'));
   assert.ok(report.lowValueMcpServers.some((item) => item.name === 'raw-html' && item.reason === 'configured-noisy-output'));
-  assert.ok(report.lowValueMcpServers.some((item) => item.name === 'browser-direct' && item.reason === 'not-routed-through-aios-proxy'));
+  assert.ok(report.lowValueMcpServers.some((item) => item.name === 'browser-direct' && item.reason === 'configured-low-value'));
   assert.ok(!report.lowValueMcpServers.some((item) => item.name === 'mcp-browser-use'));
 
   const dryRun = planClientCostSettings({ client: 'claude', config: loadTokenDisciplineConfig(rootDir), dryRun: true });
