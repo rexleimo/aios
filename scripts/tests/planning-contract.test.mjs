@@ -190,18 +190,32 @@ test('formatActivePlanInjection returns null when no plan', async () => {
 test('auto-gate keeps direct messages and plan injection read-only', async () => {
   const root = await makeTemp('aios-plan-always-');
   try {
-    const direct = runAutoGate({
+    // 北极星原则：程序不再从"为什么"这类疑问文本猜只读。无显式 intent 时
+    // 回退确定性 guarded（不建计划），由后续显式 intent 决定是否 direct。
+    const guarded = runAutoGate({
       rootDir: root,
       message: '为什么会死循环？',
       client: 'codex',
       sessionId: 'turn-direct',
     });
-    assert.equal(direct.ok, true);
+    assert.equal(guarded.ok, true);
+    assert.equal(guarded.decision.disposition, 'guarded');
+    assert.equal(guarded.decision.persistence, 'none');
+    assert.equal(guarded.created, false);
+    assert.equal(readActivePlan(root), null);
+    assert.equal(fs.existsSync(path.join(root, 'docs', 'plans')), false);
+
+    // 显式 read-only intent 才走 direct，且不建计划。
+    const direct = runAutoGate({
+      rootDir: root,
+      message: '为什么会死循环？',
+      client: 'codex',
+      sessionId: 'turn-direct',
+      explicitIntent: 'read-only',
+    });
     assert.equal(direct.decision.disposition, 'direct');
     assert.equal(direct.decision.persistence, 'none');
     assert.equal(direct.created, false);
-    assert.equal(readActivePlan(root), null);
-    assert.equal(fs.existsSync(path.join(root, 'docs', 'plans')), false);
 
     const injection = buildAlwaysOnPlanningDirective({
       rootDir: root,
@@ -239,6 +253,9 @@ test('auto-gate reports an explicit non-writing continuation decision without an
 test('/single keeps substantive changes behind the workflow safety decision', async () => {
   const root = await makeTemp('aios-plan-single-safety-');
   try {
+    // 北极星原则：/single 仅指定单 agent 执行宿主，不表达计划意图；capability
+    // software.testing.design 显式声明默认需要计划 → planned(create)，但仍受
+    // 工作流安全决策约束（requiresPreEditSafety）。
     const result = runAutoGate({
       rootDir: root,
       message: '/single update one parser rule',
@@ -246,9 +263,10 @@ test('/single keeps substantive changes behind the workflow safety decision', as
       sessionId: 'turn-single',
       policyMode: 'adaptive',
     });
-    assert.equal(result.decision.disposition, 'guarded');
+    assert.equal(result.decision.disposition, 'planned');
     assert.equal(result.decision.requiresPreEditSafety, true);
-    assert.equal(result.created, false);
+    assert.equal(result.created, true);
+    assert.equal(result.decision.capabilityDecision.capabilityId, 'software.testing.design');
   } finally {
     await rm(root, { recursive: true, force: true });
   }
@@ -309,15 +327,26 @@ test('explicit plan requests persist once and same-session continuation reuses w
 test('Claude UserPromptSubmit hook exposes the policy decision without forcing a direct plan', async () => {
   const root = await makeTemp('aios-plan-hook-');
   try {
+    // 北极星原则：无显式 intent 时程序不猜"解释/说明"是只读，回退确定性 guarded。
     const { exitCode, output } = await runClaudeUserPromptSubmitHook({
       rootDir: root,
       stdinText: JSON.stringify({ prompt: '解释当前计划状态', cwd: root }),
       client: 'claude',
     });
     assert.equal(exitCode, 0);
-    assert.equal(output.decision.disposition, 'direct');
+    assert.equal(output.decision.disposition, 'guarded');
     assert.equal(readActivePlan(root), null);
     assert.doesNotMatch(output.additionalContext, /writing-plans/u);
+
+    // 显式 read-only intent 才走 direct，且不强制建计划。
+    const direct = await runClaudeUserPromptSubmitHook({
+      rootDir: root,
+      stdinText: JSON.stringify({ prompt: '解释当前计划状态', cwd: root, explicitIntent: 'read-only' }),
+      client: 'claude',
+    });
+    assert.equal(direct.exitCode, 0);
+    assert.equal(direct.output.decision.disposition, 'direct');
+    assert.equal(readActivePlan(root), null);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

@@ -304,19 +304,34 @@ test('CLI auto-gate leaves a planned dry-run and pure injection without artifact
 test('MCP auto-gate returns the structured decision without forcing a direct plan', async () => {
   const root = await makeTemp('aios-workflow-mcp-');
   try {
+    // 北极星原则：无显式 intent 时程序不再猜"Explain..."是只读，回退确定性
+    // guarded 且不创建计划。
     const response = await handlePlanAutoGate({
       workspace: root,
       message: 'Explain the active workflow state.',
       client: 'codex',
       sessionId: 'mcp-direct',
-      policyMode: 'strict',
+      policyMode: 'adaptive',
     });
     const payload = JSON.parse(response.content[0].text);
 
     assert.equal(payload.ok, true);
-    assert.equal(payload.decision.disposition, 'direct');
-    assert.equal(payload.policy.mode, 'strict');
+    assert.equal(payload.decision.disposition, 'guarded');
+    assert.equal(payload.decision.persistence, 'none');
+    assert.equal(payload.created, false);
     assert.equal(fs.existsSync(path.join(root, '.aios', 'planning', 'active.json')), false);
+
+    // 显式 read-only intent 才走 direct，且不强制建计划。
+    const direct = await handlePlanAutoGate({
+      workspace: root,
+      message: 'Explain the active workflow state.',
+      client: 'codex',
+      sessionId: 'mcp-direct',
+      explicitIntent: 'read-only',
+    });
+    const directPayload = JSON.parse(direct.content[0].text);
+    assert.equal(directPayload.decision.disposition, 'direct');
+    assert.equal(directPayload.created, false);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

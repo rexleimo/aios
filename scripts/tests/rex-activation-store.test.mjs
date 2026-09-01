@@ -352,17 +352,21 @@ test('auto-gate persists the current rex activation and exposes one executable c
 test('same-session guarded objectives receive isolated activation ledgers', async () => {
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-isolation-'));
   try {
+    // 北极星原则：software.testing.design 默认需要计划，这里显式 implement
+    // intent 覆盖默认计划以验证 guarded 场景下的 activation 隔离。
     const first = runAutoGate({
       rootDir,
       message: '实现用户搜索过滤器。',
       client: 'codex',
       sessionId: 'session-shared',
+      explicitIntent: 'implement',
     });
     const second = runAutoGate({
       rootDir,
       message: '实现订单导出格式。',
       client: 'codex',
       sessionId: 'session-shared',
+      explicitIntent: 'implement',
     });
 
     assert.equal(first.decision.disposition, 'guarded');

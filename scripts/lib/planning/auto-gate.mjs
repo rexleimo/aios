@@ -377,12 +377,16 @@ export async function runClaudeUserPromptSubmitHook({
   const prompt = String(payload.prompt || payload.message || '').trim();
   const cwd = payload.cwd && path.isAbsolute(payload.cwd) ? payload.cwd : rootDir;
   const sessionId = String(payload.sessionId || payload.session_id || payload.session?.id || '').trim();
+  // 北极星原则：hook 不猜"解释/说明"是否只读；调用方通过 payload.explicitIntent
+  // 显式声明（如 'read-only'）。缺失时统一回退确定性 guarded。
+  const explicitIntent = payload.explicitIntent || null;
   const result = runAutoGate({
     rootDir: cwd,
     message: prompt,
     client,
     sessionId,
     policyMode: payload.policyMode || payload.policy_mode || process.env.AIOS_WORKFLOW_POLICY_MODE,
+    explicitIntent,
   });
 
   const output = {

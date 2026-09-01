@@ -62,19 +62,12 @@ const ACKNOWLEDGEMENTS = new Set([
 ]);
 
 const ACKNOWLEDGEMENT_PREFIX = /^(?:ok(?:ay)?|yes|y|sure|approved?|confirmed?|go\s+ahead|sounds\s+good|\u53ef\u4ee5\u7684?|\u597d\u7684?|\u6536\u5230|\u540c\u610f|\u8ba4\u53ef|\u786e\u8ba4|\u6ca1\u95ee\u9898)[\s,;:!?\u3002\u3001\uff0c\uff01\uff1f-]*/iu;
-const NEW_OBJECTIVE_MARKER = /\b(?:also|additionally|instead|switch|new\s+(?:task|objective|project|feature)|another\s+(?:task|objective|project|feature)|separately)\b|\u987a\u4fbf|\u53e6\u5916|\u6539\u4e3a|\u6362\u6210|\u65b0\u4efb\u52a1|\u65b0\u76ee\u6807|\u53e6\u8d77/iu;
-const ACTION_PATTERN = /\b(?:implement|add|build|create|write|change|update|modify|refactor|fix|remove|delete|migrate|integrate|install|configure|deploy|test|run|launch|execute|develop|code|optimi[sz]e|replace|enable|disable|sync|commit|push)\b|\u5b9e\u73b0|\u65b0\u589e|\u6dfb\u52a0|\u5f00\u53d1|\u4fee\u6539|\u66f4\u65b0|\u91cd\u6784|\u4fee\u590d|\u5220\u9664|\u8fc1\u79fb|\u96c6\u6210|\u5b89\u88c5|\u914d\u7f6e|\u90e8\u7f72|\u6d4b\u8bd5|\u8fd0\u884c|\u6267\u884c|\u7f16\u5199|\u4f18\u5316|\u6539\u9020|\u8c03\u6574|\u66ff\u6362|\u5173\u95ed|\u542f\u7528|\u7981\u7528|\u540c\u6b65|\u63d0\u4ea4|\u63a8\u9001/iu;
-const QUESTION_PREFIX = /^(?:why|what|how|when|where|is|are|do|does|did|why\s+did|\u4e3a\u4ec0\u4e48|\u600e\u4e48|\u5982\u4f55|\u662f\u5426|\u4ec0\u4e48|\u8bf7\u95ee)/iu;
-const REQUEST_PREFIX = /^(?:can\s+you|could\s+you|would\s+you|please|help(?:\s+me)?|\u8bf7|\u5e2e\u6211|\u628a|\u9700\u8981)/iu;
-const READ_ONLY_PATTERN = /\b(?:analy[sz]e|explain|review|research|investigate|status|show|list|inspect|compare|audit|question)\b|\u5206\u6790|\u89e3\u91ca|\u8bf4\u660e|\u7814\u7a76|\u8c03\u67e5|\u8bc4\u4f30|\u5ba1\u67e5|\u72b6\u6001|\u67e5\u770b|\u67e5\u8be2|\u4e3a\u4ec0\u4e48|\u600e\u4e48|\u5982\u4f55|\u662f\u5426/iu;
-const DESIGN_PATTERN = /\b(?:design|architecture|architect|brainstorm)\b|\u8bbe\u8ba1|\u65b9\u6848|\u67b6\u6784|\u5934\u8111\u98ce\u66b4/iu;
-const DEBUG_PATTERN = /\b(?:debug|bug|fix|broken|error|failure|crash)\b|\u4fee\u590d|\u62a5\u9519|\u6545\u969c|\u5d29\u6e83|\u5f02\u5e38/iu;
-const VERIFY_PATTERN = /\b(?:verify|validation|test|tests|typecheck|ci|regression)\b|\u9a8c\u8bc1|\u6d4b\u8bd5|\u9a8c\u6536|\u56de\u5f52/iu;
-const OPS_PATTERN = /\b(?:install|configure|setup|upgrade|update|deploy|release)\b|\u5b89\u88c5|\u914d\u7f6e|\u8bbe\u7f6e|\u5347\u7ea7|\u90e8\u7f72|\u53d1\u5e03/iu;
-const TEAM_PATTERN = /\b(?:agent\s+team|team|parallel|delegate|dispatch|orchestrat(?:e|ion))\b|\u5e76\u53d1|\u5e76\u884c|\u56e2\u961f|\u591a\s*agent|\u59d4\u6d3e|\u7f16\u6392/iu;
-const HARNESS_PATTERN = /\b(?:harness|long[-\s]?running|overnight)\b|\u957f\u4efb\u52a1|\u8fc7\u591c|\u65ad\u70b9/iu;
-const MULTI_STEP_PATTERN = /\b(?:first.+then|then.+finally|multi[-\s]?step|multiple\s+files|across)\b|\u5148.+\u518d|\u6700\u540e|\u591a\u6b65\u9aa4|\u591a\u6587\u4ef6|\u8de8\u57df/iu;
-const PLANNED_SIGNAL = /\b(?:plan|multi[-\s]?step|multiple\s+files|across|migration|migrate|refactor|architecture|security|database|auth|workflow)\b|\u5148.+\u518d|\u6700\u540e|\u591a\u6b65\u9aa4|\u591a\u6587\u4ef6|\u8de8\u57df|\u8fc1\u79fb|\u91cd\u6784|\u67b6\u6784|\u5b89\u5168|\u6570\u636e\u5e93|\u9274\u6743|\u5de5\u4f5c\u6d41/iu;
+
+/* 北极星原则：本模块只认显式协议前缀（确认/恢复）与显式 intent，绝不用关键词
+ * 正则从自由文本猜"是否只读 / 是否有新目标 / 是什么任务类型 / 是否多步 / 是否
+ * 团队或长任务"。语义判断（实质行动、只读、计划需求、团队/长任务路由）一律由
+ * 调用方显式声明（explicitIntent / capabilityDecision）；程序只保留确定性簿记
+ * 与回退默认值，不替模型做任何语义猜测。 */
 
 function text(value = '') {
   return String(value || '').replace(/\s+/gu, ' ').trim();
@@ -113,27 +106,28 @@ function explicitIntentValue(explicitIntent) {
   );
 }
 
+/**
+ * Map an explicit intent to a generic route. 北极星原则：只映射显式 intent，
+ * 不从自由文本猜任务类型。无显式 intent 时统一回退到默认 implement（仅作为
+ * 确定性兜底，不做语义判断）。message 保留为参数以兼容调用签名。
+ */
 function routeForText(message, intent) {
-  if (intent === 'implement') return 'implement';
-  if (intent === 'tickets') return 'planning';
-  if (intent === 'spec' || intent === 'grill') return 'requirements';
-  if (intent === 'review') return 'verify';
-  if (intent === 'debug') return 'debug';
-  if (intent === 'wayfinder') return 'implement';
-  if (intent === 'team') return 'team';
-  if (intent === 'harness') return 'harness';
-  if (intent === 'design') return 'design';
-  if (intent === 'debug') return 'debug';
-  if (intent === 'verify') return 'verify';
-  if (intent === 'ops') return 'ops';
-  if (TEAM_PATTERN.test(message)) return 'team';
-  if (HARNESS_PATTERN.test(message)) return 'harness';
-  if (DESIGN_PATTERN.test(message)) return 'design';
-  if (DEBUG_PATTERN.test(message)) return 'debug';
-  if (MULTI_STEP_PATTERN.test(message) && ACTION_PATTERN.test(message)) return 'implement';
-  if (VERIFY_PATTERN.test(message)) return 'verify';
-  if (OPS_PATTERN.test(message)) return 'ops';
-  return 'implement';
+  void message;
+  switch (intent) {
+    case 'implement': return 'implement';
+    case 'tickets': return 'planning';
+    case 'spec':
+    case 'grill': return 'requirements';
+    case 'review': return 'verify';
+    case 'debug': return 'debug';
+    case 'wayfinder': return 'implement';
+    case 'team': return 'team';
+    case 'harness': return 'harness';
+    case 'design': return 'design';
+    case 'verify': return 'verify';
+    case 'ops': return 'ops';
+    default: return 'implement';
+  }
 }
 
 function isExplicitPlanIntent(intent) {
@@ -260,47 +254,60 @@ export function isExplicitResumeMessage(message = '') {
   return RESUME_PREFIX.test(text(message));
 }
 
-/** Detect a replacement objective after an acknowledgement or resume prefix. */
+/** Detect a replacement objective after an acknowledgement or resume prefix.
+ * 北极星原则：只认确定性协议前缀（确认/恢复）+ 非空 tail，不再用关键词正则
+ * 从 tail 猜"是否有新目标"。非空 tail 的存在即视为新的可行动目标。 */
 export function hasNewActionableObjective(message = '') {
   const value = text(message);
   const acknowledgement = ACKNOWLEDGEMENT_PREFIX.exec(value);
   if (acknowledgement) {
     const tail = value.slice(acknowledgement[0].length).trim();
-    return Boolean(tail) && (NEW_OBJECTIVE_MARKER.test(tail) || (ACTION_PATTERN.test(tail) && !isReadOnlyMessage(tail)));
+    return Boolean(tail);
   }
 
   const resume = RESUME_PREFIX.exec(value);
   if (!resume) return false;
   const tail = value.slice(resume[0].length).trim();
-  return Boolean(tail) && NEW_OBJECTIVE_MARKER.test(tail);
+  return Boolean(tail);
 }
 
+/** 北极星原则：程序不从自由文本猜"是否只读"。只读由调用方显式声明
+ * （explicit-intent: read-only/direct/analysis/status/explain）。此处恒返回
+ * false，作为确定性兜底，避免程序替模型做语义判断。 */
 export function isReadOnlyMessage(message = '') {
-  const value = text(message);
-  if (!value) return false;
-  if (QUESTION_PREFIX.test(value) && !REQUEST_PREFIX.test(value)) return true;
-  return READ_ONLY_PATTERN.test(value) && !ACTION_PATTERN.test(value);
+  void message;
+  return false;
 }
 
+/** 北极星原则：程序不从自由文本猜"是否实质行动"。实质行动由显式 intent 或
+ * capabilityDecision 声明；程序层不做任何语义判断，统一视为实质行动（确定性
+ * 兜底，是否落计划由 needsPlan/显式 intent 决定）。 */
 function isSubstantiveMessage(message, intent, capabilityDecision = null) {
-  if (capabilityDecision) return true;
-  if (isExplicitPlanIntent(intent) || ['guarded', 'implement', 'debug', 'verify', 'ops'].includes(intent)) {
-    return true;
-  }
-  return ACTION_PATTERN.test(message)
-    || DESIGN_PATTERN.test(message)
-    || TEAM_PATTERN.test(message)
-    || HARNESS_PATTERN.test(message)
-    || PLANNED_SIGNAL.test(message);
+  void message;
+  void intent;
+  void capabilityDecision;
+  return true;
+}
+
+/** 显式直接/实施类 intent（非计划意图）在 adaptive 模式下优先于 capability 的
+ * 默认计划：用户显式声明"直接干"，就应尊重，不因 capability plannedByDefault
+ * 而强制建计划。plan 类 intent（planned/tickets/spec/grill/team/harness/design/
+ * wayfinder）仍进入计划分支。strict 模式始终计划（在 needsPlan 首行处理）。 */
+function isExplicitNonPlanningIntent(intent) {
+  return [
+    'implement', 'direct', 'read-only', 'readonly', 'analysis', 'status',
+    'explain', 'debug', 'verify', 'ops', 'guarded', 'review',
+  ].includes(intent);
 }
 
 function needsPlan(message, intent, route, policyMode, capabilityPolicy) {
+  void message;
   if (policyMode === 'strict') return true;
-  if (intent === 'guarded') return false;
+  if (isExplicitNonPlanningIntent(intent)) return false;
   if (isExplicitPlanIntent(intent)) return true;
   if (route === 'team' || route === 'harness' || route === 'design') return true;
   if (capabilityPolicy.plannedByDefault) return true;
-  return PLANNED_SIGNAL.test(message);
+  return false;
 }
 
 /**
@@ -377,14 +384,6 @@ export function evaluateWorkflowPolicy({
       disposition: 'direct',
       routeHint: 'direct',
       reason: 'explicit-direct-intent',
-    });
-  }
-
-  if (isReadOnlyMessage(value) && (!intent || isExplicitDirectIntent(intent))) {
-    return decision({
-      disposition: 'direct',
-      routeHint: 'direct',
-      reason: 'read-only-request',
     });
   }
 

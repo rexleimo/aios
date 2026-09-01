@@ -37,10 +37,15 @@ const DEFAULT_AGENT_ROLE = new Map([
   [CAPABILITY.NAVIGATION_WAYFIND, 'planner'],
 ]);
 
+// 北极星原则：plannedByDefault 是显式声明（capability 本质需要持久计划），
+// 不再依赖宿主从自由文本猜"是否多步"。TESTING_DESIGN 作为 TDD 起点本身是
+// 测试设计/规划活动，声明为默认需要计划；具体某次调用是否建计划仍可由显式
+// intent 与策略模式调整，但默认语义由这里显式给出，而非正则。
 const PLANNED_CAPABILITIES = new Set([
   CAPABILITY.REQUIREMENTS_CLARIFY,
   CAPABILITY.DESIGN_RESOLVE,
   CAPABILITY.PLANNING_SEQUENCE,
+  CAPABILITY.TESTING_DESIGN,
   CAPABILITY.TESTING_STRICT_TDD,
   CAPABILITY.NAVIGATION_WAYFIND,
 ]);

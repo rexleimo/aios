@@ -732,6 +732,7 @@ async function handlePlanAutoGate(params) {
       client: params.client || 'unknown',
       sessionId: params.sessionId || params.session_id || '',
       policyMode: params.policyMode || params.policy_mode || process.env.AIOS_WORKFLOW_POLICY_MODE,
+      explicitIntent: params.explicitIntent || params.intent || null,
       dryRun: Boolean(params.dryRun || params.dry_run),
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };

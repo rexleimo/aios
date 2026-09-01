@@ -103,26 +103,50 @@ test('blank input is a noop with no persistence', () => {
   }
 });
 
-test('read-only questions stay direct without a plan artifact', () => {
-  for (const policyMode of ['adaptive', 'strict']) {
-    const decision = evaluateWorkflowPolicy({
-      message: '为什么当前工作流会出现死循环？',
-      activePlan: activePlan(),
-      policyMode,
-      client: 'codex',
-      sessionId: 'session-a',
-    });
+test('read-only routing is driven by explicit intent, not by guessing from question text', () => {
+  // 北极星原则：程序不从"为什么/是否"等疑问文本猜只读。无显式 intent 时统一
+  // 走确定性兜底（adaptive→guarded，strict→planned），绝不因疑问句式自动降级
+  // 为 direct。capability 判定对纯疑问句不选中任何 capability（capabilityDecision 为 null）。
+  const adaptive = evaluateWorkflowPolicy({
+    message: '为什么当前工作流会出现死循环？',
+    activePlan: activePlan(),
+    policyMode: 'adaptive',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+  assert.equal(adaptive.disposition, 'guarded');
+  assert.equal(adaptive.routeHint, 'implement');
+  assert.equal(adaptive.requiresPreEditSafety, true);
+  assert.equal(adaptive.capabilityDecision, null);
 
-    assert.equal(decision.disposition, 'direct');
-    assert.equal(decision.continuation, 'none');
-    assert.equal(decision.persistence, 'none');
-    assert.equal(decision.routeHint, 'direct');
-    assert.deepEqual(decision.requiredSkills, []);
-    assert.equal(decision.requiresPreEditSafety, false);
-    assert.equal(decision.verificationScope, 'none');
-    assert.equal(decision.plan, null);
-    assert.equal(decision.reason, 'read-only-request');
-  }
+  const strict = evaluateWorkflowPolicy({
+    message: '为什么当前工作流会出现死循环？',
+    activePlan: activePlan(),
+    policyMode: 'strict',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+  assert.equal(strict.disposition, 'planned');
+  assert.equal(strict.persistence, 'create');
+
+  // 显式 read-only intent 才走 direct，且不创建计划。
+  const direct = evaluateWorkflowPolicy({
+    message: '为什么当前工作流会出现死循环？',
+    activePlan: activePlan(),
+    explicitIntent: 'read-only',
+    policyMode: 'adaptive',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+  assert.equal(direct.disposition, 'direct');
+  assert.equal(direct.continuation, 'none');
+  assert.equal(direct.persistence, 'none');
+  assert.equal(direct.routeHint, 'direct');
+  assert.deepEqual(direct.requiredSkills, []);
+  assert.equal(direct.requiresPreEditSafety, false);
+  assert.equal(direct.verificationScope, 'none');
+  assert.equal(direct.plan, null);
+  assert.equal(direct.reason, 'explicit-direct-intent');
 });
 
 test('a same-session acknowledgement reuses one nonterminal active plan', () => {
@@ -178,8 +202,11 @@ test('an unknown client acknowledgement never uses the sessionless fallback', ()
   assert.equal(decision.reason, 'acknowledgement-without-same-session-plan');
 });
 
-test('extra resume phrases reuse a nonterminal plan', () => {
-  for (const message of ['接着做', '下一步', 'keep going', 'next step']) {
+test('complete resume phrases reuse a nonterminal plan', () => {
+  // 北极星原则：仅当协议前缀（RESUME_PREFIX）整体消费整条消息（tail 为空）
+  // 时才视为纯恢复；tail 非空一律视为新目标，程序不猜"接着做/下一步"这类
+  // 语义上究竟是恢复还是新目标。
+  for (const message of ['继续', 'continue', 'resume', '接着', '下一步']) {
     const decision = evaluateWorkflowPolicy({
       message,
       client: 'codex',
@@ -190,6 +217,35 @@ test('extra resume phrases reuse a nonterminal plan', () => {
     assert.equal(decision.continuation, 'explicit-resume', message);
     assert.equal(decision.persistence, 'reuse', message);
   }
+});
+
+test('a resume prefix with a non-empty tail is treated as a new objective', () => {
+  // "接着做/keep going/下一步做" 之类带尾巴的短语：协议前缀后仍有非空 tail，
+  // 按确定性规则视为新目标，进入 capability 判定而非复用计划。是否建计划由
+  // capability 显式声明决定（software.testing.design 默认 planned）。
+  for (const message of ['接着做', 'keep going on auth']) {
+    const decision = evaluateWorkflowPolicy({
+      message,
+      client: 'codex',
+      sessionId: 'session-b',
+      activePlan: activePlan({ client: 'claude', sessionId: 'session-a' }),
+    });
+    assert.equal(decision.disposition, 'guarded', message);
+    assert.equal(decision.continuation, 'none', message);
+    assert.equal(decision.persistence, 'none', message);
+    assert.equal(decision.capabilityDecision, null, message);
+  }
+
+  const planned = evaluateWorkflowPolicy({
+    message: '下一步更新配置',
+    client: 'codex',
+    sessionId: 'session-b',
+    activePlan: activePlan({ client: 'claude', sessionId: 'session-a' }),
+  });
+  assert.equal(planned.disposition, 'planned');
+  assert.equal(planned.continuation, 'none');
+  assert.equal(planned.persistence, 'create');
+  assert.equal(planned.capabilityDecision.capabilityId, 'software.testing.design');
 });
 
 test('an explicit resume can reuse a nonterminal plan across clients', () => {
@@ -240,33 +296,53 @@ test('an acknowledgement with a new actionable objective is new work', () => {
     sessionId: 'session-a',
   });
 
-  assert.equal(decision.disposition, 'guarded');
+  assert.equal(decision.disposition, 'planned');
   assert.equal(decision.continuation, 'none');
-  assert.equal(decision.persistence, 'none');
+  assert.equal(decision.persistence, 'create');
   assert.equal(decision.plan, null);
-  assert.equal(decision.routeHint, 'ops');
+  // 北极星原则：routeHint 由 capability 判定给出（软件实现类统一走 implement），
+  // 不再依赖 OPS_PATTERN 从"更新配置项"这类文本猜 'ops'。
+  assert.equal(decision.routeHint, 'implement');
   assert.equal(decision.requiresPreEditSafety, true);
   assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
   assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
-  assert.equal(decision.verificationScope, 'focused');
+  assert.equal(decision.verificationScope, 'full');
+  assert.equal(decision.action, 'started');
 });
 
-test('adaptive mode keeps a small explicit implementation change guarded', () => {
-  const decision = evaluateWorkflowPolicy({
+test('adaptive mode plans a default TDD-design request; explicit implement stays guarded', () => {
+  // 北极星原则：software.testing.design 作为 TDD 起点显式声明默认需要计划
+  // （plannedByDefault），无显式 intent 时遵循该默认 → planned(create)。
+  const defaulted = evaluateWorkflowPolicy({
     message: '更新一个输入校验规则',
     activePlan: null,
     client: 'codex',
     sessionId: 'session-a',
   });
+  assert.equal(defaulted.disposition, 'planned');
+  assert.equal(defaulted.persistence, 'create');
+  assert.equal(defaulted.routeHint, 'implement');
+  assert.deepEqual(defaulted.requiredSkills, ['rex-test-design']);
+  assert.equal(defaulted.capabilityDecision.capabilityId, 'software.testing.design');
+  assert.equal(defaulted.requiresPreEditSafety, true);
+  assert.equal(defaulted.verificationScope, 'full');
+  assert.equal(defaulted.action, 'started');
 
-  assert.equal(decision.disposition, 'guarded');
-  assert.equal(decision.persistence, 'none');
-  assert.equal(decision.routeHint, 'implement');
-  assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
-  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
-  assert.equal(decision.requiresPreEditSafety, true);
-  assert.equal(decision.verificationScope, 'focused');
-  assert.equal(decision.action, 'none');
+  // 显式 implement intent 覆盖默认计划 → guarded（用户显式声明直接实施）。
+  const explicit = evaluateWorkflowPolicy({
+    message: '更新一个输入校验规则',
+    activePlan: null,
+    explicitIntent: 'implement',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+  assert.equal(explicit.disposition, 'guarded');
+  assert.equal(explicit.persistence, 'none');
+  assert.equal(explicit.routeHint, 'implement');
+  assert.equal(explicit.capabilityDecision.capabilityId, 'software.testing.design');
+  assert.equal(explicit.requiresPreEditSafety, true);
+  assert.equal(explicit.verificationScope, 'focused');
+  assert.equal(explicit.action, 'none');
 });
 
 test('strict mode plans the same substantive implementation request', () => {
