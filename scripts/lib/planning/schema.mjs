@@ -34,17 +34,16 @@ export const PLAN_ROUTES = Object.freeze([
 ]);
 
 /**
- * Classify user message into a planning route (lightweight, no LLM).
+ * Resolve a planning route without guessing the caller's intent.
+ *
+ * 北极星原则：程序只提供确定性簿记，绝不用正则/关键词替模型判断"任务意图"。
+ * 具体是 debug/design/verify/ops/implement 应由显式声明或模型决定；调用方没给
+ * 合法 route 时返回 'unknown'，种子任务回退到通用模板，由后续 agent 细化，
+ * 而不是靠扫描 objective 里的 "bug"/"design"/"test" 等词假装知道意图。
  */
 export function classifyPlanRoute(message = '') {
-  const text = String(message || '').toLowerCase();
-  if (!text.trim()) return 'unknown';
-  if (/(bug|fix|broken|fail|error|报错|修复|崩溃|regression)/i.test(text)) return 'debug';
-  if (/(design|architect|brainstorm|方案|设计|评审)/i.test(text)) return 'design';
-  if (/(test|verify|验收|typecheck|ci|回归)/i.test(text)) return 'verify';
-  if (/(install|update|doctor|setup|升级|安装)/i.test(text)) return 'ops';
-  if (/(implement|add|build|feat|实现|开发|重构|refactor)/i.test(text)) return 'implement';
-  return 'implement';
+  void message;
+  return 'unknown';
 }
 
 /** Rex owns provider selection; host plans do not inject a fixed skill chain. */
