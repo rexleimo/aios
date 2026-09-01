@@ -9,6 +9,7 @@ import {
   resolveModelForTaskDescription,
   resolveModelRoutingForTask,
   scoreTaskSignals,
+  classifyTaskIntent,
 } from '../lib/model-router.mjs';
 
 const registry = defaultModelRegistry();
@@ -17,95 +18,102 @@ function route(taskDescription, extra = {}) {
   return resolveModelRoutingForTask({ taskDescription, registry, env: {}, ...extra });
 }
 
-test('balanced routes Chinese browser publishing to GPT-5.5 browser automation', () => {
+test('no explicit task type falls back to general instead of guessing intent', () => {
+  // 北极星原则：程序不猜"这个任务是什么类型"，无显式声明时回退 deterministic 默认。
   const result = route('用浏览器打开小红书发布页面，上传图片并填写标题');
+  assert.equal(result.taskType, 'general');
+  assert.equal(result.confidence, 0);
+  assert.deepEqual(result.matchedSignals, []);
+  assert.equal(result.why.some((line) => line.includes('no keyword guessing')), true);
+});
+
+test('explicit task type routes precisely to its configured model', () => {
+  const result = route('', { taskType: 'browser-automation' });
   assert.equal(result.profile, 'balanced');
   assert.equal(result.taskType, 'browser-automation');
   assert.equal(result.modelId, 'gpt-5.5');
   assert.equal(result.clientId, 'codex-cli');
-  assert.equal(result.confidence > 0.7, true);
-  assert.equal(result.matchedSignals.some((signal) => signal.taskType === 'browser-automation'), true);
-  assert.equal(result.why.some((line) => line.includes('browser')), true);
+  assert.equal(result.confidence, 1);
 });
 
-test('balanced routes landing page UI work to Kimi frontend', () => {
-  const result = route('build a beautiful landing page component');
-  assert.equal(result.profile, 'balanced');
+test('explicit frontend task type routes to Kimi', () => {
+  const result = route('', { taskType: 'frontend' });
   assert.equal(result.taskType, 'frontend');
   assert.equal(result.modelId, 'kimi-k2.6');
 });
 
-test('balanced routes production incident logs to self-healing', () => {
-  const result = route('修复线上登录故障并分析日志');
-  assert.equal(result.profile, 'balanced');
+test('explicit self-healing task type routes to minimax', () => {
+  const result = route('', { taskType: 'self-healing' });
   assert.equal(result.taskType, 'self-healing');
   assert.equal(result.modelId, 'minimax-m2.7');
 });
 
-test('balanced keeps long third-party API docs on Gemini research', () => {
-  const result = route('阅读一份很长的第三方 API 文档，整理迁移策略');
+test('explicit research task type routes to Gemini', () => {
+  const result = route('', { taskType: 'research' });
   assert.equal(result.taskType, 'research');
   assert.equal(result.modelId, 'gemini-3-pro');
 });
 
-test('balanced keeps ordinary implementation on DeepSeek', () => {
-  const result = route('实现一个新的登录接口，并补测试');
+test('explicit implementation task type routes to DeepSeek', () => {
+  const result = route('', { taskType: 'implementation' });
   assert.equal(result.taskType, 'implementation');
   assert.equal(result.modelId, 'deepseek-v4');
 });
 
-test('route metadata preserves fallback model ids', () => {
-  const result = route('用浏览器打开小红书发布页面，上传图片并填写标题');
+test('route metadata preserves fallback model ids for explicit task type', () => {
+  const result = route('', { taskType: 'browser-automation' });
   assert.deepEqual(result.fallback, ['kimi-k2.6', 'claude-sonnet']);
 });
 
-test('route metadata shows unattended launch flags for routed CLI clients', () => {
-  const codex = route('用浏览器打开小红书发布页面，上传图片并填写标题');
+test('route metadata shows unattended launch flags for explicit task types', () => {
+  const codex = route('', { taskType: 'browser-automation' });
   assert.match(codex.cliCommand, /codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-5\.5/u);
 
-  const claude = route('review this pull request for code quality');
+  const claude = route('', { taskType: 'code-review' });
   assert.match(claude.cliCommand, /claude --model claude-opus-4-7 --dangerously-skip-permissions -p/u);
 
-  const gemini = route('阅读一份很长的第三方 API 文档，整理迁移策略');
+  const gemini = route('', { taskType: 'research' });
   assert.match(gemini.cliCommand, /gemini -m gemini-3-pro --yolo -p/u);
 });
 
-test('CJK implementation signals avoid matching inside browser form verbs', () => {
+test('scoreTaskSignals never guesses signals from free text', () => {
   const scored = scoreTaskSignals('打开页面并填写标题', registry, { profile: 'balanced' });
-  assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'implementation'), false);
-  assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'frontend'), false);
+  assert.deepEqual(scored.matchedSignals, []);
+  assert.equal(scored.primaryType, 'general');
+  assert.equal(scored.confidence, 0);
 });
 
-test('legacy task description resolver uses balanced signal scoring', () => {
-  const frontend = resolveModelForTaskDescription('build a beautiful landing page component', registry, {});
-  assert.equal(frontend.taskType, 'frontend');
-  assert.equal(frontend.modelId, 'kimi-k2.6');
+test('classifyTaskIntent returns deterministic default without explicit intent', () => {
+  const gate = classifyTaskIntent('设计 model-router 的优化方案');
+  assert.equal(gate.intent, 'implement');
+  assert.equal(gate.confidence, 0);
+  assert.deepEqual(gate.matchedKeywords, []);
+});
 
-  const review = resolveModelForTaskDescription('review this pull request for code quality', registry, {});
-  assert.equal(review.taskType, 'code-review');
-  assert.equal(review.modelId, 'claude-opus');
+test('classifyTaskIntent honors an explicitly declared intent', () => {
+  const gate = classifyTaskIntent('', 'review');
+  assert.equal(gate.intent, 'review');
+  assert.equal(gate.confidence, 1);
+  assert.equal(gate.preferredTaskType, 'code-review');
+});
+
+test('legacy task description resolver falls back to general without guessing', () => {
+  const result = resolveModelForTaskDescription('build a beautiful landing page component', registry, {});
+  assert.equal(result.taskType, 'general');
 });
 
 test('profile can be overridden by CLI-style option or env', () => {
-  const premium = route('实现一个复杂的跨模块重构', { profile: 'premium' });
+  const premium = route('', { taskType: 'architecture', profile: 'premium' });
   assert.equal(premium.profile, 'premium');
   assert.equal(['gpt-5.5', 'claude-opus'].includes(premium.modelId), true);
 
   const budget = resolveModelRoutingForTask({
-    taskDescription: 'build a beautiful landing page component',
+    taskType: 'frontend',
     registry,
     env: { AIOS_MODEL_ROUTER_PROFILE: 'budget' },
   });
   assert.equal(budget.profile, 'budget');
   assert.equal(budget.taskType, 'frontend');
-});
-
-test('signal scoring exposes multiple matched signals', () => {
-  const scored = scoreTaskSignals('设计 model-router 的优化方案并更新 skill 文档和博客', registry, { profile: 'balanced' });
-  assert.equal(scored.profile, 'balanced');
-  assert.equal(scored.recommendedPhases.length >= 2, true);
-  assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'planning'), true);
-  assert.equal(scored.matchedSignals.some((signal) => signal.taskType === 'docs'), true);
 });
 
 test('model-router reports render Chinese headers without mojibake', () => {
