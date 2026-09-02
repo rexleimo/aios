@@ -162,6 +162,9 @@ export async function handleMessage(message = {}) {
 
 if (process.argv[1] && process.argv[1].endsWith('memory-mcp-server.mjs')) {
   const lines = createInterface({ input: process.stdin });
+  /* 中文注释：与 shell-mcp-server.mjs 一致的并发模型——不 await 串行。
+     慢的 memory_recall（检索可达数秒）不得阻塞后续 ping / initialize / 取消，
+     否则客户端在工具调用期间完全无响应。 */
   for await (const line of lines) {
     if (!line.trim()) continue;
     let message;
@@ -171,7 +174,9 @@ if (process.argv[1] && process.argv[1].endsWith('memory-mcp-server.mjs')) {
       process.stdout.write(`${JSON.stringify({ jsonrpc: '2.0', error: { code: -32700, message: 'Parse error' }, id: null })}\n`);
       continue;
     }
-    const response = await handleMessage(message).catch((error) => makeError(message.id, -32603, error.message));
-    if (response) process.stdout.write(`${JSON.stringify(response)}\n`);
+    Promise.resolve(handleMessage(message).catch((error) => makeError(message.id, -32603, error.message)))
+      .then((response) => {
+        if (response) process.stdout.write(`${JSON.stringify(response)}\n`);
+      });
   }
 }

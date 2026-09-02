@@ -9,6 +9,8 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { buildSessionId, ensureContextDbSession, sessionMetaPath } from '../lib/lifecycle/session-hooks/start-session.mjs';
+import { runSessionStartTimeline } from '../lib/lifecycle/session-hooks/start-timeline.mjs';
+import { parseSessionArgs } from '../lib/cli/parse-args/session.mjs';
 
 function recordingCliImpl() {
   const calls = [];
@@ -36,7 +38,6 @@ test('ensureContextDbSession: 首次调用建会话并写 index', async () => {
   assert.deepEqual(calls[0], ['init', '--workspace', root]);
   assert.equal(calls[1][0], 'session:new');
   assert.ok(calls[1].includes('--session-id'));
-  assert.ok(existsSync(sessionMetaPath(root, result.sessionId)) === false || true); // meta 由真实 CLI 创建；impl 模拟下不落盘
   const index = JSON.parse(await readFile(path.join(root, '.aios', 'context-db', 'index.json'), 'utf8'));
   assert.equal(index.session, result.sessionId);
   assert.equal(index.status, 'running');
@@ -77,4 +78,26 @@ test('ensureContextDbSession: CLI 失败不抛出，错误进 errors 且 index �
   assert.match(result.errors[0], /cli boom/);
   const index = JSON.parse(await readFile(path.join(root, '.aios', 'context-db', 'index.json'), 'utf8'));
   assert.equal(index.session, 's-fail');
+});
+
+test('parseSessionArgs: --session-id/--agent/--client 映射到 options', () => {
+  const parsed = parseSessionArgs(['session', 'start', '--json', '--session-id', 's1', '--agent', 'opencode-cli', '--client', 'opencode']);
+  assert.equal(parsed.mode, 'command');
+  assert.equal(parsed.options.subcommand, 'start');
+  assert.equal(parsed.options.sessionId, 's1');
+  assert.equal(parsed.options.agent, 'opencode-cli');
+  assert.equal(parsed.options.client, 'opencode');
+  assert.equal(parsed.options.json, true);
+});
+
+test('runSessionStartTimeline: --json 输出 { registration, lines } 契约（register=false 不触 CLI）', async () => {
+  const root = await mkdtemp(path.join(os.tmpdir(), 'aios-session-start-json-'));
+  let out = '';
+  const stdout = { write: (chunk) => { out += String(chunk); } };
+  const result = await runSessionStartTimeline({ register: false, json: true, limit: 5 }, { rootDir: root, stdout });
+  assert.equal(result.exitCode, 0);
+  assert.equal(result.registration, null);
+  const payload = JSON.parse(out);
+  assert.equal(payload.registration, null);
+  assert.ok(Array.isArray(payload.lines));
 });
