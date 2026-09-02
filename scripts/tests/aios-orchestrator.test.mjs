@@ -522,7 +522,7 @@ test('buildOrchestrationPlan creates ordered phases', () => {
   assert.equal(plan.workItems.length >= 1, true);
 });
 
-test('buildDecomposedWorkItems extracts context candidates and infers item types', () => {
+test('buildDecomposedWorkItems extracts context candidates with neutral types and deterministic path hints', () => {
   const items = buildDecomposedWorkItems({
     taskTitle: 'Harden checkout flow',
     contextSummary: '- add auth preflight check\n- update billing retry logic\n- add regression tests\n- update docs/README.md',
@@ -530,12 +530,14 @@ test('buildDecomposedWorkItems extracts context candidates and infers item types
 
   assert.equal(items.length, 4);
   assert.equal(items[0].itemId, 'wi.1');
-  assert.equal(items[0].type, 'auth');
-  assert.equal(items[1].type, 'payment');
-  assert.equal(items[2].type, 'testing');
-  assert.equal(items[2].ownedPathHints.includes('scripts/tests/'), true);
-  assert.equal(items[3].type, 'docs');
+  // 北极星原则：程序不猜类型，无显式声明时一律 general
+  assert.equal(items.every((item) => item.type === 'general'), true);
+  // 确定性提取：summary 中形如路径的 token 才进入 ownedPathHints
   assert.equal(items[3].ownedPathHints.includes('docs/README.md'), true);
+  // 无显式路径时只返回宽泛默认，不做关键词归属猜测
+  assert.equal(items[0].ownedPathHints.includes('scripts/tests/'), false);
+  assert.equal(items[2].ownedPathHints.includes('scripts/tests/'), false);
+  assert.deepEqual(items[0].ownedPathHints, ['scripts/', 'mcp-server/', 'docs/']);
   assert.equal(items.every((item) => item.status === 'queued'), true);
 });
 
@@ -2559,10 +2561,10 @@ test('runOrchestrate resolves blueprint and context from learn-eval overlay', as
   const report = JSON.parse(logs.at(-1));
 
   assert.equal(result.exitCode, 0);
-  assert.equal(report.blueprint, 'security');
+  assert.equal(report.blueprint, 'feature');
   assert.equal(report.taskTitle, 'Audit login flow hardening');
   assert.equal(report.learnEvalOverlay.sourceSessionId, 'security-stable');
-  assert.equal(report.learnEvalOverlay.selectedRecommendationId, 'blueprint.security');
+  assert.equal(report.learnEvalOverlay.selectedRecommendationId, 'blueprint.feature');
   assert.equal(report.learnEvalOverlay.appliedRecommendationIds.includes('checklist.verification-standard'), true);
   assert.match(report.contextSummary, /learn-eval overlay/i);
 });
@@ -2618,7 +2620,7 @@ test('runOrchestrate adds a local dispatch skeleton without invoking models', as
 
   const logs = [];
   await runOrchestrate(
-    { sessionId: 'security-stable', dispatchMode: 'local', format: 'json' },
+    { blueprint: 'security', sessionId: 'security-stable', dispatchMode: 'local', format: 'json' },
     { rootDir, io: { log: (line) => logs.push(line) } }
   );
   const report = JSON.parse(logs.at(-1));
@@ -3068,7 +3070,7 @@ test('runOrchestrate adds a dry-run dispatch run without invoking models', async
 
   const logs = [];
   await runOrchestrate(
-    { sessionId: 'security-stable', dispatchMode: 'local', executionMode: 'dry-run', format: 'json' },
+    { blueprint: 'security', sessionId: 'security-stable', dispatchMode: 'local', executionMode: 'dry-run', format: 'json' },
     { rootDir, io: { log: (line) => logs.push(line) } }
   );
   const report = JSON.parse(logs.join('\n'));
@@ -3257,7 +3259,7 @@ test('runOrchestrate keeps explicit blueprint when overlay also recommends one',
   const report = JSON.parse(logs.join('\n'));
 
   assert.equal(report.blueprint, 'refactor');
-  assert.equal(report.learnEvalOverlay.selectedRecommendationId, 'blueprint.security');
+  assert.equal(report.learnEvalOverlay.selectedRecommendationId, 'blueprint.feature');
 });
 
 test('runOrchestrate preflight clears verification blocker and records results', async () => {
@@ -3831,8 +3833,9 @@ test('renderOrchestrationReport includes decomposed work-item plan', () => {
     contextSummary: '- add auth checks\n- add regression tests',
   });
   assert.match(report, /Work-Item Plan:/);
-  assert.match(report, /\[auth\] wi\.1/);
-  assert.match(report, /\[testing\] wi\.2/);
+  // 北极星原则：类型不猜，无显式声明时一律 general
+  assert.match(report, /\[general\] wi\.1/);
+  assert.match(report, /\[general\] wi\.2/);
 });
 
 test('renderOrchestrationReport includes learn-eval overlay summary', () => {

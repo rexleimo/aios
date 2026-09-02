@@ -38,22 +38,9 @@ export function buildOrchestrateCommand(blueprint, taskTitle, contextSummary = '
   return args.join(' ');
 }
 
-export function inferPromotionBlueprint(summary) {
-  const context = [
-    summary.session.goal,
-    summary.session.project,
-    ...summary.signals.failures.top.map((item) => item.category),
-  ].join(' ').toLowerCase();
-
-  if (/security|auth|login|permission|secret|token|privacy|compliance|audit|risk/.test(context)) {
-    return 'security';
-  }
-  if (/refactor|cleanup|rename|restructure|simplify|dedupe|extract|tidy/.test(context)) {
-    return 'refactor';
-  }
-  if (/bug|fix|issue|incident|error|regression|flaky|crash|repair|defect/.test(context)) {
-    return 'bugfix';
-  }
+export function inferPromotionBlueprint(_summary) {
+  // 北极星原则：程序不根据文本关键词猜测 promotion 蓝图类型；
+  // 蓝图选择是语义判断，上移给 LLM/显式声明，程序一律返回中性 feature。
   return 'feature';
 }
 

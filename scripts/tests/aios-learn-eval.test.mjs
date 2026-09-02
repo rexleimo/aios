@@ -217,7 +217,7 @@ test('buildLearnEvalReport promotes stable workflows from telemetry', async () =
   assert.match(rendered, /orchestrate feature --task/);
 });
 
-test('buildLearnEvalReport routes stable security workflows to the security blueprint', async () => {
+test('buildLearnEvalReport always promotes the neutral feature blueprint regardless of workflow keywords', async () => {
   const rootDir = await makeRootDir();
   await writeSession(
     rootDir,
@@ -271,9 +271,9 @@ test('buildLearnEvalReport routes stable security workflows to the security blue
   assertRecommendationShape(blueprintPromotion, {
     kind: 'promote',
     targetType: 'blueprint',
-    targetId: 'blueprint.security',
+    targetId: 'blueprint.feature',
   });
-  assert.match(blueprintPromotion?.nextCommand ?? '', /orchestrate security --task/);
+  assert.match(blueprintPromotion?.nextCommand ?? '', /orchestrate feature --task/);
 });
 
 test('buildLearnEvalReport normalizes recommendations and renders by priority order', async () => {
