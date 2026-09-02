@@ -19,8 +19,14 @@ function tomlLiteral(value) {
   return `'${String(value).replace(/'/gu, "''")}'`;
 }
 
+/* 中文注释：TOML basic string 转义与 JSON 字符串转义对本模块的值（路径/参数）等价，
+ * 直接用 JSON.stringify 生成，不需要额外转义步骤。 */
+function tomlBasic(value) {
+  return JSON.stringify(value);
+}
+
 function tomlBasicArray(values) {
-  return `[${values.map((v) => JSON.stringify(v).replace(/\\\\/gu, '\\\\')).join(', ')}]`;
+  return `[${values.map((v) => tomlBasic(v)).join(', ')}]`;
 }
 
 export function codexHomeDir(env = process.env, homeDir = '') {
@@ -29,6 +35,9 @@ export function codexHomeDir(env = process.env, homeDir = '') {
 }
 
 export function buildManagedCodexConfig({ rootDir }) {
+  /* 中文注意：这里的五大 MCP 清单与项目 .mcp.json / .gemini/settings.json /
+   * ~/.workbuddy/mcp.json 是同一套服务的两份落点——新增第六个服务时两处都要改，
+   * codex-config.test.mjs 锁定了 5 个表名防漏。 */
   const root = path.resolve(rootDir);
   const node = process.execPath;
   const lines = [];
@@ -56,7 +65,7 @@ export function buildManagedCodexConfig({ rootDir }) {
   lines.push('[mcp_servers.aios-auth-tools]');
   lines.push('type = "stdio"');
   lines.push('command = "python"');
-  lines.push(`args = ["-u", ${JSON.stringify(path.join(root, 'scripts', 'auth-tools-server.py'))}]`);
+  lines.push(`args = ${tomlBasicArray(['-u', path.join(root, 'scripts', 'auth-tools-server.py')])}`);
   lines.push('startup_timeout_sec = 30');
   lines.push('');
   lines.push('[mcp_servers.aios-auth-tools.env]');
@@ -64,7 +73,7 @@ export function buildManagedCodexConfig({ rootDir }) {
   lines.push('');
   lines.push('[mcp_servers.aios-shell]');
   lines.push('type = "stdio"');
-  lines.push(`command = ${JSON.stringify(node)}`);
+  lines.push(`command = ${tomlBasic(node)}`);
   lines.push(`args = ${tomlBasicArray([
     path.join(root, 'scripts', 'aios-mcp-proxy.mjs'),
     '--workspace', root,
@@ -93,7 +102,9 @@ export function buildManagedCodexConfig({ rootDir }) {
   return lines.join('\n');
 }
 
-/* 中文注释：按表头剥离 AIOS 拥有的段（含历史手工写入、无标记的版本），避免重复表头。 */
+/* 中文注释：按表头剥离 AIOS 拥有的段（含历史手工写入、无标记的版本），避免重复表头。
+ * 前置假设：输入是合法 TOML（codex 自己也要求这一点，非法文件它同样无法加载）；
+ * 对畸形文件（表头无闭合）会吞到下一个表头为止，属可接受退化。 */
 export function stripManagedTables(raw, { rootDir }) {
   const root = path.resolve(rootDir);
   const tableNames = [

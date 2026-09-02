@@ -9,6 +9,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 ### Added
 
 - feat(memory): prompt-driven memory activation across clients — `aios session start` now registers a ContextDB session (idempotent, `--session-id/--agent/--client`), new `aios-memory` MCP server (`memory_recall` / `memory_write` / `memory_checkpoint`) for hook-less clients, Memory Trigger Contract projected into AGENTS.md / CLAUDE.md / GEMINI.md. Local-only surfaces (machine-specific paths, gitignored): project `.mcp.json` + `.gemini/settings.json` entries, `~/.workbuddy/mcp.json`, `.opencode/plugins/aios-memory.ts`.
+- feat(codex): installer-managed home config — `aios` native sync now writes `~/.codex/config.toml` with a managed region carrying `[projects]` `trust_level = "trusted"` (fixes the recurring codex startup hook-trust prompt) and all five AIOS MCP servers (codex previously registered none). Idempotent, preserves user content, strips legacy unmarked AIOS tables.
 
 ### Changed
 
