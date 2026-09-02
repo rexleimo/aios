@@ -7,6 +7,25 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v5.9.0 (2026-09-02) — Memory Activation Across All Clients: From Regex Triggers to Prompt-Driven
+
+### What changed
+
+- **Session lifecycle wired into memory**: `aios session start` now registers a ContextDB session (idempotent, `--session-id/--agent/--client`), so sessions start with the previous handoff and pinned memos instead of `session: (new)`.
+- **New `aios-memory` MCP server** (`memory_recall` / `memory_write` / `memory_checkpoint`): deterministic memory entry point for hook-less clients (Gemini / Hermes / WorkBuddy). Write-then-recall verified end to end.
+- **OpenCode plugin + full hook coverage**: Claude SessionStart/UserPromptSubmit, Codex/Grok UserPromptSubmit verified at runtime; new OpenCode plugin injects per-turn recall through the existing hook pipeline (TUI sessions).
+- **Memory Trigger Contract projected** into AGENTS.md / CLAUDE.md / GEMINI.md: recall on new/resume turns, write on verified conclusions, checkpoint before completion. Regex triggers are gone; trigger points are declared in prompts and the LLM decides relevance.
+- **Codex startup prompt root-caused and fixed**: codex 0.148+ persists hooks/project trust in `~/.codex/config.toml`, which AIOS never wrote — every launch re-prompted. The installer now writes a managed region (trust + all five AIOS MCP servers), idempotent and user-content preserving. Fixed at install time, updates no longer recur.
+- **Gemini fully supported again**: vendor moved to Antigravity, but per the all-client promise the deprecated flag is removed and memory/projection/skill sync are fully wired.
+- **Five MCP servers × seven clients, all green**: code-review-graph, mcp-browser-use, aios-auth-tools, aios-shell, aios-memory across Claude / Hermes / Gemini / WorkBuddy / Grok / Codex / OpenCode (including an aios-shell workspace drift fix).
+
+### Upgrade notes
+
+- `aios session start --json` output shape changed from a bare array to `{ registration, lines }`.
+- WorkBuddy's desktop-bundled CLI is not on PATH by default; a shim is documented in this release.
+- `opencode run` (headless) does not load project plugins (upstream behavior); TUI sessions are unaffected.
+- Codex users may see the trust prompt one final time after upgrading — accepting once now persists.
+
 ## v5.8.2 (2026-08-29) — Plan Status No Longer Over-Advances, WorkBuddy Client Support
 
 ### What changed

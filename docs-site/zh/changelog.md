@@ -5,6 +5,25 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.9.0（2026-09-02）——记忆系统跨客户端激活：从正则触发到提示词驱动
+
+### 主要变更
+
+- **会话生命周期接入记忆**：`aios session start` 注册 ContextDB 会话（幂等、`--session-id/--agent/--client`），会话启动即带出上个 handoff 与 pinned memo，`session: (new)` 时代结束。
+- **全新 `aios-memory` MCP server**（`memory_recall` / `memory_write` / `memory_checkpoint`）：为无 hook 面的客户端（Gemini / Hermes / WorkBuddy）提供确定性入口，写入→召回端到端验证通过。
+- **OpenCode 插件 + hook 全链路**：Claude 双 hook、Codex/Grok UserPromptSubmit 运行时验证通过；新增 OpenCode 插件经既有 hook 管线注入每轮召回（TUI 会话）。
+- **Memory Trigger Contract 五端投影**（AGENTS / CLAUDE / GEMINI）：新会话先召回、继续先召回、有结论立即写、做完写检查点。正则触发层已删除，触发点由提示词契约显式声明，相关性判断交给 LLM。
+- **Codex 启动弹窗根因修复**：codex 0.148+ 的 hooks/项目信任持久化在 `~/.codex/config.toml`，AIOS 从未写入 → 每次启动重复弹。安装器现在写入托管区（trust + 五大 MCP），幂等且保留用户内容。**装完即好，更新不再复发。**
+- **Gemini 恢复全量支持**：上游转向 Antigravity，但按全端一致承诺撤销 deprecated 标记，记忆/投影/技能同步全量接好。
+- **五大 MCP × 七客户端全绿**：crg / browser / auth / shell / memory 在 Claude、Hermes、Gemini、WorkBuddy、Grok、Codex、OpenCode 全部注册（含 aios-shell workspace 漂移修正）。
+
+### 升级说明
+
+- `aios session start --json` 输出从裸数组改为 `{ registration, lines }`。
+- WorkBuddy 桌面自带 CLI 默认不在 PATH，本版文档给出 shim 方案。
+- `opencode run`（headless）不加载项目插件（上游行为），TUI 会话不受影响。
+- Codex 用户升级后可能最后见到一次信任提示——接受一次即可持久化。
+
 ## v5.8.2（2026-08-29）——计划状态不再越级，WorkBuddy 客户端支持
 
 ### 主要变更

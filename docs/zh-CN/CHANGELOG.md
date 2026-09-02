@@ -4,9 +4,24 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.8.0（2026-08-22）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.9.0（2026-09-02）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
 >
-> v5.8.0 重点包含：session close 自动生成 reviewable memo candidate、显式 evolution trigger/status、确定性 verdict 与 replay/holdout 验收、canary/rollback 晋级，以及 AIOS 版本更新通知。现有 memo 数据无需迁移。
+> v5.9.0 重点包含：记忆系统跨客户端激活（会话启动自动注册 ContextDB、aios-memory MCP 三工具、OpenCode 插件、五端 Memory Trigger Contract 投影）、Codex hooks 信任持久化根因修复（安装器自动写入，启动弹窗不再复发）、Gemini 恢复全量支持、五大 MCP × 七客户端全绿。`aios session start --json` 输出形状变更为 `{ registration, lines }`。
+
+## [5.9.0] - 2026-09-02
+
+### 新增
+
+- **记忆系统跨客户端激活**：`aios session start` 注册 ContextDB 会话（幂等、`--session-id/--agent/--client` 参数化）；新增 `aios-memory` MCP server（`memory_recall` / `memory_write` / `memory_checkpoint`），为无 hook 面的客户端（Gemini / Hermes / WorkBuddy）提供确定性入口；Memory Trigger Contract 投影至 AGENTS.md / CLAUDE.md / GEMINI.md。本机级表面（机器特定路径，已 gitignore）：项目 `.mcp.json` + `.gemini/settings.json` 条目、`~/.workbuddy/mcp.json`、`.opencode/plugins/aios-memory.ts`。
+- **codex 用户级 config 托管**：native sync 对 codex 自动写入 `~/.codex/config.toml` 管理区——`[projects]` `trust_level = "trusted"`（根治每次启动的 hook 信任弹窗）+ 五大 AIOS MCP（codex 此前为零）。幂等、保留用户内容、剥离历史无标记 AIOS 表。
+
+### 变更
+
+- gemini 在客户端注册表撤销 deprecated：上游停止迭代 Gemini CLI，但按全端一致承诺，AIOS 保持完整支持（MCP 记忆、指令投影、skill 同步）。
+
+### 修复
+
+- memory MCP server 并发处理消息（对齐 shell-mcp-server，慢检索不再阻塞 ping/initialize）；OpenCode 插件召回 stash 加 32 条 LRU 上界；`parseSessionArgs` 参数映射与 `runSessionStartTimeline` JSON 契约补测试。注意：`aios session start --json` 输出形状从裸数组改为 `{ registration, lines }`。
 
 ## [5.8.0] - 2026-08-22
 

@@ -182,7 +182,7 @@ faq:
   <div class="rex-bloglist__header">
     <span class="rex-bloglist__eyebrow">来自博客</span>
     <h2 class="rex-bloglist__title">最新工作流指南</h2>
-    <a class="rex-bloglist__more" href="https://cli.rexai.top/blog/">全部文章 <span aria-hidden="true">→</span></a>
+    <a class="rex-bloglist__more" href="/blog/zh/">全部文章 <span aria-hidden="true">→</span></a>
   </div>
   <div class="rex-bloglist__grid">
     <article class="rex-bloglist__card">
@@ -202,6 +202,13 @@ faq:
     </article>
   </div>
 </div>
+
+## 更多博客文章
+
+- [AIOS RL 训练系统](/blog/zh/rl-training-system/)
+- [ContextDB 搜索升级](/blog/zh/contextdb-fts-bm25-search/)
+- [Windows CLI 启动稳定性](/blog/zh/windows-cli-startup-stability/)
+- [Orchestrate Live](/blog/zh/orchestrate-live/)
 
 <!-- ============================================================
      收尾 CTA
