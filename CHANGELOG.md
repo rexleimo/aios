@@ -6,6 +6,18 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+
+- feat(memory): prompt-driven memory activation across clients — `aios session start` now registers a ContextDB session (idempotent, `--session-id/--agent/--client`), new `aios-memory` MCP server (`memory_recall` / `memory_write` / `memory_checkpoint`) for hook-less clients, Memory Trigger Contract projected into AGENTS.md / CLAUDE.md / GEMINI.md. Local-only surfaces (machine-specific paths, gitignored): project `.mcp.json` + `.gemini/settings.json` entries, `~/.workbuddy/mcp.json`, `.opencode/plugins/aios-memory.ts`.
+
+### Changed
+
+- gemini is no longer marked deprecated in the client registry: the vendor stopped iterating Gemini CLI, but AIOS keeps full per-client support (MCP memory, instruction projection, skill sync) per the all-client promise.
+
+### Fixed
+
+- fix(memory): review findings — memory MCP server handles messages concurrently (aligned with shell-mcp-server, slow recall no longer blocks ping/initialize), OpenCode plugin recall stash bounded (32-entry LRU), `parseSessionArgs` flag mapping and `runSessionStartTimeline` JSON contract now covered by tests. Note: `aios session start --json` output shape changed from a bare array to `{ registration, lines }`.
+
 ## [5.8.2] - 2026-08-29
 
 ### Fixed
