@@ -563,7 +563,7 @@ test('work-item telemetry schema exists and pins schemaVersion=1', async () => {
   assert.equal(telemetrySpec.default.properties.schemaVersion.const, 1);
 });
 
-test('buildWorkItemTelemetry maps blocked retries to failure and retry classes', () => {
+test('buildWorkItemTelemetry keeps neutral failure class and deterministic retry class for blocked retries', () => {
   const telemetry = buildWorkItemTelemetry({
     dispatchRun: {
       jobRuns: [
@@ -596,7 +596,9 @@ test('buildWorkItemTelemetry maps blocked retries to failure and retry classes',
   assert.equal(telemetry.totals.blocked, 1);
   const blocked = telemetry.items.find((item) => item.itemId === 'phase.implement');
   assert.ok(blocked, 'expected blocked work item');
-  assert.equal(blocked.failureClass, 'timeout');
+  // 北极星原则：无显式声明时失败类别恒为中性 runtime-error，不从错误文本猜
+  assert.equal(blocked.failureClass, 'runtime-error');
+  // 重试类别是确定性计数簿记（attempts>1），不受错误文本影响
   assert.equal(blocked.retryClass, 'same-hypothesis');
   assert.equal(blocked.attempts, 2);
   assert.equal(blocked.artifactRefs.length, 1);

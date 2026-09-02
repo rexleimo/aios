@@ -5,18 +5,9 @@ function extractJobError(jobRun) {
   return clipText(jobRun?.output?.error || jobRun?.output?.rawOutput || '');
 }
 
-function inferFailureClassFromError(errorText) {
-  const text = normalizeText(errorText).toLowerCase();
-  if (!text) return 'runtime-error';
-  if (text.includes('timed out')) return 'timeout';
-  if (text.includes('blocked by dependency')) return 'dependency-blocked';
-  if (text.includes('file policy violation') || text.includes('ownedpathprefixes') || text.includes('ownership')) {
-    return 'ownership-policy';
-  }
-  if (text.includes('invalid handoff payload') || text.includes('failed to parse json handoff') || text.includes('output a single json object')) {
-    return 'contract';
-  }
-  if (text.includes('unsupported job type')) return 'unsupported-job';
+function inferFailureClassFromError(_errorText) {
+  // 北极星原则：失败类别只来自显式声明（telemetry.failureClass），
+  // 程序不根据错误文本关键词猜类别；无声明时返回中性 runtime-error。
   return 'runtime-error';
 }
 
@@ -37,8 +28,14 @@ export function extractTurn(jobRun, { telemetryByItemId = null } = {}) {
 
   const error = extractJobError(jobRun);
   const telemetry = telemetryByItemId instanceof Map ? telemetryByItemId.get(jobId) : null;
-  const failureClass = normalizeText(telemetry?.failureClass) || inferFailureClassFromError(error);
-  const retryClass = normalizeText(telemetry?.retryClass) || 'none';
+  // 北极星原则：失败/重试类别只来自显式声明（telemetry.failureClass / jobRun.failureClass），
+  // 程序不根据错误文本猜类别；无声明时 failureClass 回退中性 runtime-error。
+  const failureClass = normalizeText(telemetry?.failureClass)
+    || normalizeText(jobRun?.failureClass)
+    || inferFailureClassFromError(error);
+  const retryClass = normalizeText(telemetry?.retryClass)
+    || normalizeText(jobRun?.retryClass)
+    || 'none';
   const attempts = Number.isFinite(jobRun?.attempts) ? Math.max(0, Math.floor(jobRun.attempts)) : 0;
 
   return {

@@ -15,31 +15,23 @@ function normalizeStatus(raw = '') {
 }
 
 function inferFailureClass(jobRun, status) {
+  // 北极星原则：失败类别只来自显式声明（jobRun.failureClass / failureCategory），
+  // 程序不根据错误文本关键词猜类别；无声明且 blocked 时返回中性 runtime-error。
+  const declared = normalizeText(jobRun?.failureClass || jobRun?.failureCategory || '').toLowerCase();
+  if (declared) {
+    return declared;
+  }
   if (status !== 'blocked') {
     return 'none';
   }
-  const text = normalizeText(`${jobRun?.output?.error || ''} ${jobRun?.output?.rawOutput || ''}`).toLowerCase();
-  if (!text) return 'runtime-error';
-  if (text.includes('timed out')) return 'timeout';
-  if (text.includes('blocked by dependency')) return 'dependency-blocked';
-  if (text.includes('file policy violation') || text.includes('ownedpathprefixes') || text.includes('ownership')) {
-    return 'ownership-policy';
-  }
-  if (text.includes('invalid handoff payload') || text.includes('failed to parse json handoff')) {
-    return 'contract';
-  }
-  if (text.includes('unsupported job type')) return 'unsupported-job';
   return 'runtime-error';
 }
 
 function inferRetryClass(jobRun) {
+  // 重试类别只做确定性簿记（attempts 计数），不根据错误文本猜假设是否变化。
   const attempts = Math.max(0, normalizeInteger(jobRun?.attempts, 0));
   if (attempts > 1) {
     return 'same-hypothesis';
-  }
-  const text = normalizeText(`${jobRun?.output?.error || ''} ${jobRun?.output?.rawOutput || ''}`).toLowerCase();
-  if (text.includes('new hypothesis') || text.includes('changed hypothesis')) {
-    return 'new-hypothesis';
   }
   return 'none';
 }

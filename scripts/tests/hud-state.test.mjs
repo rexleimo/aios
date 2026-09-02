@@ -715,6 +715,7 @@ test('readHudState includes latest checkpoint and dispatch evidence', async () =
           turnId: '20260405T005900Z:phase.implement.wi.1:a1',
           workItemRefs: ['wi.1'],
           attempts: 1,
+          failureClass: 'ownership-policy',
           output: { error: 'File policy violation' },
         },
         {
@@ -1275,6 +1276,7 @@ test('readHudDispatchSummary includes latest dispatch, hindsight, and fix hint',
       executor: 'local-phase',
       status: 'blocked',
       attempts,
+      failureClass: 'ownership-policy',
       output: { error: 'File policy violation' },
     },
     {
@@ -1491,6 +1493,7 @@ test('runTeamHistory includes dispatch hindsight summary and fix hint', async ()
       role: 'implementer',
       status: 'blocked',
       attempts,
+      failureClass: 'ownership-policy',
       output: { error: 'File policy violation' },
     },
     {
@@ -3054,6 +3057,7 @@ test('runTeamHistory preserves session ordering under concurrency', async () => 
       role: 'implementer',
       status: 'blocked',
       attempts,
+      failureClass: 'ownership-policy',
       output: { error: 'File policy violation' },
     },
     {
