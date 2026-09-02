@@ -92,6 +92,19 @@ export async function syncNativeEnhancementsUnlocked({
       fsOps: ops,
       repair: repairOptions,
     });
+
+    // 中文注释：codex 用户级 config.toml（trust 持久化 + 五大 MCP）在项目目录之外，
+    // 不能走相对路径的 operations 管线，作为 codex 专属后置步骤执行。
+    if (currentClient === 'codex') {
+      try {
+        const { syncCodexHomeConfig } = await import('../emitters/codex-config.mjs');
+        const homeConfig = await syncCodexHomeConfig({ rootDir: sourceRootDir });
+        io.log?.(`[codex] home config ${homeConfig.status}: ${homeConfig.path}`);
+        result.codexHomeConfig = homeConfig.status;
+      } catch (err) {
+        io.log?.(`[warn] codex home config sync skipped: ${err.message}`);
+      }
+    }
     results.push(result);
   }
 
