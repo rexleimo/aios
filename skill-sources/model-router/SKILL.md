@@ -14,7 +14,9 @@ repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 
 # Model Router
 
-你是 Agent Team 的调度中枢。先识别任务信号，再按 profile、能力和成本选择模型；不要把所有任务都默认塞给实现模型。
+你是 Agent Team 的调度中枢。先做语义判断（任务属于哪类），再用 `--task-type` 显式声明；不要把所有任务都默认塞给实现模型，也不要用关键词表假装识别任务类型。
+
+> 北极星原则：程序不根据自由文本关键词猜任务类型。任务类型由模型语义判断后**显式声明**（`--task-type`）；无声明时程序返回中性 `general`（确定性默认），不猜测。
 
 ## CLI 协议
 
@@ -39,7 +41,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
 
 ## Balanced v2 Profiles
 
-- `balanced` 默认：强信号升级，普通实现省成本。
+- `balanced` 默认：显式声明驱动升级，普通实现省成本。
 - `premium`：复杂、低置信、高风险任务更积极使用订阅强模型。
 - `budget`：优先低成本，仅在浏览器、长上下文、安全、生产恢复等硬能力约束下升级。
 
@@ -50,18 +52,22 @@ node scripts/aios.mjs model-router route --task "..." --profile balanced --expla
 export AIOS_MODEL_ROUTER_PROFILE=premium
 ```
 
-## 强信号路由
+## 任务类型声明
 
-| 信号 | 任务类型 | 首选模型 |
-|------|----------|----------|
-| 浏览器、打开、上传、填写、截图、网页抓取 | `browser-automation` | **GPT-5.5** |
-| 安全、漏洞、注入、权限、合规、auth | `security-review` | **Claude Opus** |
-| 代码审查、review、pull request、代码质量 | `code-review` | **Claude Opus** |
-| 线上、故障、事故、日志、恢复、自愈 | `self-healing` | **MiniMax-M2.7** |
-| 架构、技术选型、系统设计、跨模块 | `architecture` | **Claude Opus** |
-| 很长、长文档、第三方 API、视频、图像、多模态 | `research` | **Gemini-3-Pro** |
-| 前端、UI、组件、落地页、样式、beautiful | `frontend` | **Kimi K2.6** |
-| 普通实现、写代码、开发、构建 | `implementation` | **DeepSeek-V4** |
+任务类型是语义判断：你理解任务后，选择最贴合的 task type 并用 `--task-type` 显式声明。常用类型（完整列表见 `model-router list`）：
+
+| task-type | 适用场景 | 典型首选模型 |
+|-----------|----------|--------------|
+| `browser-automation` | 浏览器操作、页面交互、上传填写、截图抓取 | **GPT-5.5** |
+| `security-review` | 安全审计、漏洞分析、权限与合规检查 | **Claude Opus** |
+| `code-review` | 代码审查、PR 质量评估 | **Claude Opus** |
+| `self-healing` | 线上故障、日志恢复、生产自愈 | **MiniMax-M2.7** |
+| `architecture` | 架构设计、技术选型、跨模块规划 | **Claude Opus** |
+| `research` | 长文档、多模态、第三方 API 调研 | **Gemini-3-Pro** |
+| `frontend` | 前端 UI、组件、落地页 | **Kimi K2.6** |
+| `implementation` | 普通实现、算法、核心逻辑 | **DeepSeek-V4** |
+
+无 `--task-type` 时程序返回中性 `general` 并采用默认实现模型——这是确定性兜底，不表示程序识别出了任务类型。
 
 ## Explain 输出
 
@@ -70,6 +76,7 @@ export AIOS_MODEL_ROUTER_PROFILE=premium
 ```bash
 node scripts/aios.mjs model-router route \
   --task "用浏览器打开小红书发布页面，上传图片并填写标题" \
+  --task-type browser-automation \
   --profile balanced \
   --explain
 ```
@@ -77,8 +84,8 @@ node scripts/aios.mjs model-router route \
 重点看这些字段：
 
 - `profile`：实际使用的策略，默认 `balanced`。
-- `confidence`：信号强度和胜出差距，低置信时可考虑拆任务或用 `premium`。
-- `matchedSignals`：命中的关键词和权重。
+- `confidence`：显式声明时为 1，无声明时为 0。
+- `matchedSignals`：恒为空数组（程序不做关键词匹配）。
 - `why`：人类可读解释。
 - `recommendedPhases`：复合任务的分阶段建议；v2 只报告建议，不自动改写 team plan。
 
@@ -92,10 +99,10 @@ node scripts/aios.mjs model-router route \
 
 ## 决策流程
 
-1. 识别任务描述中的强信号，不要只看第一个动词。
+1. 语义判断任务类型：理解任务后选择最贴合的 task type，**显式**传 `--task-type`（例如浏览器类任务 → `--task-type browser-automation`）。
 2. 如果用户明确指定 task type 或角色 env override，优先尊重 override。
 3. 按 profile 调整：`balanced` 成本感知、`premium` 更积极升级、`budget` 更保守。
-4. 用 `--explain` 检查 `matchedSignals` 和 `why`。
+4. 用 `--explain` 检查 `why` 与 `confidence`。
 5. 对复合任务按 `recommendedPhases` 拆成规划、实现、文档、审查等子任务。
 6. 记录/查看结果：`node scripts/aios.mjs model-router stats`。
 
@@ -103,7 +110,7 @@ node scripts/aios.mjs model-router route \
 
 ```bash
 node scripts/aios.mjs model-router list
-node scripts/aios.mjs model-router route --task "build a beautiful landing page component" --profile balanced --explain
+node scripts/aios.mjs model-router route --task "build a beautiful landing page component" --task-type frontend --profile balanced --explain
 node scripts/aios.mjs model-router route --task "实现一个登录接口" --task-type implementation
 node scripts/aios.mjs model-router stats
 ```
@@ -127,8 +134,8 @@ export AIOS_SUBAGENT_GEMINI_UNATTENDED=0      # 关闭 Gemini 子进程 yolo（�
 
 ## Troubleshooting
 
-- 如果 `model-router stats` 全是 `deepseek-v4 / implementation`，先用 `route --task "..." --profile balanced --explain` 检查新任务是否已命中强信号；stats 反映历史执行记录，不会自动证明当前路由仍然错误。
-- 如果浏览器/上传/填写类任务没有到 GPT-5.5，确认 prompt 中包含真实操作信号，或显式加 `--task-type browser-automation`。
-- 如果前端 UI 被当成普通实现，加入 `frontend`、`UI`、`landing page`、`component`、`style` 等信号，或使用 `--task-type frontend`。
+- 如果 `model-router stats` 全是 `deepseek-v4 / implementation`，先用 `route --task "..." --task-type <type> --profile balanced --explain` 检查显式声明后的路由是否合理；stats 反映历史执行记录，不会自动证明当前路由仍然错误。
+- 如果浏览器/上传/填写类任务没有到 GPT-5.5，显式加 `--task-type browser-automation`。
+- 如果前端 UI 被当成普通实现，显式使用 `--task-type frontend`。
 - 如果任务很大且 `confidence` 低，优先拆分子任务；需要更强模型时用 `--profile premium`。
 - 当前 v2 记录历史 dispatch 供诊断和统计；历史成功率尚未自动参与权重计算，不要把 stats 当成在线学习结果。

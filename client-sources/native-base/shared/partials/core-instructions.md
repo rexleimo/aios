@@ -15,6 +15,24 @@ Classify the work item before selecting a plan, skill, or delegation route:
 Do not turn a new objective into a continuation merely because it follows an
 earlier task. Do not inject a fixed skill chain at startup.
 
+## Explicit Declaration Protocol
+
+The workflow core never guesses semantics from keywords; declare what you want
+so the policy, routing, and work-item machinery can act on it:
+
+- Workflow commands: prefix a request with `/plan`, `/implement`, `/single`,
+  `/review`, `/debug`, `/spec`, `/grill`, `/tickets`, `/team`, or `/harness`
+  to declare intent explicitly. `/single` forces a direct, unplanned turn.
+- Resume protocol: `继续` / `接着做` / `下一步` / `resume` / `continue` with a
+  non-empty tail starts a new objective; a bare acknowledgement
+  (`好` / `可以` / `确认` / `ok`) continues the same-session active plan.
+- Read-only: the core never infers read-only from prose. Declare
+  `explicit-intent: read-only` (or `/single`) for inspection-only work.
+- Work items: declare `type`, `targets`, `allowedWrites`, and `failureClass`
+  explicitly in structured plans; the core does not infer them from text.
+- Model routing: declare `task-type` explicitly; without a declaration the
+  router returns the neutral `general` default instead of guessing.
+
 ## Rex Ownership and Safety
 
 - The current Rex Capability Command is the only authority that selects a

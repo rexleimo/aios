@@ -2,11 +2,11 @@
   "schemaVersion": 1,
   "managedBy": "aios",
   "kind": "native-sync",
-  "client": "hermes",
+  "client": "workbuddy",
   "tier": "compatibility",
   "managedTargets": [
-    ".hermes/skills"
+    ".workbuddy/skills"
   ],
-  "generatedAt": "2026-09-02T01:50:17.258Z",
+  "generatedAt": "2026-09-02T01:50:24.876Z",
   "aiosVersion": ""
 }

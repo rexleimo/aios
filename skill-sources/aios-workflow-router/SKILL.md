@@ -1,6 +1,6 @@
 ---
 name: aios-workflow-router
-description: "Route AIOS host dispositions and execute the current rex-harness software Capability Command. TRIGGER: 分析、设计、实现、调试、并发、agent team、长任务、harness、plan、工作流、多步骤"
+description: "Route AIOS host dispositions and execute the current rex-harness software Capability Command. 语义判断路由（不依赖关键词表）：按 workflow-policy 的结构化 Decision 路由，按显式声明的 intent/命令前缀（/plan /single /implement /review /debug /team /harness）与当前 Capability Command 执行。TRIGGER: 需要路由 disposition、需要执行 rex Capability Command、显式 intent 声明"
 
 installCatalogName: aios-workflow-router
 clients: [codex, claude, gemini, opencode, hermes, grok, workbuddy]
@@ -14,13 +14,22 @@ repoTargets: [codex, claude, gemini, opencode, hermes, grok, agents, workbuddy]
 
 # AIOS Workflow Router
 
-这个 Skill 只协调宿主路由和 rex 返回的当前命令，不拥有软件工程步骤顺序。
+这个 Skill 只协调宿主路由和 rex 返回的当前命令，不拥有软件工程步骤顺序。路由由显式声明与 workflow-policy 的结构化 Decision 驱动，不根据任务文本关键词自行判断。
 
 ## 所有权
 
 - AIOS：`direct | guarded | planned`、最终 Provider Binding、计划和 Activation 持久化、Skill/Agent/模型执行、安全、验证、Team、Harness、恢复和重试。
 - rex-harness：Observation -> Fact、Capability 选择、Capability Recipe、Evidence Contract、下一条语义 Command、软件 Workflow Recipe，以及独立可用的 rex-native Provider；AIOS 不再绑定外部兼容 Provider。
 - Skill / Playbook / Agent：执行已经选中的一个阶段，不根据关键词自行激活，也不决定后续阶段。
+
+## 显式声明协议
+
+disposition 由显式声明驱动，模型不猜"用户是否想只读/是否要计划/是否多步"：
+
+- 用户带 workflow 命令前缀（`/plan` `/single` `/implement` `/review` `/debug` `/spec` `/grill` `/tickets` `/team` `/harness`）时，把声明的 intent 透传给 workflow-policy；`/single` = direct、不建计划。
+- 用户说 `继续` / `接着做` / `下一步` / `resume` / `continue`（带非空 tail）→ 新目标；裸确认（`好` / `可以` / `确认` / `ok`）→ 继续同会话活动计划。
+- 只读场景由调用方显式声明 `explicit-intent: read-only`，不靠"解释/说明"等词判断。
+- 模型自身需要时也可显式声明 intent（如 `/implement` 覆盖 capability 默认计划），但不得用关键词表假装识别。
 
 ## 路由流程
 
