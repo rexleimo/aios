@@ -147,6 +147,7 @@ const TOOLS = [
         workspace: { type: 'string', description: 'Workspace root (defaults to CWD)' },
         client: { type: 'string', description: 'Client id e.g. hermes' },
         sessionId: { type: 'string', description: 'Client session id for acknowledgement continuation matching' },
+        explicitIntent: { type: 'string', enum: ['plan', 'planned', 'implement', 'direct', 'read-only', 'readonly', 'review', 'debug', 'spec', 'grill', 'tickets', 'team', 'harness', 'status', 'explain', 'ops', 'guarded', 'noop'], description: 'Explicit semantic intent declaration for this turn. The policy never guesses intent from free text; declare it here (or use a /command prefix in message) when the user wants a specific disposition (e.g. read-only for inspection, implement to override a planned-by-default capability, plan/tickets/spec/grill/design for planning, team/harness for delegation).' },
         policyMode: { type: 'string', enum: ['adaptive', 'strict'], description: 'Workflow policy mode; defaults to AIOS_WORKFLOW_POLICY_MODE or adaptive' },
         dryRun: { type: 'boolean', description: 'Evaluate and return a decision without persisting a planned artifact' },
       },

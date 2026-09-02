@@ -56,6 +56,21 @@ so the policy, routing, and work-item machinery can act on it:
 - Model routing: declare `task-type` explicitly; without a declaration the
   router returns the neutral `general` default instead of guessing.
 
+**How to trigger:** when you (the model) judge that a turn needs a specific
+disposition, do not describe it in prose and expect the harness to infer it —
+the harness only reads declarations. Two concrete channels:
+
+1. Reply with a workflow command prefix (`/plan`, `/single`, `/read-only`,
+   `/review`, `/debug`, `/team`, `/harness`, ...) so the next policy evaluation
+   picks it up, or
+2. Call the AIOS MCP tool `aios_plan_auto_gate` with the `explicitIntent`
+   field set (e.g. `read-only`, `implement`, `plan`, `review`, `debug`,
+   `team`, `harness`) to declare the disposition for the current turn.
+
+Without one of these, the policy returns its deterministic default (`guarded`
+for substantive changes, capability `plannedByDefault` for design/testing
+workflows) — that is the safe fallback, not an inference of your intent.
+
 ## Rex Ownership and Safety
 
 - The current Rex Capability Command is the only authority that selects a
