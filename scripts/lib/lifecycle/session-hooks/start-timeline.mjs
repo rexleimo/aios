@@ -61,14 +61,26 @@ export async function renderActivityTimeline({ rootDir, limit = 10 }) {
 
 /**
  * CLI runner for session start (activity timeline) subcommand.
- * Renders recent events and prints to stdout.
+ * Registers the ContextDB session first (方案 A：记忆随工作流入口启用),
+ * then renders recent events and prints to stdout.
  */
-export async function runSessionStartTimeline(options, { rootDir = process.cwd(), stdout = process.stdout } = {}) {
+export async function runSessionStartTimeline(options = {}, { rootDir = process.cwd(), stdout = process.stdout } = {}) {
+  let registration = null;
+  if (options.register !== false) {
+    const { ensureContextDbSession } = await import('./start-session.mjs');
+    registration = await ensureContextDbSession({
+      rootDir,
+      sessionId: options.sessionId || '',
+      agent: options.agent || 'agent',
+      client: options.client || '',
+    });
+  }
+
   const limit = options.limit || 10;
   const lines = await renderActivityTimeline({ rootDir, limit });
 
   if (options.json || options.format === 'json') {
-    stdout.write(`${JSON.stringify(lines, null, 2)}\n`);
+    stdout.write(`${JSON.stringify({ registration, lines }, null, 2)}\n`);
   } else {
     if (lines.length === 0) {
       stdout.write('No recent activity.\n');
@@ -79,5 +91,5 @@ export async function runSessionStartTimeline(options, { rootDir = process.cwd()
     }
   }
 
-  return { exitCode: 0, lines };
+  return { exitCode: 0, lines, registration };
 }

@@ -341,3 +341,14 @@ team, harness, browser, or model-routing path.
 - UserPromptSubmit calls the workflow-policy adapter. It decides `direct`, `guarded`, or `planned` before a plan or skill is selected.
 - Keep work grounded in the AIOS runtime and verification flow after that decision.
 <!-- AIOS NATIVE END -->
+
+<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
+## Memory Trigger Contract (记忆触发契约)
+
+Claude 有确定性数据面（SessionStart / UserPromptSubmit hook 自动注入召回）；以下语义触发点由 agent 执行：
+
+- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write`（MCP `aios-memory` 工具）落 memo（本地写入，免确认）。
+- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
+- 用户说 继续 / 接着做 / resume：如注入的召回不足，主动 `memory_recall` 补充检索。
+- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
+<!-- AIOS MEMORY TRIGGER CONTRACT END -->

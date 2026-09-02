@@ -19,6 +19,9 @@ for (const name of SESSION_SUBCOMMANDS) {
   cmd.option('--json', 'Output as JSON');
   cmd.option('--format <text|json>', 'Output format');
   cmd.option('--session <id>', 'Session ID (default: default)');
+  cmd.option('--session-id <id>', 'ContextDB session id (default: auto-generated)');
+  cmd.option('--agent <name>', 'Agent id recorded for the session');
+  cmd.option('--client <name>', 'Client label recorded in session tags');
 }
 
 program.allowUnknownOption(true).allowExcessArguments(true).argument('[args...]');
@@ -30,7 +33,7 @@ export function parseSessionArgs(argv = []) {
   const hasSub = !help && SESSION_SUBCOMMANDS.includes(rawSubcommand);
   const subcommand = hasSub ? rawSubcommand : '';
 
-  const options = { subcommand, session: 'default', json: false, format: 'text' };
+  const options = { subcommand, session: 'default', json: false, format: 'text', sessionId: '', agent: '', client: '' };
 
   try {
     if (rest.length === 0 || help) {
@@ -58,6 +61,9 @@ export function parseSessionArgs(argv = []) {
     if (effectiveFlags.json === true) { options.json = true; options.format = 'json'; }
     if (effectiveFlags.format) options.format = String(effectiveFlags.format);
     if (effectiveFlags.session) options.session = String(effectiveFlags.session);
+    if (effectiveFlags.sessionId) options.sessionId = String(effectiveFlags.sessionId);
+    if (effectiveFlags.agent) options.agent = String(effectiveFlags.agent);
+    if (effectiveFlags.client) options.client = String(effectiveFlags.client);
 
     if (!subcommand) throw new Error('session requires subcommand: changed-files, close, start');
 

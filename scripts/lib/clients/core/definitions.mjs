@@ -42,9 +42,11 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     nativeMetadataRoot: '.gemini',
     instructionFileName: 'GEMINI.md',
     nativeProjectSourceFile: 'GEMINI.md',
+    // 中文注释：Gemini CLI 上游已停止迭代（供应商转向 Antigravity），但按项目承诺
+    // 所有客户端一致支持：AIOS 继续全量适配（MCP 记忆、指令投影、skill 同步），
+    // 仅同步上游现版本的修复，不依赖上游新功能。
     modelArgFlag: '-m',
     unattendedArgs: Object.freeze(['--yolo']),
-    deprecated: true,  // Gemini CLI superseded; keep syncing but no new features
   }),
   opencode: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness', 'agents', 'team']),

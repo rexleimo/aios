@@ -124,3 +124,15 @@ This repository provides compatibility-tier native enhancements for Gemini throu
 
 This compatibility projection does not declare prompt hooks. When this client is launched through AIOS shell integration, use the shared workflow policy and continue normal single-agent work for `direct` and `guarded` tasks. Use an injected `team`, `subagent`, or `harness` command only for one explicit `planned` work item.
 <!-- AIOS NATIVE END -->
+
+<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
+## Memory Trigger Contract (记忆触发契约)
+
+Gemini CLI 没有 hook 面：记忆召回完全由 agent 主动触发。
+
+- 新会话第一条消息：先调用 MCP `aios-memory` 的 `memory_recall` 检索相关记忆再开工。
+- 用户说 继续 / 接着做 / resume：先 `memory_recall` + `node scripts/aios.mjs session start --json` 恢复上下文。
+- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write`（本地写入，免确认）。
+- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
+- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
+<!-- AIOS MEMORY TRIGGER CONTRACT END -->
