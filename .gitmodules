@@ -1,6 +1,8 @@
 [submodule "rex-harness"]
 	path = rex-harness
-	# SSH over 443 matches the parent repository remote: the default SSH port (22)
-	# is blocked on many networks, which made `git clone --recurse-submodules`
-	# fail at the submodule step even though the superproject cloned fine.
-	url = ssh://git@ssh.github.com:443/rexleimo/rex-harness.git
+	# HTTPS: GitHub Actions runners have no SSH keys, so an SSH URL here breaks
+	# `submodules: recursive` checkout in release.yml (see v5.9.0 run #118).
+	# Local machines behind SSH-port-22 firewalls should add a repo-local rewrite
+	# instead of changing this URL:
+	#   git config url."ssh://git@ssh.github.com:443/".insteadOf "https://github.com/"
+	url = https://github.com/rexleimo/rex-harness.git
