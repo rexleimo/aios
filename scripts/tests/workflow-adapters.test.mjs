@@ -38,6 +38,7 @@ function makeIo() {
 async function prepareTestabilityActivation(rootDir, suffix = '') {
   const software = evaluateAiosSoftwareRequest({
     message: 'Update checkout validation behavior.',
+    explicitIntent: 'implement',
     completedCapabilities: ['software.requirements.clarify'],
   });
   const started = startStoredAiosCapabilityActivation({
@@ -45,7 +46,7 @@ async function prepareTestabilityActivation(rootDir, suffix = '') {
     decision: software.decision,
     activationId: `activation-plan-testability-${suffix || 'default'}`,
     workItemKey: `work-item:plan-testability-${suffix || 'default'}`,
-    request: { message: 'Update checkout validation behavior.' },
+    request: { message: 'Update checkout validation behavior.', explicitIntent: 'implement' },
   });
   return advanceStoredAiosCapabilityActivation({
     rootDir,
@@ -139,6 +140,7 @@ test('plan CLI submits a typed testability decision from a file with a real rece
   try {
     const software = evaluateAiosSoftwareRequest({
       message: 'Update checkout validation behavior.',
+      explicitIntent: 'implement',
       completedCapabilities: ['software.requirements.clarify'],
     });
     const started = startStoredAiosCapabilityActivation({
@@ -146,7 +148,7 @@ test('plan CLI submits a typed testability decision from a file with a real rece
       decision: software.decision,
       activationId: 'activation-plan-testability',
       workItemKey: 'work-item:plan-testability',
-      request: { message: 'Update checkout validation behavior.' },
+      request: { message: 'Update checkout validation behavior.', explicitIntent: 'implement' },
     });
     const designed = advanceStoredAiosCapabilityActivation({
       rootDir: root,

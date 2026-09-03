@@ -253,8 +253,8 @@ test('auto-gate reports an explicit non-writing continuation decision without an
 test('/single keeps substantive changes behind the workflow safety decision', async () => {
   const root = await makeTemp('aios-plan-single-safety-');
   try {
-    // 北极星原则：/single 仅指定单 agent 执行宿主，不表达计划意图；capability
-    // software.testing.design 显式声明默认需要计划 → planned(create)，但仍受
+    // 北极星原则：/single 仅指定单 agent 执行宿主，不表达计划意图；
+    // 无显式 intent 时程序不猜 capability → guarded(确定性回退)，仍受
     // 工作流安全决策约束（requiresPreEditSafety）。
     const result = runAutoGate({
       rootDir: root,
@@ -263,10 +263,10 @@ test('/single keeps substantive changes behind the workflow safety decision', as
       sessionId: 'turn-single',
       policyMode: 'adaptive',
     });
-    assert.equal(result.decision.disposition, 'planned');
+    assert.equal(result.decision.disposition, 'guarded');
     assert.equal(result.decision.requiresPreEditSafety, true);
-    assert.equal(result.created, true);
-    assert.equal(result.decision.capabilityDecision.capabilityId, 'software.testing.design');
+    assert.equal(result.created, false);
+    assert.equal(result.decision.capabilityDecision, null);
   } finally {
     await rm(root, { recursive: true, force: true });
   }

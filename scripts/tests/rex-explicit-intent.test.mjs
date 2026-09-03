@@ -18,7 +18,7 @@ test('AIOS adapter preserves explicit intent normalization and safe implement ro
     explicitIntent: { intent: 'IMPLEMENT' },
   });
   assert.equal(result.decision.capabilityId, 'software.testing.design');
-  assert.equal(result.decision.reasonCode, 'behavior-change');
+  assert.equal(result.decision.reasonCode, 'explicit-intent-implement');
   assert.equal(result.decision.provider.kind, 'skill');
 });
 

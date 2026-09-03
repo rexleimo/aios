@@ -33,7 +33,7 @@ test('release gate accepts the private root and packageable Rex child manifest',
   assert.match(String(rexPackage.version), /^\d+\.\d+\.\d+$/u);
 });
 
-test('release gate finds all required audit reports and six client targets', () => {
+test('release gate finds all required audit reports and seven client targets', () => {
   for (const report of [
     '2026-07-31-rex-wayfinder-map-ticket-audit.md',
     '2026-07-31-rex-planning-vertical-slice-audit.md',
@@ -43,7 +43,7 @@ test('release gate finds all required audit reports and six client targets', () 
   ]) {
     assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'reports', report)), true, report);
   }
-  assert.deepEqual(supportedClients(), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
+  assert.deepEqual(supportedClients(), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
 });
 
 test('release report references only existing test files', () => {

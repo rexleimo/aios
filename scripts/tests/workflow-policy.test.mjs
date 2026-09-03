@@ -236,15 +236,17 @@ test('a resume prefix with a non-empty tail is treated as a new objective', () =
     assert.equal(decision.capabilityDecision, null, message);
   }
 
+  // 显式 implement 声明进入 capability 判定 → test-design 默认 planned。
   const planned = evaluateWorkflowPolicy({
     message: '下一步更新配置',
     client: 'codex',
     sessionId: 'session-b',
+    explicitIntent: 'implement',
     activePlan: activePlan({ client: 'claude', sessionId: 'session-a' }),
   });
-  assert.equal(planned.disposition, 'planned');
+  assert.equal(planned.disposition, 'guarded');
   assert.equal(planned.continuation, 'none');
-  assert.equal(planned.persistence, 'create');
+  assert.equal(planned.persistence, 'none');
   assert.equal(planned.capabilityDecision.capabilityId, 'software.testing.design');
 });
 
@@ -289,6 +291,8 @@ test('a resume with no usable active plan is missing and never creates one', () 
 });
 
 test('an acknowledgement with a new actionable objective is new work', () => {
+  // 无显式声明时程序不猜 capability：ack 前缀 + 非空 tail → 新目标，但
+  // 不建计划（guardable 确定性回退）；显式 implement 才进入 test-design。
   const decision = evaluateWorkflowPolicy({
     message: '可以，顺便更新一个配置项',
     activePlan: activePlan(),
@@ -296,39 +300,37 @@ test('an acknowledgement with a new actionable objective is new work', () => {
     sessionId: 'session-a',
   });
 
-  assert.equal(decision.disposition, 'planned');
+  assert.equal(decision.disposition, 'guarded');
   assert.equal(decision.continuation, 'none');
-  assert.equal(decision.persistence, 'create');
+  assert.equal(decision.persistence, 'none');
   assert.equal(decision.plan, null);
-  // 北极星原则：routeHint 由 capability 判定给出（软件实现类统一走 implement），
-  // 不再依赖 OPS_PATTERN 从"更新配置项"这类文本猜 'ops'。
-  assert.equal(decision.routeHint, 'implement');
-  assert.equal(decision.requiresPreEditSafety, true);
-  assert.deepEqual(decision.requiredSkills, ['rex-test-design']);
-  assert.equal(decision.capabilityDecision.capabilityId, 'software.testing.design');
-  assert.equal(decision.verificationScope, 'full');
-  assert.equal(decision.action, 'started');
+  assert.equal(decision.capabilityDecision, null);
+
+  const declared = evaluateWorkflowPolicy({
+    message: '可以，顺便更新一个配置项',
+    activePlan: activePlan(),
+    explicitIntent: 'implement',
+    client: 'codex',
+    sessionId: 'session-a',
+  });
+  assert.equal(declared.disposition, 'guarded');
+  assert.equal(declared.capabilityDecision.capabilityId, 'software.testing.design');
 });
 
-test('adaptive mode plans a default TDD-design request; explicit implement stays guarded', () => {
-  // 北极星原则：software.testing.design 作为 TDD 起点显式声明默认需要计划
-  // （plannedByDefault），无显式 intent 时遵循该默认 → planned(create)。
-  const defaulted = evaluateWorkflowPolicy({
+test('adaptive mode keeps un-declared requests guarded; explicit implement selects test-design', () => {
+  // 北极星原则：无显式声明时程序不猜 capability → guarded(确定性回退)；
+  // 显式 implement 声明才进入 capability 判定 → test-design（guarded 不建计划，
+  // 因 implement 属显式非计划意图，用户声明直接实施）。
+  const undeclared = evaluateWorkflowPolicy({
     message: '更新一个输入校验规则',
     activePlan: null,
     client: 'codex',
     sessionId: 'session-a',
   });
-  assert.equal(defaulted.disposition, 'planned');
-  assert.equal(defaulted.persistence, 'create');
-  assert.equal(defaulted.routeHint, 'implement');
-  assert.deepEqual(defaulted.requiredSkills, ['rex-test-design']);
-  assert.equal(defaulted.capabilityDecision.capabilityId, 'software.testing.design');
-  assert.equal(defaulted.requiresPreEditSafety, true);
-  assert.equal(defaulted.verificationScope, 'full');
-  assert.equal(defaulted.action, 'started');
+  assert.equal(undeclared.disposition, 'guarded');
+  assert.equal(undeclared.persistence, 'none');
+  assert.equal(undeclared.capabilityDecision, null);
 
-  // 显式 implement intent 覆盖默认计划 → guarded（用户显式声明直接实施）。
   const explicit = evaluateWorkflowPolicy({
     message: '更新一个输入校验规则',
     activePlan: null,
@@ -346,10 +348,12 @@ test('adaptive mode plans a default TDD-design request; explicit implement stays
 });
 
 test('strict mode plans the same substantive implementation request', () => {
+  // strict 模式始终计划；显式 implement 声明让 capability 判定选中 test-design。
   const decision = evaluateWorkflowPolicy({
     message: '更新一个输入校验规则',
     activePlan: null,
     policyMode: 'strict',
+    explicitIntent: 'implement',
     client: 'codex',
     sessionId: 'session-a',
   });
@@ -365,9 +369,11 @@ test('strict mode plans the same substantive implementation request', () => {
 });
 
 test('multi-step work is planned in adaptive mode', () => {
+  // 多步由显式 plan 声明（DEPENDENT_WORK_ITEMS 事实），程序不猜文本。
   const decision = evaluateWorkflowPolicy({
     message: '先修改策略层，再接入 CLI 和 MCP，最后补齐回归测试',
     activePlan: null,
+    explicitIntent: 'plan',
     client: 'codex',
     sessionId: 'session-a',
   });
@@ -423,6 +429,10 @@ test('agent Provider uses requiredAgent instead of being injected as a Skill', (
     activePlan: null,
     client: 'codex',
     sessionId: 'session-a',
+    explicitIntent: 'implement',
+    observations: [
+      { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+    ],
     completedCapabilities: [
       'software.testing.design',
       'software.implementation.execute',
@@ -439,6 +449,9 @@ test('explicit team intent selects an execution host without replacing the rex P
     message: '并行实现一个新的支付模块',
     activePlan: null,
     explicitIntent: 'team',
+    observations: [
+      { kind: 'change.new-construct-proposed', evidenceRefs: ['observation:new-payment-module'] },
+    ],
     client: 'codex',
     sessionId: 'session-a',
   });
@@ -457,6 +470,9 @@ test('harness execution host preserves a selected Agent Provider', () => {
     message: '修改鉴权 token 和 session 校验逻辑。',
     activePlan: null,
     explicitIntent: 'harness',
+    observations: [
+      { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+    ],
     client: 'codex',
     sessionId: 'session-a',
     completedCapabilities: [
