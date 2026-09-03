@@ -139,6 +139,7 @@ mkdir -p "$tar_stage/aios"
     --exclude='.git' \
     --exclude='node_modules' \
     --exclude='mcp-server/.npm-cache' \
+    --exclude='mcp-server/.mcp.json' \
     --exclude='rex-harness/.git' \
     --exclude='rex-harness/.git/*' \
     --exclude='scripts/lib/components/superpowers' \
