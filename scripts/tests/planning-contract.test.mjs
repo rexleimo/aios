@@ -280,6 +280,11 @@ test('/subagent is an explicit planned work-item route', async () => {
       message: '/subagent repair two isolated workflow modules',
       client: 'codex',
       sessionId: 'turn-subagent',
+      // 北极星原则：/subagent 只声明执行宿主；minimal-implementation 需要
+      // "新构造"事实，由调用方显式声明 observation，程序不再从文本猜。
+      observations: [
+        { kind: 'change.new-construct-proposed', evidenceRefs: ['observation:isolated-modules'] },
+      ],
     });
 
     assert.equal(result.decision.disposition, 'planned');

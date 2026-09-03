@@ -124,6 +124,7 @@ export function evaluateAutoGateDecision({
   sessionId = '',
   policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
   explicitIntent = null,
+  observations = null,
 } = {}) {
   if (!rootDir) throw new Error('evaluateAutoGateDecision requires rootDir');
   return evaluateWorkflowPolicy({
@@ -133,6 +134,10 @@ export function evaluateAutoGateDecision({
     client,
     sessionId,
     explicitIntent: resolveExplicitIntent(message, explicitIntent),
+    // 北极星原则：observations 是调用方/模型的显式事实声明（如
+    // change.behavior-requested / review.specialist-required），程序不自行
+    // 从自由文本猜测；无声明时不建立对应事实，capability 决策走确定性回退。
+    observations: Array.isArray(observations) ? observations : undefined,
   });
 }
 
@@ -148,6 +153,7 @@ export function applyWorkflowDecision({
   sessionId = '',
   source = 'auto-gate',
   explicitIntent = null,
+  observations = null,
   dryRun = false,
 } = {}) {
   if (!rootDir) throw new Error('applyWorkflowDecision requires rootDir');
@@ -165,9 +171,12 @@ export function applyWorkflowDecision({
       rootDir,
       decision: decision.capabilityDecision,
       workItemKey,
+      // 北极星原则：显式 observations 必须随 request 存入 workflow，
+      // 供后续 capability 推进时重新评估事实（如 specialist 风险域 refs）。
       request: {
         message,
         explicitIntent,
+        ...(Array.isArray(observations) && observations.length ? { observations } : {}),
       },
     });
   };
@@ -414,6 +423,7 @@ export function runAutoGate({
   source = 'auto-gate',
   policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
   explicitIntent = null,
+  observations = null,
   dryRun = false,
   json = false,
 } = {}) {
@@ -425,6 +435,7 @@ export function runAutoGate({
     sessionId,
     policyMode: resolvedMode,
     explicitIntent,
+    observations,
   });
   const applied = applyWorkflowDecision({
     rootDir,
@@ -434,6 +445,7 @@ export function runAutoGate({
     sessionId,
     source,
     explicitIntent,
+    observations,
     dryRun: Boolean(dryRun),
   });
   const directive = buildAlwaysOnPlanningDirective({

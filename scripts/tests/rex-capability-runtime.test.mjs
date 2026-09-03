@@ -325,6 +325,8 @@ test('AIOS envelope accepts an honest typed decision and rejects a claimed RED',
   try {
     const software = evaluateAiosSoftwareRequest({
       message: 'Update checkout validation behavior.',
+      // 北极星原则：行为变更由显式声明给出，不再由文本正则猜。
+      explicitIntent: 'implement',
       completedCapabilities: ['software.requirements.clarify'],
     });
     const started = startStoredAiosCapabilityActivation({
@@ -332,7 +334,9 @@ test('AIOS envelope accepts an honest typed decision and rejects a claimed RED',
       decision: software.decision,
       activationId: 'activation-envelope-testability',
       workItemKey: 'work-item:envelope-testability',
-      request: { message: 'Update checkout validation behavior.' },
+      // 北极星原则：intent 必须随 request 持久化，workflow 推进时重新
+      // 评估事实依赖它（而非从消息文本猜）。
+      request: { message: 'Update checkout validation behavior.', explicitIntent: 'implement' },
     });
     assert.equal(started.command.provider.id, 'rex-test-design');
 
@@ -669,6 +673,11 @@ test('AIOS persists an Agent handoff artifact and adapts pass status into rex ty
   try {
     const software = evaluateAiosSoftwareRequest({
       message: '修改鉴权 token 和 session 校验逻辑。',
+      // 北极星原则：specialist 审查由显式 observation 声明（含风险域 refs），
+      // 不再由 "鉴权/security" 文本关键词触发。
+      observations: [
+        { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+      ],
       completedCapabilities: [
         'software.testing.design',
         'software.implementation.execute',

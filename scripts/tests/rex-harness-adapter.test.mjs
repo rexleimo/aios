@@ -128,6 +128,10 @@ test('AIOS adapter keeps the selected rex-native Provider by default', () => {
 test('AIOS adapter binds minimization to the bundled rex Provider by default', () => {
   const result = evaluateAiosSoftwareRequest({
     message: '实现一个新的支付模块。',
+    // 北极星原则：新构造事实由显式 observation 声明，不再由 "新增/实现" 文本猜。
+    observations: [
+      { kind: 'change.new-construct-proposed', evidenceRefs: ['observation:new-payment-module'] },
+    ],
   });
 
   assert.equal(result.decision.capabilityId, 'software.implementation.minimize');
@@ -143,6 +147,10 @@ test('AIOS adapter binds minimization to the bundled rex Provider by default', (
 test('AIOS adapter enhances the abstract rex specialist with a concrete risk-domain agent', () => {
   const result = evaluateAiosSoftwareRequest({
     message: '修改鉴权 token 和 session 校验逻辑。',
+    // 北极星原则：specialist 风险域由显式 observation 声明。
+    observations: [
+      { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+    ],
     completedCapabilities: [
       'software.testing.design',
       'software.implementation.execute',
@@ -199,7 +207,11 @@ test('AIOS adapter advances the rex-owned workflow runtime with rex-native Provi
 });
 
 test('AIOS adapter preserves Rex-owned blocked workflow semantics', () => {
-  const request = { message: 'Update checkout validation behavior.' };
+  // 北极星原则：行为变更由显式 observation 声明，不再由消息文本猜。
+  const request = {
+    message: 'Update checkout validation behavior.',
+    explicitIntent: 'implement',
+  };
   const directIds = sequentialIds('direct');
   const aiosIds = sequentialIds('direct');
   const directWorkflow = prepareTddWorkflow(startSoftwareWorkflow({
@@ -233,6 +245,11 @@ test('AIOS team or harness promotion does not replace the current rex Provider',
       request: {
         message: '修改结账校验行为。',
         explicitIntent,
+        // 北极星原则：行为变更由显式 observation 声明；team/harness 只决定
+        // promotion 宿主，不改变 rex Provider 选择。
+        observations: [
+          { kind: 'change.behavior-requested', evidenceRefs: ['observation:checkout-change'] },
+        ],
       },
       createActivationId: () => `activation-aios-${target}`,
     });

@@ -91,6 +91,7 @@ test('AIOS rejects a scenario-mismatched receipt without rotating the command or
     const started = runAutoGate({
       rootDir,
       message: '更新结账校验行为。',
+      explicitIntent: 'implement',
       client: 'codex',
       sessionId: 'session-scenario-invalid',
     });
@@ -481,6 +482,7 @@ test('blocked testability becomes a terminal replan projection instead of redisp
     const started = runAutoGate({
       rootDir,
       message: '更新结账校验行为。',
+      explicitIntent: 'implement',
       client: 'codex',
       sessionId: 'session-replan',
     });
@@ -532,6 +534,13 @@ test('planned continuation restores a concrete Agent command without an Evidence
     const first = runAutoGate({
       rootDir,
       message: '修改鉴权 token 和 session 校验逻辑。',
+      // 北极星原则：行为变更与 specialist 审查均由显式 observation 声明，
+      // 不再由 "修改/鉴权" 等文本关键词触发；不声明 implement intent，
+      // 让 test-design 的 plannedByDefault 默认维持 plan → continuation 链。
+      observations: [
+        { kind: 'change.behavior-requested', evidenceRefs: ['observation:auth-change'] },
+        { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+      ],
       client: 'codex',
       sessionId: 'session-agent-resume',
     });
