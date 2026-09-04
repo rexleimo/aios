@@ -125,6 +125,7 @@ export function evaluateAutoGateDecision({
   policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
   explicitIntent = null,
   observations = null,
+  completedCapabilities = null,
 } = {}) {
   if (!rootDir) throw new Error('evaluateAutoGateDecision requires rootDir');
   return evaluateWorkflowPolicy({
@@ -138,6 +139,10 @@ export function evaluateAutoGateDecision({
     // change.behavior-requested / review.specialist-required），程序不自行
     // 从自由文本猜测；无声明时不建立对应事实，capability 决策走确定性回退。
     observations: Array.isArray(observations) ? observations : undefined,
+    // completedCapabilities 同样为显式事实：哪些能力已在本会话完成，
+    // 决定 specialist 等后续能力是否可被选中（如 security review 需先完成
+    // testing.design + implementation.execute）。
+    completedCapabilities: Array.isArray(completedCapabilities) ? completedCapabilities : undefined,
   });
 }
 
@@ -424,6 +429,7 @@ export function runAutoGate({
   policyMode = process.env.AIOS_WORKFLOW_POLICY_MODE || 'adaptive',
   explicitIntent = null,
   observations = null,
+  completedCapabilities = null,
   dryRun = false,
   json = false,
 } = {}) {
@@ -436,6 +442,7 @@ export function runAutoGate({
     policyMode: resolvedMode,
     explicitIntent,
     observations,
+    completedCapabilities,
   });
   const applied = applyWorkflowDecision({
     rootDir,

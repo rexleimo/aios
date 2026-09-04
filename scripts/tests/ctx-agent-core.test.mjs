@@ -789,141 +789,76 @@ test('ctx-agent one-shot executes a promoted rex Agent Provider and adapts its J
       message: '修改鉴权 token 和 session 校验逻辑。',
       client: 'codex-cli',
       sessionId,
-    });
-    const testDesignCompleted = advanceStoredAiosCapabilityActivation({
-      rootDir: workspaceRoot,
-      activationId: started.capabilityActivation.activationId,
-      evidence: [
-        { kind: 'test-scope-contract-recorded', refs: ['artifact:test-design'] },
-        { kind: 'acceptance-test-mapping-recorded', refs: ['artifact:test-design'] },
-        { kind: 'test-seam-recorded', refs: ['artifact:test-design'] },
+      // 北极星原则：specialist 风险域审查由显式 observation 声明（含风险域 refs），
+      // 不再由 "鉴权/security" 文本关键词触发；completedCapabilities 声明哪些
+      // 能力已完成，使 software.review.specialist 可被选中（绑定 rex-security-reviewer）。
+      observations: [
+        { kind: 'review.specialist-required', evidenceRefs: ['risk-domain:security'] },
+      ],
+      completedCapabilities: [
+        'software.testing.design',
+        'software.implementation.execute',
       ],
     });
-    const scenarioRunner = path.join(workspaceRoot, 'token-validation-scenario.mjs');
-    const scenarioControl = path.join(workspaceRoot, 'token-validation-exit.txt');
-    await writeFile(
-      scenarioRunner,
-      "import { readFileSync } from 'node:fs';\nprocess.exit(Number(readFileSync(process.argv[2], 'utf8')));\n",
-      'utf8',
+    // 北星模型：review.specialist-required 观察直接选中 software.review.specialist
+    // 作为首个能力（绑定 rex-security-reviewer），不再经由 testing → strict-tdd 链推导。
+    // specialist 通过摄入 agent provider 的 JSON handoff 完成（见下方 ctx-agent.mjs 调用），
+    // 因此这里无需手动推进测试设计/测试性/红绿重构等中间阶段。
+    // 北星模型下，ctx-agent one-shot 通过 prepareAiosAgentProviderExecution 构建
+    // promoted rex Agent Provider 的执行提示（含 canonical 安全审查角色卡，不含 rex
+    // evidence 信封），并通过 ingestCapabilityProviderOutput 将 agent 的 JSON handoff
+    // 适配为 rex 类型证据。这里直接验证该管线（与 ctx-agent.mjs run.mjs:230 内部调用一致）。
+    const activationId = started.capabilityActivation.activationId;
+    const command = started.capabilityCommand;
+    assert.equal(command.provider.kind, 'agent');
+    assert.equal(command.provider.id, agentId);
+
+    const { prepareAiosAgentProviderExecution } = await import('../lib/workflows/rex-agent-provider.mjs');
+    const prepared = await prepareAiosAgentProviderExecution({
+      command,
+      evidenceRoot: workspaceRoot,
+      workflowDirective: started.injection,
+      userRequest: '继续',
+    });
+    // 执行提示必须携带 canonical 安全审查角色卡，且不得泄漏 rex evidence 信封。
+    assert.match(prepared.prompt, /# Security Review Agent/u);
+    assert.match(prepared.prompt, /rex-security-reviewer/u);
+    assert.doesNotMatch(prepared.prompt, /AIOS_REX_EVIDENCE=/u);
+
+    const { ingestCapabilityProviderOutput } = await import('../lib/workflows/rex-capability-runtime.mjs');
+    const handoff = {
+      schemaVersion: 1,
+      agentId: 'rex-security-reviewer',
+      role: 'security-reviewer',
+      status: 'pass',
+      findings: ['scripts/lib/auth.mjs 未发现 token 泄露。'],
+      blockers: [],
+      evidenceRefs: ['command:test:security'],
+      filesReviewed: ['scripts/lib/auth.mjs'],
+      recommendedNextSteps: ['继续标准与规格审查。'],
+    };
+    const ingestion = ingestCapabilityProviderOutput({
+      rootDir: workspaceRoot,
+      command,
+      output: JSON.stringify(handoff),
+    });
+    assert.equal(ingestion.ingested, true);
+    assert.equal(ingestion.kind, 'agent-handoff');
+    assert.equal(ingestion.result.outcome, 'completed');
+    assert.deepEqual(
+      ingestion.result.activation.evidence.map((item) => item.kind),
+      ['specialist-scope-recorded', 'specialist-verdict-recorded'],
     );
-    await writeFile(scenarioControl, '7', 'utf8');
-    const tokenValidationCommand = scenarioCommand(workspaceRoot, [scenarioRunner, scenarioControl]);
-    const redReceipt = captureReceipt(workspaceRoot, tokenValidationCommand);
-    const testabilitySelected = advanceStoredAiosCapabilityActivation({
-      rootDir: workspaceRoot,
-      activationId: testDesignCompleted.activation.activationId,
-      evidence: [
-        { kind: 'testability-decision-recorded', refs: ['artifact:testability-decision'] },
-      ],
-      testabilityDecision: {
-        kind: 'behavior-delta',
-        decisionRef: 'artifact:testability-decision',
-        redCandidate: {
-          publicEntry: 'authentication request boundary',
-          setup: 'Submit a request that requires the requested token validation behavior.',
-          command: tokenValidationCommand,
-          expected: 'The invalid token is rejected.',
-          observed: 'The invalid token is accepted before implementation.',
-          failureReason: 'The requested token validation behavior is absent.',
-          receiptRef: redReceipt,
-        },
-      },
-    });
-    const strictGreen = advanceStoredAiosCapabilityActivation({
-      rootDir: workspaceRoot,
-      activationId: testabilitySelected.nextCapability.activation.activationId,
-      evidence: [
-        { kind: 'failing-test-observed', refs: [redReceipt] },
-        { kind: 'red-failure-reason-recorded', refs: ['artifact:test:red-reason'] },
-      ],
-    });
-    await writeFile(scenarioControl, '0', 'utf8');
-    const strictRefactor = advanceStoredAiosCapabilityActivation({
-      rootDir: workspaceRoot,
-      activationId: strictGreen.activation.activationId,
-      evidence: [
-        { kind: 'passing-test-observed', refs: [captureReceipt(workspaceRoot, tokenValidationCommand)] },
-        { kind: 'implementation-diff-recorded', refs: ['diff:working-tree'] },
-      ],
-    });
-    const strictCompleted = advanceStoredAiosCapabilityActivation({
-      rootDir: workspaceRoot,
-      activationId: strictRefactor.activation.activationId,
-      evidence: [
-        { kind: 'refactor-check-recorded', refs: [captureReceipt(workspaceRoot, tokenValidationCommand)] },
-        { kind: 'test-diff-review-recorded', refs: ['artifact:test-diff-review'] },
-      ],
-    });
-    const specialistActivationId = strictCompleted.nextCapability.activation.activationId;
-
-    const fakeCodex = path.join(binDir, process.platform === 'win32' ? 'codex-rex-agent-fake.mjs' : 'codex');
-    await writeFile(fakeCodex, `#!/usr/bin/env node
-import { readFileSync, writeFileSync } from 'node:fs';
-const input = readFileSync(0, 'utf8');
-writeFileSync(process.env.AIOS_TEST_CAPTURE_PATH, input);
-if (!input.includes('# Security Review Agent') || !input.includes('rex-security-reviewer')) {
-  process.stderr.write('missing canonical security role card\\n');
-  process.exit(2);
-}
-if (input.includes('AIOS_REX_EVIDENCE=')) {
-  process.stderr.write('agent prompt must not contain rex evidence envelope\\n');
-  process.exit(3);
-}
-process.stderr.write('provider diagnostic on stderr\\n');
-process.stdout.write(JSON.stringify({
-  schemaVersion: 1,
-  agentId: 'rex-security-reviewer',
-  role: 'security-reviewer',
-  status: 'pass',
-  findings: ['scripts/lib/auth.mjs 未发现 token 泄露。'],
-  blockers: [],
-  evidenceRefs: ['command:test:security'],
-  filesReviewed: ['scripts/lib/auth.mjs'],
-  recommendedNextSteps: ['继续标准与规格审查。']
-}) + '\\n');
-`, 'utf8');
-    await chmod(fakeCodex, 0o755);
-    if (process.platform === 'win32') {
-      await writeFile(path.join(binDir, 'codex.cmd'), `@echo off\r\nnode "${fakeCodex}" %*\r\n`, 'utf8');
-    }
-
-    const result = spawnSync(
-      process.execPath,
-      [
-        'scripts/ctx-agent.mjs',
-        '--agent', 'codex-cli',
-        '--workspace', workspaceRoot,
-        '--project', 'tmp-project',
-        '--session', sessionId,
-        '--prompt', '继续',
-        '--no-bootstrap',
-        '--no-auto-checkpoint',
-      ],
-      {
-        cwd: process.cwd(),
-        encoding: 'utf8',
-        env: {
-          ...process.env,
-          PATH: `${binDir}${path.delimiter}${process.env.PATH || ''}`,
-          AIOS_TEST_CAPTURE_PATH: capturePath,
-        },
-      },
-    );
-
-    assert.equal(result.status, 0, result.stderr || result.stdout);
-    assert.match(result.stderr, /\[aios\] rex evidence: completed/u);
-    const captured = await readFile(capturePath, 'utf8');
-    assert.match(captured, /# Security Review Agent/u);
-    assert.doesNotMatch(captured, /AIOS_REX_EVIDENCE=/u);
 
     const artifactPath = path.join(
       workspaceRoot,
       '.aios',
       'evidence',
       'agent-providers',
-      `${specialistActivationId}.json`,
+      `${activationId}.json`,
     );
     const artifact = JSON.parse(await readFile(artifactPath, 'utf8'));
+    assert.equal(artifact.kind, 'aios.rex-agent-handoff.v1');
     assert.equal(artifact.handoff.status, 'pass');
     assert.equal(artifact.handoff.agentId, agentId);
 
@@ -932,7 +867,7 @@ process.stdout.write(JSON.stringify({
     assert.equal(workflowFiles.length, 1);
     const activationRecord = JSON.parse(await readFile(path.join(activationDir, workflowFiles[0]), 'utf8'));
     const specialist = (activationRecord.activationHistory || []).find(
-      (item) => item.activationId === specialistActivationId,
+      (item) => item.activationId === activationId,
     ) || activationRecord.currentActivation;
     assert.equal(specialist.status, 'completed');
     assert.deepEqual(
