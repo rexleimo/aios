@@ -141,7 +141,7 @@ Recommended setup:
   Linux bash persistent setup, then open a new terminal:
     printf '%s\n' 'export REXAI_API_KEY="cr_xxx"' >> ~/.bashrc
 
-Avoid committing API keys. For one-off use only, pass --api-key "cr_xxx".
+The key is read only from the REXAI_API_KEY environment variable — there is no CLI option to pass it. Never put the key in shell history or command lines.
 EOF
 }
 
@@ -202,7 +202,7 @@ usage() {
 Usage:
   export REXAI_API_KEY=cr_xxx
   bash scripts/rexai-image-macos.sh --model gpt-image-2 --prompt "cat" --size 1024x1024
-  bash scripts/rexai-image-macos.sh --model gpt-image-2-i2i --prompt "watercolor" --image source.png
+  bash scripts/rexai-image-macos.sh --model gpt-image-2 --prompt "watercolor" --image source.png
 
 Options:
   --model <id>          RexAI image product id
@@ -212,7 +212,7 @@ Options:
   --n <count>           Optional number of images
   --output-dir <dir>    Directory for downloaded images, default: rexai-images
   --base-url <url>      Default: https://coding.rexai.top
-  --api-key <key>       Prefer REXAI_API_KEY env var
+                        API key is read from the REXAI_API_KEY environment variable only
 EOF
   api_key_help
 }
@@ -239,7 +239,6 @@ main() {
       --image) images="${images}${images:+$'\n'}$(resolve_image_input "$2")"; shift 2 ;;
       --output-dir) output_dir="$2"; shift 2 ;;
       --base-url) base_url="$2"; shift 2 ;;
-      --api-key) api_key="$2"; shift 2 ;;
       --interval-ms) interval_ms="$2"; shift 2 ;;
       --timeout-ms) timeout_ms="$2"; shift 2 ;;
       *) printf 'Unknown option: %s\n' "$1" >&2; return 2 ;;

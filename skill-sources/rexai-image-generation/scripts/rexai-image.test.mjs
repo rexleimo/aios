@@ -26,12 +26,12 @@ assert.deepEqual(buildRequestBody({
 });
 
 assert.deepEqual(buildRequestBody({
-  model: 'gpt-image-2-i2i',
+  model: 'gpt-image-2',
   prompt: 'watercolor',
   n: '2',
   images: ['https://example.com/source.png']
 }), {
-  model: 'gpt-image-2-i2i',
+  model: 'gpt-image-2',
   prompt: 'watercolor',
   n: 2,
   images: ['https://example.com/source.png']

@@ -6,7 +6,6 @@ param(
   [string[]]$Image = @(),
   [string]$OutputDir = "rexai-images",
   [string]$BaseUrl = $(if ($env:REXAI_BASE_URL) { $env:REXAI_BASE_URL } else { "https://coding.rexai.top" }),
-  [string]$ApiKey = $env:REXAI_API_KEY,
   [int]$IntervalMs = 3000,
   [int]$TimeoutMs = 180000,
   [switch]$Help
@@ -77,7 +76,7 @@ Recommended setup:
   Linux bash persistent setup, then open a new terminal:
     printf '%s\n' 'export REXAI_API_KEY="cr_xxx"' >> ~/.bashrc
 
-Avoid committing API keys. For one-off use only, pass -ApiKey "cr_xxx".
+The key is read only from the REXAI_API_KEY environment variable — there is no CLI option to pass it. Never put the key in shell history or command lines.
 "@
 }
 
@@ -235,7 +234,7 @@ function Show-RexAiUsage {
 Usage:
   `$env:REXAI_API_KEY = "cr_xxx"
   powershell -ExecutionPolicy Bypass -File scripts/rexai-image.ps1 -Model gpt-image-2 -Prompt "cat" -Size 1024x1024
-  powershell -ExecutionPolicy Bypass -File scripts/rexai-image.ps1 -Model gpt-image-2-i2i -Prompt "watercolor" -Image source.png
+  powershell -ExecutionPolicy Bypass -File scripts/rexai-image.ps1 -Model gpt-image-2 -Prompt "watercolor" -Image source.png
 
 Options:
   -Model <id>          RexAI image product id
@@ -245,7 +244,7 @@ Options:
   -N <count>           Optional number of images
   -OutputDir <dir>     Directory for downloaded images, default: rexai-images
   -BaseUrl <url>       Default: https://coding.rexai.top
-  -ApiKey <key>        Prefer REXAI_API_KEY env var
+                       API key is read from the REXAI_API_KEY environment variable only
 
 $(Get-RexAiMissingApiKeyMessage)
 "@
@@ -256,7 +255,7 @@ function Invoke-RexAiImageCli {
     Show-RexAiUsage
     return
   }
-  if (-not $ApiKey) { throw (Get-RexAiMissingApiKeyMessage) }
+  if (-not $env:REXAI_API_KEY) { throw (Get-RexAiMissingApiKeyMessage) }
   if (-not $Model) { throw "Missing required -Model" }
   if (-not $Prompt) { throw "Missing required -Prompt" }
 
@@ -268,7 +267,7 @@ function Invoke-RexAiImageCli {
     -Image $Image `
     -OutputDir $OutputDir `
     -BaseUrl $BaseUrl `
-    -ApiKey $ApiKey `
+    -ApiKey $env:REXAI_API_KEY `
     -IntervalMs $IntervalMs `
     -TimeoutMs $TimeoutMs
   $result | ConvertTo-Json -Depth 20

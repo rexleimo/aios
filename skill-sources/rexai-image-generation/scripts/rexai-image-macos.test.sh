@@ -13,7 +13,7 @@ printf '%s' "$body" | grep -q '"model":"gpt-image-2"'
 printf '%s' "$body" | grep -q '"prompt":"cat"'
 printf '%s' "$body" | grep -q '"size":"1024x1024"'
 
-img_body="$(build_request_body 'gpt-image-2-i2i' 'watercolor' '2' '' 'https://example.com/source.png')"
+img_body="$(build_request_body 'gpt-image-2' 'watercolor' '2' '' 'https://example.com/source.png')"
 printf '%s' "$img_body" | grep -q '"images":\["https://example.com/source.png"\]'
 
 tmpdir="$(mktemp -d)"

@@ -47,9 +47,6 @@ export function parseArgs(argv) {
     i += 1;
 
     switch (key) {
-      case 'api-key':
-        options.apiKey = value;
-        break;
       case 'base-url':
         options.baseUrl = value;
         break;
@@ -111,7 +108,7 @@ Recommended setup:
   Linux bash persistent setup, then open a new terminal:
     printf '%s\\n' 'export REXAI_API_KEY="cr_xxx"' >> ~/.bashrc
 
-Avoid committing API keys. For one-off use only, pass --api-key "cr_xxx".`;
+The key is read only from the REXAI_API_KEY environment variable — there is no CLI option to pass it. Never put the key in shell history or command lines.`;
 }
 
 export async function resolveImageInput(input) {
@@ -239,7 +236,7 @@ export async function createAndWait(options) {
 function usage() {
   return `Usage:
   REXAI_API_KEY=cr_xxx node scripts/rexai-image.mjs --model gpt-image-2 --prompt "cat" --size 1024x1024
-  REXAI_API_KEY=cr_xxx node scripts/rexai-image.mjs --model gpt-image-2-i2i --prompt "watercolor" --image source.png
+  REXAI_API_KEY=cr_xxx node scripts/rexai-image.mjs --model gpt-image-2 --prompt "watercolor" --image source.png
 
 Options:
   --model <id>          RexAI image product id
@@ -249,7 +246,7 @@ Options:
   --n <count>           Optional number of images
   --output-dir <dir>    Directory for downloaded images (default: rexai-images)
   --base-url <url>      Default: ${DEFAULT_BASE_URL}
-  --api-key <key>       Prefer REXAI_API_KEY env var
+                        API key is read from the REXAI_API_KEY environment variable only
 
 ${apiKeyHelpMessage()}
 `;

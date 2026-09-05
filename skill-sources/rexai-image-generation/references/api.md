@@ -38,16 +38,18 @@ Text-to-image body:
 }
 ```
 
-Image-to-image body:
+Image-to-image body — **same product ID as text-to-image**; the `images` field makes the relay take the image-to-image route (`gpt-image-2-i2i` does not exist, `404`):
 
 ```json
 {
-  "model": "gpt-image-2-i2i",
+  "model": "gpt-image-2",
   "prompt": "Convert this image to watercolor style",
-  "images": ["https://example.com/source-image.jpg"],
+  "images": ["data:image/png;base64,..."],
   "n": 1
 }
 ```
+
+Use base64 data URIs in `images` (local files → `data:image/<mime>;base64,...`). If you pass a public http(s) URL, the relay server downloads it itself and hotlink-protected hosts reject that with `403`.
 
 Submit response is `202 Accepted`:
 
@@ -115,11 +117,9 @@ Current active text-to-image products:
 
 - `gpt-image-2` - gpt-image-2
 
-Current active image-to-image products:
+Image-to-image uses the **same product** (`gpt-image-2`) with an `images` array in the body; there is no separate i2i product ID. A `gpt-image-2-i2i` product does not exist (`404 image_product_not_found`). Nano2-series IDs (`nano2-1k-i2i`, etc.) have appeared on some instances — confirm against the instance's product list with one probe before use.
 
-- `gpt-image-2-i2i` - gpt-image-2-i2i
-
-Product availability and pricing can change; refresh `https://tool.rexai.top/api/api-docs` when a call fails due to model availability.
+Product availability and pricing can change per instance; refresh `https://tool.rexai.top/api/api-docs` or probe the instance when a call fails due to model availability.
 
 ## Sizes
 

@@ -31,8 +31,8 @@ if ($missingKeyMessage -notmatch '\.bashrc') {
 $textBody = New-RexAiImageRequestBody -Model 'gpt-image-2' -Prompt 'cat' -N 1 -Size '1024x1024'
 Assert-EqualJson $textBody ([ordered]@{ model = 'gpt-image-2'; prompt = 'cat'; n = 1; size = '1024x1024' }) 'text body'
 
-$i2iBody = New-RexAiImageRequestBody -Model 'gpt-image-2-i2i' -Prompt 'watercolor' -N 2 -Images @('https://example.com/source.png')
-Assert-EqualJson $i2iBody ([ordered]@{ model = 'gpt-image-2-i2i'; prompt = 'watercolor'; n = 2; images = @('https://example.com/source.png') }) 'image body'
+$i2iBody = New-RexAiImageRequestBody -Model 'gpt-image-2' -Prompt 'watercolor' -N 2 -Images @('https://example.com/source.png')
+Assert-EqualJson $i2iBody ([ordered]@{ model = 'gpt-image-2'; prompt = 'watercolor'; n = 2; images = @('https://example.com/source.png') }) 'image body'
 
 $tmpDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
