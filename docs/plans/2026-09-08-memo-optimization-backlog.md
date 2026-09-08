@@ -37,8 +37,8 @@
 
 | # | 条目 | 验收标准 | 来源 | 状态 |
 | --- | --- | --- | --- | --- |
-| B1 | 五要素抽取契约收口：`claimStatus=verified` 仅在引用且仅引用一条 runtime 实测退出码=0 的证据时由协议打标；模型自声明降权为 candidate | 变更后 memo-provenance 测试覆盖"伪造 verified 声明被拒"路径 | 4a663b0a 契约文档；09-05 报告 P0-3.2 | 待办 |
-| B2 | 抽取门槛规则：相对时间锚定为绝对日期、排除无信息条目（客套/寒暄） | 契约文档补充规则 + 测试 fixture | mem0 抽取 prompt | 待办（随 B1） |
+| B1 | 五要素抽取契约收口：`claimStatus=verified` 仅在引用且仅引用一条 runtime 实测退出码=0 的证据时由协议打标；模型自声明降权为 candidate | 变更后 memo-provenance 测试覆盖"伪造 verified 声明被拒"路径 | 4a663b0a 契约文档；09-05 报告 P0-3.2 | **已完成（2026-09-09，`createMemoEvent` 忽略无可信 provenance 的调用方 claimStatus + 自动链去掉 publish-shared self-grant，模型自报一律 candidate；verified 只剩三条真路：手工本地信任、attested 发布身份、治理晋升；伪造测试进 `memo-provenance`）** |
+| B2 | 抽取门槛规则：相对时间锚定为绝对日期、排除无信息条目（客套/寒暄） | 契约文档补充规则 + 测试 fixture | mem0 抽取 prompt | **已完成（2026-09-09，新 `storage/extraction.mjs` 形状校验：date 强 ISO（相对时间 reject，有码错）、confidence high\|medium、evidenceRef 标量单条、entities 去重 24 封顶；`memo add` 加四 flag 并拒相对 date；语义判断（是否客套）仍归模型，runtime 只卡客观形状；`SKILL.md` 补锚定示例 + 单证据规则 + verified 新语义；`memo-extraction` 7 用例）** |
 | B3 | memo 写入 stale-write guard（line#hash 精确替换语义，防并发覆盖） | 并发写 fixture 下后写者被拒并要求 re-read | oh-my-openagent Hashline（watchlist core 参考问题） | 待办 |
 
 ### C. 注入与预算
@@ -105,3 +105,6 @@ enforcement 现状为 NO-GO（S0-S2 仅 library prototype，无生产调用方�
 - 2026-09-09：A2 完成（方案①）。变更：`events-read.mjs` 进程内 stat 签名（size+mtimeMs+ctimeMs）解析缓存——`readJsonlEvents` 单文件单条目（tolerant 全量 + strict 首错重抛，字节等价）、`readSplitEvents` 快照比对、命中 structuredClone 防篡改、FIFO 有界 50、`memoEventsCacheStats/clearMemoEventsCache` 测试钩子；治理侧复用既有持久 archive 索引（`archive-index.mjs`）未动，feedback 经同解析缓存覆盖；`getActiveMemoStorage` 小配置读保留未缓存。
 - **经验教训（写给后续缓存改造）**：缓存存后直接返回存储引用会让首读调用方篡改缓存行——存后必须返回 clone；`normalizeEventRows` 纯函数是缓存安全的前提，动它之前先确认无原地改；stat 签名省 IO 不省 BM25/排序 CPU，bench 数字只反映解析层收益。
 - 验证：新 `memo-events-cache.test.mjs` 10/10（冷热一致、search 复用、append 失效、同尺寸改写失效、防篡改、space 隔离、malformed 双序、FIFO 驱逐、split 失效、200 事件 bench cold 6.99ms → warm 均 2.86ms）；memo 系 140/140 + dream/候选/校正 34/34 + AB 8/8 与三 arm 零漂移。
+- 2026-09-09：B1+B2 完成。变更：新 `storage/extraction.mjs` 五要素形状校验（无语义关键词表）；`createMemoEvent` 无可信 provenance 时忽略调用方 claimStatus；`recordAutomaticMemory` 去掉 publish-shared self-grant（模型自报一律 candidate 进治理队列，附五要素）；`memo add` 加 `--entities/--date/--evidence-ref/--confidence` 并拒相对 date；`SKILL.md` 补锚定示例 + 单证据规则 + verified 新语义；用例：`memo-provenance` 加伪造降级 + 迁移兼容，新 `memo-extraction.test.mjs` 7 用例（含自动链 candidate、CLI 透传冒烟）。
+- **经验教训（写给后续门槛改造）**：`assert.throws` 正则只匹配 message 不匹配 `error.code`——码断言要写 validator 回调；语义门槛（是否客套/是否有用）一旦写成词表就是反模式，runtime 只许卡客观形状（ISO 格式、枚举、标量、长度下限），判断归模型声明。
+- 验证：新 extraction 7/13 与 provenance 6/13 合计 13/13；memo 系 148/148；ctx-agent-core + dream-governance + candidate-governance + AB-eval 52/52；AB 三 arm（76.9%/100%/76.9%）零漂移；全量回归套件本轮未重跑（A2 后无热路径改动，B1 改动面限写入链）。

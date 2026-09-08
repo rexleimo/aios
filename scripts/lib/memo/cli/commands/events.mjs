@@ -10,6 +10,7 @@ import {
 import { usageError } from '../shared.mjs';
 import { getActiveMemoStorage, loadMemoStorageApi } from '../storage-api.mjs';
 import { findSupersedeCandidates } from '../../storage/temporal.mjs';
+import { normalizeExtractionDate } from '../../storage/extraction.mjs';
 
 // Bounded so a large space cannot make every write pay for a full scan.
 const HINT_SCAN_LIMIT = 500;
@@ -66,6 +67,9 @@ export async function handleMemoAddCommand({
   const space = activeSpace;
   const refs = extractTags(text);
   const turnId = createMemoTurnId(space);
+  // B2: a relative --date is rejected here (not silently dropped into `now`)
+  // so the writer must anchor it to a calendar date first.
+  const anchoredDate = flags.date ? normalizeExtractionDate(flags.date) : '';
   const storageApi = await loadMemoStorageApi();
   const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
   const record = await storageApi.appendMemoEvent({
@@ -77,7 +81,7 @@ export async function handleMemoAddCommand({
     scope: flags.scope || 'project_shared',
     agent: resolveMemoAgent(flags),
     runtimeIdentity,
-    validAt: flags.validAt || flags.date,
+    validAt: flags.validAt || anchoredDate,
     entities: String(flags.entities || '').split(','),
     confidence: flags.confidence,
     evidenceRef: flags.evidenceRef,

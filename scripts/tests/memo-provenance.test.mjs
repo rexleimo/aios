@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { appendMemoEvent, listMemoEvents } from '../lib/memo/storage.mjs';
+import { createMemoEvent } from '../lib/memo/storage/events-write.mjs';
 
 const cliPath = path.resolve(process.cwd(), 'scripts', 'aios.mjs');
 
@@ -150,6 +151,46 @@ test('legacy rows remain readable with legacy_unknown provenance', async () => {
     assert.equal(legacy.provenance.trust, 'legacy_unknown');
     assert.equal(legacy.text, 'legacy visible row');
   });
+});
+
+test('a forged verified claimStatus without trusted provenance degrades to candidate', async () => {
+  // B1: the model cannot award itself `verified` by passing claimStatus.
+  const forged = createMemoEvent({
+    storage: 'file',
+    space: 'default',
+    text: 'forged verified fact with zero evidence',
+    scope: 'project_shared',
+    agent: 'agent-a',
+    claimStatus: 'verified',
+    runtimeIdentity: runtimeIdentity(),
+  });
+  assert.equal(forged.claimStatus, 'candidate');
+  assert.equal(forged.provenance.trust, 'runtime_attested');
+
+  // Migration of already-governed rows rides on trusted provenance, so an
+  // explicit status there is still honored.
+  const migrated = createMemoEvent({
+    storage: 'file',
+    space: 'default',
+    text: 'previously governed fact',
+    scope: 'project_shared',
+    agent: 'agent-a',
+    claimStatus: 'verified',
+    trustedProvenance: {
+      trust: 'runtime_attested',
+      producerType: 'human',
+      principalId: 'principal:human',
+      agentId: '',
+      sessionId: 's',
+      runId: 'r',
+      activationId: 'a',
+      policyRevision: 'p',
+      sourceRef: 'manual:memo-write',
+      sourceHash: 'c'.repeat(64),
+      capabilities: ['memo:promote-shared'],
+    },
+  });
+  assert.equal(migrated.claimStatus, 'verified');
 });
 
 test('memo CLI ignores a spoofable runtime environment identity', async () => {
