@@ -481,6 +481,18 @@ export async function assembleExecutionContext({
   });
   const summary = summarizeAssemblyDecisions(decisions);
   const generatedAt = timestamp(now);
+  // D1: the receipt logs the actual read events the assembler's own
+  // controlled reads performed. Sources come only from the
+  // readAssemblySource calls above — assembleExecutionContext takes no
+  // readRefs input at all — so caller assertions can never inject entries.
+  const reads = sources
+    .filter((source) => source?.exists)
+    .map((source) => ({
+      ref: source.ref,
+      sourceHash: source.sourceHash,
+      reader: 'orchestrator_assembler',
+      readAt: generatedAt,
+    }));
   const contextText = renderDeliveredContext(decisions, sources);
   const assembly = {
     evidenceSource: 'orchestrator_assembler',
@@ -503,6 +515,7 @@ export async function assembleExecutionContext({
     sourceManifestHash: packet.sourceManifestHash,
     decisions,
     summary,
+    reads,
     assembly,
   });
   const receipt = {
@@ -512,6 +525,7 @@ export async function assembleExecutionContext({
     decisionDigest,
     summary,
     decisions,
+    reads,
     included: decisions.filter((item) => item.category === 'included'),
     degraded: decisions.filter((item) => item.category === 'degraded'),
     excluded: decisions.filter((item) => item.category === 'excluded'),

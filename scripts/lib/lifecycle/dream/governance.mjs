@@ -238,7 +238,9 @@ function transitionReason(action, state) {
   return 'invalid_action';
 }
 
-async function createGcSnapshot(rootDir, proposal, env, now) {
+// D4: exported as the GC write-path seam so the same-lock-domain fixture
+// exercises the real snapshot-then-rewrite, not a copy of it.
+export async function createGcSnapshot(rootDir, proposal, env, now) {
   const storage = proposal.source?.storage || 'file';
   const targetIds = new Set((proposal.actions || []).map((action) => action.eventId));
   const records = [];
