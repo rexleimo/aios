@@ -57,11 +57,11 @@ enforcement 现状为 NO-GO（S0-S2 仅 library prototype，无生产调用方�
 | # | 条目 | 验收标准 | 来源 | 状态 |
 | --- | --- | --- | --- | --- |
 | D1 | read evidence 改为受控读取工具的实测读取（现在 readRefs 是 caller 断言） | ContextReceipt 记录受控读取工具的实际读取事件 | V1 硬门 #3；Letta memory-citations | 待办 |
-| D2 | authority 不可由 shell-capable agent 经 `AIOS_RUNTIME_*` 自授 | 治理权威与 env 解耦的测试 | V1 硬门 #4 | 待办 |
+| D2 | authority 不可由 shell-capable agent 经 `AIOS_RUNTIME_*` 自授 | 治理权威与 env 解耦的测试 | V1 硬门 #4 | **已完成（2026-09-09，四层锁定：推导/写入/治理毒化 env 下不变 + 四权威源码文件无 `AIOS_RUNTIME` 引用断言；`memo-authority-env` 4/4；lib 层本就不读该 env，属证明性收口）** |
 | D3 | path 归一化覆盖 relative/absolute/Windows/CJK/symlink/case（已知 absolute path 产生 undeclared_target 误报） | 跨平台 path fixture 全绿；Windows 为一等测试环境 | V1 硬门 #5 | **已完成（2026-09-09，声明侧同工作区归一化 + reconciliation 缺失比对 + ledger 绝对转相对；`production-correction` 6/6 + `execution-context-packet` 11/11 + s2/orchestrate/evidence-gate 19/19，Windows 大小写真实跑过）** |
 | D4 | Dream GC 与 append 同锁域/CAS | 并发 append+GC fixture 不丢事件 | V1 硬门 #7 | 待办 |
-| D5 | supersede 的 ACL/publish gate 补全 | 未授权 agent 不能 supersede 他人 space 的事件 | watchlist p0（supersede 后半句） | 待办 |
-| D6 | 内容安全扫描接入候选晋升门（safety.mjs 存在但未接 gate） | promote 路径强制过 scan，注入样本被拒 | watchlist 反向信号（OpenClaw 免确认前提是 quarantine 兜底，我们不具备） | 待办 |
+| D5 | supersede 的 ACL/publish gate 补全 | 未授权 agent 不能 supersede 他人 space 的事件 | watchlist p0（supersede 后半句） | **已完成（2026-09-09，`partitionSupersedes` 写时 fail-closed：dangling 一律 `unknown_target`（原放行），跨 space `scope_or_principal_mismatch` 可见；同 space 共享协作规则不变；`memo-supersede-acl` 4/4；rex memo-D-gov 全过）** |
+| D6 | 内容安全扫描接入候选晋升门（safety.mjs 存在但未接 gate） | promote 路径强制过 scan，注入样本被拒 | watchlist 反向信号（OpenClaw 免确认前提是 quarantine 兜底，我们不具备） | **已完成（2026-09-09，`decideCandidate` promote 前强制 `scanWorkspaceMemoryContent`：注入样本 DENY + `unsafe_content` + receipt 记 `safety` 结论，干净样本走原权威门且 receipt 带 clean 结论；`memo-promote-safety` 2/2；rex memo-D-gov 全过）** |
 
 ### E. 整理与卫生
 

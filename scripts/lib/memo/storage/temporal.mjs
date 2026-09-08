@@ -93,7 +93,12 @@ export function partitionSupersedes(source = {}, events = []) {
   const denied = [];
   for (const eventId of toSupersedes(source.supersedes)) {
     const target = byId.get(eventId);
-    if (!target || canSupersedeEvent(source, target)) {
+    // D5: unknown targets fail closed. A dangling id is either a typo or a
+    // cross-space reference (collectEvents is space-scoped); storing it as
+    // `allowed` would let a later cross-space fold retire foreign facts.
+    if (!target) {
+      denied.push({ eventId, reason: 'unknown_target' });
+    } else if (canSupersedeEvent(source, target)) {
       allowed.push(eventId);
     } else {
       denied.push({ eventId, reason: 'scope_or_principal_mismatch' });

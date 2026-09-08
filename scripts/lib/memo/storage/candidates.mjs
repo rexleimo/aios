@@ -8,6 +8,7 @@ import { collectEvents, readJsonlEvents } from './events-read.mjs';
 import { appendText, sha256Hex } from './fs-io.mjs';
 import { getActiveMemoStorage } from './config.mjs';
 import { normalizeRuntimeIdentity } from './provenance.mjs';
+import { scanWorkspaceMemoryContent } from '../safety.mjs';
 
 const GOVERNANCE_FILE = 'memory-candidates.jsonl';
 const SESSION_CANDIDATE_FILE = 'session-close-memory-candidate.json';
@@ -235,7 +236,7 @@ function authorize(identity, action, reason) {
   };
 }
 
-function receiptRow({ candidate, candidateId, action, decision, reason, reasonCode, identity, capability, promotedEventId = '', autoMemoryPromotion = null }) {
+function receiptRow({ candidate, candidateId, action, decision, reason, reasonCode, identity, capability, promotedEventId = '', autoMemoryPromotion = null, safety = null }) {
   const receiptId = randomUUID();
   return {
     schemaVersion: 1,
@@ -267,6 +268,10 @@ function receiptRow({ candidate, candidateId, action, decision, reason, reasonCo
     },
     ...(promotedEventId ? { promotedEventId } : {}),
     ...(autoMemoryPromotion ? { autoMemoryPromotion } : {}),
+    // D6: every promote receipt records the content-safety verdict so an
+    // injection sample is rejected with its cause, not just the authority
+    // verdict, and clean denials stay auditable.
+    ...(safety ? { safety: { ok: safety.ok === true, id: String(safety.id || '') } } : {}),
   };
 }
 
@@ -289,10 +294,20 @@ async function decideCandidate(action, {
   const identity = normalizeRuntimeIdentity(runtimeIdentity);
   const candidates = await collectCandidates({ workspaceRoot, storage, space, env });
   const candidate = candidates.find((item) => item.candidateId === candidateId) || null;
+  // D6: the promote gate scans candidate content before any authority
+  // verdict. An injection sample is rejected as unsafe content with the
+  // scan cause on the receipt; clean candidates flow into the existing
+  // authority gate with the clean verdict attached for audit.
+  const safety = action === 'promote' && candidate
+    ? scanWorkspaceMemoryContent(candidate.text || '', { allowEmpty: true })
+    : null;
   let authorization = authorize(identity, action, text(reason));
   if (!candidate) authorization = { allowed: false, reasonCode: 'candidate_not_found', capability: authorization.capability };
   if (candidate && candidate.status !== 'pending') {
     authorization = { allowed: false, reasonCode: 'candidate_not_pending', capability: authorization.capability };
+  }
+  if (candidate && safety && safety.ok !== true) {
+    authorization = { allowed: false, reasonCode: 'unsafe_content', capability: authorization.capability };
   }
   if (!authorization.allowed) {
     const receipt = receiptRow({
@@ -300,10 +315,11 @@ async function decideCandidate(action, {
       candidateId,
       action,
       decision: 'DENY',
-      reason,
+      reason: authorization.reasonCode === 'unsafe_content' ? safety.reason : reason,
       reasonCode: authorization.reasonCode,
       identity,
       capability: authorization.capability,
+      safety,
     });
     await writeReceipt(workspaceRoot, env, receipt);
     return { ok: false, receipt };
@@ -343,6 +359,7 @@ async function decideCandidate(action, {
         reasonCode: 'promotion_write_failed',
         identity,
         capability: authorization.capability,
+        safety,
       });
       await writeReceipt(workspaceRoot, env, receipt);
       error.receipt = receipt;
@@ -382,6 +399,7 @@ async function decideCandidate(action, {
     capability: authorization.capability,
     promotedEventId: promotedEvent?.eventId || '',
     autoMemoryPromotion,
+    safety,
   });
   await writeReceipt(workspaceRoot, env, receipt);
   return { ok: true, receipt, ...(promotedEvent ? { promotedEvent } : {}) };
