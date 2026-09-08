@@ -104,12 +104,14 @@ function countTokenHits(haystack, tokens) {
   return hits;
 }
 
-function eventMatchesQuery(event, query) {
+function eventMatchesQuery(event, query, { entityBoost = true } = {}) {
   const normalizedQuery = String(query || '').trim().toLowerCase();
   if (!normalizedQuery) return true;
+  const entityText = entityBoost ? eventEntityList(event).join(' ') : '';
   const haystack = [
     event.text || '',
     ...(Array.isArray(event.refs) ? event.refs : []),
+    entityText,
     event.eventId || '',
   ].join(' ').toLowerCase();
   if (haystack.includes(normalizedQuery)) return true;
@@ -182,7 +184,7 @@ function scoreEventsWithBm25(events, queryTokens) {
   });
 }
 
-function scoreEvent(event, query, bm25Score = 0) {
+function scoreEvent(event, query, bm25Score = 0, entityScore = 0) {
   const normalizedQuery = String(query || '').trim().toLowerCase();
   if (!normalizedQuery) return 0;
   const text = String(event.text || '').toLowerCase();
@@ -191,7 +193,83 @@ function scoreEvent(event, query, bm25Score = 0) {
   if (text.includes(normalizedQuery)) score += 2;
   if (refs.includes(normalizedQuery)) score += 1;
   score += bm25Score * 4;
+  score += entityScore;
   return score;
+}
+
+/* A3 independent entity layer (shape only, never semantics).
+ *
+ * Writes already carry `entities[]` (B1 contract); reads dropped them until
+ * normalizers passthrough landed. This layer links memories across events:
+ * exact normalized entities form the link edges, token overlap with the
+ * query supplies direct evidence, and one-hop sharing spreads attenuated
+ * evidence to linked neighbours.
+ *
+ * - No word lists: matching reuses `tokenizeForMatch` (ICU + bigram
+ *   fallback) and exact lowercased entity equality for links.
+ * - Bounded: one hop, per-event max over shared entities, capped.
+ * - Scale: direct <= 1.0, spread <= 0.5. Zero when no entities exist, so
+ *   pre-entity corpora rank exactly as before (A1 recency discipline holds).
+ * - CPU, not IO: like BM25, this costs scan time per recall; the A2 parse
+ *   cache does not absorb it. */
+export const ENTITY_DIRECT_BOOST = 1.0;
+export const ENTITY_SPREAD_BOOST = 0.5;
+export const ENTITY_SPREAD_ATTENUATION = 0.5;
+
+export function normalizeEntity(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+export function eventEntityList(event) {
+  if (!event || !Array.isArray(event.entities)) return [];
+  const seen = new Set();
+  const output = [];
+  for (const raw of event.entities) {
+    const normalized = normalizeEntity(raw);
+    if (!normalized || seen.has(normalized)) continue;
+    seen.add(normalized);
+    output.push(normalized);
+  }
+  return output;
+}
+
+export function scoreEventsWithEntity(events, queryTokens) {
+  if (events.length === 0 || queryTokens.length === 0) return events.map(() => 0);
+  const querySet = new Set(queryTokens.map((token) => String(token || '').toLowerCase()).filter(Boolean));
+  if (querySet.size === 0) return events.map(() => 0);
+  const entityTokenSets = events.map((event) => tokenizeForMatch(eventEntityList(event).join(' ')));
+  const direct = events.map((_, index) => {
+    const entityTokens = entityTokenSets[index];
+    if (entityTokens.size === 0) return 0;
+    let hits = 0;
+    for (const token of querySet) {
+      if (entityTokens.has(token)) hits += 1;
+    }
+    if (hits === 0) return 0;
+    return (hits / querySet.size) * ENTITY_DIRECT_BOOST;
+  });
+  const hasDirect = direct.some((score) => score > 0);
+  if (!hasDirect) return direct;
+  const entityToIndices = new Map();
+  events.forEach((event, index) => {
+    for (const entity of eventEntityList(event)) {
+      if (!entityToIndices.has(entity)) entityToIndices.set(entity, []);
+      entityToIndices.get(entity).push(index);
+    }
+  });
+  return events.map((event, index) => {
+    if (direct[index] > 0) return direct[index];
+    let spread = 0;
+    for (const entity of eventEntityList(event)) {
+      const sharers = entityToIndices.get(entity) || [];
+      for (const other of sharers) {
+        if (other === index || direct[other] <= 0) continue;
+        const candidate = direct[other] * ENTITY_SPREAD_ATTENUATION;
+        if (candidate > spread) spread = candidate;
+      }
+    }
+    return Math.min(spread, ENTITY_SPREAD_BOOST);
+  });
 }
 
 function eventVisibleForAgent(event, agent) {
@@ -222,24 +300,24 @@ function selectVisibleEvents(events, { scope, agent, asOf, includeInvalid, inclu
   );
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity, feedbackScores = null } = {}) {
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity, feedbackScores = null, entityBoost = true } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
   const archivedIds = includeArchived ? new Set() : await readDreamArchivedEventIds({ rootDir: workspaceRoot });
   const scores = feedbackScores instanceof Map ? feedbackScores : await readMemoFeedbackScores({ workspaceRoot });
+  const enableEntity = entityBoost !== false;
   const visible = sortEventsDescending(selectVisibleEvents(
     events.filter((event) => !archivedIds.has(event.eventId)),
     { scope, agent, asOf, includeInvalid, includeCandidates },
-  )).filter((event) => eventMatchesQuery(event, query));
-  const bm25Scores = scoreEventsWithBm25(
-    visible,
-    [...tokenizeForMatch(String(query || '').trim().toLowerCase())],
-  );
+  )).filter((event) => eventMatchesQuery(event, query, { entityBoost: enableEntity }));
+  const queryTokens = [...tokenizeForMatch(String(query || '').trim().toLowerCase())];
+  const bm25Scores = scoreEventsWithBm25(visible, queryTokens);
+  const entityScores = enableEntity ? scoreEventsWithEntity(visible, queryTokens) : visible.map(() => 0);
   const scored = visible
     .map((event, index) => ({
       ...event,
-      matchScore: applyMemoFeedbackBoost(scoreEvent(event, query, bm25Scores[index]), scores.get(event.eventId)),
+      matchScore: applyMemoFeedbackBoost(scoreEvent(event, query, bm25Scores[index], entityScores[index]), scores.get(event.eventId)),
     }))
     .sort((a, b) => {
       const scoreCompare = Number(b.matchScore || 0) - Number(a.matchScore || 0);

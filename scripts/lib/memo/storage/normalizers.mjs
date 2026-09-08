@@ -3,6 +3,7 @@ import {
   SUPPORTED_MEMO_STORAGES,
 } from './constants.mjs';
 import { sha256Hex } from './fs-io.mjs';
+import { normalizeExtractionEntities } from './extraction.mjs';
 import { normalizeClaimStatus, normalizeStoredMemoProvenance } from './provenance.mjs';
 import { normalizeIsoTimestamp, toSupersedeDenials, toSupersedes } from './temporal.mjs';
 
@@ -62,6 +63,30 @@ export function normalizeMemoStorageName(raw) {
   throw new Error(`storage must be one of: ${SUPPORTED_MEMO_STORAGES.join(', ')}`);
 }
 
+/* A3: extraction fields ride the read path. Writes store entities /
+ * confidence / evidenceRef (see events-write.createMemoEvent); without this
+ * passthrough `collectEvents` silently dropped them and recall could never
+ * boost on entities. Best-effort only: malformed values are dropped, never
+ * thrown — old rows without the contract keep working. Pure function, so the
+ * A2 parse cache stays safe. */
+function pickExtractionFields(event) {
+  const output = {};
+  if (event === null || typeof event !== 'object') return output;
+  try {
+    const entities = normalizeExtractionEntities(event.entities);
+    if (entities.length > 0) output.entities = entities;
+  } catch {
+    // normalizeExtractionEntities never throws; guard for foreign shapes.
+  }
+  const confidence = String(event.confidence ?? '').trim().toLowerCase();
+  if (confidence === 'high' || confidence === 'medium') output.confidence = confidence;
+  const evidenceRef = String(event.evidenceRef ?? event.evidence_ref ?? '').trim();
+  if (evidenceRef && !Array.isArray(event.evidenceRef) && !Array.isArray(event.evidence_ref)) {
+    output.evidenceRef = evidenceRef;
+  }
+  return output;
+}
+
 export function normalizeEventRows(events, { fallbackStorage = DEFAULT_MEMO_STORAGE } = {}) {
   return events
     .filter((event) => event && typeof event === 'object')
@@ -86,6 +111,7 @@ export function normalizeEventRows(events, { fallbackStorage = DEFAULT_MEMO_STOR
         agent: normalizeMemoAgent(event.agent || event.agentNamespace || ''),
         claimStatus: normalizeClaimStatus(event.claimStatus, provenance),
         provenance,
+        ...pickExtractionFields(event),
         ...(event.promotionOf ? { promotionOf: String(event.promotionOf).trim() } : {}),
         validAt: normalizeIsoTimestamp(event.validAt) || normalizeIsoTimestamp(ts),
         supersedes: toSupersedes(event.supersedes),

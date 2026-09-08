@@ -20,7 +20,7 @@ const BASE_TS = Date.parse('2026-01-01T00:00:00.000Z');
 const TS_STEP_MS = 60 * 60 * 1000;
 const DEFAULT_LIMIT = 10;
 
-export const ARMS = ['baseline', 'temporal-explicit', 'temporal-auto'];
+export const ARMS = ['baseline', 'temporal-explicit', 'temporal-auto', 'entity-boost'];
 
 // Segments exist so the report can separate "where this works" from "where it
 // does not". A single blended average would hide both.
@@ -180,7 +180,11 @@ export function staleTextsOf(chain) {
 
 // `withLinks` is the only difference between the baseline corpus and the
 // explicit-link corpus, so any metric delta is attributable to the links.
-export function buildCorpusEvents({ withLinks = false, chains = EVAL_CHAINS } = {}) {
+// `withEntities` attaches the chain id as the entity (A3: B1 contract output)
+// so the entity-boost arm measures the same chains with entity evidence
+// present — each revision in a chain shares the entity, so the boost applies
+// equally within a chain and must not flip top-1 (A1 recency discipline).
+export function buildCorpusEvents({ withLinks = false, withEntities = false, chains = EVAL_CHAINS } = {}) {
   const events = [];
   let tick = 0;
   const nextTs = () => new Date(BASE_TS + (tick++) * TS_STEP_MS).toISOString();
@@ -193,6 +197,7 @@ export function buildCorpusEvents({ withLinks = false, chains = EVAL_CHAINS } = 
         space: 'default',
         text: revision.text,
         refs: revision.refs || [],
+        ...(withEntities ? { entities: revision.entities || [chain.id] } : {}),
         ts,
         validAt: ts,
         scope: 'project_shared',
@@ -219,8 +224,8 @@ export function buildCorpusEvents({ withLinks = false, chains = EVAL_CHAINS } = 
   return events;
 }
 
-export async function seedCorpus(workspaceRoot, { storage = 'file', withLinks = false, chains = EVAL_CHAINS } = {}) {
-  await writeExistingEvents(workspaceRoot, storage, buildCorpusEvents({ withLinks, chains }));
+export async function seedCorpus(workspaceRoot, { storage = 'file', withLinks = false, withEntities = false, chains = EVAL_CHAINS } = {}) {
+  await writeExistingEvents(workspaceRoot, storage, buildCorpusEvents({ withLinks, withEntities, chains }));
 }
 
 // Mirrors what `memo supersede --apply` writes: a re-assertion of the winning
@@ -267,7 +272,7 @@ function summarize(tally) {
   };
 }
 
-export async function measureArm(workspaceRoot, { storage = 'file', chains = EVAL_CHAINS, limit = DEFAULT_LIMIT } = {}) {
+export async function measureArm(workspaceRoot, { storage = 'file', chains = EVAL_CHAINS, limit = DEFAULT_LIMIT, entityBoost = true } = {}) {
   const overall = emptyTally();
   const bySegment = new Map();
   const perChain = [];
@@ -278,6 +283,7 @@ export async function measureArm(workspaceRoot, { storage = 'file', chains = EVA
       space: 'default',
       query: chain.query,
       limit,
+      entityBoost,
     });
 
     const currentText = currentTextOf(chain);
@@ -314,14 +320,19 @@ export async function measureArm(workspaceRoot, { storage = 'file', chains = EVA
 export async function runArm(workspaceRoot, arm, { storage = 'file', chains = EVAL_CHAINS, limit = DEFAULT_LIMIT, threshold = DEFAULT_SUPERSEDE_THRESHOLD } = {}) {
   if (!ARMS.includes(arm)) throw new Error(`unknown arm: ${arm}`);
 
-  await seedCorpus(workspaceRoot, { storage, withLinks: arm === 'temporal-explicit', chains });
+  await seedCorpus(workspaceRoot, {
+    storage,
+    withLinks: arm === 'temporal-explicit',
+    withEntities: arm === 'entity-boost',
+    chains,
+  });
 
   let autoProposals = 0;
   if (arm === 'temporal-auto') {
     autoProposals = await applyAutoSupersedes(workspaceRoot, { storage, threshold });
   }
 
-  const measured = await measureArm(workspaceRoot, { storage, chains, limit });
+  const measured = await measureArm(workspaceRoot, { storage, chains, limit, entityBoost: true });
   return { arm, autoProposals, ...measured };
 }
 
