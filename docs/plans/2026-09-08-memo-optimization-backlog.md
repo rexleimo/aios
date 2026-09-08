@@ -39,7 +39,7 @@
 | --- | --- | --- | --- | --- |
 | B1 | 五要素抽取契约收口：`claimStatus=verified` 仅在引用且仅引用一条 runtime 实测退出码=0 的证据时由协议打标；模型自声明降权为 candidate | 变更后 memo-provenance 测试覆盖"伪造 verified 声明被拒"路径 | 4a663b0a 契约文档；09-05 报告 P0-3.2 | **已完成（2026-09-09，`createMemoEvent` 忽略无可信 provenance 的调用方 claimStatus + 自动链去掉 publish-shared self-grant，模型自报一律 candidate；verified 只剩三条真路：手工本地信任、attested 发布身份、治理晋升；伪造测试进 `memo-provenance`）** |
 | B2 | 抽取门槛规则：相对时间锚定为绝对日期、排除无信息条目（客套/寒暄） | 契约文档补充规则 + 测试 fixture | mem0 抽取 prompt | **已完成（2026-09-09，新 `storage/extraction.mjs` 形状校验：date 强 ISO（相对时间 reject，有码错）、confidence high\|medium、evidenceRef 标量单条、entities 去重 24 封顶；`memo add` 加四 flag 并拒相对 date；语义判断（是否客套）仍归模型，runtime 只卡客观形状；`SKILL.md` 补锚定示例 + 单证据规则 + verified 新语义；`memo-extraction` 7 用例）** |
-| B3 | memo 写入 stale-write guard（line#hash 精确替换语义，防并发覆盖） | 并发写 fixture 下后写者被拒并要求 re-read | oh-my-openagent Hashline（watchlist core 参考问题） | 待办 |
+| B3 | memo 写入 stale-write guard（line#hash 精确替换语义，防并发覆盖） | 并发写 fixture 下后写者被拒并要求 re-read | oh-my-openagent Hashline（watchlist core 参考问题） | **已完成（2026-09-09，`pinned.mjs` 整块内容 hash 守卫：`pinnedContentHash` + `expectedHash`，stale 抛 `AIOS_MEMO_PINNED_STALE` 带 fresh hash，不传 hash 保持旧行为，读写对进 memo storage 锁；行级寻址延期见 review verdict；`memo-pinned-guard` 4/4 + 邻近 storage/CLI 绿；rex memo-all-impl TDD+review 全过）** |
 
 ### C. 注入与预算
 
