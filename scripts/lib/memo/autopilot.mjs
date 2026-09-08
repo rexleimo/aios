@@ -154,8 +154,11 @@ async function findExistingAutoMemory({ workspaceRoot, storage, space, agent, so
 
 /**
  * Persist a useful result without requiring a human to run `memo add`.
- * Unverified results stay in the current agent namespace; only verified
- * results can enter project_shared recall.
+ * B1: a model-declared `verified=yes` never stamps `verified` — automatic
+ * writes land as `candidate` (shared scope so they reach the governance
+ * queue, but invisible to active recall until an authorized promotion).
+ * Only governed promotion (human / promote-shared capability) stamps
+ * `verified`, and only with an attached evidence ref.
  */
 export async function recordAutomaticMemory({
   workspaceRoot,
@@ -218,14 +221,23 @@ export async function recordAutomaticMemory({
   // as private working memory even when the text happens to claim success.
   const failedOutcome = ['failed', 'error', 'blocked', 'retry-needed'].includes(text(outcome).toLowerCase());
   const normalizedScope = scope || (verified && !failedOutcome ? 'project_shared' : 'agent_private');
+  // B1: the harness must not grant itself publish authority — a self-granted
+  // capability is indistinguishable from a forged one. Automatic writes use a
+  // bare runtime identity, so shared-scope entries land as `candidate` and
+  // wait for governed promotion instead of entering recall as `verified`.
   const identity = buildAutoRuntimeIdentity({
     agent: normalizedAgent,
     sessionId,
     runId,
     sourceRef: stableRef,
     content: memoryText,
-    shared: normalizedScope === 'project_shared',
+    shared: false,
   });
+  // Five-element completion for the automatic path: entities come from the
+  // touched refs (minus protocol-internal ones), the turn's stable ref is the
+  // single evidence ref, and a model declaration is `medium` confidence by
+  // construction — `high` is reserved for runtime-measured verification.
+  const autoEntities = normalizeRefs(refs).filter((ref) => !ref.startsWith('auto-') && !ref.startsWith('contextdb:'));
   try {
     const event = await appendMemoEvent({
       workspaceRoot,
@@ -235,6 +247,10 @@ export async function recordAutomaticMemory({
       refs: [...normalizeRefs(refs), stableRef],
       scope: normalizedScope,
       agent: normalizedAgent,
+      entities: autoEntities,
+      confidence: 'medium',
+      evidenceRef: stableRef,
+      validAt: new Date().toISOString(),
       supersedes: normalizeRefs(supersedes),
       runtimeIdentity: identity,
       turn: {

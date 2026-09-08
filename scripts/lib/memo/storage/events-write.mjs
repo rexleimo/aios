@@ -23,6 +23,11 @@ import {
   normalizeStoredMemoProvenance,
 } from './provenance.mjs';
 import {
+  normalizeExtractionConfidence,
+  normalizeExtractionEntities,
+  normalizeExtractionEvidenceRef,
+} from './extraction.mjs';
+import {
   normalizeIsoTimestamp,
   partitionSupersedes,
   toSupersedeDenials,
@@ -48,7 +53,7 @@ function paddedSeq(seq) {
   return String(seq).padStart(12, '0');
 }
 
-export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy, scope, agent, role, validAt, supersedes, supersedeDenied, runtimeIdentity, trustedProvenance, claimStatus, promotionOf }) {
+export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId, ts, legacy, scope, agent, role, validAt, supersedes, supersedeDenied, runtimeIdentity, trustedProvenance, claimStatus, promotionOf, entities = [], confidence = '', evidenceRef = '' }) {
   const normalizedSpace = normalizeSpaceName(space);
   const safeSpace = sanitizeSpace(normalizedSpace);
   const timestamp = ts ? String(ts) : new Date().toISOString();
@@ -61,7 +66,17 @@ export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId
         provenance: normalizeStoredMemoProvenance(trustedProvenance),
       }
     : buildMemoAuthority({ runtimeIdentity, scope: normalizedScope, agent });
-  const normalizedClaimStatus = normalizeClaimStatus(claimStatus || authority.claimStatus, authority.provenance);
+  // B1: a caller-supplied claimStatus is only honored when it rides on
+  // trusted provenance (migration of already-governed rows). Anything the
+  // model declares about its own entry is ignored — the authority verdict
+  // decides, so a forged `verified` degrades to `candidate`.
+  const normalizedClaimStatus = trustedProvenance
+    ? normalizeClaimStatus(claimStatus, authority.provenance)
+    : authority.claimStatus;
+  const normalizedEntities = normalizeExtractionEntities(entities);
+  const providesExtraction = normalizedEntities.length > 0 || String(evidenceRef ?? '').trim() !== '' || String(confidence ?? '').trim() !== '';
+  const normalizedConfidence = providesExtraction ? normalizeExtractionConfidence(confidence) : '';
+  const normalizedEvidenceRef = normalizeExtractionEvidenceRef(evidenceRef);
   return {
     schemaVersion: 1,
     eventId: id,
@@ -78,6 +93,9 @@ export function createMemoEvent({ storage, space, text, refs, turn, seq, eventId
     agent: authority.agent,
     claimStatus: normalizedClaimStatus,
     provenance: authority.provenance,
+    ...(normalizedEntities.length > 0 ? { entities: normalizedEntities } : {}),
+    ...(normalizedConfidence ? { confidence: normalizedConfidence } : {}),
+    ...(normalizedEvidenceRef ? { evidenceRef: normalizedEvidenceRef } : {}),
     ...(promotionOf ? { promotionOf: String(promotionOf).trim() } : {}),
     // `validAt` is when the fact became true, which is not always when it was
     // recorded — backfilled knowledge can predate its own memo entry.
@@ -138,7 +156,7 @@ export async function writeExistingEvents(workspaceRoot, storage, events, { env 
   }
 }
 
-export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined, scope = 'project_shared', agent = '', validAt = '', supersedes = [], runtimeIdentity = null, promotionOf = '', lockOptions = {}, env = process.env } = {}) {
+export async function appendMemoEvent({ workspaceRoot, storage, space = 'default', text, refs = [], turn = undefined, scope = 'project_shared', agent = '', validAt = '', supersedes = [], runtimeIdentity = null, promotionOf = '', entities = [], confidence = '', evidenceRef = '', lockOptions = {}, env = process.env } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const content = String(text ?? '').trim();
   if (!content) {
@@ -181,6 +199,9 @@ export async function appendMemoEvent({ workspaceRoot, storage, space = 'default
       runtimeIdentity,
       promotionOf,
       validAt,
+      entities,
+      confidence,
+      evidenceRef,
       supersedes: allowedSupersedes,
       supersedeDenied,
       seq,

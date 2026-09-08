@@ -22,6 +22,16 @@ function parseSupersedes(raw) {
 }
 
 const EMPTY_TEMPORAL_FLAGS = { validAt: '', supersedes: [], asOf: '', includeInvalid: false, supersedeHint: true };
+const EMPTY_EXTRACTION_FLAGS = { entities: '', date: '', evidenceRef: '', confidence: '' };
+
+function extractionFlags(flags) {
+  return {
+    entities: String(flags.entities || '').trim(),
+    date: String(flags.date || '').trim(),
+    evidenceRef: String(flags.evidenceRef || '').trim(),
+    confidence: String(flags.confidence || '').trim(),
+  };
+}
 
 function temporalFlags(flags) {
   return {
@@ -49,7 +59,11 @@ const MEMO_LIST_CLI = new Command()
   .option('--supersedes <ids>', 'Comma-separated event ids this entry replaces')
   .option('--as-of <iso>', 'Show the facts that were current at this time')
   .option('--include-invalid', 'Include facts that have been superseded')
-  .option('--no-supersede-hint', 'Do not report likely earlier revisions when adding');
+  .option('--no-supersede-hint', 'Do not report likely earlier revisions when adding')
+  .option('--entities <list>', 'Comma-separated files/commands/symbols the fact touches')
+  .option('--date <YYYY-MM-DD>', 'Absolute calendar date the fact was established')
+  .option('--evidence-ref <ref>', 'Single verification command, file:line, or doc path backing the fact')
+  .option('--confidence <level>', 'high (ran and verified) or medium (established but indirect)');
 
 export function splitFlags(argv) {
   const doubleDashIdx = argv.indexOf('--');
@@ -75,6 +89,7 @@ export function splitFlags(argv) {
         scope: flags.scope || '',
         agent: flags.agent || '',
         ...temporalFlags(flags),
+        ...extractionFlags(flags),
       },
     };
   } catch (error) {
@@ -88,6 +103,7 @@ export function splitFlags(argv) {
         scope: '',
         agent: '',
         ...EMPTY_TEMPORAL_FLAGS,
+        ...EMPTY_EXTRACTION_FLAGS,
       },
     };
   }

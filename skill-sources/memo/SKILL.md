@@ -56,13 +56,20 @@ fact as one self-contained entry carrying five elements:
 
 - `fact`: the durable statement, understandable without the surrounding turn.
 - `entities`: the files, commands, symbols, or concepts the fact touches.
-- `date`: absolute ISO date the fact was established. Never store relative time
-  ("yesterday", "上周"); resolve it to a calendar date first.
-- `evidence_ref`: what backs it — the verification command with exit code,
-  the `file:line`, or the doc/plan/report path.
+- `date`: absolute ISO date the fact was established. Never store relative time;
+  resolve it to a calendar date first:
+  - "昨天修的" → the calendar date yesterday was (e.g. `2026-09-08`)
+  - "上周上线的" → the calendar date it shipped (e.g. `2026-09-01`)
+  - "刚才验证的" → today's date (e.g. `2026-09-09`)
+  A relative date is rejected at write time — anchor first, persist after.
+- `evidence_ref`: the ONE backing evidence — a verification command with exit
+  code, a `file:line`, or a doc/plan/report path. One entry references one and
+  only one evidence; two independent verifications mean two entries (or pick
+  the decisive one). Arrays are rejected at write time.
 - `confidence`: `high` (ran and verified) or `medium` (established but indirect).
 
-One entry = one fact. Split compound observations instead of bundling them.
+One entry = one fact = one evidence. Split compound observations instead of
+bundling them.
 
 Example entry:
 
@@ -70,12 +77,23 @@ Example entry:
 fact: "Windows-only sha256 drift-guard failures were CRLF checkout artifacts, fixed by .gitattributes eol=lf"
 entities: [drift-guard, .gitattributes, CRLF]
 date: 2026-09-06
-evidence_ref: "npm run test:scripts exit 0 + scripts/lib/specs/orchestrator-agents.json:272"
+evidence_ref: "scripts/lib/specs/orchestrator-agents.json:272"
 confidence: high
 ```
 
 You declare these elements in your own words; the harness stores what you wrote
 and never infers missing elements for you.
+
+## What `verified` means now
+
+- Your declaration (`verified=yes`) or `memo add` proposes — the entry lands as
+  `candidate` and waits in the governance queue. It is invisible to active
+  recall until promoted.
+- `verified` is stamped only by governed promotion (human / `promote-shared`
+  authority) and only with the single attached `evidence_ref`.
+- A `verified` you award yourself is demoted to `candidate` at write time.
+  Forgery is not an error you can talk your way around — it is a protocol
+  outcome.
 
 ## Exclusions (do not persist)
 
