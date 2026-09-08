@@ -15,6 +15,25 @@ function comparisonPath(value) {
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
 }
 
+// D3: workspace-aware comparison so absolute declared targets match
+// relative actual paths (and vice versa). Falls back to comparisonPath for
+// refs that escape the workspace, preserving existing undeclared semantics.
+function normalizeWorkspaceRefLocal(rootDir, value) {
+  const input = String(value || '').trim().replace(/\\/gu, '/').replace(/^\.\//u, '');
+  if (!input) return '';
+  const root = path.resolve(rootDir);
+  const absolute = path.isAbsolute(input) ? path.resolve(input) : path.resolve(root, input);
+  const relative = path.relative(root, absolute);
+  const valid = relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+  if (valid) return String(relative).replace(/\\/gu, '/').replace(/^\.\//u, '');
+  return normalizePath(value);
+}
+
+function comparisonWorkspacePath(rootDir, value) {
+  const normalized = normalizeWorkspaceRefLocal(rootDir, value);
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
 function uniqueSorted(values) {
   return [...new Set(values.map(normalizePath).filter(Boolean))].sort((a, b) => a.localeCompare(b));
 }
@@ -127,8 +146,8 @@ export async function evaluateContextReconciliation({
   const actualPaths = uniqueSorted([...ledgerPaths, ...gitPaths]);
   const declaredPaths = uniqueSorted(packet.task?.targets || []);
   const undeclaredPaths = actualPaths.filter((filePath) => !isExecutionContextMutationDeclared(packet, filePath, { rootDir }));
-  const actualPathKeys = new Set(actualPaths.map(comparisonPath));
-  const missingDeclaredPaths = declaredPaths.filter((filePath) => !actualPathKeys.has(comparisonPath(filePath)));
+  const actualPathKeys = new Set(actualPaths.map((filePath) => comparisonWorkspacePath(rootDir, filePath)));
+  const missingDeclaredPaths = declaredPaths.filter((filePath) => !actualPathKeys.has(comparisonWorkspacePath(rootDir, filePath)));
   const workspaceObservationUnavailable = workspaceObservation?.available === false;
   const wouldBlockReasons = [
     ...(undeclaredPaths.length > 0 ? ['undeclared_target'] : []),

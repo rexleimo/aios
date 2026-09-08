@@ -100,6 +100,132 @@ test('workspace-relative and equivalent absolute mutation refs have identical de
   });
 });
 
+test('absolute declared targets and patterns match relative mutations without false undeclared_target', async () => {
+  await withRoot('context-correction-absolute-declared-', async (rootDir) => {
+    const absoluteTarget = path.join(rootDir, 'src', 'a.mjs');
+    const absolutePattern = path.join(rootDir, 'src', '**');
+    const cjkRelative = 'docs/中文目录/说明.md';
+    const cjkAbsolute = path.join(rootDir, 'docs', '中文目录', '说明.md');
+    const plan = buildStructuredPlanState({
+      title: 'Absolute declared equivalence',
+      sessionId: 'absolute-declared',
+      tasks: [{
+        id: 'task-1',
+        title: 'Edit absolute-declared target',
+        targets: [absoluteTarget, cjkRelative],
+        allowedWrites: [absolutePattern],
+        contextRequirements: [],
+      }],
+    });
+    const { packet, receipt } = await buildExecutionContextPacket({
+      rootDir,
+      plan,
+      taskId: 'task-1',
+      persist: false,
+    });
+    const verdict = await evaluateExecutionContextPreflight({
+      rootDir,
+      packet,
+      receipt,
+      mutationRefs: [
+        'src/a.mjs',
+        absoluteTarget,
+        path.join(rootDir, 'src', 'b.mjs'),
+        cjkAbsolute,
+        'src/./a.mjs',
+        'src//a.mjs',
+        'src/b/../a.mjs',
+      ],
+    });
+
+    assert.deepEqual(verdict.mutations.map((item) => item.ref), [
+      'src/a.mjs',
+      'src/a.mjs',
+      'src/b.mjs',
+      cjkRelative,
+      'src/a.mjs',
+      'src/a.mjs',
+      'src/a.mjs',
+    ]);
+    assert.deepEqual(verdict.mutations.map((item) => item.declared), [true, true, true, true, true, true, true]);
+    assert.deepEqual(verdict.wouldBlockReasons, []);
+
+    const outside = await evaluateExecutionContextPreflight({
+      rootDir,
+      packet,
+      receipt,
+      mutationRefs: [path.join(path.dirname(rootDir), 'outside.mjs')],
+    });
+    assert.equal(outside.mutations[0].declared, false);
+    assert.ok(outside.wouldBlockReasons.includes('undeclared_target'));
+  });
+});
+
+test('reconciliation treats absolute declared targets and absolute ledger paths as the same workspace ref', async () => {
+  await withRoot('context-correction-reconciliation-', async (rootDir) => {
+    const absoluteTarget = path.join(rootDir, 'src', 'a.mjs');
+    const plan = buildStructuredPlanState({
+      title: 'Reconciliation equivalence',
+      sessionId: 'recon-equivalence',
+      tasks: [{
+        id: 'task-1',
+        title: 'Edit target',
+        targets: [absoluteTarget],
+        allowedWrites: [],
+        contextRequirements: [],
+      }],
+    });
+    const { packet } = await buildExecutionContextPacket({
+      rootDir,
+      plan,
+      taskId: 'task-1',
+      persist: false,
+    });
+    await recordSessionChangedFile({ rootDir, sessionId: 'recon-equivalence', filePath: 'src/a.mjs' });
+    const relativeLedger = await evaluateContextReconciliation({
+      rootDir,
+      sessionId: 'recon-equivalence',
+      packet,
+      persist: false,
+    });
+    assert.deepEqual(relativeLedger.undeclaredPaths, []);
+    assert.deepEqual(relativeLedger.missingDeclaredPaths, []);
+  });
+
+  await withRoot('context-correction-ledger-absolute-', async (rootDir) => {
+    const plan = buildStructuredPlanState({
+      title: 'Ledger absolute equivalence',
+      sessionId: 'ledger-absolute',
+      tasks: [{
+        id: 'task-1',
+        title: 'Edit target',
+        targets: ['src/a.mjs'],
+        allowedWrites: [],
+        contextRequirements: [],
+      }],
+    });
+    const { packet } = await buildExecutionContextPacket({
+      rootDir,
+      plan,
+      taskId: 'task-1',
+      persist: false,
+    });
+    await recordSessionChangedFile({
+      rootDir,
+      sessionId: 'ledger-absolute',
+      filePath: path.join(rootDir, 'src', 'a.mjs'),
+    });
+    const absoluteLedger = await evaluateContextReconciliation({
+      rootDir,
+      sessionId: 'ledger-absolute',
+      packet,
+      persist: false,
+    });
+    assert.deepEqual(absoluteLedger.undeclaredPaths, []);
+    assert.deepEqual(absoluteLedger.missingDeclaredPaths, []);
+  });
+});
+
 test('Windows case variants preserve target and allowed-write declaration semantics', {
   skip: process.platform !== 'win32',
 }, async () => {

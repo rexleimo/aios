@@ -36,6 +36,29 @@ function normalizePath(filePath) {
   return String(filePath || '').replace(/\\/g, '/').replace(/^\/+/u, '').trim();
 }
 
+// D3: preserve absolute-inside-workspace as relative at write time so later
+// workspace-aware comparison sees the same ref as git/snapshot relative paths.
+// Outside-workspace absolutes fall back to normalizePath (stay undeclared).
+function normalizeLedgerPath(rootDir, filePath) {
+  const raw = String(filePath || '').trim();
+  if (!raw) return '';
+  const isAbsolute = path.isAbsolute(raw) || path.win32.isAbsolute(raw) || path.posix.isAbsolute(raw.replace(/\\/g, '/'));
+  if (isAbsolute) {
+    try {
+      const root = path.resolve(rootDir);
+      const candidate = path.resolve(raw);
+      if (isContainedPath(root, candidate)) {
+        const relative = path.relative(root, candidate);
+        if (relative === '') return '.';
+        return String(relative).replace(/\\/g, '/').replace(/^\.\//u, '');
+      }
+    } catch {
+      // Fall through to lexical normalization below.
+    }
+  }
+  return normalizePath(raw);
+}
+
 function isContainedPath(rootPath, candidatePath) {
   const relative = path.relative(rootPath, candidatePath);
   return relative === '' || (!relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative));
@@ -244,7 +267,7 @@ export async function recordSessionChangedFile({
   env = process.env,
 } = {}) {
   const safeSessionId = normalizeSessionId(sessionId);
-  const normalized = normalizePath(filePath);
+  const normalized = normalizeLedgerPath(rootDir, filePath);
   if (!normalized) throw new Error('changed-files requires a file path');
   const row = {
     schemaVersion: 1,

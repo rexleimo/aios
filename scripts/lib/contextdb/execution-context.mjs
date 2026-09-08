@@ -571,8 +571,19 @@ export function isExecutionContextMutationDeclared(packet, rawRef, { rootDir = '
   if (!ref) return false;
   const targets = Array.isArray(packet?.task?.targets) ? packet.task.targets : [];
   const allowedWrites = Array.isArray(packet?.task?.allowedWrites) ? packet.task.allowedWrites : [];
-  return targets.some((target) => comparisonRef(target) === ref)
-    || allowedWrites.some((pattern) => globMatches(ref, pattern));
+  // D3: declared side must use the same workspace resolution as the mutation
+  // side, otherwise absolute declared targets/patterns never match the
+  // relative-normalized mutation ref (known undeclared_target false positive).
+  const declaredEquals = (target) => {
+    const normalizedTarget = rootDir ? normalizeWorkspaceRef(rootDir, target) : normalizeRef(target);
+    return comparisonRef(normalizedTarget) === ref;
+  };
+  const patternMatches = (pattern) => {
+    const normalizedPattern = rootDir ? normalizeWorkspaceRef(rootDir, pattern) : normalizeRef(pattern);
+    return globMatches(ref, normalizedPattern);
+  };
+  return targets.some(declaredEquals)
+    || allowedWrites.some(patternMatches);
 }
 
 export async function evaluateExecutionContextPreflight({

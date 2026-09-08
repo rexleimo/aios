@@ -119,7 +119,70 @@ function eventMatchesQuery(event, query) {
   return hits / queryTokens.length >= matchThreshold(queryTokens.length);
 }
 
-function scoreEvent(event, query) {
+/* BM25 constants aligned with the sqlite FTS5 sibling (mcp-server
+ * contextdb/sqlite/events.ts ranks bm25 with text weighted above refs). IDF
+ * comes from the query's matched set — the ranking corpus — so the recall hot
+ * path needs no global index; the sum is normalized by its best case so
+ * scores keep one stable scale next to the exact-match bonuses below.
+ * Normalization bounds ≈ 1 but is not a hard ceiling: short documents with
+ * repeated terms saturate past it. */
+const BM25_K1 = 1.2;
+const BM25_B = 0.75;
+
+/* BM25 separates memories by token evidence; document-length noise inside
+ * this margin is not evidence, and recency wins there via the ts tie-break —
+ * the prior the coverage scorer used to get for free. Feedback deltas
+ * (>= 1.5, see applyMemoFeedbackBoost) clear the margin by design. */
+const MATCH_SCORE_EPSILON = 0.2;
+
+function eventDocument(event) {
+  const text = String(event.text || '').toLowerCase();
+  const refs = Array.isArray(event.refs) ? event.refs.join(' ').toLowerCase() : '';
+  return { doc: `${text} ${refs}`, length: text.length + refs.length };
+}
+
+function countOccurrences(haystack, needle) {
+  let count = 0;
+  let at = haystack.indexOf(needle);
+  while (at !== -1) {
+    count += 1;
+    at = haystack.indexOf(needle, at + needle.length);
+  }
+  return count;
+}
+
+/* Coverage scoring cannot tell a token that discriminates one memory from a
+ * token every memory shares; BM25's IDF term can. Returns one normalized,
+ * scale-stable score per event. Whether a surfaced memory was useful remains
+ * the consumer's call, recorded via recall feedback. */
+function scoreEventsWithBm25(events, queryTokens) {
+  if (events.length === 0 || queryTokens.length === 0) return events.map(() => 0);
+  const docs = events.map(eventDocument);
+  const avgLength = docs.reduce((sum, entry) => sum + entry.length, 0) / docs.length || 1;
+  const idf = new Map();
+  let maxScore = 0;
+  for (const token of queryTokens) {
+    const docFrequency = docs.filter((entry) => entry.doc.includes(token)).length;
+    if (docFrequency === 0) continue;
+    const weight = Math.log(1 + (docs.length - docFrequency + 0.5) / (docFrequency + 0.5));
+    idf.set(token, weight);
+    maxScore += weight;
+  }
+  if (maxScore <= 0) return docs.map(() => 0);
+  return docs.map(({ doc, length }) => {
+    let score = 0;
+    const lengthRatio = length / avgLength;
+    for (const [token, weight] of idf) {
+      const termFrequency = countOccurrences(doc, token);
+      if (termFrequency === 0) continue;
+      score += weight * ((termFrequency * (BM25_K1 + 1))
+        / (termFrequency + BM25_K1 * (1 - BM25_B + BM25_B * lengthRatio)));
+    }
+    return score / maxScore;
+  });
+}
+
+function scoreEvent(event, query, bm25Score = 0) {
   const normalizedQuery = String(query || '').trim().toLowerCase();
   if (!normalizedQuery) return 0;
   const text = String(event.text || '').toLowerCase();
@@ -127,11 +190,7 @@ function scoreEvent(event, query) {
   let score = 0;
   if (text.includes(normalizedQuery)) score += 2;
   if (refs.includes(normalizedQuery)) score += 1;
-  const queryTokens = [...tokenizeForMatch(normalizedQuery)];
-  if (queryTokens.length > 0) {
-    score += (countTokenHits(text, queryTokens) / queryTokens.length) * 4;
-    score += (countTokenHits(refs, queryTokens) / queryTokens.length) * 2;
-  }
+  score += bm25Score * 4;
   return score;
 }
 
@@ -169,18 +228,22 @@ export async function searchMemoEvents(workspaceRoot, { storage, space = 'defaul
   const boundedLimit = normalizeLimit(limit);
   const archivedIds = includeArchived ? new Set() : await readDreamArchivedEventIds({ rootDir: workspaceRoot });
   const scores = feedbackScores instanceof Map ? feedbackScores : await readMemoFeedbackScores({ workspaceRoot });
-  const scored = sortEventsDescending(selectVisibleEvents(
+  const visible = sortEventsDescending(selectVisibleEvents(
     events.filter((event) => !archivedIds.has(event.eventId)),
     { scope, agent, asOf, includeInvalid, includeCandidates },
-  ))
-    .filter((event) => eventMatchesQuery(event, query))
-    .map((event) => ({
+  )).filter((event) => eventMatchesQuery(event, query));
+  const bm25Scores = scoreEventsWithBm25(
+    visible,
+    [...tokenizeForMatch(String(query || '').trim().toLowerCase())],
+  );
+  const scored = visible
+    .map((event, index) => ({
       ...event,
-      matchScore: applyMemoFeedbackBoost(scoreEvent(event, query), scores.get(event.eventId)),
+      matchScore: applyMemoFeedbackBoost(scoreEvent(event, query, bm25Scores[index]), scores.get(event.eventId)),
     }))
     .sort((a, b) => {
       const scoreCompare = Number(b.matchScore || 0) - Number(a.matchScore || 0);
-      if (scoreCompare !== 0) return scoreCompare;
+      if (Math.abs(scoreCompare) >= MATCH_SCORE_EPSILON) return scoreCompare;
       return String(b.ts || '').localeCompare(String(a.ts || ''));
     })
     .slice(0, boundedLimit);
