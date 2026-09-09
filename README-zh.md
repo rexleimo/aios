@@ -79,7 +79,7 @@ AIOS 由 [Rex](https://rexai.top) 公开维护——发布历史就是一份持�
 ## 它怎么拼在一起
 
 ```text
-你的编码客户端（codex / claude / gemini / opencode / hermes / grok）
+你的编码客户端（codex / claude / gemini / opencode / hermes / grok / workbuddy）
         │
         ▼
   AIOS 指引 + Workflow Policy
@@ -130,9 +130,9 @@ aios plan auto-gate --task "重构 auth 模块" --dry-run --json
 
 ## 支持的客户端
 
-六个编码客户端提供原生或兼容集成——同样的项目记忆、同样的工作流策略、同样的验证证据：
+七个编码客户端提供原生或兼容集成——同样的项目记忆、同样的工作流策略、同样的验证证据：
 
-`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok`（Grok Build）
+`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok`（Grok Build） · `workbuddy`（CodeBuddy CLI）
 
 不同客户端功能深度可能不同，请以 `aios doctor --native --verbose` 本机结果为准。
 

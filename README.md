@@ -130,9 +130,9 @@ The project marker points clients at `.aios/context-db/index.json`. ContextDB is
 
 ## Supported clients
 
-Native or compatibility integrations for six coding clients — same project memory, same workflow policy, same verification evidence everywhere:
+Native or compatibility integrations for seven coding clients — same project memory, same workflow policy, same verification evidence everywhere:
 
-`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok` (Grok Build)
+`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok` (Grok Build) · `workbuddy` (CodeBuddy CLI)
 
 Feature depth varies by client. Run `aios doctor --native --verbose` instead of assuming every route exists everywhere.
 

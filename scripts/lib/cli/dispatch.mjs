@@ -378,6 +378,24 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'memory') {
+      const [sub, ...flags] = parsed.options.args || [];
+      if (sub !== 'report') {
+        throw new Error('Usage: node scripts/aios.mjs memory report [--json]');
+      }
+      const { buildMemoryReport, renderMemoryReport } = await import('../memo/report.mjs');
+      const report = await buildMemoryReport(workspaceFor(parsed), { env: process.env });
+      const json = flags.includes('--json');
+      stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : `${renderMemoryReport(report)}\n`);
+      return;
+    }
+
+    if (parsed.command === 'import') {
+      const { runImportCommand } = await import('../memo/import-cli.mjs');
+      await runImportCommand({ args: parsed.options.args || [], rootDir: workspaceFor(parsed), stdout });
+      return;
+    }
+
     if (parsed.command === 'model-router') {
       const { runModelRouterCommand } = await import('../model-router.mjs');
       applyResultExitCode(await runModelRouterCommand(parsed.options, { rootDir: workspaceFor(parsed) }));

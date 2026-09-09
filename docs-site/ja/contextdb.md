@@ -93,6 +93,34 @@ aios memo storage repair-locks
 rebuild は derived query file を更新するだけで canonical record を書き換えません。
 `repair-locks` は記録された owner PID の終了を確認した lock だけを quarantine し、active または malformed な lock には触れません。
 
+### メモリ保守とオブザーバビリティ（v5.12.0）
+
+データを削除せずにメモリ面を点検・保守する：
+
+~~~bash
+aios memo hygiene                 # 読み取り専用チェック：sessions、pinned、イベントサイズ + 整理提案
+aios memo hygiene --json
+aios memo hygiene --rotate-events --max-events 500   # keep-newest ローテーション、アーカイブ行は零損失
+aios memo hygiene --archive-stale-sessions           # 陈旧セッションを context-db/archive/ へ移動
+aios memory report                # space別ボリューム/無効化率/候補滞留/採用率
+aios memo pin status              # pinned 予算：chars/limit, remaining（超過時警告）
+aios memo search "query" --level summary             # 1行約100トークン + pack フッター
+~~~
+
+ハイジーンルール：削除は一切なし（アーカイブ/ローテーションのみ、moved+kept 突合 + sha256 監査）；space レベルの `workspace-memory--*` 稼働セッションはアーカイブ対象外；リコール主ストア（`events.jsonl`）はローテーション対象外。apply はエージェント空闲期に実行すること。
+
+他ツールのメモリを統治対象候補として取り込む：
+
+~~~bash
+aios import --format claude --file ~/MEMORY.md --dry-run    # 先にプレビュー
+aios import --format roo --file .roomodes
+aios memo candidate list
+~~~
+
+インポートされた事実は必ず `candidate` になる（インポーターに公開権限はない）、`#import-<format>` タグ付き、再実行は冪等。詳細は `docs/import-migration.md`。
+
+
+
 ## 統合プロジェクト検索（v1.50.0） {#統合プロジェクト検索v1500}
 
 広い grep や repository 全体の read の前に使います。

@@ -308,6 +308,12 @@ export function parseArgs(argv = []) {
   if (first === 'rex') {
     return { mode: 'command', help: false, command: 'rex', options: { args: argv.slice(1) } };
   }
+  if (first === 'memory') {
+    return { mode: 'command', help: false, command: 'memory', options: { args: argv.slice(1) } };
+  }
+  if (first === 'import') {
+    return { mode: 'command', help: false, command: 'import', options: { args: argv.slice(1) } };
+  }
 
   const command = normalizeTopLevelCommand(first);
   if (!TOP_LEVEL_COMMANDS.has(command)) {

@@ -1,4 +1,5 @@
 import { getActiveMemoStorage } from './config.mjs';
+import { cosineSimilarity } from './embedding.mjs';
 import { collectEvents } from './events-read.mjs';
 import {
   normalizeLimit,
@@ -300,17 +301,38 @@ function selectVisibleEvents(events, { scope, agent, asOf, includeInvalid, inclu
   );
 }
 
-export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity, feedbackScores = null, entityBoost = true } = {}) {
+export async function searchMemoEvents(workspaceRoot, { storage, space = 'default', query = '', limit = 20, scope = '', agent = '', asOf = '', includeInvalid = false, includeCandidates = false, includeArchived = false, maxCharsPerMemory = Infinity, maxTotalChars = Infinity, feedbackScores = null, entityBoost = true, embedder = null, embeddingCandidates = 40 } = {}) {
   const resolvedStorage = storage ? normalizeMemoStorageName(storage) : await getActiveMemoStorage(workspaceRoot);
   const { events } = await collectEvents(workspaceRoot, { storage: resolvedStorage, space });
   const boundedLimit = normalizeLimit(limit);
   const archivedIds = includeArchived ? new Set() : await readDreamArchivedEventIds({ rootDir: workspaceRoot });
   const scores = feedbackScores instanceof Map ? feedbackScores : await readMemoFeedbackScores({ workspaceRoot });
   const enableEntity = entityBoost !== false;
-  const visible = sortEventsDescending(selectVisibleEvents(
+  const visiblePool = sortEventsDescending(selectVisibleEvents(
     events.filter((event) => !archivedIds.has(event.eventId)),
     { scope, agent, asOf, includeInvalid, includeCandidates },
-  )).filter((event) => eventMatchesQuery(event, query, { entityBoost: enableEntity }));
+  ));
+  let visible = visiblePool.filter((event) => eventMatchesQuery(event, query, { entityBoost: enableEntity }));
+  // A4 coarse stage: an optional local embedder widens the candidate pool
+  // with its nearest neighbours. Union-only — it can add candidates to the
+  // token-matched set but never remove one — so enabling it cannot lose a
+  // result the token path would have returned.
+  if (embedder && typeof embedder.embedText === 'function' && String(query || '').trim()) {
+    const wanted = Math.max(0, Math.floor(Number(embeddingCandidates) || 0));
+    if (wanted > 0) {
+      const matchedIds = new Set(visible.map((event) => event.eventId));
+      const queryVector = await embedder.embedText(query);
+      const neighbours = [];
+      for (const event of visiblePool) {
+        if (matchedIds.has(event.eventId)) continue;
+        const similarity = cosineSimilarity(queryVector, await embedder.embedText(event.text || ''));
+        if (similarity > 0) neighbours.push({ event, similarity });
+      }
+      neighbours.sort((a, b) => b.similarity - a.similarity
+        || String(b.event.ts || '').localeCompare(String(a.event.ts || '')));
+      visible = visible.concat(neighbours.slice(0, wanted).map((entry) => entry.event));
+    }
+  }
   const queryTokens = [...tokenizeForMatch(String(query || '').trim().toLowerCase())];
   const bm25Scores = scoreEventsWithBm25(visible, queryTokens);
   const entityScores = enableEntity ? scoreEventsWithEntity(visible, queryTokens) : visible.map(() => 0);

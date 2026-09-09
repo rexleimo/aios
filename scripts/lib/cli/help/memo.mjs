@@ -77,6 +77,7 @@ Subcommands:
   add <text> --valid-at <iso>         Append a fact that became true earlier
   add <text> --no-supersede-hint      Do not report likely earlier revisions
   pin show                            Print pinned memory
+  pin status                          Pinned usage: chars/limit/remaining
   pin set <text>                      Replace pinned memory
   pin add <text>                      Append to pinned memory
   useful <eventId,...>                Mark recalled memo(s) as adopted (recall feedback)
@@ -86,8 +87,12 @@ Subcommands:
   user init|show|path                 Initialize/read global user profile memory
   user set <text>                     Replace global user profile memory
   user add <text>                     Append to global user profile memory
-  search <query> [--limit N] [--semantic] [--as-of ISO] [--include-invalid]
-                                      Search memos; superseded facts are hidden by default
+  search <query> [--limit N] [--semantic] [--level summary|full]
+                                      [--as-of ISO] [--include-invalid]
+                                      Search memos; summary keeps ~100 tokens per row
+                                      and prints a pack footer; superseded facts are hidden by default
+  report [--json]                     Memory-plane report: per-space volume, invalidation,
+                                      candidate backlog, feedback adoption, pinned budget
   supersede [--threshold N] [--apply]
                                       Detect facts a later entry has replaced (dry run by default)
   candidate list [--status name] [--json]
@@ -98,6 +103,10 @@ Subcommands:
   candidate expire <id> --reason x    Expire without publishing
   recall [query] [--limit N] [--highlight-limit N] [--as-of ISO]
                                       Human-readable session recall digest
+  hygiene [--json] [--min-age-days N] [--archive-stale-sessions]
+                                      [--rotate-events] [--max-events N]
+                                      Memory hygiene: read-only survey by default; archive/rotate
+                                      only run behind their explicit flags and never delete
   gui [--port N] [--project name] [--no-open]
                                       Open project-local ContextDB memory genealogy graph
   storage                             Manage memo storage backend

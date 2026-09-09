@@ -10,6 +10,8 @@ const WORKSPACE_SCOPED_COMMANDS = new Set([
   'harness',
   'hud',
   'memo',
+  'memory',
+  'import',
   'orchestrate',
   'team',
   'work',

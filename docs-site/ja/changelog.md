@@ -5,6 +5,25 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## v5.12.0（2026-09-09）——メモリシステム仕上げ：ハイジーン、レポート、移行インポート、ティアローディング
+
+### 変更内容
+
+- **memoハイジーン**：`aios memo hygiene` は読み取り専用チェック（sessions/pinned/イベントサイズ + 整理提案）；`--archive-stale-sessions` は移動アーカイブ、`--rotate-events` は keep-newest ローテーション（moved+kept 突合 + sha256）。削除は一切なし。
+- **メモリレポート**：`aios memory report` / `memo report --json`——space別ボリューム/無効化率/候補滞留/feedback採用率/pinned 予算。
+- **移行インポーター**：`aios import --format claude|continue|roo|conventions`——外部メモリを統治対象 candidate として取り込む（公開権限のない identity で書き込み、verified プロトコルは迂回不可）、冪等、ガイドは `docs/import-migration.md`。
+- **段階的開示 + pinned 予算**：`search --level summary`（1行約100トークン + pack フッター）、`pin status` 三プル。
+- **AgentView ティア（H1）**：T0–T3 + ティア別文字予算、`ctx-agent.mjs workspace-view`（pull 型、既定 T3）。
+- **Autodream Phase B（E1）**：`AIOS_AUTODREAM_AUTO=1`（既定オフ）close+アイドル dual トリガ、preview のみ。
+- **embedding ラフランク（A4、既定オフ）+ 実コーパス基準（G1）**：union-only でゼロドリフト、基準 top-1 98% / top-5 100%。
+- **検証クローズ**：C1 予算デグレード投影・C2 refs/canvas・F2 generatedTargets 由来の各確認と F1 楽観ロック衝突マーカー追加。
+
+### アップグレード
+
+破壊的変更なし。回帰 1106 テスト / 0 失敗（101 ファイル、新規 9 スイート含む）。
+
+
+
 ## v5.8.2（2026-08-29）——プラン状態が先回りしなくなり、WorkBuddy クライアント対応
 
 ### 変更内容

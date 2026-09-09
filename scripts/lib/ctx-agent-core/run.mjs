@@ -468,6 +468,15 @@ export async function runCtxAgent(argv = process.argv.slice(2)) {
     return;
   }
 
+  // H1 production entry: tiered AgentView for humans and orchestrators.
+  // Deliberately NOT auto-injected into startup prompts (see
+  // aios-long-running-harness SKILL policy) — it is a pull-based read.
+  if (firstArg === 'workspace-view') {
+    const { handleWorkspaceViewCommand } = await import('./workspace-commands.mjs');
+    await handleWorkspaceViewCommand(argv.slice(1), resolveInitialWorkspace({ workspaceRoot: '' }));
+    return;
+  }
+
   const opts = parseArgs(argv);
   validateOpts(opts);
   opts.workspaceRoot = path.resolve(resolveInitialWorkspace(opts));

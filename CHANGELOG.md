@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [5.12.0] - 2026-09-09
+
+### Added
+
+- memo: pinned block budget (`C3`) — `renderPinnedBlock` in `scripts/lib/memo/storage/pinned.mjs` renders line-numbered rows with `chars`/`maxChars`/`remaining`/`truncated` metadata (limits clamped to [512, 20000], default 5000, shared with the CLI env override); new `aios memo pin status` prints the usage triple.
+- memo: progressive-disclosure search (`C4`) — `aios memo search --level summary|full`; summary rows keep ~100 tokens each (degenerate token runs collapse to two repeats before the 400-char cap) and every search ends with an observable `pack: N entries, M chars, level=X` footer; default `full` output is unchanged.
+- memo: hygiene command (`E2`+`E3`) — `aios memo hygiene` surveys sessions, pinned budgets, and per-session `l2-events.jsonl` sizes with explicit proposals (read-only by default); `--archive-stale-sessions` moves stale historical sessions into `context-db/archive/` (conflict-safe, reversible) and `--rotate-events --max-events N` rotates keep-newest with moved+kept accounting and sha256 before/after. Nothing ever deletes; space-level `workspace-memory--*` sessions are never archived; `memo storage events.jsonl` (the recall primary store) is out of rotation scope.
+- memo: memory-plane report (`G2`) — `aios memory report` / `aios memo report [--json]`: per-space volume, invalidation ratio, candidate backlog (pending/promoted/rejected/expired), feedback impressions/useful/adoption, and pinned budget in one read-only pass.
+- memo: migration importers (`F3`) — `aios import --format claude|continue|roo|conventions --file <path> [--dry-run] [--json]` turns Claude `MEMORY.md`, Continue rules, `.roomodes`, and `CONVENTIONS.md` into governed memo candidates (importer runs as a no-publish runtime identity so every fact lands `candidate`, tagged `#import-<format>`, idempotent on re-run). Landing page: `docs/import-migration.md`.
+- memo: optional local embedding coarse rank (`A4`) — `AIOS_MEMO_EMBEDDER=hash-lexical` enables a deterministic in-process embedder; the coarse stage is union-only (it can widen the candidate pool, never shrink the token-matched set) so enabling it cannot lose results; recall-ab gains a fifth `embedding` arm with zero top-1 drift vs baseline. The embedder interface accepts any local model implementation.
+- memo: real-corpus eval harness (`G1`) — `scripts/lib/memo/eval/real-corpus.mjs` derives deterministic queries from the live corpus at runtime (no memo text is copied into the repo). Live baseline on this checkout: top-1 98% / top-5 100% (171 events, 50 queries); run it before/after any retrieval change.
+- contextdb: tiered AgentView (`H1`) — `buildAgentView(workspaceRoot, sessionId, taskType, { tier })` implements the 2026-05-10 design tiers T0 (meta + project context), T1 (+filtered skill summaries and a continuity pointer), T2 (+the active skill's full text), T3 (+full continuity packet, lineage, knowledge snapshot); every view carries a per-section char budget. New pull-based CLI: `node scripts/ctx-agent.mjs workspace-view --session <id> [--task-type <type>] [--tier T0-T3] [--json]`. Default tier stays T3 for legacy callers.
+- memo: Autodream Phase B (`E1`) — `AIOS_AUTODREAM_AUTO=1` (default off) enables automatic triggers: session close and an idle threshold (`AIOS_AUTODREAM_IDLE_MINUTES`, default 30). Triggers run dream `preview` only; proposals flow through the existing governed apply. The dream engine is deterministic and zero-LLM, which is the cheapest possible consolidation route.
+- contextdb: optimistic-lock conflict markers (`F1`) — a rejected stale `writeWorkspaceMeta` now auto-writes an auditable `conflicts/{timestamp}.json` marker (expected/actual version plus requested updates) before throwing `OptimisticLockError`.
+
+### Changed
+
+- verification: backlog items closed by verification — `C1` budget-degradation projection confirmed landed (full → summary+ref → ref-only, hard-constraint items preserved at full fidelity with observable budget overflow, production caller in orchestrate); `C2` tool-log offload + Mermaid canvas confirmed already shipped (`aios refs`, `aios canvas`); `F2` premise corrected — `generatedTargets` is derived from client `agents` capability, and on-box contract checks show gemini has no agent-definition consumer and hermes consumes Claude/Codex layouts via `import-agent`, so the 4/7 gap reduces to one pending workbuddy definition-directory check.
+- tests: nine new suites added to the regression manifest (`test-suites.json`, 92 → 101 files); full regression now 1106 tests / 1100 pass / 0 fail / 6 skipped.
+
+### Fixed
+
+- tests: Windows-only cleanup flake — workspace test temp dirs now remove with `force` + retries after the conflict-marker change left files behind (ENOTEMPTY).
+
 ## [5.11.0] - 2026-09-06
 
 ### Added

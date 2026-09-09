@@ -131,13 +131,26 @@ export async function runSessionClose(options, { rootDir = process.cwd(), stdout
   const sessionId = options.session || 'default';
   const candidate = await autoMemoSessionClose({ rootDir, sessionId, env });
 
+  // E1 Autodream Phase B (opt-in): fire the governed dream preview on session
+  // close. Must never block or fail the close itself — everything is wrapped.
+  let autodream = null;
+  try {
+    const { runAutodreamPhaseB } = await import('../../memo/autodream-auto.mjs');
+    autodream = await runAutodreamPhaseB({ rootDir, trigger: 'session-close', env });
+  } catch (error) {
+    autodream = { ran: false, enabled: true, shouldRun: false, reason: `autodream error: ${error?.message || error}` };
+  }
+
   if (options.json || options.format === 'json') {
-    stdout.write(`${JSON.stringify(candidate, null, 2)}\n`);
+    stdout.write(`${JSON.stringify({ ...candidate, autodream }, null, 2)}\n`);
   } else {
     stdout.write(`Session close candidate written for ${sessionId}\n`);
     stdout.write(`  Candidate: ${candidate.candidateId}\n`);
     stdout.write(`  Text: ${candidate.text.slice(0, 80)}...\n`);
+    if (autodream?.ran) {
+      stdout.write(`  Autodream preview: ${autodream.trigger}\n`);
+    }
   }
 
-  return { exitCode: 0, event: candidate, candidate };
+  return { exitCode: 0, event: candidate, candidate, autodream };
 }

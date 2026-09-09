@@ -4,6 +4,7 @@ import { assertMaxChars, assertSafeMemoText } from '../capacity.mjs';
 import { mirrorPinnedMemoToLegacy } from '../legacy.mjs';
 import { safePrintText, usageError } from '../shared.mjs';
 import { getActiveMemoStorage, loadMemoStorageApi } from '../storage-api.mjs';
+import { renderPinnedBlock } from '../../storage/pinned.mjs';
 import { pinnedPath, readPinned } from '../workspace-state.mjs';
 
 export async function handleMemoPinCommand({
@@ -15,7 +16,7 @@ export async function handleMemoPinCommand({
   io,
 }) {
   const action = String(secondary || '').toLowerCase();
-  if (!action) throw usageError('Usage: memo pin <show|set|add> ...');
+  if (!action) throw usageError('Usage: memo pin <show|set|add|status> ...');
 
   const space = activeSpace;
   const sessionId = workspaceMemorySessionId(space);
@@ -32,6 +33,18 @@ export async function handleMemoPinCommand({
       return true;
     }
     safePrintText(io, content);
+    return true;
+  }
+
+  if (action === 'status') {
+    const storageApi = await loadMemoStorageApi();
+    const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
+    let content = await storageApi.readPinnedMemo(workspaceRoot, { storage, space });
+    if (!String(content || '').trim() && fs.existsSync(pinnedPath(workspaceRoot, sessionId))) {
+      content = readPinned(workspaceRoot, sessionId);
+    }
+    const rendered = renderPinnedBlock(content, { maxChars: workspacePinnedMaxChars });
+    io.log(`pinned ${space}: ${rendered.chars}/${rendered.maxChars} chars, remaining ${rendered.remaining}${rendered.truncated ? ', truncated' : ''}`);
     return true;
   }
 

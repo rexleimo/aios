@@ -1,5 +1,6 @@
 import { assertMaxChars, assertSafeMemoText } from '../capacity.mjs';
 import { splitFlags, splitRecallFlags } from '../flags.mjs';
+import { resolveEmbedderFromEnv } from '../../storage/embedding.mjs';
 import { legacyMemoRows, mirrorMemoEventToLegacy } from '../legacy.mjs';
 import { createMemoTurnId, extractTags } from '../records.mjs';
 import {
@@ -191,9 +192,12 @@ export async function handleMemoListCommand({ argv, workspaceRoot, activeSpace, 
 
 export async function handleMemoSearchCommand({ argv, workspaceRoot, activeSpace, io }) {
   const { positionals, flags } = splitFlags(argv);
-  if (positionals[0] !== 'search') throw usageError('Usage: memo search <query> [--limit N] [--semantic]');
+  if (positionals[0] !== 'search') {
+    throw usageError('Usage: memo search <query> [--limit N] [--semantic] [--level summary|full]');
+  }
   const query = positionals.slice(1).join(' ').trim();
   if (!query) throw usageError('memo search requires query text');
+  const level = normalizeSearchLevel(flags.level);
 
   const rows = await searchMemoRows({
     workspaceRoot,
@@ -204,15 +208,31 @@ export async function handleMemoSearchCommand({ argv, workspaceRoot, activeSpace
     agent: resolveMemoAgent(flags),
     asOf: flags.asOf,
     includeInvalid: flags.includeInvalid,
+    embedder: resolveEmbedderFromEnv(),
   });
   if (rows.length === 0) {
     io.log('(none)');
     return true;
   }
+  // C4 progressive disclosure: summary rows stay ~100 tokens each; the footer
+  // makes the pack size observable so the reader can decide when to go full.
+  let packChars = 0;
   for (const row of rows) {
-    io.log(renderMemoRow(row));
+    const line = renderMemoRow(row, { level });
+    packChars += line.length;
+    io.log(line);
   }
+  io.log(`pack: ${rows.length} entries, ${packChars} chars, level=${level}`);
   return true;
+}
+
+const SEARCH_LEVELS = new Set(['summary', 'full']);
+
+function normalizeSearchLevel(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  if (!value) return 'full';
+  if (SEARCH_LEVELS.has(value)) return value;
+  throw usageError('memo search --level must be summary or full');
 }
 
 async function loadMemoRows({ workspaceRoot, activeSpace, limit, scope = '', agent = '', asOf = '', includeInvalid = false }) {
@@ -233,7 +253,7 @@ async function loadMemoRows({ workspaceRoot, activeSpace, limit, scope = '', age
   return Array.isArray(rows) ? rows : [];
 }
 
-async function searchMemoRows({ workspaceRoot, activeSpace, query, limit, scope = '', agent = '', asOf = '', includeInvalid = false }) {
+async function searchMemoRows({ workspaceRoot, activeSpace, query, limit, scope = '', agent = '', asOf = '', includeInvalid = false, embedder = null }) {
   const storageApi = await loadMemoStorageApi();
   const storage = await getActiveMemoStorage(workspaceRoot, storageApi);
   let rows = await storageApi.searchMemoEvents(workspaceRoot, {
@@ -245,6 +265,7 @@ async function searchMemoRows({ workspaceRoot, activeSpace, query, limit, scope 
     agent,
     asOf,
     includeInvalid,
+    embedder,
   });
   if (!Array.isArray(rows) || rows.length === 0) {
     rows = legacyMemoRows(workspaceRoot, activeSpace, { query, limit });

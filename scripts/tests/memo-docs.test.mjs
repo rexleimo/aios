@@ -53,7 +53,9 @@ function readRepoFile(relativePath) {
 
 test('public memo docs avoid stale storage concepts and hidden compatibility commands', () => {
   const forbidden = [
-    /\baios memory\b/i,
+    // v5.12.0: `aios memory report` is a real top-level command; the legacy
+    // bare `aios memory` surface (pre-memo rename) stays banned.
+    /\baios memory\b(?! report\b)/i,
     /\baios memo share\b/i,
     /\bmemo share\b/i,
     /\baios memo driver\b/i,

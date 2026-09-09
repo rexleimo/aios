@@ -22,6 +22,8 @@ Commands:
   evolution     Inspect and run governed self-evolution proposals
   dream         Consolidate durable memo knowledge and export to plan/pins
   memo          Workspace memo + pinned memory helpers
+  memory        Memory-plane observability ('memory report [--json]')
+  import        Import external memory files (MEMORY.md/.roomodes/...) as memo candidates
   search        Search project memory, docs, plans, and code references
   refs          Search/read offloaded tool-output refs
   canvas        Show Mermaid task canvas for offloaded tool calls

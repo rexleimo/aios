@@ -4,9 +4,33 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.11.0（2026-09-06）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.12.0（2026-09-09）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
 >
-> v5.11.0 重点包含：7 组提示词契约加固（memo 五要素抽取、verification 评分回环、harness 卡死自报、ContextDB 压缩分级、弱模型钉死 + 预算声明、dispatch 节点 recipe、rex-planning progress ledger），纯提示词、无运行时改动、无破坏性变更。
+> v5.12.0 重点包含：记忆优化 backlog 13 项全部关闭——memo 卫生命令（只读体检 + 归档/轮替零删除）、`aios memory report` 全记忆面报表、`aios import` 迁移导入器（Claude/Continue/Roo/CONVENTIONS → 受治理候选）、渐进披露 search + pinned 预算、AgentView T0-T3 分级加载、Autodream Phase B opt-in 自动触发、本地 embedding 粗排（默认关）、真实语料评测基线 top-1 98%。无破坏性变更。
+
+## [5.12.0] - 2026-09-09
+
+### 新增
+
+- memo pinned 预算（C3）：`renderPinnedBlock` 行号化渲染 + `chars/limit/remaining/truncated` 元数据（限幅 [512, 20000]，默认 5000）；新命令 `aios memo pin status`。
+- memo 渐进披露读（C4）：`aios memo search --level summary|full`，summary 每行约 100 token（退化重复 token 先压缩再卡 400 字符），末行 `pack: N entries, M chars, level=X` 可观测；默认 full 行为不变。
+- memo 卫生命令（E2+E3）：`aios memo hygiene` 只读体检（sessions/pinned/事件体量 + 提案）；`--archive-stale-sessions` 移动归档（冲突即拒），`--rotate-events --max-events N` keep-newest 轮替（moved+kept 对账 + sha256）。永不删除；space 级活 session 永不归档；召回主存储不轮替。
+- memo 记忆报表（G2）：`aios memory report` / `memo report --json`——每 space 体量/失效比/候选积压/feedback 采纳率/pinned 预算。
+- memo 迁移导入器（F3）：`aios import --format claude|continue|roo|conventions --file <path>`，外部记忆以无发布身份写入、一律落 candidate（verified 协议不可绕过），`#import-<format>` 溯源、幂等；落地页 `docs/import-migration.md`。
+- memo 本地 embedding 粗排（A4，默认关）：`AIOS_MEMO_EMBEDDER=hash-lexical`，union-only 只加候选不删结果；recall-ab 新增第五臂 embedding，top-1 零漂移。
+- memo 真实语料评测集（G1）：`scripts/lib/memo/eval/real-corpus.mjs` 运行时派生查询（语料文本不入库）；本仓库基线 top-1 98% / top-5 100%（171 事件/50 查询）。
+- contextdb AgentView 分级（H1）：`buildAgentView({ tier })` T0–T3 四档 + 每档逐段字符预算；新 pull 型命令 `node scripts/ctx-agent.mjs workspace-view`；默认 T3 旧调用方零改动。
+- memo Autodream Phase B（E1）：`AIOS_AUTODREAM_AUTO=1`（默认关）开启会话关闭 + 空闲阈值（默认 30 分钟）双触发；只跑 preview 走既有治理 apply；dream 引擎零 LLM。
+- contextdb 乐观锁冲突标记（F1）：stale 写被拒时自动写 `conflicts/{timestamp}.json` 审计标记。
+
+### 变更
+
+- 核实关闭：C1 预算降级投影确认已落地（full → summary+ref → ref-only + hardConstraint 必保 + orchestrate 生产调用链）；C2 工具日志 offload + Mermaid 画布确认已上线（`aios refs` / `aios canvas`）；F2 前提修正（`generatedTargets` 按客户端能力推导，实测后差距缩水为 workbuddy 一个待证目录）。
+- 测试：9 个新套件入 regression 清单（92 → 101 文件）；全量回归 1106 用例 / 1100 pass / 0 fail / 6 skip。
+
+### 修复
+
+- 测试：Windows 临时目录清理偶发 ENOTEMPTY（冲突标记残留文件），清理统一加重试。
 
 ## [5.11.0] - 2026-09-06
 

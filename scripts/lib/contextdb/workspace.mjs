@@ -128,6 +128,16 @@ export async function writeWorkspaceMeta(workspaceRoot, updates = {}) {
   const current = await readWorkspaceMeta(workspaceRoot);
 
   if (updates.expectedVersion !== undefined && updates.expectedVersion !== current.workspaceVersion) {
+    // F1: a rejected optimistic write must leave an auditable marker so the
+    // loser can see who holds the version and reconcile, instead of only
+    // getting a thrown error nobody records.
+    await writeConflictMarker(workspaceRoot, {
+      kind: 'workspace-meta-conflict',
+      file: 'meta.json',
+      expectedVersion: updates.expectedVersion,
+      actualVersion: current.workspaceVersion,
+      requestedUpdates: updates,
+    });
     throw new OptimisticLockError(updates.expectedVersion, current.workspaceVersion);
   }
 
@@ -144,7 +154,36 @@ export async function writeWorkspaceMeta(workspaceRoot, updates = {}) {
   return updated;
 }
 
-export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
+/* H1 AgentView tiered loading (2026-05-10 design §2). T0 = meta + project
+ * context (startup floor); T1 = + relevant skill summaries and a continuity
+ * pointer (task routing); T2 = + the active skill's full text (execution);
+ * T3 = + full continuity packet, lineage and knowledge snapshot (legacy
+ * full load, on-demand lookups). Default tier is T3 so existing callers
+ * keep the old whole-view behavior; production entry points pass a tier
+ * explicitly. Every view reports a per-section char budget so tier costs
+ * are observable instead of guessed. */
+const AGENT_VIEW_TIERS = new Set(['T0', 'T1', 'T2', 'T3']);
+
+function viewBudget(tier) {
+  return { tier, sections: {} };
+}
+
+function accountChars(budget, section, value) {
+  const text = value == null ? '' : typeof value === 'string' ? value : JSON.stringify(value);
+  budget.sections[section] = String(text).length;
+  return budget.sections[section];
+}
+
+function skillFileOf(entry) {
+  return String(entry?.skill?.file || entry?.file || '');
+}
+
+export async function buildAgentView(workspaceRoot, sessionId, taskType = '', { tier = 'T3', env = process.env } = {}) {
+  const normalizedTier = AGENT_VIEW_TIERS.has(String(tier).toUpperCase())
+    ? String(tier).toUpperCase()
+    : 'T3';
+  const budget = viewBudget(normalizedTier);
+
   let meta;
   let projectContext = '';
 
@@ -159,32 +198,56 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
   } catch {
     return {
       sessionId,
+      tier: normalizedTier,
       workspaceVersion: 0,
       projectContext: '',
       relevantSkills: [],
+      activeSkill: null,
       activeTasks: [],
       continuity: null,
+      continuityPointer: null,
       continuityLineage: null,
+      knowledge: null,
+      budget,
     };
   }
+  accountChars(budget, 'meta', meta);
+  accountChars(budget, 'projectContext', projectContext);
+
+  const view = {
+    sessionId,
+    tier: normalizedTier,
+    workspaceVersion: meta.workspaceVersion,
+    projectContext,
+    relevantSkills: [],
+    activeSkill: null,
+    activeTasks: [],
+    continuity: null,
+    continuityPointer: null,
+    continuityLineage: null,
+    knowledge: null,
+    budget,
+  };
+  if (normalizedTier === 'T0') return view;
 
   const { readSkillIndex, findSkillsByTaskType } = await import('./skill-index.mjs');
-  const { readHandoffPacket } = await import('./handoff.mjs');
+  const { readHandoffPacket, evaluateHandoffLineage } = await import('./handoff.mjs');
 
   const index = await readSkillIndex(workspaceRoot);
-  const relevantSkills = taskType
+  view.relevantSkills = taskType
     ? findSkillsByTaskType(index, taskType)
     : index.skills;
+  accountChars(budget, 'skillSummaries', view.relevantSkills);
 
-  let continuity = null;
-  let continuityLineage = null;
+  // Continuity pointer: locate the latest other session's handoff without
+  // paying for its full packet until T2/T3 asks for it.
+  let continuitySessionId = '';
   try {
     const sessionsDir = path.join(
       resolveContextDbRoot(path.resolve(workspaceRoot), { preferLegacyExisting: true }),
       'sessions'
     );
     const entries = await fs.readdir(sessionsDir, { withFileTypes: true });
-    let latestSessionId = '';
     let latestMtime = 0;
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
@@ -195,27 +258,53 @@ export async function buildAgentView(workspaceRoot, sessionId, taskType = '') {
         const mtime = new Date(m.updated_at || m.updatedAt || m.created_at || m.createdAt || 0).getTime();
         if (mtime > latestMtime && entry.name !== sessionId) {
           latestMtime = mtime;
-          latestSessionId = entry.name;
+          continuitySessionId = entry.name;
         }
       } catch {
         // skip
       }
     }
-    if (latestSessionId) {
-      continuity = await readHandoffPacket(workspaceRoot, latestSessionId);
-      if (continuity) continuityLineage = evaluateHandoffLineage(continuity);
+    if (continuitySessionId) {
+      view.continuityPointer = { sessionId: continuitySessionId, updatedAt: new Date(latestMtime).toISOString() };
+      accountChars(budget, 'continuityPointer', view.continuityPointer);
     }
   } catch {
     // no sessions
   }
+  if (normalizedTier === 'T1') return view;
 
-  return {
-    sessionId,
-    workspaceVersion: meta.workspaceVersion,
-    projectContext,
-    relevantSkills,
-    activeTasks: [],
-    continuity,
-    continuityLineage,
-  };
+  if (normalizedTier === 'T2' || normalizedTier === 'T3') {
+    const activeSkillFile = skillFileOf(view.relevantSkills[0]);
+    if (activeSkillFile) {
+      try {
+        view.activeSkill = {
+          file: activeSkillFile,
+          content: await fs.readFile(path.resolve(workspaceRoot, activeSkillFile), 'utf8'),
+        };
+        accountChars(budget, 'activeSkill', view.activeSkill.content);
+      } catch {
+        view.activeSkill = null;
+      }
+    }
+  }
+  if (normalizedTier === 'T2') return view;
+
+  if (continuitySessionId) {
+    try {
+      view.continuity = await readHandoffPacket(workspaceRoot, continuitySessionId);
+      if (view.continuity) {
+        view.continuityLineage = evaluateHandoffLineage(view.continuity);
+        accountChars(budget, 'continuity', view.continuity);
+      }
+    } catch {
+      // no readable handoff
+    }
+  }
+  try {
+    view.knowledge = await readKnowledgeSnapshot(workspaceRoot);
+    if (view.knowledge) accountChars(budget, 'knowledge', view.knowledge);
+  } catch {
+    view.knowledge = null;
+  }
+  return view;
 }

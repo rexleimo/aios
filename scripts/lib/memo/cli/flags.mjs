@@ -60,6 +60,7 @@ const MEMO_LIST_CLI = new Command()
   .option('--as-of <iso>', 'Show the facts that were current at this time')
   .option('--include-invalid', 'Include facts that have been superseded')
   .option('--no-supersede-hint', 'Do not report likely earlier revisions when adding')
+  .option('--level <level>', 'Read level for search: summary (~100 tokens) or full')
   .option('--entities <list>', 'Comma-separated files/commands/symbols the fact touches')
   .option('--date <YYYY-MM-DD>', 'Absolute calendar date the fact was established')
   .option('--evidence-ref <ref>', 'Single verification command, file:line, or doc path backing the fact')
@@ -88,6 +89,7 @@ export function splitFlags(argv) {
         semantic: flags.semantic === true,
         scope: flags.scope || '',
         agent: flags.agent || '',
+        level: String(flags.level || '').trim(),
         ...temporalFlags(flags),
         ...extractionFlags(flags),
       },
@@ -102,6 +104,7 @@ export function splitFlags(argv) {
         semantic: false,
         scope: '',
         agent: '',
+        level: '',
         ...EMPTY_TEMPORAL_FLAGS,
         ...EMPTY_EXTRACTION_FLAGS,
       },

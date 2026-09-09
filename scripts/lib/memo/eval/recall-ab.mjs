@@ -13,6 +13,7 @@
 // detection instead of asking the writer to declare what a fact replaces.
 
 import { appendMemoEvent, writeExistingEvents } from '../storage/events-write.mjs';
+import { createHashLexicalEmbedder } from '../storage/embedding.mjs';
 import { searchMemoEvents } from '../storage/query.mjs';
 import { proposeSupersedes, DEFAULT_SUPERSEDE_THRESHOLD } from '../storage/temporal.mjs';
 
@@ -20,7 +21,7 @@ const BASE_TS = Date.parse('2026-01-01T00:00:00.000Z');
 const TS_STEP_MS = 60 * 60 * 1000;
 const DEFAULT_LIMIT = 10;
 
-export const ARMS = ['baseline', 'temporal-explicit', 'temporal-auto', 'entity-boost'];
+export const ARMS = ['baseline', 'temporal-explicit', 'temporal-auto', 'entity-boost', 'embedding'];
 
 // Segments exist so the report can separate "where this works" from "where it
 // does not". A single blended average would hide both.
@@ -272,7 +273,7 @@ function summarize(tally) {
   };
 }
 
-export async function measureArm(workspaceRoot, { storage = 'file', chains = EVAL_CHAINS, limit = DEFAULT_LIMIT, entityBoost = true } = {}) {
+export async function measureArm(workspaceRoot, { storage = 'file', chains = EVAL_CHAINS, limit = DEFAULT_LIMIT, entityBoost = true, embedder = null } = {}) {
   const overall = emptyTally();
   const bySegment = new Map();
   const perChain = [];
@@ -284,6 +285,7 @@ export async function measureArm(workspaceRoot, { storage = 'file', chains = EVA
       query: chain.query,
       limit,
       entityBoost,
+      embedder,
     });
 
     const currentText = currentTextOf(chain);
@@ -332,7 +334,15 @@ export async function runArm(workspaceRoot, arm, { storage = 'file', chains = EV
     autoProposals = await applyAutoSupersedes(workspaceRoot, { storage, threshold });
   }
 
-  const measured = await measureArm(workspaceRoot, { storage, chains, limit, entityBoost: true });
+  const measured = await measureArm(workspaceRoot, {
+    storage,
+    chains,
+    limit,
+    entityBoost: true,
+    // A4 embedding arm runs on the plain corpus with the local coarse
+    // embedder: the union prefilter must never score below baseline top-1.
+    embedder: arm === 'embedding' ? createHashLexicalEmbedder() : null,
+  });
   return { arm, autoProposals, ...measured };
 }
 

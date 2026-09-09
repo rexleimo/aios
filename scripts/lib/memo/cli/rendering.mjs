@@ -89,10 +89,38 @@ function formatRefs(refs = []) {
   return tokens.length > 0 ? ` ${tokens.join(' ')}` : '';
 }
 
-export function renderMemoRow(row) {
+// C4 summary level: ~100 tokens per row. Degenerate token runs (model output
+// loops) collapse to two repeats before the char cap, so repetition cannot
+// buy back the budget the level just saved.
+export const MEMO_SUMMARY_MAX_CHARS = 400;
+const MEMO_SUMMARY_MAX_TOKEN_RUN = 2;
+
+export function summarizeMemoText(text, maxChars = MEMO_SUMMARY_MAX_CHARS) {
+  const flat = String(text ?? '').replace(/\s+/g, ' ').trim();
+  if (!flat) return '';
+  const tokens = flat.split(' ');
+  const kept = [];
+  for (let index = 0; index < tokens.length; index += 1) {
+    if (index >= MEMO_SUMMARY_MAX_TOKEN_RUN
+      && tokens[index] === tokens[index - 1]
+      && tokens[index] === tokens[index - 2]) continue;
+    kept.push(tokens[index]);
+  }
+  const collapsed = kept.length < tokens.length;
+  let summary = kept.join(' ');
+  if (summary.length > maxChars) {
+    summary = `${summary.slice(0, Math.max(0, maxChars - 1))}…`;
+  } else if (collapsed) {
+    summary = `${summary}…`;
+  }
+  return summary;
+}
+
+export function renderMemoRow(row, { level = 'full' } = {}) {
   const ts = row?.ts ? String(row.ts) : '';
   const eventId = row?.eventId ? String(row.eventId) : '';
-  const text = row?.text ? String(row.text).replace(/\s+/g, ' ').trim() : '';
+  let text = row?.text ? String(row.text).replace(/\s+/g, ' ').trim() : '';
+  if (level === 'summary') text = summarizeMemoText(text);
   const refsLabel = formatRefs(row?.refs || []);
   const idLabel = eventId ? ` (${eventId})` : '';
   return `- [${ts}]${idLabel}${refsLabel}: ${text}`;

@@ -1,9 +1,9 @@
 # AIOS
 
-> Local-first agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, and Grok Build. Adds cross-session project memory (ContextDB), adaptive workflow routing (noop/direct/guarded/planned), multi-agent collaboration, and verification gates on top of the coding clients you already use — without replacing them. Entirely local: memory, logs, and evidence stay on your machine. Version: v5.6.1 · Updated: 2026-08-14.
+> Local-first agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, Grok Build, and WorkBuddy (CodeBuddy CLI). Adds cross-session project memory (ContextDB), adaptive workflow routing (noop/direct/guarded/planned), multi-agent collaboration, and verification gates on top of the coding clients you already use — without replacing them. Entirely local: memory, logs, and evidence stay on your machine. Version: v5.12.0 · Updated: 2026-09-09.
 
 ## One-Line Definition
-AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok) cross-session project memory, adaptive routing, multi-agent teams, and verification — same commands, now with a brain.
+AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy) cross-session project memory, adaptive routing, multi-agent teams, and verification — same commands, now with a brain.
 
 ## Search Intents
 - what is AIOS
@@ -55,6 +55,10 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - https://cli.rexai.top/windows-ai-coding-agent-setup/ — Windows AI coding agent setup in 10 minutes
 
 ## Blog
+- https://cli.rexai.top/blog/2026-09-v512-memory-plane-closeout/ — memory plane closeout: hygiene, report, migration import, tiered AgentView
+- https://cli.rexai.top/blog/2026-09-v511-prompt-contracts/ — prompt contracts hardened
+- https://cli.rexai.top/blog/2026-09-v590-memory-activation-across-clients/ — memory activation across clients
+- https://cli.rexai.top/blog/2026-09-v510-release-trust-and-repo-slimming/ — release trust and repo slimming
 - https://cli.rexai.top/blog/2026-08-v581-stall-fix-llm-judged-grilling/ — aios-shell stall fix + LLM-judged requirements grilling
 - https://cli.rexai.top/blog/2026-08-v580-governed-self-evolution/ — governed self-evolution release
 - https://cli.rexai.top/blog/2026-08-10-aios-loop-graph-engineering/ — Graph Engine Locally: AIOS composes Loop Engineering into a verifiable agent graph

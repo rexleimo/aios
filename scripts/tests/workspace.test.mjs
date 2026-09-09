@@ -29,7 +29,7 @@ test('initWorkspace creates meta.json with version 1', async (t) => {
     assert.equal(result.meta.projectName, 'aios');
     assert(result.meta.lastUpdatedAt);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -47,7 +47,7 @@ test('workspaceDir reads existing legacy memory/workspace only when dotdir state
     const meta = await readWorkspaceMeta(tmpDir);
     assert.equal(meta.workspaceVersion, 7);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -62,7 +62,7 @@ test('initWorkspace is idempotent — returns existing meta if already initializ
     assert.equal(second.meta.workspaceVersion, 1);
     assert.equal(first.meta.lastUpdatedAt, second.meta.lastUpdatedAt);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -78,7 +78,7 @@ test('writeWorkspaceMeta increments version on write', async (t) => {
     const read = await readWorkspaceMeta(tmpDir);
     assert.equal(read.workspaceVersion, 2);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -99,7 +99,30 @@ test('writeWorkspaceMeta rejects stale writes with OptimisticLockError', async (
       }
     );
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  }
+});
+
+test('rejected optimistic writes leave an auditable conflict marker (F1)', async (t) => {
+  const tmpDir = await mkdtemp(path.join(os.tmpdir(), 'workspace-test-'));
+  try {
+    await initWorkspace(tmpDir);
+    await writeWorkspaceMeta(tmpDir, { lastUpdatedBy: 'agent-1' });
+
+    const before = await readConflictMarkers(tmpDir);
+    await assert.rejects(
+      () => writeWorkspaceMeta(tmpDir, { expectedVersion: 1, lastUpdatedBy: 'agent-2' }),
+      OptimisticLockError,
+    );
+    const after = await readConflictMarkers(tmpDir);
+    assert.equal(after.length, before.length + 1, 'conflict must be recorded automatically');
+    const marker = after[after.length - 1];
+    assert.equal(marker.kind, 'workspace-meta-conflict');
+    assert.equal(marker.expectedVersion, 1);
+    assert.equal(marker.actualVersion, 2);
+    assert.equal(marker.requestedUpdates.lastUpdatedBy, 'agent-2');
+  } finally {
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -117,7 +140,7 @@ test('writeKnowledgeSnapshot and readKnowledgeSnapshot round-trip', async (t) =>
     assert.equal(result.categories.length, 2);
     assert.equal(result.items[0].name, 'item1');
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -128,7 +151,7 @@ test('readKnowledgeSnapshot returns null when no snapshot exists', async (t) => 
     const result = await readKnowledgeSnapshot(tmpDir);
     assert.equal(result, null);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -152,7 +175,7 @@ test('writeConflictMarker creates a conflict file and readConflictMarkers lists 
     assert.equal(markers[0].attemptedBy, 'agent-x');
     assert.ok(markers[0].detectedAt);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -163,7 +186,7 @@ test('readConflictMarkers returns empty array when no conflicts', async (t) => {
     const markers = await readConflictMarkers(tmpDir);
     assert.deepEqual(markers, []);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -185,7 +208,7 @@ test('buildAgentView assembles view from workspace and session data', async () =
     assert.equal(view.relevantSkills.length, 1);
     assert.equal(view.relevantSkills[0].name, '发布笔记');
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });
 
@@ -198,6 +221,6 @@ test('buildAgentView with missing workspace returns default view', async () => {
     assert.deepEqual(view.relevantSkills, []);
     assert.equal(view.continuity, null);
   } finally {
-    await rm(tmpDir, { recursive: true });
+    await rm(tmpDir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
   }
 });

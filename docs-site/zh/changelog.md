@@ -5,6 +5,25 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## v5.12.0（2026-09-09）——记忆系统收尾：卫生、报表、迁移导入、分级加载
+
+### 主要变更
+
+- **memo 卫生命令**：`aios memo hygiene` 只读体检（sessions / pinned 预算 / 事件体量 + 整理提案）；`--archive-stale-sessions` 移动归档（冲突即拒、可逆），`--rotate-events` keep-newest 轮替（moved+kept 对账 + sha256 前后审计）。永不删除；space 级活 session 永不归档；召回主存储不参与轮替。
+- **记忆报表**：`aios memory report` / `memo report --json`——每 space 体量/失效比/候选积压（四态）/feedback 采纳率/pinned 预算，一条只读命令看全记忆面。
+- **迁移导入器**：`aios import --format claude|continue|roo|conventions` 把 Claude MEMORY.md、Continue 规则、`.roomodes`、CONVENTIONS.md 导入为受治理候选——导入器以无发布身份写入，每条必为 candidate（verified 协议不可绕过），带 `#import-<format>` 溯源、幂等可重跑。指南：`docs/import-migration.md`。
+- **渐进披露 + pinned 预算**：`memo search --level summary` 每行约 100 token 并输出 `pack:` footer；`memo pin status` 打印使用率三元组，超限标 truncated。
+- **AgentView 分级（H1）**：`buildAgentView` 实现设计 T0–T3 四档，每档带逐段字符预算；新 pull 型命令 `ctx-agent.mjs workspace-view --session <id> [--tier T1]`。默认 T3，旧调用方零改动。
+- **Autodream Phase B（E1）**：`AIOS_AUTODREAM_AUTO=1`（默认关）开启会话关闭与空闲阈值（默认 30 分钟）双触发；只跑 dream `preview`，proposal 走既有治理 apply。dream 引擎确定性零 LLM。
+- **本地 embedding 粗排（A4，默认关）**：`AIOS_MEMO_EMBEDDER=hash-lexical` 开启进程内确定性 embedder；粗排 union-only（只加候选不删结果），新增 recall-ab embedding 臂实证 top-1 零漂移。
+- **真实语料评测基线（G1）**：运行时从活语料派生确定性查询（语料文本不入库）。本仓库基线 top-1 98% / top-5 100%。
+- **乐观锁冲突标记（F1）**：stale 写被拒时自动写 `conflicts/{timestamp}.json` 审计标记。
+- **核实关闭**：C1 预算降级投影确认已落地（含 orchestrate 生产调用链）；C2 工具日志 offload + Mermaid 画布确认已上线（`aios refs` / `aios canvas`）；F2 前提修正——`generatedTargets` 按客户端能力推导，装机实测后差距缩水为 workbuddy 一个待证目录。
+
+### 升级说明
+
+无破坏性变更，所有默认行为向后兼容（search full 输出、旧 AgentView 调用方、自动化全部 opt-in）。全量回归：101 文件 1106 用例 / 1100 pass / 0 fail / 6 skip（清单新增 9 个套件）。
+
 ## v5.11.0（2026-09-06）——提示词契约加固：评分回环、卡死自报、压缩分级、弱模型钉死
 
 ### 主要变更

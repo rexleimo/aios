@@ -7,6 +7,25 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v5.12.0 (2026-09-09) — Memory Plane Closeout: Hygiene, Reporting, Migration Import, Tiered AgentView
+
+### What changed
+
+- **Memo hygiene (`memo hygiene`)**: read-only survey of sessions, pinned budgets, and per-session `l2-events.jsonl` sizes with explicit proposals. Actions are explicit and never delete: `--archive-stale-sessions` moves stale historical sessions into `context-db/archive/` (conflict-safe), `--rotate-events --max-events N` rotates keep-newest with moved+kept accounting and sha256 before/after. Space-level `workspace-memory--*` sessions are never archived; the memo recall store is out of rotation scope.
+- **Memory report (`aios memory report` / `memo report --json`)**: per-space volume, invalidation ratio, candidate backlog (pending/promoted/rejected/expired), feedback impressions/useful/adoption, and pinned budget in one read-only pass.
+- **Migration importers (`aios import`)**: Claude `MEMORY.md`, Continue rules, `.roomodes`, and `CONVENTIONS.md` import as governed memo candidates — the importer runs as a no-publish runtime identity so every fact lands `candidate` (the verified protocol is not bypassable), tagged `#import-<format>`, idempotent. Guide: `docs/import-migration.md`.
+- **Progressive disclosure + pinned budget**: `memo search --level summary` keeps ~100 tokens per row with a `pack: N entries, M chars, level=X` footer; `memo pin status` prints the pinned usage triple with a `truncated` warning.
+- **Tiered AgentView (H1)**: `buildAgentView` implements the design tiers T0–T3 with per-section char budgets; new pull-based CLI `ctx-agent.mjs workspace-view --session <id> [--tier T1]`. Default tier T3 keeps legacy callers unchanged.
+- **Autodream Phase B (E1)**: `AIOS_AUTODREAM_AUTO=1` (default off) enables session-close and idle-threshold triggers (default 30 min). Triggers run dream `preview` only — proposals flow through the existing governed apply. The dream engine is deterministic and zero-LLM.
+- **Optional local embedding coarse rank (A4)**: `AIOS_MEMO_EMBEDDER=hash-lexical` enables a deterministic in-process embedder; the coarse stage is union-only (it can only widen the candidate pool), verified by a new recall-ab embedding arm with zero top-1 drift.
+- **Real-corpus eval harness (G1)**: runtime-derived deterministic queries over the live corpus (memo text never copied into the repo). Baseline on this checkout: top-1 98% / top-5 100%.
+- **Optimistic-lock conflict markers (F1)**: rejected stale `writeWorkspaceMeta` calls auto-write an auditable `conflicts/{timestamp}.json` marker.
+- **Verification closures**: C1 budget-degradation projection confirmed landed (with the orchestrate production caller); C2 tool-log offload + Mermaid canvas confirmed already shipped (`aios refs`, `aios canvas`); F2 premise corrected — `generatedTargets` derives from client `agents` capability, and on-box checks reduce the gap to one pending workbuddy definition-directory check.
+
+### Upgrade
+
+No breaking changes; all defaults are backward compatible (full search output, legacy AgentView callers, opt-in-only automation). Full regression: 1106 tests / 1100 pass / 0 fail / 6 skipped across 101 files (nine new suites added to the manifest).
+
 ## v5.11.0 (2026-09-06) — Prompt Contracts Hardened: Judge Loops, Self-Reported Progress, Compression Tiers, Pinned Weak Models
 
 ### What changed

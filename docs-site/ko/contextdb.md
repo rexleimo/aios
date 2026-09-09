@@ -93,6 +93,32 @@ aios memo storage repair-locks
 rebuild는 derived query file만 갱신하고 canonical record를 다시 쓰지 않습니다.
 `repair-locks`는 기록된 owner PID가 종료된 것으로 확인된 lock만 quarantine하며 active 또는 malformed lock은 건드리지 않습니다.
 
+### 메모리 유지보수와 관측 가능성(v5.12.0)
+
+데이터를 삭제하지 않고 메모리면을 점검·보수합니다:
+
+~~~bash
+aios memo hygiene                 # 읽기 전용 점검: sessions, pinned, 이벤트 크기 + 정리 제안
+aios memo hygiene --rotate-events --max-events 500   # keep-newest 로테이션, 아카이브 행 영손실
+aios memo hygiene --archive-stale-sessions           # 오래된 세션을 context-db/archive/로 이동
+aios memory report                # space별 볼륨/무효화율/후보 체류/채택률
+aios memo pin status              # pinned 예산: chars/limit, remaining(초과 시 경고)
+aios memo search "query" --level summary             # 행당 약 100토큰 + pack 푸터
+~~~
+
+하이진 규칙: 삭제 없음(아카이브/로테이션만, moved+kept 대조 + sha256 감사); space 레벨 `workspace-memory--*` 활성 세션은 아카이브 대상 제외; 리콜 주 저장소(`events.jsonl`)는 로테이션 대상 외. apply는 에이전트 유휴 시간에 실행.
+
+다른 도구의 메모리를 거버넌스 후보로 가져오기:
+
+~~~bash
+aios import --format claude --file ~/MEMORY.md --dry-run    # 먼저 미리보기
+aios import --format roo --file .roomodes
+aios memo candidate list
+~~~
+
+가져온 사실은 반드시 `candidate`로 기록(임포터에 게시 권한 없음), `#import-<format>` 태그, 재실행 멱등. 자세한 내용은 `docs/import-migration.md`.
+
+
 ## 통합 프로젝트 검색(v1.50.0) {#통합-프로젝트-검색v1500}
 
 넓은 grep이나 repository 전체 read 전에 사용합니다.

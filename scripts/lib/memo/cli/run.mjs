@@ -14,7 +14,9 @@ import {
   writeActiveSpaceToState,
 } from './workspace-state.mjs';
 import { handleMemoAddCommand, handleMemoListCommand, handleMemoRecallCommand, handleMemoSearchCommand } from './commands/events.mjs';
+import { handleMemoHygieneCommand } from './commands/hygiene.mjs';
 import { handleMemoPinCommand } from './commands/pin.mjs';
+import { handleMemoReportCommand } from './commands/report.mjs';
 import { handleMemoUsefulCommand } from './commands/useful.mjs';
 import { handleMemoSpaceCommand } from './commands/space.mjs';
 import { handleMemoStorageCommand } from './commands/storage.mjs';
@@ -154,6 +156,26 @@ export async function runMemo(rawOptions = {}, {
       io,
       runtimeIdentity,
       env: process.env,
+    });
+    return;
+  }
+
+  if (primary === 'hygiene') {
+    // hygiene takes no action word — every argument after it is a flag, so
+    // the commander-style secondary slot must be folded back into rest.
+    await handleMemoHygieneCommand({
+      rest: [secondary, ...rest].filter((part) => part !== undefined),
+      workspaceRoot,
+      io,
+    });
+    return;
+  }
+
+  if (primary === 'report') {
+    await handleMemoReportCommand({
+      rest: [secondary, ...rest].filter((part) => part !== undefined),
+      workspaceRoot,
+      io,
     });
     return;
   }

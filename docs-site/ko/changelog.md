@@ -5,6 +5,25 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
+## v5.12.0（2026-09-09）——메모리 시스템 마무리: 하이진, 리포트, 마이그레이션 임포트, 티어 로딩
+
+### 변경 내용
+
+- **memo 하이진**: `aios memo hygiene` 읽기 전용 점검(sessions/pinned/이벤트 크기 + 정리 제안); `--archive-stale-sessions` 이동 아카이브, `--rotate-events` keep-newest 로테이션(moved+kept 대조 + sha256). 삭제 없음.
+- **메모리 리포트**: `aios memory report` / `memo report --json`——space별 볼륨/무효화율/후보 체류/feedback 채택률/pinned 예산.
+- **마이그레이션 임포터**: `aios import --format claude|continue|roo|conventions`——외부 메모리를 거버넌스 candidate로 가져오기(게시 권한 없는 identity로 기록, verified 프로토콜 우회 불가), 멱등, 가이드는 `docs/import-migration.md`.
+- **점진적 공개 + pinned 예산**: `search --level summary`(행당 약 100토큰 + pack 푸터), `pin status` 트리플.
+- **AgentView 티어(H1)**: T0–T3 + 티어별 문자 예산, `ctx-agent.mjs workspace-view`(pull 방식, 기본 T3).
+- **Autodream Phase B(E1)**: `AIOS_AUTODREAM_AUTO=1`(기본 꺼짐) close+유휴 듀얼 트리거, preview만 실행.
+- **embedding 러프 랭킹(A4, 기본 꺼짐) + 실제 코퍼스 기준(G1)**: union-only 제로 드리프트, 기준 top-1 98% / top-5 100%.
+- **검증 클로즈**: C1 예산 강등 투영·C2 refs/canvas·F2 generatedTargets 유래 확인 및 F1 낙관적 잠금 충돌 마커 추가.
+
+### 업그레이드
+
+파괴적 변경 없음. 회귀 1106 테스트 / 0 실패(101 파일, 신규 9 스위트 포함).
+
+
+
 ## v5.8.2（2026-08-29）——플랜 상태가 더 이상 먼저 나서지 않음, WorkBuddy 클라이언트 지원
 
 ### 변경 내용

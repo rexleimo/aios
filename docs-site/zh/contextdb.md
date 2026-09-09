@@ -91,6 +91,33 @@ aios memo storage repair-locks
 rebuild 只更新派生查询文件，不重写规范 memo 记录。
 `repair-locks` 只会隔离已确认记录 owner PID 死亡的锁；活动锁和格式错误的锁不会被修改。
 
+### 记忆维护与可观测（v5.12.0）
+
+不删除任何数据即可检查和保养记忆面：
+
+~~~bash
+aios memo hygiene                 # 只读体检：sessions、pinned、事件体量 + 整理提案
+aios memo hygiene --json
+aios memo hygiene --rotate-events --max-events 500   # keep-newest 轮替，归档行零丢失
+aios memo hygiene --archive-stale-sessions           # 陈旧历史 session 移入 context-db/archive/
+aios memory report                # 每 space 体量/失效比/候选积压/采纳率
+aios memo pin status              # pinned 预算：chars/limit, remaining（超限警告）
+aios memo search "query" --level summary             # 每行约 100 token + pack footer
+~~~
+
+卫生规则：永不删除（只归档/轮替，moved+kept 对账 + sha256 前后审计）；space 级 `workspace-memory--*` 活 session 永不归档；召回主存储（`events.jsonl`）不参与轮替。请在 agent 空闲期执行 apply。
+
+把其他工具的记忆作为受治理候选迁入：
+
+~~~bash
+aios import --format claude --file ~/MEMORY.md --dry-run    # 先预览
+aios import --format roo --file .roomodes
+aios memo candidate list
+~~~
+
+导入事实一律落 `candidate`（导入器无发布权限），带 `#import-<format>` 标记，重跑幂等。见 `docs/import-migration.md`。
+
+
 ## 统一项目搜索（v1.50.0） {#统一项目搜索v1500}
 
 在大范围 grep 或读取整个仓库前使用统一搜索：

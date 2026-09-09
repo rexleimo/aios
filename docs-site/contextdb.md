@@ -93,6 +93,34 @@ aios memo storage repair-locks
 Rebuild updates derived query files; it does not rewrite canonical memo records.
 `repair-locks` only quarantines a lock after its recorded owner PID is confirmed dead; it leaves live and malformed locks untouched.
 
+### Memory maintenance and observability (v5.12.0) {#memory-maintenance}
+
+Inspect and maintain the memory plane without deleting anything:
+
+~~~bash
+aios memo hygiene                 # read-only survey: sessions, pinned, event sizes, proposals
+aios memo hygiene --json
+aios memo hygiene --rotate-events --max-events 500   # keep-newest rotation, archived lines are never lost
+aios memo hygiene --archive-stale-sessions           # move stale sessions to context-db/archive/
+aios memory report                # per-space volume, invalidation, candidate backlog, feedback adoption
+aios memo pin status              # pinned budget: chars/limit, remaining (warns when truncated)
+aios memo search "query" --level summary             # ~100 tokens per row + pack footer
+~~~
+
+Hygiene rules: nothing is ever deleted (archive/rotate only, with moved+kept accounting and sha256 before/after); space-level `workspace-memory--*` sessions are never archived; the memo recall store (`events.jsonl`) is out of rotation scope. Run applies while agent sessions are idle.
+
+Bring memory from other tools as governed candidates:
+
+~~~bash
+aios import --format claude --file ~/MEMORY.md --dry-run    # preview first
+aios import --format roo --file .roomodes
+aios memo candidate list
+~~~
+
+Imported facts always land as `candidate` (importers carry no publish authority), tagged `#import-<format>`, idempotent on re-run. See `docs/import-migration.md`.
+
+Optional local embedding coarse rank (off by default): `AIOS_MEMO_EMBEDDER=hash-lexical aios memo search "..."` — the coarse stage only widens the candidate pool; the token/BM25 re-rank stays the judge.
+
 ## Unified Project Search (v1.50.0) {#unified-project-search-v1500}
 
 Use unified search before broad grep or reading a whole repository:
