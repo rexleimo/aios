@@ -1,0 +1,15 @@
+{
+  "name": "aios-pi-extension",
+  "version": "0.1.0",
+  "description": "AIOS control-plane extension for the Pi coding agent: memory tools, safety gates, and session wiring.",
+  "private": true,
+  "type": "module",
+  "keywords": ["pi-package"],
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "pi": {
+    "extensions": ["./extensions/aios.ts"]
+  }
+}
