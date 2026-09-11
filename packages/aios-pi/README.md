@@ -8,9 +8,14 @@ guidance.
 ## Install
 
 Pi packages install from npm or git. Until this package is published,
-the supported path is the settings `extensions` entry below
+the supported path is `aios init` (registers the entry below) or the
+settings `extensions` entry directly
 (`pi install git:…` of the AIOS monorepo is unverified: the manifest
 lives in `packages/aios-pi/`, not the repo root):
+
+```bash
+aios init --agent pi   # writes the entry into ~/.pi/agent/settings.json
+```
 
 Or pin it in Pi settings (`~/.pi/agent/settings.json` or `.pi/settings.json`):
 

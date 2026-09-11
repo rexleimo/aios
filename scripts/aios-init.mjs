@@ -105,7 +105,7 @@ export async function installRexWorkflowSkills({
 }
 
 function usage() {
-console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
+console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -135,7 +135,7 @@ export async function main(argv = process.argv.slice(2)) {
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 
   if (requestedAgent && !AGENT_CONFIG[requestedAgent]) {
-    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok`);
+    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi`);
     process.exit(1);
   }
 
@@ -154,7 +154,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (agents.length === 0) {
     console.log('No supported AI coding agents detected.');
-    console.log('Supported: claude, codex, gemini, opencode, hermes, grok');
+    console.log('Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi');
     console.log('Use --all to initialize for all agents regardless of detection.');
     process.exit(0);
   }
@@ -240,6 +240,30 @@ export async function main(argv = process.argv.slice(2)) {
       });
     } catch (err) {
       console.warn(`[warn] global skill install: ${err.message}`);
+    }
+  }
+
+  // 2c. Pi extension registration — govern Pi's plugin surface on install.
+  // Project scope stays manual: .pi resources load only after Pi trust.
+  if (agents.includes('pi')) {
+    console.log('');
+    console.log('== Pi Extension ==');
+    try {
+      const { getClientHomes } = await import('./lib/platform/paths.mjs');
+      const {
+        ensurePiExtensionRegistered,
+        resolveBundledPiExtensionPath,
+        resolvePiSettingsPath,
+      } = await import('./lib/components/pi/extension-settings.mjs');
+      const result = ensurePiExtensionRegistered({
+        settingsPath: resolvePiSettingsPath(getClientHomes(process.env).pi),
+        extensionPath: resolveBundledPiExtensionPath(AIOS_ROOT),
+        dryRun,
+        io: console,
+      });
+      console.log(`  Pi extension (${result.action}): ${result.settingsPath}`);
+    } catch (err) {
+      console.warn(`[warn] Pi extension registration: ${err.message}`);
     }
   }
 
