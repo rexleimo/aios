@@ -12,16 +12,17 @@ const EXPECTED_CLIENT_ROOTS = Object.freeze({
   hermes: '.hermes/skills',
   grok: '.grok/skills',
   workbuddy: '.workbuddy/skills',
+  pi: '.pi/skills',
 });
 
-test('seven client projection targets are stable and complete', () => {
+test('eight client projection targets are stable and complete', () => {
   assert.deepEqual(supportedClients(), Object.keys(EXPECTED_CLIENT_ROOTS));
   for (const [client, root] of Object.entries(EXPECTED_CLIENT_ROOTS)) {
     assert.match(root, new RegExp(`^\\.${client === 'opencode' ? 'opencode' : client}\\/skills$`, 'u'));
   }
 });
 
-test('seven client invocation paths share the Rex-native parent adapter decision', () => {
+test('eight client invocation paths share the Rex-native parent adapter decision', () => {
   const bindings = createAiosRexProviderBindings();
   assert.ok(bindings.length > 0);
   for (const client of Object.keys(EXPECTED_CLIENT_ROOTS)) {

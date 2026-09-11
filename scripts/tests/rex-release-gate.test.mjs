@@ -43,7 +43,7 @@ test('release gate finds all required audit reports and seven client targets', (
   ]) {
     assert.equal(fs.existsSync(path.join(ROOT, 'docs', 'reports', report)), true, report);
   }
-  assert.deepEqual(supportedClients(), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
+  assert.deepEqual(supportedClients(), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
 });
 
 test('release report references only existing test files', () => {
