@@ -3,13 +3,13 @@ name: memo
 description: "AIOS project memory — read/write/search your own memory using the memo capabilities. You (the model) decide what to remember, what to correct, and what was useful; the harness only executes your decision. Use when you want to recall prior work, persist a durable fact, supersede a wrong one, or mark a recalled memory useful. TRIGGER: 记忆、memory、memo、remember、recall、记住、之前、结论"
 
 installCatalogName: memo
-clients: [codex, claude, hermes, workbuddy]
+clients: [codex, claude, hermes, workbuddy, pi]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, memory, memo]
-repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy, pi]
 ---
 
 # AIOS Memory (memo)

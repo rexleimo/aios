@@ -20,7 +20,7 @@ const SHELL_BRIDGE_CLI = new Command()
 
 export function usage() {
   console.log(`Usage:
-  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli|hermes-agent|grok-build|workbuddy-agent> --command <codex|claude|gemini|opencode|hermes|grok|codebuddy> [--cwd <path>] [-- <args...>]
+  node scripts/contextdb-shell-bridge.mjs --agent <codex-cli|claude-code|gemini-cli|opencode-cli|hermes-agent|grok-build|workbuddy-agent|pi-coding-agent> --command <codex|claude|gemini|opencode|hermes|grok|codebuddy|pi> [--cwd <path>] [-- <args...>]
 
 Environment:
   AIOS_ROOT_DIR          AIOS install root containing scripts/ctx-agent.mjs

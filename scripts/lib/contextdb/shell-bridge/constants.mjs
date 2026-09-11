@@ -34,4 +34,10 @@ export const BLOCKED_SUBCOMMANDS = Object.freeze({
     'update', 'version', 'worktree', 'wrap',
     '-h', '--help', '-v', '--version',
   ]),
+  // Pi package/management commands are ops, not agent runs — keep them out of the bridge.
+  pi: new Set([
+    'install', 'remove', 'uninstall', 'update', 'list', 'config',
+    'login', 'logout', 'models',
+    '-h', '--help', '-v', '--version',
+  ]),
 });

@@ -3,13 +3,13 @@ name: seo-geo-page-optimization
 description: Use when improving a single page for SEO and AI answer-engine visibility (GEO), especially when you need faster first-screen conversion and clearer traffic funnels.
 
 installCatalogName: seo-geo-page-optimization
-clients: [codex, claude, hermes, workbuddy]
+clients: [codex, claude, hermes, workbuddy, pi]
 scopes: [global, project]
 defaultInstall:
   global: false
   project: false
 tags: [content, seo]
-repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
 ---
 
 # SEO + GEO Page Optimization

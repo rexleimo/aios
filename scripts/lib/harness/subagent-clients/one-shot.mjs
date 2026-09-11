@@ -93,6 +93,16 @@ const CLIENT_STRATEGIES = Object.freeze({
       combineSystemAndPrompt(systemText, promptText),
     ],
   }),
+  // Pi coding agent: `-p` prints the response and exits. No unattended flags
+  // upstream (no permission popups); project trust per run via extraArgs `-a`.
+  [getClientRuntimeId('pi')]: ({ systemText, promptText, routedExtraArgs }) => ({
+    runner: 'spawn',
+    args: [
+      ...routedExtraArgs,
+      '-p',
+      combineSystemAndPrompt(systemText, promptText),
+    ],
+  }),
 });
 
 // 纯函数：把不同客户端的一次性调用差异集中到策略表，runOneShot 只负责执行。

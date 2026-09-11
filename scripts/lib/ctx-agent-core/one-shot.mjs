@@ -78,6 +78,12 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('workbuddy-agent'),
     ['-p', prompt, ...extraArgs]
   ),
+  // Pi coding agent: `-p` prints the response and exits (non-interactive).
+  // No approval flags upstream (no permission popups); project trust per run via extraArgs `-a`.
+  'pi-coding-agent': ({ prompt, extraArgs }) => runBufferedCommand(
+    commandForRuntime('pi-coding-agent'),
+    ['-p', prompt, ...extraArgs]
+  ),
 };
 
 // Exported for tests only: lets verification assert handlers are registered

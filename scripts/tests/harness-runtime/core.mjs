@@ -188,6 +188,10 @@ test('one-shot subagent invocation strategies cover every harness client', () =>
       '-',
     ],
   });
+  assert.deepEqual(buildOneShotInvocation({ clientId: 'pi-coding-agent', ...common }), {
+    runner: 'spawn',
+    args: ['-m', 'model-a', '-p', 'system\n\n## New User Request\nprompt'],
+  });
 });
 
 test('runOneShot records the final Codex fallback argv for managed provenance', async () => {

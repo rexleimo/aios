@@ -46,6 +46,10 @@ function buildWorkbuddyInvocation({ extraArgs = [] }) {
   return { cmd: commandForRuntime('workbuddy-agent'), args: [...extraArgs] };
 }
 
+function buildPiInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('pi-coding-agent'), args: [...extraArgs] };
+}
+
 const INTERACTIVE_BUILDERS = {
   'claude-code': buildClaudeInvocation,
   'gemini-cli': buildGeminiInvocation,
@@ -54,6 +58,7 @@ const INTERACTIVE_BUILDERS = {
   'hermes-agent': buildHermesInvocation,
   'grok-build': buildGrokInvocation,
   'workbuddy-agent': buildWorkbuddyInvocation,
+  'pi-coding-agent': buildPiInvocation,
 };
 
 function captureWorkspaceMemoryMtime(sessionId, workspaceRoot) {
