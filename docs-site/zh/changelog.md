@@ -5,6 +5,13 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
+## Unreleased——Pi coding agent 一等公民客户端
+
+- **Pi 客户端**：`pi` / `pi-coding-agent`，skills + native + harness（无 team/agents）。原生层、`.pi/skills`、25 skill 全投放、ctx-agent、harness 策略、shell-bridge。
+- **MCP 诚实建模**：Pi 无内置 MCP，registry 记 `format: none`，收集器跳过；AIOS 工具经 extension 到达。
+- **`aios-pi-extension`**：4 工具、tool_call 门禁、策略硬注入、`/aios-root` + `/aios-policy`；`aios init --agent pi` 注册。
+- **RPC 驾驶器**：长连接 `pi --mode rpc` 会话。详见博客。
+
 ## v5.12.0（2026-09-09）——记忆系统收尾：卫生、报表、迁移导入、分级加载
 
 ### 主要变更

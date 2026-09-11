@@ -5,6 +5,15 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
+## Unreleased——Pi coding agent ファーストクラス対応
+
+- **Pi クライアント**：`pi` / `pi-coding-agent`（skills + native + harness）。
+- **MCP 正直モデリング**：`format: none`、コレクターはスキップ。
+  AIOS ツールは extension 経由で到達。
+- **`aios-pi-extension`**：ツール 4 件、tool_call ゲート、policy 注入。
+  `aios init --agent pi` で登録。
+- **RPC ドライバ**：常駐 `pi --mode rpc` セッション。
+
 ## v5.12.0（2026-09-09）——メモリシステム仕上げ：ハイジーン、レポート、移行インポート、ティアローディング
 
 ### 変更内容

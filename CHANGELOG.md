@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+
+- Pi coding agent as a first-class AIOS client (`pi` / `pi-coding-agent`, skills + native + harness; no `team`/`agents` — no sub-agents upstream): registry, `PI_CODING_AGENT_DIR` home, L2 host capabilities, native emitter + instruction layer, all 25 skills projected (`skills pi -> installed=25`), ctx-agent one-shot/interactive, harness one-shot strategy, shell-bridge support.
+- Pi modeled MCP-less (`format: none`, empty scopes): migration/proxy/codemap collectors skip Pi instead of pretending an MCP surface exists.
+- `aios-pi-extension` (`packages/aios-pi`): 4 model-callable tools (memory recall/write/feedback, skill search), `tool_call` safety gate, `before_agent_start` policy injection, `/aios-root` + `/aios-policy` commands; `aios init --agent pi` registers it into Pi settings.
+- Pi `--mode rpc` JSONL driver (`scripts/lib/pi/rpc-client.mjs`): correlated commands, settle detection, fail-closed permission dialogs. See: [Pi client blog post](/blog/2026-09-pi-client-aios/).
+
 ## [5.12.0] - 2026-09-09
 
 ### Added

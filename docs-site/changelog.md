@@ -7,6 +7,13 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## Unreleased — Pi coding agent as a first-class client
+
+- **Pi client**: `pi` / `pi-coding-agent` with skills, native, and harness capabilities (no `team`/`agents` — no sub-agents upstream). Native layer, `.pi/skills`, all 25 skills projected, `ctx-agent` one-shot/interactive, harness one-shot strategy, shell-bridge support.
+- **MCP-less, honestly**: Pi has no built-in MCP surface; the registry records `format: none` with empty scopes so collectors skip it. AIOS tools reach Pi through the new extension, not config migration.
+- **`aios-pi-extension`** (`packages/aios-pi`): 4 model-callable tools, `tool_call` safety gate, `before_agent_start` policy injection, `/aios-root` + `/aios-policy`; `aios init --agent pi` registers it.
+- **RPC driver** (`scripts/lib/pi/rpc-client.mjs`): long-lived `pi --mode rpc` sessions with settle detection. See: [Pi client blog post](/blog/2026-09-pi-client-aios/).
+
 ## v5.12.0 (2026-09-09) — Memory Plane Closeout: Hygiene, Reporting, Migration Import, Tiered AgentView
 
 ### What changed
