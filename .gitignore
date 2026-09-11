@@ -163,6 +163,8 @@ undefined/
 .skillopt/
 # WorkBuddy: only the generated skill projection is disposable; .workbuddy/memory is kept
 .workbuddy/skills/
+# Pi: only the generated skill projection is disposable; sessions/trust stay local
+.pi/skills/
 # Windows drive-letter path join artifacts (installer temp dirs written relative to cwd)
 C:/
 

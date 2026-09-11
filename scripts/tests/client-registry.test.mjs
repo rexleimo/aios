@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -73,7 +73,7 @@ test('client registry validation returns normalized values for reuse', () => {
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
   assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -85,6 +85,7 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.hermes/skills',
     '.grok/skills',
     '.workbuddy/skills',
+    '.pi/skills',
     '.agents/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
@@ -110,8 +111,8 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy', 'pi']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent', 'pi-coding-agent']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
@@ -120,6 +121,7 @@ test('client registry exposes runtime command and client identifiers', () => {
     'hermes-agent': 'hermes',
     'grok-build': 'grok',
     'workbuddy-agent': 'workbuddy',
+    'pi-coding-agent': 'pi',
   });
 });
 
@@ -144,9 +146,11 @@ test('client registry exposes runtime argument adapters without consumer if-else
   assert.deepEqual(buildRuntimeClientModelArgs('gemini-cli', 'gemini-2.5-pro'), ['-m', 'gemini-2.5-pro']);
   assert.deepEqual(buildRuntimeClientModelArgs('opencode-cli', 'qwen3'), ['-m', 'qwen3']);
   assert.deepEqual(buildRuntimeClientModelArgs('grok-build', 'grok-build'), ['-m', 'grok-build']);
+  assert.deepEqual(buildRuntimeClientModelArgs('pi-coding-agent', 'openai/gpt-4o'), ['--model', 'openai/gpt-4o']);
   assert.deepEqual(getClientUnattendedArgs('codex'), ['--dangerously-bypass-approvals-and-sandbox']);
   assert.deepEqual(getClientUnattendedArgs('opencode'), ['run', '--dangerously-skip-permissions']);
   assert.deepEqual(getClientUnattendedArgs('grok'), ['--always-approve']);
+  assert.deepEqual(getClientUnattendedArgs('pi'), []);
 });
 
 test('client registry reports capability support explicitly', () => {
@@ -164,6 +168,7 @@ test('client registry exposes native instruction filenames per client', () => {
   assert.equal(getClientInstructionFileName('opencode'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('grok'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('workbuddy'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('pi'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
 });
 
@@ -221,6 +226,11 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.deepEqual(workbuddyTarget.scopes, [
     { scope: 'home', file: 'mcp.json', createIfMissing: true },
   ]);
+
+  // Pi has no built-in MCP surface: empty scopes, bridged via the AIOS Pi extension.
+  const piTarget = getClientMcpTarget('pi');
+  assert.equal(piTarget.format, 'none');
+  assert.deepEqual(piTarget.scopes, []);
 });
 
 test('resolveClientMcpTargetPath honors home vs project scope', () => {
@@ -252,6 +262,11 @@ test('resolveClientMcpTargetPath honors home vs project scope', () => {
     slash(resolveClientMcpTargetPath('claude', { projectRoot: '/proj', clientHome: '/home/.claude' })),
     '/proj/.mcp.json',
   );
+  // MCP-less clients (format 'none', empty scopes) resolve to no path
+  assert.equal(
+    resolveClientMcpTargetPath('pi', { projectRoot: '/proj', clientHome: '/home/.pi/agent' }),
+    '',
+  );
   assert.equal(
     slash(resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' })),
     '/proj/.gemini/settings.json',
@@ -264,6 +279,11 @@ test('every client declares instruction filename and a valid MCP target', () => 
   for (const client of ALL_CLIENTS) {
     assert.ok(getClientInstructionFileName(client), `${client} instruction filename`);
     const mcp = getClientMcpTarget(client);
+    if (mcp.format === 'none') {
+      // MCP-less clients (pi): no config surface, bridged via extension instead.
+      assert.deepEqual(mcp.scopes, [], `${client} mcp-less scopes`);
+      continue;
+    }
     assert.ok(Array.isArray(mcp.scopes) && mcp.scopes.length > 0, `${client} mcp.scopes`);
     for (const s of mcp.scopes) {
       assert.ok(['home', 'project'].includes(s.scope), `${client} mcp.scope value ${s.scope}`);

@@ -70,6 +70,14 @@
         "AGENTS.md",
         ".workbuddy/skills"
       ]
+    },
+    "pi": {
+      "tier": "compatibility",
+      "metadataRoot": ".pi",
+      "outputs": [
+        "AGENTS.md",
+        ".pi/skills"
+      ]
     }
   }
 }

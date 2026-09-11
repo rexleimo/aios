@@ -118,6 +118,23 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
   }),
+  // Pi coding agent (earendil-works/pi) — minimal self-extensible harness.
+  // Skills: Agent Skills standard (~/.pi/agent/skills, ~/.agents/skills, .pi/skills, .agents/skills).
+  // Native instruction: AGENTS.md (global ~/.pi/agent/AGENTS.md + cwd chain, APPEND_SYSTEM.md override).
+  // No built-in MCP surface: AIOS tools reach Pi through the AIOS Pi extension, not config migration.
+  // No sub-agents upstream: no agents/team capability until an extension verifies it.
+  pi: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'harness']),
+    commandName: 'pi',
+    runtimeClientId: 'pi-coding-agent',
+    projectSkillRoot: '.pi/skills',
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.pi',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '--model',
+    unattendedArgs: Object.freeze([]),  // Pi has no permission popups; harness drives print/json/rpc
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -199,5 +216,13 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     scopes: Object.freeze([
       Object.freeze({ scope: 'home', file: 'mcp.json', createIfMissing: true }),
     ]),
+  }),
+  // Pi has no built-in MCP surface (upstream philosophy: extensions over MCP).
+  // Empty scopes: every collector iterates scopes, so migration/proxy/codemap safely skip Pi.
+  // AIOS memory/tools reach Pi through the AIOS Pi extension, not config files.
+  pi: Object.freeze({
+    format: 'none',
+    namespace: '',
+    scopes: Object.freeze([]),
   }),
 });

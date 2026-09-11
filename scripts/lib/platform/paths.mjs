@@ -33,6 +33,7 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     hermes: normalizeHomeDir(env.HERMES_HOME, path.join(homeDir, '.hermes'), homeDir),
     grok: normalizeHomeDir(env.GROK_HOME, path.join(homeDir, '.grok'), homeDir),
     workbuddy: normalizeHomeDir(env.WORKBUDDY_HOME, path.join(homeDir, '.workbuddy'), homeDir),
+    pi: normalizeHomeDir(env.PI_CODING_AGENT_DIR, path.join(homeDir, '.pi', 'agent'), homeDir),
   };
 }
 

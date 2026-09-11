@@ -139,6 +139,26 @@
         "uncontrolledHostOutput": "policy-violation"
       }
     },
+    "pi": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "controlledShellRunner",
+        "compactPacket"
+      ],
+      "limits": [
+        "No built-in MCP surface: AIOS tools reach Pi through the AIOS Pi extension, not MCP config migration.",
+        "No sub-agents upstream: team/agents routes are unverified.",
+        "Project trust gating: project-local .pi resources load only after trust; harness passes --approve per run."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
+    },
     "cursor": {
       "targetLevel": "L1",
       "capabilities": [

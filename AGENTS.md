@@ -38,7 +38,7 @@ Any prompt, skill, or script that guides the model follows three rules (full tex
 Code may verify objective facts; code must never guess model or user intent.
 
 ## Project Structure & Module Organization
-This repository is AIOS — a local-first orchestration control plane that gives coding clients (codex / claude / gemini / opencode / hermes / grok / workbuddy) project memory, adaptive workflow routing, multi-agent teams, resumable long-running tasks, and verifiable evidence. The browser MCP is a legacy component inside it, not the project's center.
+This repository is AIOS — a local-first orchestration control plane that gives coding clients (codex / claude / gemini / opencode / hermes / grok / workbuddy / pi) project memory, adaptive workflow routing, multi-agent teams, resumable long-running tasks, and verifiable evidence. The browser MCP is a legacy component inside it, not the project's center.
 
 - `scripts/`: AIOS core runtime — workflow policy, rex capability routing, team/harness orchestration, ContextDB CLI, and the skill/projection system; runtime specs live in `scripts/lib/specs/`.
 - `rex-harness/`: submodule implementing the Fact → Capability → Evidence control plane.
