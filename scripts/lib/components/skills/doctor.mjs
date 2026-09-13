@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import { collectUnexpectedSkillRootFindings } from '../../platform/fs.mjs';
+import { getAgentsHome } from '../../platform/paths.mjs';
 import { resolveClientSelection } from '../../clients/registry.mjs';
 
 import { analyzeCatalogEntries, loadSkillsCatalog, resolveTargetRoot, tryLoadSkillsSyncManifest } from './catalog.mjs';
@@ -20,6 +21,31 @@ import { assertProjectScopeAllowed, isSourceRepoProjectRoot } from './safety.mjs
 // 纯函数：把诊断输出中的路径统一成 POSIX 风格，避免 Windows 终端断言和文档示例漂移。
 function formatDisplayPath(inputPath) {
   return String(inputPath || '').split(path.sep).join('/');
+}
+
+// 纯函数：旧版布局曾把 AIOS 托管 skill 写进共享 agents home（~/.agents/skills），
+// 现行布局只写各客户端 home；带 AIOS metadata 的目录是升级残留，会让 Pi 等客户端
+// 在共享根扫描时产生同名冲突告警。仅收集 AIOS 托管项，无 metadata 的视为用户自有。
+export function collectLegacySharedRootInstalls(agentsHome) {
+  const skillsDir = path.join(String(agentsHome || ''), 'skills');
+  let entries = [];
+  try {
+    entries = fs.readdirSync(skillsDir);
+  } catch {
+    return [];
+  }
+  const findings = [];
+  for (const name of entries) {
+    const metadataPath = path.join(skillsDir, name, INSTALLED_SKILL_META_FILE);
+    try {
+      const metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf8'));
+      if (metadata?.managedBy !== 'aios') continue;
+      findings.push({ name, client: String(metadata.client || '') });
+    } catch {
+      // 无 metadata 或不可读：用户自有 skill，不参与清理提示。
+    }
+  }
+  return findings;
 }
 
 export function collectOverrideWarnings({ rootDir, projectRoot, catalog, clientName, selectedSkills, homes, io, manifest }) {
@@ -62,6 +88,7 @@ export async function doctorContextDbSkills({
   scope = 'global',
   selectedSkills = [],
   homeMap = {},
+  agentsHome = getAgentsHome(),
   io = console,
 } = {}) {
   const homes = resolveHomeMap(homeMap);
@@ -86,6 +113,15 @@ export async function doctorContextDbSkills({
       io.log(`       move or convert: ${file}`);
     }
     io.log('       repo-local discoverable skills must live under .codex/skills or .claude/skills');
+    warnings += 1;
+  }
+
+  const legacySharedInstalls = collectLegacySharedRootInstalls(agentsHome);
+  if (legacySharedInstalls.length > 0) {
+    io.log(`[warn] agents home: ${legacySharedInstalls.length} legacy shared-root skill install(s) under ${formatDisplayPath(path.join(String(agentsHome || ''), 'skills'))}`);
+    for (const item of legacySharedInstalls) {
+      io.log(`       ${item.name} (client=${item.client || 'unknown'}); current layout installs per-client homes — remove this copy and re-run skills install`);
+    }
     warnings += 1;
   }
 

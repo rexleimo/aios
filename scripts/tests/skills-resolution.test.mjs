@@ -101,3 +101,50 @@ test('duplicate target names fail closed and Skills Doctor reports canonical pro
   assert.match(diagnostic, /skill-sources[/\\]provider-b/u);
   assert.match(diagnostic, /remove or rename one source/u);
 });
+
+test('skills doctor reports legacy shared-root installs under the agents home', async () => {
+  const rootDir = await makeTemp('aios-skill-resolution-legacy-');
+  await writeCanonicalSkill(rootDir, 'provider-a');
+  await writeManifest(rootDir, [
+    {
+      relativeSkillPath: 'provider-a',
+      installCatalogName: 'provider-a',
+      clients: ['codex'],
+      scopes: ['global'],
+      defaultInstall: { global: false, project: false },
+      tags: [],
+    },
+  ]);
+  const agentsHome = await makeTemp('aios-agents-home-');
+  const legacyDir = path.join(agentsHome, 'skills', 'provider-a');
+  await mkdir(legacyDir, { recursive: true });
+  await writeFile(path.join(legacyDir, 'SKILL.md'), '# provider-a\n', 'utf8');
+  await writeFile(path.join(legacyDir, '.aios-skill-install.json'), JSON.stringify({
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'installed-skill',
+    skillName: 'provider-a',
+    client: 'claude',
+    scope: 'global',
+    installMode: 'copy',
+  }), 'utf8');
+  // 用户自有目录（无 AIOS metadata）不应触发提示。
+  const userOwnedDir = path.join(agentsHome, 'skills', 'user-owned');
+  await mkdir(userOwnedDir, { recursive: true });
+  await writeFile(path.join(userOwnedDir, 'SKILL.md'), '# user\n', 'utf8');
+
+  const logs = [];
+  const result = await doctorContextDbSkills({
+    rootDir,
+    client: 'codex',
+    agentsHome,
+    homeMap: { codex: await makeTemp('aios-skill-resolution-legacy-home-') },
+    io: { log: (line) => logs.push(String(line)) },
+  });
+
+  const warning = logs.find((line) => line.includes('legacy shared-root skill install')) || '';
+  assert.match(warning, /1 legacy shared-root skill install/u);
+  assert.ok(logs.some((line) => line.includes('provider-a (client=claude)')));
+  assert.ok(!logs.some((line) => line.includes('user-owned (')));
+  assert.equal(result.warnings >= 1, true);
+});
