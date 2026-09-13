@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { realpathSync } from 'node:fs';
 import { readFile, realpath } from 'node:fs/promises';
 
 import { resolveContextDbRoot } from '../aios/state-root.mjs';
@@ -27,6 +28,16 @@ function normalizeRef(value) {
   return String(raw || '').trim().replace(/\\/gu, '/').replace(/^\.\//u, '');
 }
 
+/* 中文注释：物理路径解析（best-effort）：符号链接导致词法比较跨命名空间失败时用；
+   路径不存在时返回 null，由调用方回退到词法行为。 */
+function tryRealpath(value) {
+  try {
+    return realpathSync(value);
+  } catch {
+    return null;
+  }
+}
+
 function comparisonRef(value) {
   const normalized = normalizeRef(value);
   return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
@@ -41,10 +52,32 @@ function resolveLocalRef(rootDir, rawRef) {
     : path.resolve(root, inputRef);
   const relative = path.relative(root, absolutePath);
   const valid = relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+  if (valid) {
+    return {
+      ref: normalizeRef(relative),
+      valid: true,
+      absolutePath,
+    };
+  }
+  /* 中文注释：物理路径回退（同 context-reconciliation.mjs）：符号链接导致词法比较
+     跨命名空间失败时，两侧解析后再比一次；任一不存在则保持原行为。 */
+  const realRoot = tryRealpath(root);
+  const realAbsolute = tryRealpath(absolutePath);
+  if (realRoot && realAbsolute) {
+    const realRelative = path.relative(realRoot, realAbsolute);
+    const realValid = realRelative !== '..' && !realRelative.startsWith(`..${path.sep}`) && !path.isAbsolute(realRelative);
+    if (realValid) {
+      return {
+        ref: normalizeRef(realRelative),
+        valid: true,
+        absolutePath: realAbsolute,
+      };
+    }
+  }
   return {
-    ref: valid ? normalizeRef(relative) : inputRef,
-    valid,
-    absolutePath: valid ? absolutePath : '',
+    ref: inputRef,
+    valid: false,
+    absolutePath: '',
   };
 }
 

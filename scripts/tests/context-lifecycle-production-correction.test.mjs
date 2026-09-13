@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import { mkdtemp, rm } from 'node:fs/promises';
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { realpathSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import os from 'node:os';
 import path from 'node:path';
@@ -335,5 +336,46 @@ test('spoofed env cannot approve Dream and physical GC is fail-closed', async ()
     });
     assert.equal(gc.ok, false);
     assert.equal(gc.receipt.reasonCode, 'trusted_authority_unavailable');
+  });
+});
+
+test('reconciliation treats symlinked workspace spellings (/var vs /private/var) as the same workspace', { skip: process.platform === 'win32' }, async () => {
+  await withRoot('context-correction-symlink-', async (rootDir) => {
+    const realRoot = realpathSync(rootDir);
+    await mkdir(path.join(rootDir, 'src'), { recursive: true });
+    await writeFile(path.join(rootDir, 'src', 'a.mjs'), 'symlink equivalence\n', 'utf8');
+    /* 中文注释：声明与 ledger 故意使用两种命名空间拼写；macOS 上 raw(/var/…) 与
+       real(/private/var/…) 不同（Linux 上相同，断言依然成立）。文件必须真实存在，
+       realpath 才能解析（不存在时回退到词法比较）。 */
+    const plan = buildStructuredPlanState({
+      title: 'Symlink equivalence',
+      sessionId: 'symlink-equivalence',
+      tasks: [{
+        id: 'task-1',
+        title: 'Edit target',
+        targets: [path.join(realRoot, 'src', 'a.mjs')],
+        allowedWrites: [],
+        contextRequirements: [],
+      }],
+    });
+    const { packet } = await buildExecutionContextPacket({
+      rootDir,
+      plan,
+      taskId: 'task-1',
+      persist: false,
+    });
+    await recordSessionChangedFile({
+      rootDir,
+      sessionId: 'symlink-equivalence',
+      filePath: path.join(realRoot, 'src', 'a.mjs'),
+    });
+    const result = await evaluateContextReconciliation({
+      rootDir,
+      sessionId: 'symlink-equivalence',
+      packet,
+      persist: false,
+    });
+    assert.deepEqual(result.undeclaredPaths, []);
+    assert.deepEqual(result.missingDeclaredPaths, []);
   });
 });

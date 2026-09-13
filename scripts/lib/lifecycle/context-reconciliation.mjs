@@ -1,4 +1,5 @@
 import { spawnSync } from 'node:child_process';
+import { realpathSync } from 'node:fs';
 import path from 'node:path';
 
 import { resolveAiosStateRoot, resolveContextDbRoot } from '../aios/state-root.mjs';
@@ -8,6 +9,16 @@ import { normalizeSessionId, readSessionChangedFiles } from '../session/changed-
 
 function normalizePath(value) {
   return String(value || '').trim().replace(/\\/gu, '/').replace(/^\.\//u, '').replace(/^\/+/u, '');
+}
+
+/* 中文注释：物理路径解析（best-effort）：macOS /var -> /private/var 之类的符号链接
+   会让词法比较跨命名空间失败；路径不存在时返回 null，由调用方回退到词法行为。 */
+function tryRealpath(value) {
+  try {
+    return realpathSync(value);
+  } catch {
+    return null;
+  }
 }
 
 function comparisonPath(value) {
@@ -26,6 +37,13 @@ function normalizeWorkspaceRefLocal(rootDir, value) {
   const relative = path.relative(root, absolute);
   const valid = relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
   if (valid) return String(relative).replace(/\\/gu, '/').replace(/^\.\//u, '');
+  const realRoot = tryRealpath(root);
+  const realAbsolute = tryRealpath(absolute);
+  if (realRoot && realAbsolute) {
+    const realRelative = path.relative(realRoot, realAbsolute);
+    const realValid = realRelative !== '..' && !realRelative.startsWith(`..${path.sep}`) && !path.isAbsolute(realRelative);
+    if (realValid) return String(realRelative).replace(/\\/gu, '/').replace(/^\.\//u, '');
+  }
   return normalizePath(value);
 }
 

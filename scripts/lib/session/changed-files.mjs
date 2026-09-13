@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import { promises as fs, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { resolveAiosStateRoot } from '../aios/state-root.mjs';
 
@@ -39,6 +39,16 @@ function normalizePath(filePath) {
 // D3: preserve absolute-inside-workspace as relative at write time so later
 // workspace-aware comparison sees the same ref as git/snapshot relative paths.
 // Outside-workspace absolutes fall back to normalizePath (stay undeclared).
+// 物理路径回退：root 与候选分处符号链接两侧（如 macOS /var 与 /private/var）时，
+// 词法包含性检查会失败；两侧解析后再比一次（任一不存在则保持原行为）。
+function tryRealpath(value) {
+  try {
+    return realpathSync(value);
+  } catch {
+    return null;
+  }
+}
+
 function normalizeLedgerPath(rootDir, filePath) {
   const raw = String(filePath || '').trim();
   if (!raw) return '';
@@ -51,6 +61,13 @@ function normalizeLedgerPath(rootDir, filePath) {
         const relative = path.relative(root, candidate);
         if (relative === '') return '.';
         return String(relative).replace(/\\/g, '/').replace(/^\.\//u, '');
+      }
+      const realRoot = tryRealpath(root);
+      const realCandidate = tryRealpath(candidate);
+      if (realRoot && realCandidate && isContainedPath(realRoot, realCandidate)) {
+        const realRelative = path.relative(realRoot, realCandidate);
+        if (realRelative === '') return '.';
+        return String(realRelative).replace(/\\/g, '/').replace(/^\.\//u, '');
       }
     } catch {
       // Fall through to lexical normalization below.
