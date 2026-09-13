@@ -36,6 +36,20 @@ GC snapshot -> restored
 - gc：human 或 `memo:gc-shared`；
 - mutation 必须有 principal、policy revision、reason。
 
+形式化治理契约（2026-09-12，借鉴 LoopX dreaming lane 措辞，机制对应物已在代码中）：
+dream lane 的权限语义收敛为 DREAM_PLANNING_CONTRACT（dream/governance.mjs 导出，
+内嵌进每份 proposal JSON 与 governance receipt，机器可查）：
+
+- lane: dreaming_planning；authority: proposal_only_until_promoted；
+- 五项权限封印全 false：may_execute_protected_actions / may_read_private_material /
+  may_mutate_active_state / may_append_delivery_history / may_spend_delivery_quota；
+- promotion_required=true，promotion_requirements 映射到本仓库词表：
+  operator_approval_via_broker_seam（authorize seam）、should_run_decision
+  （solo-runtime should-run 门）、write_scope_approval（allowedWrites 边界）、
+  boundary_scan_unsafe_content_and_private_material（promote 门 unsafe_content
+  扫描 + agent_private 排除）；
+- dream run 写 proposal 时校验契约存在且五项封印全 false，否则拒绝写入。
+
 ## Receipt
 
 ALLOW/DENY receipt 保存 proposal/action/principal/capability/policy/reason/source hashes/retention/snapshot ref，不保存 memo text。

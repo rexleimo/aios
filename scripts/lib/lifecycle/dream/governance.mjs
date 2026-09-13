@@ -13,6 +13,44 @@ import { readOrRebuildDreamArchiveIndex } from './archive-index.mjs';
 const ACTIONS = new Set(['approve', 'reject', 'archive', 'restore', 'gc']);
 const DEFAULT_RETENTION_DAYS = 30;
 
+/**
+ * Dreaming lane 治理契约——形式化借鉴 LoopX build_server_managed_planning_contract
+ * （research/upstream/loopx/loopx/dreaming.py:206-241）。机制对应物在本仓库均已存在
+ * （proposal-only apply、broker authorize seam、unsafe_content 扫描、agent_private 排除、
+ * should-run 额度门）；这里把治理措辞形式化为机器可查的常量，内嵌进每份 proposal
+ * 与 governance receipt，使"hard gates are protocols"对 dream lane 成立。
+ */
+export const DREAM_PLANNING_CONTRACT = Object.freeze({
+  schemaVersion: 1,
+  lane: 'dreaming_planning',
+  authority: 'proposal_only_until_promoted',
+  may_execute_protected_actions: false,
+  may_read_private_material: false,
+  may_mutate_active_state: false,
+  may_append_delivery_history: false,
+  may_spend_delivery_quota: false,
+  promotion_required: true,
+  promotion_requirements: Object.freeze([
+    'operator_approval_via_broker_seam',
+    'should_run_decision',
+    'write_scope_approval',
+    'boundary_scan_unsafe_content_and_private_material',
+  ]),
+  allowed_outputs: Object.freeze([
+    'memory_consolidation_proposals',
+    'archive_suggestions',
+    'refactor_warnings',
+    'exploration_notes',
+  ]),
+  forbidden_outputs: Object.freeze([
+    'agent_command',
+    'protected_action_execution',
+    'private_material_read',
+    'delivery_quota_spend',
+    'active_state_mutation_without_promotion',
+  ]),
+});
+
 function dreamRoot(rootDir, env = process.env) {
   return path.join(resolveMemoRoot(rootDir, { env }), 'dream');
 }
@@ -200,6 +238,7 @@ function receiptRow({ proposal, proposalId, action, decision, reason, reasonCode
       capability,
       policyRevision: identity?.policyRevision || '',
     },
+    planningContract: DREAM_PLANNING_CONTRACT,
     source: {
       proposalRef: proposal?.proposalPath ? `file:${proposal.proposalPath}` : '',
       manifestHash: proposal ? sha256Hex(JSON.stringify(proposal.sourceManifest || [])) : '',

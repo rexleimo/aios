@@ -6,12 +6,37 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.13.0] - 2026-09-12
+
+First tagged release since v5.11.0: it ships the v5.12.0 memory-plane work (section below), the Pi client, the LoopX control-plane adoption, and a process-lifecycle hardening pass that removes the last known long-task stall/orphan classes.
+
 ### Added
 
 - Pi coding agent as a first-class AIOS client (`pi` / `pi-coding-agent`, skills + native + harness; no `team`/`agents` — no sub-agents upstream): registry, `PI_CODING_AGENT_DIR` home, L2 host capabilities, native emitter + instruction layer, all 25 skills projected (`skills pi -> installed=25`), ctx-agent one-shot/interactive, harness one-shot strategy, shell-bridge support.
 - Pi modeled MCP-less (`format: none`, empty scopes): migration/proxy/codemap collectors skip Pi instead of pretending an MCP surface exists.
 - `aios-pi-extension` (`packages/aios-pi`): 4 model-callable tools (memory recall/write/feedback, skill search), `tool_call` safety gate, `before_agent_start` policy injection, `/aios-root` + `/aios-policy` commands; `aios init --agent pi` registers it into Pi settings.
 - Pi `--mode rpc` JSONL driver (`scripts/lib/pi/rpc-client.mjs`): correlated commands, settle detection, fail-closed permission dialogs. See: [Pi client blog post](/blog/2026-09-pi-client-aios/).
+- harness: turn settlement gate (LoopX Phase 1) — typed `rex.turn-result.v1` envelope, `effectRef` idempotency (execution token + payload sha256), CAS write-back with expected-status precondition, append-only settlement journal, token rotation on seal; independent `rex-harness verify` validator process (an executor cannot self-verify) gates every settle from the harness bridge.
+- harness: should-run pacing gate (LoopX Phase 2) — pure decision module (`run|wait|ask|self_repair|quiet`), cadence ladder (180 s base, ×1.5 to a 30 min cap, material progress resets to base), and a 24 h duty-ratio compute quota where only material turns charge; decisions and balances are projected into the run summary and `aios harness status`.
+- harness: unattended tier (LoopX Phase 3, explicit opt-in via `--unattended`; attended behavior unchanged) — one bounded read-only safe-bypass turn on operator gates with code-level sealing of material claims, unchanged-poll quiet shutdown (default 3 consecutive noops), and re-entry only through explicit `resume`.
+- harness: host probes + dream planning contract (LoopX Phase 4) — codex-cli/pi probe registry wired into dry-run readiness (fail-closed `host-unsupported`); `DREAM_PLANNING_CONTRACT` (five permission seals) embedded into dream proposals, governance receipts, and write-time validation.
+- harness: read-only dashboard (LoopX Phase 5) — `aios harness dashboard` renders a static HTML projection with no service process and no state writes.
+- harness: `--turn-timeout-ms` per-turn provider timeout (default 30 min, bounds 1 s – 6 h) so legitimate long verification turns can be granted more time explicitly.
+- skills: new `portrait-916` skill source; `rexai-image-generation` gains a zero-install stdlib-only Python executor with hard deadlines, live poll progress, and bounded retries (no silent hangs) plus refreshed macOS script.
+
+### Changed
+
+- process lifecycle: staged process-tree termination — POSIX children are spawned detached (process-group leaders) and timeout/abort performs SIGTERM group → 3 s grace → SIGKILL group → liveness verify, reporting `treeAlive`/`killEscalated`/`childPid`; shared by harness turns and subagent client spawns.
+- harness: SIGINT/SIGTERM now abort the active turn tree (Ctrl-C cannot leave a detached provider running) and then run the normal stop path.
+- harness: timed-out trees that survive SIGKILL fail closed (`blocked`, stop) instead of starting the next iteration; only fully cleaned trees keep the `infra-retry` + backoff path.
+- aios-shell MCP: timeouts/cancellations run the same staged tree cleanup and force-settle even when `close` never fires because a grandchild still holds the pipe.
+- dream: public surface of `dream/index.mjs` re-exports the full governance API again (the governance batch had narrowed it to `DREAM_PLANNING_CONTRACT` only).
+
+### Fixed
+
+- harness: provider turn timeout no longer orphans a still-running provider tree (regression pinned by a POSIX grandchild test); long verification turns can no longer leave claude/opencode/etc. writing into the same workspace as the next iteration.
+- aios-shell: `aios_shell` calls can no longer hang past their timeout when the command leaves background grandchildren (the OpenCode "git diff spins forever" class); background grandchildren are killed with the tree.
+- skills: `portrait-916` frontmatter description quoted for strict YAML parsers.
 
 ## [5.12.0] - 2026-09-09
 

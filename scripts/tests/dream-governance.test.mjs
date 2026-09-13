@@ -261,3 +261,34 @@ test('Dream CLI lists metadata but spoofed approve exits non-zero', async () => 
     assert.equal(receipts.at(-1)?.reasonCode, 'trusted_authority_unavailable');
   });
 });
+
+test('dream proposals and governance receipts embed the formal planning contract', async () => {
+  await withRoot('dream-contract-embed-', async (rootDir) => {
+    const fixture = await createProposal(rootDir);
+
+    // proposal 携带契约，五项封印全 false。
+    const seals = Object.entries(fixture.proposal.planningContract ?? {}).filter(([key]) => key.startsWith('may_'));
+    assert.equal(seals.length, 5, 'exactly five permission seals');
+    assert.ok(seals.every(([, value]) => value === false), 'all five seals must be false');
+    assert.equal(fixture.proposal.planningContract.authority, 'proposal_only_until_promoted');
+    assert.equal(fixture.proposal.planningContract.promotion_required, true);
+
+    // receipt 同样携带契约（DENY 也留痕，机器可查）。
+    const result = await approveDreamProposal({
+      rootDir,
+      proposalId: fixture.proposal.proposalId,
+      reason: 'contract embed check',
+      runtimeIdentity: spoofedIdentity(),
+    });
+    assert.equal(result.ok, false);
+    const sealsInReceipt = Object.entries(result.receipt.planningContract ?? {}).filter(([key]) => key.startsWith('may_'));
+    assert.equal(sealsInReceipt.length, 5);
+    assert.ok(sealsInReceipt.every(([, value]) => value === false));
+    assert.deepEqual(result.receipt.planningContract.promotion_requirements, [
+      'operator_approval_via_broker_seam',
+      'should_run_decision',
+      'write_scope_approval',
+      'boundary_scan_unsafe_content_and_private_material',
+    ]);
+  });
+});

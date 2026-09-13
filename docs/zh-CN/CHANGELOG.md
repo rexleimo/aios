@@ -4,9 +4,43 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.12.0（2026-09-09）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.13.0（2026-09-12）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+>
+> v5.13.0 重点包含：LoopX 控制面采纳（结算门 / should-run 节奏 + 配额 / 无人值守档 / 只读 dashboard / 宿主探针与 dream 五项封印）、进程树生命周期加固（三段式清理、未清干净 fail-closed、SIGINT 中止当前 turn、`--turn-timeout-ms`）、aios-shell 强制结算卡死修复；同时首次打包 v5.12.0 记忆面与 Pi 客户端（见下）。无破坏性变更。
 >
 > v5.12.0 重点包含：记忆优化 backlog 13 项全部关闭——memo 卫生命令（只读体检 + 归档/轮替零删除）、`aios memory report` 全记忆面报表、`aios import` 迁移导入器（Claude/Continue/Roo/CONVENTIONS → 受治理候选）、渐进披露 search + pinned 预算、AgentView T0-T3 分级加载、Autodream Phase B opt-in 自动触发、本地 embedding 粗排（默认关）、真实语料评测基线 top-1 98%。无破坏性变更。
+
+## [5.13.0] - 2026-09-12
+
+v5.11.0 之后的首个发布版本：同时打包 v5.12.0 记忆面工作、Pi 客户端、LoopX 控制面采纳与一轮进程生命周期加固。
+
+### 新增
+
+- Pi coding agent 成为一等公民客户端（`pi` / `pi-coding-agent`）：registry、`PI_CODING_AGENT_DIR` 主目录、L2 宿主能力、原生发射器与指令层、25 skill 全投放、ctx-agent 单发/交互、harness 单发策略、shell-bridge。
+- Pi 建模为无 MCP（`format: none`，空 scope）：迁移/代理/codemap 收集器跳过；AIOS 工具经 extension 到达而非配置迁移。
+- `aios-pi-extension`（`packages/aios-pi`）：4 个模型可调工具（记忆召回/写入/反馈、skill 搜索）、`tool_call` 安全门、`before_agent_start` 策略注入、`/aios-root` + `/aios-policy` 命令；`aios init --agent pi` 一键注册。
+- Pi `--mode rpc` JSONL 驾驶器（`scripts/lib/pi/rpc-client.mjs`）：请求/响应关联、settle 探测、fail-closed 权限弹窗。
+- harness 结算门（LoopX Phase 1）：类型化 `rex.turn-result.v1` envelope、`effectRef` 幂等（execution token + payload sha256）、expected-status 前置 CAS 回写、append-only 结算日志、seal 时 token 轮换；独立 `rex-harness verify` 校验进程（executor 不得自验）。
+- harness should-run 节奏门（LoopX Phase 2）：纯决策函数（`run|wait|ask|self_repair|quiet`）；cadence 梯（180s 基准、×1.5 至 30min 上限、material 进展回基准）；24h 占空比计算配额（仅 material 轮扣费）；决策与余额投影进 run summary 与 `aios harness status`。
+- harness 无人值守档（LoopX Phase 3，`--unattended` 显式 opt-in；attended 行为零变化）：操作者门前唯一一次有界只读绕行（代码级封印拒绝 material 声明）、连续 noop 阈值静默停机（默认 3）、重入仅显式 resume。
+- harness 宿主探针 + dream 契约（LoopX Phase 4）：codex-cli/pi 宿主探测接入 dry-run 预检（fail-closed `host-unsupported`）；`DREAM_PLANNING_CONTRACT` 五项封印内嵌 proposal/receipt/写入校验。
+- harness 只读 dashboard（LoopX Phase 5）：`aios harness dashboard` 生成静态 HTML 投影（无服务进程、零状态写入）。
+- harness `--turn-timeout-ms` 单轮超时（默认 30 分钟，边界 1s–6h），长验证任务可显式放宽。
+- 新增 `portrait-916` skill；`rexai-image-generation` 新增零安装 stdlib-only Python 执行器（硬 deadline + 实时进度 + 有界重试，永不静默挂起）与 macOS 脚本更新。
+
+### 变更
+
+- 进程生命周期：三段式进程树清理——POSIX 子进程 detached 成为组长，超时/取消执行 SIGTERM 组 → 3s 宽限 → SIGKILL 组 → 存活校验，结果上报 `treeAlive`/`killEscalated`/`childPid`；harness turn 与 subagent 客户端共用同一平台层实现。
+- harness：SIGINT/SIGTERM 中止当前 turn 树（Ctrl-C 不再留下脱离进程组的 provider），随后走正常停机路径。
+- harness：SIGKILL 后仍存活的树 fail-closed（`blocked` 停机），不再盲目进下一轮；清理干净的树保持 `infra-retry` + backoff。
+- aios-shell MCP：超时/取消走同款三段式清理；孙子进程持有管道导致 `close` 永不触发时也会强制结算。
+- dream：`dream/index.mjs` 恢复 governance 全量 re-export（治理批次曾将其收窄为仅 `DREAM_PLANNING_CONTRACT`）。
+
+### 修复
+
+- harness：turn 超时不再留下仍在运行的 provider 进程树（POSIX 孙进程 regression 钉死）；长验证 turn 不再与孤儿 claude 并发写同一工作区。
+- aios-shell：命令超时/取消杀后台孙子进程，MCP 调用不再超过超时仍挂起（OpenCode "git diff 无限空转" 类）。
+- skills：`portrait-916` frontmatter description 加引号以适配严格 YAML 解析器。
 
 ## [5.12.0] - 2026-09-09
 

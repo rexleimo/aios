@@ -54,7 +54,8 @@ function inferFailureClass(input = {}) {
 function inferBackoffAction(outcome = '', failureClass = '') {
   const normalizedOutcome = normalizeText(outcome);
   const normalizedFailure = normalizeText(failureClass);
-  if (normalizedOutcome === 'infra-retry' && (normalizedFailure === 'runtime-error' || normalizedFailure === 'tool-error')) {
+  if (normalizedOutcome === 'infra-retry'
+    && ['runtime-error', 'tool-error', 'rate-limited', 'provider-overloaded'].includes(normalizedFailure)) {
     return 'retry-with-backoff';
   }
   if (normalizedOutcome === 'human-gate') return 'human-gate';
@@ -124,7 +125,12 @@ export function classifySoloFailure(value = {}) {
     || normalized.includes('ownership gate')
     || normalized.includes('ownership preflight failed')) return 'ownership-gate';
   if (normalized.includes('safety') || normalized.includes('human gate')) return 'safety-gate';
-  if (normalized.includes('timeout') || normalized.includes('rate limit') || normalized.includes('econnreset')) return 'runtime-error';
+  // 限流/过载从 runtime-error 中拆出：它们有专属的退避节奏（更长的窗口），不是普通基础设施抖动。
+  if (normalized.includes('rate limit') || normalized.includes('429') || normalized.includes('too many requests')) return 'rate-limited';
+  if (normalized.includes('overloaded') || normalized.includes('503') || normalized.includes('capacity')) return 'provider-overloaded';
+  if (normalized.includes('host_unsupported') || normalized.includes('host unsupported') || normalized.includes('unsupported host')) return 'host-unsupported';
+  if (normalized.includes('budget_exhausted') || normalized.includes('quota exhausted') || normalized.includes('budget exhausted')) return 'budget-exhausted';
+  if (normalized.includes('timeout') || normalized.includes('econnreset')) return 'runtime-error';
   if (normalized.includes('tool')) return 'tool-error';
   if (normalized.includes('workspace') || normalized.includes('git')) return 'workspace-mutation';
   return 'runtime-error';

@@ -121,6 +121,7 @@ Options:
   --worktree                    (run) Execute inside an isolated git worktree
   --base-ref <ref>              (run) Git ref used to seed worktree mode (default: HEAD)
   --max-iterations <n>          (run/resume) Iteration budget for the solo loop (default: 20)
+  --turn-timeout-ms <n>         (run/resume) Per-turn provider timeout before staged process-tree kill (default: 1800000)
   --hooks / --no-hooks          (run/resume) Enable or disable lifecycle hook evidence logging (default: enabled)
   --reason <text>               (stop) Operator note recorded in control.json
   --dry-run                     (run) Create/update the journal without invoking a provider

@@ -141,6 +141,7 @@ async function writeDreamProposal({ rootDir, storage, spaces, plan, events, crea
     proposalId,
     status: 'proposed',
     createdAt,
+    planningContract: DREAM_PLANNING_CONTRACT,
     source: { storage, spaces },
     summary: plan.summary,
     actions,
@@ -154,6 +155,11 @@ async function writeDreamProposal({ rootDir, storage, spaces, plan, events, crea
       };
     }),
   };
+  // 治理措辞机器可查：proposal 必须携带 dreaming lane 契约且封印全为 false。
+  const seals = Object.entries(DREAM_PLANNING_CONTRACT).filter(([key]) => key.startsWith('may_'));
+  if (seals.length !== 5 || seals.some(([, value]) => value !== false)) {
+    throw new Error('dream planning contract is malformed: the five permission seals must all be false');
+  }
   const target = path.join(resolveMemoRoot(rootDir, { env }), 'dream', 'proposals', `${proposalId.replace(/:/gu, '-')}.json`);
   await atomicWriteText(target, `${JSON.stringify(proposal, null, 2)}\n`);
   return { proposal, proposalPath: target };
@@ -241,6 +247,8 @@ export async function runDream({ rootDir, mode = 'preview', spaces = ['default']
   };
 }
 
+import { DREAM_PLANNING_CONTRACT } from './governance.mjs';
+export { DREAM_PLANNING_CONTRACT };
 export {
   approveDreamProposal,
   archiveDreamProposal,

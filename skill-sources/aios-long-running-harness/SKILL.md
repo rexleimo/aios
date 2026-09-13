@@ -71,6 +71,19 @@ Resume flow:
 
 Stable operating rules live in `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and skills. Do not regenerate those rules into per-run handoff prompts.
 
+## Unattended Tier (opt-in)
+
+Attended runs are the default and are unchanged: the loop runs turns back-to-back, and every stop waits for explicit resume intent. For scheduled or heartbeat-style unattended runs, `aios harness run --unattended` enables the should-run pacing gate:
+
+- Quota (duty-ratio accounting): only material turns charge against a 24h sliding window (`--quota <ratio>`, default 1.0). Noop/wait turns are free; when the window is exhausted the loop sleeps until the earliest spend exits the window instead of burning paid turns.
+- Cadence ladder: non-material outcomes widen the wake interval ×1.5 up to a cap (`--cadence-base-ms` / `--cadence-max-ms`); material progress resets to base; a human-gate stops auto-waking entirely.
+- Quiet shutdown: after `--quiet-threshold` (default 3) consecutive noop polls the loop shuts down with a typed reason instead of polling forever. Re-entry is still `aios harness resume` only.
+- Safe-bypass: when an unattended run hits an operator gate, the loop grants exactly one read-only steering/analysis turn. Code-level seals reject material claims from that turn: the harness clamps the outcome, and rex-bound runs additionally get `bypass_turn_material_outcome_forbidden` from the settlement gate. After the bypass turn the run waits for the operator again.
+- Per-turn timeout: `aios harness run|resume --turn-timeout-ms <n>` caps a single provider turn (default 1800000 ms = 30 min, bounds 1 s – 6 h). On expiry the whole process group is cleaned in stages (SIGTERM group → grace → SIGKILL group → verify); a tree that survives SIGKILL stops the run fail-closed instead of overlapping the next turn. Grant long verification turns extra time explicitly instead of relying on the default.
+- Active pacing state is persisted in the run summary and projected through `aios harness status --json` (`status.pacing`).
+
+Do not enable `--unattended` for work that needs per-step human approval; keep the attended default.
+
 ## Orchestrate Live Notes
 - `aios orchestrate --execute live` currently supports `AIOS_SUBAGENT_CLIENT=codex-cli` only.
 - Codex CLI v0.114+ structured exec outputs (`--output-schema`, `--output-last-message`, stdin) are required for handoff parsing; schema fallback to raw stdout is rejected.

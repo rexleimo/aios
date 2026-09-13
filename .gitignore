@@ -173,3 +173,8 @@ C:/
 
 # Pencil design sources (kept out of repo per convention)
 pen/
+
+# 本地研究克隆与工具状态（不提交；research/upstream/*-analysis.md 除外）
+research/upstream/deepseek-harness/
+research/upstream/loopx/
+.zcode/

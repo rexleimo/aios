@@ -33,26 +33,109 @@ function makeError(id, code, message) {
   return { jsonrpc: '2.0', id, error: { code, message } };
 }
 
-/* 中文注释：杀掉整个进程树。Windows 上 child.kill 只杀 cmd.exe 本身，
-   node/npm/git 等孙进程会残留并继续占用资源，必须用 taskkill /T /F。 */
-function killProcessTree(pid) {
-  if (!pid) return;
-  if (process.platform === 'win32') {
-    try {
-      spawnSync('taskkill', ['/pid', String(pid), '/T', '/F'], { stdio: 'ignore', windowsHide: true });
-    } catch {
-      /* taskkill 失败时退化为直接 kill */
-    }
-  }
+const TREE_TERM_GRACE_MS = 3000;
+const TREE_KILL_WAIT_MS = 2000;
+const TREE_POLL_INTERVAL_MS = 50;
+
+function isProcessAlive(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
   try {
-    process.kill(pid, 'SIGTERM');
-  } catch {
-    /* 进程已不存在 */
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === 'EPERM';
   }
 }
 
+function isProcessGroupAlive(pgid) {
+  if (!Number.isInteger(pgid) || pgid <= 0) return false;
+  try {
+    process.kill(-pgid, 0);
+    return true;
+  } catch (error) {
+    return error?.code === 'EPERM';
+  }
+}
+
+/* 中文注释：POSIX 用进程组信号覆盖孙子进程（spawn 时 detached 让 sh 成为组长）；
+   失败时退化为直接子进程 kill。Windows 走 taskkill /T /F（见 terminateProcessTree）。 */
+function signalProcessTree(child, signal) {
+  const pid = child?.pid;
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  if (process.platform !== 'win32') {
+    try {
+      process.kill(-pid, signal);
+      return true;
+    } catch (error) {
+      if (error?.code === 'ESRCH') return false;
+      // EPERM 等情况退化为直接子进程杀，尽量清理。
+    }
+  }
+  try {
+    child.kill(signal);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isTreeAlive(child) {
+  const pid = child?.pid;
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  return process.platform === 'win32' ? isProcessAlive(pid) : isProcessGroupAlive(pid);
+}
+
+async function waitForTreeGone(child, timeoutMs) {
+  const deadline = Date.now() + Math.max(0, timeoutMs);
+  while (Date.now() <= deadline) {
+    if (!isTreeAlive(child)) return true;
+    await new Promise((resolve) => setTimeout(resolve, TREE_POLL_INTERVAL_MS));
+  }
+  return !isTreeAlive(child);
+}
+
+/* 中文注释：三段式进程树清理（SIGTERM 组 → 宽限 → SIGKILL 组 → 校验）。
+   对齐 platform/process/spawn.mjs 的清理语义；返回 treeAlive 供 close
+   事件永远不到达时也能结算。 */
+async function terminateProcessTree(child) {
+  if (process.platform === 'win32') {
+    let terminated = false;
+    if (Number.isInteger(child?.pid) && child.pid > 0) {
+      try {
+        const result = spawnSync('taskkill', ['/pid', String(child.pid), '/t', '/f'], {
+          stdio: 'ignore',
+          windowsHide: true,
+        });
+        terminated = result.status === 0;
+      } catch {
+        terminated = false;
+      }
+    }
+    if (!terminated) {
+      try {
+        child.kill();
+      } catch {
+        // close/error 可能已抢先结算。
+      }
+    }
+    const gone = await waitForTreeGone(child, TREE_KILL_WAIT_MS);
+    return { killEscalated: !terminated, treeAlive: !gone };
+  }
+
+  signalProcessTree(child, 'SIGTERM');
+  let gone = await waitForTreeGone(child, TREE_TERM_GRACE_MS);
+  let escalated = false;
+  if (!gone) {
+    escalated = true;
+    signalProcessTree(child, 'SIGKILL');
+    gone = await waitForTreeGone(child, TREE_KILL_WAIT_MS);
+  }
+  return { killEscalated: escalated, treeAlive: !gone };
+}
+
 /* 中文注释：执行命令并返回 {stdout, stderr, exitCode, timedOut, cancelled}。
-   - 超时或取消时先杀进程树，再等待 close 事件统一 resolve，保证不泄漏子进程。
+   - 超时/取消走三段式进程树清理；close 事件因孙子进程持有管道而永不触发时也会强制结算，
+     避免 MCP 调用无限挂起（空转卡死）。
    - onCancel(cancelFn) 注册取消回调，供 notifications/cancelled 触发。
    - 超时/取消后仍返回已收集的部分输出，方便客户端看到命令走到哪一步。 */
 function executeCommand(command, cwd, timeout, { onCancel } = {}) {
@@ -60,6 +143,10 @@ function executeCommand(command, cwd, timeout, { onCancel } = {}) {
     const limit = Math.min(Math.max(timeout || 120000, 1000), 300000);
     let killed = false;
     let cancelRequested = false;
+    let settled = false;
+    let terminating = false;
+    let exitCodeRef = null;
+    const detached = process.platform !== 'win32';
     const child = spawn(process.platform === 'win32' ? 'cmd' : '/bin/sh', [
       process.platform === 'win32' ? '/c' : '-c',
       command,
@@ -68,9 +155,15 @@ function executeCommand(command, cwd, timeout, { onCancel } = {}) {
       env: { ...process.env },
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
+      detached,
     });
 
+    const stdout = [];
+    const stderr = [];
+
     const finish = (extra = {}) => {
+      if (settled) return;
+      settled = true;
       if (typeof onCancel === 'function') {
         onCancel(null);
       }
@@ -84,28 +177,47 @@ function executeCommand(command, cwd, timeout, { onCancel } = {}) {
       });
     };
 
-    let exitCodeRef = null;
+    const destroyStreams = () => {
+      for (const stream of [child.stdin, child.stdout, child.stderr]) {
+        try {
+          stream?.destroy();
+        } catch {
+          // 管道可能已随进程退出关闭。
+        }
+      }
+      try {
+        child.unref();
+      } catch {
+        // 老版本 child handle 可能没有 unref。
+      }
+    };
+
+    const terminate = async (reason) => {
+      /* 中文注释：timeout/cancel 谁先到谁生效；清理结果统一负责最终结算。 */
+      if (terminating || settled) return;
+      terminating = true;
+      if (reason === 'timeout') killed = true;
+      if (reason === 'cancel') {
+        cancelRequested = true;
+        killed = true;
+      }
+      clearTimeout(timer);
+      const tree = await terminateProcessTree(child);
+      destroyStreams();
+      finish(tree);
+    };
 
     const timer = setTimeout(() => {
-      killed = true;
-      killProcessTree(child.pid);
-      setTimeout(() => {
-        try { child.kill('SIGKILL'); } catch {}
-      }, 5000);
+      void terminate('timeout');
     }, limit);
 
-    const stdout = [];
-    const stderr = [];
     child.stdout?.on('data', (chunk) => stdout.push(chunk));
     child.stderr?.on('data', (chunk) => stderr.push(chunk));
 
     /* 中文注释：注册取消回调。pending map 里存的就是这个函数；取消时杀树并标记。 */
     if (typeof onCancel === 'function') {
       onCancel(() => {
-        cancelRequested = true;
-        killed = true;
-        clearTimeout(timer);
-        killProcessTree(child.pid);
+        void terminate('cancel');
       });
     }
 
@@ -116,6 +228,7 @@ function executeCommand(command, cwd, timeout, { onCancel } = {}) {
 
     child.on('close', (code) => {
       exitCodeRef = code;
+      if (terminating) return;
       clearTimeout(timer);
       finish();
     });

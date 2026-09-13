@@ -12,6 +12,15 @@
  *
  * Trusted core (this module, evaluator, verdict, rollback controller)
  * cannot be modified by evolution candidates.
+ *
+ * Governance wording (formalized alongside DREAM_PLANNING_CONTRACT, see
+ * dream/governance.mjs): this pipeline is the promotion gate for the
+ * evolution lane — `authority: proposal_only_until_promoted` holds here too.
+ * A candidate may only PROPOSE until a verdict promotes it; the HARD_CHECKS
+ * in verdict.mjs (schema/safety/scope/functional/tests/holdout/regression)
+ * are the boundary scan, and the verdict's promote/canary decision is the
+ * operator approval. No candidate can promote itself: every transition is
+ * an audit event written by this trusted-core module.
  */
 
 import { promises as fs } from 'node:fs';

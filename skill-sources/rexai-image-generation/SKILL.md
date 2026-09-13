@@ -22,9 +22,10 @@ Use RexAI's async image API to create images and return usable local files.
 2. Choose the product ID (verify against the current instance's product list with one probe; these IDs have drifted before):
    - Text-to-image: `gpt-image-2`.
    - Image-to-image: **the same `gpt-image-2` product with the `-Image` parameter** — the relay selects the image-to-image route when the body carries `images`. `gpt-image-2-i2i` does NOT exist (`404 image_product_not_found`); do not use it.
-3. Pick the zero-install executor for the user's platform:
-   - Windows/Codex: use `scripts/rexai-image.ps1`; it only needs built-in PowerShell/.NET.
-   - macOS/Linux: use `scripts/rexai-image-macos.sh`; it uses common system tools (`bash`, `curl`, `perl`, `base64`).
+3. Pick the executor — **prefer Python on every platform** (the shell script's silent poll loop reads as a hang):
+   - Any platform with python3 (**default choice**): use `scripts/rexai-image.py`; stdlib only. It prints live poll progress every poll (agents can watch it run), reports the job id on submit/timeout, auto-resubmits on relay circuit-breaker/429 failures (bounded to 3 attempts), tolerates transient 5xx/network errors during polling, and **always exits within the per-job `--timeout` (default 600s) — it cannot hang**. If the agent's shell tool has its own timeout, pass a matching `--timeout` so the script self-reports the job id instead of being killed mid-poll.
+   - Windows without Python: use `scripts/rexai-image.ps1`; it only needs built-in PowerShell/.NET.
+   - macOS/Linux without Python: use `scripts/rexai-image-macos.sh`; it uses common system tools (`bash`, `curl`, `perl`, `base64`). Pass `--timeout-ms 600000` for large sizes.
 4. Use `scripts/rexai-image.mjs` only when Node is already available.
 5. Report the local file path, job id, source URL if present, and expiry time if present.
 
@@ -73,6 +74,17 @@ printf '%s\n' 'export REXAI_API_KEY="cr_xxx"' >> ~/.bashrc
 Security rules: never commit `.env` files or API keys, never echo the real key back to the user, and only save persistent configuration when the user explicitly chooses that option.
 
 ## Text-To-Image
+
+Python (preferred, all platforms):
+
+```bash
+export REXAI_API_KEY="cr_xxx"
+python3 skill-sources/rexai-image-generation/scripts/rexai-image.py \
+  --model gpt-image-2 \
+  --prompt "A cozy orange cat sleeping in warm sunlight" \
+  --size 1024x1024 \
+  --output-dir generated/rexai
+```
 
 Windows/Codex:
 
@@ -159,6 +171,10 @@ A failed job's `error` in the DB is often just `upstream_failed` + `Request fail
 | `402 insufficient_direct_balance` | Direct-pay balance / wrong credential | Check balance, or use the env key |
 
 `403 upstream_failed` does NOT mean the product is delisted (a prior session misdiagnosed `gpt-image-2` this way). Always convert references to base64 data URIs, probe with a one-image proof, and read the status against this table before blaming the product.
+
+## Verification (no-hang guarantees)
+
+The Python executor's hang-safety is covered by `scripts/rexai-image.py.test.py` (stdlib only, run with `python3`): transient 5xx absorption, hard `--timeout` exit bound, bounded resubmission (≤3 submits), and immediate 4xx death. Other executors: `node rexai-image.test.mjs && node rexai-image.skill.test.mjs`, `bash rexai-image-macos.test.sh`, `powershell -File rexai-image.ps1.test.ps1`.
 
 ## Script Output
 

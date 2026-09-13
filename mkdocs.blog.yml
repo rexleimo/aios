@@ -118,6 +118,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v5.13.0 LoopX Control Plane + No-Orphan Process Trees: 2026-09-v513-loopx-control-plane.md
       - Pi coding agent as a first-class AIOS client: 2026-09-pi-client-aios.md
       - v5.8.2 Plan Status No Longer Over-Advances + WorkBuddy Client: 2026-08-v582-plan-sync-workbuddy.md
       - v5.8.1 Stall Fix + LLM-Judged Grilling: 2026-08-v581-stall-fix-llm-judged-grilling.md

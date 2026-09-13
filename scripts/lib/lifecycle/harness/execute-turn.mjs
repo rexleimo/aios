@@ -7,16 +7,38 @@ import { compressPostReceiveTurn, compressPreSendTurn, emitTurnCompressionLog, r
 import { normalizeText } from './shared.mjs';
 import { buildIterationPrompt, parseHarnessJsonOutput } from './prompt.mjs';
 
+const DEFAULT_TURN_TIMEOUT_MS = 30 * 60 * 1000;
+const MAX_TURN_TIMEOUT_MS = 6 * 60 * 60 * 1000;
+const MIN_TURN_TIMEOUT_MS = 1000;
+
+/* 中文注释：turn 超时是进程树的硬上限；验证类长任务可以显式放宽，但保持在安全边界内。 */
+function normalizeTurnTimeoutMs(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || numeric <= 0) return DEFAULT_TURN_TIMEOUT_MS;
+  return Math.min(Math.max(Math.floor(numeric), MIN_TURN_TIMEOUT_MS), MAX_TURN_TIMEOUT_MS);
+}
+
+/* 中文注释：把进程树清理结果转成可审计证据，孤儿兜底与超时重试共用。 */
+function buildTerminationEvidence(result = {}, timeoutMs = 0) {
+  const evidence = [`turnTimeoutMs=${timeoutMs}`, `treeAlive=${result.treeAlive === true}`];
+  if (Number.isInteger(result.childPid)) evidence.push(`childPid=${result.childPid}`);
+  if (result.killEscalated === true) evidence.push('killEscalated=SIGKILL');
+  if (result.terminationError) evidence.push(`terminationError=${result.terminationError}`);
+  return evidence;
+}
+
 /* 中文注释：生产执行器负责跑一轮 provider，并把 provider 输出纳入 interception packet，防止长任务日志撑爆上下文。 */
-export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionId, objective, provider, spawnCommandImpl = spawnCommand } = {}) {
+export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionId, objective, provider, spawnCommandImpl = spawnCommand, turnTimeoutMs = DEFAULT_TURN_TIMEOUT_MS } = {}) {
   const runtimeAiosRootDir = path.resolve(normalizeText(aiosRootDir, rootDir));
-  return async ({ iteration, continuity, offloadCanvas, summary, worktree }) => {
+  const effectiveTurnTimeoutMs = normalizeTurnTimeoutMs(turnTimeoutMs);
+  return async ({ iteration, continuity, offloadCanvas, summary, worktree, bypass = false, abortSignal = null }) => {
     const prompt = buildIterationPrompt({
       objective,
       iteration,
       continuity,
       offloadCanvas,
       summary,
+      bypass,
     });
     const workspaceRoot = worktree?.enabled && worktree?.path ? worktree.path : rootDir;
     const preSendPacket = await requireTurnCompression({
@@ -56,7 +78,8 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
     const result = await spawnCommandImpl(built.command, built.args, {
       cwd: built.cwd,
       env: process.env,
-      timeoutMs: 30 * 60 * 1000,
+      timeoutMs: effectiveTurnTimeoutMs,
+      ...(abortSignal ? { signal: abortSignal } : {}),
     });
     const rawOutput = `${result.stdout || ''}${result.stderr || ''}`.trim();
     /* 中文注释：rawOutput 用于解析 provider JSON，interceptedOutput 用于写入 journal/返回给上层。 */
@@ -70,8 +93,39 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
     });
     const parsed = parseHarnessJsonOutput(rawOutput);
 
+    if (result.aborted === true) {
+      /* 中文注释：操作者信号触发的主动取消：turn 树已被清理，按 stopped 结算，不进入重试统计。 */
+      return {
+        prompt,
+        rawOutput: interceptedOutput,
+        outcome: 'stopped',
+        summary: 'Turn aborted by operator stop signal; process tree terminated.',
+        keyChanges: [],
+        keyLearnings: [],
+        nextAction: 'No action required; the harness stop request is being honored.',
+        shouldStop: true,
+        failureClass: 'stop-requested',
+        evidence: buildTerminationEvidence(result, effectiveTurnTimeoutMs),
+      };
+    }
+
     if (result.timedOut) {
-      /* 中文注释：超时通常是基础设施问题，保留 compact packet 后让 harness backoff 重试。 */
+      if (result.treeAlive === true) {
+        /* 中文注释：fail-closed：整树未死透时拒绝进入下一轮，避免两个 agent 并发写同一工作区。 */
+        return {
+          prompt,
+          rawOutput: interceptedOutput,
+          outcome: 'blocked',
+          summary: `Turn exceeded ${effectiveTurnTimeoutMs}ms and its process tree survived SIGKILL; refusing to continue to avoid orphan agents.`,
+          keyChanges: [],
+          keyLearnings: [],
+          nextAction: 'Kill the surviving process group manually (evidence includes childPid), then resume once the workspace is quiet.',
+          shouldStop: true,
+          failureClass: 'runtime-error',
+          evidence: buildTerminationEvidence(result, effectiveTurnTimeoutMs),
+        };
+      }
+      /* 中文注释：超时通常是基础设施问题，保留 compact packet 后让 harness backoff 重试；树已清理干净才允许重试。 */
       return {
         prompt,
         rawOutput: interceptedOutput,
@@ -82,6 +136,7 @@ export function buildProductionExecuteTurn({ rootDir, aiosRootDir = '', sessionI
         nextAction: 'Retry after backoff.',
         shouldStop: false,
         failureClass: 'runtime-error',
+        evidence: buildTerminationEvidence(result, effectiveTurnTimeoutMs),
       };
     }
 

@@ -63,6 +63,36 @@ export function defaultWorktreeState(input = {}) {
   };
 }
 
+// pacing 状态块：should-run 门启用时持久化额度账本/cadence/连续 noop 计数。
+// null = attended 默认（门未启用），保持历史 schema 兼容。
+export function normalizePacingState(input = null) {
+  if (!input || typeof input !== 'object') return null;
+  const spend = Array.isArray(input.quota?.spend)
+    ? input.quota.spend
+      .map((entry) => ({ ts: Number(entry?.ts), slots: Number(entry?.slots) }))
+      .filter((entry) => Number.isFinite(entry.ts) && Number.isFinite(entry.slots))
+    : [];
+  return {
+    quota: { spend },
+    cadence: input.cadence && typeof input.cadence === 'object'
+      ? {
+        cadenceClass: normalizeText(input.cadence.cadenceClass) || null,
+        delayMs: Number.isFinite(input.cadence.delayMs) ? Math.max(0, Math.floor(input.cadence.delayMs)) : 0,
+        untilMs: Number.isFinite(input.cadence.untilMs) ? input.cadence.untilMs : null,
+      }
+      : null,
+    consecutiveNoop: Number.isFinite(input.consecutiveNoop) ? Math.max(0, Math.floor(input.consecutiveNoop)) : 0,
+    lastDecision: input.lastDecision && typeof input.lastDecision === 'object'
+      ? {
+        action: normalizeText(input.lastDecision.action),
+        reasonCode: normalizeText(input.lastDecision.reasonCode),
+        nextWakeMs: Number.isFinite(input.lastDecision.nextWakeMs) ? Math.max(0, Math.floor(input.lastDecision.nextWakeMs)) : 0,
+        cadenceClass: normalizeText(input.lastDecision.cadenceClass) || null,
+      }
+      : null,
+  };
+}
+
 export function defaultControl(sessionId, overrides = {}) {
   return {
     schemaVersion: 1,
@@ -105,6 +135,7 @@ export function normalizeRunSummary(input = {}) {
       ...defaultBackoff(),
       ...(input.backoff && typeof input.backoff === 'object' ? input.backoff : {}),
     },
+    pacing: normalizePacingState(input.pacing),
     worktree: defaultWorktreeState(input.worktree),
     continuity: {
       markdownPath: normalizeText(input.continuity?.markdownPath),

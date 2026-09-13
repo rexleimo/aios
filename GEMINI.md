@@ -20,6 +20,20 @@ This project exposes a structural knowledge graph via the `code-review-graph` MC
 When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, the task id, and workspace-relative targets when the task has none. The tool derives target, caller, callee, and test candidates from codemap, but it does not modify the active plan. Present the candidate refs to a human. An explicit human-controlled CLI confirmation with `aios plan task <id> --confirm-context-candidates` (optionally repeated `--candidate-ref <ref>`) activates selected refs for orchestration; it is a process boundary, not an identity/authentication boundary. Do not claim context will be delivered before that command succeeds.
 <!-- AIOS CODEMAP END -->
 
+
+<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
+## Memory Trigger Contract (记忆触发契约)
+
+Gemini CLI 没有 hook 面：记忆召回完全由 agent 主动触发。
+
+- 新会话第一条消息：先调用 MCP `aios-memory` 的 `memory_recall` 检索相关记忆再开工。
+- 用户说 继续 / 接着做 / resume：先 `memory_recall` + `node scripts/aios.mjs session start --json` 恢复上下文。
+- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write`（本地写入，免确认）。
+- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
+- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
+- Dream/dreaming lane 只产 proposal（五项权限封印，DREAM_PLANNING_CONTRACT）；晋升回真实状态需 operator 批准 + 边界扫描。
+<!-- AIOS MEMORY TRIGGER CONTRACT END -->
+
 <!-- AIOS NATIVE BEGIN -->
 AIOS native enhancements are active in this repository. This is the shared
 workflow core for every supported coding client.
@@ -124,15 +138,3 @@ This repository provides compatibility-tier native enhancements for Gemini throu
 
 This compatibility projection does not declare prompt hooks. When this client is launched through AIOS shell integration, use the shared workflow policy and continue normal single-agent work for `direct` and `guarded` tasks. Use an injected `team`, `subagent`, or `harness` command only for one explicit `planned` work item.
 <!-- AIOS NATIVE END -->
-
-<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
-## Memory Trigger Contract (记忆触发契约)
-
-Gemini CLI 没有 hook 面：记忆召回完全由 agent 主动触发。
-
-- 新会话第一条消息：先调用 MCP `aios-memory` 的 `memory_recall` 检索相关记忆再开工。
-- 用户说 继续 / 接着做 / resume：先 `memory_recall` + `node scripts/aios.mjs session start --json` 恢复上下文。
-- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write`（本地写入，免确认）。
-- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
-- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
-<!-- AIOS MEMORY TRIGGER CONTRACT END -->

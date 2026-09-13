@@ -22,6 +22,7 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.13.0: LoopX 컨트롤 플레인 + 고아 프로세스 제거](2026-09-v513-loopx-control-plane.md) — 정산 턴, 무인 리듬, 고아 제거
 - [Pi coding agent가 AIOS 퍼스트클래스 클라이언트로 승격](2026-09-pi-client-aios.md) — skills, extension, RPC
 - [v5.8.1: 에이전트가 멈추지 않음 — aios-shell 동결 수정과 LLM 의미 판단 기반 요구사항 명확화](2026-08-v581-stall-fix-llm-judged-grilling.md)
 - [v5.8.0: AIOS의 안전한 자기 진화 — Session Memory, 증거 게이트, 롤백 가능한 승격](2026-08-v580-governed-self-evolution.md)

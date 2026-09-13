@@ -23,6 +23,14 @@ export async function readSoloRunStatus({ rootDir, sessionId } = {}) {
     lastStage: summary.lastStage,
     latestEvidence: summary.latestEvidence,
     nextDelayMs: Number.isFinite(summary.backoff?.nextDelayMs) ? summary.backoff.nextDelayMs : 0,
+    // 节奏管理投影（should-run 门启用时才有值；attended 默认为 null）
+    pacing: summary.pacing ? {
+      lastDecision: summary.pacing.lastDecision || null,
+      cadenceClass: summary.pacing.cadence?.cadenceClass || null,
+      cadenceUntilMs: Number.isFinite(summary.pacing.cadence?.untilMs) ? summary.pacing.cadence.untilMs : null,
+      consecutiveNoop: Number.isFinite(summary.pacing.consecutiveNoop) ? summary.pacing.consecutiveNoop : 0,
+      quota: summary.pacing.quota?.spend ? { spendCount: summary.pacing.quota.spend.length } : null,
+    } : null,
     stopRequested: control?.stopRequested === true || summary.stopRequested === true,
     worktree: defaultWorktreeState(summary.worktree),
     continuitySummaryPath: normalizeText(summary.continuity?.markdownPath),

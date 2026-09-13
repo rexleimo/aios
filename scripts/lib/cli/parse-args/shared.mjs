@@ -1,6 +1,7 @@
 import {
   createDefaultDoctorOptions,
   createDefaultEntropyGcOptions,
+  createDefaultHarnessDashboardOptions,
   createDefaultHarnessResumeOptions,
   createDefaultHarnessRunOptions,
   createDefaultHarnessStatusOptions,
@@ -43,6 +44,7 @@ import {
 export {
   createDefaultDoctorOptions,
   createDefaultEntropyGcOptions,
+  createDefaultHarnessDashboardOptions,
   createDefaultHarnessResumeOptions,
   createDefaultHarnessRunOptions,
   createDefaultHarnessStatusOptions,
@@ -84,7 +86,7 @@ export const TEAM_PROVIDERS = new Set(resolveClientTeamProviders('all'));
 export const HUD_PRESETS = new Set(['minimal', 'focused', 'full']);
 export const SKILL_CANDIDATE_VIEWS = new Set(['inline', 'detail', 'list']);
 export const TEAM_PROVIDER_CLIENT_MAP = Object.freeze(buildTeamProviderRuntimeClientMap('all'));
-export const HARNESS_SUBCOMMANDS = new Set(['run', 'status', 'resume', 'stop']);
+export const HARNESS_SUBCOMMANDS = new Set(['run', 'status', 'resume', 'stop', 'dashboard']);
 export const INIT_AGENT_NAMES = new Set(ALL_CLIENTS);
 
 export function expandEqualsOptions(argv = []) {

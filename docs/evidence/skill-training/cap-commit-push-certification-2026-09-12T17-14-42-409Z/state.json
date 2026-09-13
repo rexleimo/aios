@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "cap-commit-push",
+  "sourcePath": "skill-sources/cap-commit-push/SKILL.md",
+  "base": "v5.11.0",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "524933f1dcc640eabc4bf7f81f50835ae218772ea35d6e44960349e0aada2046",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "a9023d77c55c2d84e61a8bb8d0eac2e27348753d02ee432dafabb9e31ef67bcf"
+  },
+  "candidate": {
+    "contentSha256": "524933f1dcc640eabc4bf7f81f50835ae218772ea35d6e44960349e0aada2046"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-12T17:14:42.409Z"
+}

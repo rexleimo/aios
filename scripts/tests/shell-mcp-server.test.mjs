@@ -105,6 +105,42 @@ test('executeCommand respects timeout', async () => {
   assert.equal(result.timedOut, true);
 });
 
+test('executeCommand timeout kills background grandchildren instead of orphaning them (POSIX)', { skip: process.platform === 'win32' }, async () => {
+  const { mkdtemp, readFile, rm } = await import('node:fs/promises');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-shell-tree-'));
+  const pidPath = path.join(rootDir, 'grandchild.pid');
+  try {
+    /* 中文注释：`sleep 60 &` 是 sh 的孙子进程且持有 stdout/stderr 管道；
+       修复前只杀 sh 会让 sleep 变成孤儿并让 close 永不触发（MCP 调用挂死）。 */
+    const startedAt = Date.now();
+    const result = await executeCommand(`sleep 60 & echo $! > "${pidPath}"; wait`, undefined, 1000);
+    const elapsedMs = Date.now() - startedAt;
+
+    assert.equal(result.timedOut, true);
+    assert.equal(result.treeAlive, false);
+    assert.ok(elapsedMs < 10000, `tree cleanup settled after ${elapsedMs}ms`);
+
+    const grandchildPid = Number.parseInt(await readFile(pidPath, 'utf8'), 10);
+    assert.equal(Number.isInteger(grandchildPid) && grandchildPid > 0, true);
+    let alive = true;
+    const deadline = Date.now() + 1000;
+    while (Date.now() < deadline) {
+      try {
+        process.kill(grandchildPid, 0);
+      } catch {
+        alive = false;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    assert.equal(alive, false, 'background grandchild must not survive the timeout');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('executeCommand supports cancellation via onCancel callback', async () => {
   let cancelFn = null;
   const promise = executeCommand('sleep 60', undefined, 10000, {

@@ -4,7 +4,7 @@ set -euo pipefail
 DEFAULT_BASE_URL="https://coding.rexai.top"
 DEFAULT_OUTPUT_DIR="rexai-images"
 DEFAULT_INTERVAL_MS=3000
-DEFAULT_TIMEOUT_MS=180000
+DEFAULT_TIMEOUT_MS=600000
 
 normalize_base_url() {
   local value="${1:-$DEFAULT_BASE_URL}"
@@ -141,7 +141,7 @@ Recommended setup:
   Linux bash persistent setup, then open a new terminal:
     printf '%s\n' 'export REXAI_API_KEY="cr_xxx"' >> ~/.bashrc
 
-The key is read only from the REXAI_API_KEY environment variable — there is no CLI option to pass it. Never put the key in shell history or command lines.
+Avoid committing API keys. For one-off use only, pass --api-key "cr_xxx".
 EOF
 }
 
@@ -170,7 +170,7 @@ download_url_result() {
   esac
   mkdir -p "$output_dir"
   local file="$output_dir/rexai-$index.$ext"
-  curl -fsSL "$url" -o "$file"
+  curl -fsSL -m 300 "$url" -o "$file"
   printf '%s' "$file"
 }
 
@@ -181,12 +181,12 @@ http_json() {
   local body="${4:-}"
   local response
   if [ -n "$body" ]; then
-    response="$(curl -sS -w '\n%{http_code}' -X "$method" "$url" \
+    response="$(curl -sS -m 120 -w '\n%{http_code}' -X "$method" "$url" \
       -H 'Content-Type: application/json' \
       -H "Authorization: Bearer $api_key" \
       --data "$body")"
   else
-    response="$(curl -sS -w '\n%{http_code}' -X "$method" "$url" \
+    response="$(curl -sS -m 120 -w '\n%{http_code}' -X "$method" "$url" \
       -H "Authorization: Bearer $api_key")"
   fi
   local code="${response##*$'\n'}"
@@ -202,7 +202,7 @@ usage() {
 Usage:
   export REXAI_API_KEY=cr_xxx
   bash scripts/rexai-image-macos.sh --model gpt-image-2 --prompt "cat" --size 1024x1024
-  bash scripts/rexai-image-macos.sh --model gpt-image-2 --prompt "watercolor" --image source.png
+  bash scripts/rexai-image-macos.sh --model gpt-image-2-i2i --prompt "watercolor" --image source.png
 
 Options:
   --model <id>          RexAI image product id
@@ -212,7 +212,7 @@ Options:
   --n <count>           Optional number of images
   --output-dir <dir>    Directory for downloaded images, default: rexai-images
   --base-url <url>      Default: https://coding.rexai.top
-                        API key is read from the REXAI_API_KEY environment variable only
+  --api-key <key>       Prefer REXAI_API_KEY env var
 EOF
   api_key_help
 }
@@ -239,6 +239,7 @@ main() {
       --image) images="${images}${images:+$'\n'}$(resolve_image_input "$2")"; shift 2 ;;
       --output-dir) output_dir="$2"; shift 2 ;;
       --base-url) base_url="$2"; shift 2 ;;
+      --api-key) api_key="$2"; shift 2 ;;
       --interval-ms) interval_ms="$2"; shift 2 ;;
       --timeout-ms) timeout_ms="$2"; shift 2 ;;
       *) printf 'Unknown option: %s\n' "$1" >&2; return 2 ;;
@@ -253,36 +254,48 @@ main() {
   base="$(normalize_base_url "$base_url")"
   local body
   body="$(build_request_body "$model" "$prompt" "$n" "$size" "$images")"
-  local job
-  job="$(http_json POST "$base/v1/images/generations" "$api_key" "$body")"
-  local job_id
-  job_id="$(json_get "$job" id)"
-  [ -n "$job_id" ] || { printf 'RexAI did not return a job id: %s\n' "$job" >&2; return 1; }
+  local job job_id
 
-  local current="$job"
   local status
-  status="$(json_get "$current" status)"
-  local started now interval_s timeout_s
-  started="$(date +%s)"
+  local started now interval_s timeout_s attempt
   interval_s=$(( (interval_ms + 999) / 1000 ))
   timeout_s=$(( (timeout_ms + 999) / 1000 ))
   [ "$interval_s" -gt 0 ] || interval_s=1
 
-  while [ "$status" != "succeeded" ] && [ "$status" != "failed" ]; do
-    now="$(date +%s)"
-    if [ $((now - started)) -gt "$timeout_s" ]; then
-      printf 'Timed out waiting for image job %s; last status=%s\n' "$job_id" "$status" >&2
+  for attempt in 1 2 3; do
+    job="$(http_json POST "$base/v1/images/generations" "$api_key" "$body")"
+    job_id="$(json_get "$job" id)"
+    [ -n "$job_id" ] || { printf 'RexAI did not return a job id: %s\n' "$job" >&2; return 1; }
+    printf 'job_id=%s (attempt %s/3) — waiting, this can take 3-5 min for large sizes\n' "$job_id" "$attempt" >&2
+
+    local current="$job"
+    status="$(json_get "$current" status)"
+    started="$(date +%s)"
+
+    while [ "$status" != "succeeded" ] && [ "$status" != "failed" ]; do
+      now="$(date +%s)"
+      if [ $((now - started)) -gt "$timeout_s" ]; then
+        printf 'Timed out waiting for image job %s; last status=%s.\n' "$job_id" "$status" >&2
+        printf 'The job may still finish server-side. Re-check with:\n  curl -sS -H "Authorization: Bearer <REXAI_API_KEY>" %s/v1/images/jobs/%s\n' "$base" "$job_id" >&2
+        return 1
+      fi
+      sleep "$interval_s"
+      current="$(http_json GET "$base/v1/images/jobs/$job_id" "$api_key")"
+      status="$(json_get "$current" status)"
+      printf '  polling: status=%s elapsed=%ss\n' "$status" "$(( $(date +%s) - started ))" >&2
+    done
+
+    if [ "$status" = "failed" ]; then
+      if printf '%s' "$current" | grep -qE 'circuit|status_429|suspended' && [ "$attempt" -lt 3 ]; then
+        printf 'Job %s failed on relay capacity, resubmit in 20s...\n' "$job_id" >&2
+        sleep 20
+        continue
+      fi
+      printf 'RexAI image job failed: %s\n' "$current" >&2
       return 1
     fi
-    sleep "$interval_s"
-    current="$(http_json GET "$base/v1/images/jobs/$job_id" "$api_key")"
-    status="$(json_get "$current" status)"
+    break
   done
-
-  if [ "$status" = "failed" ]; then
-    printf 'RexAI image job failed: %s\n' "$current" >&2
-    return 1
-  fi
 
   local idx=1
   local results=""

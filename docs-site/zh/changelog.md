@@ -5,12 +5,19 @@ description: 版本历史、升级说明与文档变更入口。
 
 # 更新日志
 
-## Unreleased——Pi coding agent 一等公民客户端
+## v5.13.0（2026-09-12）——LoopX 控制面 + 无孤儿进程树
+
+v5.11.0 之后首个打 tag 的版本：同时包含 v5.12.0 记忆面工作（见下）与 Pi 客户端。
+
+### 主要变更
 
 - **Pi 客户端**：`pi` / `pi-coding-agent`，skills + native + harness（无 team/agents）。原生层、`.pi/skills`、25 skill 全投放、ctx-agent、harness 策略、shell-bridge。
 - **MCP 诚实建模**：Pi 无内置 MCP，registry 记 `format: none`，收集器跳过；AIOS 工具经 extension 到达。
 - **`aios-pi-extension`**：4 工具、tool_call 门禁、策略硬注入、`/aios-root` + `/aios-policy`；`aios init --agent pi` 注册。
 - **RPC 驾驶器**：长连接 `pi --mode rpc` 会话。详见博客。
+- **LoopX harness 控制面**：结算门（类型化 envelope、`effectRef` 幂等、CAS 回写、append-only 结算日志、独立 `rex-harness verify`）；should-run 节奏门（cadence 梯 + 24h 占空比额度，仅 material 轮扣费）；无人值守档（`--unattended`：唯一一次封印只读绕行、连续 noop 静默停机）；只读 `aios harness dashboard`；宿主探针 fail-closed 与五项封印 `DREAM_PLANNING_CONTRACT`。
+- **不再产生孤儿进程**：三段式进程树清理（SIGTERM 组 → 3s 宽限 → SIGKILL 组 → 存活校验）；SIGKILL 后仍存活的树 fail-closed 拒绝进下一轮；SIGINT/SIGTERM 立即中止当前 turn；`--turn-timeout-ms` 为长验证任务显式放宽超时。
+- **aios-shell 卡死修复**：超时/取消杀整棵树并强制结算，孙子进程持有管道也不再挂起 MCP 调用。
 
 ## v5.12.0（2026-09-09）——记忆系统收尾：卫生、报表、迁移导入、分级加载
 

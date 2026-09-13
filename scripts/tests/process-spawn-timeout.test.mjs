@@ -84,3 +84,38 @@ test('spawnCommand settles a timed-out direct child', async () => {
     await fs.rm(rootDir, { recursive: true, force: true });
   }
 });
+
+test('spawnCommand kills grandchildren by process group so timed-out trees cannot orphan agents (POSIX)', { skip: process.platform === 'win32' }, async () => {
+  const rootDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-spawn-timeout-tree-'));
+  try {
+    const grandchildPath = path.join(rootDir, 'grandchild.mjs');
+    const parentPath = path.join(rootDir, 'parent.mjs');
+    const grandchildPidPath = path.join(rootDir, 'grandchild.pid');
+    await fs.writeFile(grandchildPath, [
+      'setInterval(() => {}, 1000);',
+    ].join('\n'), 'utf8');
+    /* 中文注释：父进程记录孙进程 pid 后自己常驻；超时必须把整组一起清掉。 */
+    await fs.writeFile(parentPath, [
+      "import fs from 'node:fs';",
+      "import { spawn } from 'node:child_process';",
+      `const child = spawn(process.execPath, [${JSON.stringify(grandchildPath)}], { stdio: 'ignore' });`,
+      `fs.writeFileSync(${JSON.stringify(grandchildPidPath)}, String(child.pid), 'utf8');`,
+      'setInterval(() => {}, 1000);',
+    ].join('\n'), 'utf8');
+
+    const startedAt = Date.now();
+    const result = await spawnCommand(process.execPath, [parentPath], { timeoutMs: 1500 });
+    const elapsedMs = Date.now() - startedAt;
+
+    assert.equal(result.timedOut, true);
+    assert.equal(result.treeAlive, false);
+    assert.equal(typeof result.killEscalated, 'boolean');
+    assert.ok(elapsedMs < 6000, `tree cleanup settled after ${elapsedMs}ms`);
+
+    const grandchildPid = Number.parseInt(await fs.readFile(grandchildPidPath, 'utf8'), 10);
+    assert.equal(Number.isInteger(grandchildPid) && grandchildPid > 0, true);
+    assert.equal(await waitForExit(grandchildPid), true);
+  } finally {
+    await fs.rm(rootDir, { recursive: true, force: true });
+  }
+});

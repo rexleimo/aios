@@ -223,6 +223,21 @@ This project exposes a structural knowledge graph via the `code-review-graph` MC
 When an active structured-plan task has implementation targets, call AIOS MCP `aios_plan_task` with `action="propose_context"`, the task id, and workspace-relative targets when the task has none. The tool derives target, caller, callee, and test candidates from codemap, but it does not modify the active plan. Present the candidate refs to a human. An explicit human-controlled CLI confirmation with `aios plan task <id> --confirm-context-candidates` (optionally repeated `--candidate-ref <ref>`) activates selected refs for orchestration; it is a process boundary, not an identity/authentication boundary. Do not claim context will be delivered before that command succeeds.
 <!-- AIOS CODEMAP END -->
 
+
+<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
+## Memory Trigger Contract (记忆触发契约)
+
+确定性数据面（hook / 插件）自动注入召回；以下语义触发点由 agent 执行：
+
+- 新会话第一条消息：先 `memory_recall`（MCP `aios-memory` 工具，或 `aios memo search`）检索相关记忆再开工。
+- 用户说 继续 / 接着做 / resume：先 `memory_recall` + `node scripts/aios.mjs session start --json` 恢复上下文，不凭空猜上次进度。
+- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write` 落 memo（本地写入，免确认）。
+- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
+- 无 hook 面的客户端（gemini / hermes / workbuddy）没有自动注入，必须主动调用 MCP `aios-memory` 工具，不要等注入。
+- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
+- Dream/dreaming lane 只产 proposal（五项权限封印，DREAM_PLANNING_CONTRACT）；晋升回真实状态需 operator 批准 + 边界扫描。
+<!-- AIOS MEMORY TRIGGER CONTRACT END -->
+
 <!-- AIOS NATIVE BEGIN -->
 AIOS native enhancements are active in this repository. This is the shared
 workflow core for every supported coding client.
@@ -319,16 +334,3 @@ Client overlays may describe only verified native capabilities. They must not
 change this workflow, claim unsupported hooks, or imply that every task uses a
 team, harness, browser, or model-routing path.
 <!-- AIOS NATIVE END -->
-
-<!-- AIOS MEMORY TRIGGER CONTRACT BEGIN -->
-## Memory Trigger Contract (记忆触发契约)
-
-确定性数据面（hook / 插件）自动注入召回；以下语义触发点由 agent 执行：
-
-- 新会话第一条消息：先 `memory_recall`（MCP `aios-memory` 工具，或 `aios memo search`）检索相关记忆再开工。
-- 用户说 继续 / 接着做 / resume：先 `memory_recall` + `node scripts/aios.mjs session start --json` 恢复上下文，不凭空猜上次进度。
-- 本轮产生已验证的结论 / 修复 / 偏好：立即 `memory_write` 落 memo（本地写入，免确认）。
-- 里程碑完成、声称"做完"之前：`memory_checkpoint` 写检查点。
-- 无 hook 面的客户端（gemini / hermes / workbuddy）没有自动注入，必须主动调用 MCP `aios-memory` 工具，不要等注入。
-- 不确定要不要记：记（宁多勿漏，dream / GC 负责清理）。
-<!-- AIOS MEMORY TRIGGER CONTRACT END -->

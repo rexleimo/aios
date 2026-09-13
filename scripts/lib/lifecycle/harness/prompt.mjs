@@ -43,6 +43,7 @@ export function buildIterationPrompt({
   summary = null,
   offloadCanvas = null,
   rootDir = null,
+  bypass = false,
 } = {}) {
   const continuityText = continuity?.summary
     ? `上一轮连续性总结：${continuity.summary}`
@@ -74,6 +75,15 @@ export function buildIterationPrompt({
     `上一轮 outcome：${lastOutcome}`,
     `上一轮 failureClass：${lastFailure}`,
     '',
+    ...(bypass ? [
+      '--- Safe-Bypass 约束（代码级封印轮）---',
+      '本轮是操作者门前的唯一一次只读绕行 turn：',
+      '- 只允许 steering / 分析 / 文档整理；不得执行受保护动作。',
+      '- 不得修改交付状态；即使完成了工作也不得声称 material 进展。',
+      '- 完成后返回 outcome=human-gate，等待操作者显式决定。',
+      '--- End Safe-Bypass ---',
+      '',
+    ] : []),
     ...directiveLines,
     '请完成一轮工作后只返回一个 JSON 对象，不要输出解释文字，不要输出 Markdown。',
     'JSON 必须包含这些字段：',

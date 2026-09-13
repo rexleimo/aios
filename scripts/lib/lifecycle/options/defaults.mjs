@@ -147,6 +147,15 @@ export function createDefaultHarnessRunOptions() {
     lifecycleHooks: true,
     dryRun: false,
     json: false,
+    // 无人值守档位（默认关闭：attended 行为不变，显式 resume 仍是默认重入方式）
+    unattended: false,
+    quota: null,
+    cadenceBaseMs: null,
+    cadenceMaxMs: null,
+    quietThreshold: null,
+    safeBypass: true,
+    // 单轮 provider 超时（毫秒，null 用内置默认 30 分钟）；长验证任务可显式放宽。
+    turnTimeoutMs: null,
   };
 }
 
@@ -166,6 +175,22 @@ export function createDefaultHarnessResumeOptions() {
     workspaceRoot: '',
     maxIterations: 20,
     lifecycleHooks: true,
+    json: false,
+    unattended: false,
+    quota: null,
+    cadenceBaseMs: null,
+    cadenceMaxMs: null,
+    quietThreshold: null,
+    safeBypass: true,
+    // 单轮 provider 超时（毫秒，null 用内置默认 30 分钟）；长验证任务可显式放宽。
+    turnTimeoutMs: null,
+  };
+}
+
+export function createDefaultHarnessDashboardOptions() {
+  return {
+    subcommand: 'dashboard',
+    workspaceRoot: '',
     json: false,
   };
 }

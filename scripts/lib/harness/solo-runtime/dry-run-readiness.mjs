@@ -18,14 +18,18 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { probeHost } from '../host-probes.mjs';
+
 /**
  * 执行 dry-run readiness 预检
  * @param {string} rootDir - workspace 根目录
- * @param {object} opts - { sessionId, provider, worktree, resume }
+ * @param {object} opts - { sessionId, provider, worktree, resume, hostProbe }
+ *   hostProbe: true 时对已注册宿主执行真实探测（unattended 档自动启用）；
+ *   已注册宿主探测失败 → blocked（fail-closed）。
  * @returns {{ level: string, checks: Array, reasons: Array, nextActions: Array }}
  */
 export function evaluateDryRunReadiness(rootDir, opts = {}) {
-  const { sessionId = '', provider = '', worktree = null, resume = false } = opts;
+  const { sessionId = '', provider = '', worktree = null, resume = false, hostProbe = false } = opts;
   const worktreeEnabled = worktree === true || (worktree && typeof worktree === 'object' && worktree.enabled === true);
   const checks = [];
   const reasons = [];
@@ -100,6 +104,19 @@ export function evaluateDryRunReadiness(rootDir, opts = {}) {
       nextActions.push('Check the session ID or omit --resume to start a new session.');
     }
     checks.push({ label: 'session-resume', status: sessionStatus, detail: sessionDetail });
+  }
+
+  // ── Check 5: 宿主探针（opt-in；unattended 档 fail-closed） ──
+  if (hostProbe && provider) {
+    const probe = probeHost({ host: provider });
+    if (probe.registered) {
+      checks.push({ label: 'host-probe', status: probe.ok ? 'ok' : 'fail', detail: probe.detail });
+      if (!probe.ok) {
+        level = 'blocked';
+        reasons.push(probe.detail);
+        nextActions.push(`Fix the ${provider} host installation or switch providers; unattended runs refuse to start on an unsupported host.`);
+      }
+    }
   }
 
   // ── Deduplicate nextActions ──

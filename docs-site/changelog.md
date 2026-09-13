@@ -7,12 +7,19 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
-## Unreleased — Pi coding agent as a first-class client
+## v5.13.0 (2026-09-12) — LoopX Control Plane + No-Orphan Process Trees
+
+First tagged release since v5.11.0 — it also ships the v5.12.0 memory-plane work (below) and the Pi client.
+
+### What changed
 
 - **Pi client**: `pi` / `pi-coding-agent` with skills, native, and harness capabilities (no `team`/`agents` — no sub-agents upstream). Native layer, `.pi/skills`, all 25 skills projected, `ctx-agent` one-shot/interactive, harness one-shot strategy, shell-bridge support.
 - **MCP-less, honestly**: Pi has no built-in MCP surface; the registry records `format: none` with empty scopes so collectors skip it. AIOS tools reach Pi through the new extension, not config migration.
 - **`aios-pi-extension`** (`packages/aios-pi`): 4 model-callable tools, `tool_call` safety gate, `before_agent_start` policy injection, `/aios-root` + `/aios-policy`; `aios init --agent pi` registers it.
 - **RPC driver** (`scripts/lib/pi/rpc-client.mjs`): long-lived `pi --mode rpc` sessions with settle detection. See: [Pi client blog post](/blog/2026-09-pi-client-aios/).
+- **LoopX harness control plane**: turn settlement gate (typed envelope, `effectRef` idempotency, CAS write-back, append-only journal, independent `rex-harness verify`), should-run pacing (cadence ladder + 24 h duty-ratio quota where only material turns charge), unattended tier (`--unattended`: one sealed read-only safe-bypass turn, unchanged-poll quiet shutdown), read-only `aios harness dashboard`, host probes (fail-closed) and the five-seal `DREAM_PLANNING_CONTRACT` embedded in proposals/receipts.
+- **No more orphan agents**: staged process-tree termination (SIGTERM group → 3 s grace → SIGKILL group → liveness verify); timed-out trees that survive SIGKILL fail closed instead of overlapping the next iteration; SIGINT/SIGTERM abort the active turn; `--turn-timeout-ms` grants long verification turns more time explicitly.
+- **aios-shell stall fix**: timeouts/cancellations kill the whole tree and force-settle even when a background grandchild holds the pipe, so MCP tool calls can no longer hang.
 
 ## v5.12.0 (2026-09-09) — Memory Plane Closeout: Hygiene, Reporting, Migration Import, Tiered AgentView
 

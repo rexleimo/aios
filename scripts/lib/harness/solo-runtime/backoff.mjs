@@ -80,8 +80,10 @@ export function resolveSoloBackoffState({ previous = null, outcome = {}, nowIso 
     : 0;
   const nextConsecutiveFailures = prevConsecutiveFailures + 1;
 
-  // 只有 infra-retry + runtime-error/tool-error 才走退避
-  if (normalizedOutcome === 'infra-retry' && (failureClass === 'runtime-error' || failureClass === 'tool-error')) {
+  // 只有 infra-retry + 可重试失败类才走退避；rate-limited / provider-overloaded
+  // 有专属节奏（见 should-run/cadence），host-unsupported / budget-exhausted 不允许盲目重试。
+  const RETRYABLE_FAILURE_CLASSES = new Set(['runtime-error', 'tool-error', 'rate-limited', 'provider-overloaded']);
+  if (normalizedOutcome === 'infra-retry' && RETRYABLE_FAILURE_CLASSES.has(failureClass)) {
     const previousDelay = Number.isFinite(current.nextDelayMs) ? Math.max(0, Math.floor(current.nextDelayMs)) : 0;
     const nextDelayMs = previousDelay > 0 ? Math.min(previousDelay * 2, BACKOFF_CAP_MS) : BACKOFF_BASE_MS;
     return {

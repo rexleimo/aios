@@ -5,7 +5,11 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 
 # 변경 로그
 
-## Unreleased——Pi coding agent 퍼스트클래스 지원
+## v5.13.0 (2026-09-12) — LoopX 컨트롤 플레인 + 고아 프로세스 제거
+
+v5.11.0 이후 첫 태그 릴리스. v5.12.0 메모리 작업(아래)과 Pi 클라이언트도 포함합니다.
+
+### 변경 내용
 
 - **Pi 클라이언트**: `pi` / `pi-coding-agent` (skills + native + harness).
 - **MCP 정직 모델링**: `format: none`, 수집기 건너뜀.
@@ -13,6 +17,9 @@ description: 릴리스 이력, 업그레이드 안내, 관련 문서 링크.
 - **`aios-pi-extension`**: 도구 4종, tool_call 게이트, policy 주입.
   `aios init --agent pi` 등록.
 - **RPC 드라이버**: 상주 `pi --mode rpc` 세션.
+- **LoopX harness 컨트롤 플레인**: 턴 정산 게이트(타입드 envelope, `effectRef` 멱등성, CAS 쓰기, append-only 저널, 독립 `rex-harness verify`), should-run 페이싱(cadence 래더 + 24h 듀티 쿼터, material 턴만 과금), 무인 티어(`--unattended`: 봉인된 읽기 전용 우회 1회, 연속 noop 조용한 종료), 읽기 전용 `aios harness dashboard`, 호스트 프로브 + 5개 봉인 `DREAM_PLANNING_CONTRACT`.
+- **고아 에이전트 제거**: 3단계 프로세스 트리 종료(SIGTERM 그룹 → 3초 → SIGKILL 그룹 → 생존 확인). SIGKILL 후에도 남으면 fail-closed로 다음 이터레이션을 시작하지 않으며, SIGINT/SIGTERM은 활성 턴을 즉시 중단, `--turn-timeout-ms`로 장시간 검증을 명시적으로 연장.
+- **aios-shell 정지 수정**: 타임아웃/취소 시 트리 전체를 정리하고 강제 정산. 손자 프로세스가 파이프를 잡고 있어도 MCP 호출이 멈추지 않습니다.
 
 ## v5.12.0（2026-09-09）——메모리 시스템 마무리: 하이진, 리포트, 마이그레이션 임포트, 티어 로딩
 

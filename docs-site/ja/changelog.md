@@ -5,7 +5,11 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 
 # 変更履歴
 
-## Unreleased——Pi coding agent ファーストクラス対応
+## v5.13.0（2026-09-12）——LoopX コントロールプレーン + 孤児プロセス根絶
+
+v5.11.0 以来の初タグリリース。v5.12.0 のメモリ面（下記）と Pi クライアントも含みます。
+
+### 変更内容
 
 - **Pi クライアント**：`pi` / `pi-coding-agent`（skills + native + harness）。
 - **MCP 正直モデリング**：`format: none`、コレクターはスキップ。
@@ -13,6 +17,9 @@ description: リリース履歴、アップグレード情報、関連ドキュ�
 - **`aios-pi-extension`**：ツール 4 件、tool_call ゲート、policy 注入。
   `aios init --agent pi` で登録。
 - **RPC ドライバ**：常駐 `pi --mode rpc` セッション。
+- **LoopX harness 制御面**：精算ゲート（型付き envelope、`effectRef` 冪等、CAS 書き戻し、追記型ジャーナル、独立 `rex-harness verify`）、should-run ペーシング（cadence ラダー + 24h デューティ比クォータ、material ターンのみ課金）、無人ティア（`--unattended`：封印された読み取り専用バイパス 1 回、連続 noop で静穏シャットダウン）、読み取り専用 `aios harness dashboard`、ホストプローブ + 五封印 `DREAM_PLANNING_CONTRACT`。
+- **孤児エージェント根絶**：三段階プロセスツリー終了（SIGTERM グループ → 3 秒 → SIGKILL グループ → 生存確認）。SIGKILL 後も残る場合は fail-closed で次イテレーションへ進まず、SIGINT/SIGTERM はアクティブターンを即中断、`--turn-timeout-ms` で長時間検証を明示延長。
+- **aios-shell ストール修正**：タイムアウト/キャンセル時にツリー全体を終了し強制精算。孫プロセスがパイプを保持していても MCP 呼び出しがハングしません。
 
 ## v5.12.0（2026-09-09）——メモリシステム仕上げ：ハイジーン、レポート、移行インポート、ティアローディング
 
