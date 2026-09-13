@@ -147,7 +147,12 @@ export async function evaluateContextReconciliation({
   const declaredPaths = uniqueSorted(packet.task?.targets || []);
   const undeclaredPaths = actualPaths.filter((filePath) => !isExecutionContextMutationDeclared(packet, filePath, { rootDir }));
   const actualPathKeys = new Set(actualPaths.map((filePath) => comparisonWorkspacePath(rootDir, filePath)));
-  const missingDeclaredPaths = declaredPaths.filter((filePath) => !actualPathKeys.has(comparisonWorkspacePath(rootDir, filePath)));
+  /* 中文注释：missing 判定必须用声明原文做工作区归一化；declaredPaths 是展示归一化
+     （uniqueSorted 会剥掉绝对路径的前导斜杠），用它比较会把绝对声明误判为缺失。 */
+  const rawDeclaredPaths = Array.isArray(packet.task?.targets) ? packet.task.targets : [];
+  const missingDeclaredPaths = uniqueSorted(
+    rawDeclaredPaths.filter((filePath) => !actualPathKeys.has(comparisonWorkspacePath(rootDir, filePath))),
+  );
   const workspaceObservationUnavailable = workspaceObservation?.available === false;
   const wouldBlockReasons = [
     ...(undeclaredPaths.length > 0 ? ['undeclared_target'] : []),
