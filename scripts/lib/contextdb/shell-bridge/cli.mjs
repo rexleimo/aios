@@ -87,11 +87,11 @@ export function validateOptions(opts) {
   ]);
 
   if (!validAgents.has(opts.agent)) {
-    throw new Error(`--agent must be one of: ${[...validAgents].join(', ')}`);
+    throw new Error(`--agent must be one of: ${[...validAgents].join(', ')} (if you expect a newer client like pi-coding-agent, the AIOS runtime is stale — run: node scripts/aios.mjs update --self-update)`);
   }
 
   if (!validCommands.has(opts.command)) {
-    throw new Error(`--command must be one of: ${[...validCommands].join(', ')}`);
+    throw new Error(`--command must be one of: ${[...validCommands].join(', ')} (if you expect a newer command like pi, the AIOS runtime is stale — run: node scripts/aios.mjs update --self-update)`);
   }
 
   if (CLIENT_DEFINITIONS[opts.command]) {

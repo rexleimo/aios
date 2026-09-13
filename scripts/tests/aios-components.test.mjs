@@ -569,6 +569,9 @@ test('windows shell uninstall removes managed block from BOM-prefixed PowerShell
 test('shell install reuses existing ContextDB runtime without reinstall', async () => {
   const rootDir = await makeTemp('aios-shell-runtime-root-');
   const rcFile = path.join(rootDir, '.zshrc');
+  // 中文注释：隔离 homeDir，避免测试把真机 ~/.aios/bin 的 shim 烘焙成临时 root。
+  const homeDir = path.join(rootDir, 'home');
+  await mkdir(homeDir, { recursive: true });
   const mcpDir = await makeFakeMcpServer(rootDir);
   const compiledCli = path.join(mcpDir, 'dist', 'contextdb', 'cli.js');
   const tsxPath = path.join(mcpDir, 'node_modules', '.bin', 'tsx');
@@ -582,7 +585,7 @@ test('shell install reuses existing ContextDB runtime without reinstall', async 
     called = true;
   };
 
-  await installContextDbShell({ rootDir, rcFile, platform: 'darwin', commandRunner });
+  await installContextDbShell({ rootDir, rcFile, platform: 'darwin', homeDir, commandRunner });
   assert.equal(called, false);
 });
 
