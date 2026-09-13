@@ -4,13 +4,13 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.13.0（2026-09-12）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.14.0（2026-09-13）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
 >
-> v5.13.0 重点包含：LoopX 控制面采纳（结算门 / should-run 节奏 + 配额 / 无人值守档 / 只读 dashboard / 宿主探针与 dream 五项封印）、进程树生命周期加固（三段式清理、未清干净 fail-closed、SIGINT 中止当前 turn、`--turn-timeout-ms`）、aios-shell 强制结算卡死修复；同时首次打包 v5.12.0 记忆面与 Pi 客户端（见下）。无破坏性变更。
+> v5.14.0 重点包含：LoopX 控制面采纳（结算门 / should-run 节奏 + 配额 / 无人值守档 / 只读 dashboard / 宿主探针与 dream 五项封印）、进程树生命周期加固（三段式清理、未清干净 fail-closed、SIGINT 中止当前 turn、`--turn-timeout-ms`）、aios-shell 强制结算卡死修复；同时首次打包 v5.12.0 记忆面与 Pi 客户端（见下）。无破坏性变更。
 >
 > v5.12.0 重点包含：记忆优化 backlog 13 项全部关闭——memo 卫生命令（只读体检 + 归档/轮替零删除）、`aios memory report` 全记忆面报表、`aios import` 迁移导入器（Claude/Continue/Roo/CONVENTIONS → 受治理候选）、渐进披露 search + pinned 预算、AgentView T0-T3 分级加载、Autodream Phase B opt-in 自动触发、本地 embedding 粗排（默认关）、真实语料评测基线 top-1 98%。无破坏性变更。
 
-## [5.13.0] - 2026-09-12
+## [5.14.0] - 2026-09-13
 
 v5.11.0 之后的首个发布版本：同时打包 v5.12.0 记忆面工作、Pi 客户端、LoopX 控制面采纳与一轮进程生命周期加固。
 

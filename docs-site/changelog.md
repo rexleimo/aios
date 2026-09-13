@@ -7,7 +7,7 @@ description: Release history, upgrade notes, and links to detailed docs updates.
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
-## v5.13.0 (2026-09-12) — LoopX Control Plane + No-Orphan Process Trees
+## v5.14.0 (2026-09-13) — LoopX Control Plane + No-Orphan Process Trees
 
 First tagged release since v5.11.0 — it also ships the v5.12.0 memory-plane work (below) and the Pi client.
 

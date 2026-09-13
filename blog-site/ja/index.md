@@ -22,7 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
-- [v5.13.0: LoopX コントロールプレーン + 孤児プロセス根絶](2026-09-v513-loopx-control-plane.md) — 精算ターン、無人リズム、孤児ゼロ
+- [v5.14.0: LoopX コントロールプレーン + 孤児プロセス根絶](2026-09-v514-loopx-control-plane.md) — 精算ターン、無人リズム、孤児ゼロ
 - [Pi coding agent が AIOS ファーストクラスクライアントに](2026-09-pi-client-aios.md) — skills、extension、RPC
 - [v5.8.1: エージェントがフリーズしない — aios-shell 停止修正と LLM の意味判断による要件明確化](2026-08-v581-stall-fix-llm-judged-grilling.md)
 - [v5.8.0: AIOS が安全に自己進化する — Session Memory、証拠ゲート、ロールバック可能な昇格](2026-08-v580-governed-self-evolution.md)

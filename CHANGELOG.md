@@ -6,7 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-## [5.13.0] - 2026-09-12
+## [5.14.0] - 2026-09-13
 
 First tagged release since v5.11.0: it ships the v5.12.0 memory-plane work (section below), the Pi client, the LoopX control-plane adoption, and a process-lifecycle hardening pass that removes the last known long-task stall/orphan classes.
 

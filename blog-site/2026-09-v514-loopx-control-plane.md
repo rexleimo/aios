@@ -1,13 +1,13 @@
 ---
-title: "v5.13.0: LoopX Control Plane + No-Orphan Process Trees"
-description: "AIOS v5.13.0 settles provider turns into contracts, paces unattended runs, kills whole process trees on timeout, and un-sticks aios-shell. v5.13.0."
+title: "v5.14.0: LoopX Control Plane + No-Orphan Process Trees"
+description: "AIOS v5.14.0 settles provider turns into contracts, paces unattended runs, kills whole process trees on timeout, and un-sticks aios-shell. v5.14.0."
 date: 2026-09-13
-tags: ["AIOS", "harness", "release", "settlement", "v5.13.0"]
+tags: ["AIOS", "harness", "release", "settlement", "v5.14.0"]
 ---
 
-# v5.13.0: LoopX Control Plane + No-Orphan Process Trees
+# v5.14.0: LoopX Control Plane + No-Orphan Process Trees
 
-v5.13.0 is the first tagged release since v5.11.0. Besides the v5.12.0 memory-plane work and the Pi client, it brings a control-plane adoption for the long-running harness — and the last two kill-the-stall fixes our own field reports demanded.
+v5.14.0 is the first tagged release since v5.11.0. Besides the v5.12.0 memory-plane work and the Pi client, it brings a control-plane adoption for the long-running harness — and the last two kill-the-stall fixes our own field reports demanded.
 
 ## Settled turns, not hopeful turns
 
@@ -21,7 +21,7 @@ The should-run gate decides run, wait, ask, or quiet before every turn: a cadenc
 
 Some verification turns legitimately run longer than the 30-minute default. When the timeout fired, AIOS killed the direct child only — the provider CLI underneath kept running as an orphan, still editing the same workspace, while the loop marched into the next iteration. Two agents, one workspace, no one told.
 
-v5.13.0 spawns every turn detached and cleans the whole process group in three stages (SIGTERM group, grace, SIGKILL group, verify). If the tree still refuses to die after SIGKILL, the loop stops instead of overlapping. And because not every long task should be cut, `--turn-timeout-ms` makes the cap explicit per run.
+v5.14.0 spawns every turn detached and cleans the whole process group in three stages (SIGTERM group, grace, SIGKILL group, verify). If the tree still refuses to die after SIGKILL, the loop stops instead of overlapping. And because not every long task should be cut, `--turn-timeout-ms` makes the cap explicit per run.
 
 ## The tool call that never came back
 
@@ -29,4 +29,4 @@ The same class lived in the shell MCP: a command that left a background grandchi
 
 ## Upgrade
 
-Grab the installer scripts from the v5.13.0 release assets and re-run them; changelogs ship in English, Chinese, Japanese, and Korean.
+Grab the installer scripts from the v5.14.0 release assets and re-run them; changelogs ship in English, Chinese, Japanese, and Korean.

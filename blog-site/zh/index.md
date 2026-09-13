@@ -20,7 +20,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 
 ## 最新文章
 
-- [v5.13.0：LoopX 控制面 + 孤儿进程终结](2026-09-v513-loopx-control-plane.md) — 结算契约、无人值守节奏、无孤儿进程树
+- [v5.14.0：LoopX 控制面 + 孤儿进程终结](2026-09-v514-loopx-control-plane.md) — 结算契约、无人值守节奏、无孤儿进程树
 - [Pi coding agent 成为 AIOS 一等公民客户端](2026-09-pi-client-aios.md) — skills、extension 与 RPC 驱动
 - [v5.8.1：Agent 不再卡死——aios-shell 冻结修复与 LLM 语义判断的需求澄清](2026-08-v581-stall-fix-llm-judged-grilling.md)
 - [v5.8.0：AIOS 安全地自我迭代——Session Memory、证据门禁与可回滚晋级](2026-08-v580-governed-self-evolution.md)
