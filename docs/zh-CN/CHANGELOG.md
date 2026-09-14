@@ -4,7 +4,9 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.14.0（2026-09-13）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.15.0（2026-09-14）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+>
+> v5.15.0 重点包含：Pi 扩展新增只读 `aios_codemap_search` 工具（复用 `search --source code`），install/update 自动带到用户侧。无破坏性变更。
 >
 > v5.14.0 重点包含：LoopX 控制面采纳（结算门 / should-run 节奏 + 配额 / 无人值守档 / 只读 dashboard / 宿主探针与 dream 五项封印）、进程树生命周期加固（三段式清理、未清干净 fail-closed、SIGINT 中止当前 turn、`--turn-timeout-ms`）、aios-shell 强制结算卡死修复；同时首次打包 v5.12.0 记忆面与 Pi 客户端（见下）。无破坏性变更。
 >
