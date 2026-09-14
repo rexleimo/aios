@@ -165,6 +165,7 @@ undefined/
 .workbuddy/skills/
 # Pi: only the generated skill projection is disposable; sessions/trust stay local
 .pi/skills/
+.pi/.aios-native-sync.json
 # Windows drive-letter path join artifacts (installer temp dirs written relative to cwd)
 C:/
 

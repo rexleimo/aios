@@ -265,6 +265,44 @@ export async function main(argv = process.argv.slice(2)) {
     } catch (err) {
       console.warn(`[warn] Pi extension registration: ${err.message}`);
     }
+    // 2d. Pi MCP bridge — Pi core has no MCP surface; install the pinned
+    // MCP-client extension and seed AIOS-managed servers into the Pi-global
+    // mcp.json so Pi gains MCP capability on install. Network failures stay
+    // warnings: offline machines keep the extension + project .mcp.json path.
+    try {
+      const { getClientHomes } = await import('./lib/platform/paths.mjs');
+      const {
+        buildAiosPiMcpServers,
+        ensurePiMcpAdapter,
+        resolvePiMcpJsonPath,
+      } = await import('./lib/components/pi/mcp-adapter.mjs');
+      const { execFile } = await import('node:child_process');
+      const run = (cmd, args) => new Promise((resolveRun, rejectRun) => {
+        // Windows npm shims (pi.cmd/pi.ps1) only resolve through a shell;
+        // args are AIOS-controlled constants, never user input.
+        const options = process.platform === 'win32' ? { timeout: 120000, shell: true } : { timeout: 120000 };
+        execFile(cmd, args, options, (error, stdout, stderr) => {
+          if (error) {
+            rejectRun(new Error(`pi ${args.join(' ')} failed: ${String(stderr || error.message).trim()}`));
+            return;
+          }
+          resolveRun({ stdout: String(stdout || '') });
+        });
+      });
+      const mcp = await ensurePiMcpAdapter({
+        mcpJsonPath: resolvePiMcpJsonPath(getClientHomes(process.env).pi),
+        servers: buildAiosPiMcpServers({ aiosRoot: AIOS_ROOT }),
+        dryRun,
+        io: console,
+        run,
+      });
+      console.log(`  Pi MCP (mcp.json ${mcp.mcpAction}, adapter ${mcp.adapter}): ${mcp.mcpJsonPath}`);
+      if (mcp.keptDiffers.length > 0) {
+        console.log(`  Pi MCP kept user-edited servers: ${mcp.keptDiffers.join(', ')}`);
+      }
+    } catch (err) {
+      console.warn(`[warn] Pi MCP bridge setup: ${err.message}`);
+    }
   }
 
   console.log('');

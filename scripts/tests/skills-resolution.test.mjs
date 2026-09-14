@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { mkdtemp, mkdir, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,7 +7,7 @@ import test from 'node:test';
 
 import { ALL_CLIENTS } from '../lib/clients/registry.mjs';
 import { analyzeCatalogEntries, resolveCatalogEntries } from '../lib/components/skills/catalog.mjs';
-import { doctorContextDbSkills } from '../lib/components/skills/doctor.mjs';
+import { doctorContextDbSkills, removeLegacySharedRootInstalls } from '../lib/components/skills/doctor.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -147,4 +148,46 @@ test('skills doctor reports legacy shared-root installs under the agents home', 
   assert.ok(logs.some((line) => line.includes('provider-a (client=claude)')));
   assert.ok(!logs.some((line) => line.includes('user-owned (')));
   assert.equal(result.warnings >= 1, true);
+});
+
+async function makeLegacyAgentsHome() {
+  const agentsHome = await makeTemp('aios-agents-home-remove-');
+  const legacyDir = path.join(agentsHome, 'skills', 'provider-a');
+  await mkdir(legacyDir, { recursive: true });
+  await writeFile(path.join(legacyDir, 'SKILL.md'), '# provider-a\n', 'utf8');
+  await writeFile(path.join(legacyDir, '.aios-skill-install.json'), JSON.stringify({
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'installed-skill',
+    skillName: 'provider-a',
+    client: 'claude',
+    scope: 'global',
+    installMode: 'copy',
+  }), 'utf8');
+  const userOwnedDir = path.join(agentsHome, 'skills', 'user-owned');
+  await mkdir(userOwnedDir, { recursive: true });
+  await writeFile(path.join(userOwnedDir, 'SKILL.md'), '# user\n', 'utf8');
+  return agentsHome;
+}
+
+test('legacy shared-root removal previews under dry-run without deleting', async () => {
+  const agentsHome = await makeLegacyAgentsHome();
+  const logs = [];
+  const result = removeLegacySharedRootInstalls(agentsHome, {
+    dryRun: true,
+    io: { log: (line) => logs.push(String(line)) },
+  });
+  assert.deepEqual(result.removed, ['provider-a']);
+  assert.ok(logs.some((line) => line.includes('[plan] would remove legacy shared-root skill: provider-a')));
+  assert.ok(fs.existsSync(path.join(agentsHome, 'skills', 'provider-a', '.aios-skill-install.json')));
+  assert.ok(fs.existsSync(path.join(agentsHome, 'skills', 'user-owned', 'SKILL.md')));
+});
+
+test('legacy shared-root removal deletes only AIOS-managed copies', async () => {
+  const agentsHome = await makeLegacyAgentsHome();
+  const result = removeLegacySharedRootInstalls(agentsHome);
+  assert.deepEqual(result.removed, ['provider-a']);
+  assert.deepEqual(result.missing, []);
+  assert.ok(!fs.existsSync(path.join(agentsHome, 'skills', 'provider-a')));
+  assert.ok(fs.existsSync(path.join(agentsHome, 'skills', 'user-owned', 'SKILL.md')));
 });

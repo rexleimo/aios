@@ -48,6 +48,31 @@ export function collectLegacySharedRootInstalls(agentsHome) {
   return findings;
 }
 
+// 与 collectLegacySharedRootInstalls 配对的清理：只删除带 AIOS 托管
+// metadata（managedBy=aios）的条目；用户自有 skill（无 metadata）永远不动。
+// dryRun 只预览。返回 { removed, kept, missing } 三个名字数组。
+export function removeLegacySharedRootInstalls(agentsHome, { dryRun = false, io = null } = {}) {
+  const targets = collectLegacySharedRootInstalls(agentsHome).map((item) => item.name);
+  const removed = [];
+  const missing = [];
+  for (const name of targets) {
+    const targetPath = path.join(String(agentsHome || ''), 'skills', name);
+    if (dryRun) {
+      io?.log?.(`[plan] would remove legacy shared-root skill: ${name}`);
+      removed.push(name);
+      continue;
+    }
+    try {
+      fs.rmSync(targetPath, { recursive: true, force: true });
+      removed.push(name);
+    } catch (error) {
+      io?.log?.(`[warn] cannot remove legacy shared-root skill ${name}: ${error.message}`);
+      missing.push(name);
+    }
+  }
+  return { removed, kept: [], missing };
+}
+
 export function collectOverrideWarnings({ rootDir, projectRoot, catalog, clientName, selectedSkills, homes, io, manifest }) {
   if (isSourceRepoProjectRoot(rootDir, projectRoot)) {
     return 0;
