@@ -3,6 +3,7 @@
 // runnable under plain node --test. `run` executes resolved AIOS argv
 // and returns { text } content for the tool result.
 import {
+  codemapSearchArgs,
   memoRecallArgs,
   memoUsefulArgs,
   memoWriteArgs,
@@ -66,6 +67,19 @@ export function buildToolDefs({ Type, run } = {}) {
       async execute(_toolCallId, params) {
         const { text } = await run({ argv: skillSearchArgs(params || {}), json: true });
         return textResult(text);
+      },
+    },
+    {
+      name: 'aios_codemap_search',
+      label: 'AIOS codemap search',
+      description: 'Search codebase structure and code references (read-only codemap) before editing. Use to locate files, symbols, and callers.',
+      parameters: Type.Object({
+        query: Type.String({ description: 'Code search text (symbol, file path, or keyword)' }),
+        limit: Type.Optional(Type.Number({ description: 'Max results (default 10)' })),
+      }),
+      async execute(_toolCallId, params) {
+        const { text } = await run({ argv: codemapSearchArgs(params || {}), json: true });
+        return textResult(text, { argv: codemapSearchArgs(params || {}) });
       },
     },
   ];

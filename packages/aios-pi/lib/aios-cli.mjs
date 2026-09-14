@@ -84,3 +84,7 @@ export function memoUsefulArgs({ eventIds = [] } = {}) {
 export function skillSearchArgs({ query = '' } = {}) {
   return ['search', String(query || ''), '--json'];
 }
+
+export function codemapSearchArgs({ query = '', limit = 10 } = {}) {
+  return ['search', String(query || ''), '--source', 'code', '--limit', String(limit), '--json'];
+}

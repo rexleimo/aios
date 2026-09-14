@@ -10,6 +10,7 @@ import {
 } from '../../packages/aios-pi/lib/gates.mjs';
 import {
   AiosCliError,
+  codemapSearchArgs,
   memoRecallArgs,
   memoUsefulArgs,
   memoWriteArgs,
@@ -93,6 +94,7 @@ test('argv builders match the real aios CLI surface', () => {
   assert.deepEqual(memoWriteArgs({ text: 'pi done' }), ['memo', 'add', 'pi done']);
   assert.deepEqual(memoUsefulArgs({ eventIds: ['a', 'b'] }), ['memo', 'useful', 'a,b']);
   assert.deepEqual(skillSearchArgs({ query: 'harness' }), ['search', 'harness', '--json']);
+  assert.deepEqual(codemapSearchArgs({ query: 'buildToolDefs', limit: 5 }), ['search', 'buildToolDefs', '--source', 'code', '--limit', '5', '--json']);
 });
 
 function stubTypeBox() {
@@ -131,6 +133,7 @@ test('tool defs expose four AIOS tools with real argv', async () => {
     'aios_memory_write',
     'aios_memory_useful',
     'aios_skill_search',
+    'aios_codemap_search',
   ]);
   const out = await defs[0].execute('id-1', { query: 'pi', limit: 2 });
   assert.equal(out.content[0].text, 'OUT:memo search pi --limit 2');
@@ -145,7 +148,7 @@ test('extension factory wires tools, gates, session status, and commands', async
     runAios: async ({ argv }) => ({ text: `RUN:${argv.join(' ')}` }),
   });
   assert.equal(aiosRoot, '/fake-aios');
-  assert.equal(pi.tools.length, 4);
+  assert.equal(pi.tools.length, 5);
   assert.deepEqual(Object.keys(pi.events).sort(), ['before_agent_start', 'session_start', 'tool_call']);
   assert.deepEqual(Object.keys(pi.commands).sort(), ['aios-policy', 'aios-root']);
 
