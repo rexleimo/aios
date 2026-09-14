@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.15.0: Pi が本物の MCP 能力を獲得](2026-09-v515-pi-mcp-bridge.md) — codemap 検索、MCP ブリッジ、doctor 整理の対
 - [v5.14.0: LoopX コントロールプレーン + 孤児プロセス根絶](2026-09-v514-loopx-control-plane.md) — 精算ターン、無人リズム、孤児ゼロ
 - [Pi coding agent が AIOS ファーストクラスクライアントに](2026-09-pi-client-aios.md) — skills、extension、RPC
 - [v5.8.1: エージェントがフリーズしない — aios-shell 停止修正と LLM の意味判断による要件明確化](2026-08-v581-stall-fix-llm-judged-grilling.md)

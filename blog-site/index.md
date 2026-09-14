@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.15.0: Pi Gains Real MCP Capability](2026-09-v515-pi-mcp-bridge.md) — codemap search, MCP bridge into Pi, paired doctor cleanup
 - [v5.14.0: LoopX Control Plane + No-Orphan Process Trees](2026-09-v514-loopx-control-plane.md) — settled turns, paced unattended runs, no-orphan process trees
 - [Pi coding agent is now a first-class AIOS client](2026-09-pi-client-aios.md) — skills, extension, and RPC inside Pi
 - [v5.8.1: No More Frozen Agents — aios-shell Stall Fix and LLM-Judged Requirements Clarification](2026-08-v581-stall-fix-llm-judged-grilling.md)

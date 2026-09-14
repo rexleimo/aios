@@ -8,7 +8,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [5.15.0] - 2026-09-14
 
-- Pi extension codemap search
+### Added
+
+- Pi extension read-only `aios_codemap_search` tool (reuses `search --source code`), carried to users automatically by install/update.
+- Pi MCP bridge: `aios init --agent pi` now installs the pinned MCP-client adapter extension and seeds AIOS-managed servers (code-review-graph first, plus session-following aios-memory) into the Pi-global `mcp.json`, so Pi gains MCP capability on install. Merge never clobbers user-edited servers (kept + reported), and network failures degrade to warnings so offline machines keep the extension + project `.mcp.json` path (`scripts/lib/components/pi/mcp-adapter.mjs`, covered by `scripts/tests/pi-mcp-adapter.test.mjs`).
+- Skills doctor: `removeLegacySharedRootInstalls` cleanup paired with the legacy shared-root warning — removes only AIOS-managed copies (`managedBy=aios` metadata), never user-owned skills, with `dryRun` preview (covered by `scripts/tests/skills-resolution.test.mjs`).
+
+No breaking changes.
 
 ## [5.14.0] - 2026-09-13
 
