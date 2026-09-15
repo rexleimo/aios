@@ -1,6 +1,6 @@
 ## AIOS Native Pi Layer
 
-- Prefer repo-local `.pi/skills` for AIOS-managed project skills; user-level `~/.pi/agent/skills` stays personal.
+- AIOS-managed project skills live in the shared repo-local `.agents/skills` root (Pi scans it natively; AIOS never writes `.pi/skills`, which would make Pi skip the shared copy as an already-loaded duplicate). User-level `~/.pi/agent/skills` stays personal.
 - Keep work grounded in the AIOS runtime and verification flow.
 - Pi has no built-in MCP surface: AIOS tools reach Pi through the AIOS Pi extension, not config migration.
 - Headless runs use `pi -p` / `--mode json`; project-local `.pi` resources load only after trust — harness passes `-a/--approve` per run.

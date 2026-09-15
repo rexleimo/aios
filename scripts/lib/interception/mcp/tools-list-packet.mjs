@@ -43,8 +43,8 @@ export async function buildToolsListPacket({ result, workspaceRoot, sessionId, h
       strategy: 'compact-tools-catalog',
     },
     recall: [
-      `node scripts/aios.mjs refs read ${ref.refId}`,
-      `node scripts/aios.mjs refs grep "toolName" --ref ${ref.refId}`,
+      `aios refs read ${ref.refId}`,
+      `aios refs grep "toolName" --ref ${ref.refId}`,
     ],
     safety: {
       redacted: false,

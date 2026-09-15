@@ -4,6 +4,7 @@ import { inspectBootstrapTask } from '../../doctor-bootstrap-task.mjs';
 import { doctorBrowserMcp } from '../components/browser.mjs';
 import { doctorCodemap } from '../components/codemap.mjs';
 import { doctorNativeEnhancements } from '../components/native.mjs';
+import { doctorPiBridge } from '../components/pi/doctor.mjs';
 import { doctorContextDbShell } from '../components/shell.mjs';
 import { doctorContextDbSkills } from '../components/skills.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
@@ -142,7 +143,7 @@ export async function runDoctorSuite({
       id: 'doctor:shell',
       item: 'ContextDB shell wrappers and runtime',
       status: shellResult.effectiveWarnings > 0 ? 'warn' : 'ok',
-      fix: 'Run: node scripts/aios.mjs setup --components shell',
+      fix: 'Run: aios setup --components shell',
       note: `effectiveWarnings=${shellResult.effectiveWarnings}`,
     });
   } else {
@@ -166,7 +167,7 @@ export async function runDoctorSuite({
       id: 'doctor:skills',
       item: 'Skill install integrity and repo skill roots',
       status: skillsResult.effectiveWarnings > 0 ? 'warn' : 'ok',
-      fix: `Run: node scripts/aios.mjs setup --components skills --client ${client}`,
+      fix: `Run: aios setup --components skills --client ${client}`,
       note: `effectiveWarnings=${skillsResult.effectiveWarnings}`,
     });
   } else {
@@ -190,7 +191,7 @@ export async function runDoctorSuite({
       id: 'doctor:native',
       item: 'Repo-local native enhancement surfaces',
       status: nativeResult.errors > 0 ? 'error' : (nativeResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: `Run: node scripts/aios.mjs update --components native --client ${client}`,
+      fix: `Run: aios update --components native --client ${client}`,
       note: `errors=${nativeResult.errors}; effectiveWarnings=${nativeResult.effectiveWarnings}`,
     });
   } else {
@@ -198,6 +199,40 @@ export async function runDoctorSuite({
     addDoctorCheck(checks, {
       id: 'doctor:native',
       item: 'Repo-local native enhancement surfaces',
+      status: 'skip',
+      fix: 'Enable gate or run doctor with --profile standard/strict.',
+      note: `disabled for profile=${profile}`,
+    });
+  }
+
+  io.log('');
+  io.log('== doctor-pi-bridge ==');
+  if (isHarnessGateEnabled('doctor:pi-bridge', { profile, disabledGates, profiles: ['standard', 'strict'] })) {
+    const piBridgeDoctor = deps.doctorPiBridge ?? doctorPiBridge;
+    const piBridgeResult = await piBridgeDoctor({ aiosRoot: rootDir, env, io });
+    if (!piBridgeResult.skipped) {
+      effectiveWarns += piBridgeResult.effectiveWarnings + piBridgeResult.errors;
+      addDoctorCheck(checks, {
+        id: 'doctor:pi-bridge',
+        item: 'Pi coding agent MCP bridge (managed servers + adapter)',
+        status: piBridgeResult.errors > 0 ? 'error' : (piBridgeResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
+        fix: 'Run: aios init --agent pi',
+        note: `errors=${piBridgeResult.errors}; effectiveWarnings=${piBridgeResult.effectiveWarnings}; adapter=${piBridgeResult.adapter}`,
+      });
+    } else {
+      addDoctorCheck(checks, {
+        id: 'doctor:pi-bridge',
+        item: 'Pi coding agent MCP bridge (managed servers + adapter)',
+        status: 'skip',
+        fix: 'Install the Pi coding agent or run: aios init --agent pi',
+        note: 'pi not detected on this machine',
+      });
+    }
+  } else {
+    logSkippedGate(io, 'doctor:pi-bridge', profile);
+    addDoctorCheck(checks, {
+      id: 'doctor:pi-bridge',
+      item: 'Pi coding agent MCP bridge (managed servers + adapter)',
       status: 'skip',
       fix: 'Enable gate or run doctor with --profile standard/strict.',
       note: `disabled for profile=${profile}`,
@@ -270,7 +305,7 @@ export async function runDoctorSuite({
       id: 'doctor:browser',
       item: 'Browser MCP prerequisites and profile health',
       status: browserResult.errors > 0 ? 'error' : (browserResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: 'Run: node scripts/aios.mjs internal browser doctor --fix (or setup --components browser)',
+      fix: 'Run: aios internal browser doctor --fix (or setup --components browser)',
       note: `errors=${browserResult.errors}; effectiveWarnings=${browserResult.effectiveWarnings}; autoFixHealed=${browserResult.autoFixHealed ?? 0}`,
     });
     if (browserResult.errors > 0) {
@@ -297,7 +332,7 @@ export async function runDoctorSuite({
       id: 'doctor:codemap',
       item: 'Code review graph (CRG) installation and graph health',
       status: codemapResult.errors > 0 ? 'error' : (codemapResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-      fix: 'Run: node scripts/aios.mjs internal codemap doctor --fix',
+      fix: 'Run: aios internal codemap doctor --fix',
       note: `errors=${codemapResult.errors}; effectiveWarnings=${codemapResult.effectiveWarnings}`,
     });
     if (codemapResult.errors > 0) {

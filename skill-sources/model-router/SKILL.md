@@ -48,7 +48,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
 使用 `--profile` 或环境变量切换：
 
 ```bash
-node scripts/aios.mjs model-router route --task "..." --profile balanced --explain
+aios model-router route --task "..." --profile balanced --explain
 export AIOS_MODEL_ROUTER_PROFILE=premium
 ```
 
@@ -97,7 +97,7 @@ export AIOS_MODEL_ROUTER_PROFILE=premium
 用 `--explain` 查看为什么选中某个模型：
 
 ```bash
-node scripts/aios.mjs model-router route \
+aios model-router route \
   --task "用浏览器打开小红书发布页面，上传图片并填写标题" \
   --task-type browser-automation \
   --profile balanced \
@@ -127,15 +127,15 @@ node scripts/aios.mjs model-router route \
 3. 按 profile 调整：`balanced` 成本感知、`premium` 更积极升级、`budget` 更保守。
 4. 用 `--explain` 检查 `why` 与 `confidence`。
 5. 对复合任务按 `recommendedPhases` 拆成规划、实现、文档、审查等子任务。
-6. 记录/查看结果：`node scripts/aios.mjs model-router stats`。
+6. 记录/查看结果：`aios model-router stats`。
 
 ## 命令工具
 
 ```bash
-node scripts/aios.mjs model-router list
-node scripts/aios.mjs model-router route --task "build a beautiful landing page component" --task-type frontend --profile balanced --explain
-node scripts/aios.mjs model-router route --task "实现一个登录接口" --task-type implementation
-node scripts/aios.mjs model-router stats
+aios model-router list
+aios model-router route --task "build a beautiful landing page component" --task-type frontend --profile balanced --explain
+aios model-router route --task "实现一个登录接口" --task-type implementation
+aios model-router stats
 ```
 
 ## 环境变量

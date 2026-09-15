@@ -17,6 +17,7 @@ import {
   resolveAiosRoot,
   runAios,
   runAiosJson,
+  memoCheckpointArgs,
   skillSearchArgs,
 } from '../../packages/aios-pi/lib/aios-cli.mjs';
 import { buildToolDefs } from '../../packages/aios-pi/lib/tools.mjs';
@@ -92,6 +93,7 @@ test('runAiosJson parses JSON and fails closed otherwise', async () => {
 test('argv builders match the real aios CLI surface', () => {
   assert.deepEqual(memoRecallArgs({ query: 'pi client', limit: 3 }), ['memo', 'search', 'pi client', '--limit', '3']);
   assert.deepEqual(memoWriteArgs({ text: 'pi done' }), ['memo', 'add', 'pi done']);
+  assert.deepEqual(memoCheckpointArgs({ text: 'milestone reached' }), ['memo', 'checkpoint', 'milestone reached']);
   assert.deepEqual(memoUsefulArgs({ eventIds: ['a', 'b'] }), ['memo', 'useful', 'a,b']);
   assert.deepEqual(skillSearchArgs({ query: 'harness' }), ['search', 'harness', '--json']);
   assert.deepEqual(codemapSearchArgs({ query: 'buildToolDefs', limit: 5 }), ['search', 'buildToolDefs', '--source', 'code', '--limit', '5', '--json']);
@@ -118,7 +120,7 @@ function stubPi() {
   };
 }
 
-test('tool defs expose four AIOS tools with real argv', async () => {
+test('tool defs expose six AIOS tools with real argv', async () => {
   assert.throws(() => buildToolDefs({}), /requires \{ Type, run \}/u);
   const seen = [];
   const defs = buildToolDefs({
@@ -132,12 +134,16 @@ test('tool defs expose four AIOS tools with real argv', async () => {
     'aios_memory_recall',
     'aios_memory_write',
     'aios_memory_useful',
+    'aios_memory_checkpoint',
     'aios_skill_search',
     'aios_codemap_search',
   ]);
   const out = await defs[0].execute('id-1', { query: 'pi', limit: 2 });
   assert.equal(out.content[0].text, 'OUT:memo search pi --limit 2');
   assert.deepEqual(seen[0], ['memo', 'search', 'pi', '--limit', '2']);
+  const checkpoint = await defs[3].execute('id-2', { text: 'milestone reached' });
+  assert.equal(checkpoint.content[0].text, 'OUT:memo checkpoint milestone reached');
+  assert.deepEqual(seen[1], ['memo', 'checkpoint', 'milestone reached']);
 });
 
 test('extension factory wires tools, gates, session status, and commands', async () => {
@@ -148,7 +154,7 @@ test('extension factory wires tools, gates, session status, and commands', async
     runAios: async ({ argv }) => ({ text: `RUN:${argv.join(' ')}` }),
   });
   assert.equal(aiosRoot, '/fake-aios');
-  assert.equal(pi.tools.length, 5);
+  assert.equal(pi.tools.length, 6);
   assert.deepEqual(Object.keys(pi.events).sort(), ['before_agent_start', 'session_start', 'tool_call']);
   assert.deepEqual(Object.keys(pi.commands).sort(), ['aios-policy', 'aios-root']);
 

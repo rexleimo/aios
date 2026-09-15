@@ -74,7 +74,7 @@ export async function checkSoloHarnessProfileReadiness({
       reason: `${profile.command} command is not available on PATH`,
       nextActions: [
         `Install the ${profile.command} CLI or switch --provider to another installed client.`,
-        'Run node scripts/aios.mjs doctor --native --verbose',
+        'Run aios doctor --native --verbose',
       ],
     };
   }

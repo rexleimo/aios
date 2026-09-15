@@ -28,13 +28,13 @@ AIOS 原生拦截运行时已废弃。Token 压缩改由社区维护的 **RTK** 
 
 ```bash
 # 交互式安装（会提示确认）
-node scripts/aios.mjs init --agent <claude|codex|gemini|opencode>
+aios init --agent <claude|codex|gemini|opencode>
 
 # 跳过确认提示（用于 CI/无人值守场景）
-node scripts/aios.mjs init --yes-compression-tools
+aios init --yes-compression-tools
 
 # 仅检测不安装
-node scripts/aios.mjs init --dry-run
+aios init --dry-run
 ```
 
 安装后 `aios init` 会自动运行 `rtk init -g` 为检测到的客户端注册 hook/plugin。

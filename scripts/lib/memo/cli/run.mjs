@@ -16,6 +16,7 @@ import {
 import { handleMemoAddCommand, handleMemoListCommand, handleMemoRecallCommand, handleMemoSearchCommand } from './commands/events.mjs';
 import { handleMemoHygieneCommand } from './commands/hygiene.mjs';
 import { handleMemoPinCommand } from './commands/pin.mjs';
+import { handleMemoCheckpointCommand } from './commands/checkpoint.mjs';
 import { handleMemoReportCommand } from './commands/report.mjs';
 import { handleMemoUsefulCommand } from './commands/useful.mjs';
 import { handleMemoSpaceCommand } from './commands/space.mjs';
@@ -101,6 +102,11 @@ export async function runMemo(rawOptions = {}, {
       workspacePinnedMaxChars,
       io,
     });
+    return;
+  }
+
+  if (primary === 'checkpoint') {
+    await handleMemoCheckpointCommand({ secondary, rest, workspaceRoot, io });
     return;
   }
 

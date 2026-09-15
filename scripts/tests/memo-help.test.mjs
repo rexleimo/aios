@@ -49,14 +49,14 @@ test('parseArgs preserves memo help path tokens for nested help routing', () => 
 
 test('memo help exposes approved storage entry and hides compatibility commands', () => {
   const stdout = assertHelp(['memo', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo <subcommand> \[options\]/);
+  assert.match(stdout, /Usage:\n\s+aios memo <subcommand> \[options\]/);
   assert.match(stdout, /\bstorage\b/);
   assertNoHiddenStorageTerms(stdout);
 });
 
 test('memo storage help lists approved storage commands', () => {
   const stdout = assertHelp(['memo', 'storage', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage <subcommand>/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage <subcommand>/);
   assert.match(stdout, /\bstatus\b/);
   assert.match(stdout, /\buse split\b/);
   assert.match(stdout, /\buse file\b/);
@@ -68,19 +68,19 @@ test('memo storage help lists approved storage commands', () => {
 
 test('memo storage status help prints status-specific usage', () => {
   const stdout = assertHelp(['memo', 'storage', 'status', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage status/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage status/);
   assert.match(stdout, /Show active memo storage/);
 });
 
 test('memo storage use help prints use-specific usage', () => {
   const stdout = assertHelp(['memo', 'storage', 'use', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage use <split\|file>/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage use <split\|file>/);
   assert.match(stdout, /Switch active memo storage/);
 });
 
 test('memo storage rebuild help prints full-rebuild usage', () => {
   const stdout = assertHelp(['memo', 'storage', 'rebuild', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage rebuild/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage rebuild/);
   assert.match(stdout, /full rebuild/i);
   assert.match(stdout, /without rewriting canonical memo records/i);
   assertNoHiddenStorageTerms(stdout);
@@ -88,13 +88,13 @@ test('memo storage rebuild help prints full-rebuild usage', () => {
 
 test('memo storage doctor help prints doctor-specific usage', () => {
   const stdout = assertHelp(['memo', 'storage', 'doctor', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage doctor/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage doctor/);
   assert.match(stdout, /Check memo storage health/);
 });
 
 test('memo storage repair-locks help explains its safe recovery boundary', () => {
   const stdout = assertHelp(['memo', 'storage', 'repair-locks', '--help']);
-  assert.match(stdout, /Usage:\n\s+node scripts\/aios\.mjs memo storage repair-locks/);
+  assert.match(stdout, /Usage:\n\s+aios memo storage repair-locks/);
   assert.match(stdout, /Quarantine memo locks/);
   assert.match(stdout, /Live or malformed locks remain untouched/);
 });

@@ -910,7 +910,7 @@ test('parseArgs treats top-level harness help as help mode', () => {
 
 test('getCommandHelpText includes harness usage and examples', () => {
   const text = getCommandHelpText('harness');
-  assert.match(text, /node scripts\/aios\.mjs harness run --objective/);
+  assert.match(text, /aios harness run --objective/);
   assert.match(text, /harness status/);
   assert.match(text, /harness resume/);
   assert.match(text, /harness stop/);

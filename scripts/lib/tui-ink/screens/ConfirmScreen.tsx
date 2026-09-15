@@ -306,7 +306,7 @@ export function ConfirmScreen({ rootDir, options, onRun }: ConfirmScreenProps) {
             {nativePreview.lines.map((line, idx) => (
               <Text key={`${idx}:${line}`}>Native: {line}</Text>
             ))}
-            <Text dimColor>Verify after run: node scripts/aios.mjs doctor --native</Text>
+            <Text dimColor>Verify after run: aios doctor --native</Text>
           </>
         )}
         {action === 'doctor' && (

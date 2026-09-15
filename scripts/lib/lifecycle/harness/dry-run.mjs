@@ -185,7 +185,7 @@ export async function runHarnessDryRunChecks({ rootDir, provider, sessionId, obj
     }
   }
   if (nextActions.length === 0) {
-    nextActions.push('All checks passed — ready to run: node scripts/aios.mjs harness run --objective "..."');
+    nextActions.push('All checks passed — ready to run: aios harness run --objective "..."');
   }
 
   return { verdict, results, nextActions, sessionId, provider, objective };

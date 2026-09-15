@@ -22,7 +22,7 @@ export async function runNativeOnlyDoctor({
     id: 'doctor:native',
     item: 'Repo-local native enhancement surfaces',
     status: nativeResult.errors > 0 ? 'error' : (nativeResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
-    fix: `Run: node scripts/aios.mjs update --components native --client ${client}`,
+    fix: `Run: aios update --components native --client ${client}`,
     note: `errors=${nativeResult.errors}; effectiveWarnings=${nativeResult.effectiveWarnings}`,
   });
   printDoctorCheckSummary(io, checks);

@@ -140,6 +140,8 @@ export function createDefaultHarnessRunOptions() {
     sessionId: '',
     workspaceRoot: '',
     provider: 'codex',
+    // provider 边界形态：one-shot 每轮冷启动；rpc 复用长会话（仅 --provider pi）。
+    transport: 'one-shot',
     profile: 'standard',
     worktree: false,
     baseRef: 'HEAD',
@@ -174,6 +176,8 @@ export function createDefaultHarnessResumeOptions() {
     sessionId: '',
     workspaceRoot: '',
     maxIterations: 20,
+    // provider 边界形态：one-shot 每轮冷启动；rpc 复用长会话（仅 pi provider）。
+    transport: 'one-shot',
     lifecycleHooks: true,
     json: false,
     unattended: false,

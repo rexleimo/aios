@@ -224,7 +224,7 @@ export function buildHindsightDraftRecommendations(summary, recommendations = []
       title: 'hindsight memo candidate',
       reason: `High-confidence hindsight lesson cluster detected. Review this memo draft before persisting it. ${topHint}`,
       evidence: evidenceParts.join(' '),
-      nextCommand: `node scripts/aios.mjs memo add ${JSON.stringify(memoText)}`,
+      nextCommand: `aios memo add ${JSON.stringify(memoText)}`,
       draftAction: {
         kind: 'memo-add',
         text: memoText,
@@ -280,7 +280,7 @@ export function buildHindsightDraftRecommendations(summary, recommendations = []
       title: 'hindsight skill patch candidate',
       reason: `Hindsight evidence suggests a reusable ${skillPatchCandidate.skillId} patch candidate; keep manual review before editing skill docs.`,
       evidence: [...evidenceParts, `skill=${skillPatchCandidate.skillId}`, `scope=${skillPatchCandidate.scope}`].join(' '),
-      nextCommand: `node scripts/aios.mjs memo add ${JSON.stringify(skillMemoText)}`,
+      nextCommand: `aios memo add ${JSON.stringify(skillMemoText)}`,
       draftAction: {
         kind: 'skill-candidate',
         skillId: skillPatchCandidate.skillId,

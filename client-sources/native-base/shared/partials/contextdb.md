@@ -54,7 +54,7 @@ Before answering any question that may involve project-specific knowledge, run m
 
 1. Run recent-context recall first:
 ```bash
-node scripts/aios.mjs memo recall --limit 5
+aios memo recall --limit 5
 ```
 
 2. If recall returns relevant context, use it and proceed. If recall is empty or the user query is long, distill the query to 2-3 core technical terms before searching:
@@ -62,7 +62,7 @@ node scripts/aios.mjs memo recall --limit 5
    - Strip: conversational filler, instructions to you, formatting
    - Use individual keywords (space = AND in memo search; multi-word queries may produce zero hits if the exact phrase doesn't appear in memos):
 ```bash
-node scripts/aios.mjs memo search "<distilled keyword>" --limit 5
+aios memo search "<distilled keyword>" --limit 5
 ```
 
 3. If the first keyword yields no results, try the next one. Combine the 2 best keywords only when each individually returns relevant hits.
@@ -83,7 +83,7 @@ Never store global project decisions, architecture facts, task handoffs, release
 **Before any ad-hoc grep or broad file reads**, use unified search to check project memory, docs, plans, and code references:
 
 ```bash
-node scripts/aios.mjs search "<query>" --agent <runtime-client-id> --json
+aios search "<query>" --agent <runtime-client-id> --json
 ```
 
 Use `--source memory,plans` for memory plus plan recall, `--source docs,code` for repo reference lookup, and `--scope agent_private --agent <runtime-client-id>` only when intentionally searching that agent's private scratch notes. The command preserves `project_shared` visibility across clients and filters other agents' private memos.

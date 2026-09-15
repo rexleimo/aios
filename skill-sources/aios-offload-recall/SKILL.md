@@ -19,9 +19,9 @@ Use this when prior tool output is likely stored under `.aios/offload/` and toke
 ## Recall Order
 
 1. Identify the session id from ContextDB, harness status, or the user's handoff.
-2. Run `node scripts/aios.mjs canvas show --session <id>` to inspect the compact task graph.
-3. Search narrowly with `node scripts/aios.mjs refs grep "<pattern>" --session <id>`.
-4. Read only the needed node with `node scripts/aios.mjs refs read <node_id>`.
+2. Run `aios canvas show --session <id>` to inspect the compact task graph.
+3. Search narrowly with `aios refs grep "<pattern>" --session <id>`.
+4. Read only the needed node with `aios refs read <node_id>`.
 5. Summarize the recalled evidence and keep the `node_id` in your notes.
 
 ## Backfill Existing Logs
@@ -29,7 +29,7 @@ Use this when prior tool output is likely stored under `.aios/offload/` and toke
 If a previous run produced JSONL tool-event logs but no canvas yet, create the index first:
 
 ```bash
-node scripts/aios.mjs canvas backfill --input <events.jsonl> --client <client> --session <id>
+aios canvas backfill --input <events.jsonl> --client <client> --session <id>
 ```
 
 Then resume the recall order above. Backfill accepts generic records with fields like `tool`, `input`, `output`,

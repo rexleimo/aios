@@ -25,21 +25,24 @@ declaration and executes it — it never guesses for you.
 
 ## Capabilities you can invoke
 
-Run from the repo root with `node scripts/aios.mjs memo ...`:
+Run from the repo root with `aios memo ...` (the installed AIOS CLI — not a repo-relative script):
 
 - **Recall** what you already know before continuing work:
-  `node scripts/aios.mjs memo recall [query]` — human-readable session recall digest
+  `aios memo recall [query]` — human-readable session recall digest
 - **Search** prior memos (superseded facts hidden by default):
-  `node scripts/aios.mjs memo search "<query>" [--limit N]`
+  `aios memo search "<query>" [--limit N]`
 - **Persist** a durable fact you just established:
-  `node scripts/aios.mjs memo add "<fact>"` — defaults to an appropriate scope; add
+  `aios memo add "<fact>"` — defaults to an appropriate scope; add
   `--scope project_shared` for facts anyone in the repo benefits from
 - **Supersede** a previously recorded fact you now know is wrong:
-  `node scripts/aios.mjs memo add "<corrected fact>" --supersedes <eventId>`
+  `aios memo add "<corrected fact>" --supersedes <eventId>`
 - **Mark useful** a recalled memory that actually shaped your outcome:
-  `node scripts/aios.mjs memo useful <eventId>`
+  `aios memo useful <eventId>`
+- **Checkpoint** a milestone so future sessions recall it first (pinned memory):
+  `aios memo checkpoint "<one-line takeaway>"` — use at milestones and before
+  claiming work complete
 
-Run `node scripts/aios.mjs memo --help` for exact flags.
+Run `aios memo --help` for exact flags.
 
 ## When to persist (you judge)
 

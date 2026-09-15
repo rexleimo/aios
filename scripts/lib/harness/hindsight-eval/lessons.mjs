@@ -33,12 +33,12 @@ function buildSuggestedCommands({ sessionId, provider, kind } = {}) {
   const commands = [];
   const id = normalizeText(sessionId);
   if (!id) return commands;
-  commands.push(`node scripts/aios.mjs hud --session ${id} --preset full`);
-  commands.push(`node scripts/aios.mjs orchestrate --session ${id} --dispatch local --execute dry-run --format json`);
+  commands.push(`aios hud --session ${id} --preset full`);
+  commands.push(`aios orchestrate --session ${id} --dispatch local --execute dry-run --format json`);
 
   const effectiveProvider = normalizeText(provider);
   if ((kind === 'repeat-blocked' || kind === 'regression') && TEAM_PROVIDER_NAMES.has(effectiveProvider)) {
-    commands.push(`node scripts/aios.mjs team --resume ${id} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`);
+    commands.push(`aios team --resume ${id} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`);
   }
 
   return commands;

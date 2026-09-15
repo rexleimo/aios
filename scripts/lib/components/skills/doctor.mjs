@@ -6,6 +6,7 @@ import { getAgentsHome } from '../../platform/paths.mjs';
 import { resolveClientSelection } from '../../clients/registry.mjs';
 
 import { analyzeCatalogEntries, loadSkillsCatalog, resolveTargetRoot, tryLoadSkillsSyncManifest } from './catalog.mjs';
+import { GENERATED_SKILL_META_FILE } from '../../skills/install-metadata.mjs';
 import {
   INSTALLED_SKILL_META_FILE,
   isLegacyManagedLinkInstall,
@@ -71,6 +72,63 @@ export function removeLegacySharedRootInstalls(agentsHome, { dryRun = false, io 
     }
   }
   return { removed, kept: [], missing };
+}
+
+// 纯函数：旧版布局曾把 Pi 的项目级 skill 投影到 .pi/skills。Pi 会同时扫描共享根
+// 与 .pi/skills，两处同名时报告“已加载”并跳过共享路径副本。现行布局只写共享根
+// （.agents/skills），凡带 AIOS 托管 metadata（install 或 sync 任一标记）的
+// .pi/skills 目录视为升级残留；无 metadata 的视为用户自有。
+function isAiosManagedSkillDir(skillsDir, name) {
+  for (const marker of [INSTALLED_SKILL_META_FILE, GENERATED_SKILL_META_FILE]) {
+    try {
+      const metadata = JSON.parse(fs.readFileSync(path.join(skillsDir, name, marker), 'utf8'));
+      if (metadata?.managedBy === 'aios') return true;
+    } catch {
+      // 缺文件或不可读：尝试下一个标记。
+    }
+  }
+  return false;
+}
+
+export function collectLegacyPiSkillRootInstalls(projectRoot) {
+  const skillsDir = path.join(String(projectRoot || ''), '.pi', 'skills');
+  let entries = [];
+  try {
+    entries = fs.readdirSync(skillsDir);
+  } catch {
+    return [];
+  }
+  const findings = [];
+  for (const name of entries) {
+    if (isAiosManagedSkillDir(skillsDir, name)) {
+      findings.push({ name });
+    }
+  }
+  return findings;
+}
+
+// 与 collectLegacyPiSkillRootInstalls 配对的清理：只删 AIOS 托管目录，
+// 用户自有 skill 永远不动；dryRun 只预览。返回 { removed, missing }。
+export function removeLegacyPiSkillRootInstalls(projectRoot, { dryRun = false, io = null } = {}) {
+  const targets = collectLegacyPiSkillRootInstalls(projectRoot).map((item) => item.name);
+  const removed = [];
+  const missing = [];
+  for (const name of targets) {
+    const targetPath = path.join(String(projectRoot || ''), '.pi', 'skills', name);
+    if (dryRun) {
+      io?.log?.(`[plan] would remove legacy .pi/skills skill: ${name}`);
+      removed.push(name);
+      continue;
+    }
+    try {
+      fs.rmSync(targetPath, { recursive: true, force: true });
+      removed.push(name);
+    } catch (error) {
+      io?.log?.(`[warn] cannot remove legacy .pi/skills skill ${name}: ${error.message}`);
+      missing.push(name);
+    }
+  }
+  return { removed, missing };
 }
 
 export function collectOverrideWarnings({ rootDir, projectRoot, catalog, clientName, selectedSkills, homes, io, manifest }) {
@@ -146,6 +204,15 @@ export async function doctorContextDbSkills({
     io.log(`[warn] agents home: ${legacySharedInstalls.length} legacy shared-root skill install(s) under ${formatDisplayPath(path.join(String(agentsHome || ''), 'skills'))}`);
     for (const item of legacySharedInstalls) {
       io.log(`       ${item.name} (client=${item.client || 'unknown'}); current layout installs per-client homes — remove this copy and re-run skills install`);
+    }
+    warnings += 1;
+  }
+
+  const legacyPiSkillInstalls = collectLegacyPiSkillRootInstalls(projectRoot || rootDir);
+  if (legacyPiSkillInstalls.length > 0) {
+    io.log(`[warn] project: ${legacyPiSkillInstalls.length} legacy .pi/skills skill install(s) under ${formatDisplayPath(path.join(String(projectRoot || rootDir), '.pi', 'skills'))}`);
+    for (const item of legacyPiSkillInstalls) {
+      io.log(`       ${item.name}; Pi loads project skills from the shared .agents/skills root — a .pi/skills copy is reported as already loaded and makes Pi skip the shared one; remove it and re-run skills sync`);
     }
     warnings += 1;
   }

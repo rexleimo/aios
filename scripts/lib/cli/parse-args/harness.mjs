@@ -22,6 +22,15 @@ function parseTurnTimeoutMs(raw) {
   return n;
 }
 
+// 中文注释：transport 决定 provider 边界形态：one-shot 每轮冷启动，rpc 复用长会话（仅 pi）。
+function parseTransport(raw) {
+  const value = String(raw || '').trim().toLowerCase();
+  if (value !== 'one-shot' && value !== 'rpc') {
+    throw new Error('--transport must be one-shot or rpc');
+  }
+  return value;
+}
+
 // 中文注释：4 个子命令各有一组专属 options
 const program = new Command()
   .name('harness')
@@ -33,6 +42,7 @@ const RUN_OPTIONS = [
   ['--session <id>', 'Session ID'],
   ['--workspace <path>', 'Workspace root'],
   ['--provider <name>', 'Provider name'],
+  ['--transport <mode>', 'Provider transport: one-shot (default) or rpc (long-lived managed pi session)'],
   ['--profile <name>', 'Profile name'],
   ['--worktree', 'Use worktree'],
   ['--base-ref <ref>', 'Base reference'],
@@ -60,6 +70,7 @@ const RESUME_OPTIONS = [
   ['--session <id>', 'Session ID'],
   ['--workspace <path>', 'Workspace root'],
   ['--max-iterations <n>', 'Max iterations'],
+  ['--transport <mode>', 'Provider transport: one-shot (default) or rpc (long-lived managed pi session)'],
   ['--unattended', 'Unattended tier: should-run pacing gate (quota + cadence + quiet shutdown)'],
   ['--quota <n>', 'Compute quota duty ratio for unattended runs (default 1.0)'],
   ['--cadence-base-ms <n>', 'Cadence base delay ms (default 180000)'],
@@ -128,6 +139,7 @@ export function parseHarnessArgs(argv) {
       if (effectiveFlags.session) options.sessionId = String(effectiveFlags.session);
       if (effectiveFlags.workspace) options.workspaceRoot = String(effectiveFlags.workspace);
       if (effectiveFlags.provider) options.provider = normalizeSoloHarnessProvider(String(effectiveFlags.provider));
+      if (effectiveFlags.transport) options.transport = parseTransport(effectiveFlags.transport);
       if (effectiveFlags.profile) options.profile = normalizeHarnessProfile(String(effectiveFlags.profile));
       if (effectiveFlags.worktree === true) options.worktree = true;
       if (effectiveFlags.maxIterations !== undefined) {
@@ -190,6 +202,7 @@ export function parseHarnessArgs(argv) {
       if (effectiveFlags.json === true) options.json = true;
       if (effectiveFlags.unattended === true) options.unattended = true;
       if (effectiveFlags.safeBypass === false) options.safeBypass = false;
+      if (effectiveFlags.transport) options.transport = parseTransport(effectiveFlags.transport);
       for (const [flag, key, validator] of [
         ['quota', 'quota', (v) => {
           const n = Number(v);

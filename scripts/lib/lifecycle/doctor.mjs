@@ -29,7 +29,7 @@ export function planDoctor(rawOptions = {}) {
   return {
     command: 'doctor',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }
 

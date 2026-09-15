@@ -23,12 +23,12 @@ test('P11 root and subcommand help surfaces advertise plan and dream', () => {
   assert.match(rootHelp, /\bdream\b/);
 
   const planHelp = getCommandHelpText('plan');
-  assert.match(planHelp, /node scripts\/aios\.mjs plan show --html/);
+  assert.match(planHelp, /aios plan show --html/);
   assert.match(planHelp, /--workspace <path>/);
   assert.match(planHelp, /--json/);
 
   const dreamHelp = getCommandHelpText('dream');
-  assert.match(dreamHelp, /node scripts\/aios\.mjs dream --preview --to pin --json/);
+  assert.match(dreamHelp, /aios dream --preview --to pin --json/);
   assert.match(dreamHelp, /--workspace <path>/);
   assert.match(dreamHelp, /--apply/);
 });
@@ -37,13 +37,13 @@ test('P11 CLI routes plan and dream help without unknown-option fallback', () =>
   const planHelp = runCli(['plan', '--help']);
   assert.equal(planHelp.status, 0, planHelp.stderr || planHelp.stdout);
   assert.doesNotMatch(planHelp.stderr || '', /unknown option/i);
-  assert.match(planHelp.stdout, /node scripts\/aios\.mjs plan show --html/);
+  assert.match(planHelp.stdout, /aios plan show --html/);
   assert.match(planHelp.stdout, /--workspace <path>/);
 
   const dreamHelp = runCli(['dream', '--help']);
   assert.equal(dreamHelp.status, 0, dreamHelp.stderr || dreamHelp.stdout);
   assert.doesNotMatch(dreamHelp.stderr || '', /unknown option/i);
-  assert.match(dreamHelp.stdout, /node scripts\/aios\.mjs dream --preview --to pin --json/);
+  assert.match(dreamHelp.stdout, /aios dream --preview --to pin --json/);
   assert.match(dreamHelp.stdout, /--workspace <path>/);
 });
 

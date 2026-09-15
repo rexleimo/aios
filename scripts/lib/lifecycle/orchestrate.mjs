@@ -118,7 +118,7 @@ export async function runOrchestrate(
   if (retryBlockedDispatchUnstable && options.executionMode === 'live' && !options.force) {
     const message = `[guard] refusing live --retry-blocked for session ${replaySessionId}: dispatch hindsight pairs=${dispatchHindsightSummary.pairsAnalyzed} repeatBlocked=${dispatchHindsightSummary.repeatedBlockedTurns} regressions=${dispatchHindsightSummary.regressions}`;
     const recoveryCommands = buildRetryBlockedRecoveryCommands(replaySessionId, env);
-    const suggestion = `Run: ${recoveryCommands[0] || `node scripts/aios.mjs learn-eval --session ${replaySessionId}`} (or retry with --dry-run / --force)`;
+    const suggestion = `Run: ${recoveryCommands[0] || `aios learn-eval --session ${replaySessionId}`} (or retry with --dry-run / --force)`;
 
     if (options.format === 'json') {
       const report = {

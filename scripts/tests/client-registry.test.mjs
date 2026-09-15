@@ -85,12 +85,14 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.hermes/skills',
     '.grok/skills',
     '.workbuddy/skills',
-    '.pi/skills',
     '.agents/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
   assert.deepEqual(resolveClientSkillRoots('grok'), ['.grok/skills', '.agents/skills']);
   assert.deepEqual(resolveClientSkillRoots('workbuddy'), ['.workbuddy/skills', '.agents/skills']);
+  // Pi installs into the shared root only: its own .pi/skills would make Pi
+  // report the skill as already loaded and skip the shared copy.
+  assert.deepEqual(resolveClientSkillRoots('pi'), ['.agents/skills']);
 });
 
 test('native sync manifest declares generated agent outputs for every agent-capable client', async () => {

@@ -2,7 +2,7 @@ export function getCodemapHelpText() {
   return `AIOS Codemap - code-review-graph integration
 
 Usage:
-  node scripts/aios.mjs internal codemap <action> [options]
+  aios internal codemap <action> [options]
 
 Actions:
   install    Install code-review-graph: uvx check, graph build, MCP inject, client docs update
@@ -31,10 +31,10 @@ Client config targets:
 Restart the selected client after install/doctor --fix so it reloads MCP config.
 
 Examples:
-  node scripts/aios.mjs internal codemap install
-  node scripts/aios.mjs internal codemap install --client codex
-  node scripts/aios.mjs internal codemap doctor --fix
-  node scripts/aios.mjs internal codemap build
-  node scripts/aios.mjs internal codemap update
+  aios internal codemap install
+  aios internal codemap install --client codex
+  aios internal codemap doctor --fix
+  aios internal codemap build
+  aios internal codemap update
 `;
 }

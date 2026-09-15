@@ -4,7 +4,7 @@ export function getBasicCommandHelpText(command) {
   switch (command) {
     case 'init':
       return `Usage:
-  node scripts/aios.mjs init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
+  aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Options:
   --agent <name>              Init only the specified agent
@@ -15,11 +15,11 @@ Options:
   --yes-headroom-mcp          Authorize unattended Gemini/Grok Headroom MCP registration
 
 Unattended example:
-  node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
+  aios init --all --yes-compression-tools --yes-headroom-mcp
 `;
     case 'setup':
       return `Usage:
-  node scripts/aios.mjs setup [options]
+  aios setup [options]
 
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
@@ -35,7 +35,7 @@ Options:
 `;
     case 'update':
       return `Usage:
-  node scripts/aios.mjs update [options]
+  aios update [options]
 
 Options:
   --self-update                 Refresh AIOS itself before component updates (default for CLI)
@@ -53,7 +53,7 @@ Options:
 `;
     case 'uninstall':
       return `Usage:
-  node scripts/aios.mjs uninstall [options]
+  aios uninstall [options]
 
 Options:
   --components <list>            Comma list: shell,skills,native,agents,browser (default: shell,skills)
@@ -64,7 +64,7 @@ Options:
 `;
     case 'doctor':
       return `Usage:
-  node scripts/aios.mjs doctor [options]
+  aios doctor [options]
 
 Options:
   --strict
@@ -81,7 +81,7 @@ Options:
       return getMemoHelpText();
     case 'quality-gate':
       return `Usage:
-  node scripts/aios.mjs quality-gate [quick|full|pre-pr] [options]
+  aios quality-gate [quick|full|pre-pr] [options]
 
 Options:
   --profile <minimal|standard|strict>

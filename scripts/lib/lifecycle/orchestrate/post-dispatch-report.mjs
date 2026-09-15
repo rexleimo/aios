@@ -28,12 +28,12 @@ function buildClarityAdjustedPolicy(releaseGuardedFinalDispatchPolicy, resolvedC
       ...(Array.isArray(releaseGuardedFinalDispatchPolicy?.requiredActions) ? releaseGuardedFinalDispatchPolicy.requiredActions : []),
       {
         type: 'command',
-        action: `node scripts/aios.mjs entropy-gc dry-run --session ${sessionId} --format json`,
+        action: `aios entropy-gc dry-run --session ${sessionId} --format json`,
         sourceId: 'gate.clarity-human',
       },
       {
         type: 'command',
-        action: `node scripts/aios.mjs orchestrate --session ${sessionId} --dispatch local --execute live --format json`,
+        action: `aios orchestrate --session ${sessionId} --dispatch local --execute live --format json`,
         sourceId: 'gate.clarity-human',
       },
     ],

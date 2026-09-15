@@ -131,13 +131,15 @@ test('native sync writes Codex and Grok UserPromptSubmit hook files', async () =
 
   const codexHooks = JSON.parse(await readFile(path.join(rootDir, '.codex', 'hooks.json'), 'utf8'));
   const grokHooks = JSON.parse(await readFile(path.join(rootDir, '.grok', 'hooks', 'aios-workflow.json'), 'utf8'));
+  // 中文注释：hooks 模板里的源码仓相对命令必须被烘焙成安装根绝对路径——
+  // 客户端工作区没有 scripts/ 目录，相对形式在客户端必然执行失败。
   assert.equal(
     codexHooks.hooks.UserPromptSubmit[0].hooks[0].command,
-    'node scripts/aios.mjs plan hook-user-prompt --client codex',
+    `node ${rootDir}/scripts/aios.mjs plan hook-user-prompt --client codex`,
   );
   assert.equal(
     grokHooks.hooks.UserPromptSubmit[0].hooks[0].command,
-    'node scripts/aios.mjs plan hook-user-prompt --client grok',
+    `node ${rootDir}/scripts/aios.mjs plan hook-user-prompt --client grok`,
   );
 });
 

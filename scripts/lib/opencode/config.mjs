@@ -40,17 +40,17 @@ export function buildOpenCodeConfig() {
       },
       'changed-files': {
         description: 'Show files changed in the current AIOS session.',
-        template: 'Run: node scripts/aios.mjs session changed-files --json\\n\\n$ARGUMENTS',
+        template: 'Run: aios session changed-files --json\\n\\n$ARGUMENTS',
         agent: OPENCODE_STRICT_PRIMARY_AGENT_NAME,
       },
       'skill-comply': {
         description: 'Generate AIOS skill compliance scenarios for a skill/rule/agent file.',
-        template: 'Run: node scripts/aios.mjs skill comply $ARGUMENTS --dry-run --json',
+        template: 'Run: aios skill comply $ARGUMENTS --dry-run --json',
         agent: OPENCODE_STRICT_PRIMARY_AGENT_NAME,
       },
       'skill-health': {
         description: 'Show AIOS skill health and failure clusters.',
-        template: 'Run: node scripts/aios.mjs skill health --json\\n\\n$ARGUMENTS',
+        template: 'Run: aios skill health --json\\n\\n$ARGUMENTS',
         agent: OPENCODE_STRICT_PRIMARY_AGENT_NAME,
       },
     },

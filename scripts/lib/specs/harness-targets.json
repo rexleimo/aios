@@ -5,127 +5,127 @@
       "targetType": "gate",
       "title": "auth preflight gate",
       "description": "Add a reusable login/session-validity check before execution.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.timeout-budget": {
       "targetType": "gate",
       "title": "timeout budget gate",
       "description": "Add wait-budget checks or split long actions before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.retry-backoff": {
       "targetType": "gate",
       "title": "network retry/backoff gate",
       "description": "Standardize retry/backoff and transient-error handling.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.human-approval": {
       "targetType": "gate",
       "title": "human approval gate",
       "description": "Add a clear human approval or access check before sensitive steps.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.rate-limit-pacing": {
       "targetType": "gate",
       "title": "rate-limit pacing gate",
       "description": "Add pacing and cooldown controls before retries.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-build": {
       "targetType": "gate",
       "title": "quality build gate",
       "description": "Repair the build before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-types": {
       "targetType": "gate",
       "title": "quality types gate",
       "description": "Fix type errors before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-scripts": {
       "targetType": "gate",
       "title": "quality scripts gate",
       "description": "Stabilize script coverage before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-contextdb": {
       "targetType": "gate",
       "title": "quality contextdb gate",
       "description": "Repair context pack/index behavior before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-log-audit": {
       "targetType": "gate",
       "title": "quality log audit gate",
       "description": "Remove accidental debug logs or tighten the allowlist for intentional CLI output.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-security": {
       "targetType": "gate",
       "title": "quality security gate",
       "description": "Repair the security checklist before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-git": {
       "targetType": "gate",
       "title": "quality git gate",
       "description": "Repair repository health before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.quality-triage": {
       "targetType": "gate",
       "title": "quality triage gate",
       "description": "Triage failing checks before dispatch.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     },
     "gate.verification-results": {
       "targetType": "gate",
       "title": "wire real verification results",
       "description": "Attach structured verification telemetry to checkpoints.",
-      "nextCommand": "node scripts/aios.mjs quality-gate full"
+      "nextCommand": "aios quality-gate full"
     },
     "gate.blocked-triage": {
       "targetType": "gate",
       "title": "blocked triage gate",
       "description": "Blocked checkpoints indicate missing inputs; triage before promotion.",
-      "nextCommand": "node scripts/aios.mjs doctor"
+      "nextCommand": "aios doctor"
     },
     "runbook.tool-repair": {
       "targetType": "runbook",
       "title": "tooling repair runbook",
       "description": "Capture the recovery path for tool/runtime failures.",
-      "nextCommand": "node scripts/aios.mjs doctor"
+      "nextCommand": "aios doctor"
     },
     "runbook.dispatch-merge-triage": {
       "targetType": "runbook",
       "title": "dispatch merge triage runbook",
       "description": "Resolve blocked handoffs or overlapping file ownership before parallel execution.",
-      "nextCommand": "node scripts/aios.mjs doctor"
+      "nextCommand": "aios doctor"
     },
     "runbook.dispatch-runtime-unavailable": {
       "targetType": "runbook",
       "title": "dispatch runtime unavailable runbook",
       "description": "Local dry-run is supported; live runtime is opt-in and may be unimplemented.",
-      "nextCommand": "node scripts/aios.mjs orchestrate --dispatch local --execute dry-run --format json"
+      "nextCommand": "aios orchestrate --dispatch local --execute dry-run --format json"
     },
     "runbook.failure-triage": {
       "targetType": "runbook",
       "title": "failure triage runbook",
       "description": "Document a short triage path before promoting the workflow.",
-      "nextCommand": "node scripts/aios.mjs doctor"
+      "nextCommand": "aios doctor"
     },
     "runbook.retry-budget-policy": {
       "targetType": "runbook",
       "title": "retry budget policy runbook",
       "description": "Standardize retry limits and cooldowns for unstable runs.",
-      "nextCommand": "node scripts/aios.mjs doctor"
+      "nextCommand": "aios doctor"
     },
     "checklist.verification-standard": {
       "targetType": "checklist",
       "title": "promote verification checklist",
       "description": "Standardize verification via quality-gate and stable evidence capture.",
-      "nextCommand": "node scripts/aios.mjs quality-gate pre-pr"
+      "nextCommand": "aios quality-gate pre-pr"
     }
   }
 }

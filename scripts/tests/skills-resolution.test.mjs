@@ -7,7 +7,12 @@ import test from 'node:test';
 
 import { ALL_CLIENTS } from '../lib/clients/registry.mjs';
 import { analyzeCatalogEntries, resolveCatalogEntries } from '../lib/components/skills/catalog.mjs';
-import { doctorContextDbSkills, removeLegacySharedRootInstalls } from '../lib/components/skills/doctor.mjs';
+import {
+  collectLegacyPiSkillRootInstalls,
+  doctorContextDbSkills,
+  removeLegacyPiSkillRootInstalls,
+  removeLegacySharedRootInstalls,
+} from '../lib/components/skills/doctor.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -190,4 +195,94 @@ test('legacy shared-root removal deletes only AIOS-managed copies', async () => 
   assert.deepEqual(result.missing, []);
   assert.ok(!fs.existsSync(path.join(agentsHome, 'skills', 'provider-a')));
   assert.ok(fs.existsSync(path.join(agentsHome, 'skills', 'user-owned', 'SKILL.md')));
+});
+
+async function makeLegacyPiSkillRoot(projectRoot) {
+  const piSkills = path.join(projectRoot, '.pi', 'skills');
+  const managedInstall = path.join(piSkills, 'memo');
+  await mkdir(managedInstall, { recursive: true });
+  await writeFile(path.join(managedInstall, 'SKILL.md'), '# memo\n', 'utf8');
+  await writeFile(path.join(managedInstall, '.aios-skill-install.json'), JSON.stringify({
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'installed-skill',
+    skillName: 'memo',
+    client: 'pi',
+    scope: 'project',
+    installMode: 'copy',
+  }), 'utf8');
+  const managedSync = path.join(piSkills, 'search-first');
+  await mkdir(managedSync, { recursive: true });
+  await writeFile(path.join(managedSync, 'SKILL.md'), '# search-first\n', 'utf8');
+  await writeFile(path.join(managedSync, '.aios-skill-sync.json'), JSON.stringify({
+    schemaVersion: 1,
+    managedBy: 'aios',
+    kind: 'generated-skill',
+    relativeSkillPath: 'search-first',
+    targetSurface: 'pi',
+    targetRelativePath: 'search-first',
+  }), 'utf8');
+  const userOwned = path.join(piSkills, 'user-owned');
+  await mkdir(userOwned, { recursive: true });
+  await writeFile(path.join(userOwned, 'SKILL.md'), '# personal\n', 'utf8');
+  return projectRoot;
+}
+
+test('legacy .pi/skills detection finds both AIOS markers and skips user-owned skills', async () => {
+  const projectRoot = await makeTemp('aios-pi-legacy-detect-');
+  await makeLegacyPiSkillRoot(projectRoot);
+  const findings = collectLegacyPiSkillRootInstalls(projectRoot);
+  assert.deepEqual(findings.map((item) => item.name).sort(), ['memo', 'search-first']);
+});
+
+test('legacy .pi/skills removal previews under dry-run and deletes only managed copies', async () => {
+  const projectRoot = await makeTemp('aios-pi-legacy-remove-');
+  await makeLegacyPiSkillRoot(projectRoot);
+  const logs = [];
+  const preview = removeLegacyPiSkillRootInstalls(projectRoot, {
+    dryRun: true,
+    io: { log: (line) => logs.push(String(line)) },
+  });
+  assert.deepEqual(preview.removed.sort(), ['memo', 'search-first']);
+  assert.ok(fs.existsSync(path.join(projectRoot, '.pi', 'skills', 'memo', 'SKILL.md')));
+
+  const result = removeLegacyPiSkillRootInstalls(projectRoot);
+  assert.deepEqual(result.removed.sort(), ['memo', 'search-first']);
+  assert.deepEqual(result.missing, []);
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.pi', 'skills', 'memo')));
+  assert.ok(!fs.existsSync(path.join(projectRoot, '.pi', 'skills', 'search-first')));
+  assert.ok(fs.existsSync(path.join(projectRoot, '.pi', 'skills', 'user-owned', 'SKILL.md')), 'user-owned skills are never touched');
+});
+
+test('skills doctor warns about legacy .pi/skills installs with global-CLI phrasing', async () => {
+  const projectRoot = await makeTemp('aios-pi-legacy-doctor-');
+  await writeCanonicalSkill(projectRoot, 'provider-a');
+  await mkdir(path.join(projectRoot, 'config'), { recursive: true });
+  await writeFile(path.join(projectRoot, 'config', 'skills-sync-manifest.json'), JSON.stringify({
+    schemaVersion: 1,
+    generatedRoots: { codex: '.codex/skills', pi: '.agents/skills' },
+    skills: [{
+      relativeSkillPath: 'provider-a',
+      installCatalogName: 'provider-a',
+      clients: ['pi'],
+      scopes: ['global'],
+      defaultInstall: { global: false, project: false },
+      tags: [],
+    }],
+    legacyUnmanaged: [],
+    legacyReplaceable: [],
+  }, null, 2), 'utf8');
+  await makeLegacyPiSkillRoot(projectRoot);
+  const logs = [];
+  await doctorContextDbSkills({
+    rootDir: projectRoot,
+    projectRoot,
+    client: 'pi',
+    io: { log: (line) => logs.push(String(line)) },
+  });
+  const output = logs.join('\n');
+  assert.match(output, /legacy \.pi\/skills skill install\(s\)/u);
+  assert.match(output, /shared \.agents\/skills root/u);
+  assert.match(output, /already loaded/u);
+  assert.doesNotMatch(output, /node scripts/u);
 });

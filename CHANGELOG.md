@@ -6,6 +6,24 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+### Added
+
+- Pi MCP bridge gains a third AIOS-managed server: `aios-bridge` (the stdio AIOS MCP server) joins `code-review-graph` and `aios-memory` in the Pi-global `mcp.json`, so Pi agents can call the plan toolset (`aios_plan_start/task/status/gate/auto_gate`), `aios_capability_evidence`, `aios_context_pack`, and friends — the `aios_plan_auto_gate` declaration channel documented in AGENTS.md is now real on Pi. All three servers stay cwd-less and follow the Pi session cwd (`scripts/lib/components/pi/mcp-adapter.mjs`, covered by `scripts/tests/pi-mcp-adapter.test.mjs`).
+- memo: `aios memo checkpoint "<text>"` CLI subcommand pins a `[checkpoint]` milestone entry to workspace memory through the same locked append path as the `memory_checkpoint` MCP tool (`scripts/lib/memo/cli/commands/checkpoint.mjs`, covered by `scripts/tests/memo-checkpoint.test.mjs`).
+- Pi extension v0.2.0: new `aios_memory_checkpoint` tool — the `aios_memory_checkpoint` reference in the injected session policy now resolves to a real tool instead of only the MCP surface (`packages/aios-pi`, covered by `scripts/tests/pi-extension.test.mjs`).
+- harness: `--transport rpc` for `aios harness run|resume --provider pi` drives Pi as a long-lived managed RPC session (`pi --mode rpc --no-session`) instead of one-shot spawns; every turn gets a fresh `new_session` so context semantics match one-shot, and any transport failure discards the session and rebuilds on the next turn. Turn prompts, compression packets, and the JSON iteration contract are shared with the one-shot executor (`scripts/lib/lifecycle/harness/execute-turn-pi-rpc.mjs`, covered by `scripts/tests/pi-rpc-execute-turn.test.mjs`).
+- doctor: new `doctor:pi-bridge` gate (standard/strict profiles) reports the AIOS-managed servers inside the Pi-global `mcp.json` and the pinned MCP-client adapter; skips cleanly when Pi is not installed. Repair hints use the global `aios` CLI only (`scripts/lib/components/pi/doctor.mjs`, covered by `scripts/tests/pi-doctor.test.mjs`).
+- `aios init --agent pi` now advises when the project has no `.mcp.json`: the Pi-global file carries only the cwd-less AIOS servers (code-review-graph, aios-memory, aios-bridge); shell/browser/auth servers reach Pi through a project-level `.mcp.json` that the pi-mcp-adapter reads directly.
+- shipped-content hygiene gate for the Pi surface: prompts, tool descriptors, MCP server definitions, doctor output, init advisories, and memo skill projections are asserted free of repo-relative invocations (`node scripts/…`), and the extension root resolution is verified customer-style (env-provided install root + arbitrary cwd) (`scripts/tests/pi-shipped-content-hygiene.test.mjs`).
+
+### Changed
+
+- Pi project skills move to the shared Agent Skills root: Pi natively scans both `.agents/skills` and `.pi/skills`, so an AIOS copy in each made Pi report the skill as already loaded and skip the shared-path duplicate. `pi.projectSkillRoot` is now `.agents/skills` (registry, skills/native sync manifests, native emitter, Pi AGENTS.md guidance, and the bundled rex-harness projection map all follow); the retired `.pi/skills` projection is gone from the repo, and the skills doctor warns about leftover AIOS-managed `.pi/skills` installs with a paired `removeLegacyPiSkillRootInstalls` cleanup that never touches user-owned skills (`scripts/lib/components/skills/doctor.mjs`, covered by `scripts/tests/skills-resolution.test.mjs`). Global scope is unchanged (`~/.pi/agent/skills` stays per-client; the shared global root is not an AIOS install target).
+- memo skill (source + all client projections) documents the new `aios memo checkpoint` capability alongside pin/useful.
+- `aios-mcp-server.mjs` header comment now reflects its real 12-tool surface (it outgrew the original Hermes-only 5-tool bridge when the plan toolset landed).
+
+No breaking changes.
+
 ## [5.15.0] - 2026-09-14
 
 ### Added

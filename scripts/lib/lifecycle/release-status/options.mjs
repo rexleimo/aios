@@ -113,6 +113,6 @@ export function planReleaseStatus(rawOptions = {}, { rootDir = process.cwd(), en
   return {
     command: 'release-status',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }

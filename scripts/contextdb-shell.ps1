@@ -149,10 +149,26 @@ function aios {
   $rest = @(if ($argList.Count -gt 1) { $argList[1..($argList.Count - 1)] })
   $rootPath = if ($env:AIOS_ROOT_DIR) { $env:AIOS_ROOT_DIR } elseif ($env:AIOS_ROOT) { $env:AIOS_ROOT } else { $env:ROOTPATH }
 
+  # 中文注释：非交互会话可能丢失 shell 集成导出的安装根变量；变量未设或目录不存在时，
+  # 回退到与 aios shim 相同的探测路径，避免 aios 命令直接失败。
+  if (-not $rootPath -or -not (Test-Path -LiteralPath $rootPath -PathType Container)) {
+    foreach ($probe in @("$HOME/.rexcil/aios", "$HOME/cool.cnb/rex-ai-boot")) {
+      if (Test-Path -LiteralPath (Join-Path $probe "scripts/aios.ps1")) {
+        $rootPath = $probe
+        break
+      }
+    }
+  }
+
   if (-not $rootPath) {
     Write-Host "[warn] AIOS_ROOT_DIR is not set (install PowerShell integration first)"
     return
   }
+
+  # 中文注释：与 aios shim 契约一致——派发前把解析出的安装根写回环境，供下游脚本读取。
+  $env:AIOS_ROOT_DIR = $rootPath
+  $env:AIOS_ROOT = $rootPath
+  $env:ROOTPATH = $rootPath
 
   switch ($sub) {
     "doctor" {

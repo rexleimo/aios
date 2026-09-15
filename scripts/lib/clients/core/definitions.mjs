@@ -118,8 +118,14 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze(['--dangerously-skip-permissions']),
   }),
-  // Pi coding agent (earendil-works/pi) — minimal self-extensible harness.
-  // Skills: Agent Skills standard (~/.pi/agent/skills, ~/.agents/skills, .pi/skills, .agents/skills).
+  // Pi coding agent (earendil-works/pi) — minimal self-extending harness.
+  // Skills: Pi natively scans the Agent Skills standard roots, including the
+  // shared project root `.agents/skills` and `~/.agents/skills`. AIOS must
+  // NOT also install into `.pi/skills`: when both exist Pi reports the skill
+  // as already loaded from one root and skips the copy in the shared path,
+  // so the shared root is the single project-scope install target.
+  // Global skills keep the per-client home `~/.pi/agent/skills` (the shared
+  // global root is not an AIOS install target).
   // Native instruction: AGENTS.md (global ~/.pi/agent/AGENTS.md + cwd chain, APPEND_SYSTEM.md override).
   // No built-in MCP surface: AIOS tools reach Pi through the AIOS Pi extension, not config migration.
   // No sub-agents upstream: no agents/team capability until an extension verifies it.
@@ -127,7 +133,7 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness']),
     commandName: 'pi',
     runtimeClientId: 'pi-coding-agent',
-    projectSkillRoot: '.pi/skills',
+    projectSkillRoot: '.agents/skills',
     skillFormat: 'markdown-directory',
     nativeMetadataRoot: '.pi',
     instructionFileName: 'AGENTS.md',

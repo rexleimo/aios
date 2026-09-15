@@ -35,13 +35,18 @@ test('aios-managed servers carry code-review-graph first, cwd-less', () => {
   assert.ok(!('cwd' in servers['code-review-graph']), 'global entry follows the Pi session cwd');
 });
 
-test('aios-managed servers add session-following aios-memory when root known', () => {
+test('aios-managed servers add session-following memory and bridge servers when root known', () => {
   const servers = buildAiosPiMcpServers({ aiosRoot: '/aios' });
-  assert.deepEqual(Object.keys(servers), ['code-review-graph', 'aios-memory']);
+  assert.deepEqual(Object.keys(servers), ['code-review-graph', 'aios-memory', 'aios-bridge']);
   assert.equal(servers['aios-memory'].command, 'node');
   assert.deepEqual(servers['aios-memory'].args, [path.join('/aios', 'scripts', 'memory-mcp-server.mjs')]);
-  assert.ok(!('cwd' in servers['aios-memory']), 'memory falls back to process.cwd()');
-  assert.ok(!('env' in servers['aios-memory']), 'no pinned workspace root');
+  assert.equal(servers['aios-bridge'].command, 'node');
+  assert.deepEqual(servers['aios-bridge'].args, [path.join('/aios', 'scripts', 'aios-mcp-server.mjs')]);
+  for (const name of ['aios-memory', 'aios-bridge']) {
+    assert.ok(!('cwd' in servers[name]), `${name} follows the Pi session cwd`);
+    assert.ok(!('env' in servers[name]), `${name} pins no workspace root`);
+    assert.ok(path.isAbsolute(servers[name].args[0]), `${name} resolves against the injected install root`);
+  }
 });
 
 test('mcp.json merge creates file and preserves other keys', async () => {
@@ -71,10 +76,10 @@ test('mcp.json merge adds newly-managed servers without touching present ones', 
     assert.deepEqual(first.added, ['code-review-graph']);
     const second = ensurePiMcpServers({ mcpJsonPath, servers: buildAiosPiMcpServers({ aiosRoot: '/aios' }) });
     assert.equal(second.action, 'updated');
-    assert.deepEqual(second.added, ['aios-memory']);
+    assert.deepEqual(second.added, ['aios-memory', 'aios-bridge']);
     assert.deepEqual(second.present, ['code-review-graph']);
     const saved = JSON.parse(await readFile(mcpJsonPath, 'utf8'));
-    assert.deepEqual(Object.keys(saved.mcpServers).sort(), ['aios-memory', 'code-review-graph']);
+    assert.deepEqual(Object.keys(saved.mcpServers).sort(), ['aios-bridge', 'aios-memory', 'code-review-graph']);
   } finally {
     await rm(home, { recursive: true, force: true });
   }

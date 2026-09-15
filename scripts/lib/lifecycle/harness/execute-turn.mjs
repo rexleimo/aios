@@ -12,7 +12,7 @@ const MAX_TURN_TIMEOUT_MS = 6 * 60 * 60 * 1000;
 const MIN_TURN_TIMEOUT_MS = 1000;
 
 /* 中文注释：turn 超时是进程树的硬上限；验证类长任务可以显式放宽，但保持在安全边界内。 */
-function normalizeTurnTimeoutMs(value) {
+export function normalizeTurnTimeoutMs(value) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric) || numeric <= 0) return DEFAULT_TURN_TIMEOUT_MS;
   return Math.min(Math.max(Math.floor(numeric), MIN_TURN_TIMEOUT_MS), MAX_TURN_TIMEOUT_MS);

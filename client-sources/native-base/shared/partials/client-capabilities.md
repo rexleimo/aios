@@ -3,7 +3,7 @@
 Before using a client for live delegation, training, quality-gate execution, or harness work, check the verified rollout state:
 
 ```bash
-node scripts/aios.mjs clients doctor --json
+aios clients doctor --json
 ```
 
 Interpretation:

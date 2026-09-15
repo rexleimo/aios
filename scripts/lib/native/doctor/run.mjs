@@ -95,7 +95,7 @@ export async function doctorNativeEnhancements({
           io.log(`[repair] summary changed=${repairFinalized.summary.totalChanged} added=${repairFinalized.summary.added} updated=${repairFinalized.summary.updated} removed=${repairFinalized.summary.removed}`);
           const changed = (repairFinalized.changedEntries || []).map((entry) => `${entry.path} (${entry.change})`);
           printPathList(io, '[repair] changed', changed, 15);
-          io.log(`[repair] rollback: node scripts/aios.mjs internal native rollback --repair-id ${repairFinalized.repairId}`);
+          io.log(`[repair] rollback: aios internal native rollback --repair-id ${repairFinalized.repairId}`);
         }
         result = await checkNativeEnhancementsSync({ rootDir, targetRootDir: resolvedTargetRootDir, client });
       } else {

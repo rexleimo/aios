@@ -381,7 +381,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     if (parsed.command === 'memory') {
       const [sub, ...flags] = parsed.options.args || [];
       if (sub !== 'report') {
-        throw new Error('Usage: node scripts/aios.mjs memory report [--json]');
+        throw new Error('Usage: aios memory report [--json]');
       }
       const { buildMemoryReport, renderMemoryReport } = await import('../memo/report.mjs');
       const report = await buildMemoryReport(workspaceFor(parsed), { env: process.env });

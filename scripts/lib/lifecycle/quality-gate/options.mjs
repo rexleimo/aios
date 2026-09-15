@@ -23,6 +23,6 @@ export function planQualityGate(rawOptions = {}) {
   return {
     command: 'quality-gate',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }

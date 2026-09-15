@@ -145,6 +145,6 @@ export function planOrchestrate(rawOptions = {}) {
   return {
     command: 'orchestrate',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }

@@ -52,7 +52,7 @@ export function planLearnEval(rawOptions = {}) {
   return {
     command: 'learn-eval',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }
 

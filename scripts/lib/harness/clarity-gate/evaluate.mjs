@@ -15,13 +15,13 @@ export function buildNextActions(gate) {
   if (gate?.decision === 'approval-required') {
     return [
       'Review the gate question and confirm whether the sensitive next action is allowed',
-      `Rerun: ${gate?.resumeCommand || 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json'}`,
+      `Rerun: ${gate?.resumeCommand || 'aios orchestrate --dispatch local --execute live --format json'}`,
       'If not approved, revise the plan to avoid the sensitive action',
     ];
   }
   return [
     'Answer the clarity-gate question or resolve the unclear signal',
-    `Rerun: ${gate?.resumeCommand || 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json'}`,
+    `Rerun: ${gate?.resumeCommand || 'aios orchestrate --dispatch local --execute live --format json'}`,
     'Checkpoint the decision before retrying automation',
   ];
 }
@@ -49,9 +49,9 @@ function buildQuestion({ decision, reasons }) {
 function buildResumeCommand(sessionId) {
   const normalizedSessionId = normalizeText(sessionId);
   if (!normalizedSessionId) {
-    return 'node scripts/aios.mjs orchestrate --dispatch local --execute live --format json';
+    return 'aios orchestrate --dispatch local --execute live --format json';
   }
-  return `node scripts/aios.mjs orchestrate --session ${normalizedSessionId} --dispatch local --execute live --format json`;
+  return `aios orchestrate --session ${normalizedSessionId} --dispatch local --execute live --format json`;
 }
 
 export function evaluateClarityGate(

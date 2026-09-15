@@ -9,12 +9,12 @@ import {
 
 export function buildTeamResumeCommand(sessionId, provider = 'codex', workers = 2) {
   const normalizedSessionId = normalizeText(sessionId) || '<session-id>';
-  return `node scripts/aios.mjs team --resume ${normalizedSessionId} --retry-blocked --provider ${provider} --workers ${workers} --dry-run`;
+  return `aios team --resume ${normalizedSessionId} --retry-blocked --provider ${provider} --workers ${workers} --dry-run`;
 }
 
 export function buildRollbackCommand(sessionId) {
   const normalizedSessionId = normalizeText(sessionId) || '<session-id>';
-  return `node scripts/aios.mjs snapshot-rollback --session ${normalizedSessionId} --dry-run`;
+  return `aios snapshot-rollback --session ${normalizedSessionId} --dry-run`;
 }
 
 export function buildWatchdogReadiness(recovery = {}) {

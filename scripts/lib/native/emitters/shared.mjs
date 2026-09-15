@@ -120,8 +120,19 @@ export function readClientMarkdownSource(rootDir, client, fileName, { optional =
   return fs.readFileSync(sourcePath, 'utf8').trim();
 }
 
+// 中文注释：hooks 模板里的 `node scripts/aios.mjs ...` 是源码仓库相对路径，客户端工作区
+// 没有 scripts/ 目录，原样写出必然执行失败。写入客户端前统一烘焙成安装根的绝对路径，
+// 与 init 程序化添加的 save-guard/offload 钩子保持同一约定（GUI 启动的客户端不保证
+// PATH 里有 ~/.aios/bin，钩子不能依赖 `aios` 命令解析）。
+function bakeRuntimeCliPaths(content, rootDir) {
+  return String(content).replaceAll('node scripts/aios.mjs', `node ${rootDir}/scripts/aios.mjs`);
+}
+
 export function readClientJsonSource(rootDir, client, fileName) {
-  return JSON.parse(fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8'));
+  return JSON.parse(bakeRuntimeCliPaths(
+    fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8'),
+    rootDir,
+  ));
 }
 
 export function readOptionalClientJson(rootDir, client, fileName) {

@@ -209,7 +209,7 @@ test('doctor --native reports a missing OpenCode primary agent', async () => {
   const rendered = logs.join('\n');
   assert.equal(result.exitCode, 1);
   assert.match(rendered, /\[missing\] \.opencode\/agent\/aios-build\.md/u);
-  assert.match(rendered, /node scripts\/aios\.mjs update --components native --client opencode/u);
+  assert.match(rendered, /aios update --components native --client opencode/u);
 });
 
 test('doctor --native checks projectRoot outputs when AIOS is installed elsewhere', async () => {
@@ -299,7 +299,7 @@ test('native doctor reports unmanaged conflicts with a concrete recovery command
 
   assert.equal(result.exitCode, 1);
   assert.match(logs.join('\n'), /unmanaged conflict/i);
-  assert.match(logs.join('\n'), /node scripts\/aios\.mjs update --components native --client codex/);
+  assert.match(logs.join('\n'), /aios update --components native --client codex/);
 });
 
 test('native doctor reports sync drift when repo-local generated skills change', async () => {
@@ -392,7 +392,7 @@ test('doctor --native --fix records repair manifest and supports rollback', asyn
   assert.equal(result.exitCode, 0);
   assert.match(rendered, /\[repair\] id=/);
   assert.match(rendered, /\[repair\] manifest=\.aios\/repairs\/.+\/manifest\.json/);
-  assert.match(rendered, /\[repair\] rollback: node scripts\/aios\.mjs internal native rollback --repair-id /);
+  assert.match(rendered, /\[repair\] rollback: aios internal native rollback --repair-id /);
   assert.match(await readFile(path.join(rootDir, 'GEMINI.md'), 'utf8'), /AIOS NATIVE BEGIN/);
 
   const repairLine = logs.find((line) => line.startsWith('[repair] id='));

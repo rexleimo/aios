@@ -38,7 +38,7 @@ async function autoHealDefaultCdpPort({
   }
 
   if (dryRun) {
-    io.log(`[plan] browser doctor fix would run: node scripts/aios.mjs internal browser cdp-start (port=${port})`);
+    io.log(`[plan] browser doctor fix would run: aios internal browser cdp-start (port=${port})`);
     return {
       attempted: false,
       healed: false,
@@ -198,17 +198,17 @@ export async function doctorBrowserMcp({ rootDir, io = console, fix = false, dry
   io.log('');
   io.log('[6/6] quick next steps');
   io.log('- Recommended: keep the selected browser profile healthy');
-  io.log('  node scripts/aios.mjs internal browser doctor');
+  io.log('  aios internal browser doctor');
   if (localBrowserMcpAvailable) {
     io.log('- Local browser MCP install/update:');
-    io.log('  node scripts/aios.mjs internal browser install');
+    io.log('  aios internal browser install');
     io.log('  npm --prefix mcp-server run build');
   } else {
     io.log('- Restore the repository-local browser MCP launcher and rerun install:');
     io.log(`  ${localBrowserMcpScript}`);
   }
   io.log('- Browser doctor auto-heal (macOS CDP service only):');
-  io.log('  node scripts/aios.mjs internal browser doctor --fix');
+  io.log('  aios internal browser doctor --fix');
   if (fix) {
     io.log(`  [fix] planned=${autoFixPlanned} attempted=${autoFixApplied} healed=${autoFixHealed}`);
   }

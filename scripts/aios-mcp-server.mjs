@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-/* 中文注释：AIOS MCP Server 桥接 Hermes Agent。暴露 5 个核心工具让 Hermes 用户直接调用 AIOS 能力。 */
+/* 中文注释：AIOS MCP Server 桥接（Hermes / Pi 等无内建 MCP 面的客户端）。暴露 12 个工具：plan 全套、capability_evidence、context_pack、doctor_suite、orchestrate、skill_validate/install、intercept_compress。 */
 import { createInterface } from 'node:readline';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 
-/* 中文注释：5 个核心工具定义，每个都是标准 MCP inputSchema 格式。 */
+/* 中文注释：12 个工具定义，每个都是标准 MCP inputSchema 格式。 */
 const TOOLS = [
   {
     name: 'aios_context_pack',
@@ -233,7 +233,7 @@ async function handleContextPack(params) {
     return { content: [{ type: 'text', text: JSON.stringify(packed, null, 2) }] };
   } catch (err) {
     /* 中文注释：CLI 失败时提供 fallback 提示 */
-    return { content: [{ type: 'text', text: `ContextDB search failed: ${err.message}\nMake sure AIOS is installed and ContextDB is initialized.\nRun: node scripts/aios.mjs doctor suite` }] };
+    return { content: [{ type: 'text', text: `ContextDB search failed: ${err.message}\nMake sure AIOS is installed and ContextDB is initialized.\nRun: aios doctor suite` }] };
   }
 }
 

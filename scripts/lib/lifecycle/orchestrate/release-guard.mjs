@@ -1,5 +1,5 @@
 export const PREFLIGHT_RELEASE_GUARD_SOURCE_ID = 'gate.release-health';
-export const PREFLIGHT_RELEASE_GUARD_COMMAND = 'node scripts/aios.mjs release-status --strict --format json';
+export const PREFLIGHT_RELEASE_GUARD_COMMAND = 'aios release-status --strict --format json';
 
 // 纯函数：识别“release state 尚未生成”的可跳过状态，避免 preflight 把首次运行误判成失败。
 export function isReleaseStateUnavailable(result = {}) {

@@ -54,7 +54,7 @@ export function buildDispatchFixHint({ sessionId, dispatchHindsight, latestDispa
     title: target?.title || targetId,
     evidence: evidenceParts.join(' '),
     nextCommand: sessionId
-      ? `node scripts/aios.mjs orchestrate --session ${normalizeText(sessionId)} --dispatch local --execute dry-run --format json`
+      ? `aios orchestrate --session ${normalizeText(sessionId)} --dispatch local --execute dry-run --format json`
       : target?.nextCommand || null,
     nextArtifact: normalizeText(latestDispatchArtifactPath) || null,
   };
@@ -64,19 +64,19 @@ export function buildSuggestedCommands({ sessionId, provider, latestDispatch, la
   const commands = [];
   if (!sessionId) return commands;
 
-  commands.push(`node scripts/aios.mjs orchestrate --session ${sessionId} --dispatch local --execute dry-run`);
-  commands.push(`node scripts/aios.mjs learn-eval --session ${sessionId}`);
+  commands.push(`aios orchestrate --session ${sessionId} --dispatch local --execute dry-run`);
+  commands.push(`aios learn-eval --session ${sessionId}`);
 
   const regressions = Number.isFinite(dispatchHindsight?.regressions) ? Math.max(0, Math.floor(dispatchHindsight.regressions)) : 0;
   const repeatBlockedTurns = Number.isFinite(dispatchHindsight?.repeatedBlockedTurns) ? Math.max(0, Math.floor(dispatchHindsight.repeatedBlockedTurns)) : 0;
   if (regressions > 0 || repeatBlockedTurns > 0) {
-    commands.push('node scripts/aios.mjs doctor');
+    commands.push('aios doctor');
   }
 
   const effectiveProvider = provider || inferProviderFromAgent(latestDispatch?.raw?.dispatchEvidence?.agent) || '';
   if (latestDispatch?.blockedJobs > 0 && TEAM_PROVIDER_NAMES.has(effectiveProvider)) {
     commands.push(
-      `node scripts/aios.mjs team --resume ${sessionId} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`
+      `aios team --resume ${sessionId} --retry-blocked --provider ${effectiveProvider} --workers 2 --dry-run`
     );
   }
 
@@ -86,7 +86,7 @@ export function buildSuggestedCommands({ sessionId, provider, latestDispatch, la
   const draftTargetId = normalizeText(candidate?.sourceDraftTargetId);
   if (draftTargetId) {
     commands.push(
-      `node scripts/aios.mjs learn-eval --session ${sessionId} --apply-draft ${draftTargetId} --apply-dry-run`
+      `aios learn-eval --session ${sessionId} --apply-draft ${draftTargetId} --apply-dry-run`
     );
   }
 
@@ -100,11 +100,11 @@ export function buildHarnessSuggestedCommands({ sessionId, latestHarnessRun = nu
   }
 
   const commands = [
-    `node scripts/aios.mjs harness status --session ${normalizedSessionId} --json`,
+    `aios harness status --session ${normalizedSessionId} --json`,
   ];
   if (normalizeText(latestHarnessRun.status) !== 'done') {
-    commands.push(`node scripts/aios.mjs harness resume --session ${normalizedSessionId}`);
-    commands.push(`node scripts/aios.mjs harness stop --session ${normalizedSessionId}`);
+    commands.push(`aios harness resume --session ${normalizedSessionId}`);
+    commands.push(`aios harness stop --session ${normalizedSessionId}`);
   }
   return normalizeStringArray(commands);
 }

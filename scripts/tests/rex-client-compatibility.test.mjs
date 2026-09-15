@@ -12,12 +12,18 @@ const EXPECTED_CLIENT_ROOTS = Object.freeze({
   hermes: '.hermes/skills',
   grok: '.grok/skills',
   workbuddy: '.workbuddy/skills',
-  pi: '.pi/skills',
+  // Pi reads the shared Agent Skills root natively; a dedicated .pi/skills
+  // projection makes Pi skip the shared copy as an already-loaded duplicate.
+  pi: '.agents/skills',
 });
 
 test('eight client projection targets are stable and complete', () => {
   assert.deepEqual(supportedClients(), Object.keys(EXPECTED_CLIENT_ROOTS));
   for (const [client, root] of Object.entries(EXPECTED_CLIENT_ROOTS)) {
+    if (client === 'pi') {
+      assert.equal(root, '.agents/skills', 'pi projects into the shared Agent Skills root');
+      continue;
+    }
     assert.match(root, new RegExp(`^\\.${client === 'opencode' ? 'opencode' : client}\\/skills$`, 'u'));
   }
 });

@@ -50,7 +50,7 @@ test('runUpdate dry-run returns its plan before component updates', async () => 
   assert.deepEqual(calls, []);
   assert.equal(result.options.dryRun, true);
   assert.match(result.preview, /update --components native .*--dry-run/);
-  assert.match(logs.join('\n'), /^\[plan\] node scripts\/aios\.mjs update/m);
+  assert.match(logs.join('\n'), /^\[plan\] aios update/m);
 });
 
 test('planDoctor preserves strict and global security flags', () => {
@@ -175,7 +175,7 @@ test('runSetup browser flow does not block lifecycle when browser-use runtime is
   assert.equal(calls[0].kind, 'doctor');
   assert.equal(calls[0].options.fix, false);
   assert.match(logs.join('\n'), /\[warn\] browser component skipped:/);
-  assert.match(logs.join('\n'), /node scripts\/aios\.mjs internal browser doctor --fix/);
+  assert.match(logs.join('\n'), /aios internal browser doctor --fix/);
 });
 
 test('runUpdate browser flow enables doctor auto-heal by default', async () => {
@@ -475,5 +475,5 @@ test('runUpdate browser flow does not block lifecycle when browser-use runtime i
   assert.equal(calls[0].kind, 'doctor');
   assert.equal(calls[0].options.fix, false);
   assert.match(logs.join('\n'), /\[warn\] browser component skipped:/);
-  assert.match(logs.join('\n'), /node scripts\/aios\.mjs internal browser doctor --fix/);
+  assert.match(logs.join('\n'), /aios internal browser doctor --fix/);
 });

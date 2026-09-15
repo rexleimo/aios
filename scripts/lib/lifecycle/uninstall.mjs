@@ -33,7 +33,7 @@ export function planUninstall(rawOptions = {}) {
   return {
     command: 'uninstall',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }
 

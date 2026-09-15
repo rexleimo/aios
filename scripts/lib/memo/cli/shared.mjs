@@ -3,7 +3,7 @@ import { captureCommand } from '../../platform/process.mjs';
 import { MAX_PRINT_CHARS } from './constants.mjs';
 
 export function usageError(message) {
-  const error = new Error(`${message}\n\nRun: node scripts/aios.mjs memo --help`);
+  const error = new Error(`${message}\n\nRun: aios memo --help`);
   error.code = 'AIOS_MEMO_USAGE';
   return error;
 }

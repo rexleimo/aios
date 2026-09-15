@@ -1,6 +1,6 @@
 import { IMPORT_FORMATS, importExternalMemories } from './import-external.mjs';
 
-const USAGE = `Usage: node scripts/aios.mjs import --format <${IMPORT_FORMATS.join('|')}> --file <path> [--dry-run] [--json]
+const USAGE = `Usage: aios import --format <${IMPORT_FORMATS.join('|')}> --file <path> [--dry-run] [--json]
 
 Import external assistant-memory files into the governed memo candidate
 queue. Imported facts are reviewable with 'memo candidate list' and land in
@@ -38,6 +38,6 @@ export async function runImportCommand({ args = [], rootDir, stdout = process.st
   const action = result.dryRun ? 'would import' : 'imported';
   stdout.write(`${action} ${result.imported} fact(s) from ${result.file} as ${result.format} candidate(s), skipped ${result.skipped} duplicate(s)\n`);
   if (!result.dryRun) {
-    stdout.write('Review with: node scripts/aios.mjs memo candidate list\n');
+    stdout.write('Review with: aios memo candidate list\n');
   }
 }

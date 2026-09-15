@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 // scripts/aios-init.mjs — 薄壳入口，逻辑在 scripts/lib/aios-init/
+import { existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -232,7 +233,9 @@ export async function main(argv = process.argv.slice(2)) {
     try {
       const { installContextDbSkills } = await import('./lib/components/skills/install.mjs');
       await installContextDbSkills({
-        rootDir: workspaceRoot,
+        // 中文注释：rootDir 必须是 AIOS 安装根（catalog 与 skill-sources 所在），
+        // 不能传客户端工作区——否则 manifest 永远找不到，全局 skill 目录静默失败。
+        rootDir: AIOS_ROOT,
         client: 'all',
         scope: 'global',
         installMode: 'copy',
@@ -299,6 +302,13 @@ export async function main(argv = process.argv.slice(2)) {
       console.log(`  Pi MCP (mcp.json ${mcp.mcpAction}, adapter ${mcp.adapter}): ${mcp.mcpJsonPath}`);
       if (mcp.keptDiffers.length > 0) {
         console.log(`  Pi MCP kept user-edited servers: ${mcp.keptDiffers.join(', ')}`);
+      }
+      // 2e. Project .mcp.json advisory — the Pi-global file only carries the
+      // cwd-less AIOS servers; shell/browser/auth reach Pi through the
+      // project-level .mcp.json that the pi-mcp-adapter reads directly.
+      if (!dryRun && !existsSync(resolve(workspaceRoot, '.mcp.json'))) {
+        console.log('  [hint] No project .mcp.json: Pi sees only the global AIOS servers (code-review-graph, aios-memory, aios-bridge).');
+        console.log('  [hint] Shell/browser/auth servers need a project-level .mcp.json (run aios init --agent claude to generate one, then re-run this command).');
       }
     } catch (err) {
       console.warn(`[warn] Pi MCP bridge setup: ${err.message}`);

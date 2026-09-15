@@ -147,8 +147,8 @@ export function buildDispatchPolicy({ learnEvalReport = null, learnEvalOverlay =
       kind: 'fix',
       targetId: 'runbook.dispatch-merge-triage',
       nextCommand: sessionId
-        ? `node scripts/aios.mjs orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`
-        : 'node scripts/aios.mjs doctor',
+        ? `aios orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`
+        : 'aios doctor',
       nextArtifact: dispatchSignals.latestArtifactPath || undefined,
     });
   }
@@ -158,8 +158,8 @@ export function buildDispatchPolicy({ learnEvalReport = null, learnEvalOverlay =
       kind: 'fix',
       targetId: 'runbook.dispatch-runtime-unavailable',
       nextCommand: sessionId
-        ? `node scripts/aios.mjs orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`
-        : 'node scripts/aios.mjs orchestrate --dispatch local --execute dry-run --format json',
+        ? `aios orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`
+        : 'aios orchestrate --dispatch local --execute dry-run --format json',
     });
   }
 

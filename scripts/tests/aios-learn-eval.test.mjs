@@ -462,7 +462,7 @@ test('buildLearnEvalReport routes tool failures to a concrete runbook target', a
     targetType: 'runbook',
     targetId: 'runbook.tool-repair',
   });
-  assert.match(repairRunbook?.nextCommand ?? '', /node scripts\/aios\.mjs doctor/);
+  assert.match(repairRunbook?.nextCommand ?? '', /(^|\s)aios doctor/);
 });
 
 test('buildLearnEvalReport surfaces dispatch evidence signals from artifacts and events', async () => {

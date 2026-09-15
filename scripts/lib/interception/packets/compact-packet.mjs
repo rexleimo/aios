@@ -45,8 +45,8 @@ export function buildCompactPacket({ request, output, shrink, ref, rawBytes }) {
     },
     /* 中文注释：召回命令直接放进 packet，Agent 需要原文时可以精准读 ref，而不是重新扫全仓库。 */
     recall: refs.length > 0 ? [
-      `node scripts/aios.mjs refs read ${refs[0].ref_id}`,
-      `node scripts/aios.mjs refs grep "pattern" --ref ${refs[0].ref_id}`,
+      `aios refs read ${refs[0].ref_id}`,
+      `aios refs grep "pattern" --ref ${refs[0].ref_id}`,
     ] : [],
     safety: {
       redacted: false,

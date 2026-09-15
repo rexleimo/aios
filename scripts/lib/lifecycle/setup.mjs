@@ -30,8 +30,8 @@ function logBrowserMcpRuntimeWarning(io, error) {
   const [firstLine = message] = message.split(String.fromCharCode(10)).filter(Boolean);
   io.log(`[warn] browser component skipped: ${firstLine}`);
   io.log('[warn] Browser MCP uses the repository-local Node/Playwright runtime.');
-  io.log('[warn] Install recovery: node scripts/aios.mjs internal browser install');
-  io.log('[warn] Browser-only recovery: node scripts/aios.mjs internal browser doctor --fix');
+  io.log('[warn] Install recovery: aios internal browser install');
+  io.log('[warn] Browser-only recovery: aios internal browser doctor --fix');
 }
 
 export function normalizeSetupOptions(rawOptions = {}) {
@@ -76,7 +76,7 @@ export function planSetup(rawOptions = {}) {
   return {
     command: 'setup',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }
 

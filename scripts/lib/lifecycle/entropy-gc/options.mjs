@@ -45,6 +45,6 @@ export function planEntropyGc(rawOptions = {}) {
   return {
     command: 'entropy-gc',
     options,
-    preview: `node scripts/aios.mjs ${args.join(' ')}`,
+    preview: `aios ${args.join(' ')}`,
   };
 }

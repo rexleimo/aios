@@ -3,7 +3,7 @@ export function getMaintenanceCommandHelpText(command) {
   switch (command) {
     case 'status':
       return `Usage:
-  node scripts/aios.mjs status [options]
+  aios status [options]
 
 Description:
   Render the unified aios.status.v1 readiness surface. This ECC-inspired status
@@ -17,9 +17,9 @@ Options:
 `;
     case 'agents':
       return `Usage:
-  node scripts/aios.mjs agents list [options]
-  node scripts/aios.mjs agents doctor --strict [options]
-  node scripts/aios.mjs agents smoke --live --client <name> [options]
+  aios agents list [options]
+  aios agents doctor --strict [options]
+  aios agents smoke --live --client <name> [options]
 
 Description:
   Inspect the aios.agent-catalogue.v1 agent catalogue for default agents.
@@ -45,7 +45,7 @@ Options:
 `;
     case 'entropy-gc':
       return `Usage:
-  node scripts/aios.mjs entropy-gc [dry-run|auto|off] [options]
+  aios entropy-gc [dry-run|auto|off] [options]
 
 Options:
   --session <id>                 Required session id to clean
@@ -56,7 +56,7 @@ Options:
 `;
     case 'snapshot-rollback':
       return `Usage:
-  node scripts/aios.mjs snapshot-rollback [options]
+  aios snapshot-rollback [options]
 
 Options:
   --manifest <path>              Explicit snapshot manifest path (relative to workspace or absolute)
@@ -68,7 +68,7 @@ Options:
 `;
     case 'release-status':
       return `Usage:
-  node scripts/aios.mjs release-status [options]
+  aios release-status [options]
 
 Options:
   --state-path <path>            Override release gate state file path
@@ -88,10 +88,10 @@ Options:
 `;
     case 'refs':
       return `Usage:
-  node scripts/aios.mjs refs list [--session <id>] [--workspace <path>]
-  node scripts/aios.mjs refs grep <pattern> [--session <id>] [--limit N] [--workspace <path>]
-  node scripts/aios.mjs refs read <node_id> [--workspace <path>]
-  node scripts/aios.mjs refs prune [--keep-days N] [--workspace <path>]
+  aios refs list [--session <id>] [--workspace <path>]
+  aios refs grep <pattern> [--session <id>] [--limit N] [--workspace <path>]
+  aios refs read <node_id> [--workspace <path>]
+  aios refs prune [--keep-days N] [--workspace <path>]
 
 Options:
   --session <id>                 Limit to one offload session
@@ -103,7 +103,7 @@ Options:
 `;
     case 'search':
       return `Usage:
-  node scripts/aios.mjs search <query> [options]
+  aios search <query> [options]
 
 Options:
   --source <list>                Sources: memory, docs, plans, code, all (default: all)
@@ -118,11 +118,11 @@ Options:
 `;
     case 'skill':
       return `Usage:
-  node scripts/aios.mjs skill comply <path> --dry-run [--client <client>] [--json]
-  node scripts/aios.mjs skill comply <path> --live [--client <client>] [--json]
-  node scripts/aios.mjs skill health [--dashboard] [--json]
-  node scripts/aios.mjs skill certify --changed [--base <ref>] [--json]
-  node scripts/aios.mjs skill verify-training --changed [--base <ref>] [--json]
+  aios skill comply <path> --dry-run [--client <client>] [--json]
+  aios skill comply <path> --live [--client <client>] [--json]
+  aios skill health [--dashboard] [--json]
+  aios skill certify --changed [--base <ref>] [--json]
+  aios skill verify-training --changed [--base <ref>] [--json]
 
 Subcommands:
   comply       Generate expected skill behavior and trigger-smoke scenarios
@@ -141,14 +141,14 @@ Options:
 `;
     case 'plan':
       return `Usage:
-  node scripts/aios.mjs plan status [--workspace <path>] [--json]
-  node scripts/aios.mjs plan show [--workspace <path>] [--html] [--json]
-  node scripts/aios.mjs plan start --title <text> --task <text> [--workspace <path>] [--json]
-  node scripts/aios.mjs plan task <id> [--context <ref[:reason]>] [--target <path>] [--allow-write <glob>] [--workspace <path>] [--json]
-  node scripts/aios.mjs plan task <id> --propose-context [--target <path>] [--workspace <path>] [--json]
-  node scripts/aios.mjs plan task <id> --confirm-context-candidates [--candidate-ref <ref>] [--workspace <path>] [--json]
-  node scripts/aios.mjs plan auto-gate --task <text> [--workspace <path>] [--json]
-  node scripts/aios.mjs plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--testability-file <path>] [--workspace <path>] [--json]
+  aios plan status [--workspace <path>] [--json]
+  aios plan show [--workspace <path>] [--html] [--json]
+  aios plan start --title <text> --task <text> [--workspace <path>] [--json]
+  aios plan task <id> [--context <ref[:reason]>] [--target <path>] [--allow-write <glob>] [--workspace <path>] [--json]
+  aios plan task <id> --propose-context [--target <path>] [--workspace <path>] [--json]
+  aios plan task <id> --confirm-context-candidates [--candidate-ref <ref>] [--workspace <path>] [--json]
+  aios plan auto-gate --task <text> [--workspace <path>] [--json]
+  aios plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--testability-file <path>] [--workspace <path>] [--json]
 
 Options:
   --title <text>                 Plan title or task title
@@ -174,20 +174,20 @@ Options:
   -h, --help
 
 Examples:
-  node scripts/aios.mjs plan show --html
-  node scripts/aios.mjs plan show --workspace /tmp/demo --json
-  node scripts/aios.mjs plan task t3-implement --propose-context --target src/feature.mjs
-  node scripts/aios.mjs plan task t3-implement --confirm-context-candidates --candidate-ref src/feature.mjs
-  node scripts/aios.mjs plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref receipt:<id> --json
+  aios plan show --html
+  aios plan show --workspace /tmp/demo --json
+  aios plan task t3-implement --propose-context --target src/feature.mjs
+  aios plan task t3-implement --confirm-context-candidates --candidate-ref src/feature.mjs
+  aios plan capability-evidence --activation activation-1 --command-token <token> --evidence-kind focused-tests-pass --evidence-ref receipt:<id> --json
 `;
     case 'dream':
       return `Usage:
-  node scripts/aios.mjs dream --preview [--space <name>] [--workspace <path>] [--json]
-  node scripts/aios.mjs dream --apply [--space <name>] [--workspace <path>] [--json]
-  node scripts/aios.mjs dream --preview --to pin [--workspace <path>] [--json]
-  node scripts/aios.mjs dream --apply --to both [--workspace <path>] [--json]
-  node scripts/aios.mjs dream --governance <list|inspect> [--proposal <id>] [--json]
-  node scripts/aios.mjs dream --governance <approve|reject|archive|restore|gc> [--proposal <id>] [--reason <text>] [--json]
+  aios dream --preview [--space <name>] [--workspace <path>] [--json]
+  aios dream --apply [--space <name>] [--workspace <path>] [--json]
+  aios dream --preview --to pin [--workspace <path>] [--json]
+  aios dream --apply --to both [--workspace <path>] [--json]
+  aios dream --governance <list|inspect> [--proposal <id>] [--json]
+  aios dream --governance <approve|reject|archive|restore|gc> [--proposal <id>] [--reason <text>] [--json]
 
 Options:
   --preview                      Preview dream consolidation/export (default)
@@ -204,13 +204,13 @@ Options:
   -h, --help
 
 Examples:
-  node scripts/aios.mjs dream --preview --to pin --json
-  node scripts/aios.mjs dream --apply --to both --workspace /tmp/demo --json
-  node scripts/aios.mjs dream --governance list --json
+  aios dream --preview --to pin --json
+  aios dream --apply --to both --workspace /tmp/demo --json
+  aios dream --governance list --json
 `;
     case 'session':
       return `Usage:
-  node scripts/aios.mjs session changed-files [--session <id>] [--json]
+  aios session changed-files [--session <id>] [--json]
 
 Subcommands:
   changed-files                  Show session-local changed file ledger
@@ -223,9 +223,9 @@ Options:
 `;
     case 'canvas':
       return `Usage:
-  node scripts/aios.mjs canvas show [--session <id>] [--format mmd|json] [--workspace <path>]
-  node scripts/aios.mjs canvas path [--session <id>] [--workspace <path>]
-  node scripts/aios.mjs canvas backfill --input <events.jsonl> --client <client> [--session <id>] [--workspace <path>]
+  aios canvas show [--session <id>] [--format mmd|json] [--workspace <path>]
+  aios canvas path [--session <id>] [--workspace <path>]
+  aios canvas backfill --input <events.jsonl> --client <client> [--session <id>] [--workspace <path>]
 
 Options:
   --session <id>                 Offload session id (default: default)
@@ -238,12 +238,12 @@ Options:
 `;
     case 'interception':
       return `Usage:
-  node scripts/aios.mjs interception doctor [--fix] [--dry-run] [--enforce-turns] [--json] [--workspace <path>]
-  node scripts/aios.mjs interception proof [--session <id>] [--json] [--workspace <path>]
-  node scripts/aios.mjs interception tail [--session <id> | --latest] [--limit <n>] [--json] [--workspace <path>]
-  node scripts/aios.mjs interception rewrite --command <cmd> [--hook claude] [--json]
-  node scripts/aios.mjs interception mcp-migrate [--dry-run] [--json]
-  node scripts/aios.mjs interception audit [--timezone <tz>] [--date <YYYY-MM-DD>] [--json] [--workspace <path>]
+  aios interception doctor [--fix] [--dry-run] [--enforce-turns] [--json] [--workspace <path>]
+  aios interception proof [--session <id>] [--json] [--workspace <path>]
+  aios interception tail [--session <id> | --latest] [--limit <n>] [--json] [--workspace <path>]
+  aios interception rewrite --command <cmd> [--hook claude] [--json]
+  aios interception mcp-migrate [--dry-run] [--json]
+  aios interception audit [--timezone <tz>] [--date <YYYY-MM-DD>] [--json] [--workspace <path>]
 
 Subcommands:
   doctor       Verify RTK/Caveman-style interception, MCP proxy routing, refs, and metrics
@@ -271,9 +271,9 @@ Options:
 `;
     case 'perception':
       return `Usage:
-  node scripts/aios.mjs perception record [options]
-  node scripts/aios.mjs perception insights [options]
-  node scripts/aios.mjs perception summary [options]
+  aios perception record [options]
+  aios perception insights [options]
+  aios perception summary [options]
 
 Subcommands:
   record      Record a structured outcome snapshot after content operation

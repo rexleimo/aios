@@ -77,6 +77,10 @@ export function memoWriteArgs({ text = '' } = {}) {
   return ['memo', 'add', String(text || '')];
 }
 
+export function memoCheckpointArgs({ text = '' } = {}) {
+  return ['memo', 'checkpoint', String(text || '')];
+}
+
 export function memoUsefulArgs({ eventIds = [] } = {}) {
   return ['memo', 'useful', [...eventIds].map(String).join(',')];
 }

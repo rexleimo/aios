@@ -41,14 +41,34 @@ ctxdb_normalize_codex_home() {
   fi
 }
 
+# 中文注释：解析 AIOS 安装根目录。非交互 shell（如 harness 命令快照）可能丢失 shell
+# 集成导出的 AIOS_ROOT_DIR/AIOS_ROOT/ROOTPATH，此时回退到与 ~/.aios/bin/aios shim
+# 相同的探测路径，避免 aios / bridge 包装函数在没有集成变量的会话里直接失败。
+# 变量已设置且目录存在时不覆盖，保持既有优先级（AIOS_ROOT_DIR → AIOS_ROOT → ROOTPATH）。
+ctxdb_resolve_aios_root() {
+  local rootpath="${AIOS_ROOT_DIR:-${AIOS_ROOT:-${ROOTPATH:-}}}"
+  if [[ -z "$rootpath" || ! -d "$rootpath" ]]; then
+    local probe
+    for probe in "$HOME/.rexcil/aios" "$HOME/cool.cnb/rex-ai-boot"; do
+      if [[ -f "$probe/scripts/aios.sh" ]]; then
+        printf '%s\n' "$probe"
+        return 0
+      fi
+    done
+    return 1
+  fi
+  printf '%s\n' "$rootpath"
+  return 0
+}
+
 ctxdb_find_bridge() {
   if [[ -n "${CTXDB_SHELL_BRIDGE:-}" ]] && [[ -f "${CTXDB_SHELL_BRIDGE}" ]]; then
     printf '%s\n' "${CTXDB_SHELL_BRIDGE}"
     return 0
   fi
 
-  local rootpath="${AIOS_ROOT_DIR:-${AIOS_ROOT:-${ROOTPATH:-}}}"
-  if [[ -n "$rootpath" ]]; then
+  local rootpath
+  if rootpath="$(ctxdb_resolve_aios_root)"; then
     local candidate="$rootpath/scripts/contextdb-shell-bridge.mjs"
     if [[ -f "$candidate" ]]; then
       printf '%s\n' "$candidate"
@@ -105,11 +125,14 @@ aios() {
   local sub="${1:-}"
   shift || true
 
-  local rootpath="${AIOS_ROOT_DIR:-${AIOS_ROOT:-${ROOTPATH:-}}}"
-  if [[ -z "$rootpath" ]]; then
+  local rootpath
+  if ! rootpath="$(ctxdb_resolve_aios_root)"; then
     echo "[warn] AIOS_ROOT_DIR is not set (install shell integration first)"
     return 1
   fi
+  # 中文注释：与 ~/.aios/bin/aios shim 保持同一契约——派发前把解析出的安装根写回环境，
+  # 避免下游 scripts/aios.sh 等子进程读到缺失或陈旧的 AIOS_ROOT_DIR。
+  export AIOS_ROOT_DIR="$rootpath" AIOS_ROOT="$rootpath" ROOTPATH="$rootpath"
 
   case "$sub" in
     doctor)

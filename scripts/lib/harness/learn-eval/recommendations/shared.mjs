@@ -11,27 +11,27 @@ export const RECOMMENDATION_SECTION_LABELS = {
 };
 
 export function getQualityGateFixCommand() {
-  return 'node scripts/aios.mjs quality-gate pre-pr';
+  return 'aios quality-gate pre-pr';
 }
 
 export function getVerificationCommand() {
-  return 'node scripts/aios.mjs quality-gate full';
+  return 'aios quality-gate full';
 }
 
 export function getQualityGatePromoteCommand() {
-  return 'node scripts/aios.mjs quality-gate pre-pr';
+  return 'aios quality-gate pre-pr';
 }
 
 export function getDoctorCommand() {
-  return 'node scripts/aios.mjs doctor';
+  return 'aios doctor';
 }
 
 export function getDispatchReplayCommand(sessionId) {
-  return `node scripts/aios.mjs orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`;
+  return `aios orchestrate --session ${sessionId} --dispatch local --execute dry-run --format json`;
 }
 
 export function buildOrchestrateCommand(blueprint, taskTitle, contextSummary = '') {
-  const args = ['node scripts/aios.mjs', 'orchestrate', blueprint, '--task', JSON.stringify(taskTitle)];
+  const args = ['aios', 'orchestrate', blueprint, '--task', JSON.stringify(taskTitle)];
   if (String(contextSummary || '').trim()) {
     args.push('--context', JSON.stringify(String(contextSummary).trim()));
   }

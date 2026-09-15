@@ -5,10 +5,11 @@
 // AIOS-managed server entries for the Pi-global mcp.json, and idempotent
 // merge/install helpers. Project repos keep using their own .mcp.json
 // (the adapter reads it directly); the Pi-global file only carries servers
-// that make sense outside any single project (code-review-graph plus
-// aios-memory, both cwd-less so they follow the Pi session cwd; browser,
-// shell and auth servers stay out until their CDP/exec/sensitivity
-// dependencies get an explicit gate).
+// that make sense outside any single project: code-review-graph (cwd-less),
+// plus the AIOS-root-resolved aios-memory and aios-bridge stdio servers,
+// all three cwd-less so they follow the Pi session cwd. Browser, shell and
+// auth servers stay out until their CDP/exec/sensitivity dependencies get
+// an explicit gate — projects enable them via their own .mcp.json.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -26,11 +27,13 @@ export function resolvePiMcpJsonPath(piHome) {
 // Servers AIOS manages inside the Pi-global mcp.json. Keyed by server name;
 // user-owned entries with other names are never touched, and a user-edited
 // entry with the same name is kept as-is (reported as kept-differs).
-// Both entries are session-cwd-following (no cwd/env): code-review-graph
-// serves the Pi session directory, and aios-memory falls back to
-// process.cwd() without AIOS_WORKSPACE_ROOT. Browser/shell/auth servers stay
-// out: browser needs a CDP endpoint, shell executes arbitrary commands, and
-// auth is niche — all need an explicit gate before going global.
+// All entries are session-cwd-following (no cwd/env): code-review-graph
+// serves the Pi session directory, and both node servers resolve their
+// workspace from the session cwd at request time. `aiosRoot` is the
+// runtime-resolved AIOS install root (never a repo-relative literal).
+// Browser/shell/auth servers stay out: browser needs a CDP endpoint, shell
+// executes arbitrary commands, and auth is niche — all need an explicit
+// gate before going global.
 export function buildAiosPiMcpServers({ aiosRoot = '' } = {}) {
   const servers = {
     'code-review-graph': {
@@ -44,6 +47,11 @@ export function buildAiosPiMcpServers({ aiosRoot = '' } = {}) {
     servers['aios-memory'] = {
       command: 'node',
       args: [path.join(root, 'scripts', 'memory-mcp-server.mjs')],
+      lifecycle: 'lazy',
+    };
+    servers['aios-bridge'] = {
+      command: 'node',
+      args: [path.join(root, 'scripts', 'aios-mcp-server.mjs')],
       lifecycle: 'lazy',
     };
   }

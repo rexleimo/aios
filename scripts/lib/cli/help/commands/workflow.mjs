@@ -2,8 +2,8 @@ export function getWorkflowCommandHelpText(command) {
   switch (command) {
     case 'workflow':
       return `Usage:
-  node scripts/aios.mjs workflow list [options]
-  node scripts/aios.mjs workflow run <workflowId> --dry-run [options]
+  aios workflow list [options]
+  aios workflow run <workflowId> --dry-run [options]
 
 Description:
   List and dry-run aios.workflow-recipe.v1 recipes. Workflow recipes are the
@@ -19,8 +19,8 @@ Options:
 `;
     case 'orchestrate':
       return `Usage:
-  node scripts/aios.mjs orchestrate [feature|bugfix|refactor|security] [options]
-  node scripts/aios.mjs orchestrate --session <id> [options]
+  aios orchestrate [feature|bugfix|refactor|security] [options]
+  aios orchestrate --session <id> [options]
 
 Options:
   --task <title>
@@ -39,23 +39,23 @@ Options:
 `;
     case 'team':
       return `Usage:
-  node scripts/aios.mjs team [<workers:provider>] [task] [options]
-  node scripts/aios.mjs team status [options]
-  node scripts/aios.mjs team watchdog [options]
-  node scripts/aios.mjs team history [options]
-  node scripts/aios.mjs team skill-candidates [list|export] [options]
+  aios team [<workers:provider>] [task] [options]
+  aios team status [options]
+  aios team watchdog [options]
+  aios team history [options]
+  aios team skill-candidates [list|export] [options]
 
 Examples:
-  node scripts/aios.mjs team 3:codex "Ship X"
-  node scripts/aios.mjs team 2:claude --session <id>
-  node scripts/aios.mjs team --resume <id> --retry-blocked --provider codex --workers 2
-  node scripts/aios.mjs team --provider gemini --workers 2 --task "Refactor Y" --dry-run
-  node scripts/aios.mjs team status --provider codex --watch
-  node scripts/aios.mjs team watchdog --session <id> --json
-  node scripts/aios.mjs team status --session <id> --show-skill-candidates detail --export-skill-candidate-patch-template
-  node scripts/aios.mjs team history --provider claude --limit 10
-  node scripts/aios.mjs team skill-candidates list --session <id> --draft-id <targetId> --json
-  node scripts/aios.mjs team skill-candidates export --session <id> --draft-id <targetId>
+  aios team 3:codex "Ship X"
+  aios team 2:claude --session <id>
+  aios team --resume <id> --retry-blocked --provider codex --workers 2
+  aios team --provider gemini --workers 2 --task "Refactor Y" --dry-run
+  aios team status --provider codex --watch
+  aios team watchdog --session <id> --json
+  aios team status --session <id> --show-skill-candidates detail --export-skill-candidate-patch-template
+  aios team history --provider claude --limit 10
+  aios team skill-candidates list --session <id> --draft-id <targetId> --json
+  aios team skill-candidates export --session <id> --draft-id <targetId>
 
 Options:
   --workers <n>                 Team worker concurrency (default: 3)
@@ -100,17 +100,17 @@ Options:
 `;
     case 'harness':
       return `Usage:
-  node scripts/aios.mjs harness run --objective <text> [options]
-  node scripts/aios.mjs harness status --session <id> [options]
-  node scripts/aios.mjs harness resume --session <id> [options]
-  node scripts/aios.mjs harness stop --session <id> [options]
+  aios harness run --objective <text> [options]
+  aios harness status --session <id> [options]
+  aios harness resume --session <id> [options]
+  aios harness stop --session <id> [options]
 
 Examples:
-  node scripts/aios.mjs harness run --objective "Ship release checklist" --worktree
-  node scripts/aios.mjs harness run --objective "Draft tomorrow handoff" --session demo-session --dry-run --json
-  node scripts/aios.mjs harness status --session demo-session --json
-  node scripts/aios.mjs harness resume --session demo-session
-  node scripts/aios.mjs harness stop --session demo-session
+  aios harness run --objective "Ship release checklist" --worktree
+  aios harness run --objective "Draft tomorrow handoff" --session demo-session --dry-run --json
+  aios harness status --session demo-session --json
+  aios harness resume --session demo-session
+  aios harness stop --session demo-session
 
 Options:
   --objective <text>            (run) Required objective for a new solo harness run
@@ -130,7 +130,7 @@ Options:
 `;
     case 'hud':
       return `Usage:
-  node scripts/aios.mjs hud [options]
+  aios hud [options]
 
 Options:
   --session <id>                Explicit ContextDB session id
@@ -153,7 +153,7 @@ Options:
 `;
     case 'learn-eval':
       return `Usage:
-  node scripts/aios.mjs learn-eval [options]
+  aios learn-eval [options]
 
 Options:
   --session <id>

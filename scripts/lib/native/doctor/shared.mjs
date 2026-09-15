@@ -45,7 +45,7 @@ export function areSamePath(left, right) {
 }
 
 export function buildFixCommand(client) {
-  return `node scripts/aios.mjs update --components native --client ${client}`;
+  return `aios update --components native --client ${client}`;
 }
 
 export function formatOperationTarget(operation) {

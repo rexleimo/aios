@@ -4,6 +4,7 @@
 // and returns { text } content for the tool result.
 import {
   codemapSearchArgs,
+  memoCheckpointArgs,
   memoRecallArgs,
   memoUsefulArgs,
   memoWriteArgs,
@@ -54,6 +55,18 @@ export function buildToolDefs({ Type, run } = {}) {
       }),
       async execute(_toolCallId, params) {
         const { text } = await run({ argv: memoUsefulArgs(params || {}) });
+        return textResult(text);
+      },
+    },
+    {
+      name: 'aios_memory_checkpoint',
+      label: 'AIOS memory checkpoint',
+      description: 'Pin a milestone checkpoint to AIOS workspace memory so future sessions recall it. Use at milestones and before claiming work complete.',
+      parameters: Type.Object({
+        text: Type.String({ description: 'One-line checkpoint takeaway' }),
+      }),
+      async execute(_toolCallId, params) {
+        const { text } = await run({ argv: memoCheckpointArgs(params || {}) });
         return textResult(text);
       },
     },

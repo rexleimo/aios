@@ -16,6 +16,7 @@ import { ensureSoloHarnessSession } from './session.mjs';
 import { runHarnessDryRunChecks } from './dry-run.mjs';
 import { renderStatus } from './status.mjs';
 import { buildProductionExecuteTurn } from './execute-turn.mjs';
+import { buildPiRpcExecuteTurn } from './execute-turn-pi-rpc.mjs';
 import { createLifecycleHooks } from './hooks.mjs';
 import { resolveResumeWorktree } from './worktree.mjs';
 import { writeHarnessDashboard } from '../../harness/dashboard.mjs';
@@ -62,6 +63,9 @@ export async function runHarnessCommand(options = {}, {
 
   if (subcommand === 'run') {
     const provider = normalizeText(options.provider, 'codex');
+    if (options.transport === 'rpc' && provider !== 'pi') {
+      throw new Error('--transport rpc is only supported with --provider pi');
+    }
     const objective = normalizeText(options.objective);
     if (!objective) {
       throw new Error('harness run requires --objective');
@@ -174,6 +178,14 @@ export async function runHarnessCommand(options = {}, {
       }
     }
 
+    const rpcExecutor = options.transport === 'rpc'
+      ? buildPiRpcExecuteTurn({
+        rootDir,
+        sessionId: session.sessionId,
+        objective,
+        turnTimeoutMs: options.turnTimeoutMs,
+      })
+      : null;
     try {
       const result = await runSoloHarnessLoop({
         rootDir,
@@ -183,7 +195,7 @@ export async function runHarnessCommand(options = {}, {
         clientId: session.profile.clientId,
         profile: normalizeText(options.profile, 'standard'),
         worktree: preservedWorktree,
-        executeTurn: executeTurn || buildProductionExecuteTurn({
+        executeTurn: executeTurn || rpcExecutor?.executeTurn || buildProductionExecuteTurn({
           rootDir,
           sessionId: session.sessionId,
           objective,
@@ -240,6 +252,8 @@ export async function runHarnessCommand(options = {}, {
         });
       }
       throw error;
+    } finally {
+      await rpcExecutor?.dispose?.();
     }
   }
 
@@ -258,22 +272,35 @@ export async function runHarnessCommand(options = {}, {
       worktree: restoredWorktree,
       updatedAt: new Date().toISOString(),
     });
-    let result = await runSoloHarnessLoop({
-      rootDir,
-      sessionId: summary.sessionId,
-      objective: summary.objective,
-      provider: summary.provider,
-      clientId: summary.clientId,
-      profile: summary.profile,
-      worktree: restoredWorktree,
-      executeTurn: executeTurn || buildProductionExecuteTurn({
+    if (options.transport === 'rpc' && summary.provider !== 'pi') {
+      throw new Error('--transport rpc is only supported with --provider pi');
+    }
+    const rpcExecutor = options.transport === 'rpc'
+      ? buildPiRpcExecuteTurn({
         rootDir,
-        aiosRootDir: existing.aiosRootDir || runtimeAiosRootDir,
+        sessionId: summary.sessionId,
+        objective: summary.objective,
+        turnTimeoutMs: options.turnTimeoutMs,
+      })
+      : null;
+    let result;
+    try {
+      result = await runSoloHarnessLoop({
+        rootDir,
         sessionId: summary.sessionId,
         objective: summary.objective,
         provider: summary.provider,
-        turnTimeoutMs: options.turnTimeoutMs,
-      }),
+        clientId: summary.clientId,
+        profile: summary.profile,
+        worktree: restoredWorktree,
+        executeTurn: executeTurn || rpcExecutor?.executeTurn || buildProductionExecuteTurn({
+          rootDir,
+          aiosRootDir: existing.aiosRootDir || runtimeAiosRootDir,
+          sessionId: summary.sessionId,
+          objective: summary.objective,
+          provider: summary.provider,
+          turnTimeoutMs: options.turnTimeoutMs,
+        }),
       maxIterations: options.maxIterations,
       lifecycleHooks: createLifecycleHooks({ enabled: hooksEnabled }),
       sleepImpl,
@@ -285,7 +312,10 @@ export async function runHarnessCommand(options = {}, {
         quietThreshold: options.quietThreshold,
         safeBypass: options.safeBypass !== false,
       }),
-    });
+      });
+    } finally {
+      await rpcExecutor?.dispose?.();
+    }
     if (restoredWorktree?.enabled && restoredWorktree?.path) {
       const finalized = await finalizeSoloWorktree({
         rootDir,

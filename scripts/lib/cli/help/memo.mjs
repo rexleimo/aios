@@ -19,37 +19,37 @@ function getMemoStorageHelpText(path = []) {
   switch (subcommand) {
     case 'status':
       return `Usage:
-  node scripts/aios.mjs memo storage status
+  aios memo storage status
 
 Show active memo storage status and supported storage backends.
 `;
     case 'use':
       return `Usage:
-  node scripts/aios.mjs memo storage use <split|file>
+  aios memo storage use <split|file>
 
 Switch active memo storage to split or file.
 `;
     case 'rebuild':
       return `Usage:
-  node scripts/aios.mjs memo storage rebuild
+  aios memo storage rebuild
 
 Run a full rebuild of derived memo query files without rewriting canonical memo records.
 `;
     case 'doctor':
       return `Usage:
-  node scripts/aios.mjs memo storage doctor [--repair-stale-locks]
+  aios memo storage doctor [--repair-stale-locks]
 
 Check memo storage health and report repair guidance.
 `;
     case 'repair-locks':
       return `Usage:
-  node scripts/aios.mjs memo storage repair-locks
+  aios memo storage repair-locks
 
 Quarantine memo locks whose recorded owners are confirmed dead. Live or malformed locks remain untouched.
 `;
     default:
       return `Usage:
-  node scripts/aios.mjs memo storage <subcommand> [options]
+  aios memo storage <subcommand> [options]
 
 Subcommands:
   status          Show active memo storage status
@@ -69,7 +69,7 @@ export function getMemoHelpText(argv = []) {
   }
 
   return `Usage:
-  node scripts/aios.mjs memo <subcommand> [options]
+  aios memo <subcommand> [options]
 
 Subcommands:
   add <text>                          Append memo event (supports #tag)
@@ -80,6 +80,7 @@ Subcommands:
   pin status                          Pinned usage: chars/limit/remaining
   pin set <text>                      Replace pinned memory
   pin add <text>                      Append to pinned memory
+  checkpoint <text>                   Append [checkpoint] milestone entry to pinned memory
   useful <eventId,...>                Mark recalled memo(s) as adopted (recall feedback)
   persona init|show|path              Initialize/read global persona baseline
   persona set <text>                  Replace global persona baseline
@@ -112,6 +113,6 @@ Subcommands:
   storage                             Manage memo storage backend
 
 Storage:
-  node scripts/aios.mjs memo storage --help
+  aios memo storage --help
 `;
 }

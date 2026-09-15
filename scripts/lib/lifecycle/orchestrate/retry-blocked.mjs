@@ -28,9 +28,9 @@ export function buildRetryBlockedRecoveryCommands(sessionId, env = process.env) 
   if (!normalizedSessionId) return [];
 
   const commands = [
-    `node scripts/aios.mjs learn-eval --session ${normalizedSessionId}`,
-    `node scripts/aios.mjs orchestrate --session ${normalizedSessionId} --dispatch local --execute dry-run --format json`,
-    `node scripts/aios.mjs hud --session ${normalizedSessionId} --preset full`,
+    `aios learn-eval --session ${normalizedSessionId}`,
+    `aios orchestrate --session ${normalizedSessionId} --dispatch local --execute dry-run --format json`,
+    `aios hud --session ${normalizedSessionId} --preset full`,
   ];
 
   const provider = inferProviderFromClientId(env?.AIOS_SUBAGENT_CLIENT || '');
@@ -39,7 +39,7 @@ export function buildRetryBlockedRecoveryCommands(sessionId, env = process.env) 
     commands.splice(
       2,
       0,
-      `node scripts/aios.mjs team --resume ${normalizedSessionId} --retry-blocked --provider ${provider} --workers ${workers} --dry-run`
+      `aios team --resume ${normalizedSessionId} --retry-blocked --provider ${provider} --workers ${workers} --dry-run`
     );
   }
 
