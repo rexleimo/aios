@@ -11,7 +11,7 @@ import { renderCodexNativeOutputs } from '../lib/native/emitters/codex.mjs';
 import { renderGrokNativeOutputs } from '../lib/native/emitters/grok.mjs';
 import { renderHermesNativeOutputs } from '../lib/native/emitters/hermes.mjs';
 import { renderOpencodeNativeOutputs } from '../lib/native/emitters/opencode.mjs';
-import { readNativePartials } from '../lib/native/emitters/shared.mjs';
+import { readNativePartials, bakeRuntimeCliValues, readClientJsonSource } from '../lib/native/emitters/shared.mjs';
 
 const AGENTS_CLIENTS = Object.freeze(['codex', 'opencode', 'hermes', 'grok']);
 const LEGACY_ALWAYS_LOADED_PARTIALS = Object.freeze([
@@ -173,4 +173,43 @@ test('Claude, Codex, and Grok declare UserPromptSubmit workflow hooks', () => {
   assert.equal(claudeSettings.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt');
   assert.equal(codexHooks.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt --client codex');
   assert.equal(grokHooks.hooks.UserPromptSubmit[0].hooks[0].command, 'node scripts/aios.mjs plan hook-user-prompt --client grok');
+});
+
+// Regression: baking an install root into the hook JSON must happen after
+// JSON.parse, on string values, so JSON.stringify re-escapes backslashes.
+// The old text-level replace left `E:\coding\...` raw inside a JSON string
+// literal; `\c` is an illegal escape and JSON.parse threw "Bad escaped
+// character", crashing doctor:native on every Windows machine.
+test('runtime CLI bake keeps JSON-embedded Windows paths parseable', () => {
+  const winRoot = 'E:\\coding\\aios';
+  const baked = bakeRuntimeCliValues(
+    { hooks: [{ commands: ['node scripts/aios.mjs plan status --client codex'] }] },
+    winRoot,
+  );
+  const reparsed = JSON.parse(JSON.stringify(baked, null, 2));
+  assert.equal(
+    reparsed.hooks[0].commands[0],
+    `node ${winRoot}/scripts/aios.mjs plan status --client codex`,
+  );
+  // The old text-level strategy must still fail on the same input, proving the
+  // test actually covers the escape defect rather than passing vacuously.
+  const rawTemplate = '{"hooks":[{"commands":["node scripts/aios.mjs plan status"]}]}';
+  assert.throws(
+    () => JSON.parse(rawTemplate.replaceAll('node scripts/aios.mjs', `node ${winRoot}/scripts/aios.mjs`)),
+    /Bad escaped character/u,
+  );
+});
+
+test('readClientJsonSource parses every native-base hook JSON at the real root', () => {
+  // Uses the shipped templates; on Windows the repo root itself carries
+  // backslashes, so this is the exact doctor:native crash path.
+  const codexHooks = readClientJsonSource(process.cwd(), 'codex', 'hooks.json');
+  assert.match(
+    codexHooks.hooks.UserPromptSubmit[0].hooks[0].command,
+    /node .+scripts\/aios\.mjs plan hook-user-prompt --client codex$/u,
+  );
+  const claudeSettings = readClientJsonSource(process.cwd(), 'claude', 'settings.local.json');
+  assert.ok(Array.isArray(claudeSettings.hooks.SessionStart));
+  const grokHooks = readClientJsonSource(process.cwd(), 'grok', path.join('hooks', 'aios-workflow.json'));
+  assert.match(grokHooks.hooks.UserPromptSubmit[0].hooks[0].command, /aios\.mjs plan hook-user-prompt/u);
 });
