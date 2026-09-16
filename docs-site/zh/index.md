@@ -269,6 +269,7 @@ faq:
     <p class="rex-cta__text">一句话就够了。装好 AIOS，让 Agent 搞定剩下的事。</p>
     <div class="rex-cta__buttons">
       <a href="getting-started" class="md-button md-button--primary">免费开始</a>
+      <a href="use-cases" class="md-button">查看用例</a>
       <a href="contextdb" class="md-button">阅读文档</a>
     </div>
   </div>

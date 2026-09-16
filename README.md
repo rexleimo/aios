@@ -9,7 +9,7 @@
 > **The local-first control plane for long-horizon coding agents.**
 > AIOS gives your AI coding agent what it's missing — cross-session project memory, multi-agent teams, resumable overnight runs, and verifiable evidence for every change. **One sentence. Any complex task. Done.**
 
-**It runs on top of the agent you already use** — Codex CLI, Claude Code, Gemini CLI, OpenCode, Hermes, and Grok. AIOS is not another agent framework: your agent stays exactly as it is, and AIOS adds the memory, coordination, and verification layer around it. Everything runs locally.
+**It runs on top of the agent you already use** — Codex CLI, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode. AIOS is not another agent framework: your agent stays exactly as it is, and AIOS adds the memory, coordination, and verification layer around it. Everything runs locally.
 
 [Why AIOS](#why-aios) · [Install](#install-in-30-seconds) · [Proof](#proof-not-promises) · [Docs](https://cli.rexai.top) · [Blog](https://cli.rexai.top/blog/) · [中文](README-zh.md)
 
@@ -58,6 +58,8 @@ Unattended install:
 ```bash
 node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 ```
+
+Token intelligence comes with the same command: AIOS detects and installs **RTK** (https://github.com/rtk-ai/rtk — a Rust CLI proxy that compresses command output 60-90%) and **Caveman** (https://github.com/JuliusBrussee/caveman — a Claude Code skill that compresses agent output ~75%), then wires the **Headroom** MCP for explicit compress-and-retrieve control. All three run locally; AIOS no longer ships its own interception runtime.
 
 **You're ready when:**
 

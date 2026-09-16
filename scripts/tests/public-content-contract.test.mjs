@@ -96,14 +96,17 @@ test('docs shells read the current VERSION through the shared MkDocs hook', () =
   const version = read('VERSION').trim();
   assert.match(version, /^\d+\.\d+\.\d+$/);
 
-  for (const relPath of [
-    'docs-site/overrides/partials/rex/docs-sidebar.html',
-    'docs-site/overrides/partials/rex/docs-page.html',
-  ]) {
-    const template = read(relPath);
-    assert.match(template, /config\.extra\.aios_version/);
-    assert.doesNotMatch(template, /aios v3\.3\.2/);
+  const shellDir = 'docs-site/overrides/partials/rex';
+  const shells = fs.readdirSync(path.join(rootDir, shellDir)).filter((name) => name.endsWith('.html'));
+  // 中文注释：docs 外壳不得写死版本号（sidebar 已拆到 partials/rex/*），统一由 mkdocs hook 注入 config.extra.aios_version。
+  for (const name of shells) {
+    assert.doesNotMatch(
+      read(path.posix.join(shellDir, name)),
+      /aios v\d+\.\d+\.\d+/,
+      `hardcoded version in ${name}`,
+    );
   }
+  assert.match(read(path.posix.join(shellDir, 'docs-page.html')), /config\.extra\.aios_version/);
 
   assert.match(read('mkdocs.yml'), /hooks:\s*\n\s+- scripts\/mkdocs_version\.py/);
   assert.match(read('mkdocs.blog.yml'), /scripts\/mkdocs_version\.py/);

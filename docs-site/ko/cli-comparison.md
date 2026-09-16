@@ -33,6 +33,32 @@ AIOS는 Codex, Claude 또는 Gemini CLI의 대체품이 아닙니다.
 | 민감 설정 읽기 안전성 | 프롬프트에 시크릿 유출이 쉬움 | Privacy Guard 리덕션 경로 |
 | 작업 복구 | 수동 문제 해결 | Doctor 스크립트 + 재현 가능한 runbook |
 
+## 지원 클라이언트
+
+현재 9개 클라이언트. 아래 표는 레지스트리가 실제로 노출하는 능력 매트릭스이며, 출처는 `scripts/lib/clients/core/definitions.mjs`입니다. 설치 상태는 추측하지 말고 `aios doctor --native --verbose`로 확인하세요.
+
+| 클라이언트 | 명령 | skills | native | harness | agents | team | 지시 파일 | 프로젝트 스킬 루트 |
+|---|---|---|---|---|---|---|---|---|
+| Codex CLI | `codex` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.codex/skills` |
+| Claude Code | `claude` | ✓ | ✓ | ✓ | ✓ | ✓ | `CLAUDE.md` | `.claude/skills` |
+| Gemini CLI | `gemini` | ✓ | ✓ | ✓ | — | ✓ | `GEMINI.md` | `.gemini/skills` |
+| OpenCode | `opencode` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.opencode/skills` |
+| Hermes | `hermes` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.hermes/skills` |
+| Grok Build | `grok` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.grok/skills` |
+| WorkBuddy | `codebuddy` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.workbuddy/skills` |
+| Pi | `pi` | ✓ | ✓ | ✓ | — | ✓ | `AGENTS.md` | `.agents/skills`(공용 루트) |
+| ZCode | `zcode` | ✓ | ✓ | ✓ | plugin | ✓ | `AGENTS.md` | `.agents/skills`(공용 루트) |
+
+열 의미: **skills** = 클라이언트 스킬 루트로 투영되는 스킬 팩 · **native** = 네이티브 지시 파일 기록 · **harness** = solo-harness 구동 · **agents** = 프로젝트 범위 서브에이전트 정의 · **team** = `aios team` 병렬 분배.
+
+세 행은 각주가 필요합니다:
+
+- **ZCode의 `agents`는 빠진 게 아닙니다.** ZCode 0.16.5에는 프로젝트 범위 서브에이전트 정의 면이 없어서, AIOS는 rex 역할 카드를 `~/.aios/zcode-plugin` 아래 `aios-agents` 인라인 플러그인으로 만들고 사용자 레벨 `plugins.dirs`로 등록합니다. `doctor:zcode-agents`가 manifest 유효성·agent 드리프트·등록 상태를 보고합니다. ZCode에는 `--model` 플래그가 없으므로 모델 라우팅은 비어 있고, headless 실행은 한 번만 `zcode login`이 필요합니다.
+- **Pi와 ZCode는 `.agents/skills` 루트를 공유합니다.** 전용 사본을 두 벌 만드는 대신, 업그레이드 때 구본에 맞는 정리를 수행합니다.
+- **Pi의 `agents`는 상류 경계이며, `team` 지원은 검증됐습니다.** Pi는 "의도적으로 내장 MCP·서브에이전트·권한 팝업·plan mode를 두지 않는다"는 설계로, 서브에이전트 실행은 확장으로 얹는 것이므로 AIOS가 rex 역할 카드를 넣을 프로젝트 범위 면이 없습니다(AIOS 도구는 config 마이그레이션이 아니라 `aios-bridge` MCP server와 Pi 확장을 통해 Pi에 닿습니다). `team`에는 그런 면이 필요하지 않습니다: 팀 워커는 다른 프로바이더와 같은 spawn 경로를 타는 headless `pi -p` 하위 프로세스일 뿐이며, 실제 `aios team --provider pi --live` 배치에서 검증됐습니다(planning 단계가 처음부터 끝까지 완료되고 implement 워커가 대상 파일을 생성). 오프라인 회귀는 `scripts/tests/team-pi-worker.test.mjs`가 지킵니다. 표는 "불가능"이 아니라 "검증됨"으로 읽고, 실제 상태는 `aios doctor --native --verbose`가 보여줍니다.
+
+단일 클라이언트만 투영하려면 `aios init --agent <client>`(예: `aios init --agent zcode`), 전부는 `--agent all`을 쓰세요.
+
 ## 원시 CLI만 사용 경우
 
 - 핸드오프가 필요 없는 일회성 짧은 작업이 필요한 경우.

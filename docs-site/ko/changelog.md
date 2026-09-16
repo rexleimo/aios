@@ -40,6 +40,58 @@ v5.11.0 이후 첫 태그 릴리스. v5.12.0 메모리 작업(아래)과 Pi 클�
 
 
 
+## v5.11.0 (2026-09-06) — 프롬프트 계약 강화: 채점 루프, 정체 자보고, 압축 티어, 약한 모델 고정
+
+### 변경 내용
+
+- **기억 추출 계약**: 저장 가능한 항목은 5 요소(`fact` / `entities[]` / 절대 날짜 / `evidence_ref` / `confidence`). 인사말·중간 결과·증거 없는 주장은 저장하지 않고, 수정은 정확한 치환으로 수행.
+- **검증 채점 루프**: `VALIDATION`이 `score` / `complete` / `missing[]`을 다음 라운드로 바로 돌려주고, 재시도 예산은 기본 3(소진하면 중단하고 인수인계). 파싱 실패는 구조화된 자가 재질문으로 처리.
+- **장기 작업 정체 자보고**: 매 라운드 `progress_made` + `blocked_reason`을 기록하고, 3 라운드 연속 진전이 없으면 경로 변경 또는 상신을 강제. `planning_interval`는 기본 5회마다 frontier 를 재생성.
+- **압축 티어**: `FULL` / `PARTIAL` / `SUMMARY` / `EXCLUDED` 4 단계. 최근 2 라운드를 보호하고 요약도 증거로 회수 가능하며, 압축은 감사 이벤트로 기록.
+- **약한 모델 고정 + 예산**: 주변 잡무는 저비용 모델에 고정(내리기만 하고 올리지 않음). 스케줄링은 `budget` / `quota_scope` / 초과 시 행동을 선언.
+- **노드 recipe**: 병렬 노드는 tools 허용 목록, 모델 티어, `max_turns`, `budget`, `output_schema`, `retry`, `subflow`를 선언하고 하류는 schema 산출물 등장으로 트리거.
+- **rex-planning ledger**(서브모듈): 매 라운드 구조화 ledger + partial 이어달리기 + 중복 없는 의존 규율. `projection-history.json`은 LF 고정.
+
+### 업그레이드
+
+파괴적 변경 없음——순수 프롬프트 배포이며 런타임 변경은 0. 당긴 뒤 `aios setup` / `aios update`를 다시 실행해 `rex-planning` 투영을 갱신하세요.
+
+## v5.10.0 (2026-09-06) — 릴리스 신뢰성과 저장소 경량화: 회귀 전체 녹색, 릴리스 게이트 강화, 공급망 고정
+
+### 변경 내용
+
+- **Windows 회귀 스위트 전체 녹색**: 늘 실패로 취급되던 Windows 고유 실패 2 건(orchestrator agent export drift guard, codemap 지시 drift guard)은 실제 drift 가 아니라 checkout 시 CRLF 생성물이었다. drift guard 는 줄 끝 정규화 비교로 고치고, `.gitattributes` 로 `agent-sources/**`, `scripts/lib/specs/*.json`, 루트 지시 파일을 LF 고정——Windows checkout 과 Linux CI 가 같은 가드를 통과하고, 테스트 실행으로 생성 spec 이 더러워지지 않는다.
+- **릴리스 증거 게이트 강화**(v5.9.0 빈실행 사고 후속): release 워크플로에서 "변경 Skill 훈련 증거" 게이트를 전체 테스트 앞으로 옮겼다(fail fast). `release-preflight.sh`는 `docs/evidence/skill-training/` 에 미커밋 변경이 있으면 통과하지 않는다——인증 증거는 tag 를 단 commit 안에 있어야 한다.
+- **공급망 강화**: GitHub Actions 를 전부 완전 commit SHA 에 고정. ci-main 에 gitleaks 비밀 스캔 job 추가. 루트와 mcp-server 에 `npm audit --omit=dev --audit-level=critical` 게이트(현재 기준 critical 0). `windows-shell-smoke`는 `npm ci`로 재현성을 확보.
+- **저장소 경량화**: `pptx-ai-coding-share/node_modules` 351 파일과 `.cache/` mkdocs 폰트 110 파일을 저장소 밖으로(재생성 가능·ignore 완료). 루트의 흩어진 디버그 로그 4 건 삭제. 인증 산출물은 gitignore 허용 목록에 넣어 `skill certify` 결과를 `git add -f` 하지 않아도 된다.
+- **서술 정렬**: AGENTS.md 는 AIOS 를 오케스트레이션 컨트롤 플레인으로 첫머리에 제시(브라우저 MCP 는 legacy 부품으로 명기). mkdocs 4 언어 사이트 설명에서 지난 "Graph Engine" 서술을 내리고, README 빠른 체험은 설치된 `aios` CLI 를 사용.
+- **프롬프트 작성 규범**: `docs/prompt-authoring-norms.md`(및 `rex-harness/skill-sources/PROMPT-AUTHORING.md`)에서 계약 우선, 의미 판단은 모델 자보고(ReAct 형), 하드 게이트=검증 프로토콜을 확립. 키워드/정규식으로 의도를 추측하는 일은 프롬프트와 보조 스크립트 모두 금지.
+
+### 업그레이드
+
+파괴적 행동 변경 없음——이번 버전은 CI·문서·저장소 위생이 중심이고, 런타임에 가까운 유이한 변경은 drift guard 정규화.
+CI 는 critical 급 npm 권장사항과 비밀 스캔 적발에서 실패한다. tag 전에 `npm audit --omit=dev`를 로컬에서 먼저 실행할 것.
+Windows 개발자는 당긴 뒤 다시 checkout 해 `.gitattributes`가 `agent-sources/`와 루트 지시 파일을 LF 로 정규화하게 할 것.
+
+## v5.9.0 (2026-09-02) — 메모리 시스템 전체 클라이언트 활성화: 정규식 트리거에서 프롬프트 구동으로
+
+### 변경 내용
+
+- **세션 라이프사이클과 메모리 연결**: `aios session start`가 ContextDB 세션을 등록(멱등, `--session-id/--agent/--client`). 세션 시작 시 이전 handoff 와 pinned 메모리가 함께 와서 `session: (new)` 시대는 종료.
+- **`aios-memory` MCP server 신규**(`memory_recall` / `memory_write` / `memory_checkpoint`): hook 면이 없는 클라이언트(Gemini / Hermes / WorkBuddy)에 결정적 진입점을 제공하며, 쓰기→회수 왕복 검증을 통과.
+- **OpenCode 플러그인 + hook 전체 경로**: Claude dual hook, Codex/Grok UserPromptSubmit 는 런타임 검증 통과. 기존 hook 파이프라인으로 매 라운드 회상을 주입하는 OpenCode 플러그인을 추가(TUI 세션).
+- **Memory Trigger Contract 5 단 투영**(AGENTS / CLAUDE / GEMINI): 새 세션은 먼저 회상, 이어하기는 먼저 회상, 결론 나면 즉시 기록, 끝나면 체크포인트. 정규식 트리거 층은 삭제하고 트리거 지점을 프롬프트 계약으로 명시, 관련성 판단은 LLM 에게 위임.
+- **Codex 시작 팝업 근원 수정**: codex 0.148+ 의 hooks/프로젝트 신뢰 영속화는 `~/.codex/config.toml` 인데 AIOS 가 쓴 적이 없어 매번 다시 떴다. 설치자가 관리 영역(trust + 5 대 MCP)에 멱등으로 기록하고 사용자 내용은 보존한다. **설치 직후 해결, 업데이트로 재발하지 않는다.**
+- **Gemini 전체 지원 복구**: 상류가 Antigravity 로 전환됐지만 전 클라이언트 일관 약속에 따라 deprecated 지정을 되돌리고 메모리/투영/스킬 동기화를 전부 연결.
+- **5 대 MCP × 7 클라이언트 전체 녹색**: crg / browser / auth / shell / memory 를 Claude, Hermes, Gemini, WorkBuddy, Grok, Codex, OpenCode 전부 등록(aios-shell workspace 드리프트 수정 포함).
+
+### 업그레이드
+
+- `aios session start --json` 출력이 맨 배열에서 `{ registration, lines }` 로 변경.
+- WorkBuddy 데스크톱 동봉 CLI 는 기본으로 PATH 에 없으므로 shim 안내를 문서에 추가.
+- `opencode run`(headless)는 프로젝트 플러그인을 읽지 않는다(상류 사양). TUI 세션은 영향 없음.
+- Codex 사용자는 업그레이드 후 신뢰 확인이 마지막 한 번 더 뜰 수 있다. 한 번 수락하면 영속화.
+
 ## v5.8.2（2026-08-29）——플랜 상태가 더 이상 먼저 나서지 않음, WorkBuddy 클라이언트 지원
 
 ### 변경 내용
@@ -427,8 +479,8 @@ node scripts/aios.mjs init --dry-run
   - **Browser doctor 자동 복구** (2026-04-06 ~ 2026-04-08): `doctor --fix` 로 CDP 서비스 자동 복구；setup/update 라이프사이클에서 browser doctor 자동 복구；문서에 CDP 퀵커맨드 추가
   - **멀티 환경 RL 트레이닝 시스템**: shell, browser, orchestrator 어댑터를 가진 공유 `rl-core` 제어 플레인; 3 포인터 checkpoint 계통; 4 레인 replay pool; PPO + teacher distillation 트레이닝
   - **혼합 환경 캠페인** (`rl-mixed-v1`): 하나의 라이브 배치가 shell + browser + orchestrator episode 에 걸치고 통합 롤백 판단으로 실행
-  - ContextDB `search` 가 기본으로 SQLite FTS5 + `bm25(...)` 랭킹, FTS 사용 불가 시 자동 레キシ컬 폴백
-  - ContextDB 시맨틱 리랭킹이 쿼리 스코프 레キシ컬 후보에서 동작하여 오래된 완전 일치 드롭 감소
+  - ContextDB `search` 가 기본으로 SQLite FTS5 + `bm25(...)` 랭킹, FTS 사용 불가 시 자동 렉시컬 폴백
+  - ContextDB 시맨틱 리랭킹이 쿼리 스코프 렉시컬 후보에서 동작하여 오래된 완전 일치 드롭 감소
   - `aios orchestrate` 의 `subagent-runtime` 라이브 실행（`AIOS_EXECUTE_LIVE=1` 로 opt-in）
   - 소유권 힌트와 함께 바운드 work-item 큐 스케줄링
   - no-op 패스트 패스: 상류 handoff 가 파일을 터치하지 않았을 때 `reviewer` / `security-reviewer` 자동 완료

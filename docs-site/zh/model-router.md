@@ -50,7 +50,7 @@ node scripts/aios.mjs model-router route \
     ↓
 路由规则查表（首选模型 + 降级链）
     ↓
-profile 调整（eco / balanced / premium）+ 角色或环境变量覆盖
+profile 调整（balanced / premium / budget）+ 角色或环境变量覆盖
     ↓
 客户端契约校验（启动方能否使用该模型协议）
     ↓
@@ -63,47 +63,56 @@ CLI 命令生成（该客户端正确的 --model/-m 参数）
 
 ## 模型能力注册表
 
-注册表包含 8 个模型及其结构化能力：
+注册表收录路由规则用到的 16 个模型；`node scripts/aios.mjs model-router` 打印完整实时清单。
 
-| 模型 | 协议 | 最擅长 | 成本 |
-|------|------|--------|------|
-| **Claude Opus 4.7** | claude | 代码审查、架构设计、安全审计 | 最高 |
-| **Claude Sonnet 4.6** | claude | 日常开发、RAG、快速原型 | 中 |
-| **GPT-5.5** | codex | 六边形战士：自动化、推理、代码全能 | 最高 |
-| **DeepSeek-V4-Pro** | claude | 算法实现、核心逻辑、批处理 | 最低 |
-| **GLM-5.1** | claude | 数学推理、自主循环、系统规划 | 低 |
-| **Kimi K2.6** | claude | 多Agent编排、前端UI、长周期执行 | 低 |
-| **MiniMax-M2.7** | claude | 自愈运维、生产恢复 | 低 |
-| **Gemini-3-Pro** | gemini | 多模态分析、长文档研究、1M上下文 | 中 |
+| 模型 | 可说协议 | 最擅长 | 成本 | 上下文 |
+|---|---|---|---|---|
+| **Claude Opus 5** | `claude` | 代码审查, 架构设计, 安全审计 | 最高 | 200K |
+| **Claude Opus 4.8** | `claude` | 代码审查, 安全审计, 长文写作 | 高 | 200K |
+| **GPT-6-Astra** | `openai-response` | 全能位, 通用推理, 浏览器自动化 | 最高 | 1M |
+| **Claude Sonnet 4.6** | `claude` | 日常开发, 快速原型, RAG | 中 | 200K |
+| **GLM-5.2** | `claude`, `openai-chat` | 自主循环, 长程规划, 数学推理 | 低 | 200K |
+| **Claude Opus 4.7** | `claude` | 代码审查, 架构设计, 安全审计 | 最高 | 200K |
+| **DeepSeek-V4-Pro** | `claude` | 算法实现, 核心逻辑, 长日志分析 | 最低 | 1M |
+| **Claude Sonnet 5** | `claude` | 日常开发, 快速原型, 前端 UI | 中 | 200K |
+| **DeepSeek-V4-Flash** | `openai-chat`, `claude` | 算法实现, 批处理, 长日志分析 | 最低 | 1M |
+| **GPT-5.5** | `openai-response` | 通用推理, 浏览器自动化, 桌面自动化 | 最高 | 1M |
+| **Gemini-3.8-Flash** | `gemini` | 多模态分析, 长文档研究, 视频分析 | 中 | 1M |
+| **GPT-5.6-Sol** | `openai-response` | 通用推理, 长周期执行, 代码执行 | 高 | 1M |
+| **Claude Haiku 4.5** | `claude` | 分类, 摘要, 批处理 | 低 | 200K |
+| **GLM-5.3-Flash** | `openai-chat` | 分类, 文档写作, 测试执行 | 最低 | 200K |
+| **Kimi K2.6** | `claude` | 多 Agent 编排, 长周期执行, 前端 UI | 低 | 200K |
+| **MiniMax-M2.7** | `claude` | 自愈恢复, 生产恢复, 持续优化 | 低 | 200K |
 
 ## CLI 协议
 
-三种协议，由 provider 自动选择：
+协议词表共四种；只有模型声明的协议与启动客户端可说协议相交，这条路由才可执行（见〈客户端模型路由契约〉）：
 
-| 协议 | CLI | 使用者 |
-|------|-----|--------|
-| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <模型名> "<提示词>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<提示词>"` | Gemini-3-Pro |
-| **claude** | `claude --model <模型名> -p "<提示词>"` | 其余所有模型 |
+| 协议 | 中转站端点 | 可启动客户端 |
+|---|---|---|
+| `openai-response` | `https://coding.rexai.top/openai/v1/responses` | codex, opencode |
+| `openai-chat` | `https://coding.rexai.top/openai/v1/chat/completions` | hermes, opencode, pi |
+| `claude` | `https://coding.rexai.top/claude/v1/messages` | claude, hermes, opencode, pi |
+| `gemini` | `https://coding.rexai.top/gemini/v1beta/models/<model>:generateContent` | opencode |
 
 Codex live worker 会默认附加 `--dangerously-bypass-approvals-and-sandbox`（当前等价于旧的 `--yolo` 快捷方式），避免后台子进程等待 approval/sandbox prompt。只有在手动调试 Codex 时才建议设置 `AIOS_SUBAGENT_CODEX_UNATTENDED=0` 关闭。
 
 ## 路由规则
 
 | 任务类型 | 首选模型 | 降级链 |
-|----------|----------|--------|
-| 代码审查、架构评审、质量把关 | **Claude Opus 5 (Anthropic)** | Claude Opus 4.8 (Anthropic) → GPT-6-Astra (OpenAI) → Claude Sonnet 4.6 (Anthropic) |
-| 安全审计、漏洞扫描、合规检查 | **Claude Opus 5 (Anthropic)** | Claude Opus 4.8 (Anthropic) → GPT-6-Astra (OpenAI) → GLM-5.2 (智谱) |
-| 架构设计、技术选型、系统设计 | **Claude Opus 5 (Anthropic)** | GPT-6-Astra (OpenAI) → GLM-5.2 (智谱) → Claude Opus 4.7 (Anthropic) |
-| 写代码、算法实现、核心逻辑 | **DeepSeek-V4-Pro** | GPT-6-Astra (OpenAI) → Claude Sonnet 5 (Anthropic) → DeepSeek-V4-Flash |
-| 浏览器操作、桌面自动化、网页抓取 | **GPT-6-Astra (OpenAI)** | GPT-5.5 (OpenAI) → Claude Sonnet 5 (Anthropic) |
-| 读超长文档、视频分析、信息召回 | **Gemini-3.8-Flash (Google)** | DeepSeek-V4-Pro → Claude Sonnet 5 (Anthropic) → GPT-5.6-Sol (OpenAI) |
-| 任务拆解、长程自主规划、复杂系统工程 | **GLM-5.2 (智谱)** | GPT-6-Astra (OpenAI) → Claude Opus 5 (Anthropic) → Claude Opus 4.7 (Anthropic) |
-| 跑测试、批量验证、分类与摘要 | **Claude Haiku 4.5 (Anthropic)** | Claude Sonnet 5 (Anthropic) → GLM-5.3-Flash (智谱) → DeepSeek-V4-Flash |
-| 文档改写、说明生成、翻译 | **Claude Sonnet 5 (Anthropic)** | GLM-5.3-Flash (智谱) → GPT-5.5 (OpenAI) → Kimi K2.6 (Moonshot) |
-| 前端 UI、样式还原、组件实现 | **Claude Sonnet 5 (Anthropic)** | GPT-5.6-Sol (OpenAI) → Kimi K2.6 (Moonshot) → GPT-5.5 (OpenAI) |
-| 故障恢复、自优化、连续迭代 | **GLM-5.2 (智谱)** | GPT-6-Astra (OpenAI) → MiniMax-M2.7 → DeepSeek-V4-Pro |
-| 通用默认位 | **GPT-6-Astra (OpenAI)** | Claude Sonnet 5 (Anthropic) → GLM-5.2 (智谱) → DeepSeek-V4-Pro |
+|---|---|---|
+| `code-review` | **Claude Opus 5** | Claude Opus 4.8 → GPT-6-Astra → Claude Sonnet 4.6 |
+| `security-review` | **Claude Opus 5** | Claude Opus 4.8 → GPT-6-Astra → GLM-5.2 |
+| `architecture` | **Claude Opus 5** | GPT-6-Astra → GLM-5.2 → Claude Opus 4.7 |
+| `implementation` | **DeepSeek-V4-Pro** | GPT-6-Astra → Claude Sonnet 5 → DeepSeek-V4-Flash |
+| `browser-automation` | **GPT-6-Astra** | GPT-5.5 → Claude Sonnet 5 |
+| `research` | **Gemini-3.8-Flash** | DeepSeek-V4-Pro → Claude Sonnet 5 → GPT-5.6-Sol |
+| `planning` | **GLM-5.2** | GPT-6-Astra → Claude Opus 5 → Claude Opus 4.7 |
+| `testing` | **Claude Haiku 4.5** | Claude Sonnet 5 → GLM-5.3-Flash → DeepSeek-V4-Flash |
+| `docs` | **Claude Sonnet 5** | GLM-5.3-Flash → GPT-5.5 → Kimi K2.6 |
+| `frontend` | **Claude Sonnet 5** | GPT-5.6-Sol → Kimi K2.6 → GPT-5.5 |
+| `self-healing` | **GLM-5.2** | GPT-6-Astra → MiniMax-M2.7 → DeepSeek-V4-Pro |
+| `general` | **GPT-6-Astra** | Claude Sonnet 5 → GLM-5.2 → DeepSeek-V4-Pro |
 
 ## 路由配置文件
 
@@ -112,7 +121,7 @@ Codex live worker 会默认附加 `--dangerously-bypass-approvals-and-sandbox`�
 | 配置 | 使用时机 | 行为 |
 |------|----------|------|
 | `balanced`（默认） | 大多数工作 | 强信号升级模型；普通编码保持廉价 |
-| `premium` | 风险较高或不清楚的任务 | 更愿意使用 Opus 或 GPT-5.5 等高成本模型 |
+| `premium` | 风险较高或不清楚的任务 | 更愿意使用 Claude Opus 5 或 GPT-6-Astra 等高成本模型 |
 | `budget` | 成本敏感的工作 | 除非任务真的需要强模型，否则优先使用廉价模型 |
 
 ```bash
@@ -125,10 +134,10 @@ export AIOS_MODEL_ROUTER_PROFILE=premium
 
 ## 快速开始
 
-### 查看所有模型
+### 查看注册表与路由规则
 
 ```bash
-node scripts/aios.mjs model-router list
+node scripts/aios.mjs model-router
 ```
 
 ### 带解释的任务路由
@@ -136,6 +145,7 @@ node scripts/aios.mjs model-router list
 ```bash
 node scripts/aios.mjs model-router route \
   --task "构建一个漂亮的落地页组件" \
+  --task-type frontend \
   --profile balanced \
   --explain
 ```
@@ -154,43 +164,59 @@ node scripts/aios.mjs model-router route \
 node scripts/aios.mjs model-router stats
 ```
 
+### 查看通道可用性状态
+
+```bash
+node scripts/aios.mjs model-router availability
+```
+
 ## 为什么选择这个模型
 
 在任何 route 命令后加 `--explain` 查看推理：
 
 ```json
 {
-  "resolvedType": "browser-automation",
-  "modelId": "gpt-5.5",
-  "confidence": 0.86,
-  "matchedSignals": [
-    { "taskType": "browser-automation", "signal": "browser", "weight": 8 }
-  ],
-  "why": ["检测到 browser-automation 信号: browser, upload"]
+  "resolvedType": "implementation",
+  "modelId": "deepseek-v4",
+  "model": "DeepSeek-V4-Pro",
+  "clientId": "claude-code",
+  "reason": "primary match for taskType=\"implementation\"",
+  "profile": "premium",
+  "confidence": 1,
+  "matchedSignals": [],
+  "why": ["Explicit task type selected: implementation"],
+  "contractMode": "",
+  "modelProtocols": ["claude"],
+  "requestedModelId": "deepseek-v4",
+  "skippedForCapability": []
 }
 ```
 
-- **高置信度** = 一个任务类型明确匹配
-- **多个 recommendedPhases** = 任务是复合的；分割以获得更好的路由
-- **matchedSignals** 显示准确哪个关键词触发了路由
+- **`resolvedType`** 是从声明解析出的任务类型，不是关键词推断的证据
+- **`matchedSignals: []`** ——路由器不从自由文本猜任务类型（`signals.mjs` 的北极星约束）
+- **`why`** 说明这次是 `Explicit task type selected: ...` 显式声明，还是 `general` 确定性兜底
+- **`requestedModelId` / `skippedForCapability` / `contractMode`** 记录客户端契约如何收窄候选链
 
 ## 环境变量覆盖
 
 如果想强制使用特定模型：
 
 ```bash
-# 按角色
+# 按角色（planner / implementer / reviewer / security-reviewer）
 export AIOS_MODEL_PLANNER=claude-opus
-export AIOS_MODEL_IMPLEMENTATION=deepseek-v4
+export AIOS_MODEL_IMPLEMENTER=deepseek-v4
 export AIOS_MODEL_REVIEWER=claude-opus
+export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
 
-# 按任务类型
-export AIOS_MODEL_BROWSER_AUTOMATION=gpt-5.5
-export AIOS_MODEL_CODE_REVIEW=claude-opus
+# 按 profile
+export AIOS_MODEL_ROUTER_PROFILE=budget
 
-# 完全禁用路由（使用固定模型）
+# 完全禁用路由（各客户端保留自带默认模型）
 export AIOS_MODEL_ROUTER=0
 ```
+
+指定覆盖后，路由器会把**客户端**换成能使用该模型的客户端；只有自动路由才允许为了适配 worker 客户端换模型。
+
 
 ## Agent 集成
 

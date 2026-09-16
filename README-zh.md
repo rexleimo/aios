@@ -9,7 +9,7 @@
 > **面向长程编码 Agent 的本地优先控制平面。**
 > AIOS 补上你的 AI 编码助手缺少的能力——跨会话项目记忆、多 Agent 协作、可恢复的过夜任务、以及每次变更的可验证证据。**一句话，搞定任何复杂任务。**
 
-**它运行在你已有的 Agent 之上**——Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi。AIOS 不是又一个 Agent 框架：Agent 还是你的 Agent，AIOS 只是在外围补上记忆、协调与验证这一层控制平面，且一切都在本地运行。
+**它运行在你已有的 Agent 之上**——Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode。AIOS 不是又一个 Agent 框架：Agent 还是你的 Agent，AIOS 只是在外围补上记忆、协调与验证这一层控制平面，且一切都在本地运行。
 
 [为什么需要 AIOS](#为什么需要-aios) · [30 秒安装](#30-秒安装) · [证据](#证据不是承诺) · [文档站](https://cli.rexai.top/zh/) · [博客](https://cli.rexai.top/blog/zh/) · [English](README.md)
 
@@ -58,6 +58,8 @@ aios doctor --native --verbose
 ```bash
 node scripts/aios.mjs init --all --yes-compression-tools --yes-headroom-mcp
 ```
+
+Token 智能随同一条命令装好：AIOS 会检测并安装 **RTK**（https://github.com/rtk-ai/rtk — Rust CLI 代理，压缩命令输出 60-90%）与 **Caveman**（https://github.com/JuliusBrussee/caveman — Claude Code skill，压缩 Agent 输出约 75%），并接入 **Headroom** MCP 提供显式压缩与取回。三者全部本地运行，AIOS 不再自带拦截运行时。
 
 **装好了的判断标准：**
 

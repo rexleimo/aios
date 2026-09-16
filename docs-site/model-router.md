@@ -52,7 +52,7 @@ Declared task type (phase role, --task-type, explicit intent)
     ↓
 Routing rule lookup (primary model + fallback chain)
     ↓
-Profile adjustment (eco / balanced / premium) + role/env override
+Profile adjustment (balanced / premium / budget) + role/env override
     ↓
 Client contract check (can the launching client speak this model's protocol?)
     ↓
@@ -65,45 +65,56 @@ Execution + outcome recorded back into channel availability
 
 ## CLI Protocol
 
-Three protocols, auto-selected by provider:
+Four protocol vocabularies exist; a route is usable only when the model's declared protocols intersect the launching client's (see *Client Model Routing Contract*):
 
-| Protocol | CLI | Used by |
+| Protocol | Relay endpoint | Launching clients |
 |---|---|---|
-| **codex** | `codex exec --dangerously-bypass-approvals-and-sandbox -m <model> "<prompt>"` | GPT-5.5 |
-| **gemini** | `gemini -m gemini-3-pro -p "<prompt>"` | Gemini-3-Pro |
-| **claude** | `claude --model <model> -p "<prompt>"` | All other models |
+| `openai-response` | `https://coding.rexai.top/openai/v1/responses` | codex, opencode |
+| `openai-chat` | `https://coding.rexai.top/openai/v1/chat/completions` | hermes, opencode, pi |
+| `claude` | `https://coding.rexai.top/claude/v1/messages` | claude, hermes, opencode, pi |
+| `gemini` | `https://coding.rexai.top/gemini/v1beta/models/<model>:generateContent` | opencode |
 
 Codex live worker defaults to `--dangerously-bypass-approvals-and-sandbox` (equivalent to the old `--yolo` shortcut), avoiding waiting for approval/sandbox prompts in background subprocesses. Only set `AIOS_SUBAGENT_CODEX_UNATTENDED=0` when manually debugging Codex.
 
 ## Supported Models
 
-| Model | Best at | Cost |
-|---|---|---|
-| **GPT-6-Astra** | all-rounder flagship, computer use, code execution, 1M context | Highest |
-| **Claude Opus 5** | code review, architecture, security audit, high-stakes decisions | Highest |
-| **Claude Sonnet 5** | daily coding, frontend, rapid prototyping | Medium |
-| **Gemini-3.8-Flash** | research, video/long-document analysis, 1M context | Medium |
-| **GLM-5.2** | long-horizon planning, math, autonomous loops | Low |
-| **DeepSeek-V4-Pro** | implementation, algorithms, long-log analysis | Lowest |
-| **Kimi K2.6** | multi-agent orchestration, long-running execution | Low |
-| **MiniMax-M2.7** | self-healing, production recovery (fallback candidate) | Low |
+The registry carries 16 models used by routing rules; `node scripts/aios.mjs model-router` prints the full live list.
+
+| Model | Protocols | Best at | Cost | Context |
+|---|---|---|---|---|
+| **Claude Opus 5** | `claude` | code review, architecture design, security audit | Highest | 200K |
+| **Claude Opus 4.8** | `claude` | code review, security audit, long-form writing | High | 200K |
+| **GPT-6-Astra** | `openai-response` | all-rounder, general reasoning, browser automation | Highest | 1M |
+| **Claude Sonnet 4.6** | `claude` | daily development, rapid prototyping, RAG | Medium | 200K |
+| **GLM-5.2** | `claude`, `openai-chat` | autonomous loops, long-running planning, math reasoning | Low | 200K |
+| **Claude Opus 4.7** | `claude` | code review, architecture design, security audit | Highest | 200K |
+| **DeepSeek-V4-Pro** | `claude` | algorithm implementation, core logic, long-log analysis | Lowest | 1M |
+| **Claude Sonnet 5** | `claude` | daily development, rapid prototyping, frontend UI | Medium | 200K |
+| **DeepSeek-V4-Flash** | `openai-chat`, `claude` | algorithm implementation, batch processing, long-log analysis | Lowest | 1M |
+| **GPT-5.5** | `openai-response` | general reasoning, browser automation, desktop automation | Highest | 1M |
+| **Gemini-3.8-Flash** | `gemini` | multimodal analysis, long-document research, video analysis | Medium | 1M |
+| **GPT-5.6-Sol** | `openai-response` | general reasoning, long-running execution, code execution | High | 1M |
+| **Claude Haiku 4.5** | `claude` | classification, summarization, batch processing | Low | 200K |
+| **GLM-5.3-Flash** | `openai-chat` | classification, documentation, test execution | Lowest | 200K |
+| **Kimi K2.6** | `claude` | multi-agent orchestration, long-running execution, frontend UI | Low | 200K |
+| **MiniMax-M2.7** | `claude` | self-healing, production recovery, continuous optimization | Low | 200K |
 
 ## Task Types & Routing
 
 | taskType | Primary model | Fallback chain |
 |---|---|---|
-| `code-review` | Claude Opus 5 | Claude Opus 4.8 → GPT-6-Astra → Claude Sonnet 4.6 |
-| `security-review` | Claude Opus 5 | Claude Opus 4.8 → GPT-6-Astra → GLM-5.2 |
-| `architecture` | Claude Opus 5 | GPT-6-Astra → GLM-5.2 → Claude Opus 4.7 |
-| `implementation` | DeepSeek-V4-Pro | GPT-6-Astra → Claude Sonnet 5 → DeepSeek-V4-Flash |
-| `browser-automation` | GPT-6-Astra | GPT-5.5 → Claude Sonnet 5 |
-| `research` | Gemini-3.8-Flash | DeepSeek-V4-Pro → Claude Sonnet 5 → GPT-5.6-Sol |
-| `planning` | GLM-5.2 | GPT-6-Astra → Claude Opus 5 → Claude Opus 4.7 |
-| `testing` | Claude Haiku 4.5 | Claude Sonnet 5 → GLM-5.3-Flash → DeepSeek-V4-Flash |
-| `docs` | Claude Sonnet 5 | GLM-5.3-Flash → GPT-5.5 → Kimi K2.6 |
-| `frontend` | Claude Sonnet 5 | GPT-5.6-Sol → Kimi K2.6 → GPT-5.5 |
-| `self-healing` | GLM-5.2 | GPT-6-Astra → MiniMax-M2.7 → DeepSeek-V4-Pro |
-| `general` | GPT-6-Astra | Claude Sonnet 5 → GLM-5.2 → DeepSeek-V4-Pro |
+| `code-review` | **Claude Opus 5** | Claude Opus 4.8 → GPT-6-Astra → Claude Sonnet 4.6 |
+| `security-review` | **Claude Opus 5** | Claude Opus 4.8 → GPT-6-Astra → GLM-5.2 |
+| `architecture` | **Claude Opus 5** | GPT-6-Astra → GLM-5.2 → Claude Opus 4.7 |
+| `implementation` | **DeepSeek-V4-Pro** | GPT-6-Astra → Claude Sonnet 5 → DeepSeek-V4-Flash |
+| `browser-automation` | **GPT-6-Astra** | GPT-5.5 → Claude Sonnet 5 |
+| `research` | **Gemini-3.8-Flash** | DeepSeek-V4-Pro → Claude Sonnet 5 → GPT-5.6-Sol |
+| `planning` | **GLM-5.2** | GPT-6-Astra → Claude Opus 5 → Claude Opus 4.7 |
+| `testing` | **Claude Haiku 4.5** | Claude Sonnet 5 → GLM-5.3-Flash → DeepSeek-V4-Flash |
+| `docs` | **Claude Sonnet 5** | GLM-5.3-Flash → GPT-5.5 → Kimi K2.6 |
+| `frontend` | **Claude Sonnet 5** | GPT-5.6-Sol → Kimi K2.6 → GPT-5.5 |
+| `self-healing` | **GLM-5.2** | GPT-6-Astra → MiniMax-M2.7 → DeepSeek-V4-Pro |
+| `general` | **GPT-6-Astra** | Claude Sonnet 5 → GLM-5.2 → DeepSeek-V4-Pro |
 
 _These tables are derived from `scripts/lib/specs/model-registry.json`; `node scripts/aios.mjs model-router` prints the live registry plus routing rules, and `model-router availability` prints which relay channels look healthy right now._
 
@@ -115,7 +126,7 @@ Choose how aggressive the routing should be:
 | Profile | When to use | Behavior |
 |---|---|---|
 | `balanced` (default) | Most work | Strong signals upgrade the model; normal coding stays cheap |
-| `premium` | Risky or unclear tasks | More willing to use expensive models like Opus or GPT-5.5 |
+| `premium` | Risky or unclear tasks | More willing to use expensive models like Claude Opus 5 or GPT-6-Astra |
 | `budget` | Cost-sensitive work | Prefers cheap models unless the task really needs a strong one |
 
 ```bash
@@ -128,10 +139,10 @@ export AIOS_MODEL_ROUTER_PROFILE=premium
 
 ## Quick Start
 
-### View all models
+### View the registry and routing rules
 
 ```bash
-node scripts/aios.mjs model-router list
+node scripts/aios.mjs model-router
 ```
 
 ### Route a task with explanation
@@ -139,6 +150,7 @@ node scripts/aios.mjs model-router list
 ```bash
 node scripts/aios.mjs model-router route \
   --task "build a beautiful landing page component" \
+  --task-type frontend \
   --profile balanced \
   --explain
 ```
@@ -157,43 +169,59 @@ node scripts/aios.mjs model-router route \
 node scripts/aios.mjs model-router stats
 ```
 
+### View channel availability state
+
+```bash
+node scripts/aios.mjs model-router availability
+```
+
 ## Why Was This Model Selected?
 
 Add `--explain` to any route command to see the reasoning:
 
 ```json
 {
-  "resolvedType": "browser-automation",
-  "modelId": "gpt-5.5",
-  "confidence": 0.86,
-  "matchedSignals": [
-    { "taskType": "browser-automation", "signal": "browser", "weight": 8 }
-  ],
-  "why": ["Detected browser-automation signals: browser, upload"]
+  "resolvedType": "implementation",
+  "modelId": "deepseek-v4",
+  "model": "DeepSeek-V4-Pro",
+  "clientId": "claude-code",
+  "reason": "primary match for taskType=\"implementation\"",
+  "profile": "premium",
+  "confidence": 1,
+  "matchedSignals": [],
+  "why": ["Explicit task type selected: implementation"],
+  "contractMode": "",
+  "modelProtocols": ["claude"],
+  "requestedModelId": "deepseek-v4",
+  "skippedForCapability": []
 }
 ```
 
-- **High confidence** = one task type clearly matched
-- **Multiple recommendedPhases** = the task is compound; split it for better routing
-- **matchedSignals** shows exactly which keywords triggered the routing
+- **`resolvedType`** is the task type resolved from a declaration — it is not evidence of keyword inference
+- **`matchedSignals: []`** because the router never guesses a task type from free text (`signals.mjs` North Star constraint)
+- **`why`** says whether the route came from `Explicit task type selected: ...` or the deterministic `general` fallback
+- **`requestedModelId` / `skippedForCapability` / `contractMode`** record how the client contract narrowed the chain
 
 ## Overriding Model Selection
 
 If you want to force a specific model:
 
 ```bash
-# By role
+# By role (planner / implementer / reviewer / security-reviewer)
 export AIOS_MODEL_PLANNER=claude-opus
 export AIOS_MODEL_IMPLEMENTER=deepseek-v4
 export AIOS_MODEL_REVIEWER=claude-opus
+export AIOS_MODEL_SECURITY_REVIEWER=claude-opus
 
-# By task type
-export AIOS_MODEL_BROWSER_AUTOMATION=gpt-5.5
-export AIOS_MODEL_CODE_REVIEW=claude-opus
+# By profile
+export AIOS_MODEL_ROUTER_PROFILE=budget
 
-# Disable routing entirely (use a fixed model)
+# Disable routing entirely (each client keeps its own default model)
 export AIOS_MODEL_ROUTER=0
 ```
+
+When you override, the router switches the **client** to one that can speak that model; only automatic
+routing is allowed to change the model to fit the worker client.
 
 ## Configuration Files
 

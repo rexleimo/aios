@@ -29,7 +29,7 @@ description: 실패한 세션에서 스킬 개선 패치를 발견, 검토, 적�
 |------|------|
 | `skillId` | 패치 대상 스킬 |
 | `scope` | 기능 영역（예：「authentication」「file-ops」） |
-| `failureClass` |遭遇した失敗タイプ |
+| `failureClass` | 발생한 실패 유형 |
 | `lessonKind` | 개선 유형（예：「error-handling」「edge-case」） |
 | `lessonCount` | 배운 교훈의 수 |
 | `patchHint` | 제안된 코드/텍스트 변경 |
@@ -162,7 +162,7 @@ aios hud --session <session-id> --show-skill-candidates --skill-candidate-view d
 aios team skill-candidates export --session-id <session-id>
 ```
 
-### 단계 3: 패치를ローカル에서 테스트
+### 단계 3: 패치를 로컬에서 테스트
 
 ```bash
 # 테스트 브랜치 생성（git 사용 시）
@@ -209,13 +209,13 @@ aios skill-candidate review <candidate-id> --reject --comment "엣지 케이스 
 
 ## Learn-Eval 통합
 
-Learn-eval은 스킬 후보를生成하는 시스템입니다:
+Learn-eval은 스킬 후보를 생성하는 시스템입니다:
 
 ```bash
 # 최근 세션을 분석하기 위해 learn-eval 실행
 aios learn-eval --limit 10
 
-# 스킬 후보를含む draft 권장 사항 표시
+# 스킬 후보를 포함해 권장안 표시
 ```
 
 ### Learn-Eval 출력
@@ -238,19 +238,19 @@ Draft 권장 사항:
 
 ## Quality-Gate 연결
 
-스킬 후보는 quality-gate가 실패할 때生成됩니다:
+스킬 후보는 quality-gate가 실패할 때 생성됩니다:
 
 ### Quality-Gate 결과
 
 | 결과 | 설명 |
 |------|------|
 | `ok` | 세션 통과 — 후보 생성 안됨 |
-| `failed` | 세션 실패 — 후보가生成되었을 가능성 |
-| `retry-needed` | 재시도 필요 — 후보가生成될 수 있음 |
+| `failed` | 세션 실패 — 후보가 생성되었을 가능성 |
+| `retry-needed` | 재시도 필요 — 후보가 생성될 수 있음 |
 
 ### 실패 카테고리
 
- candidate를トリガーする 일반적인 quality-gate 실패 카테고리:
+ candidate를 트리거하는 일반적인 quality-gate 실패 카테고리:
 - `clarity-needs-input` — 에이전트가 더 많은 사용자 입력 필요
 - `sample.latency-watch` — 성능 문제
 - `dispatch.blocked` — 작업 실행 차단됨

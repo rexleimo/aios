@@ -171,7 +171,7 @@ No breaking changes; all defaults are backward compatible (full search output, l
 
 ### Upgrade notes
 
-- Existing installs can update with `aios update`. If your environment previously hit "command 无效 / workflow 卡死" (agents blocked by live smoke evidence drift), re-run `aios agents smoke --live --client <name> --timeout-ms <ms>` to regenerate v2 evidence — no data migration needed.
+- Existing installs can update with `aios update`. If your environment previously hit "command invalid / workflow stuck" (agents blocked by live smoke evidence drift), re-run `aios agents smoke --live --client <name> --timeout-ms <ms>` to regenerate v2 evidence — no data migration needed.
 
 ## v5.4.3 (2026-08-06) — CRG Decision Checkpoints and Worker Journal Rename
 
@@ -302,52 +302,52 @@ No breaking changes; all defaults are backward compatible (full search output, l
 - Quick Start, Use Cases, CLI Comparison, Solo Harness, ContextDB, Troubleshooting, and homepage copy list Grok Build.
 - Blog: [Grok Build Is Now a First-Class AIOS Client](/blog/2026-07-grok-build-aios-client/).
 
-## v3.3.0 (2026-07-02) — 废弃原生拦截运行时，全自动安装 RTK + Caveman
+## v3.3.0 (2026-07-02) — Native interception runtime deprecated, RTK + Caveman installed automatically
 
-### Breaking Change: AIOS 原生拦截运行时废弃
+### Breaking Change: AIOS native interception runtime deprecated
 
-AIOS 原生 token 拦截运行时（`scripts/aios-mcp-proxy.mjs`、`scripts/aios-intercept.mjs`、`config/aios-interception.json`）已标记为 deprecated。代码保留但不再积极维护。
+The AIOS native token interception runtime (`scripts/aios-mcp-proxy.mjs`, `scripts/aios-intercept.mjs`, `config/aios-interception.json`) is now marked deprecated. The code is kept in the repo but is no longer actively maintained.
 
-替代方案是社区维护的工具：
+The replacement is community-maintained tooling:
 
-- **RTK** (https://github.com/rtk-ai/rtk) — Rust CLI 代理，压缩命令输出 60-90%。单二进制，<10ms 开销，100+ 支持命令。本地运行，无外部服务。
-- **Caveman** (https://github.com/JuliusBrussee/caveman) — Claude Code skill，压缩 agent 输出 token ~75%。保持技术准确性，仅压缩表述风格。本地 prompt skill。
+- **RTK** (https://github.com/rtk-ai/rtk) — a Rust CLI proxy that compresses command output by 60-90%. Single binary, <10ms overhead, 100+ supported commands. Runs locally, no external services.
+- **Caveman** (https://github.com/JuliusBrussee/caveman) — a Claude Code skill that cuts agent output tokens by ~75% while keeping technical accuracy and only compressing phrasing. A local prompt skill.
 
-### 新功能：全自动安装
+### New feature: fully automatic installation
 
-`aios init` 现在自动检测并安装 RTK + Caveman：
+`aios init` now detects and installs RTK + Caveman automatically:
 
 ```bash
-# 交互式安装（用户确认后全自动）
+# Interactive install (fully automatic after user confirmation)
 node scripts/aios.mjs init --all
 
-# CI/无人值守（跳过确认）
+# CI / unattended (skips confirmation)
 node scripts/aios.mjs init --all --yes-compression-tools
 
-# 仅检测不安装
+# Detect only, install nothing
 node scripts/aios.mjs init --dry-run
 ```
 
-安装流程：检测 → 用户确认 → 下载安装 → 验证 → PATH 配置 → `rtk init -g` 客户端初始化。
+Install flow: detect → user confirmation → download & install → verify → PATH setup → `rtk init -g` client initialisation.
 
-平台支持：macOS (brew)、Linux/WSL (install.sh)、Windows (PowerShell zip 下载 + 自动 PATH 配置)。
+Platform support: macOS (brew), Linux/WSL (install.sh), Windows (PowerShell zip download + automatic PATH setup).
 
-### 删除的策略
+### Policies removed
 
-- `bidirectional-turn-compression` 强制策略全部删除
-- `pre_send` / `post_receive` 压缩验证要求删除
-- `uncontrolled_host_output` 策略违规标记删除
-- "Do not install RTK, Caveman" 禁令删除
+- The `bidirectional-turn-compression` enforcement policy is removed entirely
+- The `pre_send` / `post_receive` compression verification requirements are removed
+- The `uncontrolled_host_output` policy violation marker is removed
+- The "Do not install RTK, Caveman" prohibition is removed
 
-### 迁移指南
+### Migration guide
 
-1. 运行 `aios init` 安装 RTK + Caveman
-2. 旧的 `scripts/aios-mcp-proxy.mjs` 不需要删除，但不再维护
-3. 旧配置 `config/aios-interception.json` 不再被读取
-4. 重启 AI 客户端激活 RTK hook/plugin
-5. 在 Claude Code 中输入 `/caveman` 激活 Caveman
+1. Run `aios init` to install RTK + Caveman
+2. The old `scripts/aios-mcp-proxy.mjs` does not need deleting, but it is unmaintained
+3. The old `config/aios-interception.json` is no longer read
+4. Restart your AI client to activate the RTK hook/plugin
+5. Type `/caveman` in Claude Code to activate Caveman
 
-## v3.2.0 (2026-07-01) — Harness 可靠性与技能生命周期升级
+## v3.2.0 (2026-07-01) — Harness reliability and skill lifecycle upgrades
 
 ### Harness Solo Runtime
 
@@ -372,12 +372,12 @@ node scripts/aios.mjs init --dry-run
 
 All changes verified with 37/37 unit + integration tests passing.
 
-## v3.1.0 (2026-06-30) — Hermes Agent 一等公民客户端集成
+## v3.1.0 (2026-06-30) — Hermes Agent integrated as a first-class client
 
-- **Hermes Agent 注册为第 7 个 AIOS 一等公民客户端**：具备 skills、native、harness、superpowers 全部能力。
-- **MCP 桥接服务器**：`scripts/aios-mcp-server.mjs` 在 Hermes 会话内暴露 5 个 AIOS 工具（`aios_context_pack`、`aios_doctor_suite`、`aios_intercept_compress`、`aios_skill_validate`、`aios_skill_install`）。
-- **Native emitter + MCP target**：AGENTS.md 输出 + JSON stdio（`.mcp.json` + `config.yaml` scopes）。
-- 多语言文档覆盖（英/中/日/韩）。
+- **Hermes Agent registered as the 7th first-class AIOS client**: full capability in skills, native, harness, and superpowers.
+- **MCP bridge server**: `scripts/aios-mcp-server.mjs` exposes 5 AIOS tools inside a Hermes session (`aios_context_pack`, `aios_doctor_suite`, `aios_intercept_compress`, `aios_skill_validate`, `aios_skill_install`).
+- **Native emitter + MCP target**: AGENTS.md output + JSON stdio (`.mcp.json` + `config.yaml` scopes).
+- Multilingual documentation coverage (EN/ZH/JA/KO).
 - See: [Hermes Agent + AIOS blog post](/blog/2026-06-hermes-agent-aios-client/).
 
 ## v2.0.2 (2026-06-15)

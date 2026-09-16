@@ -40,6 +40,58 @@ v5.11.0 以来の初タグリリース。v5.12.0 のメモリ面（下記）と 
 
 
 
+## v5.11.0（2026-09-06）——プロンプト契約の強化：採点ループ、スタイル自己申告、圧縮ティア、弱モデル固定
+
+### 変更内容
+
+- **記憶抽出契約**：永続化できる項目は 5 要素（`fact` / `entities[]` / 絶対日付 / `evidence_ref` / `confidence`）。雑談・途中結果・証拠のない主張は保存せず、修正は正確な置換で行う。
+- **検証スコアリングループ**：`VALIDATION` が `score` / `complete` / `missing[]` を次のラウンドへ直接返し、リトライ予算は既定 3（使い切ったら停止して引き継ぎ）。解析失敗は構造化された自己再問いとして扱う。
+- **長時間タスクのスタイル自己申告**：各ラウンドで `progress_made` と `blocked_reason` を記録し、3 ラウンド連続で進展がなければ路線変更か上申を強制。`planning_interval` は既定 5 で frontier を再生成。
+- **圧縮ティア**：`FULL` / `PARTIAL` / `SUMMARY` / `EXCLUDED` の 4 段階。直近 2 ラウンドを保護し、要約も証拠から再取得可能。圧縮は監査イベントとして記録。
+- **弱モデル固定 + 予算**：周辺雑務は低コストモデルに固定（下げるだけで上げない）。スケジューリング側は `budget` / `quota_scope` / 超過時の挙動を宣言する。
+- **ノード recipe**：並列ノードは tools 許可リスト、モデルティア、`max_turns`、`budget`、`output_schema`、`retry`、`subflow` を宣言し、下流は schema 成果物の出現でトリガー。
+- **rex-planning ledger**（サブモジュール）：各ラウンドの構造化 ledger + partial 続き実行 + 重複なし依存の規律。`projection-history.json` は LF 固定。
+
+### アップグレード
+
+破壊的変更なし——純粋なプロンプト配信でランタイム改変はゼロ。取得後に `aios setup` / `aios update` を再実行して `rex-planning` 投影を更新してください。
+
+## v5.10.0（2026-09-06）——リリース信頼性とリポジトリー軽量化：回帰グリーン、リリースゲート強化、サプライチェーン固定
+
+### 変更内容
+
+- **Windows 回帰スイートが全面グリーン**：「いつもの」Windows 固有レッド 2 件（orchestrator agent 導出の drift guard、codemap 指示の drift guard）は実際のドリフトではなく checkout 時の CRLF 生成物だった。drift guard は行末正規化比較に改め、`.gitattributes` で `agent-sources/**`、`scripts/lib/specs/*.json`、ルート指示ファイルを LF 固定——Windows checkout と Linux CI が同じガードを通り、テスト実行で生成 spec が汚れない。
+- **リリース証拠ゲートの強化**（v5.9.0 の空振り事故への対応）：release ワークフローで「変更 Skill 訓練証拠」ゲートを全テスト実行より前（fail fast）へ移動。`release-preflight.sh` は `docs/evidence/skill-training/` に未コミット変更がある限り通さない——認証証拠は tag を打つ commit 側に存在しなければならない。
+- **サプライチェーン強化**：GitHub Actions をすべて完全 commit SHA に固定。ci-main へ gitleaks シークレットスキャン job を追加。ルートと mcp-server に `npm audit --omit=dev --audit-level=critical` ゲート（現在の基準値は critical 0）。`windows-shell-smoke` は `npm ci` で再現性を担保。
+- **リポジトリー軽量化**：`pptx-ai-coding-share/node_modules` 351 ファイルと `.cache/` の mkdocs フォント 110 ファイルをリポジトリー外へ（再生成可能かつ ignore 済み）。ルート直下の散発デバッグログ 4 件を削除。認証成果物は gitignore ホワイトリストへ入れ、`skill certify` の結果は `git add -f` が不要になった。
+- **ナラティブ整合**：AGENTS.md は AIOS をオーケストレーション制御平面として冒頭に提示（ブラウザ MCP は legacy 部品と明記）。mkdocs 4 言語サイトの説明から古い "Graph Engine" 叙述を落とし、README のクイックスタートは導入済み `aios` CLI を使う。
+- **プロンプト記述規範**：`docs/prompt-authoring-norms.md`（および `rex-harness/skill-sources/PROMPT-AUTHORING.md`）で契約優先を確立。意味判断はモデル自身が報告し（ReAct 型）、ハードゲートはそのまま検証プロトコル。キーワードや正規表現で意図を推測するのはプロンプトにも補助スクリプトにも禁止。
+
+### アップグレード
+
+破壊的挙動変更なし——本バージョンは CI・ドキュメント・リポジトリー衛生が中心で、ランタイムに近い唯一の変更は drift guard の正規化。
+CI は critical 級の npm アドバイザリとシークレット検出で失敗する。tag 前に `npm audit --omit=dev` をローカルで実行すること。
+Windows 開発者は取得後に再 checkout して、`.gitattributes` に `agent-sources/` とルート指示ファイルを LF 化させること。
+
+## v5.9.0（2026-09-02）——記憶システムを全クライアントへ：正規表現トリガーからプロンプト駆動へ
+
+### 変更内容
+
+- **セッションライフサイクルと記憶の接続**：`aios session start` が ContextDB セッションを登録（冪等、`--session-id/--agent/--client`）。開始時に直前の handoff と pinned memo が届き、`session: (new)` の時代は終了。
+- **`aios-memory` MCP server を新設**（`memory_recall` / `memory_write` / `memory_checkpoint`）：hook 面のないクライアント（Gemini / Hermes / WorkBuddy）に決定論的な入口を提供し、書き込み→再取得の往復検証を通した。
+- **OpenCode プラグイン + hook 全経路**：Claude ダブル hook と Codex/Grok UserPromptSubmit はランタイム検証済み。既存 hook パイプラインで毎ラウンドの再取得を注入する OpenCode プラグインを追加（TUI セッション）。
+- **Memory Trigger Contract の 5 端投影**（AGENTS / CLAUDE / GEMINI）：新規セッションはまず再取得、続行もまず再取得、結論が出たら即書き込み、完了後にチェックポイント。正規表現トリガー層は削除し、トリガー点はプロンプト契約で明示、関連性の判断は LLM に委ねる。
+- **Codex 起動時ダイアログの根因修正**：codex 0.148+ は hooks とプロジェクト信頼設定を `~/.codex/config.toml` に永続化するが、AIOS が書き込んでおらず毎回再表示されていた。インストーラーは管理領域（trust + 五大 MCP）へ冪等に書き込み、ユーザー内容は保持する。**導入直後に解消し、更新では再発しない。**
+- **Gemini の全機能サポートを復帰**：上流は Antigravity へ移ったが、全クライアント一致の約束に従い deprecated 指定を取り消し、記憶・投影・スキル同期を全面接続。
+- **五大 MCP × 七クライアント全面グリーン**：crg / browser / auth / shell / memory を Claude、Hermes、Gemini、WorkBuddy、Grok、Codex、OpenCode のすべてに登録（aios-shell の workspace ドリフト修正を含む）。
+
+### アップグレード
+
+- `aios session start --json` の出力が素の配列から `{ registration, lines }` に変更。
+- WorkBuddy デスクトップ同梱の CLI は既定で PATH にいないため、shim 手順をドキュメント側に追加。
+- `opencode run`（headless）はプロジェクトプラグインを読み込まない（上流仕様）。TUI セッションは影響なし。
+- Codex ユーザーは更新後にあと一度だけ信頼確認が出ることがあるが、承認すれば永続化される。
+
 ## v5.8.2（2026-08-29）——プラン状態が先回りしなくなり、WorkBuddy クライアント対応
 
 ### 変更内容
@@ -394,12 +446,12 @@ node scripts/aios.mjs init --dry-run
 
 - `1.7.0` (2026-04-26):
   - 単一 agent の夜間実行向けに `aios harness` を追加。run journal、stop/resume 制御、HUD 表示、必要に応じた worktree 分離を提供。
-  - 公式 `Solo Harness` ドキュメントを English、中国語、日本語、한국어 へ同期。
+  - 公式 `Solo Harness` ドキュメントを English、中国語、日本語、韓国語 へ同期。
 
 ## さらに以前の安定版
 
 - `1.6.3` (2026-04-25):
-  - 中国語版の視覚的オンボーディング構成を English、日本語、한국어 ページへ同期。
+  - 中国語版の視覚的オンボーディング構成を English、日本語、韓国語 ページへ同期。
   - Overview、Quick Start、シナリオ別コマンド、Agent Team を同じ初心者優先ルートへ更新。
 
 - `1.6.2` (2026-04-25):
@@ -446,7 +498,7 @@ node scripts/aios.mjs init --dry-run
   - **Ink TUI リファクタ** (v1.1.0): TypeScript + Ink ベースの React コンポーネント TUI；REXCLI ASCII アート起動バナー；アダプティブ watch 間隔；左右オプションサイクリング
 - `0.17.0` (2026-03-17):
   - TUI アンインストールピッカーが小さいターミナルでスクロールし、`Select all` / `Clear all` / `Done` を下部に固定
-  - アンインストールカーソル選択が描画グループリストと整合 유지
+  - アンインストールカーソル選択が描画グループリストと整合を維持
   - セットアップ/更新 skill ピッカーがすでにインストール済みスキルを `(installed)` でラベル付け
 - `0.16.0` (2026-03-10): orchestrator agent catalog と生成器を追加
 - `0.15.0` (2026-03-10): `orchestrate live` をデフォルトで gate（`AIOS_EXECUTE_LIVE`）

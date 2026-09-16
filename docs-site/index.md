@@ -273,6 +273,7 @@ faq:
     <p class="rex-cta__text">One sentence is all it takes. Install AIOS and let your agent do the rest.</p>
     <div class="rex-cta__buttons">
       <a href="getting-started" class="md-button md-button--primary">Get Started Free</a>
+      <a href="use-cases" class="md-button">See use cases</a>
       <a href="contextdb" class="md-button">Read Docs</a>
     </div>
   </div>

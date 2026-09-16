@@ -16,7 +16,7 @@ description: 공유 ContextDB로 Claude 분석, Codex 구현, Gemini 리뷰의 �
 ## 실행
 
 ```bash
-scripts/ctx-agent.sh --agent claude-code --project AIOS --prompt "障碍을 분석하고 주요 수정안을 제안하세요."
+scripts/ctx-agent.sh --agent claude-code --project AIOS --prompt "장애를 분석하고 주요 수정안을 제안하세요."
 scripts/ctx-agent.sh --agent codex-cli --project AIOS --prompt "최신 checkpoint에서 주요 수정을 구현하세요."
 scripts/ctx-agent.sh --agent gemini-cli --project AIOS --prompt "회귀 위험과 누락된 테스트를 리뷰하세요."
 ```

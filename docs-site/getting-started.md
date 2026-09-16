@@ -1,4 +1,4 @@
-﻿---
+---
 title: "Quick Start — Install AIOS in 30 Seconds"
 description: "Install AIOS, run aios init --all, and start finishing complex tasks with one sentence. Works with Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
 schema_type: howto

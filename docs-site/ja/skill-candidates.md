@@ -7,7 +7,7 @@ description: 失敗したセッションからスキル改善パッチを発見�
 
 **Skill Candidates** は、失敗した agent セッションから自動的に抽出される改善提案です。エラーから学習することで、AI アシスタントの能力を継続的に改善できます。
 
-## 什么是 Skill Candidates？
+## Skill Candidates とは？
 
 Agent セッションが quality-gate チェックに失敗すると、AIOS は自動的に：
 1. 失敗パターンを分析
