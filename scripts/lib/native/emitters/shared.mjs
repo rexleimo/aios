@@ -124,15 +124,29 @@ export function readClientMarkdownSource(rootDir, client, fileName, { optional =
 // 没有 scripts/ 目录，原样写出必然执行失败。写入客户端前统一烘焙成安装根的绝对路径，
 // 与 init 程序化添加的 save-guard/offload 钩子保持同一约定（GUI 启动的客户端不保证
 // PATH 里有 ~/.aios/bin，钩子不能依赖 `aios` 命令解析）。
-function bakeRuntimeCliPaths(content, rootDir) {
-  return String(content).replaceAll('node scripts/aios.mjs', `node ${rootDir}/scripts/aios.mjs`);
+//
+// 必须在 JSON 解析之后、字符串值层做替换，再交给 JSON.stringify 转义。早先在原文本上
+// 直接 replaceAll 会把 Windows 安装根（`E:\\coding\\aios`）的反斜杠留在 JSON 字符串字面量里，
+// `\c`、`\h` 属于非法转义，于是 JSON.parse 抛 "Bad escaped character"，整个 doctor:native
+// 环节崩溃（POSIX 路径无反斜杠，因此该缺陷只在 Windows 暴露）。
+export function bakeRuntimeCliValues(value, rootDir) {
+  if (typeof value === 'string') {
+    return value.replaceAll('node scripts/aios.mjs', `node ${rootDir}/scripts/aios.mjs`);
+  }
+  if (Array.isArray(value)) {
+    return value.map((item) => bakeRuntimeCliValues(item, rootDir));
+  }
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [key, bakeRuntimeCliValues(item, rootDir)]),
+    );
+  }
+  return value;
 }
 
 export function readClientJsonSource(rootDir, client, fileName) {
-  return JSON.parse(bakeRuntimeCliPaths(
-    fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8'),
-    rootDir,
-  ));
+  const source = fs.readFileSync(resolveNativeSourcePath({ rootDir, client, fileName }), 'utf8');
+  return bakeRuntimeCliValues(JSON.parse(source), rootDir);
 }
 
 export function readOptionalClientJson(rootDir, client, fileName) {
