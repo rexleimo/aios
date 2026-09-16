@@ -11,6 +11,7 @@ import {
 import {
   AiosCliError,
   codemapSearchArgs,
+  defaultExecFile,
   memoRecallArgs,
   memoUsefulArgs,
   memoWriteArgs,
@@ -88,6 +89,24 @@ test('runAiosJson parses JSON and fails closed otherwise', async () => {
     assert.ok(error instanceof AiosCliError);
     assert.match(error.message, /err text/iu);
   }
+});
+
+test('defaultExecFile resolves every module shape (regression: execFile TypeError)', async () => {
+  // Real ESM namespace from `await import('node:child_process')` — the production
+  // default path that used to throw "Cannot read properties of undefined (reading 'execFile')".
+  const namespace = await import('node:child_process');
+  assert.equal(typeof defaultExecFile(namespace), 'function');
+  // Injected stub shape used by older tests.
+  const stub = () => {};
+  assert.equal(defaultExecFile({ child_process: { execFile: stub } }), stub);
+  // CJS default shape.
+  assert.equal(defaultExecFile({ default: { execFile: stub } }), stub);
+  assert.equal(defaultExecFile({}), null);
+  // Full default path must spawn (and fail on the missing CLI), never TypeError.
+  await assert.rejects(
+    runAios({ aiosRoot: process.cwd(), argv: ['no-such-subcommand'] }),
+    (error) => error instanceof AiosCliError && !/Cannot read properties/iu.test(error.message),
+  );
 });
 
 test('argv builders match the real aios CLI surface', () => {

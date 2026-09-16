@@ -33,8 +33,15 @@ export function resolveAiosRoot({ env = {}, startDir = '', existsSync = null } =
   return '';
 }
 
-function defaultExecFile(nodeModule) {
-  return nodeModule.child_process.execFile;
+export function defaultExecFile(nodeModule) {
+  // Accept every module shape: ESM namespace from `import('node:child_process')`
+  // ({ execFile, ... }), its CJS `default` export, or an injected stub
+  // ({ child_process: { execFile } }). Reading `.child_process.execFile` on the
+  // namespace threw "Cannot read properties of undefined (reading 'execFile')".
+  return nodeModule.child_process?.execFile
+    || nodeModule.execFile
+    || nodeModule.default?.execFile
+    || null;
 }
 
 export async function runAios({ aiosRoot = '', argv = [], execFileImpl = null, nodeModule = null } = {}) {
@@ -44,6 +51,9 @@ export async function runAios({ aiosRoot = '', argv = [], execFileImpl = null, n
     );
   }
   const execFile = execFileImpl || defaultExecFile(nodeModule || await import('node:child_process'));
+  if (typeof execFile !== 'function') {
+    throw new AiosCliError('AIOS runner unavailable: could not resolve execFile from node:child_process.');
+  }
   const cliPath = path.join(aiosRoot, ...AIOS_CLI_REL);
   return new Promise((resolve, reject) => {
     execFile(process.execPath, [cliPath, ...argv], { timeout: 120000 }, (error, stdout, stderr) => {
