@@ -55,7 +55,7 @@ Gemini: 나는 누구, 여긴 어디?
 ### 동작 원리
 
 ```
-あなたがcodex/claude/geminiと入力
+당신이 codex/claude/gemini 라고 입력
        ↓
 AIOS가 자동 가로챈다
        ↓

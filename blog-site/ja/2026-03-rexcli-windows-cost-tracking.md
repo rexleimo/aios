@@ -11,7 +11,7 @@ tags: [AIOS, Windows, Cost Tracking, OpenCode, AI Development]
 
 ## Windows ネイティブワークフローサポート
 
-AIOS は 이제 Windows ワークフローをエンドツーエンドでサポートしています。Windows 固有のパス処理やコマンドライン引数分割の問題に対処し、Windows 開発者も同じワークフローをスムーズに使えるようにしました。
+AIOS はこのたび Windows ワークフローをエンドツーエンドでサポートしています。Windows 固有のパス処理やコマンドライン引数分割の問題に対処し、Windows 開発者も同じワークフローをスムーズに使えるようにしました。
 
 主な改善点:
 

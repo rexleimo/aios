@@ -38,7 +38,7 @@ Workflow 쓰기와 Activation 프로젝션 쓰기 사이에서 프로세스가 �
 
 per-store 파일 잠금으로 이제 두 개의 병렬 호출자가 동일한 Command 토큰을 동시에 진행하는 것이 불가능해졌습니다. 두 번째 호출자는 `AIOS_REX_STORE_BUSY`를 받고 재시도해야 합니다.
 
-### 타입 기반 Wayfinder・Planning Artifact 스키마
+### 타입 기반 Wayfinder · Planning Artifact 스키마
 
 이 릴리스와 함께 두 개의 새로운 도메인 모듈이 출시됩니다:
 

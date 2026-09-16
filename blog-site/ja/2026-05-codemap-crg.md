@@ -5,15 +5,15 @@ date: 2026-05-21
 tags: ["codemap", "code-review-graph", "CRG", "knowledge-graph", "AIOS"]
 ---
 
-# Codemap: Give Your AI Agent a Map of Your Codebase
+# Codemap: AI コーディングエージェントにコードベースの地図を渡す
 
-AI coding agents are great at writing code. But they're terrible at understanding how code *connects*. They grep filenames, read a few files, and guess the impact of changes. Half the tokens you pay for are spent on blind exploration.
+AI コーディングエージェントはコードを書くのが得意です。しかしコードがどう *つながっているか* の理解は苦手のままです。ファイル名を grep し、いくつかのファイルを読み、変更の影響を推測する——支払ったトークンの半分は、この盲目的な探索に使われていました。
 
-**Codemap changes this.** It builds a Tree-sitter knowledge graph of your entire codebase — every function, every import, every call relationship — and makes it available to your agents as MCP tools. One command. All clients.
+**Codemap はここを変えます。** リポジトリ全体の Tree-sitter 知識グラフ（すべての関数、すべての import、すべての呼び出し関係）を作り、MCP ツールとして各 agent に渡します。コマンドは 1 つ、クライアントは全対応です。
 
-## The Problem: Agents Are Blind
+## 課題：エージェントは「見ていない」
 
-When an agent gets a task like "fix the auth timeout bug," here's what happens without Codemap:
+「認証タイムアウトのバグを直して」というタスクを受けたとき、Codemap が無い状態では次のことが起きます。
 
 ```
 Agent reads README
@@ -25,11 +25,11 @@ Agent reads README
   → submits — hopes nothing breaks
 ```
 
-Every "reads file" costs tokens. Every "guesses impact" adds risk. This is why agents sometimes break things they didn't know existed.
+「ファイルを読む」たびにトークンが消え、「影響を推測」するたびにリスクが増えます。エージェントが存在を知らなかったものを壊すのは、これが理由です。
 
-## The Solution: A Knowledge Graph for Code
+## 解決策：コードの知識グラフ
 
-With Codemap installed, the same task becomes:
+Codemap を入れた同じタスクでは、流れが変わります。
 
 ```
 Agent calls get_minimal_context(task="fix the auth timeout bug")
@@ -44,82 +44,82 @@ Agent calls detect_changes()
 Agent submits with confidence
 ```
 
-**No blind exploration. No guessing. Every decision backed by structure.**
+**盲目な探索も推測もなし。すべての判断が構造に裏付けられます。**
 
-## One Command, All Clients
+## 1 コマンドで全クライアントへ
 
 ```bash
 aios internal codemap install
 ```
 
-This single command:
+この 1 コマンドが次を実行します：
 
-1. Checks prerequisites (`uv`/`uvx`)
-2. Builds the initial graph (5-15 seconds)
-3. Injects CRG MCP config into opencode, codex, claude, and gemini
-4. Installs the opencode auto-update plugin
-5. Updates AGENTS.md with decision-point guidance
+1. 前提条件を確認（`uv` / `uvx`）
+2. 初期グラフを構築（5〜15 秒）
+3. CRG MCP 設定を opencode / codex / claude / gemini へ注入
+4. opencode 自動更新プラグインをインストール
+5. AGENTS.md に意思決定チェックポイントの指針を追記
 
-That's it. Every agent session from now on gets graph-first code exploration.
+以上です。このあとのすべてのエージェントセッションが、グラフ優先でコードを探索し始めます。
 
 ```bash
-# Health check
+# ヘルスチェック
 aios internal codemap doctor
 
-# Rebuild from scratch
+# ゼロから再構築
 aios internal codemap build
 
-# Quick incremental update (<2 seconds)
+# 差分だけ素早く更新（2 秒未満）
 aios internal codemap update
 
-# See what's in your graph
+# グラフに何が入っているか確認
 aios internal codemap status
 ```
 
-## What Agents Can See
+## エージェントが見られるもの
 
-Codemap exposes 28 MCP tools. Here's what matters most:
+Codemap は 28 個の MCP ツールを公開します。特に効くのは以下です。
 
-| Tool | What it replaces |
+| ツール | 置き換える作業 |
 |------|-----------------|
-| `semantic_search_nodes` | grep — finds code by name *and meaning* |
-| `query_graph` | Reading files to understand call chains |
-| `get_impact_radius` | Guessing what might break |
-| `detect_changes` | Manual diff review |
-| `get_affected_flows` | Guessing which features are affected |
-| `get_minimal_context` | Reading README + ls + exploring |
+| `semantic_search_nodes` | grep——名前 *および意味* でコードを見つける |
+| `query_graph` | 呼び出し連鎖を理解するためにファイルを読む行為 |
+| `get_impact_radius` | 何が壊れそうかの推測 |
+| `detect_changes` | 差分の手動レビュー |
+| `get_affected_flows` | どの機能に影響するかの推測 |
+| `get_minimal_context` | README を読み、ls し、探索する一連の動き |
 
-## Real Impact
+## 実際の効果
 
-Across real repositories, Codemap delivers 4.9x to 27.3x token reduction compared to grep-based exploration, averaging 8.2x. But the real value isn't just cost — it's the change in agent behavior.
+実リポジトリでの計測では、grep ベースの探索と比べてトークンが 4.9 倍〜27.3 倍削減、平均は 8.2 倍です。ただし本当の価値はコスト削減だけではく、エージェントの振る舞いの変化にあります。
 
-Without Codemap, agents spend 60-80% of their tokens on *understanding* the codebase. With Codemap, that drops dramatically. Agents spend their tokens on *doing work* — which is what you're paying for.
+Codemap が無い状態では、エージェントはトークンの 60〜80% をコードベースの *理解* に使います。Codemap を入れるとここが大きく下がり、トークンは *仕事そのもの* に回ります——あなたが課金しているのは、そちらの側です。
 
-## Deep Integration
+## 深い統合
 
-Codemap isn't a standalone plugin. It's woven into every AIOS workflow:
+Codemap は単体のプラグインではなく、AIOS の各ワークフローに織り込まれています。
 
-- **`aios doctor`** checks Codemap health alongside everything else
-- **Solo Harness** automatically builds the graph in worktrees for overnight tasks
-- **Agent Team** dispatch includes change impact analysis so every worker knows the blast radius
-- **Skills** (search-first, debug-hub, code-review) prioritize CRG tools over grep
+- **`aios doctor`** は他の項目と同じ場で Codemap の健全性を確認
+- **Solo Harness** は夜通しのタスクで worktree 内のグラフを自動構築
+- **Agent Team** のディスパッチに変更影響解析が含まれ、各 worker が blast radius を把握した状態で始動
+- **Skills**（search-first、debug-hub、code-review）は grep より CRG ツールを優先
 
-## Try It
+## まず試す
 
 ```bash
-# Install (one command)
+# インストール（1 コマンド）
 aios internal codemap install
 
-# Verify
+# 状態確認
 aios internal codemap doctor
 
-# Let your agent explore with a map instead of a flashlight
+# 懐中電灯ではなく地図で探索させる
 ```
 
-[Full Documentation →](/ja/codemap/){ .md-button }
+[ドキュメントを見る →](/ja/codemap/){ .md-button }
 
 ## 関連ドキュメント
 
 - [Codemap](https://cli.rexai.top/ja/codemap/)
-- [Quick Start](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
-- [Workflow Policy](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート
+- [クイックスタート](https://cli.rexai.top/ja/getting-started/) — 30 秒で AIOS をインストール
+- [ワークフローポリシー](https://cli.rexai.top/ja/workflow-policy/) — direct / guarded / planned ルート
