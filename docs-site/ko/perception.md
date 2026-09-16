@@ -1,9 +1,9 @@
 ---
-title: Perception
-description: Content outcome tracking, statistical insight generation, and perception summary injection for agent learning.
+title: Perception(인지 레이어)
+description: 콘텐츠 결과 추적, 통계 insight 생성, agent 학습을 위한 perception summary 주입.
 ---
 
-# Perception Layer
+# Perception 레이어
 
 > **Quick Answer:** Perception은 구조화된 콘텐츠 결과를 기록하고 다음 결정을 위한 범위가 제한된 통계 요약을 만듭니다. 분석·피드백 레이어이며 콘텐츠의 정확성이나 전체 이력의 자동 주입을 보장하지 않습니다.
 
@@ -11,11 +11,11 @@ description: Content outcome tracking, statistical insight generation, and perce
 
 결과를 기록하고 충분한 샘플이 쌓이면 insight를 생성하고, 필요할 때만 summary를 pull합니다. 컨텍스트가 이력으로 가득 차지 않도록 출력 크기를 제한하세요.
 
-> Let your agent learn from content operation results — what worked, what didn't, and why.
+> agent 가 콘텐츠 운영 결과에서 배우게 하세요—무엇이 통했고, 무엇은 안 통했으며, 왜 그랬는지.
 
-The perception loop closes the gap between "agent does something" and "agent knows the result." It records structured outcome snapshots, generates statistical insights by dimension, and injects a perception summary into the agent's context so future decisions are data-informed.
+Perception 루프는 "agent 가 무언가 한다"와 "agent 가 결과를 안다" 사이의 공백을 메웁니다. 구조화된 결과 스냅샷을 기록하고, 차원별로 통계 insight 를 만들며, perception summary 를 agent 컨텍스트에 주입해 이후 판단이 데이터에 근거하도록 합니다.
 
-## How It Works
+## 동작 방식
 
 ```mermaid
 graph LR
@@ -26,13 +26,13 @@ graph LR
     E --> A
 ```
 
-1. **Record** — after publishing content, record metrics (likes, saves, comments, views) and context (topic, format, publish time)
-2. **Analyze** — group outcomes by dimension, compute statistics, determine confidence levels
-3. **Inject** — build a perception summary that the agent sees in its context on next run
+1. **기록** — 게시 후 지표(좋아요, 저장, 댓글, 조회)와 컨텍스트(주제, 형식, 게시 시각)를 기록합니다
+2. **분석** — 차원별로 결과를 묶고, 통계를 계산하고, 신뢰도를 판정합니다
+3. **주입** — perception summary 를 만들어 다음 실행 때 agent 컨텍스트에 보이도록 합니다
 
-## Quick Start
+## 빠른 시작
 
-### Record an Outcome
+### 결과 기록하기
 
 ```bash
 aios perception record \
@@ -44,15 +44,15 @@ aios perception record \
   --context '{"topic":"AI工具","format":"图文","publishHour":20}'
 ```
 
-### Generate Insights
+### insight 생성하기
 
-After recording several outcomes (minimum 3 per dimension group):
+여러 결과를 기록한 뒤(같은 차원 그룹당 최소 3건):
 
 ```bash
 aios perception insights --min-sample 3
 ```
 
-Output:
+출력:
 
 ```
 Generated 3 insights from 5 outcomes.
@@ -61,7 +61,7 @@ Generated 3 insights from 5 outcomes.
   [insight] publishHour=20 avgLikes=123 avgSaves=53 confidence=low sampleSize=3
 ```
 
-### View Perception Summary
+### perception summary 확인하기
 
 ```bash
 aios perception summary
@@ -72,9 +72,9 @@ aios perception summary
 aios perception summary --format json
 ```
 
-## Perception Summary Format
+## perception summary 형식
 
-When the agent starts a new session, it sees a summary like this:
+agent 가 새 세션을 시작하면 다음 같은 summary 를 보게 됩니다:
 
 ```markdown
 ## Perception Layer
@@ -100,64 +100,64 @@ When the agent starts a new session, it sees a summary like this:
 - Publish around 20:00 (best time slot)
 ```
 
-## Dimensions
+## 분석 차원
 
-Outcomes are grouped by these context dimensions:
+결과는 다음 컨텍스트 차원으로 묶입니다:
 
-| Dimension | Description | Example |
+| 차원 | 설명 | 예 |
 |-----------|-------------|---------|
-| `topic` | Content topic/category | "AI工具", "恋爱", "情绪" |
-| `format` | Content format | "图文", "视频", "vlog" |
-| `publishHour` | Hour of publication (0-23) | 20 |
-| `publishDayOfWeek` | Day of week | "Monday" |
-| `contentType` | Content type | "note", "video" |
-| `coverStyle` | Cover image style | "minimal", "illustration" |
+| `topic` | 콘텐츠 주제 / 분류 | "AI工具", "恋爱", "情绪" |
+| `format` | 콘텐츠 형식 | "图文", "视频", "vlog" |
+| `publishHour` | 게시 시각(0-23) | 20 |
+| `publishDayOfWeek` | 게시 요일 | "Monday" |
+| `contentType` | 콘텐츠 유형 | "note", "video" |
+| `coverStyle` | 표지 이미지 스타일 | "minimal", "illustration" |
 
-## Confidence Levels
+## 신뢰도
 
-Insight confidence is based on sample size:
+insight 신뢰도는 표본 크기에 따라 결정됩니다:
 
-| Level | Sample Size | Meaning |
+| 단계 | 표본 수 | 의미 |
 |-------|-------------|---------|
-| high | n >= 8 | Reliable signal |
-| medium | n >= 5 | Promising pattern |
-| low | n >= 3 | Early indication |
-| insufficient | n < 3 | Not enough data |
+| high | n >= 8 | 신뢰할 수 있는 신호 |
+| medium | n >= 5 | 가능성 있는 패턴 |
+| low | n >= 3 | 초기 징후 |
+| insufficient | n < 3 | 데이터 부족 |
 
-## Metrics
+## 지표
 
-Standard metrics tracked:
+기본으로 추적하는 지표:
 
-- `likes` — post likes
-- `comments` — post comments
-- `saves` — post saves/bookmarks
-- `shares` — post shares
-- `views` — post views
-- `impressions` — feed impressions
-- `clickThroughRate` — CTR
-- `watchTime` — video watch time
-- `followerGain` — new followers from post
+- `likes` — 게시물 좋아요 수
+- `comments` — 게시물 댓글 수
+- `saves` — 저장 / 북마크 수
+- `shares` — 공유 수
+- `views` — 조회 수
+- `impressions` — 피드 노출 수
+- `clickThroughRate` — 클릭률(CTR)
+- `watchTime` — 영상 시청 시간
+- `followerGain` — 게시물에서 유입된 신규 팔로워
 
-## Agent Context Injection
+## agent 컨텍스트 주입
 
-The perception summary is automatically injected into the agent's context by `ctx-agent` when building the memory prelude. This happens when:
+perception summary 는 `ctx-agent` 가 memory prelude 를 구성할 때 agent 컨텍스트에 자동 주입됩니다. 다음 조건에서 발생합니다:
 
-- `CTXDB_PERCEPTION=true` (default)
-- Perception data exists in the workspace
+- `CTXDB_PERCEPTION=true`(기본값)
+- 워크스페이스에 Perception 데이터가 있을 때
 
-The agent sees the perception summary as part of its context, alongside persona, user profile, and workspace memo content.
+agent 는 perception summary 를 persona, 사용자 프로필, 워크스페이스 memo 와 나란한 컨텍스트의 일부로 받습니다.
 
-## Environment Variables
+## 환경 변수
 
-| Variable | Default | Description |
+| 변수 | 기본값 | 설명 |
 |----------|---------|-------------|
-| `CTXDB_PERCEPTION` | `true` | Enable/disable perception overlay |
-| `PERCEPTION_MAX_CHARS` | `3000` | Max chars for perception overlay |
-| `PERCEPTION_OUTCOMES_LIMIT` | `20` | Max outcomes loaded for summary |
-| `PERCEPTION_INSIGHTS_LIMIT` | `10` | Max insights loaded for summary |
-| `PERCEPTION_MIN_SAMPLE` | `3` | Min sample size for insight generation |
+| `CTXDB_PERCEPTION` | `true` | 인지 레이어 주입 켜기 / 끄기 |
+| `PERCEPTION_MAX_CHARS` | `3000` | 인지 레이어 최대 문자 수 |
+| `PERCEPTION_OUTCOMES_LIMIT` | `20` | summary 에 로드되는 최근 결과 수 |
+| `PERCEPTION_INSIGHTS_LIMIT` | `10` | summary 에 로드되는 insight 수 |
+| `PERCEPTION_MIN_SAMPLE` | `3` | insight 생성의 최소 표본 수 |
 
-## CLI Reference
+## CLI 참고
 
 ```bash
 # Record outcome
@@ -170,36 +170,36 @@ aios perception insights [--min-sample <n>] [--dry-run]
 aios perception summary [--format text|json] [--max-chars <n>]
 ```
 
-### Record Options
+### record 옵션
 
-| Option | Required | Description |
+| 옵션 | 필수 | 설명 |
 |--------|----------|-------------|
-| `--content-id` | Yes | Content identifier |
-| `--platform` | Yes | Platform name (e.g. xiaohongshu) |
-| `--content-type` | Yes | Content type (e.g. note, video) |
-| `--title` | No | Content title |
-| `--publish-time` | No | ISO timestamp |
-| `--snapshot-window` | No | Metrics window (default: immediate) |
-| `--metrics` | No | JSON metrics object |
-| `--context` | No | JSON context object |
-| `--json` | No | Output as JSON |
+| `--content-id` | 예 | 콘텐츠 식별자 |
+| `--platform` | 예 | 플랫폼 이름(예: xiaohongshu) |
+| `--content-type` | 예 | 콘텐츠 유형(예: note, video) |
+| `--title` | 아니오 | 콘텐츠 제목 |
+| `--publish-time` | 아니오 | ISO 타임스탬프 |
+| `--snapshot-window` | 아니오 | 지표 수집 창(기본: 즉시) |
+| `--metrics` | 아니오 | JSON 형식 지표 객체 |
+| `--context` | 아니오 | JSON 형식 컨텍스트 객체 |
+| `--json` | 아니오 | JSON 으로 출력 |
 
-### Insights Options
+### insights 옵션
 
-| Option | Default | Description |
+| 옵션 | 기본값 | 설명 |
 |--------|---------|-------------|
-| `--min-sample` | 3 | Min outcomes per dimension group |
-| `--dry-run` | false | Preview without storing insights |
+| `--min-sample` | 3 | 차원 그룹당 최소 결과 수 |
+| `--dry-run` | false | insight 를 저장하지 않고 미리 보기 |
 
-### Summary Options
+### summary 옵션
 
-| Option | Default | Description |
+| 옵션 | 기본값 | 설명 |
 |--------|---------|-------------|
-| `--format` | text | Output format: text or json |
-| `--max-chars` | 10000 | Max output characters |
-| `--space` | default | Workspace memory space |
+| `--format` | text | 출력 형식: text 또는 json |
+| `--max-chars` | 10000 | 출력 최대 문자 수 |
+| `--space` | default | 워크스페이스 기억 공간 |
 
-## FAQ
+## 자주 묻는 질문
 
 ### Perception이 콘텐츠를 자동 게시하거나 최적화하나요?
 

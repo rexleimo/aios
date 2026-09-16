@@ -9,34 +9,34 @@ description: client guidance, ContextDB, Workflow Policy, Team, Harness, browser
 
 AIOS는 기존 coding client 주변에 로컬 경계를 제공합니다. client guidance가 project를 식별하고 ContextDB가 evidence를 저장하고 recall하며 Workflow Policy가 가장 작은 route를 선택합니다. 필요하면 Team, Solo Harness, Orchestrate가 task를 실행합니다. 브라우저 기본 path는 browser-use CDP이고 오래된 Playwright MCP는 compatibility path입니다.
 
-## Components
+## 컴포넌트
 
-| Layer | Main surface | Responsibility |
+| 계층 | 주요 입구 | 역할 |
 | --- | --- | --- |
-| Client entry | scripts/contextdb-shell.zsh, client-sources/, native guidance | project instruction과 route hint |
-| Startup bridge | scripts/contextdb-shell-bridge.mjs, scripts/ctx-agent.mjs | wrapper / passthrough 판단과 client 실행 |
-| ContextDB | mcp-server/src/contextdb/, .aios/context-db/ | session, memo, checkpoint, search, context pack |
+| 클라이어트 입구 | scripts/contextdb-shell.zsh, client-sources/, 네이티브 안내 | 프로젝트 설명과 라우팅 힌트 |
+| 시작 브리지 | scripts/contextdb-shell-bridge.mjs, scripts/ctx-agent.mjs | 래퍼가 통과는지 판단해 클라이어트 시작 |
+| ContextDB | mcp-server/src/contextdb/,.aios/context-db/ | 세션·memo·체크포인트·검색 데이터·context pack 저장 |
 | Workflow Policy | scripts/lib/planning/workflow-policy.mjs, auto-gate.mjs, cli.mjs | noop, direct, guarded, planned 분류 |
-| Operations | scripts/aios.mjs, team, harness, orchestrate, HUD | dispatch, status, evidence |
+| 운영 동작 | scripts/aios.mjs,team,harness,orchestrate,HUD | 작업 배포, 상태 기록, 근거 제시 |
 | Browser | scripts/run-browser-use-mcp.sh, chrome.*, browser.*, page.* | CDP의 browser-use MCP |
-| Research | scripts/lib/rl-core/, rl-* adapter | RL experiment와 evaluation |
+| 연구 레이어 | scripts/lib/rl-core/,rl-* 어댑터 | RL 실험과 평가 격리 |
 
-## Runtime Flow
+## 실행 흐름
 
 ~~~text
-user command
-  -> supported client + native project guidance
-  -> optional shell bridge / ctx-agent compatibility path
-  -> .aios/context-db/index.json registry
-  -> ContextDB search, memo, checkpoint, context pack
-  -> Workflow Policy route decision
+사용자 명령
+-> 지원 클라이언트와 네이티브 프로젝트 안내
+-> 선택적 shell bridge / ctx-agent 호환 경로
+-> .aios/context-db/index.json 레지스트리
+-> ContextDB 검색, memo, 체크포인트, context pack
+-> Workflow Policy 라우팅 판단
   -> direct, Team, Solo Harness 또는 Orchestrate
-  -> diagnostic, test, verification evidence
+-> 진단, 테스트, 검증 근거
 ~~~
 
 route decision은 implementation complete와 같지 않습니다. file edit에는 pre-edit safety와 final verification이 필요합니다.
 
-## ContextDB와 storage boundary
+## ContextDB와 저장 경계
 
 ~~~text
 .aios/
@@ -52,7 +52,7 @@ route decision은 implementation complete와 같지 않습니다. file edit에�
 
 public model은 pull-based입니다. agent는 필요한 source만 검색하고 recall하며 전체 history가 자동으로 전달되지는 않습니다. .contextdb-enable과 오래된 wrapper mode는 compatibility로 남지만 primary onboarding은 아닙니다.
 
-## Workflow Policy boundary
+## Workflow Policy 경계
 
 | Disposition | 용도 |
 | --- | --- |
@@ -78,21 +78,21 @@ aios orchestrate --help
 aios doctor --native --verbose
 ~~~
 
-## Browser runtime
+## 브라우저 런타임
 
-기본 browser path는 browser-use MCP over CDP입니다.
+기본 브라우저 경로는 browser-use MCP over CDP입니다.
 
-- launcher: scripts/run-browser-use-mcp.sh
-- launch: chrome.launch_cdp
-- connect: browser.connect_cdp
-- page: page.semantic_snapshot, page.extract_text, page.goto, page.screenshot
-- profile: config/browser-profiles.json
+- 시작:
+- 브라우저 시작:
+- 연결:
+- 페이지 작업:
+- profile 설정:
 
-visible CDP browser를 사용하고 semantic 또는 targeted text를 먼저 읽으며 read -> act -> verify를 짧게 유지합니다. mcp-server의 Playwright MCP는 compatibility와 low-level inspection용이며 기본 business-flow path가 아닙니다.
+가시 CDP 브라우저를 사용하고 semantic 또는 대상을 접은 텍스트를 멋 읽으며 read -> act -> verify 루프를 짧게 유지합니다. mcp-server의 Playwright MCP는 호환성과 저수준 검사용이며 기본 비즈니스 흐름 경로가 아닅니다.
 
-## RL Training Layer (AIOS) {#rl-training-layer-aios}
+## RL 연구 레이어(AIOS)
 
-AIOS에는 일반 AIOS setup과 분리된 multi-environment RL research surface도 있습니다. scripts/lib/rl-core/가 campaign state, checkpoint lineage, comparison, replay, teacher signal, trainer entry point를 다루며 shell, browser, orchestrator, mixed adapter를 제공합니다.
+AIOS에는 일반 AIOS setup과 분리된 다중 환경 RL 연구 표면도 있습니다. scripts/lib/rl-core/가 campaign 상태, 체크포인트 계보, 비교, 리플레이, teacher 신호, 학습기 진입점을 다루며 shell·browser·orchestrator·mixed 어댑터를 제공합니다.
 
 ~~~bash
 node scripts/rl-shell-v1.mjs benchmark-generate --count 20
@@ -104,7 +104,7 @@ node scripts/rl-mixed-v1.mjs mixed-eval
 
 RL status와 benchmark는 대상 environment와 version에 한정된 research evidence입니다. production reliability나 공개 performance claim을 자동으로 증명하지 않습니다.
 
-## Failure boundaries
+## 실패 경계와 복구
 
 - registry 없음: 의도한 project root에서 aios init --all 실행.
 - native guidance가 오래됨: aios doctor --native --verbose, dry-run, 필요하면 --fix.

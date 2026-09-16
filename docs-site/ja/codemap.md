@@ -1,9 +1,9 @@
 ---
 title: コードレビューグラフ (Codemap)
-description: A structural knowledge graph that gives your coding agents instant codebase understanding — callers, dependents, test coverage, and blast radius at every decision point.
+description: コードベースの構造的なナレッジグラフを agent に即時提供するローカルグラフ——呼び出し元、依存先、テストカバレッジ、影響範囲を判断のたびに参照できます。
 ---
 
-# Code Review Graph (Codemap)
+# Code Review Graph（Codemap）
 
 > **Quick Answer:** Codemap はリポジトリの構造グラフをローカルに作り、編集前に caller、dependent、import、affected flow、テストカバレッジを調べられるようにします。影響半径を絞る道具であり、テストの代わりではありません。
 
@@ -11,39 +11,39 @@ description: A structural knowledge graph that gives your coding agents instant 
 
 変更前に、何に影響するか、どのフローが依存するか、対象にどのテストがあるかを確認します。グラフが使えない場合は、対象を絞った検索をフォールバックとして明記します。
 
-**The short version:** Codemap builds a Tree-sitter knowledge graph of your entire codebase and injects it as MCP tools into all your coding agents. Your agents stop blindly grepping files and start making informed decisions — knowing what calls what, what tests cover what, and what will break if you change something.
+**要点：** Codemap はコードベース全体から Tree-sitter のナレッジグラフをビルドし、MCP ツールとしてすべての coding agent に注入します。agent は闇雲に grep するのをやめ、何を誰が呼んでいるか、どのテストが何を守るか、変更すれば何が壊れるかを踏まえて判断します。
 
-No external services. No cloud. Just a local SQLite graph in `.code-review-graph/`.
+外部サービスなし。クラウドなし。`.code-review-graph/` に置かれるローカルの SQLite グラフだけです。
 
-## Why Codemap?
+## なぜ Codemap か？
 
-Without Codemap, agents explore codebases like this:
+Codemap がなければ、agent のコードベース探索はこうなります:
 
 ```
 Agent reads README → grep for "auth" → reads 3 files blind → guesses impact → modifies code → reads more files to verify → may miss callers → rework
 ```
 
-With Codemap:
+Codemap があれば:
 
 ```
 Agent queries graph → knows callers/dependents/tests → calculates blast radius → makes informed change → queries graph to verify → confident submission
 ```
 
-**Measured token reduction:** 4.9x–27.3x across real repos, averaging 8.2x. More importantly, it changes the *quality* of agent decisions.
+**実測したトークン削減：** 実在リポジトリで 4.9 倍〜27.3 倍、平均 8.2 倍。それ以上に重要なのは、agent の判断の*質*が変わることです。
 
-## One-Command Setup
+## ワンコマンドでセットアップ
 
 ```bash
 aios internal codemap install
 ```
 
-That's it. This single command:
+以上です。この 1 つのコマンドが次を行います:
 
-1. Checks `uv` is available (CRG runs via `uvx` — zero global installs)
-2. Builds the initial graph (~5-15s for most projects)
-3. Injects the CRG MCP server into all detected clients (opencode / codex / claude / gemini)
-4. Installs the opencode auto-update plugin (if opencode is detected)
-5. Updates `AGENTS.md` with graph-first decision guidance
+1. `uv` の有無を確認（CRG は `uvx` で動くのでグローバルインストール不要）
+2. 初回グラフをビルド（たいていのプロジェクトで約 5〜15 秒）
+3. 検出したすべてのクライアントに CRG MCP サーバーを注入（codex / claude / gemini / opencode / hermes / grok / workbuddy、Pi は Pi 側の MCP アダプター経由）
+4. opencode が検出できれば自動更新プラグインを導入
+5. `AGENTS.md` に「グラフを先に照会する」判断指針を追記
 
 ```bash
 # Check installation health
@@ -65,63 +65,63 @@ aios internal codemap status
 aios internal codemap uninstall
 ```
 
-## How Agents Use It
+## agent の使い方
 
-After install, every agent session loads the AGENTS.md decision checkpoints:
+導入後、agent の各セッションは AGENTS.md の判断チェックポイントを読み込みます:
 
-### Decision Checkpoints (Mandatory)
+### 判断チェックポイント（必須）
 
-| When | Call | Why |
+| タイミング | 呼び出し | 理由 |
 |------|------|-----|
-| Before doing anything | `get_minimal_context(task="...")` | Project context + suggested next steps |
-| Before modifying code | `get_impact_radius(detail_level="minimal")` | Check blast radius; if risk=high, re-evaluate plan |
-| Before modifying code | `query_graph(pattern="tests_for", target="...")` | Confirm tests exist; if not, write tests first |
-| After modifying code | `detect_changes(detail_level="minimal")` | Verify actual impact matches expected |
-| Before submitting | `get_affected_flows()` + `get_suggested_questions()` | Final safety net |
+| なんをする前 | `get_minimal_context(task="...")` | プロジェクトの文脈と次の一歩の提案 |
+| コード変更前 | `get_impact_radius(detail_level="minimal")` | 影響範囲（blast radius）を確認。risk=high なら計画を練り直す |
+| コード変更前 | `query_graph(pattern="tests_for", target="...")` | テストの有無を確認。なければ先に書く |
+| コード変更後 | `detect_changes(detail_level="minimal")` | 実際の影響が想定どおりか検証 |
+| 提出前 | `get_affected_flows()` + `get_suggested_questions()` | 最後の安全ネット |
 
-### Search Rules
+### 検索ルール
 
-- Finding code: `semantic_search_nodes` before grep
-- Understanding relationships: `query_graph` (callers_of/callees_of/tests_for) before reading files
-- Code review: `detect_changes` → `get_review_context` before reading entire files
+- コードを探す: grep より先に `semantic_search_nodes`
+- 関係を把握する: ファイルを読むより先に `query_graph`（callers_of/callees_of/tests_for）
+- コードレビュー: 全ファイルを読むより先に `detect_changes` → `get_review_context`
 
-Always use `detail_level="minimal"`; escalate to "standard" only when insufficient.
+`detail_level="minimal"` を既定とし、情報が足りないときだけ "standard" に引き上げます。
 
-## Key Tools
+## 主要ツール
 
-Codemap exposes 28 MCP tools + 5 prompts. Here are the most impactful ones:
+Codemap は 28 個の MCP ツールと 5 個のプロンプトを公開します。効果の大きい順に:
 
-| Tool | What It Does | When To Use |
+| ツール | 役割 | 使うタイミング |
 |------|-------------|-------------|
-| `get_minimal_context` | Returns project structure, risk level, relevant communities, next steps | Every session start |
-| `get_impact_radius` | Shows everything affected by a change | Before writing any code |
-| `detect_changes` | Risk-scored analysis of what actually changed | After modifying code |
-| `query_graph` | Traces callers, callees, imports, tests for any symbol | Understanding relationships |
-| `semantic_search_nodes` | Finds functions/classes by name or meaning | Locating code (replaces grep) |
-| `get_review_context` | Focused source snippets for code review | Before submitting |
-| `get_affected_flows` | Which execution paths are impacted | Impact analysis |
+| `get_minimal_context` | プロジェクト構成・リスク水準・関連コミュニティ・次の手順を返す | 各セッションの開始時 |
+| `get_impact_radius` | 変更の影響を受ける箇所をすべて表示 | コードを書く前 |
+| `detect_changes` | 実際の変更内容をリスク付きで分析 | コード変更後 |
+| `query_graph` | 任意のシンボルについて呼び出し元・呼び出し先・import・テストを追跡 | 関係を把握するとき |
+| `semantic_search_nodes` | 関数 / クラスを名前や意味から検索 | コード定位（grep の代替） |
+| `get_review_context` | レビューに必要な抜粋だけを提示 | 提出前 |
+| `get_affected_flows` | 影響される実行パスを示す | 影響分析 |
 
-### `query_graph` Patterns
+### `query_graph` のパターン
 
-| Pattern | Returns |
+| パターン | 返り値 |
 |---------|---------|
-| `callers_of` | Functions that call the target |
-| `callees_of` | Functions called by the target |
-| `imports_of` | Imports from a file/module |
-| `importers_of` | Files that import a file/module |
-| `tests_for` | Tests covering the target |
-| `inheritors_of` | Classes inheriting from target |
+| `callers_of` | 対象を呼んでいる関数 |
+| `callees_of` | 対象が呼んでいる関数 |
+| `imports_of` | ファイル / モジュールの import |
+| `importers_of` | そのファイル / モジュールを取り込んでいる側 |
+| `tests_for` | 対象を守るテスト |
+| `inheritors_of` | 対象を継承するクラス |
 
-## Deep Integration
+## 深い統合
 
-Codemap is not a standalone tool — it's woven into AIOS workflows:
+Codemap は単独のツールではなく、AIOS のワークフローに織り込まれています:
 
-- **Doctor suite:** `doctor:codemap` gate checks graph health, MCP config, and state file in every `aios doctor` run
-- **Harness:** Solo harness automatically builds the graph inside worktrees when Codemap is active
-- **Agent Team:** Team dispatch includes CRG `detect-changes` analysis so every worker knows the change impact
-- **Skills:** Search-first, debug-hub, and requesting-code-review skills prioritize CRG tools over grep/glob
+- **Doctor 一式:** 毎回の `aios doctor` でグラフの健全性・MCP 設定・状態ファイルを `doctor:codemap` が検証
+- **Harness:** Codemap が有効なら、Solo harness は worktree 内でグラフを自動ビルド
+- **Agent Team:** dispatch に CRG の `detect-changes` 分析を含め、全 worker が変更の影響を把握した上で着手
+- **Skills:** Search-first・debug-hub・requesting-code-review は grep/glob より CRG ツールを優先
 
-## Architecture
+## アーキテクチャ
 
 ```
 aios internal codemap install
@@ -134,23 +134,23 @@ aios internal codemap install
   └─ Syncs aios-codemap-ops skill to client dirs
 ```
 
-All graph data stays local. CRG runs via stdio MCP — no HTTP server, no external network calls (except one-time `uvx` package resolution on first install).
+グラフデータはすべてローカルに留まります。CRG は stdio MCP で動作し、HTTP サーバーも外部ネットワーク呼び出しもありません（初回セットアップ時の `uvx` によるパッケージ解決を除く）。
 
-## Uninstall
+## アンインストール
 
 ```bash
 aios internal codemap uninstall
 ```
 
-Removes MCP config entries, state file, and AGENTS.md section. Preserves `.code-review-graph/` — your graph data is valuable and never deleted.
+MCP 設定エントリ・状態ファイル・AGENTS.md の該当節を削除します。`.code-review-graph/` は残します——グラフデータは資産なので決して消しません。
 
-Dry-run preview:
+dry-run でプレビュー:
 
 ```bash
 aios internal codemap uninstall --dry-run
 ```
 
-## FAQ
+## よくある質問
 
 ### Codemap はリポジトリを外部サービスへ送りますか？
 

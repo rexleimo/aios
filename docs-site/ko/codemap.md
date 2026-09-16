@@ -41,7 +41,7 @@ aios internal codemap install
 
 1. `uv` 사용 가능 여부 확인 (CRG는 `uvx`를 통해 실행 — 전역 설치 불필요)
 2. 초기 그래프 구축 (대부분 프로젝트에서 약 5~15초)
-3. 감지된 모든 클라이언트(opencode / codex / claude / gemini)에 CRG MCP 서버 주입
+3. 감지된 모든 클라인트(codex / claude / gemini / opencode / hermes / grok / workbuddy, Pi 는 자체 MCP 어댑터 경루)에 CRG MCP 서버 주입
 4. opencode 자동 업데이트 플러그인 설치 (opencode 감지 시)
 5. 그래프 우선 의사결정 가이드로 `AGENTS.md` 업데이트
 

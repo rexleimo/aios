@@ -41,7 +41,7 @@ aios internal codemap install
 
 1. 检查 `uv` 是否可用（CRG 通过 `uvx` 运行，零全局安装）
 2. 构建初始图谱（大部分项目 5-15 秒）
-3. 将 CRG MCP 服务注入所有检测到的客户端（opencode / codex / claude / gemini）
+3. 将 CRG MCP 服务注入所有检测到的客户端（codex / claude / gemini / opencode / hermes / grok / workbuddy；Pi 走自身 MCP 适配器）
 4. 安装 opencode 自动更新插件（如检测到 opencode）
 5. 更新 `AGENTS.md` 添加图谱优先的决策指引
 
