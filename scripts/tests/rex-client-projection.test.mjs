@@ -13,19 +13,21 @@ import {
   installRexClientSkills,
   parseRexClientProjectionArgs,
 } from '../install-rex-client-projections.mjs';
+import { ALL_CLIENTS, CLIENT_DEFINITIONS } from '../lib/clients/core/definitions.mjs';
 
-const CLIENT_SKILL_ROOTS = Object.freeze({
-  codex: '.codex/skills',
-  claude: '.claude/skills',
-  gemini: '.gemini/skills',
-  opencode: '.opencode/skills',
-  hermes: '.hermes/skills',
-  grok: '.grok/skills',
-});
+// 期望的客户端与落点全部取自注册表：新增客户端（pi/zcode/workbuddy）时不再写死过期清单，
+// 但仍断言「投影覆盖面 == 注册表客户端全集」。
+const CLIENT_SKILL_ROOTS = Object.freeze(Object.fromEntries(
+  ALL_CLIENTS.map((client) => [client, CLIENT_DEFINITIONS[client].projectSkillRoot]),
+));
 
 test('Rex projection selection matches every supported AIOS client', () => {
-  assert.deepEqual(resolveRexProjectionClients('all'), Object.keys(CLIENT_SKILL_ROOTS));
+  assert.deepEqual(resolveRexProjectionClients('all'), [...ALL_CLIENTS]);
   assert.deepEqual(resolveRexProjectionClients('grok'), ['grok']);
+  // 每个注册客户端都必须有可投影的 skill 落点，否则覆盖面会静默缩小。
+  for (const client of ALL_CLIENTS) {
+    assert.ok(CLIENT_SKILL_ROOTS[client], `${client} has no projectSkillRoot`);
+  }
 });
 
 test('Rex projects its workflow entry into every requested native client skill root', async () => {
