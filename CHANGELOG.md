@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.17.0] - 2026-09-16
+
+- feat(pi): pi promoted to team provider (spawn-verified); fix(pi): aios_memory execFile namespace crash; fix(native): Windows JSON path bake
+
 ## [5.16.1] - 2026-09-16
 
 ### Fixed
