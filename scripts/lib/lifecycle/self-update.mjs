@@ -62,27 +62,31 @@ async function hasGitWorktree(rootDir) {
   return pathExists(path.join(rootDir, '.git'));
 }
 
-async function isGitDirty(rootDir) {
-  const result = await runCommand('git', ['status', '--porcelain'], {
+async function isGitDirty(rootDir, run = runCommand) {
+  const result = await run('git', ['status', '--porcelain'], {
     cwd: rootDir,
     io: { log: () => {}, error: () => {} },
   });
   return result.stdout.trim().length > 0;
 }
 
-async function updateFromGit(rootDir, io) {
-  if (await isGitDirty(rootDir)) {
+async function updateFromGit(rootDir, io, run = runCommand) {
+  if (await isGitDirty(rootDir, run)) {
     io.log('[warn] runtime self-update skipped: git worktree has local changes');
     io.log('       Commit/stash them, or update the release install outside this checkout.');
     return { method: 'git', updated: false, skipped: true };
   }
 
   io.log('+ runtime self-update: git pull --ff-only');
-  await runCommand('git', ['pull', '--ff-only'], { cwd: rootDir, io });
-  return { method: 'git', updated: true, skipped: false };
+  await run('git', ['pull', '--ff-only'], { cwd: rootDir, io });
+  // 中文注释：pull 只前移 gitlink；不同步子模块工作树的话 rex-harness 会停在旧代码，
+  // 新主仓脚本配旧内核。rex-harness 是必需内核，这里失败必须响亮报出。
+  io.log('+ runtime self-update: git submodule update --init --recursive');
+  await run('git', ['submodule', 'update', '--init', '--recursive'], { cwd: rootDir, io });
+  return { method: 'git', updated: true, skipped: false, submodulesSynced: true };
 }
 
-async function updateFromReleaseInstaller(rootDir, { repo, io }) {
+async function updateFromReleaseInstaller(rootDir, { repo, io, run = runCommand }) {
   const env = {
     ...process.env,
     AIOS_REPO: repo,
@@ -107,13 +111,13 @@ async function updateFromReleaseInstaller(rootDir, { repo, io }) {
       installerCmd,
     ].join('; ');
     io.log('+ runtime self-update: GitHub Releases installer (PowerShell)');
-    await runCommand('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.USERPROFILE || process.env.HOME || rootDir, env, io });
+    await run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', script], { cwd: process.env.USERPROFILE || process.env.HOME || rootDir, env, io });
     return { method: 'release-installer', updated: true, skipped: false };
   }
 
   const script = `curl -fsSL https://github.com/${repo}/releases/latest/download/aios-install.sh | bash`;
   io.log('+ runtime self-update: GitHub Releases installer');
-  await runCommand('bash', ['-lc', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
+  await run('bash', ['-lc', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
   return { method: 'release-installer', updated: true, skipped: false };
 }
 
@@ -139,16 +143,21 @@ export function ensureWorkingDirectoryOutsideInstallTree(rootDir, io = console) 
   return true;
 }
 
-export async function updateHarnessRuntime({ rootDir, repo = process.env.AIOS_REPO || DEFAULT_REPO, io = console } = {}) {
+export async function updateHarnessRuntime({
+  rootDir,
+  repo = process.env.AIOS_REPO || DEFAULT_REPO,
+  io = console,
+  runCommandImpl = runCommand,
+} = {}) {
   const before = await readVersion(rootDir);
   if (before) {
     io.log(`Runtime version: ${before}`);
   }
 
   const result = await hasGitWorktree(rootDir)
-    ? await updateFromGit(rootDir, io)
+    ? await updateFromGit(rootDir, io, runCommandImpl)
     : (ensureWorkingDirectoryOutsideInstallTree(rootDir, io),
-       await updateFromReleaseInstaller(rootDir, { repo, io }));
+       await updateFromReleaseInstaller(rootDir, { repo, io, run: runCommandImpl }));
 
   const after = await readVersion(rootDir);
   if (after && after !== before) {

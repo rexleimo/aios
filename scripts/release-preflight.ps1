@@ -113,6 +113,29 @@ foreach ($rexFile in @(
   }
 }
 
+# 中文注释：与 sh 版一致——子模块 checkout 必须等于主仓 gitlink，且 HEAD 在远端可达。
+if (Get-Command git -ErrorAction SilentlyContinue) {
+  $subStatus = (& git -C $RootDir submodule status -- rex-harness 2>$null | Select-Object -First 1)
+  if ($subStatus) {
+    if ($subStatus -match '^[+\-U]') {
+      throw "rex-harness submodule checkout does not match the recorded gitlink; sync it with: git -C `"$RootDir`" submodule update --init --recursive -- rex-harness"
+    }
+    $rexRoot = Join-Path $RootDir "rex-harness"
+    $subHead = (& git -C $rexRoot rev-parse HEAD 2>$null)
+    if ($LASTEXITCODE -eq 0 -and $subHead) {
+      $subHead = "$subHead".Trim()
+      $remoteRefs = & git -C $rexRoot ls-remote origin 2>$null
+      if ($LASTEXITCODE -eq 0 -and $remoteRefs) {
+        if (-not ($remoteRefs | Where-Object { "$_".Contains($subHead) })) {
+          throw "rex-harness HEAD ($subHead) is not present on the submodule remote; push rex-harness before releasing"
+        }
+      } else {
+        Write-Warning "cannot reach the rex-harness remote (offline?); skipping the pushed-commit gate"
+      }
+    }
+  }
+}
+
 Invoke-NodeCheck `
   -ScriptPath (Join-Path $RootDir "scripts/check-skills-sync.mjs") `
   -Arguments @("--materialize-temp") `

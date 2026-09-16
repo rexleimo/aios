@@ -4,7 +4,9 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.16.0（2026-09-16）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.16.1（2026-09-16）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+>
+> v5.16.1 重点包含：git clone 安装的运行时自更新在 `git pull --ff-only` 后现在会同步 rex-harness 子模块工作树（此前 gitlink 前移而子模块文件停留在旧内核）；release preflight 新增子模块门禁（sh/ps1 双版本：checkout 与 gitlink 不一致、或子模块 HEAD 未推送到远端即拦截——发布资产以普通文件打包子模块内容，未推送的指针会静默发布旧内核）；rex-harness 补齐版本身份 tag v0.6.0。无破坏性变更。
 >
 > v5.16.0 重点包含：ZCode（智谱 AI 桌面编程应用）成为第九个一等 AIOS 客户端——注册表定义（skills/native/team/harness、`--mode yolo` 无头参数、AGENTS.md 原生上下文）、项目 skills 投影到其原生扫描的共享 `.agents/skills` 根、MCP 迁移支持嵌套 `mcp.servers` 并归一化到 ZCode strict schema（未知字段会导致整个 server 被静默丢弃）；rex 角色卡通过 `aios-agents` inline plugin 变成可执行的 ZCode 子代理（用户级 `plugins.dirs` 注册，配套 `doctor:zcode-agents` 门禁）；同批完成 Pi 能力链修复（`aios-bridge` MCP 播种、harness `--transport rpc` 驱动、`doctor:pi-bridge`、`aios memo checkpoint`、Pi 共享根迁移 + 旧布局配对清理）。无破坏性变更。
 >

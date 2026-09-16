@@ -21,6 +21,7 @@ Validates:
   - changed Skills have reproducible, committed training evidence
   - generated skill roots materialize from skill-sources via scripts/check-skills-sync.mjs
   - generated native outputs materialize from client-sources/native-base via scripts/check-native-sync.mjs
+  - the rex-harness submodule checkout matches the recorded gitlink and its HEAD exists on the submodule remote
 EOF
 }
 
@@ -92,6 +93,32 @@ for rex_file in \
     exit 1
   fi
 done
+
+# 中文注释：release asset 打包的是子模块工作树的实际内容。子模块 checkout 与主仓
+# gitlink 不一致（'+'/'U' 前缀）会让用户拿到错误代码，必须在此拦截。
+if command -v git >/dev/null 2>&1; then
+  sub_status="$(git -C "$ROOT_DIR" submodule status -- rex-harness 2>/dev/null || true)"
+  if [[ -n "$sub_status" ]]; then
+    case "$sub_status" in
+      [+-U]*)
+        echo "rex-harness submodule checkout does not match the recorded gitlink (status: ${sub_status%% *}); sync it with: git -C \"$ROOT_DIR\" submodule update --init --recursive -- rex-harness" >&2
+        exit 1
+        ;;
+    esac
+    # 中文注释：主仓 gitlink 指向未推送的提交会让 Actions 按 SHA 拉取失败、资产缺内核。
+    sub_head="$(git -C "$ROOT_DIR/rex-harness" rev-parse HEAD 2>/dev/null || true)"
+    if [[ -n "$sub_head" ]]; then
+      if remote_refs="$(git -C "$ROOT_DIR/rex-harness" ls-remote origin 2>/dev/null)"; then
+        if ! grep -q "^$sub_head" <<<"$remote_refs" && ! grep -q "$sub_head" <<<"$remote_refs"; then
+          echo "rex-harness HEAD ($sub_head) is not present on the submodule remote; push rex-harness before releasing" >&2
+          exit 1
+        fi
+      else
+        echo "[warn] cannot reach the rex-harness remote (offline?); skipping the pushed-commit gate" >&2
+      fi
+    fi
+  fi
+fi
 
 if ! node "$ROOT_DIR/scripts/check-skills-sync.mjs" --materialize-temp >/dev/null; then
   echo "skills sync drift detected; run: node scripts/sync-skills.mjs" >&2

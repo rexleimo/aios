@@ -6,6 +6,19 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.16.1] - 2026-09-16
+
+### Fixed
+
+- Runtime self-update from a git clone now syncs the required `rex-harness` submodule worktree after `git pull --ff-only`. Previously the pull advanced the recorded gitlink while the submodule files stayed on the old kernel, pairing new scripts with a stale rex-harness (`ensureRexHarness` only initializes when files are missing; stale-but-present content was never refreshed). `updateHarnessRuntime` additionally accepts an injected command runner for testability, and `scripts/tests/self-update-lifecycle.test.mjs` — previously registered in no suite, so its macOS `/var → /private/var` temp-path sensitivity went unnoticed — is now part of the regression roster with green-path, dirty-skip, and installer-path coverage (`scripts/lib/lifecycle/self-update.mjs`).
+
+### Added
+
+- Release preflight submodule gate (sh and PowerShell): the run fails when the rex-harness checkout does not match the recorded gitlink (`+`/`U` status) or when the submodule HEAD is not reachable on its remote. Release assets bundle the submodule worktree as plain files, so an unsynced or unpushed pointer would silently ship an outdated planning kernel (`scripts/release-preflight.sh`, `scripts/release-preflight.ps1`).
+- rex-harness version identity caught up: the kernel is tagged `v0.6.0` at the commit recorded by this release (package.json said 0.6.0 while the last tag was v0.4.3, leaving doctor's reported version unable to distinguish shipped code).
+
+No breaking changes.
+
 ## [5.16.0] - 2026-09-16
 
 ### Added
