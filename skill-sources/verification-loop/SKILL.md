@@ -3,13 +3,13 @@ name: verification-loop
 description: Evidence-before-assertions workflow. Use before claiming work is done, before release, and after any behavior change in scripts/skills/MCP.
 
 installCatalogName: verification-loop
-clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, verification]
-repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 ---
 
 # Verification Loop

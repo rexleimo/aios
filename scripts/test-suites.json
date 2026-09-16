@@ -70,6 +70,8 @@
       "scripts/tests/harness-profiles.test.mjs",
       "scripts/tests/repo-lock.test.mjs",
       "scripts/tests/client-registry.test.mjs",
+      "scripts/tests/zcode-mcp-nested-migration.test.mjs",
+      "scripts/tests/zcode-agents-plugin.test.mjs",
       "scripts/tests/native-source-tree.test.mjs",
       "scripts/tests/native-route-commands.test.mjs",
       "scripts/tests/native-sync.test.mjs",

@@ -78,6 +78,14 @@
         "AGENTS.md",
         ".agents/skills"
       ]
+    },
+    "zcode": {
+      "tier": "compatibility",
+      "metadataRoot": ".zcode",
+      "outputs": [
+        "AGENTS.md",
+        ".agents/skills"
+      ]
     }
   }
 }

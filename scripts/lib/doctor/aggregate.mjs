@@ -5,6 +5,7 @@ import { doctorBrowserMcp } from '../components/browser.mjs';
 import { doctorCodemap } from '../components/codemap.mjs';
 import { doctorNativeEnhancements } from '../components/native.mjs';
 import { doctorPiBridge } from '../components/pi/doctor.mjs';
+import { doctorZcodeAgents } from '../components/zcode/doctor.mjs';
 import { doctorContextDbShell } from '../components/shell.mjs';
 import { doctorContextDbSkills } from '../components/skills.mjs';
 import { getDisabledGateIds, isHarnessGateEnabled } from '../harness/profile.mjs';
@@ -233,6 +234,40 @@ export async function runDoctorSuite({
     addDoctorCheck(checks, {
       id: 'doctor:pi-bridge',
       item: 'Pi coding agent MCP bridge (managed servers + adapter)',
+      status: 'skip',
+      fix: 'Enable gate or run doctor with --profile standard/strict.',
+      note: `disabled for profile=${profile}`,
+    });
+  }
+
+  io.log('');
+  io.log('== doctor-zcode-agents ==');
+  if (isHarnessGateEnabled('doctor:zcode-agents', { profile, disabledGates, profiles: ['standard', 'strict'] })) {
+    const zcodeAgentsDoctor = deps.doctorZcodeAgents ?? doctorZcodeAgents;
+    const zcodeAgentsResult = await zcodeAgentsDoctor({ aiosRoot: rootDir, env, io });
+    if (!zcodeAgentsResult.skipped) {
+      effectiveWarns += zcodeAgentsResult.effectiveWarnings + zcodeAgentsResult.errors;
+      addDoctorCheck(checks, {
+        id: 'doctor:zcode-agents',
+        item: 'ZCode agents plugin (rex role cards as executable subagents)',
+        status: zcodeAgentsResult.errors > 0 ? 'error' : (zcodeAgentsResult.effectiveWarnings > 0 ? 'warn' : 'ok'),
+        fix: 'Run: aios init --agent zcode',
+        note: `errors=${zcodeAgentsResult.errors}; effectiveWarnings=${zcodeAgentsResult.effectiveWarnings}; agents=${zcodeAgentsResult.agentsInstalled}/${zcodeAgentsResult.agentsExpected}; registered=${zcodeAgentsResult.registered}`,
+      });
+    } else {
+      addDoctorCheck(checks, {
+        id: 'doctor:zcode-agents',
+        item: 'ZCode agents plugin (rex role cards as executable subagents)',
+        status: 'skip',
+        fix: 'Install ZCode or run: aios init --agent zcode',
+        note: 'ZCode not detected on this machine',
+      });
+    }
+  } else {
+    logSkippedGate(io, 'doctor:zcode-agents', profile);
+    addDoctorCheck(checks, {
+      id: 'doctor:zcode-agents',
+      item: 'ZCode agents plugin (rex role cards as executable subagents)',
       status: 'skip',
       fix: 'Enable gate or run doctor with --profile standard/strict.',
       note: `disabled for profile=${profile}`,

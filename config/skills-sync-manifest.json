@@ -9,6 +9,7 @@
     "grok": ".grok/skills",
     "workbuddy": ".workbuddy/skills",
     "pi": ".agents/skills",
+    "zcode": ".agents/skills",
     "agents": ".agents/skills"
   },
   "skills": [],

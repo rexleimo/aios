@@ -84,6 +84,12 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('pi-coding-agent'),
     ['-p', prompt, ...extraArgs]
   ),
+  // ZCode bundled CLI: `-p` runs a positional prompt headless; yolo permission
+  // mode is the documented headless default and passed explicitly.
+  'zcode-cli': ({ prompt, extraArgs }) => runBufferedCommand(
+    commandForRuntime('zcode-cli'),
+    ['--mode', 'yolo', '-p', prompt, ...extraArgs]
+  ),
 };
 
 // Exported for tests only: lets verification assert handlers are registered

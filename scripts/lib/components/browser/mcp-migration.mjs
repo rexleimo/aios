@@ -11,10 +11,30 @@ import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
 import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
 import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
+import { migrateOneZcodeJsonFile } from './mcp-zcode.mjs';
 import { resolveLocalBrowserMcpScript } from './runtime-paths.mjs';
 
-/* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。 */
-export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers' } = {}) {
+/* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。
+   serversKey 支持点路径（如 zcode 的 'mcp.servers'）：逐段下钻并在缺段时创建中间对象。
+   mapManagedServerEntry 允许严格 schema 宿主（zcode）在落盘前规范化 AIOS 管理的
+   三个 server；用户自有 server 不经过该函数，保持逐字节保留。 */
+function resolveServersBucket(parsed, serversKey) {
+  const segments = String(serversKey || '').split('.').filter(Boolean);
+  let container = parsed;
+  for (const segment of segments.slice(0, -1)) {
+    if (!container[segment] || typeof container[segment] !== 'object' || Array.isArray(container[segment])) {
+      container[segment] = {};
+    }
+    container = container[segment];
+  }
+  const leaf = segments[segments.length - 1] || 'mcpServers';
+  if (!container[leaf] || typeof container[leaf] !== 'object' || Array.isArray(container[leaf])) {
+    container[leaf] = {};
+  }
+  return container[leaf];
+}
+
+export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers', mapManagedServerEntry = null } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
 
@@ -34,16 +54,20 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
     parsed = {};
   }
 
-  if (!parsed[serversKey] || typeof parsed[serversKey] !== 'object' || Array.isArray(parsed[serversKey])) {
-    parsed[serversKey] = {};
-  }
-
-  const mcpServers = parsed[serversKey];
+  const mcpServers = resolveServersBucket(parsed, serversKey);
   const existingAlias = findFirstBrowserServerEntry(mcpServers);
   removeLegacyBrowserServerEntries(mcpServers);
-  mcpServers[PRIMARY_BROWSER_ALIAS] = buildPreferredMcpServer(rootDir, existingAlias);
-  mcpServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
-  mcpServers[SHELL_ALIAS] = buildShellMcpServer(rootDir);
+  const managedServers = {
+    [PRIMARY_BROWSER_ALIAS]: buildPreferredMcpServer(rootDir, existingAlias),
+    [AUTH_TOOLS_ALIAS]: buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]),
+    [SHELL_ALIAS]: buildShellMcpServer(rootDir),
+  };
+  if (typeof mapManagedServerEntry === 'function') {
+    for (const alias of Object.keys(managedServers)) {
+      managedServers[alias] = mapManagedServerEntry(managedServers[alias]);
+    }
+  }
+  Object.assign(mcpServers, managedServers);
 
   const nextRaw = `${JSON.stringify(parsed, null, 2)}\n`;
   if (exists && raw === nextRaw) {
@@ -88,6 +112,8 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
       result = migrateOneMcpOpencodeJson(absPath, rootDir);
     } else if (target.format === 'yaml') {
       result = migrateOneHermesYaml(absPath, rootDir);
+    } else if (target.format === 'zcode-json') {
+      result = migrateOneZcodeJsonFile(absPath, rootDir);
     } else {
       result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace });
     }

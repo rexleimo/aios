@@ -3,13 +3,13 @@ name: security-scan
 description: Lightweight security hygiene for agent configs (skills/hooks/MCP/settings). Use before enabling automation, after config changes, and before release.
 
 installCatalogName: security-scan
-clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [general, security]
-repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 ---
 
 # Security Scan

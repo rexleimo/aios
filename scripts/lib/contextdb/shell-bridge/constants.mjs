@@ -40,4 +40,11 @@ export const BLOCKED_SUBCOMMANDS = Object.freeze({
     'login', 'logout', 'models',
     '-h', '--help', '-v', '--version',
   ]),
+  // ZCode management/ops subcommands are not agent runs — keep them out of the bridge.
+  // Bare `zcode`/`zcode tui` and headless runs (-p/--prompt/--resume/-c) stay bridgeable.
+  zcode: new Set([
+    'app-server', 'commands', 'doctor', 'plugins', 'skills',
+    'login', 'logout',
+    '-h', '--help', '-v', '--version',
+  ]),
 });

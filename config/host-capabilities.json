@@ -211,6 +211,25 @@
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
       }
+    },
+    "zcode": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy"
+      ],
+      "limits": [
+        "No verified turn compression: compact packets and shell rewrite are not injected into ZCode sessions yet.",
+        "Bundled CLI is not on PATH by default: harness dispatch requires aliasing the app-bundle zcode.cjs entrypoint.",
+        "Config-file hooks exist (7 events) but AIOS init does not inject ZCode hooks yet."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     }
   }
 }

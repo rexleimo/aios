@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -72,8 +72,8 @@ test('client registry validation returns normalized values for reuse', () => {
 
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -93,6 +93,9 @@ test('client registry exposes shared skill roots for selected clients', () => {
   // Pi installs into the shared root only: its own .pi/skills would make Pi
   // report the skill as already loaded and skip the shared copy.
   assert.deepEqual(resolveClientSkillRoots('pi'), ['.agents/skills']);
+  // ZCode natively scans the shared root too (after .zcode/skills); the shared
+  // root is the single project-scope install target, same rule as Pi.
+  assert.deepEqual(resolveClientSkillRoots('zcode'), ['.agents/skills']);
 });
 
 test('native sync manifest declares generated agent outputs for every agent-capable client', async () => {
@@ -113,8 +116,8 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy', 'pi']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent', 'pi-coding-agent']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy', 'pi', 'zcode']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent', 'pi-coding-agent', 'zcode-cli']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
@@ -124,13 +127,15 @@ test('client registry exposes runtime command and client identifiers', () => {
     'grok-build': 'grok',
     'workbuddy-agent': 'workbuddy',
     'pi-coding-agent': 'pi',
+    'zcode-cli': 'zcode',
   });
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok']);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']);
   assert.deepEqual(resolveClientTeamProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientTeamProviders('grok'), ['grok']);
+  assert.deepEqual(resolveClientTeamProviders('zcode'), ['zcode']);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientHarnessProviders('grok'), ['grok']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
@@ -139,6 +144,7 @@ test('client registry exposes team and harness provider subsets', () => {
     gemini: 'gemini-cli',
     opencode: 'opencode-cli',
     grok: 'grok-build',
+    zcode: 'zcode-cli',
   });
 });
 
@@ -149,10 +155,14 @@ test('client registry exposes runtime argument adapters without consumer if-else
   assert.deepEqual(buildRuntimeClientModelArgs('opencode-cli', 'qwen3'), ['-m', 'qwen3']);
   assert.deepEqual(buildRuntimeClientModelArgs('grok-build', 'grok-build'), ['-m', 'grok-build']);
   assert.deepEqual(buildRuntimeClientModelArgs('pi-coding-agent', 'openai/gpt-4o'), ['--model', 'openai/gpt-4o']);
+  // ZCode has no headless --model flag (verified against zcode 0.16.5): model
+  // routing degrades to an empty arg vector instead of inventing a flag.
+  assert.deepEqual(buildRuntimeClientModelArgs('zcode-cli', 'glm-4.7'), []);
   assert.deepEqual(getClientUnattendedArgs('codex'), ['--dangerously-bypass-approvals-and-sandbox']);
   assert.deepEqual(getClientUnattendedArgs('opencode'), ['run', '--dangerously-skip-permissions']);
   assert.deepEqual(getClientUnattendedArgs('grok'), ['--always-approve']);
   assert.deepEqual(getClientUnattendedArgs('pi'), []);
+  assert.deepEqual(getClientUnattendedArgs('zcode'), ['--mode', 'yolo']);
 });
 
 test('client registry reports capability support explicitly', () => {
@@ -171,6 +181,7 @@ test('client registry exposes native instruction filenames per client', () => {
   assert.equal(getClientInstructionFileName('grok'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('workbuddy'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('pi'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('zcode'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
 });
 
@@ -233,6 +244,16 @@ test('client registry exposes per-client MCP target conventions (single source o
   const piTarget = getClientMcpTarget('pi');
   assert.equal(piTarget.format, 'none');
   assert.deepEqual(piTarget.scopes, []);
+
+  // ZCode: nested mcp.servers inside the shared CLI config (home + project).
+  // 'zcode-json' normalizes AIOS servers to ZCode's strict server schema.
+  const zcodeTarget = getClientMcpTarget('zcode');
+  assert.equal(zcodeTarget.format, 'json');
+  assert.equal(zcodeTarget.namespace, 'mcp.servers');
+  assert.deepEqual(zcodeTarget.scopes, [
+    { scope: 'home', file: 'cli/config.json', format: 'zcode-json', namespace: 'mcp.servers', createIfMissing: true },
+    { scope: 'project', file: '.zcode/config.json', format: 'zcode-json', namespace: 'mcp.servers' },
+  ]);
 });
 
 test('resolveClientMcpTargetPath honors home vs project scope', () => {
@@ -268,6 +289,16 @@ test('resolveClientMcpTargetPath honors home vs project scope', () => {
   assert.equal(
     resolveClientMcpTargetPath('pi', { projectRoot: '/proj', clientHome: '/home/.pi/agent' }),
     '',
+  );
+  // ZCode is dual-scope: home config prefers ~/.zcode/cli/config.json, project
+  // falls back to .zcode/config.json when no home is resolvable
+  assert.equal(
+    slash(resolveClientMcpTargetPath('zcode', { projectRoot: '/proj', clientHome: '/home/.zcode' })),
+    '/home/.zcode/cli/config.json',
+  );
+  assert.equal(
+    slash(resolveClientMcpTargetPath('zcode', { projectRoot: '/proj' })),
+    '/proj/.zcode/config.json',
   );
   assert.equal(
     slash(resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' })),

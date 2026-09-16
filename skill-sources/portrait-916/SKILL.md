@@ -3,13 +3,13 @@ name: portrait-916
 description: '人像生图默认 9:16 竖幅规则。TRIGGER: 人像生图、portrait generation、人像、portrait、人脸、9:16、竖幅人像、韩系人像、网红人像'
 
 installCatalogName: portrait-916
-clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+clients: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 scopes: [global, project]
 defaultInstall:
   global: false
   project: false
 tags: [portrait, image, generation, 9x16]
-repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 ---
 
 # Portrait 9:16 — 人像生图画幅升格规则

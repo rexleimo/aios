@@ -39,6 +39,14 @@ export function collectInterceptionMcpTargets({ rootDir, clientHomes = {} } = {}
     .map((target) => ({ ...target, path: path.resolve(target.path) }));
 }
 
+/* 中文注释：namespace 支持点路径（zcode 的 'mcp.servers'），逐段下钻读取嵌套 bucket。 */
+function readNamespaceBucket(parsed, namespace) {
+  return String(namespace || '')
+    .split('.')
+    .filter(Boolean)
+    .reduce((node, key) => (node && typeof node === 'object' && !Array.isArray(node) ? node[key] : undefined), parsed);
+}
+
 /* 中文注释：单文件巡检只读配置，不修复，避免 doctor 的检查和修复职责混在一起。 */
 export function inspectMcpProxyTarget(filePath, { alias = PRIMARY_BROWSER_ALIAS, rootDir = '', namespace = 'mcpServers', format = 'json' } = {}) {
   if (!fs.existsSync(filePath)) {
@@ -51,9 +59,10 @@ export function inspectMcpProxyTarget(filePath, { alias = PRIMARY_BROWSER_ALIAS,
   } catch (error) {
     return { path: filePath, exists: true, hasAlias: false, proxied: false, error: error.message };
   }
+  const bucket = readNamespaceBucket(parsed, namespace);
   const entry = format === 'opencode-json'
-    ? normalizeOpencodeEntry(parsed?.[namespace]?.[alias])
-    : parsed?.[namespace]?.[alias];
+    ? normalizeOpencodeEntry(bucket?.[alias])
+    : bucket?.[alias];
   return {
     path: filePath,
     exists: true,

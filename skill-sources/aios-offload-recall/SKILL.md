@@ -3,13 +3,13 @@ name: aios-offload-recall
 description: Use when recalling prior AIOS tool/browser outputs from offloaded refs; inspect Mermaid canvas first, then read only matching node-level evidence.
 
 installCatalogName: aios-offload-recall
-clients: [codex, claude, hermes, workbuddy, pi]
+clients: [codex, claude, hermes, workbuddy, pi, zcode]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, token, offload, recall]
-repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi]
+repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 ---
 
 # AIOS Offload Recall

@@ -141,6 +141,37 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '--model',
     unattendedArgs: Object.freeze([]),  // Pi has no permission popups; harness drives print/json/rpc
   }),
+  // ZCode (Z.AI) — desktop AI coding app (Electron) that ALSO ships a real CLI inside
+  // the app bundle: /Applications/ZCode.app/Contents/Resources/glm/zcode.cjs (run with
+  // node; NOT on PATH by default — alias `zcode` to it to enable CLI detection/harness).
+  // The CLI supports -p/--print one-shot, --resume <sessId>, -c/--continue, --json,
+  // and --mode yolo (the documented default for headless prompts, passed explicitly).
+  // No headless --model flag exists (verified against zcode 0.16.5: "Unknown option
+  // '--model'"); model routing therefore stays empty until upstream ships a flag.
+  // Skills: ZCode natively scans Agent Skills roots — user ~/.zcode/skills and
+  // ~/.agents/skills, project .zcode/skills then .agents/skills. Same lesson as pi:
+  // project skills land ONLY in the shared root .agents/skills; a .zcode/skills copy
+  // would shadow the shared projection. Global skills keep the per-client home
+  // ~/.zcode/skills.
+  // MCP: user ~/.zcode/cli/config.json and project .zcode/config.json, both nested
+  // mcp.servers (strict server schema — canonical command/args/env fields only).
+  // Native instruction: AGENTS.md (user ~/.zcode/AGENTS.md + workspace chain).
+  // team: spawn-based routing drives the bundled CLI headlessly like any other
+  // provider. No `agents` capability: ZCode has no project-scope subagent-definition
+  // surface (its native extensibility is .zcode/workflows/*.workflow.js, a different
+  // artifact type; plugin `agents` fields are recorded but not executed upstream).
+  zcode: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
+    commandName: 'zcode',
+    runtimeClientId: 'zcode-cli',
+    projectSkillRoot: '.agents/skills',
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.zcode',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '',
+    unattendedArgs: Object.freeze(['--mode', 'yolo']),
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -150,7 +181,7 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'grok']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok']),
+  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']),
   harness: ALL_CLIENTS,
 });
 
@@ -230,5 +261,19 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     format: 'none',
     namespace: '',
     scopes: Object.freeze([]),
+  }),
+  // ZCode MCP — nested mcp.servers inside the shared CLI config file (which also
+  // holds hooks/plugins state). Dot-path namespace; the JSON migrator resolves it.
+  // 'zcode-json' additionally normalizes AIOS-managed servers to ZCode's strict
+  // server schema (unknown fields like startupTimeoutSec would get servers dropped).
+  // Home: ~/.zcode/cli/config.json (clientHome already resolves to ~/.zcode).
+  // Project: .zcode/config.json (zcode.json is an accepted alias we do not write).
+  zcode: Object.freeze({
+    format: 'json',
+    namespace: 'mcp.servers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'cli/config.json', format: 'zcode-json', namespace: 'mcp.servers', createIfMissing: true }),
+      Object.freeze({ scope: 'project', file: '.zcode/config.json', format: 'zcode-json', namespace: 'mcp.servers' }),
+    ]),
   }),
 });

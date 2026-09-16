@@ -106,7 +106,7 @@ export async function installRexWorkflowSkills({
 }
 
 function usage() {
-console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
+console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi|zcode>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -136,7 +136,7 @@ export async function main(argv = process.argv.slice(2)) {
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 
   if (requestedAgent && !AGENT_CONFIG[requestedAgent]) {
-    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi`);
+    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode`);
     process.exit(1);
   }
 
@@ -155,7 +155,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (agents.length === 0) {
     console.log('No supported AI coding agents detected.');
-    console.log('Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi');
+    console.log('Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode');
     console.log('Use --all to initialize for all agents regardless of detection.');
     process.exit(0);
   }
@@ -312,6 +312,28 @@ export async function main(argv = process.argv.slice(2)) {
       }
     } catch (err) {
       console.warn(`[warn] Pi MCP bridge setup: ${err.message}`);
+    }
+  }
+
+  // 2f. ZCode agents plugin — ZCode has no project-scope subagent definitions;
+  // rex role cards ship as a local inline ZCode plugin (agents/ directory)
+  // registered through the user-level plugins.dirs config, so every ZCode
+  // session gets them as executable subagents.
+  if (agents.includes('zcode')) {
+    console.log('');
+    console.log('== ZCode Agents Plugin ==');
+    try {
+      const { getClientHomes } = await import('./lib/platform/paths.mjs');
+      const { installAiosZcodeAgentsPlugin } = await import('./lib/components/zcode/agents-plugin.mjs');
+      const result = installAiosZcodeAgentsPlugin({
+        aiosRoot: AIOS_ROOT,
+        zcodeHome: getClientHomes(process.env).zcode,
+        dryRun,
+        io: console,
+      });
+      console.log(`  Agents plugin (${result.status}): ${result.pluginDir} (${result.agentsCount} agents)`);
+    } catch (err) {
+      console.warn(`[warn] ZCode agents plugin setup: ${err.message}`);
     }
   }
 

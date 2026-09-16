@@ -34,6 +34,7 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     grok: normalizeHomeDir(env.GROK_HOME, path.join(homeDir, '.grok'), homeDir),
     workbuddy: normalizeHomeDir(env.WORKBUDDY_HOME, path.join(homeDir, '.workbuddy'), homeDir),
     pi: normalizeHomeDir(env.PI_CODING_AGENT_DIR, path.join(homeDir, '.pi', 'agent'), homeDir),
+    zcode: normalizeHomeDir(env.ZCODE_HOME, path.join(homeDir, '.zcode'), homeDir),
   };
 }
 

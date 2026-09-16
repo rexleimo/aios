@@ -1,4 +1,4 @@
-import { getClientRuntimeId } from '../../clients/registry.mjs';
+import { getClientRuntimeId, getClientUnattendedArgs } from '../../clients/registry.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../../opencode/strict-primary-agent.mjs';
 
 function combineSystemAndPrompt(systemText, promptText) {
@@ -99,6 +99,17 @@ const CLIENT_STRATEGIES = Object.freeze({
     runner: 'spawn',
     args: [
       ...routedExtraArgs,
+      '-p',
+      combineSystemAndPrompt(systemText, promptText),
+    ],
+  }),
+  // ZCode bundled CLI: `-p` runs a positional prompt headless; permission mode
+  // defaults to yolo for headless prompts and is passed explicitly via the registry.
+  [getClientRuntimeId('zcode')]: ({ systemText, promptText, routedExtraArgs }) => ({
+    runner: 'spawn',
+    args: [
+      ...routedExtraArgs,
+      ...getClientUnattendedArgs('zcode'),
       '-p',
       combineSystemAndPrompt(systemText, promptText),
     ],
