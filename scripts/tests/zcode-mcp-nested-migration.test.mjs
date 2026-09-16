@@ -25,15 +25,28 @@ test('zcode MCP target declares nested mcp.servers in home and project scopes', 
 });
 
 test('collectClientMcpTargets resolves zcode dual scopes with nested namespace', () => {
+  // fixture 路径在不同平台必须是绝对路径：POSIX 下为 /proj、/home/.zcode，
+  // Windows 下 path.resolve 会落到当前盘符。断言用同一绝对根推导，
+  // 并额外钉住相对后缀，避免退化为与实现同义反复。
+  const projectRoot = path.resolve(path.sep, 'proj');
+  const zcodeHome = path.resolve(path.sep, 'home', '.zcode');
   const targets = collectClientMcpTargets({
-    projectRoot: '/proj',
-    clientHomes: { zcode: '/home/.zcode' },
+    projectRoot,
+    clientHomes: { zcode: zcodeHome },
   }).filter((target) => target.client === 'zcode');
   const slash = (value) => String(value).replace(/\\/g, '/');
+  const suffix = (value) => {
+    const abs = slash(value);
+    const home = slash(zcodeHome).replace(/\/$/, '');
+    const project = slash(projectRoot).replace(/\/$/, '');
+    if (abs.startsWith(home)) return `~${abs.slice(home.length)}`;
+    if (abs.startsWith(project)) return `$${abs.slice(project.length)}`;
+    return abs;
+  };
 
-  assert.deepEqual(targets.map((target) => [target.scope, slash(target.path), target.namespace, target.createIfMissing]), [
-    ['home', '/home/.zcode/cli/config.json', 'mcp.servers', true],
-    ['project', '/proj/.zcode/config.json', 'mcp.servers', true],
+  assert.deepEqual(targets.map((target) => [target.scope, suffix(target.path), target.namespace, target.createIfMissing]), [
+    ['home', '~/cli/config.json', 'mcp.servers', true],
+    ['project', '$/.zcode/config.json', 'mcp.servers', true],
   ]);
 });
 
