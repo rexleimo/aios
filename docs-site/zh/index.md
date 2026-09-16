@@ -1,13 +1,13 @@
 ---
 title: AIOS — 本地优先 Graph Engine
-description: "面向 Claude Code / Codex / Gemini / OpenCode / Grok 的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端。"
+description: "面向 Codex / Claude Code / Gemini CLI / OpenCode / Hermes / Grok / WorkBuddy / Pi / ZCode 九个客户端的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端。"
 home: true
 schema_type: faq
 faq:
   - q: AIOS 是什么？
-    a: AIOS 是一个让你的 AI 编码助手真正完成复杂任务的工具。你只需说一句话描述需求，AIOS 自动补上记忆、验证和多 Agent 协作。支持 Claude Code、Codex、Gemini CLI、OpenCode、Hermes、Grok。
+    a: AIOS 是一个让你的 AI 编码助手真正完成复杂任务的工具。你只需说一句话描述需求，AIOS 自动补上记忆、验证和多 Agent 协作。支持 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode 共九个客户端。
   - q: AIOS 会替换我的编码客户端吗？
-    a: 不会。你继续用 Claude Code、Codex、Gemini CLI、OpenCode、Hermes 或 Grok，完全不变。AIOS 在底下补上它们缺少的——跨会话记忆、自动任务路由、交付前验证。
+    a: 不会。你继续用 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi 或 ZCode，完全不变。九个客户端都拿到项目记忆、原生指令注入与 harness 驱动；子代理定义和 aios team 并行派发按客户端有差异，用 aios doctor --native --verbose 查看你这一个的支持程度。
   - q: AIOS 怎么跨会话记住上下文？
     a: AIOS 把你的项目决策、约束和进度存在本地的 ContextDB 里。下次开会话，Agent 自动拉取相关内容，不用从零开始。
   - q: 我的代码安全吗？
@@ -31,7 +31,7 @@ faq:
       <h1 class="rex-hero__title">给你的 AI 编码 Agent 一个本地优先的 Graph Engine。</h1>
 
       <p class="rex-hero__sub">
-        AIOS 是一个本地优先的 Graph Engine。它保留你已经在使用的 codex、claude、gemini、opencode、hermes 或 grok（Grok Build），
+        AIOS 是一个本地优先的 Graph Engine。它保留你已经在使用的 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok（Grok Build）、WorkBuddy（codebuddy）、Pi 或 ZCode，
         再把跨会话项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图——不改变你的工作方式。
       </p>
 
@@ -74,15 +74,63 @@ faq:
      Logo 墙 — 客户端名
      ============================================================ -->
 
-<div class="rex-logowall" aria-label="兼容你已使用的客户端">
-  <span class="rex-logowall__label">兼容你已使用的客户端</span>
-  <div class="rex-logowall__chips">
-    <span class="rex-logowall__chip">codex</span>
-    <span class="rex-logowall__chip">claude</span>
-    <span class="rex-logowall__chip">gemini</span>
-    <span class="rex-logowall__chip">opencode</span>
-    <span class="rex-logowall__chip">hermes</span>
-    <span class="rex-logowall__chip">grok</span>
+<div id="clients" class="rex-clients">
+  <div class="rex-clients__header">
+    <div class="rex-clients__heading">
+      <span class="rex-clients__eyebrow">支持客户端 · 9</span>
+      <h2 class="rex-clients__title">就在你已经在用的客户端里工作</h2>
+    </div>
+    <p class="rex-clients__note">
+      九个客户端共用同一套项目记忆、工作流策略与验证证据。
+      能力深度并不完全一致——用 <code>aios doctor --native --verbose</code> 确认你这一个。
+    </p>
+  </div>
+  <div class="rex-clients__grid">
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CX</span><span class="rex-client__name">Codex CLI</span><code class="rex-client__cmd">codex</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CL</span><span class="rex-client__name">Claude Code</span><code class="rex-client__cmd">claude</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GM</span><span class="rex-client__name">Gemini CLI</span><code class="rex-client__cmd">gemini</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">OC</span><span class="rex-client__name">OpenCode</span><code class="rex-client__cmd">opencode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">HE</span><span class="rex-client__name">Hermes</span><code class="rex-client__cmd">hermes</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GR</span><span class="rex-client__name">Grok Build</span><code class="rex-client__cmd">grok</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">WB</span><span class="rex-client__name">WorkBuddy</span><code class="rex-client__cmd">codebuddy</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">PI</span><span class="rex-client__name">Pi</span><code class="rex-client__cmd">pi</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="没有项目级子代理定义面；rex 角色卡以 ZCode plugin agents 形式运行">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+  </div>
+  <div class="rex-clients__legend">
+    <span><b>skills</b> 技能包安装</span>
+    <span><b>native</b> 原生指令文件写入</span>
+    <span><b>harness</b> solo-harness 驱动</span>
+    <span><b>agents</b> 子代理定义</span>
+    <span><b>agents+</b> 经客户端插件目录下发子代理</span>
+    <span><b>team</b> <code>aios team</code> 并行派发</span>
+    <a class="rex-clients__more" href="cli-comparison">客户端对比 <span aria-hidden="true">→</span></a>
   </div>
 </div>
 
@@ -201,14 +249,15 @@ faq:
       <p class="rex-bloglist__card-text">先分类工作，再选择流程控制——noop、direct、guarded、planned。</p>
     </article>
   </div>
+  <div class="rex-bloglist__more-list">
+    <span class="rex-bloglist__more-label">更多博客文章</span>
+    <a class="rex-bloglist__more-link" href="/blog/zh/2026-09-v516-zcode-client/">v5.16.0：ZCode 加入 AIOS <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/zh/rl-training-system/">AIOS RL 训练系统 <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/zh/contextdb-fts-bm25-search/">ContextDB 搜索升级 <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/zh/windows-cli-startup-stability/">Windows CLI 启动稳定性 <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/zh/orchestrate-live/">Orchestrate Live <i aria-hidden="true">→</i></a>
+  </div>
 </div>
-
-## 更多博客文章
-
-- [AIOS RL 训练系统](/blog/zh/rl-training-system/)
-- [ContextDB 搜索升级](/blog/zh/contextdb-fts-bm25-search/)
-- [Windows CLI 启动稳定性](/blog/zh/windows-cli-startup-stability/)
-- [Orchestrate Live](/blog/zh/orchestrate-live/)
 
 <!-- ============================================================
      收尾 CTA

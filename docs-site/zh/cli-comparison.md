@@ -33,6 +33,32 @@ AIOS 不是 Codex、Claude 或 Gemini CLI 的替代品。
 | 敏感配置读取安全 | 容易将密钥泄露到 prompts | Privacy Guard 脱敏路径 |
 | 操作恢复 | 手动排查 | Doctor 脚本 + 可复现 runbook |
 
+## 支持的客户端
+
+目前是九个。下表就是注册表实际暴露的能力矩阵（源头是 `scripts/lib/clients/core/definitions.mjs`），自己这个安装支持到什么程度，用 `aios doctor --native --verbose` 查，不要靠假设。
+
+| 客户端 | 命令 | skills | native | harness | agents | team | 指令文件 | 项目技能目录 |
+|---|---|---|---|---|---|---|---|---|
+| Codex CLI | `codex` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.codex/skills` |
+| Claude Code | `claude` | ✓ | ✓ | ✓ | ✓ | ✓ | `CLAUDE.md` | `.claude/skills` |
+| Gemini CLI | `gemini` | ✓ | ✓ | ✓ | — | ✓ | `GEMINI.md` | `.gemini/skills` |
+| OpenCode | `opencode` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.opencode/skills` |
+| Hermes | `hermes` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.hermes/skills` |
+| Grok Build | `grok` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.grok/skills` |
+| WorkBuddy | `codebuddy` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.workbuddy/skills` |
+| Pi | `pi` | ✓ | ✓ | ✓ | — | ✓ | `AGENTS.md` | `.agents/skills`（共享根） |
+| ZCode | `zcode` | ✓ | ✓ | ✓ | 插件 | ✓ | `AGENTS.md` | `.agents/skills`（共享根） |
+
+列含义：**skills** 把技能包投影到客户端技能目录 · **native** 写入客户端原生指令文件 · **harness** solo-harness 驱动 · **agents** 项目级子代理定义 · **team** `aios team` 并行派发。
+
+三行需要脚注：
+
+- **ZCode 的 `agents` 不是缺失项。** ZCode 0.16.5 没有项目级子代理定义面，所以 AIOS 把 rex 角色卡物化成 `~/.aios/zcode-plugin` 下的 `aios-agents` inline plugin，并通过用户级 `plugins.dirs` 注册；`doctor:zcode-agents` 会报告 manifest 有效性、agent 漂移和注册状态。ZCode 也没有 `--model` 参数，因此那里模型路由保持为空，headless 运行需要一次性 `zcode login`。
+- **Pi 和 ZCode 共用 `.agents/skills` 根**，不再生成私有副本，升级时会成对清理旧目录。
+- **Pi 的 `agents` 是上游边界；`team` 现在已经验证过了。** Pi 官方文档写明了它“有意不包含内置 MCP、子代理、权限弹窗、plan mode”——子代理需要你自己写成 extension，所以根本没有项目级定义面可供 AIOS 物化 rex 角色卡（AIOS 工具是靠 `aios-bridge` MCP server 加 Pi extension 桥进去的，不走 config migration）。但 `team` 不需要那种定义面：team worker 就是一个 headless 的 `pi -p` 子进程，跟其他 provider 走同一套 spawn 路由，并且已经在真实的 `aios team --provider pi --live` 批次里跑通（plan 阶段完整完成，implement worker 确实写出了目标文件），离线则由 `scripts/tests/team-pi-worker.test.mjs` 守住。Pi 另外支持长驻的 `--transport rpc` 会话驱动 solo harness。请把这张表读成“已验证”，而不是“做不到”——用 `aios doctor --native --verbose` 看你这个安装实际有什么。
+
+单个客户端投影用 `aios init --agent <client>`（例如 `aios init --agent zcode`），全部则用 `--agent all`。
+
 ## 何时仅用原生 CLI
 
 - 你需要一个没有接力的临时短任务。
@@ -41,7 +67,7 @@ AIOS 不是 Codex、Claude 或 Gemini CLI 的替代品。
 
 ## 何时添加 AIOS
 
-- 你在同一个项目中切换使用 `codex`、`claude`、`gemini` 或 `opencode`。
+- 你在同一个项目中切换使用 `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`（Grok Build）、`workbuddy`（CodeBuddy CLI）、`pi` 或 `zcode`。
 - 你需要重启安全的上下文和可审计的 checkpoint。
 - 你需要浏览器自动化和认证墙处理，且有明确的人工交接。
 - 你必须减少配置读取期间的意外密钥暴露。

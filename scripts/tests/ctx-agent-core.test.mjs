@@ -227,6 +227,17 @@ test('classifyOneShotFailure falls back to tool for generic failures', () => {
   assert.equal(classifyOneShotFailure('Unhandled exit=1'), 'tool');
 });
 
+// Regression: a dead provider tunnel answers with an nginx/AutoDL HTML error
+// page. That is an upstream transport failure, and labelling it 'tool' makes
+// the team route blame the agent for infrastructure it cannot control.
+test('classifyOneShotFailure recognizes upstream endpoint failures as network', () => {
+  const deadTunnel = ['404 <!DOCTYPE html>', '<title>404 Not Found</title>', '<h1>404 Not Found</h1>'].join('\n');
+  assert.equal(classifyOneShotFailure(deadTunnel), 'network');
+  assert.equal(classifyOneShotFailure('502 Bad Gateway'), 'network');
+  assert.equal(classifyOneShotFailure('503 Service Unavailable'), 'network');
+  assert.equal(classifyOneShotFailure('socket hang up'), 'network');
+});
+
 test('ctx-agent legacy Stop hook checkpoint-status writes checkpoint without launching claude', async () => {
   const workspaceRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-ctx-agent-legacy-stop-hook-'));
   const fakeClaudeBin = await createFakeClaudeCommand('FAKE_CLAUDE_SHOULD_NOT_RUN');

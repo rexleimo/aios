@@ -2042,7 +2042,7 @@ body.rex-home {
 }
 
 /* ============================================================
-   v8 Home blocks (ZIK3q) ¡ª light-first, token-driven
+   v8 Home blocks (ZIK3q) ï¿½ï¿½ light-first, token-driven
    ============================================================ */
 
 .rex-hero {
@@ -2659,4 +2659,274 @@ body.rex-home {
   .rex-bloglist__grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ============================================================
+   Clients matrix â€” supported coding clients and feature depth
+   (replaces the 6-chip logo wall, which understated support)
+   ============================================================ */
+
+.rex-clients {
+  width: min(100%, var(--rex-home-design-width));
+  margin: 0 auto;
+  padding: clamp(2rem, 4vw, 3rem) clamp(1.25rem, 5vw, 4rem) clamp(3.5rem, 7vw, 5.5rem);
+  box-sizing: border-box;
+}
+
+.rex-clients__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 2rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.rex-clients__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rex-clients__eyebrow {
+  color: var(--rex-accent);
+  font-family: var(--rex-font-mono);
+  font-size: 0.7rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+}
+
+.rex-clients__title {
+  margin: 0;
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-size: clamp(1.5rem, 2.6vw, 2rem);
+  font-weight: 850;
+  line-height: 1.2;
+}
+
+.rex-clients__note {
+  margin: 0;
+  max-width: 42ch;
+  color: var(--rex-text-muted);
+  font-size: 0.88rem;
+  line-height: var(--rex-lh-snug);
+}
+
+.rex-clients__note code {
+  padding: 0.1rem 0.35rem;
+  color: var(--rex-text);
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: 5px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.78rem;
+}
+
+.rex-clients__grid {
+  display: grid;
+  /* 3 columns keeps a nine-client registry as a balanced 3x3 block. */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.rex-client {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.05rem 1.15rem;
+  background: var(--rex-panel);
+  border: 1px solid var(--rex-border);
+  border-radius: var(--rex-radius-md);
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.rex-client:hover {
+  border-color: color-mix(in srgb, var(--rex-accent) 45%, transparent);
+  transform: translateY(-2px);
+}
+
+.rex-client__head {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.rex-client__mark {
+  display: grid;
+  width: 26px;
+  height: 26px;
+  flex: none;
+  place-items: center;
+  color: var(--rex-accent);
+  background: color-mix(in srgb, var(--rex-accent) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rex-accent) 28%, transparent);
+  border-radius: 7px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.rex-client__name {
+  color: var(--rex-text);
+  font-family: var(--rex-font-display);
+  font-size: 0.96rem;
+  font-weight: 800;
+}
+
+.rex-client__cmd {
+  margin-left: auto;
+  padding: 0.12rem 0.42rem;
+  color: var(--rex-text-soft);
+  background: transparent;
+  border: 1px solid var(--rex-border);
+  border-radius: 999px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+.rex-client__caps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.rex-cap {
+  padding: 0.14rem 0.45rem;
+  border-radius: 999px;
+  font-family: var(--rex-font-mono);
+  font-size: 0.62rem;
+  font-weight: 750;
+  letter-spacing: 0.03em;
+}
+
+.rex-cap--on {
+  color: var(--rex-accent);
+  background: color-mix(in srgb, var(--rex-accent) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--rex-accent) 26%, transparent);
+}
+
+.rex-cap--off {
+  color: var(--rex-text-soft);
+  background: transparent;
+  border: 1px dashed var(--rex-border);
+}
+
+/* Capability present but reached through a non-native surface (e.g. ZCode plugin agents). */
+.rex-cap--plugin {
+  color: var(--rex-accent);
+  background: color-mix(in srgb, var(--rex-accent) 6%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--rex-accent) 40%, transparent);
+  white-space: nowrap;
+}
+
+.rex-clients__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  align-items: center;
+  margin-top: 1.1rem;
+  color: var(--rex-text-soft);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.rex-clients__legend b {
+  color: var(--rex-text-muted);
+  font-family: var(--rex-font-mono);
+  font-size: 0.7rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.rex-clients__more {
+  color: var(--rex-accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.rex-clients__more:hover {
+  text-decoration: underline;
+}
+
+/* ============================================================
+   Blog secondary links â€” replaces the unstyled markdown list
+   ============================================================ */
+
+.rex-bloglist__more-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0.6rem 1.25rem;
+  margin-top: 1.1rem;
+  padding-top: 1.2rem;
+  border-top: 1px solid var(--rex-border);
+}
+
+.rex-bloglist__more-label {
+  grid-column: 1 / -1;
+  color: var(--rex-text-soft);
+  font-family: var(--rex-font-mono);
+  font-size: 0.68rem;
+  font-weight: 750;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.rex-bloglist__more-link {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  color: var(--rex-text-muted);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.rex-bloglist__more-link:hover {
+  color: var(--rex-accent);
+}
+
+.rex-bloglist__more-link i {
+  flex: none;
+  color: var(--rex-text-soft);
+  font-style: normal;
+  transition: transform 160ms ease;
+}
+
+.rex-bloglist__more-link:hover i {
+  transform: translateX(3px);
+}
+
+@media (max-width: 960px) {
+  .rex-clients__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Odd client count in a 2-column grid: let the last card span the row
+     instead of leaving a half-width orphan. */
+  .rex-clients__grid > .rex-client:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .rex-clients__grid,
+  .rex-bloglist__more-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Theme overrides: mkdocs-material underlines content links and the
+   mono command pill wrapped mid-flag at desktop widths. */
+.rex-bloglist .rex-bloglist__more-link,
+.rex-clients .rex-clients__more {
+  text-decoration: none;
+}
+
+.rex-clients__note code,
+.rex-clients__legend code {
+  white-space: nowrap;
 }

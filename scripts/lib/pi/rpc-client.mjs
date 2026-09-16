@@ -3,7 +3,12 @@
 // correlation by id, async agent events, extension_ui sub-protocol) so the
 // AIOS managed runner can drive Pi as a long-lived session instead of
 // one-shot `-p` spawns. All process access is injected (spawnImpl) for tests.
+// The argv is resolved through the shared platform spawn spec, never handed to
+// child_process directly: on Windows `pi` is an extensionless npm shim next to
+// pi.cmd, and a raw spawn('pi') fails there with ENOENT while every other
+// client path already goes through getCommandSpawnSpec().
 import { spawn } from 'node:child_process';
+import { getCommandSpawnSpec } from '../platform/process/spawn.mjs';
 
 const DEFAULT_RESPONSE_TIMEOUT_MS = 60000;
 const DEFAULT_SETTLED_TIMEOUT_MS = 120000;
@@ -58,6 +63,8 @@ function buildUiResponse(request, payload) {
 
 export function createPiRpcSession({
   spawnImpl = spawn,
+  spawnSpecImpl = getCommandSpawnSpec,
+  platform = process.platform,
   command = 'pi',
   args = ['--mode', 'rpc', '--no-session'],
   env = process.env,
@@ -156,7 +163,12 @@ export function createPiRpcSession({
   return {
     start() {
       if (child) throw new Error('pi RPC session already started');
-      child = spawnImpl(command, args, { env, stdio: ['pipe', 'pipe', 'pipe'] });
+      const spec = spawnSpecImpl(command, args, { env, platform });
+      child = spawnImpl(spec.command, spec.args, {
+        env,
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: spec.shell === true,
+      });
       framer = createJsonlFramer({ onRecord: handleRecord, onParseError });
       child.stdout.on('data', (chunk) => framer.push(chunk));
       child.stdout.on('end', () => framer.flush());

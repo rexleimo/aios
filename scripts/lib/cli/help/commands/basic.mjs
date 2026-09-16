@@ -1,4 +1,8 @@
 import { getMemoHelpText } from '../memo.mjs';
+import { ALL_CLIENTS } from '../../../clients/registry.mjs';
+
+/* 中文注释：help 里的客户端清单直接读注册表，避免新增客户端时漏改文案。 */
+const CLIENTS_FLAG = ['all', ...ALL_CLIENTS].join('|');
 
 export function getBasicCommandHelpText(command) {
   switch (command) {
@@ -24,7 +28,7 @@ Unattended example:
 Options:
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
+  --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -42,7 +46,7 @@ Options:
   --skip-self-update            Only update selected integrations
   --components <list>            Comma list: browser,shell,skills,native,agents (default: browser,shell,skills,native)
   --mode <all|repo-only|opt-in|off>
-  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
+  --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills install scope (default: global)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
@@ -57,7 +61,7 @@ Options:
 
 Options:
   --components <list>            Comma list: shell,skills,native,agents,browser (default: shell,skills)
-  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
+  --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills uninstall scope (default: global)
   --skills <list>                Comma list of skill names to uninstall
   -h, --help
@@ -69,7 +73,7 @@ Options:
 Options:
   --strict
   --global-security
-  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>
+  --client <${CLIENTS_FLAG}>
   --native
   --verbose
   --fix

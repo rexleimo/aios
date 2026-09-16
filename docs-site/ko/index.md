@@ -1,11 +1,11 @@
 ---
 title: "AIOS — Local-First Graph Engine"
-description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of nine coding clients: Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode."
 ---
 
 # AIOS
 
-**로컬 우선 Graph Engine.** AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 codex, claude, gemini, opencode, hermes, grok을 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
+**로컬 우선 Graph Engine.** AIOS는 로컬 우선 agent 워크플로 레이어입니다. 이미 사용하는 Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode 9개 클라이언트를 대체하지 않고 세션 간 프로젝트 기억, 병렬 협업, 재개 가능한 실행, 검증 게이트를 추가합니다.
 
 [빠른 시작](getting-started.md){ .md-button .md-button--primary }
 [사용 사례 보기](use-cases.md){ .md-button }
@@ -55,7 +55,7 @@ marker는 .aios/context-db/index.json을 가리킵니다. ContextDB는 pull-base
 
 ~~~text
 사용자
-  -> codex / claude / gemini / opencode / hermes / grok
+  -> codex / claude / gemini / opencode / hermes / grok / workbuddy / pi
   -> native guidance + .aios/context-db/index.json
   -> ContextDB 검색 / memo / checkpoint
   -> Team, Solo Harness, Orchestrate (필요한 경우)

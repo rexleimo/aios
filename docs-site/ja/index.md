@@ -1,11 +1,11 @@
 ---
 title: "AIOS — Local-First Graph Engine"
-description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of nine coding clients: Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode."
 ---
 
 # AIOS
 
-**一言で、どんな複雑なタスクも完了。** AIOSはローカル優先のagentワークフローレイヤーです。普段使っているcodex、claude、gemini、opencode、hermes、grokを置き換えず、セッション間のプロジェクト記憶、並列協調、再開可能な実行、検証ゲートを追加します。
+**一言で、どんな複雑なタスクも完了。** AIOSはローカル優先のagentワークフローレイヤーです。普段使っているCodex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCodeの9クライアントを置き換えず、セッション間のプロジェクト記憶、並列協調、再開可能な実行、検証ゲートを追加します。
 
 [クイックスタート](getting-started.md){ .md-button .md-button--primary }
 [ユースケースを見る](use-cases.md){ .md-button }
@@ -55,7 +55,7 @@ marker は .aios/context-db/index.json を指します。ContextDB は pull-base
 
 ~~~text
 ユーザー
-  -> codex / claude / gemini / opencode / hermes / grok
+  -> codex / claude / gemini / opencode / hermes / grok / workbuddy / pi
   -> native guidance + .aios/context-db/index.json
   -> ContextDB の検索 / memo / checkpoint
   -> Team、Solo Harness、Orchestrate（必要な場合）

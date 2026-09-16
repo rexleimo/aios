@@ -128,9 +128,13 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   // global root is not an AIOS install target).
   // Native instruction: AGENTS.md (global ~/.pi/agent/AGENTS.md + cwd chain, APPEND_SYSTEM.md override).
   // No built-in MCP surface: AIOS tools reach Pi through the AIOS Pi extension, not config migration.
-  // No sub-agents upstream: no agents/team capability until an extension verifies it.
+  // No sub-agents upstream: no `agents` capability until an extension verifies it.
+  // team: the same spawn-based routing drives `pi -p` headlessly as any other
+  // provider (verified live: worker dispatch + batch aggregation, see
+  // scripts/tests/team-pi-worker.test.mjs). Harness RPC (long-lived managed
+  // session) is supported via the pi-rpc transport.
   pi: Object.freeze({
-    capabilities: Object.freeze(['skills', 'native', 'harness']),
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'pi',
     runtimeClientId: 'pi-coding-agent',
     projectSkillRoot: '.agents/skills',
@@ -181,7 +185,10 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   skills: ALL_CLIENTS,
   native: ALL_CLIENTS,
   agents: Object.freeze(['claude', 'codex', 'opencode', 'grok']),
-  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']),
+  // team 排序：zcode 和 pi 都是 spawn 路由直接驱动的同名 CLI（zcode --mode yolo /
+  // pi -p），因此跟在其他 provider 之后；两者都不进 `agents`——它们没有项目级
+  // subagent 定义面。pi 的 team worker 已实测（见 scripts/tests/team-pi-worker.test.mjs）。
+  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']),
   harness: ALL_CLIENTS,
 });
 

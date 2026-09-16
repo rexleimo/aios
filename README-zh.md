@@ -9,7 +9,7 @@
 > **面向长程编码 Agent 的本地优先控制平面。**
 > AIOS 补上你的 AI 编码助手缺少的能力——跨会话项目记忆、多 Agent 协作、可恢复的过夜任务、以及每次变更的可验证证据。**一句话，搞定任何复杂任务。**
 
-**它运行在你已有的 Agent 之上**——Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes、Grok。AIOS 不是又一个 Agent 框架：Agent 还是你的 Agent，AIOS 只是在外围补上记忆、协调与验证这一层控制平面，且一切都在本地运行。
+**它运行在你已有的 Agent 之上**——Codex CLI、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi。AIOS 不是又一个 Agent 框架：Agent 还是你的 Agent，AIOS 只是在外围补上记忆、协调与验证这一层控制平面，且一切都在本地运行。
 
 [为什么需要 AIOS](#为什么需要-aios) · [30 秒安装](#30-秒安装) · [证据](#证据不是承诺) · [文档站](https://cli.rexai.top/zh/) · [博客](https://cli.rexai.top/blog/zh/) · [English](README.md)
 
@@ -79,7 +79,7 @@ AIOS 由 [Rex](https://rexai.top) 公开维护——发布历史就是一份持�
 ## 它怎么拼在一起
 
 ```text
-你的编码客户端（codex / claude / gemini / opencode / hermes / grok / workbuddy）
+你的编码客户端（codex / claude / gemini / opencode / hermes / grok / workbuddy / pi / zcode）
         │
         ▼
   AIOS 指引 + Workflow Policy
@@ -130,9 +130,9 @@ aios plan auto-gate --task "重构 auth 模块" --dry-run --json
 
 ## 支持的客户端
 
-七个编码客户端提供原生或兼容集成——同样的项目记忆、同样的工作流策略、同样的验证证据：
+已支持的编码客户端提供原生或兼容集成——同样的项目记忆、同样的工作流策略、同样的验证证据：
 
-`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok`（Grok Build） · `workbuddy`（CodeBuddy CLI）
+`codex` · `claude` · `gemini` · `opencode` · `hermes` · `grok`（Grok Build） · `workbuddy`（CodeBuddy CLI） · `pi`（Pi Coding Agent） · `zcode`（ZCode 桌面端 + 内置 CLI）
 
 不同客户端功能深度可能不同，请以 `aios doctor --native --verbose` 本机结果为准。
 

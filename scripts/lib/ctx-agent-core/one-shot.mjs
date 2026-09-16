@@ -13,6 +13,13 @@ export function classifyOneShotFailure(detail) {
   if (normalized.includes('rate limit') || normalized.includes('too many requests')) return 'rate-limit';
   if (normalized.includes('auth') || normalized.includes('login')) return 'auth';
   if (normalized.includes('network') || normalized.includes('enotfound') || normalized.includes('econn')) return 'network';
+  // 上游端点自身报错（隧道失效/网关抖动）会以 HTML 错误页返回，属于传输层问题，
+  // 不能退化成 tool —— 否则 team 侧把基础设施故障当成 agent 用错工具去归因。
+  if (normalized.includes('404 not found')
+    || normalized.includes('bad gateway')
+    || normalized.includes('service unavailable')
+    || normalized.includes('gateway time-out')
+    || normalized.includes('socket hang up')) return 'network';
   if (normalized.includes('permission') || normalized.includes('denied')) return 'permission';
   return 'tool';
 }

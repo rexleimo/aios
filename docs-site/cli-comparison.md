@@ -4,7 +4,7 @@ description: "Compare raw coding agents (Claude Code, Codex, Gemini) with AIOS. 
 schema_type: faq
 faq:
   - q: "Does AIOS replace my coding agent?"
-    a: "No. You keep using Claude Code, Codex, Gemini, OpenCode, Hermes, or Grok exactly as before. AIOS adds memory, routing, and verification underneath."
+    a: "No. You keep using Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, or ZCode exactly as before. AIOS adds memory, routing, and verification underneath."
   - q: "When should I use raw CLI instead of AIOS?"
     a: "For tiny, one-off changes where you don't need memory or verification. For anything complex or multi-step, AIOS finishes the job from one sentence."
   - q: "What does AIOS add that raw CLI doesn't have?"
@@ -41,6 +41,32 @@ It is a reliability layer on top of them.
 | Safety for sensitive config reads | Easy to leak secrets into prompts | Privacy Guard redaction path |
 | Operational recovery | Manual troubleshooting | Doctor scripts + reproducible runbooks |
 
+## Supported Clients
+
+Nine clients today. The table is the capability matrix the registry actually exposes — read it from `scripts/lib/clients/core/definitions.mjs`, and check your own install with `aios doctor --native --verbose` rather than assuming.
+
+| Client | Command | skills | native | harness | agents | team | Instruction file | Project skill root |
+|---|---|---|---|---|---|---|---|---|
+| Codex CLI | `codex` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.codex/skills` |
+| Claude Code | `claude` | ✓ | ✓ | ✓ | ✓ | ✓ | `CLAUDE.md` | `.claude/skills` |
+| Gemini CLI | `gemini` | ✓ | ✓ | ✓ | — | ✓ | `GEMINI.md` | `.gemini/skills` |
+| OpenCode | `opencode` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.opencode/skills` |
+| Hermes | `hermes` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.hermes/skills` |
+| Grok Build | `grok` | ✓ | ✓ | ✓ | ✓ | ✓ | `AGENTS.md` | `.grok/skills` |
+| WorkBuddy | `codebuddy` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.workbuddy/skills` |
+| Pi | `pi` | ✓ | ✓ | ✓ | — | ✓ | `AGENTS.md` | `.agents/skills` (shared root) |
+| ZCode | `zcode` | ✓ | ✓ | ✓ | plugin | ✓ | `AGENTS.md` | `.agents/skills` (shared root) |
+
+Column meanings: **skills** skill packs projected into the client's skill root · **native** native instruction file written · **harness** solo-harness driving · **agents** project-scope subagent definitions · **team** `aios team` parallel dispatch.
+
+Three rows need a footnote:
+
+- **ZCode `agents` is not a miss.** ZCode 0.16.5 has no project-scope subagent-definition surface, so AIOS materializes rex role cards as an `aios-agents` inline plugin under `~/.aios/zcode-plugin` and registers it through user-level `plugins.dirs`; `doctor:zcode-agents` reports manifest validity, agent drift, and registration state. ZCode also has no `--model` flag, so model routing stays empty there, and headless runs need a one-time `zcode login`.
+- **Pi and ZCode share the `.agents/skills` root** instead of getting a private duplicate copy, with paired legacy cleanup on upgrade.
+- **Pi's `agents` is an upstream boundary; its `team` support is now verified.** Pi "intentionally does not include built-in MCP, sub-agents, permission popups, plan mode" — spawning sub-agents is something you add as an extension, so there is no project-scope definition surface for AIOS to materialize rex role cards into (AIOS tools reach Pi through the `aios-bridge` MCP server plus the Pi extension, not config migration). `team` needs no such surface: a team worker is just a headless `pi -p` sub-process driven by the same spawn routing every other provider uses, and it was verified live in a real `aios team --provider pi --live` batch (planning phase completed end to end, implement worker produced its target file), guarded offline by `scripts/tests/team-pi-worker.test.mjs`. Pi also supports a long-lived `--transport rpc` session for the solo harness. Treat the table as "verified", not "impossible" — `aios doctor --native --verbose` reports what your install actually has.
+
+Project a single client with `aios init --agent <client>` (for example `aios init --agent zcode`), or `--agent all`.
+
 ## Use Raw CLI Only When
 
 - You need a one-off short task with no handoff.
@@ -49,7 +75,7 @@ It is a reliability layer on top of them.
 
 ## Add AIOS When
 
-- You switch between `codex`, `claude`, `gemini`, `opencode`, `hermes`, or `grok` (Grok Build) in one project.
+- You switch between `codex`, `claude`, `gemini`, `opencode`, `hermes`, `grok` (Grok Build), `workbuddy` (CodeBuddy CLI), `pi`, or `zcode` in one project.
 - You want restart-safe context and auditable checkpoints.
 - You need browser automation and auth-wall handling with explicit human handoff.
 - You must reduce accidental secret exposure during config reads.

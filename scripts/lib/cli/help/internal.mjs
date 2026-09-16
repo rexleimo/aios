@@ -1,3 +1,7 @@
+import { ALL_CLIENTS } from '../../clients/registry.mjs';
+
+/* 中文注释：客户端清单以注册表为准，防止 help 文案随版本漂移。 */
+const CLIENTS_FLAG = ['all', ...ALL_CLIENTS].join('|');
 import { getRootHelpText } from './root.mjs';
 import { getCodemapHelpText } from './codemap.mjs';
 
@@ -22,25 +26,25 @@ export function getInternalHelpText(target, action) {
 
   if (target === 'skills' && (action === 'install' || action === 'update')) {
     return `Usage:
-  aios internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
+  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
 `;
   }
 
   if (target === 'skills' && (action === 'uninstall' || action === 'doctor')) {
     return `Usage:
-  aios internal skills ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--scope <global|project>] [--skills <list>]
+  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--skills <list>]
 `;
   }
 
   if (target === 'native' && (action === 'install' || action === 'update' || action === 'uninstall')) {
     return `Usage:
-  aios internal native ${action} [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>]
+  aios internal native ${action} [--client <${CLIENTS_FLAG}>]
 `;
   }
 
   if (target === 'native' && action === 'doctor') {
     return `Usage:
-  aios internal native doctor [--client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy>] [--verbose] [--fix] [--dry-run]
+  aios internal native doctor [--client <${CLIENTS_FLAG}>] [--verbose] [--fix] [--dry-run]
 `;
   }
 

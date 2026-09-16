@@ -1,13 +1,13 @@
 ---
 title: AIOS — Local-First Graph Engine
-description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of Claude Code, Codex, Gemini CLI, OpenCode, Hermes, and Grok."
+description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of nine coding clients: Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode."
 home: true
 schema_type: faq
 faq:
   - q: What is AIOS?
-    a: "AIOS is a one-command layer that makes your AI coding agent (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, or Grok) actually finish complex tasks. You describe what you need in one sentence; AIOS adds the memory, verification, and coordination the agent needs to get it right."
+    a: "AIOS is a one-command layer that makes your AI coding agent (Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, or Pi) actually finish complex tasks. You describe what you need in one sentence; AIOS adds the memory, verification, and coordination the agent needs to get it right."
   - q: Does AIOS replace my coding client?
-    a: "No. You keep using Claude Code, Codex, Gemini CLI, OpenCode, Hermes, or Grok exactly as before. AIOS sits underneath and adds what they are missing — persistent memory across sessions, automatic task routing, and verification before delivery."
+    a: "No. You keep using Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, or ZCode exactly as before. AIOS sits underneath and adds what they are missing — persistent memory across sessions, automatic task routing, and verification before delivery. All nine get project memory, native instructions, and harness driving; subagent definitions and `aios team` dispatch depend on the client. Run `aios doctor --native --verbose` to see what your client supports."
   - q: How does AIOS remember context across sessions?
     a: "AIOS stores your project decisions, constraints, and progress in a local memory store called ContextDB. When you start a new session, the agent pulls only the relevant context instead of starting from scratch."
   - q: Is my code private with AIOS?
@@ -33,7 +33,8 @@ faq:
       <p class="rex-hero__sub">
         AIOS is a local-first Graph Engine for coding agents. It composes cross-session project memory,
         adaptive routing, multi-agent collaboration, and verification into a verifiable graph on top of
-        codex, claude, gemini, opencode, hermes, and grok — without changing how you work.
+        nine coding clients — Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode —
+        without changing how you work.
       </p>
 
       <div class="rex-hero__cta">
@@ -75,15 +76,63 @@ faq:
      Logo Wall — client names
      ============================================================ -->
 
-<div class="rex-logowall" aria-label="Works inside the clients you already use">
-  <span class="rex-logowall__label">WORKS INSIDE THE CLIENTS YOU ALREADY USE</span>
-  <div class="rex-logowall__chips">
-    <span class="rex-logowall__chip">codex</span>
-    <span class="rex-logowall__chip">claude</span>
-    <span class="rex-logowall__chip">gemini</span>
-    <span class="rex-logowall__chip">opencode</span>
-    <span class="rex-logowall__chip">hermes</span>
-    <span class="rex-logowall__chip">grok</span>
+<div id="clients" class="rex-clients">
+  <div class="rex-clients__header">
+    <div class="rex-clients__heading">
+      <span class="rex-clients__eyebrow">SUPPORTED CLIENTS · 9</span>
+      <h2 class="rex-clients__title">Works inside the client you already use</h2>
+    </div>
+    <p class="rex-clients__note">
+      Same project memory, workflow policy, and verification evidence in every client.
+      Feature depth is not identical — check yours with <code>aios doctor --native --verbose</code>.
+    </p>
+  </div>
+  <div class="rex-clients__grid">
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CX</span><span class="rex-client__name">Codex CLI</span><code class="rex-client__cmd">codex</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">CL</span><span class="rex-client__name">Claude Code</span><code class="rex-client__cmd">claude</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GM</span><span class="rex-client__name">Gemini CLI</span><code class="rex-client__cmd">gemini</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">OC</span><span class="rex-client__name">OpenCode</span><code class="rex-client__cmd">opencode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">HE</span><span class="rex-client__name">Hermes</span><code class="rex-client__cmd">hermes</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">GR</span><span class="rex-client__name">Grok Build</span><code class="rex-client__cmd">grok</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--on">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">WB</span><span class="rex-client__name">WorkBuddy</span><code class="rex-client__cmd">codebuddy</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--off">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">PI</span><span class="rex-client__name">Pi</span><code class="rex-client__cmd">pi</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="No project-scope subagent surface; rex role cards run as ZCode plugin agents">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+  </div>
+  <div class="rex-clients__legend">
+    <span><b>skills</b> skill packs installed</span>
+    <span><b>native</b> native instruction file written</span>
+    <span><b>harness</b> solo-harness driving</span>
+    <span><b>agents</b> subagent definitions</span>
+    <span><b>agents+</b> subagents delivered through the client plugin dir</span>
+    <span><b>team</b> <code>aios team</code> dispatch</span>
+    <a class="rex-clients__more" href="cli-comparison">Compare clients <span aria-hidden="true">→</span></a>
   </div>
 </div>
 
@@ -204,14 +253,15 @@ faq:
       <p class="rex-bloglist__card-text">Classify work before choosing process controls — noop, direct, guarded, planned.</p>
     </article>
   </div>
+  <div class="rex-bloglist__more-list">
+    <span class="rex-bloglist__more-label">More from the blog</span>
+    <a class="rex-bloglist__more-link" href="/blog/2026-09-v516-zcode-client/">v5.16.0: ZCode Joins AIOS <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/rl-training-system/">AIOS RL Training System <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/contextdb-fts-bm25-search/">ContextDB Search Upgrade <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/windows-cli-startup-stability/">Windows CLI Startup Stability <i aria-hidden="true">→</i></a>
+    <a class="rex-bloglist__more-link" href="/blog/orchestrate-live/">Orchestrate Live <i aria-hidden="true">→</i></a>
+  </div>
 </div>
-
-## More from the blog
-
-- [AIOS RL Training System](/blog/rl-training-system/)
-- [ContextDB Search Upgrade](/blog/contextdb-fts-bm25-search/)
-- [Windows CLI Startup Stability](/blog/windows-cli-startup-stability/)
-- [Orchestrate Live](/blog/orchestrate-live/)
 
 <!-- ============================================================
      Closing CTA

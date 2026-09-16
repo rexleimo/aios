@@ -67,7 +67,7 @@ Because each CLI session starts with a fresh prompt window. Nothing in the sessi
 No. ContextDB stores structured, searchable project memory (memos, checkpoints, packs) with explicit governance — you choose what gets remembered and what gets purged.
 
 **Does this work with Claude Code?**
-Yes. ContextDB is client-neutral: it works with codex, claude, gemini, opencode, hermes, and grok through the same project marker.
+Yes. ContextDB is client-neutral: it works with codex, claude, gemini, opencode, hermes, grok, workbuddy, pi, and zcode through the same project marker.
 
 ## Next step
 

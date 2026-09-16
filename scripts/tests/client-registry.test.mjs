@@ -72,7 +72,7 @@ test('client registry validation returns normalized values for reuse', () => {
 
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']);
   assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
 });
 
@@ -132,10 +132,11 @@ test('client registry exposes runtime command and client identifiers', () => {
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']);
   assert.deepEqual(resolveClientTeamProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientTeamProviders('grok'), ['grok']);
   assert.deepEqual(resolveClientTeamProviders('zcode'), ['zcode']);
+  assert.deepEqual(resolveClientTeamProviders('pi'), ['pi']);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientHarnessProviders('grok'), ['grok']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
@@ -145,6 +146,7 @@ test('client registry exposes team and harness provider subsets', () => {
     opencode: 'opencode-cli',
     grok: 'grok-build',
     zcode: 'zcode-cli',
+    pi: 'pi-coding-agent',
   });
 });
 

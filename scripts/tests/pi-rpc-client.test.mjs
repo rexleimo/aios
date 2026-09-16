@@ -1,5 +1,8 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import test from 'node:test';
 
 import {
@@ -155,4 +158,59 @@ test('settled timeout and process close fail pending work', async () => {
     await session.close();
   }
   assert.equal(proc().killed, true);
+});
+
+// Regression: the RPC transport must resolve argv through the shared platform
+// spawn spec. On Windows `pi` ships as an extensionless npm shim beside
+// pi.cmd, and a raw spawn('pi', ...) there dies with ENOENT before the JSONL
+// protocol ever starts (observed as `spawn pi ENOENT` in the solo journal).
+test('start() resolves argv through the platform spawn spec', () => {
+  const calls = [];
+  const session = createPiRpcSession({
+    spawnImpl: (command, args, options) => {
+      calls.push({ command, args, options });
+      return new FakeProcess();
+    },
+    spawnSpecImpl: (command, args, options) => {
+      assert.deepEqual(options.platform, 'win32');
+      return { command: 'node.exe', args: ['C:/pi/cli.mjs', ...args], shell: false };
+    },
+    platform: 'win32',
+    command: 'pi',
+  });
+  session.start();
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].command, 'node.exe');
+  assert.deepEqual(calls[0].args, ['C:/pi/cli.mjs', '--mode', 'rpc', '--no-session']);
+  assert.equal(calls[0].options.shell, false);
+});
+
+test('start() never spawns a bare extensionless shim on win32', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-pi-shim-'));
+  fs.writeFileSync(path.join(dir, 'pi'), '#!/bin/sh\nexit 0\n');
+  fs.writeFileSync(path.join(dir, 'pi.cmd'), '@echo off\r\n');
+  const calls = [];
+  const session = createPiRpcSession({
+    spawnImpl: (command, args, options) => {
+      calls.push({ command, args, options });
+      return new FakeProcess();
+    },
+    platform: 'win32',
+    env: { ...process.env, PATH: dir, PATHEXT: '.COM;.EXE;.BAT;.CMD' },
+    command: 'pi',
+  });
+  try {
+    session.start();
+  } finally {
+    session.close();
+  }
+  assert.equal(calls.length, 1);
+  const { command, options } = calls[0];
+  const resolvedWithoutShell = command === 'pi' && options.shell !== true;
+  assert.equal(
+    resolvedWithoutShell,
+    false,
+    `win32 must route the pi shim through a resolved target or cmd.exe shell, got command=${command} shell=${options.shell}`,
+  );
+  fs.rmSync(dir, { recursive: true, force: true });
 });

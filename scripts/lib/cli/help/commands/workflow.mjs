@@ -1,3 +1,12 @@
+import {
+  resolveClientHarnessProviders,
+  resolveClientTeamProviders,
+} from '../../../clients/registry.mjs';
+
+/* 中文注释：provider 清单来自能力注册表，新增客户端时 help 自动跟上。 */
+const TEAM_PROVIDERS_FLAG = resolveClientTeamProviders('all').join('|');
+const HARNESS_PROVIDERS_FLAG = resolveClientHarnessProviders('all').join('|');
+
 export function getWorkflowCommandHelpText(command) {
   switch (command) {
     case 'workflow':
@@ -59,7 +68,7 @@ Examples:
 
 Options:
   --workers <n>                 Team worker concurrency (default: 3)
-  --provider <codex|claude|gemini>
+  --provider <${TEAM_PROVIDERS_FLAG}>
   --blueprint <feature|bugfix|refactor|security>
   --task <title>
   --context <summary>
@@ -116,7 +125,8 @@ Options:
   --objective <text>            (run) Required objective for a new solo harness run
   --session <id>                Explicit ContextDB session id
   --workspace <path>            Workspace root for ContextDB session artifacts (default: current directory)
-  --provider <codex|claude|gemini|opencode|hermes|grok> (run) Provider used by the solo harness
+  --provider <${HARNESS_PROVIDERS_FLAG}> (run) Provider used by the solo harness
+  --transport <one-shot|rpc>    (run/resume) Provider transport: one-shot (default) or rpc (long-lived managed pi session)
   --profile <minimal|standard|strict> (run) Harness profile for surrounding checks
   --worktree                    (run) Execute inside an isolated git worktree
   --base-ref <ref>              (run) Git ref used to seed worktree mode (default: HEAD)
@@ -135,7 +145,7 @@ Options:
 Options:
   --session <id>                Explicit ContextDB session id
   --workspace <path>            Workspace root for ContextDB session artifacts (default: current directory)
-  --provider <codex|claude|gemini>
+  --provider <${TEAM_PROVIDERS_FLAG}>
   --preset <minimal|focused|full> Rendering preset (default: focused; with --watch defaults to minimal unless --preset provided)
   --watch                       Refresh display on an interval (TTY-only)
   --fast                        In --watch + minimal preset, skip heavy reads and throttle state refresh to ~1s
