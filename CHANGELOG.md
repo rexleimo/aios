@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- feat(model-router): client model-routing contract (`relay` vs `own` + protocol gating) so a routed model is always launchable by the worker client; explicit `-m`/`AIOS_MODEL_*` moves the client, automatic routing moves the model
+- feat(model-router): channel availability state machine (ok/degraded/down with TTL + cooldown) learned from real dispatch outcomes, readable via `model-router availability` and applied when `AIOS_MODEL_AVAILABILITY=1`
+- fix(ctx-agent-core): classify relay channel evidence (`model_not_found`, `no available channel`, truncated gateway responses) as `channel-unavailable` instead of generic `tool`, so agent-side mistakes no longer cool a model down
+- feat(specs): model registry schemaVersion 2 — 25 models, `protocolPaths`, per-model protocols, relay-curated primaries (planning→glm-5.2, browser-automation→gpt-6-astra, research→gemini-3.8-flash, review/security→claude-opus-5)
+- feat(cli): `--provider` and codemap `--client` help now derives from the client capability registry instead of hardcoded lists
+- docs(model-router): document the routing contract, protocol→endpoint map and channel availability (en/zh); routing tables regenerated from the registry
 ## [5.17.0] - 2026-09-16
 
 - feat(pi): pi promoted to team provider (spawn-verified); fix(pi): aios_memory execFile namespace crash; fix(native): Windows JSON path bake

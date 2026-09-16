@@ -1705,14 +1705,16 @@ test('buildLocalDispatchPlan creates job dependencies and a merge gate for paral
   assert.equal(mergeJob?.jobType, 'merge-gate');
   assert.equal(planJob?.launchSpec.requiresModel, true);
   assert.equal(planJob?.launchSpec.modelRouting?.taskType, 'planning');
-  assert.equal(planJob?.launchSpec.modelRouting?.modelId, 'glm-5.1');
+  // 能力映射更新：planning 主选 glm-5.1 -> glm-5.2（长程自主执行/数学实测更强）。
+  assert.equal(planJob?.launchSpec.modelRouting?.modelId, 'glm-5.2');
   assert.equal(planJob?.launchSpec.modelRouting?.clientId, 'claude-code');
   assert.equal(implementJob1?.launchSpec.requiresModel, true);
   assert.equal(implementJob1?.launchSpec.modelRouting?.taskType, 'implementation');
   assert.equal(implementJob1?.launchSpec.modelRouting?.modelId, 'deepseek-v4');
   assert.equal(reviewJob?.launchSpec.requiresModel, true);
   assert.equal(reviewJob?.launchSpec.modelRouting?.taskType, 'code-review');
-  assert.equal(reviewJob?.launchSpec.modelRouting?.modelId, 'claude-opus');
+  // code-review / security-review 主选升到实测可用的 claude-opus-5（旧 claude-opus 保留在降级链）。
+  assert.equal(reviewJob?.launchSpec.modelRouting?.modelId, 'claude-opus-5');
   assert.equal(securityJob?.launchSpec.modelRouting?.taskType, 'security-review');
   assert.equal(mergeJob?.launchSpec.requiresModel, false);
   assert.equal(reviewJob?.launchSpec.executor, 'local-phase');
@@ -2632,8 +2634,8 @@ test('runOrchestrate adds a local dispatch skeleton without invoking models', as
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'phase').every((job) => job.launchSpec.requiresModel === true), true);
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'merge-gate').every((job) => job.launchSpec.requiresModel === false), true);
   assert.equal(report.dispatchPlan.jobs.find((job) => job.jobId === 'phase.plan')?.launchSpec.modelRouting?.taskType, 'planning');
-  assert.equal(report.dispatchPlan.jobs.find((job) => job.jobId === 'phase.plan')?.launchSpec.modelRouting?.modelId, 'glm-5.1');
-  assert.equal(report.dispatchPlan.jobs.find((job) => job.role === 'security-reviewer')?.launchSpec.modelRouting?.modelId, 'claude-opus');
+  assert.equal(report.dispatchPlan.jobs.find((job) => job.jobId === 'phase.plan')?.launchSpec.modelRouting?.modelId, 'glm-5.2');
+  assert.equal(report.dispatchPlan.jobs.find((job) => job.role === 'security-reviewer')?.launchSpec.modelRouting?.modelId, 'claude-opus-5');
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'phase').every((job) => job.launchSpec.executor === 'local-phase'), true);
   assert.equal(report.dispatchPlan.jobs.filter((job) => job.jobType === 'merge-gate').every((job) => job.launchSpec.executor === 'local-merge-gate'), true);
   assert.deepEqual(report.dispatchPlan.executorRegistry, ['local-phase']);

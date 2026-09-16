@@ -1,3 +1,10 @@
+// 中文注释：provider 候选来自客户端能力注册表，新增客户端时帮助文本不再滞后。
+import { getClientHelpList } from '../../../clients/registry.mjs';
+
+function providerHelpChoices() {
+  return getClientHelpList().clientNames.join(', ');
+}
+
 export const WORKFLOW_COMMAND_SPECS = [
   {
     name: 'workflow',
@@ -33,7 +40,7 @@ export const WORKFLOW_COMMAND_SPECS = [
     description: 'One-click multi-client live team runtime',
     options: [
       ['--workers <n>', 'Team worker concurrency'],
-      ['--provider <provider>', 'Provider: codex, claude, gemini'],
+      ['--provider <provider>', `Provider: ${providerHelpChoices()}`],
       ['--blueprint <name>', 'Workflow blueprint'],
       ['--task <title>', 'Task title'],
       ['--context <summary>', 'Context summary'],

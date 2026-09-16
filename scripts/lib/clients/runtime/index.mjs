@@ -10,7 +10,10 @@ export {
 } from './identifiers.mjs';
 export {
   buildRuntimeClientModelArgs,
+  clientSupportsModelProtocol,
   getClientModelArgFlag,
+  getClientModelProtocols,
+  getClientModelRouting,
   getClientUnattendedArgs,
   getClientUnattendedInsertAfterToken,
 } from './arguments.mjs';

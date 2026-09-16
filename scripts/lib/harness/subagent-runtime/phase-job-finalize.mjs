@@ -99,6 +99,7 @@ export async function finalizePhaseJobRun({
     success: jobStatus === 'completed',
     elapsedMs,
     description: `${job.jobId} ${payloadStatus}`,
+    failureDetail: jobStatus === 'completed' ? '' : compactOutputText,
   });
 
   if (jobStatus === 'completed') {

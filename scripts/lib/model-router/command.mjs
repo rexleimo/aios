@@ -7,6 +7,11 @@ import {
 } from './reporting.mjs';
 import { loadModelDispatchHistory } from './history.mjs';
 import { resolveModelRoutingForTask } from './routing.mjs';
+import {
+  AVAILABILITY_DEFAULTS,
+  effectiveAvailability,
+  loadModelAvailability,
+} from './availability.mjs';
 
 function getSubcommand(rawOptions) {
   return String(rawOptions.subcommand || rawOptions._?.[0] || 'list').trim();
@@ -63,8 +68,49 @@ const COMMAND_HANDLERS = Object.freeze({
       matchedSignals: route.matchedSignals,
       why: route.why,
       recommendedPhases: route.recommendedPhases,
+      // 中文注释：契约层可复核字段——显式/自动、协议通道、原始诉求与被跳过的候选。
+      explicit: route.explicit === true,
+      contractMode: route.contractMode,
+      modelProtocols: route.modelProtocols,
+      requestedModelId: route.requestedModelId,
+      executionClientId: route.executionClientId,
+      ownDefaultModel: route.ownDefaultModel === true,
+      channelDown: route.channelDown === true,
+      degradedChannel: route.degradedChannel === true,
+      skippedForCapability: (route.skipped || []).map((item) => ({
+        modelId: item?.modelId || '',
+        reason: item?.reason || '',
+      })),
     }, null, 2));
 
+    return { exitCode: 0 };
+  },
+
+  // 只读本地通道证据，不联网；探测需显式走 probe 能力。
+  availability({ workspaceRoot, io }) {
+    const { filePath, cache } = loadModelAvailability({ cwd: workspaceRoot });
+    const models = cache.models || {};
+    const keys = Object.keys(models).sort();
+    io.log('# Model Channel Availability\n');
+    io.log(`Cache: ${filePath}`);
+    io.log(`ttlMs=${cache.ttlMs || AVAILABILITY_DEFAULTS.ttlMs} cooldownMs=${AVAILABILITY_DEFAULTS.cooldownMs}\n`);
+    if (!keys.length) {
+      io.log('No channel evidence yet. Records come from real dispatch outcomes; set AIOS_MODEL_AVAILABILITY_FEEDBACK=0 to disable write-back.');
+      return { exitCode: 0 };
+    }
+    const rows = [
+      '| Channel (model@protocol) | State | Reason | Failures | Last latency | Updated |',
+      '|---|---|---|---|---|---|',
+    ];
+    for (const key of keys) {
+      const record = models[key] || {};
+      const effective = effectiveAvailability(record);
+      const latency = Number.isFinite(record.lastLatencyMs) ? `${record.lastLatencyMs}ms` : '—';
+      const updated = record.updatedAt ? new Date(record.updatedAt).toISOString() : '—';
+      rows.push(`| \`${key}\` | ${effective.state} | ${record.reason || '—'} | ${record.consecutiveFailures ?? 0} | ${latency} | ${updated} |`);
+    }
+    io.log(rows.join('\n'));
+    io.log('\nStates decay on their own: `down` returns to `unknown` after the cooldown, `ok` after the TTL.');
     return { exitCode: 0 };
   },
 

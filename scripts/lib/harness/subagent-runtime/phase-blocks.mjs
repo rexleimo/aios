@@ -32,6 +32,7 @@ export function buildBlockedPhaseJobRun({
     success: false,
     elapsedMs,
     description: normalizeText(dispatchDescription) || normalizedReason,
+    failureDetail: `${normalizedReason} ${clipText(String(rawOutput || ''))}`,
   });
   return buildBlockedJobRun(plan, job, dependencyRuns, {
     executorLabel,

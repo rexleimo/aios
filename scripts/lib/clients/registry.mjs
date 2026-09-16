@@ -1,6 +1,8 @@
 export {
   ALL_CLIENTS,
   CAPABILITY_CLIENT_ORDER,
+  describeClient,
+  getClientHelpList,
   CLIENT_CAPABILITIES,
   CLIENT_DEFINITIONS,
   CLIENT_MCP_TARGETS,
@@ -41,8 +43,11 @@ export {
 export {
   buildRuntimeClientProviderMap,
   buildRuntimeClientModelArgs,
+  clientSupportsModelProtocol,
   getClientCommandName,
   getClientModelArgFlag,
+  getClientModelProtocols,
+  getClientModelRouting,
   getClientRuntimeDefinition,
   getClientRuntimeId,
   getClientUnattendedArgs,

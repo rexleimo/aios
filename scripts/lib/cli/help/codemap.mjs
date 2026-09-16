@@ -1,3 +1,10 @@
+// 中文注释：客户端目标来自注册表，避免新增客户端时帮助文本滞后。
+import { getClientHelpList } from '../../clients/registry.mjs';
+
+function clientHelpChoices() {
+  return ['all', ...getClientHelpList().clientNames].join('|');
+}
+
 export function getCodemapHelpText() {
   return `AIOS Codemap - code-review-graph integration
 
@@ -13,7 +20,7 @@ Actions:
   status     Show codemap state and graph statistics
 
 Options:
-  --client <all|codex|claude|gemini|opencode|hermes|grok|workbuddy|pi|zcode>
+  --client <${clientHelpChoices()}>
              Target client config(s). Defaults to all.
   --fix      (doctor) auto-fix issues found
   --dry-run  Preview changes without writing

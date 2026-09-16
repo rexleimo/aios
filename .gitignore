@@ -50,6 +50,8 @@ cover-image.png
 memory/history/
 memory/context-db/
 memory/workspace/
+# 运行态派生缓存：模型通道可用性证据（由真实派发结果学习，不应进版本库）
+memory/specs/
 
 # Claude 本地配置
 .claude/settings.local.json

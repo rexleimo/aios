@@ -7,8 +7,16 @@ import {
   resolveModelForTask,
 } from './selection.mjs';
 import { classifyTaskIntent, matchTaskTypeFromDescription, scoreTaskSignals } from './signals.mjs';
+import { modelProtocolSet } from './protocols.mjs';
 import { normalizeModelRouterProfile } from './profile.mjs';
 import { clonePlain, normalizeId } from './shared.mjs';
+
+// 纯函数：显式声明 -> 客户端跟随模型（provider 派生）；自动路由 -> 客户端跟随 worker。
+function routeClientIdFor(decision, provider, worker) {
+  const providerClient = providerToClientId(provider);
+  if (decision?.explicit === true) return providerClient || worker;
+  return worker || providerClient;
+}
 
 // 纯函数：收敛路由对象的字段形态，避免调用链每一层都重复处理空值和别名。
 export function normalizeModelRouting(raw = null) {
@@ -25,6 +33,17 @@ export function normalizeModelRouting(raw = null) {
     modelLabel: String(raw.modelLabel || raw.model || '').trim(),
     provider,
     clientId: String(raw.clientId || providerToClientId(provider)).trim(),
+    // 中文注释：契约层结论字段——模型协议、真正执行的客户端、被跳过的候选与原因。
+    explicit: raw.explicit === true,
+    contractMode: String(raw.contractMode || '').trim(),
+    modelProtocols: Array.isArray(raw.modelProtocols) ? raw.modelProtocols.map((item) => normalizeId(item)).filter(Boolean) : [],
+    requestedModelId: normalizeId(raw.requestedModelId),
+    executionClientId: normalizeId(raw.executionClientId),
+    skipped: Array.isArray(raw.skipped) ? raw.skipped.map(clonePlain).filter(Boolean) : [],
+    ownDefaultModel: raw.ownDefaultModel === true,
+    degradedChannel: raw.degradedChannel === true,
+    channelDown: raw.channelDown === true,
+    incompatible: raw.incompatible && typeof raw.incompatible === 'object' ? clonePlain(raw.incompatible) : null,
     reason: String(raw.reason || '').trim(),
     cost: normalizeId(raw.cost) || 'unknown',
     speed: normalizeId(raw.speed) || 'unknown',
@@ -52,15 +71,21 @@ export function resolveModelRoutingForRole({
   taskDescription = '',
   registry = defaultModelRegistry(),
   env = process.env,
+  workerClientId = '',
+  clientId = '',
+  availability = null,
 } = {}) {
+  // 兼容两种写法：workerClientId（新契约）与 clientId（历史调用方），语义一致。
+  const worker = normalizeId(workerClientId || clientId);
   const roleKey = normalizeId(role);
   const roleDefault = registry?.roleDefaults?.[roleKey];
   const taskType = normalizeId(roleDefault?.taskType)
     || matchTaskTypeFromDescription(taskDescription, registry)
     || 'general';
+  const contractContext = { clientId: worker, availability };
   const decision = roleKey
-    ? resolveModelForRole(roleKey, registry, env)
-    : resolveModelForTask(taskType, registry, env);
+    ? resolveModelForRole(roleKey, registry, env, contractContext)
+    : resolveModelForTask(taskType, registry, env, contractContext);
   const resolvedType = normalizeId(decision.taskType || taskType);
   const fallback = getFallbackChain(resolvedType, registry).map((model) => normalizeId(model?.id || model?.modelId || ''));
   const model = decision.model || getModelConfig(decision.modelId, registry) || null;
@@ -71,7 +96,17 @@ export function resolveModelRoutingForRole({
     modelId: decision.modelId,
     modelLabel: model?.label || decision.modelId,
     provider,
-    clientId: providerToClientId(provider),
+    clientId: routeClientIdFor(decision, provider, worker),
+    explicit: decision.explicit === true,
+    contractMode: decision.contractMode || '',
+    modelProtocols: modelProtocolSet(model || {}),
+    requestedModelId: decision.requestedModelId || decision.modelId,
+    executionClientId: routeClientIdFor(decision, provider, worker) || decision.clientId || '',
+    skipped: decision.skipped || [],
+    ownDefaultModel: decision.ownDefaultModel === true,
+    degradedChannel: decision.degradedChannel === true,
+    channelDown: decision.channelDown === true,
+    incompatible: decision.incompatible || null,
     reason: decision.reason,
     cost: model?.cost || 'unknown',
     speed: model?.speed || 'unknown',
@@ -111,7 +146,11 @@ export function resolveModelRoutingForTask({
   registry = defaultModelRegistry(),
   env = process.env,
   profile = '',
+  workerClientId = '',
+  clientId = '',
+  availability = null,
 } = {}) {
+  const worker = normalizeId(workerClientId || clientId);
   const intentGate = classifyTaskIntent(taskDescription);
   const explicitTaskType = normalizeId(taskType);
   const rawScoring = explicitTaskType
@@ -122,7 +161,7 @@ export function resolveModelRoutingForTask({
     || scoring.primaryType
     || matchTaskTypeFromDescription(taskDescription, registry)
     || 'general';
-  const decision = resolveModelForTask(resolvedType, registry, env);
+  const decision = resolveModelForTask(resolvedType, registry, env, { clientId: worker, availability });
   const model = decision.model || getModelConfig(decision.modelId, registry) || null;
   const provider = normalizeId(model?.provider);
   return normalizeModelRouting({
@@ -131,7 +170,17 @@ export function resolveModelRoutingForTask({
     modelId: decision.modelId,
     modelLabel: model?.label || decision.modelId,
     provider,
-    clientId: providerToClientId(provider),
+    clientId: routeClientIdFor(decision, provider, worker),
+    explicit: decision.explicit === true,
+    contractMode: decision.contractMode || '',
+    modelProtocols: modelProtocolSet(model || {}),
+    requestedModelId: decision.requestedModelId || decision.modelId,
+    executionClientId: routeClientIdFor(decision, provider, worker) || decision.clientId || '',
+    skipped: decision.skipped || [],
+    ownDefaultModel: decision.ownDefaultModel === true,
+    degradedChannel: decision.degradedChannel === true,
+    channelDown: decision.channelDown === true,
+    incompatible: decision.incompatible || null,
     reason: decision.reason,
     cost: model?.cost || 'unknown',
     speed: model?.speed || 'unknown',

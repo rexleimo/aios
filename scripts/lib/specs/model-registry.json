@@ -1,14 +1,26 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "activeModel": "claude-sonnet",
   "fallbackPolicy": "cost-ascending",
   "models": {
     "gpt-5.5": {
+      "protocols": [
+        "openai-response"
+      ],
       "provider": "codex",
       "label": "GPT-5.5 (OpenAI)",
       "description": "六边形战士，通用旗舰，原生 Computer Use、1M 上下文、知识检索、代码执行、通用推理全能",
-      "strengths": ["general-reasoning", "browser-automation", "desktop-automation", "knowledge-retrieval", "code-execution", "all-rounder"],
-      "weaknesses": ["highest-cost"],
+      "strengths": [
+        "general-reasoning",
+        "browser-automation",
+        "desktop-automation",
+        "knowledge-retrieval",
+        "code-execution",
+        "all-rounder"
+      ],
+      "weaknesses": [
+        "highest-cost"
+      ],
       "cost": "highest",
       "speed": "fast",
       "contextWindow": "1M",
@@ -20,11 +32,23 @@
       }
     },
     "kimi-k2.6": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "Kimi K2.6 (Moonshot)",
       "description": "开源 Agent 专用，300 子 Agent 并行编排、12+ 小时自主执行、编码驱动设计（前端 Awwwards 级）、文档→技能",
-      "strengths": ["multi-agent-orchestration", "long-running-execution", "frontend-ui", "full-stack", "skill-learning"],
-      "weaknesses": ["deep-security-review", "enterprise-compliance"],
+      "strengths": [
+        "multi-agent-orchestration",
+        "long-running-execution",
+        "frontend-ui",
+        "full-stack",
+        "skill-learning"
+      ],
+      "weaknesses": [
+        "deep-security-review",
+        "enterprise-compliance"
+      ],
       "cost": "low",
       "speed": "fast",
       "contextWindow": "200K",
@@ -36,11 +60,25 @@
       }
     },
     "claude-opus": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "Claude Opus 4.7 (Anthropic)",
       "description": "质量天花板，代码架构判断、长文本写作、自我验证、高风险场景可靠性、幻觉率 36%",
-      "strengths": ["code-review", "architecture-design", "security-audit", "long-form-writing", "self-verification", "high-stakes-decision"],
-      "weaknesses": ["browser-automation", "real-time-execution", "cost-sensitive-tasks"],
+      "strengths": [
+        "code-review",
+        "architecture-design",
+        "security-audit",
+        "long-form-writing",
+        "self-verification",
+        "high-stakes-decision"
+      ],
+      "weaknesses": [
+        "browser-automation",
+        "real-time-execution",
+        "cost-sensitive-tasks"
+      ],
       "cost": "highest",
       "speed": "slow",
       "contextWindow": "200K",
@@ -52,11 +90,23 @@
       }
     },
     "claude-sonnet": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "Claude Sonnet 4.6 (Anthropic)",
       "description": "性价比之王，日常开发、RAG、Adaptive Thinking、速度均衡",
-      "strengths": ["daily-development", "rapid-prototyping", "rag", "classification", "summarization"],
-      "weaknesses": ["complex-architecture", "deep-security-audit"],
+      "strengths": [
+        "daily-development",
+        "rapid-prototyping",
+        "rag",
+        "classification",
+        "summarization"
+      ],
+      "weaknesses": [
+        "complex-architecture",
+        "deep-security-audit"
+      ],
       "cost": "medium",
       "speed": "fast",
       "contextWindow": "200K",
@@ -68,11 +118,24 @@
       }
     },
     "deepseek-v4": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "DeepSeek-V4-Pro",
       "description": "开源代码怪兽，1M 上下文、Terminal-Bench 67.9%、LiveCodeBench 93.5%、价格仅为 GPT-5.5 的 1/70",
-      "strengths": ["algorithm-implementation", "core-logic", "long-log-analysis", "batch-processing", "cost-efficient-coding"],
-      "weaknesses": ["frontend-ui", "multimodal", "creative-writing"],
+      "strengths": [
+        "algorithm-implementation",
+        "core-logic",
+        "long-log-analysis",
+        "batch-processing",
+        "cost-efficient-coding"
+      ],
+      "weaknesses": [
+        "frontend-ui",
+        "multimodal",
+        "creative-writing"
+      ],
       "cost": "lowest",
       "speed": "fast",
       "contextWindow": "1M",
@@ -84,11 +147,23 @@
       }
     },
     "glm-5.1": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "GLM-5.1 (智谱)",
       "description": "自主推理引擎，8 小时自主循环、AIME 95.3%、复杂系统工程、MoE 744B 参数",
-      "strengths": ["math-reasoning", "science-reasoning", "autonomous-loop", "systems-engineering", "long-running-planning"],
-      "weaknesses": ["browser-automation", "multimodal"],
+      "strengths": [
+        "math-reasoning",
+        "science-reasoning",
+        "autonomous-loop",
+        "systems-engineering",
+        "long-running-planning"
+      ],
+      "weaknesses": [
+        "browser-automation",
+        "multimodal"
+      ],
       "cost": "low",
       "speed": "medium",
       "contextWindow": "200K",
@@ -100,11 +175,22 @@
       }
     },
     "minimax-m2.7": {
+      "protocols": [
+        "claude"
+      ],
       "provider": "claude",
       "label": "MiniMax-M2.7",
       "description": "自进化 Agent，自优化（100 轮自主迭代）、生产故障恢复（<3 分钟）、原生 Agent Teams",
-      "strengths": ["self-healing", "production-recovery", "continuous-optimization", "agent-teams"],
-      "weaknesses": ["initial-bootstrap", "creative-tasks"],
+      "strengths": [
+        "self-healing",
+        "production-recovery",
+        "continuous-optimization",
+        "agent-teams"
+      ],
+      "weaknesses": [
+        "initial-bootstrap",
+        "creative-tasks"
+      ],
       "cost": "low",
       "speed": "medium",
       "contextWindow": "200K",
@@ -116,11 +202,24 @@
       }
     },
     "gemini-3-pro": {
+      "protocols": [
+        "gemini"
+      ],
       "provider": "gemini",
       "label": "Gemini-3-Pro (Google)",
       "description": "多模态长文，1M+ 上下文、信息召回率 97%、原生视频/音频/图像融合、推测解码 2-3 倍速",
-      "strengths": ["multimodal-analysis", "long-document-research", "video-analysis", "audio-analysis", "information-recall", "large-context-processing"],
-      "weaknesses": ["complex-code-architecture", "precise-math"],
+      "strengths": [
+        "multimodal-analysis",
+        "long-document-research",
+        "video-analysis",
+        "audio-analysis",
+        "information-recall",
+        "large-context-processing"
+      ],
+      "weaknesses": [
+        "complex-code-architecture",
+        "precise-math"
+      ],
       "cost": "medium",
       "speed": "medium",
       "contextWindow": "1M",
@@ -130,100 +229,619 @@
         "modelArg": "-m",
         "modelValue": "gemini-3-pro"
       }
+    },
+    "claude-opus-5": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Opus 5 (Anthropic)",
+      "description": "当前质量天花板：代码架构判断、安全审计、自我验证、高风险决策",
+      "strengths": [
+        "code-review",
+        "architecture-design",
+        "security-audit",
+        "self-verification",
+        "high-stakes-decision"
+      ],
+      "weaknesses": [
+        "cost-sensitive-tasks",
+        "real-time-execution"
+      ],
+      "cost": "highest",
+      "speed": "slow",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "-p",
+        "modelArg": "--model",
+        "modelValue": "claude-opus-5"
+      },
+      "provider": "claude"
+    },
+    "claude-opus-4-8": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Opus 4.8 (Anthropic)",
+      "description": "上一代 Opus，评审/架构兜底位",
+      "strengths": [
+        "code-review",
+        "security-audit",
+        "long-form-writing"
+      ],
+      "weaknesses": [
+        "cost-sensitive-tasks"
+      ],
+      "cost": "high",
+      "speed": "slow",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model claude-opus-4-8 -p",
+        "modelArg": "--model",
+        "modelValue": "claude-opus-4-8"
+      },
+      "provider": "claude"
+    },
+    "claude-sonnet-5": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Sonnet 5 (Anthropic)",
+      "description": "日常开发主力：速度与性价比均衡，前端/RAG/文档改写",
+      "strengths": [
+        "daily-development",
+        "rapid-prototyping",
+        "frontend-ui",
+        "rag",
+        "docs"
+      ],
+      "weaknesses": [
+        "deep-security-audit"
+      ],
+      "cost": "medium",
+      "speed": "fast",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "-p",
+        "modelArg": "--model",
+        "modelValue": "claude-sonnet-5"
+      },
+      "provider": "claude"
+    },
+    "claude-haiku-4-5-20251001": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Haiku 4.5 (Anthropic)",
+      "description": "最快最便宜档位：批量测试、分类、摘要、格式化",
+      "strengths": [
+        "classification",
+        "summarization",
+        "batch-processing",
+        "test-execution"
+      ],
+      "weaknesses": [
+        "complex-architecture",
+        "long-horizon-planning"
+      ],
+      "cost": "low",
+      "speed": "fast",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model claude-haiku-4-5-20251001 -p",
+        "modelArg": "--model",
+        "modelValue": "claude-haiku-4-5-20251001"
+      },
+      "provider": "claude"
+    },
+    "claude-fable-5": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Fable 5 (Anthropic)",
+      "description": "Anthropic 新代号系列，能力画像待实测，不作未验证主选",
+      "strengths": [
+        "general-reasoning"
+      ],
+      "weaknesses": [
+        "unverified"
+      ],
+      "cost": "high",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model claude-fable-5 -p",
+        "modelArg": "--model",
+        "modelValue": "claude-fable-5"
+      },
+      "provider": "claude"
+    },
+    "claude-fable-5.1": {
+      "protocols": [
+        "claude"
+      ],
+      "label": "Claude Fable 5.1 (Anthropic)",
+      "description": "Anthropic 新代号系列，能力画像待实测",
+      "strengths": [
+        "general-reasoning"
+      ],
+      "weaknesses": [
+        "unverified"
+      ],
+      "cost": "high",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model claude-fable-5.1 -p",
+        "modelArg": "--model",
+        "modelValue": "claude-fable-5.1"
+      },
+      "provider": "claude"
+    },
+    "glm-5.2": {
+      "protocols": [
+        "claude",
+        "openai-chat"
+      ],
+      "label": "GLM-5.2 (智谱)",
+      "description": "长程自主规划、复杂系统工程、数学推理；relay 实测会把 glm-5.3 请求落到本模型",
+      "strengths": [
+        "autonomous-loop",
+        "long-running-planning",
+        "math-reasoning",
+        "systems-engineering"
+      ],
+      "weaknesses": [
+        "multimodal",
+        "browser-automation"
+      ],
+      "cost": "low",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model glm-5.2 -p",
+        "modelArg": "--model",
+        "modelValue": "glm-5.2"
+      },
+      "provider": "claude"
+    },
+    "glm-5.3": {
+      "protocols": [
+        "claude",
+        "openai-chat"
+      ],
+      "label": "GLM-5.3 (智谱)",
+      "description": "GLM 新一代规划位；渠道可能回落到 5.2，以 servedModelId 为准",
+      "strengths": [
+        "autonomous-loop",
+        "long-running-planning",
+        "math-reasoning"
+      ],
+      "weaknesses": [
+        "multimodal"
+      ],
+      "cost": "low",
+      "speed": "medium",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model glm-5.3 -p",
+        "modelArg": "--model",
+        "modelValue": "glm-5.3"
+      },
+      "provider": "claude"
+    },
+    "glm-5.3-flash": {
+      "protocols": [
+        "openai-chat"
+      ],
+      "label": "GLM-5.3-Flash (智谱)",
+      "description": "快速档：批量测试、文档、改写",
+      "strengths": [
+        "classification",
+        "docs",
+        "test-execution"
+      ],
+      "weaknesses": [
+        "deep-reasoning"
+      ],
+      "cost": "lowest",
+      "speed": "fast",
+      "contextWindow": "200K",
+      "cli": {
+        "command": "opencode",
+        "argsTemplate": "run -m openai-chat/glm-5.3-flash",
+        "modelArg": "-m",
+        "modelValue": "openai-chat/glm-5.3-flash"
+      },
+      "provider": "opencode"
+    },
+    "deepseek-v4-flash": {
+      "protocols": [
+        "openai-chat",
+        "claude"
+      ],
+      "label": "DeepSeek-V4-Flash",
+      "description": "低成本代码档：批量实现、长日志分析",
+      "strengths": [
+        "algorithm-implementation",
+        "batch-processing",
+        "long-log-analysis",
+        "cost-efficient-coding"
+      ],
+      "weaknesses": [
+        "frontend-ui",
+        "multimodal"
+      ],
+      "cost": "lowest",
+      "speed": "fast",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "claude",
+        "argsTemplate": "--model deepseek-v4-flash -p",
+        "modelArg": "--model",
+        "modelValue": "deepseek-v4-flash"
+      },
+      "provider": "claude"
+    },
+    "gpt-6-astra": {
+      "protocols": [
+        "openai-response"
+      ],
+      "label": "GPT-6-Astra (OpenAI)",
+      "description": "最新旗舰：通用推理、计算机使用、代码执行、长上下文，一专多能",
+      "strengths": [
+        "all-rounder",
+        "general-reasoning",
+        "browser-automation",
+        "desktop-automation",
+        "code-execution",
+        "knowledge-retrieval"
+      ],
+      "weaknesses": [
+        "highest-cost"
+      ],
+      "cost": "highest",
+      "speed": "fast",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-6-astra",
+        "modelArg": "-m",
+        "modelValue": "gpt-6-astra"
+      },
+      "provider": "codex"
+    },
+    "gpt-5.6-sol": {
+      "protocols": [
+        "openai-response"
+      ],
+      "label": "GPT-5.6-Sol (OpenAI)",
+      "description": "5.6 系列长任务位；单次往返偏慢，适合非交互式长任务",
+      "strengths": [
+        "general-reasoning",
+        "long-running-execution",
+        "code-execution"
+      ],
+      "weaknesses": [
+        "latency-sensitive-tasks"
+      ],
+      "cost": "high",
+      "speed": "slow",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-5.6-sol",
+        "modelArg": "-m",
+        "modelValue": "gpt-5.6-sol"
+      },
+      "provider": "codex"
+    },
+    "gpt-5.6-luna": {
+      "protocols": [
+        "openai-response"
+      ],
+      "label": "GPT-5.6-Luna (OpenAI)",
+      "description": "5.6 系列轻量代号，能力画像待实测",
+      "strengths": [
+        "general-reasoning"
+      ],
+      "weaknesses": [
+        "unverified"
+      ],
+      "cost": "high",
+      "speed": "medium",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-5.6-luna",
+        "modelArg": "-m",
+        "modelValue": "gpt-5.6-luna"
+      },
+      "provider": "codex"
+    },
+    "gpt-5.6-terra": {
+      "protocols": [
+        "openai-response"
+      ],
+      "label": "GPT-5.6-Terra (OpenAI)",
+      "description": "5.6 系列长上下文代号，能力画像待实测",
+      "strengths": [
+        "long-document-research",
+        "general-reasoning"
+      ],
+      "weaknesses": [
+        "unverified"
+      ],
+      "cost": "high",
+      "speed": "medium",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-5.6-terra",
+        "modelArg": "-m",
+        "modelValue": "gpt-5.6-terra"
+      },
+      "provider": "codex"
+    },
+    "gpt-5.4": {
+      "protocols": [
+        "openai-response"
+      ],
+      "label": "GPT-5.4 (OpenAI)",
+      "description": "上一代 GPT，通用兜底",
+      "strengths": [
+        "all-rounder",
+        "code-execution"
+      ],
+      "weaknesses": [
+        "highest-cost"
+      ],
+      "cost": "high",
+      "speed": "fast",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "codex",
+        "argsTemplate": "exec --dangerously-bypass-approvals-and-sandbox -m gpt-5.4",
+        "modelArg": "-m",
+        "modelValue": "gpt-5.4"
+      },
+      "provider": "codex"
+    },
+    "gemini-3.8-flash": {
+      "protocols": [
+        "gemini"
+      ],
+      "label": "Gemini-3.8-Flash (Google)",
+      "description": "多模态与超长文档：视频/音频/图像融合、信息召回、大上下文检索",
+      "strengths": [
+        "multimodal-analysis",
+        "long-document-research",
+        "video-analysis",
+        "audio-analysis",
+        "information-recall"
+      ],
+      "weaknesses": [
+        "precise-math",
+        "complex-code-architecture"
+      ],
+      "cost": "medium",
+      "speed": "medium",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "gemini",
+        "argsTemplate": "-m gemini-3.8-flash -p",
+        "modelArg": "-m",
+        "modelValue": "gemini-3.8-flash"
+      },
+      "provider": "gemini"
+    },
+    "gemini-3.1-pro-preview": {
+      "protocols": [
+        "gemini"
+      ],
+      "label": "Gemini-3.1-Pro-Preview (Google)",
+      "description": "Gemini 深度推理/研究位",
+      "strengths": [
+        "long-document-research",
+        "information-recall",
+        "multimodal-analysis"
+      ],
+      "weaknesses": [
+        "precise-math"
+      ],
+      "cost": "high",
+      "speed": "medium",
+      "contextWindow": "1M",
+      "cli": {
+        "command": "gemini",
+        "argsTemplate": "-m gemini-3.1-pro-preview -p",
+        "modelArg": "-m",
+        "modelValue": "gemini-3.1-pro-preview"
+      },
+      "provider": "gemini"
     }
   },
   "routingRules": [
     {
       "taskType": "code-review",
       "description": "代码审查、架构评审、质量把关",
-      "primary": "claude-opus",
-      "fallback": ["gpt-5.5", "glm-5.1"]
+      "primary": "claude-opus-5",
+      "fallback": [
+        "claude-opus-4-8",
+        "gpt-6-astra",
+        "claude-sonnet"
+      ]
     },
     {
       "taskType": "security-review",
       "description": "安全审计、漏洞扫描、合规检查",
-      "primary": "claude-opus",
-      "fallback": ["gpt-5.5", "glm-5.1"]
+      "primary": "claude-opus-5",
+      "fallback": [
+        "claude-opus-4-8",
+        "gpt-6-astra",
+        "glm-5.2"
+      ]
     },
     {
       "taskType": "architecture",
       "description": "架构设计、技术选型、系统设计",
-      "primary": "claude-opus",
-      "fallback": ["gpt-5.5", "glm-5.1"]
+      "primary": "claude-opus-5",
+      "fallback": [
+        "gpt-6-astra",
+        "glm-5.2",
+        "claude-opus"
+      ]
     },
     {
       "taskType": "implementation",
       "description": "写代码、算法实现、核心逻辑",
       "primary": "deepseek-v4",
-      "fallback": ["gpt-5.5", "claude-sonnet"]
+      "fallback": [
+        "gpt-6-astra",
+        "claude-sonnet-5",
+        "deepseek-v4-flash"
+      ]
     },
     {
       "taskType": "browser-automation",
       "description": "浏览器操作、桌面自动化、网页抓取",
-      "primary": "gpt-5.5",
-      "fallback": ["kimi-k2.6", "claude-sonnet"]
+      "primary": "gpt-6-astra",
+      "fallback": [
+        "gpt-5.5",
+        "claude-sonnet-5"
+      ]
     },
     {
       "taskType": "research",
-      "description": "读超长文档、视频分析、信息检索",
-      "primary": "gemini-3-pro",
-      "fallback": ["gpt-5.5", "kimi-k2.6"]
+      "description": "读超长文档、视频分析、信息召回",
+      "primary": "gemini-3.8-flash",
+      "fallback": [
+        "deepseek-v4",
+        "claude-sonnet-5",
+        "gpt-5.6-sol"
+      ]
     },
     {
       "taskType": "planning",
-      "description": "任务拆解、方案设计、路线规划",
-      "primary": "glm-5.1",
-      "fallback": ["gpt-5.5", "claude-opus"]
+      "description": "任务拆解、长程自主规划、复杂系统工程",
+      "primary": "glm-5.2",
+      "fallback": [
+        "gpt-6-astra",
+        "claude-opus-5",
+        "claude-opus"
+      ]
     },
     {
       "taskType": "testing",
-      "description": "测试编写、测试策略、QA",
-      "primary": "claude-sonnet",
-      "fallback": ["gpt-5.5", "deepseek-v4"]
+      "description": "跑测试、批量验证、分类与摘要",
+      "primary": "claude-haiku-4-5-20251001",
+      "fallback": [
+        "claude-sonnet-5",
+        "glm-5.3-flash",
+        "deepseek-v4-flash"
+      ]
     },
     {
       "taskType": "docs",
-      "description": "文档编写、README、知识库",
-      "primary": "claude-sonnet",
-      "fallback": ["gpt-5.5", "kimi-k2.6"]
+      "description": "文档改写、说明生成、翻译",
+      "primary": "claude-sonnet-5",
+      "fallback": [
+        "glm-5.3-flash",
+        "gpt-5.5",
+        "kimi-k2.6"
+      ]
     },
     {
       "taskType": "frontend",
-      "description": "前端UI、设计实现、Awwwards 级页面",
-      "primary": "kimi-k2.6",
-      "fallback": ["gpt-5.5", "claude-sonnet"]
+      "description": "前端 UI、样式还原、组件实现",
+      "primary": "claude-sonnet-5",
+      "fallback": [
+        "gpt-5.6-sol",
+        "kimi-k2.6",
+        "gpt-5.5"
+      ]
     },
     {
       "taskType": "self-healing",
-      "description": "故障恢复、自优化、生产修复",
-      "primary": "minimax-m2.7",
-      "fallback": ["glm-5.1", "gpt-5.5"]
+      "description": "故障恢复、自优化、连续迭代",
+      "primary": "glm-5.2",
+      "fallback": [
+        "gpt-6-astra",
+        "minimax-m2.7",
+        "deepseek-v4"
+      ]
     },
     {
       "taskType": "general",
-      "description": "通用任务（未匹配到特定类型时）",
-      "primary": "gpt-5.5",
-      "fallback": ["claude-sonnet", "deepseek-v4"]
+      "description": "通用默认位",
+      "primary": "gpt-6-astra",
+      "fallback": [
+        "claude-sonnet-5",
+        "glm-5.2",
+        "deepseek-v4"
+      ]
     }
   ],
   "roleDefaults": {
-    "planner": { "taskType": "planning" },
-    "implementer": { "taskType": "implementation" },
-    "reviewer": { "taskType": "code-review" },
-    "security-reviewer": { "taskType": "security-review" },
-    "discipline-planner": { "taskType": "planning", "preferredModel": "claude-opus" },
-    "discipline-builder": { "taskType": "implementation", "preferredModel": "gpt-5.5" },
-    "discipline-reviewer": { "taskType": "code-review", "preferredModel": "claude-sonnet" },
-    "discipline-orchestrator": { "taskType": "planning", "preferredModel": "glm-5.1" },
-    "discipline-explorer": { "taskType": "research", "preferredModel": "gemini-3-pro" },
-    "team-lead": { "taskType": "planning", "preferredModel": "claude-opus" },
-    "team-member": { "taskType": "implementation", "preferredModel": "gpt-5.5" }
+    "planner": {
+      "taskType": "planning"
+    },
+    "implementer": {
+      "taskType": "implementation"
+    },
+    "reviewer": {
+      "taskType": "code-review"
+    },
+    "security-reviewer": {
+      "taskType": "security-review"
+    },
+    "discipline-planner": {
+      "taskType": "planning",
+      "preferredModel": "claude-opus-5"
+    },
+    "discipline-builder": {
+      "taskType": "implementation",
+      "preferredModel": "gpt-6-astra"
+    },
+    "discipline-reviewer": {
+      "taskType": "code-review",
+      "preferredModel": "claude-opus-5"
+    },
+    "discipline-orchestrator": {
+      "taskType": "planning",
+      "preferredModel": "glm-5.2"
+    },
+    "discipline-explorer": {
+      "taskType": "research",
+      "preferredModel": "gemini-3.8-flash"
+    },
+    "team-lead": {
+      "taskType": "planning",
+      "preferredModel": "claude-opus-5"
+    },
+    "team-member": {
+      "taskType": "implementation",
+      "preferredModel": "gpt-6-astra"
+    }
   },
   "defaultProfile": "balanced",
   "routingProfiles": {
-    "balanced": { "description": "Cost-aware default; upgrade on strong signals." },
-    "premium": { "description": "Prefer stronger subscribed models for complex or low-confidence work." },
-    "budget": { "description": "Prefer low-cost models except for hard capability requirements." }
+    "balanced": {
+      "description": "Cost-aware default; upgrade on strong signals."
+    },
+    "premium": {
+      "description": "Prefer stronger subscribed models for complex or low-confidence work."
+    },
+    "budget": {
+      "description": "Prefer low-cost models except for hard capability requirements."
+    }
   },
   "signalRules": [
     {
@@ -231,8 +849,24 @@
       "priority": 100,
       "weight": 8,
       "keywords": {
-        "cjk": ["安全", "漏洞", "注入", "权限", "合规"],
-        "en": ["secret", "security", "vulnerability", "xss", "csrf", "injection", "permission", "compliance", "auth"]
+        "cjk": [
+          "安全",
+          "漏洞",
+          "注入",
+          "权限",
+          "合规"
+        ],
+        "en": [
+          "secret",
+          "security",
+          "vulnerability",
+          "xss",
+          "csrf",
+          "injection",
+          "permission",
+          "compliance",
+          "auth"
+        ]
       },
       "reason": "security or auth risk"
     },
@@ -241,8 +875,19 @@
       "priority": 98,
       "weight": 7,
       "keywords": {
-        "cjk": ["代码审查", "审查", "评审", "代码质量"],
-        "en": ["code review", "review", "pull request", "pr", "code quality"]
+        "cjk": [
+          "代码审查",
+          "审查",
+          "评审",
+          "代码质量"
+        ],
+        "en": [
+          "code review",
+          "review",
+          "pull request",
+          "pr",
+          "code quality"
+        ]
       },
       "reason": "code review or quality gate"
     },
@@ -251,8 +896,24 @@
       "priority": 95,
       "weight": 8,
       "keywords": {
-        "cjk": ["浏览器", "打开", "上传", "填写", "截图", "网页抓取", "发布页面"],
-        "en": ["browser", "upload", "screenshot", "scrape", "crawl", "automation", "computer use"]
+        "cjk": [
+          "浏览器",
+          "打开",
+          "上传",
+          "填写",
+          "截图",
+          "网页抓取",
+          "发布页面"
+        ],
+        "en": [
+          "browser",
+          "upload",
+          "screenshot",
+          "scrape",
+          "crawl",
+          "automation",
+          "computer use"
+        ]
       },
       "reason": "live browser or desktop workflow"
     },
@@ -261,8 +922,22 @@
       "priority": 90,
       "weight": 8,
       "keywords": {
-        "cjk": ["线上", "故障", "恢复", "自愈", "事故", "日志"],
-        "en": ["incident", "outage", "recover", "self-healing", "production", "logs"]
+        "cjk": [
+          "线上",
+          "故障",
+          "恢复",
+          "自愈",
+          "事故",
+          "日志"
+        ],
+        "en": [
+          "incident",
+          "outage",
+          "recover",
+          "self-healing",
+          "production",
+          "logs"
+        ]
       },
       "reason": "production recovery or incident signal"
     },
@@ -271,8 +946,20 @@
       "priority": 80,
       "weight": 7,
       "keywords": {
-        "cjk": ["架构", "技术选型", "系统设计", "跨模块", "重构方案"],
-        "en": ["architecture", "system design", "tech stack", "cross-module", "refactor plan"]
+        "cjk": [
+          "架构",
+          "技术选型",
+          "系统设计",
+          "跨模块",
+          "重构方案"
+        ],
+        "en": [
+          "architecture",
+          "system design",
+          "tech stack",
+          "cross-module",
+          "refactor plan"
+        ]
       },
       "reason": "architecture or system design"
     },
@@ -281,8 +968,24 @@
       "priority": 70,
       "weight": 7,
       "keywords": {
-        "cjk": ["很长", "长文档", "第三方 api", "调研", "研究", "视频", "图像", "多模态"],
-        "en": ["long document", "research", "migration strategy", "video", "image", "multimodal"]
+        "cjk": [
+          "很长",
+          "长文档",
+          "第三方 api",
+          "调研",
+          "研究",
+          "视频",
+          "图像",
+          "多模态"
+        ],
+        "en": [
+          "long document",
+          "research",
+          "migration strategy",
+          "video",
+          "image",
+          "multimodal"
+        ]
       },
       "reason": "long-context or multimodal research"
     },
@@ -291,8 +994,23 @@
       "priority": 65,
       "weight": 7,
       "keywords": {
-        "cjk": ["前端", "组件", "样式", "界面", "落地页"],
-        "en": ["frontend", "front-end", "ui", "landing page", "component", "css", "style", "beautiful"]
+        "cjk": [
+          "前端",
+          "组件",
+          "样式",
+          "界面",
+          "落地页"
+        ],
+        "en": [
+          "frontend",
+          "front-end",
+          "ui",
+          "landing page",
+          "component",
+          "css",
+          "style",
+          "beautiful"
+        ]
       },
       "reason": "frontend UI or visual design"
     },
@@ -301,8 +1019,17 @@
       "priority": 50,
       "weight": 4,
       "keywords": {
-        "cjk": ["测试", "验证", "qa"],
-        "en": ["test", "testing", "verify", "qa"]
+        "cjk": [
+          "测试",
+          "验证",
+          "qa"
+        ],
+        "en": [
+          "test",
+          "testing",
+          "verify",
+          "qa"
+        ]
       },
       "reason": "testing or QA"
     },
@@ -311,8 +1038,22 @@
       "priority": 45,
       "weight": 5,
       "keywords": {
-        "cjk": ["文档", "博客", "readme", "指南", "说明", "skill"],
-        "en": ["docs", "blog", "readme", "guide", "manual", "skill"]
+        "cjk": [
+          "文档",
+          "博客",
+          "readme",
+          "指南",
+          "说明",
+          "skill"
+        ],
+        "en": [
+          "docs",
+          "blog",
+          "readme",
+          "guide",
+          "manual",
+          "skill"
+        ]
       },
       "reason": "documentation work"
     },
@@ -321,8 +1062,20 @@
       "priority": 40,
       "weight": 5,
       "keywords": {
-        "cjk": ["设计", "方案", "规划", "拆解", "计划"],
-        "en": ["design", "planning", "plan", "blueprint", "roadmap"]
+        "cjk": [
+          "设计",
+          "方案",
+          "规划",
+          "拆解",
+          "计划"
+        ],
+        "en": [
+          "design",
+          "planning",
+          "plan",
+          "blueprint",
+          "roadmap"
+        ]
       },
       "reason": "planning or decomposition"
     },
@@ -331,10 +1084,27 @@
       "priority": 20,
       "weight": 6,
       "keywords": {
-        "cjk": ["实现", "写代码", "编写", "开发", "构建"],
-        "en": ["implement", "build", "coding", "develop"]
+        "cjk": [
+          "实现",
+          "写代码",
+          "编写",
+          "开发",
+          "构建"
+        ],
+        "en": [
+          "implement",
+          "build",
+          "coding",
+          "develop"
+        ]
       },
       "reason": "implementation work"
     }
-  ]
+  ],
+  "protocolPaths": {
+    "openai-chat": "https://coding.rexai.top/openai/v1/chat/completions",
+    "openai-response": "https://coding.rexai.top/openai/v1/responses",
+    "claude": "https://coding.rexai.top/claude/v1/messages",
+    "gemini": "https://coding.rexai.top/gemini/v1beta/models/{model}:generateContent"
+  }
 }

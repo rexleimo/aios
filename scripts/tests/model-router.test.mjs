@@ -28,30 +28,36 @@ test('no explicit task type falls back to general instead of guessing intent', (
 });
 
 test('explicit task type routes precisely to its configured model', () => {
+  // 能力映射更新：browser-automation 主选从 gpt-5.5 换成同族最新旗舰 gpt-6-astra。
   const result = route('', { taskType: 'browser-automation' });
   assert.equal(result.profile, 'balanced');
   assert.equal(result.taskType, 'browser-automation');
-  assert.equal(result.modelId, 'gpt-5.5');
+  assert.equal(result.modelId, 'gpt-6-astra');
   assert.equal(result.clientId, 'codex-cli');
   assert.equal(result.confidence, 1);
 });
 
-test('explicit frontend task type routes to Kimi', () => {
+test('explicit frontend task type routes to a model whose channel is actually bound', () => {
+  // kimi-k2.6 的能力描述仍然最好，但 relay 目录里没有这个 SKU（请求会 404），
+  // 所以主选让给 claude-sonnet-5；kimi 留在降级链末尾，通道绑定后即可恢复。
   const result = route('', { taskType: 'frontend' });
   assert.equal(result.taskType, 'frontend');
-  assert.equal(result.modelId, 'kimi-k2.6');
+  assert.equal(result.modelId, 'claude-sonnet-5');
+  assert.equal(result.fallback.includes('kimi-k2.6'), true, 'unbound-but-capable models stay in the chain');
 });
 
-test('explicit self-healing task type routes to minimax', () => {
+test('explicit self-healing task type routes to an available autonomous model', () => {
   const result = route('', { taskType: 'self-healing' });
   assert.equal(result.taskType, 'self-healing');
-  assert.equal(result.modelId, 'minimax-m2.7');
+  // 自优化/故障恢复改用中转站可用的 glm-5.2；minimax 通道未在中转站上架，保留为降级候选。
+  assert.equal(result.modelId, 'glm-5.2');
+  assert.equal(result.fallback.includes('minimax-m2.7'), true);
 });
 
 test('explicit research task type routes to Gemini', () => {
   const result = route('', { taskType: 'research' });
   assert.equal(result.taskType, 'research');
-  assert.equal(result.modelId, 'gemini-3-pro');
+  assert.equal(result.modelId, 'gemini-3.8-flash', 'research keeps the multimodal/long-context family');
 });
 
 test('explicit implementation task type routes to DeepSeek', () => {
@@ -62,18 +68,18 @@ test('explicit implementation task type routes to DeepSeek', () => {
 
 test('route metadata preserves fallback model ids for explicit task type', () => {
   const result = route('', { taskType: 'browser-automation' });
-  assert.deepEqual(result.fallback, ['kimi-k2.6', 'claude-sonnet']);
+  assert.deepEqual(result.fallback, ['claude-sonnet-5', 'gpt-5.5']);
 });
 
 test('route metadata shows unattended launch flags for explicit task types', () => {
   const codex = route('', { taskType: 'browser-automation' });
-  assert.match(codex.cliCommand, /codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-5\.5/u);
+  assert.match(codex.cliCommand, /codex exec --dangerously-bypass-approvals-and-sandbox -m gpt-6-astra/u);
 
   const claude = route('', { taskType: 'code-review' });
-  assert.match(claude.cliCommand, /claude --model claude-opus-4-7 --dangerously-skip-permissions -p/u);
+  assert.match(claude.cliCommand, /claude --model claude-opus-5 --dangerously-skip-permissions -p/u);
 
   const gemini = route('', { taskType: 'research' });
-  assert.match(gemini.cliCommand, /gemini -m gemini-3-pro --yolo -p/u);
+  assert.match(gemini.cliCommand, /gemini -m gemini-3.8-flash --yolo -p/u);
 });
 
 test('scoreTaskSignals never guesses signals from free text', () => {
@@ -105,7 +111,7 @@ test('legacy task description resolver falls back to general without guessing', 
 test('profile can be overridden by CLI-style option or env', () => {
   const premium = route('', { taskType: 'architecture', profile: 'premium' });
   assert.equal(premium.profile, 'premium');
-  assert.equal(['gpt-5.5', 'claude-opus'].includes(premium.modelId), true);
+  assert.equal(['gpt-6-astra', 'gpt-5.5', 'claude-opus-5', 'claude-opus'].includes(premium.modelId), true);
 
   const budget = resolveModelRoutingForTask({
     taskType: 'frontend',

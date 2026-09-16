@@ -9,11 +9,11 @@ description: 各任务自动选择合适的 AI 模型 - 无需自己思考。
 
 ## 先运行可解释路由
 
-第一次使用时优先运行带 explain 的路由。它会显示选中的模型和触发信号，让调度决策可以被复核，而不是看起来像魔法。
+第一次使用时优先运行带 explain 的路由。它会显示声明的任务类型、选中的模型和命中原因，让调度决策可以被复核，而不是看起来像魔法。
 
 **不同的 AI 模型擅长不同的事情。** 模型路由器自动将每个任务发送到最擅长的模型。
 
-前端工作？用 Kimi K2.6。安全审查？用 Claude Opus。浏览器自动化？用 GPT-5.5。不需要记住这些 — 路由器从任务描述中判断。
+前端工作？Claude Sonnet 5。安全审查？Claude Opus 5。浏览器自动化？GPT-6-Astra。不需要记住这些：由调用方声明任务类型（phase 角色、`--task-type` 或你直接指定），路由器再解析模型与客户端。
 
 ## 简单版本
 
@@ -21,12 +21,17 @@ description: 各任务自动选择合适的 AI 模型 - 无需自己思考。
 # 将任务路由到最优模型
 node scripts/aios.mjs model-router route \
   --task "构建一个漂亮的落地页组件" \
+  --task-type frontend \
   --explain
 
-# 结果: frontend → kimi-k2.6（因为检测到"落地页"、"组件"、"漂亮"）
+# 结果: frontend -> claude-sonnet-5（客户端 `claude`，协议 `claude`）
 ```
 
-就是这样。路由器读取任务，检测信号，选择最优模型。
+就是这样。路由器把**声明的**任务类型解析成模型与可启动命令。
+
+它刻意**不**从自由文本猜任务类型或意图：关键词猜测不可复核。因此
+`scripts/lib/model-router/signals.mjs` 只接受显式声明，缺省回落到 `general`；
+真正知道任务性质的是调用方（rex phase、team 角色、你）。
 
 ## 为什么不重要
 
@@ -41,17 +46,19 @@ node scripts/aios.mjs model-router route \
 ## 工作原理
 
 ```
-任务描述
+声明的任务类型（phase 角色、--task-type、显式 intent）
     ↓
-信号检测（"browser"、"security"、"frontend" 等关键词）
+路由规则查表（首选模型 + 降级链）
     ↓
-任务类型分类（browser-automation、code-review 等）
+profile 调整（eco / balanced / premium）+ 角色或环境变量覆盖
     ↓
-模型选择（基于路由配置文件）
+客户端契约校验（启动方能否使用该模型协议）
     ↓
-CLI 命令生成（codex/claude/gemini 的正确标志）
+通道可用性校验（中转站这条通道当前是否健康）
     ↓
-执行 + 结果记录
+CLI 命令生成（该客户端正确的 --model/-m 参数）
+    ↓
+执行 + 结果回写通道可用性
 ```
 
 ## 模型能力注册表
@@ -85,18 +92,18 @@ Codex live worker 会默认附加 `--dangerously-bypass-approvals-and-sandbox`�
 
 | 任务类型 | 首选模型 | 降级链 |
 |----------|----------|--------|
-| 代码审查 | Claude Opus | GPT-5.5 → GLM-5.1 |
-| 安全审计 | Claude Opus | GPT-5.5 → GLM-5.1 |
-| 架构设计 | Claude Opus | GPT-5.5 → GLM-5.1 |
-| 写代码/实现 | DeepSeek-V4 | GPT-5.5 → Claude Sonnet |
-| 浏览器自动化 | GPT-5.5 | Kimi K2.6 → Claude Sonnet |
-| 调研/研究 | Gemini-3-Pro | GPT-5.5 → Kimi K2.6 |
-| 规划/方案 | GLM-5.1 | GPT-5.5 → Claude Opus |
-| 测试/QA | Claude Sonnet | GPT-5.5 → DeepSeek-V4 |
-| 文档编写 | Claude Sonnet | GPT-5.5 → Kimi K2.6 |
-| 前端/UI | Kimi K2.6 | GPT-5.5 → Claude Sonnet |
-| 故障恢复 | MiniMax-M2.7 | GLM-5.1 → GPT-5.5 |
-| 通用兜底 | GPT-5.5 | Claude Sonnet → DeepSeek-V4 |
+| 代码审查、架构评审、质量把关 | **Claude Opus 5 (Anthropic)** | Claude Opus 4.8 (Anthropic) → GPT-6-Astra (OpenAI) → Claude Sonnet 4.6 (Anthropic) |
+| 安全审计、漏洞扫描、合规检查 | **Claude Opus 5 (Anthropic)** | Claude Opus 4.8 (Anthropic) → GPT-6-Astra (OpenAI) → GLM-5.2 (智谱) |
+| 架构设计、技术选型、系统设计 | **Claude Opus 5 (Anthropic)** | GPT-6-Astra (OpenAI) → GLM-5.2 (智谱) → Claude Opus 4.7 (Anthropic) |
+| 写代码、算法实现、核心逻辑 | **DeepSeek-V4-Pro** | GPT-6-Astra (OpenAI) → Claude Sonnet 5 (Anthropic) → DeepSeek-V4-Flash |
+| 浏览器操作、桌面自动化、网页抓取 | **GPT-6-Astra (OpenAI)** | GPT-5.5 (OpenAI) → Claude Sonnet 5 (Anthropic) |
+| 读超长文档、视频分析、信息召回 | **Gemini-3.8-Flash (Google)** | DeepSeek-V4-Pro → Claude Sonnet 5 (Anthropic) → GPT-5.6-Sol (OpenAI) |
+| 任务拆解、长程自主规划、复杂系统工程 | **GLM-5.2 (智谱)** | GPT-6-Astra (OpenAI) → Claude Opus 5 (Anthropic) → Claude Opus 4.7 (Anthropic) |
+| 跑测试、批量验证、分类与摘要 | **Claude Haiku 4.5 (Anthropic)** | Claude Sonnet 5 (Anthropic) → GLM-5.3-Flash (智谱) → DeepSeek-V4-Flash |
+| 文档改写、说明生成、翻译 | **Claude Sonnet 5 (Anthropic)** | GLM-5.3-Flash (智谱) → GPT-5.5 (OpenAI) → Kimi K2.6 (Moonshot) |
+| 前端 UI、样式还原、组件实现 | **Claude Sonnet 5 (Anthropic)** | GPT-5.6-Sol (OpenAI) → Kimi K2.6 (Moonshot) → GPT-5.5 (OpenAI) |
+| 故障恢复、自优化、连续迭代 | **GLM-5.2 (智谱)** | GPT-6-Astra (OpenAI) → MiniMax-M2.7 → DeepSeek-V4-Pro |
+| 通用默认位 | **GPT-6-Astra (OpenAI)** | Claude Sonnet 5 (Anthropic) → GLM-5.2 (智谱) → DeepSeek-V4-Pro |
 
 ## 路由配置文件
 
@@ -230,6 +237,64 @@ preferredModel: claude-opus
 ### 我可以将它用于 Agent Team 吗？
 
 可以。Agent Team 默认使用模型路由器 — 团队的每个阶段自动路由到最优模型。
+
+
+## 客户端模型路由契约
+
+只有真正启动的客户端能用这个协议，路由才有意义。AIOS 从客户端注册表
+（`scripts/lib/clients/core/definitions.mjs`）读取能力，而不是靠猜——下表是注册表派生数据：
+
+| 客户端 | `modelRouting` | 可说协议 | 模型参数 |
+|---|---|---|---|
+| codex | `relay` | `openai-response` | `-m` |
+| claude | `relay` | `claude` | `--model` |
+| gemini | `own` | _未公布_ | `-m` |
+| opencode | `relay` | `openai-chat`, `openai-response`, `claude`, `gemini` | `-m` |
+| hermes | `relay` | `claude`, `openai-chat` | `--model` |
+| grok | `own` | _未公布_ | `-m` |
+| workbuddy | `own` | _未公布_ | `--model` |
+| pi | `relay` | `openai-chat`, `claude` | `--model` |
+| zcode | `own` | _未公布_ | `—` |
+
+- `relay`：原生协议网关型 CLI，配到 `coding.rexai.top` 即可使用全部策展模型。
+- `own`：不传模型参数，沿用客户端自带默认模型，AIOS 绝不改写其配置。
+- `hermes` 能终止 `openai-chat` 上游，但启动只用 Anthropic 兼容通道，因此声明 `claude` + `openai-chat`。
+
+协议到端点的映射在 `scripts/lib/model-router/protocols.mjs`：`openai-chat -> /openai/v1/chat/completions`、
+`openai-response -> /openai/v1/responses`、`claude -> /claude/v1/messages`、
+`gemini -> /gemini/v1beta/models/<model>:generateContent`。
+
+由此得到两条规则：
+
+- **显式声明优先。** 只要设了 `-m`、`AIOS_MODEL_*` 或任务模型，就让客户端跟随模型
+  （provider 客户端 + 它自己的 `--model` 通道）。只有自动路由才允许为了适配 worker 客户端换模型。
+- **自动路由不换客户端。** team 角色、subagent、phase job 仍用任务指定的客户端启动；该客户端用不了
+  最优模型时，沿降级链找到它能真正使用的最强模型。
+
+每次决策都留在路由结果里：`requestedModelId`（原始诉求）、`skippedForCapability`（候选被跳过的原因）、
+`modelProtocols`、`contractMode`。
+
+## 通道可用性（运行态层）
+
+注册表描述模型擅长什么，另一台状态机记录中转站**此刻**能提供什么，且只从真实派发结果学习：
+
+| 现象 | 记录为 |
+|---|---|
+| `model_not_found`、`no available channel`、网关响应被截断、探针 HTTP 404 | 通道 `down`（404 直接判死） |
+| 连接/超时/reset、5xx、首字节前断流 | `network` 失败 |
+| 实际返回了别的模型 id | `degraded`（通道不稳定） |
+| 首字节超过延迟预算 | `degraded` |
+| 连续 2 次失败 | `down` |
+| 成功 | 走恢复路径回到 `ok` |
+
+Agent 自身导致的失败（`tool`、`provider-output`、`timeout-after-output`）**不算**通道证据——
+worker 用错工具不该让模型降温。
+
+查看方式：`node scripts/aios.mjs model-router availability`。路由默认**不**读这份缓存（保持离线确定性），
+设 `AIOS_MODEL_AVAILABILITY=1` 后才会跳过不可用通道；生效结果见 `orchestrate plan preview` 与
+phase 派发事件里的 `channelDown` / `degradedChannel`。`down` 冷却 `cooldownMs`（默认 300 秒）后自动恢复，
+`ok` 记录超过 `ttlMs`（默认 600 秒）视为过期。缓存位于 `memory/specs/model-availability.json`
+（`AIOS_MODEL_AVAILABILITY_PATH` 可覆盖，`AIOS_MODEL_AVAILABILITY_FEEDBACK=0` 关闭写回）。
 
 ## 下一步
 

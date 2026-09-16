@@ -1,6 +1,8 @@
 import {
   buildRuntimeClientModelArgs as buildRegistryRuntimeClientModelArgs,
   buildTeamProviderRuntimeClientMap,
+  clientSupportsModelProtocol,
+  getClientModelRouting,
   getClientUnattendedArgs,
   getClientUnattendedInsertAfterToken,
 } from '../clients/registry.mjs';
@@ -76,5 +78,16 @@ export function buildClientModelArgs(clientId = '', modelRouting = null) {
   const modelConfig = getModelConfig(modelId, defaultModelRegistry()) || null;
   const modelValue = modelConfig?.cli?.modelValue || modelId;
   const client = String(clientId || route.clientId || providerToClientId(route.provider)).trim().toLowerCase();
+  // 中文注释：三态契约的落地点。own=客户端用自身默认模型；incompatible/channelDown=
+  // 协议不匹配或该模型所有通道都被判死；这三种自动路由结果都不能把 --model 塞进去，
+  // 否则就是历史上 pi worker 收到 claude 系模型那个 401。
+  // 例外：显式声明的模型走客户端自己的 --model 通道（如 gemini -m gemini-3-pro），照办。
+  const explicit = route.explicit === true || route.contractMode === 'explicit';
+  if (!explicit) {
+    if (route.ownDefaultModel === true || route.incompatible || route.channelDown === true) return [];
+    if (getClientModelRouting(client) !== 'relay') return [];
+    const protocols = Array.isArray(route.modelProtocols) ? route.modelProtocols.filter(Boolean) : [];
+    if (protocols.length && !protocols.some((protocol) => clientSupportsModelProtocol(client, protocol))) return [];
+  }
   return buildRegistryRuntimeClientModelArgs(client, modelValue);
 }

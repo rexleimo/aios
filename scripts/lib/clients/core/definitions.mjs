@@ -5,10 +5,17 @@ export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'native', 
 export const SKILL_FORMATS = Object.freeze(['markdown-directory', 'toml-command']);
 export const DEFAULT_SKILL_FORMAT = 'markdown-directory';
 
+// 模型路由契约（与 capabilities 正交：能当 team worker != 能被派模型）。
+//   mode='relay'  AIOS 可以给该客户端注入端点并按 protocol 派模型（worker 用 --model/-m 传递）。
+//   mode='own'    不派模型：用客户端自身配置的默认模型（账号绑定 / 无 headless --model / 端点覆盖能力未验证）。
+//   protocols     该客户端能实际 speak 的 relay 协议，取自本机配置证据（见每行行尾注释）。
+// 三态而不是两态：避免把 team-capable 但不可路由的客户端（zcode/grok/workbuddy）判成不兼容后硬拒。
 export const CLIENT_DEFINITIONS = Object.freeze({
   codex: Object.freeze({
     capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'codex',
+    modelRouting: 'relay',
+    modelProtocols: Object.freeze(['openai-response']),  // codex config.toml: base_url + wire_api=responses
     runtimeClientId: 'codex-cli',
     projectSkillRoot: '.codex/skills',
     skillFormat: 'markdown-directory',
@@ -23,6 +30,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   claude: Object.freeze({
     capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'claude',
+    modelRouting: 'relay',
+    modelProtocols: Object.freeze(['claude']),  // claude env ANTHROPIC_BASE_URL/ANTHROPIC_AUTH_TOKEN 可覆盖
     runtimeClientId: 'claude-code',
     projectSkillRoot: '.claude/skills',
     skillFormat: 'markdown-directory',
@@ -36,6 +45,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   gemini: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'gemini',
+    modelRouting: 'own',
+    modelProtocols: Object.freeze([]),  // 本机未装 gemini CLI，端点覆盖能力未验证 -> 先按客户端自身配置
     runtimeClientId: 'gemini-cli',
     projectSkillRoot: '.gemini/skills',
     skillFormat: 'markdown-directory',
@@ -51,6 +62,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   opencode: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness', 'agents', 'team']),
     commandName: 'opencode',
+    modelRouting: 'relay',
+    modelProtocols: Object.freeze(['openai-chat', 'openai-response', 'claude', 'gemini']),  // opencode.json 已实配 @ai-sdk/openai|anthropic|google|openai-compatible 四通道
     runtimeClientId: 'opencode-cli',
     projectSkillRoot: '.opencode/skills',
     skillFormat: 'markdown-directory',
@@ -69,6 +82,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   hermes: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness']),
     commandName: 'hermes',
+    modelRouting: 'relay',
+    modelProtocols: Object.freeze(['claude', 'openai-chat']),  // hermes config.yaml custom_providers.api_mode: anthropic_messages|chat_completions
     runtimeClientId: 'hermes-agent',
     projectSkillRoot: '.hermes/skills',
     skillFormat: 'markdown-directory',
@@ -86,6 +101,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   grok: Object.freeze({
     capabilities: Object.freeze(['skills', 'agents', 'native', 'team', 'harness']),
     commandName: 'grok',
+    modelRouting: 'own',
+    modelProtocols: Object.freeze([]),  // grok 账号绑定（grok models 只有 4.5/4.6），无自定义 base_url
     runtimeClientId: 'grok-build',
     projectSkillRoot: '.grok/skills',
     skillFormat: 'markdown-directory',
@@ -109,6 +126,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   workbuddy: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'harness']),
     commandName: 'codebuddy',
+    modelRouting: 'own',
+    modelProtocols: Object.freeze([]),  // workbuddy CLI 未安装，本期不参与模型路由
     runtimeClientId: 'workbuddy-agent',
     projectSkillRoot: '.workbuddy/skills',
     skillFormat: 'markdown-directory',
@@ -136,6 +155,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   pi: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'pi',
+    modelRouting: 'relay',
+    modelProtocols: Object.freeze(['openai-chat', 'claude']),  // pi models.json provider.api: openai-completions|anthropic-messages
     runtimeClientId: 'pi-coding-agent',
     projectSkillRoot: '.agents/skills',
     skillFormat: 'markdown-directory',
@@ -167,6 +188,8 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   zcode: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'zcode',
+    modelRouting: 'own',
+    modelProtocols: Object.freeze([]),  // zcode 无 headless --model（0.16.5 实测 Unknown option）
     runtimeClientId: 'zcode-cli',
     projectSkillRoot: '.agents/skills',
     skillFormat: 'markdown-directory',
@@ -284,3 +307,16 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     ]),
   }),
 });
+// 纯函数：给 CLI 帮助与文档使用的客户端清单，仍然来自同一份注册表。
+export function describeClient(name) {
+  const normalized = String(name || '').trim().toLowerCase();
+  return CLIENT_DEFINITIONS[normalized] || null;
+}
+
+export function getClientHelpList() {
+  return {
+    clientNames: [...ALL_CLIENTS],
+    byCapability: Object.fromEntries(Object.entries(CAPABILITY_CLIENT_ORDER)
+      .map(([capability, names]) => [capability, [...names]])),
+  };
+}
