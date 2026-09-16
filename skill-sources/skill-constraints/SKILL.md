@@ -16,7 +16,7 @@ repoTargets: [codex, claude, gemini, opencode, hermes, workbuddy, pi, zcode]
 
 Working directory: any (MCP tools are session-relative; file paths are relative to project root)
 
-所有浏览器自动化操作 MUST 遵循此约束规��，确保安全、高效、可追溯。
+所有浏览器自动化操作 MUST 遵循此约束规则，确保安全、高效、可追溯。
 
 ## When to Use
 
@@ -77,7 +77,7 @@ This is not optional — skipping intervals risks detection and account bans. If
 
 | 行为 | 原因 |
 |------|------|
-| 操作前执行反检测 | 使用反检测脚本（如项目中已有）或通过 CDP 指纹配置规��� |
+| 操作前执行反检测 | 使用反检测脚本（如项目中已有）或通过 CDP 指纹配置规则 |
 | 截图保存到 temp/ | 路径固定为 aios/temp/ |
 | 先读文本/DOM | `page.extract_text` → `page.get_html` |
 | 使用 grep 搜索快照 | 先保存 snapshot 到文件，再用 grep 搜索 |

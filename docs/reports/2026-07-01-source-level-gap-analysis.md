@@ -10,7 +10,7 @@
 ## 0. TL;DR
 
 1. **之前竞品报告列的 12 个 P0 中，6 个已经有实现** — 报告从未核实过本项目代码
-2. **oh-my-openagent 没有 `default_mode` config 字��** — 竞品报告的核心假设是错的；实际是运行时关键词检测 hook
+2. **oh-my-openagent 没有 `default_mode` config 字段** — 竞品报告的核心假设是错的；实际是运行时关键词检测 hook
 3. **the-pair 的 4 段 verdict 实现极简** — validate_review 只是 3 个 `is_empty()` 检查，比预想简单得多
 4. **gnhf 的退避算法没有 cap** — 我们有 300s cap，gnhf 是无限指数增长
 5. **OpenHarness autodream 的核心是 prompt 工程** — 锁机制只是文件级 PID 锁 + 1h stale timeout
@@ -466,7 +466,7 @@ per-agent 过滤靠两个独立机制:
 |------|------|------|
 | gnhf 无 cap 退避 | gnhf `orchestrator.ts:372` | 无限指数增长是设计缺陷，我们的 300s cap 更好 |
 | overstory 11-adapter | overstory (archived) | oh-my-openagent 公开反对 "Premature adapter pattern" |
-| SQLite WAL Mail Bus | overstory (archived) | OpenHarness 用更轻的文��� mailbox，已成事实标准 |
+| SQLite WAL Mail Bus | overstory (archived) | OpenHarness 用更轻的文本 mailbox，已成事实标准 |
 | oh-my-openagent default_mode | oh-my-openagent | **不存在**，之前报告描述错误 |
 
 ---

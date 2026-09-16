@@ -814,7 +814,7 @@ async function cl09() {
 async function cl11() {
   return withWorkspace('context-lifecycle-cl11-', async (workspaceRoot) => {
     const readOnly = evaluateWorkflowPolicy({
-      message: '为什么当前上下文没有��中？',
+      message: '为什么当前上下文没有命中？',
       policyMode: 'strict',
       client: 'codex',
       sessionId: 'session-direct',

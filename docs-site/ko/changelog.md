@@ -218,7 +218,7 @@ export PATH="/Applications/WorkBuddy.app/Contents/Resources/app.asar.unpacked/cl
 - store 파일 잠금으로 Command token 진행을 직렬화: 병렬 호출은 `AIOS_REX_STORE_BUSY`를 받으며, 동일 token의 이중 소비를 방지합니다.
 - Wayfinder Artifact 타입 schema(`wayfinder-artifact.mjs`)를 추가했습니다: Navigation Map, Decision Graph, Decision Ticket, Next Slice 구조를 검증하며, partial/blocked 상태는 Ticket 또는 Next Slice를 선언할 수 없습니다.
 - Planning Artifact 타입 schema(`planning-artifact.mjs`)를 추가했습니다: Frontier의 ready/blocked 상호 배타 및 중복 금지, Parallel Group의 여러 그룹 간 유일성, Convergence Gate, Runtime Artifact Contract를 검증합니다.
-- `normalizeEvidenceRefs()`를 추가했습니다: evidence ref에 프로토콜 프리���스(`artifact:`, `receipt:` 등)가 필수이며 TODO/TBD/placeholder는 거부됩니다. Wayfinder, Planning, Requirements 전체 산출물에 적용됩니다.
+- `normalizeEvidenceRefs()`를 추가했습니다: evidence ref에 프로토콜 프리픽스(`artifact:`, `receipt:` 등)가 필수이며 TODO/TBD/placeholder는 거부됩니다. Wayfinder, Planning, Requirements 전체 산출물에 적용됩니다.
 - Client projection이 중단된 백업을 복원하기 전에 마커 다이제스트를 `projection-history.json`에서 재검증하여, 위조된 junction이 승격되는 것을 방지합니다(`interrupted-backup-untrusted`).
 - Plan evidence mirror(`syncEvidenceToMatchingPlan`)가 실패 시 예외를 던지는 대신 구조화된 `planEvidence.status = 'failed'`를 반환하도록 변경되어, 이미 커밋된 Rex 상태가 계속 표시됩니다.
 - AIOS MCP server에 `wayfinderArtifact` / `planningArtifact` 툴 파라미터를 추가했습니다.

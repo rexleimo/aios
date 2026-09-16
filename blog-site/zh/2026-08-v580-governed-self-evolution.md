@@ -1,6 +1,6 @@
 ---
 title: "v5.8.0：AIOS 安全地自我迭代——Session Memory、证据门禁与可回滚晋级"
-description: "AIOS v5.8.0 修复 memo 触发链，并加入带确定性验收���灰度晋级、审计和回滚的自我迭代管道。"
+description: "AIOS v5.8.0 修复 memo 触发链，并加入带确定性验收的灰度晋级、审计和回滚的自我迭代管道。"
 date: 2026-08-22
 tags: ["AIOS", "发布", "自我迭代", "记忆", "治理", "memo", "dream"]
 ---

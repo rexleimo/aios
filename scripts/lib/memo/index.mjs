@@ -1,4 +1,4 @@
-/* 中文注释��Memo barrel，集中导出 persona/workspace-memory/storage 子路径中跨域消费的能力。 */
+/* 中文注释：Memo barrel，集中导出 persona/workspace-memory/storage 子路径中跨域消费的能力。 */
 export { buildPersonaOverlay } from './persona.mjs';
 
 export {
