@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.16.0] - 2026-09-16
+
 ### Added
 
 - ZCode agents plugin: rex role cards (`agent-sources/roles/*.md`) now install as executable ZCode subagents. ZCode has no project-scope subagent definitions, so AIOS materializes them as a local inline plugin (`~/.aios/zcode-plugin`, `.zcode-plugin/plugin.json` + `agents/*.md`) and registers it through the user-level `plugins.dirs` config — the same plugin-agents channel the official document-skills plugin uses. `aios init --agent zcode` installs/refreshes the plugin idempotently (dry-run plans without writing), and a `doctor:zcode-agents` gate (standard/strict profiles) reports manifest validity, agent drift against the AIOS install's agent-sources, and registration state (`scripts/lib/components/zcode/agents-plugin.mjs`, `scripts/lib/components/zcode/doctor.mjs`, covered by `scripts/tests/zcode-agents-plugin.test.mjs`).

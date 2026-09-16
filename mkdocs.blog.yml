@@ -118,6 +118,7 @@ nav:
   - Docs Home: https://cli.rexai.top/
   - Blog Home: index.md
   - Posts:
+      - v5.16.0 ZCode Joins AIOS with Real Subagents: 2026-09-v516-zcode-client.md
       - v5.15.0 Pi Gains Real MCP Capability: 2026-09-v515-pi-mcp-bridge.md
       - v5.14.0 LoopX Control Plane + No-Orphan Process Trees: 2026-09-v514-loopx-control-plane.md
       - Pi coding agent as a first-class AIOS client: 2026-09-pi-client-aios.md

@@ -22,6 +22,7 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.16.0: ZCode가 AIOS에 합류 — 진짜 서브에이전트 포함](2026-09-v516-zcode-client.md) — 1급 클라이언트, agents plugin 브리지, strict-schema MCP, Pi 능력 사슬 복구
 - [v5.15.0: Pi가 진정한 MCP 능력을 갖추다](2026-09-v515-pi-mcp-bridge.md) — codemap 검색, MCP 브리지, doctor 정리 짝
 - [v5.14.0: LoopX 컨트롤 플레인 + 고아 프로세스 제거](2026-09-v514-loopx-control-plane.md) — 정산 턴, 무인 리듬, 고아 제거
 - [Pi coding agent가 AIOS 퍼스트클래스 클라이언트로 승격](2026-09-pi-client-aios.md) — skills, extension, RPC

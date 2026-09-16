@@ -4,7 +4,9 @@
 
 格式基于 Keep a Changelog，遵循语义化版本规范。
 
-> 当前主线版本：**v5.15.0（2026-09-14）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+> 当前主线版本：**v5.16.0（2026-09-16）**。完整的多语言当前日志请查看 [`docs-site/zh/changelog.md`](../../docs-site/zh/changelog.md)。
+>
+> v5.16.0 重点包含：ZCode（智谱 AI 桌面编程应用）成为第九个一等 AIOS 客户端——注册表定义（skills/native/team/harness、`--mode yolo` 无头参数、AGENTS.md 原生上下文）、项目 skills 投影到其原生扫描的共享 `.agents/skills` 根、MCP 迁移支持嵌套 `mcp.servers` 并归一化到 ZCode strict schema（未知字段会导致整个 server 被静默丢弃）；rex 角色卡通过 `aios-agents` inline plugin 变成可执行的 ZCode 子代理（用户级 `plugins.dirs` 注册，配套 `doctor:zcode-agents` 门禁）；同批完成 Pi 能力链修复（`aios-bridge` MCP 播种、harness `--transport rpc` 驱动、`doctor:pi-bridge`、`aios memo checkpoint`、Pi 共享根迁移 + 旧布局配对清理）。无破坏性变更。
 >
 > v5.15.0 重点包含：Pi 扩展新增只读 `aios_codemap_search` 工具（复用 `search --source code`）；`aios init --agent pi` 新增 Pi MCP 桥接（安装 pinned 适配器扩展 + 向 Pi 全局 `mcp.json` 写入 AIOS 托管 servers，不覆盖用户编辑项，离线降级为告警）；skills doctor 新增 `removeLegacySharedRootInstalls` 清理（仅删除 AIOS 托管残留，用户自有 skill 永不触碰，支持 dryRun）。install/update 自动带到用户侧。无破坏性变更。
 >

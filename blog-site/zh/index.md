@@ -20,6 +20,7 @@ description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Age
 
 ## 最新文章
 
+- [v5.16.0：ZCode 加入 AIOS——并且拥有真正的子代理](2026-09-v516-zcode-client.md) — 一等客户端、agents 插件桥、strict-schema MCP、Pi 能力链修复
 - [v5.15.0：Pi 获得真正的 MCP 能力](2026-09-v515-pi-mcp-bridge.md) — codemap 检索、MCP 桥接进 Pi、doctor 配对清理
 - [v5.14.0：LoopX 控制面 + 孤儿进程终结](2026-09-v514-loopx-control-plane.md) — 结算契约、无人值守节奏、无孤儿进程树
 - [Pi coding agent 成为 AIOS 一等公民客户端](2026-09-pi-client-aios.md) — skills、extension 与 RPC 驱动
