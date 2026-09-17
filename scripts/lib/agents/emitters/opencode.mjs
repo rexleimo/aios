@@ -5,8 +5,11 @@ import {
 
 // 中文注释：opencode 子 agent 落点 `.opencode/agents/<name>.md`（opencode 单复数目录都接受；
 // 这里用复数 agents 与 codex/claude 的 `.{client}/agents` 约定及 doctor 期望保持一致）。
-// opencode frontmatter 允许字段 name/description/mode/model/...；未知字段静默并入 options。
-// 这里只发 name/description/mode(subagent),避免 model(需 provider/ 前缀) 与 tools(需对象) 的非法形状。
+// opencode frontmatter 允许字段 name/description/mode/model/hidden/...；未知字段静默并入 options。
+// 这里只发 name/description/mode(subagent)/hidden，避免 model(需 provider/ 前缀) 与 tools(需对象) 的非法形状。
+// hidden: true 让 19 张 Rex 角色卡不出现在 TUI 的 agent 切换器（opencode 只循环
+// mode!=="subagent" && hidden!==true 的 agent），但 task 工具仍可派发它们
+// （opencode 的任务候选清单只过滤 mode!=="primary"，不排除 hidden）。
 // body 必须以受管标记包裹，使 sync 的 isManagedAgentMarkdown 能识别为受管文件。
 
 import { normalizeText } from '../../../../src/shared/normalize.mjs';
@@ -66,6 +69,7 @@ export function renderOpencodeAgent(agent) {
     `name: ${name}`,
     `description: ${escapeYamlString(description)}`,
     'mode: subagent',
+    'hidden: true',
     '---',
     '',
     buildManagedBody(agent),

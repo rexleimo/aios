@@ -239,7 +239,8 @@ test('native sync installs an OpenCode primary agent with adaptive workflow guid
   assert.match(primaryAgent, /canonical bundled Rex Provider/u);
   assert.match(primaryAgent, /If a policy-selected required skill is unavailable, stop/u);
   assert.match(primaryAgent, /at most three code-review-graph calls per work item/u);
-  assert.match(primaryAgent, /below ten changed files/u);
+  assert.match(primaryAgent, /Finish the objective in this session/u);
+  assert.doesNotMatch(primaryAgent, /below ten changed files/u);
   assert.match(primaryAgent, /Close every browser profile/u);
   assert.equal(primaryAgent.startsWith('---\n'), true);
   assert.ok(metadata.managedTargets.includes('.opencode/agent/aios-build.md'));

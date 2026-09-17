@@ -1135,6 +1135,7 @@ test('agents install skips unsupported clients and uninstall removes managed fil
   assert.match(await readFile(path.join(claudeDir, 'rex-planner.md'), 'utf8'), /AIOS-GENERATED/);
   assert.match(await readFile(path.join(codexDir, 'rex-planner.toml'), 'utf8'), /developer_instructions = "/);
   assert.match(await readFile(path.join(opencodeDir, 'rex-planner.md'), 'utf8'), /mode: subagent/);
+  assert.match(await readFile(path.join(opencodeDir, 'rex-planner.md'), 'utf8'), /hidden: true/);
 
   await uninstallOrchestratorAgents({ rootDir, client: 'all', io });
   assert.equal(await readFile(path.join(claudeDir, 'notes.md'), 'utf8'), 'manual\n');

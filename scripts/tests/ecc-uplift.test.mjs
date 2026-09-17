@@ -8,6 +8,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import { parseArgs } from '../lib/cli/parse-args.mjs';
+import { buildOpenCodeConfig, resolveOpenCodeMaxSteps } from '../lib/opencode/config.mjs';
 import { syncNativeEnhancements } from '../lib/native/sync.mjs';
 import { runClientsCommand } from '../lib/lifecycle/clients.mjs';
 import { evaluateSkillComplianceDryRun } from '../lib/skills/compliance.mjs';
@@ -84,7 +85,7 @@ test('native sync writes OpenCode opencode.json with explicit AIOS trigger surfa
   assert.ok(config.instructions.includes('.opencode/agent/aios-build.md'));
   assert.deepEqual(config.skills.paths, ['.opencode/skills']);
   assert.equal(config.agent['aios-build'].mode, 'primary');
-  assert.equal(config.agent['aios-build'].steps, 24);
+  assert.equal(config.agent['aios-build'].steps, 500);
   assert.equal(config.agent['aios-build'].tools['changed-files'], true);
   assert.equal(config.experimental.mcp_timeout, 90_000);
   assert.equal(config.command.verify.agent, 'aios-build');
@@ -93,6 +94,16 @@ test('native sync writes OpenCode opencode.json with explicit AIOS trigger surfa
 
   const metadata = JSON.parse(await readFile(path.join(rootDir, '.opencode', '.aios-native-sync.json'), 'utf8'));
   assert.ok(metadata.managedTargets.includes('opencode.json'));
+});
+
+test('OpenCode agent step budget is generous by default and env-overridable', () => {
+  assert.equal(resolveOpenCodeMaxSteps({}), 500);
+  assert.equal(resolveOpenCodeMaxSteps({ AIOS_OPENCODE_MAX_STEPS: '120' }), 120);
+  assert.equal(resolveOpenCodeMaxSteps({ AIOS_OPENCODE_MAX_STEPS: 'unlimited' }), null);
+  assert.equal(resolveOpenCodeMaxSteps({ AIOS_OPENCODE_MAX_STEPS: '0' }), null);
+  assert.equal(resolveOpenCodeMaxSteps({ AIOS_OPENCODE_MAX_STEPS: 'bogus' }), 500);
+  assert.equal(buildOpenCodeConfig({ maxSteps: 120 }).agent['aios-build'].steps, 120);
+  assert.equal(buildOpenCodeConfig({ maxSteps: null }).agent['aios-build'].steps, undefined);
 });
 
 test('parseArgs accepts clients trigger-smoke and skill/session subcommands', () => {
