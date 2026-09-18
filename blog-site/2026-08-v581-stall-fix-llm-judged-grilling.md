@@ -1,6 +1,6 @@
 ---
 title: "v5.8.1: No More Frozen Agents — aios-shell Stall Fix and LLM-Judged Requirements Clarification"
-description: "AIOS v5.8.1 fixes the aios-shell MCP stall that froze opencode/codex mid-command, and replaces regex-based ambiguity detection with LLM semantic judgment — grilling happens in-execution, one decision at a time."
+description: "AIOS v5.8.1 fixes the aios-shell MCP stall that froze opencode/codex mid-command, and replaces regex ambiguity detection with LLM judgment."
 date: 2026-08-26
 tags: ["AIOS", "release", "mcp", "aios-shell", "requirements", "grilling", "llm", "stability"]
 ---

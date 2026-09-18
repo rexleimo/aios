@@ -1,7 +1,7 @@
 ---
 title: AIOS RL Training System — From Synthetic Bugfixes to Mixed-Environment Learning
 date: 2026-03-27
-description: How we built a multi-environment reinforcement learning system that trains a shared student policy across shell, browser, and orchestrator tasks — with one unified control plane.
+description: "How we built a multi-environment reinforcement learning system that trains one shared student policy across shell, browser, and orchestrator tasks."
 ---
 
 # AIOS RL Training System: From Synthetic Bugfixes to Mixed-Environment Learning

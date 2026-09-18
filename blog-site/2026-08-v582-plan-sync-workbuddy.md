@@ -1,6 +1,6 @@
 ---
 title: "v5.8.2: Plans stop jumping the gun, and AIOS now speaks WorkBuddy"
-description: "AIOS v5.8.2 stops plans from advancing themselves when a subagent reports success without a task id, and adds WorkBuddy as a fully-supported client — native instructions, MCP, 24/24 skills, and harness driving via the bundled codebuddy CLI."
+description: "AIOS v5.8.2 stops plans from advancing on a task-id-less success report, and adds WorkBuddy as a fully supported client with native instructions and MCP."
 date: 2026-08-29
 tags: ["AIOS", "release", "planning", "workbuddy", "harness", "stability"]
 ---

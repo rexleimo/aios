@@ -1,6 +1,6 @@
 ---
 title: "Run Coding Agents Overnight: One Sentence, Resumable, Verified"
-description: "Overnight agent runs crash, drift, or leave unrecoverable state. AIOS makes overnight work resumable from one sentence: checkpoint state, gate milestones with evidence, isolate in git worktrees, and resume from the last accepted checkpoint. One command, done by morning."
+description: "Overnight agent runs crash or leave unrecoverable state. AIOS keeps them resumable: checkpoint state, gate milestones with evidence, resume from the last one."
 date: 2026-08-10
 schema_type: techarticle
 ---

@@ -1,6 +1,6 @@
 ---
 title: "에이전트 보안은 상태 머신 문제입니다: Codex 보안 스레드가 놓친 것"
-description: "Codex 보안 스레드는 이번 주 최대 AI 코딩 뉴스가 되었습니다. 대부분의 조언은 프롬프트 인젝션에 집중했습니다. 하지만 에이전트 안전성은 대부분 상태 머신 문제입니다: 활성화 상태, 동시 토큰 전진, 증거 진위. 그것이 무엇을 의미하고 워크플로 레이어가 무엇을 할 수 있는지 설명합니다."
+description: "Codex 보안 스레드는 이번 주 최대 AI 코딩 뉴스가 되었습니다. 대부분의 조언은 프롬프트 인젝션에 집중했습니다. 하지만 에이전트 안전성은 대부분 상태 머신 문제입니다: 활성화 상태, 동시 토큰 전진, 증거 진위."
 date: 2026-08-02
 tags: ["AI agent security", "Codex", "activation state", "concurrency", "evidence", "prompt injection", "developer productivity"]
 ---

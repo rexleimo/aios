@@ -1,6 +1,6 @@
 ---
 title: "Agent Team: Parallel Work with Evidence"
-description: "Choose independent work packages, start an Agent Team, monitor HUD status, and recover blocked jobs, closing out with verifiable evidence rather than self-reports."
+description: "Choose independent work packages, start an Agent Team, monitor HUD status, and recover blocked jobs, closing out with verifiable evidence."
 ---
 
 # Agent Team

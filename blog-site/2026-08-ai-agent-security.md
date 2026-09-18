@@ -1,6 +1,6 @@
 ---
 title: "Agent Security Is a State Machine Problem: What the Codex Security Thread Missed"
-description: "The Codex Security thread became the biggest AI coding story of the week. Most of the advice focused on prompt injection. But agent safety is mostly a state machine problem: activation state, concurrent token advancement, and evidence authenticity. Here is what that means and what a workflow layer can do about it."
+description: "Agent safety is mostly a state machine problem: activation state, concurrent token advancement, and evidence authenticity. Here is what a workflow layer can do."
 date: 2026-08-02
 tags: ["AI agent security", "Codex", "activation state", "concurrency", "evidence", "prompt injection", "developer productivity"]
 ---

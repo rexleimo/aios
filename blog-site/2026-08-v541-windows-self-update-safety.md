@@ -1,6 +1,6 @@
 ---
 title: "v5.4.1: Why 'aios update' Broke on Windows and How We Fixed Self-Updating"
-description: "v5.4.1 fixes a Windows-only self-update failure: running 'aios update' from inside the install tree locked the directory the installer must delete, silently nesting the new version and breaking re-exec with MODULE_NOT_FOUND. Here is the root cause and the three-layer fix."
+description: "v5.4.1 fixes a Windows self-update failure: 'aios update' inside the install tree locked a directory, nesting the new version and breaking re-exec."
 date: 2026-08-02
 tags: ["AIOS", "self-update", "Windows", "installer", "release", "bug fix"]
 ---

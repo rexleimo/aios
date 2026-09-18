@@ -1,6 +1,6 @@
 ---
 title: "How AIOS Works: One Sentence Triggers Memory, Routing, Teams, and Verification"
-description: "AIOS makes your AI coding agent finish complex tasks from one sentence. See how memory, automatic routing, parallel teams, and verification work together underneath your existing Claude Code, Codex, Gemini, OpenCode, Hermes, or Grok client."
+description: "See how memory, routing, parallel teams, and verification work underneath your existing Claude Code, Codex, Gemini, or OpenCode client."
 ---
 
 # How AIOS Works

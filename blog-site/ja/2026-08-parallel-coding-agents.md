@@ -1,6 +1,6 @@
 ---
 title: "並列コーディングエージェントはタダではない：Git Worktree はファイルを隔離するが、状態は隔離しない"
-description: "「Git worktree はコーディングエージェントの隔離境界ではない」という議論は今週 Hacker News で 30 以上のコメントを集め、並列エージェントのトレンドは伸び続けています。ファイルの隔離はソースファイルを守りますが、アクティベーション状態、トークン、証拠は依然として競合します。状態レベルの隔離と明示的な協調がどのようなものかを解説します。"
+description: "「Git worktree は隔離境界ではない」という議論が Hacker News で話題になりました。ファイルの隔離はソースファイルを守りますが、アクティベーション状態、トークン、証拠は依然として競合します。状態レベルの隔離と明示的な協調を解説します。"
 date: 2026-08-02
 tags: ["parallel coding agents", "git worktree", "concurrency", "agent team", "state isolation", "developer productivity"]
 ---

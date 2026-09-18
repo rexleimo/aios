@@ -1,6 +1,6 @@
 ---
 title: "AIOS — 로컬 우선 Graph Engine"
-description: "코딩 에이전트를 위한 로컬 우선 Graph Engine. Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode 9개 클라이언트 위에서 세션 간 프로젝트 기억, 적응형 라우팅, 멀티 에이전트 협업, 검증을 검증 가능한 그래프로 엮어냅니다."
+description: "코딩 에이전트를 위한 로컬 우선 Graph Engine. Codex, Claude Code, Gemini CLI 등 9개 클라이언트 위에서 세션 간 프로젝트 기억, 적응형 라우팅, 멀티 에이전트 협업, 검증을 검증 가능한 그래프로 엮습니다."
 home: true
 schema_type: faq
 faq:

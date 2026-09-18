@@ -1,6 +1,6 @@
 ---
 title: "Why Your AI Coding Agent Forgets Context Between Sessions (and How to Fix It)"
-description: "Your coding agent forgets everything between sessions. AIOS gives it memory automatically — you say one sentence, it remembers your project decisions, constraints, and progress across sessions. Works with Claude Code, Codex, Gemini, OpenCode, Hermes, Grok. All local."
+description: "Your coding agent forgets everything between sessions. AIOS gives it memory: say one sentence and it remembers decisions, constraints, and progress. All local."
 date: 2026-08-10
 schema_type: techarticle
 ---

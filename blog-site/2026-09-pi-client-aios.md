@@ -1,6 +1,6 @@
 ---
 title: "Pi coding agent is now a first-class AIOS client"
-description: "AIOS registers Pi (earendil-works/pi) with skills, native instructions, harness driving, a code-level extension, and RPC control — prompt-level today, embedded tomorrow."
+description: "AIOS registers Pi (earendil-works/pi) with skills, native instructions, harness driving, a code-level extension, and RPC control for embedded use."
 date: 2026-09-11
 tags: ["AIOS", "pi", "client", "extension", "harness", "skills"]
 ---

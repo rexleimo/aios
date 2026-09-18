@@ -1,6 +1,6 @@
 ---
 title: Vendor Integrations (TypeSafe / Jev)
-description: "Adopt third-party agent skills and MCP servers through one pinned, hash-verified, dry-runnable command. Ships TypeSafe (System One / Jev) support across all nine AIOS clients."
+description: "Adopt third-party agent skills and MCP servers through one pinned, hash-verified, dry-runnable command. TypeSafe support covers all nine AIOS clients."
 ---
 
 # Vendor Integrations (TypeSafe / Jev)

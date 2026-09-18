@@ -1,6 +1,6 @@
 ---
 title: "Grok Build Is Now a First-Class AIOS Client"
-description: "AIOS now registers xAI Grok Build as a first-class AIOS client — skills, agents, native sync, Codex-shaped TOML MCP, team and harness providers, with runtime id grok-build."
+description: "AIOS now registers xAI Grok Build as a first-class client: skills, agents, native sync, Codex-shaped TOML MCP, and team and harness providers."
 date: 2026-07-09
 tags: ["Grok Build", "AIOS", "MCP", "client", "Skills", "xAI"]
 ---

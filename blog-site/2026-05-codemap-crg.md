@@ -1,6 +1,6 @@
 ---
 title: "Codemap: Give Your AI Agent a Map of Your Codebase"
-description: "One command installs a Tree-sitter knowledge graph into all your coding agents — opencode, codex, claude, and gemini. Agents stop blindly grepping and start making decisions backed by actual structure: callers, dependents, test coverage, and blast radius."
+description: "One command installs a Tree-sitter knowledge graph into your coding agents, so they stop blindly grepping and decide with callers, dependents, and blast radius."
 date: 2026-05-21
 tags: ["codemap", "code-review-graph", "CRG", "knowledge-graph", "AIOS"]
 ---

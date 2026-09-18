@@ -1,6 +1,6 @@
 ---
 title: "AIOS Commands: Find What You Need in One Sentence"
-description: "Every AIOS command explained by what you want to do — memory, parallel work, overnight runs, browser automation, privacy, and verification. One sentence, one command, done."
+description: "Every AIOS command explained by what you want to do: memory, parallel work, overnight runs, browser automation, privacy, and verification."
 ---
 
 # Find Commands By What You Want To Do

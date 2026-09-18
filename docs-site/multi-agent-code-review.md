@@ -1,6 +1,6 @@
 ---
 title: "Multi-Agent Code Review: One Sentence, Parallel Agents, Verified Results"
-description: "Parallel coding agents for code review fail when they share state badly, duplicate work, or merge unreviewed results. AIOS makes multi-agent review work from one sentence: split into independent nodes, isolate each in a worktree, and collect verified evidence instead of raw opinions."
+description: "Parallel code review fails when agents share state badly, duplicate work, or merge unreviewed results. AIOS isolates each node and collects verified evidence."
 date: 2026-08-10
 schema_type: techarticle
 ---

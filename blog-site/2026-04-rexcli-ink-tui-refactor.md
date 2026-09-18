@@ -1,6 +1,6 @@
 ---
 title: "AIOS TUI Refactor: Modern Terminal UI with React Ink"
-description: "AIOS migrated its TUI installer from manual string rendering to a React Ink + Ink UI component architecture, improving both the interactive experience and code maintainability."
+description: "AIOS migrated its TUI installer from manual string rendering to a React Ink component architecture, improving the interactive experience and maintainability."
 date: 2026-04-02
 tags: [AIOS, TUI, Ink, React, Terminal, Onboarding]
 ---

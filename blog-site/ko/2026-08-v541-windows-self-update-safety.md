@@ -1,6 +1,6 @@
 ---
 title: "v5.4.1: Windows에서 'aios update'가 깨진 이유와 자체 업데이트 수정"
-description: "v5.4.1은 Windows 전용 자체 업데이트 실패를 수정했습니다. 설치 트리 내부에서 'aios update'를 실행하면 설치 프로그램이 삭제해야 할 디렉터리가 잠겨 새 버전이 조용히 중첩되고 이후 업데이트가 MODULE_NOT_FOUND로 충돌했습니다. 근본 원인과 3중 수정을 설명합니다."
+description: "v5.4.1은 Windows 전용 자체 업데이트 실패를 수정했습니다. 설치 트리 안에서 aios update를 실행하면 디렉터리가 잠겨 새 버전이 중첩되고 MODULE_NOT_FOUND로 충돌했습니다. 근본 원인과 3중 수정을 설명합니다."
 date: 2026-08-02
 tags: ["AIOS", "자체 업데이트", "Windows", "설치 프로그램", "릴리스", "버그 수정"]
 ---

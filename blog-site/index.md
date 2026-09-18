@@ -1,6 +1,6 @@
 ---
 title: Blog Hub
-description: Stories, tutorials, and deep dives about AIOS — the local agent workflow layer that adds memory, collaboration, and verification to codex, claude, gemini, opencode, hermes, Grok Build, and Pi.
+description: "Stories, tutorials, and deep dives about AIOS — the local agent workflow layer that adds memory, collaboration, and verification to your coding CLIs."
 ---
 
 # Blog

@@ -1,6 +1,6 @@
 ---
 title: "AIOS — ローカル優先 Graph Engine"
-description: "コーディングエージェントのためのローカル優先 Graph Engine。Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode の 9 クライアントの上に、セッションをまたぐプロジェクト記憶・適応型ルーティング・マルチエージェント協調・検証をひとつの検証可能なグラフとして編成します。"
+description: "コーディングエージェントのためのローカル優先 Graph Engine。Codex、Claude Code、Gemini CLI など 9 つのクライアントの上に、記憶・適応型ルーティング・マルチエージェント協調・検証をひとつの検証可能なグラフとして編成します。"
 home: true
 schema_type: faq
 faq:

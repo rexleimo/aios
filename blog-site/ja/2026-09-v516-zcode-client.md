@@ -1,6 +1,6 @@
 ---
 title: "v5.16.0：ZCode が AIOS に合流——本物のサブエージェント付き"
-description: "AIOS v5.16.0 は ZCode を第一級クライアント化：共有ルートの skills、AGENTS.md ネイティブ・コンテキスト、team ルーティング、strict-schema の MCP ブリッジ、そして inline plugin 経由で rex ロールカードを実行可能な ZCode サブエージェントとしてインストールする。Pi の能力チェーン修復も同梱。"
+description: "AIOS v5.16.0 は ZCode を第一級クライアント化：共有ルート skills、AGENTS.md ネイティブ・コンテキスト、team ルーティング、strict-schema MCP ブリッジ、rex ロールカードのサブエージェント化。"
 date: 2026-09-16
 tags: ["AIOS", "ZCode", "クライアント", "agents", "MCP", "release", "v5.16.0"]
 ---

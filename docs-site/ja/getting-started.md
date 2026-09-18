@@ -1,6 +1,6 @@
 ---
 title: クイックスタート：AIOS をインストールして確認する
-description: "AIOS をゼロからインストールして確認する手順です。現在のコマンドでインストールし、aios init でプロジェクト guidance を初期化し、ContextDB、client sync、ローカルの安全チェックがすべて通るか順に検証します。全体でおよそ 30 秒、つまずいたときは次に見るべき場所を本文が示します。"
+description: "AIOS をゼロからインストールして確認する手順です。現在のコマンドでインストールし、aios init でプロジェクト guidance を初期化し、ContextDB、client sync、ローカルの安全チェックがすべて通るか順に検証します。"
 ---
 
 # クイックスタート

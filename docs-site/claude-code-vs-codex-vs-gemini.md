@@ -1,6 +1,6 @@
 ---
 title: "Claude Code vs Codex vs Gemini CLI: Which Coding Agent CLI Should You Choose?"
-description: "Compare Claude Code, Codex CLI, Gemini CLI, OpenCode, and Hermes for daily coding work: strengths, weaknesses, memory, multi-agent support, and when to add a workflow layer like AIOS underneath them."
+description: "Compare Claude Code, Codex CLI, Gemini CLI, OpenCode, and Hermes for coding work: strengths, memory, multi-agent support, and when to add a workflow layer."
 date: 2026-08-10
 schema_type: techarticle
 ---

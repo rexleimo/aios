@@ -1,6 +1,6 @@
 ---
 title: "v5.4.3: CRG Decision Checkpoints, Worker Journal Rename, and Idempotent aios init"
-description: "v5.4.3 wires code-review-graph decision checkpoints into the workflow layer so agents inspect impact before editing, renames the solo harness journal directory to worker-journal with automatic migration, and makes aios init idempotent with --yes/--retry/--force."
+description: "v5.4.3 wires code-review-graph decision checkpoints into the workflow so agents inspect impact before editing, and makes aios init idempotent."
 date: 2026-08-06
 tags: ["AIOS", "CRG", "code-review-graph", "workflow", "aios init", "release"]
 ---

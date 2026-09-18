@@ -1,6 +1,6 @@
 ---
 title: "v5.16.0: ZCode가 AIOS에 합류 — 진짜 서브에이전트 포함"
-description: "AIOS v5.16.0은 ZCode를 1급 클라이언트로 추가한다: 공유 루트 skills, AGENTS.md 네이티브 컨텍스트, team 라우팅, strict-schema MCP 브리지, 그리고 inline plugin으로 rex 역할 카드를 실행 가능한 ZCode 서브에이전트로 설치한다. Pi 능력 사슬 복구도 함께 담겼다."
+description: "AIOS v5.16.0은 ZCode를 1급 클라이언트로 추가한다: 공유 루트 skills, AGENTS.md 네이티브 컨텍스트, team 라우팅, strict-schema MCP 브리지, rex 역할 카드의 서브에이전트 설치."
 date: 2026-09-16
 tags: ["AIOS", "ZCode", "클라이언트", "agents", "MCP", "release", "v5.16.0"]
 ---

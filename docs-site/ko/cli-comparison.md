@@ -1,6 +1,6 @@
 ---
 title: CLI 비교
-description: "순수 Codex / Claude / Gemini CLI 워크플로와 AIOS 오케스트레이션 계층의 실제 차이를 비교합니다. 순수 CLI는 기억, 라우팅, 검증을 직접 관리해야 하지만 AIOS는 하고 싶은 일을 한 문장으로 말하면 기억, 분담, 증거, 검증까지 처리해 확인 가능한 결과로 돌려줍니다."
+description: "순수 Codex / Claude / Gemini CLI 워크플로와 AIOS 계층의 실제 차이를 비교합니다. 순수 CLI는 기억, 라우팅, 검증을 직접 관리해야 하지만 AIOS는 한 문장으로 기억, 분담, 증거, 검증까지 처리합니다."
 ---
 
 # 원시 CLI vs AIOS 레이어

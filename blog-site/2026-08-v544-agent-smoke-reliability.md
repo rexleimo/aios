@@ -1,6 +1,6 @@
 ---
 title: "v5.4.4: Reliable Agent Smoke — Output-Contract Clients and Escalating Probe Timeouts"
-description: "v5.4.4 fixes agents getting permanently stuck in 'command invalid / workflow stuck' states: live smoke now works with output-contract clients like Codex, the hardcoded 30s probe timeout is configurable (default 60s), and probes auto-retry at 2x/4x before an agent is ever blocked."
+description: "v5.4.4 fixes agents stuck in 'workflow stuck' states: live smoke works with Codex, probe timeouts are configurable, and probes retry before blocking."
 date: 2026-08-06
 tags: ["AIOS", "agents", "smoke", "timeout", "reliability", "release"]
 ---

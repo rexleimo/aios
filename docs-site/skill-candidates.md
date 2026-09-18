@@ -1,6 +1,6 @@
 ---
 title: Skill Candidates Guide
-description: "Skill Candidates explain how AIOS turns failed sessions into reviewable skill patches: how a candidate is detected, how to review one, and how to apply it safely."
+description: "Skill Candidates explain how AIOS turns failed sessions into reviewable skill patches: how one is detected, reviewed, and applied safely."
 ---
 
 # Skill Candidates Guide

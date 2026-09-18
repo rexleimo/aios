@@ -1,6 +1,6 @@
 ---
 title: "Windows AI Coding Agent Setup: Install and Verify in 10 Minutes"
-description: "Set up an AI coding agent on Windows with PowerShell: install AIOS, fix PATH issues, initialize a project, verify client sync, and recover common failures — a complete low-friction guide."
+description: "Set up an AI coding agent on Windows with PowerShell: install AIOS, fix PATH issues, initialize a project, verify client sync, and recover common failures."
 date: 2026-08-10
 schema_type: techarticle
 ---

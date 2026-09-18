@@ -1,6 +1,6 @@
 ---
 title: "Hermes Agent が AIOS のファーストクラスクライアントに昇格"
-description: "AIOS が Hermes Agent (Nous Research) をファーストクラス AIOS クライアントとして登録。MCP ブリッジサーバーが 5 つのコアツール（context-pack、doctor、token compression、skill validation、skill installation）を Hermes セッション内で直接利用可能に。"
+description: "AIOS が Hermes Agent (Nous Research) を第一級クライアントとして登録。MCP ブリッジが context-pack、doctor、token compression など 5 つのコアツールを Hermes セッション内で直接利用可能にします。"
 date: 2026-06-30
 tags: ["Hermes Agent", "AIOS", "MCP", "クライアント", "Skills", "Token Compression"]
 ---

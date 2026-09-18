@@ -1,6 +1,6 @@
 ---
 title: "v5.15.0: Pi Gains Real MCP Capability"
-description: "AIOS v5.15.0 adds the read-only aios_codemap_search tool to the Pi extension, bridges AIOS-managed MCP servers into Pi on install, and pairs the skills-doctor legacy warning with a safe cleanup path."
+description: "AIOS v5.15.0 adds the read-only aios_codemap_search tool to the Pi extension, bridges AIOS-managed MCP servers into Pi, and adds a safe cleanup path."
 date: 2026-09-14
 tags: ["AIOS", "Pi", "MCP", "codemap", "release", "v5.15.0"]
 ---

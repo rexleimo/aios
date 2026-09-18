@@ -1,6 +1,6 @@
 ---
 title: "Hermes Agent Is Now a First-Class AIOS Client"
-description: "AIOS now registers Hermes Agent (Nous Research) as a first-class AIOS client, with an MCP bridge server exposing 5 core tools — context-pack, doctor, token compression, skill validation, and skill installation — directly inside Hermes sessions."
+description: "AIOS now registers Hermes Agent (Nous Research) as a first-class client, with an MCP bridge exposing five core tools directly inside Hermes sessions."
 date: 2026-06-30
 tags: ["Hermes Agent", "AIOS", "MCP", "client", "Skills", "Token Compression"]
 ---

@@ -1,6 +1,6 @@
 ---
 title: Token Intelligence and Compression
-description: "Keep context small without losing what matters: RTK shell filtering, Caveman response style, Headroom MCP tools, pull-based ContextDB recall and a decision gate."
+description: "Keep context small without losing what matters: RTK shell filtering, Caveman response style, Headroom MCP tools, pull-based ContextDB recall, decision gates."
 schema_type: techarticle
 date: 2026-05-12
 ---

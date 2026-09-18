@@ -1,6 +1,6 @@
 ---
 title: AIOS — Local-First Graph Engine
-description: "A local-first Graph Engine for coding agents — composes project memory, adaptive routing, multi-agent teams, and verification into a verifiable graph on top of nine coding clients: Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, and ZCode."
+description: "A local-first Graph Engine for coding agents: project memory, adaptive routing, multi-agent teams, and verification on top of nine coding clients."
 home: true
 schema_type: faq
 faq:

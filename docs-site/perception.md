@@ -1,6 +1,6 @@
 ---
 title: Perception
-description: "Perception records structured content outcomes, groups them by dimension, and injects a bounded summary so later agent decisions learn from what actually worked."
+description: "Perception records structured content outcomes, groups them by dimension, and injects a bounded summary so later agent decisions learn from what worked."
 ---
 
 # Perception Layer

@@ -1,6 +1,6 @@
 ---
 title: "v5.16.0: ZCode Joins AIOS — with Real Subagents"
-description: "AIOS v5.16.0 adds ZCode as a first-class client: shared-root skills, AGENTS.md native context, team routing, a strict-schema MCP bridge, and rex role cards installed as executable ZCode subagents through an inline plugin. Pi's capability chain is repaired alongside."
+description: "AIOS v5.16.0 adds ZCode as a first-class client: shared-root skills, native AGENTS.md context, team routing, and a strict-schema MCP bridge for subagents."
 date: 2026-09-16
 tags: ["AIOS", "ZCode", "client", "agents", "MCP", "release", "v5.16.0"]
 ---

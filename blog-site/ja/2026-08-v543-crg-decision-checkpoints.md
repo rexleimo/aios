@@ -1,6 +1,6 @@
 ---
 title: "v5.4.3：CRG 決定チェックポイント、Worker Journal リネーム、冪等な aios init"
-description: "v5.4.3 はワークフロー層に code-review-graph の決定チェックポイントを組み込み（編集前に影響範囲を確認、テストの存在を確認、各段階後に実変更を検証）、solo harness ジャーナルディレクトリを worker-journal にリネーム（旧ディレクトリは自動移行）、aios init に --yes/--retry/--force を追加して冪等化しました。"
+description: "v5.4.3 はワークフロー層に code-review-graph の決定チェックポイントを組み込み、solo harness ジャーナルを worker-journal にリネームし、aios init に --yes/--retry/--force を追加して冪等化しました。"
 date: 2026-08-06
 tags: ["AIOS", "CRG", "code-review-graph", "ワークフロー", "aios init", "リリース"]
 ---

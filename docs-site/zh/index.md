@@ -1,6 +1,6 @@
 ---
 title: AIOS — 本地优先 Graph Engine
-description: "面向 Codex / Claude Code / Gemini CLI / OpenCode / Hermes / Grok / WorkBuddy / Pi / ZCode 九个客户端的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端。"
+description: "面向 Codex / Claude Code / Gemini CLI 等九个客户端的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端，装上即用。"
 home: true
 schema_type: faq
 faq:

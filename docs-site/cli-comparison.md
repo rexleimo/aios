@@ -1,6 +1,6 @@
 ---
 title: "Raw CLI vs AIOS: One Sentence vs Manual Work"
-description: "Compare raw coding agents (Claude Code, Codex, Gemini) with AIOS. Raw CLI requires manual memory, routing, and verification. AIOS finishes complex tasks from one sentence — you say what you want, it handles the rest."
+description: "Compare raw coding agents with AIOS: the raw CLI needs manual memory, routing, and verification; AIOS handles all three from one sentence."
 schema_type: faq
 faq:
   - q: "Does AIOS replace my coding agent?"

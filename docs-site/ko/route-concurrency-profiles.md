@@ -1,6 +1,6 @@
 ---
 title: 라우팅/병렬 프로필
-description: "라우팅과 병렬 설정을 한 페이지에서 정리합니다. 최소한의 환경 변수로 interactive routing, subagent, team, harness 병렬 수준을 전환할 수 있는 복사용 설정 예시와 각 항목의 기본값, 어울리는 작업 규모를 담았습니다. 장비 부하에 따라 바로 바꿀 수 있습니다."
+description: "라우팅과 병렬 설정을 한 페이지에서 정리합니다. 최소한의 환경 변수로 interactive routing, subagent, team, harness 병렬 수준을 전환할 수 있는 복사용 설정 예시와 각 항목의 기본값, 어울리는 작업 규모를 담았습니다."
 ---
 
 # 라우팅/병렬 프로필

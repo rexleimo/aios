@@ -1,6 +1,6 @@
 ---
 title: "Reduce AI Coding Agent Token Costs: One Sentence, Less Waste"
-description: "Coding agent token bills grow from wasted context, repeated history, and oversized tool output. AIOS cuts costs by remembering your project locally, routing tasks efficiently, and compressing output — all from one sentence instead of manual configuration."
+description: "Token bills grow from wasted context, repeated history, and oversized tool output. AIOS cuts costs by remembering your project locally and compressing output."
 date: 2026-08-10
 schema_type: techarticle
 ---

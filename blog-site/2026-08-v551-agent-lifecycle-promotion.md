@@ -1,6 +1,6 @@
 ---
 title: "v5.5.1: Evidence-Driven Agent Lifecycle Promotion"
-description: "v5.5.1 removes the hardcoded Agent promotion bottleneck: every canonical role is smoke-tested by default and verified managed evidence promotes it into live workflow orchestration."
+description: "v5.5.1 removes the hardcoded Agent promotion bottleneck: every canonical role is smoke-tested by default, and verified evidence promotes it to live use."
 date: 2026-08-08
 tags: ["AIOS", "agents", "smoke", "workflow", "release"]
 ---
