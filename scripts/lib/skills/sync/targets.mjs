@@ -35,6 +35,31 @@ export function formatTargetPath(targetRootDir, targetPath) {
   return (path.relative(targetRootDir, targetPath) || '.').replace(/\\\\/g, '/');
 }
 
+/**
+ * 共享 generatedRoot 的归属解析：多个 surface 指向同一生成目录时（如 pi/zcode/agents
+ * 共享 .agents/skills），只有 manifest 顺序最前的 owner surface 可写入/校验，
+ * 其余 surface 跳过。否则按 client 逐个调用时后写者会覆盖前者内容，
+ * 导致 check 永远报 drift。
+ */
+export function resolveOwnedSurfaces(manifest, selectedSurfaces) {
+  const ownerByRoot = new Map();
+  for (const [surface, root] of Object.entries(manifest.generatedRoots || {})) {
+    if (root && !ownerByRoot.has(root)) {
+      ownerByRoot.set(root, surface);
+    }
+  }
+  const seenRoots = new Set();
+  const owned = [];
+  for (const surface of selectedSurfaces) {
+    const root = (manifest.generatedRoots || {})[surface];
+    if (!root || seenRoots.has(root)) continue;
+    seenRoots.add(root);
+    if (ownerByRoot.get(root) !== surface) continue;
+    owned.push(surface);
+  }
+  return owned;
+}
+
 /** 扫描目录中的 stale AIOS-managed TOML 文件并删除，返回删除数量 */
 export function collectStaleTomlTargets(rootAbs, expected) {
   let removed = 0;

@@ -29,6 +29,7 @@ import {
   collectManagedGeneratedTargets,
   collectTomlManagedPaths,
   formatTargetPath,
+  resolveOwnedSurfaces,
 } from './targets.mjs';
 
 function materializeWithMetadata({ rootDir, entry, surface }) {
@@ -57,14 +58,7 @@ export async function checkGeneratedSkillsSync({
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
-  const seenRoots = new Set();
-  const dedupedSurfaces = [];
-  for (const surface of selectedSurfaces) {
-    const root = resolvedManifest.generatedRoots[surface];
-    if (!root || seenRoots.has(root)) continue;
-    seenRoots.add(root);
-    dedupedSurfaces.push(surface);
-  }
+  const dedupedSurfaces = resolveOwnedSurfaces(resolvedManifest, selectedSurfaces);
   const expectedBySurface = new Map(dedupedSurfaces.map((surface) => [surface, new Map()]));
   const issues = [];
 
