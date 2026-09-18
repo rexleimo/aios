@@ -22,6 +22,7 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.19.1: 실제로 닿을 수 있는 선언 채널](2026-09-v5191-declaration-you-can-reach.md) — shell에서 선언할 수 있게 되었고, 그를 위해 쓴 가드가 82개 미실행 테스트 파일을 찾아냄
 - [v5.19.0: 판단 게이트에 몸을 붙이다](2026-09-v519-judgment-gate-surfaces.md) — 꺼져 있으면 아예 없는 aios_judge 도구와 보류만 할 수 있는 rex 단계 게이트
 - [v5.18.0: AIOS에 TypeSafe Jev 도입 — 기본값은 꺼짐, 의도된 선택](2026-09-v518-judgment-gate.md) — 자격 증명 설정, 문서 MCP가 판단하지 못하는 이유, fail closed opt-in 게이트
 - [v5.16.0: ZCode가 AIOS에 합류 — 진짜 서브에이전트 포함](2026-09-v516-zcode-client.md) — 1급 클라이언트, agents plugin 브리지, strict-schema MCP, Pi 능력 사슬 복구

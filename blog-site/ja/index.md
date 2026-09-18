@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.19.1：本当に手の届く宣言チャネル](2026-09-v5191-declaration-you-can-reach.md) — shell から宣言できるようになり、そのために書いたガードが 82 個の未実行テストファイルを発見
 - [v5.19.0：判断ゲートに身体を与える](2026-09-v519-judgment-gate-surfaces.md) — 無効時には存在しない aios_judge ツールと、保留しかできない rex ステージゲート
 - [v5.18.0：AIOS に TypeSafe Jev を——デフォルトはオフ、それは意図的](2026-09-v518-judgment-gate.md) — 認証情報の設定、ドキュメント MCP が判断できない理由、fail closed な opt-in ゲート
 - [v5.16.0：ZCode が AIOS に合流——本物のサブエージェント付き](2026-09-v516-zcode-client.md) — 第一級クライアント、agents plugin ブリッジ、strict-schema MCP、Pi 能力チェーン修復

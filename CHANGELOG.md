@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.19.1] - 2026-09-18
+
+- fix(cli): declare the workflow disposition with --explicit-intent; test: gate test-file wiring integrity
+
 ## [5.19.0] - 2026-09-18
 
 - feat(judgment): expose the opt-in gate as the aios_judge MCP tool and a rex stage gate
