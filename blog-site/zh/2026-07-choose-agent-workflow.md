@@ -1,6 +1,6 @@
 ---
 title: "AI Agent 工作流怎么选？AIOS 路由决策指南"
-description: "用一张决策表选择 noop、direct、guarded、planned 工作流，并配套示例、执行面和验证清单。"
+description: "用一张决策表选择 noop、direct、guarded、planned 工作流，并配套示例、执行面与验证清单。文章说明每一档的适用场景、什么条件该升级到更重的流程，以及如何避免把简单任务过度流程化。可以直接作为团队内部的工作流规范落地使用。"
 date: 2026-07-14
 tags: ["AI Agent 工作流", "AIOS", "Codex", "Claude Code", "开发工具"]
 ---

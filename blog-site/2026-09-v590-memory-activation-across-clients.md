@@ -1,7 +1,7 @@
 ---
 title: v5.9.0 — 记忆系统跨客户端激活：从正则触发到提示词驱动
 date: 2026-09-02
-description: "会话启动自动注册 ContextDB、aios-memory MCP 三工具（召回/写入/检查点）、OpenCode 插件、五端记忆触发契约投影、Codex hooks 信任持久化修复、Gemini 恢复全量支持"
+description: "v5.9.0 让记忆系统跨客户端激活：会话启动自动注册 ContextDB、aios-memory MCP 三工具（召回、写入、检查点）、OpenCode 插件、五端记忆触发契约投影、Codex hooks 信任持久化修复，以及 Gemini 恢复全量支持。"
 ---
 
 # v5.9.0 — 记忆系统跨客户端激活：从正则触发到提示词驱动

@@ -1,6 +1,6 @@
 ---
 title: "ContextDB 检索升级：FTS5/BM25 + 增量索引同步"
-description: "ContextDB 如何结合 SQLite FTS5、BM25、refs 精确过滤和可观测增量同步，提升 AI Agent 记忆检索可靠性。"
+description: "ContextDB 如何结合 SQLite FTS5、BM25、refs 精确过滤与可观测增量同步，提升 AI Agent 记忆检索的可靠性。文章解释排序原理、索引更新时机、常见漏召回原因，并给出检索性能的实测数据。适合正在自建记忆检索的团队参考。"
 date: 2026-06-18
 tags: ["ContextDB", "FTS5", "BM25", "Agent 记忆", "检索"]
 ---

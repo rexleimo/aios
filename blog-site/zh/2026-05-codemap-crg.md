@@ -1,6 +1,6 @@
 ---
 title: "Codemap：给你的 AI Agent 一张代码地图"
-description: "一行命令将 Tree-sitter 知识图谱注入所有编程 agent — opencode、codex、claude、gemini。Agent 不再盲目 grep，而是基于真实代码结构做决策：调用者、依赖、测试覆盖和影响半径。"
+description: "一行命令将 Tree-sitter 知识图谱注入所有编程 agent：opencode、codex、claude、gemini。Agent 不再盲目 grep，而是基于真实代码结构做决策，调用者、依赖、测试覆盖与影响半径都可见，安装后各客户端共享同一份地图。"
 date: 2026-05-21
 tags: ["codemap", "code-review-graph", "CRG", "知识图谱", "AIOS"]
 ---

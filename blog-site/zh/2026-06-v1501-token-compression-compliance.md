@@ -1,6 +1,6 @@
 ---
 title: "v1.50.1：全客户端 Token 压缩合规"
-description: "AIOS v1.50.1 用 pre_send、post_receive、proof 矩阵和 direct host bypass 违规记录，让所有 AIOS 客户端的省 token 指标可度量。"
+description: "AIOS v1.50.1 用 pre_send、post_receive、proof 矩阵与 direct host bypass 违规记录，让所有 AIOS 客户端的省 token 指标可度量。文章解释各指标含义、如何读取报表，以及常见的伪合规情形与识别方法。"
 date: 2026-06-05
 tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 ---

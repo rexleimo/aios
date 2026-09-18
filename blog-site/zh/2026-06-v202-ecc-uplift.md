@@ -1,6 +1,6 @@
 ---
 title: "v2.0.2：更安全的技能健康记录与更干净的 Crush 配置"
-description: "AIOS v2.0.2 强化技能健康遥测，修复新增 CLI 入口的 help 路由，并从仓库中移除 tracked Crush 配置文件。"
+description: "AIOS v2.0.2 强化技能健康遥测、修复新增 CLI 入口的 help 路由，并从仓库中移除被跟踪的 Crush 配置文件。文章说明遥测字段的含义、这次清理对升级的影响，并附发布后的验证步骤。升级过程不需要改配置，本文给出三步验证清单。"
 date: 2026-06-15
 tags: ["release", "CLI", "skills", "Crush", "configuration"]
 ---

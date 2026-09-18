@@ -1,6 +1,6 @@
 ---
 title: "v5.5.1：基于证据的 Agent 生命周期晋级"
-description: "v5.5.1 移除了 Agent 晋级的硬编码瓶颈：默认覆盖全部 canonical roles，完整 managed evidence 通过后即可进入 live workflow。"
+description: "v5.5.1 移除了 Agent 晋级的硬编码瓶颈：默认覆盖全部 canonical roles，完整 managed evidence 通过后即可进入 live workflow。文章说明晋级条件、证据要求与回滚方式，适合正在扩展 Agent 团队的用户。"
 date: 2026-08-08
 tags: ["AIOS", "agents", "smoke", "workflow", "release"]
 ---

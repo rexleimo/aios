@@ -1,6 +1,6 @@
 ---
 title: "Token Intelligence 分层架构：ContextDB、RTK、Caveman 与 Headroom MCP"
-description: "理解 AIOS 当前的 token intelligence：pull-based ContextDB、本地 RTK/Caveman 压缩，以及显式 Headroom MCP 检索。"
+description: "理解 AIOS 当前的 token intelligence：pull-based ContextDB、本地 RTK 与 Caveman 压缩，以及显式 Headroom MCP 检索。文章划清各层边界，说明哪一层负责省钱、哪一层必须保质量，并给出实测压缩比区间。"
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---

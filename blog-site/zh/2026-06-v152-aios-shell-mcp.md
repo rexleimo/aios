@@ -1,6 +1,6 @@
 ---
 title: "v1.52.0：通过 MCP 实现确定性的 Shell 输出压缩"
-description: "AIOS v1.52.0 引入 aios_shell — 一个 MCP 工具，为所有 AIOS 客户端提供 99% 压缩率的确定性 shell 输出压缩，同时带来了 shim 自愈和敏感命令守卫功能。"
+description: "AIOS v1.52.0 引入 aios_shell：一个 MCP 工具，为所有 AIOS 客户端提供确定性 shell 输出压缩，同时带来 shim 自愈与敏感命令守卫。文章给出压缩效果、兼容性范围、安全策略与升级注意事项。文中也说明哪些输出不会被压缩。"
 date: 2026-06-11
 tags: ["release", "token-compression", "shell", "MCP", "multi-client", "shim"]
 ---

@@ -1,7 +1,7 @@
 ---
 title: v5.10.0 — 发布可信与仓库减负
 date: 2026-09-06
-description: "Windows 回归全绿、发布证据门时序修复、Actions SHA 钉死 + gitleaks + npm audit 门、仓库减负 461 文件、提示词撰写规范落地"
+description: "Windows 回归全绿、发布证据门时序修复、Actions 按 SHA 钉死并加上 gitleaks 与 npm audit 门、仓库减负 461 个文件、提示词撰写规范落地：一个不发新特性、专门修复可信度问题的版本，附升级说明。升级前建议对照检查自己的流水线。"
 ---
 
 # v5.10.0 — 发布可信与仓库减负

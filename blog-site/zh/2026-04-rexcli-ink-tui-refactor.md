@@ -1,6 +1,6 @@
 ---
 title: "RexCli TUI 重构：基于 React Ink 的现代终端交互"
-description: "RexCli 把 TUI 安装程序从手动字符串渲染迁移到 React Ink + Ink UI 组件架构，提升交互体验和代码可维护性。"
+description: "RexCli 把 TUI 安装程序从手动字符串渲染迁移到 React Ink 与 Ink UI 组件架构，交互体验和代码可维护性同时提升。文章说明重构前后的差异、组件划分方式，以及迁移过程中踩到的渲染与终端兼容问题。也适合准备做同类重构的终端工具参考。"
 date: 2026-04-02
 tags: [RexCli, TUI, Ink, React, Terminal, Onboarding]
 ---

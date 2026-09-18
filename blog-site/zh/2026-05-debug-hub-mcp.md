@@ -1,6 +1,6 @@
 ---
 title: "debug-hub：当你的 Agent 能自己调试 Bug，你就能睡个好觉"
-description: "如果你的 coding agent 能自己看错误日志、自己修 bug 而不用叫醒你呢？这就是 debug-hub。"
+description: "如果你的 coding agent 能自己看错误日志、自己定位并修 bug，而不用每次都叫醒你呢？这就是 debug-hub：一个 MCP 原生日志服务，支持按会话、时间与关键字检索并给出修复建议，文中附完整接入步骤。文中也说明它与普通日志文件的差别。"
 date: 2026-05-06
 tags: ["debug-hub", "MCP", "Coding Agent", "可观测性"]
 ---

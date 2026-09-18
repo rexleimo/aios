@@ -1,6 +1,6 @@
 ---
 title: 博客中心
-description: AIOS 工程与增长博客：记忆系统、单 Agent harness、Agent Team、浏览器自动化、工作流策略和多客户端实践。
+description: "AIOS 工程与增长博客中文版：覆盖记忆系统、单 Agent harness、Agent Team 并行协作、浏览器自动化、工作流策略与多客户端落地实践。每篇都给出可复现的命令、证据与踩坑记录，适合按主题挑选阅读，也方便对照英文版核对技术细节。"
 ---
 
 # 博客中心

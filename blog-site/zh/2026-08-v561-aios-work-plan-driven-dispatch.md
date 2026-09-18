@@ -1,6 +1,6 @@
 ---
 title: "v5.6.1：计划驱动的多 Agent 调度 —— aios work 读取你的计划"
-description: "v5.6.1 让 aios work 变成计划驱动：活动结构化计划中的合格任务直接变成并行工作项，带依赖、路径归属和验收标准——不再隐性分解。"
+description: "v5.6.1 让 aios work 变成计划驱动：活动结构化计划中的合格任务直接变成并行工作项，带依赖、路径归属与验收标准，不再隐性分解。文章对比计划驱动与自由分解的差异，并说明依赖冲突的处理方式。让并发调度过程可解释、可回溯，也方便事后审计。"
 date: 2026-08-12
 tags: ["AIOS", "multi-agent", "parallel", "dispatch", "planning", "release", "v5.6.1"]
 ---

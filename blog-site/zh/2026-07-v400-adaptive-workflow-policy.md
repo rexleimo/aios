@@ -1,6 +1,6 @@
 ---
 title: "v4.0 自适应工作流策略：AIOS 如何选择合适的工程流程"
-description: "用实际例子理解 AIOS v4.0 的 noop、direct、guarded、planned 路由、计划持久化和最终验证门禁。"
+description: "用实际例子理解 AIOS v4.0 的 noop、direct、guarded、planned 路由、计划持久化与最终验证门禁。文章说明判定条件、计划状态的落库位置、回滚方式，以及与旧版本行为之间的具体差异。读完能判断自己的任务会被路由到哪一档。"
 date: 2026-07-14
 tags: ["AIOS", "AI Agent 工作流", "工作流策略", "开发效率", "SEO"]
 ---

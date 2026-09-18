@@ -1,6 +1,6 @@
 ---
 title: "v1.40：现已支持 6 个 AI 编程客户端"
-description: "AIOS 从 4 个扩展到 6 个支持的客户端，新增 Antigravity CLI 和 Crush，所有客户端均获得 superpowers 工作流技能。"
+description: "AIOS 从 4 个扩展到 6 个支持的客户端，新增 Antigravity CLI 与 Crush，所有客户端均获得 superpowers 工作流技能。文章列出各客户端的接入方式、能力差异与验证结果，并说明后续的演进方向。方便你判断是否值得切换客户端。"
 date: 2026-05-31
 tags: ["release", "multi-client", "antigravity", "crush", "superpowers", "AIOS"]
 ---

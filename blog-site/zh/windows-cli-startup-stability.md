@@ -1,6 +1,6 @@
 ---
 title: "Windows CLI 启动稳定性：保护跨 CLI 可靠性链路"
-description: "Windows cmd 启动修复如何保护 ContextDB 连续性、包裹策略和原生 Codex、Claude、Gemini 启动路径。"
+description: "Windows cmd 启动修复如何保护 ContextDB 连续性、包裹策略与原生 Codex、Claude、Gemini 启动路径。文章给出根因分析、修复涉及的层次、仍然存在的平台限制，以及可自行执行的验证命令。Windows 用户升级前建议先读这一篇。"
 date: 2026-03-20
 tags: ["Windows", "CLI 可靠性", "ContextDB", "Codex", "Claude"]
 ---

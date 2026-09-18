@@ -1,6 +1,6 @@
 ---
 title: "RexCli 最新更新：Windows 原生支持 + 实时成本追踪"
-description: "RexCli 带来重大更新：完整的 Windows 工作流支持、实时 API 成本追踪、OpenCode Agent 集成，让 AI 开发更高效、更透明"
+description: "RexCli 带来重大更新：完整的 Windows 工作流支持、实时 API 成本追踪与 OpenCode Agent 集成，让 AI 开发更高效也更透明。文章给出成本面板的实际读数、按调用量做预算的方法与 Windows 环境下的配置要点。"
 date: 2026-03-16
 tags: [RexCli, Windows, Cost Tracking, OpenCode, AI Development]
 ---

@@ -1,6 +1,6 @@
 ---
 title: "Orchestrate Live：安全 opt-in 的 Subagent Runtime"
-description: "理解 dry-run 与 live 编排的区别、受限并行 phase、JSON handoff、ownership 门禁和 provider 就绪度。"
+description: "理解 dry-run 与 live 编排的区别、受限并行 phase、JSON handoff、ownership 门禁与 provider 就绪度。文章给出切换时机、失败回退方式与常见配置错误，适合准备在真实项目里开启编排的团队。避免第一次上 live 就踩坑。"
 date: 2026-06-20
 tags: ["编排", "Subagent", "Agent Team", "dry-run", "runtime"]
 ---

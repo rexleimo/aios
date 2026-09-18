@@ -1,6 +1,6 @@
 ---
 title: "Token 压缩：把几个月的 Agent 记忆塞进一个 Prompt"
-description: "ContextDB 现在能在 token 预算内压缩你的 agent 历史记录——保留重要的，丢弃不重要的。"
+description: "ContextDB 现在能在 token 预算内压缩 Agent 历史：保留重要的、丢弃不重要的，并在压缩后仍可召回关键决策。文章给出压缩策略、预算配置方式与召回质量的实测对比，也分析了压缩失败的典型情况。文中说明压缩之后如何验证没有丢关键信息。"
 date: 2026-05-12
 tags: ["ContextDB", "token compression", "AI 记忆", "AIOS"]
 ---

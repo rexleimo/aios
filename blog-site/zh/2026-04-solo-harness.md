@@ -1,6 +1,6 @@
 ---
 title: "Solo Harness：把任务丢给 Agent，去睡觉，早上查结果"
-description: "AIOS 1.7 新增过夜 Agent 运行模式，带日志、启停控制和 git worktree 隔离。"
+description: "AIOS 1.7 新增过夜 Agent 运行模式：带运行日志、启停控制与 git worktree 隔离，中断后可从上次检查点继续。文章给出一个真实夜间任务的执行记录与验收证据，并说明哪些任务不适合无人值守。文中说明怎样判断一次夜间运行是否成功。"
 date: 2026-04-26
 tags: ["AIOS", "Solo Harness", "长时运行 Agent", "ContextDB"]
 ---

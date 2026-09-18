@@ -1,6 +1,6 @@
 ---
 title: "v3.20 Harness 可靠性升级：失败分类、退避上限与 dry-run 就绪度"
-description: "了解 AIOS v3.20 如何区分业务失败与基础设施失败，并用有上限的退避和 dry-run readiness 改善长任务稳定性。"
+description: "了解 AIOS v3.20 如何区分业务失败与基础设施失败，并用有上限的退避与 dry-run readiness 改善长任务稳定性。文章给出失败分类表、重试上限的配置方式，以及一次真实故障的完整复盘过程。对长任务稳定性要求高的团队值得一读。"
 date: 2026-07-12
 tags: ["AIOS", "可靠性", "solo harness", "失败处理", "release"]
 ---

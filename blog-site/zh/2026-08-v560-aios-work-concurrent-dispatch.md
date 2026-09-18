@@ -1,6 +1,6 @@
 ---
 title: "v5.6.0：一条命令并行多 Agent 编码 — aios work"
-description: "v5.6.0 新增 aios work：一条命令把任意任务变成规划好的并发多 Agent 调度——规划、实现、审查、安全检查并行执行并经过 merge gate 收口，不再单 Agent 串行等待。"
+description: "v5.6.0 新增 aios work：一条命令把任意任务变成规划好的并发多 Agent 调度，规划、实现、审查与安全检查并行执行，并在 merge gate 收口。文章给出使用方式、并发上限与失败后的恢复策略。适合任务量大又必须守住质量门禁的团队。"
 date: 2026-08-11
 tags: ["AIOS", "multi-agent", "parallel", "orchestration", "release", "v5.6.0"]
 ---

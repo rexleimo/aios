@@ -1,6 +1,6 @@
 ---
 title: "Pi coding agent 成为 AIOS 一等公民客户端"
-description: "AIOS 接入 Pi（earendil-works/pi）：skills、原生指令、harness 驱动、代码层 extension 与 RPC 控制——提示词层已通，嵌入层已至。"
+description: "AIOS 接入 Pi（earendil-works/pi）：skills、原生指令、harness 驱动、代码层 extension 与 RPC 控制。提示词层已通，嵌入层已至。文章说明当前已支持的能力、配置方式、最小可用示例与仍待补齐的部分。"
 date: 2026-09-11
 tags: ["AIOS", "pi", "客户端", "extension", "harness", "skills"]
 ---

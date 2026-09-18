@@ -1,7 +1,7 @@
 ---
 title: 2026年了，别再纠结用哪个 AI 编程工具了
 publish_date: 2026-03-10
-description: Claude Code vs Codex vs Gemini 深度对比，以及一个意想不到的第三选择。
+description: "Claude Code 与 Codex、Gemini 的深度对比，以及一个意想不到的第三选择：不替换你现有的 CLI，而是补上一层工作流。文章给出同一批长任务上的实测结果、选型建议与可直接使用的决策表。读完能明确自己该继续用哪个 CLI、又该补上什么。"
 ---
 
 # 2026年了，别再纠结用哪个 AI 编程工具了

@@ -1,7 +1,7 @@
 ---
 title: v5.10.0 — 发布可信与仓库减负：回归全绿、门禁加固、供应链钉死
 date: 2026-09-06
-description: "Windows 回归套件首次全绿、v5.9.0 白跑事故的制度化修复、全部 GitHub Actions SHA 钉死 + gitleaks + npm audit 门、461 个可再生成文件出库、提示词撰写规范落地"
+description: "v5.10.0 不发布新特性，专修可信：Windows 回归套件首次全绿、v5.9.0 白跑事故的制度化修复、全部 GitHub Actions 按 SHA 钉死并加上 gitleaks 与 npm audit 门禁、461 个可再生成文件出库、提示词撰写规范落地。"
 ---
 
 # v5.10.0 — 发布可信与仓库减负：回归全绿、门禁加固、供应链钉死

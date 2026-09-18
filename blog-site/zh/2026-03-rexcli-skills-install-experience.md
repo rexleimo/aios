@@ -1,6 +1,6 @@
 ---
 title: "RexCli Skills 安装体验更新：全局/项目范围、更清晰的选择器"
-description: "RexCli 本次更新不只重做了 skills 安装与卸载体验，也把仓库内 skill 主源收口到 skill-sources/，默认安装模式改成可移植 copy，并把 Node 运行基线统一到 22 LTS。"
+description: "RexCli 本次更新不只重做了 skills 安装与卸载体验，也把仓库内 skill 主源收口到 skill-sources/，默认安装模式改成可移植 copy，并把 Node 运行基线统一到 22 LTS，升级后无需手动清理旧目录。文中还说明与旧安装模式的兼容策略。"
 date: 2026-03-17
 tags: [RexCli, Skills, TUI, Onboarding, AI Development]
 ---

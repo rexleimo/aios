@@ -1,6 +1,6 @@
 ---
 title: "ContextDB 懒加载：从 5 秒启动到 Agent 自主发现"
-description: "我们废弃了启动时的完整 Pack 注入，采用 <50ms 的 Facade 加载、后台异步 Bootstrap 和运行时触发编排，让 Agent 在需要时才加载记忆。"
+description: "我们废弃了启动时的完整 Pack 注入，改用小于 50ms 的 Facade 加载、后台异步 Bootstrap 与运行时触发编排，让 Agent 只在需要时才加载记忆。文章给出启动开销与召回时延的实测变化，以及迁移时的注意事项。文中附迁移检查清单，方便评估是否值得升级。"
 date: 2026-04-19
 tags: [ContextDB, 懒加载, Agent 记忆, AIOS, 性能]
 ---

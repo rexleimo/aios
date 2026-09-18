@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0：统一 AIOS 搜索覆盖记忆、文档、计划和代码"
-description: "AIOS v1.50.0 为所有支持的 coding client 提供统一搜索入口，覆盖项目记忆、pinned memo、文档、计划和代码，并保留作用域隔离。"
+description: "AIOS v1.50.0 为所有支持的 coding client 提供统一搜索入口，覆盖项目记忆、pinned memo、文档、计划与代码，同时保留作用域隔离。文章给出搜索语法、结果排序与权限边界，并说明它与本地 grep 的分工。避免在多个工具之间重复劳动。"
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---

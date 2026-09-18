@@ -1,6 +1,6 @@
 ---
 title: "v5.14.0：LoopX 控制面 + 孤儿进程终结"
-description: "AIOS v5.14.0 把 provider turn 收敛为可结算契约，为无人值守加上节奏管理，超时杀整棵进程树，aios-shell 不再卡死。v5.14.0。"
+description: "AIOS v5.14.0 把 provider turn 收敛为可结算契约，为无人值守加上节奏管理，超时杀掉整棵进程树，aios-shell 不再卡死。文章解释结算契约的字段设计、进程树回收的实现方式与升级注意事项。升级前建议先读完本文的注意事项一节。"
 date: 2026-09-13
 tags: ["AIOS", "harness", "发布", "v5.14.0"]
 ---

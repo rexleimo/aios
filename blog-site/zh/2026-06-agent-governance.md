@@ -1,6 +1,6 @@
 ---
 title: "Agent 治理：让 Team live 运行先证明自己"
-description: "AIOS 如何用 smoke 证据、provenance、token 压缩指标和 skill training gate，把更多 agents 融入统一工作流。"
+description: "AIOS 如何用 smoke 证据、provenance、token 压缩指标与 skill training gate，把更多 agents 纳入统一工作流。文章给出治理模型、指标口径与落地检查清单，适合多个团队共用一套 Agent 基础设施时参考。"
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 ---

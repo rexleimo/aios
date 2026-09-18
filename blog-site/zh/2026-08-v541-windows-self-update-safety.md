@@ -1,6 +1,6 @@
 ---
 title: "v5.4.1：为什么 Windows 上 'aios update' 会坏，以及我们怎么修好的自更新"
-description: "v5.4.1 修复了一个 Windows 专属的自更新失败：从安装目录内运行 'aios update' 会锁住安装器必须删除的目录，静默嵌套新版本并让后续更新以 MODULE_NOT_FOUND 崩溃。本文讲根因和三层修复。"
+description: "v5.4.1 修复了一个 Windows 专属的自更新失败：从安装目录内运行 aios update 会锁住安装器必须删除的目录，静默嵌套新版本并让后续更新以 MODULE_NOT_FOUND 崩溃。本文讲根因、三层修复与旧版本升级路径。升级前对照本文可以避免再次踩坑。"
 date: 2026-08-02
 tags: ["AIOS", "自更新", "Windows", "安装器", "发布", "bug 修复"]
 ---

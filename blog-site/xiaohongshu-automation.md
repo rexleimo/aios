@@ -1,7 +1,7 @@
 ---
 title: I Automated My Xiaohongshu Operations with AI — My Colleagues Thought I Hired an Assistant
 publish_date: 2026-03-05
-description: From 2 hours per day to 15 minutes. Here's exactly how I did it.
+description: "From 2 hours per day to 15 minutes: the workflow, prompts, and guardrails I used to automate Xiaohongshu operations, including the steps I still check by hand."
 ---
 
 # I Automated My Xiaohongshu Operations with AI — My Colleagues Thought I Hired an Assistant

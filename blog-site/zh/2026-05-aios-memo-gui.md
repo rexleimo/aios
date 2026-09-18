@@ -1,6 +1,6 @@
 ---
 title: "aios memo GUI：把 Agent 的记忆变成一张活的图谱"
-description: "ContextDB 可视化界面来了 — 用交互式节点图探索会话、检查点和记忆关系。"
+description: "ContextDB 可视化界面来了：用交互式节点图探索会话、检查点与记忆之间的关系，直观看出某个结论来自哪次对话。文章介绍界面入口、常用操作、数据存储位置，以及它与命令行查询各自适合的场景。读完可以直接用图排查记忆依赖关系，不必再翻找原始日志。"
 date: 2026-05-15
 tags: ["aios memo", "ContextDB", "GUI", "可视化", "记忆图谱", "AIOS"]
 image: "assets/aios-memo-gui-screenshot.png"

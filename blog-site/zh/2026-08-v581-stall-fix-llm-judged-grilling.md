@@ -1,6 +1,6 @@
 ---
 title: "v5.8.1：Agent 不再卡死——aios-shell 冻结修复与 LLM 语义判断的需求澄清"
-description: "AIOS v5.8.1 修复 aios-shell MCP 在执行长命令时冻结 opencode/codex 的问题，并把基于正则的模糊检测改为 LLM 语义判断——grilling 在执行中发生，一次只问一个决策问题。"
+description: "AIOS v5.8.1 修复 aios-shell MCP 在执行长命令时冻结 opencode 与 codex 的问题，并把基于正则的模糊检测改为 LLM 语义判断：grilling 在执行中发生，一次只问一个决策问题，不再反复打断。本文给出复现与验证方法。"
 date: 2026-08-26
 tags: ["AIOS", "发布", "MCP", "aios-shell", "需求", "grilling", "LLM", "稳定性"]
 ---
