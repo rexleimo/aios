@@ -1,6 +1,6 @@
 ---
 title: Agent Team：証拠付きの並列作業
-description: 独立した work package を分け、Agent Team を起動し、HUD を監視し、blocked job を安全に復旧します。
+description: "Agent Team の実践ガイドです。互いに独立した work package の選び方、チームの起動、HUD での進捗監視、blocked job の安全な復旧、そして自己申告ではなく検証可能な証拠で締めるまでの流れを扱います。起動コマンド、HUD の各フィールドの意味、受け入れチェックリスト付きです。"
 ---
 
 # Agent Team

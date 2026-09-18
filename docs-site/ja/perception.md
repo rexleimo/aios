@@ -1,6 +1,6 @@
 ---
 title: Perception（知覚レイヤー）
-description: コンテンツ結果のトラッキング、統計 insight の生成、agent 学習向けの perception summary 注入。
+description: "Perception は構造化されたコンテンツ結果を記録し、次元ごとに集約し、境界を定めた insight summary を注入して、後続の agent 判断が実データを参照できるようにします。分析とフィードバックの層であり、内容の正しさを保証するものではなく、完全な履歴の注入も前提にしていません。"
 ---
 
 # Perception レイヤー

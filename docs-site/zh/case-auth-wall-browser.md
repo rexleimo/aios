@@ -1,6 +1,6 @@
 ---
 title: 案例 - 浏览器认证墙流程
-description: 检测 challenge/auth 墙并在 human-in-the-loop handoff 下安全继续。
+description: "真实案例：浏览器任务撞上验证码或登录墙时，如何先识别 challenge/auth 墙、避免无效重试，再通过 human-in-the-loop 交接与已保存的浏览器状态安全继续，并留下可复核的证据，适合需要登录态、风控环境或人工确认的自动化流程。"
 ---
 
 # 案例：浏览器认证墙流程

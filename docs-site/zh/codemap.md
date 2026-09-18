@@ -1,6 +1,6 @@
 ---
 title: 代码审查图谱 (Codemap)
-description: 一个基于 Tree-sitter 的结构化知识图谱，让编程 agent 在每一步决策时都能看到调用者、依赖关系、测试覆盖和影响半径。
+description: "基于 Tree-sitter 的结构化知识图谱：让编程 Agent 在每次决策前就能看到调用方、依赖项、测试覆盖与影响半径，而不是靠一次次盲搜代码。一条命令安装后，多个客户端共享同一份代码地图，改动的爆炸半径一目了然，Rust、TypeScript、Python 等主流项目结构都能覆盖。"
 ---
 
 # 代码审查图谱 (Codemap)

@@ -1,6 +1,6 @@
 ---
 title: ユースケース：AIOS の route を選ぶ
-description: memory、search、parallel work、resumable run、browser、privacy、verification の目的別に command を選びます。
+description: "何をしたいかからコマンドを引ける索引です。memory、search、parallel work、resumable run、browser、privacy、verification の目的ごとに、対応する AIOS コマンド、必要な前提、得られる証拠、確認方法を示します。コピーして使える例付きです。"
 ---
 
 # Find Commands By Scenario

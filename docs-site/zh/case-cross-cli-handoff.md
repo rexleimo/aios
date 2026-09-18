@@ -1,6 +1,6 @@
 ---
 title: 案例 - 跨 CLI 接力
-description: 使用共享 ContextDB 实现 Claude 分析、Codex 实现和 Gemini 审查的可复现流程。
+description: "真实案例：用共享 ContextDB 完成跨 CLI 接力，Claude 负责分析、Codex 负责实现、Gemini 负责审查，上下文与证据在交接中不丢失。文中给出每一步的提示词、命令与验收证据，可直接照着复现，也能改成自己团队的接力分工。"
 ---
 
 # 案例：跨 CLI 接力

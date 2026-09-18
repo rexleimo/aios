@@ -1,6 +1,6 @@
 ---
 title: "Claude Code vs Codex vs Gemini CLI：AI 编码 Agent 该怎么选？"
-description: "对比 Claude Code、Codex CLI、Gemini CLI、OpenCode、Hermes 的日常编码体验：各自强项、短板、记忆能力、多 Agent 支持，以及什么时候该在它们下面加一层工作流层（AIOS）。"
+description: "对比 Claude Code、Codex CLI、Gemini CLI、OpenCode、Hermes 的日常编码体验：各自强项、短板、记忆能力、多 Agent 支持，以及什么时候该在它们下面加一层工作流层（AIOS）。结论是它们各有取舍，选型取决于任务类型、团队约束，以及是否需要跨会话记忆与验证证据。"
 date: 2026-08-10
 schema_type: techarticle
 ---

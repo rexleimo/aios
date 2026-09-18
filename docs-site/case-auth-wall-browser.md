@@ -1,6 +1,6 @@
 ---
 title: Case - Browser Auth-Wall Flow
-description: Detect challenge/auth walls and continue safely with human-in-the-loop handoff.
+description: "Detect challenge and auth walls before they burn agent turns, then continue safely with human-in-the-loop handoff, saved browser state, and verified evidence."
 ---
 
 # Case: Browser Auth-Wall Flow

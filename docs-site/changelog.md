@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: Release history, upgrade notes, and links to detailed docs updates.
+description: "Release history for AIOS: what changed in every version, upgrade notes, and links to the detailed documentation that explains each new capability."
 ---
 
 # Changelog

@@ -1,6 +1,6 @@
 ---
 title: AIOS 문제 해결
-description: install, ContextDB, client sync, workflow, Team, browser, token tool, privacy 문제를 evidence로 진단합니다.
+description: "AIOS 문제 해결 안내입니다. install, ContextDB, client sync, workflow, Team, browser, token tool, privacy 문제를 증거로 좁혀갑니다. 흔한 증상과 복구 절차를 제공하므로 추측으로 재설치하기 전에 범위를 줄일 수 있습니다."
 ---
 
 # 문제 해결

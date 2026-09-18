@@ -1,6 +1,6 @@
 ---
 title: Model Router
-description: Automatically pick the right AI model for each task — so you don't have to think about it.
+description: "Model Router picks an AI model per task from task type, routing profile, capability registry, and fallback rules, and --explain shows why it chose that one."
 schema_type: techarticle
 date: 2026-05-08
 ---

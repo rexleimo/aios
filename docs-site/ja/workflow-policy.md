@@ -1,6 +1,6 @@
 ---
 title: ワークフローポリシー
-description: AIOS の adaptive workflow policy で direct、guarded、planned の使い分けを理解します。
+description: "workflow policy の解説です。AIOS が adaptive な方針で direct、guarded、planned のうち最小の正しい経路を選び、単純な依頼を過剰に手続き化せず、証拠とレビューが必要な変更は省略しない仕組みを説明します。判定条件、昇格の経路、各段階の受け入れ要件を示します。"
 ---
 
 # ワークフローポリシー

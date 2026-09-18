@@ -1,6 +1,6 @@
 ---
 title: Perception(인지 레이어)
-description: 콘텐츠 결과 추적, 통계 insight 생성, agent 학습을 위한 perception summary 주입.
+description: "Perception은 구조화된 콘텐츠 결과를 기록하고 차원별로 묶어 경계가 정해진 인사이트 요약을 주입해, 이후 에이전트 판단이 실제 데이터를 참고하도록 합니다. 분석과 피드백 계층이며 콘텐츠의 정확성을 보장하지 않고 전체 이력 주입도 전제로 하지 않습니다."
 ---
 
 # Perception 레이어

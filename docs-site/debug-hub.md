@@ -1,6 +1,6 @@
 ---
 title: debug-hub
-description: Let your coding agents debug themselves — query logs, trace errors, and self-diagnose without your help.
+description: "Let coding agents debug themselves: query runtime logs, trace execution paths, and self-diagnose failures through an MCP server instead of interrupting you."
 schema_type: techarticle
 date: 2026-05-06
 ---

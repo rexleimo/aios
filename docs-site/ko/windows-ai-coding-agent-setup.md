@@ -1,6 +1,6 @@
 ---
 title: "Windows AI 코딩 에이전트 설정: 10분 안에 설치하고 검증하기"
-description: "PowerShell로 Windows에 AI 코딩 에이전트를 설정합니다: AIOS 설치, PATH 문제 해결, 프로젝트 초기화, client 동기화 검증, 일반적인 실패 복구——마찰이 적은 완전한 가이드."
+description: "PowerShell로 Windows에 AI 코딩 에이전트를 설정합니다: AIOS 설치, PATH 문제 해결, 프로젝트 초기화, client 동기화 검증, 일반적인 실패 복구——마찰이 적은 완전한 가이드. 터미널 문자 인코딩, 권한, 래퍼 스크립트처럼 놓치기 쉬운 세부도 다룹니다."
 date: 2026-08-10
 schema_type: techarticle
 ---

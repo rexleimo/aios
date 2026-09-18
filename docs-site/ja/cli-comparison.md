@@ -1,6 +1,6 @@
 ---
 title: CLI 比較
-description: 生 Codex/Claude/Gemini CLI ワークフローと AIOS オーケストレーション層を比較。
+description: "素の Codex / Claude / Gemini CLI ワークフローと AIOS オーケストレーション層の実際の違いを比較します。素の CLI では記憶、ルーティング、検証を自分で管理する必要がありますが、AIOS ではやりたいことを一文で伝えれば、記憶、分担、証拠、検証までを担い、確認できる成果として返します。"
 ---
 
 # 生 CLI vs AIOS 層

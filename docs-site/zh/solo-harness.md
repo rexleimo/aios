@@ -1,6 +1,6 @@
 ---
 title: Solo Harness：可恢复长任务
-description: 用运行日志、stop/resume 控制、验证证据和可选 git worktree 隔离运行一个明确目标。
+description: "Solo Harness 用来跑一个目标明确的长任务：带运行日志、stop/resume 控制、验证证据和可选的 git worktree 隔离，中断后可以从上次检查点继续，不需要重新交代背景。运行日志可直接用于事后复盘与验收，适合夜间批量任务或无人值守的改造工作。"
 ---
 
 # Solo Harness

@@ -1,6 +1,6 @@
 ---
 title: Rex Workflow Migration
-description: Move from the retired Superpowers workflow to the Rex-only AIOS workflow safely.
+description: "Migration guide for the retired Superpowers workflow: what changed in AIOS, how to move an install to rex-harness, and how to keep existing links working."
 ---
 
 # Rex Workflow Migration

@@ -1,6 +1,6 @@
 ---
 title: ケース - クロス CLI handoff
-description: 共有 ContextDB で Claude 分析、Codex 実装、Gemini レビューを再現可能なフロー。
+description: "実例: 共有 ContextDB を使ったクロス CLI handoff。Claude が分析、Codex が実装、Gemini がレビューを担当し、受け渡しのたびに文脈と証拠が失われない再現可能なフローです。各ステップのプロンプト、コマンド、検証証拠が載っており、そのまま再現できます。"
 ---
 
 # ケース：クロス CLI handoff

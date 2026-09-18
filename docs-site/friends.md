@@ -1,6 +1,6 @@
 ---
 title: Friends
-description: Partner and ecosystem links for quick discovery.
+description: "Canonical RexAI entry points in one place: documentation, blog, product sites, ecosystem projects, and source code, with a note on what each destination is for."
 ---
 
 # Friends

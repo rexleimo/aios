@@ -1,6 +1,6 @@
 ---
 title: debug-hub
-description: MCP 原生调试日志服务，让 coding agent 能够查询自己的运行时日志并自我诊断错误。
+description: "MCP 原生的调试日志服务：让 coding agent 自己查询运行时日志、追踪执行路径、定位失败原因并给出修复建议。装上之后，排查问题不再需要你手动贴日志、来回描述现象，Agent 能先自我诊断一轮再找你确认，历史日志可按会话、时间范围与关键字检索。"
 ---
 
 # debug-hub

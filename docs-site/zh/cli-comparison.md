@@ -1,6 +1,6 @@
 ---
 title: CLI 对比
-description: 将原生 Codex/Claude/Gemini CLI 工作流与 AIOS 编排层进行对比。
+description: "对比原生 Codex / Claude / Gemini CLI 工作流与 AIOS 编排层的真实差别：原生 CLI 需要手动管理记忆、路由与验证，AIOS 让你用一句话描述目标，上下文、分工与验收由它负责，最终交付可复核的证据与结果，避免黑箱操作。"
 ---
 
 # 原生 CLI vs AIOS 层

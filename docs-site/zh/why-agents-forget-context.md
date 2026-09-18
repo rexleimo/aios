@@ -1,6 +1,6 @@
 ---
 title: "为什么你的 AI 编码 Agent 会跨会话失忆（以及怎么修）"
-description: "编码 Agent 每次会话都从空窗口开始，所以会忘记昨天的决策。用本地项目记忆（ContextDB）给 Claude Code、Codex、Gemini CLI、OpenCode 补上持久记忆，且不把数据发给服务器。"
+description: "编码 Agent 每次会话都从空窗口开始，所以会忘记昨天的决策。用本地项目记忆（ContextDB）给 Claude Code、Codex、Gemini CLI、OpenCode 等客户端补上跨会话上下文，同时保证数据留在本地，不依赖把项目内容上传到云端服务。"
 date: 2026-08-10
 schema_type: techarticle
 ---

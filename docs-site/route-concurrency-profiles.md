@@ -1,6 +1,6 @@
 ---
 title: Route & Concurrency Profiles
-description: Minimal env profiles for interactive routing and parallel execution in AIOS.
+description: "One page for routing and parallelism: copy-paste env profiles that switch AIOS between interactive routing, subagent, team, and harness concurrency levels."
 ---
 
 # Route & Concurrency Profiles

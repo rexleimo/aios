@@ -1,6 +1,6 @@
 ---
 title: ContextDB：pull-based プロジェクト記憶
-description: ローカル ContextDB registry、memo storage、unified project search、lazy load、client 間の記憶境界を説明します。
+description: "ローカル ContextDB の境界を理解するページです。registry、memo storage、unified project search、lazy load、recall、クライアント間で記憶を共有する際の境界とプライバシー方針を説明します。プロジェクトが大きくなっても、何を注入し、何を残すかを制御できます。"
 ---
 
 # ContextDB

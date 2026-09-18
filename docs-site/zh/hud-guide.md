@@ -1,6 +1,6 @@
 ---
 title: HUD 用户指南
-description: 使用 HUD（Heads-Up Display）监控 agent 会话的完整指南。
+description: "HUD（Heads-Up Display）完整使用指南：实时查看 Agent 会话状态、长任务进度、质量门禁结果、调度结果与技能改进建议，全程无需打断正在运行的任务。文档同时说明各状态含义、常见误用与排查方法，适合长任务执行与事后复盘时统一阅读。"
 ---
 
 # HUD 用户指南

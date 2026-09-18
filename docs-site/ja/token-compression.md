@@ -1,6 +1,6 @@
 ---
 title: Token Intelligence と圧縮の境界
-description: RTK、Caveman、Headroom MCP、ContextDB、Ponytail に着想を得た判断ゲートを正しく使います。
+description: "能力を誇張せずにコンテキストを圧縮する方法を整理します。RTK による shell 出力のフィルタ、Caveman の応答スタイル、明示的な Headroom MCP ツール、pull 型の ContextDB recall、Ponytail に着想を得た判断ゲートを取り上げ、それぞれの担当範囲と境界を明確にします。"
 ---
 
 # Token Intelligence と圧縮

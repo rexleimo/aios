@@ -1,6 +1,6 @@
 ---
 title: 워크플로 정책
-description: AIOS의 adaptive workflow policy로 direct, guarded, planned 작업을 선택하는 방법을 설명합니다.
+description: "workflow policy 설명서입니다. AIOS가 adaptive 정책으로 direct, guarded, planned 중 작은 올바른 경로를 고르고, 단순한 요청을 과하게 절차화하지 않으며 증거와 리뷰가 필요한 변경은 생략하지 않는 방식을 다룹니다. 판정 조건과 승격 경로를 제시합니다."
 ---
 
 # 워크플로 정책

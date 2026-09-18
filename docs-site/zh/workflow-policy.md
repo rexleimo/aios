@@ -1,6 +1,6 @@
 ---
 title: 工作流策略
-description: 了解 AIOS 如何用自适应工作流策略选择 direct、guarded 或 planned 路由。
+description: "工作流策略说明：AIOS 如何用自适应策略在 direct、guarded、planned 之间选择最小正确路径，既不过度流程化简单问题，也不放过需要证据与评审的改动。文档给出判定条件、升级路径和每一档的验收要求，必要时可用 --explain 查看决策依据。"
 ---
 
 # 工作流策略

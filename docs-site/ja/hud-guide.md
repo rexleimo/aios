@@ -1,6 +1,6 @@
 ---
 title: HUD ユーザーガイド
-description: エージェントセッションの監視に HUD（Heads-Up Display）を使用するための完全ガイド。
+description: "HUD（Heads-Up Display）の完全ガイドです。実行中の Agent セッション状態、長時間タスクの進捗、quality gate の結果、dispatch の結果、スキル改善の候補をリアルタイムで確認できます。実行を止めずに監視できるため、長時間の無人実行と事後レビューの両方に向いています。"
 ---
 
 # HUD ユーザーガイド

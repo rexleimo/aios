@@ -1,6 +1,6 @@
 ---
 title: Rex 워크플로 마이그레이션
-description: 폐기된 Superpowers 워크플로에서 Rex-only AIOS 워크플로로 안전하게 마이그레이션합니다.
+description: "워크플로 마이그레이션 가이드입니다. Superpowers는 AIOS에서 폐기되었으므로 실제로 무엇이 바뀌었는지, 기존 설치를 rex-harness 워크플로로 안전하게 옮기는 방법, 수정해야 할 설정, 예전 링크가 왜 현재 동작을 가리키는지 설명합니다."
 ---
 
 # Rex 워크플로 마이그레이션

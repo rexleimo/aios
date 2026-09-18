@@ -1,6 +1,6 @@
 ---
 title: "怎么让编码 Agent 跑一整夜不崩、不漂移"
-description: "隔夜 Agent 运行失败于崩溃、上下文漂移和不可恢复的状态。了解 Solo Harness 的 checkpoint、验证门禁和 git worktree 隔离如何让编码 Agent 工作一整夜。"
+description: "隔夜 Agent 运行失败于崩溃、上下文漂移与不可恢复的状态。了解 Solo Harness 如何用 checkpoint、验证门禁与 git worktree 隔离让编码 Agent 跑一整夜，第二天直接从最后一个通过验收的检查点续跑，不必从头重来。"
 date: 2026-08-10
 schema_type: techarticle
 ---

@@ -1,6 +1,6 @@
 ---
 title: "多 Agent 代码评审：真正有用的并行编码 Agent"
-description: "并行编码 Agent 做代码评审，常常败在状态共享糟糕、重复劳动、合并未经核验的结果。了解带证据门禁、HUD 状态和 worktree 隔离的 Agent 团队如何让多 Agent 评审变得可靠。"
+description: "并行编码 Agent 做代码评审常败在状态共享糟糕、重复劳动与合并未核验结果。了解带证据门禁、HUD 状态与 worktree 隔离的 Agent 团队如何让多 Agent 评审可靠：拆成独立节点、各自隔离、回收可验证证据而不是主观意见，适用于必须并行推进又需要质量门禁的项目。"
 date: 2026-08-10
 schema_type: techarticle
 ---

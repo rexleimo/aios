@@ -1,6 +1,6 @@
 ---
 title: Token Intelligence와 압축 경계
-description: RTK, Caveman, Headroom MCP, ContextDB와 Ponytail에서 영감을 얻은 결정 게이트를 정확하게 사용합니다.
+description: "능력을 과장하지 않고 컨텍스트를 압축하는 방법을 정리합니다. RTK의 shell 출력 필터, Caveman 응답 스타일, 명시적 Headroom MCP 도구, pull 방식 ContextDB recall, Ponytail에서 영감을 얻은 판단 게이트를 다루고 각 계층의 경계를 분명히 합니다."
 ---
 
 # Token Intelligence와 압축

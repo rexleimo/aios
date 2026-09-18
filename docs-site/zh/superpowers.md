@@ -1,6 +1,6 @@
 ---
 title: Rex 工作流迁移
-description: 安全地从已退役的 Superpowers 工作流迁移到仅使用 Rex 的 AIOS 工作流。
+description: "工作流迁移指南：Superpowers 已从 AIOS 退役，本文说明实际发生了什么变化、如何把已有安装平滑迁移到 rex-harness 工作流、需要修改哪些配置，以及旧链接为什么仍然指向当前行为而不是过时教程。迁移后软件工程任务默认只走 rex-harness。"
 ---
 
 # Rex 工作流迁移

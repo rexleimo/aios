@@ -1,6 +1,6 @@
 ---
 title: Windows ガイド：PowerShell のセットアップと復旧
-description: Windows の PowerShell で AIOS を install し、project を初期化し、client sync と PATH の問題を確認します。
+description: "Windows で PowerShell から AIOS をインストールし、プロジェクトを初期化し、client sync を検証し、PATH、権限、設定まわりのよくある問題に対処するためのガイドです。Windows 固有のトラブル手順を含み、WSL や Git Bash と併用する場合の注意点も説明します。"
 ---
 
 # Windows ガイド

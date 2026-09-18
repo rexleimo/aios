@@ -1,6 +1,6 @@
 ---
 title: Token Intelligence 与压缩边界
-description: 使用 RTK、Caveman、Headroom MCP、ContextDB 和 Ponytail 启发的决策门，保持上下文有效而不夸大能力。
+description: "在不夸大能力的前提下压缩上下文：RTK 过滤 shell 输出、Caveman 回应风格、显式 Headroom MCP 工具、pull 式 ContextDB 召回，以及 Ponytail 启发的决策门，各自边界清晰，且都不替代测试、隐私检查与最终验证。"
 ---
 
 # Token Intelligence 与压缩

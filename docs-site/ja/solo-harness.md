@@ -1,6 +1,6 @@
 ---
 title: Solo Harness：再開可能な長時間作業
-description: journal、stop/resume、verification evidence、任意の git worktree 分離で一つの objective を実行します。
+description: "Solo Harness は、目的が明確な長時間タスクを一つ実行するための仕組みです。journal、stop/resume 制御、検証証拠、任意の git worktree 分離を備え、中断しても最後のチェックポイントから再開できます。夜間のバッチ処理や無人での改修作業に向いています。"
 ---
 
 # Solo Harness

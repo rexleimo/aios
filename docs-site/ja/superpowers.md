@@ -1,6 +1,6 @@
 ---
 title: Rex ワークフロー移行
-description: 廃止された Superpowers ワークフローから Rex-only AIOS ワークフローへ安全に移行します。
+description: "ワークフロー移行ガイドです。Superpowers は AIOS から廃止されたため、実際に何が変わったのか、既存のインストールを rex-harness ワークフローへ安全に移行する方法、変更が必要な設定、旧リンクがなぜ現行の挙動を指したままなのかを説明します。"
 ---
 
 # Rex ワークフロー移行

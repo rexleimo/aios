@@ -1,6 +1,6 @@
 ---
 title: Agent Team：带证据的并行工作
-description: 选择独立工作包，启动 Agent Team，监控 HUD 状态，并安全恢复阻塞任务。
+description: "Agent Team 实战：如何挑选互相独立的工作包、启动团队、用 HUD 监控进度、处理阻塞任务并安全恢复，最终以可验证证据收口，而不是只靠 Agent 自述成功。文中给出启动命令、HUD 字段含义与验收清单，适合需要并行推进又必须守住质量门禁的项目。"
 ---
 
 # Agent Team

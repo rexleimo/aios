@@ -1,6 +1,6 @@
 ---
 title: Advanced Design Skills
-description: Build beautiful, production-ready pages from vague prompts using DESIGN.md and frontend-design.
+description: "Build production-ready pages from vague prompts: lock a visual contract in DESIGN.md, then use the frontend-design skill for layout, states, and responsive polish."
 ---
 
 # Advanced Design Skills for Page Building

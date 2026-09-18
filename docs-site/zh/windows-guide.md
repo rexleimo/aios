@@ -1,6 +1,6 @@
 ---
 title: Windows 指南：PowerShell 安装与恢复
-description: 在 Windows 上使用 PowerShell 安装 AIOS，初始化项目，验证客户端同步，并处理常见 PATH 和配置问题。
+description: "Windows 使用指南：用 PowerShell 安装 AIOS、初始化项目、验证客户端同步，并处理 PATH、权限与配置类常见问题。包含 Windows 专有的排错步骤，也说明与 WSL、Git Bash 混用时需要注意的地方，让长任务在原生终端里也能稳定运行。"
 ---
 
 # Windows 指南

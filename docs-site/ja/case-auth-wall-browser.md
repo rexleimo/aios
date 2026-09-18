@@ -1,6 +1,6 @@
 ---
 title: ケース - ブラウザ認証壁フロー
-description: challenge/認証壁を検出し、human-in-the-loop handoff で安全に続行。
+description: "実例: ブラウザ作業が captcha やログイン壁に当たったとき、challenge/認証壁を先に検出して無駄なリトライを避け、human-in-the-loop handoff と保存済みブラウザ状態で安全に続行し、検証可能な証拠を残すまでの流れを紹介します。ログイン状態や人手確認が必要な自動化に向いています。"
 ---
 
 # ケース：ブラウザ認証壁フロー

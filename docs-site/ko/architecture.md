@@ -1,6 +1,6 @@
 ---
 title: AIOS 아키텍처
-description: client guidance, ContextDB, Workflow Policy, Team, Harness, browser-use CDP, RL research의 연결을 설명합니다.
+description: "AIOS 전체 구조를 정리합니다. client guidance, ContextDB 기억, adaptive workflow policy, Agent Team과 Harness, browser-use CDP, RL research 계층의 역할과 기존 클라이언트 위에서의 협력 방식을 다룹니다."
 ---
 
 # 아키텍처

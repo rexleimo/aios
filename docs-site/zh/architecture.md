@@ -1,6 +1,6 @@
 ---
 title: AIOS 架构
-description: 了解客户端指引、ContextDB、工作流策略、Team、Harness、browser-use CDP 和 RL 研究层如何连接。
+description: "一份完整的 AIOS 架构总览：客户端指引层、ContextDB 项目记忆、自适应工作流策略、Agent Team 与 Harness 编排、browser-use CDP 感知层和 RL 研究层各自负责什么，以及它们如何在你现有的 Codex、Claude Code、Gemini CLI 之上协同工作。"
 ---
 
 # 架构

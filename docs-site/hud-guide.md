@@ -1,6 +1,6 @@
 ---
 title: HUD User Guide
-description: Complete guide to using HUD (Heads-Up Display) for monitoring agent sessions.
+description: "Guide to the AIOS HUD: monitor long-running agent sessions, read quality-gate outcomes, dispatch work, and review skill candidates without interrupting the run."
 ---
 
 # HUD User Guide

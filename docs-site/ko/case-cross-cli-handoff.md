@@ -1,6 +1,6 @@
 ---
 title: 케이스 - 크로스 CLI 핸드오프
-description: 공유 ContextDB로 Claude 분석, Codex 구현, Gemini 리뷰의 재현 가능한 플로우.
+description: "실제 사례: 공유 ContextDB로 Claude가 분석하고 Codex가 구현하며 Gemini가 리뷰하는 재현 가능한 크로스 CLI 흐름입니다. 각 단계의 프롬프트, 명령, 검증 증거가 함께 제공되어 그대로 따라 할 수 있습니다."
 ---
 
 # 케이스: 크로스 CLI 핸드오프

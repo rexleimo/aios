@@ -1,6 +1,6 @@
 ---
 title: "Windows 上搭建 AI 编码 Agent：10 分钟安装与验证"
-description: "在 Windows 上用 PowerShell 搭建 AI 编码 Agent：安装 AIOS、修复 PATH 问题、初始化项目、验证客户端同步、恢复常见故障——一份完整的低摩擦指南。"
+description: "在 Windows 上用 PowerShell 搭建 AI 编码 Agent：安装 AIOS、修复 PATH 问题、初始化项目、验证客户端同步并恢复常见故障。文档覆盖终端编码、权限与包装脚本等容易被忽略的细节，排错小节可直接按症状跳转，是一份低摩擦的完整指南。"
 date: 2026-08-10
 schema_type: techarticle
 ---

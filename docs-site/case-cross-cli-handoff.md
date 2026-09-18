@@ -1,6 +1,6 @@
 ---
 title: Case - Cross-CLI Handoff
-description: Reproducible flow for Claude analysis, Codex implementation, and Gemini review with shared ContextDB.
+description: "Reproducible cross-CLI flow: Claude analyses, Codex implements, Gemini reviews, and every step shares one ContextDB so context and evidence survive the handoff."
 ---
 
 # Case: Cross-CLI Handoff

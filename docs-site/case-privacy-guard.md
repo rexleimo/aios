@@ -1,6 +1,6 @@
 ---
 title: Case - Privacy Guard Config Read
-description: Read config-like files safely with redaction before model consumption.
+description: "Read config-like files without leaking secrets: redact values before they reach the model, keep an audit trail, and let the agent work from the safe projection."
 ---
 
 # Case: Privacy Guard Config Read

@@ -1,6 +1,6 @@
 ---
 title: ケースライブラリ：再現可能な AIOS workflow
-description: setup、cross-client handoff、browser auth、privacy read、release verification を evidence 付きで実行します。
+description: "証拠優先の公式ケース集: setup、cross-client handoff、browser auth、privacy-safe read、release verification を扱い、各ケースに再現手順、コマンド、検証証拠が付いています。そのまま実行でき、チーム内での展開テンプレートにも使えます。"
 ---
 
 # ケースライブラリ

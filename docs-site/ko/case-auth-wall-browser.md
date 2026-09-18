@@ -1,6 +1,6 @@
 ---
 title: 케이스 - 브라우저 인증벽 플로우
-description: challenge/인증벽을 감지하고 human-in-the-loop handoff로 안전하게 계속 진행.
+description: "실제 사례: 브라우저 작업이 캡차나 로그인 벽에 막혔을 때 challenge/인증벽을 먼저 감지해 불필요한 재시도를 줄이고, human-in-the-loop handoff와 저장된 브라우저 상태로 안전하게 이어가며 검증 가능한 증거를 남기는 흐름을 다룹니다."
 ---
 
 # 케이스: 브라우저 인증벽 플로우

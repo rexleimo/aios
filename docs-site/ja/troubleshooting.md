@@ -1,6 +1,6 @@
 ---
 title: AIOS トラブルシューティング
-description: install、ContextDB、client sync、workflow、Team、browser、token tool、privacy の問題を evidence で診断します。
+description: "AIOS のトラブルシューティング: install、ContextDB、client sync、workflow、Team、browser、token tool、privacy の問題を、観察できる証拠で切り分けます。よくある症状、原因の判断材料、復旧手順を並べているので、勘で再インストールする前に問題の範囲を絞り込めます。"
 ---
 
 # トラブルシューティング
