@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.17.0] - 2026-09-18
+
 - feat(model-router): client model-routing contract (`relay` vs `own` + protocol gating) so a routed model is always launchable by the worker client; explicit `-m`/`AIOS_MODEL_*` moves the client, automatic routing moves the model
 - feat(model-router): channel availability state machine (ok/degraded/down with TTL + cooldown) learned from real dispatch outcomes, readable via `model-router availability` and applied when `AIOS_MODEL_AVAILABILITY=1`
 - fix(ctx-agent-core): classify relay channel evidence (`model_not_found`, `no available channel`, truncated gateway responses) as `channel-unavailable` instead of generic `tool`, so agent-side mistakes no longer cool a model down
@@ -14,8 +16,6 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 - fix(opencode): keep the 19 projected Rex role cards out of the OpenCode agent switcher. The agents emitter now writes `hidden: true` into `.opencode/agents/*.md`; verified against opencode 1.18.27 that the TUI agent cycle only includes `mode !== "subagent" && hidden !== true`, while `task` dispatch only filters `mode !== "primary"` and does not exclude hidden — so the role cards stay dispatchable by the orchestrator and by `task`, but no longer clutter the picker. `aios-build` remains the visible primary/default; `build`/`plan` are untouched. Covered by `scripts/tests/aios-components.test.mjs`.
 - feat(cli): `--provider` and codemap `--client` help now derives from the client capability registry instead of hardcoded lists
 - docs(model-router): document the routing contract, protocol→endpoint map and channel availability (en/zh); routing tables regenerated from the registry
-## [5.17.0] - 2026-09-16
-
 - feat(pi): pi promoted to team provider (spawn-verified); fix(pi): aios_memory execFile namespace crash; fix(native): Windows JSON path bake
 
 ## [5.16.1] - 2026-09-16
