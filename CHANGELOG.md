@@ -6,6 +6,12 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.16.2] - 2026-09-18
+
+### Fixed
+
+- Shared generated skill roots (`.agents/skills`, used by both `pi` and `zcode`) are now owned by the first surface in `config/skills-sync-manifest.json`; borrower surfaces no longer re-project or re-check that root. Previously the per-client native sync let zcode overwrite pi's projection, so `check-native-sync` reported permanent drift for every shared skill and the `v5.16.0`/`v5.16.1` release preflights failed before their GitHub Releases could be created (`scripts/lib/skills/sync/targets.mjs` `resolveOwnedSurfaces`, covered by `scripts/tests/skills-sync.test.mjs`). Backport of `56e0a088` from the `v5.17.0` line.
+
 ## [5.16.1] - 2026-09-16
 
 ### Fixed
