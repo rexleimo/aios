@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.19.2: Names Windows Can Hold](2026-09-v5192-names-windows-can-hold.md) — a candidate id used as a file name became an NTFS alternate data stream, so a promotion was lost while the importer reported zero errors
 - [v5.19.1: A Declaration You Can Actually Reach](2026-09-v5191-declaration-you-can-reach.md) — the shell can declare a disposition, and the guard written for it found 82 test files that no gate has ever run
 - [v5.19.0: Giving the Judgment Gate a Body](2026-09-v519-judgment-gate-surfaces.md) — the aios_judge tool that is absent while disabled, and a rex stage gate that can only hold
 - [v5.18.0: TypeSafe Jev in AIOS — Off by Default, On Purpose](2026-09-v518-judgment-gate.md) — credential setup, why a docs MCP cannot judge, and an opt-in gate that fails closed

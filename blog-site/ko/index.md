@@ -22,6 +22,7 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v5.19.2: Windows가 감당할 수 있는 이름](2026-09-v5192-names-windows-can-hold.md) — 후보 id를 파일 이름으로 쓰면 NTFS에서 대체 데이터 스트림이 되어 승격이 조용히 사라지고, 가져오기 쪽은 오류 0건을 보고한다
 - [v5.19.1: 실제로 닿을 수 있는 선언 채널](2026-09-v5191-declaration-you-can-reach.md) — shell에서 선언할 수 있게 되었고, 그를 위해 쓴 가드가 82개 미실행 테스트 파일을 찾아냄
 - [v5.19.0: 판단 게이트에 몸을 붙이다](2026-09-v519-judgment-gate-surfaces.md) — 꺼져 있으면 아예 없는 aios_judge 도구와 보류만 할 수 있는 rex 단계 게이트
 - [v5.18.0: AIOS에 TypeSafe Jev 도입 — 기본값은 꺼짐, 의도된 선택](2026-09-v518-judgment-gate.md) — 자격 증명 설정, 문서 MCP가 판단하지 못하는 이유, fail closed opt-in 게이트

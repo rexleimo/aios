@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.19.2] - 2026-09-18
+
+- fix Windows artifact names: a promotion whose candidate id contains a colon was written as an NTFS alternate data stream, so it was lost silently
+
 ## [5.19.1] - 2026-09-18
 
 - fix(cli): declare the workflow disposition with --explicit-intent; test: gate test-file wiring integrity
