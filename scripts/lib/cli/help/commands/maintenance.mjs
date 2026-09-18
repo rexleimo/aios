@@ -176,13 +176,16 @@ Examples:
   aios plan task <id> [--context <ref[:reason]>] [--target <path>] [--allow-write <glob>] [--workspace <path>] [--json]
   aios plan task <id> --propose-context [--target <path>] [--workspace <path>] [--json]
   aios plan task <id> --confirm-context-candidates [--candidate-ref <ref>] [--workspace <path>] [--json]
-  aios plan auto-gate --task <text> [--workspace <path>] [--json]
+  aios plan auto-gate --task <text> [--message <text>] [--explicit-intent <value>] [--workspace <path>] [--json]
   aios plan capability-evidence --activation <id> --command-token <token> --evidence-kind <kind> --evidence-ref <ref> [--testability-file <path>] [--workspace <path>] [--json]
 
 Options:
   --title <text>                 Plan title or task title
   --task <text>                  Task/objective text
   --objective <text>             Objective text
+  --message <text>               User message for auto-gate; a /plan /review /single prefix declares intent
+  --explicit-intent <value>      Declare the workflow disposition for auto-gate (e.g. read-only, plan);
+                                 unknown values are refused, never guessed from text
   --status <status>              Plan or task status
   --context <ref[:reason]>       Required task context; repeat to add more
   --target <path>                Declared task target; repeat to add more

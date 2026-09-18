@@ -23,6 +23,9 @@ const PLAN_CLI = new Command()
   .option('--source <text>', 'Source label')
   .option('--force', 'Force (e.g. force done / replace links)')
   .option('--message <text>', 'User message for auto-gate')
+  // 中文注释：声明通道。策略层绝不从文本推断 intent，因此这里只负责把用户的显式声明原样传下去；
+  // 未知取值由 workflow-policy 以 explicit-intent-unknown 拒绝（fail closed），本层不维护白名单副本。
+  .option('--explicit-intent <value>', 'Explicit workflow disposition declaration for auto-gate')
   .option('--task-id <id>', 'Task id for plan task')
   .option('--acceptance <text>', 'Task acceptance criteria')
   .option('--context <ref[:reason]>', 'Required context declaration; repeat to add more', collectOptionValue, [])
@@ -124,6 +127,7 @@ export function parsePlanArgs(argv) {
         policyMode: flags.policyMode,
         dryRun: Boolean(flags.dryRun),
         source: flags.source,
+        explicitIntent: flags.explicitIntent ? String(flags.explicitIntent).trim() : '',
         workspaceRoot: flags.workspace ? String(flags.workspace).trim() : '',
         force: Boolean(flags.force),
         html: Boolean(flags.html),
