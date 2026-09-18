@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- fix(update): never downgrade through GitHub `releases/latest`. The `latest` pointer is ordered by release creation time, not semver, so the late-published v5.16.2 hotfix displaced v5.17.0 and `aios update` would have pulled the lower version. Update checks now list stable releases and pick the highest semver (`scripts/lib/lifecycle/release-lookup.mjs`); release-installer self-update resolves the exact newest tag, skips (instead of downgrading) when the installed VERSION is not older, and pins the download via `AIOS_RELEASE_TAG`/`AIOS_ASSET_URL`; both installers now prefer an exact-tag asset URL over the `latest` pointer (`scripts/aios-install.sh`, `scripts/aios-install.ps1`). Covered by `scripts/tests/release-lookup.test.mjs` and extended `self-update-lifecycle`/`release-pipeline` regression tests.
+
 ## [5.17.0] - 2026-09-18
 
 - feat(model-router): client model-routing contract (`relay` vs `own` + protocol gating) so a routed model is always launchable by the worker client; explicit `-m`/`AIOS_MODEL_*` moves the client, automatic routing moves the model

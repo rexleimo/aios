@@ -3,6 +3,7 @@ import path from 'node:path';
 import { resolveContextDbRoot, resolveTasksRoot, toWorkspaceRelative } from '../aios/state-root.mjs';
 import { evaluateHandoffLineage, readHandoffPacket } from '../contextdb/handoff.mjs';
 import { checkForUpdate, readCurrentVersion, readNoticeState } from '../lifecycle/update-notice.mjs';
+import { resolveNewestStableRelease } from '../lifecycle/release-lookup.mjs';
 import { reconcileUnclosedSessions } from '../lifecycle/session-hooks/reconcile.mjs';
 
 const ACTIVE_TASK_STATUSES = new Set(['pending', 'running', 'blocked']);
@@ -132,15 +133,13 @@ export function renderStartupSummary(items = []) {
 }
 
 async function fetchLatestAiosRelease() {
-  const response = await fetch('https://api.github.com/repos/rexleimo/aios/releases/latest', {
-    headers: { accept: 'application/vnd.github+json', 'user-agent': 'aios-session-start' },
-    signal: AbortSignal.timeout(2500),
-  });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const payload = await response.json();
+  // 中文注释：同 update.mjs —— 不用按创建时间排序的 releases/latest，
+  // 避免补发旧版抢占 latest 后把降级版本号写进启动摘要。
+  const newest = await resolveNewestStableRelease({ timeoutMs: 2500 });
+  if (!newest) throw new Error('no stable releases');
   return {
-    version: String(payload.tag_name || '').replace(/^v/u, ''),
-    security: Boolean(payload.security_advisory || payload.security),
+    version: newest.version,
+    security: Boolean(newest.security),
   };
 }
 

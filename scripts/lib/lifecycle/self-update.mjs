@@ -3,6 +3,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
+import { resolveNewestStableRelease } from './release-lookup.mjs';
+
 const DEFAULT_REPO = 'rexleimo/aios';
 
 async function pathExists(filePath) {
@@ -86,12 +88,68 @@ async function updateFromGit(rootDir, io, run = runCommand) {
   return { method: 'git', updated: true, skipped: false, submodulesSynced: true };
 }
 
-async function updateFromReleaseInstaller(rootDir, { repo, io, run = runCommand }) {
+function compareVersionStrings(current, candidate) {
+  const parse = (value) => /^(\d+)\.(\d+)\.(\d+)/u.exec(String(value || '').trim());
+  const c = parse(current);
+  const l = parse(candidate);
+  if (!c || !l) return 'invalid';
+  for (let i = 1; i <= 3; i += 1) {
+    const a = Number(c[i]);
+    const b = Number(l[i]);
+    if (b > a) return 'newer';
+    if (b < a) return 'older';
+  }
+  return 'equal';
+}
+
+async function updateFromReleaseInstaller(rootDir, {
+  repo,
+  io,
+  run = runCommand,
+  currentVersion = '',
+  resolveNewestRelease = null,
+} = {}) {
+  // 中文注释：防降级守卫 —— GitHub releases/latest 按创建时间排序，补发旧版本会
+  // 抢占 latest。这里优先用调用方注入的 semver-max 查询拿到精确 tag；查询失败
+  // 时退回 releases/latest 但保持旧行为。拿到 tag 后按 tag 精确拉取资产。
+  let newest = null;
+  if (typeof resolveNewestRelease === 'function') {
+    try {
+      newest = await resolveNewestRelease({ repo });
+    } catch (error) {
+      io.log(`[warn] release lookup failed: ${error instanceof Error ? error.message : error}; falling back to releases/latest`);
+    }
+  }
+  if (newest?.version && currentVersion) {
+    const relation = compareVersionStrings(currentVersion, newest.version);
+    if (relation === 'equal' || relation === 'older') {
+      io.log(
+        `[info] runtime self-update skipped: installed ${currentVersion} is not older than `
+        + `newest stable release ${newest.version}; refusing to downgrade via releases/latest.`,
+      );
+      return {
+        method: 'release-installer',
+        updated: false,
+        skipped: true,
+        reason: 'not-newer-than-installed',
+        remoteVersion: newest.version,
+      };
+    }
+  }
+
+  const releaseSegment = newest?.tag ? `releases/download/${newest.tag}` : 'releases/latest';
   const env = {
     ...process.env,
     AIOS_REPO: repo,
     AIOS_INSTALL_DIR: rootDir,
   };
+  const assetName = process.platform === 'win32' ? 'aios.zip' : 'aios.tar.gz';
+  if (newest?.tag) {
+    env.AIOS_RELEASE_TAG = newest.tag;
+    // AIOS_ASSET_URL 自旧版安装器起就被支持，即使本地安装器不识别新
+    // AIOS_RELEASE_TAG 也能锁定精确版本的资产。
+    env.AIOS_ASSET_URL = `https://github.com/${repo}/releases/download/${newest.tag}/${assetName}`;
+  }
 
   if (process.platform === 'win32') {
     const psRepo = quotePowerShellSingleString(repo);
@@ -103,7 +161,7 @@ async function updateFromReleaseInstaller(rootDir, { repo, io, run = runCommand 
     const localInstaller = path.join(rootDir, 'scripts', 'aios-install.ps1');
     const installerCmd = await pathExists(localInstaller)
       ? `& '${quotePowerShellSingleString(localInstaller)}'`
-      : `irm ("https://github.com/{0}/releases/latest/download/aios-install.ps1" -f $env:AIOS_REPO) | iex`;
+      : `irm "https://github.com/${repo}/${releaseSegment}/download/aios-install.ps1" | iex`;
     const script = [
       '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12',
       `$env:AIOS_REPO='${psRepo}'`,
@@ -115,7 +173,7 @@ async function updateFromReleaseInstaller(rootDir, { repo, io, run = runCommand 
     return { method: 'release-installer', updated: true, skipped: false };
   }
 
-  const script = `curl -fsSL https://github.com/${repo}/releases/latest/download/aios-install.sh | bash`;
+  const script = `curl -fsSL https://github.com/${repo}/${releaseSegment}/download/aios-install.sh | bash`;
   io.log('+ runtime self-update: GitHub Releases installer');
   await run('bash', ['-lc', script], { cwd: process.env.HOME || process.env.USERPROFILE || rootDir, env, io });
   return { method: 'release-installer', updated: true, skipped: false };
@@ -148,16 +206,25 @@ export async function updateHarnessRuntime({
   repo = process.env.AIOS_REPO || DEFAULT_REPO,
   io = console,
   runCommandImpl = runCommand,
+  resolveNewestRelease,
 } = {}) {
   const before = await readVersion(rootDir);
   if (before) {
     io.log(`Runtime version: ${before}`);
   }
 
+  const releaseResolver = resolveNewestRelease ?? resolveNewestStableRelease;
+
   const result = await hasGitWorktree(rootDir)
     ? await updateFromGit(rootDir, io, runCommandImpl)
     : (ensureWorkingDirectoryOutsideInstallTree(rootDir, io),
-       await updateFromReleaseInstaller(rootDir, { repo, io, run: runCommandImpl }));
+       await updateFromReleaseInstaller(rootDir, {
+         repo,
+         io,
+         run: runCommandImpl,
+         currentVersion: before,
+         resolveNewestRelease: releaseResolver,
+       }));
 
   const after = await readVersion(rootDir);
   if (after && after !== before) {

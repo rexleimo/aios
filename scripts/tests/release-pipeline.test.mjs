@@ -464,6 +464,9 @@ test('PowerShell installer can use a local asset URL for install smoke tests', a
 
   assert.match(installPs1, /AIOS_ASSET_URL/);
   assert.match(installPs1, /\$assetUrl = if \(\$AssetUrl\)/);
+  // 中文注释：releases/latest 会被补发旧版抢占，安装器必须支持按精确 tag 拉取。
+  assert.match(installPs1, /AIOS_RELEASE_TAG|\$ReleaseTag/);
+  assert.match(installPs1, /elseif \(\$ReleaseTag\)[\s\S]*releases\/download\/\$ReleaseTag\/aios\.zip/);
   assert.match(installPs1, /Copy-Item -LiteralPath \$localPath -Destination \$OutFile -Force/);
 });
 
@@ -471,7 +474,7 @@ test('Bash installer can use a local asset URL for install smoke tests', async (
   const workspaceRoot = process.cwd();
   const installSh = await readFile(path.join(workspaceRoot, 'scripts', 'aios-install.sh'), 'utf8');
 
-  assert.match(installSh, /asset_url="\$\{AIOS_ASSET_URL:-https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/aios\.tar\.gz\}"/u);
+  assert.match(installSh, /if \[ -n "\$\{AIOS_ASSET_URL:-\}" \]; then[\s\S]*elif \[ -n "\$\{AIOS_RELEASE_TAG:-\}" \]; then[\s\S]*asset_url="https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/download\/\$\{AIOS_RELEASE_TAG\}\/aios\.tar\.gz"[\s\S]*else[\s\S]*asset_url="https:\/\/github\.com\/\$\{AIOS_REPO\}\/releases\/latest\/download\/aios\.tar\.gz"/u);
 });
 
 bashInstallerTest('Bash installer isolates nested runtime and privacy paths from inherited host paths', async () => {

@@ -18,6 +18,8 @@ Optional environment variables:
   AIOS_STATE_DIR      state dir for installer-owned config, default: parent of install dir
   AIOS_WRAP_MODE      all|repo-only|opt-in|off (default: opt-in)
   AIOS_ASSET_URL      override aios.tar.gz URL for offline install tests
+  AIOS_RELEASE_TAG    exact release tag to download (preferred over releases/latest,
+                      which GitHub orders by creation time, not semver)
 USAGE
 }
 
@@ -48,7 +50,14 @@ case "$AIOS_WRAP_MODE" in
     ;;
 esac
 
-asset_url="${AIOS_ASSET_URL:-https://github.com/${AIOS_REPO}/releases/latest/download/aios.tar.gz}"
+if [ -n "${AIOS_ASSET_URL:-}" ]; then
+  asset_url="$AIOS_ASSET_URL"
+elif [ -n "${AIOS_RELEASE_TAG:-}" ]; then
+  # 中文注释：按精确 tag 拉取，避免 releases/latest 被补发旧版抢占后降级安装。
+  asset_url="https://github.com/${AIOS_REPO}/releases/download/${AIOS_RELEASE_TAG}/aios.tar.gz"
+else
+  asset_url="https://github.com/${AIOS_REPO}/releases/latest/download/aios.tar.gz"
+fi
 
 require_cmd() {
   local cmd="$1"

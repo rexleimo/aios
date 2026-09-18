@@ -114,6 +114,7 @@ test('install-tree self-update uses the release installer and never git commands
     rootDir: root,
     io: { log: () => {}, error: () => {} },
     runCommandImpl: run,
+    resolveNewestRelease: async () => null,
   });
 
   assert.equal(result.method, 'release-installer');
@@ -123,5 +124,61 @@ test('install-tree self-update uses the release installer and never git commands
     assert.equal(run.calls[0].startsWith('powershell '), true);
   } else {
     assert.equal(run.calls[0].startsWith('bash -lc curl -fsSL https://github.com/'), true);
+    assert.equal(run.calls[0].includes('/releases/latest/download/aios-install.sh'), true);
+  }
+});
+
+test('install-tree self-update refuses to downgrade when releases/latest is older than installed', async () => {
+  const root = await mkdtemp(path.join(TMP_BASE, 'aios-selfupdate-'));
+  await mkdir(path.join(root, 'scripts'), { recursive: true });
+  const { writeFile } = await import('node:fs/promises');
+  await writeFile(path.join(root, 'VERSION'), '5.17.0\n', 'utf8');
+  const run = fakeRunner();
+  const logs = [];
+
+  const result = await updateHarnessRuntime({
+    rootDir: root,
+    io: { log: (line) => logs.push(line), error: () => {} },
+    runCommandImpl: run,
+    // 模拟 GitHub latest 指针被补发的 v5.16.2 抢占。
+    resolveNewestRelease: async () => ({ tag: 'v5.16.2', version: '5.16.2', security: false }),
+  });
+
+  assert.equal(result.updated, false);
+  assert.equal(result.skipped, true);
+  assert.equal(result.reason, 'not-newer-than-installed');
+  assert.equal(result.remoteVersion, '5.16.2');
+  assert.equal(run.calls.filter((key) => key.includes('curl') || key.startsWith('powershell ')).length, 0);
+  assert.equal(logs.some((line) => line.includes('refusing to downgrade')), true);
+});
+
+test('install-tree self-update pins the asset URL to the exact newest tag', async () => {
+  const root = await mkdtemp(path.join(TMP_BASE, 'aios-selfupdate-'));
+  const { writeFile } = await import('node:fs/promises');
+  await writeFile(path.join(root, 'VERSION'), '5.16.2\n', 'utf8');
+  const run = fakeRunner();
+  const envs = [];
+  const recordingRun = async (command, args, options = {}) => {
+    envs.push(options.env || {});
+    return run(command, args, options);
+  };
+
+  const result = await updateHarnessRuntime({
+    rootDir: root,
+    io: { log: () => {}, error: () => {} },
+    runCommandImpl: recordingRun,
+    resolveNewestRelease: async () => ({ tag: 'v5.17.0', version: '5.17.0', security: false }),
+  });
+
+  assert.equal(result.updated, true);
+  assert.equal(result.skipped, false);
+  const assetUrl = (envs[0] || {}).AIOS_ASSET_URL || '';
+  assert.equal((envs[0] || {}).AIOS_RELEASE_TAG, 'v5.17.0');
+  if (process.platform === 'win32') {
+    assert.equal(run.calls[0].startsWith('powershell '), true);
+    assert.equal(assetUrl.endsWith('/releases/download/v5.17.0/aios.zip'), true);
+  } else {
+    assert.equal(run.calls[0].includes('releases/download/v5.17.0/download/aios-install.sh'), true);
+    assert.equal(assetUrl.endsWith('/releases/download/v5.17.0/aios.tar.gz'), true);
   }
 });

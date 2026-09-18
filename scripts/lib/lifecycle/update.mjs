@@ -21,22 +21,18 @@ import { doctorContextDbShell, installContextDbShell, installPrivacyGuard } from
 import { doctorContextDbSkills, installContextDbSkills } from '../components/skills.mjs';
 import { installRexClientProjections } from '../rex-harness/client-projection.mjs';
 import { updateHarnessRuntime } from './self-update.mjs';
+import { resolveNewestStableRelease } from './release-lookup.mjs';
 import { prepareRexWorkflowSurface } from '../workflows/rex-workflow-surface-lifecycle.mjs';
 import { checkForUpdate, renderUpdateNotice } from './update-notice.mjs';
 
 async function fetchLatestAiosRelease() {
-  const response = await fetch('https://api.github.com/repos/rexleimo/aios/releases/latest', {
-    headers: {
-      accept: 'application/vnd.github+json',
-      'user-agent': 'aios-update-check',
-    },
-    signal: AbortSignal.timeout(8000),
-  });
-  if (!response.ok) throw new Error(`GitHub release lookup returned HTTP ${response.status}`);
-  const payload = await response.json();
+  // 中文注释：不用 releases/latest（按创建时间，补发旧版会抢占），
+  // 改为列出全部 stable releases 后按 semver 取最大值。
+  const newest = await resolveNewestStableRelease();
+  if (!newest) throw new Error('GitHub release lookup returned no stable releases');
   return {
-    version: String(payload.tag_name || '').replace(/^v/u, ''),
-    security: Boolean(payload.security_advisory || payload.security),
+    version: newest.version,
+    security: Boolean(newest.security),
   };
 }
 

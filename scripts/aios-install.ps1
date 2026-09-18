@@ -1,6 +1,7 @@
 param(
   [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/aios" }),
   [string]$AssetUrl = $(if ($env:AIOS_ASSET_URL) { $env:AIOS_ASSET_URL } else { "" }),
+  [string]$ReleaseTag = $(if ($env:AIOS_RELEASE_TAG) { $env:AIOS_RELEASE_TAG } else { "" }),
   [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/aios") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
   [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" })
@@ -64,7 +65,15 @@ function Safe-RemoveDir([string]$Path) {
   Remove-Item -LiteralPath $full -Recurse -Force -ErrorAction SilentlyContinue
 }
 
-$assetUrl = if ($AssetUrl) { $AssetUrl } else { "https://github.com/$Repo/releases/latest/download/aios.zip" }
+# 中文注释：优先级 AssetUrl > ReleaseTag（按精确 tag 拉取）> releases/latest。
+# releases/latest 按创建时间而非 semver 排序，补发旧版会抢占导致降级安装。
+$assetUrl = if ($AssetUrl) {
+  $AssetUrl
+} elseif ($ReleaseTag) {
+  "https://github.com/$Repo/releases/download/$ReleaseTag/aios.zip"
+} else {
+  "https://github.com/$Repo/releases/latest/download/aios.zip"
+}
 
 Enable-Tls12
 
