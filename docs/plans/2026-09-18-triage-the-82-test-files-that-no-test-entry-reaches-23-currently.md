@@ -66,7 +66,8 @@ Work items (stable ids, observable outcome, verification, real deps):
 - `work-wire`: every fixed family is reachable from a suite and CI runs it. deps: all fix items — wiring a still-failing file would turn the gate red.
 - `work-snapshot-refresh`: the unwired baseline shrinks by exactly the wired count (guard W3 forces this). deps: work-wire.
 
-- frontier (ready now): work-env-py, work-residue, work-win-colon, work-stale-code, work-adjudicate.
+- `work-evidence-ledger` (NEW, blocked): `aios_capability_evidence` cannot be satisfied for a planning Provider through the documented MCP surface. Every payload returns `delivery ticket schemaVersion must be 1`, including a well-formed `rex.delivery-ticket.v1` with `schemaVersion: 1` **and** `schemaVersion: "banana"` — identical message, so the argument is not being read; the validator inspects some other object (the plan state on disk carries `schemaVersion: 3`). Until this is resolved the planning evidence is delivered in-band as `AIOS_REX_EVIDENCE`. deps: none.
+- frontier (ready now): work-env-py, work-residue, work-stale-code, work-adjudicate.
 - blocked: work-wire (needs every fix), work-snapshot-refresh (needs work-wire), work-fixture-refresh (needs the regenerate-vs-re-certify decision).
 - parallelGroups: [work-env-py], [work-residue], [work-win-colon], [work-stale-code], [work-fixture-refresh], [work-adjudicate] — independent domains, no shared state.
 - convergenceGate: full regression green, every wired family reachable from a suite, baseline shrunk by exactly the wired count.
