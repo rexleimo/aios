@@ -41,6 +41,16 @@ AIOS is a local-first Graph Engine for coding agents. Related graph-based agent 
 
 AIOS's differentiator: **local-first**. The graph, memory, and evidence run on your machine — no prompt or code leaves your environment.
 
+## Model and vendor ecosystem
+
+AIOS can adopt third-party model surfaces through a pinned, hash-verified integration rather than a copy-pasted prompt:
+
+| Vendor | Model surface | Integration |
+| --- | --- | --- |
+| [TypeSafe](https://typesafe.ai) | System One / Jev (`jev-latest`) | [`aios integration add typesafe`](integrations.md) |
+
+See [Vendor Integrations](integrations.md) for the install command, the nine-client coverage table, and the verification gates.
+
 ## FAQ
 
 ### Which link is canonical for product behavior?

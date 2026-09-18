@@ -18,6 +18,10 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - what is Graph Engineering for AI agents
 - what is Loop Engineering and why does it matter
 - how to run a coding agent overnight without crashing
+- how to add TypeSafe Jev to Claude Code / Codex
+- TypeSafe System One Jev model integration for coding agents
+- install a third-party MCP server across all coding clients safely
+- how to verify a vendor agent skill before installing it
 - local-first AI coding agent vs cloud agent
 - adaptive agent workflow policy direct guarded planned
 - agent harness vs bare coding CLI
@@ -44,6 +48,7 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 - https://cli.rexai.top/contextdb/ — local project memory store
 - https://cli.rexai.top/token-compression/ — local token budget control
 - https://cli.rexai.top/troubleshooting/ — recovery procedures
+- https://cli.rexai.top/integrations/ — vendor integrations (TypeSafe / Jev) across all nine clients
 - https://cli.rexai.top/changelog/ — version history
 
 ## Problem-First Guides
