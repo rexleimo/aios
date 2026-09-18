@@ -1,5 +1,5 @@
 ---
-title: "Solo Harness: Give Your Agent a Task, Go To Sleep, Check Results In The Morning"
+title: "Solo Harness: Start a Task, Sleep, Check Results"
 description: "AIOS 1.7 introduces the overnight agent run: journals, stop and resume controls, and git worktree isolation, so interrupted runs resume from a checkpoint."
 date: 2026-04-26
 tags: ["AIOS", "Solo Harness", "long-running agent", "ContextDB"]

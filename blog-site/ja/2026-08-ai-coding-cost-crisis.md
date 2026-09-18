@@ -1,5 +1,5 @@
 ---
-title: "AI コーディング請求書が制御不能に：Cursor は数字を隠し、Amazon は 180 万ドルを浪費、ローカルレイヤーが変えるもの"
+title: AI コーディング請求書が制御不能に：Cursor が数字を隠した理由
 description: "Cursor はコストデータを削除し、Amazon の内部レポートは些末な Claude タスクに 180 万ドルを費やしたことを示し、Codex は時間制限を復活させました。AI コーディングの請求がなぜ膨らむのか、可視性が何を変えるのかを解説します。"
 date: 2026-08-02
 tags: ["AI coding cost", "token budget", "cost transparency", "Cursor", "Claude Code", "Codex", "local-first", "developer productivity"]

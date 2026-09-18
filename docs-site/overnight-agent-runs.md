@@ -1,5 +1,5 @@
 ---
-title: "Run Coding Agents Overnight: One Sentence, Resumable, Verified"
+title: "Run Coding Agents Overnight: Resumable and Verified"
 description: "Overnight agent runs crash or leave unrecoverable state. AIOS keeps them resumable: checkpoint state, gate milestones with evidence, resume from the last one."
 date: 2026-08-10
 schema_type: techarticle

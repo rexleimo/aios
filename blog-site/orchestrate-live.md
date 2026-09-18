@@ -1,5 +1,5 @@
 ---
-title: "Orchestrate Live: Safe Opt-In Subagent Runtime for Codex, Claude, and Gemini"
+title: "Orchestrate Live: Opt-In Subagent Runtime"
 description: "Understand the difference between dry-run and live orchestration, bounded parallel phases, JSON handoffs, ownership gates, and provider readiness."
 date: 2026-06-20
 tags: ["orchestration", "subagents", "Agent Team", "dry-run", "runtime"]

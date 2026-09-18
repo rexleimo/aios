@@ -1,5 +1,5 @@
 ---
-title: "Which AI Agent Workflow Should You Choose? A Practical AIOS Decision Guide"
+title: Which AI Agent Workflow Should You Choose? A Decision Guide
 description: "Choose noop, direct, guarded, or planned AI agent workflows with a simple decision table, examples, and verification checklist."
 date: 2026-07-14
 tags: ["AI agent workflow", "AIOS", "Codex", "Claude Code", "developer tools"]

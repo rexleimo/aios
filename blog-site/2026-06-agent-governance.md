@@ -1,5 +1,5 @@
 ---
-title: "Agent Governance: Make Team Runs Prove Themselves Before Going Live"
+title: "Agent Governance: Make Team Runs Prove Themselves"
 description: "How AIOS folds many agents into one workflow with smoke evidence, provenance, token-compression metrics, and skill training gates."
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]

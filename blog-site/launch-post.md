@@ -1,5 +1,5 @@
 ---
-title: "I Finally Built the Tool That Ends the 'Which AI Coding Tool Is Better' Debate"
+title: I Built the Tool That Ends the AI CLI Debate
 publish_date: 2026-03-10
 description: "How AIOS became a workflow layer that unifies Claude Code, Codex, and Gemini without replacing them, and why that framing ends the which-tool-is-better debate."
 ---

@@ -1,5 +1,5 @@
 ---
-title: Stop Debating AI Programming Tools in 2026 — Here's What Actually Works
+title: Stop Debating AI Programming Tools in 2026
 publish_date: 2026-03-10
 description: "Claude Code vs Codex vs Gemini compared on real long tasks, plus a surprising third option: a workflow layer that uses whichever CLI you already have."
 ---

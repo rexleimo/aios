@@ -1,5 +1,5 @@
 ---
-title: "v5.8.0: AIOS Learns Safely — Session Memory, Evidence Gates, and Governed Self-Evolution"
+title: "v5.8.0: Governed Self-Evolution and Session Memory"
 description: "AIOS v5.8.0 closes the broken memo trigger chain and adds a governed self-evolution pipeline with acceptance checks, canary promotion, and rollback."
 date: 2026-08-22
 tags: ["AIOS", "release", "self-evolution", "memory", "governance", "memo", "dream"]

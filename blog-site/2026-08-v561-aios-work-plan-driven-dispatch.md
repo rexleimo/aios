@@ -1,5 +1,5 @@
 ---
-title: "v5.6.1: Plan-Driven Multi-Agent Dispatch — aios work Reads Your Plan"
+title: "v5.6.1: Plan-Driven Dispatch — aios work Reads Your Plan"
 description: "v5.6.1 makes aios work plan-driven: eligible tasks from the active plan become parallel work items with dependencies, owned paths, and acceptance criteria."
 date: 2026-08-12
 tags: ["AIOS", "multi-agent", "parallel", "dispatch", "planning", "release", "v5.6.1"]

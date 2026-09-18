@@ -1,5 +1,5 @@
 ---
-title: "ContextDB Lazy Load: From 5-Second Startup to Agentic Self-Discovery"
+title: "ContextDB Lazy Load: From 5s Startup to Self-Discovery"
 description: "We replaced eager context injection with a <50 ms facade path, background async bootstrap, and runtime triggers, so the agent decides when to load memory."
 date: 2026-04-19
 tags: [ContextDB, Lazy Load, Agentic Memory, AIOS, Performance]

@@ -1,5 +1,5 @@
 ---
-title: "v4.0 Adaptive Workflow Policy: How AIOS Chooses the Right Amount of Process"
+title: "v4.0 Adaptive Workflow Policy: The Right Amount of Process"
 description: "A practical guide to AIOS v4.0's noop, direct, guarded, and planned workflow routes, persistent plans, and evidence gates."
 date: 2026-07-14
 tags: ["AIOS", "AI agent workflow", "workflow policy", "developer productivity", "SEO"]

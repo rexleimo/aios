@@ -1,5 +1,5 @@
 ---
-title: "Claude Code vs Codex vs Gemini CLI：コーディングエージェント CLI はどれを選ぶべきか？"
+title: Claude Code vs Codex vs Gemini CLI：どれを選ぶべきか？
 description: "日常のコーディング作業向けに Claude Code、Codex CLI、Gemini CLI、OpenCode、Hermes を比較：長所、短所、メモリ、マルチエージェント対応、そして AIOS のようなワークフローレイヤーを下に追加すべきタイミング。"
 date: 2026-08-10
 schema_type: techarticle

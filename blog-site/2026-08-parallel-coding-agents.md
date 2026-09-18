@@ -1,5 +1,5 @@
 ---
-title: "Parallel Coding Agents Are Not Free: Git Worktrees Isolate Files, Not State"
+title: "Parallel Agents: Git Worktrees Isolate Files, Not State"
 description: "File isolation protects source files, but activation state, tokens, and evidence still race between parallel agents. Here is what state-level isolation means."
 date: 2026-08-02
 tags: ["parallel coding agents", "git worktree", "concurrency", "agent team", "state isolation", "developer productivity"]

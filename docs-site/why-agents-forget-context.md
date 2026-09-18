@@ -1,5 +1,5 @@
 ---
-title: "Why Your AI Coding Agent Forgets Context Between Sessions (and How to Fix It)"
+title: Why Agents Forget Context — and How to Fix It
 description: "Your coding agent forgets everything between sessions. AIOS gives it memory: say one sentence and it remembers decisions, constraints, and progress. All local."
 date: 2026-08-10
 schema_type: techarticle

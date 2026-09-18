@@ -1,5 +1,5 @@
 ---
-title: "Token Intelligence Architecture: ContextDB, RTK, Caveman, and Headroom MCP"
+title: "Token Intelligence: ContextDB, RTK, Caveman, Headroom MCP"
 description: "A current guide to AIOS token intelligence: pull-based ContextDB context, local RTK/Caveman compression, and explicit Headroom MCP retrieval."
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]

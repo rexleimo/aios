@@ -1,5 +1,5 @@
 ---
-title: "Automation Playbook: Build a Reliable Browser Content Workflow"
+title: "Automation Playbook: A Reliable Browser Content Workflow"
 description: "A practical, human-controlled playbook for browser content operations with queues, review gates, CDP sessions, ContextDB, and measurable outcomes."
 date: 2026-07-14
 tags: ["browser automation", "content operations", "MCP", "ContextDB", "workflow design"]

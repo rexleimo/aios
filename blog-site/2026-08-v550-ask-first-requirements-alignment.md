@@ -1,5 +1,5 @@
 ---
-title: "v5.5.0: Ask-First Requirements Alignment — Agents Stop Building the Wrong Thing"
+title: "v5.5.0: Ask-First Alignment — Agents Stop Guessing"
 description: "v5.5.0 makes the agent detect vague requests, pause before planning, and align with you first. A clarification budget prevents endless questioning."
 date: 2026-08-08
 tags: ["AIOS", "workflow", "requirements", "Ask-First", "clarification", "alignment", "release"]

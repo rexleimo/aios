@@ -1,5 +1,5 @@
 ---
-title: "v1.50.0: Unified AIOS Search Across Memory, Docs, Plans, and Code"
+title: "v1.50.0: Unified Search Across Memory, Docs, Plans"
 description: "AIOS v1.50.0 gives every supported coding client one search path for project memory, pinned memo, documentation, plans, and code with scoped visibility."
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]

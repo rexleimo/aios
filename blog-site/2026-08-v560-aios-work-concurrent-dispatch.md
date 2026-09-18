@@ -1,5 +1,5 @@
 ---
-title: "v5.6.0: Parallel Multi-Agent Coding with One Command — aios work"
+title: "v5.6.0: Parallel Multi-Agent Coding with One Command"
 description: "v5.6.0 adds aios work: one command turns a task into a planned, concurrent multi-agent dispatch with a merge gate instead of one agent."
 date: 2026-08-11
 tags: ["AIOS", "multi-agent", "parallel", "orchestration", "release", "v5.6.0"]

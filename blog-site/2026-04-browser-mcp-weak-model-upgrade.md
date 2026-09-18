@@ -1,5 +1,5 @@
 ---
-title: "Browser MCP Weak-Model Upgrade: Semantic Snapshot + Text Click"
+title: "Browser MCP Weak-Model Upgrade: Semantic Snapshot"
 description: "Weak-model browser execution improves with compact page understanding primitives, text-first click actions, and real-CDP compatibility hardening."
 date: 2026-04-18
 tags: [Browser MCP, Weak Models, Agent Runtime, AIOS, Reliability]

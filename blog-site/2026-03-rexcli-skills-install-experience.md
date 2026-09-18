@@ -1,5 +1,5 @@
 ---
-title: "AIOS Skills Install Experience Update: Global/Project Scope and a Clearer Picker"
+title: "AIOS Skills Install: Scope Picker and Clearer Prompts"
 description: "Skills install and uninstall improve, canonical sources move into skill-sources/, the default install becomes a portable copy, and Node 22 LTS is the baseline."
 date: 2026-03-17
 tags: [AIOS, Skills, TUI, Onboarding, AI Development]

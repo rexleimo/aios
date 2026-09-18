@@ -1,5 +1,5 @@
 ---
-title: "v5.4.4: Reliable Agent Smoke — Output-Contract Clients and Escalating Probe Timeouts"
+title: "v5.4.4: Reliable Agent Smoke and Escalating Probe Timeouts"
 description: "v5.4.4 fixes agents stuck in 'workflow stuck' states: live smoke works with Codex, probe timeouts are configurable, and probes retry before blocking."
 date: 2026-08-06
 tags: ["AIOS", "agents", "smoke", "timeout", "reliability", "release"]

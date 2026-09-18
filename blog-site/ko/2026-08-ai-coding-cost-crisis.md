@@ -1,5 +1,5 @@
 ---
-title: "AI 코딩 청구서가 통제를 벗어났습니다: Cursor는 숫자를 숨겼고, Amazon은 $1.8M을 태웠으며, 로컬 레이어가 바꾸는 것"
+title: "AI 코딩 청구서가 통제를 벗어났습니다: Cursor가 숫자를 숨겼습니다"
 description: "Cursor가 비용 데이터를 제거하고, Amazon 내부 보고서는 단순 Claude 작업에 $1.8M을 썼음을 보여주고, Codex는 시간당 한도를 되살렸습니다. 청구서가 왜 불어나는지, 가시성이 무엇을 바꾸는지 설명합니다."
 date: 2026-08-02
 tags: ["AI coding cost", "token budget", "cost transparency", "Cursor", "Claude Code", "Codex", "local-first", "developer productivity"]

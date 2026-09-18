@@ -1,5 +1,5 @@
 ---
-title: "How AIOS Works: One Sentence Triggers Memory, Routing, Teams, and Verification"
+title: "How AIOS Works: Memory, Routing, Teams, Verification"
 description: "See how memory, routing, parallel teams, and verification work underneath your existing Claude Code, Codex, Gemini, or OpenCode client."
 ---
 

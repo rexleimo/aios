@@ -1,5 +1,5 @@
 ---
-title: "v5.8.1: 에이전트가 멈추지 않음 — aios-shell 동결 수정과 LLM 의미 판단 기반 요구사항 명확화"
+title: "v5.8.1: aios-shell 동결 수정과 LLM 기반 요구사항 명확화"
 description: "AIOS v5.8.1은 긴 명령 실행 중 opencode/codex를 얼려버리는 aios-shell MCP 동결 문제를 수정하고, 정규식 기반 모호성 감지를 LLM 의미 판단으로 교체합니다 — grilling은 실행 중에, 한 번에 하나의 결정 질문만 던집니다."
 date: 2026-08-26
 tags: ["AIOS", "릴리스", "MCP", "aios-shell", "요구사항", "grilling", "LLM", "안정성"]

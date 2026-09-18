@@ -1,5 +1,5 @@
 ---
-title: "debug-hub: When Your Agent Can Debug Itself, You Sleep Better"
+title: "debug-hub: When Your Agent Can Debug Itself"
 description: "What if your coding agent could read its own error logs and fix problems without waking you up? That is what debug-hub does, and here is how to set it up."
 date: 2026-05-06
 tags: ["debug-hub", "MCP", "Coding Agent", "observability"]

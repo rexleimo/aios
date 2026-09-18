@@ -1,5 +1,5 @@
 ---
-title: "v5.4.0：ワークフロー Iteration v2.1 — Activation 安全性、型付き Evidence コントラクト、全量 Skill 監査"
+title: v5.4.0：ワークフロー Iteration v2.1 — Activation 安全性と Skill 監査
 description: "AIOS v5.4.0 は、アトミックな Activation ステート、並行トークンロック、型付き Wayfinder/Planning Artifact スキーマ、厳格な evidence-ref 検証、S1–S5 全バッチ Skill 監査を追加します。"
 date: 2026-08-01
 tags: ["AIOS", "rex-harness", "ワークフロー", "evidence コントラクト", "activation store", "Skill 監査", "開発生産性"]

@@ -1,5 +1,5 @@
 ---
-title: "Windows CLI Startup Stability: Protect the Cross-CLI Reliability Chain"
+title: "Windows CLI Startup Stability: Keep the Chain Reliable"
 description: "How the Windows cmd launcher fix protects ContextDB continuity, wrapper policy, and native Codex, Claude, and Gemini startup paths."
 date: 2026-03-20
 tags: ["Windows", "CLI reliability", "ContextDB", "Codex", "Claude"]

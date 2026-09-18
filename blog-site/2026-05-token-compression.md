@@ -1,5 +1,5 @@
 ---
-title: "Token Compression: Fit Months of Agent Memory Into a Single Prompt"
+title: "Token Compression: Months of Memory Into One Prompt"
 description: "ContextDB now compresses your agent's history to fit within a token budget — keeping what matters, dropping what doesn't."
 date: 2026-05-12
 tags: ["ContextDB", "token compression", "AI memory", "AIOS"]

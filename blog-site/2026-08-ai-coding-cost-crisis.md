@@ -1,5 +1,5 @@
 ---
-title: "Your AI Coding Bill Is Out of Control: Cursor Hid the Numbers, Amazon Blew $1.8M, and What a Local Layer Changes"
+title: "AI Coding Bills Are Out of Control: Cursor Hid the Numbers"
 description: "Cursor hid cost data, Amazon overspent on menial Claude tasks, Codex restored hourly limits. Here is why bills spiral and what visibility can change."
 date: 2026-08-02
 tags: ["AI coding cost", "token budget", "cost transparency", "Cursor", "Claude Code", "Codex", "local-first", "developer productivity"]

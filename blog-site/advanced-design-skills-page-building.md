@@ -1,5 +1,5 @@
 ---
-title: "Advanced Design Skills for Page Building: From Vague Prompts to Production UI"
+title: "Advanced Design Skills: From Vague Prompts to Production UI"
 publish_date: 2026-04-18
 description: "A practical playbook to turn fuzzy user requests into consistent, high-quality UI/UX using DESIGN.md and frontend-design."
 ---

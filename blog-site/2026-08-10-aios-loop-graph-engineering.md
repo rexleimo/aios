@@ -1,5 +1,5 @@
 ---
-title: "Graph Engine Locally: AIOS Composes Loop Engineering Into a Verifiable Agent Graph"
+title: "Graph Engine Locally: Loop Engineering as an Agent Graph"
 description: "The Loop Engineering toolkit plus nodes, edges, shared state, and failure routing compose a verifiable agent graph, compared with LangGraph, CrewAI, AutoGen."
 date: 2026-08-10
 tags: ["Graph Engine", "Graph Engineering", "Loop Engineering", "AIOS", "agent orchestration", "local-first", "agent harness"]

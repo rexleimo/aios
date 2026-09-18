@@ -1,5 +1,5 @@
 ---
-title: "v5.8.2: Plans stop jumping the gun, and AIOS now speaks WorkBuddy"
+title: "v5.8.2: Plans Stop Jumping the Gun, and WorkBuddy Lands"
 description: "AIOS v5.8.2 stops plans from advancing on a task-id-less success report, and adds WorkBuddy as a fully supported client with native instructions and MCP."
 date: 2026-08-29
 tags: ["AIOS", "release", "planning", "workbuddy", "harness", "stability"]

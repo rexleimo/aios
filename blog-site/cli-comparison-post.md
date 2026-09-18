@@ -1,5 +1,5 @@
 ---
-title: "Long-Task Showdown: Codex vs Claude vs Gemini — Which One Actually Wins?"
+title: "Long-Task Showdown: Codex vs Claude vs Gemini"
 publish_date: 2026-03-10
 description: "After using all three tools on long, messy tasks: there is no best tool, only the best fit per scenario, and the workflow around the tool decides."
 ---

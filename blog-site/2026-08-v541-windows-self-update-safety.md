@@ -1,5 +1,5 @@
 ---
-title: "v5.4.1: Why 'aios update' Broke on Windows and How We Fixed Self-Updating"
+title: "v5.4.1: Why 'aios update' Broke on Windows"
 description: "v5.4.1 fixes a Windows self-update failure: 'aios update' inside the install tree locked a directory, nesting the new version and breaking re-exec."
 date: 2026-08-02
 tags: ["AIOS", "self-update", "Windows", "installer", "release", "bug fix"]
