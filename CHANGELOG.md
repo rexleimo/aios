@@ -45,6 +45,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
   its skills are owned by sync-skills" when the target really is an AIOS checkout. The first case
   previously read like a permission problem and had no sanctioned escape. Guard refusals print one
   actionable line instead of a stack trace.
+- perf(tests): `regression.concurrency` goes from 1 to 4, so a full `npm run test:regression` stops
+  serializing 105 files behind one another (fresh checkout: 631s -> ~90s; this dev checkout: 631s ->
+  ~448s, because one file still runs its own slow cases back-to-back). Measured across six
+  full-suite samples with 0 failures (three in a fresh worktree, three in the dev checkout), c=8 gave
+  no further gain. Isolation was audited before
+  raising it: no test binds a port, none writes the real `$HOME`, every `git` write happens inside an
+  `mkdtemp` fixture, and each fixed temp path literal belongs to a single file -- and
+  `node --test` parallelizes whole files, so there is no cross-file collision to guard. The remaining
+  dev-box cost is written up, with an A/B that localizes it to local state rather than to committed
+  code, in `docs/plans/2026-09-18-regression-throughput-parallel-evidence.md`.
 
 ## [5.17.4] - 2026-09-18
 

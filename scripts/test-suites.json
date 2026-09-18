@@ -1,6 +1,6 @@
 {
   "regression": {
-    "concurrency": 1,
+    "concurrency": 4,
     "files": [
       "scripts/tests/model-router.test.mjs",
       "scripts/tests/aios-cli.test.mjs",
