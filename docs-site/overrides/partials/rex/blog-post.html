@@ -17,6 +17,7 @@
         <div class="rex-blog-article-hero {{ current.theme_class if current else '' }}" aria-hidden="true"><span></span></div>
       </header>
       <div class="rex-blog-article-body">
+        {% set rex_hero_h1 = true %}
         {% include "partials/content.html" %}
       </div>
 

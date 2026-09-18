@@ -216,6 +216,7 @@ plugins:
 
 hooks:
   - scripts/mkdocs_version.py
+  - scripts/mkdocs_single_h1.py
 
 extra:
   alternate:

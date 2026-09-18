@@ -1,6 +1,6 @@
 ---
 title: "병렬 코딩 에이전트는 공짜가 아니다: Git 워크트리는 상태가 아니라 파일을 격리한다"
-description: "\"Git 워크트리는 코딩 에이전트의 격리 경계가 아니다\"는 이번 주 Hacker News에서 댓글 30개 이상을 모았고, 병렬 에이전트 트렌드는 계속 커지고 있습니다. 파일 격리는 소스 파일을 보호하지만 활성화 상태, 토큰, 증거는 여전히 경쟁합니다. 상태 수준 격리와 명시적 조정이 어떤 모습인지 설명합니다."
+description: "'Git 워크트리는 코딩 에이전트의 격리 경계가 아니다'는 이번 주 Hacker News에서 댓글 30개 이상을 모았고, 병렬 에이전트 트렌드는 계속 커지고 있습니다. 파일 격리는 소스 파일을 보호하지만 활성화 상태, 토큰, 증거는 여전히 경쟁합니다. 상태 수준 격리와 명시적 조정이 어떤 모습인지 설명합니다."
 date: 2026-08-02
 tags: ["parallel coding agents", "git worktree", "concurrency", "agent team", "state isolation", "developer productivity"]
 ---

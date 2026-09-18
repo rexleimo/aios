@@ -306,6 +306,14 @@
   </script>
 {% endblock %}
 
+{# SEO: Material appends " - <site_name>" to every page title. Drop the brand
+   suffix when it would push the <title> past the ~60 character SERP budget. #}
+{% block htmltitle %}
+  {% set seo_title = (page.meta.title if page and page.meta and page.meta.title else (page.title if page and not page.is_homepage else config.site_name)) | striptags | trim %}
+  {% set branded_title = seo_title ~ " - " ~ config.site_name %}
+  <title>{{ branded_title if (branded_title | length) <= 60 else seo_title }}</title>
+{% endblock %}
+
 {% block header %}
   {% include "partials/rex/material-header-bridge.html" %}
 {% endblock %}

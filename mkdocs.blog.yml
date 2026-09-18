@@ -86,6 +86,8 @@ plugins:
 hooks:
   - scripts/mkdocs_blog_content.py
   - scripts/mkdocs_version.py
+  - scripts/mkdocs_single_h1.py
+  - scripts/mkdocs_sitemap_merge.py
 
 extra:
   alternate:

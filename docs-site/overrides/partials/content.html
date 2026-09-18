@@ -1,0 +1,23 @@
+{#-
+  Local override of Material's `partials/content.html`.
+
+  Material injects `<h1>{{ page.title }}</h1>` whenever the page content has no
+  heading of its own. The RexAI page templates already render the page title in a
+  hero header (`partials/rex/docs-page.html`, `partials/rex/blog-post.html`), so
+  that injection added a second `<h1>` to every page after
+  `scripts/mkdocs_single_h1.py` removed the duplicated markdown title heading.
+
+  Templates that render a hero set `rex_hero_h1 = true` before including this
+  file. Everything else (for example the 404 page) keeps Material's behaviour.
+-#}
+{% if "material/tags" in config.plugins and tags %}
+  {% include "partials/tags.html" %}
+{% endif %}
+{% include "partials/actions.html" %}
+{% if not rex_hero_h1 and "\x3ch1" not in page.content %}
+  <h1>{{ page.title | d(config.site_name, true) }}</h1>
+{% endif %}
+{{ page.content }}
+{% include "partials/source-file.html" %}
+{% include "partials/feedback.html" %}
+{% include "partials/comments.html" %}

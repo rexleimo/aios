@@ -10,6 +10,8 @@ on:
       - "docs-site/**"
       - "blog-site/**"
       - "scripts/mkdocs_version.py"
+      - "scripts/mkdocs_single_h1.py"
+      - "scripts/mkdocs_sitemap_merge.py"
       - "docs-requirements.txt"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
@@ -111,6 +113,15 @@ jobs:
             page_url="${{ steps.deployment_attempt_2.outputs.page_url }}"
           fi
           echo "page_url=${page_url}" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout metadata for IndexNow submission
+        if: steps.freshness.outputs.is_latest == 'true' && (steps.deployment_attempt_1.outcome == 'success' || steps.deployment_attempt_2.outcome == 'success')
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Submit published URLs to IndexNow
+        if: steps.freshness.outputs.is_latest == 'true' && (steps.deployment_attempt_1.outcome == 'success' || steps.deployment_attempt_2.outcome == 'success')
+        continue-on-error: true
+        run: node scripts/indexnow-submit.mjs
 
       - name: Fail when GitHub Pages deploy retries are exhausted
         if: steps.freshness.outputs.is_latest == 'true' && steps.deployment_attempt_1.outcome == 'failure' && steps.deployment_attempt_2.outcome == 'failure'
