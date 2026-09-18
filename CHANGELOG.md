@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.17.4] - 2026-09-18
+
 - fix(release): `scripts/release-stable.sh` / `.ps1` now create an **annotated** tag
   (`git tag -a vY.Z.W -m "AIOS vY.Z.W"`) instead of a lightweight tag, matching what
   `release-preflight` requires (the tag object itself must carry the release note).
