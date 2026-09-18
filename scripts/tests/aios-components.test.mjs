@@ -537,6 +537,97 @@ test('shell doctor warns when native shim dir is not first in PATH', async () =>
   assert.match(logs.join('\n'), new RegExp(`native shim dir is in PATH but not first: ${escapeRegExp(shimDir)}`, 'u'));
 });
 
+async function plantManagedShim({ homeDir, bakedRoot, command = 'aios' }) {
+  const shimDir = path.join(homeDir, '.aios', 'bin');
+  await mkdir(shimDir, { recursive: true });
+  const shimPath = path.join(shimDir, command);
+  await writeFile(shimPath, [
+    '#!/usr/bin/env sh',
+    `# AIOS_NATIVE_SHIM managed: ${command}`,
+    `_aios_root_baked='${bakedRoot}'`,
+    'if [ -f "${AIOS_ROOT_DIR:-}/scripts/aios.sh" ]; then',
+    '  :',
+    'fi',
+    '',
+  ].join('\n'), 'utf8');
+  return { shimDir, shimPath };
+}
+
+async function makeLiveRuntimeRoot(prefix) {
+  const rootDir = await makeTemp(prefix);
+  await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
+  await writeFile(path.join(rootDir, 'scripts', 'aios.mjs'), '', 'utf8');
+  await writeFile(path.join(rootDir, 'scripts', 'aios.sh'), '', 'utf8');
+  return rootDir;
+}
+
+test('shell doctor warns when a managed shim baked root no longer resolves', async () => {
+  const logs = [];
+  const homeDir = await makeTemp('aios-shell-stale-shim-home-');
+  const { shimDir, shimPath } = await plantManagedShim({
+    homeDir,
+    bakedRoot: path.join(homeDir, 'removed-runtime-root'),
+  });
+
+  await doctorContextDbShell({
+    rcFile: path.join(os.tmpdir(), 'missing-aios-rc'),
+    platform: 'darwin',
+    homeDir,
+    env: { AIOS_NATIVE_SHIM_DIR: shimDir, PATH: shimDir },
+    io: { log: (message) => logs.push(message) },
+  });
+
+  const output = logs.join('\n');
+  assert.match(output, /\[warn\][^\n]*baked root/u);
+  assert.match(output, new RegExp(escapeRegExp(shimPath), 'u'));
+});
+
+test('shell doctor accepts a managed shim whose baked root resolves', async () => {
+  const logs = [];
+  const homeDir = await makeTemp('aios-shell-live-shim-home-');
+  const runtimeRoot = await makeLiveRuntimeRoot('aios-shell-live-runtime-');
+  const { shimDir } = await plantManagedShim({ homeDir, bakedRoot: runtimeRoot });
+
+  await doctorContextDbShell({
+    rcFile: path.join(os.tmpdir(), 'missing-aios-rc'),
+    platform: 'darwin',
+    homeDir,
+    env: { AIOS_NATIVE_SHIM_DIR: shimDir, PATH: shimDir },
+    io: { log: (message) => logs.push(message) },
+  });
+
+  const output = logs.join('\n');
+  assert.doesNotMatch(output, /baked root/u);
+  assert.match(output, /\[ok\] native shim installed: .*[\\/]aios$/mu);
+});
+
+test('shell setup rewrites a managed shim with the current runtime root', async () => {
+  const homeDir = await makeTemp('aios-shell-repair-home-');
+  const rootDir = await makeLiveRuntimeRoot('aios-shell-repair-runtime-');
+  await makeFakeMcpServer(rootDir);
+  const compiledCli = path.join(rootDir, 'mcp-server', 'dist', 'contextdb', 'cli.js');
+  const tsxPath = path.join(rootDir, 'mcp-server', 'node_modules', '.bin', 'tsx');
+  await mkdir(path.dirname(compiledCli), { recursive: true });
+  await mkdir(path.dirname(tsxPath), { recursive: true });
+  await writeFile(compiledCli, '', 'utf8');
+  await writeFile(tsxPath, '', 'utf8');
+  const { shimPath } = await plantManagedShim({
+    homeDir,
+    bakedRoot: path.join(homeDir, 'removed-runtime-root'),
+  });
+
+  await installContextDbShell({
+    rootDir,
+    platform: 'darwin',
+    homeDir,
+    rcFile: path.join(homeDir, '.zshrc'),
+    commandRunner: () => {},
+  });
+
+  const repaired = await readFile(shimPath, 'utf8');
+  assert.match(repaired, new RegExp(escapeRegExp(`_aios_root_baked='${rootDir}'`), 'u'));
+});
+
 test('windows shell uninstall removes managed block from BOM-prefixed PowerShell profiles', async () => {
   const homeDir = await makeTemp('aios-shell-win-bom-home-');
   const pwshProfile = path.join(homeDir, 'Documents', 'PowerShell', 'Microsoft.PowerShell_profile.ps1');

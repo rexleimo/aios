@@ -67,6 +67,39 @@ function resolveNativeShimCommandNames() {
   return ['aios', ...resolveClientCommandNames('all')];
 }
 
+const NATIVE_SHIM_RUNTIME_ANCHORS = ['scripts/aios.mjs', 'scripts/contextdb-shell-bridge.mjs'];
+
+/**
+ * 中文注释：shim 烘焙的 runtime root 可能因目录迁移或测试临时根而失效。只读取 shim
+ * 自己声明的 baked root，不从其他字符串里猜路径。
+ */
+function readShimBakedRoot(content) {
+  if (!content) return '';
+  const posixMatch = content.match(/^_aios_root_baked=(.*)$/mu);
+  if (posixMatch) {
+    const raw = posixMatch[1].trim();
+    const unquoted = raw.startsWith("'") && raw.endsWith("'") ? raw.slice(1, -1) : raw;
+    return unquoted.trim();
+  }
+  const windowsMatch = content.match(/set "AIOS_ROOT_DIR=([^"%][^"]*)"/u);
+  return windowsMatch ? windowsMatch[1].trim() : '';
+}
+
+function expandShimRoot(root, { env = process.env, homeDir = os.homedir() } = {}) {
+  return String(root || '')
+    .replace(/\$\{HOME\}/gu, homeDir)
+    .replace(/\$HOME\b/gu, homeDir)
+    .replace(/\$\{AIOS_ROOT_DIR\}/gu, env.AIOS_ROOT_DIR || '')
+    .replace(/\$AIOS_ROOT_DIR\b/gu, env.AIOS_ROOT_DIR || '');
+}
+
+function shimBakedRootResolves(root, options = {}) {
+  const expanded = expandShimRoot(root, options);
+  if (!expanded) return false;
+  const absolute = path.resolve(expanded);
+  return NATIVE_SHIM_RUNTIME_ANCHORS.some((anchor) => fs.existsSync(path.join(absolute, anchor)));
+}
+
 function envPathEntries(env = process.env) {
   const pathKey = Object.keys(env || {}).find((key) => key.toLowerCase() === 'path') || 'PATH';
   return String(env?.[pathKey] || '').split(path.delimiter).filter(Boolean);
@@ -409,7 +442,12 @@ export async function doctorContextDbShell({
     const shimPath = path.join(shimDir, fileName);
     const content = readTextIfExists(shimPath);
     if (content?.includes(NATIVE_SHIM_MARK)) {
-      io.log(`[ok] native shim installed: ${shimPath}`);
+      const bakedRoot = readShimBakedRoot(content);
+      if (bakedRoot && !shimBakedRootResolves(bakedRoot, { env, homeDir })) {
+        warn(`native shim baked root is stale: ${shimPath} -> ${bakedRoot}; re-run shell setup to refresh it`, { effective: false });
+      } else {
+        io.log(`[ok] native shim installed: ${shimPath}`);
+      }
     } else {
       warn(`native shim missing: ${shimPath}`);
     }
