@@ -1,11 +1,6 @@
 {
   "version": 1,
   "skills": {
-    "find-skills": {
-      "source": "vercel-labs/skills",
-      "sourceType": "github",
-      "computedHash": "6412eb4eb3b91595ebab937f0c69501240e7ba761b3d82510b5cf506ec5c7adc"
-    },
     "brainstorming": {
       "source": "obra/superpowers",
       "sourceType": "github",
@@ -14,15 +9,12 @@
       "vendored_at": "2026-06-27",
       "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
     },
-    "using-superpowers": {
-      "source": "obra/superpowers",
+    "find-skills": {
+      "source": "vercel-labs/skills",
       "sourceType": "github",
-      "version": "5.1.0",
-      "license": "MIT",
-      "vendored_at": "2026-06-27",
-      "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
+      "computedHash": "6412eb4eb3b91595ebab937f0c69501240e7ba761b3d82510b5cf506ec5c7adc"
     },
-    "test-driven-development": {
+    "subagent-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "version": "5.1.0",
@@ -38,7 +30,7 @@
       "vendored_at": "2026-06-27",
       "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
     },
-    "writing-plans": {
+    "test-driven-development": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "version": "5.1.0",
@@ -46,13 +38,11 @@
       "vendored_at": "2026-06-27",
       "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
     },
-    "subagent-driven-development": {
-      "source": "obra/superpowers",
+    "typesafe-ai": {
+      "source": "typesafe-ai/skills",
       "sourceType": "github",
-      "version": "5.1.0",
-      "license": "MIT",
-      "vendored_at": "2026-06-27",
-      "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
+      "skillPath": "skills/typesafe-ai/SKILL.md",
+      "computedHash": "a6ed7d8a3d2b2d962f8e44b17663767c433b7d1fc32d1ed0349a44f7372513e8"
     },
     "using-git-worktrees": {
       "source": "obra/superpowers",
@@ -62,7 +52,23 @@
       "vendored_at": "2026-06-27",
       "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
     },
+    "using-superpowers": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "version": "5.1.0",
+      "license": "MIT",
+      "vendored_at": "2026-06-27",
+      "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
+    },
     "verification-before-completion": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "version": "5.1.0",
+      "license": "MIT",
+      "vendored_at": "2026-06-27",
+      "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
+    },
+    "writing-plans": {
       "source": "obra/superpowers",
       "sourceType": "github",
       "version": "5.1.0",

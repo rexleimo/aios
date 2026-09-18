@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "integrations": {
+    "typesafe": {
+      "displayName": "TypeSafe (System One / Jev)",
+      "vendor": "typesafe-ai",
+      "homepage": "https://typesafe.ai",
+      "docsIndex": "https://docs.typesafe.ai/llms.txt",
+      "summary": "Typed judgment primitives (Choice / Score / Noul) served by the Jev System One model. Code owns the workflow; the model returns structured answers and calibrated probabilities instead of generated text.",
+      "env": [
+        {
+          "name": "TYPESAFE_API_KEY",
+          "required": false,
+          "purpose": "API calls to https://api.typesafe.ai/v1/systemone. Not needed to register the documentation MCP server.",
+          "issueUrl": "https://console.typesafe.ai/settings/keys"
+        }
+      ],
+      "skill": {
+        "repo": "typesafe-ai/skills",
+        "commit": "65a39f393687675ce170e6094757de20370365b9",
+        "skillPath": "skills/typesafe-ai",
+        "entryFile": "SKILL.md",
+        "sha256": "71ea90d7906c6554c4f4c460ef7361b2d26f59116ccdae986dc6d997b9389f52",
+        "installName": "typesafe-ai",
+        "license": "MIT"
+      },
+      "mcp": {
+        "serverName": "typesafe-docs",
+        "url": "https://docs.typesafe.ai/mcp",
+        "transport": "http",
+        "tools": [
+          "search_type_safe_ai",
+          "query_docs_filesystem_type_safe_ai",
+          "submit_feedback"
+        ],
+        "resources": ["mintlify://skills/typesafe"],
+        "purpose": "Read-only documentation retrieval so the agent reads current API contracts instead of prior knowledge."
+      }
+    }
+  }
+}

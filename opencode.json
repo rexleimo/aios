@@ -35,17 +35,17 @@
     },
     "changed-files": {
       "description": "Show files changed in the current AIOS session.",
-      "template": "Run: node scripts/aios.mjs session changed-files --json\\n\\n$ARGUMENTS",
+      "template": "Run: aios session changed-files --json\\n\\n$ARGUMENTS",
       "agent": "aios-build"
     },
     "skill-comply": {
       "description": "Generate AIOS skill compliance scenarios for a skill/rule/agent file.",
-      "template": "Run: node scripts/aios.mjs skill comply $ARGUMENTS --dry-run --json",
+      "template": "Run: aios skill comply $ARGUMENTS --dry-run --json",
       "agent": "aios-build"
     },
     "skill-health": {
       "description": "Show AIOS skill health and failure clusters.",
-      "template": "Run: node scripts/aios.mjs skill health --json\\n\\n$ARGUMENTS",
+      "template": "Run: aios skill health --json\\n\\n$ARGUMENTS",
       "agent": "aios-build"
     }
   },

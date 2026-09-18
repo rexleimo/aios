@@ -139,6 +139,35 @@ Options:
   --json
   -h, --help
 `;
+    case 'integration':
+      return `Usage:
+  aios integration list [--json]
+  aios integration add <id> [--clients <list|all>] [--scope <global|project>] [--dry-run] [--skip-skills] [--skip-mcp] [--json]
+  aios integration doctor <id> [--clients <list|all>] [--json]
+  aios integration remove <id> [--clients <list|all>] [--scope <global|project>] [--dry-run] [--json]
+
+Subcommands:
+  list         Show vendor integrations declared in config/integrations.json
+  add          Install the pinned skill and register the docs MCP server
+  doctor       Verify the skill hash, every client registration, and a live MCP handshake
+  remove       Remove only entries AIOS wrote (never a user-edited entry)
+
+Options:
+  --clients <list>               Comma list of clients, or "all" (default: all)
+  --scope <global|project>       MCP registration scope (default: global)
+  --dry-run                      Print the plan and the exact per-client command without writing
+  --skip-skills                  Only touch the MCP plane
+  --skip-mcp                     Only touch the skill plane
+  --format <text|json>
+  --json
+  -h, --help
+
+Examples:
+  aios integration list
+  aios integration add typesafe --dry-run
+  aios integration add typesafe --yes
+  aios integration doctor typesafe --json
+`;
     case 'plan':
       return `Usage:
   aios plan status [--workspace <path>] [--json]

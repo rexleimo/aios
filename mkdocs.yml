@@ -98,6 +98,7 @@ plugins:
             Rex Workflow Migration: Rex 工作流迁移
             debug-hub: debug-hub
             Model Router: 模型路由器
+            Vendor Integrations (TypeSafe / Jev): 第三方集成（TypeSafe / Jev）
             Code Review Graph / Codemap: 代码审查图谱 / Codemap
             Route & Concurrency Profiles: 路由与并发档位
             Advanced Design Skills: 高级设计技能
@@ -145,6 +146,7 @@ plugins:
             Rex Workflow Migration: Rex ワークフロー移行
             debug-hub: debug-hub
             Model Router: モデルルーター
+            Vendor Integrations (TypeSafe / Jev): サードパーティ統合（TypeSafe / Jev）
             Code Review Graph / Codemap: コードレビューグラフ / Codemap
             Route & Concurrency Profiles: ルーティングと並列プロファイル
             Advanced Design Skills: 高度デザインスキル
@@ -192,6 +194,7 @@ plugins:
             Rex Workflow Migration: Rex 워크플로 마이그레이션
             debug-hub: debug-hub
             Model Router: 모델 라우터
+            Vendor Integrations (TypeSafe / Jev): 서드파티 통합(TypeSafe / Jev)
             Code Review Graph / Codemap: 코드 리뷰 그래프 / Codemap
             Route & Concurrency Profiles: 라우팅/병렬 프로필
             Advanced Design Skills: 고급 디자인 스킬
@@ -276,6 +279,7 @@ nav:
       - Rex Workflow Migration: superpowers.md
       - debug-hub: debug-hub.md
       - Model Router: model-router.md
+      - Vendor Integrations (TypeSafe / Jev): integrations.md
       - Code Review Graph / Codemap: codemap.md
       - Route & Concurrency Profiles: route-concurrency-profiles.md
       - Advanced Design Skills: advanced-design-skills.md
