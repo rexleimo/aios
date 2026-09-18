@@ -143,7 +143,7 @@ if (process.argv.slice(2).join(' ') !== 'skill verify-training --changed --base 
 process.stdout.write('{"status":"verified"}\\n');
 `);
   await writeFixtureFile(rootDir, 'scripts/sync-native.mjs', "console.log('[ok] native sync');\n");
-  await writeFixtureFile(rootDir, 'scripts/lib/fs/atomic-write.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'fs', 'atomic-write.mjs'), 'utf8'));
+  await cp(path.join(workspaceRoot, 'scripts', 'lib', 'fs'), path.join(rootDir, 'scripts', 'lib', 'fs'), { recursive: true });
   await writeFixtureFile(rootDir, 'scripts/lib/skills/frontmatter.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'skills', 'frontmatter.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/source-tree.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'source-tree.mjs'), 'utf8'));
   await writeFixtureFile(rootDir, 'scripts/lib/agents/compat-export.mjs', await readFile(path.join(workspaceRoot, 'scripts', 'lib', 'agents', 'compat-export.mjs'), 'utf8'));
