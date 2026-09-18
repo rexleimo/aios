@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$Repo = $(if ($env:AIOS_REPO) { $env:AIOS_REPO } else { "rexleimo/aios" }),
   [string]$AssetUrl = $(if ($env:AIOS_ASSET_URL) { $env:AIOS_ASSET_URL } else { "" }),
   [string]$ReleaseTag = $(if ($env:AIOS_RELEASE_TAG) { $env:AIOS_RELEASE_TAG } else { "" }),

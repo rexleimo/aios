@@ -1,4 +1,4 @@
-# ContextDB transparent command wrappers for PowerShell.
+﻿# ContextDB transparent command wrappers for PowerShell.
 # Source this file in PowerShell profile to route supported clients through AIOS without prompt injection.
 # Optional env vars:
 # - AIOS_ROOT_DIR

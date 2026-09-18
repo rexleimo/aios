@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { chmod, copyFile, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
+import { chmod, copyFile, mkdir, mkdtemp, readFile, readdir, writeFile } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -247,4 +247,26 @@ test('doctor-contextdb-skills.ps1 is a thin wrapper', async () => {
 test('status-browser-cdp.ps1 is a thin wrapper', async () => {
   const content = await readFile(path.join(repoRoot, 'scripts', 'status-browser-cdp.ps1'), 'utf8');
   assert.match(content, /internal browser cdp-status/);
+});
+
+// 中文注释：Windows PowerShell 5.1 在无 BOM 时按系统 ANSI 代码页（中文环境为 GBK 936）
+// 解码 .ps1。中文注释的 UTF-8 字节数为奇数时，残留的首字节会吞掉紧随其后的换行，
+// 导致整行被拼接、引号与花括号错位，最终报“表达式或语句中包含意外的标记”。
+// 因此含非 ASCII 的 .ps1 必须带 UTF-8 BOM，与行尾风格无关。
+test('PowerShell scripts with non-ASCII bytes carry a UTF-8 BOM', async () => {
+  const scriptsDir = path.join(repoRoot, 'scripts');
+  const entries = await readdir(scriptsDir, { withFileTypes: true });
+  const ps1Files = entries.filter((entry) => entry.isFile() && entry.name.endsWith('.ps1'));
+  assert.ok(ps1Files.length > 0, 'expected PowerShell scripts to audit');
+
+  const offenders = [];
+  for (const entry of ps1Files) {
+    const bytes = await readFile(path.join(scriptsDir, entry.name));
+    const hasNonAscii = bytes.some((byte) => byte >= 0x80);
+    if (!hasNonAscii) continue;
+    const hasBom = bytes.length >= 3 && bytes[0] === 0xef && bytes[1] === 0xbb && bytes[2] === 0xbf;
+    if (!hasBom) offenders.push(`scripts/${entry.name}`);
+  }
+
+  assert.deepEqual(offenders, [], `non-ASCII .ps1 without UTF-8 BOM break Windows PowerShell 5.1 on GBK codepage: ${offenders.join(', ')}`);
 });

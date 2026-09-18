@@ -1,4 +1,4 @@
-param(
+﻿param(
   [string]$Out = (Join-Path (Resolve-Path (Join-Path $PSScriptRoot "..")).Path "dist/release")
 )
 
