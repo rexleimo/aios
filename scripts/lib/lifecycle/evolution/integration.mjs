@@ -23,6 +23,7 @@ import {
   promoteFromVerdict,
   readPromotion,
   listPromotions,
+  writePromotion,
 } from './promotion.mjs';
 import { createVerdict, writeVerdict, readVerdict } from './verdict.mjs';
 import {
@@ -84,9 +85,9 @@ export async function importSessionCandidates(rootDir, options = {}) {
           previousStableVersion: null,
         });
 
-        const target = path.join(rootDir, '.aios', 'memo', 'evolution', 'promotions', `${promotionId}.json`);
-        await fs.mkdir(path.dirname(target), { recursive: true });
-        await fs.writeFile(target, JSON.stringify(promotion, null, 2), 'utf8');
+        // Go through the store's writer: it owns the file name derivation, so a
+        // hand-rolled path here would disagree with readPromotion/listPromotions.
+        await writePromotion(rootDir, promotion);
 
         results.imported.push({ sessionId, candidateId: promotionId });
 

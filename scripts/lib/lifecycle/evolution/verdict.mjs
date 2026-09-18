@@ -13,6 +13,7 @@ import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { resolveMemoRoot } from '../../aios/state-root.mjs';
+import { sanitizeFileSegment } from '../../fs/file-segment.mjs';
 import { atomicWriteText, sha256Hex } from '../../memo/storage/fs-io.mjs';
 
 const VERDICTS_DIR = 'verdicts';
@@ -248,7 +249,7 @@ export async function writeVerdict(rootDir, verdict, env = process.env) {
   }
 
   const evaluated = evaluateVerdict(verdict);
-  const target = path.join(verdictsRoot(rootDir, env), `${evaluated.candidateId}.json`);
+  const target = path.join(verdictsRoot(rootDir, env), `${sanitizeFileSegment(evaluated.candidateId)}.json`);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await atomicWriteText(target, `${JSON.stringify(evaluated, null, 2)}\n`);
   return evaluated;
@@ -258,7 +259,7 @@ export async function writeVerdict(rootDir, verdict, env = process.env) {
  * Read a verdict from disk.
  */
 export async function readVerdict(rootDir, candidateId, env = process.env) {
-  const target = path.join(verdictsRoot(rootDir, env), `${candidateId}.json`);
+  const target = path.join(verdictsRoot(rootDir, env), `${sanitizeFileSegment(candidateId)}.json`);
   try {
     const raw = await fs.readFile(target, 'utf8');
     return JSON.parse(raw);

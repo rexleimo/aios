@@ -26,6 +26,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { resolveMemoRoot } from '../../aios/state-root.mjs';
+import { sanitizeFileSegment } from '../../fs/file-segment.mjs';
 import { atomicWriteText, sha256Hex } from '../../memo/storage/fs-io.mjs';
 import { readVerdict } from './verdict.mjs';
 
@@ -67,8 +68,12 @@ function promotionsRoot(rootDir, env = process.env) {
 }
 
 function promotionPath(rootDir, candidateId, env = process.env) {
-  const safe = String(candidateId).replace(/[^A-Za-z0-9._:-]+/gu, '-');
-  return path.join(promotionsRoot(rootDir, env), `${safe}.json`);
+  // The allow-list narrows an id to filename characters, but it must not keep a
+  // colon: candidate ids legitimately look like `session:<sessionId>`, and on
+  // NTFS `session:eval-001.json` is an alternate data stream of `session`.
+  // The file then never appears in readdir and the promotion is silently lost.
+  const safe = String(candidateId).replace(/[^A-Za-z0-9._-]+/gu, '-');
+  return path.join(promotionsRoot(rootDir, env), `${sanitizeFileSegment(safe)}.json`);
 }
 
 function auditPath(rootDir, env = process.env) {
@@ -90,8 +95,12 @@ export async function readPromotion(rootDir, candidateId, env = process.env) {
 
 /**
  * Write a promotion record atomically.
+ *
+ * Exported so callers do not open-code a second writer: integration.mjs used to
+ * write `promotions/<id>.json` directly with a plain writeFile, which bypassed
+ * promotionPath() entirely and lost the record on Windows.
  */
-async function writePromotion(rootDir, promotion, env = process.env) {
+export async function writePromotion(rootDir, promotion, env = process.env) {
   const target = promotionPath(rootDir, promotion.candidateId, env);
   await fs.mkdir(path.dirname(target), { recursive: true });
   await atomicWriteText(target, `${JSON.stringify(promotion, null, 2)}\n`);

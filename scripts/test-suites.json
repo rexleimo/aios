@@ -113,7 +113,8 @@
       "scripts/tests/agent-view-tiers.test.mjs",
       "scripts/tests/canvas-context-scaling.test.mjs",
       "scripts/tests/native-agent-guidance.test.mjs",
-      "scripts/tests/pages-workflow.test.mjs"
+      "scripts/tests/pages-workflow.test.mjs",
+      "scripts/tests/artifact-filename-windows-safety.test.mjs"
     ]
   },
   "browser": {

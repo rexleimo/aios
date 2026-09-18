@@ -1,7 +1,8 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { constants as fsConstants } from 'node:fs';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { writeFileAtomic } from '../../fs/atomic-write.mjs';
 
 export async function pathExists(filePath) {
   try {
@@ -31,10 +32,11 @@ export async function writeText(filePath, content) {
 }
 
 export async function atomicWriteText(filePath, content) {
-  await ensureParentDir(filePath);
-  const tempPath = path.join(path.dirname(filePath), `.${path.basename(filePath)}.${process.pid}.${randomUUID()}.tmp`);
-  await fs.writeFile(tempPath, content, 'utf8');
-  await fs.rename(tempPath, filePath);
+  // One atomic-write implementation for the whole tree: it sanitizes the derived
+  // temp name and removes the temp file when the rename fails. The previous
+  // inline version did neither, which is how a `session:<id>` verdict name turned
+  // into a stray NTFS alternate data stream instead of a reported failure.
+  await writeFileAtomic(filePath, content);
 }
 
 export async function appendText(filePath, content) {
