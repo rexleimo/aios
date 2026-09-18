@@ -1,78 +1,79 @@
 ---
-title: v3.2.0 — Harness 可靠性与技能生命周期升级
+title: "v3.2.0 — Harness Reliability and Skill Lifecycle"
 date: 2026-07-01
-description: "v3.2.0 聚焦 Harness 可靠性与技能生命周期：连续失败自动中止、紧急压缩第三级、启动前预检、运行时指令注入、手动记忆整理，以及技能 stale 检测与文件级回滚。基于竞品源码级差距分析的 6 项改进，直接提升多 agent 配合质量，且全部向后兼容。"
+description: "v3.2.0 tightens harness reliability and skills: auto-abort on repeated failures, a third compression tier, readiness checks, and file-level rollback."
 ---
 
-# v3.2.0 — Harness 可靠性与技能生命周期升级
+# v3.2.0 — Harness Reliability and Skill Lifecycle Upgrade
 
-> 2026-07-01 · 基于竞品源码级差距分析，6 项改进直接提升 agent 配合质量
+> 2026-07-01 · Six improvements from a source-level competitor gap analysis, directly raising agent collaboration quality
 
-## 为什么发这个版本
+## Why this release
 
-上一版（v3.1.0）完成了 Hermes Agent 作为一等公民客户端的集成。但在实际长跑使用中，我们发现了几个可靠性短板：
+The previous release (v3.1.0) completed the integration of Hermes Agent as a first-class client. But in real long-run usage we found several reliability gaps:
 
-1. agent 反复失败时 harness 无限重试，白白浪费 token
-2. 长会话 canvas 节点膨胀到溢出
-3. harness 启动时没有环境预检，跑到一半才发现 provider 不可达
-4. 每轮 prompt 缺少一致的 directive 注入
-5. 记忆系统没有整理机制，旧 memo 永远累积
-6. skill workshop 的 rollback 只恢复 metadata，不恢复文件内容
+1. when an agent kept failing, the harness retried forever and burned tokens
+2. long sessions let canvas nodes grow until they overflowed
+3. the harness had no environment pre-check at start, so an unreachable provider surfaced halfway through a run
+4. each iteration's prompt lacked a consistent directive injection
+5. the memory system had no cleanup mechanism, so old memos accumulated forever
+6. skill workshop rollback restored metadata but not file content
 
-本次 v3.2.0 逐一修复这些问题。所有改进都基于竞品源码级分析（gnhf / OpenHarness / TencentDB / the-pair / OpenClaw），不是 README 推断。
+v3.2.0 fixes each of these. Every improvement comes from source-level competitor analysis (gnhf / OpenHarness / TencentDB / the-pair / OpenClaw), not from README inference.
 
-## 改进清单
+## Improvement list
 
-### A1: consecutiveFailures 自动中止
+### A1: consecutiveFailures auto-abort
 
-**文件**: `scripts/lib/harness/solo-runtime/backoff.mjs` + `loop.mjs`
+**Files**: `scripts/lib/harness/solo-runtime/backoff.mjs` + `loop.mjs`
 
-新增双计数器：
-- `consecutiveFailures` — 所有非成功 outcome 都计入（blocked/failed/infra-retry/human-gate）
-- `consecutiveInfraFailures` — 仅 infra-retry + runtime-error/tool-error 计入
+Two new counters:
 
-当 `consecutiveFailures >= 5` 时，harness 自动 abort session 并记录 `consecutive-failures-abort` reason。成功/noop 重置所有计数器。退避仍保持 30s×2ⁿ cap 300s。
+- `consecutiveFailures` — every non-success outcome counts (blocked/failed/infra-retry/human-gate)
+- `consecutiveInfraFailures` — only infra-retry plus runtime-error/tool-error count
 
-**竞品参考**: gnhf `orchestrator.ts:361-368` 的 `consecutiveFailures` 计数器。gnhf 的退避无 cap 是 bug，我们的 300s cap 是正确做法。
+When `consecutiveFailures >= 5`, the harness aborts the session automatically and records the `consecutive-failures-abort` reason. A success or noop resets all counters. Backoff stays at 30s×2ⁿ with a 300s cap.
 
-### A2: Emergency 压缩第三级
+**Competitor reference**: the `consecutiveFailures` counter in gnhf `orchestrator.ts:361-368`. gnhf's uncapped backoff is a bug; our 300s cap is the correct approach.
 
-**文件**: `scripts/lib/offload/mermaid-canvas.mjs`
+### A2: Emergency — a third compression tier
 
-在原有的 mild（20 节点）/ aggressive（50 节点）之上，新增 emergency 级别：
+**File**: `scripts/lib/offload/mermaid-canvas.mjs`
 
-| 级别 | 触发阈值 | 保留最近节点数 |
-|------|----------|---------------|
+On top of the existing mild (20 nodes) and aggressive (50 nodes) tiers, an emergency tier is added:
+
+| Tier | Trigger threshold | Recent nodes kept |
+|------|-------------------|-------------------|
 | mild | 20 | 10 |
 | aggressive | 50 | 10 |
 | **emergency** | **100** | **5** |
 
-emergency 模式的 summary node 标记为 `offload:compact-emergency`，保留更少的最近节点以防止 canvas 自身过大导致 context overflow。
+The summary node in emergency mode is tagged `offload:compact-emergency` and keeps fewer recent nodes, so the canvas itself cannot grow large enough to overflow the context.
 
-**竞品参考**: TencentDB `l3.ts` 的 emergency 级别（0.95 触发，目标 0.6）。
+**Competitor reference**: the emergency tier in TencentDB `l3.ts` (triggers at 0.95, targets 0.6).
 
-### A3: Dry-run Readiness 预检
+### A3: Dry-run readiness pre-check
 
-**文件**: `scripts/lib/harness/solo-runtime/dry-run-readiness.mjs`（新文件）+ `loop.mjs`
+**Files**: `scripts/lib/harness/solo-runtime/dry-run-readiness.mjs` (new) + `loop.mjs`
 
-harness 启动前检查 4 个维度：
+Before a harness starts, four dimensions are checked:
 
-| 维度 | 检查内容 | blocked | warning |
-|------|---------|---------|---------|
-| ContextDB | `.aios/context-db/index.json` 是否存在且可读 | — | 缺失或损坏 |
-| Git | `.git` 目录是否存在 | worktree 模式下必须 | 非 worktree 模式下降级 |
-| Provider | provider 字段是否非空 | — | 为空且无 AIOS_MODEL_ROUTER |
-| Session | resume 时 session 目录是否存在 | — | 不存在则从新开始 |
+| Dimension | What is checked | blocked | warning |
+|-----------|-----------------|---------|---------|
+| ContextDB | whether `.aios/context-db/index.json` exists and is readable | — | missing or corrupt |
+| Git | whether a `.git` directory exists | required in worktree mode | degrades outside worktree mode |
+| Provider | whether the provider field is non-empty | — | empty with no AIOS_MODEL_ROUTER |
+| Session | whether the session directory exists when resuming | — | starts fresh when missing |
 
-`blocked` 级别直接阻止 harness 启动，避免 agent 跑了一半才发现环境问题。
+A `blocked` verdict stops the harness from starting, so an environment problem surfaces before an agent is halfway through a run.
 
-**竞品参考**: OpenHarness `cli.py:333-393` 的 `_evaluate_dry_run_readiness()`。
+**Competitor reference**: `_evaluate_dry_run_readiness()` in OpenHarness `cli.py:333-393`.
 
-### B1: Runtime Directive 注入
+### B1: Runtime directive injection
 
-**文件**: `scripts/lib/lifecycle/harness/directive-inject.mjs`（新文件）+ `prompt.mjs`
+**Files**: `scripts/lib/lifecycle/harness/directive-inject.mjs` (new) + `prompt.mjs`
 
-从 `.aios/config.json` 读取 `default_mode`，将对应的 `systemPromptAdditions` 注入到每轮 harness 迭代 prompt 前面。支持 3 个内置预设和自定义 `mode_presets`。
+The `default_mode` from `.aios/config.json` selects the matching `systemPromptAdditions`, which are prepended to every harness iteration prompt. Three built-in presets plus custom `mode_presets` are supported.
 
 ```json
 {
@@ -80,7 +81,8 @@ harness 启动前检查 4 个维度：
 }
 ```
 
-注入后 prompt 包含：
+After injection the prompt contains:
+
 ```
 --- Runtime Directive ---
 You must follow the superpowers workflow before any implementation action.
@@ -88,76 +90,76 @@ Invoke verification-before-completion before claiming a task is done.
 --- End Runtime Directive ---
 ```
 
-这是原创的 directive 体系，不是抄 oh-my-openagent 的 ULTRAWORK 关键词检测（那只是 runtime hook，不是 config 字段）。
+This is an original directive system, not a copy of oh-my-openagent's ULTRAWORK keyword detection (that is a runtime hook, not a config field).
 
-### B2: Auto-dream 手动 CLI
+### B2: Auto-dream manual CLI
 
-**文件**: `scripts/lib/memo/autodream.mjs`（新文件）
+**File**: `scripts/lib/memo/autodream.mjs` (new)
 
-提供手动记忆整理 CLI：
+A manual memory-cleanup CLI:
 
 ```bash
-# 预览模式 — 只输出计划，不执行
+# preview mode — print the plan only, change nothing
 node scripts/lib/memo/autodream.mjs --root /path/to/workspace --mode preview
 
-# 执行模式 — 实际清理过期和重复的 memo
+# apply mode — actually clean expired and duplicate memos
 node scripts/lib/memo/autodream.mjs --root /path/to/workspace --mode apply
 ```
 
-封装已有的 `runDream` 管道（taxonomy 分类 + Jaccard 去重 + TTL 过期）。Phase A 是手动触发；Phase B 将加入定时自动触发。
+It wraps the existing `runDream` pipeline (taxonomy classification + Jaccard dedupe + TTL expiry). Phase A is manual triggering; Phase B adds scheduled automatic triggering.
 
-### B3: Skill Workshop stale 检测 + 文件级 rollback
+### B3: Skill workshop stale detection plus file-level rollback
 
-**文件**: `scripts/lib/skills/skill-workshop.mjs`
+**File**: `scripts/lib/skills/skill-workshop.mjs`
 
-**Stale 检测**: apply 前比对目标 `SKILL.md` 的文件系统 hash 与 lock 中的 `computedHash`。不一致说明 skill 被外部修改过 → 拒绝 apply，防止覆盖用户的手动修改。
+**Stale detection**: before applying, the filesystem hash of the target `SKILL.md` is compared with the `computedHash` in the lock. A mismatch means the skill was modified externally, so the apply is refused rather than overwriting the user's manual edits.
 
-**文件级 rollback**: apply 前将完整的 `SKILL.md` 内容存入 `lock.rollbackSnapshot.previousContent`。rollback 时可以恢复实际文件内容，不只是 metadata。
+**File-level rollback**: before applying, the full `SKILL.md` content is stored in `lock.rollbackSnapshot.previousContent`, so a rollback restores the actual file content instead of metadata alone.
 
 ```json
 {
   "rollbackSnapshot": {
-    "previousContent": "# 原始 SKILL.md 完整内容...",
+    "previousContent": "# Full original SKILL.md content...",
     "computedHash": "abc123...",
     "path": "skill-sources/my-skill/SKILL.md"
   }
 }
 ```
 
-**竞品参考**: OpenClaw `workshop/types.ts:86-99` 的 `SkillProposalRollback.previousContent`。
+**Competitor reference**: `SkillProposalRollback.previousContent` in OpenClaw `workshop/types.ts:86-99`.
 
-## 验证
+## Verification
 
-所有改动通过 37/37 单元 + 集成测试：
+All changes pass 37/37 unit and integration tests:
 
-| 模块 | 测试数 | 覆盖场景 |
-|------|--------|---------|
+| Module | Tests | Scenarios covered |
+|--------|-------|-------------------|
 | A1 backoff.mjs | 13 | success reset / infra-retry / blocked / human-gate / abort threshold / cap |
-| A2 mermaid-canvas.mjs | 8 | none/mild/aggressive/emergency 阈值边界 |
+| A2 mermaid-canvas.mjs | 8 | none/mild/aggressive/emergency threshold boundaries |
 | A3 dry-run-readiness.mjs | 10 | blocked/warning/ready / context-db / git / provider / resume |
-| B1 directive-inject | 8 | 内置预设 / 自定义预设 / prompt 注入 / null rootDir / corrupt config |
-| B2 autodream | 5 | preview / apply / CLI --help / CLI preview 执行 |
-| B3 skill-workshop | 3 | apply / rollback / import 验证 |
+| B1 directive-inject | 8 | built-in presets / custom presets / prompt injection / null rootDir / corrupt config |
+| B2 autodream | 5 | preview / apply / CLI --help / CLI preview execution |
+| B3 skill-workshop | 3 | apply / rollback / import verification |
 
-## 竞品分析报告
+## Competitor analysis reports
 
-本次改进基于以下源码级分析报告（见 `docs/reports/`）：
+These improvements come from the following source-level reports (see `docs/reports/`):
 
-- `2026-07-01-source-level-gap-analysis.md` — 6 个竞品的源码级差距分析
-- `2026-07-01-enhancement-value-assessment.md` — 按 agent 配合价值重新排序的评估报告
+- `2026-07-01-source-level-gap-analysis.md` — source-level gap analysis across six competitors
+- `2026-07-01-enhancement-value-assessment.md` — value reassessed and reordered by agent collaboration impact
 
-## 升级建议
+## Upgrade advice
 
 ```bash
-# 更新到最新版
+# update to the latest version
 aios self-update
 
-# 验证 dry-run readiness
+# verify dry-run readiness
 node scripts/lib/harness/solo-runtime/dry-run-readiness.mjs
 
-# 配置 runtime directive（可选）
+# configure the runtime directive (optional)
 echo '{"default_mode":"strict-primary"}' > .aios/config.json
 
-# 手动试跑 auto-dream
+# try auto-dream manually
 node scripts/lib/memo/autodream.mjs --root . --mode preview
 ```
