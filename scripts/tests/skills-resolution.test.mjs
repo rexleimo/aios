@@ -13,6 +13,7 @@ import {
   removeLegacyPiSkillRootInstalls,
   removeLegacySharedRootInstalls,
 } from '../lib/components/skills/doctor.mjs';
+import { isSourceRepoProjectRoot } from '../lib/components/skills/safety.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -285,4 +286,16 @@ test('skills doctor warns about legacy .pi/skills installs with global-CLI phras
   assert.match(output, /shared \.agents\/skills root/u);
   assert.match(output, /already loaded/u);
   assert.doesNotMatch(output, /node scripts/u);
+});
+
+test('the AIOS source repo is exempt from project-overrides-global warnings on its own checkout', async () => {
+  const sourceCheckout = await makeTemp('aios-source-checkout-');
+  await writeFile(path.join(sourceCheckout, 'package.json'), JSON.stringify({ name: 'aios-scripts' }), 'utf8');
+  await mkdir(path.join(sourceCheckout, 'scripts'), { recursive: true });
+  await writeFile(path.join(sourceCheckout, 'scripts', 'sync-skills.mjs'), '', 'utf8');
+  const plainProject = await makeTemp('aios-plain-project-');
+
+  assert.equal(isSourceRepoProjectRoot(await makeTemp('aios-installed-runtime-'), sourceCheckout), true);
+  assert.equal(isSourceRepoProjectRoot(await makeTemp('aios-installed-runtime-'), plainProject), false);
+  assert.equal(isSourceRepoProjectRoot(plainProject, plainProject), true);
 });

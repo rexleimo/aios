@@ -22,6 +22,9 @@ export async function reconcileLegacyWorkflowSurface({
     if (report?.retired?.length > 0) {
       io.log(`[ok] retired ${report.retired.length} historical Superpowers checkout(s) outside client discovery roots`);
     }
+    if (report?.inert?.length > 0) {
+      io.log(`[info] ${report.inert.length} inert legacy projection link(s) point at a removed source and load nothing; run with --adopt-legacy-superpowers to unlink them`);
+    }
     for (const conflict of report?.conflicts ?? []) {
       io.log(`[warn] legacy workflow projection retained: ${conflict.path} (${conflict.reason})`);
     }

@@ -6,6 +6,32 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.17.5] - 2026-09-18
+
+- fix(skills): `isSourceRepoProjectRoot` now recognizes an AIOS source checkout by its own
+  markers (`package.json` name `aios-scripts` plus `scripts/sync-skills.mjs`) instead of only
+  matching when the runtime root and the project root are the same directory. Doctor runs that
+  use the installed runtime inside this repo no longer print one
+  `[warn] ... project install overrides global install` per skill per client (197 such lines on
+  the dev repo), which drowned the findings that actually need attention. Covered by
+  `scripts/tests/skills-resolution.test.mjs`.
+- fix(workflow-surface): a recognized legacy Superpowers projection whose target no longer
+  exists is reported as inert instead of an unresolvable conflict, and
+  `--adopt-legacy-superpowers` now unlinks it without requiring the deleted source root. Such
+  links previously could not be cleaned through any sanctioned path (adoption demanded the
+  source directory), so `aios doctor` kept reporting `legacy workflow projection retained`
+  forever (47 links on the dev machine). Links with an unrecognized shape still fail closed as
+  conflicts. Covered by `scripts/tests/rex-workflow-surface-reconciliation.test.mjs`.
+- fix(workflow-surface): fail closed when a skill home exists but is not a directory. Windows
+  reports `ENOENT` where POSIX reports `ENOTDIR`, so a misconfigured `AGENTS_HOME` file let
+  reconciliation converge and retire the legacy source root; it now returns `inspection-failed`
+  and touches nothing.
+- feat(scripts): `scripts/prune-legacy-skill-copies.mjs` exposes the metadata-gated legacy skill
+  copy removers that were previously importable but not runnable (`--dry-run` by default,
+  `--apply` to delete, then re-run `aios setup --components skills --client all`). Directories
+  without AIOS install metadata (user-owned skills) are never removed. Covered by
+  `scripts/tests/legacy-skill-prune-cli.test.mjs`.
+
 ## [5.17.4] - 2026-09-18
 
 - fix(release): `scripts/release-stable.sh` / `.ps1` now create an **annotated** tag

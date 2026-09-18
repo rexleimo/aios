@@ -31,7 +31,7 @@ const LEGACY_ROUTER_INSTALL_METADATA_KEYS = Object.freeze([
 ]);
 const LEGACY_ROUTER_CLIENTS = new Set(['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok']);
 
-function createReport({ status, removed = [], conflicts = [], retired = [] } = {}) {
+function createReport({ status, removed = [], conflicts = [], retired = [], inert = [] } = {}) {
   const report = {
     kind: 'aios.rex-workflow-surface-reconciliation.v1',
     status,
@@ -39,6 +39,7 @@ function createReport({ status, removed = [], conflicts = [], retired = [] } = {
     conflicts,
   };
   if (retired.length > 0) report.retired = retired;
+  if (inert.length > 0) report.inert = inert;
   return report;
 }
 
@@ -92,6 +93,17 @@ async function inspectLink(linkPath) {
   } catch (error) {
     if (isMissingPath(error)) return { kind: 'absent' };
     return { kind: 'error', error };
+  }
+}
+
+// 判定软链是否已经悬空（目标不存在）。悬空投影可证明为惰态：任何客户端都
+// 加载不到内容，删除它也不会捐掉仍存在的用户数据，所以不需要源目录来证明归属。
+async function isDanglingLink({ managedProjection, linkTarget }) {
+  try {
+    await fs.stat(path.resolve(path.dirname(managedProjection), String(linkTarget)));
+    return false;
+  } catch (error) {
+    return isMissingPath(error);
   }
 }
 
@@ -286,6 +298,52 @@ async function recoverMissingProjection({
   return createReport({ status: 'already-converged' });
 }
 
+// 悬空的历史投影：默认只报惰态（不再计作冲突），operator 显式授权后才解除链接，
+// 并顺带清除可能残留的账本条目。
+async function reconcileDanglingLegacyProjection({
+  ledgerPath,
+  managedProjection,
+  initialLink,
+  adoptLegacySuperpowers = false,
+  dryRun = false,
+}) {
+  if (!adoptLegacySuperpowers) {
+    return createReport({ status: 'inert-dangling-legacy-projection', inert: [managedProjection] });
+  }
+
+  const finalLink = await inspectLink(managedProjection);
+  if (!sameLink(initialLink, finalLink)) {
+    return createConflict(managedProjection, 'projection-changed-before-removal');
+  }
+  if (dryRun) return createReport({ status: 'would-remove', removed: [managedProjection] });
+
+  try {
+    await fs.unlink(managedProjection);
+  } catch (error) {
+    return createConflict(managedProjection, 'projection-unlink-failed', 'inspection-failed');
+  }
+
+  const ledgerResult = await readLedger(ledgerPath);
+  if (ledgerResult.kind === 'valid' && entriesForProjection(ledgerResult.ledger, managedProjection).length > 0) {
+    const owned = entriesForProjection(ledgerResult.ledger, managedProjection);
+    const nextLedger = {
+      ...ledgerResult.ledger,
+      entries: ledgerResult.ledger.entries.filter((candidate) => !owned.includes(candidate)),
+    };
+    try {
+      await writeLedger(ledgerPath, nextLedger);
+    } catch (error) {
+      return createReport({
+        status: 'inspection-failed',
+        removed: [managedProjection],
+        conflicts: [{ path: managedProjection, reason: 'ownership-ledger-update-failed' }],
+      });
+    }
+  }
+
+  return createReport({ status: 'removed', removed: [managedProjection] });
+}
+
 async function reconcileLegacyProjection({
   ledgerPath,
   managedProjection,
@@ -306,6 +364,16 @@ async function reconcileLegacyProjection({
   }
   if (initialLink.kind === 'error') return createConflict(managedProjection, 'projection-inspection-failed', 'inspection-failed');
   if (initialLink.kind !== 'link') return createConflict(managedProjection, 'projection-is-not-a-symlink');
+
+  if (await isDanglingLink({ managedProjection, linkTarget: initialLink.linkTarget })) {
+    return reconcileDanglingLegacyProjection({
+      ledgerPath,
+      managedProjection,
+      initialLink,
+      adoptLegacySuperpowers,
+      dryRun,
+    });
+  }
 
   let ledgerResult = await readLedger(ledgerPath);
   if (ledgerResult.kind === 'error') return createConflict(managedProjection, 'ownership-ledger-inspection-failed', 'inspection-failed');
@@ -436,6 +504,17 @@ async function hasKnownLegacySkillSource({ client, codexHome, claudeHome, skillN
   return false;
 }
 
+// 归属目录本身存在但不是目录（常见于误配置把一个文件当成 home）必须 fail-closed。
+// POSIX 对这种形状报 ENOTDIR，Windows 报 ENOENT，所以不能只信错误码，要直接探测 home。
+async function isUnusableHome(homePath) {
+  try {
+    const info = await fs.stat(homePath);
+    return !info.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 async function discoverNativeLegacySkillProjections({ env, homeDir }) {
   const homes = getClientHomes(env, homeDir);
   const projections = [];
@@ -482,6 +561,7 @@ async function discoverNativeLegacySkillProjections({ env, homeDir }) {
           managedProjection,
           linkTarget: link.linkTarget,
         })) {
+          // 形状陌生：即使悬空也不自作主张，继续报冲突交给 operator 判定。
           conflicts.push({ path: managedProjection, reason: 'unrecognized-superpowers-skill-link' });
         }
         continue;
@@ -499,7 +579,15 @@ async function discoverSharedAgentLegacySkillProjections({ agentsHome, legacySou
   try {
     entries = await fs.readdir(skillRoot, { withFileTypes: true });
   } catch (error) {
-    if (isMissingPath(error)) return { projections: [], conflicts: [] };
+    if (isMissingPath(error)) {
+      if (await isUnusableHome(agentsHome)) {
+        return {
+          projections: [],
+          conflicts: [{ path: agentsHome, reason: 'shared-agent-home-inspection-failed' }],
+        };
+      }
+      return { projections: [], conflicts: [] };
+    }
     return {
       projections: [],
       conflicts: [{ path: skillRoot, reason: 'shared-agent-skills-inspection-failed' }],
@@ -537,6 +625,7 @@ async function discoverSharedAgentLegacySkillProjections({ agentsHome, legacySou
         managedProjection,
         linkTarget: link.linkTarget,
       })) {
+        // 同上：形状陌生时不自作主张，只有 AIOS 自己写过的已知投影才走惰态/清理。
         conflicts.push({ path: managedProjection, reason: 'unrecognized-superpowers-skill-link' });
       }
     }
@@ -739,6 +828,7 @@ async function retireHistoricalSuperpowersSource({ aiosHome, sourceRoot, dryRun 
 function combineReports(reports, discoveryConflicts = []) {
   const removed = reports.flatMap((report) => report.removed);
   const retired = reports.flatMap((report) => report.retired ?? []);
+  const inert = reports.flatMap((report) => report.inert ?? []);
   const conflicts = [
     ...reports.flatMap((report) => report.conflicts),
     ...discoveryConflicts,
@@ -747,14 +837,14 @@ function combineReports(reports, discoveryConflicts = []) {
     reports.some((report) => report.status === 'inspection-failed')
     || discoveryConflicts.some((conflict) => conflict.reason.endsWith('inspection-failed'))
   ) {
-    return createReport({ status: 'inspection-failed', removed, conflicts, retired });
+    return createReport({ status: 'inspection-failed', removed, conflicts, retired, inert });
   }
-  if (conflicts.length > 0) return createReport({ status: 'legacy-workflow-conflict', removed, conflicts, retired });
+  if (conflicts.length > 0) return createReport({ status: 'legacy-workflow-conflict', removed, conflicts, retired, inert });
   if (reports.some((report) => report.status === 'would-remove')) {
-    return createReport({ status: 'would-remove', removed, conflicts, retired });
+    return createReport({ status: 'would-remove', removed, conflicts, retired, inert });
   }
-  if (removed.length > 0 || retired.length > 0) return createReport({ status: 'removed', removed, conflicts, retired });
-  return createReport({ status: 'already-converged', removed, conflicts, retired });
+  if (removed.length > 0 || retired.length > 0) return createReport({ status: 'removed', removed, conflicts, retired, inert });
+  return createReport({ status: 'already-converged', removed, conflicts, retired, inert });
 }
 
 export async function reconcileRexWorkflowSurface({
@@ -799,8 +889,12 @@ export async function reconcileRexWorkflowSurface({
     homes,
     sourceRoot: legacySourceRoot,
     // A dry run has not unlinked recognized projections yet, so exclude the
-    // projections this same reconciliation has already proved removable.
-    managedProjectionPaths: new Set(reports.flatMap((report) => report.removed)),
+    // projections this same reconciliation has already proved removable, and the
+    // dangling ones already reported inert (they load nothing anywhere).
+    managedProjectionPaths: new Set([
+      ...reports.flatMap((report) => report.removed),
+      ...reports.flatMap((report) => report.inert ?? []),
+    ]),
   });
   if (consumerConflicts.length > 0) return combineReports(reports, consumerConflicts);
 

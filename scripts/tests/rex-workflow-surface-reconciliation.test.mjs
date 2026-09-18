@@ -984,3 +984,44 @@ test('workflow preflight uses the same Rex workflow-surface reconciliation seam'
   assert.equal(result.report.workflowSurface.reconciliation.status, 'already-converged');
   assert.equal(JSON.parse(output).workflowSurface.reconciliation.status, 'already-converged');
 });
+
+async function createDanglingLegacyLinkFixture() {
+  const fixtureRoot = await mkdtemp(path.join(os.tmpdir(), 'aios-rex-surface-dangling-'));
+  const codexHome = path.join(fixtureRoot, 'codex-home');
+  const agentsHome = path.join(fixtureRoot, 'agents-home');
+  const aiosHome = path.join(fixtureRoot, 'aios-home');
+  // 升级后的真实形态：旧 superpowers 安装根已整体删除，客户端技能根里只剩悬空链接。
+  await mkdir(codexHome, { recursive: true });
+  const managedProjection = path.join(agentsHome, 'skills', 'brainstorming');
+  await mkdir(path.dirname(managedProjection), { recursive: true });
+  await symlink(path.join(codexHome, 'superpowers', 'skills', 'brainstorming'), managedProjection, 'dir');
+  return {
+    managedProjection,
+    options: {
+      homeDir: fixtureRoot,
+      env: { CODEX_HOME: codexHome, AGENTS_HOME: agentsHome, AIOS_HOME: aiosHome },
+    },
+  };
+}
+
+test('dangling legacy superpowers projection is inert instead of a permanent conflict', async () => {
+  const { reconcileRexWorkflowSurface } = await import('../lib/workflows/rex-workflow-surface-reconciliation.mjs');
+  const { managedProjection, options } = await createDanglingLegacyLinkFixture();
+
+  const report = await reconcileRexWorkflowSurface({ ...options, dryRun: true });
+
+  assert.deepEqual(report.conflicts, []);
+  assert.equal(report.status, 'already-converged');
+  assert.ok(report.inert.includes(managedProjection));
+  await lstat(managedProjection);
+});
+
+test('operator-authorized cleanup unlinks a dangling legacy projection without needing the removed source', async () => {
+  const { reconcileRexWorkflowSurface } = await import('../lib/workflows/rex-workflow-surface-reconciliation.mjs');
+  const { managedProjection, options } = await createDanglingLegacyLinkFixture();
+
+  const report = await reconcileRexWorkflowSurface({ ...options, adoptLegacySuperpowers: true });
+
+  assert.ok(report.removed.includes(managedProjection));
+  await assert.rejects(lstat(managedProjection), { code: 'ENOENT' });
+});

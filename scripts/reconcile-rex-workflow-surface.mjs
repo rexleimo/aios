@@ -15,7 +15,8 @@ Reconcile Rex-only workflow projections for an installed AIOS runtime.
 Options:
   --root <dir>                 AIOS runtime directory (default: this installation)
   --dry-run                    Preview recognized workflow-surface changes without writing
-  --adopt-legacy-superpowers   Explicitly adopt and remove recognized AIOS legacy Superpowers projections
+  --adopt-legacy-superpowers   Explicitly adopt recognized AIOS legacy Superpowers projections and
+                              remove their projections, including links left dangling by a retired install
   -h, --help                   Show this help
 
 Safe cleanup preview:
