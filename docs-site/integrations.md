@@ -146,6 +146,19 @@ A judgment is a **proposal, not a fact**. Every result carries its model, its `x
 
 Risk only ever **raises** the action floor, so a destructive change needs more confidence than a read-only one. `Noul` answers carry no confidence by design; the gate uses the probability itself and says so, instead of inventing a number.
 
+### Where the gate plugs in
+
+Enabling the gate adds exactly two surfaces:
+
+| Surface | When it fires | Effect |
+| --- | --- | --- |
+| `aios_judge` MCP tool | only while the gate is enabled and the credential is present | the tool shows up in `tools/list`; while disabled it is absent rather than present-but-refusing |
+| rex stage gate | before a provider's evidence can advance a rex stage | the advance is held when the evidence is not verifiable |
+
+Both surfaces can only **narrow** an action. Neither can author content, and neither can turn a rejected advance into an allowed one. When the judgment client is unreachable the default is to hold, because you enabled the gate on purpose; set `onJudgmentError` to `"allow"` if you would rather let a vendor outage pass.
+
+The rex stage gate is host-side policy. The rex submodule does not know it exists, so leaving the gate disabled restores the previous behaviour exactly.
+
 ## Commands
 
 | Command | Purpose |

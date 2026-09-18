@@ -320,6 +320,24 @@ async function ingestRexProviderEvidence(opts, workflow, output, exitCode) {
 
   try {
     const { ingestCapabilityProviderOutput } = await import('../workflows/rex-capability-runtime.mjs');
+
+    // host 侧判定闸门（opt-in）。默认关闭时 evaluateStageAdvanceGate 立即返回 advance，
+    // 既不解析信封也不出网，rex 行为与引入闸门前一致。它只能收窄：advance | hold。
+    const { evaluateStageAdvanceGate } = await import('../judgment/stage-gate.mjs');
+    const gate = await evaluateStageAdvanceGate({ command, output, env: process.env });
+    if (gate.gate !== 'disabled') {
+      console.error(`[aios] judgment gate: ${gate.decision} (${gate.gate}) ${gate.reason}`);
+    }
+    if (gate.decision === 'hold') {
+      console.warn(`[warn] rex stage held by the judgment gate: ${gate.reason}; activation=${activationId}`);
+      return Object.freeze({
+        required: true,
+        ingested: false,
+        reason: `judgment-hold: ${gate.reason}`,
+        judgment: gate.judgment,
+      });
+    }
+
     const ingestion = ingestCapabilityProviderOutput({
       rootDir: opts.workspaceRoot,
       command,

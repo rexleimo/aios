@@ -140,11 +140,22 @@ from text. A model supplying intent would be that inference. It can be revisited
 - Input: `{state, questions}`. Output includes `verdict`, `confidence`, `model`,
   `requestId`, `usage` so the caller can cite evidence.
 - Acceptance: with `enabled:false` the tool is not in the tool list.
+- **Done (v5.19.0).** Surface is `scripts/aios-mcp-server.mjs` (the bridge server the MCP
+  gateway exposes); the tool definition and handler live in `scripts/lib/judgment/mcp-tool.mjs`.
+  `withJudgmentTool` only appends to `tools/list` when the config is enabled **and** the
+  credential is present; `tools/call` re-checks and refuses with zero network calls
+  otherwise. Output carries `disposition: "proposal-not-fact"`.
 
 ### t5 — Trigger surface 2: rex stage gate
 - A Provider may request a judgment at a declared stage-advance point; the gate can only
   return `advance | hold`. `hold` is a normal outcome with a printed reason, not a crash.
 - Acceptance: an injected low-confidence answer holds the advance and prints the reason.
+- **Done (v5.19.0).** `scripts/lib/judgment/stage-gate.mjs`, called from
+  `scripts/lib/ctx-agent-core/run.mjs` immediately before rex evidence ingestion. Disabled ⇒
+  returns `advance` before parsing anything, so rex behaviour is unchanged; the subsystem is
+  never the gate's owner (host-side policy, as decided in the open question below).
+  `onJudgmentError` defaults to `hold` and is a back-compat optional config key so an older
+  config file cannot silently disable an enabled gate.
 
 ### t6 — Docs (4 locales) + discovery
 - Extend `docs-site/integrations.md` (+`zh`/`ja`/`ko`): credential setup for Windows /

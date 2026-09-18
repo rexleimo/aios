@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-/* 中文注释：AIOS MCP Server 桥接（Hermes / Pi 等无内建 MCP 面的客户端）。暴露 12 个工具：plan 全套、capability_evidence、context_pack、doctor_suite、orchestrate、skill_validate/install、intercept_compress。 */
+/* 中文注释：AIOS MCP Server 桥接（Hermes / Pi 等无内建 MCP 面的客户端）。暴露 12 个常驻工具：plan 全套、capability_evidence、context_pack、doctor_suite、orchestrate、skill_validate/install、intercept_compress。
+   第 13 个 aios_judge（opt-in 判定闸门）只在用户显式 enable 且凭据存在时才进入 tools/list。 */
 import { createInterface } from 'node:readline';
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
@@ -539,7 +540,10 @@ async function handleMessage(message) {
   if (message.method === 'tools/list') {
     // A4: AIOS_MCP_TOOL_DESC=compact|minimal shrinks tool descriptions for lean context
     const { applyMcpToolDescriptionMode } = await import('./lib/planning/mcp-compact.mjs');
-    const tools = applyMcpToolDescriptionMode(TOOLS, process.env.AIOS_MCP_TOOL_DESC || 'full');
+    const { withJudgmentTool } = await import('./lib/judgment/mcp-tool.mjs');
+    // 判定闸门默认关闭：关闭时 aios_judge 不出现在工具表里，而不是"注册了再报拒绝"。
+    const listed = withJudgmentTool(TOOLS);
+    const tools = applyMcpToolDescriptionMode(listed, process.env.AIOS_MCP_TOOL_DESC || 'full');
     return makeResponse(message.id, { tools });
   }
 
@@ -560,6 +564,7 @@ async function handleMessage(message) {
       'aios_plan_gate': handlePlanGate,
       'aios_plan_auto_gate': handlePlanAutoGate,
       'aios_capability_evidence': handleCapabilityEvidence,
+      'aios_judge': handleJudge,
     };
 
     const handler = handlers[toolName];
@@ -776,4 +781,11 @@ export {
   handlePlanGate,
   handlePlanAutoGate,
   handleCapabilityEvidence,
+  handleJudge,
 };
+
+/* 中文注释：opt-in 判定闸门的工具面。按需加载，未开启时这段代码不会被求值。 */
+async function handleJudge(params) {
+  const { handleJudgmentTool } = await import('./lib/judgment/mcp-tool.mjs');
+  return handleJudgmentTool(params);
+}

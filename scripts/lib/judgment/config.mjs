@@ -22,9 +22,13 @@ export const DEFAULT_VENDOR_CONFIG = Object.freeze({
   maxCallsPerSession: 20,
   maxInputChars: 20000,
   timeoutMs: 10000,
+  // 闸门开着但问不到判定方（网络不通 / 401 / 429 退避后仍失败）时的取向。
+  // 默认 hold：用户既然主动开了闸门，就不应该因为厂商抖动而静默放行。
+  onJudgmentError: 'hold',
 });
 
 const FLOOR_KEYS = Object.freeze(['actFloor', 'confirmFloor']);
+const ON_ERROR_VALUES = Object.freeze(['hold', 'allow']);
 
 function resolveStateHome(env, homeDir) {
   const raw = String(env.AIOS_HOME || '').trim();
@@ -70,6 +74,14 @@ export function validateVendorConfig(raw) {
   for (const key of ['maxCallsPerSession', 'maxInputChars', 'timeoutMs']) {
     if (!isPositiveInt(raw[key])) errors.push(`${key} must be a positive integer`);
   }
+  // onJudgmentError 是后加的可选键：缺失时取默认值，而不是让整条 vendor 配置失效。
+  // 否则升级后旧配置文件会把用户已经打开的闸门静默关掉。
+  const onJudgmentError = raw.onJudgmentError === undefined
+    ? DEFAULT_VENDOR_CONFIG.onJudgmentError
+    : raw.onJudgmentError;
+  if (!ON_ERROR_VALUES.includes(onJudgmentError)) {
+    errors.push(`onJudgmentError must be one of: ${ON_ERROR_VALUES.join(', ')}`);
+  }
   if (errors.length > 0) return { ok: false, errors, value: null };
 
   return {
@@ -83,6 +95,7 @@ export function validateVendorConfig(raw) {
       maxCallsPerSession: raw.maxCallsPerSession,
       maxInputChars: raw.maxInputChars,
       timeoutMs: raw.timeoutMs,
+      onJudgmentError,
     },
   };
 }
@@ -150,7 +163,7 @@ export function resolveVendorConfig(config, vendor) {
 
 // 用户可覆盖的字段白名单。enable/disable 只碰这些键，其他键原样保留。
 export const VENDOR_OVERRIDE_KEYS = Object.freeze([
-  'enabled', 'model', 'actFloor', 'confirmFloor', 'maxCallsPerSession', 'maxInputChars', 'timeoutMs',
+  'enabled', 'model', 'actFloor', 'confirmFloor', 'maxCallsPerSession', 'maxInputChars', 'timeoutMs', 'onJudgmentError',
 ]);
 
 export function applyVendorOverride(config, vendor, overrides = {}) {

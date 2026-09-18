@@ -26,6 +26,18 @@ import {
 } from '../lib/judgment/jev-client.mjs';
 import { judgeVerdict, resolveFloors } from '../lib/judgment/verdict.mjs';
 import { runJudgmentCommand } from '../lib/judgment/cli.mjs';
+import {
+  JUDGMENT_TOOL_NAME,
+  handleJudgmentTool,
+  withJudgmentTool,
+} from '../lib/judgment/mcp-tool.mjs';
+import {
+  STAGE_GATE_QUESTION_ID,
+  buildStageGateQuestions,
+  evaluateStageAdvanceGate,
+  precheckStageEvidence,
+} from '../lib/judgment/stage-gate.mjs';
+import { handleMessage } from '../aios-mcp-server.mjs';
 
 function tempConfigPath() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-judgment-'));
@@ -420,4 +432,296 @@ test('aios judgment enable --probe reports the metered probe result', async () =
   assert.equal(result.exitCode, 0);
   assert.equal(transport.calls.length, 1, 'the probe is the only call, and only because the user asked for it');
   assert.match(stdout.text(), /probe {7}ok \(jev-1\.13\.0, request=req_probe, usage=120\/3\)/);
+});
+
+// ---------------------------------------------------------------------------
+// t4 — MCP 工具面：关闭时 aios_judge 根本不在工具表里
+// ---------------------------------------------------------------------------
+
+test('withJudgmentTool appends aios_judge only when enabled AND credentialed', () => {
+  const base = [{ name: 'aios_plan_status' }];
+
+  const disabled = withJudgmentTool(base, { config: defaultJudgmentConfig(), env: {} });
+  assert.equal(disabled, base, 'disabled must hand back the original array untouched');
+
+  const uncredentialed = withJudgmentTool(base, { config: enabledConfig(), env: {} });
+  assert.equal(uncredentialed.length, 1, 'enabled without a credential still hides the tool');
+
+  const live = withJudgmentTool(base, { config: enabledConfig(), env: { TYPESAFE_API_KEY: 'k' } });
+  assert.equal(live.length, 2);
+  assert.equal(live[0], base[0], 'existing tools are passed through by reference');
+  assert.equal(live[1].name, JUDGMENT_TOOL_NAME);
+});
+
+test('aios_judge refuses with zero network calls while the gate is disabled', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const result = await handleJudgmentTool(
+    { state: 'anything', questions: NOUL_QUESTION },
+    { config: defaultJudgmentConfig(), env: {}, transport },
+  );
+  assert.equal(result.isError, true);
+  assert.equal(transport.calls.length, 0);
+  assert.match(result.content[0].text, /"reason": "judgment-disabled"/);
+});
+
+test('aios_judge refuses with zero network calls when the credential is absent', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const result = await handleJudgmentTool(
+    { state: 'anything', questions: NOUL_QUESTION },
+    { config: enabledConfig(), env: {}, transport },
+  );
+  assert.equal(result.isError, true);
+  assert.equal(transport.calls.length, 0);
+  assert.match(result.content[0].text, /"reason": "credential-missing"/);
+});
+
+test('aios_judge maps every question type to a verdict and labels the answer a proposal', async () => {
+  const transport = scriptedTransport({
+    requestId: 'req_judge_1',
+    body: {
+      model: 'jev-1.13.0',
+      answers: {
+        reachable: { type: 'noul', noul: 0.97 },
+        severity: { type: 'score', score: 2.94, confidence: 0.94, probabilities: { '0': 0.01, '1': 0.02, '2': 0.94, '3': 0.03 } },
+        owner: { type: 'choice', choice: 'platform', confidence: 0.51, probabilities: { platform: 0.51, app: 0.49 } },
+      },
+      usage: { input_tokens: 300, output_tokens: 9 },
+    },
+  });
+
+  const result = await handleJudgmentTool({
+    state: 'a change is proposed',
+    riskClass: 'guarded',
+    questions: {
+      ...NOUL_QUESTION,
+      severity: { type: 'score', instructions: 'How severe is it?', criteria: ['none', 'annoying', 'blocking'] },
+      owner: { type: 'choice', instructions: 'Which team owns this?', criteria: { platform: 'platform team', app: 'app team' } },
+    },
+  }, { config: enabledConfig(), env: { TYPESAFE_API_KEY: 'k' }, transport });
+
+  assert.equal(result.isError, undefined);
+  assert.equal(transport.calls.length, 1);
+  const payload = JSON.parse(result.content[0].text);
+  assert.equal(payload.ok, true);
+  assert.equal(payload.disposition, 'proposal-not-fact', 'a judgment is never a repository fact');
+  assert.equal(payload.requestId, 'req_judge_1');
+  assert.equal(payload.model, 'jev-1.13.0');
+  assert.deepEqual(payload.usage, { inputTokens: 300, outputTokens: 9 });
+  assert.equal(payload.verdicts.reachable.verdict, 'act');
+  assert.equal(payload.verdicts.reachable.signalKind, 'noul');
+  assert.equal(payload.verdicts.severity.verdict, 'act');
+  assert.equal(payload.verdicts.owner.verdict, 'confirm', '0.51 sits between the two floors');
+  assert.equal(transport.calls[0].body.model, DEFAULT_VENDOR_CONFIG.model);
+  assert.equal(transport.calls[0].body.questions.reachable.type, 'noul');
+});
+
+test('aios_judge rejects an unknown risk class without calling out', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const result = await handleJudgmentTool(
+    { state: 'x', questions: NOUL_QUESTION, riskClass: 'whatever' },
+    { config: enabledConfig(), env: { TYPESAFE_API_KEY: 'k' }, transport },
+  );
+  assert.equal(result.isError, true);
+  assert.equal(transport.calls.length, 0);
+  assert.match(result.content[0].text, /invalid-risk-class/);
+});
+
+// 端到端：跑真实的 tools/list 与 tools/call 分发，而不是只测辅助函数。
+test('the running MCP server hides aios_judge until enable and credential are both true', async () => {
+  const configPath = tempConfigPath();
+  writeJudgmentConfig(enabledConfig(), { configPath });
+  const missing = path.join(path.dirname(configPath), 'missing.json');
+  const savedConfig = process.env.AIOS_JUDGMENT_CONFIG;
+  const savedKey = process.env.TYPESAFE_API_KEY;
+  const listTools = async (id) => (await handleMessage({ jsonrpc: '2.0', id, method: 'tools/list' })).result.tools;
+  const named = (tools) => tools.some((tool) => tool.name === JUDGMENT_TOOL_NAME);
+
+  try {
+    process.env.AIOS_JUDGMENT_CONFIG = missing;
+    delete process.env.TYPESAFE_API_KEY;
+    const off = await listTools(1);
+    assert.equal(named(off), false, 'default off: the tool is simply absent from the list');
+
+    process.env.AIOS_JUDGMENT_CONFIG = configPath;
+    const uncredentialed = await listTools(2);
+    assert.equal(named(uncredentialed), false, 'enabled but uncredentialed still hides it');
+    assert.equal(uncredentialed.length, off.length);
+
+    process.env.TYPESAFE_API_KEY = 'k';
+    const on = await listTools(3);
+    assert.equal(named(on), true);
+    assert.equal(on.length, off.length + 1, 'exactly one tool is added');
+
+    // 纵深防御：即使绕过 tools/list 直接 call，关闭状态下也必须被拒。
+    process.env.AIOS_JUDGMENT_CONFIG = missing;
+    const call = await handleMessage({
+      jsonrpc: '2.0',
+      id: 4,
+      method: 'tools/call',
+      params: { name: JUDGMENT_TOOL_NAME, arguments: { state: 'x', questions: NOUL_QUESTION } },
+    });
+    assert.equal(call.result.isError, true);
+  } finally {
+    if (savedConfig === undefined) delete process.env.AIOS_JUDGMENT_CONFIG;
+    else process.env.AIOS_JUDGMENT_CONFIG = savedConfig;
+    if (savedKey === undefined) delete process.env.TYPESAFE_API_KEY;
+    else process.env.TYPESAFE_API_KEY = savedKey;
+  }
+});
+
+// ---------------------------------------------------------------------------
+// t5 — rex 阶段闸门：只能收窄，且关闭时行为与引入前一致
+// ---------------------------------------------------------------------------
+
+const STAGE_COMMAND = Object.freeze({
+  activationId: 'act-1',
+  capabilityId: 'implement',
+  stageId: 'stage-1',
+  provider: Object.freeze({ id: 'agent' }),
+});
+
+function stageOutput(evidence) {
+  return `provider finished\nAIOS_REX_EVIDENCE=${JSON.stringify({ schemaVersion: 1, activationId: 'act-1', evidence })}\n`;
+}
+
+const VERIFIABLE_OUTPUT = () => stageOutput([{ kind: 'tests-passed', refs: ['cmd:npm run test:scripts -> 0 fail'] }]);
+
+test('the stage gate question ships an explicit true/false boundary', () => {
+  const questions = buildStageGateQuestions();
+  const question = questions[STAGE_GATE_QUESTION_ID];
+  assert.equal(question.type, 'noul');
+  assert.equal(typeof question.criteria.true, 'string');
+  assert.equal(typeof question.criteria.false, 'string');
+  assert.equal(validateQuestions(questions).ok, true);
+});
+
+test('precheckStageEvidence refuses evidence with no usable ref', () => {
+  assert.equal(precheckStageEvidence({ evidence: [] }).ok, false);
+  assert.equal(precheckStageEvidence({ evidence: [{ kind: 'a', refs: [] }] }).ok, false);
+  assert.equal(precheckStageEvidence({ evidence: [{ kind: 'a', refs: ['  '] }] }).ok, false);
+  assert.equal(precheckStageEvidence({ evidence: [{ kind: 'a', refs: ['cmd:x'] }] }).ok, true);
+  assert.equal(precheckStageEvidence({ evidence: [{ kind: 'a', refs: [] }, { kind: 'b', refs: ['cmd:y'] }] }).ok, true);
+});
+
+test('while disabled the stage gate short-circuits before even parsing the output', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const gate = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: 'provider said everything is fine (no envelope)',
+    config: defaultJudgmentConfig(),
+    env: {},
+    transport,
+  });
+  assert.equal(gate.decision, 'advance');
+  assert.equal(gate.gate, 'disabled', 'disabled must win before the no-envelope branch, proving the short-circuit');
+  assert.equal(transport.calls.length, 0);
+});
+
+test('the stage gate advances only on a high-probability verifiable-evidence answer', async () => {
+  const transport = scriptedTransport({
+    requestId: 'req_gate_1',
+    body: {
+      model: 'jev-1.13.0',
+      answers: { verifiable_evidence: { type: 'noul', noul: 0.95 } },
+      usage: { input_tokens: 200, output_tokens: 5 },
+    },
+  });
+  const gate = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: VERIFIABLE_OUTPUT(),
+    config: enabledConfig(),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport,
+  });
+
+  assert.equal(gate.decision, 'advance');
+  assert.equal(gate.gate, 'judgment');
+  assert.equal(gate.judgment.verdict, 'act');
+  assert.equal(gate.judgment.requestId, 'req_gate_1');
+  assert.equal(gate.judgment.disposition, 'proposal-not-fact');
+  assert.equal(transport.calls.length, 1);
+  assert.equal(transport.calls[0].body.questions.verifiable_evidence.type, 'noul');
+  assert.match(transport.calls[0].body.questions.verifiable_evidence.criteria.true, /independently checkable/);
+  // 判定方看到的是证据种类与引用，而不是被喂一份伪造的结论。
+  assert.match(transport.calls[0].body.state, /tests-passed/);
+  assert.match(transport.calls[0].body.state, /cmd:npm run test:scripts/);
+});
+
+test('the stage gate holds when the judgment is merely plausible', async () => {
+  const transport = scriptedTransport({ body: { answers: { verifiable_evidence: { type: 'noul', noul: 0.6 } } } });
+  const gate = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: VERIFIABLE_OUTPUT(),
+    config: enabledConfig(),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport,
+  });
+  assert.equal(gate.decision, 'hold');
+  assert.equal(gate.gate, 'judgment');
+  assert.equal(gate.judgment.verdict, 'confirm');
+});
+
+test('the stage gate leaves the missing-envelope decision to the existing rex path', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const gate = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: 'provider finished with prose only',
+    config: enabledConfig(),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport,
+  });
+  assert.equal(gate.decision, 'advance');
+  assert.equal(gate.gate, 'no-envelope');
+  assert.equal(transport.calls.length, 0, 'an already-rejected advance is not worth a paid call');
+});
+
+test('a stale evidence object is held by the precheck without spending a call', async () => {
+  const transport = scriptedTransport({ body: {} });
+  const gate = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: 'unused',
+    envelope: { schemaVersion: 1, activationId: 'act-1', evidence: [{ kind: 'tests-passed', refs: [] }] },
+    config: enabledConfig(),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport,
+  });
+  assert.equal(gate.decision, 'hold');
+  assert.equal(gate.gate, 'precheck');
+  assert.equal(transport.calls.length, 0);
+});
+
+test('a transient judgment failure holds by default and only relaxes when configured', async () => {
+  const held = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: VERIFIABLE_OUTPUT(),
+    config: enabledConfig(),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport: scriptedTransport({ status: 500, body: {} }),
+  });
+  assert.equal(held.decision, 'hold');
+  assert.equal(held.gate, 'judgment-unavailable');
+  assert.match(held.reason, /onJudgmentError=hold/);
+
+  const relaxed = await evaluateStageAdvanceGate({
+    command: STAGE_COMMAND,
+    output: VERIFIABLE_OUTPUT(),
+    config: enabledConfig({ onJudgmentError: 'allow' }),
+    env: { TYPESAFE_API_KEY: 'k' },
+    transport: scriptedTransport({ status: 500, body: {} }),
+  });
+  assert.equal(relaxed.decision, 'advance');
+  assert.equal(relaxed.gate, 'judgment-unavailable');
+});
+
+// 升级安全：onJudgmentError 是后加的键，旧配置文件不能因此把已开启的闸门静默关掉。
+test('a config written before onJudgmentError existed stays enabled', () => {
+  const legacy = { ...DEFAULT_VENDOR_CONFIG, enabled: true };
+  delete legacy.onJudgmentError;
+
+  const validated = validateVendorConfig(legacy);
+  assert.equal(validated.ok, true, 'a missing optional key must not invalidate the whole vendor entry');
+  assert.equal(validated.value.enabled, true);
+  assert.equal(validated.value.onJudgmentError, 'hold');
+
+  assert.equal(validateVendorConfig({ ...legacy, onJudgmentError: 'maybe' }).ok, false);
 });
