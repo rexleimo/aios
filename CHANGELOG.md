@@ -6,7 +6,7 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
-## [5.17.2] - 2026-09-18
+## [5.17.3] - 2026-09-18
 
 - fix PowerShell 5.1 GBK decode breaking non-ASCII .ps1 (UTF-8 BOM + guard test)
 - fix(shell): `aios doctor` now flags a native shim whose baked runtime root no longer resolves (`native shim baked root is stale ...; re-run shell setup to refresh it`) instead of reporting `[ok] native shim installed`, so a shim left pointing at a deleted test temp root becomes visible and repairable. Covered by `scripts/tests/aios-components.test.mjs`; TDD receipts in `docs/plans/2026-09-18-shell-shim-baked-root-guard-*.md`.
