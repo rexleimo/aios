@@ -1,6 +1,6 @@
 ---
 title: "Token Intelligence 계층: ContextDB, RTK, Caveman, Headroom MCP"
-description: "AIOS의 현재 token intelligence를 설명합니다. pull-based ContextDB, 로컬 압축, 명시적 Headroom MCP를 다룹니다."
+description: "AIOS의 현재 token intelligence를 설명합니다. pull-based ContextDB, 로컬 RTK와 Caveman 압축, 명시적 Headroom MCP 검색을 다루고 어느 계층이 절약을 맡고 어느 계층이 품질을 지키는지 구분하며 실측 압축률도 제시합니다."
 date: 2026-05-12
 tags: ["AIOS", "token intelligence", "ContextDB", "RTK", "Caveman", "Headroom MCP"]
 ---

@@ -1,6 +1,6 @@
 ---
 title: "AIOS アップデート: Windows ネイティブサポート + ライブコスト追跡"
-description: "AIOS は完全な Windows ワークフロー、ライブ API コストテレメトリ、OpenCode Agent 統合など主要なアップデートをもたらし、より透過的な AI 開発を可能にします。"
+description: "AIOS は完全な Windows ワークフロー、ライブ API コストテレメトリ、OpenCode Agent 統合など主要なアップデートをもたらし、より透過的な AI 開発を可能にします。記事ではコスト画面の実際の数値、予算管理の方法、Windows 固有の設定要点を紹介します。"
 date: 2026-03-16
 tags: [AIOS, Windows, Cost Tracking, OpenCode, AI Development]
 ---

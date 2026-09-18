@@ -1,6 +1,6 @@
 ---
 title: 블로그 허브
-description: AIOS — codex, claude, gemini, opencode, Grok Build에 기억, 협업, 검증을 추가하는 로컬 agent 워크플로 레이어의 실전 가이드.
+description: "AIOS 기술·성장 블로그(한국어판)입니다. 기억 시스템, 단일 agent harness, Agent Team 병렬 협업, 브라우저 자동화, 워크플로 정책, 멀티 클라이언트 운영 실전을 다루며 각 글에 재현 가능한 명령과 검증 증거를 함께 제공합니다."
 ---
 
 # 블로그

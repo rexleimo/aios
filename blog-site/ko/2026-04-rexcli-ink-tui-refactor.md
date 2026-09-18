@@ -1,6 +1,6 @@
 ---
 title: "AIOS TUI 리팩토링: React Ink 기반의 현대적 터미널 UI"
-description: "AIOS는 수동 문자열 렌더링에서 React Ink + Ink UI 컴포넌트 아키텍처로 TUI 인스톨러를 마이그레이션하여 대화형 경험과 코드 유지보수성을 모두 개선했습니다."
+description: "AIOS는 수동 문자열 렌더링에서 React Ink와 Ink UI 컴포넌트 아키텍처로 TUI 인스톨러를 옮겨 대화형 경험과 코드 유지보수성을 모두 개선했습니다. 글에서는 이전과 이후의 차이, 컴포넌트 분할, 터미널 호환에서 걸린 지점을 설명합니다."
 date: 2026-04-02
 tags: [AIOS, TUI, Ink, React, Terminal, Onboarding]
 ---

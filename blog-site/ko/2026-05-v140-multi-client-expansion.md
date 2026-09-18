@@ -1,6 +1,6 @@
 ---
 title: "v1.40: AI 코딩 클라이언트를 6개로 확장한 이유"
-description: "AIOS v1.40에서 Antigravity CLI와 Crush를 추가하고 여러 AI 코딩 클라이언트의 공통 워크플로 계약을 정리한 기록입니다."
+description: "AIOS v1.40에서 Antigravity CLI와 Crush를 추가해 지원하는 AI 코딩 클라이언트가 6종이 되었고, 모든 클라이언트가 superpowers 워크플로를 사용할 수 있습니다. 글에서는 각 클라이언트의 도입 방법, 능력 차이, 검증 결과와 이후 계획을 정리합니다."
 date: 2026-05-31
 tags: ["release", "multi-client", "Antigravity", "Crush", "superpowers", "AIOS"]
 ---

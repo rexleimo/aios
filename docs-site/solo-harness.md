@@ -1,5 +1,5 @@
 ---
-title: Solo Harness: Resumable Long-Running Work
+title: "Solo Harness: Resumable Long-Running Work"
 description: Run one clear objective with journals, stop and resume controls, verification evidence, and optional git worktree isolation.
 ---
 

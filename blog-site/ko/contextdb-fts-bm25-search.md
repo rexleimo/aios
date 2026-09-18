@@ -1,6 +1,6 @@
 ---
 title: "ContextDB 검색 업그레이드: FTS5/BM25 + 증분 인덱스 동기화"
-description: "SQLite FTS5, BM25, refs 정확 일치, 관측 가능한 증분 동기화로 AI 에이전트 기억 검색을 안정화하는 방법입니다."
+description: "SQLite FTS5, BM25, refs 정확 일치, 관측 가능한 증분 동기화로 AI 에이전트 기억 검색을 안정화하는 방법입니다. 글에서는 순위 산정 원리, 인덱스 갱신 시점, 흔한 누락 원인, 검색 성능 실측값까지 다룹니다."
 date: 2026-06-18
 tags: ["ContextDB", "FTS5", "BM25", "에이전트 기억", "검색"]
 ---

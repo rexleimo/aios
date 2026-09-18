@@ -1,6 +1,6 @@
 ---
 title: "AIOS 업데이트: Windows 네이티브 지원 + 라이브 비용 추적"
-description: "AIOS는 완전한 Windows 워크플로, 라이브 API 비용 텔레메트리, OpenCode Agent 통합 등 주요 업데이트를 제공하여 더 투명한 AI 개발을 가능하게 합니다."
+description: "AIOS는 완전한 Windows 워크플로, 라이브 API 비용 텔레메트리, OpenCode Agent 통합 등 주요 업데이트를 제공하여 더 투명한 AI 개발을 가능하게 합니다. 글에서는 비용 화면의 실제 수치, 예산 관리 방법, Windows 전용 설정 요점을 정리합니다."
 date: 2026-03-16
 tags: [AIOS, Windows, Cost Tracking, OpenCode, AI Development]
 ---

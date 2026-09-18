@@ -1,6 +1,6 @@
 ---
 title: "aios memo GUI: 에이전트의 기억을 살아있는 그래프로 시각화"
-description: "ContextDB의 비주얼 인터페이스 — 세션, 체크포인트, 기억 관계를 인터랙티브 노드 그래프로 탐색."
+description: "ContextDB의 비주얼 인터페이스입니다. 세션, 체크포인트, 기억의 관계를 노드 그래프로 탐색하며 어떤 결론이 어느 대화에서 왔는지 추적할 수 있습니다. 글에서는 실행 방법, 자주 쓰는 조작, 데이터 저장 위치, CLI와의 역할 분담을 소개합니다."
 date: 2026-05-15
 tags: ["aios memo", "ContextDB", "GUI", "시각화", "메모리 그래프", "AIOS"]
 image: "assets/aios-memo-gui-screenshot.png"

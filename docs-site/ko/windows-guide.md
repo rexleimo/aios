@@ -1,6 +1,6 @@
 ---
-title: Windows 가이드: PowerShell 설정과 복구
-description: Windows PowerShell에서 AIOS를 설치하고 프로젝트를 초기화하며 client sync, PATH, 구성 문제를 확인합니다.
+title: "Windows 가이드: PowerShell 설정과 복구"
+description: "Windows 가이드입니다. PowerShell로 AIOS를 설치하고 프로젝트를 초기화하며 클라이언트 동기화를 검증하고 PATH, 권한, 설정 관련 흔한 문제를 해결합니다. Windows 전용 트러블슈팅 절차와 WSL, Git Bash를 함께 쓸 때의 주의점도 설명합니다."
 ---
 
 # Windows 가이드

@@ -1,6 +1,6 @@
 ---
 title: "v3.6.0: Headroom과 Ponytail로 더 안전한 Token 인텔리전스 workflow 만들기"
-description: "AIOS는 RTK, Caveman, Headroom MCP, ContextDB, Ponytail에서 영감을 얻은 의사결정 게이트를 결합하면서 client configuration 소유권을 명시적으로 유지합니다."
+description: "AIOS는 RTK, Caveman, Headroom MCP, ContextDB, Ponytail에서 영감을 얻은 의사결정 게이트를 결합하면서 client configuration 소유권을 명시적으로 유지합니다. 각 구성 요소의 역할, 기본값, 충돌 처리 방식을 정리해 설정 중복을 막습니다."
 date: 2026-07-10
 tags: ["AIOS", "Headroom", "Ponytail", "RTK", "Caveman", "MCP", "token compression"]
 ---

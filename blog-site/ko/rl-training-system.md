@@ -1,7 +1,7 @@
 ---
 title: AIOS RL Training System — 합성 버그픽스에서 멀티 환경 학습까지
 date: 2026-03-27
-description: shell/브라우저/오케스트레이터 작업 전반에서 하나의 student 정책을 학습하는 멀티-환경 RL 시스템을, 단일 통합 컨트롤 플레인으로 구현한 방법.
+description: "shell, 브라우저, 오케스트레이터 작업 전반에서 하나의 student 정책을 학습하는 멀티 환경 RL 시스템을 단일 통합 컨트롤 플레인으로 구현한 방법입니다. 환경 추상화, 보상 설계, 학습 안정화 기법과 초기 실패 원인 분석을 소개합니다."
 ---
 
 # AIOS RL Training System: 합성 버그픽스에서 멀티 환경 학습까지

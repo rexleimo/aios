@@ -1,6 +1,6 @@
 ---
 title: "v5.8.0: AIOS의 안전한 자기 진화 — Session Memory, 증거 게이트, 롤백 가능한 승격"
-description: "AIOS v5.8.0은 끊겨 있던 memo 트리거 체인을 연결하고 결정적 검증, 카나리 승격, 감사 기록, 롤백을 갖춘 자기 진화 파이프라인을 추가합니다."
+description: "AIOS v5.8.0은 끊겨 있던 memo 트리거 체인을 연결하고 결정적 검증, 카나리 승격, 감사 기록, 롤백을 갖춘 자기 진화 파이프라인을 추가합니다. 승격 기준, 감사 기록 내용, 자동 롤백 조건을 설명합니다."
 date: 2026-08-22
 tags: ["AIOS", "release", "self-evolution", "memory", "governance", "memo", "dream"]
 ---

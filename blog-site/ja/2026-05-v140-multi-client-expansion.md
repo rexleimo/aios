@@ -1,6 +1,6 @@
 ---
 title: "v1.40: AI コーディングクライアントを 6 種類へ拡張"
-description: "AIOS v1.40 で Antigravity CLI と Crush を加え、複数 AI コーディングクライアントの共通ワークフローを整えた記録です。"
+description: "AIOS v1.40 で Antigravity CLI と Crush を加え、対応する AI コーディングクライアントが 6 種類になりました。すべてのクライアントが superpowers ワークフローを利用できます。記事では各クライアントの導入手順、能力差、検証結果と今後の予定をまとめています。"
 date: 2026-05-31
 tags: ["release", "multi-client", "Antigravity", "Crush", "superpowers", "AIOS"]
 ---

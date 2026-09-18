@@ -1,6 +1,6 @@
 ---
 title: "v4.0 적응형 워크플로 정책: AIOS는 알맞은 개발 절차를 어떻게 고를까"
-description: "AIOS v4.0의 noop, direct, guarded, planned 라우트와 계획 영속화, 검증 게이트를 실전 예제로 설명합니다."
+description: "AIOS v4.0의 noop, direct, guarded, planned 라우트와 계획 영속화, 검증 게이트를 실전 예제로 설명합니다. 판정 조건, 계획 상태 저장 위치, 롤백 방법, 이전 버전과의 동작 차이를 다루어 내 작업이 어느 단계로 가는지 판단할 수 있습니다."
 date: 2026-07-14
 tags: ["AIOS", "AI 에이전트", "워크플로", "개발 생산성", "SEO"]
 ---

@@ -1,6 +1,6 @@
 ---
 title: "v3.20 Harness 신뢰성 개선: 실패 분류, 백오프 상한, dry-run readiness"
-description: "AIOS v3.20이 일반 실패와 인프라 장애를 분리하고, 제한된 백오프와 dry-run readiness로 장시간 작업을 안정화하는 방법을 설명합니다."
+description: "AIOS v3.20이 일반 실패와 인프라 장애를 분리하고 제한된 백오프와 dry-run readiness로 장시간 작업을 안정화하는 방법을 설명합니다. 글에는 실패 분류표, 재시도 상한 설정 방법, 실제 장애 포스트모템이 담겨 있습니다."
 date: 2026-07-12
 tags: ["AIOS", "신뢰성", "solo harness", "실패 처리", "release"]
 ---

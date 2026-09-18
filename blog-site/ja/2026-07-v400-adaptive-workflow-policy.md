@@ -1,6 +1,6 @@
 ---
 title: "v4.0 適応型ワークフローポリシー: AIOS は最適な開発フローをどう選ぶか"
-description: "AIOS v4.0 の noop、direct、guarded、planned ルート、計画の永続化、検証ゲートを実例で説明します。"
+description: "AIOS v4.0 の noop、direct、guarded、planned ルート、計画の永続化、検証ゲートを実例で説明します。判定条件、計画状態の保存先、ロールバック方法、旧バージョンとの挙動の違いを扱い、自分のタスクがどの段階に振られるかを判断できます。"
 date: 2026-07-14
 tags: ["AIOS", "AI エージェント", "ワークフロー", "開発効率", "SEO"]
 ---

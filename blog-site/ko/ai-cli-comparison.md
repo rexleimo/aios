@@ -1,7 +1,7 @@
 ---
 title: "2026년 AI 프로그래밍 도구 논쟁을 끝내자 — 실제로 되는 것을 알려준다"
 publish_date: 2026-03-10
-description: "Claude Code vs Codex vs Gemini 심층 비교, 그리고 놀라운 第三의 선택지."
+description: "Claude Code, Codex, Gemini를 실제 장시간 작업에서 비교하고 놀라운 세 번째 선택지도 소개합니다. 기존 CLI를 교체하지 않고 그 위에 워크플로 계층을 얹는 접근입니다. 글에서는 실측 결과, 선택 기준, 바로 쓸 수 있는 결정표를 제공합니다."
 ---
 
 # 2026년 AI 프로그래밍 도구 논쟁을 끝내자 — 실제로 되는 것을 알려준다

@@ -1,6 +1,6 @@
 ---
 title: "Pi coding agent が AIOS ファーストクラスクライアントに"
-description: "AIOS が Pi に対応：skills、native 指示、harness 駆動、コードレベルの extension と RPC 制御。"
+description: "AIOS が Pi（earendil-works/pi）に対応しました。skills、native 指示、harness 駆動、コードレベルの extension と RPC 制御を扱います。プロンプト層は接続済み、埋め込み層も到達しています。記事では対応済みの範囲、設定方法、最小構成例と今後の課題を示します。"
 date: 2026-09-11
 tags: ["AIOS", "pi", "client", "extension", "harness", "skills"]
 ---

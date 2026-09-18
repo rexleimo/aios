@@ -1,6 +1,6 @@
 ---
 title: "Model Router: 어떤 AI 모델을 사용할지 더 이상 고민하지 마세요"
-description: "작업 설명을 읽고 자동으로 최적의 AI 모델을 선택하는 디스패치 레이어. 더 이상 모델의 강점을 외울 필요가 없습니다."
+description: "작업 설명을 읽고 자동으로 최적의 AI 모델을 선택하는 디스패치 레이어입니다. 더 이상 모델의 강점을 외울 필요가 없습니다. 글에서는 라우팅 근거, 폴백 규칙, explain 사용법과 직접 덮어써야 하는 상황을 설명합니다."
 date: 2026-05-08
 tags: ["model-router", "multi-model", "Agent Team", "AIOS"]
 ---

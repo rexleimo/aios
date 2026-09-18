@@ -1,6 +1,6 @@
 ---
-title: ContextDB: pull-based 프로젝트 기억
-description: 로컬 ContextDB registry, memo storage, unified project search, lazy load와 client 간 기억 경계를 설명합니다.
+title: "ContextDB: pull-based 프로젝트 기억"
+description: "로컬 ContextDB의 경계를 정리한 문서입니다. registry, memo 저장소, 통합 프로젝트 검색, 지연 로딩, 필요할 때의 회상, 클라이언트 간 기억 공유의 경계와 프라이버시 규칙을 설명합니다. 프로젝트가 커져도 무엇을 주입하고 남길지 통제할 수 있습니다."
 ---
 
 # ContextDB

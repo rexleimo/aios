@@ -1,6 +1,6 @@
 ---
 title: "v2.0.2: Safer Skill Health Records and Cleaner Crush Config"
-description: "AIOS v2.0.2는 skill health telemetry, help routing, repository의 Crush config hygiene을 개선합니다."
+description: "AIOS v2.0.2는 skill health telemetry, help routing, repository의 Crush config 정리를 개선합니다. 글에서는 telemetry 각 항목의 의미, 이번 정리가 업그레이드에 미치는 영향, 릴리스 이후 검증 절차를 순서대로 설명합니다."
 date: 2026-06-15
 tags: ["release", "CLI", "skills", "Crush", "configuration"]
 ---

@@ -1,6 +1,6 @@
 ---
 title: "debug-hub: Agent 가 스스로 디버깅할 수 있다면, 더 편하게 잘 수 있습니다"
-description: "Coding agent 가 자신의 에러 로그를 읽고 여러분을 깨우지 않고 문제를 고칠 수 있다면 어떨까요? 그것이 debug-hub 입니다."
+description: "Coding agent가 자신의 에러 로그를 읽고 여러분을 깨우지 않고 문제를 고칠 수 있다면 어떨까요? 그것이 debug-hub입니다. MCP 네이티브 로그 서비스로 세션, 기간, 키워드로 검색하고 수정안까지 제시하며, 글에는 도입 절차가 정리되어 있습니다."
 date: 2026-05-06
 tags: ["debug-hub", "MCP", "Coding Agent", "관측가능성"]
 ---

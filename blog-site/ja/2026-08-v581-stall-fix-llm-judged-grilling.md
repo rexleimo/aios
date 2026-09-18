@@ -1,6 +1,6 @@
 ---
 title: "v5.8.1：エージェントがフリーズしない——aios-shell 停止修正と LLM の意味判断による要件明確化"
-description: "AIOS v5.8.1 は、長いコマンド実行中に opencode/codex が固まる aios-shell MCP の停止問題を修正し、正規表現ベースの曖昧さ検出を LLM の意味判断に置き換えます——grilling は実行中に、一度に一つの決定質問だけを投げます。"
+description: "AIOS v5.8.1 は aios-shell MCP が長いコマンド実行中に opencode と codex をフリーズさせる問題を修正し、正規表現ベースの曖昧検出を LLM の意味判断に置き換えました。grilling は実行中に一度に一つの意思決定だけを問いかけます。"
 date: 2026-08-26
 tags: ["AIOS", "リリース", "MCP", "aios-shell", "要件", "grilling", "LLM", "安定性"]
 ---

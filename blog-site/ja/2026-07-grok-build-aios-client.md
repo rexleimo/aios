@@ -1,6 +1,6 @@
 ---
 title: "Grok Build が AIOS のファーストクラスクライアントに"
-description: "AIOS が xAI Grok Build を skills / agents / native / team / harness 付きのファーストクラス AIOS クライアントとして登録。runtime id は grok-build。"
+description: "AIOS が xAI Grok Build を skills / agents / native / team / harness 付きのファーストクラス AIOS クライアントとして登録しました。runtime id は grok-build です。記事では設定方法、他のクライアントとの能力差、検証結果をまとめています。"
 date: 2026-07-09
 tags: ["Grok Build", "AIOS", "MCP", "client", "Skills", "xAI"]
 ---

@@ -1,5 +1,5 @@
 ---
-title: ContextDB: Pull-Based Project Memory
+title: "ContextDB: Pull-Based Project Memory"
 description: Understand the local ContextDB registry, memo storage, unified project search, lazy loading, and cross-client memory boundaries.
 schema_type: techarticle
 date: 2026-05-15

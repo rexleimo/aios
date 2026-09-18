@@ -1,6 +1,6 @@
 ---
 title: "v1.52.0: Deterministic Shell Output Compression via MCP"
-description: "AIOS v1.52.0 introduces aios_shell for deterministic shell output compression across AIOS clients."
+description: "AIOS v1.52.0 はすべての AIOS クライアントに決定論的な shell 出力圧縮を提供する MCP ツール aios_shell を導入し、shim の自己修復と危険コマンドのガードも追加しました。記事では圧縮効果、対応範囲、安全方針、アップグレード時の注意を説明します。"
 date: 2026-06-11
 tags: ["release", "token-compression", "shell", "MCP", "multi-client", "shim"]
 ---

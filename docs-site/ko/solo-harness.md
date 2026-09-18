@@ -1,6 +1,6 @@
 ---
-title: Solo Harness: 재개 가능한 장기 작업
-description: journal, stop/resume, verification evidence와 선택적 git worktree 격리로 하나의 objective를 실행합니다.
+title: "Solo Harness: 재개 가능한 장기 작업"
+description: "Solo Harness는 목표가 분명한 장시간 작업을 하나 실행하는 도구입니다. 실행 저널, 중지와 재개 제어, 검증 증거, 선택적 git worktree 격리를 갖추어 중단되어도 마지막 체크포인트에서 이어갑니다. 야간 배치나 무인 개조 작업에 적합합니다."
 ---
 
 # Solo Harness

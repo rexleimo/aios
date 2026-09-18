@@ -1,6 +1,6 @@
 ---
 title: "Token Compression: 数ヶ月分の Agent 記憶を1つのプロンプトに収める"
-description: "ContextDB が agent の履歴を token 予算内に収まるよう圧縮 — 重要なものを残し、そうでないものを削ります。"
+description: "ContextDB が agent の履歴を token 予算内に収まるよう圧縮します。重要なものは残し、そうでないものを削り、圧縮後も重要な決定は想起できます。記事では圧縮戦略、予算設定、想起品質の実測比較、失敗しやすいケースを紹介します。"
 date: 2026-05-12
 tags: ["ContextDB", "token compression", "AI メモリ", "AIOS"]
 ---

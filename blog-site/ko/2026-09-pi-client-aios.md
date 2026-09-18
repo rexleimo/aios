@@ -1,6 +1,6 @@
 ---
 title: "Pi coding agent가 AIOS 퍼스트클래스 클라이언트로 승격"
-description: "AIOS가 Pi를 skills, native 지시, harness 구동, 코드 레벨 extension과 RPC 제어로 지원합니다."
+description: "AIOS가 Pi를 skills, native 지시, harness 구동, 코드 레벨 extension과 RPC 제어로 지원합니다. 프롬프트 계층은 연결되었고 임베딩 계층도 도달했습니다. 글에서는 지원 범위, 설정 방법, 최소 구성 예시와 남은 과제를 설명합니다."
 date: 2026-09-11
 tags: ["AIOS", "pi", "client", "extension", "harness", "skills"]
 ---

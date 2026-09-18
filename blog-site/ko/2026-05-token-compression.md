@@ -1,6 +1,6 @@
 ---
 title: "Token Compression: 몇 달의 Agent 기억을 하나의 프롬프트에 담기"
-description: "ContextDB 가 이제 agent 의 히스토리를 token 예산에 맞게 압축합니다 — 중요한 것은 남기고, 그렇지 않은 것은 줄입니다."
+description: "ContextDB가 이제 agent 히스토리를 token 예산에 맞게 압축합니다. 중요한 것은 남기고 그렇지 않은 것은 줄이며, 압축 후에도 핵심 결정은 회상할 수 있습니다. 글에서는 압축 전략, 예산 설정, 회상 품질 실측 비교와 실패 사례를 다룹니다."
 date: 2026-05-12
 tags: ["ContextDB", "token compression", "AI 메모리", "AIOS"]
 ---

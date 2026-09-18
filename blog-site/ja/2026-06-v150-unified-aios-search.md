@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0：記憶、ドキュメント、計画、コードを横断する統合 AIOS 検索"
-description: "AIOS v1.50.0 は、対応するすべての coding client に project memory、pinned memo、docs、plans、code を横断する安全な検索面を提供します。"
+description: "AIOS v1.50.0 は、対応するすべての coding client に project memory、pinned memo、docs、plans、code を横断する安全な検索面を提供します。記事では検索構文、結果の並び順、スコープ分離と権限の境界、ローカル grep との役割分担を説明します。"
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---

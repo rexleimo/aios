@@ -1,7 +1,7 @@
 ---
 title: "고급 디자인 스킬 페이지 제작: 모호한 프롬프트를 실전 UI로"
 publish_date: 2026-04-18
-description: "DESIGN.md + frontend-design 조합으로 짧고 모호한 요청에서도 일관된 고품질 UI/UX를 만드는 실전 가이드."
+description: "DESIGN.md와 frontend-design 조합으로 짧고 모호한 요청에서도 일관된 고품질 UI/UX를 만드는 실전 가이드입니다. 비주얼 계약 템플릿, 수용 체크리스트, 재작업이 생기는 전형적 원인을 담아 프런트엔드와 디자인의 협업에 적합합니다."
 ---
 
 # 고급 디자인 스킬 페이지 제작: 모호한 프롬프트를 실전 UI로

@@ -1,6 +1,6 @@
 ---
 title: "debug-hub: Agent が自分自身をデバッグできれば、よく眠れる"
-description: "coding agent が自分のエラーログを読んで、あなたを起こさずに問題を修正できたら？ それが debug-hub です。"
+description: "coding agent が自分のエラーログを読み、あなたを起こさずに問題を修正できたら？ それが debug-hub です。MCP ネイティブのログサービスで、セッション、期間、キーワードで検索し、修正案まで提示します。記事では導入手順をまとめています。"
 date: 2026-05-06
 tags: ["debug-hub", "MCP", "Coding Agent", "可観測性"]
 ---

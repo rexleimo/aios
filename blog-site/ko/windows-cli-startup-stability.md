@@ -1,6 +1,6 @@
 ---
 title: "Windows CLI 시작 안정성: 크로스 CLI 신뢰성 체인 보호"
-description: "Windows cmd 런처 수정이 ContextDB 연속성, wrapper policy, Codex·Claude·Gemini의 네이티브 시작 경로를 보호하는 방법입니다."
+description: "Windows cmd 런처 수정이 ContextDB 연속성, wrapper policy, Codex·Claude·Gemini의 네이티브 시작 경로를 보호하는 방법입니다. 글에서는 근본 원인, 수정 계층, 남아 있는 플랫폼 제약, 직접 실행할 수 있는 검증 명령을 제시합니다."
 date: 2026-03-20
 tags: ["Windows", "CLI 신뢰성", "ContextDB", "Codex", "Claude"]
 ---

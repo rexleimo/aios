@@ -1,6 +1,6 @@
 ---
 title: "Solo Harness: タスクを任せて寝て、朝に結果を確認する"
-description: "AIOS 1.7 で夜間 agent 実行を実現 — run journal、stop/resume 制御、git worktree による隔離を備えています。"
+description: "AIOS 1.7 で夜間 agent 実行を実現しました。run journal、stop/resume 制御、git worktree による隔離を備え、中断しても最後のチェックポイントから再開できます。記事では実際の夜間タスクの実行記録と検証証拠、無人実行に向かない作業も示します。"
 date: 2026-04-26
 tags: ["AIOS", "Solo Harness", "長時間実行 Agent", "ContextDB"]
 ---

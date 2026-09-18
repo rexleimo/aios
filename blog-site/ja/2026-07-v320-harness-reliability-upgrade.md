@@ -1,6 +1,6 @@
 ---
 title: "v3.20 Harness の信頼性向上: 失敗分類、バックオフ上限、dry-run readiness"
-description: "AIOS v3.20 が通常の失敗とインフラ障害を分け、有界バックオフと dry-run readiness で長時間タスクを安定させる方法を解説します。"
+description: "AIOS v3.20 が通常の失敗とインフラ障害を分け、有界バックオフと dry-run readiness で長時間タスクを安定させる方法を解説します。記事では失敗分類表、リトライ上限の設定方法、実際の障害のポストモーテムを掲載しています。"
 date: 2026-07-12
 tags: ["AIOS", "信頼性", "solo harness", "失敗処理", "release"]
 ---

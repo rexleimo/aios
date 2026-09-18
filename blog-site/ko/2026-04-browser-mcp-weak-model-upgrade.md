@@ -1,6 +1,6 @@
 ---
 title: "Browser MCP 약한 모델 개선: Semantic Snapshot + Text Click"
-description: "이번 이터레이션은 압축된 페이지 이해 도구, 텍스트 우선 클릭 액션, 실 CDP 호환성 보강을 통해 약한 모델의 브라우저 작업 성공률을 높였습니다."
+description: "이번 이터레이션은 압축된 페이지 이해 도구, 텍스트 우선 클릭 액션, 실 CDP 호환성 보강을 통해 약한 모델의 브라우저 작업 성공률을 높였습니다. 글에서는 변경 전후 비교, 여전히 실패하는 경계 사례, 전환을 판단할 지표를 제시합니다."
 date: 2026-04-18
 tags: [Browser MCP, Weak Models, Agent Runtime, AIOS, Reliability]
 ---

@@ -1,6 +1,6 @@
 ---
 title: "aios memo GUI：Agent の記憶を生きたグラフとして可視化"
-description: "ContextDB のビジュアルインターフェース — セッション、チェックポイント、記憶の関係をインタラクティブなノードグラフで探索。"
+description: "ContextDB のビジュアルインターフェースです。セッション、チェックポイント、記憶の関係をノードグラフで探索でき、ある結論がどの会話から来たのかを追えます。記事では起動方法、よく使う操作、データの保存場所、CLI との役割分担を説明します。"
 date: 2026-05-15
 tags: ["aios memo", "ContextDB", "GUI", "可視化", "メモリグラフ", "AIOS"]
 image: "assets/aios-memo-gui-screenshot.png"

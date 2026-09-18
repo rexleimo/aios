@@ -1,6 +1,6 @@
 ---
 title: "v5.6.1: 플랜 기반 멀티 에이전트 디스패치 — aios work가 플랜을 읽습니다"
-description: "v5.6.1에서 aios work는 플랜 기반이 됩니다. 활성 구조화 플랜의 대상 태스크가 의존성·소유 경로·수용 기준을 갖춘 병렬 워크 아이템이 됩니다."
+description: "v5.6.1에서 aios work는 플랜 기반이 됩니다. 활성 구조화 플랜의 대상 태스크가 의존성, 소유 경로, 수용 기준을 갖춘 병렬 워크 아이템이 됩니다. 글에서는 플랜 기반과 자유 분해의 차이, 의존성 충돌 처리 방식을 비교합니다."
 date: 2026-08-12
 tags: ["AIOS", "multi-agent", "parallel", "dispatch", "planning", "release", "v5.6.1"]
 ---

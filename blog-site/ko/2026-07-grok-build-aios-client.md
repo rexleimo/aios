@@ -1,6 +1,6 @@
 ---
 title: "Grok Build가 AIOS 1급 클라이언트가 되었습니다"
-description: "AIOS가 xAI Grok Build를 skills/agents/native/team/harness 지원 1급 AIOS 클라이언트로 등록합니다. runtime id는 grok-build입니다."
+description: "AIOS가 xAI Grok Build를 skills/agents/native/team/harness 지원 1급 AIOS 클라이언트로 등록합니다. runtime id는 grok-build입니다. 글에서는 설정 방법, 다른 클라이언트와의 능력 차이, 검증 결과를 정리합니다."
 date: 2026-07-09
 tags: ["Grok Build", "AIOS", "MCP", "client", "Skills", "xAI"]
 ---

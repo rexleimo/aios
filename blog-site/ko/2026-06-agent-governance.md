@@ -1,6 +1,6 @@
 ---
 title: "Agent Governance: Team live 실행 전에 증거 남기기"
-description: "AIOS가 smoke 증거, provenance, token-compression metrics, skill training gate로 많은 agents를 하나의 workflow에 통합하는 방법."
+description: "AIOS가 smoke 증거, provenance, token-compression metrics, skill training gate로 많은 agents를 하나의 workflow에 통합하는 방법을 설명합니다. 지표 정의와 도입 체크리스트를 제공하며 여러 팀 공유에 유용합니다."
 date: 2026-06-16
 tags: ["Agent Team", "governance", "smoke", "skills", "AIOS"]
 ---

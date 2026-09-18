@@ -1,6 +1,6 @@
 ---
 title: "Solo Harness: Agent 에게 작업을 맡기고 주무세요, 아침에 결과를 확인하세요"
-description: "AIOS 1.7 에서 도입한 무인 agent 실행 — 실행 저널, 중지/재개 제어, git worktree 격리까지."
+description: "AIOS 1.7에서 도입한 무인 agent 실행입니다. 실행 저널, 중지와 재개 제어, git worktree 격리를 갖추어 중단되어도 마지막 체크포인트에서 다시 시작합니다. 실제 야간 작업의 실행 기록과 검증 증거, 무인 실행에 맞지 않는 작업도 다룹니다."
 date: 2026-04-26
 tags: ["AIOS", "Solo Harness", "장시간 agent", "ContextDB"]
 ---

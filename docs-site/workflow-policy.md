@@ -1,6 +1,6 @@
 ---
 title: Workflow Policy — direct, guarded, or planned Agent Work
-description: Choose the smallest correct AI coding agent route with AIOS adaptive workflow policy: direct answers, guarded edits, or planned multi-step work with evidence.
+description: "Choose the smallest correct AI coding agent route with AIOS adaptive workflow policy: direct answers, guarded edits, or planned multi-step work with evidence."
 ---
 
 # Workflow Policy

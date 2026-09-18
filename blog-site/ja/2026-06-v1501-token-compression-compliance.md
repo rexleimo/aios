@@ -1,6 +1,6 @@
 ---
 title: "v1.50.1: All-Client Token Compression Compliance"
-description: "AIOS v1.50.1 は pre_send、post_receive、proof matrix、direct host bypass の違反記録で、すべての AIOS client の token savings を計測可能にします。"
+description: "AIOS v1.50.1 は pre_send、post_receive、proof matrix、direct host bypass の違反記録で、すべての AIOS client の token savings を計測可能にします。記事では各指標の意味、レポートの読み方、見かけ上の準拠を見抜く方法を解説します。"
 date: 2026-06-05
 tags: ["release", "token-compression", "AIOS", "multi-client", "proof"]
 ---

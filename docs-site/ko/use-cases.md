@@ -1,6 +1,6 @@
 ---
-title: 사용 사례: AIOS route 선택
-description: memory, search, parallel work, resumable run, browser, privacy, verification 목적에 맞는 command를 선택합니다.
+title: "사용 사례: AIOS route 선택"
+description: "무엇을 하고 싶은지에서 명령을 찾는 색인입니다. 기억 관리, 검색, 병렬 작업, 재개 가능한 장시간 실행, 브라우저, 프라이버시, 검증 목적별로 대응하는 AIOS 명령과 준비 사항, 나오는 증거, 결과 확인 방법을 정리했습니다."
 ---
 
 # Find Commands By Scenario

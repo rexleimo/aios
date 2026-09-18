@@ -1,6 +1,6 @@
 ---
 title: ブログハブ
-description: AIOS — codex、claude、gemini、opencode、hermes、Grok Build、Pi に記憶、協調、検証を追加するローカル agent ワークフローレイヤーの解説。
+description: "AIOS の技術・成長ブログ（日本語版）です。記憶システム、単一 agent の harness、Agent Team による並列協調、ブラウザ自動化、ワークフロー方針、複数クライアント運用の実践を扱い、各記事に再現できるコマンドと検証証拠を添えています。"
 ---
 
 # ブログ

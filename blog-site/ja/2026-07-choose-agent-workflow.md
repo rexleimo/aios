@@ -1,6 +1,6 @@
 ---
 title: "AI エージェントのワークフローはどう選ぶ？ AIOS の判断ガイド"
-description: "決定表と例を使って noop、direct、guarded、planned を選び、実行面と検証項目まで整理します。"
+description: "決定表と例を使って noop、direct、guarded、planned を選び、実行面と検証項目まで整理します。各段階の適用場面、より重いフローへ昇格すべき条件、単純な依頼を過剰に手続き化しないコツを示し、チームの規範としてそのまま使えます。"
 date: 2026-07-14
 tags: ["AI エージェント", "AIOS", "Codex", "Claude Code", "開発ツール"]
 ---

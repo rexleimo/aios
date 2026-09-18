@@ -1,6 +1,6 @@
 ---
 title: "Windows CLI 起動安定性: クロス CLI 信頼性チェーンを守る"
-description: "Windows cmd ランチャーの修正が ContextDB の継続性、wrapper policy、Codex・Claude・Gemini の起動を守る仕組みを説明します。"
+description: "Windows cmd ランチャーの修正が ContextDB の継続性、wrapper policy、Codex・Claude・Gemini の起動を守る仕組みを説明します。記事では根本原因、修正の層、残っているプラットフォーム制約、自分で実行できる検証コマンドを示します。"
 date: 2026-03-20
 tags: ["Windows", "CLI reliability", "ContextDB", "Codex", "Claude"]
 ---

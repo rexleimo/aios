@@ -1,6 +1,6 @@
 ---
 title: "Codemap：AIエージェントにコードベースの地図を"
-description: "ワンコマンドで Tree-sitter 知識グラフをすべての AI コーディングエージェントに注入。opencode、codex、claude、gemini。エージェントは盲目的な grep をやめ、構造に裏打ちされた意思決定を始める。"
+description: "ワンコマンドで Tree-sitter 知識グラフをすべての AI コーディングエージェントに注入します。opencode、codex、claude、gemini。エージェントは盲目的な grep をやめ、呼び出し元、依存関係、テストカバレッジ、影響範囲に基づいて判断でき、全クライアントが同じコード地図を共有します。"
 date: 2026-05-21
 tags: ["codemap", "code-review-graph", "CRG", "knowledge-graph", "AIOS"]
 ---

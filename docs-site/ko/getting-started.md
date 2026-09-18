@@ -1,6 +1,6 @@
 ---
-title: 빠른 시작: AIOS 설치와 검증
-description: 현재 명령으로 AIOS를 설치하고 프로젝트 guidance, ContextDB, client sync, 보안 검사를 확인합니다.
+title: "빠른 시작: AIOS 설치와 검증"
+description: "AIOS를 처음부터 설치하고 검증하는 절차입니다. 현재 명령으로 설치하고 aios init으로 프로젝트 가이드를 초기화한 뒤 ContextDB, 클라이언트 동기화, 로컬 안전 점검을 순서대로 확인합니다. 전체 30초 안팎이며 막히면 다음에 볼 곳을 문서가 알려줍니다."
 ---
 
 # 빠른 시작

@@ -1,6 +1,6 @@
 ---
-title: 사례 라이브러리: 재현 가능한 AIOS workflow
-description: setup, cross-client handoff, browser auth, privacy read, release verification을 evidence와 함께 실행합니다.
+title: "사례 라이브러리: 재현 가능한 AIOS workflow"
+description: "증거 우선 공식 케이스 모음입니다. 초기 설정, 크로스 클라이언트 핸드오프, 브라우저 인증 벽, 프라이버시 안전 읽기, 릴리스 검증을 다루며 각 케이스에 재현 절차와 명령, 검증 증거가 함께 있습니다. 그대로 따라 하면 동작합니다."
 ---
 
 # 사례 라이브러리

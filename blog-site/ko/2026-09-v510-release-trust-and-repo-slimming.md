@@ -1,7 +1,7 @@
 ---
 title: v5.10.0 — 릴리스 신뢰성과 저장소 슬림화
 date: 2026-09-06
-description: "Windows 회귀 스위트 완전 그린, 릴리스 증거 게이트 순서 수정, Actions SHA 고정 + gitleaks + npm audit 게이트, 저장소 461 파일 감축, 프롬프트 작성 규범 도입"
+description: "Windows 회귀 스위트 완전 그린, 릴리스 증거 게이트 순서 수정, Actions SHA 고정과 gitleaks 및 npm audit 게이트, 저장소 461 파일 감축, 프롬프트 작성 규범 도입. 새 기능 없이 신뢰성만 고친 릴리스이며 업그레이드 절차도 담았습니다."
 ---
 
 # v5.10.0 — 릴리스 신뢰성과 저장소 슬림화

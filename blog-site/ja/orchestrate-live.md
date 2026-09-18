@@ -1,6 +1,6 @@
 ---
 title: "Orchestrate Live: 安全な opt-in Subagent Runtime"
-description: "dry-run と live の違い、制限付き並列 phase、JSON handoff、所有権ゲート、provider readiness を説明します。"
+description: "dry-run と live の違い、制限付き並列 phase、JSON handoff、所有権ゲート、provider readiness を説明します。記事では切り替えのタイミング、失敗時の戻し方、よくある設定ミスを扱い、実プロジェクトで初めて live に上げるチームに向いています。"
 date: 2026-06-20
 tags: ["オーケストレーション", "Subagent", "Agent Team", "dry-run", "runtime"]
 ---

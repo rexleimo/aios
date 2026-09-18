@@ -1,6 +1,6 @@
 ---
 title: "ContextDB 検索アップグレード: FTS5/BM25 + 増分インデックス同期"
-description: "SQLite FTS5、BM25、refs 完全一致、可観測な増分同期で AI エージェントのメモリ検索を安定させる方法を説明します。"
+description: "SQLite FTS5、BM25、refs 完全一致、可観測な増分同期で AI エージェントのメモリ検索を安定させる方法を説明します。記事では順位付けの原理、索引更新のタイミング、取りこぼしが起きる典型的な原因、検索性能の実測値までを扱います。"
 date: 2026-06-18
 tags: ["ContextDB", "FTS5", "BM25", "Agent memory", "検索"]
 ---

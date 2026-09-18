@@ -1,6 +1,6 @@
 ---
 title: "AI 에이전트 워크플로는 어떻게 고를까? AIOS 판단 가이드"
-description: "결정표와 예제로 noop, direct, guarded, planned를 선택하고 실행면과 검증 항목까지 정리합니다."
+description: "결정표와 예제로 noop, direct, guarded, planned를 선택하고 실행면과 검증 항목까지 정리합니다. 각 단계의 적용 상황, 더 무거운 흐름으로 올려야 하는 조건, 단순한 요청을 과하게 절차화하지 않는 요령을 담아 팀 규범으로 바로 쓸 수 있습니다."
 date: 2026-07-14
 tags: ["AI 에이전트", "AIOS", "Codex", "Claude Code", "개발 도구"]
 ---

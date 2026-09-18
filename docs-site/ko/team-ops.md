@@ -1,6 +1,6 @@
 ---
-title: Agent Team: 증거를 남기는 병렬 작업
-description: 독립 work package를 선택하고 Agent Team을 시작하며 HUD 상태와 blocked job을 안전하게 복구합니다.
+title: "Agent Team: 증거를 남기는 병렬 작업"
+description: "Agent Team 실전 가이드입니다. 서로 독립적인 작업 묶음을 고르고, 팀을 시작하고, HUD로 진행을 지켜보고, 막힌 작업을 안전하게 복구해 검증 가능한 증거로 마무리하는 흐름을 다룹니다. 시작 명령과 확인 목록도 함께 제공합니다."
 ---
 
 # Agent Team

@@ -1,5 +1,5 @@
 ---
-title: Windows Guide: PowerShell Setup and Recovery
+title: "Windows Guide: PowerShell Setup and Recovery"
 description: Install AIOS on Windows with PowerShell, initialize a project, verify client sync, and recover common PATH or configuration issues.
 schema_type: howto
 howto_steps:

@@ -1,6 +1,6 @@
 ---
 title: "v1.50.0: 기억, 문서, 계획, 코드를 가로지르는 통합 AIOS 검색"
-description: "AIOS v1.50.0은 지원되는 모든 coding client에 project memory, pinned memo, docs, plans, code를 아우르는 안전한 검색 경로를 제공합니다."
+description: "AIOS v1.50.0은 지원되는 모든 coding client에 project memory, pinned memo, docs, plans, code를 아우르는 안전한 검색 경로를 제공합니다. 글에서는 검색 문법, 결과 정렬, 스코프 격리와 권한 경계, 로컬 grep과의 역할 분담을 설명합니다."
 date: 2026-06-04
 tags: ["release", "search", "contextdb", "memory", "multi-client", "AIOS"]
 ---
