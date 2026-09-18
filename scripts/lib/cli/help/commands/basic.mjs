@@ -30,6 +30,7 @@ Options:
   --mode <all|repo-only|opt-in|off>
   --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills install scope (default: global)
+  --project-root <path>          Project root for --scope project (default: current directory)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
   --adopt-legacy-superpowers     Explicit cleanup; preview first with the standalone reconciler --dry-run
@@ -48,6 +49,7 @@ Options:
   --mode <all|repo-only|opt-in|off>
   --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills install scope (default: global)
+  --project-root <path>          Project root for --scope project (default: current directory)
   --install-mode <copy|link>     Skills install mode (default: copy)
   --skills <list>                Comma list of skill names to install
   --adopt-legacy-superpowers     Explicit cleanup; preview first with the standalone reconciler --dry-run
@@ -63,6 +65,7 @@ Options:
   --components <list>            Comma list: shell,skills,native,agents,browser (default: shell,skills)
   --client <${CLIENTS_FLAG}>
   --scope <global|project>       Skills uninstall scope (default: global)
+  --project-root <path>          Project root for --scope project (default: current directory)
   --skills <list>                Comma list of skill names to uninstall
   -h, --help
 `;
@@ -74,6 +77,7 @@ Options:
   --strict
   --global-security
   --client <${CLIENTS_FLAG}>
+  --project-root <path>          Project root to report on (default: current directory)
   --native
   --verbose
   --fix

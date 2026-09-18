@@ -13,7 +13,7 @@ import {
   removeLegacyPiSkillRootInstalls,
   removeLegacySharedRootInstalls,
 } from '../lib/components/skills/doctor.mjs';
-import { isSourceRepoProjectRoot } from '../lib/components/skills/safety.mjs';
+import { assertProjectScopeAllowed, isSourceRepoProjectRoot } from '../lib/components/skills/safety.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -298,4 +298,33 @@ test('the AIOS source repo is exempt from project-overrides-global warnings on i
   assert.equal(isSourceRepoProjectRoot(await makeTemp('aios-installed-runtime-'), sourceCheckout), true);
   assert.equal(isSourceRepoProjectRoot(await makeTemp('aios-installed-runtime-'), plainProject), false);
   assert.equal(isSourceRepoProjectRoot(plainProject, plainProject), true);
+});
+
+test('project-scope refusals name their own cause and their own way out', async () => {
+  const runtimeRoot = await makeTemp('aios-installed-runtime-');
+  const sourceCheckout = await makeTemp('aios-source-checkout-');
+  await writeFile(path.join(sourceCheckout, 'package.json'), JSON.stringify({ name: 'aios-scripts' }), 'utf8');
+  await mkdir(path.join(sourceCheckout, 'scripts'), { recursive: true });
+  await writeFile(path.join(sourceCheckout, 'scripts', 'sync-skills.mjs'), '', 'utf8');
+  const plainProject = await makeTemp('aios-plain-project-');
+
+  // 原因一：cwd 站在 runtime 根上——该给通道，而不是“你不许装”。
+  assert.throws(
+    () => assertProjectScopeAllowed(sourceCheckout, sourceCheckout, 'project'),
+    (error) => {
+      assert.match(error.message, /--project-root/u, error.message);
+      return true;
+    },
+  );
+  // 原因二：目标项目本身是 AIOS 检出——它的 skills 归 sync-skills 管。
+  assert.throws(
+    () => assertProjectScopeAllowed(runtimeRoot, sourceCheckout, 'project'),
+    (error) => {
+      assert.match(error.message, /sync-skills/u, error.message);
+      assert.doesNotMatch(error.message, /--project-root/u, error.message);
+      return true;
+    },
+  );
+  assert.equal(assertProjectScopeAllowed(runtimeRoot, plainProject, 'project'), undefined);
+  assert.equal(assertProjectScopeAllowed(runtimeRoot, sourceCheckout, 'global'), undefined);
 });

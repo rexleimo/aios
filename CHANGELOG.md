@@ -31,6 +31,20 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
   `--apply` to delete, then re-run `aios setup --components skills --client all`). Directories
   without AIOS install metadata (user-owned skills) are never removed. Covered by
   `scripts/tests/legacy-skill-prune-cli.test.mjs`.
+- feat(cli): `--project-root <path>` declares which project a command operates on, and
+  `AIOS_PROJECT_ROOT` is now actually read (it was only ever exported to the TUI child, so any
+  wrapper or CI that set it was ignored). Resolution is `flag > env > cwd`: an explicit flag that
+  is not a directory fails closed, a stale env value falls back to cwd instead of breaking the
+  command, and skills doctor echoes `Project root: ...` so the target is never implicit. Before
+  this, `scripts/aios.mjs` used `process.cwd()` as the single source, which made `--scope project`
+  unreachable for anyone whose cwd is the runtime root. Covered by
+  `scripts/tests/cli-project-root.test.mjs`.
+- fix(skills): the project-scope refusal now names its own cause and its own way out: "project
+  scope resolved to the AIOS runtime root (...); run from your project directory or pass
+  --project-root <path>" when cwd sits on the runtime root, and "... is an AIOS source checkout;
+  its skills are owned by sync-skills" when the target really is an AIOS checkout. The first case
+  previously read like a permission problem and had no sanctioned escape. Guard refusals print one
+  actionable line instead of a stack trace.
 
 ## [5.17.4] - 2026-09-18
 

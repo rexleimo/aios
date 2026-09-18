@@ -188,6 +188,8 @@ export async function doctorContextDbSkills({
   io.log('ContextDB Skills Doctor');
   io.log('-----------------------');
   io.log(`Scope: ${normalizedScope}`);
+  // 中文注释：把解析后的 project root 回显，不让用户靠 cwd 猜命令作用在哪个项目上。
+  io.log(`Project root: ${projectRoot || rootDir}`);
 
   const unexpectedRoots = collectUnexpectedSkillRootFindings(rootDir);
   for (const finding of unexpectedRoots) {

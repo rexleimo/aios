@@ -41,11 +41,31 @@ export function isSourceRepoProjectRoot(rootDir, projectRoot = rootDir) {
   return arePathsEqual(rootDir, target) || isAiosSourceCheckout(target);
 }
 
+/** 守卫拒绝是用户可操作的结论，不是崩溃；入口层据此不打印堆栈。 */
+class ProjectScopeRefusal extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'ProjectScopeRefusal';
+    this.refusal = true;
+  }
+}
+
 export function assertProjectScopeAllowed(rootDir, projectRoot = rootDir, scope = 'global') {
   if (normalizeScope(scope) !== 'project') {
     return;
   }
-  if (isSourceRepoProjectRoot(rootDir, projectRoot)) {
-    throw new Error('[err] project installs into the source repo are owned by sync-skills; run: node scripts/sync-skills.mjs');
+  if (arePathsEqual(rootDir, projectRoot)) {
+    // 这不是“你不许装”：调用方的 cwd 落在了 runtime 根上，先给它显式声明项目的通道。
+    throw new ProjectScopeRefusal(
+      `[err] project scope resolved to the AIOS runtime root (${rootDir}); ` +
+      'run from your project directory or pass --project-root <path>; '
+      + `to install AIOS's own skills here use: node ${path.join(rootDir, 'scripts', 'sync-skills.mjs')}`,
+    );
+  }
+  if (isAiosSourceCheckout(projectRoot)) {
+    throw new ProjectScopeRefusal(
+      `[err] ${projectRoot} is an AIOS source checkout; its skills are owned by sync-skills: `
+      + 'run: node scripts/sync-skills.mjs',
+    );
   }
 }

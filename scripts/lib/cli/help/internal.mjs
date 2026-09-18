@@ -26,13 +26,13 @@ export function getInternalHelpText(target, action) {
 
   if (target === 'skills' && (action === 'install' || action === 'update')) {
     return `Usage:
-  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--install-mode <copy|link>] [--skills <list>] [--force]
+  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--project-root <path>] [--install-mode <copy|link>] [--skills <list>] [--force]
 `;
   }
 
   if (target === 'skills' && (action === 'uninstall' || action === 'doctor')) {
     return `Usage:
-  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--skills <list>]
+  aios internal skills ${action} [--client <${CLIENTS_FLAG}>] [--scope <global|project>] [--project-root <path>] [--skills <list>]
 `;
   }
 

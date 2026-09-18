@@ -7,6 +7,7 @@ export const HEALTH_COMMAND_SPECS = [
       ['--strict', 'Enable strict checks'],
       ['--global-security', 'Include global security checks'],
       ['--client <client>', 'Target client'],
+      ['--project-root <path>', 'Project root to report on (default: current directory)'],
       ['--native', 'Run native enhancement checks only'],
       ['--verbose', 'Print detailed checks'],
       ['--fix', 'Apply supported repairs'],

@@ -6,6 +6,7 @@ export const INTERNAL_COMMAND_SPECS = [
       ['--mode <mode>', 'Wrap or privacy mode'],
       ['--client <client>', 'Target client'],
       ['--scope <scope>', 'Skill scope'],
+      ['--project-root <path>', 'Project root for project-scoped skill operations (default: current directory)'],
       ['--skills <list>', 'Skill names'],
       ['--install-mode <mode>', 'Skill install mode'],
       ['--rc-file <path>', 'Shell rc file path'],

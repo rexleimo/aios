@@ -7,6 +7,7 @@ import { runInterceptionCommand } from './dispatch/interception.mjs';
 import { runCanvasCommand, runRefsCommand } from './dispatch/offload.mjs';
 import { buildTeamRuntimeEnv, getRuntimeVersion, resolveRuntimeWorkspace } from './dispatch/runtime.mjs';
 import { printHelp, applyResultExitCode, runInteractiveTui } from './dispatch/helpers.mjs';
+import { applyProjectRootFlag } from './project-root.mjs';
 
 export { applyResultExitCode } from './dispatch/helpers.mjs';
 
@@ -37,6 +38,9 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       printHelp(parsed, { stdout });
       return;
     }
+
+    /** --project-root 必须在路由表之前落到 context 上：下游命令都读同一个对象。 */
+    applyProjectRootFlag(context, parsed.options);
 
     if (parsed.command === 'version') {
       stdout.write(`AIOS ${await getRuntimeVersion(rootDir)}\n`);
@@ -369,6 +373,16 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       }
       stdout.write(`${JSON.stringify(result, null, 2)}\n`);
       applyResultExitCode(result);
+      return;
+    }
+
+    if (parsed.command === 'integration') {
+      const { runIntegrationCommand } = await import('../integrations/cli.mjs');
+      applyResultExitCode(await runIntegrationCommand(parsed.options, {
+        rootDir: workspaceFor(parsed),
+        projectRoot: context.projectRoot,
+        stdout,
+      }));
       return;
     }
 

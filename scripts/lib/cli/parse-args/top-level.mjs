@@ -59,6 +59,7 @@ function getCommandProgram(command, defaults) {
       .option('--mode <mode>', 'Setup/update mode')
       .option('--client <name>', 'Target client')
       .option('--scope <scope>', 'Skill scope')
+      .option('--project-root <path>', 'Project root for project-scoped skill installs')
       .option('--skills <names>', 'Skill names (comma-separated)')
       .option('--install-mode <mode>', 'Skill install mode')
       .option('--token-profile <profile>', 'Token discipline profile')
@@ -83,6 +84,7 @@ function getCommandProgram(command, defaults) {
       .option('--fix', 'Auto-fix issues')
       .option('--global-security', 'Check global security')
       .option('--client <name>', 'Target client')
+      .option('--project-root <path>', 'Project root to report on')
       .option('--profile <name>', 'Doctor profile');
   }
 
@@ -183,6 +185,7 @@ export function parseTopLevelArgs(command, argv) {
         if (flags.skills) options.skills = normalizeSkillNames(flags.skills);
       }
       if (flags.installMode != null) options.installMode = normalizeSkillInstallMode(flags.installMode);
+      if (flags.projectRoot) options.projectRoot = flags.projectRoot;
       if (flags.tokenProfile) options.tokenProfile = normalizeTokenProfile(flags.tokenProfile);
       if (flags.adoptLegacySuperpowers) options.adoptLegacySuperpowers = true;
       if (flags.applyClientCostSettings) options.applyClientCostSettings = true;
@@ -203,6 +206,7 @@ export function parseTopLevelArgs(command, argv) {
       if (flags.fix) options.fix = true;
       if (flags.globalSecurity) options.globalSecurity = true;
       if (flags.client) options.client = normalizeClient(flags.client);
+      if (flags.projectRoot) options.projectRoot = flags.projectRoot;
       if (flags.profile) options.profile = normalizeHarnessProfile(flags.profile);
     }
 

@@ -50,6 +50,7 @@ function buildInternalCli(target, action) {
     program.option('--install-mode <mode>', 'Skill install mode');
     program.option('--skills <names>', 'Comma-separated skill names');
     program.option('--scope <scope>', 'Skill scope');
+    program.option('--project-root <path>', 'Project root for project-scoped skill installs');
     program.option('--enable', 'Enable skills');
     program.option('--disable', 'Disable skills');
   }
@@ -111,6 +112,7 @@ export function parseInternalArgs(argv) {
     }
     if (flags.client) options.client = normalizeClient(flags.client);
     if (flags.scope) options.scope = normalizeSkillScope(flags.scope);
+    if (flags.projectRoot) options.projectRoot = flags.projectRoot;
     if (flags.skills) options.skills = normalizeSkillNames(flags.skills);
     if (flags.installMode) options.installMode = normalizeSkillInstallMode(flags.installMode);
     if (flags.rcFile) options.rcFile = flags.rcFile;
