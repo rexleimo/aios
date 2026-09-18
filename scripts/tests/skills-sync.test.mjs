@@ -57,6 +57,42 @@ test('syncGeneratedSkills writes managed repo-local skill trees with metadata', 
   });
 });
 
+test('syncGeneratedSkills keeps only the owner surface of a shared generated root', async () => {
+  // 中文注释：native sync 按 client 逐个调用 surfaces:[client]；pi/zcode 共享
+  // .agents/skills 时，后写的 zcode 会覆盖 pi 的投影，导致 check 永远报 drift
+  // （v5.16.0/v5.16.1 release preflight 失败根因）。归属由 manifest 顺序决定。
+  const rootDir = await makeTemp('aios-skills-sync-shared-root-');
+  await writeSkill(rootDir, 'memo');
+  await writeJson(path.join(rootDir, 'config', 'skills-sync-manifest.json'), {
+    schemaVersion: 1,
+    generatedRoots: {
+      pi: '.agents/skills',
+      zcode: '.agents/skills',
+    },
+    skills: [
+      {
+        relativeSkillPath: 'memo',
+        installCatalogName: 'memo',
+        repoTargets: ['pi', 'zcode'],
+      },
+    ],
+    legacyUnmanaged: [],
+  });
+
+  const piSync = await syncGeneratedSkills({ rootDir, surfaces: ['pi'], withLock: false, io: { log() {} } });
+  assert.equal(piSync.ok, true);
+  const zcodeSync = await syncGeneratedSkills({ rootDir, surfaces: ['zcode'], withLock: false, io: { log() {} } });
+  assert.equal(zcodeSync.ok, true);
+
+  const meta = readGeneratedSkillMetadata(path.join(rootDir, '.agents', 'skills', 'memo'));
+  assert.equal(meta.targetSurface, 'pi');
+
+  const ownerCheck = await checkGeneratedSkillsSync({ rootDir, surfaces: ['pi'], io: { log() {} } });
+  assert.equal(ownerCheck.ok, true);
+  const borrowerCheck = await checkGeneratedSkillsSync({ rootDir, surfaces: ['zcode'], io: { log() {} } });
+  assert.equal(borrowerCheck.ok, true);
+});
+
 test('syncGeneratedSkills propagates codemap planning guidance to every selected surface', async () => {
   const rootDir = await makeTemp('aios-codemap-skill-sync-root-');
   const body = '# codemap skill\n\n## Planning context proposals\n\nUse explicit confirmation.\n';

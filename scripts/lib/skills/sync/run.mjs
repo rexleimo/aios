@@ -33,6 +33,7 @@ import {
   collectManagedGeneratedTargets,
   collectStaleTomlTargets,
   formatTargetPath,
+  resolveOwnedSurfaces,
 } from './targets.mjs';
 
 const SYNC_LOCK_NAME = 'native-skills-sync';
@@ -137,14 +138,7 @@ async function syncGeneratedSkillsUnlocked({
   const selectedSurfaces = Array.isArray(surfaces) && surfaces.length > 0
     ? [...new Set(surfaces.map((surface) => String(surface || '').trim()).filter(Boolean))]
     : Object.keys(resolvedManifest.generatedRoots);
-  const seenRoots = new Set();
-  const dedupedSurfaces = [];
-  for (const surface of selectedSurfaces) {
-    const root = resolvedManifest.generatedRoots[surface];
-    if (!root || seenRoots.has(root)) continue;
-    seenRoots.add(root);
-    dedupedSurfaces.push(surface);
-  }
+  const dedupedSurfaces = resolveOwnedSurfaces(resolvedManifest, selectedSurfaces);
   const expectedBySurface = new Map(dedupedSurfaces.map((surface) => [surface, new Map()]));
   const results = [];
   const legacyUnmanaged = new Set(resolvedManifest.legacyUnmanaged.map((item) => path.resolve(resolvedTargetRootDir, item)));
