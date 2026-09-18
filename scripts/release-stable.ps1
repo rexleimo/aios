@@ -48,7 +48,7 @@ Write-Host "Version: $Version"
 Write-Host "Tag:     $Tag"
 Write-Host ""
 Write-Host "Commands:"
-Write-Host "  git tag $Tag"
+Write-Host "  git tag -a $Tag -m `"AIOS $Tag`""
 Write-Host "  git push origin main"
 Write-Host "  git push origin $Tag"
 
@@ -58,7 +58,10 @@ if ($DryRun) {
   exit 0
 }
 
-Invoke-Checked -Command "git" -Arguments @("-C", $RootDir, "tag", $Tag)
+# Annotated tag: release-preflight requires the tag object itself to carry the
+# release note (training evidence ships with the tag); a lightweight tag has no
+# message to audit.
+Invoke-Checked -Command "git" -Arguments @("-C", $RootDir, "tag", "-a", $Tag, "-m", "AIOS $Tag")
 Write-Host "+ git push origin main"
 Invoke-Checked -Command "git" -Arguments @("-C", $RootDir, "push", "origin", "main")
 Write-Host "+ git push origin $Tag"

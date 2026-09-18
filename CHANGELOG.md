@@ -6,6 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+- fix(release): `scripts/release-stable.sh` / `.ps1` now create an **annotated** tag
+  (`git tag -a vY.Z.W -m "AIOS vY.Z.W"`) instead of a lightweight tag, matching what
+  `release-preflight` requires (the tag object itself must carry the release note).
+  Until now the documented release shortcut could not satisfy its own preflight, so
+  the tag had to be created by hand. Asserted by
+  `scripts/tests/release-pipeline.test.mjs` (dry-run output now pins the `-a` form).
+
 ## [5.17.3] - 2026-09-18
 
 - fix PowerShell 5.1 GBK decode breaking non-ASCII .ps1 (UTF-8 BOM + guard test)

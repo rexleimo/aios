@@ -71,7 +71,7 @@ echo "Version: $VERSION"
 echo "Tag:     $TAG"
 echo ""
 echo "Commands:"
-echo "  git tag $TAG"
+echo "  git tag -a $TAG -m \"AIOS $TAG\""
 echo "  git push origin main"
 echo "  git push origin $TAG"
 
@@ -81,7 +81,9 @@ if [[ "$DRY_RUN" == "true" ]]; then
   exit 0
 fi
 
-git -C "$ROOT_DIR" tag "$TAG"
+# 中文注释：打 annotated tag。release-preflight 要求 tag 本身携带说明（training
+# evidence 随 tag 发布），轻量 tag 没有 message 可满足该审计要求。
+git -C "$ROOT_DIR" tag -a "$TAG" -m "AIOS $TAG"
 echo "+ git push origin main"
 git -C "$ROOT_DIR" push origin main
 echo "+ git push origin $TAG"

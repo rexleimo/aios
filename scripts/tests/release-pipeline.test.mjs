@@ -731,7 +731,9 @@ test('release-stable.sh dry-run prints the exact tag from VERSION', async () => 
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stdout, /Tag:\s+v\d+\.\d+\.\d+/);
-  assert.match(result.stdout, /git tag v\d+\.\d+\.\d+/);
+  // 中文注释：release 必须打 annotated tag（preflight 要求 tag 本身携带 training
+  // evidence 说明）；轻量 tag 不带 message，下游审计拿不到，所以这里钉住 `-a` 形式。
+  assert.match(result.stdout, /git tag -a v\d+\.\d+\.\d+ -m "AIOS v\d+\.\d+\.\d+"/);
 });
 
 test('materialize-release-local-outputs creates ignored Claude settings without clobbering user keys', async () => {
