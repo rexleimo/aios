@@ -20,6 +20,7 @@ description: "AIOS 工程与增长博客中文版：覆盖记忆系统、单 Age
 
 ## 最新文章
 
+- [v5.18.0：AIOS 接入 TypeSafe Jev——默认关闭，是刻意的](2026-09-v518-judgment-gate.md) — 凭据配置、为什么文档 MCP 判断不了、以及一道 fail closed 的 opt-in 闸门
 - [v5.16.0：ZCode 加入 AIOS——并且拥有真正的子代理](2026-09-v516-zcode-client.md) — 一等客户端、agents 插件桥、strict-schema MCP、Pi 能力链修复
 - [v5.15.0：Pi 获得真正的 MCP 能力](2026-09-v515-pi-mcp-bridge.md) — codemap 检索、MCP 桥接进 Pi、doctor 配对清理
 - [v5.14.0：LoopX 控制面 + 孤儿进程终结](2026-09-v514-loopx-control-plane.md) — 结算契约、无人值守节奏、无孤儿进程树

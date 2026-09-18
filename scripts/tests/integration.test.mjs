@@ -32,6 +32,7 @@ import {
   verifySkillFiles,
 } from '../lib/integrations/skill.mjs';
 import { upsertConfigEntry, readConfigEntryFor, buildDesiredMcpEntry } from '../lib/integrations/mcp.mjs';
+import { defaultCommandExistsImpl } from '../lib/integrations/install.mjs';
 import {
   IntegrationRegistryError,
   normalizeIntegrationRegistry,
@@ -187,8 +188,9 @@ test('integration clients: verified clients build the HTTP invocation we recorde
   assert.equal(getIntegrationClientEntry('hermes').interactive, true, 'hermes must be marked interactive');
   assert.equal(getIntegrationClientEntry('pi').transport, 'config');
 
-  // manual 客户端也必须给出可执行的下一步，而不是静默跳过
-  for (const client of ['gemini', 'workbuddy', 'zcode']) {
+  // manual 客户端也必须给出可执行的下一步，而不是静默跳过。
+  // gemini 于 2026-09-18 改成 cli：它自带 `mcp add --transport http`（见本文件末尾的 gemini 用例）。
+  for (const client of ['workbuddy', 'zcode']) {
     const entry = getIntegrationClientEntry(client);
     assert.equal(entry.transport, 'manual');
     assert.match(formatInvocation(entry.buildAdd({ mcp: { serverName: 'x', url: 'https://d/mcp' } })), /confirm the HTTP transport key name/u);
@@ -447,4 +449,70 @@ test('doctor: an uninstalled client and a manual client are reported distinctly'
   assert.equal(byClient.zcode, 'manual-step-required');
   assert.equal(byClient.gemini, 'client-missing');
   assert.equal(result.summary.registered, 0);
+});
+
+test('doctor: probes the client definition command name, not the client id', async () => {
+  const probed = [];
+  const result = await runIntegrationDoctor({
+    rootDir: tempDir(),
+    integration: validIntegration(),
+    clients: ['workbuddy'],
+    commandExistsImpl: (command) => {
+      probed.push(command);
+      return false;
+    },
+    isTTY: false,
+    probeImpl: async () => ({ status: 'verified', tools: [] }),
+    env: {},
+  });
+  // workbuddy 的真实可执行名是 codebuddy（CLIENT_DEFINITIONS.commandName），
+  // 探测客户端 id 永远命中不了，会把已安装的客户端误报为 client-missing。
+  assert.deepEqual(probed, ['codebuddy']);
+  assert.equal(result.clients[0].status, 'client-missing');
+  assert.match(result.clients[0].reason, /codebuddy/);
+});
+
+test('defaultCommandExistsImpl: an AIOS shim is not evidence that the vendor client is installed', () => {
+  const shimDir = tempDir();
+  const emptyPath = tempDir();
+  const shimName = process.platform === 'win32' ? 'gemini.CMD' : 'gemini';
+  fs.writeFileSync(path.join(shimDir, shimName), '');
+  const savedShimDir = process.env.AIOS_NATIVE_SHIM_DIR;
+  const savedPath = process.env.PATH;
+  process.env.AIOS_NATIVE_SHIM_DIR = shimDir;
+  process.env.PATH = emptyPath;
+  try {
+    // AIOS 给全部客户端（含未安装的）预生成 shim，shim 存在不代表客户端装了。
+    // 之前（2026-09-18）曾把 shim 目录当作已安装证据，导致 gemini/zcode 假阳性。
+    assert.equal(defaultCommandExistsImpl('gemini'), false);
+  } finally {
+    if (savedShimDir === undefined) delete process.env.AIOS_NATIVE_SHIM_DIR;
+    else process.env.AIOS_NATIVE_SHIM_DIR = savedShimDir;
+    process.env.PATH = savedPath;
+  }
+});
+
+test('gemini: registration goes through its own MCP CLI, not a hand-edited config', () => {
+  const entry = getIntegrationClientEntry('gemini');
+  // 证据：`gemini mcp add --help` 实测输出（2026-09-18，gemini 0.60.0）
+  //   -t, --transport, --type  Transport type (stdio, sse, http)
+  //   -s, --scope              Configuration scope (user or project)
+  //   --timeout                Set connection timeout in milliseconds
+  assert.equal(entry.transport, 'cli');
+  assert.equal(entry.verified, true);
+
+  const add = entry.buildAdd({ mcp: { serverName: 'typesafe-docs', url: 'https://docs.typesafe.ai/mcp' }, scope: 'global' });
+  assert.equal(add.command, 'gemini');
+  assert.deepEqual(add.args, [
+    'mcp', 'add', '--scope', 'user', '--transport', 'http',
+    'typesafe-docs', 'https://docs.typesafe.ai/mcp',
+  ]);
+
+  // gemini 的 scope 取值就是 user/project，与 AIOS 的 global->user 映射一致。
+  const remove = entry.buildRemove({ mcp: { serverName: 'typesafe-docs' }, scope: 'project' });
+  assert.deepEqual(remove.args, ['mcp', 'remove', '--scope', 'project', 'typesafe-docs']);
+
+  // gemini 没有 `mcp get <name>`（只有 add/remove/list/enable/disable）。
+  const probe = entry.buildProbe({ mcp: { serverName: 'typesafe-docs' } });
+  assert.deepEqual(probe.args, ['mcp', 'list']);
 });

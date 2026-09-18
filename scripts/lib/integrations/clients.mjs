@@ -113,11 +113,20 @@ export const INTEGRATION_CLIENT_TABLE = Object.freeze({
     buildProbe: null,
   }),
 
-  gemini: manualHttpEntry('gemini', {
-    file: { scope: 'home', file: ['settings.json'] },
-    projectFile: { scope: 'project', file: ['.gemini', 'settings.json'] },
-    reason: 'http-config-shape-unverified',
-    evidence: 'gemini is not installed here, so AIOS could not run `gemini mcp add --help`. AIOS does own the gemini JSON MCP target (mcpServers namespace); only the HTTP transport key name is unverified.',
+  // gemini 有自己的 MCP CLI（add/remove/list/enable/disable），所以走 CLI 委托路径，
+  // 而不是让人手工改 ~/.gemini/settings.json。注意它没有 `mcp get <name>`，探测用 list。
+  gemini: Object.freeze({
+    client: 'gemini',
+    transport: 'cli',
+    verified: true,
+    evidence: 'gemini mcp add --help (0.60.0): `-t, --transport, --type  Transport type (stdio, sse, http)`, `-s, --scope  Configuration scope (user or project)`, `--timeout  Set connection timeout in milliseconds`; subcommands add/remove/list/enable/disable',
+    buildAdd: ({ mcp, scope }) => cliAdd('gemini', [
+      'mcp', 'add', '--scope', scopeOf(scope), '--transport', 'http', mcp.serverName, mcp.url,
+    ]),
+    buildRemove: ({ mcp, scope }) => cliAdd('gemini', [
+      'mcp', 'remove', '--scope', scopeOf(scope), mcp.serverName,
+    ]),
+    buildProbe: () => cliAdd('gemini', ['mcp', 'list']),
   }),
 
   workbuddy: manualHttpEntry('workbuddy', {
@@ -164,6 +173,13 @@ function manualHttpEntry(client, { file, projectFile, namespace = 'mcpServers', 
     }),
     buildProbe: null,
   });
+}
+
+// 客户端 id 与真实可执行名可能不同（workbuddy → codebuddy）。探测必须用真实命令名，
+// 否则已安装的客户端会被误报为 client-missing。
+export function resolveIntegrationClientCommand(client) {
+  const commandName = String(CLIENT_DEFINITIONS[client]?.commandName || '').trim();
+  return commandName || client;
 }
 
 export function resolveIntegrationClientOrder() {

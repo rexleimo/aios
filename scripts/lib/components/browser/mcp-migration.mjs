@@ -12,6 +12,7 @@ import { migrateOneMcpToml } from './mcp-toml.mjs';
 import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
 import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
 import { migrateOneZcodeJsonFile } from './mcp-zcode.mjs';
+import { migrateOneGeminiJsonFile } from './mcp-gemini.mjs';
 import { resolveLocalBrowserMcpScript } from './runtime-paths.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。
@@ -114,6 +115,8 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
       result = migrateOneHermesYaml(absPath, rootDir);
     } else if (target.format === 'zcode-json') {
       result = migrateOneZcodeJsonFile(absPath, rootDir);
+    } else if (target.format === 'gemini-json') {
+      result = migrateOneGeminiJsonFile(absPath, rootDir);
     } else {
       result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace });
     }

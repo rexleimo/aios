@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.18.0] - 2026-09-18
+
+- feat: opt-in System One judgment gate (aios judgment) with fail-closed enablement; fix Gemini strict-schema MCP config that broke startup; fix CRLF frontmatter leak into client skill trees; honest vendor client coverage; docs and blog in four locales
+
 ## [5.17.5] - 2026-09-18
 
 - fix(skills): `isSourceRepoProjectRoot` now recognizes an AIOS source checkout by its own

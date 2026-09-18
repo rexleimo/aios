@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.18.0：AIOS に TypeSafe Jev を——デフォルトはオフ、それは意図的](2026-09-v518-judgment-gate.md) — 認証情報の設定、ドキュメント MCP が判断できない理由、fail closed な opt-in ゲート
 - [v5.16.0：ZCode が AIOS に合流——本物のサブエージェント付き](2026-09-v516-zcode-client.md) — 第一級クライアント、agents plugin ブリッジ、strict-schema MCP、Pi 能力チェーン修復
 - [v5.15.0: Pi が本物の MCP 能力を獲得](2026-09-v515-pi-mcp-bridge.md) — codemap 検索、MCP ブリッジ、doctor 整理の対
 - [v5.14.0: LoopX コントロールプレーン + 孤児プロセス根絶](2026-09-v514-loopx-control-plane.md) — 精算ターン、無人リズム、孤児ゼロ

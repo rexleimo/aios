@@ -208,8 +208,8 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(geminiTarget.format, 'json');
   assert.equal(geminiTarget.namespace, 'mcpServers');
   assert.deepEqual(geminiTarget.scopes, [
-    { scope: 'project', file: '.gemini/settings.json' },
-    { scope: 'home', file: 'settings.json', createIfMissing: true },
+    { scope: 'project', file: '.gemini/settings.json', format: 'gemini-json' },
+    { scope: 'home', file: 'settings.json', format: 'gemini-json', createIfMissing: true },
   ]);
 
   const ocTarget = getClientMcpTarget('opencode');

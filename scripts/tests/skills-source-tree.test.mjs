@@ -10,6 +10,7 @@ import {
   materializeSkillTree,
   resolveGeneratedTargetPath,
 } from '../lib/skills/source-tree.mjs';
+import { parseFrontmatter, stripAiosFrontmatter } from '../lib/skills/frontmatter.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -110,6 +111,63 @@ clients: [claude]
     assert.doesNotMatch(content, /repoTargets:/);
     assert.doesNotMatch(content, /targetRelativePathBySurface:/);
     assert.doesNotMatch(content, /clients:/);
+  } finally {
+    materialized.cleanup();
+  }
+});
+
+test('frontmatter parsing tolerates CRLF sources on both read and strip paths', () => {
+  // 中文注释：Windows 检出与厂商产物都可能带 CRLF。frontmatter 边界判定是
+  // `line === '---'`，不归一化时 `'---\r'` 既不匹配、内部字段也不会被剥掉。
+  const crlf = [
+    '---',
+    'name: sample-skill',
+    'description: Use when testing CRLF normalization',
+    'clients: [codex, claude]',
+    'repoTargets: [codex]',
+    '---',
+    '',
+    '# Body',
+    '',
+  ].join('\r\n');
+
+  const parsed = parseFrontmatter(crlf);
+  assert.equal(parsed.name, 'sample-skill');
+  assert.deepEqual(parsed.clients, ['codex', 'claude']);
+
+  const stripped = stripAiosFrontmatter(crlf);
+  assert.doesNotMatch(stripped, /\r/u, 'stripped output must be LF-only');
+  assert.match(stripped, /name: sample-skill/);
+  assert.doesNotMatch(stripped, /clients:/u);
+  assert.doesNotMatch(stripped, /repoTargets:/u);
+  assert.match(stripped, /# Body/);
+});
+
+test('materializeSkillTree normalizes CRLF sources and still strips AIOS frontmatter', async () => {
+  // 中文注释：copyWithoutClients 是 fs.cpSync 字节级复制，源带 CRLF 时会原样漏进
+  // 客户端技能树；这个用例锁住「投影输出恒为 LF，且内部字段依旧被剥离」。
+  const rootDir = await makeTemp('aios-skills-crlf-root-');
+  const skillDir = path.join(rootDir, 'skill-sources', 'sample-skill');
+  await mkdir(skillDir, { recursive: true });
+  await writeFile(path.join(skillDir, 'SKILL.md'), [
+    '---',
+    'name: sample-skill',
+    'description: Use when testing CRLF normalization',
+    'clients: [codex, claude]',
+    'repoTargets: [codex]',
+    '---',
+    '',
+    '# Body',
+    '',
+  ].join('\r\n'), 'utf8');
+
+  const materialized = materializeSkillTree({ rootDir, relativeSkillPath: 'sample-skill', client: 'claude' });
+  try {
+    const content = await readFile(path.join(materialized.directoryPath, 'SKILL.md'), 'utf8');
+    assert.doesNotMatch(content, /\r/u, 'materialized SKILL.md must be LF-only');
+    assert.match(content, /name: sample-skill/);
+    assert.doesNotMatch(content, /clients:/u);
+    assert.doesNotMatch(content, /repoTargets:/u);
   } finally {
     materialized.cleanup();
   }

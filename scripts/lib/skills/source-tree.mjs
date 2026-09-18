@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { readSkillFrontmatter, stripAiosFrontmatter } from './frontmatter.mjs';
+import { normalizeEolText, readSkillFrontmatter, stripAiosFrontmatter } from './frontmatter.mjs';
 
 const SYNC_MANIFEST_PATH = path.join('config', 'skills-sync-manifest.json');
 
@@ -193,7 +193,9 @@ export function materializeSkillTree({ rootDir, relativeSkillPath, client } = {}
   const skillMdPath = path.join(materializedPath, 'SKILL.md');
   if (fs.existsSync(skillMdPath)) {
     const raw = fs.readFileSync(skillMdPath, 'utf8');
-    const stripped = stripAiosFrontmatter(raw);
+    // 中文注释：copyWithoutClients 是 fs.cpSync 字节级复制，源带 CRLF 时会原样漏进
+    // 客户端技能树；这里显式归一化成 LF，并用与 raw 的比较保证「只有 EOL 变了」也重写。
+    const stripped = stripAiosFrontmatter(normalizeEolText(raw));
     if (stripped !== raw) {
       fs.writeFileSync(skillMdPath, stripped, 'utf8');
     }

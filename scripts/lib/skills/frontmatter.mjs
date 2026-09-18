@@ -10,6 +10,15 @@
  */
 import fs from 'node:fs';
 
+/**
+ * 中文注释：解析前统一换行。Windows 检出与厂商产物都可能带 CRLF，而 frontmatter
+ * 的边界判定是 `line === '---'`；不归一化时 `'---\r'` 判定失败，内部字段既解析不出来，
+ * 也不会被 stripAiosFrontmatter 剥掉，会直接泄漏进客户端技能树。
+ */
+export function normalizeEolText(content) {
+  return String(content ?? '').replace(/\r\n?/g, '\n');
+}
+
 function stripQuotes(val) {
   const trimmed = val.trim();
   if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
@@ -68,7 +77,7 @@ function parseYamlValue(val) {
 export function parseFrontmatter(content) {
   if (typeof content !== 'string') return {};
 
-  const lines = content.split('\n');
+  const lines = normalizeEolText(content).split('\n');
   if (lines[0] !== '---') return {};
 
   // Find closing ---
@@ -163,11 +172,13 @@ const AIOS_INTERNAL_KEYS = new Set([
 export function stripAiosFrontmatter(content) {
   if (typeof content !== 'string') return content;
 
-  const lines = content.split('\n');
-  if (lines[0] !== '---') return content;
+  // 中文注释：输出恒为 LF —— 调用方把它当作客户端技能的最终内容落盘。
+  const normalized = normalizeEolText(content);
+  const lines = normalized.split('\n');
+  if (lines[0] !== '---') return normalized;
 
   const closeIdx = lines.findIndex((line, i) => i > 0 && line === '---');
-  if (closeIdx === -1) return content;
+  if (closeIdx === -1) return normalized;
 
   const top = [];
   const body = lines.slice(closeIdx);

@@ -102,7 +102,9 @@ test('home markup exposes current install and run-layer content', () => {
     'aios doctor --native --verbose',
     'ContextDB',
     'Adaptive Workflow',
-    'Agent Team',
+    // 2026-08-22 首页改版把 run-layer 的 "Agent Team" 卡片重写为
+    // "Splits work automatically"（同一协作层，命令仍是 aios team）。
+    'Splits work automatically',
     'Verification',
   ]) {
     assert.match(home, new RegExp(escapeRegExp(marker)));

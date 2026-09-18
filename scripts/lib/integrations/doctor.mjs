@@ -5,7 +5,7 @@
 import os from 'node:os';
 
 import { getClientHomes } from '../platform/paths.mjs';
-import { describeManualTarget, getIntegrationClientEntry, resolveIntegrationClientOrder } from './clients.mjs';
+import { describeManualTarget, getIntegrationClientEntry, resolveIntegrationClientCommand, resolveIntegrationClientOrder } from './clients.mjs';
 import { defaultCommandExistsImpl } from './install.mjs';
 import { fingerprintMcpEntry, normalizeMcpEntry, readIntegrationLedger } from './ledger.mjs';
 import { buildClientDesiredEntry, probeDocsMcp, readConfigEntryFor } from './mcp.mjs';
@@ -69,11 +69,11 @@ export function checkClientPlane({ client, integration, clientHome, projectRoot,
   if (!entry) return { client, status: 'unsupported', reason: 'no-client-table-entry' };
   if (entry.transport === 'manual') {
     // 客户端根本没装时，先报这个：往一个不存在的 home 里写配置是无效动作。
-    if (!commandExistsImpl(entry.binary || client)) {
+    if (!commandExistsImpl(entry.binary || resolveIntegrationClientCommand(client))) {
       return {
         client,
         status: 'client-missing',
-        reason: `client binary "${entry.binary || client}" not found on PATH`,
+        reason: `client binary "${entry.binary || resolveIntegrationClientCommand(client)}" not found on PATH`,
       };
     }
     const target = describeManualTarget(client, { clientHome, projectRoot, integration });
@@ -108,7 +108,7 @@ export function checkClientPlane({ client, integration, clientHome, projectRoot,
     return { client, status: 'ok', configPath: current.targetPath, fingerprint: currentFingerprint };
   }
 
-  const binary = client;
+  const binary = entry.binary || resolveIntegrationClientCommand(client);
   if (!commandExistsImpl(binary)) {
     return {
       client,

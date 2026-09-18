@@ -30,6 +30,39 @@ AIOS는 벤더의 모델 정보를 통합 계약의 일부로 취급하므로 �
 
 **TypeSafe System One**은 프로그래밍 프리미티브처럼 사용할 수 있는 작은 AI 지능 단위를 제공합니다: `Choice`, `Score`, `Noul`. **Jev**는 자연어와 애플리케이션 상태를 일반 코드가 조합할 수 있는 타입이 있는 판단과 확률로 바꾸어, "프롬프트 후 파싱" 단계를 구조화된 결정으로 전환합니다.
 
+## 자격 증명 설정
+
+`TYPESAFE_API_KEY`는 이 벤더에 필요한 유일한 자격 증명입니다. AIOS는 **존재 여부만** 확인하며 값을 읽거나 출력하거나 저장하지 않습니다. 설정은 직접, 코딩 클라이언트가 실제로 실행되는 환경에 해 두어야 합니다.
+
+가장 흔한 실패 원인은 범위입니다. 어느 터미널에서 `export`한 변수나, 다른 계정의 *User* 범위에 쓴 변수는 이미 실행 중인 클라이언트에게 보이지 않습니다.
+
+**Windows —— 내 계정에 영구 적용:**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<your-key>', 'User')
+```
+
+**Windows —— 모든 계정(관리자 터미널 필요):**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<your-key>', 'Machine')
+```
+
+**macOS / Linux:**
+
+```bash
+export TYPESAFE_API_KEY="<your-key>"                                # 현재 셸에서만
+echo 'export TYPESAFE_API_KEY="<your-key>"' >> ~/.bashrc            # 영구 적용
+```
+
+그다음 **코딩 클라이언트를 재시작하세요**. 환경 변수는 프로세스가 시작될 때 한 번만 읽힙니다. 이미 열려 있는 클라이언트는 그 뒤에 설정한 값을 절대 보지 못합니다.
+
+클라이언트가 무엇을 보게 되는지 확인합니다. 자격 증명 행은 `present` 또는 `unset`만 보고하며 값을 표시하지 않습니다:
+
+```bash
+aios integration doctor typesafe
+```
+
 ## TypeSafe 통합 설치
 
 ```bash
@@ -52,7 +85,8 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
              run: claude mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   codex      planned
              run: codex mcp add typesafe-docs --url https://docs.typesafe.ai/mcp
-  gemini     manual step required  ~/.gemini/settings.json  (http-config-shape-unverified)
+  gemini     planned
+             run: gemini mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   probe      verified 2987ms
 ```
 
@@ -67,17 +101,50 @@ AIOS의 9개 클라이언트를 모두 지원합니다. 여기서 "지원"은 **
 | OpenCode | `opencode mcp add --url` | verified |
 | Grok | `grok mcp add -t http` | verified |
 | Pi | `~/.pi/agent/mcp.json` 기록 | verified |
-| Gemini CLI | CLI가 있으면 `--transport http`, 없으면 설정 파일 + 수동 단계 | verified 또는 수동 단계 |
+| Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 대화형 터미널 필요 |
-| WorkBuddy | 설정 파일 + 수동 단계 | 수동 단계 필요 |
-| ZCode | 설정 파일 + 수동 단계 | 수동 단계 필요 |
+| WorkBuddy | `codebuddy mcp add --agent <이름>` | 수동 단계 필요 |
+| ZCode | `~/.zcode/cli/config.json`(`mcp.servers`)에 기록 | stdio는 검증됨. HTTP는 수동 단계 |
 
-두 가지 동작은 의도된 것입니다.
+세 가지 동작은 의도된 것입니다.
 
 - **Hermes**는 인증 방식을 대화형으로 묻고 비대화형 플래그가 없습니다. AIOS는 답을 추측하지도, 스크립트를 멈춰 세우지도 않고 정확한 명령을 출력하며 `pending-interactive`로 보고합니다.
-- **WorkBuddy와 ZCode**는 설정 파일 위치는 알려져 있지만 AIOS가 검증한 HTTP transport 키 이름은 없습니다. AIOS는 파일과 JSON 골격을 보여주고 알 수 없는 키를 `<transport-key>`로 남겨 둡니다. 필드 이름을 지어내지 않습니다.
+- **WorkBuddy**의 `mcp add`는 `--agent <이름>` 값을 요구하지만 그 목록은 아직 비대화형으로 열거할 수 없습니다. AIOS는 agent 이름을 지어내지 않고 명령을 출력합니다.
+- **ZCode**는 `PATH`에 CLI가 없는 Electron 클라이언트입니다. AIOS는 stdio 서버를 `~/.zcode/cli/config.json`의 `mcp.servers`에 쓰고 ZCode는 거기서 읽습니다. HTTP 항목에는 AIOS가 아직 쓰지 않는 `url` 필드가 추가로 필요하므로 그 부분은 수동 단계로 남습니다.
 
 클라이언트가 설치되지 않은 경우 바이너리 이름과 함께 `client-missing`으로 보고되며, 조용히 성공으로 처리되지 않습니다.
+
+## 판단 게이트(opt-in, 기본값은 꺼짐)
+
+위 통합이 설치하는 것은 **문서** MCP 서버입니다. TypeSafe 문서를 검색할 수는 있지만 판단을 생성하지는 못합니다. 즉 설치만으로는 Jev가 아무것도 답하지 않습니다. Jev 호출은 별도의 기능이며, 사용자가 켜기 전까지 동작하지 않습니다:
+
+```bash
+aios judgment status                    # 사용자가 켜기 전까지 disabled
+aios judgment enable typesafe           # ~/.aios/judgment/config.json 기록
+aios judgment ask --state "<평가할 내용>" \
+  --questions '{"severity":{"type":"score","instructions":"위험도는?","criteria":["무시 가능","일상적","위험","데이터 손실"]}}' \
+  --risk destructive --json
+```
+
+단 1바이트라도 기계를 떠나기 전에 세 조건이 동시에 성립해야 합니다:
+
+| # | 조건 | 기본값 |
+| --- | --- | --- |
+| 1 | 클라이언트 환경에 `TYPESAFE_API_KEY` 존재 | 미설정 |
+| 2 | `~/.aios/judgment/config.json`의 `enabled: true` | `false` |
+| 3 | 세션 호출 수와 입력 길이 예산이 남아 있음 | 20회, 20000자 |
+
+하나라도 성립하지 않으면 호출 면은 존재하지 않습니다. 요청이 나가지 않으며, "답이 긍정이라고 가정하는" 폴백 경로도 없습니다. `enable --probe`는 과금되는 호출을 정확히 한 번 보내며, 그것도 사용자가 명시적으로 요청했을 때만입니다.
+
+판단은 **제안이며 사실이 아닙니다**. 모든 결과는 모델, `x-typesafe-request-id`, 토큰 사용량, 신뢰도를 함께 가지며, AIOS는 이를 세 가지 판정 중 하나로 매핑합니다:
+
+| 판정 | 조건 | 의미 |
+| --- | --- | --- |
+| `act` | 신뢰도가 `actFloor` 이상 | 묻지 않고 진행 |
+| `confirm` | 두 임계값 사이 | 먼저 사람에게 확인 |
+| `abort` | `confirmFloor` 미만 | 행동하지 않음 |
+
+위험은 행동 임계값을 **높이는** 방향으로만 작용합니다. 따라서 파괴적 변경은 읽기 전용 동작보다 더 높은 신뢰도를 요구합니다. `Noul`은 설계상 신뢰도를 가지지 않으므로, 게이트는 주어진 확률을 그대로 사용하고 숫자를 지어내지 않았다고 밝힙니다.
 
 ## 명령
 
@@ -87,6 +154,7 @@ AIOS의 9개 클라이언트를 모두 지원합니다. 여기서 "지원"은 **
 | `aios integration add <벤더> [--dry-run] [--clients a,b] [--skip-skills] [--skip-mcp]` | 스킬을 설치하고 MCP 서버를 등록 |
 | `aios integration doctor <벤더> [--json]` | 스킬 해시, 클라이언트 등록, 자격 증명 존재 여부, 실시간 MCP 핸드셰이크를 검증 |
 | `aios integration remove <벤더> [--dry-run]` | AIOS가 소유한 것만 해제하고 제거 |
+| `aios judgment status \| enable \| disable \| ask` | opt-in 판단 게이트 조회·활성화·비활성화·사용 |
 
 주요 플래그:
 

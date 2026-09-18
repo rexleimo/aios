@@ -38,6 +38,7 @@ Commands:
   learn-eval    Turn checkpoint telemetry into operator recommendations
   skill         Skill compliance dry-runs and health dashboard
   integration   Install and verify third-party vendor integrations (skill + docs MCP)
+  judgment      Opt-in System One judgment gate (off until you enable it)
   session       Inspect session-local changed file state
   entropy-gc    Auto-archive stale ContextDB artifacts with rollback manifests
   snapshot-rollback Restore pre-mutation snapshot artifacts (manifest-driven)
@@ -88,6 +89,9 @@ Examples:
   aios integration list
   aios integration add typesafe --dry-run
   aios integration doctor typesafe --json
+  aios judgment status
+  aios judgment enable typesafe
+  aios judgment ask --state "a 5-line patch that rewrites the migration" --questions '{"severity":{"type":"score","instructions":"How risky is this change?","criteria":["Trivial","Routine","Risky","Data loss"]}}' --risk destructive --json
   aios session changed-files --session codex-cli-20260303T080437-065e16c0 --json
   aios entropy-gc auto --session codex-cli-20260303T080437-065e16c0
   aios snapshot-rollback --session codex-cli-20260303T080437-065e16c0 --job phase.implement --dry-run

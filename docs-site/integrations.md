@@ -30,6 +30,39 @@ AIOS treats a vendor's model surface as part of the integration contract, so rou
 
 **TypeSafe System One** provides small units of AI intelligence you use like programming primitives: `Choice`, `Score`, and `Noul`. **Jev** turns natural language plus application state into typed judgments and probabilities that ordinary code can combine, so a "prompt and parse" step becomes a structured decision.
 
+## Configure the credential
+
+`TYPESAFE_API_KEY` is the only credential this vendor needs. AIOS checks **presence only** — it never reads, prints, or stores the value. You set it yourself, in the environment your coding client actually runs in.
+
+The most common failure is scope: a variable exported in one terminal, or written into the *User* scope of a different account, is invisible to an already-running client.
+
+**Windows — persists for your account:**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<your-key>', 'User')
+```
+
+**Windows — all accounts (needs an elevated shell):**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<your-key>', 'Machine')
+```
+
+**macOS / Linux:**
+
+```bash
+export TYPESAFE_API_KEY="<your-key>"                                # this shell only
+echo 'export TYPESAFE_API_KEY="<your-key>"' >> ~/.bashrc            # persist
+```
+
+Then **restart your coding client**. Environment variables are read once, when a process starts; a client that is already open will never see a value you set afterwards.
+
+Check what the client will see — the credential row reports `present` or `unset`, and never the value:
+
+```bash
+aios integration doctor typesafe
+```
+
 ## Install the TypeSafe integration
 
 ```bash
@@ -52,7 +85,8 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
              run: claude mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   codex      planned
              run: codex mcp add typesafe-docs --url https://docs.typesafe.ai/mcp
-  gemini     manual step required  ~/.gemini/settings.json  (http-config-shape-unverified)
+  gemini     planned
+             run: gemini mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   probe      verified 2987ms
 ```
 
@@ -67,17 +101,50 @@ All nine AIOS clients are covered. Coverage means *an honest, actionable path fo
 | OpenCode | `opencode mcp add --url` | verified |
 | Grok | `grok mcp add -t http` | verified |
 | Pi | writes `~/.pi/agent/mcp.json` | verified |
-| Gemini CLI | `--transport http` CLI when present, else config file + manual step | verified, else manual step |
+| Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | needs an interactive terminal |
-| WorkBuddy | config file + manual step | manual step required |
-| ZCode | config file + manual step | manual step required |
+| WorkBuddy | `codebuddy mcp add --agent <name>` | manual step required |
+| ZCode | writes `~/.zcode/cli/config.json` (`mcp.servers`) | verified for stdio; manual step for HTTP |
 
-Two behaviours are deliberate:
+Three behaviours are deliberate:
 
 - **Hermes** prompts interactively for the auth method and offers no non-interactive flag. AIOS does not guess an answer or hang a script; it prints the exact command and marks the client `pending-interactive`.
-- **WorkBuddy and ZCode** have known configuration file locations but no AIOS-verified HTTP transport key name. AIOS shows the file and a JSON skeleton with the unknown key left as `<transport-key>` instead of inventing a field name.
+- **WorkBuddy**'s `mcp add` requires an `--agent <name>` value that cannot be enumerated non-interactively yet, so AIOS prints the command rather than inventing an agent name.
+- **ZCode** is an Electron client with no CLI on `PATH`. AIOS writes stdio servers into `~/.zcode/cli/config.json` under `mcp.servers`, and ZCode reads them from there; its HTTP entries additionally need a `url` field that AIOS does not write yet, so those remain a manual step.
 
 An uninstalled client is reported as `client-missing` with the binary name, never as a silent success.
+
+## Judgment gate (opt-in, off by default)
+
+The integration above installs a **docs** MCP server. It can search TypeSafe documentation, but it cannot produce a judgment — so installing it will never make Jev answer anything. Calling Jev is a separate capability, and it stays off until you turn it on:
+
+```bash
+aios judgment status                    # reports disabled until you say otherwise
+aios judgment enable typesafe           # writes ~/.aios/judgment/config.json
+aios judgment ask --state "<the change>" \
+  --questions '{"severity":{"type":"score","instructions":"How risky?","criteria":["Trivial","Routine","Risky","Data loss"]}}' \
+  --risk destructive --json
+```
+
+Three conditions must hold before a single byte leaves your machine:
+
+| # | Condition | Default |
+| --- | --- | --- |
+| 1 | `TYPESAFE_API_KEY` is present in the client's environment | unset |
+| 2 | `enabled: true` in `~/.aios/judgment/config.json` | `false` |
+| 3 | The session call and input-size budgets are intact | 20 calls, 20000 chars |
+
+If any of them fails, the call surface does not exist: nothing is sent, and no code path falls back to assuming an answer. `enable --probe` sends exactly one metered call, and only because you asked for it.
+
+A judgment is a **proposal, not a fact**. Every result carries its model, its `x-typesafe-request-id`, its token usage, and a confidence, and AIOS maps it to one of three verdicts:
+
+| Verdict | Condition | Meaning |
+| --- | --- | --- |
+| `act` | confidence is at or above `actFloor` | proceed without asking |
+| `confirm` | between the two floors | ask a human first |
+| `abort` | below `confirmFloor` | do not act |
+
+Risk only ever **raises** the action floor, so a destructive change needs more confidence than a read-only one. `Noul` answers carry no confidence by design; the gate uses the probability itself and says so, instead of inventing a number.
 
 ## Commands
 
@@ -87,6 +154,7 @@ An uninstalled client is reported as `client-missing` with the binary name, neve
 | `aios integration add <vendor> [--dry-run] [--clients a,b] [--skip-skills] [--skip-mcp]` | Install the skill and register the MCP server |
 | `aios integration doctor <vendor> [--json]` | Verify skill hash, client registrations, credentials presence, and live MCP handshake |
 | `aios integration remove <vendor> [--dry-run]` | Unregister and remove only what AIOS owns |
+| `aios judgment status \| enable \| disable \| ask` | Inspect, turn on, turn off, and use the opt-in judgment gate |
 
 Useful flags:
 

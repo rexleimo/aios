@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.18.0: TypeSafe Jev in AIOS — Off by Default, On Purpose](2026-09-v518-judgment-gate.md) — credential setup, why a docs MCP cannot judge, and an opt-in gate that fails closed
 - [v5.16.0: ZCode Joins AIOS — with Real Subagents](2026-09-v516-zcode-client.md) — first-class client, agents plugin bridge, strict-schema MCP, Pi capability repair
 - [v5.15.0: Pi Gains Real MCP Capability](2026-09-v515-pi-mcp-bridge.md) — codemap search, MCP bridge into Pi, paired doctor cleanup
 - [v5.14.0: LoopX Control Plane + No-Orphan Process Trees](2026-09-v514-loopx-control-plane.md) — settled turns, paced unattended runs, no-orphan process trees

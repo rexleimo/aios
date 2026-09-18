@@ -30,6 +30,39 @@ AIOS 把厂商的模型信息视为集成契约的一部分，因此路由和提
 
 **TypeSafe System One** 提供可以像编程原语一样使用的小块 AI 智能：`Choice`、`Score`、`Noul`。**Jev** 把自然语言加应用状态转成带类型的判断与概率，让普通代码可以直接组合，从而把"提示词 + 解析"这一步变成结构化决策。
 
+## 配置凭据
+
+`TYPESAFE_API_KEY` 是这个厂商唯一需要的凭据。AIOS 只检查它**是否存在**——从不读取、打印或存储它的值。这一步要你自己做，而且要设在你编码客户端真正运行的那个环境里。
+
+最常见的失败原因是作用域：在某个终端里 `export` 的变量，或写在另一个账号 *User* 作用域里的变量，对已经在运行的客户端是不可见的。
+
+**Windows —— 对你的账号持久生效：**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<你的密钥>', 'User')
+```
+
+**Windows —— 对全部账号生效（需要管理员终端）：**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<你的密钥>', 'Machine')
+```
+
+**macOS / Linux：**
+
+```bash
+export TYPESAFE_API_KEY="<你的密钥>"                                # 仅当前 shell
+echo 'export TYPESAFE_API_KEY="<你的密钥>"' >> ~/.bashrc            # 持久化
+```
+
+然后**重启你的编码客户端**。环境变量只在进程启动时读取一次；已经打开的客户端永远看不到你之后设置的值。
+
+查看客户端将看到什么——凭据那一行只报告 `present` 或 `unset`，不会显示值：
+
+```bash
+aios integration doctor typesafe
+```
+
 ## 安装 TypeSafe 集成
 
 ```bash
@@ -52,7 +85,8 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
              run: claude mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   codex      planned
              run: codex mcp add typesafe-docs --url https://docs.typesafe.ai/mcp
-  gemini     manual step required  ~/.gemini/settings.json  (http-config-shape-unverified)
+  gemini     planned
+             run: gemini mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   probe      verified 2987ms
 ```
 
@@ -67,17 +101,50 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 | OpenCode | `opencode mcp add --url` | verified |
 | Grok | `grok mcp add -t http` | verified |
 | Pi | 写入 `~/.pi/agent/mcp.json` | verified |
-| Gemini CLI | 有 CLI 时用 `--transport http`，否则配置文件 + 人工步骤 | verified，否则人工步骤 |
+| Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 需要交互式终端 |
-| WorkBuddy | 配置文件 + 人工步骤 | 需要人工步骤 |
-| ZCode | 配置文件 + 人工步骤 | 需要人工步骤 |
+| WorkBuddy | `codebuddy mcp add --agent <名称>` | 需要人工步骤 |
+| ZCode | 写入 `~/.zcode/cli/config.json`（`mcp.servers`） | stdio 已验证；HTTP 需人工步骤 |
 
-两处行为是刻意的：
+三处行为是刻意的：
 
 - **Hermes** 会交互式追问认证方式，且没有非交互开关。AIOS 不会去猜一个答案、也不会让脚本挂住；它打印出确切命令并标记为 `pending-interactive`。
-- **WorkBuddy 和 ZCode** 的配置文件位置已知，但 AIOS 未验证其 HTTP transport 键名。AIOS 会给出文件路径和一份 JSON 骨架，把未知键名留成 `<transport-key>`，而不是编造字段名。
+- **WorkBuddy** 的 `mcp add` 需要一个 `--agent <名称>` 值，而这个名单目前无法非交互枚举，所以 AIOS 打印命令，而不是编一个 agent 名称。
+- **ZCode** 是没有 `PATH` CLI 的 Electron 客户端。AIOS 把 stdio server 写进 `~/.zcode/cli/config.json` 的 `mcp.servers`，ZCode 从那里读取；它的 HTTP 条目还额外需要一个 AIOS 目前不写入的 `url` 字段，因此那部分仍需人工步骤。
 
 客户端没安装时会报告为 `client-missing` 并给出二进制名，绝不会静默算作成功。
+
+## 判定闸门（opt-in，默认关闭）
+
+上面那条集成装的是一个**文档** MCP 服务。它能检索 TypeSafe 文档，但产生不了判断——所以装了它，Jev 也不会回答任何东西。真正调用 Jev 是另一项能力，而且要由你打开才生效：
+
+```bash
+aios judgment status                    # 在你表态之前一直是 disabled
+aios judgment enable typesafe           # 写入 ~/.aios/judgment/config.json
+aios judgment ask --state "<要评的内容>" \
+  --questions '{"severity":{"type":"score","instructions":"风险有多大？","criteria":["可忽略","常规","有风险","可能丢数据"]}}' \
+  --risk destructive --json
+```
+
+在任何一个字节离开你的机器之前，三个条件必须同时成立：
+
+| # | 条件 | 默认 |
+| --- | --- | --- |
+| 1 | 客户端环境中存在 `TYPESAFE_API_KEY` | 未设置 |
+| 2 | `~/.aios/judgment/config.json` 中 `enabled: true` | `false` |
+| 3 | 会话调用数与输入长度预算未超 | 20 次、20000 字符 |
+
+任一条件不成立，这个调用面就不存在：不会发出任何请求，也不存在任何"回退成当作答案是肯定的"代码路径。`enable --probe` 只发一次计量调用，且只因为你明确要了它。
+
+判断是**提案，不是事实**。每个结果都带着它的模型、`x-typesafe-request-id`、token 用量和置信度，AIOS 会把它映射成三种裁决之一：
+
+| 裁决 | 条件 | 含义 |
+| --- | --- | --- |
+| `act` | 置信度 ≥ `actFloor` | 不必询问，可以推进 |
+| `confirm` | 落在两个门槛之间 | 先问人 |
+| `abort` | 低于 `confirmFloor` | 不要动手 |
+
+风险只会**抬高**行动门槛，所以破坏性改动需要比只读动作更高的置信度。`Noul` 按设计不携带置信度，闸门就使用它给出的概率并如实说明，而不是编一个数出来。
 
 ## 命令
 
@@ -87,6 +154,7 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 | `aios integration add <厂商> [--dry-run] [--clients a,b] [--skip-skills] [--skip-mcp]` | 安装技能并注册 MCP 服务 |
 | `aios integration doctor <厂商> [--json]` | 校验技能哈希、客户端注册、凭据是否存在、以及实时 MCP 握手 |
 | `aios integration remove <厂商> [--dry-run]` | 只注销和删除 AIOS 自己写下的内容 |
+| `aios judgment status \| enable \| disable \| ask` | 查看、开启、关闭并使用这个 opt-in 判定闸门 |
 
 常用参数：
 

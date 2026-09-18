@@ -36,7 +36,10 @@ test('collectClientMcpTargets routes each client to its real location/format wit
   const geminiTargets = targets.filter((t) => t.client === 'gemini');
   assert.equal(geminiTargets.length, 2);
   assert.equal(geminiTargets.find((t) => t.scope === 'project').path, path.resolve('/proj/.gemini/settings.json'));
-  assert.equal(geminiTargets.find((t) => t.scope === 'project').format, 'json');
+  // gemini 的 McpServerConfigSchema 是严格模式：未知字段（如 startupTimeoutSec）
+  // 会让整份 settings.json 失效、gemini 拒绝启动，所以 scope 层走 'gemini-json' 归一化
+  //（与 zcode 同构：target 格式仍是 'json'）。
+  assert.equal(geminiTargets.find((t) => t.scope === 'project').format, 'gemini-json');
   assert.equal(geminiTargets.find((t) => t.scope === 'project').createIfMissing, true);
   assert.equal(geminiTargets.find((t) => t.scope === 'home').path, path.resolve('/home/u/.gemini/settings.json'));
 

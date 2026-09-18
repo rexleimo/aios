@@ -9,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { getClientHomes } from '../platform/paths.mjs';
+import { resolveIntegrationClientCommand } from './clients.mjs';
 import { installContextDbSkills } from '../components/skills/install.mjs';
 import {
   buildClientDesiredEntry,
@@ -38,18 +39,8 @@ import {
   stageSkillFiles,
   verifySkillFiles,
 } from './skill.mjs';
-const CLIENT_BINARY_HINTS = Object.freeze({
-  claude: ['claude'],
-  codex: ['codex'],
-  opencode: ['opencode'],
-  hermes: ['hermes'],
-  grok: ['grok'],
-  pi: ['pi'],
-  gemini: ['gemini'],
-  workbuddy: ['workbuddy'],
-  zcode: ['zcode'],
-});
-
+// 客户端 id 与真实可执行名可能不同（workbuddy → codebuddy）。这里只从 registry 解析，
+// 不再维护平行的名字表——两份表正是别名分叉的根源。
 // Windows 上 claude/codex 等是 npm 生成的 .cmd shim，没有 shell 就无法直接执行。
 // 但 `shell: true` 配上 args 会触发 DEP0190（参数不转义），所以这里显式走
 // cmd.exe /d /s /c 并把每个参数自行引号化，既保留 .cmd 能力，也不引入转义漏洞。
@@ -79,6 +70,9 @@ function defaultRunImpl(command, args, options = {}) {
 export function defaultCommandExistsImpl(command) {
   const envPath = process.env.PATH || '';
   const extensions = process.platform === 'win32' ? (process.env.PATHEXT || '.EXE;.CMD;.BAT').split(';') : [''];
+  // 只认 PATH：~/.aios/bin 里的 shim 是 AIOS 给全部客户端预生成的
+  // （连没安装的 antigravity/crush 都有），shim 存在并不代表厂商客户端装了，
+  // 所以把 shim 目录当作"已安装"证据会产生假阳性。
   for (const dir of envPath.split(path.delimiter)) {
     if (!dir) continue;
     for (const ext of extensions) {
@@ -175,7 +169,7 @@ async function registerClientMcp({
   }
 
   // CLI 委托路径：客户端自己写自己的配置。
-  const binary = (CLIENT_BINARY_HINTS[client] || [client])[0];
+  const binary = resolveIntegrationClientCommand(client);
   if (!commandExistsImpl(binary)) {
     const preview = entry.buildAdd ? formatInvocation(entry.buildAdd({ mcp: integration.mcp, scope })) : '';
     return {

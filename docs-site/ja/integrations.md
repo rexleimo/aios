@@ -30,6 +30,39 @@ AIOS はベンダーのモデル情報を統合契約の一部として扱うた
 
 **TypeSafe System One** は、プログラミングのプリミティブのように使える小さな AI 知能を提供します：`Choice`、`Score`、`Noul`。**Jev** は自然言語とアプリケーション状態を、通常のコードで組み合わせられる型付きの判断と確率に変換し、「プロンプトして解析する」ステップを構造化された意思決定に変えます。
 
+## 認証情報の設定
+
+`TYPESAFE_API_KEY` はこのベンダーに必要な唯一の認証情報です。AIOS は**存在の有無だけ**を確認し、値を読む・表示する・保存することはありません。設定はご自身で、コーディングクライアントが実際に動作する環境に対して行ってください。
+
+最も多い失敗原因はスコープです。ある端末で `export` した変数や、別アカウントの *User* スコープに書いた変数は、すでに起動しているクライアントからは見えません。
+
+**Windows —— 自分のアカウントに永続化：**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<あなたのキー>', 'User')
+```
+
+**Windows —— 全アカウント（管理者端末が必要）：**
+
+```powershell
+[Environment]::SetEnvironmentVariable('TYPESAFE_API_KEY', '<あなたのキー>', 'Machine')
+```
+
+**macOS / Linux：**
+
+```bash
+export TYPESAFE_API_KEY="<あなたのキー>"                                # 現在のシェルのみ
+echo 'export TYPESAFE_API_KEY="<あなたのキー>"' >> ~/.bashrc            # 永続化
+```
+
+その後、**コーディングクライアントを再起動してください**。環境変数はプロセス起動時に一度だけ読まれます。すでに開いているクライアントは、後から設定した値を決して見ません。
+
+クライアントから何が見えるかを確認します。認証情報の行は `present` か `unset` を報告し、値は表示しません：
+
+```bash
+aios integration doctor typesafe
+```
+
 ## TypeSafe 統合のインストール
 
 ```bash
@@ -52,7 +85,8 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
              run: claude mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   codex      planned
              run: codex mcp add typesafe-docs --url https://docs.typesafe.ai/mcp
-  gemini     manual step required  ~/.gemini/settings.json  (http-config-shape-unverified)
+  gemini     planned
+             run: gemini mcp add --scope user --transport http typesafe-docs https://docs.typesafe.ai/mcp
   probe      verified 2987ms
 ```
 
@@ -67,17 +101,50 @@ AIOS の 9 クライアントすべてを対象にします。「対応」とは
 | OpenCode | `opencode mcp add --url` | verified |
 | Grok | `grok mcp add -t http` | verified |
 | Pi | `~/.pi/agent/mcp.json` を書き込む | verified |
-| Gemini CLI | CLI があれば `--transport http`、なければ設定ファイル + 手動手順 | verified、または手動手順 |
+| Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 対話端末が必要 |
-| WorkBuddy | 設定ファイル + 手動手順 | 手動手順が必要 |
-| ZCode | 設定ファイル + 手動手順 | 手動手順が必要 |
+| WorkBuddy | `codebuddy mcp add --agent <名前>` | 手動手順が必要 |
+| ZCode | `~/.zcode/cli/config.json`（`mcp.servers`）を書き込む | stdio は検証済み。HTTP は手動手順 |
 
-意図的な挙動が 2 つあります。
+意図的な挙動が 3 つあります。
 
 - **Hermes** は認証方式を対話的に尋ね、非対話用のフラグがありません。AIOS は答えを推測せず、スクリプトを停止させることもなく、正確なコマンドを表示して `pending-interactive` と報告します。
-- **WorkBuddy と ZCode** は設定ファイルの場所が判明していますが、AIOS が検証した HTTP transport のキー名はありません。AIOS はファイルと JSON の骨組みを示し、未知のキーを `<transport-key>` のままにします。フィールド名を捏造しません。
+- **WorkBuddy** の `mcp add` は `--agent <名前>` の値を要求しますが、その一覧はまだ非対話的に列挙できません。AIOS は agent 名を捏造せず、コマンドを表示します。
+- **ZCode** は `PATH` に CLI を持たない Electron クライアントです。AIOS は stdio サーバーを `~/.zcode/cli/config.json` の `mcp.servers` に書き込み、ZCode はそこから読み取ります。HTTP エントリには AIOS がまだ書き込まない `url` フィールドが追加で必要なため、そこは手動手順のままです。
 
 クライアントが未インストールの場合はバイナリ名とともに `client-missing` として報告され、静かに成功扱いになることはありません。
+
+## 判断ゲート（opt-in、デフォルトはオフ）
+
+上記の統合が導入するのは**ドキュメント** MCP サーバーです。TypeSafe のドキュメントを検索できますが、判断を生成することはできません。つまり導入しただけでは Jev は何も答えません。Jev の呼び出しは別の機能であり、あなたが有効にするまで動きません：
+
+```bash
+aios judgment status                    # あなたが意思表示するまで disabled
+aios judgment enable typesafe           # ~/.aios/judgment/config.json を書き込む
+aios judgment ask --state "<評価対象>" \
+  --questions '{"severity":{"type":"score","instructions":"リスクはどれくらい？","criteria":["無視できる","通常","リスクあり","データ喪失"]}}' \
+  --risk destructive --json
+```
+
+1 バイトでもマシンの外に出る前に、3 つの条件が同時に成立している必要があります：
+
+| # | 条件 | デフォルト |
+| --- | --- | --- |
+| 1 | クライアント環境に `TYPESAFE_API_KEY` がある | 未設定 |
+| 2 | `~/.aios/judgment/config.json` の `enabled: true` | `false` |
+| 3 | セッションの呼び出し回数と入力長の予算が残っている | 20 回、20000 文字 |
+
+いずれかが満たされない場合、呼び出し面は存在しません。リクエストは送られず、「答えは肯定とみなす」にフォールバックするコードパスもありません。`enable --probe` は計量対象の呼び出しを 1 回だけ送りますが、それはあなたが明示的に求めた場合だけです。
+
+判断は**提案であり、事実ではありません**。すべての結果はモデル、`x-typesafe-request-id`、トークン使用量、信頼度を伴い、AIOS はそれを 3 つの裁定のいずれかに写像します：
+
+| 裁定 | 条件 | 意味 |
+| --- | --- | --- |
+| `act` | 信頼度が `actFloor` 以上 | 確認せずに進めてよい |
+| `confirm` | 2 つのしきい値の間 | まず人に確認する |
+| `abort` | `confirmFloor` 未満 | 行動しない |
+
+リスクは行動しきい値を**引き上げる**方向にしか働きません。したがって破壊的な変更は読み取り専用の操作より高い信頼度を必要とします。`Noul` は設計上信頼度を持たないため、ゲートは与えられた確率をそのまま使い、数値を捏造せずにその旨を明示します。
 
 ## コマンド
 
@@ -87,6 +154,7 @@ AIOS の 9 クライアントすべてを対象にします。「対応」とは
 | `aios integration add <ベンダー> [--dry-run] [--clients a,b] [--skip-skills] [--skip-mcp]` | スキルをインストールし MCP サーバーを登録 |
 | `aios integration doctor <ベンダー> [--json]` | スキルのハッシュ、クライアント登録、認証情報の有無、ライブ MCP ハンドシェイクを検証 |
 | `aios integration remove <ベンダー> [--dry-run]` | AIOS が所有するものだけを解除・削除 |
+| `aios judgment status \| enable \| disable \| ask` | opt-in 判断ゲートの確認・有効化・無効化・利用 |
 
 主なフラグ：
 

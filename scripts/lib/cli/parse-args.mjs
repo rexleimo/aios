@@ -3,6 +3,7 @@ import { Command } from 'commander';
 import { parseHarnessArgs, parseHudArgs, parseTeamArgs, parseWorkArgs } from './parse-args/execution.mjs';
 import { parseInterceptionArgs } from './parse-args/interception.mjs';
 import { parseIntegrationArgs } from './parse-args/integration.mjs';
+import { parseJudgmentArgs } from './parse-args/judgment.mjs';
 import { parseEvolutionArgs } from './parse-args/evolution.mjs';
 import {
   parseCanvasArgs,
@@ -295,6 +296,7 @@ export function parseArgs(argv = []) {
   if (first === 'search') return parseSearchArgs(argv);
   if (first === 'skill') return parseSkillArgs(argv);
   if (first === 'integration') return parseIntegrationArgs(argv);
+  if (first === 'judgment') return parseJudgmentArgs(argv);
   if (first === 'session') return parseSessionArgs(argv);
   if (first === 'canvas') return parseCanvasArgs(argv);
   if (first === 'internal') return parseInternalArgs(argv.slice(1));

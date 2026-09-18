@@ -386,6 +386,15 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
+    if (parsed.command === 'judgment') {
+      const { runJudgmentCommand } = await import('../judgment/cli.mjs');
+      applyResultExitCode(await runJudgmentCommand(parsed.options, {
+        rootDir: workspaceFor(parsed),
+        stdout,
+      }));
+      return;
+    }
+
     if (parsed.command === 'memo') {
       const { runMemo } = await import('../memo/memo.mjs');
       await runMemo(parsed.options, { rootDir: workspaceFor(parsed) });

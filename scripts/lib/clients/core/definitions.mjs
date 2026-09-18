@@ -239,12 +239,17 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
       Object.freeze({ scope: 'home', file: '.mcp.json', createIfMissing: true }),
     ]),
   }),
+  // Gemini CLI MCP — JSON mcpServers namespace. Gemini's McpServerConfigSchema is strict:
+  // an unknown field (e.g. AIOS's startupTimeoutSec) invalidates the WHOLE settings.json
+  // and gemini refuses to start ("Invalid configuration"). 'gemini-json' normalizes
+  // AIOS-managed servers to that schema (startupTimeoutSec seconds -> timeout milliseconds).
+  // 与 zcode 同构：target 仍是 'json'，归一化只写在 scope 层。
   gemini: Object.freeze({
     format: 'json',
     namespace: 'mcpServers',
     scopes: Object.freeze([
-      Object.freeze({ scope: 'project', file: '.gemini/settings.json' }),
-      Object.freeze({ scope: 'home', file: 'settings.json', createIfMissing: true }),
+      Object.freeze({ scope: 'project', file: '.gemini/settings.json', format: 'gemini-json' }),
+      Object.freeze({ scope: 'home', file: 'settings.json', format: 'gemini-json', createIfMissing: true }),
     ]),
   }),
   opencode: Object.freeze({

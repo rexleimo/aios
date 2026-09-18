@@ -123,6 +123,8 @@ crush.json
 .gemini/
 .grok/
 .agents/
+.workbuddy/
+.hermes/
 
 # Generated Skill certification/training run evidence. Release gates read
 # `docs/evidence/skill-training/<skill>-certification-*/state.json` from git,
