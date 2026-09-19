@@ -10,6 +10,9 @@ export {
   SHARED_AGENT_SKILL_ROOT,
 } from './core/definitions.mjs';
 export {
+  orderByPriority,
+} from './core/ordering.mjs';
+export {
   assertKnownCapability,
   assertKnownClient,
   isKnownCapability,

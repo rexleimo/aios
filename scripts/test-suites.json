@@ -75,6 +75,7 @@
       "scripts/tests/harness-profiles.test.mjs",
       "scripts/tests/repo-lock.test.mjs",
       "scripts/tests/client-registry.test.mjs",
+      "scripts/tests/client-list-derivation.test.mjs",
       "scripts/tests/zcode-mcp-nested-migration.test.mjs",
       "scripts/tests/gemini-mcp-schema.test.mjs",
       "scripts/tests/zcode-agents-plugin.test.mjs",
@@ -156,6 +157,7 @@
     "files": [
       "scripts/tests/client-registry.test.mjs",
       "scripts/tests/client-capabilities.test.mjs",
+      "scripts/tests/client-list-derivation.test.mjs",
       "scripts/tests/client-smoke.test.mjs",
       "scripts/tests/pages-workflow.test.mjs"
     ]

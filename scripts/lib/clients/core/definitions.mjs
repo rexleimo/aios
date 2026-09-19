@@ -1,3 +1,5 @@
+import { orderByPriority } from './ordering.mjs';
+
 export const CLIENT_CAPABILITIES = Object.freeze(['skills', 'agents', 'native', 'team', 'harness']);
 
 // Per-client skill format: 'markdown-directory' = SKILL.md in a dir (all clients including gemini).
@@ -235,16 +237,20 @@ export const CLIENT_DEFINITIONS = Object.freeze({
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
 export const CLIENT_SELECTIONS = Object.freeze(['all', ...ALL_CLIENTS]);
 
+// 纯函数：某能力的成员集合，来自每个客户端自己的 capabilities 声明（单一事实来源）。
+function clientsWithCapability(capability) {
+  return Object.freeze(ALL_CLIENTS.filter((client) => (
+    CLIENT_DEFINITIONS[client].capabilities.includes(capability)
+  )));
+}
+
+// 顺序是派发优先级，成员来自各客户端的 capabilities 声明；team 唯一的偏离是 zcode 排在 pi 前。
 export const CAPABILITY_CLIENT_ORDER = Object.freeze({
-  skills: ALL_CLIENTS,
-  native: ALL_CLIENTS,
-  agents: Object.freeze(['claude', 'codex', 'opencode', 'grok']),
-  // team 排序：zcode 和 pi 都是 spawn 路由直接驱动的同名 CLI（zcode --mode yolo /
-  // pi -p），因此跟在其他 provider 之后；两者都不进 `agents`——它们没有项目级
-  // subagent 定义面。pi 的 team worker 已实测（见 scripts/tests/team-pi-worker.test.mjs）。
-  // qoder 走 -p/--yolo headless（官方文档验证），排在最后。
-  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi', 'qoder']),
-  harness: ALL_CLIENTS,
+  skills: clientsWithCapability('skills'),
+  native: clientsWithCapability('native'),
+  agents: orderByPriority(clientsWithCapability('agents'), ['claude']),
+  team: orderByPriority(clientsWithCapability('team'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode']),
+  harness: clientsWithCapability('harness'),
 });
 
 export const SHARED_AGENT_SKILL_ROOT = '.agents/skills';

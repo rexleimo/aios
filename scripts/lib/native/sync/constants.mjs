@@ -1,35 +1,27 @@
 import { ALL_CLIENTS } from '../../clients/registry.mjs';
 import { renderClaudeNativeOutputs } from '../emitters/claude.mjs';
 import { renderCodexNativeOutputs } from '../emitters/codex.mjs';
-import { renderGeminiNativeOutputs } from '../emitters/gemini.mjs';
 import { renderGrokNativeOutputs } from '../emitters/grok.mjs';
-import { renderHermesNativeOutputs } from '../emitters/hermes.mjs';
 import { renderOpencodeNativeOutputs } from '../emitters/opencode.mjs';
-import { renderPiNativeOutputs } from '../emitters/pi.mjs';
-import { renderWorkbuddyNativeOutputs } from '../emitters/workbuddy.mjs';
-import { renderZcodeNativeOutputs } from '../emitters/zcode.mjs';
-import { renderQoderNativeOutputs } from '../emitters/qoder.mjs';
+import { makeInstructionMarkdownEmitter } from '../emitters/instruction-markdown.mjs';
 
-/* 中文注释：每个客户端的 native 指令生成器。Hermes 在这里只输出 AGENTS.md（没有 settings.local.json）。 */
-const EMITTER_REGISTRY = Object.freeze({
+/* 中文注释：只有带额外落盘副作用的客户端需要点名（codex hooks、claude settings、
+   grok hooks+agents、opencode config+agent）；其余客户端的 native 输出形状一致，
+   由注册表的 instructionFileName/projectSkillRoot 派生，新增客户端不必再改这里。 */
+const CUSTOM_EMITTERS = Object.freeze({
   codex: renderCodexNativeOutputs,
   claude: renderClaudeNativeOutputs,
-  gemini: renderGeminiNativeOutputs,
   opencode: renderOpencodeNativeOutputs,
-  hermes: renderHermesNativeOutputs,
   grok: renderGrokNativeOutputs,
-  workbuddy: renderWorkbuddyNativeOutputs,
-  pi: renderPiNativeOutputs,
-  zcode: renderZcodeNativeOutputs,
-  qoder: renderQoderNativeOutputs,
 });
 
-// Auto-derived from ALL_CLIENTS registry: ensures every client has an emitter.
-// Adding a new client to registry will fail fast at import time until an emitter is wired.
-export const EMITTERS = Object.freeze(
-  Object.fromEntries(ALL_CLIENTS.map((c) => {
-    if (!EMITTER_REGISTRY[c]) throw new Error(`Missing native emitter for client: ${c}`);
-    return [c, EMITTER_REGISTRY[c]];
-  })),
-);
+for (const client of Object.keys(CUSTOM_EMITTERS)) {
+  if (!ALL_CLIENTS.includes(client)) {
+    throw new Error(`Native emitter wired for unknown client: ${client}`);
+  }
+}
+
+export const EMITTERS = Object.freeze(Object.fromEntries(
+  ALL_CLIENTS.map((client) => [client, CUSTOM_EMITTERS[client] ?? makeInstructionMarkdownEmitter(client)]),
+));
 export const SYNC_LOCK_NAME = 'native-skills-sync';

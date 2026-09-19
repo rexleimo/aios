@@ -2,6 +2,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { ALL_CLIENTS } from '../../clients/core/definitions.mjs';
+
 export {
   buildAiosMcpProxyServer,
   isAiosMcpProxyEntry,
@@ -14,7 +16,8 @@ export {
 } from '../mcp/proxy-inspector.mjs';
 
 export const INTERCEPTION_LEVELS = Object.freeze(['L0', 'L1', 'L2', 'L3']);
-export const CLIENT_ORDER = Object.freeze(['aios-harness', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode', 'qoder', 'cursor', 'generic-mcp']);
+// CLI 客户端成员来自注册表；aios-harness/cursor/generic-mcp 是注册表外的宿主槽位，能力各自声明在 config/host-capabilities.json。
+export const CLIENT_ORDER = Object.freeze(['aios-harness', ...ALL_CLIENTS, 'cursor', 'generic-mcp']);
 export const REQUIRED_TURN_COMPRESSION = Object.freeze({
   preSendRequired: true,
   postReceiveRequired: true,

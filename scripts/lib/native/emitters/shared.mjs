@@ -1,6 +1,9 @@
 import fs from 'node:fs';
 
 import { stripManagedBlock } from '../../platform/fs.mjs';
+import { ALL_CLIENTS } from '../../clients/core/definitions.mjs';
+import { orderByPriority } from '../../clients/core/ordering.mjs';
+import { getClientInstructionFileName } from '../../clients/native/index.mjs';
 import { resolveNativeSourcePath, resolveSharedNativePartialPath } from '../source-tree.mjs';
 
 export const AIOS_NATIVE_BEGIN_MARK = '<!-- AIOS NATIVE BEGIN -->';
@@ -9,12 +12,20 @@ export const AIOS_NATIVE_JSON_KEY = 'aiosNative';
 
 // AGENTS.md 是多个客户端共用的指令文件，一次同步只能由一个写入方负责，否则互相覆盖。
 // 顺序即优先级：靠前者已选中时，靠后者不再重复写 AGENTS.md。
-export const AGENTS_MD_COWRITERS = Object.freeze(['codex', 'opencode', 'grok', 'hermes', 'workbuddy', 'pi', 'zcode', 'qoder']);
+// 成员=注册表中 instructionFileName 为 AGENTS.md 的客户端；priority 只保留既有的
+// codex/opencode/grok 先于其余共写方这一相对顺序。
+const AGENTS_MD_WRITERS = Object.freeze(ALL_CLIENTS.filter(
+  (client) => getClientInstructionFileName(client) === 'AGENTS.md',
+));
+export const AGENTS_MD_COWRITERS = orderByPriority(AGENTS_MD_WRITERS, ['codex', 'opencode', 'grok']);
 
-// 纯函数：判断同批次里是否已有更高优先级的共写方负责 AGENTS.md。
+// 纯函数：只有排名更靠前的共写方在本次选择里时 self 才让位；不看排名会让 pi+zcode 这类
+// 组合双方都让位、AGENTS.md 没人写。rank<=0 同时覆盖首位 codex 与非共写方（CLAUDE.md/GEMINI.md）。
 export function isAgentsMdClaimedByPeer(selectedClients = [], self = '') {
+  const rank = AGENTS_MD_COWRITERS.indexOf(self);
+  if (rank <= 0) return false;
   const selected = new Set(Array.isArray(selectedClients) ? selectedClients : []);
-  return AGENTS_MD_COWRITERS.some((client) => client !== self && selected.has(client));
+  return AGENTS_MD_COWRITERS.slice(0, rank).some((client) => selected.has(client));
 }
 
 import { normalizeText } from '../../../../src/shared/normalize.mjs';

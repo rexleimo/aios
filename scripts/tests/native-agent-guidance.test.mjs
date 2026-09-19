@@ -9,7 +9,7 @@ import { resolveNativeClients } from '../lib/native/source-tree.mjs';
 import { composeNativeMarkdown } from '../lib/native/emitters/compose.mjs';
 import { renderCodexNativeOutputs } from '../lib/native/emitters/codex.mjs';
 import { renderGrokNativeOutputs } from '../lib/native/emitters/grok.mjs';
-import { renderHermesNativeOutputs } from '../lib/native/emitters/hermes.mjs';
+import { makeInstructionMarkdownEmitter } from '../lib/native/emitters/instruction-markdown.mjs';
 import { renderOpencodeNativeOutputs } from '../lib/native/emitters/opencode.mjs';
 import { readNativePartials, bakeRuntimeCliValues, readClientJsonSource } from '../lib/native/emitters/shared.mjs';
 
@@ -64,7 +64,7 @@ test('clients sharing AGENTS.md receive one deterministic client-neutral project
   const rendered = [
     renderCodexNativeOutputs({ rootDir: process.cwd() }),
     renderOpencodeNativeOutputs({ rootDir: process.cwd(), selectedClients: ['opencode'] }),
-    renderHermesNativeOutputs({ rootDir: process.cwd(), selectedClients: ['hermes'] }),
+    makeInstructionMarkdownEmitter('hermes')({ rootDir: process.cwd(), selectedClients: ['hermes'] }),
     renderGrokNativeOutputs({ rootDir: process.cwd(), selectedClients: ['grok'] }),
   ].map(markdownOperationContent);
 
