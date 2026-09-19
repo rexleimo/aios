@@ -20,6 +20,7 @@ description: "AIOS 工程与增长博客中文版：覆盖记忆系统、单 Age
 
 ## 最新文章
 
+- [Jev + AIOS 快速上手：不用关键词，后台自动判定](2026-09-jev-aios-quickstart.md) — 设好 TYPESAFE_API_KEY、打开判定闸门，平时怎么聊还怎么聊，Jev 在后台自动判定
 - [v5.19.2：Windows 能容纳的文件名](2026-09-v5192-names-windows-can-hold.md) — 候选 id 当文件名在 NTFS 上会变成备用数据流：晋升记录静默丢失，导入方却报告零错误
 - [v5.19.1：一个真正够得着的声明通道](2026-09-v5191-declaration-you-can-reach.md) — shell 也能声明了，而为它写的守卫查出 82 个从未被任何门禁跑过的测试文件
 - [v5.19.0：给判定闸门装上身体](2026-09-v519-judgment-gate-surfaces.md) — 关闭时根本不存在的 aios_judge 工具，以及只能拦下推进的 rex 阶段闸门

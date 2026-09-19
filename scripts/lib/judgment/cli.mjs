@@ -74,6 +74,7 @@ function renderStatus(report, { json }, stdout) {
   if (disabled.length > 0) {
     stdout.write('\nThe gate is OFF by default. Nothing calls a vendor until you enable it:\n');
     for (const vendor of disabled) stdout.write(`  aios judgment enable ${vendor.vendor}\n`);
+    stdout.write('After enabling, Jev works in the background with no keywords: keep chatting normally; aios_judge appears and the rex stage gate holds unverifiable advances. Docs: docs-site/integrations.md\n');
   }
   return { exitCode: 0 };
 }

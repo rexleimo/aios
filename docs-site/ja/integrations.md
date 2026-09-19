@@ -1,11 +1,15 @@
 ---
-title: サードパーティ統合（TypeSafe / Jev）
-description: "コミットを固定し、ハッシュを検証し、ドライランできる 1 つのコマンドでサードパーティ製エージェントスキルと MCP サーバーを導入します。最初の対応ベンダーは TypeSafe（System One / Jev）で、AIOS の 9 クライアントすべてを対象にします。"
+title: AIOS で TypeSafe Jev を使う——導入・判断ゲートの有効化・バックグラウンド実行
+description: "TypeSafe（System One / Jev）スキルとドキュメント MCP を導入し、TYPESAFE_API_KEY を設定して aios judgment enable typesafe を実行します。導入だけでは Jev は発火しません。有効化後は aios_judge と rex ステージゲートがキーワードなしで裏側で介入します。"
 ---
 
-# サードパーティ統合（TypeSafe / Jev）
+# AIOS で TypeSafe Jev を使う——導入・判断ゲートの有効化・バックグラウンド実行
 
 > **要点：** `aios integration add <ベンダー>` は、固定したコミット、検証済み sha256、クライアント別の登録プラン、そして実際のハンドシェイク確認によって、サードパーティ製スキルとその MCP サーバーを導入します。最初に対応したベンダーは **TypeSafe（System One / Jev）** です。まず `aios integration add typesafe --dry-run` を実行し、ディスクに変更が入る前にクライアントごとの計画を確認してください。
+>
+> **導入は有効化ではありません。** この統合が入れるのはドキュメント MCP であり、判断を生成できません。Jev を裏側で介入させるには——キーワード不要、普段どおり話すだけで—— `TYPESAFE_API_KEY` を設定して `aios judgment enable typesafe` を実行してください。有効化前に何も起きないのは正常であり、バグではありません。
+>
+> **表記注記：** 音声入力では **Jev** が「JVM」と誤認識されがちです。「JVM MVC」は Jev と MCP ドキュメントサーバーをまとめて聞き取ったものが大半です。本ページは **Jev**（`jev-latest`）と **MCP** に統一します。
 
 ## 統合コマンドが必要な理由
 
@@ -200,6 +204,7 @@ AIOS が所有していない同名カタログディレクトリは上書きし
 | `client not installed` | クライアントのバイナリが `PATH` にない | クライアントをインストールして再実行 |
 | `probe unreachable` | ドキュメント MCP エンドポイントがハンドシェイクを完了しなかった | ネットワークまたはプロキシ設定を確認して `doctor` を再実行 |
 | `unmanaged-existing-catalog-directory` | `skill-sources/<名前>` が AIOS の所有ではない | 編集を退避してからインストールを再実行 |
+| `導入済みなのに Jev が答えない` | 想定どおり：ドキュメント MCP は入り、判断ゲートが未有効 | `TYPESAFE_API_KEY` を設定しクライアントを再起動、`aios judgment enable typesafe` を実行、`aios judgment status` で確認 |
 
 ## 次のステップ
 

@@ -1,11 +1,15 @@
 ---
-title: 서드파티 통합(TypeSafe / Jev)
-description: "커밋을 고정하고 해시를 검증하며 드라이런할 수 있는 하나의 명령으로 서드파티 에이전트 스킬과 MCP 서버를 도입합니다. 첫 지원 벤더는 TypeSafe(System One / Jev)이며 AIOS의 9개 클라이언트를 모두 지원합니다."
+title: AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행
+description: "TypeSafe(System One / Jev) 스킬과 문서 MCP를 설치하고 TYPESAFE_API_KEY를 설정한 뒤 aios judgment enable typesafe를 실행하세요. 설치만으로는 Jev가 절대 발화하지 않습니다. 켜면 aios_judge와 rex 스테이지 게이트가 키워드 없이 백그라운드에서 개입합니다."
 ---
 
-# 서드파티 통합(TypeSafe / Jev)
+# AIOS에서 TypeSafe Jev 쓰기——설치·판단 게이트 켜기·백그라운드 실행
 
 > **한 줄 답변:** `aios integration add <벤더>`는 고정된 커밋, 검증된 sha256, 클라이언트별 등록 계획, 실제 핸드셰이크 확인을 통해 서드파티 스킬과 그 MCP 서버를 설치합니다. 첫 지원 벤더는 **TypeSafe(System One / Jev)** 입니다. 먼저 `aios integration add typesafe --dry-run`을 실행해 디스크가 바뀌기 전에 클라이언트별 계획을 확인하세요.
+>
+> **설치는 켜기가 아닙니다.** 이 통합이 넣는 것은 문서 MCP 서버이며 판단을 생성할 수 없습니다. Jev를 백그라운드에서 개입시키려면——키워드 없이 평소대로 대화하면 됩니다——`TYPESAFE_API_KEY`를 설정하고 `aios judgment enable typesafe`를 실행하세요. 켜기 전에는 아무 일도 없는 것이 정상이며 버그가 아닙니다.
+>
+> **표기 주의:** 음성 입력은 **Jev**를 "JVM"으로 잘못 알아듣기 쉽습니다. "JVM MVC"는 대부분 Jev와 MCP 문서 서버를 함께 잘못 들은 것입니다. 이 페이지는 **Jev**(`jev-latest`)와 **MCP**로 통일합니다.
 
 ## 통합 명령이 필요한 이유
 
@@ -200,6 +204,7 @@ AIOS가 소유하지 않은 같은 이름의 카탈로그 디렉터리는 절대
 | `client not installed` | 클라이언트 바이너리가 `PATH`에 없음 | 클라이언트를 설치한 뒤 다시 실행 |
 | `probe unreachable` | 문서 MCP 엔드포인트가 핸드셰이크를 완료하지 못함 | 네트워크나 프록시 설정 확인 후 `doctor` 재실행 |
 | `unmanaged-existing-catalog-directory` | `skill-sources/<이름>`이 AIOS 소유가 아님 | 직접 수정한 내용을 옮긴 뒤 설치 재실행 |
+| `설치했는데 Jev가 답하지 않음` | 정상: 문서 MCP는 설치됐고 판단 게이트는 꺼져 있음 | `TYPESAFE_API_KEY` 설정 후 클라이언트 재시작, `aios judgment enable typesafe` 실행, `aios judgment status`로 확인 |
 
 ## 다음 단계
 

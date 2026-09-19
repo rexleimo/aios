@@ -1,11 +1,15 @@
 ---
-title: 第三方集成（TypeSafe / Jev）
-description: "用一条钉住版本、校验哈希、可预演的命令接入第三方 Agent 技能与 MCP 服务。首个内置厂商为 TypeSafe（System One / Jev），九种 AIOS 客户端全部覆盖。文档给出安装、预演、校验与回滚的完整步骤，并说明版本固定与哈希校验如何在 CI 中落地。"
+title: AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行
+description: "安装 TypeSafe（System One / Jev）技能与文档 MCP，设置 TYPESAFE_API_KEY，再跑 aios judgment enable typesafe。只安装永远不会触发 Jev；开启后 aios_judge 工具与 rex 阶段闸门在后台自动介入，无需关键词。"
 ---
 
-# 第三方集成（TypeSafe / Jev）
+# AIOS 中用 TypeSafe Jev——安装、开启判定闸门、后台运行
 
 > **一句话答案：** `aios integration add <厂商>` 通过钉住的 commit、校验过的 sha256、逐客户端的注册计划和一次真实握手检查，来安装第三方 Agent 技能及其 MCP 服务。首个内置厂商是 **TypeSafe（System One / Jev）**。先跑 `aios integration add typesafe --dry-run`，在动任何磁盘内容之前看清每个客户端会发生什么。
+>
+> **安装不等于开启。** 这条集成装的是文档 MCP 服务，它永远产生不了判断。要让 Jev 在后台介入——不用关键词，平时怎么聊还怎么聊——请设置 `TYPESAFE_API_KEY` 并跑 `aios judgment enable typesafe`。没开之前看不到任何触发是正常行为，不是 bug。
+>
+> **名称说明：** 语音输入常把 **Jev** 听成“JVM”，“JVM MVC”多半是 Jev 加 MCP 文档服务混在一起听错了。本文统一用 **Jev**（`jev-latest`）和 **MCP**。
 
 ## 为什么需要一条集成命令
 
@@ -200,6 +204,7 @@ AIOS 会在 catalog 副本里补上内部 frontmatter 键，用它决定分发�
 | `client not installed` | 客户端二进制不在 `PATH` 上 | 安装该客户端后重跑 |
 | `probe unreachable` | 文档 MCP 端点未完成握手 | 检查网络或代理设置，然后重跑 `doctor` |
 | `unmanaged-existing-catalog-directory` | `skill-sources/<名称>` 不属于 AIOS | 把你的改动移开，再重跑安装 |
+| `装了但 Jev 从不回答` | 预期行为：文档 MCP 装好了，判定闸门还没开 | 设置 `TYPESAFE_API_KEY`、重启客户端、跑 `aios judgment enable typesafe`，用 `aios judgment status` 验证 |
 
 ## 下一步
 

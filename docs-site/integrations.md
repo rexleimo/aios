@@ -1,11 +1,15 @@
 ---
-title: Vendor Integrations (TypeSafe / Jev)
-description: "Adopt third-party agent skills and MCP servers through one pinned, hash-verified, dry-runnable command. TypeSafe support covers all nine AIOS clients."
+title: TypeSafe Jev in AIOS — Install, Enable the Judgment Gate, Run in Background
+description: "Install the TypeSafe (System One / Jev) skill and docs MCP, set TYPESAFE_API_KEY, then run aios judgment enable typesafe. Installing alone never triggers Jev; after enabling, the aios_judge tool and rex stage gate consult Jev in the background with no keywords needed."
 ---
 
-# Vendor Integrations (TypeSafe / Jev)
+# TypeSafe Jev in AIOS — Install, Enable, Run in Background
 
 > **Quick Answer:** `aios integration add <vendor>` installs a third-party agent skill and its MCP server through a pinned commit, a verified sha256, a per-client registration plan, and a live handshake check. The first shipped vendor is **TypeSafe (System One / Jev)**. Run `aios integration add typesafe --dry-run` to see the exact per-client plan before anything changes on disk.
+>
+> **Installing is not enabling.** The integration installs a docs MCP server that can never produce a judgment. To let Jev intervene in the background — with no keywords, just your normal chat — set `TYPESAFE_API_KEY` and run `aios judgment enable typesafe`. Until then, seeing no trigger is the correct behaviour, not a bug.
+>
+> **Name note:** speech input often transcribes **Jev** as "JVM", and "JVM MVC" is usually Jev plus the MCP docs server heard together. This page uses **Jev** (`jev-latest`) and **MCP** throughout.
 
 ## Why a vendor integration command exists
 
@@ -200,6 +204,7 @@ A catalog directory AIOS does not own is never overwritten. If `skill-sources/ty
 | `client not installed` | The client binary is not on `PATH` | Install the client, then re-run |
 | `probe unreachable` | The docs MCP endpoint did not complete a handshake | Check network or proxy settings, then re-run `doctor` |
 | `unmanaged-existing-catalog-directory` | `skill-sources/<name>` is not owned by AIOS | Move your edits aside, then re-run the install |
+| `installed but Jev never answers` | Expected: docs MCP installed, judgment gate still disabled | Set `TYPESAFE_API_KEY`, restart the client, run `aios judgment enable typesafe`, verify with `aios judgment status` |
 
 ## Next steps
 
