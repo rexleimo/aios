@@ -6,7 +6,7 @@ import { parseDocument } from 'yaml';
 
 import { CRG_MCP_ALIAS } from '../constants.mjs';
 import { backupFilePath } from '../paths.mjs';
-import { buildCrgMcpServerEntryForProject, isCrgServeEntry, isObjectRecord } from './entries.mjs';
+import { buildCrgEntryForTarget, isCrgServeEntry, isObjectRecord } from './entries.mjs';
 
 function toHermesMcpEntry(entry) {
   const normalized = {};
@@ -56,7 +56,7 @@ export function upsertCrgIntoHermesYaml(filePath, projectRoot, { dryRun = false 
     return { status: 'error', reason: `YAML parse failed: ${error instanceof Error ? error.message : String(error)}` };
   }
 
-  const desired = toHermesMcpEntry(buildCrgMcpServerEntryForProject('hermes', projectRoot));
+  const desired = toHermesMcpEntry(buildCrgEntryForTarget('hermes', projectRoot, filePath));
   if (isDeepStrictEqual(state.config.mcp_servers[CRG_MCP_ALIAS], desired)) {
     return { status: 'unchanged' };
   }

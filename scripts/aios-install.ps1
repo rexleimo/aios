@@ -4,7 +4,9 @@
   [string]$ReleaseTag = $(if ($env:AIOS_RELEASE_TAG) { $env:AIOS_RELEASE_TAG } else { "" }),
   [string]$InstallDir = $(if ($env:AIOS_INSTALL_DIR) { $env:AIOS_INSTALL_DIR } else { (Join-Path $HOME ".rexcil/aios") }),
   [ValidateSet("all", "repo-only", "opt-in", "off")]
-  [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" })
+  [string]$WrapMode = $(if ($env:AIOS_WRAP_MODE) { $env:AIOS_WRAP_MODE } else { "opt-in" }),
+  # 升级前把占用安装目录的进程停掉：默认只告警并列 PID，给 -StopHolders 才真停。
+  [switch]$StopHolders
 )
 
 Set-StrictMode -Version Latest
@@ -86,7 +88,6 @@ New-Item -Path $tmp -ItemType Directory -Force | Out-Null
 try {
   $zipPath = Join-Path $tmp "aios.zip"
   $extract = Join-Path $tmp "extract"
-  $preserve = Join-Path $tmp "preserve"
 
   Download-File -Url $assetUrl -OutFile $zipPath
 
@@ -104,43 +105,112 @@ try {
     throw "Archive layout unexpected: neither aios/ prefix nor expected files found in $extract"
   }
 
+  # 占用预检：从安装目录跑起来的进程会占着旧文件。
+  # 默认只告警（旧目录是“改名让位”而不是删除，所以占用不再会弄坏安装）；
+  # 想直接停掉它们就加 -StopHolders。
+  $retired = $null
   if (Test-Path -LiteralPath $InstallDir) {
-    New-Item -Path $preserve -ItemType Directory -Force | Out-Null
-    $preservePaths = @(
-      ".aios",
-      ".browser-profiles",
-      "mcp-server/.browser-profiles",
-      "config/browser-profiles.json"
-    )
-
-    foreach ($rel in $preservePaths) {
-      $src = Join-Path $InstallDir $rel
-      if (Test-Path -LiteralPath $src) {
-        $dst = Join-Path $preserve $rel
-        $dstParent = Split-Path -Parent $dst
-        New-Item -Path $dstParent -ItemType Directory -Force | Out-Null
-        Move-Item -LiteralPath $src -Destination $dst -Force
+    try {
+      $holders = @(Get-CimInstance Win32_Process -ErrorAction Stop | Where-Object {
+        $_.ProcessId -ne $PID -and $_.CommandLine -and ($_.CommandLine -like ("*" + $InstallDir + "*"))
+      })
+    } catch {
+      # 探测失败不能静默：那和旧版“删除失败静默跳过”是同一种毛病。
+      $holders = @()
+      Write-Host ("[warn] occupancy pre-check failed ({0}); continuing with the rename-aside swap." -f $_.Exception.Message)
+    }
+    if ($holders.Count -gt 0) {
+      Write-Host ("[warn] {0} process(es) reference the install dir (heuristic): {1}" -f $holders.Count, $InstallDir)
+      foreach ($holder in $holders) { Write-Host ("        PID {0}  {1}" -f $holder.ProcessId, $holder.Name) }
+      if ($StopHolders) {
+        foreach ($holder in $holders) {
+          try {
+            Stop-Process -Id $holder.ProcessId -Force -ErrorAction Stop
+            Write-Host ("        stopped PID {0}" -f $holder.ProcessId)
+          } catch {
+            Write-Host ("        [warn] could not stop PID {0}: {1}" -f $holder.ProcessId, $_.Exception.Message)
+          }
+        }
+      } else {
+        Write-Host "[warn] continuing anyway (old dir is renamed aside, not deleted); pass -StopHolders to stop them automatically."
       }
     }
+  }
 
-    Write-Host "+ remove old install dir -> $InstallDir"
-    Safe-RemoveDir -Path $InstallDir
-    if (Test-Path -LiteralPath $InstallDir) {
-      throw "Failed to remove existing install dir: $InstallDir (files may be locked by a running aios/node process). Close it and re-run the installer."
+  $preservePaths = @(
+    ".aios",
+    ".browser-profiles",
+    "mcp-server/.browser-profiles",
+    "config/browser-profiles.json"
+  )
+
+  if (Test-Path -LiteralPath $InstallDir) {
+    # 改名让位：`[System.IO.Directory]::Move` 是**目录改名**，不触碰目录内的文件，
+    # 所以里面的文件被别人占用也照样能改（这是它和 Move-Item / Remove-Item 的关键区别：
+    # Move-Item 是逐文件搬，碰到独占锁会搬到一半报错）。
+    # 旧写法是 Safe-RemoveDir（静默落掉删除失败）+ 失败就 throw，结果是
+    # “删到一半 + 报错退出”，把安装目录留成半截（实测就剩过 mcp-server/）。
+    $retired = "{0}.retired-{1}" -f $InstallDir, (Get-Date -Format "yyyyMMdd-HHmmss")
+    Write-Host "+ retire old install dir -> $retired"
+    try {
+      [System.IO.Directory]::Move($InstallDir, $retired)
+    } catch {
+      # 关键：这里必须“干净地拒绝”，而不是删一半。旧版就是删不动还继续，
+      # 把安装目录留成半截（实测只剩过 mcp-server/），用户下次连 aios 都跑不起来。
+      # 此刻旧安装**完全未动**，直接退出是安全的。
+      Write-Host "[error] cannot swap the install dir: it is held open by a running process."
+      Write-Host ("        dir:   {0}" -f $InstallDir)
+      Write-Host ("        why:   {0}" -f $_.Exception.Message)
+      if ($holders.Count -gt 0) {
+        Write-Host "        holders (heuristic):"
+        foreach ($holder in $holders) { Write-Host ("          PID {0}  {1}" -f $holder.ProcessId, $holder.Name) }
+      }
+      Write-Host "        fix:   stop those processes and re-run, or re-run with -StopHolders."
+      Write-Host "        note:  your existing AIOS install was left untouched by this failure."
+      throw
     }
   }
 
   Write-Host "+ install -> $InstallDir"
-  Move-Item -LiteralPath $extractedRoot -Destination $InstallDir -Force
+  # 目录改名在**同卷**下最快且原子；但临时目录与安装目录常在不同盘（C:/D:），
+  # `Directory::Move` 跨卷必失败（Source and destination path must have identical roots）。
+  # 所以：先试改名，失败就退回 `Move-Item`（逐文件搬，能跨卷）。
+  $installed = $false
+  try {
+    [System.IO.Directory]::Move($extractedRoot, $InstallDir)
+    $installed = $true
+  } catch [System.IO.IOException] {
+    Write-Host "[info] cross-volume install: falling back to Move-Item (copy + remove)"
+  }
+  if (-not $installed) {
+    Move-Item -LiteralPath $extractedRoot -Destination $InstallDir -Force
+  }
 
-  if (Test-Path -LiteralPath $preserve) {
+  # 用户数据从旧目录搬回来（列新树已就位；搬不动也不影响安装，数据还在 retired 里）。
+  if ($retired -and (Test-Path -LiteralPath $retired)) {
     foreach ($rel in $preservePaths) {
-      $src = Join-Path $preserve $rel
+      $src = Join-Path $retired $rel
       if (-not (Test-Path -LiteralPath $src)) { continue }
       $dst = Join-Path $InstallDir $rel
       $dstParent = Split-Path -Parent $dst
       New-Item -Path $dstParent -ItemType Directory -Force | Out-Null
-      Move-Item -LiteralPath $src -Destination $dst -Force
+      try {
+        Move-Item -LiteralPath $src -Destination $dst -Force
+      } catch {
+        Write-Host ("[warn] could not restore {0} from the retired dir: {1}" -f $rel, $_.Exception.Message)
+        Write-Host ("[warn] it is still intact at: {0}" -f $src)
+      }
+    }
+  }
+
+  # 旧目录清理：删不掉也不影响本次安装（留一个 .retired-* 目录，退出占用进程后可手删）。
+  if ($retired -and (Test-Path -LiteralPath $retired)) {
+    try {
+      Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction Stop
+      Write-Host ("+ removed retired install dir: {0}" -f $retired)
+    } catch {
+      Write-Host ("[warn] retired install dir could not be removed (files still in use): {0}" -f $retired)
+      Write-Host "[warn] this install is complete; delete that directory after closing AIOS/clients."
     }
   }
 

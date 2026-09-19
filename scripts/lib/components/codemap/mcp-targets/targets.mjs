@@ -19,13 +19,25 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
     clientKey: 'claude',
     format: 'mcp-json',
     createIfMissing: true,
-    resolvePath: (projectRoot) => path.join(projectRoot, '.mcp.json'),
+    // 用户级优先：AIOS 的 MCP 注册不该往每个项目里塞一个 `.mcp.json`（项目文件会被
+    // 误提交、且换项目就得重写一遍）。拿不到 home 时才退回项目级。
+    resolvePath: (projectRoot, clientHomes) => {
+      const claudeHome = resolveUserPath(clientHomes.claude);
+      if (!claudeHome) return path.join(projectRoot, '.mcp.json');
+      // claude 的用户级 MCP 文件是与 `~/.claude` 同级的 `~/.claude.json`。
+      return path.join(path.dirname(claudeHome), '.claude.json');
+    },
   }),
   Object.freeze({
     clientKey: 'gemini',
     format: 'mcp-json',
     createIfMissing: true,
-    resolvePath: (projectRoot) => path.join(projectRoot, '.gemini', 'settings.json'),
+    // 同上：gemini 的用户级设置是 `~/.gemini/settings.json`（项目级才是 `.gemini/settings.json`）。
+    resolvePath: (projectRoot, clientHomes) => {
+      const geminiHome = resolveUserPath(clientHomes.gemini);
+      if (!geminiHome) return path.join(projectRoot, '.gemini', 'settings.json');
+      return path.join(geminiHome, 'settings.json');
+    },
   }),
   Object.freeze({
     clientKey: 'opencode',

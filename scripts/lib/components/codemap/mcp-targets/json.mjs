@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { CRG_MCP_ALIAS } from '../constants.mjs';
 import { backupFilePath } from '../paths.mjs';
-import { buildCrgMcpServerEntryForProject, isCrgServeEntry, isObjectRecord } from './entries.mjs';
+import { buildCrgEntryForTarget, isCrgServeEntry, isObjectRecord } from './entries.mjs';
 
 function parseJsonConfig(filePath, { dryRun = false } = {}) {
   const exists = fs.existsSync(filePath);
@@ -61,12 +61,14 @@ export function injectCrgIntoMcpJson(filePath, clientKey, projectRoot, { dryRun 
     parsed.mcpServers = {};
   }
 
-  const desired = buildCrgMcpServerEntryForProject(clientKey, projectRoot);
+  const desired = buildCrgEntryForTarget(clientKey, projectRoot, filePath);
   const existing = parsed.mcpServers[CRG_MCP_ALIAS];
   const nextEntry = { ...desired };
   if (isObjectRecord(existing)) {
     Object.assign(nextEntry, existing, desired);
   }
+  // 用户级配置里残留的 `cwd` 要拔掉：它会把全局注册钉死在某一个仓库上。
+  if (!('cwd' in desired)) delete nextEntry.cwd;
   parsed.mcpServers[CRG_MCP_ALIAS] = nextEntry;
 
   return writeJsonConfig(filePath, state.raw, parsed, state.exists, { dryRun });

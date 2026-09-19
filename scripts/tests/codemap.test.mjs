@@ -15,6 +15,7 @@ import {
 import { AGENTS_MD_MARKERS } from '../lib/components/codemap/constants.mjs';
 import { ensureOpencodePlugin } from '../lib/components/codemap/opencode-plugin.mjs';
 import { getCodemapHelpText } from '../lib/cli/help/codemap.mjs';
+import { buildCrgEntryForTarget } from '../lib/components/codemap/mcp-targets/entries.mjs';
 import { getClientMcpTarget, getClientInstructionFileName, ALL_CLIENTS } from '../lib/clients/registry.mjs';
 
 async function makeTemp(prefix) {
@@ -53,8 +54,16 @@ test('codemap MCP targets agree with the client registry (single source of truth
 
   // Codemap uses the registry's native config format for every supported client.
   assert.ok(byClient.codex.path.endsWith(path.join('.codex', 'config.toml')));
-  assert.ok(byClient.claude.path.endsWith(path.join('proj', '.mcp.json')));
-  assert.ok(byClient.gemini.path.endsWith(path.join('proj', '.gemini', 'settings.json')));
+  // 有 home 就走**用户级**：AIOS 的 MCP 注册不该往每个项目里塞配置（会被误提交、
+  // 且换项目还得重写一遍）。只有拿不到 home 时才退回项目级（下一条断言）。
+  assert.ok(byClient.claude.path.endsWith(path.join('.claude.json')), `claude 应走用户级：${byClient.claude.path}`);
+  assert.ok(byClient.gemini.path.endsWith(path.join('.gemini', 'settings.json')), `gemini 应走用户级：${byClient.gemini.path}`);
+  const projectScoped = collectCodemapMcpTargets(projectRoot, {}, 'all');
+  const fallbackByClient = Object.fromEntries(projectScoped.map((t) => [t.clientKey, t]));
+  assert.ok(
+    fallbackByClient.claude.path.endsWith(path.join('proj', '.mcp.json')),
+    '拿不到 home 时必须退回项目级，不能静默不写',
+  );
   assert.ok(byClient.opencode.path.endsWith(path.join('opencode', 'opencode.json')));
   assert.ok(byClient.hermes.path.endsWith(path.join('.hermes', 'config.yaml')));
   assert.ok(byClient.grok.path.endsWith(path.join('.grok', 'config.toml')));
@@ -66,10 +75,14 @@ test('codemap MCP targets agree with the client registry (single source of truth
     const target = byClient[client];
     if (!target) continue; // dedup'd path — covered by another client
     const desc = getClientMcpTarget(client);
-    // desc.scopes[].file lists the candidate file names; at least one must match the target path
-    const scopeFiles = desc.scopes.map((s) => s.file.split('/').join(path.sep));
-    assert.ok(scopeFiles.some((f) => target.path.endsWith(f)),
-      `${client}: registry scope files [${scopeFiles}] must match codemap target ${target.path}`);
+    // desc.scopes[].file 是相对各作用域基准目录（home / project）的路径；
+    // 这里用 path.resolve 归一化后再比，才能表达 `../.claude.json` 这种“与 client home 同级”的真实落点。
+    const home = clientHomes[client] ?? '';
+    const scopePaths = desc.scopes.map((s) => path.resolve(s.scope === 'home' ? home : projectRoot, s.file));
+    assert.ok(
+      scopePaths.some((candidate) => path.resolve(target.path) === candidate),
+      `${client}: registry scopes [${scopePaths}] must match codemap target ${target.path}`,
+    );
   }
 });
 
@@ -103,9 +116,15 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   await mkdir(hermesHome, { recursive: true });
   await mkdir(grokHome, { recursive: true });
   await mkdir(path.join(projectRoot, '.code-review-graph'), { recursive: true });
+  await mkdir(claudeHome, { recursive: true });
+  await mkdir(geminiHome, { recursive: true });
   await writeFile(path.join(codexHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
   await writeFile(path.join(grokHome, 'config.toml'), '[mcp_servers.existing]\ncommand = "npx"\n', 'utf8');
-  await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
+  // claude / gemini 现在写用户级：夹具里的“已有条目”也必须放在用户级文件里。
+  await writeJson(path.join(rootDir, 'home', '.claude.json'), { mcpServers: { existing: { command: 'node', args: ['server.js'] } } });
+  await writeJson(path.join(geminiHome, 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
+  // 项目里的同名文件保持原样：它们**不应该**再被 AIOS 写入（否则每个项目都会被塞一份）。
+  await writeJson(path.join(projectRoot, '.mcp.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(projectRoot, '.gemini', 'settings.json'), { mcpServers: { existing: { command: 'node' } } });
   await writeJson(path.join(opencodeHome, 'opencode.json'), { mcp: { existing: { type: 'local', command: ['node', 'server.js'] } } });
   await writeFile(path.join(hermesHome, 'config.yaml'), 'mcp_servers:\n  existing:\n    command: node\n', 'utf8');
@@ -126,16 +145,30 @@ test('codemap install writes client-readable MCP configs for all AIOS clients', 
   assert.match(codexToml, /\[mcp_servers\.code-review-graph\]/);
   assert.match(codexToml, /command = "uvx"/);
   assert.match(codexToml, /args = \["code-review-graph", "serve"\]/);
-  assert.match(codexToml, new RegExp(`cwd = ${escapeRegExp(JSON.stringify(projectRoot))}`));
+  // 用户级配置**不得**钉 cwd：钉了就把全局注册锁在某个仓库上，换项目 CRG 还索引旧仓库。
+  assert.doesNotMatch(codexToml, /cwd = /, '用户级 codex 配置不该带 cwd');
 
-  const claudeMcp = await readJson(path.join(projectRoot, '.mcp.json'));
-  assert.equal(claudeMcp.mcpServers['code-review-graph'].cwd, projectRoot);
+  const claudeMcp = await readJson(path.join(rootDir, 'home', '.claude.json'));
+  assert.equal(claudeMcp.mcpServers['code-review-graph'].cwd, undefined, '用户级 claude 配置不该带 cwd');
   assert.equal(claudeMcp.mcpServers['code-review-graph'].type, 'stdio');
-  assert.equal(claudeMcp.mcpServers.existing.command, 'node');
+  assert.equal(claudeMcp.mcpServers.existing.command, 'node', '写入时必须保留其它 MCP 条目');
 
-  const geminiSettings = await readJson(path.join(projectRoot, '.gemini', 'settings.json'));
-  assert.equal(geminiSettings.mcpServers['code-review-graph'].cwd, projectRoot);
+  const geminiSettings = await readJson(path.join(geminiHome, 'settings.json'));
+  assert.equal(geminiSettings.mcpServers['code-review-graph'].cwd, undefined, '用户级 gemini 配置不该带 cwd');
   assert.equal(geminiSettings.mcpServers.existing.command, 'node');
+
+  // 项目文件不得再被 AIOS 写入：项目级 `.mcp.json` / `.gemini/settings.json` 里只该有用户自己写的条目。
+  const untouchedProjectClaude = await readJson(path.join(projectRoot, '.mcp.json'));
+  assert.equal(untouchedProjectClaude.mcpServers['code-review-graph'], undefined, '用户级可用时不得再往项目里塞 claude 配置');
+  assert.equal(untouchedProjectClaude.mcpServers.existing.command, 'node');
+  const untouchedProjectGemini = await readJson(path.join(projectRoot, '.gemini', 'settings.json'));
+  assert.equal(untouchedProjectGemini.mcpServers['code-review-graph'], undefined, '用户级可用时不得再往项目里塞 gemini 配置');
+
+  // 项目级才是需要钉 cwd 的地方：那里配置本来就跟项目绑定。
+  const projectEntry = buildCrgEntryForTarget('claude', projectRoot, path.join(projectRoot, '.mcp.json'));
+  assert.equal(projectEntry.cwd, projectRoot, '项目级配置应钉 cwd');
+  const userEntry = buildCrgEntryForTarget('claude', projectRoot, path.join(rootDir, 'home', '.claude.json'));
+  assert.equal(userEntry.cwd, undefined, '用户级配置不得钉 cwd（否则换项目还索引旧仓库）');
 
   const grokToml = await readFile(path.join(grokHome, 'config.toml'), 'utf8');
   assert.match(grokToml, /\[mcp_servers\.code-review-graph\]/);
@@ -226,7 +259,7 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   assert.equal(first.errors, 0);
   assert.ok(first.effectiveWarnings >= 5);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*config\.toml \(codex\)/);
-  assert.match(firstLogs.join('\n'), /code-review-graph missing in .*\.mcp\.json \(claude\)/);
+  assert.match(firstLogs.join('\n'), /code-review-graph missing in .*\.claude\.json \(claude\)/);
   assert.match(firstLogs.join('\n').replace(/\\/g, '/'), /code-review-graph missing in .*\.gemini\/settings\.json \(gemini\)/);
   assert.match(firstLogs.join('\n'), /code-review-graph missing in .*opencode\.json \(opencode\)/);
   assert.match(firstLogs.join('\n').replace(/\\/g, '/'), /code-review-graph missing in .*\.hermes\/config\.yaml \(hermes\)/);
@@ -257,7 +290,7 @@ test('codemap doctor reports missing per-client MCP config and --fix heals it', 
   assert.equal(second.effectiveWarnings, 0);
   const normalizedSecondLogs = secondLogs.join('\n').replace(/\\/g, '/');
   assert.match(normalizedSecondLogs, /code-review-graph found in .*config\.toml \(codex\)/);
-  assert.match(normalizedSecondLogs, /code-review-graph found in .*\.mcp\.json \(claude\)/);
+  assert.match(normalizedSecondLogs, /code-review-graph found in .*\.claude\.json \(claude\)/);
   assert.match(normalizedSecondLogs, /code-review-graph found in .*\.gemini\/settings\.json \(gemini\)/);
   assert.match(normalizedSecondLogs, /code-review-graph found in .*opencode\.json \(opencode\)/);
   assert.match(normalizedSecondLogs, /code-review-graph found in .*\.hermes\/config\.yaml \(hermes\)/);

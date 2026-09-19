@@ -212,7 +212,8 @@ test('client registry exposes per-client MCP target conventions (single source o
   assert.equal(claudeTarget.namespace, 'mcpServers');
   assert.deepEqual(claudeTarget.scopes, [
     { scope: 'project', file: '.mcp.json' },
-    { scope: 'home', file: '.mcp.json', createIfMissing: true },
+    // Claude Code 的用户级 MCP 文件是与 `~/.claude` 同级的 `~/.claude.json`。
+    { scope: 'home', file: '../.claude.json', createIfMissing: true },
   ]);
 
   const geminiTarget = getClientMcpTarget('gemini');

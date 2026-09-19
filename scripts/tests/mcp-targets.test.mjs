@@ -30,7 +30,8 @@ test('collectClientMcpTargets routes each client to its real location/format wit
   assert.equal(claudeTargets.find((t) => t.scope === 'project').format, 'json');
   assert.equal(claudeTargets.find((t) => t.scope === 'project').namespace, 'mcpServers');
   assert.equal(claudeTargets.find((t) => t.scope === 'project').createIfMissing, true);
-  assert.equal(claudeTargets.find((t) => t.scope === 'home').path, path.resolve('/home/u/.claude/.mcp.json'));
+  // Claude Code 的用户级 MCP 文件是与 `~/.claude` 同级的 `~/.claude.json`（不是 `~/.claude/.mcp.json`）。
+  assert.equal(claudeTargets.find((t) => t.scope === 'home').path, path.resolve('/home/u/.claude.json'));
 
   // gemini: dual scope — project + home
   const geminiTargets = targets.filter((t) => t.client === 'gemini');

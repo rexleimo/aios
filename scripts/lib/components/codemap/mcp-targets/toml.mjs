@@ -3,7 +3,7 @@ import path from 'node:path';
 
 import { CRG_MCP_ALIAS } from '../constants.mjs';
 import { backupFilePath } from '../paths.mjs';
-import { buildCrgMcpServerEntry, isCrgServeEntry } from './entries.mjs';
+import { buildCrgMcpServerEntry, isCrgServeEntry, isProjectScopedTarget } from './entries.mjs';
 
 // 纯函数：转义 TOML 字符串，避免 Windows 反斜杠和引号破坏配置。
 export function escapeTomlString(value) {
@@ -58,7 +58,7 @@ export function parseCodexMcpServersToml(raw = '') {
   return servers;
 }
 
-export function formatCodexMcpServerToml(clientKey, projectRoot) {
+export function formatCodexMcpServerToml(clientKey, projectRoot, targetPath = '') {
   const desired = buildCrgMcpServerEntry(clientKey);
   const args = desired.args.map((arg) => `"${escapeTomlString(arg)}"`).join(', ');
   const lines = [
@@ -66,7 +66,8 @@ export function formatCodexMcpServerToml(clientKey, projectRoot) {
     `command = "${escapeTomlString(desired.command)}"`,
     `args = [${args}]`,
   ];
-  if (projectRoot) {
+  // 只有项目级配置才钉 cwd（写进客户级 home 的不能钉，否则换个项目还在索引旧仓库）。
+  if (projectRoot && isProjectScopedTarget(targetPath, projectRoot)) {
     lines.push(`cwd = "${escapeTomlString(projectRoot)}"`);
   }
   lines.push(`type = "${escapeTomlString(desired.type)}"`);
@@ -84,7 +85,7 @@ export function upsertCodexMcpToml(filePath, projectRoot, { dryRun = false } = {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
   const sectionPattern = codexSectionPattern();
-  const desiredSection = formatCodexMcpServerToml('codex', projectRoot);
+  const desiredSection = formatCodexMcpServerToml('codex', projectRoot, filePath);
   const nextRaw = sectionPattern.test(raw)
     ? raw.replace(sectionPattern, (match, prefix) => `${prefix}${desiredSection}`)
     : `${raw.replace(/\s*$/u, '')}${raw.trim() ? '\n\n' : ''}${desiredSection}\n`;

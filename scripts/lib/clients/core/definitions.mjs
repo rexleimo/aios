@@ -201,30 +201,27 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '',
     unattendedArgs: Object.freeze(['--mode', 'yolo']),
   }),
-  // Qoder (Alibaba) — AI IDE + CLI (`qoder`; CN distribution ships `qoderclicn`).
-  // Skills: markdown-directory SKILL.md in project `.qoder/skills/` and user
-  // `~/.qoder/skills/` (docs.qoder.com/zh/cli/Skills). No shared-root scan has
-  // been verified, so AIOS installs into the client's own project root only.
-  // MCP: JSON top-level mcpServers in `<home>/settings.json` (user scope),
-  // `<repo>/.qoder/settings.json` (project scope, committed) and
-  // `.qoder/settings.local.json` (gitignored variant we do not write) —
-  // verified via the native mcp-config skill surface (qoderclicn mcp add
-  // --scope user|local|project --transport stdio|sse|http|ws).
-  // Native instruction: AGENTS.md (verified: Qoder agent loads repo AGENTS.md;
-  // QODER.md is an accepted alias we do not write).
-  // Headless: `-p` print mode with `--output-format` and `--yolo` unattended
-  // (official CLI docs). Model selection is the interactive /model command and
-  // account-bound — no headless --model flag verified, so routing stays 'own'.
-  // team/harness: the same spawn routing drives `qoder -p` headlessly like
-  // gemini/zcode (docs-verified flags; live worker check lands with the
-  // client-contract tests).
+  // Qoder (Alibaba) — 桌面 IDE + CLI。本机 2026-09-19 实测（qodercli.log + 装好的 SDK schema）：
+  // Skills 只扫描 `~/.agents/skills`（user）> `<repo>/.qoder/skills` > `<repo>/.agents/skills`，
+  // user 级会遮蔽 project 级。`~/.qoder/skills` 在日志里出现 0 次：它不是扫描根，
+  // 所以 AIOS 没有 qoder 的全局技能落点（globalSkillRoot: null），只装 project 级。
+  // MCP：project 落点 `<repo>/.qoder/settings.json` 顶层 mcpServers；家目录见 resolveQoderHome
+  // （CN 发行版是 ~/.qoder-cn，不是 ~/.qoder）。用户级 settings.json 是否吃 mcpServers 未实测——
+  // 运行期真正生效的注入是内联 `--mcp-config` 指向 127.0.0.1 路由，见 mcp-router.json。
+  // Native instruction: AGENTS.md（已验证：仓库 AGENTS.md 会被自动注入；QODER.md 别名不写）。
+  // 命令名：CN 发行版是 qodercn / qoderclicn（entry/qodercn-dispatcher.ps1 的解析顺序），
+  // 国际版才是 qoder / qodercli；真实装哪个取决于用户，所以按候选解析而不是赌一个。
+  // Headless：`--yolo` 与 `--model`/`--print`/`--output-format`/`--permission-mode` 同表存在于
+  // 打包进 IDE 的 agent SDK argv 表；模型默认走账号绑定（/model 交互），不做 headless 路由。
   qoder: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'qoder',
+    commandAliases: Object.freeze(['qodercli', 'qodercn', 'qoderclicn']),
     modelRouting: 'own',
     modelProtocols: Object.freeze([]),  // qoder 模型账号绑定（/model 交互选择），无已验证的 headless --model
     runtimeClientId: 'qoder-cli',
     projectSkillRoot: '.qoder/skills',
+    globalSkillRoot: null,
     skillFormat: 'markdown-directory',
     nativeMetadataRoot: '.qoder',
     instructionFileName: 'AGENTS.md',
@@ -274,7 +271,10 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     namespace: 'mcpServers',
     scopes: Object.freeze([
       Object.freeze({ scope: 'project', file: '.mcp.json' }),
-      Object.freeze({ scope: 'home', file: '.mcp.json', createIfMissing: true }),
+      // Claude Code 的**用户级** MCP 文件是与 `~/.claude` 同级的 `~/.claude.json`，
+      // 不是 `~/.claude/.mcp.json`（后者不是它的真实配置位置；同样的结论见
+      // `scripts/lib/doctor/security-config/files.mjs` 的说明）。
+      Object.freeze({ scope: 'home', file: '../.claude.json', createIfMissing: true }),
     ]),
   }),
   // Gemini CLI MCP — JSON mcpServers namespace. Gemini's McpServerConfigSchema is strict:
