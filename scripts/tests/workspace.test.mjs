@@ -89,7 +89,7 @@ test('writeWorkspaceMeta rejects stale writes with OptimisticLockError', async (
 
     await writeWorkspaceMeta(tmpDir, { lastUpdatedBy: 'agent-1' });
 
-    assert.rejects(
+    await assert.rejects(
       () => writeWorkspaceMeta(tmpDir, { expectedVersion: 1, lastUpdatedBy: 'agent-2' }),
       (err) => {
         assert(err instanceof OptimisticLockError);

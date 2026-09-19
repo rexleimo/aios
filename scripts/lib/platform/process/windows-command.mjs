@@ -2,11 +2,15 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { resolveClientCommandNames } from '../../clients/registry.mjs';
+import { getClientCommandNames, resolveClientSelection } from '../../clients/registry.mjs';
 
 import { getEnvCaseInsensitive, splitWindowsPathEntries, splitWindowsPathExt } from './env.mjs';
 
-const WINDOWS_SHELL_COMMANDS = new Set(resolveClientCommandNames('all'));
+// 客户端的每个可执行名候选都要能被启动：Windows 上 .cmd/.ps1 分发器必须走 shell，
+// 只登记主名会让 CN 版真实命令（qoderclicn）在启动时被判成普通可执行文件。
+const WINDOWS_SHELL_COMMANDS = new Set(
+  resolveClientSelection('all').flatMap((clientId) => [...getClientCommandNames(clientId)]),
+);
 const WINDOWS_LAUNCHER_TARGET_EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.exe', '.com']);
 const WINDOWS_NODE_SCRIPT_EXTENSIONS = new Set(['.js', '.mjs', '.cjs']);
 const WINDOWS_NATIVE_EXTENSIONS = new Set(['.exe', '.com']);

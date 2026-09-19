@@ -34,6 +34,7 @@ import {
   buildRuntimeClientProviderMap,
   buildRuntimeClientModelArgs,
   getClientCommandName,
+  getClientCommandNames,
   getClientUnattendedArgs,
   getClientRuntimeId,
   resolveClientFromCommandName,
@@ -134,6 +135,32 @@ test('client registry exposes runtime command and client identifiers', () => {
     'zcode-cli': 'zcode',
     'qoder-cli': 'qoder',
   });
+});
+
+// 一个产品可能有多个发行版命令名；检测/反解必须全部接受，但对外命令列表仍是主名。
+test('client registry keeps distribution command aliases resolvable to their client', () => {
+  assert.deepEqual(getClientCommandNames('qoder'), ['qoder', 'qodercli', 'qodercn', 'qoder-cn', 'qoderclicn']);
+  assert.equal(getClientCommandName('qoder'), 'qoder');
+  assert.equal(resolveClientFromCommandName('qoderclicn'), 'qoder');
+  assert.equal(resolveClientFromCommandName('  QoderCN  '), 'qoder');
+  // 主名先判，所以别名不会抢走另一个客户端家族的解析。
+  assert.equal(resolveClientFromCommandName('codebuddy'), 'workbuddy');
+  assert.equal(resolveClientCommandNames('all').includes('qoderclicn'), false);
+  assert.equal(resolveClientFromCommandName('nope-cli'), '');
+  assert.equal(resolveClientFromCommandName(''), '');
+});
+
+// 反解靠"主名先判"消歧，所以别名既不能等于别人的主名，也不能互相重名。
+test('command aliases never collide with another client command name', () => {
+  const primaries = new Set(resolveClientCommandNames('all'));
+  const claimed = new Set();
+  for (const clientId of ALL_CLIENTS) {
+    for (const alias of getClientCommandNames(clientId).slice(1)) {
+      assert.equal(primaries.has(alias), false, `${clientId} alias ${alias} shadows a primary command name`);
+      assert.equal(claimed.has(alias), false, `${clientId} alias ${alias} is already claimed`);
+      claimed.add(alias);
+    }
+  }
 });
 
 test('client registry exposes team and harness provider subsets', () => {
@@ -367,6 +394,7 @@ test('client registry facade re-exports split module APIs', () => {
   assert.equal(registry.resolveClientsWithCapability, resolveClientsWithCapability);
   assert.equal(registry.resolveClientSkillRoots, resolveClientSkillRoots);
   assert.equal(registry.getClientRuntimeId, getClientRuntimeId);
+  assert.equal(registry.getClientCommandNames, getClientCommandNames);
   assert.equal(registry.resolveClientTeamProviders, resolveClientTeamProviders);
   assert.equal(registry.buildRuntimeClientModelArgs, buildRuntimeClientModelArgs);
   assert.equal(registry.getClientInstructionFileName, getClientInstructionFileName);

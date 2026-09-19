@@ -38,6 +38,8 @@ export function resolveTargetRoot({ rootDir, projectRoot, clientName, scope, hom
   if (scope === 'project') {
     return resolveProjectSkillRoot(projectRoot || rootDir, clientName);
   }
+  // 用户级根一律是"发行版家目录/skills"；客户端差异（含 qoder 的 CN/国际版）全部由
+  // homes[clientName] 承载，不在这里重复登记后缀。
   return path.join(homes[clientName], 'skills');
 }
 

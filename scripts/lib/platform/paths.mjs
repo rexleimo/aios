@@ -23,6 +23,30 @@ export function resolveXdgConfigHome(env = process.env, homeDir = os.homedir()) 
   return path.join(homeDir, '.config');
 }
 
+// Qoder 有两个发行版家目录：国际版 ~/.qoder，CN 版 ~/.qoder-cn。判据必须是产品自己写的
+// 标记，不能是"目录存在"——AIOS 误写 ~/.qoder 后只剩它自己的 settings.json 和 skills/，
+// 用存在性判断会让错家目录永远自证为已安装。
+const QODER_HOME_MARKERS = Object.freeze([
+  '.qoder-app-status.json',
+  path.join('entry', 'qodercn.cmd'),
+  path.join('plugins', 'installed_plugins_v2.json'),
+]);
+
+export function resolveQoderHome({
+  env = process.env,
+  homeDir = os.homedir(),
+  exists = (target) => fs.existsSync(target),
+} = {}) {
+  const fromEnv = normalizeHomeDir(env.QODER_HOME, '', homeDir);
+  if (fromEnv) return fromEnv;
+  const candidates = [path.join(homeDir, '.qoder-cn'), path.join(homeDir, '.qoder')];
+  const installed = candidates.find((home) => (
+    QODER_HOME_MARKERS.some((marker) => exists(path.join(home, marker)))
+  ));
+  // 两个都没标记时按国际版默认，保持未安装机器上的既有行为不变。
+  return installed || candidates[1];
+}
+
 export function getClientHomes(env = process.env, homeDir = os.homedir()) {
   const xdgConfigHome = resolveXdgConfigHome(env, homeDir);
   return {
@@ -35,8 +59,8 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     workbuddy: normalizeHomeDir(env.WORKBUDDY_HOME, path.join(homeDir, '.workbuddy'), homeDir),
     pi: normalizeHomeDir(env.PI_CODING_AGENT_DIR, path.join(homeDir, '.pi', 'agent'), homeDir),
     zcode: normalizeHomeDir(env.ZCODE_HOME, path.join(homeDir, '.zcode'), homeDir),
-    // Qoder CLI home: ~/.qoder (international); the CN distribution uses ~/.qoder-cn.
-    qoder: normalizeHomeDir(env.QODER_HOME, path.join(homeDir, '.qoder'), homeDir),
+    // Qoder CLI home: edition-aware — CN 发行版用 ~/.qoder-cn，国际版用 ~/.qoder。
+    qoder: resolveQoderHome({ env, homeDir }),
   };
 }
 

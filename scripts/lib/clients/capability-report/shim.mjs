@@ -5,7 +5,7 @@ import { constants as fsConstants, promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { CLIENT_DEFINITIONS } from '../registry.mjs';
+import { CLIENT_DEFINITIONS, getClientCommandNames } from '../registry.mjs';
 
 const NATIVE_SHIM_MARK = 'AIOS_NATIVE_SHIM managed';
 
@@ -64,16 +64,19 @@ async function fileExists(filePath) {
   }
 }
 
-async function findCommandInPath(commandName, env = process.env) {
+async function findCommandInPath(commandNames, env = process.env) {
   const entries = pathEntries(env);
-  const names = process.platform === 'win32' && !path.extname(commandName)
-    ? pathExtEntries(env).map((ext) => `${commandName}${ext}`)
-    : [commandName];
+  // 一个客户端可能有多个发行版命令名（如 Qoder 的 qoder / qoderclicn），逐个候选都要试。
+  for (const commandName of commandNames) {
+    const names = process.platform === 'win32' && !path.extname(commandName)
+      ? pathExtEntries(env).map((ext) => `${commandName}${ext}`)
+      : [commandName];
 
-  for (const entry of entries) {
-    for (const name of names) {
-      const candidate = path.join(entry, name);
-      if (await fileExists(candidate)) return candidate;
+    for (const entry of entries) {
+      for (const name of names) {
+        const candidate = path.join(entry, name);
+        if (await fileExists(candidate)) return candidate;
+      }
     }
   }
   return '';
@@ -105,7 +108,10 @@ async function inspectNativeShim(clientId, { env = process.env } = {}) {
   } catch (error) {
     if (error?.code !== 'ENOENT') throw error;
   }
-  const realCommandPath = await findCommandInPath(definition.commandName, buildPathEnvWithoutShim(env, shimDir));
+  const realCommandPath = await findCommandInPath(
+    getClientCommandNames(clientId),
+    buildPathEnvWithoutShim(env, shimDir),
+  );
   return {
     required: false,
     shimDir,

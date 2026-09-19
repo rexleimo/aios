@@ -177,6 +177,30 @@ test('native strict capability report requires managed shims at PATH front', asy
   assert.equal(byId(report, 'codex').nativeShim.realCommandPath, path.join(realBinDir, process.platform === 'win32' ? 'codex.cmd' : 'codex'));
 });
 
+// CN 发行的真实命令叫 qoderclicn：只探测登记的主名会把已安装的 CLI 报成不存在。
+test('native shim report resolves a client through its distribution command aliases', async () => {
+  const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-alias-bin-'));
+  const cnBinDir = path.join(homeDir, 'cn-bin');
+  await mkdir(cnBinDir, { recursive: true });
+  const fileName = process.platform === 'win32' ? 'qoderclicn.cmd' : 'qoderclicn';
+  const realPath = path.join(cnBinDir, fileName);
+  await writeFile(realPath, process.platform === 'win32' ? '@echo off\r\n' : '#!/bin/sh\nexit 0\n', 'utf8');
+  if (process.platform !== 'win32') await chmod(realPath, 0o755);
+
+  const env = {
+    HOME: homeDir,
+    AIOS_NATIVE_SHIM_DIR: path.join(homeDir, '.aios', 'bin'),
+    PATH: cnBinDir,
+  };
+  const report = await buildClientCapabilityReport({ rootDir: process.cwd(), env });
+  assert.equal(byId(report, 'qoder').nativeShim.realCommandAvailable, true);
+  assert.equal(byId(report, 'qoder').nativeShim.realCommandPath, realPath);
+
+  // 只装了 IDE、没装 CLI 的机器必须仍是 false，别名解析不能变成误报。
+  const ideOnly = await buildClientCapabilityReport({ rootDir: process.cwd(), env: { ...env, PATH: '' } });
+  assert.equal(byId(ideOnly, 'qoder').nativeShim.realCommandAvailable, false);
+});
+
 test('native strict capability report fails when no real client exists behind managed shims', async () => {
   const homeDir = await mkdtemp(path.join(os.tmpdir(), 'aios-client-shim-only-home-'));
   const shimDir = path.join(homeDir, '.aios', 'bin');

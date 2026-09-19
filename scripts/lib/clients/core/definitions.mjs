@@ -201,27 +201,29 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '',
     unattendedArgs: Object.freeze(['--mode', 'yolo']),
   }),
-  // Qoder (Alibaba) — 桌面 IDE + CLI。本机 2026-09-19 实测（qodercli.log + 装好的 SDK schema）：
-  // Skills 只扫描 `~/.agents/skills`（user）> `<repo>/.qoder/skills` > `<repo>/.agents/skills`，
-  // user 级会遮蔽 project 级。`~/.qoder/skills` 在日志里出现 0 次：它不是扫描根，
-  // 所以 AIOS 没有 qoder 的全局技能落点（globalSkillRoot: null），只装 project 级。
-  // MCP：project 落点 `<repo>/.qoder/settings.json` 顶层 mcpServers；家目录见 resolveQoderHome
-  // （CN 发行版是 ~/.qoder-cn，不是 ~/.qoder）。用户级 settings.json 是否吃 mcpServers 未实测——
-  // 运行期真正生效的注入是内联 `--mcp-config` 指向 127.0.0.1 路由，见 mcp-router.json。
+  // Qoder (Alibaba) — 桌面 IDE + CLI。判据来自安装包内打包的 agent SDK 运行时
+  // （resources/app.asar.unpacked/node_modules/@qoder-ai/qoder-cn-agent-sdk）：
+  // Skills 扫描根按运行时 SkillCommandHandler.enumerate 的顺序：
+  //   ~/.qoder-cn/skills（user）> ~/.agents/skills（user，受 loadFromAgentsDirectory 门控）
+  //   > <repo>/.qoder/skills（project）> <repo>/.agents/skills（project，同一门控）。
+  // 用户级根是"发行版家目录/skills"，所以它必须跟着 resolveQoderHome 走：CN 是 ~/.qoder-cn，
+  // 国际版是 ~/.qoder。AIOS 此前把家目录写死成 ~/.qoder，在 CN 机器上等于装进一个不扫描的目录。
+  // 同理 project 配置目录名两个发行版都是 `.qoder`（运行时 projectDefault 不随发行版切换），
+  // MCP 落点见 CLIENT_MCP_TARGETS.qoder。
   // Native instruction: AGENTS.md（已验证：仓库 AGENTS.md 会被自动注入；QODER.md 别名不写）。
-  // 命令名：CN 发行版是 qodercn / qoderclicn（entry/qodercn-dispatcher.ps1 的解析顺序），
-  // 国际版才是 qoder / qodercli；真实装哪个取决于用户，所以按候选解析而不是赌一个。
+  // 命令名：CN 发行版是 qodercn / qoder-cn（分发器）与 qoderclicn（真实 exe，见
+  // entry/qodercn-dispatcher.ps1 的 Get-Command 顺序），国际版才是 qoder / qodercli；
+  // 真实装哪个取决于用户，所以按候选解析而不是赌一个。
   // Headless：`--yolo` 与 `--model`/`--print`/`--output-format`/`--permission-mode` 同表存在于
   // 打包进 IDE 的 agent SDK argv 表；模型默认走账号绑定（/model 交互），不做 headless 路由。
   qoder: Object.freeze({
     capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
     commandName: 'qoder',
-    commandAliases: Object.freeze(['qodercli', 'qodercn', 'qoderclicn']),
+    commandAliases: Object.freeze(['qodercli', 'qodercn', 'qoder-cn', 'qoderclicn']),
     modelRouting: 'own',
     modelProtocols: Object.freeze([]),  // qoder 模型账号绑定（/model 交互选择），无已验证的 headless --model
     runtimeClientId: 'qoder-cli',
     projectSkillRoot: '.qoder/skills',
-    globalSkillRoot: null,
     skillFormat: 'markdown-directory',
     nativeMetadataRoot: '.qoder',
     instructionFileName: 'AGENTS.md',
@@ -351,7 +353,8 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
   }),
   // Qoder MCP — standard JSON mcpServers inside the CLI settings files (which also
   // hold unrelated user settings, so the migrator must merge, never rewrite).
-  // Home: ~/.qoder/settings.json (user scope; CN distribution uses ~/.qoder-cn).
+  // Home: <edition home>/settings.json — the runtime's own getGlobalSettingsPath(), so on
+  // a CN install it is ~/.qoder-cn/settings.json (see resolveQoderHome), not ~/.qoder.
   // Project: .qoder/settings.json (committed scope). The gitignored
   // .qoder/settings.local.json 'local' scope is a valid CLI target we do not write.
   qoder: Object.freeze({

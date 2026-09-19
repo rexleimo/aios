@@ -1202,6 +1202,25 @@ test('getClientHomes includes Hermes with env override support', async () => {
   assert.equal(homes.hermes, hermesHome);
 });
 
+test('getClientHomes resolves the Qoder edition home from product markers', async () => {
+  const homeDir = await makeTemp('aios-qoder-homes-');
+
+  // 没装 Qoder 的机器保持国际版默认落点，并且不因为探测而创建目录。
+  assert.equal(getClientHomes({}, homeDir).qoder, path.join(homeDir, '.qoder'));
+  assert.equal(existsSync(path.join(homeDir, '.qoder')), false);
+
+  // CN 版产品自己写 entry/qodercn.cmd：命中标记必须切到 ~/.qoder-cn，否则 skills 和
+  // 用户级 settings.json 会装进一个运行时根本不扫描的家目录。
+  await mkdir(path.join(homeDir, '.qoder-cn', 'entry'), { recursive: true });
+  await writeFile(path.join(homeDir, '.qoder-cn', 'entry', 'qodercn.cmd'), '@echo off\n', 'utf8');
+  assert.equal(getClientHomes({}, homeDir).qoder, path.join(homeDir, '.qoder-cn'));
+
+  assert.equal(
+    getClientHomes({ QODER_HOME: path.join(homeDir, 'explicit') }, homeDir).qoder,
+    path.join(homeDir, 'explicit'),
+  );
+});
+
 test('agents install skips unsupported clients and uninstall removes managed files only', async () => {
   const rootDir = await makeTemp('aios-agents-root-');
   await copyCanonicalAgentSource(rootDir);

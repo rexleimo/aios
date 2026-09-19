@@ -62,6 +62,7 @@
       "scripts/tests/skill-comply-live.test.mjs",
       "scripts/tests/plan-cli-explicit-intent.test.mjs",
     "scripts/tests/test-suite-wiring.test.mjs",
+      "scripts/tests/test-impact.test.mjs",
     "scripts/tests/plan-dream-cli-contract.test.mjs",
       "scripts/tests/dream-plan-sync.test.mjs",
       "scripts/tests/dream.test.mjs",

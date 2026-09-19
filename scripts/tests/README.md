@@ -7,10 +7,20 @@ This repository has two main automated test layers:
 
 ## Command Matrix
 
-Run from repo root:
+Inner loop while editing (repo root) — runs only the regression files reachable from the working-tree
+diff, and prints a reason plus falls back to full regression when the impact set cannot be proven:
 
 ```bash
-npm run test:scripts
+npm run test:affected                 # diff vs HEAD
+npm run test:affected -- --base main  # diff vs another ref
+npm run test:affected -- --dry-run    # show the selection without running it
+```
+
+Full and release tiers (repo root):
+
+```bash
+npm run test:regression   # all regression files (115 files, 454-483s on a 12-core box)
+npm run test:scripts      # what CI runs: regression + gaia/workflow-policy/rex chains
 ```
 
 Run from `mcp-server/`:

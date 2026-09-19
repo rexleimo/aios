@@ -35,7 +35,7 @@ Client config targets:
   workbuddy ~/.workbuddy/mcp.json
   pi         ~/.pi/agent/settings.json (extensions/skills via Pi package, no MCP)
   zcode     ~/.zcode/cli/config.json (mcp.servers, nested JSON)
-  qoder     ~/.qoder/settings.json (mcpServers) + <project>/.qoder/settings.json
+  qoder     <edition home>/settings.json (mcpServers; CN ~/.qoder-cn, intl ~/.qoder) + <project>/.qoder/settings.json
 
 Restart the selected client after install/doctor --fix so it reloads MCP config.
 

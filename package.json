@@ -60,7 +60,8 @@
     "test:rex": "node scripts/run-test-suite.mjs rex",
     "test:team": "node scripts/run-test-suite.mjs team",
     "test:workflow": "npm run test:harness && npm run test:orchestrator && npm run test:rex && npm run test:team",
-    "test:regression": "node scripts/run-test-suite.mjs regression"
+    "test:regression": "node scripts/run-test-suite.mjs regression",
+    "test:affected": "node scripts/run-affected-tests.mjs"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

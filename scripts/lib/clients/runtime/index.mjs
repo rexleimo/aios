@@ -1,6 +1,7 @@
 export {
   buildRuntimeClientProviderMap,
   getClientCommandName,
+  getClientCommandNames,
   getClientRuntimeDefinition,
   getClientRuntimeId,
   resolveClientCommandNames,

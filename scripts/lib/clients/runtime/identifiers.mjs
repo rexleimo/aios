@@ -16,18 +16,37 @@ export function getClientCommandName(client) {
   return getClientRuntimeDefinition(client).commandName;
 }
 
+// 纯函数：返回同一个客户端的全部可执行名候选（主名在前，发行版别名在后）。
+// 一个产品可能有多个发行版命令名（如 Qoder 的 qoder / qoderclicn），检测必须全试，
+// 而不是把"我们登记的那个名字"当成事实。
+export function getClientCommandNames(client) {
+  const definition = getClientRuntimeDefinition(client);
+  const aliases = Array.isArray(definition.commandAliases) ? definition.commandAliases : [];
+  return Object.freeze([definition.commandName, ...aliases.filter(Boolean)]);
+}
+
 // 纯函数：返回 AIOS 内部 runtime clientId，例如 codex-cli、claude-code。
 export function getClientRuntimeId(client) {
   return getClientRuntimeDefinition(client).runtimeClientId;
 }
 
 // 纯函数：把 CLI 命令名反解为标准客户端名，让调用方不再写命令名映射表。
+// 发行版别名也必须反解到同一个客户端，否则从进程名识别客户端时 CN 版会被认成未知客户端；
+// 主名永远先判，所以别名不可能抢走另一个客户端家族的解析。
 export function resolveClientFromCommandName(commandName = '') {
   const normalized = String(commandName || '').trim().toLowerCase();
-  const entry = Object.entries(CLIENT_DEFINITIONS).find(([, definition]) => (
-    definition.commandName === normalized
+  if (!normalized) {
+    return '';
+  }
+  const entries = Object.entries(CLIENT_DEFINITIONS);
+  const byPrimary = entries.find(([, definition]) => definition.commandName === normalized);
+  if (byPrimary) {
+    return byPrimary[0];
+  }
+  const byAlias = entries.find(([, definition]) => (
+    (definition.commandAliases || []).some((alias) => String(alias).toLowerCase() === normalized)
   ));
-  return entry?.[0] || '';
+  return byAlias?.[0] || '';
 }
 
 // 纯函数：把 runtime clientId 反解为标准客户端名，让 handoff/HUD/subagent 共用同一套映射。

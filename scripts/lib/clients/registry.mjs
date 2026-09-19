@@ -48,6 +48,7 @@ export {
   buildRuntimeClientModelArgs,
   clientSupportsModelProtocol,
   getClientCommandName,
+  getClientCommandNames,
   getClientModelArgFlag,
   getClientModelProtocols,
   getClientModelRouting,

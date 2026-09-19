@@ -78,11 +78,28 @@ npm run typecheck && npm run build
 
 ## Testing Guidelines
 Automated suites are available for both root AIOS workflows and `mcp-server`.
-Minimum verification for behavior changes:
 
-1. `npm run test:scripts` (repo root)
-2. `cd mcp-server && npm run typecheck && npm run test && npm run build`
-3. Manual MCP smoke test (`browser_health` -> `browser_launch` -> `browser_navigate` -> `browser_snapshot` -> `browser_close`) when browser-flow behavior changes.
+Pick the tier by where you are in the loop — do not run the full suite per edit:
+
+1. **Inner loop (every edit batch):** `npm run test:affected` (repo root). It maps the working-tree
+   diff through the import/spawn graph and runs only the related test files; when it cannot prove the
+   impact set (suite manifest/tooling changed, `rex-harness/`, `mcp-server/`, unattributable source,
+   dynamic `import()`, or the selection is >60% of the pool) it prints a reason and runs full
+   regression itself. It is an accelerator, not an admission gate — CI still runs everything.
+   Focused single-file runs stay fine: `node --test scripts/tests/<name>.test.mjs`.
+2. **Before claiming a behavior change is done / before push:** `npm run test:regression` (115 files,
+   measured 454-483s on a 12-core box).
+3. **Before release:** `npm run test:scripts` — this is what CI runs; its `pretest:scripts` hook adds
+   the gaia/workflow-policy/rex-harness/rex-integration chains, so it is strictly larger than tier 2.
+4. `cd mcp-server && npm run typecheck && npm run test && npm run build` when `mcp-server` changed.
+5. Manual MCP smoke test (`browser_health` -> `browser_launch` -> `browser_navigate` -> `browser_snapshot` -> `browser_close`) when browser-flow behavior changes.
+
+Measured and deliberately not tried again: raising `--test-concurrency` from 4 to 8 gave no speedup
+(476s vs 461/483s) because the cost is per-file Node spawns plus 31 files that launch the real CLI,
+not CPU-bound assertions. Speed comes from running fewer files.
+The remaining ceiling is one file: `scripts/tests/aios-orchestrator.test.mjs` takes 484s on its own, and
+three `dispatch runtime registry` cases inside it cost 151s combined because they spawn a real client in
+live mode — so any change that reaches that hub is still a full-length run.
 
 Document manual test steps in PRs when behavior changes.
 
