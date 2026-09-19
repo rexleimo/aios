@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
+from mkdocs.structure.pages import Page
 
 PAGE_SIZE = 6
 DEFAULT_AUTHOR = "RexAI Team"
@@ -249,7 +250,15 @@ def should_skip(src_uri: str, meta: dict[str, Any], markdown_text: str) -> bool:
 
 
 def absolute_url(page: Any) -> str:
-    return getattr(page, "abs_url", None) or "/"
+    for attr in ("abs_url", "canonical_url", "url"):
+        try:
+            value = getattr(page, attr, None)
+        except Exception:
+            value = None
+        if value:
+            return value
+    file_obj = getattr(page, "file", None)
+    return getattr(file_obj, "url", None) or "/"
 
 
 def build_tag_options(posts: list[dict[str, Any]], locale: str) -> list[dict[str, str]]:
@@ -315,6 +324,48 @@ def on_nav(nav, *, config, files):
         record = build_post_record(page, locale, meta, markdown_text)
         posts_by_locale[locale].append(record)
         posts_by_src[src_uri] = record
+
+    # Root fix: the yml nav is hand-maintained and rots (hero froze at v5.16.0
+    # while v5.18+ posts existed on disk). Sweep every documentation page so a
+    # post is collected the moment its file lands, nav entry or not.
+    added: list[tuple[dict[str, Any], Any]] = []
+    for file in files.documentation_pages():
+        src_uri = getattr(file, "src_uri", "")
+        if not src_uri.endswith(".md"):
+            continue
+        if Path(src_uri).name == "index.md":
+            continue
+        if src_uri in posts_by_src:
+            continue
+        locale = detect_locale(src_uri)
+        meta, markdown_text = load_source(getattr(file, "abs_src_path", None))
+        if should_skip(src_uri, meta, markdown_text):
+            continue
+        title = str(meta.get("title") or Path(src_uri).stem).strip() or Path(src_uri).stem
+        page_obj = Page(title=title, file=file, config=config)
+        record = build_post_record(page_obj, locale, meta, markdown_text)
+        posts_by_locale[locale].append(record)
+        posts_by_src[src_uri] = record
+        added.append((record, page_obj))
+
+    if added:
+        posts_section = None
+        for item in getattr(nav, "items", []):
+            if item.__class__.__name__ == "Section" and getattr(item, "title", "") == "Posts":
+                posts_section = item
+                break
+        if posts_section is not None:
+            for _, page_obj in added:
+                posts_section.children.append(page_obj)
+
+            def _child_key(child: Any) -> tuple[int, str]:
+                src = getattr(getattr(child, "file", None), "src_uri", "")
+                rec = posts_by_src.get(src)
+                if rec is None:
+                    return (0, "")
+                return (rec.get("date_sort", 0), rec.get("title", "").casefold())
+
+            posts_section.children.sort(key=_child_key, reverse=True)
 
     for locale, posts in posts_by_locale.items():
         posts.sort(key=lambda post: (post.get("date_sort", 0), post.get("title", "").casefold()), reverse=True)
