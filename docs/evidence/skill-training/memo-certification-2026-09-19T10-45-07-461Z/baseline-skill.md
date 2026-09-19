@@ -1,0 +1,138 @@
+---
+name: memo
+description: "AIOS project memory — read/write/search your own memory using the memo capabilities. You (the model) decide what to remember, what to correct, and what was useful; the harness only executes your decision. Use when you want to recall prior work, persist a durable fact, supersede a wrong one, or mark a recalled memory useful. TRIGGER: 记忆、memory、memo、remember、recall、记住、之前、结论"
+
+installCatalogName: memo
+clients: [codex, claude, hermes, workbuddy, pi, zcode]
+scopes: [global, project]
+defaultInstall:
+  global: true
+  project: false
+tags: [aios, memory, memo]
+repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy, pi, zcode]
+---
+
+# AIOS Memory (memo)
+
+Working directory: project root. Memory commands run from the repo root.
+
+## Principle: you decide, the harness executes
+
+The harness only *provides capabilities* and does **not** judge semantics for you.
+Judging **whether a fact is durable**, **what to persist**, **what to correct**, and
+**which recalled memory was useful** is entirely your job. The harness parses your
+declaration and executes it — it never guesses for you.
+
+## Capabilities you can invoke
+
+Run from the repo root with `aios memo ...` (the installed AIOS CLI — not a repo-relative script):
+
+- **Recall** what you already know before continuing work:
+  `aios memo recall [query]` — human-readable session recall digest
+- **Search** prior memos (superseded facts hidden by default):
+  `aios memo search "<query>" [--limit N]`
+- **Persist** a durable fact you just established:
+  `aios memo add "<fact>"` — defaults to an appropriate scope; add
+  `--scope project_shared` for facts anyone in the repo benefits from
+- **Supersede** a previously recorded fact you now know is wrong:
+  `aios memo add "<corrected fact>" --supersedes <eventId>`
+- **Mark useful** a recalled memory that actually shaped your outcome:
+  `aios memo useful <eventId>`
+- **Checkpoint** a milestone so future sessions recall it first (pinned memory):
+  `aios memo checkpoint "<one-line takeaway>"` — use at milestones and before
+  claiming work complete
+
+Run `aios memo --help` for exact flags.
+
+## When to persist (you judge)
+
+Persist a durable, verified fact that a future you or a teammate will need — e.g. a
+root cause you established, a fix you ran and confirmed, a decision rule. Do **not**
+persist chatter, greetings, or in-progress noise. There is no automatic write: if you
+do not record it, it is not remembered. When in doubt, prefer `project_shared` for
+facts anyone in the repo benefits from, `agent_private` for personal working notes.
+
+## Extraction contract (shape of a persistable entry)
+
+Before you persist — via the declaration `conclusion=` or `memo add` — shape the
+fact as one self-contained entry carrying five elements:
+
+- `fact`: the durable statement, understandable without the surrounding turn.
+- `entities`: the files, commands, symbols, or concepts the fact touches.
+- `date`: absolute ISO date the fact was established. Never store relative time;
+  resolve it to a calendar date first:
+  - "昨天修的" → the calendar date yesterday was (e.g. `2026-09-08`)
+  - "上周上线的" → the calendar date it shipped (e.g. `2026-09-01`)
+  - "刚才验证的" → today's date (e.g. `2026-09-09`)
+  A relative date is rejected at write time — anchor first, persist after.
+- `evidence_ref`: the ONE backing evidence — a verification command with exit
+  code, a `file:line`, or a doc/plan/report path. One entry references one and
+  only one evidence; two independent verifications mean two entries (or pick
+  the decisive one). Arrays are rejected at write time.
+- `confidence`: `high` (ran and verified) or `medium` (established but indirect).
+
+One entry = one fact = one evidence. Split compound observations instead of
+bundling them.
+
+Example entry:
+
+```
+fact: "Windows-only sha256 drift-guard failures were CRLF checkout artifacts, fixed by .gitattributes eol=lf"
+entities: [drift-guard, .gitattributes, CRLF]
+date: 2026-09-06
+evidence_ref: "scripts/lib/specs/orchestrator-agents.json:272"
+confidence: high
+```
+
+You declare these elements in your own words; the harness stores what you wrote
+and never infers missing elements for you.
+
+## What `verified` means now
+
+- Your declaration (`verified=yes`) or `memo add` proposes — the entry lands as
+  `candidate` and waits in the governance queue. It is invisible to active
+  recall until promoted.
+- `verified` is stamped only by governed promotion (human / `promote-shared`
+  authority) and only with the single attached `evidence_ref`.
+- A `verified` you award yourself is demoted to `candidate` at write time.
+  Forgery is not an error you can talk your way around — it is a protocol
+  outcome.
+
+## Exclusions (do not persist)
+
+- Greetings, pleasantries, acknowledgements, or restated user requests.
+- In-progress noise: plans not yet executed, hypotheses not yet tested.
+- Verbatim tool output or pasted logs without the conclusion they support.
+- A fact you cannot attach an `evidence_ref` to — verify first, persist after.
+
+## Editing discipline (corrections)
+
+Supersede by precise replacement: quote the exact old statement, supply the new
+statement, and link it with `--supersedes <eventId>`. Never silently rewrite
+history — a correction is a new entry pointing at the entry it replaces, so the
+log stays append-only and auditable.
+
+## Declaration block (drives the automatic loop)
+
+The harness injects a `## AIOS MEMORY DECLARATION` instruction into your prompt. At the
+end of your reply, append one trailing block when this turn produced something durable:
+
+```
+<!--memory: verified=yes|no, useful=<eventId1,eventId2>, conclusion=<one-line takeaway> -->
+```
+
+- `verified=yes` only when this turn produced a **confirmed, durable fact** (a fix you
+  ran and verified, a root cause you established). This is the trigger that persists a
+  memory — the harness records it, never decides it.
+- `useful=` lists the recalled eventIds above that you actually referenced.
+- `conclusion=` is one line capturing the takeaway.
+
+## What the harness does vs. what you do
+
+| Concern | Owner |
+|---|---|
+| Tokenize/retrieve candidate memory into your prompt | harness (must run before you see anything) |
+| Parse your declaration and persist it | harness (pure bookkeeping) |
+| Whether a fact is durable / worth persisting | **you** (via `verified=` / `memo add`) |
+| Whether a correction supersedes an old fact | **you** |
+| Which recalled memory was useful | **you** (via `useful=`) |

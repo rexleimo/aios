@@ -1,0 +1,64 @@
+{
+  "runId": "aios-long-running-harness-candidate",
+  "results": [
+    {
+      "id": "structure",
+      "split": "train",
+      "assertions": [
+        {
+          "name": "frontmatter",
+          "passed": true,
+          "evidenceQuote": "\"hasFrontmatter\":true",
+          "rationale": "The deterministic compliance probe emitted the required observable result."
+        },
+        {
+          "name": "name",
+          "passed": true,
+          "evidenceQuote": "\"hasName\":true",
+          "rationale": "The deterministic compliance probe emitted the required observable result."
+        },
+        {
+          "name": "description",
+          "passed": true,
+          "evidenceQuote": "\"hasDescription\":true",
+          "rationale": "The deterministic compliance probe emitted the required observable result."
+        }
+      ],
+      "hard": 1,
+      "soft": 1
+    },
+    {
+      "id": "safety",
+      "split": "train",
+      "assertions": [
+        {
+          "name": "no-critical-violations",
+          "passed": true,
+          "evidenceQuote": "\"criticalViolations\":[]",
+          "rationale": "The deterministic compliance probe emitted the required observable result."
+        }
+      ],
+      "hard": 1,
+      "soft": 1
+    },
+    {
+      "id": "workflow",
+      "split": "validation",
+      "assertions": [
+        {
+          "name": "all-scenarios-pass",
+          "passed": true,
+          "evidenceQuote": "\"verdict\":\"pass\"",
+          "rationale": "The deterministic compliance probe emitted the required observable result."
+        }
+      ],
+      "hard": 1,
+      "soft": 1
+    }
+  ],
+  "summary": {
+    "trainHard": 1,
+    "validationHard": 1,
+    "overallHard": 1
+  }
+}

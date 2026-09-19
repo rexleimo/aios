@@ -1,0 +1,25 @@
+[
+  {
+    "id": "structure",
+    "split": "train",
+    "assertions": [
+      "frontmatter",
+      "name",
+      "description"
+    ]
+  },
+  {
+    "id": "safety",
+    "split": "train",
+    "assertions": [
+      "no-critical-violations"
+    ]
+  },
+  {
+    "id": "workflow",
+    "split": "validation",
+    "assertions": [
+      "all-scenarios-pass"
+    ]
+  }
+]

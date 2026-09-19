@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "seo-geo-page-optimization",
+  "sourcePath": "skill-sources/seo-geo-page-optimization/SKILL.md",
+  "base": "v5.19.2",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "01e8f00d6139ba7a661da511b5c1a1f203039f3d1d2faa26f1141b83cf1449f2",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "8cce60b97bb101c1eece02d5388c297bc194c48d4c835eb7bd3899fd55ee6422"
+  },
+  "candidate": {
+    "contentSha256": "01e8f00d6139ba7a661da511b5c1a1f203039f3d1d2faa26f1141b83cf1449f2"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-19T10:45:07.461Z"
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "aios-interception-runtime",
+  "sourcePath": "skill-sources/aios-interception-runtime/SKILL.md",
+  "base": "v5.19.2",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "364d2bbcb24d8e29ad07d698b5062fa79a9f77d1afd8cc573a0201068c9b8774",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "18222c0db578d80e9065d5e3a321ef343682c6a42c9ec5ed4e3ac2357a2a2c43"
+  },
+  "candidate": {
+    "contentSha256": "364d2bbcb24d8e29ad07d698b5062fa79a9f77d1afd8cc573a0201068c9b8774"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-19T10:45:07.461Z"
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "frontend-design",
+  "sourcePath": "skill-sources/frontend-design/SKILL.md",
+  "base": "v5.19.2",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "082f2f3543f575f89ea2b591e60afe0af285e20dc9e08a6d8c1dc6a1038e159a",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "0b08ecea7d97c228e521dc5abf9e2d6e835bdb58be00fe790ea4fa833392814f"
+  },
+  "candidate": {
+    "contentSha256": "082f2f3543f575f89ea2b591e60afe0af285e20dc9e08a6d8c1dc6a1038e159a"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-19T10:45:07.461Z"
+}

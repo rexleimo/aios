@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "awesome-design-md",
+  "sourcePath": "skill-sources/awesome-design-md/SKILL.md",
+  "base": "v5.19.2",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "240dd86d9c9ab5cea32704b2cfa87fb49e1ce8134f1a3aa7fcff72dc208ea178",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "a6b11e9d2b817c5381f07fe80d1c40499f27c7c155acb13094624a91774f6c77"
+  },
+  "candidate": {
+    "contentSha256": "240dd86d9c9ab5cea32704b2cfa87fb49e1ce8134f1a3aa7fcff72dc208ea178"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-19T10:45:07.461Z"
+}
