@@ -121,6 +121,10 @@ nav:
   - Blog Home: index.md
   - Posts:
       - "Jev + AIOS Quickstart: Background Judgments With No Keywords": 2026-09-jev-aios-quickstart.md
+      - "v5.19.2 Names Windows Can Hold": 2026-09-v5192-names-windows-can-hold.md
+      - "v5.19.1 A Declaration You Can Actually Reach": 2026-09-v5191-declaration-you-can-reach.md
+      - "v5.19.0 Giving the Judgment Gate a Body": 2026-09-v519-judgment-gate-surfaces.md
+      - "v5.18.0 TypeSafe Jev in AIOS Off by Default On Purpose": 2026-09-v518-judgment-gate.md
       - v5.16.0 ZCode Joins AIOS with Real Subagents: 2026-09-v516-zcode-client.md
       - v5.15.0 Pi Gains Real MCP Capability: 2026-09-v515-pi-mcp-bridge.md
       - v5.14.0 LoopX Control Plane + No-Orphan Process Trees: 2026-09-v514-loopx-control-plane.md
