@@ -7,6 +7,12 @@ description: "Release history for AIOS: what changed in every version, upgrade n
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v5.20.0 (2026-09-19) — Qoder Client Support: Ten Clients, One Definition Block
+
+- **Qoder client**: `qoder` joins the registry as the tenth first-class client — international CLI home `~/.qoder`, CN distribution `qoderclicn` with home `~/.qoder-cn` (`QODER_HOME` override honored). One definition block in `scripts/lib/clients/core/definitions.mjs` drives skills projection (`.qoder/skills/`, all 27 catalog skills plus rex workflow skills), native sync (managed AGENTS.md block), MCP targets, shell bridge, doctor gates, and team/harness spawn.
+- **MCP in the files Qoder reads**: AIOS-managed servers migrate into top-level `mcpServers` in user-level `~/.qoder/settings.json` and project-level `.qoder/settings.json`; remote HTTP MCP registers through Qoder's own verified CLI CRUD (`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`). The gitignored `settings.local.json` scope is left alone.
+- **Headless and honest about limits**: team/harness drive Qoder via `-p` print mode with `--yolo`; model routing is `own` (account-bound `/model`, no verified headless `--model`, so AIOS does not relay endpoints) and the host-capability tier is L2 with its limits on record. See: [Qoder client blog post](/blog/2026-09-v520-qoder-client/).
+
 ## v5.14.0 (2026-09-13) — LoopX Control Plane + No-Orphan Process Trees
 
 First tagged release since v5.11.0 — it also ships the v5.12.0 memory-plane work (below) and the Pi client.

@@ -1,12 +1,12 @@
 ---
 installCatalogName: typesafe-ai
-clients: [claude, codex, opencode, hermes, grok, pi, gemini, workbuddy, zcode]
+clients: [claude, codex, opencode, hermes, grok, pi, gemini, workbuddy, zcode, qoder]
 scopes: [global, project]
 defaultInstall:
   global: true
   project: false
 tags: [aios, integration, typesafe-ai]
-repoTargets: [claude, codex, opencode, hermes, grok, pi, gemini, workbuddy, zcode, agents]
+repoTargets: [claude, codex, opencode, hermes, grok, pi, gemini, workbuddy, zcode, qoder, agents]
 name: typesafe-ai
 license: MIT
 description: >

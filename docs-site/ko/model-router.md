@@ -262,10 +262,12 @@ preferredModel: claude-opus
 | workbuddy | `own` | _미공개_ | `--model` |
 | pi | `relay` | `openai-chat`, `claude` | `--model` |
 | zcode | `own` | _미공개_ | `—` |
+| qoder | `own` | _미공개_ | `—` |
 
 - `relay`: 네이티브 프로토콜 게이트웨이형 CLI. `coding.rexai.top`으로 향하면 큐레이션된 모델을 모두 쓸 수 있습니다.
 - `own`: 모델 인수를 전혀 넘기지 않고 클라이언트 자체 기본 모델을 씁니다. AIOS는 설정을 고치지 않습니다.
 - `hermes`는 `openai-chat` 상류를 종단할 수 있지만 기동은 Anthropic 호환 채널만 쓰므로 `claude` + `openai-chat`을 선언합니다.
+- `qoder`는 `own`이며 zcode·grok·workbuddy와 같은 상태입니다. 모델이 계정에 묶여 대화형 `/model`로 고르고, 검증된 headless `--model` 플래그가 없어서 AIOS는 현재 Qoder로 모델을 중계하지 않습니다.
 
 프로토콜과 엔드포인트 대응은 `scripts/lib/model-router/protocols.mjs`: `openai-chat -> /openai/v1/chat/completions`, `openai-response -> /openai/v1/responses`, `claude -> /claude/v1/messages`, `gemini -> /gemini/v1beta/models/<model>:generateContent`.
 

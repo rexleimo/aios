@@ -1,13 +1,13 @@
 ---
 title: AIOS — 本地优先 Graph Engine
-description: "面向 Codex / Claude Code / Gemini CLI 等九个客户端的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端，装上即用。"
+description: "面向 Codex / Claude Code / Gemini CLI 等十个客户端的本地优先 Graph Engine：把项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图，而不替换你现有的编码客户端，装上即用。"
 home: true
 schema_type: faq
 faq:
   - q: AIOS 是什么？
-    a: AIOS 是一个让你的 AI 编码助手真正完成复杂任务的工具。你只需说一句话描述需求，AIOS 自动补上记忆、验证和多 Agent 协作。支持 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode 共九个客户端。
+    a: AIOS 是一个让你的 AI 编码助手真正完成复杂任务的工具。你只需说一句话描述需求，AIOS 自动补上记忆、验证和多 Agent 协作。支持 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode、Qoder 共十个客户端。
   - q: AIOS 会替换我的编码客户端吗？
-    a: 不会。你继续用 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi 或 ZCode，完全不变。九个客户端都拿到项目记忆、原生指令注入与 harness 驱动；子代理定义和 aios team 并行派发按客户端有差异，用 aios doctor --native --verbose 查看你这一个的支持程度。
+    a: 不会。你继续用 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode 或 Qoder，完全不变。十个客户端都拿到项目记忆、原生指令注入与 harness 驱动；子代理定义和 aios team 并行派发按客户端有差异，用 aios doctor --native --verbose 查看你这一个的支持程度。
   - q: AIOS 怎么跨会话记住上下文？
     a: AIOS 把你的项目决策、约束和进度存在本地的 ContextDB 里。下次开会话，Agent 自动拉取相关内容，不用从零开始。
   - q: 我的代码安全吗？
@@ -31,7 +31,7 @@ faq:
       <h1 class="rex-hero__title">给你的 AI 编码 Agent 一个本地优先的 Graph Engine。</h1>
 
       <p class="rex-hero__sub">
-        AIOS 是一个本地优先的 Graph Engine。它保留你已经在使用的 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok（Grok Build）、WorkBuddy（codebuddy）、Pi 或 ZCode，
+        AIOS 是一个本地优先的 Graph Engine。它保留你已经在使用的 Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok（Grok Build）、WorkBuddy（codebuddy）、Pi、ZCode 或 Qoder，
         再把跨会话项目记忆、自适应路由、多 Agent 协作与验证门禁编排成可验证的 Agent 图——不改变你的工作方式。
       </p>
 
@@ -77,11 +77,11 @@ faq:
 <div id="clients" class="rex-clients">
   <div class="rex-clients__header">
     <div class="rex-clients__heading">
-      <span class="rex-clients__eyebrow">支持客户端 · 9</span>
+      <span class="rex-clients__eyebrow">支持客户端 · 10</span>
       <h2 class="rex-clients__title">就在你已经在用的客户端里工作</h2>
     </div>
     <p class="rex-clients__note">
-      九个客户端共用同一套项目记忆、工作流策略与验证证据。
+      十个客户端共用同一套项目记忆、工作流策略与验证证据。
       能力深度并不完全一致——用 <code>aios doctor --native --verbose</code> 确认你这一个。
     </p>
   </div>
@@ -121,6 +121,10 @@ faq:
     <div class="rex-client">
       <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
       <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="没有项目级子代理定义面；rex 角色卡以 ZCode plugin agents 形式运行">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">QO</span><span class="rex-client__name">Qoder</span><code class="rex-client__cmd">qoder</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
     </div>
   </div>
   <div class="rex-clients__legend">

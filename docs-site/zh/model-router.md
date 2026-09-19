@@ -281,10 +281,12 @@ preferredModel: claude-opus
 | workbuddy | `own` | _未公布_ | `--model` |
 | pi | `relay` | `openai-chat`, `claude` | `--model` |
 | zcode | `own` | _未公布_ | `—` |
+| qoder | `own` | _未公布_ | `—` |
 
 - `relay`：原生协议网关型 CLI，配到 `coding.rexai.top` 即可使用全部策展模型。
 - `own`：不传模型参数，沿用客户端自带默认模型，AIOS 绝不改写其配置。
 - `hermes` 能终止 `openai-chat` 上游，但启动只用 Anthropic 兼容通道，因此声明 `claude` + `openai-chat`。
+- `qoder` 是 `own`，与 zcode、grok、workbuddy 同一状态：模型绑定账号，用交互式 `/model` 选择；没有验证过的 headless `--model` 参数，所以 AIOS 暂时不会向它转发模型。
 
 协议到端点的映射在 `scripts/lib/model-router/protocols.mjs`：`openai-chat -> /openai/v1/chat/completions`、
 `openai-response -> /openai/v1/responses`、`claude -> /claude/v1/messages`、

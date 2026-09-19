@@ -47,4 +47,10 @@ export const BLOCKED_SUBCOMMANDS = Object.freeze({
     'login', 'logout',
     '-h', '--help', '-v', '--version',
   ]),
+  // Qoder CLI management subcommands (mcp CRUD, ide launch) are not agent runs.
+  // Bare `qoder` and headless runs (-p with optional --output-format/--yolo) stay bridgeable.
+  qoder: new Set([
+    'mcp', 'ide', 'login', 'logout', 'update', 'doctor',
+    '-h', '--help', '-v', '--version',
+  ]),
 });

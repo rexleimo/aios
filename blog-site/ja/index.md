@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v5.20.0：Qoder が AIOS に合流——10 番目のクライアント、定義ブロック 1 つ](2026-09-v520-qoder-client.md) — 10 番目の第一級クライアント、Qoder が実際に読む settings.json への MCP、AGENTS.md コンテキスト、`-p` ヘッドレス team
 - [Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断](2026-09-jev-aios-quickstart.md) — TYPESAFE_API_KEY を設定し判断ゲートを開けたら、普段どおり話すだけで Jev が裏側で判断する
 - [v5.19.2：Windows が扱える名前](2026-09-v5192-names-windows-can-hold.md) — 候補 id をファイル名にすると NTFS では代替データストリームになり、昇格は静かに失われ、取り込み側はエラー 0 件と報告する
 - [v5.19.1：本当に手の届く宣言チャネル](2026-09-v5191-declaration-you-can-reach.md) — shell から宣言できるようになり、そのために書いたガードが 82 個の未実行テストファイルを発見

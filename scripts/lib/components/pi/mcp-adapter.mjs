@@ -7,11 +7,16 @@
 // (the adapter reads it directly); the Pi-global file only carries servers
 // that make sense outside any single project: code-review-graph (cwd-less),
 // plus the AIOS-root-resolved aios-memory and aios-bridge stdio servers,
-// all three cwd-less so they follow the Pi session cwd. Browser, shell and
-// auth servers stay out until their CDP/exec/sensitivity dependencies get
-// an explicit gate — projects enable them via their own .mcp.json.
+// all three cwd-less so they follow the Pi session cwd. The browser server
+// joins them once its runtime is installed in this AIOS root (browser
+// readiness has a single owner: components/browser/runtime-readiness.mjs).
+// Shell and auth stay out: a shell MCP tool would bypass the AIOS Pi safety
+// gate, and auth stays niche.
 import fs from 'node:fs';
 import path from 'node:path';
+
+import { PRIMARY_BROWSER_ALIAS } from '../browser/constants.mjs';
+import { resolveLocalBrowserMcpScript } from '../browser/runtime-paths.mjs';
 
 export const PI_MCP_ADAPTER_PACKAGE = 'pi-mcp-adapter';
 export const PI_MCP_ADAPTER_VERSION = '2.33.0';
@@ -31,10 +36,26 @@ export function resolvePiMcpJsonPath(piHome) {
 // serves the Pi session directory, and both node servers resolve their
 // workspace from the session cwd at request time. `aiosRoot` is the
 // runtime-resolved AIOS install root (never a repo-relative literal).
-// Browser/shell/auth servers stay out: browser needs a CDP endpoint, shell
-// executes arbitrary commands, and auth is niche — all need an explicit
-// gate before going global.
-export function buildAiosPiMcpServers({ aiosRoot = '' } = {}) {
+// Browser/shell/auth servers stay out by default: shell executes arbitrary
+// commands, and auth is niche. The browser server is added only when the
+// caller states the runtime is installed, so the Pi-global file never
+// advertises a server that cannot start.
+//
+// `browserRuntime` is an explicit input rather than an fs check here so this
+// module keeps no browser-path knowledge; the readiness fact stays with its
+// owner (components/browser/runtime-readiness.mjs). CDP is not required: an
+// unconfigured profile makes the runtime launch its own local Chromium.
+export function buildAiosPiBrowserServer({ aiosRoot = '' } = {}) {
+  const root = String(aiosRoot || '').trim();
+  if (!root) return null;
+  return {
+    command: 'node',
+    args: [resolveLocalBrowserMcpScript(root)],
+    lifecycle: 'lazy',
+  };
+}
+
+export function buildAiosPiMcpServers({ aiosRoot = '', browserRuntime = false } = {}) {
   const servers = {
     'code-review-graph': {
       command: 'uvx',
@@ -54,6 +75,10 @@ export function buildAiosPiMcpServers({ aiosRoot = '' } = {}) {
       args: [path.join(root, 'scripts', 'aios-mcp-server.mjs')],
       lifecycle: 'lazy',
     };
+    if (browserRuntime) {
+      const browserServer = buildAiosPiBrowserServer({ aiosRoot: root });
+      if (browserServer) servers[PRIMARY_BROWSER_ALIAS] = browserServer;
+    }
   }
   return servers;
 }

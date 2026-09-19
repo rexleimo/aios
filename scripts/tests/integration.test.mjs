@@ -425,7 +425,7 @@ test('doctor: every client reports an actionable next step, never a silent skip'
     probeImpl: async () => ({ status: 'verified', tools: [] }),
     env: {},
   });
-  assert.equal(result.clients.length, 9, 'all nine clients must be reported');
+  assert.equal(result.clients.length, 10, 'all ten clients must be reported');
   for (const item of result.clients) {
     assert.ok(item.status, `${item.client} must report a status`);
     assert.notEqual(item.status, 'unverified', `${item.client} must not fall back to a bare unverified state`);

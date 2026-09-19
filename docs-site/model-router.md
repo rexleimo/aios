@@ -286,11 +286,15 @@ table below is generated data, not opinion:
 | workbuddy | `own` | _none published_ | `--model` |
 | pi | `relay` | `openai-chat`, `claude` | `--model` |
 | zcode | `own` | _none published_ | `—` |
+| qoder | `own` | _none published_ | `—` |
 
 `relay` clients are native-protocol gateways: point them at `coding.rexai.top` and they serve the
 whole curated catalog. `own` clients are launched with **no** model argument so they keep their own
 default, and AIOS never rewrites their config. `hermes` can terminate `openai-chat` upstreams but
 launches with the Anthropic-compatible channel only, so it declares `claude` + `openai-chat`.
+`qoder` is `own` in the same state as `zcode`, `grok`, and `workbuddy`: its model is bound to the
+account and selected with the interactive `/model` command, and because no headless `--model` flag
+is verified, AIOS does not relay models to it yet.
 
 Protocol to endpoint mapping lives in `scripts/lib/model-router/protocols.mjs`:
 `openai-chat` -> `/openai/v1/chat/completions`, `openai-response` -> `/openai/v1/responses`,

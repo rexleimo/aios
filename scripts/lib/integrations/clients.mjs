@@ -17,6 +17,7 @@ export const INTEGRATION_CLIENT_ORDER = Object.freeze([
   'gemini',
   'workbuddy',
   'zcode',
+  'qoder',
 ]);
 
 function cliAdd(command, args) {
@@ -141,6 +142,23 @@ export const INTEGRATION_CLIENT_TABLE = Object.freeze({
     namespace: 'mcp.servers',
     reason: 'http-config-shape-unverified',
     evidence: 'no ZCode HTTP MCP surface has been verified by AIOS. AIOS owns the ZCode JSON MCP target (nested mcp.servers namespace); only the HTTP transport key name is unverified.',
+  }),
+
+  // Qoder CLI ships first-class MCP CRUD (verified via the native mcp-config skill
+  // surface): `qoderclicn mcp add <name> <commandOrUrl> [args...] --scope
+  // <user|local|project> --transport <stdio|sse|http|ws>` plus add-json/list/get/remove.
+  qoder: Object.freeze({
+    client: 'qoder',
+    transport: 'cli',
+    verified: true,
+    evidence: 'qoderclicn mcp add --help (via native mcp-config skill): `--scope <user|local|project>`, `--transport <stdio|sse|http|ws>`; mcp list/get/remove documented',
+    buildAdd: ({ mcp, scope }) => cliAdd('qoder', [
+      'mcp', 'add', '--scope', scopeOf(scope), '--transport', 'http', mcp.serverName, mcp.url,
+    ]),
+    buildRemove: ({ mcp, scope }) => cliAdd('qoder', [
+      'mcp', 'remove', '--scope', scopeOf(scope), mcp.serverName,
+    ]),
+    buildProbe: ({ mcp }) => cliAdd('qoder', ['mcp', 'get', mcp.serverName]),
   }),
 });
 

@@ -35,7 +35,7 @@ AIOS は Codex、Claude、Gemini CLI の代替ではありません。
 
 ## サポート済みクライアント
 
-現時点で 9 クライアント。下表はレジストリが実際に公開している能力マトリクスです。出典は `scripts/lib/clients/core/definitions.mjs`。自分のインストールは推測せず `aios doctor --native --verbose` で確認してください。
+現時点で 10 クライアント。下表はレジストリが実際に公開している能力マトリクスです。出典は `scripts/lib/clients/core/definitions.mjs`。自分のインストールは推測せず `aios doctor --native --verbose` で確認してください。
 
 | クライアント | コマンド | skills | native | harness | agents | team | 指示ファイル | プロジェクトスキルルート |
 |---|---|---|---|---|---|---|---|---|
@@ -48,16 +48,18 @@ AIOS は Codex、Claude、Gemini CLI の代替ではありません。
 | WorkBuddy | `codebuddy` | ✓ | ✓ | ✓ | — | — | `AGENTS.md` | `.workbuddy/skills` |
 | Pi | `pi` | ✓ | ✓ | ✓ | — | ✓ | `AGENTS.md` | `.agents/skills`（共用ルート） |
 | ZCode | `zcode` | ✓ | ✓ | ✓ | plugin | ✓ | `AGENTS.md` | `.agents/skills`（共用ルート） |
+| Qoder | `qoder` | ✓ | ✓ | ✓ | — | ✓ | `AGENTS.md` | `.qoder/skills` |
 
 列の意味：**skills** = クライアントのスキルルートへ投影されるスキルパック · **native** = ネイティブ指示ファイルを書き込む · **harness** = solo-harness での駆動 · **agents** = プロジェクト範囲のサブエージェント定義 · **team** = `aios team` による並列ディスパッチ。
 
-3 つの行には注記が要ります：
+4 つの行には注記が要ります：
 
 - **ZCode の `agents` は欠けではありません。** ZCode 0.16.5 にはプロジェクト範囲のサブエージェント定義面がないため、AIOS は rex ロールカードを `~/.aios/zcode-plugin` 配下の `aios-agents` インラインプラグインとして実体化し、ユーザーレベルの `plugins.dirs` に登録します。`doctor:zcode-agents` が manifest 妥当性・agent ドリフト・登録状態を報告します。ZCode には `--model` フラグがないのでモデルルーティングは空のまま、headless 実行は初回だけ `zcode login` が必要です。
 - **Pi と ZCode は `.agents/skills` ルートを共有します。** 私有のコピーを二重に作る代わりに、アップグレード時に古いコピーの対応するクリーンアップを行います。
 - **Pi の `agents` は上流の境界、`team` は検証済み。** Pi は「意図的に内蔵 MCP・サブエージェント・権限ポップアップ・plan mode を持たない」設計で、サブエージェント起動は拡張として足すものなので、AIOS が rex ロールカードを落とし込むプロジェクト範囲の面が存在しません（AIOS ツールは config 移行ではなく `aios-bridge` MCP server と Pi 拡張経由で Pi に届きます）。`team` にはそうした面が不要です：チームワーカーは他プロバイダと同じ spawn 経路を流れる headless `pi -p` サブプロセスにすぎず、実際の `aios team --provider pi --live` バッチで検証済みです（planning フェーズが最初から最後まで完了し、implement ワーカーは対象ファイルを生成）。オフラインでは `scripts/tests/team-pi-worker.test.mjs` が回帰をガードします。下表は「不可能」ではなく「検証済み」として読み、実際の状態は `aios doctor --native --verbose` が見せてくれます。
+- **Qoder の `agents` は Pi・ZCode と同じ境界です。** Qoder（Alibaba）は AI IDE とコーディング agent CLI の組み合わせで、コマンドは `qoder`、ランタイムのクライアント id は `qoder-cli`。CN 配布は `qoderclicn` でホームが `~/.qoder-cn`、国際版のホームは `~/.qoder`（環境変数 `QODER_HOME` で上書きできます）。プロジェクト範囲のサブエージェント定義面を持たないため、AIOS は `skills` / `native` / `team` / `harness` を宣言し `agents` は空のままです。`team` と `harness` が動くのは Qoder が無人実行できるからで、`-p` print モードに `--output-format`、無人実行用の `--yolo` という公式ドキュメント記載の headless 面を、他プロバイダと同じ spawn 経路がそのまま駆動します。モデルルーティングは `own`：モデルはアカウントに紐付き、対話の `/model` で選ぶため、検証済みの headless `--model` フラグが存在せず、AIOS は Qoder にモデルを中継しません（zcode・grok・workbuddy と同じ状態）。AIOS は Qoder 自身のルート `.qoder/skills`（ユーザー側は `~/.qoder/skills`）へスキルを投影し、MCP エントリは `~/.qoder/settings.json` と `<repo>/.qoder/settings.json` のトップレベル `mcpServers` 名前空間に書き込み、指示は `AGENTS.md`——codex / opencode / grok / hermes / workbuddy / pi / zcode と共書きするネイティブ投影ファイル——に落とします（`QODER.md` は Qoder が受け付ける別名ですが AIOS は書きません）。Qoder 対応は AIOS 5.20.0 で入りました。
 
-単一クライアントだけ投影するなら `aios init --agent <client>`（例：`aios init --agent zcode`）、全件なら `--agent all` です。
+単一クライアントだけ投影するなら `aios init --agent <client>`（例：`aios init --agent qoder`）、全件なら `--agent all` です。`qoder` が `PATH` にあれば自動検出されるため、フラグは必須ではありません。
 
 ## 生 CLI のみを使う場合
 
@@ -67,7 +69,7 @@ AIOS は Codex、Claude、Gemini CLI の代替ではありません。
 
 ## AIOS を追加する場合
 
-- 同じプロジェクトで `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok` を切り替える場合。
+- 同じプロジェクトで `codex`、`claude`、`gemini`、`opencode`、`hermes`、`grok`（Grok Build）、`workbuddy`（CodeBuddy CLI）、`pi`、`zcode`、`qoder`（Qoder CLI、CN 配布は `qoderclicn`）を切り替える場合。
 - 再起動安全なコンテキストと監査可能な checkpoint を必要とする場合。
 - ブラウザ自動化と認証壁処理、明示的な human handoff を必要とする場合。
 - 設定読み取り中の偶発的なシークレット露出を減らす必要がある場合。

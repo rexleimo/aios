@@ -106,7 +106,7 @@ export async function installRexWorkflowSkills({
 }
 
 function usage() {
-console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi|zcode>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
+console.log(`Usage: aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi|zcode|qoder>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Initialize AIOS ContextDB for this project. Idempotent — safe to run multiple times.
 
@@ -136,7 +136,7 @@ export async function main(argv = process.argv.slice(2)) {
   const requestedAgent = agentIdx !== -1 ? argv[agentIdx + 1] : '';
 
   if (requestedAgent && !AGENT_CONFIG[requestedAgent]) {
-    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode`);
+    console.error(`Unknown agent: ${requestedAgent}. Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode, qoder`);
     process.exit(1);
   }
 
@@ -155,7 +155,7 @@ export async function main(argv = process.argv.slice(2)) {
 
   if (agents.length === 0) {
     console.log('No supported AI coding agents detected.');
-    console.log('Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode');
+    console.log('Supported: claude, codex, gemini, opencode, hermes, grok, workbuddy, pi, zcode, qoder');
     console.log('Use --all to initialize for all agents regardless of detection.');
     process.exit(0);
   }
@@ -279,6 +279,7 @@ export async function main(argv = process.argv.slice(2)) {
         ensurePiMcpAdapter,
         resolvePiMcpJsonPath,
       } = await import('./lib/components/pi/mcp-adapter.mjs');
+      const { isBrowserMcpRuntimeInstalled } = await import('./lib/components/browser/runtime-readiness.mjs');
       const { execFile } = await import('node:child_process');
       const run = (cmd, args) => new Promise((resolveRun, rejectRun) => {
         // Windows npm shims (pi.cmd/pi.ps1) only resolve through a shell;
@@ -294,7 +295,10 @@ export async function main(argv = process.argv.slice(2)) {
       });
       const mcp = await ensurePiMcpAdapter({
         mcpJsonPath: resolvePiMcpJsonPath(getClientHomes(process.env).pi),
-        servers: buildAiosPiMcpServers({ aiosRoot: AIOS_ROOT }),
+        servers: buildAiosPiMcpServers({
+          aiosRoot: AIOS_ROOT,
+          browserRuntime: isBrowserMcpRuntimeInstalled({ rootDir: AIOS_ROOT }),
+        }),
         dryRun,
         io: console,
         run,
@@ -303,12 +307,13 @@ export async function main(argv = process.argv.slice(2)) {
       if (mcp.keptDiffers.length > 0) {
         console.log(`  Pi MCP kept user-edited servers: ${mcp.keptDiffers.join(', ')}`);
       }
-      // 2e. Project .mcp.json advisory — the Pi-global file only carries the
-      // cwd-less AIOS servers; shell/browser/auth reach Pi through the
-      // project-level .mcp.json that the pi-mcp-adapter reads directly.
+      // 2e. Project .mcp.json advisory — the Pi-global file carries the
+      // cwd-less AIOS servers plus the browser server once its runtime is
+      // installed; shell/auth still reach Pi through the project-level
+      // .mcp.json that the pi-mcp-adapter reads directly.
       if (!dryRun && !existsSync(resolve(workspaceRoot, '.mcp.json'))) {
-        console.log('  [hint] No project .mcp.json: Pi sees only the global AIOS servers (code-review-graph, aios-memory, aios-bridge).');
-        console.log('  [hint] Shell/browser/auth servers need a project-level .mcp.json (run aios init --agent claude to generate one, then re-run this command).');
+        console.log('  [hint] No project .mcp.json: Pi sees only the global AIOS servers (code-review-graph, aios-memory, aios-bridge, plus browser when its runtime is installed).');
+        console.log('  [hint] Shell/auth servers need a project-level .mcp.json (run aios init --agent claude to generate one, then re-run this command).');
       }
     } catch (err) {
       console.warn(`[warn] Pi MCP bridge setup: ${err.message}`);

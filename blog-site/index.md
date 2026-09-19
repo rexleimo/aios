@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v5.20.0: Qoder Joins AIOS — Ten Clients, One Definition Block](2026-09-v520-qoder-client.md) — tenth first-class client, MCP in Qoder's real settings.json scopes, AGENTS.md context, headless team runs
 - [Jev + AIOS Quickstart: Background Judgments With No Keywords](2026-09-jev-aios-quickstart.md) — set TYPESAFE_API_KEY, enable the judgment gate, then chat normally while Jev judges in the background
 - [v5.19.2: Names Windows Can Hold](2026-09-v5192-names-windows-can-hold.md) — a candidate id used as a file name became an NTFS alternate data stream, so a promotion was lost while the importer reported zero errors
 - [v5.19.1: A Declaration You Can Actually Reach](2026-09-v5191-declaration-you-can-reach.md) — the shell can declare a disposition, and the guard written for it found 82 test files that no gate has ever run

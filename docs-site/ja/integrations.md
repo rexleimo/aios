@@ -21,7 +21,7 @@ description: "TypeSafe（System One / Jev）スキルとドキュメント MCP �
 | --- | --- |
 | コミットの固定 | スキルは移動するブランチではなく、不変のリビジョンから取得される |
 | sha256 の検証 | 内容がレビュー済みの成果物と一致する。改変・古いコピーは拒否される |
-| クライアント別プラン | AIOS の 9 クライアントすべてに明示的で検査可能な登録手順がある |
+| クライアント別プラン | AIOS の 10 クライアントすべてに明示的で検査可能な登録手順がある |
 | 実際のハンドシェイク | ドキュメント MCP サーバーに到達でき、期待するツールを公開している |
 
 ## 対応モデル
@@ -70,7 +70,7 @@ aios integration doctor typesafe
 ## TypeSafe 統合のインストール
 
 ```bash
-# 1. 9 クライアントすべての変更をプレビュー — 何も書き込みません
+# 1. 10 クライアントすべての変更をプレビュー — 何も書き込みません
 aios integration add typesafe --dry-run
 
 # 2. スキルをインストールし、ドキュメント MCP サーバーを登録
@@ -96,7 +96,7 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 
 ## クライアント対応
 
-AIOS の 9 クライアントすべてを対象にします。「対応」とは **すべてのクライアントに正直で実行可能な次の一手がある** という意味であり、すべてのクライアントに同一の CLI があるという主張ではありません。
+AIOS の 10 クライアントすべてを対象にします。「対応」とは **すべてのクライアントに正直で実行可能な次の一手がある** という意味であり、すべてのクライアントに同一の CLI があるという主張ではありません。
 
 | クライアント | 登録方法 | AIOS の報告 |
 | --- | --- | --- |
@@ -109,12 +109,15 @@ AIOS の 9 クライアントすべてを対象にします。「対応」とは
 | Hermes | `hermes mcp add --url` | 対話端末が必要 |
 | WorkBuddy | `codebuddy mcp add --agent <名前>` | 手動手順が必要 |
 | ZCode | `~/.zcode/cli/config.json`（`mcp.servers`）を書き込む | stdio は検証済み。HTTP は手動手順 |
+| Qoder | `qoder mcp add --scope user --transport http` | verified |
 
 意図的な挙動が 3 つあります。
 
 - **Hermes** は認証方式を対話的に尋ね、非対話用のフラグがありません。AIOS は答えを推測せず、スクリプトを停止させることもなく、正確なコマンドを表示して `pending-interactive` と報告します。
 - **WorkBuddy** の `mcp add` は `--agent <名前>` の値を要求しますが、その一覧はまだ非対話的に列挙できません。AIOS は agent 名を捏造せず、コマンドを表示します。
 - **ZCode** は `PATH` に CLI を持たない Electron クライアントです。AIOS は stdio サーバーを `~/.zcode/cli/config.json` の `mcp.servers` に書き込み、ZCode はそこから読み取ります。HTTP エントリには AIOS がまだ書き込まない `url` フィールドが追加で必要なため、そこは手動手順のままです。
+
+**Qoder** は例外説明が不要です。CLI 側に完全な MCP CRUD（`mcp add` / `add-json` / `list` / `get` / `remove`）があり、3 つのスコープに対応します——`--scope user`（`~/.qoder/settings.json`）、`--scope project`（`<repo>/.qoder/settings.json`、コミット対象）、`--scope local`（`.qoder/settings.local.json`、gitignore 対象）。AIOS が書き込むのは user と project の 2 ファイルで、local は Qoder として有効な宛先ですが AIOS は触りません。`--transport` は `stdio` / `sse` / `http` / `ws` のすべてを受け付けます。
 
 クライアントが未インストールの場合はバイナリ名とともに `client-missing` として報告され、静かに成功扱いになることはありません。
 
@@ -176,7 +179,7 @@ rex ステージゲートは host 側のポリシーです。rex サブモジュ
 主なフラグ：
 
 - `--dry-run` は計画全体を表示し、何も書き込みません。
-- `--clients claude,codex` は対象を特定のクライアントに限定します。既定は 9 クライアントすべてです。
+- `--clients claude,codex` は対象を特定のクライアントに限定します。既定は 10 クライアントすべてです。
 - `--skip-skills` または `--skip-mcp` は、片方のレイヤーだけが必要なときに分離して実行します。
 - `doctor` の `--json` は CI 向けの機械可読な証拠を出力します。
 

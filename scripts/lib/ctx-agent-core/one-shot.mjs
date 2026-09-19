@@ -97,6 +97,12 @@ const ONE_SHOT_HANDLERS = {
     commandForRuntime('zcode-cli'),
     ['--mode', 'yolo', '-p', prompt, ...extraArgs]
   ),
+  // Qoder CLI: `-p` prints the response headless; --yolo skips permission
+  // prompts (official CLI docs). Model is account-bound (/model is interactive).
+  'qoder-cli': ({ prompt, extraArgs }) => runBufferedCommand(
+    commandForRuntime('qoder-cli'),
+    ['--yolo', '-p', prompt, ...extraArgs]
+  ),
 };
 
 // Exported for tests only: lets verification assert handlers are registered

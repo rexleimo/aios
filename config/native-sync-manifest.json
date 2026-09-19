@@ -86,6 +86,14 @@
         "AGENTS.md",
         ".agents/skills"
       ]
+    },
+    "qoder": {
+      "tier": "compatibility",
+      "metadataRoot": ".qoder",
+      "outputs": [
+        "AGENTS.md",
+        ".qoder/skills"
+      ]
     }
   }
 }

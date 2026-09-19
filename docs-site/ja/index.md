@@ -1,13 +1,13 @@
 ---
 title: "AIOS — ローカル優先 Graph Engine"
-description: "コーディングエージェントのためのローカル優先 Graph Engine。Codex、Claude Code、Gemini CLI など 9 つのクライアントの上に、記憶・適応型ルーティング・マルチエージェント協調・検証をひとつの検証可能なグラフとして編成します。"
+description: "コーディングエージェントのためのローカル優先 Graph Engine。Codex、Claude Code、Gemini CLI など 10 のクライアントの上に、記憶・適応型ルーティング・マルチエージェント協調・検証をひとつの検証可能なグラフとして編成します。"
 home: true
 schema_type: faq
 faq:
   - q: AIOS とは？
-    a: "AIOS は AI コーディングクライアントに複雑なタスクを本当に完了させるための一行レイヤーです。必要度を一文で伝えれば、agent が正しく終わらせるために必要な記憶・検証・協調を AIOS が補います（Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode に対応）。"
+    a: "AIOS は AI コーディングクライアントに複雑なタスクを本当に完了させるための一行レイヤーです。必要度を一文で伝えれば、agent が正しく終わらせるために必要な記憶・検証・協調を AIOS が補います（Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode、Qoder に対応）。"
   - q: AIOS は今使っているコーディングクライアントを置き換えますか？
-    a: "いいえ。Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode を今まで通り使えます。AIOS はその下に入り、足りないものを補います——セッションをまたぐ永続記憶、タスクの自動ルーティング、納品前の検証。9 クライアントすべてがプロジェクト記憶・ネイティブ指示・harness 駆動を取得しますが、サブエージェント定義と `aios team` ディスパッチの可否はクライアント依存です。自分の環境は `aios doctor --native --verbose` で確認してください。"
+    a: "いいえ。Codex、Claude Code、Gemini CLI、OpenCode、Hermes、Grok、WorkBuddy、Pi、ZCode、Qoder を今まで通り使えます。AIOS はその下に入り、足りないものを補います——セッションをまたぐ永続記憶、タスクの自動ルーティング、納品前の検証。10 クライアントすべてがプロジェクト記憶・ネイティブ指示・harness 駆動を取得しますが、サブエージェント定義と `aios team` ディスパッチの可否はクライアント依存です。自分の環境は `aios doctor --native --verbose` で確認してください。"
   - q: AIOS はセッションをまたいでコンテキストをどう覚えておくのですか？
     a: "AIOS はプロジェクトの決定・制約・進捗を ContextDB というローカル記憶ストアに保存します。新しいセッションを始めると、agent はゼロから始めるのではなく必要なコンテキストだけを取りに行きます。"
   - q: コードはプライベートに保たれますか？
@@ -33,7 +33,7 @@ faq:
       <p class="rex-hero__sub">
         AIOS はコーディング agent のためのローカル優先 Graph Engine です。セッションをまたぐプロジェクト記憶、
         適応型ルーティング、マルチエージェント協調、検証を、Codex、Claude Code、Gemini CLI、OpenCode、Hermes、
-        Grok、WorkBuddy、Pi、ZCode の 9 クライアントの上でひとつの検証可能なグラフに編成します——
+        Grok、WorkBuddy、Pi、ZCode、Qoder の 10 クライアントの上でひとつの検証可能なグラフに編成します——
         今の作業スタイルはそのままに。
       </p>
 
@@ -79,7 +79,7 @@ faq:
 <div id="clients" class="rex-clients">
   <div class="rex-clients__header">
     <div class="rex-clients__heading">
-      <span class="rex-clients__eyebrow">対応クライアント · 9</span>
+      <span class="rex-clients__eyebrow">対応クライアント · 10</span>
       <h2 class="rex-clients__title">今使っているクライアントの中で、そのまま動く</h2>
     </div>
     <p class="rex-clients__note">
@@ -123,6 +123,10 @@ faq:
     <div class="rex-client">
       <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
       <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="プロジェクト範囲のサブエージェント面がないため、rex ロールカードは ZCode plugin agents として動作">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">QO</span><span class="rex-client__name">Qoder</span><code class="rex-client__cmd">qoder</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
     </div>
   </div>
   <div class="rex-clients__legend">

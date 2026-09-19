@@ -10,6 +10,7 @@
     "workbuddy": ".workbuddy/skills",
     "pi": ".agents/skills",
     "zcode": ".agents/skills",
+    "qoder": ".qoder/skills",
     "agents": ".agents/skills"
   },
   "skills": [],

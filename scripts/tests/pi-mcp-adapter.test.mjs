@@ -4,10 +4,12 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import { resolveLocalBrowserMcpScript } from '../lib/components/browser/runtime-paths.mjs';
 import {
   PI_MCP_ADAPTER_PACKAGE,
   PI_MCP_ADAPTER_VERSION,
   buildAdapterInstallArgs,
+  buildAiosPiBrowserServer,
   buildAiosPiMcpServers,
   ensurePiMcpAdapter,
   ensurePiMcpServers,
@@ -214,4 +216,26 @@ test('full setup installs adapter when missing, previews under dry-run', async (
   } finally {
     await rm(home, { recursive: true, force: true });
   }
+});
+
+test('browser server joins the managed set only when the runtime is installed', () => {
+  const withoutRuntime = buildAiosPiMcpServers({ aiosRoot: '/aios' });
+  assert.ok(!('mcp-browser-use' in withoutRuntime), 'no runtime, no advertised browser server');
+
+  const withRuntime = buildAiosPiMcpServers({ aiosRoot: '/aios', browserRuntime: true });
+  assert.deepEqual(
+    Object.keys(withRuntime),
+    ['code-review-graph', 'aios-memory', 'aios-bridge', 'mcp-browser-use'],
+  );
+  const entry = withRuntime['mcp-browser-use'];
+  assert.equal(entry.command, 'node');
+  assert.deepEqual(entry.args, [resolveLocalBrowserMcpScript('/aios')]);
+  assert.equal(entry.lifecycle, 'lazy');
+  assert.ok(!('cwd' in entry) && !('env' in entry), 'follows the Pi session cwd like the other servers');
+  assert.ok(!('startupTimeoutSec' in entry), 'pi-mcp-adapter drops unknown fields, so AIOS never writes them');
+});
+
+test('browser entry needs an AIOS root, and readiness alone is not enough', () => {
+  assert.equal(buildAiosPiBrowserServer({ aiosRoot: '' }), null);
+  assert.deepEqual(Object.keys(buildAiosPiMcpServers({ browserRuntime: true })), ['code-review-graph']);
 });

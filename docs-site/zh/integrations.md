@@ -21,7 +21,7 @@ description: "安装 TypeSafe（System One / Jev）技能与文档 MCP，设置 
 | --- | --- |
 | 钉住 commit | 技能来自不可变版本，而不是会漂移的分支 |
 | 校验 sha256 | 内容与已审阅产物一致；被改过或过期的副本会被拒绝 |
-| 逐客户端计划 | 九种 AIOS 客户端都有明确、可检查的注册步骤 |
+| 逐客户端计划 | 十种 AIOS 客户端都有明确、可检查的注册步骤 |
 | 真实握手 | 文档 MCP 服务确实可达，且暴露了预期工具 |
 
 ## 支持的模型
@@ -70,7 +70,7 @@ aios integration doctor typesafe
 ## 安装 TypeSafe 集成
 
 ```bash
-# 1. 预演全部九种客户端的改动 —— 不写任何文件
+# 1. 预演全部十种客户端的改动 —— 不写任何文件
 aios integration add typesafe --dry-run
 
 # 2. 安装技能并注册文档 MCP 服务
@@ -96,7 +96,7 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 
 ## 客户端覆盖
 
-九种 AIOS 客户端全部覆盖。这里"覆盖"的意思是为**每个客户端都给出诚实、可执行的下一步**，而不是宣称每个客户端都有完全相同的 CLI。
+十种 AIOS 客户端全部覆盖。这里"覆盖"的意思是为**每个客户端都给出诚实、可执行的下一步**，而不是宣称每个客户端都有完全相同的 CLI。
 
 | 客户端 | 注册方式 | AIOS 如何报告 |
 | --- | --- | --- |
@@ -109,12 +109,15 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 | Hermes | `hermes mcp add --url` | 需要交互式终端 |
 | WorkBuddy | `codebuddy mcp add --agent <名称>` | 需要人工步骤 |
 | ZCode | 写入 `~/.zcode/cli/config.json`（`mcp.servers`） | stdio 已验证；HTTP 需人工步骤 |
+| Qoder | `qoder mcp add --scope user --transport http` | verified |
 
 三处行为是刻意的：
 
 - **Hermes** 会交互式追问认证方式，且没有非交互开关。AIOS 不会去猜一个答案、也不会让脚本挂住；它打印出确切命令并标记为 `pending-interactive`。
 - **WorkBuddy** 的 `mcp add` 需要一个 `--agent <名称>` 值，而这个名单目前无法非交互枚举，所以 AIOS 打印命令，而不是编一个 agent 名称。
 - **ZCode** 是没有 `PATH` CLI 的 Electron 客户端。AIOS 把 stdio server 写进 `~/.zcode/cli/config.json` 的 `mcp.servers`，ZCode 从那里读取；它的 HTTP 条目还额外需要一个 AIOS 目前不写入的 `url` 字段，因此那部分仍需人工步骤。
+
+**Qoder** 不需要例外说明——它在 CLI 上就提供了完整的 MCP 增删改查（`mcp add`、`add-json`、`list`、`get`、`remove`），并支持三个作用域：`--scope user`（`~/.qoder/settings.json`）、`--scope project`（`<repo>/.qoder/settings.json`，会提交进仓库）、`--scope local`（`.qoder/settings.local.json`，被 gitignore）。AIOS 写入 user 与 project 两个文件；local 是合法的 Qoder 作用域，但 AIOS 不会去动它。`--transport` 接受 `stdio`、`sse`、`http`、`ws` 四种。
 
 客户端没安装时会报告为 `client-missing` 并给出二进制名，绝不会静默算作成功。
 
@@ -176,7 +179,7 @@ rex 阶段闸门是 host 侧策略。rex 子模块并不知道它存在，所以
 常用参数：
 
 - `--dry-run` 打印完整计划，不写任何内容。
-- `--clients claude,codex` 只跑指定客户端；默认是全部九种。
+- `--clients claude,codex` 只跑指定客户端；默认是全部十种。
 - `--skip-skills` 或 `--skip-mcp` 在只需要一半集成时隔离单一平面。
 - `doctor` 的 `--json` 输出机器可读证据，便于接 CI。
 

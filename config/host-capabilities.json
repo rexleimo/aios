@@ -230,6 +230,25 @@
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
       }
+    },
+    "qoder": {
+      "targetLevel": "L2",
+      "capabilities": [
+        "mcpProxy"
+      ],
+      "limits": [
+        "No verified turn compression: compact packets and shell rewrite are not injected into Qoder sessions yet.",
+        "Qoder host hooks exist (tool-call events) but AIOS init does not inject Qoder hooks yet.",
+        "CN distribution uses ~/.qoder-cn home and qoderclicn command name; international default is ~/.qoder with qoder."
+      ],
+      "requiredEntrypoint": "aios-managed-runner",
+      "directHostBypassAllowed": false,
+      "turnCompression": {
+        "preSendRequired": true,
+        "postReceiveRequired": true,
+        "mode": "tight",
+        "uncontrolledHostOutput": "policy-violation"
+      }
     }
   }
 }

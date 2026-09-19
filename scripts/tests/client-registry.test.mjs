@@ -53,13 +53,13 @@ function resolveRepoRoot() {
 }
 
 test('client registry exposes stable canonical client order', () => {
-  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
-  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
+  assert.deepEqual(ALL_CLIENTS, ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode', 'qoder']);
+  assert.deepEqual(CLIENT_SELECTIONS, ['all', 'codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode', 'qoder']);
   assert.deepEqual(CLIENT_CAPABILITIES, ['skills', 'agents', 'native', 'team', 'harness']);
 });
 
 test('client registry resolves selection lists without reordering', () => {
-  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
+  assert.deepEqual(resolveClientSelection('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode', 'qoder']);
   assert.deepEqual(resolveClientSelection('  claude  '), ['claude']);
 });
 
@@ -72,8 +72,8 @@ test('client registry validation returns normalized values for reuse', () => {
 
 test('client registry keeps capability-specific ordering', () => {
   assert.deepEqual(resolveClientsWithCapability('agents', 'all'), ['claude', 'codex', 'opencode', 'grok']);
-  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']);
-  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode']);
+  assert.deepEqual(resolveClientsWithCapability('team', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi', 'qoder']);
+  assert.deepEqual(resolveClientsWithCapability('harness', 'all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'workbuddy', 'pi', 'zcode', 'qoder']);
 });
 
 test('client registry exposes shared skill roots for selected clients', () => {
@@ -86,6 +86,7 @@ test('client registry exposes shared skill roots for selected clients', () => {
     '.grok/skills',
     '.workbuddy/skills',
     '.agents/skills',
+    '.qoder/skills',
   ]);
   assert.deepEqual(resolveClientSkillRoots('opencode'), ['.opencode/skills', '.agents/skills']);
   assert.deepEqual(resolveClientSkillRoots('grok'), ['.grok/skills', '.agents/skills']);
@@ -96,6 +97,9 @@ test('client registry exposes shared skill roots for selected clients', () => {
   // ZCode natively scans the shared root too (after .zcode/skills); the shared
   // root is the single project-scope install target, same rule as Pi.
   assert.deepEqual(resolveClientSkillRoots('zcode'), ['.agents/skills']);
+  // Qoder's verified project skill root is its own .qoder/skills; the shared
+  // legacy root is still appended for selection completeness.
+  assert.deepEqual(resolveClientSkillRoots('qoder'), ['.qoder/skills', '.agents/skills']);
 });
 
 test('native sync manifest declares generated agent outputs for every agent-capable client', async () => {
@@ -116,8 +120,8 @@ test('client registry exposes runtime command and client identifiers', () => {
   assert.equal(getClientRuntimeId('claude'), 'claude-code');
   assert.equal(resolveClientFromCommandName('opencode'), 'opencode');
   assert.equal(resolveClientFromRuntimeId('opencode-cli'), 'opencode');
-  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy', 'pi', 'zcode']);
-  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent', 'pi-coding-agent', 'zcode-cli']);
+  assert.deepEqual(resolveClientCommandNames('all'), ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'codebuddy', 'pi', 'zcode', 'qoder']);
+  assert.deepEqual(resolveClientRuntimeIds('all'), ['codex-cli', 'claude-code', 'gemini-cli', 'opencode-cli', 'hermes-agent', 'grok-build', 'workbuddy-agent', 'pi-coding-agent', 'zcode-cli', 'qoder-cli']);
   assert.deepEqual(buildRuntimeClientProviderMap('all'), {
     'codex-cli': 'codex',
     'claude-code': 'claude',
@@ -128,15 +132,17 @@ test('client registry exposes runtime command and client identifiers', () => {
     'workbuddy-agent': 'workbuddy',
     'pi-coding-agent': 'pi',
     'zcode-cli': 'zcode',
+    'qoder-cli': 'qoder',
   });
 });
 
 test('client registry exposes team and harness provider subsets', () => {
-  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']);
+  assert.deepEqual(resolveClientTeamProviders('all'), ['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi', 'qoder']);
   assert.deepEqual(resolveClientTeamProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientTeamProviders('grok'), ['grok']);
   assert.deepEqual(resolveClientTeamProviders('zcode'), ['zcode']);
   assert.deepEqual(resolveClientTeamProviders('pi'), ['pi']);
+  assert.deepEqual(resolveClientTeamProviders('qoder'), ['qoder']);
   assert.deepEqual(resolveClientHarnessProviders('opencode'), ['opencode']);
   assert.deepEqual(resolveClientHarnessProviders('grok'), ['grok']);
   assert.deepEqual(buildTeamProviderRuntimeClientMap('all'), {
@@ -147,6 +153,7 @@ test('client registry exposes team and harness provider subsets', () => {
     grok: 'grok-build',
     zcode: 'zcode-cli',
     pi: 'pi-coding-agent',
+    qoder: 'qoder-cli',
   });
 });
 
@@ -160,11 +167,14 @@ test('client registry exposes runtime argument adapters without consumer if-else
   // ZCode has no headless --model flag (verified against zcode 0.16.5): model
   // routing degrades to an empty arg vector instead of inventing a flag.
   assert.deepEqual(buildRuntimeClientModelArgs('zcode-cli', 'glm-4.7'), []);
+  // Qoder has no verified headless --model (model is chosen interactively via /model).
+  assert.deepEqual(buildRuntimeClientModelArgs('qoder-cli', 'qoder-default'), []);
   assert.deepEqual(getClientUnattendedArgs('codex'), ['--dangerously-bypass-approvals-and-sandbox']);
   assert.deepEqual(getClientUnattendedArgs('opencode'), ['run', '--dangerously-skip-permissions']);
   assert.deepEqual(getClientUnattendedArgs('grok'), ['--always-approve']);
   assert.deepEqual(getClientUnattendedArgs('pi'), []);
   assert.deepEqual(getClientUnattendedArgs('zcode'), ['--mode', 'yolo']);
+  assert.deepEqual(getClientUnattendedArgs('qoder'), ['--yolo']);
 });
 
 test('client registry reports capability support explicitly', () => {
@@ -184,6 +194,7 @@ test('client registry exposes native instruction filenames per client', () => {
   assert.equal(getClientInstructionFileName('workbuddy'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('pi'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('zcode'), 'AGENTS.md');
+  assert.equal(getClientInstructionFileName('qoder'), 'AGENTS.md');
   assert.equal(getClientInstructionFileName('  CLAUDE  '), 'CLAUDE.md');
 });
 
@@ -256,6 +267,16 @@ test('client registry exposes per-client MCP target conventions (single source o
     { scope: 'home', file: 'cli/config.json', format: 'zcode-json', namespace: 'mcp.servers', createIfMissing: true },
     { scope: 'project', file: '.zcode/config.json', format: 'zcode-json', namespace: 'mcp.servers' },
   ]);
+
+  // Qoder: standard mcpServers namespace inside the CLI settings files
+  // (home ~/.qoder/settings.json user scope + project .qoder/settings.json).
+  const qoderTarget = getClientMcpTarget('qoder');
+  assert.equal(qoderTarget.format, 'json');
+  assert.equal(qoderTarget.namespace, 'mcpServers');
+  assert.deepEqual(qoderTarget.scopes, [
+    { scope: 'home', file: 'settings.json', createIfMissing: true },
+    { scope: 'project', file: '.qoder/settings.json' },
+  ]);
 });
 
 test('resolveClientMcpTargetPath honors home vs project scope', () => {
@@ -305,6 +326,16 @@ test('resolveClientMcpTargetPath honors home vs project scope', () => {
   assert.equal(
     slash(resolveClientMcpTargetPath('gemini', { projectRoot: '/proj', clientHome: '/home/.gemini' })),
     '/proj/.gemini/settings.json',
+  );
+  // Qoder is dual-scope: home prefers ~/.qoder/settings.json, project falls
+  // back to .qoder/settings.json when no home is resolvable
+  assert.equal(
+    slash(resolveClientMcpTargetPath('qoder', { projectRoot: '/proj', clientHome: '/home/.qoder' })),
+    '/home/.qoder/settings.json',
+  );
+  assert.equal(
+    slash(resolveClientMcpTargetPath('qoder', { projectRoot: '/proj' })),
+    '/proj/.qoder/settings.json',
   );
   // codex has dual scope: falls back to project when home is absent
   assert.equal(slash(resolveClientMcpTargetPath('codex', { projectRoot: '/proj' })), '/proj/.codex/config.toml');

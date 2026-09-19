@@ -5,6 +5,12 @@ description: "AIOS の全リリース履歴: 各バージョンで何が変わ�
 
 # 変更履歴
 
+## v5.20.0（2026-09-19）——Qoder クライアント対応：10 クライアントを定義ブロック 1 つで
+
+- **Qoder クライアント**：`qoder` が 10 番目の第一級クライアントとしてレジストリに参加——国際版 CLI はホーム `~/.qoder`、中国国内版 `qoderclicn` はホーム `~/.qoder-cn`（`QODER_HOME` 上書き対応）。`scripts/lib/clients/core/definitions.mjs` の定義ブロック 1 つが skills 投影（`.qoder/skills/`、27 のカタログスキルと rex ワークフロースキル）、ネイティブ同期（AGENTS.md 管理ブロック）、MCP 配置先、shell bridge、doctor ゲート、team/harness 起動を駆動する。
+- **Qoder が実際に読むファイルへ MCP**：AIOS 管理サーバーはユーザーレベル `~/.qoder/settings.json` とプロジェクトレベル `.qoder/settings.json` のトップレベル `mcpServers` へ移行。remote HTTP MCP は Qoder 自身の検証済み CLI CRUD（`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`）で登録。gitignore される `settings.local.json` スコープは触らない。
+- **headless と境界の正直な記録**：team/harness は `-p` プリントモード＋`--yolo` で Qoder を駆動。モデルルーティングは `own`（モデルはアカウントに紐付き対話の `/model` で選択、検証済み headless `--model` はないため AIOS はエンドポイントを中継しない）。ホスト能力は L2 で制限も記録どおり。参照：[Qoder クライアント ブログ記事](/blog/2026-09-v520-qoder-client/)。
+
 ## v5.14.0（2026-09-13）——LoopX コントロールプレーン + 孤児プロセス根絶
 
 v5.11.0 以来の初タグリリース。v5.12.0 のメモリ面（下記）と Pi クライアントも含みます。

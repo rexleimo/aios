@@ -54,6 +54,10 @@ function buildZcodeInvocation({ extraArgs = [] }) {
   return { cmd: commandForRuntime('zcode-cli'), args: [...extraArgs] };
 }
 
+function buildQoderInvocation({ extraArgs = [] }) {
+  return { cmd: commandForRuntime('qoder-cli'), args: [...extraArgs] };
+}
+
 const INTERACTIVE_BUILDERS = {
   'claude-code': buildClaudeInvocation,
   'gemini-cli': buildGeminiInvocation,
@@ -64,6 +68,7 @@ const INTERACTIVE_BUILDERS = {
   'workbuddy-agent': buildWorkbuddyInvocation,
   'pi-coding-agent': buildPiInvocation,
   'zcode-cli': buildZcodeInvocation,
+  'qoder-cli': buildQoderInvocation,
 };
 
 function captureWorkspaceMemoryMtime(sessionId, workspaceRoot) {

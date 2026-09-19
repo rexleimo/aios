@@ -8,7 +8,7 @@ export function getBasicCommandHelpText(command) {
   switch (command) {
     case 'init':
       return `Usage:
-  aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi|zcode>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
+  aios init [--agent <claude|codex|gemini|opencode|hermes|grok|workbuddy|pi|zcode|qoder>] [--all] [--dry-run] [--adopt-legacy-superpowers] [--yes-compression-tools] [--yes-headroom-mcp]
 
 Options:
   --agent <name>              Init only the specified agent

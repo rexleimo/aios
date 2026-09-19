@@ -21,7 +21,7 @@ description: "TypeSafe(System One / Jev) 스킬과 문서 MCP를 설치하고 TY
 | --- | --- |
 | 커밋 고정 | 스킬이 움직이는 브랜치가 아니라 불변 리비전에서 가져온다 |
 | sha256 검증 | 내용이 검토된 산출물과 일치한다. 변조되거나 오래된 사본은 거부된다 |
-| 클라이언트별 계획 | AIOS의 9개 클라이언트 모두에 명시적이고 검사 가능한 등록 단계가 있다 |
+| 클라이언트별 계획 | AIOS의 10개 클라이언트 모두에 명시적이고 검사 가능한 등록 단계가 있다 |
 | 실제 핸드셰이크 | 문서 MCP 서버에 실제로 도달하고 기대한 도구를 노출한다 |
 
 ## 지원 모델
@@ -70,7 +70,7 @@ aios integration doctor typesafe
 ## TypeSafe 통합 설치
 
 ```bash
-# 1. 9개 클라이언트의 모든 변경을 미리보기 — 아무것도 쓰지 않습니다
+# 1. 10개 클라이언트의 모든 변경을 미리보기 — 아무것도 쓰지 않습니다
 aios integration add typesafe --dry-run
 
 # 2. 스킬을 설치하고 문서 MCP 서버를 등록
@@ -96,7 +96,7 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 
 ## 클라이언트 지원 범위
 
-AIOS의 9개 클라이언트를 모두 지원합니다. 여기서 "지원"은 **모든 클라이언트에 정직하고 실행 가능한 다음 단계가 있다**는 뜻이며, 모든 클라이언트에 동일한 CLI가 있다는 주장이 아닙니다.
+AIOS의 10개 클라이언트를 모두 지원합니다. 여기서 "지원"은 **모든 클라이언트에 정직하고 실행 가능한 다음 단계가 있다**는 뜻이며, 모든 클라이언트에 동일한 CLI가 있다는 주장이 아닙니다.
 
 | 클라이언트 | 등록 방식 | AIOS 보고 |
 | --- | --- | --- |
@@ -109,12 +109,15 @@ AIOS의 9개 클라이언트를 모두 지원합니다. 여기서 "지원"은 **
 | Hermes | `hermes mcp add --url` | 대화형 터미널 필요 |
 | WorkBuddy | `codebuddy mcp add --agent <이름>` | 수동 단계 필요 |
 | ZCode | `~/.zcode/cli/config.json`(`mcp.servers`)에 기록 | stdio는 검증됨. HTTP는 수동 단계 |
+| Qoder | `qoder mcp add --scope user --transport http` | verified |
 
 세 가지 동작은 의도된 것입니다.
 
 - **Hermes**는 인증 방식을 대화형으로 묻고 비대화형 플래그가 없습니다. AIOS는 답을 추측하지도, 스크립트를 멈춰 세우지도 않고 정확한 명령을 출력하며 `pending-interactive`로 보고합니다.
 - **WorkBuddy**의 `mcp add`는 `--agent <이름>` 값을 요구하지만 그 목록은 아직 비대화형으로 열거할 수 없습니다. AIOS는 agent 이름을 지어내지 않고 명령을 출력합니다.
 - **ZCode**는 `PATH`에 CLI가 없는 Electron 클라이언트입니다. AIOS는 stdio 서버를 `~/.zcode/cli/config.json`의 `mcp.servers`에 쓰고 ZCode는 거기서 읽습니다. HTTP 항목에는 AIOS가 아직 쓰지 않는 `url` 필드가 추가로 필요하므로 그 부분은 수동 단계로 남습니다.
+
+**Qoder**는 예외 설명이 필요 없습니다. CLI 쪽에 완전한 MCP CRUD(`mcp add` / `add-json` / `list` / `get` / `remove`)가 있고 세 개의 범위를 지원합니다 — `--scope user`(`~/.qoder/settings.json`), `--scope project`(`<repo>/.qoder/settings.json`, 커밋 대상), `--scope local`(`.qoder/settings.local.json`, gitignore 대상). AIOS는 user와 project 두 파일에 쓰며, local은 Qoder에서 유효한 대상이지만 AIOS가 건드리지 않습니다. `--transport`는 `stdio`·`sse`·`http`·`ws`를 모두 받습니다.
 
 클라이언트가 설치되지 않은 경우 바이너리 이름과 함께 `client-missing`으로 보고되며, 조용히 성공으로 처리되지 않습니다.
 
@@ -176,7 +179,7 @@ rex 단계 게이트는 host 측 정책입니다. rex 하위 모듈은 그 존�
 주요 플래그:
 
 - `--dry-run`은 전체 계획을 출력하고 아무것도 쓰지 않습니다.
-- `--clients claude,codex`는 특정 클라이언트로 제한합니다. 기본값은 9개 전부입니다.
+- `--clients claude,codex`는 특정 클라이언트로 제한합니다. 기본값은 10개 전부입니다.
 - `--skip-skills` 또는 `--skip-mcp`는 한쪽 계층만 필요할 때 분리 실행합니다.
 - `doctor`의 `--json`은 CI용 기계 판독 가능 증거를 출력합니다.
 

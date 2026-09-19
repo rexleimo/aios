@@ -21,7 +21,7 @@ Most vendors ship adoption as a paragraph of prose — "copy this prompt / paste
 | --- | --- |
 | Pinned commit | The skill is fetched from an immutable revision, not a moving branch |
 | Verified sha256 | File content matches the reviewed artifact; a tampered or stale copy is refused |
-| Per-client plan | Every one of the nine AIOS clients gets an explicit, inspectable registration step |
+| Per-client plan | Every one of the ten AIOS clients gets an explicit, inspectable registration step |
 | Live handshake | The docs MCP server is actually reachable and exposes the expected tools |
 
 ## Supported models
@@ -70,7 +70,7 @@ aios integration doctor typesafe
 ## Install the TypeSafe integration
 
 ```bash
-# 1. Preview every change for all nine clients — writes nothing
+# 1. Preview every change for all ten clients — writes nothing
 aios integration add typesafe --dry-run
 
 # 2. Install the skill and register the docs MCP server
@@ -96,7 +96,7 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 
 ## Client coverage
 
-All nine AIOS clients are covered. Coverage means *an honest, actionable path for every client* — not a claim that every client has an identical CLI.
+All ten AIOS clients are covered. Coverage means *an honest, actionable path for every client* — not a claim that every client has an identical CLI.
 
 | Client | Registration path | How AIOS reports it |
 | --- | --- | --- |
@@ -109,12 +109,15 @@ All nine AIOS clients are covered. Coverage means *an honest, actionable path fo
 | Hermes | `hermes mcp add --url` | needs an interactive terminal |
 | WorkBuddy | `codebuddy mcp add --agent <name>` | manual step required |
 | ZCode | writes `~/.zcode/cli/config.json` (`mcp.servers`) | verified for stdio; manual step for HTTP |
+| Qoder | `qoder mcp add --scope user --transport http` | verified |
 
 Three behaviours are deliberate:
 
 - **Hermes** prompts interactively for the auth method and offers no non-interactive flag. AIOS does not guess an answer or hang a script; it prints the exact command and marks the client `pending-interactive`.
 - **WorkBuddy**'s `mcp add` requires an `--agent <name>` value that cannot be enumerated non-interactively yet, so AIOS prints the command rather than inventing an agent name.
 - **ZCode** is an Electron client with no CLI on `PATH`. AIOS writes stdio servers into `~/.zcode/cli/config.json` under `mcp.servers`, and ZCode reads them from there; its HTTP entries additionally need a `url` field that AIOS does not write yet, so those remain a manual step.
+
+**Qoder** needs no carve-out — it exposes full MCP CRUD on the CLI (`mcp add`, `add-json`, `list`, `get`, `remove`) across three scopes: `--scope user` (`~/.qoder/settings.json`), `--scope project` (`<repo>/.qoder/settings.json`, committed), and `--scope local` (`.qoder/settings.local.json`, gitignored). AIOS writes the user and project files; the local file is a valid Qoder target that AIOS does not touch. Transports `stdio`, `sse`, `http`, and `ws` are all accepted by `--transport`.
 
 An uninstalled client is reported as `client-missing` with the binary name, never as a silent success.
 
@@ -176,7 +179,7 @@ The rex stage gate is host-side policy. The rex submodule does not know it exist
 Useful flags:
 
 - `--dry-run` prints the full plan and writes nothing.
-- `--clients claude,codex` limits the run to specific clients; the default is all nine.
+- `--clients claude,codex` limits the run to specific clients; the default is all ten.
 - `--skip-skills` or `--skip-mcp` isolates one plane when you only need half the integration.
 - `--json` on `doctor` emits machine-readable evidence for CI.
 

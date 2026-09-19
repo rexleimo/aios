@@ -49,7 +49,7 @@ AIOS can adopt third-party model surfaces through a pinned, hash-verified integr
 | --- | --- | --- |
 | [TypeSafe](https://typesafe.ai) | System One / Jev (`jev-latest`) | [`aios integration add typesafe`](integrations.md) |
 
-See [Vendor Integrations](integrations.md) for the install command, the nine-client coverage table, and the verification gates.
+See [Vendor Integrations](integrations.md) for the install command, the ten-client coverage table, and the verification gates.
 
 ## FAQ
 

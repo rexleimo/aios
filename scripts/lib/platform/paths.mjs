@@ -35,6 +35,8 @@ export function getClientHomes(env = process.env, homeDir = os.homedir()) {
     workbuddy: normalizeHomeDir(env.WORKBUDDY_HOME, path.join(homeDir, '.workbuddy'), homeDir),
     pi: normalizeHomeDir(env.PI_CODING_AGENT_DIR, path.join(homeDir, '.pi', 'agent'), homeDir),
     zcode: normalizeHomeDir(env.ZCODE_HOME, path.join(homeDir, '.zcode'), homeDir),
+    // Qoder CLI home: ~/.qoder (international); the CN distribution uses ~/.qoder-cn.
+    qoder: normalizeHomeDir(env.QODER_HOME, path.join(homeDir, '.qoder'), homeDir),
   };
 }
 

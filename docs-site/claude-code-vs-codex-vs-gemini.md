@@ -48,7 +48,7 @@ You keep the client you already chose; the layer is the same for all of them. Se
 There is no single best — it depends on model preference and ecosystem. All five are production-usable; the differentiator is memory and orchestration, which none of them provides by default.
 
 **Can I use two coding CLIs on the same project?**
-Yes. AIOS is client-neutral: the same `.aios/context-db/` memory is available to codex, claude, gemini, opencode, hermes, grok, workbuddy, pi, and zcode in the same project.
+Yes. AIOS is client-neutral: the same `.aios/context-db/` memory is available to codex, claude, gemini, opencode, hermes, grok, workbuddy, pi, zcode, and qoder in the same project.
 
 **Do I have to migrate off Claude Code to use AIOS?**
 No. AIOS is a layer under the client, not a replacement. Keep Claude Code (or any other) and add memory, routing, and verification.

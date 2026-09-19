@@ -5,6 +5,12 @@ description: "AIOS 完整版本历史：每个版本发生了什么变化、升�
 
 # 更新日志
 
+## v5.20.0（2026-09-19）——Qoder 客户端支持：十个客户端，一个定义块
+
+- **Qoder 客户端**：`qoder` 作为第十个一等客户端进入注册表——国际版 CLI 主目录 `~/.qoder`，国内版发行 `qoderclicn` 主目录 `~/.qoder-cn`（支持 `QODER_HOME` 覆盖）。`scripts/lib/clients/core/definitions.mjs` 里的一个定义块驱动全部能力：skills 投影（`.qoder/skills/`，27 个目录技能加 rex 工作流技能）、原生同步（AGENTS.md 托管块）、MCP 落点、shell bridge、doctor 门禁与 team/harness 派发。
+- **MCP 写进 Qoder 真正读取的文件**：AIOS 托管的 server 迁移到用户级 `~/.qoder/settings.json` 与项目级 `.qoder/settings.json` 的顶层 `mcpServers`；远程 HTTP MCP 通过 Qoder 自己已验证的 CLI CRUD 注册（`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`）。被 gitignore 的 `settings.local.json` 作用域不动。
+- **headless 与如实标注边界**：team/harness 以 `-p` 打印模式加 `--yolo` 驱动 Qoder；模型路由是 `own`（模型绑定账号、交互式 `/model` 选择，没有验证过的 headless `--model`，AIOS 不中继端点），宿主能力定级 L2 并如实记录限制。见：[Qoder 客户端博客](/blog/2026-09-v520-qoder-client/)。
+
 ## v5.14.0（2026-09-13）——LoopX 控制面 + 无孤儿进程树
 
 v5.11.0 之后首个打 tag 的版本：同时包含 v5.12.0 记忆面工作（见下）与 Pi 客户端。

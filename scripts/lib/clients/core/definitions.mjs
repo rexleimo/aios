@@ -199,6 +199,37 @@ export const CLIENT_DEFINITIONS = Object.freeze({
     modelArgFlag: '',
     unattendedArgs: Object.freeze(['--mode', 'yolo']),
   }),
+  // Qoder (Alibaba) — AI IDE + CLI (`qoder`; CN distribution ships `qoderclicn`).
+  // Skills: markdown-directory SKILL.md in project `.qoder/skills/` and user
+  // `~/.qoder/skills/` (docs.qoder.com/zh/cli/Skills). No shared-root scan has
+  // been verified, so AIOS installs into the client's own project root only.
+  // MCP: JSON top-level mcpServers in `<home>/settings.json` (user scope),
+  // `<repo>/.qoder/settings.json` (project scope, committed) and
+  // `.qoder/settings.local.json` (gitignored variant we do not write) —
+  // verified via the native mcp-config skill surface (qoderclicn mcp add
+  // --scope user|local|project --transport stdio|sse|http|ws).
+  // Native instruction: AGENTS.md (verified: Qoder agent loads repo AGENTS.md;
+  // QODER.md is an accepted alias we do not write).
+  // Headless: `-p` print mode with `--output-format` and `--yolo` unattended
+  // (official CLI docs). Model selection is the interactive /model command and
+  // account-bound — no headless --model flag verified, so routing stays 'own'.
+  // team/harness: the same spawn routing drives `qoder -p` headlessly like
+  // gemini/zcode (docs-verified flags; live worker check lands with the
+  // client-contract tests).
+  qoder: Object.freeze({
+    capabilities: Object.freeze(['skills', 'native', 'team', 'harness']),
+    commandName: 'qoder',
+    modelRouting: 'own',
+    modelProtocols: Object.freeze([]),  // qoder 模型账号绑定（/model 交互选择），无已验证的 headless --model
+    runtimeClientId: 'qoder-cli',
+    projectSkillRoot: '.qoder/skills',
+    skillFormat: 'markdown-directory',
+    nativeMetadataRoot: '.qoder',
+    instructionFileName: 'AGENTS.md',
+    nativeProjectSourceFile: 'AGENTS.md',
+    modelArgFlag: '',
+    unattendedArgs: Object.freeze(['--yolo']),
+  }),
 });
 
 export const ALL_CLIENTS = Object.freeze(Object.keys(CLIENT_DEFINITIONS));
@@ -211,7 +242,8 @@ export const CAPABILITY_CLIENT_ORDER = Object.freeze({
   // team 排序：zcode 和 pi 都是 spawn 路由直接驱动的同名 CLI（zcode --mode yolo /
   // pi -p），因此跟在其他 provider 之后；两者都不进 `agents`——它们没有项目级
   // subagent 定义面。pi 的 team worker 已实测（见 scripts/tests/team-pi-worker.test.mjs）。
-  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi']),
+  // qoder 走 -p/--yolo headless（官方文档验证），排在最后。
+  team: Object.freeze(['codex', 'claude', 'gemini', 'opencode', 'grok', 'zcode', 'pi', 'qoder']),
   harness: ALL_CLIENTS,
 });
 
@@ -309,6 +341,19 @@ export const CLIENT_MCP_TARGETS = Object.freeze({
     scopes: Object.freeze([
       Object.freeze({ scope: 'home', file: 'cli/config.json', format: 'zcode-json', namespace: 'mcp.servers', createIfMissing: true }),
       Object.freeze({ scope: 'project', file: '.zcode/config.json', format: 'zcode-json', namespace: 'mcp.servers' }),
+    ]),
+  }),
+  // Qoder MCP — standard JSON mcpServers inside the CLI settings files (which also
+  // hold unrelated user settings, so the migrator must merge, never rewrite).
+  // Home: ~/.qoder/settings.json (user scope; CN distribution uses ~/.qoder-cn).
+  // Project: .qoder/settings.json (committed scope). The gitignored
+  // .qoder/settings.local.json 'local' scope is a valid CLI target we do not write.
+  qoder: Object.freeze({
+    format: 'json',
+    namespace: 'mcpServers',
+    scopes: Object.freeze([
+      Object.freeze({ scope: 'home', file: 'settings.json', createIfMissing: true }),
+      Object.freeze({ scope: 'project', file: '.qoder/settings.json' }),
     ]),
   }),
 });

@@ -38,7 +38,7 @@ test('model routing contract is declared for every supported client', () => {
 
   assert.deepEqual(relay.sort(), ['claude', 'codex', 'hermes', 'opencode', 'pi'],
     'endpoint-injection evidence exists only for these clients (see definitions.mjs per-client note)');
-  assert.deepEqual(own.sort(), ['gemini', 'grok', 'workbuddy', 'zcode'],
+  assert.deepEqual(own.sort(), ['gemini', 'grok', 'qoder', 'workbuddy', 'zcode'],
     'account-bound / no --model flag / unverified endpoint override must keep their own default model');
 
   for (const client of relay) {

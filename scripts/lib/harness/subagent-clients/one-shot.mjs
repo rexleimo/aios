@@ -114,6 +114,17 @@ const CLIENT_STRATEGIES = Object.freeze({
       combineSystemAndPrompt(systemText, promptText),
     ],
   }),
+  // Qoder CLI: `-p` runs a positional prompt headless; --yolo is the registry's
+  // unattended flag (official CLI docs).
+  [getClientRuntimeId('qoder')]: ({ systemText, promptText, routedExtraArgs }) => ({
+    runner: 'spawn',
+    args: [
+      ...routedExtraArgs,
+      ...getClientUnattendedArgs('qoder'),
+      '-p',
+      combineSystemAndPrompt(systemText, promptText),
+    ],
+  }),
 });
 
 // 纯函数：把不同客户端的一次性调用差异集中到策略表，runOneShot 只负责执行。

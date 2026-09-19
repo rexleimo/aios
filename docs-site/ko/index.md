@@ -1,13 +1,13 @@
 ---
 title: "AIOS — 로컬 우선 Graph Engine"
-description: "코딩 에이전트를 위한 로컬 우선 Graph Engine. Codex, Claude Code, Gemini CLI 등 9개 클라이언트 위에서 세션 간 프로젝트 기억, 적응형 라우팅, 멀티 에이전트 협업, 검증을 검증 가능한 그래프로 엮습니다."
+description: "코딩 에이전트를 위한 로컬 우선 Graph Engine. Codex, Claude Code, Gemini CLI 등 10개 클라이언트 위에서 세션 간 프로젝트 기억, 적응형 라우팅, 멀티 에이전트 협업, 검증을 검증 가능한 그래프로 엮습니다."
 home: true
 schema_type: faq
 faq:
   - q: AIOS 가 무엇인가요?
-    a: "AIOS는 AI 코딩 클라이언트가 복잡한 작업을 실제로 끝내게 만드는 한 줄 레이어입니다. 필요한 것을 한 문장으로 말하면, agent 가 올바르게 마무리하는 데 필요한 기억·검증·협업을 AIOS 가 채워 줍니다(Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode 지원)."
+    a: "AIOS는 AI 코딩 클라이언트가 복잡한 작업을 실제로 끝내게 만드는 한 줄 레이어입니다. 필요한 것을 한 문장으로 말하면, agent 가 올바르게 마무리하는 데 필요한 기억·검증·협업을 AIOS 가 채워 줍니다(Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode, Qoder 지원)."
   - q: AIOS 가 제가 쓰는 코딩 클라이언트를 대체하나요?
-    a: "아닙니다. Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode를 지금까지처럼 그대로 씁니다. AIOS는 그 아래에 들어가 부족한 것을 더합니다—세션을 넘는 영속 기억, 자동 작업 라우팅, 전달 전 검증. 9 개 클라이언트 모두 프로젝트 기억·네이티브 지시·harness 구동을 얻지만, 서브에이전트 정의와 `aios team` 분배는 클라이언트마다 다릅니다. `aios doctor --native --verbose` 로 본인 상태를 확인하세요."
+    a: "아닙니다. Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode, Qoder를 지금까지처럼 그대로 씁니다. AIOS는 그 아래에 들어가 부족한 것을 더합니다—세션을 넘는 영속 기억, 자동 작업 라우팅, 전달 전 검증. 10 개 클라이언트 모두 프로젝트 기억·네이티브 지시·harness 구동을 얻지만, 서브에이전트 정의와 `aios team` 분배는 클라이언트마다 다릅니다. `aios doctor --native --verbose` 로 본인 상태를 확인하세요."
   - q: AIOS는 세션 간 컨텍스트를 어떻게 기억하나요?
     a: "AIOS는 프로젝트 결정·제약·진행을 ContextDB 라는 로컬 기억 저장소에 넣습니다. 새 세션을 시작하면 agent 가 처음부터 다시 하는 대신 관련 컨텍스트만 가져옵니다."
   - q: 제 코드는 안전한가요?
@@ -32,8 +32,8 @@ faq:
 
       <p class="rex-hero__sub">
         AIOS는 코딩 agent를 위한 로컬 우선 Graph Engine 입니다. 세션 간 프로젝트 기억, 적응형 라우팅,
-        멀티 에이전트 협업, 검증을 Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi,
-        ZCode 9 개 클라이언트 위에서 하나의 검증 가능한 그래프로 엮어냅니다——작업 방식은 그대로 두고.
+        멀티 에이전트 협업, 검증을 Codex, Claude Code, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode,
+        Qoder 10 개 클라이언트 위에서 하나의 검증 가능한 그래프로 엮어냅니다——작업 방식은 그대로 두고.
       </p>
 
       <div class="rex-hero__cta">
@@ -78,7 +78,7 @@ faq:
 <div id="clients" class="rex-clients">
   <div class="rex-clients__header">
     <div class="rex-clients__heading">
-      <span class="rex-clients__eyebrow">지원 클라이언트 · 9</span>
+      <span class="rex-clients__eyebrow">지원 클라이언트 · 10</span>
       <h2 class="rex-clients__title">이미 쓰는 클라이언트 안에서 그대로 동작</h2>
     </div>
     <p class="rex-clients__note">
@@ -122,6 +122,10 @@ faq:
     <div class="rex-client">
       <div class="rex-client__head"><span class="rex-client__mark">ZC</span><span class="rex-client__name">ZCode</span><code class="rex-client__cmd">zcode</code></div>
       <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--plugin" title="프로젝트 범위 서브에이전트 면이 없어, rex 역할 카드는 ZCode plugin agents로 동작">agents+</span><span class="rex-cap rex-cap--on">team</span></div>
+    </div>
+    <div class="rex-client">
+      <div class="rex-client__head"><span class="rex-client__mark">QO</span><span class="rex-client__name">Qoder</span><code class="rex-client__cmd">qoder</code></div>
+      <div class="rex-client__caps"><span class="rex-cap rex-cap--on">skills</span><span class="rex-cap rex-cap--on">native</span><span class="rex-cap rex-cap--on">harness</span><span class="rex-cap rex-cap--off">agents</span><span class="rex-cap rex-cap--on">team</span></div>
     </div>
   </div>
   <div class="rex-clients__legend">

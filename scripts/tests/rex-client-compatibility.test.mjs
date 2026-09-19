@@ -18,9 +18,11 @@ const EXPECTED_CLIENT_ROOTS = Object.freeze({
   // ZCode scans the shared Agent Skills root natively too (after .zcode/skills);
   // same shared-root-only rule as Pi.
   zcode: '.agents/skills',
+  // Qoder's verified project skill root is its own .qoder/skills.
+  qoder: '.qoder/skills',
 });
 
-test('nine client projection targets are stable and complete', () => {
+test('ten client projection targets are stable and complete', () => {
   assert.deepEqual(supportedClients(), Object.keys(EXPECTED_CLIENT_ROOTS));
   for (const [client, root] of Object.entries(EXPECTED_CLIENT_ROOTS)) {
     if (client === 'pi' || client === 'zcode') {
@@ -31,7 +33,7 @@ test('nine client projection targets are stable and complete', () => {
   }
 });
 
-test('nine client invocation paths share the Rex-native parent adapter decision', () => {
+test('ten client invocation paths share the Rex-native parent adapter decision', () => {
   const bindings = createAiosRexProviderBindings();
   assert.ok(bindings.length > 0);
   for (const client of Object.keys(EXPECTED_CLIENT_ROOTS)) {

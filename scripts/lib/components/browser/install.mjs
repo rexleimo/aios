@@ -6,6 +6,7 @@ import {
   resolveDefaultCdpUrl,
   resolveLocalBrowserMcpScript,
 } from './runtime-paths.mjs';
+import { PRIMARY_BROWSER_ALIAS } from './constants.mjs';
 import { formatErrorMessage, requireCommand } from './shared.mjs';
 
 export async function installBrowserMcp({
@@ -42,12 +43,52 @@ export async function installBrowserMcp({
   const cdpUrl = resolveDefaultCdpUrl(rootDir);
   printSnippet(io, launcherPath, cdpUrl);
 
+  // The runtime exists now, so a Pi-global browser server can actually start.
+  // The write itself stays with the Pi component (single owner of Pi config
+  // shape); this call only reports the readiness fact install just created.
+  const piBridge = await ensurePiBrowserMcpServer({ rootDir, dryRun, io, clientHomes });
+
   return {
     launcherPath,
     cdpUrl,
     browserUseProjectDir: null,
     migrationResult,
+    piBridge,
   };
+}
+
+// Advertise the browser server in the Pi-global mcp.json. Best-effort: a
+// missing Pi home or an unwritable file must never fail the browser install.
+export async function ensurePiBrowserMcpServer({
+  rootDir = '',
+  dryRun = false,
+  io = console,
+  piHome = null,
+  clientHomes = null,
+} = {}) {
+  try {
+    const { getClientHomes } = await import('../../platform/paths.mjs');
+    const { buildAiosPiBrowserServer, ensurePiMcpServers, resolvePiMcpJsonPath } = await import('../pi/mcp-adapter.mjs');
+    // Home resolution mirrors migrateBrowserMcpConfig: an injected clientHomes
+    // map wins, so isolated callers (tests, dry runs) never reach the real
+    // ~/.pi/agent/mcp.json. piHome === '' explicitly means "no Pi home".
+    const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env);
+    const home = piHome === null ? String(homes.pi || '') : piHome;
+    if (!home) return { status: 'skipped', reason: 'no Pi client home resolved' };
+    const server = buildAiosPiBrowserServer({ aiosRoot: rootDir });
+    if (!server) return { status: 'skipped', reason: 'no AIOS root resolved' };
+    const result = ensurePiMcpServers({
+      mcpJsonPath: resolvePiMcpJsonPath(home),
+      servers: { [PRIMARY_BROWSER_ALIAS]: server },
+      dryRun,
+      io,
+    });
+    return { status: result.action, ...result };
+  } catch (error) {
+    const reason = formatErrorMessage(error);
+    io?.log?.(`[warn] Pi browser MCP wiring skipped: ${reason}`);
+    return { status: 'error', reason };
+  }
 }
 
 function installLocalBrowserMcpRuntime({ rootDir, skipPlaywrightInstall, dryRun, io }) {

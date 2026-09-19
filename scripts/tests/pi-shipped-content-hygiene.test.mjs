@@ -95,7 +95,9 @@ test('pi bridge doctor output carries global-CLI hints only', async () => {
 
 test('init project .mcp.json hint literals use the global CLI phrasing', async () => {
   const source = await fs.readFile(path.join(process.cwd(), 'scripts', 'aios-init.mjs'), 'utf8');
-  const hintLines = source.split(/\r?\n/u).filter((line) => line.includes('[hint] No project .mcp.json') || line.includes('[hint] Shell/browser/auth'));
+  // Both advisories are about the project-level .mcp.json; match on that
+  // subject so rewording the server list cannot silently drop this guard.
+  const hintLines = source.split(/\r?\n/u).filter((line) => line.includes('[hint]') && line.includes('.mcp.json'));
   assert.equal(hintLines.length, 2, 'both advisory lines are present');
   for (const line of hintLines) {
     assertClean('init hint', line);

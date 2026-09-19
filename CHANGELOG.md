@@ -6,6 +6,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [5.20.0] - 2026-09-19
+
+- feat(clients): first-class Qoder support — `qoder` joins the registry as the tenth client (skills projection into `.qoder/skills`, all 27 catalog skills whitelisted for qoder install/mirror, MCP migration into `settings.json` `mcpServers` user + `.qoder/settings.json` project scopes, verified `qoder mcp add --scope user|local|project` CLI registration, AGENTS.md native projection, `aios init --agent qoder`, shell-bridge + doctor + codemap wiring, team/harness spawn via headless `-p --yolo`). Model routing is `own` (account-bound `/model`, no verified headless `--model` yet). Docs-site and blog updated in en/zh/ja/ko.
+
 ## [5.19.2] - 2026-09-18
 
 - fix Windows artifact names: a promotion whose candidate id contains a colon was written as an NTFS alternate data stream, so it was lost silently
