@@ -42,8 +42,15 @@ test('pi team worker builds a headless one-shot invocation', () => {
 // command through the platform layer instead of assuming the shim is executable.
 test('pi resolves through the platform spawn spec on win32', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-team-pi-shim-'));
-  fs.writeFileSync(path.join(dir, 'pi'), '#!/bin/sh\nexit 0\n');
+  fs.writeFileSync(path.join(dir, 'pi'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
   fs.writeFileSync(path.join(dir, 'pi.cmd'), '@echo off\r\n');
+  // The win32 probe is the `where` binary, which does not exist on POSIX.
+  // Ship a hermetic `where` shim (found = exit 0) so the forced-platform
+  // assertion runs the real resolution code on every OS instead of only
+  // where `where.exe` happens to be installed.
+  if (process.platform !== 'win32') {
+    fs.writeFileSync(path.join(dir, 'where'), '#!/bin/sh\nexit 0\n', { mode: 0o755 });
+  }
   // Keep the real PATH reachable so the win32 `where` probe itself resolves; the
   // shim dir is searched first, exactly like an npm global install on PATH.
   const env = { ...process.env, PATH: [dir, process.env.PATH].join(path.delimiter), PATHEXT: '.COM;.EXE;.BAT;.CMD' };

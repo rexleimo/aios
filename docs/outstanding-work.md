@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after resolving B1 (planning evidence gate — validator was never missing).
+> Last updated: 2026-09-21, after diagnosing the v6.0.2/v6.0.3 CI failures (3 real linux bugs, fixed for v6.0.4).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -71,6 +71,11 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 ---
 
 ## D. Closed (for reference)
+
+- **v6.0.4 (CI repair)** — `v6.0.2`/`v6.0.3` tags pushed fine but the `release` workflow failed at `Run root release tests` (`npm run test:scripts`) on ubuntu while Windows was fully green (local `test:scripts` 1989/0). Reproduced with a local `node:24-bookworm-slim` container (anonymous-volume overlay gotcha: the mount carries Windows `node_modules` and CRLF `.sh` — both had to be normalized inside the container; POSIX grandchild-kill tests additionally need `--init`, they pass with it and fail without, on any image). True linux failures, all fixed and verified green on both platforms:
+  - `automem-loop` ×2: `fakeBin` only wrote a `codex.cmd` shim, which never resolves on POSIX — the client spawn died before the memo/skip path (plus `readLines` crashed on empty with `.map is not a function` instead of failing cleanly). Now also writes an extensionless executable `codex` shim; `readLines` falls back to `[]`.
+  - `team-pi-worker` win32-spec: the forced-`platform: 'win32'` assertion shelled out to the real `where` binary, absent on POSIX. Ships a hermetic `where` shim (exit 0) on non-win32.
+  - Non-failures, classified not fixed: `package-release` needs the `zip` binary (the workflow installs it — container lacked it); the two POSIX grandchild-kill tests are init-dependent (pass with `--init`, GitHub VMs have init).
 
 - **v5.19.2** — `session:<id>` used as a file name, three root causes: `verdict.mjs` renamed onto an NTFS alternate data stream (`EINVAL`); `promotion.mjs` allow-listed the colon so the promotion was stored as a stream that `readdir` never lists and was lost with `errors.length === 0`; `integration.mjs` open-coded a second promotion writer that bypassed `promotionPath()`. Fixed in `b8d87c47`, fixture repair in `681a0487`.
 - **v5.19.2** — the release fixture copied `scripts/lib/fs/atomic-write.mjs` as an explicit single file, so a new sibling import broke every preflight run *inside a temporary root only* (`681a0487`).

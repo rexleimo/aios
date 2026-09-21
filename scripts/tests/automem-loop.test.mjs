@@ -24,7 +24,7 @@ function makeFakeClient() {
 }
 
 function readLines(file, fallback) {
-  fallback = fallback || '';
+  fallback = fallback || [];
   return (file ? file.split(/\r?\n/).map((l) => l.trim()).filter(Boolean) : fallback).map((l) => JSON.parse(l));
 }
 async function readMemoEvents(workspaceRoot) {
@@ -49,9 +49,15 @@ function mkdirSyncSession(workspaceRoot, sessionId) {
 }
 
 async function fakeBin(dir, script) {
-  const { writeFile } = await import('node:fs/promises');
+  const { writeFile, chmod } = await import('node:fs/promises');
   await writeFile(path.join(dir, 'codex-fake.mjs'), `import { readFileSync } from 'node:fs';\nreadFileSync(0, 'utf8');\nprocess.stdout.write(${JSON.stringify(script)});\n`);
   await writeFile(path.join(dir, 'codex.cmd'), `@echo off\r\nnode "${path.join(dir, 'codex-fake.mjs')}" %*\r\n`);
+  // The .cmd shim only resolves on Windows (PATHEXT). POSIX lookup needs an
+  // extensionless executable with the same name, otherwise the client spawn
+  // fails and the loop never reaches the memo/skip path (linux CI red).
+  const posixShim = `#!/bin/sh\nexec node "${path.join(dir, 'codex-fake.mjs')}" "$@"\n`;
+  await writeFile(path.join(dir, 'codex'), posixShim, { mode: 0o755 });
+  await chmod(path.join(dir, 'codex'), 0o755);
   return `${dir}${path.delimiter}${process.env.PATH || ''}`;
 }
 
