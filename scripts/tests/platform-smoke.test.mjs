@@ -139,15 +139,23 @@ describe('REQUIRED: py/py3 — Cross-Platform Safety', () => {
 
   it('self-update.mjs enables TLS 1.2 before Windows release installer request', () => {
     const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'lifecycle', 'self-update.mjs'), 'utf8');
-    const tlsIndex = content.indexOf('[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12');
-    const installerIndex = content.indexOf('aios-install.ps1');
-
-    assert.ok(tlsIndex >= 0, 'should enable TLS 1.2 for Windows PowerShell downloads');
-    assert.ok(installerIndex >= 0 && tlsIndex < installerIndex, 'should set TLS before requesting installer');
+    // The installer command (preferred local path, remote `irm` fetch as
+    // fallback) is composed into one PowerShell script. The security contract
+    // is that the TLS assignment is the FIRST statement of that script, so it
+    // holds for both installer paths. Raw-text ordering cannot express this:
+    // the `irm` URL is defined earlier as the fallback branch of installerCmd.
+    assert.match(
+      content,
+      /const script = \[\s*'\[Net\.ServicePointManager\]::SecurityProtocol = \[Net\.SecurityProtocolType\]::Tls12'/u,
+      'the generated PowerShell script must set TLS 1.2 as its first statement',
+    );
+    assert.ok(content.includes('irm "https://'), 'should keep the remote installer fetch as fallback');
   });
 
   it('dispatch starts TUI through local tsx cli instead of npx shell', () => {
-    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'cli', 'dispatch.mjs'), 'utf8');
+    // TUI startup moved out of dispatch.mjs into dispatch/helpers.mjs when the
+    // 425-line barrel was split; assert against the module that owns the launch.
+    const content = fs.readFileSync(path.join(rootDir, 'scripts', 'lib', 'cli', 'dispatch', 'helpers.mjs'), 'utf8');
     assert.ok(content.includes("node_modules', 'tsx', 'dist', 'cli.mjs'"), 'should resolve local tsx cli');
     assert.ok(content.includes('spawnSync(process.execPath'), 'should launch local tsx with node');
     assert.ok(!content.includes('npx tsx'), 'should not depend on npx for TUI startup');

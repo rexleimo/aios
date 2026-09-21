@@ -17,7 +17,14 @@ import { AIOS_SYSTEM_PROMPT_ADDITION, buildBeforeAgentStartMessage } from '../..
 import { buildToolDefs } from '../../packages/aios-pi/lib/tools.mjs';
 import { memoCheckpointArgs, memoRecallArgs, memoWriteArgs, resolveAiosRoot } from '../../packages/aios-pi/lib/aios-cli.mjs';
 
-const REPO_RELATIVE_INVOCATION = /node scripts\/|scripts\/aios\.mjs|scripts\\/u;
+// Repo-relative invocations only. The first two alternatives are exact
+// shapes (`node scripts/...` and the `scripts/aios.mjs` entrypoint). The
+// third catches a Windows-style relative script path (`scripts\...`) and is
+// anchored to a token boundary: an absolute install-root path such as
+// /opt/global-aios\scripts\memory-mcp-server.mjs contains the same segment
+// after a path separator, and that rooted shape is what this gate demands —
+// only a token-initial `scripts\` is repo-relative.
+const REPO_RELATIVE_INVOCATION = /node scripts\/|scripts\/aios\.mjs|(?:^|[\s"'`(),=:.])scripts\\/u;
 
 function assertClean(label, text) {
   assert.doesNotMatch(String(text ?? ''), REPO_RELATIVE_INVOCATION, `${label} must not embed repo-relative invocations`);
