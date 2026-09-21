@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-18, after v5.19.2.
+> Last updated: 2026-09-21, after wiring the remaining 68 (knownUnwired 68 → 0).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -16,7 +16,7 @@ Items are split by **who owns the fix**, because that is what decides where the 
 
 ### A1 — Wire the 82 test files that no test entry reaches
 
-- **Status**: open. **Why it matters (high)**: the fixes below are green but unprotected. `evolution-integration.test.mjs` passes today because nothing runs it, not because a gate checks it.
+- **Status**: **RESOLVED 2026-09-21.** All 82 wired; `knownUnwired` 82 → 73 → 68 → **0**. The last 68 were never failing — bulk probe `node --test <68 files>` gave 589 tests / 588 pass / 0 fail / 1 skipped — so they were appended to the `regression` suite in `scripts/test-suites.json` (129 → 197 files) and the snapshot refreshed to `[]` (guard W1/W2/W3 3/3). Full gate via `npm run test:affected`: 1998 tests / 1989 pass / 0 fail / 9 skipped.
 - **Facts**: `scripts/tests/` holds 255 `*.test.mjs`. `scripts/test-suites.json` registers 111. `package.json` entries reach 173. **82 files are reachable from no entry point.** Running those 82 by hand gives 677 tests / 653 pass / 23 fail.
 - **Guard already shipped**: `scripts/tests/test-suite-wiring.test.mjs` (W1 dangling refs, W2 new unwired file fails with the file named, W3 baseline drift) plus `scripts/test-wiring-snapshot.json` (82 entries, refresh with `AIOS_UPDATE_TEST_WIRING=1`). The invariant is **entry-point reachability**, not "registered in test-suites.json".
 - **Next**: finish A2, then wire family by family, then shrink the snapshot by exactly the wired count (W3 fails until it is refreshed).
@@ -47,7 +47,7 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **`work-residue`** — **RESOLVED 2026-09-21** (see the `pi-shipped-content-hygiene` row).
 - **`work-stale-code`** — **RESOLVED 2026-09-21** (see the `doctor-bootstrap-task` row).
 - **`work-adjudicate`** — **RESOLVED 2026-09-21**: all five files adjudicated; the test was stale in every case (details in the table above and in the plan doc's work-item ledger).
-- **`work-wire` / `work-snapshot-refresh`** — **RESOLVED 2026-09-21 for the fixed families**: 9 green files wired into the `regression` suite, `knownUnwired` 82 → 73 (exactly the wired count, guard W3 verified). **Third pass same day (A3)**: the 5 rewritten rex fixture files wired too, `knownUnwired` 73 → 68 (W3 verified). Full regression: files=129, tests=1409, pass=1401, fail=0, skipped=8 — exact +5/+5 delta over the previous baseline.
+- **`work-wire` / `work-snapshot-refresh`** — **RESOLVED 2026-09-21, fully**: all remaining 68 wired (never-failing, bulk-verified green), `knownUnwired` → 0, guard W1/W2/W3 3/3. `npm run test:affected` ran the full pool itself: 1998 tests / 1989 pass / 0 fail / 9 skipped.
 - **Release-ceremony correction (2026-09-21)**: `check-site-sync`'s `findCurrentReleaseBlogErrors` demanded a VERSION-marker blog post in en/zh/ja/ko for *every* version bump, which forced a maintenance patch into public marketing copy. Repo history shows the real convention — v5.17.0–v5.17.4 shipped changelog-only with no posts at all. The gate now exempts maintenance (patch > 0) releases; minor/major still require the post, and unknown version shapes default to requiring it.
 
 ---
