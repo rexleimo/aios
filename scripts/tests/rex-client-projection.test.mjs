@@ -97,7 +97,7 @@ test('AIOS reports identical unmarked Rex projections as adopted changes', async
 
     assert.equal(result.status, 'installed');
     assert.deepEqual(result.installed, []);
-    assert.equal(result.adopted.length, 13);
+    assert.equal(result.adopted.length, 14);
     assert.deepEqual(result.updated, []);
     assert.deepEqual(result.conflicts, []);
   } finally {

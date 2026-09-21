@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [6.0.1] - 2026-09-21
+
+- refactor(quality): the engineering-standards skill moves to where its consumers live — `aios-engineering-standards` is now `rex-engineering-standards`, shipped inside the `rex-harness` submodule (release 0.7.0) alongside `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`. The dependency direction is now correct: the capability chain's shared quality baseline belongs to the capability chain, and standalone rex-harness consumers (npm `@rexleimo/rex-harness`) no longer miss it. The router and `pre-edit-safety-gate` reference the new name; content and Definition of Done are unchanged. Digest registered in `src/clients/projection-history.json`; host catalog back to 27 skills, rex projection now 14.
+
 ## [6.0.0] - 2026-09-21
 
 - feat(quality): engineering standards become a first-class framework citizen — the new `aios-engineering-standards` skill encodes the classic software-engineering baseline as the Definition of Done for all code-producing work: Clean Architecture dependency rule and boundary discipline (high cohesion, low coupling, minimal interface), Ousterhout deep modules (small interface, deep implementation; strategic over tactical programming), Clean Code naming/function/error-handling rules, DRY and orthogonality, a test-coverage bar, a toolchain bar for new projects (lint + pre-commit hooks + CI + structured logging), and ADD documentation for consequential changes. `aios-workflow-router` now loads the standard before `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`, and `pre-edit-safety-gate` checks the chosen change shape against it — the quality baseline rides the existing evidence-driven capability chain instead of running beside it.

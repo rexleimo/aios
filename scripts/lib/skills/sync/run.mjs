@@ -49,6 +49,26 @@ function writeMaterializedTarget({ materializedPath, targetPath, metadata }) {
   writeGeneratedSkillMetadata(targetPath, metadata);
 }
 
+function isOrphanedManagedSkillProjection(targetPath, rootDir) {
+  // A managed projection whose source skill was deleted from skill-sources is an
+  // orphan. Trust anchor mirrors the misprojection check: the metadata must be
+  // self-consistent (source === skill-sources/<relativeSkillPath>) so fabricated
+  // metadata on a user-owned directory is preserved.
+  const meta = readGeneratedSkillMetadata(targetPath);
+  if (!meta || meta.managedBy !== 'aios' || meta.kind !== 'generated-skill') return false;
+  const relativeSkillPath = String(meta.relativeSkillPath || '').replaceAll('\\', '/').trim();
+  if (!relativeSkillPath
+    || relativeSkillPath === '.'
+    || relativeSkillPath === '..'
+    || relativeSkillPath.startsWith('../')
+    || path.posix.isAbsolute(relativeSkillPath)
+    || path.posix.normalize(relativeSkillPath) !== relativeSkillPath) {
+    return false;
+  }
+  if (meta.source !== path.posix.join('skill-sources', relativeSkillPath)) return false;
+  return !fs.existsSync(path.join(rootDir, meta.source));
+}
+
 function materializeWithMetadata({ rootDir, entry, surface }) {
   const materialized = materializeSkillTree({ rootDir, relativeSkillPath: entry.relativeSkillPath, client: surface });
   const targetRelativePath = resolveGeneratedTargetRelativePath(entry, surface);
@@ -272,15 +292,20 @@ async function syncGeneratedSkillsUnlocked({
           continue;
         }
         const targetRelativePath = path.relative(rootAbs, managedTargetPath).split(path.sep).join('/');
-        if (!isMisprojectedManagedGeneratedSkillProjection(managedTargetPath, {
+        if (isMisprojectedManagedGeneratedSkillProjection(managedTargetPath, {
           targetSurface: surface,
           targetRelativePath,
         })) {
+          fs.rmSync(managedTargetPath, { recursive: true, force: true });
+          io.log(`[skills] removed misprojected legacy managed target: ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
+          removed += 1;
           continue;
         }
-        fs.rmSync(managedTargetPath, { recursive: true, force: true });
-        io.log(`[skills] removed misprojected legacy managed target: ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
-        removed += 1;
+        if (isOrphanedManagedSkillProjection(managedTargetPath, rootDir)) {
+          fs.rmSync(managedTargetPath, { recursive: true, force: true });
+          io.log(`[skills] removed orphaned managed target (source skill deleted): ${formatTargetPath(resolvedTargetRootDir, managedTargetPath)}`);
+          removed += 1;
+        }
       }
     }
 

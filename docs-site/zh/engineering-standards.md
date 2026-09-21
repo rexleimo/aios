@@ -7,7 +7,7 @@ description: "AIOS 6.0 把经典软件工程标准内建到工作流：Clean Arc
 
 ## Quick Answer（一句话答案）
 
-传统的编码智能体生成**能跑**的代码，AIOS 生成**工程化**的代码。自 v6.0.0 起，工作流中每一个代码生产步骤都会先加载同一套质量基线——`aios-engineering-standards` 技能：《Clean Architecture》的架构边界、《软件设计哲学》的深层模块、《代码整洁之道》的命名与函数规则、《程序员修炼之道》的 DRY 与正交性——任何改动只有通过 Definition of Done 才算完成。这套标准骑在已有的证据驱动能力链上，不是一道可以绕过的额外门。本页即公开标准，并附参考文案：四阶段能力模型、九本书单、免费合法资源。
+传统的编码智能体生成**能跑**的代码，AIOS 生成**工程化**的代码。自 v6.0.0 起，工作流中每一个代码生产步骤都会先加载同一套质量基线——`rex-engineering-standards` 技能：《Clean Architecture》的架构边界、《软件设计哲学》的深层模块、《代码整洁之道》的命名与函数规则、《程序员修炼之道》的 DRY 与正交性——任何改动只有通过 Definition of Done 才算完成。这套标准骑在已有的证据驱动能力链上，不是一道可以绕过的额外门。本页即公开标准，并附参考文案：四阶段能力模型、九本书单、免费合法资源。
 
 ## 为什么：生成代码的质量缺口
 
@@ -103,7 +103,7 @@ AIOS 是本地优先的编排控制平面，不是套在代码生成器外面的
 ```text
 router（aios-workflow-router）
   └─ 选出代码生产类 Provider（rex-implement / rex-refactor-hardening / rex-code-review / rex-design）
-       └─ 首先加载 aios-engineering-standards  ← 共同质量基线
+       └─ 首先加载 rex-engineering-standards  ← 共同质量基线
             └─ Provider 执行自己的证据驱动步骤
                  └─ 完成 = Provider 证据契约 且 本 Definition of Done 同时通过
 ```

@@ -7,6 +7,10 @@ description: "Release history for AIOS: what changed in every version, upgrade n
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v6.0.1 (2026-09-21) — Engineering Standards Move to rex-harness
+
+- **The baseline now lives with its consumers**: `aios-engineering-standards` ships as `rex-engineering-standards` inside the `rex-harness` submodule (release 0.7.0), next to `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`. The dependency direction is correct now — the capability chain's shared quality baseline belongs to the capability chain, and standalone rex-harness consumers no longer miss it. Router and `pre-edit-safety-gate` reference the new name; content and the Definition of Done are unchanged. See: [v6.0.1 release post](/blog/2026-09-v601-engineering-standards-rex/).
+
 ## v6.0.0 (2026-09-21) — Engineering Standards: Generated Code Grows Up
 
 - **Engineering standards as a framework citizen**: the new `aios-engineering-standards` skill turns the classic software-engineering reading list into the Definition of Done for all code-producing work — Clean Architecture dependency rule and boundary discipline, Ousterhout deep modules, Clean Code naming/function/error rules, DRY and orthogonality, a test bar, a toolchain bar (lint + pre-commit + CI + structured logging), and ADD records for consequential changes. See: [Engineering Standards](engineering-standards.md).

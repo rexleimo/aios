@@ -5,6 +5,10 @@ description: "AIOS 完整版本历史：每个版本发生了什么变化、升�
 
 # 更新日志
 
+## v6.0.1（2026-09-21）——工程标准移入 rex-harness
+
+- **基线搬到了消费者旁边**：`aios-engineering-standards` 以 `rex-engineering-standards` 之名随 `rex-harness` 子模块（0.7.0）发布，与 `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design` 同仓。依赖方向自此正确——能力链的共同质量基线属于能力链本身，独立使用 rex-harness 的消费者也不再错过它。router 与 `pre-edit-safety-gate` 改用新名字；内容与 Definition of Done 不变。见：[v6.0.1 发布博客](/blog/zh/2026-09-v601-engineering-standards-rex/)。
+
 ## v6.0.0（2026-09-21）——工程标准内建：生成代码长大了
 
 - **工程标准成为框架一等公民**：新技能 `aios-engineering-standards` 把经典书单变成所有代码生产工作的 Definition of Done——Clean Architecture 依赖规则与边界纪律、Ousterhout 深层模块、Clean Code 命名/函数/错误处理规则、DRY 与正交性、测试基线、工具链基线（Lint + pre-commit + CI + 结构化日志），以及 consequential 改动的 ADD 记录。见：[工程标准](engineering-standards.md)。

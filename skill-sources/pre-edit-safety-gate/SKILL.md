@@ -55,7 +55,7 @@ design that correctly supports the request and leaves responsibility clear.
 ## 3. Apply the Engineering Standards Baseline
 
 When the change is code-producing (implementation, refactor, review, or design
-resolution), load `aios-engineering-standards` and check the chosen change shape
+resolution), load `rex-engineering-standards` and check the chosen change shape
 against its baseline: boundary and dependency direction, deep-module heuristic,
 naming and function shape, test coverage, and toolchain expectations. The
 standards' Definition of Done is a completion gate alongside focused tests; it

@@ -7,7 +7,7 @@ description: "AIOS 6.0 は古典的ソフトウェア工学の基準をワーク
 
 ## Quick Answer（ひとこと回答）
 
-従来のコーディングエージェントは「動く」コードを生成する。AIOS が生成するのは**工学された**コードだ。v6.0.0 以降、ワークフローのすべてのコード生産ステップは同じ品質基準——`aios-engineering-standards` スキル——を先に読み込む：『Clean Architecture』のアーキテクチャ境界、『A Philosophy of Software Design』の深いモジュール、『Clean Code』の命名と関数のルール、『The Pragmatic Programmer』の DRY と直交性。そして Definition of Done を通過するまで完了とは見なされない。この基準は既存の証拠駆動能力チェーンに乗るもので、迂回できる追加の門ではない。本ページが公開基準であり、参考資料（四段階能力モデル、九冊の書単、無料で合法なリソース）を併載する。
+従来のコーディングエージェントは「動く」コードを生成する。AIOS が生成するのは**工学された**コードだ。v6.0.0 以降、ワークフローのすべてのコード生産ステップは同じ品質基準——`rex-engineering-standards` スキル——を先に読み込む：『Clean Architecture』のアーキテクチャ境界、『A Philosophy of Software Design』の深いモジュール、『Clean Code』の命名と関数のルール、『The Pragmatic Programmer』の DRY と直交性。そして Definition of Done を通過するまで完了とは見なされない。この基準は既存の証拠駆動能力チェーンに乗るもので、迂回できる追加の門ではない。本ページが公開基準であり、参考資料（四段階能力モデル、九冊の書単、無料で合法なリソース）を併載する。
 
 ## なぜ：生成コードの品質ギャップ
 
@@ -103,7 +103,7 @@ AIOS はローカルファーストのオーケストレーションコントロ
 ```text
 router（aios-workflow-router）
   └─ コード生産 Provider を選択（rex-implement / rex-refactor-hardening / rex-code-review / rex-design）
-       └─ aios-engineering-standards を最初に読み込む  ← 共通品質基準
+       └─ rex-engineering-standards を最初に読み込む  ← 共通品質基準
             └─ Provider が自分の証拠駆動ステップを実行
                  └─ 完了 = Provider の証拠契約 かつ 本 Definition of Done の両方を通過
 ```

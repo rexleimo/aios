@@ -7,7 +7,7 @@ description: "AIOS 6.0은 고전 소프트웨어 공학 표준을 워크플로�
 
 ## Quick Answer (한 줄 답변)
 
-전통적인 코딩 에이전트는 **돌아가는** 코드를 생성한다. AIOS가 생성하는 것은 **공학화된** 코드다. v6.0.0부터 워크플로의 모든 코드 생산 단계는 같은 품질 기준 — `aios-engineering-standards` 스킬 — 을 먼저 로드한다: 『Clean Architecture』의 아키텍처 경계, 『A Philosophy of Software Design』의 깊은 모듈, 『Clean Code』의 명명과 함수 규칙, 『The Pragmatic Programmer』의 DRY와 직교성. 그리고 Definition of Done를 통과하기 전까지 완료로 치지 않는다. 이 기준은 기존 증거 기반 능력 체인 위를 달리며, 우회할 수 있는 추가 문이 아니다. 이 페이지가 공개 기준이며 참고 자료(4단계 능력 모델, 9권 서적 목록, 무료 합법 자료)를 함께 싣는다.
+전통적인 코딩 에이전트는 **돌아가는** 코드를 생성한다. AIOS가 생성하는 것은 **공학화된** 코드다. v6.0.0부터 워크플로의 모든 코드 생산 단계는 같은 품질 기준 — `rex-engineering-standards` 스킬 — 을 먼저 로드한다: 『Clean Architecture』의 아키텍처 경계, 『A Philosophy of Software Design』의 깊은 모듈, 『Clean Code』의 명명과 함수 규칙, 『The Pragmatic Programmer』의 DRY와 직교성. 그리고 Definition of Done를 통과하기 전까지 완료로 치지 않는다. 이 기준은 기존 증거 기반 능력 체인 위를 달리며, 우회할 수 있는 추가 문이 아니다. 이 페이지가 공개 기준이며 참고 자료(4단계 능력 모델, 9권 서적 목록, 무료 합법 자료)를 함께 싣는다.
 
 ## 왜: 생성 코드의 품질 격차
 
@@ -103,7 +103,7 @@ AIOS는 로컬 우선 오케스트레이션 제어 평면이며, 코드 생성�
 ```text
 router (aios-workflow-router)
   └─ 코드 생산 Provider 선택 (rex-implement / rex-refactor-hardening / rex-code-review / rex-design)
-       └─ aios-engineering-standards를 먼저 로드  ← 공통 품질 기준
+       └─ rex-engineering-standards를 먼저 로드  ← 공통 품질 기준
             └─ Provider가 자신의 증거 기반 단계를 실행
                  └─ 완료 = Provider의 증거 계약 그리고 이 Definition of Done를 모두 통과
 ```

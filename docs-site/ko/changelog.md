@@ -5,6 +5,10 @@ description: "AIOS 전체 릴리스 이력입니다. 각 버전에서 무엇이 
 
 # 변경 로그
 
+## v6.0.1 (2026-09-21) — 엔지니어링 표준을 rex-harness로 이동
+
+- **기준의 거주지를 소비자와 함께**: `aios-engineering-standards`가 `rex-engineering-standards`로 `rex-harness` 서브모듈(0.7.0)에서 출하되어 `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`와 같은 저장소에 있게 되었다. 의존 방향이 올바르게 됐다 — 능력 체인의 공통 품질 기준은 능력 체인에 속하고, 독립 rex-harness 소비자도它을 놓치지 않는다. router와 `pre-edit-safety-gate`는 새 이름을 참조. 내용과 Definition of Done는 불변. 참조: [v6.0.1 릴리스 글](/blog/ko/2026-09-v601-engineering-standards-rex/)。
+
 ## v6.0.0 (2026-09-21) — 엔지니어링 표준 내장: 생성 코드의 성장
 
 - **엔지니어링 표준이 프레임워크 1급 시민으로**: 새 스킬 `aios-engineering-standards`가 고전 서적 목록을 모든 코드 생산 작업의 Definition of Done으로 바꾼다 — Clean Architecture 의존 규칙과 경계 규율, Ousterhout의 깊은 모듈, Clean Code 명명/함수/오류 처리 규칙, DRY와 직교성, 테스트 기준, 도구 체인 기준(lint + pre-commit + CI + 구조화 로그), 그리고 중요한 변경의 ADD 기록. 참조: [엔지니어링 표준](engineering-standards.md).

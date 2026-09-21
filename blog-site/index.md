@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v6.0.1: Engineering Standards Move to rex-harness — The Baseline Lives With Its Consumers](2026-09-v601-engineering-standards-rex.md) — the quality baseline now ships with the capability chain that consumes it
 - [v6.0.0: Engineering Standards — AIOS Builds Software, Not Just Code](2026-09-v600-engineering-standards.md) — one quality baseline from the classic books, loaded by the router before code-producing providers, with a Definition of Done for every change
 - [v5.20.0: Qoder Joins AIOS — Ten Clients, One Definition Block](2026-09-v520-qoder-client.md) — tenth first-class client, MCP in Qoder's real settings.json scopes, AGENTS.md context, headless team runs
 - [Jev + AIOS Quickstart: Background Judgments With No Keywords](2026-09-jev-aios-quickstart.md) — set TYPESAFE_API_KEY, enable the judgment gate, then chat normally while Jev judges in the background

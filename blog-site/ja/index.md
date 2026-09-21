@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v6.0.1：エンジニアリング基準を rex-harness へ——基準の居場所を消費者と同じに](2026-09-v601-engineering-standards-rex.md) — 品質基準がそれを消費する能力チェーンと一緒に出荷される
 - [v6.0.0：エンジニアリング基準の内蔵——AIOS はコードを生成するだけでなく、ソフトウェアを構築する](2026-09-v600-engineering-standards.md) — 古典的な書単から導出した一つの品質基準を router がコード生産 Provider の前に読み込み、すべての変更に Definition of Done
 - [v5.20.0：Qoder が AIOS に合流——10 番目のクライアント、定義ブロック 1 つ](2026-09-v520-qoder-client.md) — 10 番目の第一級クライアント、Qoder が実際に読む settings.json への MCP、AGENTS.md コンテキスト、`-p` ヘッドレス team
 - [Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断](2026-09-jev-aios-quickstart.md) — TYPESAFE_API_KEY を設定し判断ゲートを開けたら、普段どおり話すだけで Jev が裏側で判断する

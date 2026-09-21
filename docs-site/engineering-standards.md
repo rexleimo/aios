@@ -7,7 +7,7 @@ description: "AIOS 6.0 builds classic software-engineering standards into the wo
 
 ## Quick Answer
 
-Traditional coding agents generate code that runs. AIOS generates code that is **engineered**. Since v6.0.0, every code-producing step in the workflow loads the same quality baseline — the `aios-engineering-standards` skill: architecture boundaries from *Clean Architecture*, deep modules from *A Philosophy of Software Design*, naming and function rules from *Clean Code*, DRY and orthogonality from *The Pragmatic Programmer* — and no change counts as done until it passes a Definition of Done. The standard rides the existing evidence-driven capability chain; it is not another gate you can route around. This page is the public standard and carries the reference materials: the four-stage capability model, the nine-book reading list, and free legal resources.
+Traditional coding agents generate code that runs. AIOS generates code that is **engineered**. Since v6.0.0, every code-producing step in the workflow loads the same quality baseline — the `rex-engineering-standards` skill: architecture boundaries from *Clean Architecture*, deep modules from *A Philosophy of Software Design*, naming and function rules from *Clean Code*, DRY and orthogonality from *The Pragmatic Programmer* — and no change counts as done until it passes a Definition of Done. The standard rides the existing evidence-driven capability chain; it is not another gate you can route around. This page is the public standard and carries the reference materials: the four-stage capability model, the nine-book reading list, and free legal resources.
 
 ## Why: the quality gap in generated code
 
@@ -103,7 +103,7 @@ Claiming "done" requires every row; any "no" means keep working:
 ```text
 router (aios-workflow-router)
   └─ code-producing provider selected (rex-implement / rex-refactor-hardening / rex-code-review / rex-design)
-       └─ aios-engineering-standards loaded FIRST  ← the shared baseline
+       └─ rex-engineering-standards loaded FIRST  ← the shared baseline
             └─ provider runs its own evidence-driven steps
                  └─ completion requires BOTH the provider's evidence contract AND this Definition of Done
 ```
