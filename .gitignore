@@ -185,3 +185,9 @@ pen/
 research/upstream/deepseek-harness/
 research/upstream/loopx/
 .zcode/
+
+# AIOS 运行期产物：aios/temp 是约定的截图落点（见 skill-constraints），
+# aios/work/outcomes 是工作流检查点。二者都是本机派生数据，不进版本库
+# （曾经误提交过 aios/work/outcomes/31/artifacts/checkpoint-32-rewrite-blocked-A2.json）。
+aios/temp/
+aios/work/
