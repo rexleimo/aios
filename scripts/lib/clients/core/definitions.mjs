@@ -210,6 +210,10 @@ export const CLIENT_DEFINITIONS = Object.freeze({
   // 国际版是 ~/.qoder。AIOS 此前把家目录写死成 ~/.qoder，在 CN 机器上等于装进一个不扫描的目录。
   // 同理 project 配置目录名两个发行版都是 `.qoder`（运行时 projectDefault 不随发行版切换），
   // MCP 落点见 CLIENT_MCP_TARGETS.qoder。
+  // 装上用户级技能后的两个后果（2026-09-20 实测）：用户级会遮蔽 project 级和 ~/.agents 级的同名
+  // 技能（之后只改 project 里的 SKILL.md 不生效，必须同步用户级那份）；IDE「扩展管理」页按启动时
+  // 扫描，投影完要重开窗口才看得到 —— 别把陈旧的 0 当成没装上，验收以
+  // ~/.qoder-cn/logs/runs/<最新>/qodercli.log 里的 enumerate 行为准。
   // Native instruction: AGENTS.md（已验证：仓库 AGENTS.md 会被自动注入；QODER.md 别名不写）。
   // 命令名：CN 发行版是 qodercn / qoder-cn（分发器）与 qoderclicn（真实 exe，见
   // entry/qodercn-dispatcher.ps1 的 Get-Command 顺序），国际版才是 qoder / qodercli；
