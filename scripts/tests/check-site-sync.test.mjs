@@ -52,6 +52,30 @@ test('current release blog coverage requires a tagged post in every locale', () 
   ]);
 });
 
+test('current release blog coverage exempts maintenance (patch) releases', () => {
+  // v5.17.0–v5.17.4 shipped changelog-only with no posts at all; a stale-pin
+  // fix must not be forced into public marketing copy. A patch MAY still
+  // carry a post (v6.0.1 did) — no error either way.
+  assert.deepEqual(findCurrentReleaseBlogErrors('6.0.2', new Map()), []);
+  assert.deepEqual(findCurrentReleaseBlogErrors('5.17.4', new Map()), []);
+  assert.deepEqual(findCurrentReleaseBlogErrors('6.0.1', new Map()), []);
+
+  // Feature releases (patch segment 0) still require all four locales, and an
+  // unparseable version defaults to requiring them.
+  assert.deepEqual(findCurrentReleaseBlogErrors('6.1.0', new Map()), [
+    'missing current release blog post (en): v6.1.0',
+    'missing current release blog post (zh): v6.1.0',
+    'missing current release blog post (ja): v6.1.0',
+    'missing current release blog post (ko): v6.1.0',
+  ]);
+  assert.deepEqual(findCurrentReleaseBlogErrors('6.0', new Map()), [
+    'missing current release blog post (en): v6.0',
+    'missing current release blog post (zh): v6.0',
+    'missing current release blog post (ja): v6.0',
+    'missing current release blog post (ko): v6.0',
+  ]);
+});
+
 test('extractMdNavTargets returns only markdown file nav targets', () => {
   const mkdocs = `site_name: demo
 nav:

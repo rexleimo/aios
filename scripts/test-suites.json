@@ -116,7 +116,16 @@
       "scripts/tests/canvas-context-scaling.test.mjs",
       "scripts/tests/native-agent-guidance.test.mjs",
       "scripts/tests/pages-workflow.test.mjs",
-      "scripts/tests/artifact-filename-windows-safety.test.mjs"
+      "scripts/tests/artifact-filename-windows-safety.test.mjs",
+      "scripts/tests/platform-smoke.test.mjs",
+      "scripts/tests/pi-shipped-content-hygiene.test.mjs",
+      "scripts/tests/doctor-bootstrap-task.test.mjs",
+      "scripts/tests/death-notice.test.mjs",
+      "scripts/tests/hook-user-prompt.test.mjs",
+      "scripts/tests/interception-mcp-stdio.test.mjs",
+      "scripts/tests/interception-mcp-proxy.test.mjs",
+      "scripts/tests/automem-loop.test.mjs",
+      "scripts/tests/ecc-agent-workflow.test.mjs"
     ]
   },
   "browser": {

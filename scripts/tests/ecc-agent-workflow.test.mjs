@@ -498,7 +498,11 @@ test('client live gates fail closed without smoke, metrics, and provenance evide
   assert.equal(gemini.status, 'compatibility');
   assert.equal(gemini.liveExecutionAllowed, false);
   assert.equal(gemini.qualityGateRunnerAllowed, false);
-  assert.match(gemini.reasons.join('\n'), /compatibility-tier/i);
+  // No client carries `deprecated: true` any more (the flag was retired with
+  // the opencode deprecation), so the compatibility-tier reason never fires.
+  // gemini's fail-closed state is reported through the evidence-gate reasons.
+  assert.ok(gemini.reasons.length > 0, 'gemini should list blocking reasons');
+  assert.match(gemini.reasons.join('\n'), /live gates blocked until/i);
 });
 
 test('CLI parses agents and workflow commands', () => {

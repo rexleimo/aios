@@ -58,7 +58,7 @@ async function fakeBin(dir, script) {
 async function cleanup(all) { for (const item of all) await rm(item, { recursive: true, force: true }); }
 
 describe('automatic memory loop end-to-end', () => {
-  test('one-shot direct exit writes a verified project-shared memo when output claims success', async () => {
+  test('one-shot direct exit writes a project-shared memo as candidate when output claims success', async () => {
     const tmp = await mkdtemp(path.join(os.tmpdir(), 'aios-automem-oneshot-'));
     const bin = await mkdtemp(path.join(os.tmpdir(), 'aios-automem-oneshot-bin-'));
     try {
@@ -70,7 +70,12 @@ describe('automatic memory loop end-to-end', () => {
       const turn = events.find((e) => (e.refs || []).some((r) => String(r).startsWith('contextdb:')));
       if (!turn) throw new Error('no automatic memo event');
       if (turn.scope !== 'project_shared') throw new Error(`unexpected scope ${turn.scope}`);
-      if (turn.claimStatus !== 'verified') throw new Error(`unexpected claimStatus ${turn.claimStatus}`);
+      // Contract (autopilot.mjs): automatic writes carry a bare runtime
+      // identity, which is indistinguishable from a forged one — so a
+      // shared-scope entry lands as `candidate` and waits for governed
+      // promotion instead of entering recall as `verified`. The agent's
+      // declaration is still recorded on turn.verified.
+      if (turn.claimStatus !== 'candidate') throw new Error(`unexpected claimStatus ${turn.claimStatus}`);
       if (turn.turn?.verified !== true) throw new Error('verified event missing turn.verified=true');
       if (!receipts.some((r) => r.operation === 'write' && r.status === 'saved' && r.scope === 'project_shared')) throw new Error('missing saved receipt');
     } finally { await cleanup([tmp, bin]); }

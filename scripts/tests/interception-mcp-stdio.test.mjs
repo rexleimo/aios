@@ -29,10 +29,16 @@ test('stdio MCP proxy line handler keeps tools/call MCP shape and returns AIOS m
   }), handler);
 
   assert.equal(response.id, 11);
-  assert.equal(JSON.stringify(response).includes(SENTINEL), false);
+  // Contract since 3b689cc4: the protocol payload is handed to the client
+  // unchanged (strict MCP clients need the standard result shape; multimodal
+  // content must survive — see c3b91978). Compression is an observation, not a
+  // rewrite: the compact packet rides in _meta.aios. The old assertions —\  // sentinel absent, packet marker inside content[0].text — belonged to the
+  // pre-3b689cc4 design where the packet replaced the result, and were left
+  // behind by that commit's incomplete test update.
+  assert.equal(JSON.stringify(response).includes(SENTINEL), true);
   assert.equal(response.result.content.length, 1);
   assert.equal(response.result.content[0].type, 'text');
-  assert.match(response.result.content[0].text, /aios\.compact_packet/);
+  assert.equal(response.result.content[0].text, SENTINEL.repeat(20));
   assert.equal(response.result._meta.aios.type, 'aios.compact_packet');
   assert.equal(response.result._meta.aios.refs.length, 1);
 });

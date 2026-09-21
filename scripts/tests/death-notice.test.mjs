@@ -12,6 +12,7 @@ import {
   hasDuplicateNotice,
   VALID_DEATH_REASONS,
 } from '../lib/lifecycle/death-notice.mjs';
+import { resolveContextDbRoot } from '../lib/aios/state-root.mjs';
 
 /* ================================================================
    Notice schema tests
@@ -211,10 +212,20 @@ test('readDeathNotices returns empty array for null/undefined session', async ()
   assert.deepEqual(notices, []);
 });
 
-test('resolveDeathNoticesPath returns path under sessions dir', () => {
+test('resolveDeathNoticesPath returns path under the workspace context-db sessions dir', () => {
   const rootDir = '/tmp/test-root';
   const sessionId = 'session-xyz';
   const resolved = resolveDeathNoticesPath(rootDir, sessionId);
-  assert(resolved.endsWith(path.join('sessions', sessionId, 'death-notices.jsonl')));
-  assert(resolved.startsWith(rootDir));
+  // Contract: the path is derived from the workspace's context-db root (with
+  // legacy preference), not concatenated onto the raw workspace root — the
+  // resolver normalizes the root and appends .aios/context-db, so a literal
+  // startsWith(workspaceRoot) check is wrong on every platform.
+  const expected = path.join(
+    resolveContextDbRoot(rootDir, { preferLegacyExisting: true }),
+    'sessions',
+    sessionId,
+    'death-notices.jsonl',
+  );
+  assert.equal(resolved, expected);
+  assert.ok(resolved.endsWith(path.join('sessions', sessionId, 'death-notices.jsonl')));
 });

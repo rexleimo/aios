@@ -33,7 +33,12 @@ test('Grok UserPromptSubmit hook returns additionalContext and stays fail-open',
     });
     assert.equal(result.status, 0, result.stderr);
     const output = JSON.parse(result.stdout);
-    assert.equal(output.decision.disposition, 'direct');
+    // North-star principle: the program never guesses "read-only" from free
+    // text (isReadOnlyMessage is a constant false), and the hook payload has
+    // no explicit-intent channel — a substantive prompt on a single-host
+    // execution is `guarded`, not `direct`. `direct` only survives on the
+    // hook-error fail-open path.
+    assert.equal(output.decision.disposition, 'guarded');
     assert.ok(Object.hasOwn(output, 'additionalContext'));
   } finally {
     await rm(rootDir, { recursive: true, force: true });
@@ -75,7 +80,10 @@ test('aios plan hook-user-prompt honors --client and attaches recall on planned 
     });
     assert.equal(result.status, 0, result.stderr);
     const output = JSON.parse(result.stdout);
-    assert.equal(output.decision.disposition, 'planned');
+    // A bounded single-host turn is `guarded`; `planned` requires a plan
+    // intent, a team/harness/design route, a plannedByDefault capability, or
+    // a multi-agent execution host — none of which a bare prompt carries.
+    assert.equal(output.decision.disposition, 'guarded');
     assert.match(output.additionalContext, /## AIOS RECALL/u);
     assert.match(output.additionalContext, /ccrg:/u);
     assert.doesNotMatch(output.additionalContext, /Call get_minimal_context/u);
@@ -97,7 +105,9 @@ test('Codex planned hook attaches ContextDB/CCRG recall without inventing hits',
     });
     assert.equal(result.status, 0, result.stderr);
     const output = JSON.parse(result.stdout);
-    assert.equal(output.decision.disposition, 'planned');
+    // Same north-star contract as the Grok case: no explicit intent in the
+    // payload, so a bounded prompt classifies as `guarded`, not `planned`.
+    assert.equal(output.decision.disposition, 'guarded');
     assert.match(output.additionalContext, /## AIOS RECALL/u);
     assert.match(output.additionalContext, /contextdb:/u);
     assert.match(output.additionalContext, /ccrg:/u);

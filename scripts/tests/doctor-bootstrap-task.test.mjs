@@ -52,22 +52,27 @@ test('warns when .aios/tasks pending is empty and there is no current task', asy
 });
 
 test('warns when bootstrap task exists but current-task is missing', async () => {
+  // Contract set by the c85a51c3 doctor/ctx-bootstrap split: guideline entries
+  // pending without a pointer report `pending-bootstrap`. The runtime reads
+  // .current-task at startup (ctx-agent-core/startup-summary.mjs), so an
+  // unpointed queue is warn-worthy in both shapes below.
   const ws = await makeWs('aios-doctor-bootstrap-orphan-');
   await mkdir(path.join(ws, '.aios', 'tasks', 'pending', 'task_abc_bootstrap_guidelines'), { recursive: true });
 
   const result = await inspectBootstrapTask(ws);
   assert.equal(result.status, 'warn');
-  assert.equal(result.code, 'bootstrap-without-current-task');
-  assert.match(result.message, /\.aios\/tasks\/\.current-task is empty/);
+  assert.equal(result.code, 'pending-bootstrap');
+  assert.match(result.message, /pending has \d+ bootstrap entries/);
 });
 
-test('ok when pending has non-bootstrap tasks even without current-task', async () => {
-  const ws = await makeWs('aios-doctor-bootstrap-pending-ok-');
+test('warns when pending has non-bootstrap tasks but no current-task pointer', async () => {
+  const ws = await makeWs('aios-doctor-bootstrap-pending-stale-');
   await mkdir(path.join(ws, '.aios', 'tasks', 'pending', 'task_business_001'), { recursive: true });
 
   const result = await inspectBootstrapTask(ws);
-  assert.equal(result.status, 'ok');
-  assert.equal(result.code, 'pending-has-tasks');
+  assert.equal(result.status, 'warn');
+  assert.equal(result.code, 'pending-stale');
+  assert.match(result.message, /non-bootstrap tasks but no current task/);
 });
 
 test('keeps legacy tasks readable when existing task queue is present', async () => {

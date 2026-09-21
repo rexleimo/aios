@@ -325,8 +325,22 @@ function findBlogLocaleParityErrors(blogMarkdownFiles, locales = ['zh', 'ja', 'k
   return errors;
 }
 
+/* Repo convention, verified against release history: a feature release
+ * (minor/major — patch segment 0) announces itself with a blog post in every
+ * locale, while a maintenance release (patch > 0) ships changelog-only —
+ * v5.17.0 through v5.17.4 had no posts at all. A patch release MAY still
+ * carry a post (v6.0.1 did); the gate simply stops demanding one, so a
+ * stale-pin fix is never forced into public marketing copy. If a patch turns
+ * out to carry user-facing feature work, bump it as a minor instead. Unknown
+ * version shapes default to requiring the post. */
+function isMaintenanceRelease(version) {
+  const patch = Number(String(version ?? '').split('.')[2]);
+  return Number.isFinite(patch) && patch > 0;
+}
+
 function findCurrentReleaseBlogErrors(version, blogMarkdownByFile, locales = ['en', 'zh', 'ja', 'ko']) {
   const marker = `v${String(version || '').trim()}`;
+  if (isMaintenanceRelease(version)) return [];
   const entries = blogMarkdownByFile instanceof Map
     ? [...blogMarkdownByFile.entries()]
     : Object.entries(blogMarkdownByFile || {});

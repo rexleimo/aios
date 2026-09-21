@@ -27,11 +27,11 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 | Class | Files | Action |
 | --- | --- | --- |
-| Environment-dependent | `platform-smoke` | the test must skip with a stated reason; `python3`, `python` and `py` are all absent on this host |
-| Local state residue | `pi-shipped-content-hygiene` | delete the retired `.pi/skills` projection; no code change |
-| Stale fixture pin | `rex-v2-case-selection`, `rex-batch-invalid-training-evidence`, `rex-planning-training-evidence`, `rex-strict-tdd-training-evidence`, `rex-test-design-training-evidence` | blocked on A3 |
-| Stale reason code | `doctor-bootstrap-task` | test expects `bootstrap-without-current-task`, which exists only in the test; the implementation returns `pending-bootstrap`. Adjudicate which side is the contract |
-| Needs adjudication | `death-notice`, `hook-user-prompt`, `interception-mcp-stdio`, `automem-loop`, `ecc-agent-workflow` | one adjudication per file: is the test stale or the implementation wrong |
+| Environment-dependent | `platform-smoke` | **RESOLVED 2026-09-21 — the triage premise was wrong.** The two real failures were static-analysis rot, not the absent python interpreter: the TLS pin anchored on the first literal `aios-install.ps1` (now the preferred local installer path — real contract: Tls12 is the first statement of the generated PowerShell script), and the tsx-dispatch pin still read `dispatch.mjs` after TUI startup moved to `dispatch/helpers.mjs`. 19/19 |
+| Local state residue | `pi-shipped-content-hygiene` | **RESOLVED 2026-09-21.** The `.pi/skills` junction was removed, which exposed a masked second failure: `REPO_RELATIVE_INVOCATION` matched `scripts\` inside the absolute Windows install-root path the same test demands — Windows-only self-contradiction, third alternative now token-anchored. 7/7 |
+| Stale fixture pin | `rex-v2-case-selection`, `rex-batch-invalid-training-evidence`, `rex-planning-training-evidence`, `rex-strict-tdd-training-evidence`, `rex-test-design-training-evidence` | blocked on A3 — **still open** |
+| Stale reason code | `doctor-bootstrap-task` | **RESOLVED 2026-09-21 — the implementation is the contract** (granular codes from the c85a51c3 split; runtime reads `.current-task` at startup; old code has no other consumer). Test updated to `pending-bootstrap` / `pending-stale`. 7/7 |
+| Needs adjudication | `death-notice`, `hook-user-prompt`, `interception-mcp-stdio`, `automem-loop`, `ecc-agent-workflow` | **RESOLVED 2026-09-21 — all five adjudicated; in every case the test was stale.** automem-loop: auto writes land as `candidate` by explicit design (bare runtime identity); death-notice: path derives from the context-db root, not the raw workspace root; interception-mcp-stdio: payload passes through by design since 3b689cc4 (packet rides in `_meta.aios`) — red since 2026-06-11, not a regression; hook-user-prompt: north-star principle — no read-only guessing from free text, so bounded prompts are `guarded`; ecc-agent-workflow: no client is `deprecated` any more, so the compatibility-tier reason cannot fire |
 
 ### A3 — Decide what the rex training pin means (blocks 5 files)
 
@@ -42,9 +42,12 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ### A4 — Small, independent
 
-- **`work-env-py`** — same as the `platform-smoke` row above.
-- **`work-residue`** — same as the `pi-shipped-content-hygiene` row above.
-- **`work-stale-code`** — same as the `doctor-bootstrap-task` row above.
+- **`work-env-py`** — **RESOLVED 2026-09-21**: the premise was wrong (see the `platform-smoke` row); no environment skip was needed.
+- **`work-residue`** — **RESOLVED 2026-09-21** (see the `pi-shipped-content-hygiene` row).
+- **`work-stale-code`** — **RESOLVED 2026-09-21** (see the `doctor-bootstrap-task` row).
+- **`work-adjudicate`** — **RESOLVED 2026-09-21**: all five files adjudicated; the test was stale in every case (details in the table above and in the plan doc's work-item ledger).
+- **`work-wire` / `work-snapshot-refresh`** — **RESOLVED 2026-09-21 for the fixed families**: 9 green files wired into the `regression` suite, `knownUnwired` 82 → 73 (exactly the wired count, guard W3 verified). The 5 rex fixture files remain unwired by design until A3 is decided.
+- **Release-ceremony correction (2026-09-21)**: `check-site-sync`'s `findCurrentReleaseBlogErrors` demanded a VERSION-marker blog post in en/zh/ja/ko for *every* version bump, which forced a maintenance patch into public marketing copy. Repo history shows the real convention — v5.17.0–v5.17.4 shipped changelog-only with no posts at all. The gate now exempts maintenance (patch > 0) releases; minor/major still require the post, and unknown version shapes default to requiring it.
 
 ---
 
