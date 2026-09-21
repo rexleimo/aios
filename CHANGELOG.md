@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.5] - 2026-09-21
+
+- fix(tests): newly wired regression tests are hermetic on a clean checkout; repairs the CI outage that blocked v6.0.2-v6.0.4
+
 ## [6.0.4] - 2026-09-21
 
 - fix(tests): POSIX-hermetic automem-loop and team-pi-worker; repair v6.0.2/v6.0.3 CI failure
