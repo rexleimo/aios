@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after wiring the remaining 68 (knownUnwired 68 → 0).
+> Last updated: 2026-09-21, after resolving B1 (planning evidence gate — validator was never missing).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -56,11 +56,8 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ### B1 — The planning evidence gate cannot be satisfied through the documented surface
 
-- **Status**: open, unowned locally. **Why it matters (high)**: AIOS *is* a control plane; a gate that cannot be opened is not a gate.
-- **Reproduction**: `aios_capability_evidence` for a planning Provider returns `delivery ticket schemaVersion must be 1` for all three of: `deliveryTicket: {}`, a well-formed `rex.delivery-ticket.v1` with `schemaVersion: 1`, and `schemaVersion: "banana"`. Identical message ⇒ **the argument is not the object being validated**.
-- **Likely subject**: the plan state itself (`docs/plans/...` + `.aios/planning/active.json`), which carries `schemaVersion: 3` — a planning contract version that can never equal the ticket's `1`.
-- **Where the fix lands**: not `scripts/`. The validator is absent from this repository, from `rex-harness/src`, and from `~/.aios`, so it lives in the MCP adapter/bridge that serves the tool.
-- **Until fixed**: planning evidence is delivered in-band as `AIOS_REX_EVIDENCE`; do not claim the ledger recorded it.
+- **Status**: **RESOLVED 2026-09-21 — the triage premise was wrong; the validator was never missing.** `normalizePlanningArtifact` lives in `rex-harness/src/domain/planning-artifact.mjs`, reached via `scripts/lib/workflows/rex-capability-runtime.mjs` ← `handleCapabilityEvidence` in `scripts/aios-mcp-server.mjs`. Proven by probe: a well-formed ticket passed directly, while the plan state (`schemaVersion: 3`) fails with the exact reported message (`delivery ticket schemaVersion must be 1`) — identical message for all three repro inputs ⇒ the serving adapter validated the plan state, never the argument. Second footgun found in-repo: the MCP schema only accepts `planningArtifact`, so a caller passing the rex-side name `deliveryTicket` had it silently dropped.
+- **Fix**: `handleCapabilityEvidence` now accepts the `deliveryTicket`/`delivery_ticket` alias via exported `resolvePlanningArtifactParam` (+ regression test in `workflow-adapters.test.mjs`, 12/12). Correct call shape: pass the ticket object itself as `planningArtifact` — never wrapped, never the plan state.
 
 ---
 

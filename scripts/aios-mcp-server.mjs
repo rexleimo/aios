@@ -747,6 +747,14 @@ async function handlePlanAutoGate(params) {
   }
 }
 
+/* 中文注释：planning 票据参数归一 — schema 只收 planningArtifact，
+   但调用方常按 rex 名 deliveryTicket 傳；未知字段会被静默丢弃，
+   导致校验器永远看不到实参（B1，2026-09-21）。 */
+export function resolvePlanningArtifactParam(params = {}) {
+  return params.planningArtifact || params.planning_artifact
+    || params.deliveryTicket || params.delivery_ticket;
+}
+
 async function handleCapabilityEvidence(params) {
   const workspace = params.workspace || process.cwd();
   try {
@@ -758,7 +766,11 @@ async function handleCapabilityEvidence(params) {
       evidence: params.evidence,
       requirementsDecision: params.requirementsDecision || params.requirements_decision,
       wayfinderArtifact: params.wayfinderArtifact || params.wayfinder_artifact,
-      planningArtifact: params.planningArtifact || params.planning_artifact,
+      // B1 compat (2026-09-21): callers that learned the rex name `deliveryTicket`
+      // passed it while the schema only accepted `planningArtifact`, and the
+      // unknown field was silently dropped — every ticket shape then failed
+      // with the same message because the validator never saw the argument.
+      planningArtifact: resolvePlanningArtifactParam(params),
     });
     return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
   } catch (err) {

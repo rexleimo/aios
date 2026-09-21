@@ -10,6 +10,7 @@ import {
   handleCapabilityEvidence,
   handlePlanAutoGate,
   handlePlanStart,
+  resolvePlanningArtifactParam,
 } from '../aios-mcp-server.mjs';
 import { parsePlanArgs } from '../lib/cli/parse-args/plan.mjs';
 import { runPlanCommand } from '../lib/planning/cli.mjs';
@@ -133,6 +134,18 @@ test('plan CLI parses the typed rex capability evidence contract', () => {
   assert.equal(parsed.options.evidenceRef, 'artifact:requirements');
   assert.equal(parsed.options.testabilityFile, 'testability.json');
   assert.equal(parsed.options.requirementsFile, 'requirements.json');
+});
+
+test('capability evidence accepts the deliveryTicket alias for planningArtifact (B1)', () => {
+  // B1 (2026-09-21): callers passed `deliveryTicket` while the schema only
+  // accepted `planningArtifact`; the unknown field was silently dropped so
+  // every ticket shape failed with the same validator message.
+  const ticket = { schemaVersion: 1, kind: 'rex.delivery-ticket.v1' };
+  assert.equal(resolvePlanningArtifactParam({ planningArtifact: ticket }), ticket);
+  assert.equal(resolvePlanningArtifactParam({ deliveryTicket: ticket }), ticket);
+  assert.equal(resolvePlanningArtifactParam({ delivery_ticket: ticket }), ticket);
+  assert.equal(resolvePlanningArtifactParam({ planning_artifact: ticket }), ticket);
+  assert.equal(resolvePlanningArtifactParam({}), undefined);
 });
 
 test('plan CLI submits a typed testability decision from a file with a real receipt', async () => {
