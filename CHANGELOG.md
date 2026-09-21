@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.3] - 2026-09-21
+
+- fix(mcp): planning evidence accepts deliveryTicket alias; B1 closed
+
 ## [6.0.2] - 2026-09-21
 
 - First tagged release of the 6.x line: this tag also carries v6.0.0 (engineering standards as a framework citizen) and v6.0.1 (the baseline moves into the rex-harness submodule) — their sections above ship as part of this release.
