@@ -1,44 +1,43 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-import { validateTrainingEvidence } from '../lib/skills/training-evidence-validator.mjs';
+import { verifySkillTrainingGate } from '../lib/skills/training-gate.mjs';
+import { createSkillTrainingGateFixture } from './fixtures/skill-training-gate.mjs';
 
 const ROOT = process.cwd();
-const SKILLS = ['rex-implement', 'rex-debug', 'rex-code-review', 'rex-wayfinder'];
+const SKILL_ID = 'rex-implement';
 
-async function readJson(file) {
-  return JSON.parse((await readFile(file, 'utf8')).replace(/^\uFEFF/, ''));
-}
+test('被篡改的评分器工件不能通过训练门禁升级 rex 正式 Skill', async () => {
+  const fixture = await createSkillTrainingGateFixture({
+    sourceSkillPath: path.join(ROOT, 'rex-harness', 'skill-sources', SKILL_ID, 'SKILL.md'),
+    skillId: SKILL_ID,
+  });
+  try {
+    const statePath = await fixture.writeAcceptedState();
+    const clean = await verifySkillTrainingGate({
+      rootDir: fixture.rootDir,
+      changedFiles: [fixture.relativeSkillPath],
+    });
+    assert.equal(clean.status, 'verified', '未经污染的 accepted 证据必须先通过门禁');
 
-function taskList(value) {
-  return Array.isArray(value) ? value : value.tasks;
-}
+    const scoredPath = path.join(path.dirname(statePath), 'candidate.scored.json');
+    const scored = JSON.parse(await readFile(scoredPath, 'utf8'));
+    scored.summary = { ...scored.summary, trainHard: Number(scored.summary?.trainHard ?? 0) + 1 };
+    await writeFile(scoredPath, `${JSON.stringify(scored, null, 2)}\n`, 'utf8');
 
-test('无效的批量 Target/Scorer 工件不能升级 rex 正式 Skill', async () => {
-  for (const skill of SKILLS) {
-    const root = path.join(ROOT, '.skillopt', `${skill}-2026-07-18`);
-    const [train, valid, gate, state, canonical] = await Promise.all([
-      readJson(path.join(root, 'tasks', 'train.json')),
-      readJson(path.join(root, 'tasks', 'valid.json')),
-      readJson(path.join(root, 'steps', 'step_0001', 'gate_result.json')),
-      readJson(path.join(root, 'state.json')),
-      readFile(path.join(ROOT, 'rex-harness', 'skill-sources', skill, 'SKILL.md'), 'utf8'),
-    ]);
-    const tasks = [...taskList(train), ...taskList(valid)];
-    for (const key of ['control', 'baseline', 'candidate']) {
-      const report = validateTrainingEvidence({
-        tasks,
-        raw: await readJson(path.join(root, `${key}_raw.json`)),
-        scored: await readJson(path.join(root, `${key}_scored.json`)),
-      });
-      assert.equal(report.valid, false, `${skill}:${key} must remain invalid`);
-    }
-    assert.equal(gate.action, 'reject_invalid_scorer_evidence');
-    assert.equal(state.status, 'no_proven_improvement');
-    assert.equal(state.canonicalAction, 'retain_baseline');
-    assert.equal(state.frozenBaselineHash, createHash('sha256').update(canonical).digest('hex'));
+    const tampered = await verifySkillTrainingGate({
+      rootDir: fixture.rootDir,
+      changedFiles: [fixture.relativeSkillPath],
+    });
+    assert.equal(tampered.status, 'blocked');
+    assert.deepEqual(
+      tampered.skills.map((skill) => [skill.skillId, skill.status]),
+      [[SKILL_ID, 'blocked']],
+    );
+    assert.match(tampered.skills[0].reason, /stale|incomplete|hash|evidence/u);
+  } finally {
+    await fixture.cleanup();
   }
 });

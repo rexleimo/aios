@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "rex-planning",
+  "sourcePath": "rex-harness/skill-sources/rex-planning/SKILL.md",
+  "base": "HEAD",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "21ca601ccad728a119b6db73e833f455da3a33b3b045b0fa4650caf557d48255",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "21ca601ccad728a119b6db73e833f455da3a33b3b045b0fa4650caf557d48255"
+  },
+  "candidate": {
+    "contentSha256": "21ca601ccad728a119b6db73e833f455da3a33b3b045b0fa4650caf557d48255"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-09-21T08:52:20.582Z"
+}
