@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after diagnosing the v6.0.2/v6.0.3 CI failures (3 real linux bugs, fixed for v6.0.4).
+> Last updated: 2026-09-21, after diagnosing and fixing the CI failure that blocked v6.0.2–v6.0.4 release builds (v6.0.5).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -52,6 +52,14 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ---
 
+### A5 — OPEN: the wiring guard proves reachability, not hermeticity
+
+- **Status**: open. **Why it matters (high)**: this gap caused the v6.0.2–v6.0.4 CI outage (see D).
+- **The hole**: `scripts/tests/test-suite-wiring.test.mjs` (W1/W2/W3) proves every `*.test.mjs` is reachable from a test entry point. It cannot prove the file *passes on a clean checkout*. The A1 triage verified the 82 unwired files by bulk-running them **in a working tree where `aios init`/`sync-skills` had already generated the gitignored projection roots**, so "never failing" was measured against a developer's tree, not CI's. Every file wired that way is a latent CI failure.
+- **Proposed guard (W4)**: fail when a test reads a path under a gitignored generated root (`.codex/skills`, `.claude/skills`, `.agents/skills`, `.grok/skills`, `.hermes/skills`, `.gemini/skills`, `.workbuddy/skills`, `.opencode/skills`, `.pi/skills`, `.skillopt`) instead of projecting through `materializeSkillTree` / tracked evidence. Cheapest sound version: assert the file's source text contains no such literal, then require an allow-list entry with a reason.
+
+---
+
 ## B. rex-harness / MCP adapter
 
 ### B1 — The planning evidence gate cannot be satisfied through the documented surface
@@ -72,10 +80,13 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ## D. Closed (for reference)
 
-- **v6.0.4 (CI repair)** — `v6.0.2`/`v6.0.3` tags pushed fine but the `release` workflow failed at `Run root release tests` (`npm run test:scripts`) on ubuntu while Windows was fully green (local `test:scripts` 1989/0). Reproduced with a local `node:24-bookworm-slim` container (anonymous-volume overlay gotcha: the mount carries Windows `node_modules` and CRLF `.sh` — both had to be normalized inside the container; POSIX grandchild-kill tests additionally need `--init`, they pass with it and fail without, on any image). True linux failures, all fixed and verified green on both platforms:
-  - `automem-loop` ×2: `fakeBin` only wrote a `codex.cmd` shim, which never resolves on POSIX — the client spawn died before the memo/skip path (plus `readLines` crashed on empty with `.map is not a function` instead of failing cleanly). Now also writes an extensionless executable `codex` shim; `readLines` falls back to `[]`.
-  - `team-pi-worker` win32-spec: the forced-`platform: 'win32'` assertion shelled out to the real `where` binary, absent on POSIX. Ships a hermetic `where` shim (exit 0) on non-win32.
-  - Non-failures, classified not fixed: `package-release` needs the `zip` binary (the workflow installs it — container lacked it); the two POSIX grandchild-kill tests are init-dependent (pass with `--init`, GitHub VMs have init).
+- **v6.0.5 — the CI outage that blocked v6.0.2/v6.0.3/v6.0.4 releases.** `release` and `ci-main` both failed at `Run root release tests` on ubuntu while the same suite was green on Windows. Root cause: **five regression tests read gitignored generated roots**, so they could only pass in a worktree where `sync-skills` had already run. They went red in CI the moment the A1 triage wired them into the suite, which is why the first red ci-main is `8bce5864` — the last green was `0d5cea23`, and the three commits between are the wiring + v6.0.2 release.
+  - `skills-no-injection-policy` → `.agents/skills/<skill>/SKILL.md`; `skills-source-tree` ×2 → `.grok/skills/...`, `.codex/skills/...`; `pi-shipped-content-hygiene` → 7 projection roots.
+  - `rex-minimal-construction-training-evidence` → `.skillopt/rex-minimal-construction-2026-07-18/**` — the same dead-fixture trap A3 fixed for five sibling files but missed here. Its `gate_result.json` (`reject_train_regression`) and `state.json` (`canonicalAction: retain_baseline`) are produced by **no code in this repository**, so those two assertions tested recorded external-trainer output. Replaced with production-reachable assertions through `validateTrainingEvidence` that encode the same hazard (candidate wins validation, gives back train, and **overall looks better**).
+  - `memo-events-cache` → inserted a wall-clock micro-benchmark assertion (`warm < cold`, measured 17ms vs 11ms under concurrency 4). Replaced with a best-of-N sample against a noise-tolerant budget; the deterministic `memoEventsCacheStats().hits >= repeats` check remains the hard gate.
+  - Fix primitive: `scripts/tests/fixtures/skill-projection.mjs` → `readProjectedSkill()` projects through the same `materializeSkillTree` the installer/sync use.
+  - **Method note (why this took so long)**: a bind-mounted Windows worktree cannot reproduce these — it carries the developer's generated roots *and* Windows binaries in `node_modules`. The failure only appears in a **pristine LF copy with container-local, platform-correct deps**. Verified: clean `node:24-bookworm-slim`, CI's exact 4 shims (`codex claude gemini opencode`), CI env → 1997 tests / 1987 pass / **0 fail** / 10 skipped.
+- **v6.0.4 (CI repair)** — three genuine POSIX failures found by the same container method: `automem-loop`'s `fakeBin` wrote only a `codex.cmd` shim (unresolvable on POSIX, so the client spawn died before the memo/skip path) and `readLines` crashed on empty input with `String.map`; `team-pi-worker`'s forced-`platform: 'win32'` assertion shelled out to the real `where` binary, absent on POSIX. Classified non-failures: `package-release` needs the `zip` binary (the workflow installs it), and the two POSIX grandchild-kill tests are init-dependent (pass with `--init`).
 
 - **v5.19.2** — `session:<id>` used as a file name, three root causes: `verdict.mjs` renamed onto an NTFS alternate data stream (`EINVAL`); `promotion.mjs` allow-listed the colon so the promotion was stored as a stream that `readdir` never lists and was lost with `errors.length === 0`; `integration.mjs` open-coded a second promotion writer that bypassed `promotionPath()`. Fixed in `b8d87c47`, fixture repair in `681a0487`.
 - **v5.19.2** — the release fixture copied `scripts/lib/fs/atomic-write.mjs` as an explicit single file, so a new sibling import broke every preflight run *inside a temporary root only* (`681a0487`).

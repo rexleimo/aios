@@ -16,6 +16,7 @@ import { doctorPiBridge } from '../lib/components/pi/doctor.mjs';
 import { AIOS_SYSTEM_PROMPT_ADDITION, buildBeforeAgentStartMessage } from '../../packages/aios-pi/lib/gates.mjs';
 import { buildToolDefs } from '../../packages/aios-pi/lib/tools.mjs';
 import { memoCheckpointArgs, memoRecallArgs, memoWriteArgs, resolveAiosRoot } from '../../packages/aios-pi/lib/aios-cli.mjs';
+import { readProjectedSkill } from './fixtures/skill-projection.mjs';
 
 // Repo-relative invocations only. The first two alternatives are exact
 // shapes (`node scripts/...` and the `scripts/aios.mjs` entrypoint). The
@@ -115,12 +116,13 @@ test('init project .mcp.json hint literals use the global CLI phrasing', async (
 test('memo skill projections document the checkpoint command via the global CLI', async () => {
   // Pi reads the shared root natively: AIOS must not project a .pi/skills
   // copy (Pi reports it as already loaded and skips the shared one).
-  const roots = ['.agents/skills', '.codex/skills', '.claude/skills', '.hermes/skills', '.gemini/skills', '.workbuddy/skills', '.opencode/skills'];
-  for (const root of roots) {
-    const file = path.join(process.cwd(), root, 'memo', 'SKILL.md');
-    const content = await fs.readFile(file, 'utf8');
-    assert.match(content, /`aios memo checkpoint/u, `${root} projection documents aios memo checkpoint`);
-    assert.doesNotMatch(content, REPO_RELATIVE_INVOCATION, `${root} projection must not embed repo-relative invocations`);
+  const surfaces = ['agents', 'codex', 'claude', 'hermes', 'gemini', 'workbuddy', 'opencode'];
+  for (const surface of surfaces) {
+    // Each generated root is gitignored, so a clean checkout has none of them;
+    // project through the production materializer instead of reading the disk.
+    const content = await readProjectedSkill(process.cwd(), 'memo', surface);
+    assert.match(content, /`aios memo checkpoint/u, `${surface} projection documents aios memo checkpoint`);
+    assert.doesNotMatch(content, REPO_RELATIVE_INVOCATION, `${surface} projection must not embed repo-relative invocations`);
   }
   await assert.rejects(
     fs.stat(path.join(process.cwd(), '.pi', 'skills')),

@@ -11,6 +11,7 @@ import {
   resolveGeneratedTargetPath,
 } from '../lib/skills/source-tree.mjs';
 import { parseFrontmatter, stripAiosFrontmatter } from '../lib/skills/frontmatter.mjs';
+import { readProjectedSkill } from './fixtures/skill-projection.mjs';
 
 async function makeTemp(prefix) {
   return mkdtemp(path.join(os.tmpdir(), prefix));
@@ -203,8 +204,9 @@ test('workflow router is cataloged and generated for Grok with Rex-only guidance
   assert.ok(router.clients.includes('grok'));
   assert.ok(router.repoTargets.includes('grok'));
 
-  const grokRouter = resolveGeneratedTargetPath({ rootDir, entry: router, surface: 'grok', manifest });
-  const content = await readFile(path.join(grokRouter, 'SKILL.md'), 'utf8');
+  // The `.grok/skills` root is generated and gitignored, so assert against the
+  // production materializer rather than a developer's synced worktree.
+  const content = await readProjectedSkill(rootDir, 'aios-workflow-router', 'grok');
   assert.match(content, /current rex-harness software Capability Command/u);
   assert.doesNotMatch(content, /superpowers:/u);
 });
@@ -263,8 +265,8 @@ test('aios work dispatch skill is cataloged for every client with safe agent tri
   }
 
   for (const surface of ['codex', 'claude', 'gemini', 'opencode', 'hermes', 'grok', 'agents']) {
-    const target = resolveGeneratedTargetPath({ rootDir, entry: workDispatch, surface, manifest });
-    const projected = await readFile(path.join(target, 'SKILL.md'), 'utf8');
+    // Generated roots are gitignored; project through the real materializer.
+    const projected = await readProjectedSkill(rootDir, 'aios-work-dispatch', surface);
     assert.match(projected, /# AIOS Work Dispatch/u, surface);
   }
 });

@@ -3,10 +3,8 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import test from 'node:test';
 
-import {
-  loadSkillsSyncManifest,
-  resolveGeneratedTargetPath,
-} from '../lib/skills/source-tree.mjs';
+import { loadSkillsSyncManifest } from '../lib/skills/source-tree.mjs';
+import { readProjectedSkill } from './fixtures/skill-projection.mjs';
 
 const rootDir = process.cwd();
 
@@ -65,13 +63,9 @@ test('agent discovery projection keeps workflow skills Rex-only', async () => {
     assert.ok(entry, `expected canonical source for ${skillName}`);
     assert.ok(entry.repoTargets.includes('agents'), `${skillName} must be projected to the agent discovery root`);
 
-    const generatedPath = resolveGeneratedTargetPath({
-      rootDir,
-      entry,
-      surface: 'agents',
-      manifest,
-    });
-    const content = await readFile(path.join(generatedPath, 'SKILL.md'), 'utf8');
+    // `.agents/skills` is a generated, gitignored root: project it through the
+    // production materializer so the assertion holds in a clean checkout.
+    const content = await readProjectedSkill(rootDir, skillName, 'agents');
     assert.doesNotMatch(
       content,
       /superpowers:|superpowers pairing|Pairing with Superpowers|writing-plans|brainstorming|test-driven-development|systematic-debugging/iu,
