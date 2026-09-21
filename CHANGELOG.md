@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.4] - 2026-09-21
+
+- fix(tests): POSIX-hermetic automem-loop and team-pi-worker; repair v6.0.2/v6.0.3 CI failure
+
 ## [6.0.3] - 2026-09-21
 
 - fix(mcp): planning evidence accepts deliveryTicket alias; B1 closed
