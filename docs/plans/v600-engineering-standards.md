@@ -1,7 +1,15 @@
 # Work Item: AIOS 6.0 — Engineering Standards（工程标准内建）
 
-> Status: in progress (2026-09-21)
+> Status: v1 shipped locally (commit 5d20f59a)；v2（子模块迁移）为后续工作项
 > Owner session: 一次 planned 工作项，直接顺序执行（无并行域）
+
+## 版本决策（2026-09-21，用户确认）
+
+**分两版走**：
+
+- **v1 = 6.0.0（本计划已交付）**：技能放宿主 `skill-sources/aios-engineering-standards`，先出版拿价值。
+- **v2（下一工作项）**：把技能移入 `rex-harness/skill-sources/rex-engineering-standards`（更名，去掉 aios- 前缀），宿主 router/gate 引用同步更新。理由：消费者（rex-implement / rex-refactor-hardening / rex-code-review / rex-design）全在子模块；rex-harness 是独立发布的 npm 包（"Standalone evidence-driven workflow control plane"，files 含 skill-sources/），独立使用时质量基线不应消失；标准与能力链共同演化，一个仓库一条 changelog。代价：双仓库发布仪式（子模块 commit+push、宿主 bump 指针、两条投影管线）、跨仓名称耦合（与 router 引用 rex-* Provider 同构的既有模式）。
+- v2 版本号建议 6.0.1（对外无能力变化，纯结构归位；需按 check-site-sync 规则补四语发布博客）。
 
 ## 背景与问题
 
