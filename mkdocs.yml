@@ -106,6 +106,7 @@ plugins:
             Perception: 感知层
             Architecture: 架构
             Workflow Policy: 工作流策略
+            Engineering Standards: 工程标准
             CLI Workflows: 按场景找命令
             Agent Team: 多 Agent 实战
             HUD Guide: HUD 指南
@@ -154,6 +155,7 @@ plugins:
             Perception: パーセプション
             Architecture: アーキテクチャ
             Workflow Policy: ワークフローポリシー
+            Engineering Standards: エンジニアリング基準
             CLI Workflows: CLI ワークフロー
             Agent Team: Agent Team
             HUD Guide: HUD ガイド
@@ -202,6 +204,7 @@ plugins:
             Perception: 인식 레이어
             Architecture: 아키텍처
             Workflow Policy: 워크플로 정책
+            Engineering Standards: 엔지니어링 표준
             CLI Workflows: CLI 워크플로
             Agent Team: Agent Team
             HUD Guide: HUD 가이드
@@ -289,6 +292,7 @@ nav:
       - Perception: perception.md
       - Architecture: architecture.md
       - Workflow Policy: workflow-policy.md
+      - Engineering Standards: engineering-standards.md
       - CLI Workflows: use-cases.md
   - Resources:
       - CLI Comparison: cli-comparison.md

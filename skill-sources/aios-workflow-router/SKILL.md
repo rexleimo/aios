@@ -51,6 +51,10 @@ disposition 由显式声明驱动，模型不猜"用户是否想只读/是否要
    - `completed`：关闭当前 Capability，并让 AIOS 自动评估下一个 Capability；
    - Promotion Request：由 AIOS 决定是否接受 Team 或 Harness 升级。
 
+## 代码生产前置（Engineering Standards）
+
+当前 Provider 属于代码生产类（`rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`）时，先加载 `aios-engineering-standards`：它提供架构边界规则、深层模块启发式、代码基线、工具链基线与 Definition of Done，是这些阶段的共同质量基线，不替代 Provider 自身流程。
+
 ## Provider 规则
 
 - 当前 Command 的 `provider.id` 以 `rex-` 开头时，仅执行 rex-harness 打包的对应 Skill。
@@ -67,7 +71,7 @@ disposition 由显式声明驱动，模型不猜"用户是否想只读/是否要
 
 ## 完成门
 
-改动行为后必须执行 `verification-before-completion` 或当前客户端暴露的等价验证 Skill。只有测试、类型检查、Review 和 Evidence Contract 都有具体引用时，才能声称完成。
+改动行为后必须执行 `verification-before-completion` 或当前客户端暴露的等价验证 Skill。代码生产类工作还要通过 `aios-engineering-standards` 的 Definition of Done。只有测试、类型检查、Review、Evidence Contract 和质量基线都有具体引用时，才能声称完成。
 
 ## 资源
 

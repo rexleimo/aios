@@ -5,11 +5,17 @@ description: "AIOS の全リリース履歴: 各バージョンで何が変わ�
 
 # 変更履歴
 
+## v6.0.0（2026-09-21）——エンジニアリング基準の内蔵：生成コードの成長
+
+- **エンジニアリング基準がフレームワークの一等市民に**：新しいスキル `aios-engineering-standards` が古典的な書単を、すべてのコード生産作業の Definition of Done に変える——Clean Architecture の依存ルールと境界規律、Ousterhout の深いモジュール、Clean Code の命名・関数・エラー処理ルール、DRY と直交性、テスト基準、ツールチェーン基準（lint + pre-commit + CI + 構造化ログ）、および重要な変更の ADD 記録。参照：[エンジニアリング基準](engineering-standards.md)。
+- **能力チェーンへの統合**：`aios-workflow-router` は `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design` の前に本基準を読み込み、`pre-edit-safety-gate` は選択した変更形状を它に照らして確認する。迂回できる新しい門ではない——品質基準は既存の証拠駆動チェーンに乗る。参照：[v6.0.0 リリース記事](/blog/ja/2026-09-v600-engineering-standards/)。
+- **ドキュメントと参考資料**：エンジニアリング基準ページを en/zh/ja/ko で提供。四段階能力モデル、九冊の書単と核心価値、無料で合法なリソース、「書籍の原則 → AIOS の仕組み」マッピング付き。
+
 ## v5.20.0（2026-09-19）——Qoder クライアント対応：10 クライアントを定義ブロック 1 つで
 
 - **Qoder クライアント**：`qoder` が 10 番目の第一級クライアントとしてレジストリに参加——国際版 CLI はホーム `~/.qoder`、中国国内版 `qoderclicn` はホーム `~/.qoder-cn`（`QODER_HOME` 上書き対応）。`scripts/lib/clients/core/definitions.mjs` の定義ブロック 1 つが skills 投影（`.qoder/skills/`、27 のカタログスキルと rex ワークフロースキル）、ネイティブ同期（AGENTS.md 管理ブロック）、MCP 配置先、shell bridge、doctor ゲート、team/harness 起動を駆動する。
 - **Qoder が実際に読むファイルへ MCP**：AIOS 管理サーバーはユーザーレベル `~/.qoder/settings.json` とプロジェクトレベル `.qoder/settings.json` のトップレベル `mcpServers` へ移行。remote HTTP MCP は Qoder 自身の検証済み CLI CRUD（`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`）で登録。gitignore される `settings.local.json` スコープは触らない。
-- **headless と境界の正直な記録**：team/harness は `-p` プリントモード＋`--yolo` で Qoder を駆動。モデルルーティングは `own`（モデルはアカウントに紐付き対話の `/model` で選択、検証済み headless `--model` はないため AIOS はエンドポイントを中継しない）。ホスト能力は L2 で制限も記録どおり。参照：[Qoder クライアント ブログ記事](/blog/2026-09-v520-qoder-client/)。
+- **headless と境界の正直な記録**：team/harness は `-p` プリントモード＋`--yolo` で Qoder を駆動。モデルルーティングは `own`（モデルはアカウントに紐付き対話の `/model` で選択、検証済み headless `--model` はないため AIOS はエンドポイントを中継しない）。ホスト能力は L2 で制限も記録どおり。参照：[Qoder クライアント ブログ記事](/blog/ja/2026-09-v520-qoder-client/)。
 
 ## v5.14.0（2026-09-13）——LoopX コントロールプレーン + 孤児プロセス根絶
 

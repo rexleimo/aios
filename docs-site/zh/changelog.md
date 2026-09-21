@@ -5,11 +5,17 @@ description: "AIOS 完整版本历史：每个版本发生了什么变化、升�
 
 # 更新日志
 
+## v6.0.0（2026-09-21）——工程标准内建：生成代码长大了
+
+- **工程标准成为框架一等公民**：新技能 `aios-engineering-standards` 把经典书单变成所有代码生产工作的 Definition of Done——Clean Architecture 依赖规则与边界纪律、Ousterhout 深层模块、Clean Code 命名/函数/错误处理规则、DRY 与正交性、测试基线、工具链基线（Lint + pre-commit + CI + 结构化日志），以及 consequential 改动的 ADD 记录。见：[工程标准](engineering-standards.md)。
+- **接入能力链**：`aios-workflow-router` 在 `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design` 之前加载本标准，`pre-edit-safety-gate` 按它核对变更形态。不是一道可以绕过的门——质量基线骑在已有的证据驱动链上。见：[v6.0.0 发布博客](/blog/zh/2026-09-v600-engineering-standards/)。
+- **文档与参考文案**：工程标准页以中英日韩四语发布，含四阶段能力模型、九本书单与核心价值、免费合法资源、"书中观点 → AIOS 机制"映射。
+
 ## v5.20.0（2026-09-19）——Qoder 客户端支持：十个客户端，一个定义块
 
 - **Qoder 客户端**：`qoder` 作为第十个一等客户端进入注册表——国际版 CLI 主目录 `~/.qoder`，国内版发行 `qoderclicn` 主目录 `~/.qoder-cn`（支持 `QODER_HOME` 覆盖）。`scripts/lib/clients/core/definitions.mjs` 里的一个定义块驱动全部能力：skills 投影（`.qoder/skills/`，27 个目录技能加 rex 工作流技能）、原生同步（AGENTS.md 托管块）、MCP 落点、shell bridge、doctor 门禁与 team/harness 派发。
 - **MCP 写进 Qoder 真正读取的文件**：AIOS 托管的 server 迁移到用户级 `~/.qoder/settings.json` 与项目级 `.qoder/settings.json` 的顶层 `mcpServers`；远程 HTTP MCP 通过 Qoder 自己已验证的 CLI CRUD 注册（`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`）。被 gitignore 的 `settings.local.json` 作用域不动。
-- **headless 与如实标注边界**：team/harness 以 `-p` 打印模式加 `--yolo` 驱动 Qoder；模型路由是 `own`（模型绑定账号、交互式 `/model` 选择，没有验证过的 headless `--model`，AIOS 不中继端点），宿主能力定级 L2 并如实记录限制。见：[Qoder 客户端博客](/blog/2026-09-v520-qoder-client/)。
+- **headless 与如实标注边界**：team/harness 以 `-p` 打印模式加 `--yolo` 驱动 Qoder；模型路由是 `own`（模型绑定账号、交互式 `/model` 选择，没有验证过的 headless `--model`，AIOS 不中继端点），宿主能力定级 L2 并如实记录限制。见：[Qoder 客户端博客](/blog/zh/2026-09-v520-qoder-client/)。
 
 ## v5.14.0（2026-09-13）——LoopX 控制面 + 无孤儿进程树
 

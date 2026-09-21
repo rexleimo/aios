@@ -5,11 +5,17 @@ description: "AIOS 전체 릴리스 이력입니다. 각 버전에서 무엇이 
 
 # 변경 로그
 
+## v6.0.0 (2026-09-21) — 엔지니어링 표준 내장: 생성 코드의 성장
+
+- **엔지니어링 표준이 프레임워크 1급 시민으로**: 새 스킬 `aios-engineering-standards`가 고전 서적 목록을 모든 코드 생산 작업의 Definition of Done으로 바꾼다 — Clean Architecture 의존 규칙과 경계 규율, Ousterhout의 깊은 모듈, Clean Code 명명/함수/오류 처리 규칙, DRY와 직교성, 테스트 기준, 도구 체인 기준(lint + pre-commit + CI + 구조화 로그), 그리고 중요한 변경의 ADD 기록. 참조: [엔지니어링 표준](engineering-standards.md).
+- **능력 체인에 통합**: `aios-workflow-router`가 `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design` 전에 이 표준을 로드하고, `pre-edit-safety-gate`가 선택한 변경 형태를它에 맞춰 확인한다. 우회 가능한 새 문이 아니라 — 품질 기준은 기존 증거 기반 체인 위를 달린다. 참조: [v6.0.0 릴리스 글](/blog/ko/2026-09-v600-engineering-standards/).
+- **문서와 참고 자료**: 엔지니어링 표준 페이지를 en/zh/ja/ko로 제공. 4단계 능력 모델, 9권 서적 목록과 핵심 가치, 무료 합법 자료, "서적 원리 → AIOS 메커니즘" 매핑 포함.
+
 ## v5.20.0 (2026-09-19) — Qoder 클라이언트 지원: 열 개 클라이언트, 하나의 정의 블록
 
 - **Qoder 클라이언트**: `qoder`가 열 번째 1급 클라이언트로 레지스트리에 참여 — 국제판 CLI 홈 `~/.qoder`, 중국 내수판 `qoderclicn` 홈 `~/.qoder-cn`(`QODER_HOME` 덮어쓰기 지원). `scripts/lib/clients/core/definitions.mjs`의 정의 블록 하나가 skills 투사(`.qoder/skills/`, 27개 카탈로그 스킬과 rex 워크플로 스킬), 네이티브 동기화(AGENTS.md 관리 블록), MCP 배치 대상, 셸 브리지, doctor 게이트, team/harness 시작을 구동한다.
 - **Qoder가 실제로 읽는 파일에 MCP**: AIOS 관리 서버는 사용자 수준 `~/.qoder/settings.json`과 프로젝트 수준 `.qoder/settings.json`의 최상위 `mcpServers`로 마이그레이션. 원격 HTTP MCP는 Qoder 자신의 검증된 CLI CRUD(`qoder mcp add --scope user|local|project --transport stdio|sse|http|ws`)로 등록. gitignore되는 `settings.local.json` 스코프는 건드리지 않는다.
-- **headless와 정직한 한계 기록**: team/harness는 `-p` 출력 모드에 `--yolo`로 Qoder를 구동. 모델 라우팅은 `own`(모델이 계정에 묶여 대화형 `/model`로 선택, 검증된 headless `--model`이 없어 AIOS는 엔드포인트를 중계하지 않음)이고 호스트 능력은 L2로 한계를 함께 기록한다. 참조: [Qoder 클라이언트 블로그 글](/blog/2026-09-v520-qoder-client/).
+- **headless와 정직한 한계 기록**: team/harness는 `-p` 출력 모드에 `--yolo`로 Qoder를 구동. 모델 라우팅은 `own`(모델이 계정에 묶여 대화형 `/model`로 선택, 검증된 headless `--model`이 없어 AIOS는 엔드포인트를 중계하지 않음)이고 호스트 능력은 L2로 한계를 함께 기록한다. 참조: [Qoder 클라이언트 블로그 글](/blog/ko/2026-09-v520-qoder-client/).
 
 ## v5.14.0 (2026-09-13) — LoopX 컨트롤 플레인 + 고아 프로세스 제거
 

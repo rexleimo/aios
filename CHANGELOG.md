@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [6.0.0] - 2026-09-21
+
+- feat(quality): engineering standards become a first-class framework citizen — the new `aios-engineering-standards` skill encodes the classic software-engineering baseline as the Definition of Done for all code-producing work: Clean Architecture dependency rule and boundary discipline (high cohesion, low coupling, minimal interface), Ousterhout deep modules (small interface, deep implementation; strategic over tactical programming), Clean Code naming/function/error-handling rules, DRY and orthogonality, a test-coverage bar, a toolchain bar for new projects (lint + pre-commit hooks + CI + structured logging), and ADD documentation for consequential changes. `aios-workflow-router` now loads the standard before `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`, and `pre-edit-safety-gate` checks the chosen change shape against it — the quality baseline rides the existing evidence-driven capability chain instead of running beside it.
+- docs(site): new public Engineering Standards page (en/zh/ja/ko) with the four-stage engineering capability model, the reference reading list (Clean Code, Refactoring 2, The Pragmatic Programmer 2, GoF Design Patterns, Clean Architecture, DDIA, A Philosophy of Software Design, The Mythical Man-Month, Making Things Happen) with core values, free legitimate resources, and a book-principle → AIOS-mechanism mapping; release blog post in en/zh/ja/ko.
+
 ## [Unreleased]
 
 - fix(clients): Qoder now resolves its **edition home** — `resolveQoderHome()` in `scripts/lib/platform/paths.mjs` picks `~/.qoder-cn` on a CN install (matched by product-written markers, `QODER_HOME` still wins) instead of hardcoding `~/.qoder`, so user-scope skills and `settings.json` land in a directory the shipped runtime actually scans. Distribution command names resolve as candidates (`commandAliases` finally has consumers): capability detection, Windows spawn classification, and command→client reverse lookup all accept `qoder` / `qodercli` / `qodercn` / `qoder-cn` / `qoderclicn`.

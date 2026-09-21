@@ -7,6 +7,12 @@ description: "Release history for AIOS: what changed in every version, upgrade n
 
 Use this page to track what changed in `AIOS` and jump to release-related docs updates.
 
+## v6.0.0 (2026-09-21) — Engineering Standards: Generated Code Grows Up
+
+- **Engineering standards as a framework citizen**: the new `aios-engineering-standards` skill turns the classic software-engineering reading list into the Definition of Done for all code-producing work — Clean Architecture dependency rule and boundary discipline, Ousterhout deep modules, Clean Code naming/function/error rules, DRY and orthogonality, a test bar, a toolchain bar (lint + pre-commit + CI + structured logging), and ADD records for consequential changes. See: [Engineering Standards](engineering-standards.md).
+- **Wired into the capability chain**: `aios-workflow-router` loads the standard before `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`, and `pre-edit-safety-gate` checks the chosen change shape against it. Not a new gate to route around — the quality baseline rides the existing evidence-driven chain. See: [v6.0.0 release post](/blog/2026-09-v600-engineering-standards/).
+- **Docs and reference materials**: the Engineering Standards page ships in en/zh/ja/ko with the four-stage capability model, the nine-book reading list with core values, free legitimate resources, and a book-principle → AIOS-mechanism mapping.
+
 ## v5.20.0 (2026-09-19) — Qoder Client Support: Ten Clients, One Definition Block
 
 - **Qoder client**: `qoder` joins the registry as the tenth first-class client — international CLI home `~/.qoder`, CN distribution `qoderclicn` with home `~/.qoder-cn` (`QODER_HOME` override honored). One definition block in `scripts/lib/clients/core/definitions.mjs` drives skills projection (`.qoder/skills/`, all 27 catalog skills plus rex workflow skills), native sync (managed AGENTS.md block), MCP targets, shell bridge, doctor gates, and team/harness spawn.

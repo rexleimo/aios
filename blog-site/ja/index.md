@@ -22,6 +22,7 @@ AIOS を初めて使う方へ。これらの投稿で概要を把握できます
 
 ## 最新の記事
 
+- [v6.0.0：エンジニアリング基準の内蔵——AIOS はコードを生成するだけでなく、ソフトウェアを構築する](2026-09-v600-engineering-standards.md) — 古典的な書単から導出した一つの品質基準を router がコード生産 Provider の前に読み込み、すべての変更に Definition of Done
 - [v5.20.0：Qoder が AIOS に合流——10 番目のクライアント、定義ブロック 1 つ](2026-09-v520-qoder-client.md) — 10 番目の第一級クライアント、Qoder が実際に読む settings.json への MCP、AGENTS.md コンテキスト、`-p` ヘッドレス team
 - [Jev + AIOS クイックスタート：キーワード不要、裏側で自動判断](2026-09-jev-aios-quickstart.md) — TYPESAFE_API_KEY を設定し判断ゲートを開けたら、普段どおり話すだけで Jev が裏側で判断する
 - [v5.19.2：Windows が扱える名前](2026-09-v5192-names-windows-can-hold.md) — 候補 id をファイル名にすると NTFS では代替データストリームになり、昇格は静かに失われ、取り込み側はエラー 0 件と報告する

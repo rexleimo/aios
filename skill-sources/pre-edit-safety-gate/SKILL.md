@@ -52,7 +52,16 @@ Do not treat "smallest change" or "reuse first" as reasons to preserve an
 unsuitable design. The smallest maintainable change is the smallest complete
 design that correctly supports the request and leaves responsibility clear.
 
-## 3. Design for Reuse and Clear Ownership
+## 3. Apply the Engineering Standards Baseline
+
+When the change is code-producing (implementation, refactor, review, or design
+resolution), load `aios-engineering-standards` and check the chosen change shape
+against its baseline: boundary and dependency direction, deep-module heuristic,
+naming and function shape, test coverage, and toolchain expectations. The
+standards' Definition of Done is a completion gate alongside focused tests; it
+does not replace the Rex Provider's evidence contract.
+
+## 4. Design for Reuse and Clear Ownership
 
 Search for similar behavior before adding an implementation. Record the best
 candidate and why it is reused, extended, refactored, or rejected. Existing
@@ -85,7 +94,7 @@ Ask before expanding the requested scope, handling uncertain user-owned data,
 performing an irreversible deletion, pushing with force, or carrying out a
 production external action that was not already authorized.
 
-## 4. Make and Verify the Batch
+## 5. Make and Verify the Batch
 
 1. Make one cohesive implementation or refactor batch that matches the plan.
 2. Review `git diff` for duplicate logic, misplaced ownership, leaked
