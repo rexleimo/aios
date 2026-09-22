@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [6.1.0] - 2026-09-23
+
+- feat(browser): MCP default-off with mode selection (none|playwright|bsk, default none); install-time prompt + switch command + BSK connect baseline; 4-language release blog
+
 ## [6.0.13] - 2026-09-22
 
 - fix(integrations): ZCode's HTTP key name is read out of ZCode's own runtime instead of being guessed — `zcode` moves from `manual` to the verified `config` plane and writes `{"type":"http","url":...}` into `~/.zcode/cli/config.json` / `<repo>/.zcode/config.json` under `mcp.servers` (closes A14). ZCode's CLI bundle validates every `mcp.servers` entry with a strict discriminated union on `type` (`stdio`/`http`/`sse`): `http` and `sse` require `url`, `stdio` requires `command`, and an unknown field gets that one server dropped with a `config_mcp_server_invalid` warning. AIOS records that schema as the entry's evidence, and no client falls back to `manual-step-required` any more.

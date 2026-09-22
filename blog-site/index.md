@@ -22,6 +22,7 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v6.1.0: Browser MCP Off by Default — One Install-Time Choice, Three Modes](2026-09-browser-mcp-default-off.md) — browser automation is no longer installed on every machine; pick none/playwright/bsk at install and switch anytime
 - [v6.0.1: Engineering Standards Move to rex-harness — The Baseline Lives With Its Consumers](2026-09-v601-engineering-standards-rex.md) — the quality baseline now ships with the capability chain that consumes it
 - [v6.0.0: Engineering Standards — AIOS Builds Software, Not Just Code](2026-09-v600-engineering-standards.md) — one quality baseline from the classic books, loaded by the router before code-producing providers, with a Definition of Done for every change
 - [v5.20.0: Qoder Joins AIOS — Ten Clients, One Definition Block](2026-09-v520-qoder-client.md) — tenth first-class client, MCP in Qoder's real settings.json scopes, AGENTS.md context, headless team runs
