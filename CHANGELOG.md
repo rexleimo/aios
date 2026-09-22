@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.12] - 2026-09-22
+
+- fix(audit): A8-class re-export defect, unresolvable test entries, and invisible unit suite (A11-A13)
+
 ## [6.0.11] - 2026-09-22
 
 - fix(ci): release-health-watch heredoc terminator (A6), plus a workflow shell-syntax guard
