@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.6] - 2026-09-22
+
+- fix(integrations): WorkBuddy MCP registration is verified; correct the C1/C3 premises (C2, C4 closed)
+
 ## [6.0.5] - 2026-09-21
 
 - fix(tests): newly wired regression tests are hermetic on a clean checkout; repairs the CI outage that blocked v6.0.2-v6.0.4
