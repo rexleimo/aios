@@ -1,4 +1,11 @@
 {
+  "unit": {
+    "concurrency": 4,
+    "files": [
+      "scripts/tests/unit/default-mode.test.mjs",
+      "scripts/tests/unit/test-suite-runner.test.mjs"
+    ]
+  },
   "regression": {
     "concurrency": 4,
     "files": [
@@ -200,7 +207,8 @@
       "scripts/tests/work-item-rex-isolation.test.mjs",
       "scripts/tests/workspace-integration.test.mjs",
       "scripts/tests/cli-parser-help.test.mjs",
-      "scripts/tests/workflow-shell-syntax.test.mjs"
+      "scripts/tests/workflow-shell-syntax.test.mjs",
+      "scripts/tests/esm-reexport-binding.test.mjs"
     ]
   },
   "browser": {

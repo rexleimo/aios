@@ -1,6 +1,13 @@
 // 纯函数：对可 JSON 序列化的策略快照做深拷贝，避免训练更新污染参考策略。
 // 纯函数：生成稳定的 32 位哈希，用于跨平台可复现的伪随机种子。
-export { clone, computeHash } from '../../../../src/shared/normalize.mjs';
+// 注意：`export ... from` 只对外转发绑定，**不会**把名字引入本模块作用域；
+// nextRandom 下文要直接调用 computeHash，所以必须 import 后再 export
+// （2026-09-22 审计修复：之前只写了 re-export，nextRandom 的 seed===0 分支会抛
+// ReferenceError: computeHash is not defined；平时被 bandit-state.mjs 预先初始化
+// rngState 掩盖，属潜伏崩溃）。
+import { clone, computeHash } from '../../../../src/shared/normalize.mjs';
+
+export { clone, computeHash };
 
 export function nextRandom(state) {
   let seed = Number(state.rngState || 0) >>> 0;

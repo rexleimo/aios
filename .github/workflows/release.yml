@@ -73,6 +73,12 @@ jobs:
         run: |
           npm run test:rl
 
+      # scripts/tests/unit/** was outside every suite and every CI job until
+      # 2026-09-22 (audit F7). ~1s.
+      - name: Run unit suite
+        run: |
+          npm run test:unit
+
       - name: Verify mcp-server
         run: |
           cd mcp-server

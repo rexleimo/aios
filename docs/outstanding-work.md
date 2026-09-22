@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after closing A6 (workflow heredoc indentation) and A10 (per-command help).
+> Last updated: 2026-09-21, after the defect audit: A11/A12/A13 fixed with three new guards; A14/A15/A16 opened.
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -93,6 +93,44 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Fix**: `parse()` now reports `helpCommand`, `createCliParser` exposes `helpText(name)` (rendering that command’s `Options`, falling back to top level for an empty or unknown name), and the three CLIs that have both subcommands and a help path — `rl-shell-v1.mjs`, `rl-mixed-v1.mjs`, `privacy-guard.mjs` — now print `cli.helpText(parsed.helpCommand)`. `help <command>` and `<command> --help` both work; a bare invocation, `-h`, and `help <unknown>` still print top-level help.
 - **Coverage**: `createCliParser` had **no test file at all** across its 12 consumers, so `scripts/tests/cli-parser-help.test.mjs` was added (7 tests: helpCommand for each request form, unknown-command fallback, `helpText` content, and that subcommand flags/positionals still parse). It is wired into the `regression` suite (197 → 198 files).
 - **Assertion restored**: the `rl-shell-v1` entrypoint test that had been downgraded now runs `help phase3-train` and asserts `--config`, `--resume`, and `--max-tasks` are documented, plus a separate test for the phase-3 command list.
+---
+
+### A11 — RESOLVED 2026-09-21 (v6.0.12): the A8 defect had a second instance, now guarded
+
+- **Defect (audit F1)**: `scripts/lib/rl-core/trainer/core.mjs` opened with `export { clone, computeHash } from ...` and then called `computeHash` locally inside `nextRandom` → `ReferenceError: computeHash is not defined`. **Reproduced**: `nextRandom({})` threw.
+- **Why CI stayed green**: `bandit.mjs` gets its state from `ensureBanditState()`, which (correctly importing `computeHash`) seeds `rngState` first, so the branch was rarely reached — a *latent* crash, not a live one. Still wrong: `Number(state.rngState || 0)` also treats a legitimate `rngState === 0` as unset.
+- **Process gap this exposed**: A8 was fixed as a one-off patch with no guard, so the class recurred. Fixed the instance (import, then re-export — verified `nextRandom({})` now returns and the public surface still exposes `computeHash`/`clone`) **and** added `scripts/tests/esm-reexport-binding.test.mjs`. It scans every module under `scripts`/`src`/`packages`/`mcp-server/src` for re-exported names used without a local binding, using a comment- and string-aware code view (the naive scan false-positived on a comment header in `src/core/index.mjs` and on its own test data). Wired into `regression`.
+- **Non-vacuous**: the guard failed before the fix, naming `scripts/lib/rl-core/trainer/core.mjs -> computeHash`, and passes after. It also unit-tests the detector: comment-only mention, quoted export text, binding via `import`, binding via local declaration.
+
+### A12 — RESOLVED 2026-09-21 (v6.0.12): test entries could reference files that do not exist
+
+- **Defect (audit F2, design gap)**: `node --test` exits **0** when a path is missing or a glob matches nothing — measured both ways (`Could not find <path>` alongside `exit 0`, and `pass 0 / fail 0 / exit 0` for an empty glob). A `test:*` script can therefore shrink coverage in silence. **Live instance**: `test:workflow-policy` referenced `scripts/tests/default-mode.test.mjs`, which had been *moved* to `scripts/tests/unit/` by `62e3ff9c` and never updated; the script kept reporting green with 63 tests.
+- **Guard coverage before this**: W1 checked only `test-suites.json`; W2/W5 checked file → entry reachability, never entry → file.
+- **Fix + guard**: the stale path is gone from `test:workflow-policy` (that file is registered in the `unit` suite instead), and **W6** now asserts every `scripts/...` reference in a `pretest:*`/`test:*` script resolves — explicit paths must exist, globs must match at least one file, and `run-test-suite.mjs <suite>` must name a known suite that resolves to at least one file. Non-vacuous: W6 failed before the fix, naming `missing file -> scripts/tests/default-mode.test.mjs`.
+
+### A13 — RESOLVED 2026-09-21 (v6.0.12): `scripts/tests/unit/**` was outside every guard and every CI job
+
+- **Defect (audit F7 — worse than it first looked)**: the `unit` suite was defined **in code only** (`roots: ['scripts/tests/unit']`) and not in `test-suites.json`, while `wiring()` listed only the top level of `scripts/tests`. Both `scripts/tests/unit/*.test.mjs` were therefore invisible to W2/W5 — in no suite, in no CI job — and one of them was **red**: `test-suite-runner.test.mjs` pinned `regression.concurrency === 1` long after the manifest moved to 4. A refactor silently dropped coverage, the same family as A1/A7, but structurally hidden from the guard.
+- **Fix**: `unit` moved into `test-suites.json` (two explicit files) with `SUITES.unit` manifest-driven like every other suite; the stale concurrency assertion replaced with manifest-consistent checks; `test:unit` added to `ci-main` and `release` so those files actually run; and the guard now walks `scripts/tests/**` recursively and expands suite `roots` when a suite is roots-based.
+- **Non-vacuous**: before the fixes W2/W5 failed naming both unit files and W6 named the dangling path; afterwards all six assertions (W1, W2, W3, W5, W5-drift, W6) pass. `npm run test:unit` is 18/18.
+
+### A14 — OPEN: `zcode` HTTP config shape is still "unverified" (possible stale premise)
+
+- **Status**: open. Both previous blockers in this area were wrong when actually tested: B1's "the validator does not exist" and C2's "`codebuddy mcp add` requires `--agent`".
+- **Evidence**: `zcode` is the only remaining entry with `verified: false` / `transport: 'manual'`, reason `http-config-shape-unverified` (`scripts/lib/integrations/clients.mjs`).
+- **Next**: verify the HTTP key name against ZCode's own config schema (the method used for WorkBuddy in C2), or record that the premise was re-checked and still holds. ZCode is an Electron client with no CLI, so this needs its config file rather than a command.
+
+### A15 — OPEN: the five `shell: pwsh` workflow steps are outside S1/S2
+
+- **Status**: open. S1/S2 (`scripts/tests/workflow-shell-syntax.test.mjs`) cover bash `run:` blocks only, because `windows-shell-smoke.yml` deliberately uses `shell: pwsh` for five steps.
+- **Why it matters (low-medium)**: PowerShell has its own here-string rules (the terminator must be at column 0), so the A6 class is not bash-specific. Those steps are currently unguarded.
+- **Next**: add a PowerShell syntax check to the guard where `pwsh` is available, or record the decision not to.
+
+### A16 — OPEN: `src/core/index.mjs` has no importers
+
+- **Status**: open (low). The module calls itself a "core infrastructure barrel" and its header documents the intended import path, but no module in `scripts/`, `src/`, `packages/`, or `mcp-server/src/` imports it.
+- **Next**: delete it, or adopt it as the entry point its header describes. It is also why the ESM guard needed comment-aware scanning: its only "uses" were names listed in a comment.
+
 ## B. rex-harness / MCP adapter
 
 ### B1 — The planning evidence gate cannot be satisfied through the documented surface

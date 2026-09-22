@@ -58,6 +58,8 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 
+import { suiteSpec } from '../lib/test-suite-runner.mjs';
+
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const TESTS_DIR = path.join(ROOT, 'scripts', 'tests');
 const SUITES_PATH = path.join(ROOT, 'scripts', 'test-suites.json');
@@ -83,19 +85,50 @@ function matchesPattern(file, pattern) {
   return new RegExp(`^${escaped}$`).test(file);
 }
 
+/**
+ * Every `scripts/tests/**\/*.test.mjs`, recursively.
+ *
+ * Recursion matters: `scripts/tests/unit/` exists, and a top-level-only listing made
+ * those files invisible to this guard — so they could sit outside every suite, in no CI
+ * job, and even red, with the guard reporting all-clear (audit F7, 2026-09-22).
+ */
+function walkTestFiles() {
+  const files = [];
+  const walk = (dir) => {
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) walk(full);
+      else if (entry.name.endsWith('.test.mjs')) files.push(path.relative(ROOT, full).split(path.sep).join('/'));
+    }
+  };
+  walk(TESTS_DIR);
+  return files.sort();
+}
+
+/**
+ * Files a suite actually runs, modelled the way `run-test-suite.mjs` resolves them: an
+ * explicit `files` list, or discovery under `roots` (the `unit` suite is roots-based).
+ */
+function suiteFiles(name) {
+  let spec;
+  try {
+    spec = suiteSpec(name);
+  } catch {
+    return null;
+  }
+  if (Array.isArray(spec.files)) return [...spec.files];
+  return walkTestFiles().filter((file) => (spec.roots || []).some((root) => file.startsWith(`${root}/`)));
+}
+
 /** Every behaviour below reads this one computation. */
 function wiring() {
   const suites = JSON.parse(fs.readFileSync(SUITES_PATH, 'utf8'));
   const registered = new Set();
-  for (const suite of Object.values(suites)) {
-    for (const file of suite.files || []) registered.add(file);
+  for (const name of Object.keys(suites)) {
+    for (const file of suiteFiles(name) || []) registered.add(file);
   }
   const patterns = entryPatterns();
-  const onDisk = fs
-    .readdirSync(TESTS_DIR)
-    .filter((name) => name.endsWith('.test.mjs'))
-    .map((name) => `scripts/tests/${name}`)
-    .sort();
+  const onDisk = walkTestFiles();
   const wired = new Set(
     onDisk.filter(
       (file) => registered.has(file) || patterns.some((pattern) => matchesPattern(file, pattern)),
@@ -170,6 +203,39 @@ test('W3: the unwired baseline holds only genuinely unwired files', () => {
   );
 });
 
+test('W6: every file reference in a test script resolves', () => {
+  const scripts = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).scripts || {};
+  const onDisk = walkTestFiles();
+  const problems = [];
+  for (const [name, body] of Object.entries(scripts)) {
+    if (!(name === 'pretest:scripts' || name.startsWith('test:'))) continue;
+    for (const match of String(body).matchAll(/(?:scripts\/[^\s&|'"]+\.(?:mjs|js|sh|ps1))/g)) {
+      const target = match[0];
+      if (target.includes('*')) {
+        // A glob that matches nothing is a silently empty run: `node --test` exits 0.
+        if (!onDisk.some((file) => matchesPattern(file, target))) {
+          problems.push(`${name}: glob matches no file -> ${target}`);
+        }
+        continue;
+      }
+      if (!fs.existsSync(target)) {
+        problems.push(`${name}: missing file -> ${target}`);
+      }
+    }
+    for (const match of String(body).matchAll(/run-test-suite\.mjs\s+([A-Za-z0-9:_-]+)/g)) {
+      const files = suiteFiles(match[1]);
+      if (files === null) problems.push(`${name}: unknown suite -> ${match[1]}`);
+      else if (files.length === 0) problems.push(`${name}: suite ${match[1]} resolves to zero files`);
+    }
+  }
+  assert.deepEqual(
+    problems,
+    [],
+    'test scripts reference files or suites that do not resolve; `node --test` exits 0 when a '
+      + `path is missing or a glob matches nothing, so this drifts silently: ${problems.join('; ')}`,
+  );
+});
+
 const WORKFLOWS_DIR = path.join(ROOT, '.github', 'workflows');
 
 /**
@@ -211,7 +277,7 @@ function ciExecutedFiles() {
       for (const file of onDisk) if (matchesPattern(file, match[0])) files.add(file);
     }
     for (const match of body.matchAll(/run-test-suite\.mjs\s+([A-Za-z0-9:_-]+)/g)) {
-      for (const file of suites[match[1]]?.files || []) files.add(file);
+      for (const file of suiteFiles(match[1]) || []) files.add(file);
     }
   }
   return files;

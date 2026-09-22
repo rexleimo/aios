@@ -125,6 +125,24 @@ jobs:
           fi
           exit "$status"
 
+      # scripts/tests/unit/** sits outside the regression suite and no workflow ran
+      # test:unit, so those files could be red and invisible (audit F7). ~1s.
+      - name: Run unit suite
+        run: |
+          set -o pipefail
+          npm run test:unit 2>&1 | tee unit-tests.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo '## unit failures'
+              echo
+              echo '```'
+              rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' unit-tests.log | head -120 || true
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
       - name: Upload scripts-tests log
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -133,6 +151,7 @@ jobs:
           path: |
             scripts-tests.log
             rl-tests.log
+            unit-tests.log
           if-no-files-found: ignore
 
   mcp-server-quality:

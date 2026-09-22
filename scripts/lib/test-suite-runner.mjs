@@ -1,9 +1,13 @@
 import manifest from '../test-suites.json' with { type: 'json' };
 
 const SUITES = Object.freeze({
+  // The `unit` suite lives in the manifest like every other suite. It used to be defined
+  // here with `roots` discovery only, which made scripts/tests/unit/** invisible to the
+  // wiring guard: those files could sit outside every suite and every CI job while the
+  // guard reported all-clear (audit F7, 2026-09-22).
   unit: Object.freeze({
-    concurrency: 4,
-    roots: Object.freeze(['scripts/tests/unit']),
+    concurrency: manifest.unit.concurrency,
+    files: Object.freeze([...manifest.unit.files]),
   }),
   regression: Object.freeze({
     concurrency: manifest.regression.concurrency,
