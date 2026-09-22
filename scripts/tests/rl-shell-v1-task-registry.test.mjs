@@ -6,8 +6,17 @@ import test from 'node:test';
 
 import { fileURLToPath } from 'node:url';
 
+import { BENCHMARK_CONFIG_PATH, EXPERIMENT_DIR } from './fixtures/rl-shell-benchmark-corpus.mjs';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
+// The library resolves seeds, configs, and generated tasks under
+// `<rootDir>/.aios/experiments/rl-shell-v1/**` (see task-registry.mjs). This file
+// used to write the same fixtures to `<rootDir>/experiments/**`, so they landed
+// where nothing read them: four tests failed with ENOENT the moment the suite was
+// actually executed. The path constants are shared with the other rl-shell-v1 test
+// file through the fixture module so they cannot drift apart again.
+const EXPERIMENT_CONFIG_PATH = BENCHMARK_CONFIG_PATH;
 
 async function makeRootDir() {
   return await mkdtemp(path.join(os.tmpdir(), 'aios-rl-shell-v1-registry-'));
@@ -24,7 +33,7 @@ async function writeText(filePath, value) {
 }
 
 async function writeSeed(rootDir, seedId, { srcFile, srcCode, testFile, testCode, promptTemplate }) {
-  const base = path.join(rootDir, 'experiments', 'rl-shell-v1', 'seeds', seedId);
+  const base = path.join(rootDir, EXPERIMENT_DIR, 'seeds', seedId);
   await writeJson(path.join(base, 'manifest.template.json'), {
     schema_version: 1,
     seed_id: seedId,
@@ -94,9 +103,9 @@ async function writeSeedCorpus(rootDir) {
     ].join('\n'),
     promptTemplate: 'Fix the list filtering behavior for variant {{variant_id}}.',
   });
-  await writeJson(path.join(rootDir, 'experiments', 'rl-shell-v1', 'configs', 'benchmark-v1.json'), {
+  await writeJson(path.join(rootDir, EXPERIMENT_DIR, 'configs', 'benchmark-v1.json'), {
     schema_version: 1,
-    generated_dir: 'experiments/rl-shell-v1/tasks/generated',
+    generated_dir: '.aios/experiments/rl-shell-v1/tasks/generated',
     minimum_train_tasks: 32,
     minimum_held_out_tasks: 16,
     seeds: ['arithmetic-add', 'string-trim', 'list-filter'],
@@ -120,9 +129,9 @@ async function writeTinyBenchmark(rootDir) {
     ].join('\n'),
     promptTemplate: 'Fix the tiny benchmark variant {{variant_id}}.',
   });
-  await writeJson(path.join(rootDir, 'experiments', 'rl-shell-v1', 'configs', 'benchmark-v1.json'), {
+  await writeJson(path.join(rootDir, EXPERIMENT_DIR, 'configs', 'benchmark-v1.json'), {
     schema_version: 1,
-    generated_dir: 'experiments/rl-shell-v1/tasks/generated',
+    generated_dir: '.aios/experiments/rl-shell-v1/tasks/generated',
     minimum_train_tasks: 32,
     minimum_held_out_tasks: 16,
     seeds: ['too-small'],
@@ -146,7 +155,7 @@ test('loadTaskRegistry rejects benchmark configs with too few valid tasks', asyn
   const mod = await import('../lib/rl-shell-v1/task-registry.mjs');
 
   await assert.rejects(
-    () => mod.loadTaskRegistry({ rootDir, configPath: 'experiments/rl-shell-v1/configs/benchmark-v1.json' }),
+    () => mod.loadTaskRegistry({ rootDir, configPath: EXPERIMENT_CONFIG_PATH }),
     /insufficient-valid-tasks/i
   );
 });
@@ -161,7 +170,7 @@ test('generateBenchmark is deterministic for the same seed and sampleTrainingTas
 
   assert.deepEqual(first.generatedTasks.map((item) => item.task_id), second.generatedTasks.map((item) => item.task_id));
 
-  const registry = await mod.loadTaskRegistry({ rootDir, configPath: 'experiments/rl-shell-v1/configs/benchmark-v1.json' });
+  const registry = await mod.loadTaskRegistry({ rootDir, configPath: EXPERIMENT_CONFIG_PATH });
   assert.deepEqual(
     mod.sampleTrainingTask(registry, { seed: 17, attempt: 3 }),
     mod.sampleTrainingTask(registry, { seed: 17, attempt: 3 })
@@ -174,13 +183,13 @@ test('sampleTrainingTask never returns held-out tasks and invalid-task exclusion
   const mod = await import('../lib/rl-shell-v1/task-registry.mjs');
 
   await mod.generateBenchmark({ rootDir, seed: 17 });
-  const registry = await mod.loadTaskRegistry({ rootDir, configPath: 'experiments/rl-shell-v1/configs/benchmark-v1.json' });
+  const registry = await mod.loadTaskRegistry({ rootDir, configPath: EXPERIMENT_CONFIG_PATH });
 
   const sampled = mod.sampleTrainingTask(registry, { seed: 17, attempt: 4 });
   assert.equal(sampled.split, 'train');
 
   const exclusionReport = await readFile(
-    path.join(rootDir, 'experiments', 'rl-shell-v1', 'configs', 'benchmark-v1.invalid-tasks.json'),
+    path.join(rootDir, EXPERIMENT_DIR, 'configs', 'benchmark-v1.invalid-tasks.json'),
     'utf8'
   );
   assert.match(exclusionReport, /invalid_reason|baseline/i);

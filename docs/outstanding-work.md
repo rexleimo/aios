@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after fixing a real `normalizeText` ReferenceError (A8) and opening A7/A9 — the `test:rl-*` suites CI never runs.
+> Last updated: 2026-09-21, after wiring the test:rl-* suites into CI (A7), repairing their 15 stale/red tests (A8/A9) and opening A10.
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -57,6 +57,7 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Status**: open. **Why it matters (high)**: this gap caused the v6.0.2–v6.0.4 CI outage (see D).
 - **The hole**: `scripts/tests/test-suite-wiring.test.mjs` (W1/W2/W3) proves every `*.test.mjs` is reachable from a test entry point. It cannot prove the file *passes on a clean checkout*. The A1 triage verified the 82 unwired files by bulk-running them **in a working tree where `aios init`/`sync-skills` had already generated the gitignored projection roots**, so "never failing" was measured against a developer's tree, not CI's. Every file wired that way is a latent CI failure.
 - **Proposed guard (W4)**: fail when a test reads a path under a gitignored generated root (`.codex/skills`, `.claude/skills`, `.agents/skills`, `.grok/skills`, `.hermes/skills`, `.gemini/skills`, `.workbuddy/skills`, `.opencode/skills`, `.pi/skills`, `.skillopt`) instead of projecting through `materializeSkillTree` / tracked evidence. Cheapest sound version: assert the file's source text contains no such literal, then require an allow-list entry with a reason.
+- **Proposed guard (W5)**: every `test:*` script in `package.json` must be reachable from a workflow, or be listed with an explicit reason. A7 proved W2 can be satisfied by a glob in a script that no CI job runs — reachability again, not execution.
 
 ### A6 — OPEN: `release-health-watch` is red (pre-existing, does not block releases)
 
@@ -66,14 +67,12 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Real defect found while diagnosing**: the step captures `gate_exit_code` but **never propagates it** (it only writes `exit_code=` to `$GITHUB_OUTPUT`), while a separate step owns the fail decision. So the observed combination — this step fails while the health-fail step is skipped — is self-contradictory, and the step cannot be trusted as a gate until that is fixed.
 - **Next**: needs the run's job log (owner-only; the Actions logs endpoint returns 403 for non-admins). Either make the step explicitly propagate/exit with `gate_exit_code`, or paste the failing step's log so the exit-2 source can be identified.
 
-### A7 — OPEN: CI never executes the five `test:rl-*` suites (41 files)
+### A7 — RESOLVED 2026-09-21 (v6.0.8): the `test:rl-*` suites now run in CI
 
-- **Status**: open, found 2026-09-21. **Why it matters (medium-high)**: it is the same blind spot as A5 one level up — the wiring guard proves a file is reachable from *a script*, never that CI *runs* that script. These 41 files have been silently red.
-- **Coverage map**: `regression` (197 files) is a superset of `browser`/`context`/`client`/`orchestrator`/`harness`/`team`/`rex`, so `test:scripts` covers those. Of the 259 files on disk, 62 are outside `regression`; 21 are covered by `pretest:scripts` / `test:workflow-policy` / `test:rex-integration` (all invoked by `test:scripts`), and the remaining **41 are covered only by `test:rl-core` (13), `test:rl-shell-v1` (17), `test:rl-browser-v1` (4), `test:rl-orchestrator-v1` (4), `test:rl-mixed-v1` (3)**. No workflow invokes any of them: `ci-main` and `release` run `test:scripts`, `contextdb-quality` runs `test:contextdb`.
-- **Why the guard is silent**: W2 counts a file as wired when it is in `scripts/test-suites.json` **or** matches a `scripts/tests/...` pattern in a `pretest:scripts`/`test:*` script. Those globs satisfy W2 while no CI job ever runs them.
-- **Measured state**: `test:rl-core` 49/49 green; `test:rl-orchestrator-v1` 7/17 → **17/17** after A8; `test:rl-mixed-v1` 12/13 (A9); `test:rl-shell-v1` and `test:rl-browser-v1` not yet run in a clean checkout.
-- **Proposed guard (W5)**: every `test:*` script must be reachable from a workflow, or be listed with an explicit reason. **Next**: run shell-v1/browser-v1, fix A9, then decide whether these belong in CI (adding them while A9 is red would break CI).
-
+- **Was open**: 41 files were covered only by `test:rl-core` / `test:rl-shell-v1` / `test:rl-browser-v1` / `test:rl-orchestrator-v1` / `test:rl-mixed-v1`, and no workflow invoked any of those scripts — the wiring guard proves a file is reachable from *a script*, never that CI *runs* that script.
+- **Fixed**: new `test:rl` script chaining all five (~25s), wired as an explicit step in both `ci-main.yml` (with a failure summary and the log added to the `scripts-tests-log` artifact) and `release.yml`.
+- **What the first real run found** — all five were red, now green (160 tests): `rl-orchestrator-v1` 7/17 → **17/17** (A8, a real shipped-code `ReferenceError`), `rl-shell-v1` 68/75 → **75/75** (four fixtures written to the wrong tree + one stale help assertion), `rl-mixed-v1` 12/13 → **13/13** (A9), `rl-browser-v1` 6/6 and `rl-core` 49/49 already green.
+- **Residual**: the *reason this was invisible* is still unguarded. See A5 — proposed **W5**: every `test:*` script must be reachable from a workflow, or be listed with an explicit reason.
 ### A8 — RESOLVED 2026-09-21 (v6.0.7): `normalizeText is not defined` in shipped code
 
 - **The bug**: `scripts/lib/rl-orchestrator-v1/decision-runner/shared.mjs` opened with `export { computeHash, normalizeText } from '../../../../src/shared/normalize.mjs'` and then **called `normalizeText` locally** (6 uses, lines 26/111/136-138). In ESM an `export … from` only forwards a binding — it does not bring the name into the module scope — so every executor-evidence path threw `ReferenceError: normalizeText is not defined`. Fixed by importing and then re-exporting (public surface unchanged).
@@ -81,15 +80,20 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Checked and deliberately left alone**: `scripts/lib/harness/groupchat-runtime/shared.mjs` has the same re-export form but never uses the name locally, so it is correct as-is.
 - **Verification**: `npm run test:affected` → 613 tests / 612 pass / 0 fail / 1 skipped.
 
-### A9 — OPEN: one `rl-mixed-v1` test cannot pass as written
+### A9 — RESOLVED 2026-09-21 (v6.0.8): stale path, not a missing task source
 
-- **Test**: `scripts/tests/rl-mixed-v1-run-orchestrator.test.mjs` — "mixed campaign guardrails emit drift alerts and auto rollback degraded policy versions".
-- **Why it fails**: it calls `runMixedCampaign({ rootDir, activeEnvironments, batchTargetCount: 3, onlineBatchSize: 4 })` with **no task source**. `sampleNextTask` finds nothing, so `collectBatchEpisodes` returns `status: 'no_work'` and `runMixedCampaign` returns `buildNoWorkResult(ctx)` — **without error and without writing anything** (probe: `experiments/` is not even created). The test then reads `checkpoints/orchestrator-bandit-policy.index.json`. It is not fixable by checkout contents either: `experiments/` is untracked (0 tracked files).
-- **Evidence**: the sibling test in the same file passes because it supplies `orchestratorLiveTaskCollector`; this one supplies nothing.
-- **Fix direction**: supply tasks the way the sibling does (or seed the temp root), then assert the rollback behaviour. Also worth asking whether `no_work` returning silently — no error, no artifact — is the intended contract for a caller that asked for a campaign.
+- **Correction first**: my earlier analysis here was **wrong**. I concluded `runMixedCampaign` returned `buildNoWorkResult` and wrote nothing. A second probe showed it runs fine (`status: ok`, 3 batches, environment counts 4/4/4) and writes the checkpoint index — under **`<rootDir>/.aios/experiments/rl-mixed-v1/…`**, while the test read `<rootDir>/experiments/rl-mixed-v1/…`, missing the `.aios/` prefix. My first probe only listed `<rootDir>/experiments`, so I "confirmed" the absence I had assumed. Lesson: a probe that reports a negative must look where the code actually writes, not where the test asserts.
+- **Fix**: read `seeded.summary.policy_checkpoint.index_path` (the path the campaign reports), matching what the sibling test already did. `rl-mixed-v1` 12/13 → **13/13**.
+- **Same class, more instances while fixing A7**: `rl-shell-v1` had four tests writing seeds/config to `<rootDir>/experiments/**` while `task-registry.mjs` reads `<rootDir>/.aios/experiments/rl-shell-v1/**`. Fixed by extracting `scripts/tests/fixtures/rl-shell-benchmark-corpus.mjs`, which owns the path constants and a valid corpus (3 seeds × 16 variants → exactly 32 train / 16 held-out, every seed’s baseline genuinely failing so the tasks are not excluded as `baseline_not_reproduced`).
+- **Also fixed in that suite**: two entrypoint tests ran the CLI with `cwd: REPO_ROOT` against a benchmark corpus the repo does not ship (the experiment tree is untracked) — now they seed a temp root and run the CLI there; and the usage test asserted exit 1 plus a `--resume` flag, neither of which the CLI has ever produced (see A10).
+### A10 — OPEN: per-command flags are not discoverable from help
+
+- **Status**: open, found 2026-09-21 while repairing A9. **Why it matters (low-medium)**: `rl-shell-v1 --help` (and `help <command>`) render each command’s options as the literal placeholder `[options]`, so no per-command flag is listed anywhere in `--help` output.
+- **Evidence**: `--resume` is defined on `phase3-train` (`scripts/rl-shell-v1.mjs:67`) and one other command (`:82`), yet `node scripts/rl-shell-v1.mjs` and `node scripts/rl-shell-v1.mjs help phase3-train` both print only the command table, and `grep -- --resume` finds nothing in either output.
+- **Note**: a test asserted the flag appeared in usage. Rather than keep an assertion the CLI cannot satisfy, the test now asserts the real surface (the three phase-3 commands are listed) and this gap is recorded instead.
+- **Fix direction**: have the usage/help handler print each command’s `options` array, then re-add the flag assertion.
 
 ---
-
 ## B. rex-harness / MCP adapter
 
 ### B1 — The planning evidence gate cannot be satisfied through the documented surface

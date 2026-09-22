@@ -34,6 +34,7 @@
     "test:rex-integration": "node --test scripts/tests/rex-activation-store.test.mjs scripts/tests/rex-agent-provider.test.mjs scripts/tests/rex-capability-runtime.test.mjs scripts/tests/rex-artifact-cli.test.mjs scripts/tests/rex-client-compatibility.test.mjs scripts/tests/rex-release-gate.test.mjs scripts/tests/rex-harness-adapter.test.mjs scripts/tests/rex-explicit-intent.test.mjs scripts/tests/training-certification.test.mjs scripts/tests/rex-workflow-training-evidence.test.mjs scripts/tests/rex-tdd-training-evidence.test.mjs",
     "test:rex": "npm run test:rex-harness && npm --prefix rex-harness run test:contract && npm run test:rex-integration && npm run test:workflow-policy",
     "test:scripts": "npm run test:regression",
+    "test:rl": "npm run test:rl-core && npm run test:rl-shell-v1 && npm run test:rl-browser-v1 && npm run test:rl-orchestrator-v1 && npm run test:rl-mixed-v1",
     "test:rl-core": "node --test scripts/tests/rl-core-*.test.mjs",
     "test:rl-browser-v1": "node --test scripts/tests/rl-browser-v1-*.test.mjs",
     "test:rl-orchestrator-v1": "node --test scripts/tests/rl-orchestrator-v1-*.test.mjs",

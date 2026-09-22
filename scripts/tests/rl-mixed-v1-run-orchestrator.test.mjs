@@ -323,20 +323,18 @@ test('mixed campaign guardrails emit drift alerts and auto rollback degraded pol
   const mod = await import('../lib/rl-mixed-v1/run-orchestrator.mjs');
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-rl-mixed-'));
 
-  await mod.runMixedCampaign({
+  const seeded = await mod.runMixedCampaign({
     rootDir,
     activeEnvironments: ['shell', 'browser', 'orchestrator'],
     batchTargetCount: 3,
     onlineBatchSize: 4,
   });
 
-  const indexPath = path.join(
-    rootDir,
-    'experiments',
-    'rl-mixed-v1',
-    'checkpoints',
-    'orchestrator-bandit-policy.index.json'
-  );
+  // The namespace root lives under `.aios/` (see ensureNamespaceRoot); read the
+  // path the campaign reports instead of hardcoding it, so a namespace move
+  // cannot silently turn this into a missing-file test (it did — the path here
+  // had been missing the `.aios/` prefix since that move).
+  const indexPath = seeded.summary.policy_checkpoint.index_path;
   const indexPayload = JSON.parse(await readFile(indexPath, 'utf8'));
   const versions = Array.isArray(indexPayload.versions) ? indexPayload.versions : [];
   assert.equal(versions.length >= 2, true);

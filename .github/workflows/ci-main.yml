@@ -98,12 +98,41 @@ jobs:
           fi
           exit "$status"
 
+      # The five test:rl-* experiment suites live outside the regression suite.
+      # Nothing ran them in CI until 2026-09-21, so they were silently red (41 files,
+      # including a real 'normalizeText is not defined' crash) — see
+      # docs/outstanding-work.md A7. They take ~25s.
+      - name: Run RL experiment suites
+        run: |
+          set -o pipefail
+          npm run test:rl 2>&1 | tee rl-tests.log
+          status=${PIPESTATUS[0]}
+          if [ "$status" -ne 0 ]; then
+            {
+              echo '## test:rl failures'
+              echo
+              echo '```'
+              rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' rl-tests.log | head -120 || true
+              echo '```'
+              echo
+              echo '<details><summary>tail of rl-tests.log</summary>'
+              echo
+              echo '```'
+              tail -n 120 rl-tests.log || true
+              echo '```'
+              echo '</details>'
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
+
       - name: Upload scripts-tests log
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: scripts-tests-log
-          path: scripts-tests.log
+          path: |
+            scripts-tests.log
+            rl-tests.log
           if-no-files-found: ignore
 
   mcp-server-quality:
