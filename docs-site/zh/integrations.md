@@ -107,15 +107,16 @@ TypeSafe integration: TypeSafe (System One / Jev) (typesafe) [dry-run]
 | Pi | 写入 `~/.pi/agent/mcp.json` | verified |
 | Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 需要交互式终端 |
-| WorkBuddy | `codebuddy mcp add --agent <名称>` | 需要人工步骤 |
+| WorkBuddy | 写入 `~/.workbuddy/mcp.json`（`mcpServers`，`type: "http"` + `url`） | verified |
 | ZCode | 写入 `~/.zcode/cli/config.json`（`mcp.servers`） | stdio 已验证；HTTP 需人工步骤 |
 | Qoder | `qoder mcp add --scope user --transport http` | verified |
 
-三处行为是刻意的：
+两处行为是刻意的：
 
 - **Hermes** 会交互式追问认证方式，且没有非交互开关。AIOS 不会去猜一个答案、也不会让脚本挂住；它打印出确切命令并标记为 `pending-interactive`。
-- **WorkBuddy** 的 `mcp add` 需要一个 `--agent <名称>` 值，而这个名单目前无法非交互枚举，所以 AIOS 打印命令，而不是编一个 agent 名称。
 - **ZCode** 是没有 `PATH` CLI 的 Electron 客户端。AIOS 把 stdio server 写进 `~/.zcode/cli/config.json` 的 `mcp.servers`，ZCode 从那里读取；它的 HTTP 条目还额外需要一个 AIOS 目前不写入的 `url` 字段，因此那部分仍需人工步骤。
+
+**WorkBuddy** 不再是例外。`codebuddy mcp add` 根本没有 `--agent` 参数，`-t, --transport` 支持 `http`，所以之前缺的只有 HTTP 键名——它是 `{"type":"http","url":...}`。AIOS 把这个形状写进 `~/.workbuddy/mcp.json`（即 `codebuddy mcp list` 读取的那个文件），而不是 CLI 自己的用户文件 `~/.codebuddy/.mcp.json`，所以归属追踪、备份与“只删自己写的”语义都保持不变。
 
 **Qoder** 不需要例外说明——它在 CLI 上就提供了完整的 MCP 增删改查（`mcp add`、`add-json`、`list`、`get`、`remove`），并支持三个作用域：`--scope user`（`~/.qoder/settings.json`）、`--scope project`（`<repo>/.qoder/settings.json`，会提交进仓库）、`--scope local`（`.qoder/settings.local.json`，被 gitignore）。AIOS 写入 user 与 project 两个文件；local 是合法的 Qoder 作用域，但 AIOS 不会去动它。`--transport` 接受 `stdio`、`sse`、`http`、`ws` 四种。
 

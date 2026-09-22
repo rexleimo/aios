@@ -10,6 +10,7 @@ import {
   INTEGRATION_CLIENT_TABLE,
   formatInvocation,
   getIntegrationClientEntry,
+  resolveIntegrationClientCommand,
   resolveIntegrationClientOrder,
 } from '../lib/integrations/clients.mjs';
 import {
@@ -188,9 +189,21 @@ test('integration clients: verified clients build the HTTP invocation we recorde
   assert.equal(getIntegrationClientEntry('hermes').interactive, true, 'hermes must be marked interactive');
   assert.equal(getIntegrationClientEntry('pi').transport, 'config');
 
+  // 2026-09-21 (v6.0.6): workbuddy 从 manual 升级为 config。实测 codebuddy 2.137.1 的
+  // `mcp add` 没有 `--agent` 选项且支持 `-t http`，HTTP 条目形状为 {type:'http',url}，
+  // 所以「键名未验证」的人工步骤前提消失了。
+  const workbuddy = getIntegrationClientEntry('workbuddy');
+  assert.equal(workbuddy.transport, 'config');
+  assert.equal(workbuddy.verified, true);
+  assert.deepEqual(
+    workbuddy.config.buildEntry({ mcp: { serverName: 'x', url: 'https://d/mcp' } }),
+    { type: 'http', url: 'https://d/mcp' },
+  );
+  assert.equal(workbuddy.config.namespace, 'mcpServers');
+
   // manual 客户端也必须给出可执行的下一步，而不是静默跳过。
   // gemini 于 2026-09-18 改成 cli：它自带 `mcp add --transport http`（见本文件末尾的 gemini 用例）。
-  for (const client of ['workbuddy', 'zcode']) {
+  for (const client of ['zcode']) {
     const entry = getIntegrationClientEntry(client);
     assert.equal(entry.transport, 'manual');
     assert.match(formatInvocation(entry.buildAdd({ mcp: { serverName: 'x', url: 'https://d/mcp' } })), /confirm the HTTP transport key name/u);
@@ -438,25 +451,31 @@ test('doctor: an uninstalled client and a manual client are reported distinctly'
   const result = await runIntegrationDoctor({
     rootDir,
     integration,
-    clients: ['workbuddy', 'zcode', 'gemini'],
+    clients: ['zcode', 'gemini'],
     commandExistsImpl: (command) => command !== 'gemini',
     isTTY: false,
     probeImpl: async () => ({ status: 'verified', tools: [] }),
     env: {},
   });
   const byClient = Object.fromEntries(result.clients.map((item) => [item.client, item.status]));
-  assert.equal(byClient.workbuddy, 'manual-step-required');
   assert.equal(byClient.zcode, 'manual-step-required');
   assert.equal(byClient.gemini, 'client-missing');
   assert.equal(result.summary.registered, 0);
 });
 
 test('doctor: probes the client definition command name, not the client id', async () => {
+  // workbuddy 是唯一 client id ≠ 可执行名的客户端（CLIENT_DEFINITIONS.commandName = codebuddy）。
+  // 它自 v6.0.6 起走 config 平面，doctor 不再探测它的二进制，但「探测必须用定义里的命令名」
+  // 这条映射仍然是契约：任何把这种客户端当作 CLI 处理的路径，探测 client id 都会把
+  // 已安装的客户端误报为 client-missing。
+  assert.equal(resolveIntegrationClientCommand('workbuddy'), 'codebuddy');
+
+  // doctor 层用真实 CLI 客户端验证探测的是解析后的命令名。
   const probed = [];
   const result = await runIntegrationDoctor({
     rootDir: tempDir(),
     integration: validIntegration(),
-    clients: ['workbuddy'],
+    clients: ['gemini'],
     commandExistsImpl: (command) => {
       probed.push(command);
       return false;
@@ -465,11 +484,9 @@ test('doctor: probes the client definition command name, not the client id', asy
     probeImpl: async () => ({ status: 'verified', tools: [] }),
     env: {},
   });
-  // workbuddy 的真实可执行名是 codebuddy（CLIENT_DEFINITIONS.commandName），
-  // 探测客户端 id 永远命中不了，会把已安装的客户端误报为 client-missing。
-  assert.deepEqual(probed, ['codebuddy']);
+  assert.deepEqual(probed, ['gemini']);
   assert.equal(result.clients[0].status, 'client-missing');
-  assert.match(result.clients[0].reason, /codebuddy/);
+  assert.match(result.clients[0].reason, /gemini/);
 });
 
 test('defaultCommandExistsImpl: an AIOS shim is not evidence that the vendor client is installed', () => {

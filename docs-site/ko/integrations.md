@@ -107,15 +107,16 @@ AIOS의 10개 클라이언트를 모두 지원합니다. 여기서 "지원"은 *
 | Pi | `~/.pi/agent/mcp.json` 기록 | verified |
 | Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 대화형 터미널 필요 |
-| WorkBuddy | `codebuddy mcp add --agent <이름>` | 수동 단계 필요 |
+| WorkBuddy | `~/.workbuddy/mcp.json`(`mcpServers`, `type: "http"` + `url`)에 기록 | verified |
 | ZCode | `~/.zcode/cli/config.json`(`mcp.servers`)에 기록 | stdio는 검증됨. HTTP는 수동 단계 |
 | Qoder | `qoder mcp add --scope user --transport http` | verified |
 
-세 가지 동작은 의도된 것입니다.
+두 가지 동작은 의도된 것입니다.
 
 - **Hermes**는 인증 방식을 대화형으로 묻고 비대화형 플래그가 없습니다. AIOS는 답을 추측하지도, 스크립트를 멈춰 세우지도 않고 정확한 명령을 출력하며 `pending-interactive`로 보고합니다.
-- **WorkBuddy**의 `mcp add`는 `--agent <이름>` 값을 요구하지만 그 목록은 아직 비대화형으로 열거할 수 없습니다. AIOS는 agent 이름을 지어내지 않고 명령을 출력합니다.
 - **ZCode**는 `PATH`에 CLI가 없는 Electron 클라이언트입니다. AIOS는 stdio 서버를 `~/.zcode/cli/config.json`의 `mcp.servers`에 쓰고 ZCode는 거기서 읽습니다. HTTP 항목에는 AIOS가 아직 쓰지 않는 `url` 필드가 추가로 필요하므로 그 부분은 수동 단계로 남습니다.
+
+**WorkBuddy**는 더 이상 예외가 아닙니다. `codebuddy mcp add`에는 `--agent`가 없고 `-t, --transport`는 `http`를 받습니다. 빠져 있던 것은 HTTP 키 이름뿐이며, 그것은 `{"type":"http","url":...}`입니다. AIOS는 이 형태를 `~/.workbuddy/mcp.json`(`codebuddy mcp list`가 읽는 파일)에 쓰고, CLI 자체의 사용자 파일 `~/.codebuddy/.mcp.json`에는 쓰지 않습니다. 따라서 소유권 추적, 백업, 자기가 쓴 항목만 제거하는 의미가 그대로 유지됩니다.
 
 **Qoder**는 예외 설명이 필요 없습니다. CLI 쪽에 완전한 MCP CRUD(`mcp add` / `add-json` / `list` / `get` / `remove`)가 있고 세 개의 범위를 지원합니다 — `--scope user`(`~/.qoder/settings.json`), `--scope project`(`<repo>/.qoder/settings.json`, 커밋 대상), `--scope local`(`.qoder/settings.local.json`, gitignore 대상). AIOS는 user와 project 두 파일에 쓰며, local은 Qoder에서 유효한 대상이지만 AIOS가 건드리지 않습니다. `--transport`는 `stdio`·`sse`·`http`·`ws`를 모두 받습니다.
 

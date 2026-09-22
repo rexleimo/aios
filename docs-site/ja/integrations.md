@@ -107,15 +107,16 @@ AIOS の 10 クライアントすべてを対象にします。「対応」と�
 | Pi | `~/.pi/agent/mcp.json` を書き込む | verified |
 | Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | 対話端末が必要 |
-| WorkBuddy | `codebuddy mcp add --agent <名前>` | 手動手順が必要 |
+| WorkBuddy | `~/.workbuddy/mcp.json`（`mcpServers`、`type: "http"` + `url`）を書き込む | verified |
 | ZCode | `~/.zcode/cli/config.json`（`mcp.servers`）を書き込む | stdio は検証済み。HTTP は手動手順 |
 | Qoder | `qoder mcp add --scope user --transport http` | verified |
 
-意図的な挙動が 3 つあります。
+意図的な挙動が 2 つあります。
 
 - **Hermes** は認証方式を対話的に尋ね、非対話用のフラグがありません。AIOS は答えを推測せず、スクリプトを停止させることもなく、正確なコマンドを表示して `pending-interactive` と報告します。
-- **WorkBuddy** の `mcp add` は `--agent <名前>` の値を要求しますが、その一覧はまだ非対話的に列挙できません。AIOS は agent 名を捏造せず、コマンドを表示します。
 - **ZCode** は `PATH` に CLI を持たない Electron クライアントです。AIOS は stdio サーバーを `~/.zcode/cli/config.json` の `mcp.servers` に書き込み、ZCode はそこから読み取ります。HTTP エントリには AIOS がまだ書き込まない `url` フィールドが追加で必要なため、そこは手動手順のままです。
+
+**WorkBuddy** はもう例外ではありません。`codebuddy mcp add` に `--agent` はなく、`-t, --transport` は `http` を受け付けます。欠けていたのは HTTP のキー名だけで、それは `{"type":"http","url":...}` です。AIOS はこの形を `~/.workbuddy/mcp.json`（`codebuddy mcp list` が読むファイル）に書き込み、CLI 自身のユーザーファイル `~/.codebuddy/.mcp.json` には書き込みません。これにより所有権の追跡・バックアップ・自分の書いた分だけを削除するセマンティクスが維持されます。
 
 **Qoder** は例外説明が不要です。CLI 側に完全な MCP CRUD（`mcp add` / `add-json` / `list` / `get` / `remove`）があり、3 つのスコープに対応します——`--scope user`（`~/.qoder/settings.json`）、`--scope project`（`<repo>/.qoder/settings.json`、コミット対象）、`--scope local`（`.qoder/settings.local.json`、gitignore 対象）。AIOS が書き込むのは user と project の 2 ファイルで、local は Qoder として有効な宛先ですが AIOS は触りません。`--transport` は `stdio` / `sse` / `http` / `ws` のすべてを受け付けます。
 

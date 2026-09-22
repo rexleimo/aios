@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after diagnosing and fixing the CI failure that blocked v6.0.2–v6.0.4 release builds (v6.0.5).
+> Last updated: 2026-09-21, after resolving C2/C4 and correcting the C1/C3 premises (v6.0.6).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -71,10 +71,10 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ## C. Owner actions (not code)
 
-- **C1 — TypeSafe usage mystery**: the console shows Requests 0 / Tokens 0 / Spend $0.00 while real billed calls were made with a key ending `5d59`. Check the console API Keys page for that key; the likely explanation is that it belongs to a different organisation than the login in use.
-- **C2 — WorkBuddy**: `codebuddy` 2.137.1 is installed, but `codebuddy mcp add` requires `--agent <name>` and the agent list has not been enumerated → still `manual-step-required`.
-- **C3 — hermes**: no `mcp` subcommand; configuration only, and it needs an interactive terminal → `pending-interactive`.
-- **C4 — Installed runtime is behind**: `~/.rexcil/aios` is 5.17.4. `aios judgment`, `aios_judge`, `--explicit-intent`, and everything in v5.19.2 arrive only after `aios update`.
+- **C1 — TypeSafe usage mystery (open, vendor-side; docs only cover half of it).** The console shows Requests 0 / Tokens 0 / Spend $0.00 while real billed calls were made with a key ending `5d59`. `docs-site/integrations.md` → "Configure the credential" already documents the half AIOS owns: `TYPESAFE_API_KEY` is checked for **presence only** (never read, printed, or stored), the most common failure is **scope** (a variable set in another terminal, or in the *User* scope of a different account, is invisible to an already-running client), and `aios integration doctor typesafe` reports `present`/`unset`. What the docs cannot answer is which **organisation** the key belongs to — AIOS never sees the key value or the account behind it, so a key billed under a different org than the console login is invisible to it. **Actionable**: AIOS *does* record per-judgment provenance — `model`, `x-typesafe-request-id`, and `usage.inputTokens`/`outputTokens` (see `aios judgment ask` output and `~/.aios/judgment/`) — so use a recorded successful judgment's request id as proof of the metered call and hand that id to TypeSafe support; then check the console API Keys page for the `5d59` key's organisation.
+- **C2 — RESOLVED 2026-09-21 (v6.0.6, code fix — the premise was wrong).** `codebuddy` 2.137.1's `mcp add` has **no `--agent` option at all** (`codebuddy mcp add --help`: only `-s/--scope`, `-t/--transport`, `-e/--env`, `-H/--header`), and `-t` accepts `http`. Verified by running it: `codebuddy mcp add typesafe-docs <url> -t http` wrote `{"type":"http","url":...}` into an `mcpServers` namespace — exactly the key name AIOS reported as unverified. WorkBuddy moved from `manualHttpEntry` to a verified config-plane entry, so it now reports `planned`/`registered` instead of `manual-step-required`. **One divergence worth knowing**: the CLI's `-s user` scope writes to `~/.codebuddy/.mcp.json`, while AIOS owns `~/.workbuddy/mcp.json` (which `codebuddy mcp list` does read). AIOS keeps writing its own file so ledger, backup, and scoped-removal semantics stay intact.
+- **C3 — hermes (open, correctly classified, exact command below).** Earlier note "no `mcp` subcommand" was wrong: `hermes mcp` exists (a TUI) and `hermes mcp add` has `--url`. The `pending-interactive` classification is nevertheless **correct and re-verified**: non-TTY runs print `Connecting to <url>` then `Does this server require authentication? [Y/n]:` and then **hang forever** (timeout 124) — including with `--auth header` supplied, because the prompt fires during connection/discovery before that flag is applied. So this stays a real manual step. **Run in a real terminal**: `hermes mcp add typesafe-docs --url https://docs.typesafe.ai/mcp` and answer the auth prompt.
+- **C4 — RESOLVED 2026-09-21.** `~/.rexcil/aios` was 5.20.0 because no 6.x GitHub Release object existed (the `release` workflow was failing, see D). Once v6.0.5 published, `aios update` self-updated the installed runtime to 6.0.5; `aios --version` and `~/.rexcil/aios/VERSION` now agree.
 
 ---
 

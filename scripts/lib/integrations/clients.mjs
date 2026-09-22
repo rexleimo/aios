@@ -130,10 +130,26 @@ export const INTEGRATION_CLIENT_TABLE = Object.freeze({
     buildProbe: () => cliAdd('gemini', ['mcp', 'list']),
   }),
 
-  workbuddy: manualHttpEntry('workbuddy', {
-    file: { scope: 'home', file: ['mcp.json'] },
-    reason: 'http-config-shape-unverified',
-    evidence: 'no WorkBuddy HTTP MCP surface has been verified by AIOS. AIOS owns the WorkBuddy JSON MCP target (mcpServers namespace in ~/.workbuddy/mcp.json); only the HTTP transport key name is unverified.',
+  // 2026-09-21 (v6.0.6): 旧条目把 WorkBuddy 当作「HTTP transport 键名未验证」的人工步骤，
+  // 前提是错的。实测 codebuddy 2.137.1：`mcp add` 根本没有 `--agent` 选项（"agent 名单无法
+  // 枚举" 从未成立），且 `-t, --transport` 支持 stdio|sse|http。`codebuddy mcp add <name> <url>
+  // -t http` 写出的就是 `{"type":"http","url":...}` —— 即缺失的那个键名。
+  // 仍然由 AIOS 拥有 `~/.workbuddy/mcp.json`（而不是 CLI 的 user 文件 `~/.codebuddy/.mcp.json`），
+  // 这样 ledger、备份与「只删自己写的」语义都保持不变；`codebuddy mcp list` 会读到该文件里的条目。
+  workbuddy: Object.freeze({
+    client: 'workbuddy',
+    transport: 'config',
+    verified: true,
+    evidence: 'codebuddy mcp add --help (2.137.1): `-t, --transport <transport>` stdio|sse|http, `-s, --scope <scope>` local|project|user, no `--agent` option; verified: `codebuddy mcp add typesafe-docs <url> -t http` wrote {"type":"http","url":...} into the mcpServers namespace',
+    config: Object.freeze({
+      scope: 'home',
+      file: Object.freeze(['mcp.json']),
+      namespace: 'mcpServers',
+      buildEntry: ({ mcp }) => ({ type: 'http', url: mcp.url }),
+    }),
+    buildAdd: null,
+    buildRemove: null,
+    buildProbe: null,
   }),
 
   zcode: manualHttpEntry('zcode', {
