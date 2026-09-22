@@ -17,13 +17,18 @@ import { Command } from 'commander';
 /**
  * 创建轻量 CLI 解析器。
  *
- * 返回 { parse(argv): { command, args, flags, help, version, helpText } }
+ * 返回 { parse(argv): { command, args, flags, help, version, helpCommand, helpText }, program, helpText }
  * - command: 子命令字符串（如有）
  * - args: 剩余位置参数
  * - flags: 已解析的 options 对象
  * - help: boolean，用户请求帮助
  * - version: boolean，用户请求版本
+ * - helpCommand: 请求的是哪个子命令的帮助（空串=顶层）
  * - helpText: 帮助文本（仅 help=true 时）
+ *
+ * 注意：program.helpInformation() 会把每个子命令的选项渲染成占位符 `[options]`，
+ * 所以子命令的 flag 只能通过 helpText(helpCommand) 才能被发现。调用方在 help 分支
+ * 应该用 `cli.helpText(parsed.helpCommand)`，而不是 `cli.program.helpInformation()`。
  *
  * @param {CliParserOptions} spec
  */
@@ -64,6 +69,18 @@ export function createCliParser(spec = {}) {
   }
 
   /**
+   * 渲染帮助：给出子命令名就渲染该子命令的（含它自己的 Options），否则渲染顶层。
+   * 这是子命令 flag 的唯一可发现入口。
+   */
+  function helpText(commandName = '') {
+    const normalized = String(commandName || '').trim();
+    const target = normalized
+      ? program.commands.find((cmd) => cmd.name() === normalized)
+      : null;
+    return target ? target.helpInformation() : program.helpInformation();
+  }
+
+  /**
    * 解析 argv 数组。
    */
   function parse(argv = []) {
@@ -73,10 +90,18 @@ export function createCliParser(spec = {}) {
       flags: {},
       help: false,
       version: false,
+      helpCommand: '',
     };
 
     // 空参数或顶层 help
     if (argv.length === 0 || argv[0] === '-h' || argv[0] === '--help' || argv[0] === 'help') {
+      // `help <subcommand>` 要渲染那个子命令的选项，否则每个命令的 flag 都不可发现。
+      const helpTarget = argv[0] === 'help' ? String(argv[1] || '').trim() : '';
+      if (helpTarget && (spec.subcommands || []).some((sub) => sub.name === helpTarget)) {
+        result.help = true;
+        result.helpCommand = helpTarget;
+        return result;
+      }
       if (argv.length === 0 && spec.envDefaults) {
         try {
           const parsed = program.parse(['--'], { from: 'user' });
@@ -109,6 +134,7 @@ export function createCliParser(spec = {}) {
         const subName = String(argv[0]).trim();
         if (spec.subcommands.some((s) => s.name === subName)) {
           result.help = true;
+          result.helpCommand = subName;
           return result;
         }
       }
@@ -132,6 +158,7 @@ export function createCliParser(spec = {}) {
       // 子命令 help 检测
       if (subName && (parsed.args.includes('-h') || parsed.args.includes('--help'))) {
         result.help = true;
+        result.helpCommand = subName;
         return result;
       }
 
@@ -161,7 +188,7 @@ export function createCliParser(spec = {}) {
     return result;
   }
 
-  return { parse, program };
+  return { parse, program, helpText };
 }
 
 function coerceValue(value) {

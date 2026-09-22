@@ -187,12 +187,6 @@ test('entrypoint train command prints run summary path', async () => {
 test('entrypoint usage lists the phase 3 commands', async () => {
   // A bare invocation prints usage to stdout and exits 0. The test used to assert
   // exit 1 with usage on stderr, which the CLI does not do.
-  //
-  // It also asserted the `--resume` flag appears here. It does not, and cannot:
-  // top-level usage renders each command's options as the placeholder `[options]`,
-  // so per-command flags are not discoverable from help at all (`--resume` is
-  // defined on phase3-train/phase3-resume). That discoverability gap is recorded
-  // as A10 in docs/outstanding-work.md instead of being asserted here.
   const result = spawnSync(
     process.execPath,
     [path.join(REPO_ROOT, 'scripts', 'rl-shell-v1.mjs')],
@@ -205,6 +199,29 @@ test('entrypoint usage lists the phase 3 commands', async () => {
   assert.equal(result.status, 0, result.stderr || result.stdout);
   for (const command of ['phase3-train', 'phase3-resume', 'phase3-eval']) {
     assert.match(result.stdout, new RegExp(command, 'u'), `usage must list ${command}`);
+  }
+});
+
+test('entrypoint per-command help exposes that command flags', async () => {
+  // Top-level usage renders every command's options as the placeholder `[options]`,
+  // so per-command flags are only discoverable through `help <command>` (fixed in
+  // A10: createCliParser now reports which command's help was requested and renders
+  // its Options). `--resume` is a real flag on phase3-train and was previously
+  // unreachable from --help output.
+  const result = spawnSync(
+    process.execPath,
+    [path.join(REPO_ROOT, 'scripts', 'rl-shell-v1.mjs'), 'help', 'phase3-train'],
+    {
+      cwd: REPO_ROOT,
+      encoding: 'utf8',
+    }
+  );
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.match(result.stdout, /Usage: rl-shell-v1 phase3-train/u);
+  assert.match(result.stdout, /Options:/u);
+  for (const flag of ['--config', '--resume', '--max-tasks']) {
+    assert.match(result.stdout, new RegExp(flag, 'u'), `help phase3-train must document ${flag}`);
   }
 });
 

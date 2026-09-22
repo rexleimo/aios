@@ -91,13 +91,13 @@ async function main() {
   const parsed = cli.parse(process.argv.slice(2));
 
   if (parsed.help) {
-    console.log(cli.program.helpInformation());
+    console.log(cli.helpText(parsed.helpCommand));
     return;
   }
 
   const command = parsed.command;
   if (!command) {
-    console.log(cli.program.helpInformation());
+    console.log(cli.helpText(parsed.helpCommand));
     process.exitCode = 1;
     return;
   }
@@ -119,7 +119,7 @@ async function main() {
     return;
   }
 
-  console.log(cli.program.helpInformation());
+  console.log(cli.helpText(parsed.helpCommand));
   process.exitCode = 1;
 }
 

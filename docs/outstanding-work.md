@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after closing A5 with the W5 CI-execution guard (W4 rejected on measurement).
+> Last updated: 2026-09-21, after closing A10 (per-command help) and shipping W5 for A5.
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -86,14 +86,12 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Fix**: read `seeded.summary.policy_checkpoint.index_path` (the path the campaign reports), matching what the sibling test already did. `rl-mixed-v1` 12/13 → **13/13**.
 - **Same class, more instances while fixing A7**: `rl-shell-v1` had four tests writing seeds/config to `<rootDir>/experiments/**` while `task-registry.mjs` reads `<rootDir>/.aios/experiments/rl-shell-v1/**`. Fixed by extracting `scripts/tests/fixtures/rl-shell-benchmark-corpus.mjs`, which owns the path constants and a valid corpus (3 seeds × 16 variants → exactly 32 train / 16 held-out, every seed’s baseline genuinely failing so the tasks are not excluded as `baseline_not_reproduced`).
 - **Also fixed in that suite**: two entrypoint tests ran the CLI with `cwd: REPO_ROOT` against a benchmark corpus the repo does not ship (the experiment tree is untracked) — now they seed a temp root and run the CLI there; and the usage test asserted exit 1 plus a `--resume` flag, neither of which the CLI has ever produced (see A10).
-### A10 — OPEN: per-command flags are not discoverable from help
+### A10 — RESOLVED 2026-09-21 (v6.0.10): per-command flags are discoverable from help
 
-- **Status**: open, found 2026-09-21 while repairing A9. **Why it matters (low-medium)**: `rl-shell-v1 --help` (and `help <command>`) render each command’s options as the literal placeholder `[options]`, so no per-command flag is listed anywhere in `--help` output.
-- **Evidence**: `--resume` is defined on `phase3-train` (`scripts/rl-shell-v1.mjs:67`) and one other command (`:82`), yet `node scripts/rl-shell-v1.mjs` and `node scripts/rl-shell-v1.mjs help phase3-train` both print only the command table, and `grep -- --resume` finds nothing in either output.
-- **Note**: a test asserted the flag appeared in usage. Rather than keep an assertion the CLI cannot satisfy, the test now asserts the real surface (the three phase-3 commands are listed) and this gap is recorded instead.
-- **Fix direction**: have the usage/help handler print each command’s `options` array, then re-add the flag assertion.
-
----
+- **The gap**: `createCliParser` (`src/shared/cli-parser.mjs`, backing 12 CLIs) registered each subcommand’s options with commander, but `parse()` returned only `help: true` — the caller could not tell *which* command’s help was requested, so every caller printed `program.helpInformation()`, which renders each subcommand’s options as the placeholder `[options]`. No per-command flag was reachable from any `--help` output; `--resume` on `phase3-train` was one example.
+- **Fix**: `parse()` now reports `helpCommand`, `createCliParser` exposes `helpText(name)` (rendering that command’s `Options`, falling back to top level for an empty or unknown name), and the three CLIs that have both subcommands and a help path — `rl-shell-v1.mjs`, `rl-mixed-v1.mjs`, `privacy-guard.mjs` — now print `cli.helpText(parsed.helpCommand)`. `help <command>` and `<command> --help` both work; a bare invocation, `-h`, and `help <unknown>` still print top-level help.
+- **Coverage**: `createCliParser` had **no test file at all** across its 12 consumers, so `scripts/tests/cli-parser-help.test.mjs` was added (7 tests: helpCommand for each request form, unknown-command fallback, `helpText` content, and that subcommand flags/positionals still parse). It is wired into the `regression` suite (197 → 198 files).
+- **Assertion restored**: the `rl-shell-v1` entrypoint test that had been downgraded now runs `help phase3-train` and asserts `--config`, `--resume`, and `--max-tasks` are documented, plus a separate test for the phase-3 command list.
 ## B. rex-harness / MCP adapter
 
 ### B1 — The planning evidence gate cannot be satisfied through the documented surface

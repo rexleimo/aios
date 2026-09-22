@@ -75,14 +75,14 @@ const cli = createCliParser({
 const parsed = cli.parse(process.argv.slice(2));
 
 if (parsed.help) {
-  console.log(cli.program.helpInformation());
+  console.log(cli.helpText(parsed.helpCommand));
   process.exit(0);
 }
 
 const command = parsed.command;
 if (!command) {
   console.error('Error: missing command');
-  console.log(cli.program.helpInformation());
+  console.log(cli.helpText(parsed.helpCommand));
   process.exit(1);
 }
 
