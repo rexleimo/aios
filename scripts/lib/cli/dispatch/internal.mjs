@@ -78,6 +78,8 @@ export async function runInternal(options, { rootDir, projectRoot } = {}) {
     if (action === 'install') return module.installBrowserMcp({ rootDir, dryRun: Boolean(options.dryRun), skipPlaywrightInstall: Boolean(options.skipPlaywrightInstall) });
     if (action === 'doctor') return module.doctorBrowserMcp({ rootDir, fix: Boolean(options.fix), dryRun: Boolean(options.dryRun) });
     if (action === 'mcp-migrate') return module.migrateBrowserMcpConfig({ rootDir, dryRun: Boolean(options.dryRun) });
+    if (action === 'switch') return module.switchBrowserMcpMode({ rootDir, mode: options.browserMode, dryRun: Boolean(options.dryRun) });
+    if (action === 'bsk-doctor') return module.checkBskConnect({ rootDir, dryRun: Boolean(options.dryRun) });
     if (action === 'cdp-start') return module.startBrowserCdpService({ rootDir });
     if (action === 'cdp-stop') return module.stopBrowserCdpService({ rootDir });
     if (action === 'cdp-restart' || action === 'cdp-reload') return module.restartBrowserCdpService({ rootDir });

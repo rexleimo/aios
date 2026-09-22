@@ -761,6 +761,7 @@ test('browser install uses only the repository-local Node runtime', async () => 
 
   const result = await installBrowserMcp({
     rootDir,
+    mode: 'playwright',
     skipPlaywrightInstall: true,
     io: { log: (line) => logs.push(String(line)) },
     clientHomes: {},
@@ -805,7 +806,7 @@ test('browser mcp-migrate removes stale external env values', async () => {
     },
   }, null, 2)}\n`, 'utf8');
 
-  await migrateBrowserMcpConfig({ rootDir, io: { log: () => {} }, clientHomes: {} });
+  await migrateBrowserMcpConfig({ rootDir, mode: 'playwright', io: { log: () => {} }, clientHomes: {} });
 
   const parsed = JSON.parse(await readFile(path.join(rootDir, '.mcp.json'), 'utf8'));
   const browser = parsed.mcpServers[PRIMARY_BROWSER_ALIAS];
@@ -819,7 +820,7 @@ test('browser install fails clearly when the local runtime is missing', async ()
   await mkdir(path.join(rootDir, 'scripts'), { recursive: true });
 
   await assert.rejects(
-    () => installBrowserMcp({ rootDir, skipPlaywrightInstall: true, io: { log: () => {} } }),
+    () => installBrowserMcp({ rootDir, mode: 'playwright', skipPlaywrightInstall: true, io: { log: () => {} } }),
     /repository-local browser MCP is unavailable/u,
   );
 });
@@ -868,6 +869,7 @@ test('browser mcp-migrate updates local and client mcp json configs', async () =
   const logs = [];
   const result = await migrateBrowserMcpConfig({
     rootDir,
+    mode: 'playwright',
     io: { log: (line) => logs.push(String(line)) },
     clientHomes: {
       codex: codexHome,
@@ -937,7 +939,7 @@ test('browser mcp-migrate --dry-run does not modify files', async () => {
   const localMcpPath = path.join(rootDir, '.mcp.json');
   await writeFile(localMcpPath, before, 'utf8');
 
-  const result = await migrateBrowserMcpConfig({ rootDir, dryRun: true, clientHomes: {} });
+  const result = await migrateBrowserMcpConfig({ rootDir, mode: 'playwright', dryRun: true, clientHomes: {} });
   const after = await readFile(localMcpPath, 'utf8');
   assert.equal(after, before);
   assert.equal(result.dryRun, true);

@@ -78,6 +78,23 @@ export function getInternalHelpText(target, action) {
 `;
   }
 
+  if (target === 'browser' && action === 'switch') {
+    return `Usage:
+  aios internal browser switch <none|playwright|bsk> [--dry-run]
+
+  Re-point browser automation to the selected mode and re-materialize
+  all client configs. Modes are mutually exclusive.
+`;
+  }
+
+  if (target === 'browser' && action === 'bsk-doctor') {
+    return `Usage:
+  aios internal browser bsk-doctor [--dry-run]
+
+  Run the BrowserSkill connect baseline: 'bsk status --json' should
+  report version_skew:false (CLI/daemon/extension all on the same version).
+`;
+  }
   if (target === 'browser' && action === 'cdp-start') {
     return `Usage:
   aios internal browser cdp-start

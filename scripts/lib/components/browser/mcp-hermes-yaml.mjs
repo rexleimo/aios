@@ -12,7 +12,8 @@ import {
   PRIMARY_BROWSER_ALIAS,
   SHELL_ALIAS,
 } from './constants.mjs';
-import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { browserManagedServer } from './mcp-mode.mjs';
 
 /** 把 JSON 风格的 MCP server 对象转为 Hermes YAML 兼容的 plain object（剥离 type: 'stdio'，保留 command/args/env） */
 function toHermesMcpEntry(server) {
@@ -37,7 +38,7 @@ function toHermesMcpEntry(server) {
  * @param {string} rootDir - 项目根目录
  * @returns {{ status: 'created'|'updated'|'unchanged'|'error', reason?: string, nextRaw?: string }}
  */
-export function migrateOneHermesYaml(filePath, rootDir) {
+export function migrateOneHermesYaml(filePath, rootDir, { mode = undefined } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
 
@@ -60,8 +61,9 @@ export function migrateOneHermesYaml(filePath, rootDir) {
   }
 
   const existing = config.mcp_servers;
+  // 按 mode 取托管 browser 条目：不注入为 null → 下循环跳过该 alias（含 legacy）。
   const desired = {
-    [PRIMARY_BROWSER_ALIAS]: toHermesMcpEntry(buildPreferredMcpServer(rootDir)),
+    [PRIMARY_BROWSER_ALIAS]: toHermesMcpEntry(browserManagedServer(rootDir, {}, {}, mode)),
     [AUTH_TOOLS_ALIAS]: toHermesMcpEntry(buildAuthToolsMcpServer(rootDir)),
     [SHELL_ALIAS]: toHermesMcpEntry(buildShellMcpServer(rootDir)),
   };

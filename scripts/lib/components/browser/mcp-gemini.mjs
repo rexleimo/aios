@@ -30,9 +30,10 @@ export function normalizeGeminiServerEntry(entry) {
   return normalized;
 }
 
-export function migrateOneGeminiJsonFile(filePath, rootDir) {
+export function migrateOneGeminiJsonFile(filePath, rootDir, { mode = undefined } = {}) {
   return migrateOneMcpJsonFile(filePath, rootDir, {
     serversKey: 'mcpServers',
     mapManagedServerEntry: normalizeGeminiServerEntry,
+    mode,
   });
 }

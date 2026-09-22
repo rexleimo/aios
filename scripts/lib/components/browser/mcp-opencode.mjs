@@ -6,7 +6,8 @@ import fs from 'node:fs';
 
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
-import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { browserManagedServer } from './mcp-mode.mjs';
 
 function isObjectRecord(value) {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -32,7 +33,7 @@ function readExistingEnvironment(entry) {
 }
 
 /* 中文注释：返回 {status, nextRaw}，签名对齐 migrateOneMcpJsonFile，供 applyMcpConfigMigration 统一处理。 */
-export function migrateOneMcpOpencodeJson(filePath, rootDir) {
+export function migrateOneMcpOpencodeJson(filePath, rootDir, { mode = undefined } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
 
@@ -67,10 +68,14 @@ export function migrateOneMcpOpencodeJson(filePath, rootDir) {
   const mcp = parsed.mcp;
   const existingBrowser = findFirstBrowserServerEntry(mcp);
   removeLegacyBrowserServerEntries(mcp);
-  const browser = buildPreferredMcpServer(rootDir, { env: readExistingEnvironment(existingBrowser) });
+  // 按 mode 取托管 browser 条目：不注入 Playwright 时跳过该 alias（含 legacy）。
+  // existingBrowser 用 opencode 的 .environment；buildPreferredMcpServer 读 .env，故包裹为 {env}。
+  const browserManaged = browserManagedServer(rootDir, { env: readExistingEnvironment(existingBrowser) }, {}, mode);
   const auth = buildAuthToolsMcpServer(rootDir, { env: readExistingEnvironment(mcp[AUTH_TOOLS_ALIAS]) });
   const shell = buildShellMcpServer(rootDir);
-  mcp[PRIMARY_BROWSER_ALIAS] = toOpencodeLocalEntry(browser);
+  if (browserManaged !== null) {
+    mcp[PRIMARY_BROWSER_ALIAS] = toOpencodeLocalEntry(browserManaged);
+  }
   mcp[AUTH_TOOLS_ALIAS] = toOpencodeLocalEntry(auth);
   mcp[SHELL_ALIAS] = toOpencodeLocalEntry(shell);
 

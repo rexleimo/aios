@@ -140,7 +140,13 @@ export async function runSetup(rawOptions = {}, { rootDir, projectRoot = rootDir
     await runComponent('browser', async () => {
       let browserInstallReady = true;
       try {
-        await browserInstaller({ rootDir, skipPlaywrightInstall: options.skipPlaywrightInstall, io });
+        await browserInstaller({
+          rootDir,
+          skipPlaywrightInstall: options.skipPlaywrightInstall,
+          // 仅交互 TTY 提问选型：非 TTY（CI/管道）跳过提问，读 settings 落盘值。
+          prompt: !options.skipPlaywrightInstall && Boolean(process.stdin.isTTY) && Boolean(process.stdout.isTTY),
+          io,
+        });
       } catch (error) {
         if (!isMissingBrowserMcpRuntimeError(error)) {
           throw error;

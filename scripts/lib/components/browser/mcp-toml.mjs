@@ -6,7 +6,8 @@ import path from 'node:path';
 
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { BROWSER_MCP_ALIASES } from './mcp-aliases.mjs';
-import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { browserManagedServer } from './mcp-mode.mjs';
 
 // 纯函数：转义 TOML 字符串，避免 Windows 反斜杠与引号破坏配置。
 function escapeTomlString(value) {
@@ -134,13 +135,15 @@ function readExistingBrowserEnv(raw) {
 
 /* 中文注释：返回 {status, nextRaw}，签名对齐 migrateOneMcpJsonFile，供 applyMcpConfigMigration 统一处理。
    做法：先移除我们管理的三个 alias 段，再以确定的间距重新追加，保证幂等且不破坏用户其它配置。 */
-export function migrateOneMcpToml(filePath, rootDir) {
+export function migrateOneMcpToml(filePath, rootDir, { mode = undefined } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
   const existingBrowserEnv = readExistingBrowserEnv(raw);
 
+  // 按 mode 取托管 browser 条目：不注入 Playwright 时完全跳过 browser 段（含 legacy 段）。
+  const browserManaged = browserManagedServer(rootDir, { env: existingBrowserEnv }, {}, mode);
   const managedSections = [
-    serializeTomlServer(PRIMARY_BROWSER_ALIAS, buildPreferredMcpServer(rootDir, { env: existingBrowserEnv })),
+    ...(browserManaged ? [serializeTomlServer(PRIMARY_BROWSER_ALIAS, browserManaged)] : []),
     serializeTomlServer(AUTH_TOOLS_ALIAS, buildAuthToolsMcpServer(rootDir)),
     serializeTomlServer(SHELL_ALIAS, buildShellMcpServer(rootDir)),
   ];

@@ -7,10 +7,13 @@ import {
   resolveLocalBrowserMcpScript,
 } from './runtime-paths.mjs';
 import { PRIMARY_BROWSER_ALIAS } from './constants.mjs';
+import { browserModeAppliesPlaywright, resolveBrowserMode } from './mcp-mode.mjs';
 import { formatErrorMessage, requireCommand } from './shared.mjs';
 
 export async function installBrowserMcp({
   rootDir,
+  mode = null,
+  prompt = false,
   skipPlaywrightInstall = false,
   dryRun = false,
   io = console,
@@ -18,6 +21,38 @@ export async function installBrowserMcp({
   platform = process.platform,
 } = {}) {
   requireCommand('node');
+
+  // 选型解析优先级：显式 mode > 交互提问（仅 TTY）> 读 settings 落盘值。
+  // 交互提问会把用户选择写入 settings，随后安装按该 mode 走。
+  let resolvedMode = typeof mode === 'string' ? mode : null;
+  if (!resolvedMode && prompt && !dryRun && process.stdin.isTTY && process.stdout.isTTY) {
+    const { promptBrowserMode } = await import('./prompt.mjs');
+    resolvedMode = await promptBrowserMode({ rootDir, io });
+  }
+  if (!resolvedMode) {
+    resolvedMode = resolveBrowserMode(rootDir);
+  }
+
+  // 先落配置：auth/shell 不受 browser 选型影响，always run（失败只告警不阻塞）。
+  const migrationResult = await migrateBrowserMcpConfig({
+    rootDir, mode: resolvedMode, io, dryRun, clientHomes,
+  }).catch((error) => {
+    const message = formatErrorMessage(error).split(/\r?\n/u)[0];
+    io.log(`[warn] browser MCP config auto-update skipped: ${message}`);
+    return null;
+  });
+
+  // 只有选 Playwright 才装配仓库内 Node/Playwright 运行期并投放 launch snippet。
+  if (!browserModeAppliesPlaywright(resolvedMode)) {
+    io.log(`[info] browser mode=${resolvedMode}; skipping repository-local Playwright MCP.`);
+    return {
+      launcherPath: null,
+      cdpUrl: null,
+      browserUseProjectDir: null,
+      migrationResult,
+      mode: resolvedMode,
+    };
+  }
 
   const localMcpScript = resolveLocalBrowserMcpScript(rootDir);
   const localMcpAvailable = fs.existsSync(localMcpScript)
@@ -28,14 +63,6 @@ export async function installBrowserMcp({
 
   io.log('[info] using repository-local Node/Playwright MCP.');
   installLocalBrowserMcpRuntime({ rootDir, skipPlaywrightInstall, dryRun, io });
-
-  let migrationResult = null;
-  try {
-    migrationResult = await migrateBrowserMcpConfig({ rootDir, io, dryRun, clientHomes });
-  } catch (error) {
-    const message = formatErrorMessage(error).split(/\r?\n/u)[0];
-    io.log(`[warn] browser MCP config auto-update skipped: ${message}`);
-  }
 
   const launcherPath = dryRun
     ? `<ABSOLUTE_PATH_TO_REPO>/scripts/${path.basename(localMcpScript)}`

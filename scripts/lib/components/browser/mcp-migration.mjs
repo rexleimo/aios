@@ -6,7 +6,7 @@ import path from 'node:path';
 import { getClientHomes } from '../../platform/paths.mjs';
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
 import { findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
-import { buildAuthToolsMcpServer, buildPreferredMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
+import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
 import { migrateOneMcpOpencodeJson } from './mcp-opencode.mjs';
@@ -14,6 +14,7 @@ import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
 import { migrateOneZcodeJsonFile } from './mcp-zcode.mjs';
 import { migrateOneGeminiJsonFile } from './mcp-gemini.mjs';
 import { resolveLocalBrowserMcpScript } from './runtime-paths.mjs';
+import { browserModeAppliesPlaywright, browserManagedServer, resolveBrowserMode } from './mcp-mode.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。
    serversKey 支持点路径（如 zcode 的 'mcp.servers'）：逐段下钻并在缺段时创建中间对象。
@@ -35,7 +36,7 @@ function resolveServersBucket(parsed, serversKey) {
   return container[leaf];
 }
 
-export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers', mapManagedServerEntry = null } = {}) {
+export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers', mapManagedServerEntry = null, mode = undefined } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
 
@@ -58,11 +59,14 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
   const mcpServers = resolveServersBucket(parsed, serversKey);
   const existingAlias = findFirstBrowserServerEntry(mcpServers);
   removeLegacyBrowserServerEntries(mcpServers);
-  const managedServers = {
-    [PRIMARY_BROWSER_ALIAS]: buildPreferredMcpServer(rootDir, existingAlias),
-    [AUTH_TOOLS_ALIAS]: buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]),
-    [SHELL_ALIAS]: buildShellMcpServer(rootDir),
-  };
+  // 按 mode 取托管 browser 条目：none/bsk 时为 null，writer 据此不写入该 alias（含 legacy）。
+  const browserManaged = browserManagedServer(rootDir, existingAlias, {}, mode);
+  const managedServers = {};
+  if (browserManaged !== null) {
+    managedServers[PRIMARY_BROWSER_ALIAS] = browserManaged;
+  }
+  managedServers[AUTH_TOOLS_ALIAS] = buildAuthToolsMcpServer(rootDir, mcpServers[AUTH_TOOLS_ALIAS]);
+  managedServers[SHELL_ALIAS] = buildShellMcpServer(rootDir);
   if (typeof mapManagedServerEntry === 'function') {
     for (const alias of Object.keys(managedServers)) {
       managedServers[alias] = mapManagedServerEntry(managedServers[alias]);
@@ -81,23 +85,28 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
   };
 }
 
-export async function migrateBrowserMcpConfig({ rootDir, io = console, dryRun = false, clientHomes = null } = {}) {
-  const localMcpScript = resolveLocalBrowserMcpScript(rootDir);
-  const localMcpPackage = path.join(rootDir, 'mcp-server', 'package.json');
-  if (!fs.existsSync(localMcpScript)) {
-    throw new Error(`repository-local browser MCP launcher not found: ${localMcpScript}`);
-  }
-  if (!fs.existsSync(localMcpPackage)) {
-    throw new Error(`repository-local browser MCP package not found: ${localMcpPackage}`);
+export async function migrateBrowserMcpConfig({ rootDir, mode = null, io = console, dryRun = false, clientHomes = null } = {}) {
+  const resolvedMode = typeof mode === 'string' ? mode : resolveBrowserMode(null, { rootDir });
+
+  // 只有选 Playwright 才要求仓库内 Node/Playwright 运行期；none/bsk 无需它。
+  if (browserModeAppliesPlaywright(resolvedMode)) {
+    const localMcpScript = resolveLocalBrowserMcpScript(rootDir);
+    const localMcpPackage = path.join(rootDir, 'mcp-server', 'package.json');
+    if (!fs.existsSync(localMcpScript)) {
+      throw new Error(`repository-local browser MCP launcher not found: ${localMcpScript}`);
+    }
+    if (!fs.existsSync(localMcpPackage)) {
+      throw new Error(`repository-local browser MCP package not found: ${localMcpPackage}`);
+    }
   }
 
   const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());
   const targets = collectBrowserMcpMigrationTargets({ rootDir, clientHomes: homes });
-  return applyMcpConfigMigration({ targets, rootDir, io, dryRun });
+  return applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode: resolvedMode });
 }
 
 /* 中文注释：apply 阶段统一统计 created/updated/unchanged/errors，doctor 用这些数字给出修复证据。 */
-export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
+export function applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode = undefined }) {
   let created = 0;
   let updated = 0;
   let unchanged = 0;
@@ -108,17 +117,17 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun }) {
     const absPath = path.resolve(target.path);
     let result;
     if (target.format === 'toml') {
-      result = migrateOneMcpToml(absPath, rootDir);
+      result = migrateOneMcpToml(absPath, rootDir, { mode });
     } else if (target.format === 'opencode-json') {
-      result = migrateOneMcpOpencodeJson(absPath, rootDir);
+      result = migrateOneMcpOpencodeJson(absPath, rootDir, { mode });
     } else if (target.format === 'yaml') {
-      result = migrateOneHermesYaml(absPath, rootDir);
+      result = migrateOneHermesYaml(absPath, rootDir, { mode });
     } else if (target.format === 'zcode-json') {
-      result = migrateOneZcodeJsonFile(absPath, rootDir);
+      result = migrateOneZcodeJsonFile(absPath, rootDir, { mode });
     } else if (target.format === 'gemini-json') {
-      result = migrateOneGeminiJsonFile(absPath, rootDir);
+      result = migrateOneGeminiJsonFile(absPath, rootDir, { mode });
     } else {
-      result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace });
+      result = migrateOneMcpJsonFile(absPath, rootDir, { serversKey: target.namespace, mode });
     }
     if (result.status === 'error') {
       io.log(`ERR  mcp-migrate skipped (invalid json): ${absPath}; ${result.reason}`);

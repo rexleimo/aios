@@ -101,6 +101,11 @@ export function parseInternalArgs(argv) {
       options.repairAction = repairAction;
     }
 
+    // 位置参数：browser switch 的选型（none|playwright|bsk，非法交给组件抛错）
+    if (target === 'browser' && action === 'switch') {
+      options.browserMode = positionalArgs.length > 0 ? positionalArgs[0] : undefined;
+    }
+
     // 映射 Commander flags 到 options
     if (flags.dryRun) options.dryRun = true;
     if (flags.force) options.force = true;

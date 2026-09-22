@@ -45,9 +45,10 @@ export function normalizeZcodeServerEntry(entry) {
   return normalized;
 }
 
-export function migrateOneZcodeJsonFile(filePath, rootDir) {
+export function migrateOneZcodeJsonFile(filePath, rootDir, { mode = undefined } = {}) {
   return migrateOneMcpJsonFile(filePath, rootDir, {
     serversKey: 'mcp.servers',
     mapManagedServerEntry: normalizeZcodeServerEntry,
+    mode,
   });
 }

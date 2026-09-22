@@ -78,6 +78,7 @@ test('browser install uses local MCP when external browser-use is absent', async
   const logs = [];
   const result = await installBrowserMcp({
     rootDir,
+    mode: 'playwright',
     skipPlaywrightInstall: true,
     io: { log: (line) => logs.push(String(line)) },
     clientHomes: { codex: '', claude: '', gemini: '', opencode: '', pi: '' },
