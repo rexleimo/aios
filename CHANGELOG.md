@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.8] - 2026-09-22
+
+- test(rl): wire the test:rl-* suites into CI; repair their stale paths and CLI assertions
+
 ## [6.0.7] - 2026-09-22
 
 - fix(rl-orchestrator): undefined normalizeText reference in shipped evidence path (A8)
