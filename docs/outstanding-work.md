@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after the defect audit: A11/A12/A13 fixed with three new guards; A14/A15/A16 opened.
+> Last updated: 2026-09-22, after the zcode verification: A14 closed (ZCode HTTP key name read out of its own runtime schema; its strict server-schema allowlist fixed); A15/A16 remain open.
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -114,11 +114,22 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Fix**: `unit` moved into `test-suites.json` (two explicit files) with `SUITES.unit` manifest-driven like every other suite; the stale concurrency assertion replaced with manifest-consistent checks; `test:unit` added to `ci-main` and `release` so those files actually run; and the guard now walks `scripts/tests/**` recursively and expands suite `roots` when a suite is roots-based.
 - **Non-vacuous**: before the fixes W2/W5 failed naming both unit files and W6 named the dangling path; afterwards all six assertions (W1, W2, W3, W5, W5-drift, W6) pass. `npm run test:unit` is 18/18.
 
-### A14 — OPEN: `zcode` HTTP config shape is still "unverified" (possible stale premise)
+### A14 — RESOLVED 2026-09-22 (v6.0.13): the missing key name was `type: "http"` + `url`
 
-- **Status**: open. Both previous blockers in this area were wrong when actually tested: B1's "the validator does not exist" and C2's "`codebuddy mcp add` requires `--agent`".
-- **Evidence**: `zcode` is the only remaining entry with `verified: false` / `transport: 'manual'`, reason `http-config-shape-unverified` (`scripts/lib/integrations/clients.mjs`).
-- **Next**: verify the HTTP key name against ZCode's own config schema (the method used for WorkBuddy in C2), or record that the premise was re-checked and still holds. ZCode is an Electron client with no CLI, so this needs its config file rather than a command.
+- **Defect (audit finding)**: `zcode` was the last entry with `verified: false` / `transport: 'manual'`, reason `http-config-shape-unverified`. Both previous blockers in this area (B1, C2) turned out to be wrong when actually tested, so this one was too.
+- **Evidence (from ZCode's own runtime, not from a guess)**: the installed ZCode (3.6.5, `D:\Program Files\ZCode`) ships its CLI runtime at `resources/glm/zcode.cjs`, and that bundle validates every `mcp.servers` entry with a zod `discriminatedUnion("type", [stdio | http | sse])` where **each branch is `.strict()`**:
+  - `stdio`: `type` + `command` (required, min 1) + optional `args`/`cwd`/`env`
+  - `http`: `type` + `url` (required, min 1) + optional `headers`/`oauth`
+  - `sse`: `type` + `url` (required) + optional `headers`/`oauth`
+  - shared: `protocolVersion` (`auto`/`legacy`/`2026-07-28`), `enabled`, `timeoutMs`
+  - a preprocessor maps legacy aliases first: `enable`→`enabled`, `environment`→`env`, `http_headers`→`headers`, `type:"remote"`→`"http"`, and infers a missing `type` from `command`/`url` (the live `pencil` entry in `~/.zcode/cli/config.json` is such a historical shape: `transport:"stdio"`).
+  - an entry that fails validation is **dropped with a `config_mcp_server_invalid` warning** — per-server, non-fatal.
+  - the desktop app's "New MCP server" form offers exactly three types: `stdio`, `http`, `sse`.
+  - the namespace is `mcp.servers` (the same file AIOS already targets for stdio servers), confirmed by the app's own `readServerMapFromJson`.
+- **Fix**: `zcode` moved from `manual` to the `config` plane with `{ type: 'http', url }`, `verified: true`, and the schema quoted in its `evidence` string. `aios integration doctor typesafe` now reports `absent`/`ok` for ZCode instead of `manual-step-required`; `manual-step-required` no longer occurs for any client, so the manual fallback (`manualHttpEntry` + `describeManualTarget`) is documented as the reserved path for the next client whose key name cannot be evidenced — never fabricated.
+- **Second defect found by the same evidence (fixed)**: `normalizeZcodeServerEntry`'s allowlist in `scripts/lib/components/browser/mcp-zcode.mjs` had been reverse-engineered from the **stdio** branch only, so it was missing `url`, `protocolVersion`, and `oauth`. Any AIOS-managed *HTTP* server would therefore lose its required `url` during normalisation and be discarded by ZCode's strict union. The allowlist is now the schema's full field set (pinned by `normalizeZcodeServerEntry keeps the http branch fields (url) and drops unknown ones` — non-vacuous: the old list yields `{"type":"http","headers":…,"timeoutMs":45000}` with `url` gone).
+- **Live confirmation (ZCode's own logs, `~/.zcode/cli/log/zcode-2026-09-2*.jsonl`)**: `config.mcp_server.skipped` / `config_mcp_server_invalid` / `"<server>: Unrecognized key: \"transport\""` / `diagnosticPath: mcp.servers.pencil`, `configPath: C:\\Users\\...\\.zcode\\cli\\config.json`, `configScope: user` — the app reads exactly the file and namespace AIOS targets, and it drops an entry whose discriminator is spelled `transport`. In the same startup, the AIOS-written `aios-shell` entry (`type: "stdio"` + `timeoutMs`) reached `mcp.server.connected` with `toolCount: 1`, and a plugin-declared HTTP server connected with `transport: "http"` — so the strict schema accepts AIOS's stdio shape today and the HTTP plane is live in the same runtime.
+- **Verification**: `node --test scripts/tests/integration.test.mjs scripts/tests/zcode-mcp-nested-migration.test.mjs` 28/28; `node scripts/aios.mjs integration doctor typesafe --clients zcode` now reports `not registered` (was `manual-step-required`) and `integration add typesafe --clients zcode --dry-run --skip-skills` plans a write to the live `C:\\Users\\Administrator\\.zcode\\cli\\config.json`; full gate `npm run test:scripts` → **2013 tests / 2004 pass / 0 fail / 9 skipped, files=200**.
 
 ### A15 — OPEN: the five `shell: pwsh` workflow steps are outside S1/S2
 

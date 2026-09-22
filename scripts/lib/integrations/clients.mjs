@@ -152,12 +152,32 @@ export const INTEGRATION_CLIENT_TABLE = Object.freeze({
     buildProbe: null,
   }),
 
-  zcode: manualHttpEntry('zcode', {
-    file: { scope: 'home', file: ['cli', 'config.json'] },
-    projectFile: { scope: 'project', file: ['.zcode', 'config.json'] },
-    namespace: 'mcp.servers',
-    reason: 'http-config-shape-unverified',
-    evidence: 'no ZCode HTTP MCP surface has been verified by AIOS. AIOS owns the ZCode JSON MCP target (nested mcp.servers namespace); only the HTTP transport key name is unverified.',
+  // 2026-09-22 (v6.0.13): zcode 从 manual 升级为 config —— "HTTP transport 键名未验证" 的前提是错的。
+  // 证据来自 ZCode 自带的 CLI 运行时（安装包 resources/glm/zcode.cjs）里 mcp.servers 条目的 zod 校验：
+  //   iWr = preprocess(alias, discriminatedUnion("type", [stdio | http | sse]))，三个分支都是 .strict()。
+  //   http/sse 分支要求 { url: string.min(1), headers?, oauth? }，公共字段 protocolVersion|enabled|timeoutMs。
+  // 所以缺失的键名就是 `type: "http"` + `url`（与 buildDesiredMcpEntry 的通用形状一致）；
+  // 未知字段不会让整个文件失效，但会让该 server 被丢弃并记 config_mcp_server_invalid 警告。
+  // 预处理还把旧别名归一：enable→enabled、environment→env、http_headers→headers、
+  // type:"remote"→"http"、缺 type 时按 command/url 推断（~/.zcode/cli/config.json 里的 pencil 条目
+  // 就是历史形状，用 transport:"stdio" 而不是 type:"stdio"）。
+  // 文件位置沿用 AIOS 自己拥有的 MCP 目标：home ~/.zcode/cli/config.json / project .zcode/config.json，
+  // 命名空间 mcp.servers（CLI 的 readServerMapFromJson 也按这个点路径取值）。
+  zcode: Object.freeze({
+    client: 'zcode',
+    transport: 'config',
+    verified: true,
+    evidence: 'ZCode CLI runtime (installation resources/glm/zcode.cjs) mcp.servers entry schema: zod discriminatedUnion("type", [stdio|http|sse]), each branch .strict(); http/sse require {url, headers?, oauth?} with shared protocolVersion|enabled|timeoutMs. ZCode desktop "New MCP server" form offers exactly stdio/http/sse. Verified on ZCode 3.6.5 (win32-x64).',
+    config: Object.freeze({
+      scope: 'home',
+      file: Object.freeze(['cli', 'config.json']),
+      namespace: 'mcp.servers',
+      buildEntry: ({ mcp }) => ({ type: 'http', url: mcp.url }),
+    }),
+    projectConfig: Object.freeze({ scope: 'project', file: Object.freeze(['.zcode', 'config.json']) }),
+    buildAdd: null,
+    buildRemove: null,
+    buildProbe: null,
   }),
 
   // Qoder CLI ships first-class MCP CRUD (verified via the native mcp-config skill
@@ -180,6 +200,9 @@ export const INTEGRATION_CLIENT_TABLE = Object.freeze({
 
 // 纯函数：为"已知配置文件位置、未知 transport 键名"的客户端造一条条目。
 // 不编造键名：只把文件路径、命名空间和 URL 交给人工，并显式标出待确认字段。
+// 2026-09-22 (v6.0.13)：最后一个 manual 客户端 zcode 也拿到了自己的 schema 证据（见上），
+// 所以当前没有任何客户端走这条路。它保留为"下一个证据不足的客户端"的兜底形状——
+// 新增客户端时必须先跑通客户端的 --help / 配置 schema 再决定 transport，拿不到证据就落在这里。
 function manualHttpEntry(client, { file, projectFile, namespace = 'mcpServers', reason, evidence }) {
   return Object.freeze({
     client,

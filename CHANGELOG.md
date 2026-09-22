@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [6.0.13] - 2026-09-22
+
+- fix(integrations): ZCode's HTTP key name is read out of ZCode's own runtime instead of being guessed — `zcode` moves from `manual` to the verified `config` plane and writes `{"type":"http","url":...}` into `~/.zcode/cli/config.json` / `<repo>/.zcode/config.json` under `mcp.servers` (closes A14). ZCode's CLI bundle validates every `mcp.servers` entry with a strict discriminated union on `type` (`stdio`/`http`/`sse`): `http` and `sse` require `url`, `stdio` requires `command`, and an unknown field gets that one server dropped with a `config_mcp_server_invalid` warning. AIOS records that schema as the entry's evidence, and no client falls back to `manual-step-required` any more.
+- fix(mcp): the ZCode strict-schema allowlist had been reverse-engineered from the `stdio` branch only, so it dropped `url` (plus `protocolVersion`/`oauth`) — an AIOS-managed HTTP server would have lost its required field and been discarded by ZCode. The allowlist is now the schema's full field set, with a test that fails if `url` is ever dropped again.
+
 ## [6.0.1] - 2026-09-21
 
 - refactor(quality): the engineering-standards skill moves to where its consumers live — `aios-engineering-standards` is now `rex-engineering-standards`, shipped inside the `rex-harness` submodule (release 0.7.0) alongside `rex-implement` / `rex-refactor-hardening` / `rex-code-review` / `rex-design`. The dependency direction is now correct: the capability chain's shared quality baseline belongs to the capability chain, and standalone rex-harness consumers (npm `@rexleimo/rex-harness`) no longer miss it. The router and `pre-edit-safety-gate` reference the new name; content and Definition of Done are unchanged. Digest registered in `src/clients/projection-history.json`; host catalog back to 27 skills, rex projection now 14.

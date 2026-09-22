@@ -201,13 +201,27 @@ test('integration clients: verified clients build the HTTP invocation we recorde
   );
   assert.equal(workbuddy.config.namespace, 'mcpServers');
 
-  // manual 客户端也必须给出可执行的下一步，而不是静默跳过。
-  // gemini 于 2026-09-18 改成 cli：它自带 `mcp add --transport http`（见本文件末尾的 gemini 用例）。
-  for (const client of ['zcode']) {
-    const entry = getIntegrationClientEntry(client);
-    assert.equal(entry.transport, 'manual');
-    assert.match(formatInvocation(entry.buildAdd({ mcp: { serverName: 'x', url: 'https://d/mcp' } })), /confirm the HTTP transport key name/u);
-  }
+  // 2026-09-22 (v6.0.13): zcode 也从 manual 升级为 config。证据来自 ZCode 自带的 CLI 运行时
+  // （安装包 resources/glm/zcode.cjs）里 mcp.servers 条目的 zod schema：
+  // discriminatedUnion("type", [stdio|http|sse]) 且每分支 strict，http 分支要求 url。
+  // 所以"HTTP transport 键名未验证"这个前提和 B1/C2 一样是错的：键名就是 type:"http" + url。
+  const zcode = getIntegrationClientEntry('zcode');
+  assert.equal(zcode.transport, 'config');
+  assert.equal(zcode.verified, true);
+  assert.deepEqual(
+    zcode.config.buildEntry({ mcp: { serverName: 'x', url: 'https://d/mcp' } }),
+    { type: 'http', url: 'https://d/mcp' },
+  );
+  assert.equal(zcode.config.namespace, 'mcp.servers');
+  assert.deepEqual(zcode.config.file, ['cli', 'config.json']);
+  assert.match(zcode.evidence, /discriminatedUnion/u);
+
+  // manual 兜底仍然保留（"已知文件位置、未知键名就不编造键名"），但当前没有客户端走这条路：
+  // 下一个证据不足的客户端必须落进这个形状，而不是被静默跳过或假装注册成功。
+  assert.match(
+    formatInvocation({ kind: 'manual-config', client: 'future', namespace: 'mcpServers', serverName: 'x', url: 'https://d/mcp', placeholder: '<transport-key>' }),
+    /future: add x under mcpServers \(confirm the HTTP transport key name\)/u,
+  );
 });
 
 // ---------------------------------------------------------------- ledger
@@ -445,7 +459,7 @@ test('doctor: every client reports an actionable next step, never a silent skip'
   }
 });
 
-test('doctor: an uninstalled client and a manual client are reported distinctly', async () => {
+test('doctor: an uninstalled client and a config-plane client with no entry are reported distinctly', async () => {
   const rootDir = tempDir();
   const integration = validIntegration();
   const result = await runIntegrationDoctor({
@@ -458,7 +472,8 @@ test('doctor: an uninstalled client and a manual client are reported distinctly'
     env: {},
   });
   const byClient = Object.fromEntries(result.clients.map((item) => [item.client, item.status]));
-  assert.equal(byClient.zcode, 'manual-step-required');
+  // zcode 自 v6.0.13 走 config 平面：没有 ledger 记录时如实报 absent，而不是人工步骤。
+  assert.equal(byClient.zcode, 'absent');
   assert.equal(byClient.gemini, 'client-missing');
   assert.equal(result.summary.registered, 0);
 });

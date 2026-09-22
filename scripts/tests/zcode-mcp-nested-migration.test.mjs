@@ -5,7 +5,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { migrateOneMcpJsonFile } from '../lib/components/browser/mcp-migration.mjs';
-import { migrateOneZcodeJsonFile } from '../lib/components/browser/mcp-zcode.mjs';
+import { migrateOneZcodeJsonFile, normalizeZcodeServerEntry } from '../lib/components/browser/mcp-zcode.mjs';
 import { collectClientMcpTargets } from '../lib/components/browser/mcp-targets.mjs';
 import { PRIMARY_BROWSER_ALIAS } from '../lib/components/browser/constants.mjs';
 import { getClientMcpTarget } from '../lib/clients/native/index.mjs';
@@ -13,6 +13,18 @@ import { getClientMcpTarget } from '../lib/clients/native/index.mjs';
 async function makeTemp() {
   return mkdtemp(path.join(os.tmpdir(), 'aios-zcode-mcp-'));
 }
+
+// ZCode CLI 运行时（安装包 resources/glm/zcode.cjs）里 mcp.servers 条目的 zod schema：
+// discriminatedUnion("type", [stdio|http|sse])，三个分支都 .strict()。
+//   stdio: type | command(必填) | args | cwd | env
+//   http/sse: type | url(必填) | headers
+//   公共: headers | enabled | timeoutMs | protocolVersion | oauth
+// 未知字段不会让整个配置文件失效，但会让该 server 被丢弃并记 config_mcp_server_invalid 警告。
+const ZCODE_SERVER_SCHEMA_FIELDS = Object.freeze([
+  'type', 'command', 'args', 'cwd', 'env',
+  'url',
+  'headers', 'enabled', 'timeoutMs', 'protocolVersion', 'oauth',
+]);
 
 test('zcode MCP target declares nested mcp.servers in home and project scopes', () => {
   const target = getClientMcpTarget('zcode');
@@ -91,13 +103,37 @@ test('migrateOneZcodeJsonFile normalizes AIOS servers to ZCode strict schema', a
   assert.equal(browser.timeoutMs, 60000, 'startup timeout translated to timeoutMs');
   for (const key of Object.keys(browser)) {
     assert.ok(
-      ['type', 'command', 'args', 'cwd', 'env', 'headers', 'enabled', 'timeoutMs'].includes(key),
+      ZCODE_SERVER_SCHEMA_FIELDS.includes(key),
       `field ${key} must be in the ZCode server schema allowlist`,
     );
   }
   assert.ok(parsed.mcp.servers['aios-shell'].timeoutMs >= 30000, 'shell proxy timeout normalized');
   // user-owned servers pass through untouched, including unknown fields
   assert.equal(parsed.mcp.servers['user-own-server'].customField, 'keep-me');
+});
+
+// ZCode CLI runtime schema (installation resources/glm/zcode.cjs): discriminatedUnion("type",
+// [stdio|http|sse]) with every branch .strict(); the http/sse branch REQUIRES `url`.
+// 2026-09-22 (v6.0.13): the allowlist used to be reverse-engineered from the stdio branch only,
+// so it dropped `url` — any AIOS-managed HTTP server then lost its required field and ZCode
+// discarded the whole server (config_mcp_server_invalid). This pins the fix.
+test('normalizeZcodeServerEntry keeps the http branch fields (url) and drops unknown ones', () => {
+  const normalized = normalizeZcodeServerEntry({
+    type: 'http',
+    url: 'https://docs.typesafe.ai/mcp',
+    headers: { Authorization: 'Bearer x' },
+    protocolVersion: 'auto',
+    startupTimeoutSec: 45,
+    unknownField: 'drop-me',
+    transport: 'stdio',
+  });
+  assert.equal(normalized.url, 'https://docs.typesafe.ai/mcp', 'http branch requires url — it must survive normalization');
+  assert.deepEqual(normalized.headers, { Authorization: 'Bearer x' });
+  assert.equal(normalized.protocolVersion, 'auto');
+  assert.equal(normalized.timeoutMs, 45000, 'startupTimeoutSec translated to timeoutMs');
+  assert.equal(normalized.type, 'http');
+  assert.equal(normalized.unknownField, undefined, 'unknown fields are dropped so ZCode keeps the server');
+  assert.equal(normalized.transport, undefined, 'legacy alias keys are not in the schema');
 });
 
 test('migrateOneMcpJsonFile keeps unrelated zcode servers and is idempotent', async () => {

@@ -108,15 +108,17 @@ All ten AIOS clients are covered. Coverage means *an honest, actionable path for
 | Gemini CLI | `gemini mcp add --scope user --transport http` | verified |
 | Hermes | `hermes mcp add --url` | needs an interactive terminal |
 | WorkBuddy | writes `~/.workbuddy/mcp.json` (`mcpServers`, `type: "http"` + `url`) | verified |
-| ZCode | writes `~/.zcode/cli/config.json` (`mcp.servers`) | verified for stdio; manual step for HTTP |
+| ZCode | writes `~/.zcode/cli/config.json` (`mcp.servers`, `type: "http"` + `url`) | verified |
 | Qoder | `qoder mcp add --scope user --transport http` | verified |
 
 Two behaviours are deliberate:
 
 - **Hermes** prompts interactively for the auth method and offers no non-interactive flag. AIOS does not guess an answer or hang a script; it prints the exact command and marks the client `pending-interactive`.
-- **ZCode** is an Electron client with no CLI on `PATH`. AIOS writes stdio servers into `~/.zcode/cli/config.json` under `mcp.servers`, and ZCode reads them from there; its HTTP entries additionally need a `url` field that AIOS does not write yet, so those remain a manual step.
+- **ZCode** is an Electron client with no CLI on `PATH`. AIOS writes servers into `~/.zcode/cli/config.json` (home) and `<repo>/.zcode/config.json` (project) under the nested `mcp.servers` namespace, and ZCode reads them from there.
 
 **WorkBuddy** is no longer a carve-out. `codebuddy mcp add` takes no `--agent` value and its `-t, --transport` accepts `http`, so the only thing that was missing was the HTTP key name — it is `{"type":"http","url":...}`. AIOS writes that shape into `~/.workbuddy/mcp.json` (the file `codebuddy mcp list` reads) rather than the CLI's own user file `~/.codebuddy/.mcp.json`, so ownership, backups, and scoped removal stay intact.
+
+**ZCode** needed the same one key name, and its schema is stricter than WorkBuddy's. ZCode's own CLI runtime validates every `mcp.servers` entry with a discriminated union on `type` (`stdio` / `http` / `sse`) whose branches are strict: `http` and `sse` require `url` plus optional `headers`/`oauth`, `stdio` requires `command`, and all three share `enabled` / `timeoutMs` / `protocolVersion`. A server with an unknown field is dropped with a `config_mcp_server_invalid` warning, so AIOS normalises the servers it owns to that field set (`startupTimeoutSec` seconds → `timeoutMs` milliseconds) and never rewrites servers it does not own. Legacy aliases ZCode still accepts are mapped by ZCode itself: `enable` → `enabled`, `environment` → `env`, `http_headers` → `headers`, `type: "remote"` → `"http"`, and a missing `type` is inferred from `command` or `url`.
 
 **Qoder** needs no carve-out — it exposes full MCP CRUD on the CLI (`mcp add`, `add-json`, `list`, `get`, `remove`) across three scopes: `--scope user` (`~/.qoder/settings.json`), `--scope project` (`<repo>/.qoder/settings.json`, committed), and `--scope local` (`.qoder/settings.local.json`, gitignored). AIOS writes the user and project files; the local file is a valid Qoder target that AIOS does not touch. Transports `stdio`, `sse`, `http`, and `ws` are all accepted by `--transport`.
 
