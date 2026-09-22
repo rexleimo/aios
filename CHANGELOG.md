@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.11] - 2026-09-22
+
+- fix(ci): release-health-watch heredoc terminator (A6), plus a workflow shell-syntax guard
+
 ## [6.0.10] - 2026-09-22
 
 - fix(cli): per-command flags are discoverable from help (A10)
