@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.10] - 2026-09-22
+
+- fix(cli): per-command flags are discoverable from help (A10)
+
 ## [6.0.9] - 2026-09-22
 
 - test(guard): W5 CI-execution guard closes A5; W4 rejected on measurement
