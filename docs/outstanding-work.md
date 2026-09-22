@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after wiring the test:rl-* suites into CI (A7), repairing their 15 stale/red tests (A8/A9) and opening A10.
+> Last updated: 2026-09-21, after closing A5 with the W5 CI-execution guard (W4 rejected on measurement).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -52,13 +52,13 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 
 ---
 
-### A5 — OPEN: the wiring guard proves reachability, not hermeticity
+### A5 — RESOLVED 2026-09-21 (v6.0.9): W5 landed; W4 rejected on measurement
 
-- **Status**: open. **Why it matters (high)**: this gap caused the v6.0.2–v6.0.4 CI outage (see D).
-- **The hole**: `scripts/tests/test-suite-wiring.test.mjs` (W1/W2/W3) proves every `*.test.mjs` is reachable from a test entry point. It cannot prove the file *passes on a clean checkout*. The A1 triage verified the 82 unwired files by bulk-running them **in a working tree where `aios init`/`sync-skills` had already generated the gitignored projection roots**, so "never failing" was measured against a developer's tree, not CI's. Every file wired that way is a latent CI failure.
-- **Proposed guard (W4)**: fail when a test reads a path under a gitignored generated root (`.codex/skills`, `.claude/skills`, `.agents/skills`, `.grok/skills`, `.hermes/skills`, `.gemini/skills`, `.workbuddy/skills`, `.opencode/skills`, `.pi/skills`, `.skillopt`) instead of projecting through `materializeSkillTree` / tracked evidence. Cheapest sound version: assert the file's source text contains no such literal, then require an allow-list entry with a reason.
-- **Proposed guard (W5)**: every `test:*` script in `package.json` must be reachable from a workflow, or be listed with an explicit reason. A7 proved W2 can be satisfied by a glob in a script that no CI job runs — reachability again, not execution.
-
+- **The gap**: the guard proved a test file was *reachable from a test entry*, never that CI *executed* it. A7 is what that costs: 41 files satisfied W2 through globs in `test:*` scripts no workflow invoked, so they were silently red for weeks — including a real `ReferenceError` in shipped code (A8).
+- **W5 (shipped)**: `scripts/tests/test-suite-wiring.test.mjs` now resolves the scripts CI actually invokes — following `npm run` chains and npm’s implicit `pre<name>` hook, then expanding each script’s `scripts/tests/...` globs and `run-test-suite.mjs <suite>` manifests — and fails for any test file no CI-reachable entry executes. Exemptions must be recorded in `scripts/test-wiring-snapshot.json.knownNotInCi` with a reason (currently empty: **259/259 files are CI-reachable**), and a drift test keeps that baseline from rotting, mirroring W3.
+- **W5 verified non-vacuous by mutation**: adding a test file wired only to a new `test:*` script that no workflow runs makes W5 fail with the file named while W2 still passes — i.e. W5 catches precisely what W2 missed.
+- **W4 (rejected, with evidence)**: the proposed static lint — "a test must not read a gitignored generated root" — was measured over `scripts/tests` and does not work as a text rule: a raw literal scan hits **64/259** files (nearly all legitimate temp-root fixture writes and client-root mappings), and a read-call-scoped scan hits **0 real cases** (2 false positives, one of them a `state.json`\-contains-`stat` substring artefact). It would not have caught the historical bugs at all, because those built their paths through helpers and variables (`resolveGeneratedTargetPath(...)`, `path.join(process.cwd(), root, ...)`). A noisy allow-list or a rule that cannot see the real cases is the fake pass the guard’s own contract forbids, so the decision and its measurements are recorded in the guard’s header instead.
+- **W5 supersedes W4 for this class**: a test that depends on a developer-only artifact now fails in CI, where that artifact does not exist. That is the sound mechanism; no text lint can substitute for it.
 ### A6 — OPEN: `release-health-watch` is red (pre-existing, does not block releases)
 
 - **Status**: open, discovered 2026-09-21 while verifying the v6.0.5/v6.0.6 release. **Not caused by recent work**: the workflow has **zero successes** in all recent runs (10/10 failure, oldest examined `2026-09-19T10:45Z`) — already red before the first v6.0.2 commit — and the workflow file is unchanged since `ff387616` (2026-09-06).

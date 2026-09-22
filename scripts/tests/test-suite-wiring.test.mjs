@@ -27,6 +27,19 @@
  *   W3 The snapshot may not contain a name that is already wired or already gone, so the
  *      snapshot cannot rot into a blanket excuse.
  *   W4 The failure names the file and both ways out.
+ *   W5 Every test file is executed by a CI-reachable entry point, not merely reachable from
+ *      some package.json script. Added 2026-09-21: the five `test:rl-*` suites (41 files)
+ *      satisfied W2 through globs in scripts no workflow invoked, so nothing ran them in CI
+ *      and they were silently red for weeks (see docs/outstanding-work.md A7). A file that
+ *      no CI job executes must be recorded in `knownNotInCi` with a reason.
+ *
+ * Explicitly considered and rejected (2026-09-21): a static "this test reads a gitignored
+ * generated root" lint. Measured over scripts/tests, a raw literal scan hits 64/259 files
+ * (nearly all legitimate temp-root fixture writes and client-root mappings) and a
+ * read-call-scoped scan hits 0 real cases (2 false positives), because the historical bugs
+ * built their paths through helpers and variables. W5 is the sound mechanism instead: a test
+ * that depends on a developer-only artifact now fails in CI, where the artifact does not
+ * exist. Do not add a literal lint that cannot see the real cases.
  *
  * Allowed test seams: scripts/test-suites.json, the package.json test scripts,
  *   the scripts/tests listing, and scripts/test-wiring-snapshot.json -- all public
@@ -102,6 +115,7 @@ function readSnapshot() {
 }
 
 function writeSnapshot(unwired) {
+  const previous = fs.existsSync(SNAPSHOT_PATH) ? readSnapshot() : {};
   fs.writeFileSync(
     SNAPSHOT_PATH,
     `${JSON.stringify(
@@ -112,6 +126,7 @@ function writeSnapshot(unwired) {
           + 'baseline for scripts/tests/test-suite-wiring.test.mjs, not an approval: wiring a file '
           + 'shrinks it, and a new unwired file fails the guard instead of being appended silently.',
         knownUnwired: unwired,
+        knownNotInCi: previous.knownNotInCi || [],
       },
       null,
       2,
@@ -153,4 +168,70 @@ test('W3: the unwired baseline holds only genuinely unwired files', () => {
     [...unwired].sort(),
     'baseline drifted from the actual unwired set',
   );
+});
+
+const WORKFLOWS_DIR = path.join(ROOT, '.github', 'workflows');
+
+/**
+ * Scripts CI actually invokes, following `npm run` chains and npm's implicit
+ * `pre<name>` hook. A file wired only to a `test:*` script that no workflow runs is
+ * reachable but never executed — the A7 failure mode.
+ */
+function ciReachableScripts() {
+  const scripts = JSON.parse(fs.readFileSync(path.join(ROOT, 'package.json'), 'utf8')).scripts || {};
+  const workflowText = fs
+    .readdirSync(WORKFLOWS_DIR)
+    .filter((name) => name.endsWith('.yml') || name.endsWith('.yaml'))
+    .map((name) => fs.readFileSync(path.join(WORKFLOWS_DIR, name), 'utf8'))
+    .join('\n');
+
+  const reachable = new Set();
+  const visit = (name) => {
+    if (!name || reachable.has(name) || scripts[name] === undefined) return;
+    reachable.add(name);
+    // npm runs pre<name> automatically for `npm run <name>`.
+    visit(`pre${name}`);
+    for (const nested of String(scripts[name]).matchAll(/npm\s+run\s+([A-Za-z0-9:_-]+)/g)) visit(nested[1]);
+  };
+  for (const match of workflowText.matchAll(/npm\s+(?:--prefix\s+\S+\s+)?run\s+([A-Za-z0-9:_-]+)/g)) {
+    visit(match[1]);
+  }
+  return { reachable, scripts };
+}
+
+/** Test files that a CI-reachable script executes (globs from scripts + suite manifests). */
+function ciExecutedFiles() {
+  const { reachable, scripts } = ciReachableScripts();
+  const suites = JSON.parse(fs.readFileSync(SUITES_PATH, 'utf8'));
+  const { onDisk } = wiring();
+  const files = new Set();
+  for (const name of reachable) {
+    const body = String(scripts[name]);
+    for (const match of body.matchAll(/scripts\/tests\/[^\s&|]+/g)) {
+      for (const file of onDisk) if (matchesPattern(file, match[0])) files.add(file);
+    }
+    for (const match of body.matchAll(/run-test-suite\.mjs\s+([A-Za-z0-9:_-]+)/g)) {
+      for (const file of suites[match[1]]?.files || []) files.add(file);
+    }
+  }
+  return files;
+}
+
+test('W5: every test file is executed by a CI-reachable entry point', () => {
+  const executed = ciExecutedFiles();
+  const known = new Set(readSnapshot().knownNotInCi || []);
+  const fresh = wiring().onDisk.filter((file) => !executed.has(file) && !known.has(file));
+  assert.deepEqual(
+    fresh,
+    [],
+    'test file(s) that no CI workflow executes - run them from a workflow step, or record why '
+      + `they cannot in scripts/test-wiring-snapshot.json.knownNotInCi: ${fresh.join(', ')}`,
+  );
+});
+
+test('W5 drift: the not-in-CI baseline holds only genuinely unexecuted files', () => {
+  const executed = ciExecutedFiles();
+  const known = readSnapshot().knownNotInCi || [];
+  const stale = known.filter((file) => executed.has(file) || !wiring().onDisk.includes(file));
+  assert.deepEqual(stale, [], `baseline lists files that CI executes or that no longer exist: ${stale.join(', ')}`);
 });
