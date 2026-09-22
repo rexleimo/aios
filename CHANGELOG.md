@@ -15,6 +15,10 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.0.7] - 2026-09-22
+
+- fix(rl-orchestrator): undefined normalizeText reference in shipped evidence path (A8)
+
 ## [6.0.6] - 2026-09-22
 
 - fix(integrations): WorkBuddy MCP registration is verified; correct the C1/C3 premises (C2, C4 closed)
