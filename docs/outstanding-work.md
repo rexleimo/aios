@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after resolving C2/C4 and correcting the C1/C3 premises (v6.0.6).
+> Last updated: 2026-09-21, after resolving C2/C4, correcting the C1/C3 premises (v6.0.6), and opening A6 (release-health-watch red).
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -57,6 +57,14 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Status**: open. **Why it matters (high)**: this gap caused the v6.0.2–v6.0.4 CI outage (see D).
 - **The hole**: `scripts/tests/test-suite-wiring.test.mjs` (W1/W2/W3) proves every `*.test.mjs` is reachable from a test entry point. It cannot prove the file *passes on a clean checkout*. The A1 triage verified the 82 unwired files by bulk-running them **in a working tree where `aios init`/`sync-skills` had already generated the gitignored projection roots**, so "never failing" was measured against a developer's tree, not CI's. Every file wired that way is a latent CI failure.
 - **Proposed guard (W4)**: fail when a test reads a path under a gitignored generated root (`.codex/skills`, `.claude/skills`, `.agents/skills`, `.grok/skills`, `.hermes/skills`, `.gemini/skills`, `.workbuddy/skills`, `.opencode/skills`, `.pi/skills`, `.skillopt`) instead of projecting through `materializeSkillTree` / tracked evidence. Cheapest sound version: assert the file's source text contains no such literal, then require an allow-list entry with a reason.
+
+### A6 — OPEN: `release-health-watch` is red (pre-existing, does not block releases)
+
+- **Status**: open, discovered 2026-09-21 while verifying the v6.0.5/v6.0.6 release. **Not caused by recent work**: the workflow has **zero successes** in all recent runs (10/10 failure, oldest examined `2026-09-19T10:45Z`) — already red before the first v6.0.2 commit — and the workflow file is unchanged since `ff387616` (2026-09-06).
+- **Symptom**: job `release-health` fails at step *Run release strict health gate* with **exit code 2** (check-run annotation `.github:68`). The later step *Fail when release health is unhealthy* is **skipped**, so the job did not fail because health was judged unhealthy — the step failed by itself. `release`, `ci-main`, `docs-pages`, `windows-shell-smoke`, and `codeql` are all green, so releases are unaffected.
+- **Ruled out**: the policy state path (`.aios/experiments/rl-mixed-v1/release/orchestrator-policy-release.state.json`) is gitignored via `.aios/*` and untracked, so CI takes the `else` branch — which writes a `not_configured` payload and, reproduced locally under `bash --noprofile --norc -eo pipefail`, exits **0**. `node scripts/aios.mjs release-status --strict` with a missing state file exits **1**, not 2. CRLF is present in the committed blobs of *all* workflows (including the passing `release.yml`/`ci-main.yml`), so line endings alone are not the differentiator.
+- **Real defect found while diagnosing**: the step captures `gate_exit_code` but **never propagates it** (it only writes `exit_code=` to `$GITHUB_OUTPUT`), while a separate step owns the fail decision. So the observed combination — this step fails while the health-fail step is skipped — is self-contradictory, and the step cannot be trusted as a gate until that is fixed.
+- **Next**: needs the run's job log (owner-only; the Actions logs endpoint returns 403 for non-admins). Either make the step explicitly propagate/exit with `gate_exit_code`, or paste the failing step's log so the exit-2 source can be identified.
 
 ---
 
