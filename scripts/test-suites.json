@@ -199,7 +199,8 @@
       "scripts/tests/verdict-schema.test.mjs",
       "scripts/tests/work-item-rex-isolation.test.mjs",
       "scripts/tests/workspace-integration.test.mjs",
-      "scripts/tests/cli-parser-help.test.mjs"
+      "scripts/tests/cli-parser-help.test.mjs",
+      "scripts/tests/workflow-shell-syntax.test.mjs"
     ]
   },
   "browser": {
