@@ -1,5 +1,11 @@
 // 纯函数：生成稳定哈希，供可重复的决策采样和证据打分使用。
-export { computeHash, normalizeText } from '../../../../src/shared/normalize.mjs';
+// 注意：`export ... from` 只对外转发绑定，**不会**把名字引入本模块作用域。
+// 本文件下文要直接调用 normalizeText，所以必须 import 后再 export（2026-09-21 修复：
+// 之前只写了 `export { computeHash, normalizeText } from ...`，导致 normalizeText
+// 在本文件内是未定义引用，凡走 executor 证据路径的调用都抛 ReferenceError。
+import { computeHash, normalizeText } from '../../../../src/shared/normalize.mjs';
+
+export { computeHash, normalizeText };
 
 // 纯函数：只保留任务允许的执行器，避免上游传入非法选择。
 export function resolveRequestedExecutor({ task, selectedExecutor }) {

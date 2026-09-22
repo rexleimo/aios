@@ -1,7 +1,7 @@
 # Outstanding work
 
 > Living register. Updated whenever an item opens or closes — update it in the same commit as the change.
-> Last updated: 2026-09-21, after resolving C2/C4, correcting the C1/C3 premises (v6.0.6), and opening A6 (release-health-watch red).
+> Last updated: 2026-09-21, after fixing a real `normalizeText` ReferenceError (A8) and opening A7/A9 — the `test:rl-*` suites CI never runs.
 > Source of truth for the current work item: `docs/plans/2026-09-18-triage-the-82-test-files-that-no-test-entry-reaches-23-currently.md`.
 
 Items are split by **who owns the fix**, because that is what decides where the change lands:
@@ -65,6 +65,28 @@ Counted as 23 minus the 5 fixed in v5.19.2 (derived from the triage data, not re
 - **Ruled out**: the policy state path (`.aios/experiments/rl-mixed-v1/release/orchestrator-policy-release.state.json`) is gitignored via `.aios/*` and untracked, so CI takes the `else` branch — which writes a `not_configured` payload and, reproduced locally under `bash --noprofile --norc -eo pipefail`, exits **0**. `node scripts/aios.mjs release-status --strict` with a missing state file exits **1**, not 2. CRLF is present in the committed blobs of *all* workflows (including the passing `release.yml`/`ci-main.yml`), so line endings alone are not the differentiator.
 - **Real defect found while diagnosing**: the step captures `gate_exit_code` but **never propagates it** (it only writes `exit_code=` to `$GITHUB_OUTPUT`), while a separate step owns the fail decision. So the observed combination — this step fails while the health-fail step is skipped — is self-contradictory, and the step cannot be trusted as a gate until that is fixed.
 - **Next**: needs the run's job log (owner-only; the Actions logs endpoint returns 403 for non-admins). Either make the step explicitly propagate/exit with `gate_exit_code`, or paste the failing step's log so the exit-2 source can be identified.
+
+### A7 — OPEN: CI never executes the five `test:rl-*` suites (41 files)
+
+- **Status**: open, found 2026-09-21. **Why it matters (medium-high)**: it is the same blind spot as A5 one level up — the wiring guard proves a file is reachable from *a script*, never that CI *runs* that script. These 41 files have been silently red.
+- **Coverage map**: `regression` (197 files) is a superset of `browser`/`context`/`client`/`orchestrator`/`harness`/`team`/`rex`, so `test:scripts` covers those. Of the 259 files on disk, 62 are outside `regression`; 21 are covered by `pretest:scripts` / `test:workflow-policy` / `test:rex-integration` (all invoked by `test:scripts`), and the remaining **41 are covered only by `test:rl-core` (13), `test:rl-shell-v1` (17), `test:rl-browser-v1` (4), `test:rl-orchestrator-v1` (4), `test:rl-mixed-v1` (3)**. No workflow invokes any of them: `ci-main` and `release` run `test:scripts`, `contextdb-quality` runs `test:contextdb`.
+- **Why the guard is silent**: W2 counts a file as wired when it is in `scripts/test-suites.json` **or** matches a `scripts/tests/...` pattern in a `pretest:scripts`/`test:*` script. Those globs satisfy W2 while no CI job ever runs them.
+- **Measured state**: `test:rl-core` 49/49 green; `test:rl-orchestrator-v1` 7/17 → **17/17** after A8; `test:rl-mixed-v1` 12/13 (A9); `test:rl-shell-v1` and `test:rl-browser-v1` not yet run in a clean checkout.
+- **Proposed guard (W5)**: every `test:*` script must be reachable from a workflow, or be listed with an explicit reason. **Next**: run shell-v1/browser-v1, fix A9, then decide whether these belong in CI (adding them while A9 is red would break CI).
+
+### A8 — RESOLVED 2026-09-21 (v6.0.7): `normalizeText is not defined` in shipped code
+
+- **The bug**: `scripts/lib/rl-orchestrator-v1/decision-runner/shared.mjs` opened with `export { computeHash, normalizeText } from '../../../../src/shared/normalize.mjs'` and then **called `normalizeText` locally** (6 uses, lines 26/111/136-138). In ESM an `export … from` only forwards a binding — it does not bring the name into the module scope — so every executor-evidence path threw `ReferenceError: normalizeText is not defined`. Fixed by importing and then re-exporting (public surface unchanged).
+- **Impact**: repaired **10 tests** in `test:rl-orchestrator-v1` (7/17 → 17/17). This is a genuine production defect that survived because A7 means no CI job runs that suite.
+- **Checked and deliberately left alone**: `scripts/lib/harness/groupchat-runtime/shared.mjs` has the same re-export form but never uses the name locally, so it is correct as-is.
+- **Verification**: `npm run test:affected` → 613 tests / 612 pass / 0 fail / 1 skipped.
+
+### A9 — OPEN: one `rl-mixed-v1` test cannot pass as written
+
+- **Test**: `scripts/tests/rl-mixed-v1-run-orchestrator.test.mjs` — "mixed campaign guardrails emit drift alerts and auto rollback degraded policy versions".
+- **Why it fails**: it calls `runMixedCampaign({ rootDir, activeEnvironments, batchTargetCount: 3, onlineBatchSize: 4 })` with **no task source**. `sampleNextTask` finds nothing, so `collectBatchEpisodes` returns `status: 'no_work'` and `runMixedCampaign` returns `buildNoWorkResult(ctx)` — **without error and without writing anything** (probe: `experiments/` is not even created). The test then reads `checkpoints/orchestrator-bandit-policy.index.json`. It is not fixable by checkout contents either: `experiments/` is untracked (0 tracked files).
+- **Evidence**: the sibling test in the same file passes because it supplies `orchestratorLiveTaskCollector`; this one supplies nothing.
+- **Fix direction**: supply tasks the way the sibling does (or seed the temp root), then assert the rollback behaviour. Also worth asking whether `no_work` returning silently — no error, no artifact — is the intended contract for a caller that asked for a campaign.
 
 ---
 
