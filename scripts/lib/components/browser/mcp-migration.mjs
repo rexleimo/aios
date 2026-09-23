@@ -5,7 +5,7 @@ import path from 'node:path';
 
 import { getClientHomes } from '../../platform/paths.mjs';
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from './constants.mjs';
-import { findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
+import { BROWSER_MCP_ALIASES, findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
 import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './mcp-toml.mjs';
@@ -14,7 +14,7 @@ import { migrateOneHermesYaml } from './mcp-hermes-yaml.mjs';
 import { migrateOneZcodeJsonFile } from './mcp-zcode.mjs';
 import { migrateOneGeminiJsonFile } from './mcp-gemini.mjs';
 import { resolveLocalBrowserMcpScript } from './runtime-paths.mjs';
-import { browserModeAppliesPlaywright, browserManagedServer, resolveBrowserMode } from './mcp-mode.mjs';
+import { browserModeAppliesPlaywright, browserManagedServer, readSettingsFile, resolveBrowserMode } from './mcp-mode.mjs';
 
 /* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。
    serversKey 支持点路径（如 zcode 的 'mcp.servers'）：逐段下钻并在缺段时创建中间对象。
@@ -85,8 +85,48 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
   };
 }
 
+function hasExplicitBrowserModeInSettings(rootDir) {
+  if (!rootDir) return false;
+  try {
+    const settings = readSettingsFile(rootDir);
+    const value = settings?.browser?.mcp;
+    return typeof value === 'string' && value.length > 0;
+  } catch {
+    return false;
+  }
+}
+
+const BROWSER_ENTRY_MARKERS = [...BROWSER_MCP_ALIASES, 'aios-mcp-proxy', 'run-local-browser-mcp'];
+function targetsHaveExistingBrowser(targets) {
+  for (const target of targets || []) {
+    if (!target?.path) continue;
+    let text = '';
+    try {
+      if (!fs.existsSync(target.path)) continue;
+      text = fs.readFileSync(target.path, 'utf8');
+    } catch {
+      continue;
+    }
+    for (const marker of BROWSER_ENTRY_MARKERS) {
+      if (text.includes(marker)) return true;
+    }
+  }
+  return false;
+}
+
 export async function migrateBrowserMcpConfig({ rootDir, mode = null, io = console, dryRun = false, clientHomes = null } = {}) {
-  const resolvedMode = typeof mode === 'string' ? mode : resolveBrowserMode(null, { rootDir });
+  let resolvedMode = typeof mode === 'string' ? mode : resolveBrowserMode(null, { rootDir });
+  const explicitMode = typeof mode === 'string' || hasExplicitBrowserModeInSettings(rootDir);
+
+  const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());
+  const targets = collectBrowserMcpMigrationTargets({ rootDir, clientHomes: homes });
+
+  // 保留已有 browser：无显式选择且目标里有旧 browser 条目时，按 playwright 保留升级而不是删掉。
+  // Fresh（无旧条目）保持 none（默认-off）。显式 none 尊重用户选择，照常删除。
+  if (!explicitMode && resolvedMode === 'none' && targetsHaveExistingBrowser(targets)) {
+    resolvedMode = 'playwright';
+    io.log('[info] existing browser entry found with no explicit mode; preserving as playwright (direct) instead of dropping to none.');
+  }
 
   // 只有选 Playwright 才要求仓库内 Node/Playwright 运行期；none/bsk 无需它。
   if (browserModeAppliesPlaywright(resolvedMode)) {
@@ -100,8 +140,6 @@ export async function migrateBrowserMcpConfig({ rootDir, mode = null, io = conso
     }
   }
 
-  const homes = clientHomes && typeof clientHomes === 'object' ? clientHomes : getClientHomes(process.env, os.homedir());
-  const targets = collectBrowserMcpMigrationTargets({ rootDir, clientHomes: homes });
   return applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode: resolvedMode });
 }
 

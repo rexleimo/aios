@@ -29,7 +29,7 @@ export function browserModeAppliesPlaywright(mode) {
   return normalizeMode(mode) === 'playwright';
 }
 
-function readSettingsFile(rootDir) {
+export function readSettingsFile(rootDir) {
   if (!rootDir) return {};
   const settingsPath = path.join(rootDir, 'config', 'settings.json');
   try {
