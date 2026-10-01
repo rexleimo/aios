@@ -20,6 +20,8 @@ description: "AIOS 工程与增长博客中文版：覆盖记忆系统、单 Age
 
 ## 最新文章
 
+- [v6.3.0：/grill 成为真命令，盘问会自己落盘，pi 自己挑 MCP 承载](2026-10-grill-with-docs.md) — 盘问命令终于注册进七个客户端，面试把定下的术语写进 CONTEXT.md、把决策写进 ADR；pi 0.99+ 按版本自选 MCP 承载，不再叠一层启动警告
+
 - [v6.1.0：浏览器 MCP 默认关闭——安装时三选一，之后随时切换](2026-09-browser-mcp-default-off.md) — 浏览器自动化不再在每台机器自动装配；安装时选 none/playwright/bsk，随时一条命令切换
 - [v6.0.1：工程标准移入 rex-harness——基线搬去和消费者同住](2026-09-v601-engineering-standards-rex.md) — 质量基线现在随消费它的能力链一起发布
 - [v6.0.0：工程标准内建——AIOS 构建软件，而不只是生成代码](2026-09-v600-engineering-standards.md) — 源自经典书籍的统一质量基线，router 在代码生产类 Provider 之前加载，每处改动都要过 Definition of Done

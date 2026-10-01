@@ -22,6 +22,8 @@ AIOS를 처음 사용하시나요? 이 게시물들이 방향을 잡아줄 것�
 
 ## 최신 글
 
+- [v6.3.0: /grill이 진짜 커맨드로, 인터뷰는 스스로 기록하고, pi는 자기 MCP 캐리어를 고른다](2026-10-grill-with-docs.md) — 청취 커맨드가 드디어 일곱 클라이언트에 등록되고, 확정된 용어는 CONTEXT.md로 결정은 ADR로. pi 0.99+는 버전으로 MCP 캐리어를 골라 시작 경고를 쌓지 않습니다
+
 - [v6.0.1: 엔지니어링 표준을 rex-harness로 — 기준의 거주지를 소비자와 함께](2026-09-v601-engineering-standards-rex.md) — 품질 기준이它을 소비하는 능력 체인과 함께 출하된다
 - [v6.0.0: 엔지니어링 표준 내장 — AIOS는 코드를 생성할 뿐만 아니라 소프트웨어를 구축한다](2026-09-v600-engineering-standards.md) — 고전 서적에서 도출한 하나의 품질 기준을 router가 코드 생산 Provider 전에 로드하고 모든 변경에 Definition of Done 적용
 - [v5.20.0: Qoder가 AIOS에 합류 — 열 번째 클라이언트, 정의 블록 하나](2026-09-v520-qoder-client.md) — 열 번째 1급 클라이언트, Qoder가 실제로 읽는 settings.json의 MCP, AGENTS.md 컨텍스트, `-p` 헤드리스 team

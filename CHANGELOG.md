@@ -6,6 +6,8 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 ## [Unreleased]
 
+## [6.3.0] - 2026-10-01
+
 - feat(pi): the Pi MCP bridge now picks its carrier from the installed pi version instead of always
   installing `pi-mcp-adapter`. pi 0.99.0 (2026-09-29) shipped a built-in `mcp` extension that reads the
   same `~/.pi/agent/mcp.json`; with the adapter also installed, pi loaded the adapter and skipped the

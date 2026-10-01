@@ -5,6 +5,12 @@ description: "AIOS 전체 릴리스 이력입니다. 각 버전에서 무엇이 
 
 # 변경 로그
 
+## v6.3.0(2026-10-01) — /grill이 등록되고, 인터뷰가 기록하고, pi가 캐리어를 고른다
+
+- **`/grill`이 일곱 클라이언트에 등록된 스킬로**: 요구사항 청취 커맨드는 지금까지 텍스트 관례 — 워크플로 코어의 정규식과 Claude Code의 UserPromptSubmit hook — 에 불과해 어떤 클라이언트의 슬래시 자동완성도 제공하지 않았습니다. 얇은 등록 스킬(`skill-sources/grill/SKILL.md`)이 `explicit-intent: grill`을 선언하고 rex-requirements 플로우를 실행하며, 모든 리포지토리 표면에 materialize되어 zcode·codex·claude·pi·qoder·hermes·workbuddy 홈에 설치됩니다.
+- **인터뷰는 스스로 기록합니다**: `rex-requirements`에 기록 단계가 추가되었습니다. 청취에서 확정된 도메인 용어는 실시간으로 리포지토리 루트 `CONTEXT.md` 용어집에 upsert되고(정의 한 줄 + 이유 한 줄, 사용자가 쓴 내용은 재기록하지 않음), 예산을 통과했거나 명시적으로 결정된 사안은 경량 `docs/adr/NNNN-<slug>.md`(배경/결정/결과, 번호 재사용 없음)가 됩니다. 기록된 가정은 가정으로 남습니다. ADR이 되는 것은 기울어진 결정뿐입니다. 리포지토리 문서는 ContextDB 기억 레인의 보완이지 대체가 아닙니다.
+- **pi는 버전으로 MCP 캐리어를 선택**: pi 0.99.0+는 내장 `mcp` 확장을 함께 제공해 별도 설치한 `pi-mcp-adapter`와 충돌했고, 매 시작마다 `[Extension issues]` 경고를 출력했습니다. `resolvePiMcpMode()`는 설치된 pi 버전을 읽어 `>= 0.99.0`이면 `builtin`, 아니면 `adapter`. 감지 실패는 항상 안전한 adapter 경로에 머뭅니다. 두 캐리어는 같은 `~/.pi/agent/mcp.json`을 읽으므로 관리 서버는 영향받지 않고, 기존 어댑터는 보고만 됩니다(`installed-conflicts`, 선택적 `pi remove npm:pi-mcp-adapter`). 자동 제거는 하지 않습니다. `aios doctor`도 분기를 반영해 새 pi의 오경보가 해소되었습니다. 기록 단계는 rex-harness 0.9.0에 포함되었습니다.
+
 ## v6.2.1（2026-09-28）— 퍼널을 열고, 죽어 있던 링크 경로를 복원
 
 - **README가 퍼널이 됩니다**: `rexai.top`은 79행과 페이지 하단에만 있어서 GitHub 검색·Explore·Trending으로 유입된 방문자가 첫 화면에서 콘텐츠 허브를 볼 수 없었습니다. 두 README에 사이트 배지, 첫 링크 줄의 항목, 그리고 30초 설치 바로 다음(문서에서 의도가 가장 높은 지점)에 "Where to go next" 절을 추가했습니다. 렌더링된 페이지를 먼저 실측했습니다: GitHub는 README의 모든 외부 링크에 `rel="nofollow"`를 붙이고 배지는 `alt`를 앵커 텍스트로 읽으므로, 링크는 브랜드 앵커 텍스트(`AIOS Docs — cli.rexai.top`, `RexAI Content Hub — rexai.top`)를 담고 이 저장소와 두 사이트의 대응 관계는 본문 문장으로 명시했습니다.

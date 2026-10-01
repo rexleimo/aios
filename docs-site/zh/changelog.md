@@ -5,6 +5,12 @@ description: "AIOS 完整版本历史：每个版本发生了什么变化、升�
 
 # 更新日志
 
+## v6.3.0（2026-10-01）——/grill 完成注册、盘问自己落盘、pi 自选 MCP 承载
+
+- **`/grill` 在七个客户端注册为真 skill**：需求盘问命令此前只是文本约定——工作流核心里的一条正则加上 Claude Code 的 UserPromptSubmit hook——所以任何客户端的斜杠补成都不会提供它。新增薄注册 skill（`skill-sources/grill/SKILL.md`）：声明 `explicit-intent: grill`、执行 rex-requirements 流程，物化到每个仓库面并装进 zcode、codex、claude、pi、qoder、hermes、workbuddy 家目录。
+- **盘问会自己落盘**：`rex-requirements` 新增写回步骤。盘问中确立的领域术语实时 upsert 进仓库根 `CONTEXT.md` 词汇表（一行定义 + 一行为什么，不重写用户手写内容）；熬过澄清预算或被明确拍板的决策写成轻量 `docs/adr/NNNN-<slug>.md`（背景/决策/后果，编号递增不重用）。记录的假设仍是假设——只有已裁决的决策才落 ADR。仓库文档是 ContextDB 记忆车道的补充，不是替代。
+- **pi 按版本自选 MCP 承载**：pi 0.99.0+ 自带内置 `mcp` 扩展，与单独安装的 `pi-mcp-adapter` 冲突，每次启动打印 `[Extension issues]` 警告。`resolvePiMcpMode()` 读已装 pi 版本——`>= 0.99.0` 走 `builtin`，否则 `adapter`，检测失败留在永远安全的 adapter 路径。两个载体读同一份 `~/.pi/agent/mcp.json`，托管服务器不受影响；已装的 adapter 只被报告（`installed-conflicts`）并附可选的 `pi remove npm:pi-mcp-adapter`，绝不自动卸载。`aios doctor` 同步分流，新 pi 上不再误报。写回步骤随 rex-harness 0.9.0 发布。
+
 ## v6.2.1（2026-09-28）——把 README 变成漏斗，并修通一条死掉的链接路径
 
 - **README 现在是引流入口**：`rexai.top` 原先只出现在第 79 行和页底，从 GitHub 搜索、Explore、Trending 进来的人在首屏看不到内容站。两份 README 加上站点徽章、首行链接条入口，以及 30 秒安装之后的「下一步去哪儿」——那是全文意图最高的时刻。先实测渲染页：GitHub 给 README 所有站外链接加 `rel="nofollow"`，徽章的锚文本读的是 `alt`，所以链接现在带品牌锚文本（`AIOS Docs — cli.rexai.top`、`RexAI Content Hub — rexai.top`），本仓库与两个站点的对应关系也写进正文。

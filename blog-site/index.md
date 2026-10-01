@@ -22,6 +22,8 @@ New to AIOS? These posts will get you oriented:
 
 ## Latest Posts
 
+- [v6.3.0: /grill Becomes a Real Command, the Interview Writes Itself Down, and Pi Picks Its Own MCP Carrier](2026-10-grill-with-docs.md) — the grilling command finally registers in seven clients, and the interview writes settled terms into CONTEXT.md and decisions into ADRs; pi 0.99+ picks its MCP carrier by version instead of stacking a warning
+
 - [v6.1.0: Browser MCP Off by Default — One Install-Time Choice, Three Modes](2026-09-browser-mcp-default-off.md) — browser automation is no longer installed on every machine; pick none/playwright/bsk at install and switch anytime
 - [v6.0.1: Engineering Standards Move to rex-harness — The Baseline Lives With Its Consumers](2026-09-v601-engineering-standards-rex.md) — the quality baseline now ships with the capability chain that consumes it
 - [v6.0.0: Engineering Standards — AIOS Builds Software, Not Just Code](2026-09-v600-engineering-standards.md) — one quality baseline from the classic books, loaded by the router before code-producing providers, with a Definition of Done for every change

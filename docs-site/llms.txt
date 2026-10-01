@@ -6,7 +6,7 @@
 -->
 # AIOS
 
-> Local-first agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, Grok Build, WorkBuddy (CodeBuddy CLI), Pi, ZCode, and Qoder. Adds cross-session project memory (ContextDB), adaptive workflow routing (noop/direct/guarded/planned), multi-agent collaboration, and verification gates on top of the coding clients you already use — without replacing them. Entirely local: memory, logs, and evidence stay on your machine. Version: v6.2.1 · Updated: 2026-09-28.
+> Local-first agent workflow layer for Claude Code, Codex CLI, Gemini CLI, OpenCode, Hermes, Grok Build, WorkBuddy (CodeBuddy CLI), Pi, ZCode, and Qoder. Adds cross-session project memory (ContextDB), adaptive workflow routing (noop/direct/guarded/planned), multi-agent collaboration, and verification gates on top of the coding clients you already use — without replacing them. Entirely local: memory, logs, and evidence stay on your machine. Version: v6.3.0 · Updated: 2026-10-01.
 
 ## One-Line Definition
 AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, Codex, Gemini CLI, OpenCode, Hermes, Grok, WorkBuddy, Pi, ZCode, Qoder) cross-session project memory, adaptive routing, multi-agent teams, and verification — same commands, now with a brain.
@@ -67,7 +67,7 @@ AIOS is a local-first agent workflow layer that gives coding CLIs (Claude Code, 
 
 ## Blog
 
-- v6.2.1 is a maintenance release — changelog only, see https://cli.rexai.top/changelog/
+- https://cli.rexai.top/blog/2026-10-grill-with-docs/ — v6.3.0: /grill Becomes a Real Command, the Interview Writes Itself Down, and Pi Picks Its Own MCP Carrier
 - https://cli.rexai.top/blog/2026-09-engineering-standards-trigger-chain/ — v6.2.0: Engineering Standards That Actually Trigger
 - https://cli.rexai.top/blog/2026-09-browser-mcp-default-off/ — v6.1.0: Browser MCP Off by Default — One Install-Time Choice, Three Modes
 - https://cli.rexai.top/blog/2026-09-v601-engineering-standards-rex/ — v6.0.1: Engineering Standards Move to rex-harness — The Baseline Lives With Its Consumers

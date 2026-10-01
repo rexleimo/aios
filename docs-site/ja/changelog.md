@@ -5,6 +5,12 @@ description: "AIOS の全リリース履歴: 各バージョンで何が変わ�
 
 # 変更履歴
 
+## v6.3.0（2026-10-01）——/grill が登録され、インタビューが記録し、pi がキャリアを選ぶ
+
+- **`/grill` が 7 クライアントで登録済みスキルに**：要件ヒアリングコマンドはこれまでテキストの取り決め——ワークフローコアの正規表現と Claude Code の UserPromptSubmit hook——にすぎず、どのクライアントのスラッシュ補完も提供しませんでした。薄い登録スキル（`skill-sources/grill/SKILL.md`）が `explicit-intent: grill` を宣言し、rex-requirements フローを実行。全リポジトリサーフェスに materialize され、zcode・codex・claude・pi・qoder・hermes・workbuddy のホームにインストールされます。
+- **インタビューは自分で記録する**：`rex-requirements` に書き戻しステップが追加されました。ヒアリングで確定したドメイン用語はリアルタイムでリポジトリルートの `CONTEXT.md` 用語集に upsert（定義の一行 + なぜの一行、ユーザー手書きは書き換えない）。澄清予算を生き延びた、または明示的に決められた意思決定は軽量な `docs/adr/NNNN-<slug>.md`（背景/決定/結果、番号は再利用しない）になります。記録された仮定は仮定のまま——ADR になるのは決着した意思決定だけ。リポジトリ文書は ContextDB メモリレーンの補完であり、代替ではありません。
+- **pi はバージョンで MCP キャリアを選ぶ**：pi 0.99.0+ は内蔵 `mcp` 拡張を同梱し、別インストールの `pi-mcp-adapter` と衝突して毎回 `[Extension issues]` 警告を出していました。`resolvePiMcpMode()` はインストール済み pi バージョンを読み、`>= 0.99.0` で `builtin`、それ以外は `adapter`。検出失敗は常に安全な adapter パスに留まります。両キャリアは同じ `~/.pi/agent/mcp.json` を読むため管理下のサーバーは影響を受けず、既存アダプターは報告のみ（`installed-conflicts`）で任意の `pi remove npm:pi-mcp-adapter` を添え、自動削除はしません。`aios doctor` も分割を反映し、新しい pi での誤警告は解消。書き戻しステップは rex-harness 0.9.0 に同梱。
+
 ## v6.2.1（2026-09-28）——導線の整備と、死んでいたリンク経路の復旧
 
 - **README が導線になりました**：`rexai.top` は 79 行目とページ末尾にしか出ておらず、GitHub 検索・Explore・Trending から来た訪問者は最初の画面でコンテンツハブに到達できませんでした。両 README にサイトバッジ、最初のリンク行のエントリ、そして 30 秒インストールの直後（文書中で最も意図が高い時点）に「Where to go next」節を追加しました。まず描画済みページを実測しています：GitHub は README のすべての外部リンクに `rel="nofollow"` を付け、バッジでは `alt` がアンカーテキストとして読まれるため、リンクはブランド入りのアンカーテキスト（`AIOS Docs — cli.rexai.top`、`RexAI Content Hub — rexai.top`）を持ち、本リポジトリと 2 つサイトの対応関係は本文に明文化しました。
