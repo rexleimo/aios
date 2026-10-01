@@ -27,6 +27,23 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
   explicit-version override) and `scripts/tests/pi-doctor.test.mjs` (conflict-as-info, missing-adapter-ok
   on builtin, capture-failure fallback).
 
+- feat(skills): `/grill` becomes a registered, client-visible skill and `rex-requirements` gains a
+  doc write-back step — the two halves the aihero `/grill-with-docs` pattern has that our grilling
+  discipline lacked. The new thin skill `skill-sources/grill/SKILL.md` declares
+  `explicit-intent: grill`, executes the rex-requirements flow, and performs its write-back rules;
+  it is materialized to every repo surface by `scripts/sync-skills.mjs` (`.codex/.claude/.agents/…`)
+  and installed to the seven client homes its `clients` frontmatter promises, so `/grill` finally
+  shows up in slash autocomplete (previously the whole `/plan`-family existed only as text parsed by
+  the Claude Code hook and workflow-policy — nothing was registered, so no client suggested it).
+  `rex-harness/skill-sources/rex-requirements/SKILL.md` adds step 4 「写回仓库文档」: domain terms
+  confirmed during grilling are upserted into the repo-root `CONTEXT.md` glossary in real time
+  (one-line definition + why, user-authored content never rewritten); decisions that survive the
+  clarification budget or get an explicit user call become `docs/adr/NNNN-<slug>.md` lightweight
+  ADRs (context/decision/consequences, monotonically numbered). The boundary against
+  `assumptions-recorded` is written into the rule: assumptions are unverified and never become ADRs;
+  adjudicated decisions do. Old step 4 (first verifiable slice) renumbers to 5. Cross-session memory
+  stays on the ContextDB lane — repo docs are the push-in-your-face complement, not a replacement.
+
 ## [6.2.1] - 2026-09-28
 
 - fix(site): the docs and blog sites render a footer again, restoring the only non-`nofollow`
