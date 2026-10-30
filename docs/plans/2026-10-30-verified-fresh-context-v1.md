@@ -6,14 +6,14 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 
 ## 0. 一句话
 
-把「fresh context, not a fork」从**「我们起进程时碰巧成立」**变成**被测量、被声明、被注入、被测试钉住**的合同；对治不了的那一半（宿主自己的 subagent 工具会继承父对话），用**自包含 brief** 让它无害，而不是用提示词礼貌层去禁止。
+把「不依赖父对话」变成被测量、被声明、被注入、被测试钉住的任务合同。宿主自己的 subagent 工具可能继承父对话，自包含 brief 能降低依赖，不能提供上下文隔离或保证消除旧前提。运行时能力修正见 `./docs/plans/2026-10-30-vfc-runtime-capability.md`：允许查授权来源后再 blocked，任务输入不被有损摘要替换。
 
 ## 1. 用户目标
 
 1. **前提必须是自己测出来的**：「Codex 默认 fork」原本只是外部博客断言。本项要求 AIOS 产出可复跑的证据，未测一律 `unknown`。
 2. **两个派发面差别对待**：AIOS 自己 spawn 的 worker 是结构性新鲜（保持不动）；宿主原生 Task/Agent 工具在控制面之外，需要先测量再声明。
 3. **约束写进 AIOS 生成的产物**（角色卡、派发载荷），而不是写进散文提示词——散文面到不到模型，本项实测过，见 §7。
-4. **fork 无害化**：worker 只凭 brief 就能开工，缺事实回 `blocked`，不回头找父对话要 transcript。
+4. **降低父对话依赖**：worker 凭 brief、已投递任务上下文、上游 handoff 与授权工具查证后开工；必需事实仍不可得才回 `blocked`，不索要父对话 transcript。
 5. **不制造假绿灯**：`unknown` 不默认红、不填默认值，报告面必须把 `fork` 与 `measured` 分开显示。
 
 ## 2. 明确非目标（草稿里的三条 NO-GO 全部保留）
@@ -93,7 +93,7 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 | **pi** | not-applicable | direct | `surface: none`（上游无 subagent 工具）+ 宿主自述搜过网关 `agent`/`spawn` 零命中；clientVersion 1.4.0 |
 | 其余 8 个 | unknown | indirect | 未测。`unknown` 是合法结论，不是失败 |
 
-派生结论：**「宿主会不会 fork」已被证实是真的**（不是外部博客的说法），因此 §5 W3 的自包含 brief 不是锦上添花，而是正确性依赖。
+派生结论：**「宿主会不会 fork」已有本仓复述父 nonce 的正面观测**。自包含 brief 是重要的任务输入合同，但不能据此宣称隔离或 fork 无害；模型没有输出旧 nonce 也不能证明它看不到旧上下文。
 
 ## 7. 交付面事实（本轮最重要的更正）
 

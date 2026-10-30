@@ -7,16 +7,17 @@
 //
 // Why this exists: a harness that forks the parent conversation hides the
 // problem; a harness that starts fresh needs the facts spelled out. If the
-// brief is incomplete, the correct answer is `blocked`, not a wider prompt.
+// brief is incomplete, inspect authorized sources before reporting `blocked`;
+// never invent missing task facts or reconstruct a parent transcript.
 
 export const DISPATCH_BRIEF_SCHEMA_VERSION = 1;
 export const DISPATCH_BRIEF_SCHEMA_REL_PATH = 'scripts/lib/tooling/specs/registry/dispatch-brief.schema.v1.json';
 export const DEFAULT_HANDOFF_SCHEMA_REL_PATH = 'scripts/lib/tooling/specs/registry/agent-handoff.schema.json';
 
 export const DISPATCH_BRIEF_FORBIDDEN_DEFAULTS = Object.freeze([
-  'inheriting the parent conversation',
+  'relying on implicit parent conversation history',
   'reading the parent transcript',
-  'assuming facts the brief does not state',
+  'inventing unverified task facts',
 ]);
 
 function asStringList(value) {

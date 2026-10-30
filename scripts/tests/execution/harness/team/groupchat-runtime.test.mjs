@@ -638,8 +638,6 @@ test('runGroupChat handles re-plan when implementer is blocked', async () => {
   assert.ok(plannerCalls >= 2, `expected >=2 planner calls, got ${plannerCalls}`);
 });
 
-
-
 test('runGroupChat passes model-router context to each speaker prompt', async () => {
   const { runGroupChat } = await import('../../../../lib/execution/harness/team/groupchat-runtime.mjs');
   const captured = [];
@@ -751,13 +749,12 @@ test('runGroupChat expands implementer into parallel work items from planner fin
   assert.ok(implementerCallCount >= 1, `expected >=1 implementer calls, got ${implementerCallCount}`);
 });
 
-
-
-test('runGroupChat compresses large pre-send prompts and post-receive raw output at the AIOS turn boundary', async () => {
+test('runGroupChat preserves executable context while recording compact pre-send and post-receive evidence', async () => {
   const { runGroupChat } = await import('../../../../lib/execution/harness/team/groupchat-runtime.mjs');
   const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-groupchat-turn-'));
   const PRE_SENTINEL = 'GROUPCHAT_PRE_SEND_SENTINEL';
   const POST_SENTINEL = 'GROUPCHAT_POST_RECEIVE_SENTINEL';
+  const contextSummary = `${PRE_SENTINEL.repeat(60)}\nReject duplicate invoice IDs even when amounts differ.\n${PRE_SENTINEL.repeat(60)}\nscripts/lib/execution/harness/team/groupchat-runtime/run/run.mjs:25`;
   const captured = [];
 
   try {
@@ -773,7 +770,7 @@ test('runGroupChat compresses large pre-send prompts and post-receive raw output
 
     const result = await runGroupChat({
       taskTitle: 'Compress groupchat turn',
-      contextSummary: `${PRE_SENTINEL.repeat(120)}\nscripts/lib/execution/harness/team/groupchat-runtime/run/run.mjs:25`,
+      contextSummary,
       blueprint: 'bugfix',
       spawnFn,
       rootDir,
@@ -782,7 +779,10 @@ test('runGroupChat compresses large pre-send prompts and post-receive raw output
     });
 
     assert.equal(result.conversationHistory.length, 1);
-    assert.equal(JSON.stringify(captured[0]).includes(PRE_SENTINEL), false);
+    assert.ok(captured[0].userPrompt.includes(contextSummary), 'the executable prompt must preserve every task condition');
+    assert.ok(captured[0].systemPrompt.includes('Output Contract'));
+    assert.equal(captured[0].systemPrompt.includes('aios.compact_packet'), false);
+    assert.ok(captured[0].modelRouting.cliCommand.includes('Reject duplicate invoice IDs even when amounts differ.'));
     assert.equal(result.conversationHistory[0].rawOutput.includes(POST_SENTINEL), false);
     assert.match(result.conversationHistory[0].rawOutput, /aios\.compact_packet/);
 

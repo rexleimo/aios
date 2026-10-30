@@ -14,7 +14,8 @@ export function renderDispatchBriefMarkdown(brief = {}) {
   const lines = [
     '## Dispatch Brief',
     '',
-    'Work from this brief only. You do not inherit the parent conversation.',
+    'Use this brief with the delivered task context and upstream handoffs. Do not rely on inheriting the parent conversation.',
+    'Inspect the workspace and use available tools to discover relevant evidence within existing access permissions. Use general knowledge and reasoning; verify task-specific facts.',
     '',
     `- objective: ${brief.objective}`,
   ];
@@ -26,11 +27,12 @@ export function renderDispatchBriefMarkdown(brief = {}) {
   lines.push(brief.ownedPathPrefixes.length > 0
     ? brief.ownedPathPrefixes.map((prefix) => `- ${prefix}`).join('\n')
     : '- (none declared: read-only)');
+  lines.push('Ownership limits edits; you may read related dependencies within existing access permissions.');
   lines.push('');
   lines.push('### Acceptance');
   lines.push(brief.acceptance.length > 0
     ? brief.acceptance.map((item) => `- ${item}`).join('\n')
-    : '- (none declared: report how you verified the change)');
+    : '- (none declared: report how you verified the task)');
   lines.push('');
   lines.push('### Upstream refs');
   lines.push(brief.upstreamRefs.length > 0
@@ -39,11 +41,11 @@ export function renderDispatchBriefMarkdown(brief = {}) {
       const note = ref.note ? ` — ${ref.note}` : '';
       return `- ${ref.kind}: ${target}${note}`;
     }).join('\n')
-    : '- (none: this brief is self-contained)');
+    : '- (none declared)');
   lines.push('');
   lines.push('### Forbidden');
   lines.push(brief.forbidden.map((item) => `- ${item}`).join('\n'));
   lines.push('');
-  lines.push('If a fact you need is not in this brief, return `blocked` naming the missing item.');
+  lines.push('If a required fact remains unavailable after checking authorized sources, return `blocked` naming the missing item and what you checked. Do not invent the answer or request the parent transcript.');
   return lines.join('\n');
 }

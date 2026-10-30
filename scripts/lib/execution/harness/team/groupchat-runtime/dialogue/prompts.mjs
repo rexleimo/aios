@@ -1,3 +1,4 @@
+import { renderHandoffContract, stripOutputContractSection } from '../../../../../foundation/agents/emitters/shared.mjs';
 import { buildPersonaOverlay } from '../../../../../memory/memo/care/persona.mjs';
 import { buildModelRouterPromptSection } from '../../../../../tooling/model-router.mjs';
 import { normalizeText } from '../support/shared.mjs';
@@ -36,8 +37,8 @@ export function buildRolePrompt({ role, taskTitle, contextSummary, workItems, ex
   lines.push('- If you touched files, list them in `filesTouched` (relative paths).');
   lines.push('- If blocked or need input, set `status` to `blocked` or `needs-input` and explain in `openQuestions`.');
   lines.push('- Otherwise set `status` to `completed`.');
-  lines.push('- If upstream context does not clearly require code changes, return a no-op handoff.');
-  lines.push('- Output ONLY the JSON object.');
+  lines.push('- Complete the assigned objective, including review, diagnosis or verification when no code changes are needed. Return a no-op only when evidence shows the assigned work is already satisfied.');
+  lines.push('- For the final reply, output ONLY the JSON object.');
   lines.push('');
   return lines.join('\n');
 }
@@ -90,7 +91,7 @@ export function buildConversationPrompt({ history, currentRole, currentSpeaker }
 export function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMemory, modelRouting = null }) {
   const lines = [];
   if (agent?.systemPrompt) {
-    lines.push(agent.systemPrompt);
+    lines.push(stripOutputContractSection(agent.systemPrompt));
   } else {
     lines.push('You are a role-based subagent for AIOS orchestrations (GroupChat mode).');
   }
@@ -128,11 +129,7 @@ export function buildSystemPromptForSpeaker({ agent, rootDir, env, rolePinnedMem
   }
 
   lines.push('');
-  lines.push('Output Contract');
-  lines.push('Output a single JSON object (no surrounding text) that conforms to `scripts/lib/tooling/specs/registry/agent-handoff.schema.json`.');
-  lines.push('');
-  lines.push('Required fields: schemaVersion, status, fromRole, toRole, taskTitle, contextSummary, findings, filesTouched, openQuestions, recommendations.');
-  lines.push('Set schemaVersion=1. Always include array fields (empty arrays are OK).');
+  lines.push(renderHandoffContract({ role: agent?.role, handoffTarget: agent?.handoffTarget }));
   lines.push('');
   return lines.join('\n');
 }

@@ -132,11 +132,11 @@ test('documentation-only routing text must not contradict the surfaces that actu
     .toLowerCase();
 
   assert.match(partial, /self-contained brief/u, 'routing doc must keep requiring a self-contained brief');
-  assert.match(briefText, /you do not inherit the parent conversation/iu, 'the brief is the isolation boundary');
+  assert.match(briefText, /do not rely on inheriting the parent conversation/iu, 'the brief must not depend on inherited context');
   assert.match(briefText, /return `blocked` naming the missing item/iu, 'missing facts must resolve to blocked, not guessing');
   // 文档里承诺的三件事，live 面必须逐条真的说到（卡片与 Brief 合并后的文字里）。
   const promises = [
-    ['fresh context window', /do not inherit the parent conversation/iu],
+    ['no inherited-context dependency', /do not rely on inheriting the parent conversation/iu],
     ['blocked on missing fact', /\breturn\b[^\n]*\bblocked\b/iu],
     ['no transcript asking', /paste its transcript/iu],
   ];

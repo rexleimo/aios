@@ -1332,10 +1332,9 @@ test('dispatch runtime registry retries codex upstream errors with backoff befor
   assert.equal(logs.some((line) => line.includes('codex upstream_error retry attempt')), true);
 });
 
-test('subagent runtime prompt tells implementer to return no-op handoffs instead of waiting on non-code work', async () => {
+test('subagent runtime prompt completes non-code tasks and permits task-relevant checks', async () => {
   const runtimes = await importDispatchRuntimes();
   assert.ok(runtimes, 'expected runtime registry module');
-
   const captureDir = await fs.mkdtemp(path.join(os.tmpdir(), 'aios-orchestrator-prompt-'));
   const capturePath = path.join(captureDir, 'stdin.log');
   const fakeBin = await createFakeCodexCommand(null, { captureInputPath: capturePath });
@@ -1364,8 +1363,9 @@ test('subagent runtime prompt tells implementer to return no-op handoffs instead
   assert.match(captured, /role: implementer/);
   assert.match(captured, /## Decomposed Work Items/);
   assert.match(captured, /wi\.1/);
-  assert.match(captured, /If upstream handoffs do not clearly require code changes, return a no-op handoff instead of exploring indefinitely\./);
-  assert.match(captured, /Do not run broad verification commands unless you actually changed owned files\./);
+  assert.match(captured, /Complete the assigned objective and acceptance checks, including review, diagnosis or verification when no code changes are needed\./);
+  assert.match(captured, /Return a no-op only when evidence shows the assigned work is already satisfied\./);
+  assert.match(captured, /Run checks needed for the assigned task even when no files were edited/);
 });
 
 test('subagent runtime blocks file touches outside phase ownedPathPrefixes', async () => {

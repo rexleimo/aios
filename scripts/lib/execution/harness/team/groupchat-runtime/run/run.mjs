@@ -24,19 +24,6 @@ function resolveAgentId(role) {
   return map[normalized] || '';
 }
 
-function stringifyTurnPacket(packet, fallback) {
-  if (!packet?.refs?.length) return fallback;
-  return JSON.stringify(packet, null, 2);
-}
-
-function compactModelRoutingForTurn(modelRouting, compacted) {
-  if (!compacted || !modelRouting || typeof modelRouting !== 'object') return modelRouting;
-  const copy = { ...modelRouting };
-  if (copy.cliCommand) copy.cliCommand = '[compacted by AIOS turn gateway]';
-  if (copy.taskDescription) copy.taskDescription = '[compacted by AIOS turn gateway]';
-  return copy;
-}
-
 function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSummary, executionContext, workItems, rootDir, env, sessionId, io }) {
   return async ({ role, speaker, workItem, conversationHistory }) => {
     const agent = agentSpecNormalized.agents[resolveAgentId(role)] || null;
@@ -65,12 +52,9 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
       workItems: workItem ? [workItem] : (Array.isArray(workItems) ? workItems : []),
     });
     const fullPrompt = `${systemPrompt}\n\n${conversationPrompt}\n${rolePrompt}`;
-    const rawUserPrompt = `${fullPrompt}\n\nOutput ONLY the JSON handoff object.`;
-    const hasRuntimeDelivery = Boolean(String(executionContext?.text || '').trim());
-    // Observe runtime delivery through a redacted copy, but keep the governed prompt intact for the model.
-    const preSendText = hasRuntimeDelivery
-      ? redactExecutionContextText(rawUserPrompt, executionContext)
-      : rawUserPrompt;
+    const rawUserPrompt = `${fullPrompt}\n\nFor the final reply, output ONLY the JSON handoff object.`;
+    // Observe a redacted copy; a lossy packet must never replace executable task instructions.
+    const preSendText = redactExecutionContextText(rawUserPrompt, executionContext);
     const preSendPacket = await requireTurnCompression({
       workspaceRoot: rootDir || process.cwd(),
       cwd: rootDir || process.cwd(),
@@ -92,19 +76,15 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
       }),
     });
     emitTurnCompressionLog(preSendPacket, { write: (line) => (io?.error?.(line) || io?.log?.(line)) });
-    const compactedForExecution = !hasRuntimeDelivery && preSendPacket?.refs?.length;
-    const compactPrompt = compactedForExecution ? stringifyTurnPacket(preSendPacket, rawUserPrompt) : rawUserPrompt;
-    const compactSystemPrompt = compactedForExecution ? compactPrompt : systemPrompt;
-    const outboundModelRouting = compactModelRoutingForTurn(modelRouting, compactedForExecution);
     const result = await spawnFn({
       role,
       speaker,
       workItem: workItem || null,
       conversationHistory,
-      systemPrompt: compactSystemPrompt,
-      conversationPrompt: compactPrompt,
-      userPrompt: compactPrompt,
-      modelRouting: outboundModelRouting,
+      systemPrompt,
+      conversationPrompt: rawUserPrompt,
+      userPrompt: rawUserPrompt,
+      modelRouting,
     });
     if (result?.rawOutput) {
       const postReceivePacket = await requireTurnCompression({
@@ -134,7 +114,7 @@ function buildRoundSpawnFn({ spawnFn, agentSpecNormalized, taskTitle, contextSum
     }
     return {
       ...(result && typeof result === 'object' ? result : {}),
-      modelRouting: result?.modelRouting || outboundModelRouting,
+      modelRouting: result?.modelRouting || modelRouting,
     };
   };
 }

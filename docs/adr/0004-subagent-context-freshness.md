@@ -1,4 +1,4 @@
-# ADR 0004：subagent 上下文新鲜度——**先测量、只声明、用 brief 让 fork 无害**，送达面只有一个 owner
+# ADR 0004：subagent 上下文新鲜度——先测量、只声明、用 brief 降低父对话依赖，送达面只有一个 owner
 
 日期：2026-10-30
 状态：已确认（codex `fork` 已由 AIOS 自己的探针证实；实现落点与偏差见 `./docs/plans/2026-10-30-verified-fresh-context-v1.md`）
@@ -25,8 +25,8 @@
 2. **`verdicts = fork / fresh / unknown / not-applicable`，`surface = host-tool / none` 是两个正交维度**。「上游没有该工具」与「没测」必须分开——否则一个已声明无 subagent 的客户端会永久把 `aios status` 拖在 `incomplete`，那是假红灯。行为测量 TTL 30 天，`surface: none` 的声明 TTL 180 天（版本漂移另判 `stale`）。
 3. **「宿主自述没有该工具」只用来印证已有声明，不用来制造新事实**：先前声明 `surface: none` 且宿主自述无子 agent → `not-applicable`，confidence `direct`；未声明者即使自述「没派子 agent」也只是 `unknown / no-subagent-spawned`。**模型自述不得凭空造出能力缺失的事实。**
 4. **诊断式复测（`--spawn`）不得被故障降级**：非零退出、provider 断连、网络错误一律保持原声明、把失败写进诊断证据，**只有 `fork`/`fresh` 正面证据才更新声明**。`--record-answer` 的 operator 回填是**重新分类已捕获的答案**，不是用散文造新结论。
-5. **让 fork 无害，而不是禁止 fork**：brief 自包含（objective / owned paths / acceptance / refs），缺事实就回 `blocked`。做完这步，「宿主会不会 fork」从正确性问题降级成性能问题。禁止性散文是 NO-GO——它依赖一个我们观测不到的事件。
-6. **送达面只有一个 owner，且由门守护**：worker 侧 = 生成的角色卡三条条款；派发侧 = `## Dispatch Brief`（`scripts/lib/execution/harness/team/subagent-runtime/context/prompts.mjs:145` 构造、`:154` 注入）。**`client-sources/native-base/shared/partials/` 不是投递机制**：新增/改动 partial 必须在 `scripts/tests/foundation/native/native-partial-delivery.test.mjs:26` 的 disposition 表显式表态（`composed` 或 `documentation-only` + 理由），标 `composed` 的必须被探针证明真被读到且落到产物。这条防的具体错误是「写了文件就以为送达了」。
+5. **用自包含 brief 降低对父对话的依赖**：明确 objective / write ownership / acceptance / refs，并允许使用已投递的任务上下文、上游 handoff、授权工作区与工具。只有查证后必需事实仍不可得才回 `blocked`。brief 不提供宿主上下文隔离，也不能保证消除继承的错误前提；它不改变模型的权限。宿主 fork 仍是正确性与信息隔离风险，不能靠提示词禁止。
+6. **送达面只有一个 owner，且由门守护**：worker 侧 = 生成的角色卡三条条款；派发侧 = `## Dispatch Brief`（`scripts/lib/execution/harness/team/subagent-runtime/context/prompts.mjs` 构造并注入）。**`client-sources/native-base/shared/partials/` 不是投递机制**：新增/改动 partial 必须在 `scripts/tests/foundation/native/native-partial-delivery.test.mjs:26` 的 disposition 表显式表态（`composed` 或 `documentation-only` + 理由），标 `composed` 的必须被探针证明真被读到且落到产物。这条防的具体错误是「写了文件就以为送达了」。
 7. **结构化宿主输出是唯一可信答案源**：宿主进入 JSON 模式时，事件流里的 `assistantText` 才是子代回答；原始流含 prompt 回显，直接判会假 `fork`。分类器只认带契约字段（`subagentSpawned`）的平衡 JSON 对象。
 8. **`subagents` 是旁挂块，不是 `capabilities[]` 的一根轴**：`CAPABILITY_AXES` 是固定 token 集，加轴会改总分、逼着同批改报告，`scorecard --check` 必漂移。旁挂块零漂移。
 9. **报告不默认红**：`unknown` → `not probed yet`（warn 级措辞）、`fork` → 在 `status` 里单列 `fork=1(codex)` 并附「靠 Brief + 卡片兜住」的处置。这条检查**不进** `pretest:scripts` 默认红集合。
@@ -34,11 +34,12 @@
 11. **版本事实要有单一 owner**：`clientVersion` 走平台 spawn spec（Windows 下 `pi` 是 npm shim，裸 `spawnSync('pi', ...)` 取不到版本），取不到版本的声明会让版本漂移判定永久失效。
 12. **未复现的失败不加重试**：`cli-usage-error-exit` 在并发下红过一次（61329ms，撞该 harness 的 60000ms per-spawn 上限），隔离与混跑均绿、全量重跑绿；没有可复现证据就不给测试加静默重试——静默重试会掩盖基础设施抖动。
 13. **卡片必须把门禁实际执行的约束说出来**：只列字段名不算合同。D3 实测：同一个模型在只给 Required fields 时分别交回 `schemaVersion: "1.0"` 与 `"1.0.0"`，而 schema 要的是 `integer const 1`——空白会话里的 worker 无法从字段名推出常量。约束行现在住在单一 owner（`HANDOFF_CONTRACT_CONSTRAINTS`），内容严格来自 schema 已声明事实，并由 `handoff-contract.test.mjs` 直接读 schema 文件反校（schema 改了而卡片文字没跟着就红）。复跑：`schemaErrors 2 → 0`。推论：**模型偏离未被声明的约束，是投递方的不完整，不是模型的不听话**；补声明比加校验器或重试便宜得多。
-14. **语义判定不得靠散文正则**（本轮自己踩到并删掉）：一度用 `doesNotMatch(/parent conversation/i)` 判“有没有回头索要父上下文”——模型说「未使用父上下文」会一样命中，这是本仓 AGENTS.md 禁止的关键词猜测。新鲜度只能测客观可判事实：上一会话才可能见过的 nonce 与文件名不得出现在本会话输出里。
+14. **语义判定不得靠散文正则**（本轮自己踩到并删掉）：一度用 `doesNotMatch(/parent conversation/i)` 判“有没有回头索要父上下文”——模型说「未使用父上下文」会一样命中，这是本仓 AGENTS.md 禁止的关键词猜测。新鲜度检查只能核对客观事实：P3 证明本次输出没有上一会话的 nonce 与文件名，不能由“没有输出”推断“无法访问”。
+15. **运行时任务能力优先于摘要与过程格式**：brief 不能成为事实白名单；允许先查授权来源再 blocked。`ownedPathPrefixes` 约束修改，不禁止读取相关依赖；审查/诊断/验证不以改代码为完成前提；JSON-only 只约束最终回复，允许中间工具调用。team 两种 runtime 复用共享输出合同。GroupChat 不再用有损压缩包替换完整可执行输入和 model routing，压缩观测与结果存储仍保留。权衡是模型输入可能更长，但不再以丢失任务事实换取压缩率；不会由此宣称模型质量已经提高。详见 `./docs/plans/2026-10-30-vfc-runtime-capability.md`。
 
 ## 后果
 
-- **正向**：`fork` 在本仓第一次有了自己产出的证据（codex）与可核的复跑路径；`aios status` 从「一句 unknown」变成「`measured=2/10 fork=1(codex) unknown=8`」这种**带处置的**措辞；卡片合同从 19 份冲突收敛到 38/38 唯一；派发载荷里第一次出现「你不继承父对话」这条硬约束；新增两道会红的门（送达门 + banner 假阳性护栏），且都做过双向突变验证。
+- **正向**：`fork` 在本仓第一次有了自己产出的证据（codex）与可核的复跑路径；`aios status` 从「一句 unknown」变成「`measured=2/10 fork=1(codex) unknown=8`」这种**带处置的**措辞；卡片合同从 19 份冲突收敛到 38/38 唯一；派发载荷里第一次出现「不依赖继承父对话」这条工作约定（不是隔离保证）；新增两道会红的门（送达门 + banner 假阳性护栏），且都做过双向突变验证。
 - **顺带挖出并修掉两个既有缺陷（与新鲜度无关，由本次排查暴露）**：① `scripts/lib/clients/native/distribution/emitters/codex-config.mjs:115` 的 `stripManagedTables` 按**文本拼写**枚举表名，认不出同一路径的两种 TOML 拼法（`"C:\\..."` vs `'C:\...'`），会把重复键写进 `~/.codex/config.toml`，实测使 `codex` 全线 exit 1（`duplicate key`）；② 同函数在遇到无管理标记的遗留 AIOS 表时进入剥离态并一路吞到 `MANAGED_END`，**人类手写的后续配置会在下次 sync 时被删掉**（数据丢失级）。两者均带回归测试。
 - **本轮新行为尚未发布**：卡片约束行是用户可见的投递面变化，按 `scripts/lib/diagnostics/release-impact.mjs` 不能当 patch 发（那等于把用户可见行为写进 changelog 却不升 MINOR）；v6.16.0 tag 不追改，这堆工作进入下一个 minor（附带代价：minor 需四语发布帖）。发布决策属于人，本 ADR 只记录约束。
 - **仍然存在的负向 / 未解**：

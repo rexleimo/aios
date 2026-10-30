@@ -224,20 +224,22 @@ test('agent-routing partial pins fresh subagent context and self-contained brief
   );
   assert.match(
     section,
-    /self-contained brief \(objective, owned paths, refs\)/u,
-    'agent-routing must require a self-contained brief'
+    /self-contained brief \(objective, write ownership, acceptance, refs\)/u,
+    'agent-routing must require a self-contained task and explicit write ownership'
   );
   assert.match(
     section,
     /returns `blocked` naming the missing item/u,
     'agent-routing must route missing facts to blocked, not to guessing'
   );
-  // 中文注释：“fresh context”不是所有宿主都能兑现的承诺（本仓库已实测到 fork）。
-  // 细则必须说清：兑现不了时以 brief 为唯一隔离边界，并且只指向事实的单一写者。
+  assert.match(section, /Only after checking authorized sources/u,
+    'agent-routing must allow discovery before reporting a missing fact');
+  assert.match(section, /Ownership limits edits, not related dependency reads/u);
+  // Brief 定义任务，不提供宿主上下文隔离；客户端事实仍只有一个 owner。
   assert.match(
     section,
-    /treat the brief as the only isolation boundary/u,
-    'agent-routing must name the fallback when the host cannot give a fresh window'
+    /use the brief to define the task without treating it as context isolation/u,
+    'agent-routing must state the limit when the host cannot give a fresh window'
   );
   assert.match(
     section,

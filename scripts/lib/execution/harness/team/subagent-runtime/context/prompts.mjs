@@ -1,3 +1,4 @@
+import { renderHandoffContract, stripOutputContractSection } from '../../../../../foundation/agents/emitters/shared.mjs';
 import { buildModelRouterPromptSection } from '../../../../../tooling/model-router.mjs';
 import { buildDispatchBrief } from '../../../../../foundation/agents/brief/index.mjs';
 import { renderDispatchBriefMarkdown } from '../../../../../foundation/agents/brief/render.mjs';
@@ -22,18 +23,16 @@ function deliveredExecutionContext(plan) {
 export function buildSystemPrompt({ agent, plan, job, phase, rexBinding = null }) {
   const lines = [];
   if (agent?.systemPrompt) {
-    lines.push(agent.systemPrompt);
+    lines.push(stripOutputContractSection(agent.systemPrompt));
   } else {
     lines.push('You are a role-based subagent for AIOS orchestrations.');
   }
 
   lines.push('');
-  lines.push('Output Contract');
-  lines.push(`Output a single JSON object (no surrounding text) that conforms to \`${HANDOFF_SCHEMA_DISPLAY_PATH}\`.`);
-  lines.push('');
-  lines.push('Required fields: schemaVersion, status, fromRole, toRole, taskTitle, contextSummary, findings, filesTouched, openQuestions, recommendations.');
-  lines.push('Set schemaVersion=1. Always include array fields (empty arrays are OK).');
-  lines.push(`Set fromRole=${normalizeText(job?.role) || 'unknown'} and toRole=${normalizeText(job?.launchSpec?.handoffTarget) || 'next-phase'}.`);
+  lines.push(renderHandoffContract({
+    role: normalizeText(job?.role),
+    handoffTarget: normalizeText(job?.launchSpec?.handoffTarget),
+  }));
   lines.push('');
 
   const modelRouterSection = buildModelRouterPromptSection(job?.launchSpec?.modelRouting);
@@ -66,7 +65,7 @@ export function buildSystemPrompt({ agent, plan, job, phase, rexBinding = null }
     lines.push(`- rexWorkItem=${normalizeText(rexBinding.workItemKey)}`);
     if (rexBinding.capabilityId) lines.push(`- rexCapability=${normalizeText(rexBinding.capabilityId)}`);
     if (rexBinding.providerId) lines.push(`- rexProvider=${normalizeText(rexBinding.providerId)}`);
-    lines.push('- Stay inside ownedPathPrefixes. Do not advance another work item\'s Rex command.');
+    lines.push('- Limit edits to ownedPathPrefixes; read related dependencies within existing access permissions. Do not advance another work item\'s Rex command.');
   }
   lines.push('');
 
@@ -159,11 +158,11 @@ export function buildUserPrompt({ plan, job, phase, dependencyRuns, rexBinding =
   lines.push('- If you touched files, list them in `filesTouched` (relative paths).');
   lines.push('- If blocked or need input, set `status` to `blocked` or `needs-input` and explain in `openQuestions`.');
   lines.push('- Otherwise set `status` to `completed`.');
-  lines.push('- If upstream handoffs do not clearly require code changes, return a no-op handoff instead of exploring indefinitely.');
+  lines.push('- Complete the assigned objective and acceptance checks, including review, diagnosis or verification when no code changes are needed. Return a no-op only when evidence shows the assigned work is already satisfied.');
   lines.push('- If the next step is manual, environment-specific, or external, report it in `openQuestions`/`recommendations` without waiting for it to happen.');
-  lines.push('- Do not run broad verification commands unless you actually changed owned files.');
+  lines.push('- Run checks needed for the assigned task even when no files were edited; keep investigation and verification proportional to its scope.');
   lines.push('');
-  lines.push('Output ONLY the JSON object.');
+  lines.push('For the final reply, output ONLY the JSON object.');
   lines.push('');
 
   return lines.join('\n');

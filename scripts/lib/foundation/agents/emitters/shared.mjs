@@ -20,8 +20,8 @@ export const HANDOFF_CONTRACT_FIELDS = Object.freeze([
 // 中文注释：三条纪律对应 subagent 以 fresh context 启动这一合同；改这里就要同步
 // scripts/tests/foundation/native/subagent-context-probe.test.mjs 与 agent 卡片断言。
 export const SUBAGENT_CONTEXT_CONTRACT_LINES = Object.freeze([
-  'You do not inherit the parent conversation. Work only from the brief and the refs it names.',
-  'If the brief lacks a fact you need, return blocked with the missing item; do not reconstruct it from memory.',
+  'Use the brief, delivered task context and upstream handoffs. Do not rely on inheriting the parent conversation.',
+  'Inspect the workspace and use available tools within existing access permissions. If a required fact remains unavailable after checking authorized sources, return blocked naming the missing item; do not invent it.',
   'Do not ask the parent to paste its transcript.',
 ]);
 
@@ -52,7 +52,8 @@ export function stripOutputContractSection(text = '') {
 export function renderHandoffContract({ role = 'unknown', handoffTarget = 'next-phase' } = {}) {
   return [
     'Output Contract',
-    `Output a single JSON object (no surrounding text) that conforms to \`${HANDOFF_SCHEMA_REL_PATH}\`.`,
+    `For your final reply, output a single JSON object (no surrounding text) that conforms to \`${HANDOFF_SCHEMA_REL_PATH}\`.`,
+    'Perform the task and use available tools before the final reply; the JSON-only rule applies to that reply.',
     '',
     'Required fields:',
     ...HANDOFF_CONTRACT_FIELDS.map((field) => `- ${field}`),

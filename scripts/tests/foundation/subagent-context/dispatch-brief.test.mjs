@@ -7,7 +7,9 @@ import {
   validateDispatchBrief,
 } from '../../../lib/foundation/agents/brief/index.mjs';
 import { renderDispatchBriefMarkdown } from '../../../lib/foundation/agents/brief/render.mjs';
-import { buildUserPrompt } from '../../../lib/execution/harness/team/subagent-runtime/context/prompts.mjs';
+import { buildSystemPrompt, buildUserPrompt } from '../../../lib/execution/harness/team/subagent-runtime/context/prompts.mjs';
+import { renderHandoffContract, renderSubagentContextContract } from '../../../lib/foundation/agents/emitters/shared.mjs';
+import { buildRolePrompt, buildSystemPromptForSpeaker } from '../../../lib/execution/harness/team/groupchat-runtime/dialogue/prompts.mjs';
 
 function validBrief(overrides = {}) {
   return buildDispatchBrief({
@@ -29,9 +31,10 @@ test('buildDispatchBrief refuses input that cannot produce a workable brief', ()
   );
 });
 
-test('buildDispatchBrief always forbids inheriting the parent conversation', () => {
+test('buildDispatchBrief forbids relying on implicit parent history, without claiming to prevent host inheritance', () => {
   const brief = validBrief();
-  assert.ok(brief.forbidden.includes('inheriting the parent conversation'));
+  assert.ok(brief.forbidden.includes('relying on implicit parent conversation history'));
+  assert.ok(!brief.forbidden.includes('inheriting the parent conversation'));
   assert.equal(brief.outputSchema, DEFAULT_HANDOFF_SCHEMA_REL_PATH);
   assert.equal(brief.schemaVersion, 1);
 });
@@ -70,7 +73,7 @@ test('validateDispatchBrief reports structure only, never guesses', () => {
 test('rendered brief is self-contained: objective, ownership, output schema, blocked rule', () => {
   const markdown = renderDispatchBriefMarkdown(validBrief());
   assert.match(markdown, /^## Dispatch Brief$/m);
-  assert.match(markdown, /You do not inherit the parent conversation\./);
+  assert.match(markdown, /Do not rely on inheriting the parent conversation\./);
   assert.match(markdown, /- objective: Implement the dispatch brief module/);
   assert.match(markdown, /- workItemId: vfc-1-w3/);
   assert.match(markdown, /scripts\/lib\/foundation\/agents\/brief\//);
@@ -82,7 +85,7 @@ test('rendered brief is self-contained: objective, ownership, output schema, blo
 test('rendered brief declares read-only ownership instead of staying silent', () => {
   const markdown = renderDispatchBriefMarkdown(validBrief({ ownedPathPrefixes: [], acceptance: [] }));
   assert.match(markdown, /\(none declared: read-only\)/);
-  assert.match(markdown, /\(none declared: report how you verified the change\)/);
+  assert.match(markdown, /\(none declared: report how you verified the task\)/);
 });
 
 test('render refuses an invalid brief rather than emitting a half-brief', () => {
@@ -108,4 +111,59 @@ test('subagent prompts carry a dispatch brief built from real plan fields', () =
   assert.match(prompt, /- job-1|workItemId: job-1/);
   assert.match(prompt, /scripts\//);
   assert.match(prompt, /return `blocked` naming the missing item/);
+});
+
+test('brief and role card permit evidence discovery before blocked without expanding edit ownership', () => {
+  for (const text of [renderDispatchBriefMarkdown(validBrief()), renderSubagentContextContract()]) {
+    assert.match(text, /workspace.*tools/i);
+    assert.match(text, /authorized sources/i);
+    assert.match(text, /after checking/i);
+    assert.doesNotMatch(text, /Work (?:from this brief|only from the brief).*only|If the brief lacks a fact|If a fact you need is not in this brief/i);
+    assert.match(text, /Do not rely on inheriting the parent conversation/);
+  }
+  const text = renderDispatchBriefMarkdown(validBrief());
+  assert.match(text, /Ownership limits edits/);
+  assert.match(text, /read related dependencies/);
+  assert.ok(!validBrief().forbidden.includes('assuming facts the brief does not state'));
+});
+
+test('runtime task guidance preserves evidence, review and verification without requiring code edits', () => {
+  const prompt = buildUserPrompt({
+    plan: {
+      taskTitle: 'Investigate a failing check',
+      contextSummary: 'Keep compatibility with the existing public API',
+      executionContext: { text: 'contract-ref: retry must remain idempotent' },
+      workItems: [{ itemId: 'w1', type: 'review', summary: 'Verify retry behavior' }],
+    },
+    job: { jobId: 'review-1', role: 'reviewer', launchSpec: { workItemRefs: ['w1'] } },
+    phase: { label: 'Review', responsibility: 'Trace the retry caller and run its regression check', canEditFiles: false },
+    dependencyRuns: [{ output: { payload: { findings: ['retry caller is in dependency.mjs'] } } }],
+  });
+  for (const fact of ['retry must remain idempotent', 'Verify retry behavior', 'dependency.mjs', 'Trace the retry caller']) {
+    assert.ok(prompt.includes(fact), `task evidence missing: ${fact}`);
+  }
+  for (const text of [prompt, buildRolePrompt({ role: 'reviewer', taskTitle: 'Review retries' })]) {
+    assert.match(text, /assigned objective/);
+    assert.doesNotMatch(text, /If upstream.*require code changes.*no-op|unless you actually changed owned files/);
+  }
+  assert.match(prompt, /checks needed.*even when no files were edited/);
+});
+
+test('both runtime systems replace source output tables with the shared final handoff contract', () => {
+  const agent = { systemPrompt: 'Inspect the task carefully.\n\n## Output contract\nLegacy agentId/blockers contract.\n\n## Evidence\nCite tools.' };
+  const systems = [
+    buildSystemPrompt({ agent, plan: {}, job: { role: 'reviewer' }, phase: null, rexBinding: { workItemKey: 'review-task' } }),
+    buildSystemPromptForSpeaker({ agent, rolePinnedMemory: '' }),
+  ];
+  for (const text of systems) {
+    assert.doesNotMatch(text, /Legacy agentId\/blockers/);
+    assert.equal((text.match(/Output Contract/g) || []).length, 1);
+    assert.match(text, /integer 1/);
+    assert.match(text, /exactly one of: ready, blocked, needs-input, completed/);
+    assert.match(text, /final (?:reply|response)/i);
+    assert.match(text, /tools/i);
+    assert.ok(text.includes('Cite tools.'));
+  }
+  assert.match(systems[0], /Limit edits to ownedPathPrefixes/);
+  assert.match(renderHandoffContract(), /final (?:reply|response)/i);
 });

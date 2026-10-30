@@ -81,6 +81,6 @@ test('the context contract still carries its three clauses next to the new const
   assert.equal(SUBAGENT_CONTEXT_CONTRACT_LINES.length, 3);
   for (const line of SUBAGENT_CONTEXT_CONTRACT_LINES) assert.ok(block.includes(line));
   const text = renderHandoffContract({});
-  assert.ok(text.includes('Output a single JSON object (no surrounding text)'),
+  assert.match(text, /output a single JSON object \(no surrounding text\)/iu,
     'the one-object rule must survive the constraint addition');
 });
