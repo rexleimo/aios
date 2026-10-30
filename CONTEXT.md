@@ -161,3 +161,15 @@
 **定义**：动手前按顺序问三个问题，第一个命中的「是」即决定变更落在父仓库还是 `rex-harness/` 子模块——① 是否本仓库的贡献文书形状（PR/issue 模板、`AGENTS.md`、docs）；② 是否宿主「何时允许声称完成」的门禁（客户端指令注入、quality gate、verification-before-completion）；③ 是否需要被 Command 选中并返回一份 Evidence（新 Capability、新阶段、evidence schema、`skill-sources` 正文）。前两类留父仓库；第三类进子模块并走完整发布流（CHANGELOG + semver + tag + 独立指针 commit），判据本体是 ADR 0001 的「第三方可独立安装使用的公开产品面」。
 
 **为什么**：`workflow-ownership.md:37`（软件阶段只改 rex）与 ADR 0001（公开产品面归子模块）是同一条边界的两侧，但都是陈述句、不好执行；三问把它变成动手前的可判定顺序，同时把「改子模块要走发布流」的成本前置到决策时——外部 skill（如 mattpocock/skills 的 `pr`）的每一份内容都能拆成文书、门禁、阶段三块，混成一整份塞进任一侧都会造成第二套语义。裁决见 `docs/architecture/adr/0003-external-skill-adoption-landing.md`。
+
+## 子代理上下文新鲜度（fresh context / fork）
+
+### fork（子代继承父对话）
+
+**定义**：宿主自己的 subagent 工具把父会话带进子代上下文的默认行为。判定只能靠测量：父会话里埋一个 `AIOS-NONCE-<16 hex>`，问子代能否复述——复述即 `fork`，明确拿不到即 `fresh`，其余（缺失/拒绝/超时/不匹配）一律 `unknown` 且必带 reason。本仓实测：codex = `fork`（子代复述父 nonce，banner 里留有 session id 可核），pi = `not-applicable`（声明 `surface: none` + 宿主自述无该工具）。裁决见 `docs/adr/0004-subagent-context-freshness.md`，落地与偏差见 `docs/plans/2026-10-30-verified-fresh-context-v1.md`。
+**为什么**：「Codex 默认 fork」一开始只是外部博客的说法，而这条说法会决定要不要做 brief 自包含。按本仓规矩未测不能当已测；更重要的是**对治不了的那一半**（宿主 fork）不能用提示词禁止——那个事件不可观测，禁止必然退化成关键词猜测，只能让 fork 无害：worker 只凭自包含 brief 开工，缺事实回 `blocked`，做完这步「宿主会不会 fork」从正确性问题降级成性能问题。
+
+### 送达面（delivery surface）
+
+**定义**：真正进入模型上下文的位置。本仓实测只有两处：① AIOS 生成的角色卡（`scripts/lib/foundation/agents/emitters/shared.mjs:22` 三条固定条款，实测 38/38 张卡命中）；② 每次派发注入的 `## Dispatch Brief`（`scripts/lib/execution/harness/team/subagent-runtime/context/prompts.mjs:145` 构造、`:154` 渲染）。`client-sources/native-base/shared/partials/` **不是**送达面：10 个 partial 里只有 `core/core-instructions.md` 真被 `composeNativeMarkdown()` 读进去，其余 9 个从未被任何 loader 读取。判据是行为（patch `fs.readFileSync` 记实读 + 在产物文本里查证段落标题落点），不是 grep 引用数；守护它的是 `scripts/tests/foundation/native/native-partial-delivery.test.mjs:26` 的显式 disposition 表。
+**为什么**：这次踩到的具体坑是「写了文件就以为送达了」——第一版用 basename 全库 grep 数引用，得出「7 个孤儿」，真数是 9 个从未被读；文档提到一次 ≠ 投递一次。附带代价更大：把能力相关细则写进多客户端共享的 `AGENTS.md` 会泄漏给没有 subagent 工具的客户端，所以「该投递什么」和「投到哪里」必须分开决定。
