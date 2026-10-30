@@ -12,6 +12,28 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+
+## [6.16.1] - 2026-10-30
+
+- Fixed: dispatched workers no longer stop early. The brief and role card said a fact missing from the brief means `blocked`, and that
+the reply must be JSON-only; with tool access and delivered context present, both instructions ended the task before investigation.
+The brief now allows workspace and tool discovery within existing permissions and only then returns `blocked` with the missing item and
+what was checked. `ownedPathPrefixes` is stated as the **edit** boundary it actually is (it is enforced against `filesTouched`), so
+related dependency reads stay allowed.
+- Fixed: review, diagnosis and verification work can complete without editing files. The runtime prompt no longer infers no-op from
+"no code changes needed" and no longer forbids task-relevant checks for read-only phases; it completes the assigned objective and
+acceptance checks, and returns no-op only when evidence shows the work is already satisfied.
+- Fixed: the final handoff contract has one owner again. Both the subagent and GroupChat system prompts reuse the shared renderer
+instead of keeping private copies, a card's legacy output section is stripped, and JSON-only is scoped to the final reply after tool use.
+- Fixed (data loss path): GroupChat replaced the entire executable prompt **and** the model routing with a lossy pre-send compact
+packet whenever no `executionContext` was supplied. Measured on a 4,706-character task prompt, the 1,897-character packet kept a raw
+ref but dropped a concrete task condition, so a worker had to recall its own task text to learn the requirement. GroupChat now keeps
+the full prompt and routing; pre-send and post-receive compression remain as redacted observation and storage.
+- Docs: ADR 0004 no longer claims a self-contained brief makes a host fork harmless. It reduces dependence on the parent conversation;
+it does not isolate a forked host session, and the absence of a prior nonce in output only proves absence in output.
+- Also included from the same unreleased window: generated agent cards now state the constraints the gate actually enforces
+(`schemaVersion` is the integer 1, the status enum, array-of-string fields, no extra fields), pinned against the schema file itself.
+
 ## [6.16.0] - 2026-10-30
 
 - Added: **Verified Fresh Context V1** — "fresh context, not a fork" is now measured, declared, injected and test-pinned instead of
