@@ -25,6 +25,17 @@ export const SUBAGENT_CONTEXT_CONTRACT_LINES = Object.freeze([
   'Do not ask the parent to paste its transcript.',
 ]);
 
+// 中文注释：这份约束清单是从 agent-handoff.schema.json **读出来的事实**，不是手感的补充。
+// D3 实测证据：只列字段名时，同一个模型两次分别交回 `schemaVersion: "1.0"` 和
+// `"1.0.0"`（schema 要的是整数 const 1）——它不是不听话，是我们的合同没给可判定的信息。
+// 漂移由 scripts/tests/foundation/subagent-context/handoff-contract.test.mjs 直接对 schema 文件拦住。
+export const HANDOFF_CONTRACT_CONSTRAINTS = Object.freeze([
+  '`schemaVersion` is the integer 1 — not a string like "1.0".',
+  '`status` is exactly one of: ready, blocked, needs-input, completed.',
+  '`findings`, `filesTouched`, `openQuestions`, `recommendations` are arrays of strings.',
+  'Do not add fields beyond the ones listed above.',
+]);
+
 export function renderSubagentContextContract() {
   return ['Subagent Context', ...SUBAGENT_CONTEXT_CONTRACT_LINES].join('\n');
 }
@@ -45,6 +56,9 @@ export function renderHandoffContract({ role = 'unknown', handoffTarget = 'next-
     '',
     'Required fields:',
     ...HANDOFF_CONTRACT_FIELDS.map((field) => `- ${field}`),
+    '',
+    'Field constraints (a handoff that breaks these is rejected at the gate):',
+    ...HANDOFF_CONTRACT_CONSTRAINTS.map((line) => `- ${line}`),
     '',
     `Set \`fromRole=${role || 'unknown'}\` and \`toRole=${handoffTarget || 'next-phase'}\`.`,
   ].join('\n');

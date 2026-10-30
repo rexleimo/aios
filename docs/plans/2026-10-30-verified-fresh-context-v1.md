@@ -117,7 +117,10 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 | 命令 | 结果 |
 |---|---|
 | `node scripts/run-affected-tests.mjs --concurrency 2` | 2480 tests / 2471 pass / **0 fail** / 9 skipped（mode=full，254/254） |
-| `node --test scripts/tests/foundation/subagent-context/` | 40/40（拆分后的 probe 13 + declaration 9 + runner 10 + dispatch-brief 8）
+| `node --test scripts/tests/foundation/subagent-context/*.test.mjs` | 47 tests / 44 pass / **0 fail** / 3 skipped（probe 13 + declaration 9 + runner 10 + dispatch-brief 8 + handoff-contract 4 + blank-brief-session 3）。注：**不要用目录形式**——`node --test <dir>` 在本机 Node 24.16 对任何目录都是 `MODULE_NOT_FOUND`（已对照 `scripts/tests/foundation/native/` 证实），本仓套件是靠文件列表跑的 |
+| `node --test scripts/tests/foundation/subagent-context/handoff-contract.test.mjs` | 4/4：字段清单 == `schema.required`，每条约束行都能回指 schema 声明的 const/enum/type/additionalProperties |
+| `AIOS_VFC1_D3_LIVE=1 node --test .../blank-brief-session.test.mjs` | **3/3**（P1 14.9s / P2 17.4s / P3 15.3s，均为真实 `pi -p --no-session --mode json` 调用）；不带该变量时 `3 skip`，CI 不会意外花配额 |
+| D3 修正前后（同一脚本、同一模型） | `schemaErrors 2 → 0`：前两次交回 `schemaVersion: "1.0"` / `"1.0.0"`，补上约束行后两次都是整数 `1`；其余行为不变（P1 completed / P2 blocked）。证据：`.aios/artifacts/d3-blank-brief-2026-10-30T06-36-28-732Z.json` 与 `...T06-39-25-483Z.json`（含 prompt/answer SHA256、model、usage、工具调用数）|
 | `node --test scripts/tests/foundation/native/native-partial-delivery.test.mjs` | 3/3（+ 突变两轮均红） |
 | `node --test scripts/tests/foundation/native/codex-config.test.mjs` | 11/11 |
 | `node --test scripts/tests/execution/team/agents-sync.test.mjs` | 13/13 |
@@ -138,10 +141,23 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 |---|---|---|
 | D1 | 证据可复跑：`<client>.json` 含 nonce hash / answer hash / client 版本 / measuredAt | ✅ codex、pi 两份在盘 |
 | D2 | 注入只此一处：每张卡片含三条条款、只含一份 Output Contract | ✅ 38/38 实测 |
-| D3 | **空窗口可用**：hermetic 空白会话只凭 brief 交出符合 schema 的 handoff | ❌ **未完成**。现有 `dispatch-brief.test.mjs` 证的是「brief 进了真实 prompt」与「校验/渲染」，属结构性可用，**不等于真跑过空白模型会话** |
+| D3 | **空窗口可用**：hermetic 空白会话只凭 brief 交出符合 schema 的 handoff | ✅ **已真跑达成**（2026-10-30，三次真实调用，`AIOS_VFC1_D3_LIVE=1` 下 3/3）：P1 只凭 brief 读完工作区文件交出合规 handoff（status=completed，`schemaVersion` 整数 1）；P2 缺事实时**真的去搜了工作区**、按合同回 `blocked` 并点名缺失项，未编造；P3 上一会话才可能见过的 nonce 不会出现在下一会话。**这一跑拓出一个真缺陷：见 §9.1** |
 | D4 | 门全绿：guidance 断言 + scorecard + standards 无漂移 | ✅（并新增送达门） |
 
-D3 是本项唯一的诚实缺口：它需要一次真实空白会话调用（配额成本），不能由静态断言冒充。
+D3 已不再是缺口。但它跑出了一个只有真跑才能看见的缺陷，值得单独记：
+
+### 9.1 D3 拓出的缺陷：合同没声明门禁实际执行的约束
+
+| 阶段 | 事实 |
+|---|---|
+| 第一次跑（合同只列字段名） | 两次都交出 **`schemaVersion: "1.0"` / `"1.0.0"`**，而 `agent-handoff.schema.json` 要的是 `integer const 1` → `schemaErrors=2` |
+| 根因 | `renderHandoffContract` 只印 Required fields + schema 路径，**没印类型/常量/枚举**。空白会话里的 worker 无法从字段名推出 `1` 而不是 `"1.0"`，只能猜 |
+| 修法 | 单一 owner `emitters/shared.mjs` 新增 `HANDOFF_CONTRACT_CONSTRAINTS`，内容严格来自 schema 已声明的事实，并由 `handoff-contract.test.mjs` **直接读 schema 文件反校**（schema 改了而卡片文字没跟着改就红） |
+| 复跑 | 同一个脚本、同一个模型：**`schemaErrors=2 → 0`**，`schemaVersion` 两次都是整数 `1`；其余行为不变（P1 completed / P2 blocked） |
+
+所以这不是「模型不听话」，是我们的投递面把可判定信息弄丢了。**静态测试永远拓不出这一类缺陷**：它只在真实空白会话里暴露——这正是 D3 存在的理由。
+
+附带一个方法纠正：P3 最初我用 `doesNotMatch(/parent conversation/i)` 去判“有没有回头索要父上下文”，这是被本仓 AGENTS.md 明确禁止的**散文关键词猜语义**（模型说“没有使用父上下文”也会命中）。已删掉，换成只判客观事实：上一会话的 nonce 与文件名不得出现在本会话输出里。
 
 ## 10. 风险与回滚
 
@@ -167,7 +183,8 @@ D3 是本项唯一的诚实缺口：它需要一次真实空白会话调用（�
 
 ## 12. 剩余工作项
 
-1. **D3 空窗口验证**：一次真实 hermetic 会话，只喂 brief，断言不追问 objective 就交出符合 `agent-handoff.schema.json` 的 handoff。需要配额授权。
+1. ~~**D3 空窗口验证**~~ **已完成**：`scripts/tests/foundation/subagent-context/blank-brief-session.test.mjs`（P1/P2/P3，默认 skip，`AIOS_VFC1_D3_LIVE=1` 才跑）+ `handoff-contract.test.mjs`（卡片约束 ↔ schema 文件）。过程中拓出并修好了 §9.1 那个合同缺约束的缺陷。
+1b. **新行为尚未发布**：本轮改动（卡片现在声明类型/枚举/const）是用户可见的投递面行为，按 `versioning-by-impact` 不能当 patch 发；它进入下一个 minor（需四语发布帖），v6.16.0 tag 不追改。
 2. **其余 8 个客户端探针**：每个一次真实模型调用。
 3. **修复送达**：9 个 `documentation-only` partial 里若有该投递的内容，必须先定投递面（AGENTS.md 是多客户端共享文件，能力相关细则写进去会泄漏给无 subagent 工具的客户端）。
 4. **ADR 序号收敛**：`docs/adr/`（本篇 0004）与 `docs/architecture/adr/`（已有 0004）并存同号不同文，`./docs/adr/0003-repo-junk-cleanup-tiering.md` 已记为该问题待决。

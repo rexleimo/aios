@@ -111,6 +111,8 @@
       "scripts/tests/execution/team/team-watchdog.test.mjs",
       "scripts/tests/execution/workflow/workflow-shell-syntax.test.mjs",
       "scripts/tests/foundation/subagent-context/dispatch-brief.test.mjs",
+      "scripts/tests/foundation/subagent-context/handoff-contract.test.mjs",
+      "scripts/tests/foundation/subagent-context/blank-brief-session.test.mjs",
       "scripts/tests/foundation/context/context-lifecycle-benchmark.test.mjs",
       "scripts/tests/foundation/context/context-lifecycle-differential.test.mjs",
       "scripts/tests/foundation/context/context-lifecycle-evidence-gate.test.mjs",

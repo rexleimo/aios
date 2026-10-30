@@ -33,13 +33,16 @@
 10. **旧合同在渲染期剥离，不在源文件整段删**：`scripts/lib/foundation/agents/source-tree.mjs:51` 要求 `## Output contract` 标题存在；删标题即破既有断言。做法是源文件留一行指向 schema 的指针，渲染时剥离任何残留旧字段表，保证卡片里**恰好一份**合同。
 11. **版本事实要有单一 owner**：`clientVersion` 走平台 spawn spec（Windows 下 `pi` 是 npm shim，裸 `spawnSync('pi', ...)` 取不到版本），取不到版本的声明会让版本漂移判定永久失效。
 12. **未复现的失败不加重试**：`cli-usage-error-exit` 在并发下红过一次（61329ms，撞该 harness 的 60000ms per-spawn 上限），隔离与混跑均绿、全量重跑绿；没有可复现证据就不给测试加静默重试——静默重试会掩盖基础设施抖动。
+13. **卡片必须把门禁实际执行的约束说出来**：只列字段名不算合同。D3 实测：同一个模型在只给 Required fields 时分别交回 `schemaVersion: "1.0"` 与 `"1.0.0"`，而 schema 要的是 `integer const 1`——空白会话里的 worker 无法从字段名推出常量。约束行现在住在单一 owner（`HANDOFF_CONTRACT_CONSTRAINTS`），内容严格来自 schema 已声明事实，并由 `handoff-contract.test.mjs` 直接读 schema 文件反校（schema 改了而卡片文字没跟着就红）。复跑：`schemaErrors 2 → 0`。推论：**模型偏离未被声明的约束，是投递方的不完整，不是模型的不听话**；补声明比加校验器或重试便宜得多。
+14. **语义判定不得靠散文正则**（本轮自己踩到并删掉）：一度用 `doesNotMatch(/parent conversation/i)` 判“有没有回头索要父上下文”——模型说「未使用父上下文」会一样命中，这是本仓 AGENTS.md 禁止的关键词猜测。新鲜度只能测客观可判事实：上一会话才可能见过的 nonce 与文件名不得出现在本会话输出里。
 
 ## 后果
 
 - **正向**：`fork` 在本仓第一次有了自己产出的证据（codex）与可核的复跑路径；`aios status` 从「一句 unknown」变成「`measured=2/10 fork=1(codex) unknown=8`」这种**带处置的**措辞；卡片合同从 19 份冲突收敛到 38/38 唯一；派发载荷里第一次出现「你不继承父对话」这条硬约束；新增两道会红的门（送达门 + banner 假阳性护栏），且都做过双向突变验证。
 - **顺带挖出并修掉两个既有缺陷（与新鲜度无关，由本次排查暴露）**：① `scripts/lib/clients/native/distribution/emitters/codex-config.mjs:115` 的 `stripManagedTables` 按**文本拼写**枚举表名，认不出同一路径的两种 TOML 拼法（`"C:\\..."` vs `'C:\...'`），会把重复键写进 `~/.codex/config.toml`，实测使 `codex` 全线 exit 1（`duplicate key`）；② 同函数在遇到无管理标记的遗留 AIOS 表时进入剥离态并一路吞到 `MANAGED_END`，**人类手写的后续配置会在下次 sync 时被删掉**（数据丢失级）。两者均带回归测试。
+- **本轮新行为尚未发布**：卡片约束行是用户可见的投递面变化，按 `scripts/lib/diagnostics/release-impact.mjs` 不能当 patch 发（那等于把用户可见行为写进 changelog 却不升 MINOR）；v6.16.0 tag 不追改，这堆工作进入下一个 minor（附带代价：minor 需四语发布帖）。发布决策属于人，本 ADR 只记录约束。
 - **仍然存在的负向 / 未解**：
-  - **完成定义 D3「空窗口可用」未达成**：现有测试只证「brief 进入真实 prompt」的结构性可用，没有真跑过一次只凭 brief 的空白模型会话。这是本项唯一诚实缺口，需配额授权。
+  - ~~**完成定义 D3「空窗口可用」未达成**~~ → **已达成（2026-10-30 真跑）**：三次真实空白会话——P1 只凭 brief 交出符合 `agent-handoff.schema.json` 的 handoff（它真的跑工具去数了行数），P2 缺事实时回 `blocked` 并点名缺失项、未编造答案，P3 上一会话的 nonce 不会出现在下一会话。**这一跑的本领在于拓出了静态测试永远看不见的 §9.1 缺陷**（合同没声明 const/类型/枚举）；`blank-brief-session.test.mjs` 默认 skip，只在 `AIOS_VFC1_D3_LIVE=1` 下花钱。
   - 8/10 客户端仍是 `unknown`（每个一次真实模型调用）。
   - **9 个 partial 的内容无处投递**：其中确有该下发的纪律，但唯一的共享投递面是 `AGENTS.md`，而它是多客户端同一份文件——把 subagent 细则写进去会泄漏给没有 subagent 工具的客户端。投递面设计是独立决策，本 ADR 只钉住「不得靠写文件冒充投递」。
   - 已安装运行时 `~/.rexcil/aios` 仍带 `stripManagedTables` 缺陷——实测该副本（mtime 10-27 13:01）里没有本次修复的标志（无 `decodeTomlKey` / `sameProjectTable`），`codex-config.mjs:133` 仍是旧的文本拼写比对 `tableNames.some((t) => name === t || ...)`，所以下次 native install 会重新制造 duplicate key；需一次 install/update 才对齐（用户级写操作，需授权）。
