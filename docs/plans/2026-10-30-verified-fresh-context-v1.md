@@ -129,6 +129,9 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 | `node scripts/aios.mjs standards --root . --rule directoryEntries` | blocking=0 |
 | `node scripts/check-doc-citations.mjs` | 新增 21 条引用**全部有效**；全仓 invalid 335 → 335（不增），refs 542 → 563 |
 | `node scripts/aios.mjs standards --root . --rule duplicateLines` | 本轮 4 个新文件贡献 0；全仓实测 measured=602 blocking=602（存量，未接默认红） |
+| `node scripts/aios.mjs standards --root . --rule duplicateLines`（D3 本轮逐文件） | `emitters/shared.mjs: 17`、`blank-brief-session.test.mjs: 12`、`handoff-contract.test.mjs: 0`。shared.mjs 那 17 行**不是本轮引入的**：自己的 6 行窗口扇扫定位到 partner 为 `scripts/lib/execution/harness/team/orchestrator-agents.mjs`，命中窗口起于 80/81 行——即 `normalizeTools` + `escapeYamlString` 这两段早已存在的 helper（80–92），本轮 diff 只动了 `renderHandoffContract` 与新常量。blank-brief 的 12 行用自己的扇扫**无法归因到任何 tracked partner（测量脚本在 `temp/` 下，不受版本控制，而这条规则只枚举 `git ls-files`）→ 按该规则自己声明的 limits 归入待处置，将来走 `exempt` + 理由，不拿它冒充干净 |
+| `node scripts/aios.mjs standards --root . --rule fileLines` | `measured=1462 overBudget=78 baseline=71 blocking=7`（本轮新增文件 86/169/131 行，均未超）——7 个 blocker 全部是存量，本轮未碰（已逐个比对 staged 清单） |
+| `node scripts/aios.mjs standards --root . --rule directoryEntries` | `blocking=0`；`scripts/tests/foundation/subagent-context/` 现在 6 项（预算 8） |
 | `node scripts/aios.mjs standards --root . --rule reverseDependencies` | measured=0 blocking=0 |
 | `node scripts/aios.mjs status` | `subagent-context=incomplete measured=2/10 fork=1(codex) unknown=8` |
 | `codex mcp list` | 修复 `~/.codex/config.toml` 前 exit 1（`duplicate key`），后 exit 0 |
@@ -158,6 +161,8 @@ D3 已不再是缺口。但它跑出了一个只有真跑才能看见的缺陷�
 所以这不是「模型不听话」，是我们的投递面把可判定信息弄丢了。**静态测试永远拓不出这一类缺陷**：它只在真实空白会话里暴露——这正是 D3 存在的理由。
 
 附带一个方法纠正：P3 最初我用 `doesNotMatch(/parent conversation/i)` 去判“有没有回头索要父上下文”，这是被本仓 AGENTS.md 明确禁止的**散文关键词猜语义**（模型说“没有使用父上下文”也会命中）。已删掉，换成只判客观事实：上一会话的 nonce 与文件名不得出现在本会话输出里。
+
+证据耐久性提醒：`.aios/artifacts/` 是 gitignore 的，上面那两份原始 JSON 只对当时本机可验。**可重复的持久路径是已提交的 `AIOS_VFC1_D3_LIVE=1 node --test …/blank-brief-session.test.mjs`**（它自己重建临时工作区、自己跑真实会话），不是那两份 JSON。
 
 ## 10. 风险与回滚
 
