@@ -82,3 +82,17 @@ test('pi is not quarantined as pending-smoke in the subagent runner', async () =
     'pi must reach command lookup, not the pending-smoke gate');
   fs.rmSync(emptyDir, { recursive: true, force: true });
 });
+
+// AIOS workers are stateless turns. `pi -p` without `--no-session` persists a session
+// file per call, which both accumulates state on disk and leaves a `--continue` target
+// a later run could pick up. Pin the flag at the one-shot handler that owns pi's argv.
+test('pi one-shot handler is stateless and structured (--no-session + --mode json)', () => {
+  const source = fs.readFileSync(
+    new URL('../../../lib/foundation/ctx-agent-core/entry/one-shot.mjs', import.meta.url),
+    'utf8'
+  );
+  const handler = source.match(/'pi-coding-agent':[\s\S]*?\n  \},/);
+  assert.ok(handler, 'pi-coding-agent one-shot handler must exist');
+  assert.match(handler[0], /'-p',\s*'--no-session'/,
+    'pi one-shot must pass --no-session before the prompt');
+});

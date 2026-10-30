@@ -5,6 +5,7 @@ import { buildCodexMcpDisableArgs, buildRouteRuntimeEnv, buildCtxAgentRoutePrevi
 import { buildOpenCodePrompt } from '../context/opencode-context.mjs';
 import { buildOpenCodeStrictAgentArgs } from '../../../clients/opencode/strict-primary-agent.mjs';
 import { detectOpenCodeCliGeneration } from '../../../clients/opencode/cli-generation.mjs';
+import { parsePiJsonStream } from '../../../clients/pi/json-stream.mjs';
 
 const PENDING_SMOKE_ONE_SHOT_AGENTS = new Set([]);
 
@@ -92,10 +93,24 @@ const ONE_SHOT_HANDLERS = {
   ),
   // Pi coding agent: `-p` prints the response and exits (non-interactive).
   // No approval flags upstream (no permission popups); project trust per run via extraArgs `-a`.
-  'pi-coding-agent': ({ prompt, extraArgs }) => runBufferedCommand(
-    commandForRuntime('pi-coding-agent'),
-    ['-p', prompt, ...extraArgs]
-  ),
+  // `--no-session` is deliberate: an AIOS worker is a fresh, stateless turn. Without it pi
+  // persists a session file per call, which both accumulates state on disk and leaves a
+  // `--continue` target that a later run could pick up by accident.
+  // `--mode json` is deliberate too: it carries facts text mode drops (final assistant
+  // text, tool calls, usage, stop reason). Text consumers still read `output`; the parsed
+  // stream rides along as `structured` and is optional for every caller.
+  'pi-coding-agent': ({ prompt, extraArgs }) => {
+    const result = runBufferedCommand(
+      commandForRuntime('pi-coding-agent'),
+      ['-p', '--no-session', '--mode', 'json', prompt, ...extraArgs]
+    );
+    const structured = parsePiJsonStream(result.protocolOutput || '');
+    return {
+      ...result,
+      output: structured.assistantText || result.output,
+      structured,
+    };
+  },
   // ZCode bundled CLI: `-p` runs a positional prompt headless; yolo permission
   // mode is the documented headless default and passed explicitly.
   'zcode-cli': ({ prompt, extraArgs }) => runBufferedCommand(
