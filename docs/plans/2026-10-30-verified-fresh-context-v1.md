@@ -117,7 +117,7 @@ Provider：`rex-design` / `rex-implement` · 决策记录见 `./docs/adr/0004-su
 | 命令 | 结果 |
 |---|---|
 | `node scripts/run-affected-tests.mjs --concurrency 2` | 2480 tests / 2471 pass / **0 fail** / 9 skipped（mode=full，254/254） |
-| `node --test scripts/tests/foundation/native/subagent-context-probe.test.mjs` | 28/28 |
+| `node --test scripts/tests/foundation/subagent-context/` | 40/40（拆分后的 probe 13 + declaration 9 + runner 10 + dispatch-brief 8）
 | `node --test scripts/tests/foundation/native/native-partial-delivery.test.mjs` | 3/3（+ 突变两轮均红） |
 | `node --test scripts/tests/foundation/native/codex-config.test.mjs` | 11/11 |
 | `node --test scripts/tests/execution/team/agents-sync.test.mjs` | 13/13 |
@@ -174,3 +174,20 @@ D3 是本项唯一的诚实缺口：它需要一次真实空白会话调用（�
 5. **已安装运行时代码对齐**：`~/.rexcil/aios` 仍带 `stripManagedTables` 缺陷（实测旧拼写比对在该副本的 codex-config.mjs 第 133 行），下次 native install 会重新制造 duplicate key。
 
 已登记领域术语（非待办）：`fork（子代继承父对话）` 与 `送达面（delivery surface）` 已写入 `CONTEXT.md` 的「子代理上下文新鲜度」段，每条带实测值与裁决指向。
+
+## 13. 发布记录（v6.16.0）与两条度量教训
+
+已发布：`v6.16.0`（annotated tag 指向发布提交），CHANGELOG + 四语发布博文（en/zh/ja/ko）+ 再生成的 `docs-site/llms.txt`。`release-stable.sh --dry-run` 打印的三条命令已逐条执行，`git ls-remote` 确认远端 tag 存在。
+
+发布门拓到两个只有 `npm run test:scripts` 才能发现的问题（`run-affected-tests` 两个都没拦住）：
+
+| 发现 | 真实原因 | 处置 |
+|---|---|---|
+| `directoryEntries` 变 blocking=1 | `scripts/tests/foundation/native` 因我新增的 3 个测试到 11 条。**这条规则只枚举已跟踪路径**：我在它们还是 untracked 时跑了三次 `--rule directoryEntries` 读到 blocking=0，那三次测量全是盲的 | 4 个 VFC-1 套件归入 `scripts/tests/foundation/subagent-context/`（4 条），`foundation` 回到 10 个子项、blocking=0 |
+| `rex-agent-provider.test.mjs` 断言失败 | 它钉的是卡片手写的那句 `Return one JSON handoff object only`，而 W2 把它换成了生成式合同——**断言在保护已被移走的 prose** | 改成钉实际投递形状：`required-handoff: {"schemaVersion":1,…}` 存在、卡片指向生成段、旧 `Required fields:` 表不再出现、提示词里 `## Output contract` **恰好一份** |
+| 韩文博文带一个 U+30FB 日文中点 | `site-text-integrity.test.mjs` 把跨语种文字当污染拦住（这条门替我发现了自己写错语言的风险） | 换逗号；7/7 绿 |
+
+教训（入库而非口头）：
+1. **门禁的作测量围不等于仓库的工作集**——对「目录条目预算」这类规则，未跟踪文件在测量中不可见，所以“新文件不超预算”这个结论必须**先提交再测**。
+2. **`npm run test:affected` / `test:regression` 不是发布门**。AGENTS.md 已经写了 tier 3 是 CI 跑的那条，本轮的实际代价（一个已推送的 commit 带红）就是没按字面执行的代价。已推的四个 commit 在 CI 上是红的；`033a3d6a` 修好了，分支当前绿。
+3. 发布前证据：`bash scripts/release-stable.sh --dry-run` 全链**通过**（退出 0，并打印出 tag 命令），`release-preflight.sh --tag v6.16.0` 日志 3697 行留在 `.aios/artifacts/`：累加日志内全部汇总块 = **3027 tests / 3006 pass / 0 fail / 21 skipped**，`not ok` 行数 0、`✖` 行数 0；其中 regression 层 `files=257, concurrency=4, elapsed_ms=476438`（此前单独跑的全量是 2484 tests / 2475 pass / 0 fail / 9 skipped，数字不同因为累加范围不同——引用时得说清是哪一层）。另：`check-site-sync` 输出与 6.15.1 基线逐字相同（24 条存量翻译缺失，两边都是 exit 1），即本次发布**没新增一条门错误**；`generate-llms-txt.mjs --check` ok；`check-doc-citations` 全仓 invalid 保持 335。
