@@ -66,6 +66,22 @@ Seams: normalizeRequirementsDecision, advanceSoftwareWorkflow, standalone CLI an
 - Full verifier verdict `.aios/evidence/grill-readiness-verification.md` passed the four-section
   completeness validator.
 
+## Release
+
+- Rex `v1.0.0` was published first (commit `6563c82`, tag `v1.0.0`, asset
+  `rex-harness-1.0.0.tar.gz`), satisfying the host gate that the recorded gitlink is an
+  actual submodule release.
+- Host `v7.0.0` then passed `scripts/release-preflight.sh --tag v7.0.0` (VERSION/CHANGELOG,
+  skills+native sync, submodule published-release gate, root + MCP verification, training
+  evidence recomputed since `v6.16.1`) and published via release run 41053398356
+  (`build: success`, assets `aios.tar.gz`, `aios.zip`, both installers).
+- Release gate fix along the way: `skill verify-training --changed` treated a deleted
+  pre-rename skill directory as unreadable input with no remedy, which made any skill rename
+  unreleasable. Registered renames are now recognized only when the declared successor holds
+  accepted evidence (`superseded-by-rename`), and the logic moved into
+  `skill-gate-outcomes.mjs` so the already-baselined gate file shrank (456 -> 451) instead of
+  growing.
+
 ## Limits
 
 - Runtime checks declared structure and consistency; it cannot prove branch coverage or that
