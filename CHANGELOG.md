@@ -12,6 +12,54 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+## [6.16.0] - 2026-10-30
+
+- Added: **Verified Fresh Context V1** — "fresh context, not a fork" is now measured, declared, injected and test-pinned instead of
+  incidental. `aios agents probe --client <id>` runs a nonce probe (the parent embeds `AIOS-NONCE-<16 hex>` and asks the child to repeat it):
+  a repeated nonce is `fork`, an explicit inability is `fresh`, everything ambiguous stays `unknown` **with a reason** — `unknown` is a legal
+  verdict and is never defaulted to `fresh`. Measured on real hosts: codex = `fork` (confidence indirect; the stored banner still carries session
+  `01a18ae5-a4a8-7882-988d-60e1e98bdb53`), pi = `not-applicable` (declared `surface: none`, corroborated at confidence `direct`), 8 clients still
+  unmeasured. `--dry-run` prints what would run without spending a model call; `--record-answer` re-classifies an already-captured answer; `--spawn`
+  re-measures a declared-absent surface into `<client>.spawn.json` and only positive `fork`/`fresh` evidence may change a declaration, so a provider
+  or network failure can never erase a measured conclusion.
+- Added: `subagents` as a side-car block in `config/host-capabilities.json` (contextMode, `surface`, measuredAt, evidenceRef, reason) rather than a
+  `capabilities[]` axis — `CAPABILITY_AXES` is a fixed token set, and a new axis would move scorecard totals and force a report rewrite. Freshness is
+  TTL-based (30 days for behaviour, 180 days for a declared absent surface) plus client-version drift, and stored evidence refs are root-relative so a
+  clone on another machine can still resolve them; the shipped config is now gated on that shape.
+- Added: the Dispatch Brief. One pure builder and one renderer produce a self-contained brief (objective, owned paths, acceptance, refs, forbidden
+  defaults) that the existing prompt assembler injects — no second assembler. This is what makes a host fork harmless rather than prohibited: a worker
+  missing a fact returns `blocked` instead of leaning on inherited context.
+- Changed: subagent context clauses have a single owner in `emitters/shared.mjs`, so every emitter's hand-copied Output Contract is gone and 38/38
+  generated role cards carry exactly one contract plus the three clauses (no parent-conversation inheritance, work from the brief, missing fact ⇒
+  `blocked`). The 19 stale field tables in role sources contradicted the enforced schema; the legacy table is stripped at render time because
+  `REQUIRED_PROMPT_MARKERS` still requires the `## Output contract` heading to exist.
+- Added: a delivery gate that measures instead of assuming. Instrumenting `fs.readFileSync` while running the real projection proved that of ten shared
+  native partials exactly one (`core/core-instructions.md`) is ever read — `readSharedMarkdownParts` has no call sites in the repo or the installed
+  runtime. `native-partial-delivery.test.mjs` now requires an explicit `composed` / `documentation-only` disposition for every partial and proves
+  `composed` ones by behaviour (read *and* visible in the emitted surface) while proving `documentation-only` ones are **not** read; both directions
+  were verified by lying to the gate.
+- Changed: `aios status` reports the measured split (`subagent-context=incomplete measured=2/10 fork=1(codex) unknown=8`) with `fork` called out as the
+  risk case instead of absorbed into a neutral "measured" count, and this stays out of `blockers` — the repo's own `duplicateLines` history shows a
+  red-by-default gate without a disposition plan gets muted, not fixed.
+- Fixed: `stripManagedTables` compared TOML table names by **textual spelling**, so one path written two ways (`"C:\\Users\\..."` and `'C:\Users\...'`)
+  produced duplicate `[projects.*]` keys and made every codex invocation exit 1 with `duplicate key`. The same function used a single flag for "inside a
+  managed block", which let an unmarked legacy AIOS table swallow human-written config until `MANAGED_END` — a latent data-loss path. Table identity is
+  now a decoded key compared with `path.resolve()`, undecodable keys are preserved, and block state is split in two.
+- Fixed: the probe classifier recorded a real host answer as `answer-not-json` because it sliced from the first `{` to the last `}` and the host banner's
+  echoed prompt broke it; it now scans balanced JSON objects and accepts only one carrying `subagentSpawned`, with an echoed nonce explicitly **not**
+  evidence of a fork. Pi's `--mode json` event stream echoes the prompt too (nonce included), so verdicts read only the parsed `assistantText`.
+- Added: pi one-shot turns run `-p --no-session --mode json` with a pure parser for the JSONL event stream (model, stopReason, errorMessage, retries,
+  usage, tool calls, assistant text); `output` stays text for existing callers and the structured facts ride alongside. `--no-session` is pinned at the
+  handler that owns pi's argv — without it every worker call persisted a session file and left a `--continue` target behind.
+- Fixed: version capture goes through the platform spawn spec; `spawnSync('pi', …)` cannot read a version through the Windows npm shim, which had been
+  silently disabling version-drift detection permanently.
+- Evidence: full regression 2484 tests / 2475 pass / 0 fail / 9 skipped; probe + declaration + runner suites 28/28 (a 688-line suite split into three
+  single-responsibility files, all inside the 400-line budget); native family plus suite wiring 104/104; `check-syntax` 1296 files / 0 failures;
+  `scorecard --check` ok across 13 clients with zero drift; `directoryEntries` blocking=0; `check-doc-citations` invalid 335 → 335 while refs 542 → 563.
+- Honest gap: the plan's completion criterion D3 — a hermetic blank session handed only the brief producing a schema-valid handoff — has **not** been run;
+  current tests prove structural availability only. Eight clients remain unmeasured, and nine partials carry discipline text with no delivery surface
+  (writing it into the shared `AGENTS.md` would leak subagent instructions to clients that have no subagent tool).
+
 ## [6.15.1] - 2026-10-27
 
 - Fixed: bare `aios` (no arguments) crashed with `ReferenceError: getRootHelpText is not defined` instead of printing

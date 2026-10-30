@@ -226,7 +226,14 @@ test('agent execution rejects legacy or tampered evidence before accepting an is
     assert.match(prepared.agent.verification.refs.smoke, /\.aios[\\/\\\\]agents[\\/\\\\]smoke/u);
     assert.match(prepared.prompt, /# Security Review Agent/u);
     assert.match(prepared.prompt, /"agentId":"rex-security-reviewer"/u);
-    assert.match(prepared.prompt, /Return one JSON handoff object only/u);
+    // W2 moved the handoff fields to a single owner: the card no longer restates a field list, the
+    // provider prompt carries the machine-rendered contract instead. Pin the delivered shape AND the
+    // absence of a competing hand-written one, because two contracts in one prompt is the defect.
+    assert.match(prepared.prompt, /required-handoff: \{"schemaVersion":1,"agentId":"rex-security-reviewer"/u);
+    assert.match(prepared.prompt, /The generated contract section appended below this card is authoritative/u);
+    assert.doesNotMatch(prepared.prompt, /Required fields: `schemaVersion`, `agentId`/u);
+    assert.equal((prepared.prompt.match(/## Output contract/gu) || []).length, 1,
+      'the provider prompt must offer exactly one output-contract section');
     assert.doesNotMatch(prepared.prompt, /AIOS_REX_EVIDENCE=/u);
 
     await writePromotionEvidenceFixture(evidenceRoot, 'rex-security-reviewer', {
