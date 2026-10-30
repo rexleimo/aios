@@ -74,7 +74,7 @@
 
 - `status` 是模型自报字段（self-report），门禁用 `*_exit_code` 这些客观事实判定，两者不一致时以退出码为准。
 - `evidence.storyboard_claims[].code_ref` 必须是 `file:line`；无 `code_ref` 的画面断言不算完成。
-- `assumptions` 承接 AGENTS.md 的澄清预算：没收敛的歧义写在这里随交付物一起交给用户，不重复追问。
+- `assumptions` 只记录不改变已接受行为/验收的低影响默认值；影响可行性、范围或恢复的未决项写入 `blockers`，不能因澄清预算耗尽就降级为假设。
 
 ## 主线程合并与门禁
 

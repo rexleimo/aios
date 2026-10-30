@@ -1,8 +1,8 @@
 ---
-name: aios-long-running-harness
-description: AIOS-native long-running agent harness with rex Command execution, ContextDB, checkpoint recovery, and evidence capture. Use for a planned resumable objective when AIOS is installed. If AIOS is NOT installed, use `harness-init-runner` for a lightweight standalone alternative.
+name: aios-harness
+description: Design the operating contract for a planned long-running or recurring workflow, then host execution, evidence, checkpoints, and recovery through AIOS and the current Rex Command. Use only for an explicit resumable objective. Without AIOS, use harness-init-runner.
 
-installCatalogName: aios-long-running-harness
+installCatalogName: aios-harness
 clients: [codex, claude, hermes, workbuddy, pi, zcode, qoder]
 scopes: [global, project]
 defaultInstall:
@@ -12,19 +12,59 @@ tags: [aios, harness]
 repoTargets: [codex, claude, gemini, opencode, hermes, agents, workbuddy, pi, zcode, qoder]
 ---
 
-# AIOS Long-Running Harness
+# AIOS Harness
 
-## Overview
-Use this harness to keep long tasks stable under UI drift, model variability, and partial failures. It maps Anthropic's long-running-agent harness ideas into this repository's file-based workflow.
+## Input and Output Contract
+
+Use for a planned resumable objective selected by AIOS policy. Accept the current
+work item, explicit `workflow_type: one-shot|recurring`, existing requirements/spec
+refs, current Rex Command when present, and any selected recovery checkpoint.
+The model declares task type; code must not infer it from prose or keywords.
+
+Return a compact handoff with `workflow_ref`, `workflow_revision`, `run_ref`,
+`evidence_refs`, `recovery_checkpoint_ref`, `decision_brief`, and
+`improvement_candidates`. Use null or empty lists for inapplicable fields; do
+not invent refs. The operating contract belongs in the existing spec/work item;
+execution state belongs in the existing run journal. Reuse them rather than
+creating another plan, wiki, or ledger.
+
+## Workflow Integration
+
+Read `references/workflow-integration.md` when authoring or importing a recurring
+workflow, preparing a human decision, or converting upstream loop-me/chief-of-staff
+artifacts into AIOS handoffs.
+
+- **Specify:** reuse accepted requirements. If a consequential decision is still
+  unresolved, report it to the current Rex Command; execute requirements work
+  only when Rex selects it. An explicit `/grill` is the existing user entry.
+- **Execute:** once the operating contract is actionable, host only the current
+  Command and persist its evidence. Do not turn the harness into a Provider chain.
+- **Decide:** prepare authorized work before a human decision point. Return the
+  evidence, options, recommendation, and exact pending decision in one brief.
+- **Learn:** at a milestone, return source-backed improvement candidates and
+  write verified knowledge through existing Memo tools. `/retro` remains the
+  explicit environment-review entry; unselected candidates are not applied.
+
+The contract records objective/non-goals, trigger/input, artifacts/completion
+evidence, failure/stop rules, budgets, and human decision points. For recurring
+work, distinguish the reusable definition and revision from each individual run.
+A previous run's success is not evidence for the next run. Definition changes
+are explicit revisions, not silent changes to an active run's acceptance.
+
+These are authoring and handoff rules. The existing runtime enforces only its
+supported controls; writing a trigger or budget into a spec does not install a
+scheduler or add a new enforcement gate. Unsupported requirements remain
+explicit gaps. Manual start is sufficient unless automatic triggering is needed.
 
 ## Harness Loop
-1. Preflight: lock objective, stop conditions, budgets, and required artifacts.
-2. Plan: split into idempotent steps with explicit success/failure evidence.
-3. Execute: run one step at a time with tool output capture.
-4. Verify: assert completion from page evidence, not assumptions.
-5. Checkpoint: persist current state, artifacts, and next action.
+
+1. Preflight: reuse or complete the operating contract, stop conditions, budgets, and required artifacts.
+2. Plan: consume the current accepted plan and idempotent steps; request changes through Rex when needed.
+3. Execute: run the current Command's step with tool output capture.
+4. Verify: assert completion from task-appropriate command receipts, artifacts, or explicit human evidence.
+5. Checkpoint: persist current state, artifacts, bound workflow revision, and next action for recovery.
 6. Recover: on failure, classify and retry only with a changed hypothesis.
-7. Complete: run final verification and write summary doc.
+7. Complete: run final verification and return the result with concrete evidence refs.
 
 ## Progress self-report and replan cadence
 
@@ -40,16 +80,13 @@ Execute/Verify round, emit:
 
 Rules:
 
-- The harness counts consecutive `progress_made: false` rounds (threshold 3
-  unless the run preflight set another). At threshold, stop repeating: run
-  Recover with a changed hypothesis or escalate to the user. Never run the
-  identical action a fourth time hoping for a different result.
-- An identical tool call issued twice in a row is flagged immediately as
-  no-progress, regardless of the self-report.
+- Report consecutive `progress_made: false` rounds. At threshold 3 (or the
+  preflight limit), stop repeating: recover with a changed hypothesis or escalate.
+  Do not claim an unsupported runtime counter has enforced this reporting rule.
+- An identical tool call issued twice in a row is evidence of no progress.
 - Every N steps (`planning_interval`, default 5, set in preflight), re-emit
-  the frontier: ready work vs. blocked work with reason and evidence, and
-  replan the remaining steps from evidence. A replan is a checkpointed event,
-  not a silent course change.
+  the frontier: ready work vs. blocked work with reason and evidence. Submit
+  consequential replanning through the current Command and checkpoint it.
 
 ## rex Command Boundary
 
@@ -65,7 +102,7 @@ Use ContextDB as storage and evidence, not as prompt replay. The harness may wri
 
 Resume flow:
 1. Show or record the available unfinished-task summary and latest checkpoint locations.
-2. Stop and wait for explicit resume intent from the user or orchestrator.
+2. If resume intent is absent, stop and wait for explicit resume intent from the user or orchestrator. Reuse intent already given in this session instead of asking again.
 3. Load only the selected handoff, checkpoint, event, or offload ref needed for the next step.
 4. Do not feed `context:pack` output into a model prompt. Treat it as an explicit inspection/debug report.
 
@@ -82,33 +119,29 @@ Attended runs are the default and are unchanged: the loop runs turns back-to-bac
 - Per-turn timeout: `aios harness run|resume --turn-timeout-ms <n>` caps a single provider turn (default 1800000 ms = 30 min, bounds 1 s – 6 h). On expiry the whole process group is cleaned in stages (SIGTERM group → grace → SIGKILL group → verify); a tree that survives SIGKILL stops the run fail-closed instead of overlapping the next turn. Grant long verification turns extra time explicitly instead of relying on the default.
 - Active pacing state is persisted in the run summary and projected through `aios harness status --json` (`status.pacing`).
 
-Do not enable `--unattended` for work that needs per-step human approval; keep the attended default.
+Do not enable `--unattended` for work that needs per-step human approval; keep the attended default. Unattended pacing does not register recurring schedules.
 
 ## Orchestrate Live Notes
+
 - `aios orchestrate --execute live` currently supports `AIOS_SUBAGENT_CLIENT=codex-cli` only.
 - Codex CLI v0.114+ structured exec outputs (`--output-schema`, `--output-last-message`, stdin) are required for handoff parsing; schema fallback to raw stdout is rejected.
 - Transient `upstream_error`/`server_error` failures are retried with exponential backoff via `AIOS_SUBAGENT_UPSTREAM_MAX_ATTEMPTS` and `AIOS_SUBAGENT_UPSTREAM_BACKOFF_MS`.
 
 ## Required Controls
-- Time budget per step and per run.
-- Retry budget per failure class.
-- Human-gate checkpoints for login, payment, or policy-sensitive actions.
+
+- Time budget per step and per run, mapped to supported runtime options where available.
+- Retry budget per failure class; identify any limit that still needs explicit operator enforcement.
+- Human decision points for login, payment, or policy-sensitive actions, distinct from persisted recovery checkpoints.
 - Solo harness checkpoints should include the current stage (`research`, `requirements`, `planning`, `development`, `validation`, `handoff`) and concrete evidence.
 - Structured logs for every major transition.
 
-## Failure Classes
-- Selector/UI drift.
-- Authentication/session loss.
-- Policy rejection/content moderation.
-- Network/transient failures.
-- Tool/runtime errors.
-
 ## Completion Gate
+
 Declare success only when all are true:
-- Target action succeeded.
+- Target action satisfied the bound run's acceptance criteria.
 - Expected artifact exists.
-- Evidence snapshot/log exists.
-- Updated runbook reflects newly observed drift.
+- Evidence receipt/log or required human decision exists.
+- Result, remaining gaps, and recovery/knowledge refs are recorded. Discovered drift becomes a source-backed improvement candidate; modifying a skill requires its own authorized change.
 
 ## Resume With Offload Canvas
 
@@ -117,5 +150,7 @@ Declare success only when all are true:
 - Token savings come from targeted recall and compact refs, not from replaying raw `l2-events.jsonl`, full tool logs, or long continuity packets.
 
 ## Resources
+
+- `references/workflow-integration.md`: workflow inputs, upstream artifact mapping, decision briefs, and improvement handoffs.
 - `references/harness-checklist.md`: operational checklist template.
 - `references/anthropic-mapping.md`: principle-to-project mapping.

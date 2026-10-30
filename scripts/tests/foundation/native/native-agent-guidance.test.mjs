@@ -102,7 +102,7 @@ test('all six native projections keep compact workflow invariants and route deta
     assert.match(markdown, /On-Demand Routes/u, `${client} missing lazy route guidance`);
     assert.match(markdown, /aios-codemap-ops/u, `${client} missing codemap route`);
     assert.match(markdown, /contextdb-autopilot/u, `${client} missing ContextDB route`);
-    assert.match(markdown, /aios-long-running-harness/u, `${client} missing harness route`);
+    assert.match(markdown, /aios-harness/u, `${client} missing harness route`);
     assert.match(markdown, /model-router/u, `${client} missing model route`);
 
     assert.doesNotMatch(markdown, /## Context System|## AIOS Client Capability Gates|## AIOS Token Discipline/u);

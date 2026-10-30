@@ -13,6 +13,20 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+
+## [7.0.0] - 2026-10-30
+
+### Breaking changes
+
+- New Rex requirements submissions require typed `readiness` with a closed decision dependency graph, supported feasibility, normal/failure walkthroughs, and confirmed alignment. Evidence kinds, a first slice, or three unanswered question rounds cannot promote critical unknowns into implementation. Callers must add the readiness record; historical artifacts remain readable and later-stage workflows keep their recorded decisions.
+- `grill` adopts decision dependencies from upstream grilling/loop-me, investigates facts before asking, and retains one-question interaction. Existing accepted instructions satisfy alignment; no repeated approval is needed. Low-impact reversible defaults remain explicit assumptions; unresolved critical choices stay blocked.
+- Source workspace integration uses the Rex readiness boundary as its single owner. This version preparation is local; the changed Rex submodule must be committed and published before any host release, with the parent gitlink committed separately.
+
+## [6.16.2] - 2026-10-30
+
+- Changed: the canonical long-running skill is now `aios-harness`, aligned with `/harness` and `aios harness`. Existing catalog commands using `aios-long-running-harness` select the short name. After successful installation, AIOS-owned old copies/links are archived outside discovery; user-owned directories are preserved.
+- Docs: integrated loop-me workflow authoring into the existing `grill`/harness handoff, and chief-of-staff decision briefs and historical notes into existing Memo and improvement-candidate paths. Definitions and individual runs, human decision points and recovery checkpoints are explicit. These are guidance and handoff contracts; this patch does not add scheduling, automatic contract enforcement, or autonomous skill edits.
+
 ## [6.16.1] - 2026-10-30
 
 - Fixed: dispatched workers no longer stop early. The brief and role card said a fact missing from the brief means `blocked`, and that

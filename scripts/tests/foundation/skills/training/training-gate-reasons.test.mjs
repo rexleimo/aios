@@ -158,6 +158,56 @@ test('R5 every declared failure code maps to a kind; unknown codes stay unclassi
   assert.equal(classifyEvidenceFailure('made-up-code'), 'unclassified-evidence-failure');
 });
 
+test('R7 a registered rename verifies the retired id against its successor evidence', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-training-gate-rename-'));
+  const oldPath = 'skill-sources/aios-long-running-harness/SKILL.md';
+  const newPath = 'skill-sources/aios-harness/SKILL.md';
+  const newFile = path.join(rootDir, newPath);
+  try {
+    await mkdir(path.dirname(newFile), { recursive: true });
+    await writeFile(newFile, skillText().replace('gate-reasons', 'aios-harness'), 'utf8');
+    execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.email', 'fixture@example.invalid'], { cwd: rootDir });
+    execFileSync('git', ['config', 'user.name', 'Training Fixture'], { cwd: rootDir });
+    commitAll(rootDir, 'baseline');
+    await writeFile(newFile, `${await readFile(newFile, 'utf8')}4. Record the evidence path.\n`, 'utf8');
+    let output = '';
+    const certified = await runSkillTrainingCertification(
+      { skill: ['aios-harness'], base: 'HEAD', json: true },
+      { rootDir, stdout: { write: (chunk) => { output += String(chunk); } } },
+    );
+    assert.equal(certified.exitCode, 0, output);
+
+    const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD', changedFiles: [newPath, oldPath] });
+    assert.equal(report.status, 'verified', JSON.stringify(report.skills));
+    const retired = report.skills.find((skill) => skill.skillId === 'aios-long-running-harness');
+    assert.equal(retired.status, 'verified');
+    assert.equal(retired.supersededBy, 'aios-harness');
+    assert.equal(retired.code, 'superseded-by-rename');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
+test('R8 a deleted Skill with no registered successor stays an unreadable input', async () => {
+  const rootDir = await mkdtemp(path.join(os.tmpdir(), 'aios-training-gate-deleted-'));
+  try {
+    execFileSync('git', ['init'], { cwd: rootDir, stdio: 'ignore' });
+    execFileSync('git', ['config', 'user.email', 'fixture@example.invalid'], { cwd: rootDir });
+    execFileSync('git', ['config', 'user.name', 'Training Fixture'], { cwd: rootDir });
+    await mkdir(path.join(rootDir, 'skill-sources', 'gate-reasons'), { recursive: true });
+    await writeFile(path.join(rootDir, RELATIVE_SKILL_PATH), skillText(), 'utf8');
+    commitAll(rootDir, 'baseline');
+    await rm(path.join(rootDir, RELATIVE_SKILL_PATH), { force: true });
+
+    const report = await verifySkillTrainingGate({ rootDir, base: 'HEAD', changedFiles: [RELATIVE_SKILL_PATH] });
+    const entry = await blockedEntry(report);
+    assert.equal(entry.code, 'skill-source-unavailable');
+  } finally {
+    await rm(rootDir, { recursive: true, force: true });
+  }
+});
+
 test('R6 the text report surfaces the remedy so a human sees it without --json', async () => {
   const { rootDir } = await createReasonFixture();
   await certifyAtHead(rootDir);

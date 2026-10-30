@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "aios-harness",
+  "sourcePath": "skill-sources/aios-harness/SKILL.md",
+  "base": "v6.16.1",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "ee4ba19c14be574467e93cd7d0ada57cdce3541dcdfe99960cece4280da18ea2",
+  "baseline": {
+    "kind": "no-skill-control",
+    "contentSha256": "8f32943c38a671d90f48f64cdc8415f04818a55180dd7bd4fec531221065c7b3"
+  },
+  "candidate": {
+    "contentSha256": "ee4ba19c14be574467e93cd7d0ada57cdce3541dcdfe99960cece4280da18ea2"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 0,
+      "overallHard": 0.6666666666666666
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-10-30T11:55:01.156Z"
+}

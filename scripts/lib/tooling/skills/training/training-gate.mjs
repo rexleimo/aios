@@ -5,6 +5,7 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { certifySkillTraining, validateCertifiedTrainingEvidence } from './training-certification.mjs';
+import { collectSkillOutcomes } from './skill-gate-outcomes.mjs';
 
 const SKILL_PATHS = Object.freeze([
   'skill-sources/**/SKILL.md',
@@ -310,19 +311,13 @@ export async function verifySkillTrainingGate({ rootDir = process.cwd(), changed
     if (skillId && !skillFiles.has(skillId)) skillFiles.set(skillId, filePath);
   }
   const skillIds = [...skillFiles.keys()].sort();
-  const skills = [];
-  for (const skillId of skillIds) {
-    const sourcePath = skillFiles.get(skillId);
-    const currentSkillHash = await hashSkillFile(rootDir, sourcePath);
-    const evidenceResult = currentSkillHash
-      ? await findTrainingEvidence(rootDir, skillId, sourcePath, currentSkillHash, base)
-      : { evidence: null, staleRefs: [], staleDetails: [] };
-    if (evidenceResult.evidence) {
-      skills.push({ skillId, status: 'verified', evidence: evidenceResult.evidence });
-      continue;
-    }
-    skills.push(describeBlockedSkill({ skillId, base, currentSkillHash, evidenceResult }));
-  }
+  const skills = await collectSkillOutcomes({
+    skillIds,
+    skillFiles,
+    currentHash: (filePath) => hashSkillFile(rootDir, filePath),
+    findEvidence: (skillId, sourcePath, currentSkillHash) => findTrainingEvidence(rootDir, skillId, sourcePath, currentSkillHash, base),
+    describeBlocked: ({ skillId, currentSkillHash, evidenceResult }) => describeBlockedSkill({ skillId, base, currentSkillHash, evidenceResult }),
+  });
   const blocked = skills.filter((skill) => skill.status !== 'verified');
   return {
     schemaVersion: 1,
@@ -438,7 +433,7 @@ function renderSkillTrainingGateText(report) {
   const lines = [`AIOS skill training gate: ${report.status}`];
   for (const skill of report.skills) {
     const detail = skill.status === 'verified'
-      ? ''
+      ? (skill.supersededBy ? ` (${skill.code}: verified through ${skill.supersededBy})` : '')
       : `${skill.reasonKind ? ` (${skill.reasonKind}: ${skill.reason})` : (skill.reason ? ` (${skill.reason})` : '')}${skill.remedy ? ` remedy: ${skill.remedy}` : ''}`;
     lines.push(`- ${skill.skillId}: ${skill.status}${detail}`);
   }

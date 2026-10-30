@@ -20,12 +20,20 @@ export function normalizeInstallMode(installMode = 'copy') {
   return value;
 }
 
+// Explicit compatibility names for renamed catalog skills; no text/intent inference.
+export const SKILL_NAME_ALIASES = Object.freeze({
+  'aios-long-running-harness': 'aios-harness',
+});
+
 // 纯函数：规整用户选择的技能列表，去空值并保持顺序去重。
 export function normalizeSelectedSkills(selectedSkills = []) {
-  if (Array.isArray(selectedSkills)) {
-    return [...new Set(selectedSkills.map((item) => String(item || '').trim()).filter(Boolean))];
-  }
-  return [...new Set(String(selectedSkills || '').split(',').map((item) => item.trim()).filter(Boolean))];
+  const values = Array.isArray(selectedSkills)
+    ? selectedSkills
+    : String(selectedSkills || '').split(',');
+  return [...new Set(values
+    .map((item) => String(item || '').trim())
+    .filter(Boolean)
+    .map((name) => Object.hasOwn(SKILL_NAME_ALIASES, name) ? SKILL_NAME_ALIASES[name] : name))];
 }
 
 export function resolveHomeMap(homeMap = {}, env = process.env) {

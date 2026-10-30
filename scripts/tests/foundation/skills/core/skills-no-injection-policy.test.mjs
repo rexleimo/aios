@@ -13,7 +13,7 @@ async function readSkill(relativePath) {
 }
 
 const REX_ONLY_AGENT_SKILLS = Object.freeze([
-  'aios-long-running-harness',
+  'aios-harness',
   'aios-project-system',
   'aios-workflow-router',
   'harness-init-runner',
@@ -35,7 +35,7 @@ test('contextdb-autopilot documents pull-based continuity without prompt injecti
 });
 
 test('long-running harness documents ContextDB as storage rather than prompt replay', async () => {
-  const skill = await readSkill('skill-sources/aios-long-running-harness/SKILL.md');
+  const skill = await readSkill('skill-sources/aios-harness/SKILL.md');
 
   assert.match(skill, /## Context Boundary/);
   assert.match(skill, /ContextDB as storage and evidence, not as prompt replay/);
@@ -46,7 +46,7 @@ test('long-running harness documents ContextDB as storage rather than prompt rep
 });
 
 test('long-running harness follows rex-native Commands instead of a default external workflow chain', async () => {
-  const skill = await readSkill('skill-sources/aios-long-running-harness/SKILL.md');
+  const skill = await readSkill('skill-sources/aios-harness/SKILL.md');
   const standalone = await readSkill('skill-sources/harness-init-runner/SKILL.md');
 
   assert.match(skill, /execute only the Provider selected by the current rex Command/);

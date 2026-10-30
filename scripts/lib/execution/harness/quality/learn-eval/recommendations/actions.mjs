@@ -63,12 +63,12 @@ export const HINDSIGHT_DRAFT_SKILL_PATCH_CANDIDATES = {
     patchHint: 'Reinforce single-JSON handoff contract validation before merge-gate execution.',
   },
   timeout: {
-    skillId: 'aios-long-running-harness',
+    skillId: 'aios-harness',
     scope: 'timeout-budget',
     patchHint: 'Add timeout budgets and split long work-items before retrying repeated blocked turns.',
   },
   'dependency-blocked': {
-    skillId: 'aios-long-running-harness',
+    skillId: 'aios-harness',
     scope: 'dependency-gating',
     patchHint: 'Add dependency completion checks before retry-blocked resume workflows.',
   },

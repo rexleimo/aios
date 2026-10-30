@@ -203,7 +203,7 @@ Classify substantive work before selecting process controls. Do not create a pla
 1. `direct`: answer or inspect without persistent planning.
 2. `guarded`: make a small, clear local change behind `pre-edit-safety-gate` and focused verification.
 3. `planned`: persist one explicit work item, then execute only the Provider selected by the current rex Command.
-4. Use `aios-long-running-harness` only for a planned resumable objective. Dispatch parallel agents only for a planned item with independent domains; keep coupled changes sequential.
+4. Use `aios-harness` only for a planned resumable objective. Dispatch parallel agents only for a planned item with independent domains; keep coupled changes sequential.
 5. Before delivery, gather concrete verification evidence. For long tasks, announce the selected route in the first progress update.
 
 ## Ask-First 行为准则（需求对齐）
@@ -212,20 +212,21 @@ Classify substantive work before selecting process controls. Do not create a pla
 
 1. **查**：从环境查证（文件、代码、历史证据、已有 requirements decision）；
 2. **推**：从上下文推断（用户已做决定、仓库约束、领域惯例）；
-3. **猜**：采用合理默认值并明确标注"这是假设"；
+3. **定**：仅对低影响、可逆且不改变行为/验收的细节采用显式默认值；关键未知不靠猜测关闭；
 4. **问**：前三步都失败、且该问题会改变实现或验收方式时，主动停下来询问用户。
 
 **提问规则：**
 - 带假设提问：给出你的理解 + 选项 + 默认值（"我理解是 X，对吗？若不是，是 A 还是 B？"），用户可低成本确认；
 - 一次只问一个决策性问题，不批量轰炸；
 - 宁可多问一次，不可猜错方向——"停下来问"不是失败；
-- 用户不回答或回答"你决定"时，采用默认假设继续，永不卡住。
+- 用户明确说"你决定"时在授权范围内裁决；未回答不是批准。已有决定/授权直接引用，不重复确认。
 
-**澄清预算（防死循环）：**
-- 每次提问必须让状态前进（解决一个歧义或收敛到可开工）；
-- 累计 3 轮未收敛 → 停止询问，把未决项记录为**假设清单**（`assumptions-recorded`），解锁执行；
-- 假设清单随交付物一起交付，用户验收时可见；
-- 已确认的 requirements decision 后续直接引用，不重复询问。
+**决策闭合与可行性：**
+- 维护关键决定及其依赖，答案或事实变化后重新检查下游问题；一次一题只限制交互方式，不限制分析深度。
+- 开工前推演正常路径和关键失败路径，关键能力先查证，必要时做最小可逆探针并保留依据。
+- 每三轮可整理已决/未决/证据，不能因预算耗尽把关键未知转成假设并解锁实施。
+- 需求阶段仅在依赖闭合、关键未知已解决、可行性有依据且与已有目标/决定对齐时报告 ready；否则 blocked，并继续不依赖缺口的调查。
+- 低影响假设随交付物保留；Rex 的类型化 readiness 是唯一需求推进契约，宿主不另造判定。
 
 **前端 UI 专项：** 界面/风格方向不清晰时，先给出 1-2 个方向（风格/布局/交互）让用户选择确认，确认后才实现。
 
@@ -327,6 +328,15 @@ Without one of these, the policy returns its deterministic default (`guarded`
 for substantive changes, capability `plannedByDefault` for design/testing
 workflows) — that is the safe fallback, not an inference of your intent.
 
+## Requirements Readiness
+
+When running `/grill` or a Rex requirements Command, use the canonical
+`rex-requirements` decision-dependency and feasibility contract. A question budget
+or an assumptions record cannot close critical unknowns. Reuse accepted user
+instructions for alignment; ask only for unresolved decisions. A blocked
+requirements record stays in clarification. Direct/guarded work does not acquire
+a new global phase or an extra approval step.
+
 ## Rex Ownership and Safety
 
 - The current Rex Capability Command is the only authority that selects a
@@ -364,8 +374,9 @@ Load detailed instructions only when the current task needs them:
 - Structural code exploration and impact: `aios-codemap-ops`.
 - Browser safety and interaction: `skill-constraints` plus the available browser
   MCP surface.
-- Planned long-running or delegated work: `aios-long-running-harness`; use
-  `model-router` only when that route selects model dispatch.
+- Planned long-running or recurring work: `aios-harness` (workflow contracts,
+  decision briefs, and recovery); use `model-router` only when that route
+  selects model dispatch.
 - Local token-compression setup or diagnostics: `aios-interception-runtime`.
 
 Client overlays may describe only verified native capabilities. They must not

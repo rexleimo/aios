@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 2,
+  "kind": "aios.skill-training-certification.v2",
+  "skillId": "grill",
+  "sourcePath": "skill-sources/grill/SKILL.md",
+  "base": "HEAD",
+  "status": "accepted",
+  "nonRegression": true,
+  "acceptedSkillHash": "b36f0dfe97688774a2a31bb17aadbb8bb8b1c900d041e2a7e83d7e339ef824cd",
+  "baseline": {
+    "kind": "git",
+    "contentSha256": "9eb0a03461da0c7dc1de7aa6834757fbb3bdf626cbca8eac2123631f87eb7f66"
+  },
+  "candidate": {
+    "contentSha256": "b36f0dfe97688774a2a31bb17aadbb8bb8b1c900d041e2a7e83d7e339ef824cd"
+  },
+  "metrics": {
+    "baseline": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    },
+    "candidate": {
+      "taskCount": 3,
+      "trainTaskCount": 2,
+      "validationTaskCount": 1,
+      "trainHard": 1,
+      "validationHard": 1,
+      "overallHard": 1
+    }
+  },
+  "artifacts": {
+    "tasks": "tasks.json",
+    "baselineSkill": "baseline-skill.md",
+    "baselineRaw": "baseline.raw.json",
+    "baselineScored": "baseline.scored.json",
+    "candidateRaw": "candidate.raw.json",
+    "candidateScored": "candidate.scored.json"
+  },
+  "generatedAt": "2026-10-30T11:30:41.322Z"
+}

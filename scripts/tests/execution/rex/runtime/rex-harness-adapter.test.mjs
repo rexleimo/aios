@@ -207,6 +207,30 @@ test('AIOS adapter advances the rex-owned workflow runtime with rex-native Provi
   assert.equal(advanced.workflow.activationHistory.length, 1);
 });
 
+test('AIOS adapter cannot promote a requirements record with unresolved critical decisions', () => {
+  const started = startAiosSoftwareWorkflow({
+    workflowActivationId: 'workflow-aios-readiness', workItemKey: 'readiness',
+    request: { explicitIntent: 'grill', message: 'Clarify checkout before implementing' },
+  });
+  const decision = structuredClone(REQUIREMENTS_DECISION_FIXTURE);
+  decision.readiness.status = 'blocked';
+  decision.readiness.decisions[0].status = 'open';
+  const evidence = [
+    { kind: 'assumptions-recorded', refs: ['artifact:defaults'] },
+    { kind: 'first-slice-identified', refs: ['artifact:slice'] },
+    { kind: 'requirements-decision-recorded', refs: [decision.decisionRef] },
+  ];
+  const blocked = advanceAiosSoftwareWorkflow(started, evidence, { requirementsDecision: decision });
+  assert.equal(blocked.outcome, 'blocked');
+  assert.equal(blocked.blockedReason, 'requirements-not-ready');
+  assert.equal(blocked.workflow.currentCommand.provider.id, 'rex-requirements');
+  assert.equal(blocked.workflow.activationHistory.length, 0);
+  const ready = advanceAiosSoftwareWorkflow(blocked.workflow, evidence, {
+    requirementsDecision: REQUIREMENTS_DECISION_FIXTURE,
+  });
+  assert.equal(ready.workflow.currentCommand.provider.id, 'rex-test-design');
+});
+
 test('AIOS adapter preserves Rex-owned blocked workflow semantics', () => {
   // 北极星原则：行为变更由显式 observation 声明，不再由消息文本猜。
   const request = {

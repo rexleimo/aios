@@ -85,6 +85,15 @@ Without one of these, the policy returns its deterministic default (`guarded`
 for substantive changes, capability `plannedByDefault` for design/testing
 workflows) — that is the safe fallback, not an inference of your intent.
 
+## Requirements Readiness
+
+When running `/grill` or a Rex requirements Command, use the canonical
+`rex-requirements` decision-dependency and feasibility contract. A question budget
+or an assumptions record cannot close critical unknowns. Reuse accepted user
+instructions for alignment; ask only for unresolved decisions. A blocked
+requirements record stays in clarification. Direct/guarded work does not acquire
+a new global phase or an extra approval step.
+
 ## Rex Ownership and Safety
 
 - The current Rex Capability Command is the only authority that selects a
@@ -122,8 +131,9 @@ Load detailed instructions only when the current task needs them:
 - Structural code exploration and impact: `aios-codemap-ops`.
 - Browser safety and interaction: `skill-constraints` plus the available browser
   MCP surface.
-- Planned long-running or delegated work: `aios-long-running-harness`; use
-  `model-router` only when that route selects model dispatch.
+- Planned long-running or recurring work: `aios-harness` (workflow contracts,
+  decision briefs, and recovery); use `model-router` only when that route
+  selects model dispatch.
 - Local token-compression setup or diagnostics: `aios-interception-runtime`.
 
 Client overlays may describe only verified native capabilities. They must not

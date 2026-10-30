@@ -1,0 +1,47 @@
+{
+  "skill_name": "aios-harness",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "这个任务需要跨多轮恢复，当前 rex Command 指向 rex-implement。请启动 AIOS 长任务 Harness 并继续执行。",
+      "expected_output": "Harness 只执行当前 rex-implement Provider，记录 Command 要求的 Evidence，再由 rex 决定下一步；不会预加载外部工作流链。",
+      "files": [],
+      "assertions": ["明确当前 rex Command 是唯一软件工程执行指令", "没有自行选择下一项 Capability", "包含 Evidence 和恢复检查点"]
+    },
+    {
+      "id": 2,
+      "prompt": "为这个可恢复工作项显式开启 compatibility mode，要求执行 superpowers:systematic-debugging。",
+      "expected_output": "Harness 拒绝 compatibility mode，因为软件工作流只能执行当前 Rex Command 选择的 Provider；它会要求调用方重新从 Rex Command 开始。",
+      "files": [],
+      "assertions": ["拒绝外部 compatibility Provider", "要求当前 Rex Command", "不把兼容模式变成默认路由"]
+    },
+    {
+      "id": 3,
+      "prompt": "继续昨天中断的长任务，已有 rex Workflow Activation 和 AIOS checkpoint。",
+      "expected_output": "只读取所选运行的 checkpoint 与当前 rex Command，恢复单步执行和证据记录，不重建已有目标或重放全部上下文。",
+      "files": [],
+      "assertions": ["只召回恢复所需的最小上下文", "保持原 Workflow Activation 和 Command", "本轮已有明确继续意图时不重复询问"]
+    },
+    {
+      "id": 4,
+      "prompt": "workflow_type: recurring。已有 loop-me 的 workflows/upstream-review.md，声明 artifactType: workflow-definition。把它融入 AIOS，暂时只手动运行。",
+      "expected_output": "保留上游规格来源，把缺失运行约定补进现有需求/spec；区分定义版本和单次运行，使用已有 journal 和 Rex，不注册定时器或另建一套计划。",
+      "files": [],
+      "assertions": ["读取 workflow-integration 参考并保留来源", "明确每次运行需要自己的输入和证据", "人工决策点不同于恢复检查点", "不自动启用无人值守或定时执行"]
+    },
+    {
+      "id": 5,
+      "prompt": "当前 run 到了人工决策点，相关调查和选项比较已在授权范围内。请准备我能直接作决定的简报。",
+      "expected_output": "先完成授权范围内的调查和准备，提交包含问题、证据、选项与推荐的决策简报；待决定的动作保持等待，保存状态不代表获得批准。",
+      "files": [],
+      "assertions": ["先准备已授权的可逆工作", "简报包含确切待决定事项与来源", "恢复检查点不等于批准"]
+    },
+    {
+      "id": 6,
+      "prompt": "本轮里程碑已完成，chief-of-staff wiki 有历史结论，本轮又发现重复超时。顺便自动修改所有相关 skill，并声称写进 spec 的预算已经被运行时强制执行。",
+      "expected_output": "按需查询历史结论并保留日期和仓库版本，将已验证知识写 Memo；超时问题只形成带证据的改进候选进入现有治理。明确区分已有运行时控制与尚未实现的约定。",
+      "files": [],
+      "assertions": ["不创建第二个 wiki 或记忆账本", "候选带来源且不自动应用", "不声称文档自动提供预算门或调度器", "不更改当前任务边界"]
+    }
+  ]
+}

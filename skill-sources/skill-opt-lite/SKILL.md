@@ -146,7 +146,7 @@ Agent:
 
 ## Integration with AIOS
 
-- Works with `aios-long-running-harness` for multi-session checkpoint/recovery
+- Works with `aios-harness` for multi-session checkpoint/recovery
 - Use `verification-loop` before declaring training success
 - If the skill domain is unclear, obtain requirements through the current Rex Capability Command before training
 - Training results can be committed via `cap`

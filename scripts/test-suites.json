@@ -173,6 +173,7 @@
       "scripts/tests/execution/harness/solo/hook-stall-guard.test.mjs",
       "scripts/tests/execution/harness/solo/hook-stall-loop.test.mjs",
       "scripts/tests/clients/client-platform/help-surface-renders.test.mjs",
+      "scripts/tests/foundation/skills/install/harness-rename.test.mjs",
       "scripts/tests/foundation/skills/install/snapshot-line-endings.test.mjs",
       "scripts/tests/foundation/skills/governance/install-policy.test.mjs",
       "scripts/tests/foundation/skills/governance/legacy-skill-prune-cli.test.mjs",

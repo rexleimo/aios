@@ -18,6 +18,7 @@ import {
 } from './install-targets.mjs';
 import { normalizeInstallMode, normalizeScope, resolveHomeMap } from '../normalizers.mjs';
 import { assertProjectScopeAllowed } from '../safety.mjs';
+import { archiveRenamedSkillInstalls } from './renamed-installs.mjs';
 
 export async function installContextDbSkills({
   rootDir,
@@ -132,6 +133,12 @@ export async function installContextDbSkills({
       } finally {
         materialized.cleanup();
       }
+    }
+
+    for (const entry of entries) {
+      archiveRenamedSkillInstalls({
+        rootDir, targetRoot, entry, clientName, scope: normalizedScope, io,
+      });
     }
 
     io.log(`[done] ${clientName} skills scope=${normalizedScope} mode=${normalizedInstallMode} -> installed=${installed} reused=${reused} replaced=${replaced} skipped=${skipped}`);

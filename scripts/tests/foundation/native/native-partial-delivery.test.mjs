@@ -27,7 +27,7 @@ const PARTIAL_DISPOSITIONS = Object.freeze({
   'core/core-instructions.md': 'composed',
   'core/contextdb.md': 'documentation-only: context 拉取制，投影不注入会话历史；见 AGENTS.md 的 pull-based context 约定',
   'core/codemap.md': 'documentation-only: codemap 工具面由 aios-codemap-ops skill 与 AGENTS.md 的 bounded checkpoint 段承载',
-  'core/harness.md': 'documentation-only: long-running harness 走 aios-long-running-harness skill 按需加载',
+  'core/harness.md': 'documentation-only: long-running harness 走 aios-harness skill 按需加载',
   'clients/agent-routing.md': 'documentation-only: subagent 分派细则的 live 面是角色卡契约 + Dispatch Brief，见下方一致性断言',
   'clients/browser-mcp.md': 'documentation-only: 浏览器约束走 skill-constraints；此 partial 的唯一引用函数无调用者',
   'clients/client-capabilities.md': 'documentation-only: 能力门事实来自 config/host-capabilities.json + aios status，不靠散文复述',

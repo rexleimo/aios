@@ -460,7 +460,7 @@
       },
       {
         "path": "scripts/lib/tooling/skills/training/training-gate.mjs",
-        "count": 456
+        "count": 451
       },
       {
         "path": "scripts/tests/clients/client-platform/client-registry.test.mjs",

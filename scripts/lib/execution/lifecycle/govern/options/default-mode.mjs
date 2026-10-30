@@ -13,7 +13,7 @@ const DEFAULT_MODE_PRESETS = {
   },
   'harness-runner': {
     label: 'Harness Solo Runner',
-    skills: ['aios-long-running-harness', 'harness-init-runner'],
+    skills: ['aios-harness', 'harness-init-runner'],
     systemPromptAdditions: [
       'You are running inside the AIOS solo harness.',
       'Record progress with aios memo add after each significant change.',
