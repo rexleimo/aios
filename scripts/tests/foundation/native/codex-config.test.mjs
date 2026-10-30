@@ -155,3 +155,92 @@ test('syncCodexHomeConfig: 沙箱到沙箱（两边都易失）照旧放行', as
   const written = files.get(path.join(sandboxHome, '.codex', 'config.toml'));
   assert.ok(written && written.includes(volatileRoot), '沙箱内写沙箱路径是预期行为');
 });
+
+test('stripManagedTables: 解码键后剥离，不让同一路径以两种拼写并存', () => {
+  const winRoot = path.resolve('C:/Users/Administrator/.rexcil/aios');
+  // 真实 codex 写法：basic string 里反斜杠要转义，所以文件字节是两个反斜杠。
+  const escapedRoot = String.raw`"C:\\Users\\Administrator\\.rexcil\\aios"`;
+  const escapedOther = String.raw`"c:\\users\\administrator\\other"`;
+  const raw = [
+    'model = "gpt-5"',
+    '',
+    `# codex 自己写的：[projects.${escapedRoot}]`,
+    'trust_level = "trusted"',
+    '',
+    '# 无关项目必须保留（不是同一个解码后的键）',
+    `[projects.${escapedOther}]`,
+    'trust_level = "trusted"',
+    '',
+    '# 字面量式同一路径也要剥离',
+    `[projects.'${winRoot}']`,
+    'trust_level = "trusted"',
+    '',
+    '# 解不开的键（非法转义）一律保留：宁可不剔，不能猜着删别人的数据',
+    String.raw`[projects."bad\escape"]`,
+    'trust_level = "trusted"',
+    '',
+    '[mcp_servers.user-owned]',
+    'command = "keep-me"',
+  ].join('\n');
+
+  const stripped = stripManagedTables(raw, { rootDir: winRoot });
+
+  const projectHeaders = stripped.split('\n').filter((line) => /^\[projects\./.test(line));
+  assert.deepEqual(projectHeaders, [
+    `[projects.${escapedOther}]`,
+    String.raw`[projects."bad\escape"]`,
+  ]);
+  assert.equal(
+    projectHeaders.some((line) => line.includes('rexcil')),
+    false,
+    'AIOS root 的两种拼写都得被剔掉'
+  );
+  assert.match(stripped, /command = "keep-me"/);
+  assert.match(stripped, /model = "gpt-5"/);
+});
+
+test('syncCodexHomeConfig: 用户文件已有转义形式的同键表时不产生重复键', async () => {
+  const home = await mkdtemp(path.join(os.tmpdir(), 'aios-codex-dup-'));
+  const root = path.resolve('C:/Users/Administrator/.rexcil/aios');
+  const target = configPath(home);
+  const { impl, files } = memoryFs({
+    [target]: [
+      'model = "gpt-5"',
+      '',
+      String.raw`[projects."C:\\Users\\Administrator\\.rexcil\\aios"]`,
+      'trust_level = "trusted"',
+      '',
+    ].join('\n'),
+  });
+
+  await syncCodexHomeConfig({ rootDir: root, env: { CODEX_HOME: home }, fsImpl: impl });
+  const text = files.get(target);
+
+  const headers = text.split('\n').filter((line) => /^\[projects\./.test(line));
+  assert.equal(headers.length, 1, `trust 表只能有一份，实际：${JSON.stringify(headers)}`);
+  assert.match(headers[0], /rexcil/, '留下的必须是 AIOS root 那一份');
+  assert.match(text, /model = "gpt-5"/, '用户自有内容不动');
+});
+
+test('stripManagedTables: 无标记遗留表只吞到自己的表头边界，人类后续表必须保留', () => {
+  const root = path.resolve('C:/Users/Someone/.rexcil/aios');
+  const raw = [
+    'model = "gpt-5"',
+    '',
+    `[projects.'${root}']`,
+    'trust_level = "trusted"',
+    '',
+    '# 下一个表头就是边界：以下是人类自己的表',
+    '[mcp_servers.personal]',
+    'command = "keep-me"',
+    '',
+    '[features]',
+    'hooks = true',
+  ].join('\n');
+
+  const stripped = stripManagedTables(raw, { rootDir: root });
+  assert.match(stripped, /model = "gpt-5"/);
+  assert.match(stripped, /command = "keep-me"/);
+  assert.match(stripped, /hooks = true/);
+  assert.equal(stripped.includes('trust_level'), false, 'AIOS 拥有的那一段要被剔掉');
+});

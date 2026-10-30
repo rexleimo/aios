@@ -107,35 +107,73 @@ export function buildManagedCodexConfig({ rootDir }) {
 }
 
 /* 中文注释：按表头剥离 AIOS 拥有的段（含历史手工写入、无标记的版本），避免重复表头。
- * 前置假设：输入是合法 TOML（codex 自己也要求这一点，非法文件它同样无法加载）；
- * 对畸形文件（表头无闭合）会吞到下一个表头为止，属可接受退化。 */
+ * 前置假设：输入是合法 TOML（codex 自己也要求这一点，非法文件它同样无法加载）。
+ * 两种剥离态必须分开：
+ * - 标记区（begin→end）：整段都是 AIOS 的，剔到 end 为止；
+ * - 无标记遗留表：它只“拥有自己的表体”，到下一个表头就必须停——否则后面的人类配置会被误删。
+ *   （旧实现用一个布尔位贯穿两者，遗留表之后的内容会一直吞到 MANAGED_END，实测为数据丢失。） */
 export function stripManagedTables(raw, { rootDir }) {
   const root = path.resolve(rootDir);
-  const tableNames = [
-    `mcp_servers.aios-memory`,
-    `mcp_servers.aios-shell`,
-    `mcp_servers.aios-auth-tools`,
-    `mcp_servers.mcp-browser-use`,
-    `mcp_servers.code-review-graph`,
-    `projects.${tomlLiteral(root)}`,
-    `projects."${root.replace(/"/gu, '\\"')}"`,
+  const managedMcpTables = [
+    'mcp_servers.aios-memory',
+    'mcp_servers.aios-shell',
+    'mcp_servers.aios-auth-tools',
+    'mcp_servers.mcp-browser-use',
+    'mcp_servers.code-review-graph',
   ];
   const lines = String(raw).split(/\r?\n/u);
   const out = [];
-  let skipping = false;
+  let inManagedBlock = false;
+  let inLegacyTable = false;
   for (const line of lines) {
-    if (line.startsWith(MANAGED_BEGIN)) { skipping = true; continue; }
-    if (line.startsWith(MANAGED_END)) { skipping = false; continue; }
-    if (skipping) continue;
+    if (line.startsWith(MANAGED_BEGIN)) { inManagedBlock = true; inLegacyTable = false; continue; }
+    if (line.startsWith(MANAGED_END)) { inManagedBlock = false; inLegacyTable = false; continue; }
+    if (inManagedBlock) continue;
+
     const header = /^\s*\[([^\]]+)\]\s*$/u.exec(line);
     if (header) {
       const name = header[1].trim();
-      const isManaged = tableNames.some((t) => name === t || name.startsWith(`${t}.`));
-      if (isManaged) { skipping = true; continue; }
+      const isManaged = managedMcpTables.some((t) => name === t || name.startsWith(`${t}.`))
+        || sameProjectTable(name, root);
+      if (isManaged) { inLegacyTable = true; continue; }
+      // 无关表头：遗留表到此为止，人类内容从这一行起继续保留。
+      inLegacyTable = false;
+      out.push(line);
+      continue;
     }
+    if (inLegacyTable) continue;
     out.push(line);
   }
   return out.join('\n').replace(/\n{3,}/gu, '\n\n').trimEnd();
+}
+
+/* 中文注释：`[projects.'C:\\path']` 与 `[projects."C:\\\\path"]` 指向同一个表。
+ * 旧逻辑按“文本拼写”枚举两种，漏了 codex 自己写的转义形式，于是托管段又追了一个
+ * 同键表 → config.toml 报 duplicate key → codex 整个客户端加载失败。
+ * 唯一安全做法是把键解码成路径再比。不做大小写折叠：大小写不同的键对 TOML 是两个键，
+ * 删它等于替人类做决定。 */
+function sameProjectTable(headerName, root) {
+  if (!headerName.startsWith('projects.')) return false;
+  const decoded = decodeTomlKey(headerName.slice('projects.'.length));
+  if (!decoded) return false;
+  return path.resolve(decoded) === root;
+}
+
+function decodeTomlKey(segment) {
+  const text = String(segment || '').trim();
+  if (text.length >= 2 && text.startsWith("'") && text.endsWith("'")) {
+    return text.slice(1, -1).replace(/''/gu, "'");
+  }
+  if (text.length >= 2 && text.startsWith('"') && text.endsWith('"')) {
+    // TOML basic string 的转义集与本模块写出的值（路径/参数）与 JSON 一致。
+    try {
+      const parsed = JSON.parse(text);
+      return typeof parsed === 'string' ? parsed : '';
+    } catch {
+      return '';
+    }
+  }
+  return text;
 }
 
 /**
