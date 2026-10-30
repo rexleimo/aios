@@ -1,6 +1,9 @@
 import {
   ORCHESTRATOR_AGENT_MARKER,
   ORCHESTRATOR_AGENT_MARKER_END,
+  renderHandoffContract,
+  renderSubagentContextContract,
+  stripOutputContractSection,
 } from './shared.mjs';
 
 import { normalizeText } from '../../../../../src/shared/normalize.mjs';
@@ -20,28 +23,15 @@ function escapeTomlString(value) {
 function buildDeveloperInstructions(rawAgent = {}) {
   const role = normalizeRoleId(rawAgent.role) || 'unknown';
   const handoffTarget = normalizeText(rawAgent.handoffTarget || 'next-phase');
-  const prompt = normalizeText(rawAgent.systemPrompt) || 'You are a role-based subagent for AIOS orchestrations.';
+  const prompt = stripOutputContractSection(normalizeText(rawAgent.systemPrompt)) || 'You are a role-based subagent for AIOS orchestrations.';
   return [
     `Role: ${role}`,
     '',
     prompt,
     '',
-    'Output Contract',
-    'Output a single JSON object (no surrounding text) that conforms to `scripts/lib/tooling/specs/registry/agent-handoff.schema.json`.',
+    renderSubagentContextContract(),
     '',
-    'Required fields:',
-    '- schemaVersion',
-    '- status',
-    '- fromRole',
-    '- toRole',
-    '- taskTitle',
-    '- contextSummary',
-    '- findings',
-    '- filesTouched',
-    '- openQuestions',
-    '- recommendations',
-    '',
-    `Set \`fromRole=${role}\` and \`toRole=${handoffTarget}\`.`,
+    renderHandoffContract({ role, handoffTarget }),
   ].join('\n');
 }
 

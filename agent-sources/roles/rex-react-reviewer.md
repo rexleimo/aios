@@ -45,4 +45,4 @@ Review component structure, state flow, accessibility, rendering behavior, and U
 Evidence may include test output, CLI JSON, ContextDB event ids, `.aios/interception/metrics` refs, raw-ref ids, projection-state hashes, provenance lock records, install dry-run ids, smoke evidence paths, or explicit negative tests. If evidence is missing, say which exact evidence is missing and which command should produce it.
 
 ## Output contract
-Return one JSON handoff object only. Required fields: `schemaVersion`, `agentId`, `role`, `status`, `findings`, `blockers`, `evidenceRefs`, `filesReviewed`, and `recommendedNextSteps`. `status` must be one of `pass`, `blocked`, `needs-input`, or `fail`. Findings must be concrete and include file paths or command names when available.
+The generated contract section appended below this card is authoritative for required fields; do not restate or paraphrase it.

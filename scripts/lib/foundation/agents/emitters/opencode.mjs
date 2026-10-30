@@ -1,6 +1,9 @@
 import {
   ORCHESTRATOR_AGENT_MARKER,
   ORCHESTRATOR_AGENT_MARKER_END,
+  renderHandoffContract,
+  renderSubagentContextContract,
+  stripOutputContractSection,
 } from './shared.mjs';
 
 // 中文注释：opencode 子 agent 落点 `.opencode/agents/<name>.md`（opencode 单复数目录都接受；
@@ -31,7 +34,7 @@ function escapeYamlString(value) {
 function buildManagedBody(rawAgent = {}) {
   const role = normalizeRoleId(rawAgent.role) || '(unknown)';
   const handoffTarget = normalizeText(rawAgent.handoffTarget) || 'next-phase';
-  const prompt = normalizeText(rawAgent.systemPrompt) || 'You are a role-based subagent for AIOS orchestrations.';
+  const prompt = stripOutputContractSection(normalizeText(rawAgent.systemPrompt)) || 'You are a role-based subagent for AIOS orchestrations.';
   return [
     ORCHESTRATOR_AGENT_MARKER,
     '',
@@ -39,22 +42,9 @@ function buildManagedBody(rawAgent = {}) {
     '',
     prompt,
     '',
-    'Output Contract',
-    'Output a single JSON object (no surrounding text) that conforms to `scripts/lib/tooling/specs/registry/agent-handoff.schema.json`.',
+    renderSubagentContextContract(),
     '',
-    'Required fields:',
-    '- schemaVersion',
-    '- status',
-    '- fromRole',
-    '- toRole',
-    '- taskTitle',
-    '- contextSummary',
-    '- findings',
-    '- filesTouched',
-    '- openQuestions',
-    '- recommendations',
-    '',
-    `Set \`fromRole=${role}\` and \`toRole=${handoffTarget}\`.`,
+    renderHandoffContract({ role, handoffTarget }),
     '',
     ORCHESTRATOR_AGENT_MARKER_END,
     '',

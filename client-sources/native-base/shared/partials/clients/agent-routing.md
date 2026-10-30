@@ -1,8 +1,24 @@
-<!-- 中文注释：subagent 分派细则段，仅对具备 agents 能力的客户端下发（codex/claude 安装了 repo-local agents）。 -->
+<!-- 中文注释：subagent 分派细则文本。⚠ 它不是投递机制（2026-10-30 行为级实测：跑真实投影 + 记录 loader 实际读了哪些文件）：
+shared/partials 下 10 个 partial 只有 `core/core-instructions.md` 会被 composeNativeMarkdown 读入，
+本文件以及 contextdb/codemap/harness/browser-mcp/client-capabilities/team-provider/model-router/token-discipline
+共 9 个从未进入任何模型可见面（`readSharedMarkdownParts` 零调用者）。仓库代码与已安装运行时结论一致。
+
+真正送达模型的两处（A 方案只认这两处）：
+1) worker 侧：emitters/shared.mjs 的 SUBAGENT_CONTEXT_CONTRACT_LINES，
+   实测 .codex/agents + .claude/agents 共 38/38 张卡命中；
+2) 派发载荷侧：foundation/agents/brief/render.mjs 的 `## Dispatch Brief`（隔离边界 +
+   “缺事实就 blocked”），由 subagent-runtime/context/prompts.mjs 注入真实 worker prompt。
+
+送达事实由 scripts/tests/foundation/native/native-partial-delivery.test.mjs 钉住（双向突变已验证会红）；
+本文件的文字必须与那两个 live 面一致，同一测试里逐条校。改这里不会改变任何客户端的行为。
+-->
 
 ## AIOS Subagent Dispatch
 
 - This client ships repo-local agent definitions; prefer them over ad-hoc roles.
+- Start every subagent with a fresh context window; never let it inherit this conversation.
+- When a host cannot honor that, treat the brief as the only isolation boundary. The per-client measurement lives in `config/host-capabilities.json` under `subagents.contextMode` (read it with `aios status`; do not restate verdicts here): where it says `fork`, keep from the parent conversation anything the child must not see, because a default spawn will carry it over.
+- Give a subagent a self-contained brief (objective, owned paths, refs). If it lacks a fact, it returns `blocked` naming the missing item instead of guessing or asking for the transcript.
 - Dispatch only one explicit `planned` work item at a time. Independent domains can run as parallel subagents; keep coupled or shared-state changes sequential.
 - Every dispatched worker runs only the Provider selected by the current Rex Capability Command.
 - Dispatch parallel workers only when the policy selects team work, then converge with a verification pass before merge. Do not create a replacement plan in each worker.

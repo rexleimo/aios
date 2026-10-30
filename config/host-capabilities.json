@@ -25,6 +25,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "codex": {
@@ -44,6 +50,13 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "surface": "host-tool",
+        "contextMode": "fork",
+        "measuredAt": "2026-10-30T03:45:50.336Z",
+        "evidenceRef": ".aios/agents/subagent-context/codex.json",
+        "reason": "child-reported-parent-nonce"
       }
     },
     "gemini": {
@@ -62,6 +75,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "opencode": {
@@ -80,6 +99,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "hermes": {
@@ -99,6 +124,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "grok": {
@@ -118,6 +149,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "workbuddy": {
@@ -137,6 +174,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "pi": {
@@ -157,6 +200,13 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "surface": "none",
+        "contextMode": "not-applicable",
+        "measuredAt": "2026-10-30T02:52:02.586Z",
+        "evidenceRef": ".aios/agents/subagent-context/pi.spawn.json",
+        "reason": "host-reports-no-subagent-tool"
       }
     },
     "cursor": {
@@ -229,6 +279,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     },
     "qoder": {
@@ -248,6 +304,12 @@
         "postReceiveRequired": true,
         "mode": "tight",
         "uncontrolledHostOutput": "policy-violation"
+      },
+      "subagents": {
+        "contextMode": "unknown",
+        "measuredAt": null,
+        "evidenceRef": null,
+        "reason": "not probed yet"
       }
     }
   }

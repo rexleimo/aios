@@ -213,3 +213,41 @@ test('readClientJsonSource parses every native-base hook JSON at the real root',
   const grokHooks = readClientJsonSource(process.cwd(), 'grok', path.join('hooks', 'aios-workflow.json'));
   assert.match(grokHooks.hooks.UserPromptSubmit[0].hooks[0].command, /aios\.mjs plan hook-user-prompt/u);
 });
+
+test('agent-routing partial pins fresh subagent context and self-contained briefs', () => {
+  const [section] = readNativePartials(process.cwd(), ['clients/agent-routing.md']);
+  assert.ok(section, 'agent-routing partial must exist');
+  assert.match(
+    section,
+    /Start every subagent with a fresh context window; never let it inherit this conversation\./u,
+    'agent-routing must forbid inheriting the parent conversation'
+  );
+  assert.match(
+    section,
+    /self-contained brief \(objective, owned paths, refs\)/u,
+    'agent-routing must require a self-contained brief'
+  );
+  assert.match(
+    section,
+    /returns `blocked` naming the missing item/u,
+    'agent-routing must route missing facts to blocked, not to guessing'
+  );
+  // 中文注释：“fresh context”不是所有宿主都能兑现的承诺（本仓库已实测到 fork）。
+  // 细则必须说清：兑现不了时以 brief 为唯一隔离边界，并且只指向事实的单一写者。
+  assert.match(
+    section,
+    /treat the brief as the only isolation boundary/u,
+    'agent-routing must name the fallback when the host cannot give a fresh window'
+  );
+  assert.match(
+    section,
+    /config\/host-capabilities\.json` under `subagents\.contextMode/u,
+    'agent-routing must point at the single owner of per-client verdicts'
+  );
+  assert.doesNotMatch(
+    // 中文注释：只查真正下发给模型的内容；`<!-- -->` 是给维护者的元数据，不进投影。
+    section.replace(/<!--[\s\S]*?-->/gu, ''),
+    /codex|claude|opencode/giu,
+    'agent-routing is shared across clients and must not hardcode per-client verdicts (those drift)'
+  );
+});

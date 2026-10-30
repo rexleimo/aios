@@ -74,6 +74,7 @@ const AGENTS_CLI = createSimpleCommandParser('agents', [
   { name: 'doctor', description: 'Run agents doctor checks', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run']] },
   { name: 'list', description: 'List agents', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format']] },
   { name: 'smoke', description: 'Run agents smoke test', options: [['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--strict', 'Strict check'], ['--dry-run', 'Dry run'], ['--live', 'Run managed live client probes'], ['--client <name>', 'Client used for live probes'], ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 60000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)']] },
+  { name: 'probe', description: 'Probe one client for subagent context freshness (fork vs fresh)', options: [['--client <name>', 'Client to probe (required)'], ['--json', 'JSON output'], ['--format <text|json>', 'Format'], ['--nonce <value>', 'Reuse a nonce instead of generating one'], ['--record-answer <path|text>', 'Operator mode: classify a pasted host answer instead of spawning'], ['--spawn', 'Re-measure even when the client declares no subagent surface (writes <client>.spawn.json; only fork/fresh evidence updates the declaration)'], ['--dry-run', 'Print the probe prompt and planned evidence path']] },
 ], [
   ['--json', 'Output as JSON'],
   ['--format <text|json>', 'Output format'],
@@ -81,6 +82,9 @@ const AGENTS_CLI = createSimpleCommandParser('agents', [
   ['--dry-run', 'Dry run'],
   ['--live', 'Run managed live client probes'],
   ['--client <name>', 'Client used for live probes'],
+  ['--nonce <value>', 'Reuse a nonce instead of generating one'],
+  ['--record-answer <path|text>', 'Operator mode: classify a pasted host answer instead of spawning'],
+  ['--spawn', 'Re-measure even when the client declares no subagent surface'],
   ['--timeout-ms <ms>', 'Per-agent live probe timeout (default 60000, or AIOS_AGENT_SMOKE_TIMEOUT_MS)'],
 ]);
 
@@ -171,8 +175,8 @@ function parseAgentsArgs(argv) {
     let format = flags.format || 'text';
     let json = flags.json === true || format === 'json';
     if (json) format = 'json';
-    if (!['doctor', 'list', 'smoke'].includes(subcommand)) {
-      throw new Error('agents requires subcommand: doctor, list, or smoke');
+    if (!['doctor', 'list', 'smoke', 'probe'].includes(subcommand)) {
+      throw new Error('agents requires subcommand: doctor, list, smoke, or probe');
     }
     if (!['text', 'json'].includes(format)) {
       throw new Error('--format must be one of: text, json');
@@ -189,6 +193,9 @@ function parseAgentsArgs(argv) {
         dryRun: flags.dryRun === true,
         live: flags.live === true,
         clientId: flags.client || '',
+        nonce: flags.nonce || '',
+        recordAnswer: flags.recordAnswer || '',
+        spawn: flags.spawn === true,
         timeoutMs: flags.timeoutMs ? Number.parseInt(String(flags.timeoutMs), 10) : undefined,
       },
     };

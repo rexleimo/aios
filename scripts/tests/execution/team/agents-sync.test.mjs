@@ -138,6 +138,33 @@ test('all client agent emitters preserve rich ECC role cards in generated output
   }
 });
 
+test('every generated agent carries exactly one handoff contract and the fresh-context contract', async () => {
+  const source = await canonicalAgent('reviewer');
+  const { SUBAGENT_CONTEXT_CONTRACT_LINES } = await import('../../../lib/foundation/agents/emitters/shared.mjs');
+  const emitters = [
+    ['claude', '../../../lib/foundation/agents/emitters/claude.mjs', 'renderClaudeAgent', extractMarkdownAgentBody],
+    ['codex', '../../../lib/foundation/agents/emitters/codex.mjs', 'renderCodexAgent', extractCodexDeveloperInstructions],
+    ['opencode', '../../../lib/foundation/agents/emitters/opencode.mjs', 'renderOpencodeAgent', extractMarkdownAgentBody],
+    ['grok', '../../../lib/foundation/agents/emitters/grok.mjs', 'renderGrokAgent', extractMarkdownAgentBody],
+  ];
+
+  for (const [client, modulePath, exportName, extractor] of emitters) {
+    const mod = await import(modulePath);
+    const body = extractor(mod[exportName](source).content);
+
+    const contracts = body.match(/Output Contract/gi) || [];
+    assert.equal(contracts.length, 1, `${client} agent must carry exactly one handoff contract, found ${contracts.length}`);
+
+    for (const line of SUBAGENT_CONTEXT_CONTRACT_LINES) {
+      assert.ok(body.includes(line), `${client} agent is missing fresh-context rule: ${line}`);
+    }
+
+    // 2026-10 之前 19 张角色卡各自带一份过期字段表（agentId/blockers/evidenceRefs），
+    // 与 enforced schema 冲突；这里钉住它不得回流。
+    assert.doesNotMatch(body, /evidenceRefs|filesReviewed|recommendedNextSteps/, `${client} agent leaked the legacy handoff contract`);
+  }
+});
+
 test('syncCanonicalAgents aborts before write on unmanaged conflict', async () => {
   const rootDir = await makeRootDir();
   await copyCanonicalSource(rootDir);

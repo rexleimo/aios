@@ -1,4 +1,6 @@
 import { buildModelRouterPromptSection } from '../../../../../tooling/model-router.mjs';
+import { buildDispatchBrief } from '../../../../../foundation/agents/brief/index.mjs';
+import { renderDispatchBriefMarkdown } from '../../../../../foundation/agents/brief/render.mjs';
 import { HANDOFF_SCHEMA_DISPLAY_PATH } from '../state/constants.mjs';
 import { resolveOwnedPathPrefixes } from './file-policy.mjs';
 import { normalizeText } from './text.mjs';
@@ -131,6 +133,26 @@ export function buildUserPrompt({ plan, job, phase, dependencyRuns, rexBinding =
     lines.push(contextDelivery);
     lines.push('');
   }
+
+  // 中文注释：brief 是“可空白开工”的单个载荷，渲染器唯一 owner 在 foundation/agents/brief。
+  // objective 取真实字段（phase.responsibility → taskTitle → jobId），不编造描述。
+  const upstreamRefs = (Array.isArray(job?.launchSpec?.workItemRefs)
+    ? job.launchSpec.workItemRefs
+    : [])
+    .map((item) => normalizeText(item))
+    .filter(Boolean)
+    .map((itemId) => ({ kind: 'handoff', path: itemId }));
+  const brief = buildDispatchBrief({
+    workItemId: normalizeText(job?.jobId),
+    objective: normalizeText(phase?.responsibility) || normalizeText(plan?.taskTitle) || `job ${normalizeText(job?.jobId) || 'unassigned'}`,
+    role: normalizeText(job?.role),
+    ownedPathPrefixes: resolveOwnedPathPrefixes(phase, job),
+    acceptance: Array.isArray(phase?.acceptance) ? phase.acceptance : [],
+    upstreamRefs,
+    outputSchema: HANDOFF_SCHEMA_DISPLAY_PATH,
+  });
+  lines.push(renderDispatchBriefMarkdown(brief));
+  lines.push('');
 
   lines.push('## Deliverable');
   lines.push('- Summarize concrete findings.');
