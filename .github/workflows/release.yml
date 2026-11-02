@@ -120,6 +120,25 @@ jobs:
         run: |
           bash scripts/package-release.sh --out dist/release
 
+      - name: Replace a previous publication of this version
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # A release is normally immutable: a version number that pointed at two
+          # different trees cannot be supported in a bug report. This step exists
+          # for the one case that is not a new version — a version shipped with
+          # its own deliverable unfinished, where shipping a higher patch number
+          # would leave two numbers for one broken-to-complete pair. It is only
+          # reachable by deliberately force-pushing a moved tag, and it prints
+          # what it replaced, so the replacement is visible in the log instead of
+          # happening silently.
+          if gh release view "${GITHUB_REF_NAME}" >/dev/null 2>&1; then
+            echo "replacing the existing release for ${GITHUB_REF_NAME}:"
+            gh release view "${GITHUB_REF_NAME}" --json tagName,publishedAt,assets \
+              --jq '"published at \(.publishedAt)", (.assets[] | "  asset: \(.name) \(.size)")'
+            gh release delete "${GITHUB_REF_NAME}" --yes
+          fi
+
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
