@@ -49,8 +49,14 @@ function fail(message) {
 
 function parseArgs(argv) {
   const [command, ...rest] = argv;
+  // `--help` in the first position is the help request, not a subcommand name.
+  // Treating it as a command printed an error line and exited 2 when the user
+  // asked how to use the tool, which is the one answer that must never look
+  // like a failure.
+  const wantsHelp = command === '--help' || command === '-h';
   const options = {
-    command,
+    command: wantsHelp ? null : command,
+    help: wantsHelp,
     root: process.cwd(),
     json: false,
     force: false,

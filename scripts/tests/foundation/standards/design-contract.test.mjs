@@ -365,3 +365,16 @@ test('the design contract has no 验证 section, because it has no command to ru
   assert.ok(!/^## 验证$/m.test(design));
   assert.ok(!REQUIRED_DESIGN_SECTIONS.some((entry) => entry.heading === '验证'));
 });
+
+test('--help in the first position is help, not an unknown command', () => {
+  const help = run(['--help']);
+  // A user asking how the tool works must not get an error line and exit 2: the
+  // one command that can never look like a failure is the one that explains the
+  // others.
+  assert.equal(help.code, 0);
+  assert.match(help.stdout, /usage:/);
+  assert.doesNotMatch(help.stderr, /unknown command/);
+  // A bare invocation is still a usage error, because guessing which subcommand
+  // the user meant is not this program's job.
+  assert.equal(run([]).code, 2);
+});
