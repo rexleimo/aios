@@ -7,6 +7,13 @@
 # problem. text=auto keeps git's own binary detection for non-text assets.
 skill-sources/** text=auto eol=lf
 
+# Vendored upstream material is verified by a recorded sha256, which is a claim about
+# bytes. Without a pin, core.autocrlf=true hashes CRLF on a Windows checkout while the
+# repository stores LF, so every vendored file reports DAMAGED/modified on Linux and the
+# gate is green only for the person who recorded the digests. Measured 2026-11-03: all 21
+# entries mismatched on the LF bytes.
+vendor/stageshow/** text=auto eol=lf
+
 # Drift guards compare generated specs against canonical sources byte-for-byte;
 # pin the working tree to LF on every platform so Windows checkouts do not
 # flunk guards that Linux CI passes.

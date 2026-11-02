@@ -7,88 +7,88 @@
   "note": "Verification cores and reference texts only. The React kit, the examples and every brand asset stay upstream: see notVendored.",
   "files": {
     "LICENSE": {
-      "sha256": "f948862c8d317b6b",
-      "bytes": 1090
+      "sha256": "f9420246652580af",
+      "bytes": 1069
     },
     "NOTICE.md": {
-      "sha256": "7e5ac7d2b8f98cf9",
-      "bytes": 1802
+      "sha256": "eb8eb167a987a8d9",
+      "bytes": 1776
     },
     "references/annotations.md": {
-      "sha256": "cb601bd2c3c8c5e5",
-      "bytes": 11311
+      "sha256": "1fb2e8bbda27a0e4",
+      "bytes": 11235
     },
     "references/backgrounds.md": {
-      "sha256": "b244f83e736cd1b2",
-      "bytes": 4756
+      "sha256": "b3b0775c2a5da5fc",
+      "bytes": 4726
     },
     "references/bento.md": {
-      "sha256": "1c9e3003f00f123d",
-      "bytes": 11027
+      "sha256": "c57f8206153d5935",
+      "bytes": 10964
     },
     "references/brands.md": {
-      "sha256": "03e8689396cc492d",
-      "bytes": 4051
+      "sha256": "6d2140be308f07ab",
+      "bytes": 4019
     },
     "references/choreography.md": {
-      "sha256": "9faadb30d1d497a2",
-      "bytes": 3510
+      "sha256": "084c09e6815a30c3",
+      "bytes": 3478
     },
     "references/craft.md": {
-      "sha256": "2468b286d56685a3",
-      "bytes": 17890
+      "sha256": "4251bc0e6d0c2080",
+      "bytes": 17732
     },
     "references/framing.md": {
-      "sha256": "66b1f6143b5a5113",
-      "bytes": 14098
+      "sha256": "7843aa673d50068c",
+      "bytes": 13992
     },
     "references/kit.md": {
-      "sha256": "8cd025c158ad2d12",
-      "bytes": 28247
+      "sha256": "6122536c2a7edf07",
+      "bytes": 28072
     },
     "references/looks.md": {
-      "sha256": "c41e842b606b9aaa",
-      "bytes": 6007
+      "sha256": "b740348560893e25",
+      "bytes": 5941
     },
     "references/motion.md": {
-      "sha256": "3c7bb33626f67b14",
-      "bytes": 21795
+      "sha256": "6ccf5899c7fd186c",
+      "bytes": 21625
     },
     "references/products.md": {
-      "sha256": "f71cbe0adb2ff2cb",
-      "bytes": 2122
+      "sha256": "fd8310397b7796a4",
+      "bytes": 2096
     },
     "references/rehearse.md": {
-      "sha256": "26c368473e96de3d",
-      "bytes": 12714
+      "sha256": "03644a4bcbd614d8",
+      "bytes": 12598
     },
     "references/review.md": {
-      "sha256": "f0190a95ca6db176",
-      "bytes": 3078
+      "sha256": "76bb8fd33cb77ebc",
+      "bytes": 3052
     },
     "references/teaching.md": {
-      "sha256": "38408d8bd42b8843",
-      "bytes": 13307
+      "sha256": "2c06ac6028176c9d",
+      "bytes": 13196
     },
     "references/verify.md": {
-      "sha256": "ee16ed9ac57e9473",
-      "bytes": 5137
+      "sha256": "597f0cb24abe6fda",
+      "bytes": 5054
     },
     "scripts/browser.mjs": {
-      "sha256": "b40521192a397294",
-      "bytes": 920
+      "sha256": "ffce55eb334cdfd6",
+      "bytes": 900
     },
     "scripts/class-clash-core.mjs": {
-      "sha256": "188056ac46cfd75f",
-      "bytes": 6563
+      "sha256": "2265a44c7ce07062",
+      "bytes": 6433
     },
     "scripts/jumps-core.mjs": {
-      "sha256": "09b9043552a8e910",
-      "bytes": 10933
+      "sha256": "ad2c06db75c97f62",
+      "bytes": 10742
     },
     "scripts/layout-core.mjs": {
-      "sha256": "fd601dbdf5d00107",
-      "bytes": 11819
+      "sha256": "6d9b60909276edd0",
+      "bytes": 11658
     }
   },
   "notVendored": [

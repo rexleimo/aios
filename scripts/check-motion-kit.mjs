@@ -42,7 +42,16 @@ function parseArgs(argv) {
 }
 
 function hashOf(file) {
-  return crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 16);
+  // Hashed over LF-normalized content, because the claim is "this is upstream's
+  // file", not "these are the bytes on your filesystem". A raw digest made the
+  // verdict platform-dependent: digests recorded on a Windows checkout (CRLF)
+  // reported every vendored file as DAMAGED on Linux (LF), so the gate was green
+  // only for whoever wrote the manifest. Measured 2026-11-03: all 21 entries.
+  // `.gitattributes` pins the checkout to LF too; this keeps the verdict stable
+  // even when a local core.autocrlf rewrites the tree.
+  const normalized = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const bytes = Buffer.from(normalized, 'utf8');
+  return { digest: crypto.createHash('sha256').update(bytes).digest('hex').slice(0, 16), size: bytes.length };
 }
 
 // Every file under the vendor directory, relative and slash-normalized, so the
@@ -68,8 +77,17 @@ function compare(declared, actual, dir) {
       missing.push(relative);
       continue;
     }
-    const digest = hashOf(path.join(dir, relative));
-    if (digest !== entry.sha256) modified.push({ path: relative, expected: entry.sha256, actual: digest });
+    const actualFile = path.join(dir, relative);
+    const { digest, size } = hashOf(actualFile);
+    if (digest !== entry.sha256) {
+      modified.push({ path: relative, expected: entry.sha256, actual: digest });
+      continue;
+    }
+    // `bytes` is only meaningful if it is checked; an unchecked field is a number
+    // that silently stops describing anything, which is how a manifest rots.
+    if (typeof entry.bytes === 'number' && entry.bytes !== size) {
+      modified.push({ path: relative, expected: `${entry.bytes} bytes`, actual: `${size} bytes` });
+    }
   }
   // The manifest itself is written by the vendoring step, so it is not in the
   // list of declared files even though it lives in the directory.

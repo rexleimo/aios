@@ -119,7 +119,41 @@ test('an unknown argument is a usage error, not a silent pass', () => {
   assert.match(result.stderr, /unknown argument/);
 });
 
+  // A recorded digest is a claim about content, not about the bytes a particular
+  // filesystem happens to hold. The first version hashed the raw file, so digests
+  // recorded on a Windows checkout (CRLF) reported every vendored file as DAMAGED
+  // on Linux (LF): green for the person who wrote the manifest, red for CI and for
+  // every Linux user. Both directions are pinned, because the obvious fix —
+  // ignoring size and line endings — would make the gate stop noticing edits.
+  test('line endings do not change the verdict', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-kit-crlf-'));
+    const target = path.join(root, 'vendor', 'stageshow');
+    fs.cpSync(VENDOR, target, { recursive: true });
+    const licence = path.join(target, 'LICENSE');
+    // CRLF is a checkout artifact, not an edit: the digest is computed over
+    // LF-normalized content so the verdict cannot depend on the filesystem.
+    const LF = String.fromCharCode(10);
+    const CRLF = String.fromCharCode(13, 10);
+    const crlf = fs.readFileSync(licence, 'utf8').split(CRLF).join(LF).split(LF).join(CRLF);
+    fs.writeFileSync(licence, crlf);
+    const result = runKit(['--root', root]);
+    assert.equal(result.code, 0, result.stderr);
+  });
+
+  test('a single edited character is still reported', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-kit-edit-'));
+    const target = path.join(root, 'vendor', 'stageshow');
+    fs.cpSync(VENDOR, target, { recursive: true });
+    const licence = path.join(target, 'LICENSE');
+    fs.appendFileSync(licence, ' ');
+    const result = runKit(['--root', root]);
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /DAMAGED/);
+    assert.match(result.stderr, /LICENSE/);
+  });
 });
+
+
 
 describe('frame gate', () => {
 
@@ -209,5 +243,4 @@ test('--page is required: one run names one surface', () => {
   assert.equal(result.code, 2);
   assert.match(result.stderr, /--page is required/);
 });
-
 });
