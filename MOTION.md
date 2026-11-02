@@ -123,7 +123,7 @@ node scripts/check-motion-kit.mjs --json   # 含 notVendored 清单
 
 | 你要做的事 | 用什么 | 在哪 |
 |---|---|---|
-| 在本仓库的 UI 面上改真实产品界面（`docs-site/`、`debug-hub/`、`genealogy-gui/`） | `DESIGN.md` + 本文件 + 自己的 CSS | 本仓库，已就位 |
+| 在本仓库的 UI 面上改真实产品界面（`docs-site/`、`packages/debug-hub/`、`scripts/lib/memory/genealogy-gui/`） | `DESIGN.md` + 本文件 + 自己的 CSS | 本仓库，已就位 |
 | 需要动效的客观判据（垂直节奏、取景、编排、接缝） | `vendor/stageshow/references/` | 本仓库，已就位 |
 | 给任意项目做**产品插图 / hero / 功能卡 / 光标演示**（React） | 上游 kit + 69 个 gold 范例 + film 工具链 | **上游**，`npx skills add benjitaylor/skills --skill stageshow` |
 

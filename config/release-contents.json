@@ -1,0 +1,38 @@
+{
+  "notShipped": [
+    {
+      "prefix": "docs/",
+      "why": "design and planning records for this repository. They explain why a rule exists; they are not needed to follow it."
+    },
+    {
+      "prefix": "docs-site/",
+      "why": "the published documentation site's own sources. A user reads the built site; the archive does not carry a second copy of it."
+    },
+    {
+      "prefix": "site/",
+      "why": "generated documentation output, rebuilt from docs-site by the pages workflow."
+    },
+    {
+      "prefix": "blog-site/",
+      "why": "the blog's own sources, published by a separate workflow."
+    },
+    {
+      "prefix": "video/",
+      "why": "Remotion project for promotional renders. Its output is a rendered file, not something the installer ships."
+    },
+    {
+      "prefix": "examples/",
+      "why": "upstream stageshow scenes, deliberately not vendored (see check-motion-kit.mjs). A contract naming them names the upstream repository, not this archive."
+    }
+  ],
+  "upstream": [
+    {
+      "prefix": "kit/",
+      "why": "a directory inside the upstream stageshow repository. The contract names it to say what is deliberately not here; it is not a path this archive could ever contain."
+    },
+    {
+      "prefix": "assets/app-icons.ts",
+      "why": "upstream file whose NOTICE.md places it outside the MIT grant. Named so the prohibition is concrete."
+    }
+  ]
+}

@@ -260,6 +260,7 @@
       "scripts/tests/foundation/standards/motion-gates.test.mjs",
       "scripts/tests/foundation/standards/design-contract.test.mjs",
       "scripts/tests/foundation/release/motion-material-discoverability.test.mjs",
+      "scripts/tests/foundation/release/release-contents.test.mjs",
       "scripts/tests/foundation/platform/process-identity.test.mjs",
       "scripts/tests/tooling/tools/doc-citations.test.mjs",
       "scripts/tests/tooling/tools/doctor-bootstrap-task.test.mjs",

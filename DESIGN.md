@@ -10,7 +10,7 @@
 
 | 任务 | 产物 | 用什么 |
 |---|---|---|
-| **本仓库的真实产品界面**（`docs-site/`、`debug-hub/`、`genealogy-gui/`） | 能跑、能维护的产品页 | 本文件的视觉语言 + `MOTION.md` + 本仓库自己的 CSS。**没有 React，不要写 kit 导入** |
+| **本仓库的真实产品界面**（`docs-site/`、`packages/debug-hub/`、`scripts/lib/memory/genealogy-gui/`） | 能跑、能维护的产品页 | 本文件的视觉语言 + `MOTION.md` + 本仓库自己的 CSS。**没有 React，不要写 kit 导入** |
 | **给宿主项目的产品插图**（营销 hero、功能卡、docs 配图、带光标的假窗口/手机演示） | 一张静帧或一段 10–16 秒的循环 | 上游 `stageshow` 技能：`npx skills add benjitaylor/skills --skill stageshow`。它有 kit、69 个 gold 范例和 film 工具链，**流程是「复制最接近的范例」而不是从零写 stage** |
 | **纯视觉规范**（配色/字体/间距的基线） | `DESIGN.md` 本身 | `awesome-design-md`，本文件的前身就是它的产物 |
 
