@@ -37,10 +37,17 @@ async function resolvePlaywright(root) {
   const tried = [];
   for (const candidate of candidates) {
     try {
-      const resolved = candidate.startsWith('/') || candidate.includes(':\\') ? candidate : candidate;
-      const mod = await import(pathToFileURL(path.join(resolved, 'index.js')).href).catch(() => import(candidate));
+      // Only an absolute directory is imported by path; a bare specifier has to
+      // stay a specifier so Node resolves it through node_modules. Passing a
+      // bare name through pathToFileURL is what produced the earlier
+      // ERR_UNSUPPORTED_ESM_URL_SCHEME in the extracted package.
+      const mod = path.isAbsolute(candidate)
+        ? await import(pathToFileURL(path.join(candidate, 'index.js')).href)
+        : await import(candidate);
+      const chromium = mod.chromium ?? mod.default?.chromium;
+      if (!chromium) throw new Error('module has no chromium export');
       tried.push(`${candidate}: ok`);
-      return { chromium: mod.chromium ?? mod.default?.chromium, tried };
+      return { chromium, tried };
     } catch (error) {
       tried.push(`${candidate}: ${error.code ?? error.message}`);
     }

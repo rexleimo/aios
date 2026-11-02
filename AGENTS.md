@@ -372,6 +372,10 @@ Load detailed instructions only when the current task needs them:
 - Context recall and memory lifecycle: `contextdb-autopilot` or
   `aios-offload-recall`.
 - Structural code exploration and impact: `aios-codemap-ops`.
+- Frontend or UI work: `frontend-design`, which reads the project's `DESIGN.md`
+  and `MOTION.md` before writing code and runs their gates before claiming the
+  UI is done. The motion material those contracts cite is answered by
+  `node scripts/check-motion-kit.mjs`, not assumed.
 - Browser safety and interaction: `skill-constraints` plus the available browser
   MCP surface.
 - Planned long-running or recurring work: `aios-harness` (workflow contracts,

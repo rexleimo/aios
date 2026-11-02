@@ -17,7 +17,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '../../../..');
 const SCRIPT = path.join(REPO, 'scripts', 'check-motion-frame.mjs');
-const FIXTURE_SNAP = 'scripts/tests/fixtures/motion-frame-snap.html';
+const FIXTURE_SNAP = 'scripts/lib/motion-contract/fixtures/frame-snap.html';
 const REAL_SURFACE = 'packages/debug-hub/src/ui.html';
 
 function run(args) {

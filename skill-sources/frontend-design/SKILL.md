@@ -26,6 +26,37 @@ Before writing code, look for and read these files at the project root, if they 
 
 A `DESIGN.md` you never read is drift, not a decision. Naming it in this skill's description does not mean the implementation honoured it.
 
+### If this project ships the AIOS motion material
+
+When `MOTION.md` exists, it names companion material. **Ask the command whether it is installed; never assume either way.**
+
+```bash
+node scripts/check-motion-kit.mjs        # exit 0 = present and unmodified
+node scripts/check-motion-kit.mjs --json # also lists what is deliberately absent
+```
+
+Three measurements decide how you build, and guessing any of them produces a plausible-looking page built on a false premise:
+
+| The command says | What you may use |
+|---|---|
+| `verified` | The reference texts in `vendor/stageshow/references/` (vertical rhythm, framing, choreography, loop seams, cursor causation) and the frame recorder `vendor/stageshow/scripts/jumps-core.mjs`. **Read the reference for the problem in front of you, not all 16.** They are the source of the rules `MOTION.md` states, with the reasoning intact. |
+| `ABSENT` / `DAMAGED` | Nothing from `vendor/`. Do not write code that imports it, and do not silently proceed as if you had design guidance — say the material is missing and what it costs. |
+
+**The kit components are not part of this material, and no command will install them.** The upstream `kit/` is React; projects that ship the reference texts here may be static CSS, Astro+Tailwind, or single-file HTML with no React at all. Before writing a component that assumes `Stage`, `Window`, `Phone` or any `kit/parts` export, check the project's dependency manifest. If React is not there, build the shape in the project's own CSS by following the reference text — that is the intended path, not a degraded one.
+
+### Before claiming the UI is done
+
+Run the gates `MOTION.md` states, and quote their output. In a project that ships them:
+
+```bash
+node scripts/check-motion-contract.mjs    # declaration-level
+node scripts/check-motion-frame.mjs --page <the page you changed>  # frame-level
+```
+
+The second one only means something if it measured elements: a `clean` line without a frame count is not evidence. If it exits 3 because no browser is available, report that the frame check was skipped — **a skipped frame check is not a passed frame check**, and saying otherwise is the specific failure this section exists to prevent.
+
+Anything that steps by design (typewriter text, digit rolling, cursor hops) must carry `data-snap` or `data-typing`, or the frame gate reports it as a jump. That is not a false positive to argue with; it is the contract's way of asking you to declare intent.
+
 ## Design Thinking
 
 Before coding, understand the context and commit to a BOLD aesthetic direction:

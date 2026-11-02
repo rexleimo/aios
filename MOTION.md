@@ -4,6 +4,20 @@
 
 裁决背景见 `docs/adr/0006-motion-contract-and-render-gate.md`。
 
+## 谁会读这份文件（驱动链）
+
+**规则写了没人读，等于没写。** 本文件不是靠自觉被遵守的，它有三个入口，缺一个就会断：
+
+| 环节 | 事实 | 谁负责 |
+|---|---|---|
+| 1. 装了什么 | `scripts/package-release.sh` 的 `release_paths` 显式列出 `MOTION.md`、`DESIGN.md`、`vendor`。这是一个**白名单**，不在其中的文件不会进产物 | 发布脚本 |
+| 2. 读到了吗 | `frontend-design` 技能的「Read the project's contracts first / If this project ships the AIOS motion material」一节，要求实现前先跑 `check-motion-kit.mjs`，再按结果决定能不能用 `vendor/` 里的规范正文 | 技能投影（9 个客户端） |
+| 3. 交得出证据吗 | `check-motion-contract.mjs`（声明级）+ `check-motion-frame.mjs`（帧级）+ `check-release-contents.mjs`（产物自洽） | 门禁命令 |
+
+**第 1 环曾经断过两次，都是同一个原因**：`release_paths` 是白名单。7.0.1 漏了 `MOTION.md`，下个版本漏了 `vendor/`——两次都是「文档用路径引用了产物里没有的东西」，两次都是靠手工下载产物才发现。现在 `check-release-contents.mjs` 专门判这一件事：`MOTION.md` / `DESIGN.md` 里用反引号写出的仓库路径，必须在产物里真实存在。它跑在产物上，不是在仓库里——仓库里每个路径都存在，所以在仓库里跑它永远绿。
+
+**第 3 环的诚实边界**：帧级门没有浏览器时 exit 3 并打印 SKIP。**SKIP 不是 PASS**，声称「帧级也验过了」是这套机制存在的理由之外最严重的违规。技能里写死了这一条。
+
 ## 适用范围
 
 **覆盖**：本仓库的真实 UI 面——`docs-site/`（mkdocs 源，`site/` 是生成物只读）、`rex-harness/website/`（Astro）、`packages/debug-hub/src/ui.html`、`scripts/lib/memory/genealogy-gui/index.html`。
@@ -145,7 +159,7 @@ node scripts/check-motion-frame.mjs --page <path-or-url> --selector <css> --json
 
 判据来自 Benji Taylor 的 `stageshow` skill（MIT，`github.com/benjitaylor/skills`，vendor 于 commit `8020574`）。**vendor 的是原文与验证内核，不是我的复述**：
 
-- `vendor/stageshow/references/` 16 篇规范正文（1270 行），原文保留，本文件只做减法；
+- `vendor/stageshow/references/` 16 篇规范正文（1270 行），原文保留，本文件只做减法。**具体问题时去读对应的那一篇，不要一次读 16 篇**：垂直节奏看 `craft.md`，取景与画框看 `framing.md`，时序与编排看 `choreography.md`，循环接缝看 `rehearse.md`，验收看 `verify.md`；
 - `vendor/stageshow/scripts/jumps-core.mjs` 帧记录 + snap/drift 检测（框架无关）；
 - `vendor/stageshow/scripts/layout-core.mjs`、`class-clash-core.mjs`、`browser.mjs`；
 - `vendor/stageshow/MANIFEST.json` 钉住每个文件的 sha256，`check-motion-kit.mjs` 用它对账。
@@ -155,6 +169,6 @@ node scripts/check-motion-frame.mjs --page <path-or-url> --selector <css> --json
 - **`kit/` 96 个文件**：40 个 tsx 依赖 React，本仓库没有任何面能加载；
 - **`examples/` 69 个场景**：是原则的插图，不是产品代码，且含 CC0 照片与非 MIT 第三方标识；
 - **`assets/app-icons.ts`**：他的 `NOTICE.md` 明确图标不在 MIT 内，禁止搬运；
-- **`scripts/film-checks.mjs` 1920 行 / 48 个检测器**：写在 kit 的 `.ss-*` DOM 约定上，等某个面真的采用 kit CSS 再接。
+- **上游的 `film-checks.mjs`（1920 行 / 48 个检测器）**：写在 kit 的 `.ss-*` DOM 约定上，等某个面真的采用 kit CSS 再接。文件名刻意不带路径，因为它不在本仓库里——写成路径会让读者去一个不存在的文件找它。
 
 保留下来的是他认为「模型做得到、但不知道自己该在乎」的部分：framing 与 motion 的时序协议。本文件把其中可判定的部分写成命令，因此比原文更窄，但**窄不等于可以靠自觉**。

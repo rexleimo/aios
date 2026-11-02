@@ -99,13 +99,18 @@ fi
 
 release_paths=(
   AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc
-  # 中文注释：根目录的契约文档也是产物的一部分。MOTION.md 是动效门的规范正文，
+  # 中文注释：根目录的契约文档是产物的一部分。MOTION.md 是动效门的规范正文，
   # 它的错误信息以「MOTION.md <章节>」作为 source 引用；漏发它，装好的用户会看到
   # 指向一个不存在的文件的违规说明，而且 motion-contract 测试会在解包产物里 ENOENT。
-  MOTION.md
+  MOTION.md DESIGN.md
   package.json package-lock.json
   README.md README-zh.md
   skills-lock.json
+  # 中文注释：vendor/ 是被 MOTION.md 用路径引用的规范正文与验证内核。7.0.1 已经因为
+  # 同一个 allowlist 漏发过 MOTION.md，这次是第二例；两者都是「文档引用了产物里没有的东西」。
+  # 漏发的后果不是缺一个文件，而是装好的用户拿到一个指向不存在的树的契约，
+  # 并且 check:motion:kit 在产物里报 ABSENT —— 用户会以为是自己的安装坏了。
+  vendor
   client-sources agent-sources skill-sources rex-harness
   config scripts mcp-server src packages/debug-hub
 )
