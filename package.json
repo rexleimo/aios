@@ -20,6 +20,8 @@
   "scripts": {
     "aios": "node scripts/aios.mjs",
     "check:site-sync": "node scripts/check-site-sync.mjs",
+    "check:motion": "node scripts/check-motion-contract.mjs",
+    "test:motion-contract": "node --test scripts/tests/foundation/standards/motion-contract.test.mjs",
     "test:check-site-sync": "node --test scripts/tests/tooling/tools/check-site-sync.test.mjs",
     "test:site-redesign": "node --test scripts/tests/foundation/site-content/site-redesign-assets.test.mjs scripts/tests/foundation/site-content/site-redesign-responsive.test.mjs",
     "perf:orchestrate-learn-eval:smoke": "node scripts/perf-orchestrate-learn-eval-smoke.mjs",

@@ -17,6 +17,15 @@ This skill guides creation of distinctive, production-grade frontend interfaces 
 
 The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
 
+## Read the project's contracts first
+
+Before writing code, look for and read these files at the project root, if they exist:
+
+- **`DESIGN.md`** — the visual language (palette, type, spacing, component shape). If it exists, follow it; do not substitute your own taste for it. If it does not exist and the user has no design direction, invoke `awesome-design-md` first.
+- **`MOTION.md`** — the motion contract (durations, curves, enter/exit order, loop seams, cursor causation, reduced-motion coverage). It is a separate owner from `DESIGN.md` on purpose: visual language and timing are judged differently. Anything that animates is in scope; follow it, and run its stated gate before claiming the UI is done.
+
+A `DESIGN.md` you never read is drift, not a decision. Naming it in this skill's description does not mean the implementation honoured it.
+
 ## Design Thinking
 
 Before coding, understand the context and commit to a BOLD aesthetic direction:

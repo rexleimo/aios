@@ -199,3 +199,29 @@
 
 **定义**：真正进入模型上下文的位置。本仓实测只有两处：① AIOS 生成的角色卡（`scripts/lib/foundation/agents/emitters/shared.mjs:22` 三条固定条款，实测 38/38 张卡命中）；② 每次派发注入的 `## Dispatch Brief`（`scripts/lib/execution/harness/team/subagent-runtime/context/prompts.mjs:145` 构造、`:154` 渲染）。`client-sources/native-base/shared/partials/` **不是**送达面：10 个 partial 里只有 `core/core-instructions.md` 真被 `composeNativeMarkdown()` 读进去，其余 9 个从未被任何 loader 读取。判据是行为（patch `fs.readFileSync` 记实读 + 在产物文本里查证段落标题落点），不是 grep 引用数；守护它的是 `scripts/tests/foundation/native/native-partial-delivery.test.mjs:26` 的显式 disposition 表。
 **为什么**：这次踩到的具体坑是「写了文件就以为送达了」——第一版用 basename 全库 grep 数引用，得出「7 个孤儿」，真数是 9 个从未被读；文档提到一次 ≠ 投递一次。附带代价更大：把能力相关细则写进多客户端共享的 `AGENTS.md` 会泄漏给没有 subagent 工具的客户端，所以「该投递什么」和「投到哪里」必须分开决定。
+
+## 动效契约（motion contract）
+
+### 动效契约与视觉契约分家
+
+**定义**：`MOTION.md` 管时间轴上的事实（时长、easing、进出场顺序、循环接缝、光标因果、`prefers-reduced-motion` 覆盖），`DESIGN.md` 只管视觉语言（配色、字体、间距、组件形态）。两者不互相顶替：`DESIGN.md` 现有 51 行标题为 "Documentation Interface Design Contract"、`Scope` 写死 `docs-site style refresh only`，它从来不是动效规范的 owner。
+
+**为什么**：两类判据的判定方式不同——配色只需读 CSS 变量，动效必须跑起来拍帧才知道（一帧全体淡出、4px 跳变、循环接缝都只在中间帧可见）。写进同一个文件后，改纹理要动动效章节、改动效要动纹理，且文件粒度预算（400 行软上限）会把两件事挤在一起。裁决见 `docs/adr/0006-motion-contract-and-render-gate.md`。
+
+### 渲染门（render gate）
+
+**定义**：必须启动页面并在真实浏览器里采样才能判定的门，与只读文本/路径的 `aios standards check` 相对。当前落点是宿主侧 `scripts/` 的显式命令；`rex-harness/src/standards/check.mjs` 的 4 条规则（`directoryEntries` / `fileLines` / `duplicateLines` / `reverseDependencies`）全部是文本级，引擎内实测零渲染能力（`rg browser|playwright|screenshot|visual rex-harness/src/standards/` 零命中）。
+
+**为什么**：`standards check` 的输入契约是 git worktree（取不到 tracked 列表就 SKIP），而渲染门需要起服务 + 浏览器，把它塞进内核会让「第三方装完 rex-harness 就能跑」这条公开面变脆。同理它暂不进 `pretest:scripts`：存量未处置就接门，等于把门静音（同 `duplicateLines` 593 个文件的处置教训）。
+
+### 演示层与产品层（demo layer vs product layer）
+
+**定义**：`stageshow` 这类 skill 产出的是「给别人看的仿制界面」（营销 hero、feature card、docs 插图、bento），允许用占位条代替真实文案、允许裁切出血；本仓库的真实 UI 面是 `docs-site/`（mkdocs 源，`site/` 为生成物）、`rex-harness/website/`（Astro）、`packages/debug-hub/src/ui.html`、`scripts/lib/memory/genealogy-gui/index.html`。
+
+**为什么**：把「占位条代替文字」「窗口跑出画框」这类演示层规则搬进产品页就是灾难，反之把产品页的可访问性/真实数据规则套进演示图也做不出好东西。两层共用动效判据，但**不共用简化规则**。
+
+### 渲染门的适用落点
+
+**定义**：`apps/desktop/` 只有 `dist/` 与 `node_modules/`、无源码，不能作为 UI 变更落点；用户口中的「客户端」在本仓语境指**技能投影到的各 coding client**（`skill-sources/` → `.agents/skills/` → 客户端技能根），不是 Electron 壳。
+
+**为什么**：落点搞错会让整条链（skill 投影、门禁接线、验证证据）全部指向一个改不了的地方；这一条是 `/grill` 明确纠正过的理解偏差，写下来防止下一个会话重犯。

@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "note": "MOTION.md 声明级判据的存量基线。只许收缩：新增违规即红灯，不是往这里追加一行。",
+  "entries": [
+    {
+      "path": "docs-site/assets/redesign/components.css",
+      "code": "motionWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "docs-site/assets/redesign/footer.css",
+      "code": "motionWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "docs-site/assets/redesign/pages.css",
+      "code": "motionWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "docs-site/assets/redesign/shell.css",
+      "code": "motionWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "packages/debug-hub/src/ui.html",
+      "code": "durationOverCeiling",
+      "count": 1
+    },
+    {
+      "path": "packages/debug-hub/src/ui.html",
+      "code": "infiniteWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/memory/genealogy-gui/index.html",
+      "code": "infiniteWithoutReducedMotion",
+      "count": 1
+    },
+    {
+      "path": "scripts/lib/memory/genealogy-gui/index.html",
+      "code": "transitionAll",
+      "count": 1
+    }
+  ]
+}

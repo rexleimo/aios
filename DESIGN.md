@@ -1,5 +1,8 @@
 # Documentation Interface Design Contract
 
+> 只管视觉语言（配色、字体、间距、组件形态）与 `docs-site` 这一个目标。
+> 时间轴上的事实（时长、曲线、进出场、循环接缝、光标、减少动效）在 [`MOTION.md`](MOTION.md)，两个 owner 分离是刻意的。
+
 ## Mode
 - `Restyle`: Keep information architecture and markdown content unchanged; update visual language only.
 - `Reference`: Google Docs official website/editor visual language (reviewed on 2026-04-18).
