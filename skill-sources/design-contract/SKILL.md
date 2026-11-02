@@ -108,6 +108,32 @@ is a measurement boundary, not a clean result.
   *this* project. If a template ever mentions a specific product, that is a bug
   in the template, not a suggestion to copy.
 
+## When the work needs the upstream material
+
+A contract tells you what the rules are. It does not tell you how to draw a
+window, a phone, a chart or a cursor demo — that material lives upstream and is
+installed separately. Do not conclude "there is no kit" from the fact that this
+installation ships only the criteria.
+
+The criteria ship with AIOS (`vendor/stageshow/references/`, 15 documents) and are
+verified by `node scripts/check-motion-kit.mjs`. The material — the React kit, 69
+gold examples, the filming toolchain — is installed by one command:
+
+```bash
+aios skill add benjitaylor/skills --skill stageshow --yes
+```
+
+It lands in `${AIOS_HOME:-$HOME/.aios}/skills/external/stageshow/`, projected into
+the global skills root of every client. Check for it there before assuming it is
+absent; if it is absent and the task needs it, install it rather than handing the
+user a URL.
+
+Two consequences worth stating, because they decide whether this path applies at
+all: the kit is React, and it is **copied into the host project** rather than
+imported from the installation. A static CSS or vanilla-HTML project follows the
+reference texts and builds the shape in its own CSS — that is the intended path
+for it, not a degraded one.
+
 ## Where the shared rules live
 
 `config/design-contract/UNIVERSAL.md` in the AIOS installation.

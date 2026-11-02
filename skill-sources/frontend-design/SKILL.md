@@ -44,13 +44,50 @@ Three measurements decide how you build, and guessing any of them produces a pla
 
 **The kit components are not part of this material.** The upstream `kit/` is React; projects that ship the reference texts here may be static CSS, Astro+Tailwind, or single-file HTML with no React at all. Before writing a component that assumes `Stage`, `Window`, `Phone` or any `kit/parts` export, check the project's dependency manifest. If React is not there, build the shape in the project's own CSS by following the reference text — that is the intended path, not a degraded one.
 
-**If the task is a product illustration rather than product UI** — a marketing hero, a feature card, a docs plate, a fake window or phone with a cursor demo — then this contract is the wrong tool for the whole job, and the upstream skill is the right one:
+**If the task is a product illustration rather than product UI** — a marketing hero,
+a feature card, a docs plate, a fake window or phone with a cursor demo — this
+contract is the wrong tool for the whole job and the upstream `stageshow` skill is
+the right one. It ships the React kit, 69 gold examples and the filming
+toolchain, and it is meant for the *host* project you are building, not for this
+repository's own surfaces.
 
-```sh
-npx skills add benjitaylor/skills --skill stageshow
+**Check whether it is installed before writing anything; do not ask the user to
+remember for you.**
+
+```bash
+ls "${AIOS_HOME:-$HOME/.aios}/skills/external/stageshow/SKILL.md" 2>/dev/null && echo INSTALLED || echo ABSENT
 ```
 
-It ships the React kit, 69 gold examples and the filming toolchain, and it is meant for the *host* project you are building, not for this repository's own surfaces. Its workflow is not optional and not obvious: pen the plan, map the look, pick the story, **copy the closest gold example rather than writing a Stage from scratch**, then choreograph, then film and pass `rehearse`. Do not improvise a stage from memory — the 69 examples are the quality bar.
+If it is `ABSENT`, install it — this is a normal setup step, not something to hand
+back to the user with a URL:
+
+```bash
+aios skill add benjitaylor/skills --skill stageshow --yes
+```
+
+`npx skills add benjitaylor/skills --skill stageshow` installs the same material
+if AIOS is not on `PATH`. Either way it lands in
+`${AIOS_HOME:-$HOME/.aios}/skills/external/stageshow/` and is projected into each
+client's global skills root.
+
+Then **read that skill's `SKILL.md` and follow it** — it is the owner of this
+workflow, not this file. What matters and is easy to get wrong:
+
+- **Copy the closest of the 69 gold examples; do not write a `Stage` from memory.**
+They are the quality bar, and improvising one from a description is how an
+illustration ends up looking like neither the example nor the product.
+- **`kit/` is copied into the host project**, then imported from `kit/index.ts`.
+React, `react-dom` and `lucide-react` (used by `Icon`, which `Field` and `Chip`
+need) become real dependencies of that project. If the host project is not React,
+this path does not apply — say so instead of forcing a React tree into it.
+- **It runs on itself.** The upstream workflow is pen the plan → map the look →
+pick the story → copy the example → choreograph → film until `rehearse` passes.
+A stage that was never filmed has not been verified.
+
+The reference texts in `vendor/stageshow/references/` are the *criteria* (vertical
+rhythm, framing, loop seams, cursor causation); the kit is the *material*. You
+need both, and they are installed differently: the criteria ship with AIOS, the
+material comes from the command above.
 
 ### Before claiming the UI is done
 

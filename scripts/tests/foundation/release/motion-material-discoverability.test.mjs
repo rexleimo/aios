@@ -98,7 +98,10 @@ test('the skill routes illustration work to upstream instead of leaving it unmen
   assert.match(skill, /npx skills add benjitaylor\/skills --skill stageshow/);
   assert.match(skill, /product illustration rather than product UI/i);
   // And the part that makes the upstream skill usable at all: copy an example.
-  assert.match(skill, /copy the closest gold example/i);
+  // The wording counts here - "the closest of the 69" is what tells an agent to
+  // pick among them, where a bare "copy an example" invites the nearest guess.
+  assert.match(skill, /copy the closest of the 69 gold examples/i);
+  assert.match(skill, /do not write a `Stage` from memory/i);
 });
 
 test('the upstream skill is registered as external, not as something this repo ships', () => {
@@ -117,4 +120,30 @@ test('the design contract names all three routes, so "which tool" is answerable'
   assert.match(design, /debug-hub/);
   assert.match(design, /stageshow/);
   assert.match(design, /awesome-design-md/);
+});
+
+test('the illustration route checks for the kit and installs it, instead of handing over a URL', () => {
+  const skill = readSkill();
+  // The failure mode: an agent tells the user "install stageshow" and stops. That
+  // is a dead end disguised as instructions, and it is how the kit ends up never
+  // being used even though the route to it is documented.
+  assert.match(skill, /aios skill add benjitaylor\/skills --skill stageshow/);
+  assert.match(skill, /skills\/external\/stageshow/);
+  // It must also say where the material goes after installation, or the agent has
+  // no way to check whether it is there before writing a component.
+  assert.match(skill, /AIOS_HOME/);
+  // And it must not be presented as an alternative to the contract: the two cover
+  // different jobs, and choosing one for the other's task is the error this
+  // section exists to prevent.
+  assert.match(skill, /copied into the host project/i);
+});
+
+test('the contract skill names the kit install path rather than implying there is none', () => {
+  // The design-contract skill used to say nothing about the upstream material, so
+  // an agent reading it could only conclude that no kit exists. A skill that is
+  // silent about a dependency teaches the wrong fact.
+  const skill = fs.readFileSync(path.join(REPO, 'skill-sources', 'design-contract', 'SKILL.md'), 'utf8');
+  assert.match(skill, /aios skill add benjitaylor\/skills --skill stageshow/);
+  assert.match(skill, /skills\/external\/stageshow/);
+  assert.match(skill, /does not tell you how to draw/i);
 });
