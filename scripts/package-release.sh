@@ -99,6 +99,10 @@ fi
 
 release_paths=(
   AGENTS.md CHANGELOG.md VERSION .nvmrc .node-version .npmrc
+  # 中文注释：根目录的契约文档也是产物的一部分。MOTION.md 是动效门的规范正文，
+  # 它的错误信息以「MOTION.md <章节>」作为 source 引用；漏发它，装好的用户会看到
+  # 指向一个不存在的文件的违规说明，而且 motion-contract 测试会在解包产物里 ENOENT。
+  MOTION.md
   package.json package-lock.json
   README.md README-zh.md
   skills-lock.json

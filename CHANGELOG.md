@@ -15,6 +15,17 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+
+## [7.0.2] - 2026-11-02
+
+- ship MOTION.md in the release artifact and keep the motion test honest outside a git work tree
+
+## [7.0.2] - 2026-11-02
+
+- Fixed: `MOTION.md` was missing from the release archive. The gate and its baseline shipped, but not the contract text they cite, so an installed package carried findings pointing at a file that did not exist — and the shipped `motion-contract` test failed with `ENOENT` on the extracted tarball. `scripts/package-release.sh` now lists it. Verified by actually building the archive and running the test inside the extracted tree (11/11), not by reading the allowlist.
+- Fixed: the `motion-contract` test asserted that the checker never skips, which holds in this repository and fails in every extracted package — the guard had become the defect for install users. It now requires that a skip names the documented reason (`not a git work tree`), so a genuine discovery failure still cannot masquerade as a clean run. A new case pins the boundary: a read that throws anything other than `ENOENT` propagates instead of being absorbed.
+- Note: 7.0.1 shipped without `MOTION.md`. Nothing else in that release is affected; the gate, baseline, tests and skill projection were all correct.
+
 ## [7.0.1] - 2026-11-02
 
 - Added: `MOTION.md` is the single owner of motion criteria — durations, curves, enter/exit order, loop seams, cursor causation and reduced-motion coverage. `DESIGN.md` keeps visual language and now points at it, because palette and timing are judged differently and were previously contractless entirely.

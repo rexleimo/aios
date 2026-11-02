@@ -1,5 +1,7 @@
 # Release plan — v7.1.0 motion contract
 
+> **Outcome (2026-11-02): released as `v7.0.1`, then corrected in `v7.0.2`.** The user chose a patch bump over the minor bump this plan recommended, so the four-locale release post was skipped and `docs-site/llms.txt` labels the release a maintenance release. See "Execution record" at the bottom for what actually happened, including the artifact defect 7.0.1 shipped with.
+
 ## Objective and acceptance
 
 Publish the motion contract shipped in `e37bf298` as the next host release, and leave every gate that the release pipeline actually runs in a state a maintainer can reproduce. This plan covers the release only; the feature is committed and pushed.
@@ -123,3 +125,20 @@ Recorded so the next maintainer does not mistake them for regressions from this 
 **Bump kind.** `versioning-by-impact` classifies a new contract plus a new gate as `minor`, which makes the release `7.1.0` and brings the four-locale release post with it. `7.0.1` would skip the posts but would label a new capability as a fix, and `llms-txt.test.mjs` would then require the index to say "maintenance release — changelog only" about a release that added a contract.
 
 Everything above assumes `7.1.0`. If the answer is `7.0.1`, step 3 disappears, step 4 changes shape, and the plan shrinks by roughly the writing effort of four short posts.
+
+**Resolved 2026-11-02: `7.0.1` was chosen.** Steps 3 (release post) dropped out; step 4 produced the maintenance-release line instead of a release entry. The CHANGELOG entry states that the classification is a decision, not an impact measurement, so the record does not pretend the change was a fix.
+
+## Execution record (2026-11-02)
+
+**v7.0.1 — released.** Certified `frontend-design` at `--base v7.0.0`, bumped `VERSION`, regenerated the index, `test:scripts` exit 0 (2939 pass / 0 fail), mcp-server typecheck/test(105)/build all 0, `release-preflight.sh --tag v7.0.1` exit 0, tag pushed, GitHub release published with four assets, `release` workflow `completed success`, `ci-main` on main `completed success`.
+
+**The defect 7.0.1 shipped with.** `scripts/package-release.sh` builds the archive from an explicit `release_paths` allowlist. That list carried the gate and its baseline but not `MOTION.md`, so the published package contained findings citing a contract file it did not contain. This was found by downloading the actual release tarball and running the shipped test inside it — not by reading the allowlist, and not by any gate, because every gate runs in the repository where `MOTION.md` exists. Extracted tree: `ENOENT ... MOTION.md`, 8 pass / 2 fail.
+
+Two failures, two different causes:
+
+1. `MOTION.md` absent from the archive → added to `release_paths`.
+2. The test asserted the checker never skips (`skip === false`), which is true in this git work tree and false in every extracted package — the guard itself became the installation defect. Replaced with: if it skips, the reason must be the documented one, so a genuine discovery failure still cannot pass as clean. A new case pins the boundary: a read throwing anything but `ENOENT` propagates.
+
+**v7.0.2 — corrective release.** No skill changed, so the training gate reports `verified` with an empty change set. Verified by rebuilding the archive and running the shipped test inside it: `MOTION.md` present, 11 pass / 0 fail, `check:motion` correctly SKIPs with `not a git work tree`.
+
+**Lesson.** A release gate that only runs where the input exists cannot see an artifact that omits the input. The missing check was not "does the test pass" but "does the test pass *against the published bytes*".

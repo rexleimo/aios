@@ -170,10 +170,50 @@ test('the shipped contract says what the checker enforces', () => {
   assert.match(contract, /需人眼判定/u);
 });
 
+test('skip is not a blanket excuse: a broken read still fails instead of reporting clean', () => {
+  // 中文注释：上一条测试容忍了「不在 git work tree 里」这一种跳过。这条测试钉住它的边界：
+  // 真正的故障（读文件抛 EACCES/其它错误）必须往上抛，不能被吸收成 skip 或干净结果。
+  assert.throws(
+    () => runCheck({
+      rootDir: '/nonexistent-root-for-motion-test',
+      files: ['a.css'],
+      baselineEntries: [],
+      readImpl: () => {
+        const error = new Error('permission denied');
+        error.code = 'EACCES';
+        throw error;
+      },
+    }),
+    /permission denied/u,
+  );
+
+  // ENOENT 是唯一可以跳过的读错误（tracked 但工作树里已删）。
+  const missing = runCheck({
+    rootDir: '/nonexistent-root-for-motion-test',
+    files: ['gone.css'],
+    baselineEntries: [],
+    readImpl: () => {
+      const error = new Error('gone');
+      error.code = 'ENOENT';
+      throw error;
+    },
+  });
+  assert.equal(missing.ok, true);
+  assert.equal(missing.scanned, 0);
+  assert.deepEqual(missing.summary, { measured: 0, exempt: 0, baseline: 0, baselineStale: 0, blocking: 0 });
+});
+
 test('the real repository: the checker runs and every finding has an executable disposition', () => {
   const result = runCheck({ rootDir: ROOT });
   assert.equal(result.ok, true);
-  assert.equal(result.skip, false, 'this repository is a git work tree, so the check must actually measure');
+  if (result.skip) {
+    // 中文注释：这条断言最初的写法是「skip 必须为 false」，它在本仓通过、在**解包后的发布产物**
+    // 里必然失败（那里不是 git work tree），于是验证断言本身成了装机用户的故障源。
+    // 正确的不变式不是「不得 skip」，而是「如果 skip，理由必须是那一个已知理由」：
+    // 这样真正的故障（发现逻辑崩了、readdir 挂了）仍然无法伪装成一次跳过。
+    assert.match(result.reason, /not a git work tree/u, `skip must be the documented reason, got: ${result.reason}`);
+    return;
+  }
   assert.ok(result.scanned > 0, 'scanned=0 would mean the file discovery is broken, not that the repo is clean');
   for (const row of result.rows) {
     assert.ok(['violation', 'baseline', 'exempt', 'baseline-stale'].includes(row.disposition), `unknown disposition ${row.disposition}`);
