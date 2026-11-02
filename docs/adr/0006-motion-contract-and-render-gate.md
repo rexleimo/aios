@@ -83,8 +83,28 @@
 - **`assets/app-icons.ts` 不搬**：其 `NOTICE.md` 明确图标不在 MIT 内。
 - **`film-checks.mjs` 1920 行 / 48 个检测器暂不搬**：写在 kit 的 `.ss-*` DOM 约定上（`.ss-camera` / `.ss-caret` / `[data-snap]` 剔除规则）。`jumps-core` 只需把这几条约定映射过来即可用于本仓库页面；48 个检测器等某个面真的采用 kit CSS 再接。
 
+### 第三次修正：帧级门已经接上真实页面
+
+`scripts/check-motion-frame.mjs`（`npm run check:motion:frame`）已经接上 `packages/debug-hub/src/ui.html`：
+
+```
+[frame] packages/debug-hub/src/ui.html 145 frames over 1200ms — clean
+  3 same-origin request(s) unreachable from file:// — the page rendered without its data
+  no snap (>2px in one frame while present before and after), no drift
+```
+
+**为什么选它而不是 `site/index.html`**：`site/assets/` 是空的（mkdocs 生成物不完整），`genealogy-gui/index.html` 在运行时从 `esm.sh` 拉 React/xyflow/dagre（网络依赖，不可重复）。`debug-hub/src/ui.html` 是唯一自包含的真实面。
+
+**两个教训都当场抓到并修了**：
+
+1. **报红却 exit 0**。第一版退出码表达式写成 `ok || ...`，fixture 明明报出 `jump: card y -4.0px` 却返回 0。这是和「声明级门判绿」完全同型的错误，只是换了一层。现在 exit 0 要求四个条件同时成立：无缺陷、录制无异常、`measured.maxItems > 0`、无 recorder error。
+2. **「干净」必须能区分「没缺陷」和「没看到东西」**。选择器没匹配上、页面没渲染、录制器抛错，都会得到 `findings: []`。因此报告里带 `measured.maxItems / emptyFrames`，值 0 时就地判红而不是报 clean。
+
+**双向锁定**：`scripts/tests/foundation/standards/motion-frame.test.mjs` 同时钉住红绿两个方向——带 4px 单帧缺陷的 fixture 必须 exit 1 且点名 `jump: card y -4.0px`，干净页面必须 exit 0 且 `measured.maxItems > 0`。只钉一个方向的门可以用「永远失败」或「永远通过」通过测试。
+
 ### 仍未闭合的
 
-- **帧级门还没有接到本仓库的真实页面上。** 内核已 vendor、可跑、已在探针里证明能抓缺陷，但还没有一条 `npm run` 命令去拍 `site/index.html` 或 `debug-hub/ui.html`。这是下一个工作项，不是「已完成」。
+- **只接了一个面**。`site/index.html` 与 `genealogy-gui/index.html` 各有阻碍（生成物不完整 / 运行时网络依赖），要在门里覆盖它们，得先解决这两个前提，不是加一行配置。
+- **`film-checks.mjs` 的 48 个几何检测器仍未接**（已声明在 MANIFEST 的 `notVendored`）。它们写在 kit 的 `.ss-*` 约定上，而本仓库用 `.motion-*` 映射，逐个验证后才能接。
 - `vendor/stageshow/references` 15 个文件超 `directoryEntries` 预算 8，已按「上游形状不可拆」豁免，理由记在 `config/standards.json`。
-- 44 条规则里，声明级覆盖 4 条、帧级内核覆盖「跳变/漂移」2 类，其余仍靠人眼。**不要把这条写成「已全部可判定」。**
+- 44 条规则里，声明级覆盖 4 条、帧级覆盖「跳变/漂移」2 类，其余仍靠人眼。**不要把这条写成「已全部可判定」。**

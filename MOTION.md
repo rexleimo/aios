@@ -114,12 +114,23 @@ node scripts/check-motion-contract.mjs --json     # 机器可读
 
 它只判上面列出的声明级事实。**它通过不等于动效正确**，只等于「声明层面没有低级错误」。
 
-**帧级**：`vendor/stageshow/scripts/jumps-core.mjs` 的 `record(stage)` 在页面里逐 rAF 记录所有可见元素的 box，`analyse(frames)` 报两类客观缺陷：
+**帧级（可执行，不用等人工）：**
 
-- **snap**：相邻帧位移 >2px 且前后都在（`jump: card y -4.0px in one frame at 0.27s`）；
+```bash
+node scripts/check-motion-frame.mjs --page packages/debug-hub/src/ui.html --duration 1200
+node scripts/check-motion-frame.mjs --page <path-or-url> --selector <css> --json
+```
+
+它真的把页面跑起来，逐 rAF 记录元素 box，报两类客观缺陷：
+
+- **snap**：相邻帧位移 >2px 且前后都在 —— `jump: card y -4.0px in one frame at 0.22s`；
 - **drift**：邻居尺寸不变但间距漂移（跑在不同曲线上）。
 
-它不需要基线对比——当场测几何。**但它的覆盖度吃 DOM 约定**（`.ss-camera` / `.ss-caret` / `[data-snap]` 等剔除规则），移植到本仓库的页面前要先把这些约定映射过来，否则会把「按设计逐字步进」误报成跳变。
+它不需要基线——当场测几何。**但「干净」必须同时满足三件事**：无缺陷、录制期间无异常、确实录到了元素（`measured.maxItems > 0`）。选择器没匹配上、页面没加载、录制器抛错，一律 exit 1，**不报 clean**。这条是硬的：一个看不见元素的 "clean" 和上一版那个判绿的声明级门是同一类错误。
+
+**依赖与 SKIP**：根 `package.json` 没有 Playwright（不新增依赖），脚本按 `node_modules` → `mcp-server/node_modules` → 全局顺序找 `playwright-core`，浏览器按 `--browser` → `AIOS_FILM_BROWSER` → 系统 Chrome/Edge 顺序找。两者任一缺失时 exit 3 并说清装了什事；**SKIP 理由是 `no Playwright available` + 具体动作，不是静默通过**。
+
+**DOM 约定映射**：上游录制器原本跳过 kit 的 `.ss-caret` / `.ss-cursor` / `.ss-camera` / `[data-snap]`，这些类名在本仓库不存在，已在 `scripts/lib/motion-contract/film.mjs` 的 `DOM_CONVENTION_MAP` 映射到 `.motion-caret` / `.motion-cursor` / `.motion-camera` / `[data-snap]`。**写会自动步进的动效（逐字打字、逐位滚数）时，必须标 `data-snap` 或 `data-typing`**，否则会被当缺陷报出来。
 
 **人工（审美判断）**：改动动效面时，附上至少一份这样的证据：
 
