@@ -14,6 +14,16 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+
+## [7.0.1] - 2026-11-02
+
+- Added: `MOTION.md` is the single owner of motion criteria — durations, curves, enter/exit order, loop seams, cursor causation and reduced-motion coverage. `DESIGN.md` keeps visual language and now points at it, because palette and timing are judged differently and were previously contractless entirely.
+- Added: `scripts/check-motion-contract.mjs` (`npm run check:motion`) enforces the decidable half: `transition: all`, single-motion durations over 1s, infinite loops with no `prefers-reduced-motion` fallback, and any motion with no fallback at all. Judging (`scripts/lib/motion-contract/analyze.mjs`) and dispositioning are separate owners, so "what is a violation" cannot drift together with "what is forgiven".
+- Changed: the gate ships with the 8 findings this repository already had frozen in `config/motion-contract-baseline.json`. A baseline may only shrink; a hit that no longer matches is reported as stale instead of being silently kept, and a new violation fails. The gate returns SKIP with a reason when the target is not a git work tree, never a green result.
+- Changed: `frontend-design` now reads `DESIGN.md` and `MOTION.md` before implementing. It previously named `DESIGN.md` only in its description, so a project could install a contract that no implementation step ever read. Projected to all 8 client skill roots.
+- Not delivered: the frame-capture gate. Recording frames needs a capture baseline, and no UI surface here has one; shipping the detector first would have produced noise rather than signal. `docs/adr/0006-motion-contract-and-render-gate.md` records the gap and the four-part manual evidence protocol that stands in for it.
+- Contract note: this is a patch release by decision, not by impact. The new capability would classify as a minor bump under the repository's own rule; publishing it as a patch keeps the release changelog-only and accepts that `docs-site/llms.txt` labels it a maintenance release.
+
 ## [7.0.0] - 2026-10-30
 
 ### Breaking changes
