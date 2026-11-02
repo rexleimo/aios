@@ -83,3 +83,33 @@ test('the contents check passes on this repository', () => {
   });
   assert.match(stdout, /all resolve/);
 });
+
+test('the skill routes illustration work to upstream instead of leaving it unmentioned', () => {
+  const skill = readSkill();
+  // The correction this pins: the kit is not abandoned, it is a different
+  // entry point. An earlier version said "no command installs them", which was
+  // false - `npx skills add` does, and silently dropping that turned a real
+  // capability into a dead end for the agent reading the skill.
+  assert.match(skill, /npx skills add benjitaylor\/skills --skill stageshow/);
+  assert.match(skill, /product illustration rather than product UI/i);
+  // And the part that makes the upstream skill usable at all: copy an example.
+  assert.match(skill, /copy the closest gold example/i);
+});
+
+test('the upstream skill is registered as external, not as something this repo ships', () => {
+  const lock = JSON.parse(fs.readFileSync(path.join(REPO, 'skills-lock.json'), 'utf8'));
+  const entry = lock.skills.stageshow;
+  assert.ok(entry, 'stageshow must be recorded so its licence and provenance are not folklore');
+  assert.equal(entry.license, 'MIT');
+  assert.match(entry.commit, /^[0-9a-f]{40}$/);
+  // The distinction the whole vendoring decision rests on.
+  assert.match(entry.note, /not for this repo/);
+});
+
+test('the design contract names all three routes, so "which tool" is answerable', () => {
+  const design = fs.readFileSync(path.join(REPO, 'DESIGN.md'), 'utf8');
+  assert.match(design, /先分清你在做哪一种界面/);
+  assert.match(design, /debug-hub/);
+  assert.match(design, /stageshow/);
+  assert.match(design, /awesome-design-md/);
+});

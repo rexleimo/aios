@@ -117,7 +117,17 @@ node scripts/check-motion-kit.mjs --json   # 含 notVendored 清单
 | `DAMAGED ... missing` | 文件被删 | 恢复，不要就地补一个替代品 |
 | `DAMAGED ... modified` | 文件被就地改动 | 恢复并另开补丁，不要冒充上游 |
 
-**这条命令同时告诉你什么**没装**。**`kit/`、`examples/`、`assets/app-icons.ts` 是刻意不 vendor 的：40 个 tsx 依赖 React，而本仓库的真实 UI 面是 mkdocs 静态 CSS / Astro+Tailwind（无 react）/ 单文件原生 JS。**不要写依赖 kit 的代码——它在这个仓库里不存在，也不会被加上。** 需要 kit 的组件形态时，读 `vendor/stageshow/references/` 里的规范，用本仓库自己的 CSS 实现。
+**这条命令同时告诉你什么没装。** `kit/`、`examples/`、`assets/app-icons.ts` 不在本仓库里，但**它们不是被放弃了，是换了个入口**：
+
+| 你要做的事 | 用什么 | 在哪 |
+|---|---|---|
+| 在本仓库的 UI 面上改真实产品界面（`docs-site/`、`debug-hub/`、`genealogy-gui/`） | `DESIGN.md` + 本文件 + 自己的 CSS | 本仓库，已就位 |
+| 需要动效的客观判据（垂直节奏、取景、编排、接缝） | `vendor/stageshow/references/` | 本仓库，已就位 |
+| 给任意项目做**产品插图 / hero / 功能卡 / 光标演示**（React） | 上游 kit + 69 个 gold 范例 + film 工具链 | **上游**，`npx skills add benjitaylor/skills --skill stageshow` |
+
+第三行是独立的技能，不是本仓库的一部分，因为它有 118 个 tsx 文件和 react/react-dom/lucide-react 三个依赖——那是**被复制进宿主项目**的东西，不是一个契约仓库该背的负载。它的使用流程在它自己的 `SKILL.md`：规划 → look → story → **复制最接近的 gold example** → 屏幕 → 编排（`Act`）→ `film.mjs --gate` 必须过。**不要凭印象从零写一个 stage**，那个仓库的品质门槛是 69 个范例。
+
+**本仓库不写依赖 kit 的代码**：我们的 4 个 UI 面是 mkdocs 静态 CSS / Astro+Tailwind（无 react）/ 单文件原生 JS，`import { Stage } from kit` 在这里没有构建器能解析。要那套组件形态，用上游技能在宿主项目里做。
 
 **自动（声明级）**：
 

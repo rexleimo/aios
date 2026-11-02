@@ -42,7 +42,15 @@ Three measurements decide how you build, and guessing any of them produces a pla
 | `verified` | The reference texts in `vendor/stageshow/references/` (vertical rhythm, framing, choreography, loop seams, cursor causation) and the frame recorder `vendor/stageshow/scripts/jumps-core.mjs`. **Read the reference for the problem in front of you, not all 16.** They are the source of the rules `MOTION.md` states, with the reasoning intact. |
 | `ABSENT` / `DAMAGED` | Nothing from `vendor/`. Do not write code that imports it, and do not silently proceed as if you had design guidance — say the material is missing and what it costs. |
 
-**The kit components are not part of this material, and no command will install them.** The upstream `kit/` is React; projects that ship the reference texts here may be static CSS, Astro+Tailwind, or single-file HTML with no React at all. Before writing a component that assumes `Stage`, `Window`, `Phone` or any `kit/parts` export, check the project's dependency manifest. If React is not there, build the shape in the project's own CSS by following the reference text — that is the intended path, not a degraded one.
+**The kit components are not part of this material.** The upstream `kit/` is React; projects that ship the reference texts here may be static CSS, Astro+Tailwind, or single-file HTML with no React at all. Before writing a component that assumes `Stage`, `Window`, `Phone` or any `kit/parts` export, check the project's dependency manifest. If React is not there, build the shape in the project's own CSS by following the reference text — that is the intended path, not a degraded one.
+
+**If the task is a product illustration rather than product UI** — a marketing hero, a feature card, a docs plate, a fake window or phone with a cursor demo — then this contract is the wrong tool for the whole job, and the upstream skill is the right one:
+
+```sh
+npx skills add benjitaylor/skills --skill stageshow
+```
+
+It ships the React kit, 69 gold examples and the filming toolchain, and it is meant for the *host* project you are building, not for this repository's own surfaces. Its workflow is not optional and not obvious: pen the plan, map the look, pick the story, **copy the closest gold example rather than writing a Stage from scratch**, then choreograph, then film and pass `rehearse`. Do not improvise a stage from memory — the 69 examples are the quality bar.
 
 ### Before claiming the UI is done
 

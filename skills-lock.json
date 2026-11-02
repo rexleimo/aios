@@ -75,6 +75,15 @@
       "license": "MIT",
       "vendored_at": "2026-06-27",
       "note": "External dependency — installed via `aios setup --components superpowers` (git clone + symlink). Not copied into this repo."
+    },
+    "stageshow": {
+      "source": "benjitaylor/skills",
+      "sourceType": "github",
+      "version": "0.1.0",
+      "commit": "802057409787133703c56001080169e347305572",
+      "license": "MIT",
+      "vendored_at": "2026-11-02",
+      "note": "External dependency — installed via `npx skills add benjitaylor/skills --skill stageshow`. Ships a React kit (118 files, react/react-dom/lucide-react), 69 gold examples and the filming toolchain; used for product illustrations in a host project, not for this repo's own surfaces. Only its references/ and the framework-agnostic verification cores are vendored here (vendor/stageshow/)."
     }
   }
 }
