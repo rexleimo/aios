@@ -1,6 +1,8 @@
 # MOTION.md — 动效契约
 
-本文件是**动效判据的唯一 owner**。`DESIGN.md` 管视觉语言（配色、字体、间距、组件形态），本文件管**时间轴上的事实**：时长、曲线、进出场顺序、循环接缝、光标因果、减动效覆盖。两者不互相顶替。
+本文件是**本仓库**动效判据的 owner。`DESIGN.md` 管视觉语言（配色、字体、间距、组件形态），本文件管**时间轴上的事实**：时长、曲线、进出场顺序、循环接缝、光标因果、减动效覆盖。两者不互相顶替。
+
+> **通用判据的唯一 owner 不在本文件**，在 `config/design-contract/UNIVERSAL.md`。下面「判据分层」到「减少动效」那一段是它的逐字副本，由 `node scripts/check-design-contract.mjs` 对账——就地改写会被判成漂移。别的项目用 `node scripts/design.mjs init` 得到自己的实例。
 
 裁决背景见 `docs/adr/0006-motion-contract-and-render-gate.md`。
 
@@ -164,6 +166,16 @@ node scripts/check-motion-frame.mjs --page <path-or-url> --selector <css> --json
 4. 减少动效模式下复核一遍。
 
 没有这四类证据之一，不得声称「动效没问题」。
+
+## 决策记录
+
+本节记的是**通用判据留了选择余地、必须由本仓库自己定**的那些点。每条写：决定 + 理由 + 被拒的选项。
+
+- **曲线分族** —— 位移用 `cubic-bezier(0.45, 0, 0.1, 1)`，从无到有的到场用 `cubic-bezier(0.25, 0.8, 0.25, 1)`。被拒：一条曲线铺满全站（把层级压平，实测站点里 `cubic-bezier(0.45,0,0.1,1)` 只出现 1 次，说明分族实际上没被执行——这是待改项，不是已完成项）。
+- **演示层边界** —— `docs-site/` 的营销/插图页允许占位条与裁切出血；`debug-hub`、`genealogy-gui` 是产品页，一律不允许。被拒：两层共用一套简化规则（会让占位条出现在真产品页里）。
+- **非 UI 树的排除** —— `site/`、`blog-site/`（生成物）、`docs-site/overrides/`（partial）、`docs-site/assets/vendor/`（第三方）、`video/`（Remotion 按帧渲染，用真渲染证据而非本契约）。被拒：让门扫生成物（会把手写页面的问题埋进历史快照里）。
+- **时长上限** —— 单次 1000ms 是硬上限，叙事性位移与摄影机推拉除外。实测分布里 `15000ms`/`12000ms` 来自 `video/`（已排除），`2000ms` 来自 `debug-hub` 的 `pulse` 无限循环（已在基线里，属存量缺陷，不得新增）。
+- **帧级门的落点** —— 只有 `packages/debug-hub/src/ui.html` 能拍（自包含）；`site/` 生成物缺 assets、`genealogy-gui` 运行时从 `esm.sh` 拉 React，均不可重复。被拒：为凑覆盖面把不可重复的页面也拍进去（会产出无法复现的绿）。
 
 ## 来源与取舍
 
