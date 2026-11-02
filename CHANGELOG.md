@@ -16,22 +16,14 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
-## [7.0.2] - 2026-11-02
-
-- ship MOTION.md in the release artifact and keep the motion test honest outside a git work tree
-
-## [7.0.2] - 2026-11-02
-
-- Fixed: `MOTION.md` was missing from the release archive. The gate and its baseline shipped, but not the contract text they cite, so an installed package carried findings pointing at a file that did not exist — and the shipped `motion-contract` test failed with `ENOENT` on the extracted tarball. `scripts/package-release.sh` now lists it. Verified by actually building the archive and running the test inside the extracted tree (11/11), not by reading the allowlist.
-- Fixed: the `motion-contract` test asserted that the checker never skips, which holds in this repository and fails in every extracted package — the guard had become the defect for install users. It now requires that a skip names the documented reason (`not a git work tree`), so a genuine discovery failure still cannot masquerade as a clean run. A new case pins the boundary: a read that throws anything other than `ENOENT` propagates instead of being absorbed.
-- Note: 7.0.1 shipped without `MOTION.md`. Nothing else in that release is affected; the gate, baseline, tests and skill projection were all correct.
-
 ## [7.0.1] - 2026-11-02
 
 - Added: `MOTION.md` is the single owner of motion criteria — durations, curves, enter/exit order, loop seams, cursor causation and reduced-motion coverage. `DESIGN.md` keeps visual language and now points at it, because palette and timing are judged differently and were previously contractless entirely.
 - Added: `scripts/check-motion-contract.mjs` (`npm run check:motion`) enforces the decidable half: `transition: all`, single-motion durations over 1s, infinite loops with no `prefers-reduced-motion` fallback, and any motion with no fallback at all. Judging (`scripts/lib/motion-contract/analyze.mjs`) and dispositioning are separate owners, so "what is a violation" cannot drift together with "what is forgiven".
 - Changed: the gate ships with the 8 findings this repository already had frozen in `config/motion-contract-baseline.json`. A baseline may only shrink; a hit that no longer matches is reported as stale instead of being silently kept, and a new violation fails. The gate returns SKIP with a reason when the target is not a git work tree, never a green result.
 - Changed: `frontend-design` now reads `DESIGN.md` and `MOTION.md` before implementing. It previously named `DESIGN.md` only in its description, so a project could install a contract that no implementation step ever read. Projected to all 8 client skill roots.
+- Fixed during release verification: `MOTION.md` was missing from the release archive. The gate and its baseline were packaged but not the contract text they cite, so an installed package would have carried findings pointing at a file that did not exist. `scripts/package-release.sh` now lists it. This was caught by building the archive and running the shipped test inside the extracted tree (`ENOENT`, 8 pass / 2 fail), not by any repository-side gate — every gate runs where `MOTION.md` exists.
+- Fixed during release verification: the `motion-contract` test asserted that the checker never skips. That holds in this git work tree and fails in every extracted package, so the guard itself was the installation defect. It now requires a skip to name the documented reason (`not a git work tree`), and a new case pins the boundary: a read throwing anything other than `ENOENT` propagates instead of being absorbed as clean.
 - Not delivered: the frame-capture gate. Recording frames needs a capture baseline, and no UI surface here has one; shipping the detector first would have produced noise rather than signal. `docs/adr/0006-motion-contract-and-render-gate.md` records the gap and the four-part manual evidence protocol that stands in for it.
 - Contract note: this is a patch release by decision, not by impact. The new capability would classify as a minor bump under the repository's own rule; publishing it as a patch keeps the release changelog-only and accepts that `docs-site/llms.txt` labels it a maintenance release.
 
