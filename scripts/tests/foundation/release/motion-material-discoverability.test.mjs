@@ -77,11 +77,16 @@ test('the archive allowlist carries the material the contracts reference', () =>
 
 test('the contents check passes on this repository', () => {
   // Runs the real script, not a reimplementation: the point is that the
-  // published contracts resolve against the published tree.
+  // published contracts resolve against the published tree. The assertion is on
+  // the shape of the report rather than on its wording: a version that says
+  // "all resolve" while having skipped a whole absent tree was the defect, so
+  // what matters is that zero are missing and that the count is not zero.
   const stdout = execFileSync(process.execPath, [path.join(REPO, 'scripts', 'check-release-contents.mjs'), '--root', REPO], {
     encoding: 'utf8',
   });
-  assert.match(stdout, /all resolve/);
+  const checked = Number.parseInt(stdout.match(/\[contents\] (\d+) path reference/)?.[1] ?? '0', 10);
+  assert.ok(checked > 0, `no references were checked: ${stdout.trim()}`);
+  assert.doesNotMatch(stdout, /do not resolve|tree absent/i);
 });
 
 test('the skill routes illustration work to upstream instead of leaving it unmentioned', () => {
