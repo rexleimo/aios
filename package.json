@@ -69,7 +69,7 @@
     "tmp:gc:trash": "node scripts/aios-tmp-gc.mjs --temp --older-than 1440 --mode to-trash",
     "standards": "node scripts/aios-standards.mjs",
     "check:motion:kit": "node scripts/check-motion-kit.mjs",
-    "test:motion": "node --test scripts/tests/foundation/standards/motion-contract.test.mjs scripts/tests/foundation/standards/motion-kit.test.mjs scripts/tests/foundation/standards/motion-frame.test.mjs scripts/tests/foundation/release/motion-material-discoverability.test.mjs",
+    "test:motion": "node --test scripts/tests/foundation/standards/motion-contract.test.mjs scripts/tests/foundation/standards/motion-gates.test.mjs scripts/tests/foundation/release/motion-material-discoverability.test.mjs",
     "check:motion:frame": "node scripts/check-motion-frame.mjs",
     "check:motion:contents": "node scripts/check-release-contents.mjs",
     "design": "node scripts/design.mjs",

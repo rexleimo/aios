@@ -45,39 +45,61 @@ nothing was looked at.
 **2. Generate the skeleton.**
 
 ```bash
-node scripts/design.mjs init --root .          # writes MOTION.md
-node scripts/design.mjs init --root . --force  # discards the existing decisions
+node scripts/design.mjs init --root .              # writes MOTION.md and DESIGN.md
+node scripts/design.mjs init --root . --only design # only the visual contract
+node scripts/design.mjs init --root . --force      # discards the existing decisions
 ```
 
-The result is complete as a structure and deliberately incomplete as a decision:
-it ends with `TODO(decision)` markers. That is the contract's honest state, not a
-bug. Read the generated `适用范围` section — it lists files the generator actually
-saw, so a wrong scope there is a measurement problem, not a prose problem.
+Both contracts come from **one measurement**, so they cannot disagree about
+which files are in scope. The result is complete as a structure and deliberately
+incomplete as a decision: it carries `TODO(decision)` markers. That is the
+contract's honest state, not a bug. Read the generated `适用范围` section — it
+lists files the generator actually saw, so a wrong scope there is a measurement
+problem, not a prose problem.
+
+`DESIGN.md` additionally reports **contradictions between the evidence and the
+rules** the project appears to follow: tokens that colours bypass, one motion
+curve spread over eight durations, files with motion but no reduced-motion
+block. Those are findings, not formatting. Each one is either fixed in the code
+or removed from the rules — a rule the evidence disproves teaches readers to
+ignore the document.
 
 **3. Answer the decisions.** This is the only part you write, and it is the part
 that cannot be generated: which curves this product uses and why, which surfaces
-may use placeholder bars, which trees are excluded and on what grounds. Each
-answer takes the form *decision + reason + the option rejected*. Replacing a
-marker with a decision is not the same as deleting the marker.
+may use placeholder bars, which trees are excluded and on what grounds, which
+accent colour carries which meaning. Each answer takes the form *decision +
+reason + the option rejected*. Replacing a marker with a decision is not the same
+as deleting the marker.
 
 **4. Verify.**
 
 ```bash
-node scripts/design.mjs check --root .
-node scripts/check-design-contract.mjs --root .   # same judgement, older entry point
+node scripts/design.mjs check --root .              # both contracts
+node scripts/design.mjs check --root . --only design
+npm run check:design                                # same judgement, CI entry point
 ```
 
-Three things are checked and all three must pass: every shared rule appears
-verbatim, no local rule was silently added or removed without being recorded as a
-decision, and no `TODO(decision)` remains. A rule you want to change belongs in
-the shared set, not in your copy — a local edit forks the owner and
-`check` will say so.
+All of these must pass: every shared motion rule appears verbatim, no local rule
+was silently added or removed without being recorded as a decision, every
+required section exists (the design contract has its own list — it has no gate
+command and no rule set to restate), and no `TODO(decision)` remains. A rule you
+want to change belongs in the shared set, not in your copy — a local edit forks
+the owner and `check` will say so.
+
+With no `--only`, a contract that does not exist is not a failure: a document
+that was never adopted makes no claim that could be wrong. `--only design` still
+fails on absence, because there the absence contradicts the request.
 
 ## What this does not do
 
-- **It does not write the visual language.** `DESIGN.md` (palette, type, spacing)
-  comes from `awesome-design-md` or from the project's own decisions; the
-  generator only measures the motion facts and the surfaces.
+- **It does not invent the visual language.** The generator measures tokens,
+themes, fonts, spacing roles and the count of colours that bypass those tokens;
+it never picks a palette, because that is a brand decision nobody approved. The
+structure comes from `config/design-contract/DESIGN-STRUCTURE.md`, the choices
+from the project (`awesome-design-md` is one legitimate source for them).
+- **It cannot see a colour written in JavaScript.** Hex literals in `.ts`/`.mjs`
+are outside the scan; a theme built in code will read as "0 loose colours", which
+is a measurement boundary, not a clean result.
 - **It does not make a contract enforced.** A rule is enforced when something
   executable checks it. The declaration gate and the frame gate cover a subset;
   the rest is judged by a person. Do not describe a contract as "enforced" when

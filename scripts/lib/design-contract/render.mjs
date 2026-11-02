@@ -16,7 +16,7 @@
 // marked blank makes the missing decision impossible to miss, and validate.mjs
 // fails while any remain.
 
-import { extractSections, missingSections } from './rules.mjs';
+import { extractSections, missingSections, REQUIRED_INSTANCE_SECTIONS } from './rules.mjs';
 
 const TODO = 'TODO(decision)';
 
@@ -126,6 +126,6 @@ export function renderContract({ facts, universal }) {
 export function inspectRendered(text) {
   return {
     sections: extractSections(text),
-    missingSections: missingSections(text),
+    missingSections: missingSections(text, REQUIRED_INSTANCE_SECTIONS),
   };
 }

@@ -2,20 +2,26 @@
 // ones it cannot see.
 //
 // Every value here is measured from the project: which files are UI surfaces,
-// which directories hold generated output, which durations and easings already
-// appear, whether a reduced-motion block exists. None of it is guessed, and
-// nothing writes prose. The model's job is the decisions this file leaves
-// blank; the generator's job is to make those blanks specific instead of vague.
+// which framework is present, which durations and easings already appear,
+// whether a reduced-motion block exists, which tokens and themes are declared.
+// None of it is guessed, and nothing writes prose. The model's job is the
+// decisions this file leaves blank; the generator's job is to make those blanks
+// specific instead of vague.
 //
 // A fact that cannot be established is reported as unknown, never defaulted. A
 // contract claiming "we cover src/" when src/ does not exist is worse than one
 // saying it has not been scoped yet.
+//
+// Surface discovery itself lives in surfaces.mjs: it has a second consumer (the
+// declaration gate), and two lists of exclusions that disagree would put
+// different trees into a contract's scope depending on who was asked.
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 
-const WEB_EXTENSIONS = Object.freeze(['.css', '.html', '.htm', '.jsx', '.tsx', '.vue', '.svelte', '.astro']);
+import { classifySurfaces } from './surfaces.mjs';
+import { measureVisual } from './visual.mjs';
 
 const UI_FRAMEWORKS = Object.freeze({
   react: ['react'],
@@ -72,39 +78,6 @@ function describeUnknowns({ files, trackedCount, surfaces }) {
   return unknown;
 }
 
-/**
- * Generated output and dependencies are not UI surfaces: scanning them turns
- * history into technical debt. The list is a set of *shapes* rather than this
- * repository's directory names, so it travels.
- *
- * A project can override it in its instance file; the generator reports what it
- * excluded so an override is a decision, not a guess.
- */
-export const GENERATED_SHAPES = Object.freeze([
-  { pattern: /^(node_modules|vendor-modules)\//, why: 'dependencies' },
-  { pattern: /^(dist|build|out|coverage|\.next|\.nuxt|\.svelte-kit)\//, why: 'build output' },
-  { pattern: /^(site|blog-site|docs-built|public\/built)\//, why: 'generated site' },
-  { pattern: /^temp\//, why: 'scratch directory' },
-]);
-
-export function classifySurfaces(files) {
-  const surfaces = [];
-  const excluded = new Map();
-  for (const file of files) {
-    const lower = file.toLowerCase();
-    if (!WEB_EXTENSIONS.some((ext) => lower.endsWith(ext))) continue;
-    const shape = GENERATED_SHAPES.find((entry) => entry.pattern.test(file));
-    if (shape) {
-      const bucket = excluded.get(shape.why) ?? [];
-      bucket.push(file);
-      excluded.set(shape.why, bucket);
-      continue;
-    }
-    surfaces.push(file);
-  }
-  return { surfaces, excluded: [...excluded.entries()].map(([why, list]) => ({ why, count: list.length })) };
-}
-
 export function detectFrameworks(rootDir) {
   const manifests = ['package.json', 'mcp-server/package.json', 'website/package.json'];
   const deps = new Set();
@@ -128,13 +101,15 @@ export function detectFrameworks(rootDir) {
 
 // Accepts `.18s` as well as `180ms` and `1.2s`: a leading digit is not required,
 // and requiring it silently dropped the most common way a duration is written
-// with a unit elided.
+// with the unit elided.
 const DURATION = /(?:transition|animation)(?:-duration)?\s*:[^;}]*?(\d*\.?\d+)(ms|s)[^a-z]/gi;
 const EASING = /cubic-bezier\(([^)]+)\)/gi;
 const REDUCED = /@media[^{]*prefers-reduced-motion[^{]*\{/i;
 const HAS_MOTION = /(animation|transition)\s*:/;
 
-export function measureMotion(surfaceFiles, rootDir, readFile = (file) => fs.readFileSync(file, 'utf8')) {
+// `readFile` takes a project-relative path, matching measureVisual: two
+// measurers with two path conventions is how one of them silently reads nothing.
+export function measureMotion(surfaceFiles, rootDir, readFile = (file) => fs.readFileSync(path.join(rootDir, file), 'utf8')) {
   const durations = new Map();
   const easings = new Map();
   const withoutReducedMotion = [];
@@ -143,7 +118,7 @@ export function measureMotion(surfaceFiles, rootDir, readFile = (file) => fs.rea
   for (const relative of surfaceFiles) {
     let text;
     try {
-      text = readFile(path.join(rootDir, relative));
+      text = readFile(relative);
     } catch {
       continue;
     }
@@ -191,18 +166,31 @@ export function collectFacts({ rootDir = process.cwd(), readFile } = {}) {
   const files = listTrackedFiles(rootDir);
   const gitWorkTree = isGitWorkTree(rootDir);
   const tracked = files ?? [];
-  const { surfaces, excluded } = classifySurfaces(tracked);
+  const classified = classifySurfaces(tracked, { rootDir });
+  const { surfaces, excluded } = classified;
+  // One reader, taking a project-relative path. Both measurers call it that way,
+  // and a second join here would silently read the wrong file: `path.join` with
+  // an absolute second argument produces /root/root/file, not /root/file.
+  const read = readFile ?? ((relative) => fs.readFileSync(path.join(rootDir, relative), 'utf8'));
+
+  const unknown = describeUnknowns({ files, trackedCount: tracked.length, surfaces: surfaces.length });
+  // A malformed project exclusion file is an unknown, not a default: falling
+  // back to "no project exclusions" would quietly put every excluded tree back
+  // into scope.
+  if (classified.error) unknown.push(classified.error);
+
   return {
     rootDir,
     gitWorkTree,
     trackedCount: tracked.length,
     surfaces,
     excluded,
+    projectExclusions: classified.projectExclusions,
     layout: describeLayout(surfaces),
     framework: detectFrameworks(rootDir),
-    motion: measureMotion(surfaces, rootDir, readFile),
-    // Stated so the instance can say it, and so a caller can refuse to pretend.
-    unknown: describeUnknowns({ files, trackedCount: tracked.length, surfaces: surfaces.length }),
+    motion: measureMotion(surfaces, rootDir, read),
+    visual: measureVisual(surfaces, read),
+    unknown,
     untracked: countUntracked(rootDir),
   };
 }

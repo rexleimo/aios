@@ -12,8 +12,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { compareRuleSets, extractRuleSections, missingSections, unresolvedPlaceholders, universalPath } from '../../../lib/design-contract/rules.mjs';
+import { compareRuleSets, extractRuleSections, missingSections, unresolvedPlaceholders, universalPath, REQUIRED_DESIGN_SECTIONS } from '../../../lib/design-contract/rules.mjs';
 import { collectFacts } from '../../../lib/design-contract/facts.mjs';
+import { listScannedFiles } from '../../../check-motion-contract.mjs';
 import { renderContract } from '../../../lib/design-contract/render.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -101,11 +102,14 @@ test('init writes a contract, and check refuses it while decisions are open', ()
 test('check passes once the decisions are answered', () => {
   const root = project();
   run(['init', '--root', root]);
-  const file = path.join(root, 'MOTION.md');
-  let text = fs.readFileSync(file, 'utf8');
   // Answer every marker the way a person would: replace it with a decision.
-  text = text.replace(/TODO\(decision\)[^\n]*/g, '不适用：本项目只有一张静态页，无动效。');
-  fs.writeFileSync(file, text);
+  // Both contracts are answered because `init` writes both; answering only the
+  // motion one would leave the project half-decided while looking done.
+  for (const name of ['MOTION.md', 'DESIGN.md']) {
+    const file = path.join(root, name);
+    const text = fs.readFileSync(file, 'utf8').replace(/TODO\(decision\)[^\n]*/g, '不适用：本项目只有一张静态页，无动效。');
+    fs.writeFileSync(file, text);
+  }
   const checked = run(['check', '--root', root]);
   assert.equal(checked.code, 0, checked.stdout + checked.stderr);
 });
@@ -190,7 +194,11 @@ test('json output carries the same facts a human sees', () => {
   assert.equal(facts.surfaces.length, 2);
   assert.equal(facts.unknown.length, 0);
   const init = JSON.parse(run(['init', '--root', root, '--json']).stdout);
-  assert.ok(init.openDecisions.length > 0);
+  // Both contracts are reported by kind, because one combined count cannot tell
+  // you which document still has open decisions.
+  assert.equal(init.written.length, 2);
+  assert.ok(init.written.every((entry) => entry.openDecisions.length > 0));
+  assert.ok(init.written.every((entry) => entry.missingSections.length === 0));
 });
 
 test('a missing target directory is a usage error with a readable message', () => {
@@ -200,4 +208,160 @@ test('a missing target directory is a usage error with a readable message', () =
   assert.equal(result.code, 2);
   assert.match(result.stderr, /--root does not exist/);
   assert.ok(!/at Object\./.test(result.stderr), 'a stack trace is not a message');
+});
+
+test('the declaration gate and the design facts agree on what a surface is', () => {
+  // Two exclusion lists produced two authoritative answers about one repository:
+  // docs/reports/ and video/ were excluded by the motion gate and included by
+  // the design scanner. This pins them to one owner.
+  const facts = collectFacts({ rootDir: REPO });
+  const scanned = listScannedFiles({ rootDir: REPO });
+  assert.equal(scanned.ok, true);
+  const cssHtml = facts.surfaces.filter((file) => /\.(css|html?)$/i.test(file)).sort();
+  assert.deepEqual(scanned.files, cssHtml);
+});
+
+test('a project exclusion without a reason is rejected, not applied', () => {
+  const root = project();
+  fs.mkdirSync(path.join(root, 'comics'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'comics', 'page.html'), '<div/>');
+  fs.mkdirSync(path.join(root, 'config', 'design-contract'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'config', 'design-contract', 'exclusions.json'),
+    JSON.stringify({ exclusions: [{ prefix: 'comics/' }] }),
+  );
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  const facts = collectFacts({ rootDir: root });
+  // The files stay in scope, and the malformed entry is reported: silently
+  // honouring it would hide a decision instead of recording one.
+  assert.ok(facts.surfaces.includes('comics/page.html'));
+  assert.ok(facts.unknown.some((entry) => entry.includes('exclusion without a reason')));
+});
+
+test('init writes both contracts from one measurement, and check refuses open decisions', () => {
+  const root = project();
+  const init = run(['init', '--root', root]);
+  assert.equal(init.code, 0, init.stderr);
+  const motion = fs.readFileSync(path.join(root, 'MOTION.md'), 'utf8');
+  const design = fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8');
+
+  // The same scan has to produce both, or the two contracts can disagree about
+  // which files are in scope while each looks internally consistent.
+  assert.ok(motion.includes('src/app.css'));
+  assert.ok(design.includes('src/app.css'));
+  assert.match(design, /TODO\(decision\)/);
+  // Evidence, not adjectives: the design contract has to carry the number it
+  // stands on, which only exists because something was measured.
+  assert.match(design, /Evidence Snapshot/);
+  assert.match(design, /colours outside tokens: 0|未走 token 的颜色/);
+
+  const blocked = run(['check', '--root', root]);
+  assert.equal(blocked.code, 1, 'a contract full of TODO(decision) must not pass');
+});
+
+test('check passes only after every decision is answered', () => {
+  const root = project();
+  assert.equal(run(['init', '--root', root]).code, 0);
+  for (const name of ['MOTION.md', 'DESIGN.md']) {
+    const file = path.join(root, name);
+    fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace(/TODO\(decision\)[^\n]*/g, '答：本项目只有一页界面。'));
+  }
+  const result = run(['check', '--root', root]);
+  assert.equal(result.code, 0, result.stderr);
+  assert.match(result.stdout, /DESIGN\.md — faithful and answered/);
+});
+
+test('--only design does not write a motion contract', () => {
+  const root = project();
+  assert.equal(run(['init', '--root', root, '--only', 'design']).code, 0);
+  assert.ok(fs.existsSync(path.join(root, 'DESIGN.md')));
+  // Writing the other contract "for completeness" would create a file the
+  // project never asked for and its own check would then have to judge.
+  assert.ok(!fs.existsSync(path.join(root, 'MOTION.md')));
+});
+
+test('a design contract missing a design section is reported by name', () => {
+  const root = project();
+  assert.equal(run(['init', '--root', root, '--only', 'design']).code, 0);
+  const file = path.join(root, 'DESIGN.md');
+  const text = fs.readFileSync(file, 'utf8').replace('## Accessibility Baseline', '## 可访问性');
+  fs.writeFileSync(file, text);
+  const result = run(['check', '--root', root, '--only', 'design']);
+  assert.equal(result.code, 1);
+  assert.match(result.stderr, /Accessibility Baseline/);
+});
+
+test('the design contract names a contradiction instead of stating a rule the tokens disprove', () => {
+  const root = project();
+  const tokens = [
+    ':root {',
+    '  --p-text: #111;',
+    '  --p-bg: #fff;',
+    '  --p-space-1: 4px;',
+    '  --p-radius-md: 6px;',
+    '  --p-accent: #0066ff;',
+    '}',
+  ].join('\n');
+  fs.writeFileSync(path.join(root, 'src', 'tokens.css'), tokens);
+  // The literal goes in a *different* file. Inside the token source it would be
+  // skipped by design, and a test that puts it there asserts nothing.
+  fs.writeFileSync(path.join(root, 'src', 'page.css'), '.loose { color: #ff0000; }\n');
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  assert.equal(run(['init', '--root', root, '--only', 'design']).code, 0);
+
+  const design = fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8');
+  // A token file exists and a colour bypasses it: the contract has to say so,
+  // because "we have tokens" and "the page uses them" are different facts.
+  assert.match(design, /1 处颜色字面量|绕过它们/);
+  assert.ok(!design.includes('--p-accent: var(--p-unknown)'), 'the generator invented a token reference');
+});
+
+test('a CSS token block written on one line is still measured', () => {
+  const root = project();
+  fs.writeFileSync(
+    path.join(root, 'src', 'tokens.css'),
+    ':root{--q-bg:#fff;--q-text:#111;--q-space-1:4px;--q-space-2:8px;--q-radius-md:6px}\n',
+  );
+  execFileSync('git', ['add', '-A'], { cwd: root });
+  assert.equal(run(['init', '--root', root, '--only', 'design']).code, 0);
+  const design = fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8');
+  // Line-anchored parsing reported such a project as having no tokens at all,
+  // which is a measurement bug that reads as a finding about the project.
+  assert.match(design, /`src\/tokens\.css`/);
+  assert.match(design, /\| 5 \|/);
+});
+
+test('check refuses a missing --root with a usage error, not a stack trace', () => {
+  const result = run(['check', '--root', path.join(os.tmpdir(), 'aios-design-absent-xyz')]);
+  assert.equal(result.code, 2);
+  assert.match(result.stderr, /--root does not exist/);
+});
+
+test('the design structure document and the enforced section list agree', () => {
+  const structure = fs.readFileSync(path.join(REPO, 'config', 'design-contract', 'DESIGN-STRUCTURE.md'), 'utf8');
+  // The headings are bolded in prose because the file is a reader's guide, not a
+  // template. Extracting them is the only way to keep it from drifting away from
+  // the list that actually gates a project.
+  const documented = [...structure.matchAll(/^\*\*(.+?)\*\* —/gm)].map((match) => match[1].trim());
+  assert.ok(documented.length >= 6, `structure document lists only ${documented.length} section(s)`);
+  const enforced = REQUIRED_DESIGN_SECTIONS.map((entry) => entry.heading).filter((heading) => heading !== '适用范围');
+  for (const heading of enforced) {
+    assert.ok(documented.includes(heading), `DESIGN-STRUCTURE.md does not document ${heading}`);
+  }
+  for (const heading of documented) {
+    assert.ok(
+      REQUIRED_DESIGN_SECTIONS.some((entry) => entry.heading === heading),
+      `DESIGN-STRUCTURE.md documents ${heading}, which nothing enforces`,
+    );
+  }
+});
+
+test('the design contract has no 验证 section, because it has no command to run', () => {
+  const root = project();
+  assert.equal(run(['init', '--root', root, '--only', 'design']).code, 0);
+  const design = fs.readFileSync(path.join(root, 'DESIGN.md'), 'utf8');
+  // Requiring it would make the design contract demand a command it does not
+  // own, and the two section lists were separate for exactly that reason.
+  assert.ok(!/^## 验证$/m.test(design));
+  assert.ok(!REQUIRED_DESIGN_SECTIONS.some((entry) => entry.heading === '验证'));
 });

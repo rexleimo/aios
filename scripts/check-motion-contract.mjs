@@ -14,23 +14,14 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import { analyzeSource, RULES } from './lib/motion-contract/analyze.mjs';
+import { classifySurfaces } from './lib/design-contract/surfaces.mjs';
 
 export { MAX_MOTION_MS, REDUCED_MOTION_QUERY, RULES, analyzeSource, parseDurationMs, stripReducedMotionBlocks } from './lib/motion-contract/analyze.mjs';
 
-/** 生成物与产物目录不算源码面（与 check-dir-budget 的口径一致：它们是结果，不是作者写的声明）。 */
-const EXCLUDED_PREFIXES = Object.freeze([
-  'node_modules/',
-  'dist/',
-  'temp/',
-  // 生成站点：site/ 由 mkdocs 从 docs-site/ 产出，blog-site/ 是 locale 生成物。改它们没有意义。
-  'blog-site/',
-  'site/',
-  // 一次性报告产物，不是 UI 面：判它就等于把历史快照算成技术债。
-  'docs/reports/',
-  'docs-site/overrides/',
-  'docs-site/assets/vendor/',
-]);
-
+// 「什么算源码面」只有一个 owner：scripts/lib/design-contract/surfaces.mjs。
+// 这里曾经有一份自己的前缀表，与设计契约的排除表各说各话（docs/reports/、
+// docs-site/overrides/、video/ 在两边算出不同结果），于是同一个仓库对同一个
+// 问题给出两个都显得权威的答案。
 const SCANNED_EXTENSIONS = Object.freeze(['.css', '.html', '.htm']);
 
 /** baseline 的键：`<path>::<code>`。 */
@@ -120,14 +111,16 @@ export function listScannedFiles({ rootDir, gitImpl = runGit }) {
   if (!inside.ok || inside.stdout.trim() !== 'true') return { ok: false, reason: `not a git work tree: ${rootDir}` };
   const listed = gitImpl(['ls-files', '-z'], rootDir);
   if (!listed.ok) return { ok: false, reason: `git ls-files failed in ${rootDir}` };
-  const files = listed.stdout
-    .split('\0')
+  const candidates = listed.stdout
+    .split(String.fromCharCode(0))
     .map((line) => line.trim())
     .filter(Boolean)
-    .filter((file) => SCANNED_EXTENSIONS.some((ext) => file.toLowerCase().endsWith(ext)))
-    .filter((file) => !EXCLUDED_PREFIXES.some((prefix) => file.startsWith(prefix)))
-    .sort();
-  return { ok: true, files };
+    .filter((file) => SCANNED_EXTENSIONS.some((ext) => file.toLowerCase().endsWith(ext)));
+  // The same classifier the design contract uses. Two lists is how the same
+  // repository ends up with two authoritative answers about its own surface set.
+  const classified = classifySurfaces(candidates, { rootDir });
+  return { ok: true, files: [...classified.surfaces].sort(), excluded: classified.excluded, exclusionError: classified.error };
+
 }
 
 const DEFAULT_BASELINE_PATH = 'config/motion-contract-baseline.json';

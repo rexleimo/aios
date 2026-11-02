@@ -1,0 +1,9 @@
+{
+  "_comment": "Paths this project excludes from UI-surface discovery, each with a reason. Universal shapes (build output, dependencies, reports, vendored assets) live in scripts/lib/design-contract/surfaces.mjs; only project-specific decisions belong here. An entry without a reason is rejected.",
+  "exclusions": [
+    {
+      "prefix": "video/",
+      "why": "Remotion renders per frame and its evidence is a real render, not a stylesheet scan; the motion contract defers to that."
+    }
+  ]
+}

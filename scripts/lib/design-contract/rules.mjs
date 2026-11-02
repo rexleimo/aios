@@ -131,9 +131,26 @@ export const REQUIRED_INSTANCE_SECTIONS = Object.freeze([
   { heading: '决策记录', why: 'the choices this project made where the universal rules leave a choice' },
 ]);
 
-export function missingSections(text) {
+/**
+ * The design contract answers different questions from the motion one: it has
+ * no commands to run, and it carries the evidence its claims rest on. Checking
+ * it against the motion section list would demand a 验证 section that makes no
+ * sense there and let it omit Evidence Snapshot, which is the section that makes
+ * the document checkable at all.
+ */
+export const REQUIRED_DESIGN_SECTIONS = Object.freeze([
+  { heading: '适用范围', why: 'which surfaces this visual language governs' },
+  { heading: 'Mode', why: 'restyle or reference - the two have different freedom' },
+  { heading: 'Assumptions', why: 'decisions made without an instruction, named as assumptions' },
+  { heading: 'Evidence Snapshot', why: 'the measured facts the contract stands on' },
+  { heading: 'Visual System', why: 'what the product uses, grouped by role and traced to tokens' },
+  { heading: 'Accessibility Baseline', why: 'commitments a reviewer can test' },
+  { heading: '决策记录', why: 'the choices the evidence does not settle' },
+]);
+
+export function missingSections(text, required = REQUIRED_INSTANCE_SECTIONS) {
   const sections = extractSections(text);
-  return REQUIRED_INSTANCE_SECTIONS.filter((entry) => !sections.includes(entry.heading)).map((entry) => entry.heading);
+  return required.filter((entry) => !sections.includes(entry.heading)).map((entry) => entry.heading);
 }
 
 /** Placeholders a generated instance must have resolved before it ships. */
