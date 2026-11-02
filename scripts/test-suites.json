@@ -257,6 +257,7 @@
       "scripts/tests/foundation/standards/duplication.test.mjs",
       "scripts/tests/foundation/standards/layer-dependency.test.mjs",
       "scripts/tests/foundation/standards/motion-contract.test.mjs",
+      "scripts/tests/foundation/standards/motion-kit.test.mjs",
       "scripts/tests/foundation/platform/process-identity.test.mjs",
       "scripts/tests/tooling/tools/doc-citations.test.mjs",
       "scripts/tests/tooling/tools/doctor-bootstrap-task.test.mjs",

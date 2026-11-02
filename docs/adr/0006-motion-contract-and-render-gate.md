@@ -48,3 +48,43 @@
 2. 未做：拍帧门。理由不是「没时间」，而是**它需要的输入在这个仓库里还不存在**——没有任何一个 UI 面有稳定的截图/拍帧基线，也没有既有 Playwright 依赖在根 `package.json`。先建一个拍帧门等于先建一套无基线的检测，它会立刻变成噪声或被静音。
 
 因此「渲染门」目前只以**人工复核协议**的形式存在（`MOTION.md`「验证」一节的四类证据：固定间隔 ≥8 帧、60ms 接缝采样、390px 宽度、减少动效模式）。把拍帧门做成可执行命令需要一个新工作项，前置条件是先给至少一个 UI 面建立拍帧基线。
+
+## 第二次修正（2026-11-02）：拍帧门不是「输入不存在」，是我判错了
+
+**上一节的「未做」理由是错的，原文保留在上面以便对照。** 原话是「拍帧门需要的输入在这个仓库里还不存在——没有任何一个 UI 面有稳定的截图/拍帧基线」。这句话把两件事混成了一件：
+
+- **视觉回归**要基线（和上一次的截图比对）；
+- **动效正确性**不要基线（每帧记录元素 box，相邻帧位移 >2px 且前后都在就是跳变——这是当场可测的几何事实）。
+
+用「没有基线」否掉「可以当场测量」，是一次推理错误。由此产生的后果是：交付了一份 116 行契约（44 条规则）+ 4 条正则，然后把它称为「动效有门禁了」。用本仓库自己的标准衡量，这是 `AGENTS.md` 明令禁止的形状——「hard gates 靠 runtime verification，never by prompt politeness and never by text heuristics」。**44 条规则里 40 条没有任何执行者。**
+
+### 实证：同一个动画，两个门两个结果
+
+构造一段有真实缺陷的 CSS（`49.95%` 12px → `50%` 8px，单帧 4px 跳变；480ms；无 `transition: all`；有 reduced-motion 兜底）：
+
+| 判据 | 结果 |
+|---|---|
+| `check-motion-contract.mjs` | `blocking=0`，exit 0 —— **判绿** |
+| upstream `jumps-core.mjs` 的 `record` + `analyse`，在我们的 CSS/HTML/Chrome 上跑 | `jump: card y -4.0px in one frame at 0.27s` —— **抓到** |
+
+第一次实验把 4px 分摊到 2 帧（每帧 2px）时它**没有误报**，说明阈值是真的在起作用。
+
+### 决策修正
+
+1. **vendor upstream 而不是复述它。** `vendor/stageshow/` 保存 16 篇规范正文（1270 行原文）+ 4 个验证内核 + `LICENSE` + `NOTICE.md`，`MANIFEST.json` 用 sha256 钉住 21 个文件。本仓库的 `MOTION.md` 从此只做减法，不再充当「提炼过的替代品」。
+2. **「有没有安装」由退出码回答，不由模型记忆回答。** `scripts/check-motion-kit.mjs` 区分三种失败：`ABSENT`（没装，要装）、`DAMAGED/missing`（被删，要恢复）、`DAMAGED/modified`（被就地改，要恢复并另开补丁）。把三者混成一个「不可用」会把 agent 引向错误的修法。
+3. **把「没装什么」也当成事实输出。** `MANIFEST.json` 的 `notVendored` 记录 4 处刻意省略及理由，`--json` 一并返回。这是本次最关键的一处设计：如果只报「已安装」，agent 会以为 kit 可用，然后写出这个仓库根本无法渲染的组件。
+4. **`check:motion` 变成两段**（声明级 + vendor 完整性），两者都 exit 0 才算材料可用。仍不进任何 `pretest` 链（决策 4 的理由未变）。
+
+### 实测的取舍依据（不是偏好）
+
+- **`kit/` 96 个文件不搬**：40 个 tsx `import ... from 'react'`，而覆盖的 4 个真实 UI 面是 mkdocs 静态 CSS、Astro+Tailwind（依赖里无 react）、单文件原生 JS。搬进来等于加一个没有任何面能加载的依赖。
+- **`examples/` 69 个场景不搬**：是原则的插图而非产品代码，且含 CC0 照片与非 MIT 第三方标识。
+- **`assets/app-icons.ts` 不搬**：其 `NOTICE.md` 明确图标不在 MIT 内。
+- **`film-checks.mjs` 1920 行 / 48 个检测器暂不搬**：写在 kit 的 `.ss-*` DOM 约定上（`.ss-camera` / `.ss-caret` / `[data-snap]` 剔除规则）。`jumps-core` 只需把这几条约定映射过来即可用于本仓库页面；48 个检测器等某个面真的采用 kit CSS 再接。
+
+### 仍未闭合的
+
+- **帧级门还没有接到本仓库的真实页面上。** 内核已 vendor、可跑、已在探针里证明能抓缺陷，但还没有一条 `npm run` 命令去拍 `site/index.html` 或 `debug-hub/ui.html`。这是下一个工作项，不是「已完成」。
+- `vendor/stageshow/references` 15 个文件超 `directoryEntries` 预算 8，已按「上游形状不可拆」豁免，理由记在 `config/standards.json`。
+- 44 条规则里，声明级覆盖 4 条、帧级内核覆盖「跳变/漂移」2 类，其余仍靠人眼。**不要把这条写成「已全部可判定」。**

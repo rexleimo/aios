@@ -20,7 +20,7 @@
   "scripts": {
     "aios": "node scripts/aios.mjs",
     "check:site-sync": "node scripts/check-site-sync.mjs",
-    "check:motion": "node scripts/check-motion-contract.mjs",
+    "check:motion": "node scripts/check-motion-contract.mjs && node scripts/check-motion-kit.mjs",
     "test:motion-contract": "node --test scripts/tests/foundation/standards/motion-contract.test.mjs",
     "test:check-site-sync": "node --test scripts/tests/tooling/tools/check-site-sync.test.mjs",
     "test:site-redesign": "node --test scripts/tests/foundation/site-content/site-redesign-assets.test.mjs scripts/tests/foundation/site-content/site-redesign-responsive.test.mjs",
@@ -67,7 +67,9 @@
     "test:affected": "node scripts/run-affected-tests.mjs",
     "tmp:gc": "node scripts/aios-tmp-gc.mjs --temp --older-than 1440",
     "tmp:gc:trash": "node scripts/aios-tmp-gc.mjs --temp --older-than 1440 --mode to-trash",
-    "standards": "node scripts/aios-standards.mjs"
+    "standards": "node scripts/aios-standards.mjs",
+    "check:motion:kit": "node scripts/check-motion-kit.mjs",
+    "test:motion": "node --test scripts/tests/foundation/standards/motion-contract.test.mjs scripts/tests/foundation/standards/motion-kit.test.mjs"
   },
   "devDependencies": {
     "tsx": "^4.21.0"

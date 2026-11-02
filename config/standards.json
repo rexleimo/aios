@@ -312,6 +312,10 @@
       {
         "path": "agent-sources/roles",
         "reason": "agent registry surface (one file per role; flat readdir contract in agents/source-tree.mjs)"
+      },
+      {
+        "path": "vendor/stageshow/references",
+        "reason": "upstream spec texts vendored verbatim; splitting or renaming them would break both the mapping to the recorded upstream commit and the sha256 entries in vendor/stageshow/MANIFEST.json"
       }
     ],
     "fileLines": []

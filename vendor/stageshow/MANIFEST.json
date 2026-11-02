@@ -1,0 +1,116 @@
+{
+  "source": "https://github.com/benjitaylor/skills",
+  "skill": "stageshow",
+  "commit": "802057409787133703c56001080169e347305572",
+  "upstreamDate": "2026-10-31T11:07:17-07:00",
+  "license": "MIT",
+  "note": "Verification cores and reference texts only. The React kit, the examples and every brand asset stay upstream: see notVendored.",
+  "files": {
+    "LICENSE": {
+      "sha256": "f948862c8d317b6b",
+      "bytes": 1090
+    },
+    "NOTICE.md": {
+      "sha256": "7e5ac7d2b8f98cf9",
+      "bytes": 1802
+    },
+    "references/annotations.md": {
+      "sha256": "cb601bd2c3c8c5e5",
+      "bytes": 11311
+    },
+    "references/backgrounds.md": {
+      "sha256": "b244f83e736cd1b2",
+      "bytes": 4756
+    },
+    "references/bento.md": {
+      "sha256": "1c9e3003f00f123d",
+      "bytes": 11027
+    },
+    "references/brands.md": {
+      "sha256": "03e8689396cc492d",
+      "bytes": 4051
+    },
+    "references/choreography.md": {
+      "sha256": "9faadb30d1d497a2",
+      "bytes": 3510
+    },
+    "references/craft.md": {
+      "sha256": "2468b286d56685a3",
+      "bytes": 17890
+    },
+    "references/framing.md": {
+      "sha256": "66b1f6143b5a5113",
+      "bytes": 14098
+    },
+    "references/kit.md": {
+      "sha256": "8cd025c158ad2d12",
+      "bytes": 28247
+    },
+    "references/looks.md": {
+      "sha256": "c41e842b606b9aaa",
+      "bytes": 6007
+    },
+    "references/motion.md": {
+      "sha256": "3c7bb33626f67b14",
+      "bytes": 21795
+    },
+    "references/products.md": {
+      "sha256": "f71cbe0adb2ff2cb",
+      "bytes": 2122
+    },
+    "references/rehearse.md": {
+      "sha256": "26c368473e96de3d",
+      "bytes": 12714
+    },
+    "references/review.md": {
+      "sha256": "f0190a95ca6db176",
+      "bytes": 3078
+    },
+    "references/teaching.md": {
+      "sha256": "38408d8bd42b8843",
+      "bytes": 13307
+    },
+    "references/verify.md": {
+      "sha256": "ee16ed9ac57e9473",
+      "bytes": 5137
+    },
+    "scripts/browser.mjs": {
+      "sha256": "b40521192a397294",
+      "bytes": 920
+    },
+    "scripts/class-clash-core.mjs": {
+      "sha256": "188056ac46cfd75f",
+      "bytes": 6563
+    },
+    "scripts/jumps-core.mjs": {
+      "sha256": "09b9043552a8e910",
+      "bytes": 10933
+    },
+    "scripts/layout-core.mjs": {
+      "sha256": "fd601dbdf5d00107",
+      "bytes": 11819
+    }
+  },
+  "notVendored": [
+    {
+      "part": "kit/",
+      "size": "~96 files",
+      "reason": "40 tsx files import react; the surfaces this gate covers are mkdocs static CSS, Astro+Tailwind (no react) and single-file vanilla JS. Vendoring them would add a dependency no surface can load."
+    },
+    {
+      "part": "examples/",
+      "size": "69 scenes",
+      "reason": "Illustrations of principles, not product code. They also carry CC0 photographs and non-MIT third-party marks."
+    },
+    {
+      "part": "assets/app-icons.ts",
+      "size": "1 file",
+      "reason": "NOTICE.md states app icon artwork is not covered by the MIT license. Never transplant."
+    },
+    {
+      "part": "scripts/film-checks.mjs",
+      "size": "1920 lines",
+      "reason": "~48 detectors written against kit DOM conventions (.ss-*). Revisit once a surface adopts the kit CSS."
+    }
+  ]
+}

@@ -6,15 +6,13 @@ The format is based on Keep a Changelog and this project follows Semantic Versio
 
 
 
+## [Unreleased]
 
-
-
-
-
-
-
-
-
+- Added: `vendor/stageshow/` — the upstream motion material is now vendored instead of paraphrased. 16 reference documents (1270 lines, verbatim), four framework-agnostic verification cores (`jumps-core`, `layout-core`, `class-clash-core`, `browser`), the upstream `LICENSE` and `NOTICE.md`, all pinned by sha256 in `vendor/stageshow/MANIFEST.json` at commit `8020574`. The previous 7.0.1 distilled those texts into a 116-line contract and enforced 4 of its 44 rules; the other 40 had no executor. This release stops calling that "a motion gate".
+- Added: `scripts/check-motion-kit.mjs` (`npm run check:motion:kit`) answers "is the motion material installed" with an exit code and distinguishes three failures that need different fixes: `ABSENT` (not installed — install it), `DAMAGED/missing` (a file was deleted — restore it), `DAMAGED/modified` (a file was edited in place — restore it and open a patch instead). `check:motion` now runs both halves.
+- Added: the manifest reports what is deliberately **not** vendored, and `--json` carries it. `kit/` (96 files, 40 of them `tsx` importing React — no surface in this repository can load them), `examples/` (69 scenes, illustrations rather than product code, and carrying CC0 photographs plus non-MIT marks), `assets/app-icons.ts` (its `NOTICE.md` states the icons are not MIT), and `film-checks.mjs` (1920 lines of detectors written against the kit's `.ss-*` DOM conventions). Without this an agent would assume the kit is present and write components that cannot render here.
+- Changed: `MOTION.md` drops the claim that frame-level correctness needs no executor. A judgement class "frame-level" now sits between "machine-decidable" and "human-eye", and the verification section starts by telling the reader to ask the command rather than assume. Measured basis: `check-motion-contract.mjs` passes a 4px single-frame snap that upstream `jumps-core.mjs` reports as `jump: card y -4.0px in one frame at 0.27s`.
+- Note: the frame-level gate is **not** wired to a page in this repository yet. The core is vendored, runs, and caught the defect in a probe; there is still no `npm run` command that films `site/index.html` or `debug-hub/ui.html`. Recorded as open in ADR 0006 rather than implied complete.
 
 ## [7.0.1] - 2026-11-02
 

@@ -19,9 +19,10 @@
 | 类 | 定义 | 谁来判 |
 |---|---|---|
 | **可机器判定** | 只看声明或测量就能给出客观结论（时长数值、曲线存在性、`infinite` 是否有 `prefers-reduced-motion` 兜底、`transition: all`、总时长上限） | `node scripts/check-motion-contract.mjs` |
-| **需人眼判定** | 必须把页面跑起来、拍帧、逐帧看才能判（一帧全体淡出、4px 跳变、循环接缝、光标压住文字、内容瞬切） | 人或 agent 拍帧复核，见「验证」 |
+| **需帧级判定** | 必须把页面跑起来、逐帧量几何才能判（一帧全体淡出、4px 跳变、循环接缝、邻居漂移、内容瞬切） | `vendor/stageshow/scripts/jumps-core.mjs` 的帧记录 + `analyse()`，见「验证」 |
+| **需人眼判定** | 帧级数据也给不出结论的审美判断（构图是否成立、动画是否讲清了因果） | 人或 agent 拍帧逐帧读 |
 
-把第二类写成第一类的形式（例如用正则猜「是否有动画」）等于用猜测冒充结论，禁止。
+把第三类写成第一类的形式（例如用正则猜「是否有动画」）等于用猜测冒充结论，禁止。第二类**可以**用代码判，但代码必须真的拍到帧，不能只读声明。
 
 ## 时长与曲线
 
@@ -87,7 +88,24 @@
 
 ## 验证
 
-**自动（可机器判定）**：
+**第一步：确认材料在不在。不要假设，问命令。**
+
+```bash
+node scripts/check-motion-kit.mjs          # exit 0 = 已安装且字节未被改动
+node scripts/check-motion-kit.mjs --json   # 含 notVendored 清单
+```
+
+三种 exit 1 情形含义不同，不要混：
+
+| 输出 | 含义 | 该做什么 |
+|---|---|---|
+| `ABSENT ... not installed` | `vendor/stageshow` 不存在 | 按 MANIFEST 记录的 commit 重新 vendor，或明确降级到纯声明级校验并说出这一点 |
+| `DAMAGED ... missing` | 文件被删 | 恢复，不要就地补一个替代品 |
+| `DAMAGED ... modified` | 文件被就地改动 | 恢复并另开补丁，不要冒充上游 |
+
+**这条命令同时告诉你什么**没装**。**`kit/`、`examples/`、`assets/app-icons.ts` 是刻意不 vendor 的：40 个 tsx 依赖 React，而本仓库的真实 UI 面是 mkdocs 静态 CSS / Astro+Tailwind（无 react）/ 单文件原生 JS。**不要写依赖 kit 的代码——它在这个仓库里不存在，也不会被加上。** 需要 kit 的组件形态时，读 `vendor/stageshow/references/` 里的规范，用本仓库自己的 CSS 实现。
+
+**自动（声明级）**：
 
 ```bash
 node scripts/check-motion-contract.mjs            # 出处置表，exit 1 表示违规
@@ -96,7 +114,14 @@ node scripts/check-motion-contract.mjs --json     # 机器可读
 
 它只判上面列出的声明级事实。**它通过不等于动效正确**，只等于「声明层面没有低级错误」。
 
-**人工（需人眼判定）**：改动动效面时，附上至少一份这样的证据：
+**帧级**：`vendor/stageshow/scripts/jumps-core.mjs` 的 `record(stage)` 在页面里逐 rAF 记录所有可见元素的 box，`analyse(frames)` 报两类客观缺陷：
+
+- **snap**：相邻帧位移 >2px 且前后都在（`jump: card y -4.0px in one frame at 0.27s`）；
+- **drift**：邻居尺寸不变但间距漂移（跑在不同曲线上）。
+
+它不需要基线对比——当场测几何。**但它的覆盖度吃 DOM 约定**（`.ss-camera` / `.ss-caret` / `[data-snap]` 等剔除规则），移植到本仓库的页面前要先把这些约定映射过来，否则会把「按设计逐字步进」误报成跳变。
+
+**人工（审美判断）**：改动动效面时，附上至少一份这样的证据：
 
 1. 变更前/后各一段按固定间隔拍的帧（≥8 帧，覆盖进入—停留—离开）；
 2. 按 60ms 采样检查一次循环接缝；
@@ -107,10 +132,18 @@ node scripts/check-motion-contract.mjs --json     # 机器可读
 
 ## 来源与取舍
 
-判据来源是从 Benji Taylor 的 `stageshow` skill（MIT，`github.com/benjitaylor/skills`）的 `references/motion.md` / `framing.md` / `craft.md` **提炼的客观部分**。三处刻意的删除：
+判据来自 Benji Taylor 的 `stageshow` skill（MIT，`github.com/benjitaylor/skills`，vendor 于 commit `8020574`）。**vendor 的是原文与验证内核，不是我的复述**：
 
-- **不搬他的配色与风格取向**（"blueprint"、"glass"、"kawaii" 一类）：那是作者品味，本仓库的视觉语言归 `DESIGN.md`。
-- **不搬品牌/图标资源**（他的 `NOTICE.md` 明确 app icons 不在 MIT 内）。
-- **不搬演示层的简化规则到产品页**（占位条、裁切出血）。
+- `vendor/stageshow/references/` 16 篇规范正文（1270 行），原文保留，本文件只做减法；
+- `vendor/stageshow/scripts/jumps-core.mjs` 帧记录 + snap/drift 检测（框架无关）；
+- `vendor/stageshow/scripts/layout-core.mjs`、`class-clash-core.mjs`、`browser.mjs`；
+- `vendor/stageshow/MANIFEST.json` 钉住每个文件的 sha256，`check-motion-kit.mjs` 用它对账。
 
-保留下来的是他认为「模型做得到、但不知道自己该在乎」的部分：framing 与 motion 的时序协议。这部分本文件把它写成可判定的形式，因此比原文更窄也更硬。
+四处刻意的**不搬**（都写进了 MANIFEST 的 `notVendored`，不是悄悄省略）：
+
+- **`kit/` 96 个文件**：40 个 tsx 依赖 React，本仓库没有任何面能加载；
+- **`examples/` 69 个场景**：是原则的插图，不是产品代码，且含 CC0 照片与非 MIT 第三方标识；
+- **`assets/app-icons.ts`**：他的 `NOTICE.md` 明确图标不在 MIT 内，禁止搬运；
+- **`scripts/film-checks.mjs` 1920 行 / 48 个检测器**：写在 kit 的 `.ss-*` DOM 约定上，等某个面真的采用 kit CSS 再接。
+
+保留下来的是他认为「模型做得到、但不知道自己该在乎」的部分：framing 与 motion 的时序协议。本文件把其中可判定的部分写成命令，因此比原文更窄，但**窄不等于可以靠自觉**。
