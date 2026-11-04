@@ -314,6 +314,10 @@
         "reason": "agent registry surface (one file per role; flat readdir contract in agents/source-tree.mjs)"
       },
       {
+        "path": "scripts/tests/tooling",
+        "reason": "test mirror of the tool families: one directory per family under test (contracts, io-safety, offload, runtime-probe, search, shell, suites, tools, workspace), each holding several files and referenced by scripts/test-suites.json. Flattening would turn a family into a filename prefix, and merging two of them would move tests away from the code they cover"
+      },
+      {
         "path": "vendor/stageshow/references",
         "reason": "upstream spec texts vendored verbatim; splitting or renaming them would break both the mapping to the recorded upstream commit and the sha256 entries in vendor/stageshow/MANIFEST.json"
       }

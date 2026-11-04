@@ -1,6 +1,8 @@
 # Tauri / Next.js build artifacts
 dist/
 src-tauri/target/
+# `tauri` regenerates the config schemas on every build; they are derived, not source.
+src-tauri/gen/
 ui/.next/
 ui/out/
 ui/next-env.d.ts

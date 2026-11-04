@@ -6,25 +6,32 @@
 ## 形状（目录预算 `directoryEntries=8` 硬约束）
 
 ```
-apps/shell/                 ← 4 项
+apps/shell/                 ← 5 项
 ├── README.md
 ├── .gitignore
 ├── data/                   ← 5 项：事实装配（纯函数 + 进程入口）
 │   ├── matrix.mjs / matrix.d.mts
 │   ├── sources.mjs
 │   └── load.mjs / load.d.mts
-└── ui/                     ← 8 项：Next.js 界面
-    ├── app/                (layout.tsx, page.tsx, globals.css)
-    ├── components/         (matrix-table.tsx，'use client')
-    ├── lib/                (labels.ts, matrix-loader.ts)
-    ├── package.json
-    ├── package-lock.json
-    ├── next.config.mjs
-    ├── postcss.config.mjs
-    └── tsconfig.json
+├── ui/                     ← 8 项顶格：Next.js 界面
+│   ├── app/                (layout.tsx, page.tsx, globals.css)
+│   ├── components/         (matrix-table.tsx，'use client')
+│   ├── lib/                (labels.ts, matrix-loader.ts)
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.mjs
+│   ├── postcss.config.mjs
+│   └── tsconfig.json
+└── src-tauri/              ← 6 项：桌面壳（S1 窗口 + 能力进程生命周期）
+    ├── Cargo.toml / Cargo.lock
+    ├── build.rs
+    ├── tauri.conf.json
+    ├── icons/              (32x32、128x128、128x128@2x、icon.ico)
+    └── src/                (main.rs, lib.rs, sidecar.rs)
 ```
 
-`src-tauri/` 是 S1 阶段（窗口）要加的第四项，加之前这里必须是 4 项，加完 5 项，仍在预算内。
+`ui/` 已是 8 项顶格：`next dev` 会重写 `ui/AGENTS.md`，所以它按 `next-env.d.ts` 同档进 `.gitignore`；
+否则一个由 next 自己生成的文件就把预算顶成 9。`src-tauri/target/` 与 `src-tauri/gen/` 同样不计入。
 
 ## 技术栈（用户裁定，不是默认偏好）
 
@@ -53,9 +60,41 @@ apps/shell/                 ← 4 项
 ## 验证
 
 ```sh
-node --test "scripts/tests/tooling/shell/*.test.mjs"    # 30 用例
+node --test "scripts/tests/tooling/shell/*.test.mjs"    # 37 用例（含壳与启动器的端口一致性）
 node scripts/aios-standards.mjs --root . --rule directoryEntries
+npm run shell:test                                      # cargo test（6 用例：端口、参数、cwd、等待）
 ```
+
+## 桌面壳（S1：窗口）
+
+壳只做两件事：开一个窗口，并决定背后的**能力进程**是启动还是复用。它不持有任何事实——
+页面自己去问 `data/load.mjs`。
+
+```sh
+npm run shell:dev    # = cargo run --manifest-path apps/shell/src-tauri/Cargo.toml
+npm run shell:build  # = cargo build --release --manifest-path …
+```
+
+启动顺序（`src-tauri/src/lib.rs`）：
+
+1. **端口**：`AIOS_UI_PORT`，否则 `DEFAULT_UI_PORT`。后者与 `scripts/aios-ui.mjs` 的
+   `UI_DEFAULT_PORT` 是同一个事实，由 `shell-sidecar.test.mjs` 钉住两值相等；`tauri.conf.json`
+   的 `devUrl` 也受同一条测试约束。
+2. **安装根**：`AIOS_SHELL_ROOT`，否则从当前目录、可执行文件所在目录逐层向上找
+   `scripts/aios-ui.mjs`。仓库里直接跑因此不需要任何环境变量。
+3. **接上还是拉起**：端口已经有响应就**复用**（开发时 `npm run ui` 已经在跑），否则
+   `node scripts/aios-ui.mjs start --port <port>` 起进程，等它真的 accept 再开窗口。
+   先开窗口再等的话，用户看到的是「连接被拒绝」，而**回不来**。
+4. **工作目录**：能力进程的 CWD 必须落在安装树之外（`resolve_work_dir` 是这条判断的唯一所有者）。
+   实测依据见 ADR：CWD 在安装树内的进程会让 `aios update` 的目录替换 `EPERM/EBUSY`。
+
+实测（2026-11-05）：`next start -p 3126` 默认同时绑 `0.0.0.0` 与 `[::]`，等于把能力进程发布到
+局域网。启动器现在显式传 `-H 127.0.0.1`，绑定的端口上只剩 `127.0.0.1:3126`。
+
+**S1 明确没做的**（S2 或之后）：打包成安装包（`bundle.active=false`）、签名/公证、托盘与自启、
+本地端口信任令牌（随机 token + 拒绝带 `Origin`/`Sec-Fetch-*` 的请求）、强杀壳体时子进程的回收。
+最后一条是实测缺陷：`RunEvent::Exit` 会停掉自起的能力进程，但 `taskkill /F` 不走该路径，
+留下孤儿 node 进程；等做 S2 时用 job object / 进程组收口。
 
 ## 从仓库根启动（不需要 cd 进 apps）
 
@@ -75,7 +114,6 @@ npm run test:shell    # 只跑界面层的测试
 
 根脚本只是入口，实现在 `scripts/aios-ui.mjs`（它是 ADR 决策 3 里能力进程入口的雏形，
 以后 `aios ui` 接在这里）。端口不写在 `apps/shell/ui/package.json` 的脚本里，只有一个所有者。
-
 ## 归属
 
 桌面壳结构抄自 Cline（`apps/examples/desktop-app/`，Apache-2.0）。引用其代码时保留其 LICENSE/NOTICE

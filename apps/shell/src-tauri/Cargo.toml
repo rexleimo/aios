@@ -1,0 +1,24 @@
+[package]
+name = "aios-shell"
+version = "0.1.0"
+description = "AIOS desktop shell — the window that hosts the capability process"
+edition = "2021"
+rust-version = "1.77"
+publish = false
+
+[lib]
+# Tauri 2 expects the mobile-capable crate shapes; the desktop build only uses rlib.
+name = "aios_shell_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.7.4", features = [] }
+
+[dependencies]
+tauri = { version = "2.12.5", features = [] }
+
+[profile.release]
+# The shell links one webview and a single window; nothing here benefits from
+# fat LTO and the CI matrix builds three targets per release.
+lto = "thin"
+strip = true

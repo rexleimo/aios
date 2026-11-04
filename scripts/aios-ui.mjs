@@ -21,6 +21,9 @@ import { isDirectModuleInvocation } from './lib/foundation/platform/module-entry
 
 export const UI_MODES = Object.freeze(['dev', 'build', 'start']);
 export const UI_DEFAULT_PORT = 3126;
+// 实测：`next start -p 3126` 默认绑 0.0.0.0（`netstat` 同时出现 0.0.0.0 与 [::]），
+// 那会把能力进程发布到局域网。壳与浏览器面板都是本机视图，宿主地址因此是声明出来的。
+export const UI_BIND_HOST = '127.0.0.1';
 export const UI_REL_PATH = path.join('apps', 'shell', 'ui');
 export const NEXT_BIN_REL_PATH = path.join('node_modules', 'next', 'dist', 'bin', 'next');
 
@@ -45,7 +48,7 @@ export function resolveUiPort(port) {
   return Number.isInteger(parsed) && parsed > 0 && parsed < 65_536 ? parsed : UI_DEFAULT_PORT;
 }
 
-/** 纯函数：把模式与端口拼成一次 next 调用。build 不带端口。 */
+/** 纯函数：把模式与端口拼成一次 next 调用。build 不带端口与宿主。 */
 export function buildUiCommand({ mode = 'dev', port, uiDir } = {}) {
   if (!UI_MODES.includes(mode)) {
     const error = new Error(`unknown ui mode: ${mode} (expected one of ${UI_MODES.join(', ')})`);
@@ -54,7 +57,10 @@ export function buildUiCommand({ mode = 'dev', port, uiDir } = {}) {
   }
   const chosen = resolveUiPort(port);
   const bin = path.join(uiDir, NEXT_BIN_REL_PATH);
-  const args = mode === 'build' ? [bin, 'build'] : [bin, mode, '-p', String(chosen)];
+  const args =
+    mode === 'build'
+      ? [bin, 'build']
+      : [bin, mode, '-p', String(chosen), '-H', UI_BIND_HOST];
   return { command: process.execPath, args, uiDir, port: chosen, mode };
 }
 

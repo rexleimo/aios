@@ -5,6 +5,7 @@ import test from 'node:test';
 
 import {
 	NEXT_BIN_REL_PATH,
+	UI_BIND_HOST,
 	UI_DEFAULT_PORT,
 	UI_MODES,
 	buildUiCommand,
@@ -33,16 +34,28 @@ test('next is spawned as a JS entry, never as the bare "npm" command', () => {
 	assert.equal(dev.command.includes('npm'), false);
 	assert.equal(dev.command, process.execPath);
 	assert.equal(dev.args[0], path.join(FAKE_UI, NEXT_BIN_REL_PATH));
-	assert.deepEqual(dev.args.slice(1), ['dev', '-p', String(UI_DEFAULT_PORT)]);
+	assert.deepEqual(dev.args.slice(1), ['dev', '-p', String(UI_DEFAULT_PORT), '-H', UI_BIND_HOST]);
+});
+
+test('the server binds loopback only: next start defaults to 0.0.0.0', () => {
+	// 实测：`next start -p 3126` 在 Windows 上同时监听 0.0.0.0 与 [::]，等于把能力
+	// 进程发布到局域网。壳与浏览器面板都是本机视图，所以宿主地址必须显式声明。
+	assert.equal(UI_BIND_HOST, '127.0.0.1');
+	for (const mode of ['dev', 'start']) {
+		const plan = buildUiCommand({ mode, port: '3210', uiDir: FAKE_UI });
+		const hostFlag = plan.args.indexOf('-H');
+		assert.equal(hostFlag, plan.args.length - 2, `${mode} must end with -H <host>`);
+		assert.equal(plan.args[hostFlag + 1], '127.0.0.1');
+	}
 });
 
 test('build carries no port; dev and start carry exactly one -p', () => {
 	const built = buildUiCommand({ mode: 'build', uiDir: FAKE_UI });
-	assert.deepEqual(built.args.slice(1), ['build']);
+	assert.deepEqual(built.args.slice(1), ['build'], 'build has nothing to bind, so no host either');
 	assert.equal(built.port, UI_DEFAULT_PORT, 'the plan still resolves a port, but build does not pass it');
 
 	const start = buildUiCommand({ mode: 'start', port: '3210', uiDir: FAKE_UI });
-	assert.deepEqual(start.args.slice(1), ['start', '-p', '3210']);
+	assert.deepEqual(start.args.slice(1), ['start', '-p', '3210', '-H', UI_BIND_HOST]);
 });
 
 test('an invalid or absent port falls back to the default instead of reaching next', () => {

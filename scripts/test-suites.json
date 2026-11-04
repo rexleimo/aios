@@ -276,8 +276,9 @@
       "scripts/tests/client-capability-scorecard.test.mjs",
       "scripts/tests/tooling/shell/matrix.test.mjs",
       "scripts/tests/tooling/shell/matrix-sources.test.mjs",
-      "scripts/tests/tooling/shell/shell-tokens.test.mjs",
       "scripts/tests/tooling/shell/shell-labels.test.mjs",
+      "scripts/tests/tooling/shell/shell-sidecar.test.mjs",
+      "scripts/tests/tooling/shell/shell-tokens.test.mjs",
       "scripts/tests/tooling/shell/ui-launcher.test.mjs"
     ]
   },

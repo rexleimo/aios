@@ -43,6 +43,11 @@ cover-image.png
 !blog-site/assets/**/*.png
 !docs-site/assets/
 !docs-site/assets/**/*.png
+# 桌面壳的窗口图标是源码资产，不是内容图片：tauri.conf.json 的 bundle.icon 直接引用它们，
+# 缺失会让新克隆上的 shell-sidecar 测试变红。实测：这条否定规则缺了以后 icon.ico 被跟踪、
+# 三个 png 被静默忽略，而当时的测试只检查文件存在。
+!apps/shell/src-tauri/icons/
+!apps/shell/src-tauri/icons/*.png
 *.jpg
 *.jpeg
 *.gif
