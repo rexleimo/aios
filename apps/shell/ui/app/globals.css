@@ -1,0 +1,50 @@
+/*
+ * apps/shell/ui — Tailwind 4（CSS-first 配置，无 tailwind.config.js）
+ *
+ * token 的所有者是 `docs-site/assets/redesign/tokens.css`（见 DESIGN.md「Evidence Snapshot」）。
+ * 这里只声明矩阵用到的少数几个 `--rex-*`，并挂进 Tailwind 的颜色/字体/圆角命名空间，
+ * 于是界面里写的是 `bg-rex-bg`、`text-rex-text-muted` 这类 utility，不是手写的 CSS 规则。
+ * 值是否与所有者一致由 `scripts/tests/tooling/shell/shell-tokens.test.mjs` 逐条比对。
+ *
+ * 不 import 那个文件：docs-site 同时带 89 个 `--md-*`（mkdocs 主题层），壳里没有 mkdocs，
+ * 整份引进会拖进一个不属于这里的层。
+ */
+
+@import "tailwindcss";
+
+@theme {
+  /* 颜色命名空间：utility 名 = 去掉 --color- 前缀 */
+  --color-rex-bg: #FFFFFF;
+  --color-rex-bg-elevated: #FFFFFF;
+  --color-rex-text: #0A0A0A;
+  --color-rex-text-body: #3A4452;
+  --color-rex-text-muted: #5B6573;
+  --color-rex-text-soft: #98A2B3;
+  --color-rex-cyan: #0066FF;
+
+  /* 字体命名空间 */
+  --font-rex-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+  --font-rex-body: "Inter", system-ui, sans-serif;
+  --font-rex-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* 圆角命名空间：--rex-radius-sm: 8px */
+  --radius-rex-sm: 8px;
+}
+
+/*
+ * 深色主题走属性选择器覆写变量值，不复制一份 utility。
+ * 值来自所有者文件的 `:root[data-rex-theme="dark"]` 块，同样受 token 漂移测试约束。
+ */
+:root[data-rex-theme="dark"] {
+  --color-rex-bg: #06070D;
+  --color-rex-bg-elevated: #080A12;
+  --color-rex-text: #F8FAFC;
+}
+
+body {
+  /* 全站唯一一条非 utility 规则：把正文默认字体/字号/底色挂在根上，
+   * 其余样式一律在组件里用 utility 组合，避免再长出第二个 CSS 层。 */
+  background: var(--color-rex-bg);
+  color: var(--color-rex-text);
+  font-family: var(--font-rex-body);
+}

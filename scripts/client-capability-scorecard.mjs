@@ -16,9 +16,11 @@ import { isDirectModuleInvocation } from './lib/foundation/platform/module-entry
 const DEFAULT_CONFIG_PATH = 'config/host-capabilities.json';
 const DEFAULT_REPORT_PATH = 'docs/reports/2026-10-19-client-capability-scorecard.md';
 
-const LEVEL_POINTS = Object.freeze({ L0: 0, L1: 1, L2: 2, L3: 3 });
+export const LEVEL_POINTS = Object.freeze({ L0: 0, L1: 1, L2: 2, L3: 3 });
 // Capability axes are the exact token set used by config/host-capabilities.json.
-const CAPABILITY_AXES = Object.freeze([
+// Exported because this file is the vocabulary's single owner: the shell matrix
+// view imports it instead of keeping a second copy that could drift.
+export const CAPABILITY_AXES = Object.freeze([
   'sessionStartInjection',
   'preToolRewrite',
   'controlledShellRunner',

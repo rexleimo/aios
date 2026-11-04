@@ -10,7 +10,7 @@
 
 | 任务 | 产物 | 用什么 |
 |---|---|---|
-| **本仓库的真实产品界面**（`docs-site/`、`packages/debug-hub/`、`scripts/lib/memory/genealogy-gui/`） | 能跑、能维护的产品页 | 本文件的视觉语言 + `MOTION.md` + 本仓库自己的 CSS。**没有 React，不要写 kit 导入** |
+| **本仓库的真实产品界面**（`docs-site/`、`packages/debug-hub/`、`scripts/lib/memory/genealogy-gui/`） | 能跑、能维护的产品页 | 本文件的视觉语言 + `MOTION.md` + 本仓库自己的 CSS。**这些面没有 React，不要往里写 kit 导入**（`apps/shell/ui/` 是例外，见下） |
 | **给宿主项目的产品插图**（营销 hero、功能卡、docs 配图、带光标的假窗口/手机演示） | 一张静帧或一段 10–16 秒的循环 | 上游 `stageshow` 技能：`npx skills add benjitaylor/skills --skill stageshow`。它有 kit、69 个 gold 范例和 film 工具链，**流程是「复制最接近的范例」而不是从零写 stage** |
 | **纯视觉规范**（配色/字体/间距的基线） | `DESIGN.md` 本身 | `awesome-design-md`，本文件的前身就是它的产物 |
 
@@ -18,13 +18,20 @@
 
 ## 适用范围
 
-本契约约束下列界面源文件（由 `git ls-files` 实测，非举例）。框架：react。
+本契约约束下列界面源文件（由 `git ls-files` 实测，非举例）。**框架按路径划分，不再有一行笼统的「框架：react」**——那行曾与第 13 行互相矛盾，读者按哪一句办都会错：
+
+- `docs-site/`、`packages/debug-hub/`、`scripts/lib/memory/genealogy-gui/`：无框架，纯 CSS + 单文件 HTML
+- `scripts/lib/execution/tui-ink/**`：React（Ink 终端渲染，16 个 tsx）
+- `apps/shell/ui/**`：Next.js 16 + React 19 + **Tailwind 4**（CSS-first）+ 无头组件库（Radix UI、TanStack Table）。约定见 `apps/shell/README.md`；裁决见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md`
+
+三条共用本文件的视觉语言（token、字体、主题、对比度、焦点可见性），只有实现栈不同。
 
 - `docs-site/assets/custom.css`、`docs-site/assets/home.css`、`docs-site/assets/pages.css`
 - `docs-site/assets/redesign/{tokens,shell,home,pages,components,footer}.css`
 - `packages/debug-hub/src/ui.html`
 - `scripts/lib/memory/genealogy-gui/index.html`
 - `scripts/lib/execution/tui-ink/**`（16 个 tsx）
+- `apps/shell/ui/app/globals.css`、`apps/shell/ui/app/layout.tsx`、`apps/shell/ui/app/page.tsx`、`apps/shell/ui/components/matrix-table.tsx`、`apps/shell/ui/lib/labels.ts`
 
 **不在范围内**（实测排除，每项都有理由，配置在 `config/design-contract/exclusions.json`）：
 

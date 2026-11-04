@@ -225,3 +225,38 @@
 **定义**：`apps/desktop/` 只有 `dist/` 与 `node_modules/`、无源码，不能作为 UI 变更落点；用户口中的「客户端」在本仓语境指**技能投影到的各 coding client**（`skill-sources/` → `.agents/skills/` → 客户端技能根），不是 Electron 壳。
 
 **为什么**：落点搞错会让整条链（skill 投影、门禁接线、验证证据）全部指向一个改不了的地方；这一条是 `/grill` 明确纠正过的理解偏差，写下来防止下一个会话重犯。
+
+## 感知面与生态（perceived surface / ecosystem）
+
+### 感知面（perceived surface）
+
+**定义**：使用者能直接看见「AIOS 为我做了什么」的那些界面——当前是 TUI、`aios hud`、`genealogy-gui`、`debug-hub`；目标是新增接入矩阵面板与桌面壳。裁决见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md`。
+
+**为什么**：它与扩展面是同一件事的两面——没有宿主，插件无处可装；没有插件，宿主没有内容；没有可见面，两者都不可感知。用户反馈「感知不到受益」与「外部开发者参与不进来」是同一个空洞。
+
+### 能力进程与视图（capability process vs view）
+
+**定义**：能力进程 = 持有 ContextDB / 记忆 / CLI / 文件 / 子进程的常驻进程；浏览器面板、TUI、Tauri 壳都只是它的视图，动作由它执行。
+
+**为什么**：Web 页面无法调用底层的说法只在「页面来自外网、能力在别处」时成立；localhost 页面的能力等于服务端进程的能力（`genealogy-gui` 的 file API、`debug-hub` 的 `POST /api/logs` 是两次实证）。真正限制浏览器的是路径选择、钥匙串、常驻自启、托盘与系统通知，以及**本地端口的信任边界**。
+
+### 插件 manifest kind（client / integration / panel）
+
+**定义**：AIOS 的扩展契约按挂载侧分三类——`client`（把 AIOS 装进某客户端，今天在 `scripts/lib/clients/*` 里是代码）、`integration`（第三方 skill + MCP，已有 `config/integrations.json` 声明式注册表 + `aios integration` 四道门）、`panel`（给宿主加一屏，尚无实现）；共同字段 `schemaVersion`/`id`/`version`/`permissions`/`lifecycle`/`evidence`。
+
+**为什么**：magpie 生态能长，是因为只有一个宿主、一个 ABI、一个分发通道；我们三个平面各自为政，所以问题不是「缺钩子」而是「缺共同宿主与共同契约」。
+
+### 任务级路由 vs 请求级路由（task-level vs request-level routing）
+
+**定义**：任务级 = 现有 `scripts/lib/tooling/model-router/routing/selection.mjs` 按 task/role 选模型、`availability.mjs` 记通道状态（`ok`/`degraded`/`down`，TTL 10min）、`protocols.mjs` 的四方言词表；请求级 = 一次 LLM HTTP 请求经本地网关时决定走哪个 provider/账号/通道，含流式与工具调用透传。两者不是同一件事，不能互相顶替。
+
+**为什么**：二期网关的可行性依赖前者已有零件（状态机、词表、fallback 链），但“已有智能路由”不等于“已有网关”；把它们混为一谈会把请求面（HTTP 入口、流式转发）的工程量藏起来。
+
+### 接入矩阵（adapter matrix）
+
+**定义**：13 个客户端 × 7 个能力轴（`sessionStartInjection`/`preToolRewrite`/`controlledShellRunner`/`mcpProxy`/`compactPacket`/`advisorySkills`/`metrics`）× L0–L3 的矩阵视图，数据源固定为 `aios status --json`（`aios.status.v1`）、`config/host-capabilities.json` 与生成式记分板 `docs/reports/2026-10-19-client-capability-scorecard.md`；每格必须能展开 `reason` 原文与 `evidenceRef`。
+
+**为什么**：它是唯一同时满足三件事的第一屏——数据现成、每格可指回文件（界面里不允许出现手写常量）、并且它本身就是插件契约的入门沙盒（写 manifest 的人看着自己的格子变绿）。
+
+**落地时的两点修正（`apps/shell/data/matrix.mjs` 实测）**：逐轴原因字段不存在，单元格只表达「是否在配置里声明」，点击后展示行级 `limits[]` 原文 + `subagents.evidenceRef` + 证据状态，界面不得编造逐轴理由；且配置声明 13 个客户端而 `aios status` 只覆盖 10 个，未覆盖必须显示为 `not-covered` 而不是「好」。
+

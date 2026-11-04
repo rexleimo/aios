@@ -73,7 +73,13 @@
     "check:motion:frame": "node scripts/check-motion-frame.mjs",
     "check:motion:contents": "node scripts/check-release-contents.mjs",
     "design": "node scripts/design.mjs",
-    "check:design": "node scripts/check-design-contract.mjs"
+    "check:design": "node scripts/check-design-contract.mjs",
+    "ui:setup": "npm --prefix apps/shell/ui install",
+    "ui": "node scripts/aios-ui.mjs dev",
+    "ui:build": "node scripts/aios-ui.mjs build",
+    "ui:start": "node scripts/aios-ui.mjs start",
+    "ui:typecheck": "npm --prefix apps/shell/ui run typecheck",
+    "test:shell": "node --test \"scripts/tests/tooling/shell/*.test.mjs\""
   },
   "devDependencies": {
     "tsx": "^4.21.0"

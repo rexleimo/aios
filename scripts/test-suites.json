@@ -273,7 +273,12 @@
       "scripts/tests/tooling/workspace/pack-manifest.test.mjs",
       "scripts/tests/tooling/workspace/workspace-integration.test.mjs",
       "scripts/tests/tooling/workspace/workspace.test.mjs",
-      "scripts/tests/client-capability-scorecard.test.mjs"
+      "scripts/tests/client-capability-scorecard.test.mjs",
+      "scripts/tests/tooling/shell/matrix.test.mjs",
+      "scripts/tests/tooling/shell/matrix-sources.test.mjs",
+      "scripts/tests/tooling/shell/shell-tokens.test.mjs",
+      "scripts/tests/tooling/shell/shell-labels.test.mjs",
+      "scripts/tests/tooling/shell/ui-launcher.test.mjs"
     ]
   },
   "browser": {

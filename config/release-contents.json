@@ -23,6 +23,10 @@
     {
       "prefix": "examples/",
       "why": "upstream stageshow scenes, deliberately not vendored (see check-motion-kit.mjs). A contract naming them names the upstream repository, not this archive."
+    },
+    {
+      "prefix": "apps/",
+      "why": "the desktop shell (apps/shell: Next.js UI + Tauri shell). It is published as its own signed-unsigned desktop artifact, not inside the CLI tarball: the archive excludes node_modules, so a shipped copy could not be run by the installer anyway. DESIGN.md names apps/shell/ui because the visual contract must cover its sources, which live in the repository."
     }
   ],
   "upstream": [

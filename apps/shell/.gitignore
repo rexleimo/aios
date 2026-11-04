@@ -1,0 +1,13 @@
+# Tauri / Next.js build artifacts
+dist/
+src-tauri/target/
+ui/.next/
+ui/out/
+ui/next-env.d.ts
+ui/tsconfig.tsbuildinfo
+# `next dev` 每次都重写它（见 node_modules/next/dist/server/lib/generate-agent-files.js）。
+# 跟踪它会让 ui/ 顶格 8 项变成 9 项（app/components/lib + 5 个不可移动的配置），
+# 而它本来就由 next 自行再生，所以按 next-env.d.ts 同档处理。
+ui/AGENTS.md
+node_modules/
+*.log
