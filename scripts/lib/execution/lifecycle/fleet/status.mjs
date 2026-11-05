@@ -68,10 +68,16 @@ export async function buildAiosStatus({
   evidenceRoot = rootDir,
   generatedAt = new Date().toISOString(),
 } = {}) {
-  const [agentCatalogueReport, workflowRecipeReport, clientCapabilityReport] = await Promise.all([
-    buildAgentCatalogue({ rootDir, evidenceRoot, generatedAt }),
-    listWorkflowRecipes({ rootDir, evidenceRoot, generatedAt }),
-    buildClientCapabilityReport({ rootDir, evidenceRoot }),
+  // 三段都依赖同一份 agent catalogue，所以先算一次再并行：之前三个 builder 各自重算，
+  // `aios status` 实测因此扫了三遍证据目录（9.3s），现在只有一遍。
+  const agentCatalogueReport = await buildAgentCatalogue({ rootDir, evidenceRoot, generatedAt });
+  const [workflowRecipeReport, clientCapabilityReport] = await Promise.all([
+    listWorkflowRecipes({ rootDir, evidenceRoot, generatedAt, agentCatalogue: agentCatalogueReport }),
+    buildClientCapabilityReport({
+      rootDir,
+      evidenceRoot,
+      agentCatalogueReport,
+    }),
   ]);
   const subagentContext = await buildSubagentContextSummary({ rootDir });
 

@@ -61,28 +61,59 @@ async function readJsonFile(filePath) {
   }
 }
 
-async function findLatestValidJsonl(dirPath, validator) {
-  try {
-    const entries = await fs.readdir(dirPath, { withFileTypes: true });
-    const files = await Promise.all(entries
-      .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
-      .map(async (entry) => {
-        const filePath = path.join(dirPath, entry.name);
-        const stat = await fs.stat(filePath);
-        return { filePath, mtimeMs: stat.mtimeMs };
-      }));
-    files.sort((left, right) => right.mtimeMs - left.mtimeMs);
-    for (const file of files) {
-      if (await validator(file.filePath)) return file.filePath;
-    }
-    return '';
-  } catch (error) {
-    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) return '';
-    throw error;
-  }
+/**
+ * Per-build cache of one directory scan and the file contents read from it.
+ *
+ * Measured: `.aios/interception/metrics` holds 518 files / 27 MB, and this scan ran once
+ * per agent (16 of them), so `aios status` spent most of its 9 seconds re-listing and
+ * re-reading the same directory. The listing is identical for every agent in one build;
+ * only the per-agent validator differs, so it is evaluated in memory.
+ */
+export function createEvidenceScanCache() {
+  return { listings: new Map(), contents: new Map() };
 }
 
-async function readMetricsRecords(filePath) {
+async function listJsonlByNewest(dirPath, cache) {
+  const key = path.resolve(dirPath);
+  if (cache?.listings.has(key)) return cache.listings.get(key);
+  const pending = (async () => {
+    try {
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+      const files = await Promise.all(entries
+        .filter((entry) => entry.isFile() && entry.name.endsWith('.jsonl'))
+        .map(async (entry) => {
+          const filePath = path.join(dirPath, entry.name);
+          const stat = await fs.stat(filePath);
+          return { filePath, mtimeMs: stat.mtimeMs };
+        }));
+      files.sort((left, right) => right.mtimeMs - left.mtimeMs);
+      return files;
+    } catch (error) {
+      if (['ENOENT', 'ENOTDIR'].includes(error?.code)) return [];
+      throw error;
+    }
+  })();
+  cache?.listings.set(key, pending);
+  return pending;
+}
+
+async function findLatestValidJsonl(dirPath, validator, cache) {
+  const files = await listJsonlByNewest(dirPath, cache);
+  for (const file of files) {
+    if (await validator(file.filePath)) return file.filePath;
+  }
+  return '';
+}
+
+async function readMetricsRecords(filePath, cache) {
+  const key = path.resolve(filePath);
+  if (cache?.contents.has(key)) return cache.contents.get(key);
+  const records = await readMetricsRecordsUncached(filePath);
+  cache?.contents.set(key, records);
+  return records;
+}
+
+async function readMetricsRecordsUncached(filePath) {
   let raw = '';
   try {
     raw = await fs.readFile(filePath, 'utf8');
@@ -105,7 +136,7 @@ async function readMetricsRecords(filePath) {
   return records;
 }
 
-async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot }) {
+async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot, scan }) {
   const roots = [...new Set([evidenceRoot || rootDir].filter(Boolean).map((item) => path.resolve(item)))];
   const refs = {};
 
@@ -123,8 +154,9 @@ async function readAgentPromotionEvidence(agentId, { rootDir, evidenceRoot }) {
         agentId,
         smoke,
         provenance,
-        metricsRecords: await readMetricsRecords(filePath),
+        metricsRecords: await readMetricsRecords(filePath, scan),
       }).valid,
+      scan,
     );
     if (!metricsPath) continue;
     refs.smoke = path.relative(rootDir, smokePath);
@@ -184,8 +216,9 @@ export async function buildAgentCatalogue({
   generatedAt = new Date().toISOString(),
 } = {}) {
   const source = await loadCanonicalAgents({ rootDir });
+  const scan = createEvidenceScanCache();
   const agents = await Promise.all(Object.values(source.agentsById).map(async (agent) => {
-    const verification = await readAgentPromotionEvidence(agent.id, { rootDir, evidenceRoot });
+    const verification = await readAgentPromotionEvidence(agent.id, { rootDir, evidenceRoot, scan });
     const lifecycleState = lifecycleForAgent(agent, verification);
     const blockers = buildBlockers(agent, lifecycleState, verification);
     return {

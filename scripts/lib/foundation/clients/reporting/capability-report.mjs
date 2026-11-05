@@ -25,10 +25,21 @@ export async function buildClientCapabilityReport({
   evidenceRoot = rootDir,
   env = process.env,
   nativeStrict = false,
+  // 上层（`aios status`）已经算过这两份报告时直接传进来。旧行为是每个调用者各算一遍——
+  // 实测一次 status 因此把 19 个 agent 的证据目录扫了 3 遍，9 秒里有大半花在重复 I/O 上。
+  agentCatalogueReport: providedAgentCatalogue = null,
+  workflowRecipeReport: providedWorkflowRecipes = null,
 } = {}) {
   const hostCapabilities = await readHostCapabilities(rootDir);
-  const agentCatalogueReport = await buildAgentCatalogue({ rootDir, evidenceRoot });
-  const workflowRecipeReport = await listWorkflowRecipes({ rootDir, evidenceRoot });
+  const agentCatalogueReport =
+    providedAgentCatalogue || (await buildAgentCatalogue({ rootDir, evidenceRoot }));
+  const workflowRecipeReport =
+    providedWorkflowRecipes ||
+    (await listWorkflowRecipes({
+      rootDir,
+      evidenceRoot,
+      agentCatalogue: agentCatalogueReport,
+    }));
   const readiness = {
     agentsReady: agentCatalogueReport.strict.blocked === false,
     workflowsReady: workflowRecipeReport.summary.blockedWorkflowIds.length === 0,
