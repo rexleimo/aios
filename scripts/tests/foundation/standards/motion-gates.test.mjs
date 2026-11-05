@@ -193,7 +193,15 @@ test('a single-frame 4px step is refused, and the finding is named', () => {
     return;
   }
   assert.equal(result.code, 1, result.stdout + result.stderr);
-  assert.match(result.stdout, /jump: card y -4\.0px in one frame/);
+  // 断言「这道跳变被抓到并被指名」，不断言渲染器打印的那个浮点。
+  // fixture 设计的单帧步长是 4px（`frame-snap.html` 在 49.95%→50% 从 translateY(12px) 跳到 8px），
+  // 但帧采样的时刻随负载摆动，同一份产物实测会在 -4.0px / -4.1px 之间变（隔离跑 3 次红 1 次，
+  // 帧数也在 58↔66 之间变）。把 `-4.0` 写进正则就是拿噪声当规格，红的时候没人能看出是噪声还是真坏了。
+  // 容差 ±0.5px 仍然留住数量级：报成 -1.x 或 -12px 一样红。
+  const finding = result.stdout.match(/jump: card y (-\d+(?:\.\d+)?)px in one frame/);
+  assert.ok(finding, `expected a named single-frame y jump, got: ${result.stdout}`);
+  const step = Number.parseFloat(finding[1]);
+  assert.ok(step <= -3.5 && step >= -4.5, `single-frame step should be the fixture's 4px, got ${step}px`);
 });
 
 test('a page without a defect exits 0, and only after measuring elements', () => {
