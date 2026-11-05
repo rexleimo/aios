@@ -4,10 +4,7 @@ export type SectionId =
   | 'overview'
   | 'sessions'
   | 'memory'
-  | 'matrix'
-  | 'skills'
-  | 'team'
-  | 'integrations'
+  | 'tools'
   | 'settings';
 
 export interface SectionMeta {
@@ -46,36 +43,12 @@ export const SECTIONS: readonly SectionMeta[] = [
     source: 'aios memory report --json',
   },
   {
-    id: 'matrix',
-    href: '/matrix',
-    label: '接入矩阵',
+    id: 'tools',
+    href: '/tools',
+    label: '我的 AI 工具',
     group: '观测',
-    description: '13 个客户端 × 7 个能力轴：谁声明了什么，谁的证据还缺。',
-    source: 'apps/shell/data/load.mjs',
-  },
-  {
-    id: 'skills',
-    href: '/skills',
-    label: '技能健康',
-    group: '观测',
-    description: '技能的安装与失败模式。',
-    source: 'aios skill health --json',
-  },
-  {
-    id: 'team',
-    href: '/team',
-    label: '团队与工作流',
-    group: '观测',
-    description: '默认 agent 目录与工作流配方：哪些能真跑，哪些被门挡住。',
-    source: 'aios agents list --json + aios workflow list --json',
-  },
-  {
-    id: 'integrations',
-    href: '/integrations',
-    label: '集成',
-    group: '扩展',
-    description: '第三方集成注册表：装了什么、需要什么环境变量。',
-    source: 'aios integration list --json',
+    description: '每个客户端接了什么、能不能用、缺什么、怎么修；技能与集成在这里是细节。',
+    source: 'config/host-capabilities.json + aios status --json',
   },
   {
     id: 'settings',

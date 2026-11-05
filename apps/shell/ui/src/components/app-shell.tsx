@@ -10,14 +10,11 @@ import { usePathname } from 'next/navigation';
 import {
   Blocks,
   BookMarked,
-  Boxes,
   Gauge,
   LayoutDashboard,
   Settings2,
   MessagesSquare,
-  Sparkles,
-  TableProperties,
-  Users,
+  Wrench,
 } from 'lucide-react';
 
 import { cn } from '../lib/cn';
@@ -27,10 +24,7 @@ const ICONS: Record<SectionId, typeof LayoutDashboard> = {
   overview: LayoutDashboard,
   sessions: MessagesSquare,
   memory: BookMarked,
-  matrix: TableProperties,
-  skills: Sparkles,
-  team: Users,
-  integrations: Boxes,
+  tools: Wrench,
   settings: Settings2,
 };
 

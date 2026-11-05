@@ -7,15 +7,10 @@ import { notFound } from 'next/navigation';
 
 import { sectionById, SECTIONS } from '../../../lib/sections';
 import { OverviewSection } from '../../../components/sections/overview';
-import { MatrixSection } from '../../../components/sections/matrix';
+import { ToolsSection } from '../../../components/sections/tools';
 import { MemorySection, UsageSection } from '../../../components/sections/data-pages';
 import { SessionsSection } from '../../../components/sections/sessions';
-import {
-  IntegrationsSection,
-  SettingsSection,
-  SkillsSection,
-  TeamSection,
-} from '../../../components/sections/observability';
+import { SettingsSection } from '../../../components/sections/observability';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,10 +19,7 @@ const PAGES = {
   sessions: SessionsSection,
   memory: MemorySection,
   usage: UsageSection,
-  matrix: MatrixSection,
-  skills: SkillsSection,
-  team: TeamSection,
-  integrations: IntegrationsSection,
+  tools: ToolsSection,
   settings: SettingsSection,
 } as const;
 
