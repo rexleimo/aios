@@ -21,9 +21,9 @@ import {
   UI_DEFAULT_PORT,
   bootstrapUiUrl,
   tokenPath,
-	} from '../../../../scripts/aios-ui.mjs';
+	} from '../../../../../scripts/aios-ui.mjs';
 
-const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const SRC_TAURI = path.join(ROOT, 'apps', 'shell', 'src-tauri');
 
 function read(relative) {

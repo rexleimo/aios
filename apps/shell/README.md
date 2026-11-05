@@ -76,7 +76,7 @@ apps/shell/                 ← 5 项
 
 1. **视图不含事实。** `ui/` 里唯一的取数通道是 `lib/matrix-loader.ts`，它跑 `data/load.mjs` 读 stdout。
    不 import 装配代码：实测 import 会把 `scripts/lib/**` 拖进打包图，Turbopack 因此要求整仓 trace。
-   页面里出现任何数字字面量都是缺陷，由 `scripts/tests/tooling/shell/matrix-sources.test.mjs` 判定。
+   页面里出现任何数字字面量都是缺陷，由 `scripts/tests/tooling/shell/interface/matrix-sources.test.mjs` 判定。
 2. **token 只有一个所有者。** `@theme` 里的每个值必须等于 `docs-site/assets/redesign/tokens.css` 的对应
    `--rex-*`，由 `shell-tokens.test.mjs` 逐条比对。globals.css 里允许的选择器只有 `:root[data-rex-theme="dark"]` 和 `body`。
 3. **服务端组件不从 `'use client'` 模块取数据。** 实测踩过：`page.tsx` 从 `matrix-table.tsx` import
@@ -90,7 +90,7 @@ apps/shell/                 ← 5 项
 ## 验证
 
 ```sh
-node --test "scripts/tests/tooling/shell/*.test.mjs"    # 37 用例（含壳与启动器的端口一致性）
+node --test "scripts/tests/tooling/shell/**/*.test.mjs"   # 62 用例（interface/ 是视图，desktop/ 是壳）
 node scripts/aios-standards.mjs --root . --rule directoryEntries
 npm run shell:test                                      # cargo test（10 用例：端口、参数、cwd、等待、job、token）
 ```
@@ -205,7 +205,7 @@ npm run test:shell    # 只跑界面层的测试
 npm run ui          # 1) 起 next dev，把带 token 的 URL 打出来
 # 2) 另开一个终端（可选）：壳直接接上这个端口，不另起服务
 npm run shell:dev
-node --test scripts/tests/tooling/shell/dev-server-trust.test.mjs   # 3) 自动验
+node --test scripts/tests/tooling/shell/interface/dev-server-trust.test.mjs   # 3) 自动验
 ```
 
 `dev-server-trust.test.mjs` 起的是**真的 dev server**：随机端口 → 等 token 文件出现 →

@@ -14,10 +14,10 @@ import {
 	resolveShellBinary,
 	runApp,
 	serverCommand,
-} from '../../../../scripts/aios-app.mjs';
-import { resolveUiMode } from '../../../../scripts/aios-ui.mjs';
+} from '../../../../../scripts/aios-app.mjs';
+import { resolveUiMode } from '../../../../../scripts/aios-ui.mjs';
 
-const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const UI_DIR = path.join(ROOT, 'apps', 'shell', 'ui');
 
 /** A pathless `exists` so the tests do not depend on what is on disk right now. */

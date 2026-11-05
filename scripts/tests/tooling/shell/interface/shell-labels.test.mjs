@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-import { CAPABILITY_AXES } from '../../../client-capability-scorecard.mjs';
+import { CAPABILITY_AXES } from '../../../../client-capability-scorecard.mjs';
 
-const ui = (file) => new URL(`../../../../apps/shell/ui/${file}`, import.meta.url);
-const shell = (file) => new URL(`../../../../apps/shell/${file}`, import.meta.url);
+const ui = (file) => new URL(`../../../../../apps/shell/ui/${file}`, import.meta.url);
+const shell = (file) => new URL(`../../../../../apps/shell/${file}`, import.meta.url);
 
 // labels.ts 是 TS，测试里不引运行时（本仓无 ts 运行器），只按文本核对声明。
 // 判据是客观事实：键存在、值不等于键本身、值非空。

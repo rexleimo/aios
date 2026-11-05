@@ -8,10 +8,10 @@ import {
   buildMatrix,
   buildRow,
   MATRIX_SCHEMA_VERSION,
-} from '../../../../apps/shell/data/matrix.mjs';
-import { CAPABILITY_AXES } from '../../../client-capability-scorecard.mjs';
+} from '../../../../../apps/shell/data/matrix.mjs';
+import { CAPABILITY_AXES } from '../../../../client-capability-scorecard.mjs';
 
-const configPath = new URL('../../../../config/host-capabilities.json', import.meta.url);
+const configPath = new URL('../../../../../config/host-capabilities.json', import.meta.url);
 const capabilities = JSON.parse(readFileSync(configPath, 'utf8'));
 const declaredClients = Object.keys(capabilities.clients);
 

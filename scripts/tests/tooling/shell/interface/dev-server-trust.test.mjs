@@ -16,7 +16,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..');
+const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const NEXT_BIN = path.join(ROOT, 'apps', 'shell', 'ui', 'node_modules', 'next', 'dist', 'bin', 'next');
 const LAUNCHER = path.join(ROOT, 'scripts', 'aios-ui.mjs');
 

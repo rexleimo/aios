@@ -274,15 +274,16 @@
       "scripts/tests/tooling/workspace/workspace-integration.test.mjs",
       "scripts/tests/tooling/workspace/workspace.test.mjs",
       "scripts/tests/client-capability-scorecard.test.mjs",
-      "scripts/tests/tooling/shell/app-launcher.test.mjs",
-      "scripts/tests/tooling/shell/dev-server-trust.test.mjs",
-      "scripts/tests/tooling/shell/matrix.test.mjs",
-      "scripts/tests/tooling/shell/matrix-sources.test.mjs",
-      "scripts/tests/tooling/shell/shell-labels.test.mjs",
-      "scripts/tests/tooling/shell/shell-sidecar.test.mjs",
-      "scripts/tests/tooling/shell/shell-tokens.test.mjs",
-      "scripts/tests/tooling/shell/shell-trust.test.mjs",
-      "scripts/tests/tooling/shell/ui-launcher.test.mjs"
+      "scripts/tests/tooling/shell/desktop/app-launcher.test.mjs",
+      "scripts/tests/tooling/shell/desktop/shell-actions.test.mjs",
+      "scripts/tests/tooling/shell/interface/dev-server-trust.test.mjs",
+      "scripts/tests/tooling/shell/interface/matrix.test.mjs",
+      "scripts/tests/tooling/shell/interface/matrix-sources.test.mjs",
+      "scripts/tests/tooling/shell/interface/shell-labels.test.mjs",
+      "scripts/tests/tooling/shell/desktop/shell-sidecar.test.mjs",
+      "scripts/tests/tooling/shell/interface/shell-tokens.test.mjs",
+      "scripts/tests/tooling/shell/desktop/shell-trust.test.mjs",
+      "scripts/tests/tooling/shell/interface/ui-launcher.test.mjs"
     ]
   },
   "browser": {

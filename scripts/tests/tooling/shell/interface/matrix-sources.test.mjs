@@ -9,10 +9,10 @@ import {
 	createStatusCollector,
 	parseStatusPayload,
 	readCapabilities,
-} from '../../../../apps/shell/data/sources.mjs';
-import { loadMatrix } from '../../../../apps/shell/data/load.mjs';
+} from '../../../../../apps/shell/data/sources.mjs';
+import { loadMatrix } from '../../../../../apps/shell/data/load.mjs';
 
-const rootDir = new URL('../../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+const rootDir = new URL('../../../../../', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
 test('a status payload of another kind is rejected, not treated as empty evidence', () => {
 	assert.equal(parseStatusPayload(''), null);
@@ -92,7 +92,7 @@ test('loadMatrix wires capabilities and status into a view model with sources at
 });
 
 test('the shipped page contains no hand-written numbers', () => {
-	const page = readFileSync(new URL('../../../../apps/shell/ui/src/app/page.tsx', import.meta.url), 'utf8');
+	const page = readFileSync(new URL('../../../../../apps/shell/ui/src/app/page.tsx', import.meta.url), 'utf8');
 	const stripped = page
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.replace(/^\s*\/\/.*$/gm, '')

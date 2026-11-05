@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 
-const ownerCss = new URL('../../../../docs-site/assets/redesign/tokens.css', import.meta.url);
-const shellCss = new URL('../../../../apps/shell/ui/src/app/globals.css', import.meta.url);
+const ownerCss = new URL('../../../../../docs-site/assets/redesign/tokens.css', import.meta.url);
+const shellCss = new URL('../../../../../apps/shell/ui/src/app/globals.css', import.meta.url);
 
 // Tailwind 4 的 @theme 用自己的命名空间生成 utility；这里把它映射回所有者的 token 名。
 // 三条映射规则，不是逐个列举：新增一个 utility token 时不需要改本测试。
@@ -80,8 +80,8 @@ test('the shell styles with utilities, not with a second handwritten CSS layer',
 
 test('the accessibility baseline survives the Tailwind switch', () => {
   const css = readFileSync(shellCss, 'utf8');
-  const table = readFileSync(new URL('../../../../apps/shell/ui/src/components/matrix-table.tsx', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../../../../apps/shell/ui/src/app/page.tsx', import.meta.url), 'utf8');
+  const table = readFileSync(new URL('../../../../../apps/shell/ui/src/components/matrix-table.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../../../../apps/shell/ui/src/app/page.tsx', import.meta.url), 'utf8');
   // 无头库提供焦点与键盘行为，界面侧必须显式保留可见焦点环。
   assert.match(table, /focus-visible:outline/u);
   assert.match(css, /--color-rex-text-muted/u);

@@ -9,14 +9,14 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { bootstrapUrl, decide, isSelfOrigin, parseOrigin } from '../../../../apps/shell/ui/src/lib/trust.mjs';
+import { bootstrapUrl, decide, isSelfOrigin, parseOrigin } from '../../../../../apps/shell/ui/src/lib/trust.mjs';
 import {
 	bootstrapUiUrl,
 	childEnvironment,
 	createToken,
 	publishToken,
 	tokenPath,
-} from '../../../../scripts/aios-ui.mjs';
+} from '../../../../../scripts/aios-ui.mjs';
 
 const TOKEN = 'a'.repeat(32);
 const PORT = 3126;

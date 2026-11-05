@@ -14,7 +14,7 @@ import {
 	resolveRepoRoot,
 	resolveUiPort,
 	runUi,
-} from '../../../../scripts/aios-ui.mjs';
+} from '../../../../../scripts/aios-ui.mjs';
 
 const FAKE_ROOT = path.resolve('/tmp', 'fake-repo');
 const FAKE_UI = path.join(FAKE_ROOT, 'apps', 'shell', 'ui');
