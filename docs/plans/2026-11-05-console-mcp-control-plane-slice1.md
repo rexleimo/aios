@@ -33,7 +33,7 @@
 | `dispatch.mjs`、`parse-args/top-level.mjs` | **已是 fileLines 违规** | 新逻辑一律不进这两个文件；CLI 侧只允许一条委派分支 |
 | 落点表可信度 | hermes 真实路径 `mcp_servers.mcp.<name>`，表只写到 `mcp_servers` | w1 必须先修表再写字母，否则 w2 静默写进没人读的路径 |
 | pi 载体 | `mcp-adapter.mjs:2-8,30,33,56,167`；配置链是 structural no-op | pi 的「装卸」走扩展载体判定，且必须继承 `:21-22` 的 shell/auth 拒绝 |
-| 既有缺陷反例 | `skill add --dry-run` 空转（`dispatch.mjs:151-162` 不传，`external/install.mjs` 里 `dryRun` 出现 0 次） | w2/w4 的 `--dry-run` 必须带「不写盘」断言，作为验收的一部分 |
+| 既有缺陷反例 | `skill add --dry-run` 空转（`scripts/lib/tooling/cli/dispatch/dispatch.mjs:165-177` 不传 `dryRun`，`external/install.mjs` 里 `dryRun` 出现 0 次） | w2/w4 的 `--dry-run` 必须带「不写盘」断言，作为验收的一部分 |
 
 ## 工作项图
 
@@ -70,6 +70,8 @@
   - 证据：`node --test scripts/tests/clients/mcp-formats/*.test.mjs` → pass 57 / fail 0；
     `node --test scripts/tests/clients/**/*.test.mjs` → pass 371 / fail 0 / skip 1；
     `standards check` 未新增违规（新文件不在 duplicateLines/fileLines 失败清单内，`scripts/lib/clients` 6/8、`mcp-formats` 6/8 仍 pass）。
+    **提交后补记**：这条在 63ef5154 之后只对源码文件成立——`mcp-generic-writer.test.mjs` 被跟踪后进了 duplicateLines 名单
+    （12 行行形状，非值重复），见「w4 实施中新增的实测事实」里的口径纠正。
   - 覆盖度：**17 个可写落点全部有字节级用例**（期望集合由 `MCP_LANDING_OVERRIDES` 推导，补表加落点而测试没跟上即红），
     逐对断言「装→读回→同形状再装=unchanged→dry-run 卸不写盘→真卸→其余字节逐字节相同」。
     `pi/project` 不可写，落在拒绝用例里。
@@ -120,7 +122,8 @@
   `dispatch/memory.mjs`；② 把 `integration/mcp/judgment/search` 四个同形委派收进一张 `FEATURE_CLI_ROUTES` 表
   （它们原本各抄一份参数三件套，`integration`/`mcp` 的两份 6 行窗口已被 duplicateLines 计成副本）。
   结果：**507 → 469 行**，`fileLines` 的 blocking 从 7 降到 6（dispatch 这条既有违规被修掉），
-  `duplicateLines` 回到 HEAD 的 636（本轮净增 0），四个被改路由的命令逐个实跑退 0。
+  `duplicateLines` 回到 HEAD 的 636（本轮净增 0）**〔此数是未跟踪状态下的数，口径纠正见下条「我自己先前那句……」〕**，
+  四个被改路由的命令逐个实跑退 0。
   计划里写的 allowedWrites（`dispatch/mcp.mjs`、`parse-args/run/mcp.mjs`）与实际落点不同，如实记这里：
   参数层在 `parse-args/platform/mcp.mjs`（同族先例是 `parse-args/platform/integration.mjs`），
   测试在 `scripts/tests/clients/adapters/`（`scripts/tests/tooling` 的子目录 8/8 顶格，且被测对象属 `clients/mcp`）。
@@ -131,11 +134,11 @@
   ⚠️ 这条当时只改了**两处**：收口时实跑 `aios mcp --help` 才发现另外两处仍在说反话——
   `help/commands/basic.mjs` 的 external 段写着「`--force`（delete it anyway）」、
   `commander/specs/io/mcp.mjs:18` 写着「delete an entry AIOS did not register」、
-  `install-policy.mjs:186` 的 docstring 写着「kept-differs / external 才会走到它」。**行为一直正确，错的是四处描述里的三处**。
+  `scripts/lib/clients/mcp/install-policy.mjs` 的 `uninstallServer` docstring（**修前**写的，行号已随本轮改动失效）写着「kept-differs / external 才会走到它」。**行为一直正确，错的是四处描述里的三处**。
   现四处一致（external 必须先 `adopt`，force 只覆盖「登记后被改过」）。教训与 ADR 0001 同一句：
   同一条规则被抄进四个所有者手里时，改一处不算改完；这些串没有任何断言钉住，所以反话能活到帮助文本里——
   w6 的界面文案必须复用同一份来源，不要再抄第五份。修后 `93 pass / 0 fail`（`mcp` 全套 + 用法错误门），
-  `duplicateLines` 仍 636（与 HEAD 持平，新增散文没造出重复窗口）。
+  `duplicateLines` 仍 636（新增散文没造出重复窗口；**注意这是未跟踪口径**，提交后见下条纠正）。
 - **修完 DESIGN.md 后重跑全量：`2710 pass / 1 fail / 13 skipped`，剩下那条不是本切片的，且是 flaky**：
   `scripts/tests/foundation/standards/motion-gates.test.mjs:189` 断言真浏览器渲染出的字符串必须等于
   `/jump: card y -4\.0px in one frame/`，实测两次绿一次红，红时输出
@@ -144,6 +147,23 @@
   正确修法是把「一个 4px 的单帧跳变被抓到并指名」这件事留住、把浮点放开（捕获数字再比容差，例如 4.0±0.5），
   而不是删断言或把 `-4\.0` 改成 `-4\.\d`（后者会放过数量级错误）。**本轮没有动它**：
   这文件不在 w4 的 allowedWrites 里，改别的领域的测试断言属于范围扩张，要人点头。记录在此，等一个独立小轮处理。
+  → **人已点头，已修**（2026-11-05 落地后追加）：`motion-gates.test.mjs:196` 改为「捕获数字再比容差」——
+  先 `match(/jump: card y (-\d+(?:\.\d+)?)px in one frame/)` 拿到捕获组，再断言 `step <= -3.5 && step >= -4.5`，
+  并把为什么写死是错的（fixture 设计步长就是 4px：`frame-snap.html` 在 49.95%→50% 从 `translateY(12px)` 跳到 `8px`，
+  而帧采样时刻随负载摆动）写进注释。正反两个方向都验过：当年失败的那行 `-4.1px` 现在 PASS，
+  `-12.0px`、`-1.2px`、以及「报成多帧/没报」三种仍然 REJECTED——**数量级判定没被放松**。
+  真跑 4 次 `node --test scripts/tests/foundation/standards/motion-gates.test.mjs` = 17/17 四次全绿（修前是 3 次里红 1）。
+- **我自己先前那句「`duplicateLines` 636 与 HEAD 持平，本轮净增 0」是口径错的，纠正如下**：
+  `standards check` 的 `measured/blocking` 计的是**参与重复的文件数**（637 个文件、25288 行），且规则只测
+  `git ls-files` 里的**已跟踪**文件。w2–w4 期间我的新文件还没被跟踪，所以那时读到 636 是「不含本轮产物」的数；
+  `873c6476` 一提交，`scripts/tests/clients/mcp-formats/mcp-generic-writer.test.mjs` 就进了名单：
+  实测「按提交后的跟踪集 = 637」vs「把该 commit 新增的 14 个文件从跟踪集里剔除 = 636」，差的就是这一个文件（12 行）。
+  成因不是抄代码：那个窗口是 CASES 表的**行形状**（fixture 模板收尾两行 `}` `}` + 反引号 + `entry:` 行 + `},` + `{`），
+  两行的 fixture 恰好都以同样的方式收尾。**真正的值重复已经收掉了**：两处一模一样的
+  `{ command:'node', args:['/probe/server.js'], type:'stdio', cwd:'.' }` 字面量提成了 `STDIO_CWD`
+  （`{ ...STDIO, cwd:'.' }`，与既有 `STDIO` 同一所有者）。剩下的行形状窗口我**没有**用「把 `entry:` 移到 `key:` 旁边，
+  让每个窗口都含一行行内唯一内容」这种手法去清——那只是绕开一个逐行近似度量，没消掉任何东西，
+  而 `duplication.mjs` 自己就写着「逐行文本比较……宁可漏报也不冤枉人」。如实挂在账上：本切片让债务名单多 1 个文件。
 - **读面也需要 `--file`**：w2/w3 的授权是「只写临时目录」，要在**真实配置的副本**上走通闭环，`list/doctor` 必须能把落点指到别处。
   于是 `--file` 对读动词开放，但要求同时给出确定的 `--client` 与 `--scope`（铺满 18 个落点时一个路径谁都代表不了）；
   `--backup-dir` 仍只对写动词存在，用例两边都钉了。
@@ -214,7 +234,7 @@
 
 - **作废**：「hermes 真实路径是 `mcp_servers.mcp.<name>`」——YAML 解析器复测真实结构就是 `mcp_servers.<name>`。错误来源是我自写的按空格猜缩进的行扫描脚本。
 - **作废**：「`~/.pi/mcp.json` 不存在所以 pi 无落点」——真实落点 `~/.pi/agent/mcp.json` EXISTS，形状 `mcpServers.<name>={command,args,lifecycle}`。
-- **新发现（真漂移）**：`CLIENT_MCP_TARGETS.hermes` 的 client 级 `namespace:'mcpServers'` 与 home scope 的 `'mcp_servers'` 并存（`definitions.mjs:309-314`），**读 client 级就会把对的表读成错的**——w1 自己先踩过，已钉成回归用例。
+- **新发现（真漂移）**：`CLIENT_MCP_TARGETS.hermes` 的 client 级 `namespace:'mcpServers'` 与 home scope 的 `'mcp_servers'` 并存（`scripts/lib/foundation/clients/selection/core/definitions.mjs:309-314`），**读 client 级就会把对的表读成错的**——w1 自己先踩过，已钉成回归用例。
 - **新发现（待证）**：gemini 项目级条目实测带 `cwd`，而 gemini 段注释称其 schema 严格；两者冲突。表按实测放行但标记 `unverifiedFields:['cwd']`，交由 w7 用真启动判定，不许因「今天写着没崩」当已验。
 
 ## convergenceGate
@@ -284,7 +304,9 @@ required evidence refs：`docs/evidence/2026-11-05-mcp-landing/*`、`artifact:do
 - evidence: 需求记录路径 + 计划路径 + w1–w4 四轮测试（11/17/14/13 例）+ `mcp` 全套与用法错误门 `93 pass / 0 fail` +
   clients 全套 `385 pass` + 全量回归两轮：`2709 pass / 2 fail`（两条失败为 HEAD 既有门禁红，已修，见「w4 实施中新增的实测事实」）
   → 修后重跑 `2710 pass / 1 fail / 13 skipped`（剩下那条是 motion-gates 的既有 flaky 断言，非本切片引入，未动，已记录）+
-  standards：`fileLines blocking=6`（HEAD 为 7，`dispatch.mjs` 这条既有违规被修掉）、`duplicateLines 636`（与 HEAD 持平，本轮净增 0）、
+  standards：`fileLines blocking=6`（HEAD 为 7，`dispatch.mjs` 这条既有违规被修掉）、
+  `duplicateLines` 文件数 **636 → 637**（本切片的新测试文件在**提交后**进入规则视野，12 行行形状；见「口径纠正」条，
+  值重复已收成 `STDIO_CWD`）、
   `reverseDependencies measured=0`
 - gate: not-ok，原因「2 task(s) not done: t3-implement, t4-verify」——正确，t3 走完 4/7 个工作项
 - 落地：`aed472bd`（HEAD 既有契约红，DESIGN.md 指向已移动的文件）+ `873c6476`（w2+w3+w4，22 文件 3105 增）在 `main`，**未 push**。

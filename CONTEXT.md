@@ -275,8 +275,10 @@
 **定义**：把「一个 MCP server」当作有身份的对象——`server × 落点(client, scope) × 归属(aios|foreign|kept-differs) × 状态(verified|unverified|failed|pending-interactive)` 四元组的账本，由 `aios mcp list/add/remove/enable/disable/adopt/doctor` 驱动。
 
 **现状（2026-11-05 更新，先前此处写「这层不存在」，已过期）**：这层的引擎与命令面已落地——
-`scripts/lib/clients/mcp/server-writer.mjs:1`（读/写/卸，文字手术）、`ledger.mjs`（归属与指纹）、
-`install-policy.mjs:189`（`uninstallServer`，写前门禁）、`cli.mjs:160`（`runMcpCommand`，动词面），
+`scripts/lib/clients/mcp/server-writer.mjs:1`（读/写/卸，文字手术）、
+`scripts/lib/clients/mcp/ledger.mjs`（归属与指纹）、
+`scripts/lib/clients/mcp/install-policy.mjs:189`（`uninstallServer`，写前门禁）、
+`scripts/lib/clients/mcp/cli.mjs:160`（`runMcpCommand`，动词面），
 经 `scripts/lib/tooling/cli/dispatch/dispatch.mjs` 的 `FEATURE_CLI_ROUTES` 路由接入，参数层在
 `scripts/lib/tooling/cli/parse-args/platform/mcp.mjs`。真机只读实测：18 个落点、82 个条目、0 错误。
 **仍未完成的**是「只有一个写入者」：headroom / browser / code-review-graph / pi 四个特性还在各写自己的条目，
