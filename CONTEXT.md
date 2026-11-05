@@ -232,6 +232,8 @@
 
 **定义**：使用者能直接看见「AIOS 为我做了什么」的那些界面——当前是 TUI、`aios hud`、`genealogy-gui`、`debug-hub`；目标是新增接入矩阵面板与桌面壳。裁决见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md`。
 
+**2026-11-05 修正**：这条只解释了「看得见」，没解释「动得了」，用户实测后判定控制台「意义不明」。控制台的定位改为**本机 agent 栈的管理面**（见 [[统一对象表]] 与 `docs/adr/0008-console-is-the-local-agent-stack-control-plane.md`）；感知面继续是它的属性之一，不再是第一屏的定位。0007 决策 2 被该 ADR 取代，其余决策不动。
+
 **为什么**：它与扩展面是同一件事的两面——没有宿主，插件无处可装；没有插件，宿主没有内容；没有可见面，两者都不可感知。用户反馈「感知不到受益」与「外部开发者参与不进来」是同一个空洞。
 
 ### 能力进程与视图（capability process vs view）
@@ -256,7 +258,47 @@
 
 **定义**：13 个客户端 × 7 个能力轴（`sessionStartInjection`/`preToolRewrite`/`controlledShellRunner`/`mcpProxy`/`compactPacket`/`advisorySkills`/`metrics`）× L0–L3 的矩阵视图，数据源固定为 `aios status --json`（`aios.status.v1`）、`config/host-capabilities.json` 与生成式记分板 `docs/reports/2026-10-19-client-capability-scorecard.md`；每格必须能展开 `reason` 原文与 `evidenceRef`。
 
+**当前地位（2026-11-05）**：不再是控制台第一屏——ADR 0007 决策 2 被 `docs/adr/0008-console-is-the-local-agent-stack-control-plane.md` 取代，矩阵降为「客户端」这一对象的证据屏。三个地方仍引用它，改定位时不能顺手删：`lib/sections.ts` 里「设置」页的描述文字（「决定接入矩阵每一格的那份声明」）、`components/sections/overview.tsx:49` 的入口链接、以及 `config/host-capabilities.json` 这份被它消费的声明。另注：`MatrixSection` 组件在但没挂进路由，`/matrix` 现在实际是 404（路由 `if (!Page || !meta) notFound()`），说「矩阵页」时必须区分「组件存在」与「可达」。
+
 **为什么**：它是唯一同时满足三件事的第一屏——数据现成、每格可指回文件（界面里不允许出现手写常量）、并且它本身就是插件契约的入门沙盒（写 manifest 的人看着自己的格子变绿）。
 
 **落地时的两点修正（`apps/shell/data/matrix.mjs` 实测）**：逐轴原因字段不存在，单元格只表达「是否在配置里声明」，点击后展示行级 `limits[]` 原文 + `subagents.evidenceRef` + 证据状态，界面不得编造逐轴理由；且配置声明 13 个客户端而 `aios status` 只覆盖 10 个，未覆盖必须显示为 `not-covered` 而不是「好」。
+
+### 统一对象表（unified object table）
+
+**定义**：控制台一期的信息架构——一行一个可管理对象，每行固定三件事：**能不能动**（可操作 / 只读 / 未接线 / 待人工）+ **为什么**（引用原文，不许编）+ **详情**。取代今天「按数据源切页」的形状（`overview/sessions/memory/tools/settings` 各对应一个 JSON 来源）。
+
+**为什么**：用户「完全不知道它能做什么」的根因不是界面丑，是页面按我们的数据源切、不是按他的对象切——他想知道「我能不能管这个 MCP」，页面回答的是「我这页显示哪份 JSON」。统一表还能把「管不了」从一种感觉变成一张可追的台账。
+
+### MCP server 一等对象与账本
+
+**定义**：把「一个 MCP server」当作有身份的对象——`server × 落点(client, scope) × 归属(aios|foreign|kept-differs) × 状态(verified|unverified|failed|pending-interactive)` 四元组的账本，由 `aios mcp list/add/remove/enable/disable/adopt/doctor` 驱动。今天这层**不存在**：`dispatch.mjs` 无 `mcp` 分支，只有四个特性各自写自己的条目（headroom / browser / code-review-graph / pi）。
+
+**为什么**：这台机器的真实分布本来就是歪的（实测 home 侧 7 个 server × 7 个客户端：`aios-memory` 在 codex/grok/workbuddy 有而 `~/.claude.json` 无；`pencil` 在 claude/gemini/zcode 有而 codex/qoder/workbuddy 无）。没有账本时没有任何一方能回答「我装了它吗、给谁装了」，所以「MCP 管理不了」不是少一个按钮，是少一层对象。
+
+### 落点表与落点可证性（landing table / landing-verified）
+
+**定义**：落点表 = `CLIENT_MCP_TARGETS`（`scripts/lib/foundation/clients/selection/core/definitions.mjs:266+`，实测 10 家：codex/claude/gemini/opencode/hermes/grok/workbuddy/pi/zcode/qoder，格式 json/toml/yaml/opencode-json/gemini-json/none）。**落点可证性** = 该落点的真实 schema 路径与字段白名单经过本机实测；未证者显示 `landing-unverified` + 失败原文，禁止标绿。
+
+**为什么**：同一个落点事实今天有三份表（`CLIENT_MCP_TARGETS`、codemap 的 `CODEMAP_MCP_TARGETS`、browser 的 `migrateOne*` 格式 writer），互相不一致：pi 在权威表里是 `format:'none', scopes:[]`，真实文件 `~/.pi/agent/mcp.json` 却是 `mcpServers.<name> = {command,args,lifecycle}` 且有三处写入者；zcode 用户级用 `transport`、项目级用 `type`+`timeoutMs`；opencode 是 `{type:'local',command[],enabled,environment}` + 需要 `experimental.mcp_timeout`；gemini 用 `timeout` 而 claude 家族用 `startupTimeoutSec`，且 gemini 严格 schema——未知字段直接让整个 `settings.json` 判废、客户端拒启。「表里有这一行」不等于「写进去客户端读得到」。pi 另有一条硬约束：条目必须与 pi 自己写入器的形状**逐字节一致**（`lifecycle:'lazy'`），否则 pi 的 doctor 用 `JSON.stringify` 精确比对会永久报 `kept-differs`。
+
+**已作废的错误结论**：先前本节记「hermes 真实路径是 `mcp_servers.mcp.<name>`」。2026-11-05 用 YAML 解析器复测：真实结构就是 `mcp_servers.<name>`，与 codemap `mcp-targets/yaml.mjs:31-34` 写入形状一致，无漂移。错误来源是一个按空格猜缩进的自写行扫描脚本——**结构性结论要用解析器验，不要用手写缩进正则**。
+
+### 接管（adopt）与每客户端允许集合（per-client allowlist）
+
+**定义**：接管 = 把别人（用户手写或其它特性）写的 MCP 条目纳入 AIOS 账本的动作，需一次显式确认；此后写回仍带指纹，指纹不符拒绝。允许集合 = 每个客户端接受哪些 server，继承代码里已成立的决定——pi 拒绝 shell 与 auth（`mcp-adapter.mjs:21-22`，原话「a shell MCP tool would bypass the AIOS Pi safety gate, and auth stays niche」），browser server 仅在运行时已装时才可加（`:13-15`、`:79-81`）。
+
+**为什么**：管理面的默认危险是把自己伪装成万能：无边界地改别人配置会抹掉用户手写的注释与字段，绕过安全门则更糟（Pi 明确认为 shell MCP 会绕过它的安全门）。允许集合必须做成拒绝 + 理由原文，而不是界面上的一个可选下拉。
+
+### 留痕对象 vs 配置对象（record vs config object）
+
+**定义**：配置对象 = 客户端 / MCP server / 技能 / 集成 / agent（一期只有 MCP 有真动词）；留痕对象 = 会话 / 记忆 / 用量（有归属与生命周期语义，但不是「装与卸」）。留痕对象保留现有动作：会话导出与扔回收站、记忆标有用与取代；用量只读。
+
+**为什么**：用户骂「会话、记录乱七八糟」的实质是它们被摆在和配置对象同一层、却没有对应的动词，看起来像噪声。同时一期不能顺手再造一套会话生命周期引擎（实测 `aios session` 只有 `start/close/changed-files`），否则两条主线一起烂。注意 memo 硬删是**故意没有**的（清理归 dream/GC），要改需要另开 ADR。
+
+### pending-interactive（待人工）作为合法终态
+
+**定义**：自动化在结构上无法完成的动作（例如 hermes 在非 TTY 下要求 CLI 交互，`headroom-mcp/lifecycle.mjs:55-57` 返回 `pending-interactive` 并附上要人手动跑的命令；卸载路径同形 `:113-115`），在对象表里是一等状态，带出口；`kept-differs` 同理。
+
+**为什么**：管理面最大的诚信风险是把「没做成」显示成「做完了」。这两个状态是仓库里已有的诚实形状，界面必须继承，而不是用进度条掩盖。
 
