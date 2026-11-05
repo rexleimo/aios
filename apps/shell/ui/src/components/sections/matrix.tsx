@@ -10,7 +10,7 @@ import { Badge } from '../ui/primitives';
 export const dynamic = 'force-dynamic';
 
 export async function MatrixSection() {
-  const { matrix, cached, ageMs } = await loadMatrixSnapshot();
+  const { matrix, cached, ageMs, stale } = await loadMatrixSnapshot();
   return (
     <>
       <PageHeader
@@ -18,7 +18,7 @@ export async function MatrixSection() {
         description="每格只表达「配置里是否声明了这条能力」。逐轴原因并不存在——点击客户端可看该行 limits 原文与证据引用。"
         source="apps/shell/data/load.mjs（config/host-capabilities.json + aios status --json）"
         status={{ label: `覆盖 ${matrix.coverage.evidenceCovered}/${matrix.coverage.declared}`, tone: 'info' }}
-        freshness={<Freshness cached={cached} ageMs={ageMs} />}
+        freshness={<Freshness cached={cached} ageMs={ageMs} stale={stale} />}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-rex-text-muted">

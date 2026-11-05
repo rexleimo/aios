@@ -10,7 +10,7 @@ import { promisify } from 'node:util';
 import path from 'node:path';
 
 import type { MatrixViewModel } from '../../../data/matrix.mjs';
-import { withSnapshotAsync } from './snapshot-cache.mjs';
+import { withSnapshotStale } from './snapshot-cache.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -29,6 +29,7 @@ export interface MatrixSnapshot {
   matrix: MatrixViewModel;
   cached: boolean;
   ageMs: number;
+  stale: boolean;
 }
 
 /**
@@ -37,13 +38,17 @@ export interface MatrixSnapshot {
  * the numbers are live.
  */
 export async function loadMatrixSnapshot(): Promise<MatrixSnapshot> {
-  const snapshot = await withSnapshotAsync(`matrix:${repoRoot()}`, () =>
-    loadMatrixFromCapability(),
-  );
+  const snapshot = withSnapshotStale(`matrix:${repoRoot()}`, () => loadMatrixFromCapability());
+  if (!snapshot.payload) {
+    const payload = await snapshot.refresh();
+    return { matrix: payload as MatrixViewModel, cached: false, ageMs: 0, stale: false };
+  }
+  if (snapshot.stale) void snapshot.refresh();
   return {
     matrix: snapshot.payload as MatrixViewModel,
     cached: snapshot.cached,
     ageMs: snapshot.ageMs,
+    stale: snapshot.stale,
   };
 }
 

@@ -68,6 +68,30 @@ export function childEnvironment({ port, token, env = process.env }) {
   return { ...env, [PORT_ENV]: String(port), [TOKEN_ENV]: token };
 }
 
+/**
+ * 预热：服务一应答就自己把首页取一遍。
+ *
+ * 实测 `aios status --json` 要 ~9.3s，这段时间里窗口已经打开但页面在等采集。预热不缩短
+ * 那次采集，只是把它挪到用户还没看的时候——之后的首屏走快照，0.1s 级。
+ * 失败一律忽略：预热是优化，不是启动条件。
+ */
+export async function warmHomePage({ port, token, fetchImpl = globalThis.fetch, log = process.stderr }) {
+  const base = `http://${UI_BIND_HOST}:${port}`;
+  try {
+    const exchange = await fetchImpl(`${base}/t/${token}/`, { redirect: 'manual' });
+    const cookie = String(exchange.headers.get('set-cookie') ?? '').split(';')[0];
+    if (!cookie) return { warmed: false, reason: 'no-cookie' };
+    const page = await fetchImpl(`${base}/`, { headers: { cookie } });
+    // 读到底，页面渲染才会真正跑完并写进快照。
+    await page.text();
+    return { warmed: page.ok, status: page.status };
+  } catch (error) {
+    log.write(`[ui] warm-up skipped: ${error instanceof Error ? error.message : String(error)}
+`);
+    return { warmed: false, reason: String(error) };
+  }
+}
+
 /** 用户该打开的 URL（token 交换地址，随后 307 到页面本身）。 */
 export function bootstrapUiUrl(port, token) {
   return `http://${UI_BIND_HOST}:${port}/t/${token}/`;
@@ -162,6 +186,11 @@ export function runUi({
     stdio: 'inherit',
     env: token ? childEnvironment({ port: plan.port, token }) : process.env,
   });
+
+  if (token && process.env.AIOS_UI_NO_WARM !== '1') {
+    // 不 await：窗口该开就开，预热在后台跑。
+    void warmHomePage({ port: plan.port, token, log }).catch(() => {});
+  }
   const exitCode = child?.status ?? 1;
   if (child?.error) {
     log.write(`[ui] failed to start next: ${child.error.message}\n`);

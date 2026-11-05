@@ -11,7 +11,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 
-import { withSnapshotAsync } from './snapshot-cache.mjs';
+import { withSnapshotStale } from './snapshot-cache.mjs';
 
 const execFileAsync = promisify(execFile);
 
@@ -83,13 +83,23 @@ export async function runCapabilityJson(args, options = {}) {
  * live.
  */
 export async function runCapabilityJsonCached(args, options = {}) {
-  const snapshot = await withSnapshotAsync(
-    `cli:${args.join(' ')}:${options.rootDir ?? repoRoot()}`,
-    () => runCapabilityJson(args, options),
+  const snapshot = withSnapshotStale(`cli:${args.join(' ')}:${options.rootDir ?? repoRoot()}`, () =>
+    runCapabilityJson(args, options),
   );
-  // Same shape as the uncached call, plus how old the answer is. Callers that spread it
-  // keep working, and a page can print the age instead of implying the numbers are live.
-  return { ...snapshot.payload, cached: snapshot.cached, ageMs: snapshot.ageMs };
+  // Nothing to show: this is the only case that is allowed to block the page.
+  if (!snapshot.payload) {
+    const payload = await snapshot.refresh();
+    return { ...payload, cached: false, ageMs: 0, stale: false };
+  }
+  // Something to show: paint immediately and refresh behind the response.
+  if (snapshot.stale) void snapshot.refresh();
+  const payload = snapshot.payload;
+  return {
+    ...payload,
+    cached: snapshot.cached,
+    ageMs: snapshot.ageMs,
+    stale: snapshot.stale,
+  };
 }
 
 export const loadStatus = (options) => runCapabilityJsonCached(['status', '--json'], options);

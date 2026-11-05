@@ -85,12 +85,21 @@ export function Stat({
  * commands cost seconds; saying "3 秒前" is cheaper than pretending the values are live,
  * and it is the difference between a cache and a lie.
  */
-export function Freshness({ cached, ageMs }: { cached?: boolean; ageMs?: number }) {
+export function Freshness({
+  cached,
+  ageMs,
+  stale,
+}: {
+  cached?: boolean;
+  ageMs?: number;
+  stale?: boolean;
+}) {
   if (ageMs === undefined) return null;
   const seconds = Math.max(0, Math.round(ageMs / 1000));
   return (
     <span className="font-rex-mono text-[11px] text-rex-text-soft">
       {cached ? `数据 ${seconds}s 前` : '刚刚采集'}
+      {stale && cached ? '（后台刷新中）' : ''}
     </span>
   );
 }

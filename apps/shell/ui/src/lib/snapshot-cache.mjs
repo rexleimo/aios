@@ -22,6 +22,12 @@ import path from 'node:path';
 /** Long enough to make navigation instant, short enough that a stale view is obvious. */
 export const DEFAULT_TTL_MS = 30_000;
 
+/** Beyond this, a snapshot is no longer shown; the page waits for a real collection. */
+export const MAX_STALE_MS = 60 * 60_000;
+
+/** One in-flight collection per key: N tabs watching a slow page must not run N commands. */
+const inflight = new Map();
+
 export function cacheDir() {
   return path.join(os.tmpdir(), 'aios-shell-cache');
 }
@@ -79,4 +85,42 @@ export async function withSnapshotAsync(key, load, { ttlMs = DEFAULT_TTL_MS } = 
   const payload = await load();
   writeSnapshot(key, payload);
   return { payload, cached: false, ageMs: 0 };
+}
+
+/**
+ * Stale-while-revalidate: show what we have, refresh behind it, never make the window
+ * wait for a second collection.
+ *
+ * The measured reason: `aios status --json` costs ~9.3 s. Blocking the page on it is the
+ * difference between "instant" and "blank for ten seconds", and the data does not change
+ * second to second. So the first paint may be a few seconds old — the page says how old —
+ * and the refresh happens off the critical path. Past `MAX_STALE_MS` the snapshot is not
+ * trusted and the caller has to wait, because an hour-old "current status" is a lie.
+ */
+export function withSnapshotStale(key, load, { ttlMs = DEFAULT_TTL_MS } = {}) {
+  const hit = readSnapshot(key, { ttlMs: MAX_STALE_MS });
+  const refresh = () => {
+    const existing = inflight.get(key);
+    if (existing) return existing;
+    const pending = Promise.resolve()
+      .then(load)
+      .then((payload) => {
+        writeSnapshot(key, payload);
+        return payload;
+      })
+      .finally(() => inflight.delete(key));
+    inflight.set(key, pending);
+    return pending;
+  };
+
+  if (hit && hit.ageMs <= ttlMs) {
+    return { payload: hit.payload, cached: true, ageMs: hit.ageMs, stale: false, refresh };
+  }
+  return {
+    payload: hit ? hit.payload : null,
+    cached: Boolean(hit),
+    ageMs: hit ? hit.ageMs : 0,
+    stale: true,
+    refresh,
+  };
 }

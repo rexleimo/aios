@@ -24,7 +24,7 @@ export async function OverviewSection() {
   // One spawn, not two: the matrix payload already carries the blockers and the coverage,
   // and `aios status --json` costs ~9.3 s on its own (measured). Asking twice meant ~19 s
   // of blank window for numbers that came from the same collection.
-  const { matrix, cached, ageMs } = await loadMatrixSnapshot();
+  const { matrix, cached, ageMs, stale } = await loadMatrixSnapshot();
   const overall = String(matrix.overallStatus ?? 'unknown');
   const statusChip = STATUS_TONE[overall as keyof typeof STATUS_TONE] ?? {
     label: overall,
@@ -38,7 +38,7 @@ export async function OverviewSection() {
         description="AIOS 把能力装进哪些客户端、证据覆盖到哪、现在卡在哪。"
         source="aios status --json + config/host-capabilities.json"
         status={statusChip}
-        freshness={<Freshness cached={cached} ageMs={ageMs} />}
+        freshness={<Freshness cached={cached} ageMs={ageMs} stale={stale} />}
         actions={
           <>
             {/* 重新采集会把快照清掉并让页面重新取数——「刷新」必须真的刷新。 */}
