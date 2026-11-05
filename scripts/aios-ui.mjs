@@ -26,7 +26,9 @@ import { fileURLToPath } from 'node:url';
 
 import { isDirectModuleInvocation } from './lib/foundation/platform/module-entry.mjs';
 
-export const UI_MODES = Object.freeze(['dev', 'build', 'start']);
+// `auto` is the mode the desktop shell uses: it must work on a fresh checkout (no
+// `next build` yet) and must not serve a stale production build when one exists.
+export const UI_MODES = Object.freeze(['auto', 'dev', 'build', 'start']);
 export const UI_DEFAULT_PORT = 3126;
 // 实测：`next start -p 3126` 默认绑 0.0.0.0（`netstat` 同时出现 0.0.0.0 与 [::]），
 // 那会把能力进程发布到局域网。壳与浏览器面板都是本机视图，宿主地址因此是声明出来的。
@@ -92,20 +94,32 @@ export function resolveUiPort(port) {
   return Number.isInteger(parsed) && parsed > 0 && parsed < 65_536 ? parsed : UI_DEFAULT_PORT;
 }
 
+/**
+ * `auto` resolves once, here: a production build that exists is what the shell ships,
+ * and a missing one means the developer has not built yet, so `next dev` is the only
+ * thing that can serve the page. Deciding this in the launcher keeps the Rust side
+ * from having to know which build artifacts exist.
+ */
+export function resolveUiMode({ mode = 'dev', uiDir, existsImpl = fs.existsSync } = {}) {
+  if (mode !== 'auto') return mode;
+  return existsImpl(path.join(uiDir, '.next', 'BUILD_ID')) ? 'start' : 'dev';
+}
+
 /** 纯函数：把模式与端口拼成一次 next 调用。build 不带端口与宿主。 */
-export function buildUiCommand({ mode = 'dev', port, uiDir } = {}) {
+export function buildUiCommand({ mode = 'dev', port, uiDir, existsImpl } = {}) {
   if (!UI_MODES.includes(mode)) {
     const error = new Error(`unknown ui mode: ${mode} (expected one of ${UI_MODES.join(', ')})`);
     error.usage = true;
     throw error;
   }
+  const resolvedMode = resolveUiMode({ mode, uiDir, existsImpl });
   const chosen = resolveUiPort(port);
   const bin = path.join(uiDir, NEXT_BIN_REL_PATH);
   const args =
-    mode === 'build'
+    resolvedMode === 'build'
       ? [bin, 'build']
-      : [bin, mode, '-p', String(chosen), '-H', UI_BIND_HOST];
-  return { command: process.execPath, args, uiDir, port: chosen, mode };
+      : [bin, resolvedMode, '-p', String(chosen), '-H', UI_BIND_HOST];
+  return { command: process.execPath, args, uiDir, port: chosen, mode: resolvedMode };
 }
 
 export function runUi({
@@ -129,6 +143,10 @@ export function runUi({
     return { ok: false, exitCode: 1, plan: null, token: null };
   }
   const plan = buildUiCommand({ mode, port, uiDir });
+  if (mode === 'auto') {
+    log.write(`[ui] mode auto resolved to ${plan.mode}
+`);
+  }
 
   // build 不服务任何请求，因此没有门，也没有钥匙。
   let token = null;

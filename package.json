@@ -80,6 +80,7 @@
     "ui:start": "node scripts/aios-ui.mjs start",
     "ui:typecheck": "npm --prefix apps/shell/ui run typecheck",
     "test:shell": "node --test \"scripts/tests/tooling/shell/*.test.mjs\"",
+    "app": "node scripts/aios-app.mjs",
     "shell:dev": "cargo run --manifest-path apps/shell/src-tauri/Cargo.toml",
     "shell:build": "cargo build --release --manifest-path apps/shell/src-tauri/Cargo.toml",
     "shell:test": "cargo test --manifest-path apps/shell/src-tauri/Cargo.toml",

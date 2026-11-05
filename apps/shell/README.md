@@ -3,6 +3,32 @@
 决策来源：`docs/adr/0007-aios-perceived-surface-and-desktop-shell.md`。
 本文件只记录**目录形状、技术栈与约定**，不重复 ADR 里的决策理由。
 
+## 开桌面应用（一条命令）
+
+```sh
+npm run app
+```
+
+它做三件事，别的什么都不做：
+
+1. 端口上已经有服务就**复用**并说一句；没有就起 `scripts/aios-ui.mjs auto`。
+2. `auto` 在这里只有一处判断：有生产构建（`ui/.next/BUILD_ID`）走 `start`，没有走 `dev`
+   ——所以新克隆不需要先 `npm run ui:build`。
+3. 有壳二进制就直接用（release 优先、debug 次之）；一个都没有时**可见地**编译一次。
+
+窗口关掉时，`app` 只停掉它自己起的服务；复用的服务留给它的主人。
+界面依赖没装时它只打印 `npm run ui:setup`，不偷偷装 200 MB。
+
+其余入口的区别，避免再猜一遍：
+
+| 命令 | 是什么 | 什么时候用 |
+|---|---|---|
+| `npm run app` | **桌面窗口** | 想体验产品 |
+| `npm run ui` | 浏览器视图（`next dev`） | 改界面、看 HMR |
+| `npm run ui:start` | 浏览器视图（跑已构建产物） | 验生产行为 |
+| `npm run shell:dev` | `cargo run`，会先编译 Rust | 改壳的 Rust 代码 |
+| `npm run shell:bundle` | 出 NSIS 安装包 | 出包 |
+
 ## 形状（目录预算 `directoryEntries=8` 硬约束）
 
 ```

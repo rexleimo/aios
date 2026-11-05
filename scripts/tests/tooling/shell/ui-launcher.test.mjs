@@ -20,7 +20,7 @@ const FAKE_ROOT = path.resolve('/tmp', 'fake-repo');
 const FAKE_UI = path.join(FAKE_ROOT, 'apps', 'shell', 'ui');
 
 test('the ui modes are a closed set and an unknown mode is a usage error', () => {
-	assert.deepEqual([...UI_MODES], ['dev', 'build', 'start']);
+	assert.deepEqual([...UI_MODES], ['auto', 'dev', 'build', 'start']);
 	assert.throws(() => buildUiCommand({ mode: 'serve', uiDir: FAKE_UI }), (error) => {
 		assert.equal(error.usage, true);
 		assert.match(error.message, /unknown ui mode/);
