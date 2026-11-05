@@ -10,10 +10,17 @@
 // `spawnSync('npm', …)` 直接 ENOENT（npm 是 npm.cmd），而 `node_modules/next/dist/bin/next`
 // 是带 shebang 的 JS 文件，用当前 Node 执行它在三个平台上形状一致，还少一层进程。
 //
+// 信任边界（S2）：服务端在启动时生成一个 128 位 token，写进易失目录并把带 token 的
+// URL 打到 stdout。窗口用它换取一个 HttpOnly cookie，之后每个请求都要过
+// `apps/shell/ui/src/proxy.ts` 的门。token 由**起服务的人**持有，谁起服务谁发布，
+// 因此 shell 自起与开发态手动起走的是同一条协议，没有「忘了设环境变量就没有门」的状态。
+//
 // Usage: node scripts/aios-ui.mjs [dev|build|start] [--port <port>] [--root <dir>]
 // Exit: 0 成功；1 启动失败或依赖缺失；2 用法错误。
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -26,6 +33,43 @@ export const UI_DEFAULT_PORT = 3126;
 export const UI_BIND_HOST = '127.0.0.1';
 export const UI_REL_PATH = path.join('apps', 'shell', 'ui');
 export const NEXT_BIN_REL_PATH = path.join('node_modules', 'next', 'dist', 'bin', 'next');
+export const TOKEN_ENV = 'AIOS_UI_TOKEN';
+export const PORT_ENV = 'AIOS_UI_PORT';
+
+/** token 文件按端口命名：同一台机器上两个端口是两个服务，两把钥匙。 */
+export function tokenPath(port, tmpDir = os.tmpdir()) {
+  return path.join(tmpDir, `aios-ui-token-${port}`);
+}
+
+/** 128 位随机；不是可读口令，所以不做词表。 */
+export function createToken(bytesImpl = randomBytes) {
+  return bytesImpl(16).toString('hex');
+}
+
+/**
+ * 发布 token（写文件，POSIX 上 0600）。发布发生在 spawn 之前：窗口在端口应答后
+ * 立刻会去找这枚钥匙，晚一步就是「服务在跑但打不开」。
+ */
+export function publishToken({ port, token, writeFileImpl = fs.writeFileSync, chmodImpl = fs.chmodSync, tmpDir }) {
+  const file = tokenPath(port, tmpDir);
+  writeFileImpl(file, token, { mode: 0o600 });
+  try {
+    chmodImpl(file, 0o600);
+  } catch {
+    // Windows 上 chmod 只是尽力而为；文件本身在用户自己的临时目录里。
+  }
+  return file;
+}
+
+/** 带着 token 与端口跑 next 的环境：proxy.ts 只从这两个变量读事实。 */
+export function childEnvironment({ port, token, env = process.env }) {
+  return { ...env, [PORT_ENV]: String(port), [TOKEN_ENV]: token };
+}
+
+/** 用户该打开的 URL（token 交换地址，随后 307 到页面本身）。 */
+export function bootstrapUiUrl(port, token) {
+  return `http://${UI_BIND_HOST}:${port}/t/${token}/`;
+}
 
 export function resolveRepoRoot(fromUrl = import.meta.url) {
   return path.resolve(path.dirname(fileURLToPath(fromUrl)), '..');
@@ -64,23 +108,54 @@ export function buildUiCommand({ mode = 'dev', port, uiDir } = {}) {
   return { command: process.execPath, args, uiDir, port: chosen, mode };
 }
 
-export function runUi({ mode = 'dev', port, rootDir = resolveRepoRoot(), spawnImpl = spawnSync } = {}) {
+export function runUi({
+  mode = 'dev',
+  port,
+  rootDir = resolveRepoRoot(),
+  spawnImpl = spawnSync,
+  tokenFactory = createToken,
+  publishImpl = publishToken,
+  tmpDir,
+  log = process.stderr,
+  unlinkImpl = fs.unlinkSync,
+} = {}) {
   const { uiDir, missing } = missingUiDependencies({ rootDir });
   if (missing.length > 0) {
-    process.stderr.write(
+    log.write(
       `[ui] dependencies are not installed in ${uiDir}\n` +
       '  run: npm run ui:setup\n' +
       `  missing: ${missing.map((entry) => path.relative(rootDir, entry)).join(', ')}\n`,
     );
-    return { ok: false, exitCode: 1, plan: null };
+    return { ok: false, exitCode: 1, plan: null, token: null };
   }
   const plan = buildUiCommand({ mode, port, uiDir });
-  const child = spawnImpl(plan.command, plan.args, { cwd: uiDir, stdio: 'inherit' });
+
+  // build 不服务任何请求，因此没有门，也没有钥匙。
+  let token = null;
+  let tokenFile = null;
+  if (plan.mode !== 'build') {
+    token = tokenFactory();
+    tokenFile = publishImpl({ port: plan.port, token, tmpDir });
+    log.write(`[ui] open ${bootstrapUiUrl(plan.port, token)}\n`);
+  }
+
+  const child = spawnImpl(plan.command, plan.args, {
+    cwd: uiDir,
+    stdio: 'inherit',
+    env: token ? childEnvironment({ port: plan.port, token }) : process.env,
+  });
   const exitCode = child?.status ?? 1;
   if (child?.error) {
-    process.stderr.write(`[ui] failed to start next: ${child.error.message}\n`);
+    log.write(`[ui] failed to start next: ${child.error.message}\n`);
   }
-  return { ok: exitCode === 0, exitCode, plan };
+  if (tokenFile) {
+    try {
+      unlinkImpl(tokenFile);
+    } catch {
+      // 进程已经退出，临时目录会自己回收；这里只是顺手。
+    }
+  }
+  return { ok: exitCode === 0, exitCode, plan, token };
 }
 
 export function parseUiArgv(argv) {

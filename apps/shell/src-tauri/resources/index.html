@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="utf-8" />
+    <title>AIOS</title>
+  </head>
+  <body>
+    <p>
+      这个文件不会被显示。窗口加载的是能力进程在 <code>127.0.0.1</code> 上渲染的页面（带 token
+      交换地址），不是随壳体打包的静态资源——页面是 <code>force-dynamic</code> 的，每次请求都要
+      去问 <code>apps/shell/data/load.mjs</code>，静态导出表达不了它。
+    </p>
+    <p>
+      它存在的原因是 <code>tauri.conf.json</code> 的 <code>frontendDist</code> 必须指向一个真实目录。
+      指向 <code>../ui/.next</code> 会让安装包从 ~9 MB 涨到 ~90 MB，把 125 MB 的 Next 产物塞进一个
+      永远不会读它的安装包（实测）。
+    </p>
+  </body>
+</html>

@@ -8,7 +8,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 
-import type { MatrixViewModel } from '../../data/matrix.mjs';
+import type { MatrixViewModel } from '../../../data/matrix.mjs';
 
 export const MATRIX_LOAD_TIMEOUT_MS = 45_000;
 

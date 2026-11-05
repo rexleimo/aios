@@ -16,7 +16,12 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 
-import { UI_DEFAULT_PORT } from '../../../../scripts/aios-ui.mjs';
+import {
+  TOKEN_ENV,
+  UI_DEFAULT_PORT,
+  bootstrapUiUrl,
+  tokenPath,
+	} from '../../../../scripts/aios-ui.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..');
 const SRC_TAURI = path.join(ROOT, 'apps', 'shell', 'src-tauri');
@@ -37,11 +42,37 @@ test('the shell default port and the launcher default port are one value', () =>
   assert.equal(rustDefaultUiPort(), UI_DEFAULT_PORT);
 });
 
-test('the tauri devUrl points at the same port the launcher serves', () => {
+test('the config declares no second URL for the window', () => {
+  // 窗口 URL 由代码生成（带 token），`tauri.conf.json` 的 `devUrl` 会是第二份 URL 事实，
+  // 而且是一份不带 token 的旧地址。它被删除后必须保持删除。
   const config = JSON.parse(read('tauri.conf.json'));
-  const url = new URL(config.build.devUrl);
-  assert.equal(url.hostname, '127.0.0.1', 'the page is served to this machine only');
-  assert.equal(Number(url.port), UI_DEFAULT_PORT);
+  assert.equal(config.build.devUrl, undefined, 'the window URL is built in src/lib.rs, not in config');
+  // 实测：把 frontendDist 指向 `../ui/.next` 时，安装包从 1.84 MiB 涨到 90.16 MiB ——
+  // 125 MB 的 Next 产物被塞进一个永远不会读它的安装包（窗口加载的是能力进程渲染的页面）。
+  assert.equal(config.build.frontendDist, 'resources');
+  assert.ok(
+    !String(config.build.frontendDist).includes('ui/'),
+    'the shell must not embed the capability process`s build output',
+  );
+});
+
+test('the window URL, the launcher URL and the gate prefix are one shape', () => {
+  const sidecar = read(path.join('src', 'sidecar.rs'));
+  const token = 'deadbeef';
+  const url = bootstrapUiUrl(UI_DEFAULT_PORT, token);
+  assert.equal(url, `http://127.0.0.1:${UI_DEFAULT_PORT}/t/${token}/`);
+  assert.ok(
+    sidecar.includes('http://127.0.0.1:{port}/t/{token}/'),
+    'the Rust format string must be the same shape as bootstrapUiUrl',
+  );
+});
+
+test('the token file name and the token environment variable have one spelling', () => {
+  const sidecar = read(path.join('src', 'sidecar.rs'));
+  assert.equal(TOKEN_ENV, 'AIOS_UI_TOKEN');
+  assert.ok(sidecar.includes('pub const TOKEN_ENV: &str = "AIOS_UI_TOKEN";'));
+  assert.equal(path.basename(tokenPath(UI_DEFAULT_PORT, '/tmp')), 'aios-ui-token-3126');
+  assert.ok(sidecar.includes('aios-ui-token-{port}'));
 });
 
 test('the capability process entry the shell starts is the launcher that exists', () => {
@@ -56,12 +87,12 @@ test('the capability process entry the shell starts is the launcher that exists'
 });
 
 test('the shell is a window over a server, not a bundler of the page', () => {
-  // The page is `force-dynamic`: it shells out to data/load.mjs per request, so
-  // there is no static export to embed. `bundle.active` stays false until S2
-  // produces an artifact; a true here without a signing story would ship an
-  // unsigned installer by accident.
+  // The page is `force-dynamic`: it shells out to data/load.mjs per request, so there
+  // is no static export to embed. Bundling is on (S2-3) but produces an unsigned
+  // installer, so the targets are stated and nothing here claims a signature.
   const config = JSON.parse(read('tauri.conf.json'));
-  assert.equal(config.bundle.active, false);
+  assert.equal(config.bundle.active, true);
+  assert.deepEqual(config.bundle.targets, ['nsis']);
   assert.deepEqual(config.app.windows, [], 'the window is created in code, after the server listens');
 });
 

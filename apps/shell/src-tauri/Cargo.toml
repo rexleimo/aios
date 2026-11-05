@@ -17,6 +17,19 @@ tauri-build = { version = "2.7.4", features = [] }
 [dependencies]
 tauri = { version = "2.12.5", features = [] }
 
+# The reclamation guarantee is per-platform: a job object on Windows, a process group
+# on Unix. Both are OS facilities, so neither needs a helper binary.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+  "Win32_Foundation",
+  "Win32_Security",
+  "Win32_System_JobObjects",
+  "Win32_System_Threading",
+] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [profile.release]
 # The shell links one webview and a single window; nothing here benefits from
 # fat LTO and the CI matrix builds three targets per release.

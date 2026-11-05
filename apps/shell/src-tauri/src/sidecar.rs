@@ -34,6 +34,39 @@ pub const PROBE_INTERVAL: Duration = Duration::from_millis(150);
 
 pub const PORT_ENV: &str = "AIOS_UI_PORT";
 pub const NODE_ENV: &str = "AIOS_NODE";
+/// The token the capability process publishes; also readable as an environment
+/// variable so an operator can pin one instead of letting the server mint it.
+pub const TOKEN_ENV: &str = "AIOS_UI_TOKEN";
+
+/// Where the launcher publishes the token for a port. Kept in the volatile temp
+/// directory, one file per port: two ports are two services, and two keys.
+pub fn token_path(port: u16, temp_dir: &Path) -> PathBuf {
+    temp_dir.join(format!("aios-ui-token-{port}"))
+}
+
+/// The token, from the declaration first, then from the published file.
+///
+/// `None` means no token exists, and the caller must refuse to open the page: an
+/// ungated capability process is exactly the state the gate exists to prevent.
+pub fn read_token(declared: Option<&str>, path: &Path) -> Option<String> {
+    if let Some(value) = declared {
+        let trimmed = value.trim();
+        if !trimmed.is_empty() {
+            return Some(trimmed.to_string());
+        }
+    }
+    std::fs::read_to_string(path)
+        .ok()
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
+}
+
+/// The URL the window opens. The launcher mints the token, the gate exchanges it for
+/// a cookie, and the page itself is `/`; this shape must match
+/// `bootstrapUiUrl` in `scripts/aios-ui.mjs` and `bootstrapUrl` in the gate's module.
+pub fn bootstrap_url(port: u16, token: &str) -> String {
+    format!("http://127.0.0.1:{port}/t/{token}/")
+}
 
 /// The declared port, or the default. An unusable declaration falls back instead of
 /// reaching the server: a port of `0` or `70000` must not become a different fact
@@ -196,6 +229,27 @@ mod tests {
         assert_eq!(resolve_work_dir(&root(), &Path::new(""), &volatile), volatile);
         let outside = PathBuf::from("C:\\Users\\me\\AppData\\Local\\Temp\\aios-shell");
         assert_eq!(resolve_work_dir(&root(), &outside, &volatile), outside);
+    }
+
+    #[test]
+    fn the_token_comes_from_the_declaration_first_and_then_from_the_file() {
+        let path = token_path(3126, Path::new("temp"));
+        assert!(path.ends_with("aios-ui-token-3126"));
+        assert_eq!(
+            read_token(Some("declared"), &path).as_deref(),
+            Some("declared"),
+            "an explicit declaration wins over whatever the file holds"
+        );
+        assert_eq!(read_token(Some("   "), &path), None, "blank is not a token");
+        assert_eq!(read_token(None, &path), None, "no file, no token");
+    }
+
+    #[test]
+    fn the_window_url_is_the_token_exchange_not_the_bare_page() {
+        assert_eq!(
+            bootstrap_url(3126, "abc123"),
+            "http://127.0.0.1:3126/t/abc123/"
+        );
     }
 
     #[test]

@@ -17,7 +17,7 @@ import * as Popover from '@radix-ui/react-popover';
 
 import { AXIS_LABEL, EVIDENCE_LABEL } from '../lib/labels';
 
-import type { MatrixRow, MatrixViewModel } from '../../data/matrix.mjs';
+import type { MatrixRow, MatrixViewModel } from '../../../data/matrix.mjs';
 
 const CELL_ON = 'inline-block size-3.5 rounded-[3px] bg-rex-cyan';
 const CELL_OFF = 'inline-block size-3.5 rounded-[3px] border border-rex-text-soft';

@@ -6,7 +6,7 @@
       "dom.iterable",
       "ES2022"
     ],
-    "allowJs": false,
+    "allowJs": true,
     "strict": true,
     "noEmit": true,
     "esModuleInterop": true,
@@ -28,7 +28,8 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts"
+    ".next/dev/types/**/*.ts",
+    "**/*.mjs"
   ],
   "exclude": [
     "node_modules",

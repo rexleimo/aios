@@ -15,7 +15,12 @@
 //!
 //! Step 2 blocks on purpose. A window that shows "connection refused" and then
 //! recovers would leave the user unable to tell "slow" from "broken".
+//!
+//! The third guarantee is that the process does not outlive the shell: `job` puts it
+//! in a kill-on-close Job Object (Windows) or its own process group (Unix), because a
+//! forced kill never runs an exit handler.
 
+pub mod job;
 pub mod sidecar;
 
 use std::path::{Path, PathBuf};
@@ -24,15 +29,15 @@ use std::process::{Child, Command, Stdio};
 use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 /// The capability process this shell started, if it started one.
-pub struct ServerHandle(std::sync::Mutex<Option<Child>>);
+pub struct ServerHandle(std::sync::Mutex<Option<(Child, job::ProcessGuard)>>);
 
 impl ServerHandle {
     fn attach() -> Self {
         Self(std::sync::Mutex::new(None))
     }
 
-    fn started(child: Child) -> Self {
-        Self(std::sync::Mutex::new(Some(child)))
+    fn started(child: Child, guard: job::ProcessGuard) -> Self {
+        Self(std::sync::Mutex::new(Some((child, guard))))
     }
 
     fn owns_process(&self) -> bool {
@@ -42,12 +47,11 @@ impl ServerHandle {
     /// Stop the process only if this shell started it. Attaching to a server that
     /// was already running means somebody else owns its lifetime.
     fn stop(&self) {
-        let Ok(mut guard) = self.0.lock() else {
+        let Ok(mut slot) = self.0.lock() else {
             return;
         };
-        if let Some(mut child) = guard.take() {
-            let _ = child.kill();
-            let _ = child.wait();
+        if let Some((mut child, guard)) = slot.take() {
+            guard.terminate(&mut child);
         }
     }
 }
@@ -103,15 +107,26 @@ fn ensure_server(install_root: &Path, port: u16) -> Result<ServerHandle, String>
     std::fs::create_dir_all(&work_dir)
         .map_err(|error| format!("cannot create the working directory {work_dir:?}: {error}"))?;
 
-    let child = Command::new(node_binary())
+    let mut command = Command::new(node_binary());
+    command
         .args(sidecar::server_args(install_root, port))
         .current_dir(&work_dir)
         .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .spawn()
-        .map_err(|error| format!("cannot start the capability process: {error}"))?;
+        .stderr(Stdio::null());
 
-    let handle = ServerHandle::started(child);
+    let child = job::spawn_supervised(&mut command)
+        .map_err(|error| format!("cannot start the capability process: {error}"))?;
+    let guard = job::ProcessGuard::adopt(&child);
+    if !guard.is_supervised() {
+        // Not fatal: the window still works. It is fatal to the *promise* that a
+        // forced kill reclaims the child, so it is said out loud rather than assumed.
+        eprintln!(
+            "[aios-shell] warning: the capability process is not in a kill-on-close job; \
+             a forced kill of the shell will leave it running"
+        );
+    }
+
+    let handle = ServerHandle::started(child, guard);
     if sidecar::wait_until_listening(
         address,
         sidecar::STARTUP_TIMEOUT,
@@ -145,7 +160,20 @@ pub fn run() {
         Err(reason) => fail(&reason),
     };
     let owns_process = server.owns_process();
-    let url = format!("http://127.0.0.1:{port}/");
+
+    // The token is minted by whoever runs the server, so it is read after the server
+    // answers. No token means no gate, and no gate means no window: showing the page
+    // anyway would make the boundary optional.
+    let published = sidecar::token_path(port, &std::env::temp_dir());
+    let Some(token) = sidecar::read_token(
+        std::env::var(sidecar::TOKEN_ENV).ok().as_deref(),
+        &published,
+    ) else {
+        fail(&format!(
+            "the capability process published no token at {published:?}; refusing to open an ungated page"
+        ));
+    };
+    let url = sidecar::bootstrap_url(port, &token);
 
     let built = tauri::Builder::default()
         .manage(server)
