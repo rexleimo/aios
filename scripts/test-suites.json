@@ -280,6 +280,7 @@
       "scripts/tests/tooling/shell/interface/host-capabilities.test.mjs",
       "scripts/tests/tooling/shell/interface/matrix.test.mjs",
       "scripts/tests/tooling/shell/interface/matrix-sources.test.mjs",
+      "scripts/tests/tooling/shell/interface/memory-actions.test.mjs",
       "scripts/tests/tooling/shell/interface/sessions.test.mjs",
       "scripts/tests/tooling/shell/interface/shell-labels.test.mjs",
       "scripts/tests/tooling/shell/desktop/shell-sidecar.test.mjs",
