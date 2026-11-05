@@ -172,6 +172,31 @@ npm run test:shell    # 只跑界面层的测试
 `dev` 与 `start` 都会在启动时把 token 打进 stderr：**直接打开 `http://127.0.0.1:3126/` 会得到
 `403 missing-token`**，这是门在工作，不是故障。壳不读这行文字，它读
 `<tmp>/aios-ui-token-<port>` 这个文件——同一个事实，两条不同的消费路径。
+
+### dev 态怎么验
+
+```sh
+npm run ui          # 1) 起 next dev，把带 token 的 URL 打出来
+# 2) 另开一个终端（可选）：壳直接接上这个端口，不另起服务
+npm run shell:dev
+node --test scripts/tests/tooling/shell/dev-server-trust.test.mjs   # 3) 自动验
+```
+
+`dev-server-trust.test.mjs` 起的是**真的 dev server**：随机端口 → 等 token 文件出现 →
+裸请求必须 403 → token 交换必须发 cookie → 页面必须渲染出矩阵 → 资源无 cookie 403、有 cookie
+200 → 异源 Origin 与 `Sec-Fetch-Site: cross-site` 必须 403。缺 `ui/node_modules` 时它
+**带原因跳过**（`ui dependencies are not installed`），因为一个什么都没问就通过的检查是这份
+测试存在的理由的反面。实测一次约 14 秒（首次请求要按需编译路由）。
+
+dev 态的已知差异（实测 2026-11-05，`/` 与随机路径的 upgrade 请求）：
+
+| 路径 | dev（`next dev`） | 生产（`next start`） |
+|---|---|---|
+| `/_next/hmr` | **101 升级成功，不过门** | 不存在该端点 |
+| `/`、随机路径 | 无响应（门只在 HTTP 请求层生效） | 无响应 |
+
+也就是说 `proxy.ts` 只判定 HTTP 请求，WebSocket 升级不经它。生产态没有 HMR 端点，所以这条
+差异只存在于开发机；要在 dev 态也挡住，得在壳前面加一层真正的反向代理，当前不做。
 ## 归属
 
 桌面壳结构抄自 Cline（`apps/examples/desktop-app/`，Apache-2.0）。引用其代码时保留其 LICENSE/NOTICE
