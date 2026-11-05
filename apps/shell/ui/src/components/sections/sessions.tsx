@@ -8,7 +8,8 @@ import path from 'node:path';
 
 import { Freshness, PageHeader } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
-import { SessionList, type SessionSummary } from '../session-list';
+import { SessionList, type SessionSummary } from '../sessions/session-list';
+import { SessionActions } from '../sessions/session-actions';
 import { listSessions, readSession, sessionsDir, shortTime } from '../../lib/data/sessions.mjs';
 
 export const dynamic = 'force-dynamic';
@@ -43,6 +44,7 @@ export function SessionsSection({ searchParams }: { searchParams?: { session?: s
         source={storage}
         status={{ label: `${sessions.length} 个会话`, tone: 'info' }}
         freshness={<Freshness cached={false} ageMs={0} />}
+        actions={detail ? <SessionActions sessionId={detail.sessionId} /> : undefined}
       />
 
       <div className="grid gap-4 lg:grid-cols-[320px_1fr]">

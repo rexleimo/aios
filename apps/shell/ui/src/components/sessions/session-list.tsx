@@ -8,8 +8,8 @@ import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
-import { Badge, Input } from './ui/primitives';
-import { cn } from '../lib/cn';
+import { Badge, Input } from '../ui/primitives';
+import { cn } from '../../lib/cn';
 
 export interface SessionSummary {
   sessionId: string;

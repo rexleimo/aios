@@ -4,7 +4,6 @@ export type SectionId =
   | 'overview'
   | 'sessions'
   | 'memory'
-  | 'usage'
   | 'matrix'
   | 'skills'
   | 'team'
@@ -45,14 +44,6 @@ export const SECTIONS: readonly SectionMeta[] = [
     group: '使用',
     description: '项目记忆的事件量、空间占用与召回反馈。',
     source: 'aios memory report --json',
-  },
-  {
-    id: 'usage',
-    href: '/usage',
-    label: '用量',
-    group: '模型',
-    description: '按层记账的 token 用量：原始体积、压缩后体积、省下多少。',
-    source: 'aios tokens report --json',
   },
   {
     id: 'matrix',

@@ -7,6 +7,7 @@ import { Activity, ShieldAlert, TableProperties } from 'lucide-react';
 import Link from 'next/link';
 
 import { loadMatrixSnapshot } from '../../lib/data/matrix-loader';
+import { formatBytes, loadUsage } from '../../lib/data/capability.mjs';
 import { Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 import { Button } from '../ui/button';
@@ -21,6 +22,7 @@ const STATUS_TONE = {
 };
 
 export async function OverviewSection() {
+  const usage = await loadUsage().catch(() => null);
   // One spawn, not two: the matrix payload already carries the blockers and the coverage,
   // and `aios status --json` costs ~9.3 s on its own (measured). Asking twice meant ~19 s
   // of blank window for numbers that came from the same collection.
@@ -74,6 +76,21 @@ export async function OverviewSection() {
           tone={matrix.blockers.length > 0 ? 'danger' : 'ok'}
         />
       </StatGrid>
+
+      {usage?.ok ? (
+        <p className="mb-4 rounded-rex-md border border-rex-border bg-rex-panel px-4 py-2.5 text-[12px] text-rex-text-body">
+          到目前为止 AIOS 把长工具输出外置成引用，省下{' '}
+          <span className="font-rex-mono text-rex-green">
+            {formatBytes(
+              ((usage.data as { layers?: Array<{ saved_bytes?: number }> }).layers ?? []).reduce(
+                (sum, layer) => sum + (layer.saved_bytes ?? 0),
+                0,
+              ),
+            )}
+          </span>
+          。这不是账单，是过程记账——请求级用量要等二期网关。
+        </p>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
         <Card>

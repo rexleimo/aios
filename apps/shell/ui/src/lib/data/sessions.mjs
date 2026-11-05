@@ -169,3 +169,46 @@ export function shortTime(iso) {
   if (typeof iso !== 'string' || iso.length < 16) return iso ?? '';
   return `${iso.slice(0, 10)} ${iso.slice(11, 16)}`;
 }
+/**
+ * 删除 = 移到回收站，不 rm。
+ *
+ * 会话是 ContextDB 的数据，误删不可恢复；所以删除动作把目录移进
+ * `<context-db>/sessions-trash/<ISO>-<id>/`，想恢复就移回来。返回移到的位置，
+ * 页面把它显示出来——一个不可见的"已删除"不是删除，是丢了。
+ */
+export function trashSession(root, id, { now = new Date() } = {}) {
+  const dir = sessionPath(root, id);
+  if (!fs.existsSync(dir)) {
+    throw new SessionError(`no such session: ${id}`, { status: 404 });
+  }
+  const trashRoot = path.join(root, '.aios', 'context-db', 'sessions-trash');
+  const stamp = now.toISOString().replace(/[:.]/g, '-');
+  const target = path.join(trashRoot, `${stamp}-${id}`);
+  fs.mkdirSync(trashRoot, { recursive: true });
+  fs.renameSync(dir, target);
+  return { trashedTo: path.relative(root, target).split(String.fromCharCode(92)).join('/') };
+}
+
+/** 导出：一个自包含 JSON，含 meta / 摘要 / 检查点 / 全部事件，用于备份或贴到别处。 */
+export function exportSession(root, id) {
+  const dir = sessionPath(root, id);
+  if (!fs.existsSync(dir)) {
+    throw new SessionError(`no such session: ${id}`, { status: 404 });
+  }
+  const meta = readJson(path.join(dir, 'meta.json')) ?? {};
+  let summary = '';
+  try {
+    summary = fs.readFileSync(path.join(dir, 'l0-summary.md'), 'utf8');
+  } catch {
+    // no digest
+  }
+  return {
+    exportedAt: new Date().toISOString(),
+    schemaVersion: 1,
+    sessionId: String(meta.sessionId ?? id),
+    meta,
+    summary,
+    checkpoints: readJsonl(path.join(dir, 'l1-checkpoints.jsonl')).rows,
+    events: readJsonl(path.join(dir, 'l2-events.jsonl')).rows,
+  };
+}
