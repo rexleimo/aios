@@ -277,6 +277,7 @@
       "scripts/tests/tooling/shell/desktop/app-launcher.test.mjs",
       "scripts/tests/tooling/shell/desktop/shell-actions.test.mjs",
       "scripts/tests/tooling/shell/interface/dev-server-trust.test.mjs",
+      "scripts/tests/tooling/shell/interface/host-capabilities.test.mjs",
       "scripts/tests/tooling/shell/interface/matrix.test.mjs",
       "scripts/tests/tooling/shell/interface/matrix-sources.test.mjs",
       "scripts/tests/tooling/shell/interface/shell-labels.test.mjs",

@@ -2,7 +2,14 @@
 //
 // 这些页面共用一个形状：取一份 JSON → 显示摘要与真相 → 没有数据时给空态。
 // 没有动作按钮的页面就明确没有；动作在下一步接到 /api/actions 上。
+import { createHash } from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
+
 import { loadAgents, loadIntegrations, loadSkillHealth, loadWorkflows } from '../../lib/capability.mjs';
+import { loadMatrixSnapshot } from '../../lib/matrix-loader';
+import { parseDocument, toEditable } from '../../lib/host-capabilities.mjs';
+import { SettingsEditor } from '../settings-editor';
 import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 
@@ -203,27 +210,40 @@ export async function IntegrationsSection() {
   );
 }
 
-export function SettingsSection() {
+export async function SettingsSection() {
+  // 服务器侧读文件：设置页要显示的是 owner 文件本身，不是缓存过的副本。
+  const root = process.env.AIOS_PROJECT_ROOT ?? path.resolve(process.cwd(), '..', '..', '..');
+  const file = path.join(root, 'config', 'host-capabilities.json');
+  const matrix = await loadMatrixSnapshot();
+  let text: string;
+  try {
+    text = fs.readFileSync(file, 'utf8');
+  } catch (error) {
+    return (
+      <>
+        <PageHeader title="设置" description="能力声明的所有者是 config/host-capabilities.json。" source="config/host-capabilities.json" />
+        <ErrorNote message={error instanceof Error ? error.message : String(error)} />
+      </>
+    );
+  }
+  const hash = createHash('sha256').update(text).digest('hex');
+  const editable = toEditable(parseDocument(text));
+
   return (
     <>
       <PageHeader
         title="设置"
-        description="能力声明的所有者是 config/host-capabilities.json。编辑写回（diff → 校验 → 回滚）是下一步。"
+        description="这里是矩阵的事实来源。改完保存会先写备份，再用 aios status 验证整条链还能读；验证失败会自动回滚。"
         source="config/host-capabilities.json"
-        status={{ label: '只读', tone: 'neutral' }}
+        status={{ label: `${editable.length} 个客户端`, tone: 'info' }}
+        freshness={<Freshness cached={matrix.cached} ageMs={matrix.ageMs} stale={matrix.stale} />}
       />
-      <Card>
-        <CardHeader>
-          <CardTitle>能力声明</CardTitle>
-          <CardDescription>
-            矩阵里每个「已声明」都来自这个文件；改这里的轴与目标等级，矩阵随即变化。
-            现在还没有写回通道 —— 说出来比留一个点了没反应的按钮好。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="font-rex-mono text-[12px] text-rex-text-muted">
-          config/host-capabilities.json
-        </CardContent>
-      </Card>
+      <SettingsEditor
+        initial={editable}
+        axes={[...matrix.matrix.axes]}
+        hash={hash}
+        configPath="config/host-capabilities.json"
+      />
     </>
   );
 }
