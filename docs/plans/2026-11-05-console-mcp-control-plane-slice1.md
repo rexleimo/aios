@@ -287,6 +287,9 @@ required evidence refs：`docs/evidence/2026-11-05-mcp-landing/*`、`artifact:do
   standards：`fileLines blocking=6`（HEAD 为 7，`dispatch.mjs` 这条既有违规被修掉）、`duplicateLines 636`（与 HEAD 持平，本轮净增 0）、
   `reverseDependencies measured=0`
 - gate: not-ok，原因「2 task(s) not done: t3-implement, t4-verify」——正确，t3 走完 4/7 个工作项
+- 落地：`aed472bd`（HEAD 既有契约红，DESIGN.md 指向已移动的文件）+ `873c6476`（w2+w3+w4，22 文件 3105 增）在 `main`，**未 push**。
+  提交前门 = 全量回归 **`2711 pass / 0 fail / 13 skipped`**（283 文件，含 motion-gates 那条 flaky 这次恰好绿——
+  它仍是 3 次里红 1 的状态，见上「w4 实施中新增的实测事实」，不能当成已解决）
 
 ## Decision Log
 
