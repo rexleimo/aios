@@ -11,6 +11,7 @@ import test from 'node:test';
 import {
 	ACTIONS,
 	buildActionArgv,
+	isSuccessfulExit,
 	clientActionIds,
 	listActionIds,
 	requiresConfirmation,
@@ -90,6 +91,17 @@ test('a preview writes nothing and the apply writes', () => {
 	assert.ok(preview.includes('--dry-run'), 'the preview must be a dry run by construction');
 	assert.equal(apply.includes('--dry-run'), false);
 	assert.ok(apply.includes('--yes'), 'the apply cannot wait for a prompt no one can answer');
+});
+
+test('a blocked verdict is a successful run, not a failed one', () => {
+	// 实测：`aios status --json` 判定 blocked 时退出码 1，payload 完整；`aios doctor` 则是真 0。
+	// 允许集合是每个动作自己的数据，按钮按它判断「跑过了」而不是「结果好看」。
+	assert.deepEqual(ACTIONS['status.refresh'].okExitCodes, [0, 1]);
+	assert.equal(isSuccessfulExit('status.refresh', 1), true);
+	assert.equal(isSuccessfulExit('doctor.run', 1), false);
+	assert.equal(isSuccessfulExit('doctor.run', 0), true);
+	assert.equal(isSuccessfulExit('unknown.action', 0), true, 'unknown ids fall back to the strict set');
+	assert.equal(isSuccessfulExit('unknown.action', 7), false);
 });
 
 test('sse frames are one event with one JSON payload', () => {

@@ -3,14 +3,14 @@
 // 表格行为仍是 TanStack + Radix（`matrix-table.tsx`），这里只负责页头与图例；
 // 事实仍然只有一条通道：`data/load.mjs` 的 stdout。
 import { MatrixTable } from '../matrix-table';
-import { loadMatrixFromCapability } from '../../lib/matrix-loader';
-import { PageHeader } from '../page-frame';
+import { loadMatrixSnapshot } from '../../lib/matrix-loader';
+import { Freshness, PageHeader } from '../page-frame';
 import { Badge } from '../ui/primitives';
 
 export const dynamic = 'force-dynamic';
 
-export function MatrixSection() {
-  const matrix = loadMatrixFromCapability();
+export async function MatrixSection() {
+  const { matrix, cached, ageMs } = await loadMatrixSnapshot();
   return (
     <>
       <PageHeader
@@ -18,6 +18,7 @@ export function MatrixSection() {
         description="每格只表达「配置里是否声明了这条能力」。逐轴原因并不存在——点击客户端可看该行 limits 原文与证据引用。"
         source="apps/shell/data/load.mjs（config/host-capabilities.json + aios status --json）"
         status={{ label: `覆盖 ${matrix.coverage.evidenceCovered}/${matrix.coverage.declared}`, tone: 'info' }}
+        freshness={<Freshness cached={cached} ageMs={ageMs} />}
       />
 
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-rex-text-muted">

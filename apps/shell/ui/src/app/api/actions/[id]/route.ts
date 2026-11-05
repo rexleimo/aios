@@ -20,7 +20,8 @@ import path from 'node:path';
 
 import type { NextRequest } from 'next/server';
 
-import { ACTIONS, buildActionArgv, sseFrame } from '../../../../lib/actions.mjs';
+import { ACTIONS, buildActionArgv, isSuccessfulExit, sseFrame } from '../../../../lib/actions.mjs';
+import { clearSnapshots } from '../../../../lib/snapshot-cache.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -134,7 +135,18 @@ export async function POST(
         controller.close();
       });
       child.on('close', (code) => {
-        encode(sseFrame('result', { exitCode: code ?? 1 }));
+        // A refresh closes the loop: the snapshots it invalidated are dropped here, so the
+        // `router.refresh()` that follows the success event reads fresh numbers instead of
+        // the 30-second-old ones that prompted the click.
+        if (id === 'status.refresh') {
+          clearSnapshots();
+        }
+        encode(
+          sseFrame('result', {
+            exitCode: code ?? 1,
+            ok: isSuccessfulExit(id, code),
+          }),
+        );
         controller.close();
       });
     },

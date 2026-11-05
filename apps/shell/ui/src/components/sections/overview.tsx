@@ -6,11 +6,11 @@
 import { Activity, ShieldAlert, TableProperties } from 'lucide-react';
 import Link from 'next/link';
 
-import { loadMatrixFromCapability } from '../../lib/matrix-loader';
-import { loadStatus } from '../../lib/capability.mjs';
-import { PageHeader, Stat, StatGrid, ErrorNote } from '../page-frame';
+import { loadMatrixSnapshot } from '../../lib/matrix-loader';
+import { Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 import { Button } from '../ui/button';
+import { ActionButton } from '../ui/action-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,9 +20,11 @@ const STATUS_TONE = {
   degraded: { label: '降级', tone: 'warn' as const },
 };
 
-export function OverviewSection() {
-  const matrix = loadMatrixFromCapability();
-  const status = loadStatus();
+export async function OverviewSection() {
+  // One spawn, not two: the matrix payload already carries the blockers and the coverage,
+  // and `aios status --json` costs ~9.3 s on its own (measured). Asking twice meant ~19 s
+  // of blank window for numbers that came from the same collection.
+  const { matrix, cached, ageMs } = await loadMatrixSnapshot();
   const overall = String(matrix.overallStatus ?? 'unknown');
   const statusChip = STATUS_TONE[overall as keyof typeof STATUS_TONE] ?? {
     label: overall,
@@ -36,17 +38,20 @@ export function OverviewSection() {
         description="AIOS 把能力装进哪些客户端、证据覆盖到哪、现在卡在哪。"
         source="aios status --json + config/host-capabilities.json"
         status={statusChip}
+        freshness={<Freshness cached={cached} ageMs={ageMs} />}
         actions={
-          <Button asChild variant="secondary" size="sm">
-            <Link href="/matrix">
-              <TableProperties />
-              打开接入矩阵
-            </Link>
-          </Button>
+          <>
+            {/* 重新采集会把快照清掉并让页面重新取数——「刷新」必须真的刷新。 */}
+            <ActionButton actionId="status.refresh" label="重新采集" variant="outline" />
+            <Button asChild variant="secondary" size="sm">
+              <Link href="/matrix">
+                <TableProperties />
+                接入矩阵
+              </Link>
+            </Button>
+          </>
         }
       />
-
-      {!status.ok ? <ErrorNote message={status.error} /> : null}
 
       <StatGrid>
         <Stat label="声明客户端" value={matrix.coverage.declared} hint="config/host-capabilities.json" />

@@ -25,6 +25,7 @@ export const CLI_REL_PATH = 'scripts/aios.mjs';
  * @property {'read-only' | 'mutating'} kind
  * @property {boolean} confirm
  * @property {boolean} needsClient
+ * @property {number[]} okExitCodes exit codes that mean "ran", not "failed"
  * @property {(context: { cli: string, client?: string }) => string[] | null} argv
  */
 
@@ -36,6 +37,9 @@ export const ACTIONS = Object.freeze({
     kind: 'read-only',
     confirm: false,
     needsClient: false,
+    // 实测：`aios status --json` 在判定为 blocked 时退出码是 1，payload 照样完整。
+    // 把 1 当失败会让「重新采集」每次都红着收场。
+    okExitCodes: [0, 1],
     argv: ({ cli }) => [cli, 'status', '--json'],
   },
   'skill.health': {
@@ -44,6 +48,7 @@ export const ACTIONS = Object.freeze({
     kind: 'read-only',
     confirm: false,
     needsClient: false,
+    okExitCodes: [0],
     argv: ({ cli }) => [cli, 'skill', 'health', '--json'],
   },
   'doctor.run': {
@@ -52,6 +57,7 @@ export const ACTIONS = Object.freeze({
     kind: 'read-only',
     confirm: false,
     needsClient: false,
+    okExitCodes: [0],
     argv: ({ cli }) => [cli, 'doctor'],
   },
   'client.setup.preview': {
@@ -60,6 +66,7 @@ export const ACTIONS = Object.freeze({
     kind: 'read-only',
     confirm: false,
     needsClient: true,
+    okExitCodes: [0],
     argv: ({ cli, client }) =>
       client ? [cli, 'setup', '--dry-run', '--client', client] : null,
   },
@@ -69,6 +76,7 @@ export const ACTIONS = Object.freeze({
     kind: 'mutating',
     confirm: true,
     needsClient: true,
+    okExitCodes: [0],
     argv: ({ cli, client }) => (client ? [cli, 'setup', '--client', client, '--yes'] : null),
   },
 });
@@ -102,6 +110,12 @@ export function buildActionArgv(id, { cli, client } = {}) {
   if (!Array.isArray(argv) || argv.length === 0) return null;
   if (argv.some((part) => typeof part !== 'string' || part.length === 0)) return null;
   return argv;
+}
+
+/** Whether an exit code means the action ran (not whether it liked the result). */
+export function isSuccessfulExit(id, code) {
+  const allowed = ACTIONS[id]?.okExitCodes ?? [0];
+  return allowed.includes(Number(code));
 }
 
 /** Server-sent event frame: one JSON payload per event, no shell quoting involved. */

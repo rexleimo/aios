@@ -19,6 +19,7 @@ import * as Popover from '@radix-ui/react-popover';
 import { AXIS_LABEL, EVIDENCE_LABEL } from '../lib/labels';
 import { cn } from '../lib/cn';
 import { Badge, Input } from './ui/primitives';
+import { ActionButton } from './ui/action-button';
 
 import type { MatrixRow, MatrixViewModel } from '../../../data/matrix.mjs';
 
@@ -62,6 +63,21 @@ function RowDetail({ row }: { row: MatrixRow }) {
               <li className="text-rex-text-muted">配置未声明行级限制</li>
             )}
           </ul>
+          <div className="mt-3 flex flex-wrap items-start gap-2 border-t border-rex-border pt-3">
+            {/* 预览是只读（--dry-run），安装写主目录所以需要一次显式确认。 */}
+            <ActionButton
+              actionId="client.setup.preview"
+              client={row.clientId}
+              label="预览安装"
+              variant="outline"
+            />
+            <ActionButton
+              actionId="client.setup.apply"
+              client={row.clientId}
+              label="安装 / 修复"
+              confirm
+            />
+          </div>
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>

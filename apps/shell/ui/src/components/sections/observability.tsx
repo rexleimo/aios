@@ -3,13 +3,13 @@
 // 这些页面共用一个形状：取一份 JSON → 显示摘要与真相 → 没有数据时给空态。
 // 没有动作按钮的页面就明确没有；动作在下一步接到 /api/actions 上。
 import { loadAgents, loadIntegrations, loadSkillHealth, loadWorkflows } from '../../lib/capability.mjs';
-import { ErrorNote, PageHeader, Stat, StatGrid } from '../page-frame';
+import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 
 export const dynamic = 'force-dynamic';
 
-export function SkillsSection() {
-  const result = loadSkillHealth();
+export async function SkillsSection() {
+  const result = await loadSkillHealth();
   if (!result.ok) {
     return (
       <>
@@ -34,6 +34,7 @@ export function SkillsSection() {
         description="技能在这台机器上的安装与使用记录。没有任何记录也是事实，不补默认值。"
         source="aios skill health --json"
         status={{ label: `窗口 ${data.windowDays ?? '—'} 天`, tone: 'neutral' }}
+        freshness={<Freshness cached={result.cached} ageMs={result.ageMs} />}
       />
 
       <StatGrid>
@@ -63,9 +64,8 @@ export function SkillsSection() {
   );
 }
 
-export function TeamSection() {
-  const agents = loadAgents();
-  const workflows = loadWorkflows();
+export async function TeamSection() {
+  const [agents, workflows] = await Promise.all([loadAgents(), loadWorkflows()]);
   const agentData = agents.ok
     ? (agents.data as {
         summary?: { totalAgents?: number; byLifecycle?: Record<string, number> };
@@ -89,6 +89,7 @@ export function TeamSection() {
             ? { label: '严格模式有阻塞', tone: 'warn' }
             : { label: '按证据放行', tone: 'ok' }
         }
+        freshness={<Freshness cached={agents.cached} ageMs={agents.ageMs} />}
       />
 
       {!agents.ok ? <ErrorNote message={agents.error} /> : null}
@@ -137,8 +138,8 @@ export function TeamSection() {
   );
 }
 
-export function IntegrationsSection() {
-  const result = loadIntegrations();
+export async function IntegrationsSection() {
+  const result = await loadIntegrations();
   if (!result.ok) {
     return (
       <>
@@ -166,6 +167,7 @@ export function IntegrationsSection() {
         description="已注册的第三方集成：每个都钉了 commit 与 sha256，缺环境变量会由 doctor 报出来。"
         source="aios integration list --json"
         status={{ label: `${integrations.length} 条`, tone: 'info' }}
+        freshness={<Freshness cached={result.cached} ageMs={result.ageMs} />}
       />
 
       {integrations.length === 0 ? (

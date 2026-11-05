@@ -2,7 +2,7 @@
 //
 // 两个都只读 `--json` 输出；没有数据时显示空态而不是 0 假装有数据。
 import { formatBytes, loadMemory, loadUsage } from '../../lib/capability.mjs';
-import { ErrorNote, PageHeader, Stat, StatGrid } from '../page-frame';
+import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +23,8 @@ interface MemoryReport {
   feedback?: { impressions?: number; useful?: number };
 }
 
-export function MemorySection() {
-  const result = loadMemory();
+export async function MemorySection() {
+  const result = await loadMemory();
   if (!result.ok) {
     return (
       <>
@@ -43,6 +43,7 @@ export function MemorySection() {
         description="项目记忆是本仓库里最厚的资产：事件量、字符量、过期与候选状态一目了然。"
         source="aios memory report --json"
         status={{ label: data.storage ?? 'unknown', tone: 'neutral' }}
+        freshness={<Freshness cached={result.cached} ageMs={result.ageMs} />}
       />
 
       <StatGrid>
@@ -114,8 +115,8 @@ interface TokenReport {
   total_saved_tokens_estimate?: number;
 }
 
-export function UsageSection() {
-  const result = loadUsage();
+export async function UsageSection() {
+  const result = await loadUsage();
   if (!result.ok) {
     return (
       <>
@@ -136,6 +137,7 @@ export function UsageSection() {
         description="按层记账：原始体积、压缩后体积、省下多少。这里是过程记账，不是请求级账单——请求级要等二期网关。"
         source="aios tokens report --json"
         status={{ label: `session ${data.session_id ?? 'default'}`, tone: 'neutral' }}
+        freshness={<Freshness cached={result.cached} ageMs={result.ageMs} />}
       />
 
       <StatGrid>

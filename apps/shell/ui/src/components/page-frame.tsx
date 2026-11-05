@@ -12,12 +12,14 @@ export function PageHeader({
   source,
   actions,
   status,
+  freshness,
 }: {
   title: string;
   description: string;
   source?: string;
   actions?: ReactNode;
   status?: { label: string; tone: 'neutral' | 'info' | 'ok' | 'warn' | 'danger' | 'violet' };
+  freshness?: ReactNode;
 }) {
   return (
     <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-rex-border pb-4">
@@ -32,7 +34,11 @@ export function PageHeader({
           {description}
         </p>
         {source ? (
-          <p className="mt-1 font-rex-mono text-[11px] text-rex-text-soft">来源：{source}</p>
+          <p className="mt-1 flex items-center gap-2 font-rex-mono text-[11px] text-rex-text-soft">
+            来源：{source}
+            {freshness ? <span className="text-rex-text-soft">·</span> : null}
+            {freshness}
+          </p>
         ) : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
@@ -71,6 +77,21 @@ export function Stat({
       </p>
       {hint ? <p className="mt-1.5 text-[11px] text-rex-text-soft">{hint}</p> : null}
     </div>
+  );
+}
+
+/**
+ * How old the numbers are. The pages cache capability output for a few seconds because the
+ * commands cost seconds; saying "3 秒前" is cheaper than pretending the values are live,
+ * and it is the difference between a cache and a lie.
+ */
+export function Freshness({ cached, ageMs }: { cached?: boolean; ageMs?: number }) {
+  if (ageMs === undefined) return null;
+  const seconds = Math.max(0, Math.round(ageMs / 1000));
+  return (
+    <span className="font-rex-mono text-[11px] text-rex-text-soft">
+      {cached ? `数据 ${seconds}s 前` : '刚刚采集'}
+    </span>
   );
 }
 

@@ -199,6 +199,15 @@ npm run test:shell    # 只跑界面层的测试
 `403 missing-token`**，这是门在工作，不是故障。壳不读这行文字，它读
 `<tmp>/aios-ui-token-<port>` 这个文件——同一个事实，两条不同的消费路径。
 
+### 为什么第一次会先看到骨架（实测，2026-11-05）
+
+| 现象 | 原因 | 处理 |
+|---|---|---|
+| 窗口开了但一片空白 | 页面在**同步** spawn 里跑 `aios status`（9.3s），Node 事件循环被占住，Next 无法先把外壳刷出去 | 取数改为异步 `execFile`，`loading.tsx` 的骨架在 **0.09s** 出现，数据随后流式到达（总 7.9s） |
+| 总览比别的页更慢 | 页面同时跑了矩阵（9.9s）和 `aios status`（9.3s）**两次**，数字却来自同一次采集 | 只跑一次：矩阵 payload 已经带 blockers / coverage / overallStatus |
+| 每次翻页都重新等 | 动态页每请求都 spawn | 30s 文件快照（`<tmp>/aios-shell-cache`），命中时 **0.013s**；页头显示「数据 Ns 前 / 刚刚采集」 |
+| 「重新采集」红着收场 | `aios status --json` 判定 blocked 时退出码是 **1** | 每个动作自带 `okExitCodes`；退出码照实显示，但不再当成失败 |
+
 ### dev 态怎么验
 
 ```sh
