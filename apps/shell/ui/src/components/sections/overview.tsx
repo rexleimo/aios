@@ -92,7 +92,7 @@ export async function OverviewSection() {
         </p>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

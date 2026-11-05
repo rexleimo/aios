@@ -112,3 +112,44 @@ export function ErrorNote({ message }: { message: string }) {
     </div>
   );
 }
+
+/**
+ * 页面里每个内容区都套这一层：统一标题、说明、右侧动作与间距。
+ *
+ * 「乱布局」的根因通常不是单个卡片难看，而是每一块自己决定标题大小、内边距和上下间距。
+ * 这里把它们收成一个节奏：同一层级的区块，标题同字号、间距同值、动作永远在右上。
+ */
+export function PageSection({
+  title,
+  description,
+  actions,
+  children,
+  className,
+}: {
+  title?: string;
+  description?: string;
+  actions?: ReactNode;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={className ? `mb-6 ${className}` : 'mb-6'}>
+      {title || description || actions ? (
+        <div className="mb-2.5 flex items-end justify-between gap-4">
+          <div className="min-w-0">
+            {title ? (
+              <h2 className="font-rex-display text-[13px] font-semibold tracking-wide text-rex-text">
+                {title}
+              </h2>
+            ) : null}
+            {description ? (
+              <p className="mt-0.5 text-[11px] leading-relaxed text-rex-text-muted">{description}</p>
+            ) : null}
+          </div>
+          {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+        </div>
+      ) : null}
+      {children}
+    </section>
+  );
+}

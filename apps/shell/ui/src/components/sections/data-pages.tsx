@@ -57,6 +57,13 @@ export async function MemorySection() {
         freshness={<Freshness cached={result.cached} ageMs={result.ageMs} />}
       />
 
+      <div className="mb-4">
+        <MemoryBrowser
+          initialPinned={pinned.ok ? pinned.text : ''}
+          pinBudget={pinStatus.ok ? pinStatus.text.split(String.fromCharCode(10))[0] : ''}
+        />
+      </div>
+
       <StatGrid>
         <Stat label="事件" value={data.totals?.events ?? 0} hint={`生成于 ${data.generatedAt ?? '—'}`} />
         <Stat label="空间" value={data.totals?.spaces ?? spaces.length} hint="默认单空间" />
@@ -68,13 +75,6 @@ export async function MemorySection() {
           tone={(data.candidates?.backlog ?? 0) > 0 ? 'warn' : 'default'}
         />
       </StatGrid>
-
-      <div className="mb-4">
-        <MemoryBrowser
-          initialPinned={pinned.ok ? pinned.text : ''}
-          pinBudget={pinStatus.ok ? pinStatus.text.split(String.fromCharCode(10))[0] : ''}
-        />
-      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>

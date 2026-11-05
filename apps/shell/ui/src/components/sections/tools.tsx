@@ -77,19 +77,28 @@ export async function ToolsSection() {
             const verdict = VERDICT[row.evidence.label] ?? { text: row.evidence.label, tone: 'neutral' as const };
             const declared = row.axes.filter((cell) => cell.declared);
             return (
-              <div key={row.clientId} className="rounded-rex-sm border border-rex-border px-3 py-2.5">
-                <div className="flex flex-wrap items-center gap-2">
+              <div
+                key={row.clientId}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-x-4 gap-y-1.5 rounded-rex-sm border border-rex-border px-3 py-2.5 md:grid-cols-[minmax(0,1fr)_150px_auto]"
+              >
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <span className="font-rex-mono text-[12px] font-medium text-rex-text">{row.clientId}</span>
                   <Badge tone={verdict.tone}>{verdict.text}</Badge>
                   <span className="font-rex-mono text-[10px] text-rex-text-soft">
                     {row.declaredCount}/{row.axisTotal} 项 · {row.level ?? '—'}
                   </span>
-                  <span className="ml-auto flex items-center gap-1.5">
-                    <ActionButton actionId="client.setup.preview" client={row.clientId} label="检查一下" variant="ghost" />
-                    <ActionButton actionId="client.setup.apply" client={row.clientId} label="装好它" confirm />
-                  </span>
                 </div>
-                <div className="mt-1.5 flex flex-wrap gap-1">
+                <div className="hidden md:block">
+                  <p className="text-[10px] tracking-wide text-rex-text-soft uppercase">证据</p>
+                  <p className="font-rex-mono text-[10px] text-rex-text-muted">
+                    {EVIDENCE_LABEL[row.evidence.label] ?? row.evidence.label}
+                  </p>
+                </div>
+                <div className="flex items-center justify-end gap-1.5">
+                  <ActionButton actionId="client.setup.preview" client={row.clientId} label="检查一下" variant="ghost" />
+                  <ActionButton actionId="client.setup.apply" client={row.clientId} label="装好它" confirm />
+                </div>
+                <div className="col-span-full flex flex-wrap gap-1">
                   {declared.length === 0 ? (
                     <span className="text-[11px] text-rex-text-soft">还没有声明任何能力</span>
                   ) : (
@@ -104,11 +113,10 @@ export async function ToolsSection() {
                   )}
                 </div>
                 {row.limits.length > 0 ? (
-                  <p className="mt-1.5 text-[11px] leading-relaxed text-rex-text-muted">限制：{row.limits[0]}</p>
+                  <p className="col-span-full text-[11px] leading-relaxed text-rex-text-muted">限制：{row.limits[0]}</p>
                 ) : null}
-                <p className="mt-0.5 font-rex-mono text-[10px] text-rex-text-soft">
-                  证据：{EVIDENCE_LABEL[row.evidence.label] ?? row.evidence.label}
-                  {row.evidenceRef ? ` · ${row.evidenceRef}` : ''}
+                <p className="col-span-full font-rex-mono text-[10px] text-rex-text-soft">
+                  {row.evidenceRef ? `证据引用 ${row.evidenceRef}` : '没有 evidenceRef'}
                 </p>
               </div>
             );
