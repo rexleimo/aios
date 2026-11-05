@@ -9,6 +9,7 @@
   "regression": {
     "concurrency": 4,
     "files": [
+      "scripts/tests/tooling/shell/data/workspace-registry.test.mjs",
       "scripts/tests/clients/adapters/headroom-install.test.mjs",
       "scripts/tests/clients/adapters/headroom-mcp-config.test.mjs",
       "scripts/tests/clients/adapters/headroom-mcp-registration.test.mjs",
