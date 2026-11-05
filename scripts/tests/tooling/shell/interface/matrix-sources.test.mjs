@@ -92,7 +92,7 @@ test('loadMatrix wires capabilities and status into a view model with sources at
 });
 
 test('the shipped page contains no hand-written numbers', () => {
-	const page = readFileSync(new URL('../../../../../apps/shell/ui/src/app/page.tsx', import.meta.url), 'utf8');
+	const page = readFileSync(new URL('../../../../../apps/shell/ui/src/components/sections/matrix.tsx', import.meta.url), 'utf8');
 	const stripped = page
 		.replace(/\/\*[\s\S]*?\*\//g, '')
 		.replace(/^\s*\/\/.*$/gm, '')

@@ -139,7 +139,8 @@ test('the development server serves the page through the token gate', { timeout:
   // The first render compiles the route on demand; this is the slow assertion.
   const page = await request(port, '/', { cookie });
   assert.equal(page.status, 200);
-  assert.match(page.body, /AIOS 接入矩阵/u, 'the matrix must render, not just return 200');
+  assert.match(page.body, /总览/u, 'the console must render its navigation and first page, not just return 200');
+  assert.match(page.body, /声明客户端/u, 'the overview must render real values from aios status');
 
   const asset = page.body.match(/\/_next\/static\/[^"']+\.js/u)?.[0];
   assert.ok(asset, 'the rendered page must reference a script');

@@ -40,16 +40,29 @@ test('every evidence label the capability layer can produce is displayed', () =>
 });
 
 test('a server component must not read data out of a "use client" module', () => {
-  // 实测教训：page.tsx 从 'use client' 的 matrix-table 里 import 常量时，
-  // 服务端拿到的是客户端引用代理，轴名退化成英文、证据列表渲染成空串。
-  const page = readFileSync(ui('src/app/page.tsx'), 'utf8');
+  // 实测教训：服务端组件从 'use client' 的 matrix-table 里 import 常量时，拿到的是客户端
+  // 引用代理——轴名静默退化成英文、证据列表渲染成空串。词表因此住在 lib/labels（无指令），
+  // 服务端只能从那里取文本；从客户端模块只能取组件本身。
+  const section = readFileSync(ui('src/components/sections/matrix.tsx'), 'utf8');
   const table = readFileSync(ui('src/components/matrix-table.tsx'), 'utf8');
+  const labels = readFileSync(ui('src/lib/labels.ts'), 'utf8');
+
   assert.match(table, /^'use client';/u);
-  assert.match(page, /from '\.\.\/lib\/labels'/u);
-  assert.match(page, /import \{ MatrixTable \} from '\.\.\/components\/matrix-table'/u);
-  // 服务端组件里除组件本身外，不得再从 components/ 取任何东西。
-  const fromComponents = [...page.matchAll(/import\s+\{([^}]*)\}\s+from\s+'([^']*components\/[^']*)'/gu)]
-    .flatMap((m) => m[1].split(',').map((name) => name.trim()))
-    .filter((name) => name !== 'MatrixTable');
-  assert.deepEqual(fromComponents, [], 'page.tsx 只能从组件模块 import 组件本身');
+  assert.doesNotMatch(labels, /^'use client';/mu, 'labels 是共享词表，不能变成客户端模块');
+
+  // 从客户端组件模块只能拿组件（首字母大写），不能拿常量。
+  const importedNames = [...section.matchAll(/import\s+\{([^}]*)\}\s+from\s+'([^']+)'/gu)]
+    .flatMap((match) => match[1].split(',').map((name) => name.trim()))
+    .filter(Boolean);
+  assert.ok(importedNames.includes('MatrixTable'), 'the matrix section renders the client table');
+  assert.deepEqual(
+    importedNames.filter((name) => !/^[A-Z]/u.test(name) && /^(AXIS|EVIDENCE)_LABEL$/u.test(name)),
+    [],
+    'sections 不得从任何模块 import 标签常量——那是客户端引用代理的来源',
+  );
+
+  // 服务端要用标签时，只能从词表模块取。
+  if (section.includes('AXIS_LABEL')) {
+    assert.match(section, /from '\.\.\/\.\.\/lib\/labels'/u);
+  }
 });

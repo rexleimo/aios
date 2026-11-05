@@ -1,0 +1,48 @@
+// `/memory`, `/usage`, `/matrix`, ... — one route, eight pages.
+//
+// The navigation is a registry (`lib/sections.ts`); this file maps its ids to components.
+// Keeping the route dynamic means a new page is one registry entry plus one component, not
+// a new directory — and the sidebar and the router cannot disagree about what exists.
+import { notFound } from 'next/navigation';
+
+import { sectionById, SECTIONS } from '../../../lib/sections';
+import { OverviewSection } from '../../../components/sections/overview';
+import { MatrixSection } from '../../../components/sections/matrix';
+import { MemorySection, UsageSection } from '../../../components/sections/data-pages';
+import {
+  IntegrationsSection,
+  SettingsSection,
+  SkillsSection,
+  TeamSection,
+} from '../../../components/sections/observability';
+
+export const dynamic = 'force-dynamic';
+
+const PAGES = {
+  overview: OverviewSection,
+  memory: MemorySection,
+  usage: UsageSection,
+  matrix: MatrixSection,
+  skills: SkillsSection,
+  team: TeamSection,
+  integrations: IntegrationsSection,
+  settings: SettingsSection,
+} as const;
+
+export function generateStaticParams() {
+  return SECTIONS.filter((section) => section.id !== 'overview').map((section) => ({
+    section: section.id,
+  }));
+}
+
+export default async function SectionPage({
+  params,
+}: {
+  params: Promise<{ section: string }>;
+}) {
+  const { section } = await params;
+  const meta = sectionById(section);
+  const Page = meta ? PAGES[meta.id] : undefined;
+  if (!Page) notFound();
+  return <Page />;
+}
