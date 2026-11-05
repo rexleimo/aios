@@ -20,6 +20,9 @@ import { readServers, removeServer, writeServer } from '../../../lib/clients/mcp
 
 const PROBE = 'aios-probe-server';
 const STDIO = Object.freeze({ command: 'node', args: ['/probe/server.js'], type: 'stdio' });
+// 带 cwd 的那一家复用同一个探针条目：两个落点各自抄一份字面量时，standards 会把它们计成副本，
+// 而更要紧的是「探针长什么样」这件事从此有了两个所有者——改一处忘另一处，测试仍然绿但测的不是同一件事。
+const STDIO_CWD = Object.freeze({ ...STDIO, cwd: '.' });
 
 const CASES = Object.freeze([
   {
@@ -51,7 +54,7 @@ const CASES = Object.freeze([
   }
 }
 `,
-    entry: { command: 'node', args: ['/probe/server.js'], type: 'stdio', cwd: '.' },
+    entry: STDIO_CWD,
   },
   {
     key: 'qoder/home', clientId: 'qoder', scope: 'home', file: 'settings.json',
@@ -108,7 +111,7 @@ const CASES = Object.freeze([
   }
 }
 `,
-    entry: { command: 'node', args: ['/probe/server.js'], type: 'stdio', cwd: '.' },
+    entry: STDIO_CWD,
   },
   {
     key: 'opencode/home', clientId: 'opencode', scope: 'home', file: 'opencode.json',
