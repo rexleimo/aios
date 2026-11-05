@@ -2,6 +2,7 @@
 // 原文件 425 行拆分为 helpers.mjs（printHelp/applyResultExitCode/runInteractiveTui）+ 本文件（路由表）
 
 import { chooseInteractiveCommand } from '../commander/interactive.mjs';
+import { runMemoryFamilyCommand } from './memory.mjs';
 import { runInternal } from './internal.mjs';
 import { runInterceptionCommand } from './interception.mjs';
 import { runCanvasCommand, runRefsCommand } from './offload.mjs';
@@ -11,6 +12,19 @@ import { getRootHelpText } from '../help/help.mjs';
 import { applyProjectRootFlag } from '../project-root.mjs';
 
 export { applyResultExitCode } from './helpers.mjs';
+
+/**
+ * 特性自带 `cli.mjs` 的命令：装载方式与参数三件套完全同形，所以一张表配一条分支，
+ * 而不是每个命令抄一遍那 6 行——抄出来的副本 standards 按重复计，更要紧的是四份会各自漂移
+ * （`integration` 与 `search` 今天少传一个键，就是因为它们是各写各的）。
+ * `withProjectRoot: true` = 该 runner 要把「工作区」和「项目根」分开（只有往项目里写配置的命令需要）。
+ */
+const FEATURE_CLI_ROUTES = Object.freeze({
+  integration: { load: () => import('../../../clients/integrations/cli.mjs'), exportName: 'runIntegrationCommand', withProjectRoot: true },
+  mcp: { load: () => import('../../../clients/mcp/cli.mjs'), exportName: 'runMcpCommand', withProjectRoot: true },
+  judgment: { load: () => import('../../../learning/judgment/cli.mjs'), exportName: 'runJudgmentCommand', withProjectRoot: false },
+  search: { load: () => import('../../../memory/search/cli.mjs'), exportName: 'runSearchCommand', withProjectRoot: false },
+});
 
 /** 所有 CLI 命令的路由表；新增能力必须在这里接入才能被真实调用 */
 export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdout, stderr = process.stderr, runAiosInit = null } = {}) {
@@ -391,22 +405,13 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
-    if (parsed.command === 'integration') {
-      const { runIntegrationCommand } = await import('../../../clients/integrations/cli.mjs');
-      applyResultExitCode(await runIntegrationCommand(parsed.options, {
-        rootDir: workspaceFor(parsed),
-        projectRoot: context.projectRoot,
-        stdout,
-      }));
-      return;
-    }
-
-    if (parsed.command === 'judgment') {
-      const { runJudgmentCommand } = await import('../../../learning/judgment/cli.mjs');
-      applyResultExitCode(await runJudgmentCommand(parsed.options, {
-        rootDir: workspaceFor(parsed),
-        stdout,
-      }));
+    // 特性自带 cli.mjs 的命令走同一条分支：装载与参数三件套由上面的路由表决定，这里不再逐个抄写。
+    const featureRoute = FEATURE_CLI_ROUTES[parsed.command];
+    if (featureRoute) {
+      const loaded = await featureRoute.load();
+      applyResultExitCode(await loaded[featureRoute.exportName](parsed.options, featureRoute.withProjectRoot
+        ? { rootDir: workspaceFor(parsed), projectRoot: context.projectRoot, stdout }
+        : { rootDir: workspaceFor(parsed), stdout }));
       return;
     }
 
@@ -418,43 +423,9 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
       return;
     }
 
-    if (parsed.command === 'memo') {
-      const { runMemo } = await import('../../../memory/memo/memo.mjs');
-      await runMemo(parsed.options, { rootDir: workspaceFor(parsed) });
-      return;
-    }
-
-    if (parsed.command === 'memory') {
-      const [sub, ...flags] = parsed.options.args || [];
-      if (sub !== 'report') {
-        throw new Error('Usage: aios memory report [--json]');
-      }
-      const { buildMemoryReport, renderMemoryReport } = await import('../../../memory/memo/care/report.mjs');
-      const report = await buildMemoryReport(workspaceFor(parsed), { env: process.env });
-      const json = flags.includes('--json');
-      stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : `${renderMemoryReport(report)}\n`);
-      return;
-    }
-
-    if (parsed.command === 'tokens') {
-      const [sub, ...flags] = parsed.options.args || [];
-      if (sub !== 'report') {
-        throw new Error('Usage: aios tokens report [--session <id>] [--json]');
-      }
-      const { buildTokensReport, renderTokensReport } = await import('../../../foundation/interception/observability/metrics/report.mjs');
-      const json = flags.includes('--json');
-      const sessionFlag = flags.indexOf('--session');
-      const sessionId = sessionFlag >= 0 ? String(flags[sessionFlag + 1] || 'default') : 'default';
-      const report = await buildTokensReport({ workspaceRoot: workspaceFor(parsed), sessionId });
-      stdout.write(json ? `${JSON.stringify(report, null, 2)}\n` : `${renderTokensReport(report)}\n`);
-      return;
-    }
-
-    if (parsed.command === 'import') {
-      const { runImportCommand } = await import('../../../memory/memo/flow/import-cli.mjs');
-      await runImportCommand({ args: parsed.options.args || [], rootDir: workspaceFor(parsed), stdout });
-      return;
-    }
+    // 记忆与留痕族（memo/memory/tokens/import）的路由在 ./memory.mjs，行为原样搬出；
+    // 本文件是入口表，不是这些命令的实现处。
+    if (await runMemoryFamilyCommand(parsed, { workspaceRoot: workspaceFor(parsed), stdout })) return;
 
     if (parsed.command === 'model-router') {
       const { runModelRouterCommand } = await import('../../model-router.mjs');
@@ -482,15 +453,6 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
 
     if (parsed.command === 'refs') {
       await runRefsCommand(parsed, { ...context, stdout, stderr });
-      return;
-    }
-
-    if (parsed.command === 'search') {
-      const { runSearchCommand } = await import('../../../memory/search/cli.mjs');
-      applyResultExitCode(await runSearchCommand(parsed.options, {
-        rootDir: workspaceFor(parsed),
-        stdout,
-      }));
       return;
     }
 

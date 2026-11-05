@@ -272,7 +272,15 @@
 
 ### MCP server 一等对象与账本
 
-**定义**：把「一个 MCP server」当作有身份的对象——`server × 落点(client, scope) × 归属(aios|foreign|kept-differs) × 状态(verified|unverified|failed|pending-interactive)` 四元组的账本，由 `aios mcp list/add/remove/enable/disable/adopt/doctor` 驱动。今天这层**不存在**：`dispatch.mjs` 无 `mcp` 分支，只有四个特性各自写自己的条目（headroom / browser / code-review-graph / pi）。
+**定义**：把「一个 MCP server」当作有身份的对象——`server × 落点(client, scope) × 归属(aios|foreign|kept-differs) × 状态(verified|unverified|failed|pending-interactive)` 四元组的账本，由 `aios mcp list/add/remove/enable/disable/adopt/doctor` 驱动。
+
+**现状（2026-11-05 更新，先前此处写「这层不存在」，已过期）**：这层的引擎与命令面已落地——
+`scripts/lib/clients/mcp/server-writer.mjs:1`（读/写/卸，文字手术）、`ledger.mjs`（归属与指纹）、
+`install-policy.mjs:189`（`uninstallServer`，写前门禁）、`cli.mjs:160`（`runMcpCommand`，动词面），
+经 `scripts/lib/tooling/cli/dispatch/dispatch.mjs` 的 `FEATURE_CLI_ROUTES` 路由接入，参数层在
+`scripts/lib/tooling/cli/parse-args/platform/mcp.mjs`。真机只读实测：18 个落点、82 个条目、0 错误。
+**仍未完成的**是「只有一个写入者」：headroom / browser / code-review-graph / pi 四个特性还在各写自己的条目，
+等 w5 收编到这条通用路径上；账本目录 `~/.aios/mcp/ledger/` 至今未在这台机器上创建过（写入面属于 w7 的逐家确认）。
 
 **为什么**：这台机器的真实分布本来就是歪的（实测 home 侧 7 个 server × 7 个客户端：`aios-memory` 在 codex/grok/workbuddy 有而 `~/.claude.json` 无；`pencil` 在 claude/gemini/zcode 有而 codex/qoder/workbuddy 无）。没有账本时没有任何一方能回答「我装了它吗、给谁装了」，所以「MCP 管理不了」不是少一个按钮，是少一层对象。
 

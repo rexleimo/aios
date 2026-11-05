@@ -39,6 +39,7 @@ Commands:
   learn-eval    Turn checkpoint telemetry into operator recommendations
   skill         Skill compliance dry-runs, health dashboard, and external skill install
   integration   Install and verify third-party vendor integrations (skill + docs MCP)
+  mcp           List/install/uninstall MCP servers per client landing, with ownership guards
   judgment      Opt-in System One judgment gate (off until you enable it)
   session       Inspect session-local changed file state
   tokens        Per-layer token ledger report ('tokens report [--json]')
@@ -92,6 +93,9 @@ Examples:
   aios integration list
   aios integration add typesafe --dry-run
   aios integration doctor typesafe --json
+  aios mcp list --json
+  aios mcp add code-review-graph --client claude --command uvx --arg code-review-graph --arg serve --dry-run
+  aios mcp remove code-review-graph --client claude --dry-run
   aios judgment status
   aios judgment enable typesafe
   aios judgment ask --state "a 5-line patch that rewrites the migration" --questions '{"severity":{"type":"score","instructions":"How risky is this change?","criteria":["Trivial","Routine","Risky","Data loss"]}}' --risk destructive --json
