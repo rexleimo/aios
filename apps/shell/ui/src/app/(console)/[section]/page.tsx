@@ -9,6 +9,7 @@ import { sectionById, SECTIONS } from '../../../lib/sections';
 import { OverviewSection } from '../../../components/sections/overview';
 import { MatrixSection } from '../../../components/sections/matrix';
 import { MemorySection, UsageSection } from '../../../components/sections/data-pages';
+import { SessionsSection } from '../../../components/sections/sessions';
 import {
   IntegrationsSection,
   SettingsSection,
@@ -20,6 +21,7 @@ export const dynamic = 'force-dynamic';
 
 const PAGES = {
   overview: OverviewSection,
+  sessions: SessionsSection,
   memory: MemorySection,
   usage: UsageSection,
   matrix: MatrixSection,
@@ -37,12 +39,20 @@ export function generateStaticParams() {
 
 export default async function SectionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ section: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { section } = await params;
   const meta = sectionById(section);
   const Page = meta ? PAGES[meta.id] : undefined;
-  if (!Page) notFound();
+  if (!Page || !meta) notFound();
+  // 会话页用 ?session=<id> 选择条目，所以搜索参数要传下去；其余页面忽略它。
+  if (meta.id === 'sessions') {
+    const query = await searchParams;
+    const session = typeof query.session === 'string' ? query.session : undefined;
+    return <SessionsSection searchParams={{ session }} />;
+  }
   return <Page />;
 }

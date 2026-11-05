@@ -15,6 +15,7 @@ import {
   Gauge,
   LayoutDashboard,
   Settings2,
+  MessagesSquare,
   Sparkles,
   TableProperties,
   Users,
@@ -25,6 +26,7 @@ import { NAV_GROUPS, sectionsIn, type SectionId } from '../lib/sections';
 
 const ICONS: Record<SectionId, typeof LayoutDashboard> = {
   overview: LayoutDashboard,
+  sessions: MessagesSquare,
   memory: BookMarked,
   usage: Cpu,
   matrix: TableProperties,

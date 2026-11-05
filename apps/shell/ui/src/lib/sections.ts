@@ -2,6 +2,7 @@
 // so a page cannot exist in one and be missing from the other.
 export type SectionId =
   | 'overview'
+  | 'sessions'
   | 'memory'
   | 'usage'
   | 'matrix'
@@ -28,6 +29,14 @@ export const SECTIONS: readonly SectionMeta[] = [
     group: '使用',
     description: 'AIOS 的当前状态：有多少客户端接入、证据缺口在哪、阻断项是什么。',
     source: 'aios status --json + config/host-capabilities.json',
+  },
+  {
+    id: 'sessions',
+    href: '/sessions',
+    label: '会话',
+    group: '使用',
+    description: 'ContextDB 记下的每一次会话：目标、摘要、检查点、最近事件。',
+    source: '.aios/context-db/sessions/',
   },
   {
     id: 'memory',

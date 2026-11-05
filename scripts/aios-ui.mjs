@@ -176,7 +176,8 @@ export function runUi({
   let token = null;
   let tokenFile = null;
   if (plan.mode !== 'build') {
-    token = tokenFactory();
+    // 运维/测试可以钉一个 token（AIOS_UI_TOKEN）；不钉就每次随机生成。
+    token = String(process.env[TOKEN_ENV] ?? '').trim() || tokenFactory();
     tokenFile = publishImpl({ port: plan.port, token, tmpDir });
     log.write(`[ui] open ${bootstrapUiUrl(plan.port, token)}\n`);
   }
