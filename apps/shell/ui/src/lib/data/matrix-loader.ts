@@ -9,7 +9,7 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import path from 'node:path';
 
-import type { MatrixViewModel } from '../../../data/matrix.mjs';
+import type { MatrixViewModel } from '../../../../data/matrix.mjs';
 import { withSnapshotStale } from './snapshot-cache.mjs';
 
 const execFileAsync = promisify(execFile);

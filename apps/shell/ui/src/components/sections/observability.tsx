@@ -6,9 +6,9 @@ import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { loadAgents, loadIntegrations, loadSkillHealth, loadWorkflows } from '../../lib/capability.mjs';
-import { loadMatrixSnapshot } from '../../lib/matrix-loader';
-import { parseDocument, toEditable } from '../../lib/host-capabilities.mjs';
+import { loadAgents, loadIntegrations, loadSkillHealth, loadWorkflows } from '../../lib/data/capability.mjs';
+import { loadMatrixSnapshot } from '../../lib/data/matrix-loader';
+import { parseDocument, toEditable } from '../../lib/data/host-capabilities.mjs';
 import { SettingsEditor } from '../settings-editor';
 import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';

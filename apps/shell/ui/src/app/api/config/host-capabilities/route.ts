@@ -22,7 +22,7 @@ import {
   parseDocument,
   toEditable,
   validateDocument,
-} from '../../../../lib/host-capabilities.mjs';
+} from '../../../../lib/data/host-capabilities.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -52,6 +52,21 @@ function axisVocabulary(root: string): string[] {
     // 拿不到词表就不做轴名校验，但要说出来：静默放行等于让拼写错误变成「未声明」。
     return [];
   }
+}
+
+/**
+ * 把子进程失败压成一句人话。
+ *
+ * 实测：直接把 stderr 前 500 字塞进界面横幅，会得到一屏 Node 栈帧——用户看到的是
+ * `node:internal/modules/cjs/loader:1503 throw err;` 而不是「找不到某个文件」。
+ */
+function summarizeFailure(stderr: string): string {
+  const lines = stderr
+    .split('\n')
+    .map((line) => line.replace(/\r$/, '').trim())
+    .filter(Boolean);
+  const errorLine = lines.find((line) => /Error:/.test(line)) ?? lines[0] ?? '';
+  return errorLine.slice(0, 180) || 'aios status did not return JSON';
 }
 
 function hashOf(text: string): string {
@@ -163,7 +178,7 @@ export async function PUT(request: NextRequest): Promise<Response> {
     JSON.parse(String(check.stdout ?? ''));
   } catch {
     verified = false;
-    reason = String(check.stderr ?? '').trim().slice(0, 500) || 'aios status did not return JSON';
+    reason = summarizeFailure(String(check.stderr ?? ''));
   }
   if (!verified) {
     fs.copyFileSync(backup, file);

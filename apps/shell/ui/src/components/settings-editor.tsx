@@ -14,7 +14,7 @@ import { AlertTriangle, RotateCcw, Save } from 'lucide-react';
 import { cn } from '../lib/cn';
 import { Badge, Card, CardContent, CardHeader, CardTitle, Separator } from './ui/primitives';
 import { Button } from './ui/button';
-import { diffEditable, EDITABLE_LEVELS } from '../lib/host-capabilities.mjs';
+import { diffEditable, EDITABLE_LEVELS } from '../lib/data/host-capabilities.mjs';
 
 interface EditableClient {
   clientId: string;

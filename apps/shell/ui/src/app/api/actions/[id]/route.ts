@@ -21,7 +21,7 @@ import path from 'node:path';
 import type { NextRequest } from 'next/server';
 
 import { ACTIONS, buildActionArgv, isSuccessfulExit, sseFrame } from '../../../../lib/actions.mjs';
-import { clearSnapshots } from '../../../../lib/snapshot-cache.mjs';
+import { clearSnapshots } from '../../../../lib/data/snapshot-cache.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

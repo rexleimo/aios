@@ -1,7 +1,7 @@
 // 记忆与用量：两个「我到底积累了什么」的页面。
 //
 // 两个都只读 `--json` 输出；没有数据时显示空态而不是 0 假装有数据。
-import { formatBytes, loadMemory, loadUsage } from '../../lib/capability.mjs';
+import { formatBytes, loadMemory, loadUsage } from '../../lib/data/capability.mjs';
 import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 

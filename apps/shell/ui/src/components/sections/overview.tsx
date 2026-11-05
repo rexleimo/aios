@@ -6,7 +6,7 @@
 import { Activity, ShieldAlert, TableProperties } from 'lucide-react';
 import Link from 'next/link';
 
-import { loadMatrixSnapshot } from '../../lib/matrix-loader';
+import { loadMatrixSnapshot } from '../../lib/data/matrix-loader';
 import { Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
 import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 import { Button } from '../ui/button';

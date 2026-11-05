@@ -48,6 +48,9 @@ cover-image.png
 # 三个 png 被静默忽略，而当时的测试只检查文件存在。
 !apps/shell/src-tauri/icons/
 !apps/shell/src-tauri/icons/*.png
+# 控制台验收记录里的截图是证据，不是内容图片（docs/reports 是报告日志）。
+!docs/reports/evidence/shell-console-2026-11/
+!docs/reports/evidence/shell-console-2026-11/*.png
 *.jpg
 *.jpeg
 *.gif

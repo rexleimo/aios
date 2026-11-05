@@ -3,7 +3,7 @@
 // 表格行为仍是 TanStack + Radix（`matrix-table.tsx`），这里只负责页头与图例；
 // 事实仍然只有一条通道：`data/load.mjs` 的 stdout。
 import { MatrixTable } from '../matrix-table';
-import { loadMatrixSnapshot } from '../../lib/matrix-loader';
+import { loadMatrixSnapshot } from '../../lib/data/matrix-loader';
 import { Freshness, PageHeader } from '../page-frame';
 import { Badge } from '../ui/primitives';
 

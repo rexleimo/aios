@@ -43,7 +43,8 @@ apps/shell/                 ← 5 项
 │   ├── src/                ← 4 项
 │   │   ├── app/            (layout.tsx, page.tsx, globals.css)
 │   │   ├── components/     (matrix-table.tsx，'use client')
-│   │   ├── lib/            (labels.ts, matrix-loader.ts, trust.mjs)
+│   │   ├── lib/            (词表/导航/门：labels.ts, sections.ts, cn.ts, actions.mjs, trust.mjs)
+│   │   ├── lib/data/       (取数：capability.mjs, matrix-loader.ts, snapshot-cache.mjs, host-capabilities.mjs)
 │   │   └── proxy.ts        本地信任边界的 HTTP 翻译层（Next 16 已把 middleware 改名为 proxy）
 │   ├── package.json
 │   ├── package-lock.json
@@ -74,7 +75,7 @@ apps/shell/                 ← 5 项
 
 ## 三条不能破的约定
 
-1. **视图不含事实。** `ui/` 里唯一的取数通道是 `lib/matrix-loader.ts`，它跑 `data/load.mjs` 读 stdout。
+1. **视图不含事实。** `ui/` 里唯一的取数通道是 `lib/data/matrix-loader.ts`，它跑 `data/load.mjs` 读 stdout。
    不 import 装配代码：实测 import 会把 `scripts/lib/**` 拖进打包图，Turbopack 因此要求整仓 trace。
    页面里出现任何数字字面量都是缺陷，由 `scripts/tests/tooling/shell/interface/matrix-sources.test.mjs` 判定。
 2. **token 只有一个所有者。** `@theme` 里的每个值必须等于 `docs-site/assets/redesign/tokens.css` 的对应
