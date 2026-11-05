@@ -21,6 +21,15 @@ export async function MatrixSection() {
         freshness={<Freshness cached={cached} ageMs={ageMs} stale={stale} />}
       />
 
+      <div className="mb-4 rounded-rex-md border border-rex-border bg-rex-panel px-4 py-3 text-[12px] leading-relaxed text-rex-text-body">
+        <p className="font-medium text-rex-text">这张表在回答什么</p>
+        <p className="mt-1 text-rex-text-muted">
+          对每个客户端：AIOS 能把它接到什么程度。<b>已声明</b>表示配置里承诺了这条能力（能注入会话、
+          能改写请求、能跑受控命令……），<b>证据</b>列表示这件事在这台机器上被验证到哪一步。
+          点「详情」可以看到该行的限制原文，并对这个客户端执行预览安装 / 安装修复。
+        </p>
+      </div>
+
       <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-rex-text-muted">
         <span className="font-medium">图例</span>
         <Badge tone="info">已声明</Badge>

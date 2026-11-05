@@ -56,6 +56,23 @@ function RowDetail({ row }: { row: MatrixRow }) {
           <p className="mt-1 text-[11px] text-rex-text-soft">
             等级 {row.level ?? '—'} · 证据引用 {row.evidenceRef ?? '无'}
           </p>
+          <p className="mt-2 text-[11px] text-rex-text-muted">已声明的能力：</p>
+          <div className="mt-1 flex flex-wrap gap-1">
+            {row.axes.filter((cell) => cell.declared).length === 0 ? (
+              <span className="text-[11px] text-rex-text-soft">（一个都没有声明）</span>
+            ) : (
+              row.axes
+                .filter((cell) => cell.declared)
+                .map((cell) => (
+                  <span
+                    key={cell.axis}
+                    className="rounded-full bg-rex-panel-strong px-1.5 py-0.5 font-rex-mono text-[10px] text-rex-text-body"
+                  >
+                    {AXIS_LABEL[cell.axis] ?? cell.axis}
+                  </span>
+                ))
+            )}
+          </div>
           <ul className="mt-2 list-disc space-y-1 pl-4 leading-relaxed">
             {row.limits.length > 0 ? (
               row.limits.map((limit) => <li key={limit}>{limit}</li>)

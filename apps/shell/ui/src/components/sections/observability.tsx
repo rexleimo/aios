@@ -71,74 +71,123 @@ export async function SkillsSection() {
   );
 }
 
+interface AgentEntry {
+  agentId: string;
+  role: string;
+  roleFamily: string;
+  name: string;
+  lifecycleState: string;
+  workflowEnabled: boolean;
+  blockers: string[];
+}
+
+interface RecipeStage {
+  id: string;
+  agentRole: string;
+  agentId: string;
+  workflowEnabled: boolean;
+}
+
+interface RecipeEntry {
+  workflowId: string;
+  description: string;
+  liveReady: boolean;
+  blockers: string[];
+  stages: RecipeStage[];
+}
+
 export async function TeamSection() {
   const [agents, workflows] = await Promise.all([loadAgents(), loadWorkflows()]);
-  const agentData = agents.ok
-    ? (agents.data as {
-        summary?: { totalAgents?: number; byLifecycle?: Record<string, number> };
-        strict?: { blocked?: boolean };
-      })
-    : null;
-  const workflowData = workflows.ok
-    ? (workflows.data as {
-        summary?: { totalRecipes?: number; liveReadyRecipes?: number; blockedRecipes?: number; blockedWorkflowIds?: string[] };
-      })
-    : null;
+  const agentList = agents.ok ? ((agents.data as { agents?: AgentEntry[] }).agents ?? []) : [];
+  const recipes = workflows.ok ? ((workflows.data as { recipes?: RecipeEntry[] }).recipes ?? []) : [];
+  const ready = agentList.filter((agent) => agent.workflowEnabled).length;
 
   return (
     <>
       <PageHeader
         title="团队与工作流"
-        description="默认 agent 目录与工作流配方。这里的「被封」不是故障，是证据门在起作用。"
+        description="19 个默认 agent 与 2 条工作流配方都在这里：谁已经能用、谁还缺证据、卡在哪一条。"
         source="aios agents list --json + aios workflow list --json"
-        status={
-          agentData?.strict?.blocked
-            ? { label: '严格模式有阻塞', tone: 'warn' }
-            : { label: '按证据放行', tone: 'ok' }
-        }
+        status={{ label: `${ready}/${agentList.length} 可用`, tone: ready > 0 ? 'ok' : 'warn' }}
         freshness={<Freshness cached={agents.cached} ageMs={agents.ageMs} />}
       />
 
       {!agents.ok ? <ErrorNote message={agents.error} /> : null}
       {!workflows.ok ? <ErrorNote message={workflows.error} /> : null}
 
-      <StatGrid>
-        <Stat label="Agent" value={agentData?.summary?.totalAgents ?? 0} hint="默认目录里的角色" />
-        <Stat
-          label="已投影"
-          value={agentData?.summary?.byLifecycle?.projected ?? 0}
-          hint="装到客户端上的"
-          tone="ok"
-        />
-        <Stat
-          label="候选未验证"
-          value={agentData?.summary?.byLifecycle?.candidate ?? 0}
-          hint="需要 smoke 证据"
-          tone={(agentData?.summary?.byLifecycle?.candidate ?? 0) > 0 ? 'warn' : 'default'}
-        />
-        <Stat
-          label="工作流可用"
-          value={`${workflowData?.summary?.liveReadyRecipes ?? 0}/${workflowData?.summary?.totalRecipes ?? 0}`}
-          hint="live-ready / 总数"
-        />
-      </StatGrid>
-
-      <Card>
+      <Card className="mb-4">
         <CardHeader>
           <CardTitle>工作流配方</CardTitle>
-          <CardDescription>被封的配方会给出原因；这条通道的意义就是让「不能跑」有名字。</CardDescription>
+          <CardDescription>每条配方逐阶段列出它需要的 agent 与是否就绪——「不能跑」必须指得出是哪一段。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-2">
-          {(workflowData?.summary?.blockedWorkflowIds ?? []).length === 0 ? (
-            <p className="text-[13px] text-rex-text-muted">没有被封的配方。</p>
+        <CardContent className="space-y-3">
+          {recipes.length === 0 ? (
+            <EmptyState title="没有配方" detail="aios workflow list 没有返回条目。" />
           ) : (
-            (workflowData?.summary?.blockedWorkflowIds ?? []).map((id) => (
-              <div key={id} className="flex items-center justify-between">
-                <span className="font-rex-mono text-[12px] text-rex-text-body">{id}</span>
-                <Badge tone="warn">gate 未满足</Badge>
+            recipes.map((recipe) => (
+              <div key={recipe.workflowId} className="rounded-rex-sm border border-rex-border px-3 py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-rex-mono text-[12px] font-medium text-rex-text">{recipe.workflowId}</span>
+                  <Badge tone={recipe.liveReady ? 'ok' : 'warn'}>{recipe.liveReady ? '可运行' : '被门挡住'}</Badge>
+                </div>
+                <p className="mt-1 text-[12px] leading-relaxed text-rex-text-muted">{recipe.description}</p>
+                <ul className="mt-2 space-y-1">
+                  {recipe.stages.map((stage) => (
+                    <li key={stage.id} className="flex items-center gap-2 text-[11px] text-rex-text-body">
+                      <span className={stage.workflowEnabled ? 'text-rex-green' : 'text-rex-orange'}>
+                        {stage.workflowEnabled ? '●' : '○'}
+                      </span>
+                      <span className="font-rex-mono">{stage.id}</span>
+                      <span className="text-rex-text-soft">→</span>
+                      <span className="font-rex-mono">{stage.agentId || stage.agentRole}</span>
+                    </li>
+                  ))}
+                </ul>
+                {recipe.blockers.length > 0 ? (
+                  <p className="mt-1.5 text-[11px] text-rex-orange">{recipe.blockers[0]}</p>
+                ) : null}
               </div>
             ))
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Agent 目录</CardTitle>
+          <CardDescription>
+            「候选」= 有定义但缺 smoke 证据，能看不能用；「已投影」= 已装进客户端且证据齐。
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <table className="w-full border-collapse text-[12px]">
+            <thead>
+              <tr className="border-b border-rex-border text-left text-[11px] tracking-wide text-rex-text-muted uppercase">
+                <th className="py-2 pr-3 font-medium">agent</th>
+                <th className="py-2 pr-3 font-medium">角色</th>
+                <th className="py-2 pr-3 font-medium">系列</th>
+                <th className="py-2 pr-3 font-medium">状态</th>
+                <th className="py-2 font-medium">卡在哪</th>
+              </tr>
+            </thead>
+            <tbody>
+              {agentList.map((agent) => (
+                <tr key={agent.agentId} className="border-b border-rex-border last:border-0 align-top">
+                  <td className="py-1.5 pr-3 font-rex-mono">{agent.agentId}</td>
+                  <td className="py-1.5 pr-3 text-rex-text-muted">{agent.role}</td>
+                  <td className="py-1.5 pr-3 text-rex-text-soft">{agent.roleFamily}</td>
+                  <td className="py-1.5 pr-3">
+                    <Badge tone={agent.workflowEnabled ? 'ok' : 'warn'}>
+                      {agent.workflowEnabled ? '可用' : agent.lifecycleState === 'projected' ? '已投影·未验证' : '候选'}
+                    </Badge>
+                  </td>
+                  <td className="py-1.5 text-[11px] text-rex-text-soft">
+                    {agent.blockers.length === 0 ? '—' : agent.blockers[0].replace('missing promotion evidence: ', '缺 ').replace(' evidence', '')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </CardContent>
       </Card>
     </>
@@ -232,12 +281,35 @@ export async function SettingsSection() {
   return (
     <>
       <PageHeader
-        title="设置"
-        description="这里是矩阵的事实来源。改完保存会先写备份，再用 aios status 验证整条链还能读；验证失败会自动回滚。"
+        title="能力声明"
+        description="这是接入矩阵的事实来源：每个客户端「声称自己支持什么能力」写在这里，矩阵只是它的可视化。"
         source="config/host-capabilities.json"
         status={{ label: `${editable.length} 个客户端`, tone: 'info' }}
         freshness={<Freshness cached={matrix.cached} ageMs={matrix.ageMs} stale={matrix.stale} />}
       />
+
+      <div className="mb-4 grid gap-3 lg:grid-cols-3">
+        <div className="rounded-rex-md border border-rex-border bg-rex-panel px-4 py-3">
+          <p className="text-[11px] font-medium tracking-wide text-rex-text-muted uppercase">改这里会怎样</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-rex-text-body">
+            关掉某个轴，矩阵上那一格就变空；改等级，等级列跟着变。声明是承诺，不是测量——
+            证据列仍然来自 <span className="font-rex-mono">aios status</span> 的采集。
+          </p>
+        </div>
+        <div className="rounded-rex-md border border-rex-border bg-rex-panel px-4 py-3">
+          <p className="text-[11px] font-medium tracking-wide text-rex-text-muted uppercase">保存的安全垫</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-rex-text-body">
+            先备份到 <span className="font-rex-mono">.aios/config-backups/</span>，再整文件替换；
+            写完用 <span className="font-rex-mono">aios status</span> 复读一次，读不通就自动回滚。
+          </p>
+        </div>
+        <div className="rounded-rex-md border border-rex-border bg-rex-panel px-4 py-3">
+          <p className="text-[11px] font-medium tracking-wide text-rex-text-muted uppercase">不该在这里改的</p>
+          <p className="mt-1 text-[12px] leading-relaxed text-rex-text-body">
+            证据、用量、agent 状态都是采集结果，不是声明。改声明不会让证据变绿。
+          </p>
+        </div>
+      </div>
       <SettingsEditor
         initial={editable}
         axes={[...matrix.matrix.axes]}

@@ -80,9 +80,9 @@ export const SECTIONS: readonly SectionMeta[] = [
   {
     id: 'settings',
     href: '/settings',
-    label: '设置',
+    label: '能力声明',
     group: '设置',
-    description: '能力声明文件的位置与规模（编辑写回在下一步）。',
+    description: '决定接入矩阵每一格的那份声明：在这里改，矩阵随之变。',
     source: 'config/host-capabilities.json',
   },
 ];

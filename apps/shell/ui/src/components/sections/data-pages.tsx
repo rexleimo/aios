@@ -1,11 +1,20 @@
 // 记忆与用量：两个「我到底积累了什么」的页面。
 //
 // 两个都只读 `--json` 输出；没有数据时显示空态而不是 0 假装有数据。
-import { formatBytes, loadMemory, loadUsage } from '../../lib/data/capability.mjs';
+import { formatBytes, loadMemoPinned, loadMemory, loadUsage, runCapabilityText } from '../../lib/data/capability.mjs';
+import { MemoryBrowser } from '../memory-browser';
 import { ErrorNote, Freshness, PageHeader, Stat, StatGrid } from '../page-frame';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
+import { Badge, Card, CardContent, CardDescription, CardHeader, CardTitle, EmptyState } from '../ui/primitives';
 
 export const dynamic = 'force-dynamic';
+
+/** 每一层的含义。层名是记账里的标识，不是产品词，所以这里给出人话解释。 */
+const LAYER_LABEL: Record<string, string> = {
+  refs: '工具输出外置',
+};
+const LAYER_DETAIL: Record<string, string> = {
+  refs: '把长工具输出存成引用文件，只注入摘要与指针；原文仍可按 ref 读回。这一层省的就是那部分体积。',
+};
 
 interface MemoryReport {
   generatedAt?: string;
@@ -35,6 +44,8 @@ export async function MemorySection() {
   }
   const data = result.data as MemoryReport;
   const spaces = data.spaces ?? [];
+  const pinned = await loadMemoPinned();
+  const pinStatus = await runCapabilityText(['memo', 'pin', 'status']);
 
   return (
     <>
@@ -57,6 +68,13 @@ export async function MemorySection() {
           tone={(data.candidates?.backlog ?? 0) > 0 ? 'warn' : 'default'}
         />
       </StatGrid>
+
+      <div className="mb-4">
+        <MemoryBrowser
+          initialPinned={pinned.ok ? pinned.text : ''}
+          pinBudget={pinStatus.ok ? pinStatus.text.split(String.fromCharCode(10))[0] : ''}
+        />
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
@@ -150,44 +168,46 @@ export async function UsageSection() {
       {layers.length === 0 ? (
         <EmptyState title="没有记账" detail="跑过工具调用后这里会出现按层的数字。" />
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>按层</CardTitle>
-            <CardDescription>每一行都是一层的真实记账；压缩比由两列算出，不单独存放。</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <table className="w-full border-collapse text-[13px]">
-              <thead>
-                <tr className="border-b border-rex-border text-left text-[11px] tracking-wide text-rex-text-muted uppercase">
-                  <th className="py-2 pr-3 font-medium">层</th>
-                  <th className="py-2 pr-3 font-medium">事件</th>
-                  <th className="py-2 pr-3 font-medium">原始</th>
-                  <th className="py-2 pr-3 font-medium">压缩后</th>
-                  <th className="py-2 pr-3 font-medium">省下</th>
-                  <th className="py-2 font-medium">压缩比</th>
-                </tr>
-              </thead>
-              <tbody>
-                {layers.map((layer) => {
-                  const ratio =
-                    (layer.raw_bytes ?? 0) > 0 && (layer.compact_bytes ?? 0) > 0
-                      ? ((layer.raw_bytes ?? 0) / (layer.compact_bytes ?? 1)).toFixed(1)
-                      : '—';
-                  return (
-                    <tr key={layer.layer ?? 'layer'} className="border-b border-rex-border last:border-0">
-                      <td className="py-2 pr-3 font-rex-mono text-[12px]">{layer.layer ?? '—'}</td>
-                      <td className="py-2 pr-3 text-rex-text-muted">{layer.events ?? 0}</td>
-                      <td className="py-2 pr-3">{formatBytes(layer.raw_bytes ?? 0)}</td>
-                      <td className="py-2 pr-3">{formatBytes(layer.compact_bytes ?? 0)}</td>
-                      <td className="py-2 pr-3 text-rex-green">{formatBytes(layer.saved_bytes ?? 0)}</td>
-                      <td className="py-2 font-rex-mono text-[12px] text-rex-text-muted">{ratio}×</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </CardContent>
-        </Card>
+        <div className="space-y-3">
+          {layers.map((layer) => {
+            const raw = layer.raw_bytes ?? 0;
+            const compact = layer.compact_bytes ?? 0;
+            const percent = raw > 0 ? Math.max(1, Math.round((compact / raw) * 100)) : 0;
+            return (
+              <Card key={layer.layer ?? 'layer'}>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <span className="font-rex-mono">{layer.layer ?? '—'}</span>
+                    <Badge tone="info">{LAYER_LABEL[layer.layer ?? ''] ?? '未命名层'}</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    {LAYER_DETAIL[layer.layer ?? ''] ??
+                      '这一层的说明还没有写；数字照实显示，解释不猜。'}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <div className="flex h-2 w-full overflow-hidden rounded-full bg-rex-panel-strong">
+                    <span className="bg-rex-cyan" style={{ width: `${percent}%` }} />
+                  </div>
+                  <div className="flex flex-wrap gap-x-6 gap-y-1 font-rex-mono text-[11px] text-rex-text-muted">
+                    <span>原始 {formatBytes(raw)}</span>
+                    <span>压缩后 {formatBytes(compact)}</span>
+                    <span className="text-rex-green">
+                      省下 {formatBytes((layer.saved_bytes ?? 0))}
+                      （{(layer.saved_tokens_estimate ?? 0).toLocaleString()} tokens）
+                    </span>
+                    <span>事件 {layer.events ?? 0}</span>
+                    <span>外置引用 {layer.refs_count ?? 0}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+          <p className="text-[11px] leading-relaxed text-rex-text-soft">
+            这是**过程记账**：每次工具输出被外置成引用、只把摘要注入上下文时记一笔。
+            它不是账单，也不含模型 API 的花费——请求级用量要等二期网关。
+          </p>
+        </div>
       )}
     </>
   );

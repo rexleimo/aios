@@ -102,6 +102,30 @@ export async function runCapabilityJsonCached(args, options = {}) {
   };
 }
 
+/** 文本型命令（memo/pin 这类）：原样返回 stdout，不假设它是 JSON。 */
+export async function runCapabilityText(args, options = {}) {
+  const rootDir = options.rootDir ?? repoRoot();
+  const script = path.join(rootDir, 'scripts', 'aios.mjs');
+  try {
+    const { stdout } = await execFileAsync(process.execPath, [script, ...args], {
+      cwd: rootDir,
+      encoding: 'utf8',
+      timeout: options.timeoutMs ?? CAPABILITY_TIMEOUT_MS,
+      maxBuffer: 16 * 1024 * 1024,
+      env: { ...process.env, AIOS_PROJECT_ROOT: rootDir },
+    });
+    return { ok: true, text: String(stdout).trim(), error: null };
+  } catch (error) {
+    return {
+      ok: false,
+      text: String(error?.stdout ?? '').trim(),
+      error: String(error?.stderr ?? error?.message ?? '').trim().slice(0, 300),
+    };
+  }
+}
+
+export const loadMemoPinned = (options) => runCapabilityText(['memo', 'pin', 'show'], options);
+
 export const loadStatus = (options) => runCapabilityJsonCached(['status', '--json'], options);
 export const loadMemory = (options) => runCapabilityJsonCached(['memory', 'report', '--json'], options);
 export const loadUsage = (options) => runCapabilityJsonCached(['tokens', 'report', '--json'], options);
