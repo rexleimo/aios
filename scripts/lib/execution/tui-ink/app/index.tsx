@@ -4,7 +4,7 @@ import { render } from 'ink';
 import fs from 'node:fs';
 import path from 'node:path';
 import React from 'react';
-import { App } from '../App';
+import { App } from './App';
 import type { CatalogSkill, InstalledSkills, Client } from '../views/types';
 
 // ASCII art banner

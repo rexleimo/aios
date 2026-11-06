@@ -20,7 +20,7 @@ export async function uninstallCodemap({ rootDir, projectRoot, dryRun = false, i
         io.log(`PLAN codemap would remove ${CRG_MCP_ALIAS} from ${target.path}`);
       }
     } else if (fs.existsSync(target.path)) {
-      removeCrgFromClientTarget(target, { io });
+      await removeCrgFromClientTarget(target, { io, projectRoot: projectRootPath, dryRun });
     }
   }
 

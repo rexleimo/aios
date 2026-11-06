@@ -1,14 +1,21 @@
+// scripts/tests/clients/adapters/headroom-mcp-registration.test.mjs — headroom MCP 注册（w5c：AIOS 自写）。
+//
+// 这一份在 w5c 之后测的东西换了性质：**不再有 spawn**。注册 = AIOS 自己写客户端配置文件，
+// 走与 CLI/codemap/browser/pi 同一条通用写路径。于是原来的两个断言对象消失了：
+//   · `buildHeadroomMcpAddInvocation` / `Remove`（厂商 CLI 方言）——已删除，留着就是第二套“怎么注册”的说法；
+//   · `runImpl` / `missing-runner`——生产从来没注入过 runner，那条路径的真实归宿是永久 failed。
+// 换成四个仍能客观验证的事实：
+//   ① 三个 runtime 的落点都真的被写出来（gemini JSON / grok TOML 的 env 子表 / hermes YAML 的 enabled+tools）；
+//   ② 归属判定仍然 fail-closed：external / conflict 一个字节都不覆盖；
+//   ③ 默认 probe 不再假装成功（`pending-smoke`），真探针没接入前不得报 verified；
+//   ④ 回滚把文件带回“没装过的样子”（连新建的桶一起收）。
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import {
-  buildDesiredHeadroomEntry,
-  buildHeadroomMcpAddInvocation,
-  buildHeadroomMcpRemoveInvocation,
-} from '../../../lib/environment/aios-init/headroom-mcp/commands.mjs';
+import { buildDesiredHeadroomEntry } from '../../../lib/environment/aios-init/headroom-mcp/commands.mjs';
 import {
   ensureHeadroomMcpRegistration,
   removeOwnedHeadroomMcp,
@@ -21,36 +28,33 @@ import {
   writeHeadroomLedger,
 } from '../../../lib/environment/aios-init/headroom-mcp/ownership.mjs';
 
-test('official MCP add commands preserve the absolute executable as one argv item', () => {
-  const executable = '/Users/test/Headroom Tools/headroom';
-  assert.deepEqual(buildHeadroomMcpAddInvocation({ runtimeId: 'gemini-cli', headroomPath: executable }), {
-    command: 'gemini',
-    args: ['mcp', 'add', '--scope', 'user', '-e', 'HEADROOM_MCP_CLIENT=gemini-cli', '-e', 'HEADROOM_MCP_READ=off', 'headroom', executable, '--', 'mcp', 'serve'],
-  });
-  assert.deepEqual(buildHeadroomMcpAddInvocation({ runtimeId: 'hermes-agent', headroomPath: executable }), {
-    command: 'hermes',
-    args: ['mcp', 'add', 'headroom', '--command', executable, '--env', 'HEADROOM_MCP_CLIENT=hermes-agent', 'HEADROOM_MCP_READ=off', '--args', 'mcp', 'serve'],
-  });
-  assert.deepEqual(buildHeadroomMcpAddInvocation({ runtimeId: 'grok-build', headroomPath: executable }), {
-    command: 'grok',
-    args: ['mcp', 'add', '--scope', 'user', '-e', 'HEADROOM_MCP_CLIENT=grok-build', '-e', 'HEADROOM_MCP_READ=off', 'headroom', '--', executable, 'mcp', 'serve'],
-  });
-});
+const HOME = {
+  'gemini-cli': ['.gemini', 'settings.json'],
+  'grok-build': ['.grok', 'config.toml'],
+  'hermes-agent': ['.hermes', 'config.yaml'],
+};
 
-test('official MCP remove commands stay scoped and profile-aware', () => {
-  assert.deepEqual(buildHeadroomMcpRemoveInvocation({ runtimeId: 'gemini-cli' }), {
-    command: 'gemini',
-    args: ['mcp', 'remove', '--scope', 'user', 'headroom'],
-  });
-  assert.deepEqual(buildHeadroomMcpRemoveInvocation({ runtimeId: 'hermes-agent', profile: 'research' }), {
-    command: 'hermes',
-    args: ['mcp', 'remove', 'headroom', '--profile', 'research'],
-  });
-  assert.deepEqual(buildHeadroomMcpRemoveInvocation({ runtimeId: 'grok-build' }), {
-    command: 'grok',
-    args: ['mcp', 'remove', '--scope', 'user', 'headroom'],
-  });
-});
+/** 一个隔离 home：配置文件还没写、ledger 在 `<home>/.aios/...`。 */
+async function sandbox(prefix) {
+  const homeDir = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+  return {
+    homeDir,
+    env: {},
+    options(runtimeId) {
+      return { runtimeId, headroomPath: path.join(homeDir, 'bin', 'headroom'), homeDir, env: {}, projectRoot: '' };
+    },
+    configPath(runtimeId) {
+      return path.join(homeDir, ...HOME[runtimeId]);
+    },
+    async read(runtimeId) {
+      try {
+        return await fs.readFile(this.configPath(runtimeId), 'utf8');
+      } catch {
+        return '';
+      }
+    },
+  };
+}
 
 test('ownership is fail-closed and never adopts an external matching entry', () => {
   const desired = buildDesiredHeadroomEntry('gemini-cli', '/opt/headroom');
@@ -91,77 +95,102 @@ test('ledger path is under AIOS home and redacts unrelated fields', async () => 
   assert.equal(readBack.entries['grok-build'].env.HEADROOM_MCP_READ, 'off');
 });
 
+test('consent and ownership gate before any write: no consent or a conflicting entry leaves bytes alone', async () => {
+  const box = await sandbox('headroom-gate-');
+  const opts = box.options('gemini-cli');
 
-test('Gemini/Grok registration never overwrites conflict and needs separate consent', async () => {
-  const spawns = [];
-  const base = {
-    runtimeId: 'gemini-cli',
-    headroomPath: '/opt/headroom',
-    mode: 'auto',
-    isTTY: false,
-    runImpl: async (command, args) => { spawns.push([command, args]); return { status: 0 }; },
-    readLedgerImpl: async () => ({ schemaVersion: 1, entries: {} }),
-  };
-  assert.equal((await ensureHeadroomMcpRegistration({ ...base, consent: false, inspectImpl: async () => ({ actual: null }) })).status, 'pending-consent');
-  assert.equal((await ensureHeadroomMcpRegistration({ ...base, consent: true, inspectImpl: async () => ({ actual: { command: '/user/server', args: [], env: {} } }) })).status, 'conflict');
-  assert.deepEqual(spawns, []);
+  const pending = await ensureHeadroomMcpRegistration({ ...opts, mode: 'auto', consent: false });
+  assert.equal(pending.status, 'pending-consent');
+  assert.equal(await box.read('gemini-cli'), '', '没有 consent 不许建文件');
+
+  // 用户自己写了一条同名但不同 command 的条目 → conflict，且一个字节都不许动。
+  await fs.mkdir(path.dirname(box.configPath('gemini-cli')), { recursive: true });
+  const userOwned = '{\n  "mcpServers": {\n    "headroom": { "command": "/user/headroom", "args": ["mcp", "serve"] }\n  }\n}\n';
+  await fs.writeFile(box.configPath('gemini-cli'), userOwned, 'utf8');
+  const conflict = await ensureHeadroomMcpRegistration({ ...opts, mode: 'on', consent: true });
+  assert.equal(conflict.status, 'conflict');
+  assert.equal(await box.read('gemini-cli'), userOwned, 'conflict 不许改盘');
 });
 
-test('post-add reread is authoritative and rollback only removes an unchanged entry created this run', async () => {
-  const desired = buildDesiredHeadroomEntry('grok-build', '/opt/headroom');
-  let reads = 0;
-  const commands = [];
-  const result = await ensureHeadroomMcpRegistration({
-    runtimeId: 'grok-build',
-    headroomPath: '/opt/headroom',
-    mode: 'on',
-    consent: true,
-    isTTY: false,
-    inspectImpl: async () => ({ actual: reads++ === 0 ? null : desired, projectShadow: false, configPath: '/home/u/.grok/config.toml' }),
-    runImpl: async (command, args) => { commands.push([command, args]); return { status: 0 }; },
+test('self-write registers all three runtimes in their own dialect (grok keeps env as a sub-table)', async () => {
+  const box = await sandbox('headroom-write-');
+  const expected = {
+    'gemini-cli': (raw) => {
+      const parsed = JSON.parse(raw);
+      assert.deepEqual(parsed.mcpServers.headroom, {
+        command: path.join(box.homeDir, 'bin', 'headroom'),
+        args: ['mcp', 'serve'],
+        env: { HEADROOM_MCP_CLIENT: 'gemini-cli', HEADROOM_MCP_READ: 'off' },
+      });
+    },
+    'grok-build': (raw) => {
+      assert.match(raw, /\[mcp_servers\.headroom\]/u);
+      // 真实 ~/.grok/config.toml 就是 env 子表；写成内联表会让用户的 env 换一种形状。
+      assert.match(raw, /\[mcp_servers\.headroom\.env\]\nHEADROOM_MCP_CLIENT = "grok-build"/u);
+      assert.doesNotMatch(raw, /env = \{/u);
+    },
+    'hermes-agent': (raw) => {
+      // hermes 只认 enabled 且必须有那三个工具名（见 hermesEntryUsable）；自写必须复现同一形状。
+      assert.match(raw, /headroom:/u);
+      assert.match(raw, /enabled: true/u);
+      assert.match(raw, /headroom_compress/u);
+      assert.match(raw, /HEADROOM_MCP_CLIENT: hermes-agent/u);
+    },
+  };
+
+  for (const runtimeId of Object.keys(HOME)) {
+    const options = { ...box.options(runtimeId), mode: 'on', consent: true };
+    const first = await ensureHeadroomMcpRegistration(options);
+    // 默认 probe 是 pending-smoke：写进去了，但还没有“客户端真能连上”的证据。
+    assert.equal(first.status, 'pending-smoke', `${runtimeId} 实得 ${first.status}/${first.reason || ''}`);
+    expected[runtimeId](await box.read(runtimeId));
+
+    // 第二次：账本 + 指纹都证明是我们写的 → registered，且不再重写。
+    const before = await box.read(runtimeId);
+    const second = await ensureHeadroomMcpRegistration(options);
+    assert.equal(second.status, 'registered', `${runtimeId} 二次实得 ${second.status}/${second.reason || ''}`);
+    assert.equal(await box.read(runtimeId), before, `${runtimeId} registered 不该动文件`);
+  }
+
+  const ledger = await readHeadroomLedger({ homeDir: box.homeDir, env: {} });
+  assert.deepEqual(Object.keys(ledger.entries).sort(), ['gemini-cli', 'grok-build', 'hermes-agent']);
+});
+
+test('default probe never claims verified; an injected failing probe rolls back to the pre-install bytes', async () => {
+  const box = await sandbox('headroom-rollback-');
+  const options = { ...box.options('gemini-cli'), mode: 'on', consent: true };
+
+  const failed = await ensureHeadroomMcpRegistration({
+    ...options,
     probeImpl: async () => ({ status: 'failed', reason: 'handshake-failed' }),
-    readLedgerImpl: async () => ({ schemaVersion: 1, entries: {} }),
-    writeLedgerImpl: async () => {},
   });
-  assert.equal(result.status, 'failed');
-  assert.equal(result.rolledBack, true);
-  assert.deepEqual(commands.map(([command, args]) => [command, args.slice(0, 3)]), [
-    ['grok', ['mcp', 'add', '--scope']],
-    ['grok', ['mcp', 'remove', '--scope']],
-  ]);
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.reason, 'handshake-failed');
+  assert.equal(failed.rolledBack, true);
+  // 回滚 = 回到“没装过的样子”：本次新建的桶连壳一起收掉，文件回到空。
+  assert.equal(await box.read('gemini-cli'), '', '回滚后不许留下半截配置');
+
+  // 真探针（如果有）仍然可以报 verified——这是给未来接真握手的入口，不是现在的默认。
+  const verified = await ensureHeadroomMcpRegistration({ ...options, probeImpl: async () => ({ status: 'verified' }) });
+  assert.equal(verified.status, 'verified');
 });
 
-test('Hermes never adds or removes without a genuine TTY', async () => {
-  const calls = [];
-  const common = {
-    runtimeId: 'hermes-agent',
-    headroomPath: '/opt/headroom',
-    consent: true,
-    mode: 'on',
-    isTTY: false,
-    inspectImpl: async () => ({ actual: null, configPath: '/home/u/.hermes/config.yaml' }),
-    runImpl: async (...args) => { calls.push(args); return { status: 0 }; },
-    readLedgerImpl: async () => ({ schemaVersion: 1, entries: {} }),
-  };
-  assert.equal((await ensureHeadroomMcpRegistration(common)).status, 'pending-interactive');
-  assert.equal((await removeOwnedHeadroomMcp({ ...common, ledgerEntry: { fingerprint: 'x' } })).status, 'pending-interactive');
-  assert.deepEqual(calls, []);
-});
+test('remove only touches an entry the ledger proves we wrote', async () => {
+  const box = await sandbox('headroom-remove-');
+  const options = { ...box.options('gemini-cli'), mode: 'on', consent: true };
+  assert.equal((await ensureHeadroomMcpRegistration(options)).status, 'pending-smoke');
+  const ledger = await readHeadroomLedger({ homeDir: box.homeDir, env: {} });
+  const record = ledger.entries['gemini-cli'];
+  const written = await box.read('gemini-cli');
 
-test('Hermes exit zero is failure until config, enabled state and selected tools prove success', async () => {
-  let reads = 0;
-  const desired = buildDesiredHeadroomEntry('hermes-agent', '/opt/headroom');
-  const result = await ensureHeadroomMcpRegistration({
-    runtimeId: 'hermes-agent',
-    headroomPath: '/opt/headroom',
-    consent: true,
-    mode: 'on',
-    isTTY: true,
-    inspectImpl: async () => ({ actual: reads++ === 0 ? null : desired, configPath: '/home/u/.hermes/config.yaml' }),
-    runImpl: async () => ({ status: 0 }),
-    readLedgerImpl: async () => ({ schemaVersion: 1, entries: {} }),
-    writeLedgerImpl: async () => {},
-  });
-  assert.equal(result.status, 'failed');
-  assert.equal(result.reason, 'hermes-tools-not-enabled');
+  // 账本指纹对不上（用户在写完之后改过）→ 拒绝删除，文件不动。
+  const stale = await removeOwnedHeadroomMcp({ ...options, ledgerEntry: { ...record, fingerprint: 'stale' } });
+  assert.equal(stale.status, 'conflict');
+  assert.equal(await box.read('gemini-cli'), written);
+
+  // 指纹对得上 → 真删，且没有残留条目。
+  const removed = await removeOwnedHeadroomMcp({ ...options, ledgerEntry: record });
+  assert.equal(removed.status, 'removed', `${removed.status}/${removed.reason || ''}`);
+  const parsed = JSON.parse(await box.read('gemini-cli'));
+  assert.equal(parsed.mcpServers?.headroom, undefined);
 });

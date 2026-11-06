@@ -1,0 +1,66 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "hermes",
+  "scope": "home",
+  "file": "C:\\Users\\Administrator\\AppData\\Local\\hermes\\config.yaml",
+  "format": "yaml",
+  "entryPath": "mcp_servers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [
+    "enabled",
+    "tools"
+  ],
+  "note": "实测真实结构就是 mcp_servers.<name>（无中间 mcp 层），与 codemap yaml 写入器一致。",
+  "clientBinary": "hermes",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ]
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:65cc9ab8046993725ba5cf08c620d676f255a5a3a0bd22b66ed28d7295344032"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:26:57.848Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:65cc9ab8046993725ba5cf08c620d676f255a5a3a0bd22b66ed28d7295344032",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:26:56.970Z"
+}

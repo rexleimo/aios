@@ -1,0 +1,67 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "gemini",
+  "scope": "project",
+  "file": "E:\\coding\\harness-cli\\.gemini\\settings.json",
+  "format": "gemini-json",
+  "entryPath": "mcpServers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [
+    "cwd"
+  ],
+  "note": "cwd 是实测放行、schema 未证：w7 必须用 gemini 真启动判一次，不得因「今天写着没崩」当已验。",
+  "clientBinary": "gemini",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:d3b938f0f1804f42571f9822764181aed57de58ef104b7d0924d3cfaca7ba0a5"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command",
+        "type"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:26:55.137Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:d3b938f0f1804f42571f9822764181aed57de58ef104b7d0924d3cfaca7ba0a5",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:26:54.390Z"
+}

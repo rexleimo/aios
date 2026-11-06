@@ -80,8 +80,8 @@ test('the shell styles with utilities, not with a second handwritten CSS layer',
 
 test('the accessibility baseline survives the Tailwind switch', () => {
   const css = readFileSync(shellCss, 'utf8');
-  const table = readFileSync(new URL('../../../../../apps/shell/ui/src/components/matrix-table.tsx', import.meta.url), 'utf8');
-  const page = readFileSync(new URL('../../../../../apps/shell/ui/src/components/sections/matrix.tsx', import.meta.url), 'utf8');
+  const table = readFileSync(new URL('../../../../../apps/shell/ui/src/components/console/console-workspace.tsx', import.meta.url), 'utf8');
+  const page = readFileSync(new URL('../../../../../apps/shell/ui/src/components/console/console-ui.tsx', import.meta.url), 'utf8');
   // 无头库提供焦点与键盘行为，界面侧必须显式保留可见焦点环。
   assert.match(table, /focus-visible:outline/u);
   assert.match(css, /--color-rex-text-muted/u);

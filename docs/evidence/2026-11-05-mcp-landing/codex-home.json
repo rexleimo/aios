@@ -1,0 +1,65 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "codex",
+  "scope": "home",
+  "file": "C:\\Users\\Administrator\\.codex\\config.toml",
+  "format": "toml",
+  "entryPath": "mcp_servers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "codex",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:5317793d10acb6a18cbf4e56d205ab8e7d5248dee050f95f98331afb7aa25743"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command",
+        "type"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:26:51.416Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:5317793d10acb6a18cbf4e56d205ab8e7d5248dee050f95f98331afb7aa25743",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:26:50.684Z"
+}

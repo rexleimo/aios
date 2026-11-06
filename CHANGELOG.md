@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+## [7.1.0] - 2026-11-06
+
+- Added: the local AI tool manager is the default Console interface, with tool, MCP, project-memory, activity and settings views. The retired sidebar and pages are removed; old bookmarks redirect to current views, and navigation supports refresh and browser history.
+- Boundary: the new interface still uses explicitly labeled example data and simulated operations. Real private-project memory reads and configuration writes are not connected to it; existing API, CLI, configuration, memo and session storage are preserved.
+- Added: shared MCP configuration planning computes all changes for a file before one atomic write. Browser, codemap, Pi and Headroom registration reuse client-specific schemas and JSON/TOML/YAML writers, preserving unmanaged bytes and ownership boundaries.
+- Added: preview-first MCP landing evidence probes verify configuration read-back, ownership and original-hash restoration. The recorded matrix has 12 verified, 1 unverified and 5 host-unsupported landings; historical landing evidence remains separate from current connection tests.
+- Fixed: TOML child-table handling, nested JSON/YAML creation, OpenCode configuration preservation, client field allowlists, and TUI same-directory imports on Windows.
+- Verification: Console typecheck/build and Shell 95/95 passed; default-environment regression completed with 2746 passing, 0 failing and 12 skipped tests. Browser checks covered route migration, history/refresh, memory/MCP example flows and mobile layout without production writes.
+
 ## [7.0.1] - 2026-11-02
 
 - Changed: CI now emits `::error` annotations from the failing log lines of both test jobs. The raw log needs admin rights and the step summary is a rendered page with the same requirement, so `ci-main`'s own comment ("surface failures without log-admin rights") described an ability that did not exist — a red run was undiagnosable from outside the repository. The annotation endpoint is public.

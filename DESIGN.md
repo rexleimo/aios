@@ -31,7 +31,7 @@
 - `packages/debug-hub/src/ui.html`
 - `scripts/lib/memory/genealogy-gui/index.html`
 - `scripts/lib/execution/tui-ink/**`（16 个 tsx）
-- `apps/shell/ui/src/app/globals.css`、`apps/shell/ui/src/app/layout.tsx`、`apps/shell/ui/src/app/(console)/page.tsx`、`apps/shell/ui/src/components/matrix-table.tsx`、`apps/shell/ui/src/lib/labels.ts`（源码在 `src/` 下，见 `apps/shell/README.md`；`proxy.ts` 只做请求判定，不含视觉）
+- `apps/shell/ui/src/app/globals.css`、`apps/shell/ui/src/app/layout.tsx`、`apps/shell/ui/src/app/(console)/**`、`apps/shell/ui/src/components/console/**`、`apps/shell/ui/src/components/ui/**`（当前唯一 Console 界面；`apps/shell/ui/src/lib/console-navigation.ts` 拥有路径与可读标签，`proxy.ts` 只做请求判定，不含视觉）
 
 **不在范围内**（实测排除，每项都有理由，配置在 `config/design-contract/exclusions.json`）：
 

@@ -114,12 +114,22 @@ const CODEMAP_MCP_TARGETS = Object.freeze([
   }),
 ]);
 
-export function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {
-  return getCodemapTargetFormat(target.format).inject(target, projectRoot, { dryRun, io });
+export async function injectCrgIntoClientTarget(target, projectRoot, { dryRun = false, io = console } = {}) {
+  const format = getCodemapTargetFormat(target.format);
+  if (!format) {
+    // 旧实现会把未知标签当 `mcp-json` 写——也就是把 JSON 写进 `config.toml`。拒绝比猜安全。
+    return { status: 'error', reason: `format-not-wired:${target.format || '(empty)'}` };
+  }
+  return format.inject(target, projectRoot, { dryRun, io });
 }
 
-export function removeCrgFromClientTarget(target, { io = console } = {}) {
-  return getCodemapTargetFormat(target.format).remove(target, { io });
+export async function removeCrgFromClientTarget(target, { io = console, projectRoot = '', dryRun = false } = {}) {
+  const format = getCodemapTargetFormat(target.format);
+  if (!format) {
+    io.log(`ERR  codemap cannot clean ${target.path}: format-not-wired:${target.format || '(empty)'}`);
+    return { status: 'error', reason: `format-not-wired:${target.format || '(empty)'}` };
+  }
+  return format.remove(target, { io, projectRoot, dryRun });
 }
 
 export function collectCodemapMcpTargets(projectRoot, clientHomes = {}, client = 'all') {
@@ -154,7 +164,11 @@ export function inspectCodemapMcpTarget(target) {
 
   try {
     const raw = fs.readFileSync(target.path, 'utf8');
-    return getCodemapTargetFormat(target.format).inspect(raw, target);
+    const format = getCodemapTargetFormat(target.format);
+    if (!format) {
+      return { exists: true, hasCrg: false, valid: false, reason: `format-not-wired:${target.format || '(empty)'}` };
+    }
+    return format.inspect(raw, target);
   } catch (error) {
     return {
       exists: true,

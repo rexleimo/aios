@@ -23,6 +23,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { planServerEdits } from '../../../../clients/mcp/server-writer.mjs';
+
 import { PRIMARY_BROWSER_ALIAS } from '../../browser/constants.mjs';
 import { resolveLocalBrowserMcpScript } from '../../browser/runtime/runtime-paths.mjs';
 
@@ -162,7 +164,7 @@ function deepEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-// Idempotent: merges AIOS-managed servers into mcp.json `mcpServers`.
+// Idempotent: merges AIOS-managed servers into mcp.json mcpServers.
 // Never rewrites user-owned servers or other keys. dryRun previews.
 export function ensurePiMcpServers({ mcpJsonPath, servers = null, dryRun = false, io = null } = {}) {
   if (!mcpJsonPath) {
@@ -171,20 +173,35 @@ export function ensurePiMcpServers({ mcpJsonPath, servers = null, dryRun = false
   const wanted = servers || buildAiosPiMcpServers();
   const current = readMcpJsonObject(mcpJsonPath);
   const existing = current.mcpServers && typeof current.mcpServers === 'object' && !Array.isArray(current.mcpServers)
-    ? { ...current.mcpServers }
+    ? current.mcpServers
     : {};
   const added = [];
   const present = [];
   const keptDiffers = [];
+  const edits = [];
   for (const [name, definition] of Object.entries(wanted)) {
     if (!(name in existing)) {
-      existing[name] = definition;
       added.push(name);
+      edits.push({ action: 'upsert', serverName: name, entry: definition, mode: 'insert' });
     } else if (deepEqual(existing[name], definition)) {
       present.push(name);
     } else {
+      // 用户改过同名条目 → 认下现状（kept-differs），绝不写入。旧实现也是这个语义：
+      // 「只增不改」是 pi 这条路径的合同，不是遗漏。
       keptDiffers.push(name);
     }
+  }
+
+  // 「先算后写」：文本手术交给通用 planner（只动托管条目的切片，别处的缩进/键序/注释不再被整份重排带走）。
+  // pi 的写入仍是同步的（历史行为，调用方从 `aios init` 到 install 都是同步路径），
+  // 但**算**的部分已经与 CLI/codemap/browser 共用同一把手术刀。
+  const planned = planServerEdits({
+    filePath: mcpJsonPath,
+    shape: { format: 'json', entryPath: 'mcpServers', allowedFields: null, createIfMissing: true },
+    edits,
+  });
+  if (planned.status === 'rejected') {
+    throw new Error(`refusing to write Pi MCP JSON: ${planned.reason}`);
   }
   const action = added.length > 0 ? 'updated' : 'present';
   if (dryRun) {
@@ -195,7 +212,7 @@ export function ensurePiMcpServers({ mcpJsonPath, servers = null, dryRun = false
   }
   if (added.length > 0) {
     fs.mkdirSync(path.dirname(mcpJsonPath), { recursive: true });
-    fs.writeFileSync(mcpJsonPath, `${JSON.stringify({ ...current, mcpServers: existing }, null, 2)}\n`, 'utf8');
+    fs.writeFileSync(mcpJsonPath, planned.text, 'utf8');
   }
   return { mcpJsonPath, action, added, present, keptDiffers };
 }

@@ -9,6 +9,7 @@
 //   · 任何一次改动之后都必须 `JSON.parse` 通过，不过就**不写**（回退由调用方的备份负责）。
 //
 // 归属判定不在这一层：谁的名字能删是 w3 账本的事，这里只提供机械能力。
+import { isDeepStrictEqual } from 'node:util';
 
 /** 跳过一段 JSON 字符串，返回闭合引号之后的下标。 */
 function skipString(text, start) {
@@ -144,7 +145,11 @@ export function insertEntry(text, path, name, value) {
     const rootEnd = scanValueEnd(base, rootStart) - 1;
     const members = scanObjectMembers(base, rootStart);
     const { memberIndent } = detectIndentation(base, rootStart);
-    const bucketText = path.reduceRight((inner, segment) => `${JSON.stringify(segment)}: ${inner}`, '{}');
+    // 嵌套路径（zcode 的 `mcp.servers`）必须逐层包花括号：`reduceRight` 的累加值本身要成为**值**，
+    // 否则拼出来的是 `{"mcp": "servers": {}}`——非法 JSON，紧接着的 findBucketStart 必然失败
+    // （报 `failed to create bucket`）。w2/w5a 的 zcode fixture 都自带 `mcp.servers`，这条“从零建桶”的路径
+    // 一直没被走过；2026-11-05 由 browser 的 JSON 迁移（项目级 zcode 文件不存在）实测出来。
+    const bucketText = path.reduceRight((inner, segment) => `${JSON.stringify(segment)}: {${inner}}`, '');
     const insertText = `${members.length ? ',' : ''}\n${memberIndent}${bucketText.split('\n').map((line, index) => (index === 0 ? line : memberIndent + line)).join('\n')}`;
     const anchor = members.length ? members[members.length - 1].valueEnd : rootEnd;
     base = `${base.slice(0, anchor)}${insertText}${base.slice(anchor)}`;
@@ -173,6 +178,138 @@ export function insertEntry(text, path, name, value) {
   return { text: `${base.slice(0, insertAt)},\n${memberIndent}${JSON.stringify(name)}: ${valueText}${base.slice(insertAt)}`, replaced: false, createdBucket: false };
 }
 
+/**
+ * 桶外根键：`path` 是点路径（如 `experimental.mcp_timeout`）。
+ * 存在且值等于 `createWith` 之外也算「已有」，**不覆盖别人写的值**——本控制台的门是「非托管字节不变」，
+ * 把一个已存在的超时改成我们的默认值就是越权。缺了才补，补在根对象末尾（不动既有字节）。
+ * `filled` 回报本次真的写了哪个键，卸载时按 provenance 决定能不能连它一起收掉（同 `createdBucket`）。
+ */
+export function ensureRootKeys(text, keys) {
+  let base = text || '{}\n';
+  const filled = [];
+  for (const key of keys) {
+    const segments = key.path.split('.');
+    const rootStart = base.indexOf('{');
+    if (rootStart < 0) throw new Error('not a JSON object');
+    // 先判再写：已存在即跳过（值一概不碰）；缺失又没默认值也跳过——「猜一个值写进别人的配置」
+    // 正是这层拒绝的事，那种要求交给调用方判成 `root-keys-missing`。
+    // 以前的写法会先建出中间层的空壳才发现叶子没法建，留下一个 `"a": {}` 的半截改动——比拒绝更糟。
+    if (findRootLeaf(base, key.path) || key.createWith === undefined) continue;
+    let cursor = rootStart;
+    for (let depth = 0; depth < segments.length; depth += 1) {
+      const members = scanObjectMembers(base, cursor);
+      const hit = members.find((member) => member.key === segments[depth]);
+      const isLeaf = depth === segments.length - 1;
+      if (hit) {
+        if (!isLeaf && base[hit.valueStart] !== '{') throw new Error(`root-key-not-an-object: ${segments.slice(0, depth + 1).join('.')}`);
+        cursor = hit.valueStart;
+        continue;
+      }
+      base = setMemberAt(base, cursor, segments[depth], isLeaf ? key.createWith : {});
+      if (!isLeaf) {
+        cursor = findBucketStart(base, segments.slice(0, depth + 1));
+        if (cursor < 0) throw new Error(`root-key-create-failed: ${segments.slice(0, depth + 1).join('.')}`);
+      }
+    }
+    filled.push(key.path); // 只记叶子：父壳是本次建的，叶子的回收会顺带把它带走（`removeMemberAt`）
+  }
+  return { text: base, filled };
+}
+
+/** 根键是否已存在（只读，不建）。 */
+export function hasRootKey(text, dottedPath) {
+  const leaf = findRootLeaf(text, dottedPath);
+  return leaf !== null;
+}
+
+/** 从根对象走到点路径的最后一个成员；不存在返回 null。 */
+function findRootLeaf(text, dottedPath) {
+  let cursor = (text || '').indexOf('{');
+  if (cursor < 0) return null;
+  const segments = dottedPath.split('.');
+  let members = null;
+  for (let depth = 0; depth < segments.length; depth += 1) {
+    try {
+      members = scanObjectMembers(text, cursor);
+    } catch {
+      return null;
+    }
+    const hit = members.find((member) => member.key === segments[depth]);
+    if (!hit) return null;
+    if (depth === segments.length - 1) return hit;
+    if (text[hit.valueStart] !== '{') return null;
+    cursor = hit.valueStart;
+  }
+  return null;
+}
+
+/**
+ * 抹掉本次写入自己补的根键（`createdRootKeys` 的逆操作）：只删调用方证明由 AIOS 建的那几个，
+ * 且**值仍是当初那个默认值**才删——被人改过就说明它已被采纳，删它等于改别人的配置。
+ * 空父对象（例如我们建的 `experimental`）随最后一个子键一起收，与 `createdBucket` 同理。
+ */
+export function dropRootKeys(text, dottedPaths, expectedValues) {
+  let base = text;
+  const dropped = [];
+  for (const dotted of dottedPaths) {
+    const segments = dotted.split('.');
+    const expected = expectedValues?.[dotted];
+    const leaf = findRootLeaf(base, dotted);
+    if (!leaf) continue;
+    let current;
+    try {
+      current = JSON.parse(base.slice(leaf.valueStart, leaf.valueEnd));
+    } catch {
+      continue; // 读不回即不猜：留着别人的字节
+    }
+    if (!isDeepStrictEqual(current, expected)) continue;
+    base = removeMemberAt(base, dotted);
+    dropped.push(dotted);
+  }
+  return { text: base, dropped };
+}
+
+/** 删掉点路径最后那个成员（含它自己的逗号与缩进），父对象空了就把父对象也带走。 */
+function removeMemberAt(text, dottedPath) {
+  const segments = dottedPath.split('.');
+  // 自内向外汇聚成「一次删一个空壳」：先删叶子，父级若因此变空再删父级。
+  const leafParentPath = segments.slice(0, -1).join('.');
+  const bucketStart = segments.length === 1 ? text.indexOf('{') : findBucketStart(text, segments.slice(0, -1));
+  if (bucketStart < 0) return text;
+  const members = scanObjectMembers(text, bucketStart);
+  const name = segments[segments.length - 1];
+  const index = members.findIndex((member) => member.key === name);
+  if (index < 0) return text;
+  const target = members[index];
+  let next;
+  if (members.length === 1 && bucketStart !== text.indexOf('{')) {
+    // 父对象被掏空：连父键一起删（父键由本次写入创建才会有这种空壳）。
+    return removeMemberAt(text, leafParentPath);
+  }
+  if (members.length === 1) {
+    const close = scanValueEnd(text, bucketStart) - 1;
+    next = `${text.slice(0, bucketStart + 1)}${text.slice(close)}`;
+  } else if (index < members.length - 1) {
+    next = `${text.slice(0, target.keyStart)}${text.slice(members[index + 1].keyStart)}`;
+  } else {
+    next = `${text.slice(0, members[index - 1].valueEnd)}${text.slice(target.valueEnd)}`;
+  }
+  // 根对象本身不因为空了就消失——文件整体必须是合法 JSON 对象。
+  return next;
+}
+
+/** 在 `objectStart` 指向的对象里补一个成员（追加在末尾，键序变化但不碰既有字节）。 */
+function setMemberAt(text, objectStart, name, value) {
+  const members = scanObjectMembers(text, objectStart);
+  const { memberIndent, unit } = detectIndentation(text, objectStart);
+  const close = scanValueEnd(text, objectStart) - 1;
+  const valueText = serializeValue(value, memberIndent, unit);
+  if (members.length === 0) {
+    return `${text.slice(0, objectStart + 1)}\n${memberIndent}${JSON.stringify(name)}: ${valueText}\n${memberIndent.slice(0, Math.max(0, memberIndent.length - unit.length))}}${text.slice(close + 1)}`;
+  }
+  const last = members[members.length - 1];
+  return `${text.slice(0, last.valueEnd)},\n${memberIndent}${JSON.stringify(name)}: ${valueText}${text.slice(last.valueEnd)}`;
+}
 /**
  * 抹掉一个条目：删掉它的 `key: value` 连同**属于它的那一个逗号**与其后空白。
  * 条目不存在时返回 `{ changed: false }`，绝不猜测删除。

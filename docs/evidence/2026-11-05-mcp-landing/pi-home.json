@@ -1,0 +1,65 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "pi",
+  "scope": "home",
+  "file": "C:\\Users\\Administrator\\.pi\\agent\\mcp.json",
+  "format": "json",
+  "entryPath": "mcpServers",
+  "writable": true,
+  "registered": false,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "条目必须与 pi 写入器逐字节一致（lifecycle:\"lazy\"），否则 pi doctor 的 JSON.stringify 比对永久报 kept-differs。",
+  "clientBinary": "pi",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "lifecycle": "lazy"
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:1a673a8adb6d067ff7469025d65c4f6a7afc94c54c1a6a180a7f673ccbeb25c1"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command",
+        "lifecycle"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:27:03.273Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:1a673a8adb6d067ff7469025d65c4f6a7afc94c54c1a6a180a7f673ccbeb25c1",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:27:02.500Z"
+}

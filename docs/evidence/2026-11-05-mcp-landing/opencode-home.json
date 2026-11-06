@@ -1,0 +1,66 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "opencode",
+  "scope": "home",
+  "file": "C:\\Users\\Administrator\\.config\\opencode\\opencode.json",
+  "format": "opencode-json",
+  "entryPath": "mcp",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "今天从未被写过：两个 opencode.json 实测无 `mcp` 键。形状与 claude 家族不同源。",
+  "clientBinary": "opencode",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "type": "local",
+      "command": [
+        "node",
+        "/aios-landing-probe.js"
+      ],
+      "enabled": true
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:bd8bfd7d8b43afdca7c8722e2d0449285ed2f751bd9c75761f8e0544165fcaee"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "command",
+        "enabled",
+        "type"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:26:56.438Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:bd8bfd7d8b43afdca7c8722e2d0449285ed2f751bd9c75761f8e0544165fcaee",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:26:55.695Z"
+}

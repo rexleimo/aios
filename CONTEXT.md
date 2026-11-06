@@ -186,7 +186,7 @@
 
 **定义**：动手前按顺序问三个问题，第一个命中的「是」即决定变更落在父仓库还是 `rex-harness/` 子模块——① 是否本仓库的贡献文书形状（PR/issue 模板、`AGENTS.md`、docs）；② 是否宿主「何时允许声称完成」的门禁（客户端指令注入、quality gate、verification-before-completion）；③ 是否需要被 Command 选中并返回一份 Evidence（新 Capability、新阶段、evidence schema、`skill-sources` 正文）。前两类留父仓库；第三类进子模块并走完整发布流（CHANGELOG + semver + tag + 独立指针 commit），判据本体是 ADR 0001 的「第三方可独立安装使用的公开产品面」。
 
-**为什么**：`workflow-ownership.md:37`（软件阶段只改 rex）与 ADR 0001（公开产品面归子模块）是同一条边界的两侧，但都是陈述句、不好执行；三问把它变成动手前的可判定顺序，同时把「改子模块要走发布流」的成本前置到决策时——外部 skill（如 mattpocock/skills 的 `pr`）的每一份内容都能拆成文书、门禁、阶段三块，混成一整份塞进任一侧都会造成第二套语义。裁决见 `docs/architecture/adr/0003-external-skill-adoption-landing.md`。
+**为什么**：`rex-harness/docs/workflow-ownership.md:37`（软件阶段只改 rex）与 ADR 0001（公开产品面归子模块）是同一条边界的两侧，但都是陈述句、不好执行；三问把它变成动手前的可判定顺序，同时把「改子模块要走发布流」的成本前置到决策时——外部 skill（如 mattpocock/skills 的 `pr`）的每一份内容都能拆成文书、门禁、阶段三块，混成一整份塞进任一侧都会造成第二套语义。裁决见 `docs/architecture/adr/0003-external-skill-adoption-landing.md`。
 
 ## 子代理上下文新鲜度（fresh context / fork）
 

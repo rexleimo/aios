@@ -1,0 +1,29 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "pi",
+  "scope": "project",
+  "file": "E:\\coding\\harness-cli\\.mcp.json",
+  "format": "json",
+  "entryPath": "",
+  "writable": false,
+  "registered": false,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "pi",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "lifecycle": "lazy"
+    }
+  },
+  "status": "unverified",
+  "reason": "landing-not-writable: landing-not-writable",
+  "steps": [],
+  "capturedAt": "2026-11-06T03:27:03.855Z"
+}

@@ -109,34 +109,87 @@ function locateSection(lines, header) {
   return { start, end };
 }
 
-/** 读取桶里的条目名 → 值对象。 */
+/**
+ * 读取桶里的条目名 → 值对象。
+ *
+ * 一级子表（codex 的 `[mcp_servers.<name>.env]`）的键**并进父条目**：codex 现实配置就是这么写的，
+ * 而 w2/w5a 的 reader 只认父段、把子表整段丢掉——于是同一份文件的 env 在「读回」时消失，
+ * 上层会把它判成 `kept-differs` 并试图「修复」一份本来就对的配置。内联表与子表同时存在时按顺序合并
+ * （子表覆盖内联），与 codemap/browser 旧写入器保存 env 的语义一致。
+ * 更深的孙表不认：真出现就留给调用方判，不猜。
+ */
 export function readTomlEntries(raw, path) {
   const { lines } = splitLines(raw);
   const prefix = `[${path.map((segment) => formatKey(segment)).join('.')}.`;
   const entries = {};
   let current = null;
+  let subKey = null;
   for (const line of lines) {
     const trimmed = line.trim();
     if (isHeader(trimmed)) {
       const inside = trimmed.startsWith(prefix) && trimmed.endsWith(']');
       const inner = inside ? trimmed.slice(prefix.length, -1) : '';
-      // 只认直接子段，`.env` 这类孙表的内容并进父条目但不另立条目名。
-      current = inside && !inner.includes('.') ? inner : null;
-      if (current) entries[current] = {};
+      const segments = inner ? inner.split('.').map((segment) => segment.replace(/^"(.*)"$/u, '$1')) : [];
+      if (inside && segments.length === 1) {
+        current = segments[0];
+        subKey = null;
+        if (!entries[current]) entries[current] = {};
+        continue;
+      }
+      if (inside && segments.length === 2 && entries[segments[0]]) {
+        current = segments[0];
+        subKey = segments[1];
+        if (entries[current][subKey] === undefined) entries[current][subKey] = {};
+        continue;
+      }
+      // 别人的段、或更深的孙表：结束当前条目，不把内容并进任何条目。
+      current = null;
+      subKey = null;
       continue;
     }
     if (!current) continue;
     const eq = trimmed.indexOf('=');
     if (eq <= 0) continue;
     const key = trimmed.slice(0, eq).trim().replace(/^"(.*)"$/u, '$1');
-    entries[current][key] = parseTomlValue(trimmed.slice(eq + 1));
+    const value = parseTomlValue(trimmed.slice(eq + 1));
+    if (subKey) {
+      const bucket = entries[current][subKey];
+      if (bucket && typeof bucket === 'object' && !Array.isArray(bucket)) bucket[key] = value;
+      continue;
+    }
+    const existing = entries[current][key];
+    const bothObjects = existing && typeof existing === 'object' && !Array.isArray(existing)
+      && value && typeof value === 'object' && !Array.isArray(value);
+    entries[current][key] = bothObjects ? { ...existing, ...value } : value;
   }
   return Object.freeze({ found: Object.keys(entries).length > 0, entries });
 }
 
+/**
+ * 表段的文本形状：标量与数组留在父段，**对象值写成一级子表**（codex 的 `[x.env]` 约定）。
+ *
+ * 为什么不是内联表：codex 现实配置与 codemap/browser 的旧写入器都用子表，浏览器 TOML 迁移的用例
+ * 直接把「不得出现 `env = {`」钉成断言。把对象写成内联表不是「等价改写」，而是把用户的 env 换成另一种
+ * 形状——收编（w5b）要的是只动托管条目，不是顺手改形状。
+ * 更深的嵌套（子表里还有对象）直接拒：本层只承诺一级，猜下去会把结构写坏。
+ */
 function sectionLines(header, entry) {
   const lines = [header];
-  for (const [key, value] of Object.entries(entry)) lines.push(`${formatKey(key)} = ${formatTomlValue(value)}`);
+  const subTables = [];
+  for (const [key, value] of Object.entries(entry)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      subTables.push([key, value]);
+      continue;
+    }
+    lines.push(`${formatKey(key)} = ${formatTomlValue(value)}`);
+  }
+  for (const [key, value] of subTables) {
+    const nested = Object.entries(value);
+    if (nested.some(([, item]) => item && typeof item === 'object' && !Array.isArray(item))) {
+      throw new Error('toml-nested-too-deep');
+    }
+    lines.push('', `[${header.slice(1, -1)}.${formatKey(key)}]`, ...nested.map(([k, v]) => `${formatKey(k)} = ${formatTomlValue(v)}`));
+  }
   return lines;
 }
 
@@ -159,6 +212,26 @@ export function insertTomlEntry(raw, path, name, entry) {
   if (next.length) next.push('');
   next.push(...body, '');
   return { text: next.join(eol), replaced: false };
+}
+
+/**
+ * 原地改写一个已存在的表段：节**留在它原来的行位置**，只换段内的键值行。
+ * 为什么需要它：codemap 的 `doctor --fix` 是原地替换（`codemap/targets/mcp-targets/json.mjs` 的 upsert），
+ * 而「先 remove 再 insert」会把本段搬到文件末尾（`insertTomlEntry` 只做末尾追加）——
+ * 内容没丢，但条目的位置变了，别人的 `# 顺序注释` 与之相邻时会错位。收编（w5b）要有等价原语才有得谈。
+ * 段不存在即抛 `entry-not-found`：替换不是插入的另一种写法，缺条目是调用方的判断错误，不静默补。
+ * 子表（`[x.env]`）随本段一起重写：它的键由新条目里的 `env` 决定，留着旧的会读回一份没人认领的混合形状。
+ */
+export function replaceTomlEntry(raw, path, name, entry) {
+  const { mixed, eol, lines } = splitLines(raw);
+  if (mixed) throw new Error('mixed-newlines');
+  const header = headerFor(path, name);
+  const located = locateSection(lines, header);
+  if (!located) throw new Error('entry-not-found');
+  const body = sectionLines(header, entry);
+  // 段前的那一个空行是我们插入时垫的（与删除时带走的那一个成对），替换时保持原样。
+  const next = [...lines.slice(0, located.start), ...body, ...lines.slice(located.end)];
+  return { text: next.join(eol), replaced: true };
 }
 
 /** 抹掉一个表段，连同我们自己垫在它前面的那一个空行；其余字节不动。 */

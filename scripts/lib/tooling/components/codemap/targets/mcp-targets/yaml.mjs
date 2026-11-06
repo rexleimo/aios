@@ -1,12 +1,14 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { isDeepStrictEqual } from 'node:util';
-
+// scripts/lib/tooling/components/codemap/targets/mcp-targets/yaml.mjs — hermes 的 `mcp_servers.<name>` YAML 落点。
+//
+// w5b 收编后：写盘交给 `landing-writer.mjs`；本文件只留 hermes 自己的**形状收敛**
+// （`toHermesMcpEntry`：只保留 command/args/cwd/env，env 键排序且值转字符串）——
+// 那是「hermes 接受什么」的事实，不是文本手术，留在调用方。
+// `inspectHermesYaml` 仍是纯读：解析文本，不改盘。
 import { parseDocument } from 'yaml';
 
 import { CRG_MCP_ALIAS } from '../../constants.mjs';
-import { backupFilePath } from '../../paths.mjs';
 import { buildCrgEntryForTarget, isCrgServeEntry, isObjectRecord } from './entries.mjs';
+import { removeTargetEntry, writeTargetEntry } from './landing-writer.mjs';
 
 function toHermesMcpEntry(entry) {
   const normalized = {};
@@ -19,6 +21,7 @@ function toHermesMcpEntry(entry) {
   return normalized;
 }
 
+/** 只读：解析 hermes 配置；结构不合法就是错误，不是「空配置」。 */
 function parseHermesDocument(raw) {
   const document = parseDocument(raw || '{}\n');
   if (document.errors.length > 0) {
@@ -37,47 +40,14 @@ function parseHermesDocument(raw) {
   return { document, config };
 }
 
-function writeHermesYaml(filePath, raw, nextRaw, exists, { dryRun = false } = {}) {
-  if (exists && raw === nextRaw) return { status: 'unchanged' };
-  if (dryRun) return { status: 'planned' };
-  if (exists) fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, nextRaw, 'utf8');
-  return { status: exists ? 'updated' : 'created' };
+export async function upsertCrgIntoHermesYaml(target, projectRoot, { dryRun = false } = {}) {
+  // hermes 的条目形状由本组件收敛（schema 之外一律不收），落盘手术由通用层做。
+  const entry = toHermesMcpEntry(buildCrgEntryForTarget(target.clientKey || 'hermes', projectRoot, target.path));
+  return writeTargetEntry({ target, projectRoot, entry, dryRun });
 }
 
-export function upsertCrgIntoHermesYaml(filePath, projectRoot, { dryRun = false } = {}) {
-  const exists = fs.existsSync(filePath);
-  const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
-  let state;
-  try {
-    state = parseHermesDocument(raw);
-  } catch (error) {
-    return { status: 'error', reason: `YAML parse failed: ${error instanceof Error ? error.message : String(error)}` };
-  }
-
-  const desired = toHermesMcpEntry(buildCrgEntryForTarget('hermes', projectRoot, filePath));
-  if (isDeepStrictEqual(state.config.mcp_servers[CRG_MCP_ALIAS], desired)) {
-    return { status: 'unchanged' };
-  }
-
-  state.document.setIn(['mcp_servers', CRG_MCP_ALIAS], desired);
-  return writeHermesYaml(filePath, raw, String(state.document), exists, { dryRun });
-}
-
-export function removeCrgFromHermesYaml(filePath, { io = console } = {}) {
-  if (!fs.existsSync(filePath)) return;
-  const raw = fs.readFileSync(filePath, 'utf8');
-  try {
-    const state = parseHermesDocument(raw);
-    if (!Object.hasOwn(state.config.mcp_servers, CRG_MCP_ALIAS)) return;
-    state.document.deleteIn(['mcp_servers', CRG_MCP_ALIAS]);
-    fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
-    fs.writeFileSync(filePath, String(state.document), 'utf8');
-    io.log(`OK   codemap removed ${CRG_MCP_ALIAS} from ${filePath}`);
-  } catch (error) {
-    io.log(`ERR  codemap failed to clean ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function removeCrgFromHermesYaml(target, { io = console, projectRoot = '', dryRun = false } = {}) {
+  return removeTargetEntry({ target, projectRoot, io, dryRun });
 }
 
 export function inspectHermesYaml(raw) {

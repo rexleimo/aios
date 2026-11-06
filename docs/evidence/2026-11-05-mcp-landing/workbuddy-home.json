@@ -1,0 +1,29 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "workbuddy",
+  "scope": "home",
+  "file": "C:\\Users\\Administrator\\.workbuddy\\mcp.json",
+  "format": "json",
+  "entryPath": "mcpServers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "workbuddy",
+  "clientInstalled": false,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "host-unsupported",
+  "reason": "client binary not on PATH: workbuddy",
+  "steps": [],
+  "capturedAt": "2026-11-06T03:27:02.447Z"
+}

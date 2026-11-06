@@ -428,8 +428,7 @@ export async function ensureCompressionTools(options = {}) {
         consent: yesHeadroomMcp,
         mode: process.env.AIOS_HEADROOM_MCP || 'auto',
         dryRun: false,
-        isTTY: Boolean(process.stdin.isTTY),
-      });
+        });
     }
     console.log('  RTK: installed');
     console.log('  Caveman: installed');
@@ -500,7 +499,6 @@ export async function ensureCompressionTools(options = {}) {
       consent: yesHeadroomMcp,
       mode: process.env.AIOS_HEADROOM_MCP || 'auto',
       dryRun: false,
-      isTTY: Boolean(process.stdin.isTTY),
     });
   }
 

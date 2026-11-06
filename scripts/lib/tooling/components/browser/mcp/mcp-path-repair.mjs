@@ -167,7 +167,7 @@ export async function repairStaleAiosMcpPaths({
   const migrationTargets = targets;
   let migration = null;
   if (migrationTargets.length) {
-    migration = applyMcpConfigMigration({
+    migration = await applyMcpConfigMigration({
       targets: migrationTargets,
       rootDir: stable.root,
       io,

@@ -1,0 +1,65 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "grok",
+  "scope": "project",
+  "file": "E:\\coding\\harness-cli\\.grok\\config.toml",
+  "format": "toml",
+  "entryPath": "mcp_servers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "grok",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:7b52f3810062537ff87d1feb844281f3b57f14105edaacc9aba1afdf26f81256"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command",
+        "type"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:27:01.922Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:7b52f3810062537ff87d1feb844281f3b57f14105edaacc9aba1afdf26f81256",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:27:01.186Z"
+}

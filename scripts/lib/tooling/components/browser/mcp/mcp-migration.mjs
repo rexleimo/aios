@@ -6,7 +6,9 @@ import path from 'node:path';
 import { getClientHomes } from '../../../../foundation/platform/paths.mjs';
 import { isVolatileAiosRoot } from '../../../../foundation/platform/aios-runtime-root.mjs';
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from '../constants.mjs';
-import { BROWSER_MCP_ALIASES, findFirstBrowserServerEntry, removeLegacyBrowserServerEntries } from './mcp-aliases.mjs';
+import { planServerEdits } from '../../../../clients/mcp/server-writer.mjs';
+import { writeFileAtomic } from '../../../../environment/fs/atomic-write.mjs';
+import { BROWSER_MCP_ALIASES, LEGACY_BROWSER_ALIASES, findFirstBrowserServerEntry } from './mcp-aliases.mjs';
 import { buildAuthToolsMcpServer, buildShellMcpServer } from './mcp-server-builders.mjs';
 import { collectBrowserMcpMigrationTargets } from './mcp-targets.mjs';
 import { migrateOneMcpToml } from './formats/mcp-toml.mjs';
@@ -17,24 +19,20 @@ import { migrateOneGeminiJsonFile } from './formats/mcp-gemini.mjs';
 import { resolveLocalBrowserMcpScript } from '../runtime/runtime-paths.mjs';
 import { browserModeAppliesPlaywright, browserManagedServer, readSettingsFile, resolveBrowserMode } from '../modes/mcp-mode.mjs';
 
-/* 中文注释：单文件迁移保持 alias 稳定，只替换 server block 内容，减少客户端侧配置漂移。
-   serversKey 支持点路径（如 zcode 的 'mcp.servers'）：逐段下钻并在缺段时创建中间对象。
-   mapManagedServerEntry 允许严格 schema 宿主（zcode）在落盘前规范化 AIOS 管理的
-   三个 server；用户自有 server 不经过该函数，保持逐字节保留。 */
-function resolveServersBucket(parsed, serversKey) {
+/* 中文注释：单文件迁移保持 alias 稳定，写盘交给通用 planner（见 clients/mcp/server-writer.mjs）。
+
+   serversKey 支持点路径（如 zcode 的 'mcp.servers'）：逐段下钻；**只读**（不建中间层）——
+   策略需要看现有条目（例如 auth 条目带过哪些 env），但探测本身不该在别人的文档里建出中间层。 */
+function readServersBucket(parsed, serversKey) {
   const segments = String(serversKey || '').split('.').filter(Boolean);
   let container = parsed;
   for (const segment of segments.slice(0, -1)) {
-    if (!container[segment] || typeof container[segment] !== 'object' || Array.isArray(container[segment])) {
-      container[segment] = {};
-    }
+    if (!container[segment] || typeof container[segment] !== 'object' || Array.isArray(container[segment])) return {};
     container = container[segment];
   }
   const leaf = segments[segments.length - 1] || 'mcpServers';
-  if (!container[leaf] || typeof container[leaf] !== 'object' || Array.isArray(container[leaf])) {
-    container[leaf] = {};
-  }
-  return container[leaf];
+  const bucket = container[leaf];
+  return bucket && typeof bucket === 'object' && !Array.isArray(bucket) ? bucket : {};
 }
 
 export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServers', mapManagedServerEntry = null, mode = undefined } = {}) {
@@ -57,10 +55,11 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
     parsed = {};
   }
 
-  const mcpServers = resolveServersBucket(parsed, serversKey);
+  // 只读地取现有桶（`create: false`）：策略需要看「用户的 auth 条目里带过什么 env」，
+  // 但**绝不**为了让探测把中间层建进别人的文档——写路径是下面的 planner，不是这棵内存对象。
+  const mcpServers = readServersBucket(parsed, serversKey);
   const existingAlias = findFirstBrowserServerEntry(mcpServers);
-  removeLegacyBrowserServerEntries(mcpServers);
-  // 按 mode 取托管 browser 条目：none/bsk 时为 null，writer 据此不写入该 alias（含 legacy）。
+  // 按 mode 取托管 browser 条目：none/bsk 时为 null。
   const browserManaged = browserManagedServer(rootDir, existingAlias, {}, mode);
   const managedServers = {};
   if (browserManaged !== null) {
@@ -73,16 +72,31 @@ export function migrateOneMcpJsonFile(filePath, rootDir, { serversKey = 'mcpServ
       managedServers[alias] = mapManagedServerEntry(managedServers[alias]);
     }
   }
-  Object.assign(mcpServers, managedServers);
 
-  const nextRaw = `${JSON.stringify(parsed, null, 2)}\n`;
-  if (exists && raw === nextRaw) {
+  // 「先算后写」：算这一趟要动的条目集合（要下掉的旧别名 + 要写的托管条目），文本手术交给通用 planner。
+  // 策略逐条保留：旧别名单下（与旧实现一致），主浏览器别名在 mode 不适用 playwright 时**不下掉**——
+  // 四个写入器今天对此不一致（TOML 先删全部再加回，JSON/YAML/opencode 只删 legacy），
+  // 这是 mode 特性自己的问题（切 none 是否应摘掉已装条目），不归收编顺手改；记在计划里待拍。
+  const edits = [
+    ...LEGACY_BROWSER_ALIASES.map((alias) => ({ action: 'remove', serverName: alias })),
+    ...Object.entries(managedServers).map(([serverName, entry]) => ({ action: 'upsert', serverName, entry })),
+  ];
+  const planned = planServerEdits({
+    filePath,
+    // 迁移写入器自己就是这些条目形状的 owner（builder 决定字段），所以不套 CLI 的落点白名单；
+    // 白名单门属于「用户点按钮装一条」的那条路径（`install-policy`）。桶路径仍取目标自己的（zcode 的点路径）。
+    shape: { format: 'json', entryPath: serversKey, allowedFields: null, createIfMissing: true },
+    edits,
+  });
+  if (planned.status === 'rejected') {
+    return { status: 'error', reason: `${planned.reason}${planned.unknownFields ? `: ${planned.unknownFields.join(', ')}` : ''}` };
+  }
+  if (planned.status === 'unchanged') {
     return { status: 'unchanged' };
   }
-
   return {
     status: exists ? 'updated' : 'created',
-    nextRaw,
+    nextRaw: planned.text,
   };
 }
 
@@ -155,11 +169,13 @@ export async function migrateBrowserMcpConfig({ rootDir, mode = null, io = conso
     }
   }
 
-  return applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode: resolvedMode, skipped });
+  return await applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode: resolvedMode, skipped });
 }
 
-/* 中文注释：apply 阶段统一统计 created/updated/unchanged/errors，doctor 用这些数字给出修复证据。 */
-export function applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode = undefined, skipped = [] }) {
+/* 中文注释：apply 阶段统一统计 created/updated/unchanged/errors，doctor 用这些数字给出修复证据。
+   这是「先算后写」的后半段：每个 migrateOne* 只算不写（返回 nextRaw），本函数逐文件**写一次**——
+   多个条目落进同一份配置时不会产生中间态；写盘走 writeFileAtomic（崩溃不留半截文件）。 */
+export async function applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode = undefined, skipped = [] }) {
   let created = 0;
   let updated = 0;
   let unchanged = 0;
@@ -197,8 +213,8 @@ export function applyMcpConfigMigration({ targets, rootDir, io, dryRun, mode = u
     if (dryRun) {
       io.log(`PLAN mcp-migrate ${result.status}: ${absPath}`);
     } else {
-      fs.mkdirSync(path.dirname(absPath), { recursive: true });
-      fs.writeFileSync(absPath, result.nextRaw, 'utf8');
+      await fs.promises.mkdir(path.dirname(absPath), { recursive: true });
+      await writeFileAtomic(absPath, result.nextRaw);
       io.log(`OK   mcp-migrate ${result.status}: ${absPath}`);
     }
 

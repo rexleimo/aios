@@ -68,13 +68,13 @@ function ensureGraphBuilt({ projectRootPath, dryRun, io, freshness = null }) {
   return { crgDataDir, graphExists, freshness: freshnessInfo };
 }
 
-function injectClientMcpConfigs({ projectRootPath, homes, client, dryRun, io }) {
+async function injectClientMcpConfigs({ projectRootPath, homes, client, dryRun, io }) {
   io.log('[4/8] Injecting MCP config into clients');
   const targets = collectCodemapMcpTargets(projectRootPath, homes, client);
   const filtered = targets.filter((target) => target.createIfMissing || fs.existsSync(target.path));
   const injectedClients = [];
   for (const target of filtered) {
-    const result = injectCrgIntoClientTarget(target, projectRootPath, { dryRun, io });
+    const result = await injectCrgIntoClientTarget(target, projectRootPath, { dryRun, io });
     if (result.status === 'error') {
       io.log(`ERR  codemap MCP inject failed for ${target.path}: ${result.reason}`);
     } else if (result.status === 'unchanged') {
@@ -151,7 +151,7 @@ export async function installCodemap({
   logUvCheck({ skipCrgChecks, io });
   const resolvedCrgVersion = resolveCrgVersion({ projectRootPath, skipCrgChecks, crgVersion, io });
   const { crgDataDir, graphExists } = ensureGraphBuilt({ projectRootPath, dryRun, io });
-  const injectedClients = injectClientMcpConfigs({ projectRootPath, homes, client, dryRun, io });
+  const injectedClients = await injectClientMcpConfigs({ projectRootPath, homes, client, dryRun, io });
   installOpencodePluginIfNeeded({ injectedClients, homes, dryRun, skipCrgChecks, skipOpencodePluginInstall, io });
 
   io.log('[6/8] Writing state file');

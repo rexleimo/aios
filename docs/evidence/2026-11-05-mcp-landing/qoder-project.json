@@ -1,0 +1,29 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "qoder",
+  "scope": "project",
+  "file": "E:\\coding\\harness-cli\\.qoder\\settings.json",
+  "format": "json",
+  "entryPath": "mcpServers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "qoder",
+  "clientInstalled": false,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "host-unsupported",
+  "reason": "client binary not on PATH: qoder",
+  "steps": [],
+  "capturedAt": "2026-11-06T03:27:02.468Z"
+}

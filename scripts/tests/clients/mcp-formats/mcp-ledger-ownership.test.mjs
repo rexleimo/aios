@@ -42,7 +42,7 @@ function tamper(filePath) {
   fs.writeFileSync(filePath, next, 'utf8');
 }
 
-test('装一条即记账：owned，且字节与 w2 直写完全一致（策略层不改字节）', async () => {
+test('装一条即记账：owned，且字节与 w2 直写完全一致（claude 落点无改名，策略层不该动字节）', async () => {
   const fx = setup();
   const twin = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'rex-mcp-twin-')), '.claude.json');
   fs.writeFileSync(twin, CLAUDE_ORIG, 'utf8');
@@ -56,6 +56,105 @@ test('装一条即记账：owned，且字节与 w2 直写完全一致（策略�
 
   const verified = await verifyServer({ clientId: 'claude', scope: 'home', serverName: PROBE, filePath: fx.filePath, ledgerDir: fx.ledgerDir });
   assert.equal(verified.classification.status, 'owned');
+  fs.rmSync(fx.dir, { recursive: true, force: true });
+});
+
+test('gemini 落点：规范形状先改名再记账，账本指纹与磁盘形状同一份（收编不自造 kept-differs）', async () => {
+  // 这条是 w5a 字段变换位的存在理由，不是锦上添花：
+  // gemini 的白名单只认 `timeout`（`landing-schema.mjs` 的 GEMINI_FIELDS），而 AIOS 的规范条目写 `startupTimeoutSec`。
+  // 若先按规范形状记指纹、再按落地形状写盘，条目一装上就永久 `kept-differs`——四家收编后会得到四个幽灵。
+  const original = '{\n  "mcpServers": {\n    "theirs": { "command": "node", "args": [], "timeout": 30000 }\n  }\n}\n';
+  const fx = setup({ original, file: 'settings.json' });
+  const canonical = { command: 'node', args: ['/probe/server.js'], type: 'stdio', startupTimeoutSec: 10 };
+  const result = await installServer({ clientId: 'gemini', scope: 'home', serverName: PROBE, entry: canonical, ...fx });
+  assert.equal(result.status, 'installed', `${result.status} / ${result.reason || ''}`);
+  assert.deepEqual(result.renamed, [{ from: 'startupTimeoutSec', to: 'timeout', rule: 'x1000' }], '改名要回报，且只报键名与换算规则——值不进这一层的输出');
+  const onDisk = readServers({ clientId: 'gemini', scope: 'home', filePath: fx.filePath }).entries[PROBE];
+  assert.equal(Object.prototype.hasOwnProperty.call(onDisk, 'startupTimeoutSec'), false, '规范名不该留在别人家的文件里');
+  assert.equal(onDisk.timeout, 10000, '秒→毫秒依据既有所有者 mcp-gemini.mjs:5，不是这层自己定的');
+  assert.equal(result.classification.status, 'owned', '指纹与磁盘形状不同一份即为幽灵 kept-differs/conflict');
+
+  const verified = await verifyServer({ clientId: 'gemini', scope: 'home', serverName: PROBE, filePath: fx.filePath, ledgerDir: fx.ledgerDir, desired: canonical });
+  assert.equal(verified.classification.status, 'owned', 'doctor 拿规范形状核验落地形状，不得判成 conflict');
+
+  const again = await installServer({ clientId: 'gemini', scope: 'home', serverName: PROBE, entry: canonical, ...fx });
+  assert.equal(again.status, 'unchanged', '幂等：同一条规范形状再装不该重写');
+  fs.rmSync(fx.dir, { recursive: true, force: true });
+});
+
+test('改名不是丢字段的口子：白名单外的键仍按 unknown-field 拒，一个字节都不动', async () => {
+  // 私有写入器的做法是「按白名单过滤掉不认识的键」（`zcode-schema.mjs:33-48`），本层拒绝这种静默：
+  // 悄悄丢掉一个键＝交付方以为装上了，客户端那边却没有。
+  const fx = setup({ original: '{\n  "mcpServers": {}\n}\n', file: 'settings.json' });
+  const result = await installServer({
+    clientId: 'gemini', scope: 'home', serverName: PROBE,
+    entry: { command: 'node', args: [], startupTimeoutSec: 10, oopsUnknown: true }, ...fx,
+  });
+  assert.equal(result.status, 'rejected', `应拒，实得 ${result.status}`);
+  assert.equal(result.reason, 'unknown-field');
+  assert.deepEqual(result.unknownFields, ['oopsUnknown'], '被拒的理由要点名，不能笼统说「形状不合」');
+  assert.equal(fs.readFileSync(fx.filePath, 'utf8'), '{\n  "mcpServers": {}\n}\n', '被拒的写入必须一字节未动');
+  fs.rmSync(fx.dir, { recursive: true, force: true });
+});
+
+test('改名的两种矛盾输入即拒：两个名字同时给、以及非数字的时长', async () => {
+  const fx = setup({ original: '{\n  "mcpServers": {}\n}\n', file: 'settings.json' });
+  const both = await installServer({
+    clientId: 'gemini', scope: 'home', serverName: PROBE,
+    entry: { command: 'node', args: [], type: 'stdio', startupTimeoutSec: 10, timeout: 30000 }, ...fx,
+  });
+  assert.equal(both.status, 'rejected');
+  assert.equal(both.reason, 'transform-target-conflict', '两个名字给出不一致的时长，猜哪边都是错的');
+  assert.equal(both.conflictFrom, 'startupTimeoutSec');
+  assert.equal(both.field, 'timeout');
+
+  const notNumeric = await installServer({
+    clientId: 'gemini', scope: 'home', serverName: PROBE,
+    entry: { command: 'node', args: [], startupTimeoutSec: 'soon' }, ...fx,
+  });
+  assert.equal(notNumeric.status, 'rejected');
+  assert.equal(notNumeric.reason, 'transform-not-numeric');
+  const untouched = fs.readFileSync(fx.filePath, 'utf8');
+  assert.equal(untouched, '{\n  "mcpServers": {}\n}\n', '两种拒绝都不许留下半截条目');
+  fs.rmSync(fx.dir, { recursive: true, force: true });
+});
+
+test('restore 走原地替换：条目留在它原来的位置，别人的相邻条目与注释不搬家', async () => {
+  // w5a 之前的 restore 是「先卸再装」，TOML 会把 `[mcp_servers.x]` 整节搬到文件末尾。
+  // 内容等价不等于无损：位置也是别人的字节——挨着节写的注释会跟着错位。
+  // 顺序有讲究：先让 AIOS 自己装一次（拿到归属），再篡改磁盘那一份，才构成 `kept-differs`；
+  // 在 fixture 里预放同名条目测出来的是 external（从未归 AIOS），走不到 restore 这条路。
+  const original = `model = "gpt-5"
+
+# 挨着条目写的注释：节一搬家它就错位
+[mcp_servers.theirs]
+command = "node"
+args = ["/srv/theirs.js"]
+`;
+  const fx = setup({ original, file: 'config.toml' });
+  const base = { clientId: 'codex', scope: 'home', serverName: PROBE, entry: { command: 'node', args: ['/probe/server.js'], type: 'stdio' }, ...fx };
+  const first = await installServer(base);
+  assert.equal(first.status, 'installed', `${first.status} / ${first.reason || ''}`);
+  const installed = fs.readFileSync(fx.filePath, 'utf8');
+  const probeAt = installed.indexOf('[mcp_servers.' + PROBE + ']');
+  assert.ok(probeAt > installed.indexOf('[mcp_servers.theirs]'), 'AIOS 的节由末尾追加而来，本用例测的是它之后别乱动');
+
+  const tamperedRaw = installed.replace('args = ["/probe/server.js"]', 'args = ["/tampered.js"]');
+  assert.notEqual(tamperedRaw, installed, '篡改脚本没命中 AIOS 的条目');
+  fs.writeFileSync(fx.filePath, tamperedRaw, 'utf8');
+
+  const kept = await installServer(base);
+  assert.equal(kept.status, 'kept-differs', `应判 kept-differs，实得 ${kept.status}`);
+  const restored = await installServer({ ...base, restore: true });
+  assert.equal(restored.status, 'restored', `${restored.status} / ${restored.reason || ''}`);
+  const after = fs.readFileSync(fx.filePath, 'utf8');
+  assert.equal(after.indexOf('[mcp_servers.' + PROBE + ']'), probeAt, 'restore 是原地替换：节的位置一个字符都不该挪');
+  assert.ok(after.includes(`# 挨着条目写的注释：节一搬家它就错位
+[mcp_servers.theirs]
+command = "node"
+args = ["/srv/theirs.js"]`), '别人的节与它前面的注释必须逐字节原样');
+  assert.equal(readServers({ clientId: 'codex', scope: 'home', filePath: fx.filePath }).entries[PROBE].args.join(), '/probe/server.js');
+  assert.equal((await verifyServer({ clientId: 'codex', scope: 'home', serverName: PROBE, filePath: fx.filePath, ledgerDir: fx.ledgerDir })).classification.status, 'owned');
   fs.rmSync(fx.dir, { recursive: true, force: true });
 });
 

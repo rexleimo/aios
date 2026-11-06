@@ -1,8 +1,6 @@
-// `/` — the overview page, inside the console frame.
-import { OverviewSection } from '../../components/sections/overview';
+// `/` is the approved local AI tool manager. Fixture state remains explicitly labeled.
+import { ConsoleWorkspace } from '../../components/console/console-workspace';
 
-export const dynamic = 'force-dynamic';
-
-export default function OverviewPage() {
-  return <OverviewSection />;
+export default function ConsoleHomePage() {
+  return <ConsoleWorkspace initialView="home" />;
 }

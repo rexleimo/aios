@@ -13,6 +13,15 @@
 //
 // 证据来源（2026-11-05 实测，键名与值类型，未记录任何配置值）：见 docs/adr/0008 决策 6。
 import { CLIENT_MCP_TARGETS } from '../../foundation/clients/selection/core/definitions.mjs';
+// zcode 的字段白名单**不是本表测出来的**，而是 zcode 自己的 zod schema 的公开副本
+// （`foundation/clients/integration/mcp/zcode-schema.mjs`，browser 与 codemap 都从那里取）。
+// 本表原先自己抄了一份 `['transport','command','args','env']`，依据是 `~/.zcode/cli/config.json`
+// 里那一条**用户自有**的 `pencil` 条目；而同一份文件里 AIOS 自己写的四条（browser/auth/shell/crg）
+// 全是 `type` + `timeoutMs`，且 zcode-schema 的注释记着 CLI 日志原文 `Unrecognized key: "transport"`。
+// 结果是写入门拒绝了实际能用的形状、放行了实际被丢弃的字段：`aios mcp add --client zcode --scope home`
+// 今天写不进去。白名单归 schema 所有者，本表只是引用（2026-11-05，w5b 开工前实测）。
+import { ZCODE_SERVER_FIELDS_ALLOWLIST } from '../../foundation/clients/integration/mcp/zcode-schema.mjs';
+import { OPENCODE_MCP_TIMEOUT_MS } from '../opencode/config.mjs';
 
 /** 标准 stdio 条目形状（claude / qoder / workbuddy / hermes 项目级）。 */
 const STDIO_CLAUDE_FAMILY = Object.freeze(['command', 'args', 'type', 'env', 'cwd', 'startupTimeoutSec']);
@@ -27,17 +36,39 @@ const GEMINI_FIELDS = Object.freeze(['command', 'args', 'type', 'env', 'timeout'
 const GEMINI_PROJECT_FIELDS = Object.freeze(['command', 'args', 'type', 'cwd']);
 /** codex TOML 实测键集（含 .env 子表与 approval_mode）。 */
 const CODEX_TOML_FIELDS = Object.freeze(['command', 'args', 'type', 'startup_timeout_sec', 'cwd', 'url', 'enabled', 'approval_mode']);
-/** grok TOML 实测键集。 */
-const GROK_TOML_FIELDS = Object.freeze(['command', 'args', 'type', 'startup_timeout_sec', 'cwd', 'url', 'enabled']);
+/**
+ * grok TOML 实测键集（2026-11-05 复测：`~/.grok/config.toml` 里 AIOS 托管的条目带 `[mcp_servers.<name>.env]`
+ * 子表，例如 aios-shell / aios-memory；groK CLI 的 `mcp add -e K=V` 落的就是 env）。原表漏了 env——
+ * 那是按“没有 env 的条目”测出来的，于是 headroom 的自写路径会被自己的白名单拒掉。
+ */
+const GROK_TOML_FIELDS = Object.freeze(['command', 'args', 'type', 'startup_timeout_sec', 'cwd', 'url', 'enabled', 'env']);
 /** opencode 的本地条目形状，与 claude 家族不同源。 */
 const OPENCODE_FIELDS = Object.freeze(['type', 'command', 'enabled', 'environment']);
-/** hermes 用户级 YAML 实测键集（codemap 写入器 toHermesMcpEntry 同形）。 */
-const HERMES_YAML_FIELDS = Object.freeze(['command', 'args', 'env', 'cwd']);
-/** zcode 严格白名单：未知字段被整条丢弃。 */
-const ZCODE_HOME_FIELDS = Object.freeze(['transport', 'command', 'args', 'env']);
-const ZCODE_PROJECT_FIELDS = Object.freeze(['type', 'command', 'args', 'env', 'timeoutMs']);
-/** pi 全局 mcp.json：条目必须与 Pi 自己的写入器逐字节一致，否则 pi doctor 永久报 kept-differs。 */
-const PI_FIELDS = Object.freeze(['command', 'args', 'lifecycle']);
+/**
+ * hermes 用户级 YAML 实测键集（codemap 写入器 toHermesMcpEntry 同形）。
+ * `enabled` / `tools` 是 hermes 自己 `mcp add` 写出的字段（见 headroom-mcp 的 `hermesEntryUsable`：
+ * 条目必须 `enabled:true` 且带三个 headroom 工具名才算可用）。AIOS 自写时必须能复现同一形状，
+ * 但“手写这两列 hermes 也认”没有实证——所以列入白名单同时标成 unverified，交给 w7 用真客户端验。
+ */
+const HERMES_YAML_FIELDS = Object.freeze(['command', 'args', 'env', 'cwd', 'enabled', 'tools']);
+/**
+ * zcode 的 server schema 是 per-client 的 discriminated union，**不分 home/project**：
+ * 两个 scope 的差别只在“文件里的既有条目长什么样”，不在“能写哪些字段”。
+ * 所以两个 scope 都直接引用 owner 的白名单（含 `timeoutMs` 秒→毫秒换算的落点字段）。
+ */
+const ZCODE_FIELDS = ZCODE_SERVER_FIELDS_ALLOWLIST;
+/**
+ * pi 全局 mcp.json：条目必须与 Pi 自己的写入器逐字节一致，否则 pi doctor 永久报 kept-differs。
+ * `env` 在这一列不是可选项而是事实：pi 自己的写入器给 headroom 就写
+ * `{command, args, env:{HEADROOM_MCP_CLIENT, HEADROOM_MCP_READ}, lifecycle}`
+ * （`scripts/lib/tooling/components/integrations/pi/mcp-adapter.mjs:103-108`，形状由
+ * `scripts/tests/clients/pi-adapter/pi-mcp-adapter.test.mjs:58-66` 钉住）。
+ * 本表原先只列 `command/args/lifecycle`，而 pi/home 的 `unknownFieldPolicy:'reject'`——
+ * 那等于让通用路径**拒掉一个私有路径今天就在装的条目**：收编后 headroom 会从 pi 里静默消失。
+ * 白名单描述的是「这个落点的条目能带哪些字段」，不描述键序；键序由调用方构造对象的顺序决定
+ * （`formats/json-editor.mjs` 的 serializeValue 保留传入顺序），所以这里加 `env` 不会改字节形状。
+ */
+const PI_FIELDS = Object.freeze(['command', 'args', 'env', 'lifecycle']);
 
 /**
  * 每 client 每 scope 的补表。`entryPath` 是条目桶的点路径；`file` 只允许出现在
@@ -61,11 +92,17 @@ export const MCP_LANDING_OVERRIDES = Object.freeze({
   },
   opencode: {
     home: { entryPath: 'mcp', allowedFields: OPENCODE_FIELDS, writable: true, unknownFieldPolicy: 'reject',
-      requiresRootKeys: ['experimental.mcp_timeout'],
+      // 桶外根键：opencode 只有在 `experimental.mcp_timeout` 存在且为正数时才会给 MCP 工具调用套超时。
+      // 默认值不在这里另立一个数字——`clients/opencode/config.mjs:13` 才是它的唯一所有者
+      // （`browser/mcp/formats/mcp-opencode.mjs:65` 今天抄了一份裸 `90_000`，是漂移的候选，w5b 收编时改引这个常量）。
+      // `createWith` 是「缺了就按这个值补上」的授权：补出来的键由写路径回报 `createdRootKeys`，卸载时按 provenance 收掉，
+      // 与 `createdBucket` 同一套路——否则「装→卸回到原字节」这条门在一个本来没有 `experimental` 的文件上必然过不了。
+      requiresRootKeys: [{ path: 'experimental.mcp_timeout', createWith: OPENCODE_MCP_TIMEOUT_MS }],
       note: '今天从未被写过：两个 opencode.json 实测无 `mcp` 键。形状与 claude 家族不同源。' },
   },
   hermes: {
     home: { entryPath: 'mcp_servers', allowedFields: HERMES_YAML_FIELDS, writable: true, unknownFieldPolicy: 'reject',
+      unverifiedFields: ['enabled', 'tools'],
       note: '实测真实结构就是 mcp_servers.<name>（无中间 mcp 层），与 codemap yaml 写入器一致。' },
     project: { entryPath: 'mcpServers', allowedFields: STDIO_CLAUDE_FAMILY, writable: true, unknownFieldPolicy: 'reject' },
   },
@@ -81,13 +118,18 @@ export const MCP_LANDING_OVERRIDES = Object.freeze({
     project: { entryPath: 'mcpServers', allowedFields: STDIO_CLAUDE_FAMILY, writable: true, unknownFieldPolicy: 'reject' },
   },
   zcode: {
-    home: { entryPath: 'mcp.servers', allowedFields: ZCODE_HOME_FIELDS, writable: true, unknownFieldPolicy: 'drop-entry' },
-    project: { entryPath: 'mcp.servers', allowedFields: ZCODE_PROJECT_FIELDS, writable: true, unknownFieldPolicy: 'drop-entry' },
+    home: { entryPath: 'mcp.servers', allowedFields: ZCODE_FIELDS, writable: true, unknownFieldPolicy: 'drop-entry',
+      note: '实测：AIOS 写的条目是 type+timeoutMs（zcode 自己的 CLI 日志把 transport 记为 Unrecognized key）。' },
+    project: { entryPath: 'mcp.servers', allowedFields: ZCODE_FIELDS, writable: true, unknownFieldPolicy: 'drop-entry' },
   },
   pi: {
     // CLIENT_MCP_TARGETS 把 pi 登记成 format 'none' + scopes []，但真实落点存在且有三处写入者
     // （browser/lifecycle/install.mjs:158、codemap targets.mjs:88、pi/doctor.mjs:41，同取 clientHomes.pi）。
     home: { entryPath: 'mcpServers', file: 'mcp.json', allowedFields: PI_FIELDS, requiredFields: ['lifecycle'],
+      // 声明表没登记 pi（format 'none' + scopes []），所以 `createIfMissing` 的 per-scope 默认在这里显式补：
+      // Pi 自己的适配器在 `~/.pi/agent/mcp.json` 不存在时是**直接创建**的（`integrations/pi/mcp-adapter.mjs:197-198`），
+      // 通用路径若不建文件就永远装不上 pi，那是把「未登记」伪装成「不可写」。
+      createIfMissing: true,
       writable: true, unknownFieldPolicy: 'reject',
       note: '条目必须与 pi 写入器逐字节一致（lifecycle:"lazy"），否则 pi doctor 的 JSON.stringify 比对永久报 kept-differs。' },
     project: { entryPath: 'mcpServers', file: '.mcp.json', allowedFields: STDIO_CLAUDE_FAMILY,
@@ -117,6 +159,19 @@ function declaredScope(clientId, scope, targets = CLIENT_MCP_TARGETS) {
 }
 
 /**
+ * `createIfMissing` 的解析顺序：补表显式值 → 声明表显式值 → **声明表注释里写明的 per-scope 默认**
+ * （`definitions.mjs:265`：home 默认 false、project 默认 true）。
+ * 今天这一格是 `Boolean(declared.createIfMissing)`，把「没写」当成 false——于是所有没显式写 true 的
+ * project 落点都被判成「文件不存在就不许建」，而 project 恰恰是新建仓库时才第一次装 MCP 的地方。
+ * 这一格以前没被消费过，所以错着也没人疼；w5a 让它进写路径，就必须先把它算对。
+ */
+function resolveCreateIfMissing(override, declared, scope) {
+  if (override.createIfMissing !== undefined) return Boolean(override.createIfMissing);
+  if (declared && declared.createIfMissing !== undefined) return Boolean(declared.createIfMissing);
+  return scope === 'project';
+}
+
+/**
  * 合并声明表与补表，产出一个 (client, scope) 的完整落点描述。
  * 返回 `registered: false` 表示 CLIENT_MCP_TARGETS 没登记该落点（补表提供文件）。
  */
@@ -135,12 +190,14 @@ export function resolveLanding(clientId, scope, { targets = CLIENT_MCP_TARGETS }
     entryPath: override.entryPath,
     allowedFields: Object.freeze([...override.allowedFields]),
     requiredFields: Object.freeze([...(override.requiredFields || [])]),
-    requiresRootKeys: Object.freeze([...(override.requiresRootKeys || [])]),
+    requiresRootKeys: Object.freeze((override.requiresRootKeys || []).map((key) => (typeof key === 'string'
+      ? Object.freeze({ path: key, createWith: undefined })
+      : Object.freeze({ path: key.path, createWith: key.createWith })))),
     unknownFieldPolicy: override.unknownFieldPolicy,
     unverifiedFields: Object.freeze([...(override.unverifiedFields || [])]),
     writable: override.writable !== false,
     registered: Boolean(declared),
-    createIfMissing: Boolean(declared ? declared.createIfMissing : true),
+    createIfMissing: resolveCreateIfMissing(override, declared, scope),
     note: override.note || '',
   });
 }

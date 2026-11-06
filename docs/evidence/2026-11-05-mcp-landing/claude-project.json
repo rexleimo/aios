@@ -1,0 +1,65 @@
+{
+  "schema": "mcp.landing-evidence.v1",
+  "clientId": "claude",
+  "scope": "project",
+  "file": "E:\\coding\\harness-cli\\.mcp.json",
+  "format": "json",
+  "entryPath": "mcpServers",
+  "writable": true,
+  "registered": true,
+  "fileExists": true,
+  "unverifiedFields": [],
+  "note": "",
+  "clientBinary": "claude",
+  "clientInstalled": true,
+  "probe": {
+    "name": "aios-landing-probe",
+    "entry": {
+      "command": "node",
+      "args": [
+        "/aios-landing-probe.js"
+      ],
+      "type": "stdio"
+    }
+  },
+  "status": "verified",
+  "reason": "",
+  "steps": [
+    {
+      "step": "before-hash",
+      "value": "sha256:2b4a3a689303af739d17bb395d90afe49b3e803728a77a3ae2cc502a78a41263"
+    },
+    {
+      "step": "dry-run",
+      "status": "planned",
+      "reason": "",
+      "wroteNothing": true
+    },
+    {
+      "step": "add",
+      "status": "installed",
+      "reason": ""
+    },
+    {
+      "step": "read-back",
+      "status": "owned",
+      "fields": [
+        "args",
+        "command",
+        "type"
+      ],
+      "lastVerifiedAt": "2026-11-06T03:26:50.178Z"
+    },
+    {
+      "step": "remove",
+      "status": "uninstalled",
+      "reason": ""
+    },
+    {
+      "step": "after-hash",
+      "value": "sha256:2b4a3a689303af739d17bb395d90afe49b3e803728a77a3ae2cc502a78a41263",
+      "byteIdentical": true
+    }
+  ],
+  "capturedAt": "2026-11-06T03:26:49.465Z"
+}

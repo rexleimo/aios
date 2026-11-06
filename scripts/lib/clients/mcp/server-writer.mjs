@@ -23,95 +23,7 @@ import { isDeepStrictEqual } from 'node:util';
 
 import { writeFileAtomic } from '../../environment/fs/atomic-write.mjs';
 import { assertEntryAllowed, resolveLanding } from './landing-schema.mjs';
-import { insertEntry, readBucketEntries, removeEntry } from './formats/json-editor.mjs';
-import { insertTomlEntry, readTomlEntries, removeTomlEntry } from './formats/toml-editor.mjs';
-import { insertYamlEntry, readYamlEntries, removeYamlEntry } from './formats/yaml-editor.mjs';
-
-/** 声明表的 format → 文本手术家族。JSON 的四种方言共用同一把手术刀，差别只在白名单与归一化。 */
-const FORMAT_FAMILY = Object.freeze({
-  json: 'json',
-  'gemini-json': 'json',
-  'zcode-json': 'json',
-  'opencode-json': 'json',
-  toml: 'toml',
-  yaml: 'yaml',
-});
-
-const FAMILIES = Object.freeze({
-  json: {
-    read(raw, entryPath) {
-      // 整份可解析是动手的前提：不合法就抛，调用方拒绝写——绝不基于半截理解去改别人的文本。
-      JSON.parse(raw);
-      const bucket = readBucketEntries(raw, entryPath);
-      const entries = {};
-      for (const [name, record] of Object.entries(bucket.entries)) {
-        try {
-          entries[name] = JSON.parse(record.raw);
-        } catch {
-          entries[name] = null; // 读不回即 null，交给 conflict 判定，绝不猜
-        }
-      }
-      return { found: bucket.found, entries };
-    },
-    insert(raw, entryPath, name, entry) {
-      return insertEntry(raw || '{}\n', entryPath, name, entry);
-    },
-    remove(raw, entryPath, name) {
-      return removeEntry(raw, entryPath, name);
-    },
-    validate(text, entryPath, name) {
-      const parsed = JSON.parse(text);
-      const bucket = entryPath.reduce((node, segment) => (node == null ? node : node[segment]), parsed);
-      return Boolean(bucket) && Object.prototype.hasOwnProperty.call(bucket, name);
-    },
-    parseable(text) {
-      JSON.parse(text);
-      return true;
-    },
-  },
-  toml: {
-    read(raw, entryPath) {
-      return readTomlEntries(raw, entryPath);
-    },
-    insert(raw, entryPath, name, entry) {
-      return insertTomlEntry(raw, entryPath, name, entry);
-    },
-    remove(raw, entryPath, name) {
-      return removeTomlEntry(raw, entryPath, name);
-    },
-    validate(text, entryPath, name) {
-      return Object.prototype.hasOwnProperty.call(readTomlEntries(text, entryPath).entries, name);
-    },
-    parseable() {
-      // TOML 这层没有整份 parser：读写都走行定位，删除后由 readTomlEntries 复核条目确实消失。
-      return true;
-    },
-  },
-  yaml: {
-    read(raw, entryPath) {
-      return readYamlEntries(raw, entryPath);
-    },
-    insert(raw, entryPath, name, entry) {
-      return insertYamlEntry(raw, entryPath, name, entry);
-    },
-    remove(raw, entryPath, name) {
-      return removeYamlEntry(raw, entryPath, name);
-    },
-    validate(text, entryPath, name) {
-      return Object.prototype.hasOwnProperty.call(readYamlEntries(text, entryPath).entries, name);
-    },
-    parseable(text) {
-      // `yaml` 解析失败会抛，正是我们要的拒绝信号。
-      readYamlEntries(text, ['__rex_absent_probe__']);
-      return true;
-    },
-  },
-});
-
-function familyFor(landing) {
-  const key = FORMAT_FAMILY[landing.format];
-  return key ? FAMILIES[key] : null;
-}
+import { familyFor, listFormatFamilies } from './formats/families.mjs';
 
 export function landingFile(landing, { clientHome = '', projectRoot = '' } = {}) {
   if (landing.scope === 'project') {
@@ -129,7 +41,7 @@ function notWired(landing, action) {
     clientId: landing.clientId,
     scope: landing.scope,
     action,
-    wiredFormats: Object.keys(FORMAT_FAMILY),
+    wiredFormats: listFormatFamilies(),
   };
 }
 
@@ -176,8 +88,202 @@ export function readServers({ clientId, scope, filePath, targets }) {
 }
 
 /**
+ * 文本级 upsert（**纯函数**，不碰磁盘）：缺则插、同则 unchanged、异则按 mode 处理。
+ * `mode: 'insert'` 是「同名不同值即 conflict」（安装语义）；`mode: 'upsert'` 是同名不同值就原地替换
+ * （`doctor --fix` / 迁移语义）。插入时同时消费落点的桶外根键声明。
+ */
+function planUpsertOnText({ family, landing, entryPath, raw, exists, serverName, entry, mode = 'insert' }) {
+  let current;
+  try {
+    current = exists ? family.read(raw, entryPath) : { entries: {} };
+  } catch (error) {
+    return { status: 'rejected', reason: `landing-unparsable: ${error.message}` };
+  }
+  if (Object.prototype.hasOwnProperty.call(current.entries, serverName)) {
+    if (isDeepStrictEqual(current.entries[serverName], entry)) return { status: 'unchanged' };
+    if (mode === 'insert') return { status: 'conflict', reason: 'entry-exists-differs', serverName };
+    try {
+      return { status: 'upserted', text: family.replace(raw, entryPath, serverName, entry).text };
+    } catch (error) {
+      return { status: 'rejected', reason: `replace-failed: ${error.message}` };
+    }
+  }
+
+  let text;
+  let createdBucket = false;
+  let createdRootKeys = [];
+  try {
+    const inserted = family.insert(raw, entryPath, serverName, entry);
+    text = inserted.text;
+    createdBucket = Boolean(inserted.createdBucket);
+    // 桶外根键：`landing.requiresRootKeys` 真的被消费（w1 只声明、只有测试引用它）。
+    // 缺了且补表给了 `createWith` → 补上并回报 provenance；缺了又没默认值 → 拒，不猜一个值写进别人的配置。
+    if (landing && landing.requiresRootKeys && landing.requiresRootKeys.length > 0) {
+      if (!family.rootKeys) {
+        return { status: 'rejected', reason: `root-keys-unsupported-family:${landing.format}` };
+      }
+      const ensured = family.rootKeys.ensure(text, landing.requiresRootKeys);
+      text = ensured.text;
+      createdRootKeys = ensured.filled;
+      const stillMissing = landing.requiresRootKeys
+        .filter((key) => !family.rootKeys.has(text, key.path))
+        .map((key) => key.path);
+      if (stillMissing.length > 0) {
+        return { status: 'rejected', reason: 'root-keys-missing', missingRootKeys: stillMissing };
+      }
+    }
+  } catch (error) {
+    return { status: 'rejected', reason: `insert-failed: ${error.message}` };
+  }
+  // 落盘前必过：家族自己负责把新文本再解析一遍（json/yaml 解析失败即抛），条目必须在桶里。
+  try {
+    if (!family.validate(text, entryPath, serverName)) return { status: 'rejected', reason: 'post-write-verify-failed' };
+    if (family.parseable) family.parseable(text);
+  } catch (error) {
+    return { status: 'rejected', reason: `post-write-invalid: ${error.message}` };
+  }
+  return { status: 'inserted', text, createdBucket, createdRootKeys };
+}
+
+/** 文本级移除（**纯函数**）：只有真删掉了才返回新文本，其余字节必须原样。 */
+function planRemoveOnText({ family, landing, entryPath, raw, serverName, dropEmptyBucket = false, dropRootKeyPaths = [], rootKeyValues = {} }) {
+  let result;
+  try {
+    result = family.remove(raw, entryPath, serverName);
+  } catch (error) {
+    return { status: 'rejected', reason: `remove-failed: ${error.message}` };
+  }
+  if (!result.changed) return { status: 'not-found', reason: result.reason };
+  let text = result.text;
+  let residue = result.residue || '';
+  // 空桶是卸载后被我们掏空的外壳。只有调用方授权（账本证明桶由 AIOS 创建 / 迁移路径的显式声明）
+  // 才连桶一起收掉，否则保留并如实报 `empty-bucket`——删别人写过的键不属于「卸掉我装的东西」。
+  if (residue === 'empty-bucket' && dropEmptyBucket) {
+    const dropped = family.remove(text, entryPath.slice(0, -1), entryPath[entryPath.length - 1]);
+    if (dropped.changed) {
+      text = dropped.text;
+      residue = '';
+    }
+  }
+  // 本次卸载还要带走「当初由 AIOS 补的桶外根键」——前提是调用方证明是它建的、且值仍是当初那个默认值。
+  // 放在桶处理之后：桶里最后一条被收掉时文本才定型，根键的删除不该早于它。
+  let droppedRootKeys = [];
+  if (dropRootKeyPaths.length > 0) {
+    if (!family.rootKeys) return { status: 'rejected', reason: `root-keys-unsupported-family:${landing?.format || ''}` };
+    const dropped = family.rootKeys.drop(text, dropRootKeyPaths, rootKeyValues);
+    text = dropped.text;
+    droppedRootKeys = dropped.dropped;
+  }
+  try {
+    if (family.parseable) family.parseable(text);
+    const after = family.read(text, entryPath);
+    if (Object.prototype.hasOwnProperty.call(after.entries, serverName)) {
+      return { status: 'rejected', reason: 'post-remove-still-present' };
+    }
+  } catch (error) {
+    return { status: 'rejected', reason: `post-remove-invalid: ${error.message}` };
+  }
+  return { status: 'removed', text, residue, droppedRootKeys };
+}
+
+/**
+ * **先算后写**：把一组编辑作用在文本上，返回最终文本与逐条结果，**绝不碰磁盘**。
+ *
+ * 为什么需要这一层：browser 家族（`browser/mcp/formats/*`）与它的 `applyMcpConfigMigration` 是
+ * 「先算 → 汇总 created/updated/unchanged/errors → 再写一次」的两段式契约：算的时候要知道整份文本
+ * 长什么样，写的时候只写一次（多条目落到同一个文件时不产生中间态）。把写盘塞进计算里就会毁掉这条契约。
+ *
+ * `shape` 显式给出时用它（`{format, entryPath, allowedFields, requiresRootKeys}`），否则由
+ * `(clientId, scope)` 从落点表解析。两者都没有 → 拒绝：未知落点绝不当 JSON 写。
+ * `allowedFields` 为 `null` 表示调用方自己就是白名单的 owner（迁移写入器按自己的 builder 构造条目）。
+ */
+export function planServerEdits({ clientId, scope, filePath, edits = [], shape = null, targets } = {}) {
+  let resolved = shape;
+  if (!resolved) {
+    if (!clientId || !scope) return { status: 'rejected', reason: 'landing-shape-missing' };
+    try {
+      const landing = resolveLanding(clientId, scope, { targets });
+      resolved = {
+        format: landing.format,
+        entryPath: landing.entryPath,
+        allowedFields: landing.allowedFields,
+        requiresRootKeys: landing.requiresRootKeys,
+        createIfMissing: landing.createIfMissing,
+      };
+    } catch (error) {
+      return { status: 'rejected', reason: `landing-unresolved: ${error.message}` };
+    }
+  }
+  const family = familyFor({ format: resolved.format });
+  if (!family) return { status: 'rejected', reason: `landing-format-not-wired:${resolved.format}` };
+  const entryPath = String(resolved.entryPath).split('.');
+
+  const exists = fs.existsSync(filePath);
+  if (!exists && resolved.createIfMissing === false) {
+    return { status: 'rejected', reason: 'landing-file-missing', filePath };
+  }
+  const originalText = exists ? fs.readFileSync(filePath, 'utf8') : '';
+  let text = originalText;
+  let hasText = exists;
+  const outcomes = [];
+  let createdBucket = false;
+  const createdRootKeys = [];
+
+  for (const edit of edits) {
+    if (edit.action === 'ensure-root-keys') {
+      // 只补齐「缺了且声明了默认值」的桶外根键，已存在的值一概不碰（与 CLI / 迁移写入器同一条规则）。
+      // 单独成一个编辑动作，是因为它必须在**不插入任何条目**的轮次也能生效：
+      // 旧的 opencode 写入器每趟都保证 mcp_timeout 在，哪怕三个条目全 unchanged。
+      const keys = edit.keys || resolved.requiresRootKeys || [];
+      if (keys.length === 0) continue;
+      if (!family.rootKeys) return { status: 'rejected', reason: 'root-keys-unsupported-family:' + resolved.format, outcomes };
+      const ensured = family.rootKeys.ensure(text, keys);
+      text = ensured.text;
+      hasText = true;
+      createdRootKeys.push(...ensured.filled);
+      outcomes.push({ action: 'ensure-root-keys', status: ensured.filled.length ? 'inserted' : 'unchanged', filled: ensured.filled });
+      const missing = keys.filter((key) => !family.rootKeys.has(text, key.path)).map((key) => key.path);
+      if (missing.length > 0) return { status: 'rejected', reason: 'root-keys-missing', missingRootKeys: missing, outcomes };
+      continue;
+    }
+    if (edit.action === 'remove') {
+      const planned = planRemoveOnText({
+        family, landing: resolved, entryPath, raw: text, serverName: edit.serverName,
+        dropEmptyBucket: edit.dropEmptyBucket === true, dropRootKeyPaths: edit.dropRootKeys || [], rootKeyValues: edit.rootKeyValues || {},
+      });
+      outcomes.push({ action: 'remove', serverName: edit.serverName, status: planned.status });
+      if (planned.status === 'rejected') return { status: 'rejected', reason: planned.reason, outcomes };
+      if (planned.status === 'removed') { text = planned.text; hasText = true; }
+      continue;
+    }
+    if (resolved.allowedFields && edit.entry && typeof edit.entry === 'object') {
+      const unknown = Object.keys(edit.entry).filter((key) => !resolved.allowedFields.includes(key));
+      if (unknown.length > 0) return { status: 'rejected', reason: 'unknown-field', unknownFields: unknown, outcomes };
+    }
+    const planned = planUpsertOnText({
+      family, landing: resolved, entryPath, raw: text, exists: hasText,
+      serverName: edit.serverName, entry: edit.entry, mode: edit.mode || 'upsert',
+    });
+    outcomes.push({ action: 'upsert', serverName: edit.serverName, status: planned.status });
+    if (planned.status === 'rejected') return { status: 'rejected', reason: planned.reason, outcomes };
+    if (planned.status === 'conflict') return { status: 'rejected', reason: planned.reason, outcomes };
+    if (planned.status === 'inserted' || planned.status === 'upserted') {
+      text = planned.text;
+      hasText = true;
+      if (planned.createdBucket) createdBucket = true;
+      createdRootKeys.push(...(planned.createdRootKeys || []));
+    }
+  }
+  // 「算完发现字节没变」就是 unchanged——不按“有没有执行过编辑”判：
+  // remove + insert 同一段（浏览器 TOML 的 upsert 就是这么做）会把文本恢复原样，那不算改动。
+  const changed = text !== originalText;
+  return { status: changed ? 'planned' : 'unchanged', text, outcomes, createdBucket, createdRootKeys, changed };
+}
+
+/**
  * 安装一个条目。`dryRun: true` 时**保证不落盘**（测试同时断言 mtime 与原文）。
  * 同名条目已存在且形状相同 → `unchanged`（幂等）；形状不同 → `conflict`（等 w3 的归属裁断，不覆盖）。
+ * 写盘只是「先算后写」的后半段：计算全在 `planUpsertOnText`，本函数负责备份与原子写。
  */
 export async function writeServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets } = {}) {
   const gated = gate({ clientId, scope, entry, action: 'write', targets });
@@ -194,85 +300,90 @@ export async function writeServer({ clientId, scope, serverName, entry, filePath
   const { landing, family } = gated;
   const entryPath = landing.entryPath.split('.');
   const exists = fs.existsSync(filePath);
+  if (!exists && !landing.createIfMissing) {
+    return { status: 'rejected', reason: 'landing-file-missing', filePath, ...describe(landing) };
+  }
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
+  const planned = planUpsertOnText({ family, landing, entryPath, raw, exists, serverName, entry, mode: 'insert' });
+  if (planned.status === 'unchanged') return { status: 'unchanged', dryRun, ...describe(landing) };
+  if (planned.status === 'conflict') return { status: 'conflict', reason: planned.reason, serverName, ...describe(landing) };
+  if (planned.status !== 'inserted') {
+    return { status: 'rejected', reason: planned.reason, missingRootKeys: planned.missingRootKeys, ...describe(landing) };
+  }
+  if (dryRun) {
+    return { status: 'planned', serverName, bytes: planned.text.length, createdBucket: planned.createdBucket, createdRootKeys: planned.createdRootKeys, ...describe(landing) };
+  }
+  const backupPath = exists ? await backupOriginal(filePath, raw, backupDir) : '';
+  if (!exists) await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  await writeFileAtomic(filePath, planned.text);
+  // `createdBucket` 回传给调用方：w3 账本据此决定卸载最后一条时能不能连桶一起收掉。
+  // `createdRootKeys` 同理——本次补的桶外根键（opencode 的 `experimental.mcp_timeout`）也要有 provenance，
+  // 否则「卸载回到原字节」这条门在一个原本没有 `experimental` 的文件上永远过不去。
+  return { status: exists ? 'updated' : 'created', serverName, backupPath, createdBucket: planned.createdBucket, createdRootKeys: planned.createdRootKeys, ...describe(landing) };
+}
 
+/**
+ * 原地替换一个已存在的条目（非托管字节不动、条目留在原位置）。
+ * 与 `writeServer` 的区别只有一件事：同名不同形状时它是**替换**而不是 `conflict`。
+ * 因此「谁允许被替换」不能由本层裁断——`install-policy` 先做完归属判定（只覆盖 AIOS 登记过的
+ * `kept-differs`/`conflict` + `restore`），才允许走到这里。条目不存在即 `not-found`，不顺手插入。
+ */
+export async function replaceServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets } = {}) {
+  const gated = gate({ clientId, scope, entry, action: 'replace', targets });
+  if (!gated.ok) {
+    if (gated.notWired) return gated.notWired;
+    return { status: 'rejected', reason: gated.verdict.reason, unknownFields: gated.verdict.unknownFields, missingFields: gated.verdict.missingFields, ...describe(gated.landing) };
+  }
+  const { landing, family } = gated;
+  const entryPath = landing.entryPath.split('.');
+  if (!fs.existsSync(filePath)) return { status: 'absent', serverName, ...describe(landing) };
+  const raw = fs.readFileSync(filePath, 'utf8');
   let current;
   try {
-    current = exists ? family.read(raw, entryPath) : { entries: {} };
+    current = family.read(raw, entryPath);
   } catch (error) {
     return { status: 'rejected', reason: `landing-unparsable: ${error.message}`, ...describe(landing) };
   }
-  if (Object.prototype.hasOwnProperty.call(current.entries, serverName)) {
-    if (isDeepStrictEqual(current.entries[serverName], entry)) return { status: 'unchanged', dryRun, ...describe(landing) };
-    return { status: 'conflict', reason: 'entry-exists-differs', serverName, ...describe(landing) };
+  if (!Object.prototype.hasOwnProperty.call(current.entries, serverName)) {
+    return { status: 'not-found', reason: 'entry-not-found', serverName, ...describe(landing) };
   }
-
+  if (isDeepStrictEqual(current.entries[serverName], entry)) return { status: 'unchanged', dryRun, ...describe(landing) };
   let text;
-  let createdBucket = false;
   try {
-    const inserted = family.insert(raw, entryPath, serverName, entry);
-    text = inserted.text;
-    createdBucket = Boolean(inserted.createdBucket);
+    text = family.replace(raw, entryPath, serverName, entry).text;
   } catch (error) {
-    return { status: 'rejected', reason: `insert-failed: ${error.message}`, ...describe(landing) };
+    return { status: 'rejected', reason: `replace-failed: ${error.message}`, ...describe(landing) };
   }
-  // 落盘前必过：家族自己负责把新文本再解析一遍（json/yaml 解析失败即抛），条目必须在桶里。
   try {
     if (!family.validate(text, entryPath, serverName)) {
       return { status: 'rejected', reason: 'post-write-verify-failed', ...describe(landing) };
     }
+    family.parseable(text);
   } catch (error) {
     return { status: 'rejected', reason: `post-write-invalid: ${error.message}`, ...describe(landing) };
   }
-
-  if (dryRun) return { status: 'planned', serverName, bytes: text.length, createdBucket, ...describe(landing) };
-  const backupPath = exists ? await backupOriginal(filePath, raw, backupDir) : '';
+  if (dryRun) return { status: 'planned', serverName, bytes: text.length, ...describe(landing) };
+  const backupPath = await backupOriginal(filePath, raw, backupDir);
   await writeFileAtomic(filePath, text);
-  // `createdBucket` 回传给调用方：w3 账本据此决定卸载最后一条时能不能连桶一起收掉。
-  return { status: exists ? 'updated' : 'created', serverName, backupPath, createdBucket, ...describe(landing) };
+  return { status: 'replaced', serverName, backupPath, ...describe(landing) };
 }
 
 /** 卸载一个条目：只有真删掉了才落盘，其余字节必须原样。 */
-export async function removeServer({ clientId, scope, serverName, filePath, dryRun = false, backupDir = '', dropEmptyBucket = false, targets } = {}) {
+export async function removeServer({ clientId, scope, serverName, filePath, dryRun = false, backupDir = '', dropEmptyBucket = false, dropRootKeys: dropRootKeyPaths = [], rootKeyValues = {}, targets } = {}) {
   const gated = gate({ clientId, scope, entry: null, action: 'remove', targets });
   if (!gated.ok) return gated.notWired || { status: 'rejected', reason: gated.verdict.reason, ...describe(gated.landing) };
   const { landing, family } = gated;
   const entryPath = landing.entryPath.split('.');
   if (!fs.existsSync(filePath)) return { status: 'absent', serverName, ...describe(landing) };
   const raw = fs.readFileSync(filePath, 'utf8');
-  let result;
-  try {
-    result = family.remove(raw, entryPath, serverName);
-  } catch (error) {
-    return { status: 'rejected', reason: `remove-failed: ${error.message}`, ...describe(landing) };
-  }
-  if (!result.changed) return { status: 'not-found', reason: result.reason, serverName, ...describe(landing) };
-  let text = result.text;
-  let residue = result.residue || '';
-  // 空桶是卸载后被我们掏空的外壳。只有调用方授权（w3 账本证明桶由 AIOS 创建）才连桶一起收掉，
-  // 否则保留并如实报 `empty-bucket`——删别人写过的键不属于「卸掉我装的东西」。
-  if (residue === 'empty-bucket' && dropEmptyBucket) {
-    const dropped = family.remove(text, entryPath.slice(0, -1), entryPath[entryPath.length - 1]);
-    if (dropped.changed) {
-      text = dropped.text;
-      residue = '';
-    }
-  }
-  try {
-    family.parseable(text);
-    const after = family.read(text, entryPath);
-    if (Object.prototype.hasOwnProperty.call(after.entries, serverName)) {
-      return { status: 'rejected', reason: 'post-remove-still-present', ...describe(landing) };
-    }
-  } catch (error) {
-    return { status: 'rejected', reason: `post-remove-invalid: ${error.message}`, ...describe(landing) };
-  }
-  if (dryRun) return { status: 'planned', serverName, residue, ...describe(landing) };
+  const planned = planRemoveOnText({ family, landing, entryPath, raw, serverName, dropEmptyBucket, dropRootKeyPaths, rootKeyValues });
+  if (planned.status === 'not-found') return { status: 'not-found', reason: planned.reason, serverName, ...describe(landing) };
+  if (planned.status !== 'removed') return { status: 'rejected', reason: planned.reason, ...describe(landing) };
+  if (dryRun) return { status: 'planned', serverName, residue: planned.residue, droppedRootKeys: planned.droppedRootKeys, ...describe(landing) };
   const backupPath = await backupOriginal(filePath, raw, backupDir);
-  await writeFileAtomic(filePath, text);
-  return { status: 'removed', serverName, backupPath, residue, ...describe(landing) };
+  await writeFileAtomic(filePath, planned.text);
+  return { status: 'removed', serverName, backupPath, residue: planned.residue, droppedRootKeys: planned.droppedRootKeys, ...describe(landing) };
 }
-
 /** 备份沿用既有纪律：原文整份留底，回滚是文件复制而不是凭记忆重建。 */
 async function backupOriginal(filePath, raw, backupDir) {
   const dir = backupDir || path.join(path.dirname(filePath), '.aios-config-backups');

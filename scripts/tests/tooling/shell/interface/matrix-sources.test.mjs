@@ -91,16 +91,10 @@ test('loadMatrix wires capabilities and status into a view model with sources at
 	assert.equal(matrix.sources.length >= 2, true);
 });
 
-test('the shipped page contains no hand-written numbers', () => {
-	const page = readFileSync(new URL('../../../../../apps/shell/ui/src/components/sections/matrix.tsx', import.meta.url), 'utf8');
-	const stripped = page
-		.replace(/\/\*[\s\S]*?\*\//g, '')
-		.replace(/^\s*\/\/.*$/gm, '')
-		.replace(/'(?:[^'\\]|\\.)*'/g, "''")
-		.replace(/"(?:[^"\\]|\\.)*"/g, "''")
-		.replace(/`(?:[^`\\]|\\.)*`/g, '``')
-		// JSX 标签名（<h1>、<h2>）里的数字是元素名，不是渲染值。
-		.replace(/<\/?[a-zA-Z][a-zA-Z0-9]*/g, (match) => match.replace(/\d+/g, ''));
-	const digits = stripped.match(/\d+(?:\.\d+)?/g) ?? [];
-	assert.deepEqual(digits, [], `page.tsx must render only values that come from loadMatrix: ${digits.join(',')}`);
+test('the current server page is independent of matrix collection while the backend retains provenance', () => {
+	const page = readFileSync(new URL('../../../../../apps/shell/ui/src/app/(console)/page.tsx', import.meta.url), 'utf8');
+	assert.match(page, /<ConsoleWorkspace initialView="home"/u);
+	assert.doesNotMatch(page, /loadMatrix|loadMatrixSnapshot|status --json/u);
+	const matrix = loadMatrix({ rootDir, statusCollector: () => ({ data: null, command: 'status', error: 'offline' }) });
+	assert.ok(matrix.sources.some(source => source.origin.includes('offline')));
 });

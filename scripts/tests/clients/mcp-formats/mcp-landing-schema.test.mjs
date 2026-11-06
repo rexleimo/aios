@@ -13,6 +13,7 @@ import {
   listLandingClients,
   resolveLanding,
 } from '../../../lib/clients/mcp/landing-schema.mjs';
+import { OPENCODE_MCP_TIMEOUT_MS } from '../../../lib/clients/opencode/config.mjs';
 
 const REAL_SHAPES = Object.freeze({
   'claude/home': { type: 'stdio', command: 'node', args: [], env: {}, startupTimeoutSec: 10 },
@@ -29,7 +30,10 @@ const REAL_SHAPES = Object.freeze({
   'workbuddy/home': { type: 'stdio', command: 'node', args: [], startupTimeoutSec: 10, env: {} },
   'qoder/home': { args: [], command: 'node', env: {}, startupTimeoutSec: 10, type: 'stdio' },
   'qoder/project': { type: 'stdio', command: 'node', args: [], startupTimeoutSec: 10, env: {} },
-  'zcode/home': { transport: 'stdio', command: 'node', args: [], env: {} },
+  // zcode 只有一种可写形状：schema 白名单（`type` + 可选 `timeoutMs`）。`transport` 是用户自有
+  // 条目在磁盘上的样子，zcode 自己的 CLI 日志把 `transport` 记为 Unrecognized key——用它当写入门等于
+  // 拒绝实际能用的形状。两个 scope 同一条白名单（schema 不分 home/project）。
+  'zcode/home': { type: 'stdio', command: 'node', args: [], env: {}, timeoutMs: 10 },
   'zcode/project': { type: 'stdio', command: 'node', args: [], env: {}, timeoutMs: 10 },
   'pi/home': { command: 'uvx', args: ['code-review-graph', 'serve'], lifecycle: 'lazy' },
 });
@@ -77,15 +81,15 @@ test('gemini 的 startupTimeoutSec 必须被判未知字段（最危险的实测
   assert.deepEqual(verdict.unknownFields, ['startupTimeoutSec']);
 });
 
-test('zcode 同一 client 的 home 与 project 是两种形状，混用即拒', () => {
-  assert.deepEqual(assertEntryAllowed('zcode', 'home', { transport: 'stdio', command: 'node', args: [], env: {} }).unknownFields, []);
-  assert.deepEqual(assertEntryAllowed('zcode', 'project', { type: 'stdio', command: 'node', args: [], env: {}, timeoutMs: 10 }).unknownFields, []);
-  // home 用 project 的字段 → 拒
-  const wrongHome = assertEntryAllowed('zcode', 'home', { type: 'stdio', command: 'node', args: [] });
-  assert.deepEqual(wrongHome.unknownFields, ['type']);
-  // project 用 home 的字段 → 拒
-  const wrongProject = assertEntryAllowed('zcode', 'project', { transport: 'stdio', command: 'node', args: [] });
-  assert.deepEqual(wrongProject.unknownFields, ['transport']);
+test('zcode 两个 scope 共用 schema 白名单，未知字段（含 transport）一律拒', () => {
+  const real = { type: 'stdio', command: 'node', args: [], env: {}, timeoutMs: 10 };
+  for (const scope of ['home', 'project']) {
+    assert.deepEqual(assertEntryAllowed('zcode', scope, real).unknownFields, [], `${scope} 的实测形状必须过`);
+    // 写进 zcode 的条目不能带 schema 外的字段：zcode 会逐条丢弃（不是报错），静默失效比拒绝更糟。
+    assert.deepEqual(assertEntryAllowed('zcode', scope, { ...real, transport: 'stdio' }).unknownFields, ['transport']);
+  }
+  // 用户自有的 `pencil` 条目就是 transport 形状——它证明的是“磁盘上有这种条目”，不是“我们能这么写”。
+  assert.equal(assertEntryAllowed('zcode', 'home', { transport: 'stdio', command: 'node' }).ok, false);
 });
 
 test('pi 条目缺 lifecycle 即拒——它必须与 Pi 自己的写入器逐字节一致', () => {
@@ -93,6 +97,21 @@ test('pi 条目缺 lifecycle 即拒——它必须与 Pi 自己的写入器逐�
   assert.equal(verdict.ok, false);
   assert.equal(verdict.reason, 'required-field-missing');
   assert.deepEqual(verdict.missingFields, ['lifecycle']);
+});
+
+test('pi/home 允许 env：pi 自己的写入器给 headroom 就写 env，白名单漏了它等于收编后静默丢条目', () => {
+  // 形状取自 mcp-adapter.mjs:103-108（pi-mcp-adapter.test.mjs:58-66 钉住同一个形状）。
+  const headroom = {
+    command: '/opt/bin/headroom',
+    args: ['mcp', 'serve'],
+    env: { HEADROOM_MCP_CLIENT: 'pi', HEADROOM_MCP_READ: 'off' },
+    lifecycle: 'lazy',
+  };
+  const verdict = assertEntryAllowed('pi', 'home', headroom);
+  assert.equal(verdict.ok, true, JSON.stringify(verdict));
+  assert.deepEqual(verdict.unknownFields, []);
+  // 反向钉住「白名单不是无界放行」：pi 不接受 stdio 家族才有的 type。
+  assert.deepEqual(assertEntryAllowed('pi', 'home', { ...headroom, type: 'stdio' }).unknownFields, ['type']);
 });
 
 test('pi 项目级不是本控制台的写入门（适配器自己读仓库 .mcp.json）', () => {
@@ -103,8 +122,22 @@ test('pi 项目级不是本控制台的写入门（适配器自己读仓库 .mcp
   assert.equal(verdict.reason, 'landing-not-writable');
 });
 
-test('opencode 落点声明它还需要根键 experimental.mcp_timeout', () => {
-  assert.deepEqual(resolveLanding('opencode', 'home').requiresRootKeys, ['experimental.mcp_timeout']);
+test('opencode 落点声明它还需要根键 experimental.mcp_timeout，并自带补建用的默认值', () => {
+  // 形状是 `{ path, createWith }`：w5a 起这一格真的被写路径消费，只有名字没有默认值就等于声明了个没法兑现的要求。
+  // 默认值不在这里重述数字——引 `clients/opencode/config.mjs` 的唯一所有者常量。
+  assert.deepEqual(resolveLanding('opencode', 'home').requiresRootKeys, [{ path: 'experimental.mcp_timeout', createWith: OPENCODE_MCP_TIMEOUT_MS }]);
+  assert.equal(resolveLanding('claude', 'home').requiresRootKeys.length, 0, '其余落点没声明桶外根键');
+});
+
+test('createIfMissing 按声明表的 per-scope 默认解析：project 可建文件，home 未写即不建', () => {
+  // `definitions.mjs:265` 写的是「null/undefined 按消费方默认（home false、project true）」。
+  // 补表以前把没登记的落点一律当 true、登记的按 Boolean(值)，于是 codex/gemini/zcode 的 project
+  // （声明里没写这一格）全被判成 false——新建仓库第一次装 MCP 恰好在 project 上。w5a 让它进写路径，先算对。
+  assert.equal(resolveLanding('codex', 'project').createIfMissing, true, 'project 没写即为 true');
+  assert.equal(resolveLanding('claude', 'project').createIfMissing, true);
+  assert.equal(resolveLanding('gemini', 'project').createIfMissing, true);
+  assert.equal(resolveLanding('codex', 'home').createIfMissing, true, 'home 显式写了 true');
+  assert.equal(resolveLanding('pi', 'home').createIfMissing, true, '未登记的 pi 由补表显式补 true');
 });
 
 test('补表把「权威表没登记的落点」暴露成 drift，而不是静默跳过', () => {

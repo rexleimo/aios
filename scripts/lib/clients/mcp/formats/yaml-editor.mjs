@@ -57,7 +57,12 @@ export function insertYamlEntry(raw, path, name, entry) {
   const document = loadDocument(raw, { create: true });
   let createdBucket = false;
   if (plainBucket(document, path) === undefined) {
-    document.setIn(path, {});
+    // 必须显式 `createNode({})`：直接 `setIn(path, {})` 在这个 yaml 版本上会把空 flow map（`{}`）
+    // 当成“不是集合”——紧接着的 `setIn([...path, name])` 会抛
+    // `Expected YAML collection at mcp_servers. Remaining path: <name>`（2026-11-05 实测，
+    // 空文件/空 flow map 建桶这条路径 w2 与 w5a 的用例都没走过：它们的 hermes fixture 都已带桶）。
+    // codemap 旧写入器一直用 `document.createNode({})`，这也是它没踩到的原因。
+    document.setIn(path, document.createNode({}));
     createdBucket = true;
   }
   const bucket = plainBucket(document, path);
@@ -65,6 +70,19 @@ export function insertYamlEntry(raw, path, name, entry) {
   if (Object.prototype.hasOwnProperty.call(bucket, name)) throw new Error('entry-exists');
   document.setIn([...path, name], entry);
   return { text: String(document), replaced: false, createdBucket };
+}
+
+/**
+ * 原地改写一个已存在的条目：节点留在原来的位置，别人的条目与注释不动。
+ * 与 `insertYamlEntry` 的分工是确定的——这里缺条目即抛 `entry-not-found`，不拿「替换」当「插入」的兜底。
+ */
+export function replaceYamlEntry(raw, path, name, entry) {
+  const document = loadDocument(raw);
+  const bucket = plainBucket(document, path);
+  if (!bucket || typeof bucket !== 'object' || Array.isArray(bucket)) throw new Error('landing-bucket-not-a-map');
+  if (!Object.prototype.hasOwnProperty.call(bucket, name)) throw new Error('entry-not-found');
+  document.setIn([...path, name], entry);
+  return { text: String(document), replaced: true };
 }
 
 /** 已存在且形状不同时给出既有值，供 conflict 判定。 */

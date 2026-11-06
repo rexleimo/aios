@@ -107,6 +107,19 @@ export async function readMcpLedger(clientId, { readFileImpl = fs.promises.readF
   }
 }
 
+/**
+ * 根键默认值的留底拷贝：值来自补表声明的 `createWith` 常量（不是用户配置里的值），
+ * 深拷贝只是防着调用方之后改自己的对象导致账本跟着变。不可序列化即 `undefined`=不记，
+ * 宁可不回收那个键，也不把一条读不准的 provenance 写进账本。
+ */
+function cloneRootKeyValue(value) {
+  try {
+    return structuredClone(value);
+  } catch {
+    return undefined;
+  }
+}
+
 function sanitizeRecord(record) {
   return {
     scope: String(record.scope || ''),
@@ -117,6 +130,16 @@ function sanitizeRecord(record) {
     entryPath: String(record.entryPath || ''),
     format: String(record.format || ''),
     bucketCreated: record.bucketCreated === true,
+    // 桶外根键的 provenance：`rootKeysCreated` 是本次写入补出来的点路径，`rootKeyValues` 存补进去的那个默认值。
+    // 存值的唯一用途是卸载时的「还是不是我写的那个值」判定——值被改过就不回收（那是别人的配置了）。
+    // 这里不会放大隐私面：进来的只有补表自己声明的 `createWith` 常量（如 opencode 的 90000），
+    // 配置文件的既有值一概不写进账本（`landingFor()` 只取声明，不读文件）。
+    rootKeysCreated: Object.freeze((Array.isArray(record.rootKeysCreated) ? record.rootKeysCreated : []).map((key) => String(key))),
+    rootKeyValues: Object.freeze(Object.fromEntries(
+      Object.entries(record.rootKeyValues || {})
+        .filter(([key, value]) => typeof key === 'string' && value !== undefined)
+        .map(([key, value]) => [key, cloneRootKeyValue(value)]),
+    )),
     createdAt: record.createdAt || null,
     lastVerifiedAt: record.lastVerifiedAt || null,
     note: String(record.note || ''),
@@ -142,8 +165,13 @@ export async function readOwnershipRecord({ clientId, scope, serverName }, optio
   return { ledger, record: ledger.entries[ledgerKeyFor(scope, serverName)] || null };
 }
 
-/** 记一条归属。`origin:'adopted'` 表示这是接管别人的条目，指纹取接管时磁盘上的那份。 */
-export async function recordOwnership({ clientId, scope, serverName, entry, configPath, landing, origin = 'aios', bucketCreated = false, note = '' }, options = {}) {
+/**
+ * 记一条归属。`origin:'adopted'` 表示这是接管别人的条目，指纹取接管时磁盘上的那份。
+ * 这里的解构是**白名单**：调用方传了而签名没列的字段会静默消失（`rootKeysCreated` 第一次就踩了这个坑——
+ * 写路径报出来的桶外根键一路传到这儿被吃掉，卸载时就没东西可回收了）。加字段必须两处一起加，
+ * 下面的用例把「传进来的 provenance 一定落进账本」钉住。
+ */
+export async function recordOwnership({ clientId, scope, serverName, entry, configPath, landing, origin = 'aios', bucketCreated = false, rootKeysCreated = [], rootKeyValues = {}, note = '' }, options = {}) {
   const ledger = await readMcpLedger(clientId, options);
   const now = new Date().toISOString();
   const key = ledgerKeyFor(scope, serverName);
@@ -157,6 +185,8 @@ export async function recordOwnership({ clientId, scope, serverName, entry, conf
     entryPath: landing?.entryPath || '',
     format: landing?.format || '',
     bucketCreated: bucketCreated === true || previous?.bucketCreated === true,
+    rootKeysCreated,
+    rootKeyValues,
     createdAt: previous?.createdAt || now,
     lastVerifiedAt: now,
     note,

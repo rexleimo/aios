@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import fs from 'node:fs';
 import React from 'react';
 import { render } from 'ink';
-import { App } from '../App';
+import { App } from './App';
 import type { CatalogSkill, InstalledSkills, Client } from '../views/types';
 
 // ASCII art banner

@@ -1,0 +1,42 @@
+{
+  "schema": "mcp.headroom-evidence.v1",
+  "subject": "headroom MCP registration (w5c: AIOS writes the client config itself)",
+  "capturedAt": "2026-11-06T03:35:00.000Z",
+  "status": "host-unsupported",
+  "reason": "headroom binary not on PATH: headroom",
+  "meaning": "The self-write path is implemented and unit-verified, but the real-client half (headroom actually talking to gemini/hermes/grok over MCP) could not be run on this machine because the headroom executable is absent. Per ADR 0007/0008 this stays unverified; it is NOT a pass.",
+  "verifiedFacts": [
+    {
+      "fact": "注册不再 spawn 厂商 CLI，改经通用写路径（writeServer/removeServer）",
+      "evidence": "scripts/lib/environment/aios-init/headroom-mcp/lifecycle.mjs（无 runImpl、无 buildHeadroomMcpAddInvocation）",
+      "howChecked": "scripts/tests/clients/adapters/headroom-mcp-registration.test.mjs 6 例（写三个 runtime 各自的方言、默认 probe 只报 pending-smoke、失败探针回滚到未安装态、账本指纹不符拒删）"
+    },
+    {
+      "fact": "gemini 落点写 {command,args,env}；grok 落点把 env 写成 [mcp_servers.headroom.env] 子表；hermes 落点写 enabled:true + 三个工具名",
+      "evidence": "scripts/tests/clients/adapters/headroom-mcp-registration.test.mjs『self-write registers all three runtimes in their own dialect』",
+      "howChecked": "沙箱 home 真实写文件后按客户端形状断言（不接触真实配置）"
+    },
+    {
+      "fact": "生产路径不再有 missing-runner：没有注入 runner 也能完成注册",
+      "evidence": "lifecycle.mjs 不再读取 runImpl；compression-tools.mjs 的调用点从未传过它",
+      "howChecked": "同一组用例在不传 runImpl 的情况下通过"
+    },
+    {
+      "fact": "没有真探针时状态是 pending-smoke，而不是 registered",
+      "evidence": "lifecycle.mjs 的 probeImpl 默认值",
+      "howChecked": "用例断言默认 probe 结果为 pending-smoke"
+    }
+  ],
+  "unverifiedFacts": [
+    {
+      "fact": "handroom（headroom）二进制真能通过 MCP 与三家客户端通道握手",
+      "reason": "headroom binary not on PATH: headroom",
+      "howToClose": "装好 headroom 后跑：node scripts/aios.mjs internal ... 或直接跑 headroom-mcp 的 ensure 流程，并接一个真 probe（把 probeImpl 换成真握手）；在那之前该状态只能是 pending-smoke"
+    },
+    {
+      "fact": "手写 enabled/tools 两列 hermes 也认（原先由 hermes 自己的 mcp add 写出）",
+      "reason": "hermes 已安装，但『手写同样两列 hermes 也认』需要一次真启动 + 工具列表回读；本轮没有做",
+      "howToClose": "跑 hermes 读回 headroom 的工具列表；落点表已把这两列标成 unverifiedFields"
+    }
+  ]
+}

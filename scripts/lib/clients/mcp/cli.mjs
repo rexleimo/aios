@@ -272,6 +272,11 @@ function renderText(result) {
   if (result.hint) lines.push(`  hint: ${result.hint}`);
   if (result.classification?.status) lines.push(`  ownership: ${result.classification.status}`);
   if (result.landing?.file) lines.push(`  file: ${result.landing.file}`);
+  // 字段落到了别人家的名字上必须说出来：不说，交付方会以为文件里写的就是自己给的那个键名（w5a 的改名位）。
+  // 只报名，不报值——这一层的输出里任何时候都不出现条目内容。
+  if (result.renamed?.length) lines.push(`  renamed: ${result.renamed.map((item) => `${item.from}->${item.to}`).join(', ')}`);
+  if (result.createdRootKeys?.length) lines.push(`  createdRootKeys: ${result.createdRootKeys.join(', ')}`);
+  if (result.droppedRootKeys?.length) lines.push(`  droppedRootKeys: ${result.droppedRootKeys.join(', ')}`);
   if (result.residue) lines.push(`  residue: ${result.residue}`);
   return `${lines.join('\n')}\n`;
 }

@@ -349,3 +349,48 @@ test('browser entry needs an AIOS root, and readiness alone is not enough', () =
   assert.equal(buildAiosPiBrowserServer({ aiosRoot: '' }), null);
   assert.deepEqual(Object.keys(buildAiosPiMcpServers({ browserRuntime: true })), ['code-review-graph']);
 });
+
+test('mcp.json merge is surgical: 只插入托管条目，别人的缩进与键序逐字节不变', async () => {
+  const home = await makeTemp('aios-pi-mcp-surgical-');
+  try {
+    const mcpJsonPath = resolvePiMcpJsonPath(home);
+    const { mkdir, writeFile } = await import('node:fs/promises');
+    await mkdir(path.dirname(mcpJsonPath), { recursive: true });
+    // 4 空格缩进 + 用户自有条目 + 一个与托管同名但被用户改过的条目。
+    const original = [
+      '{',
+      '    "mcpServers": {',
+      '        "personal": { "command": "npx", "args": ["-y", "x"] },',
+      '        "code-review-graph": { "command": "user-fork", "args": ["serve"], "lifecycle": "eager" }',
+      '    },',
+      '    "otherSetting": true',
+      '}',
+      '',
+    ].join('\n');
+    await writeFile(mcpJsonPath, original, 'utf8');
+
+    const result = ensurePiMcpServers({ mcpJsonPath, servers: buildAiosPiMcpServers({ aiosRoot: '/aios' }) });
+    assert.equal(result.action, 'updated');
+    assert.deepEqual(result.added, ['aios-memory', 'aios-bridge']);
+    // 用户改过的同名条目：认下现状，不覆盖、也不进 added。
+    assert.deepEqual(result.keptDiffers, ['code-review-graph']);
+
+    const after = await readFile(mcpJsonPath, 'utf8');
+    // 非托管字节（4 空格缩进、用户条目、顶层其它键）必须原样——旧实现整份 JSON.stringify 会全改成 2 空格。
+    for (const fragment of ['\n    "mcpServers": {', '"personal": { "command": "npx", "args": ["-y", "x"] }', '\n    "otherSetting": true']) {
+      assert.ok(after.includes(fragment), `非托管字节被重排了：缺少 ${JSON.stringify(fragment)}`);
+    }
+    const parsed = JSON.parse(after);
+    assert.equal(parsed.mcpServers['code-review-graph'].command, 'user-fork', '用户改过的条目不许被覆盖');
+    assert.equal(parsed.mcpServers['aios-memory'].command, 'node');
+    assert.equal(parsed.otherSetting, true);
+
+    // 幂等：再跑一次不该再写（added 为空 → 不落盘）。
+    const again = ensurePiMcpServers({ mcpJsonPath, servers: buildAiosPiMcpServers({ aiosRoot: '/aios' }) });
+    assert.equal(again.action, 'present');
+    assert.deepEqual(again.added, []);
+    assert.equal(await readFile(mcpJsonPath, 'utf8'), after, 'present 不该动文件');
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});

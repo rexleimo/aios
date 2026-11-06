@@ -1,166 +1,70 @@
-/* 中文注释：把浏览器/auth MCP server block 以 [mcp_servers.<alias>] 形式写入 codex config.toml。
-   codex 读取 TOML 而非 mcp.json，故对 codex 专用此 writer；采用按段 surgical upsert，
-   保留用户在 config.toml 里的其它配置（参考 codemap/targets/mcp-targets/toml.mjs 的做法）。 */
+/* 中文注释：把浏览器/auth MCP server block 以 [mcp_servers.<alias>] 形式写入 codex/grok config.toml。
+   codex 读取 TOML 而非 mcp.json，故对 codex/grok 专用此 writer。
+
+   w5b：文本手术改经通用 planner（`planServerEdits`），本文件只保留**策略**——
+   条目形状（`type/command/args/startup_timeout_sec/env`，env 写成子表）、
+   浏览器 env 从既有条目继承、mode 决定是否注入主浏览器条目。
+   「先算后写」不变：返回 {status, nextRaw}，写盘由 `applyMcpConfigMigration` 一次完成。 */
 import fs from 'node:fs';
-import path from 'node:path';
+
+import { planServerEdits } from '../../../../../clients/mcp/server-writer.mjs';
+import { readTomlEntries } from '../../../../../clients/mcp/formats/toml-editor.mjs';
 
 import { AUTH_TOOLS_ALIAS, PRIMARY_BROWSER_ALIAS, SHELL_ALIAS } from '../../constants.mjs';
-import { BROWSER_MCP_ALIASES } from '../mcp-aliases.mjs';
+import { BROWSER_MCP_ALIASES, findFirstBrowserServerEntry } from '../mcp-aliases.mjs';
 import { buildAuthToolsMcpServer, buildShellMcpServer } from '../mcp-server-builders.mjs';
 import { browserManagedServer } from '../../modes/mcp-mode.mjs';
 
-// 纯函数：转义 TOML 字符串，避免 Windows 反斜杠与引号破坏配置。
-function escapeTomlString(value) {
-  return String(value ?? '').replace(/\\/gu, '\\\\').replace(/"/gu, '\\"');
-}
-
-// 把 {type, command, args[], env{}} 序列化为 Codex 当前使用的父段 + env 子段。
-function serializeTomlServer(alias, server) {
-  const lines = [`[mcp_servers.${alias}]`];
-  if (server.type) {
-    lines.push(`type = "${escapeTomlString(server.type)}"`);
-  }
-  lines.push(`command = "${escapeTomlString(server.command)}"`);
-  const args = Array.isArray(server.args) ? server.args : [];
-  lines.push(`args = [${args.map((arg) => `"${escapeTomlString(arg)}"`).join(', ')}]`);
+/**
+ * {type, command, args[], env{}} → codex 的表段条目。
+ * 键序即字节序：`type, command, args, startup_timeout_sec`，env 由 planner 写成一级子表
+ * （`[mcp_servers.<alias>.env]`，codex 的现实形状；写成内联表会被旧用例判成形状漂移）。
+ * `startupTimeoutSec` 在 codex 侧的名字就是 `startup_timeout_sec` 且**同为秒**，不换算。
+ */
+function toCodexTomlEntry(server) {
+  const entry = {};
+  if (server.type) entry.type = String(server.type);
+  entry.command = String(server.command ?? '');
+  entry.args = Array.isArray(server.args) ? server.args.map(String) : [];
   const timeout = Number(server.startupTimeoutSec ?? 0);
-  if (Number.isFinite(timeout) && timeout > 0) {
-    lines.push(`startup_timeout_sec = ${timeout}`);
-  }
+  if (Number.isFinite(timeout) && timeout > 0) entry.startup_timeout_sec = timeout;
   const env = server.env && typeof server.env === 'object' && !Array.isArray(server.env) ? server.env : {};
-  const envEntries = Object.entries(env);
-  if (envEntries.length > 0) {
-    lines.push(
-      '',
-      `[mcp_servers.${alias}.env]`,
-      ...envEntries.map(([key, value]) => `${formatTomlKey(key)} = "${escapeTomlString(String(value))}"`),
-    );
-  }
-  return lines.join('\n');
+  const envEntries = Object.entries(env).map(([key, value]) => [key, String(value)]);
+  if (envEntries.length > 0) entry.env = Object.fromEntries(envEntries);
+  return entry;
 }
 
-function readTomlSectionName(line) {
-  const match = /^\s*(\[+)([^\]]+)(\]+)\s*$/u.exec(line);
-  if (!match || match[1].length !== match[3].length) {
-    return null;
-  }
-  return match[2].trim();
-}
-
-function removeSection(raw, alias) {
-  const kept = [];
-  let removing = false;
-  for (const line of String(raw).split(/\r?\n/u)) {
-    const sectionName = readTomlSectionName(line);
-    if (sectionName) {
-      removing = isManagedMcpSection(sectionName, alias);
-      if (removing) {
-        continue;
-      }
-    }
-    if (!removing) {
-      kept.push(line);
-    }
-  }
-  return kept.join('\n').replace(/\n{3,}/gu, '\n\n');
-}
-
-function unescapeTomlString(value) {
-  return String(value).replace(/\\(["\\])/gu, '$1');
-}
-
-function isManagedMcpSection(sectionName, alias) {
-  const root = `mcp_servers.${alias}`;
-  return sectionName === root || sectionName.startsWith(`${root}.`);
-}
-
-function formatTomlKey(key) {
-  const value = String(key);
-  return /^[A-Za-z0-9_-]+$/u.test(value) ? value : `"${escapeTomlString(value)}"`;
-}
-
-function parseTomlInlineStringTable(rawTable) {
-  const parsed = {};
-  const pattern = /(?:"((?:\\.|[^"\\])*)"|([A-Za-z0-9_-]+))\s*=\s*"((?:\\.|[^"\\])*)"/gu;
-  for (const match of rawTable.matchAll(pattern)) {
-    const key = match[1] ?? match[2];
-    parsed[unescapeTomlString(key)] = unescapeTomlString(match[3]);
-  }
-  return parsed;
-}
-
-function parseTomlSections(raw) {
-  const sections = [];
-  let current = null;
-  for (const line of String(raw).split(/\r?\n/u)) {
-    const name = readTomlSectionName(line);
-    if (name) {
-      current = { name, lines: [] };
-      sections.push(current);
-    } else if (current) {
-      current.lines.push(line);
-    }
-  }
-  return sections;
-}
-
-function readExistingBrowserEnv(raw) {
-  for (const alias of BROWSER_MCP_ALIASES) {
-    const sections = parseTomlSections(raw).filter(({ name }) => (
-      name === `mcp_servers.${alias}` || name === `mcp_servers.${alias}.env`
-    ));
-    if (sections.length === 0) {
-      continue;
-    }
-
-    const inlineEnv = {};
-    const nestedEnv = {};
-    for (const section of sections) {
-      if (section.name === `mcp_servers.${alias}`) {
-        for (const line of section.lines) {
-          const envMatch = /^\s*env\s*=\s*\{([\s\S]*)\}\s*$/u.exec(line);
-          if (envMatch) {
-            Object.assign(inlineEnv, parseTomlInlineStringTable(envMatch[1]));
-          }
-        }
-      } else {
-        Object.assign(nestedEnv, parseTomlInlineStringTable(section.lines.join('\n')));
-      }
-    }
-    return { ...inlineEnv, ...nestedEnv };
-  }
-
-  return {};
-}
-
-/* 中文注释：返回 {status, nextRaw}，签名对齐 migrateOneMcpJsonFile，供 applyMcpConfigMigration 统一处理。
-   做法：先移除我们管理的三个 alias 段，再以确定的间距重新追加，保证幂等且不破坏用户其它配置。 */
+/**
+ * 返回 `{status, nextRaw}`（先算后写：本函数绝不写盘）。
+ * 策略与旧实现一致：先整组下掉受管 alias（含 legacy），再以确定顺序追加受管段——
+ * 于是 mode 不适用 Playwright 时主浏览器段也会消失（旧 TOML 写入器就是这么做的）。
+ */
 export function migrateOneMcpToml(filePath, rootDir, { mode = undefined } = {}) {
   const exists = fs.existsSync(filePath);
   const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
-  const existingBrowserEnv = readExistingBrowserEnv(raw);
 
-  // 按 mode 取托管 browser 条目：不注入 Playwright 时完全跳过 browser 段（含 legacy 段）。
-  const browserManaged = browserManagedServer(rootDir, { env: existingBrowserEnv }, {}, mode);
-  const managedSections = [
-    ...(browserManaged ? [serializeTomlServer(PRIMARY_BROWSER_ALIAS, browserManaged)] : []),
-    serializeTomlServer(AUTH_TOOLS_ALIAS, buildAuthToolsMcpServer(rootDir)),
-    serializeTomlServer(SHELL_ALIAS, buildShellMcpServer(rootDir)),
-  ];
+  // 读既有条目只为**继承浏览器的 env**（CDP 端口/代理链这类值不能因为重写而丢）。
+  // 统一走 toml-editor 的读路径：它认得内联表与 `[x.env]` 子表两种形状。
+  const entries = readTomlEntries(raw, ['mcp_servers']).entries;
+  const existingBrowser = findFirstBrowserServerEntry(entries);
+  const browserManaged = browserManagedServer(rootDir, { env: existingBrowser?.env || {} }, {}, mode);
 
-  let base = raw;
-  for (const alias of [...BROWSER_MCP_ALIASES, AUTH_TOOLS_ALIAS, SHELL_ALIAS]) {
-    base = removeSection(base, alias);
-  }
-  base = base.replace(/\s*$/u, '');
+  const managed = {
+    ...(browserManaged ? { [PRIMARY_BROWSER_ALIAS]: toCodexTomlEntry(browserManaged) } : {}),
+    [AUTH_TOOLS_ALIAS]: toCodexTomlEntry(buildAuthToolsMcpServer(rootDir)),
+    [SHELL_ALIAS]: toCodexTomlEntry(buildShellMcpServer(rootDir)),
+  };
 
-  const body = managedSections.join('\n\n');
-  const nextRaw = base ? `${base}\n\n${body}\n` : `${body}\n`;
-
-  if (exists && raw === nextRaw) {
-    return { status: 'unchanged' };
-  }
-  return { status: exists ? 'updated' : 'created', nextRaw };
+  const planned = planServerEdits({
+    filePath,
+    // 迁移写入器是这些条目形状的 owner（builder + `toCodexTomlEntry`），不套 CLI 的落点白名单。
+    shape: { format: 'toml', entryPath: 'mcp_servers', allowedFields: null, createIfMissing: true },
+    edits: [
+      ...[...BROWSER_MCP_ALIASES, AUTH_TOOLS_ALIAS, SHELL_ALIAS].map((alias) => ({ action: 'remove', serverName: alias })),
+      ...Object.entries(managed).map(([serverName, entry]) => ({ action: 'upsert', serverName, entry })),
+    ],
+  });
+  if (planned.status === 'rejected') return { status: 'error', reason: planned.reason };
+  if (planned.status === 'unchanged') return { status: 'unchanged' };
+  return { status: exists ? 'updated' : 'created', nextRaw: planned.text };
 }
-
-export { serializeTomlServer, escapeTomlString };

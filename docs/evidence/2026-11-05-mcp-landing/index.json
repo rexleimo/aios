@@ -1,0 +1,120 @@
+{
+  "schema": "mcp.landing-evidence-index.v1",
+  "capturedAt": "2026-11-06T03:27:03.856Z",
+  "outDir": "docs/evidence/2026-11-05-mcp-landing",
+  "counts": {
+    "verified": 12,
+    "unverified": 1,
+    "host-unsupported": 5
+  },
+  "cards": [
+    {
+      "clientId": "claude",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "claude",
+      "scope": "project",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "codex",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "codex",
+      "scope": "project",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "gemini",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "gemini",
+      "scope": "project",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "opencode",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "hermes",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "hermes",
+      "scope": "project",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "grok",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "grok",
+      "scope": "project",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "workbuddy",
+      "scope": "home",
+      "status": "host-unsupported",
+      "reason": "client binary not on PATH: workbuddy"
+    },
+    {
+      "clientId": "qoder",
+      "scope": "home",
+      "status": "host-unsupported",
+      "reason": "client binary not on PATH: qoder"
+    },
+    {
+      "clientId": "qoder",
+      "scope": "project",
+      "status": "host-unsupported",
+      "reason": "client binary not on PATH: qoder"
+    },
+    {
+      "clientId": "zcode",
+      "scope": "home",
+      "status": "host-unsupported",
+      "reason": "client binary not on PATH: zcode"
+    },
+    {
+      "clientId": "zcode",
+      "scope": "project",
+      "status": "host-unsupported",
+      "reason": "client binary not on PATH: zcode"
+    },
+    {
+      "clientId": "pi",
+      "scope": "home",
+      "status": "verified",
+      "reason": ""
+    },
+    {
+      "clientId": "pi",
+      "scope": "project",
+      "status": "unverified",
+      "reason": "landing-not-writable: landing-not-writable"
+    }
+  ]
+}

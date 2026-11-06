@@ -16,7 +16,9 @@
 // 本层绝不从关键词或默认值里猜出「用户大概想覆盖」。
 import fs from 'node:fs';
 
-import { readServers, removeServer, writeServer } from './server-writer.mjs';
+import { readServers, removeServer, replaceServer, writeServer } from './server-writer.mjs';
+import { normalizeEntryForLanding } from './entry-transforms.mjs';
+import { resolveLanding } from './landing-schema.mjs';
 import { assertEntryClassAllowed } from './entry-classes.mjs';
 import {
   classifyMcpOwnership,
@@ -30,6 +32,20 @@ import {
 
 function ledgerUnavailable(error) {
   return { status: 'rejected', reason: 'ledger-unavailable', detail: error instanceof Error ? error.message : String(error) };
+}
+
+/**
+ * 账本要记的落点事实（`entryPath` / `format` / 桶外根键的默认值）。
+ * w3 之前把 `written.landing` / `read.landing` 传进来，而 `server-writer` 的 `describe()` 是**平铺**的
+ * （返回 `format`、`entryPath` 两个键，没有 `landing` 这个对象），于是每条记录的这两个字段一直是空串——
+ * 没有测试断言它们，所以没人疼。现在从 `resolveLanding` 直接取，账本的落点列才是事实。
+ */
+function landingFor(clientId, scope) {
+  const landing = resolveLanding(clientId, scope);
+  return {
+    landing,
+    rootKeyValues: Object.freeze(Object.fromEntries(landing.requiresRootKeys.map((key) => [key.path, key.createWith]))),
+  };
 }
 
 /** 配置改完但账本没记上时的补偿：能回滚就回滚，不能就把事实说清楚。 */
@@ -101,6 +117,27 @@ export async function installServer({
     return { status: 'rejected', ...allowed, serverName, clientId, scope };
   }
 
+  // 落地形状先行（w5a 的字段变换位）：**必须在归属判定与指纹之前**改名。
+  // 账本认领的是「磁盘上那条目的全字段 sha256」，若按规范形状（`startupTimeoutSec`）记指纹、
+  // 却按落点形状（gemini 的 `timeout`）写盘，条目一装上就永久 `kept-differs`——收编等于自造幽灵。
+  // 改名只改名与换算，不丢字段；丢字段仍然由白名单判 `unknown-field` 拒掉。
+  const landingShape = normalizeEntryForLanding(clientId, scope, entry);
+  if (!landingShape.ok) {
+    return {
+      status: 'rejected',
+      reason: landingShape.reason,
+      field: landingShape.field,
+      conflictFrom: landingShape.conflictFrom,
+      message: landingShape.reason === 'transform-target-conflict'
+        ? `这条条目同时给了 ${landingShape.conflictFrom} 和 ${landingShape.field}，两家说法不一致，不猜哪一边。`
+        : `${landingShape.field} 的值不是数字，换算不了该落点要的时长单位：${landingShape.value}`,
+      serverName,
+      clientId,
+      scope,
+    };
+  }
+  const desired = landingShape.entry;
+
   const opened = await openLedger(clientId, ledgerOptions);
   if (!opened.ok) return { ...opened.failure, serverName, clientId, scope };
   const key = ledgerKeyFor(scope, serverName);
@@ -110,7 +147,7 @@ export async function installServer({
   if (read.status !== 'ok' && read.status !== 'absent') return { ...read, serverName };
   const actual = read.entries?.[serverName] ?? null;
   const existedBefore = read.status === 'ok';
-  const verdict = classifyMcpOwnership({ actual, desired: entry, ledgerEntry: record });
+  const verdict = classifyMcpOwnership({ actual, desired, ledgerEntry: record });
 
   if (verdict.status === 'owned' && !verdict.desiredFingerprint) {
     const ledgerNote = await markVerified({ clientId, scope, serverName, fingerprint: verdict.actualFingerprint }, ledgerOptions);
@@ -134,46 +171,62 @@ export async function installServer({
   }
 
   if (dryRun) {
-    const planned = await writeServer({ clientId, scope, serverName, entry, filePath, dryRun: true, targets });
-    return { status: planned.status === 'planned' ? 'planned' : planned.status, classification: verdict, planned, serverName, dryRun: true };
+    // restore 的 dry-run 走 replace：`writeServer` 对同名不同形状会直接给 `conflict`，
+    // 那会让「预览一次恢复」显示成一个拒绝，而真跑却是成功——预览与执行必须是同一条判定。
+    const restoring = restore && (verdict.status === 'conflict' || verdict.status === 'kept-differs');
+    const planned = restoring
+      ? await replaceServer({ clientId, scope, serverName, entry: desired, filePath, dryRun: true, targets })
+      : await writeServer({ clientId, scope, serverName, entry: desired, filePath, dryRun: true, targets });
+    return { status: planned.status === 'planned' ? 'planned' : planned.status, classification: verdict, planned, renamed: landingShape.renamed, serverName, dryRun: true };
   }
 
   // 接管路径：只按磁盘现状记账，不动配置内容。`kept-differs` 走这里 = 「认下用户改的这份」，
   // 与 `restore`（按 AIOS 形状重装）是两个人工决定，二者互斥。
   if (adopt && !restore && (verdict.status === 'external' || verdict.status === 'kept-differs')) {
     try {
-      const recorded = await recordOwnership({ clientId, scope, serverName, entry: actual, configPath: filePath, landing: read.landing, origin: 'adopted' }, ledgerOptions);
-      return { status: 'adopted', classification: classifyMcpOwnership({ actual, desired: entry, ledgerEntry: recorded.record }), record: recorded.record, wrote: false, serverName };
+      const recorded = await recordOwnership({ clientId, scope, serverName, entry: actual, configPath: filePath, landing: landingFor(clientId, scope).landing, origin: 'adopted' }, ledgerOptions);
+      return { status: 'adopted', classification: classifyMcpOwnership({ actual, desired, ledgerEntry: recorded.record }), record: recorded.record, wrote: false, serverName };
     } catch (error) {
       return { ...ledgerUnavailable(error), serverName };
     }
   }
 
-  // restore 路径：owned/conflict 且形状过期 → 先卸再装。卸不掉就停，不带着旧条目去写新的。
-  if (restore && (verdict.status === 'conflict' || verdict.status === 'kept-differs')) {
-    const off = await removeServer({ clientId, scope, serverName, filePath, backupDir, dropEmptyBucket: record?.bucketCreated === true, targets });
-    if (off.status !== 'removed') return { status: off.status, reason: off.reason, stage: 'restore-remove', classification: verdict, serverName };
-  }
+  // restore 路径：owned/conflict/kept-differs 且形状过期 → **原地替换**（w5a 的 replace 原语）。
+  // 为什么不再「先卸再装」：remove+insert 会把 TOML 的 `[mcp_servers.x]` 节搬到文件末尾、
+  // 把 JSON 的键挪到桶尾，位置一变，别人写在相邻行上的注释就错位了；条目内容等价不是「无损」，
+  // 字节位置也是门的一部分。卸不掉的情况（条目其实不存在）由 replaceServer 如实返回 `not-found`。
+  const replacing = restore && (verdict.status === 'conflict' || verdict.status === 'kept-differs');
 
-  const written = await writeServer({ clientId, scope, serverName, entry, filePath, backupDir, targets });
+  const written = replacing
+    ? await replaceServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets })
+    : await writeServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets });
   if (written.status === 'unchanged') {
-    const ledgerNote = await markVerified({ clientId, scope, serverName, fingerprint: fingerprintMcpEntry(entry) }, ledgerOptions);
+    const ledgerNote = await markVerified({ clientId, scope, serverName, fingerprint: fingerprintMcpEntry(desired) }, ledgerOptions);
     return { ...written, classification: verdict, entryClass: allowed.entryClass, serverName, ledgerNote };
   }
-  if (written.status !== 'created' && written.status !== 'updated') return { ...written, classification: verdict, serverName };
+  if (written.status !== 'created' && written.status !== 'updated' && written.status !== 'replaced') return { ...written, classification: verdict, serverName };
 
   try {
+    const { landing, rootKeyValues } = landingFor(clientId, scope);
     const recorded = await recordOwnership({
-      clientId, scope, serverName, entry, configPath: filePath, landing: written.landing,
+      clientId, scope, serverName, entry: desired, configPath: filePath, landing,
       origin: 'aios', bucketCreated: written.createdBucket === true || record?.bucketCreated === true,
+      // 本次补的桶外根键连着**当时的默认值**一起记：卸载时只有「值仍是这个默认值」才回收它。
+      // 值被人改过 = 这条目已被采纳，删它等于改别人的配置（与 `createdBucket` 同一套 provenance）。
+      // 同一条目可能先建过桶再补过键，两次写入的 provenance 都要留住，所以这里与旧记录取并集。
+      rootKeysCreated: [...new Set([...(record?.rootKeysCreated || []), ...(written.createdRootKeys || [])])],
+      rootKeyValues: { ...rootKeyValues, ...(record?.rootKeyValues || {}) },
     }, ledgerOptions);
     return {
       status: restore ? 'restored' : 'installed',
-      classification: classifyMcpOwnership({ actual: entry, desired: entry, ledgerEntry: recorded.record }),
+      classification: classifyMcpOwnership({ actual: desired, desired, ledgerEntry: recorded.record }),
       entryClass: allowed.entryClass,
       record: recorded.record,
       backupPath: written.backupPath,
       createdBucket: written.createdBucket,
+      createdRootKeys: written.createdRootKeys || [],
+      // 界面/证据卡要说「你提交的字段在这里叫什么」——不说这一步，交付方会以为配置里写的是自己给的名字。
+      renamed: landingShape.renamed,
       serverName,
     };
   } catch (error) {
@@ -215,20 +268,26 @@ export async function uninstallServer({
     };
   }
 
+  // 桶外根键的回收与桶同理：只有账本证明「这个键是 AIOS 当初补的」才回收，值还被改过就不碰（在 writer 里判）。
+  const rootKeyProvenance = {
+    dropRootKeys: record?.rootKeysCreated || [],
+    rootKeyValues: record?.rootKeyValues || {},
+  };
+
   if (dryRun) {
-    const planned = await removeServer({ clientId, scope, serverName, filePath, dryRun: true, targets });
+    const planned = await removeServer({ clientId, scope, serverName, filePath, dryRun: true, targets, ...rootKeyProvenance });
     return { status: planned.status === 'planned' ? 'planned' : planned.status, classification: verdict, serverName, dryRun: true };
   }
 
   const off = await removeServer({
     clientId, scope, serverName, filePath, backupDir,
-    dropEmptyBucket: record?.bucketCreated === true, targets,
+    dropEmptyBucket: record?.bucketCreated === true, targets, ...rootKeyProvenance,
   });
   if (off.status !== 'removed') return { ...off, classification: verdict, serverName };
 
   try {
     const released = await releaseOwnership({ clientId, scope, serverName }, ledgerOptions);
-    return { status: 'uninstalled', classification: verdict, backupPath: off.backupPath, residue: off.residue, released: released.released, serverName };
+    return { status: 'uninstalled', classification: verdict, backupPath: off.backupPath, residue: off.residue, droppedRootKeys: off.droppedRootKeys, released: released.released, serverName };
   } catch (error) {
     // 卸到这一步配置文件必然是存在的（absent 早在上面就走掉了），所以 existedBefore 传 true。
     return failWithRollback({ error, filePath, backupPath: off.backupPath, existedBefore: true, serverName, message: '账本写不进去，删除已回滚。' });
@@ -237,6 +296,9 @@ export async function uninstallServer({
 
 /** 只读核验：对象表与 doctor 读它。不写账本、不碰配置。 */
 export async function verifyServer({ clientId, scope, serverName, filePath, ledgerDir = '', desired = null, targets } = {}) {
+  // `desired` 也走同一条改名：doctor 拿规范形状去比一份落地形状的条目，会比出永不消失的幽灵 conflict。
+  const shape = desired === null ? null : normalizeEntryForLanding(clientId, scope, desired);
+  const effectiveDesired = shape && shape.ok ? shape.entry : desired;
   const opened = await openLedger(clientId, { ledgerDir });
   if (!opened.ok) return { ...opened.failure, serverName };
   const record = opened.ledger.entries[ledgerKeyFor(scope, serverName)] || null;
@@ -246,8 +308,8 @@ export async function verifyServer({ clientId, scope, serverName, filePath, ledg
   return {
     status: 'verified',
     serverName,
-    classification: classifyMcpOwnership({ actual, desired, ledgerEntry: record }),
-    landing: read.landing,
+    classification: classifyMcpOwnership({ actual, desired: effectiveDesired, ledgerEntry: record }),
+    landing: landingFor(clientId, scope).landing,
     ledgerCorrupt: opened.ledger.corrupt || '',
     record,
   };

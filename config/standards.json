@@ -238,6 +238,10 @@
         "reason": "training evidence log blobs"
       },
       {
+        "path": "docs/evidence/2026-11-05-mcp-landing",
+        "reason": "MCP landing evidence store (w7): one card per (client, scope) plus an index. These are captured command transcripts and sha256 hashes, not product code; the file set is the evidence matrix itself, so splitting it into subdirectories would only rename 10 clients as directories and make \"which landing has a card\" harder to answer"
+      },
+      {
         "path": "blog-site",
         "reason": "generated site output"
       },

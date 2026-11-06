@@ -18,6 +18,9 @@ const SECRET = 'env-sentinel-not-a-real-secret';
 const CLAUDE_FIXTURE = `{\n  "theme": "dark",\n  "mcpServers": {\n    "theirs": { "command": "node", "args": ["/theirs.js"], "env": { "TOKEN": "${SECRET}" } }\n  }\n}\n`;
 const CODEX_FIXTURE = '[mcp_servers.theirs]\ncommand = "node"\nargs = ["/theirs.js"]\ntype = "stdio"\nenabled = true\n';
 const PI_FIXTURE = '{\n  "mcpServers": {}\n}\n';
+// gemini 的 schema 是严的：越界字段会让整份 settings.json 判废（`definitions.mjs:286-289`），
+// 所以这份 fixture 里「别人的条目」本来就写成 gemini 形状，而 AIOS 要装进去的那条会被改名。
+const GEMINI_FIXTURE = '{\n  "mcpServers": {\n    "theirs": { "command": "npx", "args": ["-y", "@other/server"], "timeout": 5000 }\n  }\n}\n';
 
 function sandbox() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'rex-mcp-cli-'));
@@ -26,6 +29,8 @@ function sandbox() {
   fs.writeFileSync(path.join(dir, '.codex', 'config.toml'), CODEX_FIXTURE, 'utf8');
   fs.mkdirSync(path.join(dir, '.pi', 'agent'), { recursive: true });
   fs.writeFileSync(path.join(dir, '.pi', 'agent', 'mcp.json'), PI_FIXTURE, 'utf8');
+  fs.mkdirSync(path.join(dir, '.gemini'), { recursive: true });
+  fs.writeFileSync(path.join(dir, '.gemini', 'settings.json'), GEMINI_FIXTURE, 'utf8');
   return { homeDir: dir, ledgerDir: path.join(dir, 'ledger'), backupDir: path.join(dir, 'bak') };
 }
 
@@ -179,6 +184,52 @@ test('装卸走通完整闭环：installed → list 显示 owned → 卸掉后�
   const off = await run(fx, { subcommand: 'remove', client: 'claude', scope: 'home', name: 'probe', json: true, ledgerDir: fx.ledgerDir, backupDir: fx.backupDir });
   assert.equal(off.result.status, 'uninstalled');
   assert.equal(fs.readFileSync(file, 'utf8'), CLAUDE_FIXTURE, '卸掉自己装的之后，其余字节必须逐字节回到原样');
+  fs.rmSync(fx.homeDir, { recursive: true, force: true });
+});
+
+test('改名落点（gemini）：命令面说得出「你给的字段在这里叫什么」，且换算后的值不出门', async () => {
+  const fx = sandbox();
+  const file = path.join(fx.homeDir, '.gemini', 'settings.json');
+  const entry = { command: 'node', args: ['/probe/server.js'], type: 'stdio', startupTimeoutSec: 10 };
+  const base = { subcommand: 'add', client: 'gemini', scope: 'home', name: 'probe', entry, ledgerDir: fx.ledgerDir, backupDir: fx.backupDir };
+
+  // 预览就得说改名：dry-run 一句不提、真跑才冒出来，等于界面在第一屏撒谎。
+  const preview = await run(fx, { ...base, dryRun: true });
+  assert.equal(preview.result.status, 'planned', `${preview.result.status} / ${preview.result.reason || ''}`);
+  assert.match(preview.out, /renamed: startupTimeoutSec->timeout/u, '人话输出必须报出改名');
+  assert.equal(fs.readFileSync(file, 'utf8'), GEMINI_FIXTURE, 'dry-run 不许落盘');
+
+  const human = await run(fx, base);
+  assert.equal(human.result.status, 'installed', `${human.result.status} / ${human.result.reason || ''}`);
+  // `rule` 而不是换算结果：这一层的输出纪律是从不打印条目内容，10000 也是内容。
+  assert.deepEqual(human.result.renamed, [{ from: 'startupTimeoutSec', to: 'timeout', rule: 'x1000' }]);
+  assert.match(human.out, /renamed: startupTimeoutSec->timeout/u);
+
+  // 磁盘上是落地形状，不是提交形状；别人那条一字节不动。
+  const text = fs.readFileSync(file, 'utf8');
+  assert.match(text, /"timeout": 10000/u, '改名 + 换算必须真的落到盘上');
+  assert.doesNotMatch(text, /startupTimeoutSec/u, '规范键名不该漏进 gemini 的严格 schema（漏了整份配置判废）');
+  assert.match(text, /@other\/server/u);
+
+  // 隐私：换算后的值与 args 值都不许出现在任何一条输出路径上。
+  assert.ok(!human.out.includes('10000'), '人话输出泄漏了换算后的值');
+  assert.ok(!human.out.includes('/probe/server.js'), '人话输出泄漏了 args 值');
+  assert.ok(!JSON.stringify(human.result).includes('10000'), '--json 输出泄漏了换算后的值');
+  assert.ok(!JSON.stringify(human.result).includes('/probe/server.js'), '--json 输出泄漏了 args 值');
+
+  // 指纹按落地形状记：重复安装必须是 unchanged。若按规范形状记，收编后的每条 gemini 条目都会永久 kept-differs。
+  const again = await run(fx, { ...base, json: true });
+  assert.equal(again.result.status, 'unchanged', `改过名的条目应按落地形状幂等，实得 ${again.result.status}/${again.result.reason || ''}`);
+  assert.equal(fs.readFileSync(file, 'utf8'), text, 'unchanged 不该动文件');
+
+  const listed = await run(fx, { subcommand: 'list', client: 'gemini', scope: 'home', json: true, ledgerDir: fx.ledgerDir });
+  const probe = listed.result.landings[0].servers.find((item) => item.name === 'probe');
+  assert.equal(probe.ownership, 'owned');
+  assert.deepEqual(probe.fields, ['args', 'command', 'timeout', 'type'], '字段名要照磁盘原样列出来，界面不许显示提交名');
+
+  const off = await run(fx, { subcommand: 'remove', client: 'gemini', scope: 'home', name: 'probe', json: true, ledgerDir: fx.ledgerDir, backupDir: fx.backupDir });
+  assert.equal(off.result.status, 'uninstalled');
+  assert.equal(fs.readFileSync(file, 'utf8'), GEMINI_FIXTURE, '改名不该让「卸掉自己装的之后非托管字节不变」这条门失效');
   fs.rmSync(fx.homeDir, { recursive: true, force: true });
 });
 

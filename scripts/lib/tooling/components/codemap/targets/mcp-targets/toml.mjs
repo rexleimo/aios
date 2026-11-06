@@ -1,9 +1,13 @@
-import fs from 'node:fs';
-import path from 'node:path';
-
+// scripts/lib/tooling/components/codemap/targets/mcp-targets/toml.mjs — codex / grok 的 `[mcp_servers.*]` 落点。
+//
+// w5b 收编后：写盘交给 `landing-writer.mjs`（→ `clients/mcp/server-writer.mjs` 的定点手术），
+// 本文件只留两件旧写入器里真正属于 codemap 的判断：
+//   1. 条目形状 `{command, args, [cwd], type}` 与**键序**（TOML 段内逐键输出，键序就是字节序）；
+//   2. 只有项目级配置才钉 `cwd`（写进 `~/.codex/config.toml` 的 cwd 会把 CRG 钉死在一个仓库上）。
+// `parseCodexMcpServersToml` 保留：doctor 的 inspect 是纯读，不能为了探测而走写路径。
 import { CRG_MCP_ALIAS } from '../../constants.mjs';
-import { backupFilePath } from '../../paths.mjs';
 import { buildCrgMcpServerEntry, isCrgServeEntry, isProjectScopedTarget } from './entries.mjs';
+import { removeTargetEntry, writeTargetEntry } from './landing-writer.mjs';
 
 // 纯函数：转义 TOML 字符串，避免 Windows 反斜杠和引号破坏配置。
 export function escapeTomlString(value) {
@@ -58,68 +62,39 @@ export function parseCodexMcpServersToml(raw = '') {
   return servers;
 }
 
-export function formatCodexMcpServerToml(clientKey, projectRoot, targetPath = '') {
+/**
+ * 该落点要写的条目，**键序即字节序**：`command, args, [cwd], type`。
+ * 与旧 `formatCodexMcpServerToml` 逐字节一致；差别只有一处：clientKey 取目标自己的
+ * （旧实现把 grok 也当 codex 构造，今天两者没有差异，但这种「碰巧一样」不该继续靠巧合成立）。
+ */
+export function buildCodexMcpEntry(clientKey, projectRoot, targetPath) {
   const desired = buildCrgMcpServerEntry(clientKey);
-  const args = desired.args.map((arg) => `"${escapeTomlString(arg)}"`).join(', ');
-  const lines = [
-    `[mcp_servers.${CRG_MCP_ALIAS}]`,
-    `command = "${escapeTomlString(desired.command)}"`,
-    `args = [${args}]`,
-  ];
-  // 只有项目级配置才钉 cwd（写进客户级 home 的不能钉，否则换个项目还在索引旧仓库）。
-  if (projectRoot && isProjectScopedTarget(targetPath, projectRoot)) {
-    lines.push(`cwd = "${escapeTomlString(projectRoot)}"`);
+  const entry = { command: desired.command, args: desired.args };
+  if (projectRoot && isProjectScopedTarget(targetPath, projectRoot)) entry.cwd = projectRoot;
+  entry.type = desired.type;
+  return entry;
+}
+
+/** 旧 `formatCodexMcpServerToml` 的等价物（保留文本形状，供 message/测试对照与排障）。 */
+export function formatCodexMcpServerToml(clientKey, projectRoot, targetPath = '') {
+  const entry = buildCodexMcpEntry(clientKey, projectRoot, targetPath);
+  const lines = [`[mcp_servers.${CRG_MCP_ALIAS}]`];
+  for (const [key, value] of Object.entries(entry)) {
+    const rendered = Array.isArray(value)
+      ? `[${value.map((part) => `"${escapeTomlString(part)}"`).join(', ')}]`
+      : `"${escapeTomlString(value)}"`;
+    lines.push(`${key} = ${rendered}`);
   }
-  lines.push(`type = "${escapeTomlString(desired.type)}"`);
   return lines.join('\n');
 }
 
-function codexSectionPattern() {
-  return new RegExp(
-    `(^|\\n)\\[mcp_servers\\.${CRG_MCP_ALIAS.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}\\][\\s\\S]*?(?=\\n\\[|$)`,
-    'u'
-  );
+export async function upsertCodexMcpToml(target, projectRoot, { dryRun = false } = {}) {
+  const entry = buildCodexMcpEntry(target.clientKey, projectRoot, target.path);
+  return writeTargetEntry({ target, projectRoot, entry, dryRun });
 }
 
-export function upsertCodexMcpToml(filePath, projectRoot, { dryRun = false } = {}) {
-  const exists = fs.existsSync(filePath);
-  const raw = exists ? fs.readFileSync(filePath, 'utf8') : '';
-  const sectionPattern = codexSectionPattern();
-  const desiredSection = formatCodexMcpServerToml('codex', projectRoot, filePath);
-  const nextRaw = sectionPattern.test(raw)
-    ? raw.replace(sectionPattern, (match, prefix) => `${prefix}${desiredSection}`)
-    : `${raw.replace(/\s*$/u, '')}${raw.trim() ? '\n\n' : ''}${desiredSection}\n`;
-
-  const normalizedNextRaw = nextRaw.endsWith('\n') ? nextRaw : `${nextRaw}\n`;
-  if (exists && raw === normalizedNextRaw) {
-    return { status: 'unchanged' };
-  }
-  if (dryRun) {
-    return { status: 'planned' };
-  }
-  if (exists) {
-    fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
-  }
-  fs.mkdirSync(path.dirname(filePath), { recursive: true });
-  fs.writeFileSync(filePath, normalizedNextRaw, 'utf8');
-  return { status: exists ? 'updated' : 'created' };
-}
-
-export function removeCrgFromCodexToml(filePath, { io = console } = {}) {
-  if (!fs.existsSync(filePath)) return;
-
-  try {
-    const raw = fs.readFileSync(filePath, 'utf8');
-    const sectionPattern = codexSectionPattern();
-    if (!sectionPattern.test(raw)) return;
-    let nextRaw = raw.replace(sectionPattern, '$1');
-    nextRaw = nextRaw.replace(/\n{3,}/gu, '\n\n').replace(/\s+$/u, '\n');
-    fs.writeFileSync(backupFilePath(filePath), raw, 'utf8');
-    fs.writeFileSync(filePath, nextRaw, 'utf8');
-    io.log(`OK   codemap removed ${CRG_MCP_ALIAS} from ${filePath}`);
-  } catch (error) {
-    io.log(`ERR  codemap failed to clean ${filePath}: ${error instanceof Error ? error.message : String(error)}`);
-  }
+export async function removeCrgFromCodexToml(target, { io = console, projectRoot = '', dryRun = false } = {}) {
+  return removeTargetEntry({ target, projectRoot, io, dryRun });
 }
 
 export function inspectCodexToml(raw) {

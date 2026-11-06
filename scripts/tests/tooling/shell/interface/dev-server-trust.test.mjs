@@ -1,13 +1,4 @@
-// The development server, on the wire.
-//
-// Every other shell test asserts text: a config value, a source shape, a decision
-// table. None of them prove that `npm run ui` — the flow the README tells a human to
-// use — actually serves a page through the token gate, and the manual curl matrix from
-// S2 was evidence that disappears after the session it was typed in.
-//
-// So this test starts the real development server and asks it the same questions.
-// It skips with a named reason when the UI dependencies are absent, because a check
-// that passes without asking anything is the failure mode this file exists to avoid.
+// Exercise the real development server through its token gate and current Console routes.
 import assert from 'node:assert/strict';
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';
@@ -20,9 +11,6 @@ const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const NEXT_BIN = path.join(ROOT, 'apps', 'shell', 'ui', 'node_modules', 'next', 'dist', 'bin', 'next');
 const LAUNCHER = path.join(ROOT, 'scripts', 'aios-ui.mjs');
 
-const dependenciesInstalled = fs.existsSync(NEXT_BIN);
-
-/** A port chosen by the OS, then released. The window of reuse is small and retried. */
 function freePort() {
   return new Promise((resolve, reject) => {
     const server = net.createServer();
@@ -33,125 +21,100 @@ function freePort() {
     });
   });
 }
-
-async function waitFor(predicate, { timeoutMs = 90_000, intervalMs = 500 } = {}) {
+async function waitFor(predicate, timeoutMs = 90_000) {
   const deadline = Date.now() + timeoutMs;
   for (;;) {
     if (await predicate()) return true;
     if (Date.now() >= deadline) return false;
-    await new Promise((resolve) => setTimeout(resolve, intervalMs));
+    await new Promise(resolve => setTimeout(resolve, 500));
   }
 }
-
-/** Kill the launcher and everything it spawned; the launcher owns a `next dev` child. */
 function stopTree(child) {
   if (!child?.pid) return;
-  if (process.platform === 'win32') {
-    try {
-      execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-    } catch {
-      // Already gone.
-    }
-    return;
-  }
   try {
-    process.kill(-child.pid, 'SIGKILL');
-  } catch {
-    // Already gone.
-  }
+    if (process.platform === 'win32') execFileSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    else process.kill(-child.pid, 'SIGKILL');
+  } catch { /* Already stopped. */ }
 }
-
 async function request(port, pathname, { cookie, headers } = {}) {
   const response = await fetch(`http://127.0.0.1:${port}${pathname}`, {
-    // `redirect: 'manual'` keeps the token exchange observable instead of followed.
     redirect: 'manual',
     headers: { ...(cookie ? { cookie } : {}), ...headers },
     signal: AbortSignal.timeout(120_000),
   });
-  const body = response.status === 200 ? await response.text() : '';
-  return { status: response.status, headers: response.headers, body };
+  return { status: response.status, headers: response.headers, body: response.status === 200 ? await response.text() : '' };
 }
 
-test('the development server serves the page through the token gate', { timeout: 300_000 }, async (t) => {
-  if (!dependenciesInstalled) {
+test('the development server serves the current Console through the token gate', { timeout: 300_000 }, async t => {
+  if (!fs.existsSync(NEXT_BIN)) {
     t.skip('ui dependencies are not installed (run: npm run ui:setup)');
     return;
   }
-
   const port = await freePort();
   const child = spawn(process.execPath, [LAUNCHER, 'dev', '--port', String(port)], {
-    cwd: ROOT,
-    // A group of its own so the whole tree can be stopped on POSIX.
-    detached: process.platform !== 'win32',
-    env: { ...process.env, AIOS_UI_PORT: String(port) },
-    stdio: ['ignore', 'pipe', 'pipe'],
+    cwd: ROOT, detached: process.platform !== 'win32', env: { ...process.env, AIOS_UI_PORT: String(port) }, stdio: ['ignore', 'pipe', 'pipe'],
   });
-  // The launcher prints the tokenized URL on stderr (it is a status line, not output
-  // to be piped), so both streams are collected before the line is looked for.
   let output = '';
-  child.stdout.on('data', (chunk) => {
-    output += String(chunk);
-  });
-  child.stderr.on('data', (chunk) => {
-    output += String(chunk);
-  });
-
+  child.stdout.on('data', chunk => { output += String(chunk); });
+  child.stderr.on('data', chunk => { output += String(chunk); });
   t.after(() => stopTree(child));
-
   const tokenFile = path.join(os.tmpdir(), `aios-ui-token-${port}`);
-  const published = await waitFor(() => fs.existsSync(tokenFile), { timeoutMs: 30_000 });
-  assert.ok(published, `the launcher published no token at ${tokenFile}; output: ${output.trim()}`);
-
+  assert.ok(await waitFor(() => fs.existsSync(tokenFile), 30_000), 'launcher must publish its token');
   const token = fs.readFileSync(tokenFile, 'utf8').trim();
   assert.match(token, /^[0-9a-f]{32}$/u);
-  assert.match(output, new RegExp(`open http://127\\.0\\.0\\.1:${port}/t/${token}/`, 'u'));
-
-  // Ready means "the gate answers", not "the socket accepts": a bare request must be
-  // refused, and a refused request proves both that the server is up and that the gate
-  // is in front of it.
-  const up = await waitFor(async () => {
-    try {
-      const response = await request(port, '/');
-      return response.status === 403;
-    } catch {
-      return false;
-    }
-  });
-  assert.ok(up, 'the development server never answered with a refused request');
+  assert.ok(output.includes(`open http://127.0.0.1:${port}/t/${token}/`), 'launcher must print its bootstrap URL');
+  assert.ok(await waitFor(async () => {
+    try { return (await request(port, '/')).status === 403; } catch { return false; }
+  }), 'the gate must answer before serving the page');
 
   const bare = await request(port, '/');
   assert.equal(bare.status, 403);
   assert.equal(bare.headers.get('x-aios-deny'), 'missing-token');
-
   const exchange = await request(port, `/t/${token}/`);
-  // Next collapses the trailing slash before the gate runs, so both a 307 from the gate
-  // and a 308 from the router are acceptable — what matters is that no cookie is handed
-  // out without a matching token.
-  assert.ok([307, 308].includes(exchange.status), `exchange status ${exchange.status}`);
-  const setCookie = exchange.headers.get('set-cookie') ?? '';
+  assert.ok([307, 308].includes(exchange.status));
   if (exchange.status === 307) {
+    const setCookie = exchange.headers.get('set-cookie') ?? '';
     assert.match(setCookie, /aios_ui_token=/u);
     assert.match(setCookie, /HttpOnly/u);
     assert.match(setCookie, /SameSite=strict/iu);
   }
-
   const cookie = `aios_ui_token=${token}`;
-  // The first render compiles the route on demand; this is the slow assertion.
   const page = await request(port, '/', { cookie });
   assert.equal(page.status, 200);
-  assert.match(page.body, /总览/u, 'the console must render its navigation and first page, not just return 200');
-  assert.match(page.body, /声明客户端/u, 'the overview must render real values from aios status');
-
+  assert.match(page.body, /把工具管好，把精力留给创作。/u);
+  assert.match(page.body, /示例数据 · 不读取私人文件 · 不修改真实配置/u);
+  assert.doesNotMatch(page.body, /能力进程已连接|返回正式控制台|新版交互预览/u);
   const asset = page.body.match(/\/_next\/static\/[^"']+\.js/u)?.[0];
-  assert.ok(asset, 'the rendered page must reference a script');
-  assert.equal((await request(port, asset)).status, 403, 'assets are gated too');
+  assert.ok(asset);
+  assert.equal((await request(port, asset)).status, 403, 'assets must remain gated');
   assert.equal((await request(port, asset, { cookie })).status, 200);
-
   const foreign = await request(port, '/', { cookie, headers: { origin: `http://127.0.0.1:${port + 1}` } });
   assert.equal(foreign.status, 403);
   assert.equal(foreign.headers.get('x-aios-deny'), 'foreign-origin');
-
   const crossSite = await request(port, '/', { cookie, headers: { 'sec-fetch-site': 'cross-site' } });
   assert.equal(crossSite.status, 403);
   assert.equal(crossSite.headers.get('x-aios-deny'), 'cross-site');
+
+  for (const [pathname, label] of [['/tools', 'AI 工具'], ['/mcp', 'MCP 服务'], ['/memory', '记忆'], ['/activity', '活动记录']]) {
+    const rendered = await request(port, pathname, { cookie });
+    assert.equal(rendered.status, 200, `${pathname} must render`);
+    assert.match(rendered.body, new RegExp(`aria-label="${label}"[^>]*aria-current="page"`, 'u'));
+    assert.doesNotMatch(rendered.body, /返回正式控制台|能力进程已连接/u);
+  }
+  assert.equal((await request(port, '/settings', { cookie })).status, 200);
+  for (const [pathname, target] of [['/prototype', '/'], ['/overview', '/'], ['/sessions', '/activity'], ['/usage', '/activity'], ['/matrix', '/tools']]) {
+    const moved = await request(port, pathname, { cookie });
+    assert.equal(moved.status, 307, `${pathname} must redirect`);
+    assert.equal(new URL(moved.headers.get('location'), `http://127.0.0.1:${port}`).pathname, target);
+  }
+  assert.equal((await request(port, '/no-such-console-view', { cookie })).status, 404);
+
+  // Keep the real backend assertion: UI retirement must not delete capability APIs.
+  const api = await request(port, '/api/mcp', { cookie });
+  assert.equal(api.status, 200);
+  const payload = JSON.parse(api.body);
+  assert.ok((payload.rows ?? []).length > 0);
+  for (const row of payload.rows ?? []) {
+    assert.match(String(row.status), /^landing-(verified|unverified|error|unregistered)$/u);
+  }
 });

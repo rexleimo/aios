@@ -1,7 +1,8 @@
-# apps/shell — AIOS 自有感知面（接入矩阵 + 桌面壳）
+# apps/shell — AIOS Console（本机 AI 工具管理器 + 桌面壳）
 
-决策来源：`docs/adr/0007-aios-perceived-surface-and-desktop-shell.md`。
-本文件只记录**目录形状、技术栈与约定**，不重复 ADR 里的决策理由。
+当前界面按已确认的产品方向 A：本机 AI 工具管理、项目记忆与 MCP 服务。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`。
+
+**当前数据状态：** 新界面仍使用明确标注的示例项目、记忆和模拟执行结果，操作只改变页面内状态，刷新重置。后端 API/CLI 与真实存储继续保留；真实私人项目读取和配置写入尚未接到新界面。
 
 ## 开桌面应用（一条命令）
 
@@ -41,10 +42,10 @@ apps/shell/                 ← 5 项
 │   └── load.mjs / load.d.mts
 ├── ui/                     ← 6 项：Next.js 界面（源文件在 src/ 下）
 │   ├── src/                ← 4 项
-│   │   ├── app/            (layout.tsx, page.tsx, globals.css)
-│   │   ├── components/     (matrix-table.tsx，'use client')
-│   │   ├── lib/            (词表/导航/门：labels.ts, sections.ts, cn.ts, actions.mjs, trust.mjs)
-│   │   ├── lib/data/       (取数：capability.mjs, matrix-loader.ts, snapshot-cache.mjs, host-capabilities.mjs)
+│   │   ├── app/            (layout.tsx, (console)/page.tsx, (console)/[section]/page.tsx, globals.css)
+│   │   ├── components/     (console/ 当前界面与 flows/，ui/ 共享组件)
+│   │   ├── lib/            (console-navigation.ts, cn.ts, actions.mjs, trust.mjs)
+│   │   ├── lib/data/       (后端取数与动作：capability.mjs, memory-actions.mjs, mcp.mjs 等)
 │   │   └── proxy.ts        本地信任边界的 HTTP 翻译层（Next 16 已把 middleware 改名为 proxy）
 │   ├── package.json
 │   ├── package-lock.json
@@ -75,13 +76,16 @@ apps/shell/                 ← 5 项
 
 ## 三条不能破的约定
 
-1. **视图不含事实。** `ui/` 里唯一的取数通道是 `lib/data/matrix-loader.ts`，它跑 `data/load.mjs` 读 stdout。
-   不 import 装配代码：实测 import 会把 `scripts/lib/**` 拖进打包图，Turbopack 因此要求整仓 trace。
-   页面里出现任何数字字面量都是缺陷，由 `scripts/tests/tooling/shell/interface/matrix-sources.test.mjs` 判定。
+1. **真实事实与示例分开。** 当前示例数据集中在 `components/console/demo-data.ts`，页面始终展示示例标识。真实 API 的读取由 `lib/data/` 拥有，不把 `scripts/lib/**` 直接拖进客户端打包图。配置已写入、历史证据与当前连接测试结果是不同事实。
 2. **token 只有一个所有者。** `@theme` 里的每个值必须等于 `docs-site/assets/redesign/tokens.css` 的对应
    `--rex-*`，由 `shell-tokens.test.mjs` 逐条比对。globals.css 里允许的选择器只有 `:root[data-rex-theme="dark"]` 和 `body`。
-3. **服务端组件不从 `'use client'` 模块取数据。** 实测踩过：`page.tsx` 从 `matrix-table.tsx` import
-   `AXIS_LABEL` 时拿到的是客户端引用代理，轴名静默退化成英文、证据列表渲染成空串。词表因此住在 `lib/labels.ts`。
+3. **服务端组件不从 `'use client'` 模块取数据。** 路由只传递当前视图 ID；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。示例状态只在客户端界面内持有。
+
+## 当前入口与旧链接
+
+`/` 是首页；`/tools`、`/mcp`、`/memory`、`/activity`、`/settings` 是同一套 Console 的视图。导航更新浏览器地址，支持刷新及前进后退。
+
+`/prototype` 和 `/overview` 跳转首页；`/sessions`、`/usage` 跳转活动记录；`/matrix` 跳转 AI 工具。它们仅用于旧书签迁移，不再渲染旧页面。原矩阵、会话、记忆和 MCP 后端接口继续保留，未删除数据。
 
 ## 能力层暴露的两个实测事实（界面必须如实显示）
 
@@ -91,7 +95,7 @@ apps/shell/                 ← 5 项
 ## 验证
 
 ```sh
-node --test "scripts/tests/tooling/shell/**/*.test.mjs"   # 62 用例（interface/ 是视图，desktop/ 是壳）
+node --test "scripts/tests/tooling/shell/**/*.test.mjs"   # interface/ 含真实 HTTP 入口与旧链接迁移；desktop/ 是壳
 node scripts/aios-standards.mjs --root . --rule directoryEntries
 npm run shell:test                                      # cargo test（10 用例：端口、参数、cwd、等待、job、token）
 ```

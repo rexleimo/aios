@@ -401,7 +401,7 @@ test('codemap writes zcode through the dot-path namespace and normalizes to the 
     namespace: 'mcp.servers',
     createIfMissing: true,
   };
-  injectCrgIntoClientTarget(target, '/proj', { dryRun: false, io: silentIo() });
+  await injectCrgIntoClientTarget(target, '/proj', { dryRun: false, io: silentIo() });
 
   const written = JSON.parse(await readFile(filePath, 'utf8'));
   assert.ok(written.mcp.servers['code-review-graph'], 'CRG 必须写进 mcp.servers 这个点路径桶');
@@ -419,7 +419,7 @@ test('codemap writes zcode through the dot-path namespace and normalizes to the 
   assert.equal(inspectCodemapMcpTarget({ ...target, path: filePath }).valid, true);
 
   // 删除同样必须走点路径 —— 单层取值会让 uninstall 对 zcode 静默 no-op。
-  removeCrgFromClientTarget(target, { io: silentIo() });
+  await removeCrgFromClientTarget(target, { io: silentIo() });
   const afterRemove = JSON.parse(await readFile(filePath, 'utf8'));
   assert.equal(afterRemove.mcp.servers['code-review-graph'], undefined, 'uninstall 必须真删掉 CRG');
   assert.deepEqual(afterRemove.mcp.servers.pencil, { transport: 'stdio', command: 'pencil.exe' });
@@ -431,7 +431,7 @@ test('codemap writes pi entries byte-identical to the pi component definition', 
   const filePath = path.join(dir, 'mcp.json');
   await writeJson(filePath, { mcpServers: { 'aios-memory': { command: 'node', args: ['x'], lifecycle: 'lazy' } } });
 
-  injectCrgIntoClientTarget(
+  await injectCrgIntoClientTarget(
     { path: filePath, clientKey: 'pi', format: 'pi-json', namespace: '', createIfMissing: true },
     '/proj',
     { dryRun: false, io: silentIo() },
