@@ -222,6 +222,10 @@
         "reason": "skill registry surface (one dir per skill)"
       },
       {
+        "path": "docs/adr",
+        "reason": "append-only decision log: each ADR is cited by its numbered filename (0001-NNNN), the records must stay flat and are never deleted or renumbered, so every new ADR raises the count by design (0009 pushed 9 past budget 8)"
+      },
+      {
         "path": "docs/plans",
         "reason": "plan-discovery flat contract (preflight/dry-run/MCP create flat there)"
       },
