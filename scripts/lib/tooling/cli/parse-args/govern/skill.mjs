@@ -2,7 +2,7 @@
 import { Command } from 'commander';
 
 const WORKSHOP_SUBCOMMANDS = new Set(['propose', 'review', 'apply', 'rollback', 'index']);
-const ALL_SUBCOMMANDS = ['comply', 'health', 'certify', 'verify-training', 'add', 'propose', 'review', 'apply', 'rollback', 'index'];
+const ALL_SUBCOMMANDS = ['list', 'install', 'sync', 'remove', 'diagnose', 'comply', 'health', 'certify', 'verify-training', 'add', 'propose', 'review', 'apply', 'rollback', 'index'];
 
 const SHARED_OPTIONS = [
   ['--json', 'Output as JSON'],
@@ -21,6 +21,11 @@ const SHARED_OPTIONS = [
   ['--description <text>', 'Proposal description'],
   ['--skill <ids>', 'Named Skill ids (repeatable or comma-separated) for certify/verify-training/add'],
   ['--yes', 'Non-interactive: install every skill found in the source'],
+  ['--scope <global|project>', 'Skill scope'],
+  ['--kind <builtin|external>', 'Skill source kind'],
+  ['--source <path-or-url>', 'External skill source'],
+  ['--project-root <path>', 'Project scope root'],
+  ['--expected-revision <hash>', 'Require this preview revision before writing'],
   ['--force', 'Replace existing unmanaged skill directories'],
 ];
 
@@ -115,6 +120,17 @@ export function parseSkillArgs(argv = []) {
         .flatMap((entry) => String(entry || '').split(','))
         .map((entry) => entry.trim())
         .filter(Boolean);
+    }
+
+    if (['list', 'install', 'sync', 'remove', 'diagnose'].includes(subcommand)) {
+      options.name = posArgs[0] || '';
+      options.scope = effectiveFlags.scope || 'global';
+      options.kind = effectiveFlags.kind || 'external';
+      options.source = effectiveFlags.source || '';
+      options.projectRoot = effectiveFlags.projectRoot || '';
+      options.expectedRevision = effectiveFlags.expectedRevision || '';
+      options.client = effectiveFlags.client || (['list', 'diagnose'].includes(subcommand) ? 'all' : '');
+      if (!['list', 'diagnose'].includes(subcommand) && !options.client) throw new Error('skill management requires a --client selection');
     }
 
     // 校验

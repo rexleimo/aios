@@ -141,6 +141,11 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
     }
 
     if (parsed.command === 'skill') {
+      if (['list', 'install', 'sync', 'remove', 'diagnose'].includes(parsed.options.subcommand)) {
+        const { runSkillManagement } = await import('../../components/skills/lifecycle/cli.mjs');
+        applyResultExitCode(await runSkillManagement(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
+        return;
+      }
       if (parsed.options.subcommand === 'comply') {
         const { runSkillComply } = await import('../../skills/compliance/compliance.mjs');
         applyResultExitCode(await runSkillComply(parsed.options, { rootDir: workspaceFor(parsed), stdout }));
@@ -170,6 +175,7 @@ export function createAiosDispatch({ rootDir, projectRoot, stdout = process.stdo
           selectedSkills: parsed.options.skill,
           force: Boolean(parsed.options.force),
           yes: Boolean(parsed.options.yes),
+          dryRun: Boolean(parsed.options.dryRun),
           json: Boolean(parsed.options.json),
           stdout,
         }));

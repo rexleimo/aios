@@ -1,0 +1,13 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "artifact:docs/plans/2026-11-06-console-management-testability.json",
+  "redCandidate": {
+    "publicEntry": "listManagedSkills/manageSkill public lifecycle API",
+    "setup": "Real temporary source skill, isolated registry, two client homes; test preview/install/conflict/remove and preserved source",
+    "command": { "executable": "node", "args": ["--test", "scripts/tests/tooling/shell/data/skill-management.test.mjs"], "cwd": "E:\\coding\\harness-cli" },
+    "expected": "Public management API provides inventory and safe selected-client lifecycle; all assertions pass",
+    "observed": "exit 1: requested management module is absent",
+    "failureReason": "No unified skill inventory and safe selected-client lifecycle public API exists",
+    "receiptRef": "receipt:6d93b61e-9410-4bdc-ba0f-fac30f71d56c"
+  }
+}

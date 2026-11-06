@@ -4,6 +4,18 @@ import test from 'node:test';
 
 import { handleMessage, executeCommand, SHELL_TOOL } from '../../../shell-mcp-server.mjs';
 
+/**
+ * Long-running commands must exist on every platform the suite runs on.
+ * The MCP server spawns `cmd /c` on win32 (shell-mcp-server.mjs:150) and there is
+ * no `sleep` there: the call comes back as `exit code 1` immediately, so the
+ * timeout/cancellation branches are never reached. That made four tests fail on
+ * Windows while staying green on POSIX (regression run 2026-11-06).
+ */
+const LONG_WAIT = process.platform === 'win32' ? 'ping -n 61 127.0.0.1 > nul' : 'sleep 60';
+
+/** ~2s hold, for the concurrency test: must outlive the ping probe but not block long. */
+const SHORT_WAIT = process.platform === 'win32' ? 'ping -n 3 127.0.0.1 > nul' : 'sleep 2';
+
 test('handleMessage returns valid initialize response', async () => {
   const response = await handleMessage({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} });
   assert.equal(response.id, 1);
@@ -100,7 +112,7 @@ test('executeCommand captures stderr', async () => {
 });
 
 test('executeCommand respects timeout', async () => {
-  const result = await executeCommand('sleep 60', undefined, 500);
+  const result = await executeCommand(LONG_WAIT, undefined, 500);
   assert.equal(result.exitCode, -1);
   assert.equal(result.timedOut, true);
 });
@@ -143,7 +155,7 @@ test('executeCommand timeout kills background grandchildren instead of orphaning
 
 test('executeCommand supports cancellation via onCancel callback', async () => {
   let cancelFn = null;
-  const promise = executeCommand('sleep 60', undefined, 10000, {
+  const promise = executeCommand(LONG_WAIT, undefined, 10000, {
     onCancel: (fn) => { cancelFn = fn; },
   });
   // 等待 onCancel 注册完成
@@ -161,7 +173,7 @@ test('handleMessage cancels in-flight command via notifications/cancelled', asyn
     jsonrpc: '2.0',
     id: 20,
     method: 'tools/call',
-    params: { name: 'aios_shell', arguments: { command: 'sleep 60' } },
+    params: { name: 'aios_shell', arguments: { command: LONG_WAIT } },
   }, { pending });
   // 等待 tools/call 注册进 pending map
   await new Promise((resolve) => setTimeout(resolve, 300));
@@ -190,7 +202,7 @@ test('pending commands are cancelled when stdin closes', async () => {
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', () => {});
-  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 30, method: 'tools/call', params: { name: 'aios_shell', arguments: { command: 'sleep 60' } } }) + '\n');
+  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 30, method: 'tools/call', params: { name: 'aios_shell', arguments: { command: LONG_WAIT } } }) + '\n');
   await new Promise((resolve) => setTimeout(resolve, 300));
   child.stdin.end();
   const exitCode = await new Promise((resolve) => child.on('close', resolve));
@@ -216,7 +228,7 @@ test('long command does not block ping (concurrent main loop)', async () => {
   child.stderr.on('data', () => {});
 
   // 发送长命令（2s），立即发送 ping
-  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 40, method: 'tools/call', params: { name: 'aios_shell', arguments: { command: 'sleep 2' } } }) + '\n');
+  child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 40, method: 'tools/call', params: { name: 'aios_shell', arguments: { command: SHORT_WAIT } } }) + '\n');
   await new Promise((resolve) => setTimeout(resolve, 50));
   const pingSentAt = Date.now();
   child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 41, method: 'ping' }) + '\n');

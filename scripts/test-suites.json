@@ -290,6 +290,7 @@
       "scripts/tests/tooling/shell/data/memory-actions.test.mjs",
       "scripts/tests/tooling/shell/data/mcp-object-table.test.mjs",
       "scripts/tests/tooling/shell/data/sessions.test.mjs",
+      "scripts/tests/tooling/shell/data/skill-management.test.mjs",
       "scripts/tests/tooling/shell/interface/shell-labels.test.mjs",
       "scripts/tests/tooling/shell/desktop/shell-sidecar.test.mjs",
       "scripts/tests/tooling/shell/interface/shell-tokens.test.mjs",

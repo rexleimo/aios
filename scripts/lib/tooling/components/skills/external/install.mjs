@@ -37,7 +37,7 @@ function directoryDiffers(sourceDir, targetPath) {
 }
 
 // 第一步：把来源技能暂存进 canonical 注册处；注册处是所有客户端副本的同一来源。
-function stageIntoRegistry({ skill, registryRoot, originalSource, force }) {
+function stageIntoRegistry({ skill, registryRoot, originalSource, force, dryRun }) {
   const registryPath = path.join(registryRoot, skill.name);
   const managed = isManagedRegistryInstall(registryPath, skill.name);
   const exists = fs.existsSync(registryPath);
@@ -50,13 +50,14 @@ function stageIntoRegistry({ skill, registryRoot, originalSource, force }) {
     return { status: 'reused', registryPath };
   }
 
+  if (dryRun) return { status: exists && managed ? 'replaced' : 'installed', registryPath };
   copyDirRecursive(skill.dir, registryPath, { excludeNames: [GENERATED_SKILL_META_FILE, INSTALLED_SKILL_META_FILE] });
   writeInstalledSkillMetadata(registryPath, buildRegistryInstallMetadata({ skillName: skill.name, source: originalSource }));
   return { status: exists && managed ? 'replaced' : 'installed', registryPath };
 }
 
 // 第二步：从注册处分发到单个客户端的用户级技能根（homes[client]/skills）。
-function distributeToClient({ skill, registryPath, clientName, clientRoot, force }) {
+function distributeToClient({ skill, registryPath, clientName, clientRoot, force, dryRun }) {
   const targetPath = path.join(clientRoot, skill.name);
   // 防自毁：目标就是来源目录本身（首次收编时常见）时绝不 rm/cp；copyDirRecursive 会先删目标。
   if (path.resolve(targetPath) === path.resolve(skill.dir)) {
@@ -80,6 +81,7 @@ function distributeToClient({ skill, registryPath, clientName, clientRoot, force
     return 'reused';
   }
 
+  if (dryRun) return exists ? 'replaced' : 'installed';
   copyDirRecursive(registryPath, targetPath, { excludeNames: [GENERATED_SKILL_META_FILE, INSTALLED_SKILL_META_FILE] });
   writeInstalledSkillMetadata(targetPath, expectedMetadata);
   // 目录已存在（无论是被接管的 unmanaged 还是内容过期的 managed）都算 replaced。
@@ -97,6 +99,7 @@ export async function installExternalSkills({
   selectedSkills = [],
   force = false,
   yes = false,
+  dryRun = false,
   json = false,
   homeMap = {},
   env = process.env,
@@ -164,7 +167,7 @@ export async function installExternalSkills({
     const results = [];
 
     for (const skill of selected) {
-      const stage = stageIntoRegistry({ skill, registryRoot, originalSource: resolved.originalSource, force });
+      const stage = stageIntoRegistry({ skill, registryRoot, originalSource: resolved.originalSource, force, dryRun });
       if (stage.status === 'skipped') {
         log(`[skip] registry entry exists but is unmanaged: ${skill.name} (${stage.registryPath}); pass --force to replace`);
         totals.skipped += 1;
@@ -177,7 +180,7 @@ export async function installExternalSkills({
       const perClient = {};
       for (const clientName of clients) {
         const clientRoot = path.join(homes[clientName], 'skills');
-        const status = distributeToClient({ skill, registryPath: stage.registryPath, clientName, clientRoot, force });
+        const status = distributeToClient({ skill, registryPath: dryRun ? skill.dir : stage.registryPath, clientName, clientRoot, force, dryRun });
         if (status === 'source') {
           perClient[clientName] = status;
           log(`[skip] ${clientName} target is the source directory itself; keeping the original untouched: ${skill.name}`);
@@ -196,7 +199,7 @@ export async function installExternalSkills({
 
     log(formatSummary({ clientName: clients.join(','), counts: totals }));
     if (json) {
-      write(`${JSON.stringify({ ok: true, registryRoot, ...totals, skills: results, log: jsonLogBuffer }, null, 2)}\n`);
+      write(`${JSON.stringify({ ok: true, dryRun, registryRoot, ...totals, skills: results, log: jsonLogBuffer }, null, 2)}\n`);
     }
     return { exitCode: 0, registryRoot, ...totals, skills: results };
   } finally {
