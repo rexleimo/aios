@@ -115,5 +115,10 @@ test('the real repo root resolves to the directory holding apps/shell/ui', () =>
 	const root = resolveRepoRoot();
 	const probe = missingUiDependencies({ rootDir: root, existsImpl: () => true });
 	assert.match(probe.uiDir.replace(/\\/g, '/'), /apps\/shell\/ui$/u);
-	assert.equal(path.basename(root), 'harness-cli');
+	/* 中文注释：断言的对象是「root 就是装着 apps/shell/ui 的那个目录」，不是「工作区目录叫 harness-cli」。
+	   后者只在作者本机的检出名下成立：GitHub Actions 把仓库检出到 .../aios/aios，basename 是 'aios'，
+	   于是这条断言让 ci-main 的 scripts-tests 从 2026-11-05 起一直是红的（本地永远绿）。
+	   结构性关系 + 真实文件存在，才是「解析对了」的事实依据。 */
+	assert.equal(path.resolve(probe.uiDir), path.join(path.resolve(root), 'apps', 'shell', 'ui'));
+	assert.equal(existsSync(path.join(root, 'apps', 'shell', 'ui', 'package.json')), true);
 });
