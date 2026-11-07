@@ -16,12 +16,19 @@ const OPENCODE_CRG_PLUGIN_BODY = `import type { Plugin } from "@opencode-ai/plug
 const UPDATE_DELAY_MS = 3_000
 const COMMAND_TIMEOUT_MS = 30_000
 
+/* 中文注释：windowsHide 在这个模板里不是可选项。插件运行在客户端自己的 Bun 宿主里
+ * （opencode serve / 桌面壳），Windows 上这个宿主通常没有控制台；Bun.spawn 不传
+ * windowsHide 时，系统会为 uvx.exe 这类控制台子程序**新建一个可见控制台窗口**，
+ * 命令结束即销毁 —— 用户看到的就是「编辑文件后一直闪黑窗」。实测（本机 2026-11-07，
+ * 无控制台父进程 + detached 启动）：不带 windowsHide 1.5s 内出现可见 CASCADIA 控制台
+ * 窗口并归属到 uvx.exe；带上该标志后为 0。 */
 async function runCrg(cwd: string, args: string[]): Promise<string> {
   const proc = Bun.spawn(["uvx", "code-review-graph", ...args], {
     cwd,
     stdin: "ignore",
     stdout: "pipe",
     stderr: "ignore",
+    windowsHide: true,
   })
   const timer = setTimeout(() => {
     try {

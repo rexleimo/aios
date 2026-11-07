@@ -18,6 +18,12 @@ const SKIP_DIRS = new Set(['node_modules', 'dist', '.next', 'tests', '__tests__'
 const SKIP_FILE = /\.(test|spec)\.(mjs|js|ts|cjs)$/;
 const SOURCE_FILE = /\.(mjs|js|ts|cjs)$/;
 const CALL_RE = /(?<![.\w])(spawn|spawnSync|exec|execSync|execFile|execFileSync|fork)(Impl)?\s*\(/;
+/* 中文注释：还有一类启动点不走 child_process，而是写在**发给客户端运行的代码模板**里
+   （opencode 插件模板用 Bun.spawn）。7.1.1 只把 node 的 child_process 扫干净了，
+   Windows 上「无控制台父进程 + 未隐藏窗口 = 弹可见黑窗」这条机制对 Bun 一样成立，
+   实测归因：15:23:33 可见控制台窗口的 owner 就是 opencode.exe 的 uvx.exe 子进程。
+   所以 Bun 的启动点也进这条门禁，模板字符串也照扫。 */
+const BUN_CALL_RE = /\bBun\.spawn(Sync)?\s*\(/;
 const COMMENT_RE = /^\s*(\/\/|\*|\/\*)/;
 
 /* 中文注释：14 行窗口覆盖「一行调用 + 多行 options 字面量」；更远的对象不属于这次启动。 */
@@ -66,13 +72,16 @@ function relativeKey(file) {
 
 function scanFile(file) {
   const source = fs.readFileSync(file, 'utf8');
-  if (!source.includes('child_process') && !source.includes('getCommandSpawnSpec')) return { sites: 0, violations: [] };
+  const nodeSurface = source.includes('child_process') || source.includes('getCommandSpawnSpec');
+  const bunSurface = source.includes('Bun.spawn');
+  if (!nodeSurface && !bunSurface) return { sites: 0, violations: [] };
   const lines = source.split(/\r?\n/u);
   const violations = [];
   let sites = 0;
   for (let i = 0; i < lines.length; i += 1) {
     const line = lines[i];
-    if (!CALL_RE.test(line)) continue;
+    const isBunSite = bunSurface && BUN_CALL_RE.test(line);
+    if (!isBunSite && !(nodeSurface && CALL_RE.test(line))) continue;
     if (line.includes('child_process')) continue;
     if (COMMENT_RE.test(line)) continue;
     sites += 1;
@@ -118,6 +127,17 @@ test('the process owner itself is covered by the gate (positive control)', () =>
   const owner = 'scripts/lib/foundation/platform/process/spawn.mjs';
   assert.ok((report.perFile.get(owner) ?? 0) >= 3, `${owner} should expose at least three judged launch sites`);
   assert.equal(report.violations.some((line) => line.startsWith(owner)), false);
+});
+
+test('client-facing plugin templates are inside the scan, not beside it (positive control)', () => {
+  /* 中文注释：这条控制存在的意义：Bun 那条规则如果因为正则改动变成「永远扫不到」，
+     门禁会绿得没有意义。这里钉住「模板里确实有一个被判定过的启动点」。 */
+  const template = 'scripts/lib/tooling/components/codemap/targets/opencode-plugin.mjs';
+  assert.ok(
+    (report.perFile.get(template) ?? 0) >= 1,
+    `${template} emits a Bun.spawn launch site; the gate must judge it, not skip it because the file has no child_process import`,
+  );
+  assert.equal(report.violations.some((line) => line.startsWith(template)), false);
 });
 
 test('every shipped scan root contributes judged launch sites', () => {
