@@ -57,7 +57,7 @@ function parseArgs(argv) {
 }
 
 function git(args) {
-  const result = spawnSync('git', args, { cwd: ROOT, encoding: 'utf8' });
+  const result = spawnSync('git', args, { windowsHide: true, cwd: ROOT, encoding: 'utf8' });
   if (result.status !== 0) throw new Error(`git ${args.join(' ')} 失败：${result.stderr.trim()}`);
   return result.stdout.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
 }
@@ -128,7 +128,7 @@ function main() {
   const result = spawnSync(
     process.execPath,
     ['--test', `--test-concurrency=${concurrency}`, ...targetFiles],
-    { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'], env: sandbox.env }
+    { cwd: ROOT, stdio: ['ignore', 'inherit', 'inherit'], env: sandbox.env, windowsHide: true }
   );
   const cleanup = disposeTempSandbox(sandbox.dir);
   if (sandbox.disabled) {

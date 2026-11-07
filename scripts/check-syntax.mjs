@@ -53,7 +53,7 @@ async function collectMjs(dir, out) {
 
 function checkFile(file) {
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, ['--check', file], { stdio: ['ignore', 'ignore', 'pipe'] });
+    const child = spawn(process.execPath, ['--check', file], { windowsHide: true, stdio: ['ignore', 'ignore', 'pipe'] });
     let stderr = '';
     child.stderr.on('data', (chunk) => { stderr += chunk; });
     child.on('error', (error) => resolve({ file, ok: false, message: error.message }));

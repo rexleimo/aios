@@ -68,6 +68,7 @@ export async function fileExists(filePath) {
 export function readGitCommitAgeMinutes(workspaceRoot, nowMs) {
   try {
     const raw = execFileSync('git', ['log', '-1', '--format=%ct'], {
+      windowsHide: true,
       cwd: workspaceRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],

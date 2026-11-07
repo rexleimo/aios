@@ -288,7 +288,10 @@ export async function main(argv = process.argv.slice(2)) {
       const run = (cmd, args) => new Promise((resolveRun, rejectRun) => {
         // Windows npm shims (pi.cmd/pi.ps1) only resolve through a shell;
         // args are AIOS-controlled constants, never user input.
-        const options = process.platform === 'win32' ? { timeout: 120000, shell: true } : { timeout: 120000 };
+        // windowsHide: 本脚本可能在无控制台的宿主里跑（GUI 客户端 / 桌面壳），不隐藏就会弹黑窗。
+        const options = process.platform === 'win32'
+          ? { timeout: 120000, shell: true, windowsHide: true }
+          : { timeout: 120000, windowsHide: true };
         execFile(cmd, args, options, (error, stdout, stderr) => {
           if (error) {
             rejectRun(new Error(`pi ${args.join(' ')} failed: ${String(stderr || error.message).trim()}`));

@@ -5,6 +5,7 @@ import { spawnSync } from 'node:child_process';
 
 function runGit(rootDir, args) {
   const result = spawnSync('git', args, {
+    windowsHide: true,
     cwd: rootDir,
     encoding: 'utf8',
   });

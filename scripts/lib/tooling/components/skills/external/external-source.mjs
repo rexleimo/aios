@@ -72,6 +72,7 @@ function cloneGitSource(source, { env }) {
     ? source
     : `https://github.com/${source}.git`;
   execFileSync('git', ['clone', '--depth', '1', url, targetDir], {
+    windowsHide: true,
     stdio: 'pipe',
     env: { ...env, GIT_TERMINAL_PROMPT: '0' },
   });

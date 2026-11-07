@@ -56,6 +56,7 @@ function runInteractiveTui({ rootDir, projectRoot, stderr = process.stderr }) {
   process.env.AIOS_PROJECT_ROOT = projectRoot;
 
   const result = spawnSync(process.execPath, [tsxCliPath, cliPath], {
+    windowsHide: true,
     stdio: 'inherit',
     env: process.env,
   });

@@ -28,6 +28,7 @@ function coercePositiveInt(value, fallback) {
 function runCommand(command, args, { cwd }) {
   const startedAt = performance.now();
   const result = spawnSync(command, args, {
+    windowsHide: true,
     cwd,
     encoding: 'utf8',
     env: process.env,

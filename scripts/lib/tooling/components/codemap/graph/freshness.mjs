@@ -20,6 +20,7 @@ export function resolveGraphDbPath(projectRoot) {
 export function readHeadCommitTime(projectRoot, { execFileSyncImpl = execFileSync } = {}) {
   try {
     const out = execFileSyncImpl('git', ['log', '-1', '--format=%ct'], {
+      windowsHide: true,
       cwd: projectRoot,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],

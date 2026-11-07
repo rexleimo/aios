@@ -40,6 +40,7 @@ function configPath(root: string): string {
 /** 轴词表只有一个所有者；这里通过进程入口读它，不复制一份。 */
 function axisVocabulary(root: string): string[] {
   const result = spawnSync(process.execPath, [path.join(root, 'apps', 'shell', 'data', 'axes.mjs')], {
+    windowsHide: true,
     cwd: root,
     encoding: 'utf8',
     timeout: 30_000,
@@ -167,6 +168,7 @@ export async function PUT(request: NextRequest): Promise<Response> {
   // Verify with the same reader the rest of the toolchain uses. `aios status` exits 1 when
   // its verdict is blocked, so the payload decides, not the exit code.
   const check = spawnSync(process.execPath, [path.join(root, 'scripts', 'aios.mjs'), 'status', '--json'], {
+    windowsHide: true,
     cwd: root,
     encoding: 'utf8',
     timeout: 120_000,

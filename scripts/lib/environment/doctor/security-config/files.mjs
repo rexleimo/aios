@@ -5,6 +5,7 @@ import path from 'node:path';
 export function detectGitRoot(cwd) {
   try {
     const txt = execFileSync('git', ['-C', cwd, 'rev-parse', '--show-toplevel'], {
+      windowsHide: true,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
     });

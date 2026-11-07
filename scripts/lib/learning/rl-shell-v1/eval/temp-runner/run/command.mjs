@@ -32,6 +32,7 @@ export function checkForbiddenCommand(command, policy) {
 
 export function runCommand({ cwd, command, policy }) {
   const result = spawnSync(command, {
+    windowsHide: true,
     cwd,
     shell: true,
     encoding: 'utf8',

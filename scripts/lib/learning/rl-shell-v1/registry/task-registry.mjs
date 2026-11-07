@@ -43,6 +43,7 @@ async function runVerificationCommand({ cwd, command }) {
   const env = { ...process.env };
   delete env.NODE_TEST_CONTEXT;
   const result = spawnSync(command, {
+    windowsHide: true,
     cwd,
     shell: true,
     encoding: 'utf8',

@@ -19,6 +19,7 @@ function getCommandFailureDetail(result) {
 export function runContextDbCli(args = [], { cwd = REPO_ROOT, env = process.env, spawnSyncImpl = spawnSync } = {}) {
   const commandArgs = [TSX_CLI, CONTEXTDB_CLI, ...args];
   const runCli = () => spawnSyncImpl(process.execPath, commandArgs, {
+    windowsHide: true,
     cwd,
     env,
     encoding: 'utf8',

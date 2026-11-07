@@ -45,6 +45,7 @@ export function createStatusCollector({ rootDir, spawnImpl = spawnSync, timeoutM
   const command = `node scripts/aios.mjs status --json`;
   return () => {
     const result = spawnImpl(process.execPath, [script, 'status', '--json'], {
+      windowsHide: true,
       cwd: rootDir,
       encoding: 'utf8',
       timeout: timeoutMs,

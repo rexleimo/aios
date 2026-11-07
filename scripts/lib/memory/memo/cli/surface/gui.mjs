@@ -78,6 +78,7 @@ export function runMemoGuiServer(plan) {
     const tsxCli = path.join(plan.aiosRootDir, 'mcp-server', 'node_modules', 'tsx', 'dist', 'cli.mjs');
     const contextDbCli = path.join(plan.aiosRootDir, 'mcp-server', 'src', 'contextdb', 'shell', 'cli.ts');
     child = spawn(process.execPath, [tsxCli, contextDbCli, ...plan.contextDbArgs], {
+      windowsHide: true,
       cwd: plan.workspaceRoot,
       env: {
         ...process.env,

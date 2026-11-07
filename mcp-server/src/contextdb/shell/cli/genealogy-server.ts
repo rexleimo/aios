@@ -30,7 +30,7 @@ function openBrowserUrl(url: string): void {
   const command = platform === 'darwin' ? 'open' : platform === 'win32' ? 'cmd' : 'xdg-open';
   const args = platform === 'win32' ? ['/c', 'start', '', url] : [url];
   try {
-    const child = spawn(command, args, { stdio: 'ignore', detached: true });
+    const child = spawn(command, args, { windowsHide: true, stdio: 'ignore', detached: true });
     child.unref();
   } catch {
     // 打开浏览器只是辅助动作；服务地址仍会打印出来。

@@ -7,6 +7,7 @@ import { normalizeText } from '../../../../../src/shared/normalize.mjs';
 
 function runGit(rootDir, args) {
   const result = spawnSync('git', args, {
+    windowsHide: true,
     cwd: rootDir,
     encoding: 'utf8',
   });

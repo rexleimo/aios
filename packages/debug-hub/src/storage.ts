@@ -566,7 +566,7 @@ export class Storage {
       try {
         const out = execSync(
           `grep -rl '${marker}' '${workspace}' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.jsx' --include='*.py' --include='*.go' --include='*.rs' 2>/dev/null || true`,
-          { encoding: 'utf-8', timeout: 10000 },
+          { encoding: 'utf-8', timeout: 10000, windowsHide: true },
         ).trim();
         filePaths = out ? out.split('\n') : [];
       } catch {

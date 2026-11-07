@@ -36,6 +36,7 @@ function run(args: string[], root: string): Promise<{ ok: boolean; out: string; 
   return new Promise((resolve) => {
     const cli = path.join(root, 'scripts', 'aios.mjs');
     const child = spawn(process.execPath, [cli, ...args], {
+      windowsHide: true,
       cwd: root,
       env: { ...process.env, AIOS_PROJECT_ROOT: root },
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -86,6 +87,7 @@ export async function POST(request: NextRequest): Promise<Response> {
   const [cli, ...args] = argv;
   const result = await new Promise<{ ok: boolean; out: string; error: string }>((resolve) => {
     const child = spawn(process.execPath, [cli, ...args], {
+      windowsHide: true,
       cwd: root,
       env: { ...process.env, AIOS_PROJECT_ROOT: root },
       stdio: ['ignore', 'pipe', 'pipe'],

@@ -94,6 +94,7 @@ export function reexecUpdateAfterRuntimeReplace({
   io.log('[info] runtime files replaced; continuing update in a fresh process to reload modules');
   io.log(`[info] ${execPath} ${entry} ${args.join(' ')}`);
   const result = spawnImpl(execPath, [entry, ...args], {
+    windowsHide: true,
     cwd: process.cwd(),
     env: process.env,
     encoding: 'utf8',

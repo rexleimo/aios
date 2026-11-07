@@ -42,6 +42,7 @@ function hasTargetFileChanges(rootDir, targets = []) {
   if (files.length === 0) return true;
   try {
     const changed = execFileSync('git', ['-C', rootDir, 'diff', '--name-only'], {
+      windowsHide: true,
       encoding: 'utf8',
       timeout: 5000,
     });

@@ -35,6 +35,7 @@ const UI_FRAMEWORKS = Object.freeze({
 function runGit(args, cwd) {
   try {
     const stdout = execFileSync('git', args, {
+      windowsHide: true,
       cwd,
       encoding: 'utf8',
       maxBuffer: 64 * 1024 * 1024,

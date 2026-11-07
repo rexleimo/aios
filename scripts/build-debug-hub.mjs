@@ -20,6 +20,7 @@ try {
 
 rmSync(distDir, { recursive: true, force: true });
 const result = spawnSync(process.execPath, [tscPath, '--project', join(packageDir, 'tsconfig.json')], {
+  windowsHide: true,
   cwd: packageDir,
   stdio: 'inherit',
 });

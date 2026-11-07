@@ -35,7 +35,7 @@ export function extractCitations(text) {
 }
 
 export function listTrackedFiles(rootDir) {
-  const stdout = execFileSync('git', ['ls-files'], { cwd: rootDir, encoding: 'utf8' });
+  const stdout = execFileSync('git', ['ls-files'], { windowsHide: true, cwd: rootDir, encoding: 'utf8' });
   return stdout.split('\n').map((line) => line.trim()).filter(Boolean);
 }
 
@@ -162,6 +162,7 @@ function parseArgs(argv) {
  */
 export function collectChangedDocFiles(rootDir) {
   const stdout = execFileSync('git', ['status', '--short', '--', 'docs/plans', 'docs/reports'], {
+    windowsHide: true,
     cwd: rootDir, encoding: 'utf8',
   });
   const out = [];

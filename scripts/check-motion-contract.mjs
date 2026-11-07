@@ -98,6 +98,7 @@ function runGit(args, cwd) {
     return {
       ok: true,
       stdout: execFileSync('git', args, {
+        windowsHide: true,
         cwd, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'],
       }),
     };

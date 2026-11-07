@@ -127,6 +127,7 @@ async function findTrainingEvidence(rootDir, skillId, sourcePath, currentSkillHa
 
 function runGit(rootDir, args) {
   const result = spawnSync('git', args, {
+    windowsHide: true,
     cwd: rootDir,
     encoding: 'utf8',
   });

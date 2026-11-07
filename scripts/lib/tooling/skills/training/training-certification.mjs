@@ -38,7 +38,7 @@ function isSafeRelativePath(value) {
 }
 
 function readGit(rootDir, args) {
-  const result = spawnSync('git', args, { cwd: rootDir, encoding: 'utf8' });
+  const result = spawnSync('git', args, { windowsHide: true, cwd: rootDir, encoding: 'utf8' });
   return result.status === 0 ? result.stdout : null;
 }
 

@@ -31,6 +31,7 @@ const startedAt = performance.now();
 // 中文注释：本轮运行的临时沙箱由 runner 创建并在退出时删除；测试文件无需自觉回收。
 const sandbox = createTempSandbox();
 const child = spawn(process.execPath, ['--test', `--test-concurrency=${suite.concurrency}`, ...files], {
+  windowsHide: true,
   stdio: 'inherit',
   env: sandbox.env,
 });

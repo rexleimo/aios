@@ -183,6 +183,7 @@ export function runUi({
   }
 
   const child = spawnImpl(plan.command, plan.args, {
+    windowsHide: true,
     cwd: uiDir,
     stdio: 'inherit',
     env: token ? childEnvironment({ port: plan.port, token }) : process.env,

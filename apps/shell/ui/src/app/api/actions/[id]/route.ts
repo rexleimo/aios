@@ -114,6 +114,7 @@ export async function POST(
       );
 
       const child = spawn(process.execPath, [cliPath, ...cliArgs], {
+        windowsHide: true,
         cwd: root,
         env: { ...process.env, AIOS_PROJECT_ROOT: root },
         stdio: ['ignore', 'pipe', 'pipe'],

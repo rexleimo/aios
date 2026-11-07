@@ -21,6 +21,7 @@ async function pathExists(filePath) {
 function runCommand(command, args, { cwd, env = process.env, io = console } = {}) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
+      windowsHide: true,
       cwd,
       env,
       stdio: ['ignore', 'pipe', 'pipe'],

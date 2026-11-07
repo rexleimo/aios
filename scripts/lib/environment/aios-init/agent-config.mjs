@@ -77,7 +77,7 @@ export const MARKERS = [MARKER, LEGACY_MARKER];
 
 export function which(cmd) {
   try {
-    return execSync(`which ${cmd}`, { stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' }).trim();
+    return execSync(`which ${cmd}`, { windowsHide: true, stdio: ['ignore', 'pipe', 'ignore'], encoding: 'utf8' }).trim();
   } catch {
     return '';
   }

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'node:url';
 
 const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const result = spawnSync(process.execPath, [path.join(SCRIPT_DIR, 'design.mjs'), 'check', ...process.argv.slice(2)], {
+  windowsHide: true,
   stdio: 'inherit',
 });
 process.exit(result.status ?? 1);

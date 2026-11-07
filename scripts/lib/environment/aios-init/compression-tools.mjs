@@ -31,6 +31,7 @@ const CAVEMAN_INSTALL_SH_URL = 'https://raw.githubusercontent.com/JuliusBrussee/
 function isToolInstalled(toolName) {
   try {
     const result = spawnSync(toolName, ['--version'], {
+      windowsHide: true,
       stdio: 'pipe',
       shell: process.platform === 'win32',
       timeout: 5000,
@@ -55,6 +56,7 @@ function isWSL() {
 function hasCommand(cmd) {
   try {
     const result = spawnSync(cmd, ['--version'], {
+      windowsHide: true,
       stdio: 'pipe',
       shell: process.platform === 'win32',
       timeout: 5000,
@@ -107,6 +109,7 @@ function promptUser(question) {
 function runCommand(cmd, { timeout = 120000, shell } = {}) {
   try {
     execSync(cmd, {
+      windowsHide: true,
       stdio: 'inherit',
       timeout,
       shell: shell || (process.platform === 'win32' ? 'powershell.exe' : '/bin/bash'),
@@ -230,6 +233,7 @@ function verifyRTK() {
   // 刷新检测，考虑刚加入 PATH 的情况
   if (isToolInstalled('rtk')) {
     const version = spawnSync('rtk', ['--version'], {
+      windowsHide: true,
       stdio: 'pipe', shell: process.platform === 'win32', timeout: 5000,
     });
     const ver = version.stdout?.toString().trim() || 'unknown';

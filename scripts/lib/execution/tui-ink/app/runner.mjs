@@ -17,6 +17,7 @@ if (!existsSync(tsxCliPath)) {
 
 // Spawn tsx to run the TUI
 const child = spawn(process.execPath, [tsxCliPath, tuiPath, ...process.argv.slice(2)], {
+  windowsHide: true,
   stdio: 'inherit',
   env: {
     ...process.env,

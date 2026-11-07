@@ -176,13 +176,13 @@ function findSecretFiles(dirPath) {
 function runGit(dirPath) {
   if (!fs.existsSync(path.join(dirPath, '.git'))) return 'none';
   try {
-    if (execFileSync('git', ['-C', dirPath, 'stash', 'list'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()) {
+    if (execFileSync('git', ['-C', dirPath, 'stash', 'list'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()) {
       return 'stashed';
     }
-    if (execFileSync('git', ['-C', dirPath, 'status', '--porcelain'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()) {
+    if (execFileSync('git', ['-C', dirPath, 'status', '--porcelain'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim()) {
       return 'dirty';
     }
-    const ahead = execFileSync('git', ['-C', dirPath, 'rev-list', '--count', '@{u}..HEAD'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+    const ahead = execFileSync('git', ['-C', dirPath, 'rev-list', '--count', '@{u}..HEAD'], { windowsHide: true, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
     if (Number(ahead) > 0) return 'unpushed';
     return 'clean';
   } catch {

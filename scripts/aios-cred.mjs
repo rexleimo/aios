@@ -22,6 +22,7 @@ function python(expr, stdinObj = null) {
   if (stdinObj !== null && stdinObj.password) {
     const fallback = resolvePython();
     const result = spawnSync(fallback, ['-c', expr], {
+      windowsHide: true,
       encoding: 'utf-8',
       input: JSON.stringify(stdinObj),
     });
@@ -32,7 +33,7 @@ function python(expr, stdinObj = null) {
 
   // Prefer uv run for cross-platform compatibility; fall back to platform python.
   let pythonCmd = null;
-  const uvCheck = spawnSync(process.platform === 'win32' ? 'where' : 'command', ['-v', 'uv'], { stdio: 'ignore' });
+  const uvCheck = spawnSync(process.platform === 'win32' ? 'where' : 'command', ['-v', 'uv'], { windowsHide: true, stdio: 'ignore' });
   if (uvCheck.status === 0) {
     pythonCmd = 'uv';
   } else {
@@ -42,7 +43,7 @@ function python(expr, stdinObj = null) {
   const args = pythonCmd === 'uv'
     ? ['run', 'python', '-c', expr]
     : ['-c', expr];
-  const opts = { encoding: 'utf-8' };
+  const opts = { encoding: 'utf-8', windowsHide: true };
   if (stdinObj !== null) {
     opts.input = JSON.stringify(stdinObj);
   }

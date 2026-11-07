@@ -109,7 +109,7 @@ async function waitFor(predicate, { timeoutMs, intervalMs = 250 }) {
 export function stopServer(child) {
   if (!child?.pid) return;
   if (process.platform === 'win32') {
-    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    spawnSync('taskkill', ['/PID', String(child.pid), '/T', '/F'], { windowsHide: true, stdio: 'ignore' });
     return;
   }
   try {
@@ -150,6 +150,7 @@ export async function runApp({
     const plan = serverCommand({ rootDir, port: resolvedPort, execPath });
     log.write(`[app] starting the capability process on ${UI_BIND_HOST}:${resolvedPort} (first start compiles the page)\n`);
     server = spawnImpl(plan.command, plan.args, {
+      windowsHide: true,
       cwd: rootDir,
       // A group of its own so the whole server tree can be stopped with us.
       detached: process.platform !== 'win32',
@@ -180,7 +181,7 @@ export async function runApp({
     }
   }
 
-  const shell = spawnSyncImpl(binary.path, [], { cwd: rootDir, stdio: 'inherit' });
+  const shell = spawnSyncImpl(binary.path, [], { windowsHide: true, cwd: rootDir, stdio: 'inherit' });
   if (server) stopImpl(server);
   const exitCode = shell?.status ?? 1;
   if (shell?.error) {
