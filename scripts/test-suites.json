@@ -269,6 +269,7 @@
       "scripts/tests/foundation/release/motion-material-discoverability.test.mjs",
       "scripts/tests/foundation/release/release-contents.test.mjs",
       "scripts/tests/foundation/platform/process-identity.test.mjs",
+      "scripts/tests/foundation/platform/process-spawn-hide.test.mjs",
       "scripts/tests/tooling/tools/doc-citations.test.mjs",
       "scripts/tests/tooling/tools/doctor-bootstrap-task.test.mjs",
       "scripts/tests/tooling/tools/llms-txt.test.mjs",

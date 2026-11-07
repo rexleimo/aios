@@ -33,30 +33,36 @@ export function getCommandSpawnSpec(command, args = [], options = {}) {
   };
 }
 
-/* 中文注释：commandExists 复用 Windows direct-cli 判断，避免 npm/codex 这类 shim 被误判不存在。 */
+/* 中文注释：commandExists 复用 Windows direct-cli 判断，避免 npm/codex 这类 shim 被误判不存在。
+   windowsHide 是本层的硬保证（和 spawnCommand 一致，写在展开之后，调用方无法覆盖）：
+   父进程无控制台时（GUI 客户端 / 桌面壳 / detached 钩子），缺它就会给探针弹一个黑窗。 */
 export function commandExists(name, options = {}) {
-  const { platform, execPath, spawnOptions } = splitExecutionOptions(options);
+  const { spawnSyncImpl = spawnSync, ...rest } = options;
+  const { platform, execPath, spawnOptions } = splitExecutionOptions(rest);
   if (getWindowsDirectCli(name, { platform, execPath, env: spawnOptions.env })) {
     return true;
   }
 
   const probe = platform === 'win32' ? 'where' : 'which';
-  const result = spawnSync(probe, [name], {
+  const result = spawnSyncImpl(probe, [name], {
     stdio: 'ignore',
     env: spawnOptions.env,
+    windowsHide: true,
   });
   return result.status === 0;
 }
 
 /* 中文注释：同步捕获命令用于轻量探测；输出返回调用方，不直接写终端。 */
 export function captureCommand(command, args = [], options = {}) {
-  const { spawnOptions } = splitExecutionOptions(options);
-  const spec = getCommandSpawnSpec(command, args, options);
-  const result = spawnSync(spec.command, spec.args, {
+  const { spawnSyncImpl = spawnSync, ...rest } = options;
+  const { spawnOptions } = splitExecutionOptions(rest);
+  const spec = getCommandSpawnSpec(command, args, rest);
+  const result = spawnSyncImpl(spec.command, spec.args, {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     ...spawnOptions,
     shell: spec.shell ?? spawnOptions.shell ?? false,
+    windowsHide: true,
   });
 
   return {
@@ -199,7 +205,8 @@ async function terminateChildTree(child, {
 /* 中文注释：spawnCommand / spawnCommandWithInput 共享同一套捕获与结算逻辑；
    超时或取消时执行三段式进程树清理，close 不触发也能结算。 */
 function spawnCaptured(command, args, options = {}, { provideStdin = false, input = '' } = {}) {
-  const { timeoutMs, signal, ...rest } = options || {};
+  /* 中文注释：spawnImpl 仅作测试注入，不泄漏进 spawn options（否则会变成子进程的非法选项）。 */
+  const { timeoutMs, signal, spawnImpl = spawn, ...rest } = options || {};
   const { spawnOptions } = splitExecutionOptions(rest);
   const spec = getCommandSpawnSpec(command, args, rest);
   /* 中文注释：POSIX 下让子进程成为新进程组组长，超时/取消时可用组信号覆盖孙子进程。 */
@@ -207,7 +214,7 @@ function spawnCaptured(command, args, options = {}, { provideStdin = false, inpu
   const ownsGroup = process.platform !== 'win32' && detached === true;
 
   return new Promise((resolve) => {
-    const child = spawn(spec.command, spec.args, {
+    const child = spawnImpl(spec.command, spec.args, {
       stdio: provideStdin ? ['pipe', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe'],
       ...spawnOptions,
       detached,
@@ -365,12 +372,16 @@ export function spawnCommandWithInput(command, args = [], options = {}) {
 
 /* 中文注释：runCommand 用于确实需要继承 stdio 的命令；它不参与 interception 捕获链路。 */
 export function runCommand(command, args = [], options = {}) {
-  const { spawnOptions } = splitExecutionOptions(options);
-  const spec = getCommandSpawnSpec(command, args, options);
-  const result = spawnSync(spec.command, spec.args, {
+  const { spawnSyncImpl = spawnSync, ...rest } = options;
+  const { spawnOptions } = splitExecutionOptions(rest);
+  const spec = getCommandSpawnSpec(command, args, rest);
+  /* 中文注释：stdio inherit 的调用同样要 windowsHide——继承的是一份「无窗口控制台」，
+     不是「新建窗口」；shell-mcp-server 早已这样用，这里补齐同一语义。 */
+  const result = spawnSyncImpl(spec.command, spec.args, {
     stdio: 'inherit',
     ...spawnOptions,
     shell: spec.shell ?? spawnOptions.shell ?? false,
+    windowsHide: true,
   });
 
   if (result.error) {

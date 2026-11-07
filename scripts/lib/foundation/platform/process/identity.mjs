@@ -112,6 +112,8 @@ function syncCapture(command, args, { timeoutMs = DEFAULT_PROBE_TIMEOUT_MS, spaw
     stdio: ['ignore', 'pipe', 'pipe'],
     timeout: timeoutMs,
     shell: spec.shell ?? false,
+    /* 中文注释：watchdog 在无控制台的宿主里采样，探测子进程同样不得新建可见窗口。 */
+    windowsHide: true,
   });
   return {
     status: result?.status ?? 1,
