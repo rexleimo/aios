@@ -77,18 +77,19 @@ jobs:
           npm run test:scripts 2>&1 | tee release-tests.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' release-tests.log | head -20 || true)"
+            # 标注是唯一的公开通道（日志要管理员权限）。必须先转义 runner 的命令字符：
+            # 消息里一个未转义的 '%' 会让 runner 丢掉整条标注，失败于是只剩一句 exit code 1。
+            emit_annotation() { # level title message
+              local escaped
+              escaped="$(printf '%s' "$3" | sed 's/%/%25/g' | tr '\r' ' ' | paste -sd'|' -)"
+              printf '::%s title=%s::%s\n' "$1" "$2" "${escaped:0:3500}"
+            }
+            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' release-tests.log | head -10 || true)"
             if [ -n "$matched" ]; then
-              while IFS= read -r line; do
-                echo "::error title=release-tests::${line}"
-              done <<<"$matched"
+              while IFS= read -r line; do emit_annotation error release-tests "$line"; done <<<"$matched"
             else
-              # 中文注释：输出一条都没匹配上时，正好落进这个机制本来要解决的盲区——
-              # 日志要管理员权限，外部只能看到 "exit code 1"。此时把日志尾部当公开标注发出去。
-              echo "::error title=release-tests::no failure line matched the pattern; quoting the last 40 log lines as warnings"
-              tail -40 release-tests.log | while IFS= read -r line; do
-                echo "::warning title=release-tests tail::${line}"
-              done
+              emit_annotation error release-tests "no failure line matched the pattern; quoting the last 20 log lines below"
+              emit_annotation error "release-tests tail" "$(tail -20 release-tests.log)"
             fi
           fi
           exit "$status"

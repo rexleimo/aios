@@ -86,18 +86,19 @@ jobs:
             # an agent without repository admin) gets 403 on both the log and the
             # summary, which is how a red run stayed undiagnosable for a day. The
             # annotation endpoint is public, so the failure text has to go there too.
-            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' scripts-tests.log | head -20 || true)"
+            # 标注是唯一的公开通道（日志要管理员权限）。必须先转义 runner 的命令字符：
+            # 消息里一个未转义的 '%' 会让 runner 丢掉整条标注，失败于是只剩一句 exit code 1。
+            emit_annotation() { # level title message
+              local escaped
+              escaped="$(printf '%s' "$3" | sed 's/%/%25/g' | tr '\r' ' ' | paste -sd'|' -)"
+              printf '::%s title=%s::%s\n' "$1" "$2" "${escaped:0:3500}"
+            }
+            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' scripts-tests.log | head -10 || true)"
             if [ -n "$matched" ]; then
-              while IFS= read -r line; do
-                echo "::error title=scripts-tests::${line}"
-              done <<<"$matched"
+              while IFS= read -r line; do emit_annotation error scripts-tests "$line"; done <<<"$matched"
             else
-              # 中文注释：一条都没匹配上时，公开标注里就只剩 "exit code 1"——
-              # 那正是这条机制存在的理由，所以把日志尾部当 warning 标注发出去。
-              echo "::error title=scripts-tests::no failure line matched the pattern; quoting the last 40 log lines as warnings"
-              tail -40 scripts-tests.log | while IFS= read -r line; do
-                echo "::warning title=scripts-tests tail::${line}"
-              done
+              emit_annotation error scripts-tests "no failure line matched the pattern; quoting the last 20 log lines below"
+              emit_annotation error "scripts-tests tail" "$(tail -20 scripts-tests.log)"
             fi
             {
               echo '## scripts-tests failures'
