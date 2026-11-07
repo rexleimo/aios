@@ -77,9 +77,14 @@ jobs:
       - name: Run repo scripts tests
         run: |
           set -o pipefail
+          # GitHub runs `run:` blocks with `bash -e`: under errexit the failing pipeline
+          # would exit the script before PIPESTATUS is read, so the annotation block
+          # below was dead code and every red run published only "exit code 1".
+          set +e
           # package.json pins --test-concurrency=1; tee + summary surface failures without log-admin rights.
           npm run test:scripts 2>&1 | tee scripts-tests.log
           status=${PIPESTATUS[0]}
+          set -e
           if [ "$status" -ne 0 ]; then
             # Annotations, not only the step summary. The summary is a rendered page
             # that needs admin rights to read through the API; an external reader (or

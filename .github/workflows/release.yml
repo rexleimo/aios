@@ -74,8 +74,13 @@ jobs:
           # a step summary and the raw log are not. tee keeps the full log available
           # while the annotations name what broke.
           set -o pipefail
+          # GitHub runs `run:` blocks with `bash -e`: under errexit the failing pipeline
+          # would exit the script before PIPESTATUS is read, so the annotation block
+          # below was dead code and every red run published only "exit code 1".
+          set +e
           npm run test:scripts 2>&1 | tee release-tests.log
           status=${PIPESTATUS[0]}
+          set -e
           if [ "$status" -ne 0 ]; then
             # 标注是唯一的公开通道（日志要管理员权限）。必须先转义 runner 的命令字符：
             # 消息里一个未转义的 '%' 会让 runner 丢掉整条标注，失败于是只剩一句 exit code 1。
