@@ -120,10 +120,14 @@ test('the process owner itself is covered by the gate (positive control)', () =>
   assert.equal(report.violations.some((line) => line.startsWith(owner)), false);
 });
 
-test('every declared scan root contributes judged launch sites', () => {
-  /* 中文注释：某个根静默退出扫描时，声明会看着完整而门禁什么也没管。这里逐个根要证据。 */
-  for (const root of SCAN_ROOTS) {
+test('every shipped scan root contributes judged launch sites', () => {
+  /* 中文注释：release 包只带 config / scripts / mcp-server / packages，不带 apps/shell。
+     在安装树里跑这条门禁时，缺失的根不可能有启动点——「不存在」和「静默跳过」不是一回事：
+     存在的根必须贡献，全部根都不存在才算门禁失效。 */
+  const present = SCAN_ROOTS.filter((root) => fs.existsSync(path.join(rootDir, root)));
+  assert.ok(present.length > 0, 'at least one declared scan root must exist');
+  for (const root of present) {
     const contributes = [...report.perFile.keys()].some((file) => file.startsWith(`${root}/`));
-    assert.equal(contributes, true, `scan root ${root} contributed no judged launch site`);
+    assert.equal(contributes, true, `scan root ${root} exists but contributed no judged launch site`);
   }
 });
