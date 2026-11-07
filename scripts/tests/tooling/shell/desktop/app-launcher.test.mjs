@@ -20,6 +20,11 @@ import { resolveUiMode } from '../../../../../scripts/aios-ui.mjs';
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const UI_DIR = path.join(ROOT, 'apps', 'shell', 'ui');
 
+/* 中文注释：可执行文件名跟着平台走（Windows 带 .exe）。写死 .exe 时，Linux CI 上
+   existsImpl 永远说不存在，resolveShellBinary 就判 needsBuild，于是多跑一次 cargo build，
+   “reuse 已有服务” 那条用例的同步调用数从 1 变 2 —— ci-main 从 2026-11-05 起就一直红。 */
+const SHELL_BINARY_REL = `target/release/${process.platform === 'win32' ? 'aios-shell.exe' : 'aios-shell'}`;
+
 /** A pathless `exists` so the tests do not depend on what is on disk right now. */
 function existsFor(...suffixes) {
 	const wanted = suffixes.map((entry) => entry.replace(/\\/g, '/'));
@@ -85,7 +90,7 @@ test('a server already answering is reused, and nothing is stopped afterwards', 
 	const calls = [];
 	const result = await runApp({
 		rootDir: ROOT,
-		existsImpl: existsFor('node_modules', 'node_modules/next/dist/bin/next', 'target/release/aios-shell.exe'),
+		existsImpl: existsFor('node_modules', 'node_modules/next/dist/bin/next', SHELL_BINARY_REL),
 		answeringImpl: async () => true,
 		spawnImpl: (...args) => {
 			calls.push(['spawn', ...args]);
@@ -117,7 +122,7 @@ test('a silent port is started, waited for, and stopped when the window closes',
 		existsImpl: existsFor(
 			'node_modules',
 			'node_modules/next/dist/bin/next',
-			'target/release/aios-shell.exe',
+			SHELL_BINARY_REL,
 			'unused-token',
 		),
 		// The wait loop asks twice: before starting (silent) and after (answering).
