@@ -77,9 +77,19 @@ jobs:
           npm run test:scripts 2>&1 | tee release-tests.log
           status=${PIPESTATUS[0]}
           if [ "$status" -ne 0 ]; then
-            rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' release-tests.log | head -20 | while IFS= read -r line; do
-              echo "::error title=release-tests::${line}"
-            done
+            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' release-tests.log | head -20 || true)"
+            if [ -n "$matched" ]; then
+              while IFS= read -r line; do
+                echo "::error title=release-tests::${line}"
+              done <<<"$matched"
+            else
+              # 中文注释：输出一条都没匹配上时，正好落进这个机制本来要解决的盲区——
+              # 日志要管理员权限，外部只能看到 "exit code 1"。此时把日志尾部当公开标注发出去。
+              echo "::error title=release-tests::no failure line matched the pattern; quoting the last 40 log lines as warnings"
+              tail -40 release-tests.log | while IFS= read -r line; do
+                echo "::warning title=release-tests tail::${line}"
+              done
+            fi
           fi
           exit "$status"
 

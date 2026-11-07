@@ -86,9 +86,19 @@ jobs:
             # an agent without repository admin) gets 403 on both the log and the
             # summary, which is how a red run stayed undiagnosable for a day. The
             # annotation endpoint is public, so the failure text has to go there too.
-            rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' scripts-tests.log | head -20 | while IFS= read -r line; do
-              echo "::error title=scripts-tests::${line}"
-            done
+            matched="$(rg -n '✖|AssertionError|Expected values|not ok |Error:|fail [1-9]' scripts-tests.log | head -20 || true)"
+            if [ -n "$matched" ]; then
+              while IFS= read -r line; do
+                echo "::error title=scripts-tests::${line}"
+              done <<<"$matched"
+            else
+              # 中文注释：一条都没匹配上时，公开标注里就只剩 "exit code 1"——
+              # 那正是这条机制存在的理由，所以把日志尾部当 warning 标注发出去。
+              echo "::error title=scripts-tests::no failure line matched the pattern; quoting the last 40 log lines as warnings"
+              tail -40 scripts-tests.log | while IFS= read -r line; do
+                echo "::warning title=scripts-tests tail::${line}"
+              done
+            fi
             {
               echo '## scripts-tests failures'
               echo
