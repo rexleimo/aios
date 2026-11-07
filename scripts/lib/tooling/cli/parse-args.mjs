@@ -123,6 +123,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'refs',
   'canvas',
   'search',
+  'workspaces',
   'skill',
   'integration',
   'mcp',
@@ -330,6 +331,10 @@ export function parseArgs(argv = []) {
   }
   if (first === 'memory') {
     return { mode: 'command', help: false, command: 'memory', options: { args: argv.slice(1) } };
+  }
+  // 本机工作区清单用子动词（list/resolve），和 memory/memo 同形：位置参数直传给实现。
+  if (first === 'workspaces') {
+    return { mode: 'command', help: false, command: 'workspaces', options: { args: argv.slice(1) } };
   }
   if (first === 'tokens') {
     return { mode: 'command', help: false, command: 'tokens', options: { args: argv.slice(1) } };

@@ -14,6 +14,8 @@ function runMemo(workspaceRoot, args, options = {}) {
     encoding: 'utf8',
     env: {
       ...process.env,
+      // 默认把注册表的家目录指向临时沙箱：每一个调用者都是临时工程。
+      AIOS_HOME: process.env.AIOS_TEST_HOME ?? workspaceRoot,
       ...options.env,
     },
   });
@@ -29,6 +31,9 @@ function parseJsonLines(raw) {
 
 async function withWorkspace(prefix, fn) {
   const workspaceRoot = await fs.mkdtemp(path.join(os.tmpdir(), prefix));
+  // 中文注释：注册表的家目录由 runMemo 默认指到临时 workspaceRoot（见其 env 注释），
+  // 所以这里不需要额外传递：临时工程自己带着自己的注册表，测完一起抹掉。
+  // 不隔离的代价实测过：一轮回归往用户真实 `~/.aios/workspaces` 里写了 7 个沙箱名。
   try {
     await fn(workspaceRoot);
   } finally {

@@ -22,7 +22,7 @@ import {
   parseDocument,
   toEditable,
   validateDocument,
-} from '../../../../lib/data/host-capabilities.mjs';
+} from '../../../../lib/config/host-capabilities.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';

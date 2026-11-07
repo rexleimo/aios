@@ -10,14 +10,23 @@ const rootDir = path.resolve(path.dirname(new URL(import.meta.url).pathname), '.
 
 async function withWorkspace(run) {
   const workspace = await mkdtemp(path.join(os.tmpdir(), 'aios-checkpoint-receipt-'));
+  // 中文注释：隔离 home。新增的 workspace 注册表写者会落在 ~/.aios/workspaces，
+  // 而这里传的是临时 workspace —— 不隔离 home 就会把临时目录名写进用户真实注册表。
+  // 实测污染过 7 条，所以这不是假想风险。用仓库已有约定 AIOS_HOME 指到沙箱里。
+  const home = await mkdtemp(path.join(os.tmpdir(), 'aios-checkpoint-receipt-home-'));
   const previous = process.env.AIOS_WORKSPACE_ROOT;
+  const previousHome = process.env.AIOS_HOME;
   process.env.AIOS_WORKSPACE_ROOT = workspace;
+  process.env.AIOS_HOME = home;
   try {
     await mkdir(path.join(workspace, '.aios', 'memo', 'file', 'pinned'), { recursive: true });
     await run(workspace);
   } finally {
     if (previous === undefined) delete process.env.AIOS_WORKSPACE_ROOT;
     else process.env.AIOS_WORKSPACE_ROOT = previous;
+    if (previousHome === undefined) delete process.env.AIOS_HOME;
+    else process.env.AIOS_HOME = previousHome;
+    await rm(home, { recursive: true, force: true });
     await rm(workspace, { recursive: true, force: true });
   }
 }

@@ -9,6 +9,7 @@ import path from 'node:path';
 import { resolveContextDbRoot } from '../../../../environment/aios/state-root.mjs';
 import { runContextDbCli } from '../../../../memory/contextdb-cli.mjs';
 import { writeIndex } from '../../../../memory/contextdb/registry/context-registry.mjs';
+import { recordWorkspace } from '../../../../foundation/workspaces/registry.mjs';
 
 export function buildSessionId({ agent = 'agent', now = new Date() } = {}) {
   const clientId = String(agent || 'agent').trim().toLowerCase().replace(/[^a-z0-9-]+/gu, '-') || 'agent';
@@ -71,6 +72,15 @@ export async function ensureContextDbSession({
     });
   } catch (error) {
     errors.push(`registry index write failed: ${error.message}`);
+  }
+
+  // 中文注释：会话开始 = 这个工程在被某个客户端使用，它是本机工作区注册表的自然写点。
+  // 注册表之产读端与测试（零写者），所以 Console 的工作区列表永远是空——一个有型号但没有油表。
+  // 登记失败要进 errors，不能吞：它是「列表为什么不新」的直接答案。
+  try {
+    recordWorkspace({ rootDir: root });
+  } catch (error) {
+    errors.push(`workspace registry write failed: ${error.message}`);
   }
 
   return { sessionId: resolvedSessionId, created, errors };

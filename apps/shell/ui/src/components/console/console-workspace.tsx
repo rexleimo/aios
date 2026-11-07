@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   ArrowUpRight,
   BookOpen,
   Box,
   ChevronDown,
+  Clock,
   Command,
   FlaskConical,
   Folder,
@@ -19,7 +21,7 @@ import {
   Terminal,
 } from 'lucide-react';
 import { CONSOLE_VIEWS, PRIMARY_VIEWS, viewForPath, type ViewId } from '../../lib/console-navigation';
-import { INITIAL_ACTIVITY, PROJECTS, type DemoActivity, type DemoProject } from './demo-data';
+import type { ConsoleFacts } from '../../lib/console-facts';
 import { HomeWorkspace, ToolsWorkspace } from './home-workspace';
 import { MemoryWorkspace } from './memory-workspace';
 import { McpWorkspace } from './mcp-workspace';
@@ -28,7 +30,31 @@ import { Button, Heading, Panel } from './console-ui';
 const ICONS = { home: Home, tools: Terminal, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
 
-export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
+/** 采集时间怎么念：刚刚 / N 秒前 / N 分钟前——数据新鲜度是一条事实，不是装饰。 */
+function ageLabel(iso: string): string {
+  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+  if (seconds < 5) return '刚刚采集';
+  if (seconds < 60) return `数据 ${seconds}s 前`;
+  return `数据 ${Math.round(seconds / 60)}min 前`;
+}
+
+/** 服务端解析「选了哪个工作区」的结果，递下来给界面说实情（界面自己不算路径）。 */
+export interface WorkspaceSelection {
+  requested: string;
+  ok: boolean;
+  reason?: string;
+  detail?: string;
+}
+
+export function ConsoleWorkspace({
+  initialView,
+  facts,
+  selection = { requested: '', ok: true },
+}: {
+  initialView: ViewId;
+  facts: ConsoleFacts;
+  selection?: WorkspaceSelection;
+}) {
   const [view, setView] = useState<ViewId>(initialView);
   function navigate(next: ViewId) {
     if (window.location.pathname !== CONSOLE_VIEWS[next].href) {
@@ -41,17 +67,23 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
     window.addEventListener('popstate', onBackForward);
     return () => window.removeEventListener('popstate', onBackForward);
   }, []);
-  const [projects, setProjects] = useState<DemoProject[]>(PROJECTS);
-  const [projectId, setProjectId] = useState('harness');
-  const [activities, setActivities] = useState<DemoActivity[]>(INITIAL_ACTIVITY);
   const [theme, setTheme] = useState('light');
-  const [recovered, setRecovered] = useState(false);
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
   const [memoryTarget, setMemoryTarget] = useState({ id: '', nonce: 0 });
-  const project = projects.find((item) => item.id === projectId) ?? projects[0];
-  function record(activity: DemoActivity) {
-    setActivities((previous) => [activity, ...previous]);
+  // 当前选中的工作区以**服务端事实**为准（facts 就是按哪个根采集的），不是界面本地的一个选择状态：
+  // 这样 URL、数据、下拉框三者不可能相互说不同的话。
+  const selectedWorkspaceKey = facts.projects.find((item) => item.current)?.key ?? facts.projects[0]?.key ?? '';
+  function selectWorkspace(key: string) {
+    if (!key || key === selectedWorkspaceKey) return;
+    // 真实换 URL 并让服务端重采集——这是「选择能改数据」与「选择只是饰品」的分界。
+    window.location.href = `${CONSOLE_VIEWS[view].href}?ws=${encodeURIComponent(key)}`;
   }
+  // 面板懒挂载：没打开过的面板不进首屏 HTML，省掉一次采集与一串 DOM。
+  const [mounted, setMounted] = useState(() => new Set<ViewId>([initialView]));
+  useEffect(() => {
+    setMounted((previous) => (previous.has(view) ? previous : new Set([...previous, view])));
+  }, [view]);
+  const project = facts.projects.find((item) => item.key === selectedWorkspaceKey) ?? facts.projects[0];
   useEffect(() => {
     const previous = document.documentElement.dataset.rexTheme;
     return () => {
@@ -62,6 +94,10 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
     setTheme(value);
     document.documentElement.dataset.rexTheme = value;
   }
+  // 还没接线的视图：如实标注，不靠全局横幅把所有面板一起说成假的——首屏已经是真实数据。
+  // 所有面板都接真了；剩下的唯一门是「写用户配置」需要单独授权（路线图 P0-4 / 决策 4）。
+  const pendingPanels: Record<string, boolean> = { mcp: true };
+  const pending = pendingPanels[view];
   return (
     <div className="min-h-dvh bg-rex-bg font-rex-body text-rex-text">
       <a
@@ -83,9 +119,9 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
         <div className="mx-3 hidden rounded-lg border border-rex-border bg-rex-bg px-3 py-2.5 md:block">
           <div className="flex items-center gap-2 text-xs font-medium">
             <Box size={14} className="text-rex-text-muted" />
-            个人工作空间
+            {project?.name ?? '本机工作区'}
           </div>
-          <p className="mt-1 pl-[22px] text-[10px] text-rex-text-muted">本机管理 · 示例环境</p>
+          <p className="mt-1 pl-[22px] text-[10px] break-all text-rex-text-muted">{facts.rootDir}</p>
         </div>
         <nav aria-label="主导航" className="mt-7 space-y-1 px-3">
           {NAV.map((item) => (
@@ -103,9 +139,9 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
                 className={`shrink-0 ${view === item.id ? 'text-rex-cyan' : ''}`}
               />
               <span className="hidden md:inline">{item.label}</span>
-              {item.id === 'mcp' && !recovered && (
+              {item.id === 'mcp' && facts.issues.length > 0 && (
                 <span className="ml-auto hidden size-4 items-center justify-center rounded bg-rex-orange/10 text-[10px] text-rex-text-body md:flex">
-                  1
+                  {facts.issues.length}
                 </span>
               )}
             </button>
@@ -114,7 +150,9 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
         <div className="mx-4 mt-auto mb-5 hidden rounded-xl border border-rex-border p-3.5 md:block">
           <BookOpen size={17} className="mb-2 text-rex-cyan" />
           <p className="text-xs font-medium">让经验留在项目里</p>
-          <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">浏览与理解记忆，从选择一个项目开始。</p>
+          <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">
+            本机 {facts.memories.length} 条记忆记录。
+          </p>
           <button
             onClick={() => navigate('memory')}
             className="mt-3 flex items-center gap-1 rounded text-[11px] font-medium text-rex-cyan focus-visible:outline-2 focus-visible:outline-rex-cyan"
@@ -137,24 +175,27 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
       <div className="ml-[68px] min-w-0 md:ml-[212px]">
         <div className="sticky top-0 z-10 border-b border-rex-border bg-rex-bg/95 backdrop-blur-sm">
           <div className="flex min-h-[60px] flex-wrap items-center gap-3 px-4 lg:px-8">
-            <span className="hidden text-xs text-rex-text-muted sm:inline">个人工作空间</span>
+            <span className="hidden text-xs text-rex-text-muted sm:inline">本机工作区</span>
             <span className="hidden text-rex-text-muted sm:inline">/</span>
             <span className="text-xs font-medium">{CONSOLE_VIEWS[view].title}</span>
             <div className="ml-auto flex items-center gap-2 text-xs">
               <Folder size={14} className="hidden text-rex-text-muted sm:block" />
-              <label htmlFor="configuration-project" className="sr-only">
-                配置目标项目
+              <label htmlFor="console-workspace" className="sr-only">
+                选择工作区
               </label>
+              {/* 中文注释：选完直接换 URL 让**服务端重新采集**。旧版只 setProjectId，
+                  而没有任何东西读它：切项目后下面所有数字还是服务自己那个根，
+                  界面在暗示它在按选择过滤。现在 key 是唯一回传量，路径不由页面交出。 */}
               <select
-                id="configuration-project"
-                value={projectId}
-                onChange={(event) => setProjectId(event.target.value)}
-                className="max-w-[150px] rounded-md bg-transparent py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan sm:max-w-[180px]"
+                id="console-workspace"
+                value={selectedWorkspaceKey}
+                onChange={(event) => selectWorkspace(event.target.value)}
+                className="max-w-[170px] rounded-md bg-transparent py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan sm:max-w-[220px]"
               >
-                {projects.map((item) => (
-                  <option key={item.id} value={item.id}>
+                {facts.projects.map((item) => (
+                  <option key={item.key} value={item.key}>
                     {item.name}
-                    {projects.filter((candidate) => candidate.name === item.name).length > 1 ? ` · ${item.path}` : ''}
+                    {item.current ? ' · 当前' : item.missing ? ' · 路径已消失' : ''} · {item.memos} 条记忆
                   </option>
                 ))}
               </select>
@@ -163,19 +204,51 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
           </div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rex-border bg-rex-panel/70 px-4 py-2 text-[11px] leading-5 text-rex-text-muted lg:px-8">
             <span className="inline-flex items-center gap-1.5 font-medium text-rex-text-body">
-              <FlaskConical size={13} />
-              交互原型
+              <Clock size={13} />
+              {ageLabel(facts.generatedAt)}
             </span>
-            <span>示例数据 · 不读取私人文件 · 不修改真实配置</span>
-            <span className="ml-auto hidden sm:inline">刷新可重置体验</span>
+            <span>
+              工作区 <strong className="font-medium text-rex-text-body">{project?.name ?? facts.rootDir}</strong>
+              {' · '}
+              <span className="break-all">{facts.rootDir}</span>
+              {' · 一次采集 '}
+              {facts.totalMs}ms · {facts.services.rows.length} 个服务配置实例 ·{' '}
+              {facts.memories.length < (project?.memos ?? 0) ? (
+                <>读回 {facts.memories.length} / 共 {project?.memos} 条记忆</>
+              ) : (
+                <>{project?.memos ?? facts.memories.length} 条记忆</>
+              )}
+            </span>
+            {facts.sessionsAudit?.ok === true && facts.sessionsAudit.withoutMeta.length > 0 && (
+              <span title={facts.sessionsAudit.withoutMeta.join(', ')}>
+                会话 {facts.sessions.length} 条（另有 {facts.sessionsAudit.withoutMeta.length} 个目录没有会话元数据，未计入）
+              </span>
+            )}
+            {!selection.ok && (
+              <span className="inline-flex items-center gap-1.5 text-rex-danger">
+                <AlertTriangle size={13} />
+                你选的工作区没被采用（{selection.reason}）：{selection.detail}
+              </span>
+            )}
+            {facts.degraded.length > 0 && (
+              <span className="inline-flex items-center gap-1.5 text-rex-danger">
+                <AlertTriangle size={13} />
+                {facts.degraded.length} 项没读到（见下方原因）
+              </span>
+            )}
+            {pending && (
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded bg-rex-orange/10 px-2 py-0.5 text-rex-text-body">
+                <FlaskConical size={12} />
+                此面板只读，写入尚未授权
+              </span>
+            )}
           </div>
         </div>
         <main id="console-content" className="mx-auto max-w-[1440px] px-4 py-7 lg:px-8 lg:py-9" tabIndex={-1}>
           <div hidden={view !== 'home'}>
             <HomeWorkspace
+              facts={facts}
               navigate={navigate}
-              activities={activities}
-              recovered={recovered}
               openTool={(id) => {
                 setSelectedToolId(id);
                 navigate('tools');
@@ -187,53 +260,45 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
             />
           </div>
           <div hidden={view !== 'tools'}>
-            <ToolsWorkspace
-              onMcp={() => navigate('mcp')}
-              selectedId={selectedToolId}
-              onSelect={setSelectedToolId}
-              recovered={recovered}
-            />
+            <ToolsWorkspace facts={facts} onMcp={() => navigate('mcp')} selectedId={selectedToolId} onSelect={setSelectedToolId} />
           </div>
-          <div hidden={view !== 'mcp'}>
-            <McpWorkspace
-              project={project}
-              record={record}
-              recovered={recovered}
-              onRecovered={() => setRecovered(true)}
-            />
-          </div>
+          {mounted.has('mcp') && (
+            <div hidden={view !== 'mcp'}>
+              <McpWorkspace facts={facts} />
+            </div>
+          )}
           <div hidden={view !== 'memory'}>
-            <MemoryWorkspace
-              target={memoryTarget}
-              projects={projects}
-              onAddProject={(item) => setProjects((previous) => [...previous, item])}
-              record={record}
-            />
+            <MemoryWorkspace facts={facts} target={memoryTarget} />
           </div>
           <div hidden={view !== 'activity'}>
             <Heading
               eyebrow="ACTIVITY"
               title="每一次改变，都有迹可循。"
-              description="这是本次原型体验里的操作记录。刷新页面后恢复初始示例。"
+              description="下面列出的是这台机器上真实存在过的会话记录，来自 .aios/context-db/sessions。"
             />
             <Panel className="divide-y divide-rex-border px-5">
-              {activities.map((activity) => (
-                <div key={activity.id} className="flex gap-3 py-5">
+              {facts.sessions.map((session) => (
+                <div key={session.sessionId} className="flex gap-3 py-5">
                   <span className="mt-0.5 size-2 shrink-0 rounded-full bg-rex-text-muted" />
                   <div>
-                    <h2 className="text-sm font-medium">{activity.title}</h2>
-                    <p className="mt-2 text-xs leading-5 text-rex-text-muted">{activity.detail}</p>
+                    <h2 className="text-sm font-medium">{session.goal || session.sessionId}</h2>
+                    <p className="mt-2 text-xs leading-5 text-rex-text-muted">
+                      {session.project} · {session.agent} · {session.status} · {session.events} 条事件
+                    </p>
                   </div>
-                  <span className="ml-auto shrink-0 text-[10px] text-rex-text-muted">示例记录</span>
+                  <span className="ml-auto shrink-0 text-[10px] text-rex-text-muted">{session.updatedAt}</span>
                 </div>
               ))}
+              {facts.sessions.length === 0 && (
+                <p className="py-6 text-sm text-rex-text-muted">这台机器上还没有会话记录。</p>
+              )}
             </Panel>
           </div>
           <div hidden={view !== 'settings'}>
             <Heading
               eyebrow="PREFERENCES"
               title="让工作空间，顺手一点。"
-              description="原型设置只在当前页面生效，不写入你的应用配置。"
+              description="主题只在当前页面生效；写入应用配置属于尚未授权的能力。"
             />
             <Panel className="max-w-2xl p-6">
               <h2 className="mb-4 text-sm font-semibold">界面外观</h2>
@@ -256,9 +321,9 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
               <div className="mt-7 border-t border-rex-border pt-5">
                 <h2 className="mb-2 text-sm font-semibold">当前配置目标</h2>
                 <p className="text-xs leading-6 text-rex-text-muted">
-                  {project.name}
+                  {project?.name}
                   <br />
-                  {project.path}
+                  {facts.rootDir}
                 </p>
                 <p className="mt-3 flex items-center gap-2 text-xs leading-5 text-rex-text-muted">
                   <ShieldCheck size={15} className="shrink-0" />
@@ -266,24 +331,27 @@ export function ConsoleWorkspace({ initialView }: { initialView: ViewId }) {
                 </p>
               </div>
               <Button variant="outline" className="mt-6" onClick={() => window.location.reload()}>
-                重置原型体验
+                重新采集本机状态
               </Button>
             </Panel>
           </div>
         </main>
         <footer className="mx-4 mt-2 flex flex-wrap items-center gap-2 border-t border-rex-border py-4 text-[10px] leading-5 text-rex-text-muted lg:mx-8">
           <LockHint />
-          <span className="ml-auto">AIOS Console · 产品交互预览</span>
+          <span className="ml-auto">
+            读取项：{facts.timings.map((entry) => `${entry.item} ${entry.ms}ms`).join(' · ')}
+          </span>
         </footer>
       </div>
     </div>
   );
 }
+
 function LockHint() {
   return (
     <span className="flex items-center gap-1.5">
       <ShieldCheck size={12} />
-      原型仅在页面内运行，模拟结果不代表真实工具状态
+      只读取本机配置，不写入任何文件
     </span>
   );
 }

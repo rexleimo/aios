@@ -19,7 +19,7 @@ import {
 	parseDocument,
 	toEditable,
 	validateDocument,
-} from '../../../../../apps/shell/ui/src/lib/data/host-capabilities.mjs';
+} from '../../../../../apps/shell/ui/src/lib/config/host-capabilities.mjs';
 
 const AXES = ['sessionStartInjection', 'mcpProxy', 'metrics'];
 

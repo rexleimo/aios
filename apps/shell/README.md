@@ -2,8 +2,25 @@
 
 当前界面按已确认的产品方向 A：本机 AI 工具管理、项目记忆与 MCP 服务。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`。
 
-**当前数据状态：** 新界面仍使用明确标注的示例项目、记忆和模拟执行结果，操作只改变页面内状态，刷新重置。后端 API/CLI 与真实存储继续保留；真实私人项目读取和配置写入尚未接到新界面。
+**当前数据状态（P0-2 与工作区切换已交付）：** 六个页面——首页 `/`、AI 工具 `/tools`、MCP 服务 `/mcp`、记忆 `/memory`、
+活动记录 `/activity`、设置 `/settings`——全部按**当前选中的工作区**取本机真实数据。页头显示选中工作区的名字与绝对路径，
+实测一次采集 258–303ms：harness-cli 是 80 个服务实例 / 638 条记忆，切到 xsapp 是 52 个 / 365 条，rex-ai-tools 是 56 个 / 333 条——
+**数字随根变化**才是真的按根取数；如果切换后数字不动，那就是装饰。**已删除** `demo-data.ts` 与 `flows/service-state.ts`，
+`apps/shell/ui/src` 里没有任何指向它们的 import。MCP 向导第三步是真实 `aios mcp add --dry-run`（实测不改文件字节）。
+当前界面**不写任何用户配置文件**：写入需要单独授权（路线图 P0-4），到位前按钮不存在，而不是存在但不干活。
 
+## 工作区切换：为什么交回来的是 key，不是路径
+
+本机每个工程都有自己的 `.aios/memo`（实测 18 个）。清单来自 `aios workspaces list --json`：
+注册表 `~/.aios/workspaces/<key>.json` ∪ 文件系统证据（子目录里真的有记忆仓）。
+页面只交出 12 位 key（`workspaceKey(path)` 的摘要，所有者是 `registry.mjs`），**路径不作为查询参数存在**，
+且 key 必须命中本次清单——所以这个界面不是任意目录读取器。不在清单里的 key 退回默认工作区并在页头说明原因：
+静默退回会被读成「那个工程是空的」，那是假话。
+
+注册表的写者是 `memory_write` / `memory_checkpoint`（MCP 面）与 `start-session`（会话钩子面）。
+它自加入起只产了读端和测试、**零写者**，所以清单永远是空的——这就是项目下拉框当初只能在会话 meta 里猜名字的原因。
+`AIOS_HOME` 开关是给测试隔离用的：不接它，一轮回归会往用户真实注册表里写 7 个临时沙箱名（`aios-session-start-*`），实测踩过，
+现已由 `workspaces.test.mjs` 钉住。已安装的运行时（7.1.1）还没有 `workspaces` 动词，所以外部工作区在下次发布前只能靠证据发现。
 ## 开桌面应用（一条命令）
 
 ```sh
@@ -44,8 +61,9 @@ apps/shell/                 ← 5 项
 │   ├── src/                ← 4 项
 │   │   ├── app/            (layout.tsx, (console)/page.tsx, (console)/[section]/page.tsx, globals.css)
 │   │   ├── components/     (console/ 当前界面与 flows/，ui/ 共享组件)
-│   │   ├── lib/            (console-navigation.ts, cn.ts, actions.mjs, trust.mjs)
-│   │   ├── lib/data/       (后端取数与动作：capability.mjs, memory-actions.mjs, mcp.mjs 等)
+│   │   ├── lib/            (console-navigation.ts, console-facts.ts, cn.ts, actions.mjs, trust.mjs)
+│   │   ├── lib/config/     (host-capabilities.mjs：声明表的可编辑面，不是取数)
+│   │   ├── lib/data/       (后端取数与动作：console-facts.mjs 首屏装配、mcp.mjs、sessions.mjs、memo-store.mjs 等)
 │   │   └── proxy.ts        本地信任边界的 HTTP 翻译层（Next 16 已把 middleware 改名为 proxy）
 │   ├── package.json
 │   ├── package-lock.json
@@ -74,12 +92,19 @@ apps/shell/                 ← 5 项
 | 表格 | **TanStack Table 8.21.3** | 无头表格主流版本；v9（9.3.1）换了 API 形状（`createTableHook`/feature 注册），比 13 行的矩阵需要的机器更重，先用 v8 |
 | 框架 | Next.js 16 + React 19 | 与 Cline 的壳同代，抄壳时结构对得上 |
 
-## 三条不能破的约定
+## 四条不能破的约定
 
-1. **真实事实与示例分开。** 当前示例数据集中在 `components/console/demo-data.ts`，页面始终展示示例标识。真实 API 的读取由 `lib/data/` 拥有，不把 `scripts/lib/**` 直接拖进客户端打包图。配置已写入、历史证据与当前连接测试结果是不同事实。
+1. **页面里不许有伪造的事实。** 界面上的每一个数字都能在 `console-facts.mjs` 的 `sources[]` 里找到同名字段；
+   采集项各自报成功/失败（`degraded[]`），一项挂了不变成「用户没有东西」。
+   这条门不用词级 grep 把关（否定式文案与用户真实 memo 里都会出现「示例」），而是由
+   `shell-labels.test.mjs` 断言 fixture 文件不存在且无源文件 import 它。
+   真实 API 的读取由 `lib/data/` 拥有，不把 `scripts/lib/**` 直接拖进客户端打包图。
+   配置已写入、落点已验证与当前连接测试结果是三条不同事实，界面不得互推。
 2. **token 只有一个所有者。** `@theme` 里的每个值必须等于 `docs-site/assets/redesign/tokens.css` 的对应
    `--rex-*`，由 `shell-tokens.test.mjs` 逐条比对。globals.css 里允许的选择器只有 `:root[data-rex-theme="dark"]` 和 `body`。
-3. **服务端组件不从 `'use client'` 模块取数据。** 路由只传递当前视图 ID；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。示例状态只在客户端界面内持有。
+3. **选择必须驱动数据。** 界面上任何筛选器/切换器都要让服务端重新取数（工作区切换走 `?ws=<key>` → 服务端按该根采集）。
+   只改本地 state 而不影响取数的控件是在暗示一件没发生的事：实测就发生过切换项目后所有数字仍是服务自己那个根的。
+4. **服务端组件不从 `'use client'` 模块取数据。** 路由只传递当前视图 ID；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。取数一律在服务端完成，客户端只接 `ConsoleFacts`。
 
 ## 当前入口与旧链接
 
@@ -103,7 +128,8 @@ npm run shell:test                                      # cargo test（10 用例
 ## 桌面壳（S1 窗口 + S2 收口与门）
 
 壳只做两件事：开一个窗口，并决定背后的**能力进程**是启动还是复用。它不持有任何事实——
-页面自己去问 `data/load.mjs`。S2 在同一个壳上补了三件事：进程收口、本地信任边界、打包。
+页面服务端自己去问 `ui/src/lib/data/console-facts.mjs`（旧矩阵入口 `data/load.mjs` 仍在，只服务 CLI/CI 与旧路由）。
+S2 在同一个壳上补了三件事：进程收口、本地信任边界、打包。
 
 ```sh
 npm run shell:dev    # = cargo run --manifest-path apps/shell/src-tauri/Cargo.toml
@@ -209,9 +235,14 @@ npm run test:shell    # 只跑界面层的测试
 | 阶段 | 工具 | 实测耗时 |
 |---|---|---|
 | 打包 | **Turbopack**（Next 16 默认，`next dev` / `next build` 都没有 `--webpack`） | build ~0.5 s，dev 首次按需编译 ~0.9 s |
-| 取数 | 子进程跑 `aios status --json` | **~9.3 s** |
+| 取数 | 子进程跑 `aios status --json` | **~2.7 s**（2026-11-07 重测；旧文档的 9.3 s 已被去重优化消掉） |
 
-所以「慢」不在打包器上：换掉 Turbopack 不会让首屏变快，反而更慢。真正的 9 秒在采集。
+所以「慢」不在打包器上：换掉 Turbopack 不会让首屏变快，反而更慢。采集慢的真正原因是证据审计：
+实测 `aios status` 用度的 64% 在 `readMetricsRecordsUncached` + `hasBidirectionalMetrics`，
+它们把 `.aios/interception/metrics`（29 MB / 549 个 JSONL）整份读进来逐行 `JSON.parse`。
+**首屏因此不再跑 `aios status`**：它不展示 agent 证据审计，就不该为那 1.6 s 付钱。
+首屏取数改由 `lib/data/console-facts.mjs` 并行采集，实测 273ms（`mcp list` 263ms 是最慢一路）——
+数字与命令见 `docs/plans/2026-11-07-stage0-real-data-measurement.md`。
 三件事把它从关键路径上挪开：骨架先出（0.09 s）、快照直出 + 后台刷新（stale-while-revalidate，
 命中 0.014 s）、启动即预热（服务一应答就自己把首页取一遍）。第一次的那次采集仍然要花它该花的
 时间——要压它得改 `aios status` 本身。
@@ -220,8 +251,8 @@ npm run test:shell    # 只跑界面层的测试
 
 | 现象 | 原因 | 处理 |
 |---|---|---|
-| 窗口开了但一片空白 | 页面在**同步** spawn 里跑 `aios status`（9.3s），Node 事件循环被占住，Next 无法先把外壳刷出去 | 取数改为异步 `execFile`，`loading.tsx` 的骨架在 **0.09s** 出现，数据随后流式到达（总 7.9s） |
-| 总览比别的页更慢 | 页面同时跑了矩阵（9.9s）和 `aios status`（9.3s）**两次**，数字却来自同一次采集 | 只跑一次：矩阵 payload 已经带 blockers / coverage / overallStatus |
+| 窗口开了但一片空白 | 页面在**同步** spawn 里跑 `aios status`，Node 事件循环被占住，Next 无法先把外壳刷出去 | 取数改为异步 `execFile`，`loading.tsx` 的骨架在 **0.09s** 出现，数据随后流式到达 |
+| 总览比别的页更慢 | 页面同时跑了矩阵和 `aios status`**两次**，数字却来自同一次采集 | 只跑一次：矩阵 payload 已经带 blockers / coverage / overallStatus |
 | 每次翻页都重新等 | 动态页每请求都 spawn | 30s 文件快照（`<tmp>/aios-shell-cache`），命中时 **0.013s**；页头显示「数据 Ns 前 / 刚刚采集」 |
 | 「重新采集」红着收场 | `aios status --json` 判定 blocked 时退出码是 **1** | 每个动作自带 `okExitCodes`；退出码照实显示，但不再当成失败 |
 

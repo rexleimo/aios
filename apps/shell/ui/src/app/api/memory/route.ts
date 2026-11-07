@@ -13,7 +13,7 @@ import path from 'node:path';
 
 import type { NextRequest } from 'next/server';
 
-import { buildMemoryArgv } from '../../../lib/data/memory-actions.mjs';
+import { buildMemoryArgv, parseMemoEntries } from '../../../lib/data/memory-actions.mjs';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -132,12 +132,18 @@ export async function GET(request: NextRequest): Promise<Response> {
     ? await run(['memo', 'search', query, '--limit', String(limit), '--level', 'full'], root)
     : { ok: true, out: '', error: '' };
 
+  // 解析在服务端做（`lib/data/memory-actions.mjs` 是它的唯一所有者）：页面拿结构化条目，
+  // 不在浏览器里重实现一遍 memo 的行格式——否则同一份格式就有两个解释者。
+  const entries = parseMemoEntries(search.out ?? '');
+
   return new Response(
     JSON.stringify({
       pinned: pinned.out.trim(),
       query,
+      entries,
       results: query ? search.out.trim() : '',
-      truncated: query ? search.out.split('\n').filter((line) => line.startsWith('- [')).length >= limit : false,
+      // truncated 现在是数出来的，不是扫行首缀猜的：命中数撞上请求上限就是「可能被截断」。
+      truncated: query ? entries.length >= limit : false,
       error: query && !search.ok ? search.error.trim().slice(0, 300) : null,
     }),
     { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } },

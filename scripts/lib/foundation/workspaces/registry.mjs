@@ -15,16 +15,33 @@ export const REGISTRY_OPTOUT_ENV = 'AIOS_NO_WORKSPACE_REGISTRY';
 /** 只允许这些键；多一个键就是一次设计泄漏，测试会失败。 */
 export const ALLOWED_KEYS = Object.freeze(['schemaVersion', 'path', 'name', 'lastSeenAt', 'aiosVersion', 'counts']);
 
-export function registryRoot(homeDir = os.homedir()) {
-  return path.join(homeDir, REGISTRY_DIRNAME);
+/**
+ * 注册表的家目录。**遵循仓库已有约定**（`headroom-mcp/ownership.mjs:37`）：
+ * 显式 `homeDir` 参数优先 → 绝对路径的 `AIOS_HOME` → `os.homedir()`。
+ *
+ * 为什么必须认 `AIOS_HOME`：新增的写者让测试也会写这张表。实测跑一次回归就在用户真实
+ * `~/.aios/workspaces` 里留下了 7 个条目，名字就是 `aios-session-start-*` / `aios-checkpoint-receipt-*`
+ * 这些临时沙箱——测试隔离了 workspace root，但 home 默认直落真实家目录。
+ * 不接这个开关的话，每一轮回归都在污染用户状态。
+ */
+export function resolveRegistryHome(homeDir = undefined, env = process.env) {
+  const explicit = String(homeDir ?? '').trim();
+  if (explicit && path.isAbsolute(explicit)) return explicit;
+  const declared = String(env.AIOS_HOME ?? '').trim();
+  if (declared && path.isAbsolute(declared)) return declared;
+  return os.homedir();
+}
+
+export function registryRoot(homeDir = undefined, env = process.env) {
+  return path.join(resolveRegistryHome(homeDir, env), REGISTRY_DIRNAME);
 }
 
 export function workspaceKey(rootDir) {
   return createHash('sha1').update(path.resolve(rootDir)).digest('hex').slice(0, 12);
 }
 
-export function registryPath(rootDir, homeDir = os.homedir()) {
-  return path.join(registryRoot(homeDir), `${workspaceKey(rootDir)}.json`);
+export function registryPath(rootDir, homeDir = undefined, env = process.env) {
+  return path.join(registryRoot(homeDir, env), `${workspaceKey(rootDir)}.json`);
 }
 
 export function registryDisabled(env = process.env) {
@@ -66,7 +83,7 @@ export function countWorkspace(rootDir) {
  * 登记一次「这个项目被 AIOS 用过了」。返回写入路径，或 null（已关闭/写失败）。
  * 写失败不抛：登记是旁路事实，它不该让一次 session start 失败。
  */
-export function recordWorkspace({ rootDir, aiosVersion = null, now = new Date(), homeDir = os.homedir(), env = process.env } = {}) {
+export function recordWorkspace({ rootDir, aiosVersion = null, now = new Date(), homeDir = undefined, env = process.env } = {}) {
   if (!rootDir || registryDisabled(env)) return null;
   const entry = {
     schemaVersion: 1,
@@ -77,9 +94,9 @@ export function recordWorkspace({ rootDir, aiosVersion = null, now = new Date(),
     counts: countWorkspace(rootDir),
   };
   try {
-    const dir = registryRoot(homeDir);
+    const dir = registryRoot(homeDir, env);
     fs.mkdirSync(dir, { recursive: true });
-    const target = registryPath(rootDir, homeDir);
+    const target = registryPath(rootDir, homeDir, env);
     const temporary = `${target}.tmp-${process.pid}`;
     fs.writeFileSync(temporary, `${JSON.stringify(entry, null, 2)}\n`);
     fs.renameSync(temporary, target);
@@ -90,8 +107,8 @@ export function recordWorkspace({ rootDir, aiosVersion = null, now = new Date(),
 }
 
 /** 读所有登记项；`path` 不存在或超期的标出来，不删——删除是用户的决定。 */
-export function listWorkspaces({ homeDir = os.homedir(), now = Date.now(), staleAfterMs = 90 * 24 * 3600_000 } = {}) {
-  const dir = registryRoot(homeDir);
+export function listWorkspaces({ homeDir = undefined, env = process.env, now = Date.now(), staleAfterMs = 90 * 24 * 3600_000 } = {}) {
+  const dir = registryRoot(homeDir, env);
   let files = [];
   try {
     files = fs.readdirSync(dir).filter((name) => name.endsWith('.json'));

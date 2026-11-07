@@ -1,12 +1,29 @@
 /* 中文注释：session start 会话注册（批次 1）行为测试。
  * 覆盖：sessionId 生成规则、幂等重入、contextdb CLI 调用参数、registry index 写入。
  * contextdb CLI 通过注入 impl 模拟，不依赖真实 CLI。 */
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, mkdir, writeFile, readFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+
+// 中文注释：整文件隔离 home。start-session 现在会写本机工作区注册表（`~/.aios/workspaces`），
+// 而本测试传的是临时 workspace —— 不隔离就会把 `aios-session-start-XXXX` 这种沙箱名
+// 当成一个真实工程登进用户的注册表（实测污染过 4 条）。用仓库已有约定 AIOS_HOME。
+let isolatedHome = '';
+const previousHome = process.env.AIOS_HOME;
+
+before(async () => {
+  isolatedHome = await mkdtemp(path.join(os.tmpdir(), 'aios-session-start-home-'));
+  process.env.AIOS_HOME = isolatedHome;
+});
+
+after(async () => {
+  if (previousHome === undefined) delete process.env.AIOS_HOME;
+  else process.env.AIOS_HOME = previousHome;
+  if (isolatedHome) await rm(isolatedHome, { recursive: true, force: true });
+});
 
 import { buildSessionId, ensureContextDbSession, sessionMetaPath } from '../../../lib/execution/lifecycle/run/session-hooks/start-session.mjs';
 import { runSessionStartTimeline } from '../../../lib/execution/lifecycle/run/session-hooks/start-timeline.mjs';

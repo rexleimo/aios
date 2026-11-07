@@ -97,7 +97,13 @@ export function listSessions(root) {
   for (const entry of entries) {
     if (!entry.isDirectory() || !SESSION_ID_PATTERN.test(entry.name)) continue;
     const sessionDir = path.join(dir, entry.name);
-    const meta = readJson(path.join(sessionDir, 'meta.json')) ?? {};
+    // 中文注释：没有 meta.json 就不是会话。旧行为用 `?? {}` 兜底，再拿目录名当 sessionId、
+    // 空串当项目，于是测试残留目录被当成真实会话计入首页：实测报了 26 条，
+    // 而只有 meta 的只有 18 条（budget-session / demo-session / rr-1 / s-stall 这类）。
+    // 「读不到」与「没有」是两条事实（路线图 P1-4），所以这里跳过，并由 auditSessionStore 说出来。
+    const metaFile = path.join(sessionDir, 'meta.json');
+    if (!fs.existsSync(metaFile)) continue;
+    const meta = readJson(metaFile) ?? {};
     let summary = '';
     try {
       summary = fs.readFileSync(path.join(sessionDir, 'l0-summary.md'), 'utf8');
@@ -211,4 +217,23 @@ export function exportSession(root, id) {
     checkpoints: readJsonl(path.join(dir, 'l1-checkpoints.jsonl')).rows,
     events: readJsonl(path.join(dir, 'l2-events.jsonl')).rows,
   };
+}
+
+/**
+ * 会话目录的体检：说清「有多少目录、其中多少有元数据、哪些被跳过了」。
+ *
+ * 存在的理由只有一个：跳过必须是**可显示的事实**，不是静默过滤。没有这个函数时，
+ * `listSessions` 少报 8 条与「本机就是只有 18 条会话」在界面上长得一样。
+ */
+export function auditSessionStore(root) {
+  const dir = sessionsDir(root);
+  let entries;
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return { ok: false, dir, dirs: 0, withMeta: 0, withoutMeta: [], error: `会话目录读不到：${dir}` };
+  }
+  const names = entries.filter((entry) => entry.isDirectory() && SESSION_ID_PATTERN.test(entry.name)).map((entry) => entry.name);
+  const withoutMeta = names.filter((name) => !fs.existsSync(path.join(dir, name, 'meta.json')));
+  return { ok: true, dir, dirs: names.length, withMeta: names.length - withoutMeta.length, withoutMeta };
 }

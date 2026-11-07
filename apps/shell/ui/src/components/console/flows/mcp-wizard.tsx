@@ -6,48 +6,115 @@ import {
   ArrowLeft,
   ArrowRight,
   Check,
-  CheckCircle2,
   CircleDashed,
   FileCode2,
   LockKeyhole,
-  RotateCcw,
   ShieldCheck,
   Trash2,
 } from 'lucide-react';
-import { TOOLS, type DemoProject } from '../demo-data';
+
+import { clientLabel, type ConsoleFacts } from '../../../lib/console-facts';
 import { Badge, Button, Field, Modal, fieldClass } from '../console-ui';
-import { RESULT, type ServiceResult } from './service-state';
+
+/** `mcp.action.v1` 里预览要如实转述的字段。 */
+interface ActionPayload {
+  status?: string;
+  classification?: { status?: string; desiredFingerprint?: string };
+  planned?: { bytes?: number; createdBucket?: boolean; entryPath?: string; file?: string };
+  landing?: { clientId?: string; scope?: string; file?: string; writable?: boolean };
+  dryRun?: boolean;
+  exitCode?: number;
+  reason?: string;
+  message?: string;
+}
+
+interface PostResult {
+  ok: boolean;
+  argv: string[];
+  exitCode: number;
+  result: ActionPayload | string | null;
+  stderr: string;
+  httpStatus: number;
+  error?: string;
+  /** 路由在 400/409 时给出的可执行原因（例：缺 confirm、字段不合法）。 */
+  detail?: string;
+}
+
+const STEP_LABELS = ['选择落点', '服务配置', '预览（真实 dry-run）'];
 
 export function McpWizard({
-  project,
+  facts,
   onClose,
-  onFinish,
+  onDone,
 }: {
-  project: DemoProject;
+  facts: ConsoleFacts;
   onClose: () => void;
-  onFinish: (item: { name: string; tools: string[]; scope: string; result: ServiceResult }) => void;
+  onDone: () => void;
 }) {
-  // Freeze the target project for the lifetime of this operation.
-  const [target] = useState(project);
+  const installed = facts.clients.filter((client) => client.installed);
+  // 落点候选来自刚读回来的事实，不是这个文件里的常量：writable 为假的落点直接不进候选。
+  const landingOptions = installed.flatMap((client) =>
+    client.scopes
+      .filter((scope) => scope.writable)
+      .map((scope) => ({
+        key: `${client.clientId}/${scope.scope}`,
+        clientId: client.clientId,
+        scope: scope.scope,
+        file: scope.file,
+        entryPath: scope.format,
+      })),
+  );
   const [step, setStep] = useState(0);
-  const [tools, setTools] = useState(['claude']);
-  const [scope, setScope] = useState('home');
-  const [name, setName] = useState('项目浏览器');
+  const [landingKey, setLandingKey] = useState(landingOptions[0]?.key ?? '');
+  const [name, setName] = useState('');
   const [command, setCommand] = useState('npx');
-  const [args, setArgs] = useState(['-y', '@playwright/mcp@latest']);
+  const [args, setArgs] = useState<string[]>(['-y']);
   const [env, setEnv] = useState({ key: '', value: '' });
-  const [scenario, setScenario] = useState('failed');
-  const [result, setResult] = useState<ServiceResult>('written');
   const [showEnv, setShowEnv] = useState(false);
-  const scopeLabel = scope === 'home' ? '此用户下的所有项目' : `仅项目 ${target.name}`;
-  const valid =
-    step === 0
-      ? tools.length > 0 && (scope !== 'project' || target.status === 'ready')
-      : name.trim().length > 0 && command.trim().length > 0 && (!env.value || !!env.key.trim());
-  const stepLabels = ['选择目标', '服务配置', '预览变更', '查看结果'];
-  function toggleTool(id: string) {
-    setTools((previous) => (previous.includes(id) ? previous.filter((tool) => tool !== id) : [...previous, id]));
+  const [preview, setPreview] = useState<PostResult | null>(null);
+  const [running, setRunning] = useState(false);
+  const [failure, setFailure] = useState<string | null>(null);
+
+  const landing = landingOptions.find((option) => option.key === landingKey) ?? null;
+  const entry: Record<string, unknown> = { type: 'stdio', command: command.trim(), args: args.filter((arg) => arg !== '') };
+  if (env.key.trim() && env.value) entry.env = { [env.key.trim()]: env.value };
+
+  const nameValid = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(name.trim());
+  const stepValid = step === 0 ? Boolean(landing) : step === 1 ? nameValid && command.trim().length > 0 : true;
+
+  /** 第三步跑的是真实命令：`aios mcp add … --dry-run --json`。实测它不改一个字节。 */
+  async function runPreview() {
+    if (!landing) return;
+    setRunning(true);
+    setFailure(null);
+    setPreview(null);
+    try {
+      const response = await fetch('/api/mcp', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          action: 'add',
+          client: landing.clientId,
+          scope: landing.scope,
+          name: name.trim(),
+          entry,
+          dryRun: true,
+        }),
+      });
+      const payload = (await response.json()) as PostResult;
+      payload.httpStatus = response.status;
+      setPreview(payload);
+      if (payload.error) setFailure(`${payload.error}${payload.detail ? `：${payload.detail}` : ''}`);
+      setStep(2);
+    } catch (error) {
+      setFailure(error instanceof Error ? error.message : String(error));
+    } finally {
+      setRunning(false);
+    }
   }
+
+  const payload = preview && typeof preview.result === 'object' ? (preview.result as ActionPayload) : null;
+
   return (
     <Modal
       open
@@ -56,10 +123,10 @@ export function McpWizard({
       }}
       wide
       title="添加 MCP 服务"
-      description="这是交互原型：所有写入与连接测试均为模拟，配置不会真正更改。"
+      description="第三步跑真实 `aios mcp add --dry-run`：它不改文件，只告诉你打算写什么。真正写入需要你单独授权。"
     >
       <ol className="mb-7 flex items-center justify-between gap-2 border-b border-rex-border pb-5">
-        {stepLabels.map((label, index) => (
+        {STEP_LABELS.map((label, index) => (
           <li
             key={label}
             className={`flex items-center gap-2 text-xs ${step === index ? 'font-semibold text-rex-cyan' : 'text-rex-text-muted'}`}
@@ -73,73 +140,64 @@ export function McpWizard({
           </li>
         ))}
       </ol>
+
       {step === 0 && (
-        <div className="space-y-6">
-          <div>
-            <h3 className="mb-3 text-sm font-medium">哪些工具使用这个服务？</h3>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {TOOLS.map((tool) => (
-                <label
-                  key={tool.id}
-                  className={`flex cursor-pointer items-center gap-2 rounded-xl border p-3 text-sm ${tools.includes(tool.id) ? 'border-rex-cyan bg-rex-cyan/5' : 'border-rex-border'}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={tools.includes(tool.id)}
-                    onChange={() => toggleTool(tool.id)}
-                    className="accent-rex-cyan"
-                  />
-                  {tool.name}
-                </label>
-              ))}
-            </div>
-          </div>
-          <fieldset className="space-y-2">
-            <legend className="mb-3 text-sm font-medium">在哪里生效？</legend>
-            <label className="flex cursor-pointer gap-3 rounded-xl border border-rex-border p-4">
-              <input
-                type="radio"
-                name="scope"
-                checked={scope === 'home'}
-                onChange={() => setScope('home')}
-                className="mt-1 accent-rex-cyan"
-              />
-              <span>
-                <span className="block text-sm font-medium">此用户下的所有项目</span>
-                <span className="mt-1 block text-xs text-rex-text-muted">写入所选工具的用户配置</span>
-              </span>
-            </label>
-            <label className="flex cursor-pointer gap-3 rounded-xl border border-rex-border p-4">
-              <input
-                type="radio"
-                name="scope"
-                checked={scope === 'project'}
-                onChange={() => setScope('project')}
-                className="mt-1 accent-rex-cyan"
-              />
-              <span>
-                <span className="block text-sm font-medium">仅项目 {target.name}</span>
-                <span className="mt-1 block break-all text-xs text-rex-text-muted">{target.path}</span>
-              </span>
-            </label>
-            {scope === 'project' && target.status !== 'ready' && (
-              <p role="alert" className="text-xs text-rex-danger">
-                项目不可访问，请先重新定位，或使用用户级配置。
+        <div className="space-y-4">
+          {landingOptions.length === 0 ? (
+            <p className="text-sm text-rex-text-muted">
+              本机没有可写的落点，所以这一步没法继续。每个落点的读取结果见服务清单。
+            </p>
+          ) : (
+            <>
+              <h3 className="text-sm font-medium">写进哪个落点？</h3>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {landingOptions.map((option) => (
+                  <label
+                    key={option.key}
+                    className={`flex cursor-pointer items-start gap-2 rounded-xl border p-3 text-sm ${option.key === landingKey ? 'border-rex-cyan bg-rex-cyan/5' : 'border-rex-border'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="landing"
+                      checked={option.key === landingKey}
+                      onChange={() => setLandingKey(option.key)}
+                      className="mt-1 accent-rex-cyan"
+                    />
+                    <span className="min-w-0">
+                      <span className="block font-medium">
+                        {clientLabel(option.clientId).name} · {option.scope}
+                      </span>
+                      <span className="mt-1 block break-all font-rex-mono text-[10px] text-rex-text-muted">
+                        {option.file}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs leading-5 text-rex-text-muted">
+                不可写的落点没有出现在上面——它们来自 <code>aios mcp list</code> 的 <code>writable</code> 字段，不是这个页面自己判断的。
               </p>
-            )}
-          </fieldset>
+            </>
+          )}
         </div>
       )}
+
       {step === 1 && (
         <div className="space-y-4">
-          <Field label="服务名称">
+          <Field label="服务名称" hint="字母数字开头，可含 . _ -，最长 64；这个名字也是配置里的键">
             <input
               aria-label="服务名称"
               value={name}
               onChange={(event) => setName(event.target.value)}
               className={fieldClass}
+              placeholder="例如：my-browser"
             />
           </Field>
+          {!nameValid && name.trim() !== '' && (
+            <p role="alert" className="text-xs text-rex-danger">
+              这个名字不符合 CLI 的字符集，执行时会被拒绝——所以现在就不让你往下走。
+            </p>
+          )}
           <Field label="启动程序" hint="连接方式：本地命令（stdio）。">
             <input
               aria-label="启动程序"
@@ -206,149 +264,95 @@ export function McpWizard({
           </fieldset>
         </div>
       )}
+
       {step === 2 && (
         <div className="space-y-4">
           <div className="flex gap-2 rounded-lg bg-rex-cyan/5 p-3 text-xs leading-5 text-rex-text-body">
             <ShieldCheck size={16} className="shrink-0 text-rex-cyan" />
-            预览不会写入文件。确认后，结果仍会区分配置写入与连接测试。
+            上面这一步是真实执行的 <code>--dry-run</code>。文件没有被修改；下面全部是命令自己的回答。
           </div>
-          <dl className="grid grid-cols-[80px_1fr] gap-x-3 gap-y-3 rounded-xl border border-rex-border p-4 text-sm">
+          <dl className="grid grid-cols-[90px_1fr] gap-x-3 gap-y-3 rounded-xl border border-rex-border p-4 text-sm">
+            <dt className="text-rex-text-muted">命令</dt>
+            <dd className="break-all font-rex-mono text-[11px]">{preview?.argv.join(' ') ?? '未执行'}</dd>
+            <dt className="text-rex-text-muted">退出码</dt>
+            <dd className="font-rex-mono text-xs">{preview?.exitCode ?? '—'}</dd>
+            <dt className="text-rex-mono text-rex-text-muted">打算写入</dt>
+            <dd className="break-all text-xs">
+              {payload?.planned?.file ?? landing?.file ?? '—'}
+              {payload?.planned?.entryPath ? ` → ${payload.planned.entryPath}` : ''}
+              {typeof payload?.planned?.bytes === 'number' ? ` · 配置现共 ${payload.planned.bytes} 字节` : ''}
+            </dd>
+            <dt className="text-rex-text-muted">当前状态</dt>
+            <dd className="text-xs">
+              {payload?.classification?.status ?? '未知'}
+              {payload?.status ? ` · 命令结论 ${payload.status}` : ''}
+            </dd>
             <dt className="text-rex-text-muted">服务</dt>
-            <dd className="break-all font-medium">{name}</dd>
-            <dt className="text-rex-text-muted">目标工具</dt>
-            <dd>{tools.map((id) => TOOLS.find((tool) => tool.id === id)?.name).join('、')}</dd>
-            <dt className="text-rex-text-muted">生效范围</dt>
-            <dd>{scopeLabel}</dd>
+            <dd className="break-all font-medium">{name.trim()}</dd>
             <dt className="text-rex-text-muted">程序</dt>
-            <dd className="break-all font-rex-mono text-xs">{command}</dd>
+            <dd className="break-all font-rex-mono text-xs">{command.trim()}</dd>
             <dt className="text-rex-text-muted">参数</dt>
             <dd className="space-y-1">
-              {args.map((arg, index) => (
+              {args.filter((arg) => arg !== '').map((arg, index) => (
                 <code key={index} className="block break-all rounded bg-rex-panel px-2 py-1 text-xs">
                   {JSON.stringify(arg)}
                 </code>
               ))}
             </dd>
-            {env.key && (
+            {env.key.trim() && (
               <>
                 <dt className="text-rex-text-muted">环境变量</dt>
                 <dd className="flex items-center gap-1 text-xs">
                   <LockKeyhole size={12} />
-                  {env.key} · 值已隐藏
+                  {env.key.trim()} · 值已隐藏
                 </dd>
               </>
             )}
           </dl>
-          <div className="rounded-xl border border-rex-border p-4">
-            <h3 className="mb-2 flex items-center gap-2 text-xs font-medium">
+          {failure && (
+            <div className="flex gap-2 rounded-xl border border-rex-danger/40 p-4 text-xs leading-5 text-rex-danger">
+              <AlertTriangle size={15} className="mt-0.5 shrink-0" />
+              <span>{failure}</span>
+            </div>
+          )}
+          {payload?.reason && (
+            <p className="text-xs leading-5 text-rex-text-muted">命令给出的原因：{payload.reason}</p>
+          )}
+          <div className="rounded-xl border border-rex-border p-4 text-xs leading-6 text-rex-text-muted">
+            <h3 className="mb-2 flex items-center gap-2 font-medium text-rex-text-body">
               <FileCode2 size={15} />
-              将修改的配置（示例）
+              真正写入这一步还没有接上
             </h3>
-            {tools.map((id) => (
-              <p key={id} className="mb-1 break-all font-rex-mono text-xs leading-5 text-rex-text-muted">
-                {scope === 'home' ? '~/' : `${target.path}/`}
-                {id === 'claude'
-                  ? scope === 'home'
-                    ? '.claude.json'
-                    : '.mcp.json'
-                  : id === 'codex'
-                    ? '.codex/config.toml'
-                    : '.gemini/settings.json'}
-              </p>
-            ))}
-            <p className="mt-3 text-xs leading-5 text-rex-text-muted">
-              正式执行将保留变更前备份；预览后文件发生变化时，应停止并让你重新检查。
+            <p>
+              写入需要三件还没到位的东西：写前备份、失败即回滚、以及你对「这个产品可以改我的配置文件」的明确授权。
+              这三条到位之前，按钮不存在，而不是存在但不干活。
             </p>
           </div>
-          <Field label="体验一个结果场景">
-            <select
-              aria-label="结果场景"
-              value={scenario}
-              onChange={(event) => setScenario(event.target.value)}
-              className={fieldClass}
-            >
-              <option value="failed">写入后连接失败 → 重试恢复</option>
-              <option value="ok">写入后连接测试通过</option>
-              <option value="conflict">预览后配置被外部修改 → 保护原文件</option>
-            </select>
-          </Field>
         </div>
       )}
-      {step === 3 && (
-        <div className="space-y-4">
-          <div role="status" className="rounded-xl border border-rex-border p-5">
-            <div className="mb-3 flex items-center gap-2">
-              {result === 'passed' ? (
-                <CheckCircle2 size={22} className="text-rex-green" />
-              ) : result === 'written' ? (
-                <CircleDashed size={22} className="text-rex-text-muted" />
-              ) : (
-                <AlertTriangle size={22} className="text-rex-danger" />
-              )}
-              <h3 className="font-semibold">{RESULT[result].label}</h3>
-            </div>
-            <p className="text-sm leading-6 text-rex-text-muted">
-              {result === 'written'
-                ? '示例配置步骤已完成。尚未测试连接，因此不能确认服务可用。'
-                : result === 'passed'
-                  ? '模拟测试已通过。这里没有启动真实程序。'
-                  : result === 'conflict'
-                    ? '配置在预览后发生变化。此次没有覆盖原文件，请重新检查变更。'
-                    : '模拟程序未能启动。配置输入已保留，你可以修复后只重试连接。'}
-            </p>
-            <div className="mt-4 divide-y divide-rex-border">
-              {tools.map((id) => (
-                <div key={id} className="flex items-center justify-between gap-2 py-2 text-xs">
-                  <span>{TOOLS.find((tool) => tool.id === id)?.name}</span>
-                  <Badge tone={RESULT[result].tone}>{RESULT[result].label}</Badge>
-                </div>
-              ))}
-            </div>
-          </div>
-          {result === 'written' && (
-            <Button onClick={() => setResult(scenario === 'ok' ? 'passed' : 'failed')}>
-              模拟连接测试
-              <ArrowRight size={14} />
-            </Button>
-          )}
-          {result === 'failed' && (
-            <Button onClick={() => setResult('passed')}>
-              <RotateCcw size={14} />
-              模拟修复并重试连接
-            </Button>
-          )}
-          {result === 'conflict' && (
-            <Button variant="outline" onClick={() => setStep(2)}>
-              返回检查变更
-            </Button>
-          )}
-          <p className="text-xs leading-5 text-rex-text-muted">
-            工具：{tools.map((id) => TOOLS.find((tool) => tool.id === id)?.name).join('、')}
-            <br />
-            范围：{scopeLabel}
-            <br />
-            全部结果为原型示例，未改动真实配置。
-          </p>
-        </div>
-      )}
+
       <div className="mt-7 flex items-center justify-between border-t border-rex-border pt-5">
-        <Button variant="ghost" onClick={() => (step > 0 && step < 3 ? setStep(step - 1) : onClose())}>
+        <Button variant="ghost" onClick={() => (step > 0 ? setStep(step - 1) : onClose())}>
           <ArrowLeft size={14} />
-          {step > 0 && step < 3 ? '上一步' : '关闭'}
+          {step > 0 ? '上一步' : '关闭'}
         </Button>
-        {step < 3 ? (
+        {step < 2 ? (
           <Button
-            disabled={!valid}
+            disabled={!stepValid}
             onClick={() => {
-              if (step === 2) setResult(scenario === 'conflict' ? 'conflict' : 'written');
-              setStep(step + 1);
+              if (step === 1) void runPreview();
+              else setStep(step + 1);
             }}
           >
-            {step === 2 ? '模拟执行' : '下一步'}
+            {running ? <CircleDashed size={14} className="animate-spin" /> : null}
+            {step === 1 ? (running ? '执行中' : '跑真实 dry-run 预览') : '下一步'}
             <ArrowRight size={14} />
           </Button>
         ) : (
-          <Button onClick={() => onFinish({ name: name.trim(), tools, scope: scopeLabel, result })}>完成体验</Button>
+          <Button variant="outline" onClick={onDone}>
+            <Badge tone="neutral">只读预览</Badge>
+            返回服务清单
+          </Button>
         )}
       </div>
     </Modal>

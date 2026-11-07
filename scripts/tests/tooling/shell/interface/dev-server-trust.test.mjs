@@ -81,8 +81,17 @@ test('the development server serves the current Console through the token gate',
   const cookie = `aios_ui_token=${token}`;
   const page = await request(port, '/', { cookie });
   assert.equal(page.status, 200);
-  assert.match(page.body, /把工具管好，把精力留给创作。/u);
-  assert.match(page.body, /示例数据 · 不读取私人文件 · 不修改真实配置/u);
+  // 首屏必须是**本机真实事实**，不是被批准的口号或全局示例横幅
+  // （docs/plans/2026-11-07-product-landing-roadmap.md 问题 1/7；契约改动记录于
+  //  docs/plans/2026-11-07-stage0-real-data-measurement.md）。
+  // 页头说的是「哪个工作区 + 本次采集耗时」：选中项与数据必须同源，不能再出现
+  // 「显示 10-27 但记忆是 11-07」那种两个面不同新鲜度的并排。
+  assert.match(page.body, /工作区 <strong/u, 'the header must name the workspace it collected for');
+  assert.match(page.body, /一次采集/u);
+  assert.match(page.body, /个客户端在本机有配置落点/u);
+  assert.doesNotMatch(page.body, /把工具管好，把精力留给创作。/u, 'the approved slogan was retired by the landing roadmap');
+  assert.doesNotMatch(page.body, /示例数据 · 不读取私人文件/u, 'the global demo banner is gone: the first screen is real data');
+  assert.doesNotMatch(page.body, /示例环境/u);
   assert.doesNotMatch(page.body, /能力进程已连接|返回正式控制台|新版交互预览/u);
   const asset = page.body.match(/\/_next\/static\/[^"']+\.js/u)?.[0];
   assert.ok(asset);

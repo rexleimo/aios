@@ -15,6 +15,25 @@ function resolveWorkspaceRoot(env = process.env) {
   return env.AIOS_WORKSPACE_ROOT || process.cwd();
 }
 
+/**
+ * 把当前工程记入本机工作区注册表（`~/.aios/workspaces/<key>.json`）。
+ *
+ * 为什么需要它：注册表自加入起就只产了读端 (`listWorkspaces`) 与测试，**没有任何写者**，
+ * 所以 Console 的工作区列表不可能有真数据。而 memo 写入是所有受支持客户端（含无 hook 面的客户端）
+ * 都会走的路径，把「这个工程在被 AIOS 用」接在这里，列表就会跟着真实使用变新。
+ *
+ * 失败不能拖坑记忆写入（后者已完成，前者只是副产品），但**必须被 await**：
+ * fire-and-forget 在测试里拿不到确定结果，在生产里也可能随进程退出而丢登记。
+ */
+async function markWorkspaceSeen(rootDir) {
+  try {
+    const { recordWorkspace } = await import('./lib/foundation/workspaces/registry.mjs');
+    return recordWorkspace({ rootDir });
+  } catch {
+    return null;
+  }
+}
+
 function makeResponse(id, result) {
   return { jsonrpc: '2.0', id, result };
 }
@@ -107,6 +126,10 @@ async function handleMemoryWrite(args = {}) {
     scope: 'project_shared',
     agent: String(args.agent || 'mcp-memory'),
   });
+  // 中文注释：写 memo 就是「这个工程在被 AIOS 用」的硬证据。workspace 注册表只产了读端与测试、
+  // 零写者，所以 Console 的工作区列表永远是空的。接在这里而不是另开入口：不新增事实源，
+  // 只把已有事实多通知一个读者。必须 await：否则测试拿不到确定结果，进程退出时登记会丢。
+  await markWorkspaceSeen(root);
   return {
     content: [{
       type: 'text',
@@ -123,6 +146,8 @@ async function handleMemoryCheckpoint(args = {}) {
   const storage = await getActiveStorage(root);
   const entry = `[checkpoint] ${text}`;
   await appendPinnedMemo(root, { storage, space: 'default', content: entry });
+  // checkpoint 同样是一次真实使用，不能只有 memo 面会把工程记进注册表。
+  await markWorkspaceSeen(root);
   // 中文注释：与 CLI 面同一回执。旧回复只说“pinned”，而写入永远成功、服务窗口却会丢位——
   // 工具回报必须区分“落盘”与“被注入”，否则调用方会把“成功回复”当成“未来能召回”。
   const receipt = pinnedServeReceipt(await readPinnedMemo(root, { storage, space: 'default' }));

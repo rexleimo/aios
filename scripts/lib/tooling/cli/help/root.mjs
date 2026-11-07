@@ -23,6 +23,7 @@ Commands:
   evolution     Inspect and run governed self-evolution proposals
   dream         Consolidate durable memo knowledge and export to plan/pins
   memo          Workspace memo + pinned memory helpers
+  workspaces    List this machine's AIOS workspaces (registry ∪ memo-store evidence), resolve a key
   memory        Memory-plane observability ('memory report [--json]')
   import        Import external memory files (MEMORY.md/.roomodes/...) as memo candidates
   search        Search project memory, docs, plans, and code references

@@ -64,10 +64,13 @@ export async function POST(request: NextRequest): Promise<Response> {
   const payload = listed.data as McpListPayload | undefined;
   const landings = Array.isArray(payload?.landings) ? payload.landings : [];
 
-  const built = buildMcpArgv(action, body, { landings });
+  const built = buildMcpArgv(action, { ...body, dryRun: body.dryRun === true }, { landings });
   if ('error' in built) return json(400, { error: 'invalid-action-arguments', action, detail: built.error });
 
-  if (actionWrites(action) && body.confirm !== true) {
+  // 写入门只看「会不会落盘」。`--dry-run` 实测不改文件（claude/home 的 mtime 未变，
+  // payload 回 `status: planned`），所以它是预览，不该被要求交出写的确认。
+  // 真写（无 dryRun）仍然必须 `confirm: true`，那是 P0-4 授权之前唯一的写入面保护。
+  if (actionWrites(action) && body.dryRun !== true && body.confirm !== true) {
     return json(409, {
       error: 'confirmation-required',
       action,

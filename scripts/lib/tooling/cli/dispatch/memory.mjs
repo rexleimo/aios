@@ -13,6 +13,14 @@ export async function runMemoryFamilyCommand(parsed, { workspaceRoot, stdout }) 
     return true;
   }
 
+  // 本机工作区清单：它和 memo/memory 同族是因为它只读 AIOS 自己的观测状态（注册表 + 记忆仓存在性），
+  // 不碰工程配置、也不需要 projectRoot。Console 的项目切换拿的就是这个单一所有者。
+  if (parsed.command === 'workspaces') {
+    const { runWorkspacesCommand } = await import('../../../foundation/workspaces/cli.mjs');
+    await runWorkspacesCommand(parsed, { rootDir: workspaceRoot, stdout });
+    return true;
+  }
+
   if (parsed.command === 'memory') {
     const [sub, ...flags] = parsed.options.args || [];
     if (sub !== 'report') {

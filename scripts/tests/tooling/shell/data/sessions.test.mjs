@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { afterEach } from 'node:test';
 
 import {
 	SESSION_ID_PATTERN,
@@ -19,8 +19,25 @@ import {
 	sessionsDir,
 } from '../../../../../apps/shell/ui/src/lib/data/sessions.mjs';
 
+/**
+ * fixture 由注册表统一回收。这个文件以前只造不收：实测跑一次就留 20 多个
+ * `aios-sessions-*` 在临时区，而 `npm run tmp:gc` 只能等它们满 24 小时才能动。
+ * 前缀形状仍是 `aios-<fixture>-<6 位随机>`，所以 GC 家族谓词照旧命中。
+ */
+const createdRoots = [];
+function tempRoot(prefix) {
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+	createdRoots.push(root);
+	return root;
+}
+afterEach(() => {
+	for (const root of createdRoots.splice(0).reverse()) {
+		fs.rmSync(root, { recursive: true, force: true });
+	}
+});
+
 function fixture() {
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-sessions-'));
+	const root = tempRoot('aios-sessions-');
 	const base = path.join(root, '.aios', 'context-db', 'sessions');
 	const session = path.join(base, 'demo-session');
 	fs.mkdirSync(session, { recursive: true });
