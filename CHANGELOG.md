@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog and this project follows Semantic Versioning.
 
+
+## [7.1.1] - 2026-11-07
+
+- Fixed: Windows console windows flashing during MCP tool calls. Every `child_process` launch now passes `windowsHide: true` (67 sites across 51 files). The mechanism: Windows allocates a console window for a console-subsystem child unless `CREATE_NO_WINDOW` is requested; when the parent has no console at all (GUI client, Tauri desktop shell, `DETACHED_PROCESS` hook, windowless MCP host), each launch created a visible window that disappeared when the command exited — one black-window flash per tool call, which is what users reported as "一直在闪小黑窗".
+- Root cause boundary: this was an omission, not a missing pattern. `scripts/shell-mcp-server.mjs`, `stdio-proxy.mjs` and `shell-wrapper.mjs` already hid their children; `commandExists` / `captureCommand` / `runCommand` in the platform owner, the whole `aios-bridge` server (`scripts/aios-mcp-server.mjs`, 8 `execSync` calls), the Pi extension runner (`packages/aios-pi/lib/aios-cli.mjs`), the ContextDB shell bridge, the browser MCP launcher, the process probes, and all of `apps/shell` did not.
+- Changed: `scripts/lib/foundation/platform/process/spawn.mjs` and `identity.mjs` now set the flag inside the platform owner, **after** the caller's spread, so it cannot be overridden back to `false`; `spawnImpl` / `spawnSyncImpl` became injectable so the option can be asserted instead of read.
+- Added: a zero-exemption gate (`scripts/tests/tooling/runtime-probe/spawn-window-hygiene.test.mjs`) that fails when any launch site in `scripts/`, `packages/`, `mcp-server/src/` or `apps/shell/` lacks `windowsHide`. It also fails when it scans fewer than 60 launch sites or when a declared root contributes none, so a scan that matches nothing cannot report green. Verified in both directions: a deliberately un-hidden `spawn` under `scripts/` turns it red, removing it turns it green.
+- Evidence (this machine, 2026-11-07): console-less parent, 7s window: idle 0 visible console windows; raw `execSync` child 29 sampled frames of a visible `cmd.exe` window (~2s lifetime); the fixed platform owner (`commandExists` + `captureCommand`) 0. `npm run test:affected` escalated to the full pool because `mcp-server/` and `packages/` changed: 2757 pass, 0 fail, 12 skip in 452s; `mcp-server` typecheck + build and `apps/shell/ui` typecheck green.
+- Boundary: not fixed here, tracked separately — `aios-mcp-server.mjs` still builds shell strings for `cp -r` / `ls -1` / `rm -rf` (POSIX-only handlers that cannot work on Windows). The deprecated `aios-mcp-proxy.mjs` is untouched; it already hid its child.
+
 ## [7.1.0] - 2026-11-06
 
 - Added: the local AI tool manager is the default Console interface, with tool, MCP, project-memory, activity and settings views. The retired sidebar and pages are removed; old bookmarks redirect to current views, and navigation supports refresh and browser history.
