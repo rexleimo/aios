@@ -60,6 +60,7 @@ if (relocated) {
 const childCwd = safeCwd;
 
 const result = spawnSync(process.execPath, [projectNodeRunner, target, ...targetArgs], {
+  windowsHide: true,
   cwd: childCwd,
   env: {
     ...process.env,

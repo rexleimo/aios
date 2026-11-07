@@ -165,6 +165,7 @@ export function createPiRpcSession({
       if (child) throw new Error('pi RPC session already started');
       const spec = spawnSpecImpl(command, args, { env, platform });
       child = spawnImpl(spec.command, spec.args, {
+        windowsHide: true,
         env,
         stdio: ['pipe', 'pipe', 'pipe'],
         shell: spec.shell === true,

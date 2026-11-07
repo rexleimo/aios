@@ -15,6 +15,7 @@ export const CTXDB_CODEX_DISABLE_MCP_ENV = 'CTXDB_CODEX_DISABLE_MCP';
 export function runCommand(command, args, options = {}) {
   const spec = getCommandSpawnSpec(command, args, options);
   return spawnSync(spec.command, spec.args, {
+    windowsHide: true,
     cwd: options.cwd,
     encoding: 'utf8',
     env: options.env,
@@ -26,6 +27,7 @@ export function runCommand(command, args, options = {}) {
 export function runCommandWithInput(command, args, input, options = {}) {
   const spec = getCommandSpawnSpec(command, args, options);
   return spawnSync(spec.command, spec.args, {
+    windowsHide: true,
     cwd: options.cwd,
     encoding: 'utf8',
     env: options.env,

@@ -227,7 +227,7 @@ async function handleContextPack(params) {
   /* 中文注释：优先尝试 aios CLI，否则 fallback 到直接调用 node mcp-server 入口 */
   try {
     const cmd = `node "${path.join(aiosRoot, 'scripts', 'aios.mjs')}" context search --query "${query}" --limit 20 --workspace "${workspace}" --json`;
-    const raw = execSync(cmd, { timeout: 30000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    const raw = execSync(cmd, { timeout: 30000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, windowsHide: true });
     const results = JSON.parse(raw);
     /* 中文注释：对搜索结果做 token budget 裁剪 */
     const packed = applyTokenBudget(results, budget, strategy);
@@ -298,7 +298,7 @@ async function handleDoctorSuite(params) {
 
   try {
     const cmd = `node "${path.join(aiosRoot, 'scripts', 'aios.mjs')}" doctor suite${fix ? ' --fix' : ''} --workspace "${workspace}" --json`;
-    const raw = execSync(cmd, { timeout: 60000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+    const raw = execSync(cmd, { timeout: 60000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, windowsHide: true });
     /* 中文注释：doctor 可能输出非 JSON（TUI），try JSON parse，否则 raw text */
     try {
       const results = JSON.parse(raw);
@@ -463,7 +463,7 @@ async function handleSkillInstall(params) {
       const targetDir = params.target || defaultTarget;
       mkdirSync(targetDir, { recursive: true });
       const cmd = `python3 "${installerPath}" --source "${source}" --dest "${targetDir}"`;
-      const raw = execSync(cmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024 });
+      const raw = execSync(cmd, { timeout: 120000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, windowsHide: true });
       return { content: [{ type: 'text', text: `Skill installed successfully.\n${raw}\nTarget: ${targetDir}` }] };
     }
 
@@ -471,11 +471,11 @@ async function handleSkillInstall(params) {
     const tmpDir = path.join(process.cwd(), '.aios-tmp-skill-install');
     mkdirSync(tmpDir, { recursive: true });
 
-    execSync(`git clone --depth 1 --filter=blob:none --sparse "${repoUrl}" "${tmpDir}/repo"`, { timeout: 120000, encoding: 'utf8' });
+    execSync(`git clone --depth 1 --filter=blob:none --sparse "${repoUrl}" "${tmpDir}/repo"`, { timeout: 120000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, windowsHide: true });
 
     if (skillPathInRepo) {
       writeFileSync(path.join(tmpDir, 'repo', '.git', 'info', 'sparse-checkout'), skillPathInRepo + '\n');
-      execSync(`git -C "${tmpDir}/repo" sparse-checkout reapply`, { timeout: 60000, encoding: 'utf8' });
+      execSync(`git -C "${tmpDir}/repo" sparse-checkout reapply`, { timeout: 60000, encoding: 'utf8', maxBuffer: 10 * 1024 * 1024, windowsHide: true });
     }
 
     /* 中文注释：找到 SKILL.md 并复制到目标 */
@@ -497,10 +497,10 @@ async function handleSkillInstall(params) {
     mkdirSync(targetDir, { recursive: true });
 
     /* 中文注释：复制整个 skill 目录 */
-    execSync(`cp -r "${skillDir}/"* "${targetDir}/"`, { encoding: 'utf8' });
+    execSync(`cp -r "${skillDir}/"* "${targetDir}/"`, { encoding: 'utf8', windowsHide: true });
 
     /* 清理临时目录 */
-    try { execSync(`rm -rf "${tmpDir}"`, { encoding: 'utf8' }); } catch {}
+    try { execSync(`rm -rf "${tmpDir}"`, { encoding: 'utf8', windowsHide: true }); } catch {}
 
     return { content: [{ type: 'text', text: `Skill "${skillName}" installed to ${targetDir}\nSource: ${source}` }] };
   } catch (err) {
@@ -512,7 +512,7 @@ async function handleSkillInstall(params) {
 function findSkillMdInDir(dir, depth = 3) {
   if (depth <= 0) return null;
   try {
-    const entries = execSync(`ls -1 "${dir}"`, { encoding: 'utf8' }).trim().split('\n');
+    const entries = execSync(`ls -1 "${dir}"`, { encoding: 'utf8', windowsHide: true }).trim().split('\n');
     for (const entry of entries) {
       const full = path.join(dir, entry);
       if (entry === 'SKILL.md' && existsSync(full)) return full;

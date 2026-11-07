@@ -143,6 +143,7 @@ export function defaultBrowserProcessProbe() {
     try {
       const { execFileSync } = require_childProcess();
       const out = execFileSync('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], {
+        windowsHide: true,
         encoding: 'utf8',
         maxBuffer: 8 * 1024 * 1024,
         timeout: 15000,
@@ -154,7 +155,7 @@ export function defaultBrowserProcessProbe() {
   }
   try {
     const { execFileSync } = require_childProcess();
-    return execFileSync('ps', ['-eo', 'pid=,args='], { encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 15000 });
+    return execFileSync('ps', ['-eo', 'pid=,args='], { windowsHide: true, encoding: 'utf8', maxBuffer: 8 * 1024 * 1024, timeout: 15000 });
   } catch {
     return null;
   }

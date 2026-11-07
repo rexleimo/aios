@@ -6,6 +6,7 @@ import { normalizeForCompare, parseBoolEnv } from '../entry/shared.mjs';
 
 export function runGit(cwd, args) {
   return spawnSync('git', ['-C', cwd, ...args], {
+    windowsHide: true,
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
   });

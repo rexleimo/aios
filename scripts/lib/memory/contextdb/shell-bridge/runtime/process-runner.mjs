@@ -4,6 +4,7 @@ import { getCommandSpawnSpec } from '../../../../foundation/platform/process.mjs
 export function spawnInherited(command, args, cwd, env) {
   const spec = getCommandSpawnSpec(command, args, { env });
   const result = spawnSync(spec.command, spec.args, {
+    windowsHide: true,
     cwd,
     env,
     stdio: 'inherit',

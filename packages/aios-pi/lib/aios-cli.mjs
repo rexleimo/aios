@@ -60,7 +60,7 @@ export async function runAios({ aiosRoot = '', argv = [], execFileImpl = null, n
   // a slow or wedged aios CLI now fails the digest instead (caller treats it as best-effort).
   const execFileTimeoutMs = 8000;
   return new Promise((resolve, reject) => {
-    execFile(process.execPath, [cliPath, ...argv], { timeout: execFileTimeoutMs }, (error, stdout, stderr) => {
+    execFile(process.execPath, [cliPath, ...argv], { windowsHide: true, timeout: execFileTimeoutMs }, (error, stdout, stderr) => {
       if (error) {
         reject(new AiosCliError(`aios ${argv[0] || ''} failed: ${String(stderr || error.message).trim()}`, {
           exitCode: typeof error.code === 'number' ? error.code : 1,

@@ -73,7 +73,7 @@ export async function runClientSmoke(
   { rootDir = process.cwd(), env = process.env, spawnImpl = spawnSync, now = new Date() } = {}
 ) {
   const probes = buildSmokeInvocation(client);
-  const spawnOptions = { encoding: 'utf8', env, timeout: SMOKE_TIMEOUT_MS };
+  const spawnOptions = { encoding: 'utf8', env, timeout: SMOKE_TIMEOUT_MS, windowsHide: true };
   const help = spawnImpl(probes.command, probes.help.args, spawnOptions);
   const task = spawnImpl(probes.command, probes.task.args, spawnOptions);
   const timestamp = now instanceof Date ? now.toISOString() : new Date(now).toISOString();
@@ -104,6 +104,7 @@ export async function runClientTriggerLiveSmoke(
     encoding: 'utf8',
     env,
     timeout: SMOKE_TIMEOUT_MS,
+    windowsHide: true,
   });
   const output = `${result.stdout || ''}${result.stderr || ''}`;
   const triggerDetected = spec.successPattern.test(output);
