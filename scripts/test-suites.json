@@ -248,6 +248,7 @@
       "scripts/tests/tooling/offload/offload-tool-offload.test.mjs",
       "scripts/tests/tooling/runtime-probe/esm-reexport-binding.test.mjs",
       "scripts/tests/tooling/runtime-probe/platform-smoke.test.mjs",
+      "scripts/tests/tooling/runtime-probe/spawn-window-hygiene.test.mjs",
       "scripts/tests/tooling/runtime-probe/process-spawn-timeout.test.mjs",
       "scripts/tests/tooling/runtime-probe/tui-ink-module-graph.test.mjs",
       "scripts/tests/tooling/search/search-budget.test.mjs",
