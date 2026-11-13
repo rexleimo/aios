@@ -26,6 +26,7 @@ import { HomeWorkspace, ToolsWorkspace } from './home-workspace';
 import { MemoryWorkspace } from './memory-workspace';
 import { McpWorkspace } from './mcp-workspace';
 import { Button, Heading, Panel } from './console-ui';
+import { ModelRoutingPanel } from './model-routing-panel';
 
 const ICONS = { home: Home, tools: Terminal, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
@@ -334,6 +335,9 @@ export function ConsoleWorkspace({
                 重新采集本机状态
               </Button>
             </Panel>
+            <div className="mt-4">
+              <ModelRoutingPanel />
+            </div>
           </div>
         </main>
         <footer className="mx-4 mt-2 flex flex-wrap items-center gap-2 border-t border-rex-border py-4 text-[10px] leading-5 text-rex-text-muted lg:mx-8">
