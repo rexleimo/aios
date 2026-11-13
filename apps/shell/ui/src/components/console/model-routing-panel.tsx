@@ -32,6 +32,7 @@ export function ModelRoutingPanel() {
   const [hash, setHash] = useState('');
   const [status, setStatus] = useState<Status>('loading');
   const [message, setMessage] = useState('');
+  const [clientId, setClientId] = useState('');
 
   const load = useCallback(async () => {
     setStatus('loading');
@@ -76,6 +77,14 @@ export function ModelRoutingPanel() {
 
   const setDefaultModel = (role: string, model: string) => {
     setEditable((prev) => prev ? { ...prev, matrix: { ...prev.matrix, default: { ...prev.matrix.default, [role]: model } } } : prev);
+  };
+
+  const setClientModel = (client: string, role: string, model: string) => {
+    setEditable((prev) => {
+      if (!prev) return prev;
+      const clientMap = { ...(prev.matrix.clients[client] || {}), [role]: model };
+      return { ...prev, matrix: { ...prev.matrix, clients: { ...prev.matrix.clients, [client]: clientMap } } };
+    });
   };
 
   if (status === 'loading') {
@@ -139,6 +148,34 @@ export function ModelRoutingPanel() {
           </label>
         ))}
       </div>
+
+      <h3 className="mb-2 mt-6 text-xs font-semibold text-rex-text-muted">每客户端覆盖（优先于全局默认）</h3>
+      <label className="mb-2 flex items-center gap-2 text-xs">
+        <span className="w-20 shrink-0 text-rex-text-muted">客户端 id</span>
+        <input
+          value={clientId}
+          onChange={(event) => setClientId(event.target.value.trim())}
+          placeholder="如 claude / codex / opencode"
+          className="w-full rounded-lg border border-rex-border bg-rex-bg px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan"
+        />
+      </label>
+      {clientId ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {ROLES.map((role) => (
+            <label key={role} className="flex items-center gap-2 text-xs">
+              <span className="w-20 shrink-0 text-rex-text-muted">{ROLE_LABEL[role]}</span>
+              <input
+                value={editable.matrix.clients[clientId]?.[role] || ''}
+                onChange={(event) => setClientModel(clientId, role, event.target.value)}
+                placeholder="留空＝用全局默认"
+                className="w-full rounded-lg border border-rex-border bg-rex-bg px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan"
+              />
+            </label>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-rex-text-muted">填一个客户端 id 即可为它单独配置角色模型。</p>
+      )}
 
       <div className="mt-6 flex items-center gap-3">
         <Button onClick={() => void save()} disabled={status === 'saving'}>
