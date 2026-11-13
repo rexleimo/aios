@@ -47,7 +47,10 @@ export function createRoutingGatewayApp(options = {}) {
       return c.json({ error: { code: 'CROSS_ORIGIN_REJECTED' } }, 403);
     }
     const startedAt = Date.now();
-    const route = resolveGatewayRoute({ clientId, role, registry, env, clientProtocol });
+    // 中文注释：编排器逐阶段传不同角色——优先用请求头 x-gateway-role/x-gateway-client，回落创建期默认。
+    const requestRole = c.req.header('x-gateway-role') || role;
+    const requestClient = c.req.header('x-gateway-client') || clientId;
+    const route = resolveGatewayRoute({ clientId: requestClient, role: requestRole, registry, env, clientProtocol });
     const rawBody = await c.req.arrayBuffer();
 
     let outgoingBody = rawBody;

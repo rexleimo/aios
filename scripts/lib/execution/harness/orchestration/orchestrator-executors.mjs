@@ -1,4 +1,5 @@
 import executorSpec from '../../../tooling/specs/orchestrator/orchestrator-executors.json' with { type: 'json' };
+import { GATEWAY_PHASE_EXECUTOR } from '../../../tooling/model-router/gateway/phase-executor.mjs';
 
 export const LOCAL_PHASE_EXECUTOR = 'local-phase';
 export const LOCAL_CONTROL_EXECUTOR = 'local-control';
@@ -7,6 +8,7 @@ export const LOCAL_DISPATCH_EXECUTORS = [
   LOCAL_PHASE_EXECUTOR,
   LOCAL_CONTROL_EXECUTOR,
   LOCAL_MERGE_GATE_EXECUTOR,
+  GATEWAY_PHASE_EXECUTOR,
 ];
 
 const LOCAL_DISPATCH_EXECUTOR_CATALOG = Object.freeze(
@@ -72,7 +74,7 @@ export function selectLocalDispatchExecutor({ jobType } = {}) {
   return match.id;
 }
 
-export function createLocalDispatchExecutorRegistry({ executePhaseJob, executeMergeGateJob } = {}) {
+export function createLocalDispatchExecutorRegistry({ executePhaseJob, executeMergeGateJob, gatewayPhaseExecutor = null } = {}) {
   if (typeof executePhaseJob !== 'function') {
     throw new Error('createLocalDispatchExecutorRegistry requires executePhaseJob');
   }
@@ -97,6 +99,16 @@ export function createLocalDispatchExecutorRegistry({ executePhaseJob, executeMe
       ...getLocalDispatchExecutor(LOCAL_MERGE_GATE_EXECUTOR),
       execute({ plan, job, dependencyRuns = [] } = {}) {
         return executeMergeGateJob(plan, job, dependencyRuns);
+      },
+    },
+    // 中文注释：网关执行器需注入（带网关客户端）；未配置时 fail-closed 返回失败而非抛挂起，编排可回退 local-phase。
+    [GATEWAY_PHASE_EXECUTOR]: {
+      ...getLocalDispatchExecutor(GATEWAY_PHASE_EXECUTOR),
+      execute({ plan, job, phase } = {}) {
+        if (gatewayPhaseExecutor && typeof gatewayPhaseExecutor.execute === 'function') {
+          return gatewayPhaseExecutor.execute({ plan, job, phase });
+        }
+        return { executor: GATEWAY_PHASE_EXECUTOR, status: 'failed', outputText: '', error: 'gateway-executor-not-configured' };
       },
     },
   };

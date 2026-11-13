@@ -33,6 +33,17 @@
       "outputTypes": ["merged-handoff"],
       "concurrencyMode": "serial-only",
       "ownershipMode": "merge-only"
+    },
+    "gateway-phase": {
+      "label": "Gateway Phase Executor",
+      "description": "Drives the local LLM gateway over HTTP per phase (role-routed model, protocol translation, per-request timeout) instead of spawning cold CLI subprocesses. Spawn executor remains the fallback.",
+      "requiresModel": true,
+      "executionModes": ["live"],
+      "jobTypes": ["phase"],
+      "supportedRoles": ["planner", "implementer", "reviewer", "security-reviewer"],
+      "outputTypes": ["handoff"],
+      "concurrencyMode": "parallel-safe",
+      "ownershipMode": "handoff-only"
     }
   }
 }
