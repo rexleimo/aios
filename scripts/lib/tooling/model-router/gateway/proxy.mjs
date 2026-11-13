@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 
 import { resolveGatewayRoute } from './router.mjs';
 import { claudeToOpenAIChatRequest, openAIChatToClaudeResponse, claudeToGeminiRequest, geminiToClaudeResponse } from './translate.mjs';
+import { openAIChatStreamToClaudeStream } from './stream-translate.mjs';
 import { loadProviders, resolveProviderApiKey } from '../routing/providers.mjs';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
@@ -95,6 +96,10 @@ export function createRoutingGatewayApp(options = {}) {
 
     let responseBody = upstream.body;
     const finish = () => recordDecision({ ...route.decision, status: upstream.status, latencyMs: Date.now() - startedAt });
+    // 中文注释：跨协议流式（claude 客户端 ← openai-chat 上游）逐事件翻译 SSE；其余流式直通。
+    if (isStream && route.needsTranslation && route.clientProtocol === 'claude' && route.targetProtocol === 'openai-chat' && responseBody) {
+      responseBody = openAIChatStreamToClaudeStream(responseBody, route.modelId);
+    }
     if (responseBody) {
       responseBody = responseBody.pipeThrough(new TransformStream({ flush: finish }));
     } else {
