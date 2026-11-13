@@ -1,34 +1,73 @@
 // 中文注释：P2 跨协议流式翻译——把上游 openai-chat 的 SSE（chat.completion.chunk）逐事件翻成
-// claude 的 SSE（message_start/content_block_delta/message_stop…），让 claude 客户端经网关
-// 流式消费 openai 模型。纯 Web Standard（ReadableStream/TransformStream/TextDecoder），运行时无关。
-// 本期覆盖文本增量；流式工具调用增量长。
+// claude 的 SSE（message_start/content_block_*/message_delta/message_stop），让 claude 客户端经网关
+// 流式消费 openai 模型。覆盖文本增量与工具调用（tool_calls→tool_use/input_json_delta）。
+// 纯 Web Standard（ReadableStream/TransformStream/TextDecoder），运行时无关。
 
 function sse(event, data) {
   return `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
 }
 
-// 把 openai-chat SSE 字节流转成 claude SSE 字节流。model 用于 message_start 的模型字段。
 export function openAIChatStreamToClaudeStream(upstreamBody, model = '') {
   const decoder = new TextDecoder();
   const encoder = new TextEncoder();
   let buffer = '';
   let started = false;
   let closed = false;
+  let nextBlockIndex = 0;
+  let textBlockIndex = -1;
+  // openai tool index → { blockIndex, opened }
+  const toolBlocks = new Map();
+  const openBlockIndices = [];
+
+  const emit = (controller, event, data) => controller.enqueue(encoder.encode(sse(event, data)));
 
   const emitStart = (controller, id) => {
     started = true;
-    controller.enqueue(encoder.encode(sse('message_start', {
+    emit(controller, 'message_start', {
       type: 'message_start',
       message: { id: id || '', type: 'message', role: 'assistant', model, content: [], usage: { input_tokens: 0, output_tokens: 0 } },
-    })));
-    controller.enqueue(encoder.encode(sse('content_block_start', { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } })));
+    });
   };
+
+  const ensureTextBlock = (controller) => {
+    if (textBlockIndex >= 0) return textBlockIndex;
+    textBlockIndex = nextBlockIndex++;
+    openBlockIndices.push(textBlockIndex);
+    emit(controller, 'content_block_start', { type: 'content_block_start', index: textBlockIndex, content_block: { type: 'text', text: '' } });
+    return textBlockIndex;
+  };
+
   const emitClose = (controller, stopReason) => {
     if (closed) return;
     closed = true;
-    controller.enqueue(encoder.encode(sse('content_block_stop', { type: 'content_block_stop', index: 0 })));
-    controller.enqueue(encoder.encode(sse('message_delta', { type: 'message_delta', delta: { stop_reason: stopReason || 'end_turn' }, usage: { output_tokens: 0 } })));
-    controller.enqueue(encoder.encode(sse('message_stop', { type: 'message_stop' })));
+    for (const index of openBlockIndices) {
+      emit(controller, 'content_block_stop', { type: 'content_block_stop', index });
+    }
+    emit(controller, 'message_delta', { type: 'message_delta', delta: { stop_reason: stopReason || 'end_turn' }, usage: { output_tokens: 0 } });
+    emit(controller, 'message_stop', { type: 'message_stop' });
+  };
+
+  const handleToolCalls = (controller, toolCalls) => {
+    for (const call of toolCalls || []) {
+      const idx = call.index ?? 0;
+      let block = toolBlocks.get(idx);
+      if (!block) {
+        block = { blockIndex: nextBlockIndex++, opened: false };
+        toolBlocks.set(idx, block);
+        openBlockIndices.push(block.blockIndex);
+      }
+      if (!block.opened && (call.id || call.function?.name)) {
+        block.opened = true;
+        emit(controller, 'content_block_start', {
+          type: 'content_block_start', index: block.blockIndex,
+          content_block: { type: 'tool_use', id: call.id || '', name: call.function?.name || '', input: {} },
+        });
+      }
+      const fragment = call.function?.arguments;
+      if (fragment) {
+        emit(controller, 'content_block_delta', { type: 'content_block_delta', index: block.blockIndex, delta: { type: 'input_json_delta', partial_json: fragment } });
+      }
+    }
   };
 
   const transform = new TransformStream({
@@ -49,11 +88,15 @@ export function openAIChatStreamToClaudeStream(upstreamBody, model = '') {
         try { parsed = JSON.parse(data); } catch { continue; }
         if (!started) emitStart(controller, parsed.id);
         const choice = parsed.choices?.[0] || {};
-        const text = choice.delta?.content;
-        if (text) {
-          controller.enqueue(encoder.encode(sse('content_block_delta', { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } })));
+        const delta = choice.delta || {};
+        if (delta.content) {
+          const index = ensureTextBlock(controller);
+          emit(controller, 'content_block_delta', { type: 'content_block_delta', index, delta: { type: 'text_delta', text: delta.content } });
         }
-        if (choice.finish_reason) emitClose(controller, choice.finish_reason === 'length' ? 'max_tokens' : 'end_turn');
+        if (delta.tool_calls) handleToolCalls(controller, delta.tool_calls);
+        if (choice.finish_reason) {
+          emitClose(controller, choice.finish_reason === 'tool_calls' ? 'tool_use' : choice.finish_reason === 'length' ? 'max_tokens' : 'end_turn');
+        }
       }
     },
     flush(controller) {

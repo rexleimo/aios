@@ -53,3 +53,24 @@ test('end-to-end cross-protocol streaming: claude client gets claude SSE from op
   assert.equal(decisions[0].needsTranslation, true);
   assert.equal(decisions[0].status, 200);
 });
+
+test('streaming tool calls: openai tool_calls fragments become claude tool_use + input_json_delta', async () => {
+  const toolSSE = [
+    'data: {"id":"1","choices":[{"delta":{"tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"read_file","arguments":""}}]}}]}',
+    '',
+    'data: {"id":"1","choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"{\\"path\\":"}}]}}]}',
+    '',
+    'data: {"id":"1","choices":[{"delta":{"tool_calls":[{"index":0,"function":{"arguments":"\\"a.txt\\"}"}}]}}]}',
+    '',
+    'data: {"id":"1","choices":[{"delta":{},"finish_reason":"tool_calls"}]}',
+    '',
+    'data: [DONE]',
+    '', '',
+  ].join('\n');
+  const text = await new Response(openAIChatStreamToClaudeStream(streamFrom(toolSSE), 'qwen3.8-flash')).text();
+  assert.ok(text.includes('"type":"tool_use"'), 'tool_use content block emitted');
+  assert.ok(text.includes('"name":"read_file"'));
+  assert.ok(text.includes('"type":"input_json_delta"'), 'argument fragments streamed');
+  assert.ok(text.includes('"stop_reason":"tool_use"'), 'finish_reason tool_calls mapped');
+  assert.ok(text.includes('event: message_stop'));
+});
