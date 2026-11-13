@@ -15,6 +15,8 @@ const MODEL_ROUTER_CLI = new Command()
   .option('--profile <name>', 'Model routing profile')
   .option('--explain', 'Explain routing decision')
   .option('--json', 'JSON output')
+  .option('--client <id>', 'Client id (matrix resolution)')
+  .option('--role <name>', 'Role name (matrix resolution)')
   .option('--workspace <path>', 'Workspace root');
 
 export function parseModelRouterArgs(argv) {
@@ -38,6 +40,8 @@ export function parseModelRouterArgs(argv) {
       ...(flags.profile ? { profile: flags.profile } : {}),
       ...(flags.explain ? { explain: true } : {}),
       ...(flags.json ? { json: true } : {}),
+      ...(flags.client ? { client: flags.client } : {}),
+      ...(flags.role ? { role: flags.role } : {}),
       ...(flags.workspace ? { workspaceRoot: flags.workspace } : {}),
     };
 

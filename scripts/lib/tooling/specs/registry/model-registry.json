@@ -831,6 +831,17 @@
       "preferredModel": "gpt-6-astra"
     }
   },
+  "clientRoleMatrix": {
+    "default": {
+      "planner": "claude-opus-5",
+      "implementer": "deepseek-v4-pro",
+      "reviewer": "claude-opus-5",
+      "security-reviewer": "claude-opus-5",
+      "team-lead": "claude-opus-5",
+      "team-member": "deepseek-v4-pro"
+    },
+    "clients": {}
+  },
   "defaultProfile": "balanced",
   "routingProfiles": {
     "balanced": {
