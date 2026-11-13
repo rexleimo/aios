@@ -137,3 +137,52 @@ export function claudeToOpenAIChatResponse(claude = {}) {
     usage: { prompt_tokens: claude.usage?.input_tokens ?? 0, completion_tokens: claude.usage?.output_tokens ?? 0 },
   };
 }
+
+// claude 请求 → gemini generateContent 请求。system→systemInstruction；assistant→model；
+// tool_use→functionCall；tool_result→functionResponse；tools→functionDeclarations。
+export function claudeToGeminiRequest(claude = {}) {
+  const contents = [];
+  for (const message of claude.messages || []) {
+    const blocks = Array.isArray(message.content) ? message.content : [{ type: 'text', text: String(message.content ?? '') }];
+    const parts = [];
+    for (const block of blocks) {
+      if (block?.type === 'text') parts.push({ text: block.text || '' });
+      else if (block?.type === 'tool_use') parts.push({ functionCall: { name: block.name, args: block.input ?? {} } });
+      else if (block?.type === 'tool_result') parts.push({ functionResponse: { name: block.tool_use_id || '', response: { content: textOf(block.content) } } });
+    }
+    contents.push({ role: message.role === 'assistant' ? 'model' : 'user', parts });
+  }
+  const request = { contents };
+  if (claude.system) request.systemInstruction = { parts: [{ text: textOf(claude.system) }] };
+  if (Array.isArray(claude.tools) && claude.tools.length) {
+    request.tools = [{ functionDeclarations: claude.tools.map((t) => ({ name: t.name, description: t.description || '', parameters: t.input_schema || {} })) }];
+  }
+  if (Number.isFinite(claude.max_tokens)) request.generationConfig = { maxOutputTokens: claude.max_tokens };
+  return request;
+}
+
+const GEMINI_STOP = { STOP: 'end_turn', MAX_TOKENS: 'max_tokens', SAFETY: 'end_turn', RECITATION: 'end_turn' };
+
+// gemini generateContent 响应 → claude 响应。parts text→text 块；functionCall→tool_use 块。
+export function geminiToClaudeResponse(gemini = {}, model = '') {
+  const candidate = (gemini.candidates || [])[0] || {};
+  const parts = candidate.content?.parts || [];
+  const content = [];
+  for (const part of parts) {
+    if (part.text) content.push({ type: 'text', text: part.text });
+    else if (part.functionCall) content.push({ type: 'tool_use', id: part.functionCall.name || '', name: part.functionCall.name || '', input: part.functionCall.args ?? {} });
+  }
+  const hasTool = content.some((b) => b.type === 'tool_use');
+  return {
+    id: gemini.responseId || '',
+    type: 'message',
+    role: 'assistant',
+    model: model || gemini.modelVersion || '',
+    content,
+    stop_reason: hasTool ? 'tool_use' : (GEMINI_STOP[candidate.finishReason] || 'end_turn'),
+    usage: {
+      input_tokens: gemini.usageMetadata?.promptTokenCount ?? 0,
+      output_tokens: gemini.usageMetadata?.candidatesTokenCount ?? 0,
+    },
+  };
+}

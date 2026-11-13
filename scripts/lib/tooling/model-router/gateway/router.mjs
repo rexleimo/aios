@@ -4,20 +4,36 @@
 // 可用 openai-chat 模型，正因网关 bridges 协议。own 模式客户端不接模型分配。纯函数、不联网。
 import { resolveClientRoleModel } from '../routing/client-role-matrix.mjs';
 import { getProviderForModel, resolveProviderEndpoint } from '../routing/providers.mjs';
-import { normalizeModelProtocol } from '../routing/protocols.mjs';
+import { normalizeModelProtocol, modelProtocolSet } from '../routing/protocols.mjs';
+import { availabilityForModel } from '../routing/availability.mjs';
 import { getActiveModel } from '../entry/registry.mjs';
-import { normalizeId } from '../entry/shared.mjs';
+import { normalizeId, uniq } from '../entry/shared.mjs';
 import { getClientModelRouting } from '../../../foundation/clients/registry.mjs';
 
-// 纯函数：网关路径的模型解析——矩阵优先，回落 roleDefaults/routingRule/activeModel，不做原生协议过滤。
-function resolveGatewayModelId(clientId, role, registry, env) {
+// 纯函数：网关路径的候选链 = 矩阵模型 + 角色规则 fallback + activeModel（不做原生协议过滤，网关翻译）。
+function gatewayCandidateChain(clientId, role, registry, env) {
   const hit = resolveClientRoleModel(clientId, role, registry, env);
-  if (hit?.modelId) return { modelId: hit.modelId, reason: `client-role matrix (${hit.source}) role="${normalizeId(role)}"` };
   const roleDefault = registry?.roleDefaults?.[normalizeId(role)];
   const taskType = normalizeId(roleDefault?.taskType) || normalizeId(role);
   const rule = (registry?.routingRules || []).find((r) => normalizeId(r.taskType) === taskType);
-  const modelId = roleDefault?.preferredModel || rule?.primary || getActiveModel(registry) || '';
-  return { modelId, reason: `role default for role="${normalizeId(role)}"` };
+  const primary = hit?.modelId || roleDefault?.preferredModel || rule?.primary || '';
+  const reason = hit ? `client-role matrix (${hit.source}) role="${normalizeId(role)}"` : `role default for role="${normalizeId(role)}"`;
+  return { chain: uniq([primary, ...(rule?.fallback || []), getActiveModel(registry)]), reason };
+}
+
+// 纯函数：按通道可用性挑首个非 down 的候选（配额/故障感知）；无可用性证据时取首个。
+function resolveGatewayModelId(clientId, role, registry, env, context = {}) {
+  const { chain, reason } = gatewayCandidateChain(clientId, role, registry, env);
+  const availability = context.availability || null;
+  for (const modelId of chain) {
+    if (availability) {
+      const protocols = modelProtocolSet(registry?.models?.[modelId] || {});
+      const probe = availabilityForModel(modelId, protocols[0] || '', { availability, now: context.now, limits: context.availabilityLimits });
+      if (probe.state === 'down') continue;
+    }
+    return { modelId, reason };
+  }
+  return { modelId: chain[0] || '', reason: `${reason} [all channels down, keeping intent]` };
 }
 
 // 纯函数：产出一条请求的路由决策。needsTranslation=true 时转发层须做 clientProtocol↔targetProtocol 互转。
@@ -27,7 +43,7 @@ export function resolveGatewayRoute({ clientId = '', role = '', registry, env = 
   if (clientId && getClientModelRouting(clientId) !== 'relay') {
     return { modelId: '', providerId: '', endpoint: '', clientProtocol: from, targetProtocol: from, needsTranslation: false, ownDefaultModel: true, explicit: false, reason: 'client uses own default model', decision: { modelId: '', ownDefaultModel: true } };
   }
-  const { modelId, reason } = resolveGatewayModelId(clientId, role, registry, env);
+  const { modelId, reason } = resolveGatewayModelId(clientId, role, registry, env, context);
   const { provider, protocol } = getProviderForModel(modelId, registry);
   const to = normalizeModelProtocol(protocol) || from;
   const decision = { modelId, providerId: provider.id, clientProtocol: from, targetProtocol: to, needsTranslation: from !== to, reason };

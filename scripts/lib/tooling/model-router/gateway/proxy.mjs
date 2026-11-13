@@ -5,10 +5,14 @@
 import { Hono } from 'hono';
 
 import { resolveGatewayRoute } from './router.mjs';
-import { claudeToOpenAIChatRequest, openAIChatToClaudeResponse } from './translate.mjs';
+import { claudeToOpenAIChatRequest, openAIChatToClaudeResponse, claudeToGeminiRequest, geminiToClaudeResponse } from './translate.mjs';
 import { loadProviders, resolveProviderApiKey } from '../routing/providers.mjs';
 
 const DEFAULT_TIMEOUT_MS = 120_000;
+
+// 中文注释：按目标协议选请求/响应翻译器（claude 客户端 ↔ openai-chat / gemini 上游）。
+const REQUEST_TRANSLATORS = { 'openai-chat': claudeToOpenAIChatRequest, gemini: claudeToGeminiRequest };
+const RESPONSE_TRANSLATORS = { 'openai-chat': openAIChatToClaudeResponse, gemini: geminiToClaudeResponse };
 
 // 中文注释：按上游协议挂鉴权头。密钥值只在此处使用，调用方不得记录。
 function authHeaders(targetProtocol, apiKey) {
@@ -56,8 +60,9 @@ export function createRoutingGatewayApp(options = {}) {
     let outgoingBody = rawBody;
     let parsed = null;
     try { parsed = JSON.parse(new TextDecoder().decode(rawBody)); } catch { parsed = null; }
-    if (route.needsTranslation && parsed && route.clientProtocol === 'claude' && route.targetProtocol === 'openai-chat') {
-      outgoingBody = new TextEncoder().encode(JSON.stringify(claudeToOpenAIChatRequest(parsed)));
+    const requestTranslator = route.clientProtocol === 'claude' ? REQUEST_TRANSLATORS[route.targetProtocol] : null;
+    if (route.needsTranslation && parsed && requestTranslator) {
+      outgoingBody = new TextEncoder().encode(JSON.stringify(requestTranslator(parsed)));
     }
 
     const provider = loadProviders(registry)[route.providerId];
@@ -80,9 +85,10 @@ export function createRoutingGatewayApp(options = {}) {
     // 中文注释：跨协议非流式 → 翻译回客户端协议；同协议或流式 → 直通（流式翻译增量长）。
     const contentType = upstream.headers.get('content-type') || 'application/json';
     const isStream = contentType.includes('text/event-stream');
-    if (route.needsTranslation && !isStream && route.clientProtocol === 'claude' && route.targetProtocol === 'openai-chat') {
+    const responseTranslator = route.clientProtocol === 'claude' ? RESPONSE_TRANSLATORS[route.targetProtocol] : null;
+    if (route.needsTranslation && !isStream && responseTranslator) {
       const upstreamJson = await upstream.json();
-      const translated = openAIChatToClaudeResponse(upstreamJson, route.modelId);
+      const translated = responseTranslator(upstreamJson, route.modelId);
       recordDecision({ ...route.decision, status: upstream.status, latencyMs: Date.now() - startedAt });
       return c.json(translated, upstream.status);
     }
