@@ -1,0 +1,262 @@
+{
+  "schemaVersion": 1,
+  "kind": "rex.delivery-ticket.v1",
+  "status": "ready",
+  "objective": "把已收敛的 AIOS 本地 LLM 网关 + 可配置客户端×角色模型路由设计落成可执行工作项图（P0–P4），每项带验收标准与验证证据；只规划不实施。",
+  "decisionTicketRef": "artifact:decision-ticket:gateway-model-routing",
+  "workItems": [
+    {
+      "id": "work-p0-gateway-feasibility",
+      "title": "最小 claude-only 透传网关探针（P0，可逆）",
+      "outcome": "真实 claude 会话经本地 127.0.0.1 网关透传到 relay，单轮端到端流式完成不卡死，网关留下请求决策记录。",
+      "completionCriteria": [
+        "一个真实 claude 会话经网关→relay 完成单轮往返，流式 token 正常返回",
+        "实测单轮 wall-time 与直连 relay 基线同量级，无 10 分钟级卡死",
+        "探针可逆：env 翻回直连即恢复，CWD 不在安装树内、无残留进程锁定",
+        "产出探针报告含实测延迟、决策记录样例与是否可行的类型化结论"
+      ],
+      "verification": [
+        "rex-harness receipt --root . -- <claude-passthrough-probe>",
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p0-gateway-feasibility"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p0-gateway-feasibility"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "work-p0-routing-unknowns",
+      "title": "路由未知项探针（own 模式 + 真实 model id）",
+      "outcome": "类型化范围结论：gemini/grok own 模式能否被网关路由，以及 Qwen/gpt-6.1-sol 的真实 id 与 relay 供应情况。",
+      "completionCriteria": [
+        "gemini/grok 各给 can/cannot/conditional 之一的真实握手结论，不打包票",
+        "每个候选 model id 经 relay 模型列表/握手确认或标 unavailable，无凭空 id 进入注册表",
+        "需扣费确认项标 pending-manual-verification 并写明原因，零成本部分照常实测"
+      ],
+      "verification": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p0-routing-unknowns",
+        "rex-harness receipt --root . -- <zero-cost-relay-model-list-probe>"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p0-routing-unknowns"
+      ],
+      "dependsOn": []
+    },
+    {
+      "id": "work-p1-provider-registry",
+      "title": "用户可配供应商注册表（单一配置源·地基）",
+      "outcome": "配置新增 providers 段（endpoint/env 密钥引用/协议/供应模型）可加载校验，protocolEndpoint 的 base 改为按供应商可配，CLI 可 list/add/doctor。",
+      "completionCriteria": [
+        "注册表 schema 校验通过，非法配置 fail-closed 退出码非零，不静默跑默认",
+        "密钥以 env:VAR 引用运行时解析，配置文件与 GUI 输出均无明文密钥",
+        "CLI/网关/GUI 读同一份注册表，单一源测试钉住",
+        "复用 MODEL_PROTOCOLS/normalizeModelProtocol，不另造协议词表"
+      ],
+      "verification": [
+        "node --test scripts/tests/tooling/model-router/provider-registry.test.mjs",
+        "rex-harness receipt --root . -- aios model-router providers doctor"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p1-provider-registry",
+        "path:scripts/lib/tooling/model-router/routing/protocols.mjs"
+      ],
+      "dependsOn": ["work-p0-gateway-feasibility"]
+    },
+    {
+      "id": "work-p1-client-role-matrix",
+      "title": "客户端×角色→模型矩阵（全局默认 + 每客户端覆盖）",
+      "outcome": "矩阵配置可解析 (客户端,角色)→模型→供应商，全局默认 + 每客户端覆盖，所有角色含 implementer 可配，纠正现 routingRules 的 planning→便宜模型。",
+      "completionCriteria": [
+        "每个 relay 客户端 × planner/implementer/reviewer/team-lead/team-member 都能解析出模型",
+        "每客户端覆盖优先于全局默认，env 覆盖 AIOS_MODEL_<ROLE> 仍最高优先",
+        "own 模式客户端按探针结论标 not-assignable，不被强行分配",
+        "复用 resolveModelForRole/applyClientContract，角色/意图显式声明无声明回落中性默认"
+      ],
+      "verification": [
+        "node --test scripts/tests/tooling/model-router/client-role-matrix.test.mjs",
+        "node --test scripts/tests/tooling/model-router/selection.test.mjs"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p1-client-role-matrix",
+        "path:scripts/lib/tooling/model-router/routing/selection.mjs"
+      ],
+      "dependsOn": ["work-p1-provider-registry", "work-p0-routing-unknowns"]
+    },
+    {
+      "id": "work-p2-protocol-translation",
+      "title": "claude/openai/gemini 协议翻译（纯模块，可并行）",
+      "outcome": "协议 A 请求翻译为协议 B 发往上游、响应翻译回 A，含 tool-calls 与 reasoning 透传，纯函数 + 真实信封夹具可独立验证。",
+      "completionCriteria": [
+        "claude↔openai-chat↔openai-response↔gemini 往返保留 messages/tool-calls/reasoning",
+        "夹具照抄真实 wire 响应信封，覆盖流式与非流式",
+        "复用 MODEL_PROTOCOLS/protocolEndpoint，翻译层不持有密钥"
+      ],
+      "verification": [
+        "node --test scripts/tests/tooling/model-router/gateway/protocol-translation.test.mjs"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-protocol-translation",
+        "path:scripts/lib/tooling/model-router/routing/protocols.mjs"
+      ],
+      "dependsOn": ["work-p1-provider-registry"]
+    },
+    {
+      "id": "work-p2-request-routing",
+      "title": "网关 HTTP 入口 + 请求级路由 + 可用性/配额选择",
+      "outcome": "网关 daemon 接收请求按矩阵解析 (客户端,角色)→模型，按可用性/配额选可用 provider/通道转发（先同协议），每请求留下决策记录作为路由图数据源。",
+      "completionCriteria": [
+        "请求经网关解析到配置的 (客户端,角色) 模型并转发到正确 provider endpoint",
+        "down/degraded 通道被跳过，配额耗尽触发通道切换，复用 effectiveAvailability/availabilityForModel",
+        "每请求决策记录落盘含模型/通道/原因/可用性快照",
+        "只绑 127.0.0.1 + 随机 token，敏感路由拒绝带 Origin/Sec-Fetch-* 的请求"
+      ],
+      "verification": [
+        "node --test scripts/tests/tooling/model-router/gateway/request-routing.test.mjs",
+        "rex-harness receipt --root . -- <gateway-loopback-route>"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-request-routing",
+        "path:scripts/lib/tooling/model-router/routing/availability.mjs"
+      ],
+      "dependsOn": ["work-p1-client-role-matrix", "work-p0-gateway-feasibility"]
+    },
+    {
+      "id": "work-p2-streaming-hardening",
+      "title": "流式 + 每请求超时 + 配额故障切换 + 脱敏（集成切片）",
+      "outcome": "跨协议流式请求经网关完整完成：翻译接入活转发路径、每请求超时、配额耗尽切通道、上游转发前脱敏。",
+      "completionCriteria": [
+        "跨协议流式请求端到端完成，token 流不中断不卡死",
+        "每请求超时生效取代 10 分钟×N 冷进程串行，超时返回类型化错误而非挂起",
+        "配额耗尽/通道 down 时按可用性状态机切换并留痕",
+        "密钥/敏感数据上游转发前脱敏，日志与决策记录不含明文凭据"
+      ],
+      "verification": [
+        "node --test scripts/tests/tooling/model-router/gateway/streaming-hardening.test.mjs",
+        "rex-harness receipt --root . -- <cross-protocol-stream-loopback>"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-streaming-hardening"
+      ],
+      "dependsOn": ["work-p2-request-routing", "work-p2-protocol-translation"]
+    },
+    {
+      "id": "work-p3-gateway-executor",
+      "title": "编排器网关执行器（根治冷进程卡死）",
+      "outcome": "可插拔阶段执行器通过 HTTP 驱动网关而非 spawn 冷 CLI，工作项各阶段以角色别名经网关执行，单会话顺滑无 10 分钟×N 卡死。",
+      "completionCriteria": [
+        "一个真实多阶段工作项经网关执行器端到端跑通，角色→模型取自矩阵",
+        "实测 wall-time 显著低于 spawn 基线，无逐阶段冷进程",
+        "复用 resolvePhaseExecutorSelection 注册执行器，spawn 执行器仍可选作为回退",
+        "执行器 CWD 不在安装树内，不锁 aios update 目录替换"
+      ],
+      "verification": [
+        "node --test scripts/tests/execution/harness/gateway-executor.test.mjs",
+        "rex-harness receipt --root . -- <real-multi-phase-dispatch-via-gateway>"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p3-gateway-executor",
+        "path:scripts/lib/execution/harness/orchestration/orchestrator/planning/plan.mjs"
+      ],
+      "dependsOn": ["work-p2-streaming-hardening", "work-p1-client-role-matrix"]
+    },
+    {
+      "id": "work-p4-gui-provider-panel",
+      "title": "GUI 供应商面板（apps/shell，读写单一源）",
+      "outcome": "设置屏列出/新增/编辑供应商（endpoint/env 密钥引用/协议/供应模型），写入 CLI/网关读的同一份配置。",
+      "completionCriteria": [
+        "供应商 CRUD 经数据平面 apps/shell/data/load.mjs 子进程 + 写 action，不直接 import scripts/lib",
+        "env 引用密钥绝不回显明文，own/untrusted 标记可见",
+        "设置页落 src/app/(console) 子路由，视觉 token 与 docs-site 共用，界面零手写常量",
+        "真实浏览器冒烟覆盖 golden path 与空/错误/加载态"
+      ],
+      "verification": [
+        "npm run ui:typecheck",
+        "npm run test:shell",
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-provider-panel"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-provider-panel",
+        "path:apps/shell/data/load.mjs"
+      ],
+      "dependsOn": ["work-p1-provider-registry"]
+    },
+    {
+      "id": "work-p4-gui-role-matrix",
+      "title": "GUI 客户端×角色矩阵表（apps/shell）",
+      "outcome": "矩阵表（客户端×角色）每格可分配模型 + 全局默认 + 每客户端覆盖，读写同一份配置。",
+      "completionCriteria": [
+        "矩阵从真实配置事实渲染无手写常量，编辑持久化到单一源",
+        "relay/own 模式区分可见，own 客户端标 not-assignable",
+        "复用供应商面板建立的设置路由 + 数据平面写模式，不另造共享状态",
+        "真实浏览器冒烟：改一格→持久化→重渲染一致，覆盖空/错误/加载态"
+      ],
+      "verification": [
+        "npm run ui:typecheck",
+        "npm run test:shell",
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-role-matrix"
+      ],
+      "evidenceRefs": [
+        "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-role-matrix"
+      ],
+      "dependsOn": ["work-p1-client-role-matrix", "work-p4-gui-provider-panel"]
+    }
+  ],
+  "frontier": {
+    "ready": ["work-p0-gateway-feasibility", "work-p0-routing-unknowns"],
+    "blocked": [
+      {
+        "workItemId": "work-p1-provider-registry",
+        "reason": "等 feasibility 探针确认网关透传可行后再固化供应商 endpoint/协议模型",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p1-provider-registry"]
+      },
+      {
+        "workItemId": "work-p1-client-role-matrix",
+        "reason": "等供应商注册表 + 路由未知项探针确定可分配客户端与真实 model id 范围",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p1-client-role-matrix"]
+      },
+      {
+        "workItemId": "work-p2-protocol-translation",
+        "reason": "等注册表提供协议/endpoint 模型作为翻译目标",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-protocol-translation"]
+      },
+      {
+        "workItemId": "work-p2-request-routing",
+        "reason": "等客户端×角色矩阵 + feasibility 探针",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-request-routing"]
+      },
+      {
+        "workItemId": "work-p2-streaming-hardening",
+        "reason": "等请求路由与协议翻译汇合后做流式集成",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p2-streaming-hardening"]
+      },
+      {
+        "workItemId": "work-p3-gateway-executor",
+        "reason": "等流式加固网关稳定 + 矩阵角色解析",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p3-gateway-executor"]
+      },
+      {
+        "workItemId": "work-p4-gui-provider-panel",
+        "reason": "等供应商注册表配置层（不必等网关跑通）",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-provider-panel"]
+      },
+      {
+        "workItemId": "work-p4-gui-role-matrix",
+        "reason": "等矩阵配置 + 供应商面板建立的共享设置路由与写模式",
+        "evidenceRefs": ["artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#work-p4-gui-role-matrix"]
+      }
+    ]
+  },
+  "parallelGroups": [
+    ["work-p0-gateway-feasibility", "work-p0-routing-unknowns"],
+    ["work-p2-protocol-translation", "work-p2-request-routing", "work-p4-gui-provider-panel"]
+  ],
+  "convergenceGate": {
+    "requiredEvidenceRefs": [
+      "artifact:docs/plans/2026-11-13-gateway-model-routing-plan.md#convergence-gate",
+      "artifact:docs/plans/2026-11-13-gateway-model-routing-delivery-ticket.json"
+    ],
+    "verification": "node --test scripts/tests/tooling/model-router/provider-registry.test.mjs scripts/tests/tooling/model-router/client-role-matrix.test.mjs scripts/tests/tooling/model-router/gateway/*.test.mjs scripts/tests/execution/harness/gateway-executor.test.mjs && npm run ui:typecheck && npm run test:shell && rex-harness receipt --root . -- <real-multi-phase-dispatch-via-gateway>",
+    "joinCondition": "P0–P4 全部完成：网关执行器以配置的角色→模型路由跑通一个真实多阶段工作项且无冷进程卡死；GUI 与 CLI/网关读写同一份配置；密钥全程 env 引用不落明文。"
+  },
+  "completionClaim": "soft"
+}
