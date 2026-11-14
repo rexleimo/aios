@@ -79,9 +79,16 @@ export function applyEdits(document, editable) {
     };
   }
   next.providers = providers;
+  // 中文注释：清空的角色覆盖（空串）落盘前剪掉，避免 {implementer:''} 这类残留；空客户端整段移除。
+  const pruneMap = (map) => Object.fromEntries(Object.entries(map || {}).filter(([, v]) => String(v || '').trim()));
+  const clients = {};
+  for (const [clientId, roles] of Object.entries(editable?.matrix?.clients || {})) {
+    const pruned = pruneMap(roles);
+    if (Object.keys(pruned).length) clients[clientId] = pruned;
+  }
   next.clientRoleMatrix = {
-    default: { ...(editable?.matrix?.default || {}) },
-    clients: { ...(editable?.matrix?.clients || {}) },
+    default: pruneMap(editable?.matrix?.default),
+    clients,
   };
   return next;
 }

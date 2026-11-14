@@ -17,6 +17,8 @@ const MODEL_ROUTER_CLI = new Command()
   .option('--json', 'JSON output')
   .option('--client <id>', 'Client id (matrix resolution)')
   .option('--role <name>', 'Role name (matrix resolution)')
+  .option('--port <number>', 'Gateway listen port')
+  .option('--passthrough', 'Gateway passthrough mode (no routing)')
   .option('--workspace <path>', 'Workspace root');
 
 export function parseModelRouterArgs(argv) {
@@ -42,6 +44,8 @@ export function parseModelRouterArgs(argv) {
       ...(flags.json ? { json: true } : {}),
       ...(flags.client ? { client: flags.client } : {}),
       ...(flags.role ? { role: flags.role } : {}),
+      ...(flags.port ? { port: flags.port } : {}),
+      ...(flags.passthrough ? { passthrough: true } : {}),
       ...(flags.workspace ? { workspaceRoot: flags.workspace } : {}),
     };
 

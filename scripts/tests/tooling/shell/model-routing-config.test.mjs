@@ -62,3 +62,15 @@ test('diffEditable detects provider and matrix changes', () => {
   after.providers[0].baseUrl = 'https://other.example.com';
   assert.deepEqual(diffEditable(before, after), ['providers', 'clientRoleMatrix']);
 });
+
+test('applyEdits prunes empty role overrides and empty client maps', () => {
+  const document = parseDocument(registryText);
+  const editable = toEditable(document);
+  editable.matrix.clients.claude = { implementer: '', reviewer: 'claude-opus-5' };
+  editable.matrix.clients.codex = { implementer: '' };
+  editable.matrix.default.planner = '';
+  const next = applyEdits(document, editable);
+  assert.deepEqual(next.clientRoleMatrix.clients.claude, { reviewer: 'claude-opus-5' }, 'empty role pruned, non-empty kept');
+  assert.equal(next.clientRoleMatrix.clients.codex, undefined, 'fully-empty client map removed');
+  assert.equal(next.clientRoleMatrix.default.planner, undefined, 'empty default role pruned');
+});

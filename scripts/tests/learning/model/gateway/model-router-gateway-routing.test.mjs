@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { resolveGatewayRoute } from '../../../lib/tooling/model-router/gateway/router.mjs';
-import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { resolveGatewayRoute } from '../../../../lib/tooling/model-router/gateway/router.mjs';
+import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
 
 const registry = {
   activeModel: 'claude-opus-5',

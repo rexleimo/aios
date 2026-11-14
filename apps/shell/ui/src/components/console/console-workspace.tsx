@@ -299,7 +299,7 @@ export function ConsoleWorkspace({
             <Heading
               eyebrow="PREFERENCES"
               title="让工作空间，顺手一点。"
-              description="主题只在当前页面生效；写入应用配置属于尚未授权的能力。"
+              description="主题只在当前页面生效；模型路由配置可在此写入（写前自动备份）。"
             />
             <Panel className="max-w-2xl p-6">
               <h2 className="mb-4 text-sm font-semibold">界面外观</h2>
@@ -355,7 +355,7 @@ function LockHint() {
   return (
     <span className="flex items-center gap-1.5">
       <ShieldCheck size={12} />
-      只读取本机配置，不写入任何文件
+      本机状态只读采集；模型路由配置可写，写前自动备份
     </span>
   );
 }

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
 
-import { createPassthroughGateway } from '../../../lib/tooling/model-router/gateway/passthrough.mjs';
+import { createGatewayServer } from '../../../../lib/tooling/model-router/gateway/serve.mjs';
 
 // 中文注释：P0 透传网关用本地 mock 上游验证（零扣费）：转发路径/鉴权透传、SSE 流式、
 // 决策记录、信任边界。真实 relay 往返是另一步的 live 探针，需显式批准，不在本测试里触发。
@@ -42,7 +42,7 @@ test('forwards /v1/messages to upstream /claude/v1/messages with auth passthroug
       res.end(JSON.stringify({ ok: true, model: seen.body.model }));
     });
   });
-  const gateway = createPassthroughGateway({ upstreamBase: upstream.base });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: upstream.base });
   const addr = await gateway.listen();
   try {
     const res = await postMessages(`http://127.0.0.1:${addr.port}`, {
@@ -78,7 +78,7 @@ test('streams SSE chunks through in order without buffering', async () => {
       }
     }, 10);
   });
-  const gateway = createPassthroughGateway({ upstreamBase: upstream.base });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: upstream.base });
   const addr = await gateway.listen();
   try {
     const res = await postMessages(`http://127.0.0.1:${addr.port}`);
@@ -98,7 +98,7 @@ test('streams SSE chunks through in order without buffering', async () => {
 test('rejects browser cross-origin requests on the sensitive route', async () => {
   let called = false;
   const upstream = await startMockUpstream((req, res) => { called = true; res.end('{}'); });
-  const gateway = createPassthroughGateway({ upstreamBase: upstream.base });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: upstream.base });
   const addr = await gateway.listen();
   try {
     const res = await postMessages(`http://127.0.0.1:${addr.port}`, { headers: { origin: 'https://evil.example' } });
@@ -114,7 +114,7 @@ test('rejects browser cross-origin requests on the sensitive route', async () =>
 test('trust boundary keys on Sec-Fetch-Site, not Sec-Fetch-Mode (Node fetch sends the latter)', async () => {
   let called = 0;
   const upstream = await startMockUpstream((req, res) => { called += 1; res.writeHead(200); res.end('{}'); });
-  const gateway = createPassthroughGateway({ upstreamBase: upstream.base });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: upstream.base });
   const addr = await gateway.listen();
   const base = `http://127.0.0.1:${addr.port}`;
   try {
@@ -130,7 +130,7 @@ test('trust boundary keys on Sec-Fetch-Site, not Sec-Fetch-Mode (Node fetch send
 });
 
 test('health endpoint responds without touching upstream', async () => {
-  const gateway = createPassthroughGateway({ upstreamBase: 'http://127.0.0.1:1' });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: 'http://127.0.0.1:1' });
   const addr = await gateway.listen();
   try {
     const res = await fetch(`http://127.0.0.1:${addr.port}/health`);
@@ -142,7 +142,7 @@ test('health endpoint responds without touching upstream', async () => {
 });
 
 test('returns 502 and records a decision when upstream is unreachable', async () => {
-  const gateway = createPassthroughGateway({ upstreamBase: 'http://127.0.0.1:1' });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: 'http://127.0.0.1:1' });
   const addr = await gateway.listen();
   try {
     const res = await postMessages(`http://127.0.0.1:${addr.port}`);
@@ -157,7 +157,7 @@ test('returns 502 and records a decision when upstream is unreachable', async ()
 
 test('intake token gate rejects missing token and accepts the right one', async () => {
   const upstream = await startMockUpstream((req, res) => { res.writeHead(200); res.end('{}'); });
-  const gateway = createPassthroughGateway({ upstreamBase: upstream.base, intakeToken: 'secret' });
+  const gateway = createGatewayServer({ mode: 'passthrough', upstreamBase: upstream.base, intakeToken: 'secret' });
   const addr = await gateway.listen();
   const base = `http://127.0.0.1:${addr.port}`;
   try {

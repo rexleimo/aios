@@ -1,11 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createGatewayClient } from '../../../lib/tooling/model-router/gateway/client.mjs';
-import { createGatewayPhaseExecutor, GATEWAY_PHASE_EXECUTOR } from '../../../lib/tooling/model-router/gateway/phase-executor.mjs';
-import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/proxy.mjs';
-import { resolvePhaseExecutorSelection } from '../../../lib/execution/harness/orchestration/orchestrator/planning/plan.mjs';
-import { createLocalDispatchExecutorRegistry } from '../../../lib/execution/harness/orchestration/orchestrator-executors.mjs';
+import { createGatewayClient } from '../../../../lib/tooling/model-router/gateway/client.mjs';
+import { createGatewayPhaseExecutor, GATEWAY_PHASE_EXECUTOR } from '../../../../lib/tooling/model-router/gateway/phase-executor.mjs';
+import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { resolvePhaseExecutorSelection } from '../../../../lib/execution/harness/orchestration/orchestrator/planning/plan.mjs';
+import { createLocalDispatchExecutorRegistry } from '../../../../lib/execution/harness/orchestration/orchestrator-executors.mjs';
 
 const registry = {
   activeModel: 'claude-opus-5',

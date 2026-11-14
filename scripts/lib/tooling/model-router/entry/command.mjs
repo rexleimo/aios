@@ -14,6 +14,7 @@ import {
 } from '../routing/availability.mjs';
 import { loadProviders } from '../routing/providers.mjs';
 import { getClientRoleMatrix, resolveModelForClientRole } from '../routing/client-role-matrix.mjs';
+import { createGatewayServer } from '../gateway/serve.mjs';
 
 function getSubcommand(rawOptions) {
   return String(rawOptions.subcommand || rawOptions._?.[0] || 'list').trim();
@@ -174,6 +175,29 @@ const COMMAND_HANDLERS = Object.freeze({
       ? clientIds.map((id) => `- ${id}: ${Object.entries(matrix.clients[id]).map(([r, m]) => `${r}→\`${m}\``).join(', ')}`).join('\n')
       : '(none)');
     io.log('\nPrecedence: env AIOS_MODEL_<ROLE> > per-client > global default > roleDefaults.');
+    return { exitCode: 0 };
+  },
+
+  // 中文注释：网关生产入口——起常驻 HTTP 服务（默认路由模式，--passthrough 纯透传）。只绑 127.0.0.1。
+  async gateway({ rawOptions, registry, io }) {
+    const port = Number(rawOptions.port) || 8787;
+    const mode = rawOptions.passthrough ? 'passthrough' : 'routing';
+    const server = createGatewayServer({ mode, port, registry, env: process.env });
+    let addr;
+    try {
+      addr = await server.listen();
+    } catch (error) {
+      io.error(`Gateway failed to start: ${error instanceof Error ? error.message : error}`);
+      return { exitCode: 1 };
+    }
+    io.log(`AIOS gateway (${mode}) listening on http://127.0.0.1:${addr.port}`);
+    io.log('Press Ctrl+C to stop.');
+    await new Promise((resolve) => {
+      process.once('SIGINT', resolve);
+      process.once('SIGTERM', resolve);
+    });
+    await server.close();
+    io.log('Gateway stopped.');
     return { exitCode: 0 };
   },
 });
