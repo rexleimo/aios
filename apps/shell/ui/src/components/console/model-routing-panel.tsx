@@ -101,11 +101,6 @@ export function ModelRoutingPanel() {
 
   return (
     <Panel className="max-w-3xl p-6">
-      <h2 className="mb-1 text-sm font-semibold">模型路由</h2>
-      <p className="mb-5 text-xs leading-5 text-rex-text-muted">
-        供应商与客户端×角色矩阵读写同一份配置（CLI / 网关 / 界面共用）。密钥只以 env 引用展示，不落明文。
-      </p>
-
       <h3 className="mb-2 text-xs font-semibold text-rex-text-muted">供应商</h3>
       {editable.providers.length === 0 ? (
         <p className="mb-5 text-xs text-rex-text-muted">还没有自定义供应商（默认走内置 relay）。</p>

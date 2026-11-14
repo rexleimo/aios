@@ -15,6 +15,7 @@ import {
   Home,
   Moon,
   Plug,
+  Route,
   Settings2,
   ShieldCheck,
   Sun,
@@ -28,7 +29,7 @@ import { McpWorkspace } from './mcp-workspace';
 import { Button, Heading, Panel } from './console-ui';
 import { ModelRoutingPanel } from './model-routing-panel';
 
-const ICONS = { home: Home, tools: Terminal, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
+const ICONS = { home: Home, tools: Terminal, routing: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
 
 /** 采集时间怎么念：刚刚 / N 秒前 / N 分钟前——数据新鲜度是一条事实，不是装饰。 */
@@ -263,6 +264,16 @@ export function ConsoleWorkspace({
           <div hidden={view !== 'tools'}>
             <ToolsWorkspace facts={facts} onMcp={() => navigate('mcp')} selectedId={selectedToolId} onSelect={setSelectedToolId} />
           </div>
+          {mounted.has('routing') && (
+            <div hidden={view !== 'routing'}>
+              <Heading
+                eyebrow="MODEL ROUTING"
+                title="把对的模型，交给对的角色。"
+                description="供应商注册表与客户端×角色矩阵读写同一份配置（CLI / 网关 / 界面共用）。密钥只以 env 引用展示，不落明文。"
+              />
+              <ModelRoutingPanel />
+            </div>
+          )}
           {mounted.has('mcp') && (
             <div hidden={view !== 'mcp'}>
               <McpWorkspace facts={facts} />
@@ -299,7 +310,7 @@ export function ConsoleWorkspace({
             <Heading
               eyebrow="PREFERENCES"
               title="让工作空间，顺手一点。"
-              description="主题只在当前页面生效；模型路由配置可在此写入（写前自动备份）。"
+              description="主题只在当前页面生效。模型路由配置在左侧「模型路由」页。"
             />
             <Panel className="max-w-2xl p-6">
               <h2 className="mb-4 text-sm font-semibold">界面外观</h2>
@@ -335,9 +346,6 @@ export function ConsoleWorkspace({
                 重新采集本机状态
               </Button>
             </Panel>
-            <div className="mt-4">
-              <ModelRoutingPanel />
-            </div>
           </div>
         </main>
         <footer className="mx-4 mt-2 flex flex-wrap items-center gap-2 border-t border-rex-border py-4 text-[10px] leading-5 text-rex-text-muted lg:mx-8">

@@ -2,6 +2,7 @@
 export const CONSOLE_VIEWS = {
   home: { href: '/', label: '首页', title: '概览' },
   tools: { href: '/tools', label: 'AI 工具', title: 'AI 工具' },
+  routing: { href: '/routing', label: '模型路由', title: '模型路由' },
   mcp: { href: '/mcp', label: 'MCP 服务', title: 'MCP 服务' },
   memory: { href: '/memory', label: '记忆', title: '项目记忆' },
   activity: { href: '/activity', label: '活动记录', title: '活动记录' },
