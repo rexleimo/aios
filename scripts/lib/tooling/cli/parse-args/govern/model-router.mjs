@@ -19,6 +19,18 @@ const MODEL_ROUTER_CLI = new Command()
   .option('--role <name>', 'Role name (matrix resolution)')
   .option('--port <number>', 'Gateway listen port')
   .option('--passthrough', 'Gateway passthrough mode (no routing)')
+  .option('--gateway-url <url>', 'Connect: gateway base URL (default http://127.0.0.1:<port>)')
+  .option('--state-dir <path>', 'Connect: artifact state dir (default ~/.aios/gateway)')
+  .option('--codex-model <id>', 'Connect: explicit codex openai-response model (otherwise use configured route)')
+  .option('--pi-model <id>', 'Connect: pi gateway model id (default gateway-default)')
+  .option('--dry-run', 'Connect: validate readiness without changing clients, registry or state')
+  .option('--isolated', 'Connect: use isolated artifacts + launch aliases instead of in-place real-config editing')
+  .option('--home <path>', 'Connect: home dir whose client configs to edit in place (default real home)')
+  .option('--id <id>', 'Group id')
+  .option('--group-id <id>', 'Group id (alias)')
+  .option('--models <list>', 'Comma-separated model ids')
+  .option('--routing <mode>', 'Routing mode (smart|order|rotate|...)')
+  .option('--refresh', 'Models: discover provider model lists and merge them into the registry')
   .option('--workspace <path>', 'Workspace root');
 
 export function parseModelRouterArgs(argv) {
@@ -46,6 +58,18 @@ export function parseModelRouterArgs(argv) {
       ...(flags.role ? { role: flags.role } : {}),
       ...(flags.port ? { port: flags.port } : {}),
       ...(flags.passthrough ? { passthrough: true } : {}),
+      ...(flags.gatewayUrl ? { gatewayUrl: flags.gatewayUrl } : {}),
+      ...(flags.stateDir ? { stateDir: flags.stateDir } : {}),
+      ...(flags.codexModel ? { codexModel: flags.codexModel } : {}),
+      ...(flags.piModel ? { piModel: flags.piModel } : {}),
+      ...(flags.dryRun ? { dryRun: true } : {}),
+      ...(flags.isolated ? { isolated: true } : {}),
+      ...(flags.home ? { home: flags.home } : {}),
+      ...(flags.id ? { id: flags.id } : {}),
+      ...(flags.groupId ? { groupId: flags.groupId } : {}),
+      ...(flags.models ? { models: flags.models } : {}),
+      ...(flags.routing ? { routing: flags.routing } : {}),
+      ...(flags.refresh ? { refresh: true } : {}),
       ...(flags.workspace ? { workspaceRoot: flags.workspace } : {}),
     };
 

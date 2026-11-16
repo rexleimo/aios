@@ -11,6 +11,7 @@ const registry = {
     'qwen3.8-flash': { protocols: ['openai-chat'], cost: 'lowest' },
   },
   providers: {
+    myclaude: { baseUrl: 'https://claude.example.com', authMode: 'none', protocols: ['claude'], models: ['claude-opus-5'] },
     myopenai: { baseUrl: 'https://api.example.com', apiKeyEnv: 'env:MY_KEY', protocols: ['openai-chat'], models: ['qwen3.8-flash'] },
   },
   roleDefaults: { implementer: { taskType: 'implementation' }, planner: { taskType: 'planning' } },
@@ -28,6 +29,7 @@ test('router resolves model via matrix, picks provider endpoint, detects transla
   const cross = resolveGatewayRoute({ clientId: 'claude', role: 'implementer', registry, env: {}, clientProtocol: 'claude' });
   assert.equal(cross.modelId, 'qwen3.8-flash');
   assert.equal(cross.providerId, 'myopenai');
+  assert.equal(cross.upstreamModel, 'qwen3.8-flash');
   assert.equal(cross.targetProtocol, 'openai-chat');
   assert.equal(cross.needsTranslation, true);
   assert.equal(cross.endpoint, 'https://api.example.com/openai/v1/chat/completions');
@@ -53,6 +55,7 @@ test('routing gateway translates claude→openai request and back, uses provider
   assert.equal(json.role, 'assistant', 'response translated back to claude format');
   assert.equal(json.content[0].text, 'hi there');
   assert.equal(captured.body.messages[0].role, 'user', 'outgoing request is openai-chat format');
+  assert.equal(captured.body.model, 'qwen3.8-flash', 'upstream must receive the ROUTED model, not the client original claude-sonnet-5');
   assert.ok(captured.url.endsWith('/openai/v1/chat/completions'));
   assert.equal(captured.headers.authorization, 'Bearer secret-value');
   assert.equal(decisions.length, 1);
@@ -64,6 +67,7 @@ test('same-protocol route streams through without translation', async () => {
   const fetchImpl = async () => new Response('data: chunk\n\n', { status: 200, headers: { 'content-type': 'text/event-stream' } });
   const { app, decisions } = createRoutingGatewayApp({ registry, clientId: 'claude', role: 'planner', env: {}, clientProtocol: 'claude', fetchImpl });
   const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 200);
   assert.equal(res.headers.get('content-type'), 'text/event-stream');
   assert.equal(await res.text(), 'data: chunk\n\n');
   assert.equal(decisions[0].needsTranslation, false);
@@ -81,8 +85,123 @@ test('per-request timeout returns 504 instead of hanging', async () => {
 });
 
 test('routing gateway rejects browser cross-origin requests', async () => {
-  const fetchImpl = async () => new Response('{}', { status: 200 });
+  let calls = 0;
+  const fetchImpl = async () => { calls += 1; return new Response('{}', { status: 200 }); };
   const { app } = createRoutingGatewayApp({ registry, clientId: 'claude', role: 'implementer', env: {}, fetchImpl });
   const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json', origin: 'https://evil.example' }, body: JSON.stringify(claudeBody) });
   assert.equal(res.status, 403);
+  assert.equal(calls, 0);
+});
+
+for (const clientId of ['gemini', 'unknown-client']) {
+  test(`routing gateway rejects ${clientId} before classifier or upstream access`, async () => {
+    let calls = 0;
+    const { app, decisions } = createRoutingGatewayApp({
+      registry, clientId, env: { MY_KEY: 'fixture-key' },
+      classifyIntent: async () => { calls += 1; return null; },
+      fetchImpl: async () => { calls += 1; return new Response('{}'); },
+    });
+    const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+    assert.equal(res.status, 503);
+    assert.equal((await res.json()).error.code, 'NO_ROUTE_CONFIGURED');
+    assert.equal(calls, 0);
+    assert.equal(decisions.length, 1);
+    assert.equal(decisions[0].status, 503);
+  });
+}
+
+test('same-protocol route rewrites the upstream model to the routed model, not the client original', async () => {
+  let captured;
+  const fetchImpl = async (url, init) => {
+    captured = { url, body: JSON.parse(new TextDecoder().decode(init.body)) };
+    return new Response(JSON.stringify({ id: '1', type: 'message', role: 'assistant', model: 'claude-opus-5', content: [{ type: 'text', text: 'ok' }], stop_reason: 'end_turn', usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  const { app, decisions } = createRoutingGatewayApp({ registry, clientId: 'claude', role: 'planner', env: {}, clientProtocol: 'claude', fetchImpl });
+  const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 200);
+  await res.json();
+  assert.equal(decisions[0].modelId, 'claude-opus-5');
+  assert.equal(decisions[0].needsTranslation, false);
+  assert.ok(captured.url.endsWith('/claude/v1/messages'));
+  assert.equal(captured.body.model, 'claude-opus-5', 'same-protocol upstream must receive the routed model, not the client original claude-sonnet-5');
+});
+
+// codex 说 openai-response（/v1/responses）。网关必须能接这条入口，同协议直通+模型改写；
+// 需要翻译但无翻译器时 fail-closed，绝不把 responses body 静默发给 claude 上游。
+const responsesRegistry = {
+  activeModel: 'claude-sonnet',
+  models: {
+    'gpt-6-astra': { source: 'custom', provider: 'myrelay', protocols: ['openai-response'], cost: 'highest' },
+    'claude-sonnet': { source: 'discovered', provider: 'myrelay', protocols: ['claude'], cost: 'medium' },
+  },
+  providers: {
+    myrelay: { baseUrl: 'https://api.example.com', apiKeyEnv: 'env:MY_KEY', protocols: ['openai-response', 'claude', 'openai-chat'], models: [] },
+  },
+  clientDefaults: { codex: 'gpt-6-astra' },
+  roleDefaults: {},
+  routingRules: [],
+  clientRoleMatrix: { default: {}, clients: {} },
+};
+
+const responsesBody = { model: 'gpt-5.5', input: [{ role: 'user', content: 'hi' }], stream: false };
+
+test('openai-response incoming routes no-role codex to its client default, same-protocol passthrough + model rewrite', async () => {
+  let captured;
+  const fetchImpl = async (url, init) => {
+    captured = { url, body: JSON.parse(new TextDecoder().decode(init.body)) };
+    return new Response(JSON.stringify({ id: 'resp_1', object: 'response', model: 'gpt-6-astra', output: [{ type: 'message', role: 'assistant', content: [{ type: 'output_text', text: 'ok' }] }], status: 'completed', usage: { input_tokens: 1, output_tokens: 1 } }), { status: 200, headers: { 'content-type': 'application/json' } });
+  };
+  const { app, decisions } = createRoutingGatewayApp({ registry: responsesRegistry, clientId: 'codex', env: { MY_KEY: 'k' }, fetchImpl });
+  const res = await app.request('/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(responsesBody) });
+  assert.equal(res.status, 200);
+  await res.json();
+  assert.equal(decisions[0].modelId, 'gpt-6-astra', 'no-role codex uses explicit clientDefaults.codex, not the claude activeModel');
+  assert.equal(decisions[0].clientProtocol, 'openai-response');
+  assert.equal(decisions[0].targetProtocol, 'openai-response');
+  assert.equal(decisions[0].needsTranslation, false);
+  assert.ok(captured.url.endsWith('/openai/v1/responses'));
+  assert.equal(captured.body.model, 'gpt-6-astra', 'upstream receives the routed model, not the client original gpt-5.5');
+  assert.deepEqual(captured.body.input, responsesBody.input, 'same-protocol request body is preserved');
+});
+
+test('openai-response incoming fails closed (501) when the routed model needs an unavailable translation', async () => {
+  const registry = { ...responsesRegistry, clientDefaults: { codex: 'claude-sonnet' } };
+  const fetchImpl = async () => { throw new Error('must not forward a wrong-protocol body'); };
+  const { app, decisions } = createRoutingGatewayApp({ registry, clientId: 'codex', env: { MY_KEY: 'k' }, fetchImpl });
+  const res = await app.request('/v1/responses', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(responsesBody) });
+  assert.equal(res.status, 501);
+  assert.equal((await res.json()).error.code, 'PROTOCOL_TRANSLATION_UNAVAILABLE');
+  assert.equal(decisions[0].status, 501);
+});
+
+test('claude incoming fails closed (501) when the routed model speaks openai-response (no translator)', async () => {
+  const registry = { ...responsesRegistry, activeModel: 'gpt-6-astra', clientDefaults: {} };
+  const fetchImpl = async () => { throw new Error('must not forward a wrong-protocol body'); };
+  const { app } = createRoutingGatewayApp({ registry, clientId: 'claude', clientProtocol: 'claude', env: { MY_KEY: 'k' }, fetchImpl });
+  const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 501);
+  assert.equal((await res.json()).error.code, 'PROTOCOL_TRANSLATION_UNAVAILABLE');
+});
+
+// 真实数据验收暴露的 bug：上游 503/402 时跨协议翻译把错误吞成「空 claude 成功信封」。
+// 上游非 2xx 必须把真实错误原因透传给客户端（claude 错误信封），保留上游状态码。
+test('upstream error (503) propagates as a claude error envelope with the real message, not an empty success', async () => {
+  const fetchImpl = async () => new Response(JSON.stringify({ error: { message: 'Service temporarily unavailable', type: 'server_error', code: 'internal_error' } }), { status: 503, headers: { 'content-type': 'application/json' } });
+  const { app, decisions } = createRoutingGatewayApp({ registry, clientId: 'claude', role: 'implementer', env: { MY_KEY: 'k' }, clientProtocol: 'claude', fetchImpl });
+  const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 503, 'upstream status is preserved');
+  const json = await res.json();
+  assert.equal(json.type, 'error', 'claude client receives an error envelope, not a success-shaped message');
+  assert.match(json.error.message, /Service temporarily unavailable/, 'the real upstream cause is not swallowed');
+  assert.equal(decisions[0].status, 503);
+});
+
+test('same-protocol upstream error (402 quota) passes the raw error body through', async () => {
+  const fetchImpl = async () => new Response(JSON.stringify({ error: { type: 'insufficient_quota', message: 'weekly coding quota exhausted' } }), { status: 402, headers: { 'content-type': 'application/json' } });
+  const { app, decisions } = createRoutingGatewayApp({ registry, clientId: 'claude', role: 'planner', env: {}, clientProtocol: 'claude', fetchImpl });
+  const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 402);
+  const json = await res.json();
+  assert.match(json.error.message, /quota exhausted/, 'raw upstream error preserved on same-protocol path');
+  assert.equal(decisions[0].status, 402);
 });

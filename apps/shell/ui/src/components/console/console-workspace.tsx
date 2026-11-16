@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -18,6 +18,7 @@ import {
   Route,
   Settings2,
   ShieldCheck,
+  SlidersHorizontal,
   Sun,
   Terminal,
 } from 'lucide-react';
@@ -26,10 +27,10 @@ import type { ConsoleFacts } from '../../lib/console-facts';
 import { HomeWorkspace, ToolsWorkspace } from './home-workspace';
 import { MemoryWorkspace } from './memory-workspace';
 import { McpWorkspace } from './mcp-workspace';
-import { Button, Heading, Panel } from './console-ui';
-import { ModelRoutingPanel } from './model-routing-panel';
+import { Button, Heading, Panel, Select } from './console-ui';
+import { GatewayWorkspace } from './gateway-workspace';
 
-const ICONS = { home: Home, tools: Terminal, routing: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
+const ICONS = { home: Home, tools: Terminal, routing: Route, routingConfig: SlidersHorizontal, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
 
 /** 采集时间怎么念：刚刚 / N 秒前 / N 分钟前——数据新鲜度是一条事实，不是装饰。 */
@@ -58,9 +59,14 @@ export function ConsoleWorkspace({
   selection?: WorkspaceSelection;
 }) {
   const [view, setView] = useState<ViewId>(initialView);
-  function navigate(next: ViewId) {
-    if (window.location.pathname !== CONSOLE_VIEWS[next].href) {
-      window.history.pushState(null, '', CONSOLE_VIEWS[next].href);
+  function navigate(next: ViewId, section?: string) {
+    const params = new URLSearchParams();
+    const ws = new URLSearchParams(window.location.search).get('ws');
+    if (ws) params.set('ws', ws);
+    if (section) params.set('section', section);
+    const href = `${CONSOLE_VIEWS[next].href}${params.size ? `?${params}` : ''}`;
+    if (`${window.location.pathname}${window.location.search}` !== href) {
+      window.history.pushState(null, '', href);
     }
     setView(next);
   }
@@ -71,7 +77,9 @@ export function ConsoleWorkspace({
   }, []);
   const [theme, setTheme] = useState('light');
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
-  const [memoryTarget, setMemoryTarget] = useState({ id: '', nonce: 0 });
+  // 首页改为路由总览后不再有「首页→某条记忆」的深链；target 保持稳定的空初值，
+  // 记忆页用自己的内部选择。保留 useState 是为了引用稳定（避免每次渲染新对象触发其 effect）。
+  const [memoryTarget] = useState({ id: '', nonce: 0 });
   // 当前选中的工作区以**服务端事实**为准（facts 就是按哪个根采集的），不是界面本地的一个选择状态：
   // 这样 URL、数据、下拉框三者不可能相互说不同的话。
   const selectedWorkspaceKey = facts.projects.find((item) => item.current)?.key ?? facts.projects[0]?.key ?? '';
@@ -127,26 +135,39 @@ export function ConsoleWorkspace({
         </div>
         <nav aria-label="主导航" className="mt-7 space-y-1 px-3">
           {NAV.map((item) => (
-            <button
-              key={item.id}
-              title={item.label}
-              aria-label={item.label}
-              onClick={() => navigate(item.id)}
-              aria-current={view === item.id ? 'page' : undefined}
-              className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan ${view === item.id ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
-            >
-              <item.icon
-                size={17}
-                strokeWidth={1.7}
-                className={`shrink-0 ${view === item.id ? 'text-rex-cyan' : ''}`}
-              />
-              <span className="hidden md:inline">{item.label}</span>
-              {item.id === 'mcp' && facts.issues.length > 0 && (
-                <span className="ml-auto hidden size-4 items-center justify-center rounded bg-rex-orange/10 text-[10px] text-rex-text-body md:flex">
-                  {facts.issues.length}
-                </span>
+            <Fragment key={item.id}>
+              <button
+                title={item.label}
+                aria-label={item.label}
+                onClick={() => navigate(item.id)}
+                aria-current={view === item.id ? 'page' : undefined}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan ${view === item.id ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
+              >
+                <item.icon
+                  size={17}
+                  strokeWidth={1.7}
+                  className={`shrink-0 ${view === item.id ? 'text-rex-cyan' : ''}`}
+                />
+                <span className="hidden md:inline">{item.label}</span>
+                {item.id === 'mcp' && facts.issues.length > 0 && (
+                  <span className="ml-auto hidden size-4 items-center justify-center rounded bg-rex-orange/10 text-[10px] text-rex-text-body md:flex">
+                    {facts.issues.length}
+                  </span>
+                )}
+              </button>
+              {item.id === 'routing' && (
+                <button
+                  title="路由配置"
+                  aria-label="路由配置"
+                  onClick={() => navigate('routingConfig')}
+                  aria-current={view === 'routingConfig' ? 'page' : undefined}
+                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan md:pl-9 ${view === 'routingConfig' ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
+                >
+                  <SlidersHorizontal size={15} strokeWidth={1.7} className={`shrink-0 ${view === 'routingConfig' ? 'text-rex-cyan' : ''}`} />
+                  <span className="hidden md:inline">路由配置</span>
+                </button>
               )}
-            </button>
+            </Fragment>
           ))}
         </nav>
         <div className="mx-4 mt-auto mb-5 hidden rounded-xl border border-rex-border p-3.5 md:block">
@@ -180,7 +201,7 @@ export function ConsoleWorkspace({
             <span className="hidden text-xs text-rex-text-muted sm:inline">本机工作区</span>
             <span className="hidden text-rex-text-muted sm:inline">/</span>
             <span className="text-xs font-medium">{CONSOLE_VIEWS[view].title}</span>
-            <div className="ml-auto flex items-center gap-2 text-xs">
+            <div className="ml-auto flex min-w-0 max-w-full items-center gap-2 text-xs">
               <Folder size={14} className="hidden text-rex-text-muted sm:block" />
               <label htmlFor="console-workspace" className="sr-only">
                 选择工作区
@@ -188,19 +209,17 @@ export function ConsoleWorkspace({
               {/* 中文注释：选完直接换 URL 让**服务端重新采集**。旧版只 setProjectId，
                   而没有任何东西读它：切项目后下面所有数字还是服务自己那个根，
                   界面在暗示它在按选择过滤。现在 key 是唯一回传量，路径不由页面交出。 */}
-              <select
-                id="console-workspace"
+              <Select
+                size="sm"
+                aria-label="选择工作区"
                 value={selectedWorkspaceKey}
-                onChange={(event) => selectWorkspace(event.target.value)}
-                className="max-w-[170px] rounded-md bg-transparent py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan sm:max-w-[220px]"
-              >
-                {facts.projects.map((item) => (
-                  <option key={item.key} value={item.key}>
-                    {item.name}
-                    {item.current ? ' · 当前' : item.missing ? ' · 路径已消失' : ''} · {item.memos} 条记忆
-                  </option>
-                ))}
-              </select>
+                onValueChange={selectWorkspace}
+                className="max-w-[170px] sm:max-w-[220px]"
+                options={facts.projects.map((item) => ({
+                  value: item.key,
+                  label: `${item.name}${item.current ? ' · 当前' : item.missing ? ' · 路径已消失' : ''} · ${item.memos} 条记忆`,
+                }))}
+              />
               <ChevronDown size={12} className="hidden" />
             </div>
           </div>
@@ -248,30 +267,14 @@ export function ConsoleWorkspace({
         </div>
         <main id="console-content" className="mx-auto max-w-[1440px] px-4 py-7 lg:px-8 lg:py-9" tabIndex={-1}>
           <div hidden={view !== 'home'}>
-            <HomeWorkspace
-              facts={facts}
-              navigate={navigate}
-              openTool={(id) => {
-                setSelectedToolId(id);
-                navigate('tools');
-              }}
-              openMemory={(id) => {
-                setMemoryTarget((previous) => ({ id, nonce: previous.nonce + 1 }));
-                navigate('memory');
-              }}
-            />
+            <HomeWorkspace facts={facts} navigate={navigate} active={view === 'home'} />
           </div>
           <div hidden={view !== 'tools'}>
             <ToolsWorkspace facts={facts} onMcp={() => navigate('mcp')} selectedId={selectedToolId} onSelect={setSelectedToolId} />
           </div>
-          {mounted.has('routing') && (
-            <div hidden={view !== 'routing'}>
-              <Heading
-                eyebrow="MODEL ROUTING"
-                title="把对的模型，交给对的角色。"
-                description="供应商注册表与客户端×角色矩阵读写同一份配置（CLI / 网关 / 界面共用）。密钥只以 env 引用展示，不落明文。"
-              />
-              <ModelRoutingPanel />
+          {(mounted.has('routing') || mounted.has('routingConfig')) && (
+            <div hidden={view !== 'routing' && view !== 'routingConfig'}>
+              <GatewayWorkspace facts={facts} active={view === 'routing' || view === 'routingConfig'} view={view} navigate={navigate} />
             </div>
           )}
           {mounted.has('mcp') && (
@@ -310,7 +313,7 @@ export function ConsoleWorkspace({
             <Heading
               eyebrow="PREFERENCES"
               title="让工作空间，顺手一点。"
-              description="主题只在当前页面生效。模型路由配置在左侧「模型路由」页。"
+              description="主题只在当前页面生效。模型路由配置在左侧「模型路由 → 路由配置」页。"
             />
             <Panel className="max-w-2xl p-6">
               <h2 className="mb-4 text-sm font-semibold">界面外观</h2>

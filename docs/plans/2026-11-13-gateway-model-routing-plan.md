@@ -297,3 +297,241 @@ graph TD
 ## Reuse map
 
 见 Decision Ticket D8 表（全部锚点已实测存在）。死配置 `signalRules`（registry:846）与 `protocolPaths`（registry:1104）不被任何 .mjs 读取，P1 不依赖它们；协议端点事实以 `protocols.mjs` 的 `protocolEndpoint` 为准。
+
+## 交付实录：客户端接入（P0–P4 之后的「最后一公里」）
+
+P0–P4 交付了网关+矩阵，但用户仍无法在自己的 codex / claude code / pi 里真正用上。本节记录补齐的客户端接入与**诚实边界**（2026-11-15）。
+
+### 已交付
+- **codex 协议入口**：网关新增 `/v1/responses`（openai-response）。codex 走**同协议直通 + 模型改写**；`registry.clientDefaults.codex` 给它一个 openai-response 默认模型（connect 写入），避免无翻译器时 fail-closed。
+- **一键接入 / 断开**：`aios model-router connect [--client claude|codex|pi] [--gateway-url …] [--state-dir …]` 生成可逆配置工件到状态目录（默认 `~/.aios/gateway`），`disconnect` 还原 registry 的 `clientDefaults` 并删除工件。不碰用户 `~/.claude`、`~/.codex`、`~/.pi`。
+  - claude：`--settings <stateDir>/claude-settings.json`（合并，保留用户配置）。
+  - codex：隔离 `CODEX_HOME`，`wire_api="responses"`、`base_url=<gw>/v1`、`http_headers.x-gateway-client="codex"`。
+  - pi：隔离 `HOME`，`models.json` 用 `anthropic-messages` provider 指向网关。
+- **零扣费端到端证据**：真实 codex / pi / claude → 网关 → mock 上游全部跑通（模型改写、流式、200）；connect 生成的工件驱动真实 codex 跑通且 disconnect 干净还原。
+
+### 诚实边界（不打包票）
+- **协议翻译有边界**：翻译器只覆盖 claude 客户端 ↔ openai-chat / gemini 上游。涉及 openai-response（codex）的跨协议**没有翻译器**，网关 fail-closed 返回 501，绝不静默发错协议 body。计划里「claude/openai/gemini 互转」的表述以本边界为准。
+- **配置隔离的代价**：codex 用隔离 `CODEX_HOME`、pi 用隔离 `HOME`，网关会话里暂时看不到用户原有 MCP / 信任目录 / 历史会话；claude 用 `--settings` 合并则保留。这是可逆接入的取舍，不是 bug。
+- **真实模型扣费验收**：以上端到端均为 mock 上游（零扣费）。真实供应商扣费验收标 **pending-manual-approval**，需用户显式批准后才跑。
+
+### 真实数据验收（2026-11-15，应用户「mock 能通不代表真实能通」要求）
+
+mock 只证明转发/翻译/接线机制。真实上游验收结论分层：
+
+- **真实端点/鉴权可达**：coding.rexai.top 的 `/v1/models` 带真实 key 返回 200（13 个真实模型）；`/openai/v1/chat/completions`、`/claude/v1/messages`、`/openai/v1/responses` 均真实存在（空 body 返回真实 400/402 校验信封）。
+- **真实上游此刻不可用（外部约束，非网关缺陷）**：chat 面真实 completion 返回 **503 "Service temporarily unavailable"**；responses 面返回 **402「本周 Coding 额度已用完、钱包余额不足，2026-11-18 重置」**。因此**真实成功 completion 今天无法演示**，待上游恢复/额度重置/换有额度的 key，标 pending-external。
+- **真实数据暴露并已修复的网关 bug**：跨协议时上游非 2xx 被翻译进「空 claude 成功信封」，吞掉真实错误原因。已修（`gateway/proxy.mjs` 上游错误透传分支）+ 回归测试；修复后对真实 503 复验，客户端收到 `{type:"error",error:{message:"Service temporarily unavailable"}}` 且保留 503。同协议错误本就原样透传。
+- **结论**：网关机制与客户端接线=mock 实证；真实上游错误处理=真实 503/402 实证；真实成功 completion=待上游可用（pending-external），不打包票。
+
+---
+
+## P5：按意图真 auto + 实时路由图（magpie 对标，2026-11-15）
+
+用户裁定：主界面暂不动，先补 magpie 有、我们没有的两件能力——**按意图真 auto**（每轮让小模型把意图作为结构化判断报出来，路由到对应模型，像 claude code 的 auto）+ **实时路由图**（agent→网关→供应商/模型，带请求/改道/错误计数）。
+
+### 北极星边界（不可违反）
+- 意图是**语义判断，由分类器模型报出**（self-report），代码只校验它报的标签是否在配置意图集内、再映射到模型。**绝不**用 `keywordMatches`/正则从用户文本猜意图（`session/signals.mjs` 已钉死此原则）。
+- 分类失败/返回未知标签 → **fail-closed 回落**既有候选链，不猜、不静默发错模型。
+- 显式角色/模型声明（编排器逐阶段、env 覆盖）**绕过**分类器——显式优先于 auto。
+- 分类器每轮多一次小模型调用（成本/延迟，用户已接受）；验证用 **mock 分类器零扣费**，真实扣费验收标 **pending-manual-approval**。
+
+### 现状缺口（实测）
+- 决策记录只在 daemon 内存（`serve.mjs` 暴露 `decisions`，CLI gateway 未把 `onDecision` 落盘）→ GUI 独立进程读不到。路由图需先**落盘 JSONL**。
+- `resolveGatewayRoute` 是纯函数；异步分类只能在 `proxy.mjs handleIncoming`，结果作为显式 hint 喂回路由。
+- 无意图配置段、无分类器、无路由图视图。
+
+### 工作项图
+```mermaid
+graph TD
+  i5c["work-p5-intent-core<br/>意图纯模块(配置/提示/校验/映射)"]
+  i5g["work-p5-intent-gateway<br/>分类器接入 proxy(auto模式)"]
+  d5["work-p5-decision-log<br/>决策落盘 JSONL"]
+  g5d["work-p5-routing-graph-data<br/>GUI 读决策端点"]
+  g5u["work-p5-routing-graph-ui<br/>实时路由图视图"]
+  c5["work-p5-intent-config<br/>意图配置段+校验+最小UI"]
+  i5c --> i5g
+  c5 --> i5g
+  d5 --> g5d --> g5u
+  i5g --> g5u
+```
+
+### 工作项与验收
+- **work-p5-intent-core**（`routing/intent.mjs`，纯函数）：解析 `registry.intentRouting`（classifierModel + intents[{id,description,modelId}]）、构造分类提示、解析并校验模型报回的 typed 标签、映射 intent→model。验收：未知/缺失标签 fail-closed；绝不关键词匹配；单测覆盖。验证：`node --test scripts/tests/learning/model/model-router-intent.test.mjs`。
+- **work-p5-intent-gateway**（`gateway/proxy.mjs`）：auto 模式（无显式角色/模型）且启用意图路由时，经 DI `classifyIntent`（默认真实分类器，测试注入 mock）分类→改写路由模型→决策记录含 intent/classifierModel；工具轮次会话粘性。验收：auto 请求被分类路由；显式声明绕过；分类失败回落；决策留痕。验证：`node --test scripts/tests/learning/model/gateway/model-router-intent-routing.test.mjs`（mock 零扣费）。
+- **work-p5-decision-log**（`session/decision-log.mjs`）：JSONL 追加/读取到状态目录，`serve.mjs`/CLI 接 `onDecision`。验收：跨进程可读、日志无密钥、有界滚动。验证：`node --test scripts/tests/learning/model/model-router-decision-log.test.mjs`。
+- **work-p5-routing-graph-data**（`apps/shell/ui/src/app/api/model-routing/decisions/route.ts`）：读决策日志→{counters, recent, flow}。验收：读真实日志、脱敏、空/错误态。验证：`npm run test:shell`。
+- **work-p5-routing-graph-ui**（`components/console/routing-graph.tsx` + 接入面板）：实时 flow（agent→网关→模型）+ 计数（请求/改道/错误）+ 最近决策 feed，轮询；穷举加载/空/错误/流式态。验收：渲染真实决策、轮询刷新、状态齐全。验证：`npm run ui:typecheck && npm run test:shell` + 浏览器冒烟（截图+DOM 断言）。
+- **work-p5-intent-config**（registry `intentRouting` 种子 + `lib/config/model-routing.mjs` 校验 + 最小 UI）：意图描述→模型、分类器模型可配。验收：单一源、env 密钥安全、GUI 可编辑。验证：`npm run test:shell`。
+
+### 汇合门
+一个 auto 模式请求 → mock 分类器报意图 → 路由到意图模型 → 决策落盘 → 路由图实时显示该决策与计数。零扣费 mock 实证；真实分类器扣费 = pending-manual-approval。
+
+### 复用而非重造
+`normalizeId`/`uniq`（entry/shared）、`getProviderForModel`/`resolveProviderEndpoint`/`resolveProviderApiKey`（routing/providers）、`resolveGatewayRoute` 候选链（gateway/router）、`recordDecision`（proxy）、GUI 数据平面守卫（route.ts 的 hash/备份/校验模式）。**不**复用 `keywordMatches` 做路由。
+
+---
+
+## P5 实施与验证记录（2026-11-15）
+
+结论分层：**mock 实证**（零扣费，已跑通）／**GUI 浏览器实拍**（已跑通）／**真实错误实证**（上一段已修复并回归）／**pending-external / pending-manual-approval**（需真实扣费或上游恢复，未跑）。
+
+### 落地工件
+- 意图纯模块 `scripts/lib/tooling/model-router/routing/intent.mjs`：`getIntentRouting` / `buildIntentClassifierPrompt` / `parseIntentLabel(modelOutput, intents)`（二元，结构上看不见用户文本）/ `extractLatestUserText`（工具续轮尾返回 ''）/ `classifyTurnIntent`（openai-chat|claude，max_tokens 64，15s abort，失败→null）。
+- 网关接入 `gateway/proxy.mjs`：auto 模式（无显式角色）→ 分类 → intent 置顶候选链（仍过可用性过滤）→ 会话粘性（`x-gateway-session`||clientId||'default'）；决策记录新增 `clientId`+`role`（路由图画 agent→模型 边必需），5 个落账点统一经 `record` 包装注入身份。
+- 决策落盘 `session/decision-log.mjs`：JSONL 原子追加（tmp+rename）、500 条上限、敏感键剥离；`serve.mjs`/CLI 三处 stateDir 统一 `--state-dir` > `AIOS_GATEWAY_STATE_DIR` > `~/.aios/gateway`。
+- GUI 读侧自包含镜像 `apps/shell/ui/src/lib/config/routing-decisions.mjs`（不 import scripts/lib，避免 Turbopack 全仓 trace）+ 端点 `app/api/model-routing/decisions/route.ts`（limit 钳制 1..100，读失败 423，空≠错误）。
+- GUI 视图 `components/console/model-routing/routing-graph.tsx`（纯 SVG，SMIL 虚线动画，`prefers-reduced-motion` 关闭；计数 请求/意图自动路由/错误，**无虚构 rerouted**；最近 8 条 feed）+ `intent-routing-section.tsx`（启用开关、分类器选择按协议过滤、意图行编辑）。
+- 配置单一源：builtin + disk registry 同种子（6 意图：quick/implement/review/plan/research/general）；`lib/config/model-routing.mjs` 增 `validateIntentRouting`（分类器须存在且支持 openai-chat|claude、意图 id 唯一非空、modelId 存在）+ `toModelCatalog`；GET 返回 `models` 目录。
+
+### mock 实证（零扣费）
+- 单测/集成全绿：`model-router-intent.test.mjs`、`gateway/model-router-intent-routing.test.mjs`（7）、`model-router-decision-log.test.mjs`、`tooling/shell/model-routing-decisions.test.mjs`（8）、`tooling/shell/model-routing-config.test.mjs`（17）。model-router 套件 102/102。
+- 汇合门 e2e 探针（仓库外 `$TMPDIR/aios-p5-probe-*`，mock 上游 + fakeroot 配置隔离）：`verdict=PASS`，gateway=54372 mock=54371，`classifierCalls=1`（工具续轮不重复分类），`upstreamModels=[mock-opus, mock-opus, mock-flash]`（新轮→意图 tests→mock-opus；续轮沿用；显式 implementer→mock-flash 绕过分类器），`counters={requests:3,errors:0,autoRouted:2}`，2 条边（claude→mock-opus×2 / claude→mock-flash×1），日志原始字节不含密钥 `probe-key`。
+
+### GUI 浏览器实拍（in-app browser，dev server 指向探针沙箱）
+- 路由页 `/routing` 渲染：计数 3/2/0；SVG 节点 claude(3)→本地网关→mock-opus(2)/mock-flash(1)，虚线动画连线；最近 feed 3 行（implementer 紫徽标 / 意图 tests 蓝徽标 / 200 绿 / 延迟 ms）。
+- **实时更新**：向网关再发一条用户轮请求 → 一个轮询周期内页面自动增到 `requests:4 / auto:3 / errors:0`、feed 4 行，无需手动刷新。
+- 意图段：启用勾选、分类器 glm-5.3-flash、6 个种子意图 id+描述+模型映射全部正确渲染。
+- **保存成功**：改 quick 描述 → 保存 → fakeroot registry 落盘（描述带实测后缀），绿色 `已保存：intentRouting`（role=status，#16A34A）渲染在按钮旁；重载后从盘恢复。
+- **保存失败**：清空 quick id → 保存 → 红色 `intentRouting.intents[0]: id required`（#DC2626），**未写盘**（quick 仍在、6 意图完整）——校验门端到端有效。
+- 控制台无 error；无横向溢出；**真实 disk registry 零泄漏**（探针后缀 `浏览器实测`/`反馈实测` 均未进入，原有「能力画像待实测」等描述属注册表固有文案）。
+- 截图：`gui-routing-top.png`（网关解释面板）、`gui-routing-graph.png`（路由图+feed）。
+
+### 本段发现并修复的 UI 缺陷
+- **保存反馈不可见**：`message` 原先只渲染在「自定义覆盖」折叠面板内（`model-routing-panel.tsx` 旧 298 行），从意图段点保存时成功/失败提示完全看不见。修复：反馈改为 `{text,tone,origin}` 对象，按触发保存的按钮（intent/advanced）渲染到对应按钮旁，错误用 `text-rex-danger`、成功用 `text-rex-green`。
+- **保存后整面板闪烁**：旧 `status==='loading'` 守卫在保存后重载时把整个面板卸载成「正在读取…」占位再重建。修复：占位仅在首次加载（`!editable`）时显示，重载保留旧 UI；重载失败且有数据时顶部显示红色「刷新失败」而非清空。
+- 验证：`npm run typecheck`（apps/shell/ui）通过 + 上述浏览器成功/失败两条路径实拍。
+
+### 真实错误实证（上一段，已回归）
+- 跨协议上游错误曾被吞成空 claude 成功信封 → 已加 `!upstream.ok && route.needsTranslation` 分支显式 surfaced，回归测试钉住。
+
+### pending-external / pending-manual-approval（未跑，需批准或上游恢复）
+- 真实分类器扣费调用（真实小模型报意图）= **pending-manual-approval**（用户显式批准后才跑）。
+- 真实 relay 成功完成：coding.rexai.top chat 503、responses 402（配额耗尽，2026-11-18 重置）= **pending-external**。
+
+### 已知回归基线（非本功能引入，未擅自修）
+- `rex-harness` 子模块 out-of-sync → 约 37 个无关回归失败 + `check-dir-budget.mjs` 转发报错（不动子模块）。
+- `skill-management.test.mjs` 2 失败「linked ancestor requires explicit source management: /var」= macOS /var→/private/var 符号链接 vs commit e8c86b76 的 Windows 门守卫；工作树未触碰这些文件。
+
+### 测试接线与目录预算（本段收口，已修）
+- **接线守卫 W2/W3/W5 曾红**：本会话新建的 15 个 model-router/gateway/shell 测试文件未接入 `scripts/test-suites.json` 的 regression 清单（回归用显式清单、不走目录遍历），导致它们既不在回归跑也不被 CI 执行。已把 15 个全部接入 `regression.files`（291→306），`test:scripts`→`test:regression` CI 可达；接线守卫 6/6 转绿，15 文件直接跑 101/101 全绿。
+- **目录预算越界（我引入）**：新增 3 个测试使 `scripts/tests/learning/model` 从 6 涨到 9（>8）。按职责镜像源码 `model-router/routing/` 拆分：把 availability/client-role-matrix/intent/providers 4 个路由域测试移入新 `routing/` 子目录（顶层 9→6，routing/ 4），相对 import 深度 `../../../lib`→`../../../../lib`，git mv 保留历史。`pretest:scripts` 的 `directoryEntries` 门恢复达标。
+- 最终回归（`npm run test:regression`，306 文件）：**2676 用例 / 2627 过 / 34 败 / 15 跳过**。34 败全属既有基线（子模块 `QUANTITATIVE_STANDARD_RULES` 导出缺失 → standards-cli/rex-standards-wiring/dir-budget/architecture-line-owner；真实 CLI 派发 → aios-harness/orchestrator/work/hud-state/context-lifecycle；llms.txt 版本漂移 v7.1.2 vs VERSION 7.2.0；skill-management /var 符号链接 + V2 训练证据哈希），**无一项由 P5 代码引入**；接线守卫 W1–W6 全绿；P5 新增 101 用例全绿。
+
+---
+
+## 统一交互契约 + magpie 主界面（2026-11-15，落地 ADR 0007 推迟方向）
+
+用户裁决推翻 P5 的「主界面暂不动」：主界面改 magpie 式「每个 agent 一行 → 它现在用哪个模型 → 实时路由」；**先锁一份统一交互契约**（按钮/弹窗/表单/加载/空/错误/反馈态都走共享组件），所有页面照它做。
+
+### 交互契约（一个概念只有一个形状）
+- 唯一导入面 `components/console/console-ui.tsx`：Panel/Badge/Button/Modal/Field/Empty/Heading/SmallTitle/TextLink + 转售 `ui/` 原子 Input/Select/Textarea/Loading/ErrorState/InlineFeedback。删除手写 `fieldClass` 常量。
+- 输入三件套：`Input`/`Select` 以 `size` 为唯一变化轴；新增 `Textarea`（`ui/primitives.tsx`，高度由 `rows` 驱动，复用同一 field 表面）。异步态统一 `ui/states.tsx` 的 Loading/ErrorState/InlineFeedback，不再各页手搓。
+- 刻意保留的例外（已说明，不另造抽象）：页头工作区 `<select>` 是全局导航 chrome（透明切换器，非表单）；MCP 向导落点 radio-card 是独立选择图案；裸 checkbox 对齐 `size-3.5 accent-rex-cyan`（仅 2 处调用）。
+- `apps/shell/README.md` 约定 1/5 与入口段同步：数字出处含网关决策日志；输入三件套；`/` 为 magpie 路由总览。
+
+### magpie 主界面
+- 新增 `components/console/model-routing/agent-overview.tsx`：行数据来自服务端 `facts.clients`（**SSR 即真事实**），仅计数/当前模型为客户端异步增量 → 无整页 Loading 闪烁，dev-server-trust 的 SSR 断言仍有意义。
+- 诚实分层：有流量行 = 日志实际模型 + 「实时」徽标 + 意图/角色 + 次数 + 延迟 + 状态点（error 或 status>=400 红）；无流量行 = 「还没路由过 / 配置默认 {label}」；仅声明客户端 = 「仅声明支持 · 本机无落点」。日志里目录没有的 model id 回退原始 id，**不编造标签**。
+- 计数条请求/意图自动/错误（0 即 0，不虚构 rerouted）；刷新失败保留上次真实快照 + 「刷新失败」徽标；轮询 2.5s 且 active 门控（非首页不轮询）。
+- `home-workspace.tsx` 瘦身为 Heading + degraded 面板 + AgentOverview；issues「需要你处理」条保留。
+
+### 表单对齐
+- `flows/mcp-wizard.tsx` 5 个文本输入 → `Input`；`memory-workspace.tsx` 搜索 → `Input`、supersede → `Textarea`；意图段/自定义覆盖段沿用 Select/Input/Button。
+
+### 验证（结论分层）
+- **实拍**（浏览器截图 + 读图）：真实空态首页（13 行、「尚无流量 0/0/0」、无流量提示、真实 drift issue）；种子日志实时分支首页（5 请求/2 意图自动/1 错误红 + 实时徽标；claude「意图 quick·2 次·640ms·绿」、codex「reviewer·2 次·30000ms·红」、pi「意图 review·1 次·720ms·绿」，其余 10 行配置默认）；`/routing` 实时路由图（claude2/codex2/pi1→本地网关→deepseek-v4-pro 5，feed 5 条含 500 红，页脚打印真实日志路径）。截图 `/tmp/aios-home-smoke.png`、`/tmp/aios-home-live.png`、`/tmp/aios-routing-live.png`。
+- **数值**（API 实测）：`/api/model-routing/decisions` 返回 counters{requests:5,errors:1,autoRouted:2}、byClient{claude:2,codex:2,pi:1}、codex 边 errors:1，与种子逐条一致。
+- **动效 A/B**（Playwright 系统 Chrome，`reducedMotion` 仿真，仓库外临时探针）：no-preference → 活点 `animationName=pulse`(2s)；reduce → `none`(0s)。过渡均带 `motion-reduce:transition-none`；shell-tokens 无障碍门绿。
+- **自动门**：`apps/shell/ui` `tsc --noEmit` 干净；shell-labels 6/6（fixture 缺席守卫扩展至 3 个 model-routing 文件 + 首页实时出处/配置默认断言）；shell-tokens 5/5；model-routing-config 16/16；dev-server-trust 绿（token 门 + 首页 SSR 真事实）。
+- **预算**：model-routing/ 3、console/ 8、ui/ 3（≤8）；新增文件均 <400 行。
+- **接线**：四个 shell 测试本就在 `scripts/test-suites.json` regression 清单；本块未新增测试文件，仅扩展既有守卫。
+- **整块回归**（`npm run test:regression`，306 文件）：**2676 用例 / 2627 过 / 34 败 / 15 跳过**。34 败与 P5 记录同口径、同族（子模块 standards/QUANTITATIVE_STANDARD_RULES、llms-txt 版本漂移、真实 CLI 派发、skill-management /var、V2 证据哈希），失败清单不含任何 shell/interface、model-routing、gateway 文件 → **本块零新增回归败**。
+
+### 已知基线（非本块引入，未擅自修）
+- `rex-harness` 子模块 out-of-sync → standards / `pretest:scripts` 转发报错 + 既有回归败；`skill-management.test.mjs` /var 符号链接 2 败。
+
+## 监控/配置分面：独立子页 /routing/config（2026-11-15，注意力分层）
+
+用户反馈「为什么界面一直都在一个页面？希望有些东西能在别的面板交互，减少注意力机制」。经 AskUserQuestion 确认机制 = **独立子页 `/routing/config`**：把「改路由」的全部交互移出监控页，配置独立成页，监控页只读。
+
+### 导航与路由
+- `lib/console-navigation.ts`：`CONSOLE_VIEWS` 增 `routingConfig: { href: '/routing/config', label/title: '路由配置' }`（8 个 href）；`PRIMARY_VIEWS` 过滤掉 `settings` 与 `routingConfig`，一级导航仍 6 项。二级页在路由表里有独立 href，可刷新/深链，但不占一级导航。
+- `console-workspace.tsx`：「模型路由」一级按钮下渲染缩进的「路由配置」子按钮（`SlidersHorizontal`，`pl-9 text-xs`，`aria-current` 随 view）；新增 `mounted.has('routingConfig')` 懒挂载块（Heading「调整路由：意图、覆盖与供应商」+ `RoutingConfigPanel`）。设置页描述改指「模型路由 → 路由配置」。
+- 新增静态路由 `app/(console)/routing/config/page.tsx`（两段，与 `[section]` 不冲突）：服务端 `collectForRequest({ws})` → `<ConsoleWorkspace initialView="routingConfig" .../>`。
+
+### 职责拆分（DRY：共享 hook + 词表，不复制取数）
+- 新增 `model-routing/use-routing-config.ts`（'use client'）：唯一 GET/PUT owner，`reload`/`save`（PUT 带 `expectedHash`，保存后 reload），返回 editable/auto/models/hash/status/error。监控与配置共用，避免两份取数逻辑。
+- 新增 `model-routing/labels.ts`：ROLES/ROLE_LABEL/COST_LABEL/SPEED_LABEL/costTone，监控表与覆盖编辑器共用词表。
+- `model-routing-panel.tsx` 重写为**纯监控**（119 行）：路由图 + 只读自动路由表 + 「调整路由配置」按钮（`onConfigure`）+ 折叠网关说明。**移除** IntentRoutingSection、覆盖编辑器、save。
+- 新增 `model-routing/routing-config.tsx`（158 行，**纯配置**）：IntentRoutingSection + 展开的自定义覆盖（角色→模型全局默认 + 每客户端覆盖 + 供应商表）+ 保存意图/保存覆盖 + InlineFeedback。**不含**路由图与自动表。
+
+### 验证（结论分层）
+- **实拍**（系统 Chrome，仓库外探针）：`/tmp/aios-split-monitor.png` 监控页干净（侧栏二级「路由配置」入口、路由图空态、只读自动表 + 调整按钮、折叠说明，无任何编辑器）；点击「调整路由配置」跳转配置页；`/tmp/aios-split-config.png` 配置子页（面包屑「路由配置」、子导航 active、意图编辑器 + 展开覆盖 + 供应商 + 保存按钮，无路由图）。
+- **自动门**：`tsc --noEmit` 干净；shell-labels + mcp-object-table + shell-tokens + dev-server-trust = **18/18 绿**（dev-server-trust 断言 `/routing/config` SSR 200 + `aria-label="路由配置"…aria-current="page"`；mcp-object-table href 集扩至 8；shell-labels 钉住监控不含编辑器/配置含 IntentRoutingSection）。
+- **预算**：model-routing/ 6、console/ 8、app/(console)/ 3、ui/ 3（≤8）；最大文件 console-workspace 385 行（<400），新增文件均 <400。
+- **整块回归**（`npm run test:regression`，306 文件，79.6s）：**2676 用例 / 2627 过 / 34 败 / 15 跳过**，与上块同口径同族；失败清单不含任何 shell/interface/model-routing/gateway/console 文件 → **本次拆分零新增回归败**。
+- **未做（需授权/付费）**：UI 内真实保存配置（避免改动用户真实注册表）；真实模型上游调用。
+
+## 网关启停开关 + 接入引导卡（2026-11-15，用户裁定「一步到位含启停开关」）
+
+用户反馈「网关的启动和关闭是不是有一个开关会好一点？然后告诉用户怎么接入这个网关更好呢？」。经 AskUserQuestion 确认本轮 scope = **一步到位**：接入引导卡 + 实时状态 + UI 一键启停（含后台 daemon 管理 + 授权门）。前台 `aios model-router gateway`（Ctrl+C 停）保持不变，托管 daemon 是新增的并行入口。
+
+### 后台托管生命周期（单一事实源）
+- 新增 `scripts/lib/tooling/model-router/lifecycle/daemon.mjs`（232 行）：`startGatewayDaemon`/`stopGatewayDaemon`/`gatewayStatus`/`describeConnect` + 探测原语（`isPidAlive`/`probePort`/`waitForPort`）。所有副作用（spawn/kill/fs/端口探测）可注入，便于零进程单元测试。
+- 三条纪律与仓库进程管理一致：① 长驻子进程 CWD 走 `resolveCwdOutsideRootDir` 挪出安装树（不给 `aios update` 上锁）；② 只绑 127.0.0.1、不持密钥、不发上游请求；③ 状态是客观事实——`running`=端口应答、`managed`=pid 活且端口答、`stale`=pidfile 残留但端口没答（如实报告并清理，绝不冒充运行）。
+- 启动幂等（已在跑返回 `alreadyRunning` 不 spawn 第二个）；成功=端口真应答，起不来就 SIGTERM 收子进程 + 删 pidfile 不留孤儿；停止 SIGTERM 优雅→SIGKILL 兜底→等端口真关→删 pidfile；无 pidfile（外部前台）不擅自杀，如实 `not-managed`。
+- 新增 3 个 CLI 子命令 `gateway-start`/`gateway-stop`/`gateway-status`（`entry/command.mjs`），**绕过 registry**（管进程不管配置，配置坏了也能启停）。解析 spec 无需改（Commander 已允许未知选项 + 位置子命令）。
+- 目录预算：`gateway/` 已满 8 → lifecycle 放新子目录 `model-router/lifecycle/`（model-router/ 5→6）。
+- **默认端口单一源 = 8686**（用户 2026-11-15 裁定「端口我想是 8686」，原 8787）：`GATEWAY_DEFAULT_PORT`（`lifecycle/daemon.mjs`）是唯一写者；前台 `gateway` 默认端口、`connect` 默认 gatewayUrl、connect 提示日志全部引用该常量（删掉 3 处 8787 字面量），UI 控制卡 Modal 直接用 `status.url`（删掉硬编码 fallback）。`--port` 仍可覆盖。下方 498 行浏览器真点记录里的 8787 是改端口前的历史实测，保留不改。
+
+### UI 启停 API（授权门，照抄 /api/mcp 纪律）
+- 新增 `app/api/model-routing/gateway/route.ts`（92 行）：GET→`gateway-status --json`（只读）；POST `{action:'start'|'stop', confirm, port?}`。闭合动作集合、`confirm!==true`→409、未知动作→400、端口整数校验→400，**都在真正启停之前拒绝**；HTTP body 永不进 shell（execFile argv 数组）。进程管理只经 CLI 调 daemon，不在 UI 侧再写一份。
+
+### 监控页网关控制卡（共享契约）
+- 新增 `model-routing/gateway-control.tsx`（214 行）：Panel「本地网关」运行中/未运行徽章 + 启动/关闭按钮（busy 或 running&&!managed 时禁用）+ 外部前台进程如实标注「界面无法替它停机」；Panel「接入客户端」两步可复制命令（connect + 每客户端 launch）+ 已接入/未接入徽章。启停先弹 `Modal` 确认再 POST `confirm:true`；状态 2.5s 轮询且仅 `/routing` 激活时；刷新失败保留上次快照。全部走 `console-ui` 共享件（含新 re-export 的 `type Feedback`）。
+- 接入命令构造单一源：`connect/artifacts.mjs` 的 `connectLaunchCommand`（connect 与 lifecycle 复用，删掉 connect 私有 `launchCommand`）。
+- `model-routing-panel.tsx` 集成 `<GatewayControl active={active}/>`；`console-workspace.tsx` 传 `active={view==='routing'}`。
+
+### 验证（结论分层）
+- **单元**：lifecycle 15 用例（含真实集成 start→status(running/managed)→stop→端口关、无孤儿）+ API/卡守卫 5 用例 = **20/20 绿**；quick shell（shell-labels/mcp-object-table/shell-tokens）**17/17 绿**；`tsc --noEmit` 干净。
+- **API real-hit（真 dev server，零副作用）**：对 live dev server 逐条实测——token 交换 307+`HttpOnly;SameSite=strict` cookie；GET 200 且 `running` 为 boolean、`clients` 为 3 元素数组（launch 命令正确）；POST 缺 confirm→409、未知动作→400、非法端口→400；裸 `/`→403 missing-token、异源→403 foreign-origin、cross-site→403 cross-site。所有 POST 在 spawn 前被拒，零副作用。
+- **浏览器真点（系统 Chrome，仓库外探针，零扣费）**：`/routing` 渲染控制卡；真点 启动网关→Modal→确认启动→`running:true,managed:true,pid,port 8787 应答`→截图；复制按钮→剪贴板=`aios model-router connect`；真点 关闭网关→Modal→确认关闭→`running:false`、端口关、pidfile 删→截图。5 张截图存证；验完 daemon 全清理（pid 死、无孤儿、state dir 空）。唯一 console 404 是 favicon.ico（Next dev 常态，非本功能）。
+- **预算**：model-router/6、lifecycle/1、connect/2、model-routing/7、api/model-routing/2、gateway/1（≤8）；最大新增文件 daemon 232 行（<400）。
+- **整块回归**（`npm run test:regression`，308 文件，165.8s）：**2696 用例 / 2646 过 / 35 败 / 15 跳过**。35 败 = 34 条存量基线（submodule standards / llms-txt / skill-management / 真实 CLI dispatch / V2 hash，均非本次改动）+ **1 条环境阻塞**：`dev-server-trust` 因用户桌面 app（3126）占住 Next 16 同目录 dev 锁而起不来第二个 dev server（line 68「gate must answer」超时）；该测试全部断言已用 live dev server 逐条 real-hit 通过，干净环境（CI / #43）它全绿。**新增 20 用例全过，零新增代码回归败。**
+- **未做（需授权/付费）**：真实模型上游调用；UI 内真实保存路由配置。
+
+## 客户端接入改 magpie 式「就地外科改写真实配置」（2026-11-15，用户裁定「这次的网关需要走真实配置了」）
+
+用户对照 magpie 指出原「接入客户端」要用户手动 `connect` + 特殊启动命令、地址写死在隔离工件里；magpie 是 GUI 选模型即自动改写客户端真实配置、零手动。查证 magpie 官方文档（外科改写真实配置、保注释/顺序/缩进、原子写、写前备份原值、可还原；env/复制命令只是未知工具兜底）+ 本机 `~/.pi/agent/*.before-magpie` 备份印证。决策见 `docs/adr/0010-magpie-inplace-client-connect.md`。
+
+### 前提实证（零扣费）
+- 网关 localhost 信任：`intakeToken` 默认空（`gateway/app.mjs`），客户端无需供 token，真实上游 key 由网关注入；故接入只写占位 token、不写模型名（模型由 (client,role) 矩阵服务端路由）。
+- codex 免 env：临时 `CODEX_HOME` + 死端口探针，codex 0.169 用内联 `experimental_bearer_token` + `requires_openai_auth=false`、无 `env_key`、无 shell env，直接打印会话头并发起请求（`Reconnecting…waiting for network`），**无缺 key 报错** → 就地接入免特殊启动命令成立。`Model metadata not found` 仅软警告（fallback 可用），故不写 model-catalog。
+
+### 实现（单一事实源 + 可注入）
+- `connect/editors.mjs`：claude/codex/pi 纯函数外科编辑器 `(text,gatewayUrl)→{text,backup,changedKeys}` + 对应 restore；codex 行级外科（只改顶层 `model_provider` 行 + 带 `# aios-gateway:begin/end` 标记的 provider 块），claude/pi JSON 只动我们的 key、沿用原缩进。
+- `connect/inplace.mjs`：读真实配置→编辑→原子写(temp+rename)→原值备份 `connect-backup.json`；`disconnectInplace` 还原原值（原本不存在的文件删除，**绝不删网关 pidfile/日志**），支持 per-client 部分还原；fs 全可注入。
+- CLI `connect`/`disconnect` 默认就地，`--isolated` 退回旧隔离工件，`--home` 可注入；`--json` 供 GUI；`describeConnect` 以备份为准报告 inplace 接入态。GUI 卡每客户端「接入/还原」按钮 + 确认 Modal，隔离启动命令降为可折叠兜底。
+- 安全：只动我们的 key、备份原值、原子写、GUI `confirm:true`、非法客户端 400、绝不回显密钥；开发/测试只用临时 HOME，真正写入只由用户点「接入」触发。
+
+### 验证（结论分层）
+- **单元/集成**：editors 8 + inplace 7（含状态集成、部分还原、pidfile 保留）+ CLI 2 = **17 新用例全绿**；model 全套 132/132；启停/接入守卫 6/6；`tsc --noEmit` 干净。
+- **前提实测**：codex 免 env 内联 token 探针（上文，零扣费）；claude `--settings`/pi 隔离机制此前 #29 已零扣费实测，就地写入的配置内容与已证工件一致。
+- **整块回归**：见下方运行结果（基线 34 存量 + 1 环境阻塞 dev-server-trust，新增用例全过）。
+- **未做（需授权/付费）**：真实模型上游调用；真实客户端→网关→上游的新一轮全链路实拍（路由行为此前 #26/#29 已零扣费证，配置内容未变）。
+
+## 模型来源：magpie 式动态发现 + 自定义（2026-11-15，用户裁定「直接参考 magpie 的做法」）
+
+用户追问「模型怎么来的？网关没提供的自定义模型怎么获取？」。查证：原模型 100% 来自静态注册表 `registry.models`（手工 ~25 个），`providers.mjs` 纯函数不联网、无模型发现；routing 模式按矩阵选注册表内模型，目录外模型选不到。对比 magpie「问每个 vendor 供应哪些模型、新模型自动进 picker、custom provider 自动发现」——确为真缺口。
+
+### 实现（保留 curated 画像 + 动态发现 + 自定义）
+- `routing/discovery.mjs`：`discoverProviderModels`/`discoverAllModels` 按协议拉模型列表（`protocolModelsEndpoint`：claude `/claude/v1/models`、gemini `/gemini/v1beta/models`、openai `/openai/v1/models`），解析 `{data:[{id}]}`/`{models:[{name}]}`，按 id 去重合并协议，fail-soft（404/超时记 error 不炸），密钥只进请求头绝不记录；`mergeDiscoveredModels` 新 id 落最小条目、已有 id 只补协议不覆盖 curated 画像（纯函数）。
+- CLI `model-router models [--refresh] [--json]`：refresh 发现→合并→原子写注册表（备份）；默认列目录。`saveRegistryDocument`（entry/registry.mjs）单一写路径。
+- GUI `/api/model-routing/models`（GET 列目录 / POST refresh，confirm 门）+ `model-source-section.tsx`（刷新按钮 + curated/discovered/custom 计数 + 自定义模型/供应商入口）；UI lib `toModelCatalog` 加 source/provider，`toEditable/applyEdits` 加 customModels（只重建 custom 段、保留 curated/discovered）。
+
+### 验证（结论分层）
+- **前提实测（零扣费）**：relay `/claude/v1/models`→68 模型、`/gemini/v1beta/models`→10 模型、`/openai/v1/models`→404（fail-soft）；CLI `models --refresh` 真跑 discovered 68 / added 55 / enriched 8 / total 80（注册表测后还原）。**55 个是精选目录没有的**——正是用户指的缺口。
+- **单元/集成**：discovery 6 + config-lib customModels 等 24 + 守卫 7 全绿；`tsc --noEmit` 干净；目录预算 api/model-routing 3、components/model-routing 8、routing 8（≤8）。
+- **整块回归**：见运行结果（基线 34 存量 + 1 环境阻塞，新增用例全过）。
+- **未做（需授权/付费）**：真实模型上游生成调用；GUI 刷新按钮的浏览器实拍（点刷新会写注册表，未替用户触发；CLI 路径已实测）。

@@ -1,0 +1,230 @@
+'use client';
+
+// All editing sections share this draft and save boundary; monitoring reads saved facts separately.
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type { IntentRouting, ModelOption } from './intent-routing-section';
+import type { Feedback } from '../console-ui';
+import { toModelBindings, toModelCatalog } from '../../../lib/config/model-routing.mjs';
+
+export interface RoutingProvider {
+  id: string;
+  baseUrl: string;
+  apiKeyEnv: string;
+  authMode?: 'required' | 'none';
+  endpointStyle?: 'standard' | 'relay';
+  enabled?: boolean;
+  protocols: string[];
+  models: string[];
+  accounts?: { id: string; apiKeyEnv: string }[];
+}
+export interface CustomModel {
+  id: string;
+  label: string;
+  protocols: string[];
+  provider: string;
+  upstreamModel?: string;
+  enabled?: boolean;
+}
+export interface RoutingGroup {
+  id: string;
+  models: string[];
+  routing: string;
+}
+export interface RoutingEditable {
+  providers: RoutingProvider[];
+  customModels: CustomModel[];
+  matrix: { default: Record<string, string>; clients: Record<string, Record<string, string>> };
+  routingGroups: RoutingGroup[];
+  intentRouting: IntentRouting;
+}
+export interface AutoRole {
+  role: string;
+  taskType: string;
+  autoModelId: string;
+  effectiveModelId: string;
+  available?: boolean;
+  unavailableModelId?: string;
+  overridden: boolean;
+  label: string;
+  cost: string;
+  speed: string;
+  ruleDescription: string;
+}
+export type RoutingStatus = 'loading' | 'ready' | 'error' | 'saving';
+
+export function useRoutingConfig() {
+  const [editable, setEditable] = useState<RoutingEditable | null>(null);
+  const [auto, setAuto] = useState<AutoRole[]>([]);
+  const [models, setModels] = useState<ModelOption[]>([]);
+  const [modelBindings, setModelBindings] = useState<ModelOption[]>([]);
+  const [hash, setHash] = useState('');
+  const [status, setStatus] = useState<RoutingStatus>('loading');
+  const [error, setError] = useState('');
+  const [saved, setSaved] = useState<RoutingEditable | null>(null);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const busy = useRef(false);
+  const dirty = editable !== null && JSON.stringify(editable) !== JSON.stringify(saved);
+
+  const read = useCallback(async () => {
+    const res = await fetch('/api/config/model-routing', { cache: 'no-store' });
+    const body = await res.json();
+    if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
+    setEditable(body.editable);
+    setSaved(body.editable);
+    setAuto(Array.isArray(body.auto) ? body.auto : []);
+    setModels(Array.isArray(body.models) ? body.models : []);
+    setModelBindings(Array.isArray(body.modelBindings) ? body.modelBindings : Array.isArray(body.models) ? body.models : []);
+    setHash(body.hash);
+    setError('');
+  }, []);
+
+  const reload = useCallback(async () => {
+    if (busy.current) return;
+    busy.current = true;
+    setStatus('loading');
+    setFeedback(null);
+    try {
+      await read();
+      setStatus('ready');
+    } catch (loadError) {
+      setError(loadError instanceof Error ? loadError.message : String(loadError));
+      setStatus('error');
+    } finally {
+      busy.current = false;
+    }
+  }, [read]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [dirty]);
+
+  const saveDocument = useCallback(
+    async (next: RoutingEditable): Promise<{ ok: boolean; text: string }> => {
+      if (busy.current) return { ok: false, text: '上一项操作尚未结束，请稍后重试。' };
+      busy.current = true;
+      setStatus('saving');
+      setFeedback(null);
+      try {
+        const res = await fetch('/api/config/model-routing', {
+          method: 'PUT',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ editable: next, expectedHash: hash }),
+        });
+        const body = await res.json();
+        if (!res.ok)
+          throw new Error(
+            res.status === 409
+              ? '配置已被其他窗口或 CLI 修改。草稿已保留，请重新读取配置后再编辑。'
+              : body.detail || body.error || '保存失败'
+          );
+        let text = body.changed?.length
+          ? body.backup ? '配置已保存，写入前已自动备份。' : '配置已保存。'
+          : '配置没有变化。';
+        // A failed follow-up read must not turn an acknowledged disk write into a failed save.
+        setSaved(next);
+        setEditable(next);
+        if (body.hash) setHash(body.hash);
+        try {
+          await read();
+        } catch (readError) {
+          text = '配置已写入，但未能重新读取。请重新读取配置确认。';
+          setError(readError instanceof Error ? readError.message : String(readError));
+        }
+        setStatus('ready');
+        setFeedback({ tone: 'ok', text });
+        return { ok: true, text };
+      } catch (saveError) {
+        setStatus('ready');
+        const text = saveError instanceof Error ? saveError.message : String(saveError);
+        setFeedback({ tone: 'error', text });
+        return { ok: false, text };
+      } finally {
+        busy.current = false;
+      }
+    },
+    [hash, read]
+  );
+
+  const save = useCallback(async (): Promise<{ ok: boolean; text: string }> => {
+    if (!editable) return { ok: false, text: '没有可保存的配置' };
+    return saveDocument(editable);
+  }, [editable, saveDocument]);
+
+  const refreshModels = useCallback(async (): Promise<{ ok: boolean; text: string }> => {
+    if (dirty) return { ok: false, text: '请先保存或放弃未保存的修改，再刷新模型目录。' };
+    if (busy.current) return { ok: false, text: '上一项操作尚未结束，请稍后重试。' };
+    busy.current = true;
+    setStatus('saving');
+    try {
+      const res = await fetch('/api/model-routing/models', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ confirm: true }),
+      });
+      const body = await res.json();
+      if (!res.ok || body.ok === false)
+        throw new Error(body.stderr || body.detail || body.error || '刷新失败');
+      const result = body.result ?? {};
+      const failedSources = Array.isArray(result.providers)
+        ? result.providers.flatMap((provider: { provider?: string; errors?: { protocol?: string }[] }) =>
+            (Array.isArray(provider.errors) ? provider.errors : []).map((failure) =>
+              `${provider.provider || '未知供应商'} / ${failure.protocol || '未知协议'}`
+            )
+          )
+        : [];
+      const text = `发现 ${result.discovered ?? 0} 个模型，新增 ${result.added ?? 0}、补协议 ${result.enriched ?? 0}。仅发现列表，尚未验证生成可用性${failedSources.length ? `。部分来源读取失败：${failedSources.join('、')}；已有目录已保留。` : ''}`;
+      await read();
+      setStatus('ready');
+      return { ok: true, text };
+    } catch (refreshError) {
+      setStatus('ready');
+      return { ok: false, text: refreshError instanceof Error ? refreshError.message : String(refreshError) };
+    } finally {
+      busy.current = false;
+    }
+  }, [dirty, read]);
+
+  const discard = () => {
+    setEditable(saved ? structuredClone(saved) : null);
+    setFeedback(null);
+  };
+  const draftDocument = editable ? {
+    providers: Object.fromEntries(editable.providers.map((provider) => [provider.id, provider])),
+    models: Object.fromEntries([
+      ...modelBindings.filter((model) => model.source !== 'custom').map((model) => [model.id, model]),
+      ...editable.customModels.map((model) => [model.id, { ...model, source: 'custom', cost: 'unknown' }]),
+    ]),
+  } : null;
+  const draftModels: ModelOption[] = draftDocument ? toModelCatalog(draftDocument) : models;
+  // Management keeps inactive definitions; strategy pickers only receive route candidates.
+  const managementModels: ModelOption[] = draftDocument ? toModelBindings(draftDocument) : modelBindings;
+  return {
+    editable,
+    auto,
+    models: draftModels,
+    managementModels,
+    hash,
+    status,
+    error,
+    dirty,
+    feedback,
+    reload,
+    discard,
+    setEditable,
+    save,
+    saveDocument,
+    refreshModels,
+  };
+}
+
+export type RoutingController = ReturnType<typeof useRoutingConfig>;

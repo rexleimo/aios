@@ -162,7 +162,7 @@ test('动作 argv 由闭合集合 + 事实校验构造：非法输入一律拒�
 });
 
 test('current destinations and old bookmarks resolve to a real Console view', () => {
-  assert.deepEqual(Object.values(CONSOLE_VIEWS).map(view => view.href), ['/', '/tools', '/mcp', '/memory', '/activity', '/settings']);
+  assert.deepEqual(Object.values(CONSOLE_VIEWS).map(view => view.href), ['/', '/tools', '/routing', '/routing/config', '/mcp', '/memory', '/activity', '/settings']);
   assert.deepEqual(LEGACY_ROUTES, { '/prototype': '/', '/overview': '/', '/sessions': '/activity', '/usage': '/activity', '/matrix': '/tools' });
   for (const [path, target] of Object.entries(LEGACY_ROUTES)) {
     assert.equal(legacyDestination(path), target);

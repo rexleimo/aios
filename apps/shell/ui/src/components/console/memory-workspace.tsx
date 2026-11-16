@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import { MEMO_SCOPE_LABELS, type ConsoleFacts, type FactMemory } from '../../lib/console-facts';
-import { Badge, Button, Empty, Field, Heading, Modal, fieldClass } from './console-ui';
+import { Badge, Button, Empty, Field, Heading, Input, Modal, Textarea } from './console-ui';
 import { MemoryDetail } from './flows/memory-detail';
 import { ProjectButton } from './flows/project-button';
 
@@ -219,7 +219,7 @@ export function MemoryWorkspace({
             </div>
             <div className="relative">
               <Search size={15} className="absolute top-3 left-3 text-rex-text-muted" />
-              <input
+              <Input
                 aria-label="搜索记忆内容"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
@@ -227,7 +227,7 @@ export function MemoryWorkspace({
                   if (event.key === 'Enter') void runServerSearch();
                 }}
                 placeholder="搜索已加载记录；回车跑一次真实 memo search…"
-                className={`${fieldClass} pl-9`}
+                className="pl-9"
               />
             </div>
             <div className="mt-3 flex flex-wrap gap-1">
@@ -357,11 +357,10 @@ export function MemoryWorkspace({
           原记录：{selected?.excerpt.slice(0, 80)}
         </div>
         <Field label="现在应该记住什么" hint="8–2000 字符；命令是 aios memo add <文本> --supersedes <id>">
-          <textarea
+          <Textarea
             rows={4}
             value={replacement}
             onChange={(event) => setReplacement(event.target.value)}
-            className={`${fieldClass} h-auto py-3`}
           />
         </Field>
         <div className="mt-5 flex justify-end gap-2">

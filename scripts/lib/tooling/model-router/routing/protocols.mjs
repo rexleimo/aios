@@ -34,3 +34,14 @@ export function protocolEndpoint(protocol = '', base = RELAY_BASE_URL) {
   if (normalized === 'gemini') return `${root}/gemini/v1beta/models`;
   return '';
 }
+
+// 纯函数：按协议拼出「模型列表」端点（magpie 式动态发现用）——与 protocolEndpoint 同前缀，路径换成列表。
+// 实测 relay：claude /claude/v1/models 与 gemini /gemini/v1beta/models 返回 200；openai /openai/v1/models 404（fail-soft）。
+export function protocolModelsEndpoint(protocol = '', base = RELAY_BASE_URL) {
+  const normalized = normalizeModelProtocol(protocol);
+  const root = String(base || RELAY_BASE_URL).replace(/\/+$/u, '');
+  if (normalized === 'openai-chat' || normalized === 'openai-response') return `${root}/openai/v1/models`;
+  if (normalized === 'claude') return `${root}/claude/v1/models`;
+  if (normalized === 'gemini') return `${root}/gemini/v1beta/models`;
+  return '';
+}

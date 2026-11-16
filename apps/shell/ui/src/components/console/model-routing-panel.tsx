@@ -1,183 +1,120 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { Button, Panel } from './console-ui';
+// 监控面：只回答「现在谁在用哪个模型」。实时路由图 + 只读自动默认表 + 一个折叠的网关解释。
+// 所有「改」的交互（意图 / 覆盖 / 供应商）在独立子页 /routing/config，不在这里堆编辑器。
+import { useState, type ReactNode } from 'react';
+import { ChevronDown, KeyRound, Languages, Network, Settings2, Waypoints, type LucideIcon } from 'lucide-react';
+import { Badge, Button, ErrorState, Loading, Panel, SmallTitle } from './console-ui';
+import { RoutingGraph } from './model-routing/routing-graph';
+import { GatewayControl } from './model-routing/gateway-control';
+import { COST_LABEL, ROLE_LABEL, SPEED_LABEL, costTone } from './model-routing/labels';
+import { useRoutingConfig } from './model-routing/use-routing-config';
 
-interface Provider {
-  id: string;
-  baseUrl: string;
-  apiKeyEnv: string;
-  protocols: string[];
-  models: string[];
-}
-interface Editable {
-  providers: Provider[];
-  matrix: { default: Record<string, string>; clients: Record<string, Record<string, string>> };
-}
+export function ModelRoutingPanel({ onConfigure, active = true }: { onConfigure: () => void; active?: boolean }) {
+  const { auto, models, status, error, reload } = useRoutingConfig();
+  const [showExplainer, setShowExplainer] = useState(false);
+  const ready = auto.length > 0 || models.length > 0;
 
-const ROLES = ['planner', 'implementer', 'reviewer', 'security-reviewer', 'team-lead', 'team-member'];
-const ROLE_LABEL: Record<string, string> = {
-  planner: '规划',
-  implementer: '实现',
-  reviewer: '审查',
-  'security-reviewer': '安全审查',
-  'team-lead': '团队负责',
-  'team-member': '团队成员',
-};
-
-type Status = 'loading' | 'ready' | 'error' | 'saving';
-
-export function ModelRoutingPanel() {
-  const [editable, setEditable] = useState<Editable | null>(null);
-  const [hash, setHash] = useState('');
-  const [status, setStatus] = useState<Status>('loading');
-  const [message, setMessage] = useState('');
-  const [clientId, setClientId] = useState('');
-
-  const load = useCallback(async () => {
-    setStatus('loading');
-    setMessage('');
-    try {
-      const res = await fetch('/api/config/model-routing');
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
-      setEditable(body.editable);
-      setHash(body.hash);
-      setStatus('ready');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-      setStatus('error');
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  const save = useCallback(async () => {
-    if (!editable) return;
-    setStatus('saving');
-    setMessage('');
-    try {
-      const res = await fetch('/api/config/model-routing', {
-        method: 'PUT',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ editable, expectedHash: hash }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.detail || body.error || '保存失败');
-      setHash(body.hash || hash);
-      setMessage(body.changed?.length ? `已保存：${body.changed.join(', ')}` : '无变更');
-      setStatus('ready');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-      setStatus('ready');
-    }
-  }, [editable, hash]);
-
-  const setDefaultModel = (role: string, model: string) => {
-    setEditable((prev) => prev ? { ...prev, matrix: { ...prev.matrix, default: { ...prev.matrix.default, [role]: model } } } : prev);
-  };
-
-  const setClientModel = (client: string, role: string, model: string) => {
-    setEditable((prev) => {
-      if (!prev) return prev;
-      const clientMap = { ...(prev.matrix.clients[client] || {}), [role]: model };
-      return { ...prev, matrix: { ...prev.matrix, clients: { ...prev.matrix.clients, [client]: clientMap } } };
-    });
-  };
-
-  if (status === 'loading') {
-    return <Panel className="max-w-3xl p-6 text-sm text-rex-text-muted">正在读取模型路由配置…</Panel>;
+  if (status === 'loading' && !ready) {
+    return <Loading label="正在读取模型路由…" className="max-w-3xl" />;
   }
-  if (status === 'error' || !editable) {
-    return (
-      <Panel className="max-w-3xl p-6">
-        <p className="text-sm text-rex-text-muted">没读到模型路由配置：{message || '未知原因'}</p>
-        <Button variant="outline" className="mt-4" onClick={() => void load()}>重试</Button>
-      </Panel>
-    );
+  if (!ready) {
+    return <ErrorState className="max-w-3xl" message={`没读到模型路由：${error || '未知原因'}`} onRetry={() => void reload()} />;
   }
 
   return (
-    <Panel className="max-w-3xl p-6">
-      <h3 className="mb-2 text-xs font-semibold text-rex-text-muted">供应商</h3>
-      {editable.providers.length === 0 ? (
-        <p className="mb-5 text-xs text-rex-text-muted">还没有自定义供应商（默认走内置 relay）。</p>
-      ) : (
-        <div className="mb-5 overflow-x-auto">
+    <div className="max-w-3xl space-y-5">
+      {status === 'error' && <p className="text-xs text-rex-danger">刷新失败：{error}</p>}
+
+      <RoutingGraph models={models} />
+
+      <GatewayControl active={active} />
+
+      <Panel className="p-6">
+        <SmallTitle
+          action={
+            <Button variant="outline" size="sm" onClick={onConfigure}>
+              <Settings2 size={14} />
+              调整路由配置
+            </Button>
+          }
+        >
+          自动路由（默认）
+        </SmallTitle>
+        <p className="mb-4 text-xs leading-6 text-rex-text-muted">
+          默认已为每个角色配好最合适的模型，无需手动选择。此表只读；要改意图或覆盖，点右上「调整路由配置」进入独立配置页。
+        </p>
+        <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
               <tr className="border-b border-rex-border text-left text-rex-text-muted">
-                <th className="py-2 pr-3 font-medium">供应商</th>
-                <th className="py-2 pr-3 font-medium">端点</th>
-                <th className="py-2 pr-3 font-medium">协议</th>
-                <th className="py-2 font-medium">密钥引用</th>
+                <th className="py-2 pr-3 font-medium">角色</th>
+                <th className="py-2 pr-3 font-medium">自动分配的模型</th>
+                <th className="py-2 pr-3 font-medium">成本</th>
+                <th className="py-2 pr-3 font-medium">速度</th>
+                <th className="py-2 font-medium">来源</th>
               </tr>
             </thead>
             <tbody>
-              {editable.providers.map((provider) => (
-                <tr key={provider.id} className="border-b border-rex-border/60">
-                  <td className="py-2 pr-3 font-medium">{provider.id}</td>
-                  <td className="py-2 pr-3 text-rex-text-muted">{provider.baseUrl}</td>
-                  <td className="py-2 pr-3 text-rex-text-muted">{provider.protocols.join(', ') || '—'}</td>
-                  <td className="py-2 text-rex-text-muted">{provider.apiKeyEnv || '—'}</td>
+              {auto.map((row) => (
+                <tr key={row.role} className="border-b border-rex-border/60 align-top">
+                  <td className="py-2.5 pr-3 font-medium">{ROLE_LABEL[row.role] || row.role}</td>
+                  <td className="py-2.5 pr-3">
+                    <span className="font-medium">{row.label || row.effectiveModelId || '—'}</span>
+                    <span className="block text-[10px] text-rex-text-muted">{row.effectiveModelId}</span>
+                    {row.overridden && row.autoModelId && (
+                      <span className="block text-[10px] text-rex-text-muted">自动本来会选 {row.autoModelId}</span>
+                    )}
+                  </td>
+                  <td className="py-2.5 pr-3"><Badge tone={costTone(row.cost)}>{COST_LABEL[row.cost] || row.cost}</Badge></td>
+                  <td className="py-2.5 pr-3 text-rex-text-muted">{SPEED_LABEL[row.speed] || row.speed}</td>
+                  <td className="py-2.5">{row.overridden ? <Badge tone="warn">已自定义</Badge> : <Badge tone="info">自动</Badge>}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      )}
+      </Panel>
 
-      <h3 className="mb-2 text-xs font-semibold text-rex-text-muted">角色 → 模型（全局默认）</h3>
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {ROLES.map((role) => (
-          <label key={role} className="flex items-center gap-2 text-xs">
-            <span className="w-20 shrink-0 text-rex-text-muted">{ROLE_LABEL[role]}</span>
-            <input
-              value={editable.matrix.default[role] || ''}
-              onChange={(event) => setDefaultModel(role, event.target.value)}
-              placeholder="模型 id"
-              className="w-full rounded-lg border border-rex-border bg-rex-bg px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan"
-            />
-          </label>
-        ))}
-      </div>
+      <Panel className="p-6">
+        <button
+          type="button"
+          onClick={() => setShowExplainer((value) => !value)}
+          aria-expanded={showExplainer}
+          className="flex w-full items-center justify-between gap-3 text-left focus-visible:outline-2 focus-visible:outline-rex-cyan"
+        >
+          <span className="text-[15px] font-semibold">本地模型网关是什么</span>
+          <ChevronDown size={16} className={`text-rex-text-muted transition-transform duration-150 motion-reduce:transition-none ${showExplainer ? 'rotate-180' : ''}`} />
+        </button>
+        {showExplainer && (
+          <div className="mt-4">
+            <p className="mb-4 text-xs leading-6 text-rex-text-muted">
+              网关是跑在你本机（127.0.0.1）的统一入口。把 AI 客户端的 base URL 指向它，就由它替你把每个请求转发到最合适的模型供应商——你不必为每次对话手动挑模型。
+            </p>
+            <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Feature icon={Waypoints} title="按角色自动选模型">规划 / 审查用强模型，实现用快而省的模型；通道故障时自动切到备用。</Feature>
+              <Feature icon={Languages} title="协议翻译（有边界）">claude 客户端可跨 openai-chat / gemini 上游互转；codex（openai-response）目前只同协议直通，跨协议翻译尚未实现，网关会拒绝而非发错协议。</Feature>
+              <Feature icon={KeyRound} title="密钥只存环境变量">配置里只出现 env 引用，不落明文、不进日志。</Feature>
+              <Feature icon={Network} title="单一配置源">CLI / 网关 / 界面读写同一份配置，改一处处处生效。</Feature>
+            </ul>
+            <p className="mt-4 text-[11px] leading-5 text-rex-text-muted">
+              启动网关与接入客户端的操作都在上方「本地网关」「接入客户端」两张卡里：一键启停、每客户端一条可复制的启动命令。真实模型扣费验收需你显式批准后才跑。
+            </p>
+          </div>
+        )}
+      </Panel>
+    </div>
+  );
+}
 
-      <h3 className="mb-2 mt-6 text-xs font-semibold text-rex-text-muted">每客户端覆盖（优先于全局默认）</h3>
-      <label className="mb-2 flex items-center gap-2 text-xs">
-        <span className="w-20 shrink-0 text-rex-text-muted">客户端 id</span>
-        <input
-          value={clientId}
-          onChange={(event) => setClientId(event.target.value.trim())}
-          placeholder="如 claude / codex / opencode"
-          className="w-full rounded-lg border border-rex-border bg-rex-bg px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan"
-        />
-      </label>
-      {clientId ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {ROLES.map((role) => (
-            <label key={role} className="flex items-center gap-2 text-xs">
-              <span className="w-20 shrink-0 text-rex-text-muted">{ROLE_LABEL[role]}</span>
-              <input
-                value={editable.matrix.clients[clientId]?.[role] || ''}
-                onChange={(event) => setClientModel(clientId, role, event.target.value)}
-                placeholder="留空＝用全局默认"
-                className="w-full rounded-lg border border-rex-border bg-rex-bg px-2 py-1.5 text-xs focus-visible:outline-2 focus-visible:outline-rex-cyan"
-              />
-            </label>
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-rex-text-muted">填一个客户端 id 即可为它单独配置角色模型。</p>
-      )}
-
-      <div className="mt-6 flex items-center gap-3">
-        <Button onClick={() => void save()} disabled={status === 'saving'}>
-          {status === 'saving' ? '保存中…' : '保存路由配置'}
-        </Button>
-        {message && <span className="text-xs text-rex-text-muted">{message}</span>}
-      </div>
-    </Panel>
+function Feature({ icon: Icon, title, children }: { icon: LucideIcon; title: string; children: ReactNode }) {
+  return (
+    <li className="flex gap-2.5 rounded-xl border border-rex-border bg-rex-panel/40 p-3">
+      <Icon size={16} strokeWidth={1.8} className="mt-0.5 shrink-0 text-rex-cyan" />
+      <span className="text-xs leading-5">
+        <span className="block font-medium text-rex-text">{title}</span>
+        <span className="text-rex-text-muted">{children}</span>
+      </span>
+    </li>
   );
 }

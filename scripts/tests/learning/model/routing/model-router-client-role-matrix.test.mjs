@@ -5,7 +5,7 @@ import {
   getClientRoleMatrix,
   resolveClientRoleModel,
   resolveModelForClientRole,
-} from '../../../lib/tooling/model-router/routing/client-role-matrix.mjs';
+} from '../../../../lib/tooling/model-router/routing/client-role-matrix.mjs';
 
 const registry = {
   activeModel: 'claude-sonnet-5',

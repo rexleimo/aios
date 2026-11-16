@@ -2,11 +2,14 @@
 
 import * as Dialog from '@radix-ui/react-dialog';
 import { ArrowUpRight, X, type LucideIcon } from 'lucide-react';
-import { useRef, type ReactNode } from 'react';
+import { useRef, type ReactNode, type RefObject } from 'react';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/primitives';
+import { Badge, Input, Panel, Select, Textarea } from '../ui/primitives';
+import { ErrorState, InlineFeedback, Loading, type Feedback } from '../ui/states';
 
-export { Button, Badge };
+// 单一导入面：console 各页只从 './console-ui' 取共享件。一种交互只有一个形状——
+// 表面 Panel、徽章 Badge、输入 Input/Select/Textarea、异步态 Loading/ErrorState/InlineFeedback。
+export { Button, Badge, Panel, Input, Select, Textarea, Loading, ErrorState, InlineFeedback, type Feedback };
 export function Heading({
   eyebrow,
   title,
@@ -31,12 +34,9 @@ export function Heading({
     </header>
   );
 }
-export function Panel({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <section className={`rounded-2xl border border-rex-border bg-rex-bg ${className}`}>{children}</section>;
-}
 export function SmallTitle({ children, action }: { children: ReactNode; action?: ReactNode }) {
   return (
-    <div className="mb-4 flex items-center justify-between gap-3">
+    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
       <h2 className="text-[15px] font-semibold">{children}</h2>
       {action}
     </div>
@@ -60,6 +60,7 @@ export function Modal({
   description,
   children,
   wide = false,
+  initialFocus,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,6 +68,7 @@ export function Modal({
   description: string;
   children: ReactNode;
   wide?: boolean;
+  initialFocus?: RefObject<HTMLElement | null>;
 }) {
   const opener = useRef<HTMLElement | null>(null);
   return (
@@ -74,8 +76,12 @@ export function Modal({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-rex-text/25 backdrop-blur-[2px]" />
         <Dialog.Content
-          onOpenAutoFocus={() => {
+          onOpenAutoFocus={(event) => {
             opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+            if (initialFocus?.current) {
+              event.preventDefault();
+              initialFocus.current.focus();
+            }
           }}
           onCloseAutoFocus={(event) => {
             if (opener.current?.isConnected) {
@@ -83,7 +89,7 @@ export function Modal({
               opener.current.focus();
             }
           }}
-          className={`fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%_-_32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl border border-rex-border bg-rex-bg p-6 shadow-xl ${wide ? 'max-w-[680px]' : 'max-w-[480px]'}`}
+          className={`fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%_-_32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto scroll-pt-6 scroll-pb-24 rounded-2xl border border-rex-border bg-rex-bg p-6 shadow-xl ${wide ? 'max-w-[680px]' : 'max-w-[480px]'}`}
         >
           <Dialog.Title className="pr-8 text-xl font-semibold tracking-tight">{title}</Dialog.Title>
           <Dialog.Description className="mt-2 mb-6 text-sm leading-6 text-rex-text-muted">
@@ -103,8 +109,6 @@ export function Modal({
     </Dialog.Root>
   );
 }
-export const fieldClass =
-  'h-10 w-full min-w-0 rounded-lg border border-rex-border bg-rex-bg px-3 text-sm text-rex-text focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-rex-cyan';
 export function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
   return (
     <label className="block space-y-2">

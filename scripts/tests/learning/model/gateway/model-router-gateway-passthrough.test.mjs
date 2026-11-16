@@ -135,7 +135,7 @@ test('health endpoint responds without touching upstream', async () => {
   try {
     const res = await fetch(`http://127.0.0.1:${addr.port}/health`);
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { ok: true });
+    assert.deepEqual(await res.json(), { ok: true, ready: true });
   } finally {
     await gateway.close();
   }

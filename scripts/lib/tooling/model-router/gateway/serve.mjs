@@ -5,16 +5,29 @@ import { serve } from '@hono/node-server';
 
 import { createRoutingGatewayApp } from './proxy.mjs';
 import { createGatewayApp } from './app.mjs';
+import { createDecisionLog, defaultDecisionLogPath } from '../session/decision-log.mjs';
 
 // mode='routing'（默认，按矩阵路由+翻译）| 'passthrough'（P0 纯透传，不路由）。
+// stateDir 提供时把每条决策落盘成 JSONL（实时路由图的跨进程数据源）；密钥已在决策层排除，日志再兜一道脱敏。
 export function createGatewayServer(options = {}) {
-  const { mode = 'routing', port = 0, host = '127.0.0.1', ...appOptions } = options;
-  const built = mode === 'passthrough' ? createGatewayApp(appOptions) : createRoutingGatewayApp(appOptions);
+  const { mode = 'routing', port = 0, host = '127.0.0.1', stateDir = '', onDecision, ...appOptions } = options;
+  const decisionLog = stateDir ? createDecisionLog(defaultDecisionLogPath(stateDir)) : null;
+  let built;
+  if (mode === 'passthrough') {
+    built = createGatewayApp(appOptions);
+  } else {
+    const recordRouted = (decision) => {
+      if (decisionLog) decisionLog.append(decision);
+      if (onDecision) onDecision(decision);
+    };
+    built = createRoutingGatewayApp({ ...appOptions, onDecision: recordRouted });
+  }
   const { app, decisions } = built;
   let server = null;
 
   return Object.freeze({
     decisions,
+    decisionLog,
     mode,
     listen() {
       return new Promise((resolve, reject) => {

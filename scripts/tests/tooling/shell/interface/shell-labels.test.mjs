@@ -8,12 +8,15 @@ import { EVENT_ID_PATTERN } from '../../../../../apps/shell/ui/src/lib/data/memo
 const ui = file => new URL(`../../../../../apps/shell/ui/src/${file}`, import.meta.url);
 
 test('current Console has one route and an understandable label for every destination', () => {
-  assert.deepEqual(PRIMARY_VIEWS.map(view => view.label), ['首页', 'AI 工具', 'MCP 服务', '记忆', '活动记录']);
+  assert.deepEqual(PRIMARY_VIEWS.map(view => view.label), ['首页', 'AI 工具', '模型路由', 'MCP 服务', '记忆', '活动记录']);
   for (const [id, view] of Object.entries(CONSOLE_VIEWS)) {
     assert.equal(viewForPath(view.href), id);
     assert.ok(view.label.length > 0 && view.title.length > 0);
   }
-  assert.equal(new Set(Object.values(CONSOLE_VIEWS).map(view => view.href)).size, 6);
+  assert.equal(new Set(Object.values(CONSOLE_VIEWS).map(view => view.href)).size, 8);
+  // 配置是二级页：有独立路由但不进主导航（主导航仍 6 项）。
+  assert.equal(CONSOLE_VIEWS.routingConfig.href, '/routing/config');
+  assert.ok(!PRIMARY_VIEWS.some(view => view.id === 'routingConfig'));
   for (const path of ['/unknown', '/__proto__', '/constructor', '/memory/nested']) {
     assert.equal(viewForPath(path), undefined);
     assert.equal(legacyDestination(path), undefined);
@@ -60,12 +63,19 @@ test('the fixture state is gone from the shipped UI, not just hidden', () => {
   const sources = ['components/console/console-workspace.tsx', 'components/console/home-workspace.tsx',
     'components/console/mcp-workspace.tsx', 'components/console/memory-workspace.tsx',
     'components/console/flows/memory-detail.tsx', 'components/console/flows/mcp-wizard.tsx',
-    'app/(console)/page.tsx', 'app/(console)/[section]/page.tsx'];
+    'components/console/model-routing/agent-overview.tsx', 'components/console/model-routing/routing-graph.tsx',
+    'components/console/model-routing/intent-routing-section.tsx',
+    'app/(console)/page.tsx', 'app/(console)/[section]/page.tsx', 'app/(console)/routing/config/page.tsx'];
   for (const file of sources) {
     const source = readFileSync(ui(file), 'utf8');
     assert.doesNotMatch(source, /from '[^']*demo-data'/u, `${file} still imports fixture state`);
     assert.doesNotMatch(source, /模拟测试通过|已检测到 · 示例|示例环境/u, `${file} still renders fabricated status text`);
   }
+  // 监控/配置分离：监控页不得再挂编辑器，配置子页必须承载意图编辑。
+  const monitor = readFileSync(ui('components/console/model-routing-panel.tsx'), 'utf8');
+  assert.doesNotMatch(monitor, /intent-routing-section|RoutingConfigPanel/u, 'the monitor page must not embed config editors');
+  const configPanel = readFileSync(ui('components/console/model-routing/routing-config.tsx'), 'utf8');
+  assert.match(configPanel, /IntentRoutingSection/u, 'the config sub-page must own the intent editor');
 });
 
 test('the first screen is fed by real facts and never pays for the evidence audit', () => {
@@ -76,10 +86,15 @@ test('the first screen is fed by real facts and never pays for the evidence audi
   assert.doesNotMatch(facts, /loadStatus|runCapabilityJsonCached/u, 'the cached status loader must not be reachable from the first screen');
   assert.match(facts, /loadMcpList/u, 'service facts come from `aios mcp list`');
   for (const file of ['components/console/home-workspace.tsx', 'components/console/mcp-workspace.tsx',
-    'components/console/memory-workspace.tsx', 'app/(console)/page.tsx', 'app/(console)/[section]/page.tsx']) {
+    'components/console/memory-workspace.tsx', 'components/console/model-routing/agent-overview.tsx',
+    'app/(console)/page.tsx', 'app/(console)/[section]/page.tsx']) {
     const source = readFileSync(ui(file), 'utf8');
     assert.doesNotMatch(source, /from '[^']*demo-data'/u, `${file} must not import fixture state`);
   }
+  // 首页实时数字的唯一出处是网关决策日志端点；配置默认必须标明是配置，不能冒充观测。
+  const overview = readFileSync(ui('components/console/model-routing/agent-overview.tsx'), 'utf8');
+  assert.match(overview, /\/api\/model-routing\/decisions/u, 'home live counters must read the gateway decision log');
+  assert.match(overview, /配置默认/u, 'untrafficked agents must be labelled as configured, not observed');
   // 接线完成：外壳不再需要那个临时适配器，也不得留着任何 fixture 导入。
   const shell = readFileSync(ui('components/console/console-workspace.tsx'), 'utf8');
   assert.doesNotMatch(shell, /demo-data|toPrototypeProject/u, 'the migration shim must be gone once every panel is wired');
@@ -89,7 +104,7 @@ test('the first screen is fed by real facts and never pays for the evidence audi
 });
 
 test('server route entries fetch real facts and import no fixture state', () => {
-  for (const file of ['app/(console)/page.tsx', 'app/(console)/[section]/page.tsx']) {
+  for (const file of ['app/(console)/page.tsx', 'app/(console)/[section]/page.tsx', 'app/(console)/routing/config/page.tsx']) {
     const source = readFileSync(ui(file), 'utf8');
     assert.match(source, /import \{ ConsoleWorkspace \}/u);
     assert.match(source, /collectForRequest/u, `${file} must fetch real facts on the server for the requested workspace`);

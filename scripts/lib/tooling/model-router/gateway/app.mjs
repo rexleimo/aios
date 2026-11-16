@@ -3,8 +3,6 @@
 // P0 只做 claude 透传 + 每请求决策记录（实时路由图数据源种子）；路由/翻译/配额是 P2，在这里增量长。
 import { Hono } from 'hono';
 
-import { RELAY_BASE_URL } from '../routing/protocols.mjs';
-
 // 中文注释：只透传与上游鉴权/协议相关的头，hop-by-hop 头与 host 不转发（fetch 自管）。
 const PASSTHROUGH_REQUEST_HEADERS = Object.freeze([
   'authorization',
@@ -26,7 +24,7 @@ function extractModel(body) {
 
 export function createGatewayApp(options = {}) {
   const {
-    upstreamBase = RELAY_BASE_URL,
+    upstreamBase = '',
     upstreamPath = '/claude/v1/messages',
     incomingPath = '/v1/messages',
     intakeToken = '',
@@ -44,7 +42,8 @@ export function createGatewayApp(options = {}) {
 
   const app = new Hono();
 
-  app.get('/health', (c) => c.json({ ok: true }));
+  const configured = /^https?:\/\//u.test(upstreamBase);
+  app.get('/health', (c) => c.json({ ok: true, ready: configured }));
 
   app.post(incomingPath, async (c) => {
     // 中文注释：信任边界只认浏览器才发的信号 Origin/Sec-Fetch-Site；不拦所有 Sec-Fetch-*——
@@ -55,6 +54,7 @@ export function createGatewayApp(options = {}) {
     if (intakeToken && c.req.header('x-gateway-token') !== intakeToken) {
       return c.json({ error: { code: 'INTAKE_TOKEN_REQUIRED' } }, 401);
     }
+    if (!configured) return c.json({ error: { code: 'NO_ROUTE_CONFIGURED' } }, 503);
 
     const startedAt = Date.now();
     const body = await c.req.arrayBuffer();

@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 import { clientLabel, type ConsoleFacts } from '../../../lib/console-facts';
-import { Badge, Button, Field, Modal, fieldClass } from '../console-ui';
+import { Badge, Button, Field, Input, Modal } from '../console-ui';
 
 /** `mcp.action.v1` 里预览要如实转述的字段。 */
 interface ActionPayload {
@@ -185,11 +185,10 @@ export function McpWizard({
       {step === 1 && (
         <div className="space-y-4">
           <Field label="服务名称" hint="字母数字开头，可含 . _ -，最长 64；这个名字也是配置里的键">
-            <input
+            <Input
               aria-label="服务名称"
               value={name}
               onChange={(event) => setName(event.target.value)}
-              className={fieldClass}
               placeholder="例如：my-browser"
             />
           </Field>
@@ -199,11 +198,10 @@ export function McpWizard({
             </p>
           )}
           <Field label="启动程序" hint="连接方式：本地命令（stdio）。">
-            <input
+            <Input
               aria-label="启动程序"
               value={command}
               onChange={(event) => setCommand(event.target.value)}
-              className={fieldClass}
             />
           </Field>
           <div>
@@ -211,13 +209,13 @@ export function McpWizard({
             <div className="space-y-2">
               {args.map((arg, index) => (
                 <div key={index} className="flex gap-2">
-                  <input
+                  <Input
                     aria-label={`参数 ${index + 1}`}
                     value={arg}
                     onChange={(event) =>
                       setArgs((previous) => previous.map((value, at) => (at === index ? event.target.value : value)))
                     }
-                    className={`${fieldClass} font-rex-mono text-xs`}
+                    className="font-rex-mono text-xs"
                   />
                   <Button
                     size="icon"
@@ -241,24 +239,22 @@ export function McpWizard({
           <fieldset>
             <legend className="mb-2 text-sm font-medium">环境变量（可选）</legend>
             <div className="flex gap-2">
-              <input
+              <Input
                 aria-label="环境变量名称"
                 placeholder="变量名"
                 value={env.key}
                 onChange={(event) => setEnv((previous) => ({ ...previous, key: event.target.value }))}
-                className={fieldClass}
               />
-              <input
+              <Input
                 aria-label="环境变量值"
                 type={showEnv ? 'text' : 'password'}
                 placeholder="变量值"
                 value={env.value}
                 onChange={(event) => setEnv((previous) => ({ ...previous, value: event.target.value }))}
-                className={fieldClass}
               />
             </div>
             <label className="mt-2 flex items-center gap-2 text-xs text-rex-text-muted">
-              <input type="checkbox" checked={showEnv} onChange={(event) => setShowEnv(event.target.checked)} />
+              <input type="checkbox" checked={showEnv} onChange={(event) => setShowEnv(event.target.checked)} className="size-3.5 accent-rex-cyan" />
               显示变量值
             </label>
           </fieldset>

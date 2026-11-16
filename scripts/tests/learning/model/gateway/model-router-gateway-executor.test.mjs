@@ -10,7 +10,10 @@ import { createLocalDispatchExecutorRegistry } from '../../../../lib/execution/h
 const registry = {
   activeModel: 'claude-opus-5',
   models: { 'claude-opus-5': { protocols: ['claude'] }, 'qwen3.8-flash': { protocols: ['openai-chat'] } },
-  providers: { myopenai: { baseUrl: 'https://api.example.com', apiKeyEnv: 'env:MY_KEY', protocols: ['openai-chat'], models: ['qwen3.8-flash'] } },
+  providers: {
+    myclaude: { baseUrl: 'https://claude.example.com', apiKeyEnv: 'env:CLAUDE_KEY', protocols: ['claude'], models: ['claude-opus-5'] },
+    myopenai: { baseUrl: 'https://api.example.com', apiKeyEnv: 'env:MY_KEY', protocols: ['openai-chat'], models: ['qwen3.8-flash'] },
+  },
   roleDefaults: { implementer: { taskType: 'implementation' }, planner: { taskType: 'planning' } },
   routingRules: [
     { taskType: 'implementation', primary: 'qwen3.8-flash', fallback: [] },

@@ -19,7 +19,13 @@ test('routing-mode server starts on loopback, serves health, and closes cleanly'
     assert.ok(addr.port > 0);
     const res = await fetch(`http://127.0.0.1:${addr.port}/health`);
     assert.equal(res.status, 200);
-    assert.deepEqual(await res.json(), { ok: true });
+    assert.deepEqual(await res.json(), {
+      ok: true,
+      ready: false,
+      configuredModels: 0,
+      readyModels: 0,
+      code: 'NO_ROUTE_CONFIGURED',
+    });
   } finally {
     await server.close();
   }
@@ -33,7 +39,32 @@ test('passthrough-mode server starts and serves health', async () => {
     assert.equal(server.mode, 'passthrough');
     const res = await fetch(`http://127.0.0.1:${addr.port}/health`);
     assert.equal(res.status, 200);
+    assert.deepEqual(await res.json(), { ok: true, ready: false });
   } finally {
     await server.close();
   }
 });
+
+for (const [name, env, expected] of [
+  ['missing credentials', {}, { ready: false, readyModels: 0, code: 'PROVIDER_CREDENTIALS_MISSING' }],
+  ['ready credentials', { CLAUDE_KEY: 'fixture-secret' }, { ready: true, readyModels: 1 }],
+]) {
+  test(`routing health reports configured/ready counts with ${name} without probing upstream`, async () => {
+    let calls = 0;
+    const explicitRegistry = {
+      ...registry,
+      providers: { local: { baseUrl: 'https://upstream.invalid', protocols: ['claude'], apiKeyEnv: 'env:CLAUDE_KEY', models: ['claude-sonnet-5'] } },
+    };
+    const server = createGatewayServer({ registry: explicitRegistry, env, fetchImpl: async () => { calls += 1; throw new Error('health must be local'); } });
+    const addr = await server.listen();
+    try {
+      const res = await fetch(`http://127.0.0.1:${addr.port}/health`);
+      assert.equal(res.status, 200);
+      assert.deepEqual(await res.json(), { ok: true, configuredModels: 1, ...expected });
+      assert.equal(calls, 0);
+      assert.equal(server.decisions.length, 0);
+    } finally {
+      await server.close();
+    }
+  });
+}

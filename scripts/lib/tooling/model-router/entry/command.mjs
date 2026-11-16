@@ -1,4 +1,9 @@
-import { loadRegistry } from './registry.mjs';
+import os from 'node:os';
+import path from 'node:path';
+
+import { loadRegistrySnapshot, saveRegistryDocument } from './registry.mjs';
+import { runConnect, runConnectInplace, runDisconnect } from '../connect/command.mjs';
+import { discoverAllModels, mergeDiscoveredModels } from '../routing/discovery.mjs';
 import {
   buildModelStatsReport,
   buildModelSummaryTable,
@@ -12,19 +17,30 @@ import {
   effectiveAvailability,
   loadModelAvailability,
 } from '../routing/availability.mjs';
-import { loadProviders } from '../routing/providers.mjs';
+import { getProviderForModel, listGatewayModels, loadProviders } from '../routing/providers.mjs';
+import { addGroup, removeGroup, loadGroups } from '../routing/groups.mjs';
+import { importProvidersFromClients } from '../providers/import.mjs';
+import { runTui } from '../tui.mjs';
 import { getClientRoleMatrix, resolveModelForClientRole } from '../routing/client-role-matrix.mjs';
 import { createGatewayServer } from '../gateway/serve.mjs';
+import {
+  GATEWAY_DEFAULT_PORT,
+  defaultStateDir,
+  gatewayStatus,
+  resolveAiosScript,
+  startGatewayDaemon,
+  stopGatewayDaemon,
+} from '../lifecycle/daemon.mjs';
 
 function getSubcommand(rawOptions) {
   return String(rawOptions.subcommand || rawOptions._?.[0] || 'list').trim();
 }
 
-async function withRegistry(io, action) {
+async function withRegistry(io, action, registryRoot) {
   try {
-    return action(await loadRegistry());
+    return await action(await loadRegistrySnapshot({ rootDir: registryRoot }));
   } catch (error) {
-    io.error(`Failed to load model registry: ${error instanceof Error ? error.message : error}`);
+    io.error(`Model registry command failed: ${error instanceof Error ? error.message : error}`);
     return { exitCode: 1 };
   }
 }
@@ -86,6 +102,56 @@ const COMMAND_HANDLERS = Object.freeze({
       })),
     }, null, 2));
 
+    return { exitCode: 0 };
+  },
+
+  async 'tui'({ io }) {
+    return runTui({ io });
+  },
+
+  async 'group-list'({ registry, io }) {
+    const groups = loadGroups(registry);
+    const keys = Object.keys(groups);
+    if (!keys.length) { io.log('No routing groups.'); return { exitCode: 0 }; }
+    for (const k of keys) io.log(`${k}\t${(groups[k].models || []).join(',')}\t${groups[k].routing}`);
+    return { exitCode: 0 };
+  },
+
+  async 'group-add'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
+    const id = String(rawOptions.groupId || rawOptions.id || '').trim();
+    const models = String(rawOptions.models || '').split(',').map((s) => s.trim()).filter(Boolean);
+    const routing = String(rawOptions.routing || 'smart').trim();
+    if (!id) { io.error('Missing --id'); return { exitCode: 1 }; }
+    const next = addGroup(registry, id, { models, routing });
+    const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
+    await saveRegistryDocument(next, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
+    io.log(`Added group ${id}: ${models.join(', ')} (${routing})`);
+    return { exitCode: 0 };
+  },
+
+  async 'group-rm'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
+    const id = String(rawOptions.groupId || rawOptions.id || '').trim();
+    if (!id) { io.error('Missing --id'); return { exitCode: 1 }; }
+    const next = removeGroup(registry, id);
+    const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
+    await saveRegistryDocument(next, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
+    io.log(`Removed group ${id}`);
+    return { exitCode: 0 };
+  },
+
+  async 'import-providers'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
+    const home = String(rawOptions.home || process.env.HOME || '');
+    const candidates = importProvidersFromClients({ home });
+    if (!candidates.length) { io.log('No importable providers found in client configs.'); return { exitCode: 0 }; }
+    const merged = { ...(registry.providers || {}) };
+    for (const c of candidates) {
+      if (!merged[c.id]) merged[c.id] = { baseUrl: c.baseUrl, apiKeyEnv: c.apiKeyEnv, endpointStyle: c.endpointStyle, protocols: c.protocols, models: [] };
+    }
+    const next = { ...registry, providers: merged };
+    const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
+    await saveRegistryDocument(next, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
+    io.log(`Imported ${candidates.length} provider(s):`);
+    for (const c of candidates) io.log(`  ${c.id} -> ${c.baseUrl}`);
     return { exitCode: 0 };
   },
 
@@ -180,9 +246,10 @@ const COMMAND_HANDLERS = Object.freeze({
 
   // 中文注释：网关生产入口——起常驻 HTTP 服务（默认路由模式，--passthrough 纯透传）。只绑 127.0.0.1。
   async gateway({ rawOptions, registry, io }) {
-    const port = Number(rawOptions.port) || 8787;
+    const port = Number(rawOptions.port) || GATEWAY_DEFAULT_PORT;
     const mode = rawOptions.passthrough ? 'passthrough' : 'routing';
-    const server = createGatewayServer({ mode, port, registry, env: process.env });
+    const stateDir = String(rawOptions.stateDir || process.env.AIOS_GATEWAY_STATE_DIR || path.join(os.homedir(), '.aios', 'gateway'));
+    const server = createGatewayServer({ mode, port, registry, env: process.env, stateDir });
     let addr;
     try {
       addr = await server.listen();
@@ -191,6 +258,7 @@ const COMMAND_HANDLERS = Object.freeze({
       return { exitCode: 1 };
     }
     io.log(`AIOS gateway (${mode}) listening on http://127.0.0.1:${addr.port}`);
+    if (server.decisionLog) io.log(`Routing decisions logged to ${server.decisionLog.filePath}`);
     io.log('Press Ctrl+C to stop.');
     await new Promise((resolve) => {
       process.once('SIGINT', resolve);
@@ -200,9 +268,125 @@ const COMMAND_HANDLERS = Object.freeze({
     io.log('Gateway stopped.');
     return { exitCode: 0 };
   },
+
+  // 中文注释：一键接入——默认「就地」(magpie 式)：外科改写客户端真实配置（备份原值，disconnect 还原），普通命令即走网关。
+  // --isolated 退回旧隔离工件模式（不碰真实配置，需特殊启动命令）。--home 可注入供测试，默认真实 home。
+  async connect({ rawOptions, registry, registrySnapshot, io }) {
+    const gatewayUrl = String(rawOptions.gatewayUrl || `http://127.0.0.1:${Number(rawOptions.port) || GATEWAY_DEFAULT_PORT}`);
+    const stateDir = String(rawOptions.stateDir || process.env.AIOS_GATEWAY_STATE_DIR || path.join(os.homedir(), '.aios', 'gateway'));
+    const clients = rawOptions.client ? [String(rawOptions.client)] : ['claude', 'codex', 'pi'];
+    const useJson = Boolean(rawOptions.json);
+    const sink = useJson ? { log() {}, error() {} } : io;
+    const common = {
+      gatewayUrl,
+      stateDir,
+      registryFile: registrySnapshot.file,
+      baseRegistry: registry,
+      clients,
+      codexModel: String(rawOptions.codexModel || ''),
+      piModel: String(rawOptions.piModel || 'gateway-default'),
+      dryRun: Boolean(rawOptions.dryRun || rawOptions['dry-run']),
+      io: sink,
+    };
+    const result = rawOptions.isolated
+      ? await runConnect(common)
+      : await runConnectInplace({ ...common, home: String(rawOptions.home || os.homedir()) });
+    if (useJson) io.log(JSON.stringify(result));
+    return { exitCode: result.exitCode ?? 0 };
+  },
+
+  async disconnect({ rawOptions, registrySnapshot, io }) {
+    const stateDir = String(rawOptions.stateDir || process.env.AIOS_GATEWAY_STATE_DIR || path.join(os.homedir(), '.aios', 'gateway'));
+    const useJson = Boolean(rawOptions.json);
+    const sink = useJson ? { log() {}, error() {} } : io;
+    const clients = rawOptions.client ? [String(rawOptions.client)] : undefined;
+    const result = await runDisconnect({ stateDir, registryFile: registrySnapshot.file, clients, io: sink });
+    if (useJson) io.log(JSON.stringify(result));
+    return { exitCode: result.exitCode ?? 0 };
+  },
+
+  // 中文注释：模型来源——magpie 式动态发现。--refresh 拉各 provider 模型列表并入注册表（curated 画像保留、新模型落最小条目）；
+  // 默认/--json 列出可用模型目录（curated + discovered + custom）。发现是只读上游元数据调用，零生成扣费；密钥只进请求头。
+  async models({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
+    const useJson = Boolean(rawOptions.json);
+    if (rawOptions.refresh) {
+      const { models: discovered, providers } = await discoverAllModels(registry, { env: process.env });
+      const { registry: merged, added, enriched } = mergeDiscoveredModels(registry, discovered);
+      const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
+      await saveRegistryDocument(merged, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
+      const result = { ok: true, refreshed: true, discovered: discovered.length, added, enriched, total: Object.keys(merged.models || {}).length, providers: providers.map((p) => ({ provider: p.provider, models: p.models.length, errors: p.errors })) };
+      if (useJson) io.log(JSON.stringify(result));
+      else io.log(`Discovered ${discovered.length} models; added ${added}, enriched ${enriched}; registry now holds ${result.total} models.`);
+      return { exitCode: 0 };
+    }
+    const catalog = listGatewayModels(registry, { env: process.env }).map((id) => {
+      const m = registry.models[id];
+      const { provider, upstreamModel } = getProviderForModel(id, registry);
+      return { id, upstreamModel, label: m.label || id, protocols: m.protocols || [], provider: provider.id, source: m.source || 'registered', cost: m.cost || 'unknown' };
+    });
+    if (useJson) io.log(JSON.stringify({ models: catalog }));
+    else if (!catalog.length) io.log('No gateway-ready models. Register a provider and model, then configure its credentials (or explicit authMode: none). Native CLI templates are not gateway connections.');
+    else for (const m of catalog) io.log(`${m.id}\t${m.protocols.join('/')}\t${m.source}\t${m.cost}\tupstream=${m.upstreamModel}`);
+    return { exitCode: 0 };
+  },
+
+  // 中文注释：后台托管启停——界面一键开关走这三个子命令。它们管理进程，不读注册表（配置坏了也要能停网关），
+  // 故在分发处绕过 withRegistry。状态/停止永远 exitCode 0（「没在跑」是正常结论而非错误）；启动失败才非零。
+  async 'gateway-start'({ rawOptions, io }) {
+    const port = Number(rawOptions.port) || GATEWAY_DEFAULT_PORT;
+    const stateDir = String(rawOptions.stateDir || defaultStateDir());
+    const scriptPath = resolveAiosScript();
+    const rootDir = path.resolve(scriptPath, '..', '..');
+    const result = await startGatewayDaemon({ rootDir, port, stateDir, io });
+    if (rawOptions.json) {
+      io.log(JSON.stringify(result));
+      return { exitCode: result.ok ? 0 : 1 };
+    }
+    if (result.ok) io.log(result.alreadyRunning ? `Gateway already running on ${result.url} (pid ${result.pid}).` : `Gateway started on ${result.url} (pid ${result.pid}).`);
+    else io.error(`Gateway start failed: ${result.error}${result.detail ? ` (${result.detail})` : ''}`);
+    return { exitCode: result.ok ? 0 : 1 };
+  },
+
+  async 'gateway-stop'({ rawOptions, io }) {
+    const stateDir = String(rawOptions.stateDir || defaultStateDir());
+    const result = await stopGatewayDaemon({ stateDir });
+    if (rawOptions.json) {
+      io.log(JSON.stringify(result));
+      return { exitCode: 0 };
+    }
+    io.log(result.stopped ? `Gateway stopped (pid ${result.pid}).` : `Gateway not stopped: ${result.reason}.`);
+    return { exitCode: 0 };
+  },
+
+  async 'gateway-tray'({ rawOptions, io }) {
+    const port = Number(rawOptions.port) || GATEWAY_DEFAULT_PORT;
+    const stateDir = String(rawOptions.stateDir || defaultStateDir());
+    const scriptPath = resolveAiosScript();
+    const rootDir = path.resolve(scriptPath, '..', '..');
+    const result = await startGatewayDaemon({ rootDir, port, stateDir, io });
+    if (result.ok) {
+      io.log(`Tray/daemon running on ${result.url} (pid ${result.pid}).`);
+      io.log('Open the URL in your browser for the control panel. (Native tray icon not bundled; use menubar app for that.)');
+    } else io.error(`Tray start failed: ${result.error}`);
+    return { exitCode: result.ok ? 0 : 1 };
+  },
+
+  async 'gateway-status'({ rawOptions, io }) {
+    const stateDir = String(rawOptions.stateDir || defaultStateDir());
+    const port = Number(rawOptions.port) || GATEWAY_DEFAULT_PORT;
+    const result = await gatewayStatus({ stateDir, port });
+    if (rawOptions.json) {
+      io.log(JSON.stringify(result));
+      return { exitCode: 0 };
+    }
+    io.log(`Gateway: ${result.running ? 'running' : 'stopped'}${result.managed ? ' (managed)' : ''} on ${result.url}`);
+    io.log(`Connected: ${result.connected ? 'yes' : 'no'} · state dir ${result.stateDir}`);
+    for (const client of result.clients) io.log(`  ${client.client}: ${client.connected ? 'connected' : 'not connected'} — ${client.launch}`);
+    return { exitCode: 0 };
+  },
 });
 
-export async function runModelRouterCommand(rawOptions = {}, { rootDir, io = console } = {}) {
+export async function runModelRouterCommand(rawOptions = {}, { rootDir, registryRoot, io = console } = {}) {
   const workspaceRoot = rootDir || process.cwd();
   const subcommand = getSubcommand(rawOptions);
   const handler = COMMAND_HANDLERS[subcommand];
@@ -212,5 +396,16 @@ export async function runModelRouterCommand(rawOptions = {}, { rootDir, io = con
     return { exitCode: 1 };
   }
 
-  return withRegistry(io, (registry) => handler({ rawOptions, registry, workspaceRoot, io }));
+  if ((rawOptions.dryRun || rawOptions['dry-run']) && subcommand !== 'connect') {
+    const result = { exitCode: 1, ok: false, dryRun: true, error: 'unsupported_dry_run', message: '--dry-run is supported only for connect; no action was taken.' };
+    if (rawOptions.json) io.log(JSON.stringify(result));
+    else io.error(result.message);
+    return result;
+  }
+
+  // 生命周期子命令管理进程，不读注册表：配置损坏时也必须能查状态/停网关，故不被 withRegistry 拦下。
+  if (subcommand === 'gateway-start' || subcommand === 'gateway-stop' || subcommand === 'gateway-status' || subcommand === 'gateway-tray') {
+    return handler({ rawOptions, registry: null, workspaceRoot, io });
+  }
+  return withRegistry(io, (registrySnapshot) => handler({ rawOptions, registry: registrySnapshot.document, registrySnapshot, registryRoot, workspaceRoot, io }), registryRoot);
 }

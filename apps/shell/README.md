@@ -1,13 +1,13 @@
 # apps/shell — AIOS Console（本机 AI 工具管理器 + 桌面壳）
 
-当前界面按已确认的产品方向 A：本机 AI 工具管理、项目记忆与 MCP 服务。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`。
+当前界面提供本机 AI 工具管理、模型网关、项目记忆与 MCP 服务。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`，网关工作台决定见 `docs/plans/2026-11-15-gateway-management-workspace.md`。
 
-**当前数据状态（P0-2 与工作区切换已交付）：** 六个页面——首页 `/`、AI 工具 `/tools`、MCP 服务 `/mcp`、记忆 `/memory`、
-活动记录 `/activity`、设置 `/settings`——全部按**当前选中的工作区**取本机真实数据。页头显示选中工作区的名字与绝对路径，
+**当前数据状态：** 首页 `/`、AI 工具 `/tools`、MCP 服务 `/mcp`、记忆 `/memory`、
+活动记录 `/activity`、设置 `/settings` 按**当前选中的工作区**采集本机事实。模型网关 `/routing` 的运行状态、接入和决策日志属于本机网关，注册表属于服务启动根，不会因为切换 `ws` 变成另一套独立网关。页头显示选中工作区的名字与绝对路径，
 实测一次采集 258–303ms：harness-cli 是 80 个服务实例 / 638 条记忆，切到 xsapp 是 52 个 / 365 条，rex-ai-tools 是 56 个 / 333 条——
 **数字随根变化**才是真的按根取数；如果切换后数字不动，那就是装饰。**已删除** `demo-data.ts` 与 `flows/service-state.ts`，
 `apps/shell/ui/src` 里没有任何指向它们的 import。MCP 向导第三步是真实 `aios mcp add --dry-run`（实测不改文件字节）。
-当前界面**不写任何用户配置文件**：写入需要单独授权（路线图 P0-4），到位前按钮不存在，而不是存在但不干活。
+网关工作台可显式保存模型注册表，也可在二次确认后启停网关或改写/还原客户端接入配置；MCP 管理仍只读，向导仅预览 dry-run。
 
 ## 工作区切换：为什么交回来的是 key，不是路径
 
@@ -92,9 +92,10 @@ apps/shell/                 ← 5 项
 | 表格 | **TanStack Table 8.21.3** | 无头表格主流版本；v9（9.3.1）换了 API 形状（`createTableHook`/feature 注册），比 13 行的矩阵需要的机器更重，先用 v8 |
 | 框架 | Next.js 16 + React 19 | 与 Cline 的壳同代，抄壳时结构对得上 |
 
-## 四条不能破的约定
+## 五条不能破的约定
 
-1. **页面里不许有伪造的事实。** 界面上的每一个数字都能在 `console-facts.mjs` 的 `sources[]` 里找到同名字段；
+1. **页面里不许有伪造的事实。** 界面上的每一个数字都有真实出处：本机状态数字在 `console-facts.mjs` 的 `sources[]` 里
+   找得到同名字段，首页路由观测的日志计数来自网关决策日志（`/api/model-routing/decisions`）——两者都不是示例；
    采集项各自报成功/失败（`degraded[]`），一项挂了不变成「用户没有东西」。
    这条门不用词级 grep 把关（否定式文案与用户真实 memo 里都会出现「示例」），而是由
    `shell-labels.test.mjs` 断言 fixture 文件不存在且无源文件 import 它。
@@ -102,13 +103,59 @@ apps/shell/                 ← 5 项
    配置已写入、落点已验证与当前连接测试结果是三条不同事实，界面不得互推。
 2. **token 只有一个所有者。** `@theme` 里的每个值必须等于 `docs-site/assets/redesign/tokens.css` 的对应
    `--rex-*`，由 `shell-tokens.test.mjs` 逐条比对。globals.css 里允许的选择器只有 `:root[data-rex-theme="dark"]` 和 `body`。
-3. **选择必须驱动数据。** 界面上任何筛选器/切换器都要让服务端重新取数（工作区切换走 `?ws=<key>` → 服务端按该根采集）。
-   只改本地 state 而不影响取数的控件是在暗示一件没发生的事：实测就发生过切换项目后所有数字仍是服务自己那个根的。
-4. **服务端组件不从 `'use client'` 模块取数据。** 路由只传递当前视图 ID；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。取数一律在服务端完成，客户端只接 `ConsoleFacts`。
+3. **选择必须驱动其声明的数据范围。** 工作区切换走 `?ws=<key>` → 服务端按该根重采集本机事实；模型目录与请求筛选在已读取的快照内过滤，界面明确最近 100 条的范围，不冒充全日志查询。
+4. **服务端组件不从 `'use client'` 模块取数据。** 路由传递视图 ID 与服务端采集的 `ConsoleFacts`；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。网关运行态、配置与日志由客户端通过受 token 门保护的 API 读取。
+5. **一种交互只有一个形状。** 共享件是交互契约的唯一所有者：表面 `Panel`、徽章 `Badge`、按钮 `Button`、弹窗 `Modal`、
+   输入 `Input`/`Select`/`Textarea`（`Input`/`Select` 以 `size` 为唯一变化轴，`Textarea` 高度由 `rows` 驱动）、空态 `Empty`、异步态 `Loading`/`ErrorState`/`InlineFeedback`，
+   一律从 `components/console/console-ui` 取（它 re-export `components/ui/` 的原子件 `primitives.tsx`/`states.tsx`/`button.tsx`）。
+   页面不许再手写第二套加载/错误/反馈态，也不许写裸 `input`/`select` 类名——那会让同一个交互在不同页长得不一样。
+   圆角/颜色走 rex token（`rounded-rex-lg` 而非 `rounded-2xl`）；动效一律带 `motion-reduce:` 兜底
+   （`shell-tokens.test.mjs` 对 console-ui/console-workspace 的双引号 className 逐条判定）。
 
 ## 当前入口与旧链接
 
-`/` 是首页；`/tools`、`/mcp`、`/memory`、`/activity`、`/settings` 是同一套 Console 的视图。导航更新浏览器地址，支持刷新及前进后退。
+`/` 是只读客户端路由观测：分开显示本机配置落点、最近 50 条日志内的请求及时间、实现角色的配置默认和日志计数。不从历史请求推断客户端在线、当前连接或网关健康。`/tools`、`/routing`、`/mcp`、`/memory`、`/activity`、`/settings` 是同一套 Console 的视图。导航保留 `ws`，支持刷新及前进后退。
+
+`/routing` 使用一个持久挂载的 `GatewayWorkspace`，按任务分为四区：
+
+| 分区 | 深链 | 职责 |
+|---|---|---|
+| 运行总览 | `/routing` | 网关启停、客户端接入/还原、只读客户端观测 |
+| 供应商与模型 | `/routing?section=providers` | 供应商编辑、模型目录搜索/来源筛选、自定义模型、确认后发现目录 |
+| 路由策略 | `/routing/config` | 全局角色默认、客户端继承/覆盖、意图规则、浏览器本地角色覆盖方案 |
+| 请求记录 | `/routing?section=requests` | 日志总计、最近 100 条筛选/详情、模型请求分布 |
+
+所有配置区共用 `model-routing/use-routing-config.ts` 的一份草稿。切分区或 Console 视图不丢草稿；保存全部修改才写注册表。放弃/重新读取均需确认；有草稿时禁用发现目录，离开文档时提醒。保存失败或 409 保留草稿，不静默覆盖外部修改。写入前备份已有注册表，首次从内置配置创建时没有旧文件可备份；适配器保留未暴露的供应商、模型与路由组元数据。
+
+**并发写入边界：** UI 保存、CLI 发现/分组/供应商导入及 connect/disconnect 共用注册表旁的 `model-registry.json.write-lock` 目录锁。锁内重新读取、核对快照哈希并原子替换；发现等待网络期间发生保存时，拒绝过期结果，不覆盖新配置。接入/还原也在锁内读取，只修改自己的 codex 默认值，保留其它新配置。写后验证若读到不同字节，保留外部版本并报冲突；不能确认磁盘状态时不盲目回滚或删除首次创建的文件。外部编辑器若不遵守锁协议，仍可能与写入冲突，应重新读取核对，不能把目录锁视为任意文件编辑的事务隔离。
+
+锁等待最多 5 秒，不按锁年龄或 PID 自动抢占。进程异常退出可能留下锁：先确认所有相关写入进程已停止，再检查当前注册表与备份，最后手工删除残留的 `.write-lock` 空目录并重新读取。不要在仍有写入者运行时删除锁，也不要直接重试旧草稿覆盖磁盘。
+
+**落盘不等于运行中已加载。** 网关在启动时读取注册表，不热更新。保存配置或刷新模型目录后，应在运行总览停止并重新启动托管网关；外部前台进程需在原终端重启。界面展示的「配置默认」是磁盘快照，不是运行中进程的加载确认。
+
+**默认空接入。** 新安装的网关注册表没有供应商、模型或默认策略，不会隐式连接 relay。原生 CLI 的模型参考资料单独保存在 `native-model-templates.json`，不进入网关候选。已有用户注册表原样读取，不重置、不与空默认值深合并。只有显式绑定到供应商且声明了共同协议的模型才进入目录与策略；旧 curated 条目的 `provider` 只是启动器元数据，除非供应商的 `models` 列表唯一显式绑定它。
+
+先添加供应商，选择标准 API 或旧 relay 路径格式，保存后发现目录或手动添加真实上游模型 ID。模型的本地路由标识与 `upstreamModel` 分开，真实 ID 保留大小写，同名模型可分属不同供应商。需要凭据是默认行为；只有明确选择 `authMode: none` 才允许不带密钥请求。缺少凭据时本地拒绝，不把空密钥当作匿名授权。发现目录只证明读取过模型列表，不证明生成请求可用。
+
+`/health` 的 `ok: true` 只表示监听进程正常，`ready` 单独表示当前启动快照存在可转发的显式路由。无可路由模型时请求本地返回 `503 NO_ROUTE_CONFIGURED`，不调用分类器或任何上游。单个已启用且具备凭据的模型可直接路由；多个模型需要显式角色/默认选择或就绪的意图分类策略。Console 在运行但未就绪时禁用新接入，已有接入仍可还原。
+
+启用脱敏时，意图分类与生成请求都先经过同一个请求级脱敏边界；协议翻译后再次脱敏，共用原映射，覆盖工具参数序列化产生的敏感字符串。只有显式 `x-gateway-session` 才复用该会话的工具续轮意图；未提供会话标识时，从当前请求自己的用户轮历史重新分类，不把客户端名称当作会话缓存键。重新分类仍可能产生供应商费用，因此仅适用于用户已显式启用的就绪意图策略。
+
+可先运行 `aios model-router connect --dry-run`（也支持 `--isolated`）检查显式路由资格；演练不修改客户端、注册表或接入状态，也不调用上游。它不是实际生成探针，不证明供应商可用。其它子命令收到 `--dry-run` 会明确拒绝，不会忽略标志后执行操作。Codex 不再填入内置默认模型，使用显式模型选择或已配置的可用路由。
+
+多客户端就地接入会先预检全部编辑，并在首次改写前持久化恢复日志。修改 Codex 注册表默认值前另写入命令级恢复状态，最终状态写入失败也能重试或还原，不把已接入值当作原始默认值。已接入 A 后切换 B 失败时，恢复状态同时保留最初默认值、修改前的 A 和目标 B；不会把仍在磁盘上的 A 误判为外部冲突，也不会覆盖最初备份。中途写入失败后保留原始值；受管理字段被外部修改时拒绝覆盖，非受管理的用户新增内容保留。重复还原仅清理接入自有工件，不删除网关 PID、决策日志或未知状态文件。
+
+角色覆盖方案只快照角色矩阵，存于当前浏览器 localStorage；应用只改草稿，不包含供应商、密钥或意图规则，也不与 CLI 同步。现有路由组原样保留，但网关尚未消费它们，因此界面不提供假生效的轮询/权重策略编辑。请求没有记录的状态、耗时和 tokens 显示「未记录」，不填成成功、零耗时或零成本。
+
+请求明细的行标识在 JSONL 读侧、倒序及截取最近 100 条之前生成；新增日志不会因数组下标变化重挂载已有行，键盘焦点保留在原请求上。筛选和轮询均不改写日志。
+
+`/routing/config` 仍是二级策略深链，不增加一级导航项；`/gateway` 保留 `ws` 重定向到 `/routing`，不再维护第二套应用外壳。
+
+**网关控制卡（`model-routing/gateway-control.tsx`）**：一键启停本机网关 + 如实显示运行态 + 每客户端一键接入/还原。它经 `/api/model-routing/gateway` 调 CLI（`gateway-status`/`gateway-start`/`gateway-stop`/`connect`/`disconnect`），进程管理与就地接入的单一事实源在 `scripts/lib/tooling/model-router/lifecycle/daemon.mjs`（pidfile + 端口探测 + 安全停止，CWD 挪出安装树、detached 托管、SIGTERM→SIGKILL）与 `connect/inplace.mjs`。启停/接入/还原都是副作用 → 先弹 `Modal` 确认再 POST `confirm:true`，缺确认 409、未知动作 400、非法客户端 400；状态只读，2.5s 轮询且仅在运行总览激活时。运行态诚实区分：`running`（端口在答）/`managed`（界面托管的 pid 还活着）/`stale`（残留 pidfile 但端口没答，绝不冒充运行）；外部前台进程启动的网关如实标注「界面无法替它停机」。未运行时阻止新接入；停机不自动还原客户端，仍接入时显示警告。接入默认「就地」：每客户端一个「接入/还原」按钮，确认后把网关地址外科改写进客户端真实配置（claude `~/.claude/settings.json` 的 `env.ANTHROPIC_BASE_URL/AUTH_TOKEN`、codex `~/.codex/config.toml` 的 `model_provider`+`[model_providers.aios-gateway]`、pi `~/.pi/agent/{settings,models}.json`），只动网关需要的 key、保留注释/顺序/缩进、原子写、备份原值供还原。接入状态不等于模型连接测试通过。隔离模式（`connect --isolated`，生成隔离工件 + 特殊启动命令、不碰真实配置）在可折叠说明内，命令构造单一源为 `connect/artifacts.mjs` 的 `connectLaunchCommand`。前台 `aios model-router gateway`（Ctrl+C 停）不变。
+
+**模型来源（`model-routing/model-source-section.tsx`）**：目录只展示已显式接入的模型，不把内置资料当成可调用资源。「刷新模型」经 `/api/model-routing/models` 调 CLI `model-router models --refresh`，只读取已配置且认证就绪的供应商。标准 API 使用 `/v1/models` 或 Gemini `/v1beta/models`；显式保留 relay 格式的旧供应商使用对应协议前缀。某协议 404/超时按来源报告部分失败，密钥只进请求头。新模型保存协议、供应商、来源与真实 ID；跨供应商及大小写冲突分配不同本地标识，不覆盖 native/curated 元数据、不自动填写 active/default/意图策略。自定义模型与供应商通过共享草稿保存，未知元数据保留。刷新会写注册表，因此需要 `confirm:true`。CLI `model-router models [--refresh] [--json]` 同源。
+
+接入客户端时，界面提交状态端点返回的实际端口，API 再次核对网关仍在该端口运行后才调用 `connect --port`；不能把展示的非默认端口悄悄写成 `8686`。发现结果按供应商/协议提示部分读取失败，并明确已有目录保留，不把部分成功说成全部成功。
 
 `/prototype` 和 `/overview` 跳转首页；`/sessions`、`/usage` 跳转活动记录；`/matrix` 跳转 AI 工具。它们仅用于旧书签迁移，不再渲染旧页面。原矩阵、会话、记忆和 MCP 后端接口继续保留，未删除数据。
 
@@ -123,7 +170,31 @@ apps/shell/                 ← 5 项
 node --test "scripts/tests/tooling/shell/**/*.test.mjs"   # interface/ 含真实 HTTP 入口与旧链接迁移；desktop/ 是壳
 node scripts/aios-standards.mjs --root . --rule directoryEntries
 npm run shell:test                                      # cargo test（10 用例：端口、参数、cwd、等待、job、token）
+node --test scripts/tests/tooling/shell/model-routing-config-api.test.mjs # 临时根中的真实配置 handler
+node --test scripts/tests/tooling/shell/model-routing-concurrency.test.mjs # 临时根中的跨进程锁与真实隔离接入
+AIOS_GATEWAY_TEST_ARTIFACTS=/tmp/aios-gateway-check node --test scripts/tests/tooling/shell/interface/dev-server-trust.test.mjs
+npm run ui:build && node scripts/tests/tooling/shell/browser/gateway-motion.mjs # 生产 UI 只读拍帧
 ```
+
+真实 dev-server 测试复用同一 token 门运行网关浏览器回归，所有浏览器 API 均拦截，未知请求失败关闭；不改真实客户端配置、不发起扣费模型调用。需要已有 Playwright Core 与 Chrome；缺失时报告 SKIP，不计作通过。浏览器截图由 `AIOS_GATEWAY_TEST_ARTIFACTS` 指定目录，帧级命令使用独立生产服务与只接受 GET 的临时认证转发，不改产品信任门。
+
+### 网关工作台上一轮验收（2026-11-15，默认空接入改动之前）
+
+- 配置/API/供应商运行时/路由/网关/接入等聚焦回归 **232/232 通过，零跳过**；其中恢复与并发子集 **43/43**，覆盖真实锁超时重试、旧状态恢复、重复/顺序接入和跨进程接入/还原。
+- 独立浏览器验收 **8/8 通过，零跳过**，并在最终完整回归中再次通过；覆盖草稿、失败/409、确认、导航、请求焦点、390px、短屏、深浅主题与减少动效。四区生产帧级样本分别 **107/107/106/108 帧**，均零 findings、零页面/录制错误。
+- 类型检查、生产构建、脚本语法、设计与动效声明门通过；构建仍有 **6 条动态文件系统 tracing 警告**，不算无警告构建。
+- 完整回归正常结束：**318 个文件、2822 项测试，2775 通过、32 失败、15 跳过、零取消**。剩余 32 个失败身份均见于保留的较早完整日志，但没有干净 HEAD 对照，不能据此保证与全部改动无关，更不能声称全仓通过。当前诊断包括 Rex 公开导出/标准转发、上下文编排、训练认证 baseline 和 `llms.txt` 版本漂移；标准入口仍因缺少 `runStandardsArgs` 在测量前失败。
+
+完整回归使用凭据清空的隔离环境、中性且规范化的临时 HOME，以及显式 `AIOS_CLI=<repo>/scripts/aios.mjs`，避免把本机安装定位或路径命名依赖混作产品回归。完整命令、逐区帧数/元素数、比较边界见[工作台计划与验收证据](../../docs/plans/2026-11-15-gateway-management-workspace.md)。本机截图与帧报告位于 `/tmp/aios-gateway-acceptance/`，完整结果与比较位于 `/tmp/aios-gateway-regression-final.log`、`/tmp/aios-gateway-regression-comparison.md`；这些是临时验收材料，不是发布产物。
+
+### 默认空接入本轮验收（2026-11-15）
+
+- 最终模型/路由/网关/脱敏/接入及原生 CLI 组合 **360/360 通过**；Shell 配置/API/供应商/布局、网关控制 API 与清单组合 **140/140 通过**，均零跳过。重叠的接入/显式配置/并发子集 **142/142**；A→B 切换故障专项经独立只读复核 **14/14**。
+- Token 门后的 Console 浏览器验收 **9/9**、延迟加载布局 **11/11**、动效门测试 **39/39** 通过。原 390px 溢出用例在最终全仓运行中再次通过；已查看桌面/手机、空态/错误态、供应商对话框与短屏保存条截图。
+- 类型检查和生产构建通过，仍有 **6 条动态文件系统 tracing 警告**。四区生产拍帧为 **109/109/108/108 帧**，全部零 findings、零页面/录制错误；未放宽验收阈值或以隐藏 overflow 掩盖布局问题。脚本语法 **1430 文件零失败**，设计/动效声明与材料/路径门通过。
+- 最终全仓 **323 文件、2994 项测试：2947 通过、32 失败、15 跳过、零取消**，exit 1。运行前后核对 **5390 个输入文件无漂移**；记录结果后仅更新本 README 与工作台计划。32 个失败身份均见于保留的 dirty-tree 对照，未发现新增身份，但不是干净 HEAD 基线，**不能宣称全仓通过**。标准入口仍缺 `runStandardsArgs`，在测量前阻塞。
+
+本轮完整证据与复现命令见[工作台计划的最终显式接入验收](../../docs/plans/2026-11-15-gateway-management-workspace.md#final-explicit-access-evidence-2026-11-15)。最终日志、输入哈希及失败比较位于 `/tmp/aios-explicit-regression.log`、`/tmp/aios-explicit-regression-input-hashes.json`、`/tmp/aios-explicit-regression-comparison.json`，四区帧报告位于 `/tmp/aios-explicit-gateway-acceptance/`。这些是临时验收材料，不是发布产物。既有改动与暂存状态保留，未提交、未推送、未修改真实客户端配置，原 `127.0.0.1:3126` 服务仍在运行。
 
 ## 桌面壳（S1 窗口 + S2 收口与门）
 
@@ -204,8 +275,7 @@ npm run shell:bundle     # = tauri build --bundles nsis
 「壳要不要自带运行时」是 S2-3 之后仍未关闭的产品决定，写在
 `docs/plans/2026-11-05-shell-s2-plan.md`。
 
-**S2 仍未做**：签名/公证、托盘与自启、面板动作（现在页面只读，写操作接上之前这道门是唯一的
-写入面保护）、强杀后残留 token 文件的清理（下次启动会被新 token 覆盖，不构成安全面）。
+**S2 仍未做**：签名/公证、托盘与自启、面板动作（网关启停卡已是第一个有副作用的面板动作，经 `confirm:true` + token 门；其余页面仍只读，写操作接上之前这道门是唯一的写入面保护）、强杀后残留 token 文件的清理（下次启动会被新 token 覆盖，不构成安全面）。
 
 ## 从仓库根启动（不需要 cd 进 apps）
 

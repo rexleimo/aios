@@ -38,7 +38,10 @@ test('gemini → claude response: parts, functionCall→tool_use, usageMetadata'
 const registry = {
   activeModel: 'modelb',
   models: { modela: { protocols: ['claude'] }, modelb: { protocols: ['claude'] }, 'gemini-3.8-flash': { protocols: ['gemini'] } },
-  providers: { mygemini: { baseUrl: 'https://g.example.com', apiKeyEnv: 'env:G_KEY', protocols: ['gemini'], models: ['gemini-3.8-flash'] } },
+  providers: {
+    myclaude: { baseUrl: 'https://claude.example.com', authMode: 'none', protocols: ['claude'], models: ['modela', 'modelb'] },
+    mygemini: { baseUrl: 'https://g.example.com', apiKeyEnv: 'env:G_KEY', protocols: ['gemini'], models: ['gemini-3.8-flash'] },
+  },
   roleDefaults: { implementer: { taskType: 'implementation' } },
   routingRules: [
     { taskType: 'implementation', primary: 'modela', fallback: ['modelb'] },
@@ -54,6 +57,12 @@ test('availability failover: a down primary channel skips to the fallback', () =
   assert.equal(route.modelId, 'modelb', 'down primary skipped, fallback chosen');
   const healthy = resolveGatewayRoute({ clientId: 'claude', role: 'implementer', registry, env: {}, clientProtocol: 'claude', context: { availability: { models: {} }, now } });
   assert.equal(healthy.modelId, 'modela', 'healthy primary kept');
+  const bothDown = { models: { ...availability.models, 'modelb@claude': { state: 'down', updatedAt: now } } };
+  assert.throws(
+    () => resolveGatewayRoute({ clientId: 'claude', role: 'implementer', registry, env: {}, context: { availability: bothDown, now } }),
+    { name: 'GatewayRouteError', code: 'NO_ROUTE_CONFIGURED' },
+    'exhausted policy candidates must not escape to an unrelated configured provider',
+  );
 });
 
 test('end-to-end claude client → gemini upstream translates both ways', async () => {
@@ -72,7 +81,8 @@ test('end-to-end claude client → gemini upstream translates both ways', async 
   assert.equal(res.status, 200);
   const json = await res.json();
   assert.equal(json.content[0].text, 'gemini says hi', 'response translated back to claude');
-  assert.ok(captured.url.includes('/gemini/v1beta/models'), 'forwarded to gemini endpoint');
+  assert.equal(captured.url, 'https://g.example.com/gemini/v1beta/models', 'omitted endpointStyle retains the legacy relay Gemini endpoint');
+  assert.equal(captured.body.model, 'gemini-3.8-flash', 'legacy relay Gemini keeps the routed model in its body');
   assert.ok(Array.isArray(captured.body.contents), 'outgoing request is gemini format');
   assert.equal(captured.headers['x-goog-api-key'], 'gsecret');
   assert.ok(!JSON.stringify(decisions[0]).includes('gsecret'), 'no secret in decision record');
