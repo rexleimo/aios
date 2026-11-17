@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { Button, Input, Modal, Select } from '../../console-ui';
+import { Button, Field, Input, Modal, Select } from '../../console-ui';
 import type { ModelOption } from '../intent-routing-section';
 import type { RoutingGroup } from '../use-routing-config';
 import { modelLabel } from '../policy/model-label';
@@ -30,11 +30,24 @@ export function GroupEditor({ group, groups, models, onCommit, onClose }: {
       {group && <p className='text-xs leading-6 text-rex-text-muted'>已有 ID 保持不变，避免引用与历史元数据失联。需要新 ID 时请新建模型组并明确更新分配。</p>}
       {error && <p role='status' className='text-xs text-rex-orange'>{error}</p>}
       <label className='flex items-center gap-2 text-xs'><input type='checkbox' className='size-4 accent-rex-cyan' checked={draft.enabled !== false} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />启用模型组</label>
-      <div className='space-y-2 text-xs leading-6'>
-        <p>路由方式：{draft.routing === 'smart' ? '顺序（兼容旧 smart）' : draft.routing === 'ordered' ? '顺序' : `保留旧模式 ${draft.routing}（不可分配）`}</p>
-        {!['ordered', 'smart'].includes(draft.routing) && <Button type='button' variant='outline' onClick={() => setDraft({ ...draft, routing: 'ordered' })}>改用顺序路由</Button>}
-        <p className='text-rex-text-muted'>按列表顺序使用合资格成员；不实现权重、轮询或成本优选。跨成员仅在派发前资格检查跳过或上游明确返回 401 / 402 / 429 时尝试，不承诺通用故障重试。</p>
-      </div>
+      <Field label='路由方式' hint='顺序固定用第一个合资格成员；轮询每次请求换下一个；最少使用优先用当前用量最低的成员。同一会话会粘在首次成员上，保证 prompt cache 不失效。'>
+        <Select
+          aria-label='路由方式'
+          value={draft.routing === 'rotate' || draft.routing === 'usage' ? draft.routing : 'ordered'}
+          onValueChange={(routing) => setDraft({ ...draft, routing })}
+          options={[
+            { value: 'ordered', label: '顺序（含旧 smart）' },
+            { value: 'rotate', label: '轮询 rotate' },
+            { value: 'usage', label: '最少使用 usage' },
+          ]}
+        />
+      </Field>
+      {draft.routing && !['ordered', 'smart', 'rotate', 'usage'].includes(draft.routing) && (
+        <div className='space-y-2 text-xs leading-6'>
+          <p>保留旧模式 {draft.routing}（不可分配）。</p>
+          <Button type='button' variant='outline' onClick={() => setDraft({ ...draft, routing: 'ordered' })}>改用顺序路由</Button>
+        </div>
+      )}
       <div className='space-y-3'>
         <h3 className='text-xs font-semibold'>成员顺序</h3>
         {draft.models.length === 0 ? <p className='text-xs leading-6 text-rex-text-muted'>空模型组可以保留，但至少有一个启用且显式绑定的成员后才能分配。</p> : <ol aria-label='模型组成员' className='space-y-3'>

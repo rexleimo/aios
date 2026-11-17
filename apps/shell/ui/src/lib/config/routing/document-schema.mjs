@@ -136,6 +136,10 @@ function validateIntentRouting(document) {
   if (intent === undefined) return;
   if (!intent || typeof intent !== 'object' || Array.isArray(intent)) throw new ConfigError('intentRouting must be an object', 'intentRouting');
   if (intent.enabled !== undefined && typeof intent.enabled !== 'boolean') throw new ConfigError('intentRouting.enabled must be a boolean', 'intentRouting.enabled');
+  if (intent.confidenceThreshold !== undefined && (typeof intent.confidenceThreshold !== 'number'
+    || !Number.isFinite(intent.confidenceThreshold) || intent.confidenceThreshold < 0 || intent.confidenceThreshold > 1)) {
+    throw new ConfigError('intentRouting.confidenceThreshold must be a number in [0,1]', 'intentRouting.confidenceThreshold');
+  }
   const models = document.models || {};
   const intents = Array.isArray(intent.intents) ? intent.intents : [];
   if (intent.enabled !== false) {

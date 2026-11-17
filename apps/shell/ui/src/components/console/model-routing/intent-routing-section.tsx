@@ -8,6 +8,7 @@ import { modelLabel } from './policy/model-label';
 export interface IntentRouting {
   enabled: boolean;
   classifierModel: string;
+  confidenceThreshold?: number;
   intents: { id: string; description: string; modelId: string; fallback?: string[] }[];
 }
 export interface ModelOption {
@@ -178,6 +179,20 @@ export function IntentRoutingSection({
               仅限声明支持 OpenAI Chat 或 Claude 协议的已绑定模型；实际协议兼容性、认证与额度尚未验证。
             </p>
           </div>
+
+          <Field label="置信度门槛" hint="分类器需给出 0..1 的自报置信度；低于门槛时回落到默认路由，不在猜测上发往意图模型。留空表示不启用分级。">
+            <Select
+              aria-label="意图置信度门槛"
+              value={typeof value.confidenceThreshold === 'number' ? String(value.confidenceThreshold) : ''}
+              onValueChange={(next) => onChange({ ...value, ...(next ? { confidenceThreshold: Number(next) } : { confidenceThreshold: undefined }) })}
+              options={[
+                { value: '', label: '不分级（按意图直接路由）' },
+                { value: '0.5', label: '0.5 · 宽松' },
+                { value: '0.7', label: '0.7 · 推荐' },
+                { value: '0.9', label: '0.9 · 严格' },
+              ]}
+            />
+          </Field>
 
           <div className="space-y-3">
             <div className="flex items-center gap-2">

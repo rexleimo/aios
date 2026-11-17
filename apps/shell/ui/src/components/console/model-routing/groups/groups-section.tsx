@@ -20,7 +20,7 @@ export function GroupsSection({ routing }: { routing: RoutingController }) {
     {editable.routingGroups.length === 0 ? <p className='text-xs leading-6 text-rex-text-muted'>尚无模型组。新建后可在默认分配、客户端例外和意图规则中选择。</p> : <ul aria-label='模型组' className='divide-y divide-rex-border'>
       {editable.routingGroups.map((group) => {
         const eligible = targets.some((target) => target.id === ref(group.id));
-        const mode = group.routing === 'smart' ? '顺序（兼容旧 smart）' : group.routing === 'ordered' ? '顺序' : `保留旧模式 ${group.routing}`;
+        const mode = group.routing === 'rotate' ? '轮询 rotate' : group.routing === 'usage' ? '最少使用 usage' : group.routing === 'smart' ? '顺序（兼容旧 smart）' : group.routing === 'ordered' ? '顺序' : `保留旧模式 ${group.routing}`;
         return <li key={group.id} aria-label={`模型组 ${group.id}`} className='min-w-0 space-y-3 py-4'>
           <div className='flex flex-wrap items-center gap-2'><h3 className='break-words text-sm font-semibold [overflow-wrap:anywhere]'>{group.id}</h3><Badge tone={eligible ? 'info' : 'neutral'}>{eligible ? '可分配' : '不可新增分配'}</Badge></div>
           <p className='break-words text-xs leading-6 text-rex-text-muted [overflow-wrap:anywhere]'>{mode}{group.enabled === false ? ' · 已停用' : ''} · {group.models.join(' → ') || '无成员'}</p>

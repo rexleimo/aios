@@ -19,16 +19,25 @@ export function getIntentRouting(registry) {
     }))
     .filter((item) => item.id && item.modelId);
   if (!classifierModel || intents.length === 0) return null;
-  return { enabled: true, classifierModel, intents };
+  // Optional confidence gate (JEV-style "route on uncertainty"): only a finite
+  // threshold in [0,1] is accepted; anything else means "no gating" (legacy).
+  const threshold = raw.confidenceThreshold;
+  const confidenceThreshold = typeof threshold === 'number' && Number.isFinite(threshold) && threshold >= 0 && threshold <= 1
+    ? threshold : undefined;
+  return { enabled: true, classifierModel, intents, confidenceThreshold };
 }
 
 // 纯函数：构造分类器提示——列出每个意图 id+描述，附上用户消息，要求只回 JSON {"intent":"<id>"}。
 // 用户消息截断到 4000 字符封顶（分类只需语义，不需要全文，控制成本/延迟）。
-export function buildIntentClassifierPrompt(intents, userText) {
+export function buildIntentClassifierPrompt(intents, userText, options = {}) {
   const list = intents.map((item) => `- ${item.id}: ${item.description}`).join('\n');
+  const gated = typeof options.confidenceThreshold === 'number' && Number.isFinite(options.confidenceThreshold);
+  const answer = gated
+    ? '{"intent":"<id>","confidence":<0..1>} where confidence is how certain you are that this intent fits (0..1).'
+    : '{"intent":"<id>"}.';
   return [
     'You are a routing classifier. Read the user message and pick exactly one intent id from the list below.',
-    'Reply with ONLY a JSON object: {"intent":"<id>"}. No prose, no markdown, no explanation.',
+    `Reply with ONLY a JSON object: ${answer} No prose, no markdown, no explanation.`,
     '',
     'Intents:',
     list,
@@ -56,7 +65,25 @@ export function parseIntentLabel(modelOutput, intents) {
   if (!intentId) return null;
   const hit = (intents || []).find((item) => item.id === intentId);
   if (!hit) return null;
-  return { intentId: hit.id, modelId: hit.modelId, description: hit.description };
+  // Confidence is optional for backward compatibility, but when present it must be
+  // a finite number in [0,1]. An invalid value fails closed (no classification).
+  let confidence;
+  if (Object.hasOwn(parsed, 'confidence')) {
+    const value = parsed.confidence;
+    if (typeof value !== 'number' || !Number.isFinite(value) || value < 0 || value > 1) return null;
+    confidence = value;
+  }
+  return { intentId: hit.id, modelId: hit.modelId, description: hit.description, ...(confidence !== undefined ? { confidence } : {}) };
+}
+
+// JEV "route on uncertainty": a configured threshold acts only on confident
+// self-reports; low or missing confidence falls back to the deterministic route.
+// No threshold preserves the legacy label-only behavior.
+export function applyConfidenceTier(classified, threshold) {
+  if (!classified) return null;
+  if (typeof threshold !== 'number' || !Number.isFinite(threshold)) return classified;
+  if (typeof classified.confidence !== 'number' || !Number.isFinite(classified.confidence)) return null;
+  return classified.confidence >= threshold ? classified : null;
 }
 
 // 纯函数：从入站请求体取「最新用户轮」的文本。仅当尾消息是用户文本轮时返回文本；
@@ -102,7 +129,7 @@ export async function classifyTurnIntent({ registry, userText, env = process.env
     const { provider, protocol, upstreamModel } = getProviderForModel(config.classifierModel, registry);
     const accountId = readyProviderAccounts(provider, env)[0];
     if (!accountId) return null;
-    const body = classifierRequestBody(protocol, upstreamModel, buildIntentClassifierPrompt(config.intents, userText));
+    const body = classifierRequestBody(protocol, upstreamModel, buildIntentClassifierPrompt(config.intents, userText, { confidenceThreshold: config.confidenceThreshold }));
     if (!body) return null;
     const endpoint = resolveProviderEndpoint(provider, protocol);
     const headers = { 'content-type': 'application/json', ...resolveProviderRequestHeaders(provider, protocol, resolveProviderApiKey(provider, env, accountId), env) };
@@ -115,7 +142,8 @@ export async function classifyTurnIntent({ registry, userText, env = process.env
       void res.body?.cancel().catch(() => {});
       return null;
     }
-    return parseIntentLabel(classifierResponseText(protocol, await res.json()), config.intents);
+    const parsed = parseIntentLabel(classifierResponseText(protocol, await res.json()), config.intents);
+    return applyConfidenceTier(parsed, config.confidenceThreshold);
   } catch {
     return null;
   } finally {

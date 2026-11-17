@@ -74,7 +74,7 @@ export function toModelCatalog(document, { includeDisabled = false } = {}) {
 export function orderedGroupMembers(document, id) {
   const group = Object.hasOwn(document.routingGroups || {}, id) ? document.routingGroups[id] : null;
   if (!isRecord(group) || group.enabled === false) throw new ConfigError(`unknown group or disabled group "${id}"`);
-  if (![undefined, 'smart', 'ordered'].includes(group.routing)) throw new ConfigError(`group "${id}": unsupported routing mode; only ordered (legacy smart) is supported`);
+  if (group.routing !== undefined && !['smart', 'ordered', 'rotate', 'usage'].includes(group.routing)) throw new ConfigError(`group "${id}": unsupported routing mode; expected ordered (legacy smart), rotate or usage`);
   if (!Array.isArray(group.models) || !group.models.length) throw new ConfigError(`group "${id}": at least one concrete model member required`);
   for (const modelId of group.models) if (typeof modelId !== 'string' || !modelId || !Object.hasOwn(document.models || {}, modelId)) throw new ConfigError(`group "${id}": unknown model or non-concrete member`);
   return [...new Set(group.models)];

@@ -72,6 +72,7 @@ export function toEditable(document) {
     intentRouting: {
       enabled: Boolean(intent) && intent.enabled !== false,
       classifierModel: String(intent?.classifierModel || ''),
+      ...(typeof intent?.confidenceThreshold === 'number' ? { confidenceThreshold: intent.confidenceThreshold } : {}),
       intents: (Array.isArray(intent?.intents) ? intent.intents : []).map((item) => ({
         id: String(item?.id || ''),
         description: String(item?.description || ''),
@@ -198,6 +199,9 @@ export function applyEdits(document, editable) {
       ...document.intentRouting,
       enabled: intent.enabled !== false,
       classifierModel: intent.classifierModel ?? '',
+      ...(typeof intent.confidenceThreshold === 'number' && Number.isFinite(intent.confidenceThreshold)
+        && intent.confidenceThreshold >= 0 && intent.confidenceThreshold <= 1
+        ? { confidenceThreshold: intent.confidenceThreshold } : {}),
       intents: (Array.isArray(intent.intents) ? intent.intents : [])
         .map((item) => ({
           ...(document.intentRouting?.intents || []).find((old) => lower(old?.id) === lower(item?.id)),

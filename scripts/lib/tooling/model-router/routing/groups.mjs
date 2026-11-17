@@ -35,6 +35,36 @@ export class GroupConfigError extends Error {
   }
 }
 
+// Supported group routing modes. "ordered" (and legacy "smart") always start at
+// the first member; "rotate" round-robins and "usage" picks the least-used first.
+// State for the stateful modes is held at the gateway edge, not in this pure module.
+export const GROUP_ROUTING_MODES = Object.freeze(new Set(['ordered', 'smart', 'rotate', 'usage']));
+
+// Pure member selection for stateful modes. Given the current state it returns the
+// chosen member and the next state; callers own and persist that state (bounded).
+// "ordered"/"smart" ignore state and pick the first member.
+export function selectGroupMember(members, mode, state = {}) {
+  const list = Array.isArray(members) ? members : [];
+  if (!list.length) return { member: null, state };
+  if (mode === 'rotate') {
+    const n = Number.isSafeInteger(state.n) && state.n >= 0 ? state.n : 0;
+    return { member: list[n % list.length], state: { ...state, n: n + 1 } };
+  }
+  if (mode === 'usage') {
+    const usage = state.usage && typeof state.usage === 'object' && !Array.isArray(state.usage) ? state.usage : {};
+    let best = 0;
+    for (let i = 1; i < list.length; i++) {
+      const current = Number.isFinite(usage[list[i]]) ? usage[list[i]] : 0;
+      const bestValue = Number.isFinite(usage[list[best]]) ? usage[list[best]] : 0;
+      if (current < bestValue) best = i;
+    }
+    const nextUsage = { ...usage };
+    nextUsage[list[best]] = (Number.isFinite(nextUsage[list[best]]) ? nextUsage[list[best]] : 0) + 1;
+    return { member: list[best], state: { ...state, usage: nextUsage } };
+  }
+  return { member: list[0], state };
+}
+
 // Groups contain concrete registry IDs, never other groups or advertised API IDs.
 // Legacy "smart" never implemented weights; its compatible meaning is ordered.
 export function orderedGroupMembers(registry, id) {
@@ -43,8 +73,8 @@ export function orderedGroupMembers(registry, id) {
   if (!group || typeof group !== 'object' || Array.isArray(group) || group.enabled === false) {
     throw new GroupConfigError(`Routing group "${id}" is missing or disabled`);
   }
-  if (![undefined, 'smart', 'ordered'].includes(group.routing)) {
-    throw new GroupConfigError(`Routing group "${id}" uses unsupported routing mode "${group.routing}"; expected ordered`, 'UNSUPPORTED_GROUP_ROUTING');
+  if (group.routing !== undefined && !GROUP_ROUTING_MODES.has(group.routing)) {
+    throw new GroupConfigError(`Routing group "${id}" uses unsupported routing mode "${group.routing}"; expected one of ${[...GROUP_ROUTING_MODES].join(', ')}`, 'UNSUPPORTED_GROUP_ROUTING');
   }
   if (!Array.isArray(group.models) || !group.models.length) throw new GroupConfigError(`Routing group "${id}" requires concrete model members`);
   for (const modelId of group.models) {

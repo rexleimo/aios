@@ -183,6 +183,19 @@ test('routing groups work offline through the real routing panel, shared hook an
     assert.equal(saved().targetRefVersion, 1);
   });
 
+  await t.test('rotate and usage groups are shown and editable as supported modes', async st => {
+    const initial = registry();
+    initial.routingGroups.rotating = { id: 'rotating', models: ['alpha'], routing: 'rotate' };
+    initial.routingGroups.byUsage = { id: 'byUsage', models: ['alpha'], routing: 'usage' };
+    const { page } = await fixture(st, initial);
+    await task(page, '模型组');
+    assert.match(await groupRow(page, 'rotating').innerText(), /轮询 rotate/u);
+    assert.match(await groupRow(page, 'byUsage').innerText(), /最少使用 usage/u);
+    await groupRow(page, 'rotating').getByRole('button', { name: '编辑', exact: true }).click();
+    const mode = page.getByRole('dialog').getByRole('combobox', { name: '路由方式', exact: true });
+    assert.match(await mode.innerText(), /轮询 rotate/u);
+  });
+
   await t.test('unsupported modes and metadata survive edits until explicit conversion; enablement controls target eligibility', async st => {
     const initial = registry();
     const { page, draft, saved } = await fixture(st, initial);

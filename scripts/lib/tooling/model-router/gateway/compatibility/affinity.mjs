@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { GatewayRouteError } from '../router.mjs';
+import { selectGroupMember, GROUP_ROUTING_MODES } from '../../routing/groups.mjs';
 
 export function boundedCache({ maxEntries = 1024, ttlMs = 30 * 60_000, now = Date.now } = {}) {
   const entries = new Map();
@@ -65,6 +66,9 @@ function outputIds(json, protocol) {
 
 export function createRoutingAffinity(options = {}) {
   const cache = boundedCache(options);
+  // State for stateful group modes (rotate/usage), keyed by configuration fingerprint
+  // + group id. Bounded and in-memory only; never persisted or logged.
+  const groupState = boundedCache(options);
   return function requestAffinity({ protocol, client, role, sessionId, body, fingerprint }) {
     const key = (kind, id) => safeId(id) ? JSON.stringify([protocol, client, role, kind, id]) : null;
     const sessionKey = key('session', sessionId);
@@ -97,7 +101,20 @@ export function createRoutingAffinity(options = {}) {
         const pin = hardPin || (grouped && sessionPin?.targetRef === selected.targetRef ? sessionPin : null);
         if (!pin) {
           if (grouped && tools.length) throw new GatewayRouteError('Unknown grouped tool continuation', 'TOOL_AFFINITY_UNKNOWN', 400);
-          return { candidates, pin: opaque ? { account: candidates[0]?.accounts[0] } : null };
+          let ordered = candidates;
+          // Stateful group modes pick a member when there is no continuation pin.
+          // A pinned session keeps its member, so a conversation stays on one model.
+          const mode = selected?.routing;
+          if (grouped && GROUP_ROUTING_MODES.has(mode) && (mode === 'rotate' || mode === 'usage')) {
+            const key = JSON.stringify(['group-mode', fingerprint, selected.groupId]);
+            const memberIds = candidates.map((item) => item.selected?.modelId);
+            const current = groupState.get(key) || {};
+            const chosen = selectGroupMember(memberIds, mode, current);
+            groupState.set(key, chosen.state);
+            const index = memberIds.indexOf(chosen.member);
+            if (index > 0) ordered = [candidates[index], ...candidates.filter((_, i) => i !== index)];
+          }
+          return { candidates: ordered, pin: opaque ? { account: ordered[0]?.accounts[0] } : null };
         }
         if (pin.targetRef !== selected?.targetRef) throw new GatewayRouteError('A continuation cannot change its target', 'AFFINITY_TARGET_CONFLICT', 400);
         const candidate = candidates.find((item) => sameRoute(item.selected, pin));

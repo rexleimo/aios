@@ -129,6 +129,18 @@ test('optional intent editor works offline with real shared controls and generat
     assert.match(await page.getByRole('combobox', { name: '意图 1 模型' }).innerText(), /fixture \/ Beta/);
   });
 
+  await t.test('confidence threshold is configurable in the UI and lands in the draft', async st => {
+    const page = await fixture(st, { enabled: true, classifierModel: 'alpha', intents: [{ ...rule('chat'), description: 'Chat' }] });
+    const select = page.getByRole('combobox', { name: '意图置信度门槛', exact: true });
+    assert.ok(await select.count(), 'the gate control is present when intent routing is enabled');
+    await select.click();
+    await page.getByRole('option', { name: '0.7 · 推荐', exact: true }).click();
+    assert.equal(await page.evaluate(() => window.draft.confidenceThreshold), 0.7);
+    await select.click();
+    await page.getByRole('option', { name: '不分级（按意图直接路由）', exact: true }).click();
+    assert.equal(await page.evaluate(() => window.draft.confidenceThreshold), undefined, 'clearing the gate removes it');
+  });
+
   await t.test('rule summaries open one modal editor by keyboard without emitting edits; closing retains the draft', async st => {
     const initial = { enabled: true, classifierModel: 'alpha', intents: [
       { ...rule('chat'), description: 'Quick questions and everyday conversation' },

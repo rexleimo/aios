@@ -85,7 +85,7 @@ function resolveGatewayTarget(clientId, role, registry, env, context = {}, reque
       const probe = availabilityForModel(modelId, protocols[0] || '', { availability, now: context.now, limits: context.availabilityLimits });
       return probe.state !== 'down';
     });
-    if (modelIds.length) return { modelIds, groupId, targetRef: target.ref, explicit: Boolean(requested), reason: requested ? 'explicit request target' : chain.length || intentModelId ? reason : 'single explicitly configured model' };
+    if (modelIds.length) return { modelIds, groupId, routing: groupId !== null ? (registry.routingGroups[groupId]?.routing || 'ordered') : undefined, targetRef: target.ref, explicit: Boolean(requested), reason: requested ? 'explicit request target' : chain.length || intentModelId ? reason : 'single explicitly configured model' };
     if (groupId !== null || requested) throw new GatewayRouteError('The selected target has no eligible model members');
   }
   throw new GatewayRouteError('No eligible model is selected by the configured route');
@@ -116,8 +116,8 @@ export function resolveGatewayRoutes({ clientId = '', role = '', registry, env =
   const decision = {
     modelId, upstreamModel, providerId: provider.id, clientProtocol: from, targetProtocol: to, needsTranslation: from !== to, reason: finalReason,
     targetRef: target.targetRef, targetKind: target.groupId !== null ? 'group' : 'model', explicit: target.explicit,
-    ...(target.groupId !== null ? { groupId: target.groupId, routing: 'ordered' } : {}),
-    ...(intentRouted ? { intent: intent.intentId, classifierModel: normalizeId(intent.classifierModel), intentDescription: intent.description || '' } : {}),
+    ...(target.groupId !== null ? { groupId: target.groupId, routing: target.routing || 'ordered' } : {}),
+    ...(intentRouted ? { intent: intent.intentId, classifierModel: normalizeId(intent.classifierModel), intentDescription: intent.description || '', ...(typeof intent.confidence === 'number' ? { confidence: intent.confidence } : {}) } : {}),
   };
   return {
     modelId,
@@ -133,6 +133,7 @@ export function resolveGatewayRoutes({ clientId = '', role = '', registry, env =
     explicit: target.explicit,
     targetRef: target.targetRef,
     groupId: target.groupId,
+    routing: target.groupId !== null ? (target.routing || 'ordered') : undefined,
     reason: finalReason,
     // 中文注释：决策记录可复核字段——不含密钥/请求正文，供实时路由图消费。
     decision,

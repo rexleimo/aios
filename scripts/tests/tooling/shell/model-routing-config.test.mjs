@@ -204,6 +204,17 @@ test('validateDocument accepts a valid intentRouting section', () => {
   assert.doesNotThrow(() => validateDocument({ ...intentRegistry, intentRouting: { enabled: false, classifierModel: '', intents: [] } }), 'disabled empty config is valid');
 });
 
+test('confidenceThreshold survives the editable round-trip and is validated at the boundary', () => {
+  const withGate = { ...intentRegistry, intentRouting: { ...intentRegistry.intentRouting, confidenceThreshold: 0.7 } };
+  assert.doesNotThrow(() => validateDocument(withGate));
+  assert.equal(toEditable(withGate).intentRouting.confidenceThreshold, 0.7);
+  const editable = toEditable(withGate);
+  assert.equal(applyEdits(intentRegistry, editable).intentRouting.confidenceThreshold, 0.7, 'a UI save preserves the gate');
+  for (const bad of [1.5, -0.1, NaN, 'high']) {
+    assert.throws(() => validateDocument({ ...intentRegistry, intentRouting: { ...intentRegistry.intentRouting, confidenceThreshold: bad } }), ConfigError);
+  }
+});
+
 const singularClassifierRegistry = (protocol) => ({
   models: { classifier: { source: 'discovered', provider: 'relay', protocol, upstreamModel: 'Vendor/Classifier' } },
   providers: { relay: { baseUrl: 'https://relay.example.invalid', protocols: ['openai-chat', 'claude', 'gemini', 'openai-response'], models: [] } },

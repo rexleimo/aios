@@ -7,7 +7,7 @@ import { PROTOCOLS, ProtocolCompatibilityError, supportsProtocolTranslation, tra
 import { translateProtocolStream } from './protocol-stream.mjs';
 import { unmaskProtocolResponse, createProtocolUnmaskTransform } from './protocol-mask.mjs';
 import { loadProviders, resolveProviderApiKey, resolveProviderRequestHeaders, readyProviderAccounts, listGatewayModels, getProviderForModel, ProviderConfigError } from '../../providers/registry.mjs';
-import { getIntentRouting, classifyTurnIntent } from '../../routing/intent.mjs';
+import { getIntentRouting, classifyTurnIntent, applyConfidenceTier } from '../../routing/intent.mjs';
 import { normalizeId } from '../../entry/shared.mjs';
 import { maskObject, unmaskText } from '../../masking/masker.mjs';
 import { GroupConfigError } from '../../routing/groups.mjs';
@@ -248,9 +248,12 @@ export function createRoutingGatewayApp(options = {}) {
             let classified = null;
             try { classified = await lifetime.run(() => classify(userText, { signal: lifetime.signal })); }
             catch { lifetime.signal.throwIfAborted(); /* Keep the qualified default route on classifier failure. */ }
+            // JEV confidence gate at the consumption edge too: the injected classifier
+            // path bypasses classifyTurnIntent, so enforce the threshold here as well.
+            classified = applyConfidenceTier(classified, intentConfig.confidenceThreshold);
             const configuredIntent = intentConfig.intents.find((item) => item.id === classified?.intentId && item.modelId === classified?.modelId);
             if (configuredIntent) {
-              intent = { intentId: configuredIntent.id, modelId: configuredIntent.modelId, description: configuredIntent.description, classifierModel: intentConfig.classifierModel };
+              intent = { intentId: configuredIntent.id, modelId: configuredIntent.modelId, description: configuredIntent.description, classifierModel: intentConfig.classifierModel, ...(typeof classified?.confidence === 'number' ? { confidence: classified.confidence } : {}) };
               if (sessionKey) sessionIntents.set(sessionKey, intent);
             } else if (sessionKey) {
               sessionIntents.delete(sessionKey);

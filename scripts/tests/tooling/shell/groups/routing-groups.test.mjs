@@ -87,9 +87,10 @@ test('assignment options separate eligible groups from concrete classifier model
     opaque: { models: ['alpha'], routing: 'weight' }, paused: { models: ['paused'] },
     disabled: { models: ['alpha'], enabled: false }, broken: { models: ['unbound'] },
     nested: { models: ['group:pool'] },
+    rotating: { models: ['beta'], routing: 'rotate' }, byUsage: { models: ['alpha'], routing: 'usage' },
   });
   assert.deepEqual(config.toModelCatalog(document).map(({ id }) => id), ['alpha', 'beta']);
-  assert.deepEqual(config.toRoutingTargets(document).map(({ id }) => id), ['model:alpha', 'model:beta', 'group:pool', 'group:smart']);
+  assert.deepEqual(config.toRoutingTargets(document).map(({ id }) => id), ['model:alpha', 'model:beta', 'group:pool', 'group:smart', 'group:rotating', 'group:byUsage']);
   assert.deepEqual(config.toRoutingTargets(document).find(({ id }) => id === 'group:pool').models, ['beta', 'alpha']);
   assert.deepEqual(config.toEditable(document).routingGroups.find(({ id }) => id === 'disabled').enabled, false);
 });
@@ -101,9 +102,14 @@ for (const [at, assign] of assignments) {
     assign(next, 'group:pool');
     assert.doesNotThrow(() => config.validateDocument(next, { previousDocument: document }));
     assert.doesNotThrow(() => config.applyEdits(document, config.toEditable(next)));
-    for (const group of [{ models: [] }, { models: ['alpha'], routing: 'rotate' }, { models: ['paused'] }, { models: ['alpha'], enabled: false }]) {
+    for (const group of [{ models: [] }, { models: ['alpha'], routing: 'weight' }, { models: ['paused'] }, { models: ['alpha'], enabled: false }]) {
       next.routingGroups.pool = group;
       assert.throws(() => config.validateDocument(next, { previousDocument: document }), { name: 'ConfigError', path: at });
+    }
+    // rotate/usage are now supported modes and remain assignable.
+    for (const routing of ['rotate', 'usage']) {
+      next.routingGroups.pool = { models: ['alpha'], routing };
+      assert.doesNotThrow(() => config.validateDocument(next, { previousDocument: document }));
     }
   });
 }
