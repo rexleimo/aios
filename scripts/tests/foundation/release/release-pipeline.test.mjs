@@ -526,6 +526,7 @@ bashInstallerTest('Bash installer isolates nested runtime and privacy paths from
       AIOS_ROOT_DIR: '/unexpected/host/runtime',
       AIOS_ROOT: '/unexpected/host/runtime',
       ROOTPATH: '/unexpected/host/runtime',
+      AIOS_STATE_DIR: '',
       REXCIL_HOME: '',
     },
   });
