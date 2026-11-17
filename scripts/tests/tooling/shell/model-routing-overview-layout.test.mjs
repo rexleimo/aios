@@ -98,7 +98,8 @@ async function layout(page) {
     };
     const badge = [...document.querySelectorAll('span')].find(element => element.textContent.startsWith('运行时就绪：'));
     const gateway = exact('本地网关').closest('section');
-    const clients = exact('客户端与模型').closest('section');
+    // compact overview renders a one-line client summary, not the full client table.
+    const clients = exact('客户端与模型')?.closest('section') || null;
     const result = {
       gateway: rect(gateway),
       connection: rect(exact('接入客户端').closest('section')),
@@ -109,7 +110,7 @@ async function layout(page) {
       clients: rect(clients),
       manual: rect(exact('手动接入（隔离模式，不碰真实配置）')),
     };
-    [...clients.querySelectorAll('li')].forEach((element, index) => { result[`client-${index}`] = rect(element); });
+    if (clients) [...clients.querySelectorAll('li')].forEach((element, index) => { result[`client-${index}`] = rect(element); });
     for (const label of ['日志内请求', '含意图记录', '错误记录']) {
       const element = exact(label);
       result[label] = rect(element);
@@ -121,6 +122,9 @@ async function layout(page) {
 
 function assertStable(before, after, phase) {
   for (const key of Object.keys(before)) {
+    // Optional slots (e.g. the compact-mode client table) may be absent in both phases.
+    if (!before[key] && !after[key]) continue;
+    assert.ok(before[key] && after[key], `${phase}: ${key} appeared/disappeared between reads`);
     for (const dimension of ['x', 'y', 'width', 'height']) {
       assert.ok(Math.abs(before[key][dimension] - after[key][dimension]) <= 1,
         `${phase}: ${key}.${dimension} moved from ${before[key][dimension]} to ${after[key][dimension]}; ${JSON.stringify({ before, after })}`);
@@ -169,10 +173,21 @@ test('overview reserves real loading slots while deferred registry, health and l
         }
         const text = await page.locator('#root').innerText();
         if (options.failed) assert.match(text, /读取失败/u);
-        else assert.match(text, options.configured ? /1 个显式绑定模型/u : /尚未配置模型访问/u);
+        // Model-access count is stated in the runtime-ready panel (compact overview).
+        else assert.match(text, options.configured ? /1 个显式绑定模型/u : /0 个显式绑定模型|尚未读取/u);
         const connect = await page.getByRole('button', { name: '接入', exact: true }).all();
         for (const button of connect) assert.equal(await button.isDisabled(), !payloads[gatewayPath].body.ready);
         if (options.connected) assert.equal(await page.getByRole('button', { name: '还原', exact: true }).isEnabled(), true);
+
+        // Setup guide: three steps always present; exactly one "下一步" once status is known.
+        const steps = page.getByRole('list', { name: '接入步骤' });
+        assert.equal(await steps.getByRole('listitem').count(), 3, 'the three-step guide is always present');
+        // compact overview: one-line client summary, no full client×model table.
+        assert.equal(await page.getByText('客户端与模型', { exact: true }).count(), 0, 'the heavy client table is collapsed on the gateway overview');
+        assert.match(text, /最近请求涉及/u, 'a compact one-line client summary is shown instead');
+        assert.equal(await page.getByText('下一步', { exact: true }).count(), options.failed ? 0 : 1,
+          'one next step is marked only after status resolves');
+        assert.match(text, options.failed ? /正在读取网关状态/u : /还差一步就能开始用/u, 'headline reflects the real read state');
         const artifacts = process.env.AIOS_GATEWAY_TEST_ARTIFACTS;
         if (artifacts) {
           fs.mkdirSync(artifacts, { recursive: true });

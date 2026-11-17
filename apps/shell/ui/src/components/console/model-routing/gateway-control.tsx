@@ -7,7 +7,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Check, Copy, Plug, Power, Terminal } from 'lucide-react';
 import { clientLabel } from '../../../lib/console-facts';
+import type { ViewId } from '../../../lib/console-navigation';
 import { Badge, Button, InlineFeedback, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
+import { GatewaySetupGuide, type GuideActionKind } from './gateway-setup-guide';
 
 interface GatewayClient {
   client: string;
@@ -16,7 +18,7 @@ interface GatewayClient {
   mode: string;
   artifactExists: boolean;
 }
-interface GatewayStatus {
+export interface GatewayStatus {
   running: boolean;
   managed: boolean;
   stale: boolean;
@@ -44,7 +46,7 @@ const CONNECT_CMD = 'aios model-router connect';
 const DISCONNECT_CMD = 'aios model-router disconnect';
 const CLIENT_IDS = ['claude', 'codex', 'pi'];
 
-export function GatewayControl({ active }: { active: boolean }) {
+export function GatewayControl({ active, navigate }: { active: boolean; navigate?: (view: ViewId) => void }) {
   const [status, setStatus] = useState<GatewayStatus | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<Busy>(null);
@@ -205,8 +207,25 @@ export function GatewayControl({ active }: { active: boolean }) {
     else void runAction(confirm.kind);
   }
 
+  const onGuideAction = (kind: GuideActionKind) => {
+    if (kind === 'start') setConfirm({ kind: 'start' });
+    else if (kind === 'providers') navigate?.('routing');
+    else if (kind === 'connect') {
+      const first = status?.clients.find((item) => !item.connected);
+      if (first && canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client: first.client, port: status.port, expectedRevision: status.configuredRevision });
+    }
+  };
+
   return (
     <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+      <GatewaySetupGuide
+        status={status}
+        pending={pending}
+        busy={busy !== null}
+        error={error}
+        canConnect={canConnect}
+        onAction={onGuideAction}
+      />
       <Panel className="min-w-0 p-6">
         <SmallTitle
           action={
@@ -230,16 +249,13 @@ export function GatewayControl({ active }: { active: boolean }) {
           本地网关
         </SmallTitle>
         <p className="text-xs leading-6 text-rex-text-muted">
-          网关跑在本机 <code className="inline-block w-52 max-w-full truncate rounded bg-rex-panel px-1 py-0.5 align-bottom font-rex-mono" title={status?.url}>{status?.url || '正在读取地址…'}</code>
-          。
-          启动后，已接入客户端的请求才会进入网关。停止网关不会自动还原客户端配置。
-          网关在启动时加载配置；保存配置或刷新目录后，需要停止并重新启动才会生效。
+          监听地址 <code className="inline-block w-52 max-w-full truncate rounded bg-rex-panel px-1 py-0.5 align-bottom font-rex-mono" title={status?.url}>{status?.url || '正在读取…'}</code>
+          {' · '}启动加载配置，改配置后需重启。
         </p>
         <p className="mt-2 min-h-20 break-words text-[11px] leading-5 text-rex-text-muted sm:min-h-15">{processNotice}</p>
         <Panel className="mt-3 space-y-2 bg-rex-panel/40 p-3 text-xs leading-5">
           <Badge className="min-h-11 w-full whitespace-normal leading-5" tone={pending ? 'neutral' : ready ? 'ok' : 'warn'}>运行时就绪：{readinessText}</Badge>
-          <p className="text-rex-text-muted">已保存配置：{status?.configuredModelCount === undefined ? '尚未读取' : `${status.configuredModelCount} 个显式绑定模型`}。运行中的网关仅使用启动时加载的快照，保存配置后需重启。</p>
-          <p className="text-rex-text-muted">监听状态与模型访问能力分开统计。就绪检查不调用生成接口；模型目录发现也不代表生成已验证。</p>
+          <p className="text-rex-text-muted">已保存配置：{status?.configuredModelCount === undefined ? '尚未读取' : `${status.configuredModelCount} 个显式绑定模型`}。改配置后需重启网关加载。</p>
         </Panel>
         <div className="mt-3 min-h-12 break-words text-[11px] leading-5">
           {error ? <>
@@ -253,9 +269,7 @@ export function GatewayControl({ active }: { active: boolean }) {
         <SmallTitle action={<Badge className="w-28 justify-center" tone="neutral">{pending ? '读取接入状态…' : `${status?.clients.filter((item) => item.connected).length || 0} / ${status?.clients.length || 0} 已接入`}</Badge>}>
           接入客户端
         </SmallTitle>
-        <p className="text-xs leading-6 text-rex-text-muted">
-          目前支持下列客户端就地接入。确认后改写对应配置并备份原值；接入状态不代表已完成模型连接测试。
-        </p>
+        <p className="text-xs leading-6 text-rex-text-muted">就地接入，确认后改写配置并备份原值。</p>
         <div className="mt-3 space-y-2">
           {CLIENT_IDS.map((client) => {
             const item = status?.clients.find((entry) => entry.client === client);

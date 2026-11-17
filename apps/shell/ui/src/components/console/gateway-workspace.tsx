@@ -53,13 +53,6 @@ export function GatewayWorkspace({
   const routing = useRoutingConfig();
   const [confirm, setConfirm] = useState<'discard' | 'reload' | null>(null);
   const saving = routing.status === 'saving';
-  const accessHeading = routing.status === 'error'
-    ? '模型访问配置读取失败'
-    : !routing.editable
-      ? '正在读取模型访问配置…'
-      : routing.models.length === 0
-        ? '尚未配置模型访问'
-        : `${routing.dirty ? '当前草稿' : '已保存配置'}：${routing.models.length} 个显式绑定模型`;
 
   function selectSection(next: Section) {
     navigate('routing', next === 'overview' ? undefined : next);
@@ -126,22 +119,13 @@ export function GatewayWorkspace({
             <ArrowRight size={14} />
           </Button>
         </div>
-        <GatewayControl active={active && section === 'overview'} />
-        {/* Keep the same summary slot before and after the registry read. */}
-        <Panel className="p-5">
-          <h3 className="text-sm font-semibold">{accessHeading}</h3>
-          <p className="mt-2 min-h-24 text-xs leading-6 text-rex-text-muted sm:min-h-12">
-            {routing.status === 'error'
-              ? `配置读取失败：${routing.error}。请前往模型来源重新读取；当前无法确认已保存的模型访问配置。`
-              : '网关可以启动监听，但不会自动连接内置中转或模型模板。先添加供应商，再发现模型或手动填写真实上游 ID；保存后重启网关加载。配置数量不代表运行时就绪或生成已验证。'}
-          </p>
-          <Button className="mt-3" size="sm" variant="outline" onClick={() => selectSection('providers')}>管理模型来源<ArrowRight size={14} /></Button>
-        </Panel>
+        <GatewayControl active={active && section === 'overview'} navigate={navigate} />
         <AgentOverview
           clients={facts.clients}
           issues={[]}
           active={active && section === 'overview'}
           navigate={navigate}
+          compact
         />
       </div>
 

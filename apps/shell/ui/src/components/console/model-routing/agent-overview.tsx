@@ -36,11 +36,13 @@ export function AgentOverview({
   issues,
   active,
   navigate,
+  compact = false,
 }: {
   clients: FactClient[];
   issues: FactIssue[];
   active: boolean;
   navigate: (view: ViewId) => void;
+  compact?: boolean;
 }) {
   const [decisions, setDecisions] = useState<DecisionsPayload | null>(null);
   const [config, setConfig] = useState<RoutingConfig | null>(null);
@@ -136,6 +138,16 @@ export function AgentOverview({
         </p>
       </Panel>
 
+      {compact ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 px-4 py-3 text-xs">
+          <span className="text-rex-text-muted">
+            最近请求涉及 <span className="font-semibold text-rex-text">{clients.length}</span> 个客户端
+            {decisions ? ` · 日志内 ${decisions.counters.requests} 条请求` : ' · 日志读取中'}
+            <span className="ml-1">（仅为历史日志，不代表在线）</span>
+          </span>
+          <TextLink onClick={() => navigate('routingConfig')}>查看分配明细</TextLink>
+        </div>
+      ) : (
       <Panel className="overflow-hidden">
         <div className="border-b border-rex-border p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
@@ -221,6 +233,7 @@ export function AgentOverview({
           })}
         </ul>
       </Panel>
+      )}
 
       {issues.length > 0 && (
         <Panel className="border-rex-orange/40 p-5">
