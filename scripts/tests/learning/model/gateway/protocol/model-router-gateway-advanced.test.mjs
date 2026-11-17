@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { claudeToGeminiRequest, geminiToClaudeResponse } from '../../../../lib/tooling/model-router/gateway/translate.mjs';
-import { resolveGatewayRoute } from '../../../../lib/tooling/model-router/gateway/router.mjs';
-import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { claudeToGeminiRequest, geminiToClaudeResponse } from '../../../../../lib/tooling/model-router/gateway/translate.mjs';
+import { resolveGatewayRoute } from '../../../../../lib/tooling/model-router/gateway/router.mjs';
+import { createRoutingGatewayApp } from '../../../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
 
 test('claude → gemini request: systemInstruction, functionCall, functionDeclarations', () => {
   const gemini = claudeToGeminiRequest({

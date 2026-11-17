@@ -14,7 +14,7 @@ import {
   readyProviderAccounts,
   resolveProviderEndpoint,
   resolveProviderModelsEndpoint,
-} from '../../../../lib/tooling/model-router/routing/providers.mjs';
+} from '../../../../lib/tooling/model-router/providers/registry.mjs';
 
 function fixture(t, { claude, codex, registry = { providers: {}, models: {} } } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-import-providers-'));
@@ -33,21 +33,34 @@ function fixture(t, { claude, codex, registry = { providers: {}, models: {} } } 
     clients.push({ file, content });
   }
   const file = registryFilePath({ rootDir: root });
+  const text = `  ${JSON.stringify(registry, null, 2)}\n\n`;
+  const backupDir = path.join(root, '.aios', 'config-backups');
   fs.mkdirSync(path.dirname(file), { recursive: true });
-  fs.writeFileSync(file, JSON.stringify(registry));
+  fs.writeFileSync(file, text);
   const logs = [];
   const errors = [];
   const io = { log: (message) => logs.push(message), error: (message) => errors.push(message) };
   const network = t.mock.method(globalThis, 'fetch', () => { throw new Error('real network forbidden'); });
-  return { root, home, file, clients, logs, errors, io, network };
+  return { root, home, file, text, backupDir, clients, logs, errors, io, network,
+    backups: () => fs.existsSync(backupDir) ? fs.readdirSync(backupDir) : [] };
 }
 
 async function importRegistry(f) {
+  const before = fs.readFileSync(f.file, 'utf8');
+  const backups = f.backups();
+  const writes = importProvidersFromClients({ home: f.home }).length > 0;
   assert.deepEqual(await runModelRouterCommand({ subcommand: 'import-providers', home: f.home }, {
     registryRoot: f.root, io: f.io,
   }), { exitCode: 0 });
   assert.deepEqual(f.errors, []);
   for (const { file, content } of f.clients) assert.equal(fs.readFileSync(file, 'utf8'), content);
+  const added = f.backups().filter((file) => !backups.includes(file));
+  assert.equal(added.length, writes ? 1 : 0);
+  if (writes) {
+    const backup = path.join(f.backupDir, added[0]);
+    assert.equal(fs.readFileSync(backup, 'utf8'), before, 'backup retains exact pre-import registry bytes');
+    assert.equal(fs.statSync(backup).mode & 0o777, 0o600);
+  } else assert.equal(fs.readFileSync(f.file, 'utf8'), before);
   assert.equal(f.network.mock.callCount(), 0);
   return loadRegistry({ rootDir: f.root });
 }
@@ -107,6 +120,8 @@ test('import persists standard endpoint style and resolves native model routes f
   const saved = await importRegistry(f);
   assert.deepEqual(saved, {
     ...registry,
+    targetRefVersion: 1,
+    clientDefaults: { codex: 'model:response' },
     providers: {
       'claude-imported': { baseUrl: 'https://api.anthropic.com', apiKeyEnv: 'env:ANTHROPIC_AUTH_TOKEN', endpointStyle: 'standard', protocols: ['claude'], models: [] },
       'codex-native': { baseUrl: 'https://api.openai.com/v1', apiKeyEnv: '', endpointStyle: 'standard', protocols: ['openai-chat', 'openai-response'], models: [] },
@@ -179,7 +194,11 @@ test('import preserves existing explicit and legacy provider configuration and u
   });
   const saved = await importRegistry(f);
   const { 'codex-new': added, ...existing } = saved.providers;
-  assert.deepEqual({ ...saved, providers: existing }, registry);
+  assert.deepEqual({ ...saved, providers: existing }, {
+    ...registry, targetRefVersion: 1, activeModel: 'model:legacy',
+    clientDefaults: { claude: 'model:legacy' },
+    routingRules: [{ ...registry.routingRules[0], primary: 'model:legacy' }],
+  });
   assert.equal(added.endpointStyle, 'standard');
   const providers = loadProviders(saved);
   assert.equal(providers['claude-imported'].endpointStyle, 'relay');
@@ -187,7 +206,9 @@ test('import preserves existing explicit and legacy provider configuration and u
   assert.equal(resolveProviderEndpoint(providers['claude-imported'], 'claude'), 'https://legacy.invalid/claude/v1/messages');
   assert.equal(providers['codex-native'].authMode, 'none');
   assert.deepEqual(readyProviderAccounts(providers['codex-native'], {}), ['default']);
+  const savedText = fs.readFileSync(f.file, 'utf8');
   assert.deepEqual(await importRegistry(f), saved, 'repeat imports do not rewrite existing provider definitions');
+  assert.equal(fs.readFileSync(f.file, 'utf8'), savedText, 'repeat imports preserve canonical registry bytes');
 });
 
 test('import without client providers leaves the registry untouched', async (t) => {

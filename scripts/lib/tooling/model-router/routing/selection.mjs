@@ -1,7 +1,7 @@
-import { defaultModelRegistry, getActiveModel } from '../entry/registry.mjs';
+import { defaultModelRegistry, getActiveModel, getNativeModelId } from '../entry/registry.mjs';
 import { COST_ORDER, normalizeEnvKey, normalizeId, uniq } from '../entry/shared.mjs';
 import { scoreTaskSignals } from '../session/signals.mjs';
-import { modelProtocolSet } from './protocols.mjs';
+import { modelProtocolSet } from '../providers/protocols.mjs';
 import { availabilityForModel } from './availability.mjs';
 import { clientSupportsModelProtocol, getClientModelRouting } from '../../../foundation/clients/registry.mjs';
 
@@ -82,8 +82,11 @@ function candidateChainFor(decision, registry) {
   const generalRule = (decision?.rule?.fallback || decision?.fallback)
     ? null : getRoutingRule('general', registry);
   const generalFallback = generalRule
-    ? [generalRule.primary, ...(generalRule.fallback || [])] : [];
-  return uniq([decision?.modelId, ...fallback, ...generalFallback, getActiveModel(registry)].filter(Boolean));
+    ? [generalRule.primary, ...(generalRule.fallback || [])].map((ref) => getNativeModelId(ref, registry)) : [];
+  // Normalized route fallbacks are already concrete; persisted rule fields are not.
+  const concreteFallback = Array.isArray(decision?.rule?.fallback)
+    ? fallback.map((ref) => getNativeModelId(ref, registry)) : fallback;
+  return uniq([decision?.modelId, ...concreteFallback, ...generalFallback, getActiveModel(registry)].filter(Boolean));
 }
 
 // 纯函数：把路由结论收敛到“这个 worker 客户端真正能用”的模型；不可用时保留原意图并标注原因。
@@ -152,7 +155,7 @@ function resolveModelForRoleBase(role, registry = defaultModelRegistry(), env = 
     }
   }
 
-  const preferredModel = roleDefault?.preferredModel;
+  const preferredModel = getNativeModelId(roleDefault?.preferredModel, registry);
   if (preferredModel) {
     const model = getModelConfig(preferredModel, registry);
     if (model) {
@@ -191,7 +194,7 @@ function resolveModelForTaskBase(taskType, registry, env = process.env) {
   }
 
   const envOverride = env?.[`AIOS_MODEL_${String(taskType).toUpperCase().replace(/-/g, '_')}`];
-  const modelId = (envOverride ? normalizeId(envOverride) : '') || rule.primary;
+  const modelId = (envOverride ? normalizeId(envOverride) : '') || getNativeModelId(rule.primary, registry);
 
   const model = getModelConfig(modelId, registry);
   if (model) {
@@ -228,10 +231,11 @@ function resolveFallback(taskType, registry) {
   }
 
   for (const fbId of rule.fallback) {
-    const model = getModelConfig(fbId, registry);
+    const modelId = getNativeModelId(fbId, registry);
+    const model = getModelConfig(modelId, registry);
     if (model) {
       return {
-        modelId: fbId,
+        modelId,
         model,
         rule,
         reason: `fallback for taskType="${taskType}" (primary unavailable)`,
@@ -253,7 +257,7 @@ export function getFallbackChain(taskType, registry) {
     return [];
   }
   return rule.fallback
-    .map((id) => getModelConfig(id, registry))
+    .map((id) => getModelConfig(getNativeModelId(id, registry), registry))
     .filter(Boolean)
     .sort((a, b) => COST_ORDER.indexOf(a.cost) - COST_ORDER.indexOf(b.cost));
 }

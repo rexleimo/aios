@@ -1,23 +1,22 @@
 // 中文注释：一键接入命令——默认「就地接入」(magpie 式)：把网关地址外科改写进客户端真实配置（只动网关需要的 key，
 // 备份原值，disconnect 还原），普通 claude/codex/pi 命令即走网关，无需特殊启动命令/env。--isolated 退回旧隔离工件模式。
-// 两种模式都把 codex 的 openai-response 默认模型写进单一配置源 registry.clientDefaults（disconnect 还原）。密钥不落明文。
+// Canonical selections travel on the wire. Retain recovery for old Codex registry mutations.
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { createHash } from 'node:crypto';
 
 import { atomicTempPath, writeFileAtomic } from '../../../environment/fs/atomic-write.mjs';
-import { claudeSettings, codexConfig, connectLaunchCommand, piModels } from './artifacts.mjs';
+import { claudeSettings, codexConfig, connectLaunchCommand, piModels, shellQuote } from './artifacts.mjs';
 import { connectInplace, disconnectInplace, inplaceBackupPath } from './inplace.mjs';
 import { withRegistryWriteLock } from '../entry/registry.mjs';
-import { resolveGatewayRoute } from '../gateway/router.mjs';
 import { GATEWAY_DEFAULT_PORT } from '../lifecycle/daemon.mjs';
-import { getProviderForModel, listGatewayModels } from '../routing/providers.mjs';
+import { artifactModelForClient, connectTargetReadiness, persistedConnectTarget, requestModelForTarget } from './targets.mjs';
+import { assertIsolatedOwned, contentHash, fileHash, isolatedStale, isolatedArtifactPath, legacyArtifactHash } from './isolated.mjs';
+import { parseConnectState } from './config/journals.mjs';
 
 const STATE_FILE = 'connect-state.json';
 const DEFAULT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
-const CLIENT_PROTOCOLS = Object.freeze({ claude: 'claude', codex: 'openai-response', pi: 'claude' });
-// Keep aligned with gateway/proxy.mjs translators; Pi uses anthropic-messages too.
-const GATEWAY_TARGET_PROTOCOLS = Object.freeze({ claude: ['claude', 'openai-chat', 'gemini'], 'openai-response': ['openai-response'] });
 const CLIENT_MODEL_ALIAS = 'gateway-default';
 
 function readRegistryDocument(registryFile, baseRegistry) {
@@ -41,23 +40,49 @@ async function writeRegistryDocument(registryFile, document, backupFile) {
   }
 }
 
-function buildArtifact(client, gatewayUrl, options) {
-  if (client === 'claude') return claudeSettings(gatewayUrl);
-  if (client === 'codex') return codexConfig(gatewayUrl, options.codexModel);
-  if (client === 'pi') return piModels(gatewayUrl, options.piModel);
+function buildArtifact(client, gatewayUrl, options = {}) {
+  const ref = options.targets?.[client];
+  const model = ref ? requestModelForTarget(persistedConnectTarget(ref, options.targetRefVersion)) : 'aios-auto';
+  const catalog = options.catalogs?.[client] || [];
+  if (client === 'claude') return claudeSettings(gatewayUrl, model, catalog);
+  if (client === 'codex') return codexConfig(gatewayUrl, model);
+  if (client === 'pi') return piModels(gatewayUrl, model, catalog);
   return null;
+}
+
+function launchOptions(state) {
+  return { piModel: artifactModelForClient(state, 'pi') };
+}
+
+function nextConnectState(stateDir, selected, values) {
+  const prior = readConnectState(stateDir);
+  if (prior && prior.mode !== values.mode && prior.clients?.length) {
+    throw Object.assign(new Error('disconnect the existing connection mode before switching modes'), { code: 'CONNECT_MODE_CONFLICT' });
+  }
+  return { ...prior, ...values, targetRefVersion: 1,
+    clients: [...new Set([...(prior?.clients || []), ...selected])],
+    targets: { ...Object.fromEntries(Object.entries(prior?.targets || {}).map(([client, ref]) => [client, persistedConnectTarget(ref, prior.targetRefVersion)])), ...values.targets },
+    catalogs: { ...prior?.catalogs, ...values.catalogs },
+    artifactModels: { ...Object.fromEntries((prior?.clients || []).map((client) => [client, artifactModelForClient(prior, client)])),
+      ...Object.fromEntries(selected.map((client) => [client, requestModelForTarget(values.targets[client])])) },
+    // Freeze reconstructed legacy ownership before the global reference-version upgrade.
+    artifactHashes: { ...(prior?.mode === 'isolated' && prior.targetRefVersion === undefined
+      ? Object.fromEntries((prior.clients || []).map((client) => [client, legacyArtifactHash(client, prior)])) : {}), ...prior?.artifactHashes },
+    gatewayUrls: { ...prior?.gatewayUrls, ...Object.fromEntries(selected.map((client) => [client, values.gatewayUrl])) },
+    resolvedModels: { ...prior?.resolvedModels, ...values.resolvedModels }, at: new Date().toISOString() };
 }
 
 function readConnectState(stateDir) {
   const statePath = path.join(stateDir, STATE_FILE);
-  if (!fs.existsSync(statePath)) return null;
-  try { return JSON.parse(fs.readFileSync(statePath, 'utf8')); } catch { return null; }
+  try {
+    return parseConnectState(fs.readFileSync(statePath, 'utf8'));
+  } catch (error) { if (error?.code === 'ENOENT') return null; throw error; }
 }
 
-const codexDefaultApplied = (state) => state?.codexDefaultApplied ?? state?.clients?.includes('codex') ?? false;
+const codexDefaultApplied = (state) => state?.codexDefaultApplied ?? Boolean(state?.appliedCodexModel || state?.codexModel);
 const withConnectRegistryLock = (file, action) => file ? withRegistryWriteLock(file, action) : action();
 
-// codex 说 openai-response，必须给它一个同协议默认模型，否则网关 fail-closed。备份原值供 disconnect 还原；幂等沿用已有备份。
+// Codex sends Responses, but its explicit gateway default may use any translatable protocol. Preserve restoration ownership across reconnects.
 async function applyCodexDefault({ registryFile, baseRegistry, stateDir, codexModel, selected, nextState }) {
   const state = readConnectState(stateDir);
   const applied = codexDefaultApplied(state);
@@ -68,14 +93,15 @@ async function applyCodexDefault({ registryFile, baseRegistry, stateDir, codexMo
       ...(Object.hasOwn(state, 'codexDefaultBefore') ? { codexDefaultBefore: state.codexDefaultBefore } : {}) } : {}),
   };
   const document = readRegistryDocument(registryFile, baseRegistry);
-  if (state?.codexDefaultStatus === 'pending' && document.clientDefaults?.codex !== prior?.codex
-    && document.clientDefaults?.codex !== state.appliedCodexModel
-    && !(Object.hasOwn(state, 'codexDefaultBefore') && (document.clientDefaults?.codex ?? null) === state.codexDefaultBefore)) {
+  if (applied && document.clientDefaults?.codex !== prior?.codex
+    && document.clientDefaults?.codex !== (state.appliedCodexModel || state.codexModel)
+    && !(state?.codexDefaultStatus === 'pending' && Object.hasOwn(state, 'codexDefaultBefore') && (document.clientDefaults?.codex ?? null) === state.codexDefaultBefore)) {
     throw Object.assign(new Error('registry changed during pending connect; disk state and recovery metadata preserved'), { code: 'REGISTRY_STALE' });
   }
   const priorClientDefaults = applied ? prior : (document.clientDefaults ?? null);
-  const next = { ...document, clientDefaults: { ...(document.clientDefaults || {}), codex: codexModel } };
-  const defaults = { priorClientDefaults, codexDefaultApplied: true, appliedCodexModel: codexModel, codexDefaultBefore: document.clientDefaults?.codex ?? null };
+  const assignment = document.targetRefVersion === 1 ? `model:${encodeURIComponent(codexModel)}` : codexModel;
+  const next = { ...document, clientDefaults: { ...(document.clientDefaults || {}), codex: assignment } };
+  const defaults = { priorClientDefaults, codexDefaultApplied: true, appliedCodexModel: assignment, codexDefaultBefore: document.clientDefaults?.codex ?? null };
   // Persist ownership before the registry mutation; the final state write may fail.
   writeConnectState(stateDir, { ...nextState, ...defaults, codexDefaultStatus: 'pending' });
   await writeRegistryDocument(registryFile, next, applied ? null : path.join(stateDir, 'registry-backup.json'));
@@ -85,11 +111,11 @@ async function applyCodexDefault({ registryFile, baseRegistry, stateDir, codexMo
 async function restoreCodexDefault(registryFile, priorClientDefaults, state) {
   if (!registryFile || !fs.existsSync(registryFile)) return;
   const document = readRegistryDocument(registryFile, null);
-  if (state?.codexDefaultStatus === 'pending') {
+  {
     const current = document.clientDefaults?.codex;
     if (current === priorClientDefaults?.codex) return;
-    if (current !== state.appliedCodexModel
-      && !(Object.hasOwn(state, 'codexDefaultBefore') && (current ?? null) === state.codexDefaultBefore)) {
+    if (current !== (state.appliedCodexModel || state.codexModel)
+      && !(state?.codexDefaultStatus === 'pending' && Object.hasOwn(state, 'codexDefaultBefore') && (current ?? null) === state.codexDefaultBefore)) {
       throw Object.assign(new Error('registry changed during pending connect; disk state and recovery metadata preserved'), { code: 'REGISTRY_STALE' });
     }
   }
@@ -113,63 +139,25 @@ function validateConnect(gatewayUrl, clients, io) {
   return selected;
 }
 
-function connectReadiness({ registryFile, baseRegistry, selected, codexModel, piModel, env = process.env }) {
-  const document = readRegistryDocument(registryFile, baseRegistry);
-  const routes = {};
-  const issues = [];
-  const warnings = [];
-  try {
-    const eligible = listGatewayModels(document, { env });
-    for (const client of selected) {
-      const protocol = CLIENT_PROTOCOLS[client];
-      const compatible = eligible.filter((id) => GATEWAY_TARGET_PROTOCOLS[protocol].includes(getProviderForModel(id, document).protocol));
-      const requested = String((client === 'codex' ? codexModel : client === 'pi' ? piModel : '') || '').trim();
-      const explicit = requested === CLIENT_MODEL_ALIAS ? '' : requested;
-      let modelId = explicit;
-      let projected = document;
-      if (client === 'codex') {
-        const configured = String(document.clientDefaults?.codex || '').trim();
-        const active = String(document.activeModel || '').trim();
-        modelId ||= configured || (compatible.includes(active) ? active : '')
-          || (compatible.length === 1 ? compatible[0] : '');
-        if (!modelId) {
-          issues.push(`${client}: no unambiguous eligible ${protocol} route`);
-          continue;
-        }
-        if (registryFile) projected = { ...document, clientDefaults: { ...document.clientDefaults, codex: modelId } };
-      }
-      if (modelId && !compatible.includes(modelId)) {
-        issues.push(`${client}: model "${modelId}" is not an eligible ${protocol} route`);
-        continue;
-      }
-      // Only Codex sends x-gateway-client; Claude/Pi use the anonymous runtime default.
-      let route;
-      try {
-        route = resolveGatewayRoute({ clientId: client === 'codex' ? client : '', registry: projected, env, clientProtocol: protocol });
-      } catch {
-        issues.push(`${client}: no eligible runtime default route; configure activeModel${client === 'codex' ? ' or clientDefaults.codex' : ''}`);
-        continue;
-      }
-      if (!compatible.includes(route.modelId)) {
-        issues.push(`${client}: runtime model "${route.modelId}" is not an eligible ${protocol} route`);
-      } else if (modelId && modelId !== route.modelId) {
-        issues.push(`${client}: requested model "${modelId}" differs from runtime default "${route.modelId}"; configure the gateway route explicitly`);
-      } else {
-        routes[client] = route.modelId;
-        if (route.targetProtocol === 'gemini') warnings.push(`${client}: Gemini translation supports non-streaming requests only`);
-      }
+function connectReadiness(options) {
+  const document = readRegistryDocument(options.registryFile, options.baseRegistry);
+  if (options.expectedRevision !== undefined) {
+    if (typeof options.expectedRevision !== 'string' || !/^[a-f0-9]{64}$/u.test(options.expectedRevision)) {
+      throw Object.assign(new Error('expectedRevision must be a SHA-256 revision'), { code: 'INVALID_EXPECTED_REVISION' });
     }
-  } catch {
-    issues.push('invalid provider/model configuration');
+    let text;
+    if (options.registryFile) try { text = fs.readFileSync(options.registryFile, 'utf8'); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
+    const revision = text === undefined ? options.baseRegistryRevision : createHash('sha256').update(text).digest('hex');
+    if (revision !== options.expectedRevision) throw Object.assign(new Error('the registry changed; refresh before connecting'), { code: 'REGISTRY_STALE' });
   }
-  return { ready: issues.length === 0, routes, issues, warnings };
+  return connectTargetReadiness({ ...options, document });
 }
 
 function previewOrReject(readiness, { dryRun, io }) {
   if (!readiness.ready) {
     const message = `Gateway not ready: ${readiness.issues.join('; ')}. Register an explicit compatible provider/model and configure credentials (or authMode: none). No client configs were changed.`;
     (dryRun ? io.log : io.error).call(io, `connect: ${message}`);
-    return { exitCode: 1, ok: false, error: 'gateway_not_ready', message, dryRun: Boolean(dryRun), ...readiness };
+    return { exitCode: 1, ok: false, error: readiness.error || 'gateway_not_ready', message, dryRun: Boolean(dryRun), ...readiness };
   }
   for (const warning of readiness.warnings) io.log(`connect: ${warning}.`);
   if (dryRun) {
@@ -181,13 +169,23 @@ function previewOrReject(readiness, { dryRun, io }) {
 
 function writeConnectState(stateDir, state) {
   const target = path.join(stateDir, STATE_FILE);
+  writeOwnedText(target, `${JSON.stringify(state, null, 2)}\n`);
+}
+
+function writeOwnedText(target, text) {
   const temporary = atomicTempPath(target);
   try {
-    fs.writeFileSync(temporary, `${JSON.stringify(state, null, 2)}\n`, { flag: 'wx', mode: 0o600, flush: true });
+    fs.writeFileSync(temporary, text, { flag: 'wx', mode: 0o600, flush: true });
     fs.renameSync(temporary, target);
   } finally {
     try { fs.rmSync(temporary); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
   }
+}
+
+function writeIsolatedSnippet(stateDir, state) {
+  const text = ['# AIOS gateway connect (isolated) - source this file; reversible via `aios model-router disconnect`.',
+    ...(state.clients || []).map((client) => `alias ${client}-gw=${shellQuote(connectLaunchCommand(client, stateDir, launchOptions(state)))}`)].join('\n');
+  writeOwnedText(path.join(stateDir, 'connect.sh'), `${text}\n`);
 }
 
 // 就地接入（默认）：外科改写客户端真实配置 + 备份原值。普通命令即走网关。
@@ -207,9 +205,12 @@ async function connectInplaceUnderLock(options) {
   const preview = previewOrReject(readiness, { dryRun: options.dryRun, io });
   if (preview) return preview;
   const codexModel = readiness.routes.codex || '';
-  const result = connectInplace({ home, gatewayUrl, stateDir, modelId: piModel, clients: selected });
-  const nextState = { mode: 'inplace', gatewayUrl, clients: selected, registryFile: registryFile || null, codexModel, piModel, at: new Date().toISOString() };
-  const defaults = await applyCodexDefault({ registryFile, baseRegistry, stateDir, codexModel, selected, nextState });
+  const nextState = nextConnectState(stateDir, selected, { mode: 'inplace', gatewayUrl, registryFile: registryFile || null,
+    resolvedModels: readiness.routes, targets: readiness.targets, catalogs: readiness.catalogs });
+  const result = connectInplace({ home, gatewayUrl, stateDir, targets: readiness.targets, catalogs: readiness.catalogs, clients: selected });
+  // Deprecated --codex-model retains its recoverable registry write. Canonical targets need no registry mutation.
+  const defaults = await applyCodexDefault({ registryFile, baseRegistry, stateDir, codexModel,
+    selected: options.target === undefined && requestedCodexModel ? selected : [], nextState });
   writeConnectState(stateDir, { ...nextState, ...defaults });
   io.log(`AIOS gateway connect (in-place) → ${gatewayUrl}`);
   for (const item of result.results) io.log(`  ${item.client}: ${item.file} (${item.changedKeys.join(', ')})`);
@@ -235,31 +236,37 @@ async function connectIsolatedUnderLock(options) {
   const preview = previewOrReject(readiness, { dryRun: options.dryRun, io });
   if (preview) return preview;
   const codexModel = readiness.routes.codex || '';
-  const buildOptions = { codexModel, piModel };
-  const priorState = readConnectState(stateDir);
-  const artifactClients = [...new Set([...(priorState?.mode !== 'inplace' ? priorState?.clients || [] : []), ...selected])];
+  const nextState = nextConnectState(stateDir, selected, { mode: 'isolated', gatewayUrl, registryFile: registryFile || null,
+    resolvedModels: readiness.routes, targets: readiness.targets, catalogs: readiness.catalogs });
+  const prior = readConnectState(stateDir);
+  const plans = selected.map((client) => {
+    const artifact = buildArtifact(client, gatewayUrl, nextState);
+    const file = path.join(stateDir, artifact.relPath);
+    assertIsolatedOwned(file, client, prior);
+    return { client, artifact, file, before: fileHash(file), after: contentHash(artifact.content) };
+  });
   fs.mkdirSync(stateDir, { recursive: true });
-  const nextState = { mode: 'isolated', gatewayUrl, clients: artifactClients, registryFile: registryFile || null, codexModel, piModel, at: new Date().toISOString() };
-  const defaults = await applyCodexDefault({ registryFile, baseRegistry, stateDir, codexModel, selected, nextState });
-
+  const pendingArtifacts = { ...prior?.pendingArtifacts, ...Object.fromEntries(plans.map((plan) => [plan.client, { before: plan.before, after: plan.after }])) };
+  const pendingState = { ...nextState, artifactStatus: 'pending', pendingArtifacts };
+  const defaults = await applyCodexDefault({ registryFile, baseRegistry, stateDir, codexModel,
+    selected: options.target === undefined && requestedCodexModel ? selected : [], nextState: pendingState });
+  writeConnectState(stateDir, { ...pendingState, ...defaults });
   const artifacts = [];
-  for (const client of selected) {
-    const artifact = buildArtifact(client, gatewayUrl, buildOptions);
-    const target = path.join(stateDir, artifact.relPath);
-    fs.mkdirSync(path.dirname(target), { recursive: true });
-    fs.writeFileSync(target, artifact.content);
-    artifacts.push({ client, file: target, launch: connectLaunchCommand(client, stateDir, buildOptions) });
+  for (const { client, artifact, file, before } of plans) {
+    if (fileHash(file) !== before) throw isolatedStale(file);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    await writeFileAtomic(file, artifact.content, { mode: 0o600 });
+    artifacts.push({ client, file, launch: connectLaunchCommand(client, stateDir, launchOptions(nextState)) });
   }
-  writeConnectState(stateDir, { ...nextState, ...defaults });
-
-  const snippet = ['# AIOS gateway connect (isolated) — source this file; reversible via `aios model-router disconnect`.',
-    ...artifacts.map((a) => `alias ${a.client}-gw='${a.launch}'`)].join('\n');
-  fs.writeFileSync(path.join(stateDir, 'connect.sh'), `${snippet}\n`);
+  writeIsolatedSnippet(stateDir, nextState);
+  const remainingPending = Object.fromEntries(Object.entries(pendingArtifacts).filter(([client]) => !selected.includes(client)));
+  writeConnectState(stateDir, { ...nextState, ...defaults, pendingArtifacts: remainingPending, artifactStatus: Object.keys(remainingPending).length ? 'pending' : 'applied',
+    artifactHashes: { ...nextState.artifactHashes, ...Object.fromEntries(plans.map((plan) => [plan.client, plan.after])) } });
 
   io.log(`AIOS gateway connect (isolated) → ${gatewayUrl}`);
   io.log(`State dir: ${stateDir}`);
   for (const a of artifacts) io.log(`  ${a.client}: ${a.launch}`);
-  io.log(`\nSource the aliases:  source ${path.join(stateDir, 'connect.sh')}`);
+  io.log(`\nSource the aliases:  source ${shellQuote(path.join(stateDir, 'connect.sh'))}`);
   io.log(`Then start the gateway:  aios model-router gateway --port ${GATEWAY_DEFAULT_PORT}`);
   return { exitCode: 0, ok: true, stateDir, mode: 'isolated', artifacts, ...readiness };
 }
@@ -279,49 +286,66 @@ function pruneEmptyDirectories(directory, stateDir) {
   }
 }
 
-// 只清理已接入客户端的已知工件；目录只能删空目录，保留 pid、日志与未知用户文件。
-function cleanupIsolatedArtifacts(stateDir, state) {
-  if (!state) return;
-  for (const client of state.clients || []) {
-    const artifact = buildArtifact(client, state.gatewayUrl, state);
-    if (!artifact) continue;
-    const file = path.join(stateDir, artifact.relPath);
-    removeOwnedFile(file);
-    pruneEmptyDirectories(path.dirname(file), stateDir);
+function remainingState(state, selected, restoredCodex) {
+  const next = { ...state, clients: (state?.clients || []).filter((client) => !selected.includes(client)) };
+  for (const key of ['targets', 'catalogs', 'resolvedModels', 'gatewayUrls', 'artifactModels', 'artifactHashes', 'pendingArtifacts']) {
+    if (state?.[key]) next[key] = Object.fromEntries(Object.entries(state[key]).filter(([client]) => !selected.includes(client)));
   }
-  removeOwnedFile(path.join(stateDir, 'connect.sh'));
-  if (codexDefaultApplied(state)) removeOwnedFile(path.join(stateDir, 'registry-backup.json'));
-  removeOwnedFile(path.join(stateDir, STATE_FILE));
-  pruneEmptyDirectories(stateDir, stateDir);
+  if (restoredCodex) {
+    next.codexDefaultApplied = false;
+    for (const key of ['codexDefaultStatus', 'appliedCodexModel', 'codexDefaultBefore', 'priorClientDefaults', 'codexModel']) delete next[key];
+  }
+  return next;
 }
 
-// 还原：自动识别就地/隔离模式，两种模式均保留网关生命周期与未知状态。
+// Acquire the registry lock before consuming client backups, including on retries.
 export async function runDisconnect(options = {}) {
   const targetRegistry = options.registryFile || readConnectState(options.stateDir)?.registryFile;
-  // Acquire before consuming client backups, so a timeout leaves the whole operation retryable.
   return withConnectRegistryLock(targetRegistry, () => disconnectUnderLock(options));
 }
 
 async function disconnectUnderLock(options) {
   const { stateDir, registryFile, clients, io = console } = options;
-  const statePath = path.join(stateDir, STATE_FILE);
   const state = readConnectState(stateDir);
+  const selected = clients || DEFAULT_CLIENTS;
+  const restoreCodex = codexDefaultApplied(state) && selected.includes('codex');
   const targetRegistry = registryFile || state?.registryFile;
   const inplace = state?.mode === 'inplace' || fs.existsSync(inplaceBackupPath(stateDir));
   if (inplace) {
+    // Restore first: a failed/stale registry write must not consume its recovery journal.
+    if (restoreCodex) await restoreCodexDefault(targetRegistry, state.priorClientDefaults, state);
     const result = disconnectInplace({ stateDir, clients });
-    const fullyDone = !fs.existsSync(inplaceBackupPath(stateDir));
-    if (fullyDone) {
-      if (codexDefaultApplied(state) && targetRegistry) await restoreCodexDefault(targetRegistry, state.priorClientDefaults, state);
-      if (codexDefaultApplied(state)) removeOwnedFile(path.join(stateDir, 'registry-backup.json'));
-      try { fs.rmSync(statePath); } catch (error) { if (error?.code !== 'ENOENT') throw error; }
-    }
+    const next = remainingState(state, selected, restoreCodex);
+    if (result.remainingClients) next.clients = result.remainingClients;
+    if (restoreCodex) removeOwnedFile(path.join(stateDir, 'registry-backup.json'));
+    if (next.clients.length) writeConnectState(stateDir, next);
+    else removeOwnedFile(path.join(stateDir, STATE_FILE));
     const names = [...new Set((result.restored || []).map((item) => item.client))].join(', ');
-    io.log(`AIOS gateway disconnect (in-place): ${result.disconnected ? `restored ${names}` : 'nothing connected'}${fullyDone && state ? ' and prior clientDefaults' : ''}.`);
+    io.log(`AIOS gateway disconnect (in-place): ${result.disconnected ? `restored ${names}` : 'nothing connected'}.`);
     return { exitCode: 0, mode: 'inplace', ...result };
   }
-  if (codexDefaultApplied(state) && targetRegistry) await restoreCodexDefault(targetRegistry, state.priorClientDefaults, state);
-  cleanupIsolatedArtifacts(stateDir, state);
-  io.log(`AIOS gateway disconnect: ${state ? 'removed owned connect artifacts' : 'nothing connected'}${codexDefaultApplied(state) ? ' and restored prior clientDefaults' : ''}.`);
-  return { exitCode: 0, mode: 'isolated' };
+  if (!state) return { exitCode: 0, mode: 'isolated', disconnected: false, remainingClients: [] };
+  const plans = (state.clients || []).filter((client) => selected.includes(client)).map((client) => {
+    const file = isolatedArtifactPath(stateDir, client);
+    assertIsolatedOwned(file, client, state, { allowMissing: true });
+    return { file, before: fileHash(file) };
+  });
+  if (restoreCodex) await restoreCodexDefault(targetRegistry, state.priorClientDefaults, state);
+  for (const { file, before } of plans) {
+    if (fileHash(file) !== before) throw isolatedStale(file);
+    removeOwnedFile(file);
+    pruneEmptyDirectories(path.dirname(file), stateDir);
+  }
+  const next = remainingState(state, selected, restoreCodex);
+  if (restoreCodex) removeOwnedFile(path.join(stateDir, 'registry-backup.json'));
+  if (next.clients.length) {
+    writeIsolatedSnippet(stateDir, next);
+    writeConnectState(stateDir, next);
+  } else {
+    removeOwnedFile(path.join(stateDir, 'connect.sh'));
+    removeOwnedFile(path.join(stateDir, STATE_FILE));
+    pruneEmptyDirectories(stateDir, stateDir);
+  }
+  io.log(`AIOS gateway disconnect: removed owned connect artifacts${restoreCodex ? ' and restored prior Codex default' : ''}.`);
+  return { exitCode: 0, mode: 'isolated', disconnected: plans.length > 0, remainingClients: next.clients };
 }

@@ -6,11 +6,12 @@ import {
   defaultRelayProvider,
   getProviderForModel,
   loadProviders,
+  readyProviderAccounts,
   resolveProviderApiKey,
   resolveProviderEndpoint,
   validateProvider,
-} from '../../../../lib/tooling/model-router/routing/providers.mjs';
-import { MODEL_PROTOCOLS, RELAY_BASE_URL } from '../../../../lib/tooling/model-router/routing/protocols.mjs';
+} from '../../../../lib/tooling/model-router/providers/registry.mjs';
+import { MODEL_PROTOCOLS, RELAY_BASE_URL } from '../../../../lib/tooling/model-router/providers/protocols.mjs';
 
 const registry = {
   models: {
@@ -43,13 +44,17 @@ test('validateProvider accepts a well-formed provider and normalizes it', () => 
   assert.deepEqual(result.provider.models, ['claude-opus-5']);
 });
 
-test('validateProvider rejects plaintext keys, bad env refs, and bad baseUrl (fail-closed)', () => {
-  assert.equal(validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 'sk-secret' }).ok, false);
+test('validateProvider accepts inline keys and rejects bad env refs, control chars, and bad baseUrl (fail-closed)', () => {
   assert.equal(validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKeyEnv: 'MY_KEY' }).ok, false);
+  assert.equal(validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 'bad\nkey' }).ok, false);
+  assert.equal(validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 42 }).ok, false);
   assert.equal(validateProvider({ id: 'p', baseUrl: 'ftp://x.com' }).ok, false);
   assert.equal(validateProvider({ id: '', baseUrl: 'https://x.com' }).ok, false);
-  const plaintext = validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 'sk-secret' });
-  assert.ok(plaintext.errors.some((e) => /plaintext/i.test(e)));
+  const inline = validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 'sk-secret' });
+  assert.equal(inline.ok, true);
+  assert.equal(inline.provider.apiKey, 'sk-secret');
+  const bad = validateProvider({ id: 'p', baseUrl: 'https://x.com', apiKey: 'bad\nkey' });
+  assert.ok(bad.errors.some((e) => /credential/i.test(e)));
 });
 
 test('loadProviders uses only configured providers and throws on invalid config', () => {
@@ -60,7 +65,7 @@ test('loadProviders uses only configured providers and throws on invalid config'
   assert.equal(providers.relay, undefined, 'an unconfigured relay is never injected');
   assert.deepEqual(loadProviders({}), {});
   assert.throws(
-    () => loadProviders({ providers: { bad: { baseUrl: 'https://x.com', apiKey: 'sk-secret' } } }),
+    () => loadProviders({ providers: { bad: { baseUrl: 'https://x.com', apiKeyEnv: 'PLAINTEXT' } } }),
     ProviderConfigError,
   );
 });
@@ -72,11 +77,31 @@ test('resolveProviderEndpoint uses the per-provider base, not a hardcoded relay'
   assert.equal(resolveProviderEndpoint(defaultRelayProvider(), 'claude'), `${RELAY_BASE_URL}/claude/v1/messages`);
 });
 
-test('resolveProviderApiKey resolves env:VAR without exposing it elsewhere', () => {
+test('resolveProviderApiKey resolves inline keys and env:VAR without exposing them elsewhere', () => {
   const provider = { apiKeyEnv: 'env:MY_KEY' };
   assert.equal(resolveProviderApiKey(provider, { MY_KEY: 'secret-value' }), 'secret-value');
   assert.equal(resolveProviderApiKey(provider, {}), '');
   assert.equal(resolveProviderApiKey({ apiKeyEnv: 'plaintext' }, { MY_KEY: 'x' }), '');
+  assert.equal(resolveProviderApiKey({ apiKey: ' inline-secret ' }, {}), 'inline-secret');
+  assert.equal(resolveProviderApiKey({ apiKey: 'inline-secret' }, { UNUSED: 'x' }), 'inline-secret');
+});
+
+test('inline keys follow account/provider precedence and count toward readiness', () => {
+  const provider = loadProviders({ providers: { selected: {
+    baseUrl: 'https://selected.invalid', apiKey: 'provider-inline', apiKeyEnv: 'env:PROVIDER_KEY', protocols: ['claude'],
+    accounts: [
+      { id: 'inline', apiKey: 'account-inline' },
+      { id: 'inherited' },
+      { id: 'env', apiKeyEnv: 'env:ACCOUNT_KEY' },
+    ],
+  } } }).selected;
+  const env = { PROVIDER_KEY: 'provider-env', ACCOUNT_KEY: 'account-env' };
+  assert.equal(resolveProviderApiKey(provider, env), 'account-inline');
+  assert.equal(resolveProviderApiKey(provider, env, 'inherited'), 'provider-inline');
+  assert.equal(resolveProviderApiKey(provider, env, 'env'), 'account-env');
+  assert.equal(resolveProviderApiKey(provider, {}, 'env'), '', 'an unset account env ref never falls back to a provider inline key');
+  assert.deepEqual(readyProviderAccounts(provider, env), ['inline', 'inherited', 'env']);
+  assert.equal(resolveProviderApiKey({ ...provider, authMode: 'none' }, env), '');
 });
 
 test('getProviderForModel requires an explicit provider binding and returns the upstream model', () => {
@@ -170,7 +195,7 @@ test('provider validation rejects ambiguous accounts, protocol shapes and normal
   const base = { id: 'p', baseUrl: 'https://selected.invalid' };
   for (const patch of [
     { protocols: 'claude' }, { protocols: ['claude', 'bogus'] }, { models: 'model' }, { accounts: {} },
-    { accounts: [null] }, { accounts: [{ id: 'a', apiKey: 'plaintext-fixture' }] },
+    { accounts: [null] }, { accounts: [{ id: 'a', apiKey: 'bad\nkey' }] },
     { accounts: [{ id: 'a' }, { id: ' A ' }] },
   ]) assert.equal(validateProvider({ ...base, ...patch }).ok, false);
   assert.throws(() => loadProviders({ providers: {

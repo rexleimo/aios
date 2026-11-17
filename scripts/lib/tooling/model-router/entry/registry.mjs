@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { writeFileAtomic } from '../../../environment/fs/atomic-write.mjs';
 import nativeModelTemplates from '../../specs/registry/native-model-templates.json' with { type: 'json' };
 import { clonePlain, normalizeId } from './shared.mjs';
+import { migrateTargetRefs, parseTargetRef } from '../routing/targets.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,9 +51,20 @@ export async function loadRegistry(options = {}) {
   return (await loadRegistrySnapshot(options)).document;
 }
 
-// 纯函数：读取当前 activeModel 标识，隐藏 registry 字段缺失处理。
+// Native CLI dispatch cannot execute gateway groups/Auto. Never reinterpret a
+// concrete ID at lookup time: only assignment boundaries decode references.
+export function getNativeModelId(value, registry) {
+  if (registry?.targetRefVersion === undefined) return normalizeId(value);
+  const target = parseTargetRef(value, { targetRefVersion: registry?.targetRefVersion });
+  if (!target) return '';
+  if (target.kind !== 'model') {
+    throw Object.assign(new Error(`Native model routing does not support ${target.kind} targets; use the gateway or select a concrete model`), { code: 'UNSUPPORTED_NATIVE_TARGET' });
+  }
+  return normalizeId(target.id);
+}
+
 export function getActiveModel(registry) {
-  return normalizeId(registry?.activeModel) || '';
+  return getNativeModelId(registry?.activeModel, registry);
 }
 
 // Independently packaged CLI/UI share this protocol, not an import across release boundaries:
@@ -85,14 +97,14 @@ export async function withRegistryWriteLock(file, operation) {
 
 // expectedHash protects snapshots held across discovery; compare only under the disk lock.
 export async function saveRegistryDocument(document, { backupDir = '', rootDir = ROOT_DIR, expectedHash } = {}) {
-  const text = `${JSON.stringify(document, null, 2)}\n`;
-  parseRegistry(text);
   const file = registryFilePath({ rootDir });
   return withRegistryWriteLock(file, async () => {
     const current = await loadRegistrySnapshot({ rootDir });
     if (expectedHash !== undefined && current.hash !== expectedHash) {
       throw Object.assign(new Error('the registry changed since it was read; reload before saving'), { code: 'REGISTRY_STALE' });
     }
+    const text = `${JSON.stringify(migrateTargetRefs(document), null, 2)}\n`;
+    parseRegistry(text);
     if (!current.seeded && backupDir) {
       await fs.mkdir(backupDir, { recursive: true });
       const backup = `model-registry-${new Date().toISOString().replace(/[:.]/g, '-')}-${randomUUID()}.json`;

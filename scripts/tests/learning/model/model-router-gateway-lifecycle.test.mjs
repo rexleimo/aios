@@ -1,6 +1,7 @@
 // 网关后台托管生命周期（#44）：start/status/stop 的客观事实判定。
 // 单元用注入 impl（零进程）；末尾一条真实集成（起真网关→查状态→停→端口关闭），零扣费、必清理。
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import fs from 'node:fs';
 import net from 'node:net';
@@ -8,6 +9,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
+import { claudeSettings, piModels } from '../../../lib/tooling/model-router/connect/artifacts.mjs';
 import {
   GATEWAY_DEFAULT_PORT,
   describeConnect,
@@ -208,22 +210,79 @@ test('gatewayStatus：running/managed/stale 三态如实，不拿残留 pidfile 
   assert.equal(empty.pid, null);
 });
 
-test('describeConnect：从 connect-state 给出每客户端接入事实与可复制命令（单一源）', () => {
+test('describeConnect reads current artifacts independently of the recovery journal', () => {
   const stateDir = '/state';
-  const fsImpl = memFs({
-    [path.join(stateDir, 'connect-state.json')]: JSON.stringify({ gatewayUrl: 'http://127.0.0.1:8686', clients: ['claude', 'pi'], piModel: 'gateway-default' }),
-    [path.join(stateDir, 'claude-settings.json')]: '{}',
-    [path.join(stateDir, 'pi-home', '.pi', 'agent', 'models.json')]: '{}',
+  const gatewayUrl = 'http://127.0.0.1:8686';
+  const stateFile = path.join(stateDir, 'connect-state.json');
+  const claudeArtifact = claudeSettings(gatewayUrl);
+  const piArtifact = piModels(gatewayUrl, 'aios/model/Mixed%2FID%252F');
+  const claudeFile = path.join(stateDir, claudeArtifact.relPath);
+  const piFile = path.join(stateDir, piArtifact.relPath);
+  const digest = (text) => createHash('sha256').update(text).digest('hex');
+  const stateText = JSON.stringify({
+    mode: 'isolated', targetRefVersion: 1, gatewayUrl, clients: ['claude', 'pi'],
+    targets: { claude: 'auto', pi: 'model:Mixed%2FID%252F' },
+    artifactHashes: { claude: digest(claudeArtifact.content), pi: digest(piArtifact.content) },
   });
+  const fsImpl = memFs({ [stateFile]: stateText });
+  const journalOnly = describeConnect(stateDir, fsImpl);
+  assert.equal(journalOnly.connected, false, 'a journal does not establish a current connection');
+  for (const client of journalOnly.clients) {
+    assert.equal(client.connected, false);
+    assert.equal(client.readback.status, 'missing');
+    assert.equal(client.recovery.status, client.client === 'codex' ? 'none' : 'available');
+  }
+  fsImpl.writeFileSync(claudeFile, '{}');
+  fsImpl.writeFileSync(piFile, '{}');
+  assert.equal(describeConnect(stateDir, fsImpl).connected, false, 'artifact existence alone is not a connection');
+  fsImpl.writeFileSync(claudeFile, claudeArtifact.content);
+  fsImpl.writeFileSync(piFile, piArtifact.content);
+  const before = new Map(fsImpl.files);
   const info = describeConnect(stateDir, fsImpl);
   assert.equal(info.connected, true);
+  assert.deepEqual(fsImpl.files, before, 'readback does not modify artifacts or recovery metadata');
   const claude = info.clients.find((c) => c.client === 'claude');
   const codex = info.clients.find((c) => c.client === 'codex');
+  const pi = info.clients.find((c) => c.client === 'pi');
   assert.equal(claude.connected, true);
   assert.equal(claude.artifactExists, true);
+  assert.equal(claude.target, 'auto');
+  assert.equal(claude.ownership.status, 'owned');
+  assert.equal(claude.readback.status, 'connected');
   assert.match(claude.launch, /^claude --settings /u);
   assert.equal(codex.connected, false);
+  assert.equal(codex.artifactExists, false);
   assert.match(codex.launch, /CODEX_HOME=/u);
+  assert.equal(pi.connected, true);
+  assert.equal(pi.target, 'model:Mixed%2FID%252F');
+  assert.equal(pi.defaultTarget, pi.target);
+  assert.equal(pi.ownership.status, 'owned');
+  assert.match(pi.launch, /--provider aios-gateway --model 'aios\/model\/Mixed%2FID%252F'$/u);
+  fsImpl.unlinkSync(stateFile);
+  const unowned = describeConnect(stateDir, fsImpl);
+  assert.equal(unowned.connected, true, 'parsed current artifacts remain connected without a journal');
+  for (const client of unowned.clients.filter((c) => c.client !== 'codex')) {
+    assert.equal(client.ownership.status, 'unowned');
+    assert.equal(client.recovery.status, 'none');
+  }
+  fsImpl.writeFileSync(stateFile, stateText);
+  const changed = JSON.parse(claudeArtifact.content);
+  changed.env.ANTHROPIC_MODEL = 'aios/group/team%2Fone';
+  changed.env.ANTHROPIC_AUTH_TOKEN = 'fixture-readback-secret';
+  fsImpl.writeFileSync(claudeFile, JSON.stringify(changed));
+  const current = describeConnect(stateDir, fsImpl);
+  const drift = current.clients.find((c) => c.client === 'claude');
+  assert.equal(drift.connected, true);
+  assert.equal(drift.target, 'group:team%2Fone');
+  assert.equal(drift.defaultTarget, 'auto');
+  assert.equal(drift.readback.status, 'drift');
+  assert.equal(drift.ownership.status, 'drift');
+  assert.equal(current.clients.find((c) => c.client === 'pi').connected, true);
+  assert.doesNotMatch(JSON.stringify(current), /fixture-readback-secret|ANTHROPIC_AUTH_TOKEN|apiKey/u);
+  fsImpl.unlinkSync(claudeFile);
+  fsImpl.unlinkSync(piFile);
+  assert.equal(describeConnect(stateDir, fsImpl).connected, false);
+  assert.equal(fsImpl.readFileSync(stateFile), stateText, 'stale journal stays untouched when artifacts disappear');
 });
 
 test('resolveAiosScript 指向真实存在的 scripts/aios.mjs', () => {
@@ -236,6 +295,21 @@ test('resolveAiosScript 指向真实存在的 scripts/aios.mjs', () => {
 // 真实集成：起一个真网关（空闲端口、隔离 stateDir），查状态→停→端口关闭。零扣费（不发上游请求），必清理。
 test('真实生命周期：start→status(running)→stop→端口关闭，无孤儿', { timeout: 60_000 }, async (t) => {
   const stateDir = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-gw-life-'));
+  const home = path.join(stateDir, 'home');
+  const registryRoot = path.join(stateDir, 'runtime');
+  fs.mkdirSync(home);
+  fs.mkdirSync(path.join(registryRoot, 'memory', 'specs'), { recursive: true });
+  fs.writeFileSync(path.join(registryRoot, 'memory', 'specs', 'model-registry.json'), '{"models":{},"providers":{}}\n');
+  // Exercise the production parser/command/server without reading the live runtime registry.
+  const scriptPath = path.join(stateDir, 'isolated-cli.mjs');
+  fs.writeFileSync(scriptPath, [
+    `import { parseModelRouterArgs } from ${JSON.stringify(new URL('../../../lib/tooling/cli/parse-args/govern/model-router.mjs', import.meta.url).href)};`,
+    `import { runModelRouterCommand } from ${JSON.stringify(new URL('../../../lib/tooling/model-router/entry/command.mjs', import.meta.url).href)};`,
+    `const parsed = parseModelRouterArgs(process.argv.slice(2));`,
+    `const result = await runModelRouterCommand(parsed.options, { registryRoot: ${JSON.stringify(registryRoot)} });`,
+    `process.exitCode = result.exitCode;`,
+  ].join('\n'));
+  const env = { PATH: process.env.PATH, HOME: home, AIOS_HOME: path.join(home, '.aios'), AIOS_GATEWAY_STATE_DIR: stateDir };
   const port = await new Promise((resolve, reject) => {
     const server = net.createServer();
     server.on('error', reject);
@@ -246,16 +320,17 @@ test('真实生命周期：start→status(running)→stop→端口关闭，无�
     fs.rmSync(stateDir, { recursive: true, force: true });
   });
 
-  const started = await startGatewayDaemon({ rootDir: process.cwd(), port, stateDir });
+  assert.notEqual(port, 3126, 'never use the protected live service port');
+  const started = await startGatewayDaemon({ rootDir: registryRoot, scriptPath, env, port, stateDir });
   assert.equal(started.ok, true, `start failed: ${started.error || ''}`);
-  const running = await gatewayStatus({ stateDir, port });
+  const running = await gatewayStatus({ stateDir, home, port });
   assert.equal(running.running, true);
   assert.equal(running.managed, true);
   assert.equal(running.pid, started.pid);
 
   const stopped = await stopGatewayDaemon({ stateDir });
   assert.equal(stopped.stopped, true);
-  const after = await gatewayStatus({ stateDir, port });
+  const after = await gatewayStatus({ stateDir, home, port });
   assert.equal(after.running, false);
   assert.equal(await probePort(port), false, '端口必须真的关闭，不留孤儿');
 });

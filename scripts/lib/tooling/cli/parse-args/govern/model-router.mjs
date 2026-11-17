@@ -21,6 +21,8 @@ const MODEL_ROUTER_CLI = new Command()
   .option('--passthrough', 'Gateway passthrough mode (no routing)')
   .option('--gateway-url <url>', 'Connect: gateway base URL (default http://127.0.0.1:<port>)')
   .option('--state-dir <path>', 'Connect: artifact state dir (default ~/.aios/gateway)')
+  .option('--target <reference>', 'Connect: fixed model:<encoded-id>, group:<encoded-id>, or auto target')
+  .option('--expected-revision <hash>', 'Connect: reject a changed registry snapshot before writing')
   .option('--codex-model <id>', 'Connect: explicit codex openai-response model (otherwise use configured route)')
   .option('--pi-model <id>', 'Connect: pi gateway model id (default gateway-default)')
   .option('--dry-run', 'Connect: validate readiness without changing clients, registry or state')
@@ -29,7 +31,7 @@ const MODEL_ROUTER_CLI = new Command()
   .option('--id <id>', 'Group id')
   .option('--group-id <id>', 'Group id (alias)')
   .option('--models <list>', 'Comma-separated model ids')
-  .option('--routing <mode>', 'Routing mode (smart|order|rotate|...)')
+  .option('--routing <mode>', 'Group routing mode (ordered; legacy smart is ordered)')
   .option('--refresh', 'Models: discover provider model lists and merge them into the registry')
   .option('--workspace <path>', 'Workspace root');
 
@@ -60,6 +62,8 @@ export function parseModelRouterArgs(argv) {
       ...(flags.passthrough ? { passthrough: true } : {}),
       ...(flags.gatewayUrl ? { gatewayUrl: flags.gatewayUrl } : {}),
       ...(flags.stateDir ? { stateDir: flags.stateDir } : {}),
+      ...(flags.target !== undefined ? { target: flags.target } : {}),
+      ...(flags.expectedRevision !== undefined ? { expectedRevision: flags.expectedRevision } : {}),
       ...(flags.codexModel ? { codexModel: flags.codexModel } : {}),
       ...(flags.piModel ? { piModel: flags.piModel } : {}),
       ...(flags.dryRun ? { dryRun: true } : {}),

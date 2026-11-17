@@ -11,7 +11,7 @@ import {
 
 const GW = 'http://127.0.0.1:8686';
 
-test('claude：只改 env 两个 key，保留其它 env/model/permissions 与原值备份，restore 还原', () => {
+test('Claude manages gateway identity and selection, preserving unrelated settings and original values', () => {
   const original = `{
   "model": "claude-sonnet-5",
   "env": {
@@ -23,10 +23,13 @@ test('claude：只改 env 两个 key，保留其它 env/model/permissions 与原
 `;
   const { text, backup } = editClaude(original, GW);
   const doc = JSON.parse(text);
-  assert.equal(doc.env.ANTHROPIC_BASE_URL, GW);
+  assert.equal(doc.env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
   assert.equal(doc.env.ANTHROPIC_AUTH_TOKEN, 'aios-gateway');
   assert.equal(doc.env.OTHER_VAR, 'keep-me', '其它 env 变量不动');
-  assert.equal(doc.model, 'claude-sonnet-5', 'model 不动（网关服务端路由）');
+  assert.equal(doc.model, 'aios-auto');
+  assert.equal(doc.env.ANTHROPIC_MODEL, 'aios-auto');
+  assert.equal(doc.env.ANTHROPIC_CUSTOM_HEADERS, 'x-gateway-client: claude');
+  assert.deepEqual(doc.availableModels, ['aios-auto']);
   assert.deepEqual(doc.permissions, { allow: ['Bash'] }, '其它顶层 key 不动');
   assert.equal(backup.baseUrl, 'https://user-relay.example');
   assert.equal(backup.authToken, null, '原本没有 AUTH_TOKEN → 备份 null');
@@ -41,7 +44,7 @@ test('claude：只改 env 两个 key，保留其它 env/model/permissions 与原
 test('claude：空配置接入再还原 → env 整块移除，回到空对象', () => {
   const { text, backup } = editClaude('{}\n', GW);
   assert.equal(backup.hadEnv, false);
-  assert.equal(JSON.parse(text).env.ANTHROPIC_BASE_URL, GW);
+  assert.equal(JSON.parse(text).env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
   const restored = JSON.parse(restoreClaude(text, backup));
   assert.ok(!('env' in restored), '原本无 env → 还原后不留空 env');
 });
@@ -63,13 +66,13 @@ wire_api = "responses"
 env_key = "USER_KEY"
 `;
 
-test('codex：只改 model_provider + 追加带标记块，保留注释/其它 provider/model，restore 还原', () => {
+test('Codex manages model/provider and marked block, preserving comments and restoring original selection', () => {
   const { text, backup } = editCodex(CODEX_ORIGINAL, GW);
   assert.match(text, /^model_provider = "aios-gateway"$/mu);
   assert.match(text, /# 用户自己的 codex 配置/u, '注释保留');
   assert.match(text, /\[model_providers\.custom\]/u, '用户 provider 保留');
   assert.match(text, /base_url = "https:\/\/user-relay\.example\/v1"/u, '用户 provider 内容不动');
-  assert.match(text, /^model = "gpt-6-astra"$/mu, 'model 不动');
+  assert.match(text, /^model = "aios-auto"$/mu);
   assert.match(text, /\[model_providers\.aios-gateway\]/u);
   assert.match(text, /experimental_bearer_token = "aios-gateway"/u, '内联占位 token，免 env');
   assert.match(text, /requires_openai_auth = false/u);
@@ -77,6 +80,7 @@ test('codex：只改 model_provider + 追加带标记块，保留注释/其它 p
   assert.equal(backup.modelProvider, '"custom"');
 
   const restored = restoreCodex(text, backup);
+  assert.match(restored, /^model = "gpt-6-astra"$/mu);
   assert.match(restored, /^model_provider = "custom"$/mu, '还原原 provider');
   assert.ok(!restored.includes('aios-gateway'), '我们的块被移除');
   assert.match(restored, /\[model_providers\.custom\]/u, '用户 provider 仍在');
@@ -115,13 +119,13 @@ test('pi：settings 设 defaultProvider/defaultModel，models 加 provider，保
   const s = editPiSettings(settings, 'gateway-default');
   const sd = JSON.parse(s.text);
   assert.equal(sd.defaultProvider, 'aios-gateway');
-  assert.equal(sd.defaultModel, 'aios-gateway/gateway-default');
+  assert.equal(sd.defaultModel, 'gateway-default');
   assert.equal(sd.theme, 'dark', '其它 settings 不动');
   assert.equal(s.backup.defaultProvider, 'magpie');
 
   const m = editPiModels(models, GW, 'gateway-default');
   const md = JSON.parse(m.text);
-  assert.equal(md.providers['aios-gateway'].baseUrl, GW);
+  assert.equal(md.providers['aios-gateway'].baseUrl, `${GW}/clients/pi`);
   assert.equal(md.providers['aios-gateway'].apiKey, 'aios-gateway');
   assert.ok(md.providers.grok, '用户 provider 保留');
 

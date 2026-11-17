@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
 import { classifyTurnIntent, extractLatestUserText } from '../../../../lib/tooling/model-router/routing/intent.mjs';
 
 const registry = {
@@ -150,7 +150,7 @@ for (const client of ['', 'claude']) {
         const body = JSON.parse(new TextDecoder().decode(init.body));
         models.push(body.model);
         return body.model === 'qwen3.8-flash'
-          ? Response.json({ choices: [{ message: { content: 'ok' } }] })
+          ? Response.json({ choices: [{ message: { role: 'assistant', content: 'ok' }, finish_reason: 'stop' }] })
           : claudeSuccess();
       },
     });

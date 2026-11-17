@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { openAIChatStreamToClaudeStream } from '../../../../lib/tooling/model-router/gateway/stream-translate.mjs';
-import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { openAIChatStreamToClaudeStream } from '../../../../../lib/tooling/model-router/gateway/stream-translate.mjs';
+import { createRoutingGatewayApp } from '../../../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
 
 function streamFrom(text) {
   return new ReadableStream({ start(c) { c.enqueue(new TextEncoder().encode(text)); c.close(); } });

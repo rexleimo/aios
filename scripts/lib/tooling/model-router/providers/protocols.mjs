@@ -1,4 +1,4 @@
-// 模型协议词表：描述“一个模型通过哪种 API 方言被访问”，与 provider（用哪个客户端启动）正交。
+// 模型协议词表及供应商端点：描述“一个模型通过哪种 API 方言被访问”，与启动客户端正交。
 /* 中文注释：relay 协议是运行时事实，不是文档字段——协议路径来自 coding.rexai.top 的
    /api/v1/protocol-models 目录，客户端能力来自其自身配置证据（见 clients/core/definitions.mjs）。 */
 export const MODEL_PROTOCOLS = Object.freeze(['openai-chat', 'openai-response', 'claude', 'gemini']);

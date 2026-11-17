@@ -3,7 +3,7 @@
 // 只绑 127.0.0.1（信任边界）；优雅停机由 close() 负责。密钥/路由事实都在 app 层，本层不持有。
 import { serve } from '@hono/node-server';
 
-import { createRoutingGatewayApp } from './proxy.mjs';
+import { createRoutingGatewayApp } from './compatibility/proxy.mjs';
 import { createGatewayApp } from './app.mjs';
 import { createDecisionLog, defaultDecisionLogPath } from '../session/decision-log.mjs';
 

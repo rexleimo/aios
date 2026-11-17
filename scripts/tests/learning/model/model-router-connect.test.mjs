@@ -27,7 +27,7 @@ test('claude artifact points ANTHROPIC_BASE_URL at the gateway and carries no re
   const artifact = claudeSettings(GW);
   assert.equal(artifact.relPath, 'claude-settings.json');
   const json = JSON.parse(artifact.content);
-  assert.equal(json.env.ANTHROPIC_BASE_URL, GW);
+  assert.equal(json.env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
   assert.ok(json.env.ANTHROPIC_AUTH_TOKEN, 'a placeholder token is present (gateway injects the real provider key)');
   assert.ok(!artifact.content.includes('REXAI_API_KEY'), 'must not embed the real upstream key reference value');
 });
@@ -36,7 +36,7 @@ test('codex artifact uses wire_api=responses, gateway /v1 base, and injects x-ga
   const artifact = codexConfig(GW, 'gpt-6-astra');
   assert.equal(artifact.relPath, path.join('codex-home', 'config.toml'));
   assert.match(artifact.content, /wire_api = "responses"/);
-  assert.match(artifact.content, /base_url = "http:\/\/127\.0\.0\.1:8686\/v1"/);
+  assert.match(artifact.content, /base_url = "http:\/\/127\.0\.0\.1:8686\/clients\/codex\/v1"/);
   assert.match(artifact.content, /x-gateway-client = "codex"/);
   assert.match(artifact.content, /model = "gpt-6-astra"/);
   assert.match(artifact.content, /model_provider = "aios-gateway"/);
@@ -48,11 +48,11 @@ test('pi artifact defines an anthropic-messages provider aimed at the gateway', 
   const json = JSON.parse(artifact.content);
   const provider = json.providers['aios-gateway'];
   assert.equal(provider.api, 'anthropic-messages');
-  assert.equal(provider.baseUrl, GW);
+  assert.equal(provider.baseUrl, `${GW}/clients/pi`);
   assert.ok(provider.models.some((m) => m.id === 'gateway-default' && m.api === 'anthropic-messages'));
 });
 
-test('connect writes artifacts + sets clientDefaults.codex; disconnect removes artifacts and restores the registry', async () => {
+test('Auto writes reserved wire IDs without pinning the registry; disconnect removes artifacts', async () => {
   const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-connect-test-'));
   try {
     const stateDir = path.join(sandbox, 'state');
@@ -66,7 +66,8 @@ test('connect writes artifacts + sets clientDefaults.codex; disconnect removes a
     assert.ok(fs.existsSync(path.join(stateDir, 'codex-home', 'config.toml')));
     assert.ok(fs.existsSync(path.join(stateDir, 'pi-home', '.pi', 'agent', 'models.json')));
     const reg = JSON.parse(fs.readFileSync(registryFile, 'utf8'));
-    assert.equal(reg.clientDefaults.codex, 'test-response', 'codex gets a registered openai-response default so same-protocol routing works');
+    assert.deepEqual(reg, readyRegistry(), 'Auto leaves registry defaults unpinned');
+    assert.match(fs.readFileSync(path.join(stateDir, 'codex-home', 'config.toml'), 'utf8'), /model = "aios-auto"/);
 
     const disc = await runDisconnect({ stateDir, registryFile, io });
     assert.equal(disc.exitCode, 0);

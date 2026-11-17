@@ -1,5 +1,15 @@
 import { getModelConfig } from '../routing/selection.mjs';
 import { normalizeId } from '../entry/shared.mjs';
+import { parseTargetRef } from '../routing/targets.mjs';
+
+function targetLabel(value, registry) {
+  const target = parseTargetRef(value, { targetRefVersion: registry?.targetRefVersion });
+  if (!target) return '';
+  if (target.kind === 'auto') return 'AIOS Auto';
+  const id = normalizeId(target.id);
+  if (target.kind === 'group') return registry?.routingGroups?.[id]?.name || `Group: ${id}`;
+  return getModelConfig(id, registry)?.label || id;
+}
 
 export function buildModelSummaryTable(registry) {
   if (!registry?.models) return '';
@@ -18,10 +28,8 @@ export function buildRoutingTableMarkdown(registry) {
     '|----------|----------|--------|',
   ];
   for (const rule of registry.routingRules) {
-    const primary = getModelConfig(rule.primary, registry);
-    const fallbacks = (rule.fallback || []).map((id) => getModelConfig(id, registry)).filter(Boolean);
-    const primaryLabel = primary ? primary.label : rule.primary;
-    const fallbackLabels = fallbacks.map((model) => model.label).join(' → ');
+    const primaryLabel = targetLabel(rule.primary, registry);
+    const fallbackLabels = (rule.fallback || []).map((ref) => targetLabel(ref, registry)).filter(Boolean).join(' → ');
     lines.push(`| ${rule.description || rule.taskType} | **${primaryLabel}** | ${fallbackLabels || '-'} |`);
   }
   return lines.join('\n');

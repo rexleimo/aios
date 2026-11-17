@@ -4,15 +4,14 @@
 // 所有 fs 可注入，测试用临时 HOME 夹具，绝不碰用户真实配置；真正写入只由用户在 GUI 点「接入」触发。
 import fs from 'node:fs';
 import path from 'node:path';
-import { createHash, randomUUID } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 
-import {
-  editClaude, restoreClaude,
-  editCodex, restoreCodex,
-  editPiSettings, restorePiSettings,
-  editPiModels, restorePiModels,
-  clientConfigPaths,
-} from './editors.mjs';
+import { clientConfigPaths } from './editors.mjs';
+import { persistedConnectTarget, requestModelForTarget } from './targets.mjs';
+import { EDITORS, RESTORERS, staleConfig, readFileState, projectBackup, entryParams, configSnapshot, appliedSnapshots, assertOwned, sameFile, isOriginal } from './config/inplace-ownership.mjs';
+export { inspectInplaceEntry } from './config/inplace-ownership.mjs';
+import { readConnectStatus } from './readback.mjs';
+import { parseConnectBackup } from './config/journals.mjs';
 
 const BACKUP_FILE = 'connect-backup.json';
 const DEFAULT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
@@ -22,36 +21,10 @@ export function inplaceBackupPath(stateDir) {
 }
 
 // (client, role) → 编辑器/还原器。pi 有两个文件（settings + models），其余各一个。
-const EDITORS = {
-  'claude/main': (text, { gatewayUrl }) => editClaude(text, gatewayUrl),
-  'codex/main': (text, { gatewayUrl }) => editCodex(text, gatewayUrl),
-  'pi/settings': (text, { modelId }) => editPiSettings(text, modelId),
-  'pi/models': (text, { gatewayUrl, modelId }) => editPiModels(text, gatewayUrl, modelId),
-};
-const RESTORERS = {
-  'claude/main': restoreClaude,
-  'codex/main': restoreCodex,
-  'pi/settings': restorePiSettings,
-  'pi/models': restorePiModels,
-};
-
 function clientFiles(home, client) {
   const paths = clientConfigPaths(home)[client];
   if (client === 'pi') return [{ file: paths[0], role: 'settings' }, { file: paths[1], role: 'models' }];
   return [{ file: paths[0], role: 'main' }];
-}
-
-function staleConfig(file) {
-  return Object.assign(new Error(`client config changed outside connect: ${file}; preserve the recovery backup and reconcile before retrying`), { code: 'CLIENT_CONFIG_STALE' });
-}
-
-function readFileState(fsImpl, file) {
-  try {
-    return { existed: true, text: fsImpl.readFileSync(file, 'utf8') };
-  } catch (error) {
-    if (error?.code === 'ENOENT') return { existed: false, text: '' };
-    throw error;
-  }
 }
 
 function assertUnchanged(fsImpl, file, expected) {
@@ -72,54 +45,27 @@ function atomicWrite(fsImpl, file, text, expected) {
   }
 }
 
-const hash = (text) => createHash('sha256').update(text).digest('hex');
-
-function managedHash(backup) {
-  // 容器是否存在不代表字段所有权；用户可在 env/providers 中添加无关配置。
-  const { hadEnv, hadProviders, ...managed } = backup;
-  return hash(JSON.stringify(managed));
-}
-
-function configSnapshot(state, backup) {
-  return { existed: state.existed, hash: hash(state.text), managed: managedHash(backup) };
-}
-
-function readBackup(fsImpl, stateDir) {
-  const state = readFileState(fsImpl, inplaceBackupPath(stateDir));
-  return state.existed ? JSON.parse(state.text) : null;
-}
-
-const sameManaged = (a, b) => a && b && a.existed === b.existed && a.managed === b.managed;
-const sameFile = (a, b) => a && b && a.existed === b.existed && a.hash === b.hash;
-const isOriginal = (entry, current) => (current.existed || !entry.existed) && current.managed === managedHash(entry.backup);
-
-function appliedSnapshots(entry, document) {
-  if (entry.applied || entry.pending) return [entry.applied, entry.pending?.before, entry.pending?.after].filter(Boolean);
-  // 兼容旧备份：从旧接入参数重建托管字段，不把当前外部值认领为网关所有。
-  const key = `${entry.client}/${entry.role}`;
-  const params = { gatewayUrl: document.gatewayUrl, modelId: document.modelId || 'gateway-default' };
-  const { text } = EDITORS[key]('', params);
-  return [configSnapshot({ existed: true, text }, EDITORS[key](text, params).backup)];
-}
-
-function assertOwned(entry, current, document) {
-  if (!isOriginal(entry, current) && !appliedSnapshots(entry, document).some((known) => sameManaged(current, known))) throw staleConfig(entry.file);
-}
-
 // 原值备份始终不变。pending 同时记录写前/写后指纹，覆盖 rename 成功后进程退出的恢复窗口。
 export function connectInplace(options = {}) {
   const {
-    home, gatewayUrl, stateDir, modelId = 'gateway-default',
+    home, gatewayUrl, stateDir, modelId, targets = {}, catalogs = {},
     clients = DEFAULT_CLIENTS, fsImpl = fs,
   } = options;
   if (!home || !gatewayUrl || !stateDir) throw new Error('connectInplace requires home, gatewayUrl, stateDir');
   const backupPath = inplaceBackupPath(stateDir);
   const backupState = readFileState(fsImpl, backupPath);
-  const existing = backupState.existed ? JSON.parse(backupState.text) : null;
-  const entries = (existing?.entries || []).map((entry) => entry.applied || entry.pending ? entry : { ...entry, applied: appliedSnapshots(entry, existing)[0] });
+  const existing = backupState.existed ? parseConnectBackup(backupState.text) : null;
+  const entries = (existing?.entries || []).map((entry) => ({ ...entry,
+    gatewayUrl: entry.gatewayUrl ?? existing.gatewayUrl,
+    ...(entry.target !== undefined ? { targetRefVersion: 1, target: persistedConnectTarget(entry.target, entry.targetRefVersion ?? existing.targetRefVersion) } : {}),
+    ...(entry.client === 'pi' && existing.modelId !== undefined && entry.modelId === undefined ? { modelId: existing.modelId } : {}),
+    ...(!entry.applied && !entry.pending ? { applied: appliedSnapshots(entry, existing)[0] } : {}),
+  }));
   const plans = [];
-  const params = { gatewayUrl, modelId };
   for (const client of new Set(clients)) {
+    const target = targets[client] || options.target || (client === 'pi' && modelId ? `model:${encodeURIComponent(modelId)}` : 'auto');
+    const params = { gatewayUrl, modelId: requestModelForTarget(target), catalog: catalogs[client] || [] };
+    if (params.modelId === null) throw Object.assign(new Error('native selection is unsupported while connected'), { code: 'UNSUPPORTED_NATIVE_TARGET' });
     for (const { file, role } of clientFiles(home, client)) {
       const key = `${client}/${role}`;
       const before = readFileState(fsImpl, file);
@@ -129,17 +75,23 @@ export function connectInplace(options = {}) {
       const prior = entries[index];
       if (prior) {
         if (prior.file !== file) throw staleConfig(file);
-        assertOwned(prior, beforeSnapshot, existing);
+        assertOwned(prior, configSnapshot(before, projectBackup(backup, prior.backup)), existing);
       }
       const after = configSnapshot({ existed: true, text }, EDITORS[key](text, params).backup);
-      const entry = { ...(prior || { client, role, file, existed: before.existed, backup }), pending: { before: beforeSnapshot, after } };
+      // Validate the old ownership shape before claiming newly managed selection fields.
+      const originalBackup = prior ? { ...backup, ...prior.backup } : backup;
+      const entry = { ...(prior || { client, role, file, existed: before.existed }), backup: originalBackup, gatewayUrl, catalog: params.catalog,
+        targetRefVersion: 1, target, applied: beforeSnapshot, pending: { before: beforeSnapshot, after } };
       if (index === -1) entries.push(entry);
       else entries[index] = entry;
       plans.push({ entry, before, text, changedKeys });
     }
   }
   const document = {
-    schemaVersion: 2, gatewayUrl, modelId,
+    schemaVersion: 3, targetRefVersion: 1, gatewayUrl,
+    targets: { ...Object.fromEntries(Object.entries(existing?.targets || {}).map(([client, ref]) => [client, persistedConnectTarget(ref, existing.targetRefVersion)])),
+      ...Object.fromEntries(plans.map(({ entry }) => [entry.client, entry.target])) },
+    catalogs: { ...existing?.catalogs, ...catalogs },
     connectedAt: existing?.connectedAt || new Date().toISOString(),
     entries,
   };
@@ -167,15 +119,15 @@ export function disconnectInplace(options = {}) {
   if (!stateDir) throw new Error('disconnectInplace requires stateDir');
   const backupPath = inplaceBackupPath(stateDir);
   const backupState = readFileState(fsImpl, backupPath);
-  const document = backupState.existed ? JSON.parse(backupState.text) : null;
+  const document = backupState.existed ? parseConnectBackup(backupState.text) : null;
   if (!document) return { ok: true, disconnected: false, reason: 'not-connected', restored: [] };
   const target = clients ? document.entries.filter((entry) => clients.includes(entry.client)) : document.entries;
   if (!target.length) return { ok: true, disconnected: false, reason: 'not-connected', restored: [] };
   const plans = target.map((entry) => {
     const key = `${entry.client}/${entry.role}`;
     const before = readFileState(fsImpl, entry.file);
-    const params = { gatewayUrl: document.gatewayUrl, modelId: document.modelId };
-    const current = configSnapshot(before, EDITORS[key](before.text, params).backup);
+    const params = entryParams(entry, document);
+    const current = configSnapshot(before, projectBackup(EDITORS[key](before.text, params).backup, entry.backup));
     assertOwned(entry, current, document);
     const unchanged = isOriginal(entry, current);
     const text = unchanged ? null : RESTORERS[key](before.text, entry.backup);
@@ -203,14 +155,7 @@ export function disconnectInplace(options = {}) {
   return { ok: true, disconnected: true, restored, remainingClients: [...new Set(remaining.map((entry) => entry.client))] };
 }
 
-// 就地接入状态：哪些客户端已接入（以备份为准，客观事实）。供 GUI/gateway-status 展示。
+// Ownership journals describe recovery, not whether a client is actually configured.
 export function inplaceStatus(options = {}) {
-  const { stateDir, fsImpl = fs } = options;
-  const document = readBackup(fsImpl, stateDir);
-  const connectedClients = document ? [...new Set(document.entries.map((entry) => entry.client))] : [];
-  return {
-    connected: connectedClients.length > 0,
-    clients: DEFAULT_CLIENTS.map((client) => ({ client, connected: connectedClients.includes(client) })),
-    gatewayUrl: document?.gatewayUrl || null,
-  };
+  return readConnectStatus({ ...options, mode: 'inplace' });
 }

@@ -11,12 +11,64 @@ import { runModelRouterCommand } from '../../../lib/tooling/model-router/entry/c
 import { buildClientModelArgs } from '../../../lib/tooling/model-router/entry/client-cli.mjs';
 import { defaultModelRegistry, loadRegistry, loadRegistrySnapshot, withRegistryWriteLock } from '../../../lib/tooling/model-router/entry/registry.mjs';
 import { resolveGatewayRoute } from '../../../lib/tooling/model-router/gateway/router.mjs';
-import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/proxy.mjs';
-import { listGatewayModels } from '../../../lib/tooling/model-router/routing/providers.mjs';
+import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
+import { listGatewayModels } from '../../../lib/tooling/model-router/providers/registry.mjs';
 
 const SEED_REL = 'scripts/lib/tooling/specs/registry/model-registry.json';
 const seedText = fs.readFileSync(new URL('../../../lib/tooling/specs/registry/model-registry.json', import.meta.url), 'utf8');
 const GW = 'http://127.0.0.1:8686';
+
+function mockUpstreamReply(protocol, stream) {
+  const model = 'Vendor-Exact-ID';
+  const text = 'fixture-ok';
+  const usage = { input_tokens: 1, output_tokens: 1 };
+  const body = {
+    claude: { id: 'msg_fixture', type: 'message', role: 'assistant', model,
+      content: [{ type: 'text', text }], stop_reason: 'end_turn', usage },
+    'openai-response': { id: 'resp_fixture', object: 'response', model, status: 'completed',
+      output: [{ id: 'msg_fixture', type: 'message', role: 'assistant', status: 'completed',
+        content: [{ type: 'output_text', text, annotations: [] }] }], usage },
+    'openai-chat': { id: 'chatcmpl_fixture', object: 'chat.completion', model,
+      choices: [{ index: 0, message: { role: 'assistant', content: text }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 1, completion_tokens: 1, total_tokens: 2 } },
+    gemini: { responseId: 'gemini_fixture', modelVersion: model,
+      candidates: [{ index: 0, content: { role: 'model', parts: [{ text }] }, finishReason: 'STOP' }],
+      usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 } },
+  }[protocol];
+  if (!stream) return Response.json(body);
+  const event = (data) => `${data.type ? `event: ${data.type}\n` : ''}data: ${JSON.stringify(data)}\n\n`;
+  let wire;
+  if (protocol === 'claude') {
+    wire = [
+      { type: 'message_start', message: { ...body, content: [], stop_reason: null, usage: { ...usage, output_tokens: 0 } } },
+      { type: 'content_block_start', index: 0, content_block: { type: 'text', text: '' } },
+      { type: 'content_block_delta', index: 0, delta: { type: 'text_delta', text } },
+      { type: 'content_block_stop', index: 0 },
+      { type: 'message_delta', delta: { stop_reason: 'end_turn' }, usage },
+      { type: 'message_stop' },
+    ].map(event).join('');
+  } else if (protocol === 'openai-response') {
+    const item = body.output[0];
+    const location = { item_id: item.id, output_index: 0, content_index: 0 };
+    wire = [
+      { type: 'response.created', response: { ...body, status: 'in_progress', output: [] } },
+      { type: 'response.output_item.added', output_index: 0, item: { ...item, status: 'in_progress', content: [] } },
+      { type: 'response.content_part.added', ...location, part: { type: 'output_text', text: '', annotations: [] } },
+      { type: 'response.output_text.delta', ...location, delta: text },
+      { type: 'response.output_text.done', ...location, text },
+      { type: 'response.content_part.done', ...location, part: item.content[0] },
+      { type: 'response.output_item.done', output_index: 0, item },
+      { type: 'response.completed', response: body },
+    ].map((data, sequence_number) => event({ ...data, sequence_number })).join('');
+  } else if (protocol === 'openai-chat') {
+    const chunk = (delta, finish_reason = null) => ({ id: body.id, object: 'chat.completion.chunk', model,
+      choices: [{ index: 0, delta, finish_reason }] });
+    wire = event(chunk({ role: 'assistant', content: text })) + event(chunk({}, 'stop')) + 'data: [DONE]\n\n';
+  } else {
+    wire = event(body);
+  }
+  return new Response(wire, { headers: { 'content-type': 'text/event-stream' } });
+}
 
 function registeredModels() {
   return {
@@ -148,26 +200,53 @@ for (const [mode, connect] of [['isolated', runConnect], ['inplace', runConnectI
 
   test(`${mode}: a single explicit Responses route is selected without inventing a model`, async (t) => {
     const original = registeredModels();
+    original.activeModel = '';
+    delete original.models['actual-claude'];
+    delete original.providers.messages;
     delete original.clientDefaults;
     const f = fixture(t, original);
     const result = await connect(options(f, { clients: ['codex'] }));
     assert.equal(result.exitCode, 0);
     assert.equal(result.routes.codex, 'actual-response');
     const connected = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));
-    assert.equal(connected.clientDefaults.codex, 'actual-response');
+    assert.deepEqual(connected, original, 'Auto does not persist a resolved model as a default');
     assert.equal(resolveGatewayRoute({ clientId: 'codex', clientProtocol: 'openai-response', registry: connected, env: {} }).modelId, result.routes.codex);
     assert.deepEqual(connected.extensionMetadata, original.extensionMetadata);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(f.stateDir, 'connect-state.json'), 'utf8')).codexModel, 'actual-response');
+    const state = JSON.parse(fs.readFileSync(path.join(f.stateDir, 'connect-state.json'), 'utf8'));
+    assert.equal(state.resolvedModels.codex, 'actual-response');
+    assert.equal(state.targets.codex, 'auto');
+    assert.equal(state.targetRefVersion, 1);
     await connect(options(f, { clients: ['codex'] }));
     await runDisconnect(options(f));
     assert.deepEqual(JSON.parse(fs.readFileSync(f.registryFile, 'utf8')), original, 'repeated connect preserves the originally absent default');
   });
 
-  test(`${mode}: incompatible explicit model fails closed even with a compatible alternative`, async (t) => {
-    const f = fixture(t, registeredModels());
+  test(`${mode}: Codex can explicitly select a Claude route over a different configured default`, async (t) => {
+    const registry = registeredModels();
+    registry.activeModel = 'actual-response';
+    registry.clientDefaults = { codex: 'actual-response', pi: 'actual-claude' };
+    const f = fixture(t, registry);
     const result = await connect(options(f, { clients: ['codex'], codexModel: 'actual-claude' }));
-    assert.equal(result.ready, false);
-    assert.match(result.message, /actual-claude.*not an eligible openai-response/);
+    assert.equal(result.ready, true);
+    assert.equal(result.routes.codex, 'actual-claude');
+    const connected = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));
+    assert.deepEqual(connected.clientDefaults, { ...registry.clientDefaults, codex: 'actual-claude' });
+    assert.equal(resolveGatewayRoute({ clientId: 'codex', clientProtocol: 'openai-response', registry: connected, env: {} }).targetProtocol, 'claude');
+    assert.equal((await runDisconnect(options(f))).exitCode, 0);
+    assert.deepEqual(JSON.parse(fs.readFileSync(f.registryFile, 'utf8')), registry);
+  });
+
+  test(`${mode}: unbound explicit models fail closed even with eligible alternatives`, async (t) => {
+    const registry = registeredModels();
+    registry.models['unbound-model'] = { provider: 'responses', protocols: ['openai-response'], cli: { command: 'codex' } };
+    const f = fixture(t, registry);
+    const before = fs.readFileSync(f.registryFile, 'utf8');
+    for (const dryRun of [true, false]) {
+      const result = await connect(options(f, { clients: ['codex'], codexModel: 'unbound-model', dryRun }));
+      assert.equal(result.ready, false);
+      assert.match(result.message, /unbound-model.*not an eligible openai-response/);
+    }
+    assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
     assert.equal(fs.existsSync(f.stateDir), false);
     assert.deepEqual(fs.readdirSync(f.home), []);
   });
@@ -177,10 +256,10 @@ for (const [mode, connect] of [['isolated', runConnect], ['inplace', runConnectI
     delete registry.providers.responses.authMode;
     registry.providers.responses.apiKeyEnv = 'env:EXPLICIT_CONNECT_TEST_KEY';
     const f = fixture(t, registry);
-    const blocked = await connect(options(f, { clients: ['codex'] }));
+    const blocked = await connect(options(f, { clients: ['codex'], codexModel: 'actual-response' }));
     assert.equal(blocked.ready, false);
     assert.equal(fs.existsSync(f.stateDir), false);
-    const ready = await connect(options(f, { clients: ['codex'], dryRun: true, env: { EXPLICIT_CONNECT_TEST_KEY: 'test-only-secret' } }));
+    const ready = await connect(options(f, { clients: ['codex'], codexModel: 'actual-response', dryRun: true, env: { EXPLICIT_CONNECT_TEST_KEY: 'test-only-secret' } }));
     assert.equal(ready.ready, true);
     assert.equal(ready.dryRun, true);
     assert.equal(fs.existsSync(f.stateDir), false);
@@ -190,18 +269,25 @@ for (const [mode, connect] of [['isolated', runConnect], ['inplace', runConnectI
 
   test(`${mode}: multiple compatible models need an explicit choice, not a hardcoded default`, async (t) => {
     const registry = registeredModels();
+    registry.activeModel = '';
     registry.models['another-response'] = { ...registry.models['actual-response'] };
     registry.providers.responses.models.push('another-response');
     const f = fixture(t, registry);
-    assert.equal((await connect(options(f, { clients: ['codex'], dryRun: true }))).ready, false);
+    const before = fs.readFileSync(f.registryFile, 'utf8');
+    for (const dryRun of [true, false]) {
+      const ambiguous = await connect(options(f, { clients: ['codex'], dryRun }));
+      assert.equal(ambiguous.ready, false);
+      assert.match(ambiguous.message, /no eligible runtime default route/);
+    }
     const explicit = await connect(options(f, { clients: ['codex'], codexModel: 'another-response', dryRun: true }));
     assert.equal(explicit.ready, true);
     assert.equal(explicit.routes.codex, 'another-response');
+    assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
     assert.equal(fs.existsSync(f.stateDir), false);
     assert.deepEqual(fs.readdirSync(f.home), []);
   });
 
-  test(`${mode}: a unique compatible Claude/Pi model is not a default when multiple models are bound`, async (t) => {
+  test(`${mode}: Claude/Pi cannot infer a runtime default when multiple models are bound`, async (t) => {
     const registry = registeredModels();
     registry.activeModel = '';
     const f = fixture(t, registry);
@@ -216,42 +302,47 @@ for (const [mode, connect] of [['isolated', runConnect], ['inplace', runConnectI
     assert.deepEqual(fs.readdirSync(f.home), []);
   });
 
-  test(`${mode}: an incompatible active route is not silently replaced for Claude/Pi`, async (t) => {
+  test(`${mode}: an unbound active route is not silently replaced for Claude/Pi`, async (t) => {
     const registry = registeredModels();
-    registry.activeModel = 'actual-response';
+    registry.activeModel = 'unbound-model';
+    registry.models['unbound-model'] = { provider: 'responses', protocols: ['openai-response'], cli: { command: 'codex' } };
     const f = fixture(t, registry);
+    const before = fs.readFileSync(f.registryFile, 'utf8');
     for (const client of ['claude', 'pi']) {
       const result = await connect(options(f, { clients: [client] }));
       assert.equal(result.ready, false);
-      assert.match(result.message, /runtime model "actual-response" is not an eligible claude route/);
+      assert.match(result.message, /no eligible runtime default route/);
     }
+    assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
     assert.equal(fs.existsSync(f.stateDir), false);
     assert.deepEqual(fs.readdirSync(f.home), []);
   });
 
-  test(`${mode}: Claude/Pi client defaults cannot substitute for the anonymous runtime route`, async (t) => {
+  test(`${mode}: identified Claude/Pi paths use their own runtime defaults`, async (t) => {
     const registry = registeredModels();
     registry.activeModel = '';
     registry.clientDefaults = { claude: 'actual-claude', pi: 'actual-claude' };
     const f = fixture(t, registry);
     for (const client of ['claude', 'pi']) {
       const result = await connect(options(f, { clients: [client], dryRun: true }));
-      assert.equal(result.ready, false);
-      assert.match(result.message, /no eligible runtime default route/);
+      assert.equal(result.ready, true);
+      assert.equal(result.routes[client], 'actual-claude');
+      assert.equal(result.targets[client], 'auto');
     }
     assert.equal(fs.existsSync(f.stateDir), false);
     assert.deepEqual(fs.readdirSync(f.home), []);
   });
 
-  test(`${mode}: an explicit Pi model must match the runtime default, not just another eligible model`, async (t) => {
+  test(`${mode}: a fixed Pi model can differ from the Auto runtime default`, async (t) => {
     const registry = registeredModels();
     registry.models['another-claude'] = { ...registry.models['actual-claude'] };
     registry.providers.messages.models.push('another-claude');
     const f = fixture(t, registry);
     const before = fs.readFileSync(f.registryFile, 'utf8');
-    const rejected = await connect(options(f, { clients: ['pi'], piModel: 'another-claude' }));
-    assert.equal(rejected.ready, false);
-    assert.match(rejected.message, /requested model "another-claude" differs from runtime default "actual-claude"/);
+    const fixed = await connect(options(f, { clients: ['pi'], piModel: 'another-claude', dryRun: true }));
+    assert.equal(fixed.ready, true);
+    assert.equal(fixed.routes.pi, 'another-claude');
+    assert.equal(fixed.targets.pi, 'model:another-claude');
     const ready = await connect(options(f, { clients: ['pi'], piModel: 'actual-claude', dryRun: true }));
     assert.equal(ready.ready, true);
     assert.equal(ready.routes.pi, resolveGatewayRoute({ registry, env: {} }).modelId);
@@ -276,44 +367,117 @@ for (const [mode, connect] of [['isolated', runConnect], ['inplace', runConnectI
     assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before, 'Claude/Pi connect does not own registry defaults');
   });
 
-  for (const protocol of ['openai-chat', 'gemini']) {
-    test(`${mode}: a single ${protocol} model connects Claude/Pi through supported translation, not Codex`, async (t) => {
+  for (const protocol of ['claude', 'openai-response', 'openai-chat', 'gemini']) {
+    test(`${mode}: all clients connect to a bound ${protocol} route with JSON/SSE and reversible defaults`, async (t) => {
+      const clients = ['claude', 'codex', 'pi'];
       const registry = {
         ...JSON.parse(seedText),
         providers: { upstream: { baseUrl: 'https://upstream.invalid', endpointStyle: 'standard', authMode: 'none', protocols: [protocol] } },
         models: { 'registered-alias': { source: 'custom', provider: 'upstream', protocols: [protocol], upstreamModel: 'Vendor-Exact-ID' } },
+        clientDefaults: { pi: 'preserved-pi-default' },
+        extensionMetadata: { preserve: true },
       };
       const f = fixture(t, registry);
+      const json = (document) => `${JSON.stringify(document, null, 2)}\n`;
+      const originals = new Map([
+        ['.claude/settings.json', json({ env: { FIXTURE_SETTING: 'preserve' }, model: 'native-fixture' })],
+        ['.codex/config.toml', '# fixture only\nmodel = "native-fixture"\nmodel_provider = "fixture"\n'],
+        ['.pi/agent/settings.json', json({ defaultProvider: 'fixture', defaultModel: 'native-fixture', preserve: true })],
+        ['.pi/agent/models.json', json({ providers: { fixture: { preserve: true } } })],
+      ]);
+      for (const [relative, text] of originals) {
+        const file = path.join(f.home, relative);
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, text);
+      }
       const before = fs.readFileSync(f.registryFile, 'utf8');
-      assert.equal((await connect(options(f, { clients: ['codex'] }))).ready, false);
-      const preview = await connect(options(f, { clients: ['claude', 'pi'], dryRun: true }));
+      const expectedRoutes = { claude: 'registered-alias', codex: 'registered-alias', pi: 'registered-alias' };
+      const preview = await connect(options(f, { clients, dryRun: true }));
       assert.equal(preview.ready, true);
-      assert.deepEqual(preview.routes, { claude: 'registered-alias', pi: 'registered-alias' });
-      if (protocol === 'gemini') assert.match(preview.warnings.join('\n'), /non-streaming requests only/);
+      assert.equal(preview.dryRun, true);
+      assert.deepEqual(preview.routes, expectedRoutes);
+      assert.deepEqual(preview.warnings, []);
+      assert.doesNotMatch(f.logs.join('\n'), /non-streaming requests only/);
       assert.equal(fs.existsSync(f.stateDir), false);
-      assert.deepEqual(fs.readdirSync(f.home), []);
+      assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
+      for (const [relative, text] of originals) assert.equal(fs.readFileSync(path.join(f.home, relative), 'utf8'), text);
 
-      const result = await connect(options(f, { clients: ['claude', 'pi'] }));
+      const result = await connect(options(f, { clients }));
       assert.equal(result.exitCode, 0);
+      assert.deepEqual(result.routes, expectedRoutes);
+      assert.deepEqual(result.warnings, []);
+      const connected = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));
+      assert.deepEqual(connected, registry, 'Auto leaves the saved registry unchanged');
+      const stateFile = path.join(f.stateDir, 'connect-state.json');
+      const state = JSON.parse(fs.readFileSync(stateFile, 'utf8'));
+      assert.equal(state.codexDefaultApplied, false);
+      assert.equal(state.codexDefaultStatus, undefined);
+      assert.equal(state.codexModel, undefined);
+      assert.deepEqual(state.resolvedModels, expectedRoutes);
+      assert.deepEqual(state.targets, { claude: 'auto', codex: 'auto', pi: 'auto' });
+      assert.equal(state.targetRefVersion, 1);
+      assert.equal(fs.existsSync(path.join(f.stateDir, 'registry-backup.json')), false);
       const piFile = mode === 'isolated' ? path.join(f.stateDir, 'pi-home/.pi/agent/models.json') : path.join(f.home, '.pi/agent/models.json');
       assert.equal(JSON.parse(fs.readFileSync(piFile, 'utf8')).providers['aios-gateway'].api, 'anthropic-messages');
+      const codexFile = mode === 'isolated' ? path.join(f.stateDir, 'codex-home/config.toml') : path.join(f.home, '.codex/config.toml');
+      assert.match(fs.readFileSync(codexFile, 'utf8'), /wire_api = "responses"/);
+      assert.match(fs.readFileSync(codexFile, 'utf8'), /x-gateway-client = "codex"/);
       const calls = [];
-      const { app, decisions } = createRoutingGatewayApp({ registry, env: {}, fetchImpl: async (url, init) => {
-        calls.push({ url, body: JSON.parse(new TextDecoder().decode(init.body)) });
-        return Response.json(protocol === 'gemini'
-          ? { candidates: [{ content: { parts: [{ text: 'ok' }] } }] }
-          : { choices: [{ message: { content: 'ok' }, finish_reason: 'stop' }] });
+      const { app, decisions } = createRoutingGatewayApp({ registry: connected, env: {}, masking: false, fetchImpl: async (url, init) => {
+        const body = await new Response(init.body).json();
+        calls.push({ url, body });
+        return mockUpstreamReply(protocol, protocol === 'gemini' ? url.includes(':streamGenerateContent') : body.stream === true);
       } });
-      const response = await app.request('/v1/messages', { method: 'POST', body: JSON.stringify({ model: 'gateway-default', messages: [{ role: 'user', content: 'hello' }], max_tokens: 16 }) });
-      assert.equal(response.status, 200);
-      await response.text();
-      assert.equal(calls.length, 1);
-      assert.equal(decisions[0].modelId, result.routes.claude);
-      assert.equal(decisions[0].upstreamModel, 'Vendor-Exact-ID');
-      if (protocol === 'gemini') assert.match(calls[0].url, /Vendor-Exact-ID:generateContent$/);
-      else assert.equal(calls[0].body.model, 'Vendor-Exact-ID');
-      await runDisconnect(options(f));
+      for (const client of clients) {
+        for (const stream of [false, true]) {
+          const codex = client === 'codex';
+          const body = codex
+            ? { model: 'aios-auto', input: 'hello', max_output_tokens: 16, stream }
+            : { model: 'aios-auto', messages: [{ role: 'user', content: 'hello' }], max_tokens: 16, stream };
+          const response = await app.request(`/clients/${client}/v1/${codex ? 'responses' : 'messages'}`, {
+            method: 'POST', headers: { 'content-type': 'application/json', 'x-gateway-client': client },
+            body: JSON.stringify(body),
+          });
+          assert.equal(response.status, 200, `${client} stream=${stream}`);
+          if (stream) {
+            assert.match(response.headers.get('content-type'), /text\/event-stream/);
+            const wire = await response.text();
+            assert.ok(wire.includes('fixture-ok'));
+            assert.doesNotMatch(wire, /event: error|"type":"error"/);
+            assert.match(wire, codex ? /event: response.completed/ : /event: message_stop/);
+          } else {
+            const reply = await response.json();
+            const content = codex ? reply.output.flatMap((item) => item.content || []) : reply.content;
+            assert.equal(content.map((part) => part.text).join(''), 'fixture-ok');
+          }
+          assert.equal(decisions.at(-1).modelId, result.routes[client]);
+          assert.equal(decisions.at(-1).targetProtocol, protocol);
+          assert.equal(decisions.at(-1).upstreamModel, 'Vendor-Exact-ID');
+          const call = calls.at(-1);
+          if (protocol === 'gemini') {
+            assert.equal(call.url, `https://upstream.invalid/v1beta/models/Vendor-Exact-ID:${stream ? 'streamGenerateContent?alt=sse' : 'generateContent'}`);
+            assert.equal(Object.hasOwn(call.body, 'model'), false);
+            assert.equal(Object.hasOwn(call.body, 'stream'), false);
+          } else {
+            assert.equal(call.body.model, 'Vendor-Exact-ID');
+            assert.equal(call.body.stream, stream);
+          }
+        }
+      }
+      assert.equal(calls.length, clients.length * 2);
+      assert.equal(decisions.length, calls.length);
+      assert.equal((await connect(options(f, { clients }))).exitCode, 0);
+      assert.equal(JSON.parse(fs.readFileSync(stateFile, 'utf8')).codexDefaultApplied, false);
+      assert.equal((await runDisconnect(options(f))).exitCode, 0);
       assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
+      assert.equal(fs.existsSync(stateFile), false);
+      assert.equal(fs.existsSync(path.join(f.stateDir, 'registry-backup.json')), false);
+      assert.equal(fs.existsSync(path.join(f.stateDir, 'connect-backup.json')), false);
+      for (const [relative, text] of originals) assert.equal(fs.readFileSync(path.join(f.home, relative), 'utf8'), text);
+      if (mode === 'isolated') {
+        assert.equal(fs.existsSync(piFile), false);
+        assert.equal(fs.existsSync(codexFile), false);
+      }
     });
   }
 
@@ -371,8 +535,10 @@ test('connect rechecks route readiness after acquiring the shared registry lock'
 });
 
 test('in-place partial disconnect and zero-model cleanup preserve gateway process metadata', async (t) => {
-  const f = fixture(t, registeredModels());
-  assert.equal((await runConnectInplace(options(f))).exitCode, 0);
+  const original = registeredModels();
+  original.activeModel = 'actual-response';
+  const f = fixture(t, original);
+  assert.equal((await runConnectInplace(options(f, { codexModel: 'actual-response' }))).exitCode, 0);
   const pidFile = path.join(f.stateDir, 'gateway.pid.json');
   fs.writeFileSync(pidFile, '{"pid":123,"port":8686}\n');
   const registry = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));

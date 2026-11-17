@@ -2,6 +2,7 @@ import os from 'node:os';
 import path from 'node:path';
 
 import { loadRegistrySnapshot, saveRegistryDocument } from './registry.mjs';
+import { GROUP_COMMAND_HANDLERS } from './group-commands.mjs';
 import { runConnect, runConnectInplace, runDisconnect } from '../connect/command.mjs';
 import { discoverAllModels, mergeDiscoveredModels } from '../routing/discovery.mjs';
 import {
@@ -17,8 +18,7 @@ import {
   effectiveAvailability,
   loadModelAvailability,
 } from '../routing/availability.mjs';
-import { getProviderForModel, listGatewayModels, loadProviders } from '../routing/providers.mjs';
-import { addGroup, removeGroup, loadGroups } from '../routing/groups.mjs';
+import { getProviderForModel, listGatewayModels, loadProviders } from '../providers/registry.mjs';
 import { importProvidersFromClients } from '../providers/import.mjs';
 import { runTui } from '../tui.mjs';
 import { getClientRoleMatrix, resolveModelForClientRole } from '../routing/client-role-matrix.mjs';
@@ -109,35 +109,7 @@ const COMMAND_HANDLERS = Object.freeze({
     return runTui({ io });
   },
 
-  async 'group-list'({ registry, io }) {
-    const groups = loadGroups(registry);
-    const keys = Object.keys(groups);
-    if (!keys.length) { io.log('No routing groups.'); return { exitCode: 0 }; }
-    for (const k of keys) io.log(`${k}\t${(groups[k].models || []).join(',')}\t${groups[k].routing}`);
-    return { exitCode: 0 };
-  },
-
-  async 'group-add'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
-    const id = String(rawOptions.groupId || rawOptions.id || '').trim();
-    const models = String(rawOptions.models || '').split(',').map((s) => s.trim()).filter(Boolean);
-    const routing = String(rawOptions.routing || 'smart').trim();
-    if (!id) { io.error('Missing --id'); return { exitCode: 1 }; }
-    const next = addGroup(registry, id, { models, routing });
-    const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
-    await saveRegistryDocument(next, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
-    io.log(`Added group ${id}: ${models.join(', ')} (${routing})`);
-    return { exitCode: 0 };
-  },
-
-  async 'group-rm'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
-    const id = String(rawOptions.groupId || rawOptions.id || '').trim();
-    if (!id) { io.error('Missing --id'); return { exitCode: 1 }; }
-    const next = removeGroup(registry, id);
-    const backupDir = path.join(path.dirname(registrySnapshot.file), '..', '..', '.aios', 'config-backups');
-    await saveRegistryDocument(next, { backupDir, rootDir: registryRoot, expectedHash: registrySnapshot.hash });
-    io.log(`Removed group ${id}`);
-    return { exitCode: 0 };
-  },
+  ...GROUP_COMMAND_HANDLERS,
 
   async 'import-providers'({ rawOptions, registry, registrySnapshot, registryRoot, io }) {
     const home = String(rawOptions.home || process.env.HOME || '');
@@ -205,10 +177,12 @@ const COMMAND_HANDLERS = Object.freeze({
       '|---|---|---|---|---|',
     ];
     for (const provider of Object.values(providers)) {
-      rows.push(`| \`${provider.id}\` | ${provider.baseUrl} | ${provider.protocols.join(', ') || '—'} | ${provider.models.length || '(by protocol)'} | ${provider.apiKeyEnv || '—'} |`);
+      const inline = String(provider.apiKey || '').trim();
+      const keyRef = inline ? `inline:${inline.length > 4 ? `••••${inline.slice(-4)}` : '••••'}` : (provider.apiKeyEnv || '—');
+      rows.push(`| \`${provider.id}\` | ${provider.baseUrl} | ${provider.protocols.join(', ') || '—'} | ${provider.models.length || '(by protocol)'} | ${keyRef} |`);
     }
     io.log(rows.join('\n'));
-    io.log('\nKeys are env references only (env:VAR); no plaintext secrets are stored or shown.');
+    io.log('\nKeys may be inline (local config, shown masked here) or env:VAR references; plaintext secrets are never logged.');
     return { exitCode: 0 };
   },
 
@@ -282,9 +256,12 @@ const COMMAND_HANDLERS = Object.freeze({
       stateDir,
       registryFile: registrySnapshot.file,
       baseRegistry: registry,
+      baseRegistryRevision: registrySnapshot.hash,
+      ...(rawOptions.expectedRevision !== undefined ? { expectedRevision: rawOptions.expectedRevision } : {}),
       clients,
       codexModel: String(rawOptions.codexModel || ''),
       piModel: String(rawOptions.piModel || 'gateway-default'),
+      ...(rawOptions.target !== undefined ? { target: rawOptions.target } : {}),
       dryRun: Boolean(rawOptions.dryRun || rawOptions['dry-run']),
       io: sink,
     };

@@ -110,9 +110,11 @@ export function maskObject(obj, store = null) {
 export function createUnmaskTransform(store = null) {
   const placeholderMax = 40; // {{KIND_8hex}} 最长约 20，留余量
   let carry = '';
+  const decoder = new TextDecoder();
+  const encoder = new TextEncoder();
   return new TransformStream({
     transform(chunk, controller) {
-      const text = carry + new TextDecoder().decode(chunk, { stream: true });
+      const text = carry + decoder.decode(chunk, { stream: true });
       // 还原完整占位符
       const unmasked = text.replace(/\{\{[A-Z_]+_[a-f0-9]{8}\}\}/g, (ph) => (store && store.has(ph) ? store.get(ph) : ph));
       // 保留尾部可能的半占位符
@@ -120,16 +122,17 @@ export function createUnmaskTransform(store = null) {
       const tailLen = tailMatch ? tailMatch[0].length : 0;
       if (tailLen > 0 && tailLen < placeholderMax) {
         carry = unmasked.slice(-tailLen);
-        controller.enqueue(new TextEncoder().encode(unmasked.slice(0, -tailLen)));
+        controller.enqueue(encoder.encode(unmasked.slice(0, -tailLen)));
       } else {
         carry = '';
-        controller.enqueue(new TextEncoder().encode(unmasked));
+        controller.enqueue(encoder.encode(unmasked));
       }
     },
     flush(controller) {
+      carry += decoder.decode();
       if (carry) {
         const final = carry.replace(/\{\{[A-Z_]+_[a-f0-9]{8}\}\}/g, (ph) => (store && store.has(ph) ? store.get(ph) : ph));
-        controller.enqueue(new TextEncoder().encode(final));
+        controller.enqueue(encoder.encode(final));
         carry = '';
       }
     },

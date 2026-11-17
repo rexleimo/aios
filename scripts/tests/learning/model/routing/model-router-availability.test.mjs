@@ -14,7 +14,7 @@ import {
   recordModelAvailability,
 } from '../../../../lib/tooling/model-router/routing/availability.mjs';
 import { classifyOneShotFailure } from '../../../../lib/foundation/ctx-agent-core/entry/one-shot.mjs';
-import { MODEL_PROTOCOLS, modelProtocolSet, normalizeModelProtocol, protocolEndpoint } from '../../../../lib/tooling/model-router/routing/protocols.mjs';
+import { MODEL_PROTOCOLS, modelProtocolSet, normalizeModelProtocol, protocolEndpoint } from '../../../../lib/tooling/model-router/providers/protocols.mjs';
 
 // 中文注释：可用性是运行时事实，不是注册表里的静态勾。这些用例锁住状态机的判据：
 // 一次 404 即定论、连败熔断、慢/静默换模型只降级、TTL 与冷却期回落到 unknown。

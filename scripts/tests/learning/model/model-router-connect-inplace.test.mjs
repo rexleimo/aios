@@ -42,7 +42,7 @@ test('就地接入→改写真实配置+备份原值→还原回到原值，备�
     assert.ok(fs.existsSync(inplaceBackupPath(stateDir)), '备份落盘');
 
     const claude = JSON.parse(read(home, '.claude/settings.json'));
-    assert.equal(claude.env.ANTHROPIC_BASE_URL, GW);
+    assert.equal(claude.env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
     assert.equal(claude.env.OTHER_VAR, 'keep', '用户其它 env 保留');
     const codex = read(home, '.codex/config.toml');
     assert.match(codex, /model_provider = "aios-gateway"/u);
@@ -196,7 +196,7 @@ for (const recover of ['retry', 'disconnect']) {
       return fs.renameSync(from, to);
     } };
     assert.throws(() => connectInplace({ ...f, gatewayUrl: GW, fsImpl }), /later write unavailable/);
-    assert.equal(JSON.parse(read(f.home, '.claude/settings.json')).env.ANTHROPIC_BASE_URL, GW);
+    assert.equal(JSON.parse(read(f.home, '.claude/settings.json')).env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
     assert.equal(read(f.home, '.pi/agent/settings.json'), before['.pi/agent/settings.json']);
     assert.equal(read(f.home, '.pi/agent/models.json'), before['.pi/agent/models.json']);
     noTemporaryFiles(f.root);

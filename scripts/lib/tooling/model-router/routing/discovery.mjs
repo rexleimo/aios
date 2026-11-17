@@ -2,7 +2,7 @@
 // 实测 relay：claude /claude/v1/models（{data:[{id}]}，68 个）、gemini /gemini/v1beta/models（{models:[{name}]}，10 个）
 // 返回 200；openai /openai/v1/models 404 → fail-soft 跳过该协议，不炸。纯解析 + 可注入 fetch，密钥只进请求头绝不记录。
 import { normalizeId } from '../entry/shared.mjs';
-import { loadProviders, ProviderConfigError, readyProviderAccounts, resolveProviderApiKey, resolveProviderModelsEndpoint, validateProvider } from './providers.mjs';
+import { loadProviders, ProviderConfigError, readyProviderAccounts, resolveProviderApiKey, resolveProviderModelsEndpoint, resolveProviderRequestHeaders, validateProvider } from '../providers/registry.mjs';
 
 // 纯函数：从模型列表响应体解析模型 id。openai/claude 用 {data:[{id}]}；gemini 用 {models:[{name:"models/xxx"}]}。
 export function parseModelList(protocol, body) {
@@ -12,18 +12,6 @@ export function parseModelList(protocol, body) {
   }
   const list = Array.isArray(body?.data) ? body.data : [];
   return list.map((item) => item?.id).filter((id) => typeof id === 'string' && id);
-}
-
-// 发现请求头：同一密钥按各协议惯例都挂上（relay 认 Bearer/x-api-key，原生 gemini 认 x-goog-api-key）。
-// Explicit authMode=none (for example local Ollama) sends no authentication headers.
-function discoveryHeaders(apiKey) {
-  if (!apiKey) return {};
-  return {
-    authorization: `Bearer ${apiKey}`,
-    'x-api-key': apiKey,
-    'x-goog-api-key': apiKey,
-    'anthropic-version': '2023-06-01',
-  };
 }
 
 // 发现一个 provider 的模型：逐协议拉列表，fail-soft（某协议 404/超时只记 error 不炸），按 id 去重并合并协议。
@@ -40,15 +28,19 @@ export async function discoverProviderModels(input, options = {}) {
     return { provider: provider.id, models: [], errors: [{ provider: provider.id, code: 'MISSING_CREDENTIALS' }] };
   }
   const apiKey = resolveProviderApiKey(provider, env, accountId);
-  const headers = discoveryHeaders(apiKey);
+  // Resolve every configured connection before the first request, not fail-soft on config errors.
+  const requests = provider.protocols.map((protocol) => ({
+    protocol,
+    url: resolveProviderModelsEndpoint(provider, protocol),
+    headers: resolveProviderRequestHeaders(provider, protocol, apiKey, env),
+  }));
   const byId = new Map();
   const errors = [];
-  for (const protocol of provider?.protocols || []) {
-    const url = resolveProviderModelsEndpoint(provider, protocol);
-    if (!url) continue;
+  for (const { protocol, url, headers } of requests) {
     try {
-      const res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(timeoutMs) });
+      const res = await fetchImpl(url, { headers, signal: AbortSignal.timeout(timeoutMs), redirect: 'manual' });
       if (!res?.ok) {
+        void res?.body?.cancel().catch(() => {});
         errors.push({ provider: provider.id, protocol, status: res?.status ?? 0 });
         continue;
       }

@@ -135,7 +135,7 @@ test('就地接入 CLI：改写真实配置 + 设 codex 路由默认 + 备份；
     const res = await runConnectInplace({ home, gatewayUrl: GW, stateDir, registryFile, clients: ['claude', 'codex', 'pi'], codexModel: 'test-response', io });
     assert.equal(res.exitCode, 0);
     assert.equal(res.mode, 'inplace');
-    assert.equal(JSON.parse(fs.readFileSync(path.join(home, '.claude/settings.json'), 'utf8')).env.ANTHROPIC_BASE_URL, GW);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(home, '.claude/settings.json'), 'utf8')).env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
     assert.equal(JSON.parse(fs.readFileSync(registryFile, 'utf8')).clientDefaults.codex, 'test-response');
     assert.equal(JSON.parse(fs.readFileSync(path.join(stateDir, 'connect-state.json'), 'utf8')).mode, 'inplace');
     assert.ok(fs.existsSync(path.join(stateDir, 'connect-backup.json')));
@@ -176,7 +176,7 @@ test('real file CLI uses an explicit ready registry under temporary HOME and res
   assert.equal(connected.status, 0, connected.stderr || connected.stdout);
   assert.equal(JSON.parse(connected.stdout).mode, 'inplace');
   assert.equal(JSON.parse(fs.readFileSync(f.registryFile, 'utf8')).clientDefaults.codex, 'test-response');
-  assert.equal(JSON.parse(fs.readFileSync(path.join(f.home, '.claude/settings.json'), 'utf8')).env.ANTHROPIC_BASE_URL, GW);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(f.home, '.claude/settings.json'), 'utf8')).env.ANTHROPIC_BASE_URL, `${GW}/clients/claude`);
 
   const edited = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));
   edited.models = {};
@@ -212,3 +212,29 @@ test('real file CLI keeps the empty bundled seed separate from native aliases an
     assert.equal(fs.existsSync(f.registryFile), false);
   }
 });
+
+for (const isolated of [false, true]) {
+  test(`real file CLI forwards canonical targets and defaults an omitted target to Auto (isolated=${isolated})`, (t) => {
+    const f = seed();
+    t.after(() => cleanup(f.root));
+    const cli = installCli(f), before = clientSnapshot(f.home);
+    const registry = JSON.parse(fs.readFileSync(f.registryFile, 'utf8'));
+    registry.clientDefaults.codex = 'test-response';
+    registry.routingGroups = { team: { models: ['test-claude'], routing: 'ordered' } };
+    fs.writeFileSync(f.registryFile, JSON.stringify(registry));
+    const registryBefore = fs.readFileSync(f.registryFile, 'utf8');
+    for (const target of [undefined, 'aios-auto', 'model:test-claude', 'group:team']) {
+      const result = cli('connect', '--json', '--home', f.home, '--gateway-url', GW, '--state-dir', f.stateDir,
+        ...(isolated ? ['--isolated'] : []), ...(target === undefined ? [] : ['--target', target]));
+      assert.equal(result.status, 0, result.stderr || result.stdout);
+      const expected = target === undefined || target === 'aios-auto' ? 'auto' : target;
+      const saved = JSON.parse(fs.readFileSync(path.join(f.stateDir, 'connect-state.json'), 'utf8'));
+      assert.equal(saved.targetRefVersion, 1);
+      assert.deepEqual(saved.targets, { claude: expected, codex: expected, pi: expected });
+      assert.equal(fs.readFileSync(f.registryFile, 'utf8'), registryBefore, 'canonical targets never mutate runtime defaults');
+      const disconnected = cli('disconnect', '--json', '--state-dir', f.stateDir);
+      assert.equal(disconnected.status, 0, disconnected.stderr || disconnected.stdout);
+      assert.deepEqual(clientSnapshot(f.home), before);
+    }
+  });
+}

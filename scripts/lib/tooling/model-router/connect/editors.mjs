@@ -3,14 +3,11 @@
 // 不写盘、不持真实密钥：claude/pi 用占位 token，codex 用内联 experimental_bearer_token（网关 localhost 信任，
 // 真实上游 key 由网关注入）。fs/原子写/备份落盘都在 inplace.mjs，本层只做 text→{text,backup} 便于零副作用测试。
 import path from 'node:path';
+import { clientGatewayUrl } from './targets.mjs';
+export { editCodex, restoreCodex } from './config/codex.mjs';
 
 const PLACEHOLDER_TOKEN = 'aios-gateway';
-const CODEX_BEGIN = '# aios-gateway:begin (managed by `aios model-router connect`; remove via disconnect)';
-const CODEX_END = '# aios-gateway:end';
-
-function trimSlash(url) {
-  return String(url || '').replace(/\/+$/u, '');
-}
+const CLAUDE_MODELS = ['ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'ANTHROPIC_SMALL_FAST_MODEL'];
 
 // 探测原 JSON 的缩进单位，回写时沿用，避免把用户的 4 空格/tab 格式压成 2 空格。
 function detectIndent(text) {
@@ -21,7 +18,9 @@ function detectIndent(text) {
 function parseJson(text) {
   const trimmed = String(text || '').trim();
   if (!trimmed) return {};
-  return JSON.parse(trimmed);
+  const result = JSON.parse(trimmed);
+  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new SyntaxError('client config must be a JSON object');
+  return result;
 }
 
 function serializeJson(document, indent) {
@@ -29,21 +28,30 @@ function serializeJson(document, indent) {
 }
 
 // ---- claude：~/.claude/settings.json 的 env.ANTHROPIC_BASE_URL / ANTHROPIC_AUTH_TOKEN ----
-// 网关按 (client,role) 矩阵服务端路由，故不写 model；claude 现有 model 保持不变。
-export function editClaude(text, gatewayUrl) {
+// Explicit reserved IDs distinguish fixed targets from the gateway-managed Auto route.
+export function editClaude(text, gatewayUrl, modelId = 'aios-auto', catalog = []) {
   const document = parseJson(text);
   const indent = detectIndent(text);
   const hadEnv = Object.prototype.hasOwnProperty.call(document, 'env');
+  if (hadEnv && (!document.env || typeof document.env !== 'object' || Array.isArray(document.env))) throw new SyntaxError('Claude env must be an object');
   const env = { ...(document.env || {}) };
   const backup = {
     hadEnv,
     baseUrl: Object.prototype.hasOwnProperty.call(env, 'ANTHROPIC_BASE_URL') ? env.ANTHROPIC_BASE_URL : null,
     authToken: Object.prototype.hasOwnProperty.call(env, 'ANTHROPIC_AUTH_TOKEN') ? env.ANTHROPIC_AUTH_TOKEN : null,
+    customHeaders: Object.hasOwn(env, 'ANTHROPIC_CUSTOM_HEADERS') ? env.ANTHROPIC_CUSTOM_HEADERS : null,
+    modelEnv: Object.fromEntries(CLAUDE_MODELS.map((key) => [key, Object.hasOwn(env, key) ? env[key] : null])),
+    model: Object.hasOwn(document, 'model') ? document.model : null,
+    availableModels: Object.hasOwn(document, 'availableModels') ? document.availableModels : null,
   };
-  env.ANTHROPIC_BASE_URL = trimSlash(gatewayUrl);
+  env.ANTHROPIC_BASE_URL = clientGatewayUrl(gatewayUrl, 'claude');
   env.ANTHROPIC_AUTH_TOKEN = PLACEHOLDER_TOKEN;
+  env.ANTHROPIC_CUSTOM_HEADERS = [...String(env.ANTHROPIC_CUSTOM_HEADERS || '').split('\n').filter((line) => line && !/^\s*x-gateway-client\s*:/iu.test(line)), 'x-gateway-client: claude'].join('\n');
+  for (const key of CLAUDE_MODELS) env[key] = modelId;
+  document.model = modelId;
+  document.availableModels = [...new Set([modelId, ...catalog.map((item) => item.id)])];
   document.env = env;
-  return { text: serializeJson(document, indent), backup, changedKeys: ['env.ANTHROPIC_BASE_URL', 'env.ANTHROPIC_AUTH_TOKEN'] };
+  return { text: serializeJson(document, indent), backup, changedKeys: ['env.ANTHROPIC_BASE_URL', 'env.ANTHROPIC_AUTH_TOKEN', 'env.ANTHROPIC_CUSTOM_HEADERS', ...CLAUDE_MODELS.map((key) => `env.${key}`), 'model', 'availableModels'] };
 }
 
 export function restoreClaude(text, backup) {
@@ -54,107 +62,43 @@ export function restoreClaude(text, backup) {
   else env.ANTHROPIC_BASE_URL = backup.baseUrl;
   if (backup.authToken === null) delete env.ANTHROPIC_AUTH_TOKEN;
   else env.ANTHROPIC_AUTH_TOKEN = backup.authToken;
+  if (Object.hasOwn(backup, 'customHeaders')) {
+    if (backup.customHeaders === null) delete env.ANTHROPIC_CUSTOM_HEADERS;
+    else env.ANTHROPIC_CUSTOM_HEADERS = backup.customHeaders;
+  }
+  for (const [key, value] of Object.entries(backup.modelEnv || {})) {
+    if (value === null) delete env[key];
+    else env[key] = value;
+  }
+  for (const key of ['model', 'availableModels']) {
+    if (!Object.hasOwn(backup, key)) continue;
+    if (backup[key] === null) delete document[key];
+    else document[key] = backup[key];
+  }
   if (Object.keys(env).length === 0 && !backup.hadEnv) delete document.env;
   else document.env = env;
   return serializeJson(document, indent);
 }
 
-// ---- codex：~/.codex/config.toml 行级外科——只改顶层 model_provider 行 + 追加/替换带标记的 provider 块 ----
-function splitTopLevel(lines) {
-  const firstTable = lines.findIndex((line) => /^\s*\[/u.test(line));
-  return firstTable === -1 ? lines.length : firstTable;
-}
-
-function codexBlock(gatewayUrl) {
-  return [
-    CODEX_BEGIN,
-    '[model_providers.aios-gateway]',
-    'name = "aios-gateway"',
-    `base_url = "${trimSlash(gatewayUrl)}/v1"`,
-    'wire_api = "responses"',
-    `experimental_bearer_token = "${PLACEHOLDER_TOKEN}"`,
-    'requires_openai_auth = false',
-    '',
-    '[model_providers.aios-gateway.http_headers]',
-    'x-gateway-client = "codex"',
-    CODEX_END,
-    '',
-  ].join('\n');
-}
-
-function stripCodexBlock(lines) {
-  const begin = lines.findIndex((line) => line.trim() === CODEX_BEGIN);
-  if (begin === -1) return { lines, priorBlock: null };
-  let end = lines.findIndex((line, index) => index > begin && line.trim() === CODEX_END);
-  if (end === -1) end = lines.length - 1;
-  const priorBlock = lines.slice(begin, end + 1).join('\n');
-  const kept = lines.filter((_, index) => index < begin || index > end);
-  return { lines: kept, priorBlock };
-}
-
-export function editCodex(text, gatewayUrl) {
-  const original = String(text || '');
-  const { lines: withoutBlock, priorBlock } = stripCodexBlock(original.split('\n'));
-  const topEnd = splitTopLevel(withoutBlock);
-  let modelProvider = null;
-  let providerIndex = -1;
-  for (let index = 0; index < topEnd; index += 1) {
-    const match = withoutBlock[index].match(/^\s*model_provider\s*=\s*(.+?)\s*$/u);
-    if (match && !withoutBlock[index].trim().startsWith('#')) {
-      modelProvider = match[1];
-      providerIndex = index;
-      break;
-    }
-  }
-  const backup = { modelProvider, priorBlock };
-  const newLine = 'model_provider = "aios-gateway"';
-  if (providerIndex !== -1) withoutBlock[providerIndex] = newLine;
-  else withoutBlock.splice(topEnd, 0, newLine);
-  const body = withoutBlock.join('\n').replace(/\n+$/u, '');
-  const text2 = `${body}\n\n${codexBlock(gatewayUrl)}`;
-  return { text: text2, backup, changedKeys: ['model_provider', '[model_providers.aios-gateway]'] };
-}
-
-export function restoreCodex(text, backup) {
-  const { lines } = stripCodexBlock(String(text || '').split('\n'));
-  const topEnd = splitTopLevel(lines);
-  let providerIndex = -1;
-  for (let index = 0; index < topEnd; index += 1) {
-    if (/^\s*model_provider\s*=/u.test(lines[index]) && !lines[index].trim().startsWith('#')) {
-      providerIndex = index;
-      break;
-    }
-  }
-  if (backup.modelProvider === null) {
-    if (providerIndex !== -1) lines.splice(providerIndex, 1);
-  } else if (providerIndex !== -1) {
-    lines[providerIndex] = `model_provider = ${backup.modelProvider}`;
-  } else {
-    lines.splice(splitTopLevel(lines), 0, `model_provider = ${backup.modelProvider}`);
-  }
-  let body = lines.join('\n').replace(/\n+$/u, '');
-  if (backup.priorBlock) body = `${body}\n\n${backup.priorBlock}\n`;
-  return `${body}\n`;
-}
-
 // ---- pi：~/.pi/agent/settings.json 的 defaultProvider/defaultModel + models.json 的 provider 条目 ----
-export function piProvider(gatewayUrl, modelId) {
+export function piProvider(gatewayUrl, modelId = 'aios-auto', catalog = []) {
   return {
     api: 'anthropic-messages',
-    baseUrl: trimSlash(gatewayUrl),
+    baseUrl: clientGatewayUrl(gatewayUrl, 'pi'),
+    headers: { 'x-gateway-client': 'pi' },
     apiKey: PLACEHOLDER_TOKEN,
-    models: [
+    models: [...new Map([{ id: modelId, name: 'AIOS Gateway' }, ...catalog].map((item) => [item.id, item])).values()].map((item) => (
       {
-        id: modelId,
-        name: 'AIOS Gateway',
+        id: item.id,
+        name: item.name,
         api: 'anthropic-messages',
         contextWindow: 200000,
         maxTokens: 8192,
         input: ['text'],
         reasoning: false,
         cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-      },
-    ],
+      }
+    )),
   };
 }
 
@@ -166,7 +110,8 @@ export function editPiSettings(text, modelId) {
     defaultModel: Object.prototype.hasOwnProperty.call(document, 'defaultModel') ? document.defaultModel : null,
   };
   document.defaultProvider = 'aios-gateway';
-  document.defaultModel = `aios-gateway/${modelId}`;
+  // Pi stores provider and model separately; prefixing the provider here duplicates it.
+  document.defaultModel = modelId;
   return { text: serializeJson(document, indent), backup, changedKeys: ['defaultProvider', 'defaultModel'] };
 }
 
@@ -180,15 +125,16 @@ export function restorePiSettings(text, backup) {
   return serializeJson(document, indent);
 }
 
-export function editPiModels(text, gatewayUrl, modelId) {
+export function editPiModels(text, gatewayUrl, modelId, catalog = []) {
   const document = parseJson(text);
+  if (Object.hasOwn(document, 'providers') && (!document.providers || typeof document.providers !== 'object' || Array.isArray(document.providers))) throw new SyntaxError('Pi providers must be an object');
   const indent = detectIndent(text);
   const providers = { ...(document.providers || {}) };
   const backup = {
     hadProviders: Object.prototype.hasOwnProperty.call(document, 'providers'),
     provider: Object.prototype.hasOwnProperty.call(providers, 'aios-gateway') ? providers['aios-gateway'] : null,
   };
-  providers['aios-gateway'] = piProvider(gatewayUrl, modelId);
+  providers['aios-gateway'] = piProvider(gatewayUrl, modelId, catalog);
   document.providers = providers;
   return { text: serializeJson(document, indent), backup, changedKeys: ['providers.aios-gateway'] };
 }

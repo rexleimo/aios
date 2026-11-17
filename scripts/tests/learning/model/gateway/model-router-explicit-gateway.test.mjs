@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { createRoutingGatewayApp } from '../../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
 import { createGatewayApp } from '../../../../lib/tooling/model-router/gateway/app.mjs';
 
 const model = (provider = 'local', upstreamModel = 'Real-Model') => ({ source: 'custom', provider, upstreamModel, protocols: ['claude'] });
@@ -147,12 +147,23 @@ test('standard Gemini uses the exact real model in its URL, not an invalid model
   const calls = [];
   const { app } = createRoutingGatewayApp({ registry: { models: { only: { ...model('local', 'Gemini-Real'), protocols: ['gemini'] } },
     providers: { local: provider({ baseUrl: 'https://example.invalid/v1beta', endpointStyle: 'standard', protocols: ['gemini'] }) } }, env: {},
-    fetchImpl: async (url, init) => { calls.push({ url, body: JSON.parse(new TextDecoder().decode(init.body)) }); return Response.json({ candidates: [{ content: { parts: [{ text: 'ok' }] } }] }); },
+    fetchImpl: async (url, init) => {
+      calls.push({ url, body: JSON.parse(new TextDecoder().decode(init.body)) });
+      const json = { candidates: [{ content: { role: 'model', parts: [{ text: 'ok' }] }, finishReason: 'STOP' }] };
+      return url.includes(':streamGenerateContent')
+        ? new Response(`data: ${JSON.stringify(json)}\n\n`, { headers: { 'content-type': 'text/event-stream' } })
+        : Response.json(json);
+    },
   });
   assert.equal((await request(app)).status, 200);
   assert.equal(calls[0].url, 'https://example.invalid/v1beta/models/Gemini-Real:generateContent');
   assert.equal(calls[0].body.model, undefined);
   assert.equal(calls[0].body.contents[0].parts[0].text, 'hello');
-  assert.equal((await request(app, { stream: true })).status, 501);
-  assert.equal(calls.length, 1);
+  const streamed = await request(app, { stream: true });
+  assert.equal(streamed.status, 200);
+  assert.match(await streamed.text(), /event: message_stop/);
+  assert.equal(calls[1].url, 'https://example.invalid/v1beta/models/Gemini-Real:streamGenerateContent?alt=sse');
+  assert.equal(calls[1].body.stream, undefined);
+  assert.equal(calls[1].body.model, undefined);
+  assert.equal(calls.length, 2);
 });

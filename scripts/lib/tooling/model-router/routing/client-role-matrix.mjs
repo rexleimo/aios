@@ -2,6 +2,7 @@
 // 解析优先级：env AIOS_MODEL_<ROLE>（显式指令）> 每客户端覆盖 > 全局默认 > 既有 roleDefaults。
 // 单一配置源 = registry.clientRoleMatrix。北极星：角色显式声明，无声明不猜，回落既有解析。
 import { normalizeEnvKey, normalizeId } from '../entry/shared.mjs';
+import { getNativeModelId } from '../entry/registry.mjs';
 import { applyClientContract, getModelConfig, resolveModelForRole } from './selection.mjs';
 
 // 纯函数：取出并归一矩阵 {default:{role→model}, clients:{client:{role→model}}}。
@@ -11,7 +12,7 @@ export function getClientRoleMatrix(registry) {
     const out = {};
     for (const [role, modelId] of Object.entries(map || {})) {
       const key = normalizeId(role);
-      const model = normalizeId(modelId);
+      const model = registry?.targetRefVersion === 1 ? String(modelId ?? '').trim() : normalizeId(modelId);
       if (key && model) out[key] = model;
     }
     return out;
@@ -48,9 +49,12 @@ export function resolveModelForClientRole(clientId, role, registry, env = proces
   if (!hit) {
     return resolveModelForRole(role, registry, env, context);
   }
-  const model = getModelConfig(hit.modelId, registry);
+  // The shared matrix resolver also feeds the gateway, which needs the original
+  // reference. Decode only at this native-dispatch boundary; env IDs stay raw.
+  const modelId = hit.source === 'env' ? hit.modelId : getNativeModelId(hit.modelId, registry);
+  const model = getModelConfig(modelId, registry);
   const decision = {
-    modelId: hit.modelId,
+    modelId,
     model,
     rule: null,
     taskType: normalizeId(role),

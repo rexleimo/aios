@@ -12,7 +12,7 @@ import {
   resolveProviderEndpoint,
   resolveProviderModelsEndpoint,
   validateProvider,
-} from '../../../../lib/tooling/model-router/routing/providers.mjs';
+} from '../../../../lib/tooling/model-router/providers/registry.mjs';
 import {
   discoverAllModels,
   discoverProviderModels,
@@ -72,7 +72,7 @@ test('invalid provider catalogs reject rather than being hidden by absent routes
   for (const patch of [
     { authMode: 'optional' }, { authMode: null }, { enabled: 'false' }, { enabled: null },
     { endpointStyle: 'native' }, { endpointStyle: null },
-    { apiKey: 'plaintext-fixture' }, { apiKeyEnv: 'TEST_KEY' }, { baseUrl: '' },
+    { apiKey: 'bad\nkey' }, { apiKeyEnv: 'TEST_KEY' }, { baseUrl: '' },
     { protocols: 'openai-chat' }, { protocols: ['invalid'] }, { accounts: [null] },
     { accounts: [{ id: 'a' }, { id: ' A ' }] },
   ]) {
@@ -299,7 +299,10 @@ test('discovery uses the first ready account and merges protocols only within an
     },
   });
   assert.equal(calls.length, 2);
-  assert.ok(calls.every((call) => call.headers.authorization === 'Bearer account-fixture'));
+  assert.deepEqual(calls.map(call => call.headers), [
+    { authorization: 'Bearer account-fixture' },
+    { 'x-api-key': 'account-fixture', 'anthropic-version': '2023-06-01' },
+  ], 'the first ready account uses protocol-specific authentication without inherited provider credentials');
   assert.deepEqual(result.models, [discovered('Vendor/Model-X', 'selected', ['openai-chat', 'claude'])]
     .map((model) => ({ ...model, id: 'vendor/model-x' })));
   assert.equal(JSON.stringify(result).includes('account-fixture'), false);

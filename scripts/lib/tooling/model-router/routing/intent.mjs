@@ -3,19 +3,19 @@
 // 北极星：绝不从用户文本用关键词/正则猜意图——parseIntentLabel 结构上只接受 (模型输出, 意图集)，
 // 拿不到用户文本；未知/缺失标签 fail-closed 返回 null，由网关回落既有候选链，不猜、不静默发错模型。
 import { normalizeId } from '../entry/shared.mjs';
-import { getProviderForModel, readyProviderAccounts, resolveProviderEndpoint, resolveProviderApiKey, providerAuthHeaders } from './providers.mjs';
+import { getProviderForModel, readyProviderAccounts, resolveProviderEndpoint, resolveProviderApiKey, resolveProviderRequestHeaders } from '../providers/registry.mjs';
 
 // 纯函数：归一 registry.intentRouting。缺分类器模型或无有效意图 → null（视为禁用）。
 // 形状 { enabled, classifierModel, intents:[{id,description,modelId}] }；enabled 默认开（配置在即启用）。
 export function getIntentRouting(registry) {
   const raw = registry?.intentRouting;
   if (!raw || typeof raw !== 'object' || raw.enabled === false) return null;
-  const classifierModel = normalizeId(raw.classifierModel);
+  const classifierModel = Object.hasOwn(registry?.models || {}, raw.classifierModel) ? raw.classifierModel : normalizeId(raw.classifierModel);
   const intents = (Array.isArray(raw.intents) ? raw.intents : [])
     .map((item) => ({
       id: normalizeId(item?.id),
       description: String(item?.description || '').trim(),
-      modelId: normalizeId(item?.modelId),
+      modelId: typeof item?.modelId === 'string' ? item.modelId : '',
     }))
     .filter((item) => item.id && item.modelId);
   if (!classifierModel || intents.length === 0) return null;
@@ -94,7 +94,7 @@ function classifierResponseText(protocol, json) {
 // 异步编排：让分类器模型把意图作为结构化判断报出（self-report），校验后映射到模型。
 // 任何失败（禁用/无配置/协议不支持/上游错误/超时/未知标签）→ null，由网关 fail-closed 回落，绝不猜。
 // 分类器调用本身可能扣费——验证用 mock fetchImpl 零扣费，真实扣费验收需显式批准。
-export async function classifyTurnIntent({ registry, userText, env = process.env, fetchImpl = fetch, timeoutMs = 15_000 } = {}) {
+export async function classifyTurnIntent({ registry, userText, env = process.env, fetchImpl = fetch, timeoutMs = 15_000, signal = null } = {}) {
   let timer;
   try {
     const config = getIntentRouting(registry);
@@ -105,11 +105,16 @@ export async function classifyTurnIntent({ registry, userText, env = process.env
     const body = classifierRequestBody(protocol, upstreamModel, buildIntentClassifierPrompt(config.intents, userText));
     if (!body) return null;
     const endpoint = resolveProviderEndpoint(provider, protocol);
-    const headers = { 'content-type': 'application/json', ...providerAuthHeaders(protocol, resolveProviderApiKey(provider, env, accountId)) };
+    const headers = { 'content-type': 'application/json', ...resolveProviderRequestHeaders(provider, protocol, resolveProviderApiKey(provider, env, accountId), env) };
     const controller = new AbortController();
     timer = setTimeout(() => controller.abort(), timeoutMs);
-    const res = await fetchImpl(endpoint, { method: 'POST', headers, body: JSON.stringify(body), signal: controller.signal });
-    if (!res.ok) return null;
+    const requestSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal;
+    const res = await fetchImpl(endpoint, { method: 'POST', headers, body: JSON.stringify(body), signal: requestSignal, redirect: 'manual' });
+    if (!res.ok) {
+      controller.abort();
+      void res.body?.cancel().catch(() => {});
+      return null;
+    }
     return parseIntentLabel(classifierResponseText(protocol, await res.json()), config.intents);
   } catch {
     return null;

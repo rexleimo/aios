@@ -15,14 +15,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { resolveCwdOutsideRootDir } from '../../../foundation/platform/aios-runtime-root.mjs';
-import { connectLaunchCommand } from '../connect/artifacts.mjs';
+import { readConnectStatus } from '../connect/readback.mjs';
 
 export const GATEWAY_DEFAULT_PORT = 8686;
 export const GATEWAY_HOST = '127.0.0.1';
 const PID_FILE = 'gateway.pid.json';
-const CONNECT_STATE_FILE = 'connect-state.json';
-const CONNECT_BACKUP_FILE = 'connect-backup.json';
-const CONNECT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
 
 /** 安装树里的 scripts/aios.mjs（detached 子进程要执行它）；测试可注入 scriptPath 覆盖。 */
 export function resolveAiosScript(fromUrl = import.meta.url) {
@@ -106,32 +103,9 @@ export async function waitForPort(port, expectedOpen, { attempts = 40, delayMs =
   return false;
 }
 
-/** 接入事实：就地模式以 connect-backup.json 为准（客户端真实配置已改写），隔离模式读 connect-state.json。
- *  launch 始终给出（隔离/手动兜底用）；mode 标明当前接入方式。不写盘。 */
-export function describeConnect(stateDir, fsImpl = fs) {
-  const state = readJsonFile(path.join(stateDir, CONNECT_STATE_FILE), fsImpl);
-  const backup = readJsonFile(path.join(stateDir, CONNECT_BACKUP_FILE), fsImpl);
-  const mode = backup || state?.mode === 'inplace' ? 'inplace' : 'isolated';
-  const inplaceClients = backup ? [...new Set(backup.entries.map((entry) => entry.client))] : [];
-  const isolatedClients = Array.isArray(state?.clients) ? state.clients.filter((client) => CONNECT_CLIENTS.includes(client)) : [];
-  const clients = CONNECT_CLIENTS.map((client) => {
-    const launch = connectLaunchCommand(client, stateDir, { piModel: state?.piModel || 'gateway-default' });
-    const connected = mode === 'inplace' ? inplaceClients.includes(client) : isolatedClients.includes(client);
-    return {
-      client,
-      connected,
-      launch,
-      mode,
-      artifactExists: mode === 'isolated' && connected && fsImpl.existsSync(path.join(stateDir, artifactRelPath(client))),
-    };
-  });
-  return { connected: clients.some((client) => client.connected), mode, gatewayUrl: backup?.gatewayUrl || state?.gatewayUrl || null, clients };
-}
-
-function artifactRelPath(client) {
-  if (client === 'claude') return 'claude-settings.json';
-  if (client === 'codex') return path.join('codex-home', 'config.toml');
-  return path.join('pi-home', '.pi', 'agent', 'models.json');
+/** Parsed, redacted client facts stay separate from ownership and recovery. */
+export function describeConnect(stateDir, fsImpl = fs, options = {}) {
+  return readConnectStatus({ stateDir, fsImpl, ...options });
 }
 
 /**
@@ -219,6 +193,7 @@ export async function stopGatewayDaemon({
 /** 网关状态：运行中（端口应答）+ 是否托管（pid 活着）+ 接入事实。pidfile 残留但不可达 = stale。 */
 export async function gatewayStatus({
   stateDir = defaultStateDir(),
+  home = os.homedir(),
   port = GATEWAY_DEFAULT_PORT,
   killImpl = process.kill.bind(process),
   probeImpl = probePort,
@@ -228,7 +203,7 @@ export async function gatewayStatus({
   const chosenPort = record?.port || Number(port) || GATEWAY_DEFAULT_PORT;
   const portOpen = await probeImpl(chosenPort);
   const pidAlive = record ? isPidAlive(record.pid, killImpl) : false;
-  const connect = describeConnect(stateDir, fsImpl);
+  const connect = describeConnect(stateDir, fsImpl, { home });
   return {
     running: portOpen,
     managed: pidAlive && portOpen,

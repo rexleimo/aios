@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { createServer } from 'node:http';
 
 import { parseModelList, discoverProviderModels, discoverAllModels, mergeDiscoveredModels } from '../../../../lib/tooling/model-router/routing/discovery.mjs';
 
@@ -37,7 +38,11 @@ test('discoverProviderModels：逐协议拉取、按 id 去重合并协议、404
   assert.deepEqual(byId.shared.protocols.sort(), ['claude', 'gemini'], '跨协议同 id 去重并合并协议');
   assert.ok(models.every((m) => m.source === 'discovered'));
   assert.ok(errors.some((e) => e.protocol === 'openai-chat' && e.status === 404), 'openai 404 记 error 不炸');
-  assert.ok(capture.every((c) => c.headers.authorization === 'Bearer super-secret'), '密钥按协议挂头');
+  assert.deepEqual(capture.map(({ url, headers }) => ({ url, headers })), [
+    { url: 'https://relay.test/claude/v1/models', headers: { 'x-api-key': 'super-secret', 'anthropic-version': '2023-06-01' } },
+    { url: 'https://relay.test/gemini/v1beta/models', headers: { 'x-goog-api-key': 'super-secret' } },
+    { url: 'https://relay.test/openai/v1/models', headers: { authorization: 'Bearer super-secret' } },
+  ], 'discovery uses each API authentication header without sending unrelated credentials');
   assert.ok(!JSON.stringify({ models, errors }).includes('super-secret'), '密钥绝不进结果/错误');
 });
 
@@ -56,6 +61,47 @@ test('discoverProviderModels: required auth without credentials makes no upstrea
   assert.deepEqual(result.models, []);
   assert.equal(result.errors[0].code, 'MISSING_CREDENTIALS');
 });
+
+test('discovery redirects never forward synthetic provider credentials to a second origin', async () => {
+  let destinationCalls = 0;
+  const destination = createServer((_request, response) => {
+    destinationCalls++;
+    response.setHeader('content-type', 'application/json');
+    response.end(JSON.stringify({ data: [{ id: 'unexpected-model' }] }));
+  });
+  const origin = createServer((_request, response) => {
+    response.writeHead(307, { location: `http://127.0.0.1:${destination.address().port}/capture` });
+    response.end();
+  });
+  const listen = server => new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const close = server => new Promise(resolve => server.close(resolve));
+  await listen(destination);
+  await listen(origin);
+  try {
+    const result = await discoverProviderModels({ ...PROVIDER,
+      protocols: ['claude'], endpointStyle: 'standard', baseUrl: `http://127.0.0.1:${origin.address().port}`,
+    }, { env: { TEST_KEY: 'synthetic-key-not-real' } });
+    assert.equal(destinationCalls, 0);
+    assert.deepEqual(result.models, []);
+    assert.equal(result.errors[0].status, 307);
+  } finally {
+    await Promise.all([close(origin), close(destination)]);
+  }
+});
+
+for (const status of [307, 429]) {
+  test(`discovery cancels a ${status} body without awaiting its cancellation promise`, async () => {
+    let cancelled = false;
+    const result = await discoverProviderModels({ ...PROVIDER, protocols: ['claude'] }, {
+      env: { TEST_KEY: 'synthetic-key-not-real' }, fetchImpl: async (_url, init) => {
+        assert.equal(init.redirect, 'manual');
+        return new Response(new ReadableStream({ cancel() { cancelled = true; return new Promise(() => {}); } }), { status });
+      },
+    });
+    assert.equal(cancelled, true);
+    assert.equal(result.errors[0].status, status);
+  });
+}
 
 test('discoverProviderModels：网络异常 fail-soft，记 error 不抛', async () => {
   const fetchImpl = async () => { throw new Error('ECONNREFUSED'); };

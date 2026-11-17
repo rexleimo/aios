@@ -43,7 +43,7 @@ export {
   modelProtocolSet,
   normalizeModelProtocol,
   protocolEndpoint,
-} from './model-router/routing/protocols.mjs';
+} from './model-router/providers/protocols.mjs';
 
 export {
   AVAILABILITY_CACHE_REL_PATH,

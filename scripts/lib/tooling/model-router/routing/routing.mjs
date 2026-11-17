@@ -7,7 +7,7 @@ import {
   resolveModelForTask,
 } from './selection.mjs';
 import { classifyTaskIntent, matchTaskTypeFromDescription, scoreTaskSignals } from '../session/signals.mjs';
-import { modelProtocolSet } from './protocols.mjs';
+import { modelProtocolSet } from '../providers/protocols.mjs';
 import { normalizeModelRouterProfile } from '../session/profile.mjs';
 import { clonePlain, normalizeId } from '../entry/shared.mjs';
 

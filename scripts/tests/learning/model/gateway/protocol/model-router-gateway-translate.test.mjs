@@ -6,7 +6,7 @@ import {
   claudeToOpenAIChatResponse,
   openAIChatToClaudeRequest,
   openAIChatToClaudeResponse,
-} from '../../../../lib/tooling/model-router/gateway/translate.mjs';
+} from '../../../../../lib/tooling/model-router/gateway/translate.mjs';
 
 // 中文注释：夹具照抄真实 wire 信封（claude messages / openai chat.completion），不是按内层对象臆造。
 
