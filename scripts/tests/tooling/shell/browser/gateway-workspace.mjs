@@ -190,6 +190,7 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     await dialog.getByRole('button', { name: '加入草稿' }).click();
     await visible(page, dialog.getByText(/HTTP\(S\)/));
     await dialog.getByRole('textbox', { name: 'API 端点', exact: true }).fill('https://example.invalid/v1');
+    await dialog.getByRole('button', { name: 'API 密钥来源：环境变量引用', exact: true }).click();
     await dialog.getByRole('textbox', { name: '密钥环境变量引用', exact: true }).fill('not-an-env-reference');
     await dialog.getByRole('button', { name: '加入草稿' }).click();
     await visible(page, dialog.getByText(/不能填写真实密钥/));

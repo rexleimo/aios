@@ -66,7 +66,8 @@ export async function runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme 
     await page.getByRole('button', { name: '添加意图规则', exact: true }).click();
     await page.getByRole('textbox', { name: '意图 1 描述', exact: true }).fill('Short conversation');
     await choose(page, '意图 1 模型', /fixture \/ Beta/);
-    await page.getByRole('button', { name: '收起意图 1', exact: true }).press('Enter');
+    await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
     const rules = page.getByRole('list', { name: '意图规则', exact: true });
     assert.equal(await rules.getByRole('textbox').count(), 0);
     assert.equal(await rules.getByRole('combobox').count(), 0);
@@ -87,6 +88,8 @@ export async function runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme 
     assert.equal(saved().intentRouting.intents[0].modelId, 'model:model-beta');
     await page.getByRole('button', { name: '编辑意图 1', exact: true }).press('Space');
     assert.equal(await page.getByRole('textbox', { name: '意图 1 描述', exact: true }).inputValue(), 'Short conversation');
+    await page.getByRole('dialog').getByRole('button', { name: '关闭', exact: true }).click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(await page.getByRole('button', { name: '保存全部修改', exact: true }).isDisabled(), true, 'opening a saved rule is not a draft edit');
     assert.equal(state.writes.length, writes + 1, 'only unified save persists the rule');
     assert.equal(state.gatewayActions.length, 0);

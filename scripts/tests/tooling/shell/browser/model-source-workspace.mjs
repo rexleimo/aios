@@ -144,6 +144,7 @@ export async function runModelSourceBrowserChecks(t, { fixture, baseUrl, chooseT
       await summary.focus();
       await summary.press('Enter');
       await dialog.getByRole('button', { name: '添加账号', exact: true }).press('Enter');
+      await dialog.getByRole('button', { name: '账号 1 密钥来源：环境变量引用', exact: true }).click();
       await dialog.getByRole('textbox', { name: '账号 1 密钥环境变量引用', exact: true }).fill('env:KEYBOARD_KEY');
       const focusedBox = await dialog.getByRole('textbox', { name: '账号 1 密钥环境变量引用', exact: true }).boundingBox();
       const footerBox = await dialog.getByRole('button', { name: '加入草稿', exact: true }).locator('..').boundingBox();
@@ -203,6 +204,7 @@ export async function runModelSourceBrowserChecks(t, { fixture, baseUrl, chooseT
       await choose(page, '供应商预设', '智谱 GLM');
       await choose(page, '地区或套餐', 'Coding Plan');
       assert.equal(await field('API 端点').inputValue(), 'https://open.bigmodel.cn/api/coding/paas/v4');
+      await dialog.getByRole('button', { name: 'API 密钥来源：环境变量引用', exact: true }).click();
       await field('密钥环境变量引用').fill('env:FIXTURE_CHANNEL');
       await dialog.getByText('其他 API 地址', { exact: true }).click();
       await field('Anthropic Messages 地址').fill('https://messages.invalid/api/anthropic');

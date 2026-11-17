@@ -80,6 +80,7 @@ test('provider form stages multi-API presets, channel auth and headers; cancel a
   await choose('供应商预设', '智谱 GLM');
   await choose('地区或套餐', 'Coding Plan');
   assert.equal(await field('API 端点').inputValue(), 'https://open.bigmodel.cn/api/coding/paas/v4');
+  await dialog.getByRole('button', { name: 'API 密钥来源：环境变量引用', exact: true }).click();
   await field('密钥环境变量引用').fill('env:CHANNEL_KEY');
   await dialog.getByText('其他 API 地址', { exact: true }).click();
   assert.equal(await field('Anthropic Messages 地址').inputValue(), 'https://open.bigmodel.cn/api/anthropic');

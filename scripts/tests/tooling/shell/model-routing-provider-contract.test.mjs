@@ -297,7 +297,7 @@ test('provider dialog exposes all account refs, stages explicit edits, and confi
   const field = (name) => dialog.getByRole('textbox', { name, exact: true });
   assert.equal(await field('账号 1 密钥环境变量引用').inputValue(), 'env:PRIMARY_KEY');
   assert.equal(await field('账号 2 密钥环境变量引用').inputValue(), 'env:BACKUP_KEY');
-  assert.equal(await field('账号 3 密钥环境变量引用').inputValue(), '');
+  assert.equal(await dialog.getByRole('button', { name: '账号 3 密钥来源：继承供应商', exact: true }).getAttribute('aria-pressed'), 'true', 'an account without its own key inherits the provider');
   assert.equal(await field('账号 1 标识').isDisabled(), true, 'existing account ids protect metadata identity');
   await field('密钥环境变量引用').fill('env:ROTATED');
   await dialog.getByRole('button', { name: '加入草稿' }).click();
@@ -344,6 +344,7 @@ test('provider dialog exposes all account refs, stages explicit edits, and confi
   await page.waitForFunction(() => document.querySelector('input[aria-label="供应商标识"]')?.value === '');
   await field('供应商标识').fill('new-provider');
   await field('API 端点').fill('https://new.invalid');
+  await dialog.getByRole('button', { name: 'API 密钥来源：环境变量引用', exact: true }).click();
   await field('密钥环境变量引用').fill('env:ROTATED');
   assert.equal(await confirmation.count(), 0, 'new no-account providers retain the existing add flow');
   await dialog.getByRole('button', { name: '加入草稿' }).click();
@@ -353,6 +354,7 @@ test('provider dialog exposes all account refs, stages explicit edits, and confi
   await dialog.getByText('多账号与重试 · 可选', { exact: true }).click();
   await dialog.getByRole('button', { name: '添加账号', exact: true }).click();
   await field('账号 1 标识').fill('extra');
+  await dialog.getByRole('button', { name: '账号 1 密钥来源：环境变量引用', exact: true }).click();
   await field('账号 1 密钥环境变量引用').fill('not-an-env-reference');
   await dialog.getByRole('button', { name: '加入草稿' }).click();
   await dialog.getByText('账号密钥只能填写 env:VARIABLE 引用，不能填写真实密钥。', { exact: true }).waitFor();
@@ -385,6 +387,19 @@ test('provider dialog exposes all account refs, stages explicit edits, and confi
   await dialog.getByRole('button', { name: '加入草稿' }).click();
   const inlineSubmitted = await page.evaluate(() => window.submissions.at(-1));
   assert.equal(inlineSubmitted.apiKey, 'sk-browser-real-key-123456');
+
+  // The two sources are mutually exclusive: switching clears the other field.
+  await dialog.getByRole('button', { name: 'API 密钥来源：环境变量引用', exact: true }).click();
+  assert.equal(await dialog.getByRole('textbox', { name: 'API 密钥', exact: true }).count(), 0, 'direct field unmounts on switch');
+  await field('密钥环境变量引用').fill('env:SWITCHED_KEY');
+  await dialog.getByRole('button', { name: 'API 密钥来源：直接填写', exact: true }).click();
+  assert.equal(await field('密钥环境变量引用').count(), 0, 'env field unmounts on switch');
+  assert.equal(await field('API 密钥').inputValue(), '', 'the old inline key is cleared after switching back');
+  await dialog.getByRole('button', { name: '加入草稿' }).click();
+  const switched = await page.evaluate(() => window.submissions.at(-1));
+  assert.equal(switched.apiKeyEnv, '', 'the abandoned env ref is cleared on switch');
+  assert.ok(!switched.apiKey, 'the abandoned inline key is cleared on switch');
+
   await page.evaluate((value) => { window.initialProvider = value; window.renderSummary(); }, inlineSubmitted);
   await page.getByText('配置详情', { exact: true }).click();
   const inlineSummary = page.getByRole('list', { name: 'upstream 账号有效密钥引用' });

@@ -8,6 +8,7 @@ import { ProviderConnectionFields } from './provider/connection-fields';
 import { ProviderHeaderFields } from './provider/header-fields';
 import { API_CHOICES, connectionUrls, endpointFingerprint } from './provider/connections.mjs';
 import { credentialLabel, effectiveCredential } from './provider/credential.mjs';
+import { CredentialSourceField, type CredentialMode } from './provider/credential-source-field';
 
 const EMPTY_PROVIDER: RoutingProvider = {
   id: '',
@@ -41,6 +42,13 @@ export function ModelSourceProviderDialog({
   const initialFocus = useRef<HTMLInputElement>(null);
   const editingId = initialValue?.id || '';
   const accounts = provider.accounts ?? [];
+  const [providerMode, setProviderMode] = useState<CredentialMode>(() =>
+    initialValue?.apiKey?.trim() ? 'direct' : initialValue?.apiKeyEnv?.trim() ? 'env' : 'direct');
+  const [accountModes, setAccountModes] = useState<CredentialMode[]>(() =>
+    (initialValue?.accounts ?? []).map((account) =>
+      account.apiKey?.trim() ? 'direct' : account.apiKeyEnv?.trim() ? 'env' : 'inherit'));
+  const setAccountMode = (index: number, mode: CredentialMode) =>
+    setAccountModes((prev) => prev.map((value, i) => (i === index ? mode : value)));
   const effectiveRefs = [
     ...(accounts.length ? accounts.map((account) => credentialLabel(effectiveCredential(provider, account))) : [credentialLabel(effectiveCredential(provider))]),
     ...Object.values(provider.headers || {}).filter(value => value.startsWith('env:')),
@@ -62,6 +70,11 @@ export function ModelSourceProviderDialog({
     const next = [...accounts];
     [next[index], next[index + direction]] = [next[index + direction], next[index]];
     setProvider({ ...provider, accounts: next });
+    setAccountModes((prev) => {
+      const nextModes = [...prev];
+      [nextModes[index], nextModes[index + direction]] = [nextModes[index + direction], nextModes[index]];
+      return nextModes;
+    });
     setEndpointConfirmed(false);
   }
 
@@ -175,37 +188,24 @@ export function ModelSourceProviderDialog({
             />
           </Field>
           {provider.authMode === 'none' && <p className="text-xs leading-5 text-rex-text-muted">已显式声明无需认证，不会发送密钥。已有密钥配置会保留，切回需要认证后才使用。</p>}
-          <Field label="API 密钥" hint="直接粘贴渠道提供的密钥；保存在本地配置，列表中打码显示，不会写入日志或决策记录。">
-            <div className="flex items-center gap-2">
-              <Input
-                type={showKeys ? 'text' : 'password'}
-                aria-label="API 密钥"
-                value={provider.apiKey ?? ''}
-                placeholder="粘贴真实密钥"
-                onChange={(event) => {
-                  setProvider({ ...provider, apiKey: event.target.value });
-                  setEndpointConfirmed(false);
-                }}
-              />
-              <Button type="button" variant="outline" aria-label={showKeys ? '隐藏密钥' : '显示密钥'} onClick={() => setShowKeys(!showKeys)}>
-                {showKeys ? '隐藏' : '显示'}
-              </Button>
-            </div>
-          </Field>
-          <Field
-            label="密钥环境变量引用"
-            hint="兼容选项：仅填写 env:MY_API_KEY；推荐直接用上方 API 密钥。账号有独立配置时，不受此项修改影响。"
-          >
-            <Input
-              aria-label="密钥环境变量引用"
-              value={provider.apiKeyEnv}
-              placeholder="env:MY_API_KEY"
-              onChange={(event) => {
-                setProvider({ ...provider, apiKeyEnv: event.target.value });
-                setEndpointConfirmed(false);
-              }}
-            />
-          </Field>
+          <CredentialSourceField
+            label="API 密钥"
+            inputLabel="API 密钥"
+            envInputLabel="密钥环境变量引用"
+            mode={providerMode}
+            apiKey={provider.apiKey ?? ''}
+            apiKeyEnv={provider.apiKeyEnv}
+            showKeys={showKeys}
+            onToggleShow={() => setShowKeys(!showKeys)}
+            onChange={(next) => {
+              setProvider({ ...provider, apiKey: next.apiKey, apiKeyEnv: next.apiKeyEnv });
+              setProviderMode(next.mode);
+              setEndpointConfirmed(false);
+            }}
+          />
+          <p className="text-xs leading-5 text-rex-text-muted">
+            直接填写会把密钥保存在本地配置（列表中打码显示，不会写入日志）；环境变量引用只保存 env:VARIABLE，运行时从进程环境读取。切换来源会清除另一种配置。账号有独立配置时不受此项影响。
+          </p>
           <details open={accounts.length > 0} className="rounded-rex-sm border border-rex-border p-3">
             <summary className="cursor-pointer rounded-sm text-xs font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">多账号与重试{accounts.length ? ` · ${accounts.length} 个账号` : ' · 可选'}</summary>
             <section aria-label="供应商账号" className="mt-4 space-y-3">
@@ -215,6 +215,7 @@ export function ModelSourceProviderDialog({
                   let id = `account-${accounts.length + 1}`;
                   while (accounts.some((account) => account.id === id)) id += '-new';
                   setProvider({ ...provider, accounts: [...accounts, { id, apiKeyEnv: '', apiKey: '' }] });
+                  setAccountModes((prev) => [...prev, 'inherit']);
                   setEndpointConfirmed(false);
                 }}>添加账号</Button>
               </div>
@@ -235,23 +236,21 @@ export function ModelSourceProviderDialog({
                       onChange={(event) => updateAccount(index, { id: event.target.value })}
                     />
                   </Field>
-                  <Field label={`账号 ${index + 1} API 密钥`} hint="直接粘贴此账号的密钥；留空继承供应商密钥。">
-                    <Input
-                      type={showKeys ? 'text' : 'password'}
-                      aria-label={`账号 ${index + 1} API 密钥`}
-                      value={account.apiKey ?? ''}
-                      placeholder="粘贴真实密钥"
-                      onChange={(event) => updateAccount(index, { apiKey: event.target.value })}
-                    />
-                  </Field>
-                  <Field label={`账号 ${index + 1} 密钥环境变量引用`} hint="兼容选项：留空继承供应商配置，不会读取其他账号的引用。">
-                    <Input
-                      aria-label={`账号 ${index + 1} 密钥环境变量引用`}
-                      value={account.apiKeyEnv}
-                      placeholder="env:ACCOUNT_API_KEY"
-                      onChange={(event) => updateAccount(index, { apiKeyEnv: event.target.value })}
-                    />
-                  </Field>
+                  <CredentialSourceField
+                    label={`账号 ${index + 1} 密钥`}
+                    inputLabel={`账号 ${index + 1} API 密钥`}
+                    envInputLabel={`账号 ${index + 1} 密钥环境变量引用`}
+                    mode={accountModes[index] ?? 'inherit'}
+                    apiKey={account.apiKey ?? ''}
+                    apiKeyEnv={account.apiKeyEnv}
+                    showKeys={showKeys}
+                    allowInherit
+                    onToggleShow={() => setShowKeys(!showKeys)}
+                    onChange={(next) => {
+                      updateAccount(index, { apiKey: next.apiKey, apiKeyEnv: next.apiKeyEnv });
+                      setAccountMode(index, next.mode);
+                    }}
+                  />
                   <p className="break-all text-xs leading-5 text-rex-text-muted">
                     有效引用：{provider.authMode === 'none' ? '无需认证（不发送密钥）' : effectiveRefs[index] || '未配置（需要凭据）'}{provider.authMode !== 'none' && !account.apiKey?.trim() && !account.apiKeyEnv.trim() && '（继承供应商）'}
                   </p>
@@ -260,6 +259,7 @@ export function ModelSourceProviderDialog({
                     <Button type="button" variant="outline" disabled={index === accounts.length - 1} aria-label={`下移账号 ${index + 1}`} onClick={() => moveAccount(index, 1)}>下移</Button>
                     <Button type="button" variant="outline" aria-label={`移除账号 ${index + 1}`} onClick={() => {
                       setProvider({ ...provider, accounts: accounts.filter((_, i) => i !== index) });
+                      setAccountModes((prev) => prev.filter((_, i) => i !== index));
                       setEndpointConfirmed(false);
                     }}>移除账号</Button>
                   </div>
