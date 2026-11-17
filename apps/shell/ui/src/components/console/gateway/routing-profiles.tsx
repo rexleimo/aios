@@ -2,14 +2,15 @@
 
 import { useEffect, useState } from 'react';
 import { Bookmark, Plus, Trash2 } from 'lucide-react';
-import { Badge, Button, InlineFeedback, Input, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
+import { Button, InlineFeedback, Input, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
 import type { RoutingEditable } from '../model-routing/use-routing-config';
+import { migrateEditableTargets, serializeTargetRef } from '../../../lib/config/model-routing.mjs';
 
-type Profile = { name: string; matrix: RoutingEditable['matrix'] };
+type Profile = { name: string; matrix: RoutingEditable['matrix']; targetRefVersion?: number };
 const STORAGE_KEY = 'aios.profiles';
 
 function validMatrix(value: unknown): value is RoutingEditable['matrix'] {
-  if (!value || typeof value !== 'object') return false;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const matrix = value as RoutingEditable['matrix'];
   const validMap = (map: unknown) =>
     !!map &&
@@ -28,13 +29,16 @@ function validMatrix(value: unknown): value is RoutingEditable['matrix'] {
 export function RoutingProfiles({
   matrix,
   modelIds = [],
+  targetIds,
   onApply,
 }: {
   matrix: RoutingEditable['matrix'];
   modelIds?: string[];
+  targetIds?: string[];
   onApply: (value: RoutingEditable['matrix']) => void;
 }) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [storageReady, setStorageReady] = useState(false);
   const [name, setName] = useState('');
   const [saving, setSaving] = useState(false);
   const [selected, setSelected] = useState<{ kind: 'apply' | 'delete'; profile: Profile } | null>(null);
@@ -48,11 +52,13 @@ export function RoutingProfiles({
       )
         throw new Error('本地方案数据格式不正确，未自动覆盖。');
       setProfiles(value);
+      setStorageReady(true);
     } catch (error) {
       setFeedback({ tone: 'error', text: error instanceof Error ? error.message : '无法读取本地方案。' });
     }
   }, []);
   function persist(next: Profile[]) {
+    if (!storageReady) return false;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
       setProfiles(next);
@@ -70,6 +76,7 @@ export function RoutingProfiles({
           <Button
             size="sm"
             variant="outline"
+            disabled={!storageReady}
             onClick={() => {
               setName('');
               setSaving(true);
@@ -83,7 +90,7 @@ export function RoutingProfiles({
         角色覆盖方案
       </SmallTitle>
       <p className="mb-4 text-xs leading-6 text-rex-text-muted">
-        仅快照全局与客户端角色覆盖，不包含供应商、密钥或意图规则。方案保存在此浏览器，不与 CLI
+        仅快照全局与客户端角色覆盖，不包含普通对话默认、客户端普通对话例外、供应商、密钥或意图规则。方案保存在此浏览器，不与 CLI
         同步；应用只更新草稿。
       </p>
       <div className="space-y-2">
@@ -99,7 +106,7 @@ export function RoutingProfiles({
           >
             <Bookmark size={14} className="shrink-0 text-rex-text-muted" />
             <span className="min-w-0 flex-1 truncate text-xs font-medium">{profile.name}</span>
-            <Button size="sm" variant="outline" disabled={modelIds.length === 0} onClick={() => setSelected({ kind: 'apply', profile })}>
+            <Button size="sm" variant="outline" onClick={() => setSelected({ kind: 'apply', profile })}>
               应用到草稿
             </Button>
             <Button
@@ -131,7 +138,7 @@ export function RoutingProfiles({
               setFeedback({ tone: 'error', text: '方案名称已存在，请换一个名称。' });
               return;
             }
-            if (persist([...profiles, { name: trimmed, matrix: structuredClone(matrix) }])) {
+            if (persist([...profiles, { name: trimmed, matrix: structuredClone(matrix), targetRefVersion: 1 }])) {
               setSaving(false);
               setFeedback({ tone: 'ok', text: '角色覆盖方案已保存在此浏览器。' });
             }
@@ -179,14 +186,19 @@ export function RoutingProfiles({
               if (selected.kind === 'delete') {
                 if (!persist(profiles.filter((profile) => profile.name !== selected.profile.name))) return;
               } else {
-                const ids = [...Object.values(selected.profile.matrix.default), ...Object.values(selected.profile.matrix.clients).flatMap(Object.values)].filter(Boolean);
-                if (ids.some((id) => !modelIds.includes(id))) {
-                  setFeedback({ tone: 'error', text: '方案包含当前未绑定或已停用的模型，未应用。请先补充模型来源。' });
-                  setSelected(null);
-                  return;
+                try {
+                  // Leave stored legacy profiles untouched; their unversioned strings are literal model IDs.
+                  const migratedMatrix: RoutingEditable['matrix'] = migrateEditableTargets(selected.profile).matrix;
+                  const available = new Set(targetIds ?? modelIds.map((id) => serializeTargetRef({ kind: 'model', id })));
+                  const refs = [...Object.values(migratedMatrix.default), ...Object.values(migratedMatrix.clients).flatMap(Object.values)];
+                  if (refs.some((ref) => ref && ref !== 'auto' && !available.has(ref))) {
+                    throw new Error('包含当前不可用的模型或模型组，请先补充或启用模型来源。');
+                  }
+                  onApply(structuredClone(migratedMatrix));
+                  setFeedback({ tone: 'ok', text: '方案已应用到草稿，尚未写入配置。' });
+                } catch (error) {
+                  setFeedback({ tone: 'error', text: `方案未应用：${error instanceof Error ? error.message : '目标引用无效。'}` });
                 }
-                onApply(structuredClone(selected.profile.matrix));
-                setFeedback({ tone: 'ok', text: '方案已应用到草稿，尚未写入配置。' });
               }
               setSelected(null);
             }}

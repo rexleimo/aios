@@ -4,18 +4,26 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { IntentRouting, ModelOption } from './intent-routing-section';
 import type { Feedback } from '../console-ui';
-import { toModelBindings, toModelCatalog } from '../../../lib/config/model-routing.mjs';
+import { migrateEditableTargets, migrateTargetRefs, routingTargetReferences, toModelBindings, toModelCatalog, toRoutingTargets } from '../../../lib/config/model-routing.mjs';
+import { describePolicyChanges, inheritPolicyDocument, projectPolicyAssignment, toPolicyContext } from '../../../lib/config/routing-policy.mjs';
 
 export interface RoutingProvider {
   id: string;
   baseUrl: string;
   apiKeyEnv: string;
+  apiKey?: string;
   authMode?: 'required' | 'none';
   endpointStyle?: 'standard' | 'relay';
+  protocolBaseUrls?: Record<string, string>;
+  baseProtocol?: string;
+  preset?: string;
+  presetRegion?: string;
+  authHeader?: 'x-api-key' | 'bearer' | 'both';
+  headers?: Record<string, string>;
   enabled?: boolean;
   protocols: string[];
   models: string[];
-  accounts?: { id: string; apiKeyEnv: string }[];
+  accounts?: { id: string; apiKeyEnv: string; apiKey?: string }[];
 }
 export interface CustomModel {
   id: string;
@@ -29,8 +37,12 @@ export interface RoutingGroup {
   id: string;
   models: string[];
   routing: string;
+  enabled?: boolean;
 }
 export interface RoutingEditable {
+  targetRefVersion?: number;
+  activeModel: string;
+  clientDefaults: Record<string, string>;
   providers: RoutingProvider[];
   customModels: CustomModel[];
   matrix: { default: Record<string, string>; clients: Record<string, Record<string, string>> };
@@ -51,12 +63,14 @@ export interface AutoRole {
   ruleDescription: string;
 }
 export type RoutingStatus = 'loading' | 'ready' | 'error' | 'saving';
+type ModelBinding = ModelOption & { declaredProvider?: string };
 
 export function useRoutingConfig() {
   const [editable, setEditable] = useState<RoutingEditable | null>(null);
   const [auto, setAuto] = useState<AutoRole[]>([]);
   const [models, setModels] = useState<ModelOption[]>([]);
-  const [modelBindings, setModelBindings] = useState<ModelOption[]>([]);
+  const [modelBindings, setModelBindings] = useState<ModelBinding[]>([]);
+  const [policyContext, setPolicyContext] = useState<ReturnType<typeof toPolicyContext>>({ targetRefVersion: 1, roleDefaults: {}, routingRules: [] });
   const [hash, setHash] = useState('');
   const [status, setStatus] = useState<RoutingStatus>('loading');
   const [error, setError] = useState('');
@@ -69,11 +83,19 @@ export function useRoutingConfig() {
     const res = await fetch('/api/config/model-routing', { cache: 'no-store' });
     const body = await res.json();
     if (!res.ok) throw new Error(body.detail || body.error || '读取失败');
-    setEditable(body.editable);
-    setSaved(body.editable);
+    const loaded = migrateEditableTargets({ ...body.editable, activeModel: body.editable.activeModel ?? '', clientDefaults: body.editable.clientDefaults ?? {}, routingGroups: body.editable.routingGroups ?? [] });
+    setEditable(loaded);
+    setSaved(loaded);
     setAuto(Array.isArray(body.auto) ? body.auto : []);
     setModels(Array.isArray(body.models) ? body.models : []);
     setModelBindings(Array.isArray(body.modelBindings) ? body.modelBindings : Array.isArray(body.models) ? body.models : []);
+    const context = toPolicyContext(body.policyContext || {});
+    const migratedContext = toPolicyContext(migrateTargetRefs(context));
+    // Context-only blockers use the server context's original syntax version.
+    if (Array.isArray(context.targetReferences)) migratedContext.targetReferences = context.targetReferences.map(({ value, path }: { value: string; path: string }) => ({
+      path, value: migrateTargetRefs({ targetRefVersion: context.targetRefVersion, activeModel: value }).activeModel,
+    }));
+    setPolicyContext(migratedContext);
     setHash(body.hash);
     setError('');
   }, []);
@@ -199,20 +221,41 @@ export function useRoutingConfig() {
     setFeedback(null);
   };
   const draftDocument = editable ? {
-    providers: Object.fromEntries(editable.providers.map((provider) => [provider.id, provider])),
+    ...policyContext,
+    targetRefVersion: editable.targetRefVersion,
+    activeModel: editable.activeModel,
+    clientDefaults: editable.clientDefaults,
+    clientRoleMatrix: editable.matrix,
+    routingGroups: Object.fromEntries(editable.routingGroups.map((group) => [group.id, group])),
+    intentRouting: editable.intentRouting,
+    providers: Object.fromEntries(editable.providers.map((provider) => [provider.id.trim().toLowerCase(), provider])),
     models: Object.fromEntries([
-      ...modelBindings.filter((model) => model.source !== 'custom').map((model) => [model.id, model]),
-      ...editable.customModels.map((model) => [model.id, { ...model, source: 'custom', cost: 'unknown' }]),
+      ...modelBindings.filter((model) => model.source !== 'custom').map((model) => [model.id, {
+        ...model,
+        // A provider.models binding must not become an explicit discovered-model binding in drafts.
+        provider: model.declaredProvider ?? model.provider,
+      }]),
+      ...editable.customModels.map((model) => [saved?.customModels.some((previous) => previous.id === model.id) ? model.id : model.id.trim().toLowerCase(), { ...model, provider: model.provider.trim().toLowerCase(), source: 'custom', cost: 'unknown' }]),
     ]),
   } : null;
   const draftModels: ModelOption[] = draftDocument ? toModelCatalog(draftDocument) : models;
+  const targets: ModelOption[] = draftDocument ? toRoutingTargets(draftDocument) : [];
   // Management keeps inactive definitions; strategy pickers only receive route candidates.
   const managementModels: ModelOption[] = draftDocument ? toModelBindings(draftDocument) : modelBindings;
+  const policyPreview = (role = '', clientId = '', inherit = false) => projectPolicyAssignment(
+    inherit ? inheritPolicyDocument(draftDocument || {}, role, clientId) : draftDocument || {},
+    { role, clientId }
+  );
+  const changes: string[] = describePolicyChanges(saved, editable);
   return {
     editable,
     auto,
     models: draftModels,
+    targets,
+    targetReferences: (target: string): string[] => routingTargetReferences(draftDocument || {}, target),
     managementModels,
+    policyPreview,
+    changes,
     hash,
     status,
     error,

@@ -1,230 +1,70 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowDown, RotateCcw } from 'lucide-react';
-import { Badge, Button, Modal, Panel, Select, SmallTitle } from '../console-ui';
+import { Badge, Panel, SmallTitle } from '../console-ui';
 import { IntentRoutingSection } from './intent-routing-section';
-import { ROLES, ROLE_LABEL } from './labels';
+import { ROLES } from './labels';
 import type { RoutingController } from './use-routing-config';
-import { RoutingProfiles } from '../gateway/routing-profiles';
+import { AssignmentRow } from './policy/assignment-list';
+import { AssignmentEditor, taskLabel, type EditTarget } from './policy/assignment-editor';
+import { ClientExceptions } from './policy/client-exceptions';
+import { PolicyTools } from './policy/policy-tools';
+import { GroupsSection } from './groups/groups-section';
 
-const CLIENTS = [
-  'claude',
-  'codex',
-  'pi',
-  'opencode',
-  'gemini',
-  'hermes',
-  'grok',
-  'workbuddy',
-  'zcode',
-  'qoder',
-];
+const TASKS = ['默认分配', '客户端例外', '意图分流', '模型组'] as const;
 
 export function RoutingConfigPanel({ routing }: { routing: RoutingController }) {
-  const { editable, models, setEditable, auto } = routing;
-  const [clientId, setClientId] = useState('claude');
-  const [resetClient, setResetClient] = useState(false);
+  const [task, setTask] = useState<(typeof TASKS)[number]>('默认分配');
+  const [editing, setEditing] = useState<EditTarget | null>(null);
+  const { editable, models, setEditable } = routing;
   if (!editable) return null;
-  const options = models.map((model) => ({ value: model.id, label: `${model.label} · ${model.id}` }));
-  const clients = [...new Set([...CLIENTS, ...Object.keys(editable.matrix.clients)])];
-  const isAvailable = (value: string) => models.some((model) => model.id === value);
-  const setModel = (role: string, value: string, client?: string) =>
-    setEditable((previous) => {
-      if (!previous) return previous;
-      const matrix = client
-        ? {
-            ...previous.matrix,
-            clients: {
-              ...previous.matrix.clients,
-              [client]: { ...previous.matrix.clients[client], [role]: value },
-            },
-          }
-        : { ...previous.matrix, default: { ...previous.matrix.default, [role]: value } };
-      return { ...previous, matrix };
-    });
-
-  return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-semibold tracking-tight">选择规则，而不是猜测结果。</h2>
-        <p className="mt-1 text-xs leading-6 text-rex-text-muted">
-          角色任务按覆盖规则选择；普通对话可启用意图分类。所有修改统一保存。
-        </p>
-      </div>
-      {models.length === 0 && <Panel className="border-rex-orange/30 p-5">
-        <h3 className="text-sm font-semibold">尚无可路由模型</h3>
-        <p className="mt-2 text-xs leading-6 text-rex-text-muted">网关可以启动监听，但尚未具备模型访问能力。请先在「供应商与模型」添加来源，再发现模型或手动填写真实上游 ID。未绑定的内置模板与旧引用不会成为策略候选。</p>
-      </Panel>}
-      <Panel className="bg-rex-panel/40 p-5">
-        <SmallTitle>请求如何选择模型</SmallTitle>
-        <div className="grid gap-4 lg:grid-cols-2">
-          <div className="rounded-rex-md border border-rex-border bg-rex-bg p-4">
-            <Badge tone="info">显式角色任务</Badge>
-            <p className="mt-3 text-xs leading-6 text-rex-text-body">
-              客户端角色覆盖 → 全局角色覆盖 → 已绑定模型自动策略
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">
-              留空表示继承下一层。不会额外调用分类器。
-            </p>
-          </div>
-          <div className="rounded-rex-md border border-rex-border bg-rex-bg p-4">
-            <Badge tone="neutral">普通对话</Badge>
-            <p className="mt-3 text-xs leading-6 text-rex-text-body">
-              启用意图分类 → 对应模型；未启用或分类失败 → 默认路由
-            </p>
-            <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">
-              只有一个可用模型时直接路由，无需分类器。多模型需显式默认或角色策略，不会猜选目录第一项；启用分类会额外产生调用与费用。
-            </p>
-          </div>
-        </div>
-      </Panel>
-      <Panel className="p-5 sm:p-6">
-        <SmallTitle action={<Badge tone="neutral">{ROLES.length} 个角色</Badge>}>全局角色默认</SmallTitle>
-        <p className="mb-5 text-xs leading-5 text-rex-text-muted">
-          自动策略只在已显式绑定且协议兼容的模型中选择；只覆盖需要固定的角色。
-        </p>
-        <div className="divide-y divide-rex-border">
-          {ROLES.map((role) => {
-            const value = editable.matrix.default[role] || '';
-            const automatic = auto.find((item) => item.role === role)?.autoModelId;
-            return (
-              <div
-                key={role}
-                className="grid items-center gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[110px_minmax(0,1fr)]"
-              >
-                <div className="flex items-center gap-2 text-xs font-medium">
-                  {ROLE_LABEL[role]}
-                  {value && <span className="size-1.5 rounded-full bg-rex-cyan" aria-label="有覆盖" />}
-                </div>
-                <fieldset disabled={models.length === 0} className="min-w-0">
-                  <Select
-                    aria-label={`${ROLE_LABEL[role]}全局模型`}
-                    value={isAvailable(value) ? value : ''}
-                    onValueChange={(next) => setModel(role, next)}
-                    options={[
-                      {
-                        value: '',
-                        label: `自动策略${automatic && isAvailable(automatic) ? ` · ${models.find((item) => item.id === automatic)?.label}` : models.length === 1 ? ` · ${models[0].label}` : models.length === 0 ? ' · 无可用模型' : ' · 未配置默认路由'}`,
-                      },
-                      ...options,
-                    ]}
-                  />
-                  {value && !isAvailable(value) && <p className="mt-1 text-[11px] text-rex-text-muted">保留旧引用 {value}，当前不可路由；不会列为新选择。</p>}
-                </fieldset>
-              </div>
-            );
-          })}
-        </div>
-      </Panel>
-      <Panel className="p-5 sm:p-6">
-        <SmallTitle
-          action={
-            <Select
-              size="sm"
-              aria-label="选择覆盖客户端"
-              className="w-32"
-              value={clientId}
-              onValueChange={setClientId}
-              options={clients.map((id) => ({ value: id, label: id }))}
-            />
-          }
-        >
-          客户端角色覆盖
-        </SmallTitle>
-        <p className="mb-5 text-xs leading-5 text-rex-text-muted">
-          只影响所选客户端，优先于全局角色默认。切换客户端不会丢失草稿。
-        </p>
-        <div className="grid gap-4 lg:grid-cols-2">
-          {ROLES.map((role) => {
-            const value = editable.matrix.clients[clientId]?.[role] || '';
-            return (
-              <label key={role} className="min-w-0 space-y-2">
-                <span className="block text-xs font-medium">{ROLE_LABEL[role]}</span>
-                <fieldset disabled={models.length === 0} className="min-w-0">
-                <Select
-                  aria-label={`${clientId} ${ROLE_LABEL[role]}模型`}
-                  value={isAvailable(value) ? value : ''}
-                  onValueChange={(next) => setModel(role, next, clientId)}
-                  options={[{ value: '', label: '继承全局默认 / 自动策略' }, ...options]}
-                />
-                {value && !isAvailable(value) && <p className="mt-1 text-[11px] text-rex-text-muted">保留旧引用 {value}，当前不可路由。</p>}
-                </fieldset>
-              </label>
-            );
-          })}
-        </div>
-        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-rex-border pt-4">
-          <p className="text-[11px] text-rex-text-muted">
-            已覆盖 {Object.values(editable.matrix.clients[clientId] || {}).filter(Boolean).length} /{' '}
-            {ROLES.length} 个角色
-          </p>
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={!Object.values(editable.matrix.clients[clientId] || {}).some(Boolean)}
-            onClick={() => setResetClient(true)}
-          >
-            <RotateCcw size={13} />
-            清除此客户端覆盖
-          </Button>
-        </div>
-      </Panel>
-      <IntentRoutingSection
-        value={editable.intentRouting}
-        models={models}
-        onChange={(intentRouting) =>
-          setEditable((previous) => (previous ? { ...previous, intentRouting } : previous))
-        }
-      />
-      <RoutingProfiles
-        matrix={editable.matrix}
-        modelIds={models.map((model) => model.id)}
-        onApply={(matrix) => setEditable((previous) => (previous ? { ...previous, matrix } : previous))}
-      />
-      {editable.routingGroups.length > 0 && (
-        <Panel className="p-5">
-          <SmallTitle action={<Badge tone="warn">尚未接入调度</Badge>}>已有路由组</SmallTitle>
-          <p className="text-xs leading-6 text-rex-text-muted">
-            当前网关尚未消费路由组配置。这里保留已有数据，不提供会让人误以为已生效的轮询、权重或成本调度开关。
-          </p>
-          <ul className="mt-3 space-y-2">
-            {editable.routingGroups.map((group) => (
-              <li key={group.id} className="flex flex-wrap gap-2 text-xs">
-                <span className="font-medium">{group.id}</span>
-                <ArrowDown size={12} className="text-rex-text-muted" />
-                <span className="break-all text-rex-text-muted">{group.models.join(' / ') || '无模型'}</span>
-              </li>
-            ))}
-          </ul>
-        </Panel>
-      )}
-      <Modal
-        open={resetClient}
-        onOpenChange={setResetClient}
-        title={`清除 ${clientId} 的角色覆盖？`}
-        description="该客户端将恢复继承全局默认或自动策略。先修改草稿，保存全部修改后才会生效。"
-      >
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => setResetClient(false)}>
-            取消
-          </Button>
-          <Button
-            variant="danger"
-            onClick={() => {
-              setEditable((previous) => {
-                if (!previous) return previous;
-                const next = { ...previous.matrix.clients };
-                delete next[clientId];
-                return { ...previous, matrix: { ...previous.matrix, clients: next } };
-              });
-              setResetClient(false);
-            }}
-          >
-            清除覆盖
-          </Button>
-        </div>
-      </Modal>
+  const roles = [...new Set([...ROLES, ...Object.keys(editable.matrix.default), ...Object.values(editable.matrix.clients).flatMap(Object.keys)])];
+  const setModel = (role: string, value: string, clientId?: string) => setEditable((previous) => {
+    if (!previous) return previous;
+    if (!role) {
+      if (!clientId) return { ...previous, activeModel: value };
+      const clientDefaults = { ...previous.clientDefaults };
+      if (value) clientDefaults[clientId] = value;
+      else delete clientDefaults[clientId];
+      return { ...previous, clientDefaults };
+    }
+    const assignments = { ...(clientId ? previous.matrix.clients[clientId] : previous.matrix.default) };
+    if (value) assignments[role] = value;
+    else delete assignments[role];
+    const matrix = clientId ? { ...previous.matrix, clients: { ...previous.matrix.clients, [clientId]: assignments } } : { ...previous.matrix, default: assignments };
+    return { ...previous, matrix };
+  });
+  return <div className="space-y-5">
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><h2 className="text-lg font-semibold tracking-tight">模型分配</h2><p className="mt-1 text-xs leading-6 text-rex-text-muted">先确定默认，再处理例外。所有分区共用一份草稿。</p></div>
+      <PolicyTools routing={routing} />
     </div>
-  );
+    <nav aria-label="模型分配任务" className="flex flex-wrap gap-1 rounded-rex-md border border-rex-border bg-rex-panel/50 p-1">
+      {TASKS.map((name) => <button key={name} type="button" aria-current={task === name ? 'page' : undefined} onClick={() => setTask(name)} className={`min-w-0 flex-1 rounded-rex-sm px-3 py-2.5 text-xs font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan ${task === name ? 'bg-rex-bg text-rex-text shadow-sm' : 'text-rex-text-muted hover:bg-rex-bg/60'}`}>{name}{name === '意图分流' && <span aria-hidden="true" className="ml-1 text-[10px] text-rex-text-muted">可选</span>}</button>)}
+    </nav>
+    {models.length === 0 && <Panel className="border-rex-orange/30 p-5"><h3 className="text-sm font-semibold">尚无可路由模型</h3><p className="mt-2 text-xs leading-6 text-rex-text-muted">请先在「供应商与模型」添加来源，再发现模型或手动填写真实上游 ID。</p></Panel>}
+    <div hidden={task !== '默认分配'}>
+      <Panel className="p-5 sm:p-6">
+        <SmallTitle action={<Badge tone="neutral">配置推演</Badge>}>默认分配</SmallTitle>
+        <p className="mb-5 text-xs leading-6 text-rex-text-muted">展示当前草稿的结果与来源，不代表运行中的网关已加载，也不代表生成可用。普通对话与角色任务使用不同规则。</p>
+        <ul aria-label="全局默认分配" className="divide-y divide-rex-border">
+          {['', ...roles].map((role) => <AssignmentRow key={role} label={taskLabel(role)} preview={routing.policyPreview(role)} models={models} disabled={models.length === 0 && !(role ? editable.matrix.default[role] : editable.activeModel)} onEdit={() => setEditing({ role })} />)}
+        </ul>
+      </Panel>
+    </div>
+    <div hidden={task !== '客户端例外'}><ClientExceptions routing={routing} roles={roles} onEdit={setEditing} /></div>
+    <div hidden={task !== '意图分流'}><IntentRoutingSection value={editable.intentRouting} models={models} targets={routing.targets} onChange={(intentRouting) => setEditable((previous) => previous ? { ...previous, intentRouting } : previous)} /></div>
+    <div hidden={task !== '模型组'}><GroupsSection routing={routing} /></div>
+    <details className="rounded-rex-md border border-rex-border px-4 py-3 text-xs">
+      <summary className="cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">规则与生效范围</summary>
+      <div className="mt-3 space-y-2 leading-6 text-rex-text-muted">
+        <p>普通对话：若已有空角色默认 / 无角色任务规则，先取其中首选，再尝试客户端普通对话例外 → 规则回落 → 全局普通对话默认。未配置这些旧规则时，客户端例外直接继承全局默认；不隐式使用 general 规则。未显式选择模型组且只有一个合资格模型时可直接使用，多模型不猜选目录第一项。</p>
+        <p>角色任务：运行环境覆盖 → 客户端角色例外 → 全局角色指定 → 角色默认 / 任务规则。只取最高层首选；首选失效后走任务规则的回落列表，再尝试普通对话全局默认，不重新逐层继承。</p>
+        <p>意图分流仅处理未指定角色的普通对话，将分类目标置于候选前面。候选仍需启用且显式绑定，模型与供应商需有兼容协议；网关按请求协议翻译。凭据缺失或上游失败不承诺自动换模型或生成成功。</p>
+        <p>自动选择不同于恢复继承：明确的 Auto 覆盖不继承较低层的固定首选，也不提供具体候选，继续使用规则回落与全局默认。模型组按成员顺序路由；选中组不可用时停止，不静默改用其他固定目标。跨成员仅在派发前资格检查跳过或上游明确返回 401 / 402 / 429 时尝试。</p>
+        <p>此处推演不读取运行环境覆盖、凭据或额度。保存只写磁盘，运行中的网关需要重启加载；实际选择请查看请求记录。</p>
+      </div>
+    </details>
+    {editing && <AssignmentEditor key={`${editing.clientId || 'global'}:${editing.role}:${editing.restore}`} target={editing} roles={roles} routing={routing} onClose={() => setEditing(null)} onCommit={setModel} />}
+  </div>;
 }

@@ -27,6 +27,7 @@ interface GatewayStatus {
   clients: GatewayClient[];
   configuredReady?: boolean;
   configuredModelCount?: number;
+  configuredRevision?: string | null;
   ready?: boolean;
   configuredModels?: number;
   readyModels?: number;
@@ -34,7 +35,8 @@ interface GatewayStatus {
   generationVerified?: boolean;
 }
 
-type ConfirmState = { kind: 'start' | 'stop' } | { kind: 'connect' | 'disconnect'; client: string };
+type ConnectConfirmation = { kind: 'connect'; client: string; port: number; expectedRevision: string } | { kind: 'disconnect'; client: string };
+type ConfirmState = { kind: 'start' | 'stop' } | ConnectConfirmation;
 type Busy = 'start' | 'stop' | 'connect' | 'disconnect' | null;
 
 const POLL_MS = 2500;
@@ -104,7 +106,8 @@ export function GatewayControl({ active }: { active: boolean }) {
     }
   }
 
-  async function runConnectAction(action: 'connect' | 'disconnect', client: string) {
+  async function runConnectAction(approved: ConnectConfirmation) {
+    const { kind: action, client } = approved;
     setConfirm(null);
     setBusy(action);
     setConnectFeedback(null);
@@ -113,7 +116,7 @@ export function GatewayControl({ active }: { active: boolean }) {
       const res = await fetch('/api/model-routing/gateway', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action, confirm: true, client, ...(action === 'connect' ? { port: status?.port } : {}) }),
+        body: JSON.stringify({ action, confirm: true, client, ...(approved.kind === 'connect' ? { port: approved.port, expectedRevision: approved.expectedRevision } : {}) }),
       });
       const body = await res.json();
       if (!res.ok || body.ok === false) {
@@ -149,6 +152,8 @@ export function GatewayControl({ active }: { active: boolean }) {
   const managed = status?.managed ?? false;
   const canStop = running && managed;
   const ready = running && status?.ready === true;
+  const validRevision = typeof status?.configuredRevision === 'string' && /^[a-f0-9]{64}$/u.test(status.configuredRevision);
+  const canConnect = ready && validRevision && Number.isInteger(status?.port) && Number(status?.port) > 0 && Number(status?.port) < 65536;
   const readinessText = pending
     ? '尚未读取'
     : !running
@@ -185,7 +190,7 @@ export function GatewayControl({ active }: { active: boolean }) {
     if (confirm.kind === 'stop') return { title: '关闭本地网关？', description: '将停止界面托管的网关进程，接入的客户端在网关重新启动前无法路由请求。' };
     if (confirm.kind === 'connect') {
       const name = clientLabel(confirm.client).name;
-      return { title: `接入 ${name}？`, description: `将把 ${status?.url} 写进 ${name} 的真实配置（只改网关需要的 key，自动备份原值）。之后普通 ${name} 命令即走网关，用哪个模型由路由矩阵决定。可随时一键还原。` };
+      return { title: `接入 ${name}？`, description: `将把 http://127.0.0.1:${confirm.port} 写进 ${name} 的真实配置（只改网关需要的 key，自动备份原值）。按本次确认的目录版本接入；目录变化时需刷新并重新确认。之后普通 ${name} 命令即走网关，用哪个模型由路由矩阵决定。可随时一键还原。` };
     }
     if (confirm.kind === 'disconnect') {
       const name = clientLabel(confirm.client).name;
@@ -196,7 +201,7 @@ export function GatewayControl({ active }: { active: boolean }) {
 
   function onConfirm() {
     if (!confirm) return;
-    if (confirm.kind === 'connect' || confirm.kind === 'disconnect') void runConnectAction(confirm.kind, confirm.client);
+    if (confirm.kind === 'connect' || confirm.kind === 'disconnect') void runConnectAction(confirm);
     else void runAction(confirm.kind);
   }
 
@@ -263,8 +268,11 @@ export function GatewayControl({ active }: { active: boolean }) {
                   className="ml-auto"
                   variant={item?.connected ? 'outline' : 'default'}
                   size="sm"
-                  disabled={!item || busy !== null || !!error || (!running && !item.connected) || (!ready && !item.connected)}
-                  onClick={() => setConfirm({ kind: item?.connected ? 'disconnect' : 'connect', client })}
+                  disabled={!item || busy !== null || (!item.connected && (!!error || !canConnect))}
+                  onClick={() => {
+                    if (item?.connected) setConfirm({ kind: 'disconnect', client });
+                    else if (canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client, port: status.port, expectedRevision: status.configuredRevision });
+                  }}
                 >
                   <Plug size={14} />
                   {busy ? '处理中…' : item?.connected ? '还原' : '接入'}
@@ -274,7 +282,7 @@ export function GatewayControl({ active }: { active: boolean }) {
           })}
         </div>
         <div className="mt-3">
-          <InlineFeedback className="block min-h-10 break-words leading-5" feedback={error ? { text: `刷新失败：${error}`, tone: 'error' } : connectFeedback} idle={running && ready ? '接入/还原会改写真实配置，操作前需确认。' : '先让运行中的网关加载就绪的模型路由，再接入客户端。已接入的客户端仍可还原。'} />
+          <InlineFeedback className="block min-h-10 break-words leading-5" feedback={error ? { text: `刷新失败：${error}`, tone: 'error' } : connectFeedback} idle={canConnect ? '接入/还原会改写真实配置，操作前需确认。' : ready && !validRevision ? '目录版本不可用，请刷新后再接入。已接入的客户端仍可还原。' : '先让运行中的网关加载就绪的模型路由，再接入客户端。已接入的客户端仍可还原。'} />
         </div>
         <details className="group mt-4 text-[11px] leading-5 text-rex-text-muted">
           <summary className="cursor-pointer select-none">手动接入（隔离模式，不碰真实配置）</summary>

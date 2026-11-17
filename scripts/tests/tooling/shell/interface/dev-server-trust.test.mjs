@@ -5,12 +5,30 @@ import fs from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
+import { createRequire } from 'node:module';
 import test from 'node:test';
 import { runGatewayBrowserChecks } from '../browser/gateway-workspace.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '..', '..', '..', '..', '..');
 const NEXT_BIN = path.join(ROOT, 'apps', 'shell', 'ui', 'node_modules', 'next', 'dist', 'bin', 'next');
 const LAUNCHER = path.join(ROOT, 'scripts', 'aios-ui.mjs');
+
+test('layered Console controls share one Radix dismissal and focus registry', () => {
+  const ui = path.join(ROOT, 'apps/shell/ui');
+  const lock = JSON.parse(fs.readFileSync(path.join(ui, 'package-lock.json'), 'utf8'));
+  for (const registry of ['react-dismissable-layer', 'react-focus-scope']) {
+    const name = `@radix-ui/${registry}`;
+    assert.deepEqual(Object.keys(lock.packages).filter(key => key.endsWith(`/${name}`)), [`node_modules/${name}`]);
+    if (!fs.existsSync(NEXT_BIN)) continue;
+    const require = createRequire(path.join(ui, 'package.json'));
+    const shared = fs.realpathSync(require.resolve(name));
+    for (const owner of ['react-dialog', 'react-select', 'react-popover', 'react-tooltip']) {
+      assert.equal(fs.realpathSync(createRequire(require.resolve(`@radix-ui/${owner}`)).resolve(name)), shared);
+    }
+    const menuRequire = createRequire(require.resolve('@radix-ui/react-dropdown-menu'));
+    assert.equal(fs.realpathSync(createRequire(menuRequire.resolve('@radix-ui/react-menu')).resolve(name)), shared);
+  }
+});
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -131,7 +149,7 @@ test('the development server serves the current Console through the token gate',
   assert.equal(crossSite.status, 403);
   assert.equal(crossSite.headers.get('x-aios-deny'), 'cross-site');
 
-  for (const [pathname, label] of [['/tools', 'AI 工具'], ['/routing', '模型路由'], ['/routing/config', '路由配置'], ['/mcp', 'MCP 服务'], ['/memory', '记忆'], ['/activity', '活动记录']]) {
+  for (const [pathname, label] of [['/tools', 'Agent 客户端'], ['/routing', '模型路由'], ['/routing/config', '模型路由'], ['/mcp', '资源库'], ['/memory', '记忆'], ['/activity', '活动记录']]) {
     const rendered = await request(port, pathname, { cookie });
     assert.equal(rendered.status, 200, `${pathname} must render`);
     assert.match(rendered.body, new RegExp(`aria-label="${label}"[^>]*aria-current="page"`, 'u'));

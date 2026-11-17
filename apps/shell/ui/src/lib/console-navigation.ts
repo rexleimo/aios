@@ -1,11 +1,11 @@
 // Route ownership for the current Console. Server routes and browser history share this table.
 export const CONSOLE_VIEWS = {
   home: { href: '/', label: '首页', title: '概览' },
-  tools: { href: '/tools', label: 'AI 工具', title: 'AI 工具' },
+  tools: { href: '/tools', label: 'Agent 客户端', title: 'Agent 客户端' },
   routing: { href: '/routing', label: '模型路由', title: '模型路由' },
-  // 二级页：配置交互独立成页，监控页（/routing）不再堆编辑器。不进 PRIMARY_VIEWS。
-  routingConfig: { href: '/routing/config', label: '路由配置', title: '路由配置' },
-  mcp: { href: '/mcp', label: 'MCP 服务', title: 'MCP 服务' },
+  // 兼容旧书签；策略从模型路由内部导航进入，不新增侧栏目的地。
+  routingConfig: { href: '/routing/config', label: '模型分配', title: '模型分配' },
+  mcp: { href: '/mcp', label: '资源库', title: '资源库' },
   memory: { href: '/memory', label: '记忆', title: '项目记忆' },
   activity: { href: '/activity', label: '活动记录', title: '活动记录' },
   settings: { href: '/settings', label: '设置', title: '应用设置' },

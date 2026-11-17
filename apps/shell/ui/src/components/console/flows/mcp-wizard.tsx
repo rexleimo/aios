@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   AlertTriangle,
   ArrowLeft,
@@ -15,41 +16,28 @@ import {
 
 import { clientLabel, type ConsoleFacts } from '../../../lib/console-facts';
 import { Badge, Button, Field, Input, Modal } from '../console-ui';
-
-/** `mcp.action.v1` 里预览要如实转述的字段。 */
-interface ActionPayload {
-  status?: string;
-  classification?: { status?: string; desiredFingerprint?: string };
-  planned?: { bytes?: number; createdBucket?: boolean; entryPath?: string; file?: string };
-  landing?: { clientId?: string; scope?: string; file?: string; writable?: boolean };
-  dryRun?: boolean;
-  exitCode?: number;
-  reason?: string;
-  message?: string;
-}
-
-interface PostResult {
-  ok: boolean;
-  argv: string[];
-  exitCode: number;
-  result: ActionPayload | string | null;
-  stderr: string;
-  httpStatus: number;
-  error?: string;
-  /** 路由在 400/409 时给出的可执行原因（例：缺 confirm、字段不合法）。 */
-  detail?: string;
-}
+import { createMcpInstallFlow } from './mcp-install-flow';
 
 const STEP_LABELS = ['选择落点', '服务配置', '预览（真实 dry-run）'];
+
+export interface McpPreset {
+  name: string;
+  entry: { command: string; args: string[] };
+  requiredEnv: string[];
+  description: string;
+  costNotice: string;
+}
 
 export function McpWizard({
   facts,
   onClose,
   onDone,
+  preset,
 }: {
   facts: ConsoleFacts;
   onClose: () => void;
   onDone: () => void;
+  preset?: McpPreset;
 }) {
   const installed = facts.clients.filter((client) => client.installed);
   // 落点候选来自刚读回来的事实，不是这个文件里的常量：writable 为假的落点直接不进候选。
@@ -66,60 +54,48 @@ export function McpWizard({
   );
   const [step, setStep] = useState(0);
   const [landingKey, setLandingKey] = useState(landingOptions[0]?.key ?? '');
-  const [name, setName] = useState('');
-  const [command, setCommand] = useState('npx');
-  const [args, setArgs] = useState<string[]>(['-y']);
+  const [name, setName] = useState(preset?.name ?? '');
+  const [command, setCommand] = useState(preset?.entry.command ?? 'npx');
+  const [args, setArgs] = useState<string[]>(preset?.entry.args ?? ['-y']);
   const [env, setEnv] = useState({ key: '', value: '' });
   const [showEnv, setShowEnv] = useState(false);
-  const [preview, setPreview] = useState<PostResult | null>(null);
-  const [running, setRunning] = useState(false);
-  const [failure, setFailure] = useState<string | null>(null);
+  const router = useRouter();
+  const [, render] = useReducer((value: number) => value + 1, 0);
+  const [flow] = useState(() => createMcpInstallFlow({ changed: render, refresh: () => router.refresh() }));
+  const state = flow.snapshot();
+  const { preview, error: failure } = state;
+  const running = state.phase === 'previewing' || state.phase === 'installing';
 
   const landing = landingOptions.find((option) => option.key === landingKey) ?? null;
   const entry: Record<string, unknown> = { type: 'stdio', command: command.trim(), args: args.filter((arg) => arg !== '') };
-  if (env.key.trim() && env.value) entry.env = { [env.key.trim()]: env.value };
+  if (!preset && env.key.trim() && env.value) entry.env = { [env.key.trim()]: env.value };
+  const signature = JSON.stringify([landingKey, name, entry, landingOptions]);
+  useEffect(() => { flow.invalidate(); }, [flow, signature]);
+  useEffect(() => { flow.activate(); return () => flow.dispose(); }, [flow]);
+  const expiresAt = preview?.preview?.expiresAt;
+  useEffect(() => {
+    if (!expiresAt) return;
+    const timer = setTimeout(() => flow.expire(), Math.max(0, expiresAt - Date.now()));
+    return () => clearTimeout(timer);
+  }, [flow, expiresAt]);
 
   const nameValid = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/u.test(name.trim());
   const stepValid = step === 0 ? Boolean(landing) : step === 1 ? nameValid && command.trim().length > 0 : true;
 
-  /** 第三步跑的是真实命令：`aios mcp add … --dry-run --json`。实测它不改一个字节。 */
   async function runPreview() {
     if (!landing) return;
-    setRunning(true);
-    setFailure(null);
-    setPreview(null);
-    try {
-      const response = await fetch('/api/mcp', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          action: 'add',
-          client: landing.clientId,
-          scope: landing.scope,
-          name: name.trim(),
-          entry,
-          dryRun: true,
-        }),
-      });
-      const payload = (await response.json()) as PostResult;
-      payload.httpStatus = response.status;
-      setPreview(payload);
-      if (payload.error) setFailure(`${payload.error}${payload.detail ? `：${payload.detail}` : ''}`);
-      setStep(2);
-    } catch (error) {
-      setFailure(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRunning(false);
-    }
+    setStep(2);
+    await flow.preview({ client: landing.clientId, scope: landing.scope, name: name.trim(), entry });
   }
 
-  const payload = preview && typeof preview.result === 'object' ? (preview.result as ActionPayload) : null;
+  const payload = state.outcome?.result ?? preview?.result;
+  function close(done = false) { flow.invalidate(); router.refresh(); if (done) onDone(); else onClose(); }
 
   return (
     <Modal
       open
       onOpenChange={(isOpen) => {
-        if (!isOpen) onClose();
+        if (!isOpen) close();
       }}
       wide
       title="添加 MCP 服务"
@@ -184,6 +160,11 @@ export function McpWizard({
 
       {step === 1 && (
         <div className="space-y-4">
+          {preset && <div className="space-y-2 rounded-rex-md border border-rex-orange/30 p-3 text-xs leading-6">
+            <p>{preset.description}</p>
+            <p>{preset.costNotice}</p>
+            <p>请在启动客户端的环境中设置 {preset.requiredEnv.join('、')}，由 MCP 服务进程继承。不要在此填写密钥；预览和安装不会调用付费接口。</p>
+          </div>}
           <Field label="服务名称" hint="字母数字开头，可含 . _ -，最长 64；这个名字也是配置里的键">
             <Input
               aria-label="服务名称"
@@ -236,7 +217,7 @@ export function McpWizard({
             </button>
             <p className="mt-2 text-xs text-rex-text-muted">每项是一个完整参数，包含空格的路径也不会被拆开。</p>
           </div>
-          <fieldset>
+          {!preset && <fieldset>
             <legend className="mb-2 text-sm font-medium">环境变量（可选）</legend>
             <div className="flex gap-2">
               <Input
@@ -257,7 +238,7 @@ export function McpWizard({
               <input type="checkbox" checked={showEnv} onChange={(event) => setShowEnv(event.target.checked)} className="size-3.5 accent-rex-cyan" />
               显示变量值
             </label>
-          </fieldset>
+          </fieldset>}
         </div>
       )}
 
@@ -265,16 +246,16 @@ export function McpWizard({
         <div className="space-y-4">
           <div className="flex gap-2 rounded-lg bg-rex-cyan/5 p-3 text-xs leading-5 text-rex-text-body">
             <ShieldCheck size={16} className="shrink-0 text-rex-cyan" />
-            上面这一步是真实执行的 <code>--dry-run</code>。文件没有被修改；下面全部是命令自己的回答。
+            预览只读；只有安全预览后单独授权才会写入。预览和安装都不调用付费接口。
           </div>
           <dl className="grid grid-cols-[90px_1fr] gap-x-3 gap-y-3 rounded-xl border border-rex-border p-4 text-sm">
             <dt className="text-rex-text-muted">命令</dt>
-            <dd className="break-all font-rex-mono text-[11px]">{preview?.argv.join(' ') ?? '未执行'}</dd>
+            <dd className="break-all font-rex-mono text-[11px]">{preview?.argv?.join(' ') ?? '未执行'}</dd>
             <dt className="text-rex-text-muted">退出码</dt>
-            <dd className="font-rex-mono text-xs">{preview?.exitCode ?? '—'}</dd>
+            <dd className="font-rex-mono text-xs">{state.outcome?.exitCode ?? preview?.exitCode ?? '—'}</dd>
             <dt className="text-rex-mono text-rex-text-muted">打算写入</dt>
             <dd className="break-all text-xs">
-              {payload?.planned?.file ?? landing?.file ?? '—'}
+              {payload?.landing?.file ?? landing?.file ?? '—'}
               {payload?.planned?.entryPath ? ` → ${payload.planned.entryPath}` : ''}
               {typeof payload?.planned?.bytes === 'number' ? ` · 配置现共 ${payload.planned.bytes} 字节` : ''}
             </dd>
@@ -306,35 +287,41 @@ export function McpWizard({
             )}
           </dl>
           {failure && (
-            <div className="flex gap-2 rounded-xl border border-rex-danger/40 p-4 text-xs leading-5 text-rex-danger">
+            <div role="alert" className="flex gap-2 rounded-xl border border-rex-danger/40 p-4 text-xs leading-5 text-rex-danger">
               <AlertTriangle size={15} className="mt-0.5 shrink-0" />
               <span>{failure}</span>
             </div>
           )}
-          {payload?.reason && (
+          {payload?.reason && payload.reason !== failure && (
             <p className="text-xs leading-5 text-rex-text-muted">命令给出的原因：{payload.reason}</p>
           )}
           <div className="rounded-xl border border-rex-border p-4 text-xs leading-6 text-rex-text-muted">
             <h3 className="mb-2 flex items-center gap-2 font-medium text-rex-text-body">
               <FileCode2 size={15} />
-              真正写入这一步还没有接上
+              {state.phase === 'done' ? '安装完成' : state.phase === 'installing' ? '正在安装，请等待结果' : '写入授权与结果'}
             </h3>
             <p>
-              写入需要三件还没到位的东西：写前备份、失败即回滚、以及你对「这个产品可以改我的配置文件」的明确授权。
-              这三条到位之前，按钮不存在，而不是存在但不干活。
+              安装复用 CLI 的归属检查、写前备份与记账失败回滚；过期预览或配置变化会拒绝写入。失败后必须重新预览和授权。
             </p>
+            {state.phase === 'preview' && <label className="mt-3 flex items-start gap-2 text-rex-text-body">
+              <input type="checkbox" checked={state.consent} onChange={(event) => flow.approve(event.target.checked)} className="mt-1 accent-rex-cyan" />
+              我确认允许 AIOS 将此 MCP 服务写入所选客户端配置文件
+            </label>}
+            {payload?.backupPath && <p className="break-all">备份：{payload.backupPath}</p>}
+            {payload?.rolledBack && <p>回滚结果：{payload.rolledBack}</p>}
+            {state.phase === 'done' && <p role="status">{payload?.status} · 服务清单已刷新；这不代表已验证客户端启动或密钥可用。</p>}
           </div>
         </div>
       )}
 
       <div className="mt-7 flex items-center justify-between border-t border-rex-border pt-5">
-        <Button variant="ghost" onClick={() => (step > 0 ? setStep(step - 1) : onClose())}>
+        <Button variant="ghost" disabled={running} onClick={() => { flow.invalidate(); if (step > 0) setStep(step - 1); else close(); }}>
           <ArrowLeft size={14} />
           {step > 0 ? '上一步' : '关闭'}
         </Button>
         {step < 2 ? (
           <Button
-            disabled={!stepValid}
+            disabled={!stepValid || running}
             onClick={() => {
               if (step === 1) void runPreview();
               else setStep(step + 1);
@@ -345,10 +332,14 @@ export function McpWizard({
             <ArrowRight size={14} />
           </Button>
         ) : (
-          <Button variant="outline" onClick={onDone}>
-            <Badge tone="neutral">只读预览</Badge>
-            返回服务清单
-          </Button>
+          <div className="flex gap-2">
+            {state.phase !== 'done' && <Button disabled={running || !flow.canInstall()} onClick={() => void flow.install()}>
+              {running ? <CircleDashed size={14} className="animate-spin" /> : <FileCode2 size={14} />}安装服务
+            </Button>}
+            <Button variant="outline" disabled={running} onClick={() => close(state.phase === 'done')}>
+              <Badge tone="neutral">{state.phase === 'done' ? '已安装' : '未完成'}</Badge>返回服务清单
+            </Button>
+          </div>
         )}
       </div>
     </Modal>

@@ -5,7 +5,7 @@ import { AlertTriangle, Plug, Plus, ShieldCheck } from 'lucide-react';
 
 import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts, type FactServiceRow } from '../../lib/console-facts';
 import { Badge, Button, Empty, Heading, Panel, SmallTitle } from './console-ui';
-import { McpWizard } from './flows/mcp-wizard';
+import { McpWizard, type McpPreset } from './flows/mcp-wizard';
 
 const OWNERSHIP_LABELS: Record<string, string> = {
   owned: 'AIOS 登记并持有',
@@ -17,6 +17,9 @@ const OWNERSHIP_LABELS: Record<string, string> = {
 
 export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
   const [open, setOpen] = useState(false);
+  const [preset, setPreset] = useState<McpPreset | undefined>();
+  const [presetError, setPresetError] = useState('');
+  const [presetBusy, setPresetBusy] = useState(false);
   const [clientFilter, setClientFilter] = useState('all');
   const rows = facts.services.rows;
   const visible = useMemo(
@@ -32,6 +35,22 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
     return [...tally.entries()].sort((left, right) => right[1] - left[1]);
   }, [rows]);
 
+  async function addSearch() {
+    setPresetBusy(true);
+    setPresetError('');
+    try {
+      const response = await fetch('/api/mcp/presets', { cache: 'no-store' });
+      const result = await response.json();
+      if (!response.ok || !result.ok) throw new Error(result.error || '搜索预设读取失败');
+      setPreset(result.preset);
+      setOpen(true);
+    } catch (error) {
+      setPresetError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setPresetBusy(false);
+    }
+  }
+
   return (
     <>
       <Heading
@@ -39,12 +58,15 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
         title="服务装在哪里、谁的、读没读到。"
         description={`本机 ${rows.length} 个服务配置实例、${String(summary?.landings ?? 0)} 个落点，全部来自 ${'`aios mcp list --json`'} 的一次读取。`}
         actions={
-          <Button onClick={() => setOpen(true)} disabled={!facts.services.loaded || installed.length === 0}>
+          <div className="flex flex-wrap gap-2"><Button variant="outline" onClick={() => void addSearch()} disabled={presetBusy || !facts.services.loaded || installed.length === 0}>
+            {presetBusy ? '读取搜索预设…' : '添加 DeepSeek 搜索'}
+          </Button><Button onClick={() => { setPreset(undefined); setOpen(true); }} disabled={!facts.services.loaded || installed.length === 0}>
             <Plus size={15} />
             添加 MCP 服务
-          </Button>
+          </Button></div>
         }
       />
+      {presetError && <p role="alert" className="mb-4 text-xs text-rex-danger">{presetError}</p>}
       {!facts.services.loaded ? (
         <Panel className="mb-6 border-rex-danger/40 p-5">
           <SmallTitle action={<Badge tone="danger">读取失败</Badge>}>服务清单没读到</SmallTitle>
@@ -134,7 +156,7 @@ export function McpWorkspace({ facts }: { facts: ConsoleFacts }) {
           {facts.degraded.map((entry) => `${entry.item}（${entry.error}）`).join('；')}
         </p>
       )}
-      {open && <McpWizard facts={facts} onClose={() => setOpen(false)} onDone={() => setOpen(false)} />}
+      {open && <McpWizard facts={facts} preset={preset} onClose={() => setOpen(false)} onDone={() => setOpen(false)} />}
     </>
   );
 }

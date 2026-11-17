@@ -7,6 +7,7 @@ import {
   ConfigError,
   applyEdits,
   diffEditable,
+  migrateTargetRefs,
   parseDocument,
   toAutoPreview,
   toEditable,
@@ -45,12 +46,16 @@ test('toEditable projects providers list + matrix without exposing secrets beyon
   assert.equal(editable.matrix.clients.claude.implementer, 'claude-sonnet-5');
 });
 
-test('validateDocument rejects plaintext keys, bad env refs, bad baseUrl, unknown protocols', () => {
+test('validateDocument rejects invalid keys, bad env refs, bad baseUrl, unknown protocols', () => {
   const base = parseDocument(registryText);
-  assert.throws(() => validateDocument({ ...base, providers: { p: { baseUrl: 'https://x.com', apiKey: 'sk-secret' } } }), ConfigError);
+  assert.throws(() => validateDocument({ ...base, providers: { p: { baseUrl: 'https://x.com', apiKey: 'bad\nkey' } } }), ConfigError);
   assert.throws(() => validateDocument({ ...base, providers: { p: { baseUrl: 'https://x.com', apiKeyEnv: 'NOT_ENV' } } }), ConfigError);
   assert.throws(() => validateDocument({ ...base, providers: { p: { baseUrl: 'ftp://x.com' } } }), ConfigError);
   assert.throws(() => validateDocument({ ...base, providers: { p: { baseUrl: 'https://x.com', protocols: ['bogus'] } } }), ConfigError);
+  const inline = structuredClone(base);
+  inline.providers.relay.apiKey = 'sk-secret';
+  assert.doesNotThrow(() => validateDocument(inline));
+  assert.equal(inline.providers.relay.apiKey, 'sk-secret');
   assert.doesNotThrow(() => validateDocument(base));
 });
 
@@ -60,9 +65,9 @@ test('applyEdits rebuilds providers + matrix and preserves other registry sectio
   editable.matrix.default.planner = 'claude-opus-5';
   editable.providers.push({ id: 'custom', baseUrl: 'https://api.example.com', apiKeyEnv: 'env:MY_KEY', protocols: ['openai-chat'], models: ['qwen3.8-flash'] });
   const next = applyEdits(document, editable);
-  assert.equal(next.activeModel, 'claude-sonnet-5', 'unrelated section preserved');
+  assert.equal(next.activeModel, 'model:claude-sonnet-5', 'unrelated assignment migrates');
   assert.ok(next.models['claude-opus-5'], 'models preserved');
-  assert.equal(next.clientRoleMatrix.default.planner, 'claude-opus-5');
+  assert.equal(next.clientRoleMatrix.default.planner, 'model:claude-opus-5');
   assert.equal(next.providers.custom.baseUrl, 'https://api.example.com');
   assert.doesNotThrow(() => validateDocument(next));
 });
@@ -84,7 +89,7 @@ test('applyEdits prunes empty role overrides and empty client maps', () => {
   editable.matrix.clients.codex = { implementer: '' };
   editable.matrix.default.planner = '';
   const next = applyEdits(document, editable);
-  assert.deepEqual(next.clientRoleMatrix.clients.claude, { reviewer: 'claude-opus-5' }, 'empty role pruned, non-empty kept');
+  assert.deepEqual(next.clientRoleMatrix.clients.claude, { reviewer: 'model:claude-opus-5' }, 'empty role pruned, non-empty migrated');
   assert.equal(next.clientRoleMatrix.clients.codex, undefined, 'fully-empty client map removed');
   assert.equal(next.clientRoleMatrix.default.planner, undefined, 'empty default role pruned');
 });
@@ -162,7 +167,7 @@ test('toAutoPreview ignores unbound metadata in activeModel and never throws on 
 });
 
 const intentRegistry = {
-  activeModel: 'claude-sonnet-5',
+  activeModel: 'claude-opus-5',
   models: {
     'glm-5.3-flash': { label: 'GLM-5.3-Flash', protocols: ['openai-chat'], cost: 'lowest' },
     'claude-opus-5': { label: 'Claude Opus 5', protocols: ['claude'], cost: 'highest' },
@@ -199,6 +204,200 @@ test('validateDocument accepts a valid intentRouting section', () => {
   assert.doesNotThrow(() => validateDocument({ ...intentRegistry, intentRouting: { enabled: false, classifierModel: '', intents: [] } }), 'disabled empty config is valid');
 });
 
+const singularClassifierRegistry = (protocol) => ({
+  models: { classifier: { source: 'discovered', provider: 'relay', protocol, upstreamModel: 'Vendor/Classifier' } },
+  providers: { relay: { baseUrl: 'https://relay.example.invalid', protocols: ['openai-chat', 'claude', 'gemini', 'openai-response'], models: [] } },
+  intentRouting: { enabled: true, classifierModel: 'classifier', intents: [{ id: 'code', description: 'Coding', modelId: 'classifier' }] },
+});
+
+for (const [protocol, normalized] of [
+  ['openai', 'openai-chat'], ['compatible', 'openai-chat'], ['chat_completions', 'openai-chat'],
+  ['messages', 'claude'], ['anthropic', 'claude'], ['anthropic_messages', 'claude'],
+]) {
+  test(`classifier accepts singular protocol ${protocol} in snapshots and unchanged or omitted intent edits`, () => {
+    for (const source of ['custom', 'discovered', 'curated']) {
+      const document = singularClassifierRegistry(protocol);
+      document.models.classifier.source = source;
+      if (source === 'curated') document.providers.relay.models = ['classifier'];
+      const original = structuredClone(document);
+      assert.deepEqual(toModelCatalog(document)[0].protocols, [normalized]);
+      assert.doesNotThrow(() => validateDocument(document), source);
+      for (const editable of [{}, { intentRouting: toEditable(document).intentRouting }, toEditable(document)]) {
+        const next = applyEdits(document, editable);
+        assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }), source);
+        assert.deepEqual(next, migrateTargetRefs(original), 'only assignments migrate; singular protocol metadata stays literal');
+      }
+      assert.deepEqual(document, original);
+    }
+  });
+}
+
+test('full custom edits preserve singular declarations, omitted fields and provider-list bindings unless explicitly edited', () => {
+  for (const protocol of ['openai', 'messages', 'anthropic']) {
+    for (const binding of ['explicit', 'provider-list']) {
+      const document = singularClassifierRegistry(protocol);
+      Object.assign(document.models.classifier, {
+        source: 'custom', upstreamModel: ' Vendor/Case-Sensitive ', extension: { keep: ['raw metadata'] },
+      });
+      if (binding === 'provider-list') {
+        delete document.models.classifier.provider;
+        document.providers.relay.models = ['classifier'];
+      } else document.models.classifier.provider = ' RELAY ';
+      const original = structuredClone(document);
+      const editable = toEditable(document);
+      assert.deepEqual(editable.customModels[0].protocols, [protocol]);
+      assert.deepEqual(applyEdits(document, editable), migrateTargetRefs(original), 'only assignments migrate; absent defaults and raw metadata stay unchanged');
+      editable.providers[0].baseUrl = 'https://changed.example.invalid';
+      let next = applyEdits(document, editable);
+      assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }));
+      assert.deepEqual(next, { ...migrateTargetRefs(original), providers: { relay: { ...original.providers.relay, baseUrl: editable.providers[0].baseUrl } } });
+      editable.customModels[0].label = 'Renamed classifier';
+      next = applyEdits(document, editable);
+      assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }));
+      assert.deepEqual(next.models.classifier, { ...original.models.classifier, label: 'Renamed classifier' });
+      assert.deepEqual(document, original);
+      editable.customModels[0].protocols = [protocol === 'openai' ? 'messages' : 'openai'];
+      if (binding === 'provider-list') assert.throws(() => applyEdits(document, editable), /explicitly configured provider/u);
+      editable.customModels[0].provider = 'relay';
+      next = applyEdits(document, editable);
+      assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }));
+      assert.deepEqual(next.models.classifier, {
+        ...original.models.classifier,
+        ...(binding === 'provider-list' ? { provider: 'relay' } : {}),
+        label: 'Renamed classifier', protocols: editable.customModels[0].protocols,
+      });
+      assert.deepEqual(diffEditable(toEditable(document), toEditable(next)), ['targetRefVersion', 'providers', 'models', 'intentRouting']);
+    }
+  }
+});
+
+test('custom arrays take precedence over singular protocols and full saves never repair invalid declarations implicitly', () => {
+  for (const protocols of [['messages'], [], ['gemini'], ['responses'], ['bogus'], null, 'openai']) {
+    const document = singularClassifierRegistry('openai');
+    Object.assign(document.models.classifier, { source: 'custom', protocols });
+    const original = structuredClone(document);
+    const editable = toEditable(document);
+    if (Array.isArray(protocols)) assert.deepEqual(editable.customModels[0].protocols, protocols);
+    for (const enabled of [true, false]) {
+      document.intentRouting.enabled = enabled;
+      editable.intentRouting.enabled = enabled;
+      if (Array.isArray(protocols) && protocols[0] === 'messages') {
+        const next = applyEdits(document, editable);
+        assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }));
+        assert.deepEqual(next.models, original.models);
+        assert.deepEqual(toModelCatalog(next)[0].protocols, ['claude']);
+      } else {
+        for (const check of [() => validateDocument(document), () => applyEdits(document, editable)]) assert.throws(check, ConfigError);
+      }
+      assert.deepEqual(document.models, original.models);
+    }
+  }
+});
+
+test('unchanged singular custom references still require a valid unambiguous compatible binding', () => {
+  for (const kind of ['missing', 'unbound', 'ambiguous', 'incompatible']) {
+    const document = singularClassifierRegistry('openai');
+    document.models.classifier.source = 'custom';
+    delete document.models.classifier.provider;
+    if (kind === 'missing') delete document.models.classifier;
+    if (kind === 'ambiguous') {
+      document.providers.relay.models = ['classifier'];
+      document.providers.other = { ...document.providers.relay, enabled: false };
+    }
+    if (kind === 'incompatible') Object.assign(document.providers.relay, { models: ['classifier'], protocols: ['claude'] });
+    for (const enabled of [true, false]) {
+      document.intentRouting.enabled = enabled;
+      const original = structuredClone(document);
+      for (const check of [() => validateDocument(document), () => validateDocument(document, { previousDocument: document }),
+        () => applyEdits(document, {}), () => applyEdits(document, toEditable(document))]) {
+        assert.throws(check, ConfigError, `${kind}/enabled=${enabled}`);
+        assert.deepEqual(document, original);
+      }
+    }
+  }
+});
+
+test('classifier uses the catalog protocol intersection and arrays take precedence over singular protocol', () => {
+  for (const [protocol, protocols, providerProtocols, expected, valid] of [
+    ['responses', ['messages'], ['claude'], ['claude'], true],
+    ['messages', ['chat_completions'], ['openai-chat'], ['openai-chat'], true],
+    ['openai', ['gemini'], ['gemini'], ['gemini'], false],
+    ['messages', ['responses'], ['openai-response'], ['openai-response'], false],
+    ['openai', [], ['openai-chat'], [], false],
+    ['openai', ['messages', 'responses'], ['openai-response'], ['openai-response'], false],
+  ]) {
+    const document = singularClassifierRegistry(protocol);
+    Object.assign(document.models.classifier, { source: 'curated', protocols });
+    Object.assign(document.providers.relay, { models: ['classifier'], protocols: providerProtocols });
+    assert.deepEqual(toModelCatalog(document).flatMap((model) => model.protocols), expected);
+    for (const enabled of [true, false]) {
+      document.intentRouting.enabled = enabled;
+      for (const check of [() => validateDocument(document), () => validateDocument(document, { previousDocument: document }),
+        () => applyEdits(document, {}), () => applyEdits(document, toEditable(document))]) {
+        if (valid) assert.doesNotThrow(check);
+        else assert.throws(check, { name: 'ConfigError', path: 'intentRouting.classifierModel' });
+      }
+    }
+  }
+});
+
+for (const pause of ['model', 'provider', 'both']) {
+  for (const enabled of [true, false]) {
+    test(`singular classifier retains valid ${pause}-paused bindings with intent enabled=${enabled} but rejects new assignments`, () => {
+      for (const protocol of ['openai', 'messages', 'anthropic']) {
+        const document = singularClassifierRegistry(protocol);
+        document.intentRouting.enabled = enabled;
+        if (pause !== 'provider') document.models.classifier.enabled = false;
+        if (pause !== 'model') document.providers.relay.enabled = false;
+        assert.deepEqual(toModelCatalog(document), []);
+        assert.equal(toModelCatalog(document, { includeDisabled: true }).length, 1);
+        assert.doesNotThrow(() => validateDocument(document));
+        for (const editable of [{}, toEditable(document)]) {
+          const next = applyEdits(document, editable);
+          assert.doesNotThrow(() => validateDocument(next, { previousDocument: document }));
+          assert.deepEqual(next.intentRouting, migrateTargetRefs(document).intentRouting);
+        }
+        const unassigned = { ...document, intentRouting: { enabled: false, classifierModel: '', intents: [] } };
+        assert.throws(() => validateDocument(document, { previousDocument: unassigned }), /enabled explicit provider binding/u);
+        for (const intentRouting of [document.intentRouting, { ...document.intentRouting, enabled: false },
+          { ...document.intentRouting, enabled: false, classifierModel: '' }]) {
+          assert.throws(() => applyEdits(unassigned, { intentRouting }), /enabled explicit provider binding/u);
+        }
+        const disabled = { ...document, intentRouting: { ...document.intentRouting, enabled: false } };
+        assert.throws(() => applyEdits(disabled, { intentRouting: { ...document.intentRouting, enabled: true } }), /enabled explicit provider binding/u);
+      }
+    });
+  }
+}
+
+for (const target of ['classifier', 'intent']) {
+  test(`singular protocols never exempt unchanged invalid ${target} references, including disabled intents`, () => {
+    for (const kind of ['missing', 'unbound', 'ambiguous', 'incompatible']) {
+      const document = singularClassifierRegistry('openai');
+      document.models.stale = { protocol: 'openai' };
+      if (kind === 'missing') delete document.models.stale;
+      if (kind === 'ambiguous') {
+        document.providers.relay.models = ['stale'];
+        document.providers.other = { ...document.providers.relay, enabled: false };
+      }
+      if (kind === 'incompatible') document.providers.other = {
+        baseUrl: 'https://other.example.invalid', protocols: ['claude'], models: ['stale'],
+      };
+      if (target === 'classifier') document.intentRouting.classifierModel = 'stale';
+      else document.intentRouting.intents[0].modelId = 'stale';
+      for (const enabled of [true, false]) {
+        document.intentRouting.enabled = enabled;
+        const original = structuredClone(document);
+        for (const check of [() => validateDocument(document), () => validateDocument(document, { previousDocument: document }),
+          () => applyEdits(document, {}), () => applyEdits(document, toEditable(document))]) {
+          assert.throws(check, ConfigError, `${target}/${kind}/enabled=${enabled}`);
+          assert.deepEqual(document, original, 'invalid references must be explicitly repaired, never silently migrated');
+        }
+      }
+    }
+  });
+}
+
 test('validateDocument rejects malformed intentRouting at the boundary', () => {
   const withIntent = (intentRouting) => ({ ...intentRegistry, intentRouting });
   assert.throws(() => validateDocument(withIntent('nope')), ConfigError);
@@ -213,19 +412,21 @@ test('validateDocument rejects malformed intentRouting at the boundary', () => {
   assert.throws(() => validateDocument(withIntent({ ...intentRegistry.intentRouting, intents: [...intentRegistry.intentRouting.intents, { id: 'quick', description: 'dup', modelId: 'claude-opus-5' }] })), ConfigError, 'duplicate intent id');
 });
 
-test('applyEdits rebuilds intentRouting: normalizes ids, prunes blank rows, preserves other sections', () => {
+test('applyEdits rebuilds intentRouting: normalizes intent ids, canonicalizes targets, and prunes blank rows', () => {
   const editable = toEditable(intentRegistry);
   editable.intentRouting.classifierModel = ' GLM-5.3-Flash ';
-  editable.intentRouting.intents.push({ id: ' Tests ', description: ' 写测试 ', modelId: 'Claude-Opus-5' });
+  assert.throws(() => applyEdits(intentRegistry, editable), /classifier must be a concrete model/u, 'classifier IDs are literal, not normalized');
+  editable.intentRouting.classifierModel = 'glm-5.3-flash';
+  editable.intentRouting.intents.push({ id: ' Tests ', description: ' 写测试 ', modelId: 'claude-opus-5' });
   editable.intentRouting.intents.push({ id: '', description: '', modelId: '' });
   const next = applyEdits(intentRegistry, editable);
   assert.equal(next.intentRouting.classifierModel, 'glm-5.3-flash');
   assert.equal(next.intentRouting.intents.length, 3, 'blank row pruned');
-  assert.deepEqual(next.intentRouting.intents[2], { id: 'tests', description: '写测试', modelId: 'claude-opus-5' });
-  assert.equal(next.activeModel, 'claude-sonnet-5', 'unrelated section preserved');
+  assert.deepEqual(next.intentRouting.intents[2], { id: 'tests', description: '写测试', modelId: 'model:claude-opus-5' });
+  assert.equal(next.activeModel, 'model:claude-opus-5', 'unrelated assignment migrates');
   assert.doesNotThrow(() => validateDocument(next));
-  const untouched = applyEdits(intentRegistry, { providers: [], matrix: { default: {}, clients: {} } });
-  assert.deepEqual(untouched.intentRouting, intentRegistry.intentRouting, 'editable without the section leaves it unchanged');
+  const untouched = applyEdits(intentRegistry, { matrix: { default: {}, clients: {} } });
+  assert.deepEqual(untouched.intentRouting, migrateTargetRefs(intentRegistry).intentRouting, 'omitted assignment sections still migrate');
 });
 
 test('diffEditable detects intentRouting changes', () => {
@@ -280,8 +481,8 @@ test('builtin registry seed starts empty with no implicit gateway provider or ro
 const metadataRegistry = () => ({
   ...parseDocument(registryText),
   providers: { relay: {
-    baseUrl: 'https://relay.example.com', apiKeyEnv: 'env:RELAY_KEY', protocols: ['claude'], models: [],
-    headers: { 'x-region': 'west' }, protocolBaseUrls: { claude: 'https://claude.example.com' },
+    baseUrl: 'https://relay.example.com', apiKeyEnv: 'env:RELAY_KEY', protocols: ['claude', 'openai-chat'], models: ['claude-opus-5', 'claude-sonnet-5', 'deepseek-v4-pro'],
+    headers: { 'x-region': 'west' }, protocolBaseUrls: { claude: 'https://claude.example.com', 'openai-chat': 'https://relay.example.com/openai/v1' },
     enabled: false, retryPolicy: { attempts: 3 },
     accounts: [
       { id: 'primary', apiKeyEnv: 'env:PRIMARY_KEY', weight: 3, label: 'Primary' },
@@ -297,7 +498,7 @@ const metadataRegistry = () => ({
 test('provider edits preserve optional metadata and match account metadata by id after reorder', () => {
   const document = metadataRegistry();
   const original = structuredClone(document);
-  assert.deepEqual(toModelCatalog(document), [], 'metadata-only fixtures are not selectable gateway models');
+  assert.deepEqual(toModelCatalog(document), [], 'paused explicit bindings are not selectable gateway models');
   const editable = toEditable(document);
   editable.providers[0].baseUrl = 'https://new.example.com';
   editable.providers[0].apiKeyEnv = '';
@@ -311,7 +512,7 @@ test('provider edits preserve optional metadata and match account metadata by id
   delete expected.apiKeyEnv;
   assert.deepEqual(provider, expected);
   assert.deepEqual(applyEdits(document, editable).routingGroups, document.routingGroups, 'unedited group metadata survives unrelated edits');
-  assert.deepEqual(applyEdits(document, editable).clientRoleMatrix, document.clientRoleMatrix, 'unchanged legacy selections survive unrelated provider edits');
+  assert.deepEqual(applyEdits(document, editable).clientRoleMatrix, migrateTargetRefs(document).clientRoleMatrix, 'paused explicit assignments survive migration and unrelated provider edits');
   assert.deepEqual(document, original, 'applying edits does not mutate the source');
 });
 
@@ -330,7 +531,7 @@ test('group-only changes are detected and persisted without dropping weights or 
   const editable = toEditable(document);
   editable.routingGroups[0].routing = 'order';
   const next = applyEdits(document, editable);
-  assert.deepEqual(diffEditable(before, toEditable(next)), ['routingGroups']);
+  assert.deepEqual(diffEditable(before, toEditable(next)), ['targetRefVersion', 'activeModel', 'clientRoleMatrix', 'routingGroups']);
   assert.deepEqual(next.routingGroups.review, { ...document.routingGroups.review, routing: 'order' });
   assert.deepEqual(next.providers, document.providers);
   assert.doesNotThrow(() => validateDocument(next));
@@ -344,7 +545,7 @@ test('omitted routingGroups preserve legacy configuration; explicit deletion and
   editable.routingGroups = [];
   const cleared = applyEdits(document, editable);
   assert.deepEqual(cleared.routingGroups, {});
-  assert.deepEqual(diffEditable(toEditable(document), toEditable(cleared)), ['routingGroups']);
+  assert.deepEqual(diffEditable(toEditable(document), toEditable(cleared)), ['targetRefVersion', 'activeModel', 'clientRoleMatrix', 'routingGroups']);
   editable.routingGroups = [{ id: 'new', models: [], routing: 'smart' }];
   const added = applyEdits(cleared, editable);
   assert.deepEqual(diffEditable(toEditable(cleared), toEditable(added)), ['routingGroups']);

@@ -1,13 +1,13 @@
 # apps/shell — AIOS Console（本机 AI 工具管理器 + 桌面壳）
 
-当前界面提供本机 AI 工具管理、模型网关、项目记忆与 MCP 服务。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`，网关工作台决定见 `docs/plans/2026-11-15-gateway-management-workspace.md`。
+当前界面提供 Agent 客户端管理、模型网关、项目记忆与资源库（MCP / Skills / Subagents）。旧接入矩阵控制台已退役。原有架构边界见 `docs/adr/0007-aios-perceived-surface-and-desktop-shell.md` 与 ADR 0008；迁移决定见 `docs/plans/2026-11-06-console-retire-legacy-ui.md`，网关工作台决定见 `docs/plans/2026-11-15-gateway-management-workspace.md`。
 
-**当前数据状态：** 首页 `/`、AI 工具 `/tools`、MCP 服务 `/mcp`、记忆 `/memory`、
+**当前数据状态：** 首页 `/`、Agent 客户端 `/tools`、资源库 `/mcp`、记忆 `/memory`、
 活动记录 `/activity`、设置 `/settings` 按**当前选中的工作区**采集本机事实。模型网关 `/routing` 的运行状态、接入和决策日志属于本机网关，注册表属于服务启动根，不会因为切换 `ws` 变成另一套独立网关。页头显示选中工作区的名字与绝对路径，
 实测一次采集 258–303ms：harness-cli 是 80 个服务实例 / 638 条记忆，切到 xsapp 是 52 个 / 365 条，rex-ai-tools 是 56 个 / 333 条——
 **数字随根变化**才是真的按根取数；如果切换后数字不动，那就是装饰。**已删除** `demo-data.ts` 与 `flows/service-state.ts`，
 `apps/shell/ui/src` 里没有任何指向它们的 import。MCP 向导第三步是真实 `aios mcp add --dry-run`（实测不改文件字节）。
-网关工作台可显式保存模型注册表，也可在二次确认后启停网关或改写/还原客户端接入配置；MCP 管理仍只读，向导仅预览 dry-run。
+网关工作台可显式保存模型注册表，也可在二次确认后启停网关或改写/还原客户端接入配置。MCP 向导先预览，再经单独授权安装；预览本身不写入。Skills 复用已有安装、同步和移除能力；Subagents 只提供目录与本地 doctor。
 
 ## 工作区切换：为什么交回来的是 key，不是路径
 
@@ -105,6 +105,7 @@ apps/shell/                 ← 5 项
    `--rex-*`，由 `shell-tokens.test.mjs` 逐条比对。globals.css 里允许的选择器只有 `:root[data-rex-theme="dark"]` 和 `body`。
 3. **选择必须驱动其声明的数据范围。** 工作区切换走 `?ws=<key>` → 服务端按该根重采集本机事实；模型目录与请求筛选在已读取的快照内过滤，界面明确最近 100 条的范围，不冒充全日志查询。
 4. **服务端组件不从 `'use client'` 模块取数据。** 路由传递视图 ID 与服务端采集的 `ConsoleFacts`；路径、可读标签和旧链接迁移由 `lib/console-navigation.ts` 共享。网关运行态、配置与日志由客户端通过受 token 门保护的 API 读取。
+5. **浮层共用一个焦点与遮罩注册表。** Dialog、Select 与 DropdownMenu 对齐 Radix 版本；`react-dismissable-layer` 和 `react-focus-scope` 显式固定为单份依赖。相同版本的嵌套副本也会割裂注册表，导致 Esc 误关父弹窗、关闭后页面仍被 `pointer-events: none` 锁住；开发浏览器测试同时检查锁文件拓扑与真实退出交互。
 5. **一种交互只有一个形状。** 共享件是交互契约的唯一所有者：表面 `Panel`、徽章 `Badge`、按钮 `Button`、弹窗 `Modal`、
    输入 `Input`/`Select`/`Textarea`（`Input`/`Select` 以 `size` 为唯一变化轴，`Textarea` 高度由 `rows` 驱动）、空态 `Empty`、异步态 `Loading`/`ErrorState`/`InlineFeedback`，
    一律从 `components/console/console-ui` 取（它 re-export `components/ui/` 的原子件 `primitives.tsx`/`states.tsx`/`button.tsx`）。
@@ -116,13 +117,96 @@ apps/shell/                 ← 5 项
 
 `/` 是只读客户端路由观测：分开显示本机配置落点、最近 50 条日志内的请求及时间、实现角色的配置默认和日志计数。不从历史请求推断客户端在线、当前连接或网关健康。`/tools`、`/routing`、`/mcp`、`/memory`、`/activity`、`/settings` 是同一套 Console 的视图。导航保留 `ws`，支持刷新及前进后退。
 
+### Agent 客户端、目标与资源库操作契约
+
+`/tools` 的每个客户端分开显示程序安装/版本/来源、配置落点、网关配置观察和恢复记录。
+找到配置文件不代表找到可执行程序；可执行程序存在不代表来源可验证；`connected: true`
+只证明当前配置指向网关，不证明客户端在线、已加载配置或上游生成成功。
+
+- 右侧接入开关只改该客户端配置，不启动或停止网关。Claude、Codex、Pi 有接入适配器；
+  其他客户端显示不支持，不猜测配置格式。确认时捕获目录哈希和网关端口，提交后由 API、
+  CLI 和写入运行时重新核对。目录变更需刷新并重新确认；缺少有效哈希禁止接入/应用目标，
+  但不阻止对安全、受管配置执行断开还原。
+  运行总览的旧接入入口使用同一 revision 门：GET 的 `configuredRevision` 与端口在打开
+  确认时捕获，轮询更新不会替换这次批准；所有 connect 请求都必须提交有效 revision。
+- 目标可选具体模型、路由组或 AIOS Auto。固定模型/组绕过角色和意图；Auto 进入既有分配链，
+  并不保证一定调用分类器。空分配值表示继承，不等于 Auto。原生默认、清除固定目标与断开
+  还原是不同动作；目前三个适配器均不能保证接入后安全清除默认，因此不提供原生选项。
+- 接入工件携带客户端身份及保留的 `aios-*` 选择器。Pi 发布模型/组目录；Claude 的
+  `availableModels` 不能证明支持任意模型选择器，Codex 自定义目录 schema 尚未验证，
+  因此不会伪造这两种目录能力。可在此固定目标，或在客户端支持时使用已发布的 wire ID。
+- `readback.target` 是配置观察，`defaultTarget` 是恢复日志中的请求值；归属、漂移和待恢复
+  状态独立展示。不确定失败后关闭确认并重读，不能因 HTTP 200 或旧日志显示成功。断开只
+  还原 AIOS 持有且未漂移的字段，保留用户新增内容，不清除网关进程或日志。
+- 客户端更新先读取 PATH、真实路径、元数据和版本，再显示具体程序与参数。当前仅对来源
+  可验证的受支持 npm-global 安装提供更新；Homebrew、原生 Claude、应用商店、Windows
+  shim 和未知来源不猜更新命令。写入需 `confirm: true` 和精确预览 revision，运行前再次
+  核对来源；失败/超时或读回无法验证时保留锁供检查，不自动重试或重启客户端。
+
+模型分配与组编辑共用原有草稿和底部「保存全部修改」。角色/意图可选择组，分类器只能
+选择合资格的具体模型。组成员是原始具体模型 ID，不是嵌套组或 advertised wire ID；可排序、
+启停和编辑，存在实际分配引用时禁止删除（包括角色、规则及意图后备和嵌套环境分配）。
+失效引用与未知元数据保留，不按目录猜测或静默修复。
+
+持久化分配采用 `targetRefVersion: 1`：`model:<encodeURIComponent(id)>`、
+`group:<encodeURIComponent(id)>` 和 `auto`。未版本化字符串一律是字面模型 ID，
+即使名字为 `auto`、`group:x` 或 `model:foo`。迁移仅处理真实分配字段，保留大小写、空白、
+非 record 角色值及扩展元数据；分类器和组成员仍是原始具体模型 ID。
+浏览器本地角色方案也保存版本标记并支持模型、组和 Auto。应用旧方案时只迁移副本，
+不改写原存储；无效引用/版本拒绝应用，损坏或不可读的存储不允许被新方案覆盖。
+
+路由组按成员顺序优先，不提供权重、成本优化或负载均衡。派发前跳过不合资格候选；派发后
+只有该模型的全部派发账号明确返回 `401`、`402` 或 `429` 才允许切到下一模型。
+网络异常、`408`、`5xx` 不默认跨模型重放；输出已提交、取消或截止后不重试。每个候选从
+原始请求重新翻译、脱敏、认证和解码；成功后的会话亲和绑定目标、模型、provider、协议、
+账号和配置指纹，不把一组中所有模型视作可互换的工具续轮。
+
+`/mcp` 是资源库，不是向量文档知识库。三个页签复用现有能力：
+
+| 页签 | 已提供 | 安全边界 |
+| --- | --- | --- |
+| MCP | 清单、落点、真实 dry-run、确认安装、本机 Search/Fetch 预设 | 不覆盖外部/冲突条目；安装不启动服务或调用付费工具 |
+| Skills | 清单、来源/版本/归属、预览后安装/同步/移除 | 精确 revision 和受管内容保护；显示共享落点及影响客户端 |
+| Subagents | 规范角色、投影/验证证据、只读 doctor | 不提供增删改、启动、smoke 或 probe；投影不等于已安装/验证 |
+
+**MCP 安装确认：** 先选择可写落点和服务配置，再执行真实 `add --dry-run`。安全预览才会
+获得服务端保存的短期、一次性 opaque `previewId`，绑定规范化 argv、运行时、项目及当前
+配置/ownership ledger revision。勾选授权并确认写入；浏览器不直接决定 revision。
+服务端在异步执行前消费批准，再经 `AIOS_MCP_EXPECTED_REVISION` 传给 CLI，运行时在锁内
+检查配置与 ledger，并在 rename 前重新检查字节和 revision。取消、编辑、过期、失败、
+重复提交或服务重启后都需重新预览授权；跨 worker 不共享批准时失败关闭。
+写入成功或结果不确定时均刷新清单，不把预览的 `planned` 当成安装成功。
+协作锁及 rename 前检查不等于对任意外部编辑器提供 OS 级 compare-and-swap；有并发冲突时
+检查当前文件、备份和 ledger，不盲目重试旧批准。
+备份以 `0600` 权限、防碰撞文件名和独占创建写入。若 ledger 保存失败，补偿只恢复/移除
+仍与本次提交字节一致的配置；发现外部修改时保留它及备份，返回 `rollback-incomplete`
+和恢复信息，不宣称已回滚完成。ledger 自身也在替换前核对读取快照。
+损坏、较新版本或不支持记录形态的 ledger 只提供诊断，不按空账本覆盖；预览与写动作会
+返回 `ledger-invalid`，需先由所有者检查并恢复账本。
+
+**DeepSeek 联网搜索：** 资源库的 Search/Fetch 预设使用所选 AIOS 运行时旁的
+`scripts/aios-search-mcp.mjs`，不是项目目录中同名脚本。把 `DEEPSEEK_API_KEY` 设置在
+启动客户端的安全环境中，由 MCP 子进程继承；预设不在浏览器收集或落盘密钥。
+启动、初始化、工具发现、预览和安装都不发起付费请求；只有实际调用 `deepseek_search`
+或 `deepseek_fetch` 才向 DeepSeek 发送查询或 URL。它独立于生成模型，不会替换所有客户端
+原生 Web 工具，也不代表任意账号已获权限。官方文档价为成功且非空的 Search/Fetch
+各每千次人民币 5 元（英文站美元 0.75），`count` 不影响单次价格；以官方现价为准。
+完整参数、计费、出站数据、响应限制及离线测试见
+[`scripts/lib/tooling/search/README.md`](../../scripts/lib/tooling/search/README.md)。
+
+**边界决定：** 路由语义由 CLI/runtime 拥有，Next API 只翻译受校验的结构化 argv，UI 不另做
+路由执行。UI 目标语法镜像通过 parity 测试与权威 helper 保持一致，避免把 CLI 运行时拖入
+浏览器包。资源库复用既有 MCP/Skills/Subagents，而非另造管理后端；Search 使用现有 MCP
+SDK 和受限本机 stdio 入口，而非额外常驻搜索 daemon。取舍是保守暴露已验证能力，不以
+虚构目录、自动更新命令或免费搜索承诺填补客户端/供应商能力缺口。
+
 `/routing` 使用一个持久挂载的 `GatewayWorkspace`，按任务分为四区：
 
 | 分区 | 深链 | 职责 |
 |---|---|---|
 | 运行总览 | `/routing` | 网关启停、客户端接入/还原、只读客户端观测 |
 | 供应商与模型 | `/routing?section=providers` | 供应商编辑、模型目录搜索/来源筛选、自定义模型、确认后发现目录 |
-| 路由策略 | `/routing/config` | 全局角色默认、客户端继承/覆盖、意图规则、浏览器本地角色覆盖方案 |
+| 模型分配 | `/routing/config` | 模型/组目标、全局角色默认、客户端继承/覆盖、意图规则、路由组及浏览器本地角色覆盖方案 |
 | 请求记录 | `/routing?section=requests` | 日志总计、最近 100 条筛选/详情、模型请求分布 |
 
 所有配置区共用 `model-routing/use-routing-config.ts` 的一份草稿。切分区或 Console 视图不丢草稿；保存全部修改才写注册表。放弃/重新读取均需确认；有草稿时禁用发现目录，离开文档时提醒。保存失败或 409 保留草稿，不静默覆盖外部修改。写入前备份已有注册表，首次从内置配置创建时没有旧文件可备份；适配器保留未暴露的供应商、模型与路由组元数据。
@@ -135,17 +219,102 @@ apps/shell/                 ← 5 项
 
 **默认空接入。** 新安装的网关注册表没有供应商、模型或默认策略，不会隐式连接 relay。原生 CLI 的模型参考资料单独保存在 `native-model-templates.json`，不进入网关候选。已有用户注册表原样读取，不重置、不与空默认值深合并。只有显式绑定到供应商且声明了共同协议的模型才进入目录与策略；旧 curated 条目的 `provider` 只是启动器元数据，除非供应商的 `models` 列表唯一显式绑定它。
 
-先添加供应商，选择标准 API 或旧 relay 路径格式，保存后发现目录或手动添加真实上游模型 ID。模型的本地路由标识与 `upstreamModel` 分开，真实 ID 保留大小写，同名模型可分属不同供应商。需要凭据是默认行为；只有明确选择 `authMode: none` 才允许不带密钥请求。缺少凭据时本地拒绝，不把空密钥当作匿名授权。发现目录只证明读取过模型列表，不证明生成请求可用。
+先添加供应商，选择厂商预设（有地区或套餐时按密钥所属选项选择）或自定义渠道。主要 API 配置其 Base URL，其他 API 地址独立填写；未填写的 API 不会自动启用。Chat Completions、Responses、Anthropic Messages 和 Gemini 可分别使用不同域名、版本或路径前缀。供应商预设仅填连接，不读取密钥、不发起请求、不自动添加模型；保存后发现目录或手动添加真实上游模型 ID。模型的本地路由标识与 `upstreamModel` 分开，真实 ID 保留大小写，同名模型可分属不同供应商。需要凭据是默认行为；只有明确选择 `authMode: none` 才允许不带密钥请求。缺少凭据时本地拒绝，不把空密钥当作匿名授权。发现目录只证明读取过模型列表，不证明生成请求可用。
+
+供应商的 `protocolBaseUrls` 显式保存各 API 地址；存在时为权威配置，不回退到 `baseUrl` 拼接其他 API。Chat/Responses 在 Base URL 下使用 `/chat/completions`、`/responses`，裸域名才补 `/v1`；Anthropic 在地址下使用 `/v1/messages`（已有 `/v1` 不重复），Gemini 使用 `/models/{model}:generateContent`，裸域名才补 `/v1beta`。Gemini 模型 ID 保留命名空间分隔符并逐段转义，空段、`.`、`..` 在转发前拒绝。不同 API 的模型列表在相同 API 基址下读取。地址不得携带用户密码、查询参数或片段。没有 `protocolBaseUrls` 的已有配置继续按原 `endpointStyle` 解析；读取、取消和未编辑保存都不迁移旧地址。
+
+第三方 Anthropic 可选择 `authHeader: x-api-key|bearer|both`；省略时保持已有的 x-api-key 行为。`headers` 支持额外非敏感请求头及 `env:VARIABLE` 引用；认证头只能用环境变量引用，禁止连接/报文长度/Cookie 等受保护头。声明无需认证时不能另配凭据头。发现、分类和转发共用认证规则。修改或新增任一 API 地址后，带凭据的供应商需确认密钥发送范围；仍只加入共享草稿，统一保存才落盘。本表单不冒充已支持 Magpie 的订阅登录、插件、Vertex/Bedrock 签名或自动生成探测。
 
 `/health` 的 `ok: true` 只表示监听进程正常，`ready` 单独表示当前启动快照存在可转发的显式路由。无可路由模型时请求本地返回 `503 NO_ROUTE_CONFIGURED`，不调用分类器或任何上游。单个已启用且具备凭据的模型可直接路由；多个模型需要显式角色/默认选择或就绪的意图分类策略。Console 在运行但未就绪时禁用新接入，已有接入仍可还原。
 
 启用脱敏时，意图分类与生成请求都先经过同一个请求级脱敏边界；协议翻译后再次脱敏，共用原映射，覆盖工具参数序列化产生的敏感字符串。只有显式 `x-gateway-session` 才复用该会话的工具续轮意图；未提供会话标识时，从当前请求自己的用户轮历史重新分类，不把客户端名称当作会话缓存键。重新分类仍可能产生供应商费用，因此仅适用于用户已显式启用的就绪意图策略。
 
+### Gateway protocol compatibility
+
+The routing gateway (CLI default `http://127.0.0.1:8686`, not the Console on
+3126) accepts these inference paths:
+
+| Client wire protocol | POST path |
+| --- | --- |
+| Anthropic Messages | `/v1/messages` |
+| OpenAI Responses | `/v1/responses` |
+| OpenAI Chat Completions | `/v1/chat/completions` |
+| Gemini JSON | `/v1/models/{model}:generateContent` |
+| Gemini SSE | `/v1/models/{model}:streamGenerateContent?alt=sse` |
+
+Native Gemini SDK `/v1beta/models/...` paths are aliases. The path chooses the
+client wire protocol; `x-gateway-client`/`x-gateway-role` select routing identity,
+not protocol. Ordinary client model aliases retain the existing assignment
+behavior. Only reserved `aios-auto`, `aios/model/<encoded-id>` and
+`aios/group/<encoded-id>` selectors explicitly choose Auto, a registered model or
+a registered group. Explicit headers, body and Gemini path selectors must agree;
+malformed, unknown or contradictory reserved selectors fail with 400 rather than
+falling through.
+
+All four upstream protocols have JSON and incremental SSE adapters to all four
+client protocols. This includes text, function tools, multi-turn tool results,
+usage and terminal events, not just rewriting the outbound request body. A bound
+model/provider offering the native client protocol prefers native forwarding,
+preserving vendor extensions. Standard Gemini streaming selects
+`:streamGenerateContent?alt=sse` and puts neither `model` nor `stream` in its body;
+legacy relay endpoint semantics remain separate.
+
+Cross-protocol compatibility is not an assertion that every vendor feature is
+equivalent: unsupported stateful Responses references, built-in hosted tools,
+thinking/signatures, audio/video or other unrepresentable content/options are
+rejected explicitly rather than discarded. Representable images and common
+generation options are mapped by the request codec. Same-protocol forwarding
+remains opaque and preserves provider-specific extensions.
+
+Translated Responses requests explicitly disable response persistence with
+`store:false`. A Responses function tool with omitted/null `strict` retains its
+effective strict guarantee: OpenAI targets receive the normalized strict schema;
+Claude/Gemini targets require an explicit `strict:false` opt-out instead of
+silently weakening it. Function names and image formats must be valid for the
+target API; the gateway does not rename tools, transcode GIFs for Gemini, or fetch
+remote images to guess their contents.
+
+Explicit token-limit finishes preserve incomplete tool-argument strings in
+Chat/Claude/Responses SSE, including through masking restoration. Native Chat
+and Responses JSON can also preserve them. Cross-protocol JSON requires complete
+argument JSON, and Gemini requires a complete argument object; those unsupported
+truncated forms fail rather than receiving invented closing bytes.
+
+Unsupported requests fail locally before classifier/generation calls. Upstream
+HTTP errors keep their status in the client's error envelope; invalid upstream
+JSON or mismatched stream modes return 502. Translation errors/truncation become
+client-protocol error events (HTTP headers may already be 200), never a fabricated
+successful completion. Deadlines and cancellation cover response consumption,
+not only time to upstream headers.
+
+Response masking restores parsed JSON values and the extra JSON-string layer of
+tool arguments, not raw serialized SSE text. Standard text/tool delta channels
+can carry a placeholder across events without buffering the full response.
+With an empty mask mapping, native SSE is byte-opaque; a nonempty mapping requires
+JSON SSE data (or `[DONE]`) and bounds frames, channels and nesting. Unknown JSON
+extension fields restore within their event, not across extension-specific delta
+formats. Restoration/parser failures terminate the stream without inventing a
+successful terminal event.
+
+This is still a loopback/local-trust service, not a public multi-tenant API.
+Installing code does not reload an already-running gateway; loading a new runtime
+requires a separately authorized restart. Protocol tests use fixture upstreams,
+not live paid model calls.
+
+Verification snapshot (2026-11-16): the expanded isolated runtime/fixture checks
+pass 1300/1300. The wider dirty-worktree regression reports 3787 pass, 32 fail and
+15 skip, with the same 32 failure identities as its retained baseline; this is
+not a clean-HEAD or release-gate pass. Final evidence, the blocked standards gate
+and module-budget tradeoffs are recorded in
+`docs/plans/2026-11-15-gateway-management-workspace.md`.
+
 可先运行 `aios model-router connect --dry-run`（也支持 `--isolated`）检查显式路由资格；演练不修改客户端、注册表或接入状态，也不调用上游。它不是实际生成探针，不证明供应商可用。其它子命令收到 `--dry-run` 会明确拒绝，不会忽略标志后执行操作。Codex 不再填入内置默认模型，使用显式模型选择或已配置的可用路由。
 
 多客户端就地接入会先预检全部编辑，并在首次改写前持久化恢复日志。修改 Codex 注册表默认值前另写入命令级恢复状态，最终状态写入失败也能重试或还原，不把已接入值当作原始默认值。已接入 A 后切换 B 失败时，恢复状态同时保留最初默认值、修改前的 A 和目标 B；不会把仍在磁盘上的 A 误判为外部冲突，也不会覆盖最初备份。中途写入失败后保留原始值；受管理字段被外部修改时拒绝覆盖，非受管理的用户新增内容保留。重复还原仅清理接入自有工件，不删除网关 PID、决策日志或未知状态文件。
 
-角色覆盖方案只快照角色矩阵，存于当前浏览器 localStorage；应用只改草稿，不包含供应商、密钥或意图规则，也不与 CLI 同步。现有路由组原样保留，但网关尚未消费它们，因此界面不提供假生效的轮询/权重策略编辑。请求没有记录的状态、耗时和 tokens 显示「未记录」，不填成成功、零耗时或零成本。
+角色覆盖方案只快照角色矩阵，存于当前浏览器 localStorage；应用只改草稿，不包含供应商、密钥或意图规则，也不与 CLI 同步。路由组执行真实的顺序优先与安全后备，不提供未实现的权重、成本优化或负载均衡。请求没有记录的状态、耗时和 tokens 显示「未记录」，不填成成功、零耗时或零成本。
+
+意图规则默认显示「描述摘要 → 目标模型」，点击规则行或「编辑」后行内展开，一次编辑一条；收起只隐藏控件，不撤销草稿。新增规则自动展开并聚焦描述，删除后焦点回到相邻规则（无规则时回到添加入口；不能添加时回到启用开关）。未选择或已失效的目标模型显示「待选择目标模型」，不展示失效 ID，也不自动修复引用。内部 ID 与规则编辑身份分离；所有配置仍经底部「保存全部修改」统一保存。
 
 请求明细的行标识在 JSONL 读侧、倒序及截取最近 100 条之前生成；新增日志不会因数组下标变化重挂载已有行，键盘焦点保留在原请求上。筛选和轮询均不改写日志。
 
@@ -153,7 +322,7 @@ apps/shell/                 ← 5 项
 
 **网关控制卡（`model-routing/gateway-control.tsx`）**：一键启停本机网关 + 如实显示运行态 + 每客户端一键接入/还原。它经 `/api/model-routing/gateway` 调 CLI（`gateway-status`/`gateway-start`/`gateway-stop`/`connect`/`disconnect`），进程管理与就地接入的单一事实源在 `scripts/lib/tooling/model-router/lifecycle/daemon.mjs`（pidfile + 端口探测 + 安全停止，CWD 挪出安装树、detached 托管、SIGTERM→SIGKILL）与 `connect/inplace.mjs`。启停/接入/还原都是副作用 → 先弹 `Modal` 确认再 POST `confirm:true`，缺确认 409、未知动作 400、非法客户端 400；状态只读，2.5s 轮询且仅在运行总览激活时。运行态诚实区分：`running`（端口在答）/`managed`（界面托管的 pid 还活着）/`stale`（残留 pidfile 但端口没答，绝不冒充运行）；外部前台进程启动的网关如实标注「界面无法替它停机」。未运行时阻止新接入；停机不自动还原客户端，仍接入时显示警告。接入默认「就地」：每客户端一个「接入/还原」按钮，确认后把网关地址外科改写进客户端真实配置（claude `~/.claude/settings.json` 的 `env.ANTHROPIC_BASE_URL/AUTH_TOKEN`、codex `~/.codex/config.toml` 的 `model_provider`+`[model_providers.aios-gateway]`、pi `~/.pi/agent/{settings,models}.json`），只动网关需要的 key、保留注释/顺序/缩进、原子写、备份原值供还原。接入状态不等于模型连接测试通过。隔离模式（`connect --isolated`，生成隔离工件 + 特殊启动命令、不碰真实配置）在可折叠说明内，命令构造单一源为 `connect/artifacts.mjs` 的 `connectLaunchCommand`。前台 `aios model-router gateway`（Ctrl+C 停）不变。
 
-**模型来源（`model-routing/model-source-section.tsx`）**：目录只展示已显式接入的模型，不把内置资料当成可调用资源。「刷新模型」经 `/api/model-routing/models` 调 CLI `model-router models --refresh`，只读取已配置且认证就绪的供应商。标准 API 使用 `/v1/models` 或 Gemini `/v1beta/models`；显式保留 relay 格式的旧供应商使用对应协议前缀。某协议 404/超时按来源报告部分失败，密钥只进请求头。新模型保存协议、供应商、来源与真实 ID；跨供应商及大小写冲突分配不同本地标识，不覆盖 native/curated 元数据、不自动填写 active/default/意图策略。自定义模型与供应商通过共享草稿保存，未知元数据保留。刷新会写注册表，因此需要 `confirm:true`。CLI `model-router models [--refresh] [--json]` 同源。
+**模型来源（`model-routing/model-source-section.tsx`）**：目录只展示已显式接入的模型，不把内置资料当成可调用资源。「刷新模型」经 `/api/model-routing/models` 调 CLI `model-router models --refresh`，只读取已配置且认证就绪的供应商。显式 API 地址在各自基址下读取模型列表；旧供应商保持原路径规则。某协议 404/超时按来源报告部分失败，密钥只进请求头。新模型保存协议、供应商、来源与真实 ID；跨供应商及大小写冲突分配不同本地标识，不覆盖 native/curated 元数据、不自动填写 active/default/意图策略。自定义模型与供应商通过共享草稿保存，未知元数据保留。刷新会写注册表，因此需要 `confirm:true`。CLI `model-router models [--refresh] [--json]` 同源。
 
 接入客户端时，界面提交状态端点返回的实际端口，API 再次核对网关仍在该端口运行后才调用 `connect --port`；不能把展示的非默认端口悄悄写成 `8686`。发现结果按供应商/协议提示部分读取失败，并明确已有目录保留，不把部分成功说成全部成功。
 
@@ -275,7 +444,7 @@ npm run shell:bundle     # = tauri build --bundles nsis
 「壳要不要自带运行时」是 S2-3 之后仍未关闭的产品决定，写在
 `docs/plans/2026-11-05-shell-s2-plan.md`。
 
-**S2 仍未做**：签名/公证、托盘与自启、面板动作（网关启停卡已是第一个有副作用的面板动作，经 `confirm:true` + token 门；其余页面仍只读，写操作接上之前这道门是唯一的写入面保护）、强杀后残留 token 文件的清理（下次启动会被新 token 覆盖，不构成安全面）。
+**S2 仍未做**：签名/公证、托盘与自启、强杀后残留 token 文件的清理（下次启动会被新 token 覆盖，不构成安全面）。网关、Agent 客户端和资源库的写动作经 token 门及各自的预览/确认/revision 保护，不是桌面壳直接写配置。
 
 ## 从仓库根启动（不需要 cd 进 apps）
 

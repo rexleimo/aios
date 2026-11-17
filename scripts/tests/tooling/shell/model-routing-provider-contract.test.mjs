@@ -2,8 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
 import { applyEdits, ConfigError, toEditable, validateDocument } from '../../../../apps/shell/ui/src/lib/config/model-routing.mjs';
-import { getProviderForModel, loadProviders, resolveProviderApiKey } from '../../../lib/tooling/model-router/routing/providers.mjs';
-import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/proxy.mjs';
+import { getProviderForModel, loadProviders, resolveProviderApiKey } from '../../../lib/tooling/model-router/providers/registry.mjs';
+import { createRoutingGatewayApp } from '../../../lib/tooling/model-router/gateway/compatibility/proxy.mjs';
 import { getClientRoleMatrix, resolveClientRoleModel } from '../../../lib/tooling/model-router/routing/client-role-matrix.mjs';
 import { browserRuntime } from './browser/gateway-fixture.mjs';
 
@@ -45,7 +45,7 @@ test('adapter normalization and actual gateway forwarding honor model binding an
       return new Response('{}', { status: captured.length < 3 ? 401 : 200, headers: { 'content-type': 'application/json' } });
     },
   });
-  const response = await app.request('/v1/messages', { method: 'POST', body: JSON.stringify({ model: 'ignored-client-model', messages: [] }) });
+  const response = await app.request('/v1/messages', { method: 'POST', body: JSON.stringify({ model: 'ignored-client-model', messages: [{ role: 'user', content: 'hello' }] }) });
   assert.equal(response.status, 200);
   await response.text();
   assert.deepEqual(captured.map((item) => item.url), Array(3).fill('https://upstream.invalid/claude/v1/messages'));
@@ -56,6 +56,36 @@ test('adapter normalization and actual gateway forwarding honor model binding an
   assert.equal(decisions[0].providerId, 'upstream');
   assert.equal(decisions[0].account, 'inherited');
   for (const value of Object.values(env)) assert.ok(!JSON.stringify(decisions).includes(value), 'decision records contain no credentials');
+});
+
+test('inline keys are forwarded as credentials and never appear in decision records', async () => {
+  const document = fixture();
+  document.providers.upstream.apiKeyEnv = '';
+  document.providers.upstream.apiKey = 'sk-inline-provider';
+  document.providers.upstream.accounts = [
+    { id: 'primary', apiKeyEnv: '', apiKey: 'sk-inline-primary', weight: 3, label: 'Primary' },
+    { id: 'backup', apiKeyEnv: '', apiKey: 'sk-inline-backup', weight: 1 },
+    { id: 'inherited', apiKeyEnv: '', enabled: true },
+  ];
+  const next = applyEdits(document, toEditable(document));
+  assert.doesNotThrow(() => validateDocument(next));
+
+  const captured = [];
+  const { app, decisions } = createRoutingGatewayApp({ registry: next, role: 'implementer', env: {},
+    fetchImpl: async (url, init) => {
+      captured.push({ url, headers: init.headers });
+      return new Response('{}', { status: captured.length < 3 ? 401 : 200, headers: { 'content-type': 'application/json' } });
+    },
+  });
+  const response = await app.request('/v1/messages', {
+    method: 'POST', body: JSON.stringify({ model: 'ignored-client-model', messages: [{ role: 'user', content: 'hello' }] }),
+  });
+  assert.equal(response.status, 200);
+  await response.text();
+  assert.deepEqual(captured.map((item) => item.headers['x-api-key']), ['sk-inline-primary', 'sk-inline-backup', 'sk-inline-provider']);
+  for (const secret of ['sk-inline-primary', 'sk-inline-backup', 'sk-inline-provider']) {
+    assert.ok(!JSON.stringify(decisions).includes(secret), 'decision records contain no inline key');
+  }
 });
 
 test('invalid bindings and missing credentials return 503 before classifier or upstream fetch', async () => {
@@ -79,9 +109,12 @@ test('invalid bindings and missing credentials return 503 before classifier or u
     });
     let routingError;
     app.onError((error) => { routingError = error; return new Response('{}', { status: 500 }); });
-    const response = await app.request('/v1/messages', { method: 'POST', body: JSON.stringify({ model: 'custom-model', messages: [] }) });
+    const response = await app.request('/v1/messages', { method: 'POST', body: JSON.stringify({ model: 'custom-model', messages: [{ role: 'user', content: 'hello' }] }) });
     assert.equal(response.status, 503);
-    assert.deepEqual(await response.json(), { error: { code } });
+    const json = await response.json();
+    assert.equal(json.type, 'error');
+    assert.equal(json.error.type, 'api_error');
+    assert.equal(json.error.code, code);
     assert.equal(routingError, undefined, 'configuration failures are handled, not unhandled 500s');
     assert.equal(classifications, 0);
     assert.equal(requests, 0, 'no implicit relay or alternate protocol request may escape');
@@ -142,11 +175,11 @@ test('adapter and runtime agree on normalized protocol aliases, provider ids and
   assert.equal(resolveProviderApiKey(loadProviders(next).upstream, env, 'primary'), 'primary-fixture');
 });
 
-test('adapter rejects malformed provider arrays and plaintext/ambiguous account credentials before coercion', () => {
+test('adapter rejects malformed provider arrays and invalid/ambiguous account credentials before coercion', () => {
   for (const patch of [
-    { accounts: {} }, { accounts: [null] }, { accounts: [{ id: 'p', apiKey: 'fixture-plaintext' }] },
+    { accounts: {} }, { accounts: [null] }, { accounts: [{ id: 'p', apiKey: 'bad\nkey' }] },
     { accounts: [{ id: 'p' }, { id: ' P ' }] }, { accounts: [{ id: 'p', apiKeyEnv: 'not-an-env-ref' }] },
-    { protocols: 'claude' }, { models: 'model' }, { protocols: ['claude', 'bogus'] }, { apiKey: 'fixture-plaintext' },
+    { protocols: 'claude' }, { models: 'model' }, { protocols: ['claude', 'bogus'] }, { apiKey: 'bad\nkey' },
   ]) {
     const document = fixture();
     assert.throws(() => validateDocument({ ...document, providers: { upstream: { ...document.providers.upstream, ...patch } } }), ConfigError);
@@ -154,6 +187,23 @@ test('adapter rejects malformed provider arrays and plaintext/ambiguous account 
     Object.assign(editable.providers[0], patch);
     assert.throws(() => validateDocument(applyEdits(document, editable)), ConfigError);
   }
+});
+
+test('adapter saves inline provider/account keys and clears them on an explicit empty edit', () => {
+  const document = fixture();
+  const editable = toEditable(document);
+  editable.providers[0].apiKey = 'sk-inline';
+  editable.providers[0].accounts = [...editable.providers[0].accounts, { id: 'extra', apiKeyEnv: '', apiKey: 'sk-account' }];
+  const staged = applyEdits(document, editable);
+  assert.equal(staged.providers.upstream.apiKey, 'sk-inline');
+  assert.equal(staged.providers.upstream.accounts.at(-1).apiKey, 'sk-account');
+  assert.doesNotThrow(() => validateDocument(staged));
+
+  editable.providers[0].apiKey = '';
+  editable.providers[0].accounts.at(-1).apiKey = '';
+  const cleared = applyEdits(document, editable);
+  assert.equal(cleared.providers.upstream.apiKey, undefined);
+  assert.equal(cleared.providers.upstream.accounts.at(-1).apiKey, undefined);
 });
 
 test('matrix validation checks default and every client role ref, including deleted custom models', () => {
@@ -182,20 +232,23 @@ test('matrix validation rejects malformed maps without silently converting them 
   }
 });
 
-test('matrix inheritance, normalized model refs and arbitrary role/client ids remain legitimate', () => {
+test('matrix inheritance, canonical model refs and arbitrary role/client ids remain legitimate', () => {
   const document = fixture();
-  document.clientRoleMatrix = { default: { implementer: ' CUSTOM-MODEL ', planner: '' }, clients: {
-    claude: { implementer: '', planner: '   ' }, 'future-client': { 'future-role': 'custom-model' },
+  document.targetRefVersion = 1;
+  document.activeModel = 'model:custom-model';
+  document.clientRoleMatrix = { default: { implementer: 'model:custom-model', planner: '' }, clients: {
+    claude: { implementer: '', planner: '' }, 'future-client': { 'future-role': 'model:custom-model' },
   } };
   assert.doesNotThrow(() => validateDocument(document));
-  assert.equal(resolveClientRoleModel('claude', 'implementer', document, {}).modelId, 'custom-model');
+  for (const id of [' CUSTOM-MODEL ', 'CUSTOM-MODEL']) assert.throws(() => validateDocument({ ...document, clientRoleMatrix: { default: { implementer: id } } }), ConfigError, 'unregistered model ID variants are not normalized');
+  assert.equal(resolveClientRoleModel('claude', 'implementer', document, {}).modelId, 'model:custom-model');
   assert.equal(resolveClientRoleModel('claude', 'planner', document, {}), null);
-  assert.deepEqual(applyEdits(document, toEditable(document)).clientRoleMatrix, document.clientRoleMatrix, 'a no-op retains raw legacy references');
+  assert.deepEqual(applyEdits(document, toEditable(document)).clientRoleMatrix, document.clientRoleMatrix, 'a no-op retains canonical references');
   const editable = toEditable(document);
-  editable.matrix.clients.claude.implementer = 'custom-model';
+  editable.matrix.clients.claude.implementer = 'model:custom-model';
   assert.equal(document.clientRoleMatrix.clients.claude.implementer, '', 'nested projection edits must not mutate the source');
   editable.matrix.clients.claude.implementer = '';
-  editable.matrix.default.implementer = 'custom-model';
+  delete editable.matrix.clients.claude;
   const next = applyEdits(document, editable);
   const expected = getClientRoleMatrix(document);
   delete expected.clients.claude;
@@ -315,5 +368,27 @@ test('provider dialog exposes all account refs, stages explicit edits, and confi
   assert.match(await summary.innerText(), /primary：env:PRIMARY_KEY/u);
   assert.match(await summary.innerText(), /backup：env:BACKUP_KEY/u);
   assert.match(await summary.innerText(), /inherited：env:PROVIDER_KEY（继承供应商）/u);
+
+  // A pasted inline key is accepted, stays hidden by default, and is masked in summaries.
+  await page.evaluate(() => {
+    const initial = window.initialProvider;
+    window.initialProvider = { ...initial, apiKey: '', apiKeyEnv: '', accounts: (initial.accounts || []).map((a) => ({ ...a, apiKeyEnv: '', apiKey: '' })) };
+    window.renderProvider(window.initialProvider);
+  });
+  const keyInput = dialog.getByLabel('API 密钥', { exact: true });
+  await keyInput.fill('sk-browser-real-key-123456');
+  assert.equal(await keyInput.getAttribute('type'), 'password', 'the key field is hidden by default');
+  await dialog.getByRole('button', { name: '显示密钥', exact: true }).click();
+  assert.equal(await keyInput.getAttribute('type'), 'text');
+  await dialog.getByRole('button', { name: '隐藏密钥', exact: true }).click();
+  assert.equal(await keyInput.getAttribute('type'), 'password');
+  await dialog.getByRole('button', { name: '加入草稿' }).click();
+  const inlineSubmitted = await page.evaluate(() => window.submissions.at(-1));
+  assert.equal(inlineSubmitted.apiKey, 'sk-browser-real-key-123456');
+  await page.evaluate((value) => { window.initialProvider = value; window.renderSummary(); }, inlineSubmitted);
+  await page.getByText('配置详情', { exact: true }).click();
+  const inlineSummary = page.getByRole('list', { name: 'upstream 账号有效密钥引用' });
+  assert.ok(!(await inlineSummary.innerText()).includes('sk-browser-real-key-123456'), 'summary never shows the full inline key');
+  assert.match(await inlineSummary.innerText(), /内联密钥 ••••••••3456/u);
   assert.deepEqual(errors, []);
 });

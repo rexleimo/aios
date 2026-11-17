@@ -213,7 +213,7 @@ export function buildMcpArgv(action, input = {}, { landings = [] } = {}) {
 
 /** 会写盘的 action：API 层要求 `confirm: true`（与 `/api/actions/<id>` 同一约定）。 */
 export function actionWrites(action) {
-  return action === 'add';
+  return ['add', 'remove', 'adopt'].includes(action);
 }
 
 /**

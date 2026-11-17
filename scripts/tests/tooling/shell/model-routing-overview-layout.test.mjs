@@ -41,7 +41,7 @@ function responses({ configured = false, running = true, managed = true, stale =
   const models = configured ? [{ id: 'local/model', label: 'Local model', source: 'discovered', provider: 'local', protocols: ['openai-chat'] }] : [];
   return {
     [configPath]: { ok: !failed, body: failed ? { error: 'Offline registry read failed' } : {
-      hash: 'offline-fixture', models, modelBindings: models,
+      hash: 'a1'.repeat(32), models, modelBindings: models,
       editable: {
         providers: configured ? [{ id: 'local', baseUrl: 'http://provider.invalid/v1', apiKeyEnv: '', authMode: 'none', endpointStyle: 'standard', protocols: ['openai-chat'], models: [] }] : [],
         customModels: [], matrix: { default: configured ? { implementer: 'local/model' } : {}, clients: {} },
@@ -51,7 +51,7 @@ function responses({ configured = false, running = true, managed = true, stale =
     } },
     [gatewayPath]: { ok: !failed, body: failed ? { error: 'Offline gateway read failed' } : {
       running, managed, stale, connected, pid: running ? 12345 : null, port: 49171, url: 'http://127.0.0.1:49171',
-      ready: running && configured && !code, configuredModelCount: models.length,
+      ready: running && configured && !code, configuredRevision: 'a1'.repeat(32), configuredModelCount: models.length,
       configuredModels: models.length, readyModels: configured && !code ? 1 : 0,
       code: code || (configured ? undefined : 'NO_ROUTE_CONFIGURED'),
       clients: ['claude', 'codex', 'pi'].map(client => ({ client, connected: client === 'claude' && connected, launch: `${client} --offline`, artifactExists: false, mode: 'inplace' })),

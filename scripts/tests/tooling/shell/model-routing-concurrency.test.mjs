@@ -19,7 +19,7 @@ const commandUrl = new URL('../../../lib/tooling/model-router/entry/command.mjs'
 const storeUrl = new URL('../../../../apps/shell/ui/src/lib/config/model-registry-store.mjs', import.meta.url);
 const routeUrl = new URL('../../../../apps/shell/ui/src/app/api/config/model-routing/route.ts', import.meta.url);
 let source = fs.readFileSync(routeUrl, 'utf8');
-for (const name of ['model-routing', 'model-registry-store']) {
+for (const name of ['model-routing', 'model-registry-store', 'routing-policy']) {
   source = source.replace(`'../../../../lib/config/${name}.mjs'`, JSON.stringify(new URL(`${name}.mjs`, storeUrl).href));
 }
 const executable = stripTypeScriptTypes(source, { sourceUrl: routeUrl.href });
@@ -279,7 +279,11 @@ for (const seeded of [false, true]) {
       } finally {
         fs.promises.readFile = readFile;
       }
-      assert.equal(fs.readFileSync(f.file, 'utf8'), serialize(next), 'unknown verification state must not trigger a destructive rollback');
+      const committed = writer === 'CLI' ? {
+        ...next, clientRoleMatrix: { default: { implementer: 'model:curated' }, clients: {} },
+        activeModel: 'model:curated', targetRefVersion: 1,
+      } : next;
+      assert.equal(fs.readFileSync(f.file, 'utf8'), serialize(committed), 'unknown verification state must not trigger a destructive rollback');
       assert.deepEqual(fs.readdirSync(path.dirname(f.file)), ['model-registry.json']);
     });
 
@@ -317,12 +321,19 @@ for (const seeded of [false, true]) {
         fs.promises.mkdir = mkdir;
       }
       const document = JSON.parse(fs.readFileSync(f.file, 'utf8'));
-      assert.equal(document.clientDefaults.codex, 'curated');
-      if (writer === 'UI') assert.equal(document.clientRoleMatrix.default.reviewer, 'curated');
-      else assert.equal(document.activeModel, 'curated');
+      assert.equal(document.targetRefVersion, 1);
+      assert.equal(document.clientDefaults.codex, 'model:curated');
+      assert.equal(document.clientRoleMatrix.default.implementer, 'model:curated');
+      if (writer === 'UI') assert.equal(document.clientRoleMatrix.default.reviewer, 'model:curated');
+      else assert.equal(document.activeModel, 'model:curated');
       assert.deepEqual(document.extensionMetadata, base().extensionMetadata);
       const state = JSON.parse(fs.readFileSync(path.join(connectOptions(f).stateDir, 'connect-state.json'), 'utf8'));
-      assert.equal(state.codexModel, document.clientDefaults.codex, 'successful connect state and registry must agree');
+      assert.equal(state.targetRefVersion, 1);
+      assert.deepEqual(state.targets, { codex: 'model:curated' });
+      assert.deepEqual(state.resolvedModels, { codex: 'curated' });
+      assert.equal(state.appliedCodexModel, document.clientDefaults.codex, 'successful connect state and registry must agree');
+      assert.equal(state.codexDefaultApplied, true);
+      assert.equal(state.codexDefaultStatus, 'applied');
       assert.deepEqual(fs.readdirSync(path.dirname(f.file)), ['model-registry.json']);
     });
   }

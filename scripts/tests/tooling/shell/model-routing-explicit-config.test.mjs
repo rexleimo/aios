@@ -6,7 +6,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
-  applyEdits, modelBindingId, toAutoPreview, toEditable, toModelBindings, toModelCatalog, validateDocument,
+  applyEdits, migrateTargetRefs, modelBindingId, toAutoPreview, toEditable, toModelBindings, toModelCatalog, validateDocument,
 } from '../../../../apps/shell/ui/src/lib/config/model-routing.mjs';
 
 const ui = new URL('../../../../apps/shell/ui/', import.meta.url);
@@ -14,7 +14,8 @@ async function handler(relative) {
   const url = new URL(relative, ui);
   const source = fs.readFileSync(url, 'utf8')
     .replace("'../../../../lib/config/model-routing.mjs'", JSON.stringify(new URL('src/lib/config/model-routing.mjs', ui).href))
-    .replace("'../../../../lib/config/model-registry-store.mjs'", JSON.stringify(new URL('src/lib/config/model-registry-store.mjs', ui).href));
+    .replace("'../../../../lib/config/model-registry-store.mjs'", JSON.stringify(new URL('src/lib/config/model-registry-store.mjs', ui).href))
+    .replace("'../../../../lib/config/routing-policy.mjs'", JSON.stringify(new URL('src/lib/config/routing-policy.mjs', ui).href));
   return import(`data:text/javascript;base64,${Buffer.from(stripTypeScriptTypes(source, { sourceUrl: url.href })).toString('base64')}`);
 }
 const config = await handler('src/app/api/config/model-routing/route.ts');
@@ -146,47 +147,100 @@ test('new local keys normalize independently from real upstream ids and support 
 
 const legacyRegistry = () => ({
   models: { template: { provider: 'native-launcher', protocols: ['openai-chat'], strengths: ['preserve'], extension: { keep: true } } },
+  activeModel: 'template',
+  clientDefaults: { codex: 'gone' },
   clientRoleMatrix: { default: { implementer: 'gone' }, clients: { codex: { reviewer: 'template' } }, metadata: 'keep' },
   routingGroups: { legacy: { models: ['gone', 'template'], routing: 'opaque', weights: { gone: 2 } } },
   intentRouting: { classifierModel: 'gone', intents: [{ id: 'old', description: 'Legacy task', modelId: 'template', extra: 1 }], extra: { keep: true } },
 });
 
-test('unrelated edits preserve inactive curated metadata and unchanged stale strategy references', () => {
-  const document = legacyRegistry();
+test('unassigned native metadata and valid custom metadata survive unrelated edits without becoming implicit bindings', () => {
+  const document = registry();
+  document.models.template = legacyRegistry().models.template;
+  document.models['local/model'].extension = { keep: ['custom metadata'] };
   const editable = toEditable(document);
-  editable.providers.push({ id: 'local', apiKeyEnv: '', ...provider() });
+  editable.providers[0].baseUrl = 'http://127.0.0.1:11435/v1';
   const next = applyEdits(document, editable);
   validateDocument(next, { previousDocument: document });
-  for (const key of ['models', 'clientRoleMatrix', 'routingGroups', 'intentRouting']) assert.deepEqual(next[key], document[key], key);
-  assert.deepEqual(toModelCatalog(next), []);
-  assert.equal(toAutoPreview(next).find((entry) => entry.role === 'implementer').unavailableModelId, 'gone');
-  editable.intentRouting.intents[0].description = 'Updated description';
-  const described = applyEdits(document, editable);
-  validateDocument(described, { previousDocument: document });
-  assert.equal(described.intentRouting.classifierModel, 'gone', 'an unchanged stale model reference is not a new selection');
-  assert.equal(described.intentRouting.intents[0].extra, 1);
+  validateDocument(next);
+  assert.deepEqual(next.models.template, document.models.template);
+  assert.deepEqual(next.models['local/model'].extension, document.models['local/model'].extension);
+  assert.deepEqual(toModelCatalog(next).map((entry) => entry.id), ['local/model']);
+  assert.deepEqual(next.extension, document.extension);
 });
 
-test('new matrix, routing group, intent and classifier selections reject unavailable templates', () => {
-  const document = legacyRegistry();
-  for (const change of [
-    (editable) => { editable.matrix.default.planner = 'template'; },
-    (editable) => { editable.matrix.clients.pi = { implementer: 'template' }; },
-    (editable) => { editable.routingGroups.push({ id: 'new', models: ['template'], routing: 'smart' }); },
-    (editable) => { editable.intentRouting.classifierModel = 'template'; },
-    (editable) => { editable.intentRouting.intents.push({ id: 'new', description: 'New task', modelId: 'template' }); },
-  ]) {
-    const editable = toEditable(document);
-    change(editable);
+const policySelections = [
+  ['activeModel', (id) => ({ activeModel: id })],
+  ['clientDefaults.codex', (id) => ({ clientDefaults: { codex: id } })],
+  ['clientRoleMatrix.default.implementer', (id) => ({ clientRoleMatrix: { default: { implementer: id } } })],
+  ['clientRoleMatrix.clients.codex.reviewer', (id) => ({ clientRoleMatrix: { clients: { codex: { reviewer: id } } } })],
+  ['routingGroups.saved.models', (id) => ({ routingGroups: { saved: { models: [id], routing: 'smart' } } })],
+  ['intentRouting.classifierModel', (id) => ({ intentRouting: { enabled: false, classifierModel: id, intents: [] } })],
+  ['intentRouting.intents[0].modelId', (id) => ({ intentRouting: { enabled: false, classifierModel: '', intents: [{ id: 'code', description: 'Code', modelId: id }] } })],
+];
+
+for (const [at, policy] of policySelections) {
+  test(`${at} rejects missing, unbound, ambiguous and incompatible selections even when unchanged or omitted`, () => {
+    for (const kind of ['missing', 'unbound', 'ambiguous', 'incompatible']) {
+      const id = kind === 'missing' ? 'gone' : 'template';
+      const document = { ...registry(), ...policy(id) };
+      if (kind !== 'missing') document.models.template = { provider: 'native-launcher', protocols: [kind === 'incompatible' ? 'claude' : 'openai-chat'] };
+      if (kind === 'ambiguous' || kind === 'incompatible') document.providers.local.models = ['template'];
+      if (kind === 'ambiguous') document.providers.other = provider({ enabled: false, models: ['template'] });
+      const original = structuredClone(document);
+      for (const check of [
+        () => applyEdits(document, toEditable(document)),
+        () => applyEdits(document, {}),
+        () => validateDocument(document),
+        () => validateDocument(document, { previousDocument: document }),
+      ]) {
+        assert.throws(check, (error) => error.name === 'ConfigError'
+          && [at, at.replace(/\.modelId$/u, '')].includes(error.path), `${kind} at ${at}`);
+        assert.deepEqual(document, original, 'validation does not migrate or delete invalid references');
+      }
+    }
+  });
+}
+
+test('new scalar, matrix, routing group, intent and classifier selections reject unavailable templates', () => {
+  const document = { models: legacyRegistry().models };
+  for (const [, policy] of policySelections) {
+    const editable = toEditable({ ...document, ...policy('template') });
     assert.throws(() => applyEdits(document, editable), /enabled explicit provider binding/u);
   }
-  const disabled = { ...registry(), clientRoleMatrix: { default: { implementer: 'local/model' } } };
-  const editable = toEditable(disabled);
-  editable.providers[0].enabled = false;
-  const next = applyEdits(disabled, editable);
-  validateDocument(next, { previousDocument: disabled });
-  assert.equal(next.clientRoleMatrix.default.implementer, 'local/model');
-  assert.deepEqual(toModelCatalog(next), []);
+});
+
+test('unchanged explicitly bound compatible selections survive pausing a model or provider, but cannot be newly assigned', () => {
+  for (const binding of ['custom', 'provider-list']) {
+    for (const pause of ['model', 'provider', 'both']) {
+      const document = { ...registry(), activeModel: 'local/model', clientDefaults: { codex: 'local/model' },
+        clientRoleMatrix: { default: { implementer: 'local/model' }, clients: { codex: { reviewer: 'local/model' } } },
+        routingGroups: { saved: { models: ['local/model'], routing: 'smart' } },
+        intentRouting: { enabled: true, classifierModel: 'local/model', intents: [{ id: 'code', description: 'Code', modelId: 'local/model' }] } };
+      if (binding === 'provider-list') {
+        document.models['local/model'] = { protocols: ['openai-chat'], provider: 'native-launcher' };
+        document.providers.local.models = ['local/model'];
+      }
+      const editable = toEditable(document);
+      if (pause !== 'model') editable.providers[0].enabled = false;
+      if (pause !== 'provider') {
+        if (binding === 'custom') editable.customModels[0].enabled = false;
+        else document.models['local/model'].enabled = false;
+      }
+      const paused = applyEdits(document, editable);
+      validateDocument(paused, { previousDocument: document });
+      assert.deepEqual(toModelCatalog(paused), []);
+      validateDocument(paused);
+      assert.throws(() => validateDocument(paused, { previousDocument: registry() }), /enabled explicit provider binding/u);
+      const unrelated = toEditable(paused);
+      unrelated.providers[0].baseUrl = 'http://127.0.0.1:11435/v1';
+      const retained = applyEdits(paused, unrelated);
+      validateDocument(retained, { previousDocument: paused });
+      for (const key of ['activeModel', 'clientDefaults', 'clientRoleMatrix', 'routingGroups', 'intentRouting']) assert.deepEqual(retained[key], migrateTargetRefs(paused)[key], `${binding}/${pause}: ${key}`);
+      unrelated.matrix.default.planner = 'local/model';
+      assert.throws(() => applyEdits(paused, unrelated), /enabled explicit provider binding/u);
+    }
+  }
 });
 
 test('removing a definition cannot create stale policy references, while clearing those policies permits removal', () => {
@@ -204,7 +258,7 @@ test('removing a definition cannot create stale policy references, while clearin
     assert.throws(() => applyEdits(document, editable), /unknown model/u);
     const removed = structuredClone(document);
     delete removed.models['local/model'];
-    assert.throws(() => validateDocument(removed, { previousDocument: document }), /unknown model/u);
+    assert.throws(() => validateDocument(removed, { previousDocument: document }), /unknown (?:(?:or empty|concrete) )?model/u);
     editable.matrix = { default: {}, clients: {} };
     editable.routingGroups = [];
     editable.intentRouting = { enabled: false, classifierModel: '', intents: [] };
@@ -268,7 +322,7 @@ const putConfig = async (editable, expectedHash) => readResponse(await config.PU
 const postGateway = async (body) => readResponse(await gateway.POST(new Request('http://localhost/api/model-routing/gateway', { method: 'POST', body: JSON.stringify(body) })));
 const backups = (f) => fs.existsSync(f.backupDir) ? fs.readdirSync(f.backupDir) : [];
 
-test('config GET reports saved binding counts only, hashes exact fallback bytes and leaves an empty seed untouched', async (t) => {
+test('config GET stays read-only; an explicit migration-only save versions an empty fallback without a backup', async (t) => {
   const f = fixture(t, { seeded: true, text: ' { "models": {}, "providers": {} }\n\n' });
   const loaded = await getConfig();
   assert.equal(loaded.status, 200);
@@ -278,15 +332,38 @@ test('config GET reports saved binding counts only, hashes exact fallback bytes 
   assert.equal(loaded.body.generationVerified, false);
   assert.equal(Object.hasOwn(loaded.body, 'ready'), false, 'saved config does not establish loaded-runtime readiness');
   assert.deepEqual(loaded.body.models, []);
-  assert.equal((await putConfig(loaded.body.editable, loaded.body.hash)).status, 200);
   assert.equal(fs.existsSync(f.file), false);
+  const saved = await putConfig(loaded.body.editable, loaded.body.hash);
+  assert.equal(saved.status, 200);
+  assert.deepEqual(saved.body.changed, ['targetRefVersion']);
+  assert.equal(saved.body.backup, null);
+  const text = fs.readFileSync(f.file, 'utf8');
+  assert.equal(saved.body.hash, digest(text));
+  assert.deepEqual(JSON.parse(text), { models: {}, providers: {}, targetRefVersion: 1 });
+  assert.equal((await putConfig(loaded.body.editable, loaded.body.hash)).status, 409, 'pre-migration hashes become stale');
+  const current = (await getConfig()).body;
+  assert.deepEqual((await putConfig(current.editable, current.hash)).body, { ok: true, changed: [], backup: null });
   assert.equal(fs.readFileSync(f.builtin, 'utf8'), f.text);
   assert.deepEqual(backups(f), []);
 });
 
-test('first save materializes explicit standard/auth-none binding with exact upstream id and no nonexistent backup', async (t) => {
-  const f = fixture(t, { document: {}, seeded: true });
-  const { body: loaded } = await getConfig();
+test('first install uses the actual empty repository seed and materializes only an explicit binding without a backup', async (t) => {
+  const seedText = fs.readFileSync(new URL('../../../../scripts/lib/tooling/specs/registry/model-registry.json', import.meta.url), 'utf8');
+  const seed = JSON.parse(seedText);
+  assert.equal(seed.activeModel, '');
+  for (const key of ['models', 'providers', 'clientDefaults', 'roleDefaults']) assert.deepEqual(seed[key], {}, key);
+  assert.deepEqual(seed.clientRoleMatrix, { default: {}, clients: {} });
+  assert.deepEqual(seed.routingRules, []);
+  assert.deepEqual(seed.intentRouting, { enabled: false, classifierModel: '', intents: [] });
+  const f = fixture(t, { seeded: true, text: seedText });
+  const response = await getConfig();
+  assert.equal(response.status, 200);
+  const loaded = response.body;
+  assert.equal(loaded.hash, digest(seedText));
+  assert.equal(loaded.configuredReady, false);
+  assert.equal(loaded.configuredModelCount, 0);
+  assert.deepEqual(loaded.models, []);
+  assert.equal(fs.existsSync(f.file), false);
   loaded.editable.providers.push({ id: 'local', apiKeyEnv: '', ...provider() });
   loaded.editable.customModels.push({ id: 'LOCAL/MODEL', label: 'Manual', provider: 'local', protocols: ['openai-chat'], upstreamModel: 'Org/Exact-Case' });
   loaded.editable.matrix.default.implementer = 'local/model';
@@ -299,27 +376,108 @@ test('first save materializes explicit standard/auth-none binding with exact ups
   assert.equal(document.providers.local.authMode, 'none');
   assert.equal(document.providers.local.endpointStyle, 'standard');
   assert.equal(document.models['local/model'].upstreamModel, 'Org/Exact-Case');
+  assert.deepEqual(Object.keys(document.models), ['local/model']);
+  assert.equal(document.targetRefVersion, 1);
+  assert.deepEqual(document.clientRoleMatrix, { default: { implementer: 'model:local%2Fmodel' }, clients: {} });
+  for (const key of ['activeModel', 'clientDefaults', 'roleDefaults', 'routingRules', 'intentRouting', 'routingProfiles', 'signalRules']) assert.deepEqual(document[key], seed[key], key);
   assert.equal((await getConfig()).body.configuredModelCount, 1);
   assert.equal(fs.readFileSync(f.builtin, 'utf8'), f.text);
   assert.deepEqual(backups(f), []);
 });
 
-test('saved edits preserve legacy metadata, back up exact bytes and reject newly chosen unbound models', async (t) => {
+test('legacy selections reject no-op and unrelated saves before writing, then an explicit repair backs up exact original bytes', async (t) => {
   const document = legacyRegistry();
   const f = fixture(t, { text: `  ${serialize(document)}\n` });
-  const { body: loaded } = await getConfig();
+  const response = await getConfig();
+  assert.equal(response.status, 200, 'GET remains read-only and exposes invalid existing policy for repair');
+  const loaded = response.body;
+  assert.equal(loaded.editable.activeModel, 'template');
+  assert.deepEqual(loaded.editable.matrix.default, document.clientRoleMatrix.default);
+  assert.equal(fs.readFileSync(f.file, 'utf8'), f.text);
+  assert.deepEqual(backups(f), []);
+  for (const editable of [loaded.editable, {}]) {
+    const rejected = await putConfig(editable, loaded.hash);
+    assert.equal(rejected.status, 422, JSON.stringify(rejected.body));
+    assert.equal(rejected.body.error, 'invalid-document');
+    assert.equal(rejected.body.path, 'activeModel');
+    assert.equal(fs.readFileSync(f.file, 'utf8'), f.text);
+    assert.deepEqual(backups(f), []);
+  }
   loaded.editable.providers.push({ id: 'local', apiKeyEnv: '', ...provider() });
+  for (const editable of [loaded.editable, { providers: loaded.editable.providers }]) {
+    const rejected = await putConfig(editable, loaded.hash);
+    assert.equal(rejected.status, 422);
+    assert.equal(rejected.body.path, 'activeModel');
+    assert.equal(fs.readFileSync(f.file, 'utf8'), f.text);
+    assert.deepEqual(backups(f), []);
+  }
+  loaded.editable.customModels.push({ id: 'local/model', label: 'Repair', ...model() });
+  loaded.editable.activeModel = 'local/model';
+  loaded.editable.clientDefaults.codex = 'local/model';
+  loaded.editable.matrix.default.implementer = 'local/model';
+  loaded.editable.matrix.clients.codex.reviewer = 'local/model';
+  loaded.editable.routingGroups[0].models = ['local/model'];
+  loaded.editable.intentRouting.classifierModel = 'local/model';
+  loaded.editable.intentRouting.intents[0].modelId = 'local/model';
   const saved = await putConfig(loaded.editable, loaded.hash);
   assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.deepEqual(saved.body.changed, ['targetRefVersion', 'activeModel', 'clientDefaults', 'providers', 'models', 'clientRoleMatrix', 'routingGroups', 'intentRouting']);
   assert.equal(fs.readFileSync(path.join(f.root, saved.body.backup), 'utf8'), f.text);
-  const next = JSON.parse(fs.readFileSync(f.file, 'utf8'));
-  for (const key of ['models', 'clientRoleMatrix', 'routingGroups', 'intentRouting']) assert.deepEqual(next[key], document[key]);
+  assert.equal(backups(f).length, 1);
+  const repairedText = fs.readFileSync(f.file, 'utf8');
+  assert.equal(saved.body.hash, digest(repairedText));
+  const next = JSON.parse(repairedText);
+  validateDocument(next);
+  assert.deepEqual(next.models.template, document.models.template, 'repair does not silently delete native metadata');
+  assert.equal(next.activeModel, 'model:local%2Fmodel');
+  assert.deepEqual(next.clientDefaults, { codex: 'model:local%2Fmodel' });
+  assert.deepEqual(next.clientRoleMatrix, { ...document.clientRoleMatrix, default: { implementer: 'model:local%2Fmodel' }, clients: { codex: { reviewer: 'model:local%2Fmodel' } } });
+  assert.deepEqual(next.routingGroups.legacy, { ...document.routingGroups.legacy, models: ['local/model'] });
+  assert.deepEqual(next.intentRouting, { ...document.intentRouting, enabled: true, classifierModel: 'local/model', intents: [{ ...document.intentRouting.intents[0], modelId: 'model:local%2Fmodel' }] });
   const updated = (await getConfig()).body;
+  assert.equal(updated.hash, saved.body.hash);
   updated.editable.matrix.default.planner = 'template';
   const rejected = await putConfig(updated.editable, updated.hash);
   assert.equal(rejected.status, 422);
   assert.equal(rejected.body.path, 'clientRoleMatrix.default.planner');
+  assert.equal(fs.readFileSync(f.file, 'utf8'), repairedText);
   assert.equal(backups(f).length, 1);
+});
+
+test('saved paused explicit bindings retain unchanged policies and exact backups but reject new assignments before writing', async (t) => {
+  const document = { ...registry(), activeModel: 'local/model', clientDefaults: { codex: 'local/model' },
+    clientRoleMatrix: { default: { implementer: 'local/model' }, clients: {} } };
+  document.providers.local.enabled = false;
+  document.models['local/model'].enabled = false;
+  const f = fixture(t, { text: `  ${serialize(document)}\n` });
+  const response = await getConfig();
+  assert.equal(response.status, 200);
+  let loaded = response.body;
+  assert.equal(loaded.configuredModelCount, 0);
+  assert.equal(fs.readFileSync(f.file, 'utf8'), f.text);
+  const migrated = await putConfig(loaded.editable, loaded.hash);
+  assert.equal(migrated.status, 200);
+  assert.deepEqual(migrated.body.changed, ['targetRefVersion', 'activeModel', 'clientDefaults', 'clientRoleMatrix']);
+  assert.equal(fs.readFileSync(path.join(f.root, migrated.body.backup), 'utf8'), f.text);
+  const migratedText = fs.readFileSync(f.file, 'utf8');
+  assert.deepEqual(JSON.parse(migratedText), migrateTargetRefs(document));
+  assert.equal(migrated.body.hash, digest(migratedText));
+  loaded = (await getConfig()).body;
+  loaded.editable.matrix.default.planner = 'local/model';
+  const rejected = await putConfig(loaded.editable, loaded.hash);
+  assert.equal(rejected.status, 422);
+  assert.equal(rejected.body.path, 'clientRoleMatrix.default.planner');
+  assert.equal(fs.readFileSync(f.file, 'utf8'), migratedText);
+  assert.equal(backups(f).length, 1);
+  loaded.editable.providers[0].baseUrl = 'http://127.0.0.1:11435/v1';
+  const saved = await putConfig({ providers: loaded.editable.providers }, loaded.hash);
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.deepEqual(saved.body.changed, ['providers']);
+  assert.equal(fs.readFileSync(path.join(f.root, saved.body.backup), 'utf8'), migratedText);
+  const next = JSON.parse(fs.readFileSync(f.file, 'utf8'));
+  for (const key of ['activeModel', 'clientDefaults', 'clientRoleMatrix', 'models', 'extension']) assert.deepEqual(next[key], migrateTargetRefs(document)[key], key);
+  assert.equal(next.providers.local.enabled, false);
+  assert.equal(backups(f).length, 2);
 });
 
 test('seed drift and concurrent saves retain hash and locking safeguards', async (t) => {
@@ -367,6 +525,7 @@ test('status separates saved registry bindings from loaded health readiness with
   assert.equal(response.body.running, true);
   assert.equal(response.body.configuredReady, true);
   assert.equal(response.body.configuredModelCount, 1);
+  assert.equal(response.body.configuredRevision, digest(f.text));
   assert.equal(response.body.ready, false);
   assert.equal(response.body.configuredModels, 0);
   assert.equal(response.body.code, 'NO_ROUTE_CONFIGURED');
@@ -395,6 +554,7 @@ test('a loaded ready snapshot is not replaced by the saved registry or inferred 
 test('connect requires fresh port and runtime readiness, but empty start and disconnected restore remain allowed', async (t) => {
   const f = fixture(t, { document: {} });
   const cli = fakeCli(f);
+  const expectedRevision = digest(f.text);
   let health = { ok: true, ready: false, configuredModels: 0, readyModels: 0, code: 'NO_ROUTE_CONFIGURED' };
   const fetch = t.mock.method(globalThis, 'fetch', async (url) => {
     assert.equal(String(url), 'http://127.0.0.1:49171/health');
@@ -402,15 +562,15 @@ test('connect requires fresh port and runtime readiness, but empty start and dis
   });
   assert.equal((await postGateway({ action: 'connect', port: 49171 })).status, 409);
   assert.deepEqual(cli.calls(), [], 'confirmation precedes effects');
-  assert.equal((await postGateway({ action: 'connect', port: 49170, confirm: true })).body.error, 'gateway-changed');
+  assert.equal((await postGateway({ action: 'connect', port: 49170, confirm: true, expectedRevision })).body.error, 'gateway-changed');
   assert.equal(fetch.mock.callCount(), 0, 'port guard precedes health reads');
-  assert.equal((await postGateway({ action: 'connect', port: 49171, confirm: true })).body.error, 'gateway-not-ready');
+  assert.equal((await postGateway({ action: 'connect', port: 49171, confirm: true, expectedRevision })).body.error, 'gateway-not-ready');
   assert.ok(cli.calls().every((args) => args[1] === 'gateway-status'), 'unready listeners never rewrite client configuration');
   health = { ok: true };
-  assert.equal((await postGateway({ action: 'connect', port: 49171, confirm: true })).body.error, 'gateway-not-ready', 'old health payloads fail closed');
+  assert.equal((await postGateway({ action: 'connect', port: 49171, confirm: true, expectedRevision })).body.error, 'gateway-not-ready', 'old health payloads fail closed');
   health = { ok: true, ready: true, configuredModels: 1, readyModels: 1 };
-  assert.equal((await postGateway({ action: 'connect', client: 'codex', port: 49171, confirm: true })).status, 200);
-  assert.deepEqual(cli.calls().at(-1), ['model-router', 'connect', '--json', '--port', '49171', '--client', 'codex']);
+  assert.equal((await postGateway({ action: 'connect', client: 'codex', port: 49171, confirm: true, expectedRevision })).status, 200);
+  assert.deepEqual(cli.calls().at(-1), ['model-router', 'connect', '--json', '--port', '49171', '--client', 'codex', '--target', 'auto', '--expected-revision', expectedRevision]);
   cli.setStatus({ running: false });
   assert.equal((await postGateway({ action: 'disconnect', client: 'codex', confirm: true })).status, 200);
   assert.deepEqual(cli.calls().at(-1), ['model-router', 'disconnect', '--json', '--client', 'codex']);

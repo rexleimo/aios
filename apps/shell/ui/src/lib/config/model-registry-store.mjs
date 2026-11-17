@@ -23,7 +23,7 @@ export async function readRegistrySnapshot(file, seedFile) {
 
 /** Hold an atomic, cross-process directory lock through read/check/commit/verify. */
 export async function withRegistryWriteLock(file, action, { timeoutMs = 5_000 } = {}) {
-  await fs.mkdir(path.dirname(file), { recursive: true });
+  await fs.mkdir(path.dirname(file), { recursive: true, mode: 0o700 });
   const directory = await fs.realpath(path.dirname(file));
   const lock = path.join(directory, `${path.basename(file)}.write-lock`);
   const deadline = performance.now() + timeoutMs;
@@ -72,7 +72,7 @@ export async function commitRegistrySnapshot(current, text, { backupDir = '', va
   await validateText(text);
   let backup = null;
   if (!current.seeded && backupDir) {
-    await fs.mkdir(backupDir, { recursive: true });
+    await fs.mkdir(backupDir, { recursive: true, mode: 0o700 });
     const stamp = new Date().toISOString().replace(/[:.]/g, '-');
     backup = path.join(backupDir, `model-registry-${stamp}-${randomUUID()}.json`);
     await fs.writeFile(backup, current.text, { flag: 'wx', mode: 0o600 });

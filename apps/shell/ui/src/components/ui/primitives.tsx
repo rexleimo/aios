@@ -78,14 +78,15 @@ export interface SelectProps {
   placeholder?: string;
   size?: 'default' | 'sm';
   className?: string;
+  disabled?: boolean;
   'aria-label'?: string;
 }
 
 // Radix reserves the empty string for clearing; our forms use it as an explicit "automatic" choice.
 const EMPTY_SELECT_VALUE = '__rex_empty_option__';
 
-export const Select = ({ value, onValueChange, options, placeholder, size = 'default', className, 'aria-label': ariaLabel }: SelectProps) => (
-  <RadixSelect.Root value={value || EMPTY_SELECT_VALUE} onValueChange={(next) => onValueChange(next === EMPTY_SELECT_VALUE ? '' : next)}>
+export const Select = ({ value, onValueChange, options, placeholder, size = 'default', className, disabled, 'aria-label': ariaLabel }: SelectProps) => (
+  <RadixSelect.Root disabled={disabled} value={value || EMPTY_SELECT_VALUE} onValueChange={(next) => onValueChange(next === EMPTY_SELECT_VALUE ? '' : next)}>
     <RadixSelect.Trigger
       aria-label={ariaLabel}
       className={cn(

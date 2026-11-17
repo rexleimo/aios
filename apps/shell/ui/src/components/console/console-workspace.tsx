@@ -1,6 +1,6 @@
 'use client';
 
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Activity,
   AlertTriangle,
@@ -10,7 +10,6 @@ import {
   ChevronDown,
   Clock,
   Command,
-  FlaskConical,
   Folder,
   Home,
   Moon,
@@ -18,7 +17,6 @@ import {
   Route,
   Settings2,
   ShieldCheck,
-  SlidersHorizontal,
   Sun,
   Terminal,
 } from 'lucide-react';
@@ -26,19 +24,31 @@ import { CONSOLE_VIEWS, PRIMARY_VIEWS, viewForPath, type ViewId } from '../../li
 import type { ConsoleFacts } from '../../lib/console-facts';
 import { HomeWorkspace, ToolsWorkspace } from './home-workspace';
 import { MemoryWorkspace } from './memory-workspace';
-import { McpWorkspace } from './mcp-workspace';
+import { ResourcesWorkspace } from './resources-workspace';
 import { Button, Heading, Panel, Select } from './console-ui';
 import { GatewayWorkspace } from './gateway-workspace';
 
-const ICONS = { home: Home, tools: Terminal, routing: Route, routingConfig: SlidersHorizontal, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
+const ICONS = { home: Home, tools: Terminal, routing: Route, routingConfig: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
 const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
 
 /** 采集时间怎么念：刚刚 / N 秒前 / N 分钟前——数据新鲜度是一条事实，不是装饰。 */
-function ageLabel(iso: string): string {
-  const seconds = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 1000));
+function ageLabel(iso: string, now: number): string {
+  const seconds = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000));
   if (seconds < 5) return '刚刚采集';
   if (seconds < 60) return `数据 ${seconds}s 前`;
   return `数据 ${Math.round(seconds / 60)}min 前`;
+}
+
+function CollectionAge({ generatedAt }: { generatedAt: string }) {
+  const [now, setNow] = useState<number | null>(null);
+  useEffect(() => {
+    const update = () => setNow(Date.now());
+    update();
+    const timer = window.setInterval(update, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+  // Use the supplied timestamp until hydration completes; relative age depends on the live clock.
+  return <>{now === null ? `采集于 ${generatedAt}` : ageLabel(generatedAt, now)}</>;
 }
 
 /** 服务端解析「选了哪个工作区」的结果，递下来给界面说实情（界面自己不算路径）。 */
@@ -105,9 +115,7 @@ export function ConsoleWorkspace({
     document.documentElement.dataset.rexTheme = value;
   }
   // 还没接线的视图：如实标注，不靠全局横幅把所有面板一起说成假的——首屏已经是真实数据。
-  // 所有面板都接真了；剩下的唯一门是「写用户配置」需要单独授权（路线图 P0-4 / 决策 4）。
-  const pendingPanels: Record<string, boolean> = { mcp: true };
-  const pending = pendingPanels[view];
+  const navView = view === 'routingConfig' ? 'routing' : view;
   return (
     <div className="min-h-dvh bg-rex-bg font-rex-body text-rex-text">
       <a
@@ -135,18 +143,18 @@ export function ConsoleWorkspace({
         </div>
         <nav aria-label="主导航" className="mt-7 space-y-1 px-3">
           {NAV.map((item) => (
-            <Fragment key={item.id}>
               <button
+                key={item.id}
                 title={item.label}
                 aria-label={item.label}
                 onClick={() => navigate(item.id)}
-                aria-current={view === item.id ? 'page' : undefined}
-                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan ${view === item.id ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
+                aria-current={navView === item.id ? 'page' : undefined}
+                className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-[13px] transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan ${navView === item.id ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
               >
                 <item.icon
                   size={17}
                   strokeWidth={1.7}
-                  className={`shrink-0 ${view === item.id ? 'text-rex-cyan' : ''}`}
+                  className={`shrink-0 ${navView === item.id ? 'text-rex-cyan' : ''}`}
                 />
                 <span className="hidden md:inline">{item.label}</span>
                 {item.id === 'mcp' && facts.issues.length > 0 && (
@@ -155,19 +163,6 @@ export function ConsoleWorkspace({
                   </span>
                 )}
               </button>
-              {item.id === 'routing' && (
-                <button
-                  title="路由配置"
-                  aria-label="路由配置"
-                  onClick={() => navigate('routingConfig')}
-                  aria-current={view === 'routingConfig' ? 'page' : undefined}
-                  className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-xs transition-colors duration-150 motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-rex-cyan md:pl-9 ${view === 'routingConfig' ? 'bg-rex-bg font-medium text-rex-text shadow-sm ring-1 ring-rex-border' : 'text-rex-text-muted hover:bg-rex-panel-strong/60 hover:text-rex-text'}`}
-                >
-                  <SlidersHorizontal size={15} strokeWidth={1.7} className={`shrink-0 ${view === 'routingConfig' ? 'text-rex-cyan' : ''}`} />
-                  <span className="hidden md:inline">路由配置</span>
-                </button>
-              )}
-            </Fragment>
           ))}
         </nav>
         <div className="mx-4 mt-auto mb-5 hidden rounded-xl border border-rex-border p-3.5 md:block">
@@ -226,7 +221,7 @@ export function ConsoleWorkspace({
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-rex-border bg-rex-panel/70 px-4 py-2 text-[11px] leading-5 text-rex-text-muted lg:px-8">
             <span className="inline-flex items-center gap-1.5 font-medium text-rex-text-body">
               <Clock size={13} />
-              {ageLabel(facts.generatedAt)}
+              <CollectionAge generatedAt={facts.generatedAt} />
             </span>
             <span>
               工作区 <strong className="font-medium text-rex-text-body">{project?.name ?? facts.rootDir}</strong>
@@ -257,21 +252,17 @@ export function ConsoleWorkspace({
                 {facts.degraded.length} 项没读到（见下方原因）
               </span>
             )}
-            {pending && (
-              <span className="ml-auto inline-flex items-center gap-1.5 rounded bg-rex-orange/10 px-2 py-0.5 text-rex-text-body">
-                <FlaskConical size={12} />
-                此面板只读，写入尚未授权
-              </span>
-            )}
           </div>
         </div>
         <main id="console-content" className="mx-auto max-w-[1440px] px-4 py-7 lg:px-8 lg:py-9" tabIndex={-1}>
           <div hidden={view !== 'home'}>
             <HomeWorkspace facts={facts} navigate={navigate} active={view === 'home'} />
           </div>
-          <div hidden={view !== 'tools'}>
-            <ToolsWorkspace facts={facts} onMcp={() => navigate('mcp')} selectedId={selectedToolId} onSelect={setSelectedToolId} />
-          </div>
+          {mounted.has('tools') && (
+            <div hidden={view !== 'tools'}>
+              <ToolsWorkspace facts={facts} onMcp={() => navigate('mcp')} selectedId={selectedToolId} onSelect={setSelectedToolId} />
+            </div>
+          )}
           {(mounted.has('routing') || mounted.has('routingConfig')) && (
             <div hidden={view !== 'routing' && view !== 'routingConfig'}>
               <GatewayWorkspace facts={facts} active={view === 'routing' || view === 'routingConfig'} view={view} navigate={navigate} />
@@ -279,7 +270,7 @@ export function ConsoleWorkspace({
           )}
           {mounted.has('mcp') && (
             <div hidden={view !== 'mcp'}>
-              <McpWorkspace facts={facts} />
+              <ResourcesWorkspace facts={facts} />
             </div>
           )}
           <div hidden={view !== 'memory'}>
@@ -313,7 +304,7 @@ export function ConsoleWorkspace({
             <Heading
               eyebrow="PREFERENCES"
               title="让工作空间，顺手一点。"
-              description="主题只在当前页面生效。模型路由配置在左侧「模型路由 → 路由配置」页。"
+              description="主题只在当前页面生效。模型分配在「模型路由 → 模型分配」中管理。"
             />
             <Panel className="max-w-2xl p-6">
               <h2 className="mb-4 text-sm font-semibold">界面外观</h2>
@@ -366,7 +357,7 @@ function LockHint() {
   return (
     <span className="flex items-center gap-1.5">
       <ShieldCheck size={12} />
-      本机状态只读采集；模型路由配置可写，写前自动备份
+      本机状态只读采集；配置写入、接入与程序更新均需明确确认
     </span>
   );
 }

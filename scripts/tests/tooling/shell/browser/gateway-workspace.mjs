@@ -3,11 +3,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { browserRuntime, choose, gatewayFixture, noPageOverflow, visible } from './gateway-fixture.mjs';
 import { runModelSourceBrowserChecks } from './model-source-workspace.mjs';
+import { assign, assignmentRow, runPolicyBrowserChecks } from './routing-policy-workspace.mjs';
+import { runRoutingProfileBrowserChecks } from '../groups/routing-profiles-console.mjs';
+import { runAgentBrowserChecks } from './clients-resources/agent-workspace.mjs';
+import { runResourceBrowserChecks } from './clients-resources/resource-workspace.mjs';
 
 async function chooseTheme(page, theme) {
   const href = page.url();
   // Draft controls are mounted only after the hydrated configuration fetch completes.
-  await page.getByRole('combobox', { name: '实现全局模型', exact: true, includeHidden: true }).waitFor({ state: 'attached' });
+  await page.getByRole('list', { name: '全局默认分配', exact: true, includeHidden: true }).waitFor({ state: 'attached' });
   // Next's development indicator can cover this sidebar button on mobile.
   await page.getByRole('button', { name: '设置', exact: true }).press('Enter');
   const control = page.getByRole('button', { name: theme === 'dark' ? '深色' : '明亮', exact: true });
@@ -17,6 +21,66 @@ async function chooseTheme(page, theme) {
   await page.goBack();
   await page.waitForURL(href);
   await visible(page, page.getByRole('navigation', { name: '网关工作区' }));
+}
+
+async function runLegacyControlBrowserChecks(t, { fixture, baseUrl }) {
+  await t.test('legacy connect keeps the confirmed revision and port after polling replaces status', async st => {
+    const { page, state } = await fixture(st, { gatewayStatus: { running: true, ready: true } });
+    await page.goto(`${baseUrl}/routing`);
+    await visible(page, page.getByText('运行时就绪：可路由 2 个模型', { exact: true }));
+    const approved = { action: 'connect', confirm: true, client: 'codex', port: 3127, expectedRevision: state.catalogHash };
+    await page.getByRole('button', { name: '接入', exact: true }).first().click();
+    const dialog = page.getByRole('dialog');
+    await visible(page, dialog.getByText(/http:\/\/127\.0\.0\.1:3127/));
+    const confirmationText = await dialog.innerText();
+    state.catalogHash = '2'.padStart(64, '0');
+    Object.assign(state.gatewayStatus, { port: 4189, url: 'http://127.0.0.1:4189' });
+    await page.waitForResponse(async response => response.url().endsWith('/api/model-routing/gateway')
+      && response.request().method() === 'GET' && (await response.json()).configuredRevision === state.catalogHash);
+    await page.locator('code[title="http://127.0.0.1:4189"]').waitFor({ state: 'attached' });
+    assert.equal(await dialog.innerText(), confirmationText, 'polling must not replace the endpoint the user is confirming');
+    const [response] = await Promise.all([
+      page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.request().method() === 'POST'),
+      dialog.getByRole('button', { name: '确认接入', exact: true }).click(),
+    ]);
+    assert.equal(response.status(), 409, 'the captured old revision must fail stale, never silently accept the new catalog');
+    assert.deepEqual(state.gatewayActions, [approved]);
+    await visible(page, page.getByText(/接入失败：fixture catalog revision changed/));
+    assert.equal(state.writes.length, 0);
+  });
+
+  const cases = [
+    ['missing', undefined], ['null', null], ['empty', ''], ['malformed', 'g'.repeat(64)],
+    ['uppercase', 'A'.repeat(64)], ['short', 'a'.repeat(63)], ['refresh error'],
+  ];
+  for (const [label, configuredRevision] of cases) {
+    await t.test(`legacy ${label} revision blocks connect but still permits confirmed disconnect`, async st => {
+      const gatewayStatus = { running: true, ready: true, ...(label === 'refresh error' ? {} : { configuredRevision }) };
+      const { page, state } = await fixture(st, { gatewayStatus });
+      await page.goto(`${baseUrl}/routing`);
+      await visible(page, page.getByText('运行时就绪：可路由 2 个模型', { exact: true }));
+      if (label === 'refresh error') {
+        state.failGatewayRead = 503;
+        await page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.status() === 503);
+        await visible(page, page.getByText('刷新失败：fixture gateway read unavailable', { exact: true }).first());
+      }
+      const connect = page.getByRole('button', { name: '接入', exact: true });
+      assert.equal(await connect.count(), 2);
+      for (const button of await connect.all()) assert.equal(await button.isDisabled(), true);
+      assert.equal(await page.getByRole('dialog').count(), 0);
+      assert.deepEqual(state.gatewayActions, []);
+      const disconnect = page.getByRole('button', { name: '还原', exact: true });
+      assert.equal(await disconnect.isDisabled(), false, 'safe recovery must not depend on a usable catalog revision or a successful refresh');
+      await disconnect.click();
+      await Promise.all([
+        page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.request().method() === 'POST'),
+        page.getByRole('dialog').getByRole('button', { name: '确认还原', exact: true }).click(),
+      ]);
+      await page.getByRole('dialog').waitFor({ state: 'detached' });
+      assert.deepEqual(state.gatewayActions, [{ action: 'disconnect', confirm: true, client: 'claude' }]);
+      assert.equal(state.writes.length, 0);
+    });
+  }
 }
 
 export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
@@ -33,13 +97,27 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     return value;
   };
 
+  if (process.env.AIOS_GATEWAY_BROWSER_FOCUS === 'routing-profiles') {
+    await runRoutingProfileBrowserChecks(t, { fixture, baseUrl });
+    return;
+  }
+  if (process.env.AIOS_GATEWAY_BROWSER_FOCUS === 'gateway-control') {
+    await runLegacyControlBrowserChecks(t, { fixture, baseUrl });
+    return;
+  }
+
+  await runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme });
   await runModelSourceBrowserChecks(t, { fixture, baseUrl, chooseTheme });
+  await runAgentBrowserChecks(t, { fixture, baseUrl });
+  await runResourceBrowserChecks(t, { fixture, baseUrl });
+  await runRoutingProfileBrowserChecks(t, { fixture, baseUrl });
+  await runLegacyControlBrowserChecks(t, { fixture, baseUrl });
 
   await t.test('gateway draft survives sections, history, other views and ws deep links', async st => {
     const { page, state, saved } = await fixture(st);
     await page.goto(`${baseUrl}/routing/config?ws=browser-fixture`);
-    await visible(page, page.getByRole('heading', { name: '全局角色默认' }));
-    await choose(page, '实现全局模型', /Beta/);
+    await visible(page, page.getByRole('heading', { name: '默认分配', exact: true }));
+    await assign(page, '实现', /Beta/);
     await visible(page, page.getByText('有未保存的修改', { exact: true }));
     await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /供应商与模型/ }).click();
     assert.equal(new URL(page.url()).searchParams.get('ws'), 'browser-fixture');
@@ -50,54 +128,55 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     await page.goBack();
     await visible(page, page.getByRole('heading', { name: '上游供应商' }));
     await page.goBack();
-    await visible(page, page.getByRole('combobox', { name: '实现全局模型', exact: true }));
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    await visible(page, assignmentRow(page, '实现'));
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     await page.goForward();
     await visible(page, page.getByRole('heading', { name: '上游供应商' }));
-    await page.getByRole('navigation', { name: '主导航' }).getByRole('button', { name: 'AI 工具', exact: true }).click();
-    await page.getByRole('navigation', { name: '主导航' }).getByRole('button', { name: '路由配置', exact: true }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    await page.getByRole('navigation', { name: '主导航' }).getByRole('button', { name: 'Agent 客户端', exact: true }).click();
+    await page.getByRole('navigation', { name: '主导航' }).getByRole('button', { name: '模型路由', exact: true }).click();
+    await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /模型分配/ }).click();
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     assert.equal(state.writes.length, 0, 'tab changes must not write configuration');
     await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
     await visible(page, page.getByText('配置已保存，写入前已自动备份。', { exact: true }));
-    assert.equal(saved().matrix.default.implementer, 'model-beta');
+    assert.equal(saved().matrix.default.implementer, 'model:model-beta');
     await page.reload();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     assert.equal(new URL(page.url()).searchParams.get('ws'), 'browser-fixture');
     // Empty values must round-trip through Radix without exposing its internal sentinel.
-    await choose(page, '实现全局模型', /自动策略/);
-    await choose(page, 'claude 实现模型', /Beta/);
-    await choose(page, 'claude 实现模型', /继承全局/);
+    await assign(page, '实现', 'inherit');
+    await assign(page, '实现', /Beta/, 'claude');
+    await assign(page, '实现', 'inherit', 'claude');
     await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
     await visible(page, page.getByText('与已读取配置一致', { exact: true }));
-    assert.equal(saved().matrix.default.implementer, '');
-    assert.equal(saved().matrix.clients.claude.implementer, '');
+    assert.equal(saved().matrix.default.implementer, undefined);
+    assert.equal(saved().matrix.clients.claude.implementer, undefined);
     assert.doesNotMatch(JSON.stringify(state.writes), /__rex_empty_option__/);
   });
 
   await t.test('failed saves and 409 retain the draft; reload and discard require confirmation', async st => {
     const { page, state } = await fixture(st);
     await page.goto(`${baseUrl}/routing/config`);
-    await choose(page, '实现全局模型', /Beta/);
+    await assign(page, '实现', /Beta/);
     for (const status of [503, 409]) {
       state.failSave = status;
       await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
       await visible(page, page.getByText(status === 409 ? /配置已被其他窗口或 CLI 修改/ : 'fixture save unavailable', { exact: status !== 409 }));
-      assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+      assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
       await visible(page, page.getByText('有未保存的修改', { exact: true }));
     }
     await page.getByRole('button', { name: '重新读取配置', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '继续编辑' }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     state.failRead = true;
     await page.getByRole('button', { name: '重新读取配置', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '确认重新读取' }).click();
     await visible(page, page.getByText(/配置快照未能更新，当前草稿已保留/));
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     state.failRead = false;
     await page.getByRole('button', { name: '放弃修改', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '确认放弃修改' }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /自动策略/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /fixture \/ Alpha/);
     assert.equal(state.writes.length, 2);
   });
 
@@ -124,11 +203,11 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     assert.equal(await dialog.getByRole('textbox', { name: '所属供应商', exact: true }).inputValue(), 'my-upstream');
     await dialog.getByRole('button', { name: '加入草稿' }).click();
     assert.equal(state.writes.length, 0);
-    await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /路由策略/ }).click();
-    await choose(page, '实现全局模型', /My Custom/);
+    await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /模型分配/ }).click();
+    await assign(page, '实现', /My Custom/);
     await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
     await visible(page, page.getByText('与已读取配置一致', { exact: true }));
-    assert.equal(saved().matrix.default.implementer, 'my-custom');
+    assert.equal(saved().matrix.default.implementer, 'model:my-custom');
     assert.equal(saved().customModels[0].provider, 'my-upstream');
     assert.equal(saved().customModels[0].upstreamModel, 'My-Real-Model');
     assert.equal(saved().providers.find(provider => provider.id === 'my-upstream').endpointStyle, 'standard');
@@ -165,9 +244,9 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
       for (const button of await page.getByRole('button', { name: '接入', exact: true }).all()) assert.equal(await button.isDisabled(), true);
       await noPageOverflow(page);
       if (artifacts) await page.screenshot({ path: path.join(artifacts, `gateway-empty-overview-${width}.png`), fullPage: true });
-      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /路由策略/ }).click();
+      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /模型分配/ }).click();
       await visible(page, page.getByRole('heading', { name: '尚无可路由模型', exact: true }));
-      assert.equal(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).isDisabled(), true);
+      assert.equal(await assignmentRow(page, '实现').getByRole('button', { name: '修改', exact: true }).isDisabled(), true);
       await noPageOverflow(page);
       if (artifacts) await page.screenshot({ path: path.join(artifacts, `gateway-empty-policy-${width}.png`), fullPage: true });
     }
@@ -198,29 +277,6 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     assert.equal(await page.evaluate(() => document.getAnimations().filter(animation => animation.playState === 'running').length), 0);
   });
 
-  await t.test('local role profiles only change the draft; client reset and apply are confirmed', async st => {
-    const { page, state } = await fixture(st);
-    await page.goto(`${baseUrl}/routing/config`);
-    await choose(page, '实现全局模型', /Beta/);
-    await choose(page, 'claude 实现模型', /Beta/);
-    await page.getByRole('button', { name: '保存为方案', exact: true }).click();
-    await page.getByRole('textbox', { name: '方案名称' }).fill('Browser fixture');
-    await page.getByRole('dialog').getByRole('button', { name: '保存方案', exact: true }).click();
-    assert.equal(state.writes.length, 0);
-    await page.getByRole('button', { name: '清除此客户端覆盖' }).click();
-    await page.getByRole('dialog').getByRole('button', { name: '清除覆盖', exact: true }).click();
-    assert.match(await page.getByRole('combobox', { name: 'claude 实现模型', exact: true }).innerText(), /继承/);
-    await page.getByRole('button', { name: '放弃修改', exact: true }).click();
-    await page.getByRole('dialog').getByRole('button', { name: '确认放弃修改' }).click();
-    await page.getByRole('button', { name: '应用到草稿', exact: true }).click();
-    await page.getByRole('dialog').getByRole('button', { name: '确认应用', exact: true }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
-    assert.equal(state.writes.length, 0);
-    const profiles = await page.evaluate(() => JSON.parse(localStorage.getItem('aios.profiles')));
-    assert.deepEqual(Object.keys(profiles[0]).sort(), ['matrix', 'name']);
-    assert.equal(profiles[0].matrix.clients.claude.implementer, 'model-beta');
-  });
-
   await t.test('runtime control is confirmed and separate from traffic; request filters preserve totals', async st => {
     const { page, state } = await fixture(st);
     await page.goto(`${baseUrl}/routing`);
@@ -235,13 +291,14 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     await page.getByRole('dialog').getByRole('button', { name: '确认启动', exact: true }).click();
     await visible(page, page.getByRole('button', { name: '关闭网关', exact: true }));
     assert.deepEqual(state.gatewayActions, [{ action: 'start', confirm: true, port: 3127 }]);
+    const approvedRevision = state.catalogHash;
     await page.getByRole('button', { name: '接入', exact: true }).first().click();
     await visible(page, page.getByRole('dialog').getByText(/http:\/\/127\.0\.0\.1:3127/));
     await Promise.all([
       page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.request().method() === 'GET'),
       page.getByRole('dialog').getByRole('button', { name: '确认接入', exact: true }).click(),
     ]);
-    assert.deepEqual(state.gatewayActions[1], { action: 'connect', confirm: true, client: 'codex', port: 3127 });
+    assert.deepEqual(state.gatewayActions[1], { action: 'connect', confirm: true, client: 'codex', port: 3127, expectedRevision: approvedRevision });
     await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /请求记录/ }).click();
     await visible(page, page.getByRole('heading', { name: '请求明细' }));
     await choose(page, '筛选请求结果', '仅失败');
@@ -270,7 +327,7 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
   await t.test('short mobile dirty save bar keeps all actions reachable and confirmations safe', async st => {
     const { page, state, saved } = await fixture(st, { viewport: { width: 390, height: 640 }, reducedMotion: 'reduce' });
     await page.goto(`${baseUrl}/routing/config`);
-    await choose(page, '实现全局模型', /Beta/);
+    await assign(page, '实现', /Beta/);
     await chooseTheme(page, 'dark');
     await visible(page, page.getByText('有未保存的修改', { exact: true }));
     for (const name of ['重新读取配置', '放弃修改', '保存全部修改']) {
@@ -287,19 +344,19 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     }
     await page.getByRole('button', { name: '重新读取配置', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '继续编辑', exact: true }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /Beta/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /Beta/);
     await page.getByRole('button', { name: '放弃修改', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '确认放弃修改', exact: true }).click();
-    assert.match(await page.getByRole('combobox', { name: '实现全局模型', exact: true }).innerText(), /自动策略/);
-    await choose(page, '实现全局模型', /Beta/);
+    assert.match(await assignmentRow(page, '实现').innerText(), /fixture \/ Alpha/);
+    await assign(page, '实现', /Beta/);
     await page.getByRole('button', { name: '重新读取配置', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '确认重新读取', exact: true }).click();
     await visible(page, page.getByText('与已读取配置一致', { exact: true }));
     assert.equal(state.writes.length, 0, 'discard and reload must not save');
-    await choose(page, '实现全局模型', /Beta/);
+    await assign(page, '实现', /Beta/);
     await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
     await visible(page, page.getByText('与已读取配置一致', { exact: true }));
-    assert.equal(saved().matrix.default.implementer, 'model-beta');
+    assert.equal(saved().matrix.default.implementer, 'model:model-beta');
     assert.equal(state.writes.length, 1);
   });
 
@@ -312,7 +369,7 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
       await page.emulateMedia({ reducedMotion: width === 390 ? 'reduce' : 'no-preference' });
       for (const section of ['overview', 'providers', 'policy', 'requests']) {
         await page.goto(`${baseUrl}${section === 'policy' ? '/routing/config' : `/routing?section=${section}`}`);
-        const ready = section === 'overview' ? '本地网关' : section === 'providers' ? '上游供应商' : section === 'policy' ? '全局角色默认' : '请求明细';
+        const ready = section === 'overview' ? '本地网关' : section === 'providers' ? '上游供应商' : section === 'policy' ? '默认分配' : '请求明细';
         await visible(page, page.getByRole('heading', { name: ready, exact: true }));
         await chooseTheme(page, width === 390 ? 'dark' : 'light');
         await visible(page, page.getByRole('heading', { name: ready, exact: true }));
@@ -331,9 +388,12 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
           await noPageOverflow(page);
         }
         if (section === 'policy') {
-          await page.getByRole('combobox', { name: '实现全局模型', exact: true }).click();
+          await assignmentRow(page, '实现').getByRole('button', { name: '修改', exact: true }).click();
+          await page.getByRole('dialog').getByRole('radio', { name: '指定模型', exact: true }).check();
+          await page.getByRole('combobox', { name: '指定模型', exact: true }).click();
           const box = await page.getByRole('listbox').boundingBox();
           assert.ok(box.x >= 0 && box.x + box.width <= width + 1, 'model menu must fit the viewport');
+          await page.keyboard.press('Escape');
           await page.keyboard.press('Escape');
         }
       }

@@ -188,7 +188,7 @@ export function ModelSourceSection({
         title={confirm?.kind === 'refresh' ? '刷新所有供应商的模型目录？' : `从草稿中移除 ${confirm?.id || ''}？`}
         description={confirm?.kind === 'refresh'
           ? '将读取所有已保存供应商的上游模型列表，并更新本地目录，不仅是当前选中的供应商。不会调用模型生成内容。'
-          : '只修改当前草稿，保存全部修改后才会生效。若仍被路由策略引用，保存时会进行校验。'}>
+          : '只修改当前草稿，保存全部修改后才会生效。若仍用于模型分配，保存时会进行校验。'}>
         <div className="flex justify-end gap-2">
           <Button variant="outline" onClick={() => setConfirm(null)}>取消</Button>
           <Button variant={confirm?.kind === 'refresh' ? 'default' : 'danger'} onClick={() => void runConfirm()}>

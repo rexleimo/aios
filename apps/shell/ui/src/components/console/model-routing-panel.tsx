@@ -93,7 +93,7 @@ export function ModelRoutingPanel({ onConfigure, active = true }: { onConfigure:
             </p>
             <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <Feature icon={Waypoints} title="按角色自动选模型">规划 / 审查用强模型，实现用快而省的模型；通道故障时自动切到备用。</Feature>
-              <Feature icon={Languages} title="协议翻译（有边界）">claude 客户端可跨 openai-chat / gemini 上游互转；codex（openai-response）目前只同协议直通，跨协议翻译尚未实现，网关会拒绝而非发错协议。</Feature>
+              <Feature icon={Languages} title="协议翻译（有边界）">Messages、Responses、Chat Completions 和 Gemini 可跨协议转换请求、非流式响应及流式事件，支持函数工具续轮；无法表示的状态、思考或多模态能力会明确拒绝。同协议保留供应商扩展。</Feature>
               <Feature icon={KeyRound} title="密钥只存环境变量">配置里只出现 env 引用，不落明文、不进日志。</Feature>
               <Feature icon={Network} title="单一配置源">CLI / 网关 / 界面读写同一份配置，改一处处处生效。</Feature>
             </ul>

@@ -1,27 +1,10 @@
 'use client';
 
-import { ArrowRight } from 'lucide-react';
-import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts, type FactClient } from '../../lib/console-facts';
+import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts } from '../../lib/console-facts';
 import type { ViewId } from '../../lib/console-navigation';
 import { Badge, Button, Heading, Modal, Panel, SmallTitle } from './console-ui';
 import { AgentOverview } from './model-routing/agent-overview';
-
-/** 一个客户端最坏的那条落点状态——首屏展示的是「需不需要你处理」，不是平均值。 */
-function worstLanding(client: FactClient): { token: string; reason: string } {
-  const order = ['landing-error', 'landing-unregistered', 'landing-unverified', 'landing-verified'];
-  for (const token of order) {
-    const hit = client.landingTokens.find((entry) => entry.token === token);
-    if (hit) return { token: hit.token, reason: hit.reason };
-  }
-  return { token: client.declaredOnly ? 'landing-unregistered' : '', reason: '' };
-}
-
-function LandingBadge({ client }: { client: FactClient }) {
-  const { token } = worstLanding(client);
-  if (!token) return <Badge tone="neutral">未读到落点</Badge>;
-  const { label, tone } = landingTokenLabel(token);
-  return <Badge tone={tone}>{label}</Badge>;
-}
+import { ClientManagement } from './clients/client-management';
 
 export function HomeWorkspace({
   facts,
@@ -70,43 +53,13 @@ export function ToolsWorkspace({
   const selected = facts.clients.find((client) => client.clientId === selectedId);
   return (
     <>
-      <Heading
-        eyebrow="AI TOOLS"
-        title="先看清工具在本机的落点，再谈服务。"
-        description="每一行都是这台机器上读出来的结果：配置文件在哪、几个服务、落点验证到哪一步。"
-      />
-      <Panel className="overflow-hidden">
-        {facts.clients.map((client) => {
-          const label = clientLabel(client.clientId);
-          return (
-            <div key={client.clientId} className="flex flex-wrap items-center gap-4 border-b border-rex-border p-5 last:border-0">
-              <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-rex-panel font-rex-display text-xl font-semibold">
-                {label.monogram}
-              </span>
-              <div className="min-w-40 flex-1">
-                <h2 className="font-semibold">{label.name}</h2>
-                <p className="mt-1 text-xs break-all text-rex-text-muted">
-                  {client.installed
-                    ? client.configFiles[0] || '有落点但没有文件路径'
-                    : '本机没有配置落点（仅产品声明支持）'}
-                </p>
-              </div>
-              <span className="text-xs text-rex-text-muted">{client.services} 个服务</span>
-              <LandingBadge client={client} />
-              <Button variant="outline" onClick={() => onSelect(client.clientId)}>
-                查看工具详情
-                <ArrowRight size={14} />
-              </Button>
-            </div>
-          );
-        })}
-      </Panel>
+      <ClientManagement facts={facts} onDetails={onSelect} />
       <Modal
         open={!!selected}
         onOpenChange={(open) => {
           if (!open) onSelect(null);
         }}
-        title={`${selected ? clientLabel(selected.clientId).name : 'AI 工具'} · 工具详情`}
+        title={`${selected ? clientLabel(selected.clientId).name : 'Agent 客户端'} · 配置与落点详情`}
         description="配置读取、服务数量与落点验证是三条不同的事实，下面分开列出。"
       >
         {selected && (
@@ -133,7 +86,7 @@ export function ToolsWorkspace({
                 </ul>
               </dd>
               <dt className="text-rex-text-muted">连接测试</dt>
-              <dd>未做——当前界面只读配置，不启动服务进程。</dd>
+              <dd>未做——配置接入不代表客户端会话或上游生成已经验证。</dd>
             </dl>
             <div className="rounded-xl bg-rex-panel p-4 text-xs leading-6 text-rex-text-muted">
               读取配置成功，只说明文件可读取。服务连接结果需要独立测试后才能确认。

@@ -61,6 +61,7 @@ export function Modal({
   children,
   wide = false,
   initialFocus,
+  restoreFocusTo,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -69,6 +70,8 @@ export function Modal({
   children: ReactNode;
   wide?: boolean;
   initialFocus?: RefObject<HTMLElement | null>;
+  // Override the opener when it will be removed while the dialog is open (e.g. deleting a row).
+  restoreFocusTo?: RefObject<HTMLElement | null>;
 }) {
   const opener = useRef<HTMLElement | null>(null);
   return (
@@ -84,9 +87,11 @@ export function Modal({
             }
           }}
           onCloseAutoFocus={(event) => {
-            if (opener.current?.isConnected) {
+            const target = restoreFocusTo?.current?.isConnected ? restoreFocusTo.current
+              : opener.current?.isConnected ? opener.current : null;
+            if (target) {
               event.preventDefault();
-              opener.current.focus();
+              target.focus();
             }
           }}
           className={`fixed top-1/2 left-1/2 z-50 max-h-[90dvh] w-[calc(100%_-_32px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto scroll-pt-6 scroll-pb-24 rounded-2xl border border-rex-border bg-rex-bg p-6 shadow-xl ${wide ? 'max-w-[680px]' : 'max-w-[480px]'}`}

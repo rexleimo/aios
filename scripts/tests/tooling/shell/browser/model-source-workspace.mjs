@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { choose, noPageOverflow, visible } from './gateway-fixture.mjs';
+import { assignmentRow } from './routing-policy-workspace.mjs';
 
 const configuration = {
   models: [
@@ -42,10 +43,16 @@ export async function runModelSourceBrowserChecks(t, { fixture, baseUrl, chooseT
       assert.equal(await children().getByRole('listitem').count(), 1);
       await selectProvider(page, 'local', width);
 
-      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /路由策略/ }).click();
-      await page.getByRole('combobox', { name: '实现全局模型', exact: true }).click();
+      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /模型分配/ }).click();
+      await assignmentRow(page, '实现').getByRole('button', { name: '修改', exact: true }).click();
+      await page.getByRole('dialog').getByRole('radio', { name: '指定模型', exact: true }).check();
+      await page.getByRole('combobox', { name: '指定模型', exact: true }).click();
       assert.doesNotMatch(await page.getByRole('listbox').innerText(), /beta|Legacy unbound/u, 'management-only definitions cannot enter strategy pickers');
       await page.keyboard.press('Escape');
+      assert.equal(await page.getByRole('dialog').count(), 1, 'first Escape dismisses only the model list');
+      await page.keyboard.press('Escape');
+      await page.getByRole('dialog').waitFor({ state: 'detached' });
+      assert.notEqual(await page.evaluate(() => document.body.style.pointerEvents), 'none', 'closing nested model selection must release the page');
       await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /供应商与模型/ }).click();
       assert.equal(await page.getByRole('textbox', { name: '搜索模型目录' }).inputValue(), '');
       await visible(page, page.getByRole('list', { name: 'local 模型', exact: true }));
@@ -184,4 +191,75 @@ export async function runModelSourceBrowserChecks(t, { fixture, baseUrl, chooseT
     assert.equal(state.writes.length, 0);
     assert.equal(await page.getByRole('button', { name: '保存全部修改', exact: true }).isDisabled(), true);
   });
+
+  for (const width of [1440, 390]) {
+    await t.test(`independent API presets and auth share the safe draft boundary at ${width}px`, async st => {
+      const { page, state, saved } = await fixture(st, { configuration, viewport: { width, height: 640 }, reducedMotion: 'reduce' });
+      await page.goto(`${baseUrl}/routing?section=providers`);
+      await chooseTheme(page, width === 390 ? 'dark' : 'light');
+      await page.getByRole('button', { name: '添加供应商', exact: true }).click();
+      const dialog = page.getByRole('dialog');
+      const field = name => dialog.getByRole('textbox', { name, exact: true });
+      await choose(page, '供应商预设', '智谱 GLM');
+      await choose(page, '地区或套餐', 'Coding Plan');
+      assert.equal(await field('API 端点').inputValue(), 'https://open.bigmodel.cn/api/coding/paas/v4');
+      await field('密钥环境变量引用').fill('env:FIXTURE_CHANNEL');
+      await dialog.getByText('其他 API 地址', { exact: true }).click();
+      await field('Anthropic Messages 地址').fill('https://messages.invalid/api/anthropic');
+      await choose(page, 'Anthropic 密钥请求头', 'Authorization: Bearer');
+      await dialog.getByText('自定义请求头', { exact: true }).click();
+      await dialog.getByRole('button', { name: '添加请求头', exact: true }).click();
+      await field('请求头 1 名称').fill('x-tenant-id');
+      await field('请求头 1 值').fill('fixture-tenant');
+      await dialog.getByRole('button', { name: '加入草稿', exact: true }).click();
+      await dialog.waitFor({ state: 'detached' });
+      assert.equal(state.writes.length, 0);
+      assert.equal(state.refreshes, 0);
+      assert.equal(await page.getByRole('button', { name: '刷新模型目录', exact: true }).isDisabled(), true);
+      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /模型分配/ }).click();
+      await page.getByRole('navigation', { name: '网关工作区' }).getByRole('button', { name: /供应商与模型/ }).click();
+      await page.getByRole('button', { name: '编辑供应商 zhipu', exact: true }).click();
+      assert.equal(await field('API 端点').inputValue(), 'https://open.bigmodel.cn/api/coding/paas/v4');
+      await dialog.getByText('其他 API 地址', { exact: true }).click();
+      await field('Anthropic Messages 地址').fill('https://changed.invalid/anthropic');
+      const confirmation = dialog.getByRole('checkbox', { name: '我确认这些账号密钥可以用于新的 API 端点', exact: true });
+      await confirmation.check();
+      await field('OpenAI Responses 地址').fill('https://responses.invalid/tenant/v1');
+      assert.equal(await confirmation.isChecked(), false, 'another API destination resets consent');
+      await confirmation.check();
+      await field('请求头 1 值').fill('env:FIXTURE_TENANT');
+      assert.equal(await confirmation.isChecked(), false, 'header credential scope resets consent');
+      await confirmation.check();
+      await page.evaluate(() => { document.documentElement.style.fontSize = '200%'; });
+      await noPageOverflow(page);
+      await dialog.getByRole('button', { name: '加入草稿', exact: true }).click();
+      await dialog.waitFor({ state: 'detached' });
+      for (const status of [503, 409]) {
+        state.failSave = status;
+        await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
+        await visible(page, page.getByText(status === 409 ? /配置已被其他窗口或 CLI 修改/ : 'fixture save unavailable', { exact: status !== 409 }));
+        const staged = state.writes.at(-1).editable.providers.find(provider => provider.id === 'zhipu');
+        assert.equal(staged.protocolBaseUrls.claude, 'https://changed.invalid/anthropic');
+        assert.equal(staged.protocolBaseUrls['openai-response'], 'https://responses.invalid/tenant/v1');
+        assert.equal(staged.authHeader, 'bearer');
+        assert.deepEqual(staged.headers, { 'x-tenant-id': 'env:FIXTURE_TENANT' });
+        assert.equal(saved().providers.some(provider => provider.id === 'zhipu'), false);
+      }
+      state.failSave = false;
+      await page.getByRole('button', { name: '保存全部修改', exact: true }).click();
+      await visible(page, page.getByText('与已读取配置一致', { exact: true }));
+      assert.equal(saved().providers.find(provider => provider.id === 'zhipu').presetRegion, 'coding');
+      await page.getByRole('button', { name: '编辑供应商 zhipu', exact: true }).click();
+      await field('API 端点').fill('https://never-saved.invalid/v1');
+      await page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'detached' });
+      assert.equal(await page.getByRole('button', { name: '保存全部修改', exact: true }).isDisabled(), true);
+      assert.equal(saved().providers.find(provider => provider.id === 'zhipu').baseUrl, 'https://open.bigmodel.cn/api/coding/paas/v4');
+      assert.equal(state.refreshes, 0);
+      assert.deepEqual(state.gatewayActions, []);
+      await noPageOverflow(page);
+      const artifacts = process.env.AIOS_GATEWAY_TEST_ARTIFACTS;
+      if (artifacts) await page.screenshot({ path: path.join(artifacts, `provider-apis-${width}x640-200pct.png`) });
+    });
+  }
 }

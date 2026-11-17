@@ -3,6 +3,9 @@
 import { ChevronDown, KeyRound, Pencil, Trash2 } from 'lucide-react';
 import { Badge, Button } from '../console-ui';
 import type { RoutingProvider } from '../model-routing/use-routing-config';
+import { API_CHOICES, connectionUrls } from './provider/connections.mjs';
+import { credentialLabel, effectiveCredential } from './provider/credential.mjs';
+import { PROVIDER_PRESETS } from './provider/presets.mjs';
 
 export function ModelSourceProviderDetail({ provider, onEdit, onRemove }: {
   provider: RoutingProvider;
@@ -10,6 +13,8 @@ export function ModelSourceProviderDetail({ provider, onEdit, onRemove }: {
   onRemove: () => void;
 }) {
   const anonymous = provider.authMode === 'none';
+  const urls = connectionUrls(provider);
+  const preset = PROVIDER_PRESETS.find(item => item.id === provider.preset);
   return (
     <header className="border-b border-rex-border p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -26,29 +31,32 @@ export function ModelSourceProviderDetail({ provider, onEdit, onRemove }: {
         </div>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-[11px] leading-5 text-rex-text-muted">
-        <span>{provider.endpointStyle === 'standard' ? '标准 API' : 'Relay 前缀'}</span>
+        <span>{preset?.name || '自定义渠道'}</span>
         <span className="inline-flex items-center gap-1"><KeyRound size={12} />{anonymous ? '无需认证' : '需要认证'}</span>
         <span>{provider.accounts?.length || 1} 个账号</span>
-        <div className="flex flex-wrap gap-1">{provider.protocols.map((protocol) => <Badge key={protocol} tone="neutral">{protocol}</Badge>)}</div>
+        <div className="flex flex-wrap gap-1">{Object.keys(urls).map(protocol => <Badge key={protocol} tone="neutral">{API_CHOICES.find(item => item.value === protocol)?.label || protocol}</Badge>)}</div>
       </div>
       <details className="group mt-3 text-[11px] leading-5 text-rex-text-muted">
         <summary className="flex w-fit cursor-pointer list-none items-center gap-1 rounded-sm focus-visible:outline-2 focus-visible:outline-rex-cyan">
           配置详情<ChevronDown size={12} className="group-open:rotate-180" />
         </summary>
         <div className="mt-3 space-y-2 border-l-2 border-rex-border pl-3">
-          <p className="break-all">{anonymous ? '无需认证（不发送密钥）' : <>供应商回退引用：<span className="font-rex-mono">{provider.apiKeyEnv.trim() || '未配置（需要凭据）'}</span></>}</p>
+          <ul className="space-y-1" aria-label={`${provider.id} API 地址`}>{Object.entries(urls).map(([protocol, url]) => <li key={protocol} className="break-all">
+            {API_CHOICES.find(item => item.value === protocol)?.label || protocol}：<span className="font-rex-mono">{url}</span>
+          </li>)}</ul>
+          <p className="break-all">{anonymous ? '无需认证（不发送密钥）' : <>供应商回退凭据：<span className="font-rex-mono">{credentialLabel(effectiveCredential(provider)) || '未配置（需要凭据）'}</span></>}</p>
           {provider.accounts?.length ? (
             <>
               <ul className="space-y-1" aria-label={`${provider.id} 账号有效密钥引用`}>
                 {provider.accounts.map((account, index) => <li key={account.id} className="break-all">
-                  {index + 1}. {account.id}：<span className="font-rex-mono">{anonymous ? '无需认证（不发送密钥）' : account.apiKeyEnv.trim() || provider.apiKeyEnv.trim() || '未配置（需要凭据）'}</span>
-                  {!anonymous && !account.apiKeyEnv.trim() && '（继承供应商）'}
+                  {index + 1}. {account.id}：<span className="font-rex-mono">{anonymous ? '无需认证（不发送密钥）' : credentialLabel(effectiveCredential(provider, account)) || '未配置（需要凭据）'}</span>
+                  {!anonymous && !account.apiKey?.trim() && !account.apiKeyEnv.trim() && '（继承供应商）'}
                 </li>)}
               </ul>
               <p>账号按顺序重试；发现与分类使用首个账号。</p>
             </>
           ) : <p>默认账号使用供应商引用。</p>}
-          <p>配置不代表凭据已验证。{provider.endpointStyle !== 'standard' && '旧配置未声明端点格式时保留 Relay 路径。'}</p>
+          <p>配置不代表凭据已验证。已有连接在显式修改前保持原样。</p>
         </div>
       </details>
     </header>

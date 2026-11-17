@@ -181,7 +181,9 @@ test('the current route uses the same navigation owner and preserves unknown-rou
 
 test('API 路由不碰 shell，动作 argv 只来自 buildMcpArgv', () => {
   const route = readFileSync(ui('src/app/api/mcp/route.ts'), 'utf8');
-  assert.match(route, /buildMcpArgv/u, '必须用白名单构造器');
+  const service = readFileSync(ui('src/app/api/mcp/action-service.mjs'), 'utf8');
+  assert.match(route, /createMcpActionService/u, '路由必须经过 MCP 动作服务');
+  assert.match(service, /buildMcpArgv/u, '必须用白名单构造器');
   assert.doesNotMatch(route, /shell:\s*true/u, '不许开 shell');
   assert.doesNotMatch(route, /execSync|exec\(/u, '不许用字符串命令');
   // body 的字段只能经 buildMcpArgv 变成 argv：这里钉住「没有把 body 直接拼进数组」这件事。

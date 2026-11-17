@@ -21,6 +21,21 @@ const execFileAsync = promisify(execFile);
 const ACTIONS = new Set(['start', 'stop', 'connect', 'disconnect']);
 const CLIENTS = new Set(['claude', 'codex', 'pi']);
 
+// Keep syntax aligned with routing/targets.mjs without importing CLI code into Next.
+function connectTarget(value: unknown): string | null {
+  if (value === undefined || value === 'auto' || value === 'aios-auto') return 'auto';
+  if (value === 'native') return value;
+  if (typeof value !== 'string' || value.length > 2048) return null;
+  const match = /^(model|group):(.+)$/u.exec(value);
+  if (!match) return null;
+  try {
+    const id = decodeURIComponent(match[2]);
+    const encoded = encodeURIComponent(id);
+    if (!id || id.length > 512 || /[\u0000-\u001f\u007f]/u.test(id) || match[2].replace(/%[0-9a-f]{2}/giu, (part) => part.toUpperCase()) !== encoded) return null;
+    return `${match[1]}:${encoded}`;
+  } catch { return null; }
+}
+
 function repoRoot(): string {
   return process.env.AIOS_PROJECT_ROOT ?? path.resolve(process.cwd(), '..', '..', '..');
 }
@@ -54,9 +69,9 @@ async function configuredStatus(root: string) {
   try {
     const snapshot = await readRegistrySnapshot(path.join(root, 'memory', 'specs', 'model-registry.json'), path.join(root, 'scripts', 'lib', 'tooling', 'specs', 'registry', 'model-registry.json'));
     const models = toModelCatalog(parseDocument(snapshot.text));
-    return { configuredReady: models.length > 0, configuredModelCount: models.length };
+    return { configuredReady: models.length > 0, configuredModelCount: models.length, configuredRevision: snapshot.hash };
   } catch {
-    return { configuredReady: false, configuredModelCount: 0, configError: 'config-unreadable' };
+    return { configuredReady: false, configuredModelCount: 0, configuredRevision: null, configError: 'config-unreadable' };
   }
 }
 
@@ -115,9 +130,17 @@ export async function POST(request: NextRequest): Promise<Response> {
     argv.push('--port', String(port));
   }
   if ((action === 'connect' || action === 'disconnect') && body.client !== undefined && body.client !== null) {
-    const client = String(body.client);
+    const client = typeof body.client === 'string' ? body.client : '';
     if (!CLIENTS.has(client)) return json(400, { error: 'invalid-client', detail: 'client must be claude, codex or pi' });
     argv.push('--client', client);
+  }
+  if (action === 'connect') {
+    const target = connectTarget(body.target);
+    if (!target) return json(400, { error: 'invalid-target', detail: 'target must be auto, native, model:<encoded-id> or group:<encoded-id>' });
+    argv.push('--target', target);
+    const revision = body.expectedRevision;
+    if (typeof revision !== 'string' || !/^[a-f0-9]{64}$/u.test(revision)) return json(400, { error: 'invalid-revision', detail: 'connect requires the SHA-256 expectedRevision shown in gateway status' });
+    argv.push('--expected-revision', revision);
   }
   if (action === 'connect' && body.isolated === true) argv.push('--isolated');
 

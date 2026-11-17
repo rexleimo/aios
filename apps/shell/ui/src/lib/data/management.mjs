@@ -4,9 +4,20 @@ import { runCapabilityJson } from './capability.mjs';
 const identifier = value => typeof value === 'string' && /^[a-z0-9][a-z0-9._-]{0,127}$/iu.test(value) && value !== '..';
 export const loadManagement = options => runCapabilityJson(['skill', 'list', '--json'], options);
 
+export function loadManagementResource(resource, options) {
+  if (resource === 'skills') return loadManagement(options);
+  if (resource === 'agents') return runCapabilityJson(['agents', 'list', '--json'], options);
+  if (resource === 'integrations') return runCapabilityJson(['integration', 'list', '--json'], options);
+  return null;
+}
+
 export function buildManagementArgv(body, inventory) {
   if (!body || typeof body !== 'object' || Array.isArray(body)) return { error: 'expected an object' };
   const { resource, action } = body;
+  if (resource === 'agents') return action === 'doctor'
+    ? { argv: ['agents', 'doctor', '--json'], writes: false }
+    : { error: 'unsupported agent action' };
+  if (!['skills', 'integrations'].includes(resource)) return { error: 'unknown management resource or action' };
   const clients = Array.isArray(body.clients) ? [...new Set(body.clients)] : [];
   if (!clients.length || clients.some(id => !inventory.clients?.some(client => client.id === id))) return { error: 'choose known clients' };
   if (resource === 'skills') {
@@ -18,7 +29,7 @@ export function buildManagementArgv(body, inventory) {
     const argv = ['skill', action, body.name, '--client', clients.join(','), '--scope', body.scope, '--kind', body.kind, '--json'];
     if (body.source) argv.push('--source', body.source);
     if (body.dryRun === true) argv.push('--dry-run');
-    if (body.expectedRevision) {
+    if (body.expectedRevision !== undefined) {
       if (typeof body.expectedRevision !== 'string' || !/^[a-f0-9]{64}$/u.test(body.expectedRevision)) return { error: 'invalid preview revision' };
       argv.push('--expected-revision', body.expectedRevision);
     }
@@ -30,6 +41,24 @@ export function buildManagementArgv(body, inventory) {
     if (body.dryRun === true && action !== 'doctor') argv.push('--dry-run');
     return { argv, writes: action !== 'doctor' && body.dryRun !== true };
   }
-  if (resource === 'agents' && action === 'doctor') return { argv: ['agents', 'doctor', '--json'], writes: false };
   return { error: 'unknown management resource or action' };
+}
+
+// Keep the route and injected tests on the same confirmation/revision boundary.
+export async function executeManagement(body, options) {
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { status: 400, body: { error: 'expected an object' } };
+  let inventory = {};
+  if (['skills', 'integrations'].includes(body.resource)) {
+    const listed = await loadManagement(options);
+    if (!listed.ok || listed.data?.ok !== true || !Array.isArray(listed.data?.clients)) {
+      return { status: 502, body: listed.ok ? { ok: false, error: listed.data?.error || 'invalid skill inventory' } : listed };
+    }
+    inventory = listed.data;
+  }
+  const built = buildManagementArgv(body, inventory);
+  if ('error' in built) return { status: 400, body: built };
+  if (built.writes && body.confirm !== true) return { status: 409, body: { error: 'confirmation-required' } };
+  if (built.writes && body.resource === 'skills' && !body.expectedRevision) return { status: 409, body: { error: 'preview-required' } };
+  const result = await runCapabilityJson(built.argv, options);
+  return { status: result.ok ? 200 : 502, body: result };
 }

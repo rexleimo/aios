@@ -26,7 +26,7 @@ import { useRoutingConfig } from './model-routing/use-routing-config';
 const SECTIONS = [
   { id: 'overview', label: '运行总览', description: '启停与客户端接入', icon: LayoutDashboard },
   { id: 'providers', label: '供应商与模型', description: '管理请求的上游', icon: Plug },
-  { id: 'policy', label: '路由策略', description: '决定请求交给谁', icon: Settings2 },
+  { id: 'policy', label: '模型分配', description: '决定请求交给谁', icon: Settings2 },
   { id: 'requests', label: '请求记录', description: '查看实际路由结果', icon: FileClock },
 ] as const;
 type Section = (typeof SECTIONS)[number]['id'];
@@ -47,7 +47,7 @@ export function GatewayWorkspace({
   const section: Section =
     view === 'routingConfig'
       ? 'policy'
-      : requested === 'providers' || requested === 'requests'
+      : requested === 'providers' || requested === 'requests' || requested === 'policy'
         ? requested
         : 'overview';
   const routing = useRoutingConfig();
@@ -62,7 +62,7 @@ export function GatewayWorkspace({
         : `${routing.dirty ? '当前草稿' : '已保存配置'}：${routing.models.length} 个显式绑定模型`;
 
   function selectSection(next: Section) {
-    navigate(next === 'policy' ? 'routingConfig' : 'routing', next === 'providers' || next === 'requests' ? next : undefined);
+    navigate('routing', next === 'overview' ? undefined : next);
   }
 
   return (
@@ -190,7 +190,7 @@ export function GatewayWorkspace({
 
       {routing.editable &&
         (routing.dirty || section === 'providers' || section === 'policy' || routing.feedback) && (
-          <Panel className="sticky bottom-4 z-10 grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-rex-cyan/25 bg-rex-bg/95 p-4 shadow-lg backdrop-blur-sm sm:flex sm:flex-wrap sm:items-center">
+          <Panel className={`${routing.dirty ? 'sticky bottom-4 z-10' : ''} grid grid-cols-[auto_minmax(0,1fr)] items-start gap-3 border-rex-cyan/25 bg-rex-bg/95 p-4 shadow-lg backdrop-blur-sm sm:flex sm:flex-wrap sm:items-center`}>
             <span
               className={`grid size-8 shrink-0 place-items-center rounded-rex-sm ${routing.dirty ? 'bg-rex-cyan/10 text-rex-cyan' : 'bg-rex-panel text-rex-text-muted'}`}
             >
@@ -200,7 +200,11 @@ export function GatewayWorkspace({
               <p className="text-xs font-semibold">
                 {saving ? '正在写入配置…' : routing.dirty ? '有未保存的修改' : '与已读取配置一致'}
               </p>
-              <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">所有分区共用草稿；保存仅写入磁盘，运行中的网关需重启加载。</p>
+               <p className="mt-1 text-[11px] leading-5 text-rex-text-muted">所有分区共用草稿；保存仅写入磁盘，运行中的网关需重启加载。</p>
+               {routing.dirty && <details className="mt-1 text-[11px] leading-5 text-rex-text-muted">
+                 <summary className="cursor-pointer font-medium focus-visible:outline-2 focus-visible:outline-rex-cyan">修改摘要（{routing.changes.length} 项）</summary>
+                 <ul className="mt-1 max-h-24 space-y-1 overflow-y-auto">{routing.changes.map((change) => <li key={change}>{change}</li>)}</ul>
+               </details>}
               <InlineFeedback feedback={routing.feedback} />
             </div>
             <div className="col-span-2 flex flex-wrap justify-end gap-2 sm:ml-auto">
@@ -235,7 +239,7 @@ export function GatewayWorkspace({
         description={
           confirm === 'reload'
             ? '将读取磁盘上的最新配置。如有未保存修改，会被替换；这不会更改已保存的配置。'
-            : '供应商、模型和路由策略将恢复到最近一次读取的配置。此操作不会改写磁盘。'
+            : '供应商、模型和模型分配将恢复到最近一次读取的配置。此操作不会改写磁盘。'
         }
       >
         <div className="flex justify-end gap-2">

@@ -6,6 +6,7 @@
 import path from 'node:path';
 
 import type { NextRequest } from 'next/server';
+import { toPolicyContext } from '../../../../lib/config/routing-policy.mjs';
 
 import {
   ConfigError,
@@ -59,6 +60,7 @@ export async function GET(): Promise<Response> {
       path: REGISTRY_REL.replace(/\\/g, '/'),
       hash: current.hash,
       editable: toEditable(document),
+      policyContext: toPolicyContext(document),
       auto: toAutoPreview(document),
       models,
       modelBindings: toModelBindings(document),

@@ -2,6 +2,7 @@
 // 只测客观源码事实：启停是副作用 → 必须有 confirm 门；HTTP body 永不进 shell；argv 是白名单数组；
 // 控制卡走共享导入面、用确认弹窗、按 active 门控轮询；进程管理 CWD 不入安装树。不需要起 Next 服务。
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import fs, { readFileSync } from 'node:fs';
 import { stripTypeScriptTypes } from 'node:module';
 import os from 'node:os';
@@ -60,14 +61,17 @@ test('共享网关工作台接入控制卡，按 active 与分区门控轮询；
   assert.doesNotMatch(workspace, /<ModelRoutingPanel/u, '退役的重复工作台不能继续挂载');
 });
 
-test('接入命令构造是单一事实源：connect 与 lifecycle 都复用 artifacts', () => {
+test('接入命令构造是单一事实源：connect 与 lifecycle 读回均复用 artifacts', () => {
   const artifacts = read(lib('connect/artifacts.mjs'));
   assert.match(artifacts, /export function connectLaunchCommand/u);
   const connect = read(lib('connect/command.mjs'));
   assert.match(connect, /connectLaunchCommand/u);
   assert.doesNotMatch(connect, /function launchCommand/u, '私有副本已删除，避免两份命令字符串');
   const daemon = read(lib('lifecycle/daemon.mjs'));
-  assert.match(daemon, /connectLaunchCommand/u);
+  assert.match(daemon, /readConnectStatus/u, '生命周期通过当前配置读回，不从恢复日志推断连接');
+  const readback = read(lib('connect/readback.mjs'));
+  assert.match(readback, /import \{ connectLaunchCommand \} from '\.\/artifacts\.mjs'/u);
+  assert.doesNotMatch(readback, /function launchCommand/u);
 });
 
 test('就地接入：API 客户端闭合校验 + 卡 per-client 接入/还原 + 外科编辑器原子写/备份/内联 token', () => {
@@ -81,7 +85,7 @@ test('就地接入：API 客户端闭合校验 + 卡 per-client 接入/还原 + 
   const inplace = read(lib('connect/inplace.mjs'));
   assert.match(inplace, /renameSync/u, '原子写（temp+rename）');
   assert.match(inplace, /connect-backup\.json/u, '原值备份落盘供还原');
-  const editors = read(lib('connect/editors.mjs'));
+  const editors = read(lib('connect/config/codex.mjs'));
   assert.match(editors, /experimental_bearer_token/u, 'codex 内联占位 token，免 shell env');
   assert.match(editors, /aios-gateway:begin/u, 'codex 块带标记，可识别/移除');
 });
@@ -100,7 +104,7 @@ test('模型来源：动态发现端点单一源 + 刷新 confirm 门 + 自定�
   const discovery = read(lib('routing/discovery.mjs'));
   assert.match(discovery, /resolveProviderModelsEndpoint/u, '模型列表端点单一源，尊重供应商路径格式');
   assert.match(discovery, /errors\.push/u, '某协议失败 fail-soft 不炸');
-  const protocols = read(lib('routing/protocols.mjs'));
+  const protocols = read(lib('providers/protocols.mjs'));
   assert.match(protocols, /export function protocolModelsEndpoint/u);
 });
 
@@ -108,7 +112,7 @@ test('real gateway handler forwards the actual port and rejects stale, stopped o
   const routeUrl = ui('src/app/api/model-routing/gateway/route.ts');
   const executable = stripTypeScriptTypes(read(routeUrl), { sourceUrl: routeUrl.href })
     .replace(/from '(\.[^']+)'/gu, (_match, specifier) => `from '${new URL(specifier, routeUrl).href}'`);
-  const { POST } = await import(`data:text/javascript;base64,${Buffer.from(executable).toString('base64')}`);
+  const { GET, POST } = await import(`data:text/javascript;base64,${Buffer.from(executable).toString('base64')}`);
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-gateway-api-'));
   const previous = process.env.AIOS_PROJECT_ROOT;
   const previousFetch = globalThis.fetch;
@@ -142,16 +146,42 @@ console.log(args[1] === 'gateway-status' ? fs.readFileSync('status.json', 'utf8'
     assert.equal((await post(body)).status, 400);
   }
   assert.equal((await post({ action: 'connect', port: 3127 })).status, 409);
+  for (const expectedRevision of [undefined, '', null, 123, [], 'a'.repeat(63), 'A'.repeat(64), 'g'.repeat(64)]) {
+    const response = await post({ action: 'connect', confirm: true, port: 3127, expectedRevision });
+    assert.equal(response.status, 400, `invalid revision ${JSON.stringify(expectedRevision)} must fail before CLI invocation`);
+    assert.equal(response.body.error, 'invalid-revision');
+  }
   assert.deepEqual(calls(), [], 'validation and confirmation precede every CLI invocation');
   setStatus({ running: true, port: 3127 });
-  assert.equal((await post({ action: 'connect', confirm: true, client: 'codex', port: 3127 })).body.ok, true);
-  assert.deepEqual(calls().at(-1), ['model-router', 'connect', '--json', '--port', '3127', '--client', 'codex']);
+  const text = '{"models":{},"providers":{}}\n';
+  const file = path.join(root, 'memory', 'specs', 'model-registry.json');
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, text);
+  const expectedRevision = createHash('sha256').update(text).digest('hex');
+  assert.equal((await (await GET()).json()).configuredRevision, expectedRevision, 'GET exposes the exact config snapshot used for confirmation');
+  fs.writeFileSync(file, 'invalid registry');
+  assert.equal((await (await GET()).json()).configuredRevision, null, 'unreadable config cannot retain a usable revision');
+  fs.writeFileSync(file, text);
+  const connect = body => post({ action: 'connect', confirm: true, port: 3127, expectedRevision, ...body });
+  assert.equal((await connect({ client: 'codex' })).body.ok, true);
+  assert.deepEqual(calls().at(-1), ['model-router', 'connect', '--json', '--port', '3127', '--client', 'codex', '--target', 'auto', '--expected-revision', expectedRevision]);
+  for (const target of ['model:Vendor%2fMixed', 'group:review%20team']) {
+    assert.equal((await connect({ client: 'codex', target })).body.ok, true);
+    assert.deepEqual(calls().at(-1), ['model-router', 'connect', '--json', '--port', '3127', '--client', 'codex', '--target', target.replace('%2f', '%2F'), '--expected-revision', expectedRevision]);
+  }
+  assert.equal((await connect({ client: 'pi', isolated: true })).body.ok, true);
+  assert.deepEqual(calls().at(-1).slice(-3), ['--expected-revision', expectedRevision, '--isolated']);
+  const beforeInvalid = calls();
+  for (const target of ['group:', 'model:bad%escape', 'model:raw/slash', {}, null]) {
+    assert.equal((await connect({ client: 'codex', target })).status, 400);
+  }
+  assert.deepEqual(calls(), beforeInvalid, 'invalid targets cannot reach even the status CLI');
   health = { ok: true, ready: false, configuredModels: 0, readyModels: 0 };
-  assert.equal((await post({ action: 'connect', confirm: true, client: 'codex', port: 3127 })).status, 409);
+  assert.equal((await connect({ client: 'codex' })).status, 409);
   assert.equal(calls().at(-1)[1], 'gateway-status', 'a listening but unready gateway cannot reach client writes');
   for (const status of [{ running: false, port: 3127 }, { running: true, port: 8686 }]) {
     setStatus(status);
-    assert.equal((await post({ action: 'connect', confirm: true, port: 3127 })).status, 409);
+    assert.equal((await connect({})).status, 409);
     assert.equal(calls().at(-1)[1], 'gateway-status', 'a changed gateway must never reach connect');
   }
   assert.equal((await post({ action: 'disconnect', confirm: true, client: 'codex' })).status, 200);

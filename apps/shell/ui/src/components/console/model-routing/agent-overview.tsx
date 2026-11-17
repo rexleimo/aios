@@ -140,7 +140,7 @@ export function AgentOverview({
         <div className="border-b border-rex-border p-4 sm:p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-[15px] font-semibold">客户端与模型</h2>
-            <TextLink onClick={() => navigate('routingConfig')}>配置默认与路由策略</TextLink>
+            <TextLink onClick={() => navigate('routingConfig')}>管理模型分配</TextLink>
           </div>
           <p className="mt-2 text-xs leading-5 text-rex-text-muted">
             最近请求仅查看日志末尾 50 条；未列出不代表从未请求。配置默认只展示实现角色，不代表所有角色或意图。

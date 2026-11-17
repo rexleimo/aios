@@ -8,7 +8,7 @@ import { EVENT_ID_PATTERN } from '../../../../../apps/shell/ui/src/lib/data/memo
 const ui = file => new URL(`../../../../../apps/shell/ui/src/${file}`, import.meta.url);
 
 test('current Console has one route and an understandable label for every destination', () => {
-  assert.deepEqual(PRIMARY_VIEWS.map(view => view.label), ['首页', 'AI 工具', '模型路由', 'MCP 服务', '记忆', '活动记录']);
+  assert.deepEqual(PRIMARY_VIEWS.map(view => view.label), ['首页', 'Agent 客户端', '模型路由', '资源库', '记忆', '活动记录']);
   for (const [id, view] of Object.entries(CONSOLE_VIEWS)) {
     assert.equal(viewForPath(view.href), id);
     assert.ok(view.label.length > 0 && view.title.length > 0);
@@ -16,6 +16,8 @@ test('current Console has one route and an understandable label for every destin
   assert.equal(new Set(Object.values(CONSOLE_VIEWS).map(view => view.href)).size, 8);
   // 配置是二级页：有独立路由但不进主导航（主导航仍 6 项）。
   assert.equal(CONSOLE_VIEWS.routingConfig.href, '/routing/config');
+  assert.equal(CONSOLE_VIEWS.routingConfig.label, '模型分配');
+  assert.equal(CONSOLE_VIEWS.routingConfig.title, '模型分配');
   assert.ok(!PRIMARY_VIEWS.some(view => view.id === 'routingConfig'));
   for (const path of ['/unknown', '/__proto__', '/constructor', '/memory/nested']) {
     assert.equal(viewForPath(path), undefined);
@@ -42,13 +44,15 @@ test('memory labels keep uncertainty, and the scope vocabulary matches the store
   assert.equal(EVENT_ID_PATTERN.test('m-path'), false);
 });
 
-test('the Console discloses real status and says out loud which side effect is not authorised', () => {
+test('the Console discloses real status and confirmed mutation boundaries', () => {
   const source = readFileSync(ui('components/console/console-workspace.tsx'), 'utf8');
   assert.match(source, /工作区 <strong/u);
   assert.match(source, /一次采集 '/u);
   assert.match(source, /\{facts\.totalMs\}ms/u, '页头要说得出本次采集耗时，不是只写个“实时”');
-  // 所有面板都接真之后，剩下的唯一门是写用户配置（路线图 P0-4 / 决策 4）。
-  assert.match(source, /此面板只读，写入尚未授权/u);
+  assert.match(source, /配置写入、接入与程序更新均需明确确认/u);
+  assert.doesNotMatch(source, /此面板只读，写入尚未授权/u);
+  assert.match(source, /mounted\.has\('tools'\)/u, 'client probes must be lazy mounted');
+  assert.match(source, /<ResourcesWorkspace facts=\{facts\}/u);
   assert.doesNotMatch(source, /示例数据 · 不读取私人文件 · 不修改真实配置/u, 'the global demo banner must not come back');
   assert.doesNotMatch(source, /刷新可重置体验/u);
   assert.doesNotMatch(source, /能力进程已连接|返回正式控制台|新版交互预览/u);
