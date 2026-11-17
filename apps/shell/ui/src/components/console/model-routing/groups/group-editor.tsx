@@ -26,7 +26,7 @@ export function GroupEditor({ group, groups, models, onCommit, onClose }: {
   };
   return <Modal open title={group ? `编辑模型组 · ${group.id}` : '新建模型组'} description='只修改共享草稿，使用底部「保存全部修改」写入磁盘。成员是具体模型，不支持嵌套组。' initialFocus={initialFocus} onOpenChange={(open) => { if (!open) onClose(); }}>
     <form className='min-w-0 space-y-5' onSubmit={(event) => { event.preventDefault(); if (!error) { onCommit({ ...draft, id }); onClose(); } }}>
-      <label className='block space-y-2 text-xs font-medium'><span>模型组 ID</span><Input ref={initialFocus} aria-label='模型组 ID' value={draft.id} readOnly={!!group} onChange={(event) => setDraft({ ...draft, id: event.target.value })} /></label>
+      <label className='flex flex-col gap-2 text-xs font-medium'><span>模型组 ID</span><Input ref={initialFocus} aria-label='模型组 ID' value={draft.id} readOnly={!!group} onChange={(event) => setDraft({ ...draft, id: event.target.value })} /></label>
       {group && <p className='text-xs leading-6 text-rex-text-muted'>已有 ID 保持不变，避免引用与历史元数据失联。需要新 ID 时请新建模型组并明确更新分配。</p>}
       {error && <p role='status' className='text-xs text-rex-orange'>{error}</p>}
       <label className='flex items-center gap-2 text-xs'><input type='checkbox' className='size-4 accent-rex-cyan' checked={draft.enabled !== false} onChange={(event) => setDraft({ ...draft, enabled: event.target.checked })} />启用模型组</label>

@@ -24,7 +24,7 @@ export function ClientExceptions({ routing, roles, onEdit }: { routing: RoutingC
     <Panel className="p-5 sm:p-6">
       <SmallTitle action={<Badge tone="neutral">{entries.length} 个例外</Badge>}>客户端例外</SmallTitle>
       <div className="mb-5 grid min-w-0 gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-        <label className="block min-w-0 space-y-2 text-xs font-medium"><span>选择客户端</span>
+        <label className="flex min-w-0 flex-col gap-2 text-xs font-medium"><span>选择客户端</span>
           <Select aria-label="选择例外客户端" value={clientId} onValueChange={setClientId} options={clients.map((id) => ({ value: id, label: id }))} />
         </label>
         <Button variant="outline" size="sm" disabled={models.length === 0 || available.length === 0} onClick={() => onEdit({ role: available[0], clientId, adding: true })}><Plus size={14} />添加例外</Button>

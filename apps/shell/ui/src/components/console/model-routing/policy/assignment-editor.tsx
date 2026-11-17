@@ -34,7 +34,7 @@ export function AssignmentEditor({ target, roles, routing, onClose, onCommit }: 
   return (
     <Modal open initialFocus={initialFocus} onOpenChange={(open) => { if (!open) onClose(); }} title={`${target.adding ? '添加例外' : '修改分配'} · ${target.clientId || '全局'}${target.adding ? '' : ` / ${taskLabel(role)}`}`} description="只修改共享草稿，使用页面底部「保存全部修改」写入磁盘。">
       <form className="space-y-5" onSubmit={(event) => { event.preventDefault(); if (mode === 'model' && !validModel) return; onCommit(role, mode === 'model' ? modelId : mode === 'auto' ? 'auto' : '', target.clientId); onClose(); }}>
-        {target.adding && <label className="block space-y-2 text-xs font-medium">
+        {target.adding && <label className="flex flex-col gap-2 text-xs font-medium">
           <span>例外任务</span>
           <Select aria-label="例外任务" value={role || CONVERSATION} onValueChange={(value) => { setRole(value === CONVERSATION ? '' : value); setModelId(''); setMode('model'); }} options={availableRoles.map((task) => ({ value: task || CONVERSATION, label: taskLabel(task) }))} />
         </label>}

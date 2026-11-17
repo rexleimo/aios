@@ -136,6 +136,11 @@ test('routing groups work offline through the real routing panel, shared hook an
     await page.getByRole('button', { name: '新建模型组', exact: true }).click();
     const id = page.getByRole('textbox', { name: '模型组 ID', exact: true });
     assert.equal(await id.evaluate(element => element === document.activeElement), true);
+    const idLabel = page.getByRole('dialog').getByText('模型组 ID', { exact: true });
+    const labelBox = await idLabel.boundingBox();
+    const inputBox = await id.boundingBox();
+    assert.ok(labelBox && inputBox && inputBox.y - (labelBox.y + labelBox.height) >= 6,
+      'the ID label keeps a visible gap above the input');
     assert.equal(await page.getByRole('button', { name: '加入草稿', exact: true }).isDisabled(), true);
     await id.fill(' POOL ');
     await page.getByText('模型组 ID 已存在。', { exact: true }).waitFor();
