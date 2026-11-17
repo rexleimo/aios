@@ -1,27 +1,12 @@
-// scripts/lib/clients/mcp/server-writer.mjs — MCP 落点的通用写入门（w2）。
-//
-// 三层分工，谁都不越界：
-//   · `landing-schema.mjs`        回答「这个 (client, scope) 的桶在哪、哪些字段允许、能不能写」；
-//   · `formats/*-editor.mjs`      回答「怎么在不动其余字节的前提下增删一个条目」（json/toml/yaml 三种文本手术）；
-//   · 本文件把两者接起来，并保证四件事：白名单先过、`--dry-run` 真的不写盘、写盘前留原文备份、
-//     **卸掉自己装的条目后文件其余字节与安装前逐字节相同**（ADR 0008 验收 2）。
-//
-// 为什么要文本手术而不是 `JSON.parse → 改 → stringify`：现成的 `writeJsonConfig` 整份
-// `JSON.stringify(parsed, null, 2)` 重排（`codemap/targets/mcp-targets/json.mjs:38`），
-// 会把别人手写的条目换行、缩进、键序全改掉——那是以「管理」为名的格式化破坏。
-// YAML 族用 `yaml` 的 Document API（未改动节点保留原风格），TOML 族走行定位，同理。
-//
-// 还没接的落点如实返回 `format-not-wired`：只有 `format: 'none'` 这类没有文本形态的声明会走到这里，
-// 状态是机器可读的，不是注释里的自述——ADR 0008 不许把未验证的落点标绿。
-// 归属判定（谁的名字允许删）是 w3 账本的职责，本层只提供机械能力，不做所有权裁断。
-// 每客户端的字段归一化（gemini 的 startupTimeoutSec→timeout、zcode 的丢条目策略）属于 w5 收编时
-// 从各家私有写入器带上来的策略，本层只按 `landing-schema` 的白名单拒绝越界字段。
+// MCP text-surgery writer: landing whitelist, read-only planning, backup and checked commit.
+// Ownership belongs to install-policy; format editors preserve unrelated bytes (ADR 0008).
 import fs from 'node:fs';
 import path from 'node:path';
+import { createHash, randomUUID } from 'node:crypto';
 
 import { isDeepStrictEqual } from 'node:util';
 
-import { writeFileAtomic } from '../../environment/fs/atomic-write.mjs';
+import { writeFileChecked } from '../../environment/fs/checked-atomic-write.mjs';
 import { assertEntryAllowed, resolveLanding } from './landing-schema.mjs';
 import { familyFor, listFormatFamilies } from './formats/families.mjs';
 
@@ -285,7 +270,7 @@ export function planServerEdits({ clientId, scope, filePath, edits = [], shape =
  * 同名条目已存在且形状相同 → `unchanged`（幂等）；形状不同 → `conflict`（等 w3 的归属裁断，不覆盖）。
  * 写盘只是「先算后写」的后半段：计算全在 `planUpsertOnText`，本函数负责备份与原子写。
  */
-export async function writeServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets } = {}) {
+export async function writeServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets, checkRevision } = {}) {
   const gated = gate({ clientId, scope, entry, action: 'write', targets });
   if (!gated.ok) {
     if (gated.notWired) return gated.notWired;
@@ -315,11 +300,11 @@ export async function writeServer({ clientId, scope, serverName, entry, filePath
   }
   const backupPath = exists ? await backupOriginal(filePath, raw, backupDir) : '';
   if (!exists) await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
-  await writeFileAtomic(filePath, planned.text);
+  if (!await writeFileChecked(filePath, planned.text, { original: exists ? raw : null, checkRevision })) return { status: 'stale-preview', reason: 'config-or-ledger-changed', backupPath };
   // `createdBucket` 回传给调用方：w3 账本据此决定卸载最后一条时能不能连桶一起收掉。
   // `createdRootKeys` 同理——本次补的桶外根键（opencode 的 `experimental.mcp_timeout`）也要有 provenance，
   // 否则「卸载回到原字节」这条门在一个原本没有 `experimental` 的文件上永远过不去。
-  return { status: exists ? 'updated' : 'created', serverName, backupPath, createdBucket: planned.createdBucket, createdRootKeys: planned.createdRootKeys, ...describe(landing) };
+  return { status: exists ? 'updated' : 'created', serverName, backupPath, committedFingerprint: fingerprint(planned.text), createdBucket: planned.createdBucket, createdRootKeys: planned.createdRootKeys, ...describe(landing) };
 }
 
 /**
@@ -328,7 +313,7 @@ export async function writeServer({ clientId, scope, serverName, entry, filePath
  * 因此「谁允许被替换」不能由本层裁断——`install-policy` 先做完归属判定（只覆盖 AIOS 登记过的
  * `kept-differs`/`conflict` + `restore`），才允许走到这里。条目不存在即 `not-found`，不顺手插入。
  */
-export async function replaceServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets } = {}) {
+export async function replaceServer({ clientId, scope, serverName, entry, filePath, dryRun = false, backupDir = '', targets, checkRevision } = {}) {
   const gated = gate({ clientId, scope, entry, action: 'replace', targets });
   if (!gated.ok) {
     if (gated.notWired) return gated.notWired;
@@ -364,12 +349,12 @@ export async function replaceServer({ clientId, scope, serverName, entry, filePa
   }
   if (dryRun) return { status: 'planned', serverName, bytes: text.length, ...describe(landing) };
   const backupPath = await backupOriginal(filePath, raw, backupDir);
-  await writeFileAtomic(filePath, text);
-  return { status: 'replaced', serverName, backupPath, ...describe(landing) };
+  if (!await writeFileChecked(filePath, text, { original: raw, checkRevision })) return { status: 'stale-preview', reason: 'config-or-ledger-changed', backupPath };
+  return { status: 'replaced', serverName, backupPath, committedFingerprint: fingerprint(text), ...describe(landing) };
 }
 
 /** 卸载一个条目：只有真删掉了才落盘，其余字节必须原样。 */
-export async function removeServer({ clientId, scope, serverName, filePath, dryRun = false, backupDir = '', dropEmptyBucket = false, dropRootKeys: dropRootKeyPaths = [], rootKeyValues = {}, targets } = {}) {
+export async function removeServer({ clientId, scope, serverName, filePath, dryRun = false, backupDir = '', dropEmptyBucket = false, dropRootKeys: dropRootKeyPaths = [], rootKeyValues = {}, targets, checkRevision } = {}) {
   const gated = gate({ clientId, scope, entry: null, action: 'remove', targets });
   if (!gated.ok) return gated.notWired || { status: 'rejected', reason: gated.verdict.reason, ...describe(gated.landing) };
   const { landing, family } = gated;
@@ -381,15 +366,18 @@ export async function removeServer({ clientId, scope, serverName, filePath, dryR
   if (planned.status !== 'removed') return { status: 'rejected', reason: planned.reason, ...describe(landing) };
   if (dryRun) return { status: 'planned', serverName, residue: planned.residue, droppedRootKeys: planned.droppedRootKeys, ...describe(landing) };
   const backupPath = await backupOriginal(filePath, raw, backupDir);
-  await writeFileAtomic(filePath, planned.text);
-  return { status: 'removed', serverName, backupPath, residue: planned.residue, droppedRootKeys: planned.droppedRootKeys, ...describe(landing) };
+  if (!await writeFileChecked(filePath, planned.text, { original: raw, checkRevision })) return { status: 'stale-preview', reason: 'config-or-ledger-changed', backupPath };
+  return { status: 'removed', serverName, backupPath, committedFingerprint: fingerprint(planned.text), residue: planned.residue, droppedRootKeys: planned.droppedRootKeys, ...describe(landing) };
 }
-/** 备份沿用既有纪律：原文整份留底，回滚是文件复制而不是凭记忆重建。 */
+function fingerprint(text) {
+  return createHash('sha256').update(text).digest('hex');
+}
+// Exclusive creation never follows or changes an existing backup path's permissions.
 async function backupOriginal(filePath, raw, backupDir) {
   const dir = backupDir || path.join(path.dirname(filePath), '.aios-config-backups');
   await fs.promises.mkdir(dir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/gu, '-');
-  const backupPath = path.join(dir, `${path.basename(filePath)}.${stamp}.bak`);
-  await fs.promises.writeFile(backupPath, raw, 'utf8');
+  const backupPath = path.join(dir, `${path.basename(filePath)}.${stamp}.${randomUUID()}.bak`);
+  await fs.promises.writeFile(backupPath, raw, { encoding: 'utf8', mode: 0o600, flag: 'wx' });
   return backupPath;
 }

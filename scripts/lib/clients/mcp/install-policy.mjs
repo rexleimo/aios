@@ -1,11 +1,11 @@
 // scripts/lib/clients/mcp/install-policy.mjs — 归属门 + 允许集合门 + w2 写入门的合成层（w3）。
 //
-// 顺序就是安全顺序，任何一步失败都不许留下「配置已改但没人认领」的孤儿：
+// Safety order: refuse unsafe writes; compensate only while committed bytes still match.
 //   1. 每客户端允许集合（`entry-classes.mjs`）——身份不对的条目连落点都不去碰；
 //   2. 账本先读得到才允许动磁盘：读不到 = `ledger-unavailable`，**只读面**（计划的回退点）；
 //   3. 归属判定（`ledger.mjs` 的 absent/owned/kept-differs/external/conflict）；
 //   4. 落点白名单 + 文本手术（`server-writer.mjs`）；
-//   5. 记账；记账失败即回滚配置（有备份用备份，本次新建的文件则删掉自己建的那份）。
+//   5. Save ownership; on failure restore/delete unchanged committed bytes or report recovery.
 //
 // 三条产品性拒绝，都是 ADR 0008 决策 3/5/8 的直接兑现，不给糊话理由：
 //   · `external` 未被接管 → 不写不删，`nextAction` 指 `adopt`；
@@ -15,6 +15,10 @@
 // `force` / `adopt` 是**人工决定**的入口，必须由上层（w4 CLI、w6 界面）显式传 true；
 // 本层绝不从关键词或默认值里猜出「用户大概想覆盖」。
 import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { createHash } from 'node:crypto';
+import { readFileSnapshot, writeFileChecked } from '../../environment/fs/checked-atomic-write.mjs';
 
 import { readServers, removeServer, replaceServer, writeServer } from './server-writer.mjs';
 import { normalizeEntryForLanding } from './entry-transforms.mjs';
@@ -25,12 +29,65 @@ import {
   fingerprintMcpEntry,
   ledgerKeyFor,
   readMcpLedger,
+  resolveMcpLedgerPath,
   recordOwnership,
   releaseOwnership,
   touchVerified,
 } from './ledger.mjs';
 
+function transactionRevision(files) {
+  const hash = createHash('sha256');
+  for (const file of files) {
+    let bytes;
+    try { bytes = fs.readFileSync(file); } catch (error) {
+      if (error.code !== 'ENOENT') { error.mcpRevisionFile = file; throw error; }
+      bytes = null;
+    }
+    hash.update(JSON.stringify([file, bytes?.toString('base64') ?? null]));
+  }
+  return hash.digest('hex');
+}
+
+// Cooperative CLI transactions lock both resources, including the shared client ledger.
+// Never steal an old lock: a crashed writer requires inspection, not a timed takeover.
+async function transact(options, operation) {
+  const ledgerFile = path.resolve(resolveMcpLedgerPath(options.clientId, options));
+  const files = [path.resolve(options.filePath), ledgerFile].sort();
+  const locks = [];
+  try {
+    if (!options.dryRun) {
+      const deadline = Date.now() + 5000;
+      for (const file of files) {
+        const lock = path.join(os.tmpdir(), `aios-mcp-${createHash('sha256').update(file).digest('hex')}.lock`);
+        for (;;) {
+          try { fs.closeSync(fs.openSync(lock, 'wx', 0o600)); locks.push(lock); break; } catch (error) {
+            if (error.code !== 'EEXIST') throw error;
+            if (Date.now() >= deadline) return { status: 'rejected', reason: 'transaction-busy' };
+            await new Promise((resolve) => setTimeout(resolve, 25));
+          }
+        }
+      }
+    }
+    const revision = transactionRevision(files);
+    const checkRevision = () => transactionRevision(files) === revision;
+    if (options.expectedRevision && options.expectedRevision !== revision) return { status: 'stale-preview', reason: 'preview-revision-changed' };
+    const result = await operation({ ...options, checkRevision });
+    if (options.dryRun && !checkRevision()) return { status: 'stale-preview', reason: 'preview-revision-changed', dryRun: true };
+    return options.dryRun ? { ...result, revision } : result;
+  } catch (error) {
+    if (error.mcpRevisionFile === ledgerFile) return ledgerUnavailable(error);
+    return { status: 'rejected', reason: 'transaction-failed', detail: error.message };
+  } finally {
+    for (const lock of locks.reverse()) fs.rmSync(lock, { force: true });
+  }
+}
+
+export const installServer = (options = {}) => transact(options, install);
+export const uninstallServer = (options = {}) => transact(options, uninstall);
+
 function ledgerUnavailable(error) {
+  if (error?.code === 'MCP_LEDGER_INVALID') return { status: 'rejected', reason: 'ledger-invalid' };
+  if (error?.code === 'MCP_LEDGER_CHANGED') return { status: 'conflict', reason: 'ledger-revision-changed' };
   return { status: 'rejected', reason: 'ledger-unavailable', detail: error instanceof Error ? error.message : String(error) };
 }
 
@@ -49,19 +106,24 @@ function landingFor(clientId, scope) {
 }
 
 /** 配置改完但账本没记上时的补偿：能回滚就回滚，不能就把事实说清楚。 */
-async function rollbackConfig(filePath, backupPath, existedBefore) {
+async function rollbackConfig(filePath, backupPath, existedBefore, committedFingerprint) {
+  const incomplete = (reason) => ({ rolledBack: 'rollback-incomplete', recovery: { reason, configPath: filePath, backupPath } });
   try {
+    const committed = readFileSnapshot(filePath);
+    if (!committed || createHash('sha256').update(committed).digest('hex') !== committedFingerprint) return incomplete('config-changed-after-commit');
     if (existedBefore && backupPath) {
-      await fs.promises.copyFile(backupPath, filePath);
-      return 'restored-from-backup';
+      const original = await fs.promises.readFile(backupPath);
+      if (!await writeFileChecked(filePath, original, { original: committed })) return incomplete('config-changed-after-commit');
+      return { rolledBack: 'restored-from-backup' };
     }
     if (!existedBefore) {
-      await fs.promises.rm(filePath, { force: true });
-      return 'removed-created-file';
+      // No await since the post-commit byte check. Never delete another writer's edit.
+      fs.unlinkSync(filePath);
+      return { rolledBack: 'removed-created-file' };
     }
-    return 'no-rollback-available';
-  } catch (error) {
-    return `rollback-failed: ${error instanceof Error ? error.message : String(error)}`;
+    return incomplete('no-rollback-available');
+  } catch {
+    return incomplete('rollback-io-failed');
   }
 }
 
@@ -82,13 +144,13 @@ function refuseExternal({ verdict, serverName, message }) {
   return { status: 'refused-external', classification: verdict, reason: 'not-owned-by-aios', nextAction: 'adopt', message, serverName };
 }
 
-/**
- * 账本写不进去时的补偿，两处写路径共用：配置退回改前，理由照实说。
- * 之前这里有两段几乎一样的 catch——同一件事写两遍就是两条会各自漂移的补偿路径。
- */
-async function failWithRollback({ error, filePath, backupPath, existedBefore, serverName, message }) {
-  const rolledBack = await rollbackConfig(filePath, backupPath, existedBefore);
-  return { ...ledgerUnavailable(error), rolledBack, serverName, message };
+// Both mutation paths report incomplete compensation without claiming config was restored.
+async function failWithRollback({ error, filePath, backupPath, existedBefore, committedFingerprint, serverName }) {
+  const rollback = await rollbackConfig(filePath, backupPath, existedBefore, committedFingerprint);
+  const message = rollback.recovery
+    ? 'Ledger save failed; rollback incomplete. Preserve the current config and inspect the recovery paths.'
+    : 'Ledger save failed; config rolled back.';
+  return { ...ledgerUnavailable(error), ...rollback, backupPath, serverName, message };
 }
 
 /** 「核验时间刷新」失败不改变磁盘事实：条目在不在、归属是谁都已经判完了，只把没记上说出来。 */
@@ -106,10 +168,11 @@ async function markVerified(params, options) {
  * `adopt: true` = 人工显式接管：外部条目先按磁盘现状记账，**不覆盖**；接管后要 AIOS 形状仍需 `restore`。
  * `restore: true` = 对已属于 AIOS 但形状过期的条目先卸再装（只在 owned/conflict 路径生效）。
  */
-export async function installServer({
+async function install({
   clientId, scope, serverName, entry, filePath,
   dryRun = false, backupDir = '', ledgerDir = '', writeImpl, targets,
   browserRuntimeInstalled = false, adopt = false, restore = false,
+  checkRevision,
 } = {}) {
   const ledgerOptions = { ledgerDir, writeImpl };
   const allowed = assertEntryClassAllowed({ clientId, serverName, browserRuntimeInstalled });
@@ -147,10 +210,12 @@ export async function installServer({
   if (read.status !== 'ok' && read.status !== 'absent') return { ...read, serverName };
   const actual = read.entries?.[serverName] ?? null;
   const existedBefore = read.status === 'ok';
+  if (!checkRevision()) return { status: 'stale-preview', reason: 'preview-revision-changed' };
   const verdict = classifyMcpOwnership({ actual, desired, ledgerEntry: record });
+  if (opened.ledger.corrupt) return { status: actual && !adopt ? 'refused-external' : 'rejected', reason: 'ledger-invalid', classification: verdict, serverName };
 
   if (verdict.status === 'owned' && !verdict.desiredFingerprint) {
-    const ledgerNote = await markVerified({ clientId, scope, serverName, fingerprint: verdict.actualFingerprint }, ledgerOptions);
+    const ledgerNote = dryRun ? '' : await markVerified({ clientId, scope, serverName, fingerprint: verdict.actualFingerprint }, ledgerOptions);
     return { status: 'unchanged', classification: verdict, entryClass: allowed.entryClass, serverName, dryRun, ledgerNote };
   }
   if (verdict.status === 'external' && !adopt) {
@@ -183,6 +248,7 @@ export async function installServer({
   // 接管路径：只按磁盘现状记账，不动配置内容。`kept-differs` 走这里 = 「认下用户改的这份」，
   // 与 `restore`（按 AIOS 形状重装）是两个人工决定，二者互斥。
   if (adopt && !restore && (verdict.status === 'external' || verdict.status === 'kept-differs')) {
+    if (!checkRevision()) return { status: 'stale-preview', reason: 'preview-revision-changed' };
     try {
       const recorded = await recordOwnership({ clientId, scope, serverName, entry: actual, configPath: filePath, landing: landingFor(clientId, scope).landing, origin: 'adopted' }, ledgerOptions);
       return { status: 'adopted', classification: classifyMcpOwnership({ actual, desired, ledgerEntry: recorded.record }), record: recorded.record, wrote: false, serverName };
@@ -198,8 +264,8 @@ export async function installServer({
   const replacing = restore && (verdict.status === 'conflict' || verdict.status === 'kept-differs');
 
   const written = replacing
-    ? await replaceServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets })
-    : await writeServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets });
+    ? await replaceServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets, checkRevision })
+    : await writeServer({ clientId, scope, serverName, entry: desired, filePath, backupDir, targets, checkRevision });
   if (written.status === 'unchanged') {
     const ledgerNote = await markVerified({ clientId, scope, serverName, fingerprint: fingerprintMcpEntry(desired) }, ledgerOptions);
     return { ...written, classification: verdict, entryClass: allowed.entryClass, serverName, ledgerNote };
@@ -230,7 +296,7 @@ export async function installServer({
       serverName,
     };
   } catch (error) {
-    return failWithRollback({ error, filePath, backupPath: written.backupPath, existedBefore, serverName, message: '账本写不进去，配置已回滚：没有归属记录的改动不留在线上。' });
+    return failWithRollback({ error, filePath, backupPath: written.backupPath, existedBefore, committedFingerprint: written.committedFingerprint, serverName });
   }
 }
 
@@ -239,9 +305,10 @@ export async function installServer({
  * `force` 是人工覆盖位，但只覆盖一种：`kept-differs`（AIOS 登记过、之后被人改过）。
  * 从未归 AIOS 的 `external` 条目删前必须 `adopt`，force 不是绕过接管的口子——用户的规则是「别人的要显式接管」。
  */
-export async function uninstallServer({
+async function uninstall({
   clientId, scope, serverName, filePath,
   dryRun = false, backupDir = '', ledgerDir = '', writeImpl, targets, adopt = false, force = false,
+  checkRevision,
 } = {}) {
   const ledgerOptions = { ledgerDir, writeImpl };
   const opened = await openLedger(clientId, ledgerOptions);
@@ -251,7 +318,9 @@ export async function uninstallServer({
   const read = readServers({ clientId, scope, filePath, targets });
   if (read.status !== 'ok' && read.status !== 'absent') return { ...read, serverName };
   const actual = read.entries?.[serverName] ?? null;
+  if (!checkRevision()) return { status: 'stale-preview', reason: 'preview-revision-changed' };
   const verdict = classifyMcpOwnership({ actual, ledgerEntry: record });
+  if (opened.ledger.corrupt) return { status: actual && !adopt ? 'refused-external' : 'rejected', reason: 'ledger-invalid', classification: verdict, serverName };
 
   if (verdict.status === 'absent') return { status: 'not-found', classification: verdict, serverName };
   if (verdict.status === 'external' && !adopt) {
@@ -280,7 +349,7 @@ export async function uninstallServer({
   }
 
   const off = await removeServer({
-    clientId, scope, serverName, filePath, backupDir,
+    clientId, scope, serverName, filePath, backupDir, checkRevision,
     dropEmptyBucket: record?.bucketCreated === true, targets, ...rootKeyProvenance,
   });
   if (off.status !== 'removed') return { ...off, classification: verdict, serverName };
@@ -290,7 +359,7 @@ export async function uninstallServer({
     return { status: 'uninstalled', classification: verdict, backupPath: off.backupPath, residue: off.residue, droppedRootKeys: off.droppedRootKeys, released: released.released, serverName };
   } catch (error) {
     // 卸到这一步配置文件必然是存在的（absent 早在上面就走掉了），所以 existedBefore 传 true。
-    return failWithRollback({ error, filePath, backupPath: off.backupPath, existedBefore: true, serverName, message: '账本写不进去，删除已回滚。' });
+    return failWithRollback({ error, filePath, backupPath: off.backupPath, existedBefore: true, committedFingerprint: off.committedFingerprint, serverName });
   }
 }
 

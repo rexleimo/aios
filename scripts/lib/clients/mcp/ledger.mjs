@@ -17,9 +17,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { writeFileAtomic } from '../../environment/fs/atomic-write.mjs';
+import { readFileSnapshot, writeFileChecked } from '../../environment/fs/checked-atomic-write.mjs';
 
 export const MCP_LEDGER_SCHEMA_VERSION = 1;
+// Keep exact read bytes out of projected/serialized ownership records.
+const snapshots = new WeakMap();
 
 export function resolveMcpLedgerDir({ env = process.env, homeDir = os.homedir(), ledgerDir = '' } = {}) {
   if (ledgerDir) return ledgerDir;
@@ -39,6 +41,42 @@ export function ledgerKeyFor(scope, serverName) {
 
 function emptyLedger(clientId) {
   return { schemaVersion: MCP_LEDGER_SCHEMA_VERSION, clientId, entries: {}, missing: true, corrupt: '' };
+}
+
+const isRecord = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+function validOwnershipRecord(record) {
+  if (!isRecord(record) || typeof record.fingerprint !== 'string' || !/^[a-f0-9]{64}$/u.test(record.fingerprint)) return false;
+  const strings = ['scope', 'serverName', 'configPath', 'entryPath', 'format', 'note'];
+  return strings.every((key) => record[key] === undefined || typeof record[key] === 'string')
+    && (record.origin === undefined || ['aios', 'adopted'].includes(record.origin))
+    && ['createdAt', 'lastVerifiedAt'].every((key) => record[key] == null || typeof record[key] === 'string')
+    && (record.bucketCreated === undefined || typeof record.bucketCreated === 'boolean')
+    && (record.rootKeysCreated === undefined || (Array.isArray(record.rootKeysCreated) && record.rootKeysCreated.every((key) => typeof key === 'string')))
+    && (record.rootKeyValues === undefined || isRecord(record.rootKeyValues));
+}
+
+function ledgerProblem(ledger) {
+  if (!isRecord(ledger) || ledger.schemaVersion !== MCP_LEDGER_SCHEMA_VERSION) return 'schema-version-mismatch';
+  if (!isRecord(ledger.entries)) return 'invalid-entries';
+  return Object.values(ledger.entries).every(validOwnershipRecord) ? '' : 'invalid-ownership-record';
+}
+
+function decodeLedger(clientId, bytes) {
+  if (bytes === null) return emptyLedger(clientId);
+  try {
+    const parsed = JSON.parse(String(bytes).replace(/^\uFEFF/u, ''));
+    const corrupt = ledgerProblem(parsed);
+    return { ...emptyLedger(clientId), missing: false, corrupt, entries: corrupt ? {} : parsed.entries };
+  } catch (error) {
+    return { ...emptyLedger(clientId), missing: false, corrupt: `unparsable: ${error.message}` };
+  }
+}
+
+function assertWritableLedger(ledger) {
+  // A caller clearing the public diagnostic cannot turn an invalid read into ownership.
+  if (snapshots.get(ledger)?.corrupt || ledger?.corrupt || ledgerProblem(ledger)) {
+    throw Object.assign(new Error('MCP ledger is unreadable or unsupported; preserve it for manual recovery'), { code: 'MCP_LEDGER_INVALID' });
+  }
 }
 
 /** 全字段归一化：递归按键名排序，去掉 undefined，数组保持原序。 */
@@ -89,22 +127,16 @@ export function classifyMcpOwnership({ actual, desired, ledgerEntry } = {}) {
 /** 读账本。文件不存在=空账本；解析失败=空账本但带 `corrupt` 标记，**绝不静默重写**。 */
 export async function readMcpLedger(clientId, { readFileImpl = fs.promises.readFile, ...options } = {}) {
   const filePath = resolveMcpLedgerPath(clientId, options);
-  let raw;
+  let bytes;
   try {
-    raw = String(await readFileImpl(filePath, 'utf8')).replace(/^﻿/u, '');
+    bytes = Buffer.from(await readFileImpl(filePath));
   } catch (error) {
-    if (['ENOENT', 'ENOTDIR'].includes(error?.code)) return emptyLedger(clientId);
-    throw error;
+    if (!['ENOENT', 'ENOTDIR'].includes(error?.code)) throw error;
+    bytes = null;
   }
-  try {
-    const parsed = JSON.parse(raw);
-    if (parsed?.schemaVersion !== MCP_LEDGER_SCHEMA_VERSION || !parsed.entries || typeof parsed.entries !== 'object') {
-      return { ...emptyLedger(clientId), missing: false, corrupt: 'schema-version-mismatch' };
-    }
-    return { schemaVersion: MCP_LEDGER_SCHEMA_VERSION, clientId: String(clientId), entries: parsed.entries, missing: false, corrupt: '' };
-  } catch (error) {
-    return { ...emptyLedger(clientId), missing: false, corrupt: `unparsable: ${error.message}` };
-  }
+  const ledger = decodeLedger(String(clientId), bytes);
+  snapshots.set(ledger, { filePath, bytes, corrupt: ledger.corrupt });
+  return ledger;
 }
 
 /**
@@ -152,11 +184,21 @@ function sanitizeRecord(record) {
  * 测试靠它走「配置已写、账本写失败」这条回滚分支——那不是变态输入，磁盘满和只读挂载每天都发生。
  */
 export async function writeMcpLedger(clientId, ledger, options = {}) {
+  assertWritableLedger(ledger);
   const filePath = resolveMcpLedgerPath(clientId, options);
+  const snapshot = snapshots.get(ledger);
+  const original = snapshot?.filePath === filePath ? snapshot.bytes : readFileSnapshot(filePath);
+  // Direct saves without a read snapshot must not overwrite an unsupported destination.
+  assertWritableLedger(decodeLedger(clientId, original));
   const entries = {};
   for (const [key, record] of Object.entries(ledger?.entries || {})) entries[key] = sanitizeRecord(record);
-  const writeImpl = options.writeImpl || writeFileAtomic;
-  await writeImpl(filePath, `${JSON.stringify({ schemaVersion: MCP_LEDGER_SCHEMA_VERSION, clientId: String(clientId), entries }, null, 2)}\n`);
+  const text = `${JSON.stringify({ schemaVersion: MCP_LEDGER_SCHEMA_VERSION, clientId: String(clientId), entries }, null, 2)}\n`;
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  if (options.writeImpl) await options.writeImpl(filePath, text);
+  else if (!await writeFileChecked(filePath, text, { original })) {
+    throw Object.assign(new Error('MCP ledger changed before save'), { code: 'MCP_LEDGER_CHANGED' });
+  }
+  snapshots.set(ledger, { filePath, bytes: Buffer.from(text), corrupt: '' });
   return filePath;
 }
 
@@ -173,6 +215,7 @@ export async function readOwnershipRecord({ clientId, scope, serverName }, optio
  */
 export async function recordOwnership({ clientId, scope, serverName, entry, configPath, landing, origin = 'aios', bucketCreated = false, rootKeysCreated = [], rootKeyValues = {}, note = '' }, options = {}) {
   const ledger = await readMcpLedger(clientId, options);
+  assertWritableLedger(ledger);
   const now = new Date().toISOString();
   const key = ledgerKeyFor(scope, serverName);
   const previous = ledger.entries[key];
@@ -191,7 +234,6 @@ export async function recordOwnership({ clientId, scope, serverName, entry, conf
     lastVerifiedAt: now,
     note,
   });
-  ledger.corrupt = '';
   ledger.missing = false;
   const filePath = await writeMcpLedger(clientId, ledger, options);
   return { record: ledger.entries[key], ledgerPath: filePath, recoveredFromCorrupt: Boolean(previous === null && options.recoveredFromCorrupt) };
@@ -200,6 +242,7 @@ export async function recordOwnership({ clientId, scope, serverName, entry, conf
 /** 放一条归属：AIOS 不再声称拥有它，条目变回 external（不删配置里的条目）。 */
 export async function releaseOwnership({ clientId, scope, serverName }, options = {}) {
   const ledger = await readMcpLedger(clientId, options);
+  assertWritableLedger(ledger);
   const key = ledgerKeyFor(scope, serverName);
   if (!ledger.entries[key]) return { released: false, reason: 'no-ownership-record' };
   delete ledger.entries[key];
@@ -210,6 +253,7 @@ export async function releaseOwnership({ clientId, scope, serverName }, options 
 /** 核验用：刷新 `lastVerifiedAt`，并把本次看到的指纹记下来（doctor/对象表状态列读它）。 */
 export async function touchVerified({ clientId, scope, serverName, fingerprint }, options = {}) {
   const ledger = await readMcpLedger(clientId, options);
+  assertWritableLedger(ledger);
   const key = ledgerKeyFor(scope, serverName);
   if (!ledger.entries[key]) return { updated: false, reason: 'no-ownership-record' };
   ledger.entries[key] = { ...ledger.entries[key], lastVerifiedAt: new Date().toISOString(), fingerprint: fingerprint || ledger.entries[key].fingerprint };

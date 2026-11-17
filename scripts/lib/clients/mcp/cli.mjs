@@ -109,6 +109,7 @@ async function projectLanding({ clientId, scope, homes, projectRoot, ledgerDir, 
 
 /** 列出每个落点的真实状态。控制台的统一对象表（w6）读的就是这个结构。 */
 export async function listMcpState({ client = 'all', scope = 'all', homeDir = os.homedir(), env = process.env, projectRoot = process.cwd(), ledgerDir = '', file = '', targets } = {}) {
+  ledgerDir = resolveMcpLedgerDir({ env, homeDir, ledgerDir });
   const homes = getClientHomes(env, homeDir);
   // `--file` 只在「选中了一个落点」时才成立：铺满全表时一个文件路径对 18 个落点没有意义，
   // 静默忽略会让人以为读的是那个文件。
@@ -176,7 +177,7 @@ export async function runMcpCommand(options = {}, { projectRoot = process.cwd(),
     const ledgerDir = resolveMcpLedgerDir({ env, homeDir: home, ledgerDir: merged.ledgerDir || '' });
     const ledger = [];
     for (const clientId of clients) {
-      const read = await readMcpLedger(clientId, { ledgerDir: merged.ledgerDir || '' });
+      const read = await readMcpLedger(clientId, { ledgerDir });
       ledger.push({ clientId, path: path.join(ledgerDir, `${clientId}.json`), missing: read.missing === true, corrupt: read.corrupt || '' });
     }
     const corrupt = ledger.some((item) => item.corrupt);
@@ -204,7 +205,8 @@ export async function runMcpCommand(options = {}, { projectRoot = process.cwd(),
       filePath,
       dryRun: merged.dryRun === true,
       backupDir: merged.backupDir || '',
-      ledgerDir: merged.ledgerDir || '',
+      ledgerDir: resolveMcpLedgerDir({ env, homeDir: home, ledgerDir: merged.ledgerDir || '' }),
+      expectedRevision: env.AIOS_MCP_EXPECTED_REVISION || '',
       targets: merged.targets,
       browserRuntimeInstalled: merged.browserRuntime === true,
     },
