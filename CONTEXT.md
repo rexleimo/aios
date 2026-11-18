@@ -312,3 +312,17 @@
 
 **为什么**：管理面最大的诚信风险是把「没做成」显示成「做完了」。这两个状态是仓库里已有的诚实形状，界面必须继承，而不是用进度条掩盖。
 
+
+## 网关 Auto（省钱路由）
+
+### AIOS Auto（按意图分流）vs Claude Code auto mode（权限审查）
+
+**定义**：AIOS Auto = 客户端目标为 `aios-auto` 时，网关在每个新用户轮由分类器模型报出意图（`intentRouting`），把该轮及其工具续轮路由到意图绑定的模型；Claude Code auto mode = Claude Code 自己的「动作是否放行」审查分类器（`dangerous-tool-use-*` beta + `safeguards` 字段，或本地 `<transcript>`/`<block>` 分类请求），与选模型无关。
+
+**为什么**：两者都叫 auto，ADR 0004 的「auto mode」实指前者；magpie 的 `internal/gateway/automode.go` 处理的是后者（剥离非 Anthropic 上游的 safeguards、接入时写 `CLAUDE_CODE_AUTO_MODE_SERVER=0`、给审查请求关推理）。混用会让「auto 已落地」掩盖 Claude Code 经网关走非 Claude 模型时 auto mode 被拒/卡审批的风险。
+
+### 可省钱客户端（relay 客户端）
+
+**定义**：`CLIENT_DEFINITIONS` 中 `modelRouting:'relay'` 的客户端——claude、codex、opencode、hermes、pi；只有它们的请求经网关、可被 AIOS Auto 分配到不同模型。`own` 客户端（gemini、grok、workbuddy、zcode、qoder）账号绑定，不在省钱路由范围。
+
+**为什么**：用户目标是「多客户端自由分配到不同模型以省钱」（2026-11-18 /grill）；省钱面的边界由客户端能否改端点决定，不是由界面能否列出它决定。
