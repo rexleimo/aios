@@ -88,6 +88,10 @@ For browser tasks, use this operating pattern unless the user explicitly asks ot
     hooks: {
       SessionStart: ['node omc-hook.mjs'],
     },
+    statusLine: {
+      type: 'command',
+      command: 'node scripts/aios.mjs plan statusline',
+    },
   });
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'gemini', 'project', 'GEMINI.md'), 'Gemini compatibility instructions.\n', 'utf8');
   await writeFile(path.join(rootDir, 'client-sources', 'native-base', 'opencode', 'project', 'AIOS.md'), 'Opencode compatibility instructions.\n', 'utf8');
@@ -207,6 +211,56 @@ test('native sync merges claude settings.local.json without clobbering non-AIOS 
   assert.equal(Array.isArray(settings.aiosNative.hooks.SessionStart), true);
   assert.match(claudeDoc, /Local intro/);
   assert.match(claudeDoc, /AIOS NATIVE BEGIN/);
+});
+
+/* 中文注释：Claude Code 只读顶层 statusLine，`aiosNative.statusLine` 永不生效。
+ * 这条锁住「真实槽位被写上」这件事，否则回归会悄悄退回只写账本键的状态。 */
+test('native sync writes a top-level claude statusLine without touching user keys', async () => {
+  const rootDir = await makeTemp('aios-native-sync-claude-statusline-');
+  await seedNativeRoot(rootDir);
+  await writeJson(path.join(rootDir, '.claude', 'settings.local.json'), {
+    permissions: { allow: ['Bash(git:*)'] },
+  });
+
+  await syncNativeEnhancements({ rootDir, client: 'claude' });
+  const settings = JSON.parse(await readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
+
+  assert.equal(settings.statusLine.type, 'command');
+  assert.match(settings.statusLine.command, /plan statusline$/);
+  assert.deepEqual(settings.permissions.allow, ['Bash(git:*)']);
+  assert.equal(settings.aiosNative.statusLine.type, 'command');
+
+  // 幂等：再同步一次不改写
+  await syncNativeEnhancements({ rootDir, client: 'claude' });
+  const again = JSON.parse(await readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
+  assert.deepEqual(again.statusLine, settings.statusLine);
+});
+
+/* 中文注释：statusLine 只有一个槽位。用户已经配了自己的状态栏时，AIOS 必须让位——
+ * 覆盖等于替用户删掉他配的东西。这条锁住 default-merge 的“只补缺”语义。 */
+test('native sync preserves a user-owned claude statusLine', async () => {
+  const rootDir = await makeTemp('aios-native-sync-claude-own-statusline-');
+  await seedNativeRoot(rootDir);
+  const userStatusLine = { type: 'command', command: 'bash ~/my-statusline.sh' };
+  await writeJson(path.join(rootDir, '.claude', 'settings.local.json'), { statusLine: userStatusLine });
+
+  await syncNativeEnhancements({ rootDir, client: 'claude' });
+  const settings = JSON.parse(await readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
+  assert.deepEqual(settings.statusLine, userStatusLine);
+});
+
+test('native uninstall removes the claude statusLine it wrote and keeps user-owned ones', async () => {
+  const rootDir = await makeTemp('aios-native-sync-claude-statusline-uninstall-');
+  await seedNativeRoot(rootDir);
+  await writeJson(path.join(rootDir, '.claude', 'settings.local.json'), {
+    permissions: { allow: ['Bash(git:*)'] },
+  });
+
+  await syncNativeEnhancements({ rootDir, client: 'claude' });
+  await syncNativeEnhancements({ rootDir, client: 'claude', mode: 'uninstall' });
+  const settings = JSON.parse(await readFile(path.join(rootDir, '.claude', 'settings.local.json'), 'utf8'));
+  assert.equal(Object.hasOwn(settings, 'statusLine'), false);
+  assert.deepEqual(settings.permissions.allow, ['Bash(git:*)']);
 });
 
 test('native sync keeps OpenCode compatibility details out of shared AGENTS.md', async () => {

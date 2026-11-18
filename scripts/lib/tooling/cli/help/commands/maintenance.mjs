@@ -196,6 +196,7 @@ Examples:
     case 'plan':
       return `Usage:
   aios plan status [--workspace <path>] [--json]
+  aios plan statusline [--workspace <path>]     One-line Claude Code status bar (plan state + caveman badge)
   aios plan set-status --status <active|approved|executing|done|blocked> [--note <text>] [--force] [--workspace <path>] [--json]
   aios plan show [--workspace <path>] [--html] [--json]
   aios plan start --title <text> --task <text> [--work-item <id>] [--workspace <path>] [--json]

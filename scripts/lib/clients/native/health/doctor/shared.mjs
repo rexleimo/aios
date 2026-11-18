@@ -52,6 +52,11 @@ export function formatOperationTarget(operation) {
   if (operation.kind === 'json-merge') {
     return `${operation.targetPath}#${AIOS_NATIVE_JSON_KEY}`;
   }
+  if (operation.kind === 'json-default-merge') {
+    // 顶层键各占一个槽位，目标要指明是哪一个（否则两条 operation 在报告里同名）。
+    const keys = Object.keys(operation.content || {}).join(',');
+    return keys ? `${operation.targetPath}#${keys}` : operation.targetPath;
+  }
   return operation.targetPath;
 }
 

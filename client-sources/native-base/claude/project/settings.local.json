@@ -16,6 +16,6 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "node scripts/aios.mjs plan status"
+    "command": "node scripts/aios.mjs plan statusline"
   }
 }

@@ -4,7 +4,7 @@ import { buildNativeSyncMetadata } from '../../install-metadata.mjs';
 import { stringifyJsonObject } from '../../distribution/emitters/shared.mjs';
 
 import { backupTarget, rollbackTargets } from './fs-ops.mjs';
-import { applyJsonMergeOperation, applyJsonTopLevelMergeOperation, applyManagedExactFileOperation, applyManagedFileOperation, applyMarkdownBlockOperation, removeOperation } from './operations.mjs';
+import { applyJsonDefaultMergeOperation, applyJsonMergeOperation, applyJsonTopLevelMergeOperation, applyManagedExactFileOperation, applyManagedFileOperation, applyMarkdownBlockOperation, removeOperation } from './operations.mjs';
 
 // 纯函数：创建单个客户端/tier 的 native 同步统计桶。
 export function resultBucket(client, tier) {
@@ -28,7 +28,7 @@ export async function applyRenderedOperations({ rootDir, client, mode, rendered,
       let status = 'reused';
 
       if (mode === 'uninstall') {
-        status = await removeOperation(targetPath, operation.kind, fsOps, backups);
+        status = await removeOperation(targetPath, operation.kind, fsOps, backups, operation.content);
       } else if (operation.kind === 'markdown-block') {
         status = await applyMarkdownBlockOperation(targetPath, operation.content, fsOps, backups);
       } else if (operation.kind === 'managed-file') {
@@ -39,6 +39,8 @@ export async function applyRenderedOperations({ rootDir, client, mode, rendered,
         status = await applyJsonMergeOperation(targetPath, operation.content, fsOps, backups, repair);
       } else if (operation.kind === 'json-top-level-merge') {
         status = await applyJsonTopLevelMergeOperation(targetPath, operation.content, fsOps, backups, repair);
+      } else if (operation.kind === 'json-default-merge') {
+        status = await applyJsonDefaultMergeOperation(targetPath, operation.content, fsOps, backups, repair);
       } else {
         throw new Error(`unsupported native operation: ${operation.kind}`);
       }

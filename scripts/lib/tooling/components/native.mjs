@@ -2,6 +2,18 @@ import { syncNativeEnhancements } from '../../clients/native/synchronize/sync.mj
 import { doctorNativeEnhancements as runNativeDoctor } from '../../clients/native/health/doctor.mjs';
 import { getNativeRepair, listNativeRepairs, rollbackNativeRepair } from '../../clients/native/repair/repairs.mjs';
 import { checkRouteTriggerCommandsSync, syncRouteTriggerCommands } from '../../clients/native/routing/route-commands.mjs';
+import { checkClaudeHomeStatusline } from '../../clients/native/distribution/emitters/claude-home.mjs';
+import { resolveNativeClients } from '../../clients/native/source-tree.mjs';
+
+// 中文注释：`all` 展开成真实客户端列表再判断，避免 `all` 被当成字面客户端 id。
+function selectsClient(selection, target) {
+  if (String(selection || '').trim().toLowerCase() === 'all') return true;
+  try {
+    return resolveNativeClients(selection).includes(target);
+  } catch {
+    return false;
+  }
+}
 
 export async function installNativeEnhancements({
   rootDir,
@@ -11,7 +23,7 @@ export async function installNativeEnhancements({
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io, env });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
@@ -30,7 +42,7 @@ export async function updateNativeEnhancements({
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'install', io, env });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'install', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> installed=${item.installed} updated=${item.updated} reused=${item.reused} removed=${item.removed}`);
@@ -49,7 +61,7 @@ export async function uninstallNativeEnhancements({
   env = process.env,
   io = console,
 } = {}) {
-  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'uninstall', io });
+  const result = await syncNativeEnhancements({ rootDir, targetRootDir: projectRoot, client, mode: 'uninstall', io, env });
   const routeResult = await syncRouteTriggerCommands({ rootDir, client, homeMap, env, mode: 'uninstall', io });
   for (const item of result.results) {
     io.log(`[done] native ${item.client} -> removed=${item.removed} reused=${item.reused}`);
@@ -72,6 +84,16 @@ export async function doctorNativeEnhancements({
   io = console,
 } = {}) {
   const nativeResult = await runNativeDoctor({ rootDir, targetRootDir: projectRoot, client, verbose, fix, dryRun, io });
+  // Claude Code 全局 statusLine 在项目之外，doctor 的项目遍历看不见它，单独探一次。
+  const claudeHome = selectsClient(client, 'claude')
+    ? await checkClaudeHomeStatusline({ rootDir, env }).catch((error) => ({ ok: true, skipped: error.message }))
+    : { ok: true };
+  if (!claudeHome.ok && fix && !dryRun) {
+    const { syncClaudeHomeStatusline } = await import('../../clients/native/distribution/emitters/claude-home.mjs');
+    const synced = await syncClaudeHomeStatusline({ rootDir, env });
+    io.log(`[claude] home statusline ${synced.status}${synced.reason ? ` (${synced.reason})` : ''}: ${synced.path}`);
+  }
+  if (!claudeHome.ok) io.log(`[warn] claude home statusline: ${claudeHome.issue}`);
   let routeResult = await checkRouteTriggerCommandsSync({ rootDir, client, homeMap, env });
   if (!routeResult.ok && fix) {
     if (dryRun) {

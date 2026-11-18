@@ -19,6 +19,7 @@ export async function syncNativeEnhancementsUnlocked({
   io = console,
   fsOps,
   repair = {},
+  env = process.env,
 } = {}) {
   const sourceRootDir = path.resolve(rootDir);
   const resolvedTargetRootDir = path.resolve(targetRootDir || rootDir);
@@ -105,6 +106,20 @@ export async function syncNativeEnhancementsUnlocked({
         io.log?.(`[warn] codex home config sync skipped: ${err.message}`);
       }
     }
+
+    // 中文注释：Claude Code 全局 statusLine 同样是家目录路径，只能走后置步骤。
+    // 卸载只收回仍然是 AIOS 写下的那个值；用户改写过就保留。
+    if (currentClient === 'claude') {
+      try {
+        const home = mode === 'uninstall'
+          ? await import('../../distribution/emitters/claude-home.mjs').then((mod) => mod.removeClaudeHomeStatusline({ rootDir: sourceRootDir, env }))
+          : await import('../../distribution/emitters/claude-home.mjs').then((mod) => mod.syncClaudeHomeStatusline({ rootDir: sourceRootDir, env }));
+        io.log?.(`[claude] home statusline ${home.status}${home.reason ? ` (${home.reason})` : ''}: ${home.path}`);
+        result.claudeHomeStatusline = home.status;
+      } catch (err) {
+        io.log?.(`[warn] claude home statusline sync skipped: ${err.message}`);
+      }
+    }
     results.push(result);
   }
 
@@ -122,6 +137,7 @@ export async function syncNativeEnhancements({
   io = console,
   fsOps,
   repair = {},
+  env = process.env,
   withLock = true,
   lockOptions = {},
 } = {}) {
@@ -133,6 +149,7 @@ export async function syncNativeEnhancements({
     io,
     fsOps,
     repair,
+    env,
   });
   if (!withLock) {
     return run();

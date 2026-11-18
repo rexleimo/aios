@@ -45,6 +45,7 @@ export const PLAN_SUBCOMMANDS = Object.freeze([
   'auto-gate',
   'always-on',
   'hook-user-prompt',
+  'statusline',
 ]);
 
 function invalidTestabilityPath() {
@@ -215,6 +216,21 @@ export async function runPlanCommand(options = {}, { rootDir = process.cwd(), st
       return { exitCode: 0, state: null };
     }
     stdout.write(json ? `${JSON.stringify(state, null, 2)}\n` : `active plan [${state.status}]: ${state.relativePath}\n`);
+    return { exitCode: 0, state };
+  }
+
+  /* 中文注释：Claude Code 状态栏入口。与 `status` 的区别只在输出形态：一行、短路径，
+   * 无计划时也 exit 0 并给文案（状态栏空行会被当成渲染故障）。徽章由本命令合成，
+   * 因为 statusLine 只有一个槽位，徽章和计划状态不能各占一个。 */
+  if (sub === 'statusline') {
+    const { composeStatusline, readCavemanMode } = await import('./statusline.mjs');
+    const state = readActivePlan(rootDir);
+    const line = composeStatusline({
+      cavemanMode: readCavemanMode(),
+      planState: state,
+      progress: state ? summarizePlanProgress(state) : null,
+    });
+    stdout.write(`${line}\n`);
     return { exitCode: 0, state };
   }
 

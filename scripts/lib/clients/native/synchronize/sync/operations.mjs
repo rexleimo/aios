@@ -150,7 +150,59 @@ export async function applyJsonTopLevelMergeOperation(targetPath, fragment, fsOp
   return summarizeMutation(existsBefore, true);
 }
 
-export async function removeOperation(targetPath, kind, fsOps, backups) {
+function deepMergeJsonDefaults(existing, fragment) {
+  const next = { ...existing };
+  for (const [key, value] of Object.entries(fragment || {})) {
+    if (!(key in next)) {
+      next[key] = value;
+      continue;
+    }
+    const previous = next[key];
+    if (isPlainObject(previous) && isPlainObject(value)) {
+      next[key] = deepMergeJsonDefaults(previous, value);
+    }
+    // 已存在且非对象：用户的取值优先，绝不覆盖。
+  }
+  return next;
+}
+
+/* 中文注释：`json-default-merge` 用于只有一个槽位的资源（Claude Code 的 statusLine）。
+ * `json-top-level-merge` 会覆盖同名键；对 statusLine 来说那等于把用户自己的状态栏删掉，
+ * 而这类冲突不能靠覆盖解决（upstream caveman 也拒绝覆盖既有 statusLine）。
+ * 因此本操作只补缺、不覆盖：键已存在时保持用户取值，重复执行必然 reused。 */
+export async function applyJsonDefaultMergeOperation(targetPath, fragment, fsOps, backups, repair) {
+  const previous = await fsOps.readTextTarget(targetPath);
+  const existsBefore = previous.length > 0 || await pathExists(targetPath);
+  let parsed;
+  try {
+    parsed = parseJsonObject(previous, targetPath);
+  } catch {
+    if (!repair.resetInvalidJson) {
+      throw new Error(`invalid json: ${path.basename(targetPath)}`);
+    }
+    parsed = {};
+  }
+  const next = stringifyJsonObject(deepMergeJsonDefaults(parsed, fragment));
+  if (normalizeText(previous) === normalizeText(next)) {
+    return 'reused';
+  }
+  await backupTarget(targetPath, fsOps, backups);
+  await fsOps.writeTextTarget(targetPath, next);
+  return summarizeMutation(existsBefore, true);
+}
+
+// 纯函数：卸载时只收回“仍然是 AIOS 写的那个值”的顶层键。
+// 用户改写过（或本来就拥有）的值一律保留——卸载不应删掉不是我们写的东西。
+export function stripOwnedJsonDefaults(existingObject, fragment) {
+  if (!isPlainObject(existingObject)) return existingObject;
+  const next = { ...existingObject };
+  for (const [key, value] of Object.entries(fragment || {})) {
+    if (JSON.stringify(next[key]) === JSON.stringify(value)) delete next[key];
+  }
+  return next;
+}
+
+export async function removeOperation(targetPath, kind, fsOps, backups, content = {}) {
   const previous = await fsOps.readTextTarget(targetPath);
   if (!previous && !(await pathExists(targetPath))) {
     return 'reused';
@@ -176,6 +228,22 @@ export async function removeOperation(targetPath, kind, fsOps, backups) {
     }
     await backupTarget(targetPath, fsOps, backups);
     await fsOps.removeTarget(targetPath);
+    return 'removed';
+  }
+
+  if (kind === 'json-default-merge') {
+    const owned = parseJsonObject(previous, targetPath);
+    const nextObject = stripOwnedJsonDefaults(owned, content);
+    if (JSON.stringify(nextObject) === JSON.stringify(owned)) {
+      return 'reused';
+    }
+    const nextText = Object.keys(nextObject).length > 0 ? stringifyJsonObject(nextObject) : '';
+    await backupTarget(targetPath, fsOps, backups);
+    if (nextText) {
+      await fsOps.writeTextTarget(targetPath, nextText);
+    } else {
+      await fsOps.removeTarget(targetPath);
+    }
     return 'removed';
   }
 
