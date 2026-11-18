@@ -11,7 +11,7 @@ const connectedCount = (status) => (Array.isArray(status?.clients)
 // kind ∈ loading | start | providers | connect | ready。
 const NEXT_ACTIONS = Object.freeze({
   loading: { label: '读取状态中', step: null },
-  start: { label: '启动网关', step: 'start' },
+  start: { label: '立即启动网关', step: 'start' },
   providers: { label: '配置模型来源', step: 'models' },
   connect: { label: '接入第一个客户端', step: 'connect' },
   ready: { label: '', step: null },

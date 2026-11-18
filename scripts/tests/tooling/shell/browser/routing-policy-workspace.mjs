@@ -61,7 +61,7 @@ export async function runPolicyBrowserChecks(t, { fixture, baseUrl, chooseTheme 
     await policyTask(page, '意图分流');
     assert.equal(await page.getByRole('combobox', { name: '分类器模型', exact: true }).count(), 0);
     await page.getByRole('switch', { name: '启用按意图路由' }).click();
-    await visible(page, page.getByText(/额外.*调用.*费用/));
+    await visible(page, page.getByText('意图分类会额外增加分类器调用与费用。携带会话标识时，同一轮工具续轮复用已判断的意图，不重复分类。', { exact: true }));
     await choose(page, '分类器模型', /fixture \/ Alpha/);
     await page.getByRole('button', { name: '添加意图规则', exact: true }).click();
     await page.getByRole('textbox', { name: '意图 1 描述', exact: true }).fill('Short conversation');

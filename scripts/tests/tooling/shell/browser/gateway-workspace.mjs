@@ -240,7 +240,10 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     for (const width of [1440, 390]) {
       await page.setViewportSize({ width, height: 900 });
       await page.goto(`${baseUrl}/routing`);
-      await visible(page, page.getByRole('heading', { name: '尚未配置模型访问', exact: true }));
+      // The compact overview states model access via the runtime-ready badge + one-line summary;
+      // the old "尚未配置模型访问" heading panel was removed to shorten the page.
+      await visible(page, page.getByText('运行时就绪：监听已启动，但尚无模型访问配置', { exact: true }));
+      await visible(page, page.getByRole('list', { name: '接入步骤' }).getByText('配置模型来源', { exact: true }));
       await visible(page, page.getByText('运行时就绪：监听已启动，但尚无模型访问配置', { exact: true }));
       for (const button of await page.getByRole('button', { name: '接入', exact: true }).all()) assert.equal(await button.isDisabled(), true);
       await noPageOverflow(page);

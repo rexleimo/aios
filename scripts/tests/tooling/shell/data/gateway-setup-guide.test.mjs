@@ -27,7 +27,7 @@ test('pending read shows a loading action without claiming any state', () => {
 test('cold start guides to start the gateway first', () => {
   const guide = deriveSetupGuide(status());
   assert.equal(guide.kind, 'start');
-  assert.equal(guide.nextAction.label, '启动网关');
+  assert.equal(guide.nextAction.label, '立即启动网关');
   assert.equal(stateOf(guide, 'start'), 'next');
   assert.equal(stateOf(guide, 'models'), 'todo');
   assert.equal(stateOf(guide, 'connect'), 'todo');
@@ -72,5 +72,6 @@ test('everything loaded and connected reports ready with all steps done', () => 
 test('stale process is treated as not running, so the guide does not claim the gateway is up', () => {
   const guide = deriveSetupGuide(status({ running: true, stale: true, ready: true, configuredModelCount: 1 }));
   assert.equal(guide.kind, 'start');
+  assert.equal(guide.nextAction.label, '立即启动网关');
   assert.equal(stateOf(guide, 'start'), 'next');
 });
