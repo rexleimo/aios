@@ -551,6 +551,26 @@ test('cache usage retains totals and Claude uncached input semantics across prot
   assert.equal(claude.usage.cache_read_input_tokens, 4);
 });
 
+test('reasoning/audio token usage details are validated but dropped across protocols, not fatal', () => {
+  // reasoning_tokens is already included in completion_tokens; target protocols have no
+  // field for it, so it must be ignored rather than failing the whole translation (502).
+  const source = {
+    ...plainResponses['openai-chat'],
+    usage: {
+      prompt_tokens: 11, completion_tokens: 7, total_tokens: 18,
+      completion_tokens_details: { reasoning_tokens: 5 },
+    },
+  };
+  for (const to of ['claude', 'openai-response', 'gemini']) {
+    const out = translateResponse(source, 'openai-chat', to);
+    const actual = inspectResponse(out, to);
+    assert.deepEqual(actual.usage, [11, 7], `${to}: usage totals keep completion_tokens only`);
+    if ('total' in actual) assert.equal(actual.total, 18);
+  }
+  // A malformed reasoning_tokens value is still a boundary error, not silently ignored.
+  expectError(() => translateResponse({ ...source, usage: { ...source.usage, completion_tokens_details: { reasoning_tokens: 'many' } } }, 'openai-chat', 'claude'), 'INVALID_UPSTREAM_RESPONSE');
+});
+
 test('malformed and unsupported upstreams never become empty successful replies', () => {
   const cases = [
     ['claude', null], ['claude', {}], ['claude', { ...plainResponses.claude, content: 'wrong' }], ['claude', { ...plainResponses.claude, content: [] }],

@@ -789,18 +789,25 @@ function usageOf(body, protocol, c) {
     input += cached + cacheCreation;
   } else if (protocol === 'gemini') {
     cached = read('cachedContentTokenCount');
-    if (read('thoughtsTokenCount')) c.unsupported('reasoning/thought token usage cannot be translated');
+    // reasoning/thought tokens are a subset of candidatesTokenCount (already in output).
+    // Validate the shape but drop the detail: target protocols have no equivalent field.
+    if (raw.thoughtsTokenCount !== undefined) c.num(raw.thoughtsTokenCount, 'usage.thoughtsTokenCount', { integer: true, min: 0 });
   } else {
     const inputDetails = raw[protocol === 'openai-chat' ? 'prompt_tokens_details' : 'input_tokens_details'];
     const outputDetails = raw[protocol === 'openai-chat' ? 'completion_tokens_details' : 'output_tokens_details'];
     if (inputDetails != null) {
       c.obj(inputDetails, 'usage.input_tokens_details');
       if (inputDetails.cached_tokens !== undefined) cached = c.num(inputDetails.cached_tokens, 'usage.cached_tokens', { integer: true, min: 0 });
-      if (inputDetails.audio_tokens !== undefined && c.num(inputDetails.audio_tokens, 'usage.audio_tokens', { integer: true, min: 0 })) c.unsupported('audio token usage cannot be translated');
+      // audio_tokens is a billing detail already inside the input total; validate, don't fail.
+      if (inputDetails.audio_tokens !== undefined) c.num(inputDetails.audio_tokens, 'usage.audio_tokens', { integer: true, min: 0 });
     }
     if (outputDetails != null) {
       c.obj(outputDetails, 'usage.output_tokens_details');
-      for (const field of ['reasoning_tokens', 'audio_tokens']) if (outputDetails[field] !== undefined && c.num(outputDetails[field], `usage.${field}`, { integer: true, min: 0 })) c.unsupported(`${field} usage cannot be translated`);
+      // reasoning_tokens/audio_tokens are details already counted in output; target protocols
+      // have no field for them, so validate shape and drop rather than aborting translation.
+      for (const field of ['reasoning_tokens', 'audio_tokens']) {
+        if (outputDetails[field] !== undefined) c.num(outputDetails[field], `usage.${field}`, { integer: true, min: 0 });
+      }
     }
   }
   if (cached > input) c.invalid('cached token count exceeds input tokens');
