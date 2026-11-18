@@ -64,6 +64,33 @@ function outputIds(json, protocol) {
   return [];
 }
 
+// 中文注释：无显式 session header 时，从「第一条用户文本消息」派生稳定内容键。
+// 关键：工具续轮会在历史尾部追加 assistant/tool_result，但第一条用户消息（任务原文）不变，
+// 所以用它做键才能让同一任务的续轮命中同一意图缓存，不再重新分类。
+// 只取 text 块；tool_result / 图片等被忽略。非 claude/openai-chat 协议返回 null（回退原逻辑）。
+function firstUserText(body, protocol) {
+  if (!['claude', 'openai-chat'].includes(protocol) || !Array.isArray(body?.messages)) return null;
+  for (const message of body.messages) {
+    if (message?.role !== 'user') continue;
+    const content = message.content;
+    if (typeof content === 'string') {
+      if (content) return content;
+      continue;
+    }
+    if (Array.isArray(content)) {
+      const text = content.filter((block) => block?.type === 'text' && typeof block.text === 'string').map((block) => block.text).join('\n');
+      if (text) return text;
+    }
+  }
+  return null;
+}
+
+function deriveContentSessionKey(body, protocol) {
+  const text = firstUserText(body, protocol);
+  if (!text) return null;
+  return createHash('sha256').update(text, 'utf8').digest('hex').slice(0, 16);
+}
+
 export function createRoutingAffinity(options = {}) {
   const cache = boundedCache(options);
   // State for stateful group modes (rotate/usage), keyed by configuration fingerprint
@@ -71,7 +98,11 @@ export function createRoutingAffinity(options = {}) {
   const groupState = boundedCache(options);
   return function requestAffinity({ protocol, client, role, sessionId, body, fingerprint }) {
     const key = (kind, id) => safeId(id) ? JSON.stringify([protocol, client, role, kind, id]) : null;
+    // sessionKey 仍只来自显式 header：分组 affinity 的会话钉选不能被内容键影响（rotate 模式要能轮转）。
     const sessionKey = key('session', sessionId);
+    // intentSessionKey 才是意图粘滞用的键：显式 header 优先，无 header 时退到内容派生键。
+    const contentKey = sessionKey ? null : deriveContentSessionKey(body, protocol);
+    const intentSessionKey = sessionKey || (contentKey ? key('content', contentKey) : null);
     const opaque = protocol === 'openai-response' && Boolean(body.previous_response_id || body.conversation);
     const conversationId = typeof body.conversation === 'string' ? body.conversation : body.conversation?.id;
     const opaqueKeys = opaque ? [body.previous_response_id && key('response', body.previous_response_id), body.conversation && key('conversation', conversationId)].filter((item) => item !== undefined && item !== false && item !== '') : [];
@@ -86,6 +117,7 @@ export function createRoutingAffinity(options = {}) {
     return {
       opaque,
       sessionKey,
+      intentSessionKey,
       select(candidates) {
         const selected = candidates[0]?.selected;
         const grouped = selected?.groupId !== null && selected?.groupId !== undefined;

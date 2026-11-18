@@ -110,6 +110,15 @@ export function resolveGatewayRoutes({ clientId = '', role = '', registry, env =
   const to = nativeAvailable ? from : normalizeModelProtocol(protocol) || from;
   // 中文注释：意图模型被可用性选中才算意图路由生效（down 回落到其它候选时不冒充意图）。
   const intentRouted = !requested && Boolean(intentModelId) && target.targetRef === parseTargetRef(intentModelId, registry)?.ref;
+  // 中文注释：意图模型已报出但未被选中（不在候选/已下线）→ 显式记录回落，绝不静默切到默认路由。
+  // 凭据缺失导致的 qualify 失败在 proxy 的转发层捕获并补记；这里覆盖「目标不可路由」这一支。
+  const intentFallback = !requested && intentModelId && !intentRouted ? {
+    stage: 'qualify',
+    reason: `Intent model ${intent.modelId} is not available for routing; fell back to ${modelId}`,
+    originalIntentId: intent.intentId,
+    originalModelId: intent.modelId,
+    fallbackModelId: modelId,
+  } : null;
   const finalReason = intentRouted
     ? `intent "${intent.intentId}" classified by ${normalizeId(intent.classifierModel) || 'classifier'} → ${modelId}`
     : target.reason;
@@ -118,6 +127,7 @@ export function resolveGatewayRoutes({ clientId = '', role = '', registry, env =
     targetRef: target.targetRef, targetKind: target.groupId !== null ? 'group' : 'model', explicit: target.explicit,
     ...(target.groupId !== null ? { groupId: target.groupId, routing: target.routing || 'ordered' } : {}),
     ...(intentRouted ? { intent: intent.intentId, classifierModel: normalizeId(intent.classifierModel), intentDescription: intent.description || '', ...(typeof intent.confidence === 'number' ? { confidence: intent.confidence } : {}) } : {}),
+    ...(intentFallback ? { intentFallback } : {}),
   };
   return {
     modelId,

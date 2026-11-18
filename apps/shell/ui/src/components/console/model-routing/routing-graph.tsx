@@ -5,6 +5,13 @@ import { Waypoints } from 'lucide-react';
 import { Badge, Empty, ErrorState, Loading, Panel, SmallTitle } from '../console-ui';
 import type { ModelOption } from './intent-routing-section';
 
+interface IntentFallback {
+  stage: string;
+  reason: string;
+  originalIntentId?: string;
+  originalModelId?: string;
+  fallbackModelId: string;
+}
 interface DecisionEntry {
   at?: string;
   clientId?: string;
@@ -14,6 +21,7 @@ interface DecisionEntry {
   status?: number;
   error?: string;
   latencyMs?: number;
+  intentFallback?: IntentFallback;
 }
 interface DecisionsPayload {
   exists: boolean;
@@ -166,7 +174,9 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
           </svg>
 
           <div className="mt-4">
-            <h3 className="mb-1 text-xs font-semibold text-rex-text-muted">最近决策</h3>
+            <h3 className="mb-1 text-xs font-semibold text-rex-text-muted">
+              最近决策{data.recent.some((entry) => entry.intentFallback) ? ` · 回落 ${data.recent.filter((entry) => entry.intentFallback).length}` : ''}
+            </h3>
             <ul>
               {data.recent.slice(0, 8).map((entry, index) => {
                 const ok = !entry.error && Number(entry.status) < 400;
@@ -181,6 +191,17 @@ export function RoutingGraph({ models }: { models: ModelOption[] }) {
                       : entry.role
                         ? <Badge tone="violet">{entry.role}</Badge>
                         : <Badge tone="neutral">默认</Badge>}
+                     {entry.intentFallback && (
+                       <Badge tone="danger" className="cursor-help" title={[
+                         entry.intentFallback.reason,
+                         entry.intentFallback.originalIntentId
+                           ? `原意图: ${entry.intentFallback.originalIntentId} → ${entry.intentFallback.originalModelId}`
+                           : '',
+                         `实际执行: ${entry.intentFallback.fallbackModelId}`,
+                       ].filter(Boolean).join('\n')}>
+                         回落 ({entry.intentFallback.stage})
+                       </Badge>
+                     )}
                     <span className="flex-1 truncate" title={entry.modelId}>{labelOf(entry.modelId || '') || '—'}</span>
                     <span className={`shrink-0 tabular-nums ${ok ? 'text-rex-green' : 'text-rex-danger'}`}>{entry.status ?? '—'}</span>
                     <span className="shrink-0 tabular-nums text-rex-text-soft">{Number(entry.latencyMs) || 0}ms</span>

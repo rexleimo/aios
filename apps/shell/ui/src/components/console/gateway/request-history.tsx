@@ -18,6 +18,13 @@ import {
 import type { ModelOption } from '../model-routing/intent-routing-section';
 import { ROLE_LABEL } from '../model-routing/labels';
 
+interface IntentFallback {
+  stage: string;
+  reason: string;
+  originalIntentId?: string;
+  originalModelId?: string;
+  fallbackModelId: string;
+}
 interface Decision {
   recordKey: string;
   at?: string;
@@ -29,6 +36,7 @@ interface Decision {
   error?: string;
   latencyMs?: number;
   usage?: { input_tokens?: number; output_tokens?: number };
+  intentFallback?: IntentFallback;
 }
 interface DecisionLog {
   counters: { requests: number; errors: number; autoRouted: number };
@@ -196,11 +204,24 @@ export function RequestHistory({ active, models }: { active: boolean; models: Mo
                       </span>
                     </td>
                     <td className="px-5 py-4 text-rex-text-muted">
-                      {entry.intent
-                        ? `意图 · ${entry.intent}`
-                        : entry.role
-                          ? ROLE_LABEL[entry.role] || entry.role
-                          : '默认路由'}
+                      <span className="block">
+                        {entry.intent
+                          ? `意图 · ${entry.intent}`
+                          : entry.role
+                            ? ROLE_LABEL[entry.role] || entry.role
+                            : '默认路由'}
+                      </span>
+                      {entry.intentFallback && (
+                        <Badge tone="danger" className="mt-1 cursor-help" title={[
+                          entry.intentFallback.reason,
+                          entry.intentFallback.originalIntentId
+                            ? `原意图: ${entry.intentFallback.originalIntentId} → ${entry.intentFallback.originalModelId}`
+                            : '',
+                          `实际执行: ${entry.intentFallback.fallbackModelId}`,
+                        ].filter(Boolean).join('\n')}>
+                          回落 ({entry.intentFallback.stage})
+                        </Badge>
+                      )}
                     </td>
                     <td className="px-5 py-4">
                       <Badge tone={isError(entry) ? 'danger' : 'neutral'}>
@@ -267,6 +288,17 @@ export function RequestHistory({ active, models }: { active: boolean; models: Mo
             <dd className="break-all">{selected.modelId || '未记录'}</dd>
             <dt className="text-rex-text-muted">路由依据</dt>
             <dd>{selected.intent || selected.role || '默认路由'}</dd>
+            {selected.intentFallback && (
+              <>
+                <dt className="text-rex-text-muted">回落原因</dt>
+                <dd className="break-all text-rex-danger">
+                  {selected.intentFallback.reason}
+                  {selected.intentFallback.originalIntentId
+                    ? `（原意图 ${selected.intentFallback.originalIntentId} → ${selected.intentFallback.originalModelId}）`
+                    : ''}
+                </dd>
+              </>
+            )}
             <dt className="text-rex-text-muted">输入 tokens</dt>
             <dd>{selected.usage?.input_tokens ?? '未记录'}</dd>
             <dt className="text-rex-text-muted">输出 tokens</dt>

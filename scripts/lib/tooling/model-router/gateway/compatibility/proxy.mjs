@@ -98,12 +98,38 @@ export function createRoutingGatewayApp(options = {}) {
       || context.opaque || listGatewayModels(registry, { env, requireCredentials: false }).length < 2) return null;
     try {
       const classifier = getProviderForModel(config.classifierModel, registry);
-      if (!['claude', 'openai-chat'].includes(classifier.protocol) || !readyProviderAccounts(classifier.provider, env).length) return null;
-      for (const item of config.intents) {
-        const route = qualifyRoute({ ...context, intent: { intentId: item.id, modelId: item.modelId } });
-        if (route.selected.targetRef !== parseTargetRef(item.modelId, registry)?.ref) return null;
+      if (!['claude', 'openai-chat'].includes(classifier.protocol) || !readyProviderAccounts(classifier.provider, env).length) {
+        // 分类器本身不可达也是「显式回落」：记下原因，绝不静默走默认路由。
+        context.intentConfigFailure = {
+          stage: 'qualify',
+          reason: `Intent classifier ${config.classifierModel} failed qualification: no credentials or unsupported protocol`,
+          originalModelId: config.classifierModel,
+        };
+        return null;
       }
-      return config;
+      // 中文注释：单个意图不可路由只跳过该意图，不让一个坏配置拖垮整张意图表。
+      // 只把合格的意图交给分类器（避免为一个已不可达的意图付分类器调用费），
+      // 但仍把被跳过的意图记进 context，供决策记录写明回落阶段/原因。
+      const qualified = [];
+      const skipped = [];
+      for (const item of config.intents) {
+        try {
+          const route = qualifyRoute({ ...context, intent: { intentId: item.id, modelId: item.modelId } });
+          if (route.selected.targetRef !== parseTargetRef(item.modelId, registry)?.ref) {
+            skipped.push({ id: item.id, modelId: item.modelId, reason: 'route resolved to a different target' });
+            continue;
+          }
+          qualified.push(item);
+        } catch (error) {
+          skipped.push({ id: item.id, modelId: item.modelId, reason: error.message || error.code || 'qualification failed' });
+        }
+      }
+      if (skipped.length) context.intentSkipped = skipped;
+      if (qualified.length === 0) {
+        context.allIntentsSkipped = skipped;
+        return null;
+      }
+      return { ...config, intents: qualified };
     } catch (error) {
       if (!(error instanceof ProviderConfigError) && !(error instanceof GatewayRouteError) && !(error instanceof GroupConfigError) && !(error instanceof ProtocolCompatibilityError)) throw error;
       return null;
@@ -231,6 +257,22 @@ export function createRoutingGatewayApp(options = {}) {
       try {
         let intent = null;
         const intentConfig = qualifiedIntentConfig(routeContext);
+        if (!intentConfig && routeContext.intentConfigFailure) {
+          routeContext.intentFallbackHint = { ...routeContext.intentConfigFailure };
+        }
+        if (routeContext.allIntentsSkipped) {
+          // 所有意图都不可达：不调用付费分类器，但仍显式记录是哪一支回落了。
+          const first = routeContext.allIntentsSkipped[0];
+          if (first) {
+            routeContext.intentFallbackHint = {
+              stage: 'qualify',
+              reason: `Intent model ${first.modelId} failed qualification: ${first.reason}`,
+              originalIntentId: first.id,
+              originalModelId: first.modelId,
+            };
+          }
+          console.warn('[intent-routing] All intents skipped:', routeContext.allIntentsSkipped);
+        }
 
         let defaultError;
         try {
@@ -239,30 +281,59 @@ export function createRoutingGatewayApp(options = {}) {
           if (!intentConfig || error.code !== 'NO_ROUTE_CONFIGURED') throw error;
           defaultError = error;
         }
+        // 意图粘滞用 intentSessionKey（显式 header 优先，否则内容派生），与分组 affinity 的 sessionKey 解耦。
+        const sessionKey = affinity.intentSessionKey;
         if (intentConfig) {
-          const sessionKey = affinity.sessionKey;
-          // A client identity is not a conversation. Anonymous continuations must use
-          // their own history rather than another request's cached intent.
+          // 有 sessionKey（显式 header 或内容派生）时只看本轮最新用户文本：
+          // 工具续轮的尾消息是 tool_result → userText 为空 → 直接复用 sessionIntents 缓存，不重新分类。
           const userText = sessionKey ? extractProtocolUserText(parsed, incomingProtocol) : latestTurnUserText(parsed, incomingProtocol);
           if (userText) {
             let classified = null;
+            let classifyError = null;
             try { classified = await lifetime.run(() => classify(userText, { signal: lifetime.signal })); }
-            catch { lifetime.signal.throwIfAborted(); /* Keep the qualified default route on classifier failure. */ }
+            catch (error) { lifetime.signal.throwIfAborted(); classifyError = error; }
             // JEV confidence gate at the consumption edge too: the injected classifier
             // path bypasses classifyTurnIntent, so enforce the threshold here as well.
+            const originalClassified = classified;
             classified = applyConfidenceTier(classified, intentConfig.confidenceThreshold);
             const configuredIntent = intentConfig.intents.find((item) => item.id === classified?.intentId && item.modelId === classified?.modelId);
             if (configuredIntent) {
               intent = { intentId: configuredIntent.id, modelId: configuredIntent.modelId, description: configuredIntent.description, classifierModel: intentConfig.classifierModel, ...(typeof classified?.confidence === 'number' ? { confidence: classified.confidence } : {}) };
               if (sessionKey) sessionIntents.set(sessionKey, intent);
-            } else if (sessionKey) {
-              sessionIntents.delete(sessionKey);
+            } else {
+              // 分类失败 / 低置信度 / 意图不可路由都要显式记录回落原因，绝不静默。
+              const skipped = (routeContext.intentSkipped || []).find((item) => item.id === originalClassified?.intentId && item.modelId === originalClassified?.modelId);
+              if (classifyError) {
+                routeContext.classifyFailure = { stage: 'classify', reason: `Classifier error: ${classifyError.message}` };
+              } else if (originalClassified && !classified) {
+                routeContext.classifyFailure = { stage: 'classify', reason: `Low confidence (${Number(originalClassified.confidence).toFixed(2)} < ${intentConfig.confidenceThreshold})`, originalIntentId: originalClassified.intentId };
+              } else if (skipped) {
+                routeContext.intentFallbackHint = { stage: 'qualify', reason: `Intent model ${skipped.modelId} failed qualification: ${skipped.reason}`, originalIntentId: skipped.id, originalModelId: skipped.modelId };
+              } else if (!classified) {
+                routeContext.classifyFailure = { stage: 'classify', reason: 'Classifier returned null' };
+              }
+              if (sessionKey) sessionIntents.delete(sessionKey);
             }
           } else if (sessionKey) {
             intent = sessionIntents.get(sessionKey) || null;
           }
         }
-        if (intent) ({ selected: route, candidates } = qualify(intent));
+        if (intent) {
+          try {
+            ({ selected: route, candidates } = qualify(intent));
+          } catch (error) {
+            if (!route) throw error;
+            // 意图模型 qualify 失败（凭据缺失/模型下线）→ 显式回落到已合格的默认路由并记录原因。
+            routeContext.intentFallbackHint = {
+              stage: 'qualify',
+              reason: `Intent model ${intent.modelId} failed qualification: ${error.message}`,
+              originalIntentId: intent.intentId,
+              originalModelId: intent.modelId,
+              fallbackModelId: route.modelId,
+            };
+            if (sessionKey) sessionIntents.delete(sessionKey);
+          }
+        }
         if (!route) throw defaultError || new GatewayRouteError('No configured route selected');
       } catch (error) {
         if (!(error instanceof GatewayRouteError) && !(error instanceof ProviderConfigError) && !(error instanceof GroupConfigError) && !(error instanceof ProtocolCompatibilityError) && !(error instanceof TargetReferenceError)) throw error;
@@ -284,6 +355,13 @@ export function createRoutingGatewayApp(options = {}) {
       const upstream = result.upstream;
       usedAccount = result.account;
       route = { ...route, decision: { ...route.decision, attempts, affinityPinned: Boolean(affinitySelection.pin), failoverCount: Math.max(0, new Set(attempts.map((item) => item.modelId)).size - 1) } };
+      // 中文注释：fetchGatewayCandidates 会用实际命中的候选替换 route，所以回落信息在最终 route 上并入决策。
+      // router 已记录的 intentFallback 优先；否则补上 classify/qualify 阶段记录的原因。
+      const fallback = routeContext.intentFallbackHint
+        || (routeContext.classifyFailure ? { ...routeContext.classifyFailure } : null);
+      if (fallback && !route.decision?.intentFallback) {
+        route = { ...route, decision: { ...route.decision, intentFallback: { ...fallback, fallbackModelId: fallback.fallbackModelId || route.modelId } } };
+      }
       const remember = (json) => { if (upstream.ok) affinity.remember(route, usedAccount, json); };
 
       const contentType = upstream.headers.get('content-type') || 'application/json';

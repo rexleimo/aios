@@ -57,7 +57,7 @@ export function readDecisions(filePath) {
 // 纯函数：汇总计数器 + 按模型/客户端分组 + client→model 边（路由图的连线）。
 // 诚实计数：errors = status>=400 或带 error；autoRouted = 带 intent。没有 failover 就不造 rerouted 指标。
 export function summarizeDecisions(entries) {
-  const summary = { requests: 0, errors: 0, autoRouted: 0, byModel: {}, byClient: {}, edges: [] };
+  const summary = { requests: 0, errors: 0, autoRouted: 0, fallbacks: 0, byModel: {}, byClient: {}, edges: [] };
   const edgeMap = new Map();
   for (const entry of entries || []) {
     summary.requests += 1;
@@ -65,6 +65,7 @@ export function summarizeDecisions(entries) {
     const isAuto = Boolean(entry?.intent);
     if (isError) summary.errors += 1;
     if (isAuto) summary.autoRouted += 1;
+    if (entry?.intentFallback) summary.fallbacks += 1;
     const modelId = String(entry?.modelId || '');
     const clientId = String(entry?.clientId || '');
     if (modelId) summary.byModel[modelId] = (summary.byModel[modelId] || 0) + 1;

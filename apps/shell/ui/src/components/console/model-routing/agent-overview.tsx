@@ -8,12 +8,20 @@ import { clientLabel, type FactClient, type FactIssue } from '../../../lib/conso
 import type { ViewId } from '../../../lib/console-navigation';
 import { Badge, Empty, ErrorState, Panel, SmallTitle, TextLink } from '../console-ui';
 
+interface IntentFallback {
+  stage: string;
+  reason: string;
+  originalIntentId?: string;
+  originalModelId?: string;
+  fallbackModelId: string;
+}
 interface DecisionEntry {
   at?: string;
   clientId?: string;
   role?: string;
   modelId?: string;
   intent?: string;
+  intentFallback?: IntentFallback;
 }
 interface DecisionsPayload {
   exists: boolean;
@@ -199,6 +207,19 @@ export function AgentOverview({
                             <p className="flex flex-wrap gap-x-2 text-[11px] leading-5 text-rex-text-muted">
                               {latest.role && <span className="break-all">角色 {latest.role}</span>}
                               {latest.intent && <span className="break-all">意图 {latest.intent}</span>}
+                            </p>
+                          )}
+                          {latest.intentFallback && (
+                            <p>
+                              <Badge tone="danger" className="cursor-help" title={[
+                                latest.intentFallback.reason,
+                                latest.intentFallback.originalIntentId
+                                  ? `原意图: ${latest.intentFallback.originalIntentId} → ${latest.intentFallback.originalModelId}`
+                                  : '',
+                                `实际执行: ${latest.intentFallback.fallbackModelId}`,
+                              ].filter(Boolean).join('\n')}>
+                                回落 ({latest.intentFallback.stage})
+                              </Badge>
                             </p>
                           )}
                           {latest.at && <p className="break-words text-[11px] text-rex-text-muted"><RequestTime at={latest.at} /></p>}

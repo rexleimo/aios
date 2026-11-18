@@ -168,7 +168,9 @@ for (const client of ['', 'claude']) {
       { role: 'user', content: [{ type: 'tool_result', tool_use_id: 't1', content: 'done' }] },
     ] });
     assert.deepEqual(models, ['claude-opus-5', 'qwen3.8-flash', 'claude-opus-5']);
-    assert.equal(calls, 3, 'without an explicit session, use only this request\'s user-turn history');
+    // 内容派生 session key 让 turn A 的续轮复用本轮意图：turn A 与 turn B 各分类一次，
+    // turn A 的工具续轮命中同一内容键 → 不再分类（任务级粘滞）。
+    assert.equal(calls, 2, 'turn A and turn B classify once each; turn A tool continuation reuses its cached intent');
   });
 }
 
