@@ -49,34 +49,38 @@ export function RequestHistory({ active, models }: { active: boolean; models: Mo
   const [query, setQuery] = useState('');
   const [result, setResult] = useState('all');
   const [selected, setSelected] = useState<Decision | null>(null);
-  const busy = useRef(false);
-  const load = useCallback(async (signal?: AbortSignal) => {
-    if (busy.current) return;
-    busy.current = true;
+  // 每个请求用自己的 controller；abort 只影响它自己，不会锁住后续加载。
+  // StrictMode 的 mount→cleanup→remount 会 abort 第一次请求，第二次必须能立即重发，
+  // 不能依赖一个共享的 busy 锁（那会让 remount 的 load 被跳过，直到 5s 轮询才恢复）。
+  const inFlight = useRef<Set<AbortController>>(new Set());
+  const load = useCallback(async () => {
+    const controller = new AbortController();
+    inFlight.current.add(controller);
     setRefreshing(true);
     try {
-      const response = await fetch('/api/model-routing/decisions?limit=100', { signal });
+      const response = await fetch('/api/model-routing/decisions?limit=100', { signal: controller.signal });
       const body = await response.json();
+      if (controller.signal.aborted) return;
       if (!response.ok) throw new Error(body.detail || body.error || '读取失败');
       setLog(body);
       setError('');
     } catch (cause) {
-      if (!signal?.aborted) setError(cause instanceof Error ? cause.message : String(cause));
+      if (!controller.signal.aborted) setError(cause instanceof Error ? cause.message : String(cause));
     } finally {
-      busy.current = false;
-      setRefreshing(false);
+      inFlight.current.delete(controller);
+      if (inFlight.current.size === 0) setRefreshing(false);
     }
   }, []);
 
   useEffect(() => {
     if (!active) return;
-    const abort = new AbortController();
-    void load(abort.signal);
+    void load();
     const timer = window.setInterval(() => {
-      if (!document.hidden) void load(abort.signal);
+      if (!document.hidden) void load();
     }, 5000);
     return () => {
-      abort.abort();
+      for (const controller of inFlight.current) controller.abort();
+      inFlight.current.clear();
       window.clearInterval(timer);
     };
   }, [active, load]);
