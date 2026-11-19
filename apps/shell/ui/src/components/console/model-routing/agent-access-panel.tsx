@@ -13,8 +13,8 @@ import { ClientUpdateDialog, type UpdatePreview } from '../clients/client-update
 import { installationSummary } from '../clients/client-management-model.mjs';
 import { useClientManagement, type ClientInstallation } from '../clients/use-client-management';
 
-const CLIENTS = ['claude', 'codex', 'pi'] as const;
-type ClientId = typeof CLIENTS[number];
+// 本机所有 agent 都列出（来自 /api/clients 清单）；只有这三类能就地接入网关。
+const CONNECTABLE = new Set(['claude', 'codex', 'pi']);
 // magpie 里「选模型」就是接入；这里用一个显式选项表达断开并还原。
 const DISCONNECT_VALUE = '__disconnect__';
 
@@ -51,6 +51,13 @@ export function AgentAccessPanel({
   const [failure, setFailure] = useState('');
 
   const connectedCount = status?.clients?.filter((item) => item.connected).length || 0;
+  // 清单是本机事实：三个可接入客户端固定占位（避免逐个读取返回时列表跳动），
+  // 再并入安装清单与网关已知客户端里的其它 agent，全部列出。
+  const ids = [...new Set([
+    ...CONNECTABLE,
+    ...state.installations.map((client) => client.id),
+    ...(status?.clients || []).map((client) => client.client),
+  ])];
 
   async function copy(text: string, key: string) {
     try {
@@ -75,7 +82,7 @@ export function AgentAccessPanel({
 
   return (
     <Panel className="min-w-0 p-6">
-      <SmallTitle action={<Badge className="w-28 justify-center" tone="neutral">{status ? `${connectedCount} / ${CLIENTS.length} 已接入` : '读取接入状态…'}</Badge>}>
+      <SmallTitle action={<Badge className="w-32 justify-center" tone="neutral">{status ? `已接入 ${connectedCount} · ${ids.length} 个客户端` : '读取接入状态…'}</Badge>}>
         接入客户端
       </SmallTitle>
       <p className="text-xs leading-6 text-rex-text-muted">选模型即接入：程序就地写入客户端全局配置并备份原值，不启停网关；选「断开并还原配置」即还原。</p>
@@ -89,9 +96,11 @@ export function AgentAccessPanel({
       </div>
 
       <ul className="mt-3 divide-y divide-rex-border rounded-rex-md border border-rex-border">
-        {CLIENTS.map((id: ClientId) => {
+        {ids.map((id) => {
           const item = status?.clients?.find((entry) => entry.client === id);
           const installed = state.installations.find((client) => client.id === id);
+          const label = clientLabel(id);
+          const supported = CONNECTABLE.has(id);
           const connected = item?.connected === true;
           const current = item && 'target' in item ? String((item as { target?: string | null }).target || 'auto') : 'auto';
           const target = selected[id] ?? current;
@@ -109,38 +118,44 @@ export function AgentAccessPanel({
             <li key={id} className="grid min-w-0 items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
               {/* 照 AgentOverview 的一行式：左侧身份块，右侧事实/操作块；不在行内换行堆三行。 */}
               <div className="flex min-w-0 items-center gap-3">
-                <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-rex-md bg-rex-panel">
-                  {/* 品牌图标来自 magpie（MIT），见 public/icons/NOTICE.md */}
-                  <img src={`/icons/${id}.svg`} alt="" className="size-5" />
-                </span>
+                <BrandIcon id={id} label={label.name} />
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-medium">{clientLabel(id).name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
+                  <p className="truncate text-xs font-medium">{label.name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
                   <p className="flex min-w-0 items-center gap-2 text-[11px] text-rex-text-muted">
-                    <span className="truncate">{installed ? installationSummary(installed) : '版本未读到'}</span>
+                    <span className="truncate">{installed ? installationSummary(installed) : '未检测到程序'}</span>
                     <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed?.update?.supported} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
                   </p>
                 </div>
               </div>
               <div className="flex min-w-0 items-center gap-2">
-                <div className="min-w-0 flex-1">
-                  <Select
-                    aria-label={`${clientLabel(id).name} 接入模型`}
-                    value={pickerValue}
-                    onValueChange={(value) => {
-                      if (value === DISCONNECT_VALUE) {
-                        if (connected) onDisconnect(id);
-                        return;
-                      }
-                      setSelected((previous) => ({ ...previous, [id]: value }));
-                      onConnect(id, value);
-                    }}
-                    options={clientOptions}
-                    disabled={disabled}
-                  />
-                </div>
-                <Badge className="w-14 shrink-0 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
-                  {!item ? '未知' : connected ? '已接入' : '未接入'}
-                </Badge>
+                {supported ? (
+                  <>
+                    <div className="min-w-0 flex-1">
+                      <Select
+                        aria-label={`${label.name} 接入模型`}
+                        value={pickerValue}
+                        onValueChange={(value) => {
+                          if (value === DISCONNECT_VALUE) {
+                            if (connected) onDisconnect(id);
+                            return;
+                          }
+                          setSelected((previous) => ({ ...previous, [id]: value }));
+                          onConnect(id, value);
+                        }}
+                        options={clientOptions}
+                        disabled={disabled}
+                      />
+                    </div>
+                    <Badge className="w-14 shrink-0 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
+                      {!item ? '未知' : connected ? '已接入' : '未接入'}
+                    </Badge>
+                  </>
+                ) : (
+                  <>
+                    <span className="min-w-0 flex-1 truncate">{installed ? '已检测到本机程序，暂无安全接入适配器' : '本机未检测到程序'}</span>
+                    <Badge className="w-16 shrink-0 justify-center" tone={installed ? 'info' : 'neutral'}>{installed ? '已安装' : '未安装'}</Badge>
+                  </>
+                )}
               </div>
             </li>
           );
@@ -179,6 +194,16 @@ export function AgentAccessPanel({
         })();
       }} />}
     </Panel>
+  );
+}
+
+function BrandIcon({ id, label }: { id: string; label: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-rex-md bg-rex-panel font-rex-display text-sm font-semibold">
+      {/* 品牌图标来自 magpie（MIT），见 public/icons/NOTICE.md；没有图标的客户端退回首字母。 */}
+      {failed ? label.slice(0, 1) : <img src={`/icons/${id}.svg`} alt="" className="size-5" onError={() => setFailed(true)} />}
+    </span>
   );
 }
 

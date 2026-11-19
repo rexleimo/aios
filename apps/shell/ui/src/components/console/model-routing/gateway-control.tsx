@@ -203,7 +203,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
   };
 
   return (
-    <div className="grid min-w-0 grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+    <div className="min-w-0 space-y-5">
       <GatewaySetupGuide
         status={status}
         pending={pending}
