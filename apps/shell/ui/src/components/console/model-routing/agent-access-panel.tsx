@@ -122,7 +122,7 @@ export function AgentAccessPanel({
                   <p className="truncate text-xs font-medium">{label.name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
                   <p className="flex min-w-0 items-center gap-2 text-[11px] text-rex-text-muted">
                     <span className="truncate">{installed ? installationSummary(installed) : '未检测到程序'}</span>
-                    <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed?.update?.supported} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
+                    <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
                   </p>
                 </div>
               </div>
@@ -143,9 +143,16 @@ export function AgentAccessPanel({
                     disabled={disabled}
                   />
                 </div>
-                <Badge className="w-14 shrink-0 justify-center" tone={connected ? 'ok' : 'neutral'}>
+                <button
+                  type="button"
+                  aria-label={`${label.name} ${connected ? '断开接入' : '接入网关'}`}
+                  title={connected ? '点击断开并还原配置' : '点击接入网关（写入全局配置）'}
+                  disabled={disabled}
+                  onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
+                  className={`w-16 shrink-0 cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-medium disabled:cursor-not-allowed disabled:opacity-40 ${connected ? 'bg-rex-green/10 text-rex-green' : 'bg-rex-panel-strong text-rex-text-muted hover:text-rex-cyan'}`}
+                >
                   {connected ? '已接入' : '未接入'}
-                </Badge>
+                </button>
               </div>
             </li>
           );
