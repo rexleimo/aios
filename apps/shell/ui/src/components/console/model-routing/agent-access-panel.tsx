@@ -145,13 +145,15 @@ export function AgentAccessPanel({
                 </div>
                 <button
                   type="button"
-                  aria-label={`${label.name} ${connected ? '断开接入' : '接入网关'}`}
-                  title={connected ? '点击断开并还原配置' : '点击接入网关（写入全局配置）'}
+                  role="switch"
+                  aria-label={`${label.name} 接入网关`}
+                  aria-checked={connected}
+                  title={connected ? '已接入 · 点击断开并还原' : '未接入 · 点击接入（写入全局配置）'}
                   disabled={disabled}
                   onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
-                  className={`w-16 shrink-0 cursor-pointer rounded-full px-2 py-0.5 text-[11px] font-medium disabled:cursor-not-allowed disabled:opacity-40 ${connected ? 'bg-rex-green/10 text-rex-green' : 'bg-rex-panel-strong text-rex-text-muted hover:text-rex-cyan'}`}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rex-cyan disabled:opacity-40 ${connected ? 'bg-rex-cyan' : 'bg-rex-border'}`}
                 >
-                  {connected ? '已接入' : '未接入'}
+                  <span aria-hidden="true" className={`h-5 w-5 rounded-full bg-rex-bg transition-transform motion-reduce:transition-none ${connected ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </button>
               </div>
             </li>
