@@ -13,8 +13,10 @@ import { ClientUpdateDialog, type UpdatePreview } from '../clients/client-update
 import { installationSummary } from '../clients/client-management-model.mjs';
 import { useClientManagement, type ClientInstallation } from '../clients/use-client-management';
 
-// 本机所有 agent 都列出（来自 /api/clients 清单）；只有这三类能就地接入网关。
+// 本机所有 agent 都列出（来自 /api/clients 清单）；只有这三类已有就地接入编辑器。
 const CONNECTABLE = new Set(['claude', 'codex', 'pi']);
+// relay 客户端但还没有就地编辑器：可手动接入；own 客户端账号绑定，请求到不了网关。
+const RELAY_MANUAL = new Set(['opencode', 'hermes']);
 // magpie 里「选模型」就是接入；这里用一个显式选项表达断开并还原。
 const DISCONNECT_VALUE = '__disconnect__';
 
@@ -152,7 +154,9 @@ export function AgentAccessPanel({
                   </>
                 ) : (
                   <>
-                    <span className="min-w-0 flex-1 truncate">{installed ? '已检测到本机程序，暂无安全接入适配器' : '本机未检测到程序'}</span>
+                    <span className="min-w-0 flex-1 truncate">
+                      {!installed ? '本机未检测到程序' : RELAY_MANUAL.has(id) ? '可手动接入 · 步骤见接入手册' : '客户端自带模型，不经网关'}
+                    </span>
                     <Badge className="w-16 shrink-0 justify-center" tone={installed ? 'info' : 'neutral'}>{installed ? '已安装' : '未安装'}</Badge>
                   </>
                 )}
