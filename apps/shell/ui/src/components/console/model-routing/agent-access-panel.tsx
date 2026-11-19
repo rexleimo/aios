@@ -15,6 +15,8 @@ import { useClientManagement, type ClientInstallation } from '../clients/use-cli
 
 const CLIENTS = ['claude', 'codex', 'pi'] as const;
 type ClientId = typeof CLIENTS[number];
+// magpie 里「选模型」就是接入；这里用一个显式选项表达断开并还原。
+const DISCONNECT_VALUE = '__disconnect__';
 
 interface AccessClient {
   client: string;
@@ -76,14 +78,14 @@ export function AgentAccessPanel({
       <SmallTitle action={<Badge className="w-28 justify-center" tone="neutral">{status ? `${connectedCount} / ${CLIENTS.length} 已接入` : '读取接入状态…'}</Badge>}>
         接入客户端
       </SmallTitle>
-      <p className="text-xs leading-6 text-rex-text-muted">就地接入，确认后改写配置并备份原值；开关只改配置，不启停网关。</p>
+      <p className="text-xs leading-6 text-rex-text-muted">选模型即接入：程序就地写入客户端全局配置并备份原值，不启停网关；选「断开并还原配置」即还原。</p>
       {/* 固定高度：异步读取逐个返回时，下面列表/折叠区不因提示文案增减而跳动。 */}
       <div className="mt-1 min-h-12 text-xs leading-5">
         {error ? <p role="alert" className="text-rex-danger">网关状态刷新失败：{error}</p>
           : failure ? <p role="alert" className="text-rex-danger">{failure}</p>
             : Object.keys(state.errors).length > 0
               ? <p role="alert" className="text-rex-danger">{Object.values(state.errors).join('；')}未读到</p>
-              : <InlineFeedback feedback={feedback} idle={canConnect ? '接入/还原会改写真实配置，操作前需确认。' : '先让运行中的网关加载就绪的模型路由，再接入客户端；已接入的仍可还原。'} />}
+              : <InlineFeedback feedback={feedback} idle={canConnect ? '选择模型即写入客户端配置，操作前需确认。' : '先让运行中的网关加载就绪的模型路由，再接入客户端；已接入的仍可断开还原。'} />}
       </div>
 
       <ul className="mt-3 divide-y divide-rex-border rounded-rex-md border border-rex-border">
@@ -93,12 +95,16 @@ export function AgentAccessPanel({
           const connected = item?.connected === true;
           const current = item && 'target' in item ? String((item as { target?: string | null }).target || 'auto') : 'auto';
           const target = selected[id] ?? current;
-          const clientOptions = [...state.targets];
-          if (target && !clientOptions.some((option) => option.value === target)) {
+          const pickerValue = connected ? target : DISCONNECT_VALUE;
+          const clientOptions = [
+            ...state.targets,
+            { value: DISCONNECT_VALUE, label: '断开并还原配置' },
+          ];
+          if (target && target !== DISCONNECT_VALUE && !clientOptions.some((option) => option.value === target)) {
             clientOptions.unshift({ value: target, label: `${target} · 当前引用未在目录中` });
           }
-          // 接入需要网关就绪且无刷新错误；还原（已接入）不依赖目录版本或刷新成功。
-          const disabled = busy || state.busy || (connected ? !item : !item || state.loading || !!error || !canConnect);
+          // 选模型接入需要网关就绪且无刷新错误；断开（已接入）不依赖目录版本或刷新成功。
+          const disabled = busy || state.busy || !item || (connected ? false : state.loading || !!error || !canConnect);
           return (
             <li key={id} className="grid min-w-0 items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
               {/* 照 AgentOverview 的一行式：左侧身份块，右侧事实/操作块；不在行内换行堆三行。 */}
@@ -117,19 +123,24 @@ export function AgentAccessPanel({
               </div>
               <div className="flex min-w-0 items-center gap-2">
                 <div className="min-w-0 flex-1">
-                  <Select aria-label={`${clientLabel(id).name} 默认模型`} value={target} onValueChange={(value) => setSelected((previous) => ({ ...previous, [id]: value }))} options={clientOptions} disabled={disabled} />
+                  <Select
+                    aria-label={`${clientLabel(id).name} 接入模型`}
+                    value={pickerValue}
+                    onValueChange={(value) => {
+                      if (value === DISCONNECT_VALUE) {
+                        if (connected) onDisconnect(id);
+                        return;
+                      }
+                      setSelected((previous) => ({ ...previous, [id]: value }));
+                      onConnect(id, value);
+                    }}
+                    options={clientOptions}
+                    disabled={disabled}
+                  />
                 </div>
                 <Badge className="w-14 shrink-0 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
                   {!item ? '未知' : connected ? '已接入' : '未接入'}
                 </Badge>
-                <button
-                  type="button" role="switch" aria-label={`${clientLabel(id).name} 接入网关`} aria-checked={connected}
-                  disabled={disabled}
-                  onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rex-cyan disabled:opacity-40 ${connected ? 'bg-rex-cyan' : 'bg-rex-border'}`}
-                >
-                  <span aria-hidden="true" className={`h-5 w-5 rounded-full bg-rex-bg transition-transform motion-reduce:transition-none ${connected ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                </button>
               </div>
             </li>
           );

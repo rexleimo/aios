@@ -179,18 +179,19 @@ test('overview reserves real loading slots while deferred registry, health and l
         if (options.failed) assert.match(text, /读取失败/u);
         // Model-access count is stated in the runtime-ready panel (compact overview).
         else assert.match(text, options.configured ? /1 个显式绑定模型/u : /0 个显式绑定模型|尚未读取/u);
-        // 接入客户端已改为开关式列表：每个可接入客户端一个开关，状态由 aria-checked 表达。
-        const switches = page.getByRole('switch', { name: /接入网关$/u });
-        assert.equal(await switches.count(), 3, 'one gateway switch per connectable client');
-        for (const control of await switches.all()) {
-          if (await control.getAttribute('aria-checked') === 'false') {
-            assert.equal(await control.isDisabled(), !payloads[gatewayPath].body.ready, 'connect switch tracks gateway readiness');
+        // magpie 式：模型选择器即接入入口，没有单独开关。未接入时显示「断开并还原配置」选项。
+        const pickers = page.getByRole('combobox', { name: /接入模型$/u });
+        assert.equal(await pickers.count(), 3, 'one model picker per connectable client');
+        for (const picker of await pickers.all()) {
+          const label = await picker.innerText();
+          if (label.includes('断开并还原配置')) {
+            assert.equal(await picker.isDisabled(), !payloads[gatewayPath].body.ready, 'model picker blocked until gateway ready');
           } else {
-            assert.equal(await control.isDisabled(), false, 'an already-connected client can still be restored');
+            assert.equal(await picker.isDisabled(), false, 'connected client can change model or disconnect');
           }
         }
         if (options.connected) {
-          assert.equal(await page.getByRole('switch', { name: 'Claude Code 接入网关' }).getAttribute('aria-checked'), 'true');
+          assert.match(await page.getByRole('combobox', { name: 'Claude Code 接入模型' }).innerText(), /AIOS Auto/u);
         }
 
         // Setup guide: three steps always present; exactly one "下一步" once status is known.

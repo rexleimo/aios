@@ -8,6 +8,12 @@ import { runRoutingProfileBrowserChecks } from '../groups/routing-profiles-conso
 import { runAgentBrowserChecks } from './clients-resources/agent-workspace.mjs';
 import { runResourceBrowserChecks } from './clients-resources/resource-workspace.mjs';
 
+// magpie 式接入：点开某个 agent 的模型选择器，选一项即触发写入确认。
+async function pickAgentModel(page, clientName, option) {
+  await page.getByRole('combobox', { name: `${clientName} 接入模型` }).click();
+  await page.getByRole('option', { name: option }).click();
+}
+
 async function chooseTheme(page, theme) {
   const href = page.url();
   // Draft controls are mounted only after the hydrated configuration fetch completes.
@@ -29,7 +35,7 @@ async function runLegacyControlBrowserChecks(t, { fixture, baseUrl }) {
     await page.goto(`${baseUrl}/routing`);
     await visible(page, page.getByText('运行时就绪：可路由 2 个模型', { exact: true }));
     const approved = { action: 'connect', confirm: true, client: 'codex', port: 3127, expectedRevision: state.catalogHash, target: 'auto' };
-    await page.getByRole('switch', { name: 'Codex 接入网关' }).click();
+    await pickAgentModel(page, 'Codex', /AIOS Auto/u);
     const dialog = page.getByRole('dialog');
     await visible(page, dialog.getByText(/http:\/\/127\.0\.0\.1:3127/));
     const confirmationText = await dialog.innerText();
@@ -64,16 +70,16 @@ async function runLegacyControlBrowserChecks(t, { fixture, baseUrl }) {
         await page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.status() === 503);
         await visible(page, page.getByText('刷新失败：fixture gateway read unavailable', { exact: true }).first());
       }
-      const switches = page.getByRole('switch', { name: /接入网关$/u });
-      assert.equal(await switches.count(), 3);
-      for (const control of await switches.all()) {
-        if (await control.getAttribute('aria-checked') === 'false') assert.equal(await control.isDisabled(), true, 'connect switch blocked by unusable catalog revision');
+      const pickers = page.getByRole('combobox', { name: /接入模型$/u });
+      assert.equal(await pickers.count(), 3);
+      for (const picker of await pickers.all()) {
+        if ((await picker.innerText()).includes('断开并还原配置')) assert.equal(await picker.isDisabled(), true, 'model picker blocked by unusable catalog revision');
       }
       assert.equal(await page.getByRole('dialog').count(), 0);
       assert.deepEqual(state.gatewayActions, []);
-      const disconnect = page.getByRole('switch', { name: 'Claude Code 接入网关' });
-      assert.equal(await disconnect.isDisabled(), false, 'safe recovery must not depend on a usable catalog revision or a successful refresh');
-      await disconnect.click();
+      const disconnectPicker = page.getByRole('combobox', { name: 'Claude Code 接入模型' });
+      assert.equal(await disconnectPicker.isDisabled(), false, 'safe recovery must not depend on a usable catalog revision or a successful refresh');
+      await pickAgentModel(page, 'Claude Code', '断开并还原配置');
       await Promise.all([
         page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.request().method() === 'POST'),
         page.getByRole('dialog').getByRole('button', { name: '确认还原', exact: true }).click(),
@@ -247,8 +253,8 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
       await visible(page, page.getByText('运行时就绪：监听已启动，但尚无模型访问配置', { exact: true }));
       await visible(page, page.getByRole('list', { name: '接入步骤' }).getByText('配置模型来源', { exact: true }));
       await visible(page, page.getByText('运行时就绪：监听已启动，但尚无模型访问配置', { exact: true }));
-      for (const control of await page.getByRole('switch', { name: /接入网关$/u }).all()) {
-        if (await control.getAttribute('aria-checked') === 'false') assert.equal(await control.isDisabled(), true);
+      for (const picker of await page.getByRole('combobox', { name: /接入模型$/u }).all()) {
+        if ((await picker.innerText()).includes('断开并还原配置')) assert.equal(await picker.isDisabled(), true);
       }
       await noPageOverflow(page);
       if (artifacts) await page.screenshot({ path: path.join(artifacts, `gateway-empty-overview-${width}.png`), fullPage: true });
@@ -291,7 +297,7 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     await visible(page, page.getByText('有客户端仍指向网关。', { exact: false }));
     await page.getByText('手动接入（隔离模式，不碰真实配置）', { exact: true }).click();
     await visible(page, page.getByText('aios model-router connect --isolated --port 3127', { exact: true }));
-    assert.equal(await page.getByRole('switch', { name: 'Codex 接入网关' }).isDisabled(), true);
+    assert.equal(await page.getByRole('combobox', { name: 'Codex 接入模型' }).isDisabled(), true);
     await page.getByRole('button', { name: '启动网关', exact: true }).click();
     await page.getByRole('dialog').getByRole('button', { name: '取消', exact: true }).click();
     assert.equal(state.gatewayActions.length, 0);
@@ -300,7 +306,7 @@ export async function runGatewayBrowserChecks(t, { baseUrl, token }) {
     await visible(page, page.getByRole('button', { name: '关闭网关', exact: true }));
     assert.deepEqual(state.gatewayActions, [{ action: 'start', confirm: true, port: 3127 }]);
     const approvedRevision = state.catalogHash;
-    await page.getByRole('switch', { name: 'Codex 接入网关' }).click();
+    await pickAgentModel(page, 'Codex', /AIOS Auto/u);
     await visible(page, page.getByRole('dialog').getByText(/http:\/\/127\.0\.0\.1:3127/));
     await Promise.all([
       page.waitForResponse(response => response.url().endsWith('/api/model-routing/gateway') && response.request().method() === 'GET'),
