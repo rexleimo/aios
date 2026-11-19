@@ -313,7 +313,7 @@
 **为什么**：管理面最大的诚信风险是把「没做成」显示成「做完了」。这两个状态是仓库里已有的诚实形状，界面必须继承，而不是用进度条掩盖。
 
 
-## 网关 Auto（省钱路由）
+## 网关 Auto（按意图分流）
 
 ### AIOS Auto（按意图分流）vs Claude Code auto mode（权限审查）
 
@@ -323,6 +323,6 @@
 
 ### 可省钱客户端（relay 客户端）
 
-**定义**：`CLIENT_DEFINITIONS` 中 `modelRouting:'relay'` 的客户端——claude、codex、opencode、hermes、pi；只有它们的请求经网关、可被 AIOS Auto 分配到不同模型。`own` 客户端（gemini、grok、workbuddy、zcode、qoder）账号绑定，不在省钱路由范围。
+**定义**：`CLIENT_DEFINITIONS` 中 `modelRouting:'relay'` 的客户端——claude、codex、opencode、hermes、pi；只有它们的请求经网关、可被 AIOS Auto 分配到不同模型。`own` 客户端（gemini、grok、workbuddy、zcode、qoder）账号绑定，不在意图分流范围。
 
-**为什么**：用户目标是「多客户端自由分配到不同模型以省钱」（2026-11-18 /grill）；省钱面的边界由客户端能否改端点决定，不是由界面能否列出它决定。
+**为什么**：边界由客户端能否改端点决定，不是由界面能否列出它决定；`own` 客户端发起的请求根本到不了网关，写进意图表也不会生效。
