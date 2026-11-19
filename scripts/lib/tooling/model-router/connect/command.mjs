@@ -11,12 +11,12 @@ import { claudeSettings, codexConfig, connectLaunchCommand, piModels, shellQuote
 import { connectInplace, disconnectInplace, inplaceBackupPath } from './inplace.mjs';
 import { withRegistryWriteLock } from '../entry/registry.mjs';
 import { GATEWAY_DEFAULT_PORT } from '../lifecycle/daemon.mjs';
-import { artifactModelForClient, connectTargetReadiness, persistedConnectTarget, requestModelForTarget } from './targets.mjs';
+import { CONNECT_CLIENTS, artifactModelForClient, connectTargetReadiness, persistedConnectTarget, requestModelForTarget } from './targets.mjs';
 import { assertIsolatedOwned, contentHash, fileHash, isolatedStale, isolatedArtifactPath, legacyArtifactHash } from './isolated.mjs';
 import { parseConnectState } from './config/journals.mjs';
 
 const STATE_FILE = 'connect-state.json';
-const DEFAULT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
+const DEFAULT_CLIENTS = CONNECT_CLIENTS;
 const CLIENT_MODEL_ALIAS = 'gateway-default';
 
 function readRegistryDocument(registryFile, baseRegistry) {
@@ -133,7 +133,7 @@ function validateConnect(gatewayUrl, clients, io) {
   }
   const selected = clients.filter((client) => DEFAULT_CLIENTS.includes(client));
   if (!selected.length) {
-    io.error(`connect: no supported clients in ${JSON.stringify(clients)} (use claude|codex|pi)`);
+    io.error(`connect: no supported clients in ${JSON.stringify(clients)} (use ${CONNECT_CLIENTS.join('|')})`);
     return null;
   }
   return selected;
@@ -214,7 +214,7 @@ async function connectInplaceUnderLock(options) {
   writeConnectState(stateDir, { ...nextState, ...defaults });
   io.log(`AIOS gateway connect (in-place) → ${gatewayUrl}`);
   for (const item of result.results) io.log(`  ${item.client}: ${item.file} (${item.changedKeys.join(', ')})`);
-  io.log(`Your normal claude/codex/pi now route through the gateway. Start it:  aios model-router gateway --port ${GATEWAY_DEFAULT_PORT}`);
+  io.log(`Your normal ${selected.join('/')} commands now route through the gateway. Start it:  aios model-router gateway --port ${GATEWAY_DEFAULT_PORT}`);
   io.log('Restore anytime:  aios model-router disconnect');
   return { exitCode: 0, stateDir, mode: 'inplace', ...readiness, ...result };
 }

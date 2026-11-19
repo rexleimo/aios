@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import { createHash } from 'node:crypto';
-import { editClaude, restoreClaude, editCodex, restoreCodex, editPiSettings, restorePiSettings, editPiModels, restorePiModels } from '../editors.mjs';
+import { editClaude, restoreClaude, editCodex, restoreCodex, editPiSettings, restorePiSettings, editPiModels, restorePiModels,
+  editOpencode, restoreOpencode, editZcode, restoreZcode, editQoder, restoreQoder, editGemini, restoreGemini,
+  editHermes, restoreHermes, editGrok, restoreGrok, editWorkbuddy, restoreWorkbuddy } from '../editors.mjs';
 import { persistedConnectTarget, requestModelForTarget } from '../targets.mjs';
 
 export const EDITORS = {
@@ -8,12 +10,26 @@ export const EDITORS = {
   'codex/main': (text, { gatewayUrl, modelId }) => editCodex(text, gatewayUrl, modelId),
   'pi/settings': (text, { modelId }) => editPiSettings(text, modelId),
   'pi/models': (text, { gatewayUrl, modelId, catalog }) => editPiModels(text, gatewayUrl, modelId, catalog),
+  'opencode/main': (text, { gatewayUrl, modelId, catalog }) => editOpencode(text, { gatewayUrl, modelId, catalog }),
+  'zcode/main': (text, { gatewayUrl, modelId, catalog }) => editZcode(text, { gatewayUrl, modelId, catalog }),
+  'qoder/main': (text, { gatewayUrl, modelId, catalog }) => editQoder(text, { gatewayUrl, modelId, catalog }),
+  'gemini/main': (text, { gatewayUrl, modelId, catalog }) => editGemini(text, { gatewayUrl, modelId, catalog }),
+  'hermes/main': (text, { gatewayUrl, modelId }) => editHermes(text, { gatewayUrl, modelId }),
+  'grok/main': (text, { gatewayUrl, modelId }) => editGrok(text, { gatewayUrl, modelId }),
+  'workbuddy/main': (text, { gatewayUrl, modelId, catalog }) => editWorkbuddy(text, { gatewayUrl, modelId, catalog }),
 };
 export const RESTORERS = {
   'claude/main': restoreClaude,
   'codex/main': restoreCodex,
   'pi/settings': restorePiSettings,
   'pi/models': restorePiModels,
+  'opencode/main': restoreOpencode,
+  'zcode/main': restoreZcode,
+  'qoder/main': restoreQoder,
+  'gemini/main': restoreGemini,
+  'hermes/main': restoreHermes,
+  'grok/main': restoreGrok,
+  'workbuddy/main': restoreWorkbuddy,
 };
 
 export function staleConfig(file) {

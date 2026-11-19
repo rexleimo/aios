@@ -15,7 +15,7 @@ function fixture(t) {
   const home = path.join(root, 'home'), stateDir = path.join(root, 'state');
   const files = { claude: path.join(home, '.claude/settings.json'), codex: path.join(home, '.codex/config.toml'), settings: path.join(home, '.pi/agent/settings.json'), models: path.join(home, '.pi/agent/models.json') };
   const write = (name, text) => { fs.mkdirSync(path.dirname(files[name]), { recursive: true }); fs.writeFileSync(files[name], text); };
-  return { home, stateDir, gatewayUrl: GW, files, write };
+  return { home, stateDir, gatewayUrl: GW, files, write, clients: ['claude', 'codex', 'pi'] };
 }
 const client = (status, name) => status.clients.find((item) => item.client === name);
 
@@ -25,7 +25,7 @@ test('parsed files, not a recovery journal, establish connection; daemon shares 
   assert.equal(absent.connected, false);
   assert.deepEqual(absent.clients.map((item) => item.readback.status), ['missing', 'missing', 'missing']);
   connectInplace(f);
-  assert.deepEqual(describeConnect(f.stateDir, fs, { home: f.home }), readConnectStatus(f));
+  assert.deepEqual(describeConnect(f.stateDir, fs, { home: f.home, clients: f.clients }), readConnectStatus(f));
   const daemon = await gatewayStatus({ ...f, probeImpl: async () => false, killImpl() { throw Object.assign(new Error(), { code: 'ESRCH' }); } });
   assert.deepEqual(daemon.clients, readConnectStatus(f).clients);
   assert.equal(daemon.connected, true);

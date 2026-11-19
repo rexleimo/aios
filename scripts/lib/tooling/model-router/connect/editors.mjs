@@ -5,6 +5,9 @@
 import path from 'node:path';
 import { clientGatewayUrl } from './targets.mjs';
 export { editCodex, restoreCodex } from './config/codex.mjs';
+export { editOpencode, restoreOpencode, editZcode, restoreZcode, editQoder, restoreQoder, editGemini, restoreGemini } from './config/json-clients.mjs';
+export { editHermes, restoreHermes, editGrok, restoreGrok } from './config/block-clients.mjs';
+export { editWorkbuddy, restoreWorkbuddy } from './config/workbuddy-editor.mjs';
 
 const PLACEHOLDER_TOKEN = 'aios-gateway';
 const CLAUDE_MODELS = ['ANTHROPIC_MODEL', 'ANTHROPIC_DEFAULT_SONNET_MODEL', 'ANTHROPIC_DEFAULT_OPUS_MODEL', 'ANTHROPIC_DEFAULT_HAIKU_MODEL', 'ANTHROPIC_SMALL_FAST_MODEL'];
@@ -156,5 +159,12 @@ export function clientConfigPaths(home) {
     claude: [path.join(home, '.claude', 'settings.json')],
     codex: [path.join(home, '.codex', 'config.toml')],
     pi: [path.join(home, '.pi', 'agent', 'settings.json'), path.join(home, '.pi', 'agent', 'models.json')],
+    opencode: [path.join(home, '.config', 'opencode', 'opencode.json')],
+    zcode: [path.join(home, '.zcode', 'v2', 'config.json')],
+    qoder: [path.join(home, '.qoder', 'settings.json')],
+    gemini: [path.join(home, '.gemini', 'settings.json')],
+    hermes: [path.join(home, '.hermes', 'config.yaml')],
+    grok: [path.join(home, '.grok', 'config.toml')],
+    workbuddy: [path.join(home, '.workbuddy', 'models.json')],
   };
 }

@@ -70,7 +70,7 @@ for (const mode of ['isolated', 'inplace']) {
       assert.equal(state.codexModel, undefined);
       assert.equal(state.piModel, undefined);
       assert.equal(fs.readFileSync(f.registryFile, 'utf8'), before);
-      const status = readConnectStatus(f);
+      const status = readConnectStatus({ ...f, clients });
       assert.equal(status.mode, mode);
       for (const item of status.clients) {
         assert.equal(item.connected, true, JSON.stringify(item));

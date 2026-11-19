@@ -1,5 +1,7 @@
 const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-const clients = ['claude', 'codex', 'pi'];
+import { CONNECT_CLIENTS } from '../config/clients.mjs';
+
+const clients = CONNECT_CLIENTS;
 
 export function parseConnectState(text) {
   const value = JSON.parse(text);

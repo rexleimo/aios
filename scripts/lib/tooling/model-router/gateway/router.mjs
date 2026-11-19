@@ -7,6 +7,7 @@ import { normalizeModelProtocol, modelProtocolSet } from '../providers/protocols
 import { availabilityForModel } from '../routing/availability.mjs';
 import { normalizeId, normalizeEnvKey } from '../entry/shared.mjs';
 import { getClientModelRouting } from '../../../foundation/clients/registry.mjs';
+import { CONNECT_CLIENTS } from '../connect/config/clients.mjs';
 import { orderedGroupMembers } from '../routing/groups.mjs';
 import { parseTargetRef, resolveWireTarget } from '../routing/targets.mjs';
 
@@ -95,8 +96,8 @@ function resolveGatewayTarget(clientId, role, registry, env, context = {}, reque
 // intent（可选）是分类器模型报出的意图 {intentId,modelId,description,classifierModel}——self-report 而非猜文本。
 export function resolveGatewayRoutes({ clientId = '', role = '', registry, env = process.env, clientProtocol = 'claude', context = {}, intent = null, requestedModel, headerTargets = [], pathModel } = {}) {
   const from = normalizeModelProtocol(clientProtocol) || 'claude';
-  // own 模式客户端（账号绑定）不接模型分配，用它自己的默认。
-  if (clientId && getClientModelRouting(clientId) !== 'relay') {
+  // 已显式接入网关的客户端（含原本 own 模式的）按其身份走路由；其余 own 客户端仍用自身模型。
+  if (clientId && !CONNECT_CLIENTS.includes(clientId) && getClientModelRouting(clientId) !== 'relay') {
     throw new GatewayRouteError('This client uses its native model, not a gateway route');
   }
   const wireTarget = parseRequestedTarget(requestedModel, registry, { headerTargets, pathModel });

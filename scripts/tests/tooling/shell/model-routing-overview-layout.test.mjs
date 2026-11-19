@@ -10,6 +10,7 @@ const configPath = '/api/config/model-routing';
 const gatewayPath = '/api/model-routing/gateway';
 const decisionsPath = '/api/model-routing/decisions';
 const clientsPath = '/api/clients';
+const ALL_CLIENTS = ['claude', 'codex', 'pi', 'opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy'];
 
 async function workspaceAssets() {
   const { build } = await import('esbuild');
@@ -55,7 +56,7 @@ function responses({ configured = false, running = true, managed = true, stale =
       ready: running && configured && !code, configuredRevision: 'a1'.repeat(32), configuredModelCount: models.length,
       configuredModels: models.length, readyModels: configured && !code ? 1 : 0,
       code: code || (configured ? undefined : 'NO_ROUTE_CONFIGURED'),
-      clients: ['claude', 'codex', 'pi'].map(client => ({ client, connected: client === 'claude' && connected, launch: `${client} --offline`, artifactExists: false, mode: 'inplace' })),
+      clients: ALL_CLIENTS.map(client => ({ client, connected: client === 'claude' && connected, launch: `${client} --offline`, artifactExists: false, mode: 'inplace' })),
     } },
     [decisionsPath]: { ok: true, body: {
       exists: configured, counters: { requests: configured ? 1234 : 0, errors: 0, autoRouted: configured ? 12 : 0 },
@@ -63,7 +64,7 @@ function responses({ configured = false, running = true, managed = true, stale =
       recent: configured ? [{ at: '2026-11-15T08:00:00Z', clientId: 'claude', modelId: 'local/model', role: 'implementer' }] : [],
     } },
     [clientsPath]: { ok: !failed, body: failed ? { error: 'Offline client read failed' } : {
-      clients: ['claude', 'codex', 'pi'].map(id => ({ id, installed: true, version: '1.0.0', revision: 'fixture', update: { supported: false, reason: 'offline fixture' } })),
+      clients: ALL_CLIENTS.map(id => ({ id, installed: true, version: '1.0.0', revision: 'fixture', update: { supported: false, reason: 'offline fixture' } })),
     } },
   };
 }
@@ -181,7 +182,7 @@ test('overview reserves real loading slots while deferred registry, health and l
         else assert.match(text, options.configured ? /1 个显式绑定模型/u : /0 个显式绑定模型|尚未读取/u);
         // magpie 式：模型选择器即接入入口，没有单独开关。未接入时显示「断开并还原配置」选项。
         const pickers = page.getByRole('combobox', { name: /接入模型$/u });
-        assert.equal(await pickers.count(), 3, 'one model picker per connectable client');
+        assert.equal(await pickers.count(), ALL_CLIENTS.length, 'one model picker per connectable client');
         for (const picker of await pickers.all()) {
           const label = await picker.innerText();
           if (label.includes('断开并还原配置')) {

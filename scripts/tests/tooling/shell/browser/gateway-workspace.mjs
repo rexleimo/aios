@@ -71,7 +71,7 @@ async function runLegacyControlBrowserChecks(t, { fixture, baseUrl }) {
         await visible(page, page.getByText('刷新失败：fixture gateway read unavailable', { exact: true }).first());
       }
       const pickers = page.getByRole('combobox', { name: /接入模型$/u });
-      assert.equal(await pickers.count(), 3);
+      assert.equal(await pickers.count(), 10, 'all connectable clients get a model picker');
       for (const picker of await pickers.all()) {
         if ((await picker.innerText()).includes('断开并还原配置')) assert.equal(await picker.isDisabled(), true, 'model picker blocked by unusable catalog revision');
       }

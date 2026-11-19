@@ -93,7 +93,18 @@ test('routing gateway rejects browser cross-origin requests', async () => {
   assert.equal(calls, 0);
 });
 
-for (const clientId of ['gemini', 'unknown-client']) {
+test('routing gateway serves connectable own-mode clients (gemini) once they point at the gateway', async () => {
+  let calls = 0;
+  const { app } = createRoutingGatewayApp({
+    registry, clientId: 'gemini', env: { MY_KEY: 'fixture-key' },
+    fetchImpl: async () => { calls += 1; return new Response('{"content":[{"type":"text","text":"ok"}]}', { status: 200, headers: { 'content-type': 'application/json' } }); },
+  });
+  const res = await app.request('/v1/messages', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(claudeBody) });
+  assert.equal(res.status, 200);
+  assert.ok(calls > 0, 'the gateway routes the connected gemini client to an upstream');
+});
+
+for (const clientId of ['unknown-client']) {
   test(`routing gateway rejects ${clientId} before classifier or upstream access`, async () => {
     let calls = 0;
     const { app, decisions } = createRoutingGatewayApp({

@@ -7,6 +7,57 @@ import { parseWireTarget } from '../routing/targets.mjs';
 import { inspectInplaceEntry } from './config/inplace-ownership.mjs';
 import { isolatedArtifactPath, isolatedOwnership } from './isolated.mjs';
 import { parseConnectState, parseConnectBackup } from './config/journals.mjs';
+import YAML from 'yaml';
+
+// 新增客户端的接入态读取：直接按各自格式读原文，不套用旧的 JSON.parse 通用分支。
+const GENERIC_CLIENTS = new Set(['opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy']);
+function genericObserved(client, home, fsImpl) {
+  const file = home ? clientConfigPaths(home)[client]?.[0] : null;
+  let text;
+  try { text = file ? fsImpl.readFileSync(file, 'utf8') : null; }
+  catch (error) { if (error?.code !== 'ENOENT') return { status: 'unknown', connected: false }; }
+  if (text === null || text === undefined) return { status: 'missing', connected: false };
+  let base, model, selected;
+  try {
+    if (client === 'hermes') {
+      const doc = YAML.parse(text);
+      selected = doc?.model?.provider === 'aios';
+      base = doc?.providers?.aios?.base_url;
+      model = doc?.model?.default;
+    } else if (client === 'grok') {
+      selected = /\[model\."aios\//u.test(text);
+      base = text.match(/base_url\s*=\s*"([^"]+)"/u)?.[1];
+      model = text.match(/default\s*=\s*"aios\/([^"]+)"/u)?.[1];
+    } else if (client === 'workbuddy') {
+      const doc = JSON.parse(text);
+      const list = Array.isArray(doc) ? doc : doc?.models || [];
+      const entry = list.find((item) => item?.vendor === 'aios');
+      selected = Boolean(entry);
+      base = entry?.url?.replace(/\/v1\/chat\/completions$/u, '');
+      model = entry?.id?.startsWith('aios/') ? entry.id.slice(5) : entry?.id;
+    } else {
+      const doc = JSON.parse(text);
+      if (client === 'gemini') {
+        base = doc?.env?.GOOGLE_GEMINI_BASE_URL;
+        model = doc?.model?.name;
+        selected = doc?.security?.auth?.selectedType === 'gemini-api-key' && Boolean(doc?.env?.GEMINI_API_KEY);
+      } else {
+        const provider = client === 'qoder' ? doc?.providers?.aios : doc?.provider?.aios;
+        base = provider?.options?.baseURL || provider?.baseUrl;
+        selected = Boolean(provider);
+        model = client === 'qoder' ? provider?.model : doc?.model;
+      }
+    }
+  } catch {
+    return { status: 'malformed', connected: false };
+  }
+  const url = safeUrl(base);
+  const gateway = Boolean(url && /^http:\/\/127\.0\.0\.1:/u.test(url));
+  const target = targetFromWire(model);
+  const connected = Boolean(selected && gateway && target);
+  return { status: connected ? 'connected' : selected && (gateway || target) ? 'partial' : 'disconnected', connected, target,
+    ...(url ? { baseUrl: url } : {}), identity: connected ? 'verified' : 'absent' };
+}
 
 const record = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const LF = String.fromCharCode(10), DQ = String.fromCharCode(34), SQ = String.fromCharCode(39), BS = String.fromCharCode(92);
@@ -128,20 +179,26 @@ function observed(client, files, mode, state) {
     ...(url ? { baseUrl: url } : {}), identity: identity ? 'verified' : 'absent' };
 }
 
-export function readConnectStatus({ stateDir, home, fsImpl = fs, mode: requestedMode } = {}) {
+export function readConnectStatus({ stateDir, home, fsImpl = fs, mode: requestedMode, clients = CONNECT_CLIENTS } = {}) {
   const stateRead = read(path.join(stateDir, 'connect-state.json'), fsImpl, parseConnectState);
   const backupRead = read(path.join(stateDir, 'connect-backup.json'), fsImpl, parseConnectBackup);
   const state = stateRead.status === 'ok' ? stateRead.value : null;
   const backup = backupRead.status === 'ok' && Array.isArray(backupRead.value.entries) ? backupRead.value : null;
   const mode = requestedMode || (backup || state?.mode === 'inplace' || !state && home ? 'inplace' : 'isolated');
-  const clients = CONNECT_CLIENTS.map((client) => {
+  const clientStatuses = clients.map((client) => {
     const entries = backup?.entries.filter((entry) => entry.client === client) || [];
     const paths = mode === 'inplace' ? (home ? clientConfigPaths(home)[client] : client === 'pi'
       ? ['settings', 'models'].map((role) => entries.find((entry) => entry.role === role)?.file) : [entries[0]?.file])
       : [isolatedArtifactPath(stateDir, client)];
-    const files = paths.map((file) => read(file, fsImpl, client === 'codex' ? codexDocument : JSON.parse));
-    let facts;
-    try { facts = observed(client, files, mode, state); } catch { facts = { status: 'unknown', connected: false }; }
+    let facts, files;
+    if (GENERIC_CLIENTS.has(client) && mode === 'inplace') {
+      try { facts = genericObserved(client, home, fsImpl); } catch { facts = { status: 'unknown', connected: false }; }
+      const status = facts.status === 'unknown' ? 'unreadable' : facts.status === 'missing' ? 'missing' : 'ok';
+      files = [{ status }];
+    } else {
+      files = paths.map((file) => read(file, fsImpl, client === 'codex' ? codexDocument : JSON.parse));
+      try { facts = observed(client, files, mode, state); } catch { facts = { status: 'unknown', connected: false }; }
+    }
     const journalStatuses = [stateRead.status, backupRead.status];
     let ownership = { status: 'unowned' }, pending = false;
     try {
@@ -173,5 +230,5 @@ export function readConnectStatus({ stateDir, home, fsImpl = fs, mode: requested
       ownership, recovery, launch: mode === 'inplace' ? client : connectLaunchCommand(client, stateDir, { piModel }),
       artifactExists: mode === 'isolated' && files[0].status !== 'missing' && files[0].status !== 'unreadable' };
   });
-  return { mode, connected: clients.some((client) => client.connected), clients, gatewayUrl: safeUrl(backup?.gatewayUrl || state?.gatewayUrl) };
+  return { mode, connected: clientStatuses.some((client) => client.connected), clients: clientStatuses, gatewayUrl: safeUrl(backup?.gatewayUrl || state?.gatewayUrl) };
 }

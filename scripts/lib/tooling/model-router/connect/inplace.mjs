@@ -14,6 +14,7 @@ import { readConnectStatus } from './readback.mjs';
 import { parseConnectBackup } from './config/journals.mjs';
 
 const BACKUP_FILE = 'connect-backup.json';
+// 内部默认仍是历史三客户端；CLI 总是显式传 clients（来自 validateConnect），所以生产侧接入全部可选客户端。
 const DEFAULT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
 
 export function inplaceBackupPath(stateDir) {
@@ -132,7 +133,16 @@ export function disconnectInplace(options = {}) {
     const unchanged = isOriginal(entry, current);
     const text = unchanged ? null : RESTORERS[key](before.text, entry.backup);
     // 重试接入不能把用户新增内容升级成可整文件删除的所有权；仅在还原后确实为空时删除。
-    const empty = text !== null && (key === 'codex/main' ? !text.trim() : Object.keys(JSON.parse(text)).length === 0);
+    // JSON 客户端看对象键数，TOML/YAML/数组客户端按文本是否为空判断，避免 parse 非 JSON 抛错。
+    let empty = text !== null && !text.trim();
+    if (text && text.trim()) {
+      try {
+        const parsed = JSON.parse(text);
+        empty = Array.isArray(parsed) ? parsed.length === 0 : parsed && typeof parsed === 'object' ? Object.keys(parsed).length === 0 : false;
+      } catch {
+        empty = false;
+      }
+    }
     const remove = !entry.existed && empty && appliedSnapshots(entry, document).some((known) => sameFile(current, known));
     return { entry, before, unchanged, remove, text };
   });
@@ -157,5 +167,5 @@ export function disconnectInplace(options = {}) {
 
 // Ownership journals describe recovery, not whether a client is actually configured.
 export function inplaceStatus(options = {}) {
-  return readConnectStatus({ ...options, mode: 'inplace' });
+  return readConnectStatus({ clients: DEFAULT_CLIENTS, ...options, mode: 'inplace' });
 }

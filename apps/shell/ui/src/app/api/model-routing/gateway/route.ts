@@ -19,7 +19,7 @@ export const dynamic = 'force-dynamic';
 
 const execFileAsync = promisify(execFile);
 const ACTIONS = new Set(['start', 'stop', 'connect', 'disconnect']);
-const CLIENTS = new Set(['claude', 'codex', 'pi']);
+const CLIENTS = new Set(['claude', 'codex', 'pi', 'opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy']);
 
 // Keep syntax aligned with routing/targets.mjs without importing CLI code into Next.
 function connectTarget(value: unknown): string | null {

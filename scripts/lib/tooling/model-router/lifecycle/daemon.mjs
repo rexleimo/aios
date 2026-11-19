@@ -198,12 +198,13 @@ export async function gatewayStatus({
   killImpl = process.kill.bind(process),
   probeImpl = probePort,
   fsImpl = fs,
+  clients,
 } = {}) {
   const record = readGatewayPid(stateDir, fsImpl);
   const chosenPort = record?.port || Number(port) || GATEWAY_DEFAULT_PORT;
   const portOpen = await probeImpl(chosenPort);
   const pidAlive = record ? isPidAlive(record.pid, killImpl) : false;
-  const connect = describeConnect(stateDir, fsImpl, { home });
+  const connect = describeConnect(stateDir, fsImpl, { home, ...(clients ? { clients } : {}) });
   return {
     running: portOpen,
     managed: pidAlive && portOpen,

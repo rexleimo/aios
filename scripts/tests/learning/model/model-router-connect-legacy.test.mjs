@@ -19,7 +19,7 @@ function fixture(t) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   const home = path.join(root, 'home'), stateDir = path.join(root, 'state');
   fs.mkdirSync(stateDir);
-  return { root, home, stateDir, gatewayUrl: GW };
+  return { root, home, stateDir, gatewayUrl: GW, clients: ['claude', 'codex', 'pi'] };
 }
 function legacyInplace(t, fingerprints) {
   const f = fixture(t), id = 'group:x';

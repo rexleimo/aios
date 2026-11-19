@@ -239,6 +239,8 @@
       "scripts/tests/learning/model/routing/model-router-discovery.test.mjs",
       "scripts/tests/learning/model/model-router-connect.test.mjs",
       "scripts/tests/learning/model/model-router-connect-editors.test.mjs",
+      "scripts/tests/learning/model/model-router-connect-extra-editors.test.mjs",
+      "scripts/tests/learning/model/model-router-connect-extra-integration.test.mjs",
       "scripts/tests/learning/model/model-router-connect-inplace.test.mjs",
       "scripts/tests/learning/model/model-router-connect-inplace-cli.test.mjs",
       "scripts/tests/learning/model/model-router-gateway-lifecycle.test.mjs",

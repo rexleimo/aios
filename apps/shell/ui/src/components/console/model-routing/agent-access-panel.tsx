@@ -13,8 +13,8 @@ import { ClientUpdateDialog, type UpdatePreview } from '../clients/client-update
 import { installationSummary } from '../clients/client-management-model.mjs';
 import { useClientManagement, type ClientInstallation } from '../clients/use-client-management';
 
-// 本机所有 agent 都列出（来自 /api/clients 清单）；只有这三类已有就地接入编辑器。
-const CONNECTABLE = new Set(['claude', 'codex', 'pi']);
+// 与 CLI 的 CONNECT_CLIENTS 一致：全部客户端都支持就地接入（选模型即写入全局配置）。
+const CONNECTABLE = new Set(['claude', 'codex', 'pi', 'opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy']);
 // magpie 里「选模型」就是接入；这里用一个显式选项表达断开并还原。
 const DISCONNECT_VALUE = '__disconnect__';
 
@@ -100,7 +100,6 @@ export function AgentAccessPanel({
           const item = status?.clients?.find((entry) => entry.client === id);
           const installed = state.installations.find((client) => client.id === id);
           const label = clientLabel(id);
-          const supported = CONNECTABLE.has(id);
           const connected = item?.connected === true;
           const current = item && 'target' in item ? String((item as { target?: string | null }).target || 'auto') : 'auto';
           const target = selected[id] ?? current;
@@ -128,36 +127,25 @@ export function AgentAccessPanel({
                 </div>
               </div>
               <div className="flex min-w-0 items-center gap-2">
-                {supported ? (
-                  <>
-                    <div className="min-w-0 flex-1">
-                      <Select
-                        aria-label={`${label.name} 接入模型`}
-                        value={pickerValue}
-                        onValueChange={(value) => {
-                          if (value === DISCONNECT_VALUE) {
-                            if (connected) onDisconnect(id);
-                            return;
-                          }
-                          setSelected((previous) => ({ ...previous, [id]: value }));
-                          onConnect(id, value);
-                        }}
-                        options={clientOptions}
-                        disabled={disabled}
-                      />
-                    </div>
-                    <Badge className="w-14 shrink-0 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
-                      {!item ? '未知' : connected ? '已接入' : '未接入'}
-                    </Badge>
-                  </>
-                ) : (
-                  <>
-                    <span className="min-w-0 flex-1 truncate">
-                      {!installed ? '本机未检测到程序' : '尚未实现该客户端的就地接入适配器'}
-                    </span>
-                    <Badge className="w-16 shrink-0 justify-center" tone={installed ? 'info' : 'neutral'}>{installed ? '已安装' : '未安装'}</Badge>
-                  </>
-                )}
+                <div className="min-w-0 flex-1">
+                  <Select
+                    aria-label={`${label.name} 接入模型`}
+                    value={pickerValue}
+                    onValueChange={(value) => {
+                      if (value === DISCONNECT_VALUE) {
+                        if (connected) onDisconnect(id);
+                        return;
+                      }
+                      setSelected((previous) => ({ ...previous, [id]: value }));
+                      onConnect(id, value);
+                    }}
+                    options={clientOptions}
+                    disabled={disabled}
+                  />
+                </div>
+                <Badge className="w-14 shrink-0 justify-center" tone={connected ? 'ok' : 'neutral'}>
+                  {connected ? '已接入' : '未接入'}
+                </Badge>
               </div>
             </li>
           );
@@ -199,12 +187,15 @@ export function AgentAccessPanel({
   );
 }
 
+// 图标文件多数是 .svg，zcode 在 magpie 源里是 .png；统一映射，避免 404。
+const ICON_EXT: Record<string, string> = { zcode: 'png' };
+
 function BrandIcon({ id, label }: { id: string; label: string }) {
   const [failed, setFailed] = useState(false);
   return (
     <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-rex-md bg-rex-panel font-rex-display text-sm font-semibold">
       {/* 品牌图标来自 magpie（MIT），见 public/icons/NOTICE.md；没有图标的客户端退回首字母。 */}
-      {failed ? label.slice(0, 1) : <img src={`/icons/${id}.svg`} alt="" className="size-5" onError={() => setFailed(true)} />}
+      {failed ? label.slice(0, 1) : <img src={`/icons/${id}.${ICON_EXT[id] || 'svg'}`} alt="" className="size-5" onError={() => setFailed(true)} />}
     </span>
   );
 }

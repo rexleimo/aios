@@ -5,8 +5,8 @@ import { serializeWireTarget } from '../../routing/targets.mjs';
 import { supportsProtocolTranslation } from './protocol-codec.mjs';
 import { getClientModelRouting } from '../../../../foundation/clients/registry.mjs';
 
-const CLIENT_PREFIX = /^\/clients\/(claude|codex|pi)(?=\/|$)/u;
-const CLIENTS = new Set(['claude', 'codex', 'pi']);
+const CLIENT_PREFIX = /^\/clients\/(claude|codex|pi|opencode|zcode|qoder|gemini|hermes|grok|workbuddy)(?=\/|$)/u;
+const CLIENTS = new Set(['claude', 'codex', 'pi', 'opencode', 'zcode', 'qoder', 'gemini', 'hermes', 'grok', 'workbuddy']);
 const FIXED_DATE = '2026-01-01T00:00:00Z';
 
 export function gatewayPath(request) {
@@ -31,7 +31,7 @@ export function registerGatewayCatalog(app, { registry, env, clientId }) {
     if (c.req.header('origin') || c.req.header('sec-fetch-site')) return c.json({ error: { code: 'CROSS_ORIGIN_REJECTED' } }, 403);
     try {
       const client = gatewayClient(c, clientId);
-      if (client && getClientModelRouting(client) !== 'relay') throw new GatewayRouteError('This client does not use gateway model routing');
+      if (client && !CLIENTS.has(client) && getClientModelRouting(client) !== 'relay') throw new GatewayRouteError('This client does not use gateway model routing');
       const providers = loadProviders(registry);
       const protocol = client === 'codex' ? 'openai-response' : client === 'pi' ? 'openai-chat' : 'claude';
       const available = (requestedModel) => {

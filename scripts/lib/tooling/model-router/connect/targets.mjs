@@ -6,8 +6,13 @@ import { parseTargetRef, serializeWireTarget, TARGET_REF_VERSION } from '../rout
 
 export const DEFAULT_CONNECT_TARGET = 'auto';
 export { TARGET_REF_VERSION };
-export const CONNECT_CLIENTS = Object.freeze(['claude', 'codex', 'pi']);
-const PROTOCOLS = Object.freeze({ claude: 'claude', codex: 'openai-response', pi: 'claude' });
+export { CONNECT_CLIENTS } from './config/clients.mjs';
+import { CONNECT_CLIENTS } from './config/clients.mjs';
+const PROTOCOLS = Object.freeze({
+  claude: 'claude', codex: 'openai-response', pi: 'claude',
+  opencode: 'openai-chat', zcode: 'openai-chat', qoder: 'openai-chat',
+  gemini: 'openai-chat', hermes: 'openai-chat', grok: 'openai-chat', workbuddy: 'openai-chat',
+});
 
 const capability = (supported, reason) => ({ supported, ...(reason ? { reason } : {}) });
 

@@ -8,6 +8,7 @@ import { connectInplace, disconnectInplace, inplaceStatus, inplaceBackupPath } f
 import { describeConnect } from '../../../lib/tooling/model-router/lifecycle/daemon.mjs';
 
 const GW = 'http://127.0.0.1:8686';
+const ROSTER = ['claude', 'codex', 'pi'];
 
 function seedHome() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-inplace-test-'));
@@ -126,7 +127,7 @@ test('网关状态如实反映就地接入：connect→inplace 已接入，disco
   const { root, home, stateDir } = seedHome();
   try {
     connectInplace({ home, gatewayUrl: GW, stateDir });
-    const status = describeConnect(stateDir);
+    const status = describeConnect(stateDir, fs, { clients: ROSTER });
     assert.equal(status.mode, 'inplace');
     assert.equal(status.connected, true);
     assert.deepEqual(status.clients.map((c) => c.connected), [true, true, true]);
@@ -144,7 +145,7 @@ test('部分还原：只 disconnect claude，codex/pi 仍接入，备份保留�
     assert.deepEqual(res.remainingClients.sort(), ['codex', 'pi']);
     assert.equal(JSON.parse(read(home, '.claude/settings.json')).env.ANTHROPIC_BASE_URL, 'https://user-relay.example');
     assert.match(read(home, '.codex/config.toml'), /model_provider = "aios-gateway"/u, 'codex 仍接入');
-    const status = describeConnect(stateDir);
+    const status = describeConnect(stateDir, fs, { clients: ROSTER });
     assert.deepEqual(status.clients.map((c) => [c.client, c.connected]), [['claude', false], ['codex', true], ['pi', true]]);
     assert.ok(fs.existsSync(inplaceBackupPath(stateDir)), '剩余客户端备份保留');
   } finally { cleanup(root); }

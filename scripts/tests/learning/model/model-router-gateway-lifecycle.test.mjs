@@ -219,13 +219,14 @@ test('describeConnect reads current artifacts independently of the recovery jour
   const claudeFile = path.join(stateDir, claudeArtifact.relPath);
   const piFile = path.join(stateDir, piArtifact.relPath);
   const digest = (text) => createHash('sha256').update(text).digest('hex');
+  const describe = () => describeConnect(stateDir, fsImpl, { clients: ['claude', 'codex', 'pi'] });
   const stateText = JSON.stringify({
     mode: 'isolated', targetRefVersion: 1, gatewayUrl, clients: ['claude', 'pi'],
     targets: { claude: 'auto', pi: 'model:Mixed%2FID%252F' },
     artifactHashes: { claude: digest(claudeArtifact.content), pi: digest(piArtifact.content) },
   });
   const fsImpl = memFs({ [stateFile]: stateText });
-  const journalOnly = describeConnect(stateDir, fsImpl);
+  const journalOnly = describe();
   assert.equal(journalOnly.connected, false, 'a journal does not establish a current connection');
   for (const client of journalOnly.clients) {
     assert.equal(client.connected, false);
@@ -234,11 +235,11 @@ test('describeConnect reads current artifacts independently of the recovery jour
   }
   fsImpl.writeFileSync(claudeFile, '{}');
   fsImpl.writeFileSync(piFile, '{}');
-  assert.equal(describeConnect(stateDir, fsImpl).connected, false, 'artifact existence alone is not a connection');
+  assert.equal(describe().connected, false, 'artifact existence alone is not a connection');
   fsImpl.writeFileSync(claudeFile, claudeArtifact.content);
   fsImpl.writeFileSync(piFile, piArtifact.content);
   const before = new Map(fsImpl.files);
-  const info = describeConnect(stateDir, fsImpl);
+  const info = describe();
   assert.equal(info.connected, true);
   assert.deepEqual(fsImpl.files, before, 'readback does not modify artifacts or recovery metadata');
   const claude = info.clients.find((c) => c.client === 'claude');
@@ -259,7 +260,7 @@ test('describeConnect reads current artifacts independently of the recovery jour
   assert.equal(pi.ownership.status, 'owned');
   assert.match(pi.launch, /--provider aios-gateway --model 'aios\/model\/Mixed%2FID%252F'$/u);
   fsImpl.unlinkSync(stateFile);
-  const unowned = describeConnect(stateDir, fsImpl);
+  const unowned = describe();
   assert.equal(unowned.connected, true, 'parsed current artifacts remain connected without a journal');
   for (const client of unowned.clients.filter((c) => c.client !== 'codex')) {
     assert.equal(client.ownership.status, 'unowned');
@@ -270,7 +271,7 @@ test('describeConnect reads current artifacts independently of the recovery jour
   changed.env.ANTHROPIC_MODEL = 'aios/group/team%2Fone';
   changed.env.ANTHROPIC_AUTH_TOKEN = 'fixture-readback-secret';
   fsImpl.writeFileSync(claudeFile, JSON.stringify(changed));
-  const current = describeConnect(stateDir, fsImpl);
+  const current = describe();
   const drift = current.clients.find((c) => c.client === 'claude');
   assert.equal(drift.connected, true);
   assert.equal(drift.target, 'group:team%2Fone');
@@ -281,7 +282,7 @@ test('describeConnect reads current artifacts independently of the recovery jour
   assert.doesNotMatch(JSON.stringify(current), /fixture-readback-secret|ANTHROPIC_AUTH_TOKEN|apiKey/u);
   fsImpl.unlinkSync(claudeFile);
   fsImpl.unlinkSync(piFile);
-  assert.equal(describeConnect(stateDir, fsImpl).connected, false);
+  assert.equal(describe().connected, false);
   assert.equal(fsImpl.readFileSync(stateFile), stateText, 'stale journal stays untouched when artifacts disappear');
 });
 
