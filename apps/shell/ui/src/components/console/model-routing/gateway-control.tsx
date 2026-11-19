@@ -5,10 +5,11 @@
 // 接入默认 magpie 式「就地」：一键把网关地址写进客户端真实配置（备份原值、可还原），普通命令即走网关；
 // 隔离模式（特殊启动命令）降为可折叠兜底。全部走共享件，不另写一套表面。
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Check, Copy, Plug, Power, Terminal } from 'lucide-react';
+import { Power } from 'lucide-react';
 import { clientLabel } from '../../../lib/console-facts';
 import type { ViewId } from '../../../lib/console-navigation';
 import { Badge, Button, InlineFeedback, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
+import { AgentAccessPanel } from './agent-access-panel';
 import { GatewaySetupGuide, type GuideActionKind } from './gateway-setup-guide';
 
 interface GatewayClient {
@@ -37,15 +38,11 @@ export interface GatewayStatus {
   generationVerified?: boolean;
 }
 
-type ConnectConfirmation = { kind: 'connect'; client: string; port: number; expectedRevision: string } | { kind: 'disconnect'; client: string };
+type ConnectConfirmation = { kind: 'connect'; client: string; port: number; expectedRevision: string; target: string } | { kind: 'disconnect'; client: string };
 type ConfirmState = { kind: 'start' | 'stop' } | ConnectConfirmation;
 type Busy = 'start' | 'stop' | 'connect' | 'disconnect' | null;
 
 const POLL_MS = 2500;
-const CONNECT_CMD = 'aios model-router connect';
-const DISCONNECT_CMD = 'aios model-router disconnect';
-const CLIENT_IDS = ['claude', 'codex', 'pi'];
-
 export function GatewayControl({ active, navigate }: { active: boolean; navigate?: (view: ViewId) => void }) {
   const [status, setStatus] = useState<GatewayStatus | null>(null);
   const [error, setError] = useState('');
@@ -53,7 +50,6 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const [connectFeedback, setConnectFeedback] = useState<Feedback | null>(null);
-  const [copied, setCopied] = useState('');
   const inFlight = useRef(false);
 
   const loadStatus = useCallback(async () => {
@@ -118,7 +114,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
       const res = await fetch('/api/model-routing/gateway', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ action, confirm: true, client, ...(approved.kind === 'connect' ? { port: approved.port, expectedRevision: approved.expectedRevision } : {}) }),
+        body: JSON.stringify({ action, confirm: true, client, ...(approved.kind === 'connect' ? { port: approved.port, expectedRevision: approved.expectedRevision, target: approved.target } : {}) }),
       });
       const body = await res.json();
       if (!res.ok || body.ok === false) {
@@ -136,16 +132,6 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
     } finally {
       setBusy(null);
       await loadStatus();
-    }
-  }
-
-  async function copy(text: string, key: string) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(key);
-      setTimeout(() => setCopied((current) => (current === key ? '' : current)), 1500);
-    } catch {
-      setConnectFeedback({ text: '复制失败：请手动选中命令复制', tone: 'error' });
     }
   }
 
@@ -192,7 +178,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
     if (confirm.kind === 'stop') return { title: '关闭本地网关？', description: '将停止界面托管的网关进程，接入的客户端在网关重新启动前无法路由请求。' };
     if (confirm.kind === 'connect') {
       const name = clientLabel(confirm.client).name;
-      return { title: `接入 ${name}？`, description: `将把 http://127.0.0.1:${confirm.port} 写进 ${name} 的真实配置（只改网关需要的 key，自动备份原值）。按本次确认的目录版本接入；目录变化时需刷新并重新确认。之后普通 ${name} 命令即走网关，用哪个模型由路由矩阵决定。可随时一键还原。` };
+      return { title: `接入 ${name}？`, description: `将把 http://127.0.0.1:${confirm.port} 写进 ${name} 的真实配置（只改网关需要的 key，自动备份原值），默认目标 ${confirm.target}。按本次确认的目录版本接入；目录变化时需刷新并重新确认。之后普通 ${name} 命令即走网关。可随时一键还原。` };
     }
     if (confirm.kind === 'disconnect') {
       const name = clientLabel(confirm.client).name;
@@ -212,7 +198,7 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
     else if (kind === 'providers') navigate?.('routing');
     else if (kind === 'connect') {
       const first = status?.clients.find((item) => !item.connected);
-      if (first && canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client: first.client, port: status.port, expectedRevision: status.configuredRevision });
+      if (first && canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client: first.client, port: status.port, expectedRevision: status.configuredRevision, target: 'auto' });
     }
   };
 
@@ -265,53 +251,18 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
         </div>
       </Panel>
 
-      <Panel className="min-w-0 p-6">
-        <SmallTitle action={<Badge className="w-28 justify-center" tone="neutral">{pending ? '读取接入状态…' : `${status?.clients.filter((item) => item.connected).length || 0} / ${status?.clients.length || 0} 已接入`}</Badge>}>
-          接入客户端
-        </SmallTitle>
-        <p className="text-xs leading-6 text-rex-text-muted">就地接入，确认后改写配置并备份原值。</p>
-        <div className="mt-3 space-y-2">
-          {CLIENT_IDS.map((client) => {
-            const item = status?.clients.find((entry) => entry.client === client);
-            return (
-              <div key={client} className="flex flex-wrap items-center gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 p-3">
-                <Terminal size={14} className="text-rex-text-muted" />
-                <span className="text-xs font-medium">{clientLabel(client).name}</span>
-                <Badge className="w-14 justify-center" tone={item?.connected ? 'ok' : 'neutral'}>{!item ? '未知' : item.connected ? '已接入' : '未接入'}</Badge>
-                <Button
-                  className="ml-auto"
-                  variant={item?.connected ? 'outline' : 'default'}
-                  size="sm"
-                  disabled={!item || busy !== null || (!item.connected && (!!error || !canConnect))}
-                  onClick={() => {
-                    if (item?.connected) setConfirm({ kind: 'disconnect', client });
-                    else if (canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client, port: status.port, expectedRevision: status.configuredRevision });
-                  }}
-                >
-                  <Plug size={14} />
-                  {busy ? '处理中…' : item?.connected ? '还原' : '接入'}
-                </Button>
-              </div>
-            );
-          })}
-        </div>
-        <div className="mt-3">
-          <InlineFeedback className="block min-h-10 break-words leading-5" feedback={error ? { text: `刷新失败：${error}`, tone: 'error' } : connectFeedback} idle={canConnect ? '接入/还原会改写真实配置，操作前需确认。' : ready && !validRevision ? '目录版本不可用，请刷新后再接入。已接入的客户端仍可还原。' : '先让运行中的网关加载就绪的模型路由，再接入客户端。已接入的客户端仍可还原。'} />
-        </div>
-        <details className="group mt-4 text-[11px] leading-5 text-rex-text-muted">
-          <summary className="cursor-pointer select-none">手动接入（隔离模式，不碰真实配置）</summary>
-          <div className="hidden group-open:block">
-            {status ? <p className="mt-2">
-              不想改真实配置时，用 <code className="rounded bg-rex-panel px-1 py-0.5">{CONNECT_CMD} --isolated --port {status.port}</code> 生成隔离工件，再按下列命令启动客户端；还原用 <code className="rounded bg-rex-panel px-1 py-0.5">{DISCONNECT_CMD}</code>。codex/pi 隔离目录里暂时看不到你原有的 MCP/历史会话。
-            </p> : <p className="mt-2">待读取网关端口后显示隔离接入命令。</p>}
-            <div className="mt-2 space-y-2">
-              {(status?.clients ?? []).map((item) => (
-                <CommandRow key={item.client} text={item.launch} copied={copied === item.client} onCopy={() => copy(item.launch, item.client)} />
-              ))}
-            </div>
-          </div>
-        </details>
-      </Panel>
+      <AgentAccessPanel
+        status={status}
+        canConnect={canConnect}
+        busy={busy !== null}
+        error={error}
+        feedback={connectFeedback}
+        onConnect={(client, target) => {
+          if (canConnect && status?.configuredRevision) setConfirm({ kind: 'connect', client, port: status.port, expectedRevision: status.configuredRevision, target });
+        }}
+        onDisconnect={(client) => setConfirm({ kind: 'disconnect', client })}
+        onNavigate={(view) => navigate?.(view)}
+      />
 
       <Modal
         open={confirm !== null}
@@ -327,19 +278,6 @@ export function GatewayControl({ active, navigate }: { active: boolean; navigate
           </Button>
         </div>
       </Modal>
-    </div>
-  );
-}
-
-function CommandRow({ text, copied, onCopy }: { text: string; copied: boolean; onCopy: () => void }) {
-  return (
-    <div className="flex items-center gap-2">
-      <code className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-rex-bg px-2.5 py-1.5 text-[11px] leading-5 whitespace-nowrap text-rex-text-body ring-1 ring-rex-border">
-        {text}
-      </code>
-      <Button variant="ghost" size="icon" aria-label={copied ? '已复制' : '复制命令'} onClick={onCopy}>
-        {copied ? <Check size={15} className="text-rex-green" /> : <Copy size={15} />}
-      </Button>
     </div>
   );
 }

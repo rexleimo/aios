@@ -43,7 +43,8 @@ test('控制卡：共享导入面 + 确认弹窗 + confirm:true + active 门控�
   assert.match(card, /from '\.\.\/console-ui'/u, '只从共享面取件');
   assert.match(card, /Modal/u, '启停前确认');
   assert.match(card, /confirm:\s*true/u, 'POST 必须带确认');
-  assert.match(card, /navigator\.clipboard/u, '命令可一键复制');
+  assert.match(card, /from '\.\/agent-access-panel'/u, '接入列表拆到独立组件，控制卡只管确认门');
+  assert.match(read(ui('src/components/console/model-routing/agent-access-panel.tsx')), /navigator\.clipboard/u, '命令与示例可一键复制');
   assert.match(card, /if \(!active\) return/u, '非激活不轮询');
   assert.match(card, /\/api\/model-routing\/gateway/u);
   assert.doesNotMatch(card, /scripts\/lib/u, 'UI 不得 import scripts/lib');
@@ -81,7 +82,8 @@ test('就地接入：API 客户端闭合校验 + 卡 per-client 接入/还原 + 
   const card = read(ui('src/components/console/model-routing/gateway-control.tsx'));
   assert.match(card, /runConnectAction/u, 'per-client 接入/还原走确认门');
   assert.match(card, /action, confirm: true, client/u, '接入 POST 带 client + 确认');
-  assert.match(card, /--isolated/u, '隔离模式降为可折叠兜底');
+  assert.match(card, /target: approved\.target/u, '接入 POST 带默认目标');
+  assert.match(read(ui('src/components/console/model-routing/agent-access-panel.tsx')), /--isolated/u, '隔离模式降为可折叠兜底');
   const inplace = read(lib('connect/inplace.mjs'));
   assert.match(inplace, /renameSync/u, '原子写（temp+rename）');
   assert.match(inplace, /connect-backup\.json/u, '原值备份落盘供还原');

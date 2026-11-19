@@ -9,6 +9,7 @@ const ui = path.resolve(import.meta.dirname, '../../../../apps/shell/ui');
 const configPath = '/api/config/model-routing';
 const gatewayPath = '/api/model-routing/gateway';
 const decisionsPath = '/api/model-routing/decisions';
+const clientsPath = '/api/clients';
 
 async function workspaceAssets() {
   const { build } = await import('esbuild');
@@ -61,6 +62,9 @@ function responses({ configured = false, running = true, managed = true, stale =
       byClient: configured ? { claude: 1234 } : {},
       recent: configured ? [{ at: '2026-11-15T08:00:00Z', clientId: 'claude', modelId: 'local/model', role: 'implementer' }] : [],
     } },
+    [clientsPath]: { ok: !failed, body: failed ? { error: 'Offline client read failed' } : {
+      clients: ['claude', 'codex', 'pi'].map(id => ({ id, installed: true, version: '1.0.0', revision: 'fixture', update: { supported: false, reason: 'offline fixture' } })),
+    } },
   };
 }
 
@@ -72,7 +76,7 @@ async function installDeferredReads(page) {
     const pending = [];
     window.fetch = async (input, init = {}) => {
       const pathname = new URL(String(input), 'http://fixture.invalid').pathname;
-      if (init.method && init.method !== 'GET' || !['/api/config/model-routing', '/api/model-routing/gateway', '/api/model-routing/decisions'].includes(pathname)) {
+      if (init.method && init.method !== 'GET' || !['/api/config/model-routing', '/api/model-routing/gateway', '/api/model-routing/decisions', '/api/clients'].includes(pathname)) {
         window.unexpectedRequests.push(`${init.method || 'GET'} ${pathname}`);
         throw new Error('Request outside offline layout fixture');
       }
@@ -163,7 +167,7 @@ test('overview reserves real loading slots while deferred registry, health and l
         await noPageOverflow(page);
         assert.match(await page.locator('#root').innerText(), /尚未读取/u, 'loading must not claim a loaded state');
         const payloads = responses(options);
-        const order = width === 1440 ? [configPath, gatewayPath, decisionsPath] : [gatewayPath, decisionsPath, configPath];
+        const order = width === 1440 ? [configPath, gatewayPath, decisionsPath, clientsPath] : [gatewayPath, decisionsPath, configPath, clientsPath];
         for (const pathname of order) {
           await page.evaluate(([pathname, result]) => window.releaseRead(pathname, result), [pathname, payloads[pathname]]);
           // Flush the state commit, not a timed wait that could hide an intermediate jump.
@@ -175,9 +179,19 @@ test('overview reserves real loading slots while deferred registry, health and l
         if (options.failed) assert.match(text, /读取失败/u);
         // Model-access count is stated in the runtime-ready panel (compact overview).
         else assert.match(text, options.configured ? /1 个显式绑定模型/u : /0 个显式绑定模型|尚未读取/u);
-        const connect = await page.getByRole('button', { name: '接入', exact: true }).all();
-        for (const button of connect) assert.equal(await button.isDisabled(), !payloads[gatewayPath].body.ready);
-        if (options.connected) assert.equal(await page.getByRole('button', { name: '还原', exact: true }).isEnabled(), true);
+        // 接入客户端已改为开关式列表：每个可接入客户端一个开关，状态由 aria-checked 表达。
+        const switches = page.getByRole('switch', { name: /接入网关$/u });
+        assert.equal(await switches.count(), 3, 'one gateway switch per connectable client');
+        for (const control of await switches.all()) {
+          if (await control.getAttribute('aria-checked') === 'false') {
+            assert.equal(await control.isDisabled(), !payloads[gatewayPath].body.ready, 'connect switch tracks gateway readiness');
+          } else {
+            assert.equal(await control.isDisabled(), false, 'an already-connected client can still be restored');
+          }
+        }
+        if (options.connected) {
+          assert.equal(await page.getByRole('switch', { name: 'Claude Code 接入网关' }).getAttribute('aria-checked'), 'true');
+        }
 
         // Setup guide: three steps always present; exactly one "下一步" once status is known.
         const steps = page.getByRole('list', { name: '接入步骤' });
