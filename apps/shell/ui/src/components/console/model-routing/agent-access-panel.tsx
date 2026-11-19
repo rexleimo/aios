@@ -4,7 +4,7 @@
 // 并给出可复制的「接入」详情（API / Base URL / 密钥 / 模型 / 示例）。
 // 所有写操作仍走父组件已有的确认门与 /api/model-routing/gateway，不在这里新增网关能力。
 import { useState } from 'react';
-import { Check, Copy, Terminal } from 'lucide-react';
+import { Check, Copy } from 'lucide-react';
 
 import { clientLabel } from '../../../lib/console-facts';
 import type { ViewId } from '../../../lib/console-navigation';
@@ -112,25 +112,34 @@ export function AgentAccessPanel({
           // 接入需要网关就绪且无刷新错误；还原（已接入）不依赖目录版本或刷新成功。
           const disabled = busy || state.busy || (connected ? !item : !item || state.loading || !!error || !canConnect);
           return (
-            <li key={id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-3">
-              <Terminal size={15} className="shrink-0 text-rex-text-muted" aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{clientLabel(id).name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
-                <p className="truncate text-[11px] text-rex-text-muted">{installed ? installationSummary(installed) : '版本未读到'}</p>
+            <li key={id} className="grid min-w-0 items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
+              {/* 照 AgentOverview 的一行式：左侧身份块，右侧事实/操作块；不在行内换行堆三行。 */}
+              <div className="flex min-w-0 items-center gap-3">
+                <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-rex-md bg-rex-panel font-rex-display text-sm font-semibold">{clientLabel(id).monogram}</span>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-medium">{clientLabel(id).name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
+                  <p className="flex min-w-0 items-center gap-2 text-[11px] text-rex-text-muted">
+                    <span className="truncate">{installed ? installationSummary(installed) : '版本未读到'}</span>
+                    <Button className="shrink-0 px-1.5" size="sm" variant="ghost" disabled={state.busy || !installed?.update?.supported} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
+                  </p>
+                </div>
               </div>
-              <Badge className="w-14 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
-                {!item ? '未知' : connected ? '已接入' : '未接入'}
-              </Badge>
-              <Select aria-label={`${clientLabel(id).name} 默认模型`} value={target} onValueChange={(value) => setSelected((previous) => ({ ...previous, [id]: value }))} options={clientOptions} disabled={disabled} />
-              <Button size="sm" variant="ghost" disabled={state.busy || !installed?.update?.supported} onClick={() => installed && void previewUpdate(installed)}>更新</Button>
-              <button
-                type="button" role="switch" aria-label={`${clientLabel(id).name} 接入网关`} aria-checked={connected}
-                disabled={disabled}
-                onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rex-cyan disabled:opacity-40 ${connected ? 'bg-rex-cyan' : 'bg-rex-border'}`}
-              >
-                <span aria-hidden="true" className={`h-5 w-5 rounded-full bg-rex-bg transition-transform motion-reduce:transition-none ${connected ? 'translate-x-5' : 'translate-x-0.5'}`} />
-              </button>
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="min-w-0 flex-1">
+                  <Select aria-label={`${clientLabel(id).name} 默认模型`} value={target} onValueChange={(value) => setSelected((previous) => ({ ...previous, [id]: value }))} options={clientOptions} disabled={disabled} />
+                </div>
+                <Badge className="w-14 shrink-0 justify-center" tone={!item ? 'neutral' : connected ? 'ok' : 'neutral'}>
+                  {!item ? '未知' : connected ? '已接入' : '未接入'}
+                </Badge>
+                <button
+                  type="button" role="switch" aria-label={`${clientLabel(id).name} 接入网关`} aria-checked={connected}
+                  disabled={disabled}
+                  onClick={() => connected ? onDisconnect(id) : onConnect(id, target)}
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors motion-reduce:transition-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rex-cyan disabled:opacity-40 ${connected ? 'bg-rex-cyan' : 'bg-rex-border'}`}
+                >
+                  <span aria-hidden="true" className={`h-5 w-5 rounded-full bg-rex-bg transition-transform motion-reduce:transition-none ${connected ? 'translate-x-5' : 'translate-x-0.5'}`} />
+                </button>
+              </div>
             </li>
           );
         })}
