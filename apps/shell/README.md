@@ -74,7 +74,7 @@ apps/shell/                 ← 5 项
     ├── Cargo.toml / Cargo.lock
     ├── build.rs
     ├── tauri.conf.json
-    ├── icons/              (32x32、128x128、128x128@2x、icon.ico)
+    ├── icons/              (品牌吉祥物派生的 RGBA 图标：16/32/128/128@2x/256/512 PNG + ico + icns)
     └── src/                (main.rs, lib.rs, sidecar.rs, job.rs)
 ```
 
@@ -428,11 +428,19 @@ npm run shell:build  # = cargo build --release --manifest-path …
 ### 打包（S2-3，不签名）
 
 ```sh
-npm run shell:bundle     # = tauri build --bundles nsis
+npm run shell:bundle     # = tauri build --bundles nsis（本地单平台）
 ```
 
-产物：`apps/shell/src-tauri/target/release/bundle/nsis/AIOS_0.1.0_x64-setup.exe`（1.84 MiB）。
-`bundle.active=true`、`targets=["nsis"]`，**不签名**。
+`bundle.active=true`，**不签名**。图标是品牌吉祥物派生的全套 RGBA 尺寸
+（`icons/` 含 16/32/128/128@2x/256/512 PNG + `icon.ico` + `icon.icns`），源图与含义见
+[`brand/README.md`](../../brand/README.md)。
+
+**正式发行走 GitHub Actions**（公开仓库免费）：tag `desktop-v<semver>` 触发
+`.github/workflows/desktop-release.yml`，三平台原生 runner 构建：macOS `.dmg`（aarch64 +
+x86_64）、Windows `.exe`（NSIS）、Linux `.deb` + `.AppImage`，产物上传同名 release。
+版本由 tag 唯一决定：`scripts/desktop-release-version.mjs` 把 `desktop-v0.0.1` 解成 `0.0.1`
+并写进 `tauri.conf.json` / `Cargo.toml` / `Cargo.lock`。tag 前缀 `desktop-v*` 与 CLI 的 `v*`
+彻底隔离，不会误触发 CLI 的全套回归发布流。首个版本为 **0.0.1**。
 
 `frontendDist` 指向 `src-tauri/resources/`（一个说明性 index.html），不是 `../ui/.next`：
 实测前者产出 1.84 MiB 安装包，后者把 125 MB 的 Next 产物塞进一个永远不会读它的安装包，

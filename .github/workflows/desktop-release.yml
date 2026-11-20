@@ -1,0 +1,90 @@
+name: desktop-release
+
+# AIOS desktop shell (Tauri) release. Deliberately separate from release.yml:
+# that workflow owns the CLI (`v*` tags) and runs the full regression suite;
+# this one owns the desktop installers and is triggered only by `desktop-v*`.
+# GitHub Actions is free for public repos, so the three native runners below
+# cost nothing and give us real .dmg / .exe / .deb / .AppImage artifacts.
+on:
+  push:
+    tags:
+      - "desktop-v*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.platform }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            args: --target aarch64-apple-darwin
+          - platform: macos-latest
+            args: --target x86_64-apple-darwin
+          - platform: windows-latest
+            args: ""
+          - platform: ubuntu-22.04
+            args: ""
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          submodules: recursive
+
+      # The frontendDist is the checked-in resources/ index.html (ADR 0007):
+      # the window loads the page rendered by the local capability process, so
+      # no Next.js build is needed here. We only need Rust + the Tauri bundler.
+
+      - name: Stamp version from tag
+        shell: bash
+        run: node scripts/desktop-release-version.mjs "${GITHUB_REF_NAME}"
+
+      - name: Install Linux Tauri system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libappindicator3-dev \
+            librsvg2-dev \
+            patchelf \
+            libssl-dev \
+            libgtk-3-dev \
+            libayatana-appindicator3-dev \
+            file
+
+      - name: Install macOS target
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add aarch64-apple-darwin x86_64-apple-darwin
+
+      - name: Build and upload release assets
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # v1.0.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          projectPath: apps/shell/src-tauri
+          tagName: ${{ github.ref_name }}
+          releaseName: "AIOS Desktop ${{ github.ref_name }}"
+          releaseBody: |
+            First desktop release of AIOS — the local-first control plane for
+            long-horizon coding agents. This build carries the new brand mascot:
+            a glowing "memory core" creature inside a local container, with
+            memory shards and evidence shields (see `brand/README.md`).
+
+            Installers (unsigned — signing/notarization is not part of this first release):
+            - macOS: .dmg (aarch64 + x86_64)
+            - Windows: .exe (NSIS)
+            - Linux: .deb + .AppImage
+
+            The desktop shell is a window around a local AIOS tree; see
+            `apps/shell/README.md` for what it does and does not bundle.
+          generateReleaseNotes: true
+          args: ${{ matrix.args }}

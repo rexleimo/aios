@@ -88,12 +88,23 @@ test('the capability process entry the shell starts is the launcher that exists'
 
 test('the shell is a window over a server, not a bundler of the page', () => {
   // The page is `force-dynamic`: it shells out to data/load.mjs per request, so there
-  // is no static export to embed. Bundling is on (S2-3) but produces an unsigned
-  // installer, so the targets are stated and nothing here claims a signature.
+  // is no static export to embed. Bundling is on (S2-3) but produces unsigned
+  // installers. Bundle targets are intentionally NOT pinned here: the desktop
+  // release workflow passes `--bundles` per platform (dmg / nsis / deb / appimage),
+  // so a single config-level target would fight the cross-platform build.
   const config = JSON.parse(read('tauri.conf.json'));
   assert.equal(config.bundle.active, true);
-  assert.deepEqual(config.bundle.targets, ['nsis']);
+  assert.equal(config.bundle.targets, undefined, 'targets are chosen per-platform by the release workflow');
   assert.deepEqual(config.app.windows, [], 'the window is created in code, after the server listens');
+});
+
+test('the desktop release workflow is isolated from the CLI release channel', () => {
+  // A `v*` tag owns the CLI release (full regression). The desktop workflow must
+  // only fire on `desktop-v*`, or one tag would publish two unrelated products.
+  const wf = readFileSync(path.join(ROOT, '.github', 'workflows', 'desktop-release.yml'), 'utf8');
+  assert.match(wf, /desktop-v\*/, 'desktop release must be triggered by a desktop-v* tag');
+  assert.ok(!/^\s+- "v\*"/m.test(wf), 'desktop release must not trigger on the CLI v* tags');
+  assert.match(wf, /versionFromTag|desktop-release-version\.mjs/, 'version must be stamped from the tag');
 });
 
 test('every icon the bundle names exists and is not an empty placeholder', () => {
@@ -103,6 +114,18 @@ test('every icon the bundle names exists and is not an empty placeholder', () =>
     const file = path.join(SRC_TAURI, icon);
     assert.ok(existsSync(file), `${icon} is declared but missing`);
     assert.ok(readFileSync(file).length > 64, `${icon} is too small to be a real image`);
+  }
+});
+
+test('every PNG icon is RGBA — Tauri rejects RGB at bundle time', () => {
+  // 实测坑：sips 从 RGB 源 resize 出的 PNG 丢了 alpha，`generate_context!()` 直接
+  // proc-macro panicked: "icon ... is not RGBA"。新克隆上 CI 会因此打包失败。
+  const config = JSON.parse(read('tauri.conf.json'));
+  for (const icon of config.bundle.icon.filter((name) => name.endsWith('.png'))) {
+    const bytes = readFileSync(path.join(SRC_TAURI, icon));
+    // PNG IHDR: bytes[24] is bit depth, bytes[25] is color type (6 = RGBA).
+    assert.equal(bytes.subarray(1, 4).toString('ascii'), 'PNG', `${icon} is not a PNG`);
+    assert.equal(bytes[25], 6, `${icon} must be RGBA (color type 6), got ${bytes[25]}`);
   }
 });
 
