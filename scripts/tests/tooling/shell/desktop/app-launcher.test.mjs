@@ -6,10 +6,14 @@
 // pin the launcher's three decisions (reuse or start a server, which binary, compile or
 // not) without starting anything real; the window itself is verified by hand.
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
 import {
+	ensureMacAppBundle,
+	macAppInfoPlist,
 	missingUiDependencies,
 	resolveShellBinary,
 	runApp,
@@ -72,6 +76,7 @@ test('without interface dependencies it names the command and starts nothing', a
 	let started = 0;
 	const result = await runApp({
 		rootDir: ROOT,
+		platform: 'linux',
 		existsImpl: () => false,
 		spawnImpl: () => {
 			started += 1;
@@ -90,6 +95,7 @@ test('a server already answering is reused, and nothing is stopped afterwards', 
 	const calls = [];
 	const result = await runApp({
 		rootDir: ROOT,
+		platform: 'linux',
 		existsImpl: existsFor('node_modules', 'node_modules/next/dist/bin/next', SHELL_BINARY_REL),
 		answeringImpl: async () => true,
 		spawnImpl: (...args) => {
@@ -116,6 +122,7 @@ test('a silent port is started, waited for, and stopped when the window closes',
 	const answers = [false, true];
 	const result = await runApp({
 		rootDir: ROOT,
+		platform: 'linux',
 		// The published token file is part of the readiness condition, so the stub must
 		// claim it exists — otherwise the wait runs to its 3-minute timeout, which is
 		// exactly how the first version of this test hung.
@@ -153,4 +160,74 @@ test('a silent port is started, waited for, and stopped when the window closes',
 		[['stop', 4242]],
 		'the server this launcher started is the only one it stops',
 	);
+});
+
+test('Info.plist names the bundle AIOS and points at the icon', () => {
+	const plist = macAppInfoPlist('8.0.0');
+	assert.match(plist, /<key>CFBundleName<\/key><string>AIOS<\/string>/);
+	assert.match(plist, /<key>CFBundleIconFile<\/key><string>icon\.icns<\/string>/);
+	assert.match(plist, /top\.rexai\.aios\.shell/);
+	assert.match(plist, /<string>8\.0\.0<\/string>/);
+});
+
+test('the dev .app bundle has a real binary copy and icon (not a symlink)', () => {
+	// macOS resolves a symlink back to the target binary's name, so the Dock
+	// would show `aios-shell` again. The bundle must hold a real copy named AIOS.
+	const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'aios-bundle-'));
+	try {
+		const rootDir = path.join(tmp, 'repo');
+		const binDir = path.join(rootDir, 'apps', 'shell', 'src-tauri', 'target', 'debug');
+		const iconDir = path.join(rootDir, 'apps', 'shell', 'src-tauri', 'icons');
+		fs.mkdirSync(binDir, { recursive: true });
+		fs.mkdirSync(iconDir, { recursive: true });
+		const bin = path.join(binDir, 'aios-shell');
+		fs.writeFileSync(bin, 'binary-bytes');
+		fs.writeFileSync(path.join(iconDir, 'icon.icns'), 'icns-bytes');
+
+		const bundle = ensureMacAppBundle({ rootDir, binaryPath: bin });
+		const bundledBin = path.join(bundle, 'Contents', 'MacOS', 'AIOS');
+		assert.ok(bundle.endsWith(path.join('debug', 'AIOS.app')), bundle);
+		assert.ok(fs.existsSync(bundledBin), 'bundled binary exists');
+		assert.equal(fs.readFileSync(bundledBin, 'utf8'), 'binary-bytes', 'it is a real copy');
+		assert.equal(fs.lstatSync(bundledBin).isSymbolicLink(), false, 'not a symlink');
+		assert.ok(fs.existsSync(path.join(bundle, 'Contents', 'Resources', 'icon.icns')), 'icon copied');
+		assert.ok(fs.existsSync(path.join(bundle, 'Contents', 'Info.plist')), 'Info.plist written');
+
+		// Idempotent + picks up a newer binary: touching the source rebuilds the bundle.
+		const plistPath = path.join(bundle, 'Contents', 'Info.plist');
+		fs.writeFileSync(plistPath, 'STALE');
+		const future = new Date(Date.now() + 10_000);
+		fs.utimesSync(bin, future, future);
+		ensureMacAppBundle({ rootDir, binaryPath: bin });
+		assert.notEqual(fs.readFileSync(plistPath, 'utf8'), 'STALE', 'newer binary rebuilds Info.plist');
+	} finally {
+		fs.rmSync(tmp, { recursive: true, force: true });
+	}
+});
+
+test('on macOS the launcher goes through a .app bundle + open with AIOS_SHELL_ROOT', async () => {
+	const calls = [];
+	const result = await runApp({
+		rootDir: ROOT,
+		platform: 'darwin',
+		existsImpl: existsFor('node_modules', 'node_modules/next/dist/bin/next', SHELL_BINARY_REL),
+		answeringImpl: async () => true,
+		ensureBundleImpl: ({ rootDir, binaryPath }) => {
+			calls.push(['bundle', rootDir, binaryPath]);
+			return '/fake/AIOS.app';
+		},
+		spawnImpl: () => fakeChild(),
+		spawnSyncImpl: (command, args, opts) => {
+			calls.push(['open', command, args, opts?.env?.AIOS_SHELL_ROOT]);
+			return { status: 0 };
+		},
+		log: { write() {} },
+	});
+	assert.equal(result.ok, true);
+	const open = calls.find(([kind]) => kind === 'open');
+	assert.ok(open, 'must launch via open, not a bare binary');
+	assert.equal(open[1], '/usr/bin/open');
+	assert.deepEqual(open[2], ['-W', '/fake/AIOS.app']);
+	assert.equal(open[3], ROOT, 'AIOS_SHELL_ROOT must pin the install root');
+	assert.equal(calls.filter(([kind]) => kind === 'bundle').length, 1);
 });
