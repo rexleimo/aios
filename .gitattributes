@@ -19,6 +19,10 @@ vendor/stageshow/** text=auto eol=lf
 # flunk guards that Linux CI passes.
 agent-sources/**/*.md text eol=lf
 agent-sources/**/*.json text eol=lf
+# 桌面发版脚本把 tag 版本 stamp 进 Cargo.lock（字面量 \n 匹配）。不钉 LF 的话
+# Windows checkout 的 core.autocrlf=true 会刷成 CRLF，脚本在 Windows 上静默失配
+# （实测 0.0.3 Windows job：macOS/Linux 成功、Windows 产物留着旧版本号）。
+apps/shell/src-tauri/Cargo.lock text eol=lf
 scripts/lib/tooling/specs/*.json text eol=lf
 docs-site/llms.txt text eol=lf
 # Skill 训练认证产物是跟 Git blob 做内容哈希比对的字节约定（baseline-skill.md 等），

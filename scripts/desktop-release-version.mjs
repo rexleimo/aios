@@ -58,11 +58,20 @@ export function stamp(version, root = ROOT) {
   writeFileSync(cargoPath, cargoNext);
 
   const lock = readFileSync(lockPath, 'utf8');
-  const lockNext = replaceOnce(
-    lock,
-    `name = "aios-shell"\nversion = "${oldConfVersion}"`,
-    `name = "aios-shell"\nversion = "${version}"`,
-    'Cargo.lock aios-shell version',
+  // The lockfile is not eol-pinned in .gitattributes, so a Windows checkout
+  // (core.autocrlf=true) gives CRLF — a literal "\n" match silently fails there
+  // while working on macOS/Linux. Match either line ending, and preserve the
+  // file's own ending in the replacement.
+  const lockPattern = new RegExp(
+    `(name = "aios-shell")(\\r?\\n)(version = "${oldConfVersion.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}")`,
+  );
+  const lockMatch = lock.match(lockPattern);
+  if (!lockMatch) {
+    throw new Error(`Cargo.lock aios-shell version: expected version ${JSON.stringify(oldConfVersion)}`);
+  }
+  const lockNext = lock.replace(
+    lockPattern,
+    `$1$2version = "${version}"`,
   );
   writeFileSync(lockPath, lockNext);
 

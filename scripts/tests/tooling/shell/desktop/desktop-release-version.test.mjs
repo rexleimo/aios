@@ -4,7 +4,7 @@
 // touches the real worktree (a footgun hit while authoring this script).
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, mkdirSync, cpSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync, rmSync, mkdirSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -45,6 +45,25 @@ test('stamp writes the version into all three bundler-facing files', () => {
     assert.equal(conf.version, '9.8.7');
     assert.match(cargo, /^version = "9\.8\.7"$/m);
     assert.match(lock, /name = "aios-shell"\nversion = "9\.8\.7"/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('stamp handles a CRLF lockfile (Windows core.autocrlf checkout)', () => {
+  // Regression guard: a literal "\n" match worked on macOS/Linux but silently
+  // failed on Windows, where an unpinned Cargo.lock arrives as CRLF — leaving
+  // Windows installers stamped with the previous version.
+  const { dir, tauri } = isolatedTree();
+  try {
+    for (const f of ['tauri.conf.json', 'Cargo.toml', 'Cargo.lock']) {
+      const p = path.join(tauri, f);
+      const crlf = readFileSync(p, 'utf8').replace(/\n/g, '\r\n');
+      writeFileSync(p, crlf);
+    }
+    stamp('5.5.5', dir);
+    const lock = readFileSync(path.join(tauri, 'Cargo.lock'), 'utf8');
+    assert.match(lock, /name = "aios-shell"\r\nversion = "5\.5\.5"/);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
