@@ -1,6 +1,6 @@
 [package]
 name = "aios-shell"
-version = "0.0.2"
+version = "0.0.5"
 description = "AIOS desktop shell — the window that hosts the capability process"
 edition = "2021"
 rust-version = "1.77"
