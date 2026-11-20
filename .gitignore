@@ -51,6 +51,9 @@ cover-image.png
 # AIOS 品牌资产（吉祥物 / app icon 源图）是源码资产，桌面图标由它们派生。
 !brand/
 !brand/*.png
+# UI 顶栏 logo 与 favicon 同样是源码资产，不是内容图片。
+!apps/shell/ui/public/aios-mark.png
+!apps/shell/ui/src/app/icon.png
 # 控制台验收记录里的截图是证据，不是内容图片（docs/reports 是报告日志）。
 !docs/reports/evidence/shell-console-2026-11/
 !docs/reports/evidence/shell-console-2026-11/*.png

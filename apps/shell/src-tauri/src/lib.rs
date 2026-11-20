@@ -26,7 +26,7 @@ pub mod sidecar;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 
-use tauri::{Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
+use tauri::{include_image, Manager, RunEvent, WebviewUrl, WebviewWindowBuilder};
 
 /// The capability process this shell started, if it started one.
 pub struct ServerHandle(std::sync::Mutex<Option<(Child, job::ProcessGuard)>>);
@@ -183,6 +183,8 @@ pub fn run() {
                 .map_err(|error| format!("invalid capability URL {url}: {error}"))?;
             WebviewWindowBuilder::new(app, "main", WebviewUrl::External(target))
                 .title("AIOS")
+                // 窗口/任务栏图标：bundle.icon 只管安装包文件图标，运行时窗口图标要显式设。
+                .icon(include_image!("icons/32x32.png"))?
                 .inner_size(1280.0, 860.0)
                 .min_inner_size(900.0, 600.0)
                 .build()?;

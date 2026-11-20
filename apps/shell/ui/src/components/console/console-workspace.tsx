@@ -9,7 +9,6 @@ import {
   Box,
   ChevronDown,
   Clock,
-  Command,
   Folder,
   Home,
   Moon,
@@ -146,9 +145,13 @@ export function ConsoleWorkspace({
       </a>
       <aside className="fixed inset-y-0 left-0 z-20 flex w-[68px] flex-col border-r border-rex-border bg-rex-panel/60 md:w-[212px]">
         <div className="flex h-[78px] items-center gap-2.5 px-[18px] md:px-6">
-          <span className="grid size-8 shrink-0 place-items-center rounded-[10px] bg-rex-text text-rex-bg">
-            <Command size={19} strokeWidth={1.8} />
-          </span>
+          <img
+            src="/aios-mark.png"
+            alt="AIOS"
+            width={36}
+            height={36}
+            className="size-9 shrink-0 rounded-[10px]"
+          />
           <span className="hidden md:block">
             <span className="block font-rex-display text-lg leading-5 font-semibold tracking-tight">AIOS</span>
             <span className="text-[10px] tracking-wide text-rex-text-muted">你的本机 AI 工作空间</span>
