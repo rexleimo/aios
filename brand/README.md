@@ -17,9 +17,16 @@ AIOS 的品牌图形与桌面图标源图。所有 PNG 由 GPT Image 2（经 Rex
 
 配色只有两色：青 `#22D3EE` / 近黑 `#06070D`，白色用于眼睛和对勾，克制、工程师向。
 
+## 两张源图的分工
+
+- `aios-mark-flat.png` —— **带深底圆角方块**的 app icon 源图。给安装包 / 窗口 / favicon
+  之外的“应用级图标”用；macOS 会对 `.app` bundle 自动套 squircle 圆角矩形。
+- `aios-mark-transparent.png` —— **透明底**的同款吉祥物（chroma key 抠掉品红背景）。
+  给 UI 顶栏这类“叠加在面板上”的场景用，不会出现黑方块。
+
 ## 桌面图标
 
-由 `aios-mark-flat.png` 派生，落在 `apps/shell/src-tauri/icons/`：
+由 `aios-mark-flat.png`（带底版）派生，落在 `apps/shell/src-tauri/icons/`：
 
 | 文件 | 用途 |
 | --- | --- |

@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "aios-shell"
-version = "0.0.6"
+version = "0.0.7"
 dependencies = [
  "libc",
  "tauri",
