@@ -3,7 +3,8 @@
 // bundler reads, and — critically — that stamping an isolated copy never
 // touches the real worktree (a footgun hit while authoring this script).
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync, mkdirSync, cpSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, mkdirSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -55,9 +56,31 @@ test('stamp refuses a non-string root instead of mis-resolving to the worktree',
   }
 });
 
-test('the real worktree stays pinned at the declared 0.0.1', () => {
+test('the CLI entry actually runs when invoked (cross-platform main detection)', () => {
+  // Regression guard: the original `file://${process.argv[1]}` check silently
+  // no-ops on Windows (backslash paths), so the Windows 0.0.2 installers kept
+  // the 0.0.1 version. Invoke the CLI with an invalid tag: a running entry
+  // rejects it (writing nothing); a broken entry detection exits silently.
+  const script = path.join(ROOT, 'scripts', 'desktop-release-version.mjs');
+  const probe = spawnSync(process.execPath, [script, 'not-a-desktop-tag'], {
+    cwd: ROOT,
+    encoding: 'utf8',
+  });
+  assert.notEqual(probe.status, 0, 'CLI entry must run and reject a bad tag');
+  assert.match(probe.stderr + probe.stdout, /desktop-v\*|does not encode a semver|expected a desktop-v/);
+});
+
+test('the real worktree has one version across all three bundler files', () => {
   // Regression guard: an earlier bug made an isolated-copy test write to the
-  // real worktree because `undefined` triggered the default root.
+  // real worktree because `undefined` triggered the default root; another left
+  // the Windows installers stamped at the previous version. Assert agreement,
+  // not a literal, so the test keeps working across releases.
   const conf = JSON.parse(readFileSync(path.join(SRC_TAURI, 'tauri.conf.json'), 'utf8'));
-  assert.equal(conf.version, '0.0.1');
+  const cargo = readFileSync(path.join(SRC_TAURI, 'Cargo.toml'), 'utf8');
+  const lock = readFileSync(path.join(SRC_TAURI, 'Cargo.lock'), 'utf8');
+  const cargoVersion = cargo.match(/^version = "([^"]+)"$/m)?.[1];
+  const lockVersion = lock.match(/name = "aios-shell"\nversion = "([^"]+)"/)?.[1];
+  assert.ok(cargoVersion && lockVersion, 'versions must be readable');
+  assert.equal(conf.version, cargoVersion);
+  assert.equal(conf.version, lockVersion);
 });

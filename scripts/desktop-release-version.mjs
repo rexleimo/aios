@@ -5,6 +5,7 @@
 // tag can never produce a mis-versioned installer.
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const ROOT = process.cwd();
 const CONF = resolve(ROOT, 'apps/shell/src-tauri/tauri.conf.json');
@@ -68,7 +69,11 @@ export function stamp(version, root = ROOT) {
   return { version, oldConfVersion, files: [confPath, cargoPath, lockPath] };
 }
 
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+// Cross-platform main-module detection: on Windows process.argv[1] is a
+// backslash path (D:\...\script.mjs), so string-concatenating `file://` never
+// matches import.meta.url (file:///D:/.../script.mjs) and the CLI silently
+// no-ops — which left the Windows 0.0.2 installers stamped 0.0.1.
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url) {
   const tag = process.argv[2] ?? process.env.GITHUB_REF_NAME;
   const version = versionFromTag(tag);
   const result = stamp(version);
