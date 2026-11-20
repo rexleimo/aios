@@ -1,7 +1,7 @@
 'use client';
 
 import { clientLabel, landingTokenLabel, LANDING_TOKEN_EXPLANATION, type ConsoleFacts } from '../../lib/console-facts';
-import type { ViewId } from '../../lib/console-navigation';
+import type { NavId } from '../../lib/console-navigation';
 import { Badge, Button, Heading, Modal, Panel, SmallTitle } from './console-ui';
 import { AgentOverview } from './model-routing/agent-overview';
 import { ClientManagement } from './clients/client-management';
@@ -12,7 +12,7 @@ export function HomeWorkspace({
   active,
 }: {
   facts: ConsoleFacts;
-  navigate: (view: ViewId) => void;
+  navigate: (view: NavId) => void;
   active: boolean;
 }) {
   return (

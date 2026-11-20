@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "id": "hello-plugin",
+      "manifest": "examples/hello-plugin",
+      "enabled": true
+    }
+  ]
+}

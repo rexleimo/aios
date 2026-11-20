@@ -17,8 +17,13 @@ export default async function SectionPage({
   const pathname = `/${section}`;
   const destination = legacyDestination(pathname);
   if (destination) redirect(destination);
-  const view = viewForPath(pathname);
-  if (!view) notFound();
   const { facts, selection } = await collectForRequest({ ws });
-  return <ConsoleWorkspace initialView={view} facts={facts} selection={selection} />;
+  const builtinView = viewForPath(pathname);
+  // 内置视图用 ViewId；插件贡献的 panel 用 `plugin:<id>`，由 facts.pluginViews 的 href 匹配。
+  // 旧缓存/降级路径可能没有该字段，防御为空数组（fail-open，不让首屏 500）。
+  const pluginViews = facts.pluginViews ?? [];
+  const pluginView = pluginViews.find((item: { href: string; id: string }) => item.href === pathname);
+  const initialView = builtinView ?? (pluginView ? pluginView.id : null);
+  if (!initialView) notFound();
+  return <ConsoleWorkspace initialView={initialView} facts={facts} selection={selection} />;
 }

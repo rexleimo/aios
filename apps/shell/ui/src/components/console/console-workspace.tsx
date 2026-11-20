@@ -20,7 +20,7 @@ import {
   Sun,
   Terminal,
 } from 'lucide-react';
-import { CONSOLE_VIEWS, PRIMARY_VIEWS, viewForPath, type ViewId } from '../../lib/console-navigation';
+import { CONSOLE_VIEWS, PRIMARY_VIEWS, viewForPath } from '../../lib/console-navigation';
 import type { ConsoleFacts } from '../../lib/console-facts';
 import { HomeWorkspace, ToolsWorkspace } from './home-workspace';
 import { MemoryWorkspace } from './memory-workspace';
@@ -28,8 +28,21 @@ import { ResourcesWorkspace } from './resources-workspace';
 import { Button, Heading, Panel, Select } from './console-ui';
 import { GatewayWorkspace } from './gateway-workspace';
 
-const ICONS = { home: Home, tools: Terminal, routing: Route, routingConfig: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
-const NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] }));
+const ICONS: Record<string, typeof Home> = { home: Home, tools: Terminal, routing: Route, routingConfig: Route, mcp: Plug, memory: BookOpen, activity: Activity, settings: Settings2 };
+const BASE_NAV = PRIMARY_VIEWS.map(item => ({ ...item, icon: ICONS[item.id] as typeof Home }));
+type PluginView = { id: string; href: string; label: string; title: string; source: string };
+
+/** 主导航 = 内置视图 + 插件声明式贡献的 panel。插件 id 带 `plugin:` 前缀，不与内置冲突。 */
+function buildNav(pluginViews: PluginView[]) {
+  const extra = (pluginViews || []).map((item) => ({
+    id: item.id,
+    href: item.href,
+    label: item.label,
+    title: item.title,
+    icon: Plug as typeof Home,
+  }));
+  return [...BASE_NAV, ...extra];
+}
 
 /** 采集时间怎么念：刚刚 / N 秒前 / N 分钟前——数据新鲜度是一条事实，不是装饰。 */
 function ageLabel(iso: string, now: number): string {
@@ -64,24 +77,31 @@ export function ConsoleWorkspace({
   facts,
   selection = { requested: '', ok: true },
 }: {
-  initialView: ViewId;
+  initialView: string;
   facts: ConsoleFacts;
   selection?: WorkspaceSelection;
 }) {
-  const [view, setView] = useState<ViewId>(initialView);
-  function navigate(next: ViewId, section?: string) {
+  const [view, setView] = useState<string>(initialView);
+  const pluginViews = facts.pluginViews ?? [];
+  const nav = buildNav(pluginViews);
+  const findView = (id: string) => nav.find((item) => item.id === id) ?? nav[0];
+  function navigate(next: string, section?: string) {
     const params = new URLSearchParams();
     const ws = new URLSearchParams(window.location.search).get('ws');
     if (ws) params.set('ws', ws);
     if (section) params.set('section', section);
-    const href = `${CONSOLE_VIEWS[next].href}${params.size ? `?${params}` : ''}`;
+    const href = `${findView(next).href}${params.size ? `?${params}` : ''}`;
     if (`${window.location.pathname}${window.location.search}` !== href) {
       window.history.pushState(null, '', href);
     }
     setView(next);
   }
+
   useEffect(() => {
-    const onBackForward = () => setView(viewForPath(window.location.pathname) ?? 'home');
+    const onBackForward = () => {
+      const found = buildNav(facts.pluginViews ?? []).find((item) => item.href === window.location.pathname);
+      setView(found?.id ?? viewForPath(window.location.pathname) ?? 'home');
+    };
     window.addEventListener('popstate', onBackForward);
     return () => window.removeEventListener('popstate', onBackForward);
   }, []);
@@ -96,10 +116,10 @@ export function ConsoleWorkspace({
   function selectWorkspace(key: string) {
     if (!key || key === selectedWorkspaceKey) return;
     // 真实换 URL 并让服务端重采集——这是「选择能改数据」与「选择只是饰品」的分界。
-    window.location.href = `${CONSOLE_VIEWS[view].href}?ws=${encodeURIComponent(key)}`;
+    window.location.href = `${findView(view).href}?ws=${encodeURIComponent(key)}`;
   }
   // 面板懒挂载：没打开过的面板不进首屏 HTML，省掉一次采集与一串 DOM。
-  const [mounted, setMounted] = useState(() => new Set<ViewId>([initialView]));
+  const [mounted, setMounted] = useState(() => new Set<string>([initialView]));
   useEffect(() => {
     setMounted((previous) => (previous.has(view) ? previous : new Set([...previous, view])));
   }, [view]);
@@ -142,7 +162,7 @@ export function ConsoleWorkspace({
           <p className="mt-1 pl-[22px] text-[10px] break-all text-rex-text-muted">{facts.rootDir}</p>
         </div>
         <nav aria-label="主导航" className="mt-7 space-y-1 px-3">
-          {NAV.map((item) => (
+          {nav.map((item) => (
               <button
                 key={item.id}
                 title={item.label}
@@ -195,7 +215,7 @@ export function ConsoleWorkspace({
           <div className="flex min-h-[60px] flex-wrap items-center gap-3 px-4 lg:px-8">
             <span className="hidden text-xs text-rex-text-muted sm:inline">本机工作区</span>
             <span className="hidden text-rex-text-muted sm:inline">/</span>
-            <span className="text-xs font-medium">{CONSOLE_VIEWS[view].title}</span>
+            <span className="text-xs font-medium">{findView(view).title}</span>
             <div className="ml-auto flex min-w-0 max-w-full items-center gap-2 text-xs">
               <Folder size={14} className="hidden text-rex-text-muted sm:block" />
               <label htmlFor="console-workspace" className="sr-only">
@@ -300,6 +320,9 @@ export function ConsoleWorkspace({
               )}
             </Panel>
           </div>
+          {pluginViews.map((item) => (
+            <PluginPanelView key={item.id} item={item} active={view === item.id} />
+          ))}
           <div hidden={view !== 'settings'}>
             <Heading
               eyebrow="PREFERENCES"
@@ -349,6 +372,34 @@ export function ConsoleWorkspace({
           </span>
         </footer>
       </div>
+    </div>
+  );
+}
+
+/** 插件声明式 panel 的通用渲染：展示来源插件、贡献内容与安装提示。 */
+function PluginPanelView({ item, active }: { item: PluginView; active: boolean }) {
+  return (
+    <div hidden={!active}>
+      <Heading
+        eyebrow="PLUGIN PANEL"
+        title={item.title}
+        description={`由插件 ${item.source} 贡献的页面（声明式 panel）。`}
+      />
+      <Panel className="max-w-2xl p-6">
+        <h2 className="text-sm font-semibold">这个页面来自插件</h2>
+        <p className="mt-2 text-xs leading-6 text-rex-text-muted">
+          插件 <code className="rounded bg-rex-panel px-1 py-0.5 font-rex-mono">{item.source}</code> 在 manifest 的
+          <code className="mx-1 rounded bg-rex-panel px-1 py-0.5 font-rex-mono">contributes.panels</code>
+          中声明了这个页面，路由 <code className="rounded bg-rex-panel px-1 py-0.5 font-rex-mono">{item.href}</code>。
+        </p>
+        <div className="mt-4 rounded-xl border border-rex-border bg-rex-panel/40 p-4 text-xs leading-6">
+          <p className="font-medium">声明式贡献已生效</p>
+          <p className="mt-1 text-rex-text-muted">
+            这个页面本身就是证据：你能点开它、看到来源，说明 <code>plugins.json → manifest → 导航注入</code> 这条链路已经跑通。
+            禁用或卸载插件后，这个入口会消失。
+          </p>
+        </div>
+      </Panel>
     </div>
   );
 }

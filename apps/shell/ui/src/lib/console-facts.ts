@@ -159,6 +159,10 @@ export interface ConsoleFacts {
   /** 每一项失败采集的原文；界面必须把它显示出来，而不是显示成「什么都没有」。 */
   degraded: Array<{ item: string; error: string }>;
   sources: Array<{ field: string; origin: string }>;
+  /** 已启用插件贡献的导航页（声明式 panel）；服务端采集，界面合并进主导航。 */
+  pluginViews: Array<{ id: string; href: string; label: string; title: string; source: string }>;
+  /** 加载失败的插件（fail-open 记录），界面可如实展示。 */
+  pluginFailures: Array<{ id: string; error: string }>;
   declaredClientCount: number;
   declaredOnlyReason: string | null;
   clients: FactClient[];
@@ -194,6 +198,14 @@ const CLIENT_LABELS: Record<string, { name: string; monogram: string }> = {
 export function clientLabel(clientId: string): { name: string; monogram: string } {
   return CLIENT_LABELS[clientId] ?? { name: clientId, monogram: clientId.slice(0, 1).toUpperCase() };
 }
+
+/**
+ * 拦截能力矩阵里的「宿主槽位」，不是可接入/选模型的 AI 客户端。
+ * 它们声明在 host-capabilities.json 的 clients 段，被 console-facts 一并收进 facts.clients，
+ * 但没有配置落点、没有模型可选，不能接入网关——不应出现在 Agent 客户端列表里。
+ * Cursor 是真编辑器客户端，不在此列（它有自己的 logo，可接入）。
+ */
+export const NON_CLIENT_HOSTS: ReadonlySet<string> = new Set(['aios-harness', 'generic-mcp']);
 
 /** 落点 token → 一句话解释。查不到原因时明说「尚未查明」，不编（路线图 P1-1）。 */
 export function landingTokenLabel(token: string): { label: string; tone: 'ok' | 'warn' | 'danger' | 'neutral' } {

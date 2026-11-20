@@ -7,9 +7,9 @@
     "node": ">=24 <25"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.14",
     "@inkjs/ui": "^1.0.0",
     "@inquirer/prompts": "^8.4.3",
-    "@hono/node-server": "^1.19.14",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "chalk": "^5.6.2",
     "commander": "^14.0.3",
@@ -17,6 +17,7 @@
     "ink": "^4.4.1",
     "react": "^18.3.1",
     "react-router": "^7.1.1",
+    "ts-pattern": "^5.9.2",
     "yaml": "^2.9.0"
   },
   "scripts": {
@@ -57,7 +58,7 @@
     "check:node": "node scripts/check-node-version.mjs",
     "syntax:check": "node scripts/check-syntax.mjs",
     "test": "node --test scripts/tests/learning/model/gateway/*.test.mjs",
-  "test:unit": "node scripts/run-test-suite.mjs unit",
+    "test:unit": "node scripts/run-test-suite.mjs unit",
     "test:browser": "node scripts/run-test-suite.mjs browser",
     "test:client": "node scripts/run-test-suite.mjs client",
     "test:context": "node scripts/run-test-suite.mjs context",
@@ -79,6 +80,7 @@
     "check:design": "node scripts/check-design-contract.mjs",
     "ui:setup": "npm --prefix apps/shell/ui install",
     "ui": "node scripts/aios-ui.mjs dev",
+    "ui:plugin-demo": "node scripts/aios-plugin-demo.mjs",
     "ui:build": "node scripts/aios-ui.mjs build",
     "ui:start": "node scripts/aios-ui.mjs start",
     "ui:typecheck": "npm --prefix apps/shell/ui run typecheck",

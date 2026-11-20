@@ -6,10 +6,11 @@
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 
-import { clientLabel } from '../../../lib/console-facts';
-import type { ViewId } from '../../../lib/console-navigation';
+import { clientLabel, NON_CLIENT_HOSTS } from '../../../lib/console-facts';
+import type { NavId } from '../../../lib/console-navigation';
 import { Badge, Button, InlineFeedback, Panel, Select, SmallTitle, type Feedback } from '../console-ui';
 import { ClientUpdateDialog, type UpdatePreview } from '../clients/client-update-dialog';
+import { ClientLogo } from '../clients/client-logo';
 import { installationSummary } from '../clients/client-management-model.mjs';
 import { useClientManagement, type ClientInstallation } from '../clients/use-client-management';
 
@@ -42,7 +43,7 @@ export function AgentAccessPanel({
   feedback: Feedback | null;
   onConnect: (client: string, target: string) => void;
   onDisconnect: (client: string) => void;
-  onNavigate: (view: ViewId) => void;
+  onNavigate: (view: NavId) => void;
 }) {
   const state = useClientManagement();
   const [selected, setSelected] = useState<Record<string, string>>({});
@@ -57,7 +58,7 @@ export function AgentAccessPanel({
     ...CONNECTABLE,
     ...state.installations.map((client) => client.id),
     ...(status?.clients || []).map((client) => client.client),
-  ])];
+  ])].filter((id) => !NON_CLIENT_HOSTS.has(id));
 
   async function copy(text: string, key: string) {
     try {
@@ -117,7 +118,7 @@ export function AgentAccessPanel({
             <li key={id} className="grid min-w-0 items-center gap-x-3 gap-y-2 p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.35fr)]">
               {/* 照 AgentOverview 的一行式：左侧身份块，右侧事实/操作块；不在行内换行堆三行。 */}
               <div className="flex min-w-0 items-center gap-3">
-                <BrandIcon id={id} label={label.name} />
+                <ClientLogo id={id} />
                 <div className="min-w-0">
                   <p className="truncate text-xs font-medium">{label.name}<span className="ml-2 font-normal text-rex-text-muted">{id}</span></p>
                   <p className="flex min-w-0 items-center gap-2 text-[11px] text-rex-text-muted">
@@ -193,19 +194,6 @@ export function AgentAccessPanel({
         })();
       }} />}
     </Panel>
-  );
-}
-
-// 图标文件多数是 .svg，zcode 在 magpie 源里是 .png；统一映射，避免 404。
-const ICON_EXT: Record<string, string> = { zcode: 'png' };
-
-function BrandIcon({ id, label }: { id: string; label: string }) {
-  const [failed, setFailed] = useState(false);
-  return (
-    <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-rex-md bg-rex-panel font-rex-display text-sm font-semibold">
-      {/* 品牌图标来自 magpie（MIT），见 public/icons/NOTICE.md；没有图标的客户端退回首字母。 */}
-      {failed ? label.slice(0, 1) : <img src={`/icons/${id}.${ICON_EXT[id] || 'svg'}`} alt="" className="size-5" onError={() => setFailed(true)} />}
-    </span>
   );
 }
 

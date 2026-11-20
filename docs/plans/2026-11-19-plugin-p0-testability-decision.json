@@ -1,0 +1,17 @@
+{
+  "kind": "behavior-delta",
+  "decisionRef": "file:docs/plans/2026-11-19-plugin-p0-test-scope.md#2-acceptance-test-mapping",
+  "redCandidate": {
+    "publicEntry": "normalizePluginManifest(raw) from scripts/lib/clients/plugins/manifest.mjs (P0 A1)",
+    "setup": "Import the not-yet-implemented manifest module and assert a minimal valid plugin manifest is accepted and an invalid one (empty id) throws PluginManifestError; the module does not exist yet, so the test file fails at import.",
+    "command": {
+      "executable": "node",
+      "args": ["--test", "scripts/lib/clients/plugins/manifest.test.mjs"],
+      "cwd": "/Users/rex/codes/harness-cli"
+    },
+    "expected": "4 tests pass: valid manifest normalized; empty id / bad schemaVersion / non-object contributes each throw PluginManifestError.",
+    "observed": "node --test exits 1 with ERR_MODULE_NOT_FOUND for ./manifest.mjs — the new user-observable capability (manifest validation) does not exist yet, a real RED for new behavior.",
+    "failureReason": "The plugin manifest validation module is not implemented; the RED test references it and fails at import, proving the target behavior is absent rather than a regression.",
+    "receiptRef": "receipt:c23c7ee9-e87e-4089-a543-0245627c72a8"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "id": "hello-plugin",
+  "version": "1.0.0",
+  "permissions": ["panel", "integration"],
+  "lifecycle": { "install": "automatic", "upgrade": "manual", "disable": "toggle", "remove": "clean" },
+  "evidence": { "kind": "example", "note": "随仓库发布的示例插件，用于端到端演示声明式 contributions。" },
+  "contributes": {
+    "panels": [
+      { "id": "hello", "href": "/hello-plugin", "label": "示例插件", "title": "示例插件 · Hello" }
+    ],
+    "integrations": [
+      {
+        "id": "hello-docs",
+        "displayName": "Hello Plugin Docs",
+        "vendor": "hello-plugin",
+        "homepage": "https://example.com/hello-plugin",
+        "summary": "示例插件贡献的文档集成（演示真写盘 + 卸载清理）",
+        "env": [],
+        "skill": {
+          "repo": "example/hello-plugin-skill",
+          "commit": "1111111111111111111111111111111111111111",
+          "skillPath": "skills/hello",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "installName": "hello-docs",
+          "license": "MIT"
+        },
+        "mcp": {
+          "serverName": "hello-docs",
+          "url": "https://example.com/hello-plugin/mcp",
+          "transport": "http",
+          "tools": [],
+          "resources": []
+        }
+      }
+    ],
+    "providers": [
+      { "id": "hello-registry", "entry": "provider.mjs", "note": "从本机真实 model-registry 读模型/供应商" }
+    ],
+    "middleware": [
+      { "source": "function onRequest(body, ctx){ return body; }", "note": "透传示例：真实插件可在此给请求注入 system 上下文；改 model/stream 会被回滚。" }
+    ]
+  }
+}

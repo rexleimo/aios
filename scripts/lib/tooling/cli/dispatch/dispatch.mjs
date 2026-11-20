@@ -22,6 +22,7 @@ export { applyResultExitCode } from './helpers.mjs';
 const FEATURE_CLI_ROUTES = Object.freeze({
   integration: { load: () => import('../../../clients/integrations/cli.mjs'), exportName: 'runIntegrationCommand', withProjectRoot: true },
   mcp: { load: () => import('../../../clients/mcp/cli.mjs'), exportName: 'runMcpCommand', withProjectRoot: true },
+  plugin: { load: () => import('../../../clients/plugins/cli.mjs'), exportName: 'runPluginCommand', withProjectRoot: true },
   judgment: { load: () => import('../../../learning/judgment/cli.mjs'), exportName: 'runJudgmentCommand', withProjectRoot: false },
   search: { load: () => import('../../../memory/search/cli.mjs'), exportName: 'runSearchCommand', withProjectRoot: false },
 });

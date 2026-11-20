@@ -16,6 +16,7 @@ import path from 'node:path';
 import { loadMcpList } from './mcp.mjs';
 import { listSessions, auditSessionStore } from './sessions.mjs';
 import { readMemoEvents, readPinnedMemo } from './memo-store.mjs';
+import { loadPluginPanelViews } from './plugin-contributions.mjs';
 import { runCapabilityJson, repoRoot } from './capability.mjs';
 
 /** 字面量类型要显式声明：没有这层断言，导出常量会被推成 `string`，页面就没法对齐 `ConsoleFacts`。 */
@@ -182,7 +183,7 @@ function buildProjects({ workspaces, rootDir }) {
  */
 export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, workspaces: workspacesInjected } = {}) {
   const startedAt = Date.now();
-  const [mcpResult, sessionsResult, memoResult, pinnedResult, memoryReportResult, declarationResult, workspacesResult] = await Promise.all([
+  const [mcpResult, sessionsResult, memoResult, pinnedResult, memoryReportResult, declarationResult, workspacesResult, pluginViewsResult] = await Promise.all([
     timed('mcp', () => loadMcpList({ rootDir, runImpl })),
     timed('sessions', async () => ({ rows: listSessions(rootDir), audit: auditSessionStore(rootDir) })),
     timed('memo', async () => readMemoEvents({ rootDir })),
@@ -196,9 +197,10 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
       const { loadWorkspaces } = await import('../config/workspaces.mjs');
       return loadWorkspaces({ rootDir: repoRoot(), runImpl });
     }),
+    timed('plugins', async () => loadPluginPanelViews({ rootDir })),
   ]);
 
-  const degraded = [mcpResult, sessionsResult, memoResult, pinnedResult, memoryReportResult, declarationResult, workspacesResult]
+  const degraded = [mcpResult, sessionsResult, memoResult, pinnedResult, memoryReportResult, declarationResult, workspacesResult, pluginViewsResult]
     .filter((entry) => !entry.ok)
     .map((entry) => ({ item: String(entry.item), error: String(entry.error ?? 'unknown failure') }));
   // 采集器自己也会返回 `{ ok:false }`（子进程跑了但没拿到 payload），那同样是降级。
@@ -255,7 +257,10 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
       { item: 'memoryReport', ms: memoryReportResult.ms },
       { item: 'declaration', ms: declarationResult.ms },
       { item: 'workspaces', ms: workspacesResult.ms },
+      { item: 'plugins', ms: pluginViewsResult.ms },
     ],
+    pluginViews: pluginViewsResult.ok && pluginViewsResult.value ? pluginViewsResult.value.views : [],
+    pluginFailures: pluginViewsResult.ok && pluginViewsResult.value ? pluginViewsResult.value.failed : [],
     degraded,
     sources: [
       { field: 'clients / services / issues', origin: 'node scripts/aios.mjs mcp list --json' },
@@ -264,6 +269,7 @@ export async function collectConsoleFacts({ rootDir = repoRoot(), runImpl, works
       { field: 'memories', origin: memoResult.ok ? memoResult.value?.file : 'unreadable' },
       { field: 'memoryTotals', origin: 'node scripts/aios.mjs memory report --json' },
       { field: 'workspaces', origin: 'node scripts/aios.mjs workspaces list --json（注册表 ∪ 记忆仓存在性）' },
+      { field: 'pluginViews', origin: path.join(rootDir, 'config', 'plugins.json') },
     ],
     declaredClientCount: declared.clients.length,
     declaredOnlyReason: declared.reason,

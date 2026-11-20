@@ -4,9 +4,10 @@
 // Decision logs cannot establish whether a client or gateway process is running.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CircleAlert, Waypoints } from 'lucide-react';
-import { clientLabel, type FactClient, type FactIssue } from '../../../lib/console-facts';
-import type { ViewId } from '../../../lib/console-navigation';
+import { clientLabel, NON_CLIENT_HOSTS, type FactClient, type FactIssue } from '../../../lib/console-facts';
+import type { NavId } from '../../../lib/console-navigation';
 import { Badge, Empty, ErrorState, Panel, SmallTitle, TextLink } from '../console-ui';
+import { ClientLogo } from '../clients/client-logo';
 
 interface IntentFallback {
   stage: string;
@@ -49,9 +50,11 @@ export function AgentOverview({
   clients: FactClient[];
   issues: FactIssue[];
   active: boolean;
-  navigate: (view: ViewId) => void;
+  navigate: (view: NavId) => void;
   compact?: boolean;
 }) {
+  // 拦截矩阵的宿主槽位（aios-harness/generic-mcp）不是可接入客户端，不在此展示。
+  const visibleClients = clients.filter((client) => !NON_CLIENT_HOSTS.has(client.clientId));
   const [decisions, setDecisions] = useState<DecisionsPayload | null>(null);
   const [config, setConfig] = useState<RoutingConfig | null>(null);
   const [decisionsError, setDecisionsError] = useState('');
@@ -149,7 +152,7 @@ export function AgentOverview({
       {compact ? (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-rex-md border border-rex-border bg-rex-panel/40 px-4 py-3 text-xs">
           <span className="text-rex-text-muted">
-            最近请求涉及 <span className="font-semibold text-rex-text">{clients.length}</span> 个客户端
+            最近请求涉及 <span className="font-semibold text-rex-text">{visibleClients.length}</span> 个客户端
             {decisions ? ` · 日志内 ${decisions.counters.requests} 条请求` : ' · 日志读取中'}
             <span className="ml-1">（仅为历史日志，不代表在线）</span>
           </span>
@@ -169,22 +172,20 @@ export function AgentOverview({
             {!decisions ? '尚未读到网关决策日志。' : decisions.counters.requests === 0 ? (decisions.exists ? '当前日志内没有请求记录。' : '尚未找到网关决策日志。') : ''}客户端配置落点不能证明已接入网关。
           </p>
         </div>
-        {clients.length === 0 && (
+        {visibleClients.length === 0 && (
           <Empty icon={Waypoints} title="没有可展示的客户端">
             当前工作区没有返回客户端事实；配置落点与请求记录分别采集。
           </Empty>
         )}
         <ul className="divide-y divide-rex-border">
-          {clients.map((client) => {
+          {visibleClients.map((client) => {
             const label = clientLabel(client.clientId);
             const latest = latestFor(client.clientId);
             const configured = configuredFor(client.clientId);
             return (
               <li key={client.clientId} className="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] lg:gap-6">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span aria-hidden className="grid size-10 shrink-0 place-items-center rounded-rex-md bg-rex-panel font-rex-display text-base font-semibold">
-                    {label.monogram}
-                  </span>
+                  <ClientLogo id={client.clientId} size="lg" />
                   <div className="min-w-0 space-y-1">
                     <h3 className="break-words text-sm font-semibold">{label.name}</h3>
                     <p className="break-all text-[11px] text-rex-text-muted">{client.clientId}</p>

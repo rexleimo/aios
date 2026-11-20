@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Power } from 'lucide-react';
 import { clientLabel } from '../../../lib/console-facts';
-import type { ViewId } from '../../../lib/console-navigation';
+import type { NavId } from '../../../lib/console-navigation';
 import { Badge, Button, InlineFeedback, Modal, Panel, SmallTitle, type Feedback } from '../console-ui';
 import { AgentAccessPanel } from './agent-access-panel';
 import { GatewaySetupGuide, type GuideActionKind } from './gateway-setup-guide';
@@ -43,7 +43,7 @@ type ConfirmState = { kind: 'start' | 'stop' } | ConnectConfirmation;
 type Busy = 'start' | 'stop' | 'connect' | 'disconnect' | null;
 
 const POLL_MS = 2500;
-export function GatewayControl({ active, navigate }: { active: boolean; navigate?: (view: ViewId) => void }) {
+export function GatewayControl({ active, navigate }: { active: boolean; navigate?: (view: NavId) => void }) {
   const [status, setStatus] = useState<GatewayStatus | null>(null);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState<Busy>(null);

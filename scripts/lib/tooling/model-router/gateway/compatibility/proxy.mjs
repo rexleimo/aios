@@ -53,6 +53,10 @@ export function createRoutingGatewayApp(options = {}) {
     onDecision = () => {},
     classifyIntent = null,
     masking = true,
+    // 可选插件 middleware：路由前对请求体跑 onRequest 链。默认 undefined = 零行为变化。
+    // 只接收/返回 body，受保护字段的改动由链内部回滚；失败 fail-open。
+    pluginOnRequest = null,
+    onPluginUsage = null,
   } = options;
 
   const decisions = [];
@@ -64,6 +68,8 @@ export function createRoutingGatewayApp(options = {}) {
     const decision = Object.freeze({ at: new Date().toISOString(), ...entry });
     decisions.push(decision);
     onDecision(decision);
+    // 插件 onUsage：请求结束时的只读通知。hook 内部已 fail-open，这里直接调用。
+    if (typeof onPluginUsage === 'function') onPluginUsage(decision);
     return decision;
   }
 
@@ -248,6 +254,12 @@ export function createRoutingGatewayApp(options = {}) {
       // Classification is an upstream request too; share one request-local mask mapping.
       let maskStore = new Map();
       if (masking) parsed = maskObject(parsed, maskStore).value;
+
+      // 插件 middleware 的 onRequest：默认无插件时是零开销的直通；hook 链内部已 fail-open。
+      if (typeof pluginOnRequest === 'function') {
+        const pluginBody = pluginOnRequest(parsed, { protocol: incomingProtocol, client: requestClient, role: requestRole });
+        if (pluginBody && typeof pluginBody === 'object' && !Array.isArray(pluginBody)) parsed = pluginBody;
+      }
 
       const sessionId = c.req.header('x-gateway-session') || c.req.header('x-aios-session');
       const affinity = requestAffinity({ protocol: incomingProtocol, client: requestClient, role: normalizeId(requestRole), sessionId, body: parsed, fingerprint: configurationFingerprint(registry, env) });

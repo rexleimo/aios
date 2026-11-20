@@ -4,6 +4,7 @@ import { parseHarnessArgs, parseHudArgs, parseTeamArgs, parseWorkArgs } from './
 import { parseInterceptionArgs } from './parse-args/platform/interception.mjs';
 import { parseIntegrationArgs } from './parse-args/platform/integration.mjs';
 import { parseMcpArgs } from './parse-args/platform/mcp.mjs';
+import { parsePluginArgs } from './parse-args/platform/plugin.mjs';
 import { parseJudgmentArgs } from './parse-args/govern/judgment.mjs';
 import { parseEvolutionArgs } from './parse-args/knowledge/evolution.mjs';
 import {
@@ -127,6 +128,7 @@ const TOP_LEVEL_COMMANDS = new Set([
   'skill',
   'integration',
   'mcp',
+  'plugin',
   'session',
   'tokens',
   'rex',
@@ -308,6 +310,7 @@ export function parseArgs(argv = []) {
   if (first === 'skill') return parseSkillArgs(argv);
   if (first === 'integration') return parseIntegrationArgs(argv);
   if (first === 'mcp') return parseMcpArgs(argv);
+  if (first === 'plugin') return parsePluginArgs(argv);
   if (first === 'judgment') return parseJudgmentArgs(argv);
   if (first === 'session') return parseSessionArgs(argv);
   if (first === 'canvas') return parseCanvasArgs(argv);

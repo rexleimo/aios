@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "integrations": {
     "typesafe": {
+      "id": "typesafe",
       "displayName": "TypeSafe (System One / Jev)",
       "vendor": "typesafe-ai",
       "homepage": "https://typesafe.ai",
@@ -33,8 +34,36 @@
           "query_docs_filesystem_type_safe_ai",
           "submit_feedback"
         ],
-        "resources": ["mintlify://skills/typesafe"],
+        "resources": [
+          "mintlify://skills/typesafe"
+        ],
         "purpose": "Read-only documentation retrieval so the agent reads current API contracts instead of prior knowledge."
+      }
+    },
+    "hello-docs": {
+      "id": "hello-docs",
+      "displayName": "Hello Plugin Docs",
+      "vendor": "hello-plugin",
+      "homepage": "https://example.com/hello-plugin",
+      "docsIndex": "",
+      "summary": "示例插件贡献的文档集成（演示真写盘 + 卸载清理）",
+      "env": [],
+      "skill": {
+        "repo": "example/hello-plugin-skill",
+        "commit": "1111111111111111111111111111111111111111",
+        "skillPath": "skills/hello",
+        "entryFile": "SKILL.md",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "installName": "hello-docs",
+        "license": "MIT"
+      },
+      "mcp": {
+        "serverName": "hello-docs",
+        "url": "https://example.com/hello-plugin/mcp",
+        "transport": "http",
+        "tools": [],
+        "resources": [],
+        "purpose": ""
       }
     }
   }

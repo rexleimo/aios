@@ -14,13 +14,14 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import type { ConsoleFacts } from '../../lib/console-facts';
-import type { ViewId } from '../../lib/console-navigation';
+import type { NavId } from '../../lib/console-navigation';
 import { Badge, Button, ErrorState, Heading, InlineFeedback, Loading, Modal, Panel } from './console-ui';
 import { AgentOverview } from './model-routing/agent-overview';
 import { GatewayControl } from './model-routing/gateway-control';
 import { ModelSourceSection } from './model-routing/model-source-section';
 import { RoutingConfigPanel } from './model-routing/routing-config';
 import { RequestHistory } from './gateway/request-history';
+import { RoutingGraph } from './model-routing/routing-graph';
 import { useRoutingConfig } from './model-routing/use-routing-config';
 
 const SECTIONS = [
@@ -39,8 +40,8 @@ export function GatewayWorkspace({
 }: {
   facts: ConsoleFacts;
   active: boolean;
-  navigate: (view: ViewId, section?: string) => void;
-  view?: ViewId;
+  navigate: (view: NavId, section?: string) => void;
+  view?: NavId;
 }) {
   const params = useSearchParams();
   const requested = params.get('section');
@@ -119,6 +120,7 @@ export function GatewayWorkspace({
             <ArrowRight size={14} />
           </Button>
         </div>
+        <RoutingGraph models={routing.models} />
         <GatewayControl active={active && section === 'overview'} navigate={navigate} />
         <AgentOverview
           clients={facts.clients}

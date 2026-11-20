@@ -11,6 +11,8 @@ export const CONSOLE_VIEWS = {
   settings: { href: '/settings', label: '设置', title: '应用设置' },
 } as const;
 export type ViewId = keyof typeof CONSOLE_VIEWS;
+/** 导航 id：内置 ViewId 或插件贡献的 `plugin:<id>`。用于跨视图传递，不做 CONSOLE_VIEWS 索引。 */
+export type NavId = string;
 export const PRIMARY_VIEWS = (Object.keys(CONSOLE_VIEWS) as ViewId[])
   .filter(id => id !== 'settings' && id !== 'routingConfig')
   .map(id => ({ id, ...CONSOLE_VIEWS[id] }));

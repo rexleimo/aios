@@ -219,11 +219,15 @@ const COMMAND_HANDLERS = Object.freeze({
   },
 
   // 中文注释：网关生产入口——起常驻 HTTP 服务（默认路由模式，--passthrough 纯透传）。只绑 127.0.0.1。
-  async gateway({ rawOptions, registry, io }) {
+  // pluginHooks 由外层 CLI 边界注入（依赖倒置）：网关 core 不知道插件装配从哪来。
+  async gateway({ rawOptions, registry, io, pluginHooks = null }) {
     const port = Number(rawOptions.port) || GATEWAY_DEFAULT_PORT;
     const mode = rawOptions.passthrough ? 'passthrough' : 'routing';
     const stateDir = String(rawOptions.stateDir || process.env.AIOS_GATEWAY_STATE_DIR || path.join(os.homedir(), '.aios', 'gateway'));
-    const server = createGatewayServer({ mode, port, registry, env: process.env, stateDir });
+    const server = createGatewayServer({
+      mode, port, registry, env: process.env, stateDir,
+      ...(pluginHooks ? { pluginOnRequest: pluginHooks.onRequest, onPluginUsage: pluginHooks.onUsage } : {}),
+    });
     let addr;
     try {
       addr = await server.listen();
@@ -384,5 +388,14 @@ export async function runModelRouterCommand(rawOptions = {}, { rootDir, registry
   if (subcommand === 'gateway-start' || subcommand === 'gateway-stop' || subcommand === 'gateway-status' || subcommand === 'gateway-tray') {
     return handler({ rawOptions, registry: null, workspaceRoot, io });
   }
-  return withRegistry(io, (registrySnapshot) => handler({ rawOptions, registry: registrySnapshot.document, registrySnapshot, registryRoot, workspaceRoot, io }), registryRoot);
+  // CLI 边界装配插件 hooks 并注入 handler（网关 core 不 import 插件实现，依赖倒置）。
+  const extra = {};
+  if (subcommand === 'gateway') {
+    try {
+      const { assemblePluginHooks } = await import('../../../clients/plugins/assemble.mjs');
+      const hooks = assemblePluginHooks({ rootDir: workspaceRoot });
+      extra.pluginHooks = hooks;
+    } catch { /* 无插件/装配失败时 fail-open，网关照常启动 */ }
+  }
+  return withRegistry(io, (registrySnapshot) => handler({ rawOptions, registry: registrySnapshot.document, registrySnapshot, registryRoot, workspaceRoot, io, ...extra }), registryRoot);
 }
